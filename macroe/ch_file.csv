@@ -1,0 +1,4 @@
+﻿Indicator,Date,Actual,Previous,naive_moving_avg,Status,CHF_Score,CHF_Grade
+Switzerland 10Y Bond Yield,2025-11-01,0.19,0.18,0.18,Stale,0,Neutral
+Switzerland CPI YoY,2025-04-01,0.03,0.34,0.19,Stale,-6,Bearish
+Switzerland GDP YoY,2023-07-01,1.21,1.12,1.16,Stale,1,Mildly Bullish

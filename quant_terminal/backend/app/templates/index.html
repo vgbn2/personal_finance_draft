@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quant Terminal</title>
+    <style>
+        :root {
+            --bg-color: #0f111a;
+            --card-bg: #1e212b;
+            --text-color: #e0e0e0;
+            --accent: #00d1b2;
+            --danger: #ff3860;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--card-bg);
+            padding-bottom: 20px;
+        }
+        h1 { margin: 0; color: var(--accent); }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .card h2 { margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #555;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .online { background-color: var(--accent); box-shadow: 0 0 5px var(--accent); }
+        
+        button {
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.8; }
+        
+        pre { background: #000; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ Quant Terminal</h1>
+            <div>
+                <span id="system-status"><span class="status-dot"></span>System: Connecting...</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Market Status Card -->
+            <div class="card">
+                <h2>📊 Active Markets</h2>
+                <div id="market-list">
+                    <p>Loading markets...</p>
+                </div>
+                <button onclick="fetchMarkets()">Refresh Data</button>
+            </div>
+
+            <!-- Signal & ML Card -->
+            <div class="card">
+                <h2>🤖 ML Assistant</h2>
+                <div id="ml-stats">
+                    <p>Model Status: <span style="color: grey">Standby</span></p>
+                    <p>Regime: <strong>Unknown</strong></p>
+                    <p>Recommendation: --</p>
+                </div>
+                <button onclick="runAnalysis()">Run Analysis</button>
+            </div>
+
+            <!-- Logs / Output -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>📟 System Logs</h2>
+                <pre id="log-window">System Initialized.</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8000";
+
+        async function checkHealth() {
+            try {
+                const res = await fetch(`${API_URL}/health`);
+                const data = await res.json();
+                const dot = document.querySelector('.status-dot');
+                const text = document.querySelector('#system-status');
+                
+                if (data.status === 'healthy') {
+                    dot.classList.add('online');
+                    text.innerHTML = '<span class="status-dot online"></span>System: Online';
+                    log("Connected to Backend.");
+                }
+            } catch (e) {
+                log("Connection failed: " + e);
+            }
+        }
+
+        async function fetchMarkets() {
+            log("Fetching market data...");
+            // Placeholder for real API call
+            setTimeout(() => {
+                document.getElementById('market-list').innerHTML = `
+                    <p><strong>Polymarket:</strong> Elon Tweets (Active)</p>
+                    <p><strong>Gate.io:</strong> BTC/USDT (Vol: High)</p>
+                `;
+                log("Market data updated.");
+            }, 500);
+        }
+
+        async function runAnalysis() {
+            log("Requesting ML Analysis...");
+            document.getElementById('ml-stats').innerHTML = `
+                <p>Model Status: <span style="color: var(--accent)">Running...</span></p>
+            `;
+            // Simulate processing
+            setTimeout(() => {
+                document.getElementById('ml-stats').innerHTML = `
+                    <p>Model Status: <span style="color: var(--accent)">Active</span></p>
+                    <p>Regime: <strong>High Volatility</strong></p>
+                    <p>Recommendation: <span style="color: var(--accent)">MEAN REVERSION</span></p>
+                `;
+                log("Analysis Complete. Edge detected.");
+            }, 1500);
+        }
+
+        function log(msg) {
+            const win = document.getElementById('log-window');
+            const time = new Date().toLocaleTimeString();
+            win.innerHTML += `\n[${time}] ${msg}`;
+            win.scrollTop = win.scrollHeight;
+        }
+
+        // Init
+        checkHealth();
+        setInterval(checkHealth, 30000);
+    </script>
+</body>
+</html>

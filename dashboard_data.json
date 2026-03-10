@@ -1,0 +1,306 @@
+{
+  "timestamp": "2026-01-24T00:06:37.725890",
+  "status": "\ud83c\udfe2 WORK",
+  "base_rate": 28.571428571428573,
+  "live_rate": 28.571428571428573,
+  "tracker_active": true,
+  "manual_fallback": 468,
+  "events": [
+    {
+      "title": "Elon Musk # tweets January 20 - January 27, 2026?",
+      "count": 200,
+      "proj": 314,
+      "days_left": 3.995490830034722,
+      "buckets": [
+        {
+          "name": "280-299",
+          "price": 0.35000000000000003,
+          "prob": 8.461983442042799,
+          "edge": 8.1119834420428,
+          "signal": "NONE"
+        },
+        {
+          "name": "300-319",
+          "price": 1.25,
+          "prob": 61.579786239503655,
+          "edge": 60.329786239503655,
+          "signal": "BUY YES"
+        },
+        {
+          "name": "320-339",
+          "price": 1.7999999999999998,
+          "prob": 28.91251143566629,
+          "edge": 27.11251143566629,
+          "signal": "BUY YES"
+        },
+        {
+          "name": "340-359",
+          "price": 2.25,
+          "prob": 1.0095603882763204,
+          "edge": -1.2404396117236796,
+          "signal": "NONE"
+        },
+        {
+          "name": "360-379",
+          "price": 3.5000000000000004,
+          "prob": 0.0027699889517451837,
+          "edge": -3.4972300110482553,
+          "signal": "NONE"
+        },
+        {
+          "name": "380-399",
+          "price": 4.15,
+          "prob": 7.169374316440269e-07,
+          "edge": -4.149999283062568,
+          "signal": "NONE"
+        },
+        {
+          "name": "400-419",
+          "price": 6.15,
+          "prob": 2.1604940059205546e-11,
+          "edge": -6.149999999978395,
+          "signal": "NONE"
+        },
+        {
+          "name": "420-439",
+          "price": 9.2,
+          "prob": 0.0,
+          "edge": -9.2,
+          "signal": "NONE"
+        },
+        {
+          "name": "440-459",
+          "price": 11.75,
+          "prob": 0.0,
+          "edge": -11.75,
+          "signal": "NONE"
+        },
+        {
+          "name": "460-479",
+          "price": 14.000000000000002,
+          "prob": 0.0,
+          "edge": -14.000000000000002,
+          "signal": "NONE"
+        },
+        {
+          "name": "480-499",
+          "price": 11.85,
+          "prob": 0.0,
+          "edge": -11.85,
+          "signal": "NONE"
+        },
+        {
+          "name": "500-519",
+          "price": 10.9,
+          "prob": 0.0,
+          "edge": -10.9,
+          "signal": "NONE"
+        },
+        {
+          "name": "520-539",
+          "price": 8.649999999999999,
+          "prob": 0.0,
+          "edge": -8.649999999999999,
+          "signal": "NONE"
+        },
+        {
+          "name": "540-559",
+          "price": 6.3,
+          "prob": 0.0,
+          "edge": -6.3,
+          "signal": "NONE"
+        },
+        {
+          "name": "560-579",
+          "price": 4.25,
+          "prob": 0.0,
+          "edge": -4.25,
+          "signal": "NONE"
+        },
+        {
+          "name": "580-599",
+          "price": 2.1,
+          "prob": 0.0,
+          "edge": -2.1,
+          "signal": "NONE"
+        },
+        {
+          "name": "600-619",
+          "price": 1.3,
+          "prob": 0.0,
+          "edge": -1.3,
+          "signal": "NONE"
+        }
+      ]
+    },
+    {
+      "title": "Elon Musk # tweets January 23 - January 30, 2026?",
+      "count": 4,
+      "proj": 203,
+      "days_left": 6.995490830034722,
+      "buckets": [
+        {
+          "name": "160-179",
+          "price": 0.25,
+          "prob": 4.497688355003646,
+          "edge": 4.247688355003646,
+          "signal": "NONE"
+        },
+        {
+          "name": "180-199",
+          "price": 0.5499999999999999,
+          "prob": 36.065928663993816,
+          "edge": 35.51592866399382,
+          "signal": "BUY YES"
+        },
+        {
+          "name": "200-219",
+          "price": 0.44999999999999996,
+          "prob": 47.1795202999418,
+          "edge": 46.7295202999418,
+          "signal": "BUY YES"
+        },
+        {
+          "name": "220-239",
+          "price": 0.65,
+          "prob": 11.609035304457937,
+          "edge": 10.959035304457936,
+          "signal": "NONE"
+        },
+        {
+          "name": "260-279",
+          "price": 1.05,
+          "prob": 0.005978857148702943,
+          "edge": -1.044021142851297,
+          "signal": "NONE"
+        },
+        {
+          "name": "280-299",
+          "price": 1.55,
+          "prob": 1.4266928505257681e-05,
+          "edge": -1.5499857330714948,
+          "signal": "NONE"
+        },
+        {
+          "name": "300-319",
+          "price": 1.4500000000000002,
+          "prob": 8.4267037792074e-09,
+          "edge": -1.4499999915732964,
+          "signal": "NONE"
+        },
+        {
+          "name": "320-339",
+          "price": 2.85,
+          "prob": 1.3322676295501878e-12,
+          "edge": -2.849999999998668,
+          "signal": "NONE"
+        },
+        {
+          "name": "340-359",
+          "price": 3.3000000000000003,
+          "prob": 0.0,
+          "edge": -3.3000000000000003,
+          "signal": "NONE"
+        },
+        {
+          "name": "360-379",
+          "price": 4.3,
+          "prob": 0.0,
+          "edge": -4.3,
+          "signal": "NONE"
+        },
+        {
+          "name": "380-399",
+          "price": 5.5,
+          "prob": 0.0,
+          "edge": -5.5,
+          "signal": "NONE"
+        },
+        {
+          "name": "400-419",
+          "price": 7.35,
+          "prob": 0.0,
+          "edge": -7.35,
+          "signal": "NONE"
+        },
+        {
+          "name": "420-439",
+          "price": 9.0,
+          "prob": 0.0,
+          "edge": -9.0,
+          "signal": "NONE"
+        },
+        {
+          "name": "440-459",
+          "price": 9.0,
+          "prob": 0.0,
+          "edge": -9.0,
+          "signal": "NONE"
+        },
+        {
+          "name": "460-479",
+          "price": 10.0,
+          "prob": 0.0,
+          "edge": -10.0,
+          "signal": "NONE"
+        },
+        {
+          "name": "480-499",
+          "price": 10.5,
+          "prob": 0.0,
+          "edge": -10.5,
+          "signal": "NONE"
+        },
+        {
+          "name": "500-519",
+          "price": 8.5,
+          "prob": 0.0,
+          "edge": -8.5,
+          "signal": "NONE"
+        },
+        {
+          "name": "520-539",
+          "price": 7.5,
+          "prob": 0.0,
+          "edge": -7.5,
+          "signal": "NONE"
+        },
+        {
+          "name": "540-559",
+          "price": 6.5,
+          "prob": 0.0,
+          "edge": -6.5,
+          "signal": "NONE"
+        },
+        {
+          "name": "560-579",
+          "price": 4.1000000000000005,
+          "prob": 0.0,
+          "edge": -4.1000000000000005,
+          "signal": "NONE"
+        },
+        {
+          "name": "580-599",
+          "price": 3.65,
+          "prob": 0.0,
+          "edge": -3.65,
+          "signal": "NONE"
+        },
+        {
+          "name": "600-619",
+          "price": 1.7999999999999998,
+          "prob": 0.0,
+          "edge": -1.7999999999999998,
+          "signal": "NONE"
+        },
+        {
+          "name": "620-639",
+          "price": 1.35,
+          "prob": 0.0,
+          "edge": -1.35,
+          "signal": "NONE"
+        }
+      ]
+    }
+  ]
+}
