@@ -1,0 +1,36 @@
+{
+    "markets": [
+        {
+            "id": "mstr-btc-sell-2025",
+            "title": "MicroStrategy sell any Bitcoin in 2025?",
+            "slug": "microstrategy-sell-any-bitcoin-in-2025",
+            "type": "binary",
+            "enabled": true,
+            "token_ids": [
+                "93592949212798121127213117304912625505836768562433217537850469496310204567319",
+                "2138725892558778438183141203099952477699494423276162345"
+            ],
+            "outcomes": [
+                "Yes",
+                "No"
+            ],
+            "end_time": 1740873600.0,
+            "skip_oracle": true
+        },
+        {
+            "id": "ukraine-crimea-july",
+            "title": "Ukraine recognize Crimea as part of Russia by July 1?",
+            "slug": "ukraine-recognize-crimea-as-part-of-russia-by-july-1",
+            "type": "binary",
+            "enabled": false
+        }
+    ],
+    "global_settings": {
+        "default_bankroll": 1000.0,
+        "fee_simulation": {
+            "enabled": true,
+            "maker_fee": 0.0,
+            "taker_fee": 0.001
+        }
+    }
+}

@@ -1,0 +1,22 @@
+# LLM Feeder - Neural-Ready Knowledge Base System
+# Core dependencies for scraping, processing, and storing technical documentation
+
+# Scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.1.0
+
+# LLM Processing
+openai>=1.10.0
+langchain>=0.1.0
+langchain-community>=0.0.20
+
+# Vector Storage
+chromadb>=0.4.22
+sentence-transformers>=2.2.0
+
+# Utilities
+tiktoken>=0.5.0
+python-dotenv>=1.0.0
+rich>=13.0.0
+tqdm>=4.66.0

@@ -1,0 +1,154 @@
+Control your Сapital on Prediction Markets with Kelly Criterion.
+In this article I want to explain the Kelly formula in the simplest way possible and show how to use it the right way on Prediction Markets.
+I won’t use heavy math or complicated terms. I’ll show what affects what and how you can apply it in your own trading.
+I also want to say that the Kelly Criterion is just one small piece of a much bigger puzzle.
+1. The basic formula of the Kelly Criterion.
+The Kelly Criterion shows how big your position size should be. 
+It depends on two things: your edge over the market and the potential profit the market offers.
+The original formula looks like this:
+F = (K × p − 1) / (K − 1)
+K - odds
+p - your estimated probability
+F - the fraction of your bankroll for trade
+In very simple words: Position size = edge / potential profit
+If your edge is bigger, you buy more. If the potential profit is smaller, you also buy more. 
+If there’s no edge, you don’t buy at all.
+2. Simplifying the Kelly Formula for Prediction Markets.
+The original version of the formula is built around traditional odds. That format is not very common on prediction markets but you can still convert prices into odds.
+For example:
+If the price is 25c the odds are 4.
+Why? Because if you win you get 4x.
+So the odds (K) = 1 / Price.
+Now let’s rewrite the formula for prediction markets:
+
+
+F = (p − P) / (1 − P)
+
+p - your estimated probability
+P - market price
+We simplified it as much as possible.
+And the logic is still the same: Position size = edge / potential profit.
+3. The Logic Behind the Formula.
+To really understand this formula we need to see the cause and effect inside it.
+In simple words: How does the result change when the inputs change?
+It’s like the speed formula: Speed = Distance / Time
+If distance goes up and time stays the same -> speed goes up.
+If distance stays the same and time goes up -> speed goes down.
+The Kelly formula works the same way.
+If your edge increases and potential profit stays the same -> bet size increases.
+If potential profit increases and your edge stays the same -> bet size decreases.
+We have 3 parts:
+Kelly fraction (F)
+Your estimated probability (p)
+Market probability (P)
+We observe how the Kelly fraction changes.
+Situation 1:
+P stays the same, your p changes:
+The line is straight because this is a linear function.
+This shows that when the market price is fixed, your position size grows in direct proportion to your edge.
+Kelly scales confidence into position size in a linear way.
+Situation 2:
+Your p stays the same, P changes.
+Now the line is curved because this is a rational function.
+When the market moves, position size reacts in a nonlinear way.
+The lower the price: the higher the potential payout and the stronger Kelly starts to "accelerate".
+That’s why cheap probabilities can create very aggressive Kelly sizing.
+4. Flipping the Logic.
+The Kelly formula shows something interesting.
+Two situations may look the same at first glance but the result can be very different.
+Let’s compare.
+Case 1:
+P (Market Price) = 0.2
+p (your estimated probability) = 0.4
+That’s 2x higher. Looks strong.
+Case 2:
+P (Market Price) = 0.4
+p (your estimated probability) = 0.8
+Also 2x higher. Same logic, right?
+But the Kelly fraction in these two cases is very different:
+Why?
+Because Kelly doesn’t just look at the ratio.
+It balances two things:
+how often you win
+how much you win when you’re right
+In the second case, you have a high probability of winning and a solid payout.
+That combination makes Kelly much more aggressive.
+In simple words: It’s not just about "2x better".
+It’s about how often you get paid and how big the payout is.
+5. Fractional Kelly and How to Use It.
+Unlike the market price or odds, the Kelly formula also requires your own estimate of the outcome probability.
+And that’s where risk comes in.
+What if your estimate is wrong?
+That’s why we have:
+Full Kelly — mathematically optimal.
+Fractional Kelly — practically optimal.
+Here’s the logic idea: 
+Full Kelly is like driving 85 mph. Fractional Kelly is like driving 65 mph. Both get you there fast. But the second one gives you a much lower chance of crashing.
+How it’s used in trading:
+1/2 Kelly — if the model is well tested
+1/4 Kelly — standard approach
+1/8 Kelly — if the market is noisy
+< 1/8 Kelly — if there is tail risk
+On prediction markets most people use 1/4 Kelly or less.
+Example of changes on the same charts that were before
+Probabilities are subjective and information shocks happen. So Pm traders should use Fractional Kelly.
+Kelly is basically a formula to control greed.
+Full Kelly says: "If you’re perfectly right, buy this much".
+Fractional Kelly says: "You’re not perfectly right".
+Trade on Polymarket: https://polymarket.com?via=jasper-bell
+My favorite trading Terminal: https://synthesis.trade?ref=jasperbell
+
+
+Others comment :"Bots on Polymarket also use the Kelly Criterion - it's one of their key modules
+
+
+Arbitrage bots apply the Kelly Criterion to dynamically adjust bet sizes based on perceived edge and current bankroll
+
+On GitHub you can find open source bots where kelly is often a separate module in the architecture
+
+Standard practice - fractional Kelly with a 0.25 fraction coefficient and a hard limit: 
+
+> Never risk more than 10% of bankroll on a single position
+
+But here's what's also important to understand with this article:
+
+The contract price on Polymarket doesn't just determine probability - it defines the entire risk profile
+
+> At a price of $0.10 you risk $0.10 to win $0.90 - 9:1 ratio in your favor
+
+> At $0.90 you risk $0.90 to win $0.10 -  9:1 ratio against you
+
+This means Kelly on cheap contracts can give aggressive position sizes (as the 
+@jasper_b3ll
+  mentions in the section on non-linearity)
+
+But one mistake in probability estimation on expensive contracts and the formula flips immediately
+
+An error of just 7 percentage points can drastically change the signals
+
+That's exactly why half-Kelly is the base minimum, not an over-cautious mov",
+"Your edge is worthless without the Kelly Criterion formula
+
+Found a mispriced contract? Great. 
+But now, how much do you actually bet?
+
+Most traders wing it. That's the problem.
+
+The Kelly Criterion calculates optimal bet size:
+
+f = (p - q) / (1 - q)
+
+Where:
+
+p = your probability estimate
+q = market price
+f = bankroll fraction
+
+Example: You believe 68% probability, market shows $0.55
+
+Edge = 13% → Full Kelly = 28.9% → Quarter Kelly = 7.2% of bankroll.
+
+Professionals use ¼ Kelly with 10% max per position. 
+Even arbitrage bots have Kelly modules.
+
+Hope you now understand that Kelly makes edge work properly."

@@ -1,0 +1,141 @@
+// @version=5
+indicator("TSA: Polymarket [Price Target Projection]", overlay=true, max_lines_count=300, max_labels_count=300)
+
+// -----------------------------------------------------------------------------
+// 1. CONFIGURATION
+// -----------------------------------------------------------------------------
+group_main = "Prediction Settings"
+horizon_bars     = input.int(10, "Projection Horizon (Bars)", minval=1, group=group_main)
+prob_target_pct  = input.float(2.0, "Strike Distance (+/- %)", group=group_main)
+// MỚI: Input mức giá cụ thể
+target_price_up   = input.float(0.0, "Target Price Upper (0 = use %)", group=group_main)
+target_price_down = input.float(0.0, "Target Price Lower (0 = use %)", group=group_main)
+
+group_agg = "Aggressiveness"
+lookback_bars    = input.int(10, "Slope Lookback (Bars)", minval=1, group=group_agg)
+ignore_hurst     = input.bool(false, "Ignore Hurst Damping", group=group_agg)
+slope_mult       = input.float(1.0, "Slope Multiplier", step=0.1, group=group_agg)
+
+group_eng = "Engine Tuning"
+kalman_q      = input.float(0.01, "Process Noise", group=group_eng)
+mult          = input.float(2.0, "Volatility Bands", group=group_eng)
+macro_weight  = input.float(0.05, "Macro Drag", group=group_eng)
+
+group_data = "External Data"
+sym_dxy  = input.symbol("TVC:DXY", "Dollar Index", group=group_data)
+sym_bond = input.symbol("TVC:US10Y", "US 10Y Yield", group=group_data)
+
+// -----------------------------------------------------------------------------
+// 2. MATH & FUNCTIONS
+// -----------------------------------------------------------------------------
+
+
+norm_cdf(val, mean, dev) =>
+    if dev == 0
+        val >= mean ? 1.0 : 0.0
+    else
+        x = (val - mean) / dev
+        k = 1.0 / (1.0 + 0.2316419 * math.abs(x))
+        w = 1.0 - (1.0 / math.sqrt(2.0 * math.pi)) * math.exp(-0.5 * x * x) * k * (0.319381530 + k * (-0.356563782 + k * (1.781477937 + k * (-1.821255978 + 1.330274429 * k))))
+        x < 0.0 ? 1.0 - w : w
+
+get_bar(pct) =>
+    bars = math.round(math.max(0, math.min(100, pct)) / 10) 
+    res = ""
+    if bars > 0
+        for i = 1 to bars
+            res := res + "⬛" 
+    if bars < 10
+        for i = 1 to (10 - bars)
+            res := res + "⬜" 
+    res
+
+// -----------------------------------------------------------------------------
+// 3. ENGINES (Kalman, Hurst, Macro)
+// -----------------------------------------------------------------------------
+// Hurst Damping
+calc_hurst(src, len) =>
+    l_ret = math.log(src / nz(src[1], src))
+    avg = ta.sma(l_ret, len)
+    float sum_dev = 0.0
+    float max_dev = 0.0
+    float min_dev = 0.0
+    float sum_sq_diff = 0.0
+    for i = 0 to math.min(len - 1, 49)
+        diff = nz(l_ret[i]) - avg
+        sum_dev := sum_dev + diff
+        max_dev := math.max(max_dev, sum_dev)
+        min_dev := math.min(min_dev, sum_dev)
+        sum_sq_diff := sum_sq_diff + (diff * diff)
+    R = max_dev - min_dev
+    S = math.sqrt(sum_sq_diff / len)
+    (S == 0 or R == 0) ? 0.5 : (math.log(R / S) / math.log(len))
+
+h_val = calc_hurst(close, 100)
+
+// Kalman Filter
+var float k_est = close
+var float k_err = 1.0
+k_err := k_err + kalman_q
+k_gain = k_err / (k_err + 1.0)
+k_est := k_est + k_gain * (close - k_est)
+k_err := (1.0 - k_gain) * k_err
+
+// Volatility
+current_vol = ta.stdev(close - k_est, 50) 
+
+// -----------------------------------------------------------------------------
+// 4. PROJECTION & TARGET LOGIC
+// -----------------------------------------------------------------------------
+var float p_up = 0.0
+var float p_down = 0.0
+var line[] proj_lines = array.new_line() 
+
+// Xác định mức giá mục tiêu cuối cùng
+float final_target_u = target_price_up > 0 ? target_price_up : close * (1 + prob_target_pct/100)
+float final_target_d = target_price_down > 0 ? target_price_down : close * (1 - prob_target_pct/100)
+
+if barstate.islast
+    while array.size(proj_lines) > 0
+        line.delete(array.pop(proj_lines))
+
+    // Tính toán Slope
+    float past_k = nz(k_est[lookback_bars], k_est)
+    float slope_per_bar = (k_est - past_k) / lookback_bars
+    float hurst_conf = ignore_hurst ? 1.0 : (h_val < 0.5 ? 0.5 : 1.0)
+    float final_slope = slope_per_bar * slope_mult * hurst_conf
+    
+    // Dự phóng
+    float mu_price = k_est + (final_slope * horizon_bars)
+    float sigma_future = current_vol * math.sqrt(horizon_bars)
+    
+    // Tính xác suất
+    p_up   := (1.0 - norm_cdf(final_target_u, mu_price, sigma_future)) * 100
+    p_down := norm_cdf(final_target_d, mu_price, sigma_future) * 100
+
+    // Vẽ Cone dự báo
+    int start_i = bar_index
+    int end_i   = bar_index + horizon_bars
+    array.push(proj_lines, line.new(start_i, k_est, end_i, mu_price, xloc=xloc.bar_index, color=color.white, width=2))
+    array.push(proj_lines, line.new(start_i, k_est, end_i, final_target_u, xloc=xloc.bar_index, color=color.new(color.green, 70), style=line.style_dotted))
+    array.push(proj_lines, line.new(start_i, k_est, end_i, final_target_d, xloc=xloc.bar_index, color=color.new(color.red, 70), style=line.style_dotted))
+
+// -----------------------------------------------------------------------------
+// 5. DASHBOARD
+// -----------------------------------------------------------------------------
+var table panel = table.new(position.top_right, 3, 5, bgcolor=color.new(color.black, 10), frame_color=color.new(color.gray, 80), frame_width=1)
+
+if barstate.islast
+    table.cell(panel, 0, 0, "🎯 TARGET LEVELS", text_color=color.white, bgcolor=color.black)
+    table.cell(panel, 1, 0, "Price Target", text_color=color.gray, bgcolor=color.black)
+    table.cell(panel, 2, 0, "Probability", text_color=color.gray, bgcolor=color.black)
+
+    table.cell(panel, 0, 1, "UP > " + str.tostring(final_target_u, "#.##"), text_color=color.white, text_halign=text.align_left)
+    table.cell(panel, 1, 1, str.tostring(p_up, "#.0") + "%", text_color=color.green, text_size=size.large)
+    table.cell(panel, 2, 1, get_bar(p_up), text_color=color.green)
+
+    table.cell(panel, 0, 3, "DOWN < " + str.tostring(final_target_d, "#.##"), text_color=color.white, text_halign=text.align_left)
+    table.cell(panel, 1, 3, str.tostring(p_down, "#.0") + "%", text_color=color.red, text_size=size.large)
+    table.cell(panel, 2, 3, get_bar(p_down), text_color=color.red)
+
+plot(k_est, "Trend Center", color=color.blue)

@@ -1,0 +1,108 @@
+
+import os
+import re
+import sys
+
+# Keywords mapping for description inference
+KEYWORDS = {
+    "sort": "Sorts an array of elements",
+    "bubble": "Implements Bubble Sort",
+    "insertion": "Implements Insertion Sort",
+    "selection": "Implements Selection Sort",
+    "prime": "Checks for prime numbers",
+    "gcd": "Calculates Greatest Common Divisor",
+    "lcm": "Calculates Least Common Multiple",
+    "fibonacci": "Generates Fibonacci sequence",
+    "matrix": "Performs matrix operations",
+    "palindrome": "Checks for palindromes",
+    "sum": "Calculates sums",
+    "reverse": "Reverses data",
+    "count": "Counts occurrences",
+    "pattern": "Prints a pattern",
+}
+
+def analyze_file(content):
+    """Analyze file content to extract functions and infer description."""
+    functions = re.findall(r'\b(void|int|long|float|double|char)\s+(\w+)\s*\(', content)
+    func_names = [f[1] for f in functions if f[1] != 'main']
+    
+    description = "C Program"
+    for kw, desc in KEYWORDS.items():
+        if kw in content.lower():
+            description = desc
+            break
+    
+    if func_names:
+        description += f" using functions: {', '.join(func_names)}"
+        
+    return description, func_names
+
+def create_header(filename, description):
+    header = "/*\n"
+    header += f" * Filename: {filename}\n"
+    header += f" * Description: {description}\n"
+    header += " * \n"
+    header += " * Test Case Example:\n"
+    header += " * Input:\n"
+    header += " *   [Insert Example Input Here]\n"
+    header += " * Output:\n"
+    header += " *   [Insert Example Output Here]\n"
+    header += " */\n\n"
+    return header
+
+def process_directory(directory):
+    files_data = []
+    
+    for filename in os.listdir(directory):
+        if not filename.endswith(".c"):
+            continue
+            
+        file_path = os.path.join(directory, filename)
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Skip if already has header
+        if content.startswith("/*\n * Filename:"):
+            # We assume it's processed, but let's grab info for README
+            desc_match = re.search(r'Description: (.*)', content)
+            desc = desc_match.group(1) if desc_match else "C Program"
+            # Try to grab functions again mainly for READMe
+            _, func_names = analyze_file(content) 
+            files_data.append("| [{}]({}) | {} | {} |".format(filename, filename, desc, ", ".join(func_names)))
+            continue
+
+        description, func_names = analyze_file(content)
+        header = create_header(filename, description)
+        
+        # Prepend header
+        new_content = header + content
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+            
+        files_data.append("| [{}]({}) | {} | {} |".format(filename, filename, description, ", ".join(func_names)))
+        print(f"Updated: {filename}")
+
+    # Generate README for folder
+    if files_data:
+        readme_path = os.path.join(directory, "README.md")
+        folder_name = os.path.basename(directory)
+        with open(readme_path, 'w', encoding='utf-8') as f:
+            f.write(f"# {folder_name} Exercises\n\n")
+            f.write("Summary of C code exercises in this folder.\n\n")
+            f.write("| File | Description | Key Functions |\n")
+            f.write("|---|---|---|\n")
+            f.write("\n".join(sorted(files_data)))
+            f.write("\n")
+        print(f"Generated README: {readme_path}")
+
+if __name__ == "__main__":
+    target_dir = r"c:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\ptit_studies\code_c"
+    
+    # Process all subdirectories
+    for item in os.listdir(target_dir):
+        full_path = os.path.join(target_dir, item)
+        if os.path.isdir(full_path) and not item.startswith("."):
+            print(f"Processing folder: {item}")
+            process_directory(full_path)

@@ -1,0 +1,22 @@
+[project]
+name = "architect-engine"
+version = "0.1.0"
+description = "Personal Architect Engine — Constraint-Aware Generator + Engineering Telemetry Tracker"
+requires-python = ">=3.10"
+dependencies = [
+    "chromadb>=0.4.0",
+    "sentence-transformers>=2.2.0",
+    "click>=8.1.0",
+    "aiosqlite>=0.19.0",
+    "rich>=13.0.0",
+    "rank-bm25>=0.2.2",
+    "httpx>=0.25.0",
+    "streamlit>=1.30.0",
+]
+
+[project.scripts]
+architect = "architect_engine.cli:cli"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"

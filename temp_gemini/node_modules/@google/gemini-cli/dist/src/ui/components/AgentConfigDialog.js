@@ -1,0 +1,310 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Text } from 'ink';
+import { theme } from '../semantic-colors.js';
+import { SettingScope } from '../../config/settings.js';
+import { getCachedStringWidth } from '../utils/textUtils.js';
+import { BaseSettingsDialog, } from './shared/BaseSettingsDialog.js';
+/**
+ * Agent configuration fields
+ */
+const AGENT_CONFIG_FIELDS = [
+    {
+        key: 'enabled',
+        label: 'Enabled',
+        description: 'Enable or disable this agent',
+        type: 'boolean',
+        path: ['enabled'],
+        defaultValue: true,
+    },
+    {
+        key: 'model',
+        label: 'Model',
+        description: "Model to use (e.g., 'gemini-2.0-flash' or 'inherit')",
+        type: 'string',
+        path: ['modelConfig', 'model'],
+        defaultValue: 'inherit',
+    },
+    {
+        key: 'temperature',
+        label: 'Temperature',
+        description: 'Sampling temperature (0.0 to 2.0)',
+        type: 'number',
+        path: ['modelConfig', 'generateContentConfig', 'temperature'],
+        defaultValue: undefined,
+    },
+    {
+        key: 'topP',
+        label: 'Top P',
+        description: 'Nucleus sampling parameter (0.0 to 1.0)',
+        type: 'number',
+        path: ['modelConfig', 'generateContentConfig', 'topP'],
+        defaultValue: undefined,
+    },
+    {
+        key: 'topK',
+        label: 'Top K',
+        description: 'Top-K sampling parameter',
+        type: 'number',
+        path: ['modelConfig', 'generateContentConfig', 'topK'],
+        defaultValue: undefined,
+    },
+    {
+        key: 'maxOutputTokens',
+        label: 'Max Output Tokens',
+        description: 'Maximum number of tokens to generate',
+        type: 'number',
+        path: ['modelConfig', 'generateContentConfig', 'maxOutputTokens'],
+        defaultValue: undefined,
+    },
+    {
+        key: 'maxTimeMinutes',
+        label: 'Max Time (minutes)',
+        description: 'Maximum execution time in minutes',
+        type: 'number',
+        path: ['runConfig', 'maxTimeMinutes'],
+        defaultValue: undefined,
+    },
+    {
+        key: 'maxTurns',
+        label: 'Max Turns',
+        description: 'Maximum number of conversational turns',
+        type: 'number',
+        path: ['runConfig', 'maxTurns'],
+        defaultValue: undefined,
+    },
+];
+/**
+ * Get a nested value from an object using a path array
+ */
+function getNestedValue(obj, path) {
+    if (!obj)
+        return undefined;
+    let current = obj;
+    for (const key of path) {
+        if (current === null || current === undefined)
+            return undefined;
+        if (typeof current !== 'object')
+            return undefined;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        current = current[key];
+    }
+    return current;
+}
+/**
+ * Set a nested value in an object using a path array, creating intermediate objects as needed
+ */
+function setNestedValue(obj, path, value) {
+    const result = { ...obj };
+    let current = result;
+    for (let i = 0; i < path.length - 1; i++) {
+        const key = path[i];
+        if (current[key] === undefined || current[key] === null) {
+            current[key] = {};
+        }
+        else {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+            current[key] = { ...current[key] };
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        current = current[key];
+    }
+    const finalKey = path[path.length - 1];
+    if (value === undefined) {
+        delete current[finalKey];
+    }
+    else {
+        current[finalKey] = value;
+    }
+    return result;
+}
+/**
+ * Get the effective default value for a field from the agent definition
+ */
+function getFieldDefaultFromDefinition(field, definition) {
+    if (definition.kind !== 'local')
+        return field.defaultValue;
+    if (field.key === 'enabled') {
+        return !definition.experimental; // Experimental agents default to disabled
+    }
+    if (field.key === 'model') {
+        return definition.modelConfig?.model ?? 'inherit';
+    }
+    if (field.key === 'temperature') {
+        return definition.modelConfig?.generateContentConfig?.temperature;
+    }
+    if (field.key === 'topP') {
+        return definition.modelConfig?.generateContentConfig?.topP;
+    }
+    if (field.key === 'topK') {
+        return definition.modelConfig?.generateContentConfig?.topK;
+    }
+    if (field.key === 'maxOutputTokens') {
+        return definition.modelConfig?.generateContentConfig?.maxOutputTokens;
+    }
+    if (field.key === 'maxTimeMinutes') {
+        return definition.runConfig?.maxTimeMinutes;
+    }
+    if (field.key === 'maxTurns') {
+        return definition.runConfig?.maxTurns;
+    }
+    return field.defaultValue;
+}
+export function AgentConfigDialog({ agentName, displayName, definition, settings, onClose, onSave, }) {
+    // Scope selector state (User by default)
+    const [selectedScope, setSelectedScope] = useState(SettingScope.User);
+    // Pending override state for the selected scope
+    const [pendingOverride, setPendingOverride] = useState(() => {
+        const scopeSettings = settings.forScope(selectedScope).settings;
+        const existingOverride = scopeSettings.agents?.overrides?.[agentName];
+        return existingOverride ? structuredClone(existingOverride) : {};
+    });
+    // Track which fields have been modified
+    const [modifiedFields, setModifiedFields] = useState(new Set());
+    // Update pending override when scope changes
+    useEffect(() => {
+        const scopeSettings = settings.forScope(selectedScope).settings;
+        const existingOverride = scopeSettings.agents?.overrides?.[agentName];
+        setPendingOverride(existingOverride ? structuredClone(existingOverride) : {});
+        setModifiedFields(new Set());
+    }, [selectedScope, settings, agentName]);
+    /**
+     * Save a specific field value to settings
+     */
+    const saveFieldValue = useCallback((fieldKey, path, value) => {
+        // Guard against prototype pollution
+        if (['__proto__', 'constructor', 'prototype'].includes(agentName)) {
+            return;
+        }
+        // Build the full settings path for agent override
+        // e.g., agents.overrides.<agentName>.modelConfig.generateContentConfig.temperature
+        const settingsPath = ['agents', 'overrides', agentName, ...path].join('.');
+        settings.setValue(selectedScope, settingsPath, value);
+        onSave?.();
+    }, [settings, selectedScope, agentName, onSave]);
+    // Calculate max label width
+    const maxLabelWidth = useMemo(() => {
+        let max = 0;
+        for (const field of AGENT_CONFIG_FIELDS) {
+            const lWidth = getCachedStringWidth(field.label);
+            const dWidth = getCachedStringWidth(field.description);
+            max = Math.max(max, lWidth, dWidth);
+        }
+        return max;
+    }, []);
+    // Generate items for BaseSettingsDialog
+    const items = useMemo(() => AGENT_CONFIG_FIELDS.map((field) => {
+        const currentValue = getNestedValue(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        pendingOverride, field.path);
+        const defaultValue = getFieldDefaultFromDefinition(field, definition);
+        const effectiveValue = currentValue !== undefined ? currentValue : defaultValue;
+        let displayValue;
+        if (field.type === 'boolean') {
+            displayValue = effectiveValue ? 'true' : 'false';
+        }
+        else if (effectiveValue !== undefined && effectiveValue !== null) {
+            displayValue = String(effectiveValue);
+        }
+        else {
+            displayValue = '(default)';
+        }
+        // Add * if modified
+        const isModified = modifiedFields.has(field.key) || currentValue !== undefined;
+        if (isModified && currentValue !== undefined) {
+            displayValue += '*';
+        }
+        // Get raw value for edit mode
+        const rawValue = currentValue !== undefined ? currentValue : effectiveValue;
+        return {
+            key: field.key,
+            label: field.label,
+            description: field.description,
+            type: field.type,
+            displayValue,
+            isGreyedOut: currentValue === undefined,
+            scopeMessage: undefined,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+            rawValue: rawValue,
+        };
+    }), [pendingOverride, definition, modifiedFields]);
+    const maxItemsToShow = 8;
+    // Handle scope changes
+    const handleScopeChange = useCallback((scope) => {
+        setSelectedScope(scope);
+    }, []);
+    // Handle toggle for boolean fields
+    const handleItemToggle = useCallback((key, _item) => {
+        const field = AGENT_CONFIG_FIELDS.find((f) => f.key === key);
+        if (!field || field.type !== 'boolean')
+            return;
+        const currentValue = getNestedValue(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        pendingOverride, field.path);
+        const defaultValue = getFieldDefaultFromDefinition(field, definition);
+        const effectiveValue = currentValue !== undefined ? currentValue : defaultValue;
+        const newValue = !effectiveValue;
+        const newOverride = setNestedValue(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        pendingOverride, field.path, newValue);
+        setPendingOverride(newOverride);
+        setModifiedFields((prev) => new Set(prev).add(key));
+        // Save the field value to settings
+        saveFieldValue(field.key, field.path, newValue);
+    }, [pendingOverride, definition, saveFieldValue]);
+    // Handle edit commit for string/number fields
+    const handleEditCommit = useCallback((key, newValue, _item) => {
+        const field = AGENT_CONFIG_FIELDS.find((f) => f.key === key);
+        if (!field)
+            return;
+        let parsed;
+        if (field.type === 'number') {
+            if (newValue.trim() === '') {
+                // Empty means clear the override
+                parsed = undefined;
+            }
+            else {
+                const numParsed = Number(newValue.trim());
+                if (Number.isNaN(numParsed)) {
+                    // Invalid number; don't save
+                    return;
+                }
+                parsed = numParsed;
+            }
+        }
+        else {
+            // For strings, empty means clear the override
+            parsed = newValue.trim() === '' ? undefined : newValue;
+        }
+        // Update pending override locally
+        const newOverride = setNestedValue(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        pendingOverride, field.path, parsed);
+        setPendingOverride(newOverride);
+        setModifiedFields((prev) => new Set(prev).add(key));
+        // Save the field value to settings
+        saveFieldValue(field.key, field.path, parsed);
+    }, [pendingOverride, saveFieldValue]);
+    // Handle clear/reset - reset to default value (removes override)
+    const handleItemClear = useCallback((key, _item) => {
+        const field = AGENT_CONFIG_FIELDS.find((f) => f.key === key);
+        if (!field)
+            return;
+        // Remove the override (set to undefined)
+        const newOverride = setNestedValue(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        pendingOverride, field.path, undefined);
+        setPendingOverride(newOverride);
+        setModifiedFields((prev) => {
+            const updated = new Set(prev);
+            updated.delete(key);
+            return updated;
+        });
+        // Save as undefined to remove the override
+        saveFieldValue(field.key, field.path, undefined);
+    }, [pendingOverride, saveFieldValue]);
+    // Footer content
+    const footerContent = modifiedFields.size > 0 ? (_jsx(Text, { color: theme.text.secondary, children: "Changes saved automatically." })) : null;
+    return (_jsx(BaseSettingsDialog, { title: `Configure: ${displayName}`, searchEnabled: false, items: items, showScopeSelector: true, selectedScope: selectedScope, onScopeChange: handleScopeChange, maxItemsToShow: maxItemsToShow, maxLabelWidth: maxLabelWidth, onItemToggle: handleItemToggle, onEditCommit: handleEditCommit, onItemClear: handleItemClear, onClose: onClose, footerContent: footerContent }));
+}
+//# sourceMappingURL=AgentConfigDialog.js.map

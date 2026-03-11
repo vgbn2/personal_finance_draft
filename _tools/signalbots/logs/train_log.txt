@@ -1,0 +1,23 @@
+2026-02-13 10:25:48,767 - INFO - Generating dummy data...
+2026-02-13 10:25:50,045 - INFO - Starting training on 800 samples...
+2026-02-13 10:25:51,012 - INFO - Epoch 1/1 | Train Loss: 0.6887 | Val Loss: 0.7045 | Acc: 43.00%
+2026-02-13 10:25:51,017 - INFO - Exporting best model to ONNX...
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\signalbots\ai\model_trainer.py", line 290, in <module>
+    train(args)
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\signalbots\ai\model_trainer.py", line 272, in train
+    torch.onnx.export(
+  File "C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\torch\onnx\__init__.py", line 282, in export
+    from torch.onnx._internal.exporter import _compat
+  File "C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\torch\onnx\_internal\exporter\_compat.py", line 16, in <module>
+    from torch.onnx._internal.exporter import (
+  File "C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\torch\onnx\_internal\exporter\_core.py", line 19, in <module>
+    import onnxscript
+  File "C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\onnxscript\__init__.py", line 69, in <module>
+    from ._internal.main import export_onnx_lib, graph, script
+  File "C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\onnxscript\_internal\main.py", line 14, in <module>
+    from onnxscript import ir
+  File "C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\onnxscript\ir\__init__.py", line 4, in <module>
+    from onnx_ir import *  # type: ignore # noqa: F403
+    ^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'onnx_ir'

@@ -1,0 +1,19 @@
+{
+  "topic_name": "Flexbox - Flex-Basis and Flex Shorthand",
+  "category": "Front-End",
+  "core_concept": "This document explains the fundamental concepts of flexbox, specifically focusing on `flex-basis` and the `flex` shorthand. It clarifies that `flex-basis` sets the initial size of a flex item, influencing how `flex-grow` and `flex-shrink` operate. The `flex` shorthand provides a concise way to control these properties, offering flexibility in layout design.",
+  "technical_breakdown": [
+    "`flex-basis` defines the initial size of a flex item before `flex-grow` and `flex-shrink` are applied.",
+    "The `flex` shorthand (`flex: grow shrink basis`) allows for concise control of flex item sizing and behavior.",
+    "`flex: auto` is equivalent to `flex: 1 1 auto` and represents a flexible sizing option.",
+    "Common usage involves `flex: 1` to make divs grow evenly and `flex-shrink: 0` to prevent shrinking."
+  ],
+  "snippet": "```javascript\n// Example of using flex: 1 to make divs grow evenly\nconst div1 = document.createElement('div');\nconst div2 = document.createElement('div');\nconst div3 = document.createElement('div');\n\n// Set flex-grow to 1 for all divs\ndiv1.style.flexGrow = '1';\ndiv2.style.flexGrow = '1';\ndiv3.style.flexGrow = '1';\n```",
+  "cross_references": [
+    "CSS Flexbox",
+    "Flexbox Shorthand Values",
+    "W3C Flexbox Specification"
+  ],
+  "source_file": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\llm_feeder\\data\\odin\\foundations\\flexbox_growing_and_shrinking.md",
+  "chunk_index": 1
+}

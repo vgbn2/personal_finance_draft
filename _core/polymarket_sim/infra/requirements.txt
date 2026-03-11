@@ -1,0 +1,13 @@
+websockets>=12.0
+aiohttp>=3.9
+numpy>=1.26
+sortedcontainers>=2.4
+tenacity>=8.2
+aiosqlite>=0.19
+polars>=0.20
+rich>=13.0
+dnspython>=2.6
+fastapi>=0.100
+uvicorn>=0.23
+scipy>=1.11
+#winget install --id Microsoft.PowerShell --source winget

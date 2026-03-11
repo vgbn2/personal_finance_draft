@@ -1,0 +1,260 @@
+[
+    {
+        "timestamp": "2026-01-13T00:00:00+00:00",
+        "event_title": "Elon Musk Tweets Jan 6-12",
+        "current_count": 280,
+        "days_left": 3.0,
+        "resolution_date": "2026-01-13T00:00:00+00:00",
+        "actual_winner": 3,
+        "actual_count": 412,
+        "buckets": [
+            {
+                "name": "0-299",
+                "low": 0,
+                "high": 299,
+                "market_price": 5.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "300-349",
+                "low": 300,
+                "high": 349,
+                "market_price": 12.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "350-399",
+                "low": 350,
+                "high": 399,
+                "market_price": 25.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "400-449",
+                "low": 400,
+                "high": 449,
+                "market_price": 35.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "450-499",
+                "low": 450,
+                "high": 499,
+                "market_price": 15.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "500+",
+                "low": 500,
+                "high": 99999,
+                "market_price": 8.0,
+                "model_prob": 0.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2026-01-20T00:00:00+00:00",
+        "event_title": "Elon Musk Tweets Jan 13-19",
+        "current_count": 320,
+        "days_left": 2.5,
+        "resolution_date": "2026-01-20T00:00:00+00:00",
+        "actual_winner": 2,
+        "actual_count": 385,
+        "buckets": [
+            {
+                "name": "0-299",
+                "low": 0,
+                "high": 299,
+                "market_price": 3.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "300-349",
+                "low": 300,
+                "high": 349,
+                "market_price": 8.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "350-399",
+                "low": 350,
+                "high": 399,
+                "market_price": 40.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "400-449",
+                "low": 400,
+                "high": 449,
+                "market_price": 30.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "450-499",
+                "low": 450,
+                "high": 499,
+                "market_price": 12.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "500+",
+                "low": 500,
+                "high": 99999,
+                "market_price": 7.0,
+                "model_prob": 0.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2026-01-24T12:00:00+00:00",
+        "event_title": "Elon Musk Tweets Jan 20-26",
+        "current_count": 350,
+        "days_left": 2.0,
+        "resolution_date": "2026-01-27T00:00:00+00:00",
+        "actual_winner": 4,
+        "actual_count": 468,
+        "buckets": [
+            {
+                "name": "0-349",
+                "low": 0,
+                "high": 349,
+                "market_price": 2.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "350-399",
+                "low": 350,
+                "high": 399,
+                "market_price": 8.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "400-449",
+                "low": 400,
+                "high": 449,
+                "market_price": 25.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "450-499",
+                "low": 450,
+                "high": 499,
+                "market_price": 35.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "500-549",
+                "low": 500,
+                "high": 549,
+                "market_price": 20.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "550+",
+                "low": 550,
+                "high": 99999,
+                "market_price": 10.0,
+                "model_prob": 0.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-12-30T00:00:00+00:00",
+        "event_title": "Elon Musk Tweets Dec 23-29",
+        "current_count": 200,
+        "days_left": 4.0,
+        "resolution_date": "2025-12-30T00:00:00+00:00",
+        "actual_winner": 2,
+        "actual_count": 378,
+        "buckets": [
+            {
+                "name": "0-299",
+                "low": 0,
+                "high": 299,
+                "market_price": 10.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "300-349",
+                "low": 300,
+                "high": 349,
+                "market_price": 20.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "350-399",
+                "low": 350,
+                "high": 399,
+                "market_price": 35.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "400-449",
+                "low": 400,
+                "high": 449,
+                "market_price": 22.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "450+",
+                "low": 450,
+                "high": 99999,
+                "market_price": 13.0,
+                "model_prob": 0.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2026-01-06T00:00:00+00:00",
+        "event_title": "Elon Musk Tweets Dec 30-Jan 5",
+        "current_count": 250,
+        "days_left": 3.5,
+        "resolution_date": "2026-01-06T00:00:00+00:00",
+        "actual_winner": 3,
+        "actual_count": 425,
+        "buckets": [
+            {
+                "name": "0-299",
+                "low": 0,
+                "high": 299,
+                "market_price": 5.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "300-349",
+                "low": 300,
+                "high": 349,
+                "market_price": 10.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "350-399",
+                "low": 350,
+                "high": 399,
+                "market_price": 22.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "400-449",
+                "low": 400,
+                "high": 449,
+                "market_price": 33.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "450-499",
+                "low": 450,
+                "high": 499,
+                "market_price": 18.0,
+                "model_prob": 0.0
+            },
+            {
+                "name": "500+",
+                "low": 500,
+                "high": 99999,
+                "market_price": 12.0,
+                "model_prob": 0.0
+            }
+        ]
+    }
+]

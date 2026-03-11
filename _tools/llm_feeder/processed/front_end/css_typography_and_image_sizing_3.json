@@ -1,0 +1,18 @@
+{
+  "topic_name": "CSS Typography and Image Sizing",
+  "category": "Front-End",
+  "core_concept": "This document details fundamental CSS properties for controlling text appearance and image dimensions. Specifically, it covers `font-family`, `font-size`, `font-weight`, `text-align`, and image height/width adjustments. Understanding these properties is crucial for creating visually appealing and responsive web pages.",
+  "technical_breakdown": [
+    "CSS properties like `font-family`, `font-size`, `font-weight`, `text-align`, and `font-size` are used to style text elements.",
+    "The `img` element's `height` and `width` attributes and CSS properties control image dimensions, preventing layout shifts upon image loading.",
+    "External CSS files are the most common method for managing styles, linking them via the `<link>` tag in the HTML `<head>`."
+  ],
+  "snippet": "```css\nimg {\n  height: auto;\n  width: 500px;\n}\n```",
+  "cross_references": [
+    "CSS Selectors",
+    "HTTP Requests (REST APIs)",
+    "Responsive Design"
+  ],
+  "source_file": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\llm_feeder\\data\\odin\\foundations\\intro_to_css.md",
+  "chunk_index": 3
+}

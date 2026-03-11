@@ -1,0 +1,6 @@
+[2026-02-20 13:02:30]
+PROMPT: Test robustness 2
+Constraints: 7
+ERROR: Ollama error: Client error '404 Not Found' for url 'http://localhost:11434/api/chat'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
+------------------------------------------------------------

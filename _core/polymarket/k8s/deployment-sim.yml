@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: polymarket-sim
+  namespace: polymarket-staging
+  labels:
+    app: polymarket-sim
+    component: web-dashboard
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: polymarket-sim
+      component: web-dashboard
+  template:
+    metadata:
+      labels:
+        app: polymarket-sim
+        component: web-dashboard
+    spec:
+      containers:
+      - name: web
+        image: ghcr.io/your-org/polymarket:latest
+        imagePullPolicy: Always
+        workingDir: /app/polym_sim
+        command: ["python", "run_app.py"]
+        
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        
+        envFrom:
+        - configMapRef:
+            name: polymarket-config
+        
+        env:
+        - name: PORT
+          value: "8000"
+        - name: HOST
+          value: "0.0.0.0"
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: polymarket-sim
+  namespace: polymarket-staging
+  labels:
+    app: polymarket-sim
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: polymarket-sim
+    component: web-dashboard
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: polymarket-sim-ingress
+  namespace: polymarket-staging
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts:
+    - polymarket-staging.example.com
+    secretName: polymarket-sim-tls
+  rules:
+  - host: polymarket-staging.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: polymarket-sim
+            port:
+              number: 80

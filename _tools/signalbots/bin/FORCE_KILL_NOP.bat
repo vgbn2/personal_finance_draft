@@ -1,0 +1,9 @@
+@echo off
+echo Killing Python...
+taskkill /F /IM python.exe /T 2>nul
+echo Cleaning port 5560...
+for /f "tokens=5" %%a in ('netstat -aon ^| find ":5560"') do (
+    echo Killing PID %%a...
+    taskkill /F /PID %%a 2>nul
+)
+echo Done.

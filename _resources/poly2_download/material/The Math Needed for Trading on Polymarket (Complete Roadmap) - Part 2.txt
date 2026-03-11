@@ -1,0 +1,386 @@
+The Math Needed for Trading on Polymarket (Complete Roadmap) - Part 2
+I'm going to break down the essential math you need for trading on Polymarket. I'll also share the exact roadmap and resources that helped me personally.
+
+Let's get straight to it
+
+Part 1 reached over 2.2 million views. The response made one thing clear: understanding prediction markets like Polymarket at a system level is essential if you want to make real money like the top arbitrage bots. Theory alone won't get you there. Execution will.
+Bookmark This -  
+I’m Roan, a backend developer working on system design, HFT-style execution, and quantitative trading systems. My work focuses on how prediction markets actually behave under load.  For any suggestions, thoughtful collaborations, partnerships DMs are open.
+Before you continue: If you haven't read Part 1, stop here and read it first. Part 1 covers marginal polytopes, Bregman projections, and Frank-Wolfe optimization. This article builds directly on those foundations.
+
+When you understand that Frank-Wolfe solves Bregman projections through iterative optimization, you think "I can implement this." You're right. What most people never realize is that while they're stuck on iteration 1 trying to figure out valid starting vertices, production systems have already initialized with Algorithm 3 (explained in this article)   , prevented gradient explosions using adaptive contraction, stopped at exactly 90% of maximum profit, and executed the trade. By the time you manually start your first iteration, these systems have already captured the arbitrage across multiple markets, sized positions based on order book depth, and moved on to the next opportunity.
+
+The difference isn't just mathematical knowledge.  
+It's implementation precision.
+
+By the end of this article, you will know exactly how to build the same system that extracted over $40 million. 
+Part 1 gave you the theory on integer programming, marginal polytopes, Bregman projections. 
+Part 2 gives you the implementation about how to actually start the algorithm from scratch, prevent the crashes that kill amateur attempts, calculate exact profit guarantees before executing, and why platforms like Polymarket deliberately leave these opportunities open. 
+The math is public. The $40 million was sitting there. The only difference between the traders who extracted it and everyone else was solving four critical implementation problems first. 
+This is the exact playbook that turned equations into millions.
+
+Note: This isn’t a skim. If you’re serious about building systems that can scale to seven figures, read it end to end. If you’re here for quick wins or vibe coding, this isn’t for you.
+Part I: The Initialization Problem (Setting Up Market States)
+You can't just start Frank-Wolfe with random numbers and hope it works. The algorithm requires a valid starting point that is a set of vertices from the marginal polytope M that you know are feasible. This is the initialization problem, and it's harder than it sounds.
+
+Why Initialization Matters -
+Recall from Part 1 that the Frank-Wolfe algorithm maintains an active set Z_t  of vertices discovered so far. At each iteration, it solves a convex optimization over the convex hull of Z_t, then finds a new descent vertex by solving an integer program.  
+
+But iteration 1 has a problem: what is Z_0?
+
+You need at least one valid payoff vector to start. Ideally, you need several  vertices that span different regions of the outcome space. And critically, you need an interior point u - a coherent price vector where every unsettled security  has a price strictly between 0 and 1. 
+
+Why? Because the Barrier Frank-Wolfe variant we use (covered in Part II of this article) contracts the polytope toward this interior point to control gradient growth. If your interior point has any coordinate exactly at 0 or 1, the contraction fails and the algorithm breaks.
+
+Algorithm 3: InitFW Explained
+Algorithm 3: InitFW
+The goal of InitFW is threefold:
+Find an initial set of active vertices Z_0
+Construct a valid interior point u
+Extend the partial outcome σ to include any securities that can be logically settled
+Here's how it works. You start with a partial outcome σ (the set of securities already settled to 0 or 1) and iterate through every unsettled security i.
+For each security i, you ask the integer programming solver two questions:
+Question 1: "Give me a valid payoff vector z where z_i = 1"
+Question 2: "Give me a valid payoff vector z where z_i = 0"
+The IP solver either finds such a vector or proves none exists.
+Case 1: The solver finds valid vectors for both z_i = 0 and z_i = 1. This means security i is genuinely uncertain - it could resolve either way. Add both vectors to Z_0. Security i remains unsettled.
+Case 2: The solver finds a vector for z_i = 1 but cannot find one for z_i = 0. This means every valid outcome has z_i = 1. Security i must resolve to 1. Add it to the extended partial outcome σ̂ as (i, 1).
+Case 3: The solver finds a vector for z_i = 0 but cannot find one for z_i = 1. Every valid outcome has z_i = 0. Security i must resolve to 0. Add it to σ̂ as (i, 0).
+After iterating through all unsettled securities, you have:
+An extended partial outcome σ̂ with more securities settled than you started with
+A set Z_0 of vertices where each unsettled security appears as both 0 and 1 across different vectors
+The interior point u is simply the average of all vertices in Z_0:
+u = (1/|Z_0|) × Σ_{z ∈ Z_0} z
+Because each unsettled security appears as both 0 and 1 in Z_0, the average guarantees that u_i is strictly between 0 and 1 for all unsettled i.
+Real Example: NCAA Tournament Initialization
+Consider the Duke vs Cornell market from Part 1. Each team has 7 securities (0 to 6 wins). Initially, no games have been played, so σ = ∅.
+InitFW iterates through all 14 securities:
+For "Duke: 0 wins", the solver finds valid vectors with both 0 and 1 (Duke could win 0 games or not)
+For "Duke: 6 wins", the solver finds valid vectors with both 0 and 1 (Duke could win the championship or not)
+Same for all Cornell securities
+But there's a constraint: Duke and Cornell can't both reach the finals (5+ wins each), because they'd meet in the semifinals. When InitFW asks for a vector where Duke: 5 wins = 1 AND Cornell: 5 wins = 1, the IP solver returns infeasible.
+This doesn't settle any securities (both teams could win 5 games, just not simultaneously). But it populates Z_0 with vectors that respect the dependency. The algorithm now knows the structure of the outcome space before any iterations begin.
+After initialization:
+Z_0 contains valid payoff vectors for all possible tournament outcomes
+u is a price vector with all coordinates between 0 and 1 (something like 0.14 for each team's 0-6 win probabilities)
+σ̂ = σ = ∅ (no games settled yet)
+Once games start settling, subsequent calls to InitFW extend σ̂. If Duke loses in Round 1, the next InitFW call detects that all valid vectors have "Duke: 1+ wins" = 0, and adds those securities to σ̂. Prices for settled securities lock at 0 or 1 permanently.
+Why This Step Is Critical?
+Without proper initialization, Frank-Wolfe can fail in three ways:
+Failure 1: Empty Z_0 If you don't find any valid vertices, you have nothing to optimize over. The algorithm can't start.
+Failure 2: Boundary interior point If your interior point u has any coordinate at 0 or 1, the contraction in Barrier Frank-Wolfe is undefined. Gradients explode. The algorithm diverges.
+Failure 3: Missed settlements If you don't extend σ̂ to include logically settled securities, you waste computation optimizing over prices that should be fixed. And worse you miss arbitrage removal opportunities, because settled securities by definition have no arbitrage.
+The Kroer et al. experiments show that InitFW completes in under 1 second for the NCAA tournament even at full size (63 games, 2^63 outcomes). 
+The IP solver handles these queries efficiently because it's just checking feasibility, not optimizing anything.
+Key takeaway: You cannot run Frank-Wolfe without valid initialization. Algorithm 3 solves three problems simultaneously: it constructs a valid starting active set Z_0, builds an interior point u where all unsettled coordinates are strictly between 0 and 1, and extends the partial outcome σ to include securities that can be logically settled. The IP solver is doing feasibility checks, not optimization, so this step is fast even for enormous outcome spaces. InitFW is what allows Frank-Wolfe to start running, and it's what enables the algorithm to speed up over time as outcomes resolve. Miss this step and your projection either never starts or diverges immediately.
+
+Now let's talk about why that interior point matters so much.
+Part II: Adaptive Contraction & Controlled Growth (Why FW Doesn't Break)
+Standard Frank-Wolfe assumes the gradient of your objective function is Lipschitz continuous with a bounded constant L. This assumption enables the convergence proof: the algorithm is guaranteed to reduce the gap 
+g(μ_t) at rate O(L × diam(M) / t)
+
+But LMSR (Logarithmic Market Scoring Rule) violates this assumption catastrophically.
+The Gradient Explosion Problem -
+Recall from Part 1 that for LMSR, the Bregman divergence is KL divergence:
+D(μ||θ) = Σ_i μ_i ln(μ_i / p_i(θ))
+To minimize this via Frank-Wolfe, we need the gradient ∇D with respect to μ. Taking the derivative:
+∇R(μ) = ln(μ) + 1
+This gradient is defined only when μ > 0. As any coordinate μ_i approaches 0, the gradient component (∇R)_i = ln(μ_i) + 1 goes to negative infinity.
+This is a problem. The marginal polytope M has vertices where some coordinates are exactly 0. Securities that resolve to False have μ_i = 0 in the corresponding payoff vector. As Frank-Wolfe iterates approach these boundary vertices, the gradient explodes.
+Standard FW convergence analysis requires a bounded Lipschitz constant. Here, L is unbounded. The algorithm could diverge, oscillate, or get stuck.
+The Kroer et al. solution: Barrier Frank-Wolfe with adaptive contraction.
+Controlled Growth Condition
+Instead of requiring a bounded Lipschitz constant globally, we only require it locally on contracted subsets of M.
+Define the contracted polytope:
+M' = (1 - ε)M + εu
+where ε ∈ (0,1) is the contraction parameter and u is the interior point from InitFW.
+Geometrically, M' is the polytope M shrunk toward the point u. Every vertex v of M gets pulled toward u:
+v' = (1 - ε)v + εu
+Because u has all coordinates strictly between 0 and 1 (by construction in InitFW), and ε > 0, every coordinate of v' is strictly between 0 and 1. The contracted polytope M' stays away from the boundary.
+Now the gradient ∇R(μ) is bounded on M'. Specifically, the Lipschitz constant on M' is:
+L_ε = O(1/ε)
+The smaller ε (closer to the true polytope M), the larger L_ε. But critically, L_ε is finite for any fixed ε > 0.
+This gives us a trade-off:
+Large ε: Fast convergence (small L_ε), but we're optimizing over the wrong polytope (far from M)
+Small ε: Slow convergence (large L_ε), but we're optimizing over something close to M
+The adaptive contraction scheme solves this by starting with large ε and decreasing it over time.
+The Adaptive Epsilon Rule
+Algorithm 2 in the Kroer paper implements this. At each iteration t, the algorithm maintains ε_t and updates it according to:
+If g(μ_t) / (-4g_u) < ε_{t-1}:
+    ε_t = min{g(μ_t) / (-4g_u), ε_{t-1} / 2}
+Else:
+    ε_t = ε_{t-1}
+What does this mean?
+g(μ_t) is the Frank-Wolfe gap at iteration t (how suboptimal μ_t is). g_u is the gap evaluated at the interior point u.
+The ratio g(μ_t) / (-4g_u) measures how close we are to the true optimum relative to the interior point. If this ratio is small (we're making good progress), we shrink ε by half. If the ratio is large (we're still far from optimal), we keep ε the same.
+The key insight: ε decreases adaptively based on convergence, not on a fixed schedule.
+As iterations progress:
+Early iterations: ε is large (maybe 0.1). We optimize over a heavily contracted polytope M'. Convergence is fast.
+Middle iterations: ε shrinks to 0.05, 0.025, etc. We get closer to the true polytope M. Convergence slows.
+Late iterations: ε approaches 0. We're optimizing over nearly the true M. Convergence is slow but accurate.
+The Krishnan et al. 2015 analysis proves that ε_t → 0 as t → ∞, so the algorithm converges to the true Bregman projection on M, not just on some contracted approximation.
+Why This Works: The Hessian Bound
+The controlled growth condition holds for LMSR because the Hessian of R(μ) is well-behaved on M'.
+The Hessian is a diagonal matrix with entries:
+H_ii = ∂²R / ∂μ_i² = 1/μ_i
+On the contracted polytope M', every coordinate μ_i ≥ ε (because of the contraction toward u). Therefore:
+H_ii ≤ 1/ε
+The operator norm of the Hessian (which upper-bounds the Lipschitz constant of the gradient) is:
+||H|| = max_i (1/μ_i) ≤ 1/ε
+This gives us L_ε = O(1/ε), exactly as claimed.
+For other cost functions (like sums of LMSRs), the same analysis applies. As long as the cost function's conjugate R has a Hessian that grows at most as O(1/ε) on contracted polytopes, Barrier Frank-Wolfe converges.
+Convergence Rate With Adaptive Contraction
+The convergence rate of Barrier FW is:
+O(L_ε × diam(M') / t) = O(1/(ε × t))
+As ε shrinks, convergence slows. But the adaptive rule ensures we only shrink ε when we're close enough to the optimum that accuracy matters more than speed.
+In practice (from the Kroer experiments):
+First 10 iterations: ε = 0.1, rapid progress toward a rough solution
+Iterations 10-50: ε shrinks to 0.01, refining the solution
+Iterations 50-150: ε approaches 0.001, converging to high precision
+Total iterations: 50 to 150 for NCAA tournament markets with thousands of securities. Total time: 30 minutes once the outcome space shrinks enough for IP solves to complete quickly.
+What Happens Without Adaptive Contraction?
+If you just run standard Frank-Wolfe on M (without contraction), two things can happen:
+Scenario 1: The algorithm encounters a vertex with μ_i = 0 for some i. The gradient component becomes -∞. Numerical overflow. The algorithm crashes.
+Scenario 2: The algorithm stays slightly inside M (numerical rounding keeps μ_i > 0 but very small). The gradient becomes enormous. Step sizes are unstable. Convergence is erratic or nonexistent.
+The research paper explicitly states: "Without adaptive contraction, FW does not converge for LMSR."
+Barrier FW with adaptive contraction is not an optimization. It's a necessity.
+Key takeaway: Standard Frank-Wolfe fails on LMSR because the gradient explodes at price boundaries where μ_i approaches zero. Barrier Frank-Wolfe solves this by optimizing over a contracted polytope M' = (1-ε)M + εu where all coordinates are bounded away from zero, giving a finite Lipschitz constant L_ε = O(1/ε). The adaptive epsilon rule starts with large ε for fast early convergence and shrinks ε over time to approach the true projection on M. This maintains controlled growth of the gradient while guaranteeing asymptotic convergence to the correct solution. Without this mechanism, the algorithm either crashes from numerical overflow or diverges due to unstable gradients.
+
+Now you know how to keep the algorithm stable. But when do you actually stop and execute?
+Part III: The Profit Guarantee (When to Stop and Trade)
+You're running Frank-Wolfe. Iteration 50. The gap g(μₜ) is decreasing. The IP solver is still running.
+When do you stop?
+Stop too early → Miss most of the profit Stop too late → Market moves, opportunity gone
+You need a stopping condition that guarantees profit.
+Proposition 4.1: The Formula
+The guaranteed profit from moving market state θ to θ̂ (where p(θ̂) = μ̂) is:
+Profit ≥ D(μ̂||θ) - g(μ̂)
+Where:
+D(μ̂||θ) = Bregman divergence (maximum arbitrage if μ̂ were perfect)
+g(μ̂) = Frank-Wolfe gap (how suboptimal μ̂ currently is)
+This is everything.
+D(μ̂||θ) is the profit you'd get with perfect optimization. g(μ̂) is the profit you're losing because μ̂ isn't perfect yet. The difference is guaranteed profit even with an approximate solution.
+Why This Matters
+In traditional optimization, you stop when g(μ̂) is small. You don't care about D(μ̂||θ).
+In arbitrage, you care about both:
+Case 1: 
+D(μ̂||θ) = 0.15, g(μ̂) = 0.20 Guaranteed profit = 0.15 - 0.20 = -0.05
+Don't trade. Your approximation is too poor.
+Case 2: 
+D(μ̂||θ) = 0.15, g(μ̂) = 0.02 Guaranteed profit = 0.15 - 0.02 = 0.13
+Trade immediately. You're capturing 87% of available arbitrage.
+Case 3: 
+D(μ̂||θ) = 0.0001, g(μ̂) = 0.00001 Guaranteed profit = 0.00009
+Technically positive, but execution costs exceed profit. Skip.
+The Three Stopping Conditions
+Condition 1: α-Extraction
+g(μₜ) ≤ (1-α) × D(μₜ||θ)
+Rearranges to:
+D(μₜ||θ) - g(μₜ) ≥ α × D(μₜ||θ)
+Interpretation: 
+Guaranteed profit is at least α fraction of maximum possible.
+Research implementation: α = 0.9
+"Stop when you're guaranteed to capture at least 90% of available arbitrage."
+Why 90% instead of 100%?
+Getting the last 10% might take 50 more iterations. IP solver might timeout. Market might move. Take 90% now.
+Condition 2: Near-Arbitrage-Free
+D(μₜ||θ) ≤ εD
+If maximum arbitrage available is below threshold εD, don't bother.
+Research value: εD = 0.05
+"If profit is less than 5 cents per dollar, skip it."
+Why?
+Execution risk and gas fees would consume it.
+Condition 3: Forced Interruption
+New trade arrives or time limit hit → Return best iterate found so far.
+Track across all iterations:
+t* = argmax over τ≤t [D(μτ||θ) - g(μτ)]
+Even if interrupted at iteration 5, you return the iterate with maximum guaranteed profit among those 5.
+Critically: D(μₜ||θ) - g(μₜ) ≥ 0 always (proven via convex duality).
+You never return a trade with negative guaranteed profit.
+Proof Sketch
+The guaranteed profit is:
+min over ω [profit in outcome ω]
+= min over μ∈M [(θ̂-θ)·μ - C(θ̂) + C(θ)]
+Using conjugacy (θ̂ = ∇R(μ̂)) and simplifying:
+= D(μ̂||θ) + min over μ∈M [(θ̂-θ)·(μ-μ̂)]
+The term min over μ∈M [(θ̂-θ)·(μ-μ̂)] equals -g(μ̂) by definition of FW gap.
+Therefore:
+Guaranteed profit = D(μ̂||θ) - g(μ̂)
+QED.
+Real Numbers from NCAA Experiments
+Early tournament (16 games settled):
+Iteration 10: D = 0.0045, g = 0.0042, guaranteed profit = 0.0003 
+Iteration 50: D = 0.0045, g = 0.0004, guaranteed profit = 0.0041
+α-extraction check: g(μ₅₀) = 0.0004 ≤ 0.9 × 0.0045 = 0.00405 ✓
+Stop. Guaranteed profit: 91% of maximum.
+Late tournament (56 games settled):
+Iteration 20: D = 0.0002, g = 0.00001, guaranteed profit = 0.00019
+α-extraction check: g(μ₂₀) = 0.00001 ≤ 0.9 × 0.0002 = 0.00018 ✓
+Stop. Guaranteed profit: 95% of maximum.
+Late tournament converges faster because outcome space is smaller 
+(128 possibilities vs billions).
+When NOT to Trade
+Abort if:
+D(μₜ||θ) < εD → Arbitrage-free, no profit
+D(μₜ||θ) - g(μₜ) < 0 → Gap exceeds divergence, keep iterating
+D(μₜ||θ) - g(μₜ) < execution threshold → Profit too small for risk
+The $0.05 minimum threshold from the research accounts for:
+Non-atomic execution (one leg might fill, other might not)
+Gas fees (~$0.02 per multi-leg trade on Polygon)
+Slippage and order book movement
+Key takeaway: Proposition 4.1 transforms abstract optimization into concrete trading decisions. The profit guarantee D(μ̂||θ) - g(μ̂) tells you exactly when to stop Frank-Wolfe. The α-extraction stopping condition (α = 0.9) ensures you capture 90% of profit without waiting for perfect convergence. Tracking best iterate t* across iterations means even forced interruption returns a profitable trade. This is how the top arbitrageur made $2,009,631.76 across 4,049 trades. Every single trade had guaranteed minimum profit before execution. No gambling. No hoping. Mathematical certainty within the stopping tolerance.
+Now you know: how to initialize (Part I), how to prevent crashes (Part II), when to stop and trade (Part III).
+But there's one more piece. How do market makers actually set these prices in the first place?
+Part IV: The Market Maker's Perspective (Why Prices Are Wrong)
+Everything so far focused on exploiting mispricing. But where does mispricing come from?
+
+Understanding the market maker's optimization problem reveals why arbitrage exists at all.
+The Cost Function Framework
+Polymarket (like all automated market makers) uses a cost function C(θ) to set prices.
+From Part 1, LMSR:
+C(θ) = b × log(Σ eθᵢ/ᵇ)
+Prices: pᵢ(θ) = eθᵢ/ᵇ / Σⱼ eθⱼ/ᵇ
+The parameter b controls liquidity.
+Small b → Prices move fast with each trade Large b → Prices move slowly
+The Market Maker's Problem
+The market maker wants to:
+Attract traders (provide liquidity)
+Stay arbitrage-free (don't lose money to arbitrageurs)
+Bound maximum loss (worst-case payout is finite)
+These goals conflict.
+If you enforce arbitrage-free prices via Bregman projection (Parts I-III), you sacrifice liquidity.
+Why? Because projection solves an integer program. That takes 30 seconds to 30 minutes depending on market size.
+Prices can't update in real-time if every update requires solving an IP.
+The Tradeoff: Speed vs Accuracy
+Fast pricing (what Polymarket actually does):
+When a trade arrives:
+Update state: θ_new = θ_old + δ
+Compute new prices: p(θ_new) = ∇C(θ_new)
+Execute immediately
+Time: <100ms
+But prices might violate logical constraints. If Duke loses in Round 1, "Duke wins championship" should go to $0 instantly. Instead, it decays gradually as traders bet against it.
+Accurate pricing (FWMM from Parts I-III):
+When a trade arrives:
+Run InitFW to extend partial outcome
+Run Barrier FW to project onto M
+Update state to projected prices
+Execute trade
+Time: 30 seconds to 30 minutes
+Prices are guaranteed arbitrage-free. But they update slowly. By the time projection completes, 10 more trades have arrived. You're always behind.
+Polymarket chose speed over accuracy.
+They use independent LMSR markets with fast updates. This creates three types of mispricing:
+Type 1: 
+Within-market inconsistency
+Sum of probabilities ≠ 1 for multi-condition markets.
+Example from empirical data:
+662 NegRisk markets (42% of all multi-condition markets) had sum ≠ 1
+Median deviation: 0.08 per dollar
+Type 2:
+Cross-market inconsistency
+Dependent markets price as if independent.
+Example: "Trump wins PA" and "GOP wins by 5+ nationally" should be correlated. But each market updates independently based on its own trades.
+Result: Prices violate logical dependencies. Combinatorial arbitrage exists.
+Type 3: 
+Settlement lag
+When games settle, prices don't instantly lock. They drift toward 0 or 1 as traders bet against resolved outcomes.
+Example from the paper: Assad remaining President of Syria through 2024.
+Assad flees country (outcome determined)
+Prices: YES = $0.30, NO = $0.30 (sum = 0.60)
+Should be: YES = $0, NO = $1
+Arbitrage window lasts hours until enough traders bet it down
+The Fundamental Impossibility
+Theorem (implicit in Kroer et al.):
+For any cost function on combinatorial markets with dependencies:
+Fast price updates → Arbitrage exists
+Arbitrage-free prices → Slow updates
+You cannot have both.
+LMSR with independent sub-markets is fast but creates arbitrage. FWMM with integer programming is arbitrage-free but slow.
+What Polymarket Could Do (But Doesn't)
+Hybrid approach:
+Use fast LMSR for normal trades
+Run LCMM (linear constraint MM from Dud´ık et al. 2012) every 10 seconds to partially remove arbitrage
+Run full FWMM projection every 5 minutes or when partial outcome updates
+This would reduce arbitrage from $40M/year to maybe $5M/year.
+Why doesn't Polymarket do this?
+Because arbitrage attracts sophisticated traders.
+Market makers want volume. Arbitrageurs provide consistent volume. If you remove all arbitrage, many professional traders leave.
+Polymarket tolerates some arbitrage as a liquidity incentive.
+The Market Maker's Loss Bound
+Even with arbitrage, the market maker's loss is bounded.
+From Abernethy et al. 2011:
+Worst-case loss = max over ω [D(φ(ω)||θ₀)]
+Where:
+φ(ω) is the payoff vector in outcome ω
+θ₀ is the initial market state
+For LMSR, this simplifies to:
+Max loss = b × log(|Ω|)
+Where |Ω| is the number of outcomes.
+Example: NCAA tournament
+|Ω| = 2⁶³ b = 150 (typical liquidity parameter)
+Max loss = 150 × log(2⁶³) = 150 × 43.7 = $6,555
+No matter how many trades occur, how much arbitrage exists, the market maker loses at most $6,555 on this market.
+This is why LMSR is used. Bounded loss even in adversarial scenarios.
+What This Means for Arbitrageurs
+The market maker is choosing to be exploitable.
+They could run FWMM and eliminate arbitrage. They don't, because:
+Speed is more important than accuracy
+Arbitrageurs provide liquidity
+Loss is bounded anyway
+For you as an arbitrageur:
+The opportunities aren't bugs. They're features. The market maker knows prices are wrong. They're accepting bounded loss in exchange for fast updates and high volume.
+Your job is to extract profit faster than competitors.
+And now you have the tools:
+InitFW to start optimization (Part I)
+Barrier FW to handle LMSR (Part II)
+Profit guarantees to know when to trade (Part III)
+Understanding of why mispricing exists (Part IV)
+Key takeaway: Market makers face an impossible tradeoff: fast updates create arbitrage, arbitrage-free pricing is slow. Polymarket chose speed, using independent LMSR sub-markets that update in <100ms. This creates within-market inconsistencies (sum ≠ 1), cross-market inconsistencies (dependencies ignored), and settlement lag (prices drift toward true values). The $40M in extracted arbitrage is not a failure it's an accepted cost for maintaining liquidity and volume. The market maker's loss is bounded by b×log(|Ω|) regardless of arbitrage, so tolerating some exploitation is rational. For arbitrageurs, this means opportunities are systematic and not accidental.
+The faster you can detect and execute, the more you extract.
+Conclusion: The Complete Framework
+Part 1 showed you the math: integer programming, marginal polytopes, Bregman projection, Frank-Wolfe iterations.
+Part 2 showed you the implementation: how to actually start the algorithm, why standard methods fail, when to stop and guarantee profit, and why these opportunities exist at all.
+The gap between theory and execution is four problems:
+Initialization (Part I): Use InitFW with IP solver to build valid Z₀, construct interior point u, extend partial outcome σ̂
+Stability (Part II): Use Barrier FW with adaptive contraction to prevent gradient explosion from LMSR
+Execution (Part III): Use profit guarantee D(μ̂||θ) - g(μ̂) with α-extraction to capture 90% of arbitrage before market moves
+Market Structure (Part IV): Understand that market makers choose speed over accuracy, creating systematic mispricing
+This is not theoretical. 
+The top arbitrageur made $2,009,631.76 using exactly these methods.
+Top 10 accounts ranked by total amount and number of successful opportunities
+They didn't have better information. They didn't have insider knowledge. They had better implementation of the same math everyone can read in the research papers.
+
+The question is no longer "Is this possible?"
+The question is: Will you implement it?
+What's Next?
+This was Part 2. We covered initialization, stability, profit guarantees, and market maker economics.
+But we haven't talked about the production system.
+How do you actually:
+Ingest real-time data from Polymarket's WebSocket API?
+Run integer programs in parallel without blocking?
+Submit orders to the CLOB with <30ms latency?
+Monitor 17,000+ conditions simultaneously?
+Size positions under capital constraints?
+Handle partial fills when one leg executes and others don't?
+Should I release Part 3?
+Part 3 would cover:
+System architecture (data pipeline, execution engine, monitoring)
+Code examples (Python + Gurobi implementation)
+Risk management (position sizing, Kelly criterion, drawdown limits)
+Infrastructure (AWS setup, database schema, WebSocket handling)
+The complete production system that scales to seven figures
+Let me know if you want Part 3. Now it's about building the machine that will print for you.
+Resources
+Research Papers:
+Kroer et al. 2016: "Arbitrage-Free Combinatorial Market Making via Integer Programming" (arXiv:1606.02825v2)
+Saguillo et al. 2025: "Unravelling the Probabilistic Forest: Arbitrage in Prediction Markets" (arXiv:2508.03474v1)
+Tools:
+Gurobi Optimizer: gurobi.com
+Polymarket CLOB API: docs.polymarket.com
+comments of author:"This is the exact math formula that guarantees profit to Polymarket arbitrage bots like gabagool22
+
+Proposition 4.1 guarantees profit = D(μ̂||θ) - g(μ̂)
+Stop at 90% extraction (α = 0.9), don't wait for 100%  
+","This is the exact execution loop in rust behind serious Polymarket arbitrage bots 
+
+The actual pseudocode that prints money 
+Production systems are running this in milliseconds "

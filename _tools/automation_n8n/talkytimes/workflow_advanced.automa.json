@@ -1,0 +1,572 @@
+{
+    "extVersion": "1.30.01",
+    "name": "Talkytimes (Detailed Advanced v2)",
+    "icon": "riFlowChart",
+    "table": [],
+    "version": "1.30.01",
+    "drawflow": {
+        "nodes": [
+            {
+                "id": "trigger",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 100,
+                    "y": 100
+                },
+                "data": {
+                    "description": "Start",
+                    "type": "manual",
+                    "observeElement": {
+                        "selector": "",
+                        "baseSelector": "",
+                        "matchPattern": "",
+                        "targetOptions": {
+                            "subtree": false,
+                            "childList": true,
+                            "attributes": false
+                        },
+                        "baseElOptions": {
+                            "subtree": false,
+                            "childList": true,
+                            "attributes": false
+                        }
+                    },
+                    "settings": {
+                        "blockTimeout": 0,
+                        "debugMode": false
+                    },
+                    "triggers": []
+                },
+                "label": "trigger"
+            },
+            {
+                "id": "open-sheets",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 300,
+                    "y": 100
+                },
+                "data": {
+                    "url": "https://docs.google.com/spreadsheets/d/1G6q-TBUJd9a6d1bXlny6VP4zlQZHK26pHbi21qjyKOc/edit",
+                    "description": "Open Sheets (Reporting)",
+                    "active": false,
+                    "customUserAgent": false,
+                    "userAgent": "",
+                    "waitTabLoaded": false,
+                    "updatePrevTab": false
+                },
+                "label": "new-tab"
+            },
+            {
+                "id": "open-grok",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 500,
+                    "y": 100
+                },
+                "data": {
+                    "url": "https://grok.com",
+                    "description": "Open Grok AI",
+                    "active": false,
+                    "customUserAgent": false,
+                    "userAgent": "",
+                    "waitTabLoaded": false,
+                    "updatePrevTab": false
+                },
+                "label": "new-tab"
+            },
+            {
+                "id": "get-accounts",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 700,
+                    "y": 100
+                },
+                "data": {
+                    "description": "Get Accounts (Sheet: Đức Anh)",
+                    "refKey": "accounts",
+                    "type": "get",
+                    "spreadsheetId": "1G6q-TBUJd9a6d1bXlny6VP4zlQZHK26pHbi21qjyKOc",
+                    "range": "Đức Anh!A:B",
+                    "firstRowAsKey": true,
+                    "dataFrom": "data-columns",
+                    "InsertDataOption": "INSERT_ROWS",
+                    "valueInputOption": "RAW",
+                    "saveData": true
+                },
+                "label": "google-sheets"
+            },
+            {
+                "id": "debugcheck",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 900,
+                    "y": 100
+                },
+                "data": {
+                    "code": "/* DEBUG: Check if data was found */\nconst data = aut.refData('accounts');\nif (!data || data.length === 0) {\n  const msg = 'DEBUG ERROR: No data found in sheet \"Đức Anh\"! \\n\\n1. Check Sheet format (Columns A,B?)\\n2. Check Tab Name spelling.\\n3. Check Range: Đức Anh!A:B';\n  alert(msg);\n  // Optional: Auto-open Gemini to debug\n  const query = encodeURIComponent(\"Automa Google Sheet Error: \" + msg);\n  window.open(\"https://gemini.google.com/app?q=\" + query, '_blank');\n  aut.stop();\n}",
+                    "description": "DEBUG: Verify Data",
+                    "context": "background",
+                    "everyNewTab": false,
+                    "timeout": 5000
+                },
+                "label": "javascript-code"
+            },
+            {
+                "id": "loop-accounts",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1100,
+                    "y": 100
+                },
+                "data": {
+                    "loopId": "accounts",
+                    "loopThrough": "google-sheets",
+                    "description": "Loop Accounts",
+                    "fromNumber": 1,
+                    "loopData": "[]",
+                    "maxLoop": 0,
+                    "startIndex": 0,
+                    "toNumber": 10
+                },
+                "label": "loop-data"
+            },
+            {
+                "id": "new-tt-tab",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1300,
+                    "y": 100
+                },
+                "data": {
+                    "url": "https://talkytimes.com/auth/login",
+                    "description": "Login Page",
+                    "active": true,
+                    "customUserAgent": false,
+                    "userAgent": "",
+                    "waitTabLoaded": false,
+                    "updatePrevTab": false
+                },
+                "label": "new-tab"
+            },
+            {
+                "id": "login-logic",
+                "type": "BlockGroup",
+                "initialized": false,
+                "position": {
+                    "x": 1500,
+                    "y": 100
+                },
+                "data": {
+                    "blocks": [
+                        {
+                            "id": "wait-tabs",
+                            "type": "BlockBasic",
+                            "data": {
+                                "disableBlock": false
+                            },
+                            "label": "active-tab"
+                        },
+                        {
+                            "id": "fill-email",
+                            "type": "BlockBasic",
+                            "data": {
+                                "selector": ".ui-input:nth-child(1) .ui-input_control",
+                                "value": "{{ loopData.accounts.Email }}",
+                                "type": "text-field",
+                                "delay": 100,
+                                "findBy": "cssSelector",
+                                "waitForSelector": true,
+                                "waitSelectorTimeout": 5000
+                            },
+                            "label": "forms"
+                        },
+                        {
+                            "id": "wait-1",
+                            "type": "BlockDelay",
+                            "data": {
+                                "time": 5000,
+                                "settings": {
+                                    "blockTimeout": 0,
+                                    "debugMode": false
+                                }
+                            },
+                            "label": "delay"
+                        },
+                        {
+                            "id": "fill-pass",
+                            "type": "BlockBasic",
+                            "data": {
+                                "selector": ".ui-input:nth-child(2) .ui-input_control",
+                                "value": "{{ loopData.accounts.Password }}",
+                                "type": "text-field",
+                                "delay": 100,
+                                "findBy": "cssSelector",
+                                "waitForSelector": true,
+                                "waitSelectorTimeout": 5000
+                            },
+                            "label": "forms"
+                        },
+                        {
+                            "id": "wait-2",
+                            "type": "BlockDelay",
+                            "data": {
+                                "time": 500,
+                                "settings": {
+                                    "blockTimeout": 0,
+                                    "debugMode": false
+                                }
+                            },
+                            "label": "delay"
+                        },
+                        {
+                            "id": "click-login",
+                            "type": "BlockBasic",
+                            "data": {
+                                "selector": "button[data-test-id=\"cmp:ui-button click:resolve-action Log in\"]",
+                                "findBy": "cssSelector",
+                                "waitForSelector": true,
+                                "waitSelectorTimeout": 5000
+                            },
+                            "label": "event-click"
+                        },
+                        {
+                            "id": "wait-login",
+                            "type": "BlockDelay",
+                            "data": {
+                                "time": 8000,
+                                "settings": {
+                                    "blockTimeout": 0,
+                                    "debugMode": false
+                                }
+                            },
+                            "label": "delay"
+                        }
+                    ],
+                    "name": "Login Flow",
+                    "description": "Standard Login Sequence",
+                    "disableBlock": false,
+                    "icon": "riFolderLine"
+                },
+                "label": "blocks-group"
+            },
+            {
+                "id": "find-profiles",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1700,
+                    "y": 100
+                },
+                "data": {
+                    "code": "/* Find 8 Profiles with Photos & Filter Names */\nconst profiles = document.querySelectorAll('.user-card'); // Adjust selector\nlet validProfiles = [];\n\nfor (let p of profiles) {\n  const name = p.querySelector('.user-name')?.innerText || '';\n  const hasPhoto = p.querySelector('img.avatar') !== null;\n  \n  // Filter: No [] and Normal Chars\n  if (hasPhoto && !name.includes('[') && !name.includes(']')) {\n    const link = p.querySelector('a')?.href;\n    if (link) validProfiles.push(link);\n  }\n  if (validProfiles.length >= 8) break;\n}\n\nreturn validProfiles;",
+                    "description": "JS: Find 8 Valid Profiles",
+                    "context": "page",
+                    "everyNewTab": false,
+                    "timeout": 5000
+                },
+                "label": "javascript-code"
+            },
+            {
+                "id": "loop-profiles",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1900,
+                    "y": 100
+                },
+                "data": {
+                    "loopId": "profiles",
+                    "loopThrough": "custom-data",
+                    "loopData": "{{ find-profiles }}",
+                    "description": "Loop 8 Profiles",
+                    "fromNumber": 1,
+                    "maxLoop": 0,
+                    "startIndex": 0,
+                    "toNumber": 10
+                },
+                "label": "loop-data"
+            },
+            {
+                "id": "open-profile",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 2100,
+                    "y": 100
+                },
+                "data": {
+                    "url": "{{ loopData.profiles }}",
+                    "description": "Open Profile",
+                    "active": true,
+                    "customUserAgent": false,
+                    "userAgent": "",
+                    "waitTabLoaded": false
+                },
+                "label": "new-tab"
+            },
+            {
+                "id": "check-buttons",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 2300,
+                    "y": 100
+                },
+                "data": {
+                    "selector": ".chat-btn, .photo-comment-btn",
+                    "description": "Verify Buttons",
+                    "findBy": "cssSelector",
+                    "waitForSelector": true,
+                    "waitSelectorTimeout": 5000,
+                    "multiple": false
+                },
+                "label": "element-exists"
+            },
+            {
+                "id": "switch-grok",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 2500,
+                    "y": 100
+                },
+                "data": {
+                    "matchPattern": "grok.com",
+                    "description": "Switch to Grok",
+                    "active": true
+                },
+                "label": "switch-tab"
+            },
+            {
+                "id": "type-draft",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 2700,
+                    "y": 100
+                },
+                "data": {
+                    "selector": "textarea",
+                    "value": "Draft for {{ loopData.profiles }}: Hello!",
+                    "type": "text-field",
+                    "description": "Type Draft (No Send)",
+                    "delay": 100,
+                    "findBy": "cssSelector",
+                    "waitForSelector": true,
+                    "waitSelectorTimeout": 5000
+                },
+                "label": "forms"
+            },
+            {
+                "id": "switch-back-profile",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 2900,
+                    "y": 100
+                },
+                "data": {
+                    "matchPattern": "talkytimes.com",
+                    "description": "Switch back to Profile",
+                    "active": true
+                },
+                "label": "switch-tab"
+            },
+            {
+                "id": "close-profile",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 3100,
+                    "y": 100
+                },
+                "data": {
+                    "description": "Close Profile Tab",
+                    "active": true
+                },
+                "label": "close-tab"
+            },
+            {
+                "id": "loop-break-profiles",
+                "type": "BlockLoopBreakpoint",
+                "initialized": false,
+                "position": {
+                    "x": 3300,
+                    "y": 100
+                },
+                "data": {
+                    "loopId": "profiles"
+                },
+                "label": "loop-breakpoint"
+            },
+            {
+                "id": "logout-logic",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 3500,
+                    "y": 100
+                },
+                "data": {
+                    "url": "https://talkytimes.com/logout",
+                    "description": "Logout",
+                    "active": true,
+                    "customUserAgent": false,
+                    "userAgent": "",
+                    "waitTabLoaded": false
+                },
+                "label": "new-tab"
+            },
+            {
+                "id": "loop-break-accounts",
+                "type": "BlockLoopBreakpoint",
+                "initialized": false,
+                "position": {
+                    "x": 3700,
+                    "y": 100
+                },
+                "data": {
+                    "loopId": "accounts"
+                },
+                "label": "loop-breakpoint"
+            },
+            {
+                "id": "error-handler",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1500,
+                    "y": 400
+                },
+                "data": {
+                    "code": "/* Smart Debugger */\nconst err = aut.getLog();\nconst query = encodeURIComponent(\"Fix Automa Error: \" + JSON.stringify(err));\nwindow.open(\"https://gemini.google.com/app?q=\" + query, '_blank');\nalert(\"Error detected! Opened Gemini with logs.\");",
+                    "description": "Smart Debugger (Gemini)",
+                    "context": "background",
+                    "everyNewTab": false,
+                    "timeout": 5000
+                },
+                "label": "javascript-code"
+            }
+        ],
+        "edges": [
+            {
+                "source": "trigger",
+                "target": "open-sheets",
+                "id": "e1"
+            },
+            {
+                "source": "open-sheets",
+                "target": "open-grok",
+                "id": "e2"
+            },
+            {
+                "source": "open-grok",
+                "target": "get-accounts",
+                "id": "e3"
+            },
+            {
+                "source": "get-accounts",
+                "target": "debugcheck",
+                "id": "e4-debug"
+            },
+            {
+                "source": "debugcheck",
+                "target": "loop-accounts",
+                "id": "e4"
+            },
+            {
+                "source": "loop-accounts",
+                "target": "new-tt-tab",
+                "id": "e5"
+            },
+            {
+                "source": "new-tt-tab",
+                "target": "login-logic",
+                "id": "e6"
+            },
+            {
+                "source": "login-logic",
+                "target": "find-profiles",
+                "id": "e7"
+            },
+            {
+                "source": "find-profiles",
+                "target": "loop-profiles",
+                "id": "e8"
+            },
+            {
+                "source": "loop-profiles",
+                "target": "open-profile",
+                "id": "e9"
+            },
+            {
+                "source": "open-profile",
+                "target": "check-buttons",
+                "id": "e10"
+            },
+            {
+                "source": "check-buttons",
+                "target": "switch-grok",
+                "id": "e11"
+            },
+            {
+                "source": "switch-grok",
+                "target": "type-draft",
+                "id": "e12"
+            },
+            {
+                "source": "type-draft",
+                "target": "switch-back-profile",
+                "id": "e13"
+            },
+            {
+                "source": "switch-back-profile",
+                "target": "close-profile",
+                "id": "e14"
+            },
+            {
+                "source": "close-profile",
+                "target": "loop-break-profiles",
+                "id": "e15"
+            },
+            {
+                "source": "loop-break-profiles",
+                "target": "logout-logic",
+                "id": "e16"
+            },
+            {
+                "source": "logout-logic",
+                "target": "loop-break-accounts",
+                "id": "e17"
+            }
+        ],
+        "settings": {
+            "aipowerToken": "",
+            "blockDelay": 0,
+            "debugMode": true,
+            "defaultColumnName": "column",
+            "execContext": "popup",
+            "executedBlockOnWeb": true,
+            "inputAutocomplete": true,
+            "insertDefaultColumn": false,
+            "notification": true,
+            "onError": "execute-block",
+            "onErrorBlockId": "error-handler",
+            "publicId": "",
+            "restartTimes": 3,
+            "reuseLastState": true,
+            "saveLog": true,
+            "tabLoadTimeout": 30000
+        },
+        "description": "talkytimes advanced\n",
+        "globalData": "{\n\t\"key\": \"value\"\n}"
+    }
+}

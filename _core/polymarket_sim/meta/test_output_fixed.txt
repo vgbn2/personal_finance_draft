@@ -1,0 +1,61 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim
+plugins: anyio-4.12.0, langsmith-0.6.6
+collected 35 items
+
+tests\test_matching.py ........                                          [ 22%]
+tests\test_metrics.py .........FF.F.                                     [ 62%]
+tests\test_orderbook.py .............                                    [100%]
+
+================================== FAILURES ===================================
+____________ TestStrategyGrader.test_good_strategy_gets_high_grade ____________
+
+self = <polymarket_sim.tests.test_metrics.TestStrategyGrader object at 0x0000021C990AD550>
+
+    def test_good_strategy_gets_high_grade(self):
+        snap = self._make_snapshot(
+            sharpe=2.5, win_rate=0.70, ev=6.0, max_drawdown_pct=3.0
+        )
+        grade = StrategyGrader.grade(snap)
+        assert grade.score >= 80
+>       assert grade.letter in ("A+", "A")
+E       AssertionError: assert '?' in ('A+', 'A')
+E        +  where '?' = StrategyGrade(letter='?', score=92.3, sharpe_score=92.5, win_rate_score=90.8, ev_score=92.0, drawdown_score=95.0, verd...FICIENT DATA', reason='Only 30/100 trades completed. Need more data before grade is meaningful.', min_trades_met=False).letter
+
+tests\test_metrics.py:96: AssertionError
+_____________ TestStrategyGrader.test_bad_strategy_gets_low_grade _____________
+
+self = <polymarket_sim.tests.test_metrics.TestStrategyGrader object at 0x0000021C990ADB90>
+
+    def test_bad_strategy_gets_low_grade(self):
+        snap = self._make_snapshot(
+            sharpe=-0.5, win_rate=0.30, ev=-2.0, max_drawdown_pct=30.0
+        )
+        grade = StrategyGrader.grade(snap)
+        assert grade.score < 35
+>       assert grade.letter in ("D", "F")
+E       AssertionError: assert '?' in ('D', 'F')
+E        +  where '?' = StrategyGrade(letter='?', score=11.4, sharpe_score=7.5, win_rate_score=25.3, ev_score=0.0, drawdown_score=16.5, verdic...FICIENT DATA', reason='Only 30/100 trades completed. Need more data before grade is meaningful.', min_trades_met=False).letter
+
+tests\test_metrics.py:105: AssertionError
+__________________ TestStrategyGrader.test_mediocre_strategy __________________
+
+self = <polymarket_sim.tests.test_metrics.TestStrategyGrader object at 0x0000021C990AE850>
+
+    def test_mediocre_strategy(self):
+        snap = self._make_snapshot(
+            sharpe=0.6, win_rate=0.50, ev=1.0, max_drawdown_pct=12.0
+        )
+        grade = StrategyGrader.grade(snap)
+        assert 35 <= grade.score <= 79
+>       assert grade.letter in ("B", "C", "D")
+E       AssertionError: assert '?' in ('B', 'C', 'D')
+E        +  where '?' = StrategyGrade(letter='?', score=46.1, sharpe_score=39.6, win_rate_score=49.5, ev_score=44.0, drawdown_score=59.4, verd...FICIENT DATA', reason='Only 30/100 trades completed. Need more data before grade is meaningful.', min_trades_met=False).letter
+
+tests\test_metrics.py:121: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_metrics.py::TestStrategyGrader::test_good_strategy_gets_high_grade
+FAILED tests/test_metrics.py::TestStrategyGrader::test_bad_strategy_gets_low_grade
+FAILED tests/test_metrics.py::TestStrategyGrader::test_mediocre_strategy - As...
+======================== 3 failed, 32 passed in 0.43s =========================

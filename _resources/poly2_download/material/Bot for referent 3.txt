@@ -1,0 +1,69 @@
+I built a powerful real-time edge terminal specifically for 
+@Polymarket
+ - multi-timeframe dashboard covering all coins! (100% FREE & fully open-source)
+
+In one sentence: This Python bot gives you live alpha on Polymarket’s Up/Down crypto binaries by fusing real-time Binance order flow, current Polymarket probabilities, and multi-TF technical analysis.
+
+Spot mispricings fast - where the market odds haven’t yet caught up to momentum, aggressive delta, or strong signals. 
+Perfect for lightning-fast 15-minute scalps (markets resolve every 15 min with constant repricing) or cleaner swings on 1h / 4h / daily horizons.
+Pure decision-support tool - no auto-trading, just sharp, actionable insight delivered straight to your terminal.
+
+> Coins covered: BTC, ETH, SOL, XRP 
+> Timeframes: 15m, 1h, 4h, daily - All 16 market combinations are live and heavily traded on Polymarket (especially the 15m contracts - ultra-fast flips)
+
+Features at a glance: 
+
+> Streams live trades + full order book from Binance > Pulls real-time Up/Down prices & depth via Polymarket WebSocket 
+> Computes 11+ indicators on the fly 
+> Rolls everything up into a clear BULLISH / BEARISH / NEUTRAL bias score + probability estimate per timeframe 
+> Displays a clean, colorful, auto-refreshing terminal dashboard
+
+Order-book signals: 
+
+> OBI (imbalance)
+> visible buy/sell walls
+> liquidity depth (0.1% / 0.5% / 1.0%)
+> net flow & volume
+> CVD (across 1m/3m/5m windows)
+> 1m delta
+> Volume Profile + POC
+
+Technical indicators: 
+> RSI (14)
+> MACD (12/26/9) + signal line + histogram
+> VWAP
+> EMA 5 / EMA 20 cross
+>Heikin-Ashi candle streak count
+
+Important: 
+this is NOT an auto-trading bot. It highlights where Polymarket odds are lagging real Binance order-flow and multi-timeframe TA - giving you an edge on 15m scalping, 1–4h momentum trades, and daily directional confirmation.
+
+Built with: 
+Python (asyncio + Rich/Textual for a slick CLI look) One-line start: 
+python http://main.py Refreshes every few seconds Completely free & open-source → GitHub repo
+
+Want access? Like + RT + drop a reply or quote below - I’ll DM you the GitHub link
+
+Don’t miss the edge - especially on those 15-minute markets that flip every quarter hour. Seeing all timeframes at once is real alpha.
+
+Here’s to green candles and fat PnL!
+
+Update 
+
+How to make some $$$ on the new 5-minute Polymarket - BTC UP/DOWN market
+
+New market: https://polymarket.com/crypto/5M?via=SolSt1ne
+
+It's been less than a day since the 5-minute events were added, and the bots are still on the 15-minute events - a chance to try out the new tool before others.
+
+My PolyAssist already supports 5-minute events and provides real-time signals.
+
+You can monitor the discrepancies between technical analysis (BULLISH/BEARISH) and Polymarket's odds:
+
+> If the trend is BULLISH and the UP odds are low, it's a potential buy opportunity.
+> If the trend is BEARISH and the DOWN odds are low, it's a potential sell opportunity.
+> The data is updated every 3 seconds, and the fast timeframe helps you make decisions more quickly.
+
+PolyAssist does not guarantee profits, but it can be a useful tool for analyzing and finding interesting market opportunities.
+
+PolyAssist: https://github.com/st1ne/polymarket-assistant.git

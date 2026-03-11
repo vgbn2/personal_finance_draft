@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Import-Package: kotlin;resolution:=optional,kotlin.collections;resolut
+ ion:=optional,kotlin.jvm.functions;resolution:=optional,kotlin.jvm.in
+ ternal;resolution:=optional,java.io,java.lang,java.lang.annotation,ja
+ va.lang.invoke,java.lang.module,java.lang.ref,java.lang.reflect,java.
+ math,java.net,java.nio,java.nio.charset,java.nio.file,java.nio.file.a
+ ttribute,java.security,java.sql,java.text,java.time,java.time.chrono,
+ java.time.format,java.time.temporal,java.util,java.util.concurrent,ja
+ va.util.concurrent.atomic,java.util.concurrent.locks,java.util.functi
+ on,java.util.jar,java.util.logging,java.util.regex,java.util.spi,java
+ .util.stream,javax.xml.namespace,javax.xml.parsers,javax.xml.stream,j
+ avax.xml.transform,javax.xml.transform.dom,javax.xml.transform.stax,o
+ rg.opentest4j.reporting.tooling.spi.htmlreport,org.w3c.dom
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=17))"
+

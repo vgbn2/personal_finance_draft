@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # 1. Elon Musk Tweet Tracker
+  elon-tracker:
+    build: .
+    container_name: polymarket-elon
+    command: python elon_musk/notebooks/elonmusk_tweet.py --no-browser
+    volumes:
+      - .:/app
+    tty: true
+    stdin_open: true
+
+  # 2. Bitcoin Price Tracker
+  btc-tracker:
+    build: .
+    container_name: polymarket-btc
+    command: python crypto_price/btc_tracker.py
+    volumes:
+      - .:/app
+    tty: true
+
+  # 3. Fed Rates Tracker
+  fed-tracker:
+    build: .
+    container_name: polymarket-fed
+    command: python fed_rates/fed_tracker.py
+    volumes:
+      - .:/app
+    tty: true
+
+  # 4. Hurricane Markets Tracker
+  hurricane-tracker:
+    build: .
+    container_name: polymarket-hurricane
+    command: python hurricane_markets/hurricane_tracker.py
+    volumes:
+      - .:/app
+    tty: true
+
+  # 5. Internet Outages Tracker
+  outage-tracker:
+    build: .
+    container_name: polymarket-outage
+    command: python internet_outages/outage_tracker.py
+    volumes:
+      - .:/app
+    tty: true
+
+  # 6. SpaceX Launches Tracker
+  spacex-tracker:
+    build: .
+    container_name: polymarket-spacex
+    command: python spacex_launches/spacex_tracker.py
+    volumes:
+      - .:/app
+    tty: true
+
+  # 7. Polymarket Simulator (Web Dashboard)
+  polym-sim:
+    build: .
+    container_name: polymarket-sim
+    # Mount as /app/polymarket so 'from polymarket.x' works
+    working_dir: /app/polymarket/polym_sim
+    command: python run_app.py
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app/polymarket
+    tty: true
+    environment:
+      - PYTHONPATH=/app
+
+  # 8. Market Making Bot
+  # Note: This might fail if 'poly_data' is missing.
+  bot:
+    build: .
+    container_name: polymarket-bot
+    command: python market_making_bot.py
+    volumes:
+      - .:/app
+    tty: true
+    environment:
+      - PYTHONUNBUFFERED=1

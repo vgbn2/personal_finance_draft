@@ -1,0 +1,101 @@
+Daily task
+-morning(){
+
+
+for(2<=day<=7){
+    wakes up at 6:30
+    if(temp<10c){
+     wakes up at 7:30   
+    }
+}
+if(day==sunday){
+    wakes up at 8:30
+}
+func have_breakfast(,distance,money,time,price){
+    if(distance<1km){
+        walk
+    }
+    else{
+        use vehicle
+    }
+    if(money>=price){
+        have breakfast
+    }
+    else{
+        buy breakfast
+        while(money<price){
+            getmoney+=10Kvnd
+        }
+        have breakfast
+    }
+}
+func breakfast_menu(feeling,money,time,price){
+    if(feeling==thirsty){
+        have Phở
+    }
+    else{
+        have bread
+    }
+    while(money<price){
+        getmoney+=10Kvnd
+    }
+    have breakfast
+}
+func brushes_teeth(dis,money,time,price){
+    if(dis<1km){
+        walk
+    }
+    else{
+        use vehicle
+    }
+
+    if(toothpaste==false){
+        buy toothpaste
+    if(money>=price){
+        buy toothpaste
+    }
+    else{
+        buy toothpaste
+        while(money<price){
+            getmoney+=10Kvnd
+        }
+        toothpaste
+    }
+    }
+    else{
+        brushes teeth
+    }
+}
+func job_talkytimes(accounts,time,qty){
+    def session=6 accounts
+    1 session=20+-5 minutes
+    workflow(){
+        1 workflow=3 accounts
+        def tab1=grok,tab2=gemini,tab3=talkytimes,tab4=docs,tab5=ggsheet,tab6=ggsheet;
+        for(int i=0;i<5;i++){
+            select sentence from tab4=>copy && delete from tab4
+            paste sentence to tab2
+            select credentials from tab 6=>login tab3
+            select profile:
+            if(profile picture==true){
+                select profile
+            }   
+            else{
+                no select profile
+            }
+            for(i=1;i<=8;i++){
+                if(i==1&&i==2){
+                    screenshot picture,sends to tabi
+                }
+                if(i==3&&i==4){
+                    select text, send to tabi
+                }
+                if(i>4){
+                    select text from tab 2;paste to tab i 
+                }
+            }
+        }
+        clock out 
+    }
+}
+}

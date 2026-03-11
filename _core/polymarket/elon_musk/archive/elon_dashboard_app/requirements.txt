@@ -1,0 +1,6 @@
+streamlit
+pandas
+selenium
+scipy
+requests
+numpy

@@ -1,0 +1,24 @@
+# Core Data Science
+pandas
+numpy
+scipy
+
+# Web & API
+requests
+fastapi
+uvicorn
+python-multipart
+streamlit
+
+# Database
+sqlalchemy
+
+# Browser Automation
+selenium
+webdriver-manager
+
+# Utilities
+python-dotenv
+colorama
+termcolor
+wcwidth

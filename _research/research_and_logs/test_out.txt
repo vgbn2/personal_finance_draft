@@ -1,0 +1,27 @@
+[OK] Virtual environment activated.
+===================================================
+  Polymarket Simulator — Starting Unified Engine
+===================================================
+
+[INFO] Cleaning up background processes...
+SUCCESS: The process "python.exe" with PID 35512 has been terminated.
+SUCCESS: The process "python.exe" with PID 27684 has been terminated.
+SUCCESS: The process "python.exe" with PID 15824 has been terminated.
+
+[INFO] Opening Web Dashboard...
+[INFO] Launching unified engine with all strategies...
+INFO:     Started server process [28312]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+
+[WEB] Starting Web Dashboard at http://localhost:8000
+
+[DEBUG] Engine run loop entered
+INFO:     127.0.0.1:60322 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63528 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:49310 - "GET / HTTP/1.1" 200 OK
+
+Press any key to continue . . . 

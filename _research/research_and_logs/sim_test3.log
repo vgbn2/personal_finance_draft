@@ -1,0 +1,45 @@
+2026-02-22 03:38:23,824 | INFO    | polymarket_sim.core.database | \U0001f4e6 Database connected: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\data\trades.db
+2026-02-22 03:38:23,824 | INFO    | polymarket_sim.data.ws_binance | Started Binance WS client (BTC/USDT).
+2026-02-22 03:38:23,825 | INFO    | polymarket_sim.engine     | ============================================================
+2026-02-22 03:38:23,825 | INFO    | polymarket_sim.engine     |   POLYMARKET PAPER TRADING SIMULATOR
+2026-02-22 03:38:23,826 | INFO    | polymarket_sim.engine     | ============================================================
+2026-02-22 03:38:23,834 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #95 started: Strategy Alpha � Mean Reversion ($1000.00)
+2026-02-22 03:38:23,835 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #96 started: Strategy Beta � Momentum Crossover ($1000.00)
+2026-02-22 03:38:23,836 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #97 started: Multi-Signal Paper Bot ($1000.00)
+2026-02-22 03:38:23,837 | INFO    | polymarket_sim.engine     | Bankroll: $1000.00 per strategy
+2026-02-22 03:38:23,837 | INFO    | polymarket_sim.engine     | \U0001f50d Discovering current active market...
+2026-02-22 03:38:23,839 | INFO    | polymarket_sim.core.dns   | \U0001f30d Initialized Custom DNS Resolver using ['1.1.1.1', '1.0.0.1', '8.8.8.8']
+2026-02-22 03:38:23,839 | INFO    | polymarket_sim.data.rest_client | Fetching market: https://gamma-api.polymarket.com/events/slug/btc-updown-15m-1771705800?tid=1771706303839
+2026-02-22 03:38:24,361 | INFO    | polymarket_sim.engine     | \U0001f4ca Market: Bitcoin Up or Down - February 21, 3:30PM-3:45PM ET
+2026-02-22 03:38:24,362 | INFO    | polymarket_sim.engine     |   Token 0 (Up): 98562062728630958253...
+2026-02-22 03:38:24,363 | INFO    | polymarket_sim.engine     |   Token 1 (Down): 10049561168982480215...
+2026-02-22 03:38:24,363 | INFO    | polymarket_sim.engine     | Market mode: continuous
+2026-02-22 03:38:24,364 | INFO    | polymarket_sim.data.ws_client | Connecting to wss://ws-subscriptions-clob.polymarket.com/ws/market ...
+2026-02-22 03:38:24,382 | INFO    | polymarket_sim.data.ws_client | Connecting with Origin/UA fixed headers...
+2026-02-22 03:38:25,024 | INFO    | polymarket_sim.data.ws_client | WebSocket connected.
+2026-02-22 03:38:25,025 | INFO    | polymarket_sim.engine     | \U0001f7e2 WebSocket connected. Listening for orderbook updates...
+2026-02-22 03:38:25,025 | INFO    | polymarket_sim.data.ws_client | Subscribing to 2 tokens: ['98562062728630958253744465720490596726465188815710791862817086460380870372707', '100495611689824802158006286575939631553672552874078264637590022079584016047681']
+2026-02-22 03:38:25,278 | INFO    | polymarket_sim.analysis.strategy_grader | \U0001f4ca Strategy Grade: ? (22.8/100) � INSUFFICIENT DATA
+2026-02-22 03:38:25,278 | INFO    | polymarket_sim.engine     | \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+2026-02-22 03:38:25,278 | INFO    | polymarket_sim.engine     | \U0001f4ca Tick #2 | Strategy Alpha � Mean Reversion | Bankroll: $1000.00
+2026-02-22 03:38:25,278 | INFO    | polymarket_sim.engine     |    PnL: $0.00 (realized: $0.00, unrealized: $0.00)
+2026-02-22 03:38:25,279 | INFO    | polymarket_sim.engine     |    Trades: 0 | Win Rate: 0.0% | Sharpe: 0.00 | EV: $0.00
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.engine     |    StDev: 0.0000 | Max Drawdown: 0.0%
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.engine     |    Grade: ? (INSUFFICIENT DATA) � Only 0/100 trades completed. Need more data before grade is 
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.engine     | \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.analysis.strategy_grader | \U0001f4ca Strategy Grade: ? (22.8/100) � INSUFFICIENT DATA
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.engine     | \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.engine     | \U0001f4ca Tick #2 | Strategy Beta � Momentum Crossover | Bankroll: $1000.00
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.engine     |    PnL: $0.00 (realized: $0.00, unrealized: $0.00)
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.engine     |    Trades: 0 | Win Rate: 0.0% | Sharpe: 0.00 | EV: $0.00
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.engine     |    StDev: 0.0000 | Max Drawdown: 0.0%
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.engine     |    Grade: ? (INSUFFICIENT DATA) � Only 0/100 trades completed. Need more data before grade is 
+2026-02-22 03:38:25,280 | INFO    | polymarket_sim.engine     | \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+2026-02-22 03:38:25,281 | INFO    | polymarket_sim.analysis.strategy_grader | \U0001f4ca Strategy Grade: ? (22.8/100) � INSUFFICIENT DATA
+2026-02-22 03:38:25,281 | INFO    | polymarket_sim.engine     | \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+2026-02-22 03:38:25,281 | INFO    | polymarket_sim.engine     | \U0001f4ca Tick #2 | Multi-Signal Paper Bot | Bankroll: $1000.00
+2026-02-22 03:38:25,281 | INFO    | polymarket_sim.engine     |    PnL: $0.00 (realized: $0.00, unrealized: $0.00)
+2026-02-22 03:38:25,281 | INFO    | polymarket_sim.engine     |    Trades: 0 | Win Rate: 0.0% | Sharpe: 0.00 | EV: $0.00
+2026-02-22 03:38:25,281 | INFO    | polymarket_sim.engine     |    StDev: 0.0000 | Max Drawdown: 0.0%
+2026-02-22 03:38:25,283 | INFO    | polymarket_sim.engine     |    Grade: ? (INSUFFICIENT DATA) � Only 0/100 trades completed. Need more data before grade is 
+2026-02-22 03:38:25,283 | INFO    | polymarket_sim.engine     | \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500

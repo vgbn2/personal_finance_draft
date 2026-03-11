@@ -1,0 +1,18 @@
+{
+  "topic_name": "Introduction to CSS Styling Methods",
+  "category": "Front-End",
+  "core_concept": "This document explains three common methods for styling HTML elements: internal CSS, external CSS, and inline CSS. Internal CSS involves embedding CSS rules within `<style>` tags in the `<head>` of an HTML document, while external CSS uses separate `.css` files linked to the HTML. Inline CSS applies styles directly to individual HTML elements using the `style` attribute, though this approach is generally discouraged due to potential maintenance issues.",
+  "technical_breakdown": [
+    "CSS styling is used to control the visual presentation of HTML documents.",
+    "There are three primary methods for applying CSS: internal, external, and inline.",
+    "Each method has its advantages and disadvantages regarding maintainability, scalability, and potential for conflicts."
+  ],
+  "snippet": "```html\n<head>\n  <style>\n    div { \n      color: white; \n      background-color: black; \n    } \n\n    p { \n      color: red; \n    } \n  </style>\n</head>\n```",
+  "cross_references": [
+    "CSS Selectors",
+    "Cascading Style Sheets (CSS)",
+    "HTTP Requests (for external CSS)"
+  ],
+  "source_file": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\llm_feeder\\data\\odin\\foundations\\intro_to_css.md",
+  "chunk_index": 4
+}

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: polymarket-config
+  namespace: polymarket-staging
+data:
+  # Application settings
+  PYTHONUNBUFFERED: "1"
+  CHROME_BIN: "/usr/bin/chromium"
+  CHROMEDRIVER_PATH: "/usr/bin/chromedriver"
+  
+  # Logging
+  LOG_LEVEL: "INFO"
+  
+  # Bot settings
+  MIN_MERGE_SIZE: "1.0"
+  TRADE_INTERVAL: "30"
+  
+  # Market parameters
+  MAX_POSITION_SIZE: "250"
+  MIN_ORDER_SIZE: "1"

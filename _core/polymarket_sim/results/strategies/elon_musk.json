@@ -1,0 +1,19 @@
+{
+    "base_daily_rate": 55.0,
+    "dispersion_param": 0.1,
+    "edge_threshold": 12.0,
+    "kelly_fraction": 0.25,
+    "starting_count": 150,
+    "max_pos_usd": 300.0,
+    "trade_cooldown": 60.0,
+    "ranges": {
+        "elon-musk-tweets-jan-20-27": [
+            150,
+            250
+        ],
+        "0x685e1ded29": [
+            200,
+            300
+        ]
+    }
+}

@@ -1,0 +1,120 @@
+groups:
+  - name: polymarket_alerts
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          rate(polymarket_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: bot
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # Service down
+      - alert: ServiceDown
+        expr: up{job=~"polymarket-.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 2 minutes"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (container_memory_usage_bytes{name=~"polymarket-.*"} / container_spec_memory_limit_bytes{name=~"polymarket-.*"}) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: resources
+        annotations:
+          summary: "High memory usage on {{ $labels.name }}"
+          description: "Memory usage is {{ $value | humanizePercentage }} (threshold: 90%)"
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: |
+          rate(container_cpu_usage_seconds_total{name=~"polymarket-.*"}[5m]) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: resources
+        annotations:
+          summary: "High CPU usage on {{ $labels.name }}"
+          description: "CPU usage is {{ $value | humanizePercentage }} (threshold: 90%)"
+
+      # Large position size
+      - alert: LargePositionSize
+        expr: polymarket_position_size > 200
+        for: 5m
+        labels:
+          severity: warning
+          component: trading
+        annotations:
+          summary: "Large position detected"
+          description: "Position size is {{ $value }} on {{ $labels.market }} (threshold: 200)"
+
+      # High PnL drawdown
+      - alert: HighDrawdown
+        expr: polymarket_pnl_percent < -10
+        for: 5m
+        labels:
+          severity: critical
+          component: trading
+        annotations:
+          summary: "High drawdown detected"
+          description: "PnL is {{ $value }}% on {{ $labels.market }} (threshold: -10%)"
+
+      # Container restart
+      - alert: ContainerRestarting
+        expr: |
+          rate(kube_pod_container_status_restarts_total{namespace=~"polymarket-.*"}[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Container {{ $labels.container }} is restarting"
+          description: "Container has restarted {{ $value }} times in the last 15 minutes"
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value | humanizePercentage }} available (threshold: 10%)"
+
+      # Failed trades
+      - alert: HighFailedTradesRate
+        expr: |
+          rate(polymarket_failed_trades_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: trading
+        annotations:
+          summary: "High failed trades rate"
+          description: "Failed trades rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      # API latency high
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95, rate(polymarket_api_latency_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile latency is {{ $value }}s (threshold: 5s)"

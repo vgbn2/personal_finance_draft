@@ -1,0 +1,106 @@
+# Docker compose file for netprobe
+# https://github.com/plaintextpackets/netprobe_lite
+name: netprobe
+
+networks:
+  netprobe-net:
+
+
+services:
+  redis:
+    restart: always
+    container_name: netprobe-redis
+    image: "redis:latest"
+    volumes:
+      - ./config/redis/redis.conf:/etc/redis/redis.conf
+    networks:
+      - netprobe-net
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  netprobe:
+    restart: always
+    container_name: netprobe-probe
+    image: "plaintextpackets/netprobe:latest"
+    pull_policy: always
+    volumes:
+      - .:/netprobe_lite
+    environment:
+      MODULE: "NETPROBE"
+    networks:
+      - netprobe-net
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  speedtest:
+    restart: always
+    container_name: netprobe-speedtest
+    image: "plaintextpackets/netprobe:latest"
+    pull_policy: always
+    volumes:
+      - .:/netprobe_lite
+    environment:
+      MODULE: "SPEEDTEST"
+    networks:
+      - netprobe-net
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  presentation:
+    restart: always
+    container_name: netprobe-presentation
+    image: "plaintextpackets/netprobe:latest"
+    pull_policy: always
+    volumes:
+      - .:/netprobe_lite
+    environment:
+      MODULE: "PRESENTATION"
+    networks:
+      - netprobe-net
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  prometheus:
+    restart: always
+    container_name: netprobe-prometheus
+    image: "prom/prometheus"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus # Persistent local storage for Prometheus data
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d' # Adjust retention to 30 days
+
+    networks:
+      - netprobe-net
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  grafana:
+    restart: always
+    image: grafana/grafana-enterprise
+    container_name: netprobe-grafana
+    volumes:
+      - ./config/grafana/datasources/automatic.yml:/etc/grafana/provisioning/datasources/automatic.yml
+      - ./config/grafana/dashboards/main.yml:/etc/grafana/provisioning/dashboards/main.yml
+      - ./config/grafana/dashboards/netprobe.json:/var/lib/grafana/dashboards/netprobe.json
+      - grafana_data:/var/lib/grafana
+    ports:
+      - '3001:3000'
+    networks:
+      - netprobe-net
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+

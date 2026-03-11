@@ -1,0 +1,793 @@
+{
+    "extVersion": "1.30.01",
+    "name": "work",
+    "icon": "riGlobalLine",
+    "table": [],
+    "version": "1.30.01",
+    "drawflow": {
+        "nodes": [
+            {
+                "id": "cDoVopq2qp_KqCCWrpj1x",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 128,
+                    "y": 75.5
+                },
+                "data": {
+                    "disableBlock": false,
+                    "description": "run\n",
+                    "type": "manual",
+                    "interval": 60,
+                    "delay": 5,
+                    "date": "",
+                    "time": "00:00",
+                    "url": "",
+                    "shortcut": "",
+                    "activeInInput": false,
+                    "isUrlRegex": false,
+                    "days": [],
+                    "contextMenuName": "",
+                    "contextTypes": [],
+                    "parameters": [],
+                    "preferParamsInTab": true,
+                    "observeElement": {
+                        "selector": "",
+                        "baseSelector": "",
+                        "matchPattern": "",
+                        "targetOptions": {
+                            "subtree": false,
+                            "childList": true,
+                            "attributes": false,
+                            "attributeFilter": [],
+                            "characterData": false
+                        },
+                        "baseElOptions": {
+                            "subtree": false,
+                            "childList": true,
+                            "attributes": false,
+                            "attributeFilter": [],
+                            "characterData": false
+                        }
+                    },
+                    "settings": {
+                        "blockTimeout": 200,
+                        "debugMode": false
+                    },
+                    "triggers": [
+                        {
+                            "data": {
+                                "activeInInput": false,
+                                "contextMenuName": "",
+                                "contextTypes": [],
+                                "date": "",
+                                "days": [],
+                                "delay": 5,
+                                "description": "",
+                                "disableBlock": false,
+                                "interval": 60,
+                                "isUrlRegex": false,
+                                "observeElement": {
+                                    "baseElOptions": {
+                                        "attributeFilter": [],
+                                        "attributes": false,
+                                        "characterData": false,
+                                        "childList": true,
+                                        "subtree": false
+                                    },
+                                    "baseSelector": "",
+                                    "matchPattern": "",
+                                    "selector": "",
+                                    "targetOptions": {
+                                        "attributeFilter": [],
+                                        "attributes": false,
+                                        "characterData": false,
+                                        "childList": true,
+                                        "subtree": false
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "data": {
+                                            "masks": [
+                                                {
+                                                    "isRegex": false,
+                                                    "lazy": false,
+                                                    "mask": ""
+                                                }
+                                            ],
+                                            "required": false,
+                                            "unmaskValue": false,
+                                            "useMask": false
+                                        },
+                                        "defaultValue": "",
+                                        "description": "",
+                                        "name": "param",
+                                        "placeholder": "Text",
+                                        "type": "string"
+                                    }
+                                ],
+                                "preferParamsInTab": true,
+                                "shortcut": "",
+                                "time": "00:00",
+                                "type": "manual",
+                                "url": ""
+                            },
+                            "id": "7VAau",
+                            "type": "manual"
+                        }
+                    ]
+                },
+                "label": "trigger"
+            },
+            {
+                "id": "qchdu2b",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 458.66666666666674,
+                    "y": -231.16666666666669
+                },
+                "data": {
+                    "InsertDataOption": "INSERT_ROWS",
+                    "assignVariable": false,
+                    "customData": "",
+                    "dataColumn": "",
+                    "dataFrom": "data-columns",
+                    "description": "",
+                    "disableBlock": false,
+                    "firstRowAsKey": true,
+                    "keysAsFirstRow": true,
+                    "range": "accounts-F!A:B",
+                    "refKey": "login",
+                    "saveData": true,
+                    "spreadsheetId": "1G6q-TBUJd9a6d1bXlny6VP4zlQZHK26pHbi21qjyKOc",
+                    "type": "get",
+                    "valueInputOption": "RAW",
+                    "variableName": ""
+                },
+                "label": "google-sheets"
+            },
+            {
+                "id": "7vsxvjv",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 822.3120226030372,
+                    "y": -235.22189613463146
+                },
+                "data": {
+                    "description": "accounts",
+                    "disableBlock": false,
+                    "elementSelector": "",
+                    "fromNumber": 1,
+                    "loopData": "[]",
+                    "loopId": "accounts",
+                    "loopThrough": "google-sheets",
+                    "maxLoop": 0,
+                    "referenceKey": "login",
+                    "resumeLastWorkflow": false,
+                    "reverseLoop": false,
+                    "startIndex": 0,
+                    "toNumber": 10,
+                    "variableName": "",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000
+                },
+                "label": "loop-data"
+            },
+            {
+                "id": "wfxeci8",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1912,
+                    "y": 75.5
+                },
+                "data": {
+                    "assignVariable": false,
+                    "clearValue": true,
+                    "dataColumn": "",
+                    "delay": "1",
+                    "description": "password",
+                    "disableBlock": false,
+                    "events": [],
+                    "findBy": "cssSelector",
+                    "getValue": false,
+                    "markEl": false,
+                    "multiple": false,
+                    "optionPosition": "1",
+                    "saveData": false,
+                    "selectOptionBy": "value",
+                    "selected": true,
+                    "selector": ".ui-input:nth-child(2) .ui-input_control",
+                    "type": "text-field",
+                    "value": "{{ loopData.accounts.password }}",
+                    "variableName": "",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000
+                },
+                "label": "forms"
+            },
+            {
+                "id": "qhvqhce",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1328,
+                    "y": 75.5
+                },
+                "data": {
+                    "assignVariable": false,
+                    "clearValue": true,
+                    "dataColumn": "",
+                    "delay": "1",
+                    "description": "email",
+                    "disableBlock": false,
+                    "events": [],
+                    "findBy": "cssSelector",
+                    "getValue": false,
+                    "markEl": false,
+                    "multiple": false,
+                    "optionPosition": "1",
+                    "saveData": false,
+                    "selectOptionBy": "custom-position",
+                    "selected": true,
+                    "selector": ".ui-input:nth-child(1) .ui-input_control",
+                    "type": "text-field",
+                    "value": "{{ loopData.accounts.name }}",
+                    "variableName": "",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000
+                },
+                "label": "forms"
+            },
+            {
+                "id": "95mgg0i",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 2496,
+                    "y": 75.5
+                },
+                "data": {
+                    "description": "",
+                    "disableBlock": false,
+                    "findBy": "cssSelector",
+                    "markEl": false,
+                    "multiple": false,
+                    "selector": "button[data-test-id=\"cmp:ui-button click:resolve-action Log in\"]",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000
+                },
+                "label": "event-click"
+            },
+            {
+                "id": "1pw0jvj",
+                "type": "BlockDelay",
+                "initialized": false,
+                "position": {
+                    "x": 1620,
+                    "y": 75.5
+                },
+                "data": {
+                    "disableBlock": false,
+                    "settings": {
+                        "blockTimeout": 0,
+                        "debugMode": false
+                    },
+                    "time": "5000"
+                },
+                "label": "delay"
+            },
+            {
+                "id": "bi9ikd1",
+                "type": "BlockDelay",
+                "initialized": false,
+                "position": {
+                    "x": 2204,
+                    "y": 75.5
+                },
+                "data": {
+                    "disableBlock": false,
+                    "settings": {
+                        "blockTimeout": 0,
+                        "debugMode": false
+                    },
+                    "time": 500
+                },
+                "label": "delay"
+            },
+            {
+                "id": "sgzsdjx",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 128,
+                    "y": 197.5
+                },
+                "data": {
+                    "active": true,
+                    "customUserAgent": false,
+                    "description": "",
+                    "disableBlock": false,
+                    "inGroup": false,
+                    "tabZoom": 1,
+                    "updatePrevTab": false,
+                    "url": "https://talkytimes.com/auth/login",
+                    "userAgent": "",
+                    "waitTabLoaded": false
+                },
+                "label": "new-tab"
+            },
+            {
+                "id": "k86b40y",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1036,
+                    "y": 75.5
+                },
+                "data": {
+                    "disableBlock": false
+                },
+                "label": "active-tab"
+            },
+            {
+                "id": "bijl7lb",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 3177.0000000000005,
+                    "y": 82.16666666666666
+                },
+                "data": {
+                    "disableBlock": false,
+                    "description": "",
+                    "findBy": "xpath",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000,
+                    "selector": "//*[@id=\"popper_vwqofk72_oljnd4\"]/div[2]/div[1]/div[1]/div/ul/li[4]/span/div/div/div",
+                    "markEl": false,
+                    "multiple": false
+                },
+                "label": "event-click"
+            },
+            {
+                "id": "e27dh3g",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 2788,
+                    "y": 75.5
+                },
+                "data": {
+                    "disableBlock": false,
+                    "description": "",
+                    "findBy": "cssSelector",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000,
+                    "selector": ".user__btn .nav-tab-desktop-content",
+                    "markEl": false,
+                    "multiple": false
+                },
+                "label": "event-click"
+            },
+            {
+                "id": "4lmiqkm",
+                "type": "BlockGroup",
+                "initialized": false,
+                "position": {
+                    "x": 128,
+                    "y": 360
+                },
+                "data": {
+                    "blocks": [],
+                    "disableBlock": false,
+                    "name": "filling"
+                },
+                "label": "blocks-group"
+            },
+            {
+                "id": "masabbn",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1242.9999803153048,
+                    "y": -288.6509840507994
+                },
+                "data": {
+                    "assignVariable": false,
+                    "captureActiveTab": true,
+                    "dataColumn": "",
+                    "description": "",
+                    "disableBlock": false,
+                    "ext": "png",
+                    "fileName": "",
+                    "fullPage": false,
+                    "quality": 100,
+                    "saveToColumn": true,
+                    "saveToComputer": false,
+                    "selector": "",
+                    "type": "page",
+                    "variableName": ""
+                },
+                "label": "take-screenshot"
+            },
+            {
+                "id": "rcp87kh",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1151.6858114045815,
+                    "y": 568.6726243732849
+                },
+                "data": {
+                    "description": "",
+                    "disableBlock": false,
+                    "findBy": "cssSelector",
+                    "markEl": false,
+                    "multiple": false,
+                    "selector": "",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000
+                },
+                "label": "hover-element"
+            },
+            {
+                "id": "4d8w111",
+                "type": "BlockBasicWithFallback",
+                "initialized": false,
+                "position": {
+                    "x": 819.3133604588119,
+                    "y": 328.43475262983264
+                },
+                "data": {
+                    "conditions": [
+                        {
+                            "conditions": [
+                                {
+                                    "id": "G1vA2FizElyv9FHTOjuYL",
+                                    "items": [
+                                        {
+                                            "category": "value",
+                                            "data": {
+                                                "value": ""
+                                            },
+                                            "id": "IjwbUbtVMH05rnQTI2CYZ",
+                                            "type": "value"
+                                        },
+                                        {
+                                            "category": "compare",
+                                            "id": "qtgR8yvHP9NZUSeBlYfue",
+                                            "type": "eq"
+                                        },
+                                        {
+                                            "category": "value",
+                                            "data": {
+                                                "value": ""
+                                            },
+                                            "id": "rUguSiS8ex8IQoOXEjN4A",
+                                            "type": "value"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "id": "j2koqWuHh_WQXr5O_jWj5"
+                        }
+                    ],
+                    "description": "",
+                    "disableBlock": false
+                },
+                "label": "while-loop"
+            },
+            {
+                "id": "rxpllq6",
+                "type": "BlockRepeatTask",
+                "initialized": false,
+                "position": {
+                    "x": 3731.5584031231992,
+                    "y": -24.939588139092905
+                },
+                "data": {
+                    "disableBlock": false,
+                    "onError": {
+                        "dataToInsert": [],
+                        "enable": false,
+                        "errorMessage": "",
+                        "insertData": false,
+                        "retry": false,
+                        "retryInterval": 2,
+                        "retryTimes": 1,
+                        "toDo": "error"
+                    },
+                    "repeatFor": "40",
+                    "settings": {
+                        "blockTimeout": 0,
+                        "debugMode": false
+                    }
+                },
+                "label": "repeat-task"
+            },
+            {
+                "id": "4h8346h",
+                "type": "BlockConditions",
+                "initialized": false,
+                "position": {
+                    "x": 3273.6943978896447,
+                    "y": 297.62503006571234
+                },
+                "data": {
+                    "conditions": [],
+                    "description": "",
+                    "disableBlock": false,
+                    "retryConditions": false,
+                    "retryCount": 10,
+                    "retryTimeout": 1000
+                },
+                "label": "conditions"
+            },
+            {
+                "id": "8ackwyn",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1566.0795595134332,
+                    "y": 465.16535300766077
+                },
+                "data": {
+                    "assignVariable": true,
+                    "copySelectedText": false,
+                    "dataColumn": "",
+                    "dataToCopy": "",
+                    "description": "",
+                    "disableBlock": false,
+                    "saveData": true,
+                    "type": "get",
+                    "variableName": ""
+                },
+                "label": "clipboard"
+            },
+            {
+                "id": "bbajnr0",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1922.7462261801006,
+                    "y": 461.8320196743275
+                },
+                "data": {
+                    "assignVariable": false,
+                    "copySelectedText": false,
+                    "dataColumn": "",
+                    "dataToCopy": "",
+                    "description": "",
+                    "disableBlock": false,
+                    "saveData": true,
+                    "type": "get",
+                    "variableName": ""
+                },
+                "label": "clipboard"
+            }
+        ],
+        "edges": [
+            {
+                "id": "vueflow__edge-qchdu2bqchdu2b-output-1-7vsxvjv7vsxvjv-input-1",
+                "type": "custom",
+                "source": "qchdu2b",
+                "target": "7vsxvjv",
+                "sourceHandle": "qchdu2b-output-1",
+                "targetHandle": "7vsxvjv-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 674.6668850568614,
+                "sourceY": -195.16665073978618,
+                "targetX": 798.3120364847839,
+                "targetY": -197.22188457678834
+            },
+            {
+                "id": "vueflow__edge-cDoVopq2qp_KqCCWrpj1xcDoVopq2qp_KqCCWrpj1x-output-1-qchdu2bqchdu2b-input-1",
+                "type": "custom",
+                "source": "cDoVopq2qp_KqCCWrpj1x",
+                "target": "qchdu2b",
+                "sourceHandle": "cDoVopq2qp_KqCCWrpj1x-output-1",
+                "targetHandle": "qchdu2b-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 344.00025693689656,
+                "sourceY": 111.50001592688051,
+                "targetX": 434.66671909511535,
+                "targetY": -195.16665073978618
+            },
+            {
+                "id": "vueflow__edge-qhvqhceqhvqhce-output-1-wfxeci8wfxeci8-input-1",
+                "type": "custom",
+                "source": "qhvqhce",
+                "target": "1pw0jvj",
+                "sourceHandle": "qhvqhce-output-1",
+                "targetHandle": "1pw0jvj-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 1544.0002569368967,
+                "sourceY": 111.50001592688051,
+                "targetX": 1595.9998982416407,
+                "targetY": 133.91669626231047
+            },
+            {
+                "id": "vueflow__edge-wfxeci8wfxeci8-output-1-95mgg0i95mgg0i-input-1",
+                "type": "custom",
+                "source": "wfxeci8",
+                "target": "bi9ikd1",
+                "sourceHandle": "wfxeci8-output-1",
+                "targetHandle": "bi9ikd1-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 2128.000025656685,
+                "sourceY": 111.50001592688051,
+                "targetX": 2179.999898241641,
+                "targetY": 133.91669626231047
+            },
+            {
+                "id": "vueflow__edge-1pw0jvj1pw0jvj-output-1-wfxeci8wfxeci8-input-1",
+                "type": "custom",
+                "source": "1pw0jvj",
+                "target": "wfxeci8",
+                "sourceHandle": "1pw0jvj-output-1",
+                "targetHandle": "wfxeci8-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 1836.0001412967906,
+                "sourceY": 133.91669626231047,
+                "targetX": 1887.9998982416407,
+                "targetY": 111.50001592688051
+            },
+            {
+                "id": "vueflow__edge-bi9ikd1bi9ikd1-output-1-95mgg0i95mgg0i-input-1",
+                "type": "custom",
+                "source": "bi9ikd1",
+                "target": "95mgg0i",
+                "sourceHandle": "bi9ikd1-output-1",
+                "targetHandle": "95mgg0i-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 2420.0002569368967,
+                "sourceY": 133.91669626231047,
+                "targetX": 2472.0000524284487,
+                "targetY": 111.50001592688051
+            },
+            {
+                "id": "vueflow__edge-7vsxvjv7vsxvjv-output-1-k86b40yk86b40y-input-1",
+                "type": "custom",
+                "source": "7vsxvjv",
+                "target": "k86b40y",
+                "sourceHandle": "7vsxvjv-output-1",
+                "targetHandle": "k86b40y-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 1038.3122795399338,
+                "sourceY": -197.22188457678834,
+                "targetX": 1012.0000042450712,
+                "targetY": 111.50001592688051
+            },
+            {
+                "id": "vueflow__edge-k86b40yk86b40y-output-1-qhvqhceqhvqhce-input-1",
+                "type": "custom",
+                "source": "k86b40y",
+                "target": "qhvqhce",
+                "sourceHandle": "k86b40y-output-1",
+                "targetHandle": "qhvqhce-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 1252.0002376635457,
+                "sourceY": 111.50001592688051,
+                "targetX": 1304.0000042450713,
+                "targetY": 111.50001592688051
+            },
+            {
+                "id": "vueflow__edge-95mgg0i95mgg0i-output-1-e27dh3ge27dh3g-input-1",
+                "type": "custom",
+                "source": "95mgg0i",
+                "target": "e27dh3g",
+                "sourceHandle": "95mgg0i-output-1",
+                "targetHandle": "e27dh3g-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 2712.000179843493,
+                "sourceY": 111.50001592688051,
+                "targetX": 2763.999898241641,
+                "targetY": 111.50001592688051
+            },
+            {
+                "id": "vueflow__edge-bijl7lbbijl7lb-output-1-rxpllq6rxpllq6-input-1",
+                "type": "custom",
+                "source": "bijl7lb",
+                "target": "rxpllq6",
+                "sourceHandle": "bijl7lb-output-1",
+                "targetHandle": "rxpllq6-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 3393.0001798434932,
+                "sourceY": 118.16675968695107,
+                "targetX": 3707.55830136484,
+                "targetY": 45.477159002397165
+            },
+            {
+                "id": "vueflow__edge-e27dh3ge27dh3g-output-1-bijl7lbbijl7lb-input-1",
+                "type": "custom",
+                "source": "e27dh3g",
+                "target": "bijl7lb",
+                "sourceHandle": "e27dh3g-output-1",
+                "targetHandle": "bijl7lb-input-1",
+                "updatable": true,
+                "selectable": true,
+                "data": {},
+                "label": "",
+                "markerEnd": "arrowclosed",
+                "sourceX": 3004.000179843493,
+                "sourceY": 111.50001592688051,
+                "targetX": 3152.9998982416414,
+                "targetY": 118.16675968695107
+            }
+        ],
+        "position": [
+            -890.0479715781403,
+            257.99830594009825
+        ],
+        "zoom": 0.39585237323186845,
+        "viewport": {
+            "x": -890.0479715781403,
+            "y": 257.99830594009825,
+            "zoom": 0.39585237323186845
+        }
+    },
+    "settings": {
+        "aipowerToken": "",
+        "blockDelay": 0,
+        "debugMode": true,
+        "defaultColumnName": "column",
+        "execContext": "popup",
+        "executedBlockOnWeb": true,
+        "inputAutocomplete": true,
+        "insertDefaultColumn": false,
+        "notification": true,
+        "onError": "stop-workflow",
+        "publicId": "",
+        "restartTimes": 3,
+        "reuseLastState": true,
+        "saveLog": true,
+        "tabLoadTimeout": 30000
+    },
+    "globalData": "{\n\t\"key\": \"value\"\n}",
+    "description": "talkytimes\n",
+    "includedWorkflows": {}
+}
