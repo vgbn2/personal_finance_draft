@@ -1,0 +1,22 @@
+# This directory stores position risk information for each market
+
+# Files are created automatically by the market_making_bot.py
+# Format: <condition_id>.json
+
+# Example content:
+# {
+#   "time": "2026-01-29 12:00:00",
+#   "question": "Will BTC reach $100k in January 2026?",
+#   "msg": "Selling 50 because spread is 0.02 and pnl is -5.5",
+#   "sleep_till": "2026-01-29 14:00:00"
+# }
+
+# This directory should be:
+# - Persistent in production (use PersistentVolume)
+# - Backed up regularly
+# - Monitored for anomalies
+# - Cleaned up periodically (old files)
+
+# Do not commit position files to git (they may contain sensitive trading data)
+*.json
+!.gitkeep

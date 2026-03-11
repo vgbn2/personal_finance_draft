@@ -1,0 +1,20 @@
+{
+    "manifest_version": 3,
+    "name": "Terminus Daily Journal",
+    "version": "1.0",
+    "description": "Daily journal and schedule tracker for Terminus and University.",
+    "action": {
+        "default_popup": "dashboard.html",
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    },
+    "permissions": [
+        "storage"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ]
+}

@@ -1,0 +1,34 @@
+=== Diagnostic Run: 2026-02-19 22:16:54 ===
+
+✅ Import polymarket_sim.core.config
+✅ Import polymarket_sim.core.dns
+✅ Import polymarket_sim.core.logger
+✅ Import polymarket_sim.core.database
+✅ Import polymarket_sim.data.rest_client
+✅ Import polymarket_sim.data.ws_client
+✅ Import polymarket_sim.market.matching_engine
+✅ Import polymarket_sim.analysis.portfolio
+✅ Import polymarket_sim.analysis.strategy_grader
+✅ Import polymarket_sim.engine
+✅ MatchingEngine instantiation OK
+✅ DNS resolve gamma-api.polymarket.com -> 172.64.153.51
+✅ DNS resolve ws-subscriptions-clob -> 104.18.34.205
+✅ REST API search returned 1 result(s)
+❌ WebSocket Handshake: server rejected WebSocket connection: HTTP 403
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\code_testing\run_all_tests.py", line 104, in test_ws_handshake
+    async with websockets.connect(
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\.venv\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\.venv\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\.venv\Lib\site-packages\websockets\asyncio\client.py", line 115, in handshake
+    raise self.protocol.handshake_exc
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\.venv\Lib\site-packages\websockets\client.py", line 327, in parse
+    self.process_response(response)
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\.venv\Lib\site-packages\websockets\client.py", line 144, in process_response
+    raise InvalidStatus(response)
+websockets.exceptions.InvalidStatus: server rejected WebSocket connection: HTTP 403
+
+✅ Database in-memory session #40 created

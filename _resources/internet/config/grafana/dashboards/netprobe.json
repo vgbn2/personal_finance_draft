@@ -1,0 +1,1945 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "datasource",
+                    "uid": "grafana"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "target": {
+                    "limit": 100,
+                    "matchAny": false,
+                    "tags": [],
+                    "type": "dashboard"
+                },
+                "type": "dashboard"
+            }
+        ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "max": 100,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "dark-red",
+                                "value": null
+                            },
+                            {
+                                "color": "dark-red",
+                                "value": 10
+                            },
+                            {
+                                "color": "semi-dark-red",
+                                "value": 20
+                            },
+                            {
+                                "color": "light-red",
+                                "value": 30
+                            },
+                            {
+                                "color": "super-light-red",
+                                "value": 40
+                            },
+                            {
+                                "color": "super-light-yellow",
+                                "value": 50
+                            },
+                            {
+                                "color": "light-yellow",
+                                "value": 60
+                            },
+                            {
+                                "color": "semi-dark-green",
+                                "value": 70
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 0,
+                "y": 0
+            },
+            "id": 35,
+            "options": {
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto",
+                "text": {}
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Health_Stats * 100",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Internet Quality Score (Avg)",
+            "type": "gauge"
+        },
+        {
+            "alert": {
+                "alertRuleTags": {},
+                "conditions": [
+                    {
+                        "evaluator": {
+                            "params": [
+                                90
+                            ],
+                            "type": "lt"
+                        },
+                        "operator": {
+                            "type": "and"
+                        },
+                        "query": {
+                            "params": [
+                                "A",
+                                "1m",
+                                "now"
+                            ]
+                        },
+                        "reducer": {
+                            "params": [],
+                            "type": "avg"
+                        },
+                        "type": "query"
+                    }
+                ],
+                "executionErrorState": "alerting",
+                "for": "5m",
+                "frequency": "1m",
+                "handler": 1,
+                "message": "Error - internet score has dropped below 90%",
+                "name": "Current Internet Score alert",
+                "noDataState": "no_data",
+                "notifications": []
+            },
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 3,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "dark-red",
+                                "value": 10
+                            },
+                            {
+                                "color": "semi-dark-red",
+                                "value": 20
+                            },
+                            {
+                                "color": "light-red",
+                                "value": 30
+                            },
+                            {
+                                "color": "super-light-red",
+                                "value": 40
+                            },
+                            {
+                                "color": "super-light-yellow",
+                                "value": 50
+                            },
+                            {
+                                "color": "light-yellow",
+                                "value": 60
+                            },
+                            {
+                                "color": "semi-dark-green",
+                                "value": 70
+                            },
+                            {
+                                "color": "dark-green",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 14,
+                "x": 5,
+                "y": 0
+            },
+            "id": 37,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": false
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "8.2.3",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Health_Stats * 100",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "thresholds": [
+                {
+                    "colorMode": "critical",
+                    "op": "lt",
+                    "value": 90,
+                    "visible": true
+                }
+            ],
+            "transparent": true,
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "alexanderzobnin-zabbix-datasource",
+                "uid": "zeKjzJc7z"
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 19,
+                "y": 0
+            },
+            "id": 39,
+            "options": {
+                "code": {
+                    "language": "plaintext",
+                    "showLineNumbers": false,
+                    "showMiniMap": false
+                },
+                "content": "## Internet Quality Score\nThe Internet Quality Score is a metric designed to provide you an idea of your internet quality at any given time. The metric ranges from 0 and 100, and is comprised of four metrics (with associated weights):\n\n- Packet loss (60%)\n- Latency (15%)\n- Jitter (20%)\n- DNS Response Times (5%)\n",
+                "mode": "markdown"
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "application": {
+                        "filter": ""
+                    },
+                    "datasource": {
+                        "type": "alexanderzobnin-zabbix-datasource",
+                        "uid": "zeKjzJc7z"
+                    },
+                    "functions": [],
+                    "group": {
+                        "filter": ""
+                    },
+                    "host": {
+                        "filter": ""
+                    },
+                    "item": {
+                        "filter": ""
+                    },
+                    "itemTag": {
+                        "filter": ""
+                    },
+                    "options": {
+                        "disableDataAlignment": false,
+                        "showDisabledItems": false,
+                        "skipEmptyValues": false,
+                        "useZabbixValueMapping": false
+                    },
+                    "proxy": {
+                        "filter": ""
+                    },
+                    "queryType": "0",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "table": {
+                        "skipEmptyValues": false
+                    },
+                    "tags": {
+                        "filter": ""
+                    },
+                    "trigger": {
+                        "filter": ""
+                    },
+                    "triggers": {
+                        "acknowledged": 2,
+                        "count": true,
+                        "minSeverity": 3
+                    }
+                }
+            ],
+            "transparent": true,
+            "type": "text"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "description": "",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "decimals": 2,
+                    "mappings": [],
+                    "max": 5,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 3
+                            },
+                            {
+                                "color": "semi-dark-red",
+                                "value": 4
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 0,
+                "y": 9
+            },
+            "id": 25,
+            "options": {
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto",
+                "text": {}
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Network_Stats{type=\"loss\", target=\"all\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Packet Loss (Avg)",
+            "type": "gauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "description": "",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "axisSoftMax": 6,
+                        "axisSoftMin": 0,
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 3,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "area"
+                        }
+                    },
+                    "mappings": [],
+                    "max": 100,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "transparent",
+                                "value": null
+                            },
+                            {
+                                "color": "semi-dark-red",
+                                "value": 4
+                            },
+                            {
+                                "color": "dark-red",
+                                "value": 5
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "A"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "B"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 1
+                            },
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        10
+                                    ],
+                                    "fill": "dash"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "__systemRef": "hideSeriesFrom",
+                        "matcher": {
+                            "id": "byNames",
+                            "options": {
+                                "mode": "exclude",
+                                "names": [
+                                    "average loss"
+                                ],
+                                "prefix": "All except:",
+                                "readOnly": true
+                            }
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.hideFrom",
+                                "value": {
+                                    "legend": false,
+                                    "tooltip": false,
+                                    "viz": true
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 14,
+                "x": 5,
+                "y": 9
+            },
+            "id": 36,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "8.2.3",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Network_Stats{type=\"loss\", target=\"all\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "average loss",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Network_Stats{type=\"loss\", target!=\"all\"}",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "{{ target }}",
+                    "range": true,
+                    "refId": "B",
+                    "useBackend": false
+                }
+            ],
+            "transparent": true,
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "alexanderzobnin-zabbix-datasource",
+                "uid": "zeKjzJc7z"
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 19,
+                "y": 9
+            },
+            "id": 40,
+            "options": {
+                "code": {
+                    "language": "plaintext",
+                    "showLineNumbers": false,
+                    "showMiniMap": false
+                },
+                "content": "## Packet Loss\nThe percentage of packets (messages) that are lost when being transmitted over your internet connection. Packet loss should be 0% consistently with occasional spikes during peak internet use. Persistent packet loss could indicate:\n\n- Faulty internal hardware (including cabling or modem)\n- Faulty ISP hardware\n- ISP capacity problems",
+                "mode": "markdown"
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "application": {
+                        "filter": ""
+                    },
+                    "datasource": {
+                        "type": "alexanderzobnin-zabbix-datasource",
+                        "uid": "zeKjzJc7z"
+                    },
+                    "functions": [],
+                    "group": {
+                        "filter": ""
+                    },
+                    "host": {
+                        "filter": ""
+                    },
+                    "item": {
+                        "filter": ""
+                    },
+                    "itemTag": {
+                        "filter": ""
+                    },
+                    "options": {
+                        "disableDataAlignment": false,
+                        "showDisabledItems": false,
+                        "skipEmptyValues": false,
+                        "useZabbixValueMapping": false
+                    },
+                    "proxy": {
+                        "filter": ""
+                    },
+                    "queryType": "0",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "table": {
+                        "skipEmptyValues": false
+                    },
+                    "tags": {
+                        "filter": ""
+                    },
+                    "trigger": {
+                        "filter": ""
+                    },
+                    "triggers": {
+                        "acknowledged": 2,
+                        "count": true,
+                        "minSeverity": 3
+                    }
+                }
+            ],
+            "transparent": true,
+            "type": "text"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "max": 120,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            },
+                            {
+                                "color": "semi-dark-red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "unit": "ms"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 0,
+                "y": 18
+            },
+            "id": 23,
+            "options": {
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto"
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Network_Stats{type=\"latency\", target=\"all\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Latency to Anchors (Avg)",
+            "type": "gauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "description": "",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "dark-blue",
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "axisSoftMax": 120,
+                        "axisSoftMin": 0,
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 3,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "area"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "transparent",
+                                "value": null
+                            },
+                            {
+                                "color": "semi-dark-red",
+                                "value": 80
+                            },
+                            {
+                                "color": "dark-red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "unit": "ms"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "B"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        10
+                                    ],
+                                    "fill": "dash"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "A"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-blue",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "__systemRef": "hideSeriesFrom",
+                        "matcher": {
+                            "id": "byNames",
+                            "options": {
+                                "mode": "exclude",
+                                "names": [
+                                    "average latency"
+                                ],
+                                "prefix": "All except:",
+                                "readOnly": true
+                            }
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.hideFrom",
+                                "value": {
+                                    "legend": false,
+                                    "tooltip": false,
+                                    "viz": true
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 14,
+                "x": 5,
+                "y": 18
+            },
+            "id": 2,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Network_Stats{type=\"latency\", target=\"all\"}",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "average latency",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "code",
+                    "exemplar": false,
+                    "expr": "Network_Stats{type=\"latency\", target!=\"all\"}",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "{{ target }}",
+                    "range": true,
+                    "refId": "B",
+                    "useBackend": false
+                }
+            ],
+            "transparent": true,
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "alexanderzobnin-zabbix-datasource",
+                "uid": "zeKjzJc7z"
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 19,
+                "y": 18
+            },
+            "id": 41,
+            "options": {
+                "code": {
+                    "language": "plaintext",
+                    "showLineNumbers": false,
+                    "showMiniMap": false
+                },
+                "content": "## Latency to Anchors\nThe time it takes to get packets to and from various well-known websites. Higher latency means slower performance, even on a high speed connection. If your latency is consistently high, there could be several causes including:\n\n- Faulty internal hardware (including cabling or modem)\n- Faulty ISP hardware\n- ISP routing issues",
+                "mode": "markdown"
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "application": {
+                        "filter": ""
+                    },
+                    "datasource": {
+                        "type": "alexanderzobnin-zabbix-datasource",
+                        "uid": "zeKjzJc7z"
+                    },
+                    "functions": [],
+                    "group": {
+                        "filter": ""
+                    },
+                    "host": {
+                        "filter": ""
+                    },
+                    "item": {
+                        "filter": ""
+                    },
+                    "itemTag": {
+                        "filter": ""
+                    },
+                    "options": {
+                        "disableDataAlignment": false,
+                        "showDisabledItems": false,
+                        "skipEmptyValues": false,
+                        "useZabbixValueMapping": false
+                    },
+                    "proxy": {
+                        "filter": ""
+                    },
+                    "queryType": "0",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "table": {
+                        "skipEmptyValues": false
+                    },
+                    "tags": {
+                        "filter": ""
+                    },
+                    "trigger": {
+                        "filter": ""
+                    },
+                    "triggers": {
+                        "acknowledged": 2,
+                        "count": true,
+                        "minSeverity": 3
+                    }
+                }
+            ],
+            "transparent": true,
+            "type": "text"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "max": 40,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 25
+                            },
+                            {
+                                "color": "semi-dark-red",
+                                "value": 30
+                            }
+                        ]
+                    },
+                    "unit": "ms"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 0,
+                "y": 27
+            },
+            "id": 28,
+            "options": {
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto",
+                "text": {}
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Network_Stats{type=\"jitter\", target=\"all\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Jitter (Avg)",
+            "type": "gauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "description": "",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "purple",
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "axisSoftMax": 30,
+                        "axisSoftMin": 0,
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 3,
+                        "pointSize": 7,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "area"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "transparent",
+                                "value": null
+                            },
+                            {
+                                "color": "semi-dark-red",
+                                "value": 20
+                            },
+                            {
+                                "color": "dark-red",
+                                "value": 25
+                            }
+                        ]
+                    },
+                    "unit": "ms"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "A"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "purple",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "B"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.lineStyle",
+                                "value": {
+                                    "dash": [
+                                        10,
+                                        10
+                                    ],
+                                    "fill": "dash"
+                                }
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    {
+                        "__systemRef": "hideSeriesFrom",
+                        "matcher": {
+                            "id": "byNames",
+                            "options": {
+                                "mode": "exclude",
+                                "names": [
+                                    "average jitter"
+                                ],
+                                "prefix": "All except:",
+                                "readOnly": true
+                            }
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.hideFrom",
+                                "value": {
+                                    "legend": false,
+                                    "tooltip": false,
+                                    "viz": true
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 14,
+                "x": 5,
+                "y": 27
+            },
+            "id": 27,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Network_Stats{type=\"jitter\", target=\"all\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "average jitter",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Network_Stats{type=\"jitter\", target!=\"all\"}",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "{{target}}",
+                    "range": true,
+                    "refId": "B",
+                    "useBackend": false
+                }
+            ],
+            "transparent": true,
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "alexanderzobnin-zabbix-datasource",
+                "uid": "zeKjzJc7z"
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 19,
+                "y": 27
+            },
+            "id": 42,
+            "options": {
+                "code": {
+                    "language": "plaintext",
+                    "showLineNumbers": false,
+                    "showMiniMap": false
+                },
+                "content": "## Jitter\nJitter measures how frequently your latency is changing. High jitter in the red zone can have a negative impact on real-time streaming applications, such as gaming and voice calls. Consistently high jitter could be caused due to:\n- Faulty internal hardware (including cabling or modem)\n- Faulty ISP hardware\n- Overuse of current internet capacity (hitting the limit)",
+                "mode": "markdown"
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "application": {
+                        "filter": ""
+                    },
+                    "datasource": {
+                        "type": "alexanderzobnin-zabbix-datasource",
+                        "uid": "zeKjzJc7z"
+                    },
+                    "functions": [],
+                    "group": {
+                        "filter": ""
+                    },
+                    "host": {
+                        "filter": ""
+                    },
+                    "item": {
+                        "filter": ""
+                    },
+                    "itemTag": {
+                        "filter": ""
+                    },
+                    "options": {
+                        "disableDataAlignment": false,
+                        "showDisabledItems": false,
+                        "skipEmptyValues": false,
+                        "useZabbixValueMapping": false
+                    },
+                    "proxy": {
+                        "filter": ""
+                    },
+                    "queryType": "0",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "table": {
+                        "skipEmptyValues": false
+                    },
+                    "tags": {
+                        "filter": ""
+                    },
+                    "trigger": {
+                        "filter": ""
+                    },
+                    "triggers": {
+                        "acknowledged": 2,
+                        "count": true,
+                        "minSeverity": 3
+                    }
+                }
+            ],
+            "transparent": true,
+            "type": "text"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "description": "",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "decimals": 0,
+                    "mappings": [],
+                    "max": 120,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            },
+                            {
+                                "color": "semi-dark-red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "unit": "ms"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 0,
+                "y": 36
+            },
+            "id": 33,
+            "options": {
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto"
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "DNS_Stats{server=\"My_DNS_Server\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "DNS Response Time (My DNS Server)",
+            "type": "gauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 3,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "ms"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 14,
+                "x": 5,
+                "y": 36
+            },
+            "id": 32,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "code",
+                    "expr": "DNS_Stats",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "{{server}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "transparent": true,
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "alexanderzobnin-zabbix-datasource",
+                "uid": "zeKjzJc7z"
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 19,
+                "y": 36
+            },
+            "id": 43,
+            "options": {
+                "code": {
+                    "language": "plaintext",
+                    "showLineNumbers": false,
+                    "showMiniMap": false
+                },
+                "content": "## DNS Response Time\nDNS is the protocol used to turn website names into IP addresses. Almost every request to the internet starts with a DNS request, so having fast DNS is vital. This graph compares the response time of your currently configured DNS server against several popular public DNS servers. Slow DNS response could be caused by:\n\n- Poor DNS server performance\n- High latency",
+                "mode": "markdown"
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "application": {
+                        "filter": ""
+                    },
+                    "datasource": {
+                        "type": "alexanderzobnin-zabbix-datasource",
+                        "uid": "zeKjzJc7z"
+                    },
+                    "functions": [],
+                    "group": {
+                        "filter": ""
+                    },
+                    "host": {
+                        "filter": ""
+                    },
+                    "item": {
+                        "filter": ""
+                    },
+                    "itemTag": {
+                        "filter": ""
+                    },
+                    "options": {
+                        "disableDataAlignment": false,
+                        "showDisabledItems": false,
+                        "skipEmptyValues": false,
+                        "useZabbixValueMapping": false
+                    },
+                    "proxy": {
+                        "filter": ""
+                    },
+                    "queryType": "0",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "table": {
+                        "skipEmptyValues": false
+                    },
+                    "tags": {
+                        "filter": ""
+                    },
+                    "trigger": {
+                        "filter": ""
+                    },
+                    "triggers": {
+                        "acknowledged": 2,
+                        "count": true,
+                        "minSeverity": 3
+                    }
+                }
+            ],
+            "transparent": true,
+            "type": "text"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "description": "",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "decimals": 0,
+                    "mappings": [],
+                    "max": 120,
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            }
+                        ]
+                    },
+                    "unit": "bps"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 0,
+                "y": 45
+            },
+            "id": 44,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "text": {},
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Speed_Stats{direction=\"download\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "Download",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "Speed_Stats{direction=\"upload\"}",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "Upload",
+                    "range": true,
+                    "refId": "B",
+                    "useBackend": false
+                }
+            ],
+            "title": "Internet Bandwidth (from speedtest.net)",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 7,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 3,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "bps"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 14,
+                "x": 5,
+                "y": 45
+            },
+            "id": 45,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "code",
+                    "expr": "Speed_Stats",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "{{direction}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "transparent": true,
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "alexanderzobnin-zabbix-datasource",
+                "uid": "zeKjzJc7z"
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 5,
+                "x": 19,
+                "y": 45
+            },
+            "id": 46,
+            "options": {
+                "code": {
+                    "language": "plaintext",
+                    "showLineNumbers": false,
+                    "showMiniMap": false
+                },
+                "content": "## Internet Bandwidth\nIf you don't see any data you need to explicitly enable the test in the .env file configuration.\n\nBandwidth is the maximum amount of data that can travel across your internet connection at a given time. It's measured in megabits per second (Mbps), similar to how water flow is measured. Less bandwidth than what you paid for can be caused by:\n\n- Other clients down-/uploading data\n- Faulty internal hardware (including cabling or modem)\n- Faulty ISP hardware\n- ISP capacity problems",
+                "mode": "markdown"
+            },
+            "pluginVersion": "10.2.2",
+            "targets": [
+                {
+                    "application": {
+                        "filter": ""
+                    },
+                    "datasource": {
+                        "type": "alexanderzobnin-zabbix-datasource",
+                        "uid": "zeKjzJc7z"
+                    },
+                    "functions": [],
+                    "group": {
+                        "filter": ""
+                    },
+                    "host": {
+                        "filter": ""
+                    },
+                    "item": {
+                        "filter": ""
+                    },
+                    "itemTag": {
+                        "filter": ""
+                    },
+                    "options": {
+                        "disableDataAlignment": false,
+                        "showDisabledItems": false,
+                        "skipEmptyValues": false,
+                        "useZabbixValueMapping": false
+                    },
+                    "proxy": {
+                        "filter": ""
+                    },
+                    "queryType": "0",
+                    "refId": "A",
+                    "resultFormat": "time_series",
+                    "table": {
+                        "skipEmptyValues": false
+                    },
+                    "tags": {
+                        "filter": ""
+                    },
+                    "trigger": {
+                        "filter": ""
+                    },
+                    "triggers": {
+                        "acknowledged": 2,
+                        "count": true,
+                        "minSeverity": 3
+                    }
+                }
+            ],
+            "transparent": true,
+            "type": "text"
+        }
+    ],
+    "refresh": false,
+    "schemaVersion": 38,
+    "tags": [],
+    "templating": {
+        "list": []
+    },
+    "time": {
+        "from": "now-3h",
+        "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Netprobe",
+    "uid": "app",
+    "version": 1,
+    "weekStart": ""
+}

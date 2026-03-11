@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: polymarket-bot
+  namespace: polymarket-staging
+  labels:
+    app: polymarket-bot
+    component: trading-bot
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: polymarket-bot
+      component: trading-bot
+  template:
+    metadata:
+      labels:
+        app: polymarket-bot
+        component: trading-bot
+    spec:
+      containers:
+      - name: bot
+        image: ghcr.io/your-org/polymarket:latest
+        imagePullPolicy: Always
+        command: ["python", "market_making_bot.py"]
+        
+        envFrom:
+        - configMapRef:
+            name: polymarket-config
+        - secretRef:
+            name: polymarket-secrets
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import sys; sys.exit(0)"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import sys; sys.exit(0)"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        volumeMounts:
+        - name: positions-data
+          mountPath: /app/positions
+        
+      volumes:
+      - name: positions-data
+        persistentVolumeClaim:
+          claimName: polymarket-bot-pvc
+      
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: polymarket-bot-pvc
+  namespace: polymarket-staging
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard

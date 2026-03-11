@@ -1,0 +1,21 @@
+{
+  "topic_name": "Flexbox Growing And Shrinking",
+  "category": "Front-End",
+  "core_concept": "This lesson explains how the `flex` shorthand property controls the sizing behavior of flex items within a flex container. The `flex` shorthand represents `flex-grow`, `flex-shrink`, and `flex-basis`, allowing developers to define how items expand or contract to fill available space. Understanding these properties is crucial for creating responsive and adaptable layouts using Flexbox.",
+  "technical_breakdown": [
+    "The `flex` shorthand simplifies the use of `flex-grow`, `flex-shrink`, and `flex-basis` properties.",
+    "`flex-grow` determines how much an item expands relative to other items in the container.",
+    "`flex-shrink` controls how much an item can contract if the container is too small, and `flex-basis` sets the initial size of the item before growth or shrinkage is applied."
+  ],
+  "snippet": "```html\n<style>\n.flex-container { /* This is a container */\n  display: flex; /* Enable flexbox */\n}\n.flex-item { /* This is a flex item */\n  flex: 1; /* Equivalent to flex-grow: 1, flex-shrink: 1, flex-basis: 0 */\n}\n</style>\n```",
+  "cross_references": [
+    "Flexbox Container",
+    "Flexbox Item",
+    "CSS `flex-grow`",
+    "CSS `flex-shrink`",
+    "CSS `flex-basis`",
+    "Shorthand properties on MDN"
+  ],
+  "source_file": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\llm_feeder\\data\\odin\\foundations\\flexbox_growing_and_shrinking.md",
+  "chunk_index": 0
+}

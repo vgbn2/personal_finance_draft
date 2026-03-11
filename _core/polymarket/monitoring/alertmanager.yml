@@ -1,0 +1,78 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: 'YOUR_SLACK_WEBHOOK_URL'
+
+# The root route
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+  
+  routes:
+    # Critical alerts go to Slack and PagerDuty
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      continue: true
+    
+    # Warning alerts go to Slack only
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+    
+    # Trading alerts
+    - match:
+        component: trading
+      receiver: 'trading-alerts'
+
+# Alert receivers
+receivers:
+  - name: 'default'
+    slack_configs:
+      - channel: '#polymarket-alerts'
+        title: 'Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+  - name: 'critical-alerts'
+    slack_configs:
+      - channel: '#polymarket-critical'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+    
+    # PagerDuty integration (optional)
+    # pagerduty_configs:
+    #   - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+
+  - name: 'warning-alerts'
+    slack_configs:
+      - channel: '#polymarket-warnings'
+        title: '⚠️ Warning: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+
+  - name: 'trading-alerts'
+    slack_configs:
+      - channel: '#polymarket-trading'
+        title: '💰 Trading Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+    
+    # Email notification (optional)
+    # email_configs:
+    #   - to: 'trading-team@example.com'
+    #     from: 'alertmanager@example.com'
+    #     smarthost: 'smtp.gmail.com:587'
+    #     auth_username: 'alertmanager@example.com'
+    #     auth_password: 'YOUR_EMAIL_PASSWORD'
+
+# Inhibition rules
+inhibit_rules:
+  # Inhibit warning if critical alert is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster', 'service']

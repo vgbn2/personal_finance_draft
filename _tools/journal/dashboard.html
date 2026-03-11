@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily — Trần Đức Anh</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+</head>
+
+<body>
+
+  <div class="header">
+    <div class="date-block">
+      <div class="day-name" id="dayName">—</div>
+      <div class="date-str" id="dateStr">—</div>
+      <div class="streak-info" id="streakInfo"></div>
+    </div>
+    <div class="header-right">
+      <div class="semester-badge">HK2 · 2025–2026</div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section">
+    <div class="progress-row">
+      <div class="progress-label">TERMINUS PHASE 11</div>
+      <div class="progress-nums"><span id="doneCount">0</span>/16 tasks</div>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Classes -->
+  <div class="section">
+    <div class="section-label">Classes</div>
+    <div id="classesList"></div>
+  </div>
+
+  <!-- Terminus Tasks -->
+  <div class="section">
+    <div class="section-label">Terminus <span class="phase-tag">P11</span></div>
+    <div id="terminusList"></div>
+  </div>
+
+  <!-- THCS2 -->
+  <div id="thcs2Section" class="section" style="display:none">
+    <div class="section-label">THCS2 Practice</div>
+    <div id="thcs2Item"></div>
+  </div>
+
+  <!-- Notes -->
+  <div class="section">
+    <div class="section-label">Notes</div>
+    <div class="note-area">
+      <div class="note-label">Stuck on</div>
+      <textarea class="note-input" id="stuckInput" placeholder="what blocked you today..." rows="2"></textarea>
+    </div>
+    <div class="note-area">
+      <div class="note-label">Note</div>
+      <textarea class="note-input" id="noteInput" placeholder="anything worth remembering..." rows="2"></textarea>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button class="btn" onclick="toggleTomorrow()">TOMORROW →</button>
+    <button class="btn btn-primary" onclick="endDay()">END DAY ✓</button>
+  </div>
+
+  <!-- Tomorrow Preview -->
+  <div class="tomorrow-preview" id="tomorrowPreview">
+    <div class="tomorrow-title">Tomorrow</div>
+    <div id="tomorrowList"></div>
+  </div>
+
+  <div class="toast" id="toast">Day logged ✓</div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
+}
+
+list.innerHTML = html;
+preview.classList.add('show');
+}
+
+function showToast(msg) {
+const t = document.getElementById('toast');
+t.textContent = msg;
+t.classList.add('show');
+setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Auto-save notes on input
+document.getElementById('stuckInput').addEventListener('input', function() {
+state[`stuck_${todayKey()}`] = this.value;
+saveState(state);
+});
+
+document.getElementById('noteInput').addEventListener('input', function() {
+state[`note_${todayKey()}`] = this.value;
+saveState(state);
+});
+
+// ── INIT ──────────────────────────────────────────────────────
+render();
+</script>
+</body>
+
+</html>

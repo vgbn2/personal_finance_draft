@@ -1,0 +1,4 @@
+2026-02-13 17:37:49,634 [discord.client] WARNING: PyNaCl is not installed, voice will NOT be supported
+2026-02-13 17:37:49,635 [sentinel] ERROR: ❌ DISCORD_BOT_TOKEN missing in .env
+2026-02-13 17:39:57,631 [discord.client] WARNING: PyNaCl is not installed, voice will NOT be supported
+2026-02-13 17:39:57,631 [sentinel] ERROR: ❌ DISCORD_BOT_TOKEN missing in .env

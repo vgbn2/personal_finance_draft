@@ -1,25 +1,40 @@
 ## Current Position
-- **Phase**: Optimization & Precision
-- **Task**: Server Startup Stability & Bug Fixing
-- **Status**: Paused at 2026-03-11T02:20:00+07:00
+- **Phase**: Infrastructure Stabilization & Storage Optimization
+- **Task**: Verifying Docker Desktop Start and PATH Propagation
+- **Status**: Paused at 2026-03-12 01:00
 
 ## Last Session Summary
-Diagnosed and fixed server startup websocket and typescript crash bugs.
-- Fixed WebSocket `.close()` exception triggering during CONNECTING state across OKX, Bybit, Deribit, Hyperliquid, Gate.io, and Bitget adapters by swapping to `.terminate()`.
-- Addressed NaN timestamp database crash in `AggregatedCandleEngine.persist()` by pre-validating upstream candles.
-- Resolved a silent backend crash where `startup.ts` attempted to seed `ohlcvEngine` and `ictEngine` with outdated/incorrect parameters. 
+Resolved critical "Docker gone" issue after a failed update by:
+1.  **Cleaning Disk Space**: Freed ~7.5GB (from 3GB to 10.7GB) by clearing `Temp` folders.
+2.  **Clean Reinstall**: Uninstalled corrupted Docker and performed a fresh install of the latest stable version.
+3.  **PATH Configuration**: Updated both Machine and User PATH variables to include Docker binaries.
+4.  **Verification**: Confirmed `docker --version` (v29.2.1) works in current session.
 
 ## In-Progress Work
-- Ready to restart backend and frontend. Waiting for Docker to start!
+- Files modified: `task.md`, `implementation_plan.md`, `walkthrough.md`.
+- Tests status: `docker` command works in PowerShell; `start.bat` (CMD) still fails due to stale session context.
 
 ## Blockers
-- **Docker Dependency**: Redis and TimescaleDB containers need to be started for the backend server to launch successfully. `start.bat` will succeed once Docker Desktop is running.
+- **Stale Shell Context**: The user's active terminal/CMD session has not picked up the newly added PATH entries. A full terminal or VS Code restart is required.
+- **Ethernet Confusion**: User suspected network issues, but it's confirmed to be a local PATH/session refresh issue.
 
 ## Context Dump
-- `ws.close()` reliably throws Unhandled Promise Rejections if called while WebSocket `readyState` is 0 (CONNECTING). Always use `.terminate()` for forced teardowns during reconnect loops.
-- `tsx` compiler swallowed errors silently without any output when we had TS interface mismatches for `ohlcvEngine.seed()` in `startup.ts`.
+### Decisions Made
+- **Full Uninstall/Reinstall**: Chosen over repair because the update failure was severe and corrupted the installation binaries.
+- **Manual TEMP cleanup**: Chosen to immediately free enough space (7GB+) for the 600MB installer to run safely.
+
+### Approaches Tried
+- **Manual Repair**: Attempted to start Docker from its absolute path and clean log files. Outcome: Failed, binaries were likely incomplete.
+- **Clean Install**: Full cleanup + fresh installer. Outcome: Success, binaries restored and running.
+
+### Current Hypothesis
+Docker IS working and running in the background. The `start.bat` script's `where docker` check only fails because the CMD environment hasn't refreshed its environment variables.
+
+### Files of Interest
+- `start.bat`: Contains the Docker detection logic on line 41.
+- `docker-compose.yml`: Infrastructure definition.
 
 ## Next Steps
-1. Boot up Docker Desktop and verify Timescale/Redis containers.
-2. Run `start.bat` to launch the backend and frontend.
-3. Validate frontend data feed via WebSocket connection.
+1.  **Verify Restart**: Confirm with user that they have restarted VS Code/Terminal.
+2.  **Run start.bat**: Once restarted, `start.bat` should successfully detect Docker and start containers.
+3.  **Monitor Storage**: Ensure C: drive doesn't dip below 2GB again to avoid future update failures.

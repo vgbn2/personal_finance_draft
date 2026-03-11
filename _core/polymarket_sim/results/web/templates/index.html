@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polymarket Simulator Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --panel-bg: #161b22;
+            --border-color: #30363d;
+            --text-color: #c9d1d9;
+            --text-muted: #8b949e;
+            --buy-color: #2ea043;
+            --sell-color: #f85149;
+            --accent: #58a6ff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        /* Layout Grid */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--accent);
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 24px;
+            font-weight: 500;
+        }
+
+        .header-stats span {
+            color: var(--text-muted);
+        }
+
+        .main-content {
+            display: flex;
+            gap: 16px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .orderbooks-col {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .sidebar-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            margin: 0 0 12px 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        /* Typography */
+        .color-buy {
+            color: var(--buy-color);
+        }
+
+        .color-sell {
+            color: var(--sell-color);
+        }
+
+        .color-muted {
+            color: var(--text-muted);
+        }
+
+        /* Orderbook */
+        .orderbook-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 0.9rem;
+        }
+
+        .orderbook-table th,
+        .orderbook-table td {
+            padding: 4px 8px;
+            text-align: right;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .orderbook-table th {
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
+        .ask-row {
+            background: linear-gradient(to right, rgba(248, 81, 73, 0.15) var(--depth, 0%), transparent var(--depth, 0%));
+        }
+
+        .bid-row {
+            background: linear-gradient(to right, rgba(46, 160, 67, 0.15) var(--depth, 0%), transparent var(--depth, 0%));
+        }
+
+        .orderbook-table td:first-child {
+            text-align: left;
+        }
+
+        .ob-mid {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Logs */
+        .log-container {
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 0.85rem;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /* Dynamic Items */
+        .strategy-block {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .strategy-block:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        /* Tabs */
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .tab-button {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .tab-button:hover {
+            border-color: var(--accent);
+            color: var(--text-color);
+        }
+
+        .tab-button.active {
+            background-color: var(--accent);
+            color: var(--bg-color);
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1> Polymarket Simulator</h1>
+        <div class="header-stats">
+            <div><span class="color-muted">Current Market:</span> <b id="ui-current-market">All</b></div>
+            <div><span class="color-muted">Time:</span> <b id="ui-time">00:00</b></div>
+            <div><span class="color-muted">Tick:</span> <b id="ui-tick">0</b></div>
+        </div>
+    </div>
+
+    <div class="tab-bar" id="market-tabs">
+        <!-- Tabs injected here -->
+    </div>
+
+    <div class="main-content">
+        <!-- Center Column: Orderbook -->
+        <div class="orderbooks-col">
+            <div class="panel" style="flex: 1;">
+                <h2 class="panel-header">Active Orderbook</h2>
+                <div id="orderbook-container">
+                    <div style="color: var(--text-muted); text-align: center; padding: 20px;">Waiting for data...</div>
+                </div>
+            </div>
+
+            <div class="panel" style="height: 250px;">
+                <h2 class="panel-header">Activity Log</h2>
+                <div class="log-container" id="activity-log">
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Portfolios & PnL -->
+        <div class="sidebar-col">
+            <div class="panel" style="flex: 1;">
+                <h2 class="panel-header">Strategies & Portfolios</h2>
+                <div id="portfolio-container">
+                    <div style="color: var(--text-muted); text-align: center; padding: 20px;">Waiting for data...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMarketId = null;
+        const ws = new WebSocket(`ws://${window.location.host}/ws`);
+
+        ws.onopen = function () {
+            console.log("Connected to simulator WebSocket");
+        };
+
+        ws.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            updateUI(data);
+        };
+
+        ws.onclose = function () {
+            console.log("Disconnected from WebSocket");
+            document.getElementById('ui-current-market').innerHTML = "<span class='color-sell'>Disconnected</span>";
+        };
+
+        function switchMarket(marketId) {
+            currentMarketId = marketId;
+            // No need to wait for next tick, trigger a re-render if we had the last data
+            // but for simplicity we'll just wait for the next WS message.
+        }
+
+        function updateUI(data) {
+            // Header
+            document.getElementById('ui-time').innerText = data.time;
+            document.getElementById('ui-tick').innerText = data.tick_count;
+
+            const marketIds = Object.keys(data.markets);
+            if (!currentMarketId && marketIds.length > 0) {
+                currentMarketId = marketIds[0];
+            }
+
+            // Render Tabs
+            const tabBar = document.getElementById('market-tabs');
+            let tabsHtml = '';
+            marketIds.forEach(mid => {
+                const isActive = mid === currentMarketId;
+                tabsHtml += `<button class="tab-button ${isActive ? 'active' : ''}" onclick="switchMarket('${mid}')">${mid}</button>`;
+            });
+            tabBar.innerHTML = tabsHtml;
+
+            const market = data.markets[currentMarketId];
+            if (!market) {
+                document.getElementById('ui-current-market').innerText = "Select a market";
+                return;
+            }
+
+            document.getElementById('ui-current-market').innerText = currentMarketId;
+
+            // Render Orderbooks (Filtered by Market's token_ids)
+            const obContainer = document.getElementById('orderbook-container');
+            let obHtml = '';
+
+            market.token_ids.forEach(assetId => {
+                const book = data.orderbooks[assetId];
+                if (!book) return;
+
+                // Calculate cumulative sizes
+                let maxCumSize = 0;
+                let cumSize = 0;
+                const asksWithCum = [...book.asks].map(a => {
+                    cumSize += a.size;
+                    return { ...a, cumSize };
+                });
+                if (asksWithCum.length > 0) maxCumSize = Math.max(maxCumSize, asksWithCum[asksWithCum.length - 1].cumSize);
+
+                cumSize = 0;
+                const bidsWithCum = book.bids.map(b => {
+                    cumSize += b.size;
+                    return { ...b, cumSize };
+                });
+                if (bidsWithCum.length > 0) maxCumSize = Math.max(maxCumSize, bidsWithCum[bidsWithCum.length - 1].cumSize);
+
+                maxCumSize = Math.max(maxCumSize, 1);
+                const sortedAsks = asksWithCum.reverse();
+
+                let askRows = sortedAsks.map(a => {
+                    const depthPct = 2 + (a.cumSize / maxCumSize) * 98;
+                    const priceCents = Math.round(a.price * 100);
+                    return `<tr class="ask-row" style="--depth: ${depthPct}%;"><td>Ask</td><td class="color-sell">${priceCents}¢</td><td>${a.size.toFixed(0)}</td></tr>`;
+                }).join('');
+
+                let bidRows = bidsWithCum.map(b => {
+                    const depthPct = 2 + (b.cumSize / maxCumSize) * 98;
+                    const priceCents = Math.round(b.price * 100);
+                    return `<tr class="bid-row" style="--depth: ${depthPct}%;"><td>Bid</td><td class="color-buy">${priceCents}¢</td><td>${b.size.toFixed(0)}</td></tr>`;
+                }).join('');
+
+                const midCents = book.mid ? Math.round(book.mid * 100) : '-';
+
+                obHtml += `
+                    <div style="margin-bottom: 24px;">
+                        <div style="font-weight: 600; margin-bottom: 8px;">Outcome: ${book.label}</div>
+                        <table class="orderbook-table">
+                            <thead><tr><th>Side</th><th>Price</th><th>Size</th></tr></thead>
+                            <tbody>
+                                ${askRows}
+                                <tr><td colspan="3"><div class="ob-mid">Mid: ${midCents}¢ <span style="font-size: 0.8rem; font-weight: normal; color: #8b949e;">(Spread: ${(book.spread * 100).toFixed(1)}¢)</span></div></td></tr>
+                                ${bidRows}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+            obContainer.innerHTML = obHtml || '<div class="color-muted">No active orderbook data for this market</div>';
+
+            // Render Portfolios (Specific to THIS market)
+            const pfContainer = document.getElementById('portfolio-container');
+            let pfHtml = '';
+            for (const [stratId, pf] of Object.entries(market.portfolios)) {
+                let posHtml = '';
+                const keys = Object.keys(pf.positions);
+                if (keys.length > 0) {
+                    posHtml = keys.map(k => {
+                        const p = pf.positions[k];
+                        const pnlColor = p.unrealized_pnl >= 0 ? 'color-buy' : 'color-sell';
+                        const sideColor = p.side === 'BUY' ? 'color-buy' : 'color-sell';
+                        return `
+                            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 4px; margin-top: 8px;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                    <b>${p.label}</b>
+                                    <span class="${sideColor}">${p.side} ${p.size.toFixed(0)}</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                                    <span class="color-muted">Base: ${p.avg_entry.toFixed(3)}</span>
+                                    <span>Pnl: <span class="${pnlColor}">$${p.unrealized_pnl.toFixed(2)}</span></span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    posHtml = '<div class="color-muted" style="margin-top: 8px; font-size: 0.85rem;">No active positions</div>';
+                }
+
+                pfHtml += `
+                    <div class="strategy-block">
+                        <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px;">${stratId}</div>
+                        <div class="metric-row"><span class="color-muted">Equity</span> <b>$${(pf.bankroll + pf.total_pnl).toFixed(2)}</b></div>
+                        <div class="metric-row"><span class="color-muted">PnL</span> <b class="${pf.total_pnl >= 0 ? 'color-buy' : 'color-sell'}">$${pf.total_pnl.toFixed(2)}</b></div>
+                        <div style="margin-top: 12px; font-size: 0.9em; border-top: 1px solid var(--border-color); padding-top: 8px;">Market Exposure</div>
+                        ${posHtml}
+                    </div>
+                `;
+            }
+            pfContainer.innerHTML = pfHtml || '<div class="color-muted">No portfolios for this market</div>';
+
+            // Render Log
+            const logContainer = document.getElementById('activity-log');
+            const logInner = data.activity_log.map(item => {
+                let msg = item.message;
+                if (msg.includes('BUY')) msg = msg.replace('BUY', '<span class="color-buy">BUY</span>');
+                if (msg.includes('SELL')) msg = msg.replace('SELL', '<span class="color-sell">SELL</span>');
+                if (msg.includes('✅')) msg = msg.replace('✅', '<span style="color:#2ea043">✅</span>');
+                return `<div><span class="color-muted">[${item.time}]</span> ${msg}</div>`;
+            }).join('');
+            logContainer.innerHTML = logInner;
+
+            if (logContainer.scrollHeight - logContainer.scrollTop < logContainer.clientHeight + 50) {
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+        }
+    </script>
+</body>
+
+</html>

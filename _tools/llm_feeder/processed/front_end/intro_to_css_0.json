@@ -1,0 +1,18 @@
+{
+  "topic_name": "Intro To CSS",
+  "category": "Front-End",
+  "core_concept": "CSS (Cascading Style Sheets) is the standard language for styling web pages, controlling aspects like layout, colors, and fonts. It utilizes rules consisting of selectors and declarations to apply styles to HTML elements. This foundational knowledge is crucial for creating visually appealing and well-structured websites.",
+  "technical_breakdown": [
+    "CSS rules consist of a selector and a declaration block.",
+    "Selectors target HTML elements based on their type, class, ID, or universal nature.",
+    "Declarations within the declaration block define the properties and their corresponding values to be applied to the selected elements."
+  ],
+  "snippet": "```css\n* {\n  color: purple;\n}\n\ndiv { \n  color: white;\n}\n\n.alert-text { \n  color: red;\n}\n```",
+  "cross_references": [
+    "HTML Structure",
+    "Selectors (Universal, Type, Class, ID)",
+    "CSS Syntax"
+  ],
+  "source_file": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\llm_feeder\\data\\odin\\foundations\\intro_to_css.md",
+  "chunk_index": 0
+}

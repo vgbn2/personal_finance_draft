@@ -1,0 +1,18 @@
+{
+  "topic_name": "CSS Specificity and Inheritance",
+  "category": "Front-End",
+  "core_concept": "This document explores CSS specificity, the mechanism that determines which CSS rules apply to an element when multiple rules conflict. It covers key factors like selector types, combinators, and the importance of rule order. Furthermore, it explains CSS inheritance, detailing which properties are inherited and how direct targeting overrides inheritance.",
+  "technical_breakdown": [
+    "Specificity determines the order in which CSS rules are applied when conflicts arise.",
+    "Combinators (like ID, class, and descendant selectors) contribute to specificity.",
+    "Inheritance allows certain CSS properties to be automatically applied to descendant elements."
+  ],
+  "snippet": "```css\n/* rule 1 */\n.class.second-class { \n  font-size: 12px; \n} \n\n/* rule 2 */\n.class .second-class { \n  font-size: 24px; \n} \n\n/* rule 1 */\n.class.second-class { \n  font-size: 12px; \n} \n\n/* rule 2 */\n.class > .second-class { \n  font-size: 24px; \n} \n\n/* rule 1 */\n* { \n  color: black; \n} \n\n/* rule 2 */\nh1 { \n  color: orange; \n} \n\n/* rule 1 */\n#parent { \n  color: red; \n} \n\n/* rule 2 */\n.child { \n  color: blue; \n} \n\n/* styles.css */\n\n.alert { \n  color: red; \n} \n\n.warning { \n  color: yellow; \n}\n```",
+  "cross_references": [
+    "CSS Selectors",
+    "CSS Inheritance",
+    "Cascading Style Sheets (CSS) Algorithm"
+  ],
+  "source_file": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\llm_feeder\\data\\odin\\foundations\\the_cascade.md",
+  "chunk_index": 1
+}

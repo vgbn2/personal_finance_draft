@@ -1,0 +1,404 @@
+{
+  "meta": {
+    "student": "Trần Đức Anh",
+    "student_id": "B24DCVT021",
+    "semester": "Học kỳ 2 - 2025-2026",
+    "semester_start": "2026-01-12",
+    "semester_end": "2026-05-22",
+    "generated": "2026-03-08"
+  },
+
+  "subjects": [
+    {
+      "code": "BAS1122",
+      "name": "Tư tưởng Hồ Chí Minh",
+      "name_en": "Ho Chi Minh Ideology",
+      "credits": 2,
+      "lecturer": "L.T.Huệ",
+      "terminus_relevance": "none",
+      "university_relevance": "mandatory politics module — minimum viable effort"
+    },
+    {
+      "code": "BSA1221",
+      "name": "Pháp luật đại cương",
+      "name_en": "General Law",
+      "credits": 2,
+      "lecturer": "H.T.Lan",
+      "terminus_relevance": "none",
+      "university_relevance": "general law — minimum viable effort"
+    },
+    {
+      "code": "ELE1309",
+      "name": "Điện tử số",
+      "name_en": "Digital Electronics",
+      "credits": 3,
+      "lecturer": "T.T.T.Thủy",
+      "terminus_relevance": "low",
+      "university_relevance": "hardware foundation — logic gates, flip flops, counters. Feeds into microprocessor course later.",
+      "study_priority": "medium"
+    },
+    {
+      "code": "ELE13101",
+      "name": "Xử lý tín hiệu số",
+      "name_en": "Digital Signal Processing",
+      "credits": 3,
+      "lecturer": "T.T.Anh",
+      "terminus_relevance": "high",
+      "university_relevance": "DIRECTLY maps to quantMath.ts — FFT, convolution, filter design, sampling theory. The math behind stepVolatility and the Kalman filter lives here.",
+      "study_priority": "high",
+      "terminus_connections": [
+        "Kalman filter in quantMath.ts is a recursive digital filter",
+        "logReturns() is a discrete signal transformation",
+        "stepVolatility is standard deviation of a discrete signal",
+        "The sigma grid projection is a discrete time series forecast"
+      ]
+    },
+    {
+      "code": "SKD1102",
+      "name": "Kỹ năng làm việc nhóm",
+      "name_en": "Teamwork Skills",
+      "credits": 1,
+      "lecturer": "N.T.T.Hiền",
+      "terminus_relevance": "none",
+      "university_relevance": "soft skills — attend, participate, done",
+      "study_priority": "low"
+    },
+    {
+      "code": "TEL1344",
+      "name": "Lý thuyết truyền tin",
+      "name_en": "Information Theory",
+      "credits": 3,
+      "lecturer": "L.T.Thủy",
+      "terminus_relevance": "medium",
+      "university_relevance": "Shannon entropy, channel capacity, coding theory. Connects to how the intelligence engine encodes signal confidence.",
+      "study_priority": "medium",
+      "terminus_connections": [
+        "Signal vs noise distinction in edge score",
+        "Information entropy relates to market uncertainty modeling",
+        "Channel capacity analogous to how much signal the system can extract"
+      ]
+    },
+    {
+      "code": "TEL1345",
+      "name": "Kỹ thuật siêu cao tần",
+      "name_en": "Microwave Engineering",
+      "credits": 3,
+      "lecturer": "N.V.Minh",
+      "terminus_relevance": "none",
+      "university_relevance": "RF and antenna theory — pure hardware, no software connection",
+      "study_priority": "medium"
+    }
+  ],
+
+  "weekly_timetable": {
+    "note": "Period times: P1=07:00, P2=07:50, P3=08:40, P4=09:35, P5=10:25, P6=11:15, P7=12:30, P8=13:20, P10=15:05, P13=17:35, P15=18:00, P18=online",
+    "monday": [
+      {
+        "subject": "ELE1309",
+        "name": "Điện tử số",
+        "period_start": 1,
+        "period_count": 2,
+        "time_start": "07:00",
+        "time_end": "08:40",
+        "room": "605-A2",
+        "type": "lecture",
+        "date_ranges": ["12/01-02/02", "02/03-23/03", "30/03-20/04", "04/05-11/05"]
+      },
+      {
+        "subject": "ELE1309",
+        "name": "Điện tử số",
+        "period_start": 4,
+        "period_count": 2,
+        "time_start": "09:35",
+        "time_end": "11:15",
+        "room": "605-A2",
+        "type": "lecture",
+        "date_ranges": ["12/01-02/02", "02/03-23/03"]
+      },
+      {
+        "subject": "ELE13101",
+        "name": "Xử lý tín hiệu số",
+        "period_start": 7,
+        "period_count": 1,
+        "time_start": "12:30",
+        "time_end": "13:20",
+        "room": "705-A2",
+        "type": "lecture",
+        "date_ranges": ["12/01-02/02", "02/03-23/03"]
+      },
+      {
+        "subject": "ELE13101",
+        "name": "Xử lý tín hiệu số",
+        "period_start": 8,
+        "period_count": 2,
+        "time_start": "13:20",
+        "time_end": "15:05",
+        "room": "705-A2",
+        "type": "lecture",
+        "date_ranges": ["12/01-02/02", "02/03-13/04"]
+      }
+    ],
+    "tuesday": [
+      {
+        "subject": "ELE1309",
+        "name": "Điện tử số",
+        "period_start": 2,
+        "period_count": 4,
+        "time_start": "07:50",
+        "time_end": "11:15",
+        "room": "602-A3",
+        "type": "lab",
+        "date_ranges": ["31/03", "28/04"]
+      },
+      {
+        "subject": "ELE13101",
+        "name": "Xử lý tín hiệu số",
+        "period_start": 15,
+        "period_count": 3,
+        "time_start": "18:00",
+        "time_end": "20:30",
+        "room": "LMS",
+        "type": "online",
+        "date_ranges": ["27/01", "03/03", "24/03", "07/04"]
+      }
+    ],
+    "wednesday": [],
+    "thursday": [
+      {
+        "subject": "TEL1345",
+        "name": "Kỹ thuật siêu cao tần",
+        "period_start": 3,
+        "period_count": 1,
+        "time_start": "08:40",
+        "time_end": "09:35",
+        "room": "705-A2",
+        "type": "lecture",
+        "date_ranges": ["26/03-23/04", "07/05-21/05"]
+      },
+      {
+        "subject": "TEL1345",
+        "name": "Kỹ thuật siêu cao tần",
+        "period_start": 4,
+        "period_count": 2,
+        "time_start": "09:35",
+        "time_end": "11:15",
+        "room": "705-A2",
+        "type": "lecture",
+        "date_ranges": ["15/01-05/02", "26/02-23/04", "07/05-21/05"]
+      }
+    ],
+    "friday": [
+      {
+        "subject": "BAS1122",
+        "name": "Tư tưởng Hồ Chí Minh",
+        "period_start": 7,
+        "period_count": 3,
+        "time_start": "12:30",
+        "time_end": "15:05",
+        "room": "201-A2",
+        "type": "lecture",
+        "date_ranges": ["16/01", "30/01", "27/02", "13/03"]
+      },
+      {
+        "subject": "BAS1122",
+        "name": "Tư tưởng Hồ Chí Minh",
+        "period_start": 8,
+        "period_count": 2,
+        "time_start": "13:20",
+        "time_end": "15:05",
+        "room": "201-A2",
+        "type": "lecture",
+        "date_ranges": ["27/03", "10/04", "24/04", "15/05"]
+      },
+      {
+        "subject": "TEL1344",
+        "name": "Lý thuyết truyền tin",
+        "period_start": 1,
+        "period_count": 2,
+        "time_start": "07:00",
+        "time_end": "08:40",
+        "room": "605-A2",
+        "type": "lecture",
+        "date_ranges": ["16/01-06/02", "27/02-24/04", "08/05-22/05"]
+      },
+      {
+        "subject": "TEL1344",
+        "name": "Lý thuyết truyền tin",
+        "period_start": 3,
+        "period_count": 1,
+        "time_start": "08:40",
+        "time_end": "09:35",
+        "room": "605-A2",
+        "type": "lecture",
+        "date_ranges": ["16/01-06/02", "27/02-20/03"]
+      }
+    ],
+    "saturday": [
+      {
+        "subject": "BSA1221",
+        "name": "Pháp luật đại cương",
+        "period_start": 1,
+        "period_count": 2,
+        "time_start": "07:00",
+        "time_end": "08:40",
+        "room": "101-A3",
+        "type": "lecture",
+        "date_ranges": ["28/03-09/05"]
+      },
+      {
+        "subject": "BSA1221",
+        "name": "Pháp luật đại cương",
+        "period_start": 4,
+        "period_count": 2,
+        "time_start": "09:35",
+        "time_end": "11:15",
+        "room": "101-A3",
+        "type": "lecture",
+        "date_ranges": ["17/01-07/02", "28/02-21/03"]
+      },
+      {
+        "subject": "SKD1102",
+        "name": "Kỹ năng làm việc nhóm",
+        "period_start": 10,
+        "period_count": 2,
+        "time_start": "15:05",
+        "time_end": "16:45",
+        "room": "801-A2",
+        "type": "lecture",
+        "date_ranges": ["11/04-23/05"]
+      },
+      {
+        "subject": "BAS1122",
+        "name": "Tư tưởng Hồ Chí Minh",
+        "period_start": 18,
+        "period_count": 1,
+        "time_start": "online",
+        "time_end": "online",
+        "room": "LMS",
+        "type": "online",
+        "date_ranges": ["21/03-28/03", "18/04-02/05"]
+      }
+    ]
+  },
+
+  "free_blocks": {
+    "note": "These are the high value Terminus blocks based on the actual timetable",
+    "monday": {
+      "morning": "07:00-12:30 — FREE (no Monday classes in timetable)",
+      "afternoon_note": "Work 2 hours somewhere in here",
+      "evening": "After work — Terminus block available"
+    },
+    "tuesday": {
+      "morning": "FREE until any lab dates (31/03, 28/04)",
+      "afternoon": "FREE — best deep work block of the week",
+      "evening": "19:00-21:00 Spanish, rest after"
+    },
+    "wednesday": {
+      "entire_day": "COMPLETELY FREE — no classes Wednesday",
+      "note": "Best Terminus day. Protect this day aggressively."
+    },
+    "thursday": {
+      "note": "Classes 08:40-11:15 on most weeks",
+      "afternoon": "11:15 onwards — FREE for Terminus"
+    },
+    "friday": {
+      "note": "Heavy day — TEL1344 07:00-09:35, BAS1122 12:30-15:05",
+      "evening": "15:30 onwards — light Terminus or rest"
+    },
+    "saturday": {
+      "note": "Classes morning + afternoon on some weeks",
+      "evening": "Free after classes — rest recommended"
+    },
+    "sunday": {
+      "note": "FULL REST — no classes, no Terminus, mandatory reset"
+    }
+  },
+
+  "terminus_roadmap": {
+    "current_phase": 11,
+    "phase_11": {
+      "tasks_total": 16,
+      "tasks_completed": 0,
+      "estimated_hours": 25,
+      "target_start": "2026-03-10",
+      "target_end": "2026-03-31",
+      "available_hours_per_week": {
+        "tuesday_morning": 3,
+        "wednesday": 5,
+        "thursday_afternoon": 2,
+        "monday_evening": 2
+      },
+      "tasks": [
+        { "id": 1,  "name": "COIN_REGISTRY",                    "hours": 1,   "done": false, "day": "monday_evening" },
+        { "id": 2,  "name": "Per-symbol marketState Map",        "hours": 2,   "done": false, "day": "tuesday_morning" },
+        { "id": 3,  "name": "Symbol switch debounce mutex",      "hours": 1,   "done": false, "day": "monday_evening" },
+        { "id": 4,  "name": "Startup pre-warm all symbols",      "hours": 2,   "done": false, "day": "wednesday" },
+        { "id": 5,  "name": "Simplified tech score + 4H wired",  "hours": 2,   "done": false, "day": "wednesday" },
+        { "id": 6,  "name": "Yahoo Finance shared cache",        "hours": 1.5, "done": false, "day": "tuesday_morning" },
+        { "id": 7,  "name": "BTC inheritance score",             "hours": 2,   "done": false, "day": "wednesday" },
+        { "id": 8,  "name": "Signal state tracker",              "hours": 2,   "done": false, "day": "tuesday_morning" },
+        { "id": 9,  "name": "ATR-relative key price areas",      "hours": 2,   "done": false, "day": "wednesday" },
+        { "id": 10, "name": "Grade definition A/B/C/D",          "hours": 1,   "done": false, "day": "monday_evening" },
+        { "id": 11, "name": "Correlation divergence alert",      "hours": 1.5, "done": false, "day": "thursday_afternoon" },
+        { "id": 12, "name": "dataCompleteness flag",             "hours": 1,   "done": false, "day": "thursday_afternoon" },
+        { "id": 13, "name": "Global panel labeling UI",          "hours": 0.5, "done": false, "day": "monday_evening" },
+        { "id": 14, "name": "Watchlist editor UI",               "hours": 3,   "done": false, "day": "wednesday" },
+        { "id": 15, "name": "AI macro summary Gemini",           "hours": 1.5, "done": false, "day": "tuesday_morning" },
+        { "id": 16, "name": "Staleness indicator UI",            "hours": 0.5, "done": false, "day": "monday_evening" }
+      ]
+    },
+    "phase_12": {
+      "name": "Liquidation Fix + Real Data",
+      "target_start": "2026-04-07",
+      "target_end": "2026-05-15",
+      "note": "After semester pressure increases — keep scope tight"
+    },
+    "milestones": [
+      { "date": "2026-03-31", "label": "Phase 11 complete",           "type": "terminus" },
+      { "date": "2026-04-15", "label": "Backtest connected to signals","type": "terminus" },
+      { "date": "2026-05-15", "label": "Phase 12 complete",           "type": "terminus" },
+      { "date": "2026-05-22", "label": "Semester ends",               "type": "university" },
+      { "date": "2026-06-01", "label": "Paper trading begins",        "type": "terminus" }
+    ]
+  },
+
+  "thcs2_prep": {
+    "sessions_per_week": 1,
+    "slot": "tuesday_afternoon_13:00",
+    "duration_minutes": 60,
+    "current_topic": "arrays and strings",
+    "progression": [
+      "arrays and strings",
+      "pointers",
+      "structs",
+      "linked lists",
+      "stacks and queues",
+      "sorting algorithms",
+      "recursion",
+      "file I/O",
+      "past papers"
+    ],
+    "retake_date": null,
+    "note": "One problem per session, written on paper first, edge cases before typing"
+  },
+
+  "personal": {
+    "work_hours_per_day": 2,
+    "spanish": {
+      "day": "tuesday",
+      "time": "19:00-21:00",
+      "note": "Fixed commitment — keep, no additional Spanish study needed"
+    },
+    "rest_day": "sunday",
+    "rest_day_rule": "No Terminus, no studying — hard stop"
+  },
+
+  "daily_review_template": {
+    "terminus_planned": "",
+    "terminus_actual": "",
+    "thcs2_done": false,
+    "note": "",
+    "stuck_on": "",
+    "tomorrow_priority": ""
+  }
+}

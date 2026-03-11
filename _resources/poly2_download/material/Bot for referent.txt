@@ -1,0 +1,12 @@
+I found a fully functional and super underrated Chinese Polymarket trading bot on GitHub and its completely free…
+
+Thank God, it comes with detailed step by step setup guide in English, so its not so difficult to figure out. 
+
+How this bot actually works:
+
+It automatically finds active 15min markets on poly and tracks the order book in real time using WebSocket. If the probability drops by 20-30% or more, bot instantly buys the crashed side and after the price stabilizes, it takes profit - everything fully automated, without even the human involvement 
+
+Its getting harder to ignore how effective these bots are becoming. 
+Here is a real example - another working bot on poly, using similar strategy to the Chinese one, in just two months it turned an $80 deposit into over $780,000 also fully automated… these bots are crazy nowadays …
+
+https://github.com/discountry/polymarket-trading-bot.git

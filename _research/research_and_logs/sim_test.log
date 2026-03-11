@@ -1,0 +1,47 @@
+2026-02-22 03:35:45,551 | INFO    | polymarket_sim.core.database | \U0001f4e6 Database connected: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\data\trades.db
+2026-02-22 03:35:45,552 | INFO    | polymarket_sim.data.ws_binance | Started Binance WS client (BTC/USDT).
+2026-02-22 03:35:45,552 | INFO    | polymarket_sim.engine     | ============================================================
+2026-02-22 03:35:45,552 | INFO    | polymarket_sim.engine     |   POLYMARKET PAPER TRADING SIMULATOR
+2026-02-22 03:35:45,553 | INFO    | polymarket_sim.engine     | ============================================================
+2026-02-22 03:35:45,553 | INFO    | polymarket_sim.strategies.strategy_runner | Loading strategy from: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\strategies\strategy_alpha.py
+2026-02-22 03:35:45,556 | INFO    | polymarket_sim.strategies.strategy_runner | \u2705 Loaded strategy: Strategy Alpha ù Mean Reversion v1.0.0 ù Buys below rolling mean, sells above. Binary market optimized.
+2026-02-22 03:35:45,568 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #89 started: Strategy Alpha ù Mean Reversion ($1000.00)
+2026-02-22 03:35:45,569 | INFO    | polymarket_sim.strategies.strategy_runner | Loading strategy from: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\strategies\strategy_beta.py
+2026-02-22 03:35:45,570 | INFO    | polymarket_sim.strategies.strategy_runner | \u2705 Loaded strategy: Strategy Beta ù Momentum Crossover v1.0.0 ù Follows the trend. Buys on Golden Cross, sells on Death Cross.
+2026-02-22 03:35:45,571 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #90 started: Strategy Beta ù Momentum Crossover ($1000.00)
+2026-02-22 03:35:45,572 | INFO    | polymarket_sim.strategies.strategy_runner | Loading strategy from: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\strategies\strategy_multi_signal.py
+2026-02-22 03:35:45,573 | INFO    | polymarket_sim.strategies.strategy_runner | \u2705 Loaded strategy: Multi-Signal Paper Bot v1.0.0 ù MOM, MR, EXP signals driven by Binance BTC WS
+2026-02-22 03:35:45,575 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #91 started: Multi-Signal Paper Bot ($1000.00)
+2026-02-22 03:35:45,575 | INFO    | polymarket_sim.strategies.strategy_runner | Loading strategy from: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\strategies\strategy_runner.py
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\strategies\strategy_runner.py", line 93, in load
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\strategies\strategy_runner.py", line 16, in <module>
+    from ..core import config
+ImportError: attempted relative import with no known parent package
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\__main__.py", line 4, in <module>
+    main()
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\main.py", line 201, in main
+    asyncio.run(engine.run())
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\engine.py", line 143, in run
+    runner.load()
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\strategies\strategy_runner.py", line 95, in load
+    raise StrategyLoadError(f"Error executing strategy module: {exc}") from exc
+polymarket_sim.strategies.strategy_runner.StrategyLoadError: Error executing strategy module: attempted relative import with no known parent package

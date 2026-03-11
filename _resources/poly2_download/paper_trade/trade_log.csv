@@ -1,0 +1,3 @@
+timestamp,status,signal,direction,market,entry_price,exit_price,size_usd,est_prob,kelly_frac,edge,pnl,balance,outcome,reason
+2026-02-18 10:10:40,OPEN,EXP↑,UP,"Bitcoin Up or Down - February 17, 10:00PM-10:15PM ET",0.765000,,7.45,0.8000,0.0387,0.0350,,192.55,,"Expiry in 4.3min. BTC period delta=+0.062% (UP trend), but UP only priced 0.7650 (should be >0.82). Time decay: est prob=0.80, edge=0.0350. BTC $67,376.96 vs open $67,335.04."
+2026-02-18 10:10:40,CLOSED:TAKE_PROFIT,EXP↑,UP,"Bitcoin Up or Down - February 17, 10:00PM-10:15PM ET",0.765000,0.7950,7.45,0.8000,0.0387,0.0350,+0.29,200.29,TAKE_PROFIT,"Expiry in 4.3min. BTC period delta=+0.062% (UP trend), but UP only priced 0.7650 (should be >0.82). Time decay: est prob=0.80, edge=0.0350. BTC $67,376.96 vs open $67,335.04."

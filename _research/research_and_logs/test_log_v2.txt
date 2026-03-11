@@ -1,0 +1,82 @@
+INFO:     Started server process [33116]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 10048] error while attempting to bind on address ('0.0.0.0', 8000): only one usage of each socket address (protocol/network address/port) is normally permitted
+INFO:     Waiting for application shutdown.
+2026-02-23 17:43:06,900 | INFO    | polymarket_sim.web.app    | Shutting down engine...
+2026-02-23 17:43:06,908 | INFO    | polymarket_sim.core.database | \U0001f4e6 Database connected: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_sim\data\trades.db
+2026-02-23 17:43:06,908 | INFO    | polymarket_sim.data.ws_binance | Started Binance WS client (BTC/USDT).
+2026-02-23 17:43:06,908 | INFO    | polymarket_sim.engine     | ============================================================
+2026-02-23 17:43:06,908 | INFO    | polymarket_sim.engine     |   POLYMARKET PAPER TRADING SIMULATOR
+2026-02-23 17:43:06,908 | INFO    | polymarket_sim.engine     | ============================================================
+2026-02-23 17:43:06,918 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #203 started: Strategy Alpha ù Mean Reversion ($1000.00)
+2026-02-23 17:43:06,919 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #204 started: Strategy Beta ù Momentum Crossover ($1000.00)
+2026-02-23 17:43:06,920 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #205 started: Strategy Arbitrage ù Sum < 1 ($1000.00)
+2026-02-23 17:43:06,920 | INFO    | polymarket_sim.engine     | Bankroll: $1000.00 per strategy
+2026-02-23 17:43:06,921 | INFO    | polymarket_sim.engine     | 
+\u23f9  Shutting down...
+2026-02-23 17:43:06,921 | INFO    | polymarket_sim.data.ws_binance | Stopped Binance WS client.
+2026-02-23 17:43:06,921 | INFO    | polymarket_sim.analysis.strategy_grader | \U0001f4ca Strategy Grade: ? (22.8/100) ù INSUFFICIENT DATA
+2026-02-23 17:43:06,921 | INFO    | polymarket_sim.engine     | 
+\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557
+\u2551           \U0001f4ca  STRATEGY REPORT CARD  \U0001f4ca              \u2551
+\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563
+\u2551  Strategy :  Strategy Alpha ù Mean Reversion        \u2551
+\u2551  Grade    :  ?    (23/100)                        \u2551
+\u2551  Verdict  :  \u23f3 INSUFFICIENT DATA                   \u2551
+\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563
+\u2551  Sharpe      :   10.0/100                         \u2551
+\u2551  Win Rate    :   10.0/100                         \u2551
+\u2551  EV/Trade    :   10.0/100                         \u2551
+\u2551  Drawdown    :   95.0/100                         \u2551
+\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563
+\u2551  Only 0/100 trades completed. Need more data before grade is meaningful.\u2551
+\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d
+
+2026-02-23 17:43:06,923 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #203 ended: PnL=$0.00 Grade=?
+2026-02-23 17:43:06,924 | INFO    | polymarket_sim.analysis.strategy_grader | \U0001f4ca Strategy Grade: ? (22.8/100) ù INSUFFICIENT DATA
+2026-02-23 17:43:06,925 | INFO    | polymarket_sim.engine     | 
+\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557
+\u2551           \U0001f4ca  STRATEGY REPORT CARD  \U0001f4ca              \u2551
+\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563
+\u2551  Strategy :  Strategy Beta ù Momentum Crossover     \u2551
+\u2551  Grade    :  ?    (23/100)                        \u2551
+\u2551  Verdict  :  \u23f3 INSUFFICIENT DATA                   \u2551
+\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563
+\u2551  Sharpe      :   10.0/100                         \u2551
+\u2551  Win Rate    :   10.0/100                         \u2551
+\u2551  EV/Trade    :   10.0/100                         \u2551
+\u2551  Drawdown    :   95.0/100                         \u2551
+\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563
+\u2551  Only 0/100 trades completed. Need more data before grade is meaningful.\u2551
+\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d
+
+2026-02-23 17:43:06,926 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #204 ended: PnL=$0.00 Grade=?
+2026-02-23 17:43:06,926 | INFO    | polymarket_sim.analysis.strategy_grader | \U0001f4ca Strategy Grade: ? (22.8/100) ù INSUFFICIENT DATA
+2026-02-23 17:43:06,926 | INFO    | polymarket_sim.engine     | 
+\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557
+\u2551           \U0001f4ca  STRATEGY REPORT CARD  \U0001f4ca              \u2551
+\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563
+\u2551  Strategy :  Strategy Arbitrage ù Sum < 1           \u2551
+\u2551  Grade    :  ?    (23/100)                        \u2551
+\u2551  Verdict  :  \u23f3 INSUFFICIENT DATA                   \u2551
+\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563
+\u2551  Sharpe      :   10.0/100                         \u2551
+\u2551  Win Rate    :   10.0/100                         \u2551
+\u2551  EV/Trade    :   10.0/100                         \u2551
+\u2551  Drawdown    :   95.0/100                         \u2551
+\u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563
+\u2551  Only 0/100 trades completed. Need more data before grade is meaningful.\u2551
+\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d
+
+2026-02-23 17:43:06,929 | INFO    | polymarket_sim.core.database | \U0001f4dd Session #205 ended: PnL=$0.00 Grade=?
+2026-02-23 17:43:06,929 | INFO    | polymarket_sim.engine     | Goodbye! \U0001f44b
+INFO:     Application shutdown complete.
+
+[WEB] Starting Web Dashboard at http://localhost:8000
+
+[DEBUG] Engine run loop entered
+[DEBUG] FastAPI lifespan teardown triggered. Calling engine.stop()
+[DEBUG] Awaiting engine task completion...
+[DEBUG] Engine run loop exited normally
+[DEBUG] Engine task completed successfully

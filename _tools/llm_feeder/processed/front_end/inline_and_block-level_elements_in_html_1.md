@@ -1,0 +1,17 @@
+---
+## Inline and Block-Level Elements in HTML
+- **Category:** Front-End
+- **Core Concept:** This lesson focuses on understanding the fundamental difference between inline and block-level HTML elements, crucial for controlling the layout and presentation of web content. Inline elements flow within the content of a line, while block-level elements take up the full width available and start on a new line. Mastering these concepts allows developers to precisely control how elements are displayed and positioned on a webpage.
+- **Technical Breakdown:**
+  - Inline elements (like `<span>`) are used to group text and inline content.
+  - Block-level elements (like `<p>` and `<div>`) establish a block of content and force new lines.
+  - Understanding the default behavior of block and inline elements is essential for creating responsive and well-structured layouts.
+  - The `box-sizing` property is used to control how padding and border affect the element's total width and height.
+- **Snippet:**
+```html
+<span style="height: 300px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;">See the Pen <a href="https://codepen.io/TheOdinProjectExamples/pen/abLLPor">block-inline-lesson-span-example</a> by TheOdinProject (<a href="https://codepen.io/TheOdinProjectExamples">@TheOdinProjectExamples</a>) on <a href="https://codepen.io">CodePen</a>.</span>
+```
+- **Cross-Reference:** CSS Box Model, CSS Layout, HTML Block and Inline Elements
+---
+
+_Source: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\llm_feeder\data\odin\foundations\block_and_inline.md (chunk 1)_

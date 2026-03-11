@@ -1,0 +1,3 @@
+"""
+Life tracker package initializer.
+"""

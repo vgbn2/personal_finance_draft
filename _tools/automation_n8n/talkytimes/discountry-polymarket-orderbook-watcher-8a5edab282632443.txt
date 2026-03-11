@@ -1,0 +1,611 @@
+Directory structure:
+└── discountry-polymarket-orderbook-watcher/
+    ├── readme.md
+    ├── CLAUDE.md
+    ├── package.json
+    ├── test.js
+    ├── .editorconfig
+    ├── .prettierignore
+    └── source/
+        ├── app.js
+        ├── cli.js
+        └── utils.js
+
+================================================
+FILE: readme.md
+================================================
+# polymarket-orderbook-watcher
+
+Real-time orderbook viewer for Polymarket BTC Up/Down 15-minute markets.
+
+## Features
+
+- Displays live orderbook for current BTC Up/Down market
+- Automatically switches to new market every 15 minutes
+- Shows countdown timer to next window
+- Displays bids/asks for both "Up" and "Down" outcomes
+
+## Requirements
+
+- Node.js 22+ (required for native WebSocket support)
+
+## Install
+
+```bash
+pnpm install
+pnpm build
+```
+
+## Usage
+
+```bash
+node dist/cli.js
+```
+
+The CLI will:
+
+1. Fetch the current 15-minute BTC Up/Down market from Polymarket
+2. Connect to the orderbook WebSocket
+3. Display real-time bids and asks
+4. Automatically switch to the next market when the window ends
+
+
+
+================================================
+FILE: CLAUDE.md
+================================================
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+```bash
+# Build (transpile JSX to dist/)
+pnpm build
+
+# Development mode (watch for changes)
+pnpm dev
+
+# Run tests (prettier + xo lint + ava tests)
+pnpm test
+
+# Run the CLI (requires Node.js 22+ for native WebSocket)
+node dist/cli.js
+```
+
+## Architecture
+
+Real-time orderbook viewer for Polymarket BTC Up/Down 15-minute markets. Automatically detects and switches to the current 15-minute window.
+
+**Key technologies:**
+
+- **Ink + React**: Terminal UI components in JSX
+- **Babel**: Transpiles JSX from `source/` to `dist/` (preset: @babel/preset-react)
+- **polymarket-websocket-client**: WebSocket client for CLOB orderbook data
+- **meow**: CLI argument parsing
+- **xo + prettier**: Linting and formatting
+
+**Source structure:**
+
+- `source/cli.js` - CLI entrypoint
+- `source/app.js` - Main React/Ink component with orderbook display
+- `source/utils.js` - Market data fetching and 15-min window utilities
+
+**Data flow:**
+
+1. Calculate current 15-min window timestamp (aligned to clock: 8:00, 8:15, 8:30, 8:45...)
+2. Fetch market data from Gamma API (`gamma-api.polymarket.com/events/slug/{slug}`)
+3. Extract `clobTokenIds` for Up/Down outcomes
+4. Subscribe to orderbook via `ClobMarketClient` WebSocket
+5. Display bids/asks in real-time, auto-switch at window boundary
+
+
+
+================================================
+FILE: package.json
+================================================
+{
+	"name": "polymarket-orderbook-watcher",
+	"version": "0.0.0",
+	"license": "MIT",
+	"bin": "dist/cli.js",
+	"type": "module",
+	"engines": {
+		"node": ">=22"
+	},
+	"scripts": {
+		"build": "babel --out-dir=dist source",
+		"dev": "babel --out-dir=dist --watch source",
+		"test": "prettier --check . && xo && ava"
+	},
+	"files": [
+		"dist"
+	],
+	"dependencies": {
+		"ink": "^4.1.0",
+		"meow": "^11.0.0",
+		"polymarket-websocket-client": "^0.1.0",
+		"react": "^18.2.0"
+	},
+	"devDependencies": {
+		"@babel/cli": "^7.21.0",
+		"@babel/preset-react": "^7.18.6",
+		"@vdemedes/prettier-config": "^2.0.1",
+		"ava": "^5.2.0",
+		"chalk": "^5.2.0",
+		"eslint-config-xo-react": "^0.27.0",
+		"eslint-plugin-react": "^7.32.2",
+		"eslint-plugin-react-hooks": "^4.6.0",
+		"import-jsx": "^5.0.0",
+		"ink-testing-library": "^3.0.0",
+		"prettier": "^2.8.7",
+		"xo": "^0.53.1"
+	},
+	"ava": {
+		"environmentVariables": {
+			"NODE_NO_WARNINGS": "1"
+		}
+	},
+	"xo": {
+		"extends": "xo-react",
+		"prettier": true,
+		"rules": {
+			"react/prop-types": "off"
+		}
+	},
+	"prettier": "@vdemedes/prettier-config",
+	"babel": {
+		"presets": [
+			"@babel/preset-react"
+		]
+	}
+}
+
+
+
+================================================
+FILE: test.js
+================================================
+import test from 'ava';
+import {
+	getCurrent15MinWindowTimestamp,
+	getNext15MinWindowTimestamp,
+	getMsUntilNextWindow,
+	buildMarketSlug,
+} from './source/utils.js';
+
+test('getCurrent15MinWindowTimestamp returns aligned timestamp', t => {
+	const timestamp = getCurrent15MinWindowTimestamp();
+	// Should be divisible by 15 minutes (900 seconds)
+	t.is(timestamp % 900, 0);
+});
+
+test('getNext15MinWindowTimestamp is 15 minutes after current', t => {
+	const current = getCurrent15MinWindowTimestamp();
+	const next = getNext15MinWindowTimestamp();
+	t.is(next - current, 900);
+});
+
+test('getMsUntilNextWindow returns positive value', t => {
+	const ms = getMsUntilNextWindow();
+	t.true(ms > 0);
+	t.true(ms <= 15 * 60 * 1000);
+});
+
+test('buildMarketSlug formats correctly', t => {
+	const slug = buildMarketSlug(1767186000);
+	t.is(slug, 'btc-updown-15m-1767186000');
+});
+
+
+
+================================================
+FILE: .editorconfig
+================================================
+root = true
+
+[*]
+indent_style = tab
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.yml]
+indent_style = space
+indent_size = 2
+
+
+
+================================================
+FILE: .prettierignore
+================================================
+dist
+
+
+
+================================================
+FILE: source/app.js
+================================================
+import React, {useState, useEffect} from 'react';
+import {Box, Text} from 'ink';
+import {ClobMarketClient} from 'polymarket-websocket-client';
+import {
+	getCurrent15MinWindowTimestamp,
+	getNext15MinWindowTimestamp,
+	getMsUntilNextWindow,
+	formatWindowTime,
+	buildMarketSlug,
+	fetchMarketData,
+	extractTokenIds,
+	parseOutcomes,
+} from './utils.js';
+
+function OrderbookSide({orders, side, maxRows = 10}) {
+	const isBid = side === 'bid';
+	const color = isBid ? 'green' : 'red';
+	const sortedOrders = [...orders].sort((a, b) =>
+		isBid
+			? Number(b.price) - Number(a.price)
+			: Number(a.price) - Number(b.price),
+	);
+	const displayOrders = sortedOrders.slice(0, maxRows);
+
+	return (
+		<Box flexDirection="column" width={24}>
+			<Text bold color={color}>
+				{isBid ? 'BIDS' : 'ASKS'}
+			</Text>
+			<Box>
+				<Text dimColor>{'Price'.padEnd(10)}Size</Text>
+			</Box>
+			{displayOrders.length === 0 ? (
+				<Text dimColor>No orders</Text>
+			) : (
+				displayOrders.map((order, i) => (
+					<Text key={`${order.price}-${i}`} color={color}>
+						{Number(order.price).toFixed(2).padEnd(10)}
+						{Number(order.size).toFixed(0)}
+					</Text>
+				))
+			)}
+		</Box>
+	);
+}
+
+function TokenOrderbook({tokenId, label, book}) {
+	const bids = book?.bids || [];
+	const asks = book?.asks || [];
+
+	return (
+		<Box
+			flexDirection="column"
+			marginRight={2}
+			borderStyle="round"
+			paddingX={1}
+		>
+			<Text bold underline>
+				{label}
+			</Text>
+			<Box marginTop={1}>
+				<OrderbookSide orders={bids} side="bid" />
+				<Box width={2} />
+				<OrderbookSide orders={asks} side="ask" />
+			</Box>
+		</Box>
+	);
+}
+
+export default function App() {
+	const [status, setStatus] = useState('Initializing...');
+	const [error, setError] = useState(null);
+	const [marketInfo, setMarketInfo] = useState(null);
+	const [outcomes, setOutcomes] = useState(['Up', 'Down']);
+	const [tokenIds, setTokenIds] = useState(null);
+	const [books, setBooks] = useState({});
+	const [countdown, setCountdown] = useState('');
+	const [client, setClient] = useState(null);
+
+	// Initialize and switch markets
+	useEffect(() => {
+		let currentClient = null;
+		let switchTimeout = null;
+		let countdownInterval = null;
+
+		async function initMarket() {
+			try {
+				// Disconnect previous client
+				if (currentClient) {
+					currentClient.disconnect();
+				}
+
+				setStatus('Fetching market data...');
+				setBooks({});
+
+				const timestamp = getCurrent15MinWindowTimestamp();
+				const slug = buildMarketSlug(timestamp);
+
+				const data = await fetchMarketData(slug);
+				setMarketInfo(data);
+
+				const tokens = extractTokenIds(data);
+				if (!tokens) {
+					throw new Error('No token IDs found in market data');
+				}
+
+				setTokenIds(tokens);
+				setOutcomes(parseOutcomes(data));
+
+				// Check if market is accepting orders
+				if (!data.markets?.[0]?.acceptingOrders) {
+					setStatus('Market not accepting orders, waiting for next window...');
+				} else {
+					setStatus('Connecting to WebSocket...');
+				}
+
+				// Create WebSocket client
+				currentClient = new ClobMarketClient();
+				setClient(currentClient);
+
+				currentClient.on('connected', () => {
+					setStatus('Connected - Subscribing...');
+					currentClient.subscribe(tokens);
+				});
+
+				currentClient.on('disconnected', () => {
+					setStatus('Disconnected');
+				});
+
+				currentClient.on('error', err => {
+					setError(`WebSocket error: ${err.message}`);
+				});
+
+				currentClient.onBook(event => {
+					setStatus('Receiving orderbook updates');
+					setBooks(prev => ({
+						...prev,
+						[event.asset_id]: {
+							bids: event.bids || [],
+							asks: event.asks || [],
+						},
+					}));
+				});
+
+				currentClient.onPriceChange(event => {
+					// Update books with price changes
+					for (const change of event.price_changes || []) {
+						setBooks(prev => {
+							const current = prev[event.asset_id] || {bids: [], asks: []};
+							const side = change.side === 'BUY' ? 'bids' : 'asks';
+							let orders = [...current[side]];
+
+							// Find existing order at this price
+							const idx = orders.findIndex(o => o.price === change.price);
+
+							if (Number(change.size) === 0) {
+								// Remove order
+								if (idx !== -1) orders.splice(idx, 1);
+							} else if (idx !== -1) {
+								// Update order
+								orders[idx] = {price: change.price, size: change.size};
+							} else {
+								// Add new order
+								orders.push({price: change.price, size: change.size});
+							}
+
+							return {
+								...prev,
+								[event.asset_id]: {
+									...current,
+									[side]: orders,
+								},
+							};
+						});
+					}
+				});
+
+				await currentClient.connect();
+
+				// Schedule switch to next window
+				const msUntilNext = getMsUntilNextWindow();
+				switchTimeout = setTimeout(() => {
+					initMarket();
+				}, msUntilNext + 2000); // Add 2s buffer for API
+			} catch (err) {
+				setError(err.message);
+			}
+		}
+
+		// Countdown timer
+		countdownInterval = setInterval(() => {
+			const ms = getMsUntilNextWindow();
+			const seconds = Math.floor(ms / 1000);
+			const minutes = Math.floor(seconds / 60);
+			const secs = seconds % 60;
+			setCountdown(`${minutes}:${secs.toString().padStart(2, '0')}`);
+		}, 1000);
+
+		initMarket();
+
+		return () => {
+			if (currentClient) currentClient.disconnect();
+			if (switchTimeout) clearTimeout(switchTimeout);
+			if (countdownInterval) clearInterval(countdownInterval);
+		};
+	}, []);
+
+	if (error) {
+		return (
+			<Box flexDirection="column">
+				<Text color="red" bold>
+					Error: {error}
+				</Text>
+			</Box>
+		);
+	}
+
+	const windowStart = formatWindowTime(getCurrent15MinWindowTimestamp());
+	const windowEnd = formatWindowTime(getNext15MinWindowTimestamp());
+
+	return (
+		<Box flexDirection="column" padding={1}>
+			<Box marginBottom={1}>
+				<Text bold color="cyan">
+					Polymarket BTC Up/Down Orderbook
+				</Text>
+			</Box>
+
+			<Box marginBottom={1}>
+				<Text>
+					<Text bold>Window:</Text> {windowStart} - {windowEnd}
+				</Text>
+				<Text> | </Text>
+				<Text>
+					<Text bold>Next:</Text> {countdown}
+				</Text>
+				<Text> | </Text>
+				<Text dimColor>{status}</Text>
+			</Box>
+
+			{marketInfo && (
+				<Box marginBottom={1}>
+					<Text dimColor>{marketInfo.title}</Text>
+				</Box>
+			)}
+
+			{tokenIds && (
+				<Box>
+					{outcomes.map((outcome, idx) => (
+						<TokenOrderbook
+							key={tokenIds[idx]}
+							tokenId={tokenIds[idx]}
+							label={outcome}
+							book={books[tokenIds[idx]]}
+						/>
+					))}
+				</Box>
+			)}
+		</Box>
+	);
+}
+
+
+
+================================================
+FILE: source/cli.js
+================================================
+#!/usr/bin/env node
+import React from 'react';
+import {render} from 'ink';
+import meow from 'meow';
+import App from './app.js';
+
+const cli = meow(
+	`
+	Usage
+	  $ polymarket-orderbook-watcher
+
+	Description
+	  Real-time orderbook viewer for Polymarket BTC Up/Down 15-minute markets.
+	  Automatically switches to the next market window every 15 minutes.
+
+	Examples
+	  $ polymarket-orderbook-watcher
+`,
+	{
+		importMeta: import.meta,
+	},
+);
+
+render(<App />);
+
+
+
+================================================
+FILE: source/utils.js
+================================================
+/**
+ * Calculate the Unix timestamp for the current 15-minute window start.
+ * Windows are aligned to clock time (e.g., 8:00, 8:15, 8:30, 8:45).
+ */
+export function getCurrent15MinWindowTimestamp() {
+	const now = Math.floor(Date.now() / 1000);
+	const windowSeconds = 15 * 60; // 15 minutes
+	return Math.floor(now / windowSeconds) * windowSeconds;
+}
+
+/**
+ * Get the next 15-minute window timestamp
+ */
+export function getNext15MinWindowTimestamp() {
+	return getCurrent15MinWindowTimestamp() + 15 * 60;
+}
+
+/**
+ * Calculate milliseconds until next window starts
+ */
+export function getMsUntilNextWindow() {
+	const nextWindow = getNext15MinWindowTimestamp();
+	return nextWindow * 1000 - Date.now();
+}
+
+/**
+ * Format timestamp to readable time string
+ */
+export function formatWindowTime(timestamp) {
+	const date = new Date(timestamp * 1000);
+	return date.toLocaleTimeString('en-US', {
+		hour: '2-digit',
+		minute: '2-digit',
+		timeZoneName: 'short',
+	});
+}
+
+/**
+ * Build the market slug for the 15-minute BTC up/down market
+ */
+export function buildMarketSlug(timestamp) {
+	return `btc-updown-15m-${timestamp}`;
+}
+
+/**
+ * Fetch market data from Gamma API
+ */
+export async function fetchMarketData(slug) {
+	const tid = Date.now();
+	const url = `https://gamma-api.polymarket.com/events/slug/${slug}?tid=${tid}`;
+
+	const response = await fetch(url);
+	if (!response.ok) {
+		throw new Error(`Failed to fetch market: ${response.status}`);
+	}
+
+	return response.json();
+}
+
+/**
+ * Extract token IDs from market data
+ * Returns [upTokenId, downTokenId]
+ */
+export function extractTokenIds(marketData) {
+	if (!marketData?.markets?.[0]?.clobTokenIds) {
+		return null;
+	}
+
+	const tokenIds = JSON.parse(marketData.markets[0].clobTokenIds);
+	return tokenIds;
+}
+
+/**
+ * Parse outcomes from market data
+ */
+export function parseOutcomes(marketData) {
+	if (!marketData?.markets?.[0]?.outcomes) {
+		return ['Up', 'Down'];
+	}
+
+	return JSON.parse(marketData.markets[0].outcomes);
+}
+
+

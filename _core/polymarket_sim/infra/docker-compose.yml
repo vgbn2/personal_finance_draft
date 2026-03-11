@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  simulator:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/polymarket_sim/data
+      - ./logs:/app/polymarket_sim/logs
+    restart: unless-stopped

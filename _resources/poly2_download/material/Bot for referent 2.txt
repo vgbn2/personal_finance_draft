@@ -1,0 +1,11 @@
+I just found a super underrated Polymarket bot for trading 5 min BTC markets on GitHub and its absolutely free
+
+Thank God it comes with a detailed step by step usage guide, so its actually pretty easy to get it running 
+
+This bot caught my eye because of its uncommon strategy:
+
+At each new 5 min market, Polymarket sets the odds at 50/50, so u bet $10 to win $10. And at the same time, bot watches and analyses the last few results of these markets and looks for streaks - several identical outcomes in a row. When this happens, the real statistic shows a 70-75% reversal probability for the next 5 min btc, while the market still prices at 50%. In such case, bot places a bet in advance, predicting a reversal. The bot dev has already completed over 280 trades with 70%+ win rate. The whole process is fully automated, without even the human involvement.
+
+Here is one more example - another 5 min BTC trading bot, which is using similar strategy. Launched only 2 days ago and it already turned a $277 deposit into over $26,000. Again, only in TWO DAYS, imagine the results in 1 week or a month… crazyyy
+
+https://github.com/0xrsydn/polymarket-streak-bot.git

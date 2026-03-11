@@ -1,0 +1,55 @@
+Starting knowledge separation process...
+
+Processing: Computer_Science/Kỹ thuật theo dõi, giám sát an toàn mạng
+  ✓ Saved 117 definitions -> Definitions.md
+  ✓ Saved 34 formulas -> Formulas.md
+Processing: Computer_Science/Lập trình mạng
+  ✓ Saved 244 definitions -> Definitions.md
+  ✓ Saved 50 formulas -> Formulas.md
+Processing: Computer_Science/Mạng cảm biến
+  ✓ Saved 1 definitions -> Definitions.md
+  ✓ Saved 2 formulas -> Formulas.md
+Processing: Computer_Science/Mạng máy tính và internet
+  ✓ Saved 171 definitions -> Definitions.md
+  ✓ Saved 20 formulas -> Formulas.md
+Processing: Computer_Science/Thuật toán và ứng dụng
+  ✓ Saved 38 definitions -> Definitions.md
+  ✓ Saved 9 formulas -> Formulas.md
+Processing: Math_Physics/Bài giảng Thống kê doanh nghiệp
+  ✓ Saved 234 definitions -> Definitions.md
+  ✓ Saved 105 formulas -> Formulas.md
+Processing: Math_Physics/Giải tích hàm một biến số (Giải tích 1)
+  ✓ Saved 2 formulas -> Formulas.md
+Processing: Math_Physics/Giải tích hàm nhiều biến số (Giải tích 2)
+  ✓ Saved 2 formulas -> Formulas.md
+Processing: Math_Physics/Thống kê doanh nghiệp
+  ✓ Saved 224 definitions -> Definitions.md
+  ✓ Saved 85 formulas -> Formulas.md
+Processing: Math_Physics/Toán kỹ thuật
+  ✓ Saved 313 definitions -> Definitions.md
+  ✓ Saved 174 formulas -> Formulas.md
+Processing: Math_Physics/Toán rời rạc 1
+  ✓ Saved 106 definitions -> Definitions.md
+  ✓ Saved 41 formulas -> Formulas.md
+Processing: Math_Physics/Toán rời rạc 2
+  ✓ Saved 74 definitions -> Definitions.md
+  ✓ Saved 22 formulas -> Formulas.md
+Processing: Signals_Systems/Kỹ thuật Vi xử lý
+  ✓ Saved 137 definitions -> Definitions.md
+  ✓ Saved 32 formulas -> Formulas.md
+Processing: Signals_Systems/Truyền thông nội bộ trong tổ chức
+  ✓ Saved 158 definitions -> Definitions.md
+  ✓ Saved 18 formulas -> Formulas.md
+Processing: Signals_Systems/Truyền thông số
+  ✓ Saved 126 definitions -> Definitions.md
+  ✓ Saved 35 formulas -> Formulas.md
+Processing: Signals_Systems/Xử lý tiếng nói
+  ✓ Saved 153 definitions -> Definitions.md
+  ✓ Saved 35 formulas -> Formulas.md
+
+==================================================
+SEPARATION COMPLETE
+==================================================
+Subjects processed: 16
+Total definitions separated: 2096
+Total formulas separated: 666

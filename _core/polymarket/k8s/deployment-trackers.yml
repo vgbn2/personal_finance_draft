@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: polymarket-trackers
+  namespace: polymarket-staging
+  labels:
+    app: polymarket-trackers
+    component: data-collection
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: polymarket-trackers
+      component: data-collection
+  template:
+    metadata:
+      labels:
+        app: polymarket-trackers
+        component: data-collection
+    spec:
+      containers:
+      # BTC Tracker
+      - name: btc-tracker
+        image: ghcr.io/your-org/polymarket:latest
+        imagePullPolicy: Always
+        command: ["python", "crypto_price/btc_tracker.py"]
+        envFrom:
+        - configMapRef:
+            name: polymarket-config
+        - secretRef:
+            name: polymarket-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      
+      # Fed Rates Tracker
+      - name: fed-tracker
+        image: ghcr.io/your-org/polymarket:latest
+        imagePullPolicy: Always
+        command: ["python", "fed_rates/fed_tracker.py"]
+        envFrom:
+        - configMapRef:
+            name: polymarket-config
+        - secretRef:
+            name: polymarket-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      
+      # Hurricane Tracker
+      - name: hurricane-tracker
+        image: ghcr.io/your-org/polymarket:latest
+        imagePullPolicy: Always
+        command: ["python", "hurricane_markets/hurricane_tracker.py"]
+        envFrom:
+        - configMapRef:
+            name: polymarket-config
+        - secretRef:
+            name: polymarket-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      
+      # Internet Outage Tracker
+      - name: outage-tracker
+        image: ghcr.io/your-org/polymarket:latest
+        imagePullPolicy: Always
+        command: ["python", "internet_outages/outage_tracker.py"]
+        envFrom:
+        - configMapRef:
+            name: polymarket-config
+        - secretRef:
+            name: polymarket-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      
+      # SpaceX Tracker
+      - name: spacex-tracker
+        image: ghcr.io/your-org/polymarket:latest
+        imagePullPolicy: Always
+        command: ["python", "spacex_launches/spacex_tracker.py"]
+        envFrom:
+        - configMapRef:
+            name: polymarket-config
+        - secretRef:
+            name: polymarket-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      
+      # Elon Musk Tweet Tracker
+      - name: elon-tracker
+        image: ghcr.io/your-org/polymarket:latest
+        imagePullPolicy: Always
+        command: ["python", "elon_musk/notebooks/elonmusk_tweet.py", "--no-browser"]
+        envFrom:
+        - configMapRef:
+            name: polymarket-config
+        - secretRef:
+            name: polymarket-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "400m"
+      
+      restartPolicy: Always

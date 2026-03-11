@@ -1,0 +1,275 @@
+# 📖 Definitions for Kỹ thuật Vi xử lý
+
+- **Vi xử lý**: Một mạch điện tử thực hiện các phép tính và điều khiển.
+
+- **Bộ vi xử lý ARM**: Một loại bộ vi xử lý được sử dụng rộng rãi trong các hệ thống nhúng và di động.
+
+- **Thumb lệnh**: Một lệnh giảm kích thước mức, cho phép tạo ra các xung nhịp có tên sẵn trong các vi điều khiển 8051.
+
+- **Ngắt theo mức**: Một loại ngắt mà CPU tiếp nhận ngay khi một sự kiện xảy ra, không cần phải hoàn thành lệnh hiện tại.
+
+- **Ngắt theo điều kiện**: Một loại ngắt mà CPU tiếp nhận khi một điều kiện được đáp ứng.
+
+- **Ngắt**: A state of the CPU when unexpected events occur, such as interrupts or glitches.
+
+- **Chế độ ngoại lệ**: A specific state of the CPU where unexpected events occur.
+
+- **Thanh ghi ưu tiên ngắt**: A register used to store the interrupt vector.
+
+- **Mainframe Computer**: A large-scale computer designed for processing large-scale problems with high speed, typically using 64-bit or larger data and featuring high-speed processors and large memory.
+
+- **Microcomputer**: A common type of computer that can be a microcontroller, one-chip microcomputer, or a microprocessor with the ability to work with data of lengths 1-64 bit.
+
+- **CPU**: Central Processing Unit: The core component of a microprocessor that executes instructions and performs calculations.
+
+- **RAM**: Random Access Memory: A type of computer memory that can be accessed randomly; volatile memory.
+
+- **ROM**: Read-Only Memory: A type of computer memory that retains its data even when the power is off.
+
+- **Bus địa chỉ**: Bus truyền tải thông tin của các bit địa chỉ để chỉ định vị trí ô nhớ trong bộ nhớ.
+
+- **Bus dữ liệu**: Bus truyền tải dữ liệu giữa các thành phần của hệ thống.
+
+- **Thanh ghi lệnh**: Lưu các lệnh sau khi nạp mã lệnh từ bộ nhớ. Kích cỡ của thanh ghi này phụ thuộc vào kích cỡ của vi xử lý.
+
+- **Bộ đếm chương trình**: Chứa địa chỉ của lệnh hay mã thực thi (op-code). Tự động tăng theo bộ logic trong của vi xử lý.
+
+- **ALU**: Arithmetic Logic Unit - Thực hiện các phép toán số học và logic bên trong vi xử lý.
+
+- **CU**: Control Unit - Đọc và giải mã các lệnh từ bộ nhớ chương trình, kích hoạt khối phù hợp trong ALU.
+
+- **RISC**: Reduced Instruction Set Computing - Một tập lệnh máy tính nhỏ, đơn giản, tập trung vào hiệu suất.
+
+- **CISC**: Complex Instruction Set Computing - Một tập lệnh máy tính lớn, phức tạp, cung cấp nhiều lệnh khác nhau.
+
+- **ARM Cortex**: A family of ARM processor cores categorized into A, R, and M lines, supporting applications like high-complexity computing, real-time processing, and microcontroller applications.
+
+- **Thumb**: A 16-bit instruction set that allows for smaller program sizes (approximately 35% reduction) compared to 32-bit ARM when compiling.
+
+- **Memory Management Unit (MMU)**: A hardware component that translates virtual addresses used by a process into physical addresses in memory.
+
+- **Single Instruction Multiple Data (SIMD)**: A type of instruction set architecture that allows a single instruction to operate on multiple data elements simultaneously.
+
+- **Big Endian**: A system endianness where the most significant byte of a multi-byte data value is stored at the lowest memory address.
+
+- **Little Endian**: A system endianness where the least significant byte of a multi-byte data value is stored at the lowest memory address.
+
+- **MCLK**: Memory Clock: Synchronous clock signal for all processor activities including memory access and computation.
+
+- **ALE (Address Latch Enable)**: A signal that holds address bits on the address bus during memory access cycles.
+
+- **DBE (Data Bus Enable)**: A signal that maintains data on the data bus.
+
+- **Load-Store Architecture**: A processor architecture where data transfer between the processor and memory occurs exclusively through load and store instructions.
+
+- **ALU (Arithmetic Logic Unit)**: A processing unit that performs arithmetic and logical operations.
+
+- **MAC (Multiply Accumulate Unit)**: A processing unit that performs multiplication and accumulation operations.
+
+- **Register File**: A collection of storage locations within a processor, each capable of holding a single value.
+
+- **PC (Program Counter)**: A register that holds the memory address of the next instruction to be executed.
+
+- **Fetch-decode-execute**: A fundamental three-stage process in processor architecture where an instruction is retrieved, decoded, and then executed.
+
+- **Idle state**: A state in a processor where no instructions are currently being executed, allowing for other operations to be performed.
+
+- **Stack Pointer (SP)**: A register used to point to a specific location in the stack memory.
+
+- **Link Register (LR)**: A register used to store the return address when calling a subroutine.
+
+- **CPSR**: Program Status Register, a 32-bit register that contains status and control information for the ARM processor.
+
+- **IRQ**: Interrupt Request, a signal generated by a peripheral device to request the processor's attention.
+
+- **Exception**: A special situation during program execution that triggers an exception handler.
+
+- **Exception Vector Address**: A predefined address in ROM (32 bytes at the end) where the exception handler is located.
+
+- **Software Interrupt (SWI)**: A pre-defined exception call within a program, allowing a user-mode program to transition to a privileged mode.
+
+- **LR_svc (R14_svc)**: Register used to store the return address before entering a Supervisor mode via SWI.
+
+- **AREA**: A section of code or data within an application, with attributes defining its read/write access.
+
+- **CODE**: A section of code that contains instructions, typically with a READONLY attribute.
+
+- **CPR**: Control and Program Status Register - Thanh ghi trạng thái và điều khiển.
+
+- **Cờ nhớ (C)**: Carry Flag - Cờ tràn.
+
+- **Logical Shift Right (LSR)**: Shifts bits to the right by n positions, preserving the sign bit.
+
+- **Arithmetic Shift Right (ASR)**: Shifts bits to the right by n positions, preserving the sign bit (arithmetic shift).
+
+- **CMP instruction**: Compares two operands (Rn and Operand) and sets status flags based on the result of the subtraction.
+
+- **CMN instruction**: Compares Operand with -Rn and sets status flags based on the result of the addition.
+
+- **B**: Conditional branch instruction to a label.
+
+- **BL**: Conditional branch instruction using the link register (R14).
+
+- **Địa chỉ cơ sở**: Địa chỉ lưu trữ trong thanh ghi Rn.
+
+- **Địa chỉ lệch**: Offset được sử dụng để tính toán địa chỉ của ô nhớ ngoài.
+
+- **LDM/STM: Nạp hoặc lưu nhiều thanh ghi đồng thời**: Các lệnh này cho phép thao tác đồng thời trên nhiều thanh ghi.
+
+- **IA, IB, DA, DB modes trong LDM/STM**: Các chế độ khác nhau trong LDM/STM điều khiển cách tăng địa chỉ khi thao tác với các ô nhớ.
+
+- **LIFO**: Last Input First Output - vào trước ra sau
+
+- **SP (R13)**: Thanh ghi con trỏ ngăn xếp
+
+- **Align**: Instruction to align the memory location to a specific size by inserting zero bits into the memory location.
+
+- **Offset**: Specifies the offset from the position indicated by the expression.
+
+- **Align 4**: Instruction used to ensure data is loaded correctly when data is loaded at non-4 byte aligned addresses.
+
+- **Align 16**: Instruction used to ensure data is loaded correctly when data is loaded at non-16 byte aligned addresses.
+
+- **DCB**: Data Construction Block - Instruction to allocate one or more bytes of memory to store data.
+
+- **SWI**: Supervisor Word Interrupt - một ngắt được sử dụng để giao tiếp giữa kernel và user-space.
+
+- **Thumb mode**: A 16-bit instruction set architecture subset of ARM, utilizing a halfword alignment.
+
+- **LSB**: Least Significant Bit, used to determine mode switching between ARM and Thumb.
+
+- **PSW**: Program status word - Thanh ghi trạng thái chƣơng trình, chứa thông tin về trạng thái của CPU.
+
+- **PC**: Program counter - Con trỏ ngăn xếp, chỉ địa chỉ của lệnh tiếp theo được thực thi.
+
+- **Bộ tạo dao động**: Một mạch tạo ra xung nhịp ổn định, thường sử dụng tụ gốm hoặc thạch anh.
+
+- **Bộ nhớ chương trình (ROM)**: Bộ nhớ lưu trữ chương trình điều khiển hoạt động của vi điều khiển.
+
+- **Bộ nhớ số liệu (RAM)**: Bộ nhớ lưu trữ thông tin tạm thời trong quá trình vi điều khiển làm việc.
+
+- **Program Store Enable**: Tín hiệu điều khiển để cho phép đọc bộ nhớ ngoài, duy trì mức 1 khi lấy lệnh.
+
+- **Address Latch Enable (ALE)**: Tín hiệu cho phép chốt địa chỉ để phân kênh bus dữ liệu và byte thấp của bus địa chỉ trên port 0.
+
+- **RAM nội của 8051**: Bộ nhớ RAM nội của 8051 có dung lượng 256 byte (địa chỉ 00H – FF H)
+
+- **Vùng RAM định vị bit**: Một vùng RAM trong 8051 có địa chỉ 20H-2FH, chứa 128 bit, dùng để truy xuất từng bit hoặc byte.
+
+- **Thanh ghi tích lũy A (Accummulator)**: Một thanh ghi chứa toán hạng và kết quả của các lệnh số học và logic, có địa chỉ E0H và định địa chỉ từng bit.
+
+- **Cờ OV (Overflow)**: Báo biết kết quả phép cộng số có dấu là đúng hoặc sai. OV = 1 nghĩa là kết quả sai, OV = 0 nghĩa là kết quả đúng.
+
+- **Stack**: A region of RAM used for temporary storage of data, following a Last-In, First-Out (LIFO) principle.
+
+- **DPTR**: A 16-bit register consisting of DPL and DPH bytes, used to specify external memory addresses.
+
+- **SBUF**: Serial Buffer: A memory location used to store data being transmitted or received over a serial port.
+
+- **Bộ nhớ dữ liệu ngoài**: Một loại bộ nhớ có thể truy cập ngoài vi xử lý chính, thường được sử dụng để lưu trữ dữ liệu lớn.
+
+- **Địa chỉ bộ nhớ**: Một giá trị duy nhất xác định vị trí của một phần tử dữ liệu trong bộ nhớ.
+
+- **Hằng dữ liệu tức thời**: Dữ liệu được biểu diễn bằng ký tự '#' đặt trước nó, dùng trong lệnh hợp ngữ.
+
+- **Định địa chỉ tức thời**: Một kiểu định địa chỉ sử dụng hằng dữ liệu 8 bit làm dữ liệu tức thời.
+
+- **Nhãn**: Tên được sử dụng để tham chiếu đến một vị trí cụ thể trong chương trình.
+
+- **Mnemonic**: Instruction code that indicates the function of a command (e.g., ADD, MOV, DIV, MUL, INC) or the instruction of the assembler.
+
+- **Assembler**: A program used to translate source code into object code.
+
+- **MOVC**: Lệnh truy xuất dữ liệu từ ROM nội, sử dụng DPTR để đánh địa chỉ.
+
+- **XCH**: Lệnh trao đổi dữ liệu giữa thanh ghi A và một ô nhớ có địa chỉ cụ thể.
+
+- **AddC**: Lệnh cộng có xét đến cờ nhớ C, cộng giá trị dữ liệu trên thanh ghi A với giá trị dữ liệu trên thanh ghi Rn và cộng thêm giá trị của số nhớ trên cờ C.
+
+- **SubB**: Lệnh trừ có xét đến cờ nhớ C, trừ giá trị dữ liệu trên thanh ghi A với giá trị dữ liệu trên thanh ghi Rn và trừ cho giá trị nhớ trên cờ C.
+
+- **ORL**: Performs a logic OR operation between the data in register A and the data in register Rn, storing the result in register A.
+
+- **XRL**: Performs an exclusive OR (EX-OR) operation between the data in register A and the data in register Rn, storing the result in register A.
+
+- **LCALL**: Lệnh gọi xa, chuyển thực thi đến một chương trình con tại địa chỉ được chỉ định.
+
+- **RET**: Lệnh kết thúc chương trình con, quay lại thực thi chương trình chính.
+
+- **LJMP**: Lệnh thực hiện nhảy tới địa chỉ dài 16 bit, khoảng cách nhảy tối đa 64KB.
+
+- **JZ**: Lệnh nhảy thuận với cờ Zero, nhảy đến nhãn nếu cờ Zero bằng 1 (A=0)
+
+- **JNC**: Jump if Not Carry - Lệnh nhảy nếu không tràn.
+
+- **JB**: Jump if Bit - Lệnh nhảy nếu bit.
+
+- **JNB**: Jump if Not Bit - Lệnh nhảy nếu không bit.
+
+- **JBC**: Jump if Bit Condition - Conditional jump based on the value of a bit.  Resets the bit to 0.
+
+- **CJNE**: Conditional Jump if Not Equal - Conditional jump based on the comparison of two operands. Affects the Carry flag.
+
+- **DJNZ**: Decrements the operand by 1 and, if the operand is not zero, jumps to the label specified.
+
+- **Bộ đếm (Counter)**: Một ngoại vi được thiết kế để đếm các xung nhịp, thường dùng để đếm các sự kiện bên ngoài.
+
+- **Bộ định thời (Timer)**: Một ngoại vi được thiết kế để tạo một bộ trễ thời gian, thường sử dụng xung nhịp bên trong IC để đếm thời gian một cách chính xác.
+
+- **Flipflop báo tràn**: Một flipflop được sử dụng để báo hiệu khi giá trị đếm của bộ định thời đạt giá trị tối đa, thường được gọi là cờ tràn (overflow flag).
+
+- **DFF (Delay flipflop)**: Một flipflop có thể được sử dụng để tạo độ trễ, thường được sử dụng trong mạch chia xung clock.
+
+- **TL0**: Byte thấp của bộ Timer 0.
+
+- **TH0**: Byte cao của bộ Timer 0.
+
+- **Timer**: A hardware module used for timing and counting events or intervals.
+
+- **Gate**: A control bit that enables or disables the timer operation.
+
+- **Cờ tràn**: Một bit trong thanh ghi TCON, TF0/TF1, báo hiệu sự tràn của bộ định thời.
+
+- **Cờ ngắt bên ngoài**: Một bit trong thanh ghi TCON, IE0/IE1, kích hoạt ngắt ngoài khi có sự kiện.
+
+- **Chế độ định thời 0**: Chế độ định thời 13 bit sử dụng byte cao của bộ định thời THx và 5 bit thấp của byte thấp của bộ định thời TLx.
+
+- **Timer 0**: A 16-bit timer/counter that can be programmed to operate in various modes.
+
+- **Timer 1**: A 16-bit timer/counter that can be programmed to operate in various modes.
+
+- **Chế độ 1 của bộ định thời**: Chế độ hoạt động của bộ định thời với 16 bit, cho phép kiểm soát cả byte cao và byte thấp.
+
+- **Chế độ 2 của bộ định thời**: Chế độ hoạt động của bộ định thời với 8 bit, tự động nạp lại giá trị từ thanh ghi TH sau khi đạt giá trị cực đại.
+
+- **Counter**: A circuit that counts events or pulses, typically used in conjunction with a timer.
+
+- **UART**: Universal Asynchronous Receiver/Transmitter - A communication protocol for serial data transmission.
+
+- **REN**: Bit cho phép thu (Receive Enable). Bit REN cũng đƣợc tham chiếu bằng SCON.4 vì SCON là thanh ghi đánh địa chỉ theo bit.
+
+- **RI**: Bit ngắt thu. Cờ RI được bật lên sau khi 8051 nhận dữ liệu nối tiếp qua chân RxD.
+
+- **Interrupt Service Routine (ISR)**: A subroutine that handles a specific interrupt request.
+
+- **Interrupt Handler**: A program that manages an interrupt.
+
+- **IE (Interrupt Enable)**: A register used to enable or disable specific interrupts within a microcontroller.
+
+- **TF (Timer Flag)**: A flag bit set by a timer when it reaches a specific value, triggering an interrupt.
+
+- **External Interrupt**: A hardware interrupt triggered by external signals, specifically INT0 and INT1 on the 8051.
+
+- **Level Triggered Interrupt**: An interrupt activated when a low-level signal is applied to the interrupt input pins (P3.2 and P3.3), halting current execution and jumping to the interrupt vector.
+
+- **Interrupt Vector**: A memory address that points to the code to be executed when an interrupt occurs.
+
+- **Ngắt theo sƣờn**: Một loại ngắt trong đó vi điều khiển lấy mẫu trạng thái của chân ngắt ngoài một lần mỗi chu kỳ máy để xác định thời điểm ngắt.
+
+- **Interrupt – in – service**: A flag indicating that an interrupt service routine (ISR) is currently executing, preventing further interrupts on that channel.
+
+- **TCON**: A register in the 8051 microcontroller that controls interrupt enable bits (IE0, IE1) and the power-saving mode.
+
+- **Interrupt Priority**: A mechanism in 8051 to assign priority levels to different interrupt sources, determining the order in which they are serviced.
+
+- **RI, TI Interrupt**: A specific interrupt used for serial communication (UART) in the 8051 microcontroller, triggered by data reception or transmission.

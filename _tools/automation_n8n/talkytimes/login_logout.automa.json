@@ -1,0 +1,299 @@
+{
+    "extVersion": "1.30.01",
+    "name": "Talkytimes Login/Logout (Exact Replica)",
+    "icon": "riGlobalLine",
+    "table": [],
+    "version": "1.30.01",
+    "drawflow": {
+        "nodes": [
+            {
+                "id": "trigger",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 128,
+                    "y": 75.5
+                },
+                "data": {
+                    "description": "Start"
+                },
+                "label": "trigger"
+            },
+            {
+                "id": "googlesheets",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 300,
+                    "y": -231.16666666666669
+                },
+                "data": {
+                    "description": "Get Accounts",
+                    "refKey": "accounts",
+                    "type": "get",
+                    "spreadsheetId": "1G6q-TBUJd9a6d1bXlny6VP4zlQZHK26pHbi21qjyKOc",
+                    "range": "accounts-F!A:B",
+                    "firstRowAsKey": true
+                },
+                "label": "google-sheets"
+            },
+            {
+                "id": "debugcheck",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 500,
+                    "y": -235.22189613463146
+                },
+                "data": {
+                    "code": "/* Check if data exists */\nconst data = aut.refData('accounts');\nif (!data || data.length === 0) {\n  alert('DEBUG: No data found in Google Sheets!\\nCheck Spreadsheet ID and Range.');\n  aut.stop();\n}",
+                    "description": "DEBUG: Check Data",
+                    "everyNewTab": false,
+                    "timeout": 5000,
+                    "context": "background"
+                },
+                "label": "javascript-code"
+            },
+            {
+                "id": "loopdata",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 700,
+                    "y": -235.22189613463146
+                },
+                "data": {
+                    "loopId": "accounts",
+                    "loopThrough": "googlesheets",
+                    "description": "Loop Rows"
+                },
+                "label": "loop-data"
+            },
+            {
+                "id": "newtab",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 128,
+                    "y": 197.5
+                },
+                "data": {
+                    "url": "https://talkytimes.com/auth/login",
+                    "description": "Open Login Page",
+                    "active": true
+                },
+                "label": "new-tab"
+            },
+            {
+                "id": "activetab",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 700,
+                    "y": 75.5
+                },
+                "data": {
+                    "disableBlock": false
+                },
+                "label": "active-tab"
+            },
+            {
+                "id": "emailform",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 900,
+                    "y": 75.5
+                },
+                "data": {
+                    "description": "email",
+                    "findBy": "cssSelector",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000,
+                    "selector": ".ui-input:nth-child(1) .ui-input_control",
+                    "value": "{{ loopData.accounts.name }}",
+                    "type": "text-field",
+                    "delay": "1",
+                    "events": []
+                },
+                "label": "forms"
+            },
+            {
+                "id": "delayemail",
+                "type": "BlockDelay",
+                "initialized": false,
+                "position": {
+                    "x": 1100,
+                    "y": 75.5
+                },
+                "data": {
+                    "time": "5000",
+                    "description": "Wait after Email"
+                },
+                "label": "delay"
+            },
+            {
+                "id": "passwordform",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1300,
+                    "y": 75.5
+                },
+                "data": {
+                    "description": "password",
+                    "findBy": "cssSelector",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000,
+                    "selector": ".ui-input:nth-child(2) .ui-input_control",
+                    "value": "{{ loopData.accounts.password }}",
+                    "type": "text-field",
+                    "delay": "1",
+                    "events": []
+                },
+                "label": "forms"
+            },
+            {
+                "id": "delaypasswd",
+                "type": "BlockDelay",
+                "initialized": false,
+                "position": {
+                    "x": 1500,
+                    "y": 75.5
+                },
+                "data": {
+                    "time": "500",
+                    "description": "Wait after Password"
+                },
+                "label": "delay"
+            },
+            {
+                "id": "clicklogin",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1700,
+                    "y": 75.5
+                },
+                "data": {
+                    "description": "Click Login Button",
+                    "findBy": "cssSelector",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000,
+                    "selector": "button[data-test-id=\"cmp:ui-button click:resolve-action Log in\"]"
+                },
+                "label": "event-click"
+            },
+            {
+                "id": "clickprofile",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 1900,
+                    "y": 75.5
+                },
+                "data": {
+                    "description": "Click Profile Icon",
+                    "findBy": "cssSelector",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000,
+                    "selector": ".user__btn .nav-tab-desktop-content"
+                },
+                "label": "event-click"
+            },
+            {
+                "id": "clicklogout",
+                "type": "BlockBasic",
+                "initialized": false,
+                "position": {
+                    "x": 2100,
+                    "y": 75.5
+                },
+                "data": {
+                    "description": "Click Logout",
+                    "findBy": "xpath",
+                    "waitForSelector": false,
+                    "waitSelectorTimeout": 5000,
+                    "selector": "//*[@id=\"popper_vwqofk72_oljnd4\"]/div[2]/div[1]/div[1]/div/ul/li[4]/span/div/div/div"
+                },
+                "label": "event-click"
+            },
+            {
+                "id": "loopbreak",
+                "type": "BlockLoopBreakpoint",
+                "initialized": false,
+                "position": {
+                    "x": 2300,
+                    "y": 75.5
+                },
+                "data": {
+                    "loopId": "accounts"
+                },
+                "label": "loop-breakpoint"
+            }
+        ],
+        "edges": [
+            {
+                "source": "trigger",
+                "target": "googlesheets",
+                "id": "e1"
+            },
+            {
+                "source": "googlesheets",
+                "target": "debugcheck",
+                "id": "d1"
+            },
+            {
+                "source": "debugcheck",
+                "target": "loopdata",
+                "id": "e2"
+            },
+            {
+                "source": "loopdata",
+                "target": "activetab",
+                "id": "e3"
+            },
+            {
+                "source": "activetab",
+                "target": "emailform",
+                "id": "e4"
+            },
+            {
+                "source": "emailform",
+                "target": "delayemail",
+                "id": "e5"
+            },
+            {
+                "source": "delayemail",
+                "target": "passwordform",
+                "id": "e6"
+            },
+            {
+                "source": "passwordform",
+                "target": "delaypasswd",
+                "id": "e7"
+            },
+            {
+                "source": "delaypasswd",
+                "target": "clicklogin",
+                "id": "e8"
+            },
+            {
+                "source": "clicklogin",
+                "target": "clickprofile",
+                "id": "e9"
+            },
+            {
+                "source": "clickprofile",
+                "target": "clicklogout",
+                "id": "e10"
+            },
+            {
+                "source": "clicklogout",
+                "target": "loopbreak",
+                "id": "e11"
+            }
+        ]
+    },
+    "settings": {}
+}

@@ -1,0 +1,75 @@
+name: Optimize Docker Image
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+
+jobs:
+  optimize:
+    name: Analyze and Optimize Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build image for analysis
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        load: true
+        tags: polymarket:analysis
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Run Dive for layer analysis
+      run: |
+        docker pull wagoodman/dive
+        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+          wagoodman/dive polymarket:analysis \
+          --ci --lowestEfficiency=0.9 || echo "Dive analysis completed"
+
+    - name: Analyze image size
+      run: |
+        echo "## Docker Image Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Image Size" >> $GITHUB_STEP_SUMMARY
+        docker images polymarket:analysis --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Layer Count" >> $GITHUB_STEP_SUMMARY
+        docker history polymarket:analysis --no-trunc | wc -l >> $GITHUB_STEP_SUMMARY
+
+    - name: Security scan with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'polymarket:analysis'
+        format: 'table'
+        exit-code: '0'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Create optimization report
+      run: |
+        echo "# Docker Image Optimization Report" > optimization-report.md
+        echo "" >> optimization-report.md
+        echo "Generated: $(date)" >> optimization-report.md
+        echo "" >> optimization-report.md
+        echo "## Recommendations" >> optimization-report.md
+        echo "" >> optimization-report.md
+        echo "- Review layer efficiency with Dive" >> optimization-report.md
+        echo "- Update base images regularly" >> optimization-report.md
+        echo "- Remove unnecessary dependencies" >> optimization-report.md
+        echo "- Use multi-stage builds" >> optimization-report.md
+        echo "- Minimize layer count" >> optimization-report.md
+
+    - name: Upload optimization report
+      uses: actions/upload-artifact@v4
+      with:
+        name: optimization-report
+        path: optimization-report.md

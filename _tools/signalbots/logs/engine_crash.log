@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\signalbots\trading\mt5_engine.py", line 512, in engine_main
+    engine = QuantEngine(zmq_address)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\signalbots\trading\mt5_engine.py", line 109, in __init__
+    self._publisher = SignalPublisher(zmq_address)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\signalbots\core\bridge.py", line 19, in __init__
+    self._sock.bind(address or Config.ZMQ_ADDRESS)
+  File "C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\.venv\Lib\site-packages\zmq\sugar\socket.py", line 320, in bind
+    super().bind(addr)
+  File "zmq/backend/cython/_zmq.py", line 1009, in zmq.backend.cython._zmq.Socket.bind
+  File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+zmq.error.ZMQError: Address in use (addr='tcp://127.0.0.1:5559')

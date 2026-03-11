@@ -1,0 +1,23 @@
+--- History ---
+   STT        Ngày  ...    Số đăng ký Thành tiền
+0  STT    NoteDate  ...  RegisteredNo     Amount
+1    1  30/01/2026  ...           NaN     110000
+2    2  30/01/2026  ...           NaN     110000
+3    3  30/01/2026  ...           NaN      70000
+4    4  30/01/2026  ...           NaN     900000
+
+[5 rows x 14 columns]
+['STT', 'Ngày', 'Số phiếu', 'Đối tượng', 'Loại phiếu', 'Tên thuốc', 'Đơn vị', 'Số lượng', 'Đơn giá', 'CK', 'VAT', 'Lô/Hạn', 'Số đăng ký', 'Thành tiền']
+Unique values in Loại phiếu:
+['Xuất Bán' 'Chuyển kho' 'Xuất hủy' 'Nhập Kho' 'Nhập Lại Từ Khách Hàng']
+
+--- Drugs ---
+  Mã Thuốc         Nhóm Thuốc  ...  Vị trí bảo quản                Tồn kho
+0     Code          GroupName  ...  StorageLocation  LastInventoryQuantity
+1  TH11441  Hạ nhiệt giảm đau  ...              NaN                   0.00
+2  TH11440   Chăm sóc cá nhân  ...              NaN                   0.00
+3  TH11439             Tất cả  ...              NaN                   0.00
+4  TH11438       Dụng cụ y tế  ...              NaN                   0.00
+
+[5 rows x 48 columns]
+['Mã Thuốc', 'Nhóm Thuốc', 'Tên Thuốc', 'Thông Tin', 'Vị trí tủ, kho', 'Giá Nhập', 'Giá Bán Lẻ', 'Vat(%)', 'Trạng thái tích điểm\n(0 -bỏ tích, 1-tích)', 'Tích điểm(%)', 'Trạng thái chiết khấu theo lợi nhuận\n(0 -bỏ tích, 1-tích)', 'Chiết khấu hàng tư vấn cho nhân viên(%)', 'Trạng thái Hàng tư vấn\n((0 -bỏ tích, 1-tích)', 'Giá Buôn', 'Đơn Vị Lẻ', 'Đơn Vị Thứ Nguyên', 'Số lượng cảnh báo', 'Hệ Số', 'Số dư đầu kỳ', 'Giá đầu kỳ', 'Barcode', 'Số Lô', 'Hạn Dùng', 'Dạng Bào Chế', 'Số ĐK', 'Hoạt Chất', 'Hàm Lượng', 'QC Đóng Gói', 'Nước SX', 'Hãng SX', 'Nhà Nhập Khẩu', 'ĐV Đóng Gói NN', 'Giá Khai Báo', 'Mã QG', 'Loại Hàng', 'Bán theo đơn(Chỉ cho loại hàng 3)(1:Bán theo đơn,0:Bán không theo đơn)', 'CS Kê Khai', 'Nước ĐK', 'Địa Chỉ ĐK', 'Địa Chỉ Sản Xuất', 'Phân Loại', 'Mã Định Danh', 'Bán Buôn', 'Result', 'CTKM', 'Điều kiện bảo quản', 'Vị trí bảo quản', 'Tồn kho']

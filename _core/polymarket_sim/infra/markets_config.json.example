@@ -1,0 +1,51 @@
+{
+  "markets": [
+    {
+      "id": "btc-up-down-15m",
+      "title": "Bitcoin Price (End of Window) - Up or Down?",
+      "slug": "bitcoin-price-up-down-15m",
+      "type": "binary",
+      "tokens": {
+        "YES": "0x...",
+        "NO": "0x..."
+      },
+      "oracle": {
+        "type": "price_feed",
+        "params": {
+          "asset": "BTC",
+          "interval": "15m"
+        }
+      },
+      "enabled": true
+    },
+    {
+      "id": "elon-tweets-weekly",
+      "title": "Elon Musk Weekly Tweet Count > 5",
+      "slug": "elon-musk-weekly-tweet-count-5",
+      "type": "binary",
+      "tokens": {
+        "YES": "0x...",
+        "NO": "0x..."
+      },
+      "oracle": {
+        "type": "social_feed",
+        "params": {
+          "platform": "twitter",
+          "account": "elonmusk",
+          "metric": "tweet_count",
+          "threshold": 5,
+          "window": "weekly"
+        }
+      },
+      "enabled": false
+    }
+  ],
+  "global_settings": {
+    "default_bankroll": 1000.0,
+    "fee_simulation": {
+      "enabled": true,
+      "maker_fee": 0.0,
+      "taker_fee": 0.001
+    }
+  }
+}
