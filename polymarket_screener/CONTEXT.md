@@ -7,13 +7,18 @@ A professional-grade, event-driven trading framework designed specifically for P
 
 ### A. Environment & Portability
 - **No Docker**: To ensure local stability, easy debugging, and direct access to native OS performance without container overhead.
-- **VPN-Safe Networking**: Explicit binding to `0.0.0.0` and heartbeat state-sync for reliable connectivity behind VPN tunnels.
+- **VPN-Safe Networking**: Explicit binding to `0.0.0.0` and heartbeat state-sync to prevent WSL/Windows port conflicts (binding to specific IPs instead of just `localhost`).
+- **Infrastructure Hardening**: Integrated **Redis** for sub-millisecond signal caching and **PostgreSQL** for trade/execution persistence, alongside MongoDB for cloud logging.
 - **Modular Directory Structure**: Clear separation between Data, Strategy, Validation, and API layers to prevent "spaghetti code."
 
 ### B. Tech Stack
 - **Backend (Python)**: High-performance data ingestion using `FastAPI` and `Asyncio`. Numerical logic powered by `NumPy/Pandas`.
-- **Frontend (React/Vite)**: Premium **Glassmorphism** Dashboard with real-time WebSocket syncing for live monitoring.
-- **Persistence**: **MongoDB** for cloud-accessible trade logs and **Parquet** for high-speed local data caching.
+- **Frontend (React/Vite)**: Premium **Glassmorphism** Dashboard with real-time WebSocket syncing.
+- **Persistence Layer**: 
+  - **Redis**: Real-time signal & state cache (Latency control).
+  - **PostgreSQL**: Relational trade records and contract metadata.
+  - **MongoDB**: Remote cloud-accessible logs (Render.com).
+  - **Parquet**: Local high-speed backtest data.
 
 ### C. Reliability & Decoupling (The "Not Broken" Philosophy)
 - **Strict Decoupling**: The backend Quant Engine and the Frontend UI operate on separate threads/processes. The backend "pushes" data to a non-blocking `ws_bridge`, ensuring that even a slow or crashing frontend cannot slow down the performance of the trading logic.
