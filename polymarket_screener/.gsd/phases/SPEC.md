@@ -27,8 +27,12 @@ Execution runs locally with NO DOCKER to ensure stability and easy debugging.
 - **Frontend - Premium Dashboard** (`frontend/`):
   - **Tech Stack**: Vite + React + Tailwind + Lucide Icons + Recharts (for Alpha/Greeks visualization).
   - **Theme**: Sleek Dark Mode / Glassmorphism (Vibrant gradients, micro-animations).
-  - **Connection**: `api/ws_bridge.py` serves as the primary real-time pipe. REST fallback for historical data.
-- **Deployment**: Render.com compatible via basic `start.sh` or `gunicorn`. VPN-resilient binding.
+- **Frontend - Premium Dashboard** (`frontend/`):
+  - **Connection**: `api/ws_bridge.py`. **Auto-reconnect** and **State-Sync** logic to ensure UI matches backend even after VPN drop.
+  - **Alerting**: Persistent toast notifications for Rate-Limit hits or API outages.
+- **Resilience Guidelines**:
+  - **Graceful Degradation**: If Sentiment API fails, strategy continues with neutral sentiment rather than crashing.
+  - **No Silent Failures**: All caught exceptions must be logged with stack traces to MongoDB for cloud debugging.
 
 ## Verification Requirements
 - Validate Binance/Deribit data fetchers pull fresh data and reject stale data.
