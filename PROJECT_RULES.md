@@ -20,6 +20,25 @@
 
 ---
 
+## Collaborative Workflows (Gemini + Hive)
+
+The **Gemini CLI** (External Orchestrator) and the **Internal Agent Hive** work as a unified force for high-integrity development.
+
+| Entity | Role | Tooling |
+|--------|------|---------|
+| **Gemini CLI** | Primary Orchestrator | `read_file`, `replace`, `run_shell_command`, `git` |
+| **Agent Hive** | Specialized Deep Analysis | `tsx scripts/hive-call.ts <role> <instruction> [files]` |
+
+### Protocol for Core Changes (C++, Concurrency, Quant)
+For any change affecting the core engine logic, thread-safety (atomic/mutex), or financial math, Gemini **MUST** invoke the Hive for an audit before finalizing:
+
+1. **PROPOSE**: Gemini drafts the code changes.
+2. **AUDIT**: Gemini calls the `AuditorAgent` or `QuantAgent` with the proposed file content.
+3. **REFINE**: Gemini adjusts the code based on Hive feedback.
+4. **VERIFY**: Standard build and test suite validation.
+
+---
+
 ## Proof Requirements
 
 Every change requires verification evidence:
