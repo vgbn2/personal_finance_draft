@@ -10,8 +10,9 @@ Execution runs locally with NO DOCKER to ensure stability and easy debugging.
 - **External Data Ingestion** (`data/exchanges/`):
   - `binance_client.py`: Fetches spot and futures OHLCV data from Binance.
   - `deribit_client.py`: Fetches options data, implied volatility (IV), and Greeks (Delta, Gamma, Theta, Vega) from Deribit.
-  - `macro_client.py`: Integrates macroeconomic data to factor in broader market conditions.
-  - `data_aggregator.py`: Merges and synchronizes OHLCV, Greeks, Macro, and Polymarket data. Includes strict data freshness checks (rejects stale data).
+  - `macro_client.py`: Integrates macroeconomic data (Fed Watch for rate hike/cut probabilities, CPI, etc.).
+  - `sentiment_client.py`: Integrates crowd sentiment data (e.g., Twitter/X, Reddit, or specific sentiment APIs).
+  - `data_aggregator.py`: Merges and synchronizes OHLCV, Greeks, Macro, Sentiment, and Polymarket data. Includes strict data freshness checks (rejects stale data).
 - **Polymarket Data Layer** (`data/polymarket/`):
   - `gamma_client.py`: Interfaces with Polymarket's Gamma API.
   - `clob_client.py`: Interfaces with Polymarket's CLOB API.
