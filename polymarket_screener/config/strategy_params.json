@@ -1,0 +1,19 @@
+{
+  "screener": {
+    "min_volume": 100000,
+    "min_liquidity": 10000,
+    "max_days_to_expiry": 30
+  },
+  "strategy": {
+    "name": "example_macro_arb",
+    "position_size_usd": 100,
+    "stop_loss_pct": 0.1,
+    "take_profit_pct": 0.2
+  },
+  "data_ingestion": {
+    "binance_symbols": ["BTC/USDT", "ETH/USDT"],
+    "deribit_currencies": ["BTC", "ETH"],
+    "timeframe": "1h",
+    "max_staleness_seconds": 60
+  }
+}
