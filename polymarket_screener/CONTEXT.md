@@ -1,0 +1,39 @@
+# Project Context: Polymarket Trading Framework
+
+## 1. Mission
+A professional-grade, event-driven trading framework designed specifically for Polymarket, with integrated crypto and stock market data. The goal is to maximize alpha through robust backtesting (Monte Carlo) and safe, real-time paper trading.
+
+## 2. Core Architectural Decisions
+
+### A. Environment & Portability
+- **No Docker**: To ensure local stability, easy debugging, and direct access to native OS performance without container overhead.
+- **VPN-Safe Networking**: Explicit binding to `0.0.0.0` and heartbeat state-sync for reliable connectivity behind VPN tunnels.
+- **Modular Directory Structure**: Clear separation between Data, Strategy, Validation, and API layers to prevent "spaghetti code."
+
+### B. Tech Stack
+- **Backend (Python)**: High-performance data ingestion using `FastAPI` and `Asyncio`. Numerical logic powered by `NumPy/Pandas`.
+- **Frontend (React/Vite)**: Premium **Glassmorphism** Dashboard with real-time WebSocket syncing for live monitoring.
+- **Persistence**: **MongoDB** for cloud-accessible trade logs and **Parquet** for high-speed local data caching.
+
+### C. Reliability (The "Not Broken" Philosophy)
+- **Zero Hardcoding**: All symbols and network configs are managed via YAML registries.
+- **Anti-Fragile Ingestion**: Centralized rate-limiting, circuit breakers, and exponential backoff retries.
+- **Stale-Data Poisoning**: Automatic signal suspension if critical price feeds stop updating.
+
+## 3. Directory Mapping
+```text
+/config/            # Symbols, network, strategy parameters
+/data/              # Ingestion clients (Polymarket, Binance, Deribit, Stocks)
+/strategy/          # Signal generation logic (Pure functions)
+/execution/         # Broker & Portfolio management
+/validation/        # Backtesting & Monte Carlo engines
+/api/               # FastAPI & WebSocket Bridge
+/frontend/          # React Dashboard (Vite)
+/logs/              # Structured logging for debugging
+```
+
+## 4. Key Workflows
+1.  **Screener**: Filter Polymarket for high-volume, event-driven opportunities.
+2.  **Backtest**: Test strategies against historical data with realistic slippage.
+3.  **Monte Carlo**: Verify strategy survival under "Black Swan" market shocks.
+4.  **Live Terminal**: Monitor real-time Greeks and risk dials on the premium dashboard.
