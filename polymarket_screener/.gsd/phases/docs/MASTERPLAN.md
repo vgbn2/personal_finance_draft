@@ -24,13 +24,17 @@ For high-fidelity code sketches of every module, see [FULL_CODE_SPEC.md](file://
 - **Local Cache**: Implement Parquet caching (`data/storage.py`) to prevent redundant API calls during backtesting.
 - **Aggregator**: Create `data_aggregator.py` to synchronize Binance, Deribit, and Polymarket streams into a unified `MarketState`, strictly dropping stale asynchronous data.
 
+### Plan 1.5: Core Models & Strict Schemas (Pydantic)
+- **Data Integrity**: Implement `data/models.py`. Every incoming tick and outgoing trade must pass through these Pydantic schemas to validate types and prevent "Poisoned JSON" from crashing databases or math components.
+
 ---
 
 ## 🧠 PHASE 2: Core Logic, Screening & Storage
 **Goal**: Build the filtering mechanisms, cloud persistence, and realistic orderbook math.
 
-### Plan 2.1: Market Screener
-- **Filtering logic**: Implement `market_screener.py` to isolate specific assets (BTC) or qualitative events (Tweet Markets) based on volume/liquidity thresholds defined in `strategy_params.yaml`.
+### Plan 2.1: Market Screener & Auto-Rolling
+- **Filtering logic**: Implement `market_screener.py` to isolate specific assets (BTC) or qualitative events (Tweet Markets).
+- **Chronological Rolling**: Implement the `WindowSequenceHandler` to detect and "pre-warm" the next 15-minute market window (e.g., 9:30 -> 9:45) before the current one expires. No manual symbol updates required for recurring windows.
 
 ### Plan 2.2: Cloud Storage & Analytics
 - **MongoDB**: Integrate `mongodb_client.py` using `pymongo` to persist trades, signals, and stack traces securely to the cloud (Render.com ready).
@@ -38,6 +42,11 @@ For high-fidelity code sketches of every module, see [FULL_CODE_SPEC.md](file://
 ### Plan 2.3: Orderbook Slippage & Dashboard API
 - **Slippage Math**: Enhance the CLOB client to traverse depth and calculate `effective_price` based on trade size.
 - **API Endpoints**: Finalize the threaded FastAPI backend to serve the current strategy state natively to the frontend.
+
+### Plan 2.4: Execution Safety, State Recovery & Alerts
+- **Execution Locks**: Enforce `asyncio.Lock()` in `broker.py` to serialize trade executions and prevent Polymarket Nonce collisions.
+- **Power-Outage Protocol**: Implement `reconciliation.py` which triggers on startup to pull all open positions and pending orders from the database/Polymarket before placing new trades.
+- **Alerting Service**: Build `alert_service.py` (Telegram integration) to push notifications when Circuit Breakers trip or significant trades occur.
 
 ---
 
@@ -84,6 +93,13 @@ For high-fidelity code sketches of every module, see [FULL_CODE_SPEC.md](file://
 ### Plan 5.1: Render.com Compatibility
 - **Environment**: Ensure the Python backend runs flawlessly via a standard `start.sh` or Gunicorn setup without relying on Docker compose files.
 - **Monitoring**: Verify MongoDB captures all live execution logs for remote debugging.
+
+### Plan 5.2: "Shadow Mode" & Slippage Proof
+- **Shadow Loop**: Implement a non-trading execution mode that compares "Virtual Fills" to actual blockchain trade events to verify our `slippage.py` math matches reality in real-time.
+
+### Plan 5.3: "Chaos Monkey" & Math Hardening
+- **Resilience Testing**: Implement a script to randomly kill processes and network interfaces to verify 100% state recovery.
+- **Property-Based Testing**: Use `Hypothesis` to subject the Quant Math (Black-Scholes, Kelly) to 1,000,000 edge-case inputs.
 
 ---
 
