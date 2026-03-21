@@ -6,23 +6,27 @@ A modular, event-driven framework for screening Polymarket events, backtesting s
 Execution runs locally with NO DOCKER to ensure stability and easy debugging.
 
 ## Architecture Guidelines
-- **Configuration** (`config/strategy_params.json/yaml`): Exposes parameters per-asset (e.g., BTC, ETH) and per-event type (e.g., tweet markets). Supports configuration grids for optimization.
-- **External Data Ingestion** (`data/exchanges/`):
-  - `binance_client.py`: Fetches spot and futures OHLCV data from Binance.
-  - `deribit_client.py`: Fetches options data, implied volatility (IV), and Greeks (Delta, Gamma, Theta, Vega) from Deribit.
-  - `macro_client.py`: Integrates macroeconomic data (Fed Watch for rate hike/cut probabilities, CPI, etc.).
-  - `sentiment_client.py`: Integrates crowd sentiment data (e.g., Twitter/X, Reddit, or specific sentiment APIs).
-  - `data_aggregator.py`: Merges and synchronizes OHLCV, Greeks, Macro, Sentiment, and Polymarket data. Includes strict data freshness checks (rejects stale data).
+- **Configuration** (`config/strategy_params.json/yaml`): Exposes parameters per-asset (e.g., BTC, ETH) and per-event type. Supports configuration grids and risk limits.
+- **Data Ingestion Layer** (`data/`):
+  - `binance_client.py`, `deribit_client.py`: Market data and Greeks.
+  - `macro_client.py`: Fed Watch (rate hike/cut probabilities) and Macro indicators.
+  - `sentiment_client.py`: Crowd sentiment (e.g., Twitter, Reddit).
+  - `data_aggregator.py`: Synchronizes all streams via an internal **Event Bus** (Terminus pattern). Strict freshness checks.
 - **Polymarket Data Layer** (`data/polymarket/`):
-  - `gamma_client.py`: Interfaces with Polymarket's Gamma API.
-  - `clob_client.py`: Interfaces with Polymarket's CLOB API.
+  - `gamma_client.py`: Market discovery.
+  - `clob_client.py`: Orderbook snapshots with **Slippage & Impact Calculator**.
 - **Storage** (`data/storage.py`): Caches historical data locally (SQLite or Parquet).
-- **Screener** (`screener/market_screener.py`): Allows selecting specific assets or distinct event types (e.g., tweet markets). Filters based on custom criteria.
-- **Strategy Interface** (`strategy/base.py`): The `BaseStrategy` class that users inherit from.
-- **Backtesting & Validation Engine** (`backtest/`): 
-  - Main loop (`engine.py`), execution (`broker.py`), tracking (`portfolio.py`).
-  - Optimization & Robustness (`optimizer.py` and `monte_carlo.py`): Supports testing strategy robustness via Monte Carlo simulations, parameter configuration sweeps, and advanced statistical metrics.
-- **Paper Trading Engine** (`live/paper_trader.py`): Connects to live WS/REST endpoints.
+- **Screener** (`screener/market_screener.py`): Isolates assets/events with **Volatility Decay Filters** to avoid entering late on news spikes.
+- **Strategy Engine** (`strategy/`):
+  - `base.py`: Abstract `BaseStrategy` with `on_market_event` and `on_macro_data`.
+  - Includes **Arbitrage & Hedging logic** (e.g., suggesting Binance offsets for Polymarket positions).
+- **Backtesting & Validation** (`backtest/`): 
+  - `engine.py`, `broker.py`, `portfolio.py`.
+  - `optimizer.py`: Parameter sweeps.
+  - `monte_carlo.py`: Robustness testing with **Black Swan Stress Testing** (injecting artificial crashes/early resolutions).
+- **Live Bridge & Dashboard** (`live/`):
+  - `paper_trader.py`: Live integration.
+  - **Dashboard API** (`live/api.py`): Flask/FastAPI server running in a separate thread (Terminus pattern) to provide a local web UI for monitoring without Docker.
 
 ## Verification Requirements
 - Validate Binance/Deribit data fetchers pull fresh data and reject stale data.
