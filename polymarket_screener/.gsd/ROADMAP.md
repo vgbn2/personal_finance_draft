@@ -2,7 +2,7 @@
 
 ## Phase 1: Infrastructure and Data Ingestion
 - Set up project structure and configuration handling (`config/strategy_params.json`).
-- Implement external data clients: `binance_client.py`, `deribit_client.py`, `macro_client.py` (including Fed Watch tool logic), `sentiment_client.py`.
+- Implement external data clients: `binance_client.py`, `deribit_client.py`, `stock_options_client.py`, `macro_client.py` (including Fed Watch tool logic), `sentiment_client.py`.
 - Implement Polymarket data clients: `gamma_client.py`, `clob_client.py`.
 - Implement local storage and caching layer (`data/storage.py`).
 - Implement `data_aggregator.py` with strict data freshness verification to sync all streams.
