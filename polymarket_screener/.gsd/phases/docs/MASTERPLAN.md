@@ -44,15 +44,16 @@ For high-fidelity code sketches of every module, see [FULL_CODE_SPEC.md](file://
 ## 🧪 PHASE 3: Validation & Stress Testing
 **Goal**: Ensure strategies survive extreme market conditions before risking capital.
 
-### Plan 3.1: Backtesting & Monte Carlo Stress Testing
-- **Time-Series Engine**: Build the historical replay loop (`backtest/engine.py`) and simulated execution `broker.py`.
-- **Black Swan Injection**: Implement `monte_carlo.py` to run $N$ simulations, periodically injecting synthetic shocks (e.g., flash crashes) to calculate worst-case Value at Risk (VaR).
+### Plan 3.1: Market Replay Backtesting (Zero-WebSocket)
+- **Engine**: Build the `backtest/engine.py` using **Market Replay** logic. Instead of live WebSockets, it reads historical Parquet ticks (from Phase 1.4) to simulate execution without network latency.
+- **Slippage Simulation**: Use the `old317/quant_engine.py` pattern to simulate fills against the historical orderbook depth.
 
-### Plan 3.2: Advanced Statistical Analytics
-- **Risk-Reward Metrics**: Implement `analytics.py` to calculate industry-standard quant metrics on the backtest equity curve:
-  - **Sharpe & Sortino Ratios**: To measure risk-adjusted and downside-adjusted returns.
-  - **Calmar Ratio**: To evaluate the relationship between compound annual growth rate (CAGR) and Maximum Drawdown.
-  - **Profit Factor & Expectancy**: To determine the raw mathematical edge of the strategy (Gross Profit / Gross Loss).
+### Plan 3.2: 3D Risk Management Matrix (The "Old 317" Shield)
+- **Exposure Gates**: Implement the `risk_manager.py` with three absolute boundaries:
+  - **Global Cap**: 30% max portfolio exposure.
+  - **Correlation Cap**: 15% max exposure per expiration date.
+  - **Conviction Tiers**: Position size capped by win-probability (ITM = 5%, OTM = 1.5%).
+- **Circuit Breakers**: Port the **Volatility Circuit Breaker** (`rv > MOMENTUM_THRESHOLD`) to freeze entries during market chaos.
 - **Out-of-Sample Validation**: Ensure strategies are validated on unseen data to prevent overfitting ("curve-fitting") the parameters.
 
 ### Plan 3.3: Advanced Combinatorial Arbitrage (Legacy Integration)
