@@ -29,15 +29,15 @@ Execution runs locally with NO DOCKER to ensure stability and easy debugging.
 - **Backtesting & Optimization** (`validation/`): 
   - `backtester.py`, `monte_carlo.py`, `stress_tests.py`.
 - **Frontend - Premium Dashboard** (`frontend/`):
-  - **Tech Stack**: Vite + React + Tailwind + Lucide Icons + Recharts.
-  - **Connection**: `api/ws_bridge.py`. **Auto-reconnect** and **State-Sync** logic to ensure UI matches backend even after VPN drop.
-  - **Alerting**: Persistent toast notifications for Rate-Limit hits or API outages.
+  - **Languages**: **JavaScript/TypeScript** using **React** and **Vite**.
+  - **Styling**: **Tailwind CSS** for custom glassmorphism components.
+  - **Visuals**: **Lucide Icons** and **Recharts**.
+  - **Connection**: Real-time **WebSocket Bridge** (`api/ws_bridge.py`) for live signals, with **REST (FastAPI)** endpoints for historical/static data.
+  - **Resilience**: Auto-reconnect and state-sync logic for VPN stability.
 - **Resilience Guidelines**:
-  - **Graceful Degradation**: If Sentiment API fails, strategy continues with neutral sentiment rather than crashing.
-  - **No Silent Failures**: All exceptions logged with stack traces to MongoDB.
-- **Resilience Guidelines**:
-  - **Graceful Degradation**: If Sentiment API fails, strategy continues with neutral sentiment rather than crashing.
-  - **No Silent Failures**: All caught exceptions must be logged with stack traces to MongoDB for cloud debugging.
+  - **Graceful Degradation**: If non-critical APIs (e.g. Sentiment) fail, the system continues with neutral defaults.
+  - **No Silent Failures**: All exceptions are caught and logged with tracebacks to MongoDB for remote debugging.
+  - **Data Poisoning**: Automatic signal suspension if critical price feeds go stale.
 
 ## Verification Requirements
 - Validate Binance/Deribit data fetchers pull fresh data and reject stale data.
