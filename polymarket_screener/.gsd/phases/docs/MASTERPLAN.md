@@ -74,3 +74,12 @@ For high-fidelity code sketches of every module, see [FULL_CODE_SPEC.md](file://
 ### Plan 5.1: Render.com Compatibility
 - **Environment**: Ensure the Python backend runs flawlessly via a standard `start.sh` or Gunicorn setup without relying on Docker compose files.
 - **Monitoring**: Verify MongoDB captures all live execution logs for remote debugging.
+
+---
+
+## 🛡️ PHASE 6: Stability & Pre-Flight Verification
+**Goal**: Final certification that the project is "Zero-Break."
+
+### Plan 6.1: Automated Health Checks
+- **Pre-Flight Suite**: Implement `scripts/health_check.py` to verify Redis/Postgres/API connectivity before every launch.
+- **CI/CD Logic**: Ensure every code change passes the `Greeks` mathematical unit tests and VPN-reconnect integration tests.
