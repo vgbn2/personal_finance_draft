@@ -55,6 +55,11 @@ For high-fidelity code sketches of every module, see [FULL_CODE_SPEC.md](file://
   - **Profit Factor & Expectancy**: To determine the raw mathematical edge of the strategy (Gross Profit / Gross Loss).
 - **Out-of-Sample Validation**: Ensure strategies are validated on unseen data to prevent overfitting ("curve-fitting") the parameters.
 
+### Plan 3.3: Advanced Combinatorial Arbitrage (Legacy Integration)
+- **Marginal Polytope Logic**: Implement dependency detection using Integer Programming (Frank-Wolfe Algorithm) to find mispriced spreads across correlated markets (e.g., Election Winner vs. Pennsylvania Winner).
+- **Bregman Projection**: Use the Kullback-Leibler divergence model to calculate optimal "information-theoretic" arbitrage trades instead of simple Euclidean distance.
+- **Legacy Client Integration**: Port the `15min_window_epoch` scanning logic from legacy `polymarket_client.py` for high-frequency crypto event monitoring.
+
 ---
 
 ## 🖥️ PHASE 4: Premium Dashboard (React/Vite)
