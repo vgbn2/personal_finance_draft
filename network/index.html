@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicroLink | Network Simulator</title>
+    <style>
+        :root {
+            --bg-dark: #0a0b10;
+            --panel-bg: #14161f;
+            --accent-green: #00e676;
+            --accent-yellow: #ffea00;
+            --accent-orange: #ff9100;
+            --accent-red: #ff5252;
+            --text-main: #e0e0e0;
+            --text-dim: #9094a6;
+            --border: #2a2d3d;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Side Panel */
+        .side-panel {
+            width: 320px;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0 0 20px 0;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .setting-group input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .val-display {
+            float: right;
+            color: var(--text-main);
+            font-weight: bold;
+        }
+
+        /* Map Area */
+        .map-area {
+            flex-grow: 1;
+            position: relative;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            pointer-events: none;
+            border: 1px solid var(--border);
+        }
+
+        .stats-panel {
+            margin-top: auto;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 15px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .explanation {
+            margin-top: 20px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+        }
+
+        .explanation b {
+            color: var(--accent-yellow);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="side-panel">
+        <h1>MicroLink</h1>
+        
+        <div class="setting-group">
+            <label>Frequency (GHz) <span class="val-display" id="freq-val">5.0</span></label>
+            <input type="range" id="freq" min="1" max="80" step="0.1" value="5.0">
+        </div>
+
+        <div class="setting-group">
+            <label>TX Power (dBm) <span class="val-display" id="pwr-val">20</span></label>
+            <input type="range" id="pwr" min="0" max="30" step="1" value="20">
+        </div>
+
+        <div class="setting-group">
+            <label>Antenna Gain (dBi) <span class="val-display" id="gain-val">24</span></label>
+            <input type="range" id="gain" min="0" max="50" step="1" value="24">
+        </div>
+
+        <div class="setting-group">
+            <label>Receiver Sensitivity (dBm) <span class="val-display" id="sens-val">-70</span></label>
+            <input type="range" id="sens" min="-100" max="-40" step="1" value="-70">
+        </div>
+
+        <div class="stats-panel" id="results">
+            <div style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 10px;">LINK ANALYSIS</div>
+            <div id="stat-content">Select or place nodes to see link data.</div>
+        </div>
+
+        <div class="explanation">
+            <b>How it works:</b><br>
+            Microwave links use <b>Line of Sight</b>. The <b>Free Space Path Loss (FSPL)</b> increases as distance or frequency goes up. 
+            The <b>Fade Margin</b> tells us how much "buffer" we have before the signal drops below the receiver's threshold.
+        </div>
+    </div>
+
+    <div class="map-area" id="map-parent">
+        <canvas id="networkCanvas"></canvas>
+        <div class="instructions">CLICK to place Tower | DRAG to move | SPACE to clear</div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('networkCanvas');
+    const ctx = canvas.getContext('2d');
+    const mapParent = document.getElementById('map-parent');
+    
+    // State
+    let towers = [];
+    let draggingNode = null;
+    let dragOffset = { x: 0, y: 0 };
+    
+    // Simulation Parameters
+    let config = {
+        freq: 5.0,
+        txPower: 20,
+        gain: 24,
+        sensitivity: -70
+    };
+
+    // UI Elements
+    const inputs = ['freq', 'pwr', 'gain', 'sens'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        const display = document.getElementById(id + '-val');
+        el.oninput = () => {
+            config[id === 'pwr' ? 'txPower' : (id === 'sens' ? 'sensitivity' : id)] = parseFloat(el.value);
+            display.innerText = el.value;
+            draw();
+        };
+    });
+
+    function resize() {
+        canvas.width = mapParent.clientWidth;
+        canvas.height = mapParent.clientHeight;
+        draw();
+    }
+
+    window.onresize = resize;
+    resize();
+
+    // Interaction
+    canvas.onmousedown = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Check if clicking existing tower
+        const hit = towers.find(t => Math.hypot(t.x - x, t.y - y) < 15);
+        if (hit) {
+            draggingNode = hit;
+            dragOffset = { x: hit.x - x, y: draggingNode.y - y };
+        } else {
+            // Place new tower
+            towers.push({ x, y, id: 'T' + (towers.length + 1) });
+            draw();
+        }
+    };
+
+    canvas.onmousemove = (e) => {
+        if (!draggingNode) return;
+        const rect = canvas.getBoundingClientRect();
+        draggingNode.x = e.clientX - rect.left;
+        draggingNode.y = e.clientY - rect.top;
+        draw();
+    };
+
+    window.onmouseup = () => draggingNode = null;
+    
+    window.onkeydown = (e) => {
+        if (e.code === 'Space') {
+            towers = [];
+            draw();
+        }
+    };
+
+    // Signal Math
+    function calculateLink(t1, t2) {
+        const pixelsPerKm = 50; // Scale: 50px = 1km
+        const distancePx = Math.hypot(t1.x - t2.x, t1.y - t2.y);
+        const distKm = distancePx / pixelsPerKm;
+        
+        // FSPL = 20log10(d) + 20log10(f) + 92.45
+        // d in km, f in GHz
+        const fspl = 20 * Math.log10(distKm || 0.001) + 20 * Math.log10(config.freq) + 92.45;
+        
+        // Received Power = Pt + Gtx + Grx - FSPL
+        const rxPower = config.txPower + config.gain + config.gain - fspl;
+        const fadeMargin = rxPower - config.sensitivity;
+
+        // Est Capacity (Mbps) based on Fade Margin (SNR Proxy)
+        let capacity = 0;
+        if (fadeMargin > 25) capacity = 1200;
+        else if (fadeMargin > 18) capacity = 800;
+        else if (fadeMargin > 12) capacity = 450;
+        else if (fadeMargin > 5) capacity = 150;
+        else if (fadeMargin > 0) capacity = 50;
+
+        return { distKm, fspl, rxPower, fadeMargin, capacity };
+    }
+
+    // Drawing
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Links First (behind towers)
+        if (towers.length > 1) {
+            for (let i = 0; i < towers.length; i++) {
+                for (let j = i + 1; j < towers.length; j++) {
+                    const stats = calculateLink(towers[i], towers[j]);
+                    
+                    // Color based on fade margin
+                    let color = 'var(--accent-red)';
+                    if (stats.fadeMargin > 25) color = '#00e676'; // Excellent
+                    else if (stats.fadeMargin > 15) color = '#ffea00'; // Good
+                    else if (stats.fadeMargin > 5) color = '#ff9100'; // Marginal
+
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.globalAlpha = 0.6;
+                    ctx.beginPath();
+                    ctx.moveTo(towers[i].x, towers[i].y);
+                    ctx.lineTo(towers[j].x, towers[j].y);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1.0;
+
+                    // Info Label on Link
+                    const midX = (towers[i].x + towers[j].x) / 2;
+                    const midY = (towers[i].y + towers[j].y) / 2;
+                    ctx.fillStyle = color;
+                    ctx.font = '10px monospace';
+                    ctx.fillText(`${stats.distKm.toFixed(1)}km | ${stats.rxPower.toFixed(1)}dBm`, midX + 5, midY - 5);
+                }
+            }
+        }
+
+        // Draw Towers
+        towers.forEach(t => {
+            // Base/Glow
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(0, 230, 118, 0.5)';
+            ctx.fillStyle = 'var(--accent-green)';
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Outer ring
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, 10, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Label
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.fillText(t.id, t.x + 12, t.y + 4);
+        });
+
+        updateResults();
+    }
+
+    function updateResults() {
+        const content = document.getElementById('stat-content');
+        if (towers.length < 2) {
+            content.innerHTML = "Place at least two towers to see link calculations.";
+            return;
+        }
+
+        let html = '';
+        // Show summary of first link found
+        const stats = calculateLink(towers[0], towers[1]);
+        html += `
+            <div class="stat-row"><span>Distance:</span> <span>${stats.distKm.toFixed(2)} km</span></div>
+            <div class="stat-row"><span>Path Loss:</span> <span>${stats.fspl.toFixed(1)} dB</span></div>
+            <div class="stat-row"><span>RX Signal:</span> <span>${stats.rxPower.toFixed(1)} dBm</span></div>
+            <div class="stat-row"><span>Fade Margin:</span> <span style="color:${stats.fadeMargin > 5 ? 'var(--accent-green)' : 'var(--accent-red)'}">${stats.fadeMargin.toFixed(1)} dB</span></div>
+            <div class="stat-row" style="margin-top:5px; font-weight:bold;"><span>Capacity:</span> <span style="color:var(--accent-yellow)">${stats.capacity} Mbps</span></div>
+            <div style="margin-top:10px; font-size:0.75rem; border-top:1px solid var(--border); padding-top:10px;">
+                ${stats.fadeMargin > 15 ? '🟢 LINK STABLE' : (stats.fadeMargin > 0 ? '🟡 LINK MARGINAL' : '🔴 LINK DOWN')}
+            </div>
+        `;
+        content.innerHTML = html;
+    }
+
+</script>
+
+</body>
+</html>

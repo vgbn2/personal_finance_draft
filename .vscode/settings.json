@@ -1,4 +1,5 @@
 {
   "workbench.colorTheme": "Default Dark+",
-  "css.lint.unknownAtRules": "ignore"
+  "css.lint.unknownAtRules": "ignore",
+  "git.ignoreLimitWarning": true
 }

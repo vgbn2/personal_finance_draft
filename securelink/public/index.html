@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureLink E2EE Chat</title>
+    <link rel="stylesheet" href="style.css">
+    <script>console.log('SecureLink HTML Loaded');</script>
+</head>
+<body>
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>SecureLink</h2>
+            <p>End-to-End Encrypted Chat</p>
+            <input type="text" id="username-input" placeholder="Choose a username..." autofocus>
+            <button id="login-btn">Start Chatting</button>
+        </div>
+    </div>
+
+    <div id="app-container" class="hidden">
+        <div class="sidebar">
+            <div class="header">
+                <h3>Contacts</h3>
+                <span id="my-username"></span>
+            </div>
+            <ul id="contact-list">
+                <!-- Contacts will be injected here -->
+            </ul>
+        </div>
+        <div class="main-chat">
+            <div class="chat-header">
+                <div>
+                    <h3 id="current-chat-user">Select a contact to start chatting</h3>
+                    <div id="verification-info" class="hidden">
+                        <span id="encryption-status">🔐 E2EE Active</span>
+                        <span id="fingerprint-display">Safety Code: ---</span>
+                    </div>
+                </div>
+            </div>
+            <div class="messages" id="messages-container">
+                <!-- Messages go here -->
+            </div>
+            <div class="input-area">
+                <input type="text" id="message-input" placeholder="Type a message..." disabled>
+                <button id="send-btn" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="crypto.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/messaging.js"></script>
+</body>
+</html>
