@@ -12,9 +12,13 @@ Execution runs locally with NO DOCKER to ensure stability and easy debugging.
   - `network.yaml`: **VPN-Safe Network Config** (Binding to `0.0.0.0` for Docker-less cross-device access; customized ports to avoid VPN conflicts).
   - `secrets.env`: API keys and MongoDB URI.
 - **Data Ingestion Layer (WS & REST)** (`data/`):
-  - `streams/`: WebSocket managers for real-time Polymarket clob, Binance, and Deribit feeds.
-  - `clients/`: REST fallback/historical clients for Greeks, Macro, Sentiment, and Stock Options.
-  - `data_aggregator.py`: Asynchronous Event Bus.
+  - `streams/`: WebSocket managers with **Exponential Backoff Reconnection** and **Heartbeat monitoring**.
+  - `clients/`: REST clients with **Centralized Rate Limiting**, **Circuit Breakers**, and **Retry Decorators** (Exponential Backoff).
+  - `data_aggregator.py`: Asynchronous Event Bus with **Stale-Data Poisoning** (auto-dropping stale inputs).
+- **Data Integrity & Safety**:
+  - **Schema Validation**: Using `Pydantic` for all incoming JSON/API responses.
+  - **Fail-Fast Checks**: Immediate error if critical data (e.g. BTC price) is missing.
+  - **Atomic Persistence**: MongoDB transactions for consistent trade logging.
 - **Storage** (`data/storage/`):
   - `local_cache.py`: Parquet/Buffer for high-speed backtesting.
   - `mongodb_client.py`: Persistent cloud storage for trades, metrics, and event history (Render.com compatible).
@@ -25,11 +29,12 @@ Execution runs locally with NO DOCKER to ensure stability and easy debugging.
 - **Backtesting & Optimization** (`validation/`): 
   - `backtester.py`, `monte_carlo.py`, `stress_tests.py`.
 - **Frontend - Premium Dashboard** (`frontend/`):
-  - **Tech Stack**: Vite + React + Tailwind + Lucide Icons + Recharts (for Alpha/Greeks visualization).
-  - **Theme**: Sleek Dark Mode / Glassmorphism (Vibrant gradients, micro-animations).
-- **Frontend - Premium Dashboard** (`frontend/`):
+  - **Tech Stack**: Vite + React + Tailwind + Lucide Icons + Recharts.
   - **Connection**: `api/ws_bridge.py`. **Auto-reconnect** and **State-Sync** logic to ensure UI matches backend even after VPN drop.
   - **Alerting**: Persistent toast notifications for Rate-Limit hits or API outages.
+- **Resilience Guidelines**:
+  - **Graceful Degradation**: If Sentiment API fails, strategy continues with neutral sentiment rather than crashing.
+  - **No Silent Failures**: All exceptions logged with stack traces to MongoDB.
 - **Resilience Guidelines**:
   - **Graceful Degradation**: If Sentiment API fails, strategy continues with neutral sentiment rather than crashing.
   - **No Silent Failures**: All caught exceptions must be logged with stack traces to MongoDB for cloud debugging.
