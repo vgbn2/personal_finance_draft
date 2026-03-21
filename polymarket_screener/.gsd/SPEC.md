@@ -8,15 +8,16 @@ Execution runs locally with NO DOCKER to ensure stability and easy debugging.
 ## Architecture Guidelines
 - **Configuration** (`config/strategy_params.json/yaml`): Exposes parameters per-asset (e.g., BTC, ETH) and per-event type. Supports configuration grids and risk limits.
 - **Data Ingestion Layer** (`data/`):
-  - `binance_client.py`, `deribit_client.py`: Market data and Greeks.
+  - `binance_client.py`, `deribit_client.py`: Crypto market data and Greeks.
+  - `stock_options_client.py`: US Equity Options (OHLCV, Greeks, Implied Volatility) using `yfinance` or a low-cost provider like Alpha Vantage.
   - `macro_client.py`: Fed Watch (rate hike/cut probabilities) and Macro indicators.
   - `sentiment_client.py`: Crowd sentiment (e.g., Twitter, Reddit).
-  - `data_aggregator.py`: Synchronizes all streams via an internal **Event Bus** (Terminus pattern). Strict freshness checks.
+  - `data_aggregator.py`: Synchronizes all streams (Crypto, Stocks, Macro, Sentiment) via an internal **Event Bus**. Strict freshness checks.
 - **Polymarket Data Layer** (`data/polymarket/`):
   - `gamma_client.py`: Market discovery.
   - `clob_client.py`: Orderbook snapshots with **Slippage & Impact Calculator**.
 - **Storage** (`data/storage.py`): Caches historical data locally (SQLite or Parquet).
-- **Screener** (`screener/market_screener.py`): Isolates assets/events with **Volatility Decay Filters** to avoid entering late on news spikes.
+- **Screener** (`screener/market_screener.py`): Isolates assets (Crypto/Stocks) or events (Tweet markets) with **Volatility Decay Filters**. Helps choose between high-theta options decays vs high-delta spot trades.
 - **Strategy Engine** (`strategy/`):
   - `base.py`: Abstract `BaseStrategy` with `on_market_event` and `on_macro_data`.
   - Includes **Arbitrage & Hedging logic** (e.g., suggesting Binance offsets for Polymarket positions).
