@@ -1,0 +1,15 @@
+# VPN-Safe Network Configuration
+# Ensures the dashboard and API are accessible even behind a VPN.
+
+server:
+  host: "0.0.0.0" # Bind to all interfaces (required for VPN access)
+  port: 8000      # Backend API Port
+  ws_port: 8001   # Dedicated WebSocket Port
+
+frontend:
+  proxy_port: 3000
+  base_url: "http://localhost:3000"
+
+security:
+  allow_origins: ["*"] # Adjust for production security later
+  heartbeat_interval: 5000 # 5 seconds for VPN stability checks

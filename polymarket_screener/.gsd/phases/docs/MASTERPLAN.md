@@ -1,6 +1,7 @@
 # Polymarket Framework: Master Execution Plan
 
 This document consolidates all individual phases and execution plans into a single, linear roadmap.
+For high-fidelity code sketches of every module, see [FULL_CODE_SPEC.md](file:///C:/Users/Lenovo/.gemini/antigravity/brain/571bca6a-8901-4fac-b1a0-fa88d6b509cf/full_code_spec.md).
 
 ---
 

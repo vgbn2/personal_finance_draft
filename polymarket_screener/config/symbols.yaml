@@ -1,0 +1,24 @@
+# Centralized Symbol Registry
+# Symbols are never hardcoded in the codebase.
+
+crypto:
+  - symbol: BTC
+    binance: BTCUSDT
+    deribit: BTC-PERPETUAL
+    polymarket_id: "0x..." # Root token ID for BTC events
+  - symbol: ETH
+    binance: ETHUSDT
+    deribit: ETH-PERPETUAL
+    polymarket_id: "0x..."
+
+stocks:
+  - symbol: TSLA
+    options_contract: TSLA240621C00200000 # Example for Greeks tracking
+  - symbol: NVDA
+    options_contract: NVDA240621C00900000
+
+categories:
+  - name: "Tweet Markets"
+    keywords: ["Elon", "Musk", "Tweet", "X.com"]
+  - name: "Macro"
+    keywords: ["Fed", "Interest", "Hike", "Cut"]
