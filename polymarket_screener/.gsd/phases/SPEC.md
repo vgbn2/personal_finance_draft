@@ -8,7 +8,8 @@ Execution runs locally with NO DOCKER to ensure stability and easy debugging.
 ## Architecture Guidelines
 - **Configuration** (`config/`):
   - `strategy_params.yaml`: Strategy-specific thresholds.
-  - `symbols.yaml`: **Centralized Registry** of all assets (BTC/ETH, stocks, Polymarket IDs). NO HARDCODED SYMBOLS in code.
+  - `symbols.yaml`: Centralized Registry.
+  - `network.yaml`: **VPN-Safe Network Config** (Binding to `0.0.0.0` for Docker-less cross-device access; customized ports to avoid VPN conflicts).
   - `secrets.env`: API keys and MongoDB URI.
 - **Data Ingestion Layer (WS & REST)** (`data/`):
   - `streams/`: WebSocket managers for real-time Polymarket clob, Binance, and Deribit feeds.
@@ -23,11 +24,11 @@ Execution runs locally with NO DOCKER to ensure stability and easy debugging.
   - `portfolio.py`: Real-time state tracking.
 - **Backtesting & Optimization** (`validation/`): 
   - `backtester.py`, `monte_carlo.py`, `stress_tests.py`.
-- **Frontend-Backend Connection** (`api/`):
-  - `server.py`: FastAPI/Flask.
-  - `routes/`: Modular endpoints (e.g., `/api/v1/markets`, `/api/v1/status`).
-  - `ws_bridge.py`: Fans out internal backend event bus data to frontend WebSockets.
-- **Deployment**: Render.com compatible via basic `start.sh` or `gunicorn` (No Docker). Pure Python environments.
+- **Frontend - Premium Dashboard** (`frontend/`):
+  - **Tech Stack**: Vite + React + Tailwind + Lucide Icons + Recharts (for Alpha/Greeks visualization).
+  - **Theme**: Sleek Dark Mode / Glassmorphism (Vibrant gradients, micro-animations).
+  - **Connection**: `api/ws_bridge.py` serves as the primary real-time pipe. REST fallback for historical data.
+- **Deployment**: Render.com compatible via basic `start.sh` or `gunicorn`. VPN-resilient binding.
 
 ## Verification Requirements
 - Validate Binance/Deribit data fetchers pull fresh data and reject stale data.
