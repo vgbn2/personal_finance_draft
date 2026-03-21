@@ -60,6 +60,10 @@ For high-fidelity code sketches of every module, see [FULL_CODE_SPEC.md](file://
 ## 🖥️ PHASE 4: Premium Dashboard (React/Vite)
 **Goal**: Translate the mathematical state into a glassmorphic visualization terminal.
 
+### Plan 4.1: UI Adaptation Layer
+- **Data Contracts**: Implement the `ui_adapter.py` to format raw quant state into the specific JSON expected by the [UI_ADAPTATION_SPEC.md](file:///c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/polymarket_screener/UI_ADAPTATION_SPEC.md).
+- **Responsive Pushing**: Ensure the WebSocket bridge respects the user's design for "Screener Table" and "Greeks Sidebar."
+
 ### Plan 4.1 & 4.2: Setup and Components
 - **Architecture**: Initialize Vite. Build the **Screener Component**, the **Options Greeks Sidebar**, and the **Risk Dial**.
 
