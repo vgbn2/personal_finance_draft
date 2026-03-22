@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\stats\_axis_nan_policy.py
+# hypothesis_version: 6.151.9
+
+['Notes', 'Parameters', 'axis', 'bool, default: False', 'ignore', 'keepdims', 'mask', 'nan_policy', 'nan_propagation', 'omit', 'propagate', 'vectorization']

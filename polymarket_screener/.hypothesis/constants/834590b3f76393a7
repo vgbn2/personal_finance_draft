@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\optimize\_differentiable_functions.py
+# hypothesis_version: 6.151.9
+
+['2-point', '3-point', 'abs_step', 'as_linear_operator', 'bounds', 'cs', 'csr', 'hess', 'method', 'real floating', 'rel_step', 'sparsity']

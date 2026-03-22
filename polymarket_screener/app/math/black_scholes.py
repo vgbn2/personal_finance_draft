@@ -58,11 +58,17 @@ def vectorized_nd2(
     d1 = (np.log(S / K) + (r + 0.5 * safe_sigma**2) * safe_T) / (safe_sigma * sqrt_T)
     d2 = d1 - safe_sigma * sqrt_T
 
+    # Guard against Inf/NaN from extreme inputs (Hypothesis-discovered)
+    d2 = np.nan_to_num(d2, nan=0.0, posinf=37.0, neginf=-37.0)
+
     result = norm.cdf(d2)
 
     # Override edge cases
     result = np.where(expired, np.where(S >= K, 1.0, 0.0), result)
     result = np.where(~expired & zero_vol, np.where(S >= K, 1.0, 0.0), result)
+
+    # Final safety clamp to [0, 1]
+    result = np.clip(result, 0.0, 1.0)
 
     return result
 

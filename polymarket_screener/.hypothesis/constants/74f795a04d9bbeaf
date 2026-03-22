@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\ndimage\measurements.py
+# hypothesis_version: 6.151.9
+
+['_measurements', 'center_of_mass', 'extrema', 'find_objects', 'histogram', 'label', 'maximum', 'maximum_position', 'mean', 'measurements', 'median', 'minimum', 'minimum_position', 'ndimage', 'standard_deviation', 'sum', 'sum_labels', 'variance', 'watershed_ift']

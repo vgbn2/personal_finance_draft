@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\_lib\_docscrape.py
+# hypothesis_version: 6.151.9
+
+[' :', ' : ', '(', '(?P<allfuncs>', '(?P<trailing>[,\\.])?', ')', ')*)', '*', ',', ', ', '-', '.', '..', '.. index::', '...', ':', '::', '=', 'Attributes', 'Examples', 'Extended Summary', 'Methods', 'Notes', 'Other Parameters', 'Parameter', 'Parameters', 'Raises', 'Receives', 'References', 'Returns', 'See Also', 'Signature', 'Summary', 'Warnings', 'Warns', 'Yields', '\\*', '\\s*', '^\\s*', '_', '__call__', '__class__', '__name__', '_asdict', '_cls', '_f', '_fields', 'allfuncs', 'class', 'default', 'desc', 'docstring', 'exclude-members', 'func', 'function', 'index', 'members', 'meth', 'method', 'module', 'name', 'name2', 'namenext', 'object', 'role', 'rolenext', 'show_class_members', 'sphinx', 'trailing', 'type', '|']

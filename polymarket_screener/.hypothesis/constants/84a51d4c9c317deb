@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\sparse\_compressed.py
+# hypothesis_version: 6.151.9
+
+[0.001, 'CF', '_diagonal', '_eldiv_', '_elmul_', '_ge_', '_gt_', '_has_sorted_indices', '_le_', '_lt_', '_matmat', '_matmat_maxnnz', '_matvec', '_matvecs', '_maximum_', '_minimum_', '_minus_', '_ne_', '_plus_', 'axis out of bounds', 'blocksize', 'cannot be broadcast', 'cf', 'clip', 'csc', 'csr', 'i', 'inconsistent shapes', 'indices must be >= 0', 'mergesort']

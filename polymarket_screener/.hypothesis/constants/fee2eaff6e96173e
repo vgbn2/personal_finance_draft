@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\numpy\ctypeslib.py
+# hypothesis_version: 6.151.9
+
+[',', '.dll', '.dylib', '.so', '<', '=', '>', 'ALIGNED', 'C_CONTIGUOUS', 'EXT_SUFFIX', 'F_CONTIGUOUS', 'OWNDATA', 'Overlapping fields', 'S', 'WRITEABLE', 'WRITEBACKIFCOPY', '_', '_%dd', '_dtype_', '_flags_', '_ndim_', '_shape_', 'any', 'as_array', 'as_ctypes', 'as_ctypes_type', 'c_intp', 'darwin', 'data', 'load_library', 'ndpointer', 'ndpointer_%s', 'shape', 'strides', 'struct', 'typestr', 'union', 'version', 'win', 'x']

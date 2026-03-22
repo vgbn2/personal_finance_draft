@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\numpy\__config__.py
+# hypothesis_version: 6.151.9
+
+['/c/opt/64/include', '/c/opt/64/lib', '0.3.23.dev', '1.26.4', '19.29.30153', '3.0.8', '3.11', 'Build Dependencies', 'Compilers', 'False', 'Machine Information', 'Python Information', 'SIMD Extensions', 'True', 'args', 'baseline', 'blas', 'build', 'c', 'c++', 'cl', 'commands', 'cpu', 'cross-compiled', 'cython', 'dep2270588361616', 'detection method', 'dicts', 'endian', 'false', 'family', 'found', 'host', 'include directory', 'internal', 'lapack', 'lib directory', 'link', 'linker', 'linker args', 'little', 'msvc', 'name', 'not found', 'openblas64', 'path', 'pc file directory', 'pkgconfig', 'show', 'stdout', 'system', 'unknown', 'version', 'windows', 'x86_64']

@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\spatial\_kdtree.py
+# hypothesis_version: 6.151.9
+
+[1.0, 2.0, 1000000, 'KDTree', 'Rectangle', '_tree', 'c', 'distance_matrix', 'dok_matrix', 'float64', 'minkowski_distance', 'minkowski_distance_p', 'set']

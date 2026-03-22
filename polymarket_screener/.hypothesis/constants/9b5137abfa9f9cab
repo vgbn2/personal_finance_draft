@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\sparse\csr.py
+# hypothesis_version: 6.151.9
+
+['_csr', 'csr', 'csr_count_blocks', 'csr_matrix', 'csr_tobsr', 'csr_tocsc', 'get_csr_submatrix', 'isspmatrix_csr', 'sparse', 'spmatrix', 'upcast']

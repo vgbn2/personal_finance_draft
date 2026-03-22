@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\sparse\linalg\_svdp.py
+# hypothesis_version: 6.151.9
+
+[0.002, 0.75, 1000, 'D', 'F', 'L', 'LM', 'S', 'SM', '_svdp', 'd', 'f', 'i', 'n', 'shifts must be >= 0!', 'y']

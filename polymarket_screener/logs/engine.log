@@ -197,3 +197,4 @@
 {"ts": "2026-03-22T10:07:04.524236+00:00", "level": "WARNING", "logger": "poly_screen", "message": "Insufficient liquidity: filled $1000.00 of $2000.00", "module": "slippage", "func": "calculate_vwap", "line": 52}
 {"ts": "2026-03-22T10:19:00.686908+00:00", "level": "INFO", "logger": "poly_screen", "message": "ShadowBroker: Bookmarked BUY TEST-MKT-001 @ 0.5500 ($100.00)", "module": "shadow_broker", "func": "execute_trade", "line": 124}
 {"ts": "2026-03-22T10:19:02.710073+00:00", "level": "INFO", "logger": "poly_screen", "message": "ShadowBroker: Fill resolved \u2014 Intended=0.5500, Actual=0.5500, Drift=0.0bps [OK]", "module": "shadow_broker", "func": "execute_trade", "line": 146}
+{"ts": "2026-03-22T10:23:18.483110+00:00", "level": "WARNING", "logger": "poly_screen", "message": "Insufficient liquidity: filled $100.00 of $500.00", "module": "slippage", "func": "calculate_vwap", "line": 52}

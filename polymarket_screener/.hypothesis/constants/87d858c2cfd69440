@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\_lib\array_api_compat\common\_linalg.py
+# hypothesis_version: 6.151.9
+
+['2', 'EighResult', 'QRResult', 'SVDResult', 'SlogdetResult', 'cholesky', 'complete', 'complex floating', 'cross', 'diagonal', 'eigh', 'fro', 'matmul', 'matrix_norm', 'matrix_rank', 'matrix_transpose', 'nuc', 'outer', 'pinv', 'qr', 'reduced', 'slogdet', 'svd', 'svdvals', 'tensordot', 'trace', 'vecdot', 'vector_norm']
