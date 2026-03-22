@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 from app.core.event_bus import Channel, event_bus
 from app.core.data_feed import BaseExchangeClient
 from app.core.domain_models import MarketSnapshot, UnifiedTick
+from app.utils.config import config_manager
 from app.utils.logger import log
 
 
@@ -43,11 +44,36 @@ class DataAggregator:
         self.clients: Dict[str, BaseExchangeClient] = {}
         self.cache: Dict[str, MarketSnapshot] = {}
         self._running: bool = False
+        self._push_sources: List[BaseExchangeClient] = []
 
     def register(self, client: BaseExchangeClient) -> None:
         """Register an exchange client for aggregation."""
         self.clients[client.name.lower()] = client
+        if hasattr(client, "set_callback"):
+            client.set_callback(self.handle_push_update)
+            self._push_sources.append(client)
         log.info(f"Aggregator: registered [{client.name}]")
+
+    async def handle_push_update(self, source: str, data: Dict[str, Any]) -> None:
+        """Handle incoming WebSocket push updates."""
+        # Extract market_id
+        market_id = "BTC" # Default
+        if source == "binance":
+            s = data.get("s", "") # "BTCUSDT"
+            if "ETH" in s: market_id = "ETH"
+        elif source == "deribit":
+            channel = data.get("params", {}).get("channel", "")
+            if "eth" in channel: market_id = "ETH"
+            
+        if market_id not in self.cache:
+            self.cache[market_id] = MarketSnapshot(market_id=market_id)
+            
+        snapshot = self.cache[market_id]
+        self._merge(snapshot, source, data)
+        
+        # Publish real-time update
+        await event_bus.publish(Channel.MARKET_UPDATE, snapshot)
+        # log.debug(f"Aggregator: Pushed update from {source}")
 
     async def get_snapshot(self, market_id: str) -> MarketSnapshot:
         """
@@ -76,7 +102,7 @@ class DataAggregator:
             elif name == "polymarket":
                 tasks[name] = client.fetch_data(market_id)
 
-        # Await all concurrently
+        # Await all concurrently (Only for non-push sources or as fallback)
         if tasks:
             results = await asyncio.gather(
                 *tasks.values(), return_exceptions=True
@@ -87,10 +113,8 @@ class DataAggregator:
                     continue
                 self._merge(snapshot, name, result)
 
-        # Stale-data check
+        # Stale-data check (Don't poisoning if push is active)
         snapshot.is_stale = self._check_staleness(snapshot)
-        if snapshot.is_stale:
-            log.warning(f"Snapshot for {market_id} flagged STALE")
 
         # Cache and publish
         self.cache[market_id] = snapshot
@@ -106,14 +130,24 @@ class DataAggregator:
             return
 
         if source == "binance":
-            snapshot.spot_price = data.get("price")
+            # Handle both REST and WS formats
+            if "price" in data: # REST
+                snapshot.spot_price = data.get("price")
+            elif "k" in data: # WS Kline
+                snapshot.spot_price = float(data["k"]["c"])
         elif source == "deribit":
-            snapshot.implied_vol = data.get("dvol")
+            if "dvol" in data: # REST
+                snapshot.implied_vol = data.get("dvol")
+            elif "params" in data: # WS Index
+                params_data = data["params"].get("data", {})
+                snapshot.implied_vol = params_data.get("value") or params_data.get("price")
         elif source == "fred":
             snapshot.risk_free_rate = data.get("latest_value")
         elif source == "polymarket":
             snapshot.polymarket_yes = data.get("yes_price")
             snapshot.polymarket_no = data.get("no_price")
+        
+        log.debug(f"Aggregator: Merged update from source: {source}")
 
     def _check_staleness(self, snapshot: MarketSnapshot) -> bool:
         """

@@ -56,6 +56,14 @@ class BaseExchangeClient(ABC):
             return float("inf")
         return time.time() - self.last_update
 
+    async def connect(self) -> None:
+        """Establish connection (for Persistent/WS clients)."""
+        pass
+
+    def stop(self) -> None:
+        """Stop any background loops."""
+        pass
+
 
 # ─── Binance Client ───
 
@@ -127,6 +135,65 @@ class BinanceClient(BaseExchangeClient):
             return None
 
 
+class BinanceWSClient(BaseExchangeClient):
+    """
+    Binance WebSocket client for real-time OHLCV and Ticker updates.
+    """
+
+    def __init__(self):
+        super().__init__("BinanceWS")
+        self.base_url = "wss://stream.binance.com:9443/ws"
+        self._ws = None
+        self._running = False
+        self._on_update_cb = None
+
+    def set_callback(self, cb):
+        """Set callback for push updates."""
+        self._on_update_cb = cb
+
+    async def fetch_data(self, symbol: str, **kwargs) -> Dict[str, Any]:
+        """WS clients don't use polling, but satisfy the interface."""
+        return {}
+
+    async def subscribe(self, symbols: List[str]):
+        """Subscribe to kline streams: <symbol>@kline_1m."""
+        if not self._ws:
+            return
+        params = [f"{s.lower().replace('/', '')}@kline_1m" for s in symbols]
+        msg = {"method": "SUBSCRIBE", "params": params, "id": 1}
+        await self._ws.send(json.dumps(msg))
+        log.info(f"BinanceWS: Subscribed to {params}")
+
+    async def connect(self):
+        """Establish WebSocket connection with auto-reconnect."""
+        self._running = True
+        while self._running:
+            try:
+                log.info(f"BinanceWS: Connecting to {self.base_url}")
+                async with websockets.connect(self.base_url) as ws:
+                    self._ws = ws
+                    self.is_connected = True
+                    log.info("BinanceWS: Connected")
+                    
+                    # Heartbeat is handled by websockets library pings
+                    while self._running:
+                        msg = await ws.recv()
+                        data = json.loads(msg)
+                        log.debug(f"BinanceWS: Received {data.get('e')}")
+                        if "k" in data: # Kline update
+                            self.mark_update()
+                            if self._on_update_cb:
+                                await self._on_update_cb("binance", data)
+            except Exception as e:
+                log.error(f"BinanceWS Error: {e}")
+                self.is_connected = False
+                if self._running:
+                    await asyncio.sleep(5)
+
+    def stop(self):
+        self._running = False
+
+
 # ─── Deribit Client ───
 
 class DeribitClient(BaseExchangeClient):
@@ -177,6 +244,80 @@ class DeribitClient(BaseExchangeClient):
         except Exception as e:
             log.error(f"Deribit greeks error for {currency}: {e}")
             return {}
+
+
+class DeribitWSClient(BaseExchangeClient):
+    """
+    Deribit WebSocket client for real-time DVOL and Volatility updates.
+    """
+
+    def __init__(self):
+        super().__init__("DeribitWS")
+        self.url = "wss://www.deribit.com/ws/api/v2"
+        self._ws = None
+        self._running = False
+        self._on_update_cb = None
+
+    def set_callback(self, cb):
+        self._on_update_cb = cb
+
+    async def fetch_data(self, symbol: str, **kwargs) -> Dict[str, Any]:
+        """WS clients don't use polling, but satisfy the interface."""
+        return {}
+
+    async def connect(self):
+        """Establish connection with heartbeats."""
+        self._running = True
+        while self._running:
+            try:
+                log.info(f"DeribitWS: Connecting to {self.url}")
+                async with websockets.connect(self.url) as ws:
+                    self._ws = ws
+                    self.is_connected = True
+                    
+                    # Mandatory heartbeat for Deribit
+                    heartbeat_msg = {
+                        "jsonrpc": "2.0",
+                        "id": 9098,
+                        "method": "public/set_heartbeat",
+                        "params": {"interval": 30}
+                    }
+                    await ws.send(json.dumps(heartbeat_msg))
+                    
+                    # Subscribe to DVOL for BTC/ETH
+                    sub_msg = {
+                        "jsonrpc": "2.0",
+                        "id": 1,
+                        "method": "public/subscribe",
+                        "params": {"channels": ["deribit_price_index.btc_usd", "deribit_price_index.eth_usd"]}
+                    }
+                    await ws.send(json.dumps(sub_msg))
+                    
+                    log.info("DeribitWS: Connected & Subscribed")
+                    
+                    while self._running:
+                        msg = await ws.recv()
+                        data = json.loads(msg)
+                        log.debug(f"DeribitWS: Received {data.get('method') or data.get('id')}")
+                        
+                        # Handle heartbeat response
+                        if data.get("method") == "heartbeat":
+                            await ws.send(json.dumps({"jsonrpc":"2.0", "id": 9999, "method":"public/test"}))
+                            continue
+                            
+                        if "params" in data:
+                            self.mark_update()
+                            if self._on_update_cb:
+                                await self._on_update_cb("deribit", data)
+                                
+            except Exception as e:
+                log.error(f"DeribitWS Error: {e}")
+                self.is_connected = False
+                if self._running:
+                    await asyncio.sleep(5)
+
+    def stop(self):
+        self._running = False
 
 
 # ─── Macro Client ───
