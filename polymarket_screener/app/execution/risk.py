@@ -47,24 +47,19 @@ class RiskVerdict(BaseModel):
         return status
 
 
-# ─── Conviction Tier Mapping ───
-
-CONVICTION_TIERS = {
-    # (min_prob, max_prob) -> max_position_size_pct
-    (0.00, 0.20): 0.010,  # Deep OTM: 1.0% max
-    (0.20, 0.40): 0.015,  # OTM: 1.5% max
-    (0.40, 0.60): 0.030,  # ATM: 3.0% max
-    (0.60, 0.80): 0.040,  # ITM: 4.0% max
-    (0.80, 1.01): 0.050,  # Deep ITM: 5.0% max
-}
+# Conviction Tier Mapping is now handled via config_manager.risk.conviction_tiers
+# Default mapping provided in config.py: {0.6: 0.10, 0.7: 0.15, 0.8: 0.25}
 
 
 def get_conviction_cap(win_prob: float) -> float:
-    """Get maximum position size based on win probability tier."""
-    for (lo, hi), cap in CONVICTION_TIERS.items():
-        if lo <= win_prob < hi:
-            return cap
-    return 0.015  # Default to conservative
+    """Get maximum position size based on win probability tier from config."""
+    tiers = config_manager.risk.conviction_tiers
+    # Sort tiers by threshold descending to find the highest applicable
+    sorted_thresholds = sorted(tiers.keys(), reverse=True)
+    for threshold in sorted_thresholds:
+        if win_prob >= threshold:
+            return tiers[threshold]
+    return 0.015  # Default conservative floor
 
 
 class RiskManager:
@@ -81,14 +76,14 @@ class RiskManager:
 
     def __init__(
         self,
-        max_global_exposure: float = 0.30,
-        max_temporal_exposure: float = 0.15,
-        min_liquidity_usd: float = 500.0,
+        max_global_exposure: Optional[float] = None,
+        max_temporal_exposure: Optional[float] = None,
+        min_liquidity_usd: Optional[float] = None,
         max_trades_per_hour: int = 10,
     ):
-        self.max_global_exposure = max_global_exposure
-        self.max_temporal_exposure = max_temporal_exposure
-        self.min_liquidity_usd = min_liquidity_usd
+        self.max_global_exposure = max_global_exposure or config_manager.risk.max_global_exposure_pct
+        self.max_temporal_exposure = max_temporal_exposure or config_manager.risk.max_temporal_exposure_pct
+        self.min_liquidity_usd = min_liquidity_usd or config_manager.risk.min_liquidity_usd
         self.max_trades_per_hour = max_trades_per_hour
 
         # State

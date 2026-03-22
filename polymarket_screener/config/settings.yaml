@@ -1,0 +1,7 @@
+version: 0.2.0
+mode: paper
+log_level: INFO
+clob_endpoint: https://clob.polymarket.com
+mongodb_uri: null
+exchanges: {}
+strategies: []

@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  /* Core Palette */
+  --bg: #060606;
+  --bg1: #0c0c0c;
+  --bg2: #111111;
+  --bg3: #161616;
+  --border: #2a2a2a;
+  --border2: #363636;
+  
+  /* Accent Colors */
+  --text: #e8e8e8;
+  --text-muted: #b8b8b8;
+  --text-dim: #777777;
+  
+  --brand-green: #00ff87;
+  --brand-green-dim: #00cc6a;
+  --brand-red: #ff5252;
+  --brand-amber: #ffb340;
+  --brand-blue: #7b9cff;
+
+  /* Glassmorphism & Effects */
+  --glow-strong: rgba(0, 255, 135, 0.18);
+  --glow-soft: rgba(0, 255, 135, 0.08);
+  --glass-blur: blur(12px);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+  
+  /* Typography */
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-display: 'Syne', sans-serif;
+}
+
+@theme {
+  --color-bg: var(--bg);
+  --color-bg-1: var(--bg1);
+  --color-bg-2: var(--bg2);
+  --color-bg-3: var(--bg3);
+  --color-border: var(--border);
+  --color-border-dim: var(--border);
+  --color-border-bright: var(--border2);
+  
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  
+  --color-brand-green: var(--brand-green);
+  --color-brand-red: var(--brand-red);
+  --color-brand-amber: var(--brand-amber);
+  --color-brand-blue: var(--brand-blue);
+  
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+  
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-white font-mono antialiased;
+    background-color: var(--bg);
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-bg-1/80 border border-border-dim rounded-lg;
+    backdrop-filter: var(--glass-blur);
+  }
+  
+  .neon-text-green {
+    text-shadow: 0 0 10px rgba(0, 255, 135, 0.4);
+  }
+  
+  .neon-border-green {
+    box-shadow: 0 0 15px rgba(0, 255, 135, 0.2);
+  }
+}

@@ -1,22 +1,33 @@
-# Strategy and Risk Thresholds
-# Centralized context for backend calculations.
+# ─── Strategy Parameters ───
+# This file is loaded by app/utils/config.py at startup.
 
-risk_management:
-  max_drawdown: 0.15          # 15% Max Drawdown limit
-  black_swan_threshold: 0.05  # 5% probability triggers warning
-  max_slippage: 0.02          # 2% max slippage rejection
+strategy:
+  name: "polymarket_edge_screener"
+  min_edge: 0.04                # Minimum edge (fair - market) to generate signal
+  vrp_haircut: 0.85             # Volatility Risk Premium discount factor
+  kelly_fraction: 0.25          # Fraction of Kelly to actually bet (conservative)
 
-backtest_params:
-  initial_capital: 10000
-  commission: 0.001           # 0.1% fee simulation
-  monte_carlo_runs: 500
+risk:
+  max_exposure: 0.20            # Maximum % of bankroll at risk at any time
+  max_position_size: 0.05       # Maximum single position as % of bankroll
+  min_liquidity_usd: 500.0      # Minimum orderbook depth (USD) to consider
+  max_drawdown: 0.15            # Circuit breaker: max portfolio drawdown
+  heartbeat_timeout_sec: 30     # Circuit breaker: max seconds without data
 
-analytics_targets:
-  min_sharpe_ratio: 1.5       # Target risk-adjusted return
-  min_sortino_ratio: 2.0      # Target downside protection
-  min_profit_factor: 1.3      # Target mathematical edge
-  min_win_rate: 0.55          # Target win percentage
-screener_filters:
-  min_volume_24h: 50000       # US Dollars
-  min_liquidity: 10000        # Minimum depth for slippage calc
-  default_category: "Crypto"
+execution:
+  slippage_bps: 15              # Expected slippage in basis points
+  cooldown_sec: 5               # Minimum seconds between orders
+  shadow_mode: true             # If true, simulate trades without real capital
+
+clock:
+  window_minutes: 15            # Rolling window duration
+  pre_warm_sec: 120             # Seconds before window end to start warming next
+
+logging:
+  level: "INFO"                 # DEBUG | INFO | WARNING | ERROR | CRITICAL
+  console_format: "rich"        # "rich" for terminal, "json" for structured logs
+  file_output: "logs/engine.log"
+
+database:
+  mongo_db_name: "poly_screener"
+  audit_batch_size: 10          # Flush audit logs every N events

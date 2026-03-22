@@ -49,7 +49,7 @@ class DataAggregator:
         self.clients[client.name.lower()] = client
         log.info(f"Aggregator: registered [{client.name}]")
 
-    async def get_snapshot(self, market_id: str = "BTC") -> MarketSnapshot:
+    async def get_snapshot(self, market_id: str) -> MarketSnapshot:
         """
         Fetch and merge data from all registered clients into a snapshot.
 
@@ -63,11 +63,14 @@ class DataAggregator:
         tasks = {}
 
         # Dispatch concurrent fetches
+        base = config_manager.config.base_currency
+        quote = config_manager.config.quote_currency
+        
         for name, client in self.clients.items():
             if name == "binance":
-                tasks[name] = client.fetch_data("BTC/USDT")
+                tasks[name] = client.fetch_data(f"{base}/{quote}")
             elif name == "deribit":
-                tasks[name] = client.fetch_data("BTC")
+                tasks[name] = client.fetch_data(base)
             elif name == "fred":
                 tasks[name] = client.fetch_data("DFF")
             elif name == "polymarket":
@@ -144,7 +147,7 @@ class DataAggregator:
 
         while self._running:
             try:
-                for market_id in list(self.cache.keys()) or ["BTC"]:
+                for market_id in list(self.cache.keys()) or list(config_manager.symbols.polymarket.watchlist):
                     await self.get_snapshot(market_id)
                 await asyncio.sleep(interval_sec)
             except Exception as e:

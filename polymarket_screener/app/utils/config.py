@@ -20,6 +20,9 @@ class StrategyConfig(BaseModel):
     max_position_size: float = 0.05
     stop_loss: float = 0.15
     greed_decay: float = 1.5
+    default_dte_minutes: int = 15
+    vrp_discount_factor: float = 0.85
+    min_edge_no: float = 0.02
 
     @classmethod
     def load(cls, path: str = "") -> "StrategyConfig":
@@ -39,6 +42,10 @@ class RiskConfig(BaseModel):
     min_liquidity_usd: float = 500.0
     max_drawdown: float = 0.15
     heartbeat_timeout_sec: int = 30
+    max_global_exposure_pct: float = 0.30
+    max_temporal_exposure_pct: float = 0.15
+    max_iv_spike_ratio: float = 3.0
+    conviction_tiers: Dict[float, float] = Field(default_factory=lambda: {0.6: 0.10, 0.7: 0.15, 0.8: 0.25})
 
 
 class ExecutionConfig(BaseModel):
@@ -97,6 +104,8 @@ class AppConfig(BaseModel):
     mode: str = "paper"
     log_level: str = "INFO"
     clob_endpoint: str = "https://clob.polymarket.com"
+    base_currency: str = "BTC"
+    quote_currency: str = "USDT"
     mongodb_uri: Optional[str] = None
     exchanges: Dict[str, ExchangeConfig] = {}
     strategies: List[StrategyConfig] = []

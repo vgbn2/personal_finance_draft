@@ -1,24 +1,51 @@
-# Centralized Symbol Registry
-# Symbols are never hardcoded in the codebase.
+# ─── Symbols & Markets to Monitor ───
+# This file defines the assets and markets the engine observes.
 
-crypto:
-  - symbol: BTC
-    binance: BTCUSDT
-    deribit: BTC-PERPETUAL
-    polymarket_id: "0x..." # Root token ID for BTC events
-  - symbol: ETH
-    binance: ETHUSDT
-    deribit: ETH-PERPETUAL
-    polymarket_id: "0x..."
+polymarket:
+  # Event categories to scan
+  categories:
+    - "crypto"
+    - "politics"
+    - "economics"
+    - "sports"
+  
+  # Specific market slugs to always monitor (if available)
+  watchlist:
+    - "will-bitcoin-hit-100k"
+    - "fed-rate-decision"
 
-stocks:
-  - symbol: TSLA
-    options_contract: TSLA240621C00200000 # Example for Greeks tracking
-  - symbol: NVDA
-    options_contract: NVDA240621C00900000
+binance:
+  # Spot pairs for reference pricing
+  spot:
+    - "BTCUSDT"
+    - "ETHUSDT"
+    - "SOLUSDT"
+  
+  # Futures pairs for IV/Greeks calculation
+  futures:
+    - "BTCUSDT"
+    - "ETHUSDT"
 
-categories:
-  - name: "Tweet Markets"
-    keywords: ["Elon", "Musk", "Tweet", "X.com"]
-  - name: "Macro"
-    keywords: ["Fed", "Interest", "Hike", "Cut"]
+deribit:
+  # Options instruments for Implied Volatility
+  instruments:
+    - "BTC-PERPETUAL"
+    - "ETH-PERPETUAL"
+  
+  # Currencies for options chain
+  currencies:
+    - "BTC"
+    - "ETH"
+
+macro:
+  # Fed Watch indicators
+  fed_watch:
+    enabled: true
+    source: "cme_fedwatch"
+  
+  # Crowd sentiment feeds
+  sentiment:
+    enabled: true
+    sources:
+      - "polymarket_volume"
+      - "twitter_mentions"

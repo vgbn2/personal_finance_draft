@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POLY/SCREEN — Institutional Grade Screener</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<!-- RECONNECT BANNER -->
+<div id="reconnectBanner" class="reconnect-banner">
+  ⚠ WebSocket disconnected — reconnecting (attempt <span id="retryCount">1</span>) · backoff <span id="backoffTime">50</span>ms · frontend blinded until STATE_SYNC confirmed
+</div>
+
+<!-- API KEY MODAL -->
+<div id="apiModal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-title">Connect Live API Key</div>
+    <div class="modal-sub">Your key is held in JavaScript memory only — never written to disk, localStorage, or the DOM. It lives for this session only and is cleared on page close.</div>
+    <div class="modal-warning">⚠ LIVE MODE routes real orders to Polymarket's CLOB. Validate your strategy in Paper Mode first. You are solely responsible for all executed trades.</div>
+    <div class="modal-field">
+      <label>Polymarket Private Key</label>
+      <input class="inp" id="keyInput" type="password" placeholder="0x…" autocomplete="off" spellcheck="false"/>
+    </div>
+    <div class="modal-field">
+      <label>Proxy Wallet Address (optional)</label>
+      <input class="inp" id="walletInput" type="text" placeholder="0x…" autocomplete="off"/>
+    </div>
+    <div class="modal-field">
+      <label>CLOB Endpoint</label>
+      <input class="inp" id="endpointInput" value="https://clob.polymarket.com" autocomplete="off"/>
+    </div>
+    <div class="modal-btns">
+      <div class="btn" onclick="closeModal()">Cancel</div>
+      <div class="btn btn-warn" onclick="activateLive()">Activate Live Mode</div>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+<header class="topbar">
+  <div class="logo">POLY<em>/</em>SCREEN<small>v0.2.0</small></div>
+  <div class="sep"></div>
+  <div class="si"><div class="dot g pulse"></div><b>Polymarket</b> LIVE</div>
+  <div class="si"><div class="dot g pulse"></div><b>Binance</b> LIVE</div>
+  <div class="si"><div class="dot a" id="derDot"></div><b>Deribit</b> <span id="derLag">210ms</span></div>
+  <div class="si"><div class="dot g pulse"></div><b>MongoDB</b> OK</div>
+  <div class="sep"></div>
+  <div class="ws-pill connected" id="wsPill" onclick="simulateDisconnect()" title="Click to demo reconnect">
+    <div class="dot g" id="wsDot"></div>
+    <span id="wsLabel">WS 0.0.0.0:8000</span>
+    <span style="color:var(--text3);margin-left:4px" id="wsLat">12ms</span>
+  </div>
+  <div class="sep"></div>
+  <!-- SESSION PNL TICKER -->
+  <div class="pnl-ticker pos" id="pnlTicker">
+    <span class="pnl-label">Session</span>
+    <span id="pnlValue" style="color:var(--green);font-weight:500">+$0.00</span>
+    <span id="pnlPct" style="font-size:9px;color:var(--text3)">+0.00%</span>
+  </div>
+  <div id="keyStatus" style="display:none" class="row">
+    <div class="key-display">
+      <span class="key-val" id="keyDisplay"></span>
+      <button class="key-clear" onclick="clearKey()">✕ Clear</button>
+    </div>
+  </div>
+  <div class="mode-toggle" style="margin-left:auto">
+    <div class="mode-btn paper active" id="paperBtn" onclick="setMode('paper')">● PAPER</div>
+    <div class="mode-btn live" id="liveBtn" onclick="setMode('live')">◎ LIVE</div>
+  </div>
+</header>
+
+<aside class="left">
+  <div class="panel-head">
+    <div class="section-title">Market Screener</div>
+    <span class="badge" id="mcount">8 markets</span>
+  </div>
+  <div class="filter-row">
+    <div class="chip on" onclick="filter('All',this)">All</div>
+    <div class="chip" onclick="filter('BTC',this)">BTC</div>
+    <div class="chip" onclick="filter('Tweet',this)">Tweet</div>
+    <div class="chip" onclick="filter('Macro',this)">Macro</div>
+  </div>
+  <div class="screener-scroll">
+    <table class="stbl">
+      <thead><tr><th>Event</th><th>YES/NO</th><th>BS Fair</th><th>Edge</th><th>Vol</th><th>Sig</th></tr></thead>
+      <tbody id="stbody"></tbody>
+    </table>
+  </div>
+  <div id="ob-detail" style="display:none" class="ob-detail">
+    <div class="row" style="margin-bottom:8px">
+      <div style="font-family:var(--font-disp);font-size:11px;font-weight:600;color:#f0f0f0;flex:1;line-height:1.4" id="ob-title"></div>
+      <button class="btn" style="padding:3px 8px;font-size:9px;flex-shrink:0" onclick="closeOB()">✕</button>
+    </div>
+    <div class="g4" style="margin-bottom:8px">
+      <div class="mc"><div class="mk">YES Price</div><div class="mv yp" id="ob-yp">—</div></div>
+      <div class="mc"><div class="mk">BS Fair (N(d2))</div><div class="mv" style="color:var(--blue)" id="ob-bs">—</div></div>
+      <div class="mc"><div class="mk">Edge</div><div class="mv" id="ob-edge">—</div></div>
+      <div class="mc"><div class="mk">Kelly Size</div><div class="mv" style="color:var(--amber)" id="ob-kelly">—</div></div>
+    </div>
+    <div class="g4" style="margin-bottom:8px">
+      <div class="mc"><div class="mk">Spread</div><div class="mv" style="color:var(--text)" id="ob-sp">—</div></div>
+      <div class="mc"><div class="mk">Liquidity</div><div class="mv" style="color:var(--text)" id="ob-liq">—</div></div>
+      <div class="mc"><div class="mk">Slippage</div><div class="mv" style="color:var(--amber)" id="ob-slip">—</div></div>
+      <div class="mc"><div class="mk">Exec Mode</div><div class="mv" style="font-size:11px" id="ob-exec">—</div></div>
+    </div>
+    <div class="g2" style="margin-bottom:8px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;overflow:hidden">
+        <div style="font-size:9px;padding:4px 8px;border-bottom:1px solid var(--border);color:var(--green);text-transform:uppercase;letter-spacing:.08em">Bids (YES)</div>
+        <div id="ob-bids"></div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;overflow:hidden">
+        <div style="font-size:9px;padding:4px 8px;border-bottom:1px solid var(--border);color:var(--red);text-transform:uppercase;letter-spacing:.08em">Asks (NO)</div>
+        <div id="ob-asks"></div>
+      </div>
+    </div>
+    <div class="row">
+      <span style="font-size:10px;color:var(--text2)">Size $</span>
+      <input class="inp" type="number" id="tradeSize" value="1000" min="100" step="100" onchange="calcSlip()" style="width:80px"/>
+      <div class="mc" style="flex:1"><div class="mk">Eff. Price</div><div class="mv" style="font-size:11px;color:#e8e8e8" id="effp">—</div></div>
+      <div class="mc" style="flex:1"><div class="mk">Slip Cost</div><div class="mv" style="font-size:11px;color:var(--amber)" id="slipc">—</div></div>
+      <div id="placeOrderBtn" style="display:none">
+        <div class="btn btn-go" onclick="placeOrder()" style="white-space:nowrap">▶ Place Order</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="right">
+  <nav class="tabs">
+    <div class="tab on" onclick="sw('bt',this)">Backtest &amp; MC</div>
+    <div class="tab" onclick="sw('an',this)">Analytics</div>
+    <div class="tab" onclick="sw('rg',this)">Risk / Greeks</div>
+    <div class="tab" onclick="sw('ex',this)">Execution</div>
+    <div class="tab" onclick="sw('po',this)">Positions</div>
+    <div class="tab" onclick="sw('sa',this)">Signal Audit</div>
+    <div class="tab" onclick="sw('st',this)">Strategy Builder</div>
+    <div class="tab" onclick="sw('lg',this)">Live Logs</div>
+  </nav>
+
+  <!-- BACKTEST + MC -->
+  <div id="vbt" class="view on">
+    <div class="sub-tabs">
+      <div class="sub-tab on" onclick="subSw('config',this)">Config &amp; Run</div>
+      <div class="sub-tab" onclick="subSw('results',this)">Results</div>
+      <div class="sub-tab" onclick="subSw('mc',this)">Monte Carlo</div>
+    </div>
+    <div id="sv-config" class="sub-view on">
+      <div class="card">
+        <div class="card-title">Strategy Configuration</div>
+        <div class="g4" style="margin-bottom:10px">
+          <div class="bt-field"><label>Strategy</label><select class="inp" id="bt_strat"><option>DELTA_V2</option><option>MEAN_REVERT</option><option>MOMENTUM</option><option>CONTRARIAN</option></select></div>
+          <div class="bt-field"><label>Market Filter</label><select class="inp" id="bt_mkt"><option>All Markets</option><option>BTC Only</option><option>Tweet Markets</option><option>Macro Events</option></select></div>
+          <div class="bt-field"><label>Start Date</label><input class="inp" id="bt_from" value="2024-01-01"/></div>
+          <div class="bt-field"><label>End Date</label><input class="inp" id="bt_to" value="2024-12-31"/></div>
+          <div class="bt-field"><label>Capital ($)</label><input class="inp" type="number" id="bt_cap" value="10000" min="1000" step="1000"/></div>
+          <div class="bt-field"><label>Position Size %</label><input class="inp" type="number" id="bt_pos" value="5" min="1" max="25"/></div>
+          <div class="bt-field"><label>Stop Loss %</label><input class="inp" type="number" id="bt_sl" value="15"/></div>
+          <div class="bt-field"><label>Take Profit %</label><input class="inp" type="number" id="bt_tp" value="40"/></div>
+        </div>
+        <div class="row">
+          <div class="btn btn-go" id="runBtn" onclick="runBacktest()">▶ Run Backtest</div>
+          <div class="progress-wrap"><div class="progress-bar" id="progBar"></div></div>
+          <span style="font-size:10px;color:var(--text3);min-width:70px" id="progLabel">Ready</span>
+        </div>
+      </div>
+      <div class="card" style="border-color:#0f1e14">
+        <div class="card-title">
+          <span>Backend Bridge</span>
+          <span style="color:var(--green);font-size:9px">ws://0.0.0.0:8000/ws/state</span>
+        </div>
+        <div class="g4">
+          <div class="mc"><div class="mk">WS Latency</div><div class="mv" style="color:var(--green)" id="wsLatCard">12ms</div></div>
+          <div class="mc"><div class="mk">API Thread</div><div class="mv" style="color:var(--green)">Unblocked</div></div>
+          <div class="mc"><div class="mk">Stale Guard</div><div class="mv" style="color:var(--green)">Active</div></div>
+          <div class="mc"><div class="mk">State Syncs</div><div class="mv" style="color:var(--text)" id="syncCount">0</div></div>
+        </div>
+        <div style="margin-top:10px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:3px;font-size:9px;color:var(--text3);line-height:1.7">
+          <b style="color:var(--text2)">Resilience:</b> WS disconnects trigger exponential backoff (50ms → 100ms → … → 30s max). On reconnect the frontend requests a full <b style="color:#c0c0c0">STATE_SYNC</b> before unblinding the UI. FastAPI runs on a daemon thread — strategy loop is never blocked by HTTP/WS traffic.
+        </div>
+      </div>
+    </div>
+    <div id="sv-results" class="sub-view">
+      <div id="bt-empty" class="card" style="text-align:center;padding:28px;color:var(--text3)">Run a backtest first to see results.</div>
+      <div id="bt-content" style="display:none;flex-direction:column;gap:10px">
+        <div class="card"><div class="card-title">Summary</div><div class="g5" id="bt_met"></div></div>
+        <div class="g2">
+          <div class="card"><div class="card-title">Equity Curve</div><canvas id="eqCanvas" height="130"></canvas></div>
+          <div class="card"><div class="card-title">Drawdown %</div><canvas id="ddCanvas" height="130"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Trade Log <span id="tlog-count" style="color:var(--text3)"></span></div>
+          <div class="trade-scroll"><table class="trade-tbl"><thead><tr><th>Date</th><th>Market</th><th>Side</th><th>Entry</th><th>Exit</th><th>P&amp;L</th></tr></thead><tbody id="tradeRows"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+    <div id="sv-mc" class="sub-view">
+      <div class="card">
+        <div class="card-title">Simulation Parameters</div>
+        <div class="row" style="gap:18px;flex-wrap:wrap">
+          <div class="row" style="gap:7px"><span style="font-size:10px;color:var(--text2)">N paths</span><input type="range" min="50" max="600" step="50" value="200" style="width:100px" id="mcNRange"/><span id="nval" style="font-size:11px;color:var(--green);min-width:28px">200</span></div>
+          <div class="row" style="gap:7px"><span style="font-size:10px;color:var(--text2)">Volatility</span><input type="range" min="5" max="80" step="5" value="30" style="width:90px" id="mcVolRange"/><span id="volval" style="font-size:11px;color:var(--blue);min-width:30px">30%</span></div>
+          <div class="row" style="gap:7px"><span style="font-size:10px;color:var(--text2)">Days</span><input type="range" min="7" max="90" step="7" value="30" style="width:80px" id="mcDaysRange"/><span id="daysval" style="font-size:11px;color:var(--amber);min-width:20px">30</span></div>
+          <div class="btn btn-warn" id="injectShockBtn">⚡ Black Swan</div>
+        </div>
+      </div>
+      <div class="card"><div class="card-title">Path Distribution</div>
+        <canvas id="mcCanvas" height="200"></canvas>
+        <div class="row" style="gap:12px;margin-top:8px;font-size:9px;color:#333;flex-wrap:wrap">
+          <span style="color:rgba(0,255,135,.55)">— Best</span><span style="color:rgba(255,82,82,.55)">— Worst</span><span style="color:var(--blue)">— Median</span><span style="color:rgba(255,179,64,.5)">-- Expected</span>
+        </div>
+      </div>
+      <div class="g5">
+        <div class="mc"><div class="mk">Best Final</div><div class="mv" style="color:var(--green)" id="mc1">—</div></div>
+        <div class="mc"><div class="mk">Worst Final</div><div class="mv" style="color:var(--red)" id="mc2">—</div></div>
+        <div class="mc"><div class="mk">Median</div><div class="mv" style="color:var(--blue)" id="mc3">—</div></div>
+        <div class="mc"><div class="mk">VaR 95%</div><div class="mv" style="color:var(--amber)" id="mc4">—</div></div>
+        <div class="mc"><div class="mk">CVaR 99%</div><div class="mv" style="color:var(--red)" id="mc5">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div id="van" class="view">
+    <div id="an-empty" class="card" style="text-align:center;padding:28px;color:var(--text3)">Run a backtest first to populate analytics.</div>
+    <div id="an-content" style="display:none;flex-direction:column;gap:10px">
+      <div class="analytics-grid">
+        <div class="card"><div class="card-title">Performance Ratios</div>
+          <div class="stat-row"><span class="k">Sharpe Ratio</span><span class="v" id="sharpe">—</span></div>
+          <div class="stat-row"><span class="k">Sortino Ratio</span><span class="v" id="sortino">—</span></div>
+          <div class="stat-row"><span class="k">Calmar Ratio</span><span class="v" id="calmar">—</span></div>
+          <div class="stat-row"><span class="k">Omega Ratio</span><span class="v" id="omega">—</span></div>
+          <div class="stat-row"><span class="k">Information Ratio</span><span class="v" id="ir">—</span></div>
+          <div class="stat-row"><span class="k">Beta (vs BTC)</span><span class="v" id="beta">—</span></div>
+          <div class="stat-row"><span class="k">Alpha (annualized)</span><span class="v" id="alpha">—</span></div>
+          <div class="stat-row"><span class="k">R² Fit</span><span class="v" id="rsq">—</span></div>
+        </div>
+        <div class="card"><div class="card-title">Risk Metrics</div>
+          <div class="stat-row"><span class="k">Max Drawdown</span><span class="v" id="mdd">—</span></div>
+          <div class="stat-row"><span class="k">Avg Drawdown</span><span class="v" id="avgdd">—</span></div>
+          <div class="stat-row"><span class="k">Recovery Factor</span><span class="v" id="recov">—</span></div>
+          <div class="stat-row"><span class="k">Ulcer Index</span><span class="v" id="ulcer">—</span></div>
+          <div class="stat-row"><span class="k">VaR 95% daily</span><span class="v" id="avar95">—</span></div>
+          <div class="stat-row"><span class="k">CVaR 95% tail</span><span class="v" id="cvar95">—</span></div>
+          <div class="stat-row"><span class="k">Skewness</span><span class="v" id="skew">—</span></div>
+          <div class="stat-row"><span class="k">Excess Kurtosis</span><span class="v" id="kurt">—</span></div>
+        </div>
+        <div class="card"><div class="card-title">Trade Statistics</div>
+          <div class="stat-row"><span class="k">Win Rate</span><span class="v" id="wr">—</span></div>
+          <div class="stat-row"><span class="k">Profit Factor</span><span class="v" id="pf">—</span></div>
+          <div class="stat-row"><span class="k">Avg Win</span><span class="v" id="avgwin">—</span></div>
+          <div class="stat-row"><span class="k">Avg Loss</span><span class="v" id="avgloss">—</span></div>
+          <div class="stat-row"><span class="k">Win/Loss Ratio</span><span class="v" id="wlr">—</span></div>
+          <div class="stat-row"><span class="k">Expectancy</span><span class="v" id="expcy">—</span></div>
+          <div class="stat-row"><span class="k">Avg Hold Time</span><span class="v" id="holdtime">—</span></div>
+          <div class="stat-row"><span class="k">Total Trades</span><span class="v" id="ttrades">—</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Return Distribution</div>
+          <canvas id="distCanvas" height="100" style="margin-bottom:10px"></canvas>
+          <div class="card-title" style="margin-top:4px">Asset Correlation</div>
+          <div class="corr-grid" id="corrMatrix"></div>
+        </div>
+      </div>
+      <div class="card"><div class="card-title">Monthly Returns Heatmap — 2024</div><div class="heatmap-grid" id="heatmap"></div></div>
+    </div>
+  </div>
+
+  <!-- RISK / GREEKS -->
+  <div id="vrg" class="view">
+    <div class="g2">
+      <div class="card"><div class="card-title">Black Swan Risk Meter</div>
+        <div class="dial-wrap">
+          <svg width="200" height="112" viewBox="0 0 200 112">
+            <defs><linearGradient id="dg" x1="0%" x2="100%"><stop offset="0%" stop-color="#00ff87"/><stop offset="50%" stop-color="#ffb340"/><stop offset="100%" stop-color="#ff5252"/></linearGradient></defs>
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1a1a1a" stroke-width="12" stroke-linecap="round"/>
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#dg)" stroke-width="12" stroke-linecap="round"/>
+            <line id="dhand" x1="100" y1="100" x2="140" y2="56" stroke="#ffb340" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="100" cy="100" r="6" fill="#111" stroke="#ffb340" stroke-width="2"/>
+            <text x="16" y="114" font-size="9" fill="#444" font-family="IBM Plex Mono">LOW</text>
+            <text x="90" y="14" font-size="9" fill="#444" font-family="IBM Plex Mono" text-anchor="middle">MED</text>
+            <text x="172" y="114" font-size="9" fill="#444" font-family="IBM Plex Mono" text-anchor="end">CRIT</text>
+          </svg>
+          <div class="dial-score" id="riskScore" style="color:var(--amber)">62</div>
+          <div class="dial-sub" id="riskLabel">Elevated Risk</div>
+        </div>
+        <div class="g3" style="margin-top:10px">
+          <div class="mc"><div class="mk">VaR 95%</div><div class="mv" style="color:var(--amber)" id="var95">-$420</div></div>
+          <div class="mc"><div class="mk">VaR 99%</div><div class="mv" style="color:var(--red)" id="var99">-$870</div></div>
+          <div class="mc"><div class="mk">Max DD</div><div class="mv" style="color:var(--red)" id="rsk_mdd">-$1.4K</div></div>
+        </div>
+        <div class="slider-block">
+          <label>Portfolio size<span id="portVal">$10,000</span></label>
+          <input type="range" min="1000" max="100000" step="1000" value="10000" id="portSizeRange"/>
+        </div>
+      </div>
+      <div class="card"><div class="card-title">Options Greeks · BTC-USD</div>
+        <div class="g2">
+          <div class="greek-card"><div class="greek-label">Delta Δ</div><div class="greek-val" style="color:var(--green)" id="gd">+0.621</div><div class="greek-sub">Directional exposure</div></div>
+          <div class="greek-card"><div class="greek-label">Gamma Γ</div><div class="greek-val" style="color:var(--blue)" id="gg">0.0082</div><div class="greek-sub">Delta sensitivity</div></div>
+          <div class="greek-card"><div class="greek-label">Theta Θ</div><div class="greek-val" style="color:var(--red)" id="gt">-14.32</div><div class="greek-sub">Time decay / day</div></div>
+          <div class="greek-card"><div class="greek-label">Vega V</div><div class="greek-val" style="color:var(--amber)" id="gv">+42.1</div><div class="greek-sub">IV sensitivity</div></div>
+        </div>
+        <div class="slider-block"><label>IV Shock %<span id="ivVal">0%</span></label><input type="range" min="-50" max="50" step="1" value="0" id="ivShockRange"/></div>
+        <div class="slider-block"><label>Price Δ %<span id="priceVal">0%</span></label><input type="range" min="-30" max="30" step="1" value="0" id="priceShockRange"/></div>
+      </div>
+    </div>
+
+    <!-- TRIPLE GATE -->
+    <div class="card">
+      <div class="card-title">3D Risk Matrix — Triple Gate <span style="color:var(--text3)">All gates must PASS to execute</span></div>
+      <div class="gate-row">
+        <span class="gate-label">Gate A · Global</span>
+        <div class="gate-bar-wrap"><div class="gate-bar pass" id="gateABar" style="width:58%"></div></div>
+        <span class="gate-pct" id="gateAPct" style="color:var(--green)">17.4%</span>
+        <span class="gate-limit" style="color:var(--text3)">/ 30%</span>
+        <span class="gate-status gate-pass" id="gateAStatus">PASS</span>
+      </div>
+      <div class="gate-row">
+        <span class="gate-label">Gate B · Temporal</span>
+        <div class="gate-bar-wrap"><div class="gate-bar warn" id="gateBBar" style="width:73%"></div></div>
+        <span class="gate-pct" id="gateBPct" style="color:var(--amber)">10.9%</span>
+        <span class="gate-limit" style="color:var(--text3)">/ 15%</span>
+        <span class="gate-status gate-warn" id="gateBStatus">WARN</span>
+      </div>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Gate C · Conviction Tiers</div>
+        <div class="tier-row">
+          <span class="tier-p">p &gt; 0.80 · High</span>
+          <div class="tier-bar-wrap"><div class="tier-bar" style="width:100%;background:var(--green)"></div></div>
+          <span class="tier-max" style="color:var(--green)">5.0% max</span>
+          <span class="tier-badge" style="background:rgba(0,255,135,.1);color:var(--green);border:1px solid rgba(0,255,135,.2)">BTC $100k</span>
+        </div>
+        <div class="tier-row">
+          <span class="tier-p">p &gt; 0.40 · Med</span>
+          <div class="tier-bar-wrap"><div class="tier-bar" style="width:60%;background:var(--blue)"></div></div>
+          <span class="tier-max" style="color:var(--blue)">3.0% max</span>
+          <span class="tier-badge" style="background:rgba(123,156,255,.1);color:var(--blue);border:1px solid rgba(123,156,255,.2)">Fed Cuts, Trump</span>
+        </div>
+        <div class="tier-row">
+          <span class="tier-p">p ≤ 0.40 · Low</span>
+          <div class="tier-bar-wrap"><div class="tier-bar" style="width:30%;background:var(--text3)"></div></div>
+          <span class="tier-max" style="color:var(--text2)">1.5% max</span>
+          <span class="tier-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border)">ETH Flip, Rec</span>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="slider-block">
+          <label>Sim Global Exposure %<span id="gateASliderVal">17.4%</span></label>
+          <input type="range" min="0" max="40" step="0.5" value="17.4" id="gateASlider"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- CIRCUIT BREAKERS -->
+    <div class="card">
+      <div class="card-title">Circuit Breakers <span id="cbAllOk" style="color:var(--green);font-size:9px">● All Clear</span></div>
+      <div class="cb-row">
+        <span class="cb-name">Volatility Breaker</span>
+        <span class="cb-val" id="cbVolVal">0.82% / min</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:9px;color:var(--text3)">threshold 2.0%</span>
+          <div class="cb-dot cb-ok" id="cbVolDot"></div>
+        </div>
+      </div>
+      <div class="cb-row">
+        <span class="cb-name">Stale Data Guard</span>
+        <span class="cb-val" id="cbStaleVal">lag 41ms</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:9px;color:var(--text3)">threshold 500ms</span>
+          <div class="cb-dot cb-ok" id="cbStaleDot"></div>
+        </div>
+      </div>
+      <div class="cb-row">
+        <span class="cb-name">WS Heartbeat</span>
+        <span class="cb-val" id="cbHbVal">last ping 1.8s ago</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:9px;color:var(--text3)">every 2s</span>
+          <div class="cb-dot cb-ok" id="cbHbDot"></div>
+        </div>
+      </div>
+      <div class="cb-row">
+        <span class="cb-name">CLOB Rate Limiter</span>
+        <span class="cb-val" id="cbRlVal">42 / 100 req</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:9px;color:var(--text3)">per minute</span>
+          <div class="cb-dot cb-ok" id="cbRlDot"></div>
+        </div>
+      </div>
+      <div class="cb-row">
+        <span class="cb-name">Price Deviation Guard</span>
+        <span class="cb-val" id="cbPdVal">max dev $0.12</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:9px;color:var(--text3)">limit $0.35</span>
+          <div class="cb-dot cb-ok" id="cbPdDot"></div>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="btn btn-warn" style="font-size:9px" onclick="tripBreaker()">⚡ Simulate Breaker Trip</div>
+      </div>
+    </div>
+
+    <!-- VRP STRIP VISUALIZER -->
+    <div class="card">
+      <div class="card-title">VRP Strip Visualizer — Deribit IV → N(d2) Fair Price <span style="color:var(--text3)">haircut = IV / 0.85</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <div class="vrp-row">
+            <span class="vrp-label">Raw Deribit IV</span>
+            <div class="vrp-bar-wrap"><div class="vrp-bar" style="width:72%;background:var(--red)"></div></div>
+            <span class="vrp-val" style="color:var(--red)" id="vrpRawIV">72.4%</span>
+          </div>
+          <div class="vrp-row">
+            <span class="vrp-label">After VRP Haircut</span>
+            <div class="vrp-bar-wrap"><div class="vrp-bar" style="width:61%;background:var(--amber)"></div></div>
+            <span class="vrp-val" style="color:var(--amber)" id="vrpAdjIV">61.5%</span>
+          </div>
+          <div class="vrp-row">
+            <span class="vrp-label">N(d2) Fair Price</span>
+            <div class="vrp-bar-wrap"><div class="vrp-bar" style="width:68%;background:var(--green)"></div></div>
+            <span class="vrp-val" style="color:var(--green)" id="vrpFair">0.681</span>
+          </div>
+          <div class="vrp-row">
+            <span class="vrp-label">Market Price</span>
+            <div class="vrp-bar-wrap"><div class="vrp-bar" style="width:72%;background:var(--blue)"></div></div>
+            <span class="vrp-val" style="color:var(--blue)" id="vrpMkt">0.724</span>
+          </div>
+          <div class="vrp-row">
+            <span class="vrp-label">Edge (Fair − Mkt)</span>
+            <div class="vrp-bar-wrap"><div class="vrp-bar" id="vrpEdgeBar" style="width:14%;background:var(--amber)"></div></div>
+            <span class="vrp-val" id="vrpEdge" style="color:var(--amber)">−0.043</span>
+          </div>
+        </div>
+        <div>
+          <canvas id="vrpCanvas" height="120"></canvas>
+        </div>
+      </div>
+      <div class="g4">
+        <div class="bt-field"><label>Spot Price</label><input class="inp" type="number" id="vrpSpot" value="87500" step="500" oninput="recalcVRP()"/></div>
+        <div class="bt-field"><label>Strike</label><input class="inp" type="number" id="vrpStrike" value="100000" step="1000" oninput="recalcVRP()"/></div>
+        <div class="bt-field"><label>Deribit IV %</label><input class="inp" type="number" id="vrpIV" value="72.4" step="1" oninput="recalcVRP()"/></div>
+        <div class="bt-field"><label>Days to Expiry</label><input class="inp" type="number" id="vrpDTE" value="180" step="1" oninput="recalcVRP()"/></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXECUTION -->
+  <div id="vex" class="view">
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Hybrid Taker / Maker Logic</div>
+        <div class="exec-flow">
+          <div class="exec-step">
+            <div class="exec-step-num" style="background:rgba(0,255,135,.15);color:var(--green)">1</div>
+            <div class="exec-step-body">
+              <div class="exec-step-title">Spread-Adjusted Edge</div>
+              <div class="exec-step-detail"><b>Edge = BS_fair − entry_price</b><br>Strips VRP haircut from Deribit IV before comparing to market.</div>
+              <div class="exec-result" style="background:var(--glow2);color:var(--green);border:1px solid rgba(0,255,135,.2)" id="ex-edge-disp">Edge = +0.057 on BTC $100K</div>
+            </div>
+          </div>
+          <div class="exec-step">
+            <div class="exec-step-num" style="background:rgba(123,156,255,.15);color:var(--blue)">2</div>
+            <div class="exec-step-body">
+              <div class="exec-step-title">Taker Threshold Check</div>
+              <div class="exec-step-detail"><b>If Edge ≥ (Spread × 1.15) + Buffer → Market/FOK</b><br>Aggressive fill — accepts slippage to guarantee execution.</div>
+              <div class="exec-result" id="ex-taker-disp" style="background:var(--glow2);color:var(--green);border:1px solid rgba(0,255,135,.2)">✓ TAKER — Edge 0.057 ≥ threshold 0.014</div>
+            </div>
+          </div>
+          <div class="exec-step">
+            <div class="exec-step-num" style="background:rgba(255,179,64,.1);color:var(--amber)">3</div>
+            <div class="exec-step-body">
+              <div class="exec-step-title">Maker Fallback</div>
+              <div class="exec-step-detail"><b>If Edge &gt; Buffer but Taker fails → Limit/Post-Only at bid + 0.001</b><br>Passive fill — queue at best bid to earn spread.</div>
+              <div class="exec-result" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border)">Fallback not triggered</div>
+            </div>
+          </div>
+          <div class="exec-step">
+            <div class="exec-step-num" style="background:rgba(255,82,82,.1);color:var(--red)">4</div>
+            <div class="exec-step-body">
+              <div class="exec-step-title">Slippage Guard</div>
+              <div class="exec-step-detail"><b>Reject if VWAP deviates &gt; $0.35 from signal price</b><br>Hard cancel — protects against illiquid flash moves.</div>
+              <div class="exec-result" style="background:rgba(0,255,135,.08);color:var(--green);border:1px solid rgba(0,255,135,.15)">✓ VWAP dev $0.12 — within limit</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Greed-Decay Take Profit</div>
+        <div class="exec-flow">
+          <div class="exec-step">
+            <div class="exec-step-num" style="background:rgba(0,255,135,.15);color:var(--green)">1</div>
+            <div class="exec-step-body">
+              <div class="exec-step-title">Capital Recycling</div>
+              <div class="exec-step-detail"><b>If bid ≥ 0.99 → Instant sell</b><br>Near-certain resolution — don't wait for the last $0.01.</div>
+            </div>
+          </div>
+          <div class="exec-step">
+            <div class="exec-step-num" style="background:rgba(123,156,255,.15);color:var(--blue)">2</div>
+            <div class="exec-step-body">
+              <div class="exec-step-title">Greed Decay Formula</div>
+              <div class="exec-step-detail"><b>target = p_real × exp(−k × max(0, ROI))</b><br>k scales with entry price — patient on cheap tokens ($0.03), aggressive on expensive ($0.80).</div>
+              <canvas id="decayCanvas" height="90" style="margin-top:8px;border-radius:3px"></canvas>
+            </div>
+          </div>
+          <div class="exec-step">
+            <div class="exec-step-num" style="background:rgba(255,179,64,.1);color:var(--amber)">3</div>
+            <div class="exec-step-body">
+              <div class="exec-step-title">Time Discount</div>
+              <div class="exec-step-detail"><b>exit_price = target − (days_to_expiry × discount_rate)</b><br>The closer to expiry, the more aggressively we cut.</div>
+            </div>
+          </div>
+        </div>
+        <div class="slider-block" style="margin-top:8px">
+          <label>Entry price (k scaling)<span id="entrySliderVal">$0.30</span></label>
+          <input type="range" min="0.03" max="0.95" step="0.01" value="0.30" id="entryPriceRange"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live execution feed -->
+    <div class="card">
+      <div class="card-title">Recent Execution Events <span style="color:var(--text3)">— broker.py stream</span></div>
+      <div id="execFeed" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <!-- OPEN POSITIONS -->
+  <div id="vpo" class="view">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div class="card-title" style="margin:0">Open Positions <span id="posCount" style="color:var(--text3)">5 open</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="mc" style="padding:4px 10px"><div class="mk">Unrealized P&L</div><div class="mv" style="color:var(--green);font-size:12px" id="totalUnreal">+$284</div></div>
+          <div class="mc" style="padding:4px 10px"><div class="mk">Realized Today</div><div class="mv" style="color:var(--green);font-size:12px" id="totalReal">+$147</div></div>
+          <div class="mc" style="padding:4px 10px"><div class="mk">Exposure</div><div class="mv" style="color:var(--amber);font-size:12px" id="totalExposure">17.4%</div></div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="pos-tbl">
+          <thead><tr>
+            <th>Market</th><th>Side</th><th>Size</th><th>Entry</th>
+            <th>Current Bid</th><th>Unrealized</th><th>ROI</th>
+            <th>Decay Target</th><th>DTE</th><th>Action</th>
+          </tr></thead>
+          <tbody id="posBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNAL AUDIT LOG -->
+  <div id="vsa" class="view">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div class="card-title" style="margin:0">Signal Audit Log <span style="color:var(--text3)">— why each signal was accepted or rejected</span></div>
+        <div style="display:flex;gap:6px">
+          <div class="chip on" id="auditAll" onclick="filterAudit('ALL',this)">All</div>
+          <div class="chip" onclick="filterAudit('TAKER',this)">Taker</div>
+          <div class="chip" onclick="filterAudit('MAKER',this)">Maker</div>
+          <div class="chip" onclick="filterAudit('GATED',this)">Gated</div>
+          <div class="chip" onclick="filterAudit('REJECT',this)">Reject</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;max-height:520px;overflow-y:auto">
+        <table class="audit-tbl">
+          <thead><tr>
+            <th>Time</th><th>Market</th><th>BS Fair</th><th>Mkt Price</th>
+            <th>Edge</th><th>Spread</th><th>Gate A</th><th>Gate B</th><th>Gate C</th><th>Decision</th><th>Reason</th>
+          </tr></thead>
+          <tbody id="auditBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRATEGY BUILDER -->
+  <div id="vst" class="view">
+    <div class="card" style="padding:10px 14px">
+      <div class="row">
+        <div class="section-title" style="font-size:12px">Strategy Builder</div>
+        <div class="badge badge-new" style="background:rgba(0,255,135,.1);color:var(--green);border:1px solid rgba(0,255,135,.2);font-size:9px;padding:2px 8px">BETA</div>
+        <input class="inp" id="stStratName" value="MY_STRATEGY_V1" style="flex:1;margin:0 10px;max-width:220px"/>
+        <div class="btn btn-go" id="stExportBtn" style="white-space:nowrap">Export strategy_params.yaml</div>
+        <div class="btn" id="stRunBtn" style="white-space:nowrap;margin-left:4px">▶ Backtest this strategy</div>
+      </div>
+    </div>
+
+    <div class="sb-grid">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="card">
+          <div class="card-title">
+            <div class="sb-step"><div class="sb-step-num" style="background:rgba(0,255,135,.15);color:var(--green)">1</div>Market Targeting</div>
+          </div>
+          <div class="row" style="margin-bottom:10px;flex-wrap:wrap;gap:6px">
+            <span style="font-size:10px;color:var(--text2);min-width:120px">Categories</span>
+            <div class="sb-chip-row" id="stCatChips">
+              <div class="chip on">BTC</div>
+              <div class="chip on">Macro</div>
+              <div class="chip">Tweet</div>
+              <div class="chip">Election</div>
+              <div class="chip">Sports</div>
+            </div>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:10px;color:var(--text2);min-width:120px">Min liquidity</span>
+            <input type="range" min="0" max="2000" step="50" value="400" id="stMinLiq" style="flex:1"/>
+            <span style="font-size:11px;color:var(--text);min-width:54px;text-align:right;font-family:var(--font-mono)" id="stMinLiqVal">$400K</span>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:10px;color:var(--text2);min-width:120px">Min volume bar</span>
+            <input type="range" min="0" max="100" step="5" value="40" id="stMinVol" style="flex:1"/>
+            <span style="font-size:11px;color:var(--text);min-width:54px;text-align:right;font-family:var(--font-mono)" id="stMinVolVal">40%</span>
+          </div>
+          <div class="row">
+            <span style="font-size:10px;color:var(--text2);min-width:120px">Keyword filter</span>
+            <input class="inp" id="stKw" placeholder="e.g. BTC, recession…" style="flex:1"/>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <div class="sb-step"><div class="sb-step-num" style="background:rgba(123,156,255,.15);color:var(--blue)">2</div>Signal Rules</div>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:10px;color:var(--text2);min-width:140px">Min edge (BS − mkt)</span>
+            <input type="range" min="0" max="0.15" step="0.005" value="0.04" id="stMinEdge" style="flex:1"/>
+            <span style="font-size:11px;color:var(--green);min-width:54px;text-align:right;font-family:var(--font-mono)" id="stMinEdgeVal">0.040</span>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:10px;color:var(--text2);min-width:140px">Min N(d2) fair price</span>
+            <input type="range" min="0.1" max="0.95" step="0.05" value="0.55" id="stMinFair" style="flex:1"/>
+            <span style="font-size:11px;color:var(--text);min-width:54px;text-align:right;font-family:var(--font-mono)" id="stMinFairVal">0.55</span>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:10px;color:var(--text2);min-width:140px">VRP discount</span>
+            <input type="range" min="0.70" max="1.0" step="0.01" value="0.85" id="stVrp" style="flex:1"/>
+            <span style="font-size:11px;color:var(--text);min-width:54px;text-align:right;font-family:var(--font-mono)" id="stVrpVal">0.85</span>
+          </div>
+          <div class="row">
+            <span style="font-size:10px;color:var(--text2);min-width:140px">Execution mode</span>
+            <div class="sb-chip-row">
+              <div class="chip on" id="stModeAuto">Auto</div>
+              <div class="chip" id="stModeTaker">Taker only</div>
+              <div class="chip" id="stModeMaker">Maker only</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <div class="sb-step"><div class="sb-step-num" style="background:rgba(255,179,64,.12);color:var(--amber)">3</div>Sizing &amp; Exit Rules</div>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:10px;color:var(--text2);min-width:140px">Kelly fraction</span>
+            <input type="range" min="0.05" max="0.5" step="0.05" value="0.25" id="stKelly" style="flex:1"/>
+            <span style="font-size:11px;color:var(--amber);min-width:54px;text-align:right;font-family:var(--font-mono)" id="stKellyVal">0.25x</span>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:10px;color:var(--text2);min-width:140px">Max position size</span>
+            <input type="range" min="1" max="10" step="0.5" value="5" id="stMaxPos" style="flex:1"/>
+            <span style="font-size:11px;color:var(--text);min-width:54px;text-align:right;font-family:var(--font-mono)" id="stMaxPosVal">5.0%</span>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:10px;color:var(--text2);min-width:140px">Stop loss</span>
+            <input type="range" min="5" max="50" step="5" value="15" id="stSL" style="flex:1"/>
+            <span style="font-size:11px;color:var(--red);min-width:54px;text-align:right;font-family:var(--font-mono)" id="stSLVal">15%</span>
+          </div>
+          <div class="row" style="margin-bottom:8px">
+            <span style="font-size:10px;color:var(--text2);min-width:140px">Greed decay k</span>
+            <input type="range" min="0.5" max="4" step="0.1" value="1.5" id="stKd" style="flex:1"/>
+            <span style="font-size:11px;color:var(--text);min-width:54px;text-align:right;font-family:var(--font-mono)" id="stKdVal">1.5</span>
+          </div>
+          <canvas id="stDecayCanvas" height="55" style="width:100%;background:#080808;border-radius:3px"></canvas>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="card">
+          <div class="card-title">Live market preview <span id="stMatchCount" style="margin-left:auto;color:var(--green)">3 match</span></div>
+          <div id="stPreviewList"></div>
+          <div style="font-size:9px;color:var(--text3);text-align:center;margin-top:6px">adjust rules to update</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Strategy summary</div>
+          <div class="sum-grid">
+            <div class="mc"><div class="mk">Min edge</div><div class="mv" style="color:var(--green)" id="stSumEdge">0.040</div></div>
+            <div class="mc"><div class="mk">Kelly frac</div><div class="mv" style="color:var(--amber)" id="stSumKelly">0.25x</div></div>
+            <div class="mc"><div class="mk">Max pos</div><div class="mv" style="color:var(--blue)" id="stSumPos">5.0%</div></div>
+            <div class="mc"><div class="mk">Stop loss</div><div class="mv" style="color:var(--red)" id="stSumSL">15%</div></div>
+          </div>
+          <div class="gauge-row">
+            <span class="gauge-lbl">Aggressiveness</span>
+            <div class="gauge-track"><div class="gauge-fill" id="stAggBar" style="width:45%;background:var(--amber)"></div></div>
+            <span class="gauge-num" id="stAggVal" style="color:var(--amber)">45</span>
+          </div>
+          <div class="gauge-row">
+            <span class="gauge-lbl">Risk level</span>
+            <div class="gauge-track"><div class="gauge-fill" id="stRiskBar" style="width:30%;background:var(--green)"></div></div>
+            <span class="gauge-num" id="stRiskVal" style="color:var(--green)">30</span>
+          </div>
+          <div class="gauge-row">
+            <span class="gauge-lbl">Market reach</span>
+            <div class="gauge-track"><div class="gauge-fill" id="stReachBar" style="width:60%;background:var(--blue)"></div></div>
+            <span class="gauge-num" id="stReachVal" style="color:var(--blue)">60</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">strategy_params.yaml</div>
+          <div class="yaml-box" id="stYamlOut"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div id="vlg" class="view">
+    <div class="row">
+      <span style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Engine Logs — ws_bridge stream</span>
+      <div class="spacer"></div>
+      <div class="btn" id="clearLogsBtn">Clear</div>
+    </div>
+    <div class="log-box" id="logbox"></div>
+  </div>
+</main>
+
+<footer class="bottombar">
+  <span>ENGINE <b style="color:var(--green)" class="pulse">RUNNING</b></span>
+  <span>SYNC <b id="syncAge">—</b></span>
+  <span>SESSION P&L <b id="footerPnL" style="color:var(--green)">+$431</b></span>
+  <span>POSITIONS <b id="footerPos" style="color:var(--text2)">5 open</b></span>
+  <span>GATES <b id="gatesStatus" style="color:var(--green)">A✓ B✓ C✓</b></span>
+  <span>UPTIME <b id="uptime">00:00:00</b></span>
+  <span class="spacer"></span>
+  <span>STALE GUARD <b style="color:var(--green);text-shadow:0 0 6px rgba(0,255,135,.3)">ACTIVE</b></span>
+</footer>
+
+</div>
+
+<script type="module" src="assets/js/main.js"></script>
+</body>
+</html>
