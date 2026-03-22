@@ -41,3 +41,18 @@
 - Connect `feed_aggregator.py` to live WebSocket streams (Binance/Deribit).
 - Implement rate-limit backoff and error recovery in API clients.
 - Verify live state reconciliation and audit streaming.
+
+## Phase 8: Advanced Alpha & Arbitrage Skeletons
+- Implement Cross-Exchange price correlation filters.
+- Build "Phantom Order" detection for orderbook manipulation.
+- Create automated Kelly-based position sizing for multi-strategy concurrency.
+
+## Phase 9: Performance Optimization & Hardening
+- Profiling and bottleneck analysis (cProfile/py-spy).
+- Internal queue optimization (lock-free or specialized buffers).
+- Memory footprint reduction for high-frequency data ingestion.
+
+## Phase 10: Cloud Ops & Monitoring
+- Dockerization and Environment parity.
+- Prometheus/Grafana integration for real-time engine metrics.
+- Multi-channel alerting (Telegram, Slack) for risk/engine events.
