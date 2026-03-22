@@ -1,8 +1,7 @@
 """
 Smoke tests: verify the Python path, dependencies, and core module imports.
-If these fail, the environment is broken.
+Updated for Phase 4 modular architecture.
 """
-
 
 def test_app_package_imports():
     """Verify the top-level app package is importable."""
@@ -14,34 +13,40 @@ def test_core_modules_import():
     """Verify all core submodules import without errors."""
     from app.core import common
     from app.core import clock
-    from app.core import ingestion
+    from app.core import aggregator
     from app.core import portfolio
+    from app.core import state
     assert common.MarketData is not None
-    assert clock.MasterClock is not None
-    assert ingestion.DataAggregator is not None
+    assert clock.WindowSequenceHandler is not None
+    assert aggregator.aggregator is not None
     assert portfolio.PortfolioManager is not None
+    assert state.SystemState is not None
 
 
 def test_math_module_import():
     """Verify the quantitative library imports."""
-    from app.math import pricing
-    assert callable(pricing.black_scholes_fair_price)
-    assert callable(pricing.calculate_greeks)
+    from app.math.black_scholes import BlackScholes
+    from app.math.kelly import calculate_kelly
+    from app.math.slippage import SlippageModel
+    assert BlackScholes is not None
+    assert calculate_kelly is not None
+    assert SlippageModel is not None
 
 
 def test_utils_module_import():
     """Verify utility modules import."""
     from app.utils import config
     from app.utils import logger
-    assert config.ConfigManager is not None
+    assert config.config_manager is not None
     assert logger.log is not None
 
 
 def test_execution_module_import():
     """Verify execution/risk module imports."""
     from app.execution import risk
+    from app.execution import circuit_breakers
     assert risk.RiskManager is not None
-    assert risk.CircuitBreaker is not None
+    assert circuit_breakers.MasterCircuitBreaker is not None
 
 
 def test_config_yaml_parseable():
@@ -59,25 +64,16 @@ def test_config_yaml_parseable():
 
 def test_pydantic_models_instantiate():
     """Verify Pydantic data models can be instantiated."""
-    from app.core.common import MarketData, Signal, Position, Side, SignalType
+    from app.core.models import MarketSnapshot, UnifiedTick
 
-    market = MarketData(
-        id="test-market",
-        name="Test Market",
-        category="crypto",
-        price=0.55,
-        vol_24h=10000.0,
-        liquidity=5000.0,
-    )
-    assert market.price == 0.55
+    snap = MarketSnapshot(market_id="test-market")
+    assert snap.market_id == "test-market"
 
-    signal = Signal(
-        market_id="test-market",
-        signal_type=SignalType.BUY,
-        side=Side.YES,
-        edge=0.05,
-        confidence=0.75,
-        suggested_size_pct=0.02,
-        reasoning="Test signal",
+    tick = UnifiedTick(
+        exchange="binance",
+        symbol="BTC/USDT",
+        price=67000.0,
+        bid=66990.0,
+        ask=67010.0
     )
-    assert signal.edge == 0.05
+    assert tick.price == 67000.0
