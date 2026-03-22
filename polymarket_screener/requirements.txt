@@ -15,6 +15,7 @@ pymongo>=4.6.0
 # ─── Numerical / Quantitative ───
 numpy>=1.26.0
 scipy>=1.11.0
+pandas>=2.1.0
 
 # ─── Blockchain / Polymarket Auth ───
 web3>=6.11.0
@@ -25,6 +26,7 @@ rich>=13.7.0
 
 # ─── HTTP Clients ───
 httpx>=0.25.0
+requests>=2.31.0
 websockets>=12.0
 
 # ─── Testing ───
