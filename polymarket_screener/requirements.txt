@@ -8,9 +8,10 @@ pydantic-settings>=2.1.0
 pyyaml>=6.0.1
 python-dotenv>=1.0.0
 
-# ─── Database ───
+# ─── Database & Storage ───
 motor>=3.3.0
 pymongo>=4.6.0
+fastparquet>=2023.10.0
 
 # ─── Numerical / Quantitative ───
 numpy>=1.26.0
