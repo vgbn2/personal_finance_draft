@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\optimize\_linprog_ip.py
+# hypothesis_version: 6.151.9
+
+[1e-08, 0.1, 0.99995, 1.0, 1000, '-', 'COLAMD', 'Dual Feasibility   ', 'Duality Gap        ', 'MMD_ATA', 'MMD_AT_PLUS_A', 'NATURAL', 'Objective          ', 'Path Parameter     ', 'Primal Feasibility ', 'Step            ', 'complete', 'con', 'csc', 'fun', 'message', 'nit', 'phase', 'pos', 'slack', 'status', 'success', 'x']

@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\optimize\_minimize.py
+# hypothesis_version: 6.151.9
+
+['2-point', 'AllInteger', 'BFGS', 'L-BFGS-B', 'SLSQP', '_custom', 'barrier_tol', 'bfgs', 'bounded', 'brent', 'cg', 'cobyla', 'cobyqa', 'disp', 'dogleg', 'fatol', 'final_tr_radius', 'ftol', 'fun', 'golden', 'gtol', 'hess_inv', 'jac', 'l-bfgs-b', 'minimize', 'minimize_scalar', 'nelder-mead', 'new', 'newton-cg', 'old', 'powell', 'return_all', 'slsqp', 'stop_iteration', 'tnc', 'tol', 'trust-constr', 'trust-exact', 'trust-krylov', 'trust-ncg', 'xatol', 'xtol']

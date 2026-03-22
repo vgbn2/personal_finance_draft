@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\sparse\_base.py
+# hypothesis_version: 6.151.9
+
+[0.0, 1.0, 10.1, '\n  :\t:\n', '\n  Coords\tValues\n', 'Block Sparse Column', 'Block Sparse Row', 'COOrdinate', 'D', 'DIAgonal', 'Dictionary Of Keys', 'F', 'JAgged Diagonal', 'Linpack BAnded', 'List of Lists', 'Nonsymmetric SKyline', 'SparseWarning', 'Symmetric SKyline', 'Undefined', 'Variable Block Row', '_spbase', 'array', 'bsc', 'bsr', 'coo', 'csc', 'csr', 'd', 'dia', 'dod', 'dok', 'egd', 'f', 'inconsistent shapes', 'index out of bounds', 'issparse', 'isspmatrix', 'jad', 'lba', 'lil', 'matrix', 'msc', 'msr', 'nsk', 'sparray', 'ssk', 'sss', 'to', 'und', 'unsafe', 'uss', 'vbr']

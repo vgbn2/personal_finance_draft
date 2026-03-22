@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\stats\_resampling.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.01, 0.95, 1.0, 100, 9999, 10000, 'BCa', 'axis', 'basic', 'bca', 'bootstrap', 'data', 'float16', 'greater', 'independent', 'less', 'monte_carlo_test', 'pairings', 'percentile', 'permutation_test', 'permuted', 'pvalue', 'random_state', 'real floating', 'rng', 'sample', 'samples', 'size', 'two-sided']

@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\special\__init__.py
+# hypothesis_version: 6.151.9
+
+['SpecialFunctionError', 'ellip_harm', 'ellip_harm_2', 'ellip_normal', 'lambertw', 'log_softmax', 'logsumexp', 'multigammaln', 'nt', 'softmax', 'spherical_in', 'spherical_jn', 'spherical_kn', 'spherical_yn']

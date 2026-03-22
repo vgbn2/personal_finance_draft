@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\optimize\_slsqp_py.py
+# hypothesis_version: 6.151.9
+
+[0.0, 1e-06, 100, '    (Exit mode ', '%5s %5s %16s %16s', ')', '2-point', '3-point', 'FC', 'GNORM', 'NIT', 'OBJFUN', 'approx_jacobian', 'args', 'callback', 'cs', 'disp', 'eps', 'eq', 'fmin_slsqp', 'ftol', 'fun', 'ignore', 'ineq', 'iprint', 'jac', 'maxiter', 'message', 'nit', 'real floating', 'restructuredtext en', 'status', 'type', 'x']

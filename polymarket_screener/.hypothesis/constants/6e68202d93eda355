@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\stats\mstats_extras.py
+# hypothesis_version: 6.151.9
+
+['_mstats_extras', 'compare_medians_ms', 'hdmedian', 'hdquantiles', 'hdquantiles_sd', 'idealfourths', 'median_cihs', 'mjci', 'mquantiles_cimj', 'mstats', 'mstats_extras', 'rsh', 'stats', 'trimmed_mean_ci']

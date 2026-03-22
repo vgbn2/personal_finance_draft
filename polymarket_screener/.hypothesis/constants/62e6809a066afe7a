@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\trio\_core\_generated_run.py
+# hypothesis_version: 6.151.9
+
+[0.0, 'current_clock', 'current_root_task', 'current_statistics', 'current_time', 'current_trio_token', 'reschedule', 'spawn_system_task']

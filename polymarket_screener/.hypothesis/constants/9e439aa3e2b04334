@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\ndimage\_filters.py
+# hypothesis_version: 6.151.9
+
+[-0.5, 0.0, 1e-15, 0.5, 4.0, 100.0, 100, 'biu', 'c', 'constant', 'convolve', 'convolve1d', 'correlate', 'correlate1d', 'float32', 'footprint', 'gaussian_filter', 'gaussian_filter1d', 'gaussian_laplace', 'generic_filter', 'generic_filter1d', 'generic_laplace', 'int64', 'invalid filter size', 'invalid origin', 'invalid percentile', 'laplace', 'maximum_filter', 'maximum_filter1d', 'median', 'median_filter', 'minimum_filter', 'minimum_filter1d', 'percentile', 'percentile_filter', 'prewitt', 'rank', 'rank_filter', 'reflect', 'sobel', 'uniform_filter', 'uniform_filter1d', 'unsafe', 'weights']

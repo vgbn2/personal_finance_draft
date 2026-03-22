@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\_lib\array_api_compat\common\_helpers.py
+# hypothesis_version: 6.151.9
+
+['.common._helpers', '.cupy', '.dask.array', '.numpy', '.torch', '2021.12', '2022.12', '2023.12', 'DASK_DEVICE', '__array_namespace__', 'array_api_strict', 'array_namespace', 'cpu', 'cupy', 'dask.array', 'device', 'get_namespace', 'inspect', 'is_array_api_obj', 'is_cupy_array', 'is_cupy_namespace', 'is_dask_array', 'is_dask_namespace', 'is_jax_array', 'is_jax_namespace', 'is_ndonnx_array', 'is_ndonnx_namespace', 'is_numpy_array', 'is_numpy_namespace', 'is_torch_array', 'is_torch_namespace', 'jax', 'jax.numpy', 'math', 'ndonnx', 'numpy', 'size', 'sparse', 'sys', 'to_device', 'torch', 'warnings']

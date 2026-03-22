@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\optimize\optimize.py
+# hypothesis_version: 6.151.9
+
+['OptimizeResult', 'OptimizeWarning', '_optimize', 'approx_fprime', 'bracket', 'brent', 'brute', 'check_grad', 'fmin', 'fmin_bfgs', 'fmin_cg', 'fmin_ncg', 'fmin_powell', 'fminbound', 'golden', 'line_search', 'optimize', 'rosen', 'rosen_der', 'rosen_hess', 'rosen_hess_prod', 'show_options', 'zeros']

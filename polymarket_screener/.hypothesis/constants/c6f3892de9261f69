@@ -1,0 +1,4 @@
+# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\trio\testing\_check_streams.py
+# hypothesis_version: 6.151.9
+
+[b'1', b'123', b'2', b'x', b'xyzzy', b'y', 1.5, 100, 4096, 16834, 'ArgsT', 'Res1', 'Res2', 'little', 'receiver starting', 'waiter sleeping', 'waiter wokeup']
