@@ -12,7 +12,7 @@ from typing import Dict, List
 from pydantic import BaseModel, Field
 
 from app.core.event_bus import Channel, event_bus
-from app.core.models import ExecutionResult, MarketSnapshot
+from app.core.domain_models import ExecutionResult, MarketSnapshot
 from app.utils.logger import log
 
 

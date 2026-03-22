@@ -3,9 +3,9 @@ from typing import Dict, Any
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.api.ui_adapter import UIAdapter
-from app.core.state import system_state
+from app.core.state_synchronizer import state_synchronizer
 from app.core.portfolio import portfolio
-from app.execution.risk import risk_engine
+from app.execution.risk_manager import risk_manager
 from app.utils.logger import log
 
 router = APIRouter()
@@ -42,9 +42,9 @@ async def websocket_endpoint(websocket: WebSocket):
     async def push_state():
         while True:
             state_json = UIAdapter.format_market_state(
-                snapshot=system_state.latest_snapshot,
+                snapshot=state_synchronizer.latest_snapshot,
                 portfolio=portfolio,
-                risk_engine=risk_engine
+                risk_engine=risk_manager
             )
             try:
                 await websocket.send_json(state_json)

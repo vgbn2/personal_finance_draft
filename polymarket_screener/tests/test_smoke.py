@@ -11,14 +11,14 @@ def test_app_package_imports():
 
 def test_core_modules_import():
     """Verify all core submodules import without errors."""
-    from app.core import common
-    from app.core import clock
-    from app.core import aggregator
+    from app.core import schemas as common
+    from app.core import engine_clock as clock
+    from app.core import feed_aggregator as aggregator
     from app.core import portfolio
-    from app.core import state
+    from app.core import state_synchronizer as state
     assert common.MarketData is not None
     assert clock.WindowSequenceHandler is not None
-    assert aggregator.aggregator is not None
+    assert aggregator.feed_aggregator is not None
     assert portfolio.PortfolioManager is not None
     assert state.SystemState is not None
 
@@ -43,7 +43,7 @@ def test_utils_module_import():
 
 def test_execution_module_import():
     """Verify execution/risk module imports."""
-    from app.execution import risk
+    from app.execution import risk_manager as risk
     from app.execution import circuit_breakers
     assert risk.RiskManager is not None
     assert circuit_breakers.MasterCircuitBreaker is not None
@@ -64,7 +64,7 @@ def test_config_yaml_parseable():
 
 def test_pydantic_models_instantiate():
     """Verify Pydantic data models can be instantiated."""
-    from app.core.models import MarketSnapshot, UnifiedTick
+    from app.core.domain_models import MarketSnapshot, UnifiedTick
 
     snap = MarketSnapshot(market_id="test-market")
     assert snap.market_id == "test-market"

@@ -1,8 +1,8 @@
 from typing import Dict, Any, List
 import time
-from app.core.models import MarketSnapshot
+from app.core.domain_models import MarketSnapshot
 from app.core.portfolio import PortfolioManager
-from app.execution.risk import RiskManager
+from app.execution.risk_manager import RiskManager
 from app.math.black_scholes import bs_engine
 
 class UIAdapter:

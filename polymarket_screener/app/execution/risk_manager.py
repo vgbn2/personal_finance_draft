@@ -208,4 +208,4 @@ class RiskManager:
 
 
 # ─── Module-level singleton ───
-risk_engine = RiskManager()
+risk_manager = RiskManager()

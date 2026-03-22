@@ -24,7 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.core.portfolio import PortfolioManager
-from app.db.models import PortfolioCheckpoint
+from app.db.schemas import PortfolioCheckpoint
 from app.utils.logger import log
 
 

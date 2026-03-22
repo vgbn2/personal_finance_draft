@@ -14,8 +14,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from app.core.event_bus import Channel, event_bus
-from app.core.ingestion import BaseExchangeClient
-from app.core.models import MarketSnapshot, UnifiedTick
+from app.core.data_feed import BaseExchangeClient
+from app.core.domain_models import MarketSnapshot, UnifiedTick
 from app.utils.logger import log
 
 
@@ -161,4 +161,4 @@ class DataAggregator:
 
 
 # ─── Module-level singleton ───
-aggregator = DataAggregator()
+feed_aggregator = DataAggregator()

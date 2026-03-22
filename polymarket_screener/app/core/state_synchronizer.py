@@ -9,7 +9,7 @@ import asyncio
 from typing import Dict, Optional
 
 from app.core.event_bus import Channel, event_bus
-from app.core.models import MarketSnapshot
+from app.core.domain_models import MarketSnapshot
 from app.utils.logger import log
 
 
@@ -75,4 +75,4 @@ class SystemState:
 
 
 # Module-level singleton
-system_state = SystemState()
+state_synchronizer = SystemState()
