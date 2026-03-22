@@ -6,7 +6,7 @@ from app.utils.logger import log
 from app.utils.config import config_manager
 from app.core.engine_clock import engine_clock
 from app.core.feed_aggregator import feed_aggregator
-from app.core.data_feed import PolymarketWS
+from app.core.data_feed import PolymarketWS, BinanceWSClient, DeribitWSClient
 from app.core.strategy_registry import strategy_registry
 from app.core.reconciliation import reconciliation_service
 from app.execution.risk_manager import risk_manager
@@ -40,13 +40,24 @@ async def startup_event():
     
     # Setup Ingestors
     poly = PolymarketWS()
-    feed_aggregator.add_ingestor(poly)
+    binance_ws = BinanceWSClient()
+    deribit_ws = DeribitWSClient()
+    
+    feed_aggregator.register(poly)
+    feed_aggregator.register(binance_ws)
+    feed_aggregator.register(deribit_ws)
+    
+    # Start WebSockets
+    asyncio.create_task(binance_ws.connect())
+    asyncio.create_task(deribit_ws.connect())
+    asyncio.create_task(poly.connect())
+    asyncio.create_task(poly.listen())
     
     # Start Engine Clock (Background Task)
     asyncio.create_task(engine_clock.start())
     
-    # Start Data Aggregator (Background Task)
-    asyncio.create_task(feed_aggregator.start())
+    # Start Data Aggregator (Background Polling for Macro/REST fallback)
+    asyncio.create_task(feed_aggregator.start_polling())
     
     # Start Audit Daemon (Background Task)
     await audit_daemon.start()
