@@ -26,7 +26,7 @@ class MarketScreener:
     """
 
     def __init__(self, min_edge: Optional[float] = None):
-        self.min_edge = min_edge or config_manager.strategy.min_edge
+        self.min_edge = min_edge or config_manager.strategy.min_edge_no
         self._running = False
 
     async def start(self) -> None:
@@ -45,9 +45,9 @@ class MarketScreener:
         if not snapshot.has_pricing_data:
             return
 
-        # Calculate Fair Value (N(d2)) via Black-Scholes
-        # Assume 15m DTE (0.0104 days) for this architecture
-        dte_days = 15 / (24 * 60)
+        # Calculate Fair Value (N(d2)) via Black-Scholes using dynamic DTE from config
+        dte_mins = config_manager.strategy.default_dte_minutes
+        dte_days = dte_mins / (24 * 60)
 
         try:
             fair_prob = bs_engine.fair_price(
@@ -85,8 +85,10 @@ class MarketScreener:
             odds_offered=1.0 / market_prob if market_prob > 0 else 0.0
         )
         
-        # Quarter-Kelly for safety
-        alloc_pct = min(kelly_pct * 0.25, 0.10) # Max 10% per trade
+        # Quarter-Kelly for safety (parameterized)
+        k_frac = config_manager.strategy.kelly_fraction
+        max_pos = config_manager.strategy.max_position_size
+        alloc_pct = min(kelly_pct * k_frac, max_pos)
 
         signal = TradeSignal(
             market_id=market_id,
@@ -102,6 +104,9 @@ class MarketScreener:
         log.info(f"Screener SIGNAL: {side} {market_id[:8]}... edge={edge:.1%} alloc={alloc_pct:.1%}")
         await event_bus.publish(Channel.SIGNAL_DETECTED, signal)
 
+
+# Module-level singleton
+bs_engine = BlackScholes(vrp_discount=config_manager.strategy.vrp_discount_factor)
 
 # Singleton
 screener = MarketScreener()

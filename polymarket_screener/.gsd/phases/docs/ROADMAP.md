@@ -1,20 +1,37 @@
 # Polymarket Framework Roadmap
 
-## Phase 1: Infrastructure & Real-time Streams
-- Set up directory structure and centralized `symbols.yaml` (No hardcoded strings).
-- Implement WebSocket stream managers for Polymarket CLOB, Binance, and Deribit.
-- Implement REST clients for Greeks, Stock Options, Macro, and Sentiment.
-- Build the Async Event Bus to merge All streams.
+## Phase 0: Project Scaffolding
+- Environment setup (`requirements.txt`, `.env`).
+- Configuration templates (`config/`).
+- Test suite initialization (`tests/`).
 
-## Phase 2: Core Analysis & Modularity
-- Implement `market_screener.py` and modular `BaseStrategy`.
-- Refactor `clob_client.py` for Slippage/Impact logic.
-- Set up MongoDB integration for cloud-accessible persistent logs.
 
-## Phase 3: Backtesting & Robustness
-- Implement the validation engine and Monte Carlo "Black Swan" stress tests.
+## Phase 1: Modular Foundation & Foundation Utils
+- Initialize the `app/` package structure and standardized `__init__.py` files.
+- Implement `app/utils/config.py` (YAML/Pydantic) and `app/utils/logger.py` (Rich/JSON).
+- Port existing exchange clients to `app/core/ingestion.py`.
 
-## Phase 4: Frontend & Cloud
-- Build the FastAPI/Flask server and WebSocket Bridge for frontend connection.
-- Prepare Render.com deployment files (`requirements.txt`, `gunicorn` config).
-- Create a simple dashboard to display live processed signals.
+## Phase 2: Core Analysis & Execution Gates
+- Implement the `WindowSequenceHandler` in `app/core/clock.py`.
+- Build the `Screener` and `Portfolio` state managers in `app/core/`.
+- Implement 3D Risk Gates and Circuit Breakers in `app/execution/risk.py`.
+- Set up MongoDB integration for persistent cloud logs.
+
+## Phase 3: Quantitative Library & Backtesting
+- Implement the `app/math/` library (Black-Scholes, Kelly, Slippage).
+- Build the validation engine for Monte Carlo stress tests.
+
+## Phase 4: Frontend Modularization & Deployment
+- Break down `frontend.html` into modular CSS/JS/HTML files.
+- Build the FastAPI server and WebSocket bridge in `app/api/`.
+- Prepare Render.com deployment and final production verification.
+
+## Phase 5: Advanced Foundation Architecture
+- Database persistence skeletons (MongoDB abstraction).
+- Internal async Event Bus for decentralized module messaging.
+- Execution Router framework.
+
+## Phase 6: Foundation Integration & Micro-Services
+- Strategy Plugin Registry for drop-in algorithms.
+- REST API Control Gateway for frontend commands.
+- State Reconciliation & Audit Streaming daemons.

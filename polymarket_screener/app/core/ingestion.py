@@ -190,7 +190,7 @@ class MacroClient(BaseExchangeClient):
     def __init__(self, api_key: str = ""):
         key = api_key or os.getenv("FRED_API_KEY", "")
         super().__init__("FRED", api_key=key)
-        self.base_url = "https://api.stlouisfed.org/fred/series/observations"
+        self.base_url = kwargs.get("url", "https://api.stlouisfed.org/fred/series/observations")
         self.is_connected = bool(key)
 
     async def fetch_data(self, symbol: str = "DFF", **kwargs) -> Dict[str, Any]:

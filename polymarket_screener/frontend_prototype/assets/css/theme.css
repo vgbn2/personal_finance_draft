@@ -1,0 +1,35 @@
+:root {
+  --bg: #060606;
+  --bg1: #0c0c0c;
+  --bg2: #111;
+  --bg3: #161616;
+  --border: #2a2a2a;
+  --border2: #363636;
+  --text: #e8e8e8;
+  --text2: #b8b8b8;
+  --text3: #777;
+  --green: #00ff87;
+  --green2: #00cc6a;
+  --glow: rgba(0, 255, 135, 0.18);
+  --glow2: rgba(0, 255, 135, 0.08);
+  --red: #ff5252;
+  --amber: #ffb340;
+  --blue: #7b9cff;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-disp: 'Syne', sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow: hidden;
+}
