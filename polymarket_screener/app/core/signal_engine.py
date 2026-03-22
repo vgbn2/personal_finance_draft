@@ -10,7 +10,8 @@ from typing import Dict, Optional
 
 from app.core.event_bus import Channel, event_bus
 from app.core.domain_models import MarketSnapshot, TradeSignal
-from app.math.black_scholes import bs_engine
+from app.core.alpha import alpha_engine
+from app.math.black_scholes import BlackScholes
 from app.math.kelly import fw_kelly, calculate_kelly
 from app.utils.config import config_manager
 from app.utils.logger import log
@@ -42,9 +43,16 @@ class MarketScreener:
         if not self._running or snapshot.is_stale:
             return
 
-        if not snapshot.has_pricing_data:
-            return
-
+        # ── Alpha Filter 1: Correlation Tracking ──
+        if snapshot.spot_price:
+            tracker = alpha_engine.get_tracker(snapshot.market_id)
+            # Estimate mid-price for Polymarket to compare vs Binance Spot
+            poly_mid = snapshot.polymarket_yes if snapshot.polymarket_yes else 0.5
+            tracker.add_points(snapshot.spot_price, poly_mid)
+            
+        # ── Alpha Filter 2: Orderbook Imbalance ──
+        imbalance = snapshot.orderbook.imbalance if snapshot.orderbook else 0.0
+        
         # Calculate Fair Value (N(d2)) via Black-Scholes using dynamic DTE from config
         dte_mins = config_manager.strategy.default_dte_minutes
         dte_days = dte_mins / (24 * 60)
@@ -61,19 +69,33 @@ class MarketScreener:
             log.warning(f"Screener: Fair value calc failed for {snapshot.market_id}: {e}")
             return
 
+        # ── Signal Generation with Alpha Filtering ──
+        correlation = alpha_engine.get_tracker(snapshot.market_id).correlation
+
         # Evaluate YES side
         market_prob_yes = snapshot.polymarket_yes
         if market_prob_yes:
             edge_yes = fair_prob - market_prob_yes
             if edge_yes >= self.min_edge:
-                await self._emit_signal(snapshot.market_id, "BUY_YES", fair_prob, market_prob_yes, edge_yes)
+                # Apply Filters
+                if imbalance < -0.5:
+                    log.debug(f"Screener: Suppressed BUY_YES due to imbalance ({imbalance:.2f})")
+                elif correlation < 0:
+                    log.debug(f"Screener: Suppressed BUY_YES due to divergence (corr={correlation:.2f})")
+                else:
+                    await self._emit_signal(snapshot.market_id, "BUY_YES", fair_prob, market_prob_yes, edge_yes)
         
         # Evaluate NO side
         market_prob_no = snapshot.polymarket_no
         if market_prob_no:
             edge_no = (1.0 - fair_prob) - market_prob_no
             if edge_no >= self.min_edge:
-                await self._emit_signal(snapshot.market_id, "BUY_NO", 1.0 - fair_prob, market_prob_no, edge_no)
+                if imbalance > 0.5:
+                    log.debug(f"Screener: Suppressed BUY_NO due to imbalance ({imbalance:.2f})")
+                elif correlation < 0:
+                    log.debug(f"Screener: Suppressed BUY_NO due to divergence (corr={correlation:.2f})")
+                else:
+                    await self._emit_signal(snapshot.market_id, "BUY_NO", 1.0 - fair_prob, market_prob_no, edge_no)
 
     async def _emit_signal(
         self, market_id: str, side: str, fair_prob: float, market_prob: float, edge: float
