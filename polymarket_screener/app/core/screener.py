@@ -51,9 +51,9 @@ class MarketScreener:
 
         try:
             fair_prob = bs_engine.fair_price(
-                S=snapshot.spot_price,
-                K=snapshot.spot_price,  # ATM assumption for window strategy
-                t=dte_days,
+                spot=snapshot.spot_price,
+                strike=snapshot.spot_price,  # ATM assumption for window strategy
+                dte=dte_days * 365,          # internal logic expects days, then does dte/365
                 iv=snapshot.implied_vol / 100.0,
                 r=snapshot.risk_free_rate / 100.0 if snapshot.risk_free_rate else 0.05
             )
@@ -82,7 +82,7 @@ class MarketScreener:
         # Simple Kelly for binary outcome
         kelly_pct = calculate_kelly(
             win_prob=fair_prob,
-            odds=1.0 / market_prob if market_prob > 0 else 0.0
+            odds_offered=1.0 / market_prob if market_prob > 0 else 0.0
         )
         
         # Quarter-Kelly for safety
