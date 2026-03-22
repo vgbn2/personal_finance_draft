@@ -1,16 +1,24 @@
 {
   "configurations": [
     {
-      "name": "windows-gcc-x64",
+      "name": "windows-msvc-x64",
       "includePath": [
-        "${workspaceFolder}/**"
+        "${workspaceFolder}/**",
+        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/node_modules/node-addon-api",
+        "C:/Users/Lenovo/AppData/Local/node-gyp/Cache/24.13.1/include/node",
+        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native",
+        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native/common",
+        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native/core",
+        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native/engines",
+        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native/bindings",
+        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native/vendor/simdjson"
       ],
-      "compilerPath": "C:/msys64/ucrt64/bin/gcc.exe",
-      "cStandard": "${default}",
-      "cppStandard": "${default}",
-      "intelliSenseMode": "windows-gcc-x64",
-      "compilerArgs": [
-        ""
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-msvc-x64",
+      "defines": [
+        "N_EXCHANGES=7",
+        "NAPI_CPP_EXCEPTIONS"
       ]
     }
   ],

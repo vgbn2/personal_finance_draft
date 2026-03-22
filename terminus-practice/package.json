@@ -1,0 +1,17 @@
+{
+    "name": "terminus-practice",
+    "private": true,
+    "workspaces": [
+        "backend/server",
+        "frontend/web"
+    ],
+    "scripts": {
+        "dev": "concurrently \"npm run dev -w backend/server\" \"npm run dev -w frontend/web\"",
+        "build": "npm run build -w backend/server && npm run build -w frontend/web",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

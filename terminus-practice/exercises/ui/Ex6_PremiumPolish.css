@@ -1,0 +1,10 @@
+/*
+ * Exercise 6: Premium Polish
+ * 
+ * Objective: Add modern UI effects to the market grid.
+ * 
+ * Instructions:
+ * 1. Add 'backdrop-filter: blur(10px)' to .market-card.
+ * 2. Add 'transform: scale(1.02)' on hover.
+ * 3. Use an 'animate' keyframe for the price color when it updates.
+ */

@@ -1,0 +1,16 @@
+{
+  "name": "terminus-v2",
+  "version": "2.0.0",
+  "description": "Crypto market intelligence terminal",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js",
+    "btc": "node backend/server.js BTC",
+    "top3": "node backend/server.js BTC ETH SOL"
+  },
+  "dependencies": {
+    "ws": "^8.16.0",
+    "dotenv": "^16.4.0"
+  }
+}

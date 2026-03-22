@@ -1,0 +1,82 @@
+Rất tiếc, hiện tại hệ thống không hỗ trợ xuất trực tiếp thành một file định dạng `.txt` để bạn tải xuống. Tuy nhiên, mình đã định dạng lại toàn bộ nội dung sơ đồ cây chi tiết dưới dạng văn bản thô (plain text) trong khung bên dưới. 
+
+Bạn chỉ cần nhấn nút **"Sao chép" (Copy)** ở góc phải của khung này, sau đó dán (Paste) vào Notepad hoặc bất kỳ trình soạn thảo văn bản nào trên máy tính và lưu lại dưới đuôi `.txt` nhé:
+
+```text
+Giao trinh Tu tuong Ho Chi Minh (Ban mo rong chi tiet)
+|
++-- Chuong 1: Khai niem, doi tuong, y nghia & Phuong phap
+|   |
+|   +-- Khai niem & Doi tuong
+|   |   +-- Khai niem chuan (Dai hoi XI - 2011): La he thong quan diem toan dien, sau sac ve cach mang Viet Nam, mai mai soi duong cho su nghiep cach mang.
+|   |   +-- Doi tuong: Gom he thong quan diem cua Ho Chi Minh va qua trinh "hien thuc hoa" quan diem do trong thuc tien Viet Nam.
+|   |
+|   +-- Phuong phap luan nghien cuu
+|       +-- Thong nhat ly luan va thuc tien: Ly luan lam kim chi nam, thuc tien de kiem nghiem; chong kinh nghiem va giao dieu.
+|       +-- Lich su - Cu the: Dat su vat, hien tuong vao dung boi canh khong gian, thoi gian hinh thanh.
+|       +-- Toan dien va He thong: Nhin nhan cac quan diem trong mot chinh the thong nhat xoay quanh hat nhan "doc lap, tu do, dan chu va CNXH".
+|
++-- Chuong 2: Co so va qua trinh hinh thanh
+|   |
+|   +-- Nguon goc Ly luan (3 thanh to)
+|   |   +-- Gia tri truyen thong: Chu nghia yeu nuoc la cot loi, la dong luc xuyen suot.
+|   |   +-- Tinh hoa nhan loai: Tiep thu Nho giao (tu duong), Phat giao (tu bi), Lao giao (hoa hop); va phuong Tay (Tu do, Binh dang, Bac ai).
+|   |   +-- Chu nghia Mac - Lenin: Buoc phat trien ve chat, dong vai tro the gioi quan va phuong phap luan quyet dinh.
+|   |
+|   +-- Cac cot moc dinh hinh tu tuong
+|       +-- Thang 7/1920: Doc So thao Luan cuong cua Lenin, buoc ngoat den voi chu nghia Mac - Lenin.
+|       +-- Dau nam 1930: Soan thao Cuong linh chinh tri dau tien.
+|
++-- Chuong 3: Doc lap dan toc & Chu nghia xa hoi (CNXH)
+|   |
+|   +-- Doc lap dan toc
+|   |   +-- Tieu chuan: Quyen cua moi dan toc, thieng lieng, bat kha xam pham.
+|   |   +-- Muc tieu thuc te: Doc lap phai gan voi tu do, com no, ao am cho nhan dan.
+|   |   +-- Phuong phap: Cach mang giai phong dan toc can chu dong, sang tao va su dung bao luc cach mang cua quan chung.
+|   |
+|   +-- Chu nghia xa hoi va Thoi ky qua do
+|   |   +-- Dac trung co ban: Do nhan dan lam chu; Kinh te phat trien cao; Phat trien cao ve van hoa, dao duc.
+|   |   +-- Thoi ky qua do: Kho khan, phuc tap, di tu nuoc nong nghiep lac hau tien thang len CNXH (bo qua tu ban chu nghia).
+|   |
+|   +-- Su gan ket Doc lap & CNXH
+|       +-- Bien chung: Doc lap dan toc la co so, tien de; CNXH la dieu kien bao dam.
+|
++-- Chuong 4: Dang Cong san & Nha nuoc
+|   |
+|   +-- Dang Cong san Viet Nam
+|   |   +-- Quy luat dac thu: Chu nghia Mac - Lenin + Phong trao cong nhan + Phong trao yeu nuoc.
+|   |   +-- 5 Nguyen tac hoat dong: Tap trung dan chu; Tu phe binh va phe binh; Ky luat nghiem minh; Doan ket thong nhat; Gan bo voi nhan dan.
+|   |
+|   +-- Nha nuoc phap quyen cua dan, do dan, vi dan
+|       +-- Ban chat: Dan la chu, nam quyen luc cao nhat.
+|       +-- Phap quyen nhan nghia: Quan ly bang Hien phap, phap luat (thuong ton phap luat), khuyen thien.
+|       +-- Chong tieu cuc: Kien quyet chong "giac noi xam" (Tham o, lang phi, quan lieu).
+|
++-- Chuong 5: Dai doan ket & Doan ket quoc te
+|   |
+|   +-- Dai doan ket toan dan toc
+|   |   +-- Tam nhin: La muc tieu, nhiem vu hang dau.
+|   |   +-- Nen tang: Khoi lien minh Cong - Nong - Tri thuc.
+|   |   +-- Dieu kien: Khoan dung, do luong, lay loi ich chung lam diem quy tu.
+|   |   +-- To chuc: Mat tran Dan toc thong nhat.
+|   |
+|   +-- Doan ket quoc te
+|       +-- Tam quan trong: Ket hop suc manh dan toc voi suc manh thoi dai.
+|       +-- Nguyen tac thiet lap: Thong nhat muc tieu, loi ich ("Co ly, co tinh") va doc lap, tu chu.
+|
++-- Chuong 6: Van hoa, Dao duc, Con nguoi
+    |
+    +-- Van hoa
+    |   +-- Vai tro: Soi duong cho quoc dan di.
+    |   +-- Chuc nang: Boi duong tu tuong, nang cao dan tri, boi duong dao duc.
+    |
+    +-- Dao duc cach mang
+    |   +-- Ban chat: Dao duc la "cai goc" cua nguoi cach mang.
+    |   +-- 4 Chuan muc: Trung voi nuoc, hieu voi dan; Can, kiem, liem, chinh, chi cong vo tu; Thuong yeu con nguoi; Tinh than quoc te trong sang.
+    |   +-- 3 Nguyen tac tu duong: Noi di doi voi lam; Xay di doi voi chong; Tu duong suot doi.
+    |
+    +-- Con nguoi
+        +-- Triet ly "Trong nguoi": Con nguoi la von quy nhat. "Vi loi ich tram nam thi phai trong nguoi".
+```
+
+Nếu bạn cần mình lập một bản báo cáo tùy chỉnh trực tiếp lưu vào trong danh sách tài liệu dự án của NotebookLM, hãy báo cho mình biết để mình tạo "Báo cáo" (Report) nhé!
