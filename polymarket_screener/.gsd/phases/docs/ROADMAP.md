@@ -35,3 +35,9 @@
 - Strategy Plugin Registry for drop-in algorithms.
 - REST API Control Gateway for frontend commands.
 - State Reconciliation & Audit Streaming daemons.
+
+## Phase 7: Live Connectivity & Exchange Integration
+- Replace `PolymarketWS` stub with real CLOB API integration.
+- Connect `feed_aggregator.py` to live WebSocket streams (Binance/Deribit).
+- Implement rate-limit backoff and error recovery in API clients.
+- Verify live state reconciliation and audit streaming.
