@@ -158,4 +158,4 @@ class DatabaseManager:
 
 
 # ─── Module-level singleton ───
-db_manager = DatabaseManager()
+persistence_manager = DatabaseManager()

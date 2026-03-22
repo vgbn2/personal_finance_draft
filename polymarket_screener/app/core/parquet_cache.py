@@ -13,7 +13,7 @@ from typing import List, Dict, Any
 import pandas as pd
 
 from app.core.event_bus import Channel, event_bus
-from app.core.models import MarketSnapshot
+from app.core.domain_models import MarketSnapshot
 from app.utils.logger import log
 
 CACHE_DIR = Path("data/cache")

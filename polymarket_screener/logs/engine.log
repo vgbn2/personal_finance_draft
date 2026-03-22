@@ -198,3 +198,11 @@
 {"ts": "2026-03-22T10:19:00.686908+00:00", "level": "INFO", "logger": "poly_screen", "message": "ShadowBroker: Bookmarked BUY TEST-MKT-001 @ 0.5500 ($100.00)", "module": "shadow_broker", "func": "execute_trade", "line": 124}
 {"ts": "2026-03-22T10:19:02.710073+00:00", "level": "INFO", "logger": "poly_screen", "message": "ShadowBroker: Fill resolved \u2014 Intended=0.5500, Actual=0.5500, Drift=0.0bps [OK]", "module": "shadow_broker", "func": "execute_trade", "line": 146}
 {"ts": "2026-03-22T10:23:18.483110+00:00", "level": "WARNING", "logger": "poly_screen", "message": "Insufficient liquidity: filled $100.00 of $500.00", "module": "slippage", "func": "calculate_vwap", "line": 52}
+{"ts": "2026-03-22T10:33:14.386483+00:00", "level": "INFO", "logger": "poly_screen", "message": "[bold yellow]Starting Backend Smoke Test...[/]", "module": "smoke_test", "func": "smoke_test", "line": 9}
+{"ts": "2026-03-22T10:33:14.391487+00:00", "level": "INFO", "logger": "poly_screen", "message": "Config loaded: [cyan]v0.2.0[/]", "module": "smoke_test", "func": "smoke_test", "line": 14}
+{"ts": "2026-03-22T10:33:14.392553+00:00", "level": "INFO", "logger": "poly_screen", "message": "Snap Check: [green]10:30 - 10:45[/]", "module": "smoke_test", "func": "smoke_test", "line": 21}
+{"ts": "2026-03-22T10:33:14.393063+00:00", "level": "INFO", "logger": "poly_screen", "message": "Type Check: [bold cyan]Signal Ready[/] - Edge: 0.045", "module": "smoke_test", "func": "smoke_test", "line": 33}
+{"ts": "2026-03-22T10:33:14.394383+00:00", "level": "INFO", "logger": "poly_screen", "message": "[bold green]SMOKE TEST PASSED[/]", "module": "smoke_test", "func": "smoke_test", "line": 35}
+{"ts": "2026-03-22T10:39:43.323763+00:00", "level": "INFO", "logger": "poly_screen", "message": "ReconciliationService: State is consistent \u2713", "module": "reconciliation", "func": "check_once", "line": 141}
+{"ts": "2026-03-22T10:39:46.345556+00:00", "level": "INFO", "logger": "poly_screen", "message": "AuditDaemon: Started (batch=10, flush_interval=5.0s)", "module": "audit", "func": "start", "line": 60}
+{"ts": "2026-03-22T10:39:48.356469+00:00", "level": "INFO", "logger": "poly_screen", "message": "AuditDaemon: Stopped. Total events flushed: 2", "module": "audit", "func": "stop", "line": 85}

@@ -4,15 +4,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.utils.logger import log
 from app.utils.config import config_manager
-from app.core.clock import master_clock
-from app.core.aggregator import aggregator
-from app.core.ingestion import PolymarketWS
-from app.execution.risk import risk_engine
+from app.core.engine_clock import engine_clock
+from app.core.feed_aggregator import feed_aggregator
+from app.core.data_feed import PolymarketWS
+from app.core.strategy_registry import strategy_registry
+from app.core.reconciliation import reconciliation_service
+from app.execution.risk_manager import risk_manager
 from app.execution.circuit_breakers import master_breaker
+from app.execution.audit import audit_daemon
 from app.api import ws_bridge
+from app.api import rest_endpoints
 
-app = FastAPI(title="POLY/SCREEN Backend", version="0.2.0")
+app = FastAPI(title="POLY/SCREEN Backend", version="0.3.0")
 app.include_router(ws_bridge.router)
+app.include_router(rest_endpoints.router)
 
 # CORS for local frontend modular development
 app.add_middleware(
@@ -24,26 +29,45 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    log.info("Starting POLY/SCREEN Engine...")
+    log.info("Starting POLY/SCREEN Engine v0.3.0...")
     
     # Initialize Config
     config_manager.load()
     
+    # Discover and load strategy plugins
+    strategy_registry.discover()
+    await strategy_registry.start_all()
+    
     # Setup Ingestors
     poly = PolymarketWS()
-    aggregator.add_ingestor(poly)
+    feed_aggregator.add_ingestor(poly)
     
-    # Start Master Clock (Background Task)
-    asyncio.create_task(master_clock.start())
+    # Start Engine Clock (Background Task)
+    asyncio.create_task(engine_clock.start())
     
     # Start Data Aggregator (Background Task)
-    asyncio.create_task(aggregator.start())
+    asyncio.create_task(feed_aggregator.start())
     
-    log.info("[bold green]Engine successfully initialized.[/]")
+    # Start Audit Daemon (Background Task)
+    await audit_daemon.start()
+    
+    # Start Reconciliation Service (Background Task)
+    await reconciliation_service.start()
+    
+    log.info("[bold green]Engine successfully initialized (Phase 6).[/]")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    log.info("Shutting down POLY/SCREEN Engine...")
+    await strategy_registry.stop_all()
+    await reconciliation_service.stop()
+    await audit_daemon.stop()
+    log.info("Engine shutdown complete.")
 
 @app.get("/")
 def read_root():
-    return {"status": "running", "version": "0.2.0"}
+    return {"status": "running", "version": "0.3.0"}
 
 
 def start():

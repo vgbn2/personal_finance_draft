@@ -7,7 +7,8 @@ the system from trading expired markets.
 """
 import asyncio
 import time
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timezone, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.core.event_bus import Channel, event_bus
 from app.utils.config import config_manager
@@ -28,6 +29,14 @@ class WindowSequenceHandler:
         self.schedule: List[Dict[str, Any]] = []
         self._running: bool = False
         self._task: Optional[asyncio.Task] = None
+
+    def get_current_window_range(self, interval_mins: int = 15) -> Tuple[datetime, datetime]:
+        """Get the start and end of the current time window."""
+        now = datetime.now(timezone.utc)
+        start_min = (now.minute // interval_mins) * interval_mins
+        start = now.replace(minute=start_min, second=0, microsecond=0)
+        end = start + timedelta(minutes=interval_mins)
+        return start, end
 
     def load_schedule(self, markets: List[Dict[str, Any]]) -> None:
         """
@@ -98,15 +107,15 @@ class WindowSequenceHandler:
 
 
 # Provide a singleton instance
-master_clock = WindowSequenceHandler(pre_warm_sec=config_manager.clock.pre_warm_sec)
+engine_clock = WindowSequenceHandler(pre_warm_sec=config_manager.clock.pre_warm_sec)
 
 
 if __name__ == "__main__":
     # verification script
     async def verify():
-        from app.core.state import system_state
+        from app.core.state_synchronizer import state_synchronizer
         
-        await system_state.start()
+        await state_synchronizer.start()
         
         clock = WindowSequenceHandler(pre_warm_sec=3)
         now = time.time()
@@ -120,17 +129,17 @@ if __name__ == "__main__":
         
         print("Waiting for warm-up...")
         await asyncio.sleep(2)
-        print(f"State after 2s (warming up): next={system_state.next_market}, active={system_state.active_market}")
+        print(f"State after 2s (warming up): next={state_synchronizer.next_market}, active={state_synchronizer.active_market}")
         
         print("Waiting for rollover...")
         await asyncio.sleep(3)
-        print(f"State after 5s (rolled): next={system_state.next_market}, active={system_state.active_market}")
+        print(f"State after 5s (rolled): next={state_synchronizer.next_market}, active={state_synchronizer.active_market}")
         
         await clock.stop()
-        await system_state.stop()
+        await state_synchronizer.stop()
         
-        if system_state.active_market == "MKT-1":
-            print("[OK] Master Clock sequence verified.")
+        if state_synchronizer.active_market == "MKT-1":
+            print("[OK] Engine Clock sequence verified.")
         else:
             print("[FAIL] Sequence failed.")
 

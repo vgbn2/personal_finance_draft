@@ -9,7 +9,7 @@ import asyncio
 from typing import Dict, Optional
 
 from app.core.event_bus import Channel, event_bus
-from app.core.models import MarketSnapshot, TradeSignal
+from app.core.domain_models import MarketSnapshot, TradeSignal
 from app.math.black_scholes import bs_engine
 from app.math.kelly import fw_kelly, calculate_kelly
 from app.utils.config import config_manager

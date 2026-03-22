@@ -20,10 +20,10 @@ import asyncio
 from typing import Any, Callable, Dict, Optional
 
 from app.core.event_bus import Channel, event_bus
-from app.core.models import TradeSignal
-from app.db.models import AuditLogEntry
-from app.db.mongo import db_manager
-from app.execution.risk import risk_engine
+from app.core.domain_models import TradeSignal
+from app.db.schemas import AuditLogEntry
+from app.db.persistence import persistence_manager
+from app.execution.risk_manager import risk_manager
 from app.math.slippage import slippage_model
 from app.utils.logger import log
 
@@ -102,7 +102,7 @@ class ExecutionRouter:
         )
 
         # ── Risk Gate Check ──
-        verdict = risk_engine.check_order(
+        verdict = risk_manager.check_order(
             signal_prob=sig.confidence,
             size_pct=sig.allocation_pct,
             liquidity_usd=1000.0,  # TODO: Pull from live orderbook in Phase 6
@@ -111,7 +111,7 @@ class ExecutionRouter:
         )
 
         # ── Audit Log ──
-        await db_manager.insert_audit_log(
+        await persistence_manager.insert_audit_log(
             AuditLogEntry(
                 event_type="RISK_CHECK",
                 source_module="execution_router",
@@ -151,8 +151,8 @@ class ExecutionRouter:
             f"@ {signal.market_price:.4f} (size={size_pct:.2%})"
         )
 
-        # Record fill in risk engine
-        risk_engine.record_fill(signal.market_id, size_pct)
+        # Record fill in risk manager
+        risk_manager.record_fill(signal.market_id, size_pct)
 
         # Publish execution event
         execution_event = {
@@ -166,7 +166,7 @@ class ExecutionRouter:
         await event_bus.publish(Channel.TRADE_EXECUTED, execution_event)
 
         # Audit log
-        await db_manager.insert_audit_log(
+        await persistence_manager.insert_audit_log(
             AuditLogEntry(
                 event_type="ORDER_ROUTED",
                 source_module="execution_router",

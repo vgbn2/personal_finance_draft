@@ -19,8 +19,8 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from app.core.event_bus import Channel, event_bus
-from app.db.models import AuditLogEntry
-from app.db.mongo import db_manager
+from app.db.schemas import AuditLogEntry
+from app.db.persistence import persistence_manager
 from app.math.slippage import slippage_model
 from app.utils.logger import log
 
@@ -151,7 +151,7 @@ class ShadowBroker:
         )
 
         # Audit trail
-        await db_manager.insert_audit_log(
+        await persistence_manager.insert_audit_log(
             AuditLogEntry(
                 event_type="SHADOW_FILL",
                 source_module="shadow_broker",
