@@ -87,11 +87,16 @@ class UnifiedOrderbook(BaseModel):
         return self.asks[0][0] if self.asks else None
 
     @property
-    def depth_usd(self) -> float:
-        """Total orderbook depth in USD."""
-        bid_depth = sum(p * s for p, s in self.bids)
-        ask_depth = sum(p * s for p, s in self.asks)
-        return bid_depth + ask_depth
+    def imbalance(self) -> float:
+        """
+        Calculate orderbook imbalance: (bid_size - ask_size) / (bid_size + ask_size).
+        Range: [-1.0 (sell pressure), 1.0 (buy pressure)].
+        Uses top 5 levels for calculation.
+        """
+        bid_vol = sum(s for p, s in self.bids[:5])
+        ask_vol = sum(s for p, s in self.asks[:5])
+        total = bid_vol + ask_vol
+        return (bid_vol - ask_vol) / total if total > 0 else 0.0
 
 
 class MarketSnapshot(BaseModel):
@@ -141,3 +146,13 @@ class ExecutionResult(BaseModel):
     timestamp: datetime = Field(default_factory=_utc_now)
     success: bool = True
     error: Optional[str] = None
+
+
+class Position(BaseModel):
+    """Internal tracked position."""
+    market_id: str
+    side: str
+    size_usd: float
+    entry_price: float
+    current_price: float
+    updated_at: datetime = Field(default_factory=_utc_now)
