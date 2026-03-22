@@ -21,3 +21,23 @@
 
 **Status**: [HEALTHY] Core logic is resilient and imports are correctly wired.
 
+## Session: 2026-03-22 18:13
+
+### Objective
+Implement Advanced Alpha Signals (8.1) and Dynamic Capital Sizing (8.2).
+
+### Accomplished
+- [x] Implemented `imbalance` and `CorrelationTracker` logic.
+- [x] Integrated alpha filters into `MarketScreener`.
+- [x] Verified Phase 8.1 with `test_alpha_signals.py`.
+- [x] Implemented `MarketScorer` and dynamic Kelly sizing.
+
+### Verification
+- [x] Phase 8.1 (Alpha Signals) — PASSED.
+- [ ] Phase 8.2 (Capital Sizing) — FAILED (Signals capped at 5% / $500).
+
+### Paused Because
+3-Strike debugging failure on dynamic sizing verification. Context rot prevention.
+
+### Handoff Notes
+The math engine (`diag_sizing.py`) is correct, but the integrated engine is capping all signals at 5%. This is likely a singleton state issue in the test environment. Resume with a clean session to run the test in isolation.
