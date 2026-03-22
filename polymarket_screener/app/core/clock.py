@@ -1,7 +1,7 @@
 """
 Master Clock & Market Sequencing.
 
-Handles chronological synchronization with Polymarket's 15-minute resolution windows.
+Handles chronological synchronization with Polymarket's dynamic resolution windows (e.g., 15-minute).
 Pre-warms the system prior to a market open, and triggers hard rollovers to prevent
 the system from trading expired markets.
 """
@@ -10,6 +10,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 from app.core.event_bus import Channel, event_bus
+from app.utils.config import config_manager
 from app.utils.logger import log
 
 
@@ -97,7 +98,7 @@ class WindowSequenceHandler:
 
 
 # Provide a singleton instance
-master_clock = WindowSequenceHandler()
+master_clock = WindowSequenceHandler(pre_warm_sec=config_manager.clock.pre_warm_sec)
 
 
 if __name__ == "__main__":
