@@ -1,24 +1,51 @@
 ## Current Position
 - **Phase**: Infrastructure Stabilization & Storage Optimization
 - **Task**: Verifying Docker Desktop Start and PATH Propagation
-- **Status**: Paused at 2026-03-12 01:00
+# GSD State Snapshot
+
+## Current Position
+- **Phase**: Phase 8: Digital Twin (Hardening)
+- **Task**: 3D Kinematic Hardening & DT Centralization
+- **Status**: Completed & Paused at 2026-03-29 00:30
 
 ## Last Session Summary
-Resolved critical "Docker gone" issue after a failed update by:
-1.  **Cleaning Disk Space**: Freed ~7.5GB (from 3GB to 10.7GB) by clearing `Temp` folders.
-2.  **Clean Reinstall**: Uninstalled corrupted Docker and performed a fresh install of the latest stable version.
-3.  **PATH Configuration**: Updated both Machine and User PATH variables to include Docker binaries.
-4.  **Verification**: Confirmed `docker --version` (v29.2.1) works in current session.
+Successfully transitioned the Metabolic Engine from a 2D CV model to a robust **3D Kinematic Engine**. 
+
+**Primary Achievements**:
+- **3D Kalman Filter**: Upgraded state vector to `[x, v, a]` in `kalman.py` with metabolic damping.
+- **Metabolic Math**: Refactored `calculate_risk_indices` using Kovatchev symmetrization (`symmetrized_val`).
+- **Signal Quality**: Standardized artifact detection in `signal_quality.py`.
+- **Global DT Centralization**: Implemented `MetabolicMath.get_dt()` with a $30s$ numerical safety floor across all DSP modules.
 
 ## In-Progress Work
-- Files modified: `task.md`, `implementation_plan.md`, `walkthrough.md`.
-- Tests status: `docker` command works in PowerShell; `start.bat` (CMD) still fails due to stale session context.
+- **Completed**: All core math and filtering logic is now hardened and verified.
+- **Next Up**: Feature integration (Decision Matrix).
+- **Files modified**: `metabolic_math.py`, `kalman.py`, `signal_quality.py`, `medical_constants.py`.
+- **Tests status**: **ALL PASSED** (`verify_kalman.py`, `verify_metabolic.py`, `test_hr_input.py`).
 
 ## Blockers
-- **Stale Shell Context**: The user's active terminal/CMD session has not picked up the newly added PATH entries. A full terminal or VS Code restart is required.
-- **Ethernet Confusion**: User suspected network issues, but it's confirmed to be a local PATH/session refresh issue.
+- **None**. The path is clear for higher-level integration.
 
 ## Context Dump
+The system is now mathematically consistent. Any new derivative calculation MUST use `MetabolicMath.get_dt()` to maintain numerical stability.
+
+### Decisions Made
+- **30s (0.5m) DT Floor**: Chosen to balance sensor redundancy against physiological limit tracking.
+- **3D Acceleration**: Extracted directly from Kalman state, with a finite-difference fallback in `extract_kinematics` for the very first reading.
+
+### Current Hypothesis
+Integrating **Acceleration** into the `DecisionMatrix` logic will provide a ~10-15 minute lead time advantage for faint detection.
+
+### Files of Interest
+- `diabetic/dsp/metabolic_math.py`: Ground truth for all metabolic calculus.
+- `diabetic/dsp/kalman.py`: Core 3D state estimation.
+- `diabetic/telegram_bot/decision_matrix.py`: Next target for integration.
+
+## Next Steps
+1. **Decision Matrix Audit**: Update risk-scoring logic to include acceleration.
+2. **Trajectory Prediction**: Finalize 4-hour pathing in `predictor.py`.
+3. **Phase 9 Transition**: Transition to VPS deployment.
+
 ### Decisions Made
 - **Full Uninstall/Reinstall**: Chosen over repair because the update failure was severe and corrupted the installation binaries.
 - **Manual TEMP cleanup**: Chosen to immediately free enough space (7GB+) for the 600MB installer to run safely.
