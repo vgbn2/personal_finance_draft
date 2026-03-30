@@ -25,7 +25,7 @@ async def test_live_feeds():
     log.info("Waiting for connections...")
     await asyncio.sleep(5) 
     if binance.is_connected:
-        await binance.subscribe(["BTC/USDT", "ETH/USDT"])
+        await binance.subscribe(["btcusdt", "ethusdt"])
     else:
         log.error("BinanceWS failed to connect in time")
     

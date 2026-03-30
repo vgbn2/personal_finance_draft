@@ -4,7 +4,7 @@ Implements correlation tracking and imbalance monitoring.
 """
 import collections
 import numpy as np
-from typing import Dict, List, Optional
+from app.core.domain_models import MarketSnapshot
 from app.utils.logger import log
 
 class CorrelationTracker:
@@ -48,5 +48,31 @@ class AlphaEngine:
             self.trackers[market_id] = CorrelationTracker()
         return self.trackers[market_id]
 
-# Singleton
+class MarketScorer:
+    """
+    Ranks market opportunities based on edge, liquidity, and cost.
+    """
+    @staticmethod
+    def calculate_score(snapshot: MarketSnapshot, edge: float) -> float:
+        """
+        Score = (Edge / Spread) * log10(Volume)
+        Higher is better.
+        """
+        import math
+        
+        # 1. Spread penalty
+        spread = 0.01 # Default min spread
+        if snapshot.orderbook and snapshot.orderbook.best_ask and snapshot.orderbook.best_bid:
+            spread = max(0.001, snapshot.orderbook.best_ask - snapshot.orderbook.best_bid)
+        
+        edge_to_spread = edge / spread
+        
+        # 2. Liquidity bonus (log scale)
+        volume = snapshot.orderbook.depth_usd if snapshot.orderbook else 100.0
+        liquidity_bonus = math.log10(max(10, volume))
+        
+        return edge_to_spread * liquidity_bonus
+
+# Singletons
 alpha_engine = AlphaEngine()
+market_scorer = MarketScorer()

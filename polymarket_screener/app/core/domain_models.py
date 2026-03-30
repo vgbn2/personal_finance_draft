@@ -98,6 +98,13 @@ class UnifiedOrderbook(BaseModel):
         total = bid_vol + ask_vol
         return (bid_vol - ask_vol) / total if total > 0 else 0.0
 
+    @property
+    def depth_usd(self) -> float:
+        """Total USD liquidity in the top 10 levels of the book."""
+        b_depth = sum(p * v for p, v in self.bids[:10])
+        a_depth = sum(p * v for p, v in self.asks[:10])
+        return b_depth + a_depth
+
 
 class MarketSnapshot(BaseModel):
     """Consolidated view of a single market across exchanges."""

@@ -145,14 +145,27 @@ class ReconciliationService:
     async def _fetch_exchange_positions(self) -> Dict[str, Dict[str, Any]]:
         """
         Fetch actual positions from the exchange.
-
-        STUB: Returns empty dict for Phase 6.
-        Phase 7 will integrate with the Polymarket CLOB API
-        to fetch real account positions.
         """
-        # TODO: Replace with real Polymarket API call
-        # positions = await clob_client.get_open_positions()
-        return {}
+        # In a real scenario, we'd get the poly client from a registry
+        # For now, we'll try to find it in the global feed_aggregator
+        from app.core.feed_aggregator import feed_aggregator
+        poly_client = feed_aggregator.clients.get("polymarket")
+        
+        if not poly_client or not hasattr(poly_client, "get_open_positions"):
+            return {}
+            
+        raw_positions = await poly_client.get_open_positions()
+        
+        # Map raw SDK format to internal comparison schema: {market_id: {size_usd, side, ...}}
+        normalized = {}
+        for pos in raw_positions:
+            market_id = pos.get("market_id") or pos.get("symbol")
+            if market_id:
+                normalized[market_id] = {
+                    "size_usd": float(pos.get("size", 0)), # Simplified
+                    "side": pos.get("side", "BUY"),
+                }
+        return normalized
 
     def _get_internal_positions(self) -> Dict[str, Dict[str, Any]]:
         """Extract positions from the internal PortfolioManager."""

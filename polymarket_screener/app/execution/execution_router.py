@@ -140,16 +140,43 @@ class ExecutionRouter:
 
     async def _send_order(self, signal: TradeSignal, size_pct: float) -> None:
         """
-        Execute the trade order.
-
-        STUB: In Phase 6, this will call the Polymarket CLOB API
-        with EIP-712 signed orders. For now, it logs the intent
-        and publishes a simulated TRADE_EXECUTED event.
+        Execute the trade order via Polymarket CLOB.
         """
+        from app.utils.config import config_manager
+        from app.core.feed_aggregator import feed_aggregator
+        
+        shadow_mode = config_manager.execution.shadow_mode
+        
         log.info(
-            f"ExecutionRouter: ORDER ROUTED — {signal.side} {signal.market_id} "
-            f"@ {signal.market_price:.4f} (size={size_pct:.2%})"
+            f"ExecutionRouter: ORDER {'(SHADOW) ' if shadow_mode else 'LIVE '}— "
+            f"{signal.side} {signal.market_id} @ {signal.market_price:.4f} "
+            f"(size={size_pct:.2%})"
         )
+
+        if shadow_mode:
+            status = "SIMULATED"
+            tx_hash = "mock_hash_123"
+        else:
+            # Live Execution
+            poly_client = feed_aggregator.clients.get("polymarket")
+            if not poly_client or not poly_client.clob_client:
+                log.error("ExecutionRouter: Cannot execute — Polymarket client not authenticated")
+                return
+
+            try:
+                # Basic Market Order via CLOB SDK
+                resp = poly_client.clob_client.create_order(
+                    market_id=signal.market_id,
+                    side=signal.side,
+                    size=float(size_pct * 100), # Placeholder sizing logic
+                    price=signal.market_price
+                )
+                status = "FILLED"
+                tx_hash = resp.get("orderID")
+            except Exception as e:
+                log.error(f"ExecutionRouter: CLOB Order Error: {e}")
+                status = "FAILED"
+                tx_hash = None
 
         # Record fill in risk manager
         risk_manager.record_fill(signal.market_id, size_pct)
@@ -161,7 +188,8 @@ class ExecutionRouter:
             "price": signal.market_price,
             "size_pct": size_pct,
             "edge": signal.edge,
-            "status": "SIMULATED",  # Will be "FILLED" in Phase 6
+            "status": status,
+            "tx_hash": tx_hash,
         }
         await event_bus.publish(Channel.TRADE_EXECUTED, execution_event)
 
