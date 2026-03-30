@@ -13,6 +13,7 @@ import numpy as np
 from scipy.stats import norm
 from typing import Dict, Optional, Union
 
+from app.core.constants import DEFAULT_RISK_FREE_RATE, DAYS_PER_YEAR, EPSILON
 from app.utils.logger import log
 
 
@@ -25,7 +26,7 @@ def vectorized_nd2(
     K: ArrayLike,
     T: ArrayLike,
     sigma: ArrayLike,
-    r: float = 0.05,
+    r: float = DEFAULT_RISK_FREE_RATE,
 ) -> np.ndarray:
     """
     Vectorized N(d2) — the risk-neutral probability that S > K at expiry.
@@ -92,7 +93,7 @@ class BlackScholes:
         strike: ArrayLike,
         dte: ArrayLike,
         iv: ArrayLike,
-        r: float = 0.05,
+        r: float = DEFAULT_RISK_FREE_RATE,
         apply_vrp: bool = True,
     ) -> np.ndarray:
         """
@@ -109,13 +110,18 @@ class BlackScholes:
         Returns:
             np.ndarray of fair probabilities
         """
+        # Null-safety: reject None inputs before they reach NumPy
+        if spot is None or strike is None or dte is None or iv is None:
+            log.warning("BlackScholes.fair_price: received None input, returning 0.5")
+            return np.array([0.5])
+
         iv_arr = np.asarray(iv, dtype=np.float64)
         sigma = iv_arr / 100.0  # Convert percentage to decimal
 
         if apply_vrp:
             sigma = sigma * self.vrp_discount
 
-        T = np.asarray(dte, dtype=np.float64) / 365.0
+        T = np.asarray(dte, dtype=np.float64) / DAYS_PER_YEAR
 
         return vectorized_nd2(spot, strike, T, sigma, r)
 
@@ -125,7 +131,7 @@ class BlackScholes:
         strike: ArrayLike,
         dte: ArrayLike,
         iv: ArrayLike,
-        r: float = 0.05,
+        r: float = DEFAULT_RISK_FREE_RATE,
     ) -> Dict[str, np.ndarray]:
         """
         Calculate option Greeks for binary options (vectorized).
