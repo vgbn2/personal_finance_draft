@@ -1,9 +1,0 @@
-﻿Indicator,Date,Actual,Previous,naive_moving_avg,Status,JPY_Score,JPY_Grade
-Japan 10Y Bond Yield,2025-11-01,1.8,1.66,1.73,Stale,3,Mildly Bullish
-Japan BOJ Policy Rate,2023-12-01,0.3,0.3,0.3,Stale,0,Neutral
-Japan CPI YoY,2022-04-01,0.4,-0.4,0.0,Stale,10,Very Bullish
-Japan Consumer Confidence,2024-01-01,98.95,98.71,98.83,Stale,1,Mildly Bullish
-Japan Exports YoY,2025-10-01,1.55,-1.04,0.25,Stale,10,Very Bullish
-Japan Industrial Production,2024-03-01,-2.97,-6.7,-4.84,Stale,10,Very Bullish
-Japan Real GDP YoY,2025-07-01,0.66,1.92,1.29,Stale,-10,Very Bearish
-Japan Unemployment Rate,2025-10-01,2.6,2.6,2.6,Stale,0,Neutral
