@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\trio\_socket.py
-# hypothesis_version: 6.151.9
-
-[128, '255.255.255.255', '<broadcast>', 'AF_UNIX', 'AI_NUMERICSERV', 'P', 'SOCK_CLOEXEC', 'SOCK_NONBLOCK', 'T', '__', '__name__', 'ascii', 'fromshare', 'hostname_resolver', 'linux', 'recvmsg', 'recvmsg_into', 'sendmsg', 'share', 'socket.socket', 'socket_factory', 'trio.socket.socket', 'win32']

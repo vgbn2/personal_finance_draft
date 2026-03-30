@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\sparse\compressed.py
-# hypothesis_version: 6.151.9
-
-['IndexMixin', '_compressed', 'check_shape', 'compressed', 'csr_column_index1', 'csr_column_index2', 'csr_row_index', 'csr_row_slice', 'csr_sample_offsets', 'csr_sample_values', 'csr_todense', 'downcast_intp_index', 'get_csr_submatrix', 'get_sum_dtype', 'getdtype', 'is_pydata_spmatrix', 'isdense', 'isintlike', 'isscalarlike', 'isshape', 'operator', 'sparse', 'to_native', 'upcast', 'upcast_char', 'warn']

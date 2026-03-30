@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\trio\_core\_windows_cffi.py
-# hypothesis_version: 6.151.9
-
-[128, 256, 258, 512, 735, 995, 997, 1024, 1168, 2048, 4096, 10038, 73764, 1048576, 1073741824, 1207959580, 1207959581, 1207959586, 2147483648, 4294967295, 'HANDLE', 'Handle', 'HandleArray', 'No error set?', '_Kernel32', '_Nt', '_Ws2', 'kernel32.dll', 'ntdll.dll', 'ws2_32.dll']

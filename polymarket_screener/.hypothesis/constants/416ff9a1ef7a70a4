@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\_lib\_array_api.py
-# hypothesis_version: 6.151.9
-
-[1e-07, 0.5, 1.0, 1.5, 'A', 'C', 'F', 'K', 'SCIPY_ARRAY_API', 'SCIPY_DEVICE', '_asarray', 'array_namespace', 'assert_almost_equal', 'complex floating', 'cpu', 'get_xp_devices', 'gpu', 'integral', 'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 'linalg', 'mps', 'real floating', 'scipy_namespace_for', 'subok', 'tpu', 'xp_assert_close', 'xp_assert_equal', 'xp_assert_less', 'xp_copy', 'xp_copysign', 'xp_device', 'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size', 'xp_take_along_axis', 'xp_vector_norm']

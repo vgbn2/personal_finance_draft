@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\optimize\_zeros_py.py
-# hypothesis_version: 6.151.9
-
-[0.0, 2e-12, 1.48e-08, 0.0001, 0.33, 0.5, 1.0, 2.0, 100, 'Derivative was zero.', 'No error', 'RootResults', 'all', 'bisect', 'brenth', 'brentq', 'converged', 'convergence error', 'halley', 'newton', 'result', 'ridder', 'root', 'secant', 'sign error', 'some', 'toms748', 'value error', 'zero_der']

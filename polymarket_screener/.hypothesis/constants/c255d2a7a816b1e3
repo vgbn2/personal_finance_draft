@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\_lib\array_api_compat\numpy\_aliases.py
-# hypothesis_version: 6.151.9
-
-['_CopyMode', 'acos', 'acosh', 'asarray', 'asin', 'asinh', 'atan', 'atan2', 'atanh', 'bitwise_invert', 'bitwise_left_shift', 'bitwise_right_shift', 'bool', 'concat', 'cpu', 'get_xp', 'isdtype', 'np', 'pow', 'unstack', 'vecdot']

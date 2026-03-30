@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\sparse\bsr.py
-# hypothesis_version: 6.151.9
-
-['_bsr', 'bsr', 'bsr_matmat', 'bsr_matrix', 'bsr_matvec', 'bsr_matvecs', 'bsr_sort_indices', 'bsr_tocsr', 'bsr_transpose', 'check_shape', 'csr_matmat_maxnnz', 'getdata', 'getdtype', 'isshape', 'isspmatrix_bsr', 'sparse', 'spmatrix', 'to_native', 'upcast', 'warn']

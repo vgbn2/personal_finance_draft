@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\special\_support_alternative_backends.py
-# hypothesis_version: 6.151.9
-
-[0.0, 0.5, 1.0, 'SCIPY_ARRAY_API', 'betainc', 'betaincc', 'chdtr', 'chdtrc', 'entr', 'erf', 'erfc', 'expit', 'gammainc', 'gammaincc', 'gammaln', 'i0', 'i0e', 'i1', 'i1e', 'ignore', 'integral', 'log_ndtr', 'logit', 'ndtr', 'ndtri', 'rel_entr', 'special', 'stdtr', 'xlogy']

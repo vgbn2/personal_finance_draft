@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_screener\app\utils\logger.py
-# hypothesis_version: 6.151.9
-
-['%(message)s', 'INFO', 'engine.log', 'exception', 'func', 'level', 'line', 'logger', 'logs', 'message', 'module', 'poly_screen', 'ts', 'utf-8']
