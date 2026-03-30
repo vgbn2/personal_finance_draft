@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\linalg\decomp_qr.py
-# hypothesis_version: 6.151.9
-
-['_decomp_qr', 'decomp_qr', 'get_lapack_funcs', 'linalg', 'qr', 'qr_multiply', 'rq']

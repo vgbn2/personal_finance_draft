@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\linalg\lapack.py
-# hypothesis_version: 6.151.9
-
-['Default ``\\1``\n', 'LAPACK', 'clapack', 'corghr', 'corghr_lwork', 'corgqr', 'corgrq', 'cormqr', 'cunghr', 'cunghr_lwork', 'cungqr', 'cungrq', 'cunmqr', 'dtype', 'flapack', 'flapack_64', 'get_lapack_funcs', 'int_dtype', 'preferred', 's', 'zorghr', 'zorghr_lwork', 'zorgqr', 'zorgrq', 'zormqr', 'zunghr', 'zunghr_lwork', 'zungqr', 'zungrq', 'zunmqr']

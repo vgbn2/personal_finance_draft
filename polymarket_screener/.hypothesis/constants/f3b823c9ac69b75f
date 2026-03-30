@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\trio\_core\_thread_cache.py
-# hypothesis_version: 6.151.9
-
-['RetT', '_default_name', '_idle_workers', '_job', '_thread', '_thread_cache', '_worker_lock', 'ascii', 'darwin', 'libc.so', 'pthread', 'pthread_setname_np', 'register_at_fork', 'replace']

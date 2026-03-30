@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\interpolate\_rgi.py
-# hypothesis_version: 6.151.9
-
-[0.0, 0.5, 1.0, '=', 'astype', 'cubic', 'cubic_legacy', 'dtype', 'interpn', 'linear', 'ndim', 'nearest', 'pchip', 'quintic', 'quintic_legacy', 'same_kind', 'slinear', 'slinear_legacy', 'splinef2d']

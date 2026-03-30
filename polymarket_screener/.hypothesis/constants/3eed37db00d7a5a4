@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\trio\_ssl.py
-# hypothesis_version: 6.151.9
-
-[16384, '._ssl', 'BROKEN', 'CLOSED', 'OK', 'T', 'TLSv1.3', 'T_Stream', 'Ts', '_State', '_afn', '_args', '_done', 'cipher', 'compression', 'context', 'get_channel_binding', 'getpeercert', 'pending', 'server_hostname', 'server_side', 'session', 'session_reused', 'shared_ciphers', 'started', 'strerror', 'version']

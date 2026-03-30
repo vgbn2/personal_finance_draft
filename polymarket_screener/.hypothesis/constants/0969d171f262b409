@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\linalg\decomp_svd.py
-# hypothesis_version: 6.151.9
-
-['LinAlgError', '_decomp_svd', 'decomp_svd', 'diagsvd', 'get_lapack_funcs', 'linalg', 'null_space', 'orth', 'subspace_angles', 'svd', 'svdvals']

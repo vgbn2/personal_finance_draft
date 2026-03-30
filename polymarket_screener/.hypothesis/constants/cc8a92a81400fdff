@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\sparse\construct.py
-# hypothesis_version: 6.151.9
-
-['_construct', 'block_diag', 'bmat', 'bsr_matrix', 'check_random_state', 'construct', 'coo_matrix', 'csc_matrix', 'csr_hstack', 'csr_matrix', 'dia_matrix', 'diags', 'eye', 'get_index_dtype', 'hstack', 'identity', 'isscalarlike', 'issparse', 'kron', 'kronsum', 'numbers', 'rand', 'random', 'rng_integers', 'sparse', 'spdiags', 'upcast', 'vstack']

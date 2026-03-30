@@ -1,4 +1,0 @@
-# file: C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\scipy\optimize\_milp.py
-# hypothesis_version: 6.151.9
-
-['csc', 'disp', 'fun', 'log_to_console', 'message', 'mip_dual_bound', 'mip_gap', 'mip_max_nodes', 'mip_node_count', 'mip_rel_gap', 'node_limit', 'presolve', 'status', 'success', 'time_limit', 'x']
