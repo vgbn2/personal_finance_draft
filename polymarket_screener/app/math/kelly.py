@@ -18,15 +18,18 @@ from app.utils.logger import log
 def calculate_kelly(
     win_prob: float,
     odds_offered: float,
-    fraction: float = 0.25,
+    fraction: float = 1.0,
 ) -> float:
     """
     Simple Kelly criterion for a single binary bet.
 
+    Returns FULL Kelly by default. Callers are responsible for
+    applying their own fractional scaling (e.g., quarter-Kelly).
+
     Args:
         win_prob: Probability of winning (0-1)
         odds_offered: Decimal odds (e.g., 2.5 means +150)
-        fraction: Fractional Kelly (default 0.25 = quarter-Kelly for safety)
+        fraction: Fractional Kelly multiplier (default 1.0 = full Kelly)
 
     Returns:
         Optimal bet fraction of bankroll (0.0 if negative edge)
@@ -44,10 +47,12 @@ def calculate_kelly(
 def calculate_kelly_from_price(
     fair_prob: float,
     market_price: float,
-    fraction: float = 0.25,
+    fraction: float = 1.0,
 ) -> float:
     """
     Kelly sizing from fair probability vs market price.
+
+    Returns FULL Kelly by default. Callers apply their own fraction.
 
     For Polymarket binary options:
         - market_price is the YES token price (e.g., 0.55)
@@ -57,7 +62,7 @@ def calculate_kelly_from_price(
     Args:
         fair_prob: Model's fair probability
         market_price: Current market price of the YES token
-        fraction: Fractional Kelly multiplier
+        fraction: Fractional Kelly multiplier (default 1.0 = full Kelly)
 
     Returns:
         Optimal allocation fraction
