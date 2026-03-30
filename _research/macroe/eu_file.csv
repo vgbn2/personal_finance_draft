@@ -1,6 +1,0 @@
-﻿Indicator,Date,Actual,Previous,naive_moving_avg,Status,EUR_Score,EUR_Grade
-ECB Deposit Facility Rate,2025-12-23,2.0,2.0,2.0,Fresh,0,Neutral
-Economic Sentiment,2024-01-01,99.13,99.16,99.14,Stale,0,Neutral
-Euro Area 10Y Yield,2025-11-01,3.14,3.12,3.13,Stale,0,Neutral
-Euro Area GDP YoY,2025-07-01,1.36,1.54,1.45,Stale,-4,Bearish
-Euro Area HICP YoY,2025-11-01,2.12,2.08,2.1,Stale,1,Mildly Bullish

@@ -1,37 +1,25 @@
 ## Current Position
-- **Phase**: 8 — Advanced Alpha & Arbitrage Skeletons
-- **Task**: 8.2 — Dynamic Capital Sizing (Kelly Criterion)
-- **Status**: Paused at 2026-03-22 18:22
+- **Phase**: 9 — Math Hardening & Configuration Unification
+- **Task**: 9.1 — Complete (all 7 tasks)
+- **Status**: Verified at 2026-03-30 17:28
 - **Milestone Audit**: Completed for Phases 5-7 ([Core-Integration-SUMMARY.md](file:///c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/polymarket_screener/.gsd/milestones/Core-Integration-SUMMARY.md))
 
 ## Last Session Summary
-Implemented Phase 8.1 (Correlation & Imbalance) and Phase 8.2 (Capital Sizing). Phase 8.1 is verified. Phase 8.2 is implemented in `alpha.py` and `signal_engine.py` but verification is blocked by a $500 cap issue.
+Executed Phase 9.1: Math Hardening & Configuration Unification. All 7 tasks completed with atomic commits. All 9 tests passing. NumPy warnings eliminated.
 
-## In-Progress Work
-- Modified `app/core/signal_engine.py` with dynamic sizing logic.
-- Created `app/core/alpha.py` with `MarketScorer`.
-- Added `depth_usd` to `app/core/domain_models.py`.
-- Tests: `test_alpha_signals.py` PASS, `test_dynamic_sizing.py` FAIL (IndexError/Capped).
+## Key Decisions Made (Phase 9)
+- **Kelly Default**: Changed from 0.25 (quarter) to 1.0 (full). Engine now explicitly applies `strategy.kelly_fraction`.
+- **Position Cap**: Unified to `risk.max_position_size` as single source of truth.
+- **IV Pass-through**: Signal engine now passes raw IV% to BS (BS handles /100 internally).
+- **DTE**: Simplified to `dte_mins / 1440` days. BS handles `/365` internally.
 
-## Context Dump
-### Decisions Made
-- **Kelly Fraction**: Set to 0.25 (Quarter-Kelly) by default in config for safety.
-- **Score Multiplier**: Scaling range [0.5x, 1.5x] based on Liquidity/Spread ratio.
-
-### Approaches Tried
-- **Approach 1**: Full Kelly in `signal_engine.py`. Result: Capped at 5% ($500) regardless of edge.
-- **Approach 2**: Reduced edge in test (0.01). Result: Still capped at 5% ($500).
-- **Approach 3**: Atomic math test (`diag_sizing.py`). Result: PASSED (calculated 1.04% properly).
-
-### Current Hypothesis
-Singleton collision in `event_bus` or `config_manager`. Multiple `MarketScreener` instances may be listening to the same channel, or the `fair_prob` calculation for ultra-short DTE (15m) in the full engine is behaving differently than the diagnostic script.
-
-### Files of Interest
-- `app/core/signal_engine.py`: Integration of sizing logic.
-- `app/core/alpha.py`: Implementation of `MarketScorer`.
-- `tests/test_dynamic_sizing.py`: Failing verification test.
+## Files of Interest
+- `app/core/constants.py`: NEW — centralized magic numbers
+- `app/core/signal_engine.py`: Engine logic refactored
+- `app/math/kelly.py`: Pure math utility (full Kelly)
+- `app/core/alpha.py`: Variance-guarded correlation
 
 ## Next Steps
-1. Resume with a clean session to reset singletons.
-2. Run `tests/test_dynamic_sizing.py` in isolation.
-3. Verify `final_alloc` doesn't hit `max_pos` and respects `score_mult`.
+1. Push Phase 9 commits to GitHub.
+2. Optionally move `DEFAULT_RISK_FREE_RATE` to `strategy_params.yaml` for runtime configurability.
+3. Consider Phase 10: Strategy Registry hardening or Frontend dashboard updates.
