@@ -1,0 +1,166 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\polymarket_screener
+plugins: anyio-4.12.1, hypothesis-6.151.9, langsmith-0.6.6, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 2 items
+
+tests\test_dynamic_sizing.py F                                           [ 50%]
+tests\test_live_data.py .                                                [100%]
+
+================================== FAILURES ===================================
+_____________________________ test_dynamic_sizing _____________________________
+
+    async def test_dynamic_sizing():
+        from app.utils.logger import log as app_log
+        import logging
+        app_log.setLevel(logging.DEBUG)
+        log.info("Starting Dynamic Sizing Verification...")
+    
+        screener = MarketScreener(min_edge=0.01)
+        await screener.start()
+    
+        signals = []
+        async def on_signal(sig):
+            signals.append(sig)
+        event_bus.on(Channel.SIGNAL_DETECTED, on_signal)
+    
+        # 1. Base Case: Fixed Equity ($10k), Balanced Case
+        portfolio.cash = 10000.0
+        snap_base = MarketSnapshot(
+            market_id="SIZE-TEST",
+            spot_price=60000,
+            implied_vol=50.0,
+            polymarket_yes=0.49, # Fair ~0.50 -> Edge ~0.01 (min)
+            orderbook=UnifiedOrderbook(
+                exchange="poly", symbol="BTC",
+                bids=[(0.44, 1000)], asks=[(0.46, 1000)]
+            )
+        )
+    
+        # Send multiple updates to ensure processing
+        for _ in range(5):
+            await event_bus.publish(Channel.MARKET_UPDATE, snap_base)
+    
+        for _ in range(20): # Wait up to 2 seconds
+            if len(signals) >= 1: break
+            await asyncio.sleep(0.1)
+    
+        if not signals:
+            log.error("FAIL: No signal received for base case")
+            return
+    
+        size_1 = signals[-1].allocation_pct * portfolio.equity
+        log.info(f"Signal 1 (Base): ${size_1:,.2f}")
+    
+        # 2. High Liquidity Case -> Should have higher score and higher size
+        snap_liquid = MarketSnapshot(
+            market_id="SIZE-TEST",
+            spot_price=60000,
+            implied_vol=50.0,
+            polymarket_yes=0.49,
+            orderbook=UnifiedOrderbook(
+                exchange="poly", symbol="BTC",
+                bids=[(0.44, 100000)], asks=[(0.46, 100000)] # 100x depth
+            )
+        )
+        prev_count = len(signals)
+        for _ in range(5):
+            await event_bus.publish(Channel.MARKET_UPDATE, snap_liquid)
+    
+        for _ in range(20):
+            if len(signals) > prev_count: break
+            await asyncio.sleep(0.1)
+    
+        size_2 = signals[-1].allocation_pct * portfolio.equity
+        log.info(f"Signal 2 (Liquid): ${size_2:,.2f}")
+>       assert size_2 > size_1, f"Liquid market (${size_2}) should have higher allocation than base (${size_1})"
+E       AssertionError: Liquid market ($500.0) should have higher allocation than base ($500.0)
+E       assert 500.0 > 500.0
+
+tests\test_dynamic_sizing.py:71: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[03/30/26 16:48:00] INFO     Starting Dynamic Sizing Verification...           
+                    INFO     Market Screener started (min_edge=1.0%)           
+                    DEBUG    Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77      
+                             score=58.35 mult=1.50 final=5.00%                 
+                    INFO     Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5%   
+                             score=58.4 alloc=5.0% ($500)                      
+                    DEBUG    Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77      
+                             score=58.35 mult=1.50 final=5.00%                 
+                    INFO     Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5%   
+                             score=58.4 alloc=5.0% ($500)                      
+                    DEBUG    Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77      
+                             score=58.35 mult=1.50 final=5.00%                 
+                    INFO     Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5%   
+                             score=58.4 alloc=5.0% ($500)                      
+                    DEBUG    Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77      
+                             score=58.35 mult=1.50 final=5.00%                 
+                    INFO     Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5%   
+                             score=58.4 alloc=5.0% ($500)                      
+                    DEBUG    Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77      
+                             score=58.35 mult=1.50 final=5.00%                 
+                    INFO     Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5%   
+                             score=58.4 alloc=5.0% ($500)                      
+                    INFO     Signal 1 (Base): $500.00                          
+                    DEBUG    Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77      
+                             score=97.85 mult=1.50 final=5.00%                 
+                    INFO     Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5%   
+                             score=97.9 alloc=5.0% ($500)                      
+                    DEBUG    Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77      
+                             score=97.85 mult=1.50 final=5.00%                 
+                    INFO     Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5%   
+                             score=97.9 alloc=5.0% ($500)                      
+                    DEBUG    Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77      
+                             score=97.85 mult=1.50 final=5.00%                 
+                    INFO     Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5%   
+                             score=97.9 alloc=5.0% ($500)                      
+                    DEBUG    Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77      
+                             score=97.85 mult=1.50 final=5.00%                 
+                    INFO     Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5%   
+                             score=97.9 alloc=5.0% ($500)                      
+                    DEBUG    Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77      
+                             score=97.85 mult=1.50 final=5.00%                 
+                    INFO     Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5%   
+                             score=97.9 alloc=5.0% ($500)                      
+                    INFO     Signal 2 (Liquid): $500.00                        
+------------------------------ Captured log call ------------------------------
+INFO     poly_screen:test_dynamic_sizing.py:12 Starting Dynamic Sizing Verification...
+INFO     poly_screen:signal_engine.py:37 Market Screener started (min_edge=1.0%)
+DEBUG    poly_screen:signal_engine.py:123 Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77 score=58.35 mult=1.50 final=5.00%
+INFO     poly_screen:signal_engine.py:140 Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5% score=58.4 alloc=5.0% ($500)
+DEBUG    poly_screen:signal_engine.py:123 Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77 score=58.35 mult=1.50 final=5.00%
+INFO     poly_screen:signal_engine.py:140 Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5% score=58.4 alloc=5.0% ($500)
+DEBUG    poly_screen:signal_engine.py:123 Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77 score=58.35 mult=1.50 final=5.00%
+INFO     poly_screen:signal_engine.py:140 Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5% score=58.4 alloc=5.0% ($500)
+DEBUG    poly_screen:signal_engine.py:123 Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77 score=58.35 mult=1.50 final=5.00%
+INFO     poly_screen:signal_engine.py:140 Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5% score=58.4 alloc=5.0% ($500)
+DEBUG    poly_screen:signal_engine.py:123 Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77 score=58.35 mult=1.50 final=5.00%
+INFO     poly_screen:signal_engine.py:140 Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5% score=58.4 alloc=5.0% ($500)
+INFO     poly_screen:test_dynamic_sizing.py:48 Signal 1 (Base): $500.00
+DEBUG    poly_screen:signal_engine.py:123 Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77 score=97.85 mult=1.50 final=5.00%
+INFO     poly_screen:signal_engine.py:140 Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5% score=97.9 alloc=5.0% ($500)
+DEBUG    poly_screen:signal_engine.py:123 Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77 score=97.85 mult=1.50 final=5.00%
+INFO     poly_screen:signal_engine.py:140 Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5% score=97.9 alloc=5.0% ($500)
+DEBUG    poly_screen:signal_engine.py:123 Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77 score=97.85 mult=1.50 final=5.00%
+INFO     poly_screen:signal_engine.py:140 Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5% score=97.9 alloc=5.0% ($500)
+DEBUG    poly_screen:signal_engine.py:123 Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77 score=97.85 mult=1.50 final=5.00%
+INFO     poly_screen:signal_engine.py:140 Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5% score=97.9 alloc=5.0% ($500)
+DEBUG    poly_screen:signal_engine.py:123 Sizing DEBUG: fair=0.89 mkt=0.49 full_k=0.77 score=97.85 mult=1.50 final=5.00%
+INFO     poly_screen:signal_engine.py:140 Screener SIGNAL: BUY_YES SIZE-TES... edge=39.5% score=97.9 alloc=5.0% ($500)
+INFO     poly_screen:test_dynamic_sizing.py:70 Signal 2 (Liquid): $500.00
+============================== warnings summary ===============================
+tests/test_dynamic_sizing.py::test_dynamic_sizing
+tests/test_live_data.py::test_live_feeds
+  C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\numpy\lib\function_base.py:2897: RuntimeWarning: invalid value encountered in divide
+    c /= stddev[:, None]
+
+tests/test_dynamic_sizing.py::test_dynamic_sizing
+tests/test_live_data.py::test_live_feeds
+  C:\Users\Lenovo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\numpy\lib\function_base.py:2898: RuntimeWarning: invalid value encountered in divide
+    c /= stddev[None, :]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_dynamic_sizing.py::test_dynamic_sizing - AssertionError: Li...
+================== 1 failed, 1 passed, 4 warnings in 23.05s ===================

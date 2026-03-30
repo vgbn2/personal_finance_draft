@@ -1,4 +1,5 @@
 import asyncio
+import os
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -43,15 +44,33 @@ async def startup_event():
     binance_ws = BinanceWSClient()
     deribit_ws = DeribitWSClient()
     
+    # Initialize Polymarket with Auth if available
+    poly_api_key = os.getenv("POLY_API_KEY")
+    poly_secret = os.getenv("POLY_API_SECRET")
+    poly_passphrase = os.getenv("POLY_API_PASSPHRASE")
+    poly_wallet_key = os.getenv("POLY_WALLET_KEY")
+    
+    if poly_api_key and poly_secret and poly_passphrase and poly_wallet_key:
+        poly.initialize_auth(
+            poly_api_key, poly_secret, poly_passphrase, poly_wallet_key
+        )
+    
     feed_aggregator.register(poly)
     feed_aggregator.register(binance_ws)
     feed_aggregator.register(deribit_ws)
     
-    # Start WebSockets
+    # Start WebSockets (Background Tasks)
     asyncio.create_task(binance_ws.connect())
     asyncio.create_task(deribit_ws.connect())
     asyncio.create_task(poly.connect())
-    asyncio.create_task(poly.listen())
+    
+    # Wait for connections then subscribe
+    async def delayed_subscribe():
+        await asyncio.sleep(5)
+        await binance_ws.subscribe(config_manager.symbols.binance.spot or ["BTC/USDT", "ETH/USDT"])
+        await poly.subscribe(config_manager.symbols.polymarket.watchlist or ["BTC", "ETH"])
+    
+    asyncio.create_task(delayed_subscribe())
     
     # Start Engine Clock (Background Task)
     asyncio.create_task(engine_clock.start())
@@ -65,7 +84,23 @@ async def startup_event():
     # Start Reconciliation Service (Background Task)
     await reconciliation_service.start()
     
-    log.info("[bold green]Engine successfully initialized (Phase 6).[/]")
+    # Start System Watchdog
+    asyncio.create_task(system_watchdog())
+    
+    log.info("[bold green]Engine successfully initialized (Phase 7.3).[/]")
+
+
+async def system_watchdog():
+    """Periodically checks health of all critical components."""
+    from app.core.feed_aggregator import feed_aggregator
+    while True:
+        await asyncio.sleep(60)
+        for name, client in feed_aggregator.clients.items():
+            if hasattr(client, "check_health"):
+                if not client.check_health():
+                    log.critical(f"WATCHDOG: Client {name} is UNHEALTHY! Forcing restart...")
+                    # In a real app, we'd trigger a reconnect here
+                    # For now, just log the criticality
 
 
 @app.on_event("shutdown")

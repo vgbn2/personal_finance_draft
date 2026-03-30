@@ -10,7 +10,8 @@ from typing import Dict, Optional
 
 from app.core.event_bus import Channel, event_bus
 from app.core.domain_models import MarketSnapshot, TradeSignal
-from app.core.alpha import alpha_engine
+from app.core.alpha import alpha_engine, market_scorer
+from app.core.portfolio import portfolio
 from app.math.black_scholes import BlackScholes
 from app.math.kelly import fw_kelly, calculate_kelly
 from app.utils.config import config_manager
@@ -83,7 +84,7 @@ class MarketScreener:
                 elif correlation < 0:
                     log.debug(f"Screener: Suppressed BUY_YES due to divergence (corr={correlation:.2f})")
                 else:
-                    await self._emit_signal(snapshot.market_id, "BUY_YES", fair_prob, market_prob_yes, edge_yes)
+                    await self._emit_signal(snapshot, "BUY_YES", fair_prob, market_prob_yes, edge_yes)
         
         # Evaluate NO side
         market_prob_no = snapshot.polymarket_no
@@ -95,25 +96,38 @@ class MarketScreener:
                 elif correlation < 0:
                     log.debug(f"Screener: Suppressed BUY_NO due to divergence (corr={correlation:.2f})")
                 else:
-                    await self._emit_signal(snapshot.market_id, "BUY_NO", 1.0 - fair_prob, market_prob_no, edge_no)
+                    await self._emit_signal(snapshot, "BUY_NO", 1.0 - fair_prob, market_prob_no, edge_no)
 
     async def _emit_signal(
-        self, market_id: str, side: str, fair_prob: float, market_prob: float, edge: float
+        self, snapshot: MarketSnapshot, side: str, fair_prob: float, market_prob: float, edge: float
     ) -> None:
         """Calculate Kelly allocation and emit signal."""
-        # Simple Kelly for binary outcome
-        kelly_pct = calculate_kelly(
-            win_prob=fair_prob,
-            odds_offered=1.0 / market_prob if market_prob > 0 else 0.0
-        )
+        # Dynamic Sizing Logic
+        score = market_scorer.calculate_score(snapshot, edge)
+        score_mult = max(0.5, min(1.5, score / 15.0))
         
-        # Quarter-Kelly for safety (parameterized)
+        # calculate_kelly already applies a default fraction of 0.25.
+        # We'll pass the config value explicitly to be clear.
         k_frac = config_manager.strategy.kelly_fraction
         max_pos = config_manager.strategy.max_position_size
-        alloc_pct = min(kelly_pct * k_frac, max_pos)
+        
+        kelly_pct = calculate_kelly(
+            win_prob=fair_prob,
+            odds_offered=1.0 / market_prob if market_prob > 0 else 0.0,
+            fraction=1.0 # Get FULL kelly here, we'll multiply manually for score_mult
+        )
+        
+        # Apply score-based scaling and fraction
+        alloc_pct = min(kelly_pct * k_frac * score_mult, max_pos)
+        
+        log.debug(f"Sizing DEBUG: fair={fair_prob:.2f} mkt={market_prob:.2f} full_k={kelly_pct:.2f} score={score:.2f} mult={score_mult:.2f} final={alloc_pct:.2%}")
+        
+        # Log pricing context
+        equity = portfolio.equity
+        size_usd = equity * alloc_pct
 
         signal = TradeSignal(
-            market_id=market_id,
+            market_id=snapshot.market_id,
             side=side,
             target_price=fair_prob,
             market_price=market_prob,
@@ -123,7 +137,11 @@ class MarketScreener:
             confidence=fair_prob
         )
 
-        log.info(f"Screener SIGNAL: {side} {market_id[:8]}... edge={edge:.1%} alloc={alloc_pct:.1%}")
+        log.info(
+            f"Screener SIGNAL: {side} {snapshot.market_id[:8]}... "
+            f"edge={edge:.1%} score={score:.1f} alloc={alloc_pct:.1%} "
+            f"(${size_usd:,.0f})"
+        )
         await event_bus.publish(Channel.SIGNAL_DETECTED, signal)
 
 

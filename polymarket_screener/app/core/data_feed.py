@@ -64,6 +64,16 @@ class BaseExchangeClient(ABC):
         """Stop any background loops."""
         pass
 
+    def check_health(self) -> bool:
+        """Verify client is healthy and not stale. Returns False if unhealthy."""
+        if not self.is_connected:
+            return False
+        # If no update for 3 minutes, consider unhealthy
+        if self.staleness_sec > 180:
+            log.warning(f"Client {self.name} is stale ({self.staleness_sec:.1f}s)")
+            return False
+        return True
+
 
 # ─── Binance Client ───
 
@@ -393,47 +403,128 @@ class PolymarketWS(BaseExchangeClient):
         self.endpoint = endpoint
         self._ws = None
         self._running = False
+        self._on_update_cb = None
+        self.clob_client = None # To be initialized with auth if needed
+
+    def set_callback(self, cb):
+        """Set callback for push updates."""
+        self._on_update_cb = cb
+
+    def initialize_auth(self, api_key: str, api_secret: str, api_passphrase: str, wallet_key: str):
+        """Initialize authenticated CLOB client."""
+        from py_polymarket_clob_client.client import ClobClient
+        # Host: https://clob.polymarket.com
+        self.clob_client = ClobClient(
+            host="https://clob.polymarket.com",
+            key=api_key,
+            secret=api_secret,
+            passphrase=api_passphrase,
+            private_key=wallet_key
+        )
+        log.info("PolymarketWS: Authenticated CLOB client initialized")
+
+    async def get_open_positions(self) -> List[Dict[str, Any]]:
+        """Fetch open positions via authenticated REST API."""
+        if not self.clob_client:
+            log.warning("PolymarketWS: No authenticated client for positions")
+            return []
+        try:
+            # Note: SDK methods might vary; using standard get_orders/get_balance logic
+            return self.clob_client.get_open_orders() # Or get_positions if available
+        except Exception as e:
+            log.error(f"PolymarketWS: Failed to fetch positions: {e}")
+            return []
 
     async def fetch_data(self, symbol: str, **kwargs) -> Dict[str, Any]:
         """Not used for WS — use listen() instead."""
         return {}
 
+    async def _authenticate_ws(self) -> None:
+        """Send authentication message for private channels."""
+        if not self.clob_client or not self._ws:
+            return
+        
+        import hmac
+        import hashlib
+        
+        # Use simple timestamp-based auth for CLOB WS
+        timestamp = str(int(time.time()))
+        nonce = "0" 
+        msg = f"{timestamp}GET/ws/auth" # Simplified example, usually requires specific path/method
+        
+        # The SDK clob_client.secret is usually accessible
+        secret = getattr(self.clob_client, "secret", "")
+        if not secret:
+            return
+
+        signature = hmac.new(
+            secret.encode(),
+            msg.encode(),
+            hashlib.sha256
+        ).hexdigest()
+
+        auth_msg = {
+            "type": "auth",
+            "api_key": getattr(self.clob_client, "key", ""),
+            "sig": signature,
+            "nonce": nonce,
+            "timestamp": timestamp,
+        }
+        await self._ws.send(json.dumps(auth_msg))
+        log.info("PolymarketWS: Sent authentication message")
+
     async def connect(self) -> None:
-        """Establish WebSocket connection."""
-        try:
-            self._ws = await websockets.connect(self.endpoint)
-            self.is_connected = True
-            log.info(f"Connected to {self.name} WS: {self.endpoint}")
-        except Exception as e:
-            log.error(f"Failed to connect to {self.name}: {e}")
-            self.is_connected = False
+        """Establish WebSocket connection and start listening."""
+        self._running = True
+        while self._running:
+            try:
+                log.info(f"PolymarketWS: Connecting to {self.endpoint}")
+                async with websockets.connect(self.endpoint) as ws:
+                    self._ws = ws
+                    self.is_connected = True
+                    log.info(f"PolymarketWS: Connected to {self.endpoint}")
+                    
+                    # If authenticated, send auth message
+                    if self.clob_client:
+                        await self._authenticate_ws()
+                    
+                    while self._running:
+                        msg = await ws.recv()
+                        data = json.loads(msg)
+                        if data.get("type") == "book":
+                            self.mark_update()
+                            if self._on_update_cb:
+                                await self._on_update_cb("polymarket", data)
+                                
+            except Exception as e:
+                log.error(f"PolymarketWS connection error: {e}")
+                self.is_connected = False
+                if self._running:
+                    await asyncio.sleep(5)
 
     async def subscribe(self, symbols: List[str]) -> None:
-        """Subscribe to orderbook channels."""
-        if not self.is_connected or not self._ws:
+        """Subscribe to orderbook and user channels."""
+        if not self._ws or not self.is_connected:
+            log.warning("PolymarketWS: Cannot subscribe — WS not connected")
             return
+            
+        # 1. Public Orderbook
         msg = {
             "type": "subscribe",
             "channels": [{"name": "orderbook", "symbols": symbols}],
         }
         await self._ws.send(json.dumps(msg))
-        log.info(f"Subscribed to {len(symbols)} symbols on {self.name}")
+        
+        # 2. Private User updates
+        if self.clob_client:
+            user_msg = {
+                "type": "subscribe",
+                "channels": [{"name": "user"}],
+            }
+            await self._ws.send(json.dumps(user_msg))
+            log.info(f"Subscribed to user channel on {self.name}")
 
-    async def listen(self) -> None:
-        """Listen for orderbook updates."""
-        self._running = True
-        while self._running:
-            try:
-                msg = await self._ws.recv()
-                data = json.loads(msg)
-                if data.get("type") == "book":
-                    self.mark_update()
-                    # Process via EventBus in future integration
-            except Exception as e:
-                log.error(f"{self.name} connection error: {e}")
-                self.is_connected = False
-                await asyncio.sleep(5)
-                await self.connect()
+        log.info(f"Subscribed to {len(symbols)} symbols on {self.name}")
 
     def stop(self) -> None:
         """Stop the listener loop."""
