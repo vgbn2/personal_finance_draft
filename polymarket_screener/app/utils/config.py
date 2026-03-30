@@ -17,7 +17,6 @@ class StrategyConfig(BaseModel):
     min_edge: float = 0.04
     vrp_haircut: float = 0.85
     kelly_fraction: float = 0.25
-    max_position_size: float = 0.05
     stop_loss: float = 0.15
     greed_decay: float = 1.5
     default_dte_minutes: int = 15
