@@ -8,6 +8,15 @@ fair value using the `black_scholes` math layer, and emits
 import asyncio
 from typing import Dict, Optional
 
+from app.core.constants import (
+    MINUTES_PER_DAY,
+    DEFAULT_RISK_FREE_RATE,
+    IMBALANCE_SUPPRESS_THRESHOLD,
+    DEFAULT_SCORE_MULT_MIN,
+    DEFAULT_SCORE_MULT_MAX,
+    SCORE_DIVISOR,
+    EPSILON,
+)
 from app.core.event_bus import Channel, event_bus
 from app.core.domain_models import MarketSnapshot, TradeSignal
 from app.core.alpha import alpha_engine, market_scorer
@@ -53,18 +62,19 @@ class MarketScreener:
             
         # ── Alpha Filter 2: Orderbook Imbalance ──
         imbalance = snapshot.orderbook.imbalance if snapshot.orderbook else 0.0
-        
-        # Calculate Fair Value (N(d2)) via Black-Scholes using dynamic DTE from config
+
+        # Calculate Fair Value (N(d2)) via Black-Scholes
+        # DTE: convert config minutes → days (what BS.fair_price expects)
         dte_mins = config_manager.strategy.default_dte_minutes
-        dte_days = dte_mins / (24 * 60)
+        dte_days = dte_mins / MINUTES_PER_DAY
 
         try:
             fair_prob = bs_engine.fair_price(
                 spot=snapshot.spot_price,
                 strike=snapshot.spot_price,  # ATM assumption for window strategy
-                dte=dte_days * 365,          # internal logic expects days, then does dte/365
-                iv=snapshot.implied_vol / 100.0,
-                r=snapshot.risk_free_rate / 100.0 if snapshot.risk_free_rate else 0.05
+                dte=dte_days,                # BS internally divides by 365
+                iv=snapshot.implied_vol,     # BS internally divides by 100
+                r=snapshot.risk_free_rate / 100.0 if snapshot.risk_free_rate else DEFAULT_RISK_FREE_RATE
             )
         except Exception as e:
             log.warning(f"Screener: Fair value calc failed for {snapshot.market_id}: {e}")
@@ -79,19 +89,19 @@ class MarketScreener:
             edge_yes = fair_prob - market_prob_yes
             if edge_yes >= self.min_edge:
                 # Apply Filters
-                if imbalance < -0.5:
+                if imbalance < -IMBALANCE_SUPPRESS_THRESHOLD:
                     log.debug(f"Screener: Suppressed BUY_YES due to imbalance ({imbalance:.2f})")
                 elif correlation < 0:
                     log.debug(f"Screener: Suppressed BUY_YES due to divergence (corr={correlation:.2f})")
                 else:
                     await self._emit_signal(snapshot, "BUY_YES", fair_prob, market_prob_yes, edge_yes)
-        
+
         # Evaluate NO side
         market_prob_no = snapshot.polymarket_no
         if market_prob_no:
             edge_no = (1.0 - fair_prob) - market_prob_no
             if edge_no >= self.min_edge:
-                if imbalance > 0.5:
+                if imbalance > IMBALANCE_SUPPRESS_THRESHOLD:
                     log.debug(f"Screener: Suppressed BUY_NO due to imbalance ({imbalance:.2f})")
                 elif correlation < 0:
                     log.debug(f"Screener: Suppressed BUY_NO due to divergence (corr={correlation:.2f})")
@@ -104,20 +114,19 @@ class MarketScreener:
         """Calculate Kelly allocation and emit signal."""
         # Dynamic Sizing Logic
         score = market_scorer.calculate_score(snapshot, edge)
-        score_mult = max(0.5, min(1.5, score / 15.0))
-        
-        # calculate_kelly already applies a default fraction of 0.25.
-        # We'll pass the config value explicitly to be clear.
+        score_mult = max(DEFAULT_SCORE_MULT_MIN, min(DEFAULT_SCORE_MULT_MAX, score / SCORE_DIVISOR))
+
+        # Kelly: calculate_kelly now returns FULL Kelly (fraction=1.0 default).
+        # We explicitly apply the config fraction here.
         k_frac = config_manager.strategy.kelly_fraction
-        max_pos = config_manager.strategy.max_position_size
-        
+        max_pos = config_manager.risk.max_position_size  # Single source of truth
+
         kelly_pct = calculate_kelly(
             win_prob=fair_prob,
-            odds_offered=1.0 / market_prob if market_prob > 0 else 0.0,
-            fraction=1.0 # Get FULL kelly here, we'll multiply manually for score_mult
+            odds_offered=1.0 / market_prob if market_prob > EPSILON else 0.0,
         )
-        
-        # Apply score-based scaling and fraction
+
+        # Apply score-based scaling and fractional Kelly
         alloc_pct = min(kelly_pct * k_frac * score_mult, max_pos)
         
         log.debug(f"Sizing DEBUG: fair={fair_prob:.2f} mkt={market_prob:.2f} full_k={kelly_pct:.2f} score={score:.2f} mult={score_mult:.2f} final={alloc_pct:.2%}")
