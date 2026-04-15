@@ -63,6 +63,28 @@ Parse:
 - Verify those commits exist
 - Resume from specified task
 
+### Step 3.5: Complexity-First Execution Priority
+
+When multiple plans are available within the same wave, or when choosing which plan to execute next across the roadmap, **always prioritize the most complex/difficult plan first**.
+
+**Priority ranking** (evaluate in order):
+1. **Complexity: High** before Medium before Low
+2. **Difficulty: High** before Medium before Low
+3. **Estimated Length: Longest** before shortest
+
+**Rationale:** AI quality degrades as context accumulates (see Quality Degradation Curve). By front-loading the hardest work while context is fresh and clean, we guarantee peak-quality output on the code that matters most. Easy plans are resilient to slight quality dips later in the session.
+
+**Tie-breaking:** If two plans share the same complexity/difficulty, prioritize the one with more downstream dependents (i.e., more plans in `depends_on` reference it).
+
+**Example:**
+```
+Wave 2 contains:
+  Plan 1.2 — Complexity: High, Difficulty: Medium, 45m
+  Plan 1.3 — Complexity: Medium, Difficulty: Medium, 30m
+
+Execute order: 1.2 → 1.3 (High complexity first)
+```
+
 ### Step 4: Execute Tasks
 
 For each task:

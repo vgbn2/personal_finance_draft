@@ -1,0 +1,15 @@
+{
+  "people": [],
+  "projects": [
+    "Core",
+    "Engine",
+    "Integration",
+    "Polymarket",
+    "Config",
+    "Event",
+    "Kelly",
+    "Ingestion",
+    "Refactor",
+    "Pydantic"
+  ]
+}

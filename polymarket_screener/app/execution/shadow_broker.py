@@ -18,7 +18,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from app.core.event_bus import Channel, event_bus
+from app.core.engine.event_bus import Channel, event_bus
 from app.db.schemas import AuditLogEntry
 from app.db.persistence import persistence_manager
 from app.math.slippage import slippage_model

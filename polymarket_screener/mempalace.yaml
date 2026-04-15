@@ -1,0 +1,70 @@
+wing: polymarket_screener
+rooms:
+- name: app
+  description: Files from app/
+  keywords:
+  - app
+  - app
+- name: backtest
+  description: Files from backtest/
+  keywords:
+  - backtest
+  - backtest
+- name: configuration
+  description: Files from config/
+  keywords:
+  - configuration
+  - config
+- name: data
+  description: Files from data/
+  keywords:
+  - data
+  - data
+- name: documentation
+  description: Files from docs/
+  keywords:
+  - documentation
+  - docs
+- name: frontend
+  description: Files from frontend/
+  keywords:
+  - frontend
+  - frontend
+- name: frontend_prototype
+  description: Files from frontend_prototype/
+  keywords:
+  - frontend_prototype
+  - frontend_prototype
+- name: logs
+  description: Files from logs/
+  keywords:
+  - logs
+  - logs
+- name: scripts
+  description: Files from scripts/
+  keywords:
+  - scripts
+  - scripts
+- name: testing
+  description: Files from tests/
+  keywords:
+  - testing
+  - tests
+- name: tmp
+  description: Files from tmp/
+  keywords:
+  - tmp
+  - tmp
+- name: backend
+  description: Files from api/
+  keywords:
+  - backend
+  - api
+- name: design
+  description: Files from assets/
+  keywords:
+  - design
+  - assets
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

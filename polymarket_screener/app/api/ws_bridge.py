@@ -3,8 +3,8 @@ from typing import Dict, Any
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.api.ui_adapter import UIAdapter
-from app.core.state_synchronizer import state_synchronizer
-from app.core.portfolio import portfolio
+from app.core.engine.state_synchronizer import state_synchronizer
+from app.core.models.portfolio import portfolio
 from app.execution.risk_manager import risk_manager
 from app.utils.logger import log
 

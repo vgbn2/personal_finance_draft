@@ -16,8 +16,8 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.core.event_bus import Channel, event_bus
-from app.core.strategy_registry import strategy_registry
+from app.core.engine.event_bus import Channel, event_bus
+from app.core.engine.strategy_registry import strategy_registry
 from app.execution.circuit_breakers import master_breaker, SystemState
 from app.utils.config import config_manager
 from app.utils.logger import log

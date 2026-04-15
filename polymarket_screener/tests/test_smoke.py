@@ -64,7 +64,7 @@ def test_config_yaml_parseable():
 
 def test_pydantic_models_instantiate():
     """Verify Pydantic data models can be instantiated."""
-    from app.core.domain_models import MarketSnapshot, UnifiedTick
+    from app.core.models.domain_models import MarketSnapshot, UnifiedTick
 
     snap = MarketSnapshot(market_id="test-market")
     assert snap.market_id == "test-market"

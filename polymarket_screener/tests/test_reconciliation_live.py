@@ -1,9 +1,9 @@
 import asyncio
 import os
 from unittest.mock import MagicMock, AsyncMock
-from app.core.reconciliation import ReconciliationService
-from app.core.feed_aggregator import feed_aggregator
-from app.core.portfolio import portfolio
+from app.core.engine.reconciliation import ReconciliationService
+from app.core.ingestion.feed_aggregator import feed_aggregator
+from app.core.models.portfolio import portfolio
 from app.utils.logger import log
 
 async def test_live_reconciliation():
@@ -25,7 +25,7 @@ async def test_live_reconciliation():
     # 3. Setup Portfolio with Drift
     # Internal state only has BTC-123 but with different size
     portfolio.positions.clear()
-    from app.core.domain_models import Position
+    from app.core.models.domain_models import Position
     portfolio.positions["BTC-123"] = Position(
         market_id="BTC-123",
         side="BUY",

@@ -23,7 +23,7 @@ from pathlib import Path
 # Ensure project root is in path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.core.portfolio import PortfolioManager
+from app.core.models.portfolio import PortfolioManager
 from app.db.schemas import PortfolioCheckpoint
 from app.utils.logger import log
 

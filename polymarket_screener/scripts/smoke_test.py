@@ -2,8 +2,8 @@ import asyncio
 import sys
 from app.utils.logger import log
 from app.utils.config import config_manager
-from app.core.engine_clock import engine_clock
-from app.core.schemas import Side, Signal
+from app.core.engine.engine_clock import engine_clock
+from app.core.models.schemas import Side, Signal
 
 async def smoke_test():
     log.info("[bold yellow]Starting Backend Smoke Test...[/]")

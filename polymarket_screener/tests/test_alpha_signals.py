@@ -1,8 +1,8 @@
 import asyncio
 from unittest.mock import MagicMock
-from app.core.signal_engine import MarketScreener
-from app.core.domain_models import MarketSnapshot, UnifiedOrderbook
-from app.core.event_bus import Channel, event_bus
+from app.core.engine.signal_engine import MarketScreener
+from app.core.models.domain_models import MarketSnapshot, UnifiedOrderbook
+from app.core.engine.event_bus import Channel, event_bus
 from app.utils.logger import log
 
 async def test_alpha_filtering():
