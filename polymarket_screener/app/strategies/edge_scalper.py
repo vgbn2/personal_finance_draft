@@ -6,7 +6,7 @@ an additional confidence filter before forwarding to execution.
 """
 from typing import Optional
 
-from app.core.domain_models import MarketSnapshot, TradeSignal
+from app.core.models.domain_models import MarketSnapshot, TradeSignal
 from app.strategies.base import BaseStrategy
 from app.utils.logger import log
 

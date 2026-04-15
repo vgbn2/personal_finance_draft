@@ -1,8 +1,8 @@
 import asyncio
-from app.core.signal_engine import MarketScreener
-from app.core.domain_models import MarketSnapshot, UnifiedOrderbook, TradeSignal
-from app.core.portfolio import portfolio
-from app.core.event_bus import Channel, event_bus
+from app.core.engine.signal_engine import MarketScreener
+from app.core.models.domain_models import MarketSnapshot, UnifiedOrderbook, TradeSignal
+from app.core.models.portfolio import portfolio
+from app.core.engine.event_bus import Channel, event_bus
 from app.utils.logger import log
 
 async def test_dynamic_sizing():

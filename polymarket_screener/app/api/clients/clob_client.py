@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
-from app.core.domain_models import UnifiedOrderbook
+from app.core.models.domain_models import UnifiedOrderbook
 from app.math.slippage import calculate_vwap, calculate_slippage_bps
 from app.utils.logger import log
 

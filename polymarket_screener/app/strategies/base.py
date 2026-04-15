@@ -12,8 +12,8 @@ The ``StrategyRegistry`` discovers and instantiates these at boot-time.
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-from app.core.domain_models import MarketSnapshot, TradeSignal
-from app.core.event_bus import Channel, event_bus
+from app.core.models.domain_models import MarketSnapshot, TradeSignal
+from app.core.engine.event_bus import Channel, event_bus
 from app.utils.logger import log
 
 

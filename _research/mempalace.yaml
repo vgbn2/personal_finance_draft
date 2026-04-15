@@ -1,0 +1,75 @@
+wing: _research
+rooms:
+- name: awesome_quant
+  description: Files from awesome_quant/
+  keywords:
+  - awesome_quant
+  - awesome_quant
+- name: backtest
+  description: Files from backtest/
+  keywords:
+  - backtest
+  - backtest
+- name: codeptit
+  description: Files from codeptit/
+  keywords:
+  - codeptit
+  - codeptit
+- name: ft_userdata
+  description: Files from ft_userdata/
+  keywords:
+  - ft_userdata
+  - ft_userdata
+- name: heart_beat_detector
+  description: Files from heart_beat_detector/
+  keywords:
+  - heart_beat_detector
+  - heart_beat_detector
+- name: mempalace
+  description: Files from mempalace/
+  keywords:
+  - mempalace
+  - mempalace
+- name: psuedo_code
+  description: Files from psuedo_code/
+  keywords:
+  - psuedo_code
+  - psuedo_code
+- name: ptit_studies
+  description: Files from ptit_studies/
+  keywords:
+  - ptit_studies
+  - ptit_studies
+- name: qlib
+  description: Files from qlib/
+  keywords:
+  - qlib
+  - qlib
+- name: research_and_logs
+  description: Files from research_and_logs/
+  keywords:
+  - research_and_logs
+  - research_and_logs
+- name: documentation
+  description: Files from docs/
+  keywords:
+  - documentation
+  - docs
+- name: scripts
+  description: Files from scripts/
+  keywords:
+  - scripts
+  - scripts
+- name: design
+  description: Files from assets/
+  keywords:
+  - design
+  - assets
+- name: testing
+  description: Files from tests/
+  keywords:
+  - testing
+  - tests
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

@@ -5,11 +5,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.utils.logger import log
 from app.utils.config import config_manager
-from app.core.engine_clock import engine_clock
-from app.core.feed_aggregator import feed_aggregator
-from app.core.data_feed import PolymarketWS, BinanceWSClient, DeribitWSClient
-from app.core.strategy_registry import strategy_registry
-from app.core.reconciliation import reconciliation_service
+from app.core.engine.engine_clock import engine_clock
+from app.core.ingestion.feed_aggregator import feed_aggregator
+from app.core.ingestion.data_feed import PolymarketWS, BinanceWSClient, DeribitWSClient
+from app.core.engine.strategy_registry import strategy_registry
+from app.core.engine.reconciliation import reconciliation_service
 from app.execution.risk_manager import risk_manager
 from app.execution.circuit_breakers import master_breaker
 from app.execution.audit import audit_daemon
@@ -92,7 +92,7 @@ async def startup_event():
 
 async def system_watchdog():
     """Periodically checks health of all critical components."""
-    from app.core.feed_aggregator import feed_aggregator
+    from app.core.ingestion.feed_aggregator import feed_aggregator
     while True:
         await asyncio.sleep(60)
         for name, client in feed_aggregator.clients.items():

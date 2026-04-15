@@ -1,7 +1,7 @@
 import asyncio
 import json
-from app.core.data_feed import BinanceWSClient, DeribitWSClient
-from app.core.feed_aggregator import feed_aggregator
+from app.core.ingestion.data_feed import BinanceWSClient, DeribitWSClient
+from app.core.ingestion.feed_aggregator import feed_aggregator
 from app.utils.logger import log
 
 async def test_live_feeds():

@@ -13,7 +13,7 @@ import numpy as np
 from scipy.stats import norm
 from typing import Dict, Optional, Union
 
-from app.core.constants import DEFAULT_RISK_FREE_RATE, DAYS_PER_YEAR, EPSILON
+from app.core.shared.constants import DEFAULT_RISK_FREE_RATE, DAYS_PER_YEAR, EPSILON
 from app.utils.logger import log
 
 

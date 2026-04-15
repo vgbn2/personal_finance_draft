@@ -1,7 +1,7 @@
 import pytest
 from app.api.ui_adapter import UIAdapter
 from app.core.models import MarketSnapshot
-from app.core.portfolio import PortfolioManager
+from app.core.models.portfolio import PortfolioManager
 from app.execution.risk import RiskManager
 
 def test_ui_adapter_empty():

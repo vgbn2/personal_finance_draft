@@ -19,8 +19,8 @@ Usage:
 import asyncio
 from typing import Any, Callable, Dict, Optional
 
-from app.core.event_bus import Channel, event_bus
-from app.core.domain_models import TradeSignal
+from app.core.engine.event_bus import Channel, event_bus
+from app.core.models.domain_models import TradeSignal
 from app.db.schemas import AuditLogEntry
 from app.db.persistence import persistence_manager
 from app.execution.risk_manager import risk_manager
@@ -143,7 +143,7 @@ class ExecutionRouter:
         Execute the trade order via Polymarket CLOB.
         """
         from app.utils.config import config_manager
-        from app.core.feed_aggregator import feed_aggregator
+        from app.core.ingestion.feed_aggregator import feed_aggregator
         
         shadow_mode = config_manager.execution.shadow_mode
         
