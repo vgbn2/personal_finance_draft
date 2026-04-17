@@ -1,42 +1,42 @@
 # GSD State Snapshot
 
 ## Current Position
-- **Phase**: Domain-Driven Reorganization & Refactor
-- **Task**: 100% Complete (Transformed Monolithic Core to Subpackage Domains)
-- **Status**: Active (resumed 2026-04-15 21:58)
+- **Phase**: Polymarket & Kraken CLI Integration
+- **Task**: Installation Planning & Dockerization Architecture
+- **Status**: Paused at 2026-04-17 14:04
 
 ## Last Session Summary
-Successfully delivered the **Domain-Driven Reorganization**. The codebase is now split into clear specialized subpackages (`cli`, `engine`, `intelligence`, `store`, `infra`).
+Explored and planned the installation of `polymarket-cli` and `kraken-cli`. Since the user is on Windows and the project is Rust-based with no official Windows binaries and no local Rust toolchain, a **Docker-based containerization** strategy has been proposed.
 
 **Primary Achievements**:
-- **Structural Separation**: Moved 18 modules from the monolithic `core` into 5 domain-specific subpackages.
-- **Global Import Sync**: Updated 58+ internal absolute imports to ensure zero broken references.
-- **CLI Namespace**: Relocated entry points to `sovereign.cli` and updated the `start_all.bat` launcher.
-- **Verification**: 100% logic integrity confirmed through the final verification suite.
+- **Research**: Analyzed `Cargo.toml` of both CLIs and identified build/run requirements.
+- **Environment Audit**: Confirmed Rust is missing but Docker is available and healthy.
+- **Architectural Plan**: Drafted [implementation_plan.md](file:///C:/Users/Lenovo/.gemini/antigravity/brain/5776cbd0-2715-4e5f-aaff-2390f8bf3888/implementation_plan.md) covering Dockerization, PowerShell wrappers, and the refactoring of `sovereign/adapters` in the Console project.
 
 ## In-Progress Work
-- **Completed**: Structural pivot, Batch orchestration, and Namespace consolidation.
-- **Next Up**: Milestone 6: Portfolio Intelligence (Risk-Off Automation).
-- **Files modified**: `sovereign/main.py`, `sovereign/ui/hud.py`, `start_all.bat`.
-- **Tests status**: **ALL PASSED** (`python -m sovereign.main --dry-run`).
+- **Waiting for Approval**: The implementation plan is pending user sign-off.
+- **Files modified**: `_resources/polymarket-cli/` (research only), `sovereign_wealth_console/` (research only).
+- **Plan created**: [implementation_plan.md](file:///C:/Users/Lenovo/.gemini/antigravity/brain/5776cbd0-2715-4e5f-aaff-2390f8bf3888/implementation_plan.md).
 
 ## Blockers
-- **None**. The platform is stable.
+- **None**. Waiting for permission to proceed with the build.
 
 ## Context Dump
-The system now uses the `python -m sovereign.module` entry points exclusively. Do not run scripts directly from their file paths.
+The user specifically wants to apply these CLIs to `sovereign_wealth_console`. The existing Polymarket adapter is rudimentary; replacing it with the CLI will provide full EIP-712 trading support.
 
 ### Decisions Made
-- **Multi-Window Launch**: Abandoned `wt.exe` pane-splitting in favor of independent CMD windows to ensure maximum compatibility for the user.
-- **PowerShell SED fallback**: Used native PowerShell `-replace` for the namespace migration after `sed/xargs` failed on Windows.
+- **Docker-First Architecture**: Abandoned native build to avoid installing heavy Rust toolchains on Windows. 
+- **Native Wrapper**: Using PowerShell (.ps1) for the CLI wrappers to provide a seamless "binary" experience within the shell.
 
 ### Current Hypothesis
-The multi-window approach in `start_all.bat` will be more resilient for the user while still providing the "Matrix Heatmap" visual feedback they need.
+A multi-stage Docker build will produce compact, stable runtimes that can be easily invoked by Python's `subprocess` with `-o json` for clean data ingestion.
 
 ### Files of Interest
-- `start_all.bat`: The primary suite entry point.
-- `sovereign/ui/hud.py`: The core rendering engine (now with fixed macro imports).
+- `_resources/polymarket-cli/Dockerfile`: (Yet to be created)
+- `_resources/kraken-cli/Dockerfile`: (Yet to be created)
+- `sovereign/adapters/polymarket/client.py`: Targeted for refactoring.
 
 ## Next Steps
-1. **Milestone 6 Execution**: Begin developing the `PortfolioAllocator` within `sovereign/core`.
-2. **Deribit L4 Hook**: Integrate Options flows into the Research Heatmap.
+1. **Execute Docker Builds**: Once approved, create Dockerfiles and build `polymarket-cli` and `kraken-cli` images.
+2. **Setup Wrappers**: Create the `.ps1` wrapper scripts.
+3. **Integration refactor**: Implement the new adapters in `sovereign_wealth_console`.
