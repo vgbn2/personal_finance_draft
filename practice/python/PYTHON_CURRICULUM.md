@@ -19,6 +19,12 @@ This curriculum is a direct mirror of the **Bio-Quant Engine** architecture. Eac
 
 ---
 
+### The Sovereign Methodology
+- **Rule 6 Enforcement**: AI provides code in chat; User implements manually (No auto-writing).
+- **Synthesis Exams**: Every 5 units, a "Certification Exam" is triggered to synthesize previous lessons.
+- **Book Summaries**: Upon completion of each Book, a `BOOK_XX_SUMMARY.md` must be generated in the book folder to codify patterns.
+- **Project Alignment**: All exercises bridge directly into the Bio-Quant Production Engine.
+
 ## 📅 Milestones (Expansion)
 
 ### Chapter 01-02: Foundational Sovereignty & Validation
