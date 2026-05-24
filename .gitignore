@@ -32,6 +32,10 @@ graphify-out/
 storage/secrets/
 
 # Data
+data/cache/*.json
+data/features/*.json
+data/models/*.json
+data/backtests/*.json
 storage/data/*.csv
 storage/data/*.bin
 storage/db/*.sqlite3
@@ -39,7 +43,14 @@ storage/exports/*.csv
 
 # Compiled Binaries
 *.exe
+*.obj
 *.so
 *.dylib
 *.dll
 
+# Empty scaffold directories (created by mistake, kept for git history hygiene)
+# Run once to untrack:
+#   git rm --cached quote_feed_interface_test.obj
+#   git rm --cached cpp_core/src/sovereign_wealth.exe
+#   git rm -r --cached docss/
+docss/
