@@ -2,27 +2,27 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const {
-  fetchBinanceBaseCandles, fetchCoinbaseBaseCandles, fetchKalshiHistoricalCandlesticks,
-  fetchKalshiHistoricalMarkets, fetchStooqDailyHistory, fetchPolymarketHistoricalPrices,
-  fetchYahooBaseCandles, fetchPaginated, fetchParallelBackfill, ingestMarketData,
-  dedupePreferredMarketQuotes, loadConfig, loadExternalQuoteInputs,
-  resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
+  ingestMarketData,
+  loadHistoricalSources,
+  loadPredictionMarketHistory,
+  mergeSnapshots,
 } = require('../../data_ops/ingest_market_data');
-const { DEFAULT_PROVIDER_PRIORITY } = require('../../lib/quote_router');
-const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../lib/backtest');
-const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../lib/indicators');
-const { compareModels } = require('../../lib/models');
-const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../lib/market_validation');
-const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal } = require('../../tui_cli');
-
+const { validateSnapshot, writeJson, readSnapshot } = require('../../lib/market_validation');
 const utils = require('../lib/utils.js');
-const { usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption } = utils;
-const { REPO_ROOT, DEFAULT_SNAPSHOT, DEFAULT_QUALITY_REPORT, DEFAULT_HISTORY, DEFAULT_FEATURES, DEFAULT_MODEL_REPORT, DEFAULT_BACKTEST, DEFAULT_STATE_PATH, BACKEND_CANDIDATES, HELP_TOPICS } = utils;
+const { 
+  printPayload, 
+  optionValue, 
+  numericOption, 
+  hasFlag, 
+  pageText,
+  DEFAULT_SNAPSHOT,
+  DEFAULT_QUALITY_REPORT,
+  DEFAULT_HISTORY
+} = utils;
 
-const research = require('./research.js');
-const data = require('./data.js');
-
-
+/**
+ * Handles the 'ingest' command.
+ */
 async function commandIngest(args) {
   const snapshot = await ingestMarketData();
   if (hasFlag(args, '--full')) {
@@ -34,11 +34,14 @@ async function commandIngest(args) {
     fetched_at: snapshot.fetched_at,
     sources: snapshot.sources.length,
     errors: snapshot.errors.length,
-    provider_checks: snapshot.provider_checks.length,
+    provider_checks: (snapshot.provider_checks || []).length,
   }, args);
   return snapshot.errors.length === 0 ? 0 : 1;
 }
 
+/**
+ * Handles the 'backfill' command.
+ */
 async function commandBackfill(args) {
   const output = optionValue(args, '--output', DEFAULT_HISTORY);
   const relevanceFloor = numericOption(args, '--relevance-floor', 0);
@@ -60,15 +63,18 @@ async function commandBackfill(args) {
   const predictionHistory = hasFlag(args, '--include-prediction')
     ? await loadPredictionMarketHistory(args)
     : { sources: [], errors: [] };
+  
   const snapshot = {
     mode: 'backtest_history',
     fetched_at: new Date().toISOString(),
-    sources: [...marketHistory.snapshot.sources, ...predictionHistory.sources],
-    errors: [...(marketHistory.snapshot.errors || []), ...predictionHistory.errors],
+    sources: [...(marketHistory.snapshot.sources || []), ...(predictionHistory.sources || [])],
+    errors: [...(marketHistory.snapshot.errors || []), ...(predictionHistory.errors || [])],
     backfill_windows: [...(marketHistory.snapshot.backfill_windows || [])],
   };
+  
   const { report } = validateSnapshot(snapshot, { rejectStale: false });
-  const byKeyScore = new Map(report.reliability.samples.map((sample) => [sample.key, sample.score]));
+  const byKeyScore = new Map((report.reliability?.samples || []).map((sample) => [sample.key, sample.score]));
+  
   const filteredSources = relevanceFloor > 0
     ? snapshot.sources.filter((record, index) => {
       const key = `${record.family || 'unknown'}:${record.provider || 'unknown'}:${record.symbol || record.underlying || record.series || record.location || record.region || record.country || record.chain || record.metric || 'unknown'}:${record.timeframe || record.component || record.metric || record.option_type || 'point'}:${record.timestamp || `index_${index}`}`;
@@ -76,6 +82,7 @@ async function commandBackfill(args) {
       return Number.isFinite(score) ? score >= relevanceFloor : true;
     })
     : snapshot.sources;
+    
   const filteredSnapshot = { ...snapshot, sources: filteredSources };
   const filteredReport = validateSnapshot(filteredSnapshot, { rejectStale: false }).report;
 
@@ -84,12 +91,13 @@ async function commandBackfill(args) {
 
   writeJson(output, preservedSnapshot);
   writeJson(DEFAULT_QUALITY_REPORT, filteredReport);
+  
   printPayload({
     mode: filteredSnapshot.mode,
     records: filteredSnapshot.sources.length,
     errors: filteredSnapshot.errors.length,
     stale_records: filteredReport.freshness.stale_records,
-    reliability_samples: filteredReport.reliability.samples.length,
+    reliability_samples: (filteredReport.reliability?.samples || []).length,
     relevance_floor: relevanceFloor,
     backfill_windows: filteredSnapshot.backfill_windows || [],
     output,
@@ -98,6 +106,9 @@ async function commandBackfill(args) {
   return filteredSnapshot.errors.length === 0 ? 0 : 1;
 }
 
+/**
+ * Handles the 'validate' command.
+ */
 function commandValidate(args) {
   const input = optionValue(args, '--input', DEFAULT_SNAPSHOT);
   const output = optionValue(args, '--output', DEFAULT_QUALITY_REPORT);
@@ -119,6 +130,9 @@ function commandValidate(args) {
   return hasFlag(args, '--strict') && !report.ok ? 1 : 0;
 }
 
+/**
+ * Handles the 'watch' command.
+ */
 async function commandWatch(args) {
   const family = optionValue(args, '--family', 'all');
   const intervalMinutes = numericOption(args, '--interval', 15);
@@ -134,9 +148,9 @@ async function commandWatch(args) {
     console.clear();
     console.log(`\x1b[1;36mSOVEREIGN WATCH MODE\x1b[0m \x1b[90m(Family: ${family}, Interval: ${intervalMinutes}m)\x1b[0m`);
     console.log('\x1b[90mPress Ctrl+C to stop, Ctrl+T to show more.\x1b[0m\n');
-    
+
     if (lastSyncTime) {
-      process.stdout.write(`\x1b[32m✔\x1b[0m Last sync: \x1b[1m${lastSyncTime}\x1b[0m (\x1b[90m${lastSyncCount} records, ${lastSyncDuration}s\x1b[0m)\n\n`);
+      process.stdout.write(`\x1b[32m\u2714\x1b[0m Last sync: \x1b[1m${lastSyncTime}\x1b[0m (\x1b[90m${lastSyncCount} records, ${lastSyncDuration}s\x1b[0m)\n\n`);
     }
 
     if (latestBySymbol.size > 0) {
@@ -144,21 +158,21 @@ async function commandWatch(args) {
       const visibleSymbols = sortedSymbols.slice(0, showLimit);
 
       console.log('\x1b[1m  Target       Price        Type      Provider\x1b[0m');
-      console.log('\x1b[90m  ───────────  ───────────  ────────  ─────────\x1b[0m');
-      
+      console.log('\x1b[90m  ───────────  ───────────  ──────── ────────\x1b[0m');
+
       for (const sym of visibleSymbols) {
         const latest = latestBySymbol.get(sym);
         const price = latest.close || latest.value || 'N/A';
         const type = latest.timeframe || 'point';
         const provider = latest.provider || 'unknown';
-        
+
         const displaySym = String(sym).slice(0, 11).padEnd(11);
         const displayPrice = String(price).slice(0, 11).padEnd(11);
         const displayType = String(type).slice(0, 8).padEnd(8);
-        
-        console.log(`  \x1b[36m${displaySym}\x1b[0m  \x1b[32m${displayPrice}\x1b[0m  \x1b[90m${displayType}  ${provider}\x1b[0m`);
+
+        console.log(`  \x1b[36m${displaySym}\x1b[0m \x1b[32m${displayPrice}\x1b[0m  \x1b[90m${displayType}  ${provider}\x1b[0m`);
       }
-      
+
       if (latestBySymbol.size > showLimit) {
         console.log(`\x1b[90m  ... and ${latestBySymbol.size - showLimit} more targets (Press Ctrl+T to expand)\x1b[0m`);
       }
@@ -168,12 +182,12 @@ async function commandWatch(args) {
 
   const runIngest = async () => {
     const start = Date.now();
-    process.stdout.write(`\r\x1b[K\x1b[33m⌛\x1b[0m Synchronizing ${family} data...`);
+    process.stdout.write(`\r\x1b[K\x1b[33m\u231b\x1b[0m Synchronizing ${family} data...`);
     try {
       const snapshot = await ingestMarketData({ family: family === 'all' ? null : family });
       lastSyncDuration = ((Date.now() - start) / 1000).toFixed(1);
       lastSyncTime = new Date().toLocaleTimeString();
-      
+
       const lastRecords = snapshot.sources.filter(r => !family || family === 'all' || r.family === family);
       lastSyncCount = lastRecords.length;
 
@@ -187,7 +201,7 @@ async function commandWatch(args) {
       }
       render();
     } catch (error) {
-      process.stdout.write(`\r\x1b[K\x1b[31m✘\x1b[0m Sync failed: ${error.message}\n`);
+      process.stdout.write(`\r\x1b[K\x1b[31m\u2718\x1b[0m Sync failed: ${error.message}\n`);
     }
   };
 
@@ -211,6 +225,7 @@ async function commandWatch(args) {
 
   let nextRun = Date.now() + intervalMs;
   const timer = setInterval(async () => {
+    if (global.suppressLogs) return; // Add suppression check
     const now = Date.now();
     const remaining = Math.max(0, nextRun - now);
     const seconds = Math.floor(remaining / 1000);
@@ -221,9 +236,9 @@ async function commandWatch(args) {
     const progress = Math.min(1, (intervalMs - remaining) / intervalMs);
     const filled = Math.floor(progress * progressWidth);
     const empty = progressWidth - filled;
-    const progressBar = '\x1b[90m[' + '\x1b[36m' + '█'.repeat(filled) + '\x1b[90m' + '░'.repeat(empty) + ']\x1b[0m';
+    const progressBar = `\x1b[90m[\x1b[36m${'█'.repeat(filled)}\x1b[90m${'░'.repeat(empty)}]\x1b[0m`;
 
-    process.stdout.write('\r\x1b[KNext refresh in: \x1b[1m' + minutes + 'm ' + displaySeconds + 's\x1b[0m ' + progressBar + ' ');
+    process.stdout.write(`\r\x1b[KNext refresh in: \x1b[1m${minutes}m ${displaySeconds}s\x1b[0m ${progressBar} `);
 
     if (remaining <= 0) {
       process.stdout.write('\n');
@@ -236,5 +251,8 @@ async function commandWatch(args) {
 }
 
 module.exports = {
-  commandIngest, commandBackfill, commandValidate, commandWatch
+  commandIngest,
+  commandBackfill,
+  commandValidate,
+  commandWatch
 };
