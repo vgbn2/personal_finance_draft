@@ -7,6 +7,7 @@ const {
   loadPredictionMarketHistory,
   mergeSnapshots,
 } = require('../../data_ops/ingest_market_data');
+const { runMaintenance } = require('../../lib/db_pruning');
 const { validateSnapshot, writeJson, readSnapshot } = require('../../lib/market_validation');
 const utils = require('../lib/utils.js');
 const { 
@@ -128,6 +129,29 @@ function commandValidate(args) {
     output,
   }, args);
   return hasFlag(args, '--strict') && !report.ok ? 1 : 0;
+}
+
+/**
+ * Handles the 'prune' command for database maintenance.
+ */
+async function commandPrune(args) {
+  const days = numericOption(args, '--days', 30);
+  const archive = optionValue(args, '--archive', null);
+  
+  console.log(`[MAINTENANCE] Starting database pruning (Retention: ${days} days)...`);
+  
+  try {
+    const results = await runMaintenance(days, archive);
+    printPayload({
+      ok: true,
+      retention_days: days,
+      results
+    }, args);
+    return 0;
+  } catch (error) {
+    console.error(`[MAINTENANCE] Pruning failed: ${error.message}`);
+    return 1;
+  }
 }
 
 /**
@@ -254,5 +278,6 @@ module.exports = {
   commandIngest,
   commandBackfill,
   commandValidate,
-  commandWatch
+  commandWatch,
+  commandPrune
 };

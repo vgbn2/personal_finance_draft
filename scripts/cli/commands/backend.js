@@ -1,31 +1,33 @@
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
-const {
-  fetchBinanceBaseCandles, fetchCoinbaseBaseCandles, fetchKalshiHistoricalCandlesticks,
-  fetchKalshiHistoricalMarkets, fetchStooqDailyHistory, fetchPolymarketHistoricalPrices,
-  fetchYahooBaseCandles, fetchPaginated, fetchParallelBackfill, ingestMarketData,
-  dedupePreferredMarketQuotes, loadConfig, loadExternalQuoteInputs,
-  resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
-} = require('../../data_ops/ingest_market_data');
-const { DEFAULT_PROVIDER_PRIORITY } = require('../../lib/quote_router');
-const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../lib/backtest');
-const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../lib/indicators');
-const { compareModels } = require('../../lib/models');
-const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../lib/market_validation');
-const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal } = require('../../tui_cli');
-
 const utils = require('../lib/utils.js');
-const { usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption } = utils;
-const { REPO_ROOT, DEFAULT_SNAPSHOT, DEFAULT_QUALITY_REPORT, DEFAULT_HISTORY, DEFAULT_FEATURES, DEFAULT_MODEL_REPORT, DEFAULT_BACKTEST, DEFAULT_STATE_PATH, BACKEND_CANDIDATES, HELP_TOPICS } = utils;
+const { 
+  printPayload, 
+  optionValue, 
+  numericOption, 
+  hasFlag, 
+  pageText,
+  DEFAULT_SNAPSHOT,
+  DEFAULT_QUALITY_REPORT,
+  DEFAULT_HISTORY,
+  DEFAULT_BACKTEST,
+  BACKEND_CANDIDATES,
+  currentPhaseLabel
+} = utils;
 
+const { readSnapshot, validateSnapshot } = require('../../lib/market_validation');
 
-
+/**
+ * Locates the C++ backend binary among known candidate paths.
+ */
 function locateBackendBinary() {
-  const fs = require('node:fs');
   return BACKEND_CANDIDATES.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
+/**
+ * Runs a command against the C++ backend binary.
+ */
 function runBackendCommand(commandArgs) {
   const binary = locateBackendBinary();
   if (!binary) {
@@ -43,7 +45,7 @@ function runBackendCommand(commandArgs) {
   }
 
   const result = spawnSync(binary, passedArgs, {
-    cwd: REPO_ROOT,
+    cwd: utils.REPO_ROOT,
     encoding: 'utf8',
     shell: false,
   });
@@ -98,7 +100,6 @@ function runBackendStats(args = []) {
   if (!equityCsv) {
     const inputPath = optionValue(args, '--input', DEFAULT_BACKTEST);
     try {
-      const fs = require('node:fs');
       const backtest = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
       if (backtest && backtest.equity_curve && Array.isArray(backtest.equity_curve)) {
         equityCsv = backtest.equity_curve.map(point => (point.equity * 100).toFixed(2)).join(',');
@@ -194,11 +195,11 @@ function reportSnapshotIntegrity(inputPath, rejectStale = true) {
       mode: snapshot.mode || 'unknown',
       fetched_at: snapshot.fetched_at || null,
       total_records: report.total_records,
-      usable_records: usableSources.length,
+      usable_records: (usableSources || []).length,
       rejected_records: report.rejected_records,
-      stale_records: report.freshness.stale_records,
-      provider_errors: report.provider_errors.length,
-      issues: report.issues.slice(0, 8),
+      stale_records: (report.freshness || {}).stale_records || 0,
+      provider_errors: (report.provider_errors || []).length,
+      issues: (report.issues || []).slice(0, 8),
     };
   } catch (error) {
     return {
@@ -233,6 +234,54 @@ function runBackendIntegrity(args = []) {
   };
 }
 
+/**
+ * Runs a performance benchmark on the backend.
+ */
+function runBackendBenchmark(args = []) {
+  const iterations = numericOption(args, '--iterations', 10);
+  const cmd = args[0] || 'status';
+  
+  const availability = backendAvailability();
+  if (!availability.available) {
+    return {
+      ok: false,
+      error: 'Backend binary not found. Cannot run benchmark.',
+      searched: BACKEND_CANDIDATES
+    };
+  }
+
+  console.log(`[BENCHMARK] Running ${iterations} iterations of backend '${cmd}'...`);
+  
+  const startTotal = process.hrtime.bigint();
+  const times = [];
+  
+  for (let i = 0; i < iterations; i++) {
+    const start = process.hrtime.bigint();
+    runBackendCommand([cmd, '--json']);
+    const end = process.hrtime.bigint();
+    times.push(Number(end - start) / 1000000); // Convert to ms
+  }
+  
+  const endTotal = process.hrtime.bigint();
+  const totalDuration = Number(endTotal - startTotal) / 1000000;
+  const avg = times.reduce((a, b) => a + b, 0) / iterations;
+  const min = Math.min(...times);
+  const max = Math.max(...times);
+  
+  return {
+    ok: true,
+    type: 'backend_benchmark',
+    path: availability.path,
+    command: cmd,
+    iterations,
+    total_ms: totalDuration.toFixed(2),
+    average_ms: avg.toFixed(2),
+    min_ms: min.toFixed(2),
+    max_ms: max.toFixed(2),
+    samples: times.map(t => t.toFixed(2))
+  };
+}
+
 function backendAvailability() {
   for (const candidate of BACKEND_CANDIDATES) {
     if (fs.existsSync(candidate)) return { available: true, path: candidate };
@@ -249,6 +298,7 @@ function commandBackend(args) {
     correlation: (a) => runBackendCorrelation(a),
     universe: (a) => runBackendUniverse(a),
     integrity: (a) => runBackendIntegrity(a),
+    benchmark: (a) => runBackendBenchmark(a),
     data: (a) => {
       const nested = a[0] || 'summary';
       if (nested !== 'summary') throw new Error(`Unsupported backend data command: ${nested}`);
@@ -273,5 +323,16 @@ function commandBackend(args) {
 }
 
 module.exports = {
-  locateBackendBinary, runBackendCommand, runBackendStatus, runBackendStats, runBackendPortfolio, runBackendDataSummary, runBackendCorrelation, runBackendUniverse, reportSnapshotIntegrity, runBackendIntegrity, backendAvailability, commandBackend
+  locateBackendBinary, 
+  runBackendCommand, 
+  runBackendStatus, 
+  runBackendStats, 
+  runBackendPortfolio, 
+  runBackendDataSummary, 
+  runBackendCorrelation, 
+  runBackendUniverse, 
+  reportSnapshotIntegrity, 
+  runBackendIntegrity, 
+  backendAvailability, 
+  commandBackend
 };
