@@ -54,7 +54,14 @@ async function handleCommand(args) {
 
 async function main() {
   const args = process.argv.slice(2);
-  return await handleCommand(args);
+  if (args.length > 0) {
+    return await handleCommand(args);
+  }
+
+  // Persistent TUI menu loop when no args provided
+  const { runInteractiveMenu } = utils;
+  await runInteractiveMenu(handleCommand);
+  return 0;
 }
 
 if (require.main === module) {
