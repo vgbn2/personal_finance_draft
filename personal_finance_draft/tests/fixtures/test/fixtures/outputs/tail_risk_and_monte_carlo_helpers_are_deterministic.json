@@ -1,0 +1,33 @@
+{
+  "tailRisk": {
+    "alpha": 0.05,
+    "value_at_risk": -0.043,
+    "expected_shortfall": -0.05,
+    "tail_count": 1,
+    "sample_size": 6
+  },
+  "mcA": {
+    "runs": 120,
+    "seed": "demo",
+    "sample_size": 6,
+    "mean_final_return": -0.001,
+    "median_final_return": -0.002,
+    "p05_final_return": -0.116,
+    "p95_final_return": 0.114,
+    "probability_of_loss": 0.517,
+    "mean_max_drawdown": 0.064,
+    "p95_max_drawdown": 0.15
+  },
+  "mcB": {
+    "runs": 120,
+    "seed": "demo",
+    "sample_size": 6,
+    "mean_final_return": -0.001,
+    "median_final_return": -0.002,
+    "p05_final_return": -0.116,
+    "p95_final_return": 0.114,
+    "probability_of_loss": 0.517,
+    "mean_max_drawdown": 0.064,
+    "p95_max_drawdown": 0.15
+  }
+}

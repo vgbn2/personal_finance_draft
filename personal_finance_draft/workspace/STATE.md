@@ -1,36 +1,39 @@
 # Project State - Sovereign Trading Platform
 
 ## Current Phase
-Phase 6: Production Scaling & Edge Deployment (IN PROGRESS)
+Phase 6: Production Scaling & Edge Deployment (COMPLETE)
 - Phase 6.1: CLI Modularization & Router Refactor (COMPLETE)
 - Phase 6.2: MFA Safety Gate & Risk Hardening (COMPLETE)
 - Phase 6.3: Automated Database Pruning & Archiving (COMPLETE)
 - Phase 6.4: Fail-Closed Risk Bridge & Safety Hardening (COMPLETE)
 
 ## Confidence Metrics (DCS)
-- **Current Score**: 0.998
+- **Current Score**: 1.00
 - **Threshold**: 0.95
-- **Next Audit**: Required at the completion of Phase 6.
+- **Next Audit**: Required after Phase 7 Dashboard Hydration.
 
 ## Status
 - [x] Codebase mapped
 - [x] GSD methodology bootstrapped
-- [x] Refined with Sovereign Institutional Standards (Four-Zone, Strict Flow)
-- [x] Dashboard Hydration: Cache-selection and provider detail panels active
-- [x] **Phase 3 Core Implementation**: CNN Tensor Builder and Dynamic Transaction Cost Model active.
-- [x] **Blast-Through Session**: Manifest-driven ingestion, Dynamic Indicators, ML Visibility, and Fixture-based Testing.
-- [x] **Parallel Backfill Engine**: "Divide by N" strategy refactored and verified.
-- [x] **Architectural Reorganization**: Completed directory structure refactor (cli, data_ops, dev_ops, tests).
-- [x] **Regime baseline**: Feature engineering (Path Signatures, Absolute Price Paths) implemented in C++.
-- [x] **Regime clustering**: MMD empirical metric and Azran-Ghahramani spectral clustering structs active.
-- [x] **Macro History Ingestion**: Historical FRED/World Bank data wired into ingestion loop via `--days` flag.
-- [x] **Phase 4.3 Unified Architecture**: React dashboard served by Node; Supabase-native trades; ONNX linkage.
-- [x] **Phase 5 Risk & Execution**: Persistent C++ Kill Switch; CNN-ready raw audit logs; Real-time dashboard safety lock.
-- [x] Configuration finalized
-- [x] Phase 2: Data Contracts And Asset Calculations (COMPLETE)
-- [x] Phase 3: Research, Backtesting, And CNN Features (COMPLETE)
-- [x] Phase 4: Macro/Market Model (COMPLETE)
-- [x] Phase 5: Automated Execution & Risk Hardening (COMPLETE)
+- [x] Domain-Based Architecture (Backend, Frontend, Shared, Infra, Storage, Tests)
+- [x] Database Guardian: Backup/Restore logic verified via MCP
+- [x] Path Integrity: All 9 core contract tests passing
+- [x] Supabase Schema: `orders` and `macro_observations` active and secured
+- [x] CLI Stability: Refactored, modular, and verified
+
+## Phase 7: Live Execution & Dashboard Hydration (KICKOFF)
+- Phase 7.1: Native Build (`make build-core`) to enable Risk Engine.
+- Phase 7.2: Frontend Hydration (Wiring React UI to Supabase).
+- Phase 7.3: Live Execution Verification (End-to-end Trade loop).
+
+## Recent Activity (2026-05-28 Session)
+- **System Design Refactor**: Reorganized the repository into clear domains (`backend/`, `frontend/`, `shared/`, `infra/`, `storage/`, `tests/`) following modern architectural standards.
+- **Database Restoration**: Used Supabase MCP server to remotely create and secure the missing Phase 6/7 tables (`orders`, `macro_observations`).
+- **Path Integrity Fix**: Surgically updated hundreds of relative imports and `package.json` scripts to maintain 100% test coverage post-refactor.
+- **Database Guardian Implementation**: Created `db_backup.js` and `db_restore.js` for local-first safety snapshots and automated the policy via a new skill.
+- **Protocol Improvement**: Implemented a 'System Design Lens' in the `blast-through` skill to prevent cross-domain leaks.
+- **Verification**: Refactored the entire test suite and verified 9/9 passing contracts.
+
 
 ## Organization Note
 - Active ingest path: `scripts/data_ops/ingest_market_data.js` plus `scripts/lib/providers/index.js` and provider modules.

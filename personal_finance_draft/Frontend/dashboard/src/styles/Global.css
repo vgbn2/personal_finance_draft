@@ -1,0 +1,26 @@
+:root {
+  --bg:      #f9fafb;
+  --bg2:     #ffffff;
+  --bg3:     #f3f4f6;
+  --border:  #e2e5ea;
+  --border2: #f3f4f6;
+  --text:    #1a1d23;
+  --muted:   #6b7280;
+  --faint:   #9ca3af;
+  --cyan:    #0284c7;
+  --green:   #16a34a;
+  --red:     #dc2626;
+  --amber:   #d97706;
+  --violet:  #7c3aed;
+  --pink:    #db2777;
+  --font:    'DM Sans', sans-serif;
+  --mono:    'DM Mono', monospace;
+  --r:       4px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5}
+button,input,select{font-family:var(--font)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}

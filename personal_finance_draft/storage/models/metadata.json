@@ -1,0 +1,18 @@
+{
+  "models": [
+    {
+      "name": "cnn_v3",
+      "path": "models/cnn_v3.onnx",
+      "status": "active_prototype",
+      "feature_config": "models/feature_config.yaml",
+      "promoted": false
+    },
+    {
+      "name": "regime_classifier",
+      "path": "models/regime_classifier.onnx",
+      "status": "active_prototype",
+      "feature_config": "models/feature_config.yaml",
+      "promoted": false
+    }
+  ]
+}

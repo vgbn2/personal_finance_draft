@@ -1,0 +1,49 @@
+{
+  "input": [
+    {
+      "family": "equities",
+      "provider": "yahoo",
+      "symbol": "AAPL",
+      "timeframe": "tick",
+      "timestamp": "2026-05-19T10:00:00Z",
+      "close": 99
+    },
+    {
+      "family": "equities",
+      "provider": "mt5",
+      "symbol": "AAPL",
+      "timeframe": "tick",
+      "timestamp": "2026-05-19T10:00:00Z",
+      "close": 100
+    },
+    {
+      "family": "macro",
+      "provider": "fred",
+      "series": "CPI",
+      "timestamp": "2026-05-01T00:00:00Z",
+      "value": 1
+    }
+  ],
+  "result": {
+    "records": [
+      {
+        "family": "equities",
+        "provider": "mt5",
+        "symbol": "AAPL",
+        "timeframe": "tick",
+        "timestamp": "2026-05-19T10:00:00Z",
+        "close": 100
+      },
+      {
+        "family": "macro",
+        "provider": "fred",
+        "series": "CPI",
+        "timestamp": "2026-05-01T00:00:00Z",
+        "value": 1
+      }
+    ],
+    "input_records": 3,
+    "quote_records": 2,
+    "removed_records": 1
+  }
+}

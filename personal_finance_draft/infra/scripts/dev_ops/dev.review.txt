@@ -1,0 +1,2 @@
+remember to
+Use these wrappers to keep the local workflow consistent: build, setup, test, deploy, and data operations should all route through the repo's active CLI/web entrypoints.

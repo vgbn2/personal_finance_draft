@@ -1,0 +1,26 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpp-release:
+    name: C++ release build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build/ci-release -DCMAKE_BUILD_TYPE=Release -DSOVEREIGN_ENABLE_SANITIZERS=OFF -DSOVEREIGN_ENABLE_ONNX_RUNTIME=OFF
+
+      - name: Build
+        run: cmake --build build/ci-release --parallel
