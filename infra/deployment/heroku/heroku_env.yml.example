@@ -1,0 +1,6 @@
+config:
+  NODE_ENV: production
+  SOVEREIGN_WEB_HOST: 0.0.0.0
+  SOVEREIGN_WEB_PORT: "8787"
+  # Optional overrides for review apps or staging-like runs.
+  # SOVEREIGN_WEB_TITLE: Sovereign Trading Platform

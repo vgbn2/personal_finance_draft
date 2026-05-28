@@ -1,0 +1,4 @@
+Regime subtree review note:
+- Keep regime detection deterministic and exportable through headers.
+- Prefer a factory/API seam rather than including `.cpp` in tests.
+- If new regime logic is added, keep the state/description contract stable.

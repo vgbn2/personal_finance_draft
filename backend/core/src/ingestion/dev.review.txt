@@ -1,0 +1,4 @@
+Ingestion subtree review note:
+- Keep provider boundaries explicit and fail closed on missing inputs.
+- Prefer recorded or file-backed fixtures for tests.
+- Avoid adding new ingestion shells without a concrete data contract.

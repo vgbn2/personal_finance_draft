@@ -1,0 +1,60 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  node-cli:
+    name: Node CLI tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Check active JavaScript entrypoints
+        run: |
+          node --check scripts/lib/quote_router.js
+          node --check scripts/data_ops/ingest_market_data.js
+          node --check scripts/cli/sovereign_cli.js
+          node --check scripts/tui_cli/intersection.js
+          node --check web/app.js
+
+      - name: Type-check execution gateway
+        run: node node_modules/typescript/bin/tsc -p execution_gateway/tsconfig.json --noEmit
+
+      - name: Run Node tests
+        run: npm test
+
+  cpp-debug:
+    name: C++ debug sanitizer tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build/ci-debug -DCMAKE_BUILD_TYPE=Debug -DSOVEREIGN_ENABLE_SANITIZERS=ON -DSOVEREIGN_ENABLE_ONNX_RUNTIME=OFF
+
+      - name: Build
+        run: cmake --build build/ci-debug --parallel
+
+      - name: Run CTest
+        run: ctest --test-dir build/ci-debug/cpp_core --output-on-failure
+

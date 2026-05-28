@@ -1,0 +1,3 @@
+interface:
+  display_name: "Repo Global Protocol"
+  short_description: "Canonical first-read repo workflow and truth map"

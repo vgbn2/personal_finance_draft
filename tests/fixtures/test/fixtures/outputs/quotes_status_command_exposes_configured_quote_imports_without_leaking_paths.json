@@ -1,0 +1,70 @@
+{
+  "payload": {
+    "ok": true,
+    "type": "quote_sources",
+    "schema_version": 1,
+    "enabled": true,
+    "providers": [
+      {
+        "provider": "headway_mt5",
+        "enabled": true,
+        "configured": false,
+        "env": null,
+        "priority": 101,
+        "status": "not_configured",
+        "records": 0,
+        "stale_records": 0,
+        "freshness_issues": 0,
+        "message": null
+      },
+      {
+        "provider": "mt5",
+        "enabled": true,
+        "configured": true,
+        "env": "SOVEREIGN_MT5_QUOTES_PATH",
+        "priority": 100,
+        "status": "ok",
+        "records": 1,
+        "stale_records": 0,
+        "freshness_issues": 0,
+        "message": null
+      },
+      {
+        "provider": "webull",
+        "enabled": true,
+        "configured": false,
+        "env": null,
+        "priority": 92,
+        "status": "not_configured",
+        "records": 0,
+        "stale_records": 0,
+        "freshness_issues": 0,
+        "message": null
+      }
+    ],
+    "records": 1,
+    "stale_records": 0,
+    "freshness_issues": 0,
+    "selected_records": 1,
+    "deduplication": {
+      "input_records": 1,
+      "quote_records": 1,
+      "output_records": 1,
+      "removed_records": 0,
+      "policy": "provider_priority_then_quality"
+    },
+    "symbols": [
+      {
+        "family": "equities",
+        "symbol": "AAPL",
+        "provider": "mt5",
+        "timeframe": "tick",
+        "timestamp": "2026-05-19T10:00:00.000Z",
+        "close": 100.1,
+        "bid": 100,
+        "ask": 100.2
+      }
+    ],
+    "errors": []
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "payload": {
+    "available": true,
+    "path": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\personal_finance_draft\\cpp_core\\build\\manual\\sovereign_wealth.exe",
+    "exit_code": 0,
+    "type": "market_data_summary",
+    "engine": "sovereign_cpp_core",
+    "schema_version": 1,
+    "ok": true,
+    "input": "C:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/data/cache/backtest_history.json",
+    "summary": {
+      "symbol": "AAPL",
+      "timeframe": "1d",
+      "bars": 5,
+      "first_close": 301.91,
+      "last_close": 308.82,
+      "min_close": 301.91,
+      "max_close": 308.82,
+      "total_volume": 89037300
+    },
+    "quality": {
+      "ok": true,
+      "accepted_records": 5,
+      "rejected_records": 0,
+      "reasons": [],
+      "rejected_total": 0
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "snapshot": {
+    "mode": "backtest_history",
+    "fetched_at": "2026-05-18T00:00:00.000Z",
+    "sources": [
+      {
+        "family": "prediction_market",
+        "provider": "kalshi",
+        "symbol": "fed_rate_cut_prob",
+        "market_id": "KXTEST",
+        "timeframe": "1d",
+        "timestamp": "2025-05-18T00:00:00.000Z",
+        "open": 0.4,
+        "high": 0.6,
+        "low": 0.3,
+        "close": 0.55,
+        "volume": 5000,
+        "open_interest": 1000
+      }
+    ],
+    "errors": []
+  },
+  "report": {
+    "ok": true,
+    "mode": "backtest_history",
+    "fetched_at": "2026-05-18T00:00:00.000Z",
+    "total_records": 1,
+    "usable_records": 1,
+    "rejected_records": 0,
+    "counts": {
+      "error": 0,
+      "warning": 1
+    },
+    "by_family": {
+      "prediction_market": {
+        "records": 1,
+        "errors": 0,
+        "warnings": 1
+      }
+    },
+    "rejected_keys": [],
+    "issues": [
+      {
+        "severity": "warning",
+        "code": "stale_record",
+        "key": "prediction_market:kalshi:fed_rate_cut_prob:1d:2025-05-18T00:00:00.000Z",
+        "family": "prediction_market",
+        "message": "record age 525600m exceeds freshness threshold 10080m"
+      }
+    ],
+    "provider_errors": [],
+    "reject_stale": false,
+    "freshness": {
+      "stale_records": 0,
+      "issues": 1
+    },
+    "reliability": {
+      "samples": [
+        {
+          "key": "prediction_market:kalshi:fed_rate_cut_prob:1d:2025-05-18T00:00:00.000Z",
+          "family": "prediction_market",
+          "provider": "kalshi",
+          "symbol": "fed_rate_cut_prob",
+          "score": 0.409
+        }
+      ]
+    }
+  },
+  "usableSources": [
+    {
+      "family": "prediction_market",
+      "provider": "kalshi",
+      "symbol": "fed_rate_cut_prob",
+      "market_id": "KXTEST",
+      "timeframe": "1d",
+      "timestamp": "2025-05-18T00:00:00.000Z",
+      "open": 0.4,
+      "high": 0.6,
+      "low": 0.3,
+      "close": 0.55,
+      "volume": 5000,
+      "open_interest": 1000
+    }
+  ]
+}

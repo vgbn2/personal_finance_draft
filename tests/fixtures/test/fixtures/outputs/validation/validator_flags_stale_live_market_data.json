@@ -1,0 +1,69 @@
+{
+  "snapshot": {
+    "mode": "live",
+    "fetched_at": "2026-05-18T00:00:00.000Z",
+    "sources": [
+      {
+        "family": "equities",
+        "provider": "yahoo",
+        "symbol": "SPY",
+        "timeframe": "1d",
+        "timestamp": "2026-05-12T20:00:00.000Z",
+        "open": 100,
+        "high": 101,
+        "low": 99,
+        "close": 100.5,
+        "volume": 1000
+      }
+    ],
+    "errors": []
+  },
+  "report": {
+    "ok": false,
+    "mode": "live",
+    "fetched_at": "2026-05-18T00:00:00.000Z",
+    "total_records": 1,
+    "usable_records": 0,
+    "rejected_records": 1,
+    "counts": {
+      "error": 1,
+      "warning": 0
+    },
+    "by_family": {
+      "equities": {
+        "records": 1,
+        "errors": 1,
+        "warnings": 0
+      }
+    },
+    "rejected_keys": [
+      "equities:yahoo:SPY:1d:2026-05-12T20:00:00.000Z"
+    ],
+    "issues": [
+      {
+        "severity": "error",
+        "code": "stale_record",
+        "key": "equities:yahoo:SPY:1d:2026-05-12T20:00:00.000Z",
+        "family": "equities",
+        "message": "record age 7440m exceeds freshness threshold 4320m"
+      }
+    ],
+    "provider_errors": [],
+    "reject_stale": true,
+    "freshness": {
+      "stale_records": 1,
+      "issues": 1
+    },
+    "reliability": {
+      "samples": [
+        {
+          "key": "equities:yahoo:SPY:1d:2026-05-12T20:00:00.000Z",
+          "family": "equities",
+          "provider": "yahoo",
+          "symbol": "SPY",
+          "score": 0.606
+        }
+      ]
+    }
+  }
+}

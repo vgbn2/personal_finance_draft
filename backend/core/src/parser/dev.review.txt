@@ -1,0 +1,4 @@
+Parser subtree review note:
+- Parsers should normalize and validate at the boundary.
+- Prefer small helpers that are reusable by CSV and JSON adapters.
+- New parsers should land with tests proving malformed input is rejected.

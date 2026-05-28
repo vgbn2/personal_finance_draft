@@ -1,0 +1,25 @@
+{
+  "name": "sovereign-trading-platform",
+  "description": "Local-first trading platform web/API bridge with CLI-backed data validation and dashboard surfaces.",
+  "repository": "https://github.com/vgbn2/personal_finance_draft.git",
+  "keywords": [
+    "node",
+    "trading",
+    "quant",
+    "dashboard"
+  ],
+  "env": {
+    "NODE_ENV": {
+      "value": "production"
+    },
+    "SOVEREIGN_WEB_HOST": {
+      "value": "0.0.0.0"
+    },
+    "SOVEREIGN_WEB_PORT": {
+      "value": "8787"
+    }
+  },
+  "scripts": {
+    "postdeploy": "node scripts/cli/sovereign_cli.js status --json"
+  }
+}

@@ -1,0 +1,4 @@
+Strategies subtree review note:
+- Keep strategies small, composable, and explicit about side and confidence.
+- Prefer thin heuristics around a shared interface instead of standalone one-off binaries.
+- Add tests whenever a strategy module graduates from compatibility to behavior.
