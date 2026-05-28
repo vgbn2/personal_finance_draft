@@ -1,0 +1,21 @@
+# Sovereign CLI - Rust local core
+#
+# The Node CLI remains the operational surface, but this crate now backs the
+# local Rust CLI core with command, config, portfolio, backtest, and broker
+# helper modules.
+#
+# Current operational CLI: scripts/cli/sovereign_cli.js (Node.js)
+# Use this Rust crate for local CLI-core parity work.
+
+[package]
+name = "sovereign-cli"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+tokio = { version = "1.0", features = ["full"] }
+reqwest = { version = "0.11", features = ["json"] }
+sqlx = { version = "0.6", features = ["runtime-tokio-rustls", "sqlite"] }

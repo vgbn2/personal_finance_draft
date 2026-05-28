@@ -1,0 +1,2 @@
+.backtest-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 16px; }
+.backtest-item { border-radius: 14px; border: 1px solid var(--border); padding: 14px; background: linear-gradient(180deg, #fff, #fafafa); }

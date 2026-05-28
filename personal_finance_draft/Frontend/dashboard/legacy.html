@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Planner — VND</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --bg:       #f9fafb;
+  --bg2:      #ffffff;
+  --bg3:      #f9fafb;
+  --border:   #e2e5ea;
+  --border2:  #f3f4f6;
+  --text:     #1a1d23;
+  --muted:    #6b7280;
+  --faint:    #9ca3af;
+  --cyan:     #0284c7;
+  --green:    #16a34a;
+  --red:      #dc2626;
+  --amber:    #d97706;
+  --violet:   #7c3aed;
+  --pink:     #db2777;
+  --font:     'DM Sans', sans-serif;
+  --mono:     'DM Mono', monospace;
+  --r:        4px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5}
+button,input,select{font-family:var(--font)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ═══════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════ */
+.shell{display:grid;grid-template-rows:48px 1fr;height:100vh;overflow:hidden}
+
+/* TOPBAR */
+.topbar{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:0;padding:0 16px;
+  position:relative;z-index:50;
+}
+.brand{font-size:13px;font-weight:600;color:var(--text);letter-spacing:.02em;margin-right:24px;white-space:nowrap}
+.brand em{color:var(--cyan);font-style:normal}
+.tabs{display:flex;height:100%;gap:0}
+.tab{
+  height:100%;padding:0 16px;font-size:12px;font-weight:500;
+  border:none;background:transparent;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;
+}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.pill{font-size:11px;font-family:var(--mono);padding:3px 8px;border-radius:99px;background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
+
+/* BODY */
+.body{display:grid;grid-template-columns:260px 1fr;overflow:hidden}
+@media(max-width:800px){.body{grid-template-columns:1fr}}
+
+/* SIDEBAR */
+.sidebar{
+  background:var(--bg2);border-right:1px solid var(--border);
+  overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:0;
+}
+.sb-section{margin-bottom:16px}
+.sb-section-head{
+  font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);padding:6px 4px;margin-bottom:6px;
+  border-bottom:1px solid var(--border);cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  user-select:none;
+}
+.sb-section-head:hover{color:var(--muted)}
+.sb-section-sub{font-size:9px;color:var(--faint);padding:0 4px;margin-bottom:8px;line-height:1.2;font-style:italic}
+.sb-section-body{display:flex;flex-direction:column;gap:8px}
+.sb-section-body.collapsed{display:none}
+.field{display:flex;flex-direction:column;gap:3px}
+.field-row{display:flex;justify-content:space-between;align-items:baseline}
+.field-label{font-size:11px;color:var(--muted)}
+.field-val{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cyan)}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:3px;border-radius:2px;
+  background:var(--border2);outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:12px;height:12px;border-radius:50%;
+  background:var(--cyan);border:2px solid var(--bg2);
+  box-shadow:0 0 0 1px var(--cyan);transition:transform .1s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.25)}
+.toggle-row{display:flex;justify-content:space-between;align-items:center}
+.toggle-label{font-size:11px;color:var(--muted)}
+.toggle{
+  width:32px;height:18px;border-radius:9px;border:none;cursor:pointer;
+  background:var(--border2);position:relative;transition:background .2s;flex-shrink:0;
+}
+.toggle::after{
+  content:'';position:absolute;left:2px;top:2px;width:14px;height:14px;
+  border-radius:50%;background:#fff;transition:transform .2s;
+}
+.toggle.on{background:var(--cyan)}
+.toggle.on::after{transform:translateX(14px)}
+.mobile-toggle{display:none;position:fixed;bottom:20px;right:20px;width:48px;height:48px;border-radius:50%;background:var(--cyan);color:#fff;border:none;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:300;cursor:pointer;font-size:20px;align-items:center;justify-content:center}
+@media(max-width:800px){
+  .mobile-toggle{display:flex}
+  .sidebar{position:fixed;inset:0;z-index:250;transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+}
+.events-list{display:flex;flex-direction:column;gap:4px}
+.event-item{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  padding:6px 8px;font-size:11px;display:flex;justify-content:space-between;
+  align-items:center;gap:4px;
+}
+.event-item .ev-label{color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.event-item .ev-val{font-family:var(--mono);color:var(--amber);white-space:nowrap}
+.event-item .ev-del{background:none;border:none;color:var(--faint);cursor:pointer;font-size:13px;padding:0 2px}
+.event-item .ev-del:hover{color:var(--red)}
+.add-event-btn{
+  width:100%;padding:6px;font-size:11px;background:var(--bg3);
+  border:1px dashed var(--border2);border-radius:var(--r);color:var(--muted);
+  cursor:pointer;transition:all .15s;
+}
+.add-event-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;
+  align-items:center;justify-content:center;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:8px;
+  padding:20px;width:340px;display:flex;flex-direction:column;gap:12px;
+}
+.modal h3{font-size:14px;font-weight:600;color:var(--text)}
+.modal-field{display:flex;flex-direction:column;gap:4px}
+.modal-field label{font-size:11px;color:var(--muted)}
+.modal-field input,.modal-field select{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);
+  color:var(--text);padding:7px 10px;font-size:12px;outline:none;
+}
+.modal-field input:focus,.modal-field select:focus{border-color:var(--cyan)}
+.modal-field select option{background:var(--bg2)}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.btn{
+  padding:7px 16px;font-size:12px;font-weight:600;border:none;
+  border-radius:var(--r);cursor:pointer;transition:all .15s;
+}
+.btn-primary{background:var(--cyan);color:var(--bg)}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{background:var(--bg3);color:var(--muted);border:1px solid var(--border2)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2)}
+
+/* MAIN */
+.main{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+
+/* PANEL */
+.panel{display:none;flex-direction:column;gap:14px}
+.panel.active{display:flex}
+
+/* METRIC ROW */
+.metrics{
+  display:grid;gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:var(--r);overflow:hidden;
+}
+.metric{background:var(--bg2);padding:12px 14px}
+.metric-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.metric-val{font-family:var(--mono);font-size:18px;font-weight:500;letter-spacing:-.3px}
+.metric-sub{font-size:10px;color:var(--faint);margin-top:2px}
+.mv-cyan{color:var(--cyan)}
+.mv-green{color:var(--green)}
+.mv-red{color:var(--red)}
+.mv-amber{color:var(--amber)}
+.mv-violet{color:var(--violet)}
+
+/* CARDS */
+.card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.05);
+}
+.card-head{
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.card-title{font-size:12px;font-weight:600;color:var(--text)}
+.card-sub{font-size:10px;color:var(--faint)}
+.card-body{padding:14px}
+.chart-wrap{position:relative}
+.chart-wrap.h200{height:200px}
+.chart-wrap.h240{height:240px}
+.chart-wrap.h280{height:280px}
+.chart-wrap.h320{height:320px}
+
+/* GRID LAYOUTS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g32{display:grid;grid-template-columns:3fr 2fr;gap:12px}
+.g23{display:grid;grid-template-columns:2fr 3fr;gap:12px}
+@media(max-width:1000px){.g2,.g3,.g32,.g23{grid-template-columns:1fr}}
+
+/* TABLE */
+.tbl-wrap{overflow:auto;border:1px solid var(--border);border-radius:var(--r);max-height:260px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{
+  position:sticky;top:0;z-index:1;background:var(--bg3);
+  color:var(--faint);font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  padding:7px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;
+}
+thead th:first-child{text-align:left}
+tbody td{
+  padding:7px 10px;text-align:right;border-bottom:1px solid var(--border);
+  font-family:var(--mono);color:var(--text);white-space:nowrap;
+}
+tbody td:first-child{text-align:left;font-family:var(--font);color:var(--muted);font-weight:500}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg3)}
+.tc{color:var(--cyan)!important;font-weight:500}
+.tg{color:var(--green)!important;font-weight:500}
+.tr{color:var(--red)!important;font-weight:500}
+.ta{color:var(--amber)!important;font-weight:500}
+.tv{color:var(--violet)!important;font-weight:500}
+
+/* ALERT */
+.alert{padding:9px 12px;border-radius:var(--r);font-size:11px;font-weight:500;margin-bottom:4px}
+.alert-warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);color:var(--amber)}
+.alert-err{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);color:var(--red)}
+
+/* HEATMAP */
+.heatmap-wrap{overflow:auto}
+.heatmap{border-collapse:collapse;font-size:10px;font-family:var(--mono);width:100%}
+.heatmap th{padding:5px 8px;color:var(--faint);font-weight:600;white-space:nowrap;text-align:center}
+.heatmap th:first-child{text-align:left}
+.heatmap td{padding:5px 8px;text-align:center;white-space:nowrap;border:1px solid var(--bg)}
+
+/* HOUSE CARDS */
+.hcards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:900px){.hcards{grid-template-columns:1fr}}
+.hcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.hcard-head{padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.hc-cash .hcard-head{border-bottom:2px solid var(--cyan);color:var(--cyan)}
+.hc-mort .hcard-head{border-bottom:2px solid var(--amber);color:var(--amber)}
+.hc-rent .hcard-head{border-bottom:2px solid var(--green);color:var(--green)}
+.hcard-body{padding:12px 14px;display:flex;flex-direction:column;gap:0}
+.hrow{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px}
+.hrow:last-of-type{border-bottom:none}
+.hl{color:var(--muted)}
+.hv{font-family:var(--mono);font-weight:500;color:var(--text)}
+.hcard-verdict{margin:10px 14px;padding:8px;border-radius:var(--r);font-size:11px;font-weight:600;text-align:center}
+.hv-win{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:var(--green)}
+.hv-lose{background:var(--bg3);border:1px solid var(--border);color:var(--faint)}
+
+/* FIRE */
+.fire-gauge{display:flex;flex-direction:column;gap:6px;padding:14px}
+.gauge-bar-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.gauge-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--violet),var(--cyan));transition:width .4s}
+.fire-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:900px){.fire-grid{grid-template-columns:1fr}}
+.fire-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.fire-card-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.fire-card-val{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--violet);margin-bottom:4px}
+.fire-card-sub{font-size:11px;color:var(--muted)}
+
+/* LEGEND */
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--muted)}
+.leg{display:flex;align-items:center;gap:5px}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.leg-line{width:16px;height:2px;flex-shrink:0}
+.leg-dash{width:16px;height:2px;flex-shrink:0;border-top:2px dashed}
+
+/* EXPORT BAR */
+.export-bar{display:flex;gap:8px;justify-content:flex-end}
+.exp-btn{
+  padding:5px 12px;font-size:11px;font-weight:600;border-radius:var(--r);cursor:pointer;
+  background:var(--bg3);border:1px solid var(--border2);color:var(--muted);
+  transition:all .15s;
+}
+.exp-btn:hover{color:var(--cyan);border-color:var(--cyan)}
+
+/* SPINNER */
+.spinner{display:none;font-size:11px;color:var(--muted);align-items:center;gap:5px}
+.spinner.on{display:flex}
+.spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* BADGE */
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;white-space:nowrap}
+.badge-p90{background:rgba(56,189,248,.15);color:var(--cyan);border:1px solid rgba(56,189,248,.3)}
+.badge-p50{background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)}
+.badge-p10{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+
+/* ASSET ALLOC */
+.alloc-bar{height:10px;border-radius:5px;overflow:hidden;display:flex;margin:6px 0}
+.alloc-seg{height:100%;transition:width .3s}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══ TOPBAR ═══ -->
+<header class="topbar">
+  <div class="brand">Financial <em>Planner</em></div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="forecast">Forecast</button>
+    <button class="tab" data-tab="montecarlo">Monte Carlo</button>
+    <button class="tab" data-tab="house">House</button>
+    <button class="tab" data-tab="fire">FIRE</button>
+    <button class="tab" data-tab="kids">Kids</button>
+    <button class="tab" data-tab="sensitivity">Sensitivity</button>
+  </nav>
+  <div class="topbar-right">
+    <span class="pill" id="pillCurrency">VND · M</span>
+    <div class="export-bar">
+      <button class="exp-btn" onclick="exportCSV()">↓ CSV</button>
+      <button class="exp-btn" onclick="exportPNG()">↓ PNG</button>
+    </div>
+  </div>
+</header>
+
+<div class="body">
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar" id="sidebar">
+
+  <!-- PILLAR 1: HUMAN CAPITAL -->
+  <div class="sb-section" style="border-left: 3px solid var(--cyan)">
+    <div class="sb-section-head" onclick="toggleSection(this)">Human Capital <span>▾</span></div>
+    <div class="sb-section-sub">Income, Expenses, Kids & Family</div>
+    <div class="sb-section-body">
+      <div class="field">
+        <div class="field-row"><span class="field-label">Monthly wage (M)</span><span class="field-val" id="vWage">20</span></div>
+        <input type="range" id="sWage" min="3" max="200" step="1" value="20">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Salary growth (%/yr)</span><span class="field-val" id="vWageGrow">5.0%</span></div>
+        <input type="range" id="sWageGrow" min="0" max="25" step="0.5" value="5">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Essential base/mo (M)</span><span class="field-val" id="vEss">3.0</span></div>
+        <input type="range" id="sEss" min="0.5" max="20" step="0.5" value="3">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Discretionary/mo (M)</span><span class="field-val" id="vDisc">4.0</span></div>
+        <input type="range" id="sDisc" min="0.5" max="20" step="0.5" value="4">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Number of kids</span><span class="field-val" id="vKids">0</span></div>
+        <input type="range" id="sKids" min="0" max="5" step="1" value="0">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Cost per kid (M/mo)</span><span class="field-val" id="vKidCost">5.0</span></div>
+        <input type="range" id="sKidCost" min="0" max="30" step="0.5" value="5">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Education fund (M/kid)</span><span class="field-val" id="vKidEd">500</span></div>
+        <input type="range" id="sKidEd" min="0" max="5000" step="100" value="500">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Kid arrival year</span><span class="field-val" id="vKidYear">1</span></div>
+        <input type="range" id="sKidYear" min="0" max="20" step="1" value="1">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Simulation Years</span><span class="field-val" id="vYears">20</span></div>
+        <input type="range" id="sYears" min="1" max="40" step="1" value="20">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Emergency fund (mo)</span><span class="field-val" id="vEmFund">6</span></div>
+        <input type="range" id="sEmFund" min="0" max="24" step="1" value="6">
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 2: SOVEREIGN ALPHA (MARKETS & WEALTH) -->
+  <div class="sb-section" style="border-left: 3px solid var(--green)">
+    <div class="sb-section-head" onclick="toggleSection(this)">Sovereign Alpha <span>▾</span></div>
+    <div class="sb-section-sub">Portfolio Returns, Inflation & Tax</div>
+    <div class="sb-section-body">
+      <div class="field">
+        <div class="field-row"><span class="field-label">Initial Portfolio (M)</span><span class="field-val" id="vInitInv">1,000</span></div>
+        <input type="range" id="sInitInv" min="0" max="100000" step="500" value="1000">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Expected return (%/yr)</span><span class="field-val" id="vRet">12.0%</span></div>
+        <input type="range" id="sRet" min="0" max="35" step="0.5" value="12">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Equity allocation (%)</span><span class="field-val" id="vEqPct">70%</span></div>
+        <input type="range" id="sEqPct" min="0" max="100" step="5" value="70">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Inflation avg (%/yr)</span><span class="field-val" id="vEssInf">8.0%</span></div>
+        <input type="range" id="sEssInf" min="0" max="25" step="0.5" value="8">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">VND depreciation (%/yr)</span><span class="field-val" id="vVndDep">3.0%</span></div>
+        <input type="range" id="sVndDep" min="0" max="15" step="0.5" value="3">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Market Volatility (StdDev)</span><span class="field-val" id="vRetSd">6.0%</span></div>
+        <input type="range" id="sRetSd" min="0" max="25" step="0.5" value="6">
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Apply income tax (PIT)</span>
+        <button class="toggle on" id="tTax" onclick="toggleBtn(this,'taxOn')"></button>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Tax Mode</span>
+        <div style="display:flex;gap:4px">
+           <button class="btn btn-ghost btn-sm on" id="btnTaxAuto" style="padding:2px 8px;font-size:10px" onclick="setTaxMode('auto')">Auto (VN)</button>
+           <button class="btn btn-ghost btn-sm" id="btnTaxFlat" style="padding:2px 8px;font-size:10px" onclick="setTaxMode('flat')">Flat</button>
+        </div>
+      </div>
+      <div class="field" id="taxRateField" style="display:none">
+        <div class="field-row"><span class="field-label">Flat PIT rate (%)</span><span class="field-val" id="vTaxRate">20.0%</span></div>
+        <input type="range" id="sTaxRate" min="0" max="45" step="1" value="20">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Capital gains tax (%)</span><span class="field-val" id="vCgtRate">0.1%</span></div>
+        <input type="range" id="sCgtRate" min="0" max="30" step="0.1" value="0.1">
+      </div>
+      <div class="alloc-bar" id="allocBar" style="margin-top:12px">
+        <div class="alloc-seg" style="background:var(--cyan)" id="allocEq"></div>
+        <div class="alloc-seg" style="background:var(--violet)" id="allocBd"></div>
+        <div class="alloc-seg" style="background:var(--border2)" id="allocCash"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 3: HOUSING STRATEGY -->
+  <div class="sb-section" style="border-left: 3px solid var(--amber)">
+    <div class="sb-section-head" onclick="toggleSection(this)">Housing Strategy <span>▾</span></div>
+    <div class="sb-section-sub" id="housingSub">Living at parents · No housing cost</div>
+    <div class="sb-section-body">
+      <div class="toggle-row">
+        <span class="toggle-label">Pay for housing (rent/buy)</span>
+        <button class="toggle" id="tHousing" onclick="toggleHousing(this)"></button>
+      </div>
+      <div class="toggle-row" style="margin-top:6px">
+        <span class="toggle-label">Leverage: Borrow to Invest</span>
+        <button class="toggle" id="tLeverage" onclick="toggleLeverage(this)"></button>
+      </div>
+
+      <div id="housingFields" style="display:none;flex-direction:column;gap:8px;margin-top:8px">
+        <div class="field"><div class="field-row"><span class="field-label">Purchase/Rent Year</span><span class="field-val" id="vHouseYear">Yr 1</span></div><input type="range" id="sHouseYear" min="1" max="40" step="1" value="1"></div>
+        <div class="field"><div class="field-row"><span class="field-label">House price (M)</span><span class="field-val" id="vHPrice">5,000</span></div><input type="range" id="sHPrice" min="500" max="30000" step="100" value="5000"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Down payment (%)</span><span class="field-val" id="vDown">20%</span></div><input type="range" id="sDown" min="5" max="80" step="1" value="20"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Mortgage rate (%/yr)</span><span class="field-val" id="vMortRate">9.0%</span></div><input type="range" id="sMortRate" min="2" max="25" step="0.25" value="9"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Mortgage term (yr)</span><span class="field-val" id="vMortTerm">20</span></div><input type="range" id="sMortTerm" min="5" max="30" step="1" value="20"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Property growth (%/yr)</span><span class="field-val" id="vPropGrow">6.0%</span></div><input type="range" id="sPropGrow" min="0" max="25" step="0.5" value="6"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Maintenance (%/yr)</span><span class="field-val" id="vMaint">1.0%</span></div><input type="range" id="sMaint" min="0" max="5" step="0.25" value="1"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Monthly rent (M)</span><span class="field-val" id="vRent">10.0</span></div><input type="range" id="sRent" min="1" max="100" step="0.5" value="10"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Rent growth (%/yr)</span><span class="field-val" id="vRentGrow">5.0%</span></div><input type="range" id="sRentGrow" min="0" max="20" step="0.5" value="5"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Transaction Cost (%)</span><span class="field-val" id="vTxCost">0.5%</span></div><input type="range" id="sTxCost" min="0" max="10" step="0.1" value="0.5"></div>
+      </div>
+
+      <div id="leverageFields" style="display:none;flex-direction:column;gap:8px;margin-top:8px">
+        <div class="sb-section-sub" style="margin:0;font-style:normal;color:var(--cyan)">Borrow vs parents' collateral, invest at portfolio rate.</div>
+        <div id="levArbitrage" style="font-size:11px;font-family:var(--mono);text-align:center;padding:4px 0;color:var(--green)">Arbitrage: +3.0%/yr</div>
+        <div class="field"><div class="field-row"><span class="field-label">Loan Year</span><span class="field-val" id="vLevYear">Yr 1</span></div><input type="range" id="sLevYear" min="1" max="40" step="1" value="1"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Loan Amount (M)</span><span class="field-val" id="vLoanAmt">2,000</span></div><input type="range" id="sLoanAmt" min="100" max="20000" step="100" value="2000"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Loan Rate (%/yr)</span><span class="field-val" id="vLevRate">9.0%</span></div><input type="range" id="sLevRate" min="2" max="25" step="0.25" value="9"></div>
+        <div class="field"><div class="field-row"><span class="field-label">Loan Term (yr)</span><span class="field-val" id="vLevTerm">10</span></div><input type="range" id="sLevTerm" min="1" max="30" step="1" value="10"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 4: EXIT STRATEGY -->
+  <div class="sb-section" style="border-left: 3px solid var(--violet)">
+    <div class="sb-section-head" onclick="toggleSection(this)">Exit Strategy <span>▾</span></div>
+    <div class="sb-section-sub">FIRE Targets & Safe Withdrawal</div>
+    <div class="sb-section-body">
+      <div class="field">
+        <div class="field-row"><span class="field-label">Safe withdrawal rate (%)</span><span class="field-val" id="vSwr">4.0%</span></div>
+        <input type="range" id="sSwr" min="1" max="10" step="0.25" value="4">
+      </div>
+      <div class="field">
+        <div class="field-row"><span class="field-label">Retire target spend (M/mo)</span><span class="field-val" id="vFireSpend">10.0</span></div>
+        <input type="range" id="sFireSpend" min="1" max="100" step="0.5" value="10">
+      </div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-head" onclick="toggleSection(this)">Lump Sum Events <span>▾</span></div>
+    <div class="sb-section-body">
+      <div class="events-list" id="eventsList"></div>
+      <button class="add-event-btn" onclick="openEventModal()">+ Add Event</button>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+  <!-- ── FORECAST ── -->
+  <div class="panel active" id="panel-forecast">
+    <div id="alertsForecast"></div>
+    <div class="metrics" style="grid-template-columns:repeat(6,1fr)" id="mForecast">
+      <div class="metric"><div class="metric-label">Final Wealth</div><div class="metric-val mv-green" id="mfWealth">—</div><div class="metric-sub">Portfolio value</div></div>
+      <div class="metric"><div class="metric-label">After-Tax Gains</div><div class="metric-val mv-cyan" id="mfGains">—</div><div class="metric-sub">Returns on contrib.</div></div>
+      <div class="metric"><div class="metric-label">Total Contributed</div><div class="metric-val" id="mfContrib">—</div><div class="metric-sub">Cumulative savings</div></div>
+      <div class="metric"><div class="metric-label">Tax Paid (cum.)</div><div class="metric-val mv-red" id="mfTax">—</div><div class="metric-sub">PIT + CGT</div></div>
+      <div class="metric"><div class="metric-label">Avg Savings Rate</div><div class="metric-val mv-amber" id="mfRate">—</div><div class="metric-sub">% of after-tax wage</div></div>
+      <div class="metric"><div class="metric-label">Gains Breakeven</div><div class="metric-val mv-violet" id="mfBreak">—</div><div class="metric-sub">Month gains &gt; contrib.</div></div>
+    </div>
+
+    <div class="g32">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Wealth Trajectory</span>
+          <div class="legend">
+            <span class="leg"><span class="leg-dot" style="background:var(--cyan)"></span>Net Worth</span>
+            <span class="leg"><span class="leg-dash" style="border-color:var(--green)"></span>Portfolio</span>
+            <span class="leg"><span class="leg-dot" style="background:var(--amber)"></span>House Equity</span>
+          </div>
+        </div>
+        <div class="card-body"><div class="chart-wrap h240"><canvas id="cWealth"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Monthly Cash Flow</span><span class="card-sub">Spending &amp; savings</span></div>
+        <div class="card-body"><div class="chart-wrap h240"><canvas id="cFlow"></canvas></div></div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Year</th><th>Wage/yr</th><th>Tax/yr</th><th>Ess/yr</th><th>Disc/yr</th><th>Kid/yr</th><th>Housing/yr</th>
+          <th>Savings/yr</th><th>Rate%</th><th>Lump</th><th>Contrib (cum)</th><th>Gains</th><th>Wealth</th>
+        </tr></thead>
+        <tbody id="tForecast"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── MONTE CARLO ── -->
+  <div class="panel" id="panel-montecarlo">
+    <div class="metrics" style="grid-template-columns:repeat(6,1fr)">
+      <div class="metric"><div class="metric-label">P90 Wealth</div><div class="metric-val mv-cyan" id="mcP90">—</div><div class="metric-sub">Optimistic</div></div>
+      <div class="metric"><div class="metric-label">P50 Wealth</div><div class="metric-val mv-green" id="mcP50">—</div><div class="metric-sub">Median</div></div>
+      <div class="metric"><div class="metric-label">P10 Wealth</div><div class="metric-val mv-red" id="mcP10">—</div><div class="metric-sub">Downside</div></div>
+      <div class="metric"><div class="metric-label">P(Wealth &gt; 0)</div><div class="metric-val" id="mcPos">—</div><div class="metric-sub">Prob. positive</div></div>
+      <div class="metric"><div class="metric-label">P(Hit FIRE)</div><div class="metric-val mv-violet" id="mcFire">—</div><div class="metric-sub">Prob. reach FIRE</div></div>
+      <div class="metric"><div class="metric-label">Median Breakeven</div><div class="metric-val mv-amber" id="mcBreak">—</div><div class="metric-sub">Month gains &gt; 0</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Wealth Fan Chart — Monte Carlo</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="badge badge-p90">P90</span>
+          <span class="badge badge-p50">P50 Median</span>
+          <span class="badge badge-p10">P10</span>
+          <div class="spinner" id="mcSpin"><span class="spin">⟳</span> Running…</div>
+        </div>
+      </div>
+      <div class="card-body"><div class="chart-wrap h280"><canvas id="cMC"></canvas></div></div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Final Wealth Distribution</span><span class="card-sub">Histogram · N simulations</span></div>
+        <div class="card-body"><div class="chart-wrap h200"><canvas id="cMCHist"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Savings Rate Decay</span><span class="card-sub">P10 / P50 / P90 paths</span></div>
+        <div class="card-body"><div class="chart-wrap h200"><canvas id="cMCRate"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HOUSE ── -->
+  <div class="panel" id="panel-house">
+    <div class="metrics" style="grid-template-columns:repeat(5,1fr)">
+      <div class="metric"><div class="metric-label">House Price</div><div class="metric-val" id="hmPrice">—</div><div class="metric-sub">Current</div></div>
+      <div class="metric"><div class="metric-label">Monthly Mortgage</div><div class="metric-val mv-amber" id="hmMort">—</div><div class="metric-sub">P + I</div></div>
+      <div class="metric"><div class="metric-label">Total Interest Paid</div><div class="metric-val mv-red" id="hmInt">—</div><div class="metric-sub">Over sim horizon</div></div>
+      <div class="metric"><div class="metric-label">House Value @ Horizon</div><div class="metric-val mv-green" id="hmFutVal">—</div><div class="metric-sub">After property growth</div></div>
+      <div class="metric"><div class="metric-label">Break-even Rent</div><div class="metric-val mv-violet" id="hmBER">—</div><div class="metric-sub">Rent where Mort = Rent</div></div>
+    </div>
+
+    <div class="hcards">
+      <div class="hcard hc-cash">
+        <div class="hcard-head">A · Cash Purchase</div>
+        <div class="hcard-body" id="hBodyCash"></div>
+        <div class="hcard-verdict" id="hVerdCash"></div>
+      </div>
+      <div class="hcard hc-mort">
+        <div class="hcard-head">B · Mortgage</div>
+        <div class="hcard-body" id="hBodyMort"></div>
+        <div class="hcard-verdict" id="hVerdMort"></div>
+      </div>
+      <div class="hcard hc-rent">
+        <div class="hcard-head">C · Rent + Invest</div>
+        <div class="hcard-body" id="hBodyRent"></div>
+        <div class="hcard-verdict" id="hVerdRent"></div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Net Worth Comparison</span><span class="card-sub">Year-by-year · M</span></div>
+        <div class="card-body"><div class="chart-wrap h240"><canvas id="cHouseNet"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Mortgage Amortization</span><span class="card-sub">Principal vs. Interest / year</span></div>
+        <div class="card-body"><div class="chart-wrap h240"><canvas id="cAmort"></canvas></div></div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Year</th><th>Cash Net Worth</th><th>Mortgage Net Worth</th><th>Rent+Invest Net Worth</th>
+          <th>Princip. Paid</th><th>Interest Paid</th><th>Maintenance</th><th>House Value</th>
+        </tr></thead>
+        <tbody id="tHouse"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── FIRE ── -->
+  <div class="panel" id="panel-fire">
+    <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+      <div class="metric"><div class="metric-label">FIRE Number</div><div class="metric-val mv-violet" id="ffNumber">—</div><div class="metric-sub">Portfolio needed to retire</div></div>
+      <div class="metric"><div class="metric-label">FIRE Date</div><div class="metric-val mv-green" id="ffDate">—</div><div class="metric-sub">Month you cross FIRE number</div></div>
+      <div class="metric"><div class="metric-label">Coast FIRE</div><div class="metric-val mv-cyan" id="ffCoast">—</div><div class="metric-sub">Stop contributing, coast to FIRE</div></div>
+      <div class="metric"><div class="metric-label">Progress Today</div><div class="metric-val mv-amber" id="ffProg">—</div><div class="metric-sub">% of FIRE number (Y1)</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-body fire-gauge" id="fireGauge">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">
+          <span>FIRE Progress over time</span><span id="fireGaugePct">0%</span>
+        </div>
+        <div class="gauge-bar-wrap"><div class="gauge-bar" id="fireBar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="fire-grid">
+      <div class="fire-card">
+        <div class="fire-card-title">Traditional FIRE</div>
+        <div class="fire-card-val" id="ffTrad">—</div>
+        <div class="fire-card-sub">25× annual spend · 4% SWR</div>
+      </div>
+      <div class="fire-card">
+        <div class="fire-card-title">Lean FIRE</div>
+        <div class="fire-card-val" id="ffLean">—</div>
+        <div class="fire-card-sub">25× essentials only</div>
+      </div>
+      <div class="fire-card">
+        <div class="fire-card-title">Fat FIRE</div>
+        <div class="fire-card-val" id="ffFat">—</div>
+        <div class="fire-card-sub">33× annual spend · 3% SWR</div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Portfolio vs. FIRE Number</span><span class="card-sub">Year-by-year</span></div>
+        <div class="card-body"><div class="chart-wrap h240"><canvas id="cFire"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">FIRE SWR Comparison</span><span class="card-sub">Annual withdrawal at different rates</span></div>
+        <div class="card-body"><div class="chart-wrap h240"><canvas id="cFireSwr"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── KIDS ── -->
+  <div class="panel" id="panel-kids">
+    <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+      <div class="metric">
+        <div class="metric-label">Total Parent Tax</div>
+        <div class="metric-val mv-red" id="fkTotal">—</div>
+        <div class="metric-sub">Lifetime child cost</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Monthly Burden</div>
+        <div class="metric-val mv-amber" id="fkMonthly">—</div>
+        <div class="metric-sub">Direct expenses</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">University Fund</div>
+        <div class="metric-val mv-violet" id="fkUni">—</div>
+        <div class="metric-sub">Total at Year 18</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">FIRE Delay</div>
+        <div class="metric-val" id="fkDelay">—</div>
+        <div class="metric-sub">Months lost vs. No Kids</div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Cumulative Cost of Parenting</span><span class="card-sub">Includes inflation and education</span></div>
+        <div class="card-body"><div class="chart-wrap h280"><canvas id="cKidCost"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Expense Composition (Final Year)</span><span class="card-sub">Essentials vs. Disc. vs. Kids</span></div>
+        <div class="card-body"><div class="chart-wrap h280"><canvas id="cKidComp"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SENSITIVITY ── -->
+  <div class="panel" id="panel-sensitivity">
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+      <div class="metric"><div class="metric-label">Base Case Wealth</div><div class="metric-val mv-green" id="senBase">—</div><div class="metric-sub">Current params</div></div>
+      <div class="metric"><div class="metric-label">Best Cell</div><div class="metric-val mv-cyan" id="senBest">—</div><div class="metric-sub">Highest in grid</div></div>
+      <div class="metric"><div class="metric-label">Worst Cell</div><div class="metric-val mv-red" id="senWorst">—</div><div class="metric-sub">Lowest in grid</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Final Wealth Heatmap</span>
+        <span class="card-sub">Return % (cols) × Essential Inflation % (rows) · M VND</span>
+      </div>
+      <div class="card-body heatmap-wrap"><div id="heatmapDiv"></div></div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Wealth vs. Return Rate</span><span class="card-sub">At base inflation · salary growth held constant</span></div>
+        <div class="card-body"><div class="chart-wrap h200"><canvas id="cSenRet"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Wealth vs. Salary Growth</span><span class="card-sub">At base return &amp; inflation</span></div>
+        <div class="card-body"><div class="chart-wrap h200"><canvas id="cSenWage"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div><!-- body -->
+</div><!-- shell -->
+<button class="mobile-toggle" id="mbToggle" onclick="$('sidebar').classList.toggle('open')">☰</button>
+
+<!-- EVENT MODAL -->
+<div class="modal-overlay" id="evModal">
+  <div class="modal">
+    <h3>Add Lump Sum Event</h3>
+    <div class="modal-field">
+      <label>Label</label>
+      <input type="text" id="evLabel" aria-label="Event label">
+      <small class="field-hint">Examples: Bonus, Wedding, Inheritance</small>
+    </div>
+    <div class="modal-field">
+      <label>Year (1–40)</label>
+      <input type="number" id="evYear" min="1" max="40" value="3">
+    </div>
+    <div class="modal-field">
+      <label>Amount (M VND)</label>
+      <input type="number" id="evAmount" value="100">
+    </div>
+    <div class="modal-field">
+      <label>Type</label>
+      <select id="evType">
+        <option value="inflow">Inflow (bonus / inheritance)</option>
+        <option value="outflow">Outflow (expense / purchase)</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeEventModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEvent()">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   STATE
+   FIX #1: S.years was 8 but sYears slider default is 20 → corrected to 20
+   FIX #2: S.discInf was missing → NaN in simForecast on first render → added (mirrors essInf default)
+═══════════════════════════════════════════════ */
+const S = {
+  initInv:1000, years:20, wage:20, wageGrow:5, ess:3, disc:4, emFund:6,
+  ret:12, eqPct:70,
+  essInf:8, discInf:8,
+  vndDep:3,
+  taxOn:true, taxMode:'auto', taxRate:20, cgtRate:0.1,
+  retSd:6, infSd:2, nSims:500,
+  housingOn:false, // OFF = living at parents, no cost
+  houseYear:1, txCost:0.5, hPrice:5000, down:20, mortRate:9, mortTerm:20,
+  propGrow:6, maint:1, rent:10, rentGrow:5,
+  leverageOn:false, levYear:1, loanAmt:2000, levRate:9, levTerm:10,
+  swr:4, fireSpend:10,
+  kids:0, kidCost:5, kidEd:500, kidYear:1,
+  events:[],
+};
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+const $  = id => document.getElementById(id);
+const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
+const S_COLORS = { cyan:'#38bdf8', green:'#34d399', red:'#f87171', amber:'#fbbf24', violet:'#a78bfa', faint:'#9ca3af' };
+function randn(){const u=1-Math.random(),v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+
+function fmtM(v,dp=1){
+  if(!isFinite(v)||isNaN(v)) return '—';
+  const s=v<0?'-':'', a=Math.abs(v);
+  if(a>=1000) return s+(a/1000).toFixed(dp)+'B';
+  if(a>=100)  return s+a.toFixed(0)+'M';
+  return s+a.toFixed(dp)+'M';
+}
+function fmtPct(v,dp=1){return isFinite(v)?v.toFixed(dp)+'%':'—'}
+function fmtComma(v){return Math.round(v).toLocaleString('en-US')}
+
+/* ═══════════════════════════════════════════════
+   CHART REGISTRY
+═══════════════════════════════════════════════ */
+const CR={};
+function mkChart(id,cfg){if(CR[id])CR[id].destroy();CR[id]=new Chart($(id).getContext('2d'),cfg)}
+
+const gx={ticks:{color:'#9ca3af',font:{size:10,family:'DM Mono'}},grid:{color:'#f3f4f6'},border:{color:'#e2e5ea'}};
+const gy={ticks:{color:'#9ca3af',font:{size:10,family:'DM Mono'}},grid:{color:'#f3f4f6'},border:{display:false}};
+const gleg={labels:{font:{size:11,family:'DM Sans'},color:'#6b7f95',boxWidth:10,padding:14}};
+const bopts={responsive:true,maintainAspectRatio:false,scales:{x:gx,y:gy},plugins:{legend:gleg,tooltip:{mode:'index',intersect:false,backgroundColor:'#1c2633',titleColor:'#d4dbe6',bodyColor:'#6b7f95',borderColor:'#2e3d50',borderWidth:1}}};
+
+/* ═══════════════════════════════════════════════
+   SIM CORE — FORECAST
+   FIX #3: yearEnd was returned but never computed → now computed as year-end monthly snapshots
+═══════════════════════════════════════════════ */
+function simForecast(S, retOverride, essInfOverride, discInfOverride, isMC=false){
+  // 1. Geometric Compounding for monthly rates
+  const ret      = (retOverride     ?? S.ret) / 100;
+  const essInf   = (essInfOverride  ?? S.essInf) / 100;
+  const discInf  = (discInfOverride ?? S.discInf) / 100; 
+  
+  const mRet      = Math.pow(1 + ret, 1/12) - 1;
+  const mEssInf   = Math.pow(1 + essInf, 1/12) - 1;
+  const mDiscInf  = Math.pow(1 + discInf, 1/12) - 1;
+  const mWageGrow = Math.pow(1 + S.wageGrow/100, 1/12) - 1;
+  const mVndDep   = Math.pow(1 + S.vndDep/100, 1/12) - 1;
+
+  const taxRate  = S.taxOn ? S.taxRate/100 : 0;
+  const cgtRate  = S.cgtRate / 100;
+  const months   = S.years * 12;
+
+  const kidStartM = S.kidYear * 12;
+  const uniM      = (S.kidYear + 18) * 12;
+  const houseM    = S.houseYear * 12;
+
+  // Housing Setup
+  const price     = S.hPrice || 0;
+  const down      = price * (S.down/100);
+  const loan      = price - down;
+  const mMortRate = S.mortRate / 100 / 12;
+  const nMortPmts = S.mortTerm * 12;
+  const mPmt      = (price > 0 && mMortRate > 0)
+    ? loan * (mMortRate * Math.pow(1+mMortRate, nMortPmts)) / (Math.pow(1+mMortRate, nMortPmts) - 1)
+    : (price > 0 ? loan / nMortPmts : 0);
+
+  // Leverage Loan Setup
+  const levM       = (S.levYear||1) * 12;
+  const levLoan    = S.loanAmt || 0;
+  const levMRate   = (S.levRate||9) / 100 / 12;
+  const levNPmts   = (S.levTerm||10) * 12;
+  const levPmt     = (levLoan > 0 && levMRate > 0)
+    ? levLoan * (levMRate * Math.pow(1+levMRate, levNPmts)) / (Math.pow(1+levMRate, levNPmts) - 1)
+    : (levLoan > 0 ? levLoan / levNPmts : 0);
+
+  const lumpMap = {};
+  S.events.forEach(e => { lumpMap[e.year] = (lumpMap[e.year]||0) + (e.type==='inflow'?1:-1)*e.amount; });
+
+  // 2. Initial Wealth
+  let inv = S.initInv;
+  let totalContrib = S.initInv;
+  let totalTax = 0, breakeven = null;
+  let mortBal = 0, bought = false;
+  let loanBal = 0, levTaken = false;
+  let accumulatedGainsYear = 0;
+  
+  const monthly = [];
+
+  for(let m=1; m<=months; m++){
+    const yr = Math.ceil(m/12);
+    const rw = S.wage * Math.pow(1 + mWageGrow, m-1);
+    
+    let pit = 0;
+    if (S.taxOn) {
+      if (S.taxMode === 'auto') {
+        pit = calculateVnPit(rw);
+      } else {
+        pit = rw * (S.taxRate/100);
+      }
+    }
+    const nw = rw - pit;
+
+    // Inflation with VND drag
+    const infDrag = (1 + mEssInf) * (1 + mVndDep) - 1;
+    const ess = S.ess * Math.pow(1 + infDrag, m-1);
+    const disc = S.disc * Math.pow(1 + (1 + mDiscInf) * (1 + mVndDep) - 1, m-1);
+
+    // Housing Logic
+    let housingCost = 0;
+    let currentHouseVal = 0;
+
+    if (S.housingOn) {
+      if (m < houseM) {
+        housingCost = S.rent * Math.pow(1 + S.rentGrow/100/12, m-1);
+      } else {
+        if (!bought && price > 0) {
+          const upfront = down + (price * S.txCost/100);
+          inv -= upfront;
+          mortBal = loan;
+          bought = true;
+        }
+        if (bought) {
+          currentHouseVal = price * Math.pow(1 + S.propGrow/100/12, m - houseM);
+          if (mortBal > 0) {
+            const interest  = mortBal * mMortRate;
+            const principal = Math.min(mPmt - interest, mortBal);
+            housingCost = mPmt + (currentHouseVal * S.maint/100/12);
+            mortBal = Math.max(0, mortBal - principal);
+          } else {
+            housingCost = currentHouseVal * S.maint/100/12;
+          }
+        }
+      }
+    }
+
+    // Leverage Arbitrage
+    if (S.leverageOn) {
+      if (!levTaken && m >= levM && levLoan > 0) {
+        inv   += levLoan;
+        loanBal = levLoan;
+        levTaken = true;
+      }
+      if (loanBal > 0) {
+        const levInt  = loanBal * levMRate;
+        const levPrin = Math.min(levPmt - levInt, loanBal);
+        housingCost  += levPmt;
+        loanBal = Math.max(0, loanBal - levPrin);
+      }
+    }
+
+    let kidSpend = 0;
+    if(S.kids > 0 && m >= kidStartM) kidSpend = (S.kids * S.kidCost) * Math.pow(1 + infDrag, m-1);
+
+    // CAP: Allow spending to exceed wage ONLY if portfolio is positive.
+    const intendedSpend = ess + disc + housingCost + kidSpend;
+    const maxPossibleSpend = nw + Math.max(0, inv); 
+    const spend = Math.min(intendedSpend, maxPossibleSpend);
+    const save = nw - spend;
+
+    let uniLump = 0;
+    if(m === uniM && S.kids > 0) uniLump = (S.kids * S.kidEd) * Math.pow(1 + infDrag, m-1);
+
+    // Portfolio Returns
+    const prevInv = inv;
+    let currentMRet = mRet;
+    if (isMC) {
+       const mSd = (S.retSd/100) / Math.sqrt(12);
+       currentMRet = mRet + (randn() * mSd);
+    }
+    
+    inv = inv * (1 + currentMRet);
+    const rawGain = inv - prevInv;
+    accumulatedGainsYear += Math.max(0, rawGain);
+
+    // Annual CGT realization
+    let cgt = 0;
+    if (m % 12 === 0) {
+      cgt = accumulatedGainsYear * cgtRate;
+      inv -= cgt;
+      accumulatedGainsYear = 0;
+    }
+
+    let lump = (m % 12 === 1 && lumpMap[yr]) ? lumpMap[yr] : 0;
+    inv += save + lump - uniLump;
+
+    totalContrib += Math.max(0, save) + Math.max(0, lump);
+    totalTax += pit + cgt;
+
+    const houseEquity = currentHouseVal - mortBal;
+    const netWorth = inv + houseEquity - loanBal; // subtract outstanding leverage debt
+    const gains = netWorth - totalContrib;
+    if(breakeven===null && gains>0 && totalContrib>0) breakeven=m;
+
+    monthly.push({
+      m, yr, rw, pit, nw, ess, disc, kidSpend, uniLump, housingCost,
+      spend, save, inv, netWorth, houseEquity, currentHouseVal, mortBal, loanBal,
+      totalContrib, gains, totalTax, rate:(nw>0?(save/nw)*100:0), lump
+    });
+  }
+
+  const yearEnd = monthly.filter(d => d.m % 12 === 0);
+  return {monthly, yearEnd, breakeven, mPmt};
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — FORECAST
+═══════════════════════════════════════════════ */
+function renderForecast(){
+  const {monthly,yearEnd,breakeven}=simForecast(S);
+  const last=monthly[monthly.length-1];
+  const avgRate=monthly.reduce((s,d)=>s+d.rate,0)/monthly.length;
+
+  // Alerts
+  const alerts=[];
+  if(monthly.some(d=>d.save<0)) alerts.push(['warn','Monthly spending will exceed after-tax wage — portfolio will decline in those months.']);
+  if(last && last.inv<0) alerts.push(['err','Negative final portfolio. Reduce spending or increase income.']);
+  $('alertsForecast').innerHTML=alerts.map(([t,m])=>`<div class="alert alert-${t==='warn'?'warn':'err'}">${m}</div>`).join('');
+
+  if(!last) return;
+  $('mfWealth').textContent  = fmtM(last.netWorth);
+  $('mfGains').textContent   = fmtM(Math.max(0,last.gains));
+  $('mfContrib').textContent = fmtM(last.totalContrib);
+  $('mfTax').textContent     = fmtM(last.totalTax);
+  $('mfRate').textContent    = fmtPct(avgRate);
+  $('mfBreak').textContent   = breakeven?'Mo.'+breakeven:'—';
+
+  const lbl=yearEnd.map(d=>'Y'+d.yr);
+
+  mkChart('cWealth',{type:'line',data:{labels:lbl,datasets:[
+    {label:'Net Worth (Total)',data:yearEnd.map(d=>+d.netWorth.toFixed(1)),borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.07)',fill:true,tension:.3,pointRadius:3,borderWidth:2},
+    {label:'Portfolio (Cash)',data:yearEnd.map(d=>+d.inv.toFixed(1)),borderColor:'#34d399',borderDash:[2,2],fill:false,tension:.3,pointRadius:0,borderWidth:1.5},
+    {label:'House Equity',data:yearEnd.map(d=>+d.houseEquity.toFixed(1)),borderColor:'#fbbf24',fill:false,tension:.3,pointRadius:0,borderWidth:1.5},
+    {label:'Total Contributed',data:yearEnd.map(d=>+d.totalContrib.toFixed(1)),borderColor:'#94a3b8',borderDash:[5,5],fill:false,tension:0,pointRadius:0,borderWidth:1},
+  ]},options:bopts});
+
+  mkChart('cFlow',{type:'bar',data:{labels:lbl,datasets:[
+    {label:'Savings',     data:yearEnd.map(d=>+Math.max(0,d.save).toFixed(2)),backgroundColor:'rgba(52,211,153,.5)',stack:'s'},
+    {label:'Deficit (from Portfolio)', data:yearEnd.map(d=>+Math.min(0,d.save).toFixed(2)),backgroundColor:'rgba(248,113,113,.4)',stack:'s'},
+    {label:'Tax',        data:yearEnd.map(d=>+d.pit.toFixed(2)),backgroundColor:'rgba(167,139,250,.4)',stack:'s'},
+    {label:'Housing/Leverage', data:yearEnd.map(d=>+d.housingCost.toFixed(2)),backgroundColor:'rgba(251,191,36,.5)',stack:'s'},
+    {label:'Kids',       data:yearEnd.map(d=>+d.kidSpend.toFixed(2)),backgroundColor:'rgba(248,113,113,.6)',stack:'s'},
+    {label:'Discretionary', data:yearEnd.map(d=>+d.disc.toFixed(2)),backgroundColor:'rgba(251,191,36,.4)',stack:'s'},
+    {label:'Essentials',  data:yearEnd.map(d=>+d.ess.toFixed(2)),backgroundColor:'rgba(56,189,248,.4)',stack:'s'},
+  ]},options:{...bopts,scales:{x:{...gx,stacked:true},y:{...gy,stacked:true}}}});
+
+  $('tForecast').innerHTML=yearEnd.map(d=>{
+    const rc = d.rate >= 20 ? 'tg' : (d.rate <= 5 ? 'tr' : 'ta');
+    const lumpStr=d.lump!==0?`<span class="${d.lump>0?'tg':'tr'}">${fmtM(d.lump)}</span>`:'—';
+    const kidAnn = d.kidSpend*12 + d.uniLump;
+    const kidStr = kidAnn > 0 ? fmtM(kidAnn) : '—';
+    return `<tr>
+      <td>Year ${d.yr}</td>
+      <td>${fmtM(d.rw*12)}</td>
+      <td class="tr">${fmtM(d.pit*12)}</td>
+      <td>${fmtM(d.ess*12)}</td>
+      <td>${fmtM(d.disc*12)}</td>
+      <td class="tr">${kidStr}</td>
+      <td class="tr">${fmtM(d.housingCost*12)}</td>
+      <td class="${d.save<0?'tr':'tg'}">${fmtM(d.save*12)}</td>
+      <td class="${rc}">${fmtPct(d.rate)}</td>
+      <td>${lumpStr}</td>
+      <td>${fmtM(d.totalContrib)}</td>
+      <td class="${d.gains>=0?'tc':'tr'}">${fmtM(d.gains)}</td>
+      <td class="${d.netWorth>=0?'tc':'tr'}">${fmtM(d.netWorth)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — MONTE CARLO
+═══════════════════════════════════════════════ */
+function renderMC(){
+  $('mcSpin').classList.add('on');
+  const fireNum = S.fireSpend * 12 / (S.swr/100);
+  requestAnimationFrame(()=>{
+    const nY=S.years, nS=S.nSims;
+    const perYear=Array.from({length:nY},()=>[]);
+    const perYearRate=Array.from({length:nY},()=>[]);
+    const finals=[], bkArr=[], fireHits=[];
+
+    for(let s=0;s<nS;s++){
+      const retAnn  = clamp(S.ret/100    + randn()*(S.retSd/100),  -0.5,  2.0);
+      const essIA   = clamp(S.essInf/100 + randn()*(S.infSd/100),    0,  0.5);
+      const discIA  = clamp(S.discInf/100 + randn()*(S.infSd/100),   0,  0.5);
+
+      const {monthly, breakeven:bk} = simForecast(S, retAnn*100, essIA*100, discIA*100, true);
+      const last = monthly[monthly.length-1];
+
+      let fireMo = null;
+      monthly.forEach(d => {
+        if(fireMo === null && d.netWorth >= fireNum) fireMo = d.m;
+        if(d.m % 12 === 0){
+          const yr = d.m/12;
+          perYear[yr-1].push(d.netWorth);
+          perYearRate[yr-1].push(d.rate);
+        }
+      });
+
+      if(last) finals.push(last.netWorth);
+      if(bk) bkArr.push(bk);
+      if(fireMo) fireHits.push(fireMo);
+    }
+
+    const pct=(arr,p)=>{const s=[...arr].sort((a,b)=>a-b);return s[Math.floor(p*s.length)]||0};
+
+    $('mcP90').textContent=fmtM(pct(finals,.9));
+    $('mcP50').textContent=fmtM(pct(finals,.5));
+    $('mcP10').textContent=fmtM(pct(finals,.1));
+    $('mcPos').textContent=fmtPct(finals.filter(v=>v>0).length/finals.length*100);
+    $('mcFire').textContent=fmtPct(fireHits.length/nS*100);
+    $('mcBreak').textContent=bkArr.length?'Mo.'+Math.round(pct(bkArr,.5)):'N/A';
+    $('mcSpin').classList.remove('on');
+
+    const lbl=Array.from({length:nY},(_,i)=>'Y'+(i+1));
+    const p10Y=perYear.map(a=>pct(a,.1)), p25Y=perYear.map(a=>pct(a,.25));
+    const p50Y=perYear.map(a=>pct(a,.5)), p75Y=perYear.map(a=>pct(a,.75));
+    const p90Y=perYear.map(a=>pct(a,.9));
+
+    mkChart('cMC',{type:'line',data:{labels:lbl,datasets:[
+      {label:'P90',data:p90Y,borderColor:'#38bdf8',borderWidth:1.5,fill:'+1',backgroundColor:'rgba(56,189,248,.07)',pointRadius:0,tension:.3},
+      {label:'P75',data:p75Y,borderColor:'rgba(52,211,153,.3)',borderWidth:0,fill:'+1',backgroundColor:'rgba(52,211,153,.08)',pointRadius:0,tension:.3},
+      {label:'P50',data:p50Y,borderColor:'#34d399',borderWidth:2.5,fill:'+1',backgroundColor:'rgba(52,211,153,.06)',pointRadius:3,tension:.3},
+      {label:'P25',data:p25Y,borderColor:'rgba(248,113,113,.3)',borderWidth:0,fill:'+1',backgroundColor:'rgba(248,113,113,.05)',pointRadius:0,tension:.3},
+      {label:'P10',data:p10Y,borderColor:'#f87171',borderWidth:1.5,fill:false,pointRadius:0,tension:.3},
+    ]},options:bopts});
+
+    const mn=Math.min(...finals), mx2=Math.max(...finals), bins=20, bw=(mx2-mn)/bins||1;
+    const cnts=Array(bins).fill(0);
+    finals.forEach(v=>{const i=clamp(Math.floor((v-mn)/bw),0,bins-1);cnts[i]++;});
+    mkChart('cMCHist',{type:'bar',data:{labels:cnts.map((_,i)=>fmtM(mn+(i+.5)*bw,0)),datasets:[{label:'Count',data:cnts,backgroundColor:'rgba(56,189,248,.5)',borderColor:'#38bdf8',borderWidth:1}]},options:{...bopts,plugins:{legend:{display:false}}}});
+
+    mkChart('cMCRate',{type:'line',data:{labels:lbl,datasets:[
+      {label:'P90 Rate',data:perYearRate.map(a=>pct(a,.9)),borderColor:'#38bdf8',fill:false,tension:.3,pointRadius:0,borderWidth:1.5},
+      {label:'P50 Rate',data:perYearRate.map(a=>pct(a,.5)),borderColor:'#34d399',fill:false,tension:.3,pointRadius:2,borderWidth:2},
+      {label:'P10 Rate',data:perYearRate.map(a=>pct(a,.1)),borderColor:'#f87171',fill:false,tension:.3,pointRadius:0,borderWidth:1.5},
+    ]},options:bopts});
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — KIDS
+═══════════════════════════════════════════════ */
+function renderKids(){
+  const base = simForecast(S).monthly;
+  const noKids = simForecast({...S, kids:0}).monthly;
+
+  let totalKidCost = 0, maxKidMonthly = 0, totalUni = 0;
+  base.forEach(d => {
+    totalKidCost += (d.kidSpend + d.uniLump);
+    maxKidMonthly = Math.max(maxKidMonthly, d.kidSpend);
+    totalUni += d.uniLump;
+  });
+
+  // FIRE number uses inflation-adjusted target spending
+  const lastM = base[base.length-1] || {ess:0,disc:0};
+  const fireNum = (lastM.ess + lastM.disc) * 12 / (S.swr/100);
+  
+  // Delay uses total netWorth to cross the fireNum threshold
+  const fBase = base.findIndex(d=>d.inv >= fireNum);
+  const fNo   = noKids.findIndex(d=>d.inv >= fireNum);
+  const delay = (fBase !== -1 && fNo !== -1) ? (fBase - fNo) : 0;
+
+  $('fkTotal').textContent   = fmtM(totalKidCost);
+  $('fkMonthly').textContent = fmtM(maxKidMonthly);
+  $('fkUni').textContent     = fmtM(totalUni);
+  $('fkDelay').textContent   = delay > 0 ? Math.round(delay/12) + ' yrs' : '—';
+
+  const annualBase = base.filter(d=>d.m%12===0);
+  const labels = annualBase.map(d=>'Y'+d.yr);
+  const dataKidCum = [];
+  let curKidCum = 0;
+  annualBase.forEach(d=>{
+    curKidCum += (d.kidSpend*12) + d.uniLump;
+    dataKidCum.push(+curKidCum.toFixed(1));
+  });
+
+  mkChart('cKidCost',{type:'line',data:{labels,datasets:[{label:'Cumulative Cost',data:dataKidCum,borderColor:S_COLORS.red,backgroundColor:S_COLORS.red+'20',fill:true,tension:0.3,pointRadius:2}]},options:bopts});
+
+  const finalM = base[base.length-1] || {ess:0,disc:0,kidSpend:0};
+  mkChart('cKidComp',{type:'doughnut',data:{labels:['Essentials','Discretionary','Kids'],datasets:[{data:[+finalM.ess.toFixed(1), +finalM.disc.toFixed(1), +finalM.kidSpend.toFixed(1)],backgroundColor:[S_COLORS.cyan, S_COLORS.amber, S_COLORS.red]}]},options:{...bopts,cutout:'70%',scales:{x:{display:false},y:{display:false}}}});
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — HOUSE
+   FIX #5: removed dead 'const p=S' assignment
+═══════════════════════════════════════════════ */
+function renderHouse(){
+  const years = S.years, price = S.hPrice;
+  const months = years * 12;
+
+  // We run 3 simulations using the core engine with overridden housing params
+  // Both start with the same S.initInv to ensure a fair comparison.
+  
+  // Scenario A: Cash Purchase at houseYear
+  const simA = simForecast({...S, down:100, mortRate:0});
+  // Scenario B: Mortgage at houseYear
+  const simB = simForecast(S);
+  // Scenario C: Rent Forever (Price = 0)
+  const simC = simForecast({...S, hPrice:0});
+
+  const lastA = simA.monthly[months-1], lastB = simB.monthly[months-1], lastC = simC.monthly[months-1];
+  const finalA = lastA?.netWorth||0, finalB = lastB?.netWorth||0, finalC = lastC?.netWorth||0;
+  const maxFinal = Math.max(finalA, finalB, finalC);
+
+  let totalRentPaid = 0;
+  simC.monthly.forEach(d => totalRentPaid += d.housingCost);
+
+  $('hmPrice').textContent  = fmtM(price);
+  $('hmMort').textContent   = fmtM(simB.mPmt)+'/mo';
+  
+  // Totals over simulation
+  let totalInt = 0, totalMaint = 0;
+  simB.monthly.forEach(d => {
+    if (d.m > S.houseYear*12) {
+      const interest = d.mortBal * (S.mortRate/100/12); // Approximate
+      totalInt += interest;
+      totalMaint += (price * S.maint/100/12);
+    }
+  });
+
+  $('hmInt').textContent    = fmtM(totalInt);
+  $('hmFutVal').textContent = fmtM(price * Math.pow(1 + S.propGrow/100, years));
+  
+  // Break-even rent: find rent level where Rent+Invest NW == Mortgage NW
+  // At low rent, renting wins (higher NW). At high rent, mortgage wins (lower NW for renter).
+  // We binary-search for the crossover point.
+  let berLow = 0, berHigh = 200;
+  let ber = berHigh; // default: no crossover found
+  for(let i=0; i<20; i++) {
+    const berMid = (berLow + berHigh) / 2;
+    const testSim = simForecast({...S, hPrice:0, rent:berMid});
+    const testNW = testSim.monthly[months-1]?.netWorth ?? 0;
+    if(testNW > finalB) { berLow = berMid; } else { berHigh = berMid; ber = berMid; }
+  }
+  $('hmBER').textContent = berLow < 1 ? '—' : fmtM(ber) + '/mo';
+
+  function hr(l,v,c=''){return`<div class="hrow"><span class="hl">${l}</span><span class="hv ${c}">${v}</span></div>`}
+  
+  const mPmt = simB.monthly[S.houseYear*12+1]?.housingCost || 0;
+  
+  $('hBodyCash').innerHTML=hr('Purchase Year','Yr '+S.houseYear)+hr('Full Price Outlay',fmtM(price+price*S.txCost/100),'tr')+hr('House value @ Y'+years,fmtM(lastA.currentHouseVal));
+  $('hVerdCash').outerHTML=`<div class="hcard-verdict ${finalA===maxFinal?'hv-win':'hv-lose'}" id="hVerdCash">${finalA===maxFinal?'✓ Best':'—'} · ${fmtM(finalA)}</div>`;
+
+  $('hBodyMort').innerHTML=hr('Purchase Year','Yr '+S.houseYear)+hr('Down + Trans. Cost',fmtM(price*S.down/100 + price*S.txCost/100),'tr')+hr('Total Interest Paid',fmtM(totalInt),'tr')+hr('Mortgage Net Worth',fmtM(finalB),'tg');
+  $('hVerdMort').outerHTML=`<div class="hcard-verdict ${finalB===maxFinal?'hv-win':'hv-lose'}" id="hVerdMort">${finalB===maxFinal?'✓ Best':'—'} · ${fmtM(finalB)}</div>`;
+
+  $('hBodyRent').innerHTML=hr('Rent Forever','✓')+hr('Monthly Rent Target',fmtM(S.rent),'ta')+hr('Total Rent Paid',fmtM(totalRentPaid),'tr')+hr('Rent Net Worth',fmtM(finalC),'tg');
+  $('hVerdRent').outerHTML=`<div class="hcard-verdict ${finalC===maxFinal?'hv-win':'hv-lose'}" id="hVerdRent">${finalC===maxFinal?'✓ Best':'—'} · ${fmtM(finalC)}</div>`;
+
+  const lbl = Array.from({length:years},(_,i)=>'Y'+(i+1));
+  mkChart('cHouseNet',{type:'line',data:{labels:lbl,datasets:[
+    {label:'Cash', data:simA.yearEnd.map(v=>+v.netWorth.toFixed(1)), borderColor:'#38bdf8', fill:false, tension:.3, pointRadius:2, borderWidth:2},
+    {label:'Mortgage', data:simB.yearEnd.map(v=>+v.netWorth.toFixed(1)), borderColor:'#fbbf24', fill:false, tension:.3, pointRadius:2, borderWidth:2},
+    {label:'Rent+Invest', data:simC.yearEnd.map(v=>+v.netWorth.toFixed(1)), borderColor:'#34d399', fill:false, tension:.3, pointRadius:2, borderWidth:2},
+  ]},options:bopts});
+
+  // Mortgage Amortization for Scenario B
+  const mortPrinY = simB.yearEnd.map((d,i) => {
+     const prev = simB.yearEnd[i-1]?.mortBal || (S.hPrice - S.hPrice*S.down/100);
+     return Math.max(0, prev - d.mortBal);
+  });
+  const mortIntY = simB.yearEnd.map((d, i) => {
+    const months = 12;
+    let totalYInt = 0;
+    for(let m = i*12+1; m <= (i+1)*12; m++) {
+      const monthData = simB.monthly[m-1];
+      if (monthData) {
+        totalYInt += monthData.mortBal * (S.mortRate/100/12);
+      }
+    }
+    return totalYInt;
+  });
+
+  mkChart('cAmort',{type:'bar',data:{labels:lbl,datasets:[
+    {label:'Principal',data:mortPrinY,backgroundColor:'rgba(56,189,248,.7)',stack:'a'},
+    {label:'Interest',data:mortIntY,backgroundColor:'rgba(248,113,113,.5)',stack:'a'},
+    {label:'Maintenance',data:lbl.map(()=>price*S.maint/100),backgroundColor:'rgba(251,191,36,.5)',stack:'a'},
+  ]},options:{...bopts,scales:{x:{...gx,stacked:true},y:{...gy,stacked:true}}}});
+
+  $('tHouse').innerHTML=simB.yearEnd.map((d,i)=>{
+    const yr=i+1, C=simA.yearEnd[i].netWorth, M=simB.yearEnd[i].netWorth, R=simC.yearEnd[i].netWorth, mx=Math.max(C,M,R);
+    return`<tr>
+      <td>Year ${yr}</td>
+      <td class="${C===mx?'tc':''}">${fmtM(C)}</td>
+      <td class="${M===mx?'tc':''}">${fmtM(M)}</td>
+      <td class="${R===mx?'tc':''}">${fmtM(R)}</td>
+      <td class="tg">${fmtM(mortPrinY[i])}</td>
+      <td class="tr">${fmtM(mortIntY[i])}</td>
+      <td class="ta">${fmtM(price*S.maint/100)}</td>
+      <td>${fmtM(d.currentHouseVal)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — FIRE
+═══════════════════════════════════════════════ */
+function renderFIRE(){
+  const {monthly,yearEnd}=simForecast(S);
+  const annSpend=S.fireSpend*12;
+  const fireNum = annSpend/(S.swr/100);
+  const leanNum = (S.ess*12)/(S.swr/100);
+  const fatNum  = annSpend/0.03;
+
+  let fireMo=null, coastMo=null;
+  monthly.forEach(d=>{
+    const infDrag = Math.pow(1 + (1 + S.essInf/100) * (1 + S.vndDep/100) - 1, d.m/12);
+    const dynamicFireNum = fireNum * infDrag;
+    if(fireMo===null && d.inv>=dynamicFireNum) fireMo=d.m;
+    
+    const rem=(S.years*12)-d.m;
+    const mCoastRet = Math.pow(1 + S.ret/100, 1/12) - 1;
+    const coastTarget=rem>0 ? dynamicFireNum/Math.pow(1+mCoastRet,rem) : dynamicFireNum;
+    if(coastMo===null && d.inv>=coastTarget) coastMo=d.m;
+  });
+
+  const last=monthly[monthly.length-1];
+  // FIRE progress against netWorth (includes house equity)
+  const prog=last ? last.netWorth/fireNum*100 : 0;
+
+  $('ffNumber').textContent = fmtM(fireNum);
+  $('ffDate').textContent   = fireMo?'Month '+fireMo:'Beyond horizon';
+  $('ffCoast').textContent  = coastMo?'Month '+coastMo:'Beyond horizon';
+  $('ffProg').textContent   = fmtPct(Math.min(100,prog));
+  $('ffTrad').textContent   = fmtM(fireNum);
+  $('ffLean').textContent   = fmtM(leanNum);
+  $('ffFat').textContent    = fmtM(fatNum);
+
+  const finalProg=Math.min(100,(last?.netWorth??0)/fireNum*100);
+  $('fireBar').style.width=finalProg+'%';
+  $('fireGaugePct').textContent=fmtPct(finalProg);
+
+  const lbl=yearEnd.map(d=>'Y'+d.yr);
+  mkChart('cFire',{type:'line',data:{labels:lbl,datasets:[
+    {label:'Portfolio',data:yearEnd.map(d=>+d.inv.toFixed(1)),borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,.07)',fill:true,tension:.3,pointRadius:3,borderWidth:2},
+    {label:'FIRE Number',data:lbl.map(()=>+fireNum.toFixed(1)),borderColor:'#34d399',borderDash:[6,3],fill:false,pointRadius:0,borderWidth:1.5},
+  ]},options:bopts});
+
+  const rates=[2,3,4,5,6,7];
+  const lastInv=last?.inv??0;
+  mkChart('cFireSwr',{type:'bar',data:{
+    labels:rates.map(s=>s+'%'),
+    datasets:[{label:'Annual Income',data:rates.map(s=>+(lastInv*(s/100)).toFixed(1)),backgroundColor:rates.map(r=>r===S.swr?S_COLORS.violet:S_COLORS.cyan+'80')}]
+  },options:{...bopts,plugins:{legend:{display:false}},indexAxis:'y',scales:{x:gy,y:gx}}});
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — SENSITIVITY
+═══════════════════════════════════════════════ */
+function renderSensitivity(){
+  const retVals  =[4,6,8,10,12,15,18,22];
+  const infVals  =[2,4,6,8,10,12,15];
+
+  let globalMin=Infinity, globalMax=-Infinity;
+  const grid=infVals.map(inf=>retVals.map(ret=>{
+    const {monthly}=simForecast({...S,ret,essInf:inf,discInf:inf});
+    const v=monthly[monthly.length-1]?.netWorth??0;
+    if(v<globalMin)globalMin=v;
+    if(v>globalMax)globalMax=v;
+    return v;
+  }));
+
+  function heatColor(v){
+    const t=(v-globalMin)/(globalMax-globalMin+1e-9);
+    if(t<.5){
+      const r=Math.round(248+(251-248)*t*2),g=Math.round(113+(191-113)*t*2),b=Math.round(113*Math.max(0,1-t*4));
+      return`rgb(${r},${g},${b})`;
+    }
+    const t2=(t-.5)*2;
+    const r=Math.round(251+(52-251)*t2),g=Math.round(191+(211-191)*t2),b=Math.round(36+(153-36)*t2);
+    return`rgb(${r},${g},${b})`;
+  }
+  function textColor(v){
+    const t=(v-globalMin)/(globalMax-globalMin+1e-9);
+    return t<.35||t>.65?'#0c1117':'#1c2633';
+  }
+
+  const baseVal=simForecast(S).monthly[S.years*12-1]?.netWorth??0;
+  $('senBase').textContent=fmtM(baseVal);
+  $('senBest').textContent=fmtM(globalMax);
+  $('senWorst').textContent=fmtM(globalMin);
+
+  const hdr=`<tr><th>Inf↓ Ret→</th>${retVals.map(r=>`<th>${r}%</th>`).join('')}</tr>`;
+  const rows=infVals.map((inf,ri)=>`<tr>
+    <th>${inf}%</th>
+    ${retVals.map((_,ci)=>{
+      const v=grid[ri][ci];
+      const bg=heatColor(v),fg=textColor(v);
+      const bold=Math.abs(S.ret-retVals[ci])<0.01&&Math.abs(S.essInf-inf)<0.01?'font-weight:700;outline:2px solid #38bdf8':'';
+      return`<td style="background:${bg};color:${fg};${bold}">${fmtM(v,0)}</td>`;
+    }).join('')}
+  </tr>`).join('');
+  $('heatmapDiv').innerHTML=`<table class="heatmap"><thead>${hdr}</thead><tbody>${rows}</tbody></table>`;
+
+  mkChart('cSenRet',{type:'line',data:{labels:retVals.map(r=>r+'%'),datasets:[{
+    label:'Wealth',
+    data:retVals.map(ret=>{const {monthly}=simForecast({...S,ret}); return +(monthly[monthly.length-1]?.netWorth??0).toFixed(1);}),
+    borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.08)',fill:true,tension:.3,pointRadius:4,borderWidth:2,
+  }]},options:bopts});
+
+  const wageVals=[0,2,3,5,7,10,15];
+  mkChart('cSenWage',{type:'line',data:{labels:wageVals.map(w=>w+'%'),datasets:[{
+    label:'Wealth',
+    data:wageVals.map(wg=>{const {monthly}=simForecast({...S,wageGrow:wg}); return +(monthly[monthly.length-1]?.netWorth??0).toFixed(1);}),
+    borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.08)',fill:true,tension:.3,pointRadius:4,borderWidth:2,
+  }]},options:bopts});
+}
+
+/* ═══════════════════════════════════════════════
+   TAB ROUTING
+═══════════════════════════════════════════════ */
+let activeTab='forecast';
+const TAB_RENDER={
+  'forecast':renderForecast,
+  'montecarlo':renderMC,
+  'kids':renderKids,
+  'house':renderHouse,
+  'fire':renderFIRE,
+  'sensitivity':renderSensitivity
+};
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    activeTab=t.dataset.tab;
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    $('panel-'+activeTab).classList.add('active');
+    if(TAB_RENDER[activeTab]) TAB_RENDER[activeTab]();
+  });
+});
+
+function refresh(){if(TAB_RENDER[activeTab]) TAB_RENDER[activeTab]();}
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR — SLIDERS
+   FIX #6: removed 'sTxCost' entry (no HTML element; txCost stays at default 0.5%)
+═══════════════════════════════════════════════ */
+const SLIDERS=[
+  ['sInitInv', 'vInitInv',  v=>fmtComma(v)+' M',    'initInv'],
+  ['sYears',  'vYears',    v=>v+' yr',             'years'],
+  ['sWage',   'vWage',     v=>fmtComma(v)+' M',    'wage'],
+  ['sWageGrow','vWageGrow',v=>(+v).toFixed(1)+'%', 'wageGrow'],
+  ['sEss',    'vEss',      v=>(+v).toFixed(1),     'ess'],
+  ['sDisc',   'vDisc',     v=>(+v).toFixed(1),     'disc'],
+  ['sEmFund', 'vEmFund',   v=>v+' mo',             'emFund'],
+  ['sRet',    'vRet',      v=>(+v).toFixed(1)+'%', 'ret'],
+  ['sEqPct',  'vEqPct',    v=>v+'%',               'eqPct'],
+  ['sEssInf', 'vEssInf',   v=>(+v).toFixed(1)+'%', 'essInf'],
+  ['sVndDep', 'vVndDep',   v=>(+v).toFixed(1)+'%', 'vndDep'],
+  ['sTaxRate','vTaxRate',  v=>(+v).toFixed(1)+'%', 'taxRate'],
+  ['sCgtRate','vCgtRate',  v=>(+v).toFixed(1)+'%', 'cgtRate'],
+  ['sRetSd',  'vRetSd',    v=>(+v).toFixed(1)+'%', 'retSd'],
+  ['sHouseYear','vHouseYear', v=>'Yr '+v,          'houseYear'],
+  ['sTxCost', 'vTxCost',   v=>(+v).toFixed(1)+'%', 'txCost'],
+  ['sHPrice', 'vHPrice',   v=>fmtComma(v),         'hPrice'],
+  ['sDown',   'vDown',     v=>v+'%',               'down'],
+  ['sMortRate','vMortRate',v=>(+v).toFixed(2)+'%', 'mortRate'],
+  ['sMortTerm','vMortTerm',v=>v+' yr',             'mortTerm'],
+  ['sPropGrow','vPropGrow',v=>(+v).toFixed(1)+'%', 'propGrow'],
+  ['sMaint',  'vMaint',    v=>(+v).toFixed(2)+'%', 'maint'],
+  ['sRent',   'vRent',     v=>(+v).toFixed(1),     'rent'],
+  ['sRentGrow','vRentGrow',v=>(+v).toFixed(1)+'%', 'rentGrow'],
+  ['sSwr',    'vSwr',      v=>(+v).toFixed(2)+'%', 'swr'],
+  ['sFireSpend','vFireSpend',v=>(+v).toFixed(1),   'fireSpend'],
+  ['sKids',   'vKids',     v=>v,                   'kids'],
+  ['sKidCost','vKidCost',  v=>(+v).toFixed(1),     'kidCost'],
+  ['sKidEd',  'vKidEd',    v=>fmtComma(v),         'kidEd'],
+  ['sKidYear','vKidYear',  v=>'Yr '+v,             'kidYear'],
+  ['sLevYear','vLevYear',  v=>'Yr '+v,             'levYear'],
+  ['sLoanAmt','vLoanAmt',  v=>fmtComma(v)+' M',    'loanAmt'],
+  ['sLevRate','vLevRate',  v=>(+v).toFixed(2)+'%', 'levRate'],
+  ['sLevTerm','vLevTerm',  v=>v+' yr',             'levTerm'],
+];
+
+SLIDERS.forEach(([sid,vid,fmt,key])=>{
+  const el=$(sid);
+  if(!el) return;
+  el.addEventListener('input',()=>{
+    const v=el.value;
+    $(vid).textContent=fmt(v);
+    S[key]=+v;
+    if(sid==='sEssInf') S.discInf = +v;
+    if(sid==='sLevRate'||sid==='sRet') updateLevArbitrage();
+    updateAllocBar();
+    refresh();
+  });
+});
+
+/* ═══════════════════════════════════════════════
+   SIDEBAR — TOGGLES & SECTIONS
+═══════════════════════════════════════════════ */
+function toggleBtn(el,key){
+  el.classList.toggle('on');
+  S[key]=el.classList.contains('on');
+  refresh();
+}
+
+function toggleHousing(el){
+  el.classList.toggle('on');
+  S.housingOn = el.classList.contains('on');
+  const fields = $('housingFields');
+  fields.style.display = S.housingOn ? 'flex' : 'none';
+  $('housingSub').textContent = S.housingOn ? 'Rent before buy — full cost modeled' : 'Living at parents \u00b7 No housing cost';
+  refresh();
+}
+
+function toggleLeverage(el){
+  el.classList.toggle('on');
+  S.leverageOn = el.classList.contains('on');
+  const fields = $('leverageFields');
+  fields.style.display = S.leverageOn ? 'flex' : 'none';
+  updateLevArbitrage();
+  refresh();
+}
+
+function setTaxMode(mode){
+  S.taxMode = mode;
+  $('btnTaxAuto').classList.toggle('on', mode==='auto');
+  $('btnTaxFlat').classList.toggle('on', mode==='flat');
+  $('taxRateField').style.display = mode==='flat' ? 'block' : 'none';
+  refresh();
+}
+
+function calculateVnPit(wage){
+  let tax = 0;
+  if(wage <= 5) return wage * 0.05;
+  tax += 5 * 0.05; wage -= 5;
+  if(wage <= 5) return tax + wage * 0.10;
+  tax += 5 * 0.10; wage -= 5;
+  if(wage <= 8) return tax + wage * 0.15;
+  tax += 8 * 0.15; wage -= 8;
+  if(wage <= 14) return tax + wage * 0.20;
+  tax += 14 * 0.20; wage -= 14;
+  if(wage <= 20) return tax + wage * 0.25;
+  tax += 20 * 0.25; wage -= 20;
+  if(wage <= 28) return tax + wage * 0.30;
+  tax += 28 * 0.30; wage -= 28;
+  return tax + wage * 0.35;
+}
+
+function updateLevArbitrage(){
+  const arb = S.ret - (S.levRate||9);
+  const el = $('levArbitrage');
+  if(!el) return;
+  el.style.color = arb > 0 ? 'var(--green)' : 'var(--red)';
+  el.textContent = `Arbitrage: ${arb>0?'+':''}${arb.toFixed(1)}%/yr \u2014 ${arb>0?'Positive carry \u2713':'Risk: negative carry \u26a0'}`;  
+}
+
+function toggleSection(head){
+  const body=head.parentElement.querySelector('.sb-section-body');
+  const arrow=head.querySelector('span');
+  body.classList.toggle('collapsed');
+  arrow.textContent=body.classList.contains('collapsed')?'▸':'▾';
+}
+
+/* ═══════════════════════════════════════════════
+   ALLOC BAR
+   FIX #4: removed blendRet() call (function never defined, caused ReferenceError
+   on equity slider change). The sRet slider controls expected return directly.
+═══════════════════════════════════════════════ */
+function updateAllocBar(){
+  const eq=S.eqPct, rest=100-eq, bd=rest*0.7, cash=rest*0.3;
+  $('allocEq').style.width=eq+'%';
+  $('allocBd').style.width=bd+'%';
+  $('allocCash').style.width=cash+'%';
+  // Note: S.ret is controlled by the sRet slider; equity allocation is informational only
+}
+
+/* ═══════════════════════════════════════════════
+   LUMP SUM EVENTS
+═══════════════════════════════════════════════ */
+function openEventModal(){$('evModal').classList.add('open')}
+function closeEventModal(){$('evModal').classList.remove('open')}
+function saveEvent(){
+  const lbl=$('evLabel').value.trim()||'Event';
+  const yr=clamp(+$('evYear').value,1,40);
+  const amt=+$('evAmount').value;
+  const type=$('evType').value;
+  if(!amt){closeEventModal();return;}
+  S.events.push({id:Date.now(),label:lbl,year:yr,amount:amt,type});
+  closeEventModal();
+  renderEvents();
+  refresh();
+}
+function deleteEvent(id){
+  S.events=S.events.filter(e=>e.id!==id);
+  renderEvents();
+  refresh();
+}
+function renderEvents(){
+  $('eventsList').innerHTML=S.events.map(e=>`
+    <div class="event-item">
+      <span class="ev-label" title="${e.label} Y${e.year}">Y${e.year} · ${e.label}</span>
+      <span class="ev-val">${e.type==='inflow'?'+':'-'}${fmtM(e.amount)}</span>
+      <button class="ev-del" onclick="deleteEvent(${e.id})">✕</button>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   EXPORT
+═══════════════════════════════════════════════ */
+function exportCSV(){
+  const {yearEnd}=simForecast(S);
+  const hdr='Year,Wage/yr,Tax/yr,Ess/yr,Disc/yr,Kid/yr,Housing/yr,Savings/yr,Rate%,Contrib(cum),Gains,Wealth';
+  const rows=yearEnd.map(d=>[
+    d.yr, (d.rw*12).toFixed(1),(d.pit*12).toFixed(1),
+    (d.ess*12).toFixed(1),(d.disc*12).toFixed(1),(d.kidSpend*12).toFixed(1),(d.housingCost*12).toFixed(1),(d.save*12).toFixed(1),
+    d.rate.toFixed(1),d.totalContrib.toFixed(1),d.gains.toFixed(1),d.netWorth.toFixed(1)
+  ].join(',')).join('\n');
+  const blob=new Blob([hdr+'\n'+rows],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wealth_forecast.csv';a.click();
+}
+
+function exportPNG(){
+  const activePanel = document.querySelector('.panel.active');
+  const canvases = activePanel.querySelectorAll('canvas');
+  if(canvases.length === 0){alert('No chart visible on this tab.');return;}
+  canvases.forEach((canvas, index) => {
+    const id = canvas.id;
+    if(!CR[id]) return;
+    const a = document.createElement('a');
+    a.href = CR[id].toBase64Image('image/png',1);
+    a.download = `chart_${id}_${index+1}.png`;
+    a.click();
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+updateAllocBar();
+renderForecast();
+</script>
+</body>
+</html>

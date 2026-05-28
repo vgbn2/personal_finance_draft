@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sovereign-web-config
+  labels:
+    app: sovereign
+    component: web
+data:
+  NODE_ENV: production
+  SOVEREIGN_WEB_HOST: 0.0.0.0
+  SOVEREIGN_WEB_PORT: "8787"
+  SOVEREIGN_LOG_LEVEL: info
+  SOVEREIGN_CACHE_TTL_MS: "30000"
+  SOVEREIGN_CACHE_MAX_ENTRIES: "100"

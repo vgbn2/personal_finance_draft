@@ -1,0 +1,31 @@
+{
+  "mode": "live",
+  "fetched_at": "2026-05-18T00:00:00.000Z",
+  "sources": [
+    {
+      "family": "equities",
+      "provider": "sample",
+      "symbol": "SPY",
+      "timeframe": "1d",
+      "timestamp": "2026-05-10T00:00:00.000Z",
+      "open": 100,
+      "high": 101,
+      "low": 99,
+      "close": 100,
+      "volume": 1000
+    },
+    {
+      "family": "equities",
+      "provider": "sample",
+      "symbol": "SPY",
+      "timeframe": "1d",
+      "timestamp": "2026-05-11T00:00:00.000Z",
+      "open": 100,
+      "high": 102,
+      "low": 99,
+      "close": 101,
+      "volume": 1000
+    }
+  ],
+  "errors": []
+}

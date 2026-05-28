@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sovereign-web
+  labels:
+    app: sovereign
+    component: web
+spec:
+  type: ClusterIP
+  selector:
+    app: sovereign
+    component: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

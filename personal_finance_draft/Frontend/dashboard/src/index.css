@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* QuantLab Pro colors mapped to existing semantic slots */
+  --color-brand-cyan: #0284c7;
+  --color-brand-green: #16a34a;
+  --color-brand-red: #dc2626;
+  --color-brand-amber: #d97706;
+  --color-brand-violet: #7c3aed;
+  --color-brand-pink: #db2777;
+}
+
+@layer base {
+  :root {
+    /* Surfaces */
+    --bg-primary: #f9fafb;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f3f4f6;
+    
+    /* Borders */
+    --border-subtle: #e2e5ea;
+    --border-focus: #d1d5db;
+    
+    /* Typography */
+    --text-main: #1a1d23;
+    --text-muted: #6b7280;
+    --text-faint: #9ca3af;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.05em;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 3px; }
+
+@layer components {
+  /* The Pillar System */
+  .sb-section { 
+    margin-bottom: 24px; 
+    border-left: 3px solid var(--color-brand-cyan); 
+    padding-left: 16px; 
+  }
+  .sb-section.model { border-left-color: var(--color-brand-violet); }
+  .sb-section.macro { border-left-color: var(--color-brand-amber); }
+  .sb-section.risk { border-left-color: var(--color-brand-red); }
+
+  /* The Dense Table */
+  .data-ledger { 
+    font-family: var(--font-mono); 
+    font-size: 11px; 
+    width: 100%; 
+    border-collapse: collapse; 
+  }
+  .data-ledger th { 
+    text-align: left; 
+    color: var(--text-muted); 
+    text-transform: uppercase; 
+    font-size: 10px; 
+    border-bottom: 1px solid var(--border-subtle); 
+    padding: 8px 12px; 
+  }
+  .data-ledger td { 
+    padding: 10px 12px; 
+    border-bottom: 1px solid var(--bg-tertiary); 
+    color: var(--text-main);
+  }
+
+  /* Custom UI Components */
+  .btn-primary {
+    @apply bg-[var(--color-brand-cyan)] text-white font-medium px-4 py-2 rounded-md text-sm transition-colors hover:bg-indigo-500 flex items-center gap-2 cursor-pointer;
+  }
+  
+  .btn-ghost {
+    @apply border border-transparent text-[var(--text-main)] font-medium px-4 py-2 rounded-md text-sm transition-colors hover:bg-[var(--bg-tertiary)] flex items-center gap-2 cursor-pointer;
+  }
+}

@@ -1,0 +1,20 @@
+.banner{padding:9px 13px;border-radius:var(--r);display:flex;align-items:center;gap:10px;font-size:11.5px;margin-bottom:14px;font-weight:500}
+.banner-amber{background:#fffbeb;border:1px solid #fde68a;color:var(--amber)}
+.banner-cyan{background:#eff6ff;border:1px solid #bfdbfe;color:var(--cyan)}
+.banner strong{font-weight:600}
+.sec-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.sec-title{font-size:13px;font-weight:600;color:var(--text)}
+.sec-sub{font-size:10px;color:var(--faint);letter-spacing:.05em;text-transform:uppercase}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-head{padding:10px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.card-title{font-size:12px;font-weight:600;color:var(--text)}
+.ctr{margin-left:auto;display:flex;gap:6px;align-items:center}
+.card-body{padding:13px}
+.card-body.np{padding:0}
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;white-space:nowrap}
+.b-sc{background:var(--bg3);color:var(--faint);border:1px solid var(--border)}
+.b-off{background:#fef2f2;color:var(--red);border:1px solid #fecaca}
+.b-on{background:#f0fdf4;color:var(--green);border:1px solid #bbf7d0}
+.b-paper{background:#f5f3ff;color:var(--violet);border:1px solid #ddd6fe}
+.b-warn{background:#fffbeb;color:var(--amber);border:1px solid #fde68a}
+.b-cyan{background:#eff6ff;color:var(--cyan);border:1px solid #bfdbfe}

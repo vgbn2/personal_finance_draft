@@ -1,0 +1,30 @@
+{
+  "sources": [
+    {
+      "provider": "mt5",
+      "symbol": "AAPL",
+      "timeframe": "1d",
+      "timestamp": "2025-05-18T00:00:00Z",
+      "open": 180.5,
+      "high": 182.0,
+      "low": 179.0,
+      "close": 181.5,
+      "volume": 15000000,
+      "bid": 181.45,
+      "ask": 181.55
+    },
+    {
+      "provider": "mt5",
+      "symbol": "MSFT",
+      "timeframe": "1d",
+      "timestamp": "2025-05-18T00:00:00Z",
+      "open": 420.0,
+      "high": 425.0,
+      "low": 418.0,
+      "close": 424.0,
+      "volume": 12000000,
+      "bid": 423.90,
+      "ask": 424.10
+    }
+  ]
+}

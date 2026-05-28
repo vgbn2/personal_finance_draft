@@ -1,0 +1,1047 @@
+
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width" />
+    <link rel="shortcut icon" type="image/x-icon" href="" />
+    <title>PMI Releases</title>
+        <link href="/Public/Content/reset.css" rel="stylesheet"/>
+<link href="/Public/Content/TagSpecific.css" rel="stylesheet"/>
+<link href="/Public/Content/Header/HeaderStyles_v4.css" rel="stylesheet"/>
+<link href="/Public/Content/Footer/FooterStyles.css" rel="stylesheet"/>
+<link href="/Public/Content/ContentPage/ContentPageLayout_v4.css" rel="stylesheet"/>
+<link href="/Public/Content/Clearfix.css" rel="stylesheet"/>
+<link href="/Public/Content/slick.css" rel="stylesheet"/>
+<link href="/Public/Content/slick-theme.css" rel="stylesheet"/>
+
+    <link href="/Public/Content/iconFonts_v2.css" rel="stylesheet" />
+    
+    
+    <script src="/Public/Scripts/jquery-3.6.3.min.js"></script>
+
+        
+    
+
+    <!--[if IE]>
+
+       <style type="text/css">
+
+        div.languages {
+           background-color:rgb(34,96, 146)!important;
+        }
+
+        </style>
+
+    <![endif]-->
+
+</head>
+<body>
+    <div class="header">
+        <header class="header">
+            <a href="/Public/Home/Index?language=en"><h1 class="image markitLogo">&nbsp;</h1></a>
+            
+            
+<nav class="navAdminMenu">
+    <ul class="nav adminMenu">
+        <li class="language firstChild"><span class="icon-Gobe imageIcon"></span><span class="greyLanguage">Language</span>
+            <div class="languages">
+                <div class="blueLanguage">
+                    <table class="language">
+                        <tr>
+                            <td><a href="?language=ar">العربية</a></td>
+                            <td><a href="?language=en">English</a></td>
+                            <td><a href="?language=it">Italiano</a></td>
+                            <td><a href="?language=pt">Português</a></td>
+                            <td><a href="?language=th" style="font-size: 14px;">ไทย</a></td>
+                        </tr>
+                        <tr>
+                            <td><a href="?language=cz">Čeština</a></td>
+                            <td><a href="?language=es">Español</a></td>
+                            <td><a href="?language=ja">日本語</a></td>
+                            <td><a href="?language=ru">Pусский</a></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><a href="?language=de">Deutsch</a></td>
+                            <td><a href="?language=fr">Français</a></td>
+                            <td><a href="?language=nl">Nederlands</a></td>
+                            <td><a href="?language=tr">Türkçe</a></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><a href="?language=el">ΕΛΛΗΝΙΚΑ</a></td>
+                            <td><a href="?language=ms">Bahasa Indonesia</a></td>
+                            <td><a href="?language=pl">Polski</a></td>
+                            <td><a href="?language=vi">Tiếng Việt</a></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </div>
+            </div></li>
+        <li><a href="/Public/Home/JoinASurvey?language=en"><span class="greyPanel">Join a panel </span></a></li>
+        <li class="lastChild"><a class="loginLink" href="/Public/Authentication/Login?language=en">MEMBERS</a></li>
+    </ul>
+</nav>
+
+            <br/>
+            <nav class="navTopMenu">
+    <ul class="nav topMenu">
+        <li><a href="https://www.spglobal.com/marketintelligence/en/mi/products/pmi.html" target="_blank">ABOUT PMI</a></li>
+        <li><a href="https://www.spglobal.com/en/who-we-are/">ABOUT S&amp;P&nbsp;GLOBAL</a></li>
+        <li><a href="/Public/Home/ContactUs?language=en">Contact us</a></li>
+    </ul>
+</nav>
+        </header>
+    </div>
+    <div class="body clearfix">
+        <div style="margin:0 auto; left:auto; width:1260px; background-color:white; padding:0px 0 0 0;">
+                
+            <div style="min-width:700px; min-height:400px; margin-right:30px;">
+                
+
+
+<div class="body clearfix">
+    
+<img src="/Public/Content/Images/PMIReleasesHero.jpg" />
+
+    <div style="min-width:700px; min-height:400px; margin-left:271px; margin-right:30px;padding-top:100px;">
+        
+
+
+<h1 class="twoTieredHeading">
+    <span class="subHeading">PMI releases</span>
+    PMI data are released monthly, in advance of comparable official economic data
+</h1>  
+
+<div class="moduleDetails clearfix">
+    <div class="moduleLinks" style="float:right;">
+        <div class="greyBoxBlueImage_Large" style="margin-right:0px;">
+            <a href="/Public?language=en">
+                <span class="greyBox_Large">Home</span>
+                <span class="blueImage_Large icon-Brochure"></span>
+            </a>
+        </div>
+        <div class="greyBoxBlueImage_Large" style="width:250px;margin-right:0px;">
+            <a href="/Public/Release/ReleaseDates?language=en">
+                <span class="greyBox_Large">Calendar</span>
+                <span class="blueImage_Large icon-Calendar">
+                    <span class="path1"><span class="path2"><span class="path3"><span class="path4"><span class="path5"><span class="path6"><span class="path7"><span class="path8"><span class="path9"><span class="path10"><span class="path11"><span class="path12"><span class="path13"><span class="path14"><span class="path15"><span class="path16"><span class="path17"><span class="path18"><span class="path19"><span class="path20"><span class="path21"><span class="path22"></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span>
+                </span>
+            </a>
+        </div>
+    </div>
+    <div class="moduleInstructions" style="float:right;">
+        <p>To receive underlying PMI data, please contact economics@spglobal.com.</p>
+        <p class="lastChild">Release times are shown in UTC.</p>
+    </div>
+
+</div>
+
+<h1 class="moduleHeader">
+    PMI releases
+</h1>
+<div class="pressReleaseSection clearfix">
+    <div class="years" style="padding-top:20px"><ul style="padding-left:60px;"><li>Latest</li></ul></div>
+    <div class="pressReleaseList clearfix">
+                <div class="listSubHeading">
+                            <span>May</span>
+                </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;21&nbsp;2026&nbsp;05:00&nbsp;UTC</span>
+                            <span class="releaseTitle">HSBC Flash India PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/4b5e6dd9a706401f8d83966f799cd16e" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;21&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Japan PMI (&#26085;&#26412;&#35486;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/1186f275b6214eeba4f5f090c0720395" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;21&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Japan PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/06a6066e2c83468486b8a04b8c142c1e" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;20&nbsp;2026&nbsp;23:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Australia PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/c1101fa4aba847799a6e28e43e587053" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;18&nbsp;2026&nbsp;08:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global UK Consumer Sentiment Index</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/78ffcf0dd34248178fa0ba5abd66ac60" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;12&nbsp;2026&nbsp;23:01&nbsp;UTC</span>
+                            <span class="releaseTitle">Royal Bank of Scotland Growth Tracker</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/9597ef9b4ad94d40b8427aeb3e6b298a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;12&nbsp;2026&nbsp;23:01&nbsp;UTC</span>
+                            <span class="releaseTitle">Ulster Bank Northern Ireland Growth Tracker</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/f9878ebfe5b742888e80852c9bd02014" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;12&nbsp;2026&nbsp;23:01&nbsp;UTC</span>
+                            <span class="releaseTitle">Natwest UK Regional Growth Tracker</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/021d2a9e35544cfabe42b2b8c5e088be" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;12&nbsp;2026&nbsp;14:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Investment Manager Index</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/aacae539a7ad430e9eb45672a10b10ac" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;12&nbsp;2026&nbsp;12:00&nbsp;UTC</span>
+                            <span class="releaseTitle">GEP Global Supply Chain Volatility Index</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/5dc7c8f6d0eb4e408acc9697151248f6" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;12&nbsp;2026&nbsp;00:01&nbsp;UTC</span>
+                            <span class="releaseTitle">AIB Ireland Construction PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/991cb9e04c32463fa18fff7e554af288" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;10&nbsp;2026&nbsp;23:01&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global / REC UK Report on Jobs: North</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/9b743fc0aba2426ab96930d7e31b84f1" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;10&nbsp;2026&nbsp;23:01&nbsp;UTC</span>
+                            <span class="releaseTitle">KPMG / REC UK Report on Jobs</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/8f449bf06e194036a30b8c21a194ba79" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;10&nbsp;2026&nbsp;23:01&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global / REC UK Report on Jobs: South</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/1aa533dbd6164359836470406668b16d" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;10&nbsp;2026&nbsp;23:01&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global / REC UK Report on Jobs: London</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/d2f0001e167c48f8aac0a8c72011ba99" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;10&nbsp;2026&nbsp;23:01&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global / REC UK Report on Jobs: Midlands</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/dcb5e607ebf84a1a8b8539903cb9d707" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;08&nbsp;2026&nbsp;06:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Halifax House Price Index</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/5ea44d9403a1435f8cd460f45c2f23ed" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;08&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Japan Services PMI (&#26085;&#26412;&#35486;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/0de53fdb89c74f8bb4cd8428d141e0c5" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;08&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Japan Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/ac7217bf44174a168afc84e78394b75b" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;07&nbsp;2026&nbsp;08:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global UK Construction PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/20cf659688d14e4b9777c07ae41548e1" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;07&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Construction PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/92c9def8c3574cb694b97a6ad801f5ed" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;07&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Italy Construction PMI (Italiano)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/b0df3794b9ef40dcaa66fefe787cba1a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;07&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global France Construction PMI (Français)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/5696e51d81ef49f1a913bcd0d20e4589" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;07&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Italy Construction PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/8f97c65679794c3ca0f676d869ac090d" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;07&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global France Construction PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/235fdb3cfc254fb1b9bf7885e3a09c75" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;07&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Germany Construction PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/2bd45b3f19814999a9c5ee6e39a01106" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;07&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Germany Construction PMI (Deutsch)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/b6486f07430240fbb1249f2fd9de4951" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;15:00&nbsp;UTC</span>
+                            <span class="releaseTitle">JPMorgan Global Composite PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/aaa65d75fb5c432aaac32015bfcb64c6" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;15:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Sector PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/da2fb122f90c4d299eccf0d3e75fa539" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;13:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Brazil Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/72b963d0610e488284eeef6f0f99517d" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;13:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Brazil Services PMI (&#80;&#111;&#114;&#116;&#117;&#103;&#117;&#234;&#115;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/206efcf10b73458a8b9d8a3fab63007b" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;09:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Ghana PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/e6bb29289bd3439292870a4ddc8ced25" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;08:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global UK Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/4eb5cf7810e6424eb2d23be545f24db7" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;08:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Europe Sector PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/5df5d91f957a42e493279bb52abe7a0e" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;08:30&nbsp;UTC</span>
+                            <span class="releaseTitle">Stanbic Bank Zambia PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/0695c57fe9f445bebca83120ec976080" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Composite PMI (Deutsch)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/48e0155f66104733949c92edd80ea555" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">BLOM Lebanon PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/e18b269d191742c6ae3b4ca8fd14f1b3" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Composite PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/e189dc5785424a6f9dd3384266699426" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">BLOM Lebanon PMI (Arabic)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/60d80d4e4b8d4097b2dd2c268833b188" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Composite PMI (Italiano)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/74f88e6a26304daea17e04b2466c463d" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Composite PMI (Français)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/4a5fc61e28554350b2822d099c0b603d" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Composite PMI (Español)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/c0e9e05a04cf40549a2c923ae76e3ee1" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:55&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Germany Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/dfd9c8db703b4e3fac1018febf7d3d95" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:55&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Germany Services PMI (Deutsch)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/53c2d31455cf4747a914bfd38d0de7b9" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:50&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global France Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/215f8d3f0bcf4fbf875834df4a4db81e" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:50&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global France Services PMI (Français)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/7e8cd1b69b7f4baf91c8094101f32c8e" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:45&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Italy Services PMI (Italiano)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/9a81e8bfc7ea466aafdef7a37171734b" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:45&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Italy Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/de0f4ae803194bae9ebee856b7053c6c" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">Stanbic Bank Kenya PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/e2084ec0ae214caeaf561e432a07a0a0" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Spain Services PMI (Español)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/735a5a9daaec4dc3adfc91a885706b1a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Spain Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/b63e231d1d694b1592a0dddba0369bbb" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global South Africa PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/9627fa393660475d86ea60a431e7d75a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Freedom Holding Corp. Kazakhstan Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/20eff5d4d4d641c49f91ea56f278d54b" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Freedom Holding Corp. Kazakhstan Services PMI (Kazakh)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/bcd97b8b29174106b96c7767e73ffeec" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;07:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Freedom Holding Corp. Kazakhstan Services PMI (Russian)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/7e5ee6941e7045878f75da05a73b30c8" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;06:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Stanbic Bank Uganda PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/66e9c0f17dfd45b1aa6ce4b4b2dbc728" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;06:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Russia Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/a2cfc8162aa043fe9ce4ad978b39306e" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;06:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Standard Bank Mozambique PMI (&#80;&#111;&#114;&#116;&#117;&#103;&#117;&#234;&#115;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/dc0e2d9e90c14e84a63c6178f34724b1" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;06:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Standard Bank Mozambique PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/ef7bbecfa0e5474a88e35acbcbe9f3ae" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;05:00&nbsp;UTC</span>
+                            <span class="releaseTitle">HSBC India Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/e6be6bd3f0c24d6295a94cd28d17c450" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;01:45&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Asia Sector PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/c25c5a4409734feda2a7c00b18d13a7e" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;01:45&nbsp;UTC</span>
+                            <span class="releaseTitle">RatingDog China General Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/fc7a5c95c9c040e4aa318c1edd48b9d7" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;01:45&nbsp;UTC</span>
+                            <span class="releaseTitle">RatingDog China General Services PMI (&#20013;&#25991;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/3e34193af6fb4d14b567f21f09118a34" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Singapore PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/11d2f219346240ffa6d77f631007d2ed" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Hong Kong SAR PMI (&#20013;&#25991;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/3412c89c7bd94328acc50a80532cec14" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Hong Kong SAR PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/a6dda15be33a493985f462fe389772a1" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;06&nbsp;2026&nbsp;00:01&nbsp;UTC</span>
+                            <span class="releaseTitle">AIB Ireland Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/25720744dfd24e029a602d31267d1886" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;13:45&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global US Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/ffcbf96e32a24ace8a4711b3a4f6d3f3" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;13:45&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global US Sector PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/1597b56155aa479585f85744f259890a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;13:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Canada Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/cd323e551a804e7a823d3a44638c95bc" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;09:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Qatar PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/df0ba08e5f3142dc90b305f498a64540" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;09:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Qatar PMI (Arabic)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/f0f7b17f00b94bd2ac82e58cdd63611f" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;04:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Kuwait PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/dc2d856e461e4fa1ae5161d0378a22d4" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;04:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Egypt PMI (Arabic)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/876dc5eed3e249039674f460e61d812e" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;04:15&nbsp;UTC</span>
+                            <span class="releaseTitle">Riyad Bank Saudi Arabia PMI (Arabic)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/88fa62e72d91419490581f9135eb511f" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;04:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global United Arab Emirates PMI (Arabic)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/496103f997074c01a81469545d6931b9" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;04:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Kuwait PMI (Arabic)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/acc77860fa18490b940c4b56b559025c" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;04:15&nbsp;UTC</span>
+                            <span class="releaseTitle">Riyad Bank Saudi Arabia PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/7ee51d761a4d4a6580850fd4fb9b4dbf" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;04:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Egypt PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/6da6b456a57e437297aa6776bd1e0a40" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;04:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global United Arab Emirates PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/9b4566b109c14ef6a694e6481af58c8a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Thailand Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/be03c42425f5413c8bd958ba6b8ca35c" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global ASEAN Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/c2dd401bee604b7bbbed6df6e9592504" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global ASEAN Manufacturing PMI (Burmese)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/43c573649fa84a2e9f00e9d78a974eb1" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global ASEAN Manufacturing PMI (Thai)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/bdaed44d92014d9e8c62cd26ad399eee" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Thailand Manufacturing PMI (Thai)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/da4ff31eadeb49a7be8584ac097cbda9" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global ASEAN Manufacturing PMI (Vietnamese)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/b7ceacdcff90437da3a4cb7db41c9d51" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global ASEAN Manufacturing PMI (Indonesian)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/f9de776ab6d9443eb9cfe83af404a3f8" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;05&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global ASEAN Manufacturing PMI (Tagalog)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/74c3086c757b45968446fbce7c0091e0" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;23:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Australia Services PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/3e446e09e41f474a900bdc93ce906d94" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;15:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Davivienda Colombia Manufacturing PMI (Español)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/0a796b682eae40f99d0cd4738ad4df05" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;15:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Mexico Manufacturing PMI (Español)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/68ecd349b536495d8f22fbb2e8751e21" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;15:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Mexico Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/dd45ddb81742435fb960732071fc0713" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;15:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Davivienda Colombia Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/71d3fcc93d3e420eb789aefa6f46750a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;15:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global PMI Commodity Price & Supply Indicators</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/1bbd47dfa1fe45b1950fb3e69bbbb6d6" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;15:00&nbsp;UTC</span>
+                            <span class="releaseTitle">JPMorgan Global Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/29831c315cdf4adc8caa210968ca9a7e" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;13:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Brazil Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/2660cf8b99df400e8bd1cf3be0e40923" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;13:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Brazil Manufacturing PMI (&#80;&#111;&#114;&#116;&#117;&#103;&#117;&#234;&#115;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/e6e0ee62feac406b9d8a6d8dc186ffd8" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;08:45&nbsp;UTC</span>
+                            <span class="releaseTitle">Stanbic IBTC Bank Nigeria PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/55498facf9694854a9355c4209dee756" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Manufacturing PMI (Deutsch)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/17688ff75f8041ca85b6d1cefc9c354f" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Manufacturing PMI (Français)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/9d329c372b28456b8df81c8073628b0b" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Greece Manufacturing PMI (&#917;&#955;&#955;&#951;&#957;&#953;&#954;&#940;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/4ebe235693cc41f3b8e7dd8e8d5c1ee8" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Greece Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/59ef2bdef4074a3f802c4a39c730c1e5" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/7fdcb7bd4bec4a9281c2b7098869b109" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Manufacturing PMI (Italiano)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/3a58795185c74a998ffc745647a0a8eb" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Eurozone Manufacturing PMI (Español)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/eae834c6bf9e41b792739861f397a41c" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:55&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Germany Manufacturing PMI (Deutsch)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/ae31435bdb634adbb2fe1aa71028c1fb" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:55&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Germany Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/5c69abafd66e4db8a07ea1cfe12184f2" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:50&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global France Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/075fb59b4e8f4d6882a807e54f7c352a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:50&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global France Manufacturing PMI (Français)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/581e6a87124e488ea51312bd043c64e4" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:45&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Italy Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/f7cbad08f48b4699a669217f34cac7cf" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:45&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Italy Manufacturing PMI (Italiano)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/e45488ff8c6d481f9e5ffe6255689141" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Czechia Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/15247ada02234ee5a65956f1d79a24f1" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Czechia Manufacturing PMI (&#268;&#101;&#353;&#116;&#105;&#110;&#97;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/492968b7d0eb408fbbd3b9a001e8dc44" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Spain Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/91c3fae3e7284438bc0e7b24037c6c9a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Spain Manufacturing PMI (Español)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/9a7b51e6a1c14a0c8e5ebfdcb76ee45e" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Poland Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/1a48ae4c3eee4f6cb45f41ee82b3ab9a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Istanbul Chamber of Industry Türkiye Manufacturing PMI (&#84;&#252;&#114;&#107;&#231;&#101;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/1f25615b6bdf42519c4802b022b9888d" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Freedom Holding Corp. Kazakhstan Manufacturing PMI (Russian)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/636be4e35de34c51aa7b62d8f3635059" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Poland Manufacturing PMI (&#74;&#281;&#122;&#121;&#107; &#80;&#111;&#108;&#115;&#107;&#105;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/c98250bb90854a199692854b226b0010" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Istanbul Chamber of Industry Türkiye Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/53919bca617c47b781af3a877f28d589" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Freedom Holding Corp. Kazakhstan Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/0f78a74b43a044c69c7e4c8a607d5d80" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;07:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Freedom Holding Corp. Kazakhstan Manufacturing PMI (Kazakh)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/61ef944b2c1442eaaed8917d8be06bdf" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;06:00&nbsp;UTC</span>
+                            <span class="releaseTitle">BCR Romania Manufacturing PMI (Romanian)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/aa9a7795cb1d47c985dc6ed040a73c46" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;06:00&nbsp;UTC</span>
+                            <span class="releaseTitle">BCR Romania Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/a21dd31de1f747e0a25cbb91b1d72b7d" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;06:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Russia Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/f404507b49b6469ba9c2594c431aae64" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;05:15&nbsp;UTC</span>
+                            <span class="releaseTitle">HBL Pakistan Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/3c6c40ad73974b5db2d249e4f95ff826" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;05:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Nevi Netherlands Manufacturing PMI (Dutch)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/ed56beebe993432b95a37516d3ab1e24" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;05:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Nevi Netherlands Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/a5145e07140b466eae38a7567ce0de3a" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;05:00&nbsp;UTC</span>
+                            <span class="releaseTitle">HSBC India Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/a0451a81ccf142baabf2600ec61e2ab2" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Philippines Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/bd2cd76887c6494298ac3dfaf58005d1" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Myanmar Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/b497ee0b21044a9a98e295fe56805f3c" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Malaysia Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/dfc1bb665e4b427fbddb70660d099843" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global South Korea Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/b0713574ed8b458ebced08327165cc94" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Indonesia Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/830e3b030b244f1da9db2b8f0312e82c" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Taiwan Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/677263684c6f44cea8d66b55b132c6d0" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Philippines Manufacturing PMI (Tagalog)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/a29be7092b0749dba01243114a1c2424" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Vietnam Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/cbf146c972154b1693185e1b0193f514" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Indonesia Manufacturing PMI (Indonesian)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/2a4a3ca2400f46c5bb901597ffa8f2f0" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global South Korea Manufacturing PMI (Korean)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/9c70fbe83fb248afb1357b03308ae161" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Taiwan Manufacturing PMI (&#20013;&#25991;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/59db5dc2a237421aa9b8483330943c99" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Vietnam Manufacturing PMI (Vietnamese)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/860b09a01c5542a7a419552d3203863c" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;04&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Myanmar Manufacturing PMI (Burmese)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/8a59fd31226a4a3e93dc9d9884560dee" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;01&nbsp;2026&nbsp;13:45&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global US Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/b8123dcab4204a3f979075403c433cd0" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;01&nbsp;2026&nbsp;13:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Canada Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/a65d839fd8f943ae8f42d3d56596370b" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;01&nbsp;2026&nbsp;13:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Canada Manufacturing PMI (Français)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/e13907e113f74dcaa9b1b378da43b682" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;01&nbsp;2026&nbsp;08:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global UK Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/e1ead6f4c96b4dd6ae2506a1fdb29d77" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;01&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Japan Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/669c2b1c22b7438ca0aeb69188d66e23" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;01&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Japan Manufacturing PMI (&#26085;&#26412;&#35486;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/014b2063ffcf48ffaa92ac7a3f14c323" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">May&nbsp;01&nbsp;2026&nbsp;00:01&nbsp;UTC</span>
+                            <span class="releaseTitle">AIB Ireland Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/a0234bbe392a4091afb9685f417aac24" target="_blank">View More</a></span>
+                        </div>
+                <div class="listSubHeading">
+                            <span>April</span>
+                </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;30&nbsp;2026&nbsp;23:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Australia Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/20ecd7716977487d89a6b0b22b9b6bb4" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;30&nbsp;2026&nbsp;01:45&nbsp;UTC</span>
+                            <span class="releaseTitle">RatingDog China General Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/5fda5aa49e1a4c6a988623e53e1d7182" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;30&nbsp;2026&nbsp;01:45&nbsp;UTC</span>
+                            <span class="releaseTitle">RatingDog China General Manufacturing PMI (&#20013;&#25991;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/2dadc2be990c4e93b43ef08680b28960" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;28&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">UniCredit Bank Austria Manufacturing PMI (Deutsch)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/2a7073e53f3c4ed7aaa25419827de9d5" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;28&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">Unicredit Bank Austria Manufacturing PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/d121160cf3f54f8abf80ba0a6820bab6" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;24&nbsp;2026&nbsp;13:00&nbsp;UTC</span>
+                            <span class="releaseTitle">NatWest UK Business Growth Tracker</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/a16aadb805a741b1b5ed39a4bbc63ccb" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;13:45&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash US PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/8bdf1bb2dddf420e9c0e9d7e22f75c09" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;08:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash UK PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/4a046456eab6413094b375ae22fa9650" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Eurozone PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/89d5df92554f42589275c1d9ddb5fde3" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Eurozone PMI (Italiano)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/b44910a3cca1464ba64307b58d1cebc4" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Eurozone PMI (Deutsch)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/5a8a139067fc4a9aa55c93c103bc883b" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Eurozone PMI (Français)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/62544a0552154f74984ac4239b505634" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;08:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Eurozone PMI (Español)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/8b3d4be505914bbb8d648eca15b5e0f2" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Germany PMI (Deutsch)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/7d3cea8dfc984e69b7d6d40b9f02e1e7" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;07:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Germany PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/444f6be3f701474398dfab659db4eda1" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;07:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash France PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/8e60f76b895c43b9a2694df8ac5e15a8" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;07:15&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash France PMI (Français)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/adce5104e5254d02aa99ee8d3a489ef9" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;05:00&nbsp;UTC</span>
+                            <span class="releaseTitle">HSBC Flash India PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/34a8ea5e72344d67b53be4272346e171" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Japan PMI (&#26085;&#26412;&#35486;)</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/86559d9a5f5e4ce794178f3942abb48d" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;23&nbsp;2026&nbsp;00:30&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Japan PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/f65b1852016d49a5abde92a6b742f9bc" target="_blank">View More</a></span>
+                        </div>
+                        <div class="listItem">
+                            <span class="releaseDate">April&nbsp;22&nbsp;2026&nbsp;23:00&nbsp;UTC</span>
+                            <span class="releaseTitle">S&P Global Flash Australia PMI</span>
+                            <span class="greenListItem"><a href="https://www.pmi.spglobal.com/Public/Home/PressRelease/d4a5504cf0174c5c9513484b01df7f3b" target="_blank">View More</a></span>
+                        </div>
+            
+        </div>
+</div>
+
+
+
+
+
+    </div>
+
+</div>
+
+
+
+
+
+
+            </div>
+        </div>
+        
+    </div>
+    <div class="bodyBottomLine"></div>
+    <div class="footer">
+        <footer class="footer">
+            <nav class="footerNav">
+    <ul class="nav">
+        <li><a href="/Public/Home/Sitemap?language=en">SITEMAP</a></li>
+        <li><a href="https://www.spglobal.com/en/terms-of-use.html" target="_blank">TERMS OF USE</a></li>
+        <li><a href="https://www.spglobal.com/en/legal/privacy" target="_blank">PRIVACY AND COOKIE POLICY</a></li>
+        <li><a href="https://www.spglobal.com/en/terms-of-use.html" target="_blank">DISCLAIMER</a></li>
+    </ul>
+</nav>
+<p class="copyright">
+    <small>Copyright © 2024 S&amp;P Global. All rights reserved.</small>
+</p>
+
+            
+    
+
+        </footer>
+    </div>
+</body>
+</html>

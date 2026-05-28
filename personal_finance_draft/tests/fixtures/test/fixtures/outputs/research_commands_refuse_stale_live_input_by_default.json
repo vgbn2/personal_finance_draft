@@ -1,0 +1,6 @@
+{
+  "command": "optimize",
+  "payload": {
+    "error": "Optimization input failed data-quality validation. errors=2 provider_errors=0 stale_records=2 Run `check --strict`, refresh with `ingest`/`backfill`, or pass `--sample` for deterministic validation."
+  }
+}

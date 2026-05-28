@@ -1,0 +1,14 @@
+module.exports = {
+  '/health': require('./health'),
+  '/api/analytics': require('./analytics'),
+  '/api/auth/status': require('./auth'),
+  '/api/backtest': require('./backtest'),
+  '/api/correlation': require('./correlation'),
+  '/api/database/status': require('./database'),
+  '/api/backend/portfolio': require('./portfolio'),
+  '/api/signal': require('./signal'),
+  '/api/signal/promote': require('./signal_promote'),
+  '/api/supabase/config': require('./supabase_config'),
+  '/api/system/status': require('./system'),
+  '/api/strategies': require('./strategies'),
+};

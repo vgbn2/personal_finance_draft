@@ -1,0 +1,16 @@
+{
+  "csv": "-BEGIN HEADER-\nDates (month/day/year): 05/12/2026 through 05/18/2026 in LST\n-END HEADER-\nYEAR,MO,DY,T2M,T2M_MAX,T2M_MIN,PRECTOTCORR,WS10M,ALLSKY_SFC_SW_DWN\n2026,5,16,25.78,26.29,25.28,0.14,5.2,-999.0",
+  "rows": [
+    {
+      "YEAR": "2026",
+      "MO": "5",
+      "DY": "16",
+      "T2M": "25.78",
+      "T2M_MAX": "26.29",
+      "T2M_MIN": "25.28",
+      "PRECTOTCORR": "0.14",
+      "WS10M": "5.2",
+      "ALLSKY_SFC_SW_DWN": "-999.0"
+    }
+  ]
+}

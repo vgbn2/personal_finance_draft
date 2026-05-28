@@ -1,0 +1,5 @@
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { flex-direction: row; overflow-x: auto; }
+  .tab { min-width: 140px; }
+}
