@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 require('../lib/env');
+global.suppressLogs = false;
 const utils = require('./lib/utils.js');
 const { pageText, helpText, printPayload } = utils;
 
