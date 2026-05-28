@@ -10,7 +10,7 @@ const { commandBackend } = require('./commands/backend.js');
 const { commandQuotes } = require('./commands/quotes.js');
 const { commandStrategy } = require('./commands/strategy.js');
 const { commandBacktest, commandOptimize, commandDemo } = require('./commands/research.js');
-const { commandWatch, commandIngest, commandBackfill, commandValidate } = require('./commands/data.js');
+const { commandWatch, commandIngest, commandBackfill, commandValidate, commandPrune } = require('./commands/data.js');
 const { commandTrade, buildTradeGatewayLaunch } = require('./commands/trade.js');
 const { commandIndicators, commandModelCompare } = require('./commands/research.js');
 
@@ -39,6 +39,8 @@ async function handleCommand(args) {
     models: (a) => commandModelCompare(a),
     optimize: (a) => commandOptimize(a),
     trade: (a) => commandTrade(a),
+    prune: (a) => commandPrune(a),
+    'db-prune': (a) => commandPrune(a),
     demo: (a) => commandDemo(a),
   };
 
