@@ -1,0 +1,9 @@
+app:
+  name: "sovereign-trading-platform"
+  mode: "active_prototype"
+  default_timezone: "UTC"
+  paper_trading_default: true
+paths:
+  data_dir: "data"
+  model_dir: "models"
+  log_dir: "logs"

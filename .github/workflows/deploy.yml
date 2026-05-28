@@ -1,0 +1,23 @@
+name: Deployment Guard
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Confirm deployment remains local-first
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify deployment docs
+        run: test -s docs/DEPLOYMENT.md
+
+      - name: Report guarded status
+        run: |
+          echo "Production deployment is intentionally disabled while the active prototype remains local-first."
+          echo "Use this workflow as a manual reminder until docs/DEPLOYMENT.md promotes a concrete target."

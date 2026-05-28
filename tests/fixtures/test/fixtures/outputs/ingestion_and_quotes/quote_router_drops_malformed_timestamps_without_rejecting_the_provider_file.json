@@ -1,0 +1,22 @@
+{
+  "records": [
+    {
+      "family": "equities",
+      "provider": "mt5",
+      "symbol": "MSFT",
+      "timeframe": "tick",
+      "timestamp": "2026-05-19T10:00:00.000Z",
+      "open": 400,
+      "high": 400,
+      "low": 400,
+      "close": 400,
+      "volume": 0,
+      "bid": 399.9,
+      "ask": 400.1,
+      "last": 400,
+      "quote_type": "tick",
+      "source": "mt5-quote-import",
+      "source_url": "mt5://local-quote-export"
+    }
+  ]
+}

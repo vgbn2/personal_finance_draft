@@ -1,0 +1,66 @@
+# Sovereign Intelligence Suite - GitIgnore
+
+# Build Directories
+build/
+cpp_core/build/
+cli/target/
+web/node_modules/
+graphify-out/
+
+# Local agent/workflow state
+.agent/
+.agents/
+.gemini/
+.gsd/
+
+# Local IDE and tooling caches
+.clangd
+.vscode/tasks.json
+
+# OS/IDE
+.DS_Store
+.vscode/
+*.swp
+*.log
+logs/
+
+# Secrets
+.env
+.env.*
+*.env
+*.key
+*.pem
+storage/secrets/
+
+# Data
+data/cache/
+data/cache/*.json
+data/features/*.json
+data/models/*.json
+data/backtests/*.json
+data/backtests/*.sqlite
+data/trades/*.sqlite
+data/*.db
+storage/data/*.csv
+storage/data/*.bin
+storage/db/*.sqlite3
+storage/exports/*.csv
+
+# Generated notebook/model artifacts
+models/*.onnx
+notebooks/*.ipynb
+
+# Compiled Binaries
+*.exe
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+
+# Empty scaffold directories (created by mistake, kept for git history hygiene)
+# Run once to untrack:
+#   git rm --cached quote_feed_interface_test.obj
+#   git rm --cached cpp_core/src/sovereign_wealth.exe
+#   git rm -r --cached docss/
+docss/

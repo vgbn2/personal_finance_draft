@@ -1,0 +1,30 @@
+name: my_strategy
+kind: event_driven
+status: draft
+enabled: false
+model: cnn_v3
+sections:
+  hypothesis: "Replace this with the market edge thesis for my_strategy."
+  universe:
+    - SPY
+    - QQQ
+    - AAPL
+  signals:
+    entry: "Define the trigger conditions here."
+    exit: "Define the exit conditions here."
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 5
+    risk_weight: 0.4
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

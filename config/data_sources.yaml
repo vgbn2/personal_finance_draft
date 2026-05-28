@@ -1,0 +1,159 @@
+sources:
+  equities:
+    enabled: true
+    providers: ["yahoo", "stooq"]
+    symbols: ["AAPL", "MSFT", "SPY", "QQQ", "SSO", "QLD"]
+    timeframes: ["5m", "15m", "30m", "1h", "4h", "1d"]
+
+  indices:
+    enabled: true
+    providers: ["stooq", "yahoo", "fred"]
+    symbols: ["SPX", "NDX", "DJI", "VIX"]
+    timeframes: ["5m", "15m", "30m", "1h", "4h", "1d"]
+
+  commodities:
+    enabled: true
+    providers: ["yahoo", "stooq"]
+    symbols: ["XAUUSD", "XAGUSD", "XCUUSD", "USOIL"]
+    timeframes: ["5m", "15m", "30m", "1h", "4h", "1d"]
+
+  fx:
+    enabled: true
+    providers: ["frankfurter", "fxapi", "ecb"]
+    symbols: ["EURUSD", "EURJPY", "EURGBP"]
+    timeframes: ["1d"]
+
+  quote_feeds:
+    enabled: true
+    providers: ["headway_mt5", "mt5", "webull"]
+    symbols: []
+    timeframes: ["tick", "1m", "5m", "1d"]
+
+  crypto:
+    enabled: true
+    providers: ["binance", "coinbase"]
+    symbols: ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "SUIUSDT", "ADAUSDT"]
+    timeframes: ["5m", "15m", "30m", "1h", "4h", "1d"]
+
+  pmi:
+    enabled: true
+    providers: ["spglobal"]
+    series: ["US_COMPOSITE", "US_MANUFACTURING", "US_SERVICES", "US_MANUFACTURING_OUTPUT"]
+
+  macro:
+    enabled: true
+    providers: ["fred"]
+    series: ["CPI", "PPI", "US02YIELD", "NFP", "ADP", "JOLTS", "JOBLESS_CLAIMS", "UNEMPLOYMENT_RATE", "GDP", "RETAIL_SALES", "CONSUMER_CONFIDENCE"]
+
+  weather:
+    enabled: true
+    providers: ["nasa_power"]
+    locations: ["us_gulf", "us_midwest", "europe_central"]
+    metrics: ["T2M", "T2M_MAX", "T2M_MIN", "PRECTOTCORR", "WS10M", "ALLSKY_SFC_SW_DWN"]
+
+  flight:
+    enabled: true
+    providers: ["opensky"]
+    regions: ["us_gulf", "us_midwest", "europe_central"]
+    metrics: ["aircraft_count", "avg_velocity", "avg_altitude", "on_ground_share"]
+
+  crypto_tx:
+    enabled: true
+    providers: ["blockchair"]
+    chains: ["bitcoin", "ethereum"]
+    metrics: ["transactions_24h", "mempool_transactions", "mempool_total_fee_usd", "market_price_usd", "volume_24h"]
+
+  sentiment:
+    enabled: true
+    providers: ["alternative_me"]
+    fields: ["fear_and_greed", "fear_and_greed_classification"]
+
+  holdings:
+    enabled: true
+    providers: ["sec"]
+    symbols: ["AAPL", "MSFT"]
+    metrics: ["sic", "recent_filing_count", "latest_filing_form", "latest_filing_date", "insider_transaction_flags"]
+
+  reserves:
+    enabled: true
+    providers: ["world_bank"]
+    countries: ["USA", "TUR", "CHN"]
+    metrics: ["total_reserves_usd", "fuel_imports_pct", "fuel_exports_pct"]
+
+  macro_alt:
+    enabled: false
+    providers: ["truflation"]
+    series: ["US_CPI_HEADLINE", "US_CPI_FOOD", "US_CPI_HOUSING", "US_CPI_ENERGY", "US_PCE_HEADLINE"]
+
+  satellite_nrt:
+    enabled: false
+    providers: ["firms"]
+    areas: ["us_gulf", "us_west"]
+    metrics: ["active_fires", "fire_radiative_power"]
+
+  cargo:
+    enabled: false
+    providers: ["marinetraffic"]
+    regions: ["us_gulf", "singapore_strait"]
+    metrics: ["vessel_count", "avg_speed", "congestion_index"]
+
+  onchain:
+    enabled: true
+    providers: ["blockchair"]
+    chains: ["bitcoin", "ethereum"]
+    metrics: ["transactions_24h", "mempool_transactions", "mempool_total_fee_usd", "market_price_usd", "volume_24h"]
+
+  breadth:
+    enabled: true
+    providers: ["yahoo"]
+    metrics: ["spy_rsp_ratio", "qqq_spy_ratio", "iwm_spy_ratio"]
+
+  prediction_market:
+    enabled: true
+    providers: ["kalshi"]
+    events: ["fed_rate_cut_prob", "us_recession_prob", "inflation_above_target", "risk_off_spike"]
+
+fred_mappings:
+  indices:
+    NDX: "NASDAQCOM"
+    DJI: "DJIA"
+    VIX: "VIXCLS"
+  macro:
+    CPI: "CPIAUCSL"
+    PPI: "PPIACO"
+    US02YIELD: "DGS2"
+    NFP: "PAYEMS"
+    ADP: "ADPWNUSNERSA"
+    JOLTS: "JTSJOL"
+    JOBLESS_CLAIMS: "ICSA"
+    UNEMPLOYMENT_RATE: "UNRATE"
+    GDP: "GDP"
+    RETAIL_SALES: "RSAFS"
+    CONSUMER_CONFIDENCE: "UMCSENT"
+
+breadth_ratios:
+  spy_rsp_ratio: ["SPY", "RSP"]
+  qqq_spy_ratio: ["QQQ", "SPY"]
+  iwm_spy_ratio: ["IWM", "SPY"]
+
+sec_ciks:
+  AAPL: "0000320193"
+  MSFT: "0000789019"
+
+world_bank_mappings:
+  total_reserves_usd: "FI.RES.TOTL.CD"
+  fuel_imports_pct: "TM.VAL.FUEL.ZS.UN"
+  fuel_exports_pct: "TX.VAL.FUEL.ZS.UN"
+
+prediction_market_keywords:
+  fed_rate_cut_prob: ["fed", "rate", "cut"]
+  us_recession_prob: ["recession"]
+  inflation_above_target: ["inflation", "cpi"]
+  risk_off_spike: ["vix", "volatility", "recession", "crash"]
+
+quality:
+  reject_stale: true
+  reject_lookahead: true
+  max_missing_ratio: 0.01
+
+

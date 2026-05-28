@@ -1,0 +1,16 @@
+feature_sets:
+  cnn_v3:
+    asset_inputs:
+      - close_return_1
+      - close_return_5
+      - realized_volatility_20
+      - rsi_14
+      - macd
+      - atr_14
+    macro_inputs:
+      - inflation
+      - policy_rate
+      - wage_growth
+      - consumer_sentiment
+    tensor_shape: [1, 64, 10]
+    status: active_prototype

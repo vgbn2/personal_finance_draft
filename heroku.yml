@@ -1,0 +1,8 @@
+setup:
+  addons:
+    - plan: mongolab:sandbox # Heroku's Mongo add-on (if available)
+build:
+  docker:
+    web: Dockerfile
+run:
+  web: node scripts/cli/sovereign_cli.js watch --full

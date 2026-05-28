@@ -1,0 +1,13 @@
+regimes:
+  expansion:
+    risk_multiplier: 1.0
+  slowdown:
+    risk_multiplier: 0.6
+  inflation_shock:
+    risk_multiplier: 0.4
+  credit_stress:
+    risk_multiplier: 0.2
+  risk_off:
+    risk_multiplier: 0.0
+default_regime: "unknown"
+unknown_regime_risk_multiplier: 0.0

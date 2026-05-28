@@ -1,0 +1,261 @@
+{
+  "mode": "live",
+  "fetched_at": "2026-05-28T05:16:47.717Z",
+  "sources": [
+    {
+      "family": "reserves",
+      "source": "worldbank",
+      "country_code": "USA",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "value": 1.5,
+      "requested_days": 3650,
+      "country": "USA",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "family": "reserves",
+      "source": "worldbank",
+      "country_code": "USA",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "value": 1.5,
+      "requested_days": 3650,
+      "country": "USA",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "family": "reserves",
+      "source": "worldbank",
+      "country_code": "USA",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "value": 1.5,
+      "requested_days": 3650,
+      "country": "USA",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "family": "reserves",
+      "source": "worldbank",
+      "country_code": "TUR",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "value": 1.5,
+      "requested_days": 3650,
+      "country": "TUR",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "family": "reserves",
+      "source": "worldbank",
+      "country_code": "TUR",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "value": 1.5,
+      "requested_days": 3650,
+      "country": "TUR",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "family": "reserves",
+      "source": "worldbank",
+      "country_code": "TUR",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "value": 1.5,
+      "requested_days": 3650,
+      "country": "TUR",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "family": "reserves",
+      "source": "worldbank",
+      "country_code": "CHN",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "value": 1.5,
+      "requested_days": 3650,
+      "country": "CHN",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "family": "reserves",
+      "source": "worldbank",
+      "country_code": "CHN",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "value": 1.5,
+      "requested_days": 3650,
+      "country": "CHN",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "family": "reserves",
+      "source": "worldbank",
+      "country_code": "CHN",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2025-01-01T00:00:00.000Z",
+      "value": 1.5,
+      "requested_days": 3650,
+      "country": "CHN",
+      "metric": "fuel_exports_pct"
+    }
+  ],
+  "errors": [],
+  "provider_checks": [
+    {
+      "family": "quote_feeds",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "equities",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "indices",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "commodities",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "fx",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "crypto",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "pmi",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "macro",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "weather",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "flight",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "crypto_tx",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "sentiment",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "holdings",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "onchain",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "breadth",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "prediction_market",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "equities_options",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "stock_options",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "reserves",
+      "provider": "world_bank",
+      "symbol": "USA",
+      "status": "ok"
+    }
+  ],
+  "deduplication": {
+    "input_records": 9,
+    "output_records": 9,
+    "quote_records": 0,
+    "removed_records": 0,
+    "policy": "provider_priority_then_quality"
+  },
+  "quality_filter": {
+    "removed_records": 0,
+    "stale_records": 0,
+    "policy": "drop_rejected_live_records_after_merge",
+    "merged_removed_records": 0,
+    "merged_stale_records": 0
+  },
+  "macro_store": {
+    "configured": false,
+    "skipped": true,
+    "written": 0,
+    "records": 0,
+    "units": {}
+  }
+}

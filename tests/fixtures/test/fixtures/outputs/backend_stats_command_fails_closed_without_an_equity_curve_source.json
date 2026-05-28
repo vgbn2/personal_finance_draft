@@ -1,0 +1,10 @@
+{
+  "payload": {
+    "available": true,
+    "ok": false,
+    "type": "backend_stats",
+    "engine": "sovereign_cli_frontend",
+    "schema_version": 1,
+    "error": "No equity curve found. Run a backtest first or pass --equity explicitly."
+  }
+}

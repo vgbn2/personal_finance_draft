@@ -1,0 +1,40 @@
+{
+  "ok": false,
+  "mode": "unknown",
+  "fetched_at": null,
+  "total_records": 0,
+  "usable_records": 0,
+  "rejected_records": 0,
+  "counts": {
+    "error": 1,
+    "warning": 0
+  },
+  "by_family": {
+    "unknown": {
+      "records": 0,
+      "errors": 1,
+      "warnings": 0
+    }
+  },
+  "rejected_keys": [
+    "unknown:unknown:unknown:point:index_0"
+  ],
+  "issues": [
+    {
+      "severity": "error",
+      "code": "missing_sources",
+      "key": "unknown:unknown:unknown:point:index_0",
+      "family": "unknown",
+      "message": "snapshot.sources must be an array"
+    }
+  ],
+  "provider_errors": [],
+  "reject_stale": true,
+  "freshness": {
+    "stale_records": 0,
+    "issues": 0
+  },
+  "reliability": {
+    "samples": []
+  }
+}
