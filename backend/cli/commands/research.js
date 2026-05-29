@@ -154,16 +154,24 @@ function recordBackfillSummary(summaries, candles, family, provider, symbol, tim
 
 async function loadHistoricalSources(args) {
   const timeframe = optionValue(args, '--timeframe', '1d');
+  const targetSymbol = optionValue(args, '--symbol', null); // [gemini-work] Detect --symbol flag
   const window = historicalWindowFromArgs(args);
   const config = await loadConfig();
   const sources = [];
   const backfillWindows = [];
   const chosenTimeframe = ['5m', '15m', '30m', '1h', '4h', '1d'].includes(timeframe) ? timeframe : '1d';
+  
+  // [gemini-work] Filter symbols based on targetSymbol if provided
+  const filterSymbols = (symbols) => {
+    if (!targetSymbol) return (symbols || []).slice(0, 2);
+    return (symbols || []).filter(s => s === targetSymbol);
+  };
+
   const symbolsByFamily = {
-    equities: (config.equities.symbols || []).slice(0, 2),
-    indices: (config.indices.symbols || []).slice(0, 2),
-    commodities: (config.commodities.symbols || []).slice(0, 2),
-    crypto: (config.crypto.symbols || []).slice(0, 2),
+    equities: filterSymbols(config.equities.symbols),
+    indices: filterSymbols(config.indices.symbols),
+    commodities: filterSymbols(config.commodities.symbols),
+    crypto: filterSymbols(config.crypto.symbols),
   };
   //dev review alot of if elses
   for (const symbol of symbolsByFamily.equities) {

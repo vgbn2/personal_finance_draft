@@ -10,15 +10,17 @@ async function backfill20Years(symbol = 'SPY') {
     const days = 20 * 365; // ~7300 days
     
     try {
-        await ingestMarketData({
+        const snapshot = await ingestMarketData({
             symbol,
             days,
             timeframe: '1d',
             provider: 'yahoo', // Yahoo is most reliable for 20y daily data
         });
         console.log(`[PIPELINE] Successfully backfilled ${symbol} for 20 years.`);
+        return snapshot;
     } catch (error) {
         console.error(`[PIPELINE] Failed to backfill ${symbol}:`, error.message);
+        return null;
     }
 }
 

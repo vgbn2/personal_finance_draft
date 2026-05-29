@@ -47,28 +47,37 @@ async function commandIngest(args) {
  */
 async function commandBackfill(args) {
   const symbol = optionValue(args, '--symbol', 'SPY');
+  let snapshotResult = null;
+
   if (hasFlag(args, '--20-years')) {
-      await backfill20Years(symbol); // [gemini-work] 20-year pipeline
-      return 0;
+      snapshotResult = await backfill20Years(symbol); // [gemini-work] 20-year pipeline
+      if (!snapshotResult) return 1;
   }
-  
+
   const output = optionValue(args, '--output', DEFAULT_HISTORY);
   const relevanceFloor = numericOption(args, '--relevance-floor', 0);
   let marketHistory = null;
-  try {
-    marketHistory = await loadHistoricalSources(args);
-  } catch (error) {
-    console.error(`[BACKFILL] Critical Failure: ${error.stack || error.message}`);
-    marketHistory = {
-      snapshot: {
-        mode: 'provider_history',
-        fetched_at: new Date().toISOString(),
-        sources: [],
-        errors: [{ family: 'market_history', provider: 'mixed', symbol: 'configured_universe', message: error.message }],
-      },
-      quality: null,
-    };
+
+  // If we already have a snapshot from 20-year backfill, we can use it or augment it
+  if (snapshotResult) {
+      marketHistory = { snapshot: snapshotResult, quality: null };
+  } else {
+      try {
+        marketHistory = await loadHistoricalSources(args);
+      } catch (error) {
+        console.error(`[BACKFILL] Critical Failure: ${error.stack || error.message}`);
+        marketHistory = {
+          snapshot: {
+            mode: 'provider_history',
+            fetched_at: new Date().toISOString(),
+            sources: [],
+            errors: [{ family: 'market_history', provider: 'mixed', symbol: 'configured_universe', message: error.message }],
+          },
+          quality: null,
+        };
+      }
   }
+
   const predictionHistory = hasFlag(args, '--include-prediction')
     ? await loadPredictionMarketHistory(args)
     : { sources: [], errors: [] };
