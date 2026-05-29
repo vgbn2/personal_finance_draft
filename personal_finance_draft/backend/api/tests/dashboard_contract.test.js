@@ -1,7 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 
-const { server } = require('../app');
+const { server, io, DEFAULT_SNAPSHOT } = require('../app');
 
 const REQUIRED_UI_ENDPOINTS = [
   '/api/system/status',
@@ -24,6 +25,10 @@ function listen() {
 
 function close() {
   return new Promise((resolve, reject) => {
+    if (fs.existsSync(DEFAULT_SNAPSHOT)) {
+      fs.unwatchFile(DEFAULT_SNAPSHOT);
+    }
+    io.close();
     server.close((error) => (error ? reject(error) : resolve()));
   });
 }

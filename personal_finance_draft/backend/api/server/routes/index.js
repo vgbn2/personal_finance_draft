@@ -10,5 +10,6 @@ module.exports = {
   '/api/signal/promote': require('./signal_promote'),
   '/api/supabase/config': require('./supabase_config'),
   '/api/system/status': require('./system'),
+  '/api/kill-switch': require('./kill_switch'),
   '/api/strategies': require('./strategies'),
 };

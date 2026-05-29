@@ -14,12 +14,14 @@ export const API_ENDPOINTS = {
   SYSTEM_STATUS: `${API_BASE_URL}/api/system/status`,
   SIGNAL: `${API_BASE_URL}/api/signal`,
   UNIVERSE: `${API_BASE_URL}/api/universe`,
+  DATA_SUMMARY: `${API_BASE_URL}/api/data/summary`,
   CORRELATION: `${API_BASE_URL}/api/correlation`,
   BACKTEST: `${API_BASE_URL}/api/backtest`,
   PORTFOLIO: `${API_BASE_URL}/api/backend/portfolio`,
   AUTH_STATUS: `${API_BASE_URL}/api/auth/status`,
   DATABASE_STATUS: `${API_BASE_URL}/api/database/status`,
   SUPABASE_CONFIG: `${API_BASE_URL}/api/supabase/config`,
+  KILL_SWITCH: `${API_BASE_URL}/api/kill-switch`,
 };
 
 export const DEFAULT_HEADERS = {

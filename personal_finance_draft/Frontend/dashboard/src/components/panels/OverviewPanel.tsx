@@ -20,13 +20,31 @@ export function OverviewPanel() {
   useEffect(() => {
     const hydrateSystem = async () => {
       try {
-        const res = await fetch(API_ENDPOINTS.SYSTEM_STATUS, { headers: DEFAULT_HEADERS });
-        const data = await res.json();
+        const [sysRes, killRes, signalRes] = await Promise.all([
+          fetch(API_ENDPOINTS.SYSTEM_STATUS, { headers: DEFAULT_HEADERS }),
+          fetch(API_ENDPOINTS.KILL_SWITCH, { headers: DEFAULT_HEADERS }),
+          fetch(API_ENDPOINTS.SIGNAL, { headers: DEFAULT_HEADERS })
+        ]);
+        
+        const data = await sysRes.json();
+        const killData = await killRes.json();
+        const signalData = await signalRes.json();
+        
         if (data.ok) {
           setMetrics([
             { label: 'Backend Status', value: data.components.backend.available ? 'OK' : 'OFFLINE', status: data.components.backend.available ? 'cyan' : 'red', subtext: data.components.backend.type || 'N/A' },
-            { label: 'Kill Switch', value: 'NOMINAL', status: 'green', subtext: 'No Breaches' },
-            { label: 'Active Signals', value: data.components.cli.phase.split(' ')[1] || 'N/A', status: 'violet', subtext: 'Phase Tracking' },
+            { 
+              label: 'Kill Switch', 
+              value: killData.ok ? (killData.status === 'engaged' ? 'TRIPPED' : 'NOMINAL') : 'UNKNOWN', 
+              status: killData.ok ? (killData.status === 'engaged' ? 'red' : 'green') : 'amber', 
+              subtext: killData.ok ? (killData.status === 'engaged' ? 'Breach Detected' : 'No Breaches') : 'Checking...' 
+            },
+            { 
+              label: 'Active Signals', 
+              value: signalData.ok ? String(signalData.active_signals || 0) : '...', 
+              status: 'violet', 
+              subtext: signalData.ok ? `${signalData.candidate_signals || 0} Candidates` : 'Analyzing...' 
+            },
             { label: 'Quote Health', value: data.components.quotes.ok ? 'HEALTHY' : 'STALE', status: data.components.quotes.ok ? 'cyan' : 'amber', subtext: `${data.components.quotes.providers.length} providers` },
           ]);
         }

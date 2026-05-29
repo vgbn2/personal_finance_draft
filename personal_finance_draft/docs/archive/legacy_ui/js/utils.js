@@ -9,6 +9,7 @@ window.SovereignUtils = (() => {
     card.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
     return card;
   }
+  
 
   return { fmtNumber, createMetric };
 })();

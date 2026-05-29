@@ -3,18 +3,21 @@
 require('../../shared/lib/env');
 global.suppressLogs = false;
 const utils = require('./lib/utils.js');
-const { pageText, helpText, printPayload } = utils;
+const { pageText, helpText, printPayload, logger } = utils;
 
 const { commandStatus, commandCockpit } = require('./commands/status.js');
 const { commandBackend } = require('./commands/backend.js');
 const { commandQuotes } = require('./commands/quotes.js');
 const { commandStrategy } = require('./commands/strategy.js');
 const { commandBacktest, commandOptimize, commandDemo } = require('./commands/research.js');
-const { commandWatch, commandIngest, commandBackfill, commandValidate, commandPrune } = require('./commands/data.js');
+const { commandWatch, commandIngest, commandBackfill, commandValidate, commandPrune, commandLoc } = require('./commands/data.js');
 const { commandTrade, buildTradeGatewayLaunch } = require('./commands/trade.js');
 const { commandIndicators, commandModelCompare } = require('./commands/research.js');
 
 async function handleCommand(args) {
+  const isDebug = args.includes('--debug') || process.env.SOVEREIGN_DEBUG === 'true';
+  if (isDebug) logger.info('Debug mode active');
+
   const command = args[0];
   if (!command || command === '--help' || command === '-h' || command === 'help') {
     const topic = command === 'help' ? (args[1] || 'overview') : 'overview';
@@ -42,6 +45,7 @@ async function handleCommand(args) {
     prune: (a) => commandPrune(a),
     'db-prune': (a) => commandPrune(a),
     demo: (a) => commandDemo(a),
+    loc: (a) => commandLoc(a),
   };
 
   const handler = handlers[command];

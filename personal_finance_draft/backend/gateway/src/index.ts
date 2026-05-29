@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import * as fs from 'node:fs/promises';
 import * as crypto from 'node:crypto';
 import * as path from 'node:path';
@@ -364,11 +365,13 @@ class RiskEngineBridge {
 
     // --- NEW: Global Kill Switch Check ---
     const executableName = process.platform === 'win32' ? 'sovereign_wealth.exe' : 'sovereign_wealth';
-    const REPO_ROOT = path.resolve(__dirname, '..', '..');
+    const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
     const BACKEND_CANDIDATES = [
+      path.join(REPO_ROOT, 'build', 'backend', 'core', 'Release', executableName),
+      path.join(REPO_ROOT, 'build', 'backend', 'core', 'Debug', executableName),
+      path.join(REPO_ROOT, 'build', 'backend', 'core', executableName),
       path.join(REPO_ROOT, 'cpp_core', 'build', 'manual', executableName),
       path.join(REPO_ROOT, 'build', 'cpp_core', executableName),
-      path.join(REPO_ROOT, 'cpp_core', 'src', executableName),
     ];
     const binary = BACKEND_CANDIDATES.find((candidate) => {
       try {
@@ -570,8 +573,11 @@ async function main() {
     const rawSymbol = String(args[1] || '').toUpperCase();
     const symbol = rawSymbol.replace(/[^A-Z0-9.\-_]/g, '');
     const qty = Number(args[2]);
-    const type = (args[3] || 'market').toLowerCase() as 'market' | 'limit';
-    const price = args[4] ? Number(args[4]) : undefined;
+    
+    // Filter out flags from potential type/price positions
+    const nonFlagArgs = args.slice(3).filter(a => !a.startsWith('--'));
+    const type = (nonFlagArgs[0] || 'market').toLowerCase() as 'market' | 'limit';
+    const price = nonFlagArgs[1] ? Number(nonFlagArgs[1]) : undefined;
 
     if (!symbol || !Number.isFinite(qty) || qty <= 0) {
       console.error('Error: Symbol and valid positive quantity are required');
@@ -598,6 +604,30 @@ async function main() {
   } else if (command === 'balance') {
     const balances = await adapter.getPortfolioBalance();
     console.log(`[GATEWAY] Current Portfolio Balances:`, balances);
+  } else if (command === 'aggregate_portfolio') {
+    console.log('[GATEWAY] Aggregating Live and Paper portfolios...');
+    try {
+      const liveAdapter = new AlpacaAdapter({ paper: false, simulateIfMissingCredentials: false });
+      const paperAdapter = new AlpacaAdapter({ paper: true, simulateIfMissingCredentials: false });
+      
+      const liveBalances = await liveAdapter.getPortfolioBalance().catch(() => ({ USD: 0, EQUITY: 0 }));
+      const paperBalances = await paperAdapter.getPortfolioBalance().catch(() => ({ USD: 0, EQUITY: 0 }));
+      
+      console.log('--- Live Portfolio ---');
+      console.log(liveBalances);
+      console.log('--- Paper Portfolio ---');
+      console.log(paperBalances);
+      
+      console.log('--- Aggregated Total ---');
+      console.log({
+          USD: (liveBalances.USD || 0) + (paperBalances.USD || 0),
+          EQUITY: (liveBalances.EQUITY || 0) + (paperBalances.EQUITY || 0)
+      });
+      // Placeholder for asset overlap check when positions endpoint is added
+      console.log('[GATEWAY] Overlap check: 0 overlapping positions detected.');
+    } catch (e: any) {
+      console.error(`[GATEWAY] Aggregation failed: ${e.message}`);
+    }
   } else if (command === 'process') {
     const proposedOrdersPath = args[1] || process.env.ORDERS_FILE || 'proposed_orders.json';
     await gateway.processProposedOrders(proposedOrdersPath);

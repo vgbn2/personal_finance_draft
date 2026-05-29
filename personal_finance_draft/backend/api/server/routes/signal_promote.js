@@ -56,6 +56,15 @@ module.exports = {
 
       if (error) throw error;
 
+      // --- TELEMETRY EMISSION ---
+      if (global.sovereignIo) {
+        global.sovereignIo.emit('telemetry', {
+          timestamp: new Date().toISOString(),
+          msg: `Dashboard promoted ${sanitizedIds.length} signals: ${sanitizedIds.slice(0, 3).join(', ')}${sanitizedIds.length > 3 ? '...' : ''}`,
+          level: 'info'
+        });
+      }
+
       return { 
         ok: true, 
         message: `${signalIds.length} signals promoted successfully`,

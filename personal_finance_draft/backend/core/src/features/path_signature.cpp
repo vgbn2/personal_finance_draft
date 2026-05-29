@@ -47,7 +47,7 @@ int PathSignatureGenerator::getLevelOffset(int d, int level) const {
 }
 
 std::vector<double> PathSignatureGenerator::tensorProduct(const std::vector<double>& A, const std::vector<double>& B, int d) const {
-    int total_size = A.size();
+    int total_size = static_cast<int>(A.size());
     std::vector<double> result(total_size, 0.0);
     
     for (int m = 0; m <= max_level_; ++m) {
@@ -74,7 +74,7 @@ std::vector<double> PathSignatureGenerator::tensorProduct(const std::vector<doub
 }
 
 std::vector<double> PathSignatureGenerator::segmentSignature(const std::vector<double>& increment) const {
-    int d = increment.size();
+    int d = static_cast<int>(increment.size());
     int total_size = getLevelOffset(d, max_level_ + 1);
     std::vector<double> sig(total_size, 0.0);
     sig[0] = 1.0;
@@ -104,7 +104,7 @@ std::vector<double> PathSignatureGenerator::segmentSignature(const std::vector<d
 std::vector<double> PathSignatureGenerator::calculateSignature(const std::vector<std::vector<double>>& path) const {
     if (path.empty()) return {};
     
-    int d = path[0].size();
+    int d = static_cast<int>(path[0].size());
     if (d == 0) {
         throw std::invalid_argument("Path dimension must be > 0");
     }

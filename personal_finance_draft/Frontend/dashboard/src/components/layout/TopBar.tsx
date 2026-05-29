@@ -44,6 +44,7 @@ const TABS: { id: TabId; label: string; number: string; icon: React.ReactNode }[
   { id: 'backtest', label: 'Backtest Ledger', number: '04', icon: <GitMerge className="w-4 h-4" /> },
   { id: 'quote_health', label: 'Quote Health', number: '05', icon: <Database className="w-4 h-4" /> },
   { id: 'audit_log', label: 'Audit Log', number: '06', icon: <Server className="w-4 h-4" /> },
+  { id: 'telemetry', label: 'Telemetry', number: '07', icon: <Activity className="w-4 h-4" /> },
 ];
 
 export function TopBar({ activeTab, onTabChange }: TopBarProps) {

@@ -3,12 +3,14 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const {
   ingestMarketData,
+} = require('../../scripts/data_ops/ingest_market_data');
+const { 
   loadHistoricalSources,
   loadPredictionMarketHistory,
-  mergeSnapshots,
-} = require('../../scripts/data_ops/ingest_market_data');
+} = require('./research.js');
+const { backfill20Years } = require('../../../scripts/data_ops/backfill_20_years');
 const { runMaintenance } = require('../../../shared/lib/db_pruning');
-const { validateSnapshot, writeJson, readSnapshot } = require('../../../shared/lib/market_validation');
+const { validateSnapshot, writeJson, readSnapshot, mergeSnapshots } = require('../../../shared/lib/market_validation');
 const utils = require('../lib/utils.js');
 const { 
   printPayload, 
@@ -44,6 +46,12 @@ async function commandIngest(args) {
  * Handles the 'backfill' command.
  */
 async function commandBackfill(args) {
+  const symbol = optionValue(args, '--symbol', 'SPY');
+  if (hasFlag(args, '--20-years')) {
+      await backfill20Years(symbol); // [gemini-work] 20-year pipeline
+      return 0;
+  }
+  
   const output = optionValue(args, '--output', DEFAULT_HISTORY);
   const relevanceFloor = numericOption(args, '--relevance-floor', 0);
   let marketHistory = null;
@@ -274,10 +282,90 @@ async function commandWatch(args) {
   return new Promise(() => {});
 }
 
+async function commandLoc(args) {
+  const isJson = hasFlag(args, '--json');
+  if (!isJson) console.log('Counting project lines (excluding artifacts)...');
+  
+  const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
+  const TARGET_DIRS = ['backend', 'Frontend', 'shared', 'tests', 'infra', 'supabase'];
+  const EXCLUDED_DIRS = ['node_modules', 'build', 'dist', '.git', '.gemini', '.codex', '.agents'];
+  const INCLUDED_EXTS = ['.js', '.ts', '.tsx', '.cpp', '.hpp', '.h', '.yaml', '.yml', '.json', '.md'];
+
+  let totalLines = 0;
+
+  function countLinesSync(filePath) {
+    try {
+      const buffer = fs.readFileSync(filePath);
+      let lines = 0;
+      for (let i = 0; i < buffer.length; i++) {
+        if (buffer[i] === 10) lines++; // Count \n
+      }
+      return lines;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function walkSync(dir) {
+    const files = fs.readdirSync(dir);
+    for (const file of files) {
+      const fullPath = path.join(dir, file);
+      
+      // Check exclusions early
+      if (EXCLUDED_DIRS.some(ex => fullPath.includes(`${path.sep}${ex}`) || fullPath.endsWith(`${path.sep}${ex}`))) {
+        continue;
+      }
+
+      const stat = fs.statSync(fullPath);
+      if (stat.isDirectory()) {
+        walkSync(fullPath);
+      } else if (stat.isFile()) {
+        const ext = path.extname(fullPath).toLowerCase();
+        if (INCLUDED_EXTS.includes(ext)) {
+          totalLines += countLinesSync(fullPath);
+        }
+      }
+    }
+  }
+
+  try {
+    for (const dir of TARGET_DIRS) {
+      const fullDir = path.join(REPO_ROOT, dir);
+      if (fs.existsSync(fullDir)) {
+        walkSync(fullDir);
+      }
+    }
+
+    const payload = {
+      ok: true,
+      type: 'project_scale',
+      loc: totalLines,
+      timestamp: new Date().toISOString(),
+      scope: TARGET_DIRS,
+      excluded: EXCLUDED_DIRS
+    };
+
+    if (isJson) {
+      console.log(JSON.stringify(payload, null, 2));
+    } else {
+      console.log(`\x1b[32mTotal LOC: ${totalLines.toLocaleString()}\x1b[0m`);
+    }
+    return 0;
+  } catch (err) {
+    if (isJson) {
+      console.log(JSON.stringify({ ok: false, error: err.message }, null, 2));
+    } else {
+      console.error(`Failed to count lines: ${err.message}`);
+    }
+    return 1;
+  }
+}
+
 module.exports = {
   commandIngest,
   commandBackfill,
   commandValidate,
   commandWatch,
-  commandPrune
+  commandPrune,
+  commandLoc
 };

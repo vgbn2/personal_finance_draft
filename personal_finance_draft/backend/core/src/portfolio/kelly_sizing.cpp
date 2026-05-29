@@ -1,4 +1,5 @@
 #include "kelly_sizing.hpp"
+#include "../position_sizing/kelly.hpp"
 
 #include <algorithm>
 

@@ -8,6 +8,11 @@ import { TopBar } from './components/layout/TopBar';
 import { Sidebar } from './components/layout/Sidebar';
 import { OverviewPanel } from './components/panels/OverviewPanel';
 import { SignalPanel } from './components/panels/SignalPanel';
+import TelemetryPanel from './components/panels/TelemetryPanel';
+import { MarketIntelPanel } from './components/panels/MarketIntelPanel';
+import { BacktestPanel } from './components/panels/BacktestPanel';
+import { QuoteHealthPanel } from './components/panels/QuoteHealthPanel';
+import { AuditLogPanel } from './components/panels/AuditLogPanel';
 import { TabId } from './types';
 
 export default function App() {
@@ -23,14 +28,13 @@ export default function App() {
         <main className="flex-1 relative overflow-hidden flex flex-col bg-[var(--bg-primary)]">
           {activeTab === 'overview' && <OverviewPanel />}
           {activeTab === 'signals' && <SignalPanel />}
-          
-          {/* Missing view placeholders */}
-          {['market_intel', 'backtest', 'quote_health', 'audit_log'].includes(activeTab) && (
-            <div className="flex-1 flex items-center justify-center p-8 text-[var(--text-muted)] animate-in fade-in duration-500">
-              <div className="text-center font-mono border border-dashed border-[var(--border-focus)] p-8 rounded bg-[var(--bg-secondary)]">
-                <p className="text-xs uppercase tracking-widest mb-1">Module Offline</p>
-                <p className="text-[10px] opacity-70">Awaiting C++ Core hydration for {activeTab.replace('_', ' ')}.</p>
-              </div>
+          {activeTab === 'market_intel' && <MarketIntelPanel />}
+          {activeTab === 'backtest' && <BacktestPanel />}
+          {activeTab === 'quote_health' && <QuoteHealthPanel />}
+          {activeTab === 'audit_log' && <AuditLogPanel />}
+          {activeTab === 'telemetry' && (
+            <div className="flex-1 p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <TelemetryPanel />
             </div>
           )}
         </main>
