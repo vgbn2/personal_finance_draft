@@ -38,7 +38,11 @@ function buildTradeGatewayLaunch(args = []) {
     }
     return { command: tsxPath, args: [gatewayPath, ...args], shell: false };
   }
-  return { command: 'npx.cmd', args: ['tsx', gatewayPath, ...args], shell: false };
+  return { 
+    command: process.platform === 'win32' ? 'npx.cmd' : 'npx', 
+    args: ['tsx', gatewayPath, ...args], 
+    shell: process.platform === 'win32' 
+  };
 }
 
 /**
