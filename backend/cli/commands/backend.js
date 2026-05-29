@@ -295,19 +295,24 @@ async function commandBackend(args) {
   const subcommand = args[0] || 'status';
 
   if ((subcommand === 'correlation' || subcommand === 'data') && isRichTerminal()) {
-    const symbols = get_Current_Universe_Symbols();
-    const choices = symbols.map(s => ({ label: s, value: s }));
+    const hasSymbols = hasFlag(args, '--symbols');
+    const hasSymbol = hasFlag(args, '--symbol');
     
-    if (subcommand === 'correlation') {
-      const selected = await utils.promptMultiSelect('Select symbols (min 2):', choices);
-      if (selected.length < 2) {
-        console.error('Please select at least 2 symbols.');
-        return 1;
+    if ((subcommand === 'correlation' && !hasSymbols) || (subcommand === 'data' && !hasSymbol)) {
+      const symbols = get_Current_Universe_Symbols();
+      const choices = symbols.map(s => ({ label: s, value: s }));
+      
+      if (subcommand === 'correlation') {
+        const selected = await utils.promptMultiSelect('Select symbols (min 2):', choices);
+        if (selected.length < 2) {
+          console.error('Please select at least 2 symbols.');
+          return 1;
+        }
+        args.push('--symbols', selected.join(','));
+      } else if (subcommand === 'data') {
+        const selected = await utils.promptSelect('Select symbol:', choices);
+        args.push('--symbol', selected);
       }
-      args.push('--symbols', selected.join(','));
-    } else if (subcommand === 'data') {
-      const selected = await utils.promptSelect('Select symbol:', choices);
-      args.push('--symbol', selected);
     }
   }
 
