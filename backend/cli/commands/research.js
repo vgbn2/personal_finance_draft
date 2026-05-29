@@ -155,6 +155,7 @@ function recordBackfillSummary(summaries, candles, family, provider, symbol, tim
 async function loadHistoricalSources(args) {
   const timeframe = optionValue(args, '--timeframe', '1d');
   const targetSymbol = optionValue(args, '--symbol', null); // [gemini-work] Detect --symbol flag
+  const force = args.historyForce || hasFlag(args, '--force'); // [gemini-work] Force refresh
   const window = historicalWindowFromArgs(args);
   const config = await loadConfig();
   const sources = [];
@@ -173,167 +174,42 @@ async function loadHistoricalSources(args) {
     commodities: filterSymbols(config.commodities.symbols),
     crypto: filterSymbols(config.crypto.symbols),
   };
-  //dev review alot of if elses
-  for (const symbol of symbolsByFamily.equities) {
-    const providers = (config.equities.providers || []).filter(provider => typeof provider === 'string' && provider.trim().length > 0);
-    if (providers.length > 1 && chosenTimeframe !== '1d' && window.days > 2) {
-      const candles = await fetchParallelBackfill(symbol, chosenTimeframe, window.days, 'equities', providers);
-      recordBackfillSummary(backfillWindows, candles, 'equities', providers[0], symbol, chosenTimeframe);
-      sources.push(...candlesToSources(candles, 'equities', providers[0], symbol, chosenTimeframe));
-    } else {
-      let resolved = false;
-      for (const provider of providers) {
-        try {
-          if (provider === 'stooq') {
-            if (chosenTimeframe !== '1d') continue;
-            const mapped = resolveStooqSymbol('equities', symbol);
-            if (!mapped) continue;
-            const candles = filterCandlesByWindow(await fetchStooqDailyHistory(mapped), window);
-            sources.push(...candlesToSources(candles, 'equities', provider, symbol, '1d'));
-            resolved = true;
-            break;
+
+  const families = ['equities', 'indices', 'commodities', 'crypto'];
+  for (const family of families) {
+      const symbols = symbolsByFamily[family];
+      for (const symbol of symbols) {
+          try {
+              // Leverage ingestMarketData for all historical fetching
+              const snapshot = await ingestMarketData({
+                  family,
+                  symbol,
+                  timeframe: chosenTimeframe,
+                  historyDays: window.days,
+                  force
+              });
+              
+              const candles = snapshot.sources.filter(s => 
+                  (s.symbol === symbol || s.underlying === symbol) && 
+                  (s.timeframe === chosenTimeframe || s.timeframe === '1d')
+              );
+
+              if (candles.length > 0) {
+                  sources.push(...candles);
+              }
+          } catch (err) {
+              console.warn(`[BACKFILL] Failed to load ${family}:${symbol}: ${err.message}`);
           }
-          if (provider === 'yahoo') {
-            const mapped = resolveEquityOrIndexSymbol('equities', symbol, provider) || symbol;
-            let candles;
-            if (chosenTimeframe !== '1d' && window.days > 5) {
-              candles = await fetchPaginated(mapped, chosenTimeframe, window.days, 'equities', fetchYahooBaseCandles);
-            } else {
-              candles = await fetchYahooBaseCandles(mapped, chosenTimeframe, window.days);
-            }
-            recordBackfillSummary(backfillWindows, candles, 'equities', provider, symbol, chosenTimeframe);
-            sources.push(...candlesToSources(candles, 'equities', provider, symbol, chosenTimeframe));
-            resolved = true;
-            break;
-          }
-        } catch { continue; }
       }
-    }
   }
 
-  for (const symbol of symbolsByFamily.indices) {
-    const providers = (config.indices.providers || []).filter(provider => typeof provider === 'string' && provider.trim().length > 0);
-    if (providers.length > 1 && chosenTimeframe !== '1d' && window.days > 2) {
-       const candles = await fetchParallelBackfill(symbol, chosenTimeframe, window.days, 'equities', providers);
-       recordBackfillSummary(backfillWindows, candles, 'indices', providers[0], symbol, chosenTimeframe);
-       sources.push(...candlesToSources(candles, 'indices', providers[0], symbol, chosenTimeframe));
-    } else {
-      let resolved = false;
-      for (const provider of providers) {
-        try {
-          if (provider === 'stooq') {
-            if (chosenTimeframe !== '1d') continue;
-            const mapped = resolveStooqSymbol('indices', symbol);
-            if (!mapped) continue;
-            const candles = filterCandlesByWindow(await fetchStooqDailyHistory(mapped), window);
-            sources.push(...candlesToSources(candles, 'indices', provider, symbol, '1d'));
-            resolved = true;
-            break;
-          }
-          if (provider === 'yahoo') {
-            const mapped = resolveEquityOrIndexSymbol('indices', symbol, provider) || symbol;
-            let candles;
-            if (chosenTimeframe !== '1d' && window.days > 5) {
-              candles = await fetchPaginated(mapped, chosenTimeframe, window.days, 'equities', fetchYahooBaseCandles);
-            } else {
-              candles = await fetchYahooBaseCandles(mapped, chosenTimeframe, window.days);
-            }
-            recordBackfillSummary(backfillWindows, candles, 'indices', provider, symbol, chosenTimeframe);
-            sources.push(...candlesToSources(candles, 'indices', provider, symbol, chosenTimeframe));
-            resolved = true;
-            break;
-          }
-          if (provider === 'fred') {
-            const seriesId = resolveFredSeries('indices', symbol);
-            if (!seriesId) continue;
-            sources.push({
-              ...(await fetchFredLatest(seriesId)),
-              family: 'indices',
-              symbol,
-            });
-            resolved = true;
-            break;
-          }
-        } catch { continue; }
-      }
-    }
-  }
-
-  for (const symbol of symbolsByFamily.commodities) {
-    const providers = (config.commodities.providers || []).filter(provider => typeof provider === 'string' && provider.trim().length > 0);
-    if (providers.length > 1 && chosenTimeframe !== '1d' && window.days > 2) {
-       const candles = await fetchParallelBackfill(symbol, chosenTimeframe, window.days, 'equities', providers);
-       recordBackfillSummary(backfillWindows, candles, 'commodities', providers[0], symbol, chosenTimeframe);
-       sources.push(...candlesToSources(candles, 'commodities', providers[0], symbol, chosenTimeframe));
-    } else {
-      let resolved = false;
-      for (const provider of providers) {
-        try {
-          if (provider === 'stooq') {
-            if (chosenTimeframe !== '1d') continue;
-            const mapped = resolveStooqSymbol('commodities', symbol);
-            if (!mapped) continue;
-            const candles = filterCandlesByWindow(await fetchStooqDailyHistory(mapped), window);
-            sources.push(...candlesToSources(candles, 'commodities', provider, symbol, '1d'));
-            resolved = true;
-            break;
-          }
-          if (provider === 'yahoo') {
-            const mapped = resolveCommoditySymbol(provider, symbol) || symbol;
-            let candles;
-            if (chosenTimeframe !== '1d' && window.days > 5) {
-              candles = await fetchPaginated(mapped, chosenTimeframe, window.days, 'equities', fetchYahooBaseCandles);
-            } else {
-              candles = await fetchYahooBaseCandles(mapped, chosenTimeframe, window.days);
-            }
-            recordBackfillSummary(backfillWindows, candles, 'commodities', provider, symbol, chosenTimeframe);
-            sources.push(...candlesToSources(candles, 'commodities', provider, symbol, chosenTimeframe));
-            resolved = true;
-            break;
-          }
-        } catch { continue; }
-      }
-    }
-  }
-
-  for (const symbol of symbolsByFamily.crypto) {
-    const providers = (config.crypto.providers || []).filter(provider => typeof provider === 'string' && provider.trim().length > 0);
-    if (providers.length > 1 && chosenTimeframe !== '1d' && window.days > 1) {
-      const candles = await fetchParallelBackfill(symbol, chosenTimeframe, window.days, 'crypto', providers);
-      recordBackfillSummary(backfillWindows, candles, 'crypto', providers[0], symbol, chosenTimeframe);
-      sources.push(...candlesToSources(candles, 'crypto', providers[0], symbol, chosenTimeframe));
-    } else {
-      for (const provider of providers.slice(0, 2)) {
-        let candles = null;
-        try {
-          if (provider === 'binance') {
-            if (window.days > 3 || (chosenTimeframe !== '1d' && window.days > 1)) {
-               candles = await fetchPaginated(symbol, chosenTimeframe, window.days, 'crypto', fetchBinanceBaseCandles);
-            } else {
-               candles = await fetchBinanceBaseCandles(symbol, cryptoLimitForWindow(chosenTimeframe, window.days, provider), chosenTimeframe);
-            }
-          } else if (provider === 'coinbase') {
-            candles = await fetchCoinbaseBaseCandles(symbol, cryptoLimitForWindow(chosenTimeframe, window.days, provider), chosenTimeframe);
-          }
-          if (candles && candles.length > 0) {
-            recordBackfillSummary(backfillWindows, candles, 'crypto', provider, symbol, chosenTimeframe);
-            sources.push(...candlesToSources(candles, 'crypto', provider, symbol, chosenTimeframe));
-          }
-        } catch { continue; }
-      }
-    }
-  }
-
-  return {
-    snapshot: {
-      mode: 'provider_history',
-      fetched_at: new Date().toISOString(),
-      sources,
-      errors: [],
-      backfill_windows: backfillWindows,
-    },
-    quality: null,
+  const snapshot = {
+    mode: 'provider_history',
+    fetched_at: new Date().toISOString(),
+    sources,
+    backfill_windows: backfillWindows,
   };
+  return { snapshot, quality: null };
 }
 
 async function loadPredictionMarketHistory(args) {

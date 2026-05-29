@@ -19,60 +19,163 @@ async function promptMultiSelect(question, options) {
   process.stdin.setEncoding('utf8');
 
   let selectedIndex = 0;
-  const resolvedOptions = typeof options === 'function' ? await options() : options;
+  let filterText = '';
+  const rawOptions = typeof options === 'function' ? await options() : options;
+  const resolvedOptions = rawOptions.map(o => (typeof o === 'object' ? o : { label: String(o), value: o }));
   const selectedIndices = new Set();
   
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 12;
   let scrollOffset = 0;
 
   return new Promise(resolve => {
     let lastLinesCount = 0;
 
+    const getFiltered = () => resolvedOptions.filter(o => 
+      (o.label || o.value || '').toString().toLowerCase().includes(filterText.toLowerCase())
+    );
+
     const render = () => {
+      const filtered = getFiltered();
+      
+      // Group by category for rendering
+      const grouped = [];
+      let lastCat = null;
+      filtered.forEach(o => {
+          if (o.category && o.category !== lastCat) {
+              grouped.push({ type: 'header', label: o.category });
+              lastCat = o.category;
+          }
+          grouped.push({ type: 'item', ...o });
+      });
+
+      if (selectedIndex >= grouped.length) selectedIndex = Math.max(0, grouped.length - 1);
+      
+      if (selectedIndex < scrollOffset) scrollOffset = selectedIndex;
+      else if (selectedIndex >= scrollOffset + PAGE_SIZE) scrollOffset = selectedIndex - PAGE_SIZE + 1;
+
+      const visible = grouped.slice(scrollOffset, scrollOffset + PAGE_SIZE);
+      
+      let buffer = '';
+      const time = new Date().toLocaleTimeString();
+      
+      buffer += `\x1b[1;36mSOVEREIGN\x1b[0m \x1b[90m| ${time} |\x1b[0m \x1b[1m${question}\x1b[0m \x1b[90m(Filter: ${filterText})\x1b[0m\n`;
+      buffer += `\x1b[90m  Space: toggle | Enter: confirm | Esc: back/cancel | Type to search\x1b[0m\n`;
+      buffer += `\x1b[90m${'─'.repeat(80)}\x1b[0m\n`;
+
+      visible.forEach((item, i) => {
+        const actualIndex = i + scrollOffset;
+        const isSelected = actualIndex === selectedIndex;
+        
+        if (item.type === 'header') {
+            buffer += `\n  \x1b[1;33m--- ${item.label.toUpperCase()} ---\x1b[0m\n`;
+        } else {
+            // Map grouped item back to its original resolvedOptions index for state tracking
+            const origIdx = resolvedOptions.indexOf(resolvedOptions.find(o => o.value === item.value && o.family === item.family) || item);
+            // Better: use a robust find that handles the object shape
+            const foundIdx = resolvedOptions.findIndex(o => o.value === item.value && o.label === item.label);
+            const isChecked = selectedIndices.has(foundIdx);
+            const prefix = isChecked ? '\x1b[32m[x]\x1b[0m' : '[ ]';
+            
+            if (isSelected) {
+                buffer += `  \x1b[32m❯ ${prefix} \x1b[36m${item.label || item.value}\x1b[0m\n`;
+            } else {
+                buffer += `    ${prefix} ${item.label || item.value}\n`;
+            }
+        }
+      });
+
       if (lastLinesCount > 0) {
         readline.moveCursor(process.stdout, 0, -lastLinesCount);
         readline.clearScreenDown(process.stdout);
       }
-      
-      let buffer = '';
-      buffer += `\x1b[1;36mSOVEREIGN\x1b[0m \x1b[1m${question}\x1b[0m \x1b[90m(Space: toggle, Enter: finish)\x1b[0m\n\n`;
-      
-      if (selectedIndex < scrollOffset) {
-        scrollOffset = selectedIndex;
-      } else if (selectedIndex >= scrollOffset + PAGE_SIZE) {
-        scrollOffset = selectedIndex - PAGE_SIZE + 1;
-      }
-
-      const visible = resolvedOptions.slice(scrollOffset, scrollOffset + PAGE_SIZE);
-      for (let i = 0; i < visible.length; i++) {
-        const actualIndex = i + scrollOffset;
-        const isSelected = selectedIndices.has(actualIndex);
-        const prefix = isSelected ? '\x1b[32m[x]\x1b[0m' : '[ ]';
-        const line = actualIndex === selectedIndex 
-          ? `  \x1b[36m❯ ${prefix} ${visible[i].label}\x1b[0m`
-          : `    ${prefix} ${visible[i].label}`;
-        buffer += line + '\n';
-      }
 
       process.stdout.write(buffer);
-      lastLinesCount = 2 + visible.length;
+      lastLinesCount = (buffer.match(/\n/g) || []).length;
     };
     
     render();
-    //too many if elses dev review
+
     const onData = (key) => {
-      if (key === '\u0003') { process.exit(0); }
-      if (key === '\u001b[A') { selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : resolvedOptions.length - 1; render(); }
-      else if (key === '\u001b[B') { selectedIndex = (selectedIndex < resolvedOptions.length - 1) ? selectedIndex + 1 : 0; render(); }
-      else if (key === ' ') {
-        if (selectedIndices.has(selectedIndex)) selectedIndices.delete(selectedIndex);
-        else selectedIndices.add(selectedIndex);
+      const isControl = key === '\u0003' || key === '\r' || key === '\n' || key === '\u001b' || key === '\u007f' || key === ' ';
+      const isArrow = key === '\u001b[A' || key === '\u001b[B';
+      const isPrintable = key.length === 1 && key >= ' ' && key <= '~' && key !== ' ';
+
+      if (!isControl && !isArrow && !isPrintable) return;
+
+      if (key === '\u0003' || key === '\u001b') { 
+        process.stdin.removeListener('data', onData);
+        if (process.stdin.setRawMode) process.stdin.setRawMode(false);
+        process.stdout.write('\n');
+        resolve(null);
+      }
+      else if (key === '\u007f') {
+        filterText = filterText.slice(0, -1);
+        selectedIndex = 0;
         render();
+      } else if (isPrintable) {
+        filterText += key;
+        selectedIndex = 0;
+        render();
+      } else if (key === ' ') {
+          const filtered = getFiltered();
+          const grouped = [];
+          let lastCat = null;
+          filtered.forEach(o => {
+              if (o.category && o.category !== lastCat) {
+                  grouped.push({ type: 'header', label: o.category });
+                  lastCat = o.category;
+              }
+              grouped.push({ type: 'item', ...o });
+          });
+
+          const item = grouped[selectedIndex];
+          if (item && item.type === 'item') {
+              const origIdx = resolvedOptions.findIndex(o => o.value === item.value && o.label === item.label);
+              if (selectedIndices.has(origIdx)) selectedIndices.delete(origIdx);
+              else selectedIndices.add(origIdx);
+          }
+        render();
+      } else if (key === '\u001b[A') {
+          const filtered = getFiltered();
+          const grouped = [];
+          let lastCat = null;
+          filtered.forEach(o => {
+              if (o.category && o.category !== lastCat) {
+                  grouped.push({ type: 'header', label: o.category });
+                  lastCat = o.category;
+              }
+              grouped.push({ type: 'item', ...o });
+          });
+
+          let nextIdx = selectedIndex;
+          do {
+              nextIdx = (nextIdx > 0) ? nextIdx - 1 : grouped.length - 1;
+          } while (grouped[nextIdx]?.type === 'header' && grouped.length > 1);
+          selectedIndex = nextIdx;
+          render();
+      } else if (key === '\u001b[B') {
+          const filtered = getFiltered();
+          const grouped = [];
+          let lastCat = null;
+          filtered.forEach(o => {
+              if (o.category && o.category !== lastCat) {
+                  grouped.push({ type: 'header', label: o.category });
+                  lastCat = o.category;
+              }
+              grouped.push({ type: 'item', ...o });
+          });
+
+          let nextIdx = selectedIndex;
+          do {
+              nextIdx = (nextIdx < grouped.length - 1) ? nextIdx + 1 : 0;
+          } while (grouped[nextIdx]?.type === 'header' && grouped.length > 1);
+          selectedIndex = nextIdx;
+          render();
       } else if (key === '\r' || key === '\n') {
         process.stdin.removeListener('data', onData);
         if (process.stdin.setRawMode) process.stdin.setRawMode(false);
         process.stdout.write('\n');
-        resolve([...selectedIndices].map(idx => resolvedOptions[idx].value));
+        resolve(Array.from(selectedIndices).map(idx => resolvedOptions[idx].value));
       }
     };
     process.stdin.on('data', onData);
@@ -120,11 +223,6 @@ async function promptSelect(question, options) {
     );
 
     const render = () => {
-      if (lastLinesCount > 0) {
-        readline.moveCursor(process.stdout, 0, -lastLinesCount);
-        readline.clearScreenDown(process.stdout);
-      }
-      
       const filtered = getFiltered();
       
       // Group by category for rendering
@@ -155,50 +253,87 @@ async function promptSelect(question, options) {
 
       for (let i = 0; i < visible.length; i++) {
         const item = visible[i];
+        const isSelected = (i + scrollOffset) === selectedIndex;
+        
         if (item.type === 'header') {
             buffer += `\n  \x1b[1;33m--- ${item.label.toUpperCase()} ---\x1b[0m\n`;
-            lastLinesCount += 1;
         } else {
-            const actualIndex = i + scrollOffset;
-            const line = actualIndex === selectedIndex 
+            const line = isSelected 
               ? `  \x1b[32m❯ \x1b[36m${item.label || item.value || item}\x1b[0m`
               : `    ${item.label || item.value || item}`;
             buffer += line + '\n';
         }
       }
 
+      // [gemini-work] Waterproof screen clearing
+      if (lastLinesCount > 0) {
+        readline.moveCursor(process.stdout, 0, -lastLinesCount);
+        readline.clearScreenDown(process.stdout);
+      }
+
       process.stdout.write(buffer);
-      lastLinesCount = 3 + visible.length; 
+      // Count actual newlines in buffer for next clear
+      lastLinesCount = (buffer.match(/\n/g) || []).length;
     };
     
     render();
 
     const onData = (key) => {
+      // Recognize standard keys
+      const isControl = key === '\u0003' || key === '\r' || key === '\n' || key === '\u007f';
+      const isArrow = key === '\u001b[A' || key === '\u001b[B';
+      const isPrintable = key.length === 1 && key >= ' ' && key <= '~';
+
+      if (!isControl && !isArrow && !isPrintable) return;
+
       if (key === '\u0003') { process.exit(0); }
       else if (key === '\u007f') { // Backspace
         filterText = filterText.slice(0, -1);
         selectedIndex = 0;
         render();
-      } else if (key.length === 1 && key >= ' ' && key <= '~') {
+      } else if (isPrintable) {
         filterText += key;
         selectedIndex = 0;
         render();
       } else if (key === '\u001b[A') {
-        const filteredCount = getFiltered().length;
-        selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : Math.max(0, filteredCount - 1);
+        const filtered = getFiltered();
+        // Skip headers when navigating
+        let nextIdx = selectedIndex;
+        do {
+            nextIdx = (nextIdx > 0) ? nextIdx - 1 : filtered.length - 1;
+        } while (filtered[nextIdx]?.type === 'header' && filtered.length > 1);
+        selectedIndex = nextIdx;
         render();
       } else if (key === '\u001b[B') {
-        const filteredCount = getFiltered().length;
-        selectedIndex = (selectedIndex < filteredCount - 1) ? selectedIndex + 1 : 0;
+        const filtered = getFiltered();
+        let nextIdx = selectedIndex;
+        do {
+            nextIdx = (nextIdx < filtered.length - 1) ? nextIdx + 1 : 0;
+        } while (filtered[nextIdx]?.type === 'header' && filtered.length > 1);
+        selectedIndex = nextIdx;
         render();
       } else if (key === '\r' || key === '\n') {
         process.stdin.removeListener('data', onData);
         if (process.stdin.setRawMode) process.stdin.setRawMode(false);
         process.stdout.write('\n');
         
+        // Find selected item from raw options, not grouped
         const filtered = getFiltered();
-        const selected = filtered[selectedIndex];
-        resolve(selected ? (selected.value !== undefined ? selected.value : selected) : null);
+        const selected = filtered.filter(f => f.type !== 'header')[selectedIndex]; // This is still a bit risky
+        // Correct way: filter headers out first for index matching
+        const actualItems = [];
+        let lastCat = null;
+        resolvedOptions.filter(o => 
+          (o.label || o.value || '').toString().toLowerCase().includes(filterText.toLowerCase())
+        ).forEach(o => {
+            if (o.category && o.category !== lastCat) {
+                actualItems.push({ type: 'header', label: o.category });
+                lastCat = o.category;
+            }
+            actualItems.push({ type: 'item', ...o });
+        });
+        const finalSelection = actualItems[selectedIndex];
+        resolve(finalSelection ? (finalSelection.value !== undefined ? finalSelection.value : finalSelection) : null);
       }
     };
     process.stdin.on('data', onData);
@@ -337,6 +472,43 @@ function renderSigmaSparkline(mean, stddev, currentPrice, width = 40) {
   return `[-3σ ${line.join('')} +3σ]`;
 }
 
+/**
+ * Renders a color-coded heatmap for a correlation matrix.
+ */
+function renderCorrelationHeatmap(labels, values) {
+  if (!labels || !values || labels.length === 0) return '';
+
+  const getAnsiColor = (val) => {
+    // 256-color palette or RGB would be better, but we'll use robust 8-color for now
+    // Blue for negative, Cyan for neutral, Yellow/Red for positive
+    if (val > 0.8) return '\x1b[1;31m'; // Bright Red
+    if (val > 0.4) return '\x1b[31m';   // Red
+    if (val > 0.1) return '\x1b[33m';   // Yellow
+    if (val > -0.1) return '\x1b[90m';  // Grey
+    if (val > -0.4) return '\x1b[36m';  // Cyan
+    return '\x1b[34m';                  // Blue
+  };
+
+  const header = ' '.repeat(10) + labels.map(l => l.padStart(8).slice(-8)).join(' ');
+  let buffer = `\x1b[1mCorrelation Heatmap\x1b[0m\n${header}\n`;
+  buffer += '─'.repeat(header.length) + '\n';
+
+  for (let i = 0; i < labels.length; i++) {
+    let row = labels[i].padEnd(10).slice(0, 10);
+    for (let j = 0; j < labels.length; j++) {
+      const val = values[i][j];
+      const color = getAnsiColor(val);
+      row += color + val.toFixed(2).padStart(8) + '\x1b[0m ';
+    }
+    buffer += row + '\n';
+  }
+
+  // Legend
+  buffer += `\n\x1b[90mLegend: \x1b[34mNeg \x1b[36mLow \x1b[90mNeutral \x1b[33mMod \x1b[31mHigh \x1b[1;31mV.High\x1b[0m\n`;
+
+  return buffer;
+}
+
 module.exports = {
   promptSelect,
   promptMultiSelect,
@@ -344,5 +516,6 @@ module.exports = {
   promptConfirm,
   runInteractiveMenu,
   isRichTerminal,
-  renderSigmaSparkline
+  renderSigmaSparkline,
+  renderCorrelationHeatmap
 };
