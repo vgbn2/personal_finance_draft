@@ -707,6 +707,31 @@ function backendPortfolio(query = {}) {
   });
 }
 
+function backendIndicators(query = {}) {
+  const symbol = stringOrFallback(query.symbol, '');
+  const timeframe = stringOrFallback(query.timeframe, '1d');
+  return withCache(`indicators:${symbol}:${timeframe}`, () => {
+    const args = [
+      'indicators',
+      '--symbol',
+      symbol,
+      '--timeframe',
+      timeframe,
+      '--json',
+    ];
+    // Indicators are primarily handled by the Node CLI which uses shared/lib/indicators
+    const nodeCli = runNodeCli(args);
+    if (nodeCli.ok) {
+      return nodeCli;
+    }
+    return {
+      available: true,
+      ok: false,
+      error: nodeCli.error || 'indicators_command_failed',
+    };
+  });
+}
+
 function backendKillSwitch(subcommand = 'status') {
   const args = ['kill-switch', subcommand];
   const backend = runBackend(args);
@@ -888,6 +913,7 @@ module.exports = {
   backendDataSummary,
   backendPortfolio,
   backendUniverse,
+  backendIndicators,
   backendStats,
   backtestSummary,
   backendStatus,

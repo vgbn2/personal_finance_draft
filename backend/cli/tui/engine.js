@@ -9,11 +9,12 @@ const MANIFEST = require('./manifest');
  */
 
 function isRichTerminal() {
+  if (process.env.SOVEREIGN_FORCE_TUI === 'true') return true;
   return process.stdout.isTTY && !process.env.CI;
 }
 
 async function promptMultiSelect(question, options) {
-  process.stdin.setRawMode(true);
+  if (process.stdin.setRawMode) process.stdin.setRawMode(true);
   process.stdin.resume();
   process.stdin.setEncoding('utf8');
 
@@ -69,7 +70,7 @@ async function promptMultiSelect(question, options) {
         render();
       } else if (key === '\r' || key === '\n') {
         process.stdin.removeListener('data', onData);
-        process.stdin.setRawMode(false);
+        if (process.stdin.setRawMode) process.stdin.setRawMode(false);
         process.stdout.write('\n');
         resolve([...selectedIndices].map(idx => resolvedOptions[idx].value));
       }
@@ -94,19 +95,29 @@ async function promptSelect(question, options) {
     });
   }
 
-  process.stdin.setRawMode(true);
+  if (process.stdin.setRawMode) process.stdin.setRawMode(true);
   process.stdin.resume();
   process.stdin.setEncoding('utf8');
 
   let selectedIndex = 0;
   let filterText = '';
-  const resolvedOptions = typeof options === 'function' ? await options() : options;
+  const rawOptions = typeof options === 'function' ? await options() : options;
   
+  // Normalize options to object shape
+  const resolvedOptions = rawOptions.map(o => {
+    if (typeof o === 'object' && o !== null) return o;
+    return { label: String(o), value: o };
+  });
+
   const PAGE_SIZE = 10;
   let scrollOffset = 0;
 
   return new Promise(resolve => {
     let lastLinesCount = 0;
+
+    const getFiltered = () => resolvedOptions.filter(o => 
+      (o.label || o.value || '').toString().toLowerCase().includes(filterText.toLowerCase())
+    );
 
     const render = () => {
       if (lastLinesCount > 0) {
@@ -114,10 +125,7 @@ async function promptSelect(question, options) {
         readline.clearScreenDown(process.stdout);
       }
       
-      // Apply filter
-      const filtered = resolvedOptions.filter(o => 
-        (o.label || o.value || o).toString().toLowerCase().includes(filterText.toLowerCase())
-      );
+      const filtered = getFiltered();
       
       // Group by category for rendering
       const grouped = [];
@@ -176,24 +184,26 @@ async function promptSelect(question, options) {
         selectedIndex = 0;
         render();
       } else if (key === '\u001b[A') {
-        selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : Math.max(0, resolvedOptions.filter(o => o.label.toLowerCase().includes(filterText.toLowerCase())).length - 1);
+        const filteredCount = getFiltered().length;
+        selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : Math.max(0, filteredCount - 1);
         render();
       } else if (key === '\u001b[B') {
-        selectedIndex = (selectedIndex < resolvedOptions.filter(o => o.label.toLowerCase().includes(filterText.toLowerCase())).length - 1) ? selectedIndex + 1 : 0;
+        const filteredCount = getFiltered().length;
+        selectedIndex = (selectedIndex < filteredCount - 1) ? selectedIndex + 1 : 0;
         render();
       } else if (key === '\r' || key === '\n') {
         process.stdin.removeListener('data', onData);
-        process.stdin.setRawMode(false);
+        if (process.stdin.setRawMode) process.stdin.setRawMode(false);
         process.stdout.write('\n');
-        const filtered = resolvedOptions.filter(o => o.label.toLowerCase().includes(filterText.toLowerCase()));
+        
+        const filtered = getFiltered();
         const selected = filtered[selectedIndex];
-        resolve(selected.value !== undefined ? selected.value : selected);
+        resolve(selected ? (selected.value !== undefined ? selected.value : selected) : null);
       }
     };
     process.stdin.on('data', onData);
   });
 }
-
 
 async function promptText(question, defaultValue = '') {
   const rl = readline.createInterface({
@@ -253,8 +263,9 @@ async function runInteractiveMenu(handleCommand) {
   console.log('\x1b[90mNavigate with Up/Down arrows and Enter.\x1b[0m\n');
 
   while (true) {
+    const categories = MANIFEST.categories || [];
     const categoryChoices = [
-      ...MANIFEST.categories.map(c => ({ label: c.label, value: c.id })),
+      ...categories.map(c => ({ label: c.label, value: c.id })),
       { label: 'Exit', value: 'exit' }
     ];
     const categoryId = await promptSelect('Select Category:', categoryChoices);
@@ -264,7 +275,7 @@ async function runInteractiveMenu(handleCommand) {
       process.exit(0);
     }
 
-    const commandList = MANIFEST.commands[categoryId];
+    const commandList = (MANIFEST.commands && MANIFEST.commands[categoryId]) || [];
     const commandChoices = [
       ...commandList.map(c => ({ label: c.label, value: c })),
       { label: '< Back', value: 'back' }
@@ -328,6 +339,7 @@ function renderSigmaSparkline(mean, stddev, currentPrice, width = 40) {
 
 module.exports = {
   promptSelect,
+  promptMultiSelect,
   promptText,
   promptConfirm,
   runInteractiveMenu,

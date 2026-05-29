@@ -22,6 +22,7 @@ const {
   backendStats,
   backendStatus,
   backendUniverse,
+  backendIndicators,
   quoteSources,
   systemStatus,
 } = require('./server/services/cli_executor');
@@ -44,7 +45,7 @@ const ALLOWED_ORIGINS = [
 
 const RATE_LIMITS = new Map(); // Simple IP-based rate limiting
 const LIMIT_WINDOW_MS = 60000;
-const MAX_REQ_PER_WINDOW = 120;
+const MAX_REQ_PER_WINDOW = 600; // Increased to 600/min (10 req/s) for heavy dashboard use
 
 function setSecurityHeaders(res, origin) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -91,7 +92,21 @@ function checkSecurity(req, res) {
   // API Token check for data-modifying or sensitive routes
   const token = req.headers['x-sovereign-token'];
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
-  const isPublicRoute = ['/','/index.html','/health','/api/status','/api/signal','/api/data/summary','/api/correlation','/api/backend/stats','/api/backend/portfolio','/api/universe','/api/quotes/status'].includes(pathname);
+  const isPublicRoute = [
+    '/',
+    '/index.html',
+    '/health',
+    '/api/status',
+    '/api/signal',
+    '/api/data/summary',
+    '/api/correlation',
+    '/api/backend/stats',
+    '/api/backend/portfolio',
+    '/api/universe',
+    '/api/cache/universe', // New public alias
+    '/api/indicators',     // New public endpoint
+    '/api/quotes/status'
+  ].includes(pathname);
   if (!isPublicRoute && req.method !== 'GET') {
     if (!API_TOKEN || token !== API_TOKEN) {
       console.warn(`[SECURITY] Missing or invalid API token from ${ip}`);
@@ -220,8 +235,13 @@ async function handleApi(req, res, url) {
     sendJson(res, endpointStatus(payload), payload);
     return true;
   }
-  if (url.pathname === '/api/universe') {
+  if (url.pathname === '/api/universe' || url.pathname === '/api/cache/universe') {
     const payload = backendUniverse(query);
+    sendJson(res, endpointStatus(payload), payload);
+    return true;
+  }
+  if (url.pathname === '/api/indicators') {
+    const payload = await backendIndicators(query);
     sendJson(res, endpointStatus(payload), payload);
     return true;
   }

@@ -26,3 +26,5 @@ if (require.main === module) {
     const symbol = process.argv[2] || 'SPY';
     backfill20Years(symbol);
 }
+
+module.exports = { backfill20Years };
