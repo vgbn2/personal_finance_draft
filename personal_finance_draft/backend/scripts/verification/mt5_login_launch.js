@@ -14,13 +14,10 @@ function envValue(...keys) {
   return '';
 }
 
+const { findTool } = require('../../../shared/lib/paths');
+
 function findTerminal() {
-  const candidates = [
-    process.env.MT5_TERMINAL_PATH,
-    'C:\\Program Files\\MetaTrader 5\\terminal64.exe',
-    'C:\\Program Files\\Five Percent Online MetaTrader 5\\terminal64.exe',
-  ].filter(Boolean);
-  return candidates.find((candidate) => fs.existsSync(candidate));
+  return findTool('metatrader5', 'MT5_TERMINAL_PATH');
 }
 
 function main() {
