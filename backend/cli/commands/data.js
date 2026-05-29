@@ -56,6 +56,7 @@ async function commandBackfill(args) {
 
   const output = optionValue(args, '--output', DEFAULT_HISTORY);
   const relevanceFloor = numericOption(args, '--relevance-floor', 0);
+  const force = hasFlag(args, '--force'); // [gemini-work] Force refresh
   let marketHistory = null;
 
   // If we already have a snapshot from 20-year backfill, we can use it or augment it
@@ -370,11 +371,48 @@ async function commandLoc(args) {
   }
 }
 
+/**
+ * Handles the 'universe' command.
+ */
+async function commandUniverse(args) {
+  const { loadConfig } = require('../../scripts/data_ops/ingest_market_data');
+  const config = await loadConfig();
+  const families = ['equities', 'indices', 'commodities', 'fx', 'crypto'];
+  const universe = [];
+  
+  for (const f of families) {
+      const symbols = config[f]?.symbols || [];
+      for (const s of symbols) {
+          universe.push({ label: `${s} (${f})`, value: s, category: f });
+      }
+  }
+
+  if (hasFlag(args, '--json')) {
+      console.log(JSON.stringify(universe, null, 2));
+      return 0;
+  }
+
+  const { promptSelect } = require('../tui/engine');
+  
+  console.log(`\n\x1b[1;36mSovereign Asset Universe\x1b[0m`);
+  const selected = await promptSelect('Select an asset to analyze:', [
+      ...universe,
+      { label: 'Exit', value: null }
+  ]);
+
+  if (selected) {
+      console.log(`\x1b[32mSelected: ${selected}\x1b[0m`);
+      console.log(`To analyze this asset, run: \x1b[33msovereign backend correlation --symbols ${selected}\x1b[0m`);
+  }
+  return 0;
+}
+
 module.exports = {
   commandIngest,
   commandBackfill,
   commandValidate,
   commandWatch,
   commandPrune,
-  commandLoc
+  commandLoc,
+  commandUniverse
 };
