@@ -2,6 +2,8 @@
 
 const { spawnSync } = require('node:child_process');
 
+const { findTool } = require('../../../shared/lib/paths');
+
 const DEFAULT_TOOLS = [
   {
     id: 'cmake',
@@ -21,7 +23,10 @@ const DEFAULT_TOOLS = [
     id: 'gpp',
     label: 'C++20 compiler fallback',
     required: false,
-    candidates: ['C:\\msys64\\ucrt64\\bin\\g++.exe', 'g++'],
+    candidates: [
+        findTool('msys64', 'SOVEREIGN_GPP') || 'g++',
+        'g++'
+    ],
     versionArgs: ['--version'],
   },
 ];

@@ -456,8 +456,8 @@ function unresolvedProviderErrors(errors, sources) {
   return (errors || []).filter((error) => !providerErrorIsResolvedBySource(error, sources));
 }
 
-function removeRejectedLiveSources(snapshot) {
-  const { report } = validateSnapshot(snapshot, { rejectStale: true });
+function removeRejectedSources(snapshot, rejectStale = true) {
+  const { report } = validateSnapshot(snapshot, { rejectStale });
   if (report.rejected_keys.length === 0) {
     return { removed_records: 0, stale_records: 0 };
   }
@@ -546,7 +546,7 @@ function aggregateCandles(candles, interval, symbol, provider, family = "unknown
         low: candle.low,
         close: candle.close,
         volume: candle.volume,
-        source: `${provider}-${BASE_CRYPTO_INTERVAL}-rollup`,
+        source: `${provider}-rollup`,
       });
       continue;
     }
@@ -838,7 +838,8 @@ function resolveWorldBankIndicator(metric, config) {
   return mappings[metric] || metric;
 }
 
-async function fetchEquityOrIndexSnapshot(family, provider, symbol, timeframes) {
+async function fetchEquityOrIndexSnapshot(family, provider, symbol, timeframes, config, options = {}) {
+  const historyDays = options.historyDays || options.days || 5;
   let baseCandles = null;
   if (provider === 'stooq') {
     const stooqSymbol = resolveStooqSymbol(family, symbol);
@@ -851,7 +852,9 @@ async function fetchEquityOrIndexSnapshot(family, provider, symbol, timeframes) 
     if (!providerSymbol) {
       throw new Error(`No ${provider} symbol mapping for ${symbol}`);
     }
-    const bestBase = timeframes.includes("1h") ? "1h" : "1d"; baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase);
+    // [gemini-work] Force 1d for long history to avoid Yahoo 422
+    const bestBase = (historyDays > 730 || !timeframes.includes("1h")) ? "1d" : "1h"; 
+    baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, historyDays);
   }
   const output = [];
 
@@ -861,17 +864,23 @@ async function fetchEquityOrIndexSnapshot(family, provider, symbol, timeframes) 
     }
     const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family); 
     if (aggregated.length > 0) {
-      output.push({
-        ...aggregated[aggregated.length - 1],
-        family,
-      });
+      if (historyDays > 5) {
+        // [gemini-work] Return full history for backfills
+        output.push(...aggregated);
+      } else {
+        output.push({
+          ...aggregated[aggregated.length - 1],
+          family,
+        });
+      }
     }
   }
 
   return output;
 }
 
-async function fetchCommoditySnapshot(family, provider, symbol, timeframes) {
+async function fetchCommoditySnapshot(family, provider, symbol, timeframes, config, options = {}) {
+  const historyDays = options.historyDays || options.days || 5;
   let baseCandles = null;
   if (provider === 'stooq') {
     const stooqSymbol = resolveStooqSymbol('commodities', symbol);
@@ -884,7 +893,9 @@ async function fetchCommoditySnapshot(family, provider, symbol, timeframes) {
     if (!providerSymbol) {
       throw new Error(`No ${provider} symbol mapping for ${symbol}`);
     }
-    const bestBase = timeframes.includes("1h") ? "1h" : "1d"; baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase);
+    // [gemini-work] Force 1d for long history
+    const bestBase = (historyDays > 730 || !timeframes.includes("1h")) ? "1d" : "1h"; 
+    baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, historyDays);
   }
   const output = [];
 
@@ -894,10 +905,15 @@ async function fetchCommoditySnapshot(family, provider, symbol, timeframes) {
     }
     const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family); 
     if (aggregated.length > 0) {
-      output.push({
-        ...aggregated[aggregated.length - 1],
-        family,
-      });
+      if (historyDays > 5) {
+        // [gemini-work] Return full history
+        output.push(...aggregated);
+      } else {
+        output.push({
+          ...aggregated[aggregated.length - 1],
+          family,
+        });
+      }
     }
   }
 
@@ -1211,24 +1227,24 @@ async function fetchPolymarketPriceHistory() { return []; }
 async function fetchPolymarketHistoricalPrices() { return []; }
 
 const FAMILIES_MANIFEST = [
-  { id: 'equities', configKey: 'equities', itemsKey: 'symbols', fetcher: (p, s, t, cfg) => fetchEquityOrIndexSnapshot('equities', p, s, t) },
-  { id: 'indices', configKey: 'indices', itemsKey: 'symbols', fetcher: async (p, s, t, cfg) => {
+  { id: 'equities', configKey: 'equities', itemsKey: 'symbols', fetcher: (p, s, t, cfg, opts) => fetchEquityOrIndexSnapshot('equities', p, s, t, cfg, opts) },
+  { id: 'indices', configKey: 'indices', itemsKey: 'symbols', fetcher: async (p, s, t, cfg, opts) => {
       if (p === 'fred') {
         const id = resolveFredSeries('indices', s, cfg);
         if (!id) throw new Error(`No FRED series mapping for ${s}`);
         return [{ ...await fetchFredLatest(id), family: 'indices', symbol: s }];
       }
-      return fetchEquityOrIndexSnapshot('indices', p, s, t);
+      return fetchEquityOrIndexSnapshot('indices', p, s, t, cfg, opts);
     } 
   },
-  { id: 'commodities', configKey: 'commodities', itemsKey: 'symbols', fetcher: (p, s, t, cfg) => fetchCommoditySnapshot('commodities', p, s, t) },
-  { id: 'fx', configKey: 'fx', itemsKey: 'symbols', fetcher: async (p, s, t, cfg) => {
+  { id: 'commodities', configKey: 'commodities', itemsKey: 'symbols', fetcher: (p, s, t, cfg, opts) => fetchCommoditySnapshot('commodities', p, s, t, cfg, opts) },
+  { id: 'fx', configKey: 'fx', itemsKey: 'symbols', fetcher: async (p, s, t, cfg, opts) => {
       if (p === 'frankfurter') return [await fetchFrankfurterFx(s)];
       if (p === 'fxapi') return [await fetchFxApiFx(s)];
       return [await fetchEcbFx(s)];
     }
   },
-  { id: 'crypto', configKey: 'crypto', itemsKey: 'symbols', fetcher: (p, s, t, cfg) => fetchCryptoSnapshot(p, s, t, 'crypto') },
+  { id: 'crypto', configKey: 'crypto', itemsKey: 'symbols', fetcher: (p, s, t, cfg, opts) => fetchCryptoSnapshot(p, s, t, 'crypto', opts) },
   { id: 'pmi', configKey: 'pmi', itemsKey: 'series', fetcher: async (p, s, t, cfg) => fetchSpGlobalFlashPmi() },
   { id: 'macro', configKey: 'macro', itemsKey: 'series', fetcher: async (p, s, t, cfg, opts) => {
       const id = resolveFredSeries('macro', s, cfg);
@@ -1304,7 +1320,7 @@ async function ingestMarketData(options = {}) {
 
       // A. Provider Smoke Tests
       const items = family.itemsKey ? section[family.itemsKey] : ['fear_and_greed'];
-      if (items && items[0]) {
+      if (items && items[0] && options.historyDays <= 5) { // [gemini-work] Skip smoke tests for heavy backfills
         const sampleItem = items[0];
         for (const provider of section.providers) {
           if (!provider) continue;
@@ -1319,12 +1335,19 @@ async function ingestMarketData(options = {}) {
 
       // B. Full Data Sync
       if (items) {
-        for (const item of items) { console.log('[INGEST] Fetching ' + family.id + ':' + item);
+        // [gemini-work] Filter items if symbol option is provided
+        const filteredItems = options.symbol 
+          ? items.filter(i => i === options.symbol)
+          : items;
+
+        const syncTimeframes = options.timeframe ? [options.timeframe] : (section.timeframes || ['1d']);
+
+        for (const item of filteredItems) { console.log('[INGEST] Fetching ' + family.id + ':' + item);
           let resolved = false;
           for (const provider of section.providers) {
             if (!provider) continue;
             try {
-              const records = normalizeFetchedRecords(await fetcher(provider, item, section.timeframes || ['1d'], config, options), fetchContext(family.id, provider, item));
+              const records = normalizeFetchedRecords(await fetcher(provider, item, syncTimeframes, config, options), fetchContext(family.id, provider, item));
               snapshot.sources.push(...records); 
               resolved = true;
               break;
@@ -1348,12 +1371,17 @@ async function ingestMarketData(options = {}) {
       const fetcher = family.fetcher || family.fetch;
       const items = section[family.itemsKey];
       if (items) {
-        for (const item of items) { console.log('[INGEST] Fetching ' + family.id + ':' + item);
+        // [gemini-work] Filter items if symbol option is provided
+        const filteredItems = options.symbol 
+          ? items.filter(i => i === options.symbol)
+          : items;
+
+        for (const item of filteredItems) { console.log('[INGEST] Fetching ' + family.id + ':' + item);
           let resolved = false;
           for (const provider of section.providers) {
             if (!provider) continue;
             try {
-              const records = normalizeFetchedRecords(await fetcher(provider, item, null, optionsConfig), fetchContext(family.id, provider, item));
+              const records = normalizeFetchedRecords(await fetcher(provider, item, null, optionsConfig, options), fetchContext(family.id, provider, item));
               snapshot.sources.push(...records); 
               resolved = true;
               break;
@@ -1371,7 +1399,11 @@ async function ingestMarketData(options = {}) {
     const deduped = dedupePreferredMarketQuotes(snapshot.sources); 
     snapshot.sources = deduped.records;
     snapshot.errors = unresolvedProviderErrors(snapshot.errors, snapshot.sources);
-    const qualityFilter = removeRejectedLiveSources(snapshot); 
+    
+    // [gemini-work] Disable stale rejection for backfills
+    const rejectStale = (options.historyDays || options.days || 0) <= 5;
+    const qualityFilter = removeRejectedSources(snapshot, rejectStale); 
+
     snapshot.deduplication = {
       input_records: deduped.input_records,
       output_records: snapshot.sources.length,
@@ -1382,19 +1414,19 @@ async function ingestMarketData(options = {}) {
     snapshot.quality_filter = {
       removed_records: qualityFilter.removed_records,
       stale_records: qualityFilter.stale_records,
-      policy: 'drop_rejected_live_records',
+      policy: rejectStale ? 'drop_rejected_live_records' : 'preserve_historical_records',
     };
 
     // --- PRIORITIZED MERGE & PERSISTENCE ---
     const existing = readSnapshot(CACHE_PATH);
 
     const preservedSnapshot = mergeSnapshots(existing, snapshot);
-    const mergedQualityFilter = removeRejectedLiveSources(preservedSnapshot);
+    const mergedQualityFilter = removeRejectedSources(preservedSnapshot, rejectStale);
     preservedSnapshot.quality_filter = {
       ...preservedSnapshot.quality_filter,
       merged_removed_records: mergedQualityFilter.removed_records,
       merged_stale_records: mergedQualityFilter.stale_records,
-      policy: 'drop_rejected_live_records_after_merge',
+      policy: rejectStale ? 'drop_rejected_live_records_after_merge' : 'preserve_historical_records_after_merge',
     };
 
     try {
@@ -1468,12 +1500,29 @@ if (require.main === module) {
     });
 }
 
-async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypto') {
-  let fetchBase = fetchBinanceBaseCandles;
-  if (provider === 'coinbase') fetchBase = fetchCoinbaseBaseCandles;
-  else if (provider === 'alpaca') fetchBase = fetchAlpacaBaseCandles;
-  
-  const baseCandles = await fetchBase(symbol);
+async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypto', options = {}) {
+  const historyDays = options.historyDays || options.days || 5;
+  let baseCandles = null;
+
+  if (historyDays > 5 && (provider === 'binance' || provider === 'coinbase')) {
+    // [gemini-work] Use Yahoo for long-term crypto history if requested
+    const yahooSymbol = COINBASE_PRODUCTS[symbol] || symbol;
+    // [gemini-work] Force 1d for long history to avoid Yahoo 422
+    const bestBase = (historyDays > 730 || !timeframes.includes("1h")) ? "1d" : "1h"; 
+    try {
+      baseCandles = await fetchYahooBaseCandles(yahooSymbol, bestBase, historyDays);
+      console.log(`[INGEST] Using Yahoo for ${symbol} long-term history (${historyDays} days) at ${bestBase} interval`);
+    } catch (err) {
+      console.warn(`[INGEST] Yahoo fallback failed for ${symbol}: ${err.message}`);
+    }
+  }
+
+  if (!baseCandles) {
+    let fetchBase = fetchBinanceBaseCandles;
+    if (provider === 'coinbase') fetchBase = fetchCoinbaseBaseCandles;
+    else if (provider === 'alpaca') fetchBase = fetchAlpacaBaseCandles;
+    baseCandles = await fetchBase(symbol);
+  }
   const output = [];
 
   for (const timeframe of timeframes) {
@@ -1482,10 +1531,15 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
     }
     const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family); 
     if (aggregated.length > 0) {
-      output.push({
-        ...aggregated[aggregated.length - 1],
-        family,
-      });
+      if (historyDays > 5) {
+        // [gemini-work] Return full history
+        output.push(...aggregated);
+      } else {
+        output.push({
+          ...aggregated[aggregated.length - 1],
+          family,
+        });
+      }
     }
   }
 
