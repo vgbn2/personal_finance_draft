@@ -1,14 +1,13 @@
-name: my_strategy
-kind: event_driven
+name: trend_following
+kind: ml
 status: draft
 enabled: false
 model: cnn_v3
 sections:
-  hypothesis: "Replace this with the market edge thesis for my_strategy."
+  hypothesis: "Replace this with the market edge thesis for trend_following."
   universe:
     - SPY
     - QQQ
-    - AAPL
   signals:
     entry: "Define the trigger conditions here."
     exit: "Define the exit conditions here."

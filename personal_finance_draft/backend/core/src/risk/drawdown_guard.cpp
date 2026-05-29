@@ -23,7 +23,7 @@ RiskDecision DrawdownGuard::evaluate(std::span<const double> equity_curve, const
     }
 
     if (drawdown.max_drawdown > limits.max_drawdown) {
-        decision.reason = "max_drawdown_limit_breached";
+        decision.reason = "max_drawdown_exceeded";
         decision.approved = false;
         decision.halt_trading = true;
         return decision;

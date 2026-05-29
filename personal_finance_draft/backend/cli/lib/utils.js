@@ -14,7 +14,12 @@ const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, ge
 const { compareModels } = require('../../../shared/lib/models');
 const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../shared/lib/market_validation');
 
-const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
+const { 
+  REPO_ROOT, 
+  BACKEND_CANDIDATES, 
+  CLI_CANDIDATES 
+} = require('../../../shared/lib/paths');
+
 const DEFAULT_SNAPSHOT = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch.json');
 const DEFAULT_QUALITY_REPORT = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'data_quality_report.json');
 const DEFAULT_HISTORY = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'backtest_history.json');
@@ -22,11 +27,6 @@ const DEFAULT_FEATURES = path.join(REPO_ROOT, 'storage', 'data', 'features', 'la
 const DEFAULT_MODEL_REPORT = path.join(REPO_ROOT, 'storage', 'data', 'models', 'latest_model_comparison.json');
 const DEFAULT_BACKTEST = path.join(REPO_ROOT, 'storage', 'data', 'backtests', 'latest_backtest.json');
 const DEFAULT_STATE_PATH = path.join(REPO_ROOT, 'workspace', 'STATE.md');
-const BACKEND_CANDIDATES = [
-  path.join(REPO_ROOT, 'backend', 'core', 'build', 'manual', process.platform === 'win32' ? 'sovereign_wealth.exe' : 'sovereign_wealth'),
-  path.join(REPO_ROOT, 'build', 'cpp_core', process.platform === 'win32' ? 'sovereign_wealth.exe' : 'sovereign_wealth'),
-  path.join(REPO_ROOT, 'backend', 'core', 'src', process.platform === 'win32' ? 'sovereign_wealth.exe' : 'sovereign_wealth'),
-];
 
 const HELP_TOPICS = {
   overview: [
@@ -46,6 +46,7 @@ const HELP_TOPICS = {
     '  optimize      Test indicator periods against backtest metrics',
     '  trade         Place trades and check balances (Alpaca)',
     '  watch         Periodically synchronize market data in the background',
+    '  loc           Count lines of code in the project',
     '',
     'Navigation',
     '  help                 Show this guide',
@@ -68,12 +69,14 @@ const HELP_TOPICS = {
     '  backend integrity [--json]',
     '  quotes status [--json]',
     '  strategy new <name> [--kind momentum] [--model cnn_v3] [--output path]',
-    '  strategy list | strategy validate',
+    '  strategy list | strategy validate | strategy interactive',
+    '  strategy run_automated [--interval 15] [--live]',
     '  ingest [--full]',
-    '  backfill [--timeframe 1d] [--days 365] [--include-prediction]',
+    '  backfill [--timeframe 1d] [--days 365] [--symbol S] [--include-prediction] [--20-years]',
     '  check | validate [--input path] [--strict]',
     '  trade balance | trade <buy|sell> <symbol> <qty> [type] [price] [--live]',
     '  watch [--family crypto|fx|all] [--interval 15]',
+    '  loc',
     '',
     'Research',
     '  features | indicators [--sample] [--timeframe 1d]',
@@ -181,6 +184,33 @@ const HELP_TOPICS = {
     'Get JSON for another tool',
     '  node scripts/cli/sovereign_cli.js bt --json',
   ],
+};
+
+const IS_DEBUG = process.argv.includes('--debug') || process.env.SOVEREIGN_DEBUG === 'true';
+
+const logger = {
+  info: (msg) => console.log(`[INFO] ${msg}`),
+  warn: (msg) => console.warn(`\x1b[33m[WARN] ${msg}\x1b[0m`),
+  error: (msg, err) => {
+    console.error(`\x1b[31m[ERROR] ${msg}\x1b[0m`);
+    if (IS_DEBUG && err) {
+      console.error(`\x1b[2m${err.stack || err}\x1b[0m`);
+    }
+  },
+  debug: (msg, data) => {
+    if (IS_DEBUG) {
+      console.log(`\x1b[36m[DEBUG] ${msg}\x1b[0m`);
+      if (data) console.log(JSON.stringify(data, null, 2));
+    }
+  },
+  trace: (label, fn) => {
+    if (!IS_DEBUG) return fn();
+    const start = Date.now();
+    logger.debug(`Starting: ${label}`);
+    const result = fn();
+    logger.debug(`Finished: ${label} (${Date.now() - start}ms)`);
+    return result;
+  }
 };
 
 function usage() {
@@ -302,10 +332,23 @@ const {
   isRichTerminal
 } = require('../tui');
 
+function get_Current_Universe_Symbols() {
+  try {
+    if (!fs.existsSync(DEFAULT_HISTORY)) return ['BTCUSDT', 'ETHUSDT'];
+    const data = JSON.parse(fs.readFileSync(DEFAULT_HISTORY, 'utf8'));
+    const symbols = [...new Set(data.sources.map(s => s.symbol))].filter(Boolean);
+    return symbols.length > 0 ? symbols : ['BTCUSDT', 'ETHUSDT'];
+  } catch (e) {
+    return ['BTCUSDT', 'ETHUSDT'];
+  }
+}
+
 module.exports = {
   REPO_ROOT, DEFAULT_SNAPSHOT, DEFAULT_QUALITY_REPORT, DEFAULT_HISTORY,
   DEFAULT_FEATURES, DEFAULT_MODEL_REPORT, DEFAULT_BACKTEST, DEFAULT_STATE_PATH,
   BACKEND_CANDIDATES, HELP_TOPICS,
   usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption,
-  runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal
+  runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal,
+  get_Current_Universe_Symbols, logger,
+  promptMultiSelect: require('../tui/engine').promptMultiSelect
 };

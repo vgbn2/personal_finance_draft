@@ -15,6 +15,11 @@
 
 namespace sovereign::indicators {
 
+struct KalmanResult {
+    double estimate;
+    double variance;
+};
+
 struct IndicatorRow {
     OhlcvBar bar;
     // Dynamic metrics storage. Keys follow the pattern: "type:period" (e.g., "rsi:14", "vol:20")
@@ -48,6 +53,7 @@ class IndicatorEngine {
 public:
     static std::vector<double> rateOfChangeSeries(const std::vector<double>& closes, std::size_t lookback);
     static std::vector<double> rollingVolatilitySeries(const std::vector<double>& closes, std::size_t period);
+    static std::vector<KalmanResult> kalmanSeriesWithVariance(const std::vector<double>& closes, double process_noise, double measurement_noise);
     static IndicatorFrame buildFrame(std::span<const OhlcvBar> bars);
 };
 

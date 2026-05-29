@@ -8,34 +8,54 @@ const {
   dedupePreferredMarketQuotes, loadConfig, loadExternalQuoteInputs,
   resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
 } = require('../../scripts/data_ops/ingest_market_data');
+
 const { DEFAULT_PROVIDER_PRIORITY } = require('../../../shared/lib/quote_router');
+
 const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../shared/lib/backtest');
-const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../shared/lib/indicators');
+
+const { calculateFeatureFrame, calculateRollingFeatureFrame,
+        DEFAULT_PERIODS, generateSampleBars } = require('../../../shared/lib/indicators');
+
 const { compareModels } = require('../../../shared/lib/models');
-const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../shared/lib/market_validation');
-const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal } = require('../tui');
+
+const { mergeSnapshots, readSnapshot, 
+        validateSnapshot, writeJson } = require('../../../shared/lib/market_validation');
+
+const { runInteractiveMenu, handleIntersection, promptSelect, 
+        promptText, promptConfirm, isRichTerminal } = require('../tui');
+
+const { loadResearchConfig } = require('../lib/research_config');
 
 const utils = require('../lib/utils.js');
-const { usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption } = utils;
-const { REPO_ROOT, DEFAULT_SNAPSHOT, DEFAULT_QUALITY_REPORT, DEFAULT_HISTORY, DEFAULT_FEATURES, DEFAULT_MODEL_REPORT, DEFAULT_BACKTEST, DEFAULT_STATE_PATH, BACKEND_CANDIDATES, HELP_TOPICS } = utils;
 
-const research = require('./research.js');
-const data = require('./data.js');
+const { usage,helpText, pageText, optionValue, 
+        hasFlag, printPayload, currentPhaseLabel, 
+        formatHumanNumber, formatHumanPayload, renderHumanValue, 
+        safeReadJson, labelState, numericOption } = utils;
 
+const { REPO_ROOT, DEFAULT_SNAPSHOT, DEFAULT_QUALITY_REPORT,
+        DEFAULT_HISTORY, DEFAULT_FEATURES, 
+        DEFAULT_MODEL_REPORT, DEFAULT_BACKTEST, DEFAULT_STATE_PATH,
+        BACKEND_CANDIDATES, HELP_TOPICS } = utils;
 
+const researchConfig = loadResearchConfig();
+//dev suggest, what if i want to add more indicators?, then we have to manually add this to here
 function periodOptionsFromArgs(args) {
+  const periods = researchConfig.indicator_periods || {};
   return {
-    returnFast: numericOption(args, '--return-fast', DEFAULT_PERIODS.returnFast),
-    returnSlow: numericOption(args, '--return-slow', DEFAULT_PERIODS.returnSlow),
-    volatility: numericOption(args, '--volatility', DEFAULT_PERIODS.volatility),
-    rsi: numericOption(args, '--rsi', DEFAULT_PERIODS.rsi),
-    atr: numericOption(args, '--atr', DEFAULT_PERIODS.atr),
-    bollinger: numericOption(args, '--bollinger', DEFAULT_PERIODS.bollinger),
+    returnFast: numericOption(args, '--return-fast', periods.return_fast || DEFAULT_PERIODS.returnFast),
+    returnSlow: numericOption(args, '--return-slow', periods.return_slow || DEFAULT_PERIODS.returnSlow),
+    volatility: numericOption(args, '--volatility', periods.volatility || DEFAULT_PERIODS.volatility),
+    rsi: numericOption(args, '--rsi', periods.rsi || DEFAULT_PERIODS.rsi),
+    atr: numericOption(args, '--atr', periods.atr || DEFAULT_PERIODS.atr),
+    bollinger: numericOption(args, '--bollinger', periods.bollinger || DEFAULT_PERIODS.bollinger),
   };
 }
 
-function historicalWindowFromArgs(args, fallbackDays = 365) {
-  const days = Math.max(1, Math.floor(numericOption(args, '--days', fallbackDays)));
+function historicalWindowFromArgs(args, fallbackDays) {
+  const defaults = researchConfig.historical_defaults || {};
+  const actualFallback = fallbackDays || defaults.fallback_days || 365;
+  const days = Math.max(1, Math.floor(numericOption(args, '--days', actualFallback)));
   const endTs = Math.floor(Date.now() / 1000);
   return {
     days,
@@ -69,7 +89,8 @@ function cryptoLimitForWindow(timeframe, days, provider) {
 
 function loadUsableSources(args) {
   const timeframe = optionValue(args, '--timeframe', '1d');
-  const sampleSize = Math.max(30, Math.floor(numericOption(args, '--sample-size', 120)));
+  const defaults = researchConfig.historical_defaults || {};
+  const sampleSize = Math.max(30, Math.floor(numericOption(args, '--sample-size', defaults.sample_size || 120)));
   if (hasFlag(args, '--sample')) {
     return {
       snapshot: {
@@ -144,8 +165,7 @@ async function loadHistoricalSources(args) {
     commodities: (config.commodities.symbols || []).slice(0, 2),
     crypto: (config.crypto.symbols || []).slice(0, 2),
   };
-//line 950-1104 can be optimize, 
-  //line 950-1104 can be optimize, 
+  //dev review alot of if elses
   for (const symbol of symbolsByFamily.equities) {
     const providers = (config.equities.providers || []).filter(provider => typeof provider === 'string' && provider.trim().length > 0);
     if (providers.length > 1 && chosenTimeframe !== '1d' && window.days > 2) {
@@ -310,9 +330,10 @@ async function loadHistoricalSources(args) {
 
 async function loadPredictionMarketHistory(args) {
   const config = await loadConfig();
+  const defaults = researchConfig.prediction_market || {};
   const provider = optionValue(args, '--prediction-provider', 'all');
-  const marketLimit = Math.max(1, Math.floor(numericOption(args, '--prediction-market-limit', 3)));
-  const periodInterval = Math.floor(numericOption(args, '--prediction-period-minutes', 1440));
+  const marketLimit = Math.max(1, Math.floor(numericOption(args, '--prediction-market-limit', defaults.market_limit || 3)));
+  const periodInterval = Math.floor(numericOption(args, '--prediction-period-minutes', defaults.period_minutes || 1440));
   const { startTs, endTs } = historicalWindowFromArgs(args);
   const sources = [];
   const errors = [];
@@ -416,14 +437,15 @@ function commandModelCompare(args) {
   const { snapshot, quality } = loadUsableSources(args);
   if (quality) writeJson(DEFAULT_QUALITY_REPORT, quality);
   if (rejectDegradedResearchInput(quality, args, 'Model comparison')) return 1;
+  const defaults = researchConfig.backtest_defaults || {};
   const featureFrame = filterFeatureFrame(calculateRollingFeatureFrame(snapshot.sources, 2, periodOptionsFromArgs(args)), dateFilterOptionsFromArgs(args));
   const report = {
     source_mode: snapshot.mode,
     data_quality_ok: quality ? quality.ok : true,
     data_quality_report: quality ? DEFAULT_QUALITY_REPORT : null,
     ...compareModels(featureFrame, {
-      horizon: numericOption(args, '--horizon', 5),
-      threshold: numericOption(args, '--threshold', 0.55),
+      horizon: numericOption(args, '--horizon', defaults.horizon || 5),
+      threshold: numericOption(args, '--threshold', defaults.threshold || 0.55),
     }),
   };
   writeJson(output, report);
@@ -439,19 +461,20 @@ function commandModelCompare(args) {
 }
 
 async function commandBacktest(args) {
+  const defaults = researchConfig.backtest_defaults || {};
   const output = optionValue(args, '--output', DEFAULT_BACKTEST);
-  const model = optionValue(args, '--model', 'cnn_window_v0');
+  const model = optionValue(args, '--model', defaults.model || 'cnn_window_v0');
   const timeframe = optionValue(args, '--timeframe', null);
   const from = optionValue(args, '--from', null);
   const to = optionValue(args, '--to', null);
-  const horizon = numericOption(args, '--horizon', 5);
-  const threshold = numericOption(args, '--threshold', 0.55);
-  const costBps = numericOption(args, '--cost-bps', 5);
-  const feeBps = numericOption(args, '--fee-bps', costBps / 2);
-  const slippageBps = numericOption(args, '--slippage-bps', costBps / 2);
-  const trainRatio = numericOption(args, '--train-ratio', 0.7);
-  const tailAlpha = numericOption(args, '--tail-alpha', 0.05);
-  const monteCarloRuns = numericOption(args, '--monte-carlo-runs', 1000);
+  const horizon = numericOption(args, '--horizon', defaults.horizon || 5);
+  const threshold = numericOption(args, '--threshold', defaults.threshold || 0.55);
+  const costBps = numericOption(args, '--cost-bps', defaults.cost_bps || 5);
+  const feeBps = numericOption(args, '--fee-bps', defaults.fee_bps || costBps / 2);
+  const slippageBps = numericOption(args, '--slippage-bps', defaults.slippage_bps || costBps / 2);
+  const trainRatio = numericOption(args, '--train-ratio', defaults.train_ratio || 0.7);
+  const tailAlpha = numericOption(args, '--tail-alpha', defaults.tail_alpha || 0.05);
+  const monteCarloRuns = numericOption(args, '--monte-carlo-runs', defaults.monte_carlo_runs || 1000);
   let { snapshot, quality } = loadUsableSources(args);
   if (quality) writeJson(DEFAULT_QUALITY_REPORT, quality);
   const initialQualityError = backtestDataQualityError(quality, args);
@@ -516,31 +539,33 @@ async function commandBacktest(args) {
   writeJson(output, report);
   const tailRisk = report.metrics.tail_risk || {};
   const monteCarlo = report.metrics.monte_carlo || {};
-  printPayload({
-    strategy: report.strategy,
-    model: report.model,
-    timeframe: report.timeframe,
-    period: report.period,
-    trade_logs: report.trades.length,
-    trades: report.metrics.trades,
-    fee_bps: report.fee_bps,
-    slippage_bps: report.slippage_bps,
-    net_return: report.metrics.net_return,
-    max_drawdown: report.metrics.max_drawdown,
-    sharpe_ratio: report.metrics.sharpe_ratio,
-    sortino_ratio: report.metrics.sortino_ratio,
-    win_rate: report.metrics.win_rate,
-    expected_value: report.metrics.expected_value,
-    tail_var_95: tailRisk.value_at_risk,
-    tail_es_95: tailRisk.expected_shortfall,
-    mc_p05_return: monteCarlo.p05_final_return,
-    mc_loss_prob: monteCarlo.probability_of_loss,
-    oos_trades: outOfSample.metrics.trades,
-    oos_expected_value: outOfSample.metrics.expected_value,
-    oos_net_return: outOfSample.metrics.net_return,
-    output,
-  }, args);
-  return 0;
+  if (!global.suppressLogs) {
+    printPayload({
+      strategy: report.strategy,
+      model: report.model,
+      timeframe: report.timeframe,
+      period: report.period,
+      trade_logs: report.trades.length,
+      trades: report.metrics.trades,
+      fee_bps: report.fee_bps,
+      slippage_bps: report.slippage_bps,
+      net_return: report.metrics.net_return,
+      max_drawdown: report.metrics.max_drawdown,
+      sharpe_ratio: report.metrics.sharpe_ratio,
+      sortino_ratio: report.metrics.sortino_ratio,
+      win_rate: report.metrics.win_rate,
+      expected_value: report.metrics.expected_value,
+      tail_var_95: tailRisk.value_at_risk,
+      tail_es_95: tailRisk.expected_shortfall,
+      mc_p05_return: monteCarlo.p05_final_return,
+      mc_loss_prob: monteCarlo.probability_of_loss,
+      oos_trades: outOfSample.metrics.trades,
+      oos_expected_value: outOfSample.metrics.expected_value,
+      oos_net_return: outOfSample.metrics.net_return,
+      output,
+    }, args);
+  }
+  return report;
 }
 
 async function commandOptimize(args) {
@@ -548,22 +573,30 @@ async function commandOptimize(args) {
   let { snapshot, quality } = loadUsableSources(args);
   if (quality) writeJson(DEFAULT_QUALITY_REPORT, quality);
   if (rejectDegradedResearchInput(quality, args, 'Optimization')) return 1;
+  const defaults = researchConfig.backtest_defaults || {};
+  const gridConfig = researchConfig.optimization_grid || {};
   const timeframe = optionValue(args, '--timeframe', null);
   const from = optionValue(args, '--from', null);
   const to = optionValue(args, '--to', null);
-  const horizon = numericOption(args, '--horizon', 5);
-  const threshold = numericOption(args, '--threshold', 0.55);
-  const costBps = numericOption(args, '--cost-bps', 5);
-  const feeBps = numericOption(args, '--fee-bps', costBps / 2);
-  const slippageBps = numericOption(args, '--slippage-bps', costBps / 2);
-  const tailAlpha = numericOption(args, '--tail-alpha', 0.05);
-  const monteCarloRuns = numericOption(args, '--monte-carlo-runs', 1000);
-  const trainRatio = numericOption(args, '--train-ratio', 0.7);
+  const horizon = numericOption(args, '--horizon', defaults.horizon || 5);
+  const threshold = numericOption(args, '--threshold', defaults.threshold || 0.55);
+  const costBps = numericOption(args, '--cost-bps', defaults.cost_bps || 5);
+  const feeBps = numericOption(args, '--fee-bps', defaults.fee_bps || costBps / 2);
+  const slippageBps = numericOption(args, '--slippage-bps', defaults.slippage_bps || costBps / 2);
+  const tailAlpha = numericOption(args, '--tail-alpha', defaults.tail_alpha || 0.05);
+  const monteCarloRuns = numericOption(args, '--monte-carlo-runs', defaults.monte_carlo_runs || 1000);
+  const trainRatio = numericOption(args, '--train-ratio', defaults.train_ratio || 0.7);
+  
+  const rsiGrid = gridConfig.rsi || [7, 14, 21];
+  const atrGrid = gridConfig.atr || [7, 14, 21];
+  const bollingerGrid = gridConfig.bollinger || [10, 20, 30];
+  const volatilityGrid = gridConfig.volatility || [10, 20, 60];
+  
   const grid = [];
-  for (const rsi of [7, 14, 21]) {
-    for (const atr of [7, 14, 21]) {
-      for (const bollinger of [10, 20, 30]) {
-        for (const volatility of [10, 20, 60]) {
+  for (const rsi of rsiGrid) {
+    for (const atr of atrGrid) {
+      for (const bollinger of bollingerGrid) {
+        for (const volatility of volatilityGrid) {
           grid.push({ rsi, atr, bollinger, volatility, returnFast: 1, returnSlow: 5 });
         }
       }
@@ -576,7 +609,7 @@ async function commandOptimize(args) {
     const split = splitFeatureFrame(filtered, trainRatio);
     const backtestOptions = {
       strategy: 'cnn_momentum',
-      model: 'cnn_window_v0',
+      model: defaults.model || 'cnn_window_v0',
       horizon,
       threshold,
       costBps,
@@ -587,6 +620,8 @@ async function commandOptimize(args) {
     };
     const trainBacktest = runBacktest(split.train, backtestOptions);
     const testBacktest = runBacktest(split.test, backtestOptions);
+    const overfit_warning = (testBacktest.metrics.sharpe_ratio < (trainBacktest.metrics.sharpe_ratio * 0.5)) || (testBacktest.metrics.expected_value < 0); // [gemini-work] Detect OOS overfitting
+
     return {
       periods,
       timeframe: timeframe || testBacktest.timeframe,
@@ -604,10 +639,10 @@ async function commandOptimize(args) {
       oos_trades: testBacktest.metrics.trades,
       oos_net_return: testBacktest.metrics.net_return,
       oos_expected_value: testBacktest.metrics.expected_value,
-      score: trainBacktest.metrics.net_return - trainBacktest.metrics.max_drawdown + (trainBacktest.metrics.expected_value * 10),
+      overfit_warning,
+      score: trainBacktest.metrics.net_return - trainBacktest.metrics.max_drawdown + (trainBacktest.metrics.expected_value * 10) - (overfit_warning ? 100 : 0), // Penalize overfitting
     };
-  }).sort((a, b) => b.score - a.score || b.net_return - a.net_return);
-
+    }).sort((a, b) => b.score - a.score || b.net_return - a.net_return);
   if (!hasFlag(args, '--sample') && runs.length > 0 && runs[0].feature_count === 0) {
     try {
       const historical = await loadHistoricalSources(args);
@@ -630,6 +665,8 @@ async function commandOptimize(args) {
         };
         const trainBacktest = runBacktest(split.train, backtestOptions);
         const testBacktest = runBacktest(split.test, backtestOptions);
+        const overfit_warning = (testBacktest.metrics.sharpe_ratio < (trainBacktest.metrics.sharpe_ratio * 0.5)) || (testBacktest.metrics.expected_value < 0);
+
         return {
           periods,
           timeframe: timeframe || testBacktest.timeframe,
@@ -647,7 +684,8 @@ async function commandOptimize(args) {
           oos_trades: testBacktest.metrics.trades,
           oos_net_return: testBacktest.metrics.net_return,
           oos_expected_value: testBacktest.metrics.expected_value,
-          score: trainBacktest.metrics.net_return - trainBacktest.metrics.max_drawdown + (trainBacktest.metrics.expected_value * 10),
+          overfit_warning,
+          score: trainBacktest.metrics.net_return - trainBacktest.metrics.max_drawdown + (trainBacktest.metrics.expected_value * 10) - (overfit_warning ? 100 : 0),
         };
       }).sort((a, b) => b.score - a.score || b.net_return - a.net_return);
     } catch (error) {
@@ -687,6 +725,7 @@ async function commandOptimize(args) {
     oos_trades: report.winner ? report.winner.oos_trades : 0,
     oos_net_return: report.winner ? report.winner.oos_net_return : 0,
     oos_ev: report.winner ? report.winner.oos_expected_value : 0,
+    oos_overfit_warning: report.winner ? report.winner.overfit_warning : false,
     output,
   }, args);
   return 0;

@@ -16,7 +16,10 @@ int main() {
         KronosTensorBuilder tensor_builder(3); // Small window for testing
         
         // Load empirical data instead of dummy values
-        auto snapshot = loadMarketDataSnapshot("data/cache/backtest_history.json", "BTCUSDT", "1d", 5);
+        auto snapshot = loadMarketDataSnapshot("storage/data/cache/backtest_history.json", "BTCUSDT", "1d", 5);
+        if (snapshot.bars.size() < 4) {
+            snapshot = loadMarketDataSnapshot("../../../storage/data/cache/backtest_history.json", "BTCUSDT", "1d", 5);
+        }
         if (snapshot.bars.size() < 4) {
             throw std::runtime_error("Not enough empirical data points for Kronos test (need at least 4)");
         }

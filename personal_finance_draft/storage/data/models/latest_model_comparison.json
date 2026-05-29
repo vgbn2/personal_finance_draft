@@ -2,7 +2,7 @@
   "source_mode": "sample",
   "data_quality_ok": true,
   "data_quality_report": null,
-  "generated_at": "2026-05-27T12:55:41.605Z",
+  "generated_at": "2026-05-28T14:46:44.946Z",
   "horizon": 5,
   "threshold": 0.55,
   "feature_count": 238,
@@ -16,499 +16,214 @@
     "probabilistic",
     "trees"
   ],
-  "winner": "knn_pattern_v0",
+  "winner": "volatility_breakout_v0",
   "per_symbol_winners": [
     {
       "symbol": "BTCUSDT",
-      "winner": "knn_pattern_v0",
+      "winner": "volatility_breakout_v0",
       "candidates": [
         {
-          "model": "knn_pattern_v0",
-          "family": "instance_based",
-          "symbol": "BTCUSDT",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
-        },
-        {
-          "model": "naive_bayes_regime_v0",
-          "family": "probabilistic",
-          "symbol": "BTCUSDT",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
-        },
-        {
-          "model": "mean_reversion_baseline_v0",
+          "model": "volatility_breakout_v0",
           "family": "baseline",
           "symbol": "BTCUSDT",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
+          "trades": 22,
+          "hit_rate": 1,
+          "expectancy": 0.040757429214681125,
+          "sharpe_like": 3.8776123732053005,
+          "total_return": 1.4055919100524616
+        },
+        {
+          "model": "decision_tree_stump_v0",
+          "family": "trees",
+          "symbol": "BTCUSDT",
+          "trades": 27,
+          "hit_rate": 1,
+          "expectancy": 0.041951363168270986,
+          "sharpe_like": 3.0904169310959895,
+          "total_return": 2.0262831470551674
         },
         {
           "model": "transformer_attention_v0",
           "family": "neural",
           "symbol": "BTCUSDT",
-          "trades": 91,
-          "hit_rate": 0.3956043956043956,
-          "expectancy": -0.005395112335264652,
-          "sharpe_like": -0.15286455764007328,
-          "total_return": -0.42225105394591167
+          "trades": 53,
+          "hit_rate": 0.660377358490566,
+          "expectancy": 0.014979350828483581,
+          "sharpe_like": 0.4612204836697575,
+          "total_return": 1.1405888447026187
         },
         {
-          "model": "cnn_window_v0",
-          "family": "neural",
+          "model": "knn_pattern_v0",
+          "family": "instance_based",
           "symbol": "BTCUSDT",
-          "trades": 76,
-          "hit_rate": 0.35526315789473684,
-          "expectancy": -0.010227296791421855,
-          "sharpe_like": -0.29586623481021845,
-          "total_return": -0.5624598839569802
+          "trades": 93,
+          "hit_rate": 0.6236559139784946,
+          "expectancy": 0.013070685344143105,
+          "sharpe_like": 0.4154422592170075,
+          "total_return": 2.19939573566055
+        },
+        {
+          "model": "random_forest_v0",
+          "family": "trees",
+          "symbol": "BTCUSDT",
+          "trades": 80,
+          "hit_rate": 0.6375,
+          "expectancy": 0.013721266947262584,
+          "sharpe_like": 0.40223935620916657,
+          "total_return": 1.843410801977789
         }
       ]
     },
     {
       "symbol": "SPY",
-      "winner": "knn_pattern_v0",
+      "winner": "volatility_breakout_v0",
       "candidates": [
         {
-          "model": "knn_pattern_v0",
-          "family": "instance_based",
-          "symbol": "SPY",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
-        },
-        {
-          "model": "naive_bayes_regime_v0",
-          "family": "probabilistic",
-          "symbol": "SPY",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
-        },
-        {
-          "model": "mean_reversion_baseline_v0",
+          "model": "volatility_breakout_v0",
           "family": "baseline",
           "symbol": "SPY",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
+          "trades": 22,
+          "hit_rate": 1,
+          "expectancy": 0.040757429214681125,
+          "sharpe_like": 3.8776123732053005,
+          "total_return": 1.4055919100524616
+        },
+        {
+          "model": "decision_tree_stump_v0",
+          "family": "trees",
+          "symbol": "SPY",
+          "trades": 27,
+          "hit_rate": 1,
+          "expectancy": 0.041951363168270986,
+          "sharpe_like": 3.0904169310959895,
+          "total_return": 2.0262831470551674
         },
         {
           "model": "transformer_attention_v0",
           "family": "neural",
           "symbol": "SPY",
-          "trades": 91,
-          "hit_rate": 0.3956043956043956,
-          "expectancy": -0.005395112335264652,
-          "sharpe_like": -0.15286455764007328,
-          "total_return": -0.42225105394591167
+          "trades": 53,
+          "hit_rate": 0.660377358490566,
+          "expectancy": 0.014979350828483581,
+          "sharpe_like": 0.4612204836697575,
+          "total_return": 1.1405888447026187
         },
         {
-          "model": "cnn_window_v0",
-          "family": "neural",
+          "model": "knn_pattern_v0",
+          "family": "instance_based",
           "symbol": "SPY",
-          "trades": 76,
-          "hit_rate": 0.35526315789473684,
-          "expectancy": -0.010227296791421855,
-          "sharpe_like": -0.29586623481021845,
-          "total_return": -0.5624598839569802
+          "trades": 93,
+          "hit_rate": 0.6236559139784946,
+          "expectancy": 0.013070685344143105,
+          "sharpe_like": 0.4154422592170075,
+          "total_return": 2.19939573566055
+        },
+        {
+          "model": "random_forest_v0",
+          "family": "trees",
+          "symbol": "SPY",
+          "trades": 80,
+          "hit_rate": 0.6375,
+          "expectancy": 0.013721266947262584,
+          "sharpe_like": 0.40223935620916657,
+          "total_return": 1.843410801977789
         }
       ]
     }
   ],
   "models": [
     {
-      "name": "knn_pattern_v0",
-      "family": "instance_based",
-      "status": "deterministic_adapter",
-      "description": "nearest-neighbor style pattern proxy using return and RSI similarity bands",
-      "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
-        "macd",
-        "atr_14"
-      ],
-      "trades": 228,
-      "robustness_score": 0.3611682496304234,
-      "hit_rate": 0.5175438596491229,
-      "expectancy": 0.0029435102495828027,
-      "sharpe_like": 0.08173314713459538,
-      "total_return": 0.6875882685722083,
-      "by_symbol": [
-        {
-          "symbol": "BTCUSDT",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
-        },
-        {
-          "symbol": "SPY",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
-        }
-      ],
-      "sample_trades": [
-        {
-          "model": "knn_pattern_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-02T00:00:00.000Z",
-          "exit_time": "2025-01-07T00:00:00.000Z",
-          "entry": 98.85471222629775,
-          "exit": 102.71355869428479,
-          "return": 0.03903553387676029,
-          "confidence": 0.585,
-          "raw_score": 0.05
-        },
-        {
-          "model": "knn_pattern_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-03T00:00:00.000Z",
-          "exit_time": "2025-01-08T00:00:00.000Z",
-          "entry": 99.31875437772442,
-          "exit": 103.80792002805458,
-          "return": 0.04519957664045182,
-          "confidence": 0.585,
-          "raw_score": 0.05
-        },
-        {
-          "model": "knn_pattern_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-04T00:00:00.000Z",
-          "exit_time": "2025-01-09T00:00:00.000Z",
-          "entry": 99.9590052524901,
-          "exit": 104.92860293054389,
-          "return": 0.049716357875920325,
-          "confidence": 0.585,
-          "raw_score": 0.05
-        },
-        {
-          "model": "knn_pattern_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-05T00:00:00.000Z",
-          "exit_time": "2025-01-10T00:00:00.000Z",
-          "entry": 100.75603446927339,
-          "exit": 106.034390526641,
-          "return": 0.05238749306849022,
-          "confidence": 0.585,
-          "raw_score": 0.05
-        },
-        {
-          "model": "knn_pattern_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-06T00:00:00.000Z",
-          "exit_time": "2025-01-11T00:00:00.000Z",
-          "entry": 101.68447209235077,
-          "exit": 107.08338602367135,
-          "return": 0.05309477268483276,
-          "confidence": 0.585,
-          "raw_score": 0.05
-        }
-      ]
-    },
-    {
-      "name": "naive_bayes_regime_v0",
-      "family": "probabilistic",
-      "status": "deterministic_adapter",
-      "description": "naive-Bayes style regime score from independent technical likelihood buckets",
-      "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
-        "macd",
-        "atr_14"
-      ],
-      "trades": 228,
-      "robustness_score": 0.3611682496304234,
-      "hit_rate": 0.5175438596491229,
-      "expectancy": 0.0029435102495828027,
-      "sharpe_like": 0.08173314713459538,
-      "total_return": 0.6875882685722083,
-      "by_symbol": [
-        {
-          "symbol": "BTCUSDT",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
-        },
-        {
-          "symbol": "SPY",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
-        }
-      ],
-      "sample_trades": [
-        {
-          "model": "naive_bayes_regime_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-02T00:00:00.000Z",
-          "exit_time": "2025-01-07T00:00:00.000Z",
-          "entry": 98.85471222629775,
-          "exit": 102.71355869428479,
-          "return": 0.03903553387676029,
-          "confidence": 0.5999999999999999,
-          "raw_score": 0.09999999999999987
-        },
-        {
-          "model": "naive_bayes_regime_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-03T00:00:00.000Z",
-          "exit_time": "2025-01-08T00:00:00.000Z",
-          "entry": 99.31875437772442,
-          "exit": 103.80792002805458,
-          "return": 0.04519957664045182,
-          "confidence": 0.5999999999999999,
-          "raw_score": 0.09999999999999987
-        },
-        {
-          "model": "naive_bayes_regime_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-04T00:00:00.000Z",
-          "exit_time": "2025-01-09T00:00:00.000Z",
-          "entry": 99.9590052524901,
-          "exit": 104.92860293054389,
-          "return": 0.049716357875920325,
-          "confidence": 0.5999999999999999,
-          "raw_score": 0.09999999999999987
-        },
-        {
-          "model": "naive_bayes_regime_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-05T00:00:00.000Z",
-          "exit_time": "2025-01-10T00:00:00.000Z",
-          "entry": 100.75603446927339,
-          "exit": 106.034390526641,
-          "return": 0.05238749306849022,
-          "confidence": 0.5999999999999999,
-          "raw_score": 0.09999999999999987
-        },
-        {
-          "model": "naive_bayes_regime_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-06T00:00:00.000Z",
-          "exit_time": "2025-01-11T00:00:00.000Z",
-          "entry": 101.68447209235077,
-          "exit": 107.08338602367135,
-          "return": 0.05309477268483276,
-          "confidence": 0.5999999999999999,
-          "raw_score": 0.09999999999999987
-        }
-      ]
-    },
-    {
-      "name": "mean_reversion_baseline_v0",
+      "name": "volatility_breakout_v0",
       "family": "baseline",
       "status": "deterministic_adapter",
-      "description": "long when RSI is washed out, flat when overbought",
+      "description": "long when trend is positive and realized volatility is not elevated",
       "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
         "macd",
-        "atr_14"
+        "atr"
       ],
-      "trades": 228,
-      "robustness_score": 0.3611682496304234,
-      "hit_rate": 0.5175438596491229,
-      "expectancy": 0.0029435102495828027,
-      "sharpe_like": 0.08173314713459538,
-      "total_return": 0.6875882685722083,
+      "trades": 44,
+      "robustness_score": 4.581077166534814,
+      "hit_rate": 1,
+      "expectancy": 0.040757429214681125,
+      "sharpe_like": 3.9235028743880025,
+      "total_return": 4.786872437709851,
       "by_symbol": [
         {
           "symbol": "BTCUSDT",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
+          "trades": 22,
+          "hit_rate": 1,
+          "expectancy": 0.040757429214681125,
+          "sharpe_like": 3.8776123732053005,
+          "total_return": 1.4055919100524616
         },
         {
           "symbol": "SPY",
-          "trades": 114,
-          "hit_rate": 0.5175438596491229,
-          "expectancy": 0.0029435102495828027,
-          "sharpe_like": 0.08155291946844741,
-          "total_return": 0.29907207982167416
+          "trades": 22,
+          "hit_rate": 1,
+          "expectancy": 0.040757429214681125,
+          "sharpe_like": 3.8776123732053005,
+          "total_return": 1.4055919100524616
         }
       ],
       "sample_trades": [
         {
-          "model": "mean_reversion_baseline_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-02T00:00:00.000Z",
-          "exit_time": "2025-01-07T00:00:00.000Z",
-          "entry": 98.85471222629775,
-          "exit": 102.71355869428479,
-          "return": 0.03903553387676029,
-          "confidence": 1,
-          "raw_score": 0.5
-        },
-        {
-          "model": "mean_reversion_baseline_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-03T00:00:00.000Z",
-          "exit_time": "2025-01-08T00:00:00.000Z",
-          "entry": 99.31875437772442,
-          "exit": 103.80792002805458,
-          "return": 0.04519957664045182,
-          "confidence": 1,
-          "raw_score": 0.5
-        },
-        {
-          "model": "mean_reversion_baseline_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-04T00:00:00.000Z",
-          "exit_time": "2025-01-09T00:00:00.000Z",
-          "entry": 99.9590052524901,
-          "exit": 104.92860293054389,
-          "return": 0.049716357875920325,
-          "confidence": 1,
-          "raw_score": 0.5
-        },
-        {
-          "model": "mean_reversion_baseline_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-05T00:00:00.000Z",
-          "exit_time": "2025-01-10T00:00:00.000Z",
-          "entry": 100.75603446927339,
-          "exit": 106.034390526641,
-          "return": 0.05238749306849022,
-          "confidence": 1,
-          "raw_score": 0.5
-        },
-        {
-          "model": "mean_reversion_baseline_v0",
+          "model": "volatility_breakout_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-06T00:00:00.000Z",
           "exit_time": "2025-01-11T00:00:00.000Z",
           "entry": 101.68447209235077,
           "exit": 107.08338602367135,
           "return": 0.05309477268483276,
-          "confidence": 1,
-          "raw_score": 0.5
-        }
-      ]
-    },
-    {
-      "name": "transformer_attention_v0",
-      "family": "neural",
-      "status": "deterministic_adapter",
-      "description": "attention-style scorer weighting trend, volatility, and mean-reversion context",
-      "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
-        "macd",
-        "atr_14"
-      ],
-      "trades": 182,
-      "robustness_score": 0.04276028335875276,
-      "hit_rate": 0.3956043956043956,
-      "expectancy": -0.005395112335264652,
-      "sharpe_like": -0.15328859328860073,
-      "total_return": -0.6662061553333898,
-      "by_symbol": [
-        {
-          "symbol": "BTCUSDT",
-          "trades": 91,
-          "hit_rate": 0.3956043956043956,
-          "expectancy": -0.005395112335264652,
-          "sharpe_like": -0.15286455764007328,
-          "total_return": -0.42225105394591167
+          "confidence": 0.5552882590884729,
+          "raw_score": 0.0552882590884729
         },
         {
+          "model": "volatility_breakout_v0",
           "symbol": "SPY",
-          "trades": 91,
-          "hit_rate": 0.3956043956043956,
-          "expectancy": -0.005395112335264652,
-          "sharpe_like": -0.15286455764007328,
-          "total_return": -0.42225105394591167
-        }
-      ],
-      "sample_trades": [
-        {
-          "model": "transformer_attention_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-02T00:00:00.000Z",
-          "exit_time": "2025-01-07T00:00:00.000Z",
-          "entry": 98.85471222629775,
-          "exit": 102.71355869428479,
-          "return": 0.03903553387676029,
-          "confidence": 0.71,
-          "raw_score": 0.175
+          "entry_time": "2025-01-07T00:00:00.000Z",
+          "exit_time": "2025-01-12T00:00:00.000Z",
+          "entry": 102.71355869428479,
+          "exit": 108.03481805757991,
+          "return": 0.05180678608491451,
+          "confidence": 0.5607223451580325,
+          "raw_score": 0.06072234515803254
         },
         {
-          "model": "transformer_attention_v0",
+          "model": "volatility_breakout_v0",
           "symbol": "SPY",
-          "entry_time": "2025-01-03T00:00:00.000Z",
-          "exit_time": "2025-01-08T00:00:00.000Z",
-          "entry": 99.31875437772442,
-          "exit": 103.80792002805458,
-          "return": 0.04519957664045182,
-          "confidence": 0.71,
-          "raw_score": 0.175
+          "entry_time": "2025-01-08T00:00:00.000Z",
+          "exit_time": "2025-01-13T00:00:00.000Z",
+          "entry": 103.80792002805458,
+          "exit": 108.85098133018036,
+          "return": 0.04858069885961358,
+          "confidence": 0.5639269837993073,
+          "raw_score": 0.06392698379930728
         },
         {
-          "model": "transformer_attention_v0",
+          "model": "volatility_breakout_v0",
           "symbol": "SPY",
-          "entry_time": "2025-01-04T00:00:00.000Z",
-          "exit_time": "2025-01-09T00:00:00.000Z",
-          "entry": 99.9590052524901,
-          "exit": 104.92860293054389,
-          "return": 0.049716357875920325,
-          "confidence": 0.71,
-          "raw_score": 0.175
+          "entry_time": "2025-01-09T00:00:00.000Z",
+          "exit_time": "2025-01-14T00:00:00.000Z",
+          "entry": 104.92860293054389,
+          "exit": 109.4991904172427,
+          "return": 0.043559023555514775,
+          "confidence": 0.5647744161824897,
+          "raw_score": 0.06477441618248969
         },
         {
-          "model": "transformer_attention_v0",
+          "model": "volatility_breakout_v0",
           "symbol": "SPY",
-          "entry_time": "2025-01-05T00:00:00.000Z",
-          "exit_time": "2025-01-10T00:00:00.000Z",
-          "entry": 100.75603446927339,
-          "exit": 106.034390526641,
-          "return": 0.05238749306849022,
-          "confidence": 0.71,
-          "raw_score": 0.175
-        },
-        {
-          "model": "transformer_attention_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-06T00:00:00.000Z",
-          "exit_time": "2025-01-11T00:00:00.000Z",
-          "entry": 101.68447209235077,
-          "exit": 107.08338602367135,
-          "return": 0.05309477268483276,
-          "confidence": 0.71,
-          "raw_score": 0.175
+          "entry_time": "2025-01-10T00:00:00.000Z",
+          "exit_time": "2025-01-15T00:00:00.000Z",
+          "entry": 106.034390526641,
+          "exit": 109.9535990819909,
+          "return": 0.03696167381058513,
+          "confidence": 0.5632308578526914,
+          "raw_score": 0.06323085785269145
         }
       ]
     },
@@ -518,443 +233,282 @@
       "status": "deterministic_adapter",
       "description": "single decision tree stump for fast sanity checks",
       "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
         "macd",
-        "atr_14"
+        "atr"
       ],
-      "trades": 0,
-      "robustness_score": 0,
-      "hit_rate": 0,
-      "expectancy": 0,
-      "sharpe_like": 0,
-      "total_return": 0,
-      "by_symbol": [],
-      "sample_trades": []
+      "trades": 54,
+      "robustness_score": 3.789504604377527,
+      "hit_rate": 1,
+      "expectancy": 0.041951363168270986,
+      "sharpe_like": 3.119990972694817,
+      "total_return": 8.15838968615013,
+      "by_symbol": [
+        {
+          "symbol": "BTCUSDT",
+          "trades": 27,
+          "hit_rate": 1,
+          "expectancy": 0.041951363168270986,
+          "sharpe_like": 3.0904169310959895,
+          "total_return": 2.0262831470551674
+        },
+        {
+          "symbol": "SPY",
+          "trades": 27,
+          "hit_rate": 1,
+          "expectancy": 0.041951363168270986,
+          "sharpe_like": 3.0904169310959895,
+          "total_return": 2.0262831470551674
+        }
+      ],
+      "sample_trades": [
+        {
+          "model": "decision_tree_stump_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-06T00:00:00.000Z",
+          "exit_time": "2025-01-11T00:00:00.000Z",
+          "entry": 101.68447209235077,
+          "exit": 107.08338602367135,
+          "return": 0.05309477268483276,
+          "confidence": 0.6799999999999999,
+          "raw_score": 0.12
+        },
+        {
+          "model": "decision_tree_stump_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-07T00:00:00.000Z",
+          "exit_time": "2025-01-12T00:00:00.000Z",
+          "entry": 102.71355869428479,
+          "exit": 108.03481805757991,
+          "return": 0.05180678608491451,
+          "confidence": 0.6799999999999999,
+          "raw_score": 0.12
+        },
+        {
+          "model": "decision_tree_stump_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-08T00:00:00.000Z",
+          "exit_time": "2025-01-13T00:00:00.000Z",
+          "entry": 103.80792002805458,
+          "exit": 108.85098133018036,
+          "return": 0.04858069885961358,
+          "confidence": 0.6799999999999999,
+          "raw_score": 0.12
+        },
+        {
+          "model": "decision_tree_stump_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-09T00:00:00.000Z",
+          "exit_time": "2025-01-14T00:00:00.000Z",
+          "entry": 104.92860293054389,
+          "exit": 109.4991904172427,
+          "return": 0.043559023555514775,
+          "confidence": 0.6799999999999999,
+          "raw_score": 0.12
+        },
+        {
+          "model": "decision_tree_stump_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-10T00:00:00.000Z",
+          "exit_time": "2025-01-15T00:00:00.000Z",
+          "entry": 106.034390526641,
+          "exit": 109.9535990819909,
+          "return": 0.03696167381058513,
+          "confidence": 0.6799999999999999,
+          "raw_score": 0.12
+        }
+      ]
     },
     {
-      "name": "momentum_baseline_v0",
-      "family": "baseline",
-      "status": "deterministic_adapter",
-      "description": "long when 5-period return is positive",
-      "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
-        "macd",
-        "atr_14"
-      ],
-      "trades": 0,
-      "robustness_score": 0,
-      "hit_rate": 0,
-      "expectancy": 0,
-      "sharpe_like": 0,
-      "total_return": 0,
-      "by_symbol": [],
-      "sample_trades": []
-    },
-    {
-      "name": "volatility_breakout_v0",
-      "family": "baseline",
-      "status": "deterministic_adapter",
-      "description": "long when trend is positive and realized volatility is not elevated",
-      "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
-        "macd",
-        "atr_14"
-      ],
-      "trades": 0,
-      "robustness_score": 0,
-      "hit_rate": 0,
-      "expectancy": 0,
-      "sharpe_like": 0,
-      "total_return": 0,
-      "by_symbol": [],
-      "sample_trades": []
-    },
-    {
-      "name": "cnn_window_v0",
+      "name": "transformer_attention_v0",
       "family": "neural",
       "status": "deterministic_adapter",
-      "description": "convolution-style scorer over latest technical feature row",
+      "description": "attention-style scorer weighting trend, volatility, and mean-reversion context",
       "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
         "macd",
-        "atr_14"
+        "atr"
       ],
-      "trades": 152,
-      "robustness_score": -0.14912378526211456,
-      "hit_rate": 0.35526315789473684,
-      "expectancy": -0.010227296791421859,
-      "sharpe_like": -0.296850817347896,
-      "total_return": -0.8085586468530609,
+      "trades": 106,
+      "robustness_score": 0.8632260932962675,
+      "hit_rate": 0.660377358490566,
+      "expectancy": 0.014979350828483576,
+      "sharpe_like": 0.46343258501143175,
+      "total_return": 3.582120602065289,
       "by_symbol": [
         {
           "symbol": "BTCUSDT",
-          "trades": 76,
-          "hit_rate": 0.35526315789473684,
-          "expectancy": -0.010227296791421855,
-          "sharpe_like": -0.29586623481021845,
-          "total_return": -0.5624598839569802
+          "trades": 53,
+          "hit_rate": 0.660377358490566,
+          "expectancy": 0.014979350828483581,
+          "sharpe_like": 0.4612204836697575,
+          "total_return": 1.1405888447026187
         },
         {
           "symbol": "SPY",
-          "trades": 76,
-          "hit_rate": 0.35526315789473684,
-          "expectancy": -0.010227296791421855,
-          "sharpe_like": -0.29586623481021845,
-          "total_return": -0.5624598839569802
+          "trades": 53,
+          "hit_rate": 0.660377358490566,
+          "expectancy": 0.014979350828483581,
+          "sharpe_like": 0.4612204836697575,
+          "total_return": 1.1405888447026187
         }
       ],
       "sample_trades": [
         {
-          "model": "cnn_window_v0",
+          "model": "transformer_attention_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-02T00:00:00.000Z",
           "exit_time": "2025-01-07T00:00:00.000Z",
           "entry": 98.85471222629775,
           "exit": 102.71355869428479,
           "return": 0.03903553387676029,
-          "confidence": 0.625,
-          "raw_score": 0.125
+          "confidence": 0.71,
+          "raw_score": 0.175
         },
         {
-          "model": "cnn_window_v0",
+          "model": "transformer_attention_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-03T00:00:00.000Z",
           "exit_time": "2025-01-08T00:00:00.000Z",
           "entry": 99.31875437772442,
           "exit": 103.80792002805458,
           "return": 0.04519957664045182,
-          "confidence": 0.625,
-          "raw_score": 0.125
+          "confidence": 0.71,
+          "raw_score": 0.175
         },
         {
-          "model": "cnn_window_v0",
+          "model": "transformer_attention_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-04T00:00:00.000Z",
           "exit_time": "2025-01-09T00:00:00.000Z",
           "entry": 99.9590052524901,
           "exit": 104.92860293054389,
           "return": 0.049716357875920325,
-          "confidence": 0.625,
-          "raw_score": 0.125
+          "confidence": 0.71,
+          "raw_score": 0.175
         },
         {
-          "model": "cnn_window_v0",
+          "model": "transformer_attention_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-05T00:00:00.000Z",
           "exit_time": "2025-01-10T00:00:00.000Z",
           "entry": 100.75603446927339,
           "exit": 106.034390526641,
           "return": 0.05238749306849022,
-          "confidence": 0.625,
-          "raw_score": 0.125
+          "confidence": 0.71,
+          "raw_score": 0.175
         },
         {
-          "model": "cnn_window_v0",
+          "model": "transformer_attention_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-06T00:00:00.000Z",
           "exit_time": "2025-01-11T00:00:00.000Z",
           "entry": 101.68447209235077,
           "exit": 107.08338602367135,
           "return": 0.05309477268483276,
-          "confidence": 0.625,
-          "raw_score": 0.125
+          "confidence": 0.9065094933685223,
+          "raw_score": 0.3387579111404352
         }
       ]
     },
     {
-      "name": "svm_margin_v0",
-      "family": "linear",
+      "name": "knn_pattern_v0",
+      "family": "instance_based",
       "status": "deterministic_adapter",
-      "description": "support-vector style margin around trend and volatility boundaries",
+      "description": "nearest-neighbor style pattern proxy using return and RSI similarity bands",
       "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
         "macd",
-        "atr_14"
+        "atr"
       ],
-      "trades": 138,
-      "robustness_score": -0.24868571558387076,
-      "hit_rate": 0.3333333333333333,
-      "expectancy": -0.012590863193945702,
-      "sharpe_like": -0.37277708364441375,
-      "total_return": -0.8392375818896669,
+      "trades": 186,
+      "robustness_score": 0.7972765021374953,
+      "hit_rate": 0.6236559139784946,
+      "expectancy": 0.013070685344143103,
+      "sharpe_like": 0.4165696486960643,
+      "total_return": 9.236133073362906,
       "by_symbol": [
         {
           "symbol": "BTCUSDT",
-          "trades": 69,
-          "hit_rate": 0.3333333333333333,
-          "expectancy": -0.0125908631939457,
-          "sharpe_like": -0.3714140915719828,
-          "total_return": -0.5990481099803455
+          "trades": 93,
+          "hit_rate": 0.6236559139784946,
+          "expectancy": 0.013070685344143105,
+          "sharpe_like": 0.4154422592170075,
+          "total_return": 2.19939573566055
         },
         {
           "symbol": "SPY",
-          "trades": 69,
-          "hit_rate": 0.3333333333333333,
-          "expectancy": -0.0125908631939457,
-          "sharpe_like": -0.3714140915719828,
-          "total_return": -0.5990481099803455
+          "trades": 93,
+          "hit_rate": 0.6236559139784946,
+          "expectancy": 0.013070685344143105,
+          "sharpe_like": 0.4154422592170075,
+          "total_return": 2.19939573566055
         }
       ],
       "sample_trades": [
         {
-          "model": "svm_margin_v0",
+          "model": "knn_pattern_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-02T00:00:00.000Z",
           "exit_time": "2025-01-07T00:00:00.000Z",
           "entry": 98.85471222629775,
           "exit": 102.71355869428479,
           "return": 0.03903553387676029,
-          "confidence": 0.556,
-          "raw_score": 0.04
+          "confidence": 0.585,
+          "raw_score": 0.05
         },
         {
-          "model": "svm_margin_v0",
+          "model": "knn_pattern_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-03T00:00:00.000Z",
           "exit_time": "2025-01-08T00:00:00.000Z",
           "entry": 99.31875437772442,
           "exit": 103.80792002805458,
           "return": 0.04519957664045182,
-          "confidence": 0.556,
-          "raw_score": 0.04
+          "confidence": 0.585,
+          "raw_score": 0.05
         },
         {
-          "model": "svm_margin_v0",
+          "model": "knn_pattern_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-04T00:00:00.000Z",
           "exit_time": "2025-01-09T00:00:00.000Z",
           "entry": 99.9590052524901,
           "exit": 104.92860293054389,
           "return": 0.049716357875920325,
-          "confidence": 0.556,
-          "raw_score": 0.04
+          "confidence": 0.585,
+          "raw_score": 0.05
         },
         {
-          "model": "svm_margin_v0",
+          "model": "knn_pattern_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-05T00:00:00.000Z",
           "exit_time": "2025-01-10T00:00:00.000Z",
           "entry": 100.75603446927339,
           "exit": 106.034390526641,
           "return": 0.05238749306849022,
-          "confidence": 0.556,
-          "raw_score": 0.04
+          "confidence": 0.585,
+          "raw_score": 0.05
         },
         {
-          "model": "svm_margin_v0",
+          "model": "knn_pattern_v0",
           "symbol": "SPY",
           "entry_time": "2025-01-06T00:00:00.000Z",
           "exit_time": "2025-01-11T00:00:00.000Z",
           "entry": 101.68447209235077,
           "exit": 107.08338602367135,
           "return": 0.05309477268483276,
-          "confidence": 0.556,
-          "raw_score": 0.04
-        }
-      ]
-    },
-    {
-      "name": "xgboost_ranker_v0",
-      "family": "boosting",
-      "status": "deterministic_adapter",
-      "description": "XGBoost-style boosted-tree ranker using nonlinear feature interactions",
-      "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
-        "macd",
-        "atr_14"
-      ],
-      "trades": 90,
-      "robustness_score": -0.7542581139429556,
-      "hit_rate": 0.2222222222222222,
-      "expectancy": -0.020424910673631985,
-      "sharpe_like": -0.8000090072066357,
-      "total_return": -0.8484988867858687,
-      "by_symbol": [
-        {
-          "symbol": "BTCUSDT",
-          "trades": 45,
-          "hit_rate": 0.2222222222222222,
-          "expectancy": -0.02042491067363198,
-          "sharpe_like": -0.7955018783432066,
-          "total_return": -0.6107685608611104
-        },
-        {
-          "symbol": "SPY",
-          "trades": 45,
-          "hit_rate": 0.2222222222222222,
-          "expectancy": -0.02042491067363198,
-          "sharpe_like": -0.7955018783432066,
-          "total_return": -0.6107685608611104
-        }
-      ],
-      "sample_trades": [
-        {
-          "model": "xgboost_ranker_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-26T00:00:00.000Z",
-          "exit_time": "2025-01-31T00:00:00.000Z",
-          "entry": 102.08486390815274,
-          "exit": 99.42545990024364,
-          "return": -0.026050913975864343,
-          "confidence": 0.62,
-          "raw_score": 0.060000000000000005
-        },
-        {
-          "model": "xgboost_ranker_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-02-10T00:00:00.000Z",
-          "exit_time": "2025-02-15T00:00:00.000Z",
-          "entry": 106.54246197737126,
-          "exit": 110.79138570784197,
-          "return": 0.03988009711445506,
-          "confidence": 0.62,
-          "raw_score": 0.060000000000000005
-        },
-        {
-          "model": "xgboost_ranker_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-02-11T00:00:00.000Z",
-          "exit_time": "2025-02-16T00:00:00.000Z",
-          "entry": 107.62997344261322,
-          "exit": 109.46509085522528,
-          "return": 0.017050244963504824,
-          "confidence": 0.62,
-          "raw_score": 0.060000000000000005
-        },
-        {
-          "model": "xgboost_ranker_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-02-12T00:00:00.000Z",
-          "exit_time": "2025-02-17T00:00:00.000Z",
-          "entry": 108.63588199918358,
-          "exit": 109.57978336989174,
-          "return": 0.008688670385308406,
-          "confidence": 0.62,
-          "raw_score": 0.060000000000000005
-        },
-        {
-          "model": "xgboost_ranker_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-02-13T00:00:00.000Z",
-          "exit_time": "2025-02-18T00:00:00.000Z",
-          "entry": 109.52060946943486,
-          "exit": 109.4764202873678,
-          "return": -0.00040347823374187186,
-          "confidence": 0.62,
-          "raw_score": 0.060000000000000005
-        }
-      ]
-    },
-    {
-      "name": "gradient_boosted_trees_v0",
-      "family": "boosting",
-      "status": "deterministic_adapter",
-      "description": "gradient-boosted decision tree style ensemble over momentum, RSI, and risk",
-      "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
-        "macd",
-        "atr_14"
-      ],
-      "trades": 90,
-      "robustness_score": -0.7542581139429556,
-      "hit_rate": 0.2222222222222222,
-      "expectancy": -0.020424910673631985,
-      "sharpe_like": -0.8000090072066357,
-      "total_return": -0.8484988867858687,
-      "by_symbol": [
-        {
-          "symbol": "BTCUSDT",
-          "trades": 45,
-          "hit_rate": 0.2222222222222222,
-          "expectancy": -0.02042491067363198,
-          "sharpe_like": -0.7955018783432066,
-          "total_return": -0.6107685608611104
-        },
-        {
-          "symbol": "SPY",
-          "trades": 45,
-          "hit_rate": 0.2222222222222222,
-          "expectancy": -0.02042491067363198,
-          "sharpe_like": -0.7955018783432066,
-          "total_return": -0.6107685608611104
-        }
-      ],
-      "sample_trades": [
-        {
-          "model": "gradient_boosted_trees_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-01-26T00:00:00.000Z",
-          "exit_time": "2025-01-31T00:00:00.000Z",
-          "entry": 102.08486390815274,
-          "exit": 99.42545990024364,
-          "return": -0.026050913975864343,
-          "confidence": 0.66,
-          "raw_score": 0.08
-        },
-        {
-          "model": "gradient_boosted_trees_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-02-10T00:00:00.000Z",
-          "exit_time": "2025-02-15T00:00:00.000Z",
-          "entry": 106.54246197737126,
-          "exit": 110.79138570784197,
-          "return": 0.03988009711445506,
-          "confidence": 0.66,
-          "raw_score": 0.08
-        },
-        {
-          "model": "gradient_boosted_trees_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-02-11T00:00:00.000Z",
-          "exit_time": "2025-02-16T00:00:00.000Z",
-          "entry": 107.62997344261322,
-          "exit": 109.46509085522528,
-          "return": 0.017050244963504824,
-          "confidence": 0.66,
-          "raw_score": 0.08
-        },
-        {
-          "model": "gradient_boosted_trees_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-02-12T00:00:00.000Z",
-          "exit_time": "2025-02-17T00:00:00.000Z",
-          "entry": 108.63588199918358,
-          "exit": 109.57978336989174,
-          "return": 0.008688670385308406,
-          "confidence": 0.66,
-          "raw_score": 0.08
-        },
-        {
-          "model": "gradient_boosted_trees_v0",
-          "symbol": "SPY",
-          "entry_time": "2025-02-13T00:00:00.000Z",
-          "exit_time": "2025-02-18T00:00:00.000Z",
-          "entry": 109.52060946943486,
-          "exit": 109.4764202873678,
-          "return": -0.00040347823374187186,
-          "confidence": 0.66,
-          "raw_score": 0.08
+          "confidence": 0.772,
+          "raw_score": 0.16
         }
       ]
     },
@@ -964,187 +518,377 @@
       "status": "deterministic_adapter",
       "description": "random-forest style majority vote across simple technical regimes",
       "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
         "macd",
-        "atr_14"
+        "atr"
       ],
-      "trades": 90,
-      "robustness_score": -0.7542581139429556,
-      "hit_rate": 0.2222222222222222,
-      "expectancy": -0.020424910673631985,
-      "sharpe_like": -0.8000090072066357,
-      "total_return": -0.8484988867858687,
+      "trades": 160,
+      "robustness_score": 0.7907229272884274,
+      "hit_rate": 0.6375,
+      "expectancy": 0.01372126694726258,
+      "sharpe_like": 0.40351025781580163,
+      "total_return": 7.084984988803965,
       "by_symbol": [
         {
           "symbol": "BTCUSDT",
-          "trades": 45,
-          "hit_rate": 0.2222222222222222,
-          "expectancy": -0.02042491067363198,
-          "sharpe_like": -0.7955018783432066,
-          "total_return": -0.6107685608611104
+          "trades": 80,
+          "hit_rate": 0.6375,
+          "expectancy": 0.013721266947262584,
+          "sharpe_like": 0.40223935620916657,
+          "total_return": 1.843410801977789
         },
         {
           "symbol": "SPY",
-          "trades": 45,
-          "hit_rate": 0.2222222222222222,
-          "expectancy": -0.02042491067363198,
-          "sharpe_like": -0.7955018783432066,
-          "total_return": -0.6107685608611104
+          "trades": 80,
+          "hit_rate": 0.6375,
+          "expectancy": 0.013721266947262584,
+          "sharpe_like": 0.40223935620916657,
+          "total_return": 1.843410801977789
         }
       ],
       "sample_trades": [
         {
           "model": "random_forest_v0",
           "symbol": "SPY",
-          "entry_time": "2025-01-26T00:00:00.000Z",
-          "exit_time": "2025-01-31T00:00:00.000Z",
-          "entry": 102.08486390815274,
-          "exit": 99.42545990024364,
-          "return": -0.026050913975864343,
+          "entry_time": "2025-01-02T00:00:00.000Z",
+          "exit_time": "2025-01-07T00:00:00.000Z",
+          "entry": 98.85471222629775,
+          "exit": 102.71355869428479,
+          "return": 0.03903553387676029,
           "confidence": 0.65,
           "raw_score": 0.1
         },
         {
           "model": "random_forest_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-10T00:00:00.000Z",
-          "exit_time": "2025-02-15T00:00:00.000Z",
-          "entry": 106.54246197737126,
-          "exit": 110.79138570784197,
-          "return": 0.03988009711445506,
+          "entry_time": "2025-01-03T00:00:00.000Z",
+          "exit_time": "2025-01-08T00:00:00.000Z",
+          "entry": 99.31875437772442,
+          "exit": 103.80792002805458,
+          "return": 0.04519957664045182,
           "confidence": 0.65,
           "raw_score": 0.1
         },
         {
           "model": "random_forest_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-11T00:00:00.000Z",
-          "exit_time": "2025-02-16T00:00:00.000Z",
-          "entry": 107.62997344261322,
-          "exit": 109.46509085522528,
-          "return": 0.017050244963504824,
+          "entry_time": "2025-01-04T00:00:00.000Z",
+          "exit_time": "2025-01-09T00:00:00.000Z",
+          "entry": 99.9590052524901,
+          "exit": 104.92860293054389,
+          "return": 0.049716357875920325,
           "confidence": 0.65,
           "raw_score": 0.1
         },
         {
           "model": "random_forest_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-12T00:00:00.000Z",
-          "exit_time": "2025-02-17T00:00:00.000Z",
-          "entry": 108.63588199918358,
-          "exit": 109.57978336989174,
-          "return": 0.008688670385308406,
+          "entry_time": "2025-01-05T00:00:00.000Z",
+          "exit_time": "2025-01-10T00:00:00.000Z",
+          "entry": 100.75603446927339,
+          "exit": 106.034390526641,
+          "return": 0.05238749306849022,
           "confidence": 0.65,
           "raw_score": 0.1
         },
         {
           "model": "random_forest_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-13T00:00:00.000Z",
-          "exit_time": "2025-02-18T00:00:00.000Z",
-          "entry": 109.52060946943486,
-          "exit": 109.4764202873678,
-          "return": -0.00040347823374187186,
-          "confidence": 0.65,
-          "raw_score": 0.1
+          "entry_time": "2025-01-06T00:00:00.000Z",
+          "exit_time": "2025-01-11T00:00:00.000Z",
+          "entry": 101.68447209235077,
+          "exit": 107.08338602367135,
+          "return": 0.05309477268483276,
+          "confidence": 0.95,
+          "raw_score": 0.3
         }
       ]
     },
     {
-      "name": "lstm_sequence_v0",
-      "family": "neural",
+      "name": "xgboost_ranker_v0",
+      "family": "boosting",
       "status": "deterministic_adapter",
-      "description": "sequence-model proxy emphasizing persistent multi-bar momentum",
+      "description": "XGBoost-style boosted-tree ranker using nonlinear feature interactions",
       "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
         "macd",
-        "atr_14"
+        "atr"
       ],
-      "trades": 82,
-      "robustness_score": -0.9370857116454103,
-      "hit_rate": 0.1951219512195122,
-      "expectancy": -0.022479781088671394,
-      "sharpe_like": -0.9622879007586963,
-      "total_return": -0.8485206429362031,
+      "trades": 132,
+      "robustness_score": 0.7216672948193154,
+      "hit_rate": 0.6060606060606061,
+      "expectancy": 0.011924216779366994,
+      "sharpe_like": 0.35242512702564543,
+      "total_return": 3.440918678406266,
       "by_symbol": [
         {
           "symbol": "BTCUSDT",
-          "trades": 41,
-          "hit_rate": 0.1951219512195122,
-          "expectancy": -0.02247978108867139,
-          "sharpe_like": -0.9563294044542294,
-          "total_return": -0.6107965094403742
+          "trades": 66,
+          "hit_rate": 0.6060606060606061,
+          "expectancy": 0.011924216779366992,
+          "sharpe_like": 0.35107741605837467,
+          "total_return": 1.107348732034227
         },
         {
           "symbol": "SPY",
-          "trades": 41,
-          "hit_rate": 0.1951219512195122,
-          "expectancy": -0.02247978108867139,
-          "sharpe_like": -0.9563294044542294,
-          "total_return": -0.6107965094403742
+          "trades": 66,
+          "hit_rate": 0.6060606060606061,
+          "expectancy": 0.011924216779366992,
+          "sharpe_like": 0.35107741605837467,
+          "total_return": 1.107348732034227
         }
       ],
       "sample_trades": [
         {
-          "model": "lstm_sequence_v0",
+          "model": "xgboost_ranker_v0",
           "symbol": "SPY",
-          "entry_time": "2025-01-26T00:00:00.000Z",
-          "exit_time": "2025-01-31T00:00:00.000Z",
-          "entry": 102.08486390815274,
-          "exit": 99.42545990024364,
-          "return": -0.026050913975864343,
-          "confidence": 0.5852679171618933,
-          "raw_score": 0.0710565976349111
+          "entry_time": "2025-01-06T00:00:00.000Z",
+          "exit_time": "2025-01-11T00:00:00.000Z",
+          "entry": 101.68447209235077,
+          "exit": 107.08338602367135,
+          "return": 0.05309477268483276,
+          "confidence": 0.7316075510498968,
+          "raw_score": 0.1158037755249484
         },
         {
-          "model": "lstm_sequence_v0",
+          "model": "xgboost_ranker_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-11T00:00:00.000Z",
-          "exit_time": "2025-02-16T00:00:00.000Z",
-          "entry": 107.62997344261322,
-          "exit": 109.46509085522528,
-          "return": 0.017050244963504824,
-          "confidence": 0.5791638394497114,
-          "raw_score": 0.06596986620809284
+          "entry_time": "2025-01-07T00:00:00.000Z",
+          "exit_time": "2025-01-12T00:00:00.000Z",
+          "entry": 102.71355869428479,
+          "exit": 108.03481805757991,
+          "return": 0.05180678608491451,
+          "confidence": 0.7358021944099514,
+          "raw_score": 0.1179010972049757
         },
         {
-          "model": "lstm_sequence_v0",
+          "model": "xgboost_ranker_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-12T00:00:00.000Z",
-          "exit_time": "2025-02-17T00:00:00.000Z",
-          "entry": 108.63588199918358,
-          "exit": 109.57978336989174,
-          "return": 0.008688670385308406,
-          "confidence": 0.6561535107346148,
-          "raw_score": 0.13012792561217898
+          "entry_time": "2025-01-08T00:00:00.000Z",
+          "exit_time": "2025-01-13T00:00:00.000Z",
+          "entry": 103.80792002805458,
+          "exit": 108.85098133018036,
+          "return": 0.04858069885961358,
+          "confidence": 0.7392631506908647,
+          "raw_score": 0.11963157534543237
         },
         {
-          "model": "lstm_sequence_v0",
+          "model": "xgboost_ranker_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-13T00:00:00.000Z",
-          "exit_time": "2025-02-18T00:00:00.000Z",
-          "entry": 109.52060946943486,
-          "exit": 109.4764202873678,
-          "return": -0.00040347823374187186,
-          "confidence": 0.7289947742792455,
-          "raw_score": 0.19082897856603792
+          "entry_time": "2025-01-09T00:00:00.000Z",
+          "exit_time": "2025-01-14T00:00:00.000Z",
+          "entry": 104.92860293054389,
+          "exit": 109.4991904172427,
+          "return": 0.043559023555514775,
+          "confidence": 0.741468987040883,
+          "raw_score": 0.12073449352044154
         },
         {
-          "model": "lstm_sequence_v0",
+          "model": "xgboost_ranker_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-14T00:00:00.000Z",
-          "exit_time": "2025-02-19T00:00:00.000Z",
-          "entry": 110.24883083155696,
-          "exit": 109.16279319179236,
-          "return": -0.009850786004469203,
-          "confidence": 0.7952099550601168,
-          "raw_score": 0.24600829588343065
+          "entry_time": "2025-01-10T00:00:00.000Z",
+          "exit_time": "2025-01-15T00:00:00.000Z",
+          "entry": 106.034390526641,
+          "exit": 109.9535990819909,
+          "return": 0.03696167381058513,
+          "confidence": 0.7420833741831504,
+          "raw_score": 0.12104168709157521
+        }
+      ]
+    },
+    {
+      "name": "naive_bayes_regime_v0",
+      "family": "probabilistic",
+      "status": "deterministic_adapter",
+      "description": "naive-Bayes style regime score from independent technical likelihood buckets",
+      "feature_names": [
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
+        "macd",
+        "atr"
+      ],
+      "trades": 202,
+      "robustness_score": 0.618752791505296,
+      "hit_rate": 0.5841584158415841,
+      "expectancy": 0.009208616730922117,
+      "sharpe_like": 0.27666662419607485,
+      "total_return": 4.7063578592494375,
+      "by_symbol": [
+        {
+          "symbol": "BTCUSDT",
+          "trades": 101,
+          "hit_rate": 0.5841584158415841,
+          "expectancy": 0.00920861673092212,
+          "sharpe_like": 0.27597754062496677,
+          "total_return": 1.388798413271708
+        },
+        {
+          "symbol": "SPY",
+          "trades": 101,
+          "hit_rate": 0.5841584158415841,
+          "expectancy": 0.00920861673092212,
+          "sharpe_like": 0.27597754062496677,
+          "total_return": 1.388798413271708
+        }
+      ],
+      "sample_trades": [
+        {
+          "model": "naive_bayes_regime_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-02T00:00:00.000Z",
+          "exit_time": "2025-01-07T00:00:00.000Z",
+          "entry": 98.85471222629775,
+          "exit": 102.71355869428479,
+          "return": 0.03903553387676029,
+          "confidence": 0.5999999999999999,
+          "raw_score": 0.09999999999999987
+        },
+        {
+          "model": "naive_bayes_regime_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-03T00:00:00.000Z",
+          "exit_time": "2025-01-08T00:00:00.000Z",
+          "entry": 99.31875437772442,
+          "exit": 103.80792002805458,
+          "return": 0.04519957664045182,
+          "confidence": 0.5999999999999999,
+          "raw_score": 0.09999999999999987
+        },
+        {
+          "model": "naive_bayes_regime_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-04T00:00:00.000Z",
+          "exit_time": "2025-01-09T00:00:00.000Z",
+          "entry": 99.9590052524901,
+          "exit": 104.92860293054389,
+          "return": 0.049716357875920325,
+          "confidence": 0.5999999999999999,
+          "raw_score": 0.09999999999999987
+        },
+        {
+          "model": "naive_bayes_regime_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-05T00:00:00.000Z",
+          "exit_time": "2025-01-10T00:00:00.000Z",
+          "entry": 100.75603446927339,
+          "exit": 106.034390526641,
+          "return": 0.05238749306849022,
+          "confidence": 0.5999999999999999,
+          "raw_score": 0.09999999999999987
+        },
+        {
+          "model": "naive_bayes_regime_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-06T00:00:00.000Z",
+          "exit_time": "2025-01-11T00:00:00.000Z",
+          "entry": 101.68447209235077,
+          "exit": 107.08338602367135,
+          "return": 0.05309477268483276,
+          "confidence": 0.7716738197424893,
+          "raw_score": 0.2716738197424893
+        }
+      ]
+    },
+    {
+      "name": "cnn_window_v0",
+      "family": "neural",
+      "status": "deterministic_adapter",
+      "description": "convolution-style scorer over latest technical feature row",
+      "feature_names": [
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
+        "macd",
+        "atr"
+      ],
+      "trades": 118,
+      "robustness_score": 0.5800595951527406,
+      "hit_rate": 0.576271186440678,
+      "expectancy": 0.008467324895590725,
+      "sharpe_like": 0.24538634619683336,
+      "total_return": 1.5242620467643189,
+      "by_symbol": [
+        {
+          "symbol": "BTCUSDT",
+          "trades": 59,
+          "hit_rate": 0.576271186440678,
+          "expectancy": 0.008467324895590727,
+          "sharpe_like": 0.2443354362448513,
+          "total_return": 0.5887926380633557
+        },
+        {
+          "symbol": "SPY",
+          "trades": 59,
+          "hit_rate": 0.576271186440678,
+          "expectancy": 0.008467324895590727,
+          "sharpe_like": 0.2443354362448513,
+          "total_return": 0.5887926380633557
+        }
+      ],
+      "sample_trades": [
+        {
+          "model": "cnn_window_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-02T00:00:00.000Z",
+          "exit_time": "2025-01-07T00:00:00.000Z",
+          "entry": 98.85471222629775,
+          "exit": 102.71355869428479,
+          "return": 0.03903553387676029,
+          "confidence": 0.625,
+          "raw_score": 0.125
+        },
+        {
+          "model": "cnn_window_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-03T00:00:00.000Z",
+          "exit_time": "2025-01-08T00:00:00.000Z",
+          "entry": 99.31875437772442,
+          "exit": 103.80792002805458,
+          "return": 0.04519957664045182,
+          "confidence": 0.625,
+          "raw_score": 0.125
+        },
+        {
+          "model": "cnn_window_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-04T00:00:00.000Z",
+          "exit_time": "2025-01-09T00:00:00.000Z",
+          "entry": 99.9590052524901,
+          "exit": 104.92860293054389,
+          "return": 0.049716357875920325,
+          "confidence": 0.625,
+          "raw_score": 0.125
+        },
+        {
+          "model": "cnn_window_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-05T00:00:00.000Z",
+          "exit_time": "2025-01-10T00:00:00.000Z",
+          "entry": 100.75603446927339,
+          "exit": 106.034390526641,
+          "return": 0.05238749306849022,
+          "confidence": 0.625,
+          "raw_score": 0.125
+        },
+        {
+          "model": "cnn_window_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-06T00:00:00.000Z",
+          "exit_time": "2025-01-11T00:00:00.000Z",
+          "entry": 101.68447209235077,
+          "exit": 107.08338602367135,
+          "return": 0.05309477268483276,
+          "confidence": 0.8769352479083619,
+          "raw_score": 0.37693524790836186
         }
       ]
     },
@@ -1154,94 +898,496 @@
       "status": "deterministic_adapter",
       "description": "logistic linear margin over normalized technical features",
       "feature_names": [
-        "close_return_1",
-        "close_return_5",
-        "realized_volatility_20",
-        "rsi_14",
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
         "macd",
-        "atr_14"
+        "atr"
       ],
-      "trades": 64,
-      "robustness_score": -1.438240256560308,
-      "hit_rate": 0.09375,
-      "expectancy": -0.027244518672978665,
-      "sharpe_like": -1.4157950698305215,
-      "total_return": -0.8313776636022505,
+      "trades": 124,
+      "robustness_score": 0.5032836158055813,
+      "hit_rate": 0.5483870967741935,
+      "expectancy": 0.006574353779770995,
+      "sharpe_like": 0.18754007800787145,
+      "total_return": 1.0909226943384671,
       "by_symbol": [
         {
           "symbol": "BTCUSDT",
-          "trades": 32,
-          "hit_rate": 0.09375,
-          "expectancy": -0.027244518672978665,
-          "sharpe_like": -1.4045136544279528,
-          "total_return": -0.5893634984591001
+          "trades": 62,
+          "hit_rate": 0.5483870967741935,
+          "expectancy": 0.006574353779770994,
+          "sharpe_like": 0.18677616412797293,
+          "total_return": 0.4460023147763168
         },
         {
           "symbol": "SPY",
-          "trades": 32,
-          "hit_rate": 0.09375,
-          "expectancy": -0.027244518672978665,
-          "sharpe_like": -1.4045136544279528,
-          "total_return": -0.5893634984591001
+          "trades": 62,
+          "hit_rate": 0.5483870967741935,
+          "expectancy": 0.006574353779770994,
+          "sharpe_like": 0.18677616412797293,
+          "total_return": 0.4460023147763168
         }
       ],
       "sample_trades": [
         {
           "model": "logistic_regression_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-13T00:00:00.000Z",
-          "exit_time": "2025-02-18T00:00:00.000Z",
-          "entry": 109.52060946943486,
-          "exit": 109.4764202873678,
-          "return": -0.00040347823374187186,
-          "confidence": 0.5628926540878715,
-          "raw_score": 0.2529101345157236
+          "entry_time": "2025-01-06T00:00:00.000Z",
+          "exit_time": "2025-01-11T00:00:00.000Z",
+          "entry": 101.68447209235077,
+          "exit": 107.08338602367135,
+          "return": 0.05309477268483276,
+          "confidence": 0.6388508105934032,
+          "raw_score": 0.5703798138527961
         },
         {
           "model": "logistic_regression_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-14T00:00:00.000Z",
-          "exit_time": "2025-02-19T00:00:00.000Z",
-          "entry": 110.24883083155696,
-          "exit": 109.16279319179236,
-          "return": -0.009850786004469203,
-          "confidence": 0.5831405468894352,
-          "raw_score": 0.33567911049181265
+          "entry_time": "2025-01-07T00:00:00.000Z",
+          "exit_time": "2025-01-12T00:00:00.000Z",
+          "entry": 102.71355869428479,
+          "exit": 108.03481805757991,
+          "return": 0.05180678608491451,
+          "confidence": 0.6703542784847802,
+          "raw_score": 0.7097878398870402
         },
         {
           "model": "logistic_regression_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-15T00:00:00.000Z",
-          "exit_time": "2025-02-20T00:00:00.000Z",
-          "entry": 110.79138570784197,
-          "exit": 108.65625478614594,
-          "return": -0.019271632970873642,
-          "confidence": 0.6004668907599525,
-          "raw_score": 0.4074108654117731
+          "entry_time": "2025-01-08T00:00:00.000Z",
+          "exit_time": "2025-01-13T00:00:00.000Z",
+          "entry": 103.80792002805458,
+          "exit": 108.85098133018036,
+          "return": 0.04858069885961358,
+          "confidence": 0.6948467133550311,
+          "raw_score": 0.8228770353943377
         },
         {
           "model": "logistic_regression_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-16T00:00:00.000Z",
-          "exit_time": "2025-02-21T00:00:00.000Z",
-          "entry": 109.46509085522528,
-          "exit": 107.98272216623947,
-          "return": -0.013541930832966176,
-          "confidence": 0.6075404983874488,
-          "raw_score": 0.43698548571100543
+          "entry_time": "2025-01-09T00:00:00.000Z",
+          "exit_time": "2025-01-14T00:00:00.000Z",
+          "entry": 104.92860293054389,
+          "exit": 109.4991904172427,
+          "return": 0.043559023555514775,
+          "confidence": 0.7119234303928821,
+          "raw_score": 0.9047440525548923
         },
         {
           "model": "logistic_regression_v0",
           "symbol": "SPY",
-          "entry_time": "2025-02-17T00:00:00.000Z",
-          "exit_time": "2025-02-22T00:00:00.000Z",
-          "entry": 109.57978336989174,
-          "exit": 107.1751987878411,
-          "return": -0.02194368804265523,
-          "confidence": 0.6112598825396718,
-          "raw_score": 0.4526111665660476
+          "entry_time": "2025-01-10T00:00:00.000Z",
+          "exit_time": "2025-01-15T00:00:00.000Z",
+          "entry": 106.034390526641,
+          "exit": 109.9535990819909,
+          "return": 0.03696167381058513,
+          "confidence": 0.7214761135567545,
+          "raw_score": 0.9517954471346183
         }
       ]
+    },
+    {
+      "name": "svm_margin_v0",
+      "family": "linear",
+      "status": "deterministic_adapter",
+      "description": "support-vector style margin around trend and volatility boundaries",
+      "feature_names": [
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
+        "macd",
+        "atr"
+      ],
+      "trades": 130,
+      "robustness_score": 0.4637037819272014,
+      "hit_rate": 0.5384615384615384,
+      "expectancy": 0.00560947065786748,
+      "sharpe_like": 0.15760907534852658,
+      "total_return": 0.9080079179335936,
+      "by_symbol": [
+        {
+          "symbol": "BTCUSDT",
+          "trades": 65,
+          "hit_rate": 0.5384615384615384,
+          "expectancy": 0.00560947065786748,
+          "sharpe_like": 0.1569969989572418,
+          "total_return": 0.38130659809239753
+        },
+        {
+          "symbol": "SPY",
+          "trades": 65,
+          "hit_rate": 0.5384615384615384,
+          "expectancy": 0.00560947065786748,
+          "sharpe_like": 0.1569969989572418,
+          "total_return": 0.38130659809239753
+        }
+      ],
+      "sample_trades": [
+        {
+          "model": "svm_margin_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-02T00:00:00.000Z",
+          "exit_time": "2025-01-07T00:00:00.000Z",
+          "entry": 98.85471222629775,
+          "exit": 102.71355869428479,
+          "return": 0.03903553387676029,
+          "confidence": 0.556,
+          "raw_score": 0.04
+        },
+        {
+          "model": "svm_margin_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-03T00:00:00.000Z",
+          "exit_time": "2025-01-08T00:00:00.000Z",
+          "entry": 99.31875437772442,
+          "exit": 103.80792002805458,
+          "return": 0.04519957664045182,
+          "confidence": 0.556,
+          "raw_score": 0.04
+        },
+        {
+          "model": "svm_margin_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-04T00:00:00.000Z",
+          "exit_time": "2025-01-09T00:00:00.000Z",
+          "entry": 99.9590052524901,
+          "exit": 104.92860293054389,
+          "return": 0.049716357875920325,
+          "confidence": 0.556,
+          "raw_score": 0.04
+        },
+        {
+          "model": "svm_margin_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-05T00:00:00.000Z",
+          "exit_time": "2025-01-10T00:00:00.000Z",
+          "entry": 100.75603446927339,
+          "exit": 106.034390526641,
+          "return": 0.05238749306849022,
+          "confidence": 0.556,
+          "raw_score": 0.04
+        },
+        {
+          "model": "svm_margin_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-06T00:00:00.000Z",
+          "exit_time": "2025-01-11T00:00:00.000Z",
+          "entry": 101.68447209235077,
+          "exit": 107.08338602367135,
+          "return": 0.05309477268483276,
+          "confidence": 1,
+          "raw_score": 0.39270934707170657
+        }
+      ]
+    },
+    {
+      "name": "mean_reversion_baseline_v0",
+      "family": "baseline",
+      "status": "deterministic_adapter",
+      "description": "long when RSI is washed out, flat when overbought",
+      "feature_names": [
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
+        "macd",
+        "atr"
+      ],
+      "trades": 228,
+      "robustness_score": 0.3611682496304234,
+      "hit_rate": 0.5175438596491229,
+      "expectancy": 0.0029435102495828027,
+      "sharpe_like": 0.08173314713459538,
+      "total_return": 0.6875882685722083,
+      "by_symbol": [
+        {
+          "symbol": "BTCUSDT",
+          "trades": 114,
+          "hit_rate": 0.5175438596491229,
+          "expectancy": 0.0029435102495828027,
+          "sharpe_like": 0.08155291946844741,
+          "total_return": 0.29907207982167416
+        },
+        {
+          "symbol": "SPY",
+          "trades": 114,
+          "hit_rate": 0.5175438596491229,
+          "expectancy": 0.0029435102495828027,
+          "sharpe_like": 0.08155291946844741,
+          "total_return": 0.29907207982167416
+        }
+      ],
+      "sample_trades": [
+        {
+          "model": "mean_reversion_baseline_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-02T00:00:00.000Z",
+          "exit_time": "2025-01-07T00:00:00.000Z",
+          "entry": 98.85471222629775,
+          "exit": 102.71355869428479,
+          "return": 0.03903553387676029,
+          "confidence": 1,
+          "raw_score": 0.5
+        },
+        {
+          "model": "mean_reversion_baseline_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-03T00:00:00.000Z",
+          "exit_time": "2025-01-08T00:00:00.000Z",
+          "entry": 99.31875437772442,
+          "exit": 103.80792002805458,
+          "return": 0.04519957664045182,
+          "confidence": 1,
+          "raw_score": 0.5
+        },
+        {
+          "model": "mean_reversion_baseline_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-04T00:00:00.000Z",
+          "exit_time": "2025-01-09T00:00:00.000Z",
+          "entry": 99.9590052524901,
+          "exit": 104.92860293054389,
+          "return": 0.049716357875920325,
+          "confidence": 1,
+          "raw_score": 0.5
+        },
+        {
+          "model": "mean_reversion_baseline_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-05T00:00:00.000Z",
+          "exit_time": "2025-01-10T00:00:00.000Z",
+          "entry": 100.75603446927339,
+          "exit": 106.034390526641,
+          "return": 0.05238749306849022,
+          "confidence": 1,
+          "raw_score": 0.5
+        },
+        {
+          "model": "mean_reversion_baseline_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-06T00:00:00.000Z",
+          "exit_time": "2025-01-11T00:00:00.000Z",
+          "entry": 101.68447209235077,
+          "exit": 107.08338602367135,
+          "return": 0.05309477268483276,
+          "confidence": 1,
+          "raw_score": 0.5
+        }
+      ]
+    },
+    {
+      "name": "gradient_boosted_trees_v0",
+      "family": "boosting",
+      "status": "deterministic_adapter",
+      "description": "gradient-boosted decision tree style ensemble over momentum, RSI, and risk",
+      "feature_names": [
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
+        "macd",
+        "atr"
+      ],
+      "trades": 124,
+      "robustness_score": 0.3278625345840489,
+      "hit_rate": 0.5,
+      "expectancy": 0.002038899065894241,
+      "sharpe_like": 0.05747354392510647,
+      "total_return": 0.19169768207880655,
+      "by_symbol": [
+        {
+          "symbol": "BTCUSDT",
+          "trades": 62,
+          "hit_rate": 0.5,
+          "expectancy": 0.002038899065894241,
+          "sharpe_like": 0.05723943483014545,
+          "total_return": 0.09164906544127405
+        },
+        {
+          "symbol": "SPY",
+          "trades": 62,
+          "hit_rate": 0.5,
+          "expectancy": 0.002038899065894241,
+          "sharpe_like": 0.05723943483014545,
+          "total_return": 0.09164906544127405
+        }
+      ],
+      "sample_trades": [
+        {
+          "model": "gradient_boosted_trees_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-06T00:00:00.000Z",
+          "exit_time": "2025-01-11T00:00:00.000Z",
+          "entry": 101.68447209235077,
+          "exit": 107.08338602367135,
+          "return": 0.05309477268483276,
+          "confidence": 0.66,
+          "raw_score": 0.08
+        },
+        {
+          "model": "gradient_boosted_trees_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-07T00:00:00.000Z",
+          "exit_time": "2025-01-12T00:00:00.000Z",
+          "entry": 102.71355869428479,
+          "exit": 108.03481805757991,
+          "return": 0.05180678608491451,
+          "confidence": 0.66,
+          "raw_score": 0.08
+        },
+        {
+          "model": "gradient_boosted_trees_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-08T00:00:00.000Z",
+          "exit_time": "2025-01-13T00:00:00.000Z",
+          "entry": 103.80792002805458,
+          "exit": 108.85098133018036,
+          "return": 0.04858069885961358,
+          "confidence": 0.66,
+          "raw_score": 0.08
+        },
+        {
+          "model": "gradient_boosted_trees_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-09T00:00:00.000Z",
+          "exit_time": "2025-01-14T00:00:00.000Z",
+          "entry": 104.92860293054389,
+          "exit": 109.4991904172427,
+          "return": 0.043559023555514775,
+          "confidence": 0.66,
+          "raw_score": 0.08
+        },
+        {
+          "model": "gradient_boosted_trees_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-10T00:00:00.000Z",
+          "exit_time": "2025-01-15T00:00:00.000Z",
+          "entry": 106.034390526641,
+          "exit": 109.9535990819909,
+          "return": 0.03696167381058513,
+          "confidence": 0.66,
+          "raw_score": 0.08
+        }
+      ]
+    },
+    {
+      "name": "lstm_sequence_v0",
+      "family": "neural",
+      "status": "deterministic_adapter",
+      "description": "sequence-model proxy emphasizing persistent multi-bar momentum",
+      "feature_names": [
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
+        "macd",
+        "atr"
+      ],
+      "trades": 178,
+      "robustness_score": 0.0326449014952028,
+      "hit_rate": 0.4044943820224719,
+      "expectancy": -0.005533466553810565,
+      "sharpe_like": -0.16202043296669155,
+      "total_return": -0.6642933141387326,
+      "by_symbol": [
+        {
+          "symbol": "BTCUSDT",
+          "trades": 89,
+          "hit_rate": 0.4044943820224719,
+          "expectancy": -0.005533466553810565,
+          "sharpe_like": -0.16156209984769335,
+          "total_return": -0.4205979928743192
+        },
+        {
+          "symbol": "SPY",
+          "trades": 89,
+          "hit_rate": 0.4044943820224719,
+          "expectancy": -0.005533466553810565,
+          "sharpe_like": -0.16156209984769335,
+          "total_return": -0.4205979928743192
+        }
+      ],
+      "sample_trades": [
+        {
+          "model": "lstm_sequence_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-06T00:00:00.000Z",
+          "exit_time": "2025-01-11T00:00:00.000Z",
+          "entry": 101.68447209235077,
+          "exit": 107.08338602367135,
+          "return": 0.05309477268483276,
+          "confidence": 0.8779028718625428,
+          "raw_score": 0.3149190598854523
+        },
+        {
+          "model": "lstm_sequence_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-07T00:00:00.000Z",
+          "exit_time": "2025-01-12T00:00:00.000Z",
+          "entry": 102.71355869428479,
+          "exit": 108.03481805757991,
+          "return": 0.05180678608491451,
+          "confidence": 0.9684264065211234,
+          "raw_score": 0.39035533876760287
+        },
+        {
+          "model": "lstm_sequence_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-08T00:00:00.000Z",
+          "exit_time": "2025-01-13T00:00:00.000Z",
+          "entry": 103.80792002805458,
+          "exit": 108.85098133018036,
+          "return": 0.04858069885961358,
+          "confidence": 1,
+          "raw_score": 0.4519957664045182
+        },
+        {
+          "model": "lstm_sequence_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-09T00:00:00.000Z",
+          "exit_time": "2025-01-14T00:00:00.000Z",
+          "entry": 104.92860293054389,
+          "exit": 109.4991904172427,
+          "return": 0.043559023555514775,
+          "confidence": 1,
+          "raw_score": 0.49716357875920325
+        },
+        {
+          "model": "lstm_sequence_v0",
+          "symbol": "SPY",
+          "entry_time": "2025-01-10T00:00:00.000Z",
+          "exit_time": "2025-01-15T00:00:00.000Z",
+          "entry": 106.034390526641,
+          "exit": 109.9535990819909,
+          "return": 0.03696167381058513,
+          "confidence": 1,
+          "raw_score": 0.5238749306849022
+        }
+      ]
+    },
+    {
+      "name": "momentum_baseline_v0",
+      "family": "baseline",
+      "status": "deterministic_adapter",
+      "description": "long when 5-period return is positive",
+      "feature_names": [
+        "return_fast",
+        "return_slow",
+        "volatility",
+        "rsi",
+        "macd",
+        "atr"
+      ],
+      "trades": 0,
+      "robustness_score": 0,
+      "hit_rate": 0,
+      "expectancy": 0,
+      "sharpe_like": 0,
+      "total_return": 0,
+      "by_symbol": [],
+      "sample_trades": []
     }
   ]
 }

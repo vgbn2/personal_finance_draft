@@ -1,1 +1,1 @@
-node scripts/cli/sovereign_cli.js $args
+node backend/cli/sovereign_cli.js $args

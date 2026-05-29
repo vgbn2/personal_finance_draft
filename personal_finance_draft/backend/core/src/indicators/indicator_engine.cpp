@@ -1,5 +1,6 @@
 #include "indicator_engine.hpp"
 
+#include "../ml/kalman_filter.hpp"
 #include "macd.hpp"
 #include "moving_averages.hpp"
 #include "rsi.hpp"
@@ -78,6 +79,19 @@ std::vector<double> IndicatorEngine::rollingVolatilitySeries(const std::vector<d
     return res;
 }
 
+std::vector<KalmanResult> IndicatorEngine::kalmanSeriesWithVariance(const std::vector<double>& closes, double process_noise, double measurement_noise) {
+    std::vector<KalmanResult> res(closes.size(), {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
+    if (closes.empty()) return res;
+
+    KalmanFilter kf(process_noise, measurement_noise, closes[0], 1.0);
+    
+    for (std::size_t i = 0; i < closes.size(); ++i) {
+        res[i].estimate = kf.update(closes[i]);
+        res[i].variance = kf.getVariance();
+    }
+    return res;
+}
+
 IndicatorFrame IndicatorEngine::buildFrame(std::span<const OhlcvBar> bars) {
     IndicatorFrame frame;
     frame.rows.reserve(bars.size());
@@ -97,6 +111,10 @@ IndicatorFrame IndicatorEngine::buildFrame(std::span<const OhlcvBar> bars) {
     auto r5_series = rateOfChangeSeries(closes, constants::PERIOD_RETURN_SLOW);
     auto vol_series = rollingVolatilitySeries(closes, constants::PERIOD_VOLATILITY);
     auto rsi_series = relativeStrengthIndexSeries(closes, constants::PERIOD_RSI);
+    // TODO: Load these from config/indicator_config.yaml
+    const double kalman_q = 0.001; 
+    const double kalman_r = 1.0;
+    auto kalman_results = kalmanSeriesWithVariance(closes, kalman_q, kalman_r);
     auto macd_series = macdSeries(closes, constants::PERIOD_MACD_FAST, constants::PERIOD_MACD_SLOW);
     auto ema_fast_series = exponentialMovingAverageSeries(closes, constants::PERIOD_MACD_FAST);
     auto ema_slow_series = exponentialMovingAverageSeries(closes, constants::PERIOD_MACD_SLOW);
@@ -121,6 +139,10 @@ IndicatorFrame IndicatorEngine::buildFrame(std::span<const OhlcvBar> bars) {
         if (!std::isnan(r5_series[i])) row.set("ret:slow", r5_series[i]);
         if (!std::isnan(vol_series[i])) row.set("vol:20", vol_series[i]);
         if (!std::isnan(rsi_series[i])) row.set("rsi:14", rsi_series[i]); else all_core_ready = false;
+        if (!std::isnan(kalman_results[i].estimate)) {
+            row.set("kalman", kalman_results[i].estimate);
+            row.set("kalman_var", kalman_results[i].variance);
+        }
         if (!std::isnan(macd_series[i])) row.set("macd", macd_series[i]); else all_core_ready = false;
         if (!std::isnan(ema_fast_series[i])) row.set("ema:12", ema_fast_series[i]); else all_core_ready = false;
         if (!std::isnan(ema_slow_series[i])) row.set("ema:26", ema_slow_series[i]); else all_core_ready = false;

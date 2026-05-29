@@ -1,261 +1,302 @@
 {
   "mode": "live",
-  "fetched_at": "2026-05-28T05:16:47.717Z",
+  "fetched_at": "2026-05-28T11:26:01.130Z",
   "sources": [
     {
-      "family": "reserves",
-      "source": "worldbank",
-      "country_code": "USA",
-      "indicator": "FI.RES.TOTL.CD",
-      "timestamp": "2025-01-01T00:00:00.000Z",
-      "value": 1.5,
-      "requested_days": 3650,
-      "country": "USA",
-      "metric": "total_reserves_usd"
-    },
-    {
-      "family": "reserves",
-      "source": "worldbank",
-      "country_code": "USA",
-      "indicator": "TM.VAL.FUEL.ZS.UN",
-      "timestamp": "2025-01-01T00:00:00.000Z",
-      "value": 1.5,
-      "requested_days": 3650,
-      "country": "USA",
-      "metric": "fuel_imports_pct"
-    },
-    {
-      "family": "reserves",
-      "source": "worldbank",
-      "country_code": "USA",
-      "indicator": "TX.VAL.FUEL.ZS.UN",
-      "timestamp": "2025-01-01T00:00:00.000Z",
-      "value": 1.5,
-      "requested_days": 3650,
-      "country": "USA",
-      "metric": "fuel_exports_pct"
-    },
-    {
-      "family": "reserves",
-      "source": "worldbank",
-      "country_code": "TUR",
-      "indicator": "FI.RES.TOTL.CD",
-      "timestamp": "2025-01-01T00:00:00.000Z",
-      "value": 1.5,
-      "requested_days": 3650,
-      "country": "TUR",
-      "metric": "total_reserves_usd"
-    },
-    {
-      "family": "reserves",
-      "source": "worldbank",
-      "country_code": "TUR",
-      "indicator": "TM.VAL.FUEL.ZS.UN",
-      "timestamp": "2025-01-01T00:00:00.000Z",
-      "value": 1.5,
-      "requested_days": 3650,
-      "country": "TUR",
-      "metric": "fuel_imports_pct"
-    },
-    {
-      "family": "reserves",
-      "source": "worldbank",
-      "country_code": "TUR",
-      "indicator": "TX.VAL.FUEL.ZS.UN",
-      "timestamp": "2025-01-01T00:00:00.000Z",
-      "value": 1.5,
-      "requested_days": 3650,
-      "country": "TUR",
-      "metric": "fuel_exports_pct"
-    },
-    {
-      "family": "reserves",
-      "source": "worldbank",
-      "country_code": "CHN",
-      "indicator": "FI.RES.TOTL.CD",
-      "timestamp": "2025-01-01T00:00:00.000Z",
-      "value": 1.5,
-      "requested_days": 3650,
-      "country": "CHN",
-      "metric": "total_reserves_usd"
-    },
-    {
-      "family": "reserves",
-      "source": "worldbank",
-      "country_code": "CHN",
-      "indicator": "TM.VAL.FUEL.ZS.UN",
-      "timestamp": "2025-01-01T00:00:00.000Z",
-      "value": 1.5,
-      "requested_days": 3650,
-      "country": "CHN",
-      "metric": "fuel_imports_pct"
-    },
-    {
-      "family": "reserves",
-      "source": "worldbank",
-      "country_code": "CHN",
-      "indicator": "TX.VAL.FUEL.ZS.UN",
-      "timestamp": "2025-01-01T00:00:00.000Z",
-      "value": 1.5,
-      "requested_days": 3650,
-      "country": "CHN",
-      "metric": "fuel_exports_pct"
-    }
-  ],
-  "errors": [],
-  "provider_checks": [
-    {
-      "family": "quote_feeds",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "family": "equities",
+      "provider": "stooq",
+      "symbol": "AAPL",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "open": 150,
+      "high": 155,
+      "low": 149,
+      "close": 152,
+      "volume": 1000000
     },
     {
       "family": "equities",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "provider": "yahoo",
+      "symbol": "MSFT",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "open": 300,
+      "high": 305,
+      "low": 299,
+      "close": 302,
+      "volume": 500000
     },
     {
-      "family": "indices",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "family": "equities",
+      "provider": "stooq",
+      "symbol": "SPY",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "open": 400,
+      "high": 405,
+      "low": 399,
+      "close": 402,
+      "volume": 2000000
     },
     {
-      "family": "commodities",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
-    },
-    {
-      "family": "fx",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "family": "equities",
+      "provider": "yahoo",
+      "symbol": "QQQ",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "open": 350,
+      "high": 355,
+      "low": 349,
+      "close": 352,
+      "volume": 1500000
     },
     {
       "family": "crypto",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "provider": "binance",
+      "symbol": "BTCUSDT",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "open": 60000,
+      "high": 61000,
+      "low": 59000,
+      "close": 60500,
+      "volume": 100
+    },
+    {
+      "family": "crypto",
+      "provider": "coinbase",
+      "symbol": "ETHUSDT",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "open": 3000,
+      "high": 3100,
+      "low": 2900,
+      "close": 3050,
+      "volume": 1000
+    },
+    {
+      "family": "fx",
+      "provider": "frankfurter",
+      "symbol": "EURUSD",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 1.08
+    },
+    {
+      "family": "fx",
+      "provider": "fxapi",
+      "symbol": "GBPUSD",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 1.25
+    },
+    {
+      "family": "fx",
+      "provider": "ecb",
+      "symbol": "USDJPY",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 155.5
+    },
+    {
+      "family": "commodities",
+      "provider": "stooq",
+      "symbol": "XAUUSD",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "close": 2300
+    },
+    {
+      "family": "commodities",
+      "provider": "yahoo",
+      "symbol": "XAGUSD",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "close": 28
+    },
+    {
+      "family": "indices",
+      "provider": "stooq",
+      "symbol": "SPX",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "close": 5200
     },
     {
       "family": "pmi",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "provider": "spglobal",
+      "symbol": "US_MANUFACTURING",
+      "timestamp": "2026-05-01T00:00:00Z",
+      "value": 50.2
+    },
+    {
+      "family": "pmi",
+      "provider": "spglobal",
+      "symbol": "US_SERVICES",
+      "timestamp": "2026-05-01T00:00:00Z",
+      "value": 51.5
+    },
+    {
+      "family": "pmi",
+      "provider": "spglobal",
+      "symbol": "US_COMPOSITE",
+      "timestamp": "2026-05-01T00:00:00Z",
+      "value": 50.8
     },
     {
       "family": "macro",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
-    },
-    {
-      "family": "weather",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
-    },
-    {
-      "family": "flight",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "provider": "fred",
+      "symbol": "CPI",
+      "timestamp": "2026-04-01T00:00:00Z",
+      "value": 3.4
     },
     {
       "family": "crypto_tx",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "provider": "blockchain",
+      "symbol": "bitcoin",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 500000
     },
     {
       "family": "sentiment",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
-    },
-    {
-      "family": "holdings",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
-    },
-    {
-      "family": "onchain",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "provider": "alternative_me",
+      "symbol": "fear_and_greed",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 65
     },
     {
       "family": "breadth",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "provider": "custom",
+      "symbol": "spy_rsp_ratio",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 1.12
     },
     {
       "family": "prediction_market",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "provider": "polymarket",
+      "symbol": "fed_rate_cut_prob",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 0.25
     },
     {
-      "family": "equities_options",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "family": "weather",
+      "provider": "openweather",
+      "symbol": "NYC",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 22
     },
     {
-      "family": "stock_options",
-      "provider": "manifest",
-      "status": "skipped",
-      "reason": "target_family_filter",
-      "target_family": "reserves"
+      "family": "flight",
+      "provider": "adsbexchange",
+      "symbol": "GLOBAL_COUNT",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 15000
+    },
+    {
+      "family": "onchain",
+      "provider": "glassnode",
+      "symbol": "BTC_EXCHANGE_NETFLOW",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": -500
+    },
+    {
+      "family": "holdings",
+      "provider": "sec",
+      "symbol": "BRK_A",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 600000
     },
     {
       "family": "reserves",
       "provider": "world_bank",
       "symbol": "USA",
-      "status": "ok"
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 1.5
+    },
+    {
+      "family": "equities_options",
+      "provider": "cboe",
+      "symbol": "AAPL_CALL",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 5.5
+    },
+    {
+      "family": "stock_options",
+      "provider": "cboe",
+      "symbol": "MSFT_PUT",
+      "timestamp": "2026-05-28T12:00:00Z",
+      "value": 2.2
     }
   ],
-  "deduplication": {
-    "input_records": 9,
-    "output_records": 9,
-    "quote_records": 0,
-    "removed_records": 0,
-    "policy": "provider_priority_then_quality"
-  },
-  "quality_filter": {
-    "removed_records": 0,
-    "stale_records": 0,
-    "policy": "drop_rejected_live_records_after_merge",
-    "merged_removed_records": 0,
-    "merged_stale_records": 0
-  },
-  "macro_store": {
-    "configured": false,
-    "skipped": true,
-    "written": 0,
-    "records": 0,
-    "units": {}
-  }
+  "errors": [],
+  "provider_checks": [
+    {
+      "family": "equities",
+      "providers": [
+        "stooq",
+        "yahoo"
+      ],
+      "symbols": [
+        "AAPL",
+        "MSFT",
+        "SPY",
+        "QQQ"
+      ]
+    },
+    {
+      "family": "commodities",
+      "providers": [
+        "stooq",
+        "yahoo"
+      ]
+    },
+    {
+      "family": "weather",
+      "provider": "openweather",
+      "status": "ok"
+    },
+    {
+      "family": "flight",
+      "provider": "adsbexchange",
+      "status": "ok"
+    },
+    {
+      "family": "onchain",
+      "provider": "glassnode",
+      "status": "ok"
+    },
+    {
+      "family": "holdings",
+      "provider": "sec",
+      "status": "ok"
+    },
+    {
+      "family": "reserves",
+      "provider": "world_bank",
+      "status": "ok"
+    },
+    {
+      "family": "crypto",
+      "provider": "binance",
+      "status": "ok"
+    },
+    {
+      "family": "crypto",
+      "provider": "coinbase",
+      "status": "ok"
+    },
+    {
+      "family": "fx",
+      "provider": "frankfurter",
+      "status": "ok"
+    },
+    {
+      "family": "fx",
+      "provider": "fxapi",
+      "status": "ok"
+    },
+    {
+      "family": "fx",
+      "provider": "ecb",
+      "status": "ok"
+    },
+    {
+      "family": "pmi",
+      "provider": "spglobal",
+      "status": "ok"
+    },
+    {
+      "family": "macro",
+      "provider": "fred",
+      "status": "ok"
+    }
+  ]
 }
