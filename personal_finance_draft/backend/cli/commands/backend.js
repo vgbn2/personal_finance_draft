@@ -145,17 +145,35 @@ function runBackendPortfolio(args = []) {
   ]);
 }
 
-function runBackendDataSummary(args = []) {
+async function runBackendDataSummary(args = []) {
   let symbol = optionValue(args, '--symbol', null);
-  
+
   if (!symbol && utils.isRichTerminal()) {
-    const symbols = utils.get_Current_Universe_Symbols();
-    const choices = symbols.map(s => ({ label: s, value: s }));
-    symbol = spawnSync('node', [path.join(__dirname, '../tui/engine.js'), 'Select symbol:', JSON.stringify(choices)], { encoding: 'utf8' }).stdout.trim();
-    // Re-evaluating: using internal prompt is better but requires async handling everywhere.
-    // For now, let's just use the helper if it's already there or the user will pass it.
+    const { promptSelect } = require('../tui/engine');
+
+    const categoryMap = {
+      equities: 'Market Equities', indices: 'Market Indices', commodities: 'Commodities',
+      crypto: 'Crypto Assets', fx: 'Foreign Exchange', macro: 'Economic Data (Macro)',
+      pmi: 'Economic Data (Macro)', sentiment: 'Market Sentiment', reserves: 'Global Reserves',
+      holdings: 'Institutional Holdings', equities_options: 'Derivatives (Options)',
+      stock_options: 'Derivatives (Options)'
+    };
+
+    const seen = new Set();
+    const choices = [];
+    utils.get_Current_Universe_Symbols().forEach(u => {
+      if (!u.symbol || seen.has(u.symbol)) return;
+      seen.add(u.symbol);
+      choices.push({ label: u.symbol, value: u.symbol, category: categoryMap[u.family] || 'Other Assets' });
+    });
+    choices.sort((a, b) => a.category.localeCompare(b.category) || a.label.localeCompare(b.label));
+
+    console.log(`\n\x1b[1;36mData Summary\x1b[0m`);
+    const selected = await promptSelect('Select asset to inspect:', choices);
+    if (!selected) return { ok: false, error: 'User cancelled selection' };
+    symbol = selected;
   }
-  
+
   const resolved = utils.resolveSymbols([symbol || 'AAPL'])[0];
 
   return runBackendCommand([
@@ -173,65 +191,65 @@ function runBackendDataSummary(args = []) {
   ]);
 }
 
-async function runBackendCorrelation(args = []) {
+async function runBackendCorrelation(args = [], preSelectedSymbol = null) {
   let symbols = optionValue(args, '--symbols', null);
-  
-  // [gemini-work] Interactive discovery if no symbols provided
+
   if (!symbols && utils.isRichTerminal()) {
-      const { promptMultiSelect } = require('../tui/engine');
-      
-      // Get raw symbols from cache or config
-      const rawUniverse = utils.get_Current_Universe_Symbols();
-      
-      // Deduplicate and categorize
-      const seen = new Set();
-      const choices = [];
-      
-      const categoryMap = {
-          equities: 'Market Equities',
-          indices: 'Market Indices',
-          commodities: 'Commodities',
-          crypto: 'Crypto Assets',
-          fx: 'Foreign Exchange',
-          macro: 'Economic Data (Macro)',
-          pmi: 'Economic Data (Macro)',
-          sentiment: 'Market Sentiment',
-          reserves: 'Global Reserves',
-          holdings: 'Institutional Holdings',
-          equities_options: 'Derivatives (Options)',
-          stock_options: 'Derivatives (Options)'
-      };
+    const { promptMultiSelect } = require('../tui/engine');
+    const rawUniverse = utils.get_Current_Universe_Symbols();
 
-      rawUniverse.forEach(u => {
-          const s = u.symbol;
-          if (!s || seen.has(s)) return;
-          seen.add(s);
-          
-          let category = categoryMap[u.family] || 'Other Assets';
-          
-          // Heuristic: If it looks like an option symbol, group it.
-          if (s.includes('_CALL') || s.includes('_PUT')) category = 'Derivatives (Options)';
-          // Heuristic: If it's a major crypto pair, group it.
-          if (u.family === 'crypto') category = 'Crypto Assets';
+    const categoryMap = {
+      equities: 'Market Equities', indices: 'Market Indices', commodities: 'Commodities',
+      crypto: 'Crypto Assets', fx: 'Foreign Exchange', macro: 'Economic Data (Macro)',
+      pmi: 'Economic Data (Macro)', sentiment: 'Market Sentiment', reserves: 'Global Reserves',
+      holdings: 'Institutional Holdings', equities_options: 'Derivatives (Options)',
+      stock_options: 'Derivatives (Options)'
+    };
 
-          choices.push({ label: s, value: s, category });
-      });
+    // Step 1: Family filter
+    const availableFamilies = [...new Set(rawUniverse.map(u => u.family).filter(Boolean))].sort();
+    const familyChoices = availableFamilies.map(f => ({
+      label: f.charAt(0).toUpperCase() + f.slice(1).replace(/_/g, ' '),
+      value: f,
+      category: ''
+    }));
 
-      // Sort by category then name
-      choices.sort((a, b) => a.category.localeCompare(b.category) || a.label.localeCompare(b.label));
+    console.log(`\n\x1b[1;36mCorrelation Analysis\x1b[0m \x1b[90m— Step 1 of 2: filter by family (Enter with none = include all)\x1b[0m`);
+    const selectedFamilies = await promptMultiSelect('Include families:', familyChoices);
+    if (selectedFamilies === null) return { ok: false, error: 'User cancelled selection' };
+    const filterFamilies = selectedFamilies.length > 0;
 
-      console.log(`\n\x1b[1;36mCorrelation Discovery\x1b[0m`);
-      const selected = await promptMultiSelect('Select assets to correlate (min 2):', choices);
-      
-      if (!selected) return { ok: false, error: 'User cancelled selection' };
-      if (selected.length < 2) {
-          console.error('\n\x1b[31mError: Correlation requires at least 2 symbols.\x1b[0m');
-          return { ok: false, error: 'Insufficient symbols selected' };
-      }
-      symbols = selected.join(',');
+    // Step 2: Symbol picker filtered by chosen families
+    const seen = new Set();
+    const choices = [];
+    rawUniverse.forEach(u => {
+      const s = u.symbol;
+      if (!s || seen.has(s)) return;
+      if (filterFamilies && !selectedFamilies.includes(u.family)) return;
+      if (s.includes('_CALL') || s.includes('_PUT')) return;
+      seen.add(s);
+      choices.push({ label: s, value: s, category: categoryMap[u.family] || 'Other Assets' });
+    });
+    choices.sort((a, b) => a.category.localeCompare(b.category) || a.label.localeCompare(b.label));
+
+    if (preSelectedSymbol) {
+      console.log(`\n\x1b[90mPrimary from data summary: \x1b[36m${preSelectedSymbol}\x1b[90m (auto-included)\x1b[0m`);
+    }
+    console.log(`\x1b[1;36mCorrelation Analysis\x1b[0m \x1b[90m— Step 2 of 2: select assets\x1b[0m`);
+    const selected = await promptMultiSelect('Select assets to correlate (min 2):', choices);
+    if (selected === null) return { ok: false, error: 'User cancelled selection' };
+
+    const allSelected = preSelectedSymbol
+      ? [preSelectedSymbol, ...selected.filter(s => s !== preSelectedSymbol)]
+      : selected;
+
+    if (allSelected.length < 2) {
+      console.error('\n\x1b[31mError: Correlation requires at least 2 symbols.\x1b[0m');
+      return { ok: false, error: 'Insufficient symbols selected' };
+    }
+    symbols = allSelected.join(',');
   }
 
-  // Fallback to default if still nothing
   if (!symbols) symbols = 'AAPL,MSFT,SPY';
 
   const resolved = utils.resolveSymbols(symbols).join(',');
@@ -399,6 +417,30 @@ async function commandBackend(args) {
     }
 
     printPayload(payload, args);
+
+    // Extend data summary into correlation analysis
+    if (subcommand === 'data' && payload.ok && !hasFlag(args, '--json') && utils.isRichTerminal()) {
+      const { promptConfirm } = require('../tui/engine');
+      const extend = await promptConfirm('Extend to correlation analysis?');
+      if (extend) {
+        // Backend nests it: { type:'market_data_summary', summary:{ symbol, ... } }
+        const primarySymbol = payload.summary?.symbol || optionValue(args, '--symbol', null);
+        // Pass only timeframe + input — not --max-bars (data summary default 0 ≠ correlation default 252)
+        const corrArgs = [];
+        const tf = optionValue(args, '--timeframe', null);
+        const inp = optionValue(args, '--input', null);
+        if (tf) corrArgs.push('--timeframe', tf);
+        if (inp) corrArgs.push('--input', inp);
+        const corrPayload = await runBackendCorrelation(corrArgs, primarySymbol);
+        if (corrPayload.ok) {
+          const { renderCorrelationHeatmap } = require('../tui');
+          console.log('\n' + renderCorrelationHeatmap(corrPayload.labels, corrPayload.values));
+        } else {
+          printPayload(corrPayload, args);
+        }
+      }
+    }
+
     return payload.available !== false && payload.ok ? 0 : 1;
   } catch (e) {
     printPayload({ error: e.message }, args);

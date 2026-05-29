@@ -14,6 +14,12 @@ function isRichTerminal() {
 }
 
 async function promptMultiSelect(question, options) {
+  process.stdin.removeAllListeners('data');
+  process.stdin.removeAllListeners('keypress');
+  process.stdin.removeAllListeners('line');
+  process.stdin.removeAllListeners('data');
+  process.stdin.removeAllListeners('keypress');
+  process.stdin.removeAllListeners('line');
   if (process.stdin.setRawMode) process.stdin.setRawMode(true);
   process.stdin.resume();
   process.stdin.setEncoding('utf8');
@@ -30,148 +36,103 @@ async function promptMultiSelect(question, options) {
   return new Promise(resolve => {
     let lastLinesCount = 0;
 
-    const getFiltered = () => resolvedOptions.filter(o => 
+    const getFiltered = () => resolvedOptions.filter(o =>
       (o.label || o.value || '').toString().toLowerCase().includes(filterText.toLowerCase())
     );
 
-    const render = () => {
+    const buildGrouped = () => {
       const filtered = getFiltered();
-      
-      // Group by category for rendering
-      const grouped = [];
+      const groups = [{ type: 'select_all' }];
       let lastCat = null;
       filtered.forEach(o => {
-          if (o.category && o.category !== lastCat) {
-              grouped.push({ type: 'header', label: o.category });
-              lastCat = o.category;
-          }
-          grouped.push({ type: 'item', ...o });
+        if (o.category && o.category !== lastCat) { groups.push({ type: 'header', label: o.category }); lastCat = o.category; }
+        groups.push({ type: 'item', ...o });
       });
+      return groups;
+    };
 
+    const getFilteredIndices = () =>
+      getFiltered().map(fi => resolvedOptions.findIndex(o => o.value === fi.value && o.label === fi.label)).filter(i => i >= 0);
+
+    const render = () => {
+      const grouped = buildGrouped();
       if (selectedIndex >= grouped.length) selectedIndex = Math.max(0, grouped.length - 1);
-      
+      while (grouped[selectedIndex]?.type === 'header' && selectedIndex < grouped.length - 1) selectedIndex++;
       if (selectedIndex < scrollOffset) scrollOffset = selectedIndex;
       else if (selectedIndex >= scrollOffset + PAGE_SIZE) scrollOffset = selectedIndex - PAGE_SIZE + 1;
-
       const visible = grouped.slice(scrollOffset, scrollOffset + PAGE_SIZE);
-      
       let buffer = '';
       const time = new Date().toLocaleTimeString();
-      
       buffer += `\x1b[1;36mSOVEREIGN\x1b[0m \x1b[90m| ${time} |\x1b[0m \x1b[1m${question}\x1b[0m \x1b[90m(Filter: ${filterText})\x1b[0m\n`;
-      buffer += `\x1b[90m  Space: toggle | Enter: confirm | Esc: back/cancel | Type to search\x1b[0m\n`;
+      buffer += `\x1b[90m  Space: toggle | Enter: confirm | Esc: cancel | Type to search\x1b[0m\n`;
       buffer += `\x1b[90m${'─'.repeat(80)}\x1b[0m\n`;
-
       visible.forEach((item, i) => {
         const actualIndex = i + scrollOffset;
         const isSelected = actualIndex === selectedIndex;
-        
-        if (item.type === 'header') {
-            buffer += `\n  \x1b[1;33m--- ${item.label.toUpperCase()} ---\x1b[0m\n`;
+        if (item.type === 'select_all') {
+          const fi = getFilteredIndices();
+          const allChecked = fi.length > 0 && fi.every(idx => selectedIndices.has(idx));
+          const saPrefix = allChecked ? '\x1b[32m[x]\x1b[0m' : '[ ]';
+          const saLabel = allChecked ? 'Deselect All' : 'Select All';
+          buffer += isSelected
+            ? `  \x1b[32m❯ ${saPrefix} \x1b[33m${saLabel}\x1b[0m\n`
+            : `    ${saPrefix} \x1b[33m${saLabel}\x1b[0m\n`;
+        } else if (item.type === 'header') {
+          buffer += `\n  \x1b[1;33m--- ${item.label.toUpperCase()} ---\x1b[0m\n`;
         } else {
-            // Map grouped item back to its original resolvedOptions index for state tracking
-            const origIdx = resolvedOptions.indexOf(resolvedOptions.find(o => o.value === item.value && o.family === item.family) || item);
-            // Better: use a robust find that handles the object shape
-            const foundIdx = resolvedOptions.findIndex(o => o.value === item.value && o.label === item.label);
-            const isChecked = selectedIndices.has(foundIdx);
-            const prefix = isChecked ? '\x1b[32m[x]\x1b[0m' : '[ ]';
-            
-            if (isSelected) {
-                buffer += `  \x1b[32m❯ ${prefix} \x1b[36m${item.label || item.value}\x1b[0m\n`;
-            } else {
-                buffer += `    ${prefix} ${item.label || item.value}\n`;
-            }
+          const foundIdx = resolvedOptions.findIndex(o => o.value === item.value && o.label === item.label);
+          const isChecked = selectedIndices.has(foundIdx);
+          const prefix = isChecked ? '\x1b[32m[x]\x1b[0m' : '[ ]';
+          buffer += isSelected
+            ? `  \x1b[32m❯ ${prefix} \x1b[36m${item.label || item.value}\x1b[0m\n`
+            : `    ${prefix} ${item.label || item.value}\n`;
         }
       });
-
-      if (lastLinesCount > 0) {
-        readline.moveCursor(process.stdout, 0, -lastLinesCount);
-        readline.clearScreenDown(process.stdout);
-      }
-
+      if (lastLinesCount > 0) { readline.moveCursor(process.stdout, 0, -lastLinesCount); readline.clearScreenDown(process.stdout); }
       process.stdout.write(buffer);
       lastLinesCount = (buffer.match(/\n/g) || []).length;
     };
-    
+
     render();
 
     const onData = (key) => {
-      const isControl = key === '\u0003' || key === '\r' || key === '\n' || key === '\u001b' || key === '\u007f' || key === ' ';
-      const isArrow = key === '\u001b[A' || key === '\u001b[B';
+      const isEnter = /[\r\n]/.test(key);
+      const isControl = key === '' || isEnter || key === '' || key === '' || key === ' ';
+      const isArrow = key === '[A' || key === '[B';
       const isPrintable = key.length === 1 && key >= ' ' && key <= '~' && key !== ' ';
-
       if (!isControl && !isArrow && !isPrintable) return;
-
-      if (key === '\u0003' || key === '\u001b') { 
+      if (key === '' || key === '') {
         process.stdin.removeListener('data', onData);
         if (process.stdin.setRawMode) process.stdin.setRawMode(false);
-        process.stdout.write('\n');
-        resolve(null);
-      }
-      else if (key === '\u007f') {
-        filterText = filterText.slice(0, -1);
-        selectedIndex = 0;
-        render();
+        process.stdout.write('\n'); resolve(null);
+      } else if (key === '') {
+        filterText = filterText.slice(0, -1); selectedIndex = 0; render();
       } else if (isPrintable) {
-        filterText += key;
-        selectedIndex = 0;
-        render();
+        filterText += key; selectedIndex = 0; render();
       } else if (key === ' ') {
-          const filtered = getFiltered();
-          const grouped = [];
-          let lastCat = null;
-          filtered.forEach(o => {
-              if (o.category && o.category !== lastCat) {
-                  grouped.push({ type: 'header', label: o.category });
-                  lastCat = o.category;
-              }
-              grouped.push({ type: 'item', ...o });
-          });
-
-          const item = grouped[selectedIndex];
-          if (item && item.type === 'item') {
-              const origIdx = resolvedOptions.findIndex(o => o.value === item.value && o.label === item.label);
-              if (selectedIndices.has(origIdx)) selectedIndices.delete(origIdx);
-              else selectedIndices.add(origIdx);
-          }
+        const grouped = buildGrouped();
+        const item = grouped[selectedIndex];
+        if (item?.type === 'select_all') {
+          const fi = getFilteredIndices();
+          const allChecked = fi.length > 0 && fi.every(idx => selectedIndices.has(idx));
+          if (allChecked) fi.forEach(idx => selectedIndices.delete(idx));
+          else fi.forEach(idx => selectedIndices.add(idx));
+        } else if (item?.type === 'item') {
+          const origIdx = resolvedOptions.findIndex(o => o.value === item.value && o.label === item.label);
+          if (selectedIndices.has(origIdx)) selectedIndices.delete(origIdx); else selectedIndices.add(origIdx);
+        }
         render();
-      } else if (key === '\u001b[A') {
-          const filtered = getFiltered();
-          const grouped = [];
-          let lastCat = null;
-          filtered.forEach(o => {
-              if (o.category && o.category !== lastCat) {
-                  grouped.push({ type: 'header', label: o.category });
-                  lastCat = o.category;
-              }
-              grouped.push({ type: 'item', ...o });
-          });
-
-          let nextIdx = selectedIndex;
-          do {
-              nextIdx = (nextIdx > 0) ? nextIdx - 1 : grouped.length - 1;
-          } while (grouped[nextIdx]?.type === 'header' && grouped.length > 1);
-          selectedIndex = nextIdx;
-          render();
-      } else if (key === '\u001b[B') {
-          const filtered = getFiltered();
-          const grouped = [];
-          let lastCat = null;
-          filtered.forEach(o => {
-              if (o.category && o.category !== lastCat) {
-                  grouped.push({ type: 'header', label: o.category });
-                  lastCat = o.category;
-              }
-              grouped.push({ type: 'item', ...o });
-          });
-
-          let nextIdx = selectedIndex;
-          do {
-              nextIdx = (nextIdx < grouped.length - 1) ? nextIdx + 1 : 0;
-          } while (grouped[nextIdx]?.type === 'header' && grouped.length > 1);
-          selectedIndex = nextIdx;
-          render();
-      } else if (key === '\r' || key === '\n') {
+      } else if (key === '[A') {
+        const grouped = buildGrouped(); let nextIdx = selectedIndex;
+        do { nextIdx = nextIdx > 0 ? nextIdx - 1 : grouped.length - 1; }
+        while (grouped[nextIdx]?.type === 'header' && grouped.length > 1);
+        selectedIndex = nextIdx; render();
+      } else if (key === '[B') {
+        const grouped = buildGrouped(); let nextIdx = selectedIndex;
+        do { nextIdx = nextIdx < grouped.length - 1 ? nextIdx + 1 : 0; }
+        while (grouped[nextIdx]?.type === 'header' && grouped.length > 1);
+        selectedIndex = nextIdx; render();
+      } else if (isEnter) {
         process.stdin.removeListener('data', onData);
         if (process.stdin.setRawMode) process.stdin.setRawMode(false);
         process.stdout.write('\n');
@@ -180,6 +141,7 @@ async function promptMultiSelect(question, options) {
     };
     process.stdin.on('data', onData);
   });
+
 }
 
 async function promptSelect(question, options) {
@@ -280,7 +242,8 @@ async function promptSelect(question, options) {
 
     const onData = (key) => {
       // Recognize standard keys
-      const isControl = key === '\u0003' || key === '\r' || key === '\n' || key === '\u007f';
+      const isEnter = /[\r\n]/.test(key);
+      const isControl = key === '\u0003' || isEnter || key === '\u007f';
       const isArrow = key === '\u001b[A' || key === '\u001b[B';
       const isPrintable = key.length === 1 && key >= ' ' && key <= '~';
 
@@ -312,7 +275,7 @@ async function promptSelect(question, options) {
         } while (filtered[nextIdx]?.type === 'header' && filtered.length > 1);
         selectedIndex = nextIdx;
         render();
-      } else if (key === '\r' || key === '\n') {
+      } else if (isEnter) {
         process.stdin.removeListener('data', onData);
         if (process.stdin.setRawMode) process.stdin.setRawMode(false);
         process.stdout.write('\n');
@@ -341,15 +304,37 @@ async function promptSelect(question, options) {
 }
 
 async function promptText(question, defaultValue = '') {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-  return new Promise(resolve => {
-    rl.question(`\x1b[36m?\x1b[0m \x1b[1m${question}\x1b[0m ${defaultValue ? `\x1b[90m(${defaultValue})\x1b[0m ` : ''}`, (answer) => {
-      rl.close();
-      resolve(answer.trim() || defaultValue);
+  if (!isRichTerminal()) {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    return new Promise(resolve => {
+      rl.question(`? ${question} ${defaultValue ? `(${defaultValue}) ` : ''}`, answer => { rl.close(); resolve(answer.trim() || defaultValue); });
     });
+  }
+  // Pure raw-mode — no readline. Fixes stdin drift from repeated raw/cooked cycling.
+  process.stdin.removeAllListeners('data');
+  process.stdin.removeAllListeners('keypress');
+  process.stdin.removeAllListeners('line');
+  if (process.stdin.setRawMode) process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.setEncoding('utf8');
+  let input = '';
+  process.stdout.write(`\x1b[36m?\x1b[0m \x1b[1m${question}\x1b[0m ${defaultValue ? `\x1b[90m(${defaultValue})\x1b[0m ` : ''}`);
+  return new Promise(resolve => {
+    const onKey = (key) => {
+      if (/[\r\n]/.test(key)) {
+        process.stdin.removeListener('data', onKey);
+        if (process.stdin.setRawMode) process.stdin.setRawMode(false);
+        process.stdout.write('\n');
+        resolve(input.trim() || defaultValue);
+      } else if (key === '') {
+        process.exit(0);
+      } else if (key === '' || key === '') {
+        if (input.length > 0) { input = input.slice(0, -1); process.stdout.write('\b \b'); }
+      } else if (key.length === 1 && key >= ' ' && key <= '~') {
+        input += key; process.stdout.write(key);
+      }
+    };
+    process.stdin.on('data', onKey);
   });
 }
 
@@ -390,6 +375,27 @@ async function resolveFlags(flags) {
     }
   }
   return finalArgs;
+}
+
+async function waitForEnter() {
+  process.stdin.removeAllListeners('data');
+  process.stdin.removeAllListeners('keypress');
+  process.stdin.removeAllListeners('line');
+  if (process.stdin.setRawMode) process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.setEncoding('utf8');
+  return new Promise(resolve => {
+    const onKey = (key) => {
+      if (/[\r\n]/.test(key) || key === '' || key === '') {
+        process.stdin.removeListener('data', onKey);
+        if (process.stdin.setRawMode) process.stdin.setRawMode(false);
+        process.stdout.write('\n');
+        if (key === '') process.exit(0);
+        resolve();
+      }
+    };
+    process.stdin.on('data', onKey);
+  });
 }
 
 async function runInteractiveMenu(handleCommand) {
@@ -435,7 +441,8 @@ async function runInteractiveMenu(handleCommand) {
     }
 
     process.stdout.write('\n\x1b[90m' + '─'.repeat(60) + '\x1b[0m\n');
-    await promptText('Press Enter to return to menu...');
+    process.stdout.write('\x1b[90m  Press Enter to return to menu...\x1b[0m');
+    await waitForEnter();
     console.clear();
   }
 }
