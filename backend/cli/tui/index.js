@@ -10,5 +10,6 @@ const manifest = require('./manifest');
 module.exports = {
   ...engine,
   ...intersection,
-  MANIFEST: manifest
+  MANIFEST: manifest,
+  promptMultiSelect: engine.promptMultiSelect
 };

@@ -15,6 +15,7 @@ bool expect(bool condition, const char* message) {
 
 std::filesystem::path locateConfig() {
     const std::filesystem::path candidates[] = {
+        std::filesystem::path("../../../config/data_sources.yaml"),
         std::filesystem::path("../../config/data_sources.yaml"),
         std::filesystem::path("../config/data_sources.yaml"),
         std::filesystem::path("config/data_sources.yaml"),

@@ -1,5 +1,10 @@
 # Sovereign Intelligence Suite - GitIgnore
 
+# Node.js
+node_modules/
+dist/
+npm-debug.log*
+
 # Build Directories
 build/
 cpp_core/build/
@@ -31,6 +36,7 @@ logs/
 *.key
 *.pem
 storage/secrets/
+.mcp.json
 
 # Data
 data/cache/

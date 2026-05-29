@@ -11,6 +11,9 @@ double calculateConfidence(
     double max_drawdown,
     double calmar) {
     
+    (void)annualized_return;
+    (void)max_drawdown;
+    
     // Benchmarks for normalization
     const double target_sharpe = 2.0;
     const double target_sortino = 3.0;

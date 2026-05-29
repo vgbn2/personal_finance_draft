@@ -1,4 +1,4 @@
-export type TabId = 'overview' | 'signals' | 'market_intel' | 'backtest' | 'quote_health' | 'audit_log';
+export type TabId = 'overview' | 'signals' | 'market_intel' | 'backtest' | 'quote_health' | 'audit_log' | 'telemetry';
 
 export interface MarketData {
   symbol: string;

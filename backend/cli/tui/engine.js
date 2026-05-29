@@ -12,6 +12,72 @@ function isRichTerminal() {
   return process.stdout.isTTY && !process.env.CI;
 }
 
+async function promptMultiSelect(question, options) {
+  process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.setEncoding('utf8');
+
+  let selectedIndex = 0;
+  const resolvedOptions = typeof options === 'function' ? await options() : options;
+  const selectedIndices = new Set();
+  
+  const PAGE_SIZE = 10;
+  let scrollOffset = 0;
+
+  return new Promise(resolve => {
+    let lastLinesCount = 0;
+
+    const render = () => {
+      if (lastLinesCount > 0) {
+        readline.moveCursor(process.stdout, 0, -lastLinesCount);
+        readline.clearScreenDown(process.stdout);
+      }
+      
+      let buffer = '';
+      buffer += `\x1b[1;36mSOVEREIGN\x1b[0m \x1b[1m${question}\x1b[0m \x1b[90m(Space: toggle, Enter: finish)\x1b[0m\n\n`;
+      
+      if (selectedIndex < scrollOffset) {
+        scrollOffset = selectedIndex;
+      } else if (selectedIndex >= scrollOffset + PAGE_SIZE) {
+        scrollOffset = selectedIndex - PAGE_SIZE + 1;
+      }
+
+      const visible = resolvedOptions.slice(scrollOffset, scrollOffset + PAGE_SIZE);
+      for (let i = 0; i < visible.length; i++) {
+        const actualIndex = i + scrollOffset;
+        const isSelected = selectedIndices.has(actualIndex);
+        const prefix = isSelected ? '\x1b[32m[x]\x1b[0m' : '[ ]';
+        const line = actualIndex === selectedIndex 
+          ? `  \x1b[36m❯ ${prefix} ${visible[i].label}\x1b[0m`
+          : `    ${prefix} ${visible[i].label}`;
+        buffer += line + '\n';
+      }
+
+      process.stdout.write(buffer);
+      lastLinesCount = 2 + visible.length;
+    };
+    
+    render();
+    //too many if elses dev review
+    const onData = (key) => {
+      if (key === '\u0003') { process.exit(0); }
+      if (key === '\u001b[A') { selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : resolvedOptions.length - 1; render(); }
+      else if (key === '\u001b[B') { selectedIndex = (selectedIndex < resolvedOptions.length - 1) ? selectedIndex + 1 : 0; render(); }
+      else if (key === ' ') {
+        if (selectedIndices.has(selectedIndex)) selectedIndices.delete(selectedIndex);
+        else selectedIndices.add(selectedIndex);
+        render();
+      } else if (key === '\r' || key === '\n') {
+        process.stdin.removeListener('data', onData);
+        process.stdin.setRawMode(false);
+        process.stdout.write('\n');
+        resolve([...selectedIndices].map(idx => resolvedOptions[idx].value));
+      }
+    };
+    process.stdin.on('data', onData);
+  });
+}
+
 async function promptSelect(question, options) {
   if (!isRichTerminal()) {
     console.log(`\n? ${question}`);
@@ -33,8 +99,8 @@ async function promptSelect(question, options) {
   process.stdin.setEncoding('utf8');
 
   let selectedIndex = 0;
+  let filterText = '';
   const resolvedOptions = typeof options === 'function' ? await options() : options;
-  const labels = resolvedOptions.map(opt => (typeof opt === 'string' ? opt : opt.label));
   
   const PAGE_SIZE = 10;
   let scrollOffset = 0;
@@ -43,68 +109,91 @@ async function promptSelect(question, options) {
     let lastLinesCount = 0;
 
     const render = () => {
-      // Clear previous output by moving up and clearing from there
       if (lastLinesCount > 0) {
         readline.moveCursor(process.stdout, 0, -lastLinesCount);
         readline.clearScreenDown(process.stdout);
       }
       
+      // Apply filter
+      const filtered = resolvedOptions.filter(o => 
+        (o.label || o.value || o).toString().toLowerCase().includes(filterText.toLowerCase())
+      );
+      
+      // Group by category for rendering
+      const grouped = [];
+      let lastCat = null;
+      filtered.forEach(o => {
+          if (o.category && o.category !== lastCat) {
+              grouped.push({ type: 'header', label: o.category });
+              lastCat = o.category;
+          }
+          grouped.push({ type: 'item', ...o });
+      });
+
+      if (selectedIndex >= grouped.length) selectedIndex = Math.max(0, grouped.length - 1);
+      
+      if (selectedIndex < scrollOffset) scrollOffset = selectedIndex;
+      else if (selectedIndex >= scrollOffset + PAGE_SIZE) scrollOffset = selectedIndex - PAGE_SIZE + 1;
+
+      const visible = grouped.slice(scrollOffset, scrollOffset + PAGE_SIZE);
+      
       let buffer = '';
       const time = new Date().toLocaleTimeString();
       const statusLine = `\x1b[90mBackend: \x1b[32mOK\x1b[90m | Cache: \x1b[32mValid\x1b[90m | Network: \x1b[32mConnected\x1b[0m`;
       
-      buffer += `\x1b[1;36mSOVEREIGN\x1b[0m \x1b[90m| ${time} |\x1b[0m \x1b[1m${question}\x1b[0m \x1b[90m(Total: ${labels.length})\x1b[0m\n`;
+      buffer += `\x1b[1;36mSOVEREIGN\x1b[0m \x1b[90m| ${time} |\x1b[0m \x1b[1m${question}\x1b[0m \x1b[90m(Filter: ${filterText})\x1b[0m\n`;
       buffer += `  ${statusLine}\n`;
       buffer += `\x1b[90m${'─'.repeat(80)}\x1b[0m\n`;
-      
-      if (selectedIndex < scrollOffset) {
-        scrollOffset = selectedIndex;
-      } else if (selectedIndex >= scrollOffset + PAGE_SIZE) {
-        scrollOffset = selectedIndex - PAGE_SIZE + 1;
-      }
 
-      const visibleLabels = labels.slice(scrollOffset, scrollOffset + PAGE_SIZE);
-      for (let i = 0; i < visibleLabels.length; i++) {
-        const actualIndex = i + scrollOffset;
-        const line = actualIndex === selectedIndex 
-          ? `  \x1b[32m❯ \x1b[36m${visibleLabels[i]}\x1b[0m`
-          : `    ${visibleLabels[i]}`;
-        buffer += line + '\n';
-      }
-
-      const hasMore = labels.length > PAGE_SIZE;
-      if (hasMore) {
-        buffer += `  \x1b[90m--- ${labels.length - PAGE_SIZE} more hidden ---\x1b[0m\n`;
+      for (let i = 0; i < visible.length; i++) {
+        const item = visible[i];
+        if (item.type === 'header') {
+            buffer += `\n  \x1b[1;33m--- ${item.label.toUpperCase()} ---\x1b[0m\n`;
+            lastLinesCount += 1;
+        } else {
+            const actualIndex = i + scrollOffset;
+            const line = actualIndex === selectedIndex 
+              ? `  \x1b[32m❯ \x1b[36m${item.label || item.value || item}\x1b[0m`
+              : `    ${item.label || item.value || item}`;
+            buffer += line + '\n';
+        }
       }
 
       process.stdout.write(buffer);
-      lastLinesCount = 3 + visibleLabels.length + (hasMore ? 1 : 0);
+      lastLinesCount = 3 + visible.length; 
     };
     
     render();
 
     const onData = (key) => {
-      if (key === '\u0003') { // Ctrl+C
-        process.stdout.write('\nExiting.\n');
-        process.exit(0);
-      }
-      if (key === '\u001b[A') { // Up
-        selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : labels.length - 1;
+      if (key === '\u0003') { process.exit(0); }
+      else if (key === '\u007f') { // Backspace
+        filterText = filterText.slice(0, -1);
+        selectedIndex = 0;
         render();
-      } else if (key === '\u001b[B') { // Down
-        selectedIndex = (selectedIndex < labels.length - 1) ? selectedIndex + 1 : 0;
+      } else if (key.length === 1 && key >= ' ' && key <= '~') {
+        filterText += key;
+        selectedIndex = 0;
+        render();
+      } else if (key === '\u001b[A') {
+        selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : Math.max(0, resolvedOptions.filter(o => o.label.toLowerCase().includes(filterText.toLowerCase())).length - 1);
+        render();
+      } else if (key === '\u001b[B') {
+        selectedIndex = (selectedIndex < resolvedOptions.filter(o => o.label.toLowerCase().includes(filterText.toLowerCase())).length - 1) ? selectedIndex + 1 : 0;
         render();
       } else if (key === '\r' || key === '\n') {
         process.stdin.removeListener('data', onData);
         process.stdin.setRawMode(false);
         process.stdout.write('\n');
-        const selected = resolvedOptions[selectedIndex];
+        const filtered = resolvedOptions.filter(o => o.label.toLowerCase().includes(filterText.toLowerCase()));
+        const selected = filtered[selectedIndex];
         resolve(selected.value !== undefined ? selected.value : selected);
       }
     };
     process.stdin.on('data', onData);
   });
 }
+
 
 async function promptText(question, defaultValue = '') {
   const rl = readline.createInterface({
@@ -205,10 +294,43 @@ async function runInteractiveMenu(handleCommand) {
   }
 }
 
+function renderSigmaSparkline(mean, stddev, currentPrice, width = 40) {
+  if (stddev === 0) return '[' + '-'.repeat(width) + ']';
+  
+  const min = mean - (3 * stddev);
+  const max = mean + (3 * stddev);
+  const range = max - min;
+  
+  // Normalize positions
+  let pos = Math.round(((currentPrice - min) / range) * width);
+  pos = Math.max(0, Math.min(width - 1, pos));
+  
+  const meanPos = Math.round(width / 2);
+  const sig1Neg = Math.round(((mean - stddev - min) / range) * width);
+  const sig1Pos = Math.round(((mean + stddev - min) / range) * width);
+  
+  let line = Array(width).fill('-');
+  line[meanPos] = '|'; // Mean
+  if (sig1Neg >= 0 && sig1Neg < width) line[sig1Neg] = ':';
+  if (sig1Pos >= 0 && sig1Pos < width) line[sig1Pos] = ':';
+  
+  // Plot current price
+  if (currentPrice > max) {
+     line[width - 1] = '\x1b[31m►\x1b[0m';
+  } else if (currentPrice < min) {
+     line[0] = '\x1b[31m◄\x1b[0m';
+  } else {
+     line[pos] = '\x1b[36m*\x1b[0m';
+  }
+  
+  return `[-3σ ${line.join('')} +3σ]`;
+}
+
 module.exports = {
   promptSelect,
   promptText,
   promptConfirm,
   runInteractiveMenu,
-  isRichTerminal
+  isRichTerminal,
+  renderSigmaSparkline
 };

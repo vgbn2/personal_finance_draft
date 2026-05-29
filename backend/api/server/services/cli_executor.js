@@ -2,24 +2,19 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
-const executableName = process.platform === 'win32' ? 'sovereign_wealth.exe' : 'sovereign_wealth';
-const DEFAULT_HISTORY = path.join(REPO_ROOT, 'data', 'cache', 'backtest_history.json');
-const DEFAULT_SNAPSHOT = path.join(REPO_ROOT, 'data', 'cache', 'last_fetch.json');
-const DEFAULT_QUALITY_REPORT = path.join(REPO_ROOT, 'data', 'cache', 'data_quality_report.json');
-const DEFAULT_MODEL_REPORT = path.join(REPO_ROOT, 'data', 'models', 'latest_model_comparison.json');
-const DEFAULT_BACKTEST_REPORT = path.join(REPO_ROOT, 'data', 'backtests', 'latest_backtest.json');
+const { 
+  findBackendBinary, 
+  findNodeCli, 
+  REPO_ROOT,
+  BACKEND_CANDIDATES,
+  CLI_CANDIDATES 
+} = require('../../../../shared/lib/paths');
 
-const CLI_CANDIDATES = [
-  path.join(REPO_ROOT, 'scripts', 'cli', 'sovereign_cli.js'),
-  path.join(REPO_ROOT, 'scripts', 'sovereign_cli.js'),
-];
-
-const BACKEND_CANDIDATES = [
-  path.join(REPO_ROOT, 'cpp_core', 'build', 'manual', executableName),
-  path.join(REPO_ROOT, 'build', 'cpp_core', executableName),
-  path.join(REPO_ROOT, 'cpp_core', 'src', executableName),
-];
+const DEFAULT_HISTORY = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'backtest_history.json');
+const DEFAULT_SNAPSHOT = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch.json');
+const DEFAULT_QUALITY_REPORT = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'data_quality_report.json');
+const DEFAULT_MODEL_REPORT = path.join(REPO_ROOT, 'storage', 'data', 'models', 'latest_model_comparison.json');
+const DEFAULT_BACKTEST_REPORT = path.join(REPO_ROOT, 'storage', 'data', 'backtests', 'latest_backtest.json');
 
 const MEMORY_CACHE = new Map();
 const MEMORY_CACHE_TTL_MS = 5000; // 5 seconds cache for dashboard snappiness
@@ -38,11 +33,11 @@ function withCache(key, producer) {
 }
 
 function locateBackendBinary() {
-  return BACKEND_CANDIDATES.find((candidate) => fs.existsSync(candidate)) || null;
+  return findBackendBinary();
 }
 
 function locateNodeCli() {
-  return CLI_CANDIDATES.find((candidate) => fs.existsSync(candidate)) || null;
+  return findNodeCli();
 }
 
 function stringOrFallback(value, fallback) {
@@ -722,7 +717,7 @@ function backendKillSwitch(subcommand = 'status') {
 }
 
 function backendCacheList() {
-  const cacheDir = path.join(REPO_ROOT, 'data', 'cache');
+  const cacheDir = path.join(REPO_ROOT, 'storage', 'data', 'cache');
   try {
     if (!fs.existsSync(cacheDir)) {
       return { ok: true, files: [] };
@@ -894,6 +889,7 @@ module.exports = {
   backendPortfolio,
   backendUniverse,
   backendStats,
+  backtestSummary,
   backendStatus,
   backendKillSwitch,
   cliStatus,

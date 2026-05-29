@@ -1,8 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 
-const { server } = require('../app');
+const { server, io, DEFAULT_SNAPSHOT } = require('../app');
 
 const BACKEND_HISTORY_FIXTURE = path.join(__dirname, '..', '..', 'test', 'fixtures', 'backend_history_sample.json');
 
@@ -26,6 +27,10 @@ function listen() {
 
 function close() {
   return new Promise((resolve, reject) => {
+    if (fs.existsSync(DEFAULT_SNAPSHOT)) {
+      fs.unwatchFile(DEFAULT_SNAPSHOT);
+    }
+    io.close();
     server.close((error) => (error ? reject(error) : resolve()));
   });
 }
@@ -112,7 +117,9 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.ok(quotesPayload.providers.some((provider) => provider.provider === 'mt5'));
     assert.equal(quotesPayload.deduplication.policy, 'provider_priority_then_quality');
 
-    const signal = await fetch(`${baseUrl}/api/signal`);
+    const signal = await fetch(`${baseUrl}/api/signal?${query({
+      input: BACKEND_HISTORY_FIXTURE,
+    })}`);
     assert.equal(signal.status, 200);
     const signalPayload = await signal.json();
     assert.equal(signalPayload.type, 'signal_status');

@@ -13,7 +13,9 @@ const {
   DEFAULT_HISTORY,
   DEFAULT_BACKTEST,
   BACKEND_CANDIDATES,
-  currentPhaseLabel
+  currentPhaseLabel,
+  get_Current_Universe_Symbols,
+  isRichTerminal
 } = utils;
 
 const { readSnapshot, validateSnapshot } = require('../../../shared/lib/market_validation');
@@ -289,8 +291,26 @@ function backendAvailability() {
   return { available: false, path: null };
 }
 
-function commandBackend(args) {
+async function commandBackend(args) {
   const subcommand = args[0] || 'status';
+
+  if ((subcommand === 'correlation' || subcommand === 'data') && isRichTerminal()) {
+    const symbols = get_Current_Universe_Symbols();
+    const choices = symbols.map(s => ({ label: s, value: s }));
+    
+    if (subcommand === 'correlation') {
+      const selected = await utils.promptMultiSelect('Select symbols (min 2):', choices);
+      if (selected.length < 2) {
+        console.error('Please select at least 2 symbols.');
+        return 1;
+      }
+      args.push('--symbols', selected.join(','));
+    } else if (subcommand === 'data') {
+      const selected = await utils.promptSelect('Select symbol:', choices);
+      args.push('--symbol', selected);
+    }
+  }
+
   const subcommands = {
     status: (a) => runBackendStatus(a),
     stats: (a) => runBackendStats(a),

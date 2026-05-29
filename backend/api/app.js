@@ -3,6 +3,17 @@ const http = require('node:http');
 const path = require('node:path');
 const { URL } = require('node:url');
 
+// --- gemini-work: Anti-crash foundation ---
+process.on('uncaughtException', (err) => {
+  console.error('CRITICAL: Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('CRITICAL: Unhandled Rejection at:', promise, 'reason:', reason);
+});
+// ------------------------------------------
+
 const {
   backendCacheList,
   backendCorrelation,
@@ -224,10 +235,6 @@ async function handleApi(req, res, url) {
     sendJson(res, payload.ok ? 200 : 500, payload);
     return true;
   }
-  if (url.pathname === '/health') {
-    sendJson(res, 200, ROUTES['/health'].handle(query));
-    return true;
-  }
   return false;
 }
 
@@ -253,10 +260,45 @@ const server = http.createServer((req, res) => {
     });
 });
 
-if (require.main === module) {
-  server.listen(PORT, HOST, () => {
-    console.log(`Sovereign web API listening on http://${HOST}:${PORT}`);
+const { Server } = require('socket.io');
+
+const io = new Server(server, {
+  cors: {
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST']
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log(`[TELEMETRY] Client connected: ${socket.id}`);
+  socket.emit('status', { msg: 'Connected to Sovereign Telemetry', timestamp: new Date().toISOString() });
+  
+  socket.on('disconnect', () => {
+    console.log(`[TELEMETRY] Client disconnected: ${socket.id}`);
+  });
+});
+
+// Watch snapshot for real-time market data streaming
+const { DEFAULT_SNAPSHOT } = require('./server/services/cli_executor');
+if (fs.existsSync(DEFAULT_SNAPSHOT)) {
+  fs.watchFile(DEFAULT_SNAPSHOT, { interval: 1000 }, (curr, prev) => {
+    if (curr.mtime > prev.mtime) {
+      console.log('[TELEMETRY] Emitting real-time market data update');
+      const universe = backendUniverse({});
+      const dataSummary = backendDataSummary({});
+      io.emit('market_data', { universe, dataSummary });
+    }
   });
 }
 
-module.exports = { server };
+// Global emitter helper
+global.sovereignIo = io;
+
+if (require.main === module) {
+  server.listen(PORT, HOST, () => {
+    console.log(`Sovereign web API listening on http://${HOST}:${PORT}`);
+    console.log(`[TELEMETRY] WebSocket server active`);
+  });
+}
+
+module.exports = { server, io, DEFAULT_SNAPSHOT };

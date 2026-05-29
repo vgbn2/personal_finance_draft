@@ -1,7 +1,0 @@
-broker/quotes
-open
-high
-low
-close 
-voluem
-->filter based on symbols
