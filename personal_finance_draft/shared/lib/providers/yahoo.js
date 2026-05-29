@@ -4,11 +4,13 @@ async function fetchYahooBaseCandles(symbol, interval = '1d', rangeDays = 5, sta
   const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
   
   if (startTime && endTime) {
-    url.searchParams.set('period1', Math.floor(startTime / 1000).toString());
-    url.searchParams.set('period2', Math.floor(endTime / 1000).toString());
+    url.searchParams.set('period1', Math.floor(startTime / 1000));
+    url.searchParams.set('period2', Math.floor(endTime / 1000));
   } else {
+    // [gemini-work] Use the day count directly; 'max' can be unreliable for some symbols/intervals
     url.searchParams.set('range', `${rangeDays}d`);
   }
+
   
   url.searchParams.set('interval', interval);
   url.searchParams.set('includePrePost', 'false');
@@ -20,6 +22,7 @@ async function fetchYahooBaseCandles(symbol, interval = '1d', rangeDays = 5, sta
   }
 
   const timestamps = result.timestamp || [];
+  console.log(`[YAHOO] Fetched ${timestamps.length} candles for ${symbol} (${interval}, range=${url.searchParams.get('range')})`);
   const quote = result.indicators?.quote?.[0] || {};
   const candles = [];
 

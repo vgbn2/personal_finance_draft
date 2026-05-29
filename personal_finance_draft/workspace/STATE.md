@@ -6,7 +6,7 @@ Phase 8: Production Hardening & Feature Polish
 ## Key Accomplishments
 - **100% Core Integrity**: All 29/29 C++ core tests passing on Win32 MSVC 2026.
 - **Strategy Automation**: Implemented `strategy run_automated` loop with live trade integration, freshness guards, and **verified deduplication** via `EXECUTION_MEMORY`.
-- **Architectural Seam Fix**: Resolved circular dependencies between `data.js` and `research.js`. Corrected import paths for `loadHistoricalSources` and `mergeSnapshots`.
+- **Architectural Seam Fix**: Standardized binary and tool discovery via `shared/lib/paths.js`. Eliminated machine-local hardcoded paths for MSYS64 and MetaTrader 5, moving them to a centralized `config/tools.yaml`.
 - **Unattended Security Gate**: Enhanced `trade` command with support for `--pin` flag and automated Fail-Closed logic when `SOVEREIGN_TRADE_PIN` is missing in non-interactive environments.
 - **Sovereign MCP Server**: TypeScript-based MCP server providing structured agent access to the CLI.
 - **Enhanced Dashboard**: Complete with Overview, Signal, Market Intel, Backtest, Telemetry, Quote Health, and Audit Log panels.
