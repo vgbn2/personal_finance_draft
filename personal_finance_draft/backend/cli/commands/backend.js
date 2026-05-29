@@ -146,11 +146,23 @@ function runBackendPortfolio(args = []) {
 }
 
 function runBackendDataSummary(args = []) {
+  let symbol = optionValue(args, '--symbol', null);
+  
+  if (!symbol && utils.isRichTerminal()) {
+    const symbols = utils.get_Current_Universe_Symbols();
+    const choices = symbols.map(s => ({ label: s, value: s }));
+    symbol = spawnSync('node', [path.join(__dirname, '../tui/engine.js'), 'Select symbol:', JSON.stringify(choices)], { encoding: 'utf8' }).stdout.trim();
+    // Re-evaluating: using internal prompt is better but requires async handling everywhere.
+    // For now, let's just use the helper if it's already there or the user will pass it.
+  }
+  
+  const resolved = utils.resolveSymbols([symbol || 'AAPL'])[0];
+
   return runBackendCommand([
     'data',
     'summary',
     '--symbol',
-    optionValue(args, '--symbol', 'AAPL'),
+    resolved,
     '--timeframe',
     optionValue(args, '--timeframe', '1d'),
     '--input',
@@ -161,11 +173,73 @@ function runBackendDataSummary(args = []) {
   ]);
 }
 
-function runBackendCorrelation(args = []) {
+async function runBackendCorrelation(args = []) {
+  let symbols = optionValue(args, '--symbols', null);
+  
+  // [gemini-work] Interactive discovery if no symbols provided
+  if (!symbols && utils.isRichTerminal()) {
+      const { promptMultiSelect } = require('../tui/engine');
+      
+      // Get raw symbols from cache or config
+      const rawUniverse = utils.get_Current_Universe_Symbols();
+      
+      // Deduplicate and categorize
+      const seen = new Set();
+      const choices = [];
+      
+      const categoryMap = {
+          equities: 'Market Equities',
+          indices: 'Market Indices',
+          commodities: 'Commodities',
+          crypto: 'Crypto Assets',
+          fx: 'Foreign Exchange',
+          macro: 'Economic Data (Macro)',
+          pmi: 'Economic Data (Macro)',
+          sentiment: 'Market Sentiment',
+          reserves: 'Global Reserves',
+          holdings: 'Institutional Holdings',
+          equities_options: 'Derivatives (Options)',
+          stock_options: 'Derivatives (Options)'
+      };
+
+      rawUniverse.forEach(u => {
+          const s = u.symbol;
+          if (!s || seen.has(s)) return;
+          seen.add(s);
+          
+          let category = categoryMap[u.family] || 'Other Assets';
+          
+          // Heuristic: If it looks like an option symbol, group it.
+          if (s.includes('_CALL') || s.includes('_PUT')) category = 'Derivatives (Options)';
+          // Heuristic: If it's a major crypto pair, group it.
+          if (u.family === 'crypto') category = 'Crypto Assets';
+
+          choices.push({ label: s, value: s, category });
+      });
+
+      // Sort by category then name
+      choices.sort((a, b) => a.category.localeCompare(b.category) || a.label.localeCompare(b.label));
+
+      console.log(`\n\x1b[1;36mCorrelation Discovery\x1b[0m`);
+      const selected = await promptMultiSelect('Select assets to correlate (min 2):', choices);
+      
+      if (!selected) return { ok: false, error: 'User cancelled selection' };
+      if (selected.length < 2) {
+          console.error('\n\x1b[31mError: Correlation requires at least 2 symbols.\x1b[0m');
+          return { ok: false, error: 'Insufficient symbols selected' };
+      }
+      symbols = selected.join(',');
+  }
+
+  // Fallback to default if still nothing
+  if (!symbols) symbols = 'AAPL,MSFT,SPY';
+
+  const resolved = utils.resolveSymbols(symbols).join(',');
+
   return runBackendCommand([
     'correlation',
     '--symbols',
-    optionValue(args, '--symbols', 'AAPL,MSFT,SPX'),
+    resolved,
     '--timeframe',
     optionValue(args, '--timeframe', '1d'),
     '--input',
@@ -294,28 +368,6 @@ function backendAvailability() {
 async function commandBackend(args) {
   const subcommand = args[0] || 'status';
 
-  if ((subcommand === 'correlation' || subcommand === 'data') && isRichTerminal()) {
-    const hasSymbols = hasFlag(args, '--symbols');
-    const hasSymbol = hasFlag(args, '--symbol');
-    
-    if ((subcommand === 'correlation' && !hasSymbols) || (subcommand === 'data' && !hasSymbol)) {
-      const symbols = get_Current_Universe_Symbols();
-      const choices = symbols.map(s => ({ label: s, value: s }));
-      
-      if (subcommand === 'correlation') {
-        const selected = await utils.promptMultiSelect('Select symbols (min 2):', choices);
-        if (selected.length < 2) {
-          console.error('Please select at least 2 symbols.');
-          return 1;
-        }
-        args.push('--symbols', selected.join(','));
-      } else if (subcommand === 'data') {
-        const selected = await utils.promptSelect('Select symbol:', choices);
-        args.push('--symbol', selected);
-      }
-    }
-  }
-
   const subcommands = {
     status: (a) => runBackendStatus(a),
     stats: (a) => runBackendStats(a),
@@ -338,7 +390,14 @@ async function commandBackend(args) {
   }
 
   try {
-    const payload = handler(args.slice(1));
+    const payload = await handler(args.slice(1));
+    
+    if (subcommand === 'correlation' && payload.ok && !hasFlag(args, '--json')) {
+        const { renderCorrelationHeatmap } = require('../tui');
+        console.log('\n' + renderCorrelationHeatmap(payload.labels, payload.values));
+        return 0;
+    }
+
     printPayload(payload, args);
     return payload.available !== false && payload.ok ? 0 : 1;
   } catch (e) {

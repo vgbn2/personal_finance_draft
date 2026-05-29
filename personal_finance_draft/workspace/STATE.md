@@ -5,7 +5,9 @@ Phase 8: Production Hardening & Feature Polish
 
 ## Key Accomplishments
 - **100% Core Integrity**: All 29/29 C++ core tests passing on Win32 MSVC 2026.
-- **Strategy Automation**: Implemented `strategy run_automated` loop with live trade integration, freshness guards, and **verified deduplication** via `EXECUTION_MEMORY`.
+- **Strategy Automation**: Implemented `strategy run_automated` loop with live trade integration, dynamic position sizing, and **verified deduplication** via persistent `EXECUTION_MEMORY`.
+- **Dynamic Position Sizing Active**: Replaced hardcoded quantities with a risk-based sizing engine. The automation loop now fetches real-time Alpaca balances and calculates order size using strategy `risk_weight` and instrument price.
+- **Execution Guard Hardened**: Migrated `EXECUTION_MEMORY` from a volatile Set to a persistent JSON-backed utility (`shared/lib/execution_memory.js`). The platform now survives restarts without re-executing duplicate signals. (Waterproof)
 - **Architectural Seam Fix**: Standardized binary and tool discovery via `shared/lib/paths.js`. Eliminated machine-local hardcoded paths for MSYS64 and MetaTrader 5, moving them to a centralized `config/tools.yaml`.
 - **Unattended Security Gate**: Enhanced `trade` command with support for `--pin` flag and automated Fail-Closed logic when `SOVEREIGN_TRADE_PIN` is missing in non-interactive environments.
 - **Sovereign MCP Server**: TypeScript-based MCP server providing structured agent access to the CLI.

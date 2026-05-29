@@ -334,13 +334,52 @@ const {
 
 function get_Current_Universe_Symbols() {
   try {
-    if (!fs.existsSync(DEFAULT_HISTORY)) return ['BTCUSDT', 'ETHUSDT'];
+    if (!fs.existsSync(DEFAULT_HISTORY)) return [];
     const data = JSON.parse(fs.readFileSync(DEFAULT_HISTORY, 'utf8'));
-    const symbols = [...new Set(data.sources.map(s => s.symbol))].filter(Boolean);
-    return symbols.length > 0 ? symbols : ['BTCUSDT', 'ETHUSDT'];
+    const seen = new Set();
+    const universe = [];
+    
+    (data.sources || []).forEach(s => {
+        const symbol = s.symbol || s.underlying || s.series || s.metric || s.event;
+        if (!symbol) return;
+        const key = `${s.family}:${symbol}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        universe.push({ symbol, family: s.family });
+    });
+    
+    return universe;
   } catch (e) {
-    return ['BTCUSDT', 'ETHUSDT'];
+    return [];
   }
+}
+
+/**
+ * Attempts to resolve short symbols (BTC) to canonical ones (BTCUSDT)
+ * based on the active universe.
+ */
+function resolveSymbols(inputSymbols) {
+    const universe = get_Current_Universe_Symbols();
+    const symbols = Array.isArray(inputSymbols) ? inputSymbols : String(inputSymbols || '').split(',').map(s => s.trim()).filter(Boolean);
+    
+    return symbols.map(s => {
+        const upper = s.toUpperCase();
+        
+        // Match logic:
+        // 1. Exact match in universe objects
+        // 2. Fuzzy match (starts/ends with) in universe objects
+        // 3. Fallback to the original upper-cased input
+        
+        const exact = universe.find(u => u.symbol && String(u.symbol).toUpperCase() === upper);
+        if (exact) return exact.symbol;
+
+        const fuzzy = universe.find(u => {
+            const sym = String(u.symbol || '').toUpperCase();
+            return sym && (sym.startsWith(upper) || sym.endsWith(upper));
+        });
+        
+        return fuzzy ? fuzzy.symbol : upper;
+    });
 }
 
 module.exports = {
@@ -349,6 +388,6 @@ module.exports = {
   BACKEND_CANDIDATES, HELP_TOPICS,
   usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption,
   runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal,
-  get_Current_Universe_Symbols, logger,
+  get_Current_Universe_Symbols, resolveSymbols, logger,
   promptMultiSelect: require('../tui/engine').promptMultiSelect
 };

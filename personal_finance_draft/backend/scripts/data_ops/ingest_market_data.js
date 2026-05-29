@@ -45,7 +45,8 @@ const { fetchPaginated, fetchParallelBackfill, BARS_PER_DAY } = require('../../.
 
 const CONFIG_PATH = path.join(REPO_ROOT, 'config', 'data_sources.yaml');
 const OPTIONS_CONFIG_PATH = path.join(REPO_ROOT, 'config', 'options_data.yaml');
-const CACHE_PATH = path.join(REPO_ROOT, 'data', 'cache', 'last_fetch.json');
+const CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch.json');
+const HISTORY_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'backtest_history.json');
 
 const SUPPORTED_INTERVALS = {
   '5m': 5 * 60 * 1000,
@@ -65,6 +66,16 @@ const COINBASE_PRODUCTS = {
   DOGEUSDT: 'DOGE-USD',
   SUIUSDT: 'SUI-USD',
   ADAUSDT: 'ADA-USD',
+  LINKUSDT: 'LINK-USD',
+  PEPEUSDT: 'PEPE-USD',
+  WIFUSDT: 'WIF-USD',
+  SHIBUSDT: 'SHIB-USD',
+  FETUSDT: 'FET-USD',
+  POLUSDT: 'POL-USD',
+  AVAXUSDT: 'AVAX-USD',
+  NEARUSDT: 'NEAR-USD',
+  INJUSDT: 'INJ-USD',
+  RNDRUSDT: 'RNDR-USD',
 };
 
 const COINBASE_GRANULARITY = {
@@ -82,6 +93,10 @@ const YAHOO_INDEX_SYMBOLS = {
   NDX: '^NDX',
   DJI: '^DJI',
   VIX: '^VIX',
+  RUT: '^RUT',
+  DAX: '^GDAXI',
+  FTSE: '^FTSE',
+  N225: '^N225',
 };
 
 const YAHOO_COMMODITY_SYMBOLS = {
@@ -840,6 +855,9 @@ function resolveWorldBankIndicator(metric, config) {
 
 async function fetchEquityOrIndexSnapshot(family, provider, symbol, timeframes, config, options = {}) {
   const historyDays = options.historyDays || options.days || 5;
+  const startTime = options.startTime || null;
+  const endTime = options.endTime || null;
+
   let baseCandles = null;
   if (provider === 'stooq') {
     const stooqSymbol = resolveStooqSymbol(family, symbol);
@@ -854,7 +872,7 @@ async function fetchEquityOrIndexSnapshot(family, provider, symbol, timeframes, 
     }
     // [gemini-work] Force 1d for long history to avoid Yahoo 422
     const bestBase = (historyDays > 730 || !timeframes.includes("1h")) ? "1d" : "1h"; 
-    baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, historyDays);
+    baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, historyDays, startTime, endTime);
   }
   const output = [];
 
@@ -881,6 +899,9 @@ async function fetchEquityOrIndexSnapshot(family, provider, symbol, timeframes, 
 
 async function fetchCommoditySnapshot(family, provider, symbol, timeframes, config, options = {}) {
   const historyDays = options.historyDays || options.days || 5;
+  const startTime = options.startTime || null;
+  const endTime = options.endTime || null;
+
   let baseCandles = null;
   if (provider === 'stooq') {
     const stooqSymbol = resolveStooqSymbol('commodities', symbol);
@@ -895,7 +916,7 @@ async function fetchCommoditySnapshot(family, provider, symbol, timeframes, conf
     }
     // [gemini-work] Force 1d for long history
     const bestBase = (historyDays > 730 || !timeframes.includes("1h")) ? "1d" : "1h"; 
-    baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, historyDays);
+    baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, historyDays, startTime, endTime);
   }
   const output = [];
 
@@ -1232,6 +1253,10 @@ const FAMILIES_MANIFEST = [
       if (p === 'fred') {
         const id = resolveFredSeries('indices', s, cfg);
         if (!id) throw new Error(`No FRED series mapping for ${s}`);
+        if (opts?.historyDays) {
+            const records = await fetchFredHistory(id, opts.historyDays);
+            return records.map(r => ({ ...r, family: 'indices', symbol: s }));
+        }
         return [{ ...await fetchFredLatest(id), family: 'indices', symbol: s }];
       }
       return fetchEquityOrIndexSnapshot('indices', p, s, t, cfg, opts);
@@ -1294,6 +1319,22 @@ async function ingestMarketData(options = {}) {
     const targetFamily = options.family || null;
     const config = await loadConfig();
     const optionsConfig = await loadOptionsConfig();
+    
+    // [gemini-work] Load existing history at the start for incremental checks
+    const existingHistory = readSnapshot(HISTORY_PATH);
+    const universeMap = new Map();
+    if (existingHistory && Array.isArray(existingHistory.sources)) {
+      for (const s of existingHistory.sources) {
+        const key = `${s.family}:${s.symbol}:${s.timeframe || '1d'}`;
+        if (!universeMap.has(key)) universeMap.set(key, { min: Infinity, max: 0, count: 0 });
+        const meta = universeMap.get(key);
+        const ts = new Date(s.timestamp).getTime();
+        meta.min = Math.min(meta.min, ts);
+        meta.max = Math.max(meta.max, ts);
+        meta.count++;
+      }
+    }
+
     const snapshot = {
       mode: 'live',
       fetched_at: new Date().toISOString(),
@@ -1320,7 +1361,7 @@ async function ingestMarketData(options = {}) {
 
       // A. Provider Smoke Tests
       const items = family.itemsKey ? section[family.itemsKey] : ['fear_and_greed'];
-      if (items && items[0] && options.historyDays <= 5) { // [gemini-work] Skip smoke tests for heavy backfills
+      if (items && items[0] && (options.historyDays || 0) <= 5) { // [gemini-work] Skip smoke tests for heavy backfills
         const sampleItem = items[0];
         for (const provider of section.providers) {
           if (!provider) continue;
@@ -1342,12 +1383,57 @@ async function ingestMarketData(options = {}) {
 
         const syncTimeframes = options.timeframe ? [options.timeframe] : (section.timeframes || ['1d']);
 
-        for (const item of filteredItems) { console.log('[INGEST] Fetching ' + family.id + ':' + item);
+        for (const item of filteredItems) { 
+          // [gemini-work] Incremental check: Do we already have enough data?
+          const requestedDays = options.historyDays || options.days || 5;
+          const force = options.force || options.historyForce || false;
+          const requestedMs = requestedDays * 24 * 60 * 60 * 1000;
+          const now = Date.now();
+          const targetStart = now - requestedMs;
+          
+          let skipItem = !force;
+          let latestInCache = 0;
+          let earliestInCache = Infinity;
+
+          for (const tf of syncTimeframes) {
+              const cacheKey = `${family.id}:${item}:${tf}`;
+              const meta = universeMap.get(cacheKey);
+              const freshnessThreshold = SUPPORTED_INTERVALS[tf] || 24 * 60 * 60 * 1000;
+              
+              if (!meta || meta.min > targetStart || (now - meta.max) > freshnessThreshold) {
+                  skipItem = false;
+              }
+              if (meta) {
+                  latestInCache = Math.max(latestInCache, meta.max);
+                  earliestInCache = Math.min(earliestInCache, meta.min);
+              }
+          }
+
+          if (skipItem) {
+              if (filteredItems.length > 1) {
+                // Bulk ingestion skip
+                continue;
+              } else {
+                // Single symbol: force refresh but log it
+                console.log(`[INGEST] ${family.id}:${item} cache hit (full range covered). Refreshing anyway for latest bar.`);
+              }
+          }
+
+          // [gemini-work] Calculate fetch range to fill gaps
+          let fetchOptions = { ...options };
+          if (!skipItem && latestInCache > 0 && earliestInCache <= targetStart && (now - latestInCache) > 0) {
+              // Cache covers history but is stale. Just fetch the forward gap.
+              const buffer = 1000 * 60 * 5; // 5m buffer
+              fetchOptions.startTime = latestInCache - buffer; 
+              console.log(`[INGEST] ${family.id}:${item} identifies forward gap. Fetching from ${new Date(fetchOptions.startTime).toISOString()} to fill.`);
+          }
+
+          console.log('[INGEST] Fetching ' + family.id + ':' + item);
           let resolved = false;
           for (const provider of section.providers) {
             if (!provider) continue;
             try {
-              const records = normalizeFetchedRecords(await fetcher(provider, item, syncTimeframes, config, options), fetchContext(family.id, provider, item));
+              const records = normalizeFetchedRecords(await fetcher(provider, item, syncTimeframes, config, fetchOptions), fetchContext(family.id, provider, item));
               snapshot.sources.push(...records); 
               resolved = true;
               break;
@@ -1502,6 +1588,8 @@ if (require.main === module) {
 
 async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypto', options = {}) {
   const historyDays = options.historyDays || options.days || 5;
+  const startTime = options.startTime || null;
+  const endTime = options.endTime || null;
   let baseCandles = null;
 
   if (historyDays > 5 && (provider === 'binance' || provider === 'coinbase')) {
@@ -1510,7 +1598,7 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
     // [gemini-work] Force 1d for long history to avoid Yahoo 422
     const bestBase = (historyDays > 730 || !timeframes.includes("1h")) ? "1d" : "1h"; 
     try {
-      baseCandles = await fetchYahooBaseCandles(yahooSymbol, bestBase, historyDays);
+      baseCandles = await fetchYahooBaseCandles(yahooSymbol, bestBase, historyDays, startTime, endTime);
       console.log(`[INGEST] Using Yahoo for ${symbol} long-term history (${historyDays} days) at ${bestBase} interval`);
     } catch (err) {
       console.warn(`[INGEST] Yahoo fallback failed for ${symbol}: ${err.message}`);
