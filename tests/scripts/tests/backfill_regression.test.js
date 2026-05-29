@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fsPromises = require('node:fs/promises');
 const path = require('node:path');
 const os = require('node:os');
-const realBtcFixture = require('../../test/fixtures/real_bars_btc.json');
+const realBtcFixture = require('../../fixtures/real_bars_btc.json');
 
 function fixtureCandles(provider = 'binance') {
   return realBtcFixture.sources

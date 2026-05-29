@@ -33,7 +33,7 @@ async function handleIntersection(args, handleCommand) {
   const providedArgs = args.slice(pathLength);
   const finalArgs = [...args.slice(0, pathLength)];
   const flagsSpec = spec.flags || {};
-
+// to many if else dev review
   for (const [flagKey, flagSpec] of Object.entries(flagsSpec)) {
     // Check if flag is already provided in the CLI
     let isProvided = false;

@@ -38,10 +38,16 @@ bool require_contains(const std::string& haystack, const std::string& needle, co
 }
 
 std::filesystem::path locate_repo_root() {
+#ifdef SOVEREIGN_REPO_ROOT
+    if (std::filesystem::exists(std::filesystem::path(SOVEREIGN_REPO_ROOT) / "config" / "data_sources.yaml")) {
+        return SOVEREIGN_REPO_ROOT;
+    }
+#endif
     const std::filesystem::path candidates[] = {
         std::filesystem::current_path(),
         std::filesystem::current_path().parent_path(),
         std::filesystem::current_path().parent_path().parent_path(),
+        std::filesystem::current_path().parent_path().parent_path().parent_path(),
     };
     for (const auto& candidate : candidates) {
         if (std::filesystem::exists(candidate / "config" / "data_sources.yaml")) {
@@ -193,7 +199,7 @@ int main() {
     ok &= require_contains(options_config, "  providers: [\"glassnode\", \"cryptoquant\"]\n", "onchain provider");
     ok &= require_contains(options_config, "  metrics: [\"exchange_netflow_btc\", \"exchange_netflow_eth\", \"sopr_btc\", \"sopr_eth\", \"active_addresses_btc\", \"active_addresses_eth\"]\n", "onchain metrics");
 
-    const std::filesystem::path snapshot_path = repo_root / "data" / "cache" / "last_fetch.json";
+    const std::filesystem::path snapshot_path = repo_root / "storage" / "data" / "cache" / "last_fetch.json";
     std::ifstream snapshot_input(snapshot_path);
     if (!snapshot_input) {
         std::cerr << "Unable to open live cache snapshot: " << snapshot_path.string() << "\n";

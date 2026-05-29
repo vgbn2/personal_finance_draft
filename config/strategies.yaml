@@ -38,4 +38,6 @@ promotion:
 registry:
   files:
     - "config/strategies/mean_reversion.yaml"
+    - "config/strategies/trend_following.yaml"
     - "config/strategies/volume_profile.yaml"
+    - "config/strategies/test_automation.yaml"

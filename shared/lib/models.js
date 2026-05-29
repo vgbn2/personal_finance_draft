@@ -1,10 +1,14 @@
 const FEATURE_NAMES = [
-  'close_return_1',
-  'close_return_5',
-  'realized_volatility_20',
-  'rsi_14',
+  'return_fast',
+  'return_slow',
+  'volatility',
+  'rsi',
   'macd',
-  'atr_14',
+  'atr',
+  'gamma',
+  'theta',
+  'vega',
+  'kalman',
 ];
 
 function clamp(value, min, max) {
@@ -21,12 +25,16 @@ function logistic(value) {
 
 function signalParts(feature) {
   const close = Math.max(valueOrZero(feature.close), 1);
-  const return1 = valueOrZero(feature.close_return_1);
-  const return5 = valueOrZero(feature.close_return_5);
-  const volatility = valueOrZero(feature.realized_volatility_20);
-  const rsi = valueOrZero(feature.rsi_14);
+  const return1 = valueOrZero(feature.return_fast);
+  const return5 = valueOrZero(feature.return_slow);
+  const volatility = valueOrZero(feature.volatility);
+  const rsi = valueOrZero(feature.rsi);
   const macdNorm = valueOrZero(feature.macd) / close;
-  const atrPct = valueOrZero(feature.atr_14) / close;
+  const atrPct = valueOrZero(feature.atr) / close;
+  const gamma = valueOrZero(feature.gamma);
+  const theta = valueOrZero(feature.theta);
+  const vega = valueOrZero(feature.vega);
+  const kalman = valueOrZero(feature.kalman);
   const trend = return5 * 8 + macdNorm * 20;
   const meanReversion = (50 - rsi) / 100;
   const breakout = return1 * 6 - volatility;
@@ -42,6 +50,10 @@ function signalParts(feature) {
     rsi,
     trend,
     volatility,
+    gamma,
+    theta,
+    vega,
+    kalman,
   };
 }
 
