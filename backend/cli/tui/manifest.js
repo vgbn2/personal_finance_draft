@@ -15,13 +15,32 @@ function getCategoryForSymbol(symbol) {
 }
 
 function getCachedUniverse() {
-  const cachePath = path.join(__dirname, '../../data/cache/backtest_history.json');
+  const cachePath = path.join(__dirname, '../../storage/data/cache/backtest_history.json');
+  
+  // [gemini-work] Load config-based symbols as initial list
+  const configSymbols = [];
+  try {
+      const configPath = path.join(__dirname, '../../../config/data_sources.yaml');
+      if (fs.existsSync(configPath)) {
+          const content = fs.readFileSync(configPath, 'utf8');
+          // Simple regex parsing to avoid async dependency in manifest
+          const sections = ['equities', 'indices', 'commodities', 'fx', 'crypto'];
+          for (const s of sections) {
+              const match = content.match(new RegExp(`${s}:[\\s\\S]+?symbols:\\s*\\[(.*?)\\]`));
+              if (match) {
+                  const symbols = match[1].split(',').map(sym => sym.trim().replace(/"/g, '').replace(/'/g, ''));
+                  for (const sym of symbols) {
+                      if (sym) configSymbols.push({ label: sym, value: sym, category: s.charAt(0).toUpperCase() + s.slice(1) });
+                  }
+              }
+          }
+      }
+  } catch (e) {}
+
   if (!fs.existsSync(cachePath)) {
-      // Return default with category lookup
-      const symbols = ['AAPL', 'BTCUSDT'];
       return { 
-          symbols: symbols.map(s => ({ label: s, value: s, category: getCategoryForSymbol(s) })), 
-          timeframes: ['1d'] 
+          symbols: configSymbols.length > 0 ? configSymbols : [{ label: 'AAPL', value: 'AAPL', category: 'Equities' }], 
+          timeframes: ['1d', '1h', '5m'] 
       };
   }
 
@@ -80,6 +99,7 @@ const COMMAND_MANIFEST = {
     op: [
       { id: 'status', label: 'Status (Phase, cache, quality)', args: [] },
       { id: 'cockpit', label: 'Cockpit (Terminal dashboard)', args: [] },
+      { id: 'universe', label: 'Universe (Symbol discovery)', args: [] },
       { id: 'watch', label: 'Watch (Semi-live data sync)', flags: {
         '--family': { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities', 'macro', 'prediction_market'], label: 'Family', default: 'all' },     
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' }
@@ -109,7 +129,6 @@ const COMMAND_MANIFEST = {
         '--max-bars': { type: 'text', default: '0', label: 'Max Bars (0 = All)' }
       }},
       { id: 'correlation', prefix: ['backend'], label: 'Backend Correlation', flags: {
-        '--symbols': { type: 'text', default: 'AAPL,MSFT,SPY', label: 'Symbols (comma separated)' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--max-bars': { type: 'text', default: '252', label: 'Lookback Period (Bars)' }
       }},
