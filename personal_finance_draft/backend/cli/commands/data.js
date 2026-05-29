@@ -136,7 +136,7 @@ function commandValidate(args) {
     provider_errors: report.provider_errors.length,
     output,
   }, args);
-  return hasFlag(args, '--strict') && !report.ok ? 1 : 0;
+  return !report.ok ? 1 : 0;
 }
 
 /**
