@@ -3,9 +3,11 @@ const { fetchJson } = require('./common');
 async function fetchYahooBaseCandles(symbol, interval = '1d', rangeDays = 5, startTime = null, endTime = null) {
   const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`);
   
-  if (startTime && endTime) {
+  const queryEndTime = endTime || Date.now();
+
+  if (startTime) {
     url.searchParams.set('period1', Math.floor(startTime / 1000));
-    url.searchParams.set('period2', Math.floor(endTime / 1000));
+    url.searchParams.set('period2', Math.floor(queryEndTime / 1000));
   } else {
     // [gemini-work] Use the day count directly; 'max' can be unreliable for some symbols/intervals
     url.searchParams.set('range', `${rangeDays}d`);
