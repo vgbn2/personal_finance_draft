@@ -1,49 +1,11 @@
-# Graphify Ignore - Sovereign Platform (Domain-Based)
-
-# Build & Binaries
-build/
-bin/
-dist/
-target/
-*.exe
-*.o
-*.obj
-*.so
-*.dylib
-*.dll
-
-# Domain Exclusions
+data/
+tests/
+docs/
 node_modules/
-vendor/
-.venv/
-env/
-
-# Secrets & Environment
-.env
-.env.*
-*.key
-*.pem
-.supabase/
-.mcp.json
-
-# Tooling Caches & Metadata
-.gemini/
-.agents/
+build/
+dist/
 .git/
-.vscode/
-.clangd/
+.gemini/
+.codex/
+.agents/
 graphify-out/
-
-# Data & Storage
-storage/logs/
-storage/data/cache/
-storage/backups/
-storage/models/*.onnx
-
-# Temporary/Stale
-temp/
-tmp/
-*.log
-docss/
-frontend/dashboard/legacy.html
-frontend/dashboard/sovereign-trading-platform.zip

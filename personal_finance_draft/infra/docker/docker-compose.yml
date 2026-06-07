@@ -1,28 +1,67 @@
-version: "3.9"
+# Run from repo root:  docker compose -f infra/docker/docker-compose.yml up -d
+# Or symlink this file to repo root and use:  docker compose up -d
 
 services:
   web:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    image: sovereign-trading-platform:local
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+    image: personal_finance:latest
+    env_file:
+      # Canonical config — the same .env the CLI uses. Required.
+      - path: ../../.env
+        required: true
+      # Optional production overrides (only loaded if present).
+      - path: ../../.env.production
+        required: false
     environment:
       NODE_ENV: production
       SOVEREIGN_WEB_HOST: 0.0.0.0
       SOVEREIGN_WEB_PORT: 8787
       SOVEREIGN_CACHE_TTL_MS: 30000
       SOVEREIGN_CACHE_MAX_ENTRIES: 100
-      SOVEREIGN_SUPABASE_URL: ${SOVEREIGN_SUPABASE_URL:-}
-      SOVEREIGN_SUPABASE_PUBLISHABLE_KEY: ${SOVEREIGN_SUPABASE_PUBLISHABLE_KEY:-}
-      SOVEREIGN_SUPABASE_SECRET_KEY: ${SOVEREIGN_SUPABASE_SECRET_KEY:-}
     ports:
       - "8787:8787"
     volumes:
-      - ../data:/app/data
-      - ../workspace:/app/workspace
+      - ../../storage:/app/storage
+      - ../../workspace:/app/workspace
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1));"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 15s
+      start_period: 20s
+
+  bot:
+    image: personal_finance:latest
+    depends_on:
+      web:
+        condition: service_healthy
+    env_file:
+      # Canonical config — the same .env the CLI uses. Required.
+      - path: ../../.env
+        required: true
+      # Optional production overrides (only loaded if present).
+      - path: ../../.env.production
+        required: false
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ../../storage:/app/storage
+    restart: unless-stopped
+    # The image's HEALTHCHECK probes :8787/health, but bot runs no HTTP server —
+    # disable it here so `docker compose ps` doesn't report a false "unhealthy".
+    healthcheck:
+      disable: true
+    # Runs one paper-bot cycle every 30 minutes (1800s).
+    # Set BOT_INTERVAL_SECS in .env to override.
+    command:
+      - /bin/sh
+      - -c
+      - |
+        INTERVAL=$${BOT_INTERVAL_SECS:-1800}
+        while true; do
+          node backend/cli/sovereign_cli.js run bot paper --once --strategy low_prob_dip
+          sleep $$INTERVAL
+        done

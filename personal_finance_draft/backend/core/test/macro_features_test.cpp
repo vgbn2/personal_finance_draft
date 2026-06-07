@@ -34,12 +34,12 @@ void test_macro_feature_extraction() {
     assert(last_row.timestamp == "2026-03-01");
 
     // Rate momentum: 4.6 - 4.7 = -0.1
-    auto rate_mom = last_row.get("macro:rate_momentum:US02YIELD");
+    [[maybe_unused]] auto rate_mom = last_row.get("macro:rate_momentum:US02YIELD");
     assert(rate_mom.has_value());
     assert(std::abs(*rate_mom - (-0.1)) < 1e-9);
 
     // Inflation velocity: (312-305) - (305-300) = 7 - 5 = 2
-    auto inf_vel = last_row.get("macro:inflation_velocity:CPI");
+    [[maybe_unused]] auto inf_vel = last_row.get("macro:inflation_velocity:CPI");
     assert(inf_vel.has_value());
     assert(std::abs(*inf_vel - 2.0) < 1e-9);
 
@@ -48,7 +48,7 @@ void test_macro_feature_extraction() {
     // My code only used DFF for inversion. US02YIELD is not in the composite list.
     // Liquidity components were: M2SL, WALCL, RESERVES, DFF (-0.5)
     // Only M2SL is present at 2026-03-01 for composite in this test.
-    auto liq_idx = last_row.get("macro:liquidity_index");
+    [[maybe_unused]] auto liq_idx = last_row.get("macro:liquidity_index");
     assert(liq_idx.has_value());
     assert(std::abs(*liq_idx - 21000.0) < 1e-9);
 

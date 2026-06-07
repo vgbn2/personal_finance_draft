@@ -1,16 +1,1 @@
-{
-  "mcpServers": {
-    "supabase": {
-      "httpUrl": "https://mcp.supabase.com/mcp?project_ref=kwrnlkvoqzmaolmwvhse"
-    },
-    "sovereign": {
-      "command": "node",
-      "args": [
-        "dist/mcp_server/index.js"
-      ],
-      "env": {
-        "SOVEREIGN_BACKEND_BIN": "build/backend/core/Release/sovereign_wealth.exe"
-      }
-    }
-  }
-}
+{"mcpServers":{"sovereign":{"type":"http","url":"http://127.0.0.1:8787","headers":{"x-mcp-token":"${MCP_GATE_TOKEN}"}}}}

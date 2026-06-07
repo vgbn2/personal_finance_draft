@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { handleIntersection } = require('../../../../backend/cli/tui/intersection');
+const { handleIntersection } = require('../../../backend/cli/tui/intersection');
 
 /**
  * TEST: TUI/CLI INTERSECTION (HEADLESS BYPASS)

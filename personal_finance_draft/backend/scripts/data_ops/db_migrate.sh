@@ -3,4 +3,4 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-node "$repo_root/scripts/cli/sovereign_cli.js" check --strict --json
+node "$repo_root/backend/cli/sovereign_cli.js" check --strict --json

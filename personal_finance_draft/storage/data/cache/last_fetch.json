@@ -1,302 +1,968 @@
 {
   "mode": "live",
-  "fetched_at": "2026-05-28T11:26:01.130Z",
+  "fetched_at": "2026-06-07T10:22:32.979Z",
   "sources": [
     {
-      "family": "equities",
-      "provider": "stooq",
-      "symbol": "AAPL",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "open": 150,
-      "high": 155,
-      "low": 149,
-      "close": 152,
-      "volume": 1000000
-    },
-    {
-      "family": "equities",
-      "provider": "yahoo",
-      "symbol": "MSFT",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "open": 300,
-      "high": 305,
-      "low": 299,
-      "close": 302,
-      "volume": 500000
-    },
-    {
-      "family": "equities",
-      "provider": "stooq",
-      "symbol": "SPY",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "open": 400,
-      "high": 405,
-      "low": 399,
-      "close": 402,
-      "volume": 2000000
-    },
-    {
-      "family": "equities",
-      "provider": "yahoo",
-      "symbol": "QQQ",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "open": 350,
-      "high": 355,
-      "low": 349,
-      "close": 352,
-      "volume": 1500000
-    },
-    {
-      "family": "crypto",
-      "provider": "binance",
-      "symbol": "BTCUSDT",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "open": 60000,
-      "high": 61000,
-      "low": 59000,
-      "close": 60500,
-      "volume": 100
-    },
-    {
-      "family": "crypto",
-      "provider": "coinbase",
-      "symbol": "ETHUSDT",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "open": 3000,
-      "high": 3100,
-      "low": 2900,
-      "close": 3050,
-      "volume": 1000
-    },
-    {
-      "family": "fx",
-      "provider": "frankfurter",
-      "symbol": "EURUSD",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 1.08
-    },
-    {
-      "family": "fx",
-      "provider": "fxapi",
-      "symbol": "GBPUSD",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 1.25
-    },
-    {
-      "family": "fx",
-      "provider": "ecb",
-      "symbol": "USDJPY",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 155.5
-    },
-    {
-      "family": "commodities",
-      "provider": "stooq",
-      "symbol": "XAUUSD",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "close": 2300
-    },
-    {
-      "family": "commodities",
-      "provider": "yahoo",
-      "symbol": "XAGUSD",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "close": 28
-    },
-    {
-      "family": "indices",
-      "provider": "stooq",
-      "symbol": "SPX",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "close": 5200
-    },
-    {
-      "family": "pmi",
-      "provider": "spglobal",
-      "symbol": "US_MANUFACTURING",
-      "timestamp": "2026-05-01T00:00:00Z",
-      "value": 50.2
-    },
-    {
-      "family": "pmi",
-      "provider": "spglobal",
-      "symbol": "US_SERVICES",
-      "timestamp": "2026-05-01T00:00:00Z",
-      "value": 51.5
-    },
-    {
-      "family": "pmi",
-      "provider": "spglobal",
-      "symbol": "US_COMPOSITE",
-      "timestamp": "2026-05-01T00:00:00Z",
-      "value": 50.8
-    },
-    {
-      "family": "macro",
-      "provider": "fred",
-      "symbol": "CPI",
-      "timestamp": "2026-04-01T00:00:00Z",
-      "value": 3.4
-    },
-    {
-      "family": "crypto_tx",
-      "provider": "blockchain",
-      "symbol": "bitcoin",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 500000
-    },
-    {
-      "family": "sentiment",
-      "provider": "alternative_me",
-      "symbol": "fear_and_greed",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 65
-    },
-    {
-      "family": "breadth",
-      "provider": "custom",
-      "symbol": "spy_rsp_ratio",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 1.12
-    },
-    {
-      "family": "prediction_market",
-      "provider": "polymarket",
-      "symbol": "fed_rate_cut_prob",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 0.25
-    },
-    {
-      "family": "weather",
-      "provider": "openweather",
-      "symbol": "NYC",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 22
-    },
-    {
-      "family": "flight",
-      "provider": "adsbexchange",
-      "symbol": "GLOBAL_COUNT",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 15000
-    },
-    {
-      "family": "onchain",
-      "provider": "glassnode",
-      "symbol": "BTC_EXCHANGE_NETFLOW",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": -500
-    },
-    {
-      "family": "holdings",
-      "provider": "sec",
-      "symbol": "BRK_A",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 600000
-    },
-    {
-      "family": "reserves",
       "provider": "world_bank",
-      "symbol": "USA",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 1.5
+      "country": "USA",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "value": 910036546651.5,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
     },
     {
-      "family": "equities_options",
-      "provider": "cboe",
-      "symbol": "AAPL_CALL",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 5.5
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2023-01-01T00:00:00.000Z",
+      "value": 773426187289.127,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
     },
     {
-      "family": "stock_options",
-      "provider": "cboe",
-      "symbol": "MSFT_PUT",
-      "timestamp": "2026-05-28T12:00:00Z",
-      "value": 2.2
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2022-01-01T00:00:00.000Z",
+      "value": 706644215998.894,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2021-01-01T00:00:00.000Z",
+      "value": 716152260973.711,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2020-01-01T00:00:00.000Z",
+      "value": 628369715338.322,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2019-01-01T00:00:00.000Z",
+      "value": 516700583371.247,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2018-01-01T00:00:00.000Z",
+      "value": 449907088828.546,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2017-01-01T00:00:00.000Z",
+      "value": 451285263406.24,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2016-01-01T00:00:00.000Z",
+      "value": 405942428719.749,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "value": 7.47933820850955,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2023-01-01T00:00:00.000Z",
+      "value": 8.41226616291469,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2022-01-01T00:00:00.000Z",
+      "value": 9.56553567648077,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2021-01-01T00:00:00.000Z",
+      "value": 7.62835925904237,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2020-01-01T00:00:00.000Z",
+      "value": 5.40205322460483,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2019-01-01T00:00:00.000Z",
+      "value": 8.17781897202692,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2018-01-01T00:00:00.000Z",
+      "value": 9.24830831010608,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2017-01-01T00:00:00.000Z",
+      "value": 8.47860299060236,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2016-01-01T00:00:00.000Z",
+      "value": 7.25649021798253,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "value": 18.3113039630256,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2023-01-01T00:00:00.000Z",
+      "value": 18.6774872527635,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2022-01-01T00:00:00.000Z",
+      "value": 21.4101656084375,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2021-01-01T00:00:00.000Z",
+      "value": 15.9220948098952,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2020-01-01T00:00:00.000Z",
+      "value": 12.7159907896534,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2019-01-01T00:00:00.000Z",
+      "value": 14.1993655796366,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2018-01-01T00:00:00.000Z",
+      "value": 13.5299938279588,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2017-01-01T00:00:00.000Z",
+      "value": 10.510450824598,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "USA",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2016-01-01T00:00:00.000Z",
+      "value": 7.57865354567164,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "value": 155548682878.169,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2023-01-01T00:00:00.000Z",
+      "value": 140868480001.696,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2022-01-01T00:00:00.000Z",
+      "value": 128735003395.893,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2021-01-01T00:00:00.000Z",
+      "value": 111184882382.134,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2020-01-01T00:00:00.000Z",
+      "value": 93584577917.0715,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2019-01-01T00:00:00.000Z",
+      "value": 105619672447.934,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2018-01-01T00:00:00.000Z",
+      "value": 92997230040.5605,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2017-01-01T00:00:00.000Z",
+      "value": 107657025384.516,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2016-01-01T00:00:00.000Z",
+      "value": 104810530764.478,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "value": 8.64780686121678,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2023-01-01T00:00:00.000Z",
+      "value": 8.31796413925205,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2022-01-01T00:00:00.000Z",
+      "value": 8.7209870625572,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2021-01-01T00:00:00.000Z",
+      "value": 6.41428113277134,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2020-01-01T00:00:00.000Z",
+      "value": 4.96430454961941,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2019-01-01T00:00:00.000Z",
+      "value": 7.20190468630014,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2018-01-01T00:00:00.000Z",
+      "value": 8.95585881800513,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2017-01-01T00:00:00.000Z",
+      "value": 7.10345010319205,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2016-01-01T00:00:00.000Z",
+      "value": 6.02324480176486,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "value": 6.16442555598186,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2023-01-01T00:00:00.000Z",
+      "value": 6.36477511937887,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2022-01-01T00:00:00.000Z",
+      "value": 6.32564856668837,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2021-01-01T00:00:00.000Z",
+      "value": 3.69000155336288,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2020-01-01T00:00:00.000Z",
+      "value": 2.69239035084596,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2019-01-01T00:00:00.000Z",
+      "value": 4.49416367984142,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2018-01-01T00:00:00.000Z",
+      "value": 3.12270042185464,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2017-01-01T00:00:00.000Z",
+      "value": 2.75372472293348,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "TUR",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2016-01-01T00:00:00.000Z",
+      "value": 2.13742856858285,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "value": 3456024808739.12,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2023-01-01T00:00:00.000Z",
+      "value": 3449544415518.98,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2022-01-01T00:00:00.000Z",
+      "value": 3306839412813.77,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2021-01-01T00:00:00.000Z",
+      "value": 3427931394628.85,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2020-01-01T00:00:00.000Z",
+      "value": 3357240875433.71,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2019-01-01T00:00:00.000Z",
+      "value": 3222894578036.36,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2018-01-01T00:00:00.000Z",
+      "value": 3168216331199.08,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2017-01-01T00:00:00.000Z",
+      "value": 3235681607213.04,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "FI.RES.TOTL.CD",
+      "timestamp": "2016-01-01T00:00:00.000Z",
+      "value": 3097658421378.4,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "total_reserves_usd"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "value": 20.4222505719016,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2023-01-01T00:00:00.000Z",
+      "value": 21.0332541381132,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2022-01-01T00:00:00.000Z",
+      "value": 20.6343617882309,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2021-01-01T00:00:00.000Z",
+      "value": 16.0586526598696,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2020-01-01T00:00:00.000Z",
+      "value": 14.0746971565506,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2019-01-01T00:00:00.000Z",
+      "value": 17.8562823008297,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2018-01-01T00:00:00.000Z",
+      "value": 17.4688169187818,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2017-01-01T00:00:00.000Z",
+      "value": 14.5851037046112,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TM.VAL.FUEL.ZS.UN",
+      "timestamp": "2016-01-01T00:00:00.000Z",
+      "value": 12.0917339150655,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_imports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "value": 1.49786393169736,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2023-01-01T00:00:00.000Z",
+      "value": 1.8075643209073,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2022-01-01T00:00:00.000Z",
+      "value": 1.79009011301844,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2021-01-01T00:00:00.000Z",
+      "value": 1.29170537075172,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2020-01-01T00:00:00.000Z",
+      "value": 1.2143685449396,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2019-01-01T00:00:00.000Z",
+      "value": 1.87465304454538,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2018-01-01T00:00:00.000Z",
+      "value": 1.86764407076313,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2017-01-01T00:00:00.000Z",
+      "value": 1.5635573554021,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
+    },
+    {
+      "provider": "world_bank",
+      "country": "CHN",
+      "indicator": "TX.VAL.FUEL.ZS.UN",
+      "timestamp": "2016-01-01T00:00:00.000Z",
+      "value": 1.28100094525523,
+      "source": "worldbank",
+      "family": "reserves",
+      "metric": "fuel_exports_pct"
     }
   ],
   "errors": [],
   "provider_checks": [
     {
+      "family": "quote_feeds",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
       "family": "equities",
-      "providers": [
-        "stooq",
-        "yahoo"
-      ],
-      "symbols": [
-        "AAPL",
-        "MSFT",
-        "SPY",
-        "QQQ"
-      ]
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "indices",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
     },
     {
       "family": "commodities",
-      "providers": [
-        "stooq",
-        "yahoo"
-      ]
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
     },
     {
-      "family": "weather",
-      "provider": "openweather",
-      "status": "ok"
-    },
-    {
-      "family": "flight",
-      "provider": "adsbexchange",
-      "status": "ok"
-    },
-    {
-      "family": "onchain",
-      "provider": "glassnode",
-      "status": "ok"
-    },
-    {
-      "family": "holdings",
-      "provider": "sec",
-      "status": "ok"
-    },
-    {
-      "family": "reserves",
-      "provider": "world_bank",
-      "status": "ok"
+      "family": "fx",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
     },
     {
       "family": "crypto",
-      "provider": "binance",
-      "status": "ok"
-    },
-    {
-      "family": "crypto",
-      "provider": "coinbase",
-      "status": "ok"
-    },
-    {
-      "family": "fx",
-      "provider": "frankfurter",
-      "status": "ok"
-    },
-    {
-      "family": "fx",
-      "provider": "fxapi",
-      "status": "ok"
-    },
-    {
-      "family": "fx",
-      "provider": "ecb",
-      "status": "ok"
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
     },
     {
       "family": "pmi",
-      "provider": "spglobal",
-      "status": "ok"
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
     },
     {
       "family": "macro",
-      "provider": "fred",
-      "status": "ok"
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "weather",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "flight",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "crypto_tx",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "sentiment",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "holdings",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "onchain",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "breadth",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "prediction_market",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "equities_options",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
+    },
+    {
+      "family": "stock_options",
+      "provider": "manifest",
+      "status": "skipped",
+      "reason": "target_family_filter",
+      "target_family": "reserves"
     }
-  ]
+  ],
+  "deduplication": {
+    "input_records": 81,
+    "output_records": 81,
+    "quote_records": 0,
+    "removed_records": 0,
+    "policy": "provider_priority_then_quality"
+  },
+  "quality_filter": {
+    "removed_records": 0,
+    "stale_records": 0,
+    "policy": "preserve_historical_records_after_merge",
+    "merged_removed_records": 0,
+    "merged_stale_records": 0
+  },
+  "macro_store": {
+    "configured": false,
+    "skipped": true,
+    "written": 0,
+    "records": 0,
+    "units": {},
+    "reason": "target_family_filter",
+    "target_family": "reserves"
+  }
 }

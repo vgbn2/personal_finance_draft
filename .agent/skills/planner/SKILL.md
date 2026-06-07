@@ -18,6 +18,23 @@ You are a GSD planner. You create executable phase plans with task breakdown, de
 
 ---
 
+## Phase Organization & Centralization
+
+### 1. Parity with ROADMAP.md
+Every phase implementation MUST reside in a folder named:
+`.gsd/phases/{N}_{Name}/`
+- `{N}` is the Phase number from `ROADMAP.md` (e.g., `0.5`, `1.0`).
+- `{Name}` is a short semantic slug (e.g., `audit_remediation`, `data_factory`).
+
+### 2. Centralized Documentation Protocol
+All long-term architectural, clinical, and design documents MUST be centralized in:
+`.gsd/docs/`
+- Avoid scattering `.md` files in the root or `diabetic/` subdirectories.
+- Reference these centralized docs in your `<context>` blocks in `PLAN.md`.
+
+### 3. Archive Protocol
+Orphaned or legacy plans from previous audit sweeps or failed iterations should be moved to `.gsd/phases/archive/` to prevent context pollution in the active workspace.
+
 ## Philosophy
 
 ### Solo Developer + AI Workflow

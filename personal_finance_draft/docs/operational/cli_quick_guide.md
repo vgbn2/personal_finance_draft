@@ -1,6 +1,6 @@
 # CLI Quick Guide
 
-The CLI lives in `scripts/cli/sovereign_cli.js`.
+The CLI lives in `backend/cli/sovereign_cli.js`.
 
 ## First Commands
 
@@ -9,11 +9,11 @@ cd C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\personal_finance_draft
 .\sv.ps1 help
 .\sv.ps1 status
 .\sv.ps1 cockpit
-node scripts\cli\sovereign_cli.js help
-node scripts\cli\sovereign_cli.js help commands
-node scripts\cli\sovereign_cli.js help backtest
-node scripts\cli\sovereign_cli.js help indicators
-node scripts\cli\sovereign_cli.js help examples
+node backend\cli\sovereign_cli.js help
+node backend\cli\sovereign_cli.js help commands
+node backend\cli\sovereign_cli.js help backtest
+node backend\cli\sovereign_cli.js help indicators
+node backend\cli\sovereign_cli.js help examples
 ```
 
 ## Main Commands
@@ -49,12 +49,12 @@ node scripts\cli\sovereign_cli.js help examples
 .\sv.ps1 status
 .\sv.ps1 cockpit
 .\sv.ps1 check --strict
-node scripts\cli\sovereign_cli.js status
-node scripts\cli\sovereign_cli.js check --strict
-node scripts\cli\sovereign_cli.js backfill --timeframe 1d --days 365 --include-prediction --relevance-floor 0.30
-node scripts\cli\sovereign_cli.js bt --input data\cache\backtest_history.json --timeframe 1d
-node scripts\cli\sovereign_cli.js bt --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
-node scripts\cli\sovereign_cli.js optimize --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
+node backend\cli\sovereign_cli.js status
+node backend\cli\sovereign_cli.js check --strict
+node backend\cli\sovereign_cli.js backfill --timeframe 1d --days 365 --include-prediction --relevance-floor 0.30
+node backend\cli\sovereign_cli.js bt --input storage\data\cache\backtest_history.json --timeframe 1d
+node backend\cli\sovereign_cli.js bt --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
+node backend\cli\sovereign_cli.js optimize --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
 ```
 
 ## Output Metrics

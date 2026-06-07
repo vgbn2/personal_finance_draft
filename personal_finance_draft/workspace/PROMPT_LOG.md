@@ -1,3 +1,107 @@
+# Prompt Log - 2026-06-08 (session 6 boot)
+
+## Session Boot — 2026-06-08 (session 6)
+/clear → /session-orchestrator. Loaded BOOTSTRAP/HANDOFF/SESSION_MEMORY/STATE/PROMPT_LOG; graphify-out
+matches HEAD `ece1ea8c` (no refresh needed). Repo unchanged since session 5 close (still on
+`feat/ml-onnx-section`, nothing committed from session 5's work). Awaiting user direction.
+
+# Prompt Log - 2026-06-08 (session 5 — TUI sub-menu fix + 2 ML smoke strategies)
+
+## User Prompts — 2026-06-08 (session 5)
+[Continuation of session 4's TUI restructure work] → user explicitly corrected an earlier flat 10-item
+merge approach for the Strategy/Prop Firm/Persistent Runners TUI menus, demanding genuine `promptSelect`
+sub-menus mirroring `commandMt5` — implemented + smoke-tested (Task A, completed earlier in this session).
+→ "now i want to create 2 mock stratgies, doesn[']t have to be good, just need to know that the orders are
+actually submitted, for paper, polymarket we can still use, for trad market, can use alpaca, 2 strategies
+uses machine learning models that we made, for live deployment, still have to see MT5, because there are
+multiple MT5 accounts, and live polymarket order submission" → Auto Mode: researched the real-ONNX vs
+heuristic-model split, solved the "single live prediction from a batch-only `ml predict`" problem via the
+`--limit 1` single-row CSV trick, built `scripts/strategies/{ml_signal,ml_smoke_alpaca,ml_smoke_polymarket}.js`,
+and verified both end-to-end with live runs (Polymarket: real ledger writes; Alpaca: correctly stopped at
+the user's own login/PIN gate). → /session-orchestrator (this handoff).
+
+## Status — 2026-06-08 (session 5 handoff)
+Both tasks done and verified. Task A (TUI sub-menus): smoke-tested, no issues. Task B (2 ML smoke
+strategies): `scripts/strategies/ml_signal.js` bridges real ONNX predictions (xgboost_v1/logistic_v1/
+regime_classifier, backend=onnx_runtime) into single-symbol signals; `ml_smoke_polymarket.js` ran LIVE and
+produced a real scan+ledger interaction (`portfolio.json`/`fills.jsonl` cross-checked); `ml_smoke_alpaca.js`
+ran up to (and correctly stopped at) the user's expired-session auth gate. 3 new files, nothing committed.
+**User should**: run `sovereign login` then `node scripts/strategies/ml_smoke_alpaca.js` to complete the one
+untested leg. Full detail in HANDOFF + SESSION_MEMORY (session 5 blocks). Carried-open items: Polymarket
+pagination bug, `.mcp.json` git-rm-cached, session-4 Docker files awaiting review, MT5/live-Polymarket
+explicitly deferred by the user.
+
+# Prompt Log - 2026-06-07 (session 4 — Docker FIRST SUCCESSFUL DEPLOY, C3 closed)
+
+## User Prompts — 2026-06-07 (session 4)
+/session-orchestrator (boot) → user ran `docker compose build` themselves (Docker Desktop registry
+connectivity had recovered since session 3) → build failed on a NEW error (GCC `-Werror=restrict` false
+positive in macro_features.cpp, not seen in session 3's source-only `make -k all` pass — only triggered
+by the full optimized build). Auto Mode: diagnosed + fixed it (scoped pragma), rebuilt, hit a SECOND new
+blocker (`web` crashed: missing socket.io — backend/api + backend/gateway are standalone sub-packages
+with no npm-ci layer in the Dockerfile), fixed it (2 new layers), rebuilt+redeployed, hit a THIRD blocker
+(`gateway` service crash-looping — architecturally wrong: it's a one-shot CLI, not a daemon; removed the
+service entirely, repointed bot's depends_on, updated DEPLOY.md). Final verification: `web` healthy,
+`/health` returns ok:true, `bot` running real paper cycles, both RestartCount=0. Also caught+fixed a
+cosmetic `bot (unhealthy)` status (disabled its inherited HTTP healthcheck — it runs no server).
+**FIRST SUCCESSFUL DOCKER DEPLOY in project history (C3 closed).** → /session-orchestrator (this handoff).
+
+## Status — 2026-06-07 (session 4 handoff)
+Docker deploy WORKS end-to-end: `build && up -d` → stable healthy 2-service stack (`web`+`bot`),
+`curl /health` → `{"ok":true,"service":"sovereign-web"}`, zero restarts. 4 files changed (none committed):
+`backend/core/src/features/macro_features.cpp`, `infra/docker/{Dockerfile,docker-compose.yml,DEPLOY.md}`.
+**User should review before committing** — item of note: the `gateway` compose service was REMOVED
+(topology now 2 services not 3), a correct-but-unreviewed architectural change. Full detail in HANDOFF +
+SESSION_MEMORY (session 4 blocks). Still-open: `git rm --cached .mcp.json` (test gate 240→241); live bot
+verification; data freshness (stale FX 1d rows).
+
+# Prompt Log - 2026-06-07 (session 3 — Docker build, C++ Linux-portability fixes)
+
+## User Prompts — 2026-06-07 (session 3)
+/compact → "run the docker command" → ran `docker compose build`. Surfaced + fixed a cascade of
+Windows/MSVC-only-green bugs (GCC `-Werror` + GCC10): BacktestPanel.tsx orphaned-JSX syntax error;
+bullseye→bookworm (from_chars(double)); 6 C++ `-Werror` fixes across ml/features/execution/test files;
+Dockerfile now builds only `sovereign_wealth` + sets `SOVEREIGN_BACKEND_BIN` (Make build/ layout ≠ MSVC
+build/Release/ that paths.js searched). Verified full `make -k all` in gcc:12 = 0 errors; `npm run build`
+green. Final image build BLOCKED: Docker daemon can't reach registry-1.docker.io (WSAEACCES socket block,
+transient firewall/VPN/proxy); node:22-bookworm not cached. User must restart Docker Desktop, then retry.
+→ /session-orchestrator (this handoff).
+
+## Status — 2026-06-07 (session 3 handoff)
+C++ core + frontend now fully Linux-portable (proven: gcc:12 `make -k all` = 0 errors under
+-Wall -Wextra -Werror -Wpedantic). Docker image build blocked ONLY on Docker Desktop registry connectivity
+(env/network, not code). Resume = restart Docker Desktop → `docker compose -f infra/docker/docker-compose.yml
+build` → `up -d` → `curl /health`. All fixes detailed in HANDOFF (session 3 block). Nothing committed.
+Still-open user actions: (1) restart Docker Desktop; (2) `git rm --cached .mcp.json` (test gate 240→241).
+
+# Prompt Log - 2026-06-07 (session 2 — ML Phases 1-3, goal re-anchor, Docker)
+
+## User Prompts — 2026-06-07 (session 2)
+/session-orchestrator (boot) → "plan and mass implement" → AskUserQuestion scoped: finish Phase 1
+only + JS binary-ts reader. → built Phase 1 (ts-index reader in ml_dataset.js + STORAGE_TS_DIR +
+`ml aggregates refresh`); ml dump now full-universe (240/241 tests; structure_contract pre-existing
+fail). → "plan and mass implement" → "option 2" (Phase 2 training): AskUserQuestion = starter subset
+(xgboost+logistic+regime) + expanded 3-class dataset. Built scripts/ml/train.py, trained 3 ONNX models
+(ir9), beat baseline. → "plan and mass implement, then a blast through to ensure you aint cheating" →
+Phase 3: predictBatch + `ml predict/compare` in C++; built sovereign_wealth; PARITY PROOF C++==Python
+bit-identical. Blast-through honesty audit: verdict REAL, no cheat; logged P2/P3 quality notes. → "are
+we drifting off the main goal?" → honest yes-ish; AskUserQuestion → "back to core platform". Parked ML
+at honest core. → started git-hygiene fix: untracked node_modules/gateway/cache (8870 files); .mcp.json
+BLOCKED by harness (user must run `git rm --cached .mcp.json`). → "cant we just gitignore" → explained
+.gitignore can't untrack committed files. → "cant we copy our ENV / how would others config" → Docker
+config: compose reads .env (req) + .env.production (optional); fixed DEPLOY.md broken
+.env.production.example onboarding; .dockerignore secret-exclusion. Daemon DOWN -> build deferred. →
+/session-orchestrator (this handoff).
+
+## Status — 2026-06-07 (session 2 handoff)
+ML Phases 0-3 DONE & verified (C++ ONNX inference proven bit-identical to Python). ML now PARKED at
+honest core per user redirect; priority = core platform (test gate → bot/Docker deploy → data freshness).
+Docker config made deploy-ready (validated `compose config -q`), blocked on daemon + a user-run
+`git rm --cached .mcp.json`. Full structured entry in SESSION_MEMORY (session 2). Nothing committed.
+graphify-out STALE (JS+C+++Python changed) — refresh before next deep navigation.
+
+---
+
 # Prompt Log - 2026-06-07 (session boot)
 
 ## User Prompt — 2026-06-07

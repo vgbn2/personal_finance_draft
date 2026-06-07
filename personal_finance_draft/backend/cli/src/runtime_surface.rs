@@ -43,7 +43,8 @@ pub fn runtime_surface_lines() -> Vec<String> {
     ];
 
     for entry in command_registry() {
-        lines.push(bullet_line(format!("command_{}", entry.name), entry.help));
+        let label = format!("command_{}", entry.name);
+        lines.push(bullet_line(&label, entry.help));
     }
 
     lines

@@ -33,7 +33,7 @@ From the repository root:
 ```bash
 cmake -S . -B build
 cmake --build build
-ctest --test-dir build/cpp_core
+ctest --test-dir build/backend/core
 ```
 
 On Windows PowerShell, the same commands apply:
@@ -41,29 +41,38 @@ On Windows PowerShell, the same commands apply:
 ```powershell
 cmake -S . -B build
 cmake --build build
-ctest --test-dir build/cpp_core
+ctest --test-dir build/backend/core
 ```
 
 If CMake is not installed, install it before treating the C++ backend as fully verified.
 
 ## CLI Health Checks
 
+Install the local CLI package first:
+
+```bash
+npm install
+npm link
+```
+
 Run the active CLI entrypoint from the repository root:
 
 ```bash
-node scripts/cli/sovereign_cli.js status --json
-node scripts/cli/sovereign_cli.js check --strict
-node scripts/cli/sovereign_cli.js backend integrity --json
-node scripts/cli/sovereign_cli.js quotes status --json
+node backend/cli/sovereign_cli.js status --json
+node backend/cli/sovereign_cli.js check --strict
+node backend/cli/sovereign_cli.js backend integrity --json
+node backend/cli/sovereign_cli.js quotes status --json
+sovereign setup
+sovereign doctor --json
 ```
 
 Useful research commands:
 
 ```bash
-node scripts/cli/sovereign_cli.js demo
-node scripts/cli/sovereign_cli.js models --sample --json
-node scripts/cli/sovereign_cli.js bt --sample
-node scripts/cli/sovereign_cli.js optimize --sample
+node backend/cli/sovereign_cli.js demo
+node backend/cli/sovereign_cli.js models --sample --json
+node backend/cli/sovereign_cli.js bt --sample
+node backend/cli/sovereign_cli.js optimize --sample
 ```
 
 `models` compares a registry of deterministic model adapters across baseline, tree, boosting, linear, probabilistic, instance-based, and neural families. Treat these as reproducible candidate scorers for backtest selection; trained artifacts such as real XGBoost, random-forest, or neural models should plug into the same registry names once promoted.
@@ -73,7 +82,7 @@ node scripts/cli/sovereign_cli.js optimize --sample
 Run:
 
 ```bash
-node web/app.js
+node backend/api/app.js
 ```
 
 Open:
@@ -100,17 +109,17 @@ After a CMake build, use the active backend through the CLI or through focused C
 Preferred checks:
 
 ```bash
-node scripts/cli/sovereign_cli.js backend data summary --symbol AAPL --timeframe 1d --json
-node scripts/cli/sovereign_cli.js backend correlation --symbols AAPL,MSFT,SPX --timeframe 1d --json
-node scripts/cli/sovereign_cli.js backend universe --json
+node backend/cli/sovereign_cli.js backend data summary --symbol AAPL --timeframe 1d --json
+node backend/cli/sovereign_cli.js backend correlation --symbols AAPL,MSFT,SPX --timeframe 1d --json
+node backend/cli/sovereign_cli.js backend universe --json
 ```
 
 Windows PowerShell uses the same Node commands:
 
 ```powershell
-node scripts\cli\sovereign_cli.js backend data summary --symbol AAPL --timeframe 1d --json
-node scripts\cli\sovereign_cli.js backend correlation --symbols AAPL,MSFT,SPX --timeframe 1d --json
-node scripts\cli\sovereign_cli.js backend universe --json
+node backend\cli\sovereign_cli.js backend data summary --symbol AAPL --timeframe 1d --json
+node backend\cli\sovereign_cli.js backend correlation --symbols AAPL,MSFT,SPX --timeframe 1d --json
+node backend\cli\sovereign_cli.js backend universe --json
 ```
 
 ## Where To Start Coding
@@ -118,11 +127,11 @@ node scripts\cli\sovereign_cli.js backend universe --json
 For current implementation work:
 
 - current state anchor: `workspace/STATE.md`
-- active CLI: `scripts/cli/sovereign_cli.js`
-- ingestion and provider routing: `scripts/data_ops/ingest_market_data.js`, `scripts/lib/providers/`
-- validation: `scripts/lib/market_validation.js`
-- web/API bridge: `web/app.js`, `web/server/services/cli_executor.js`
-- Kronos pipeline: `docs/kronos_pipeline.md`, `cpp_core/src/ml/`
-- core C++ folders: `cpp_core/src/assets`, `cpp_core/src/data`, `cpp_core/src/ingestion`, `cpp_core/src/features`, `cpp_core/src/ml`, `cpp_core/src/research`, `cpp_core/src/risk`, `cpp_core/src/execution`, `cpp_core/src/portfolio`
+- active CLI: `backend/cli/sovereign_cli.js`
+- ingestion and provider routing: `backend/scripts/data_ops/ingest_market_data.js`, `shared/lib/providers/`
+- validation: `shared/lib/market_validation.js`
+- web/API bridge: `backend/api/app.js`, `backend/api/server/services/cli_executor.js`
+- Kronos pipeline: `docs/kronos_pipeline.md`, `backend/core/src/ml/`
+- core C++ folders: `backend/core/src/assets`, `backend/core/src/data`, `backend/core/src/ingestion`, `backend/core/src/features`, `backend/core/src/ml`, `backend/core/src/research`, `backend/core/src/risk`, `backend/core/src/execution`, `backend/core/src/portfolio`
 
 Do not add live broker execution or production portfolio-monitoring side effects until the corresponding phase is explicitly opened.

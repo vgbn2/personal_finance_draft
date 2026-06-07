@@ -10,10 +10,6 @@ namespace sovereign::ml {
 
 namespace {
 
-float clampProbability(double value) {
-    return static_cast<float>(std::clamp(value, 0.0, 1.0));
-}
-
 std::vector<float> normalizeScores(double down, double neutral, double up) {
     const double total = std::max(0.000001, down + neutral + up);
     return {

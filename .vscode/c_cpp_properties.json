@@ -1,24 +1,27 @@
 {
   "configurations": [
     {
-      "name": "windows-msvc-x64",
+      "name": "windows-gcc-x64",
       "includePath": [
-        "${workspaceFolder}/**",
-        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/node_modules/node-addon-api",
-        "C:/Users/Lenovo/AppData/Local/node-gyp/Cache/24.13.1/include/node",
-        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native",
-        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native/common",
-        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native/core",
-        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native/engines",
-        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native/bindings",
-        "c:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/terminus/backend/server/src/native/vendor/simdjson"
+        "${workspaceFolder}/**"
       ],
+      "compilerPath": "C:/msys64/ucrt64/bin/gcc.exe",
       "cStandard": "c17",
-      "cppStandard": "c++17",
-      "intelliSenseMode": "windows-msvc-x64",
+      "cppStandard": "c++20",
+      "intelliSenseMode": "windows-gcc-x64",
+      "browse": {
+        "path": [
+          "${workspaceFolder}/**",
+          "${workspaceFolder}/personal_finance_draft/cpp_core/src",
+          "${workspaceFolder}/personal_finance_draft/cpp_core/test",
+          "C:/msys64/ucrt64/include"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      },
       "defines": [
         "N_EXCHANGES=7",
-        "NAPI_CPP_EXCEPTIONS"
+        "NAPI_CPP_EXCEPTIONS",
+        "SOVEREIGN_REPO_ROOT=\"${workspaceFolder}/personal_finance_draft\""
       ]
     }
   ],

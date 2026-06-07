@@ -48,6 +48,8 @@ function withStubbedIngestEnvironment(stubs, run) {
         },
       }),
       mergeSnapshots: (_existing, snapshot) => snapshot,
+      writePartitionedSnapshot: () => {},
+      writeTsIndex: () => {},
     },
   };
 

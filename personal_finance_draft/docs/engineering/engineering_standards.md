@@ -23,26 +23,26 @@ The personal-finance code is legacy/reference context. New engineering work shou
 
 ## Active Source Map
 
-- `scripts/cli/sovereign_cli.js`: active CLI command surface.
-- `scripts/data_ops/ingest_market_data.js`: active ingestion orchestration.
-- `scripts/lib/`: active JS helpers for validation, indicators, backfill, models, providers, and quote routing.
-- `web/app.js`: active local web/API bridge.
-- `web/server/services/cli_executor.js`: active bridge from HTTP routes to the CLI.
-- `cpp_core/src/parser`: active CSV/OHLCV parsing helpers.
-- `cpp_core/src/indicators`: active technical indicator engine.
-- `cpp_core/src/features`: active technical and macro feature boundaries.
-- `cpp_core/src/ml`: active tensor builders and model boundary code.
-- `cpp_core/src/backtest`: active native backtest components.
-- `cpp_core/src/ingestion`: active native ingestion adapters and snapshot summaries.
-- `cpp_core/src/portfolio`: active PnL and reusable optimizer helpers.
-- `cpp_core/src/execution`: partially active execution interfaces and kill-switch/paper-broker compatibility wrappers.
-- `cpp_core/src/wealth`: compatibility wealth logic retained for reference.
-- `config/data_sources.yaml`: active provider and family manifest.
+- `backend/cli/sovereign_cli.js`: active CLI command surface.
+- `backend/scripts/data_ops/ingest_market_data.js`: active ingestion orchestration.
+- `shared/lib/`: active JS helpers for validation, indicators, backfill, models, providers, and quote routing.
+- `backend/api/app.js`: active local web/API bridge.
+- `backend/api/server/services/cli_executor.js`: active bridge from HTTP routes to the CLI.
+- `backend/core/src/parser`: active CSV/OHLCV parsing helpers.
+- `backend/core/src/indicators`: active technical indicator engine.
+- `backend/core/src/features`: active technical and macro feature boundaries.
+- `backend/core/src/ml`: active tensor builders and model boundary code.
+- `backend/core/src/backtest`: active native backtest components.
+- `backend/core/src/ingestion`: active native ingestion adapters and snapshot summaries.
+- `backend/core/src/portfolio`: active PnL and reusable optimizer helpers.
+- `backend/core/src/execution`: partially active execution interfaces and kill-switch/paper-broker compatibility wrappers.
+- `backend/core/src/wealth`: compatibility wealth logic retained for reference.
+- `config/markets/data_sources.yaml`: active provider and family manifest.
 - `workspace/STATE.md`: current status anchor when docs drift.
 
 ## Build Targets
 
-The root `CMakeLists.txt` delegates into `cpp_core`.
+The root `CMakeLists.txt` delegates into `backend/core`.
 
 The native CMake project currently defines `sovereign_wealth` plus focused test executables for data contracts, stats, risk, replay, indicators, backtests, portfolio, ingestion contracts, Kronos/CNN tensors, technical features, parser/sizing, normalization/optimizer, and macro features.
 
@@ -50,21 +50,21 @@ Local Windows verification may use `C:\msys64\ucrt64\bin\g++.exe` directly when 
 
 ## Public API Rules
 
-Public structs and functions used across modules should live in the owning `cpp_core/src` module today unless a stable public include boundary already exists.
+Public structs and functions used across modules should live in the owning `backend/core/src` module today unless a stable public include boundary already exists.
 
 Implementation details belong under the module that owns them:
 
-- asset identity should go under `cpp_core/src/assets`
-- data ingestion should go under `cpp_core/src/ingestion`
-- validated market records should go under `cpp_core/src/data`
-- feature engineering should go under `cpp_core/src/features`
+- asset identity should go under `backend/core/src/assets`
+- data ingestion should go under `backend/core/src/ingestion`
+- validated market records should go under `backend/core/src/data`
+- feature engineering should go under `backend/core/src/features`
 - market logic should go under market-owned modules
-- future macro-specific engines should go under `cpp_core/src/macro` if they outgrow `features`
-- future data-quality engines should go under `cpp_core/src/data_quality` if they outgrow `data`
-- future quant research workflow logic should go under `cpp_core/src/research`
-- execution logic should go under `cpp_core/src/execution`
-- portfolio monitoring should go under `cpp_core/src/portfolio`
-- legacy wealth logic stays under `cpp_core/src/wealth`
+- future macro-specific engines should go under `backend/core/src/macro` if they outgrow `features`
+- future data-quality engines should go under `backend/core/src/data_quality` if they outgrow `data`
+- future quant research workflow logic should go under `backend/core/src/research`
+- execution logic should go under `backend/core/src/execution`
+- portfolio monitoring should go under `backend/core/src/portfolio`
+- legacy wealth logic stays under `backend/core/src/wealth`
 
 Avoid multiple headers with the same name and different definitions. One public API should have one authoritative declaration.
 
@@ -149,9 +149,9 @@ These should not affect active build or runtime until their owning phase or modu
 
 Future module reservations:
 
-- `cpp_core/src/macro`: FX, inflation, rates, yield curves, volatility indexes, liquidity and credit stress, macro regime classification, and economy health scoring.
-- `cpp_core/src/data_quality`: missing data, stale data, timestamp mismatch, source freshness, and lookahead-risk checks for market and macro inputs.
-- `cpp_core/src/research`: research hypotheses, backtest integrity rules, cost models, validation windows, portfolio constraints, and promotion gates.
+- `backend/core/src/macro`: FX, inflation, rates, yield curves, volatility indexes, liquidity and credit stress, macro regime classification, and economy health scoring.
+- `backend/core/src/data_quality`: missing data, stale data, timestamp mismatch, source freshness, and lookahead-risk checks for market and macro inputs.
+- `backend/core/src/research`: research hypotheses, backtest integrity rules, cost models, validation windows, portfolio constraints, and promotion gates.
 
 Macro and research modules are partially present as provider boundaries and helper code, but full macro-regime scoring and strategy promotion remain gated. Legacy `vndDep` currency-drag assumptions must stay separate from live FX or macro ingestion unless intentionally promoted with tests.
 

@@ -2,6 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 const fs = require('node:fs');
 const path = require('node:path');
 const { cached, isCacheEnabled } = require('./ttl_cache');
+const { classifySupabaseError } = require('../../../../shared/lib/supabase_errors');
 
 function loadRootEnv() {
   const envPath = path.resolve(__dirname, '..', '..', '..', '.env');
@@ -81,21 +82,27 @@ async function getAuthStatus(req) {
     if (!token) return status;
 
     const supabase = createSovereignSupabaseClient(req);
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error) {
+    try {
+      const { data, error } = await supabase.auth.getUser(token);
+      if (error) {
+        status.ok = false;
+        status.error = classifySupabaseError(error, 'reach the Supabase auth service');
+        return status;
+      }
+
+      status.authenticated = Boolean(data.user);
+      status.user = data.user
+        ? {
+            id: data.user.id,
+            email: data.user.email || null,
+            role: data.user.role || null,
+          }
+        : null;
+    } catch (error) {
       status.ok = false;
-      status.error = error.message;
+      status.error = classifySupabaseError(error, 'reach the Supabase auth service');
       return status;
     }
-
-    status.authenticated = Boolean(data.user);
-    status.user = data.user
-      ? {
-          id: data.user.id,
-          email: data.user.email || null,
-          role: data.user.role || null,
-        }
-      : null;
     return status;
   });
 }
@@ -129,16 +136,25 @@ async function getDatabaseStatus(req) {
     const supabase = createSovereignSupabaseClient(req);
     const checks = await Promise.all(
       EXPECTED_TABLES.map(async (name) => {
-        const { count, error } = await supabase.from(name).select('*', {
-          count: 'exact',
-          head: true,
-        });
-        return {
-          name,
-          readable: !error,
-          count: error ? null : count,
-          error: error ? error.message : undefined,
-        };
+        try {
+          const { count, error } = await supabase.from(name).select('*', {
+            count: 'exact',
+            head: true,
+          });
+          return {
+            name,
+            readable: !error,
+            count: error ? null : count,
+            error: error ? classifySupabaseError(error, `read the ${name} table`) : undefined,
+          };
+        } catch (error) {
+          return {
+            name,
+            readable: false,
+            count: null,
+            error: classifySupabaseError(error, `read the ${name} table`),
+          };
+        }
       }),
     );
 
@@ -149,10 +165,33 @@ async function getDatabaseStatus(req) {
   });
 }
 
+async function getUserConfig(supabaseClient, userId) {
+  const { data, error } = await supabaseClient
+    .from('user_config')
+    .select('config_key, config_value')
+    .eq('user_id', userId);
+  if (error) throw error;
+  const config = {};
+  for (const row of data || []) config[row.config_key] = row.config_value;
+  return config;
+}
+
+async function setUserConfig(supabaseClient, userId, key, value) {
+  const { error } = await supabaseClient
+    .from('user_config')
+    .upsert(
+      { user_id: userId, config_key: key, config_value: value, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,config_key' }
+    );
+  if (error) throw error;
+}
+
 module.exports = {
   EXPECTED_TABLES,
   createSovereignSupabaseClient,
   getAuthStatus,
   getDatabaseStatus,
+  getUserConfig,
+  setUserConfig,
   isConfigured,
 };
