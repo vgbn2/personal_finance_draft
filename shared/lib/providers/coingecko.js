@@ -15,11 +15,18 @@ const COINGECKO_ID_OVERRIDES = {
   LINK: 'chainlink', PEPE: 'pepe', WIF: 'dogwifcoin', SHIB: 'shiba-inu',
   FET: 'fetch-ai', POL: 'polygon-ecosystem-token', MATIC: 'matic-network',
   AVAX: 'avalanche-2', NEAR: 'near', INJ: 'injective-protocol', RNDR: 'render-token',
+  DOT: 'polkadot', TRX: 'tron',
+  // Stablecoins (for stablecoin-mcap aggregate / capital-flight signal).
+  USDT: 'tether', USDC: 'usd-coin', DAI: 'dai', BUSD: 'binance-usd', TUSD: 'true-usd',
 };
 
 // Strip a trading-pair quote suffix so "POLUSDT" resolves on the base ticker "POL".
+// Guard against bare stablecoins ("USDT" -> "" would break resolution): if stripping
+// empties the symbol, keep the original so e.g. USDT/USDC still resolve as themselves.
 function baseSymbol(symbol) {
-  return String(symbol).toUpperCase().replace(/(USDT|USDC|BUSD|USD)$/, '');
+  const up = String(symbol).toUpperCase();
+  const stripped = up.replace(/(USDT|USDC|BUSD|USD)$/, '');
+  return stripped || up;
 }
 
 /**
@@ -140,9 +147,34 @@ async function fetchCoinGeckoBaseCandles(symbol, days = 365) {
     .sort((a, b) => a.openTime - b.openTime);
 }
 
+/**
+ * Fetches a daily market-cap time series for a coin from CoinGecko's market_chart.
+ * Used to reconstruct historical crypto aggregates (total mcap, dominance, stablecoin
+ * mcap) since the free /global endpoint is snapshot-only. Buckets to one point per UTC
+ * day (last value wins) so series across coins can be aligned by date.
+ *
+ * @param {string} symbol - Pair or bare ticker (e.g. "BTCUSDT" or "BTC")
+ * @param {number} days   - Days of history (>=365 yields daily granularity)
+ * @returns {Promise<Map<string, number>>} date "YYYY-MM-DD" -> market_cap (USD)
+ */
+async function fetchCoinGeckoMcapSeries(symbol, days = 365) {
+  const id = await resolveCoinGeckoId(symbol);
+  const url = `${COINGECKO_BASE}/coins/${id}/market_chart?vs_currency=usd&days=${days}`;
+  const data = await fetchJson(url);
+  const caps = data.market_caps || [];
+  const byDay = new Map();
+  for (const [timestamp, mcap] of caps) {
+    if (!Number.isFinite(mcap) || mcap <= 0) continue;
+    const date = new Date(Number(timestamp)).toISOString().slice(0, 10);
+    byDay.set(date, Number(mcap)); // later (intraday) points overwrite -> last per day
+  }
+  return byDay;
+}
+
 module.exports = {
   fetchCoinGeckoHistory,
   fetchCoinGeckoBaseCandles,
+  fetchCoinGeckoMcapSeries,
   resolveCoinGeckoId,
   getCoinGeckoIdMap
 };
