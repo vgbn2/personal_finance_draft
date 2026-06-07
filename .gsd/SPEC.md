@@ -23,3 +23,20 @@ The goal is to refine and debug the FIR filter research tool located in `_resear
 - [ ] Sinc and Butterworth filters are verified to produce smoother trends than SMA/EMA.
 - [ ] Visualization matches the requested "Premium" aesthetic.
 - [ ] Empirical validation (plots) captured before final sign-off.
+
+---
+
+# SPEC-002: Disk & Workspace Optimization
+
+## 1. Overview
+The user is experiencing disk space constraints and wants to clean disks C: and D:. This spec covers the analysis and safe removal of bloat from the system and workspace.
+
+## 2. Requirements
+- **Disk Analysis**: Identify top 10 largest files/folders on C: and D:.
+- **Temp Cleanup**: Sanitize %TEMP% and installer directories.
+- **Workspace Purge**: Remove `old317` and `temp_gemini`.
+
+## 3. Success Criteria
+- [ ] Analysis script provides actionable data.
+- [ ] Cleaning script safely removes at least 5GB (target).
+- [ ] Workspace is free of legacy ghost directories.

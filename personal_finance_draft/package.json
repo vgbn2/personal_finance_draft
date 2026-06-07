@@ -1,5 +1,5 @@
 {
-  "name": "personal_finance_draft",
+  "name": "personal_finance",
   "version": "1.0.0",
   "description": "Sovereign is an active local trading research prototype with ingestion, validation, research/backtest commands, C++ backend inspection, and a local web/API dashboard bridge.",
   "main": "index.js",
@@ -17,20 +17,34 @@
     "test:core": "npm run test:prepare && ctest --test-dir build/backend/core -C Release --output-on-failure",
     "setup:mcp": "node scripts/setup_mcp.js",
     "test:api": "node --test backend/api/tests/api.test.js backend/api/tests/dashboard_contract.test.js backend/api/tests/charts.test.js",
-    "test:contracts": "node --test backend/api/tests/api.test.js backend/api/tests/dashboard_contract.test.js tests/scripts/macro_history_helpers.test.js tests/scripts/cache_contract.test.js tests/scripts/macro_ingestion_contract.test.js tests/scripts/macro_store_contract.test.js tests/scripts/config_integrity.test.js tests/scripts/deployment_manifest_contract.test.js tests/scripts/supabase_route_contract.test.js",      
+    "test:contracts": "node --test backend/api/tests/api.test.js backend/api/tests/dashboard_contract.test.js tests/scripts/macro_history_helpers.test.js tests/scripts/cache_contract.test.js tests/scripts/macro_ingestion_contract.test.js tests/scripts/macro_store_contract.test.js tests/scripts/config_integrity.test.js tests/scripts/deployment_manifest_contract.test.js tests/scripts/supabase_route_contract.test.js tests/scripts/tui_search_contract.test.js",
+    "test:structure": "node --test tests/scripts/structure_contract.test.js",
     "test:data": "node --test tests/scripts/tests/backfill_regression.test.js tests/scripts/lib/indicators.data_flow.test.js tests/scripts/config_integrity.test.js",
     "test:deploy": "node --test tests/scripts/deployment_manifest_contract.test.js",
     "test:macro": "node --test tests/scripts/macro_history_helpers.test.js tests/scripts/macro_ingestion_contract.test.js tests/scripts/macro_store_contract.test.js",
-    "verify:strict": "npm run test:contracts && npm test"
+    "test:secrets": "node backend/scripts/dev/secret_pattern_check.js",
+    "verify:strict": "npm run test:contracts && npm run test:secrets && npm test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "bin": {
+    "sovereign": "backend/cli/sovereign_cli.js"
+  },
+  "imports": {
+    "#shared/*": "./shared/lib/*.js",
+    "#scripts/*": "./backend/scripts/data_ops/*.js",
+    "#native/*": "./native/pkg/*.js"
+  },
   "dependencies": {
+    "@mathieuc/tradingview": "github:Mathieu2301/TradingView-API",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@polymarket/clob-client-v2": "^1.0.6",
     "@supabase/supabase-js": "^2.106.2",
     "@types/node": "^25.9.1",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "viem": "^2.52.2"
   }
 }

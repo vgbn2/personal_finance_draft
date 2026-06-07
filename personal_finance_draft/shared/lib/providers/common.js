@@ -2,8 +2,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
-const REPO_ROOT = path.resolve(__dirname, '../../..');
-const API_CACHE_DIR = path.join(REPO_ROOT, 'data', 'cache', 'api_responses');
+const { REPO_ROOT, API_CACHE_DIR } = require('../paths');
 const API_CACHE_TTL_MS = 60 * 60 * 1000;
 
 // Centralized rate limiters per domain

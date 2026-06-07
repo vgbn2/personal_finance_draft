@@ -138,7 +138,7 @@ rw = wage * (1 + mWageGrow)^(month - 1)
 Port target:
 
 ```text
-cpp_core/src/wealth/
+backend/core/src/wealth/
 ```
 
 Required tests:
@@ -170,7 +170,7 @@ Legacy brackets:
 Port target:
 
 ```text
-cpp_core/src/wealth/
+backend/core/src/wealth/
 ```
 
 Required tests:
@@ -197,7 +197,7 @@ inv = inv + save + lump - uniLump
 Port target:
 
 ```text
-cpp_core/src/wealth/
+backend/core/src/wealth/
 ```
 
 Required tests:
@@ -220,7 +220,7 @@ disc = disc0 * (1 + discDrag)^(month - 1)
 Port target:
 
 ```text
-cpp_core/src/wealth/
+backend/core/src/wealth/
 ```
 
 Required tests:
@@ -247,7 +247,7 @@ payment = loan / n
 Port target:
 
 ```text
-cpp_core/src/wealth/
+backend/core/src/wealth/
 ```
 
 Required tests:
@@ -354,7 +354,7 @@ Required tests:
 Recommended wealth module split:
 
 ```text
-cpp_core/src/wealth/
+backend/core/src/wealth/
   finance_engine.cpp
   param_loader.cpp
   rates.hpp
@@ -368,7 +368,7 @@ cpp_core/src/wealth/
 Recommended tests:
 
 ```text
-cpp_core/test/
+backend/core/test/
   phase1_compounding_test.cpp
   wealth_tax_test.cpp
   wealth_spending_test.cpp

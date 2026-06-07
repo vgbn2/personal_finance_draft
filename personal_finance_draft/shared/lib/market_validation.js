@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const OHLCV_FAMILIES = new Set(['equities', 'indices', 'commodities', 'crypto', 'prediction_market']);
+const OHLCV_FAMILIES = new Set(['equities', 'indices', 'commodities', 'crypto', 'fx', 'prediction_market']);
 const SCALAR_VALUE_FAMILIES = new Set(['pmi', 'macro', 'macro_alt', 'sentiment', 'breadth', 'prediction_market']);
 
 const FRESHNESS_RULES_MS = {
@@ -82,6 +82,17 @@ const PROVIDER_TRUST = {
   blockchair: 0.8,
   default: 0.7,
 };
+
+const FAMILY_START_DATES = {
+  crypto: '2009-01-03T00:00:00.000Z',
+};
+
+const PROVIDER_START_DATES = {
+  binance: '2017-07-14T00:00:00.000Z',
+  coinbase: '2012-06-01T00:00:00.000Z',
+};
+
+const LOWER_TIMEFRAMES = new Set(['tick', '1m', '5m', '15m', '30m', '1h', '4h']);
 
 function isFiniteNumber(value) {
   return typeof value === 'number' && Number.isFinite(value);
@@ -206,6 +217,78 @@ function validateOhlcv(record, report, index) {
   }
 }
 
+function normalizedProviderName(record) {
+  return String(record.provider || record.source || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '');
+}
+
+function sourceLabel(record) {
+  return String(record.source || record.provider || record.provenance || '').toLowerCase();
+}
+
+function isLowerTimeframe(record) {
+  return LOWER_TIMEFRAMES.has(record.timeframe || '');
+}
+
+function providerStartDate(record) {
+  const name = normalizedProviderName(record);
+  for (const [provider, start] of Object.entries(PROVIDER_START_DATES)) {
+    if (name.includes(provider)) return start;
+  }
+  return null;
+}
+
+function addTemporalProvenanceIssues(record, report, index) {
+  const timestampMs = Date.parse(record.timestamp);
+  if (!Number.isFinite(timestampMs)) return;
+
+  const familyStart = FAMILY_START_DATES[record.family || 'unknown'];
+  if (familyStart && timestampMs < Date.parse(familyStart)) {
+    addIssue(
+      report,
+      'error',
+      'before_family_inception',
+      record,
+      index,
+      `record timestamp predates ${record.family} inception floor ${familyStart}`,
+    );
+  }
+
+  const providerStart = providerStartDate(record);
+  if (providerStart && timestampMs < Date.parse(providerStart)) {
+    addIssue(
+      report,
+      'error',
+      'before_provider_history',
+      record,
+      index,
+      `record timestamp predates provider history floor ${providerStart}`,
+    );
+  }
+
+  const label = sourceLabel(record);
+  if (isLowerTimeframe(record) && (label.includes('synthetic') || label.includes('deconstruct'))) {
+    addIssue(
+      report,
+      'error',
+      'synthetic_lower_timeframe',
+      record,
+      index,
+      'lower-timeframe bar is synthetic/deconstructed and must not be treated as live history',
+    );
+  } else if (isLowerTimeframe(record) && label.includes('rollup')) {
+    addIssue(
+      report,
+      'warning',
+      'rollup_lower_timeframe',
+      record,
+      index,
+      'lower-timeframe bar uses rollup provenance; verify it was aggregated from native lower-timeframe data',
+    );
+  }
+}
+
 function hasOhlcvShape(record) {
   return ['open', 'high', 'low', 'close'].some((field) => Object.prototype.hasOwnProperty.call(record, field));
 }
@@ -248,6 +331,8 @@ function validateSourceRecord(record, report, index, seen) {
   } else if (family === 'weather') {
     validateWeather(record, report, index);
   }
+
+  addTemporalProvenanceIssues(record, report, index);
 
   const freshness = sourceReliabilityScore(record, report.fetched_at);
   if (Number.isFinite(freshness.score)) {
@@ -331,8 +416,52 @@ function validateSnapshot(snapshot, options = {}) {
   return { report, usableSources };
 }
 
-function readSnapshot(inputPath) {
+function readSnapshot(inputPath, options = {}) {
   if (!fs.existsSync(inputPath)) return null;
+  const family = options.family ? String(options.family).trim() : null;
+  
+  if (fs.statSync(inputPath).isDirectory()) {
+    if (family) {
+      const familyPath = path.join(inputPath, family, 'backtest_history.json');
+      if (!fs.existsSync(familyPath)) return null;
+      try {
+        const snapshot = JSON.parse(fs.readFileSync(familyPath, 'utf8'));
+        return {
+          ...snapshot,
+          mode: snapshot.mode || 'backtest_history',
+          loaded_family: family,
+        };
+      } catch (error) {
+        return null;
+      }
+    }
+
+    // Recursive merge of all backtest_history.json files
+    const snapshot = { sources: [], errors: [], backfill_windows: [], mode: 'merged_history' };
+    const files = [];
+    const scan = (dir) => {
+      fs.readdirSync(dir).forEach(file => {
+        const full = path.join(dir, file);
+        if (fs.statSync(full).isDirectory()) scan(full);
+        else if (file === 'backtest_history.json') files.push(full);
+      });
+    };
+    scan(inputPath);
+
+    files.forEach(f => {
+      try {
+        const part = JSON.parse(fs.readFileSync(f, 'utf8'));
+        if (part.sources) for (const s of part.sources) snapshot.sources.push(s);
+        if (part.errors) for (const e of part.errors) snapshot.errors.push(e);
+        if (part.backfill_windows) for (const w of part.backfill_windows) snapshot.backfill_windows.push(w);
+        if (!snapshot.fetched_at || part.fetched_at > snapshot.fetched_at) {
+          snapshot.fetched_at = part.fetched_at;
+        }
+      } catch (e) { /* ignore corrupt parts */ }
+    });
+    return snapshot;
+  }
+
   try {
     return JSON.parse(fs.readFileSync(inputPath, 'utf8'));
   } catch (error) {
@@ -363,9 +492,35 @@ function mergeSnapshots(base, update) {
     return 0;
   });
 
-  // Errors describe the current fetch attempt. Preserving old provider failures
-  // makes a healthy refresh look broken after the source has recovered.
-  merged.errors = update.errors || [];
+  const uniqueBy = (items, keyFn) => {
+    const seenItems = new Map();
+    for (const item of items || []) {
+      seenItems.set(keyFn(item), item);
+    }
+    return Array.from(seenItems.values());
+  };
+
+  const isHistoricalMerge = ['backtest_history', 'merged_history'].includes(base.mode) || ['backtest_history', 'merged_history'].includes(update.mode);
+
+  // Keep historical diagnostics additive so repeated backfills don't erase prior context.
+  // Live refreshes still prefer the current attempt's provider error set.
+  merged.errors = isHistoricalMerge
+    ? uniqueBy([...(base.errors || []), ...(update.errors || [])], (item) => [
+        item.family || 'unknown',
+        item.provider || 'unknown',
+        item.symbol || item.series || item.metric || 'unknown',
+        item.message || '',
+        item.code || '',
+      ].join(':'))
+    : (update.errors || []);
+
+  merged.backfill_windows = uniqueBy([...(base.backfill_windows || []), ...(update.backfill_windows || [])], (item) => [
+    item.family || 'unknown',
+    item.symbol || 'unknown',
+    item.timeframe || 'unknown',
+    item.days || item.requested_window || 'unknown',
+    item.actual_window || '',
+  ].join(':'));
 
   return merged;
 }
@@ -377,13 +532,177 @@ function writeJson(outputPath, payload) {
   fs.renameSync(tempPath, outputPath);
 }
 
+/**
+ * Splits a snapshot into families and writes them to partitioned directories.
+ * outputPath should be the root cache directory.
+ */
+function writePartitionedSnapshot(rootPath, snapshot) {
+  if (!snapshot || !Array.isArray(snapshot.sources)) return;
+  
+  const byFamily = new Map();
+  snapshot.sources.forEach(s => {
+    const family = s.family || 'unknown';
+    if (!byFamily.has(family)) byFamily.set(family, []);
+    byFamily.get(family).push(s);
+  });
+
+  for (const [family, sources] of byFamily.entries()) {
+    const familyDir = path.join(rootPath, family);
+    const familyPath = path.join(familyDir, 'backtest_history.json');
+    
+    // For each family, we should ideally merge with existing if any,
+    // but the caller might have already merged.
+    // If rootPath/family/backtest_history.json exists, and we are not doing a full rewrite,
+    // we should merge.
+    
+    const familySnapshot = {
+      ...snapshot,
+      sources,
+      // Filter errors and windows relevant to this family if possible, 
+      // otherwise just replicate them.
+      errors: (snapshot.errors || []).filter(e => !e.family || e.family === family),
+      backfill_windows: (snapshot.backfill_windows || []).filter(w => !w.family || w.family === family)
+    };
+
+    writeJson(familyPath, familySnapshot);
+  }
+}
+
+// Binary format per file: magic(4) + count(uint32LE) + N×[ts_ms,open,high,low,close,volume](6×float64LE)
+// Metadata sidecar: <symbol>_<timeframe>.meta.json — family, provider, coordinate_id, etc.
+const TS_MAGIC = 'SOVT';
+const TS_RECORD_BYTES = 6 * 8; // 6 float64 fields
+const TS_HEADER_BYTES = 8;     // 4 magic + 4 count
+
+function tsIndexPath(tsDir, symbol, timeframe) {
+  const safe = symbol.replace(/[^a-zA-Z0-9_]/g, '_');
+  return {
+    bin:  path.join(tsDir, `${safe}_${timeframe}.bin`),
+    meta: path.join(tsDir, `${safe}_${timeframe}.meta.json`),
+  };
+}
+
+/**
+ * Writes a per-symbol binary time-series index from a snapshot.
+ * tsDir should be e.g. storage/data/ts/
+ * Only OHLCV families are indexed (equities, indices, crypto, commodities).
+ */
+function writeTsIndex(tsDir, snapshot) {
+  if (!snapshot || !Array.isArray(snapshot.sources)) return;
+  fs.mkdirSync(tsDir, { recursive: true });
+
+  // Group by symbol+timeframe
+  const groups = new Map();
+  for (const s of snapshot.sources) {
+    if (!OHLCV_FAMILIES.has(s.family)) continue;
+    if (!s.symbol || !s.timeframe || !s.timestamp) continue;
+    const key = `${s.symbol}\0${s.timeframe}`;
+    if (!groups.has(key)) groups.set(key, { records: [], meta: null });
+    const g = groups.get(key);
+    g.records.push(s);
+    // Keep the most recent meta (last writer wins; good enough for provider/coordinate_id)
+    if (!g.meta) {
+      g.meta = {
+        symbol: s.symbol,
+        timeframe: s.timeframe,
+        family: s.family,
+        provider: s.provider || '',
+        coordinate_id: s.coordinate_id || '',
+        config_market: s.config_market || '',
+        config_sector: s.config_sector || '',
+      };
+    }
+  }
+
+  for (const [key, { records, meta }] of groups) {
+    if (!meta || records.length === 0) continue;
+
+    // Sort by timestamp ascending, deduplicate by ms timestamp
+    records.sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
+    const seen = new Set();
+    const deduped = records.filter(r => {
+      const ms = Date.parse(r.timestamp);
+      if (!Number.isFinite(ms) || seen.has(ms)) return false;
+      seen.add(ms);
+      return true;
+    });
+
+    const count = deduped.length;
+    const buf = Buffer.allocUnsafe(TS_HEADER_BYTES + count * TS_RECORD_BYTES);
+    buf.write(TS_MAGIC, 0, 'ascii');
+    buf.writeUInt32LE(count, 4);
+
+    for (let i = 0; i < count; i++) {
+      const r = deduped[i];
+      const off = TS_HEADER_BYTES + i * TS_RECORD_BYTES;
+      buf.writeDoubleLE(Date.parse(r.timestamp), off);
+      buf.writeDoubleLE(Number(r.open)   || 0, off + 8);
+      buf.writeDoubleLE(Number(r.high)   || 0, off + 16);
+      buf.writeDoubleLE(Number(r.low)    || 0, off + 24);
+      buf.writeDoubleLE(Number(r.close)  || 0, off + 32);
+      buf.writeDoubleLE(Number(r.volume) || 0, off + 40);
+    }
+
+    const { bin, meta: metaPath } = tsIndexPath(tsDir, meta.symbol, meta.timeframe);
+    const tmpBin = bin + '.tmp';
+    fs.writeFileSync(tmpBin, buf);
+    fs.renameSync(tmpBin, bin);
+    fs.writeFileSync(metaPath, JSON.stringify({ ...meta, count }), 'utf8');
+  }
+}
+
+/**
+ * Reads a symbol's time series from the binary index.
+ * Returns an array of OHLCV records (same shape as snapshot.sources entries),
+ * or null if the index file doesn't exist yet.
+ */
+function readTsIndex(tsDir, symbol, timeframe) {
+  const { bin, meta: metaPath } = tsIndexPath(tsDir, symbol, timeframe);
+  if (!fs.existsSync(bin) || !fs.existsSync(metaPath)) return null;
+
+  const buf = fs.readFileSync(bin);
+  if (buf.length < TS_HEADER_BYTES) return null;
+  if (buf.toString('ascii', 0, 4) !== TS_MAGIC) return null;
+
+  const count = buf.readUInt32LE(4);
+  if (buf.length < TS_HEADER_BYTES + count * TS_RECORD_BYTES) return null;
+
+  let meta;
+  try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf8')); } catch (_) { return null; }
+
+  const records = [];
+  for (let i = 0; i < count; i++) {
+    const off = TS_HEADER_BYTES + i * TS_RECORD_BYTES;
+    const ts = buf.readDoubleLE(off);
+    records.push({
+      family:        meta.family,
+      provider:      meta.provider,
+      symbol:        meta.symbol,
+      timeframe:     meta.timeframe,
+      timestamp:     new Date(ts).toISOString(),
+      open:          buf.readDoubleLE(off + 8),
+      high:          buf.readDoubleLE(off + 16),
+      low:           buf.readDoubleLE(off + 24),
+      close:         buf.readDoubleLE(off + 32),
+      volume:        buf.readDoubleLE(off + 40),
+      coordinate_id: meta.coordinate_id || undefined,
+      config_market: meta.config_market || undefined,
+      config_sector: meta.config_sector || undefined,
+    });
+  }
+  return records;
+}
+
 module.exports = {
   OHLCV_FAMILIES,
   isFiniteNumber,
   isValidTimestamp,
   mergeSnapshots,
   readSnapshot,
+  readTsIndex,
   recordKey,
   validateSnapshot,
   writeJson,
+  writePartitionedSnapshot,
+  writeTsIndex,
 };

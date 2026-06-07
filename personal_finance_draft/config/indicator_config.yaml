@@ -1,4 +1,0 @@
-indicators:
-  kalman:
-    process_noise: 0.001
-    measurement_noise: 1.0

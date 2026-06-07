@@ -1,13 +1,13 @@
 # Project Roadmap
 
 ## Initial Platform Setup (COMPLETE)
-- [x] Core directory structure (cpp_core, cli, web)
+- [x] Core directory structure (backend, shared, Frontend)
 - [x] Documentation of data contracts
 - [x] Config slots
 - [x] Build system (CMake)
 
 ## Phase 2: Data Contracts And Asset Calculations (COMPLETE)
-- [x] Asset identity system (`cpp_core/src/data/data_snapshot.hpp`)
+- [x] Asset identity system (`backend/core/src/data/data_snapshot.hpp`)
 - [x] Universe loading (`loadMarketUniverse()` in `data_snapshot.cpp`)
 - [x] OHLCV parsing/validation (`data_validator.cpp`)
 - [x] Technical indicators (`indicators/indicator_engine.cpp`: RSI, MACD, ATR, Bollinger Bands, rolling vol)

@@ -48,6 +48,33 @@
 2. Consolidate backfill/provider routing so `scripts/lib/backfill.js` owns chunking and parallel pagination, while the CLI only handles command orchestration.
 3. Lock the macro provider boundary so FRED and World Bank primitives stay in `scripts/lib/providers/macro.js` and are re-exported through `scripts/lib/providers/index.js` instead of being duplicated elsewhere.
 4. Add one path note in the workspace docs after the split is cleaned up so future passes can tell active code from legacy glue at a glance.
+5. Keep strategy catalogs honest about capability level: research-only signals, backtest-only models, and executable order flow should be labeled differently so UI and CLI surfaces do not overclaim broker support.
+
+## 8b. Adapter Boundary Update - 2026-06-02
+- `shared/lib/adapters.js` has been reduced to a compatibility shim that re-exports the canonical provider and backfill modules.
+- The live ingest and backfill code now owns the behavior; the adapter module no longer carries its own duplicate fetch implementation.
+- Future cleanup should prefer removing compatibility imports entirely rather than widening the shim again.
+
+## 9. Structural Health Debt - 2026-05-31
+- [ ] **Canonical Layout Decision**
+  - Deferred: whether to keep the current domain layout (`backend/`, `Frontend/`, `shared/`) or migrate to the Sovereign Architect target (`apps/`, `packages/`, `native/`).
+  - Why: current build/runtime files actively depend on the domain layout, so a blind folder move would break CMake, Docker, npm scripts, test paths, and MCP entrypoints.
+  - Where: root folder layout, `docs/ARCHITECTURE.md`, `package.json`, `Dockerfile`, `CMakeLists.txt`.
+  - Risk if ignored: future agents keep mixing standards and adding new code to stale paths.
+  - Retires when: one canonical layout is recorded and a structural contract test guards the chosen entrypoints.
+  - Owner: repo architecture maintainer.
+- [x] **Tracked Generated Artifacts**
+  - Fixed: root `node_modules`, `backend/gateway/node_modules`, `storage/data/cache`, and local `.mcp.json` were removed from the Git index with `git rm --cached` while staying on disk.
+  - Guard: `tests/scripts/structure_contract.test.js` asserts generated/local-only paths are ignored and not tracked.
+  - Residual: future passes should still scan for other generated roots before release.
+- [ ] **Path Drift In Docs And Tests**
+  - Deferred: full docs/test rewrite from legacy `cpp_core`, `web_page`, `web`, `scripts/lib`, and `scripts/cli` paths to active `backend/core`, `Frontend/dashboard`, `backend/api`, `shared/lib`, and `backend/cli` paths.
+  - Progress: README, Quickstart, web/API docs, engineering standards, lower-traffic docs, the legacy CLI artifact, and the path resolver now point at the active domain layout.
+  - Why remaining: a few fixtures, legacy tests, and archival docs still need a final docs-sync/test-repair pass or an explicit archival label.
+  - Where: docs/operational, docs/engineering, docs/research, tests/scripts/tests, C++ test defaults.
+  - Risk if ignored: stale commands, failing legacy tests, and incorrect automation handoffs.
+  - Retires when: README/quickstart commands run against active paths and legacy path references are either updated or explicitly marked archival.
+  - Owner: repo architecture maintainer.
 
 ---
 *Roadmap generated under Sovereign Institutional Standards.*

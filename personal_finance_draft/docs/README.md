@@ -1,51 +1,76 @@
-# Sovereign Platform Documentation Hub
+# Sovereign Documentation Hub
 
-Welcome to the Sovereign Platform documentation. This directory is organized into the following areas:
+This is the filtered entrypoint for repo documentation. Start with the canonical files below, then move to the supporting or archived material only when you need the extra detail.
 
-## 📂 [Engineering](./engineering)
-*Technical specifications, architecture details, and coding standards.*
-- [Architecture Overview](./engineering/architecture_overview.md)
-- [Product Specification](./engineering/product_spec.md)
-- [Engineering Standards](./engineering/engineering_standards.md)
-- [Technical Spec](./engineering/technical_spec.md)
-- [Web API Specification](./engineering/web_api.md)
-- [Supabase Integration](./engineering/supabase_integration.md)
-- [Stack Manifest](./engineering/stack_manifest.md)
-- [Agentic Coding Playbook](./engineering/agentic_coding_playbook.md)
-- [Architectural Debt](./engineering/architectural_debt.md)
-- [Codebase Organization](./engineering/codebase_org.md)
-- [Blast-Through Checklist](./engineering/blast_through_checklist.md)
-- [Dev Review Queue](./engineering/dev_review_queue.md)
+## Canonical
 
-## 📂 [Operational](./operational)
-*Setup, deployment, and day-to-day operations.*
-- [Quickstart Guide](./operational/QUICKSTART.md)
-- [Contributor Guide](./operational/CONTRIBUTING.md)
-- [Deployment Guide](./operational/DEPLOYMENT.md)
-- [Testing Surface](./operational/testing_surface.md)
-- [Environment Setup](./operational/environment_setup.md)
-- [CLI Quick Guide](./operational/cli_quick_guide.md)
-- [Data Ingestion Procedures](./operational/data_ingestion.md)
-- [Project Roadmap](./operational/roadmap.md)
-- [Bootstrap Protocol](./operational/bootstrap.md)
+- [Architecture entrypoint](./ARCHITECTURE.md): short overview that points to the real ownership map.
+- [Codebase organization map](./engineering/codebase_org.md): canonical folder and file ownership.
+- [Architecture overview](./engineering/architecture_overview.md): high-level system and data-flow view.
+- [Product specification](./engineering/product_spec.md): product scope and behavior boundaries.
+- [Technical spec](./engineering/technical_spec.md): implementation-facing contract.
+- [Engineering standards](./engineering/engineering_standards.md): repo-wide engineering rules.
+- [Web API spec](./engineering/web_api.md): local API and dashboard contract.
+- [Supabase integration](./engineering/supabase_integration.md): gated persistence integration surface.
+- [Stack manifest](./engineering/stack_manifest.md): current platform stack inventory.
+- [Agentic coding playbook](./engineering/agentic_coding_playbook.md): agent workflow guidance.
+- [Quickstart](./operational/QUICKSTART.md): first-run operator guide.
+- [Bootstrap protocol](./operational/bootstrap.md): session-start flow.
+- [Contributor guide](./operational/CONTRIBUTING.md): contribution workflow and expectations.
+- [Deployment guide](./operational/DEPLOYMENT.md): deployment and release operations.
+- [Environment setup](./operational/environment_setup.md): local environment bootstrapping.
+- [CLI quick guide](./operational/cli_quick_guide.md): operator CLI reference.
+- [Testing surface](./operational/testing_surface.md): verification surface overview.
+- [Local-first setup](./operational/local_first_setup.md): current local-first runtime setup.
+- [Local-first migration](./operational/local_first_migration.md): migration path for local-first operation.
+- [Local-first trading plan](./operational/local_first_trading_setup_plan.md): staged trading enablement plan.
+- [Research overview](./research/quant_research.md): quantitative research entrypoint.
+- [Macro model](./research/macro_model.md): macro strategy and model notes.
+- [Legacy math](./research/legacy_math.md): older foundations kept for reference.
+- [Frontend design spec](./design/frontend_design_spec.md): UI/UX design rules.
+- [Frontend prompt](./design/frontend_prompt.md): prompt/reference material for the frontend workflow.
 
-## 📂 [Research](./research)
-*Quantitative research, macro models, and mathematical foundations.*
-- [Macro Model Strategy](./research/macro_model.md)
-- [Quantitative Research](./research/quant_research.md)
-- [Legacy Mathematical Foundations](./research/legacy_math.md)
+## Supporting
 
-## 📂 [Design](./design)
-*UI/UX design specifications and assets.*
-- [Frontend Design Spec](./design/frontend_design_spec.md)
-- [AI Studio Prompts](./design/frontend_prompt.md)
+These are useful, but they should not be mistaken for the primary truth sources.
 
-## 📂 [Memory](./memory)
-*Historical session reports, logs, and audit trails.*
-- [Blast-Through Reports](./memory/BLAST_THROUGH_REPORT.md)
-- [Prompt Logs](./memory/PROMPT_LOG.md)
-- [Session Memory](./memory/SESSION_MEMORY.md)
-- [Developer Comments Index](./memory/DEV_COMMENTS.md)
+- [Architectural debt](./engineering/architectural_debt.md)
+- [Blast-through checklist](./engineering/blast_through_checklist.md)
+- [Dev review queue](./engineering/dev_review_queue.md)
+- [Capability manifest](./engineering/capability_manifest.md)
+- [Kronos pipeline](./engineering/kronos_pipeline.md)
+- [Phase 5 spec](./engineering/phase_5_spec.md)
+- [Rust mirror status](./engineering/rust_mirror_status.md)
+- [Roadmap](./operational/roadmap.md)
+- [Roadmap CLI](./operational/ROADMAP_CLI.md)
+- [Operations](./operational/operations.md)
+- [Data ingestion](./operational/data_ingestion.md)
+- [Blast-through report](./memory/BLAST_THROUGH_REPORT.md)
+- [Developer comments](./memory/DEV_COMMENTS.md)
+- [Prompt log mirror](./memory/PROMPT_LOG.md)
+- [Session memory mirror](./memory/SESSION_MEMORY.md)
+- [Session report archive](./memory/SESSION_REPORT_2026-05-19.md)
 
----
-*Generated by Sovereign Architect.*
+## Archive And Mirrors
+
+- `docs/archive/*`: legacy UI and old CLI artifacts; keep for history, not as active architecture truth.
+- `docs/memory/*`: mirrors of workspace truth files. Prefer the workspace files when making decisions.
+- `docs/ARCHITECTURE.md`: thin entrypoint only. It should stay short and defer to `docs/engineering/codebase_org.md`.
+- `docs/engineering/architecture_overview.md` and `docs/engineering/codebase_org.md` are intentionally split between overview and ownership. Do not duplicate detailed path ownership in both.
+
+## Redundant Or Superseded
+
+These are present for history or transition tracking, but should not be treated as current canonical truth.
+
+- `docs/archive/legacy_ui/*`
+- `docs/archive/sovereign_cli.og.js`
+- `docs/memory/*` as duplicates of workspace append-only state
+
+## Reading Order
+
+1. `docs/ARCHITECTURE.md`
+2. `docs/engineering/codebase_org.md`
+3. `docs/engineering/architecture_overview.md`
+4. The specific operational, research, or design file you need
+
+If a doc is not listed above, it is likely transitional, supporting, or archival.

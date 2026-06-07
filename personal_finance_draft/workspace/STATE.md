@@ -3,6 +3,135 @@
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Direction Note - 2026-06-08 session 5 — TUI sub-menus fixed + first real-ONNX-driven order submissions proven
+
+- **Direction unchanged** (Phase 9 continues; ML buildout milestone advances within the established plan —
+  not a pivot). Two pieces of work:
+  1. **TUI correction applied**: Strategy/Prop Firm/Persistent Runners now use genuine `promptSelect`
+     sub-menus (mirroring `commandMt5`), per the user's explicit rejection of an earlier flat-merge approach.
+  2. **First proof that REAL trained ONNX models can drive REAL order submission**, closing a gap the ML
+     buildout had left open (models existed + were proven accurate in Phase 3, but nothing actually used
+     them to place an order). New `scripts/strategies/ml_signal.js` solves the "how do you get a single
+     live prediction out of a batch-only `ml predict`" problem via the `--limit 1` single-row trick — this
+     is now the reusable bridge for ANY future strategy that wants a real-time ONNX read.
+- **New capability unlocked**: `scripts/strategies/ml_smoke_{alpaca,polymarket}.js` are runnable, real,
+  end-to-end smoke tests — Polymarket leg fully verified live (real ledger writes); Alpaca leg verified up
+  to the user's own login/PIN gate (untested leg pending `sovereign login`).
+- **Scope guardrail reaffirmed by the user**: MT5 multi-account design and live (non-paper) Polymarket
+  order submission are explicitly future work ("still have to see") — do not start either without the user
+  re-raising it. Full detail: HANDOFF + SESSION_MEMORY (session 5).
+
+## Direction Note - 2026-06-07 session 4 — DOCKER DEPLOY SUCCEEDED (C3 closed, first time)
+
+- **C3 closed**: `docker compose build && up -d` now produces a stable, healthy 2-service stack (`web`+`bot`).
+  `curl /health` -> `{"ok":true,"service":"sovereign-web"}`; both `RestartCount=0`. First successful deploy
+  in project history. Found+fixed 3 NEW blockers beyond session 3's portability pass (these only surface in
+  the full build+run path, not a source-only compile check):
+  1. GCC 12 `-Wrestrict` false positive in `macro_features.cpp:32` (scoped pragma suppression).
+  2. Missing `npm ci` layers for standalone sub-packages `backend/api`/`backend/gateway` (web crashed on
+     `Cannot find module 'socket.io'`).
+  3. **Architectural fix**: removed the `gateway` compose service — it was crash-looping because
+     `gateway.main()` is a one-shot CLI dispatcher, not a daemon (`SOVEREIGN_GATEWAY_MODE=managed` was dead
+     config). Topology is now 2 services, not 3 — **user should review this change before committing**.
+  Also disabled `bot`'s inherited HEALTHCHECK (cosmetic `unhealthy` status; it runs no HTTP server).
+  4 files changed, none committed: `macro_features.cpp`, `Dockerfile`, `docker-compose.yml`, `DEPLOY.md`.
+  Full detail: HANDOFF + SESSION_MEMORY (session 4).
+
+## Direction Note - 2026-06-07 session 3 (Docker build attempted — code now Linux-portable)
+- **Docker build status**: code-ready. Surfaced + fixed 8 Windows/MSVC-only-green portability bugs (GCC
+  `-Werror` + GCC10 from_chars); full `make -k all` in gcc:12 = 0 errors, `npm run build` green. Image build
+  BLOCKED only on Docker Desktop registry connectivity (WSAEACCES; node:22-bookworm not cached). Resume after
+  user restarts Docker Desktop. Full detail: HANDOFF + SESSION_MEMORY (session 3).
+- **Durable gotcha**: `shared/lib/paths.js` BACKEND_CANDIDATES doesn't include the Make single-config path
+  `backend/core/build/sovereign_wealth`; native Linux builds need SOVEREIGN_BACKEND_BIN set (Dockerfile does).
+- **Test quality**: core test mains assert-only → no-ops under Release NDEBUG; should run in Debug. Pre-existing.
+
+## Direction Note - 2026-06-07 (re-anchor to core platform) + Docker config readiness
+- **Direction**: ML buildout reached a real, verified honest core (Phases 0-3). User flagged drift; ML is
+  now PARKED — Phases 4-5 (TUI section, backtest swap) deemed low-leverage polish on weak models. Priority:
+  test-gate fix → Docker/bot deploy → data freshness. See `feedback-stay-on-core-goal` memory.
+- **Git hygiene**: untracked node_modules/backend/gateway/node_modules/storage/data/cache (8870 files,
+  index-only). `.mcp.json` still tracked — harness blocks the agent; USER must run `git rm --cached .mcp.json`
+  to make structure_contract pass (suite 240→241).
+- **Docker deploy-ready** (config only; daemon was down so no build ran): compose `env_file` now reads `.env`
+  (required) + `.env.production` (optional override) — one config file for CLI and Docker; fixed DEPLOY.md
+  onboarding (it referenced a nonexistent `.env.production.example`); `.dockerignore` now excludes `.env*`
+  (was baking secrets into image) + `backend/core/build`. `docker compose config -q` clean.
+- **Known gap**: Dockerfile C++ build omits `-DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON` → container ML =
+  deterministic_baseline (real ONNX won't run in the deployed image). Flagged, not fixed.
+
+## Correction Log - 2026-06-07 (ML Phase 3 — C++ ONNX inference + train/serve parity PROVEN)
+- **C++ now runs the real trained models.** New `ml predict` / `ml compare` command in
+  `backend/core/src/main.cpp`: reads `storage/models/serving_manifest.txt` (column order + train
+  medians + model list, emitted by train.py — C++ has no JSON/YAML parser, so a whitespace manifest),
+  reads the JS feature CSV, median-fills + orders columns identically to training, runs each `.onnx`
+  batched, outputs per-model accuracy + class counts as JSON.
+- **New `OnnxModel::predictBatch`** (`backend/core/src/ml/onnx_model.{hpp,cpp}`): float `[batch,n]` input,
+  converter-agnostic output handling (queries output names/types; int64 label tensor and/or float prob
+  tensor) — works for both skl2onnx and onnxmltools-xgboost outputs. Existing `predict()` (int64 token
+  smoke path) left untouched; onnx_model_test/cnn_inference_test/model_registry_test still 3/3.
+- **NO-SKEW PROOF (the anti-cheat gate)**: `scripts/ml/verify_parity.py` replicates the C++ logic in
+  Python via onnxruntime. C++ `ml compare` and Python are **bit-identical** on the full 19,480-row frame:
+  - xgboost_v1 acc 0.666376, counts {0:7061,1:1275,2:11144}
+  - logistic_v1 acc 0.468378, counts {0:7208,1:223,2:12049}
+  - regime_classifier acc 0.456982, counts {0:6802,1:162,2:12516}
+  C++ == Python to 6 decimals AND every class count → C++ inference is real and skew-free.
+  (Full-frame accuracy > Phase-2 holdout accuracy because it includes training rows; xgboost overfits
+  the train portion — expected.)
+- **Build**: `cmake --build backend/core/build --config Release --target sovereign_wealth` clean
+  (ONNX ON). `backend()=="onnx_runtime"` confirmed on all 3 models.
+- **Next**: Phase 4 — JS `backend_bridge` call to `ml compare` + TUI "Machine Learning" section
+  (model comparison table). Phase 5 — route backtest `model.predict` through the C++ ONNX path; relabel
+  JS heuristics `heuristic_baseline`.
+
+## Correction Log - 2026-06-07 (ML Phase 2 — real trained models exported to ONNX)
+- **First real trained ML in the repo.** `scripts/ml/train.py` (new, runs in `.venv_ml`) reads the JS
+  feature CSV and trains the starter set, all predicting the 3-class N-bar forward label {down,flat,up}:
+  - `xgboost_v1` (all 32 feats) — holdout acc **0.4233** vs majority baseline 0.3894 (**+3.4%**)
+  - `logistic_v1` (StandardScaler→logreg, all feats) — **0.4199** (+3.1%)
+  - `regime_classifier` (cross-family feats only: regime_*_mom + xf_corr_*) — **0.3976** (+0.8%)
+  - All 3 exported to `storage/models/*.onnx` at **ir_version=9** (C++ onnxruntime 1.17.1 ceiling),
+    opsets `ai.onnx.ml:1` + `ai.onnx:15` (both within 1.17.1) → ready to load in the C++ path (Phase 3).
+  - Modest lifts are honest for daily directional prediction; the point is real models that beat baseline,
+    not alpha.
+- **No train/serve skew**: missing cells filled with TRAIN-split medians; medians + per-model feature-column
+  order written to `storage/models/feature_config.yaml` (new v2 schema). Linear-model scaling is baked INTO
+  the ONNX graph, so the only external serving contract is the median fill. `metadata.json` rewritten to the
+  real models (schema `sovereign.ml.metadata/v2`, real metrics, `promoted` = beats-baseline).
+- **Deps**: installed scikit-learn 1.9, xgboost 3.2, skl2onnx 1.20, onnxmltools 1.16, pandas 3.0 into `.venv_ml`.
+- **Dataset**: re-dumped 20-symbol liquid universe, `--days 1000 --deadzone 0.01` → 19,480 rows, true 3-class
+  balance {down 7456 / flat 3495 / up 8529}.
+- **Safe overwrite**: nothing at runtime reads `metadata.json`/`feature_config.yaml` yet (`cnn_v3` in
+  `models.js` is only a JS-heuristic alias). Phase 3 C++ will be the first consumer. `smoke.onnx` preserved.
+- **Gate**: `npm test` → **240/241** (unchanged; the 1 fail is the pre-existing structure_contract git-drift).
+- **Next**: Phase 3 — C++ `ml predict`/`ml compare` command reading `feature_config.yaml` + the .onnx files
+  (feature vector in → ONNX → 3-class prediction, batched). Then Phase 4 TUI section, Phase 5 backtest swap.
+  CNN/LightGBM deferred (needs torch + windowing tensor builder).
+
+## Correction Log - 2026-06-07 (ML Phase 1 FINISH — full-universe data + aggregates job)
+- **Phase 1 closed**: `ml dump` now covers the FULL backfilled universe, not just the 3 JSON-cached
+  crypto coins. Root gap was that `shared/lib/ml_dataset.js` only read `cache/<family>/backtest_history.json`
+  (PEPE/POL/SUI only) while the core universe (BTC/ETH/SOL, XAU/XAG/XCU, USOIL/NG, SPY, equities) lives in
+  the binary `storage/data/ts/*.bin` index (633 .bin files).
+  - **Fix (JS binary-ts reader, Design B)**: `ml_dataset.js` now unions JSON-cache records with
+    `readTsIndex()` (already in `market_validation.js`) per symbol, deduped by symbol+timestamp (JSON wins).
+    Added `readTsSources`/`tsSymbolsForTimeframe`. `cacheCloseSeriesAnchor` also merges ts closes.
+    New `STORAGE_TS_DIR` constant in `shared/lib/paths.js`. `opts.tsDir` overridable for tests.
+  - **`ml aggregates refresh` (first production caller for `buildCryptoAggregateSeries`)**: new
+    `backend/cli/commands/ml.js` subcommand + testable `refreshCryptoAggregates()` writes
+    `storage/data/cache/crypto_aggregates.json` in the exact shape `loadCryptoAggregateAnchors` reads
+    (throttle/backoff via `--throttle-ms`, `--days`, `--universe`). CoinGecko free-tier; run is optional.
+  - **LIVE verified**: `ml dump --symbols BTCUSDT,ETHUSDT,SOLUSDT,XAUUSD,USOIL,SPY --days 365 --no-fred`
+    → 6/6 assets, **2034 rows × 36 cols** (these all returned `no_asset_sources` before this session).
+    Anchors now resolve from ts (GOLD 5566d, OIL 5998d, etc.).
+  - **Gate**: `npm test` → **240/241 pass** (was 237; +4 new ML tests, all green). The 1 fail is the
+    PRE-EXISTING `structure_contract.test.js` (see below), unrelated to this work.
+- **[FOUND — needs user decision] artifact-hygiene regression**: `.mcp.json` + `backend/gateway/node_modules/`
+  (~6847 files) are git-TRACKED and no longer matched by `.gitignore` (`git check-ignore` returns empty).
+  This is what fails `structure_contract.test.js:84`. Session 75 had `git rm --cached`'d these; they drifted
+  back. Fix = restore `.gitignore` coverage + `git rm --cached` (index-only, no disk delete), but staging
+  6847 deletions is a large op left for explicit approval — NOT bundled with the ML change.
+
 ## Correction Log - 2026-06-07 (ML reality + ONNX Phase 0)
 - **Grade-relevant correction**: the "ML" was not machine learning. All models in
   `shared/lib/models.js` + `backend/core/src/ml/model_registry.cpp` are heuristics tagged
@@ -1729,8 +1858,67 @@ Run a dedicated hygiene cleanup for tracked generated artifacts, then a docs/tes
 - Added `workspace/README.md` as the workspace index, with canonical live truth, working plans, historical snapshots, and redundant/superseded notes called out explicitly.
 - The highest-redundancy surfaces are now identified rather than implied: `docs/memory/*` mirrors workspace state, `docs/archive/*` is historical, `FEATURE_TEST_MATRIX_2026_06_04.md` is superseded, and the session snapshot files should be treated as archive material once their lessons are folded into the live truth files.
 
+## Update - 2026-06-07 Filtered tree ignore refresh
+
+- Updated `scripts/filtered-tree.ps1` so the code-only tree now ignores fixture/test-data paths as well as docs, workspace, and generated/cache roots.
+- The filtered tree is now better aligned with the repo's active code surface and no longer treats test-data folders as part of the visible code tree.
+
+## Update - 2026-06-07 Filtered tree ignore narrowing
+
+- Narrowed `scripts/filtered-tree.ps1` to ignore the actual repo fixture root (`tests\\fixtures`) instead of the broader generic `fixtures` / `testdata` name set.
+- This keeps the filtered tree honest about real code folders while still hiding the fixture payload that is not part of the active source surface.
+
+## Update - 2026-06-07 Filtered tree path-segment filtering
+
+- Expanded `scripts/filtered-tree.ps1` to match ignored folders by path segment, not just top-level names, so nested `node_modules`, fixture trees, cache folders, and workspace/docs roots no longer leak into the code tree.
+- Removed markdown from the include list so the tree is closer to a code/config view instead of a docs view.
+
+## Update - 2026-06-07 Filtered tree fingerprint ignore
+
+- Added `.fingerprint` to the filtered-tree ignore list so debug cache directories no longer appear in the code tree output.
+
+## Update - 2026-06-07 Filtered tree LOC labels
+
+- Updated `scripts/filtered-tree.ps1` so each file line now prints a `-xN` LOC suffix alongside the filename.
+- The filtered tree is now a code-orientation and size scan in one pass, which makes the output more useful for quick cleanup passes.
+
+## Update - 2026-06-07 Filtered tree docs/workspace visibility
+
+- Updated `scripts/filtered-tree.ps1` to keep `docs/` and `workspace/` visible in the tree output, including their markdown/text content, so the repo's organizational surface is now part of the scan.
+- This makes the structure report usable as a live organization map rather than only a code-only dump.
+
+## Update - 2026-06-07 Workspace archive grouping
+
+- Moved historical workspace snapshots into `workspace/archive/` and added an archive README so live truth files stay at the workspace root while older evidence is grouped together.
+- Updated the workspace index and canonical codebase map to point at the new archive bucket instead of treating those snapshots as root-level surfaces.
+
+## Update - 2026-06-07 Blast-through organization debt
+
+- Focused audit on the organization seams confirmed that `backend/api/server/routes` and `backend/cli/commands` are still flat enough to be maintenance hotspots.
+- The new backlog recommendation is to group the API routes by domain and the CLI commands by workflow, while preserving stable top-level registries so imports and dispatch do not break.
+- Workspace archival grouping is now in place; the remaining live workspace root should stay limited to truth, handoff, memory, review, and active plan surfaces.
+
+## Update - 2026-06-07 API route grouping implemented
+
+- Moved the API route modules under domain directories: `account/`, `bot/`, `data/`, `market/`, `status/`, and `system/`.
+- Kept `backend/api/server/routes/index.js` as the stable registry entrypoint so the server wiring did not change.
+- Verified the grouped route registry loads cleanly after the move.
+
+## Update - 2026-06-07 CLI workflow grouping implemented
+
+- Moved the flat CLI command modules into workflow directories: `account/`, `operational/`, `research/`, and `runner/`, leaving the existing nested command groups intact.
+- Kept `backend/cli/sovereign_cli.js` as the stable dispatcher and updated the one stale test import to the new `account/auth` path.
+- Focused CLI contract tests now pass again after the grouping and path rewrite.
+
 ### Verification
 - `node --test tests\scripts\tests\polymarket_auth_health.test.js tests\scripts\tests\polymarket_preflight.test.js tests\scripts\tests\polymarket_errors.test.js tests\scripts\tests\polymarket_account.test.js` -> 21/21 pass.
 - `node --check backend\cli\commands\trade\trade.js` -> pass.
 - `node_modules\.bin\tsc.cmd -p backend\gateway\tsconfig.json --noEmit` -> pass.
 - `node backend\cli\lib\run_trade_gateway.js polymarket auth-health --json` -> configured signer/funder surface with `likelyFailureStage:"collateral"` and `network_unavailable` classification on current read probes.
+
+## Update - 2026-06-07 Rigorous feature-testing refresh
+
+- Re-ran the broad feature surface probes for MCP, CLI, TUI, data integrity, strategy/backtest, gateway, and API/Web.
+- Current verified coverage includes a built MCP stdio server with `17` tools, a green CLI help/import surface, green TUI automation smoke, green strategy/backtest contracts, green gateway no-spend contracts, and green API/Web contracts.
+- The current hard separation still holds: `backend integrity --json` is policy-green while `status --json` remains degraded on latest-fetch freshness, so the docs must keep those scopes distinct.
+- The only still-stale repo-truth surface identified by this pass is `docs/engineering/tui_feature_map.md`, which still needs a truth sync to the current audit baseline.

@@ -5,6 +5,34 @@ import * as fs from 'node:fs';
 import { REPO_ROOT, findNodeCli, CLI_CANDIDATES } from '../../../shared/lib/paths';
 import { ToolResponse } from './schemas';
 
+export function extractJsonPayload(stdout: string): any | null {
+  const trimmed = String(stdout || '').trim();
+  if (!trimmed) return null;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {}
+
+  const lines = trimmed.split(/\r?\n/);
+  for (const line of lines) {
+    const candidate = line.trim();
+    if (!candidate.startsWith('{') || !candidate.endsWith('}')) continue;
+    try {
+      return JSON.parse(candidate);
+    } catch {}
+  }
+
+  const first = trimmed.indexOf('{');
+  const last = trimmed.lastIndexOf('}');
+  if (first !== -1 && last !== -1 && last > first) {
+    try {
+      return JSON.parse(trimmed.slice(first, last + 1));
+    } catch {}
+  }
+
+  return null;
+}
+
 export function invokeSovereignCli(args: string[]): ToolResponse {
   const cliPath = findNodeCli();
   
@@ -39,18 +67,17 @@ export function invokeSovereignCli(args: string[]): ToolResponse {
       };
     }
 
-    // Try to parse JSON output
-    try {
-      const parsed = JSON.parse(result.stdout);
+    const parsed = extractJsonPayload(result.stdout);
+    if (parsed !== null) {
       return {
         content: [{ type: 'text', text: JSON.stringify(parsed, null, 2) }],
       };
-    } catch (parseError) {
-      // Fallback for non-JSON output if --json flag was ignored or failed
-      return {
-        content: [{ type: 'text', text: result.stdout || 'No output from CLI' }],
-      };
     }
+
+    // Fallback for non-JSON output if --json flag was ignored or failed
+    return {
+      content: [{ type: 'text', text: result.stdout || 'No output from CLI' }],
+    };
   } catch (err: any) {
     return {
       content: [{ type: 'text', text: `Bridge failure: ${err.message}` }],

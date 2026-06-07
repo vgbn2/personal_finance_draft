@@ -50,9 +50,8 @@ test('Intersection Logic - Flag Preservation', async (t) => {
   assert.ok(executedArgs.includes('--sample'), 'Should keep provided boolean flags');
 });
 
-test('Manifest Utils - Symbol Fetching', (t) => {
-  // This depends on the cache file existing, but getCachedSymbols has a fallback
-  const symbols = MANIFEST.commands.backend.find(c => c.id === 'summary').flags['--symbol'].options();
-  assert.ok(Array.isArray(symbols), 'Symbols should be an array');
-  assert.ok(symbols.length > 0, 'Should return some symbols');
+test('Manifest Utils - Timeframe Options', (t) => {
+  const timeframes = MANIFEST.commands.backend.find(c => c.id === 'summary').flags['--timeframe'].options();
+  assert.ok(Array.isArray(timeframes), 'Timeframes should be an array');
+  assert.ok(timeframes.length > 0, 'Should return some timeframe options');
 });

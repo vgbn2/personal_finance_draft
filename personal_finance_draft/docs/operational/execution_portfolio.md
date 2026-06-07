@@ -82,13 +82,13 @@ Paper trading and live trading should use the same execution interface. Broker-s
 
 Existing adapter and route names now point to likely integrations:
 
-- `cpp_core/src/execution/paper_broker.hpp`
-- `cpp_core/src/execution/paper_broker.cpp`
-- `cpp_core/src/execution/live_broker_adapter.hpp`
-- `cpp_core/src/execution/simple_market.cpp`
-- `cpp_core/src/execution/twap_vwap.cpp`
-- `cpp_core/src/execution/rl_router.cpp`
+- `backend/core/src/execution/paper_broker.hpp`
+- `backend/core/src/execution/paper_broker.cpp`
+- `backend/core/src/execution/live_broker_adapter.hpp`
+- `backend/core/src/execution/simple_market.cpp`
+- `backend/core/src/execution/twap_vwap.cpp`
+- `backend/core/src/execution/rl_router.cpp`
 - `cli/src/broker_api/gate_io_api.rs`
 - `cli/src/broker_api/mt5_native.rs`
 - `cli/src/broker_api/order_executor.rs`
-- `cpp_core/src/execution/execution_interface.hpp`
+- `backend/core/src/execution/execution_interface.hpp`

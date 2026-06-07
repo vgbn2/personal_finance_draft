@@ -5,18 +5,18 @@ global.suppressLogs = false;
 const utils = require('./lib/utils.js');
 const { pageText, helpText, printPayload, logger } = utils;
 
-const { commandStatus, commandCockpit } = require('./commands/status.js');
-const { commandSetup, commandDoctor } = require('./commands/setup.js');
+const { commandStatus, commandCockpit } = require('./commands/operational/status.js');
+const { commandSetup, commandDoctor } = require('./commands/operational/setup.js');
 const { commandBackend } = require('./commands/tools/backend.js');
 const { commandQuotes } = require('./commands/quotes/quotes.js');
-const { commandStrategy } = require('./commands/strategy/strategy.js');
+const { commandStrategyMenu, commandPropFirmMenu } = require('./commands/strategy/strategy.js');
 const { commandBacktest, commandOptimize, commandEdgeDecay, commandDemo, commandIndicators, commandModelCompare } = require('./commands/research/research.js');
 const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandValidate, commandPrune, commandLoc, commandUniverse } = require('./commands/data/data.js');
 const { commandTrade, buildTradeGatewayLaunch, commandMt5, commandMt5Profile, commandMt5Connect, commandMt5Bridge, commandAutoTrade, commandAddPlatform, commandAgent, commandPolymarket, commandBot } = require('./commands/trade/trade.js');
-const { commandLogin, commandRegister, commandLogout, commandAuthStatus } = require('./commands/auth.js');
+const { commandLogin, commandRegister, commandLogout, commandAuthStatus } = require('./commands/account/auth.js');
 const { commandSettings } = require('./commands/settings/settings.js');
-const { commandRun } = require('./commands/run.js');
-const { commandMl } = require('./commands/ml.js');
+const { commandRunnerMenu } = require('./commands/runner/run.js');
+const { commandMl } = require('./commands/research/ml.js');
 const { installDoubleCtrlCExit } = require('./lib/exit_guard');
 
 installDoubleCtrlCExit();
@@ -55,8 +55,9 @@ async function handleCommand(args) {
     models:           (a) => commandModelCompare(a),
     optimize:         (a) => commandOptimize(a),
     'edge-decay':     (a) => commandEdgeDecay(a),
-    // --- Strategy (manifest: strategy) ---
-    strategy:         (a) => commandStrategy(a),
+    // --- Strategy (manifest: trade — sub-menu under Execution & Trading) ---
+    strategy:         (a) => commandStrategyMenu(a),
+    'prop-firms':     (a) => commandPropFirmMenu(a),
     // --- Trade (manifest: trade) ---
     trade:            (a) => commandTrade(a),
     alpaca:           (a) => commandTrade(a),
@@ -66,8 +67,8 @@ async function handleCommand(args) {
     agent:            (a) => commandAgent(a),
     polymarket:       (a) => commandPolymarket(a),
     bot:              (a) => commandBot(a),
-    // --- Runner (manifest: runner) ---
-    run:              (a) => commandRun(a),
+    // --- Runner (manifest: trade — sub-menu under Execution & Trading) ---
+    run:              (a) => commandRunnerMenu(a),
     // --- Settings (manifest: settings) ---
     settings:         (a) => commandSettings(a),
     // --- Account (manifest: account) ---
@@ -131,12 +132,12 @@ module.exports = {
   handleCommand,
   buildTradeGatewayLaunch,
   commandCockpit,
-  renderCockpit: require('./commands/status.js').renderCockpit,
+  renderCockpit: require('./commands/operational/status.js').renderCockpit,
   currentPhaseLabel: utils.currentPhaseLabel,
-  quoteProviderHeaderState: require('./commands/status.js').quoteProviderHeaderState,
+  quoteProviderHeaderState: require('./commands/operational/status.js').quoteProviderHeaderState,
   cryptoLimitForWindow: require('./commands/research/research.js').cryptoLimitForWindow,
   filterCandlesByWindow: require('./commands/research/research.js').filterCandlesByWindow,
   historicalWindowFromArgs: require('./commands/research/research.js').historicalWindowFromArgs,
-  buildCockpitModel: require('./commands/status.js').buildCockpitModel,
+  buildCockpitModel: require('./commands/operational/status.js').buildCockpitModel,
   backtestDataQualityError: require('./commands/research/research.js').backtestDataQualityError,
 };

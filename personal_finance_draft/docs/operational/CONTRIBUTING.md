@@ -15,7 +15,7 @@ Then identify which phase your change belongs to. If the phase is not active, di
 
 ## Active Phase Rules
 
-Phase 5 automated execution and risk hardening is complete. Treat `workspace/STATE.md` as the current phase anchor for active work and Phase 6 preparation.
+Treat `workspace/STATE.md` as the current phase anchor for active work and cleanup.
 
 Allowed by default:
 
@@ -41,9 +41,9 @@ Avoid by default:
 
 - Use C++20.
 - Prefer standard-library code where practical.
-- Keep public declarations in `cpp_core/include`.
-- Keep implementations in the owning module under `cpp_core/src`.
-- Keep tests in `cpp_core/test`.
+- Keep public declarations in `backend/core/include`.
+- Keep implementations in the owning module under `backend/core/src`.
+- Keep tests in `backend/core/test`.
 - Write simple code before adding abstractions.
 - Validate inputs close to the module that owns the behavior.
 

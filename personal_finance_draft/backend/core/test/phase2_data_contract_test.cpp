@@ -15,6 +15,11 @@ bool expect(bool condition, const char* message) {
 
 std::filesystem::path locateConfig() {
     const std::filesystem::path candidates[] = {
+        std::filesystem::path("../../../config/markets/data_sources.yaml"),
+        std::filesystem::path("../../config/markets/data_sources.yaml"),
+        std::filesystem::path("../config/markets/data_sources.yaml"),
+        std::filesystem::path("config/markets/data_sources.yaml"),
+        // Legacy fallback (pre-markets/ relocation)
         std::filesystem::path("../../../config/data_sources.yaml"),
         std::filesystem::path("../../config/data_sources.yaml"),
         std::filesystem::path("../config/data_sources.yaml"),
@@ -32,7 +37,7 @@ std::filesystem::path locateConfig() {
 
 int main() {
     const auto config_path = locateConfig();
-    if (!expect(!config_path.empty(), "Could not locate config/data_sources.yaml")) {
+    if (!expect(!config_path.empty(), "Could not locate config/markets/data_sources.yaml")) {
         return 1;
     }
 

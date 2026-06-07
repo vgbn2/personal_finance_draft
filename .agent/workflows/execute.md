@@ -224,12 +224,17 @@ Phase {N} executed successfully. {X} plans, {Y} tasks completed.
 1. Proceed to Phase {N+1}
 ```
 
+**Update REQUIREMENTS.md** (if exists):
+- Cross-reference completed tasks with requirement IDs
+- Mark requirements satisfied by this phase as `In Progress` or `Complete`
+- Update the traceability matrix with plan references
+
 ---
 
 ## 9. Commit Phase Completion
 
 ```bash
-git add .gsd/ROADMAP.md .gsd/STATE.md
+git add .gsd/ROADMAP.md .gsd/STATE.md .gsd/REQUIREMENTS.md
 git commit -m "docs(phase-{N}): complete {phase-name}"
 ```
 

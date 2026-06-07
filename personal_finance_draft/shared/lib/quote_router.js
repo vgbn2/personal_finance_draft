@@ -47,13 +47,14 @@ function normalizeSymbol(symbol, family = null) {
   let value = String(symbol || '').trim().toUpperCase();
   value = value.replace(/\s+/g, '');
   value = value.replace(/[./:_-]/g, '');
-  value = value.replace(/USDT$/, 'USD');
   value = INDEX_ALIASES[value] || value;
+  if (family === 'crypto' && value.endsWith('USD') && !value.endsWith('USDT')) {
+    value = `${value.slice(0, -3)}USDT`;
+  } else if (family && family !== 'crypto') {
+    value = value.replace(/USDT$/, 'USD');
+  }
   if ((family === 'equities' || !family) && value.endsWith('US') && value.length > 2) {
     value = value.slice(0, -2);
-  }
-  if (family === 'crypto' && value.endsWith('USD')) {
-    return `${value.slice(0, -3)}USDT`;
   }
   return value;
 }
@@ -86,20 +87,44 @@ function quoteIdentity(record) {
   ].join(':');
 }
 
-function recordScore(record, priority = DEFAULT_PROVIDER_PRIORITY) {
-  const rank = providerRank(record.provider, priority);
-  const quality = finiteNumber(record.quality_score) ?? 0;
-  const volume = finiteNumber(record.volume) ?? finiteNumber(record.last_size) ?? 0;
-  return (rank * 1000000) + (quality * 1000) + Math.min(volume, 999);
-}
-
 function selectPreferredQuoteRecords(records, options = {}) {
   const priority = options.providerPriority || DEFAULT_PROVIDER_PRIORITY;
   const selected = new Map();
+  
+  // 1. Group records by series (family:symbol:timeframe) to count bars per provider
+  const seriesCounts = new Map(); // key -> Map(provider -> count)
+  for (const record of records || []) {
+    const family = inferFamily(record.symbol || record.instrument_id, record.family);
+    const symbol = normalizeSymbol(record.symbol || record.instrument_id, family);
+    const seriesKey = `${family}:${symbol}:${record.timeframe || 'point'}`;
+    const provider = normalizeProvider(record.provider);
+    
+    if (!seriesCounts.has(seriesKey)) seriesCounts.set(seriesKey, new Map());
+    const counts = seriesCounts.get(seriesKey);
+    counts.set(provider, (counts.get(provider) || 0) + 1);
+  }
+
+  // 2. Optimized score including bar-count depth for tie-breaking same-rank providers
+  const getEnrichedScore = (record) => {
+    const rank = providerRank(record.provider, priority);
+    const family = inferFamily(record.symbol || record.instrument_id, record.family);
+    const symbol = normalizeSymbol(record.symbol || record.instrument_id, family);
+    const seriesKey = `${family}:${symbol}:${record.timeframe || 'point'}`;
+    const provider = normalizeProvider(record.provider);
+    
+    const count = seriesCounts.get(seriesKey)?.get(provider) || 0;
+    const quality = finiteNumber(record.quality_score) ?? 0;
+    const volume = finiteNumber(record.volume) ?? finiteNumber(record.last_size) ?? 0;
+    
+    // priority = (rank * 1B) + (clamp(count, 0, 999k) * 1K) + quality + volume_epsilon
+    // This ensures rank always wins, but for same-rank providers, the one with more history wins.
+    return (rank * 1000000000) + (Math.min(count, 999999) * 1000) + (quality * 10) + Math.min(volume, 9);
+  };
+
   for (const record of records || []) {
     const key = quoteIdentity(record);
     const existing = selected.get(key);
-    if (!existing || recordScore(record, priority) > recordScore(existing, priority)) {
+    if (!existing || getEnrichedScore(record) > getEnrichedScore(existing)) {
       selected.set(key, record);
     }
   }

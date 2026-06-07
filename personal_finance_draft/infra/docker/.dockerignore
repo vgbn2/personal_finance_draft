@@ -1,8 +1,7 @@
 node_modules
 **/node_modules
 build
-cpp_core/build
-cli/target
+backend/core/build
 graphify-out
 .git
 .github
@@ -19,11 +18,11 @@ logs
 *.so
 *.dylib
 *.pdb
-data/cache
-data/backtests
-data/models
-data/features
+# Runtime data is mounted as a volume, not baked into the image.
 storage
+# Never bake secrets into image layers — compose injects them via env_file at runtime.
+.env
+.env.*
 *.ipynb
 notebooks
 *.zip

@@ -1,7 +1,9 @@
-# Use a base image with Node.js and C++ build tools
+# Canonical Dockerfile lives at infra/docker/Dockerfile.
+# This root copy exists for tools that expect Dockerfile at repo root (e.g. Heroku, Railway).
+# Keep in sync with infra/docker/Dockerfile.
+
 FROM node:22-bullseye
 
-# Install build dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -9,26 +11,31 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy the entire repository
+COPY package*.json ./
+RUN npm ci --ignore-scripts
+
+COPY Frontend/dashboard/package*.json ./Frontend/dashboard/
+RUN cd Frontend/dashboard && npm ci --ignore-scripts
+
+COPY Frontend/ ./Frontend/
+RUN cd Frontend/dashboard && npm run build
+
 COPY . .
 
-# Install Node.js dependencies
-RUN npm install
+RUN mkdir -p backend/core/build \
+    && cd backend/core/build \
+    && cmake .. -DCMAKE_BUILD_TYPE=Release \
+    && make -j$(nproc)
 
-# Build the C++ core
-WORKDIR /app/cpp_core
-RUN mkdir build && cd build && \
-    cmake .. && \
-    make
+EXPOSE 8787
 
-# Switch back to app root
-WORKDIR /app
+ENV NODE_ENV=production \
+    SOVEREIGN_WEB_HOST=0.0.0.0 \
+    SOVEREIGN_WEB_PORT=8787
 
-# Expose port (if web dashboard is active)
-EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD node -e "fetch('http://127.0.0.1:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-# Default command
-CMD ["node", "scripts/cli/sovereign_cli.js", "watch"]
+CMD ["node", "backend/api/app.js"]

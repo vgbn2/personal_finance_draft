@@ -33,4 +33,44 @@
     - *Implementation*: Requires a rolling Pearson Correlation indicator in `shared/lib/indicators.js`.
 - **Crypto-Stable Inverse Correlation**: Monitor total crypto market cap vs. stablecoin dominance/market cap. 
     - *Hypothesis*: Inversely correlated; decoupling indicates capital flight or fresh liquidity injection.
-- **Intra-Bar Simulation (Synthetic LTF)**: Deconstruct 1d bars into synthetic 8h/1h/1m bars for noise-robustness backtesting.
+- **Intra-Bar Simulation (Synthetic LTF)**: Deconstruct 1d bars into synthetic 8h/1h/1m bars for noise-robust backtesting.
+
+## Correlation Innovations (Roadmap)
+- **Hierarchical Matrix Sorting**: Implement `--sort volume` or `--sort market_cap` in `backend correlation` to group Leaders (Beta) vs. Followers (Outliers) in the heatmap.
+- **Correlation Divergence Monitor**: Add a telemetry watcher to the `watch` loop that alerts when a historical correlation "breaks" (e.g. SOL/AVAX dropping from 0.9 to 0.5), signaling a regime shift.
+
+## Audit Findings - 2026-05-31 (Session 6)
+
+### [TUI SCALABILITY] Heatmap suppressed for N > 12
+- **Context**: `backend/cli/tui/engine.js` -> `renderCorrelationHeatmap`
+- **Logic**: Matrices larger than 12x12 are unreadable in CLI. System now switches to a "Correlation Summary" (Top 10 Pos/Neg pairs) automatically. Full data remains accessible via `--json`.
+- **Status**: Hardened.
+
+### [QUANT POLISH] Price-based X-Axis for Sigma Bands
+- **Context**: `backend/cli/tui/engine.js` -> `renderSigmaSparkline`
+- **Enhancement**: Distribution plot now shows actual prices corresponding to sigma ticks (-3σ to +3σ). Added auto-scaling (k/M) for large values.
+- **Status**: Implemented.
+
+### [DATA INCONSISTENCY] Backfill --20-years ignores requested timeframe
+- **Context**: `scripts/data_ops/backfill_20_years.js` and `backend/scripts/data_ops/ingest_market_data.js`
+- **Issue**: The 20-year pipeline is hardcoded to `1d` because Yahoo Finance restricts `1h` data to the last 730 days. Requesting `--20-years` with `--timeframe 1h` results in a silent fallback to `1d`.
+- **Note**: "tf choosen to bf=1h, but fill 1 day" logged by user. Implementation of mixed-timeframe merging (e.g. 18y of 1d + 2y of 1h) not yet prioritized.
+- **Status**: Logged, pending research on alternative data providers for deep intraday history.
+
+## Audit Findings - 2026-06-01 (Session 53)
+
+### [DATA READINESS] Integrity freshness still blocks promotion
+- **Context**: `backend integrity --json`
+- **Issue**: Cache coverage is complete (`84/84` configured symbols cached), but required-window freshness is degraded (`60` stale entries). `check --json` is clean for the active live snapshot, so this is not a schema failure; it is an integrity freshness blocker.
+- **Status**: Logged in `workspace/DEV_REVIEW.md`; promotion should stay blocked until either stale windows are refreshed or the integrity policy is narrowed.
+
+### [CATALOG DRIFT] Strategy API needed taxonomy parity
+- **Context**: `/api/strategies`
+- **Issue**: The route lagged the new strategy taxonomy/grade registry and did not expose `family`, `lane`, `role`, or grade fields to dashboard consumers.
+- **Status**: Fixed in `backend/api/server/routes/strategies.js` and covered by `backend/api/tests/api.test.js`.
+
+## Focused Audit Notes - 2026-06-05 (Polymarket gateway path)
+- **backend/gateway/src/index.ts**: `describeGatewayError()` currently serializes raw axios errors and leaks Polymarket auth headers on probe failures. This is now the highest-severity issue in the Polymarket seam.
+- **legacy/holygrailpoly/legacy_clob.js**: the legacy env bridge is not alias-only; it forces signature type `3` when a funder exists, so current-vs-legacy comparisons are also mode comparisons.
+- **backend/cli/lib/run_trade_gateway.js**: custom `ts-node` bootstrap is now the effective fallback runtime on machines without local `tsx`; treat it as supported infra, not a one-off patch.
+

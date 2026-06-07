@@ -85,6 +85,11 @@ Discovery is MANDATORY unless you can prove current context exists.
 - Low-risk decision (easily changed later)
 - Action: Quick web search, no RESEARCH.md needed
 
+**Level 1.5 — Discovery** (5-15 min)
+- Quick library/option comparison (A vs B)
+- Low-to-medium risk, focused question
+- Action: Create DISCOVERY.md using `.gsd/templates/discovery.md` template
+
 **Level 2 — Standard Research** (15-30 min)
 - Choosing between 2-3 options
 - New external integration (API, service)
@@ -221,6 +226,7 @@ Display banner:
 ### 6a. Gather Context
 Load:
 - `.gsd/SPEC.md` — Requirements
+- `.gsd/REQUIREMENTS.md` — Formal requirements tracking (if exists)
 - `.gsd/ROADMAP.md` — Phase description
 - `$PHASE_DIR/RESEARCH.md` — If exists
 - `.gsd/ARCHITECTURE.md` — If exists
@@ -286,8 +292,23 @@ For each plan, verify:
 - [ ] Verify commands are executable
 - [ ] Done criteria are measurable
 - [ ] Context references exist
+- [ ] Tests are meaningful (see Test Quality Rules below)
 
 **If issues found:** Fix and re-verify (max 3 iterations).
+
+### Test Quality Rules
+
+Tests must verify real behavior, not just pass. Reject plans with tests that:
+
+| Anti-pattern | Example | Fix |
+|-------------|---------|-----|
+| **Mock everything** | Mocking the DB then asserting the mock was called | Use real DB or integration test |
+| **Tautological assert** | `assert mock.called` with no behavior check | Assert actual output or side effect |
+| **Always-pass test** | `assert True` or `assert response is not None` | Assert specific expected values |
+| **Testing the framework** | Asserting that Express returns 200 on a stub | Test your logic, not the framework |
+| **No negative cases** | Only testing the happy path | Include at least one failure/edge case |
+
+**Rule:** Every `<verify>` command must test the *actual behavior* of the code, not just that it runs without errors. If a test would still pass with the implementation deleted, it is not a valid test.
 
 ---
 

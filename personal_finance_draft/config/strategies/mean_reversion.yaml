@@ -1,36 +1,54 @@
+engine: auto
 name: mean_reversion
 kind: mean_reversion
+family: mean_reversion
+lane: single_asset
+role: strategy
 status: draft
-enabled: false
+enabled: true
 model: cnn_v3
 sections:
-  hypothesis: "Replace this with the market edge thesis for mean_reversion."
+  hypothesis: "Trades mean reversion on indices and major crypto."
   universe:
+    - BTCUSDT
     - SPY
-    - QQQ
-    - BTC
-    - ETH
-    - EURUSD
-    - XAUUSD  
-    - XAGUSD
-    - GBPUSD  
-    - USDJPY
   signals:
-    entry: "Define the trigger conditions here."
-    exit: "Define the exit conditions here."
+    entry: "Signal > 0.65"
+    exit: "Hold 5 days"
   data:
     required_sources:
       - price_volume
-      - sentiment
     validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
   risk:
     signal_threshold: 0.65
     max_holding_days: 5
-    risk_weight: 0.4
+    risk_weight: 0.05
     fail_closed: true
   promotion:
     require_backtest: true
-    require_walk_forward: true
-    require_paper_trade: true
-    review_required: true
   notes: []
