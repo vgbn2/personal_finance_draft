@@ -7,7 +7,7 @@ The repo now has an active local web/API bridge. It is a local inspection surfac
 Active local server:
 
 ```bash
-node web/app.js
+node backend/api/app.js
 ```
 
 Default address:
@@ -22,17 +22,17 @@ Runtime shape:
 browser / API client
     |
     v
-web/app.js
+backend/api/app.js
     |
     v
-web/server/services/cli_executor.js
+backend/api/server/services/cli_executor.js
     |
-    +--> scripts/cli/sovereign_cli.js
+    +--> backend/cli/sovereign_cli.js
     |
     +--> C++ backend executable when available
 ```
 
-The server currently serves the built React dashboard from `web_page/dist`, with `web_page/src` as the source tree and `web/app.js` as the runtime bridge. Browser work should treat the built `web_page/dist` bundle plus the bridge endpoints as the source of truth.
+The server currently serves the built React dashboard from `Frontend/dashboard/dist`, with `Frontend/dashboard/src` as the source tree and `backend/api/app.js` as the runtime bridge. Browser work should treat the dashboard source plus the bridge endpoints as the source of truth.
 
 ## Active Endpoints
 
@@ -79,7 +79,7 @@ The web surface should not:
 
 ## Known Gaps
 
-- The served entrypoint is the built artifact in `web_page/dist`, so source changes in `web_page/src` need a rebuild before the bridge reflects them.
+- The served entrypoint is the built artifact in `Frontend/dashboard/dist`, so source changes in `Frontend/dashboard/src` need a rebuild before the bridge reflects them.
 - Some dashboard panels still need real data wiring beyond the hydrated market, quote, signal, and backtest surfaces.
 - Quote imports can be stale or unconfigured while the rest of the system is healthy.
 - Production deployment, authentication, and external exposure are not active.

@@ -11,23 +11,24 @@ Read the documentation in this order:
 1. [Documentation Hub](docs/README.md)
 2. [Quickstart Guide](docs/operational/QUICKSTART.md)
 3. [Architecture Overview](docs/engineering/architecture_overview.md)
-4. [Product Specification](docs/engineering/product_spec.md)
-5. [Engineering Standards](docs/engineering/engineering_standards.md)
-6. [Contributor Guide](docs/operational/CONTRIBUTING.md)
+4. [Codebase Organization Map](docs/engineering/codebase_org.md)
+5. [Product Specification](docs/engineering/product_spec.md)
+6. [Engineering Standards](docs/engineering/engineering_standards.md)
+7. [Contributor Guide](docs/operational/CONTRIBUTING.md)
 
 ## Current Phase
 
-Phase 5 automated execution and risk hardening is complete. The current state anchor points to Phase 6 preparation, with the React dashboard, Supabase-native persistence, and C++ kill-switch work already landed.
+Phase 8 production hardening and feature polish is complete. `workspace/STATE.md` is the current status anchor when older docs or fixtures drift.
 
 Buildable today:
 
 - local market data ingestion and strict cache validation
 - stocks, indices, FX, crypto, macro, weather, news/sentiment, and quote source boundaries
-- Node CLI operations through `scripts/cli/sovereign_cli.js`
+- Node CLI operations through `backend/cli/sovereign_cli.js`
 - C++ backend inspection for status, data summaries, correlations, universe, portfolio, and integrity checks
 - sample features, model comparison, backtest, and optimization commands
-- local web/API bridge serving the built React dashboard from `web_page/dist` through `web/app.js`
-- React/Vite source work under `web_page/src` with the built artifact mirrored into the served bridge
+- local web/API bridge serving the built React dashboard from `Frontend/dashboard/dist` through `backend/api/app.js`
+- React/Vite source work under `Frontend/dashboard/src`
 
 Still planned or gated:
 
@@ -40,22 +41,26 @@ Still planned or gated:
 ## Quick Build
 
 ```bash
+npm install
+npm link
 cmake -S . -B build
 cmake --build build
-ctest --test-dir build/cpp_core
+ctest --test-dir build/backend/core
 ```
 
 Run the local CLI:
 
 ```bash
-node scripts/cli/sovereign_cli.js status --json
-node scripts/cli/sovereign_cli.js check --strict
+node backend/cli/sovereign_cli.js status --json
+node backend/cli/sovereign_cli.js check --strict
+sovereign setup
+sovereign doctor --json
 ```
 
 Run the local web/API bridge:
 
 ```bash
-node web/app.js
+node backend/api/app.js
 ```
 
 Then open `http://127.0.0.1:8787` or inspect `http://127.0.0.1:8787/api/system/status`.

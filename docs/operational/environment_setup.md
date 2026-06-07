@@ -8,6 +8,8 @@ Use this file as the short onboarding list for external keys and credentials. Th
 - [ ] `TRUFLATION_API_KEY` for alternative inflation and macro series
 - [ ] `SPGLOBAL_API_KEY` for PMI-style commercial macro data
 - [X] `ALPHA_VANTAGE_API_KEY` for an extra market data source
+- [ ] `FINNHUB_API_KEY` for broader stocks, forex, and crypto coverage
+- [ ] `TWELVE_DATA_API_KEY` for expanded time series and symbol discovery
 - [X] `POLYGON_API_KEY` for richer market, options, or breadth data
 - [X] `ALPACA_API_KEY` and `ALPACA_API_SECRET` for Alpaca market data or paper trading
 - [ ] `IBKR_API_KEY` or broker credentials for Interactive Brokers demo or paper access
@@ -62,9 +64,11 @@ Use this file as the short onboarding list for external keys and credentials. Th
 - [X] `NEWSAPI_API_KEY`
 - [X] `POLYGON_API_KEY`
 - [ ] `TRUFLATION_API_KEY`
+- [ ] `FINNHUB_API_KEY`
+- [ ] `TWELVE_DATA_API_KEY`
 
 ## Notes
 
-- `config/data_sources.yaml` is the main source map for which providers the repo expects.
+- `config/markets/data_sources.yaml` is the main source map for which providers the repo expects.
 - Some providers may offer public endpoints for limited data, but authenticated access is usually needed for reliable production use.
 - If you only want OHLCV and sample research, you can start with the free/public paths already in the CLI and add keys later.

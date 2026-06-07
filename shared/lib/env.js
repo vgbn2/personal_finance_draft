@@ -22,6 +22,9 @@ function parseEnvLine(line) {
 }
 
 function loadLocalEnv(envPath = ENV_PATH) {
+  if (process.env.SOVEREIGN_SKIP_DOTENV === '1' || process.env.SOVEREIGN_SKIP_LOCAL_ENV === '1') {
+    return {};
+  }
   if (!fs.existsSync(envPath)) return {};
   const text = fs.readFileSync(envPath, 'utf8');
   const loaded = {};

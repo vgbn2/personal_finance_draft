@@ -32,7 +32,7 @@ struct ExecutionOrder {
     std::optional<double> limit_price = std::nullopt;
     std::optional<double> stop_price = std::nullopt;
     TimeInForce tif = TimeInForce::GTC;
-    std::string venue;
+    std::string venue = "";
 };
 
 struct ExecutionResult {

@@ -1,18 +1,27 @@
 #include "stats/stats_engine.hpp"
 #include "correlation/correlation_engine.hpp"
 #include "data/data_snapshot.hpp"
+#include "indicators/indicator_engine.hpp"
 #include "portfolio/portfolio_state.hpp"
+#include "risk/pre_trade_risk.hpp"
+#include "backtest/frame_backtester.hpp"
+#include "ml/onnx_model.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <exception>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <limits>
+#include <map>
+#include <numeric>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace {
@@ -164,7 +173,7 @@ std::vector<std::string> parseSymbols(const std::vector<std::string>& args) {
         return {
             optionValue(args, "--lhs", "AAPL"),
             optionValue(args, "--mid", "MSFT"),
-            optionValue(args, "--rhs", "SPX"),
+            optionValue(args, "--rhs", "SPY"),
         };
     }
     std::vector<std::string> symbols;
@@ -194,8 +203,8 @@ void printRejectedReasons(const std::vector<std::string>& reasons) {
 }
 
 int printStatus(const std::vector<std::string>& args) {
-    const auto snapshot = std::filesystem::path(optionValue(args, "--snapshot", "data/cache/last_fetch.json"));
-    const auto quality = std::filesystem::path(optionValue(args, "--quality", "data/cache/data_quality_report.json"));
+    const auto snapshot = std::filesystem::path(optionValue(args, "--snapshot", "storage/data/cache/last_fetch.json"));
+    const auto quality = std::filesystem::path(optionValue(args, "--quality", "storage/data/cache/data_quality_report.json"));
     const bool snapshotExists = std::filesystem::exists(snapshot);
     const bool qualityExists = std::filesystem::exists(quality);
 
@@ -264,7 +273,7 @@ int printStats(const std::vector<std::string>& args) {
 int printDataSummary(const std::vector<std::string>& args) {
     const std::string symbol = optionValue(args, "--symbol", "SPY");
     const std::string timeframe = optionValue(args, "--timeframe", "1d");
-    const auto input = std::filesystem::path(optionValue(args, "--input", "data/cache/backtest_history.json"));
+    const auto input = std::filesystem::path(optionValue(args, "--input", "storage/data/cache/backtest_history.json"));
     const std::size_t max_bars = parseSizeOption(args, "--max-bars", 0U);
     const auto snapshot = sovereign::loadMarketDataSnapshot(input, symbol, timeframe, max_bars);
     const auto& summary = snapshot.summary;
@@ -299,11 +308,26 @@ int printDataSummary(const std::vector<std::string>& args) {
 int printCorrelation(const std::vector<std::string>& args) {
     const std::vector<std::string> labels = parseSymbols(args);
     const std::string timeframe = optionValue(args, "--timeframe", "1d");
-    const auto input = std::filesystem::path(optionValue(args, "--input", "data/cache/backtest_history.json"));
+    const std::string method = optionValue(args, "--method", "pearson-levels");
+    const bool use_returns = method == "pearson-returns" || method == "fx-returns";
+    const auto input = std::filesystem::path(optionValue(args, "--input", "storage/data/cache/backtest_history.json"));
     const std::size_t max_bars = parseSizeOption(args, "--max-bars", 252U);
     std::vector<std::vector<double>> series;
     std::vector<std::string> rejected;
     std::size_t min_size = std::numeric_limits<std::size_t>::max();
+    if (method != "pearson-levels" && method != "pearson-returns" && method != "fx-returns") {
+        std::cout
+            << "{\n"
+            << "  \"type\": \"correlation_matrix\",\n"
+            << "  \"engine\": \"sovereign_cpp_core\",\n"
+            << "  \"schema_version\": 1,\n"
+            << "  \"ok\": false,\n"
+            << "  \"input\": \"" << jsonEscape(input.generic_string()) << "\",\n"
+            << "  \"method\": \"" << jsonEscape(method) << "\",\n"
+            << "  \"error\": \"unsupported correlation method\"\n"
+            << "}\n";
+        return 1;
+    }
     for (const auto& label : labels) {
         const auto snapshot = sovereign::loadMarketDataSnapshot(input, label, timeframe, max_bars);
         if (!snapshot.quality.ok || snapshot.bars.size() < 2U) {
@@ -317,8 +341,12 @@ int printCorrelation(const std::vector<std::string>& args) {
         for (const auto& bar : snapshot.bars) {
             closes.push_back(bar.close);
         }
-        min_size = std::min(min_size, closes.size());
-        series.push_back(std::move(closes));
+        auto values = use_returns ? sovereign::logReturnSeries(closes) : std::move(closes);
+        if (values.size() < 2U) {
+            rejected.push_back(label + ":" + timeframe + ":insufficient_" + (use_returns ? "returns" : "bars"));
+        }
+        min_size = std::min(min_size, values.size());
+        series.push_back(std::move(values));
     }
     if (labels.size() < 2U || min_size < 2U || !rejected.empty()) {
         std::cout
@@ -352,6 +380,8 @@ int printCorrelation(const std::vector<std::string>& args) {
         << "  \"ok\": true,\n"
         << "  \"input\": \"" << jsonEscape(input.generic_string()) << "\",\n"
         << "  \"timeframe\": \"" << jsonEscape(timeframe) << "\",\n"
+        << "  \"method\": \"" << jsonEscape(method) << "\",\n"
+        << "  \"transform\": \"" << (use_returns ? "log_returns" : "close_levels") << "\",\n"
         << "  \"observations\": " << min_size << ",\n"
         << "  \"labels\": [";
     for (std::size_t i = 0; i < matrix.labels.size(); ++i) {
@@ -369,12 +399,39 @@ int printCorrelation(const std::vector<std::string>& args) {
         if (i + 1 < matrix.values.size()) std::cout << ",";
         std::cout << "\n";
     }
-    std::cout << "  ]\n}\n";
+    std::cout << "  ]";
+
+    if (hasFlag(args, "--divergence")) {
+        const std::size_t short_window = parseSizeOption(args, "--short-window", 10U);
+        double threshold = 0.3;
+        const std::string threshold_str = optionValue(args, "--threshold");
+        if (!threshold_str.empty()) {
+            parseDoubleStrict(threshold_str, threshold);
+        }
+
+        const auto divergences = sovereign::CorrelationEngine::computeDivergence(labels, series, short_window, threshold);
+        std::cout << ",\n  \"divergences\": [\n";
+        for (std::size_t i = 0; i < divergences.size(); ++i) {
+            const auto& div = divergences[i];
+            std::cout << "    {\n"
+                      << "      \"lhs\": \"" << jsonEscape(div.lhs) << "\",\n"
+                      << "      \"rhs\": \"" << jsonEscape(div.rhs) << "\",\n"
+                      << "      \"short_corr\": " << div.short_corr << ",\n"
+                      << "      \"long_corr\": " << div.long_corr << ",\n"
+                      << "      \"diff\": " << div.diff << "\n"
+                      << "    }";
+            if (i + 1 < divergences.size()) std::cout << ",";
+            std::cout << "\n";
+        }
+        std::cout << "  ]";
+    }
+
+    std::cout << "\n}\n";
     return 0;
 }
 
 int printUniverse(const std::vector<std::string>& args) {
-    const auto input = std::filesystem::path(optionValue(args, "--input", "data/cache/backtest_history.json"));
+    const auto input = std::filesystem::path(optionValue(args, "--input", "storage/data/cache/backtest_history.json"));
     const std::size_t max_entries = parseSizeOption(args, "--max-entries", 0U);
     const auto universe = sovereign::loadMarketUniverse(input, max_entries);
     std::cout
@@ -459,6 +516,472 @@ int printPortfolio(const std::vector<std::string>& args) {
     return metrics.ok ? 0 : 1;
 }
 
+int printIndicators(const std::vector<std::string>& args) {
+    const std::string symbol = optionValue(args, "--symbol", "AAPL");
+    const std::string timeframe = optionValue(args, "--timeframe", "1d");
+    const auto input = std::filesystem::path(optionValue(args, "--input", "storage/data/cache/backtest_history.json"));
+    const std::size_t max_bars = parseSizeOption(args, "--max-bars", 0U);
+    const std::size_t show_last = parseSizeOption(args, "--show-last", 5U);
+
+    const auto snapshot = sovereign::loadMarketDataSnapshot(input, symbol, timeframe, max_bars);
+    if (!snapshot.quality.ok || snapshot.bars.empty()) {
+        std::cout << "{\"ok\":false,\"error\":\"failed to load market data for " << symbol << "\"}";
+        return 1;
+    }
+
+    sovereign::indicators::ParameterMap params;
+    const std::vector<std::string> param_keys = {
+        "ret_fast", "ret_slow", "vol_period", "rsi_period", "kalman_q", "kalman_r",
+        "macd_fast", "macd_slow", "sma_slow", "atr_period", "bb_period", "stoch_period", "stoch_signal"
+    };
+
+    for (const auto& key : param_keys) {
+        std::string flag = "--" + key;
+        std::replace(flag.begin(), flag.end(), '_', '-');
+        const std::string val = optionValue(args, flag);
+        if (!val.empty()) {
+            double dval = 0.0;
+            if (parseDoubleStrict(val, dval)) {
+                params[key] = dval;
+            }
+        }
+    }
+
+    const auto frame = sovereign::indicators::IndicatorEngine::buildFrame(snapshot.bars, params);
+    
+    std::cout
+        << "{\n"
+        << "  \"type\": \"indicator_frame\",\n"
+        << "  \"symbol\": \"" << jsonEscape(symbol) << "\",\n"
+        << "  \"timeframe\": \"" << jsonEscape(timeframe) << "\",\n"
+        << "  \"total_bars\": " << frame.rows.size() << ",\n"
+        << "  \"ready_bars\": " << frame.ready_rows << ",\n"
+        << "  \"rows\": [\n";
+
+    const std::size_t start = (frame.rows.size() > show_last) ? (frame.rows.size() - show_last) : 0;
+    for (std::size_t i = start; i < frame.rows.size(); ++i) {
+        const auto& row = frame.rows[i];
+        std::cout << "    {\n";
+        std::cout << "      \"timestamp\": \"" << jsonEscape(row.bar.timestamp) << "\",\n";
+        std::cout << "      \"open\": " << row.bar.open << ",\n";
+        std::cout << "      \"high\": " << row.bar.high << ",\n";
+        std::cout << "      \"low\": " << row.bar.low << ",\n";
+        std::cout << "      \"close\": " << row.bar.close << ",\n";
+        std::cout << "      \"volume\": " << row.bar.volume << ",\n";
+        std::cout << "      \"metrics\": {\n";
+        for (std::size_t j = 0; j < row.metrics.size(); ++j) {
+            std::cout << "        \"" << jsonEscape(row.metrics[j].first) << "\": " << row.metrics[j].second;
+            if (j + 1 < row.metrics.size()) std::cout << ",";
+            std::cout << "\n";
+        }
+        std::cout << "      }\n";
+        std::cout << "    }";
+        if (i + 1 < frame.rows.size()) std::cout << ",";
+        std::cout << "\n";
+    }
+    std::cout << "  ]\n}\n";
+    
+    return 0;
+}
+
+int printRiskCheck(const std::vector<std::string>& args) {
+    sovereign::RiskLimits limits;
+    limits.max_drawdown = 0.20;
+    const std::string max_dd_str = optionValue(args, "--max-drawdown");
+    if (!max_dd_str.empty()) {
+        parseDoubleStrict(max_dd_str, limits.max_drawdown);
+    }
+    limits.fail_closed = !hasFlag(args, "--fail-open");
+
+    sovereign::TradeOrder order{};
+    const std::string notional_str = optionValue(args, "--notional", "0.0");
+    const std::string vol_str = optionValue(args, "--volatility", "1.0");
+    const std::string dd_str = optionValue(args, "--drawdown", "0.0");
+    
+    parseDoubleStrict(notional_str, order.notional);
+    parseDoubleStrict(vol_str, order.volatility);
+    parseDoubleStrict(dd_str, order.current_drawdown);
+
+    sovereign::PreTradeRisk engine(limits);
+    const auto decision = engine.validate(order);
+
+    std::cout
+        << "{\n"
+        << "  \"type\": \"risk_decision\",\n"
+        << "  \"approved\": " << (decision.approved ? "true" : "false") << ",\n"
+        << "  \"halt_trading\": " << (decision.halt_trading ? "true" : "false") << ",\n"
+        << "  \"observed_drawdown\": " << decision.observed_drawdown << ",\n"
+        << "  \"limit\": " << decision.limit << ",\n"
+        << "  \"reason\": \"" << jsonEscape(decision.reason) << "\"\n"
+        << "}\n";
+    
+    return decision.approved ? 0 : 2;
+}
+
+void printBacktestResult(const sovereign::FrameBacktestResult& fr) {
+    const auto& s = fr.base.summary;
+    const auto& mc = fr.monte_carlo;
+    std::cout << "{\n"
+        << "  \"type\": \"backtest_result\",\n"
+        << "  \"engine\": \"sovereign_cpp_core\",\n"
+        << "  \"mode\": \"" << jsonEscape(fr.mode) << "\",\n"
+        << "  \"ok\": " << (s.ok ? "true" : "false") << ",\n"
+        << "  \"metrics\": {\n"
+        << "    \"trades\": " << s.trades << ",\n"
+        << "    \"winners\": " << s.winners << ",\n"
+        << "    \"losers\": " << s.losers << ",\n"
+        << "    \"net_return\": " << s.net_return << ",\n"
+        << "    \"max_drawdown\": " << s.max_drawdown << ",\n"
+        << "    \"win_rate\": " << s.win_rate << ",\n"
+        << "    \"expectancy\": " << s.expectancy << ",\n"
+        << "    \"expected_value\": " << s.expectancy << ",\n"
+        << "    \"sharpe_ratio\": " << s.sharpe << ",\n"
+        << "    \"sortino_ratio\": " << s.sortino << ",\n"
+        << "    \"monte_carlo\": {\n"
+        << "      \"runs\": " << mc.runs << ",\n"
+        << "      \"sample_size\": " << mc.sample_size << ",\n"
+        << "      \"mean_final_return\": " << mc.mean_final_return << ",\n"
+        << "      \"median_final_return\": " << mc.median_final_return << ",\n"
+        << "      \"p05_final_return\": " << mc.p05_final_return << ",\n"
+        << "      \"p95_final_return\": " << mc.p95_final_return << ",\n"
+        << "      \"probability_of_loss\": " << mc.probability_of_loss << ",\n"
+        << "      \"mean_max_drawdown\": " << mc.mean_max_drawdown << ",\n"
+        << "      \"p95_max_drawdown\": " << mc.p95_max_drawdown << "\n"
+        << "    }\n"
+        << "  },\n";
+
+    // Equity curve (compact — first + last 50 points to cap output size)
+    std::cout << "  \"equity_curve\": [\n";
+    const auto& pts = fr.base.equity_curve.points;
+    const std::size_t max_pts = 100;
+    const std::size_t step = pts.size() > max_pts ? (pts.size() / max_pts) : 1;
+    bool first_pt = true;
+    for (std::size_t i = 0; i < pts.size(); i += step) {
+        if (!first_pt) std::cout << ",\n";
+        std::cout << "    {\"timestamp\":\"" << jsonEscape(pts[i].timestamp) << "\",\"equity\":" << pts[i].equity << "}";
+        first_pt = false;
+    }
+    if (!pts.empty()) {
+        const auto& last = pts.back();
+        std::cout << ",\n    {\"timestamp\":\"" << jsonEscape(last.timestamp) << "\",\"equity\":" << last.equity << "}";
+    }
+    std::cout << "\n  ],\n";
+
+    // Trades (cap at 500 to avoid huge payloads)
+    std::cout << "  \"trades\": [\n";
+    const std::size_t max_trades = 500;
+    const auto& trades = fr.base.trades;
+    for (std::size_t i = 0; i < trades.size() && i < max_trades; ++i) {
+        const auto& t = trades[i];
+        if (i > 0) std::cout << ",\n";
+        std::cout << "    {\"symbol\":\"" << jsonEscape(t.symbol)
+            << "\",\"entry_time\":\"" << jsonEscape(t.entry_time)
+            << "\",\"exit_time\":\"" << jsonEscape(t.exit_time)
+            << "\",\"entry_price\":" << t.entry_price
+            << ",\"exit_price\":" << t.exit_price
+            << ",\"net_return\":" << t.net_return
+            << ",\"confidence\":" << t.confidence << "}";
+    }
+    std::cout << "\n  ]\n}\n";
+}
+
+int printBacktest(const std::vector<std::string>& args) {
+    const std::string mode = optionValue(args, "--mode", "native");
+
+    // ── Mode B: JS-annotated frame ────────────────────────────────────────────
+    if (mode == "frame") {
+        const std::string frame_path = optionValue(args, "--frame");
+        if (frame_path.empty()) {
+            std::cout << "{\"ok\":false,\"error\":\"--frame path required for frame mode\"}\n";
+            return 1;
+        }
+        sovereign::FrameBacktestConfig cfg;
+        // Parse frame file (populates cfg from embedded fields)
+        auto rows = sovereign::FrameBacktester::parseFrameFile(frame_path, cfg);
+        // Allow CLI flags to override frame-embedded config
+        { double d = 0.0; std::string v;
+          v = optionValue(args, "--threshold");        if (!v.empty() && parseDoubleStrict(v, d)) cfg.threshold = d;
+          v = optionValue(args, "--horizon");          if (!v.empty() && parseDoubleStrict(v, d)) cfg.horizon = static_cast<int>(d);
+          v = optionValue(args, "--cost-bps");         if (!v.empty() && parseDoubleStrict(v, d)) cfg.cost_bps = d;
+          v = optionValue(args, "--monte-carlo-runs"); if (!v.empty() && parseDoubleStrict(v, d)) cfg.monte_carlo_runs = static_cast<int>(d);
+          v = optionValue(args, "--timeframe");        if (!v.empty()) cfg.timeframe = v;
+          v = optionValue(args, "--from");             if (!v.empty()) cfg.from_date = v;
+          v = optionValue(args, "--to");               if (!v.empty()) cfg.to_date = v;
+        }
+        if (rows.empty()) {
+            std::cout << "{\"ok\":false,\"error\":\"frame file contained no valid rows\"}\n";
+            return 1;
+        }
+        const auto result = sovereign::FrameBacktester::runFromAnnotated(rows, cfg);
+        printBacktestResult(result);
+        return result.base.summary.ok ? 0 : 1;
+    }
+
+    // ── Mode A: native C++ signal from OHLCV bars ─────────────────────────────
+    const auto input = std::filesystem::path(optionValue(args, "--input", "storage/data/cache"));
+    const std::string symbols_str = optionValue(args, "--symbol");
+    const std::string timeframe   = optionValue(args, "--timeframe", "1d");
+    const std::size_t max_bars    = parseSizeOption(args, "--max-bars", 0U);
+
+    if (symbols_str.empty()) {
+        std::cout << "{\"ok\":false,\"error\":\"--symbol required for native mode\"}\n";
+        return 1;
+    }
+
+    // Build BacktestConfig from CLI flags
+    sovereign::BacktestConfig bt_cfg;
+    sovereign::FrameBacktestConfig fr_cfg;
+    fr_cfg.timeframe = timeframe;
+    { double d = 0.0; std::string v;
+      v = optionValue(args, "--threshold");        if (!v.empty() && parseDoubleStrict(v, d)) bt_cfg.entry_threshold = d;
+      v = optionValue(args, "--horizon");          if (!v.empty() && parseDoubleStrict(v, d)) bt_cfg.holding_period = static_cast<std::size_t>(d);
+      v = optionValue(args, "--cost-bps");         if (!v.empty() && parseDoubleStrict(v, d)) { bt_cfg.fee_bps = d * 0.5; bt_cfg.slippage_bps = d * 0.5; }
+      v = optionValue(args, "--monte-carlo-runs"); if (!v.empty() && parseDoubleStrict(v, d)) fr_cfg.monte_carlo_runs = static_cast<int>(d);
+    }
+
+    // Split comma-separated symbols
+    std::vector<std::string> symbols;
+    { std::istringstream ss(symbols_str); std::string s;
+      while (std::getline(ss, s, ',')) if (!s.empty()) symbols.push_back(s);
+    }
+
+    // Run per-symbol, aggregate trades
+    sovereign::FrameBacktestResult aggregate;
+    aggregate.mode = "native";
+    aggregate.base.equity_curve.initial_equity = 1.0;
+    aggregate.base.equity_curve.points.push_back({"start", 1.0});
+    double equity = 1.0;
+    std::vector<double> all_returns;
+
+    for (const auto& sym : symbols) {
+        const auto snap = sovereign::loadMarketDataSnapshot(input, sym, timeframe, max_bars);
+        if (snap.bars.empty()) continue; // quality.ok may be false for minor issues; trust Backtester::run's own validation
+        const auto res = sovereign::Backtester::run(snap.bars, bt_cfg);
+        for (const auto& t : res.trades) {
+            equity *= (1.0 + t.net_return);
+            all_returns.push_back(t.net_return);
+            aggregate.base.trades.push_back(t);
+            aggregate.base.equity_curve.points.push_back({t.exit_time, equity});
+            if (t.net_return > 0.0) ++aggregate.base.summary.winners;
+            else if (t.net_return < 0.0) ++aggregate.base.summary.losers;
+        }
+    }
+
+    // Aggregate summary
+    auto& s = aggregate.base.summary;
+    s.trades       = aggregate.base.trades.size();
+    s.net_return   = equity - 1.0;
+    { double peak = 1.0, dd = 0.0;
+      for (const auto& pt : aggregate.base.equity_curve.points) {
+          if (pt.equity > peak) peak = pt.equity;
+          if (peak > 0.0) dd = std::max(dd, (peak - pt.equity) / peak);
+      }
+      s.max_drawdown = dd;
+    }
+    s.win_rate   = s.trades > 0 ? static_cast<double>(s.winners) / static_cast<double>(s.trades) : 0.0;
+    s.expectancy = !all_returns.empty()
+        ? std::accumulate(all_returns.begin(), all_returns.end(), 0.0) / static_cast<double>(all_returns.size()) : 0.0;
+
+    if (!aggregate.base.equity_curve.points.empty()) {
+        std::vector<double> eq;
+        for (const auto& pt : aggregate.base.equity_curve.points) eq.push_back(pt.equity);
+        const auto stats = sovereign::StatsEngine::summarize(eq,
+            sovereign::constants::DEFAULT_RISK_FREE_RATE,
+            sovereign::constants::TRADING_DAYS_PER_YEAR);
+        s.sharpe  = stats.sharpe;
+        s.sortino = stats.sortino;
+    }
+    s.ok = !aggregate.base.trades.empty();
+
+    const uint64_t seed = static_cast<uint64_t>(all_returns.size()) * 6364136223846793005ULL;
+    aggregate.monte_carlo = sovereign::FrameBacktester::runMonteCarlo(
+        all_returns, fr_cfg.monte_carlo_runs, fr_cfg.tail_alpha, seed);
+
+    printBacktestResult(aggregate);
+    return s.ok ? 0 : 1;
+}
+
+// ─── ml predict / ml compare ──────────────────────────────────────────────────
+// Real ONNX inference over a JS-built feature frame, using the shared serving manifest
+// (column order + train medians + model list) so the C++ feature vector matches training
+// exactly (no train/serve skew). Outputs per-model accuracy + class counts as JSON.
+
+struct ServingModel { std::string name, path, input_set; std::size_t n_features = 0; };
+struct ServingManifest {
+    std::vector<std::string> columns;                 // feature columns, in training order
+    std::unordered_map<std::string, double> medians;  // column -> train-split median
+    std::vector<ServingModel> models;
+};
+
+bool loadServingManifest(const std::string& path, ServingManifest& out) {
+    std::ifstream in(path);
+    if (!in) return false;
+    std::string line;
+    while (std::getline(in, line)) {
+        if (line.empty() || line[0] == '#') continue;
+        std::istringstream ss(line);
+        std::string tag; ss >> tag;
+        if (tag == "COL") {
+            std::string name; double med = 0.0;
+            ss >> name >> med;
+            out.columns.push_back(name);
+            out.medians[name] = med;
+        } else if (tag == "MODEL") {
+            ServingModel m; double nf = 0.0;
+            ss >> m.name >> m.path >> m.input_set >> nf;
+            m.n_features = static_cast<std::size_t>(nf);
+            out.models.push_back(m);
+        }
+    }
+    return !out.columns.empty() && !out.models.empty();
+}
+
+bool isCrossFamily(const std::string& c) {
+    return c.rfind("regime_", 0) == 0 || c.rfind("xf_corr_", 0) == 0;
+}
+
+// Parse a feature CSV into a header index + raw string cells (NaN for blanks handled later).
+struct FeatureCsv {
+    std::unordered_map<std::string, std::size_t> col_index;
+    std::vector<std::vector<std::string>> rows;
+    bool has_label = false;
+    std::size_t label_col = 0;
+};
+
+bool loadFeatureCsv(const std::string& path, FeatureCsv& out, std::size_t limit) {
+    std::ifstream in(path);
+    if (!in) return false;
+    std::string line;
+    if (!std::getline(in, line)) return false;
+    { std::istringstream ss(line); std::string h; std::size_t i = 0;
+      while (std::getline(ss, h, ',')) {
+          out.col_index[h] = i;
+          if (h == "label_class") { out.has_label = true; out.label_col = i; }
+          ++i;
+      }
+    }
+    while (std::getline(in, line)) {
+        if (line.empty()) continue;
+        std::vector<std::string> cells; std::istringstream ss(line); std::string c;
+        while (std::getline(ss, c, ',')) cells.push_back(c);
+        out.rows.push_back(std::move(cells));
+        if (limit > 0 && out.rows.size() >= limit) break;
+    }
+    return true;
+}
+
+int runMlModel(const ServingManifest& man, const FeatureCsv& csv,
+               const ServingModel& m, const std::string& models_dir, bool first) {
+    // Resolve this model's input columns (cross-family subset preserves training order).
+    std::vector<std::string> cols;
+    for (const auto& c : man.columns) {
+        if (m.input_set == "cross_family") { if (isCrossFamily(c)) cols.push_back(c); }
+        else cols.push_back(c);
+    }
+    const std::size_t n = cols.size();
+    const std::size_t rows = csv.rows.size();
+
+    // Build the flat float matrix: CSV value when finite, else the train median.
+    std::vector<float> flat; flat.reserve(rows * n);
+    for (const auto& row : csv.rows) {
+        for (const auto& col : cols) {
+            double v = 0.0; bool have = false;
+            auto it = csv.col_index.find(col);
+            if (it != csv.col_index.end() && it->second < row.size()) {
+                const std::string& cell = row[it->second];
+                if (!cell.empty() && parseDoubleStrict(cell, v) && std::isfinite(v)) have = true;
+            }
+            if (!have) { auto mit = man.medians.find(col); v = (mit != man.medians.end()) ? mit->second : 0.0; }
+            flat.push_back(static_cast<float>(v));
+        }
+    }
+
+    const std::string model_file = models_dir + "/" + m.name + ".onnx";
+    sovereign::ml::OnnxModel model(model_file);
+    auto res = model.predictBatch(flat, rows, n);
+
+    // Accuracy vs label_class + predicted-class histogram.
+    std::map<int, std::size_t> class_counts;
+    std::size_t correct = 0, scored = 0;
+    for (std::size_t i = 0; i < res.predicted_class.size(); ++i) {
+        const int pc = res.predicted_class[i];
+        ++class_counts[pc];
+        if (csv.has_label && csv.label_col < csv.rows[i].size()) {
+            double lbl = 0.0;
+            if (parseDoubleStrict(csv.rows[i][csv.label_col], lbl)) {
+                ++scored;
+                if (static_cast<int>(lbl) == pc) ++correct;
+            }
+        }
+    }
+    const double acc = scored > 0 ? static_cast<double>(correct) / static_cast<double>(scored) : 0.0;
+
+    if (!first) std::cout << ",\n";
+    std::cout << "    {\"model\":\"" << jsonEscape(m.name) << "\""
+              << ",\"backend\":\"" << jsonEscape(res.backend) << "\""
+              << ",\"input_set\":\"" << jsonEscape(m.input_set) << "\""
+              << ",\"n_features\":" << n
+              << ",\"rows\":" << rows
+              << ",\"scored\":" << scored
+              << ",\"accuracy\":" << acc
+              << ",\"class_counts\":{";
+    bool fc = true;
+    for (const auto& [cls, cnt] : class_counts) {
+        if (!fc) std::cout << ",";
+        std::cout << "\"" << cls << "\":" << cnt;
+        fc = false;
+    }
+    std::cout << "}}";
+    return res.backend == "onnx_runtime" ? 0 : 2;
+}
+
+int printMl(const std::vector<std::string>& args) {
+    const std::string sub = args.size() > 1 ? args[1] : "";
+    if (sub != "predict" && sub != "compare") {
+        std::cout << "{\"ok\":false,\"error\":\"usage: ml <predict|compare> --frame CSV [--manifest TXT] [--models-dir DIR] [--model NAME] [--limit N]\"}\n";
+        return 1;
+    }
+    const std::string frame = optionValue(args, "--frame", "storage/data/ml/feature_frame.csv");
+    const std::string models_dir = optionValue(args, "--models-dir", "storage/models");
+    const std::string manifest_path = optionValue(args, "--manifest", models_dir + "/serving_manifest.txt");
+    const std::string only_model = optionValue(args, "--model");
+    const std::size_t limit = parseSizeOption(args, "--limit", 0U);
+
+    ServingManifest man;
+    if (!loadServingManifest(manifest_path, man)) {
+        std::cout << "{\"ok\":false,\"error\":\"could not read serving manifest\",\"path\":\"" << jsonEscape(manifest_path) << "\"}\n";
+        return 1;
+    }
+    FeatureCsv csv;
+    if (!loadFeatureCsv(frame, csv, limit) || csv.rows.empty()) {
+        std::cout << "{\"ok\":false,\"error\":\"could not read feature frame or no rows\",\"path\":\"" << jsonEscape(frame) << "\"}\n";
+        return 1;
+    }
+
+    std::vector<ServingModel> targets;
+    for (const auto& m : man.models) {
+        if (sub == "predict" && !only_model.empty() && m.name != only_model) continue;
+        targets.push_back(m);
+    }
+    if (targets.empty()) {
+        std::cout << "{\"ok\":false,\"error\":\"no matching model\"}\n";
+        return 1;
+    }
+
+    std::cout << "{\"ok\":true,\"command\":\"ml " << sub << "\""
+              << ",\"frame\":\"" << jsonEscape(frame) << "\""
+              << ",\"rows\":" << csv.rows.size()
+              << ",\"results\":[\n";
+    int rc = 0; bool first = true;
+    for (const auto& m : targets) {
+        const int mrc = runMlModel(man, csv, m, models_dir, first);
+        if (mrc != 0) rc = mrc;
+        first = false;
+    }
+    std::cout << "\n  ]}\n";
+    return rc;
+}
+
 void printUsage() {
     std::cout
         << "Sovereign C++ Core\n"
@@ -466,9 +989,13 @@ void printUsage() {
         << "  status --snapshot PATH --quality PATH --json\n"
         << "  stats --equity 100,110,105 --json\n"
         << "  data summary --symbol AAPL --timeframe 1d --json\n"
-        << "  correlation --symbols AAPL,MSFT,SPX --timeframe 1d --json\n"
-        << "  universe --input data/cache/backtest_history.json --json\n"
-        << "  portfolio --cash 10000.0 --positions \"AAPL,10,150,180;MSFT,5,300,320\"\n";
+        << "  correlation --symbols AAPL,MSFT,SPY --timeframe 1d --json\n"
+        << "  universe --input storage/data/cache/backtest_history.json --json\n"
+        << "  portfolio --cash 10000.0 --positions \"AAPL,10,150,180;MSFT,5,300,320\"\n"
+        << "  indicators --symbol AAPL --timeframe 1d --json\n"
+        << "  risk check --notional 1000 --volatility 5000 --drawdown 0.05\n"
+        << "  ml compare --frame storage/data/ml/feature_frame.csv --json\n"
+        << "  ml predict --model xgboost_v1 --frame PATH [--limit N]\n";
 }
 
 } // namespace
@@ -499,7 +1026,7 @@ int main(int argc, char** argv) {
         return printStats(args);
     }
     if (args[0] == "kill-switch") {
-        const auto lockPath = std::filesystem::path("data/cache/kill_switch.lock");
+        const auto lockPath = std::filesystem::path("storage/data/cache/kill_switch.lock");
         if (args.size() > 1) {
             const std::string sub = args[1];
             if (sub == "engage") {
@@ -538,6 +1065,18 @@ int main(int argc, char** argv) {
     }
     if (args[0] == "portfolio") {
         return printPortfolio(args);
+    }
+    if (args[0] == "indicators") {
+        return printIndicators(args);
+    }
+    if (args[0] == "risk" && args.size() > 1 && args[1] == "check") {
+        return printRiskCheck(args);
+    }
+    if (args[0] == "backtest") {
+        return printBacktest(args);
+    }
+    if (args[0] == "ml") {
+        return printMl(args);
     }
 
     std::cerr << "Unknown command: " << args[0] << "\n";

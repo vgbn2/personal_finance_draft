@@ -5,6 +5,7 @@ const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
+const manifest = require('../../../backend/cli/tui/manifest');
 
 const CLI_PATH = path.join(__dirname, '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
 
@@ -77,6 +78,13 @@ test('settings auto_backfill flag and backfill_interval_min round-trip', () => {
     assert.equal(show.feature_flags.auto_backfill, true);
     assert.equal(show.trading.backfill_interval_min, 720);
   });
+});
+
+test('tui settings flag picker includes auto_backfill', () => {
+  const picker = manifest.commands.settings.find((item) => item.id === 'flags');
+  assert.ok(picker);
+  assert.ok(Array.isArray(picker.flags['--flag'].options));
+  assert.ok(picker.flags['--flag'].options.includes('auto_backfill'));
 });
 
 test('settings reset restores defaults and show matches default shape', () => {

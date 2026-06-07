@@ -38,8 +38,8 @@ constexpr double RSI_NEUTRAL_LEVEL = 50.0;
 constexpr double STRENGTH_NEUTRAL = 0.5;
 
 // File Paths
-constexpr std::string_view DEFAULT_HISTORY_CACHE = "data/cache/backtest_history.json";
-constexpr std::string_view DEFAULT_SNAPSHOT_CACHE = "data/cache/last_fetch.json";
+constexpr std::string_view DEFAULT_HISTORY_CACHE = "storage/data/cache/backtest_history.json";
+constexpr std::string_view DEFAULT_SNAPSHOT_CACHE = "storage/data/cache/last_fetch.json";
 constexpr std::string_view DEFAULT_BACKTEST_ARTIFACT = "data/backtests/latest_backtest.json";
 
 } // namespace constants

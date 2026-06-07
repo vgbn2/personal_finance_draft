@@ -29,7 +29,17 @@ FeatureFrame MacroFeatureExtractor::extract(const std::vector<MacroObservation>&
         FeatureRow row;
         row.asset_id = "MACRO";
         row.timestamp = ts;
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
         row.timeframe = "D"; // Macro data is often treated as daily-aligned features
+        // GCC 12 -Wrestrict false positive here: it computes a bogus ~9.2e18-byte
+        // memcpy size for this 1-char literal assignment when extract() is inlined
+        // with the surrounding loop. Not a real overlap (row.timeframe is fresh).
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
         // Calculate specific high-signal features
         calculateRateMomentum(row, series_history_, ts);
@@ -43,7 +53,7 @@ FeatureFrame MacroFeatureExtractor::extract(const std::vector<MacroObservation>&
     return frame;
 }
 
-void MacroFeatureExtractor::calculateRateMomentum(FeatureRow& row, const std::map<std::string, SeriesState>& series_map, const std::string& [[maybe_unused]] current_ts) {
+void MacroFeatureExtractor::calculateRateMomentum(FeatureRow& row, const std::map<std::string, SeriesState>& series_map, [[maybe_unused]] const std::string& current_ts) {
     // Interest rate series (e.g., 2Y Yield, Fed Funds)
     const std::vector<std::string> rate_series = {"US02YIELD", "FEDFUNDS", "DFF", "GS10"};
 
@@ -59,7 +69,7 @@ void MacroFeatureExtractor::calculateRateMomentum(FeatureRow& row, const std::ma
     }
 }
 
-void MacroFeatureExtractor::calculateInflationVelocity(FeatureRow& row, const std::map<std::string, SeriesState>& series_map, const std::string& [[maybe_unused]] current_ts) {
+void MacroFeatureExtractor::calculateInflationVelocity(FeatureRow& row, const std::map<std::string, SeriesState>& series_map, [[maybe_unused]] const std::string& current_ts) {
     // Inflation and economic activity series
     const std::vector<std::string> inflation_series = {"CPI", "CPIAUCSL", "PPI", "US_MANUFACTURING", "US_SERVICES"};
 
@@ -77,7 +87,7 @@ void MacroFeatureExtractor::calculateInflationVelocity(FeatureRow& row, const st
     }
 }
 
-void MacroFeatureExtractor::calculateLiquidityIndex(FeatureRow& row, const std::map<std::string, SeriesState>& series_map, const std::string& [[maybe_unused]] current_ts) {
+void MacroFeatureExtractor::calculateLiquidityIndex(FeatureRow& row, const std::map<std::string, SeriesState>& series_map, [[maybe_unused]] const std::string& current_ts) {
     // Composite score of liquidity-related series
     double composite_score = 0.0;
     int active_components = 0;

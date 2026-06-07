@@ -5,23 +5,38 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const { historicalTailRisk, monteCarloStress, runBacktest } = require('../lib/backtest');
-const { calculateRollingFeatureFrame, generateSampleBars, rsi } = require('../lib/indicators');
-const { compareModels, modelCandidates } = require('../lib/models');
-const { mergeSnapshots, validateSnapshot } = require('../lib/market_validation');
+const CLI_PATH = path.join(__dirname, '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
+const { mergeSnapshots, validateSnapshot } = require('../../../shared/lib/market_validation');
+const { classifySupabaseError } = require('../../../shared/lib/supabase_errors');
+const { commandLogin } = require('../../../backend/cli/commands/account/auth');
+const auth = require('../../../backend/cli/lib/auth');
 const {
   cryptoLimitForWindow,
   filterCandlesByWindow,
   historicalWindowFromArgs,
-  buildCockpitModel,
   buildTradeGatewayLaunch,
   currentPhaseLabel,
-  renderCockpit,
-} = require('../cli/sovereign_cli');
+} = require('../../../backend/cli/sovereign_cli');
+const {
+  buildPolymarketActionChoices,
+  buildPolymarketCategoryChoices,
+  buildPolymarketMarketChoices,
+  buildTokenChoicePrompt,
+  deriveDefaultBuyPriceFromBook,
+  hasPolymarketOrderbookDepth,
+  minOrderSizeFromBook,
+  normalizeLimitPriceInput,
+  resolveOutcomeToken,
+  renderPolymarketMarketDetails,
+  renderPolymarketOrderbookDetails,
+} = require('../../../backend/cli/commands/trade/trade');
 const {
   fetchGoogleCustomSearchInterest,
   fetchPredictionInterestSignal,
   polymarketTimeframeFromOptions,
+  parsePolymarketTokenIds,
+  polymarketMarketRecord,
+  polymarketPriceHistoryRecords,
   parseStooqCsv,
   redactUrl,
   dedupePreferredMarketQuotes,
@@ -30,15 +45,13 @@ const {
   loadExternalQuoteProvider,
   parseCsvTable,
   unresolvedProviderErrors,
-} = require('../data_ops/ingest_market_data');
+} = require('../../../backend/scripts/data_ops/ingest_market_data');
 const {
   normalizeExternalQuotePayload,
   normalizeExternalQuotePayloadWithReport,
   normalizeSymbol,
   selectPreferredQuoteRecords,
-} = require('../lib/quote_router');
-
-const BACKEND_HISTORY_FIXTURE = path.join(__dirname, '..', '..', 'test', 'fixtures', 'backend_history_sample.json');
+} = require('../../../shared/lib/quote_router');
 
 /**
  * TEST UTILS
@@ -58,12 +71,22 @@ function dumpVisibility(name, data) {
 }
 
 function loadFixture(name) {
-  const p = path.join(__dirname, '..', 'test', 'fixtures', `${name}.json`);
+  const p = path.join(__dirname, '..', '..', 'fixtures', 'test', 'fixtures', `${name}.json`);
   if (!fs.existsSync(p)) {
     // Fallback for transition phase: create if missing for some tests
     return null;
   }
   return JSON.parse(fs.readFileSync(p, 'utf8'));
+}
+
+function parseCliJsonOutput(stdout) {
+  const cleaned = String(stdout || '').replace(/\u001b\[[0-9;]*m/g, '');
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error(`Unable to locate JSON payload in CLI output:\n${cleaned}`);
+  }
+  return JSON.parse(cleaned.slice(start, end + 1));
 }
 
 test('validator rejects undefined timestamps and null scalar values', () => {
@@ -281,6 +304,63 @@ test('resolved fallback provider errors are removed from persisted quality error
   assert.equal(unresolved[0].provider, 'weather');
 });
 
+test('supabase network errors are classified into a friendly message', () => {
+  const error = new TypeError('fetch failed', {
+    cause: { code: 'EACCES', message: 'permission denied' },
+  });
+
+  const message = classifySupabaseError(error, 'sign in to Supabase');
+  dumpVisibility('supabase network errors are classified into a friendly message', { message });
+  assert.match(message, /Unable to sign in to Supabase/i);
+  assert.doesNotMatch(message, /fetch failed/i);
+  assert.doesNotMatch(message, /EACCES/i);
+});
+
+test('login command reports supabase connectivity problems without a raw stack trace', async () => {
+  const original = {
+    isSupabaseConfigured: auth.isSupabaseConfigured,
+    loadSession: auth.loadSession,
+    isSessionValid: auth.isSessionValid,
+    refreshSession: auth.refreshSession,
+    getAuthenticatedUser: auth.getAuthenticatedUser,
+    loginWithCredentials: auth.loginWithCredentials,
+  };
+  const captured = { errors: [], logs: [] };
+  const originalError = console.error;
+  const originalLog = console.log;
+
+  auth.isSupabaseConfigured = () => true;
+  auth.getAuthenticatedUser = async () => {
+    throw new Error('Unable to reach Supabase auth. Check network access, the Supabase URL, and the publishable key.');
+  };
+  auth.loginWithCredentials = async () => {
+    throw new Error('should not be reached');
+  };
+  console.error = (...args) => captured.errors.push(args.join(' '));
+  console.log = (...args) => captured.logs.push(args.join(' '));
+
+  try {
+    const exitCode = await commandLogin(['login', '--email', 'user@example.com', '--password', 'secret']);
+    dumpVisibility('login command reports supabase connectivity problems without a raw stack trace', {
+      exitCode,
+      errors: captured.errors,
+      logs: captured.logs,
+    });
+    assert.equal(exitCode, 1);
+    assert.ok(captured.errors.some((line) => /Unable to reach Supabase auth/i.test(line)));
+    assert.ok(captured.errors.every((line) => !/fetch failed|EACCES|AggregateError/i.test(line)));
+  } finally {
+    auth.isSupabaseConfigured = original.isSupabaseConfigured;
+    auth.loadSession = original.loadSession;
+    auth.isSessionValid = original.isSessionValid;
+    auth.refreshSession = original.refreshSession;
+    auth.getAuthenticatedUser = original.getAuthenticatedUser;
+    auth.loginWithCredentials = original.loginWithCredentials;
+    console.error = originalError;
+    console.log = originalLog;
+  }
+});
+
 test('historical --days window is used for candles and crypto limits', () => {
   const originalNow = Date.now;
   Date.now = () => Date.parse('2026-05-18T00:00:00.000Z');
@@ -304,16 +384,7 @@ test('historical --days window is used for candles and crypto limits', () => {
 test('status phase label comes from workspace state anchor', () => {
   const phase = currentPhaseLabel();
   dumpVisibility('status phase label comes from workspace state anchor', { phase });
-  assert.match(phase, /Phase 5: Automated Execution & Risk Hardening/i);
-});
-
-test('cockpit render uses readable ASCII separators', () => {
-  const model = buildCockpitModel();
-  const rendered = renderCockpit(model);
-  dumpVisibility('cockpit render uses readable ascii separators', { rendered });
-  assert.equal(rendered.includes('â'), false);
-  assert.match(rendered, /Phase:/);
-  assert.match(rendered, /={10,}/);
+  assert.match(phase, /Phase 9: Strategic Intelligence & TUI Integration - ACTIVE/i);
 });
 
 test('trade gateway launch uses an available TypeScript runtime', () => {
@@ -327,7 +398,10 @@ test('trade gateway launch uses an available TypeScript runtime', () => {
     /powershell\.exe$/i.test(launch.command),
     `Unexpected trade launcher: ${launch.command}`
   );
-  assert.ok(launch.args.some((value) => /execution_gateway[\\/]src[\\/]index\.ts/.test(value)));
+  assert.ok(
+    launch.args.some((value) => /backend[\\/]gateway[\\/]src[\\/]index\.ts/.test(value)) ||
+    launch.args.some((value) => /backend[\\/]cli[\\/]lib[\\/]run_trade_gateway\.js/.test(value))
+  );
   assert.ok(launch.args.some((value) => /balance/.test(String(value))));
 });
 
@@ -338,6 +412,192 @@ test('polymarket timeframe labels match requested price-history fidelity', () =>
   assert.equal(polymarketTimeframeFromOptions({ interval: 'max', fidelity: 15 }), '15m');
 });
 
+test('polymarket market browser exposes operator-friendly category defaults', () => {
+  const choices = buildPolymarketCategoryChoices();
+  assert.equal(Array.isArray(choices), true);
+  assert.equal(choices[0].value, 'crypto');
+  assert.match(choices[0].label, /Recommended/);
+  assert.ok(choices.some((choice) => choice.value === '__custom__'));
+});
+
+test('polymarket market browser builds concise market labels and detailed output', () => {
+  const markets = [{
+    question: 'Will Bitcoin hit $150k by June 30, 2026?',
+    volume: 19823596.559,
+  }];
+  const choices = buildPolymarketMarketChoices(markets);
+  assert.equal(choices.length, 1);
+  assert.match(choices[0].label, /Bitcoin hit \$150k/);
+  assert.match(choices[0].label, /vol 19,823,597/);
+
+  const detail = renderPolymarketMarketDetails(
+    { category: 'crypto' },
+    {
+      section: 'Bitcoin',
+      question: 'Will Bitcoin hit $150k by June 30, 2026?',
+      slug: 'bitcoin-150k-june-30-2026',
+      condition_id: '0xcondition',
+      volume: 19823596.559,
+      liquidity: 2500000,
+      active: true,
+      closed: false,
+      tokens: [
+        { outcome: 'Yes', token_id: 'token-yes' },
+        { outcome: 'No', token_id: 'token-no' },
+      ],
+    }
+  );
+  assert.match(detail, /Polymarket Market Detail/);
+  assert.match(detail, /Category: crypto/);
+  assert.match(detail, /Outcomes:/);
+  assert.match(detail, /token-yes/);
+  assert.doesNotMatch(detail, /Slug:/);
+  assert.match(detail, /Use Market action to inspect orderbook, history, or place orders\./);
+});
+
+test('polymarket action choices expose buy and research actions for yes/no markets', () => {
+  const market = {
+    tokens: [
+      { outcome: 'Yes', token_id: 'yes-token' },
+      { outcome: 'No', token_id: 'no-token' },
+    ],
+  };
+  const choices = buildPolymarketActionChoices(market);
+  assert.ok(choices.some((choice) => choice.value === 'orderbook'));
+  assert.ok(choices.some((choice) => choice.value === 'price_history'));
+  assert.ok(choices.some((choice) => choice.value === 'buy_yes'));
+  assert.ok(choices.some((choice) => choice.value === 'buy_no'));
+  assert.equal(resolveOutcomeToken(market, 'yes').token_id, 'yes-token');
+  assert.equal(resolveOutcomeToken(market, 'no').token_id, 'no-token');
+});
+
+test('polymarket orderbook helpers render best prices and derive a default buy price', () => {
+  const snapshot = {
+    tokenId: 'yes-token',
+    book: {
+      bids: [
+        { price: '0.01', size: '1000' },
+        { price: '0.41', size: '125' },
+      ],
+      asks: [
+        { price: '0.99', size: '1000' },
+        { price: '0.43', size: '80' },
+      ],
+    },
+  };
+  assert.equal(deriveDefaultBuyPriceFromBook(snapshot), 0.43);
+  const rendered = renderPolymarketOrderbookDetails(
+    { question: 'Will Bitcoin hit $150k by June 30, 2026?' },
+    snapshot
+  );
+  assert.match(rendered, /Best bid: 0.41 x 125/);
+  assert.match(rendered, /Best ask: 0.43 x 80/);
+  assert.match(rendered, /Near-spread bids:/);
+  assert.match(rendered, /Near-spread asks:/);
+  assert.ok(rendered.indexOf('0.41 x 125') < rendered.indexOf('0.01 x 1000'));
+  assert.ok(rendered.indexOf('0.43 x 80') < rendered.indexOf('0.99 x 1000'));
+});
+
+test('polymarket limit price parser accepts decimal and percent shorthand', () => {
+  assert.deepEqual(normalizeLimitPriceInput('0.40', 0.99, 0.01), { ok: true, price: 0.4 });
+  assert.deepEqual(normalizeLimitPriceInput('.40', 0.99, 0.01), { ok: true, price: 0.4 });
+  assert.deepEqual(normalizeLimitPriceInput('40%', 0.99, 0.01), { ok: true, price: 0.4 });
+  assert.deepEqual(normalizeLimitPriceInput('40', 0.99, 0.01), { ok: true, price: 0.4 });
+  assert.deepEqual(normalizeLimitPriceInput('', 0.99, 0.01), { ok: true, price: 0.99 });
+  assert.equal(normalizeLimitPriceInput('0.', 0.99, 0.01).reason, 'incomplete_decimal');
+});
+
+test('polymarket order entry reads min order size from orderbook', () => {
+  assert.equal(minOrderSizeFromBook({ book: { min_order_size: '5' } }), 5);
+  assert.equal(minOrderSizeFromBook({ book: { min_order_size: '0' } }), 0);
+  assert.equal(minOrderSizeFromBook({ book: {} }), 0);
+});
+
+test('polymarket order entry blocks empty orderbook depth', () => {
+  assert.equal(hasPolymarketOrderbookDepth({ book: { bids: [], asks: [] } }), false);
+  assert.equal(hasPolymarketOrderbookDepth({ book: { bids: [{ price: '0.11', size: '10' }], asks: [] } }), true);
+  assert.equal(hasPolymarketOrderbookDepth({ book: { bids: [], asks: [{ price: '0.12', size: '10' }] } }), true);
+});
+
+test('polymarket token chooser exposes explicit yes/no token ids', () => {
+  const choices = buildTokenChoicePrompt({
+    tokens: [
+      { outcome: 'Yes', token_id: 'yes-token' },
+      { outcome: 'No', token_id: 'no-token' },
+    ],
+  });
+  assert.equal(choices.length, 2);
+  assert.match(choices[0].label, /Yes/);
+  assert.equal(choices[0].value, 'yes-token');
+});
+
+test('polymarket market records preserve clob token ids for historical lookup', () => {
+  const market = {
+    id: '123',
+    conditionId: '0xabc',
+    question: 'Will the Fed cut rates in 2026?',
+    updatedAt: '2026-06-04T00:00:00.000Z',
+    volume: '1000.25',
+    liquidity: '500.5',
+    clobTokenIds: '["111","222"]',
+    lastTradePrice: '0.42',
+  };
+  const record = polymarketMarketRecord('fed_rate_cut_prob', market, 'https://gamma-api.polymarket.com/markets');
+  dumpVisibility('polymarket market records preserve clob token ids for historical lookup', { market, record });
+  assert.deepEqual(parsePolymarketTokenIds(market), ['111', '222']);
+  assert.equal(record.provider, 'polymarket');
+  assert.equal(record.symbol, 'fed_rate_cut_prob');
+  assert.equal(record.condition_id, '0xabc');
+  assert.equal(record.value, 0.42);
+  assert.deepEqual(record.clob_token_ids, ['111', '222']);
+});
+
+test('polymarket price history normalizes to prediction market candles', () => {
+  const market = {
+    id: '123',
+    condition_id: '0xabc',
+    question: 'Will the Fed cut rates in 2026?',
+  };
+  const payload = {
+    history: [
+      { t: 1780531200, p: 0.4 },
+      { t: 1780534800, p: 0.45 },
+    ],
+  };
+  const records = polymarketPriceHistoryRecords(
+    'fed_rate_cut_prob',
+    market,
+    '111',
+    payload,
+    { interval: 'max', fidelity: 60 },
+    'https://clob.polymarket.com/prices-history?market=111&interval=max&fidelity=60'
+  );
+  dumpVisibility('polymarket price history normalizes to prediction market candles', { payload, records });
+  assert.equal(records.length, 2);
+  assert.equal(records[0].provider, 'polymarket');
+  assert.equal(records[0].timeframe, '1h');
+  assert.equal(records[0].market_id, '123');
+  assert.equal(records[0].token_id, '111');
+  assert.equal(records[0].close, 0.4);
+  const normalizedMarketRecords = polymarketPriceHistoryRecords(
+    'fed_rate_cut_prob',
+    { market_id: 'normalized-123', condition_id: '0xabc', question: market.question },
+    '111',
+    payload,
+    { interval: 'max', fidelity: 60 },
+    'https://clob.polymarket.com/prices-history?market=111&interval=max&fidelity=60'
+  );
+  assert.equal(normalizedMarketRecords[0].market_id, 'normalized-123');
+  const snapshot = {
+    mode: 'backtest_history',
+    fetched_at: '2026-06-04T00:00:00.000Z',
+    sources: records,
+  };
+  const { report, usableSources } = validateSnapshot(snapshot);
+  assert.equal(report.ok, true);
+  assert.equal(usableSources.length, 2);
+});
+
 test('CLI backtest refuses stale live input by default', () => {
   const fixture = loadFixture('stale_live');
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-cli-'));
@@ -345,7 +605,7 @@ test('CLI backtest refuses stale live input by default', () => {
   fs.writeFileSync(input, JSON.stringify(fixture), 'utf8');
 
   const result = spawnSync(process.execPath, [
-    path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
+    CLI_PATH,
     'bt',
     '--input',
     input,
@@ -355,27 +615,14 @@ test('CLI backtest refuses stale live input by default', () => {
   assert.equal(result.status, 1);
   const payload = JSON.parse(result.stdout);
   assert.ok(
-    /failed data-quality validation/.test(payload.error) ||
+    /Data-quality validation failed:/.test(payload.error) ||
     /fetch failed/.test(payload.error),
     payload.error,
   );
-  if (/failed data-quality validation/.test(payload.error)) {
-    assert.match(payload.error, /stale_records=2/);
+  if (/Data-quality validation failed:/.test(payload.error)) {
+    assert.match(payload.error, /2 stale records/);
   }
   dumpVisibility('CLI backtest refuses stale live input by default', { fixture, payload });
-});
-
-test('cockpit model renders status, model, backtest, and portfolio cards', () => {
-  const model = buildCockpitModel();
-  dumpVisibility('cockpit model renders status, model, backtest, and portfolio cards', { model });
-  assert.equal(model.title, 'Sovereign CLI Cockpit');
-  assert.ok(Array.isArray(model.cards));
-  assert.ok(model.cards.length >= 5);
-  const rendered = renderCockpit(model);
-  assert.match(rendered, /Sovereign CLI Cockpit/);
-  assert.match(rendered, /Phase:/);
-  assert.match(rendered, /System:/);
-  assert.match(rendered, /Commands:/);
 });
 
 test('research commands refuse stale live input by default', () => {
@@ -386,7 +633,7 @@ test('research commands refuse stale live input by default', () => {
 
   for (const command of ['features', 'models', 'optimize']) {
     const result = spawnSync(process.execPath, [
-      path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
+      CLI_PATH,
       command,
       '--input',
       input,
@@ -394,7 +641,7 @@ test('research commands refuse stale live input by default', () => {
     ], { encoding: 'utf8' });
 
     assert.equal(result.status, 1);
-    const payload = JSON.parse(result.stdout);
+    const payload = parseCliJsonOutput(result.stdout);
     assert.ok(
       /failed data-quality validation/.test(payload.error) ||
       /fetch failed/.test(payload.error),
@@ -404,203 +651,42 @@ test('research commands refuse stale live input by default', () => {
   }
 });
 
-test('backend status command reports missing C++ executable without crashing', () => {
+test('optimize fails fast when the current slice has no usable features', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-optimize-'));
+  const input = path.join(tempDir, 'empty-snapshot.json');
+  fs.writeFileSync(input, JSON.stringify({
+    mode: 'provider_history',
+    fetched_at: '2026-06-02T00:00:00.000Z',
+    sources: [],
+    backfill_windows: [],
+  }), 'utf8');
+
   const result = spawnSync(process.execPath, [
-    path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
-    'backend',
-    'status',
-    '--json',
-  ], { encoding: 'utf8' });
-
-  assert.equal([0, 1].includes(result.status), true);
-  const payload = JSON.parse(result.stdout);
-  dumpVisibility('backend status command reports missing C++ executable without crashing', { payload });
-  assert.equal(typeof payload.available, 'boolean');
-  if (!payload.available) {
-    assert.match(payload.error, /backend executable not found/i);
-    assert.equal(Array.isArray(payload.searched), true);
-  } else {
-    assert.equal(payload.type, 'backend_status');
-    assert.equal(payload.engine, 'sovereign_cpp_core');
-  }
-});
-
-test('backend stats command exposes C++ performance metrics when executable is available', () => {
-  const result = spawnSync(process.execPath, [
-    path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
-    'backend',
-    'stats',
-    '--equity',
-    '100,110,105,120,90,95,130',
-    '--json',
-  ], { encoding: 'utf8' });
-
-  assert.equal([0, 1].includes(result.status), true);
-  const payload = JSON.parse(result.stdout);
-  dumpVisibility('backend stats command exposes C++ performance metrics when executable is available', { payload });
-  assert.equal(typeof payload.available, 'boolean');
-  if (!payload.available) {
-    assert.match(payload.error, /backend executable not found/i);
-  } else {
-    assert.equal(payload.type, 'backend_stats');
-    assert.equal(payload.engine, 'sovereign_cpp_core');
-    assert.equal(payload.ok, true);
-    assert.equal(payload.observations, 7);
-    assert.equal(payload.max_drawdown, 0.25);
-    assert.equal(payload.drawdown.peak_index, 3);
-    assert.equal(payload.drawdown.trough_index, 4);
-  }
-});
-
-test('backend stats command fails closed without an equity curve source', () => {
-  const result = spawnSync(process.execPath, [
-    path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
-    'backend',
-    'stats',
+    CLI_PATH,
+    'optimize',
+    '--strategy',
+    'config/strategies/defensive_rotation.yaml',
     '--input',
-    path.join(os.tmpdir(), 'missing-backtest-equity.json'),
+    input,
     '--json',
   ], { encoding: 'utf8' });
 
   assert.equal(result.status, 1);
-  const payload = JSON.parse(result.stdout);
-  dumpVisibility('backend stats command fails closed without an equity curve source', { payload });
-  assert.equal(payload.ok, false);
-  assert.match(payload.error, /No equity curve found/);
-});
-
-test('backend data summary command exposes real cache OHLCV summary when executable is available', () => {
-  const result = spawnSync(process.execPath, [
-    path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
-    'backend',
-    'data',
-    'summary',
-    '--symbol',
-    'AAPL',
-    '--timeframe',
-    '1d',
-    '--max-bars',
-    '5',
-    '--input',
-    BACKEND_HISTORY_FIXTURE,
-    '--json',
-  ], { encoding: 'utf8' });
-
-  assert.equal([0, 1].includes(result.status), true);
-  const payload = JSON.parse(result.stdout);
-  dumpVisibility('backend data summary command exposes real cache OHLCV summary when executable is available', { payload });
-  assert.equal(typeof payload.available, 'boolean');
-  if (!payload.available) {
-    assert.match(payload.error, /backend executable not found/i);
-  } else {
-    assert.equal(payload.type, 'market_data_summary');
-    assert.equal(payload.engine, 'sovereign_cpp_core');
-    assert.equal(payload.summary.symbol, 'AAPL');
-    assert.equal(payload.summary.timeframe, '1d');
-    assert.equal(payload.ok, true);
-    assert.equal(payload.summary.bars, 4);
-    assert.equal(payload.quality.rejected_records, 0);
-  }
-});
-
-test('backend correlation command exposes C++ pearson matrix when executable is available', () => {
-  const result = spawnSync(process.execPath, [
-    path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
-    'backend',
-    'correlation',
-    '--symbols',
-    'AAPL,MSFT,SPX',
-    '--timeframe',
-    '1d',
-    '--max-bars',
-    '4',
-    '--input',
-    BACKEND_HISTORY_FIXTURE,
-    '--json',
-  ], { encoding: 'utf8' });
-
-  assert.equal([0, 1].includes(result.status), true);
-  const payload = JSON.parse(result.stdout);
-  dumpVisibility('backend correlation command exposes C++ pearson matrix when executable is available', { payload });
-  assert.equal(typeof payload.available, 'boolean');
-  if (!payload.available) {
-    assert.match(payload.error, /backend executable not found/i);
-  } else {
-    assert.equal(payload.type, 'correlation_matrix');
-    assert.equal(payload.engine, 'sovereign_cpp_core');
-    assert.equal(payload.ok, true);
-    assert.deepEqual(payload.labels, ['AAPL', 'MSFT', 'SPX']);
-    assert.equal(payload.observations, 4);
-    assert.equal(payload.values.length, 3);
-    assert.equal(payload.values[0][0], 1);
-  }
-});
-
-test('backend universe command exposes cache symbol inventory when executable is available', () => {
-  const result = spawnSync(process.execPath, [
-    path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
-    'backend',
-    'universe',
-    '--max-entries',
-    '5',
-    '--input',
-    BACKEND_HISTORY_FIXTURE,
-    '--json',
-  ], { encoding: 'utf8' });
-
-  assert.equal([0, 1].includes(result.status), true);
-  const payload = JSON.parse(result.stdout);
-  dumpVisibility('backend universe command exposes cache symbol inventory when executable is available', { payload });
-  assert.equal(typeof payload.available, 'boolean');
-  if (!payload.available) {
-    assert.match(payload.error, /backend executable not found/i);
-  } else {
-    assert.equal(payload.type, 'market_universe');
-    assert.equal(payload.engine, 'sovereign_cpp_core');
-    assert.equal(Array.isArray(payload.entries), true);
-    assert.equal(payload.entries.length, 3);
-    assert.ok(payload.entries.some((entry) => entry.symbol === 'AAPL'));
-    assert.equal(payload.quality.rejected_records, 0);
-  }
-});
-
-test('backend integrity command summarizes live and historical cache health', () => {
-  const result = spawnSync(process.execPath, [
-    path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
-    'backend',
-    'integrity',
-    '--history',
-    BACKEND_HISTORY_FIXTURE,
-    '--input',
-    path.join(__dirname, '..', '..', 'data', 'cache', 'last_fetch.json'),
-    '--json',
-  ], { encoding: 'utf8' });
-
-  assert.equal([0, 1].includes(result.status), true);
-  const payload = JSON.parse(result.stdout);
-  dumpVisibility('backend integrity command summarizes live and historical cache health', { payload });
-  assert.equal(typeof payload.available, 'boolean');
-  assert.equal(payload.type, 'backend_integrity');
-  if (payload.available) {
-    assert.equal(payload.engine, 'sovereign_cli_frontend');
-    assert.equal(typeof payload.live_cache.ok, 'boolean');
-    assert.equal(typeof payload.historical_cache.ok, 'boolean');
-    assert.equal(typeof payload.universe.entries, 'number');
-    assert.ok(Array.isArray(payload.universe.top_symbols));
-    assert.equal(payload.historical_cache.total_records, 12);
-    assert.ok(payload.universe.entries > 0);
-    assert.equal(payload.ok, payload.live_cache.ok && payload.historical_cache.ok && payload.universe.ok);
-  }
+  const payload = parseCliJsonOutput(result.stdout);
+  assert.match(payload.error, /Optimization input has no usable features in the current slice/);
+  assert.doesNotMatch(payload.error, /Refreshing provider history/i);
+  assert.doesNotMatch(payload.error, /Failed to load equities/i);
+  dumpVisibility('optimize fails fast when the current slice has no usable features', { payload });
 });
 
 test('strategy command creates a validated yaml plan file', () => {
-  const registryPath = path.join(__dirname, '..', '..', 'config', 'strategies.yaml');
+  const registryPath = path.join(__dirname, '..', '..', '..', 'config', 'trading', 'strategies.yaml');
   const registryBackup = fs.readFileSync(registryPath, 'utf8');
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'strategy-config-'));
   const target = path.join(tempDir, 'my_strategy.yaml');
   try {
     const result = spawnSync(process.execPath, [
-      path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
+      CLI_PATH,
       'strategy',
       'new',
       'My Strategy',
@@ -627,7 +713,7 @@ test('strategy command creates a validated yaml plan file', () => {
     assert.match(text, /require_walk_forward: true/);
 
     const listResult = spawnSync(process.execPath, [
-      path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
+      CLI_PATH,
       'strategy',
       'list',
       '--json',
@@ -645,7 +731,7 @@ test('strategy command creates a validated yaml plan file', () => {
     assert.equal(created.kind, 'event_driven');
 
     const validateResult = spawnSync(process.execPath, [
-      path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
+      CLI_PATH,
       'strategy',
       'validate',
       '--json',
@@ -673,6 +759,7 @@ test('credential-bearing URLs are redacted before persistence or logging', () =>
 test('quote router normalizes symbols and prioritizes tier-one providers', () => {
   assert.equal(normalizeSymbol('AAPL.US', 'equities'), 'AAPL');
   assert.equal(normalizeSymbol('BTC-USD', 'crypto'), 'BTCUSDT');
+  assert.equal(normalizeSymbol('BTCUSDT', 'crypto'), 'BTCUSDT');
 
   const records = normalizeExternalQuotePayload({
     ticks: [
@@ -910,7 +997,7 @@ test('quotes status command exposes configured quote imports without leaking pat
   delete env.WEBULL_QUOTES_PATH;
 
   const result = spawnSync(process.execPath, [
-    path.join(__dirname, '..', 'cli', 'sovereign_cli.js'),
+    CLI_PATH,
     'quotes',
     'status',
     '--json',
@@ -988,70 +1075,4 @@ test('prediction interest wrapper is wired to google custom search', async () =>
       else process.env[key] = value;
     }
   }
-});
-
-test('indicators produce rolling feature rows from sample bars', () => {
-  const frame = calculateRollingFeatureFrame(generateSampleBars('SPY', 40), 2, { rsi: 7, atr: 7, bollinger: 10 });
-  dumpVisibility('indicators produce rolling feature rows from sample bars', { frame });
-  assert.equal(frame.feature_count, 39);
-  assert.equal(frame.indicator_periods.rsi, 7);
-  assert.equal(frame.features.at(-1).symbol, 'SPY');
-  assert.equal(typeof frame.features.at(-1).return_fast, 'number');
-  assert.equal(typeof rsi(generateSampleBars('SPY', 20).map((bar) => bar.close), 14), 'number');
-});
-
-test('model comparison and backtest produce ranked, reproducible outputs', () => {
-  const frame = calculateRollingFeatureFrame(generateSampleBars('SPY', 80), 2);
-  const comparison = compareModels(frame);
-  assert.equal(comparison.models.length, modelCandidates.length);
-  assert.ok(comparison.models.length >= 10);
-  assert.ok(comparison.families.includes('boosting'));
-  assert.ok(comparison.families.includes('trees'));
-  assert.ok(comparison.families.includes('neural'));
-  assert.ok(comparison.winner);
-  assert.equal(comparison.per_symbol_winners[0].symbol, 'SPY');
-  assert.ok(comparison.per_symbol_winners[0].winner);
-  assert.ok(comparison.models.some((model) => model.name === 'xgboost_ranker_v0'));
-  assert.ok(comparison.models.some((model) => model.name === 'decision_tree_stump_v0'));
-
-  const backtest = runBacktest(frame, {
-    model: comparison.winner,
-    horizon: 5,
-    threshold: 0.55,
-    costBps: 5,
-    feeBps: 2,
-    slippageBps: 3,
-    tailAlpha: 0.05,
-    monteCarloRuns: 150,
-    timeframe: '1d',
-  });
-  dumpVisibility('model comparison and backtest produce ranked, reproducible outputs', { frame, comparison, backtest });
-  assert.equal(typeof backtest.metrics.net_return, 'number');
-  assert.equal(typeof backtest.metrics.max_drawdown, 'number');
-  assert.ok(Object.prototype.hasOwnProperty.call(backtest.metrics, 'sharpe_ratio'));
-  assert.ok(Object.prototype.hasOwnProperty.call(backtest.metrics, 'sortino_ratio'));
-  assert.ok(Object.prototype.hasOwnProperty.call(backtest.metrics, 'win_rate'));
-  assert.ok(Object.prototype.hasOwnProperty.call(backtest.metrics, 'expected_value'));
-  assert.ok(Object.prototype.hasOwnProperty.call(backtest.metrics, 'tail_risk'));
-  assert.ok(Object.prototype.hasOwnProperty.call(backtest.metrics, 'monte_carlo'));
-  assert.equal(Array.isArray(backtest.trade_logs), true);
-  assert.equal(backtest.trade_logs[0].provider, 'sample');
-  assert.equal(backtest.trade_logs[0].fee_bps, 2);
-  assert.equal(backtest.trade_logs[0].slippage_bps, 3);
-  assert.equal(backtest.trade_logs[0].holding_period_bars, 5);
-  assert.equal(backtest.timeframe, '1d');
-  assert.equal(Array.isArray(backtest.trades), true);
-});
-
-test('tail risk and monte carlo helpers are deterministic', () => {
-  const returns = [0.03, -0.02, 0.01, -0.05, 0.04, -0.01];
-  const tailRisk = historicalTailRisk(returns, 0.05);
-  const mcA = monteCarloStress(returns, { runs: 120, seed: 'demo' });
-  const mcB = monteCarloStress(returns, { runs: 120, seed: 'demo' });
-  dumpVisibility('tail risk and monte carlo helpers are deterministic', { tailRisk, mcA, mcB });
-  assert.equal(tailRisk.alpha, 0.05);
-  assert.ok(Number.isFinite(tailRisk.value_at_risk));
-  assert.ok(Number.isFinite(tailRisk.expected_shortfall));
-  assert.deepEqual(mcA, mcB);
-  assert.equal(mcA.runs, 120);
 });

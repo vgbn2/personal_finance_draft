@@ -7,7 +7,7 @@
 | Technology | Status | Purpose |
 |------------|--------|---------|
 | C++20 | **Active** | Core calculations, data contracts, backtests, risk, and execution interfaces |
-| Node.js | **Active** | Operational CLI (`scripts/cli/sovereign_cli.js`) and local web/API bridge |
+| Node.js | **Active** | Operational CLI (`backend/cli/sovereign_cli.js`) and local web/API bridge |
 | CMake | **Active** | C++ build configuration (3.15+) |
 | Rust | **Active** | Local CLI core in `cli/` with command, config, portfolio, and backtest helpers |
 | ONNX | *Planned* | CNN and regime model artifact format |
@@ -17,8 +17,8 @@
 ### Web (Node.js)
 | Package | Version | Purpose |
 |---------|---------|---------|
-| node:http | built-in | Local web/API server in `web/app.js` |
-| express | ^4.18.0 | Listed in `web/package.json`; not required by current `web/app.js` runtime |
+| node:http | built-in | Local web/API server in `backend/api/app.js` |
+| express | ^4.18.0 | Listed in `backend/api/package.json`; not required by current `backend/api/app.js` runtime |
 | socket.io | ^4.5.0 | Planned streaming dashboard updates |
 | dotenv | ^16.0.0 | Environment configuration |
 
@@ -50,7 +50,7 @@
 | Variable/File | Purpose | Required |
 |---------------|---------|----------|
 | `.env` | Local secrets, never committed | No |
-| `config/data_sources.yaml` | Source and universe config | Yes |
+| `config/markets/data_sources.yaml` | Source and universe config | Yes |
 | `config/feature_engineering.yaml` | Feature and CNN windows | Yes |
 | `config/strategies.yaml` | Strategy parameters | Yes |
 | `config/risk_management.yaml` | Risk limits | Yes |

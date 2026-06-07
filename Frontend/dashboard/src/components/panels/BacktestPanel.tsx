@@ -169,6 +169,3 @@ export function BacktestPanel() {
     </div>
   );
 }
-iv>
-  );
-}

@@ -1,124 +1,1318 @@
 {
+  "generated_at": "2026-06-07T10:22:38.539Z",
   "source_mode": "sample",
   "data_quality_ok": true,
   "data_quality_report": null,
+  "data_quality_summary": null,
+  "strategy": "defensive_rotation",
+  "model": "xgboost_ranker_v0",
+  "timeframe": "1h",
+  "threshold": 0.62,
+  "strategy_source": "config/strategies/defensive_rotation.yaml",
+  "strategy_family": "mean_reversion",
+  "strategy_lane": "single_asset",
+  "strategy_role": "strategy",
+  "strategy_universe": [
+    "SPY",
+    "QQQ",
+    "BTCUSDT",
+    "XAUUSD"
+  ],
+  "strategy_asset_mode": "portfolio_management",
+  "prop_firm_profile": {
+    "id": "custom_two_step_evaluation_null",
+    "name": "Two-Step Evaluation",
+    "firm": "Custom",
+    "account_type": "two_step",
+    "step_count": 2
+  },
+  "data_start": "2025-01-01T01:00:00.000Z",
+  "data_end": "2025-01-05T23:00:00.000Z",
+  "data_bars": 476,
+  "oos_start_at": "2025-01-04T12:00:00.000Z",
+  "oos_end_at": "2025-01-05T23:00:00.000Z",
+  "oos_bars": 144,
+  "run_started_at": "2026-06-07T10:22:38.441Z",
+  "run_ended_at": "2026-06-07T10:22:38.539Z",
+  "runtime_ms": 98,
   "train_ratio": 0.7,
+  "annualized_return": 8.908198856270378e+28,
+  "oos_annualized_return": 9.549568577635642e+25,
+  "calmar_ratio": 1.2497312337073242e+30,
+  "recovery_factor": 20.384015241226056,
+  "trade_density_per_year": 3714.406779661017,
+  "stress_test": {
+    "runs": 200,
+    "seed": "50:0.92905143",
+    "sample_size": 50,
+    "mean_final_return": 1.5121677976213252,
+    "median_final_return": 1.4378927611970673,
+    "p05_final_return": 0.7171222352620759,
+    "p95_final_return": 2.5801828359775487,
+    "probability_of_loss": 0,
+    "mean_max_drawdown": 0.08180218845109416,
+    "p95_max_drawdown": 0.14711306751553102,
+    "median_path": {
+      "final_return": 1.4395510228876978,
+      "max_drawdown": 0.060259362618651766,
+      "equity_curve": [
+        {
+          "timestamp": "0",
+          "equity": 1
+        },
+        {
+          "timestamp": "1",
+          "equity": 1.0112092973267608
+        },
+        {
+          "timestamp": "2",
+          "equity": 1.099957111733104
+        },
+        {
+          "timestamp": "3",
+          "equity": 1.1420921166357856
+        },
+        {
+          "timestamp": "4",
+          "equity": 1.2131745737462138
+        },
+        {
+          "timestamp": "5",
+          "equity": 1.3470452879284858
+        },
+        {
+          "timestamp": "6",
+          "equity": 1.3137801495908166
+        },
+        {
+          "timestamp": "7",
+          "equity": 1.3514210501821229
+        },
+        {
+          "timestamp": "8",
+          "equity": 1.3971247557996334
+        },
+        {
+          "timestamp": "9",
+          "equity": 1.4276456016980883
+        },
+        {
+          "timestamp": "10",
+          "equity": 1.3946538106879474
+        },
+        {
+          "timestamp": "11",
+          "equity": 1.4361403398998582
+        },
+        {
+          "timestamp": "12",
+          "equity": 1.5069675067758852
+        },
+        {
+          "timestamp": "13",
+          "equity": 1.5722800768748832
+        },
+        {
+          "timestamp": "14",
+          "equity": 1.657133501695277
+        },
+        {
+          "timestamp": "15",
+          "equity": 1.6200094582339954
+        },
+        {
+          "timestamp": "16",
+          "equity": 1.6637157918947338
+        },
+        {
+          "timestamp": "17",
+          "equity": 1.6556082165377883
+        },
+        {
+          "timestamp": "18",
+          "equity": 1.6589211630944938
+        },
+        {
+          "timestamp": "19",
+          "equity": 1.7658122699516483
+        },
+        {
+          "timestamp": "20",
+          "equity": 1.9592931991026399
+        },
+        {
+          "timestamp": "21",
+          "equity": 1.942458642099548
+        },
+        {
+          "timestamp": "22",
+          "equity": 1.8657613593290072
+        },
+        {
+          "timestamp": "23",
+          "equity": 1.991785298107149
+        },
+        {
+          "timestamp": "24",
+          "equity": 2.183984794288761
+        },
+        {
+          "timestamp": "25",
+          "equity": 2.4395510228876978
+        }
+      ]
+    },
+    "worst_path": {
+      "final_return": 0.3684873877820525,
+      "max_drawdown": 0.15772289725178876,
+      "equity_curve": [
+        {
+          "timestamp": "0",
+          "equity": 1
+        },
+        {
+          "timestamp": "1",
+          "equity": 1.0875259671010962
+        },
+        {
+          "timestamp": "2",
+          "equity": 1.0831069193283782
+        },
+        {
+          "timestamp": "3",
+          "equity": 1.0509702156131733
+        },
+        {
+          "timestamp": "4",
+          "equity": 1.0502736652518452
+        },
+        {
+          "timestamp": "5",
+          "equity": 1.1148664491480873
+        },
+        {
+          "timestamp": "6",
+          "equity": 1.00385306684311
+        },
+        {
+          "timestamp": "7",
+          "equity": 1.0611566922398936
+        },
+        {
+          "timestamp": "8",
+          "equity": 1.0854457672003508
+        },
+        {
+          "timestamp": "9",
+          "equity": 1.1296235858951145
+        },
+        {
+          "timestamp": "10",
+          "equity": 1.1531561065519407
+        },
+        {
+          "timestamp": "11",
+          "equity": 1.1194150375273892
+        },
+        {
+          "timestamp": "12",
+          "equity": 1.0741999384579397
+        },
+        {
+          "timestamp": "13",
+          "equity": 1.0264416590157954
+        },
+        {
+          "timestamp": "14",
+          "equity": 0.9799716097596345
+        },
+        {
+          "timestamp": "15",
+          "equity": 0.9712769844429762
+        },
+        {
+          "timestamp": "16",
+          "equity": 1.0193892534941207
+        },
+        {
+          "timestamp": "17",
+          "equity": 1.0387536331137623
+        },
+        {
+          "timestamp": "18",
+          "equity": 1.0690000349901811
+        },
+        {
+          "timestamp": "19",
+          "equity": 1.1292881464128297
+        },
+        {
+          "timestamp": "20",
+          "equity": 1.0979797126269832
+        },
+        {
+          "timestamp": "21",
+          "equity": 1.1171127453536165
+        },
+        {
+          "timestamp": "22",
+          "equity": 1.2037877119226925
+        },
+        {
+          "timestamp": "23",
+          "equity": 1.2299074894927824
+        },
+        {
+          "timestamp": "24",
+          "equity": 1.3759367279915449
+        },
+        {
+          "timestamp": "25",
+          "equity": 1.3684873877820525
+        }
+      ]
+    }
+  },
   "in_sample": {
-    "trades": 16,
-    "net_return": 0.22641868431170553,
-    "gross_return": 0.24619920710872312,
-    "max_drawdown": 0.05722668916559801,
-    "sharpe_ratio": 3.0746461207248275,
-    "sortino_ratio": 4.917044486043576,
-    "win_rate": 0.625,
-    "hit_rate": 0.625,
-    "expectancy": 0.013277682255896789,
-    "expected_value": 0.013277682255896789,
-    "average_win": 0.0331018326931809,
-    "average_loss": -0.019762568472910063,
-    "payoff_ratio": 1.6749762430200255,
-    "turnover": 16,
+    "trades": 33,
+    "net_return": 0.943471432228592,
+    "gross_return": 1.0086759523037854,
+    "max_drawdown": 0.06874793559627705,
+    "sharpe_ratio": 28.755215578195358,
+    "sortino_ratio": 45.49477772648003,
+    "win_rate": 0.7878787878787878,
+    "hit_rate": 0.7878787878787878,
+    "expectancy": 0.02078109131274606,
+    "expected_value": 0.02078109131274606,
+    "average_win": 0.03312853517105142,
+    "average_loss": -0.02508084301810241,
+    "payoff_ratio": 1.3208700818844281,
+    "profit_factor": 4.906088875570733,
+    "turnover": 33,
+    "time_weighted_variance": 0.000887306342508629,
+    "time_weighted_stddev": 0.029787687767072975,
+    "daily_summary": {
+      "trading_days": 4,
+      "daily_returns": [
+        0.6478813179315523,
+        0.0730174532878276,
+        0.018390010559014458,
+        0.07927300433464302
+      ],
+      "daily_return_mean": 0.20464044652825936,
+      "daily_return_stddev": 0.29675652359738997,
+      "best_day_return": 0.6478813179315523,
+      "worst_day_return": 0.018390010559014458,
+      "positive_days": 4,
+      "negative_days": 0,
+      "positive_day_ratio": 1,
+      "positive_return_total": 0.8185617861130374,
+      "absolute_return_total": 0.8185617861130374,
+      "best_day_share_of_positive_profit": 0.7914873732476985
+    },
+    "prop_firm": {
+      "profile_id": "custom_two_step_evaluation_null",
+      "profile_name": "Two-Step Evaluation",
+      "firm": "Custom",
+      "account_type": "two_step",
+      "step_count": 2,
+      "rules": {
+        "profile_id": "custom_two_step_evaluation_null",
+        "profile_name": "Two-Step Evaluation",
+        "firm": "Custom",
+        "account_type": "two_step",
+        "step_count": 2,
+        "max_daily_loss": 0.04,
+        "max_total_loss": 0.06,
+        "min_trading_days": 4,
+        "profit_target": 0.1,
+        "consistency_cap": 0.35,
+        "max_news_window_minutes": 2,
+        "allow_overnight": false,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      },
+      "grade": "F",
+      "score": 27,
+      "verdict": "breach-risk",
+      "passable": false,
+      "warnings": [
+        "max drawdown breaches prop-firm cap",
+        "low trade-day sample for consistency",
+        "best day concentration above consistency cap",
+        "time-weighted variance is elevated"
+      ],
+      "trading_days": 4,
+      "max_daily_loss": 0,
+      "max_daily_loss_usage": 0,
+      "max_total_loss_usage": 1.1457989266046176,
+      "best_day_share_of_positive_profit": 0.7914873732476985,
+      "time_weighted_variance": 0.000887306342508629,
+      "time_weighted_stddev": 0.029787687767072975,
+      "profile": {
+        "profile_id": "custom_two_step_evaluation_null",
+        "profile_name": "Two-Step Evaluation",
+        "firm": "Custom",
+        "account_type": "two_step",
+        "step_count": 2,
+        "max_daily_loss": 0.04,
+        "max_total_loss": 0.06,
+        "min_trading_days": 4,
+        "profit_target": 0.1,
+        "consistency_cap": 0.35,
+        "max_news_window_minutes": 2,
+        "allow_overnight": false,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      }
+    },
     "tail_risk": {
       "alpha": 0.05,
-      "value_at_risk": -0.04332826172269211,
-      "expected_shortfall": -0.04332826172269211,
+      "value_at_risk": -0.03668174334824261,
+      "expected_shortfall": -0.050688486799393584,
       "tail_count": 2,
-      "sample_size": 16
+      "sample_size": 33
     },
     "monte_carlo": {
-      "runs": 1000,
-      "seed": "16:0.21244292",
-      "sample_size": 16,
-      "mean_final_return": 0.23804605286817226,
-      "median_final_return": 0.23247405772127294,
-      "p05_final_return": 0.00208850835988339,
-      "p95_final_return": 0.4928094496948292,
-      "probability_of_loss": 0.047,
-      "mean_max_drawdown": 0.06268232813167632,
-      "p95_max_drawdown": 0.12443411217998661
+      "runs": 200,
+      "seed": "33:0.68577601",
+      "sample_size": 33,
+      "mean_final_return": 0.9890544498715415,
+      "median_final_return": 0.9670566060892418,
+      "p05_final_return": 0.4792092074197041,
+      "p95_final_return": 1.6418486070373142,
+      "probability_of_loss": 0,
+      "mean_max_drawdown": 0.06963291860213779,
+      "p95_max_drawdown": 0.14122111132041135,
+      "median_path": {
+        "final_return": 0.9705182735307087,
+        "max_drawdown": 0.051727966797391,
+        "equity_curve": [
+          {
+            "timestamp": "0",
+            "equity": 1
+          },
+          {
+            "timestamp": "1",
+            "equity": 1.0357341532038253
+          },
+          {
+            "timestamp": "2",
+            "equity": 1.0868658537324072
+          },
+          {
+            "timestamp": "3",
+            "equity": 1.1310918295384547
+          },
+          {
+            "timestamp": "4",
+            "equity": 1.1698311332296711
+          },
+          {
+            "timestamp": "5",
+            "equity": 1.167630738962808
+          },
+          {
+            "timestamp": "6",
+            "equity": 1.1093181472114124
+          },
+          {
+            "timestamp": "7",
+            "equity": 1.140954611001394
+          },
+          {
+            "timestamp": "8",
+            "equity": 1.1904715620795903
+          },
+          {
+            "timestamp": "9",
+            "equity": 1.2596511153047372
+          },
+          {
+            "timestamp": "10",
+            "equity": 1.305741857109521
+          },
+          {
+            "timestamp": "11",
+            "equity": 1.3461287464203027
+          },
+          {
+            "timestamp": "12",
+            "equity": 1.3645742567874142
+          },
+          {
+            "timestamp": "13",
+            "equity": 1.3661156308437488
+          },
+          {
+            "timestamp": "14",
+            "equity": 1.4030095453541764
+          },
+          {
+            "timestamp": "15",
+            "equity": 1.4531449033942918
+          },
+          {
+            "timestamp": "16",
+            "equity": 1.4945869065143114
+          },
+          {
+            "timestamp": "17",
+            "equity": 1.5372107873800314
+          },
+          {
+            "timestamp": "18",
+            "equity": 1.538947165459128
+          },
+          {
+            "timestamp": "19",
+            "equity": 1.5515640719971124
+          },
+          {
+            "timestamp": "20",
+            "equity": 1.5995542977014854
+          },
+          {
+            "timestamp": "21",
+            "equity": 1.6771134553494431
+          },
+          {
+            "timestamp": "22",
+            "equity": 1.590849412963487
+          },
+          {
+            "timestamp": "23",
+            "equity": 1.6117132696567626
+          },
+          {
+            "timestamp": "24",
+            "equity": 1.6337979877071882
+          },
+          {
+            "timestamp": "25",
+            "equity": 1.740668886738698
+          },
+          {
+            "timestamp": "26",
+            "equity": 1.8098108083263937
+          },
+          {
+            "timestamp": "27",
+            "equity": 1.8335463253647561
+          },
+          {
+            "timestamp": "28",
+            "equity": 1.9236429799222616
+          },
+          {
+            "timestamp": "29",
+            "equity": 2.0354278945347914
+          },
+          {
+            "timestamp": "30",
+            "equity": 1.9787569609052817
+          },
+          {
+            "timestamp": "31",
+            "equity": 2.064634182211036
+          },
+          {
+            "timestamp": "32",
+            "equity": 2.007150079225388
+          },
+          {
+            "timestamp": "33",
+            "equity": 1.9705182735307087
+          }
+        ]
+      },
+      "worst_path": {
+        "final_return": 0.18983642387591737,
+        "max_drawdown": 0.1747850517854309,
+        "equity_curve": [
+          {
+            "timestamp": "0",
+            "equity": 1
+          },
+          {
+            "timestamp": "1",
+            "equity": 0.998119049660793
+          },
+          {
+            "timestamp": "2",
+            "equity": 0.9703291492818341
+          },
+          {
+            "timestamp": "3",
+            "equity": 0.9584371873663152
+          },
+          {
+            "timestamp": "4",
+            "equity": 0.95663441461363
+          },
+          {
+            "timestamp": "5",
+            "equity": 0.9449102898317662
+          },
+          {
+            "timestamp": "6",
+            "equity": 0.8977205695426296
+          },
+          {
+            "timestamp": "7",
+            "equity": 0.8515453957553353
+          },
+          {
+            "timestamp": "8",
+            "equity": 0.8360041336442596
+          },
+          {
+            "timestamp": "9",
+            "equity": 0.8427195580497444
+          },
+          {
+            "timestamp": "10",
+            "equity": 0.8411344444111744
+          },
+          {
+            "timestamp": "11",
+            "equity": 0.8478910793953458
+          },
+          {
+            "timestamp": "12",
+            "equity": 0.8488488266970239
+          },
+          {
+            "timestamp": "13",
+            "equity": 0.8252149482145691
+          },
+          {
+            "timestamp": "14",
+            "equity": 0.8261470813731353
+          },
+          {
+            "timestamp": "15",
+            "equity": 0.8270802674358294
+          },
+          {
+            "timestamp": "16",
+            "equity": 0.8628328377136651
+          },
+          {
+            "timestamp": "17",
+            "equity": 0.897105823726681
+          },
+          {
+            "timestamp": "18",
+            "equity": 0.8509622700178939
+          },
+          {
+            "timestamp": "19",
+            "equity": 0.8390833005183378
+          },
+          {
+            "timestamp": "20",
+            "equity": 0.8690672317298315
+          },
+          {
+            "timestamp": "21",
+            "equity": 0.9067843847018151
+          },
+          {
+            "timestamp": "22",
+            "equity": 0.8941261689053378
+          },
+          {
+            "timestamp": "23",
+            "equity": 0.9329308692295356
+          },
+          {
+            "timestamp": "24",
+            "equity": 0.9787731526167772
+          },
+          {
+            "timestamp": "25",
+            "equity": 0.9609099004778722
+          },
+          {
+            "timestamp": "26",
+            "equity": 0.9341559872883478
+          },
+          {
+            "timestamp": "27",
+            "equity": 0.9884407731679145
+          },
+          {
+            "timestamp": "28",
+            "equity": 1.0277030906328424
+          },
+          {
+            "timestamp": "29",
+            "equity": 1.0949277745042716
+          },
+          {
+            "timestamp": "30",
+            "equity": 1.1012451817765299
+          },
+          {
+            "timestamp": "31",
+            "equity": 1.1159190130221985
+          },
+          {
+            "timestamp": "32",
+            "equity": 1.1504346390728875
+          },
+          {
+            "timestamp": "33",
+            "equity": 1.1898364238759174
+          }
+        ]
+      }
     }
   },
   "out_of_sample": {
-    "trades": 6,
-    "net_return": -0.08842365116350459,
-    "gross_return": -0.08293775137164305,
-    "max_drawdown": 0.11506073285412514,
-    "sharpe_ratio": -2.6377147747027134,
-    "sortino_ratio": -4.284139991306189,
-    "win_rate": 0.3333333333333333,
-    "hit_rate": 0.3333333333333333,
-    "expectancy": -0.014654206778639637,
-    "expected_value": -0.014654206778639637,
-    "average_win": 0.030100463025593882,
-    "average_loss": -0.0370315416807564,
-    "payoff_ratio": 0.8128331054938422,
-    "turnover": 6,
+    "trades": 13,
+    "net_return": 0.2697851882501836,
+    "gross_return": 0.2864001604074864,
+    "max_drawdown": 0.02749043961628757,
+    "sharpe_ratio": 27.14925152776002,
+    "sortino_ratio": 180.73431619256536,
+    "win_rate": 0.6923076923076923,
+    "hit_rate": 0.6923076923076923,
+    "expectancy": 0.01892675096713989,
+    "expected_value": 0.01892675096713989,
+    "average_win": 0.033146649725261046,
+    "average_loss": -0.01306802123863271,
+    "payoff_ratio": 2.5364704510328098,
+    "profit_factor": 5.707058514823822,
+    "turnover": 13,
+    "time_weighted_variance": 0.0007859744147960567,
+    "time_weighted_stddev": 0.028035235237037992,
+    "daily_summary": {
+      "trading_days": 2,
+      "daily_returns": [
+        0.2215998395852461,
+        0.03944446217453468
+      ],
+      "daily_return_mean": 0.1305221508798904,
+      "daily_return_stddev": 0.12880330259670889,
+      "best_day_return": 0.2215998395852461,
+      "worst_day_return": 0.03944446217453468,
+      "positive_days": 2,
+      "negative_days": 0,
+      "positive_day_ratio": 1,
+      "positive_return_total": 0.2610443017597808,
+      "absolute_return_total": 0.2610443017597808,
+      "best_day_share_of_positive_profit": 0.8488974403630828
+    },
+    "prop_firm": {
+      "profile_id": "custom_two_step_evaluation_null",
+      "profile_name": "Two-Step Evaluation",
+      "firm": "Custom",
+      "account_type": "two_step",
+      "step_count": 2,
+      "rules": {
+        "profile_id": "custom_two_step_evaluation_null",
+        "profile_name": "Two-Step Evaluation",
+        "firm": "Custom",
+        "account_type": "two_step",
+        "step_count": 2,
+        "max_daily_loss": 0.04,
+        "max_total_loss": 0.06,
+        "min_trading_days": 4,
+        "profit_target": 0.1,
+        "consistency_cap": 0.35,
+        "max_news_window_minutes": 2,
+        "allow_overnight": false,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      },
+      "grade": "D",
+      "score": 48,
+      "verdict": "breach-risk",
+      "passable": false,
+      "warnings": [
+        "needs 4 trading days",
+        "best day concentration above consistency cap"
+      ],
+      "trading_days": 2,
+      "max_daily_loss": 0,
+      "max_daily_loss_usage": 0,
+      "max_total_loss_usage": 0.4581739936047929,
+      "best_day_share_of_positive_profit": 0.8488974403630828,
+      "time_weighted_variance": 0.0007859744147960567,
+      "time_weighted_stddev": 0.028035235237037992,
+      "profile": {
+        "profile_id": "custom_two_step_evaluation_null",
+        "profile_name": "Two-Step Evaluation",
+        "firm": "Custom",
+        "account_type": "two_step",
+        "step_count": 2,
+        "max_daily_loss": 0.04,
+        "max_total_loss": 0.06,
+        "min_trading_days": 4,
+        "profit_target": 0.1,
+        "consistency_cap": 0.35,
+        "max_news_window_minutes": 2,
+        "allow_overnight": false,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      }
+    },
     "tail_risk": {
       "alpha": 0.05,
-      "value_at_risk": -0.05806179778998255,
-      "expected_shortfall": -0.05806179778998255,
-      "tail_count": 2,
-      "sample_size": 6
+      "value_at_risk": -0.015349373097996243,
+      "expected_shortfall": -0.019375829456190874,
+      "tail_count": 1,
+      "sample_size": 13
     },
     "monte_carlo": {
-      "runs": 1000,
-      "seed": "6:-0.08792524",
-      "sample_size": 6,
-      "mean_final_return": -0.08425024223625266,
-      "median_final_return": -0.0884236511635047,
-      "p05_final_return": -0.20374746875176952,
-      "p95_final_return": 0.043602886204228364,
-      "probability_of_loss": 0.89,
-      "mean_max_drawdown": 0.1208110729271245,
-      "p95_max_drawdown": 0.22538808170597116
+      "runs": 200,
+      "seed": "13:0.24604776",
+      "sample_size": 13,
+      "mean_final_return": 0.28188425588137767,
+      "median_final_return": 0.25614248964617925,
+      "p05_final_return": 0.08190743199639616,
+      "p95_final_return": 0.5013399673630199,
+      "probability_of_loss": 0.02,
+      "mean_max_drawdown": 0.028315504607790695,
+      "p95_max_drawdown": 0.057732750621623384,
+      "median_path": {
+        "final_return": 0.2563753639568265,
+        "max_drawdown": 0.019375829456190877,
+        "equity_curve": [
+          {
+            "timestamp": "0",
+            "equity": 1
+          },
+          {
+            "timestamp": "1",
+            "equity": 1.0431746992894322
+          },
+          {
+            "timestamp": "2",
+            "equity": 1.0322492774726653
+          },
+          {
+            "timestamp": "3",
+            "equity": 1.0923688317300742
+          },
+          {
+            "timestamp": "4",
+            "equity": 1.078533905256569
+          },
+          {
+            "timestamp": "5",
+            "equity": 1.1211585782987799
+          },
+          {
+            "timestamp": "6",
+            "equity": 1.1402012904520382
+          },
+          {
+            "timestamp": "7",
+            "equity": 1.1181089447025108
+          },
+          {
+            "timestamp": "8",
+            "equity": 1.131635331227415
+          },
+          {
+            "timestamp": "9",
+            "equity": 1.1975432598451021
+          },
+          {
+            "timestamp": "10",
+            "equity": 1.1823762919972933
+          },
+          {
+            "timestamp": "11",
+            "equity": 1.2024587779374234
+          },
+          {
+            "timestamp": "12",
+            "equity": 1.1872295547144966
+          },
+          {
+            "timestamp": "13",
+            "equity": 1.2563753639568265
+          }
+        ]
+      },
+      "worst_path": {
+        "final_return": -0.05449886660881098,
+        "max_drawdown": 0.07042367328541954,
+        "equity_curve": [
+          {
+            "timestamp": "0",
+            "equity": 1
+          },
+          {
+            "timestamp": "1",
+            "equity": 0.9902420560729471
+          },
+          {
+            "timestamp": "2",
+            "equity": 0.9805793296155778
+          },
+          {
+            "timestamp": "3",
+            "equity": 0.9710108915011619
+          },
+          {
+            "timestamp": "4",
+            "equity": 0.9587129716972667
+          },
+          {
+            "timestamp": "5",
+            "equity": 0.9493579042773065
+          },
+          {
+            "timestamp": "6",
+            "equity": 0.9394150485251718
+          },
+          {
+            "timestamp": "7",
+            "equity": 0.9295763267145805
+          },
+          {
+            "timestamp": "8",
+            "equity": 0.9453650427416825
+          },
+          {
+            "timestamp": "9",
+            "equity": 0.9861808941807959
+          },
+          {
+            "timestamp": "10",
+            "equity": 0.9736908452483689
+          },
+          {
+            "timestamp": "11",
+            "equity": 0.9548247774877822
+          },
+          {
+            "timestamp": "12",
+            "equity": 0.9576295779373724
+          },
+          {
+            "timestamp": "13",
+            "equity": 0.945501133391189
+          }
+        ]
+      }
     }
   },
-  "generated_at": "2026-05-29T08:49:38.306Z",
-  "strategy": "cnn_momentum",
-  "model": "cnn_window_v0",
-  "timeframe": "1d",
+  "walk_forward": null,
   "period": {
     "from": null,
     "to": null
   },
-  "threshold": 0.55,
   "horizon": 5,
   "cost_bps": 5,
   "fee_bps": 2.5,
   "slippage_bps": 2.5,
   "metrics": {
-    "trades": 24,
-    "net_return": 0.16101144658434952,
-    "gross_return": 0.18921278607495728,
-    "max_drawdown": 0.05773348600169795,
-    "sharpe_ratio": 1.3868989172733206,
-    "sortino_ratio": 2.59975499886215,
-    "win_rate": 0.5833333333333334,
-    "hit_rate": 0.5833333333333334,
-    "expectancy": 0.006825243278189064,
-    "expected_value": 0.006825243278189064,
-    "average_win": 0.03231084456274275,
-    "average_loss": -0.028854598520186105,
-    "payoff_ratio": 1.1197814636075678,
-    "turnover": 24,
+    "trades": 50,
+    "net_return": 1.4529913021331549,
+    "gross_return": 1.5787588663391876,
+    "max_drawdown": 0.07128091717644146,
+    "sharpe_ratio": 24.946049950457418,
+    "sortino_ratio": 45.39864445764411,
+    "win_rate": 0.76,
+    "hit_rate": 0.76,
+    "expectancy": 0.018581028685258162,
+    "expected_value": 0.018581028685258162,
+    "average_win": 0.03233583212769162,
+    "average_loss": -0.024975848882447804,
+    "payoff_ratio": 1.2946840077342143,
+    "profit_factor": 4.099832691158346,
+    "turnover": 50,
+    "time_weighted_variance": 0.0009525682673377977,
+    "time_weighted_stddev": 0.03086370469236961,
+    "daily_summary": {
+      "trading_days": 5,
+      "daily_returns": [
+        0.6478813179315523,
+        0.0730174532878276,
+        0.018390010559014458,
+        0.30805998238883414,
+        0.0414094204522204
+      ],
+      "daily_return_mean": 0.2177516369238898,
+      "daily_return_stddev": 0.2669067060951054,
+      "best_day_return": 0.6478813179315523,
+      "worst_day_return": 0.018390010559014458,
+      "positive_days": 5,
+      "negative_days": 0,
+      "positive_day_ratio": 1,
+      "positive_return_total": 1.088758184619449,
+      "absolute_return_total": 1.088758184619449,
+      "best_day_share_of_positive_profit": 0.5950644753664972
+    },
+    "prop_firm": {
+      "profile_id": "custom_two_step_evaluation_null",
+      "profile_name": "Two-Step Evaluation",
+      "firm": "Custom",
+      "account_type": "two_step",
+      "step_count": 2,
+      "rules": {
+        "profile_id": "custom_two_step_evaluation_null",
+        "profile_name": "Two-Step Evaluation",
+        "firm": "Custom",
+        "account_type": "two_step",
+        "step_count": 2,
+        "max_daily_loss": 0.04,
+        "max_total_loss": 0.06,
+        "min_trading_days": 4,
+        "profit_target": 0.1,
+        "consistency_cap": 0.35,
+        "max_news_window_minutes": 2,
+        "allow_overnight": false,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      },
+      "grade": "F",
+      "score": 27,
+      "verdict": "breach-risk",
+      "passable": false,
+      "warnings": [
+        "max drawdown breaches prop-firm cap",
+        "low trade-day sample for consistency",
+        "best day concentration above consistency cap",
+        "time-weighted variance is elevated"
+      ],
+      "trading_days": 5,
+      "max_daily_loss": 0,
+      "max_daily_loss_usage": 0,
+      "max_total_loss_usage": 1.1880152862740243,
+      "best_day_share_of_positive_profit": 0.5950644753664972,
+      "time_weighted_variance": 0.0009525682673377977,
+      "time_weighted_stddev": 0.03086370469236961,
+      "profile": {
+        "profile_id": "custom_two_step_evaluation_null",
+        "profile_name": "Two-Step Evaluation",
+        "firm": "Custom",
+        "account_type": "two_step",
+        "step_count": 2,
+        "max_daily_loss": 0.04,
+        "max_total_loss": 0.06,
+        "min_trading_days": 4,
+        "profit_target": 0.1,
+        "consistency_cap": 0.35,
+        "max_news_window_minutes": 2,
+        "allow_overnight": false,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      }
+    },
     "tail_risk": {
       "alpha": 0.05,
-      "value_at_risk": -0.045589472633692917,
-      "expected_shortfall": -0.04598850985328129,
-      "tail_count": 2,
-      "sample_size": 24
+      "value_at_risk": -0.03999654573880733,
+      "expected_shortfall": -0.0507089405072347,
+      "tail_count": 3,
+      "sample_size": 50
     },
     "monte_carlo": {
-      "runs": 1000,
-      "seed": "24:0.16380584",
-      "sample_size": 24,
-      "mean_final_return": 0.17451675635625175,
-      "median_final_return": 0.15599325859219793,
-      "p05_final_return": -0.113926486728537,
-      "p95_final_return": 0.535095466681885,
-      "probability_of_loss": 0.188,
-      "mean_max_drawdown": 0.11940208478871088,
-      "p95_max_drawdown": 0.22322827819473529
+      "runs": 200,
+      "seed": "50:0.92905143",
+      "sample_size": 50,
+      "mean_final_return": 1.5121677976213252,
+      "median_final_return": 1.4378927611970673,
+      "p05_final_return": 0.7171222352620759,
+      "p95_final_return": 2.5801828359775487,
+      "probability_of_loss": 0,
+      "mean_max_drawdown": 0.08180218845109416,
+      "p95_max_drawdown": 0.14711306751553102,
+      "median_path": {
+        "final_return": 1.4395510228876978,
+        "max_drawdown": 0.060259362618651766,
+        "equity_curve": [
+          {
+            "timestamp": "0",
+            "equity": 1
+          },
+          {
+            "timestamp": "1",
+            "equity": 1.0112092973267608
+          },
+          {
+            "timestamp": "2",
+            "equity": 1.099957111733104
+          },
+          {
+            "timestamp": "3",
+            "equity": 1.1420921166357856
+          },
+          {
+            "timestamp": "4",
+            "equity": 1.2131745737462138
+          },
+          {
+            "timestamp": "5",
+            "equity": 1.3470452879284858
+          },
+          {
+            "timestamp": "6",
+            "equity": 1.3137801495908166
+          },
+          {
+            "timestamp": "7",
+            "equity": 1.3514210501821229
+          },
+          {
+            "timestamp": "8",
+            "equity": 1.3971247557996334
+          },
+          {
+            "timestamp": "9",
+            "equity": 1.4276456016980883
+          },
+          {
+            "timestamp": "10",
+            "equity": 1.3946538106879474
+          },
+          {
+            "timestamp": "11",
+            "equity": 1.4361403398998582
+          },
+          {
+            "timestamp": "12",
+            "equity": 1.5069675067758852
+          },
+          {
+            "timestamp": "13",
+            "equity": 1.5722800768748832
+          },
+          {
+            "timestamp": "14",
+            "equity": 1.657133501695277
+          },
+          {
+            "timestamp": "15",
+            "equity": 1.6200094582339954
+          },
+          {
+            "timestamp": "16",
+            "equity": 1.6637157918947338
+          },
+          {
+            "timestamp": "17",
+            "equity": 1.6556082165377883
+          },
+          {
+            "timestamp": "18",
+            "equity": 1.6589211630944938
+          },
+          {
+            "timestamp": "19",
+            "equity": 1.7658122699516483
+          },
+          {
+            "timestamp": "20",
+            "equity": 1.9592931991026399
+          },
+          {
+            "timestamp": "21",
+            "equity": 1.942458642099548
+          },
+          {
+            "timestamp": "22",
+            "equity": 1.8657613593290072
+          },
+          {
+            "timestamp": "23",
+            "equity": 1.991785298107149
+          },
+          {
+            "timestamp": "24",
+            "equity": 2.183984794288761
+          },
+          {
+            "timestamp": "25",
+            "equity": 2.4395510228876978
+          }
+        ]
+      },
+      "worst_path": {
+        "final_return": 0.3684873877820525,
+        "max_drawdown": 0.15772289725178876,
+        "equity_curve": [
+          {
+            "timestamp": "0",
+            "equity": 1
+          },
+          {
+            "timestamp": "1",
+            "equity": 1.0875259671010962
+          },
+          {
+            "timestamp": "2",
+            "equity": 1.0831069193283782
+          },
+          {
+            "timestamp": "3",
+            "equity": 1.0509702156131733
+          },
+          {
+            "timestamp": "4",
+            "equity": 1.0502736652518452
+          },
+          {
+            "timestamp": "5",
+            "equity": 1.1148664491480873
+          },
+          {
+            "timestamp": "6",
+            "equity": 1.00385306684311
+          },
+          {
+            "timestamp": "7",
+            "equity": 1.0611566922398936
+          },
+          {
+            "timestamp": "8",
+            "equity": 1.0854457672003508
+          },
+          {
+            "timestamp": "9",
+            "equity": 1.1296235858951145
+          },
+          {
+            "timestamp": "10",
+            "equity": 1.1531561065519407
+          },
+          {
+            "timestamp": "11",
+            "equity": 1.1194150375273892
+          },
+          {
+            "timestamp": "12",
+            "equity": 1.0741999384579397
+          },
+          {
+            "timestamp": "13",
+            "equity": 1.0264416590157954
+          },
+          {
+            "timestamp": "14",
+            "equity": 0.9799716097596345
+          },
+          {
+            "timestamp": "15",
+            "equity": 0.9712769844429762
+          },
+          {
+            "timestamp": "16",
+            "equity": 1.0193892534941207
+          },
+          {
+            "timestamp": "17",
+            "equity": 1.0387536331137623
+          },
+          {
+            "timestamp": "18",
+            "equity": 1.0690000349901811
+          },
+          {
+            "timestamp": "19",
+            "equity": 1.1292881464128297
+          },
+          {
+            "timestamp": "20",
+            "equity": 1.0979797126269832
+          },
+          {
+            "timestamp": "21",
+            "equity": 1.1171127453536165
+          },
+          {
+            "timestamp": "22",
+            "equity": 1.2037877119226925
+          },
+          {
+            "timestamp": "23",
+            "equity": 1.2299074894927824
+          },
+          {
+            "timestamp": "24",
+            "equity": 1.3759367279915449
+          },
+          {
+            "timestamp": "25",
+            "equity": 1.3684873877820525
+          }
+        ]
+      }
+    }
+  },
+  "benchmarks": {
+    "buy_hold_equal_weight": {
+      "name": "buy_hold_equal_weight",
+      "symbol_count": 4,
+      "net_return": 0.11156125122810379,
+      "best": {
+        "symbol": "SPY",
+        "timeframe": "1h",
+        "start": "2025-01-01T01:00:00.000Z",
+        "end": "2025-01-05T23:00:00.000Z",
+        "entry": 42.67607974838618,
+        "exit": 54.31449886528415,
+        "net_return": 0.2714432026092637
+      },
+      "worst": {
+        "symbol": "XAUUSD",
+        "timeframe": "1h",
+        "start": "2025-01-01T01:00:00.000Z",
+        "end": "2025-01-05T23:00:00.000Z",
+        "entry": 210.92172591911122,
+        "exit": 212.16872663284687,
+        "net_return": 0.004906739758271161
+      },
+      "legs": [
+        {
+          "symbol": "SPY",
+          "timeframe": "1h",
+          "start": "2025-01-01T01:00:00.000Z",
+          "end": "2025-01-05T23:00:00.000Z",
+          "entry": 42.67607974838618,
+          "exit": 54.31449886528415,
+          "net_return": 0.2714432026092637
+        },
+        {
+          "symbol": "QQQ",
+          "timeframe": "1h",
+          "start": "2025-01-01T01:00:00.000Z",
+          "end": "2025-01-05T23:00:00.000Z",
+          "entry": 63.39827174384775,
+          "exit": 71.3673646911094,
+          "net_return": 0.12457376252037
+        },
+        {
+          "symbol": "BTCUSDT",
+          "timeframe": "1h",
+          "start": "2025-01-01T01:00:00.000Z",
+          "end": "2025-01-05T23:00:00.000Z",
+          "entry": 25.703448596411512,
+          "exit": 26.895244105117566,
+          "net_return": 0.04532130002451029
+        },
+        {
+          "symbol": "XAUUSD",
+          "timeframe": "1h",
+          "start": "2025-01-01T01:00:00.000Z",
+          "end": "2025-01-05T23:00:00.000Z",
+          "entry": 210.92172591911122,
+          "exit": 212.16872663284687,
+          "net_return": 0.004906739758271161
+        }
+      ]
     }
   },
   "equity_curve": [
@@ -127,1017 +1321,2122 @@
       "equity": 1
     },
     {
-      "timestamp": "2025-01-07T00:00:00.000Z",
-      "equity": 1.0379970176010216
+      "timestamp": "2025-01-01T11:00:00.000Z",
+      "equity": 1.0493675914523208
     },
     {
-      "timestamp": "2025-01-12T00:00:00.000Z",
-      "equity": 1.0906810803549554
+      "timestamp": "2025-01-01T16:00:00.000Z",
+      "equity": 1.115916991736852
     },
     {
-      "timestamp": "2025-01-17T00:00:00.000Z",
-      "equity": 1.111635356491966
+      "timestamp": "2025-01-01T21:00:00.000Z",
+      "equity": 1.1889119721743167
     },
     {
-      "timestamp": "2025-02-16T00:00:00.000Z",
-      "equity": 1.1294589876306167
+      "timestamp": "2025-01-02T02:00:00.000Z",
+      "equity": 1.2405102525921217
     },
     {
-      "timestamp": "2025-02-21T00:00:00.000Z",
-      "equity": 1.1130503250128736
+      "timestamp": "2025-01-02T07:00:00.000Z",
+      "equity": 1.2829970800558508
     },
     {
-      "timestamp": "2025-02-26T00:00:00.000Z",
-      "equity": 1.0648237892201884
+      "timestamp": "2025-01-02T12:00:00.000Z",
+      "equity": 1.293303093575204
     },
     {
-      "timestamp": "2025-03-18T00:00:00.000Z",
-      "equity": 1.1090255148627757
+      "timestamp": "2025-01-02T17:00:00.000Z",
+      "equity": 1.2696994636730206
     },
     {
-      "timestamp": "2025-03-23T00:00:00.000Z",
-      "equity": 1.1074378918529495
+      "timestamp": "2025-01-03T03:00:00.000Z",
+      "equity": 1.20439117579163
     },
     {
-      "timestamp": "2025-03-28T00:00:00.000Z",
-      "equity": 1.0642513829787525
+      "timestamp": "2025-01-04T04:00:00.000Z",
+      "equity": 1.2416432657347793
     },
     {
-      "timestamp": "2025-04-17T00:00:00.000Z",
-      "equity": 1.1158731913772544
+      "timestamp": "2025-01-04T14:00:00.000Z",
+      "equity": 1.321978974593123
     },
     {
-      "timestamp": "2025-04-22T00:00:00.000Z",
-      "equity": 1.1294438510794476
+      "timestamp": "2025-01-04T19:00:00.000Z",
+      "equity": 1.4071526788846165
     },
     {
-      "timestamp": "2025-04-27T00:00:00.000Z",
-      "equity": 1.0775024114053524
+      "timestamp": "2025-01-05T00:00:00.000Z",
+      "equity": 1.480139646242052
     },
     {
-      "timestamp": "2025-01-07T00:00:00.000Z",
-      "equity": 1.1184442894966649
+      "timestamp": "2025-01-05T05:00:00.000Z",
+      "equity": 1.5243407822800141
     },
     {
-      "timestamp": "2025-01-12T00:00:00.000Z",
-      "equity": 1.1752114941566594
+      "timestamp": "2025-01-05T10:00:00.000Z",
+      "equity": 1.5124513312794785
     },
     {
-      "timestamp": "2025-01-17T00:00:00.000Z",
-      "equity": 1.197789777223542
+      "timestamp": "2025-01-01T11:00:00.000Z",
+      "equity": 1.567792054560178
     },
     {
-      "timestamp": "2025-02-16T00:00:00.000Z",
-      "equity": 1.2169947827554375
+      "timestamp": "2025-01-01T16:00:00.000Z",
+      "equity": 1.6219835211417033
     },
     {
-      "timestamp": "2025-02-21T00:00:00.000Z",
-      "equity": 1.1993144092168826
+      "timestamp": "2025-01-01T21:00:00.000Z",
+      "equity": 1.7006302265391942
     },
     {
-      "timestamp": "2025-02-26T00:00:00.000Z",
-      "equity": 1.1473502006065377
+      "timestamp": "2025-01-02T02:00:00.000Z",
+      "equity": 1.7698310676509743
     },
     {
-      "timestamp": "2025-03-18T00:00:00.000Z",
-      "equity": 1.1949776665747034
+      "timestamp": "2025-01-02T07:00:00.000Z",
+      "equity": 1.7930422537418007
     },
     {
-      "timestamp": "2025-03-23T00:00:00.000Z",
-      "equity": 1.1932669989532132
+      "timestamp": "2025-01-02T12:00:00.000Z",
+      "equity": 1.8033875737135983
     },
     {
-      "timestamp": "2025-03-28T00:00:00.000Z",
-      "equity": 1.1467334315010873
+      "timestamp": "2025-01-02T17:00:00.000Z",
+      "equity": 1.77821326606354
     },
     {
-      "timestamp": "2025-04-17T00:00:00.000Z",
-      "equity": 1.202356054531578
+      "timestamp": "2025-01-04T14:00:00.000Z",
+      "equity": 1.8413510602317933
     },
     {
-      "timestamp": "2025-04-22T00:00:00.000Z",
-      "equity": 1.2169784730850526
+      "timestamp": "2025-01-04T19:00:00.000Z",
+      "equity": 1.9292933021640568
     },
     {
-      "timestamp": "2025-04-27T00:00:00.000Z",
-      "equity": 1.1610114465843495
+      "timestamp": "2025-01-05T00:00:00.000Z",
+      "equity": 2.003468846377771
+    },
+    {
+      "timestamp": "2025-01-05T05:00:00.000Z",
+      "equity": 2.0232587556595827
+    },
+    {
+      "timestamp": "2025-01-05T10:00:00.000Z",
+      "equity": 2.0276487005685215
+    },
+    {
+      "timestamp": "2025-01-05T15:00:00.000Z",
+      "equity": 1.9928552385152534
+    },
+    {
+      "timestamp": "2025-01-01T11:00:00.000Z",
+      "equity": 2.0907800018679903
+    },
+    {
+      "timestamp": "2025-01-01T16:00:00.000Z",
+      "equity": 2.2122774244260177
+    },
+    {
+      "timestamp": "2025-01-01T21:00:00.000Z",
+      "equity": 2.322992432347491
+    },
+    {
+      "timestamp": "2025-01-02T02:00:00.000Z",
+      "equity": 2.353945756367709
+    },
+    {
+      "timestamp": "2025-01-02T07:00:00.000Z",
+      "equity": 2.349518101298794
+    },
+    {
+      "timestamp": "2025-01-02T22:00:00.000Z",
+      "equity": 2.23218092843946
+    },
+    {
+      "timestamp": "2025-01-03T18:00:00.000Z",
+      "equity": 2.3286724162176617
+    },
+    {
+      "timestamp": "2025-01-04T04:00:00.000Z",
+      "equity": 2.42117070054514
+    },
+    {
+      "timestamp": "2025-01-04T09:00:00.000Z",
+      "equity": 2.5076891852910332
+    },
+    {
+      "timestamp": "2025-01-04T14:00:00.000Z",
+      "equity": 2.5264317073380647
+    },
+    {
+      "timestamp": "2025-01-04T19:00:00.000Z",
+      "equity": 2.471788214014246
+    },
+    {
+      "timestamp": "2025-01-05T05:00:00.000Z",
+      "equity": 2.3463453380553645
+    },
+    {
+      "timestamp": "2025-01-01T11:00:00.000Z",
+      "equity": 2.4132603790765352
+    },
+    {
+      "timestamp": "2025-01-01T16:00:00.000Z",
+      "equity": 2.4784339413335323
+    },
+    {
+      "timestamp": "2025-01-01T21:00:00.000Z",
+      "equity": 2.48123349127265
+    },
+    {
+      "timestamp": "2025-01-03T03:00:00.000Z",
+      "equity": 2.5295016857257533
+    },
+    {
+      "timestamp": "2025-01-03T13:00:00.000Z",
+      "equity": 2.5641625231023832
+    },
+    {
+      "timestamp": "2025-01-03T18:00:00.000Z",
+      "equity": 2.5851845566252387
+    },
+    {
+      "timestamp": "2025-01-03T23:00:00.000Z",
+      "equity": 2.5535015794471043
+    },
+    {
+      "timestamp": "2025-01-04T09:00:00.000Z",
+      "equity": 2.482406298243459
+    },
+    {
+      "timestamp": "2025-01-05T00:00:00.000Z",
+      "equity": 2.5105103923612537
+    },
+    {
+      "timestamp": "2025-01-05T15:00:00.000Z",
+      "equity": 2.520558577483179
+    },
+    {
+      "timestamp": "2025-01-05T20:00:00.000Z",
+      "equity": 2.452991302133155
     }
   ],
   "trade_logs": [
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-02T00:00:00.000Z",
-      "exit_time": "2025-01-07T00:00:00.000Z",
-      "entry": 98.85471222629775,
-      "exit": 102.71355869428479,
-      "gross_return": 0.03903553387676029,
-      "net_return": 0.03799701760102159,
+      "entry_time": "2025-01-01T06:00:00.000Z",
+      "exit_time": "2025-01-01T11:00:00.000Z",
+      "entry": 43.84779809156934,
+      "exit": 46.058493749849625,
+      "gross_return": 0.05041748399004198,
+      "net_return": 0.049367591452320836,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.001038516275738699,
+      "cost_drag": 0.001049892537721142,
       "holding_period_bars": 5,
-      "confidence": 0.625
+      "confidence": 0.7281552067806645
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-07T00:00:00.000Z",
-      "exit_time": "2025-01-12T00:00:00.000Z",
-      "entry": 102.71355869428479,
-      "exit": 108.03481805757991,
-      "gross_return": 0.05180678608491451,
-      "net_return": 0.05075550493940262,
+      "entry_time": "2025-01-01T11:00:00.000Z",
+      "exit_time": "2025-01-01T16:00:00.000Z",
+      "entry": 46.058493749849625,
+      "exit": 49.028461880960776,
+      "gross_return": 0.06448252839620583,
+      "net_return": 0.06341857784308647,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010512811455118953,
+      "cost_drag": 0.0010639505531193638,
       "holding_period_bars": 5,
-      "confidence": 0.9372842710140823
+      "confidence": 0.7427839671857479
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-12T00:00:00.000Z",
-      "exit_time": "2025-01-17T00:00:00.000Z",
-      "entry": 108.03481805757991,
-      "exit": 110.22055947559366,
-      "gross_return": 0.020231823937064464,
-      "net_return": 0.01921210197410894,
+      "entry_time": "2025-01-01T16:00:00.000Z",
+      "exit_time": "2025-01-01T21:00:00.000Z",
+      "entry": 49.028461880960776,
+      "exit": 52.287800458975305,
+      "gross_return": 0.06647849948725848,
+      "net_return": 0.0654125539605348,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.001019721962955522,
+      "cost_drag": 0.0010659455267236773,
       "holding_period_bars": 5,
-      "confidence": 1
+      "confidence": 0.653837866263912
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-11T00:00:00.000Z",
-      "exit_time": "2025-02-16T00:00:00.000Z",
-      "entry": 107.62997344261322,
-      "exit": 109.46509085522528,
-      "gross_return": 0.017050244963504824,
-      "net_return": 0.01603370298952833,
+      "entry_time": "2025-01-01T21:00:00.000Z",
+      "exit_time": "2025-01-02T02:00:00.000Z",
+      "entry": 52.287800458975305,
+      "exit": 54.61165340665382,
+      "gross_return": 0.044443501682611464,
+      "net_return": 0.04339958014169931,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010165419739764925,
+      "cost_drag": 0.0010439215409121516,
       "holding_period_bars": 5,
-      "confidence": 0.8635851989523096
+      "confidence": 0.6457499471537792
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-16T00:00:00.000Z",
-      "exit_time": "2025-02-21T00:00:00.000Z",
-      "entry": 109.46509085522528,
-      "exit": 107.98272216623947,
-      "gross_return": -0.013541930832966176,
-      "net_return": -0.014527895919589917,
+      "entry_time": "2025-01-02T02:00:00.000Z",
+      "exit_time": "2025-01-02T07:00:00.000Z",
+      "entry": 54.61165340665382,
+      "exit": 56.538584307451885,
+      "gross_return": 0.03528424394056695,
+      "net_return": 0.034249477080056545,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009859650866237413,
+      "cost_drag": 0.0010347668605104055,
       "holding_period_bars": 5,
-      "confidence": 0.8223663416083319
+      "confidence": 0.7299636731547284
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-21T00:00:00.000Z",
-      "exit_time": "2025-02-26T00:00:00.000Z",
-      "entry": 107.98272216623947,
-      "exit": 103.40737421505877,
-      "gross_return": -0.0423711114092582,
-      "net_return": -0.04332826172269211,
+      "entry_time": "2025-01-02T07:00:00.000Z",
+      "exit_time": "2025-01-02T12:00:00.000Z",
+      "entry": 56.538584307451885,
+      "exit": 57.04976670176633,
+      "gross_return": 0.009041301627481069,
+      "net_return": 0.0080327645943703,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009571503134339077,
+      "cost_drag": 0.001008537033110768,
       "holding_period_bars": 5,
-      "confidence": 0.5922041234798641
+      "confidence": 0.7382699803677829
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-13T00:00:00.000Z",
-      "exit_time": "2025-03-18T00:00:00.000Z",
-      "entry": 105.47430242520412,
-      "exit": 109.96253647404927,
-      "gross_return": 0.04255286781373058,
-      "net_return": 0.04151083596184302,
+      "entry_time": "2025-01-02T12:00:00.000Z",
+      "exit_time": "2025-01-02T17:00:00.000Z",
+      "entry": 57.04976670176633,
+      "exit": 56.06460762248106,
+      "gross_return": -0.017268415564875017,
+      "net_return": -0.01825065602907794,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010420318518875593,
+      "cost_drag": 0.0009822404642029214,
       "holding_period_bars": 5,
-      "confidence": 0.6337637512693278
+      "confidence": 0.7282189766951188
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-18T00:00:00.000Z",
-      "exit_time": "2025-03-23T00:00:00.000Z",
-      "entry": 109.96253647404927,
-      "exit": 109.91497989934165,
-      "gross_return": -0.0004324797902315325,
-      "net_return": -0.001431547776448161,
+      "entry_time": "2025-01-02T22:00:00.000Z",
+      "exit_time": "2025-01-03T03:00:00.000Z",
+      "entry": 53.90996016704886,
+      "exit": 51.18820896824629,
+      "gross_return": -0.050486982189724694,
+      "net_return": -0.05143602068828568,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009990679862166285,
+      "cost_drag": 0.0009490384985609834,
       "holding_period_bars": 5,
-      "confidence": 0.9055674764736483
+      "confidence": 0.6203680890958974
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-23T00:00:00.000Z",
-      "exit_time": "2025-03-28T00:00:00.000Z",
-      "entry": 109.91497989934165,
-      "exit": 105.73433139374282,
-      "gross_return": -0.0380352933642657,
-      "net_return": -0.03899677732891904,
+      "entry_time": "2025-01-03T23:00:00.000Z",
+      "exit_time": "2025-01-04T04:00:00.000Z",
+      "entry": 45.369046903265485,
+      "exit": 46.81911744738384,
+      "gross_return": 0.0319616708548045,
+      "net_return": 0.030930224906923653,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009614839646533424,
+      "cost_drag": 0.001031445947880849,
       "holding_period_bars": 5,
-      "confidence": 0.6969826522177235
+      "confidence": 0.7070598491525985
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-12T00:00:00.000Z",
-      "exit_time": "2025-04-17T00:00:00.000Z",
-      "entry": 104.84201918243153,
-      "exit": 110.0373927922537,
-      "gross_return": 0.04955430704536412,
-      "net_return": 0.04850527725321485,
+      "entry_time": "2025-01-04T09:00:00.000Z",
+      "exit_time": "2025-01-04T14:00:00.000Z",
+      "entry": 48.79482573223605,
+      "exit": 52.00388345957682,
+      "gross_return": 0.0657663528700898,
+      "net_return": 0.0647011191340876,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010490297921492697,
+      "cost_drag": 0.0010652337360022024,
       "holding_period_bars": 5,
-      "confidence": 0.6517678520561779
+      "confidence": 0.6265831034554842
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-17T00:00:00.000Z",
-      "exit_time": "2025-04-22T00:00:00.000Z",
-      "entry": 110.0373927922537,
-      "exit": 111.48704070286966,
-      "gross_return": 0.01317413902520248,
-      "net_return": 0.012161471220079934,
+      "entry_time": "2025-01-04T14:00:00.000Z",
+      "exit_time": "2025-01-04T19:00:00.000Z",
+      "entry": 52.00388345957682,
+      "exit": 55.409820686459796,
+      "gross_return": 0.06549390161468316,
+      "net_return": 0.06442894019377898,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010126678051225468,
+      "cost_drag": 0.0010649614209041758,
       "holding_period_bars": 5,
-      "confidence": 0.9009090726674502
+      "confidence": 0.762789115420913
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-22T00:00:00.000Z",
-      "exit_time": "2025-04-27T00:00:00.000Z",
-      "entry": 111.48704070286966,
-      "exit": 106.46633095738774,
-      "gross_return": -0.04503402111876753,
-      "net_return": -0.04598850985328129,
+      "entry_time": "2025-01-04T19:00:00.000Z",
+      "exit_time": "2025-01-05T00:00:00.000Z",
+      "entry": 55.409820686459796,
+      "exit": 58.34216067747902,
+      "gross_return": 0.05292094352032062,
+      "net_return": 0.05186854877417346,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009544887345137587,
+      "cost_drag": 0.0010523947461471561,
       "holding_period_bars": 5,
-      "confidence": 0.8030525466877667
+      "confidence": 0.7627794440039726
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "SPY",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-02T00:00:00.000Z",
-      "exit_time": "2025-01-07T00:00:00.000Z",
-      "entry": 98.85471222629775,
-      "exit": 102.71355869428479,
-      "gross_return": 0.03903553387676029,
-      "net_return": 0.03799701760102159,
+      "entry_time": "2025-01-05T00:00:00.000Z",
+      "exit_time": "2025-01-05T05:00:00.000Z",
+      "entry": 58.34216067747902,
+      "exit": 60.14453629209485,
+      "gross_return": 0.03089319273894442,
+      "net_return": 0.029862814735207577,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.001038516275738699,
+      "cost_drag": 0.0010303780037368426,
       "holding_period_bars": 5,
-      "confidence": 0.625
+      "confidence": 0.7514242455500939
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "SPY",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-07T00:00:00.000Z",
-      "exit_time": "2025-01-12T00:00:00.000Z",
-      "entry": 102.71355869428479,
-      "exit": 108.03481805757991,
-      "gross_return": 0.05180678608491451,
-      "net_return": 0.05075550493940262,
+      "entry_time": "2025-01-05T05:00:00.000Z",
+      "exit_time": "2025-01-05T10:00:00.000Z",
+      "entry": 60.14453629209485,
+      "exit": 59.73513024925291,
+      "gross_return": -0.00680703631754076,
+      "net_return": -0.007799732932915471,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010512811455118953,
+      "cost_drag": 0.0009926966153747108,
       "holding_period_bars": 5,
-      "confidence": 0.9372842710140823
+      "confidence": 0.7381525953201364
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-12T00:00:00.000Z",
-      "exit_time": "2025-01-17T00:00:00.000Z",
-      "entry": 108.03481805757991,
-      "exit": 110.22055947559366,
-      "gross_return": 0.020231823937064464,
-      "net_return": 0.01921210197410894,
+      "entry_time": "2025-01-01T06:00:00.000Z",
+      "exit_time": "2025-01-01T11:00:00.000Z",
+      "entry": 64.7002941378221,
+      "exit": 67.13478465574082,
+      "gross_return": 0.037627193977400664,
+      "net_return": 0.03659008533774322,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.001019721962955522,
+      "cost_drag": 0.001037108639657447,
       "holding_period_bars": 5,
-      "confidence": 1
+      "confidence": 0.7245750786538114
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-11T00:00:00.000Z",
-      "exit_time": "2025-02-16T00:00:00.000Z",
-      "entry": 107.62997344261322,
-      "exit": 109.46509085522528,
-      "gross_return": 0.017050244963504824,
-      "net_return": 0.01603370298952833,
+      "entry_time": "2025-01-01T11:00:00.000Z",
+      "exit_time": "2025-01-01T16:00:00.000Z",
+      "entry": 67.13478465574082,
+      "exit": 69.52482000234892,
+      "gross_return": 0.03560055132170192,
+      "net_return": 0.03456546831188523,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010165419739764925,
+      "cost_drag": 0.0010350830098166952,
       "holding_period_bars": 5,
-      "confidence": 0.8635851989523096
+      "confidence": 0.7327529680930057
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-16T00:00:00.000Z",
-      "exit_time": "2025-02-21T00:00:00.000Z",
-      "entry": 109.46509085522528,
-      "exit": 107.98272216623947,
-      "gross_return": -0.013541930832966176,
-      "net_return": -0.014527895919589917,
+      "entry_time": "2025-01-01T16:00:00.000Z",
+      "exit_time": "2025-01-01T21:00:00.000Z",
+      "entry": 69.52482000234892,
+      "exit": 72.9688705254861,
+      "gross_return": 0.04953699301948311,
+      "net_return": 0.0484879805327072,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009859650866237413,
+      "cost_drag": 0.0010490124867759132,
       "holding_period_bars": 5,
-      "confidence": 0.8223663416083319
+      "confidence": 0.6340113150551042
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-21T00:00:00.000Z",
-      "exit_time": "2025-02-26T00:00:00.000Z",
-      "entry": 107.98272216623947,
-      "exit": 103.40737421505877,
-      "gross_return": -0.0423711114092582,
-      "net_return": -0.04332826172269211,
+      "entry_time": "2025-01-01T21:00:00.000Z",
+      "exit_time": "2025-01-02T02:00:00.000Z",
+      "entry": 72.9688705254861,
+      "exit": 76.01404419824574,
+      "gross_return": 0.041732503885969274,
+      "net_return": 0.04069129198803245,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009571503134339077,
+      "cost_drag": 0.0010412118979368223,
       "holding_period_bars": 5,
-      "confidence": 0.5922041234798641
+      "confidence": 0.6309473541498272
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-13T00:00:00.000Z",
-      "exit_time": "2025-03-18T00:00:00.000Z",
-      "entry": 105.47430242520412,
-      "exit": 109.96253647404927,
-      "gross_return": 0.04255286781373058,
-      "net_return": 0.04151083596184302,
+      "entry_time": "2025-01-02T02:00:00.000Z",
+      "exit_time": "2025-01-02T07:00:00.000Z",
+      "entry": 76.01404419824574,
+      "exit": 77.08801150255886,
+      "gross_return": 0.014128537899025462,
+      "net_return": 0.01311491617199012,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010420318518875593,
+      "cost_drag": 0.001013621727035341,
       "holding_period_bars": 5,
-      "confidence": 0.6337637512693278
+      "confidence": 0.7456796250294433
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-18T00:00:00.000Z",
-      "exit_time": "2025-03-23T00:00:00.000Z",
-      "entry": 109.96253647404927,
-      "exit": 109.91497989934165,
-      "gross_return": -0.0004324797902315325,
-      "net_return": -0.001431547776448161,
+      "entry_time": "2025-01-02T07:00:00.000Z",
+      "exit_time": "2025-01-02T12:00:00.000Z",
+      "entry": 77.08801150255886,
+      "exit": 77.61035795011655,
+      "gross_return": 0.006775975114371224,
+      "net_return": 0.005769702275676192,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009990679862166285,
+      "cost_drag": 0.0010062728386950326,
       "holding_period_bars": 5,
-      "confidence": 0.9055674764736483
+      "confidence": 0.7320752564026556
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-23T00:00:00.000Z",
-      "exit_time": "2025-03-28T00:00:00.000Z",
-      "entry": 109.91497989934165,
-      "exit": 105.73433139374282,
-      "gross_return": -0.0380352933642657,
-      "net_return": -0.03899677732891904,
+      "entry_time": "2025-01-02T12:00:00.000Z",
+      "exit_time": "2025-01-02T17:00:00.000Z",
+      "entry": 77.61035795011655,
+      "exit": 76.603524894461,
+      "gross_return": -0.012972921169912444,
+      "net_return": -0.013959454981836483,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009614839646533424,
+      "cost_drag": 0.0009865338119240397,
       "holding_period_bars": 5,
-      "confidence": 0.6969826522177235
+      "confidence": 0.7297532943360855
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-12T00:00:00.000Z",
-      "exit_time": "2025-04-17T00:00:00.000Z",
-      "entry": 104.84201918243153,
-      "exit": 110.0373927922537,
-      "gross_return": 0.04955430704536412,
-      "net_return": 0.04850527725321485,
+      "entry_time": "2025-01-04T09:00:00.000Z",
+      "exit_time": "2025-01-04T14:00:00.000Z",
+      "entry": 67.6929996419984,
+      "exit": 70.16665996896931,
+      "gross_return": 0.0365423358405319,
+      "net_return": 0.03550631151685346,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010490297921492697,
+      "cost_drag": 0.0010360243236784417,
       "holding_period_bars": 5,
-      "confidence": 0.6517678520561779
+      "confidence": 0.6219128217196148
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-17T00:00:00.000Z",
-      "exit_time": "2025-04-22T00:00:00.000Z",
-      "entry": 110.0373927922537,
-      "exit": 111.48704070286966,
-      "gross_return": 0.01317413902520248,
-      "net_return": 0.012161471220079934,
+      "entry_time": "2025-01-04T14:00:00.000Z",
+      "exit_time": "2025-01-04T19:00:00.000Z",
+      "entry": 70.16665996896931,
+      "exit": 73.59134812853351,
+      "gross_return": 0.04880791192111378,
+      "net_return": 0.047759628151077926,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010126678051225468,
+      "cost_drag": 0.0010482837700358516,
       "holding_period_bars": 5,
-      "confidence": 0.9009090726674502
+      "confidence": 0.7424145422893069
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-22T00:00:00.000Z",
-      "exit_time": "2025-04-27T00:00:00.000Z",
-      "entry": 111.48704070286966,
-      "exit": 106.46633095738774,
-      "gross_return": -0.04503402111876753,
-      "net_return": -0.04598850985328129,
+      "entry_time": "2025-01-04T19:00:00.000Z",
+      "exit_time": "2025-01-05T00:00:00.000Z",
+      "entry": 73.59134812853351,
+      "exit": 76.49717381080252,
+      "gross_return": 0.03948596888310485,
+      "net_return": 0.03844700239746457,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009544887345137587,
+      "cost_drag": 0.0010389664856402803,
       "holding_period_bars": 5,
-      "confidence": 0.8030525466877667
+      "confidence": 0.7505567044490025
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T00:00:00.000Z",
+      "exit_time": "2025-01-05T05:00:00.000Z",
+      "entry": 76.49717381080252,
+      "exit": 77.33009074646878,
+      "gross_return": 0.010888205330647605,
+      "net_return": 0.009877822316823881,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010103830138237235,
+      "holding_period_bars": 5,
+      "confidence": 0.7443157423896328
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T05:00:00.000Z",
+      "exit_time": "2025-01-05T10:00:00.000Z",
+      "entry": 77.33009074646878,
+      "exit": 77.57541356202904,
+      "gross_return": 0.0031724108066104595,
+      "net_return": 0.00216973973134138,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010026710752690793,
+      "holding_period_bars": 5,
+      "confidence": 0.7310114269223764
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T10:00:00.000Z",
+      "exit_time": "2025-01-05T15:00:00.000Z",
+      "entry": 77.57541356202904,
+      "exit": 76.32053972659915,
+      "gross_return": -0.01617617976894825,
+      "net_return": -0.017159511923102166,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009833321541539153,
+      "holding_period_bars": 5,
+      "confidence": 0.729269484728825
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T06:00:00.000Z",
+      "exit_time": "2025-01-01T11:00:00.000Z",
+      "entry": 26.401056453298988,
+      "exit": 27.726061686236335,
+      "gross_return": 0.05018758379162436,
+      "net_return": 0.04913792103920911,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.001049662752415248,
+      "holding_period_bars": 5,
+      "confidence": 0.7281444346957696
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T11:00:00.000Z",
+      "exit_time": "2025-01-01T16:00:00.000Z",
+      "entry": 27.726061686236335,
+      "exit": 29.366604189056837,
+      "gross_return": 0.05916969100717595,
+      "net_return": 0.058111050636354245,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010586403708217063,
+      "holding_period_bars": 5,
+      "confidence": 0.7421597607756292
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T16:00:00.000Z",
+      "exit_time": "2025-01-01T21:00:00.000Z",
+      "entry": 29.366604189056837,
+      "exit": 30.86712862795589,
+      "gross_return": 0.051096287103505444,
+      "net_return": 0.05004571610190278,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010505710016026626,
+      "holding_period_bars": 5,
+      "confidence": 0.6471357238278884
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T21:00:00.000Z",
+      "exit_time": "2025-01-02T02:00:00.000Z",
+      "entry": 30.86712862795589,
+      "exit": 31.309719879683772,
+      "gross_return": 0.014338594854820252,
+      "net_return": 0.01332476317580511,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010138316790151425,
+      "holding_period_bars": 5,
+      "confidence": 0.6316395936890745
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-02T02:00:00.000Z",
+      "exit_time": "2025-01-02T07:00:00.000Z",
+      "entry": 31.309719879683772,
+      "exit": 31.2820943125376,
+      "gross_return": -0.0008823319803669127,
+      "net_return": -0.0018809503392069882,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009986183588400754,
+      "holding_period_bars": 5,
+      "confidence": 0.7312321876045504
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-02T17:00:00.000Z",
+      "exit_time": "2025-01-02T22:00:00.000Z",
+      "entry": 28.991204341408718,
+      "exit": 27.570913105113537,
+      "gross_return": -0.04899041859625508,
+      "net_return": -0.04994095291050149,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009505343142464096,
+      "holding_period_bars": 5,
+      "confidence": 0.6250898751563363
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-03T13:00:00.000Z",
+      "exit_time": "2025-01-03T18:00:00.000Z",
+      "entry": 26.360674412245793,
+      "exit": 27.527693063423836,
+      "gross_return": 0.04427119856371764,
+      "net_return": 0.04322744923981592,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010437493239017215,
+      "holding_period_bars": 5,
+      "confidence": 0.7083987942031399
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-03T23:00:00.000Z",
+      "exit_time": "2025-01-04T04:00:00.000Z",
+      "entry": 29.129294121277304,
+      "exit": 30.316653917023473,
+      "gross_return": 0.040761708498760596,
+      "net_return": 0.039721466911055936,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.00104024158770466,
+      "holding_period_bars": 5,
+      "confidence": 0.7542606992077111
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-04T04:00:00.000Z",
+      "exit_time": "2025-01-04T09:00:00.000Z",
+      "entry": 30.316653917023473,
+      "exit": 31.431409574445322,
+      "gross_return": 0.03677040548316879,
+      "net_return": 0.035734153203825336,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010362522793434525,
+      "holding_period_bars": 5,
+      "confidence": 0.7465301594640614
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-04T09:00:00.000Z",
+      "exit_time": "2025-01-04T14:00:00.000Z",
+      "entry": 31.431409574445322,
+      "exit": 31.698010764541802,
+      "gross_return": 0.008481999175539157,
+      "net_return": 0.007474021165368772,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.001007978010170385,
+      "holding_period_bars": 5,
+      "confidence": 0.7400565699728774
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-04T14:00:00.000Z",
+      "exit_time": "2025-01-04T19:00:00.000Z",
+      "entry": 31.698010764541802,
+      "exit": 31.043451185357576,
+      "gross_return": -0.020649862984980505,
+      "net_return": -0.02162872369164215,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.000978860706661644,
+      "holding_period_bars": 5,
+      "confidence": 0.7289572066124322
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T00:00:00.000Z",
+      "exit_time": "2025-01-05T05:00:00.000Z",
+      "entry": 29.31747302716574,
+      "exit": 27.85745926705116,
+      "gross_return": -0.04980012290833269,
+      "net_return": -0.050749847922916924,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009497250145842351,
+      "holding_period_bars": 5,
+      "confidence": 0.6542690018648707
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T06:00:00.000Z",
+      "exit_time": "2025-01-01T11:00:00.000Z",
+      "entry": 214.5090433648246,
+      "exit": 220.84732883919122,
+      "gross_return": 0.029547870686210675,
+      "net_return": 0.02851883733220162,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010290333540090568,
+      "holding_period_bars": 5,
+      "confidence": 0.7232218596942793
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T11:00:00.000Z",
+      "exit_time": "2025-01-01T16:00:00.000Z",
+      "entry": 220.84732883919122,
+      "exit": 227.0385532073727,
+      "gross_return": 0.028033956311464214,
+      "net_return": 0.02700643611525111,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010275201962131053,
+      "holding_period_bars": 5,
+      "confidence": 0.7273278705128281
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T16:00:00.000Z",
+      "exit_time": "2025-01-01T21:00:00.000Z",
+      "entry": 227.0385532073727,
+      "exit": 227.52241651257236,
+      "gross_return": 0.0021311944529425197,
+      "net_return": 0.0011295640736792567,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.001001630379263263,
+      "holding_period_bars": 5,
+      "confidence": 0.6253050137485981
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-02T22:00:00.000Z",
+      "exit_time": "2025-01-03T03:00:00.000Z",
+      "entry": 208.44529374382276,
+      "exit": 212.71285038194432,
+      "gross_return": 0.020473269323923127,
+      "net_return": 0.01945330603624318,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.001019963287679948,
+      "holding_period_bars": 5,
+      "confidence": 0.7116445076759432
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-03T08:00:00.000Z",
+      "exit_time": "2025-01-03T13:00:00.000Z",
+      "entry": 219.19412238524538,
+      "exit": 222.4199681694639,
+      "gross_return": 0.014716844362044235,
+      "net_return": 0.013702634622552168,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010142097394920668,
+      "holding_period_bars": 5,
+      "confidence": 0.7350408069479626
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-03T13:00:00.000Z",
+      "exit_time": "2025-01-03T18:00:00.000Z",
+      "entry": 222.4199681694639,
+      "exit": 224.46781197368932,
+      "gross_return": 0.009207104115153575,
+      "net_return": 0.008198401362414787,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010087027527387882,
+      "holding_period_bars": 5,
+      "confidence": 0.7352087398941747
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-03T18:00:00.000Z",
+      "exit_time": "2025-01-03T23:00:00.000Z",
+      "entry": 224.46781197368932,
+      "exit": 221.93865292312967,
+      "gross_return": -0.01126735734768114,
+      "net_return": -0.012255595871071612,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009882385233904722,
+      "holding_period_bars": 5,
+      "confidence": 0.7337199321473837
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-04T04:00:00.000Z",
+      "exit_time": "2025-01-04T09:00:00.000Z",
+      "entry": 213.88136901824492,
+      "exit": 208.13445656981315,
+      "gross_return": -0.026869626255017764,
+      "net_return": -0.027842270306736694,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009726440517189294,
+      "holding_period_bars": 5,
+      "confidence": 0.631944127403653
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-04T19:00:00.000Z",
+      "exit_time": "2025-01-05T00:00:00.000Z",
+      "entry": 206.17277370033042,
+      "exit": 208.71553104870398,
+      "gross_return": 0.012333138380673958,
+      "net_return": 0.011321311155905844,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010118272247681137,
+      "holding_period_bars": 5,
+      "confidence": 0.7109517512313908
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T10:00:00.000Z",
+      "exit_time": "2025-01-05T15:00:00.000Z",
+      "entry": 220.15091448597104,
+      "exit": 221.25319951064878,
+      "gross_return": 0.005006951832343898,
+      "net_return": 0.004002447132861464,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010045046994824336,
+      "holding_period_bars": 5,
+      "confidence": 0.7361588950805176
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T15:00:00.000Z",
+      "exit_time": "2025-01-05T20:00:00.000Z",
+      "entry": 221.25319951064878,
+      "exit": 215.5376123759953,
+      "gross_return": -0.025832788620886782,
+      "net_return": -0.026806468992080057,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009736803711932751,
+      "holding_period_bars": 5,
+      "confidence": 0.7328035357893298
     }
   ],
   "trades": [
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-02T00:00:00.000Z",
-      "exit_time": "2025-01-07T00:00:00.000Z",
-      "entry": 98.85471222629775,
-      "exit": 102.71355869428479,
-      "gross_return": 0.03903553387676029,
-      "net_return": 0.03799701760102159,
+      "entry_time": "2025-01-01T06:00:00.000Z",
+      "exit_time": "2025-01-01T11:00:00.000Z",
+      "entry": 43.84779809156934,
+      "exit": 46.058493749849625,
+      "gross_return": 0.05041748399004198,
+      "net_return": 0.049367591452320836,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.001038516275738699,
+      "cost_drag": 0.001049892537721142,
       "holding_period_bars": 5,
-      "confidence": 0.625
+      "confidence": 0.7281552067806645
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-07T00:00:00.000Z",
-      "exit_time": "2025-01-12T00:00:00.000Z",
-      "entry": 102.71355869428479,
-      "exit": 108.03481805757991,
-      "gross_return": 0.05180678608491451,
-      "net_return": 0.05075550493940262,
+      "entry_time": "2025-01-01T11:00:00.000Z",
+      "exit_time": "2025-01-01T16:00:00.000Z",
+      "entry": 46.058493749849625,
+      "exit": 49.028461880960776,
+      "gross_return": 0.06448252839620583,
+      "net_return": 0.06341857784308647,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010512811455118953,
+      "cost_drag": 0.0010639505531193638,
       "holding_period_bars": 5,
-      "confidence": 0.9372842710140823
+      "confidence": 0.7427839671857479
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-12T00:00:00.000Z",
-      "exit_time": "2025-01-17T00:00:00.000Z",
-      "entry": 108.03481805757991,
-      "exit": 110.22055947559366,
-      "gross_return": 0.020231823937064464,
-      "net_return": 0.01921210197410894,
+      "entry_time": "2025-01-01T16:00:00.000Z",
+      "exit_time": "2025-01-01T21:00:00.000Z",
+      "entry": 49.028461880960776,
+      "exit": 52.287800458975305,
+      "gross_return": 0.06647849948725848,
+      "net_return": 0.0654125539605348,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.001019721962955522,
+      "cost_drag": 0.0010659455267236773,
       "holding_period_bars": 5,
-      "confidence": 1
+      "confidence": 0.653837866263912
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-11T00:00:00.000Z",
-      "exit_time": "2025-02-16T00:00:00.000Z",
-      "entry": 107.62997344261322,
-      "exit": 109.46509085522528,
-      "gross_return": 0.017050244963504824,
-      "net_return": 0.01603370298952833,
+      "entry_time": "2025-01-01T21:00:00.000Z",
+      "exit_time": "2025-01-02T02:00:00.000Z",
+      "entry": 52.287800458975305,
+      "exit": 54.61165340665382,
+      "gross_return": 0.044443501682611464,
+      "net_return": 0.04339958014169931,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010165419739764925,
+      "cost_drag": 0.0010439215409121516,
       "holding_period_bars": 5,
-      "confidence": 0.8635851989523096
+      "confidence": 0.6457499471537792
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-16T00:00:00.000Z",
-      "exit_time": "2025-02-21T00:00:00.000Z",
-      "entry": 109.46509085522528,
-      "exit": 107.98272216623947,
-      "gross_return": -0.013541930832966176,
-      "net_return": -0.014527895919589917,
+      "entry_time": "2025-01-02T02:00:00.000Z",
+      "exit_time": "2025-01-02T07:00:00.000Z",
+      "entry": 54.61165340665382,
+      "exit": 56.538584307451885,
+      "gross_return": 0.03528424394056695,
+      "net_return": 0.034249477080056545,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009859650866237413,
+      "cost_drag": 0.0010347668605104055,
       "holding_period_bars": 5,
-      "confidence": 0.8223663416083319
+      "confidence": 0.7299636731547284
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-21T00:00:00.000Z",
-      "exit_time": "2025-02-26T00:00:00.000Z",
-      "entry": 107.98272216623947,
-      "exit": 103.40737421505877,
-      "gross_return": -0.0423711114092582,
-      "net_return": -0.04332826172269211,
+      "entry_time": "2025-01-02T07:00:00.000Z",
+      "exit_time": "2025-01-02T12:00:00.000Z",
+      "entry": 56.538584307451885,
+      "exit": 57.04976670176633,
+      "gross_return": 0.009041301627481069,
+      "net_return": 0.0080327645943703,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009571503134339077,
+      "cost_drag": 0.001008537033110768,
       "holding_period_bars": 5,
-      "confidence": 0.5922041234798641
+      "confidence": 0.7382699803677829
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-13T00:00:00.000Z",
-      "exit_time": "2025-03-18T00:00:00.000Z",
-      "entry": 105.47430242520412,
-      "exit": 109.96253647404927,
-      "gross_return": 0.04255286781373058,
-      "net_return": 0.04151083596184302,
+      "entry_time": "2025-01-02T12:00:00.000Z",
+      "exit_time": "2025-01-02T17:00:00.000Z",
+      "entry": 57.04976670176633,
+      "exit": 56.06460762248106,
+      "gross_return": -0.017268415564875017,
+      "net_return": -0.01825065602907794,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010420318518875593,
+      "cost_drag": 0.0009822404642029214,
       "holding_period_bars": 5,
-      "confidence": 0.6337637512693278
+      "confidence": 0.7282189766951188
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-18T00:00:00.000Z",
-      "exit_time": "2025-03-23T00:00:00.000Z",
-      "entry": 109.96253647404927,
-      "exit": 109.91497989934165,
-      "gross_return": -0.0004324797902315325,
-      "net_return": -0.001431547776448161,
+      "entry_time": "2025-01-02T22:00:00.000Z",
+      "exit_time": "2025-01-03T03:00:00.000Z",
+      "entry": 53.90996016704886,
+      "exit": 51.18820896824629,
+      "gross_return": -0.050486982189724694,
+      "net_return": -0.05143602068828568,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009990679862166285,
+      "cost_drag": 0.0009490384985609834,
       "holding_period_bars": 5,
-      "confidence": 0.9055674764736483
+      "confidence": 0.6203680890958974
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-23T00:00:00.000Z",
-      "exit_time": "2025-03-28T00:00:00.000Z",
-      "entry": 109.91497989934165,
-      "exit": 105.73433139374282,
-      "gross_return": -0.0380352933642657,
-      "net_return": -0.03899677732891904,
+      "entry_time": "2025-01-03T23:00:00.000Z",
+      "exit_time": "2025-01-04T04:00:00.000Z",
+      "entry": 45.369046903265485,
+      "exit": 46.81911744738384,
+      "gross_return": 0.0319616708548045,
+      "net_return": 0.030930224906923653,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009614839646533424,
+      "cost_drag": 0.001031445947880849,
       "holding_period_bars": 5,
-      "confidence": 0.6969826522177235
+      "confidence": 0.7070598491525985
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-12T00:00:00.000Z",
-      "exit_time": "2025-04-17T00:00:00.000Z",
-      "entry": 104.84201918243153,
-      "exit": 110.0373927922537,
-      "gross_return": 0.04955430704536412,
-      "net_return": 0.04850527725321485,
+      "entry_time": "2025-01-04T09:00:00.000Z",
+      "exit_time": "2025-01-04T14:00:00.000Z",
+      "entry": 48.79482573223605,
+      "exit": 52.00388345957682,
+      "gross_return": 0.0657663528700898,
+      "net_return": 0.0647011191340876,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010490297921492697,
+      "cost_drag": 0.0010652337360022024,
       "holding_period_bars": 5,
-      "confidence": 0.6517678520561779
+      "confidence": 0.6265831034554842
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-17T00:00:00.000Z",
-      "exit_time": "2025-04-22T00:00:00.000Z",
-      "entry": 110.0373927922537,
-      "exit": 111.48704070286966,
-      "gross_return": 0.01317413902520248,
-      "net_return": 0.012161471220079934,
+      "entry_time": "2025-01-04T14:00:00.000Z",
+      "exit_time": "2025-01-04T19:00:00.000Z",
+      "entry": 52.00388345957682,
+      "exit": 55.409820686459796,
+      "gross_return": 0.06549390161468316,
+      "net_return": 0.06442894019377898,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010126678051225468,
+      "cost_drag": 0.0010649614209041758,
       "holding_period_bars": 5,
-      "confidence": 0.9009090726674502
+      "confidence": 0.762789115420913
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
       "symbol": "SPY",
-      "timeframe": "1d",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-22T00:00:00.000Z",
-      "exit_time": "2025-04-27T00:00:00.000Z",
-      "entry": 111.48704070286966,
-      "exit": 106.46633095738774,
-      "gross_return": -0.04503402111876753,
-      "net_return": -0.04598850985328129,
+      "entry_time": "2025-01-04T19:00:00.000Z",
+      "exit_time": "2025-01-05T00:00:00.000Z",
+      "entry": 55.409820686459796,
+      "exit": 58.34216067747902,
+      "gross_return": 0.05292094352032062,
+      "net_return": 0.05186854877417346,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009544887345137587,
+      "cost_drag": 0.0010523947461471561,
       "holding_period_bars": 5,
-      "confidence": 0.8030525466877667
+      "confidence": 0.7627794440039726
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "SPY",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-02T00:00:00.000Z",
-      "exit_time": "2025-01-07T00:00:00.000Z",
-      "entry": 98.85471222629775,
-      "exit": 102.71355869428479,
-      "gross_return": 0.03903553387676029,
-      "net_return": 0.03799701760102159,
+      "entry_time": "2025-01-05T00:00:00.000Z",
+      "exit_time": "2025-01-05T05:00:00.000Z",
+      "entry": 58.34216067747902,
+      "exit": 60.14453629209485,
+      "gross_return": 0.03089319273894442,
+      "net_return": 0.029862814735207577,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.001038516275738699,
+      "cost_drag": 0.0010303780037368426,
       "holding_period_bars": 5,
-      "confidence": 0.625
+      "confidence": 0.7514242455500939
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "SPY",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-07T00:00:00.000Z",
-      "exit_time": "2025-01-12T00:00:00.000Z",
-      "entry": 102.71355869428479,
-      "exit": 108.03481805757991,
-      "gross_return": 0.05180678608491451,
-      "net_return": 0.05075550493940262,
+      "entry_time": "2025-01-05T05:00:00.000Z",
+      "exit_time": "2025-01-05T10:00:00.000Z",
+      "entry": 60.14453629209485,
+      "exit": 59.73513024925291,
+      "gross_return": -0.00680703631754076,
+      "net_return": -0.007799732932915471,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010512811455118953,
+      "cost_drag": 0.0009926966153747108,
       "holding_period_bars": 5,
-      "confidence": 0.9372842710140823
+      "confidence": 0.7381525953201364
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-01-12T00:00:00.000Z",
-      "exit_time": "2025-01-17T00:00:00.000Z",
-      "entry": 108.03481805757991,
-      "exit": 110.22055947559366,
-      "gross_return": 0.020231823937064464,
-      "net_return": 0.01921210197410894,
+      "entry_time": "2025-01-01T06:00:00.000Z",
+      "exit_time": "2025-01-01T11:00:00.000Z",
+      "entry": 64.7002941378221,
+      "exit": 67.13478465574082,
+      "gross_return": 0.037627193977400664,
+      "net_return": 0.03659008533774322,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.001019721962955522,
+      "cost_drag": 0.001037108639657447,
       "holding_period_bars": 5,
-      "confidence": 1
+      "confidence": 0.7245750786538114
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-11T00:00:00.000Z",
-      "exit_time": "2025-02-16T00:00:00.000Z",
-      "entry": 107.62997344261322,
-      "exit": 109.46509085522528,
-      "gross_return": 0.017050244963504824,
-      "net_return": 0.01603370298952833,
+      "entry_time": "2025-01-01T11:00:00.000Z",
+      "exit_time": "2025-01-01T16:00:00.000Z",
+      "entry": 67.13478465574082,
+      "exit": 69.52482000234892,
+      "gross_return": 0.03560055132170192,
+      "net_return": 0.03456546831188523,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010165419739764925,
+      "cost_drag": 0.0010350830098166952,
       "holding_period_bars": 5,
-      "confidence": 0.8635851989523096
+      "confidence": 0.7327529680930057
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-16T00:00:00.000Z",
-      "exit_time": "2025-02-21T00:00:00.000Z",
-      "entry": 109.46509085522528,
-      "exit": 107.98272216623947,
-      "gross_return": -0.013541930832966176,
-      "net_return": -0.014527895919589917,
+      "entry_time": "2025-01-01T16:00:00.000Z",
+      "exit_time": "2025-01-01T21:00:00.000Z",
+      "entry": 69.52482000234892,
+      "exit": 72.9688705254861,
+      "gross_return": 0.04953699301948311,
+      "net_return": 0.0484879805327072,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009859650866237413,
+      "cost_drag": 0.0010490124867759132,
       "holding_period_bars": 5,
-      "confidence": 0.8223663416083319
+      "confidence": 0.6340113150551042
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-02-21T00:00:00.000Z",
-      "exit_time": "2025-02-26T00:00:00.000Z",
-      "entry": 107.98272216623947,
-      "exit": 103.40737421505877,
-      "gross_return": -0.0423711114092582,
-      "net_return": -0.04332826172269211,
+      "entry_time": "2025-01-01T21:00:00.000Z",
+      "exit_time": "2025-01-02T02:00:00.000Z",
+      "entry": 72.9688705254861,
+      "exit": 76.01404419824574,
+      "gross_return": 0.041732503885969274,
+      "net_return": 0.04069129198803245,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009571503134339077,
+      "cost_drag": 0.0010412118979368223,
       "holding_period_bars": 5,
-      "confidence": 0.5922041234798641
+      "confidence": 0.6309473541498272
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-13T00:00:00.000Z",
-      "exit_time": "2025-03-18T00:00:00.000Z",
-      "entry": 105.47430242520412,
-      "exit": 109.96253647404927,
-      "gross_return": 0.04255286781373058,
-      "net_return": 0.04151083596184302,
+      "entry_time": "2025-01-02T02:00:00.000Z",
+      "exit_time": "2025-01-02T07:00:00.000Z",
+      "entry": 76.01404419824574,
+      "exit": 77.08801150255886,
+      "gross_return": 0.014128537899025462,
+      "net_return": 0.01311491617199012,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010420318518875593,
+      "cost_drag": 0.001013621727035341,
       "holding_period_bars": 5,
-      "confidence": 0.6337637512693278
+      "confidence": 0.7456796250294433
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-18T00:00:00.000Z",
-      "exit_time": "2025-03-23T00:00:00.000Z",
-      "entry": 109.96253647404927,
-      "exit": 109.91497989934165,
-      "gross_return": -0.0004324797902315325,
-      "net_return": -0.001431547776448161,
+      "entry_time": "2025-01-02T07:00:00.000Z",
+      "exit_time": "2025-01-02T12:00:00.000Z",
+      "entry": 77.08801150255886,
+      "exit": 77.61035795011655,
+      "gross_return": 0.006775975114371224,
+      "net_return": 0.005769702275676192,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009990679862166285,
+      "cost_drag": 0.0010062728386950326,
       "holding_period_bars": 5,
-      "confidence": 0.9055674764736483
+      "confidence": 0.7320752564026556
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-03-23T00:00:00.000Z",
-      "exit_time": "2025-03-28T00:00:00.000Z",
-      "entry": 109.91497989934165,
-      "exit": 105.73433139374282,
-      "gross_return": -0.0380352933642657,
-      "net_return": -0.03899677732891904,
+      "entry_time": "2025-01-02T12:00:00.000Z",
+      "exit_time": "2025-01-02T17:00:00.000Z",
+      "entry": 77.61035795011655,
+      "exit": 76.603524894461,
+      "gross_return": -0.012972921169912444,
+      "net_return": -0.013959454981836483,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009614839646533424,
+      "cost_drag": 0.0009865338119240397,
       "holding_period_bars": 5,
-      "confidence": 0.6969826522177235
+      "confidence": 0.7297532943360855
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-12T00:00:00.000Z",
-      "exit_time": "2025-04-17T00:00:00.000Z",
-      "entry": 104.84201918243153,
-      "exit": 110.0373927922537,
-      "gross_return": 0.04955430704536412,
-      "net_return": 0.04850527725321485,
+      "entry_time": "2025-01-04T09:00:00.000Z",
+      "exit_time": "2025-01-04T14:00:00.000Z",
+      "entry": 67.6929996419984,
+      "exit": 70.16665996896931,
+      "gross_return": 0.0365423358405319,
+      "net_return": 0.03550631151685346,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010490297921492697,
+      "cost_drag": 0.0010360243236784417,
       "holding_period_bars": 5,
-      "confidence": 0.6517678520561779
+      "confidence": 0.6219128217196148
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-17T00:00:00.000Z",
-      "exit_time": "2025-04-22T00:00:00.000Z",
-      "entry": 110.0373927922537,
-      "exit": 111.48704070286966,
-      "gross_return": 0.01317413902520248,
-      "net_return": 0.012161471220079934,
+      "entry_time": "2025-01-04T14:00:00.000Z",
+      "exit_time": "2025-01-04T19:00:00.000Z",
+      "entry": 70.16665996896931,
+      "exit": 73.59134812853351,
+      "gross_return": 0.04880791192111378,
+      "net_return": 0.047759628151077926,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0010126678051225468,
+      "cost_drag": 0.0010482837700358516,
       "holding_period_bars": 5,
-      "confidence": 0.9009090726674502
+      "confidence": 0.7424145422893069
     },
     {
-      "strategy": "cnn_momentum",
-      "model": "cnn_window_v0",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
       "provider": "sample",
-      "entry_time": "2025-04-22T00:00:00.000Z",
-      "exit_time": "2025-04-27T00:00:00.000Z",
-      "entry": 111.48704070286966,
-      "exit": 106.46633095738774,
-      "gross_return": -0.04503402111876753,
-      "net_return": -0.04598850985328129,
+      "entry_time": "2025-01-04T19:00:00.000Z",
+      "exit_time": "2025-01-05T00:00:00.000Z",
+      "entry": 73.59134812853351,
+      "exit": 76.49717381080252,
+      "gross_return": 0.03948596888310485,
+      "net_return": 0.03844700239746457,
       "fee_bps": 2.5,
       "slippage_bps": 2.5,
       "round_trip_cost_bps": 10,
-      "cost_drag": 0.0009544887345137587,
+      "cost_drag": 0.0010389664856402803,
       "holding_period_bars": 5,
-      "confidence": 0.8030525466877667
+      "confidence": 0.7505567044490025
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T00:00:00.000Z",
+      "exit_time": "2025-01-05T05:00:00.000Z",
+      "entry": 76.49717381080252,
+      "exit": 77.33009074646878,
+      "gross_return": 0.010888205330647605,
+      "net_return": 0.009877822316823881,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010103830138237235,
+      "holding_period_bars": 5,
+      "confidence": 0.7443157423896328
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T05:00:00.000Z",
+      "exit_time": "2025-01-05T10:00:00.000Z",
+      "entry": 77.33009074646878,
+      "exit": 77.57541356202904,
+      "gross_return": 0.0031724108066104595,
+      "net_return": 0.00216973973134138,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010026710752690793,
+      "holding_period_bars": 5,
+      "confidence": 0.7310114269223764
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "QQQ",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T10:00:00.000Z",
+      "exit_time": "2025-01-05T15:00:00.000Z",
+      "entry": 77.57541356202904,
+      "exit": 76.32053972659915,
+      "gross_return": -0.01617617976894825,
+      "net_return": -0.017159511923102166,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009833321541539153,
+      "holding_period_bars": 5,
+      "confidence": 0.729269484728825
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T06:00:00.000Z",
+      "exit_time": "2025-01-01T11:00:00.000Z",
+      "entry": 26.401056453298988,
+      "exit": 27.726061686236335,
+      "gross_return": 0.05018758379162436,
+      "net_return": 0.04913792103920911,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.001049662752415248,
+      "holding_period_bars": 5,
+      "confidence": 0.7281444346957696
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T11:00:00.000Z",
+      "exit_time": "2025-01-01T16:00:00.000Z",
+      "entry": 27.726061686236335,
+      "exit": 29.366604189056837,
+      "gross_return": 0.05916969100717595,
+      "net_return": 0.058111050636354245,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010586403708217063,
+      "holding_period_bars": 5,
+      "confidence": 0.7421597607756292
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T16:00:00.000Z",
+      "exit_time": "2025-01-01T21:00:00.000Z",
+      "entry": 29.366604189056837,
+      "exit": 30.86712862795589,
+      "gross_return": 0.051096287103505444,
+      "net_return": 0.05004571610190278,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010505710016026626,
+      "holding_period_bars": 5,
+      "confidence": 0.6471357238278884
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T21:00:00.000Z",
+      "exit_time": "2025-01-02T02:00:00.000Z",
+      "entry": 30.86712862795589,
+      "exit": 31.309719879683772,
+      "gross_return": 0.014338594854820252,
+      "net_return": 0.01332476317580511,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010138316790151425,
+      "holding_period_bars": 5,
+      "confidence": 0.6316395936890745
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-02T02:00:00.000Z",
+      "exit_time": "2025-01-02T07:00:00.000Z",
+      "entry": 31.309719879683772,
+      "exit": 31.2820943125376,
+      "gross_return": -0.0008823319803669127,
+      "net_return": -0.0018809503392069882,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009986183588400754,
+      "holding_period_bars": 5,
+      "confidence": 0.7312321876045504
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-02T17:00:00.000Z",
+      "exit_time": "2025-01-02T22:00:00.000Z",
+      "entry": 28.991204341408718,
+      "exit": 27.570913105113537,
+      "gross_return": -0.04899041859625508,
+      "net_return": -0.04994095291050149,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009505343142464096,
+      "holding_period_bars": 5,
+      "confidence": 0.6250898751563363
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-03T13:00:00.000Z",
+      "exit_time": "2025-01-03T18:00:00.000Z",
+      "entry": 26.360674412245793,
+      "exit": 27.527693063423836,
+      "gross_return": 0.04427119856371764,
+      "net_return": 0.04322744923981592,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010437493239017215,
+      "holding_period_bars": 5,
+      "confidence": 0.7083987942031399
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-03T23:00:00.000Z",
+      "exit_time": "2025-01-04T04:00:00.000Z",
+      "entry": 29.129294121277304,
+      "exit": 30.316653917023473,
+      "gross_return": 0.040761708498760596,
+      "net_return": 0.039721466911055936,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.00104024158770466,
+      "holding_period_bars": 5,
+      "confidence": 0.7542606992077111
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-04T04:00:00.000Z",
+      "exit_time": "2025-01-04T09:00:00.000Z",
+      "entry": 30.316653917023473,
+      "exit": 31.431409574445322,
+      "gross_return": 0.03677040548316879,
+      "net_return": 0.035734153203825336,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010362522793434525,
+      "holding_period_bars": 5,
+      "confidence": 0.7465301594640614
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-04T09:00:00.000Z",
+      "exit_time": "2025-01-04T14:00:00.000Z",
+      "entry": 31.431409574445322,
+      "exit": 31.698010764541802,
+      "gross_return": 0.008481999175539157,
+      "net_return": 0.007474021165368772,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.001007978010170385,
+      "holding_period_bars": 5,
+      "confidence": 0.7400565699728774
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-04T14:00:00.000Z",
+      "exit_time": "2025-01-04T19:00:00.000Z",
+      "entry": 31.698010764541802,
+      "exit": 31.043451185357576,
+      "gross_return": -0.020649862984980505,
+      "net_return": -0.02162872369164215,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.000978860706661644,
+      "holding_period_bars": 5,
+      "confidence": 0.7289572066124322
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T00:00:00.000Z",
+      "exit_time": "2025-01-05T05:00:00.000Z",
+      "entry": 29.31747302716574,
+      "exit": 27.85745926705116,
+      "gross_return": -0.04980012290833269,
+      "net_return": -0.050749847922916924,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009497250145842351,
+      "holding_period_bars": 5,
+      "confidence": 0.6542690018648707
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T06:00:00.000Z",
+      "exit_time": "2025-01-01T11:00:00.000Z",
+      "entry": 214.5090433648246,
+      "exit": 220.84732883919122,
+      "gross_return": 0.029547870686210675,
+      "net_return": 0.02851883733220162,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010290333540090568,
+      "holding_period_bars": 5,
+      "confidence": 0.7232218596942793
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T11:00:00.000Z",
+      "exit_time": "2025-01-01T16:00:00.000Z",
+      "entry": 220.84732883919122,
+      "exit": 227.0385532073727,
+      "gross_return": 0.028033956311464214,
+      "net_return": 0.02700643611525111,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010275201962131053,
+      "holding_period_bars": 5,
+      "confidence": 0.7273278705128281
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-01T16:00:00.000Z",
+      "exit_time": "2025-01-01T21:00:00.000Z",
+      "entry": 227.0385532073727,
+      "exit": 227.52241651257236,
+      "gross_return": 0.0021311944529425197,
+      "net_return": 0.0011295640736792567,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.001001630379263263,
+      "holding_period_bars": 5,
+      "confidence": 0.6253050137485981
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-02T22:00:00.000Z",
+      "exit_time": "2025-01-03T03:00:00.000Z",
+      "entry": 208.44529374382276,
+      "exit": 212.71285038194432,
+      "gross_return": 0.020473269323923127,
+      "net_return": 0.01945330603624318,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.001019963287679948,
+      "holding_period_bars": 5,
+      "confidence": 0.7116445076759432
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-03T08:00:00.000Z",
+      "exit_time": "2025-01-03T13:00:00.000Z",
+      "entry": 219.19412238524538,
+      "exit": 222.4199681694639,
+      "gross_return": 0.014716844362044235,
+      "net_return": 0.013702634622552168,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010142097394920668,
+      "holding_period_bars": 5,
+      "confidence": 0.7350408069479626
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-03T13:00:00.000Z",
+      "exit_time": "2025-01-03T18:00:00.000Z",
+      "entry": 222.4199681694639,
+      "exit": 224.46781197368932,
+      "gross_return": 0.009207104115153575,
+      "net_return": 0.008198401362414787,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010087027527387882,
+      "holding_period_bars": 5,
+      "confidence": 0.7352087398941747
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-03T18:00:00.000Z",
+      "exit_time": "2025-01-03T23:00:00.000Z",
+      "entry": 224.46781197368932,
+      "exit": 221.93865292312967,
+      "gross_return": -0.01126735734768114,
+      "net_return": -0.012255595871071612,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009882385233904722,
+      "holding_period_bars": 5,
+      "confidence": 0.7337199321473837
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-04T04:00:00.000Z",
+      "exit_time": "2025-01-04T09:00:00.000Z",
+      "entry": 213.88136901824492,
+      "exit": 208.13445656981315,
+      "gross_return": -0.026869626255017764,
+      "net_return": -0.027842270306736694,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009726440517189294,
+      "holding_period_bars": 5,
+      "confidence": 0.631944127403653
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-04T19:00:00.000Z",
+      "exit_time": "2025-01-05T00:00:00.000Z",
+      "entry": 206.17277370033042,
+      "exit": 208.71553104870398,
+      "gross_return": 0.012333138380673958,
+      "net_return": 0.011321311155905844,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010118272247681137,
+      "holding_period_bars": 5,
+      "confidence": 0.7109517512313908
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T10:00:00.000Z",
+      "exit_time": "2025-01-05T15:00:00.000Z",
+      "entry": 220.15091448597104,
+      "exit": 221.25319951064878,
+      "gross_return": 0.005006951832343898,
+      "net_return": 0.004002447132861464,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0010045046994824336,
+      "holding_period_bars": 5,
+      "confidence": 0.7361588950805176
+    },
+    {
+      "strategy": "defensive_rotation",
+      "model": "xgboost_ranker_v0",
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "provider": "sample",
+      "entry_time": "2025-01-05T15:00:00.000Z",
+      "exit_time": "2025-01-05T20:00:00.000Z",
+      "entry": 221.25319951064878,
+      "exit": 215.5376123759953,
+      "gross_return": -0.025832788620886782,
+      "net_return": -0.026806468992080057,
+      "fee_bps": 2.5,
+      "slippage_bps": 2.5,
+      "round_trip_cost_bps": 10,
+      "cost_drag": 0.0009736803711932751,
+      "holding_period_bars": 5,
+      "confidence": 0.7328035357893298
     }
   ],
-  "skipped": []
+  "skipped": [],
+  "trust_assessment": {
+    "grade": "F",
+    "score": 30,
+    "verdict": "do-not-trust-yet",
+    "warnings": [
+      "sample mode is not research evidence",
+      "small OOS trade sample",
+      "in-sample return far exceeds OOS"
+    ],
+    "oos_alpha_vs_buy_hold": 0.27369637990171103,
+    "freshness_warning_ratio": 0,
+    "walk_forward_summary": null
+  }
 }

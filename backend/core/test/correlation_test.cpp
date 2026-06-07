@@ -37,6 +37,17 @@ int main() {//what is the purpose of these 4 vectors
     if (!expect(approxEqual(sovereign::pearsonCorrelation(up, flat), 0.0, 0.0000001), "Expected zero correlation against flat series")) {
         return 1;
     }
+    const std::vector<double> doubling{1.0, 2.0, 4.0, 8.0};
+    const auto returns = sovereign::logReturnSeries(doubling);
+    if (!expect(returns.size() == 3U, "Expected three log returns from four prices")) {
+        return 1;
+    }
+    if (!expect(approxEqual(returns[0], returns[1], 0.0000001), "Expected matching log returns for repeated doubling")) {
+        return 1;
+    }
+    if (!expect(approxEqual(returns[1], returns[2], 0.0000001), "Expected matching log returns for repeated doubling")) {
+        return 1;
+    }
 
     const std::vector<std::string> labels{"up", "up2", "down"};
     const std::vector<std::vector<double>> series{up, up2, down};
