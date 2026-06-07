@@ -2,19 +2,24 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const { 
-  findBackendBinary, 
-  findNodeCli, 
+const {
+  findBackendBinary,
+  findNodeCli,
   REPO_ROOT,
   BACKEND_CANDIDATES,
-  CLI_CANDIDATES 
+  CLI_CANDIDATES,
+  DEFAULT_SNAPSHOT,
+  DEFAULT_QUALITY_REPORT,
+  DEFAULT_MODEL_REPORT,
+  DEFAULT_BACKTEST,
 } = require('../../../../shared/lib/paths');
+const { calculateRollingFeatureFrame } = require('../../../../shared/lib/indicators');
+const { compareModels } = require('../../../../shared/lib/models');
 
+// backtest_history.json is this service's specific read target — distinct from the CLI's cache dir
 const DEFAULT_HISTORY = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'backtest_history.json');
-const DEFAULT_SNAPSHOT = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch.json');
-const DEFAULT_QUALITY_REPORT = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'data_quality_report.json');
-const DEFAULT_MODEL_REPORT = path.join(REPO_ROOT, 'storage', 'data', 'models', 'latest_model_comparison.json');
-const DEFAULT_BACKTEST_REPORT = path.join(REPO_ROOT, 'storage', 'data', 'backtests', 'latest_backtest.json');
+// Alias: API layer named this DEFAULT_BACKTEST_REPORT; canonical name is DEFAULT_BACKTEST
+const DEFAULT_BACKTEST_REPORT = DEFAULT_BACKTEST;
 
 const MEMORY_CACHE = new Map();
 const MEMORY_CACHE_TTL_MS = 5000; // 5 seconds cache for dashboard snappiness
@@ -550,7 +555,7 @@ function backendStatus(query = {}) {
 }
 
 function backendDataSummary(query = {}) {
-  const symbol = stringOrFallback(query.symbol, 'AAPL');
+  const symbol = stringOrFallback(query.symbol, 'SPY');
   const timeframe = stringOrFallback(query.timeframe, '1d');
   return withCache(`summary:${symbol}:${timeframe}`, () => {
     const args = [
@@ -570,7 +575,7 @@ function backendDataSummary(query = {}) {
     if (backend.available) {
       return backend;
     }
-    const nodeCli = runNodeCli(args);
+    const nodeCli = runNodeCli(['backend', ...args]);
     if (nodeCli.ok) {
       return nodeCli;
     }
@@ -579,7 +584,7 @@ function backendDataSummary(query = {}) {
 }
 
 function backendCorrelation(query = {}) {
-  const symbols = stringOrFallback(query.symbols, 'AAPL,MSFT,SPX');
+  const symbols = stringOrFallback(query.symbols, 'AAPL,MSFT,SPY');
   return withCache(`correlation:${symbols}`, () => {
     const args = [
     'correlation',
@@ -597,7 +602,7 @@ function backendCorrelation(query = {}) {
     if (backend.available) {
       return backend;
     }
-    const nodeCli = runNodeCli(args);
+    const nodeCli = runNodeCli(['backend', ...args]);
     if (nodeCli.ok) {
       return nodeCli;
     }
@@ -610,7 +615,7 @@ function backendStats(query = {}) {
     let equityCsv = stringOrFallback(query.equity, null);
     let equitySource = equityCsv ? 'query' : null;
     if (!equityCsv) {
-      const inputPath = stringOrFallback(query.input, path.join(REPO_ROOT, 'data', 'backtests', 'latest_backtest.json'));
+      const inputPath = stringOrFallback(query.input, DEFAULT_BACKTEST_REPORT);
       try {
         const backtest = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
         if (backtest && backtest.equity_curve && Array.isArray(backtest.equity_curve)) {
@@ -684,26 +689,44 @@ function backendUniverse(query = {}) {
 }
 
 function backendPortfolio(query = {}) {
-  const cash = stringOrFallback(query.cash, '10000.0');
-  const pos = stringOrFallback(query.positions, '');
-  return withCache(`portfolio:${cash}:${pos}`, () => {
+  return withCache('portfolio:aggregated', () => {
     const args = [
-    'portfolio',
-    '--cash',
-    cash,
-    '--positions',
-    pos,
-    '--json',
+      'trade',
+      'aggregate_portfolio',
+      '--json',
     ];
-    const backend = runBackend(args);
-    if (backend.available) {
-      return backend;
+    const payload = runNodeCli(args);
+    
+    if (payload.ok === false) {
+      return {
+        ...localBackendFallback('portfolio', query),
+        fallback_reason: payload.error || 'aggregate_portfolio_unavailable',
+      };
     }
-    const nodeCli = runNodeCli(args);
-    if (nodeCli.ok) {
-      return nodeCli;
-    }
-    return localBackendFallback('portfolio', query);
+
+    // Map the gateway's aggregated structure to the API's expected portfolio_snapshot structure
+    return {
+      available: true,
+      ok: true,
+      type: 'portfolio_snapshot',
+      engine: 'sovereign_gateway',
+      schema_version: 1,
+      source: 'multi_broker_aggregation',
+      cash: payload.total_usd || 0,
+      positions: (payload.positions || []).map((p) => ({
+        symbol: p.symbol,
+        quantity: p.quantity,
+        average_price: p.averagePrice,
+        market_value: p.marketValue,
+        unrealized_pl: p.unrealizedPl,
+      })),
+      summary: {
+        market_value: (payload.total_equity || 0) - (payload.total_usd || 0),
+        equity: payload.total_equity || 0,
+        positions: (payload.positions || []).length,
+      },
+      brokers: payload.brokers || [],
+    };
   });
 }
 
@@ -773,8 +796,34 @@ function signalStatus(query = {}) {
   const backtestPath = stringOrFallback(query.backtest_report, DEFAULT_BACKTEST_REPORT);
   const threshold = finiteNumber(query.threshold, null) ?? finiteNumber(readJsonFile(modelPath)?.threshold, 0.55);
 
-  return withCache(`signal:${modelPath}:${backtestPath}:${threshold}`, () => {
-    const modelReport = readJsonFile(modelPath);
+  return withCache(`signal:${modelPath}:${backtestPath}:${threshold}:${query.input || 'latest'}`, () => {
+    let modelReport = readJsonFile(modelPath);
+    if (
+      query.input
+      && modelReport
+      && (!Array.isArray(modelReport.per_symbol_winners) || modelReport.per_symbol_winners.length === 0)
+    ) {
+      const records = loadHistoryRecords(stringOrFallback(query.input, ''));
+      if (records.length) {
+        const featureFrame = calculateRollingFeatureFrame(records, 2);
+        const featureCounts = new Map();
+        for (const feature of featureFrame.features || []) {
+          featureCounts.set(feature.key, (featureCounts.get(feature.key) || 0) + 1);
+        }
+        const maxFeatureRows = Math.max(0, ...featureCounts.values());
+        const requestHorizon = Math.max(1, Math.min(finiteNumber(modelReport.horizon, 5), maxFeatureRows - 1));
+        modelReport = {
+          ...modelReport,
+          source_mode: 'request_input',
+          input: query.input,
+          data_quality_ok: true,
+          ...compareModels(featureFrame, {
+            horizon: requestHorizon,
+            threshold,
+          }),
+        };
+      }
+    }
     const backtestReport = readJsonFile(backtestPath);
     const perSymbol = Array.isArray(modelReport?.per_symbol_winners) ? modelReport.per_symbol_winners : [];
     const signals = perSymbol
@@ -900,6 +949,22 @@ function systemStatus() {
   });
 }
 
+function botStatus(query = {}) {
+  return runNodeCli(['bot', 'status', '--json']); // no cache — lock state must be live
+}
+
+function botCycle(query = {}) {
+  const extraArgs = [];
+  if (query.live === 'true') extraArgs.push('--live');
+  return runNodeCli(['bot', 'cycle', '--json', ...extraArgs]);
+}
+
+function botSell(query = {}) {
+  const positionId = String(query.position_id || '');
+  if (!positionId) return { ok: false, error: 'position_id required' };
+  return runNodeCli(['bot', 'sell', '--position-id', positionId, '--json']);
+}
+
 module.exports = {
   BACKEND_CANDIDATES,
   CLI_CANDIDATES,
@@ -926,4 +991,7 @@ module.exports = {
   runNodeCli,
   signalStatus,
   systemStatus,
+  botStatus,
+  botCycle,
+  botSell,
 };

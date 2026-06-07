@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, Database, GitMerge, LayoutDashboard, LineChart, Server, User, Lock, Unlock } from 'lucide-react';
+import { Activity, Bot, Database, GitMerge, LayoutDashboard, LineChart, LogOut, Server, Settings, User, Lock, Unlock, TrendingUp } from 'lucide-react';
+import type { Session } from '@supabase/supabase-js';
 import { TabId } from '../../types';
 import { cn } from '../../lib/utils';
-import { subscribeToOrders } from '../../lib/supabase';
+import { supabase, subscribeToOrders } from '../../lib/supabase';
 
 interface TopBarProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
+  session: Session | null;
 }
 
-// --- NEW: Global Kill Switch Component ---
 function SafetyLock() {
   const [isBreached, setIsBreached] = useState(false);
 
@@ -25,8 +26,8 @@ function SafetyLock() {
   return (
     <div className={cn(
       "flex items-center gap-2 border rounded-full px-3 py-1 h-8 transition-all duration-500",
-      isBreached 
-        ? "bg-red-950/30 border-red-500/50 text-red-500 shadow-[0_0_12px_rgba(239,68,68,0.2)]" 
+      isBreached
+        ? "bg-red-950/30 border-red-500/50 text-red-500 shadow-[0_0_12px_rgba(239,68,68,0.2)]"
         : "bg-slate-800/50 border-slate-700 text-slate-400"
     )}>
       {isBreached ? <Lock className="w-3 h-3 animate-pulse" /> : <Unlock className="w-3 h-3" />}
@@ -45,15 +46,23 @@ const TABS: { id: TabId; label: string; number: string; icon: React.ReactNode }[
   { id: 'quote_health', label: 'Quote Health', number: '05', icon: <Database className="w-4 h-4" /> },
   { id: 'audit_log', label: 'Audit Log', number: '06', icon: <Server className="w-4 h-4" /> },
   { id: 'telemetry', label: 'Telemetry', number: '07', icon: <Activity className="w-4 h-4" /> },
+  { id: 'sigma_band', label: 'Sigma Band', number: '08', icon: <TrendingUp className="w-4 h-4" /> },
+  { id: 'bot',        label: 'Edge Bot',   number: '09', icon: <Bot className="w-4 h-4" /> },
 ];
 
-export function TopBar({ activeTab, onTabChange }: TopBarProps) {
+export function TopBar({ activeTab, onTabChange, session }: TopBarProps) {
+  const userEmail = session?.user?.email ?? null;
+
+  async function handleLogout() {
+    if (supabase) await supabase.auth.signOut();
+  }
+
   return (
     <header className="h-14 bg-[var(--bg-secondary)] border-b border-[var(--border-subtle)] flex items-center justify-between px-6 z-[1000] sticky top-0 shrink-0">
       {/* Brand Slot */}
       <div className="flex items-center gap-6">
         <div className="font-heading font-bold text-lg tracking-tight text-[var(--text-main)]">
-          Sovereign <em className="not-italic text-[var(--color-brand-cyan)] font-normal">Research OS</em>      
+          Sovereign <em className="not-italic text-[var(--color-brand-cyan)] font-normal">Research OS</em>
         </div>
 
         {/* Global Tab Navigation */}
@@ -90,14 +99,39 @@ export function TopBar({ activeTab, onTabChange }: TopBarProps) {
           </div>
         </div>
 
-        <button className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
+        {/* Settings */}
+        <button
+          onClick={() => onTabChange('settings')}
+          className={cn(
+            "w-8 h-8 rounded-full border flex items-center justify-center transition-colors",
+            activeTab === 'settings'
+              ? "border-[var(--color-brand-cyan)] text-[var(--color-brand-cyan)]"
+              : "border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
+          )}
+          title="Settings"
+        >
+          <Settings className="w-3.5 h-3.5" />
+        </button>
+
+        {/* User */}
+        <div className="flex items-center gap-2 text-[var(--text-muted)]">
           <div className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] flex items-center justify-center">
             <User className="w-4 h-4" />
           </div>
-          <span className="text-xs font-mono hidden xl:inline">Guest</span>
-        </button>
+          <span className="text-xs font-mono hidden xl:inline max-w-[140px] truncate">
+            {userEmail ?? 'Guest'}
+          </span>
+          {userEmail && (
+            <button
+              onClick={handleLogout}
+              title="Sign out"
+              className="w-7 h-7 flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );
 }
-

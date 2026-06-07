@@ -1,5 +1,6 @@
 const MANIFEST = require('./manifest');
-const { promptSelect, promptText, promptConfirm, isRichTerminal } = require('./engine');
+const { promptSelect, promptText, promptConfirm, isRichTerminal } = require('./engine/engine');
+const A = require('../../../shared/lib/ansi');
 
 /**
  * INTERSECTION
@@ -33,7 +34,6 @@ async function handleIntersection(args, handleCommand) {
   const providedArgs = args.slice(pathLength);
   const finalArgs = [...args.slice(0, pathLength)];
   const flagsSpec = spec.flags || {};
-// to many if else dev review
   for (const [flagKey, flagSpec] of Object.entries(flagsSpec)) {
     // Check if flag is already provided in the CLI
     let isProvided = false;
@@ -81,6 +81,11 @@ async function handleIntersection(args, handleCommand) {
   // (e.g. user passed --json which isn't in most schemas)
   for (const raw of providedArgs) {
     if (!finalArgs.includes(raw)) finalArgs.push(raw);
+  }
+
+  if (spec.loading) {
+    const label = spec.label.replace(/\s*\(.*\)$/, '');
+    process.stdout.write(`${A.muted(`${A.GLYPH.pointer} ${label}...`)}\n`);
   }
 
   return handleCommand(finalArgs);

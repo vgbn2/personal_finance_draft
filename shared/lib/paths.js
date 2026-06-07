@@ -1,5 +1,6 @@
 const path = require('node:path');
 const fs = require('node:fs');
+const { parseYamlRecursive } = require('./config_loader');
 
 /**
  * PATHS & BINARY DISCOVERY UTILITY
@@ -7,21 +8,23 @@ const fs = require('node:fs');
  */
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
+const STORAGE_DATA_DIR = path.join(REPO_ROOT, 'storage', 'data');
+const API_CACHE_DIR = path.join(STORAGE_DATA_DIR, 'cache', 'api_responses');
 
 const BINARY_NAME = process.platform === 'win32' ? 'sovereign_wealth.exe' : 'sovereign_wealth';
 
 const BACKEND_CANDIDATES = [
+    path.join(REPO_ROOT, 'backend', 'core', 'build', 'Release', BINARY_NAME),
+    path.join(REPO_ROOT, 'backend', 'core', 'build', 'Debug', BINARY_NAME),
     path.join(REPO_ROOT, 'build', 'backend', 'core', 'Release', BINARY_NAME),
     path.join(REPO_ROOT, 'build', 'backend', 'core', 'Debug', BINARY_NAME),
     path.join(REPO_ROOT, 'backend', 'core', 'build', 'manual', BINARY_NAME),
-    path.join(REPO_ROOT, 'build', 'cpp_core', BINARY_NAME),
+    path.join(REPO_ROOT, 'build', 'backend', 'core', BINARY_NAME),
     path.join(REPO_ROOT, 'backend', 'core', 'src', BINARY_NAME),
 ];
 
 const CLI_CANDIDATES = [
     path.join(REPO_ROOT, 'backend', 'cli', 'sovereign_cli.js'),
-    path.join(REPO_ROOT, 'scripts', 'cli', 'sovereign_cli.js'),
-    path.join(REPO_ROOT, 'scripts', 'sovereign_cli.js'),
 ];
 
 /**
@@ -43,39 +46,14 @@ function findNodeCli() {
 }
 
 /**
- * Loads tool configurations from config/tools.yaml.
- * Uses a basic regex-based parser to avoid external dependencies in shared lib.
+ * Loads tool configurations from config/system/tools.yaml.
  */
 function loadToolsConfig() {
-    const toolsPath = path.join(REPO_ROOT, 'config', 'tools.yaml');
+    const toolsPath = path.join(REPO_ROOT, 'config', 'system', 'tools.yaml');
     if (!fs.existsSync(toolsPath)) return {};
-    
-    const content = fs.readFileSync(toolsPath, 'utf8');
-    const config = {};
-    let currentKey = null;
 
-    content.split('\n').forEach(line => {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) return;
-
-        // Header key (e.g., "msys64:")
-        if (line.match(/^[a-z0-9_]+:/i)) {
-            currentKey = trimmed.replace(':', '');
-            config[currentKey] = {};
-        } 
-        // Sub-key or list (very basic parsing)
-        else if (currentKey && trimmed.startsWith('-')) {
-            const val = trimmed.replace(/^- /, '').replace(/"/g, '').replace(/'/g, '');
-            const listKey = 'candidates'; // Default list key
-            if (!config[currentKey][listKey]) config[currentKey][listKey] = [];
-            config[currentKey][listKey].push(val);
-        }
-        else if (currentKey && trimmed.includes(':')) {
-            const [k, v] = trimmed.split(':').map(s => s.trim());
-            config[currentKey][k] = v.replace(/"/g, '').replace(/'/g, '');
-        }
-    });
-
+    const lines = fs.readFileSync(toolsPath, 'utf8').split(/\r?\n/);
+    const [config] = parseYamlRecursive(lines);
     return config;
 }
 
@@ -117,8 +95,28 @@ function which(cmd) {
     }
 }
 
+// Canonical storage path constants — import these; never recompute them per-file.
+const DEFAULT_SNAPSHOT      = path.join(STORAGE_DATA_DIR, 'cache', 'last_fetch.json');
+const DEFAULT_QUALITY_REPORT = path.join(STORAGE_DATA_DIR, 'cache', 'data_quality_report.json');
+const DEFAULT_FEATURES      = path.join(STORAGE_DATA_DIR, 'features', 'latest_features.json');
+const DEFAULT_MODEL_REPORT  = path.join(STORAGE_DATA_DIR, 'models', 'latest_model_comparison.json');
+const DEFAULT_BACKTEST      = path.join(STORAGE_DATA_DIR, 'backtests', 'latest_backtest.json');
+const DEFAULT_STATE_PATH    = path.join(REPO_ROOT, 'workspace', 'STATE.md');
+const DEFAULT_USER_SETTINGS = path.join(STORAGE_DATA_DIR, 'user_settings.json');
+const STORAGE_TS_DIR        = path.join(STORAGE_DATA_DIR, 'ts');
+
 module.exports = {
     REPO_ROOT,
+    STORAGE_DATA_DIR,
+    API_CACHE_DIR,
+    DEFAULT_SNAPSHOT,
+    DEFAULT_QUALITY_REPORT,
+    DEFAULT_FEATURES,
+    DEFAULT_MODEL_REPORT,
+    DEFAULT_BACKTEST,
+    DEFAULT_STATE_PATH,
+    DEFAULT_USER_SETTINGS,
+    STORAGE_TS_DIR,
     findBackendBinary,
     findNodeCli,
     findTool,

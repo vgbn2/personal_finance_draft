@@ -2,8 +2,8 @@ const { spawnSync } = require('node:child_process');
 
 const args = [
   '--test',
-  'tests/scripts/*.test.js',
-  'tests/web/*.test.js',
+  'tests/scripts/**/*.test.js',
+  'tests/web/**/*.test.js',
   ...process.argv.slice(2),
 ];
 

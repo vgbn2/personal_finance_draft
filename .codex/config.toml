@@ -1,8 +1,0 @@
-personality = "friendly"
-
-[integrity]
-dcs_threshold = 0.95
-audit_mandatory = true
-fail_closed = true
-
-

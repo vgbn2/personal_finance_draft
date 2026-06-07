@@ -1,6 +1,6 @@
 #include "indicator_engine.hpp"
 
-#include "../ml/kalman_filter.hpp"
+#include "kalman_filter.hpp"
 #include "macd.hpp"
 #include "moving_averages.hpp"
 #include "rsi.hpp"
@@ -38,6 +38,15 @@ double stddev(std::span<const double> values) {
         variance += delta * delta;
     }
     return std::sqrt(variance / static_cast<double>(values.size() - 1U));
+}
+
+template<typename T>
+T getParam(const ParameterMap& params, const std::string& key, T fallback) {
+    auto it = params.find(key);
+    if (it != params.end()) {
+        return static_cast<T>(it->second);
+    }
+    return fallback;
 }
 
 } // namespace
@@ -92,7 +101,7 @@ std::vector<KalmanResult> IndicatorEngine::kalmanSeriesWithVariance(const std::v
     return res;
 }
 
-IndicatorFrame IndicatorEngine::buildFrame(std::span<const OhlcvBar> bars) {
+IndicatorFrame IndicatorEngine::buildFrame(std::span<const OhlcvBar> bars, const ParameterMap& params) {
     IndicatorFrame frame;
     frame.rows.reserve(bars.size());
     if (bars.empty()) {
@@ -107,26 +116,36 @@ IndicatorFrame IndicatorEngine::buildFrame(std::span<const OhlcvBar> bars) {
     }
 
     // 1. Vectorized Series Calculations (No Branching)
-    auto r1_series = rateOfChangeSeries(closes, constants::PERIOD_RETURN_FAST);
-    auto r5_series = rateOfChangeSeries(closes, constants::PERIOD_RETURN_SLOW);
-    auto vol_series = rollingVolatilitySeries(closes, constants::PERIOD_VOLATILITY);
-    auto rsi_series = relativeStrengthIndexSeries(closes, constants::PERIOD_RSI);
-    // TODO: Load these from config/indicator_config.yaml
-    const double kalman_q = 0.001; 
-    const double kalman_r = 1.0;
+    const std::size_t period_ret_fast = getParam(params, "ret_fast", constants::PERIOD_RETURN_FAST);
+    const std::size_t period_ret_slow = getParam(params, "ret_slow", constants::PERIOD_RETURN_SLOW);
+    const std::size_t period_vol = getParam(params, "vol_period", constants::PERIOD_VOLATILITY);
+    const std::size_t period_rsi = getParam(params, "rsi_period", constants::PERIOD_RSI);
+    const double kalman_q = getParam(params, "kalman_q", 0.001);
+    const double kalman_r = getParam(params, "kalman_r", 1.0);
+    const std::size_t period_macd_fast = getParam(params, "macd_fast", constants::PERIOD_MACD_FAST);
+    const std::size_t period_macd_slow = getParam(params, "macd_slow", constants::PERIOD_MACD_SLOW);
+    const std::size_t period_sma_slow = getParam(params, "sma_slow", constants::PERIOD_SMA_SLOW);
+    const std::size_t period_atr = getParam(params, "atr_period", constants::PERIOD_ATR);
+    const std::size_t period_bb = getParam(params, "bb_period", constants::PERIOD_BOLLINGER);
+    const std::size_t period_stoch = getParam(params, "stoch_period", constants::PERIOD_STOCHASTIC);
+    const std::size_t period_stoch_signal = getParam(params, "stoch_signal", constants::PERIOD_STOCHASTIC_SIGNAL);
+
+    auto r1_series = rateOfChangeSeries(closes, period_ret_fast);
+    auto r5_series = rateOfChangeSeries(closes, period_ret_slow);
+    auto vol_series = rollingVolatilitySeries(closes, period_vol);
+    auto rsi_series = relativeStrengthIndexSeries(closes, period_rsi);
     auto kalman_results = kalmanSeriesWithVariance(closes, kalman_q, kalman_r);
-    auto macd_series = macdSeries(closes, constants::PERIOD_MACD_FAST, constants::PERIOD_MACD_SLOW);
-    auto ema_fast_series = exponentialMovingAverageSeries(closes, constants::PERIOD_MACD_FAST);
-    auto ema_slow_series = exponentialMovingAverageSeries(closes, constants::PERIOD_MACD_SLOW);
-    auto sma_20_series = simpleMovingAverageSeries(closes, constants::PERIOD_BOLLINGER);
-    auto sma_50_series = simpleMovingAverageSeries(closes, constants::PERIOD_SMA_SLOW);
-    auto atr_series = averageTrueRangeSeries(bars, constants::PERIOD_ATR);
-    auto bb_series = bollingerBandsSeries(closes, constants::PERIOD_BOLLINGER);
-    auto stoch_k_series = stochasticPercentKSeries(bars, constants::PERIOD_STOCHASTIC);
+    auto macd_series = macdSeries(closes, period_macd_fast, period_macd_slow);
+    auto ema_fast_series = exponentialMovingAverageSeries(closes, period_macd_fast);
+    auto ema_slow_series = exponentialMovingAverageSeries(closes, period_macd_slow);
+    auto sma_20_series = simpleMovingAverageSeries(closes, period_bb);
+    auto sma_50_series = simpleMovingAverageSeries(closes, period_sma_slow);
+    auto atr_series = averageTrueRangeSeries(bars, period_atr);
+    auto bb_series = bollingerBandsSeries(closes, period_bb);
+    auto stoch_k_series = stochasticPercentKSeries(bars, period_stoch);
     
     // Note: To perfectly replicate `stoch_d` SMA logic, we run SMA directly over `stoch_k_series`
-    // Missing NaN handling in generic SMA means we should build it locally or let the loop handle it
-    auto stoch_d_series = simpleMovingAverageSeries(stoch_k_series, constants::PERIOD_STOCHASTIC_SIGNAL);
+    auto stoch_d_series = simpleMovingAverageSeries(stoch_k_series, period_stoch_signal);
 
     // 2. Single-pass insertion
     for (std::size_t i = 0; i < bars.size(); ++i) {
@@ -137,42 +156,42 @@ IndicatorFrame IndicatorEngine::buildFrame(std::span<const OhlcvBar> bars) {
 
         if (!std::isnan(r1_series[i])) row.set("ret:fast", r1_series[i]); else all_core_ready = false;
         if (!std::isnan(r5_series[i])) row.set("ret:slow", r5_series[i]);
-        if (!std::isnan(vol_series[i])) row.set("vol:20", vol_series[i]);
-        if (!std::isnan(rsi_series[i])) row.set("rsi:14", rsi_series[i]); else all_core_ready = false;
+        if (!std::isnan(vol_series[i])) row.set("vol:" + std::to_string(period_vol), vol_series[i]);
+        if (!std::isnan(rsi_series[i])) row.set("rsi:" + std::to_string(period_rsi), rsi_series[i]); else all_core_ready = false;
         if (!std::isnan(kalman_results[i].estimate)) {
             row.set("kalman", kalman_results[i].estimate);
             row.set("kalman_var", kalman_results[i].variance);
         }
         if (!std::isnan(macd_series[i])) row.set("macd", macd_series[i]); else all_core_ready = false;
-        if (!std::isnan(ema_fast_series[i])) row.set("ema:12", ema_fast_series[i]); else all_core_ready = false;
-        if (!std::isnan(ema_slow_series[i])) row.set("ema:26", ema_slow_series[i]); else all_core_ready = false;
-        if (!std::isnan(sma_20_series[i])) row.set("sma:20", sma_20_series[i]);
-        if (!std::isnan(sma_50_series[i])) row.set("sma:50", sma_50_series[i]);
+        if (!std::isnan(ema_fast_series[i])) row.set("ema:" + std::to_string(period_macd_fast), ema_fast_series[i]); else all_core_ready = false;
+        if (!std::isnan(ema_slow_series[i])) row.set("ema:" + std::to_string(period_macd_slow), ema_slow_series[i]); else all_core_ready = false;
+        if (!std::isnan(sma_20_series[i])) row.set("sma:" + std::to_string(period_bb), sma_20_series[i]);
+        if (!std::isnan(sma_50_series[i])) row.set("sma:" + std::to_string(period_sma_slow), sma_50_series[i]);
         
         if (!std::isnan(atr_series[i])) {
-            row.set("atr:14", atr_series[i]);
+            row.set("atr:" + std::to_string(period_atr), atr_series[i]);
             if (bars[i].close != 0.0) {
-                row.set("atr_pct:14", atr_series[i] / bars[i].close);
+                row.set("atr_pct:" + std::to_string(period_atr), atr_series[i] / bars[i].close);
             }
         }
         
         if (!std::isnan(bb_series.middle[i])) {
-            row.set("bb_upper:20", bb_series.upper[i]);
-            row.set("bb_middle:20", bb_series.middle[i]);
-            row.set("bb_lower:20", bb_series.lower[i]);
+            row.set("bb_upper:" + std::to_string(period_bb), bb_series.upper[i]);
+            row.set("bb_middle:" + std::to_string(period_bb), bb_series.middle[i]);
+            row.set("bb_lower:" + std::to_string(period_bb), bb_series.lower[i]);
             if (bb_series.middle[i] != 0.0) {
-                row.set("bb_width:20", (bb_series.upper[i] - bb_series.lower[i]) / bb_series.middle[i]);
+                row.set("bb_width:" + std::to_string(period_bb), (bb_series.upper[i] - bb_series.lower[i]) / bb_series.middle[i]);
             }
             const double band_range = bb_series.upper[i] - bb_series.lower[i];
             if (band_range > 0.0) {
-                row.set("bb_percent_b:20", (bars[i].close - bb_series.lower[i]) / band_range);
+                row.set("bb_percent_b:" + std::to_string(period_bb), (bars[i].close - bb_series.lower[i]) / band_range);
             }
         }
         
         if (!std::isnan(stoch_k_series[i])) {
-            row.set("stoch_k:14", stoch_k_series[i]);
+            row.set("stoch_k:" + std::to_string(period_stoch), stoch_k_series[i]);
             if (!std::isnan(stoch_d_series[i])) {
-                row.set("stoch_d:3", stoch_d_series[i]);
+                row.set("stoch_d:" + std::to_string(period_stoch_signal), stoch_d_series[i]);
             }
         } else {
             all_core_ready = false;

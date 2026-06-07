@@ -1,15 +1,67 @@
 'use strict';
 
 // ML dataset helpers: load OHLCV bars + anchor series from the local family-partitioned
-// cache (storage/data/cache/<family>/backtest_history.json) and serialize a feature frame
-// to CSV for Python training. Cache-only (no network); cache root is overridable for tests.
+// cache (storage/data/cache/<family>/backtest_history.json) AND the binary time-series
+// index (storage/data/ts/<symbol>_<tf>.bin), then serialize a feature frame to CSV for
+// Python training. Cache-only (no network); both roots are overridable for tests.
+//
+// The JSON cache only holds whatever was last written to backtest_history.json (often a
+// partial set), while the binary ts index carries the full backfilled universe (core
+// crypto, metals, energy, FX, equities). Reading both makes `ml dump` cover everything.
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { REPO_ROOT } = require('./paths');
+const { REPO_ROOT, STORAGE_TS_DIR } = require('./paths');
+const { readTsIndex } = require('./market_validation');
 
 function defaultCacheRoot() {
   return path.join(REPO_ROOT, 'storage', 'data', 'cache');
+}
+
+function defaultTsDir() {
+  return STORAGE_TS_DIR;
+}
+
+// Enumerate the symbols present in the binary ts index for a timeframe (from `<sym>_<tf>.bin`).
+function tsSymbolsForTimeframe(tsDir, timeframe) {
+  const dir = tsDir || defaultTsDir();
+  if (!fs.existsSync(dir)) return [];
+  const suffix = `_${timeframe}.bin`;
+  const out = [];
+  for (const f of fs.readdirSync(dir)) {
+    if (f.endsWith(suffix)) out.push(f.slice(0, -suffix.length));
+  }
+  return out;
+}
+
+// Read ts-index OHLCV records for the requested symbols + timeframe. Returns the same flat
+// record shape as the JSON cache sources. `symbols` empty => every symbol in the ts index.
+function readTsSources(symbols, timeframe, tsDir) {
+  const dir = tsDir || defaultTsDir();
+  const want = (symbols && symbols.length)
+    ? [...new Set(symbols.map((s) => String(s).toUpperCase()))]
+    : tsSymbolsForTimeframe(dir, timeframe);
+  const out = [];
+  for (const sym of want) {
+    const recs = readTsIndex(dir, sym, timeframe);
+    if (Array.isArray(recs)) out.push(...recs);
+  }
+  return out;
+}
+
+// Merge JSON-cache + ts-index records, deduped by symbol+timestamp (JSON wins on a tie).
+function mergeSourceRecords(jsonRecords, tsRecords) {
+  const seen = new Set();
+  const out = [];
+  const keyOf = (r) => `${String(r.symbol).toUpperCase()}\0${r.timestamp}`;
+  for (const r of jsonRecords) { seen.add(keyOf(r)); out.push(r); }
+  for (const r of tsRecords) {
+    const k = keyOf(r);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(r);
+  }
+  return out;
 }
 
 function readFamilySources(cacheRoot) {
@@ -36,11 +88,14 @@ function readFamilySources(cacheRoot) {
  */
 function loadAssetSourcesFromCache(symbols, timeframe = '1d', opts = {}) {
   const want = new Set((symbols || []).map((s) => String(s).toUpperCase()));
-  const all = readFamilySources(opts.cacheRoot);
-  const filtered = all.filter(
+  const jsonAll = readFamilySources(opts.cacheRoot);
+  const jsonFiltered = jsonAll.filter(
     (r) => r && r.symbol && r.timeframe === timeframe &&
       (want.size === 0 || want.has(String(r.symbol).toUpperCase())),
   );
+  // Fill the rest of the universe from the binary ts index (it carries the full backfill).
+  const tsRecords = readTsSources(symbols, timeframe, opts.tsDir);
+  const filtered = mergeSourceRecords(jsonFiltered, tsRecords);
 
   // Cap to the most recent N bars per symbol — the expanding-window feature build is
   // O(n^2), so unbounded 7000-bar histories are impractical. Default: no cap.
@@ -66,10 +121,15 @@ function loadAssetSourcesFromCache(symbols, timeframe = '1d', opts = {}) {
  * (one point per UTC day, last value wins). Use for metals/energy/FX cross-family anchors.
  */
 function cacheCloseSeriesAnchor(symbol, timeframe = '1d', opts = {}) {
-  const all = readFamilySources(opts.cacheRoot);
   const sym = String(symbol).toUpperCase();
+  const jsonAll = readFamilySources(opts.cacheRoot);
   const byDay = new Map();
-  for (const r of all) {
+  // ts-index first, then JSON cache overrides same-day closes (JSON precedence).
+  for (const r of readTsSources([sym], timeframe, opts.tsDir)) {
+    if (!Number.isFinite(Number(r.close))) continue;
+    byDay.set(String(r.timestamp).slice(0, 10), Number(r.close));
+  }
+  for (const r of jsonAll) {
     if (!r || r.timeframe !== timeframe || String(r.symbol).toUpperCase() !== sym) continue;
     if (!Number.isFinite(Number(r.close))) continue;
     byDay.set(String(r.timestamp).slice(0, 10), Number(r.close));
@@ -120,6 +180,8 @@ function frameToCsv(frame) {
 
 module.exports = {
   readFamilySources,
+  readTsSources,
+  tsSymbolsForTimeframe,
   loadAssetSourcesFromCache,
   cacheCloseSeriesAnchor,
   frameToCsv,

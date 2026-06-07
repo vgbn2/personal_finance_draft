@@ -1,5 +1,9 @@
+engine: auto
 name: volume_profile
 kind: momentum
+family: momentum
+lane: single_asset
+role: strategy
 status: draft
 enabled: false
 model: cnn_v3
@@ -16,6 +20,31 @@ sections:
       - price_volume
       - sentiment
     validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
   risk:
     signal_threshold: 0.65
     max_holding_days: 5

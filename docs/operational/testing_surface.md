@@ -17,23 +17,23 @@ That means:
 ## Current Grouped Scripts
 
 `npm test`
-- Runs the broad Node suite through `scripts/run_node_tests.js`
-- Covers `scripts/tests/*.test.js`, `test/scripts/**/*.test.js`, and `web/tests/*.test.js`
+- Runs the broad Node suite through `tests/run_node_tests.js`
+- Covers `tests/scripts/tests/*.test.js`, `test/scripts/**/*.test.js`, and `backend/api/tests/*.test.js`
 
 `npm run test:api`
-- Runs `web/tests/api.test.js`, `web/tests/dashboard_contract.test.js`, and `web/tests/charts.test.js`
+- Runs `backend/api/tests/api.test.js`, `backend/api/tests/dashboard_contract.test.js`, and `backend/api/tests/charts.test.js`
 - Verifies served dashboard entrypoint, API route health, summary/correlation/universe payloads, and contract drift
 
 `npm run test:data`
-- Runs `scripts/tests/backfill_regression.test.js`, `test/scripts/lib/indicators.data_flow.test.js`, and `test/scripts/config_integrity.test.js`
+- Runs `tests/scripts/backfill_regression.test.js`, `tests/scripts/lib/indicators.data_flow.test.js`, and `tests/scripts/config_integrity.test.js`
 - Verifies input bars, config loading, and feature/data-flow boundaries
 
 `npm run test:macro`
-- Runs `scripts/tests/macro_history_helpers.test.js`, `test/scripts/macro_ingestion_contract.test.js`, and `test/scripts/macro_store_contract.test.js`
+- Runs `tests/scripts/tests/macro_history_helpers.test.js`, `tests/scripts/macro_ingestion_contract.test.js`, and `tests/scripts/macro_store_contract.test.js`
 - Verifies macro and reserves history mapping, the canonical macro normalization layer, and the full ingest entrypoint
 
 `npm run test:deploy`
-- Runs `test/scripts/deployment_manifest_contract.test.js`
+- Runs `tests/scripts/deployment_manifest_contract.test.js`
 - Verifies Docker, Kubernetes, and deployment docs stay aligned on ports, cache settings, and Supabase secret wiring
 
 `npm run test:contracts`
@@ -43,10 +43,10 @@ That means:
 - Runs `test:contracts` first, then the broader Node suite
 - Use this before claiming the repo is healthy after API, deployment, or ingestion changes
 
-`node --test test/scripts/cache_contract.test.js`
+`node --test tests/scripts/tests/cache_contract.test.js`
 - Verifies cache reuse and disable-mode freshness behavior
 
-`node --test test/scripts/supabase_route_contract.test.js`
+`node --test tests/scripts/tests/supabase_route_contract.test.js`
 - Verifies Supabase auth and database route contract shape with a mocked client
 
 ## Existing Verification Helpers
@@ -62,15 +62,15 @@ These are not all unit tests, but they are important evidence surfaces:
 `node scripts/dev/parallel_backfill_probe.js`
 - Probes backfill behavior and is useful when debugging historical fetch paths
 
-`node scripts/data_ops/ingest_market_data.js --family macro --days 30`
+`node backend/scripts/data_ops/ingest_market_data.js --family macro --days 30`
 - Runtime macro ingest evidence check
 - Should be inspected for record counts, timestamps, and family grouping
 
-`node scripts/data_ops/ingest_market_data.js --family reserves --days 3650`
+`node backend/scripts/data_ops/ingest_market_data.js --family reserves --days 3650`
 - Runtime reserves/economy-history evidence check
 - Useful for country/metric coverage and long-window history shape
 
-`node web/app.js`
+`node backend/api/app.js`
 - Starts the live local web bridge for browser and endpoint inspection
 
 ## Required Test Slices By Surface
@@ -96,7 +96,7 @@ Deployment:
 
 Input data:
 
-- config loading from `config/data_sources.yaml`
+- config loading from `config/markets/data_sources.yaml`
 - backfill integrity
 - indicator data flow
 - macro history mapping from FRED

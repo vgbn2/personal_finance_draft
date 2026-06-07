@@ -2,8 +2,12 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 const { buildCryptoAggregateSeries } = require('../../../shared/lib/crypto_aggregates');
+const { refreshCryptoAggregates } = require('../../../backend/cli/commands/ml');
 
 // Injected fetcher: symbol -> Map(date -> mcap). No network.
 function fakeFetcher(data) {
@@ -53,4 +57,31 @@ test('buildCryptoAggregateSeries gates days below the coin quorum and requires B
   assert.strictEqual(r.total_mcap.length, 1, 'only the quorum-satisfying day with BTC survives');
   assert.strictEqual(r.total_mcap[0].date, '2026-01-01');
   assert.strictEqual(r.stablecoin_mcap[0].value, 0, 'no stablecoins -> zero');
+});
+
+test('refreshCryptoAggregates writes a file in the shape loadCryptoAggregateAnchors reads', async () => {
+  const data = {
+    BTC: { '2026-01-01': 1000, '2026-01-02': 1200 },
+    ETH: { '2026-01-01': 400, '2026-01-02': 500 },
+    USDT: { '2026-01-01': 100, '2026-01-02': 150 },
+  };
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mlagg-'));
+  const out = path.join(dir, 'crypto_aggregates.json');
+  const result = await refreshCryptoAggregates({
+    out,
+    universe: ['BTC', 'ETH'],
+    stablecoins: ['USDT'],
+    throttleMs: 0,
+    fetchMcapSeries: fakeFetcher(data),
+  });
+  assert.strictEqual(result.out, out);
+  assert.strictEqual(result.days_emitted, 2);
+
+  const written = JSON.parse(fs.readFileSync(out, 'utf8'));
+  // Keys must match what loadCryptoAggregateAnchors maps (total_mcap/btc_dominance/stablecoin_mcap).
+  assert.ok(Array.isArray(written.total_mcap) && written.total_mcap.length === 2);
+  assert.ok(Array.isArray(written.btc_dominance) && written.btc_dominance.length === 2);
+  assert.ok(Array.isArray(written.stablecoin_mcap) && written.stablecoin_mcap.length === 2);
+  assert.strictEqual(written.total_mcap[0].value, 1500);
+  assert.ok(written.meta && typeof written.meta.generated_at === 'string');
 });

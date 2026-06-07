@@ -3,7 +3,7 @@ const path = require('node:path');
 
 /**
  * 20-Year Historical Data Pipeline
- * [gemini-work] Added to fulfill dev suggestion for long-term historical research.
+
  */
 async function backfill20Years(symbol = 'SPY') {
     console.log(`[PIPELINE] Initiating 20-year backfill for ${symbol}...`);

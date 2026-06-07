@@ -5,6 +5,8 @@ const FEATURE_NAMES = [
   'rsi',
   'macd',
   'atr',
+  'smc_score',
+  'divergence_score',
   'gamma',
   'theta',
   'vega',
@@ -31,22 +33,30 @@ function signalParts(feature) {
   const rsi = valueOrZero(feature.rsi);
   const macdNorm = valueOrZero(feature.macd) / close;
   const atrPct = valueOrZero(feature.atr) / close;
+  const smcScore = valueOrZero(feature.smc_score);
+  const divergenceScore = valueOrZero(feature.divergence_score);
+  const sessionProfilePosition = valueOrZero(feature.session_volume_profile_position);
+  const sessionProfileImbalance = valueOrZero(feature.session_volume_profile_imbalance);
   const gamma = valueOrZero(feature.gamma);
   const theta = valueOrZero(feature.theta);
   const vega = valueOrZero(feature.vega);
   const kalman = valueOrZero(feature.kalman);
-  const trend = return5 * 8 + macdNorm * 20;
-  const meanReversion = (50 - rsi) / 100;
-  const breakout = return1 * 6 - volatility;
+  const trend = return5 * 8 + macdNorm * 20 + smcScore * 2 + sessionProfileImbalance * 4;
+  const meanReversion = (50 - rsi) / 100 + divergenceScore * 0.5 + (sessionProfilePosition > 0.8 ? -0.15 : sessionProfilePosition < 0.2 ? 0.15 : 0);
+  const breakout = return1 * 6 - volatility + smcScore + (sessionProfilePosition > 0.7 ? 0.5 : 0);
   const riskPenalty = volatility * 2 + atrPct;
   return {
     atrPct,
     breakout,
+    divergenceScore,
     macdNorm,
     meanReversion,
     return1,
     return5,
     riskPenalty,
+    smcScore,
+    sessionProfileImbalance,
+    sessionProfilePosition,
     rsi,
     trend,
     volatility,
@@ -73,7 +83,8 @@ const modelCandidates = [
     description: 'convolution-style scorer over latest technical feature row',
     predict(feature) {
       const p = signalParts(feature);
-      return predictionFromScore(p.trend + p.meanReversion * 0.25 - p.riskPenalty, 1);
+      // confidenceScale=3 calibrates for real daily return magnitudes (~0.01–0.03 range)
+      return predictionFromScore(p.trend + p.meanReversion * 0.25 - p.riskPenalty, 3);
     },
   },
   {
@@ -338,6 +349,24 @@ function perSymbolWinners(models) {
   });
 }
 
+// Short names used in strategy YAMLs → canonical model names
+const MODEL_ALIASES = {
+  xgboost:   'xgboost_ranker_v0',
+  cnn_v3:    'cnn_window_v0',
+  lstm_v1:   'lstm_sequence_v0',
+  cnn:       'cnn_window_v0',
+  lstm:      'lstm_sequence_v0',
+  rf:        'random_forest_v0',
+  dt:        'decision_tree_stump_v0',
+  lr:        'logistic_regression_v0',
+  svm:       'svm_margin_v0',
+};
+
+function resolveModel(name) {
+  const canonical = MODEL_ALIASES[name] || name;
+  return modelCandidates.find((c) => c.name === canonical) || modelCandidates[0];
+}
+
 function compareModels(featureFrame, options = {}) {
   const horizon = options.horizon || 5;
   const threshold = options.threshold || 0.55;
@@ -359,8 +388,10 @@ function compareModels(featureFrame, options = {}) {
 
 module.exports = {
   FEATURE_NAMES,
+  MODEL_ALIASES,
   compareModels,
   modelCandidates,
   perSymbolWinners,
+  resolveModel,
   scoreModel,
 };

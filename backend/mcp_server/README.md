@@ -3,6 +3,14 @@
 LLM-facing tool server for the Sovereign trading platform (system status, backtests,
 market universe, portfolio, trade gates, Polymarket tools).
 
+## Trading safety contract
+
+- MCP trade tools default to non-live execution unless `live=true`.
+- Any live order must also set `confirm_live=true`.
+- Live Polymarket orders should include an explicit `price`; this mirrors the TUI path, which previews and submits a limit order rather than an implicit market buy.
+- `place_polymarket_order` also accepts `max_cost_usdc` as a caller-side spend cap.
+- The server still enforces the repo-local `ai_agent_trading` feature gate before any live order path is forwarded.
+
 ## Canonical launch path
 
 The server runs from the **compiled** output, not the TypeScript source:

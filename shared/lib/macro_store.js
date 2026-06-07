@@ -47,31 +47,30 @@ function normalizeObservedAt(record) {
 }
 
 function normalizeMacroObservation(record) {
-  const series = String(record.series || '').trim();
+  const series = String(record.series || record.symbol || '').trim();
   const observedAt = normalizeObservedAt(record);
-  const rawValue = Number(record.value);
+  const rawValue = Number(record.value ?? record.close);
   const unit = MACRO_SERIES_UNITS[series] || 'level';
 
   return {
     family: 'macro',
     series,
-    series_id: record.series_id ? String(record.series_id).trim() : null,
     source: String(record.source || record.provider || 'fred'),
     observed_at: observedAt,
-    raw_value: Number.isFinite(rawValue) ? rawValue : null,
+    value: Number.isFinite(rawValue) ? rawValue : null,
     normalized_value: Number.isFinite(rawValue) ? signedLog1p(rawValue) : null,
     unit,
     normalization_method: 'signed_log1p',
-    payload: record,
+    metadata: record,
   };
 }
 
 function buildMacroObservationRows(records) {
   const list = Array.isArray(records) ? records : [records];
   return list
-    .filter((record) => record && record.family === 'macro' && record.series)
+    .filter((record) => record && (record.family === 'macro' || record.family === 'pmi') && (record.series || record.symbol))
     .map(normalizeMacroObservation)
-    .filter((record) => Boolean(record.observed_at) && Number.isFinite(record.raw_value));
+    .filter((record) => Boolean(record.observed_at) && Number.isFinite(record.value));
 }
 
 function chunkRows(rows, size) {

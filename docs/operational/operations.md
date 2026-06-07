@@ -11,7 +11,7 @@ git status --short
 npm run native:doctor
 cmake -S . -B build
 cmake --build build
-ctest --test-dir build/cpp_core
+ctest --test-dir build/backend/core
 ```
 
 Windows PowerShell:
@@ -21,7 +21,7 @@ git status --short
 npm run native:doctor
 cmake -S . -B build
 cmake --build build
-ctest --test-dir build/cpp_core
+ctest --test-dir build/backend/core
 ```
 
 The `native:doctor` command reports whether `cmake`, `ctest`, and a focused compiler fallback are available on the current machine. The CMake build verifies the C++ backend path. Node CLI and web/API checks should also be run when touching ingestion, validation, research, quote, or dashboard bridge behavior.
@@ -42,10 +42,10 @@ Before handing off a change:
 If CMake is unavailable locally, a direct compiler smoke test may be used during development:
 
 ```bash
-g++ -std=c++20 -Wall -Wextra -Werror -I ./cpp_core/include \
-  ./cpp_core/src/main.cpp \
-  ./cpp_core/src/wealth/finance_engine.cpp \
-  ./cpp_core/src/wealth/param_loader.cpp \
+g++ -std=c++20 -Wall -Wextra -Werror -I ./backend/core/include \
+  ./backend/core/src/main.cpp \
+  ./backend/core/src/wealth/finance_engine.cpp \
+  ./backend/core/src/wealth/param_loader.cpp \
   -o ./build/manual/sovereign_wealth
 ```
 
@@ -63,11 +63,11 @@ Resolution: focused direct `g++` smoke tests can still prove small native seams,
 
 Problem: executable path does not exist.
 
-Resolution: run `cmake --build build` and check whether your generator places binaries under `build/cpp_core`.
+Resolution: run `cmake --build build` and check whether your generator places binaries under `build/backend/core`.
 
 Problem: test target not found.
 
-Resolution: confirm `cpp_core/CMakeLists.txt` defines `phase1_compounding_test` and `add_test`.
+Resolution: confirm `backend/core/CMakeLists.txt` defines `phase1_compounding_test` and `add_test`.
 
 Problem: linker errors for `FinanceEngine`.
 

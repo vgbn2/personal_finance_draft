@@ -12,7 +12,7 @@
 
 namespace {
 
-bool approxEqual(double actual, double expected, double tolerance = 1e-9) {
+[[maybe_unused]] bool approxEqual(double actual, double expected, double tolerance = 1e-9) {
     return std::fabs(actual - expected) <= tolerance;
 }
 
@@ -25,7 +25,7 @@ int main() {
     assert(paper.isReady());
     assert(paper.name() == "PaperBroker");
 
-    const ExecutionOrder market_order{"BTCUSDT", "buy", 1.0, "market"};
+    const ExecutionOrder market_order{.instrument_id = "BTCUSDT", .side = "buy", .quantity = 1.0, .order_type = "market"};
     const auto market_fill = paper.submit(market_order);
     assert(market_fill.state == OrderState::filled);
     assert(approxEqual(market_fill.filled_quantity, 1.0));

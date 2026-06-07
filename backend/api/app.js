@@ -15,21 +15,14 @@ process.on('unhandledRejection', (reason, promise) => {
 // ------------------------------------------
 
 const {
-  backendCacheList,
-  backendCorrelation,
-  backendDataSummary,
-  backendPortfolio,
-  backendStats,
-  backendStatus,
   backendUniverse,
-  backendIndicators,
-  quoteSources,
-  systemStatus,
+  backendDataSummary,
 } = require('./server/services/cli_executor');
 const ROUTES = require('./server/routes');
+const { isMcpRequest, isMcpAllowed, redactDeep } = require('../../shared/lib/mcp_gate');
 
-const REPO_ROOT = path.resolve(__dirname, '..');
-const WEB_PUBLIC_ROOT = path.join(REPO_ROOT, 'web_page', 'dist');
+const REPO_ROOT = path.resolve(__dirname, '../..');
+const WEB_PUBLIC_ROOT = path.join(REPO_ROOT, 'Frontend', 'dashboard', 'dist');
 const INDEX_PATH = path.join(WEB_PUBLIC_ROOT, 'index.html');
 const PORT = Number.parseInt(process.env.SOVEREIGN_WEB_PORT || process.env.PORT || '8787', 10);
 const HOST = process.env.SOVEREIGN_WEB_HOST || '127.0.0.1';
@@ -46,6 +39,24 @@ const ALLOWED_ORIGINS = [
 const RATE_LIMITS = new Map(); // Simple IP-based rate limiting
 const LIMIT_WINDOW_MS = 60000;
 const MAX_REQ_PER_WINDOW = 600; // Increased to 600/min (10 req/s) for heavy dashboard use
+
+// Purge stale entries every 5 min to prevent unbounded Map growth under diverse IPs
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of RATE_LIMITS) {
+    if (now - data.start > LIMIT_WINDOW_MS) {
+      RATE_LIMITS.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000).unref();
+
+// GET routes that require a token even though they are read-only
+const PROTECTED_GET_ROUTES = new Set([
+  '/api/backend/portfolio',
+  '/api/cache/list',
+  '/api/config',
+  '/api/bot/status',
+]);
 
 function setSecurityHeaders(res, origin) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -89,9 +100,17 @@ function checkSecurity(req, res) {
     return false;
   }
 
+  // MCP agent gate — block sensitive routes before token check
+  const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
+  if (isMcpRequest(req) && !isMcpAllowed(pathname)) {
+    console.warn(`[MCP-GATE] Blocked agent access to: ${pathname}`);
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'MCP agent access not permitted for this route' }));
+    return false;
+  }
+
   // API Token check for data-modifying or sensitive routes
   const token = req.headers['x-sovereign-token'];
-  const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
   const isPublicRoute = [
     '/',
     '/index.html',
@@ -101,13 +120,12 @@ function checkSecurity(req, res) {
     '/api/data/summary',
     '/api/correlation',
     '/api/backend/stats',
-    '/api/backend/portfolio',
     '/api/universe',
     '/api/cache/universe', // New public alias
     '/api/indicators',     // New public endpoint
     '/api/quotes/status'
   ].includes(pathname);
-  if (!isPublicRoute && req.method !== 'GET') {
+  if (!isPublicRoute && (req.method !== 'GET' || PROTECTED_GET_ROUTES.has(pathname))) {
     if (!API_TOKEN || token !== API_TOKEN) {
       console.warn(`[SECURITY] Missing or invalid API token from ${ip}`);
       res.writeHead(401);
@@ -119,7 +137,7 @@ function checkSecurity(req, res) {
   // Add response hardening and scoped CORS headers
   setSecurityHeaders(res, origin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Sovereign-Token');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Sovereign-Token, Authorization');
   res.setHeader('Access-Control-Max-Age', '600');
   
   if (req.method === 'OPTIONS') {
@@ -131,8 +149,9 @@ function checkSecurity(req, res) {
   return true;
 }
 
-function sendJson(res, status, payload) {
-  const body = JSON.stringify(payload, null, 2);
+function sendJson(res, status, payload, req = null) {
+  const safe = req && isMcpRequest(req) ? redactDeep(payload) : payload;
+  const body = JSON.stringify(safe, null, 2);
   res.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
@@ -197,62 +216,28 @@ function queryObject(url) {
   return Object.fromEntries(url.searchParams.entries());
 }
 
-function endpointStatus(payload) {
-  return payload && payload.available !== false && payload.ok !== false ? 200 : 503;
+async function readBody(req) {
+  return new Promise((resolve) => {
+    let raw = '';
+    req.on('data', chunk => { raw += chunk; });
+    req.on('end', () => {
+      try { resolve(JSON.parse(raw)); } catch { resolve({}); }
+    });
+    req.on('error', () => resolve({}));
+  });
 }
 
 async function handleApi(req, res, url) {
   const query = queryObject(url);
+  // Merge JSON body into query for POST routes
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+    const body = await readBody(req);
+    Object.assign(query, body);
+  }
   const route = ROUTES[url.pathname];
   if (route) {
     const payload = await route.handle(query, { req, res, url });
-    sendJson(res, route.status(payload), payload);
-    return true;
-  }
-  if (url.pathname === '/api/status') {
-    const payload = backendStatus(query);
-    sendJson(res, endpointStatus(payload), payload);
-    return true;
-  }
-
-  if (url.pathname === '/api/data/summary') {
-    const payload = backendDataSummary(query);
-    sendJson(res, endpointStatus(payload), payload);
-    return true;
-  }
-  if (url.pathname === '/api/correlation') {
-    const payload = backendCorrelation(query);
-    sendJson(res, endpointStatus(payload), payload);
-    return true;
-  }
-  if (url.pathname === '/api/backend/stats') {
-    const payload = backendStats(query);
-    sendJson(res, endpointStatus(payload), payload);
-    return true;
-  }
-  if (url.pathname === '/api/backend/portfolio') {
-    const payload = backendPortfolio(query);
-    sendJson(res, endpointStatus(payload), payload);
-    return true;
-  }
-  if (url.pathname === '/api/universe' || url.pathname === '/api/cache/universe') {
-    const payload = backendUniverse(query);
-    sendJson(res, endpointStatus(payload), payload);
-    return true;
-  }
-  if (url.pathname === '/api/indicators') {
-    const payload = await backendIndicators(query);
-    sendJson(res, endpointStatus(payload), payload);
-    return true;
-  }
-  if (url.pathname === '/api/quotes/status') {
-    const payload = quoteSources(query);
-    sendJson(res, payload && payload.type === 'quote_sources' ? 200 : endpointStatus(payload), payload);
-    return true;
-  }
-  if (url.pathname === '/api/cache/list') {
-    const payload = backendCacheList();
-    sendJson(res, payload.ok ? 200 : 500, payload);
+    sendJson(res, route.status(payload), payload, req);
     return true;
   }
   return false;

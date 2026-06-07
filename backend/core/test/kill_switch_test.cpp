@@ -9,7 +9,7 @@ int main() {
     auto paper = std::make_unique<PaperBroker>();
     KillSwitch ks(std::move(paper));
 
-    ExecutionOrder order{"BTCUSDT", "buy", 1.0, "market"};
+    ExecutionOrder order{.instrument_id = "BTCUSDT", .side = "buy", .quantity = 1.0, .order_type = "market"};
 
     // 1. Normal state (disengaged)
     assert(ks.is_engaged() == false);
