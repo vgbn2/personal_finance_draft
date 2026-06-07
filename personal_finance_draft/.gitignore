@@ -2,11 +2,16 @@
 
 # Node.js
 node_modules/
+backend/api/node_modules/
+backend/gateway/node_modules/
+Frontend/dashboard/node_modules/
 dist/
+Frontend/dashboard/dist/
 npm-debug.log*
 
 # Build Directories
 build/
+backend/core/build/
 cpp_core/build/
 cli/target/
 web/node_modules/
@@ -49,12 +54,16 @@ data/trades/*.sqlite
 data/*.db
 storage/data/*.csv
 storage/data/*.bin
+storage/data/cache/
+storage/data/ts/
+backend/scripts/data/cache/
 storage/db/*.sqlite3
 storage/exports/*.csv
 
 # Generated notebook/model artifacts
 models/*.onnx
 notebooks/*.ipynb
+Frontend/dashboard/*.zip
 
 # Compiled Binaries
 *.exe
@@ -70,3 +79,6 @@ notebooks/*.ipynb
 #   git rm --cached cpp_core/src/sovereign_wealth.exe
 #   git rm -r --cached docss/
 docss/
+
+# ML training virtualenv (local-only)
+.venv_ml/

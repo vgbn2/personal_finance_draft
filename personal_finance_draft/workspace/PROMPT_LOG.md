@@ -1,3 +1,19 @@
+# Prompt Log - 2026-06-07 (session boot)
+
+## User Prompt — 2026-06-07
+/session-orchestrator
+
+## Status — 2026-06-07
+Booted: loaded HANDOFF, SESSION_MEMORY, STATE, NEXT_SESSION_GOAL. HEAD at 7a0dba5d (feat/resilient-crypto-fallback, local-only — push declined last session). graphify-out GRAPH_REPORT header reads dfb8f47f but content was refreshed against the working tree that became 7a0dba5d (refresh ran pre-commit per prior log), so graph is effectively current — no refresh needed. No BOOTSTRAP.md in workspace/. Awaiting objective.
+
+## User Prompts — 2026-06-07 (ML buildout session)
+/blast-through → focused audit (resilient-crypto-fallback surface), DCS 0.96, found orphan fetchCoinGeckoHistory. → "does the machine learning section actually work" → traced it: ML was FAKE (deterministic_adapter heuristics, ONNX off + no model files). → "pretty sure we need a machine learning section wired to the c++ backend" → scoped via AskUserQuestion: real ONNX ML, all model families, regime classifier, cross-family correlation. → "plan then mass implement" → wrote ML_SECTION_PLAN.md. → /mass-implement ×3 → Phase 0 (ONNX in C++) + Phase 1 (JS feature layer + ml dump). → "plan and mass implement, add to mass-implement skill, encourage AI to ask user" → added "Plan First, and Ask the User" to both SKILL.md copies. → /blast-through (ML surface audit, all A-/B+, clean). → /session-orchestrator (this handoff).
+
+## Status — 2026-06-07 (handoff)
+ML Phase 0+1 DONE & verified (237/237 tests; live ml dump 1017x26 CSV; real onnx_runtime inference). Architecture pivoted to Design B (JS builds features, C++ infers only). Full structured entry in SESSION_MEMORY. Biggest open: JS binary-ts-index reader (full-universe training blocked on it). graphify-out STALE (code changed: ONNX enabled + 4 new JS modules + ml command) — refresh recommended before next deep navigation. Nothing committed this session (all local).
+
+---
+
 # Prompt Log - 2026-06-06 (session boot)
 
 ## User Prompt — 2026-06-06
@@ -17,6 +33,12 @@ workspace\FEATURE_TEST_MATRIX.md read, deep planning → answered: (Q1) shouldn'
 
 ## Status — 2026-06-06
 Plan approved (resilient-percolating-sky). Implemented WS1 (wire CoinGecko + resolveCoinGeckoId + provider_unreachable integrity tag), WS2 (auto_backfill flag + interval, gated run-all loop), WS3 (MCP README + Phase 7/9 reconcile), WS4 partial (folder + shim + constants.js). 205/205 pass. 3 zombie crypto symbols recovered live; integrity stale 14→11. Remaining ingest module carving = task #6.
+
+## User Prompt — 2026-06-06
+do all (refresh graphify + commit) → later: "just commit, no push"
+
+## Status — 2026-06-06
+graphify-out refreshed (6075 nodes, 9748 edges, 487 communities). Work committed LOCALLY on branch `feat/resilient-crypto-fallback` (commit 7a0dba5d, 17 files, explicit pathspecs so parent-repo cruft excluded). Push attempted then declined by user — repo origin (vgbn2/polymarket_screener) returned "not found" (no creds); user chose commit-only, no push. Session closed via /session-orchestrator handoff.
 
 ---
 
@@ -332,3 +354,12 @@ $session-orchestrator
 
 ## Status - 2026-06-06
 Boot sequence complete. HEAD still `dfb8f47f`. `workspace/BOOTSTRAP.md` absent. Loaded HANDOFF, SESSION_MEMORY, and STATE. Previous session (2026-06-06) closed the entire local-first plan: broker env modules, setup/doctor, live execution guard, Polymarket signature-type-2 default, proposed-order validation, secret-pattern CI, npm link verified. DCS last recorded 1.0 for the local-first slice. Three active tracks for this session (priority order): (1) Polymarket backtest/rolling historical data, (2) Polymarket trading bot, (3) Docker/Ubuntu deployment. Open bugs: POLYMARKET_FUNDER_ADDRESS not set, resolved/unnamed positions show token IDs, live_paths.test.js skeleton, YAML consolidation, stale FX 1d rows (9), stale Headway quotes (18). Awaiting user direction.
+
+## User Prompt - 2026-06-07
+`$session-orchestrator`
+
+## User Prompt - 2026-06-07
+`$rigorous-feature-testing`
+
+## Status - 2026-06-07
+Boot sequence started with `repo-global-protocol`, `session-orchestrator`, and `rigorous-feature-testing`. `workspace/BOOTSTRAP.md` is absent, so continuity loaded from `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`, and `workspace/STATE.md`. Current carryover: local-first plan is closed, configured-cache integrity is policy-green, latest-fetch freshness remains degraded by scope, and feature-audit work must report overlap candidates without merge/remove action unless the user explicitly approves it. `workspace/PROMPT_LOG.md` now includes the session start prompts; `graphify-out` refresh is the next bootstrap step because prior sessions changed code materially.

@@ -1,3 +1,60 @@
+## Update - 2026-06-07 ML section — Phase 0 (ONNX in C++) DONE; audit: ML was fake
+
+### Audit finding (blast-through + user question "does the ML section actually work")
+- The "ML" was **not** machine learning. Every model in `shared/lib/models.js` and
+  `backend/core/src/ml/model_registry.cpp` is a hand-coded heuristic tagged
+  `deterministic_adapter`. C++ `onnx_model.cpp` was real but gated OFF, no `.onnx` files,
+  unreachable from `main.cpp`. `metadata.json` referenced nonexistent `cnn_v3.onnx`/`regime_classifier.onnx`.
+- User approved a full real-ML buildout: train (Python) → ONNX → C++ inference → compare all
+  families → cross-family **regime classifier** feeds per-asset models. Plan: `workspace/ML_SECTION_PLAN.md`.
+
+### Phase 0 (Batch 0) — DONE, verified
+- Enabled `SOVEREIGN_ENABLE_ONNX_RUNTIME=ON` on the local build; onnxruntime 1.17.1 win-x64
+  FetchContent download + link succeeds on Win32 MSVC.
+- **Real ONNX inference proven in C++**: `onnx_model_test` → `backend()=="onnx_runtime"`,
+  smoke model `[[1,2,3],[4,5,6]]`→`[2,5]`, ~228us, exit 0.
+- Fixes (files): `onnx_model.cpp` Windows wide-path (`ORTCHAR_T`) + non-silent load-failure log;
+  `CMakeLists.txt` reusable `sovereign_copy_onnx_runtime()` DLL post-build copy + `sovereign_wealth`
+  now links onnxruntime; `onnx_model_test.cpp` flag-aware (loads real `storage/models/smoke.onnx`).
+- **Key constraint for Phase 2**: onnxruntime 1.17.1 requires model **IR version ≤ 9** — exports
+  must set `model.ir_version = 9`.
+- Tooling: base Python `onnx` is corrupted → created gitignored `.venv_ml/` (onnx/onnxruntime/numpy;
+  torch+xgboost already in base). CMake default kept OFF for portability; local build is ON.
+- ML test group: `onnx_model_test`, `cnn_inference_test`, `model_registry_test` → PASS (3/3).
+  `kronos_integration_test` → FAIL (pre-existing, unrelated: reads deprecated monolithic
+  `backtest_history.json` path; logged in DEV_REVIEW).
+
+### Phase 1 progress (2026-06-07, Design B) — feature layer in JS
+- **Architecture pivot**: feature frame built in **JS** (single source for train-dump + serve),
+  C++ is inference-only. Discovery: all data ingestion lives in JS; C++ feature pipeline isn't
+  CLI-wired and macro is Supabase-only. See ML_SECTION_PLAN.md "ARCHITECTURE UPDATE".
+- **1.1 crypto aggregates DONE**: `shared/lib/crypto_aggregates.js` reconstructs historical total
+  mcap / BTC dominance / stablecoin mcap from per-coin `market_caps` (free /global is snapshot-only).
+  `coingecko.js`: `fetchCoinGeckoMcapSeries()` + stablecoin id overrides. Fixed real bug: `baseSymbol()`
+  stripped bare stablecoins to "" (USDT→tether now). Verified live: USDT 186.9B; unit tests 2/2.
+- **1.3 feature builder DONE (core)**: `shared/lib/feature_builder.js` `buildMLFeatureFrame()` composes
+  existing `indicators.js` (technical features + rollingCorrelation + correlation divergence +
+  crypto-stable sentiment) with cross-family corr/regime columns + 3-class N-bar forward label.
+  Point-in-time (label-only lookahead, tail rows dropped). Unit tests 2/2.
+- **Gate**: `npm test` → **234/234 pass** (incl. 4 new), 0 fail.
+
+### Phase 1 effectively DONE (2026-06-07)
+- **1.2** FRED confirmed: `FRED_API_KEY` set (32 chars); `fetchFredHistory(seriesId,days)` returns
+  `[{timestamp,value}]`. `ml dump` wires CPI(CPIAUCSL)/US10Y(DGS10)/USD_BROAD(DTWEXBGS) when enabled.
+- **1.4** `sovereign ml dump` DONE: new `backend/cli/commands/ml.js` (CLI key `ml`, dispatcher wired) +
+  `shared/lib/ml_dataset.js` (cache loaders + `frameToCsv`, per-symbol bar cap for the O(n²) build).
+  **Verified live**: `ml dump --symbols AAPL,MSFT,SPY --days 365` → CSV **1017 rows × 26 cols** with
+  technical + cross-family (xf_corr_/regime_ FX anchors) + 3-class label (MSFT down row fwd=-0.0746 ✓).
+- **Gate**: `npm test` → **237/237 pass** (incl. 7 new ML tests). New CLI command, no regressions.
+
+### KEY GAP before Phase 2 (logged in DEV_REVIEW): `ml dump` reads `backtest_history.json`, but the
+core crypto universe (BTC/ETH/SOL) + metals/energy anchors live in the binary `storage/data/ts/` index,
+not that file. So the dump currently covers equities + FX + the 3 backfilled crypto only. Need a JS
+binary-ts reader (or repopulate backtest_history.json, or shell to C++) for full-universe training.
+Also: add a rate-limit-aware `crypto_aggregates.json` refresh job. Then Phase 2 (Python training, IR≤9).
+
+---
+
 ## Update - 2026-06-06 Resilient crypto data fallback + auto-backfill + ingest folder shard
 
 ### Completed this session (plan: resilient-percolating-sky)
@@ -771,3 +828,17 @@ The data plane is now fully synchronized at the daily level.
 - Added `backend/scripts/dev/secret_pattern_check.js` plus `npm run test:secrets` and a GitHub Actions step to keep obvious secret patterns out of tracked files.
 - Added a clean-room doctor test using `SOVEREIGN_SKIP_DOTENV=1` so missing-field reporting can be verified without the repo `.env`.
 - Verified setup writes and redaction for temp-file Alpaca and Polymarket flows, plus the gateway typecheck and targeted test suites.
+
+## Update - 2026-06-06 Session close: Data/Gateway repair and feature-testing governance
+
+### What changed
+- Data is now policy-green: compact integrity returned `ok:true`, `84/84` cached, `0` missing, `0` stale, and `2` explicit exceptions (`RNDRUSDT`, `VRE`).
+- `status --json` now labels the health split between `freshness_scope:"last_fetch_snapshot"` and `integrity_scope:"configured_ts_cache"`.
+- Polymarket Gateway is improved to B-level: order-shape/tick-size/account/network failures are classified, paper-run handles per-market orderbook failures, and gateway contracts pass.
+- `rigorous-feature-testing` now includes a mandatory parent/subset/overlap audit and explicitly requires user approval before any feature merge, removal, rename, hiding, or deprecation.
+
+### Carryover
+- Do not retry a live Polymarket buy without explicit user approval because it can spend real pUSD.
+- Next safe Gateway/Data improvement: align paper-trading resolution logs to the documented `pnl_log.jsonl` schema and expose deployment-gate metrics.
+- Next Data cleanup: implement exchange-aware VN ticker mapping so `VRE` can be removed from `integrity_exceptions`.
+- If a future audit finds subset features, report them as `merge candidate`, `remove candidate`, or `rename candidate` only. Do not act until the user approves the exact candidate and affected paths.
