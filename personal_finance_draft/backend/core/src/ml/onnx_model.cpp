@@ -35,16 +35,20 @@ OnnxModel::OnnxModel(const std::string& model_path)
     try {
 #if SOVEREIGN_ONNX_RUNTIME_ENABLED
         if (!model_path.empty()) {
-            pimpl->session = std::make_unique<Ort::Session>(pimpl->env, model_path.c_str(), pimpl->session_options);
+            // ONNX Runtime takes ORTCHAR_T paths: wchar_t on Windows, char elsewhere.
+#ifdef _WIN32
+            const std::wstring ort_path(model_path.begin(), model_path.end());
+#else
+            const std::string ort_path = model_path;
+#endif
+            pimpl->session = std::make_unique<Ort::Session>(pimpl->env, ort_path.c_str(), pimpl->session_options);
             pimpl->initialized = true;
         }
 #else
         pimpl->initialized = true;
 #endif
     } catch (const std::exception& e) {
-        if (pimpl->verbose) {
-            std::cerr << "[ONNX] Initialization failed: " << e.what() << std::endl;
-        }
+        std::cerr << "[ONNX] Initialization failed: " << e.what() << std::endl;
     }
 }
 
