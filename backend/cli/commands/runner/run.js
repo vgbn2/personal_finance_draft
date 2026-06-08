@@ -1,6 +1,6 @@
 'use strict';
 
-const { startLoop, stopLoop, getStatus, installShutdownHandlers } = require('../../../../shared/lib/run_loop.js');
+const { startLoop, stopLoop, getStatus, installShutdownHandlers } = require('../../../../shared/lib/runtime/run_loop.js');
 const { featureGate, loadRuntimeSettings } = require('../../../../shared/lib/settings/runtime');
 const utils = require('../../lib/utils.js');
 const { hasFlag, numericOption, optionValue, printPayload } = utils;
@@ -222,4 +222,3 @@ async function commandRunnerMenu(args) {
 }
 
 module.exports = { commandRun, commandRunnerMenu };
-

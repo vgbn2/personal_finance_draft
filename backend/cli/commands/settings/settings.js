@@ -1,5 +1,5 @@
 'use strict';
-const A = require('../../../../shared/lib/ansi');
+const A = require('../../../../shared/lib/ui/ansi');
 const {
   DEFAULTS,
   VALID_FLAGS,
