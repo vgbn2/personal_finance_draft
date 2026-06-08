@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { loadConfig } = require('../data_ops/ingest_market_data');
-const { normalizeSymbol, inferFamily } = require('../../../shared/lib/quote_router');
+const { normalizeSymbol, inferFamily } = require('../../../shared/lib/market/quote_router');
 
 function flattenInventory(config) {
   const sources = config.sources || config;

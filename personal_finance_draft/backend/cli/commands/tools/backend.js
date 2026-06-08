@@ -43,7 +43,7 @@ const {
   isRichTerminal
 } = utils;
 
-const { readSnapshot, readTsIndex, validateSnapshot } = require('../../../../shared/lib/market_validation.js');
+const { readSnapshot, readTsIndex, validateSnapshot } = require('../../../../shared/lib/market/validation.js');
 const DEFAULT_TS_INDEX = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
 
 /**
@@ -984,8 +984,8 @@ function reportSnapshotIntegrity(inputPath, rejectStale = true) {
 }
 
 async function runBackendIntegrity(args = []) {
-  const { readTsIndex } = require('../../../../shared/lib/market_validation.js');
-  const { loadMarketConfig } = require('../../../../shared/lib/config_loader.js');
+  const { readTsIndex } = require('../../../../shared/lib/market/validation.js');
+  const { loadMarketConfig } = require('../../../../shared/lib/runtime/config_loader.js');
   const TS_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
   const CONFIG_PATH = path.join(utils.REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
   const OHLCV_FAMILIES = new Set(['equities', 'indices', 'commodities', 'crypto', 'fx']);

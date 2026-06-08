@@ -8,13 +8,13 @@ const {
   dedupePreferredMarketQuotes, loadConfig, loadExternalQuoteInputs,
   resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
 } = require('../../../scripts/data_ops/ingest_market_data.js');
-const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/quote_router.js');
-const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../../shared/lib/backtest.js');
-const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../../shared/lib/indicators.js');
-const { compareModels } = require('../../../../shared/lib/models.js');
-const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../../shared/lib/market_validation.js');
+const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quote_router.js');
+const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../../shared/lib/strategy/backtest.js');
+const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../../shared/lib/market/indicators.js');
+const { compareModels } = require('../../../../shared/lib/ml/models.js');
+const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation.js');
 const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, promptMultiSelect, isRichTerminal } = require('../../tui/index.js');
-const { inferStrategyTaxonomy, laneDisplayLabel, formatStrategyGradeTag, decorateStrategyRecord } = require('../../../../shared/lib/strategy_registry.js');
+const { inferStrategyTaxonomy, laneDisplayLabel, formatStrategyGradeTag, decorateStrategyRecord } = require('../../../../shared/lib/strategy/registry.js');
 const {
   ACCOUNT_TYPE_DEFAULTS,
   deletePropFirmProfile,
@@ -30,7 +30,7 @@ const {
   slugify,
   upsertPropFirmProfile,
   resolvePropFirmProfile,
-} = require('../../../../shared/lib/prop_firms.js');
+} = require('../../../../shared/lib/profiles/prop_firms.js');
 const { featureGate, loadRuntimeSettings } = require('../../../../shared/lib/settings/runtime');
 
 const utils = require('../../lib/utils.js');
@@ -218,7 +218,7 @@ function listStrategyFiles(options = {}) {
 // Keeps hand-rolled parsing for list/section formats that parseYamlRecursive
 // does not handle (YAML `- item` lists).
 function parseStrategyYaml(text) {
-  const { parseYamlRecursive } = require('../../../../shared/lib/config_loader.js');
+  const { parseYamlRecursive } = require('../../../../shared/lib/runtime/config_loader.js');
   const lines = text.split(/\r?\n/);
   const [yaml] = parseYamlRecursive(lines);
 
@@ -730,7 +730,7 @@ async function commandPropFirmProfiles(args) {
 }
 
 
-const EXECUTION_MEMORY = require('../../../../shared/lib/execution_memory.js');
+const EXECUTION_MEMORY = require('../../../../shared/lib/runtime/execution_memory.js');
 
 async function runAutomationPass(args, strategiesOverride = null) {
     const isLive = hasFlag(args, '--live');
