@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { buildCryptoAggregateSeries } = require('../../../shared/lib/crypto_aggregates');
+const { buildCryptoAggregateSeries } = require('../../../shared/lib/data/crypto_aggregates');
 const { refreshCryptoAggregates } = require('../../../backend/cli/commands/ml');
 
 // Injected fetcher: symbol -> Map(date -> mcap). No network.
