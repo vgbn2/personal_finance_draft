@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 // @ts-ignore
-import { REPO_ROOT, findNodeCli, CLI_CANDIDATES } from '../../../shared/lib/paths';
+import { REPO_ROOT, findNodeCli, CLI_CANDIDATES } from '../../../shared/lib/runtime/paths';
 import { ToolResponse } from './schemas';
 
 export function extractJsonPayload(stdout: string): any | null {

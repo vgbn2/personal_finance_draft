@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-require('../../../shared/lib/env');
+require('../../../shared/lib/runtime/env');
 
 function mask(value) {
   if (!value) return 'missing';

@@ -7,7 +7,7 @@ const {
   inferWinner,
   gammaFinalPrice,
   buildPriceSeries,
-} = require('../../../../shared/lib/polymarket_history.js');
+} = require('../../../../shared/lib/market/polymarket_history.js');
 
 /**
  * Apply low_prob_dip strategy: enter when earliest price ≤ entryThreshold,

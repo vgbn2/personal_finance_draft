@@ -6,8 +6,8 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const CLI_PATH = path.join(__dirname, '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
-const { mergeSnapshots, validateSnapshot } = require('../../../shared/lib/market_validation');
-const { classifySupabaseError } = require('../../../shared/lib/supabase_errors');
+const { mergeSnapshots, validateSnapshot } = require('../../../shared/lib/market/validation');
+const { classifySupabaseError } = require('../../../shared/lib/supabase/errors');
 const { commandLogin } = require('../../../backend/cli/commands/account/auth');
 const auth = require('../../../backend/cli/lib/auth');
 const {
@@ -51,7 +51,7 @@ const {
   normalizeExternalQuotePayloadWithReport,
   normalizeSymbol,
   selectPreferredQuoteRecords,
-} = require('../../../shared/lib/quote_router');
+} = require('../../../shared/lib/market/quote_router');
 
 /**
  * TEST UTILS

@@ -2,7 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 const fs = require('node:fs');
 const path = require('node:path');
 const { cached, isCacheEnabled } = require('./ttl_cache');
-const { classifySupabaseError } = require('../../../../shared/lib/supabase_errors');
+const { classifySupabaseError } = require('../../../../shared/lib/supabase/errors');
 
 function loadRootEnv() {
   const envPath = path.resolve(__dirname, '..', '..', '..', '.env');
