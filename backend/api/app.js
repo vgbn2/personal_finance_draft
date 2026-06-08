@@ -19,7 +19,7 @@ const {
   backendDataSummary,
 } = require('./server/services/cli_executor');
 const ROUTES = require('./server/routes');
-const { isMcpRequest, isMcpAllowed, redactDeep } = require('../../shared/lib/mcp_gate');
+const { isMcpRequest, isMcpAllowed, redactDeep } = require('../../shared/lib/mcp/gate');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const WEB_PUBLIC_ROOT = path.join(REPO_ROOT, 'Frontend', 'dashboard', 'dist');

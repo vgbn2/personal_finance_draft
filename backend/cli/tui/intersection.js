@@ -1,6 +1,6 @@
 const MANIFEST = require('./manifest');
 const { promptSelect, promptText, promptConfirm, isRichTerminal } = require('./engine/engine');
-const A = require('../../../shared/lib/ansi');
+const A = require('../../../shared/lib/ui/ansi');
 
 /**
  * INTERSECTION

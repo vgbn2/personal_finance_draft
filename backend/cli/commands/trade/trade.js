@@ -5,7 +5,7 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const { ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
 const utils = require('../../lib/utils.js');
-const { canLiveExecute, getRuntimeMode } = require('../../../../shared/lib/broker_capabilities');
+const { canLiveExecute, getRuntimeMode } = require('../../../../shared/lib/brokers/capabilities');
 const { featureGate } = require('../../../../shared/lib/settings/runtime');
 const {
   pageText,

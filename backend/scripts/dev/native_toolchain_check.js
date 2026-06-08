@@ -2,7 +2,7 @@
 
 const { spawnSync } = require('node:child_process');
 
-const { findTool } = require('../../../shared/lib/paths');
+const { findTool } = require('../../../shared/lib/runtime/paths');
 
 const DEFAULT_TOOLS = [
   {

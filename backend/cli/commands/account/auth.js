@@ -1,4 +1,4 @@
-const A = require('../../../../shared/lib/ansi');
+const A = require('../../../../shared/lib/ui/ansi');
 const auth = require('../../lib/auth');
 
 function paint(code, text) { return A.c(code, text); }
@@ -152,4 +152,3 @@ async function commandAuthStatus() {
 }
 
 module.exports = { commandLogin, commandRegister, commandLogout, commandAuthStatus };
-

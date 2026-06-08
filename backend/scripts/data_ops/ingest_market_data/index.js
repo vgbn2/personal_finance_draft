@@ -3,14 +3,14 @@ const path = require('node:path');
 const zlib = require('node:zlib');
 const crypto = require('node:crypto');
 
-require('../../../../shared/lib/env');
+require('../../../../shared/lib/runtime/env');
 
 const {
   DEFAULT_PROVIDER_PRIORITY,
   normalizeExternalQuotePayload,
   normalizeExternalQuotePayloadWithReport,
   selectPreferredQuoteRecords,
-} = require('../../../../shared/lib/quote_router');
+} = require('../../../../shared/lib/market/quote_router');
 const {
   readSnapshot,
   recordKey,
@@ -18,11 +18,11 @@ const {
   mergeSnapshots,
   writePartitionedSnapshot,
   writeTsIndex,
-} = require('../../../../shared/lib/market_validation');
+} = require('../../../../shared/lib/market/validation');
 
 const {
   saveMacroObservations,
-} = require('../../../../shared/lib/macro_store');
+} = require('../../../../shared/lib/data/macro_store');
 
 const {
   fetchBinanceBaseCandles,
@@ -47,7 +47,7 @@ const {
   API_CACHE_DIR
 } = require('../../../../shared/lib/providers');
 
-const { fetchPaginated, fetchParallelBackfill, BARS_PER_DAY } = require('../../../../shared/lib/backfill');
+const { fetchPaginated, fetchParallelBackfill, BARS_PER_DAY } = require('../../../../shared/lib/data/backfill');
 
 const CONFIG_PATH = path.join(REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
 const OPTIONS_CONFIG_PATH = path.join(REPO_ROOT, 'config', 'markets', 'options_data.yaml');
@@ -83,7 +83,7 @@ const {
   parseYamlList,
   parseYamlRecursive,
   loadMarketConfig
-} = require('../../../../shared/lib/config_loader');
+} = require('../../../../shared/lib/runtime/config_loader');
 
 async function loadOptionsConfig() {
   const content = await fs.readFile(OPTIONS_CONFIG_PATH, 'utf8');

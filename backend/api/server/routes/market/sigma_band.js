@@ -1,5 +1,5 @@
 const path = require('node:path');
-const { REPO_ROOT } = require('../../../../../shared/lib/paths');
+const { REPO_ROOT } = require('../../../../../shared/lib/runtime/paths');
 
 const DEFAULT_SNAPSHOT = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'backtest_history.json');
 const fs = require('node:fs');

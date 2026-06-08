@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 
 const fsPromises = require('node:fs/promises');
 const providersPath = require.resolve('../../shared/lib/providers');
-const marketValidationPath = require.resolve('../../shared/lib/market_validation');
-const supabasePath = require.resolve('../../shared/lib/supabase_admin');
-const macroStorePath = require.resolve('../../shared/lib/macro_store');
+const marketValidationPath = require.resolve('../../shared/lib/market/validation');
+const supabasePath = require.resolve('../../shared/lib/supabase/admin');
+const macroStorePath = require.resolve('../../shared/lib/data/macro_store');
 const ingestPath = require.resolve('../../backend/scripts/data_ops/ingest_market_data');
 
 function clearModule(modulePath) {

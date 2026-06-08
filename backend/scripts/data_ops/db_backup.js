@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { getAdminClient } = require('../../../shared/lib/supabase_admin');
+const { getAdminClient } = require('../../../shared/lib/supabase/admin');
 
 /**
  * Sovereign Database Guardian - Backup Engine

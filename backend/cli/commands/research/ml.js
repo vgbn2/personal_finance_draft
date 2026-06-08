@@ -6,13 +6,13 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { REPO_ROOT } = require('../../../../shared/lib/paths');
-const { buildMLFeatureFrame } = require('../../../../shared/lib/feature_builder');
+const { REPO_ROOT } = require('../../../../shared/lib/runtime/paths');
+const { buildMLFeatureFrame } = require('../../../../shared/lib/ml/feature_builder');
 const {
   loadAssetSourcesFromCache,
   cacheCloseSeriesAnchor,
   frameToCsv,
-} = require('../../../../shared/lib/ml_dataset');
+} = require('../../../../shared/lib/ml/dataset');
 const { optionValue, numericOption, hasFlag } = require('../../lib/utils');
 
 // Cache-based cross-family anchors: anchor name -> cache symbol.
@@ -123,7 +123,7 @@ async function commandFeaturesDump(args) {
 // cache file that `loadCryptoAggregateAnchors` reads. Separated from the CLI wrapper so the
 // write path is unit-testable with an injected fetcher (no network).
 async function refreshCryptoAggregates(opts = {}) {
-  const { buildCryptoAggregateSeries } = require('../../../../shared/lib/crypto_aggregates');
+  const { buildCryptoAggregateSeries } = require('../../../../shared/lib/data/crypto_aggregates');
   const cacheRoot = opts.cacheRoot || path.join(REPO_ROOT, 'storage', 'data', 'cache');
   const outPath = opts.out || path.join(cacheRoot, 'crypto_aggregates.json');
 

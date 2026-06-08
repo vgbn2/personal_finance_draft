@@ -1,4 +1,4 @@
-const { fetchParallelBackfill } = require('../../../shared/lib/backfill');
+const { fetchParallelBackfill } = require('../../../shared/lib/data/backfill');
 
 async function probeParallelBackfill(options = {}) {
   const symbol = options.symbol || 'BTCUSDT';

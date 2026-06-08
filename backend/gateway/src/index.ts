@@ -29,7 +29,7 @@ const { resolveAlpacaSettings, resolveGateIoSettings } = require('../../../share
 // @ts-ignore
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
-const { PersistenceBridge } = require('../../../shared/lib/persistence_bridge');
+const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
 
 const ansi = {
   reset:       '\x1b[0m',
@@ -592,7 +592,7 @@ class RiskEngineBridge {
 
     // --- NEW: Global Kill Switch Check ---
     // @ts-ignore
-    const { findBackendBinary } = require('../../../shared/lib/paths');
+    const { findBackendBinary } = require('../../../shared/lib/runtime/paths');
     const binary: string | null = findBackendBinary();
 
     if (!binary) {

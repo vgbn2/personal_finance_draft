@@ -1,6 +1,6 @@
 'use strict';
 
-const { getStatus } = require('../../../../../shared/lib/run_loop.js');
+const { getStatus } = require('../../../../../shared/lib/runtime/run_loop.js');
 
 module.exports = {
   path: '/api/run/status',

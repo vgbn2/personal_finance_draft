@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 
-require('../../../shared/lib/env');
+require('../../../shared/lib/runtime/env');
 
 function envValue(...keys) {
   for (const key of keys) {
@@ -14,7 +14,7 @@ function envValue(...keys) {
   return '';
 }
 
-const { findTool } = require('../../../shared/lib/paths');
+const { findTool } = require('../../../shared/lib/runtime/paths');
 
 function findTerminal() {
   return findTool('metatrader5', 'MT5_TERMINAL_PATH');

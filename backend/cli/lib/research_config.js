@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { parseYamlRecursive } = require('../../../shared/lib/config_loader');
+const { parseYamlRecursive } = require('../../../shared/lib/runtime/config_loader');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const RESEARCH_CONFIG_PATH = path.join(REPO_ROOT, 'config', 'trading', 'research.yaml');
