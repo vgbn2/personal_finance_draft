@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { modelCandidates } = require('../../../shared/lib/models');
+const { modelCandidates } = require('../../../shared/lib/ml/models');
 
 const REPO_ROOT = path.resolve(__dirname, '../../..');
 const CPP_REGISTRY_PATH = path.join(REPO_ROOT, 'backend', 'core', 'src', 'ml', 'model_registry.cpp');

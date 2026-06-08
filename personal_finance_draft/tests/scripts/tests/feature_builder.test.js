@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-const { buildMLFeatureFrame } = require('../../../shared/lib/feature_builder');
+const { buildMLFeatureFrame } = require('../../../shared/lib/ml/feature_builder');
 
 // Build N daily OHLCV bars for one symbol with a deterministic close path.
 function makeBars(n, closeFn) {

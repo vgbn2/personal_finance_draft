@@ -10,8 +10,8 @@ const {
   loadAssetSourcesFromCache,
   cacheCloseSeriesAnchor,
   frameToCsv,
-} = require('../../../shared/lib/ml_dataset');
-const { writeTsIndex } = require('../../../shared/lib/market_validation');
+} = require('../../../shared/lib/ml/dataset');
+const { writeTsIndex } = require('../../../shared/lib/market/validation');
 
 // Build a temp binary ts index for a symbol (mirrors the storage/data/ts layout).
 function makeTempTs(symbol, family, timeframe, closes) {

@@ -1,7 +1,7 @@
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
-const A = require('../../../shared/lib/ansi');
+const A = require('../../../shared/lib/ui/ansi');
 
 const {
   REPO_ROOT,
@@ -13,9 +13,9 @@ const {
   DEFAULT_MODEL_REPORT,
   DEFAULT_BACKTEST,
   DEFAULT_STATE_PATH,
-} = require('../../../shared/lib/paths');
+} = require('../../../shared/lib/runtime/paths');
 
-const { loadMarketConfig } = require('../../../shared/lib/config_loader');
+const { loadMarketConfig } = require('../../../shared/lib/runtime/config_loader');
 
 // Cache directory (not a file) — local to CLI, not shared with API layer
 const DEFAULT_HISTORY = path.join(REPO_ROOT, 'storage', 'data', 'cache');

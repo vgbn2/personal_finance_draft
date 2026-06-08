@@ -9,23 +9,23 @@ const {
   resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
 } = require('../../../scripts/data_ops/ingest_market_data.js');
 
-const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/quote_router.js');
-const { upsertStrategyGradeRecord, inferStrategyTaxonomy, normalizeStrategyPath } = require('../../../../shared/lib/strategy_registry.js');
+const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quote_router.js');
+const { upsertStrategyGradeRecord, inferStrategyTaxonomy, normalizeStrategyPath } = require('../../../../shared/lib/strategy/registry.js');
 
-const { filterFeatureFrame, runBacktest, splitFeatureFrame, rollingWalkForward } = require('../../../../shared/lib/backtest.js');
+const { filterFeatureFrame, runBacktest, splitFeatureFrame, rollingWalkForward } = require('../../../../shared/lib/strategy/backtest.js');
 
 const { calculateFeatureFrame, calculateRollingFeatureFrame,
-        DEFAULT_PERIODS } = require('../../../../shared/lib/indicators.js');
+        DEFAULT_PERIODS } = require('../../../../shared/lib/market/indicators.js');
 
-const { compareModels } = require('../../../../shared/lib/models.js');
+const { compareModels } = require('../../../../shared/lib/ml/models.js');
 
 const { mergeSnapshots, readSnapshot, 
-        validateSnapshot, writeJson } = require('../../../../shared/lib/market_validation.js');
+        validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation.js');
 
 const { runInteractiveMenu, handleIntersection, promptSelect, 
         promptText, promptConfirm, isRichTerminal } = require('../../tui/index.js');
-const { resolvePropFirmProfile } = require('../../../../shared/lib/prop_firms.js');
-const { classifyStrategyAssetMode, formatStrategyAssetModeLabel } = require('../../../../shared/lib/strategy_registry.js');
+const { resolvePropFirmProfile } = require('../../../../shared/lib/profiles/prop_firms.js');
+const { classifyStrategyAssetMode, formatStrategyAssetModeLabel } = require('../../../../shared/lib/strategy/registry.js');
 
 const { loadResearchConfig } = require('../../lib/research_config.js');
 
@@ -172,7 +172,7 @@ function validatedSnapshot(snapshot) {
 }
 
 function loadSampleSources(args, symbols = []) {
-  const { generateSampleBars } = require('../../../../shared/lib/indicators.js');
+  const { generateSampleBars } = require('../../../../shared/lib/market/indicators.js');
   const timeframe = optionValue(args, '--timeframe', '1d');
   const sampleSize = Math.max(96, Math.floor(numericOption(args, '--sample-size', 120)));
   const targetSymbols = [...new Set(symbols.length > 0 ? symbols : ['SPY', 'BTCUSDT'])];

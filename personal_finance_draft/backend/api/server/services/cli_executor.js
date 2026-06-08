@@ -12,9 +12,9 @@ const {
   DEFAULT_QUALITY_REPORT,
   DEFAULT_MODEL_REPORT,
   DEFAULT_BACKTEST,
-} = require('../../../../shared/lib/paths');
-const { calculateRollingFeatureFrame } = require('../../../../shared/lib/indicators');
-const { compareModels } = require('../../../../shared/lib/models');
+} = require('../../../../shared/lib/runtime/paths');
+const { calculateRollingFeatureFrame } = require('../../../../shared/lib/market/indicators');
+const { compareModels } = require('../../../../shared/lib/ml/models');
 
 // backtest_history.json is this service's specific read target — distinct from the CLI's cache dir
 const DEFAULT_HISTORY = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'backtest_history.json');
@@ -742,7 +742,7 @@ function backendIndicators(query = {}) {
       timeframe,
       '--json',
     ];
-    // Indicators are primarily handled by the Node CLI which uses shared/lib/indicators
+    // Indicators are primarily handled by the Node CLI which uses shared/lib/market/indicators
     const nodeCli = runNodeCli(args);
     if (nodeCli.ok) {
       return nodeCli;
