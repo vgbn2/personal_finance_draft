@@ -1,3 +1,18 @@
+# Prompt Log - 2026-06-08 (session 8 boot)
+
+## Session Boot — 2026-06-08 (session 8)
+/session-orchestrator. Loaded `HANDOFF.md` (pointer → `workspace/handoff/2026-06-08.md`),
+`SESSION_MEMORY.md`, `STATE.md` (current section, 209 lines + archive pointer). HEAD still `4d3fb4d`
+(unchanged since session 7 close — nothing new committed). `graphify-out` is one commit stale (built
+from `ece1ea8c`; HEAD now `4d3fb4d`, the 10-day commands/routes restructure — mostly renames, low nav
+risk; refresh on demand if doing deep code navigation this session, not blocking).
+
+Carryovers per `HANDOFF.md`: (1) scalping-bot pivot — scoping doc DONE at
+`workspace/SCALPING_BOT_SCOPING.md`, pivot decision still the user's (4 open questions in §5);
+(2) `.mcp.json` test-gate fix needs **USER** to run `git rm --cached .mcp.json`; (3) container ML
+still `deterministic_baseline`; (4) Docker deploy files reviewed but uncommitted, awaiting user
+review (esp. `gateway` service removal). Awaiting user direction.
+
 # Prompt Log - 2026-06-08 (session 6 boot)
 
 ## Session Boot — 2026-06-08 (session 6)
@@ -467,3 +482,50 @@ Boot sequence complete. HEAD still `dfb8f47f`. `workspace/BOOTSTRAP.md` absent. 
 
 ## Status - 2026-06-07
 Boot sequence started with `repo-global-protocol`, `session-orchestrator`, and `rigorous-feature-testing`. `workspace/BOOTSTRAP.md` is absent, so continuity loaded from `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`, and `workspace/STATE.md`. Current carryover: local-first plan is closed, configured-cache integrity is policy-green, latest-fetch freshness remains degraded by scope, and feature-audit work must report overlap candidates without merge/remove action unless the user explicitly approves it. `workspace/PROMPT_LOG.md` now includes the session start prompts; `graphify-out` refresh is the next bootstrap step because prior sessions changed code materially.
+
+## User Prompt - 2026-06-08
+`/session-orchestrator` (re-invoked mid-session 6, after the blast-through debt batch had already landed)
+
+## Status - 2026-06-08
+Re-ran the orchestrator boot mid-session to refresh continuity bookkeeping. `workspace/BOOTSTRAP.md` remains
+absent (consistent with prior sessions). `HANDOFF.md` and `SESSION_MEMORY.md` already carry this session's
+session-6 entry (blast-through audit + 3-item debt batch: ANSI import fix, YAML parser consolidation,
+commit `4d3fb4d` of the 10-day-old commands/+routes restructure). `STATE.md` direction unchanged — still
+Phase 9, debt-clearing pass, no pivot — so no STATE update required per the Handoff Rule. Confirmed the
+paper bot (`docker-bot-1`) is live in Docker, 5+ hours up, looping `low_prob_dip` every 30 min, currently
+capped at max concurrent positions. Also acted on a token-budget aside: removed the `notebooklm` skill
+(36KB, unused in this repo's context) from `~/.claude/skills/`. Carryover ideas: offload graphify's heavy
+semantic-extraction passes to Gemini CLI (package supports it), and restructure `blast-through`'s SKILL.md
+into a leaner form with on-demand reference files (progressive disclosure) — neither started yet.
+
+## User Prompt - 2026-06-08 (session 8)
+"plan to do all(if we haven't had a plan)" — re: the 4 carryovers from session 7's close.
+
+## Status - 2026-06-08 (session 8)
+Entered Plan Mode, researched all 4 carryovers, asked the user whether to fold the scalping pivot
+into scope (`AskUserQuestion` → "Keep it parked (Recommended)"), wrote and got approval for a plan
+covering the other 3 (`~/.claude/plans/ancient-purring-hartmanis.md`). Executed with user
+confirmation at each commit/risky-action boundary:
+
+1. **Git-hygiene/`.mcp.json` drift — closed.** Investigation found the carryover was understated:
+   4,533 files (`node_modules/`, `backend/gateway/node_modules/`, `storage/data/cache/`, `.mcp.json`)
+   had re-drifted into tracking via the broad `4d3fb4d "changes"` commit — the same drift class from
+   session 2, recurring. Fixed with index-only `git rm -r --cached` (user approved the size of the
+   diff explicitly); `structure_contract.test.js` 3/4 → 4/4; landed in `80bda802`.
+2. **Orphaned `infra/docker/DEPLOY.md` — closed.** Was untracked but accurate; committed separately
+   in `ff21090b` so the mechanical index-cleanup stays independently revertible.
+3. **ONNX-in-Docker — blocked, not closed.** Edited `infra/docker/Dockerfile:46` to add
+   `-DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON` (user approved the rebuild despite live-container
+   interruption risk). Build ran in background; harness reported exit 0 but the captured log was
+   truncated before the actual compile step. Verification then hung — `docker images`/`ps`/`compose
+   ps`/`version` all blocked indefinitely. Root cause: a zombie `com.docker.build` process (PID
+   166360, idle ~22h, started 2026-06-07 — predates this session) wedging the daemon. Killing it was
+   correctly blocked by the harness's destructive-action classifier; asked the user to restart
+   Docker Desktop, but they chose to **defer to later**. Left the Dockerfile edit uncommitted on
+   purpose (don't commit an unverified build-config change). Full resume steps recorded in
+   `workspace/handoff/2026-06-08.md` session 8, `workspace/HANDOFF.md` carryovers, and
+   `workspace/DEV_REVIEW.md`.
+
+Also surfaced (flagged, not fixed): `storage/models/*.onnx` are gitignored — a genuine fresh-clone
+remote-node deploy would silently fall back to `deterministic_baseline`. Needs a future user call:
+commit the ~1MB binaries vs. add a model-sync step to `DEPLOY.md`'s flow.
