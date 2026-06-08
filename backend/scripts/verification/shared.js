@@ -1,7 +1,7 @@
 const DEFAULT_URL = 'https://opensky-network.org/api/states/all';
 const TOKEN_URL = 'https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token';
 
-require('../../../shared/lib/env');
+require('../../../shared/lib/runtime/env');
 
 let cachedToken = null;
 let cachedTokenExpiresAt = 0;

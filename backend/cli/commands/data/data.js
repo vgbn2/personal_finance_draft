@@ -9,8 +9,8 @@ const {
   loadPredictionMarketHistory,
 } = require('../research/research.js');
 const { backfill20Years } = require('../../../../scripts/data_ops/backfill_20_years.js');
-const { runMaintenance } = require('../../../../shared/lib/db_pruning.js');
-const { validateSnapshot, writeJson, readSnapshot, mergeSnapshots, writePartitionedSnapshot, writeTsIndex, readTsIndex, recordKey } = require('../../../../shared/lib/market_validation.js');
+const { runMaintenance } = require('../../../../shared/lib/data/db_pruning.js');
+const { validateSnapshot, writeJson, readSnapshot, mergeSnapshots, writePartitionedSnapshot, writeTsIndex, readTsIndex, recordKey } = require('../../../../shared/lib/market/validation.js');
 const utils = require('../../lib/utils.js');
 const { featureGate } = require('../../../../shared/lib/settings/runtime');
 const {

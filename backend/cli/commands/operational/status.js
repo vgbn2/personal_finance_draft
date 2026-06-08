@@ -8,11 +8,11 @@ const {
   dedupePreferredMarketQuotes, loadConfig, loadExternalQuoteInputs,
   resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
 } = require('../../../scripts/data_ops/ingest_market_data');
-const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/quote_router');
-const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../../shared/lib/backtest');
-const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../../shared/lib/indicators');
-const { compareModels } = require('../../../../shared/lib/models');
-const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../../shared/lib/market_validation');
+const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quote_router');
+const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../../shared/lib/strategy/backtest');
+const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../../shared/lib/market/indicators');
+const { compareModels } = require('../../../../shared/lib/ml/models');
+const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation');
 const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal } = require('../../tui');
 
 const utils = require('../../lib/utils.js');
