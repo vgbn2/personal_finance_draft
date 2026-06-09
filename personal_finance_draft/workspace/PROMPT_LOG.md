@@ -529,3 +529,36 @@ confirmation at each commit/risky-action boundary:
 Also surfaced (flagged, not fixed): `storage/models/*.onnx` are gitignored — a genuine fresh-clone
 remote-node deploy would silently fall back to `deterministic_baseline`. Needs a future user call:
 commit the ~1MB binaries vs. add a model-sync step to `DEPLOY.md`'s flow.
+
+## Status - 2026-06-09 (session 9-10) — RSI backtest harness shipped, mass-implement debt clear, rescued at-risk shared/lib reorg from working tree
+
+Continued the RSI-reversal backtest work (native JS port of `notebooks/research/rsi_reversal.py`'s
+analyzer in `shared/lib/strategy/rsi_backtest.js`, runnable via `scripts/strategies/
+rsi_reversal_backtest.js`), then ran two `/mass-implement` passes back to back:
+
+**Session 9 — debt clear on the RSI stack:**
+- Added `CACHE_SYMBOL_OVERRIDES` (GLD→XAUUSD, SLV→XAGUSD, USO→USOIL; TLT has no proxy, skips
+  correctly) per user correction on cache-symbol resolution.
+- Found and fixed a real bug while auditing the user's claimed shared/lib "tidy up": a same-day
+  shim (`centralized_lib/ansi.js`) was patching a 5-day-old broken import in
+  `backend/cli/lib/auth.js:11` rather than the caller being fixed — repointed the caller, deleted
+  3 zero-caller shim files + 2 empty dirs.
+- Wrote `tests/scripts/rsi_backtest_primitives.test.js` (15/15, closed-form references — Beta(2,2)
+  polynomial CDF, Cauchy dist for Student-t df=1, pandas quantile interpolation) and exported
+  `betaCdf/betaPpf/tCdf/tPpf`. Committed `scripts/strategies/` (was untracked, `c47e3f91`).
+
+**Session 10 — `/mass-implement` again, surfaced something bigger than the ledger:**
+Step-0 planning surfaced that the shared/lib reorg STATE.md already claimed was "done" — plus a
+large workspace-doc archival — were both **entirely uncommitted**: ~30 new canonical
+`shared/lib/{runtime,market,strategy,ml,ui,...}` dirs sat untracked while old root files existed
+only as gutted shims in the working tree; one `git clean -fd` from permanent loss. Smoke-tested
+the tree, then landed it in two commits: `f4a97e94` (191 files — the reorg + ~50 caller
+import-path updates; had to walk back an over-broad `git add backend/` that swept in 2,151
+untracked Rust `target/` artifacts) and a follow-up (21 files — the doc archival,
+`STATE_ARCHIVE.md`/`workspace/handoff/`/`workspace/archive/`). Then closed the gap flagged in
+session 9's closeout: `tests/scripts/rsi_backtest_analyze.test.js` (`c5114e90`) — a seeded-fixture
+(mulberry32 PRNG) end-to-end test of `analyzeSeries`/`extractActionable` pinning the exact
+deterministic signal the real pipeline produces. 6/6 passing, full `rsi_backtest` suite 21/21.
+
+Flagged not fixed: `backend/cli/target/` (2,151 untracked Rust build artifacts) should probably be
+`.gitignore`d. ONNX-Docker fix stays blocked — daemon still wedged (`docker info` times out).

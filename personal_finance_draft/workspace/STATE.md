@@ -242,3 +242,25 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
 - Fix applied: repointed `backend/cli/lib/auth.js:11` to the canonical `shared/lib/ansi` (the same shim every other migrated caller uses → `ui/ansi`), then deleted all three zero-caller shim files plus the now-empty `centralized_lib/` and `indicators/` directories. `auth/supabase_env.js` (real module, not a shim) stays. Verified clean: `node -e "require('./backend/cli/lib/auth.js')"` loads, and a full-tree grep for the three removed paths returns nothing.
 - Also added unit tests for the rsi_backtest statistical primitives (`tests/scripts/rsi_backtest_primitives.test.js`, 15/15 passing against independent closed-form references — Beta(2,2)'s polynomial CDF, the Cauchy distribution for Student-t df=1, pandas quantile interpolation) and exported `betaCdf/betaPpf/tCdf/tPpf` from `shared/lib/strategy/rsi_backtest.js` to make its existing "exposed for tests / inspection" comment true.
 - Committed the previously-untracked `scripts/strategies/` directory (8 files, ~1,900 LOC incl. the new RSI reversal stack) — `c47e3f91`.
+
+## Correction - 2026-06-09 mass-implement: shared/lib reorg + workspace doc archival landed (was at-risk uncommitted)
+
+- Found the `shared/lib` category reorg this same STATE.md already documented as "done" was
+  entirely **uncommitted** — ~30 new canonical dirs/files (`runtime/`, `market/`, `strategy/`,
+  `ml/`, `ui/`, etc.) sat untracked while the old root files existed only as gutted one-line
+  shims in the working tree. One `git clean -fd` away from permanently destroying a
+  multi-session restructure. Same exposure for the workspace-doc archival
+  (`STATE_ARCHIVE.md`, `workspace/handoff/`, `workspace/archive/` — all untracked, while
+  `STATE.md`/`HANDOFF.md` looked like they'd lost ~2,800 lines that had actually moved there).
+- Landed both as separate commits after smoke-testing the working tree
+  (`require('./shared/lib/{paths,strategy/rsi_backtest,runtime/config_loader,market/quote_router}')`,
+  `require('./backend/cli/lib/auth.js')` all load clean): `f4a97e94` (191 files, the reorg +
+  ~50 caller import-path updates) and a follow-up commit (21 files, the doc archival).
+  Deliberately excluded `backend/cli/target/` (2,151 untracked Rust build-artifact files that
+  `git add backend/` would otherwise have swept in) and two unrelated stray files
+  (`frame_backtester.{cpp,hpp}`, `polymarket-cli/`) — left untouched, out of scope.
+- Also closed the gap flagged in the prior session's closeout: added
+  `tests/scripts/rsi_backtest_analyze.test.js` — a seeded-fixture (mulberry32 PRNG) end-to-end
+  test of `analyzeSeries`/`extractActionable` running the real rsi→atr→crossover→Bayesian-summarize
+  pipeline and pinning the exact deterministic signal it produces (kelly=0.5715, hit=0.7692,
+  CAUTION/MED). 6/6 passing — full `rsi_backtest` suite now 21/21 (`c5114e90`).
