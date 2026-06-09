@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-08.md`**
+- Latest/current handoff: **`workspace/handoff/2026-06-09.md`**
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -18,6 +18,18 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **shared/lib reorg + workspace doc archival — DONE (session 10, 2026-06-09), but READ THIS:**
+  the reorg STATE.md had been claiming as "done" since 2026-06-08 was actually sitting **entirely
+  uncommitted** (new canonical `shared/lib/{runtime,market,strategy,...}` dirs untracked, old
+  files gutted to shims only in the working tree — one `git clean -fd` from total loss). Same for
+  the doc archival (`STATE_ARCHIVE.md`/`workspace/handoff/`/`workspace/archive/`). Landed in
+  `f4a97e94` (191 files) + a follow-up commit (21 files). **Lesson for future sessions: when
+  STATE.md says a restructure is "done," verify with `git status`, not just by reading the
+  doc** — this is the third time this drift class has bitten the project (`648ab69e`, `4d3fb4d`,
+  now this). Full trace: `workspace/handoff/2026-06-09.md` session 10.
+- **New hygiene flag (not fixed)**: `backend/cli/target/` — 2,151 untracked Rust build-artifact
+  files. Should probably go in `.gitignore`; currently a `git add backend/` trap (caught and
+  walked back during session 10's commit, see above). Small, easy follow-up.
 - **Scalping-bot pivot scoping — DONE.** Scoping doc written at `workspace/SCALPING_BOT_SCOPING.md`
   (5 sections: strategy module shape, sub-minute cycle reqs, order-book data needs, latency/fee
   modeling, open risks/decisions — all with file:line refs). Verdict: this is a second execution
