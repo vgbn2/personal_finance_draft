@@ -729,3 +729,15 @@ Alpaca 422 root-caused (fractional TIF + BTCUSDT symbols) and fixed with live pa
 (c385959f). Bots verified: docker bot cycling (daemon unwedged), edge-trader engine end-to-end dry
 cycle works. "DNS issues" = host egress EACCES flapping; clob retryOnError enabled (fd15e2e2).
 Full trail: workspace/handoff/2026-06-12.md.
+
+## 2026-06-12 - Session 17b/c: /blast-through + plan-and-delegate waves + C++ verify + end session
+
+**Prompts:** `/blast-through`; `plan and delegate execution`; `next`; `end session`
+
+**Outcome:** Focused audit found 7 findings (kill-switch GET auth gap High, exit-0-on-failure,
+FOK loss, classifier/masking/display items). All 7 fixed via 4 Sonnet agent batches, Fable-reviewed
+and committed (37d2d6d2, 32cb5637, cafe6eea, 6875f1fa). Retry rollout complete (EACCES flaps).
+Suite 284/284. C++ backend verified behaviorally (exact ML parity match; ctest 27/29 with 2
+fixture-path failures queued as S-fixes). Mid-wave incident (2 unexplained Polymarket trades)
+resolved benign: user's own UI bets; open order cancelled on request. 12 commits total this
+session. Trail: workspace/handoff/2026-06-12.md.

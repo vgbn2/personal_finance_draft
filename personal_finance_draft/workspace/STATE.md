@@ -363,3 +363,14 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
   SDK-level retry enabled; shared fetch retry helper queued.
 - User's 9-item roadmap recorded in `workspace/handoff/2026-06-12.md`; next waves: TUI revamp,
   monolith deconstruction, C++ verify, RAM optimization, deep 5-min data, login barrier.
+
+## Correction - 2026-06-12 session 17c - C++ test claim + audit findings cleared
+
+- The "All 29/29 C++ core tests passing" claim above is STALE: currently 27/29. Both failures are
+  fixture-path debt (ingestion_adapter_test resolves config/data_sources.yaml relative to the
+  build dir; kronos_integration_test missing its empirical fixture), not logic. Engines verified
+  healthy behaviorally: ml compare reproduces Phase-3 ONNX parity EXACTLY; correlation/risk green.
+- All 7 session-17 blast-through findings RESOLVED same-day via delegated Sonnet waves
+  (37d2d6d2 kill-switch auth, 32cb5637 failure semantics + classifier + masking, cafe6eea
+  FOK/deadline guard, 6875f1fa dedup + retry rollout). Suite 284/284. backend/api/app.js gate
+  expected to lift C->B next audit.
