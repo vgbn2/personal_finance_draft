@@ -434,6 +434,17 @@ class GateIoAdapter implements BrokerAdapter {
   }
 }
 
+// Alpaca trades crypto as slash pairs against USD (BTC/USD); the platform's cache
+// universe uses concatenated symbols (BTCUSDT). Map known crypto bases; leave
+// everything else (equities, already-slashed pairs) untouched.
+const ALPACA_CRYPTO_SYMBOL = /^(BTC|ETH|SOL|DOGE|XRP|ADA|AVAX|LINK|LTC|BCH|UNI|AAVE|SHIB|PEPE|SUI|DOT|TRX|NEAR|POL|MATIC)(USDT|USDC|USD)$/;
+function toAlpacaTradeSymbol(symbol: string): string {
+  const upper = String(symbol || '').toUpperCase();
+  if (upper.includes('/')) return upper;
+  const m = upper.match(ALPACA_CRYPTO_SYMBOL);
+  return m ? `${m[1]}/USD` : upper;
+}
+
 /**
  * Alpaca Implementation using official SDK
  */
@@ -476,14 +487,18 @@ class AlpacaAdapter implements BrokerAdapter {
     }
 
     try {
+      const symbol = toAlpacaTradeSymbol(order.instrumentId);
+      const isCrypto = symbol.includes('/');
+      const isFractional = !Number.isInteger(order.quantity);
       const payload: any = {
-        symbol: order.instrumentId,
+        symbol,
         qty: order.quantity,
         side: order.side,
         type: order.type,
-        time_in_force: 'gtc',
+        // Alpaca rejects fractional equity orders with any TIF other than 'day' (422).
+        time_in_force: isCrypto ? 'gtc' : (isFractional ? 'day' : 'gtc'),
       };
-      
+
       if (order.type === 'limit' && order.price) {
         payload.limit_price = order.price;
       }
@@ -494,7 +509,8 @@ class AlpacaAdapter implements BrokerAdapter {
         status: alpacaOrder.status,
       };
     } catch (err: any) {
-      throw new Error(`Alpaca SDK Order Error: ${err.message}`);
+      const detail = err?.response?.data ? ` ${JSON.stringify(err.response.data)}` : '';
+      throw new Error(`Alpaca SDK Order Error: ${err.message}${detail}`);
     }
   }
 
