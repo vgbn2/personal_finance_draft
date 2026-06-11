@@ -87,4 +87,70 @@ async function fetchWithRetry(url, options = {}, retry = {}) {
   return lastResponse;
 }
 
-module.exports = { fetchWithRetry };
+/**
+ * Wraps any async function with the same transient-error retry logic used by
+ * fetchWithRetry.  Handles:
+ *   - Transport errors (EACCES, ECONNREFUSED, etc.) that are thrown directly.
+ *   - Axios-style errors: err.response present + status >= 500 → transient;
+ *     status 4xx → non-retryable; no err.response with matching code → transport.
+ *   - AggregateError / generic fetch failures with no code → treated as transient.
+ *
+ * @template T
+ * @param {() => Promise<T>} fn  - Async function to call (called fresh each attempt).
+ * @param {{ attempts?: number, baseDelayMs?: number }} [retry={}]
+ *   attempts    - Total number of attempts (default 3).
+ *   baseDelayMs - Base delay in ms; actual delay = baseDelayMs * 2^attemptIndex (default 300).
+ * @returns {Promise<T>}
+ */
+async function retryTransient(fn, retry = {}) {
+  const attempts = typeof retry.attempts === 'number' && retry.attempts >= 1
+    ? Math.floor(retry.attempts)
+    : 3;
+  const baseDelayMs = typeof retry.baseDelayMs === 'number' && retry.baseDelayMs >= 0
+    ? retry.baseDelayMs
+    : 300;
+
+  let lastError;
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (attempt > 0) {
+      const delay = baseDelayMs * Math.pow(2, attempt - 1);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    try {
+      return await fn();
+    } catch (err) {
+      // Axios-style error: has err.response with a status code.
+      if (err && err.response && typeof err.response.status === 'number') {
+        const status = err.response.status;
+        // 5xx → transient, retry
+        if (isRetryableStatus(status)) {
+          lastError = err;
+          continue;
+        }
+        // 4xx → client/business error, do not retry
+        throw err;
+      }
+
+      // Transport-level error (EACCES, ECONNREFUSED, etc.)
+      if (isRetryableError(err)) {
+        lastError = err;
+        continue;
+      }
+
+      // AggregateError (e.g. from Promise.any) or errors with no code — treat as transient
+      if (err && (err instanceof AggregateError || (err.name === 'AggregateError'))) {
+        lastError = err;
+        continue;
+      }
+
+      // Unknown error — do not retry
+      throw err;
+    }
+  }
+
+  throw lastError;
+}
+
+module.exports = { fetchWithRetry, retryTransient };
