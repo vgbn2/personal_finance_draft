@@ -134,7 +134,37 @@ function classifyPolymarketGatewayError(error) {
     } else if (/token|market|not found|resolved|delisted/i.test(message)) {
       error_category = 'invalid_token';
       suggestion = 'The token ID may belong to a resolved or delisted market. Re-fetch markets and pick an active one.';
+    } else if (error && typeof error === 'object' && error.response && error.response.status === 400) {
+      // CLOB HTTP-400 business rejection not otherwise classified (e.g. invalid order version)
+      const responseData = error.response.data;
+      const serverMsg = (typeof responseData === 'object' && responseData !== null)
+        ? (responseData.error || responseData.message || '')
+        : (typeof responseData === 'string' ? responseData.trim() : '');
+      error_category = 'clob_rejected';
+      suggestion = serverMsg
+        ? `CLOB rejected the order: ${serverMsg}. Check order parameters and ensure you are using the latest clob-client version.`
+        : 'CLOB rejected the order with a 400 error. Check order parameters and client version.';
     }
+  }
+
+  // Re-classify: CLOB 400 errors carrying a non-auth "error" string that slipped through
+  // the token/market branch (e.g. "invalid order version") must not appear as invalid_token.
+  if (error_category === 'invalid_token') {
+    const responseData = error && typeof error === 'object' && error.response && error.response.data;
+    const serverMsg = responseData && typeof responseData === 'object'
+      ? String(responseData.error || responseData.message || '')
+      : typeof responseData === 'string' ? responseData.trim() : '';
+    const isAuthProblem = /sig(nature)?|signing|owner|unauthorized|api.?key|passphrase/i.test(serverMsg);
+    if (serverMsg && !isAuthProblem && error && error.response && error.response.status === 400) {
+      error_category = 'clob_rejected';
+      suggestion = `CLOB rejected the order: ${serverMsg}. Check order parameters and ensure you are using the latest clob-client version.`;
+    }
+  }
+
+  // Specifically re-map "invalid order version" regardless of how it arrives
+  if (error_category !== 'clob_rejected' && /invalid order version/i.test(message)) {
+    error_category = 'clob_rejected';
+    suggestion = 'The CLOB rejected the order version. Ensure you are using the latest @polymarket/clob-client-v2 and retry.';
   }
 
   return {
