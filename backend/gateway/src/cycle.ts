@@ -14,6 +14,8 @@ import { createClobClient } from './clob_factory.js';
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/persistence_bridge');
+// @ts-ignore
+const { fetchWithRetry } = require('../../../shared/lib/runtime/fetch_retry');
 
 // ─── Gamma end-date helper ────────────────────────────────────────────────────
 
@@ -28,7 +30,7 @@ async function fetchMarketEndDateIso(slug: string): Promise<string | null> {
     const parts = slug.split('--');
     const eventSlug  = parts[0];
     const marketSlug = parts.slice(1).join('--');
-    const res = await fetch(`${GAMMA_API_CYCLE}/events?slug=${encodeURIComponent(eventSlug)}`);
+    const res = await fetchWithRetry(`${GAMMA_API_CYCLE}/events?slug=${encodeURIComponent(eventSlug)}`);
     if (!res.ok) return null;
     const body = await res.json();
     const events: any[] = Array.isArray(body) ? body : body?.data ?? [];

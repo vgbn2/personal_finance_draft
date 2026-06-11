@@ -31,7 +31,7 @@ const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
 // @ts-ignore
-const { fetchWithRetry } = require('../../../shared/lib/runtime/fetch_retry');
+const { fetchWithRetry, retryTransient } = require('../../../shared/lib/runtime/fetch_retry');
 
 const ansi = {
   reset:       '\x1b[0m',
@@ -1115,7 +1115,7 @@ class PolymarketAdapter implements BrokerAdapter {
       };
       // Pass 1 — active markets
       try {
-        const resp = await axios.get(`https://gamma-api.polymarket.com/markets?${buildParams().toString()}`, { timeout: 8000, headers: gammaHeaders });
+        const resp = await retryTransient(() => axios.get(`https://gamma-api.polymarket.com/markets?${buildParams().toString()}`, { timeout: 8000, headers: gammaHeaders }));
         const markets: any[] = Array.isArray(resp.data) ? resp.data : (resp.data?.data ?? []);
         markets.forEach(parseMarketQuestion);
       } catch { /* best-effort */ }
@@ -1127,7 +1127,7 @@ class PolymarketAdapter implements BrokerAdapter {
           stillMissing.forEach((id) => p2.append('clob_token_ids', id as string));
           p2.set('limit', String(Math.min(stillMissing.length * 2, 200)));
           p2.set('active', 'false');
-          const resp2 = await axios.get(`https://gamma-api.polymarket.com/markets?${p2.toString()}`, { timeout: 8000, headers: gammaHeaders });
+          const resp2 = await retryTransient(() => axios.get(`https://gamma-api.polymarket.com/markets?${p2.toString()}`, { timeout: 8000, headers: gammaHeaders }));
           const markets2: any[] = Array.isArray(resp2.data) ? resp2.data : (resp2.data?.data ?? []);
           markets2.forEach(parseMarketQuestion);
         } catch { /* best-effort */ }
@@ -1832,9 +1832,24 @@ async function fetchPolymarketPriceHistory(tokenId: string, interval = '1h', fid
   }
 }
 
-async function submitPolymarketOrder(tokenId: string, quantity: number, price?: number, tickSizeOverride?: string, side: 'buy' | 'sell' = 'buy'): Promise<any> {
+/**
+ * Shared core for submitPolymarketOrder and preflightPolymarketOrder.
+ * Handles input validation, adapter/identity setup, signer derivation, and
+ * error wrapping; delegates the actual work to the adapter based on preflightOnly.
+ *
+ * Returns the exact JSON shapes expected by their respective callers.
+ */
+async function _polymarketOrderCore(
+  tokenId: string,
+  quantity: number,
+  price: number | undefined,
+  tickSizeOverride: string | undefined,
+  side: 'buy' | 'sell',
+  options: { preflightOnly: boolean },
+): Promise<any> {
   if (!tokenId) return { ok: false, error: 'Missing token id' };
   if (!Number.isFinite(quantity) || quantity <= 0) return { ok: false, error: 'Quantity must be a positive number' };
+
   const adapter = new PolymarketAdapter();
   const identity = adapter.getAccountIdentity();
   let signerAddress = null;
@@ -1842,95 +1857,78 @@ async function submitPolymarketOrder(tokenId: string, quantity: number, price?: 
     const { Wallet } = await import('ethers');
     signerAddress = new Wallet(process.env.POLYMARKET_PRIVATE_KEY as string).address;
   } catch {}
-  try {
-    const result = await adapter.placeOrder({
-      instrumentId: tokenId,
-      side: side === 'sell' ? OrderSide.SELL : OrderSide.BUY,
-      quantity,
-      price: typeof price === 'number' && Number.isFinite(price) ? price : undefined,
-      tickSizeOverride: String(tickSizeOverride || '').trim() || undefined,
-      type: 'limit',
-      status: OrderStatus.PROPOSED,
-      timestamp: new Date(),
-    });
-    return {
-      ok: true,
-      tokenId,
-      side,
-      quantity,
-      price: typeof price === 'number' && Number.isFinite(price) ? price : null,
-      signerAddress,
-      funderAddress: identity.funderAddress ?? null,
-      signatureType: identity.signatureType ?? null,
-      result,
-    };
-  } catch (e: any) {
-    const diagnostic = classifyPolymarketGatewayError(e);
-    const priceField = typeof price === 'number' && Number.isFinite(price) ? price : null;
-    return {
-      ok: false,
-      tokenId,
-      side,
-      quantity,
-      price: priceField,
-      signerAddress,
-      funderAddress: identity.funderAddress ?? null,
-      signatureType: identity.signatureType ?? null,
-      ...diagnostic,
-    };
+
+  const orderInput: TradeOrder = {
+    instrumentId: tokenId,
+    side: side === 'sell' ? OrderSide.SELL : OrderSide.BUY,
+    quantity,
+    price: typeof price === 'number' && Number.isFinite(price) ? price : undefined,
+    tickSizeOverride: String(tickSizeOverride || '').trim() || undefined,
+    type: 'limit',
+    status: OrderStatus.PROPOSED,
+    timestamp: new Date(),
+  };
+  const priceField = typeof price === 'number' && Number.isFinite(price) ? price : null;
+
+  const errorBase = {
+    ok: false,
+    tokenId,
+    side,
+    quantity,
+    price: priceField,
+    signerAddress,
+    funderAddress: identity.funderAddress ?? null,
+    signatureType: identity.signatureType ?? null,
+  };
+
+  if (options.preflightOnly) {
+    try {
+      const prepared = await adapter.prepareOrder(orderInput);
+      return {
+        ok: true,
+        tokenId,
+        side,
+        quantity,
+        price: priceField,
+        preflight: {
+          signerAddress,
+          funderAddress: prepared.accountIdentity.funderAddress ?? null,
+          signatureType: prepared.accountIdentity.signatureType ?? null,
+          tickSize: prepared.tickSize,
+          signed: Boolean(prepared.signedOrder),
+        },
+      };
+    } catch (e: any) {
+      const diagnostic = classifyPolymarketGatewayError(e);
+      return { ...errorBase, ...diagnostic };
+    }
+  } else {
+    try {
+      const result = await adapter.placeOrder(orderInput);
+      return {
+        ok: true,
+        tokenId,
+        side,
+        quantity,
+        price: priceField,
+        signerAddress,
+        funderAddress: identity.funderAddress ?? null,
+        signatureType: identity.signatureType ?? null,
+        result,
+      };
+    } catch (e: any) {
+      const diagnostic = classifyPolymarketGatewayError(e);
+      return { ...errorBase, ...diagnostic };
+    }
   }
 }
 
+async function submitPolymarketOrder(tokenId: string, quantity: number, price?: number, tickSizeOverride?: string, side: 'buy' | 'sell' = 'buy'): Promise<any> {
+  return _polymarketOrderCore(tokenId, quantity, price, tickSizeOverride, side, { preflightOnly: false });
+}
+
 async function preflightPolymarketOrder(tokenId: string, quantity: number, price?: number, tickSizeOverride?: string, side: 'buy' | 'sell' = 'buy'): Promise<any> {
-  if (!tokenId) return { ok: false, error: 'Missing token id' };
-  if (!Number.isFinite(quantity) || quantity <= 0) return { ok: false, error: 'Quantity must be a positive number' };
-  const adapter = new PolymarketAdapter();
-  const identity = adapter.getAccountIdentity();
-  let signerAddress = null;
-  try {
-    const { Wallet } = await import('ethers');
-    signerAddress = new Wallet(process.env.POLYMARKET_PRIVATE_KEY as string).address;
-  } catch {}
-  try {
-    const prepared = await adapter.prepareOrder({
-      instrumentId: tokenId,
-      side: side === 'sell' ? OrderSide.SELL : OrderSide.BUY,
-      quantity,
-      price: typeof price === 'number' && Number.isFinite(price) ? price : undefined,
-      tickSizeOverride: String(tickSizeOverride || '').trim() || undefined,
-      type: 'limit',
-      status: OrderStatus.PROPOSED,
-      timestamp: new Date(),
-    });
-    return {
-      ok: true,
-      tokenId,
-      side,
-      quantity,
-      price: typeof price === 'number' && Number.isFinite(price) ? price : null,
-      preflight: {
-        signerAddress,
-        funderAddress: prepared.accountIdentity.funderAddress ?? null,
-        signatureType: prepared.accountIdentity.signatureType ?? null,
-        tickSize: prepared.tickSize,
-        signed: Boolean(prepared.signedOrder),
-      },
-    };
-  } catch (e: any) {
-    const diagnostic = classifyPolymarketGatewayError(e);
-    const priceField = typeof price === 'number' && Number.isFinite(price) ? price : null;
-    return {
-      ok: false,
-      tokenId,
-      side,
-      quantity,
-      price: priceField,
-      signerAddress,
-      funderAddress: identity.funderAddress ?? null,
-      signatureType: identity.signatureType ?? null,
-      ...diagnostic,
-    };
-  }
+  return _polymarketOrderCore(tokenId, quantity, price, tickSizeOverride, side, { preflightOnly: true });
 }
 
 async function fetchPolymarketInvestigate(args: string[]): Promise<any> {
