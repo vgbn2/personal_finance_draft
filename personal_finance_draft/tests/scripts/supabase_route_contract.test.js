@@ -2,8 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const SUPABASE_SERVICE_PATH = require.resolve('../../backend/api/server/services/supabase_client');
-const AUTH_ROUTE_PATH = require.resolve('../../backend/api/server/routes/auth');
-const DATABASE_ROUTE_PATH = require.resolve('../../backend/api/server/routes/database');
+const AUTH_ROUTE_PATH = require.resolve('../../backend/api/server/routes/account/auth');
+const DATABASE_ROUTE_PATH = require.resolve('../../backend/api/server/routes/account/database');
 
 function clear(modulePath) {
   delete require.cache[modulePath];
