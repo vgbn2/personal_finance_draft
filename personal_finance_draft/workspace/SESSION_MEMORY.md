@@ -1,4 +1,27 @@
-﻿## Session Memory - 2026-06-11 (session 12) Fix pass: audit cleared via Sonnet delegation, suite 263/263
+﻿## Session Memory - 2026-06-12 (session 17) Polymarket CLOB V2 migration + first real matched order; Alpaca 422 fixed
+
+{
+  "work": "User set a 9-item roadmap; locked focus on Polymarket orders + bot automation with tiny-proof-order bounds. Committed session-16 staged batch first (c65f0bfa). Diagnosed and fixed Polymarket order placement end-to-end (ac21d19a), fixed Alpaca 422s (c385959f), verified both bots online, mitigated the egress flapping (fd15e2e2).",
+  "key_mechanism": "THREE stacked root causes made Polymarket orders 'stuck': (1) .env funder targeted an empty EIP-7702 MetaMask account (sig2) and PROXY_ADDRESS an empty EOA; the real account is the EIP-1167 Polymarket proxy 0x1e7955f5402c8eb5f2aa7879b36bc8789d8f2091 with sig1 -- found by on-chain triage (eth_getCode + USDC allowances + data-api positions per candidate wallet). (2) Polymarket CLOB V2 cutover 2026-04-28: EVERY legacy @polymarket/clob-client version (incl. latest 5.8.1) gets 'invalid order version' on POST /order; must use @polymarket/clob-client-v2 (options-object ctor; ethers v5 Wallet still satisfies ClobSigner; method names unchanged). (3) No sell path existed in the gateway CLI. ALSO: 'pUSD' balance is Polymarket-internal ledger, NOT on-chain USDC (chain shows 0 while CLOB shows the real tradeable balance); markets now carry 1000bps maker/taker fees. Alpaca 422 = hardcoded time_in_force gtc (fractional equity needs day) + BTCUSDT-style symbols unknown to Alpaca (needs BTC/USD). 'DNS issues' = host egress flapping connect EACCES to Cloudflare/CLOB/Alpaca IPs on a seconds timescale (same class as the 06-07 Docker registry WSAEACCES) -- retry on connect errors is mandatory platform-wide.",
+  "verified": [
+    "Real Polymarket SELL via gateway CLI (user-approved 5 @ 0.15 ETH-dip token): orderId 0x27d7cd70..., status matched; position 10->5; balance +752,960 micro-pUSD net of 10% fee.",
+    "Alpaca paper: buy AAPL 0.5 market --live -> FILLED (day TIF); buy BTCUSDT 0.001 --live -> accepted as BTC/USD gtc; both server-side confirmed via getOrders. Without --live the gateway dry-runs (probes never reach Alpaca -- by design).",
+    "bot health 6/6; bot cycle full decision engine produces wouldBuy with aiProb/edge; docker-bot-1 + docker-web-1 Up 10h (daemon UNWEDGED, old carryover clearable).",
+    "Polymarket test bundle 26/26; gateway tsc clean; structure 7/7 + notebooks 1/1 before the staged-batch commit."
+  ],
+  "user_decisions": [
+    "Focus order: items 1+3 now; TUI revamp, monoliths, C++ verify, RAM, 5-min data, docker/web-dashboard later (9 explicitly deferred).",
+    "Tiny proof orders approved; the exact SELL 5 @ 0.15 was explicitly re-approved after the auto-mode classifier correctly blocked the agent-chosen live order.",
+    "Commit staged session-16 batch: yes."
+  ],
+  "cautions": [
+    "Bot left enabled=true liveTrading=false. Do NOT enable live: top dry pick was a past-deadline market (resolution-lag edge trap) -- candidate filter needs deadline/liquidity guards first.",
+    "Polymarket buys limited by $9.31 pUSD balance; deposits are a user action.",
+    "Error classifier labels CLOB version rejections as invalid_token (misleading); bot health prints micro-units pUSD."
+  ],
+  "dcs": 0.97
+}
+## Session Memory - 2026-06-11 (session 12) Fix pass: audit cleared via Sonnet delegation, suite 263/263
 
 {
   "work": "Executed the approved fix plan for session 11's audit findings. Per NEW user preference ('use lesser model to implement to save tokens' -- saved to memory as feedback-lighter-model-implementation), implementation was delegated to two Sonnet subagent waves with precise specs; Fable only orchestrated, reviewed diffs for hallucinated conventions, re-ran every gate itself, and did all git staging/commits. 6 commits landed (358476f6 bridge, 7d99af0f indicators+config/system, e6716777 data/ingestion+untracked deps, b3b0fec5 gateway redaction, 2bf1e482 test contracts, 8e8b4adf onnx binaries+.gitignore).",
