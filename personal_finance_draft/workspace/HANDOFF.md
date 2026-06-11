@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-09.md`**
+- Latest/current handoff: **`workspace/handoff/2026-06-11.md`**
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -17,6 +17,20 @@ boot) never has to read tens of thousands of tokens of accumulated history.
   2026-05-31 to 2026-06-07) are archived in `workspace/STATE_ARCHIVE.md`.
 
 ## Open carryovers (keep this list current)
+
+- **`feat/ml-onnx-section` — AUDITED + FIXED + COMMITTED (sessions 11-12, 2026-06-11).**
+  The unrecorded 2026-06-10 work was audited (7 new failing test files, broken
+  `runGatewayCommand`, tracked→untracked deps), then fixed via Sonnet-delegated waves and
+  landed in 6 commits (`358476f6`..`8e8b4adf`). **Full suite now 263/263 — first fully green
+  run on record** (all 6 pre-existing baseline failures cleared too). Trail:
+  `workspace/handoff/2026-06-11.md`, DEV_REVIEW.md "Focused Audit - 2026-06-11" + RESOLUTION.
+  Branch is ready for the user's merge decision (feat/ml-onnx-section → main).
+- **`backend/cli/target/` hygiene — CLOSED** (committed in `8e8b4adf`).
+- **`.onnx` models latent gap — CLOSED** (binaries + serving manifest committed in `8e8b4adf`).
+- **Centralization backlog (open, M)**: migrate trade.js's 5 remaining direct
+  `buildTradeGatewayLaunch` call sites + `tools/backend.js`'s local `runBackendCommand` onto
+  the bridge. **Also open**: `notebooks/` is untracked (notebooks_contract test would fail on
+  a fresh clone — user scope decision); graphify-out stale (refresh before deep navigation).
 
 - **shared/lib reorg + workspace doc archival — DONE (session 10, 2026-06-09), but READ THIS:**
   the reorg STATE.md had been claiming as "done" since 2026-06-08 was actually sitting **entirely

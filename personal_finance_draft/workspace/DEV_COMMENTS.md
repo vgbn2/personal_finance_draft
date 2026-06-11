@@ -69,8 +69,38 @@
 - **Issue**: The route lagged the new strategy taxonomy/grade registry and did not expose `family`, `lane`, `role`, or grade fields to dashboard consumers.
 - **Status**: Fixed in `backend/api/server/routes/strategies.js` and covered by `backend/api/tests/api.test.js`.
 
-## Focused Audit Notes - 2026-06-05 (Polymarket gateway path)
-- **backend/gateway/src/index.ts**: `describeGatewayError()` currently serializes raw axios errors and leaks Polymarket auth headers on probe failures. This is now the highest-severity issue in the Polymarket seam.
-- **legacy/holygrailpoly/legacy_clob.js**: the legacy env bridge is not alias-only; it forces signature type `3` when a funder exists, so current-vs-legacy comparisons are also mode comparisons.
-- **backend/cli/lib/run_trade_gateway.js**: custom `ts-node` bootstrap is now the effective fallback runtime on machines without local `tsx`; treat it as supported infra, not a one-off patch.
+## Audit Findings - 2026-06-10 (Mass Audit & Ingestion Repair)
 
+### [SYSTEM RISK] Indicator Scalability (Manual Threading)
+- **Context**: `shared/lib/market/indicators.js` -> `featureFromWindow` and `backend/core/src/indicators/indicator_engine.cpp`.
+- **Issue**: Adding a new indicator requires 5+ manual synchronized edits across JS structures and C++ implementations. No central registry exists.
+- **Recommended Move**: Transition to a schema-driven `indicator_manifest.yaml` to automate code generation or dynamic lookup for both JS and C++ layers.
+- **Status**: Flagged as High Risk debt.
+
+### [DATA UPGRADE] Deep Ingestion Architecture (Waterproof)
+- **Context**: `backend/scripts/data_ops/ingest_market_data/index.js` and `shared/lib/providers/binance.js`.
+- **Enhancement**: Implemented 'Local Cache Aggregation' (rebuilding 1w/1mo from 1d cache) and 'Deep Paginated Fetching' (bypassing 1,000-bar API limits).
+- **Result**: Crypto weekly history restored (e.g. BTCUSDT 4 -> 464 bars). System now capable of "all the way back" recovery for any symbol.
+- **Status**: Implemented & Verified (DCS 0.98).
+
+### [SECURITY] Gateway Sanitization
+- **Context**: `backend/gateway/src/polymarket_errors.js`.
+- **Fix**: Expanded sensitive header redaction to cover `L2-Signature`, `POLY_ADDRESS`, and 12+ other security token variations.
+- **Status**: Hardened.
+
+### [INFRA] Artifact Hygiene Restored
+- **Context**: `.gitignore`.
+- **Action**: Suppressed 2,900+ build artifacts in `backend/cli/target` and root binaries. Git noise reduced by ~90%.
+- **Status**: Resolved.
+
+
+### [CORRECTION - 2026-06-11] to "Audit Findings - 2026-06-10 (Mass Audit & Ingestion Repair)"
+- The ingestion claims hold (BTCUSDT 1w 4→464 bars verified against the ts index), but
+  "Implemented & Verified (DCS 0.98)" is overstated for the tree as a whole: a full `npm test`
+  on 2026-06-11 shows **7 NEW failing test files** vs the 226/232 baseline (polymarket_preflight,
+  proposed_orders_cli, polymarket_auth_health, indicators.data_flow, polymarket_errors,
+  sovereign_cli_human_surfaces, sovereign_cli_price_action), plus a proven-broken
+  `runGatewayCommand` (`backend_bridge.js:72`) that kills all migrated trade/balance/Polymarket
+  paths. Recomputed DCS = **0.87**. Full findings + reviewer decisions:
+  `workspace/DEV_REVIEW.md` "Focused Audit - 2026-06-11". The 2026-06-10 session also wrote no
+  handoff/session-memory entry — its work was only discoverable via `git status`.
