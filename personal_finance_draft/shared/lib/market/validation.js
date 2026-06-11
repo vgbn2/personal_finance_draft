@@ -3,7 +3,6 @@ const path = require('node:path');
 
 const OHLCV_FAMILIES = new Set(['equities', 'indices', 'commodities', 'crypto', 'fx', 'prediction_market']);
 const SCALAR_VALUE_FAMILIES = new Set(['pmi', 'macro', 'macro_alt', 'sentiment', 'breadth', 'prediction_market']);
-
 const FRESHNESS_RULES_MS = {
   equities: {
     '5m': 96 * 60 * 60 * 1000,
@@ -12,6 +11,8 @@ const FRESHNESS_RULES_MS = {
     '1h': 96 * 60 * 60 * 1000,
     '4h': 48 * 60 * 60 * 1000,
     '1d': 72 * 60 * 60 * 1000,
+    '1w': 14 * 24 * 60 * 60 * 1000,
+    '1mo': 60 * 24 * 60 * 60 * 1000,
   },
   indices: {
     '5m': 96 * 60 * 60 * 1000,
@@ -20,6 +21,8 @@ const FRESHNESS_RULES_MS = {
     '1h': 96 * 60 * 60 * 1000,
     '4h': 48 * 60 * 60 * 1000,
     '1d': 72 * 60 * 60 * 1000,
+    '1w': 14 * 24 * 60 * 60 * 1000,
+    '1mo': 60 * 24 * 60 * 60 * 1000,
   },
   commodities: {
     '5m': 6 * 60 * 60 * 1000,
@@ -28,6 +31,8 @@ const FRESHNESS_RULES_MS = {
     '1h': 24 * 60 * 60 * 1000,
     '4h': 48 * 60 * 60 * 1000,
     '1d': 72 * 60 * 60 * 1000,
+    '1w': 14 * 24 * 60 * 60 * 1000,
+    '1mo': 60 * 24 * 60 * 60 * 1000,
   },
   crypto: {
     '5m': 3 * 60 * 60 * 1000,
@@ -36,6 +41,8 @@ const FRESHNESS_RULES_MS = {
     '1h': 24 * 60 * 60 * 1000,
     '4h': 48 * 60 * 60 * 1000,
     '1d': 72 * 60 * 60 * 1000,
+    '1w': 14 * 24 * 60 * 60 * 1000,
+    '1mo': 60 * 24 * 60 * 60 * 1000,
   },
   fx: {
     tick: 6 * 60 * 60 * 1000,
@@ -46,6 +53,8 @@ const FRESHNESS_RULES_MS = {
     '1h': 24 * 60 * 60 * 1000,
     '4h': 48 * 60 * 60 * 1000,
     '1d': 72 * 60 * 60 * 1000,
+    '1w': 14 * 24 * 60 * 60 * 1000,
+    '1mo': 60 * 24 * 60 * 60 * 1000,
     default: 72 * 60 * 60 * 1000,
   },
   pmi: { default: 45 * 24 * 60 * 60 * 1000 },

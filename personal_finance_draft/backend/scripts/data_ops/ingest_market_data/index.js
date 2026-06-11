@@ -13,12 +13,42 @@ const {
 } = require('../../../../shared/lib/market/quote_router');
 const {
   readSnapshot,
+  readTsIndex,
   recordKey,
   validateSnapshot,
   mergeSnapshots,
   writePartitionedSnapshot,
   writeTsIndex,
 } = require('../../../../shared/lib/market/validation');
+
+/**
+ * Attempts to aggregate a higher timeframe (1w, 1mo) from the local 1d binary cache.
+ * Returns aggregated records or null if local data is insufficient.
+ */
+function deriveHighTfFromLocalDaily(family, symbol, targetTf) {
+  if (targetTf !== '1w' && targetTf !== '1mo') return null;
+
+  try {
+    const dailyRecords = readTsIndex(TS_INDEX_PATH, symbol, '1d');
+    if (!dailyRecords || dailyRecords.length < 100) return null;
+
+    const candlesWithOpenTime = dailyRecords.map(r => ({
+      ...r,
+      openTime: new Date(r.timestamp).getTime()
+    }));
+
+    const provider = dailyRecords[0].provider || 'local-aggregate';
+    const aggregated = aggregateCandles(candlesWithOpenTime, targetTf, symbol, provider, family);
+
+    if (aggregated.length > 0) {
+       console.log(`[INGEST] Derived ${aggregated.length} ${targetTf} bars for ${symbol} from local 1d cache (${dailyRecords.length} bars)`);
+       return aggregated;
+    }
+  } catch (err) {
+    console.warn(`[INGEST] Local aggregation failed for ${symbol}:${targetTf}: ${err.message}`);
+  }
+  return null;
+}
 
 const {
   saveMacroObservations,
@@ -1220,6 +1250,12 @@ const FAMILIES_MANIFEST = [
         if (p === 'finnhub') return fetchFinnhubSnapshot('fx', s, t, opts);
         if (p === 'twelve') return fetchTwelveDataSnapshot('fx', s, t, opts);
         if (p === 'fxapi') return [await fetchFxApiFx(s)];
+        if (p === 'ecb') {
+          if (opts?.historyDays) {
+            return fetchEcbHistory(s, opts.historyDays);
+          }
+          return [await fetchEcbFx(s)];
+        }
         return [await fetchEcbFx(s)];
       }
     },
@@ -1499,14 +1535,33 @@ async function ingestMarketData(options = {}) {
 
           console.log('[INGEST] Fetching ' + family.id + ':' + item);
           let resolved = false;
-          for (const provider of section.providers) {
-            if (!provider) continue;
-            try {
-              const providerSymbol = (family.id === 'equities' || family.id === 'indices') ? resolveEquityOrIndexSymbol(family.id, item, provider) : item;
-              const records = normalizeFetchedRecords(await fetcher(provider, item, syncTimeframes, config, fetchOptions), fetchContext(family.id, provider, item));
-              if (!records || records.length === 0) {
-                continue;
+
+          // Local Aggregation Engine: Build 1w/1mo from 1d if available
+          const localDerived = [];
+          const remoteTimeframes = [];
+          for (const tf of syncTimeframes) {
+              const derived = deriveHighTfFromLocalDaily(family.id, item, tf);
+              if (derived) {
+                  localDerived.push(...derived);
+              } else {
+                  remoteTimeframes.push(tf);
               }
+          }
+
+          if (localDerived.length > 0) {
+              snapshot.sources.push(...localDerived);
+              if (remoteTimeframes.length === 0) resolved = true;
+          }
+
+          if (!resolved) {
+            for (const provider of section.providers) {
+              if (!provider) continue;
+              try {
+                const providerSymbol = (family.id === 'equities' || family.id === 'indices') ? resolveEquityOrIndexSymbol(family.id, item, provider) : item;
+                const records = normalizeFetchedRecords(await fetcher(provider, item, remoteTimeframes, config, fetchOptions), fetchContext(family.id, provider, item));
+                if (!records || records.length === 0) {
+                  continue;
+                }
               
              
               const tags = categoryTags.get(family.id)?.get(item);
@@ -1526,6 +1581,7 @@ async function ingestMarketData(options = {}) {
               snapshot.errors.push({ provider, symbol: item, family: family.id, message: error.message });
             }
           }
+        }
           if (!resolved && items.length > 0) {
             snapshot.errors.push({ provider: family.id, symbol: item, message: `No ${family.id} provider resolved successfully` });
           }
@@ -1704,32 +1760,39 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
   const endTime = options.endTime || null;
   let baseCandles = null;
 
-  if (historyDays > 5 && (provider === 'binance' || provider === 'coinbase')) {
-   
+  // Primary Provider Fetch
+  if (provider === 'coingecko') {
+    baseCandles = await fetchCoinGeckoBaseCandles(symbol, Math.max(historyDays, 365));
+  } else {
+    let fetchBase = fetchBinanceBaseCandles;
+    if (provider === 'coinbase') fetchBase = fetchCoinbaseBaseCandles;
+    else if (provider === 'alpaca') fetchBase = fetchAlpacaBaseCandles;
+    
+    try {
+      const limit = Math.max(100, Math.ceil(historyDays * 1.5));
+      baseCandles = await fetchBase(symbol, limit, '1d', startTime, endTime);
+    } catch (err) {
+      console.warn(`[INGEST] Primary provider ${provider} failed for ${symbol}: ${err.message}. Attempting Yahoo fallback.`);
+    }
+  }
+
+  // Yahoo Fallback (only if primary failed and history requested)
+  if (!baseCandles && historyDays > 5 && (provider === 'binance' || provider === 'coinbase')) {
     const yahooSymbol = COINBASE_PRODUCTS[symbol] || symbol;
     const { base: bestBase, effectiveDays } = selectYahooBase(timeframes, historyDays);
     try {
       baseCandles = await fetchYahooBaseCandles(yahooSymbol, bestBase, effectiveDays, startTime, endTime);
-      console.log(`[INGEST] Using Yahoo for ${symbol} (${bestBase}, ${effectiveDays}d)`);
+      console.log(`[INGEST] Using Yahoo fallback for ${symbol} (${bestBase}, ${effectiveDays}d)`);
     } catch (err) {
       console.warn(`[INGEST] Yahoo fallback failed for ${symbol}: ${err.message}`);
     }
   }
 
   if (!baseCandles) {
-    if (provider === 'coingecko') {
-      // Keyless, geo-resilient last-resort fallback. Uses a days window (not a bar
-      // limit) and resolves the bare ticker internally, so it recovers symbols that
-      // Binance/Coinbase reject or that this region geo-blocks (HTTP 451).
-      baseCandles = await fetchCoinGeckoBaseCandles(symbol, Math.max(historyDays, 365));
-    } else {
-      let fetchBase = fetchBinanceBaseCandles;
-      if (provider === 'coinbase') fetchBase = fetchCoinbaseBaseCandles;
-      else if (provider === 'alpaca') fetchBase = fetchAlpacaBaseCandles;
-      baseCandles = await fetchBase(symbol);
-    }
+      throw new Error(`Failed to fetch crypto data for ${symbol} via ${provider} or fallbacks`);
   }
   const output = [];
+  const targetStartMs = startTime || (Date.now() - (historyDays * 24 * 60 * 60 * 1000));
 
   for (const timeframe of timeframes) {
     if (!SUPPORTED_INTERVALS[timeframe]) {
@@ -1737,12 +1800,12 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
     }
     const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family); 
     if (aggregated.length > 0) {
+      const filtered = aggregated.filter(r => new Date(r.timestamp).getTime() >= targetStartMs);
       if (historyDays > 5) {
-       
-        output.push(...aggregated);
-      } else {
+        output.push(...filtered);
+      } else if (filtered.length > 0) {
         output.push({
-          ...aggregated[aggregated.length - 1],
+          ...filtered[filtered.length - 1],
           family,
         });
       }
