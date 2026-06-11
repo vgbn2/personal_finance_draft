@@ -28,7 +28,9 @@ export async function createClobClient(opts: ClobClientOptions = {}): Promise<an
   const host = settings.host;
   const pk   = settings.privateKey;
 
-  if (!pk) return new ClobClient({ host, chain: 137 });
+  // retryOnError: single quick retry on transient transport errors — this host's
+  // egress to Cloudflare/CLOB flaps with connect EACCES on a seconds timescale.
+  if (!pk) return new ClobClient({ host, chain: 137, retryOnError: true });
   assertValidPrivateKey(pk);
 
   const { Wallet } = await import('ethers');
@@ -38,7 +40,7 @@ export async function createClobClient(opts: ClobClientOptions = {}): Promise<an
     : undefined;
 
   const { signatureType, funderAddress } = resolveAccountIdentity(opts);
-  return new ClobClient({ host, chain: 137, signer, creds: creds as any, signatureType: signatureType as any, funderAddress });
+  return new ClobClient({ host, chain: 137, signer, creds: creds as any, signatureType: signatureType as any, funderAddress, retryOnError: true });
 }
 
 /**
