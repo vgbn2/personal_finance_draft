@@ -18,6 +18,10 @@ function git(args) {
   });
 }
 
+function isTracked(relativePath) {
+  return git(['ls-files', '--error-unmatch', relativePath]).status === 0;
+}
+
 test('active domain-layout entrypoints exist', () => {
   [
     'backend/core/CMakeLists.txt',
@@ -41,7 +45,11 @@ test('generated and local-only paths are ignored', () => {
     'Frontend/dashboard/node_modules',
     'Frontend/dashboard/dist',
     'storage/data/cache',
+    'storage/data/ml',
+    'storage/data/paper_trading',
+    'storage/data/polymarket_history',
     'storage/data/ts',
+    '__pycache__',
     '.mcp.json',
   ];
 
@@ -76,10 +84,50 @@ test('generated and local-only paths are not tracked', () => {
     'Frontend/dashboard/node_modules',
     'Frontend/dashboard/dist',
     'storage/data/cache',
+    'storage/data/ml',
+    'storage/data/paper_trading',
+    'storage/data/polymarket_history',
     'storage/data/ts',
+    '__pycache__',
     '.mcp.json',
   ]);
 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout.trim(), '', 'generated/local-only paths should not be tracked');
+});
+
+test('load-bearing clean-clone assets are tracked', () => {
+  [
+    '.dockerignore',
+    'backend/api/tests/correlation_contract.test.js',
+    'scripts/classify_strategy_assets.js',
+    'scripts/mcp_stdio_probe.js',
+    'notebooks/signal_library.json',
+  ].forEach((relativePath) => {
+    assert.equal(isTracked(relativePath), true, `${relativePath} should be tracked`);
+  });
+});
+
+test('frame backtester sources referenced by the native build are tracked', () => {
+  const cmake = fs.readFileSync(path.join(REPO_ROOT, 'backend', 'core', 'CMakeLists.txt'), 'utf8');
+  const main = fs.readFileSync(path.join(REPO_ROOT, 'backend', 'core', 'src', 'main.cpp'), 'utf8');
+
+  assert.match(cmake, /src\/backtest\/frame_backtester\.cpp/);
+  assert.match(main, /backtest\/frame_backtester\.hpp/);
+
+  [
+    'backend/core/src/backtest/frame_backtester.cpp',
+    'backend/core/src/backtest/frame_backtester.hpp',
+  ].forEach((relativePath) => {
+    assert.equal(isTracked(relativePath), true, `${relativePath} should be tracked`);
+  });
+});
+
+test('default api gate includes the correlation contract', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
+  assert.match(
+    pkg.scripts['test:api'],
+    /backend\/api\/tests\/correlation_contract\.test\.js/,
+    'test:api should run the correlation contract'
+  );
 });
