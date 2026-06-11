@@ -353,3 +353,27 @@ suite 272/272 (52.7s) AFTER all session changes; gateway tsc clean; live matched
 ### Resolved this pass
 - app.js GET-auth question (carried since 2026-06-06): design is public-read + token-write + PROTECTED_GET_ROUTES; verified sound EXCEPT finding #1. /api/supabase/config exposes URL only (no keys) -- acceptable.
 - Stub scan: no new stubs on reachable paths. Dev-marker scan: gateway src clean (0 markers).
+
+## Resolutions + C++ verification - 2026-06-12 (session 17c)
+
+### Session-17 audit findings: ALL RESOLVED
+#1 kill-switch GET auth (37d2d6d2) | #2 exit-0-on-failure (32cb5637, proven live) |
+#3 FOK loss + #7 deadline guard (cafe6eea) | #4 clob_rejected category (32cb5637) |
+#5 derive-creds masking (32cb5637) | #6 pUSD display (32cb5637).
+Centralization backlog: fetch-retry rollout DONE (6875f1fa -- fetchWithRetry + retryTransient
+cover Gate.io fetch, gamma axios, cycle end-date fetch; trade.js has no raw fetches by
+construction); submit/preflight dedup DONE (6875f1fa). L2-header SDK adoption REJECTED with
+documented rationale: createL2Headers wants a ClobSigner object + WebCrypto HMAC and omits
+User-Agent/Accept -- hand-rolled builder in clob_factory stays canonical (remove backlog item).
+Suite after all waves: 284/284.
+
+### C++ backend verification (roadmap item 6) - findings
+
+Verdict: core engines REAL and healthy; test harness has fixture-path debt.
+
+| # | Severity | Finding | Decision needed |
+|---|---|---|---|
+| 1 | Evidence | ml compare reproduces the Phase-3 parity numbers EXACTLY (xgboost 0.666376 {7061,1275,11144}, logistic 0.468378, regime 0.456982; backend onnx_runtime, 19,480 rows). Correlation + risk engines respond correctly. | none -- strongest possible health proof |
+| 2 | Low | C++ `indicators` default --input is the pre-partition monolith path (main.cpp:522, storage/data/cache/backtest_history.json -- gone). Works with explicit --input; API route serves indicators via Node CLI anyway. | S fix: default to equities partition or require --input |
+| 3 | Medium | ctest 27/29: ingestion_adapter_test fails (looks for config/data_sources.yaml relative to build dir; real file = repo-root config/markets/data_sources.yaml) and kronos_integration_test fails (needs >=4 empirical data points, fixture absent). Fixture/CWD debt, NOT logic failures. | S fix: resolve config path from repo root / ship fixture; then STATE.md 29/29 claim true again |
+| 4 | Note | STATE.md "All 29/29 C++ core tests passing" is STALE (currently 27/29). Also carryover: core test mains are assert-only -> no-ops under Release NDEBUG; green Release ctest is weak evidence. Behavioral anchors (finding #1) are the real gate. | run ctest in Debug config when fixing #3 |
