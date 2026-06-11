@@ -68,7 +68,7 @@ function getCachedUniverse() {
   if (!fs.existsSync(cachePath)) {
       return { 
           symbols: configSymbols.length > 0 ? configSymbols : [{ label: 'AAPL', value: 'AAPL', category: 'Equities' }], 
-          timeframes: ['1d', '1h', '5m'] 
+          timeframes: ['1mo','1wk','1d', '1h', '5m'] 
       };
   }
 
@@ -155,9 +155,9 @@ const COMMAND_MANIFEST = {
         '--timeframe': { type: 'select', options: ['1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1h' },
         '--history-days': { type: 'text', default: '', label: 'Historical days (blank = latest only)' }
       }},
-      { id: 'backfill', label: 'Backfill (Build historical cache)', loading: true, flags: {
+      { id: 'backfill', label: 'Backfill', loading: true, flags: {
         '--symbol': { type: 'text', prompt: 'Symbol (e.g. AAPL, BTCUSDT):' },
-        '--timeframe': { type: 'select', options: ['1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1d' },
+        '--timeframe': { type: 'select', options: ['1mo','1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1d' },
         '--days': { type: 'text', default: '365', label: 'Days to backfill' },
         '--20-years': { type: 'confirm', label: '20 Year Deep History?', default: false }
       }},

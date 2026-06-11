@@ -34,6 +34,7 @@ const MASS_BACKFILL_STALE_MS = {
   '4h': 48 * 60 * 60 * 1000,
   '1d': 96 * 60 * 60 * 1000,
   '1w': 14 * 24 * 60 * 60 * 1000,
+  '1mo': 60 * 24 * 60 * 60 * 1000,
 };
 const WEEKEND_EXEMPT_FAMILIES = new Set(['equities', 'indices', 'commodities']);
 
@@ -354,10 +355,11 @@ async function commandBackfill(args) {
  */
 async function commandMassBackfill(args) {
   const { loadConfig } = require('../../../scripts/data_ops/ingest_market_data.js');
-  const timeframesArg = optionValue(args, '--timeframes', '1w,1d,1h,15m');
+  const timeframesArg = optionValue(args, '--timeframes', '1mo,1w,1d,1h,15m');
   const timeframes = timeframesArg.split(',').map(t => t.trim()).filter(Boolean);
-  const days = optionValue(args, '--days', '365');
-  const concurrency = numericOption(args, '--concurrency', 5);
+  // 20-year deep defaults: deep-paginated providers handle the volume; mind free-tier rate limits if raising concurrency further.
+  const days = optionValue(args, '--days', '7300');
+  const concurrency = numericOption(args, '--concurrency', 10);
   const dryRun = hasFlag(args, '--dry-run');
   const force = hasFlag(args, '--force');
 
@@ -432,7 +434,8 @@ async function commandMassBackfill(args) {
   });
 
   async function runJob({ symbol, timeframe }) {
-    const syntheticArgs = ['--symbol', symbol, '--timeframe', timeframe, '--days', days, '--force'];
+    const syntheticArgs = ['--symbol', symbol, '--timeframe', timeframe, '--days', days];
+    if (force) syntheticArgs.push('--force');
     try {
       const history = await loadHistoricalSources(syntheticArgs);
       allSources.push(...(history.snapshot.sources || []));

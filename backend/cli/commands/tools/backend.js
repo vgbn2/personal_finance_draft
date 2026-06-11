@@ -1132,15 +1132,20 @@ async function runBackendIntegrity(args = []) {
         r.exceptions.forEach(s => console.log(`  Exception: ${s.symbol} [${s.issues.join(', ')}]`));
       }
 
-      // Show cached symbols with their bar counts + last date
+      // Show cached symbols with their history range and bar counts per timeframe
       r.cached.forEach(s => {
         const tf1d = s.timeframes['1d'];
         const tf1h = s.timeframes['1h'];
         const primary = tf1d || tf1h || Object.values(s.timeframes)[0];
         if (!primary) return;
         const staleTag = primary.stale ? ` [stale ${primary.age_h}h]` : '';
-        const tfs = Object.keys(s.timeframes).join(' ');
-        console.log(`  OK ${s.symbol.padEnd(12)} ${String(primary.bars).padStart(6)} bars  ${primary.from} -> ${primary.to}  [${tfs}]${staleTag}`);
+        
+        // Build timeframe:count strings for a clear breakdown
+        const tfDetails = Object.entries(s.timeframes)
+          .map(([tf, meta]) => `${tf}:${meta.bars}`)
+          .join(' ');
+
+        console.log(`  OK ${s.symbol.padEnd(12)} ${primary.from} -> ${primary.to}  [${tfDetails}]${staleTag}`);
       });
     }
 
@@ -1299,7 +1304,6 @@ function renderSigmaFrame(symbol, timeframe, windowSize, state, pollIntervalSec,
   const B_RED = `${A_ESC}[1;31m`;
   const B_YELLOW = `${A_ESC}[1;33m`;
   const RESET = `${A_ESC}[0m`;
-
   const { renderSigmaSparkline } = require('../../tui/index.js');
   const { currentPrice, prevPrice, mean, stddev, sigmas, upper, lower, bandwidth, position, lastTimestamp, prediction } = state;
 
@@ -1583,11 +1587,11 @@ module.exports = {
   runBackendStats, 
   runBackendPortfolio, 
   runBackendDataSummary, 
-  runBackendCorrelation, 
+  runBackendCorrelation,
   defaultCorrelationMethod,
   resolveCorrelationMethod,
   renderBackendUniverse,
-  runBackendUniverse, 
+  runBackendUniverse,
   runBackendIndicators,
   reportSnapshotIntegrity, 
   runBackendIntegrity, 

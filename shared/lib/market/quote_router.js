@@ -10,7 +10,7 @@ const DEFAULT_PROVIDER_PRIORITY = {
   yahoo: 58,
   fred: 55,
   default: 10,
-};
+}
 
 const CURRENCY_CODES = new Set(['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'CNH', 'VND']);
 const COMMODITY_SYMBOLS = new Set(['XAUUSD', 'XAGUSD', 'XCUUSD', 'USOIL']);

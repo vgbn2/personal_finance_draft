@@ -1,8 +1,7 @@
 {
-  "source_mode": "provider_history",
-  "data_quality_ok": true,
+  "data_quality_ok": false,
   "data_quality_report": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\personal_finance_draft\\storage\\data\\cache\\data_quality_report.json",
-  "generated_at": "2026-06-07T11:37:55.358Z",
+  "generated_at": "2026-06-10T16:48:06.205Z",
   "indicator_periods": {
     "returnFast": 1,
     "returnSlow": 5,
