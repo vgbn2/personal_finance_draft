@@ -7,6 +7,7 @@ const { ingestMarketData } = require('../../../scripts/data_ops/ingest_market_da
 const utils = require('../../lib/utils.js');
 const { canLiveExecute, getRuntimeMode } = require('../../../../shared/lib/brokers/capabilities');
 const { featureGate } = require('../../../../shared/lib/settings/runtime');
+const { runGatewayCommand, buildTradeGatewayLaunch } = require('../../../../shared/lib/runtime/backend_bridge');
 const {
   pageText,
   promptSelect,
@@ -20,46 +21,7 @@ const {
   printPayload,
 } = utils;
 
-/**
- * Builds the launch configuration for the execution gateway.
- * @param {string[]} args Command line arguments.
- * @returns {object} Launch object with command and args.
- */
-function buildTradeGatewayLaunch(args = []) {
-  // Suppress DEP0180 and similar Node deprecation warnings in gateway subprocesses
-  if (!process.env.NODE_OPTIONS || !process.env.NODE_OPTIONS.includes('--no-deprecation')) {
-    process.env.NODE_OPTIONS = ((process.env.NODE_OPTIONS || '') + ' --no-deprecation').trim();
-  }
-  const gatewayPath = path.join(utils.REPO_ROOT, 'backend', 'gateway', 'src', 'index.ts');
-  const gatewayBootstrapPath = path.join(utils.REPO_ROOT, 'backend', 'cli', 'lib', 'run_trade_gateway.js');
-  const tsxCandidates = [
-    path.join(utils.REPO_ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx'),
-    path.join(utils.REPO_ROOT, 'backend', 'gateway', 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx'),
-  ];
-  const tsxPath = tsxCandidates.find((candidate) => fs.existsSync(candidate));
-  if (tsxPath) {
-    if (process.platform === 'win32' && tsxPath.toLowerCase().endsWith('.cmd')) {
-      const quoteForPowerShell = (value) => `'${String(value).replace(/'/g, "''")}'`;
-      return {
-        command: 'powershell.exe',
-        args: ['-NoProfile', '-Command', `& ${[tsxPath, gatewayPath, ...args].map(quoteForPowerShell).join(' ')}`],
-        shell: false,
-      };
-    }
-    return { command: tsxPath, args: [gatewayPath, ...args], shell: false };
-  }
-  if (fs.existsSync(gatewayBootstrapPath)) {
-    return {
-      command: process.execPath,
-      args: [gatewayBootstrapPath, ...args],
-      shell: false,
-    };
-  }
-  if (process.platform === 'win32') {
-    return { command: 'cmd.exe', args: ['/c', 'npx', 'tsx', gatewayPath, ...args], shell: false };
-  }
-  return { command: 'npx', args: ['tsx', gatewayPath, ...args], shell: false };
-}
+// buildTradeGatewayLaunch is imported from shared/lib/runtime/backend_bridge (canonical location)
 
 /**
  * Returns the help text for the Trade Desk.
@@ -397,31 +359,16 @@ function renderPolymarketPriceHistoryDetails(market, snapshot) {
   return lines.join('\n');
 }
 
+
 function fetchPolymarketOrderbookSnapshot(tokenId) {
-  const gatewayArgs = ['polymarket', 'orderbook', '--token', tokenId, '--json'];
-  const launch = buildTradeGatewayLaunch(gatewayArgs);
-  const result = spawnSync(launch.command, launch.args, {
-    cwd: utils.REPO_ROOT,
-    encoding: 'utf8',
-    shell: launch.shell ?? false,
-  });
-  if (result.error) throw new Error(`Failed to fetch Polymarket orderbook: ${result.error.message}`);
-  const payload = parseGatewayJsonOutput(result.stdout, 'polymarket orderbook');
-  if (!payload || payload.ok === false) throw new Error(payload && payload.error ? payload.error : 'Polymarket orderbook request failed');
+  const payload = runGatewayCommand(['polymarket', 'orderbook', '--token', tokenId, '--json']);
+  if (!payload.ok) throw new Error(payload.error || 'Polymarket orderbook request failed');
   return payload;
 }
 
 function fetchPolymarketPriceHistorySnapshot(tokenId, interval = '1h') {
-  const gatewayArgs = ['polymarket', 'price-history', '--token', tokenId, '--interval', interval, '--json'];
-  const launch = buildTradeGatewayLaunch(gatewayArgs);
-  const result = spawnSync(launch.command, launch.args, {
-    cwd: utils.REPO_ROOT,
-    encoding: 'utf8',
-    shell: launch.shell ?? false,
-  });
-  if (result.error) throw new Error(`Failed to fetch Polymarket price history: ${result.error.message}`);
-  const payload = parseGatewayJsonOutput(result.stdout, 'polymarket price-history');
-  if (!payload || payload.ok === false) throw new Error(payload && payload.error ? payload.error : 'Polymarket price-history request failed');
+  const payload = runGatewayCommand(['polymarket', 'price-history', '--token', tokenId, '--interval', interval, '--json']);
+  if (!payload.ok) throw new Error(payload.error || 'Polymarket price history request failed');
   return payload;
 }
 
@@ -429,24 +376,15 @@ function submitPolymarketBuyOrder(tokenId, size, price, tickSize) {
   const gatewayArgs = ['polymarket', 'buy', tokenId, String(size), ...(price !== undefined ? [String(price)] : [])];
   if (tickSize !== undefined) gatewayArgs.push('--tick-size', String(tickSize));
   gatewayArgs.push('--json');
-  const launch = buildTradeGatewayLaunch(gatewayArgs);
-  const result = spawnSync(launch.command, launch.args, {
-    cwd: utils.REPO_ROOT,
-    encoding: 'utf8',
-    shell: launch.shell ?? false,
-  });
-  if (result.error) throw new Error(`Failed to submit Polymarket order: ${result.error.message}`);
-  const payload = parseGatewayJsonOutput(result.stdout, 'polymarket buy');
-  if (!payload || payload.ok === false) {
-    if (payload) {
-      const lines = [payload.error || 'Polymarket buy request failed'];
-      if (payload.signerAddress || payload.funderAddress || payload.signatureType !== undefined) {
-        lines.push(`signer=${payload.signerAddress || 'none'} funder=${payload.funderAddress || 'none'} sigType=${payload.signatureType ?? 'unset'}`);
-      }
-      if (payload.suggestion) lines.push(payload.suggestion);
-      throw new Error(lines.join('\n'));
+  
+  const payload = runGatewayCommand(gatewayArgs);
+  if (!payload.ok) {
+    const lines = [payload.error || 'Polymarket buy request failed'];
+    if (payload.signerAddress || payload.funderAddress || payload.signatureType !== undefined) {
+      lines.push(`signer=${payload.signerAddress || 'none'} funder=${payload.funderAddress || 'none'} sigType=${payload.signatureType ?? 'unset'}`);
     }
-    throw new Error('Polymarket buy request failed');
+    if (payload.suggestion) lines.push(payload.suggestion);
+    throw new Error(lines.join('\n'));
   }
   return payload;
 }
@@ -795,53 +733,22 @@ async function promptTradeDeskArgs() {
  * Fetches the current portfolio balance from the gateway.
  */
 async function fetchBalance(live = false) {
-  const launch = buildTradeGatewayLaunch(['balance', ...(live ? ['--live'] : []), '--json']);
-  const result = spawnSync(launch.command, launch.args, {
-    cwd: utils.REPO_ROOT,
-    encoding: 'utf8',
-    shell: launch.shell ?? false,
-  });
-
-  if (result.error) {
-    throw new Error(`Failed to fetch balance: ${result.error.message}`);
+  const payload = runGatewayCommand(['balance', ...(live ? ['--live'] : []), '--json']);
+  if (!payload.ok) {
+    throw new Error(payload.error || 'Failed to fetch balance');
   }
-
-  try {
-    // Filter out potential non-JSON logs from the output
-    const lines = result.stdout.split('\n');
-    const jsonLine = lines.find(l => l.trim().startsWith('{') && l.trim().endsWith('}'));
-    if (!jsonLine) throw new Error('No JSON balance found in gateway output');
-    return JSON.parse(jsonLine);
-  } catch (err) {
-    console.error(`[TRADE] Raw output: ${result.stdout}`);
-    throw new Error(`Failed to parse balance JSON: ${err.message}`);
-  }
+  return payload;
 }
 
 /**
  * Fetches the aggregated multi-broker portfolio from the gateway.
  */
 async function fetchAggregatePortfolio() {
-  const launch = buildTradeGatewayLaunch(['aggregate_portfolio', '--json']);
-  const result = spawnSync(launch.command, launch.args, {
-    cwd: utils.REPO_ROOT,
-    encoding: 'utf8',
-    shell: launch.shell ?? false,
-  });
-
-  if (result.error) {
-    throw new Error(`Failed to fetch aggregated portfolio: ${result.error.message}`);
+  const payload = runGatewayCommand(['aggregate_portfolio', '--json']);
+  if (!payload.ok) {
+    throw new Error(payload.error || 'Failed to fetch aggregated portfolio');
   }
-
-  try {
-    const lines = result.stdout.split('\n');
-    const jsonLine = lines.find(l => l.trim().startsWith('{') && l.trim().endsWith('}'));
-    if (!jsonLine) throw new Error('No JSON portfolio found in gateway output');
-    return JSON.parse(jsonLine);
-  } catch (err) {
-    console.error(`[TRADE] Raw output: ${result.stdout}`);
-    throw new Error(`Failed to parse portfolio JSON: ${err.message}`);
-  }
+  return payload;
 }
 
 
