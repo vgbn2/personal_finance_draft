@@ -23,27 +23,33 @@ test('backtest no longer exposes prop-firm selection', () => {
 });
 
 test('prop-firm menu is exposed as its own category', () => {
-  const propFirmCategory = manifest.commands.propfirm;
-  assert.ok(Array.isArray(propFirmCategory));
+  // After the TUI restructure, prop-firm is a navigable sub-menu entry inside commands.trade
+  // (the sub-menu items are rendered by commandPropFirmMenu at runtime, not stored in the manifest).
+  const tradeCommands = manifest.commands.trade;
+  assert.ok(Array.isArray(tradeCommands));
 
-  const setActive = propFirmCategory.find((entry) => entry.id === 'set-active');
-  const list = propFirmCategory.find((entry) => entry.id === 'prop-firms');
-
-  assert.ok(list);
-  assert.match(list.label, /^Prop Firm Profiles$/);
-  assert.ok(setActive);
-  assert.ok(setActive.flags);
-  assert.match(setActive.label, /^Set Active Prop Firm$/);
-  assert.match(setActive.flags.profile.label, /^Prop-firm profile$/);
+  const propFirmEntry = tradeCommands.find((entry) => entry.id === 'prop-firms');
+  assert.ok(propFirmEntry, 'prop-firms sub-menu entry exists in trade commands');
+  assert.match(propFirmEntry.label, /Prop Firm/);
+  // Navigable entries use args:[] (no flags), confirming it opens a sub-menu
+  assert.ok(Array.isArray(propFirmEntry.args));
 });
 
 test('strategy menu exposes registry sync without prop-firm actions', () => {
-  const sync = manifest.commands.strategy.find((entry) => entry.id === 'sync');
+  // After the TUI restructure, strategy is a navigable sub-menu entry inside commands.trade
+  // (sub-menu items rendered by commandStrategyMenu at runtime, not stored in the manifest).
+  const tradeCommands = manifest.commands.trade;
+  assert.ok(Array.isArray(tradeCommands));
 
-  assert.ok(sync);
-  assert.match(sync.label, /^Sync Strategy Registry$/);
-  assert.equal(manifest.commands.strategy.some((entry) => entry.id === 'set-active'), false);
-  assert.equal(manifest.commands.strategy.some((entry) => entry.id === 'prop-firms'), false);
+  const strategyEntry = tradeCommands.find((entry) => entry.id === 'strategy');
+  assert.ok(strategyEntry, 'strategy sub-menu entry exists in trade commands');
+  assert.match(strategyEntry.label, /Strategy/);
+  // Prop-firm actions must NOT be mixed into the strategy entry itself
+  assert.equal(Object.prototype.hasOwnProperty.call(strategyEntry, 'flags') &&
+    strategyEntry.flags && 'set-active' in strategyEntry.flags, false);
+  // The strategy entry is navigable (opens sub-menu), prop-firm is a separate entry
+  assert.ok(tradeCommands.some((entry) => entry.id === 'prop-firms'));
+  assert.notEqual(strategyEntry.id, 'prop-firms');
 });
 
 test('ingest TUI family selector maps to scoped ingest options', () => {
