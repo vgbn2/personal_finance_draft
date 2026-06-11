@@ -259,7 +259,7 @@ async function loadHistoricalSources(args) {
   const config = await loadConfig();
   const sources = [];
   const backfillWindows = [];
-  const chosenTimeframe = ['5m', '15m', '30m', '1h', '4h', '1d'].includes(timeframe) ? timeframe : null;
+  const chosenTimeframe = timeframe;
   
   const targetSymbols = targetSymbol ? new Set(targetSymbol.split(',').map(s => s.trim())) : null;
 
@@ -317,9 +317,9 @@ async function loadHistoricalSources(args) {
                     force
                 }));
 
-                const candles = snapshot.sources.filter(s => 
-                    (s.symbol === symbol || s.series === symbol || s.series_id === symbol || s.underlying === symbol) && 
-                    (s.timeframe === tf || s.timeframe === '1d' || s.timeframe === 'point' || !s.timeframe)
+                const candles = snapshot.sources.filter(s =>
+                    (s.symbol === symbol || s.series === symbol || s.series_id === symbol || s.underlying === symbol) &&
+                    (s.timeframe === tf || s.timeframe === 'point' || !s.timeframe)
                 );
 
                 if (candles.length > 0) {

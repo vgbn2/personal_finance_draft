@@ -479,33 +479,7 @@ async function get_Full_Universe_Symbols() {
  * Attempts to resolve short symbols (BTC) to canonical ones (BTCUSDT)
  * based on the active universe.
  */
-function resolveSymbols(inputSymbols, universe = null) {
-    if (!universe) universe = get_Current_Universe_Symbols();
-    const symbols = Array.isArray(inputSymbols) ? inputSymbols : String(inputSymbols || '').split(',').map(s => s.trim()).filter(Boolean);
-    
-    return symbols.map(s => {
-        const upper = s.toUpperCase();
-        
-        // Match logic:
-        // 1. Exact match in universe objects (symbol or coordinate_id)
-        // 2. Fuzzy match (starts/ends with) in universe objects
-        // 3. Fallback to the original upper-cased input
-        
-        const exact = universe.find(u => {
-            const sym = String(u.symbol || '').toUpperCase();
-            const cid = String(u.coordinate_id || '').toUpperCase();
-            return sym === upper || cid === upper;
-        });
-        if (exact) return exact.symbol;
-
-        const fuzzy = universe.find(u => {
-            const sym = String(u.symbol || '').toUpperCase();
-            return sym && (sym.startsWith(upper) || sym.endsWith(upper));
-        });
-        
-        return fuzzy ? fuzzy.symbol : upper;
-    });
-}
+const { resolveSymbols } = require('../../../shared/lib/market/symbol_resolver');
 
 function buildStatusLine(authEmail) {
   const backendOk = BACKEND_CANDIDATES.some(c => fs.existsSync(c));

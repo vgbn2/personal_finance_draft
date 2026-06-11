@@ -92,7 +92,7 @@ async function fetchClobPriceHistory(tokenId, interval = '1d', noCache = false) 
     if (hit) return { ok: true, source: 'cache', data: hit };
   }
 
-  const fidelityMap = { '1m': 60, '5m': 300, '1h': 3600, '1d': 86400 };
+  const fidelityMap = { '1m': 60, '5m': 300, '1h': 3600, '1d': 86400, '1w': 86400 * 7 };
   const fidelity = fidelityMap[interval] || 86400;
   const url = `${CLOB_BASE}/prices-history?market=${encodeURIComponent(tokenId)}&interval=max&fidelity=${fidelity}`;
 

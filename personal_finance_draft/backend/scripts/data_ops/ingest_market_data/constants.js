@@ -12,24 +12,28 @@ const SUPPORTED_INTERVALS = {
   '4h':  4  * 60 * 60 * 1000,
   '1d':  24 * 60 * 60 * 1000,
   '1w':  7  * 24 * 60 * 60 * 1000,
+  '1mo': 30 * 24 * 60 * 60 * 1000,
 };
 
 // Yahoo's max lookback per interval
 const YAHOO_MAX_DAYS = {
   '5m': 60, '15m': 60, '30m': 60,
   '1h': 730, '4h': 730,
-  '1d': Infinity, '1w': Infinity,
+  '1d': Infinity, '1w': Infinity, '1mo': Infinity,
 };
 
 // Choose the finest Yahoo base interval that fits the requested days.
 // Returns { base: '<yahoo_interval>', effectiveDays: <number> }
 function selectYahooBase(timeframes, historyDays) {
-  const ORDER = ['5m', '15m', '30m', '1h', '4h', '1d', '1w'];
+  const ORDER = ['5m', '15m', '30m', '1h', '4h', '1d', '1w', '1mo'];
   // Finest timeframe the caller actually needs
   const finest = ORDER.find(iv => timeframes.includes(iv));
-  if (!finest || finest === '1d' || finest === '1w') {
-    // For weekly, fetch 1wk directly; daily stays daily
-    return { base: finest === '1w' ? '1wk' : '1d', effectiveDays: historyDays };
+  if (!finest || ['1d', '1w', '1mo'].includes(finest)) {
+    // For weekly/monthly, fetch 1wk/1mo directly; daily stays daily
+    let base = '1d';
+    if (finest === '1w') base = '1wk';
+    else if (finest === '1mo') base = '1mo';
+    return { base, effectiveDays: historyDays };
   }
   const maxDays = YAHOO_MAX_DAYS[finest] ?? Infinity;
   const effectiveDays = Math.min(historyDays, maxDays);
