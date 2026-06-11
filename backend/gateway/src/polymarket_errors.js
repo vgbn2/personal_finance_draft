@@ -5,6 +5,18 @@ const SENSITIVE_HEADER_KEYS = new Set([
   'poly_api_key',
   'poly_passphrase',
   'poly_signature',
+  'x-api-key',
+  'api-key',
+  'apikey',
+  'secret',
+  'password',
+  'passphrase',
+  'token',
+  'access-token',
+  'auth-token',
+  'l2-api-key',
+  'l2-signature',
+  'l2-passphrase',
 ]);
 
 function redactHeaderMap(headers) {
