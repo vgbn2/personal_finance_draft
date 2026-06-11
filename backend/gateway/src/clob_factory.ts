@@ -21,12 +21,14 @@ function resolveAccountIdentity(opts: ClobClientOptions): { signatureType?: numb
 }
 
 export async function createClobClient(opts: ClobClientOptions = {}): Promise<any> {
-  const { ClobClient } = await import('@polymarket/clob-client');
+  // CLOB V2 (live since 2026-04-28): the legacy @polymarket/clob-client line can no
+  // longer place orders ("invalid order version"); @polymarket/clob-client-v2 is required.
+  const { ClobClient } = await import('@polymarket/clob-client-v2');
   const settings = resolvePolymarketClientSettings(process.env, opts);
   const host = settings.host;
   const pk   = settings.privateKey;
 
-  if (!pk) return new ClobClient(host, 137);
+  if (!pk) return new ClobClient({ host, chain: 137 });
   assertValidPrivateKey(pk);
 
   const { Wallet } = await import('ethers');
@@ -36,7 +38,7 @@ export async function createClobClient(opts: ClobClientOptions = {}): Promise<an
     : undefined;
 
   const { signatureType, funderAddress } = resolveAccountIdentity(opts);
-  return new ClobClient(host, 137, signer, creds as any, signatureType as any, funderAddress as any);
+  return new ClobClient({ host, chain: 137, signer, creds: creds as any, signatureType: signatureType as any, funderAddress });
 }
 
 /**
