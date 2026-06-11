@@ -1,0 +1,23 @@
+features:
+  # Core trading
+  live_trading: false
+  paper_mode: true
+  bot_autopilot: false
+  kill_switch: true
+
+  # UI panels
+  sigma_band: true
+  correlation_heatmap: true
+  backtest_ui: true
+  quote_health: true
+  telemetry: true
+
+  # Data / signals
+  ai_signals: true
+  polymarket: false
+  onchain_data: false
+  satellite_nrt: false
+
+  # Experimental
+  multi_agent_research: false
+  auto_rebalance: false
