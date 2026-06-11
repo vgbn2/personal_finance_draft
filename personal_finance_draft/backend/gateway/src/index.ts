@@ -30,6 +30,8 @@ const { resolveAlpacaSettings, resolveGateIoSettings } = require('../../../share
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
+// @ts-ignore
+const { fetchWithRetry } = require('../../../shared/lib/runtime/fetch_retry');
 
 const ansi = {
   reset:       '\x1b[0m',
@@ -67,6 +69,7 @@ interface TradeOrder {
   type: 'market' | 'limit';
   status: OrderStatus;
   timestamp: Date;
+  error?: string;
 }
 
 
@@ -264,7 +267,7 @@ class GateIoAdapter implements BrokerAdapter {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const signature = signGateIoRequest(method, requestPath, '', payload, timestamp, this.apiSecret || '');
 
-    const response = await fetch(`${this.baseUrl}${requestPath}`, {
+    const response = await fetchWithRetry(`${this.baseUrl}${requestPath}`, {
       method,
       headers: {
         Accept: 'application/json',
@@ -737,12 +740,13 @@ class ExecutionGateway {
         const result = await this.adapter.placeOrder(order);
         console.log(`[LIVE] Order placed successfully: ${result.orderId} (Status: ${result.status})`);
         order.status = result.status === 'filled' ? OrderStatus.FILLED : OrderStatus.SUBMITTED;
-        
+
         await this.persistence.logOrder(order, 'alpaca', { order_id: result.orderId }, result);
-        
+
       } catch (error: any) {
         console.error(`[LIVE] Execution failed: ${error}`);
         order.status = OrderStatus.FAILED;
+        order.error = error.message ?? String(error);
         await this.persistence.logOrder(order, 'alpaca', { error: error.message });
       }
     }
@@ -2031,8 +2035,19 @@ export async function main() {
     };
 
     await gateway.execute(order);
-    if (useJson) {
+    const orderFailed = order.status === OrderStatus.FAILED || order.status === OrderStatus.RISK_REJECTED;
+    if (orderFailed) {
+      process.exitCode = 1;
+      const errMsg = order.error || `Order ${order.status}`;
+      if (useJson) {
+        console.log(JSON.stringify({ ok: false, error: errMsg, order }));
+      } else {
+        console.error(`[GATEWAY] Order ${order.status}: ${errMsg}`);
+      }
+    } else {
+      if (useJson) {
         console.log(JSON.stringify({ ok: true, order }));
+      }
     }
   } else if (command === 'balance') {
     const balances = await adapter.getPortfolioBalance();
@@ -2234,6 +2249,8 @@ export async function main() {
         console.error(`${ansi.red}POLYMARKET_PRIVATE_KEY not set in .env${ansi.reset}`);
         process.exit(1);
       }
+      const revealCreds = args.includes('--reveal');
+      const maskValue = (val: string) => revealCreds ? val : (val ? `${String(val).slice(0, 4)}…` : '');
       try {
         const { Wallet } = await import('ethers');
         const signer = new Wallet(pk);
@@ -2249,7 +2266,9 @@ export async function main() {
         const normalizedCreds = derivation.creds;
         if (useJson) {
           console.log(JSON.stringify({
-            ...normalizedCreds,
+            key: normalizedCreds.key,
+            secret: maskValue(normalizedCreds.secret),
+            passphrase: maskValue(normalizedCreds.passphrase),
             source: derivation.source,
             createRequestErrors: derivation.createRequestErrors,
             deriveRequestErrors: derivation.deriveRequestErrors,
@@ -2264,9 +2283,12 @@ export async function main() {
             console.log(`${ansi.yellow}Create attempt diagnostics:${ansi.reset} ${JSON.stringify(derivation.createRequestErrors[0])}`);
           }
           console.log(`\n${ansi.boldCyan}Paste these into your .env:${ansi.reset}`);
+          if (!revealCreds) {
+            console.log(`${ansi.yellow}(secret and passphrase masked — pass --reveal to show in full)${ansi.reset}`);
+          }
           console.log(`POLYMARKET_API_KEY=${normalizedCreds.key}`);
-          console.log(`POLYMARKET_API_SECRET=${normalizedCreds.secret}`);
-          console.log(`POLYMARKET_API_PASSPHRASE=${normalizedCreds.passphrase}`);
+          console.log(`POLYMARKET_API_SECRET=${maskValue(normalizedCreds.secret)}`);
+          console.log(`POLYMARKET_API_PASSPHRASE=${maskValue(normalizedCreds.passphrase)}`);
         }
       } catch (e: any) {
         console.error(`${ansi.red}derive-creds failed: ${e.message}${ansi.reset}`);
@@ -2481,7 +2503,16 @@ export async function main() {
         console.log(`\n${ansi.boldCyan}--- BOT HEALTH ---${ansi.reset}`);
         for (const c of health.checks) {
           const icon = c.ok ? `${ansi.green}✔${ansi.reset}` : `${ansi.red}✖${ansi.reset}`;
-          console.log(`  ${icon}  ${c.label.padEnd(42)} ${c.ok ? ansi.green : ansi.yellow}${c.detail}${ansi.reset}`);
+          let detail = c.detail;
+          // pUSD balance is stored in micro-units (1e6 = $1); convert to display dollars
+          if (c.label === 'pUSD balance' && typeof detail === 'string') {
+            const match = detail.match(/^([\d.]+)\s+pUSD(.*)/);
+            if (match) {
+              const displayAmount = (Number(match[1]) / 1e6).toFixed(2);
+              detail = `${displayAmount} pUSD${match[2]}`;
+            }
+          }
+          console.log(`  ${icon}  ${c.label.padEnd(42)} ${c.ok ? ansi.green : ansi.yellow}${detail}${ansi.reset}`);
         }
         console.log();
         if (health.ok) {
@@ -2528,7 +2559,7 @@ export async function main() {
       }
 
     } else {
-      console.error(`Unknown bot subcommand: ${sub}. Available: cycle, status, run, sell, config`);
+      console.error(`Unknown bot subcommand: ${sub}. Available: cycle, status, health, run, sell, config`);
       process.exit(1);
     }
 
