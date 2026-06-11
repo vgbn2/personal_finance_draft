@@ -264,3 +264,36 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
   test of `analyzeSeries`/`extractActionable` running the real rsi→atr→crossover→Bayesian-summarize
   pipeline and pinning the exact deterministic signal it produces (kelly=0.5715, hit=0.7692,
   CAUTION/MED). 6/6 passing — full `rsi_backtest` suite now 21/21 (`c5114e90`).
+
+## Update - 2026-06-11 session 11 — blast-through audit of feat/ml-onnx-section (unrecorded 2026-06-10 work)
+
+- Repo is on NEW branch `feat/ml-onnx-section` with ~28 uncommitted modified files from an
+  unrecorded 2026-06-10 session. Audit verdict: **DCS 0.87, tree NOT safe to commit** —
+  `runGatewayCommand` throws on every call (backend_bridge.js:72), 7 NEW failing test files
+  (suite 12✖ vs 6✖ baseline), and tracked code depends on 3 untracked files (4th occurrence of
+  the drift class). Ingestion upgrades (binance pagination, 1w/1mo local aggregation) verified
+  REAL (BTCUSDT 1w 4→464 bars). Full ledger: DEV_REVIEW.md "Focused Audit - 2026-06-11";
+  gate table: workspace/handoff/2026-06-11.md.
+- Grade trend vs 2026-06-06 audit: trade B→D (broken migration), shared/lib market A→C (failing
+  feature contract), runtime bridge new at D, providers B (binance solid), ingest B,
+  tui/engine C→B (markers cleared — ungated), gateway B→C (redaction contract), api/app.js C
+  (cached). No section at D/F for 2+ consecutive audits yet — no domain-level escalation; the
+  D grades are first-occurrence and tied to ONE fixable root cause each.
+- Carryover closed: `backend/cli/target/` now gitignored (edit in tree, uncommitted).
+  Carryover direction set in-tree: `storage/models/*.onnx` un-ignored (= "commit binaries").
+
+## Update - 2026-06-11 session 12 — audit findings fixed + landed; suite fully green (263/263)
+
+- All session-11 audit findings fixed same-day (Sonnet-delegated implementation, Fable-verified)
+  and committed in 6 batches (`358476f6`..`8e8b4adf`) on `feat/ml-onnx-section`. Bonus root cause:
+  `bot_state.ts` stale reorg import meant the gateway could not boot under ts-node at all (tsx has
+  been missing from node_modules since ~06-09).
+- **`npm test` = 263/263, 0 failures — first fully green suite in project history** (prior best
+  226/232; the 6 pre-existing baseline failures were also cleared per user decision).
+- Gate table regrades vs session 11: bridge D→B, trade D→B, shared/lib market C→B, backend/cli C→B,
+  gateway C→B. No gated sections remain except backend/api/app.js C (cached, GET-auth question)
+  and the Docker carryover.
+- Carryovers CLOSED: trained `.onnx` binaries committed (fresh-clone fallback gap),
+  `backend/cli/target/` gitignored. Still open: Docker/ONNX verification (daemon restart),
+  centralization backlog (gateway launcher call sites, local runBackendCommand copy),
+  untracked `notebooks/`, stale graphify-out.

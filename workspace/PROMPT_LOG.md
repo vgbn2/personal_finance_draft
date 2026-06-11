@@ -562,3 +562,55 @@ deterministic signal the real pipeline produces. 6/6 passing, full `rsi_backtest
 
 Flagged not fixed: `backend/cli/target/` (2,151 untracked Rust build artifacts) should probably be
 `.gitignore`d. ONNX-Docker fix stays blocked — daemon still wedged (`docker info` times out).
+
+---
+
+## 2026-06-11 — Session boot (session-orchestrator)
+
+**Prompt:** `/session-orchestrator` (boot only, no task given yet).
+
+**Boot findings:**
+- Branch is now `feat/ml-onnx-section` (new since session 10's handoff) with ~28 modified
+  tracked files (~723+/704-) that NO handoff/session-memory entry accounts for. Includes:
+  a substantial `shared/lib/runtime/backend_bridge.js` refactor (new `executeSovereignCommand`,
+  `runGatewayCommand`, smart JSON extraction, timeouts), `providers/binance.js` (+66),
+  `quote_router.js`, TUI `manifest.js` (adds `1mo`/`1wk` timeframes), `data_sources.yaml`,
+  plus the known still-uncommitted `Dockerfile:46` ONNX flag edit (still blocked on Docker
+  Desktop restart). Branch name suggests ML Phase 4 (TUI ONNX section) work in flight —
+  origin of the edits unrecorded (possibly Codex batch or an unlogged session).
+- `graphify-out/GRAPH_REPORT.md` last written 2026-06-08 02:22 — STALE vs f4a97e94/c5114e90
+  (2026-06-09) and the live working-tree edits; refresh before next deep graph navigation.
+- `workspace/BOOTSTRAP.md` does not exist in this checkout; HANDOFF.md boot order used instead.
+
+---
+
+## 2026-06-11 - Session boot (Codex)
+
+**Prompt:** `session boot`
+
+**Boot actions:**
+- Loaded repo instructions and canonical boot sources: `workspace/STATE.md`, `workspace/HANDOFF.md`,
+  latest dated handoff, `workspace/SESSION_MEMORY.md`, `workspace/DEV_REVIEW.md`, and current git state.
+- `repo-global-protocol` is referenced by `AGENTS.md`, but no matching local `SKILL.md` was found under
+  `.agents`, `.codex`, or `skills`; boot continued using the documented repo truth hierarchy.
+- Refreshed graph context with `graphify update .`; new graph report: 9,164 nodes, 14,108 edges,
+  728 communities.
+
+**Current anchor:**
+- Branch: `feat/ml-onnx-section`.
+- Active review anchor: `workspace/DEV_REVIEW.md` focused audit from 2026-06-11. It grades the current
+  uncommitted tree at DCS 0.87 and says not to commit as-is.
+- Highest-priority blockers remain the broken `runGatewayCommand` path in
+  `shared/lib/runtime/backend_bridge.js`, seven new failing test files versus the prior baseline, and
+  load-bearing untracked files required by tracked code.
+
+## 2026-06-11 — Sessions 11-12 (/blast-through audit + "plan to fix" + delegated fix pass)
+
+**Prompts:** `/blast-through`; "plan to fix"; plan-mode rejection note: "use lesser model to
+implement to save tokens" (saved as durable preference).
+
+**Outcome:** Audit found the unrecorded 2026-06-10 tree not commit-safe (broken runGatewayCommand,
+manifest engine corrupting ML features, 7 new failing test files, untracked load-bearing deps).
+Fix plan approved with 4 user decisions; two Sonnet waves implemented; Fable verified + committed
+6 batches. Full suite 263/263 (first fully green). Trail: workspace/handoff/2026-06-11.md,
+DEV_REVIEW.md Focused Audit + RESOLUTION blocks.

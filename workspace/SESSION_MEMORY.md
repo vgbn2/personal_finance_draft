@@ -1,3 +1,54 @@
+﻿## Session Memory - 2026-06-11 (session 12) Fix pass: audit cleared via Sonnet delegation, suite 263/263
+
+{
+  "work": "Executed the approved fix plan for session 11's audit findings. Per NEW user preference ('use lesser model to implement to save tokens' -- saved to memory as feedback-lighter-model-implementation), implementation was delegated to two Sonnet subagent waves with precise specs; Fable only orchestrated, reviewed diffs for hallucinated conventions, re-ran every gate itself, and did all git staging/commits. 6 commits landed (358476f6 bridge, 7d99af0f indicators+config/system, e6716777 data/ingestion+untracked deps, b3b0fec5 gateway redaction, 2bf1e482 test contracts, 8e8b4adf onnx binaries+.gitignore).",
+  "key_mechanism": "TWO root causes the audit had only partially attributed: (1) the 3 gateway test failures were DOUBLE-broken -- besides the bridge require.resolve bug, bot_state.ts:5 imported shared/lib/brokers/supabase_env.js (reorg fallout; canonical = auth/supabase_env.js), so the gateway could not boot under ts-node AT ALL; tsx had vanished from node_modules since 06-09 making the ts-node bootstrap the live path. Found because the Sonnet agent's 'pre-existing failure, stash bisect proves it' claim was verified rather than trusted -- stash bisect is BLIND to untracked-file and node_modules drift. (2) parseYamlRecursive does not parse inline flow maps: params: { period: volatility } arrives as a STRING and Object.values(string) spreads CHARACTERS as function args -> NaN/missing ML features. Fix pattern: block-style YAML + typeof params guard + once-per-id warnings.",
+  "verified": [
+    "Full npm test AFTER all waves, run by Fable directly: 263/263 pass, 0 fail, exit 0 -- first fully green suite on record (prior best 226/232; all 6 pre-existing baseline failures cleared as user opted).",
+    "runGatewayCommand(['balance','--json']) live probe: boots gateway via ts-node bootstrap, reaches real Alpaca SDK (fails only on sandbox network EACCES -- environmental).",
+    "Manifest probe: latest feature now has finite volatility (0.00233), return_fast, atr (299.1) from the real BTC fixture.",
+    "Per-batch gates re-run by Fable: polymarket_preflight/proposed_orders_cli/polymarket_auth_health 3/3; indicators.data_flow + manifest_parity + price_action 7/7.",
+    "git status: only intentionally-uncommitted files remain (Dockerfile = Docker-blocked carryover; workspace docs committed separately)."
+  ],
+  "user_decisions": [
+    "Implementation MUST go to lighter-model subagents (token economy) -- durable preference, saved to persistent memory.",
+    "quote_router priorities reverted (binance stays preferred over coinbase); .onnx binaries committed; mass-backfill 7300d/concurrency-10 defaults kept; ALL pre-existing test failures fixed (not just the new ones)."
+  ],
+  "remaining": [
+    "Docker/ONNX container verification -- Dockerfile:46 edit still deliberately uncommitted, blocked on Docker Desktop restart (unchanged).",
+    "Centralization backlog: trade.js 5 direct buildTradeGatewayLaunch call sites + tools/backend.js local runBackendCommand -> bridge (M).",
+    "notebooks/ untracked -- notebooks_contract.test.js would fail on fresh clone; user scope decision.",
+    "graphify-out stale (2026-06-08) -- refresh after this lands.",
+    "Merge decision feat/ml-onnx-section -> main is the user's."
+  ],
+  "dcs": 0.97
+}
+## Session Memory - 2026-06-11 (session 11) Blast-through of the unrecorded feat/ml-onnx-section tree
+
+{
+  "work": "Focused /blast-through on a ~28-file uncommitted diff found at boot on a NEW branch feat/ml-onnx-section. The work was done in an unrecorded 2026-06-10 session (self-described only in DEV_COMMENTS.md as 'Mass Audit & Ingestion Repair', claiming 'Implemented & Verified DCS 0.98') that wrote no handoff/session-memory entry. Review only -- nothing fixed, nothing committed. Findings + reviewer decisions appended to DEV_REVIEW.md ('Focused Audit - 2026-06-11'); correction appended to DEV_COMMENTS.md; gate table in workspace/handoff/2026-06-11.md.",
+  "key_mechanism": "runGatewayCommand (shared/lib/runtime/backend_bridge.js:72) contains a dead require.resolve('../../backend/gateway/src/index.ts') that resolves relative to shared/lib/runtime/ -> shared/backend/... (nonexistent) and THROWS on every call, before reaching the correct path.join two lines below -- so all 5 trade.js functions migrated onto it (balance, aggregate portfolio, Polymarket orderbook/price-history/BUY) are dead. Proven by direct node -e probe, then corroborated by 3 of the 7 NEW failing test files. Lesson reinforced (5th data point): NEVER trust a doc/comment claiming 'verified' -- run the suite; and check git status for tracked-code-depends-on-untracked-file drift (4th occurrence: utils.js->symbol_resolver.js, providers/index.js->ecb.js, indicators.js->config/system/indicator_manifest.yaml).",
+  "verified": [
+    "npm test (full, twice): 12 failing subtests across 12 files vs the 226/232 6-failure baseline -> 7 NEW failing files: polymarket_preflight, proposed_orders_cli, polymarket_auth_health (exit 1 != 0), lib/indicators.data_flow ('Volatility should be positive in real market'), polymarket_errors (redactHeaderMap), sovereign_cli_human_surfaces (integrity render), sovereign_cli_price_action.",
+    "node -e probe: runGatewayCommand(['balance','--json']) -> 'Cannot find module ../../backend/gateway/src/index.ts' (bridge loads fine; the throw is call-time).",
+    "BTCUSDT ts index: 1d 3254 bars (2017-07-14->2026-06-10), 1w 464 bars, 1mo 109 bars -- DEV_COMMENTS' '4 -> 464 bars' ingestion claim is REAL; binance.js pagination + deriveHighTfFromLocalDaily are sound (TS_INDEX_PATH/aggregateCandles defined in-module).",
+    "All 19 modified JS files pass node --check.",
+    "backend integrity --json: ok:true (policy-green, AAPL age 55h).",
+    "TUI engine: zero TODO/FIXME/dev-review markers remain (was 4 in the 2026-06-06 audit) -> ungated C->B."
+  ],
+  "answers_to_inline_dev_review_questions": [
+    "quote_router priority: HIGHER = BETTER (rank*1e9 dominant term, sorted desc). The coinbase 80->85 edit promotes coinbase above binance(82) for crypto -- risky given coinbase's documented 451 geo-fragility.",
+    "Provider selection is per symbol-timeframe group (groupQuoteRecords), so per-symbol fallback exists; 'mostly YF in cache' = Yahoo won rank or was sole success for those keys."
+  ],
+  "remaining": [
+    "P0 fix: delete backend_bridge.js:72 dead require.resolve + decide ts-node/tsx launcher-parity with run_trade_gateway.js bootstrap; then reconcile the 7 failing test files one by one (code fix vs deliberate contract update).",
+    "Track the untracked load-bearing files (symbol_resolver.js, ecb.js, config/system/, storage/models/*.onnx per the in-tree un-ignore) BEFORE committing the branch -- it is self-breaking without them.",
+    "P1s: 30s default spawn timeout (frame backtests via strategy/backtest.js exceed it; tools/backend.js's LOCAL runBackendCommand copy is the only reason 95s correlations still work), forced ok:true smart-JSON extraction, research.js strict candle filter (drops 1d/'point' fallback -- check macro/CPI backtest paths), silent applyManifestIndicator catch.",
+    "Docker/ONNX container verification still blocked on Docker Desktop restart (unchanged carryover).",
+    "graphify-out stale (2026-06-08) -- refresh before next deep graph navigation."
+  ],
+  "dcs": 0.87
+}
 ## Session Memory - 2026-06-09 (sessions 9-10) RSI backtest harness shipped + rescued an at-risk uncommitted shared/lib reorg
 
 {
@@ -35,7 +86,7 @@
     "Confirmed via Get-Process that com.docker.build (PID 166360) was idle (CPU not increasing across a 3s sample) and had StartTime 2026-06-07 17:25:54 -- ~22h before this session's first docker command, proving the wedge predated and was unrelated to anything done this session."
   ],
   "user_decisions": [
-    "User chose 'Keep it parked (Recommended)' for the scalping-bot pivot -- stays out of scope, decision remains theirs (workspace/SCALPING_BOT_SCOPING.md §5).",
+    "User chose 'Keep it parked (Recommended)' for the scalping-bot pivot -- stays out of scope, decision remains theirs (workspace/SCALPING_BOT_SCOPING.md Â§5).",
     "User approved committing the 4,533-file index cleanup despite its size, and approved proceeding with the ONNX Docker rebuild despite the live-container interruption risk.",
     "When the Docker daemon was found wedged, user chose 'leave it for later' rather than restart Docker Desktop now -- ONNX-Docker verification (and the uncommitted Dockerfile edit) is parked pending that restart.",
     "Killing the zombie PID directly was correctly blocked by the harness's destructive-action classifier ('force-killing an arbitrary system process... without explicit user instruction') -- confirms the classifier catches even well-reasoned destructive asks; the right move was to ask the user instead."
@@ -43,7 +94,7 @@
   "remaining": [
     "ONNX-in-Docker: user restarts Docker Desktop -> rebuild -> verify `ml compare --json` reports onnx_runtime (cross-check Phase-3 parity: xgboost 0.666376 / logistic 0.468378 / regime 0.456982) -> THEN commit the already-edited Dockerfile -> close the DEV_REVIEW.md ledger item. Full steps in workspace/handoff/2026-06-08.md session 8.",
     "Latent gap (flagged, not fixed): storage/models/*.onnx are gitignored (.gitignore:64) -- a genuine fresh-clone-to-remote-node deploy per DEPLOY.md's own flow would silently fall back to deterministic_baseline. Needs a future user call: commit the ~1MB binaries vs. add a model-sync step to the deploy flow.",
-    "Scalping-bot pivot remains parked -- workspace/SCALPING_BOT_SCOPING.md §5's 4 open questions (venue, thesis, validation window, resourcing) are still the user's to answer."
+    "Scalping-bot pivot remains parked -- workspace/SCALPING_BOT_SCOPING.md Â§5's 4 open questions (venue, thesis, validation window, resourcing) are still the user's to answer."
   ],
   "dcs": 0.97
 }
@@ -81,7 +132,7 @@
   "key_mechanism": "`ml predict` (C++ backend/core/src/main.cpp printMl/runMlModel, lines 804-936) ONLY emits an aggregate class_counts map per model -- never per-row predictions. Trick: feed it a single-row CSV via --frame <tmp> --limit 1 -> class_counts collapses to exactly ONE key, and that key IS that row's predicted class (label_classes from metadata.json: {'0':'down','1':'flat','2':'up'}). This bridges genuine real-time per-symbol ONNX inference into JS WITHOUT touching the C++ binary. Implemented in scripts/strategies/ml_signal.js::getMlPrediction({symbol, model}) via runBackendCommand(['ml','predict','--frame',tmpPath,'--manifest',MANIFEST_PATH,'--models-dir',MODELS_DIR,'--model',model,'--limit','1']).",
   "verified": [
     "getMlPrediction direct test: AAPL/xgboost_v1 -> up, BTCUSDT/logistic_v1 -> down, MSFT/regime_classifier -> up; all backend:'onnx_runtime' (genuine ONNX, not heuristic).",
-    "ml_smoke_alpaca.js --dry: up -> side 'buy' (mapping correct). LIVE (no --dry): commandTrade(['buy','AAPL','1','market','--live','--json']) correctly stopped at the user's OWN auth gate: '✖ Sign-in required for live trading. Run `sovereign login` to authenticate, then try again.' (session expired per auth-status --json) -- this is the safety boundary working AS DESIGNED, proving correct wiring up to and including the gate, not a bug.",
+    "ml_smoke_alpaca.js --dry: up -> side 'buy' (mapping correct). LIVE (no --dry): commandTrade(['buy','AAPL','1','market','--live','--json']) correctly stopped at the user's OWN auth gate: 'âœ– Sign-in required for live trading. Run `sovereign login` to authenticate, then try again.' (session expired per auth-status --json) -- this is the safety boundary working AS DESIGNED, proving correct wiring up to and including the gate, not a bug.",
     "ml_smoke_polymarket.js LIVE (no --dry): predicted 'down' for BTCUSDT/logistic_v1 -> mapped to strategy 'low_prob_dip' -> commandPolymarket(['paper-run','--strategy','low_prob_dip','--json']) -> real result {ok:true, dry_run:true, strategy:'low_prob_dip', markets_scanned:25, fills:[], skipped:[{reason:'max concurrent positions reached'}], summary:{virtual_balance:95, open_positions:5}}. Cross-checked storage/data/paper_trading/portfolio.json (5 open low_prob_dip positions) + fills.jsonl (real prior fills tagged reason:'low_prob_dip') -- this exact path has produced real fills before; this run just hit the 5-position concurrency cap, itself proof the path is live not stubbed."
   ],
   "files_created": [
@@ -99,16 +150,16 @@
   "dcs": 0.97
 }
 
-## Session Memory - 2026-06-07 (session 4) FIRST SUCCESSFUL DOCKER DEPLOY — C3 closed
+## Session Memory - 2026-06-07 (session 4) FIRST SUCCESSFUL DOCKER DEPLOY â€” C3 closed
 
 {
   "work": "Continued from session 3 (registry connectivity recovered): ran `docker compose build` -> `up -d` -> hit and fixed THREE new independent blockers (none caught by session 3's source-only portability pass; only surface in the full build+run path) -> verified a stable healthy 2-service stack. FIRST end-to-end Docker deploy in project history.",
   "verified": "curl http://127.0.0.1:8787/health -> {\"ok\":true,\"service\":\"sovereign-web\"}; web=Healthy RestartCount=0; bot=Up RestartCount=0 running real paper cycles ({\"ok\":true,\"dry_run\":true,\"strategy\":\"low_prob_dip\",\"markets_scanned\":25,\"summary\":{\"virtual_balance\":95,...}}).",
   "fixes": [
-    "backend/core/src/features/macro_features.cpp:32 — GCC12 -Werror=restrict FALSE POSITIVE (bogus ~9.2e18-byte memcpy size for `row.timeframe = \"D\";`, a 1-char literal assign, when extract() inlines into the loop; row is a fresh local, no real overlap). Fixed with scoped #pragma GCC diagnostic push/ignored \"-Wrestrict\"/pop + comment explaining it's a compiler defect, not a real bug.",
-    "infra/docker/Dockerfile — web crashed with `Cannot find module 'socket.io'` (backend/api/app.js:268). backend/api and backend/gateway are STANDALONE npm sub-packages (own package.json+lockfile+node_modules, not hoisted to root); .dockerignore excludes all node_modules from `COPY . .`; Dockerfile only ran npm ci for root+Frontend. Added Layer 1b/1c: COPY+npm ci --ignore-scripts --omit=dev for both sub-packages. Confirmed via build log (`added 99 packages`/`added 216 packages`).",
-    "infra/docker/docker-compose.yml — removed the `gateway` service entirely (was crash-looping, RestartCount=9, exits 0 after printing CLI usage). ROOT CAUSE: gateway.main() (backend/gateway/src/index.ts) is a one-shot CLI dispatcher (zero args -> printUsage() -> return), NOT a persistent server. SOVEREIGN_GATEWAY_MODE=managed (set in that service's env) is read NOWHERE in the codebase -- dead config from a prior session's misconception that a 'managed' persistent mode existed. Real pattern: buildTradeGatewayLaunch() in backend/cli/commands/trade/trade.js spawnSyncs it on-demand with real args. Repointed bot.depends_on gateway->web; updated DEPLOY.md (removed gateway row + logs line, added subprocess-spawn-architecture note).",
-    "infra/docker/docker-compose.yml — bot showed (unhealthy) in `compose ps` (cosmetic): inherits the image's HEALTHCHECK (curl 127.0.0.1:8787/health) but runs no HTTP server (it's a `while true; do node ... ; sleep; done` loop). Nothing depends_on bot's health, so purely cosmetic/confusing. Fixed with `healthcheck: disable: true` override on the bot service."
+    "backend/core/src/features/macro_features.cpp:32 â€” GCC12 -Werror=restrict FALSE POSITIVE (bogus ~9.2e18-byte memcpy size for `row.timeframe = \"D\";`, a 1-char literal assign, when extract() inlines into the loop; row is a fresh local, no real overlap). Fixed with scoped #pragma GCC diagnostic push/ignored \"-Wrestrict\"/pop + comment explaining it's a compiler defect, not a real bug.",
+    "infra/docker/Dockerfile â€” web crashed with `Cannot find module 'socket.io'` (backend/api/app.js:268). backend/api and backend/gateway are STANDALONE npm sub-packages (own package.json+lockfile+node_modules, not hoisted to root); .dockerignore excludes all node_modules from `COPY . .`; Dockerfile only ran npm ci for root+Frontend. Added Layer 1b/1c: COPY+npm ci --ignore-scripts --omit=dev for both sub-packages. Confirmed via build log (`added 99 packages`/`added 216 packages`).",
+    "infra/docker/docker-compose.yml â€” removed the `gateway` service entirely (was crash-looping, RestartCount=9, exits 0 after printing CLI usage). ROOT CAUSE: gateway.main() (backend/gateway/src/index.ts) is a one-shot CLI dispatcher (zero args -> printUsage() -> return), NOT a persistent server. SOVEREIGN_GATEWAY_MODE=managed (set in that service's env) is read NOWHERE in the codebase -- dead config from a prior session's misconception that a 'managed' persistent mode existed. Real pattern: buildTradeGatewayLaunch() in backend/cli/commands/trade/trade.js spawnSyncs it on-demand with real args. Repointed bot.depends_on gateway->web; updated DEPLOY.md (removed gateway row + logs line, added subprocess-spawn-architecture note).",
+    "infra/docker/docker-compose.yml â€” bot showed (unhealthy) in `compose ps` (cosmetic): inherits the image's HEALTHCHECK (curl 127.0.0.1:8787/health) but runs no HTTP server (it's a `while true; do node ... ; sleep; done` loop). Nothing depends_on bot's health, so purely cosmetic/confusing. Fixed with `healthcheck: disable: true` override on the bot service."
   ],
   "architecture_note": "Deploy topology is now 2 services (web+bot), down from the 3 a prior session configured (web+bot+gateway). This is correct per the code (gateway is subprocess-spawned on demand, never a daemon) but is a divergence the user should be made aware of before committing -- they hadn't seen this decision ship yet.",
   "files_changed": [
@@ -122,28 +173,28 @@
   "dcs": 0.98
 }
 
-## Session Memory - 2026-06-07 (session 3) Docker build — C++/frontend made Linux-portable, blocked on registry network
+## Session Memory - 2026-06-07 (session 3) Docker build â€” C++/frontend made Linux-portable, blocked on registry network
 
 {
   "work": "Ran the Docker deploy ('run the docker command'). The build exposed a cascade of bugs that were GREEN on Windows/MSVC but broke under the container toolchain (GCC 12 + -Wall -Wextra -Werror -Wpedantic, and GCC10 in the first base image). Fixed all of them; the final image build is blocked only on Docker Desktop being unable to reach Docker Hub.",
   "verified": "Full `make -k all` in a gcc:12 container (mounting backend/core) = 0 errors/0 warnings under the strict flags. `npm run build` (vite) green = 2413 modules. So the source is now portable; remaining failure is pure environment/network.",
   "fixes": [
-    "Frontend/dashboard/src/components/panels/BacktestPanel.tsx: removed orphaned `iv> ); }` text after the component end (botched prior edit) — was a hard `vite build` syntax error.",
+    "Frontend/dashboard/src/components/panels/BacktestPanel.tsx: removed orphaned `iv> ); }` text after the component end (botched prior edit) â€” was a hard `vite build` syntax error.",
     "infra/docker/Dockerfile: FROM node:22-bullseye -> node:22-bookworm. GCC10 (bullseye) only has integer std::from_chars; the core uses from_chars(double) in data_snapshot.cpp, frame_backtester.cpp, ohlcv_parser.cpp. bookworm = GCC12.",
-    "infra/docker/Dockerfile: `make sovereign_wealth` (was bare `make`, which builds ALL test targets — not wanted in a runtime image). Added ENV SOVEREIGN_BACKEND_BIN=/app/backend/core/build/sovereign_wealth.",
+    "infra/docker/Dockerfile: `make sovereign_wealth` (was bare `make`, which builds ALL test targets â€” not wanted in a runtime image). Added ENV SOVEREIGN_BACKEND_BIN=/app/backend/core/build/sovereign_wealth.",
     "backend/core/src/ml/kronos_tensor_builder.hpp: +#include <cstddef> for size_t.",
     "backend/core/src/ml/cnn_inference.cpp: deleted dead clampProbability (-Werror=unused-function).",
     "backend/core/src/ml/onnx_model.cpp: moved `start_time` decl inside #if SOVEREIGN_ONNX_RUNTIME_ENABLED (set-but-unused when ONNX off).",
     "backend/core/src/features/macro_features.cpp: moved misplaced [[maybe_unused]] (was after `&`, GCC ignores it there) to before the param on 3 current_ts params.",
-    "backend/core/src/execution/execution_interface.hpp: ExecutionOrder::venue given default `= \"\"` — it was the only member without a default member initializer, so any partial aggregate init tripped -Werror=missing-field-initializers (execution_test, kill_switch_test). Root-cause fix.",
+    "backend/core/src/execution/execution_interface.hpp: ExecutionOrder::venue given default `= \"\"` â€” it was the only member without a default member initializer, so any partial aggregate init tripped -Werror=missing-field-initializers (execution_test, kill_switch_test). Root-cause fix.",
     "backend/core/test/execution_test.cpp + macro_features_test.cpp: [[maybe_unused]] on assert-only locals/helper."
   ],
-  "gotcha_binary_path": "CRITICAL for any Linux/Make build of the core: shared/lib/paths.js BACKEND_CANDIDATES only lists build/Release/, build/Debug/ (MSVC multi-config) + a few build/backend/core/ paths — it does NOT list backend/core/build/<binary> (Make single-config root). So a successful Linux build still leaves Node unable to find sovereign_wealth unless SOVEREIGN_BACKEND_BIN is set. Dockerfile now sets it; consider adding the Make path to BACKEND_CANDIDATES for native Linux dev.",
+  "gotcha_binary_path": "CRITICAL for any Linux/Make build of the core: shared/lib/paths.js BACKEND_CANDIDATES only lists build/Release/, build/Debug/ (MSVC multi-config) + a few build/backend/core/ paths â€” it does NOT list backend/core/build/<binary> (Make single-config root). So a successful Linux build still leaves Node unable to find sovereign_wealth unless SOVEREIGN_BACKEND_BIN is set. Dockerfile now sets it; consider adding the Make path to BACKEND_CANDIDATES for native Linux dev.",
   "test_quality_note": "Release mode defines NDEBUG -> assert() is a no-op. Many core test mains (execution_test, macro_features_test, etc.) only validate via assert(), so in a Release `make` they BUILD but assert NOTHING. Pre-existing. The Dockerfile no longer builds tests anyway. Tests should run in Debug.",
   "container_ml_baseline": "Same as session 2: the Dockerfile does NOT pass -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON, so the container core is the deterministic baseline, not the real ONNX path. Flag flip if wanted in-container.",
-  "blocker": "Docker daemon cannot reach registry-1.docker.io:443 — Windows WSAEACCES 'socket forbidden by access permissions'. DNS resolves; outbound connect blocked. Worked ~15min earlier (pulled gcc:12, n8n cached). node:22-bookworm NOT cached -> build can't pull base image. Likely transient firewall/VPN/AV or Docker network-proxy state.",
+  "blocker": "Docker daemon cannot reach registry-1.docker.io:443 â€” Windows WSAEACCES 'socket forbidden by access permissions'. DNS resolves; outbound connect blocked. Worked ~15min earlier (pulled gcc:12, n8n cached). node:22-bookworm NOT cached -> build can't pull base image. Likely transient firewall/VPN/AV or Docker network-proxy state.",
   "resume": "USER: restart Docker Desktop (kills n8n container too) / toggle VPN / check firewall, then re-run `docker compose -f infra/docker/docker-compose.yml build`, then `up -d`, then `curl http://127.0.0.1:8787/health`.",
-  "cleanup": "Removed backend/core/build_linux/ (throwaway container build dir; was NOT gitignored — watch for it).",
+  "cleanup": "Removed backend/core/build_linux/ (throwaway container build dir; was NOT gitignored â€” watch for it).",
   "committed": false,
   "dcs": 0.97
 }
@@ -188,14 +239,14 @@
   "cautions": [
     "Nothing committed this session; working tree was already large/dirty from prior sessions. graphify-out STALE (code changed; refresh before next deep navigation).",
     "ml compare default --frame is the full training frame -> its accuracy is IN-SAMPLE; honest OOS number is the Phase-2 holdout. No persisted holdout-only CSV yet (DEV_REVIEW P2).",
-    "regime_classifier beats baseline by only +0.8% and predicts 'up' ~64% of rows — real but weak.",
+    "regime_classifier beats baseline by only +0.8% and predicts 'up' ~64% of rows â€” real but weak.",
     "predictBatch no-ONNX branch returns zeros but ml compare still prints an accuracy (surfaced via backend field/rc=2); harden to null when backend!=onnx_runtime (DEV_REVIEW P3).",
     "xgboost ONNX export needs onnxmltools' OWN FloatTensorType, not skl2onnx's."
   ],
   "dcs": 0.97
 }
 
-## Session Memory - 2026-06-07 Real ML buildout — Phase 0 (ONNX in C++) + Phase 1 (JS feature layer)
+## Session Memory - 2026-06-07 Real ML buildout â€” Phase 0 (ONNX in C++) + Phase 1 (JS feature layer)
 
 {
   "work": "Audit found the 'ML' was fake (deterministic_adapter heuristics). User approved a real ONNX-in-C++ ML buildout. Completed Phase 0 (enable + prove ONNX inference in C++) and Phase 1 (JS feature pipeline + `ml dump` training-CSV command).",
@@ -204,7 +255,7 @@
     "Enabled SOVEREIGN_ENABLE_ONNX_RUNTIME=ON (local build; CMake default kept OFF for portability). onnxruntime 1.17.1 win-x64 FetchContent download+link works on Win32 MSVC.",
     "onnx_model.cpp: fixed Windows wide-path bug (Ort::Session needs ORTCHAR_T/wchar_t, not char*); load failure now logs (was silent).",
     "CMakeLists: added reusable sovereign_copy_onnx_runtime(target) post-build DLL copy; sovereign_wealth now links onnxruntime (static core links it PRIVATE, final exe must satisfy Ort symbols).",
-    "onnx_model_test.cpp: flag-aware — loads real storage/models/smoke.onnx, asserts backend()=='onnx_runtime'. PROVEN: [[1,2,3],[4,5,6]]->[2,5], 228us, exit 0."
+    "onnx_model_test.cpp: flag-aware â€” loads real storage/models/smoke.onnx, asserts backend()=='onnx_runtime'. PROVEN: [[1,2,3],[4,5,6]]->[2,5], 228us, exit 0."
   ],
   "phase1_js_features": [
     "coingecko.js: fetchCoinGeckoMcapSeries() + stablecoin id overrides. Fixed real bug: baseSymbol() stripped bare stablecoins to '' (USDT now -> tether).",
@@ -223,8 +274,8 @@
     "ONNX export: onnxruntime 1.17.1 caps model IR version at 9 -> Python exports MUST set model.ir_version = 9 (opset can be 13-20). Discovered: venv onnx wrote IR 13 -> C++ load failed.",
     "Python: base Windows-Store python's onnx is corrupted (onnx.defs missing). Use the gitignored .venv_ml/ (onnx/onnxruntime/numpy; torch+xgboost already in base). Phase 2 adds skl2onnx/onnxmltools.",
     "BIGGEST GAP: ml dump reads storage/data/cache/<family>/backtest_history.json, but the core crypto universe (BTC/ETH/SOL) + metals/energy anchors live in the BINARY storage/data/ts/ index (48-byte Float64), NOT that file. So ml dump currently covers equities + FX + the 3 backfilled crypto only. Need a JS binary-ts reader (or repopulate backtest_history.json, or shell to C++) before full-universe training.",
-    "buildCryptoAggregateSeries has no production caller yet (only its test) — awaits a rate-limit-aware `ml aggregates refresh` job to write crypto_aggregates.json. CoinGecko free tier rate-limits the full ~17-coin burst.",
-    "feature build is O(n^2) (expanding-window calculateRollingFeatureFrame) — ml dump caps bars via --days (1d => N bars). Don't run unbounded on 7000-bar equities.",
+    "buildCryptoAggregateSeries has no production caller yet (only its test) â€” awaits a rate-limit-aware `ml aggregates refresh` job to write crypto_aggregates.json. CoinGecko free tier rate-limits the full ~17-coin burst.",
+    "feature build is O(n^2) (expanding-window calculateRollingFeatureFrame) â€” ml dump caps bars via --days (1d => N bars). Don't run unbounded on 7000-bar equities.",
     "Windows MSVC: an uncaught C++ exception aborts with 0xC0000409 (looks scary, it's just terminate). In Git Bash a missing-DLL launch shows exit 127."
   ],
   "next_steps": [
@@ -261,10 +312,10 @@
     "shim + folder resolve 53 exports both ways; node --check clean on all touched JS."
   ],
   "cautions": [
-    "CoinGecko /market_chart: days<=90 returns HOURLY points, days>90 returns DAILY. The dispatch uses Math.max(historyDays,365) so it gets daily granularity for the 1d cache. Free tier rate-limited (~10-50/min) — fine as last-resort + forward-gap-only.",
+    "CoinGecko /market_chart: days<=90 returns HOURLY points, days>90 returns DAILY. The dispatch uses Math.max(historyDays,365) so it gets daily granularity for the 1d cache. Free tier rate-limited (~10-50/min) â€” fine as last-resort + forward-gap-only.",
     "COINGECKO_ID_OVERRIDES is required because the auto symbol->id map keeps the LAST coin per symbol (collisions on pol/pepe). Add new universe symbols there.",
     "ingest_market_data is now a FOLDER: real code in ingest_market_data/index.js (relative requires are ../../../../shared, one deeper). Old ingest_market_data.js is a shim. data_sync.sh + CI --check point at index.js.",
-    "Remaining ingest modules (http/normalize/symbols/providers/persist) NOT yet extracted — provider code is not unit-covered, so carve one-per-commit with a live ingest smoke. Task #6.",
+    "Remaining ingest modules (http/normalize/symbols/providers/persist) NOT yet extracted â€” provider code is not unit-covered, so carve one-per-commit with a live ingest smoke. Task #6.",
     "FX (10 pairs) + VRE still stale; targeted FX backfill returned no sources/no errors -> Frankfurter/skip-path artifact, separate from the crypto fix. auto_backfill is the standing freshener."
   ],
   "dcs": 0.95
@@ -275,19 +326,19 @@
 {
   "work": "Named resolved positions, fixed $0 balance bug (wrong address)",
   "implemented": [
-    "index.ts getPositions(): two-pass Gamma lookup — Pass 1 (default/active), Pass 2 (active=false for still-missing tokens). Resolved positions now get their market question.",
+    "index.ts getPositions(): two-pass Gamma lookup â€” Pass 1 (default/active), Pass 2 (active=false for still-missing tokens). Resolved positions now get their market question.",
     "index.ts renderPolymarketSection(): fallback label changed from 'resolved/unnamed' to 'unnamed'.",
     "index.ts getPortfolioBalance(): fallback to PROXY_ADDRESS (signatureType=1) when Gnosis Safe returns $0. Summed so both wallets show up if both funded."
   ],
   "verification": [
-    "tsc -p backend/gateway/tsconfig.json --noEmit → clean",
-    "npm test → 202/202 pass"
+    "tsc -p backend/gateway/tsconfig.json --noEmit â†’ clean",
+    "npm test â†’ 202/202 pass"
   ],
   "cautions": [
-    "PROXY_ADDRESS fallback in getPortfolioBalance only fires when signatureType=2 AND primary balance is $0. If both wallets have funds, they are SUMMED — this is correct since they are separate CTF Exchange buckets.",
+    "PROXY_ADDRESS fallback in getPortfolioBalance only fires when signatureType=2 AND primary balance is $0. If both wallets have funds, they are SUMMED â€” this is correct since they are separate CTF Exchange buckets.",
     "User's $5 balance is under PROXY_ADDRESS (signatureType=1, old deposit flow). New orders must go through DEPOSIT_ADDRESS (signatureType=2) to avoid 'maker address not allowed'.",
     "Gamma two-pass: Pass 2 only fetches token IDs that were NOT resolved in Pass 1 (stillMissing). This keeps the second request minimal and avoids fetching known-active markets twice.",
-    "Resolved market CLOB prices return 0 — unrealizedPl on resolved positions is always 0 in the display. This is expected."
+    "Resolved market CLOB prices return 0 â€” unrealizedPl on resolved positions is always 0 in the display. This is expected."
   ]
 }
 
@@ -296,54 +347,54 @@
 {
   "work": "Events-first browse redesign, dead-code removal, blast-through focused audit",
   "implemented": [
-    "trade.js: removed __events__ from buildPolymarketCategoryChoices. All categories now use events-first flow (topics → markets).",
+    "trade.js: removed __events__ from buildPolymarketCategoryChoices. All categories now use events-first flow (topics â†’ markets).",
     "trade.js: promptPolymarketMarketBrowser collapsed to single events path. fetchPolymarketEventsSnapshot receives actual category variable.",
     "trade.js: deleted fetchPolymarketMarketsSnapshot + buildPolymarketSectionChoices (dead after flat browser removal).",
     ".env: POLYMARKET_FUNDER_ADDRESS=0x0f6AAd6a042cB1F2A0F297da4238efd0252852DB added to fix CLOB maker-address rejection."
   ],
   "verification": [
-    "node --check backend/cli/commands/trade/trade.js → SYNTAX OK",
-    "npm test → 202/202 pass, 0 fail"
+    "node --check backend/cli/commands/trade/trade.js â†’ SYNTAX OK",
+    "npm test â†’ 202/202 pass, 0 fail"
   ],
   "cautions": [
-    "POLYMARKET_FUNDER_ADDRESS must be DEPOSIT_ADDRESS (Gnosis Safe), not PROXY_ADDRESS. Using PROXY_ADDRESS → CLOB error: maker address not allowed.",
+    "POLYMARKET_FUNDER_ADDRESS must be DEPOSIT_ADDRESS (Gnosis Safe), not PROXY_ADDRESS. Using PROXY_ADDRESS â†’ CLOB error: maker address not allowed.",
     "Gamma events API: category='all' may return unrelated markets. 'crypto' is the most reliable category for crypto markets.",
-    "fetchPolymarketMarketsSnapshot was deleted — do not re-introduce. The events-first flow replaces the flat-market browse entirely.",
-    "Events browse has no contract test yet — DCS coverage factor is 0.82. Test gate: add 1 test to polymarket_markets.test.js."
+    "fetchPolymarketMarketsSnapshot was deleted â€” do not re-introduce. The events-first flow replaces the flat-market browse entirely.",
+    "Events browse has no contract test yet â€” DCS coverage factor is 0.82. Test gate: add 1 test to polymarket_markets.test.js."
   ],
   "blast_through_dcs": 0.926,
   "gate_table": {
-    "backend/cli/commands/trade": "B — OPEN",
-    "backend/gateway/src": "B — OPEN",
-    "shared/lib/centralized_lib": "A — OPEN",
-    "tests/scripts": "B — OPEN",
-    "backend/cli/tui/engine": "C — GATED (4 dev-review markers)",
-    "backend/api/app.js": "C — GATED (RATE_LIMITS leak + GET auth bypass)"
+    "backend/cli/commands/trade": "B â€” OPEN",
+    "backend/gateway/src": "B â€” OPEN",
+    "shared/lib/centralized_lib": "A â€” OPEN",
+    "tests/scripts": "B â€” OPEN",
+    "backend/cli/tui/engine": "C â€” GATED (4 dev-review markers)",
+    "backend/api/app.js": "C â€” GATED (RATE_LIMITS leak + GET auth bypass)"
   }
 }
 
 ## Session Memory - 2026-06-06 Full-sweep session
 
 {
-  "work": "Gateway C→B unblock, run/status test, Gamma API fix, Gate.io cost-basis, Docker compose",
+  "work": "Gateway Câ†’B unblock, run/status test, Gamma API fix, Gate.io cost-basis, Docker compose",
   "implemented": [
     "polymarket_history.js: exported GAMMA_BASE.",
     "polymarket_paper.js: imports GAMMA_BASE + inferWinner from shared lib, deleted _inferYesResolutionPrice.",
-    "polymarket_paper.test.js: 2 new tests for checkAndCloseResolvedPositions (resolved→close, active→skip). 5/5 pass.",
+    "polymarket_paper.test.js: 2 new tests for checkAndCloseResolvedPositions (resolvedâ†’close, activeâ†’skip). 5/5 pass.",
     "api.test.js: added /api/run/status assertion. 1/1 pass.",
     "polymarket_history.js: fetchResolvedGammaMarkets now uses order=id&ascending=false, drops tag_id param. Gamma API tag_id filter returns empty for closed markets.",
     "polymarket_backtest.js: removed tagId from _fetchMarkets call (kept in opts for CLI compat).",
-    "index.ts: getCostBasisVwap(pair) method — GET /spot/my_trades VWAP; getPositions uses it for averagePrice+unrealizedPl.",
+    "index.ts: getCostBasisVwap(pair) method â€” GET /spot/my_trades VWAP; getPositions uses it for averagePrice+unrealizedPl.",
     "infra/docker/docker-compose.yml: added gateway + bot services to existing web service.",
     "infra/docker/DEPLOY.md: documented three-service stack."
   ],
   "verification": [
-    "node --test polymarket_paper.test.js polymarket_backtest.test.js run_loop.test.js api.test.js → 24/24 pass",
-    "tsc -p backend/gateway/tsconfig.json --noEmit → clean",
+    "node --test polymarket_paper.test.js polymarket_backtest.test.js run_loop.test.js api.test.js â†’ 24/24 pass",
+    "tsc -p backend/gateway/tsconfig.json --noEmit â†’ clean",
     "live backtest smoke: marketsScanned:10, gammaFallbacks:10, trades:4 (all recent ETH price markets, NO won)"
   ],
   "cautions": [
-    "Gamma API: tag_id filter does NOT work for closed markets — returns empty array. Use order=id&ascending=false instead.",
+    "Gamma API: tag_id filter does NOT work for closed markets â€” returns empty array. Use order=id&ascending=false instead.",
     "Gamma resolved markets: CLOB history is always empty for resolved tokens. All backtest series are outcomePrices fallbacks (gammaFallbacks == marketsScanned). This is expected.",
     "Gate.io getCostBasisVwap: requires live credentials + network to verify. Cost basis set to 0 + cost_basis_unavailable:true as fallback when trades endpoint unreachable.",
     "Docker bot service: paper bot only. Live mode requires explicit flag and 7-day paper gate."
@@ -356,10 +407,10 @@
 {
   "work": "Fixed polymarket backtest (was returning marketsScanned:0), hardened persistent runners, added label cleanup",
   "root_causes_diagnosed": [
-    "Gamma resolved markets: `clobTokenIds` is a JSON-encoded STRING, not array. `tokens` field is absent. `yesTokenId()` was calling Array.isArray on a string (falsy) → returned null for every market.",
+    "Gamma resolved markets: `clobTokenIds` is a JSON-encoded STRING, not array. `tokens` field is absent. `yesTokenId()` was calling Array.isArray on a string (falsy) â†’ returned null for every market.",
     "`tag_slug=crypto` returns 2020 era markets (Biden/Airbnb), which are filtered out by 90-day date filter. Must use `tag_id=21` for crypto 2023+.",
-    "CLOB price history returns 0 points for resolved tokens — need Gamma `outcomePrices` as synthetic fallback.",
-    "Winner field `market.winner` does not exist on resolved Gamma markets. Must infer from `bestAsk` (>=0.9 → YES) or `outcomePrices` JSON string."
+    "CLOB price history returns 0 points for resolved tokens â€” need Gamma `outcomePrices` as synthetic fallback.",
+    "Winner field `market.winner` does not exist on resolved Gamma markets. Must infer from `bestAsk` (>=0.9 â†’ YES) or `outcomePrices` JSON string."
   ],
   "implemented": [
     "shared/lib/polymarket_history.js: yesTokenId() handles JSON string clobTokenIds; fetchResolvedGammaMarkets uses tag_id=21 + order=end_date_iso; new inferWinner(), gammaFinalPrice() helpers.",
@@ -372,20 +423,20 @@
     "backend/api/server/routes/run_status.js + index.js: GET /api/run/status endpoint."
   ],
   "verification": [
-    "node --test tests/scripts/tests/polymarket_backtest.test.js → 12/12 pass (includes Gamma fallback integration test)",
-    "node --test tests/scripts/tests/run_loop.test.js → 6/6 pass",
-    "All modules load clean: node -e require(...) → OK"
+    "node --test tests/scripts/tests/polymarket_backtest.test.js â†’ 12/12 pass (includes Gamma fallback integration test)",
+    "node --test tests/scripts/tests/run_loop.test.js â†’ 6/6 pass",
+    "All modules load clean: node -e require(...) â†’ OK"
   ],
   "open_debt": [
-    "checkAndCloseResolvedPositions has no unit test (needs 2: resolved→close, active→skip).",
-    "_inferYesResolutionPrice in polymarket_paper.js:223 duplicates inferWinner from shared lib — should import instead.",
-    "GAMMA_BASE defined in both polymarket_paper.js and polymarket_history.js — export from shared.",
+    "checkAndCloseResolvedPositions has no unit test (needs 2: resolvedâ†’close, activeâ†’skip).",
+    "_inferYesResolutionPrice in polymarket_paper.js:223 duplicates inferWinner from shared lib â€” should import instead.",
+    "GAMMA_BASE defined in both polymarket_paper.js and polymarket_history.js â€” export from shared.",
     "Gateway grade stays C until duplication cleared."
   ],
   "cautions": [
     "Gamma API shape for resolved markets: no `tokens`, no `winner`, `clobTokenIds` is a JSON string. `outcomePrices` is a JSON string `[yesPrice, noPrice]`. `bestAsk` for YES token signals resolution direction.",
-    "CLOB /prices-history always returns 0 points for resolved tokens — Gamma outcomePrices fallback is the only data source for these markets.",
-    "tag_id=21 = crypto 2023+. tag_slug=crypto returns old 2020 prediction markets (Biden/Airbnb) — do not use."
+    "CLOB /prices-history always returns 0 points for resolved tokens â€” Gamma outcomePrices fallback is the only data source for these markets.",
+    "tag_id=21 = crypto 2023+. tag_slug=crypto returns old 2020 prediction markets (Biden/Airbnb) â€” do not use."
   ]
 }
 
@@ -624,27 +675,27 @@
 {
   "work": "C++ backtest engine integration, TUI feature map, settings module, blast-through, mass-implement",
   "findings": [
-    "C++ core already had Backtester class, StatsEngine, IndicatorEngine — none were exposed as a CLI command.",
+    "C++ core already had Backtester class, StatsEngine, IndicatorEngine â€” none were exposed as a CLI command.",
     "New FrameBacktester: Mode A (native C++ RSI/momentum signal) and Mode B (JS model.predict + C++ loop).",
     "engine: 'auto' = C++ when binary available; engine: 'js' = force JS path; sample mode always JS.",
     "Optimize and edge-decay inner loops must use engine: 'js' to avoid N binary spawns per grid/window.",
-    "normalizeCppResult was missing data_start/data_end → annualized_return: null (fixed by deriving from equity_curve).",
+    "normalizeCppResult was missing data_start/data_end â†’ annualized_return: null (fixed by deriving from equity_curve).",
     "BACKEND_CANDIDATES in paths.js needed backend/core/build/Release as first entry for new build path.",
-    "loadMarketDataSnapshot quality.ok can be false even with valid bars (minor issues from multi-file scan) — skip on bars.empty() not quality.ok.",
-    "Settings & Preferences was the only full TUI category with no CLI handler — implemented and fully wired.",
-    "tui_feature_map.md created: 57 items × 10 categories, Codex Implementation Tasks appended."
+    "loadMarketDataSnapshot quality.ok can be false even with valid bars (minor issues from multi-file scan) â€” skip on bars.empty() not quality.ok.",
+    "Settings & Preferences was the only full TUI category with no CLI handler â€” implemented and fully wired.",
+    "tui_feature_map.md created: 57 items Ã— 10 categories, Codex Implementation Tasks appended."
   ],
   "implemented": [
-    "backend/core/src/backtest/frame_backtester.hpp + .cpp — FrameBacktester (Mode A + B + runMonteCarlo)",
-    "backend/core/src/main.cpp — backtest command (--mode native | frame)",
-    "backend/core/CMakeLists.txt — frame_backtester.cpp added",
-    "shared/lib/backend_bridge.js — thin binary-call wrapper for shared/ domain",
-    "shared/lib/backtest.js — C++ dispatcher (default), normalizeCppResult with prop-firm/tail-risk/data_start/data_end",
-    "shared/lib/paths.js — BACKEND_CANDIDATES updated, DEFAULT_USER_SETTINGS added",
-    "backend/cli/commands/research/research.js — engine field in backtestOptions; engine: 'js' for optimize + edge-decay loops",
-    "config/strategies/*.yaml — engine: auto added to all 14 strategy YAMLs",
-    "backend/cli/commands/settings/settings.js — 7 subcommands, SOVEREIGN_USER_SETTINGS_PATH env override",
-    "docs/engineering/tui_feature_map.md — 57 TUI items + Codex tasks"
+    "backend/core/src/backtest/frame_backtester.hpp + .cpp â€” FrameBacktester (Mode A + B + runMonteCarlo)",
+    "backend/core/src/main.cpp â€” backtest command (--mode native | frame)",
+    "backend/core/CMakeLists.txt â€” frame_backtester.cpp added",
+    "shared/lib/backend_bridge.js â€” thin binary-call wrapper for shared/ domain",
+    "shared/lib/backtest.js â€” C++ dispatcher (default), normalizeCppResult with prop-firm/tail-risk/data_start/data_end",
+    "shared/lib/paths.js â€” BACKEND_CANDIDATES updated, DEFAULT_USER_SETTINGS added",
+    "backend/cli/commands/research/research.js â€” engine field in backtestOptions; engine: 'js' for optimize + edge-decay loops",
+    "config/strategies/*.yaml â€” engine: auto added to all 14 strategy YAMLs",
+    "backend/cli/commands/settings/settings.js â€” 7 subcommands, SOVEREIGN_USER_SETTINGS_PATH env override",
+    "docs/engineering/tui_feature_map.md â€” 57 TUI items + Codex tasks"
   ],
   "verification": [
     "node backend/cli/sovereign_cli.js bt --strategy mean_reversion.yaml --days 30 --allow-degraded --json -> backtest_engine: sovereign_cpp_core, annualized_return: 0.23",
@@ -660,12 +711,12 @@
     "no_binary": "JS fallback"
   },
   "remaining": [
-    "Data plane: backend integrity ok:false, 9 stale 1d rows — needs internet-reachable backfill",
+    "Data plane: backend integrity ok:false, 9 stale 1d rows â€” needs internet-reachable backfill",
     "Quotes: 18 stale MT5/Headway records",
-    "C++ MC worst_path/median_path: empty equity_curve [] — tracked in DEV_REVIEW P3",
-    "Cockpit quote badge stale-state fix (status.js:146) — S effort, Task 2 in tui_feature_map.md",
-    "Cockpit backtest trust downgrade (status.js:45) — S effort, Task 3",
-    "tests/integration/live_paths.test.js skeleton — S effort, Task 4"
+    "C++ MC worst_path/median_path: empty equity_curve [] â€” tracked in DEV_REVIEW P3",
+    "Cockpit quote badge stale-state fix (status.js:146) â€” S effort, Task 2 in tui_feature_map.md",
+    "Cockpit backtest trust downgrade (status.js:45) â€” S effort, Task 3",
+    "tests/integration/live_paths.test.js skeleton â€” S effort, Task 4"
   ],
   "dcs": 0.89
 }
@@ -675,11 +726,11 @@
 {
   "work": "Blast-through focused audit, mass-implement checklist pass, Settings & Preferences implementation, TUI feature map",
   "findings": [
-    "Settings & Preferences was the only full ❌ TUI category — all 7 items had no CLI handler.",
+    "Settings & Preferences was the only full âŒ TUI category â€” all 7 items had no CLI handler.",
     "getQuote() in GateIoAdapter and AlpacaAdapter returned dummy 150.0 with no warning when credentials absent.",
     "engine.js had 4 stale dev-review comment markers (cosmetic, now removed).",
-    "sovereign_cli_human_surfaces.test.js:176 asserted ok===true on integrity, which fails when data is stale — softened to structural check.",
-    "mass-implement SKILL.md lacked a planning phase — agents went straight to implementation without emitting a checklist first."
+    "sovereign_cli_human_surfaces.test.js:176 asserted ok===true on integrity, which fails when data is stale â€” softened to structural check.",
+    "mass-implement SKILL.md lacked a planning phase â€” agents went straight to implementation without emitting a checklist first."
   ],
   "implemented": [
     "settings.js module: show, timezone, layout, params, flags, alerts, reset. Persists to storage/data/user_settings.json. SOVEREIGN_USER_SETTINGS_PATH env override for tests.",
@@ -701,10 +752,10 @@
     "node backend/cli/sovereign_cli.js settings show --json -> valid JSON with all keys."
   ],
   "remaining": [
-    "Task 2: Cockpit quote badge stale-state fix (status.js:146) — S effort.",
-    "Task 3: Cockpit backtest trust downgrade (status.js:45) — S effort.",
-    "Task 4: tests/integration/live_paths.test.js skeleton — S effort.",
-    "Data gate: backend integrity ok:false, 12 stale 1d rows — needs network-reachable env for backfill.",
+    "Task 2: Cockpit quote badge stale-state fix (status.js:146) â€” S effort.",
+    "Task 3: Cockpit backtest trust downgrade (status.js:45) â€” S effort.",
+    "Task 4: tests/integration/live_paths.test.js skeleton â€” S effort.",
+    "Data gate: backend integrity ok:false, 12 stale 1d rows â€” needs network-reachable env for backfill.",
     "Quotes: 18 stale MT5/Headway records.",
     "YAML consolidation: strategy_registry.js hand-rolled parsers not yet merged to parseYamlRecursive."
   ],
@@ -1020,3 +1071,5 @@
   ],
   "dcs": 0.96
 }
+
+
