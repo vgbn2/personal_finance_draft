@@ -714,3 +714,18 @@ the user's task for this session.
 
 **Outcome:** Trimmed the repo-local skill tree down to `codex`, `claude`, and `gemini` only, and
 updated the live bootstrap docs to point at those three umbrella skills.
+
+## 2026-06-12 - Session 17: Polymarket orders + bot automation (roadmap items 1+3)
+
+**Prompt:** 9-item focus list (1 polymarket orders stuck, 2 TUI revamp, 3 bot automation w/ real-trade
+approval, 4 monolith deconstruction, 5 DNS issues + login barrier, 6 C++ backend verify, 7 RAM
+optimization, 8 deep 5-min data, 9 docker deploy + web dashboard later). Chose 1+3 first, tiny proof
+orders, commit staged batch.
+
+**Outcome:** Committed session-16 batch (c65f0bfa). Polymarket UNSTUCK: real funder wallet found
+(0x1e7955..., sig1), migrated to @polymarket/clob-client-v2 (CLOB V2 cutover 2026-04-28 had killed
+the legacy SDK), added `polymarket sell`, placed user-approved real SELL -> matched (ac21d19a).
+Alpaca 422 root-caused (fractional TIF + BTCUSDT symbols) and fixed with live paper proof
+(c385959f). Bots verified: docker bot cycling (daemon unwedged), edge-trader engine end-to-end dry
+cycle works. "DNS issues" = host egress EACCES flapping; clob retryOnError enabled (fd15e2e2).
+Full trail: workspace/handoff/2026-06-12.md.
