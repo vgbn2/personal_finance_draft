@@ -181,3 +181,146 @@ Still open from the backlog: migrate trade.js's 5 remaining direct buildTradeGat
 sites + tools/backend.js's local runBackendCommand onto the bridge (M); ingest derive-before-fetch
 ordering (1-cycle lag); notebooks/ directory itself is still untracked (the notebooks_contract test
 would fail on a fresh clone -- scope decision for the user).
+
+## Deep Blast-Through - 2026-06-11 live dirty-tree audit
+
+Scope: hard-reading audit of the current `feat/ml-onnx-section` worktree after graph refresh.
+The graph was rebuilt from `6eea7b77` to 9205 nodes / 14200 edges / 730 communities. Runtime
+verification is strong locally, but repository reproducibility is not clean because several
+tracked files depend on local-only or ignored files.
+
+### P0 - tracked C++ build depends on untracked `frame_backtester` sources
+- `backend/core/CMakeLists.txt:94` includes `src/backtest/frame_backtester.cpp`.
+- `backend/core/src/main.cpp:7` includes `backtest/frame_backtester.hpp` and calls
+  `FrameBacktester` at `main.cpp:700`, `main.cpp:715`, and `main.cpp:797`.
+- `git ls-files backend/core/src/backtest/frame_backtester.cpp backend/core/src/backtest/frame_backtester.hpp`
+  returns no tracked files. A clean clone has tracked references to files that are absent.
+- Local verification is green only because the untracked files exist in this checkout.
+  `cmake --build backend/core/build --config Release --target sovereign_wealth` builds after
+  cleaning this shell's duplicate `Path`/`PATH` environment key. The first build attempt failed
+  before compilation with MSBuild `Item has already been added. Key in dictionary: 'Path'`.
+- Required fix: either track `frame_backtester.{cpp,hpp}` with the C++ work or remove the tracked
+  references. Do not treat the current native build as clone-safe until this is closed.
+
+### P0 - full test suite is green locally but relies on untracked/ignored test assets
+- `tests/scripts/strategy_asset_classification.test.js:7` executes
+  `scripts/classify_strategy_assets.js`, but that script is untracked.
+- `workspace/FEATURE_TEST_MATRIX.md:9` and `workspace/FEATURE_REPAIR_PLAN.md:37` use
+  `scripts/mcp_stdio_probe.js` as the MCP proof command, but that script is untracked.
+- `workspace/FEATURE_TEST_MATRIX.md:16` and `workspace/FEATURE_REPAIR_PLAN.md:44` list
+  `backend/api/tests/correlation_contract.test.js`, but that test file is untracked.
+- `tests/scripts/notebooks_contract.test.js:7-27` asserts notebooks exist and are parseable.
+  `.gitignore:125` ignores `notebooks/*.ipynb`, and `git ls-files notebooks/*.ipynb` returns
+  nothing. The local notebooks make the suite pass; a clean clone would not have them.
+- Required fix: decide which of these are source/test fixtures and track them, or rewrite the
+  contracts so local-only artifacts are skipped or generated before test execution.
+
+### P1 - repo-local skill/protocol inventory is hollow for many advertised skills
+- `GEMINI.md:11` tells agents to read `.codex/skills/repo-global-protocol/SKILL.md`, but that
+  path does not exist in this checkout.
+- `.agents/skills/` contains many expected skill directories, but most have no `SKILL.md`:
+  `repo-global-protocol`, `session-orchestrator`, `rigorous-feature-testing`,
+  `multi-agent-research`, `mass-implement`, and others are empty directories in the live tree.
+- The loadable repo-local skill subset is much smaller: context-fetch, empirical-validation,
+  gsd-codebase-mapper, gsd-executor, OpenAI/Gemini/GitHub skills, and a few audit helpers.
+- Impact: boot and blast-through behavior depends on global Codex skills plus handoff files,
+  not the repo-local protocol that docs and AGENTS-style instructions advertise.
+- Required fix: either restore the missing repo-local `SKILL.md` files or update the repo
+  instructions to point only at the live `.agents/skills` subset.
+
+### P1 - Docker context hygiene is untracked while Dockerfile remains a blocked carryover
+- `.dockerignore` is untracked. It excludes `.env*`, cache, build outputs, notebooks, workspace
+  state, and generated data from Docker build context, but a clean clone would not have that
+  protection.
+- `infra/docker/Dockerfile` still has the deliberate uncommitted ONNX flag edit:
+  `-DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON`. This remains blocked on Docker Desktop verification per
+  the existing handoff.
+- Required fix: track `.dockerignore` if Docker build hygiene is considered part of the repo, and
+  keep the Dockerfile edit uncommitted until the container rebuild plus in-container `ml compare`
+  proves `onnx_runtime`.
+
+### P2 - real provider/data gaps remain behind green no-spend tests
+- `backend/scripts/data_ops/ingest_market_data/index.js:1162-1167` still returns empty objects for
+  OpenSky, Blockchair, SEC holdings, SP Global PMI, and ECB FX fetchers. Their registry entries
+  are wired at `index.js:1269-1299`, so the seam is active but provider extraction is incomplete.
+- `shared/lib/providers/tradingview.js:78` still explicitly says the screener search is stubbed.
+- These are not breaking current tests because the no-spend verification suite focuses configured
+  cache health and mocked provider contracts. They are product-scope gaps, not runtime regressions.
+
+### P2 - stale developer-review comments remain in active C++ ML code
+- `backend/core/src/ml/cnn_inference.cpp:61`, `backend/core/src/ml/model_registry.cpp:52`, and
+  `backend/core/src/ml/onnx_model.cpp:18` still contain `dev review` comments in active source.
+- These do not break compile or tests, but they keep the ML section below an A cleanliness grade
+  because the comments are unresolved design questions in production code.
+
+### Verified good in this audit
+- `graphify update .` succeeded: 9205 nodes, 14200 edges, 730 communities.
+- Modified JS syntax checks passed for API executor, status, trade, asset picker, ingestion, and
+  user settings.
+- Focused no-spend gates passed:
+  - CLI/settings/TUI/status bundle: 25/25.
+  - API/correlation/dashboard bundle: 4/4.
+  - Macro/reserves ingest contract: 2/2.
+  - Gateway no-spend contract bundle: 30/30.
+  - Strategy/prop-firm/backtest bundle: 22/22.
+  - MCP stdio probe: 17 tools listed.
+  - CLI/module-loading bundle: 16/16.
+- Full `npm.cmd test` passed: 269/269.
+- Native C++ target built locally after the duplicate environment key workaround:
+  `sovereign_core.lib` and `sovereign_wealth.exe`.
+- `status --json` reports `cache_mode:"recovered_live"`, 293 usable records, 0 stale records.
+- `backend integrity --json` remains policy-green: 84/84 cached, 0 missing, 0 stale, only
+  `RNDRUSDT` as the active exception.
+
+### Section grades from this pass
+| Section | Grade | Reason |
+|---|---:|---|
+| CLI/TUI/status/settings | B+ | Runtime tests green; current feature work is covered, but dirty-tree docs/tests depend on untracked artifacts. |
+| API/Web contracts | B+ | API correlation fallback tests pass; new correlation contract is untracked. |
+| C++ core | C | Local build passes; tracked source graph depends on untracked frame backtester files. |
+| Data/ingestion | B- | Status/integrity green; scoped snapshot handling works; provider stubs remain. |
+| Gateway/Polymarket | B | No-spend tests green; live spend still intentionally unverified. |
+| Infra/Docker | C | ONNX flag edit still unverified; `.dockerignore` is untracked. |
+| Repo workflow/skills | C- | Instructions advertise skill files that are empty or absent in the live repo. |
+| Docs/workspace truth | B- | Current ledgers are useful, but some proof commands name untracked files. |
+
+### Next cleanup move
+Close clean-clone reproducibility before any broad commit: track or deliberately demote
+`frame_backtester.{cpp,hpp}`, `scripts/classify_strategy_assets.js`, `scripts/mcp_stdio_probe.js`,
+`backend/api/tests/correlation_contract.test.js`, and the notebook fixtures/contracts. Then rerun
+`npm.cmd test` and the native C++ build from a clean clone or temporary export.
+
+### Gap Closure Plan - 2026-06-11
+- Durable plan: `workspace/DEEP_BLAST_GAP_CLOSURE_PLAN.md`.
+- Recommended order: clean-clone reproducibility first, notebook/research contract second, repo
+  protocol/skill truth third, then Docker ONNX verification, provider extraction, and C++ ML review
+  cleanup.
+- Key planning decision: do not bulk commit local research/data state. Track load-bearing source and
+  proof assets, keep heavyweight `.ipynb` and generated `storage/data/*` outputs local, and replace
+  tests that require ignored artifacts with tracked fixtures or manifests.
+
+### Update - 2026-06-11 mass-implement clean-clone repair batch
+- Implemented the Phase 1 and minimal Phase 2 reproducibility slice:
+  - staged `.dockerignore`
+  - staged `backend/core/src/backtest/frame_backtester.{cpp,hpp}`
+  - staged `scripts/classify_strategy_assets.js`
+  - staged `scripts/mcp_stdio_probe.js`
+  - staged `backend/api/tests/correlation_contract.test.js`
+  - staged `notebooks/signal_library.json`
+  - added tracked notebook fixtures under `tests/fixtures/notebooks/`
+  - rewired `test:api`, expanded `structure_contract.test.js`, and rewrote
+    `notebooks_contract.test.js` to validate tracked fixtures instead of ignored live notebooks
+- Verification:
+  - `npm.cmd run test:structure` pass
+  - `npm.cmd run test:api` pass
+  - `node --test tests/scripts/notebooks_contract.test.js` pass
+  - `node -e` RSI library probe: `35` actionable signals from tracked `notebooks/signal_library.json`
+  - `cmake --build backend/core/build --config Release --target sovereign_wealth` pass
+  - `npm.cmd test` pass `272/272`
+- Additional blocker found during verification and fixed inline:
+  - TUI boot was refreshing Supabase auth on menu startup, which made
+    `tests/scripts/tui_terminal_automation.test.js` fail under network-restricted conditions.
+  - Fix: `backend/cli/sovereign_cli.js` now reads auth locally only during TUI boot via
+    `getAuthenticatedUser({ refreshExpired: false })`; explicit auth flows still refresh normally.
+- Remaining nuance: this closes the reproducibility gap in the current staged index, but a true
+  clean-clone proof still needs commit or clean-worktree/export verification.

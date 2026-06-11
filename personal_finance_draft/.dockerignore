@@ -1,0 +1,51 @@
+# Dependencies — reinstalled inside image
+node_modules/
+backend/api/node_modules/
+backend/gateway/node_modules/
+Frontend/dashboard/node_modules/
+
+# Secrets — injected via env_file at runtime, never baked in
+.env
+.env.*
+!.env.example
+
+# Generated / cache — large, not needed at build time
+storage/data/cache/
+storage/data/ts/
+storage/backups/
+storage/logs/
+data/cache/
+data/features/
+data/models/
+data/backtests/
+graphify-out/
+
+# Build artifacts — rebuilt inside image
+build/
+backend/core/build/
+backend/cli/target/
+Frontend/dashboard/dist/
+
+# Session / workspace state — not part of the application
+workspace/
+.agent/
+.agents/
+.gsd/
+.codex/
+.claude/
+
+# Git
+.git/
+.gitignore
+
+# Dev tooling
+*.log
+.vscode/
+notebooks/
+docs/archive/
+archive/
+models/qwen-sovereign-lora/
+
+# OS
+.DS_Store
+Thumbs.db

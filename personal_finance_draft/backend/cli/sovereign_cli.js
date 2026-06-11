@@ -110,7 +110,8 @@ async function main() {
   const { runInteractiveMenu, buildStatusLine } = utils;
   const { setAuthEmail, setStatusLine } = require('./tui/engine/engine.js');
   const authLib = require('./lib/auth');
-  const user = await authLib.getAuthenticatedUser().catch(() => null);
+  // TUI boot should stay local-only; expired auth refresh belongs to explicit auth flows.
+  const user = await authLib.getAuthenticatedUser({ refreshExpired: false }).catch(() => null);
   if (user?.email) setAuthEmail(user.email);
   setStatusLine(buildStatusLine(user?.email || null));
   await runInteractiveMenu(handleCommand);
