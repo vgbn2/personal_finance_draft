@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { fetchWithRetry } = require('../../../shared/lib/runtime/fetch_retry');
+const { fetchWithRetry, retryTransient } = require('../../../shared/lib/runtime/fetch_retry');
 
 // Helper: build a minimal Response-like object
 function makeResponse(status, body = '') {
@@ -154,6 +154,84 @@ test('fetchWithRetry throws last transport error after exhausting attempts', asy
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+// ── retryTransient tests ──────────────────────────────────────────────────────
+
+test('retryTransient returns value on first success', async () => {
+  let calls = 0;
+  const fn = async () => { calls++; return 'ok'; };
+  const result = await retryTransient(fn, { attempts: 3, baseDelayMs: 0 });
+  assert.equal(result, 'ok');
+  assert.equal(calls, 1);
+});
+
+test('retryTransient retries on transient transport error then succeeds', async () => {
+  let calls = 0;
+  const fn = async () => {
+    calls++;
+    if (calls === 1) {
+      const err = new Error('connect ECONNREFUSED');
+      err.code = 'ECONNREFUSED';
+      throw err;
+    }
+    return 'success';
+  };
+  const result = await retryTransient(fn, { attempts: 3, baseDelayMs: 0 });
+  assert.equal(result, 'success');
+  assert.equal(calls, 2, 'Should have retried once');
+});
+
+test('retryTransient retries on axios-style 5xx error then succeeds', async () => {
+  let calls = 0;
+  const fn = async () => {
+    calls++;
+    if (calls === 1) {
+      const err = new Error('Request failed with status code 503');
+      err.response = { status: 503, data: { error: 'service unavailable' } };
+      throw err;
+    }
+    return { data: 'ok' };
+  };
+  const result = await retryTransient(fn, { attempts: 3, baseDelayMs: 0 });
+  assert.deepEqual(result, { data: 'ok' });
+  assert.equal(calls, 2, 'Should have retried once on 503');
+});
+
+test('retryTransient does NOT retry on axios-style 4xx error', async () => {
+  let calls = 0;
+  const fn = async () => {
+    calls++;
+    const err = new Error('Request failed with status code 401');
+    err.response = { status: 401, data: { error: 'unauthorized' } };
+    throw err;
+  };
+  await assert.rejects(
+    () => retryTransient(fn, { attempts: 3, baseDelayMs: 0 }),
+    (err) => {
+      assert.equal(err.response.status, 401);
+      return true;
+    },
+  );
+  assert.equal(calls, 1, '4xx must not be retried');
+});
+
+test('retryTransient throws after exhausting all attempts on persistent transient error', async () => {
+  let calls = 0;
+  const fn = async () => {
+    calls++;
+    const err = new Error('connect ETIMEDOUT');
+    err.code = 'ETIMEDOUT';
+    throw err;
+  };
+  await assert.rejects(
+    () => retryTransient(fn, { attempts: 2, baseDelayMs: 0 }),
+    (err) => {
+      assert.equal(err.code, 'ETIMEDOUT');
+      return true;
+    },
+  );
+  assert.equal(calls, 2, 'Should have exhausted all attempts');
 });
 
 test('fetchWithRetry does not retry on non-transport errors (e.g. AbortError)', async () => {
