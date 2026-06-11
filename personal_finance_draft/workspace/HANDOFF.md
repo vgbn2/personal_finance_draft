@@ -27,10 +27,11 @@ boot) never has to read tens of thousands of tokens of accumulated history.
   Branch is ready for the user's merge decision (feat/ml-onnx-section → main).
 - **`backend/cli/target/` hygiene — CLOSED** (committed in `8e8b4adf`).
 - **`.onnx` models latent gap — CLOSED** (binaries + serving manifest committed in `8e8b4adf`).
-- **Centralization backlog (open, M)**: migrate trade.js's 5 remaining direct
-  `buildTradeGatewayLaunch` call sites + `tools/backend.js`'s local `runBackendCommand` onto
-  the bridge. **Also open**: `notebooks/` is untracked (notebooks_contract test would fail on
-  a fresh clone — user scope decision); graphify-out stale (refresh before deep navigation).
+- **DEPRIORITIZED by user (2026-06-11, "not important, skip"):** Docker/ONNX container
+  verification (Dockerfile:46 edit stays uncommitted in the working tree — don't lose it, but
+  don't push it either), centralization backlog (trade.js launcher call sites,
+  tools/backend.js local runBackendCommand), untracked `notebooks/`, graphify-out refresh.
+  Do NOT proactively resume these; wait for the user to re-raise.
 
 - **shared/lib reorg + workspace doc archival — DONE (session 10, 2026-06-09), but READ THIS:**
   the reorg STATE.md had been claiming as "done" since 2026-06-08 was actually sitting **entirely
