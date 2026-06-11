@@ -309,11 +309,13 @@ async function registerWithCredentials(email, password) {
   }
 }
 
-async function getAuthenticatedUser() {
+async function getAuthenticatedUser(options = {}) {
+  const { refreshExpired = true } = options;
   if (!isSupabaseConfigured()) return null;
   let session = loadSession();
   if (!session) return null;
   if (isSessionValid(session)) return session.user;
+  if (!refreshExpired) return null;
   try {
     session = await refreshSession(session);
     return session ? session.user : null;

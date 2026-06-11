@@ -614,3 +614,103 @@ manifest engine corrupting ML features, 7 new failing test files, untracked load
 Fix plan approved with 4 user decisions; two Sonnet waves implemented; Fable verified + committed
 6 batches. Full suite 263/263 (first fully green). Trail: workspace/handoff/2026-06-11.md,
 DEV_REVIEW.md Focused Audit + RESOLUTION blocks.
+
+## 2026-06-11 — Session boot (session-orchestrator, re-invoked post fix-pass)
+
+Boot with state already current (sessions 11-12 closed out this same day). Repo check: only
+infra/docker/Dockerfile modified (deliberate, Docker-blocked carryover, deprioritized by user).
+HEAD = 6eea7b77 on feat/ml-onnx-section, suite 263/263. graphify refresh skipped per user
+deprioritization. Awaiting next objective.
+
+## 2026-06-11 — Continue pass (feature sweep resumed)
+
+Continuation after the broad feature sweep and status/data repair pass. Current confirmed state:
+- root status now recovers a representative global snapshot from partitioned history when the
+  canonical `last_fetch.json` is scoped
+- `backend integrity --json` is green with only `RNDRUSDT` as the active exception
+- `docs/engineering/tui_feature_map.md` is now a deliberate tracked truth artifact, and the
+  workspace feature matrix / repair plan were updated to match
+- gateway verification still stops at the no-spend wall: live execution remains unverified because
+  the wallet is unfunded and no live order has been authorized
+
+Next durable step if the user wants the final gateway proof:
+- fund the wallet and explicitly authorize one tiny live Polymarket order for verification only
+
+2026-06-11 20:43 Asia/Saigon - trade-desk and correlation repair continuation:
+- added a favourite-symbols action to the trade desk and wired the symbol picker behind the buy/sell flow
+- corrected API correlation fallback so weekly/monthly requests roll daily equity history forward when exact bars are absent
+- refreshed the feature matrix, repair plan, and prompt log to match the new evidence
+
+## 2026-06-11 - Session boot (session orchestrator)
+
+**Prompt:** `$session orcharestator`
+
+**Outcome:** Bootstrapped from repo truth in the standard continuity order: `workspace/HANDOFF.md`
+pointer -> `workspace/handoff/2026-06-11.md` -> `workspace/SESSION_MEMORY.md` ->
+`workspace/STATE.md` -> `docs/engineering/codebase_org.md` -> existing `graphify-out/GRAPH_REPORT.md`.
+Confirmed branch `feat/ml-onnx-section` at `6eea7b77`. The latest graph report is already dated
+2026-06-11; a fresh `graphify update .` was not forced because graph refresh is explicitly
+deprioritized in the current handoff. Working tree is not clean and contains active user changes,
+including the deliberate uncommitted `infra/docker/Dockerfile` carryover plus additional in-flight
+feature work across CLI, API, TUI, tests, docs, and new untracked files. Awaiting the next
+objective from this bootstrapped state.
+
+## 2026-06-11 - Deep blast-through
+
+**Prompt:** `deep blast through`
+
+**Outcome:** Refreshed graphify (`9205` nodes / `14200` edges / `730` communities) and ran a hard
+audit of the live dirty tree. Local runtime is strong: modified JS syntax checks pass, focused
+no-spend gates pass, `node scripts/mcp_stdio_probe.js` lists 17 tools, `npm.cmd test` passes
+269/269, and native `sovereign_wealth` builds after cleaning duplicate `Path`/`PATH` env keys.
+
+**Main finding:** clean-clone reproducibility is not green. Tracked build/test/docs surfaces depend
+on untracked or ignored files: `frame_backtester.{cpp,hpp}`, `scripts/classify_strategy_assets.js`,
+`scripts/mcp_stdio_probe.js`, `backend/api/tests/correlation_contract.test.js`, and notebook
+fixtures ignored by `.gitignore`. `.dockerignore` is also untracked while Docker/ONNX remains a
+blocked carryover. Persisted details to DEV_REVIEW, BLAST_THROUGH_REPORT, FEATURE_TEST_MATRIX,
+FEATURE_REPAIR_PLAN, STATE, and today's handoff.
+
+## 2026-06-11 - Deep blast gap-closure plan
+
+**Prompt:** `create a plan to fill in those gaps, do a deep research to create the best plan, most suitable plan`
+
+**Outcome:** Created `workspace/DEEP_BLAST_GAP_CLOSURE_PLAN.md` and linked it from the active
+workspace ledgers. The plan classifies each gap as track, rewrite, ignore, verify, or defer; it
+recommends clean-clone reproducibility as Phase 1 and notebook/research contract repair as Phase 2,
+with repo skill truth, Docker ONNX verification, provider extraction, and C++ ML review cleanup as
+later waves.
+
+## 2026-06-11 - Repo skill restoration
+
+**Prompt:** `use the skill mass implement, install those skill back to here`
+
+**Outcome:** Restored the missing core repo workflow skills under `skills/` and added
+`.agents/skills` mirrors so repo-local discovery can load them again. Also updated stale bootstrap
+references from dead `.codex` and `.gemini` paths to the tracked `skills/` copies.
+
+## 2026-06-11 - Mass-implement clean-clone repair batch
+
+**Prompt:** `now plan to apply fixes, then mass implement`
+
+**Outcome:** Converted `workspace/DEEP_BLAST_GAP_CLOSURE_PLAN.md` into an execution checklist and
+implemented the first reproducibility wave. Staged the load-bearing source/proof files, rewired
+`test:api`, added structure guards, moved the notebook contract to tracked fixture notebooks, and
+verified `test:structure`, `test:api`, notebook contract, full `npm.cmd test` (`272/272`), RSI
+signal library load, and the native C++ build.
+
+## 2026-06-11 - Session 17 boot (session-orchestrator)
+
+**Prompt:** `/session-orchestrator` (session boot, no task prompt yet)
+
+**Outcome:** Boot sequence completed: read HANDOFF.md pointer, handoff/2026-06-11.md (sessions
+11-16), SESSION_MEMORY.md, STATE.md, and verified git status. Tree state confirmed: session 16's
+clean-clone repair batch is STAGED but UNCOMMITTED (suite was 272/272 at staging time). Awaiting
+the user's task for this session.
+
+## 2026-06-11 - Skill tree reduction
+
+**Prompt:** `i see a lot of unecessary agent skills, reduce to only codex, claude and gemini`
+
+**Outcome:** Trimmed the repo-local skill tree down to `codex`, `claude`, and `gemini` only, and
+updated the live bootstrap docs to point at those three umbrella skills.

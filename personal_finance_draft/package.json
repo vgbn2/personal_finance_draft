@@ -16,7 +16,7 @@
     "test:prepare": "node backend/scripts/dev/seed_master_fixture.js",
     "test:core": "npm run test:prepare && ctest --test-dir build/backend/core -C Release --output-on-failure",
     "setup:mcp": "node scripts/setup_mcp.js",
-    "test:api": "node --test backend/api/tests/api.test.js backend/api/tests/dashboard_contract.test.js backend/api/tests/charts.test.js",
+    "test:api": "node --test backend/api/tests/api.test.js backend/api/tests/correlation_contract.test.js backend/api/tests/dashboard_contract.test.js backend/api/tests/charts.test.js",
     "test:contracts": "node --test backend/api/tests/api.test.js backend/api/tests/dashboard_contract.test.js tests/scripts/macro_history_helpers.test.js tests/scripts/cache_contract.test.js tests/scripts/macro_ingestion_contract.test.js tests/scripts/macro_store_contract.test.js tests/scripts/config_integrity.test.js tests/scripts/deployment_manifest_contract.test.js tests/scripts/supabase_route_contract.test.js tests/scripts/tui_search_contract.test.js",
     "test:structure": "node --test tests/scripts/structure_contract.test.js",
     "test:data": "node --test tests/scripts/tests/backfill_regression.test.js tests/scripts/lib/indicators.data_flow.test.js tests/scripts/config_integrity.test.js",

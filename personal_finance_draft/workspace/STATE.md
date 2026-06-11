@@ -297,3 +297,56 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
   `backend/cli/target/` gitignored. Still open: Docker/ONNX verification (daemon restart),
   centralization backlog (gateway launcher call sites, local runBackendCommand copy),
   untracked `notebooks/`, stale graphify-out.
+
+## Update - 2026-06-11 deep blast-through repo-hygiene audit
+
+- Runtime/no-spend health is strong locally: `npm.cmd test` passed 269/269, MCP lists 17 tools,
+  status reports `recovered_live` with 293 usable records / 0 stale, and backend integrity is
+  policy-green with only `RNDRUSDT` as the active exception.
+- Main active blocker is now **clean-clone reproducibility**, not runtime behavior. Tracked files
+  reference untracked or ignored assets: `frame_backtester.{cpp,hpp}`,
+  `scripts/classify_strategy_assets.js`, `scripts/mcp_stdio_probe.js`,
+  `backend/api/tests/correlation_contract.test.js`, and ignored notebook fixtures.
+- `workspace/DEV_REVIEW.md`, `workspace/BLAST_THROUGH_REPORT.md`,
+  `workspace/FEATURE_TEST_MATRIX.md`, and `workspace/FEATURE_REPAIR_PLAN.md` carry the full
+  evidence and grades. Close those load-bearing artifact decisions before any broad commit.
+
+## Update - 2026-06-11 deep blast gap-closure plan
+
+- Added `workspace/DEEP_BLAST_GAP_CLOSURE_PLAN.md` as the executable plan for the open gaps.
+- Plan priority is clean-clone reproducibility: track load-bearing source/proof files, rewrite the
+  notebook contract away from ignored `.ipynb` files, and add structure guards so future tests/docs
+  cannot silently depend on untracked artifacts.
+- Later waves are intentionally separated: repo protocol/skill truth, Docker ONNX verification,
+  provider extraction stubs, and C++ ML review-comment cleanup.
+
+## Update - 2026-06-11 repo skill restoration
+
+- Restored the core repo workflow skills as tracked canonical copies under `skills/`:
+  `repo-global-protocol`, `session-orchestrator`, `mass-implement`,
+  `rigorous-feature-testing`, `blast-through`, `all-skills-loader`, `context-memory`,
+  `evidence-first-testing`, `verification-gates`, `technical-debt-ledger`,
+  `subagent-contracts`, and `multi-agent-research`.
+- Added `.agents/skills/*/SKILL.md` mirrors for the same set so repo-local skill discovery can
+  expose them again in future sessions.
+- Updated stale path references in `GEMINI.md`, `docs/memory/SESSION_MEMORY.md`, and
+  `docs/operational/bootstrap.md` to point at the restored tracked `skills/` copies instead of dead
+  `.codex` or `.gemini` paths.
+
+## Update - 2026-06-11 mass-implement clean-clone repair batch
+
+- Applied the first reproducibility wave from `workspace/DEEP_BLAST_GAP_CLOSURE_PLAN.md`.
+- Staged the load-bearing source/proof assets that tracked code and docs depended on:
+  `.dockerignore`, `backend/core/src/backtest/frame_backtester.{cpp,hpp}`,
+  `scripts/classify_strategy_assets.js`, `scripts/mcp_stdio_probe.js`,
+  `backend/api/tests/correlation_contract.test.js`, and `notebooks/signal_library.json`.
+- Rewired `package.json` so `test:api` includes the correlation contract, expanded
+  `tests/scripts/structure_contract.test.js` to guard tracked clean-clone assets and local-only
+  ignores, and rewrote `tests/scripts/notebooks_contract.test.js` to validate tracked fixture
+  notebooks under `tests/fixtures/notebooks/` instead of ignored live `.ipynb` files.
+- Verification is green in the current staged state:
+  `test:structure`, `test:api`, notebook contract, full `npm.cmd test` (`272/272`), RSI signal
+  library probe (`35` actionable signals), and native `sovereign_wealth` build all passed.
+- Also fixed a verification blocker: TUI boot no longer performs a network auth refresh just to
+  paint the menu header, which removed the Supabase `EACCES` noise that had broken the TUI
+  automation harness in this environment.
