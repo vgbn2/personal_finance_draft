@@ -1,6 +1,6 @@
 # Codebase Organization Map
 
-> Canonical file and folder map for the Sovereign Trading Platform. Last updated 2026-06-06.
+> Canonical file and folder map for the Sovereign Trading Platform. Last updated 2026-06-08.
 
 ## Purpose And Truth Rules
 
@@ -78,11 +78,19 @@ Agent and workflow state: `.codex/`, `.gemini/`, `.agents/`, `.claude/`, `.gsd/`
 
 - `shared/lib/providers/`: canonical provider layer for live fetchers and history helpers.
 - `shared/lib/backfill.js`: shared backfill helper used by active ingestion.
-- `shared/lib/adapters.js`: compatibility shim only; do not grow new live fetch logic here.
+- `shared/lib/ui/`: terminal/UI helpers such as ANSI codes and glyph utilities.
+- `shared/lib/ai/`: local AI client helpers and related agent-facing utilities.
+- `shared/lib/mcp/`: MCP gate/agent access-control helpers.
+- `shared/lib/runtime/`: repo-root discovery, env loading, config parsing, loop control, and backend bridge helpers.
+- `shared/lib/market/`: market validation, quote routing, polymarket history, and related data helpers.
+- `shared/lib/market/price_action.js`: canonical SMC/divergence/session-profile indicator helper.
+- `shared/lib/brokers/capabilities.js`: broker runtime capability checks.
+- `shared/lib/supabase/`: admin client and error helpers for Supabase integration.
+- `shared/lib/compat/`: compatibility shims kept for older import paths.
 - `shared/lib/settings/user_settings.js`: canonical user-settings defaults, validation, and persistence helpers shared by CLI and TUI.
 - `shared/lib/strategy_registry.js`: strategy taxonomy, registry, asset-mode classification, and grade index helpers.
 - `shared/lib/prop_firms.js`: prop-firm profile persistence and active profile resolution.
-- Other `shared/lib/*.js` files hold cross-surface utilities for CLI/API/scripts. Prefer this folder for reusable platform logic before creating duplicate helpers.
+- Other `shared/lib/*.js` files are either thin compatibility shims or still need later category migration. Prefer the category folders before creating duplicate helpers.
 
 ### `config/`
 
@@ -148,7 +156,18 @@ Use them as evidence or outputs only. If any generated/cache root is tracked or 
 
 - `data/`: compatibility or legacy data root. Prefer `storage/data` for current runtime unless a test explicitly labels `data/cache` as fixture/compatibility input.
 - `scripts/`: root helper scripts only. New operational logic should normally go under `backend/scripts`.
-- `shared/lib/adapters.js`: compatibility shim over canonical provider/backfill modules.
+- `shared/lib/adapters.js`: root compatibility shim over `shared/lib/compat/adapters.js`.
+- `shared/lib/compat/adapters.js`: legacy provider/backfill bridge.
+- `shared/lib/ansi.js` and `shared/lib/centralized_lib/ansi.js`: legacy shims over `shared/lib/ui/ansi.js`.
+- `shared/lib/ui/ansi.js`: canonical ANSI/UI constants module.
+- `shared/lib/auth/ai_client.js`: legacy shim over `shared/lib/ai/ai_client.js`.
+- `shared/lib/ai/ai_client.js`: canonical local AI client helper.
+- `shared/lib/mcp_gate.js` and `shared/lib/mcp_agent.js`: legacy shims over `shared/lib/mcp/`.
+- `shared/lib/paths.js`, `shared/lib/env.js`, `shared/lib/config_loader.js`, `shared/lib/run_loop.js`, and `shared/lib/backend_bridge.js`: legacy shims over `shared/lib/runtime/`.
+- `shared/lib/market_validation.js`, `shared/lib/quote_router.js`, and `shared/lib/polymarket_history.js`: legacy shims over `shared/lib/market/`.
+- `shared/lib/indicators/price_action.js`: legacy shim over `shared/lib/market/price_action.js`.
+- `shared/lib/broker_capabilities.js`: legacy shim over `shared/lib/brokers/capabilities.js`.
+- `shared/lib/supabase_admin.js` and `shared/lib/supabase_errors.js`: legacy shims over `shared/lib/supabase/`.
 - `backend/cli/sovereign_cli.og.js`: historical legacy CLI archive reference only. The active CLI is `backend/cli/sovereign_cli.js`, and the `.og.js` file is no longer present in the tree.
 - `docs/archive/`: historical docs/UI; never use as current product truth without re-promoting it.
 - Stale path names to avoid in new docs/code: `cpp_core`, `web`, `web_page`, `scripts/lib`, and `scripts/cli` unless explicitly discussing old migrations.
@@ -172,7 +191,7 @@ Use them as evidence or outputs only. If any generated/cache root is tracked or 
 | Storage/data | C | `storage/data` is canonical, and `data/cache` should now be treated as explicit compatibility or fixture input rather than active runtime truth. |
 | Frontend/dashboard | C | Active source is clear, but generated `dist`, local dependencies, and legacy HTML need explicit handling. |
 | Tests | C | Focused contracts are valuable, while legacy nested tests still contain path drift. |
-| Docs/workspace | B- | State and docs are useful, but multiple architecture docs need this map to prevent stale duplication. |
+| Docs/workspace | B+ | State and docs are useful, and the canonical hub plus current feature map now keep the lower-traffic surfaces aligned. |
 | Generated/local artifacts | D as source, A as outputs | They are expected outputs, but should never be used as source-of-truth architecture. |
 
 Current repo architecture rating remains `B-` for code architecture and `C+` for whole-repo cleanliness until the open decisions above are retired.
