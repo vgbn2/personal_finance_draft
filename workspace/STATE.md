@@ -220,8 +220,8 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
 
 ## Update - 2026-06-08 Skills refresh
 
-- Refreshed the active repo-local skill inventory and confirmed the `.agents/skills` tree is present and stable in this workspace.
-- No repo-local skill files needed edits in this pass; the current loaded focus remains `repo-global-protocol` plus the task-specific `rigorous-feature-testing` workflow.
+- Refreshed the active repo-local skill inventory and trimmed the live tree to the three umbrella skills: `codex`, `claude`, and `gemini`.
+- The current loaded focus now stays on those three skills only, with the older secondary skill directories removed from both `skills/` and `.agents/skills/`.
 - This refresh is a state sync only, not a skill-content change.
 
 ## Update - 2026-06-08 Shared lib organization
@@ -322,16 +322,12 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
 
 ## Update - 2026-06-11 repo skill restoration
 
-- Restored the core repo workflow skills as tracked canonical copies under `skills/`:
-  `repo-global-protocol`, `session-orchestrator`, `mass-implement`,
-  `rigorous-feature-testing`, `blast-through`, `all-skills-loader`, `context-memory`,
-  `evidence-first-testing`, `verification-gates`, `technical-debt-ledger`,
-  `subagent-contracts`, and `multi-agent-research`.
-- Added `.agents/skills/*/SKILL.md` mirrors for the same set so repo-local skill discovery can
-  expose them again in future sessions.
-- Updated stale path references in `GEMINI.md`, `docs/memory/SESSION_MEMORY.md`, and
-  `docs/operational/bootstrap.md` to point at the restored tracked `skills/` copies instead of dead
-  `.codex` or `.gemini` paths.
+- Trimmed the repo-local skill tree down to the three umbrella skills: `codex`, `claude`, and
+  `gemini`.
+- Kept matching `SKILL.md` files in both `skills/` and `.agents/skills/` so repo-local skill
+  discovery stays consistent.
+- Updated stale path references in `AGENTS.md`, `GEMINI.md`, `docs/memory/SESSION_MEMORY.md`, and
+  `docs/operational/bootstrap.md` to point at the remaining tracked skill paths.
 
 ## Update - 2026-06-11 mass-implement clean-clone repair batch
 
@@ -350,3 +346,20 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
 - Also fixed a verification blocker: TUI boot no longer performs a network auth refresh just to
   paint the menu header, which removed the Supabase `EACCES` noise that had broken the TUI
   automation harness in this environment.
+
+## Update - 2026-06-12 session 17 - Polymarket CLOB V2 migration; first real matched order; Alpaca 422 fixed
+
+- **Polymarket order placement works again** (was dead since the 2026-04-28 CLOB V2 cutover).
+  Gateway migrated to `@polymarket/clob-client-v2`; funder corrected to the real proxy wallet
+  (`0x1e7955...`, sig1) after on-chain triage; new `polymarket sell` subcommand. Proven with a
+  real user-approved matched SELL order. Commits `ac21d19a`, `fd15e2e2`.
+- **Alpaca 422 fixed** (`c385959f`): fractional equity orders now sent TIF=day, BTCUSDT-style
+  symbols mapped to Alpaca slash pairs, Alpaca error bodies surfaced. Proven with two live paper
+  orders (one filled).
+- **Bots verified online**: docker bot cycling (daemon unwedged), edge-trader decision engine
+  green end-to-end in dry mode. Live-loop enablement deliberately left as a user decision —
+  candidate filtering needs deadline/liquidity guards first.
+- **"DNS issues" reclassified**: host-level flapping `connect EACCES` egress blocks, not DNS.
+  SDK-level retry enabled; shared fetch retry helper queued.
+- User's 9-item roadmap recorded in `workspace/handoff/2026-06-12.md`; next waves: TUI revamp,
+  monolith deconstruction, C++ verify, RAM optimization, deep 5-min data, login barrier.
