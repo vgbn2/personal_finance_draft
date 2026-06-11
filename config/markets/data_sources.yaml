@@ -41,25 +41,25 @@ sources:
     enabled: true
     providers: ["twelve", "stooq", "yahoo", "fred"]
     symbols: ["SPX", "NDX", "DJI", "VIX", "IXIC", "RUT", "DAX", "FTSE", "FCHI", "N225", "HSI"]
-    timeframes: ["5m", "15m", "30m", "1h", "4h", "1d"]
+    timeframes: ["5m", "15m", "30m", "1h", "4h", "1d","1w","1mo"]
 
   commodities:
     enabled: true
     providers: ["twelve", "stooq", "yahoo"]
     symbols: ["XAUUSD", "XAGUSD", "XCUUSD", "USOIL", "UKOIL", "NG", "WHEAT", "CORN", "SOYBN"]
-    timeframes: ["5m", "15m", "30m", "1h", "4h", "1d"]
+    timeframes: ["5m", "15m", "30m", "1h", "4h", "1d","1w","1mo"]
 
   fx:
     enabled: true
     providers: ["finnhub", "twelve", "frankfurter", "fxapi", "ecb"]
     symbols: ["EURUSD", "EURJPY", "EURGBP", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD", "USDSEK"]
-    timeframes: ["1d"]
+    timeframes: ["1d","1w","1mo"]
 
   quote_feeds:
     enabled: true
     providers: ["headway_mt5", "mt5", "webull"]
     symbols: []
-    timeframes: ["tick", "1m", "5m", "1d"]
+    timeframes: ["tick", "1m", "5m", "1d","1w","1mo"]
 
   crypto:
     enabled: true
@@ -75,7 +75,7 @@ sources:
           defi: ["UNIUSDT", "AAVEUSDT", "LINKUSDT", "INJUSDT", "MKRUSDT", "SNXUSDT", "LDOUSDT"]
           memes: ["DOGEUSDT", "SHIBUSDT", "PEPEUSDT", "WIFUSDT", "FLOKIUSDT", "BONKUSDT"]
           ai: ["FETUSDT", "RNDRUSDT", "AGIXUSDT", "OCEANUSDT", "TAOUSDT"]
-    timeframes: ["5m", "15m", "30m", "1h", "4h", "1d"]
+    timeframes: ["5m", "15m", "30m", "1h", "4h", "1d","1w","1mo"]
 
   pmi:
     enabled: true

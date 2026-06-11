@@ -4,8 +4,8 @@ const { fetchYahooBaseCandles } = require('../providers/yahoo');
 const { fetchAlpacaBaseCandles } = require('../providers/alpaca');
 
 const BARS_PER_DAY = {
-  crypto: { '1m': 1440, '5m': 288, '15m': 96, '30m': 48, '1h': 24, '4h': 6, '1d': 1 },
-  equities: { '1m': 390, '5m': 78, '15m': 26, '30m': 13, '1h': 7, '4h': 2, '1d': 1 },
+  crypto: { '1m': 1440, '5m': 288, '15m': 96, '30m': 48, '1h': 24, '4h': 6, '1d': 1, '1w': 1 / 7, '1mo': 1 / 30 },
+  equities: { '1m': 390, '5m': 78, '15m': 26, '30m': 13, '1h': 7, '4h': 2, '1d': 1, '1w': 1 / 7, '1mo': 1 / 30 },
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
