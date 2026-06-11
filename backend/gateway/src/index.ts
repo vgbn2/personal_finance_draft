@@ -807,6 +807,7 @@ Commands:
                                        Show public price history for one token id
   polymarket paper-run                 Run paper-trading cycle without submitting CLOB orders
   polymarket buy <token> <qty> [price] Submit a live buy order for one token id
+  polymarket sell <token> <qty> [price] Submit a live sell order for one token id
                                        Add --preflight to sign and validate without posting
                                        Add --tick-size <0.001> to reuse a known orderbook tick size
   polymarket derive-creds              Derive L2 API credentials from POLYMARKET_PRIVATE_KEY
@@ -917,13 +918,13 @@ class PolymarketAdapter implements BrokerAdapter {
 
     let signedOrder: any;
     try {
-      const { Side } = await import('@polymarket/clob-client');
+      const { Side } = await import('@polymarket/clob-client-v2');
       signedOrder = await client.createOrder({
         tokenID: order.instrumentId,
         price,
         size: order.quantity,
         side: order.side === OrderSide.BUY ? Side.BUY : Side.SELL,
-      }, tickSize);
+      }, { tickSize: tickSize as any });
     } catch (error: any) {
       throw buildPolymarketOrderError('order signing', error);
     }
@@ -966,7 +967,7 @@ class PolymarketAdapter implements BrokerAdapter {
 
     let resp: any;
     try {
-      const { OrderType } = await import('@polymarket/clob-client');
+      const { OrderType } = await import('@polymarket/clob-client-v2');
       resp = await client.postOrder(signedOrder, OrderType.GTC) as any;
     } catch (error: any) {
       throw buildPolymarketOrderError('order submit', error);
@@ -1811,7 +1812,7 @@ async function fetchPolymarketPriceHistory(tokenId: string, interval = '1h', fid
   }
 }
 
-async function submitPolymarketBuy(tokenId: string, quantity: number, price?: number, tickSizeOverride?: string): Promise<any> {
+async function submitPolymarketOrder(tokenId: string, quantity: number, price?: number, tickSizeOverride?: string, side: 'buy' | 'sell' = 'buy'): Promise<any> {
   if (!tokenId) return { ok: false, error: 'Missing token id' };
   if (!Number.isFinite(quantity) || quantity <= 0) return { ok: false, error: 'Quantity must be a positive number' };
   const adapter = new PolymarketAdapter();
@@ -1824,9 +1825,10 @@ async function submitPolymarketBuy(tokenId: string, quantity: number, price?: nu
   try {
     const result = await adapter.placeOrder({
       instrumentId: tokenId,
-      side: OrderSide.BUY,
+      side: side === 'sell' ? OrderSide.SELL : OrderSide.BUY,
       quantity,
       price: typeof price === 'number' && Number.isFinite(price) ? price : undefined,
+      tickSizeOverride: String(tickSizeOverride || '').trim() || undefined,
       type: 'limit',
       status: OrderStatus.PROPOSED,
       timestamp: new Date(),
@@ -1834,6 +1836,7 @@ async function submitPolymarketBuy(tokenId: string, quantity: number, price?: nu
     return {
       ok: true,
       tokenId,
+      side,
       quantity,
       price: typeof price === 'number' && Number.isFinite(price) ? price : null,
       signerAddress,
@@ -1847,6 +1850,7 @@ async function submitPolymarketBuy(tokenId: string, quantity: number, price?: nu
     return {
       ok: false,
       tokenId,
+      side,
       quantity,
       price: priceField,
       signerAddress,
@@ -1857,7 +1861,7 @@ async function submitPolymarketBuy(tokenId: string, quantity: number, price?: nu
   }
 }
 
-async function preflightPolymarketBuy(tokenId: string, quantity: number, price?: number, tickSizeOverride?: string): Promise<any> {
+async function preflightPolymarketOrder(tokenId: string, quantity: number, price?: number, tickSizeOverride?: string, side: 'buy' | 'sell' = 'buy'): Promise<any> {
   if (!tokenId) return { ok: false, error: 'Missing token id' };
   if (!Number.isFinite(quantity) || quantity <= 0) return { ok: false, error: 'Quantity must be a positive number' };
   const adapter = new PolymarketAdapter();
@@ -1870,7 +1874,7 @@ async function preflightPolymarketBuy(tokenId: string, quantity: number, price?:
   try {
     const prepared = await adapter.prepareOrder({
       instrumentId: tokenId,
-      side: OrderSide.BUY,
+      side: side === 'sell' ? OrderSide.SELL : OrderSide.BUY,
       quantity,
       price: typeof price === 'number' && Number.isFinite(price) ? price : undefined,
       tickSizeOverride: String(tickSizeOverride || '').trim() || undefined,
@@ -1881,6 +1885,7 @@ async function preflightPolymarketBuy(tokenId: string, quantity: number, price?:
     return {
       ok: true,
       tokenId,
+      side,
       quantity,
       price: typeof price === 'number' && Number.isFinite(price) ? price : null,
       preflight: {
@@ -1897,6 +1902,7 @@ async function preflightPolymarketBuy(tokenId: string, quantity: number, price?:
     return {
       ok: false,
       tokenId,
+      side,
       quantity,
       price: priceField,
       signerAddress,
@@ -2382,19 +2388,19 @@ export async function main() {
         else console.error(`${ansi.red}paper-run failed: ${diagnostic.error}${ansi.reset}`);
         process.exit(1);
       }
-    } else if (sub === 'buy') {
+    } else if (sub === 'buy' || sub === 'sell') {
       const tokenId = args[2];
       const quantity = Number(args[3]);
       const price = args[4] !== undefined ? Number(args[4]) : undefined;
       const tickSizeOverride = parseOptionValue(args.slice(2), '--tick-size');
       const preflightOnly = args.includes('--preflight');
       const placed = preflightOnly
-        ? await preflightPolymarketBuy(String(tokenId || ''), quantity, price, tickSizeOverride)
-        : await submitPolymarketBuy(String(tokenId || ''), quantity, price, tickSizeOverride);
+        ? await preflightPolymarketOrder(String(tokenId || ''), quantity, price, tickSizeOverride, sub)
+        : await submitPolymarketOrder(String(tokenId || ''), quantity, price, tickSizeOverride, sub);
       if (useJson) {
         console.log(JSON.stringify(placed));
       } else if (!placed.ok) {
-        console.error(`${ansi.red}${preflightOnly ? 'buy preflight failed' : 'buy failed'}: ${placed.error}${ansi.reset}`);
+        console.error(`${ansi.red}${preflightOnly ? `${sub} preflight failed` : `${sub} failed`}: ${placed.error}${ansi.reset}`);
         if (placed.signerAddress || placed.funderAddress || placed.signatureType !== undefined) {
           console.error(`  signer=${placed.signerAddress ?? 'none'} funder=${placed.funderAddress ?? 'none'} sigType=${placed.signatureType ?? 'unset'}`);
         }
@@ -2406,11 +2412,11 @@ export async function main() {
         console.log(`${ansi.green}Order preflight passed.${ansi.reset} token=${placed.tokenId} qty=${placed.quantity} price=${placed.price ?? 'market_ref'}`);
         console.log(`  signer=${placed.preflight?.signerAddress ?? 'none'} funder=${placed.preflight?.funderAddress ?? 'none'} sigType=${placed.preflight?.signatureType ?? 'unset'} tickSize=${placed.preflight?.tickSize ?? 'n/a'} signed=${placed.preflight?.signed ? 'yes' : 'no'}`);
       } else {
-        console.log(`${ansi.green}Order submitted.${ansi.reset} token=${placed.tokenId} qty=${placed.quantity} price=${placed.price ?? 'market_ref'}`);
+        console.log(`${ansi.green}${sub === 'sell' ? 'Sell order' : 'Order'} submitted.${ansi.reset} token=${placed.tokenId} qty=${placed.quantity} price=${placed.price ?? 'market_ref'}`);
         console.log(`  orderId=${placed.result?.orderId} status=${placed.result?.status}`);
       }
     } else {
-      console.error(`Unknown polymarket subcommand: ${sub}. Available: portfolio, balance, debug, auth-health, modes, investigate, probe, topology, trace, derive-creds, markets, orderbook, price-history, paper-run, buy`);
+      console.error(`Unknown polymarket subcommand: ${sub}. Available: portfolio, balance, debug, auth-health, modes, investigate, probe, topology, trace, derive-creds, markets, orderbook, price-history, paper-run, buy, sell`);
       process.exit(1);
     }
   } else if (command === 'bot') {
