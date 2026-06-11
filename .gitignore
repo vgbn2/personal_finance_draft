@@ -115,6 +115,9 @@ data/*.db
 storage/data/*.csv
 storage/data/*.bin
 storage/data/cache/
+storage/data/ml/
+storage/data/paper_trading/
+storage/data/polymarket_history/
 storage/data/ts/
 backend/scripts/data/cache/
 storage/db/*.sqlite3
@@ -124,6 +127,7 @@ storage/exports/*.csv
 models/*.onnx
 notebooks/*.ipynb
 Frontend/dashboard/*.zip
+__pycache__/
 
 # Compiled Binaries
 *.exe
