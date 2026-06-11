@@ -215,18 +215,11 @@ tracked files depend on local-only or ignored files.
 - Required fix: decide which of these are source/test fixtures and track them, or rewrite the
   contracts so local-only artifacts are skipped or generated before test execution.
 
-### P1 - repo-local skill/protocol inventory is hollow for many advertised skills
-- `GEMINI.md:11` tells agents to read `.codex/skills/repo-global-protocol/SKILL.md`, but that
-  path does not exist in this checkout.
-- `.agents/skills/` contains many expected skill directories, but most have no `SKILL.md`:
-  `repo-global-protocol`, `session-orchestrator`, `rigorous-feature-testing`,
-  `multi-agent-research`, `mass-implement`, and others are empty directories in the live tree.
-- The loadable repo-local skill subset is much smaller: context-fetch, empirical-validation,
-  gsd-codebase-mapper, gsd-executor, OpenAI/Gemini/GitHub skills, and a few audit helpers.
-- Impact: boot and blast-through behavior depends on global Codex skills plus handoff files,
-  not the repo-local protocol that docs and AGENTS-style instructions advertise.
-- Required fix: either restore the missing repo-local `SKILL.md` files or update the repo
-  instructions to point only at the live `.agents/skills` subset.
+### P1 - repo-local skill inventory should stay trimmed to the three umbrella skills
+- `GEMINI.md:11` now points at `skills/gemini/SKILL.md`, which matches the live repo-local bootstrap path.
+- The repo-local skill tree has been reduced to `codex`, `claude`, and `gemini` only; the older secondary skill directories were removed from both `skills/` and `.agents/skills/`.
+- Impact: bootstrap and blast-through behavior should rely on the three umbrella skills plus handoff files, not a fragmented skill set.
+- Required fix: keep the docs and bootstrap paths pinned to the three umbrella skills only.
 
 ### P1 - Docker context hygiene is untracked while Dockerfile remains a blocked carryover
 - `.dockerignore` is untracked. It excludes `.env*`, cache, build outputs, notebooks, workspace
@@ -324,3 +317,39 @@ Close clean-clone reproducibility before any broad commit: track or deliberately
     `getAuthenticatedUser({ refreshExpired: false })`; explicit auth flows still refresh normally.
 - Remaining nuance: this closes the reproducibility gap in the current staged index, but a true
   clean-clone proof still needs commit or clean-worktree/export verification.
+
+## Focused Audit - 2026-06-12 (session 17 blast-through: gateway change surface + gated carryovers)
+
+Scope: backend/gateway/src (CLOB V2 migration, polymarket sell, Alpaca 422 fixes), shared/lib/runtime
+bridge, backend/api/app.js (gated carryover -- GET-auth question RESOLVED this pass). Evidence: full
+suite 272/272 (52.7s) AFTER all session changes; gateway tsc clean; live matched Polymarket order +
+2 live Alpaca paper orders as behavioral proof. DCS 0.95.
+
+### Findings (reviewer decisions required)
+
+| # | Severity | File:Line | Finding | Required decision / gate |
+|---|---|---|---|---|
+| 1 | High | backend/api/app.js:128 + server/routes/system/kill_switch.js:6 | Unauthenticated GET /api/kill-switch?command=<engage|release|status> reaches the C++ kill switch -- state-changing safety control on the exposed web port. Route is in neither the public list nor PROTECTED_GET_ROUTES. | Add /api/kill-switch to PROTECTED_GET_ROUTES (one line) or make engage/release POST-only. Fold into roadmap item 5 (login barrier). Gate: app.js stays GATED until landed. |
+| 2 | High | backend/gateway/src/index.ts:723-748 | ExecutionGateway.execute() swallows live order failures: logs to stderr, sets status FAILED, exits 0. Bridge then reports ok:true (proven live: 422 probes returned ok:true + status failed). Callers cannot distinguish success from failure. | Decide envelope: non-zero exit on failed execution vs ok:false JSON. Then update bridge consumers. |
+| 3 | High (live path) | backend/gateway/src/cycle.ts:207-227, 405-437 | FOK intent silently lost: timeInForce:'FOK' is not a UserOrder field; postOrder(signed) defaults GTC. Unmatched GTC sells REST on the book while code treats them as failed and keeps the position -> dangling live orders + duplicate-sell stacking on retry. Pre-existing; relevant before any liveTrading enable. | Use postOrder(signed, OrderType.FAK) or createAndPostMarketOrder(FOK), cancel on unmatched. BLOCKS liveTrading enablement. |
+| 4 | Medium | backend/gateway/src (classifyPolymarketGatewayError) | CLOB business rejections (e.g. the V2 "invalid order version") classified as invalid_token with misleading suggestion. | Add explicit categories for CLOB 400-with-error-body rejections. |
+| 5 | Medium | backend/gateway/src/index.ts:2267-2269 | polymarket derive-creds prints L2 API secret/passphrase plaintext to stdout (by design for setup; lands in any captured log). | Confirm by-design or add --reveal flag + masked default. |
+| 6 | Low | backend/gateway/src (bot health) | pUSD balance printed in micro-units ("9305985.00 pUSD"). | Divide by 1e6 in display. |
+| 7 | Note | bot cycle engine | Top dry-run pick was a past-deadline market at 78.9% claimed edge (resolution-lag trap). | Candidate filter needs endDate/liquidity guards before liveTrading. |
+
+### Centralization Backlog (additions)
+
+| Pattern | Files (count) | Proposed unit | Effort | Grade impact |
+|---|---|---|---|---|
+| Raw fetch without transport retry (host egress flaps connect EACCES) | gateway index.ts gamma/data-api fetches, polymarket_paper.js, CLI fetch sites (3+) | shared/lib/runtime/fetch_retry.js (2-3 attempts, expo backoff on connect-class errors) | M | gateway error-handling B->A |
+| submitPolymarketOrder / preflightPolymarketOrder ~80% duplicated | index.ts (2 fns) | single prepare+optionally-post helper | S | drift containment |
+| Hand-rolled L2 HMAC headers in clob_factory authedGet | clob_factory.ts vs clob-client-v2 createL2Headers/updateBalanceAllowance exports | adopt SDK helpers, drop local copy | S | drift containment |
+| (carryover, user-deprioritized) trade.js 5 launcher call sites + tools/backend.js local runBackendCommand | 2 files | bridge | M | unchanged |
+
+### Orphans / parity
+- Orphan: AlpacaAdapter.placeBracketOrder (index.ts:568) -- no caller anywhere (below >3 threshold; note only).
+- Parity nit: bot unknown-subcommand error lists "cycle, status, run, sell, config" but omits implemented "health".
+
+### Resolved this pass
+- app.js GET-auth question (carried since 2026-06-06): design is public-read + token-write + PROTECTED_GET_ROUTES; verified sound EXCEPT finding #1. /api/supabase/config exposes URL only (no keys) -- acceptable.
+- Stub scan: no new stubs on reachable paths. Dev-marker scan: gateway src clean (0 markers).
