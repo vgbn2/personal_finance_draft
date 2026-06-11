@@ -15,6 +15,41 @@ const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/persistence_bridge');
 
+// ─── Gamma end-date helper ────────────────────────────────────────────────────
+
+const GAMMA_API_CYCLE = 'https://gamma-api.polymarket.com';
+
+/**
+ * Returns the market's endDateIso (YYYY-MM-DD) from Gamma, or null when the
+ * field is absent or the request fails.  slug format: "<eventSlug>--<marketSlug>"
+ */
+async function fetchMarketEndDateIso(slug: string): Promise<string | null> {
+  try {
+    const parts = slug.split('--');
+    const eventSlug  = parts[0];
+    const marketSlug = parts.slice(1).join('--');
+    const res = await fetch(`${GAMMA_API_CYCLE}/events?slug=${encodeURIComponent(eventSlug)}`);
+    if (!res.ok) return null;
+    const body = await res.json();
+    const events: any[] = Array.isArray(body) ? body : body?.data ?? [];
+    for (const event of events) {
+      const markets: any[] = Array.isArray(event.markets) ? event.markets : [];
+      const market = markets.find(
+        (m: any) => m.marketSlug === marketSlug || m.slug === marketSlug,
+      );
+      if (market) {
+        // Prefer endDateIso (YYYY-MM-DD string); fall back to endDate ISO datetime.
+        const raw: unknown = market.endDateIso ?? market.endDate ?? null;
+        if (typeof raw === 'string' && raw) return raw.slice(0, 10); // normalise to YYYY-MM-DD
+        return null;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Truth Machine ─────────────────────────────────────────────────────────────
 
 interface TruthMachineBet {
@@ -204,20 +239,31 @@ export async function runCycle(args: string[]): Promise<CycleResult & { skipped?
 
           if (live && client) {
             try {
+              const { OrderType } = await import('@polymarket/clob-client-v2');
               const signed = await client.createOrder({
-                tokenID:        pos.tokenId,
-                price:          fairPrice,
-                size:           pos.shares,
-                side:           'SELL',
-                timeInForce:    'FOK',
+                tokenID: pos.tokenId,
+                price:   fairPrice,
+                size:    pos.shares,
+                side:    'SELL',
               });
-              const resp = await client.postOrder(signed);
+              const resp = await client.postOrder(signed, OrderType.FOK);
               if (resp?.status === 'matched') {
                 sellsExecuted++;
                 await persistence.logOrder({ instrumentId: pos.tokenId, side: 'sell', quantity: pos.shares, price: fairPrice, type: 'market', status: 'filled', timestamp: new Date() }, 'polymarket', { slug: pos.slug, positionId: pos.positionId });
                 state.positions = state.positions.filter(p => p.positionId !== pos.positionId);
               } else {
-                errors.push(`FOK sell unmatched for ${pos.slug}`);
+                // FOK not matched — server should auto-cancel, but defensively attempt cancel if orderID present
+                const orderId: string | undefined = resp?.orderID ?? resp?.order_id;
+                let cancelNote = '';
+                if (orderId) {
+                  try {
+                    await client.cancelOrder({ orderID: orderId });
+                    cancelNote = '; cancel attempted: ok';
+                  } catch (ce: any) {
+                    cancelNote = `; cancel attempted: failed (${ce.message})`;
+                  }
+                }
+                errors.push(`FOK sell unmatched for ${pos.slug} (status: ${resp?.status ?? 'unknown'})${cancelNote}`);
               }
             } catch (e: any) {
               errors.push(`sell order failed for ${pos.slug}: ${e.message}`);
@@ -288,6 +334,18 @@ export async function runCycle(args: string[]): Promise<CycleResult & { skipped?
             continue;
           }
 
+          // Deadline guard — skip markets whose end date has already passed.
+          // endDateIso is fetched from Gamma as YYYY-MM-DD; compared to today's date string.
+          // If the field is absent (null), the market is unknown-deadline: do NOT skip.
+          const endDateIso = await fetchMarketEndDateIso(bet.slug);
+          if (endDateIso !== null) {
+            const todayIso = new Date().toISOString().slice(0, 10);
+            if (endDateIso < todayIso) {
+              skipped.push(`${bet.slug} — past deadline (${endDateIso})`);
+              continue;
+            }
+          }
+
           const tokenId = side === 'YES' ? info.yesTokenId : info.noTokenId;
           const shares  = config.positionSizeUsdc / price;
           const positionId = `${tokenId}_${Date.now()}`;
@@ -311,14 +369,14 @@ export async function runCycle(args: string[]): Promise<CycleResult & { skipped?
 
           if (live && client) {
             try {
+              const { OrderType: OrderTypeBuy } = await import('@polymarket/clob-client-v2');
               const signed = await client.createOrder({
-                tokenID:     tokenId,
+                tokenID: tokenId,
                 price,
-                size:        shares,
-                side:        'BUY',
-                timeInForce: 'FOK',
+                size:    shares,
+                side:    'BUY',
               });
-              const resp = await client.postOrder(signed);
+              const resp = await client.postOrder(signed, OrderTypeBuy.FOK);
               if (resp?.status === 'matched') {
                 fillPrice = Number(resp.price ?? price);
                 filled    = true;
@@ -415,14 +473,26 @@ export async function runForceSell(positionId: string, args: string[]): Promise<
   }
 
   try {
+    const { OrderType } = await import('@polymarket/clob-client-v2');
     const client = await createClobClient({ withCreds: true });
     const priceResp = await client.getPrice(pos.tokenId, 'BUY');
     const fairPrice = Number(priceResp?.price ?? priceResp ?? 0);
-    const signed    = await client.createOrder({ tokenID: pos.tokenId, price: fairPrice, size: pos.shares, side: 'SELL', timeInForce: 'FOK' });
-    const resp      = await client.postOrder(signed);
+    const signed    = await client.createOrder({ tokenID: pos.tokenId, price: fairPrice, size: pos.shares, side: 'SELL' });
+    const resp      = await client.postOrder(signed, OrderType.FOK);
 
     if (resp?.status !== 'matched') {
-      return { ok: false, error: `FOK sell unmatched (status: ${resp?.status})` };
+      // Defensively attempt cancel in case the FOK order rested (server should auto-cancel)
+      const orderId: string | undefined = resp?.orderID ?? resp?.order_id;
+      let cancelNote = '';
+      if (orderId) {
+        try {
+          await client.cancelOrder({ orderID: orderId });
+          cancelNote = '; cancel attempted: ok';
+        } catch (ce: any) {
+          cancelNote = `; cancel attempted: failed (${ce.message})`;
+        }
+      }
+      return { ok: false, error: `FOK sell unmatched (status: ${resp?.status ?? 'unknown'})${cancelNote}` };
     }
 
     const pnl = (fairPrice - pos.fillPrice) * pos.shares;
