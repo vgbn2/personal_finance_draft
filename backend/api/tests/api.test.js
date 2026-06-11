@@ -3,6 +3,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
+// Set a known token before app.js is required so the PROTECTED_GET_ROUTES
+// auth gate operates with a non-empty API_TOKEN during this test suite.
+// Tests that exercise unauthenticated access deliberately omit the header.
+const TEST_API_TOKEN = 'test-sentinel-token-api-suite';
+process.env.SOVEREIGN_API_TOKEN = TEST_API_TOKEN;
+
 const { server, io, DEFAULT_SNAPSHOT } = require('../app');
 
 const BACKEND_HISTORY_FIXTURE = path.join(__dirname, '../../..', 'tests', 'fixtures', 'backend_history_sample.json');
@@ -90,6 +96,30 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.equal(correlationPayload.values.length, 3);
     assert.equal(correlationPayload.values[0][0], 1);
 
+    const weeklyCorrelation = await fetch(`${baseUrl}/api/correlation?${query({
+      symbols: 'AAPL,MSFT,SPY',
+      timeframe: '1w',
+      max_bars: '252',
+      input: BACKEND_HISTORY_FIXTURE,
+    })}`);
+    assert.equal(weeklyCorrelation.status, 200);
+    const weeklyPayload = await weeklyCorrelation.json();
+    assert.equal(weeklyPayload.type, 'correlation_matrix');
+    assert.deepEqual(weeklyPayload.labels, ['AAPL', 'MSFT', 'SPY']);
+    assert.ok(weeklyPayload.sample_size > 0);
+
+    const monthlyCorrelation = await fetch(`${baseUrl}/api/correlation?${query({
+      symbols: 'AAPL,MSFT,SPY',
+      timeframe: '1mo',
+      max_bars: '252',
+      input: BACKEND_HISTORY_FIXTURE,
+    })}`);
+    assert.equal(monthlyCorrelation.status, 200);
+    const monthlyPayload = await monthlyCorrelation.json();
+    assert.equal(monthlyPayload.type, 'correlation_matrix');
+    assert.deepEqual(monthlyPayload.labels, ['AAPL', 'MSFT', 'SPY']);
+    assert.ok(monthlyPayload.sample_size > 0);
+
     const universe = await fetch(`${baseUrl}/api/universe?${query({
       max_entries: '5',
       input: BACKEND_HISTORY_FIXTURE,
@@ -176,5 +206,23 @@ test('web API exposes backend health, data summary, and correlation', async () =
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
     }
+  }
+});
+
+test('GET /api/kill-switch requires X-Sovereign-Token and rejects unauthenticated callers', async () => {
+  const baseUrl = await listen();
+  try {
+    // 2a: unauthenticated request must be rejected with 401
+    const unauthenticated = await fetch(`${baseUrl}/api/kill-switch?command=status`);
+    assert.equal(unauthenticated.status, 401, 'kill-switch without token must return 401');
+
+    // 2b: authenticated request must NOT return 401 (200 or 503 are both acceptable
+    //     since the C++ backend may be unavailable in the test environment)
+    const authenticated = await fetch(`${baseUrl}/api/kill-switch?command=status`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
+    assert.notEqual(authenticated.status, 401, 'kill-switch with valid token must not return 401');
+  } finally {
+    await close();
   }
 });

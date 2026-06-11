@@ -56,6 +56,7 @@ const PROTECTED_GET_ROUTES = new Set([
   '/api/cache/list',
   '/api/config',
   '/api/bot/status',
+  '/api/kill-switch',
 ]);
 
 function setSecurityHeaders(res, origin) {
