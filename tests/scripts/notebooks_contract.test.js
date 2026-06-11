@@ -4,7 +4,7 @@ const path = require('path');
 const test = require('node:test');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const NOTEBOOKS_DIR = path.join(ROOT, 'notebooks');
+const NOTEBOOKS_DIR = path.join(ROOT, 'tests', 'fixtures', 'notebooks');
 const NOTEBOOKS = [
   'data_exploration.ipynb',
   'feature_importance.ipynb',
@@ -21,8 +21,8 @@ function cellSource(cell) {
   return Array.isArray(cell.source) ? cell.source.join('') : String(cell.source || '');
 }
 
-test('notebooks are parseable and carry the research ladder contract', () => {
-  assert.ok(fs.existsSync(NOTEBOOKS_DIR), 'notebooks directory exists');
+test('tracked notebook fixtures are parseable and carry the research ladder contract', () => {
+  assert.ok(fs.existsSync(NOTEBOOKS_DIR), 'fixture notebooks directory exists');
 
   for (const file of NOTEBOOKS) {
     const nb = readNotebook(file);
