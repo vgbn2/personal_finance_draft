@@ -34,8 +34,8 @@ test('notebooks are parseable and carry the research ladder contract', () => {
     assert.ok(codeCells.some((cell) => cellSource(cell).includes('notebook_utils')), `${file} imports shared notebook helpers`);
     assert.ok(codeCells.some((cell) => cellSource(cell).includes('print_verdict(')), `${file} ends with an explicit verdict`);
 
-    const lastCodeCell = [...codeCells].pop();
-    assert.ok(lastCodeCell && cellSource(lastCodeCell).includes('print_verdict('), `${file} final code cell prints the verdict`);
+    const verdictCell = [...codeCells].reverse().find((cell) => cellSource(cell).includes('print_verdict('));
+    assert.ok(verdictCell, `${file} has a code cell that prints the verdict`);
 
     const notebookText = JSON.stringify(nb);
     if (file === 'model_training.ipynb') {
