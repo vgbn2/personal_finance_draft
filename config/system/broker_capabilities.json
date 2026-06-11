@@ -1,0 +1,42 @@
+{
+  "alpaca": {
+    "paper": true,
+    "live": true,
+    "requires_local_secret": true,
+    "requires_local_terminal": false,
+    "cloud_compute_allowed": true,
+    "cloud_live_execution_allowed": false
+  },
+  "gateio": {
+    "paper": false,
+    "live": true,
+    "requires_local_secret": true,
+    "requires_local_terminal": false,
+    "cloud_compute_allowed": true,
+    "cloud_live_execution_allowed": false
+  },
+  "mt5": {
+    "paper": true,
+    "live": true,
+    "requires_local_secret": true,
+    "requires_local_terminal": true,
+    "cloud_compute_allowed": true,
+    "cloud_live_execution_allowed": false
+  },
+  "polymarket": {
+    "paper": true,
+    "live": true,
+    "requires_local_secret": true,
+    "requires_local_terminal": false,
+    "cloud_compute_allowed": true,
+    "cloud_live_execution_allowed": false
+  },
+  "supabase": {
+    "paper": false,
+    "live": false,
+    "requires_local_secret": true,
+    "requires_local_terminal": false,
+    "cloud_compute_allowed": false,
+    "cloud_live_execution_allowed": false
+  }
+}

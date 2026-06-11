@@ -1,0 +1,112 @@
+# Sovereign Indicator Manifest
+# Centralized definition of all technical indicators and their parameters.
+# Used by both JS and C++ layers for feature extraction and optimization.
+
+indicators:
+  returns_fast:
+    id: return_fast
+    method: returns
+    input_type: closes
+    params:
+      period: returnFast
+    output_key: return_fast
+
+  returns_slow:
+    id: return_slow
+    method: returns
+    input_type: closes
+    params:
+      period: returnSlow
+    output_key: return_slow
+
+  volatility:
+    id: volatility
+    method: rollingVolatility
+    input_type: closes
+    params:
+      period: volatility
+    output_key: volatility
+
+  rsi:
+    id: rsi
+    method: rsi
+    input_type: closes
+    params:
+      period: rsi
+    output_key: rsi
+
+  macd:
+    id: macd
+    method: macd
+    input_type: closes
+    output_key: macd
+
+  atr:
+    id: atr
+    method: atr
+    input_type: window
+    params:
+      period: atr
+    output_key: atr
+
+  bollinger:
+    id: bollinger
+    method: bollingerBands
+    input_type: closes
+    params:
+      period: bollinger
+    output_keys:
+      upper: bollinger_upper
+      middle: bollinger_middle
+      lower: bollinger_lower
+
+  smc:
+    id: smc
+    method: calculateSmartMoneyConceptSignals
+    input_type: window
+    params:
+      structureStrength: structure
+    output_keys:
+      score: smc_score
+      bias: smc_bias
+      signals.bullish_structure_break: smc_bullish_structure_break
+      signals.bearish_structure_break: smc_bearish_structure_break
+      signals.bullish_liquidity_sweep: smc_bullish_liquidity_sweep
+      signals.bearish_liquidity_sweep: smc_bearish_liquidity_sweep
+      signals.bullish_fair_value_gap: smc_bullish_fair_value_gap
+      signals.bearish_fair_value_gap: smc_bearish_fair_value_gap
+
+  divergence:
+    id: divergence
+    method: calculateDivergenceSignals
+    input_type: window
+    params:
+      structureStrength: structure
+      rsiPeriod: divergence
+    output_keys:
+      score: divergence_score
+      bullish: divergence_bullish
+      bearish: divergence_bearish
+      rsi.bullish: rsi_bullish_divergence
+      rsi.bearish: rsi_bearish_divergence
+      macd.bullish: macd_bullish_divergence
+      macd.bearish: macd_bearish_divergence
+
+  session_volume:
+    id: session_volume_profile
+    method: calculateSessionVolumeProfile
+    input_type: window
+    params:
+      binCount: sessionBins
+      minimumBars: sessionMinimumBars
+      sessionStartHour: sessionStartHour
+      timezoneOffsetMinutes: sessionTimezoneOffsetMinutes
+    output_keys:
+      session_key: session_volume_profile_session_key
+      poc_price: session_volume_profile_poc
+      value_area_high: session_volume_profile_vah
+      value_area_low: session_volume_profile_val
+      vwap: session_volume_profile_vwap
+      position: session_volume_profile_position
+      imbalance: session_volume_profile_imbalance
+      acceptance: session_volume_profile_acceptance
