@@ -26,6 +26,16 @@ test('redactHeaderMap removes Polymarket auth-bearing headers', () => {
     POLY_SIGNATURE: '[redacted]',
     POLY_ADDRESS: '0xabc',
   });
+
+  // x-api-key and l2-signature must be redacted (lookup is lowercased)
+  const redacted2 = redactHeaderMap({
+    'x-api-key': 'my-api-key',
+    'l2-signature': 'my-l2-sig',
+    'x-request-id': 'trace-123',
+  });
+  assert.equal(redacted2['x-api-key'], '[redacted]');
+  assert.equal(redacted2['l2-signature'], '[redacted]');
+  assert.equal(redacted2['x-request-id'], 'trace-123');
 });
 
 test('sanitizeAxiosConfig preserves endpoint context but redacts headers', () => {
