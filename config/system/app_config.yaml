@@ -1,0 +1,48 @@
+app:
+  name: "sovereign-trading-platform"
+  mode: "active_prototype"
+  default_timezone: "UTC"
+  paper_trading_default: true
+
+# Supported timezones for the TUI / dashboard picker
+timezones:
+  - "UTC"
+  - "America/New_York"
+  - "America/Chicago"
+  - "America/Los_Angeles"
+  - "Europe/London"
+  - "Europe/Berlin"
+  - "Asia/Tokyo"
+  - "Asia/Singapore"
+  - "Asia/Ho_Chi_Minh"
+  - "Australia/Sydney"
+
+# App-level default trading parameters (overridable per-user via /api/config)
+default_params:
+  position_size_usdc: 100
+  stop_loss_pct: 0.05
+  take_profit_pct: 0.10
+  min_edge_threshold: 0.05
+  max_positions: 10
+  order_timeout_seconds: 30
+  polling_interval_seconds: 60
+
+# Dashboard layout presets
+layout_presets:
+  compact:
+    sidebar_collapsed: true
+    density: "compact"
+    panel_order: ["overview", "signals", "bot"]
+  default:
+    sidebar_collapsed: false
+    density: "comfortable"
+    panel_order: ["overview", "signals", "market_intel", "backtest", "bot"]
+  research:
+    sidebar_collapsed: false
+    density: "comfortable"
+    panel_order: ["market_intel", "sigma_band", "correlation_heatmap", "backtest", "signals"]
+
+paths:
+  data_dir: "data"
+  model_dir: "models"
+  log_dir: "logs"

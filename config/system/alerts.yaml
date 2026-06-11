@@ -1,0 +1,17 @@
+alerts:
+  channels:
+    telegram:
+      enabled: false
+    email:
+      enabled: false
+    webhook:
+      enabled: false
+  events:
+    stale_data: true
+    risk_limit_breach: true
+    order_rejected: true
+    broker_error: true
+    drawdown_breach: true
+    macro_regime_shift: true
+    prediction_market_divergence: true
+    cnn_signal_anomaly: true

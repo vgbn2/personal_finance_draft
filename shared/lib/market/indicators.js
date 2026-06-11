@@ -150,26 +150,149 @@ function mergePeriods(periods = {}) {
   return { ...DEFAULT_PERIODS, ...periods };
 }
 
+/**
+ * Registry of available indicator methods.
+ */
+const IndicatorMethods = {
+  returns,
+  rollingVolatility,
+  rsi,
+  macd,
+  atr,
+  bollingerBands,
+  calculateSmartMoneyConceptSignals,
+  calculateDivergenceSignals,
+  calculateSessionVolumeProfile,
+};
+
+const _warnedIndicatorIds = new Set();
+
+let _cachedManifest = null;
+/**
+ * Loads the indicator manifest from config/system/indicator_manifest.yaml.
+ */
+function getIndicatorManifest() {
+  if (_cachedManifest) return _cachedManifest;
+  try {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const { REPO_ROOT } = require('../runtime/paths');
+    const { parseYamlRecursive } = require('../runtime/config_loader');
+    const manifestPath = path.join(REPO_ROOT, 'config', 'system', 'indicator_manifest.yaml');
+    if (fs.existsSync(manifestPath)) {
+      const lines = fs.readFileSync(manifestPath, 'utf8').split(/\r?\n/);
+      const [config] = parseYamlRecursive(lines);
+      if (config && config.indicators) {
+        _cachedManifest = config.indicators;
+      }
+    }
+  } catch (err) {
+    // Fail silently to fallback to legacy hardcoded path if needed
+  }
+  return _cachedManifest;
+}
+
+/**
+ * Resiliently applies an indicator defined in the manifest.
+ */
+function applyManifestIndicator(ind, window, closes, periods) {
+  const fn = IndicatorMethods[ind.method];
+  if (!fn) return {};
+
+  // Guard: params must be an object (not a string from failed YAML inline-map parse)
+  let safeParams = ind.params;
+  if (safeParams !== undefined && safeParams !== null && typeof safeParams !== 'object') {
+    const warnKey = `params:${ind.id}`;
+    if (!_warnedIndicatorIds.has(warnKey)) {
+      _warnedIndicatorIds.add(warnKey);
+      console.warn(`[indicators] manifest params for "${ind.id}" did not parse as a map; ignoring params`);
+    }
+    safeParams = {};
+  }
+
+  const input = ind.input_type === 'window' ? window : closes;
+  let result;
+
+  try {
+    if (ind.method.startsWith('calculate')) {
+      // Modern object-based parameter style
+      const options = {};
+      for (const [pKey, pVal] of Object.entries(safeParams || {})) {
+        options[pKey] = periods[pVal] ?? pVal;
+      }
+      result = fn(input, options);
+    } else {
+      // Legacy positional parameter style
+      const pValues = Object.values(safeParams || {}).map((v) => periods[v] ?? v);
+      result = fn(input, ...pValues);
+    }
+
+    if (result === null || result === undefined) return {};
+
+    const output = {};
+    if (ind.output_key) {
+      output[ind.output_key] = result;
+    } else if (ind.output_keys) {
+      for (const [resKey, outKey] of Object.entries(ind.output_keys)) {
+        // Support nested property access (e.g., signals.bullish_structure_break)
+        const parts = resKey.split('.');
+        let val = result;
+        for (const part of parts) {
+          val = val !== null && typeof val === 'object' ? val[part] : null;
+        }
+        output[outKey] = val;
+      }
+    }
+    return output;
+  } catch (err) {
+    const warnKey = `fail:${ind.id}`;
+    if (!_warnedIndicatorIds.has(warnKey)) {
+      _warnedIndicatorIds.add(warnKey);
+      console.warn(`[indicators] manifest indicator "${ind.id}" failed: ${err.message}`);
+    }
+    return {};
+  }
+}
+
 function featureFromWindow(key, window, periods = DEFAULT_PERIODS) {
+  const lastBar = window[window.length - 1];
   const closes = window.map((bar) => bar.close).filter(isFiniteNumber);
+
+  const feature = {
+    key,
+    symbol: lastBar.symbol,
+    family: lastBar.family,
+    provider: lastBar.provider || null,
+    timeframe: lastBar.timeframe,
+    as_of: lastBar.timestamp,
+    bars: window.length,
+    close: closes[closes.length - 1],
+  };
+
+  const manifest = getIndicatorManifest();
+  if (manifest) {
+    for (const ind of Object.values(manifest)) {
+      Object.assign(feature, applyManifestIndicator(ind, window, closes, periods));
+    }
+    return feature;
+  }
+
+  // Legacy Hardcoded Fallback
   const bands = bollingerBands(closes, periods.bollinger);
   const smc = calculateSmartMoneyConceptSignals(window, { structureStrength: periods.structure });
-  const divergence = calculateDivergenceSignals(window, { structureStrength: periods.structure, rsiPeriod: periods.divergence });
+  const divergence = calculateDivergenceSignals(window, {
+    structureStrength: periods.structure,
+    rsiPeriod: periods.divergence,
+  });
   const sessionProfile = calculateSessionVolumeProfile(window, {
     binCount: periods.sessionBins,
     minimumBars: periods.sessionMinimumBars,
     sessionStartHour: periods.sessionStartHour,
     timezoneOffsetMinutes: periods.sessionTimezoneOffsetMinutes,
   });
+
   return {
-    key,
-    symbol: window[window.length - 1].symbol,
-    family: window[window.length - 1].family,
-    provider: window[window.length - 1].provider || null,
-    timeframe: window[window.length - 1].timeframe,
-    as_of: window[window.length - 1].timestamp,
-    bars: window.length,
-    close: closes[closes.length - 1],
+    ...feature,
     return_fast: returns(closes, periods.returnFast),
     return_slow: returns(closes, periods.returnSlow),
     volatility: rollingVolatility(closes, periods.volatility),
