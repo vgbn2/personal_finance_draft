@@ -2,7 +2,7 @@ import 'dotenv/config';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
-const { resolveSupabaseSettings } = require('../../../shared/lib/brokers/supabase_env.js');
+const { resolveSupabaseSettings } = require('../../../shared/lib/auth/supabase_env.js');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
