@@ -6,10 +6,12 @@ function mean(values) {
 
 function ema(values, period) {
   if (values.length < period) return null;
-  const multiplier = 2 / (period + 1);
+  const multiplier = 2 / (period + 1);//k=2/n+1
   let current = mean(values.slice(0, period));
   for (let i = period; i < values.length; i += 1) {
     current = values[i] * multiplier + current * (1 - multiplier);
+    //ema=ema[-1]+k*(p-ema[-1])=
+    //y(n)=y(n-1)+k*(p-y(n-1)) or y(n)=K*price+ (1-K)*y(n-1)
   }
   return current;
 }

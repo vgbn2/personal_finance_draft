@@ -12,6 +12,7 @@ const tradingview = require('./tradingview');
 const coingecko = require('./coingecko');
 const finnhub = require('./finnhub');
 const twelve = require('./twelve');
+const ecb = require('./ecb');
 
 module.exports = {
   ...binance,
@@ -27,5 +28,6 @@ module.exports = {
   ...coingecko,
   ...finnhub,
   ...twelve,
+  ...ecb,
   ...common
 };

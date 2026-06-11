@@ -29,6 +29,7 @@ function renderHuman(settings) {
   console.log(`    polling_interval ${t.polling_interval}s`);
   console.log(`    backfill_interval ${t.backfill_interval_min}min ${A.muted('(used when auto_backfill flag is on)')}`);
   console.log(`\n  ${paint(A.BOLD, 'Feature Flags')}`);
+  
   for (const [k, v] of Object.entries(settings.feature_flags)) {
     const dot = v ? paint(A.GREEN, '●') : paint(A.DIM, '○');
     console.log(`    ${dot} ${k}`);
