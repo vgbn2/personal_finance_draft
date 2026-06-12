@@ -25,6 +25,8 @@ const { classifyPolymarketGatewayError, describeGatewayError } = require('./poly
 // @ts-ignore
 const { runPolymarketPaperRun, loadPortfolio: loadInternalPaperPortfolio, summarizePortfolio: summarizeInternalPaperPortfolio } = require('./polymarket_paper.js');
 // @ts-ignore
+const { runPolymarketOrderbookLiteBackfill } = require('../../cli/commands/trade/polymarket_backtest.js');
+// @ts-ignore
 const { resolveAlpacaSettings, resolveGateIoSettings } = require('../../../shared/lib/brokers/index.js');
 // @ts-ignore
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
@@ -2423,6 +2425,75 @@ export async function main() {
         if (useJson) console.log(JSON.stringify(payload));
         else console.error(`${ansi.red}paper-run failed: ${diagnostic.error}${ansi.reset}`);
         process.exit(1);
+      }
+    } else if (sub === 'history') {
+      const historySub = (args[2] || 'backfill').toLowerCase();
+      if (historySub !== 'backfill' && historySub !== 'orderbook-lite') {
+        console.error(`Unknown polymarket history subcommand: ${historySub}. Available: backfill, orderbook-lite`);
+        process.exit(1);
+      }
+
+      const subArgs = args.slice(3);
+      if (historySub === 'backfill') {
+        const history = require('../../../shared/lib/market/polymarket_history.js');
+        const toNumber = (value: string | undefined, fallback: number): number => {
+          const parsed = Number(value);
+          return Number.isFinite(parsed) ? parsed : fallback;
+        };
+        const archiveResult = await history.backfillPolymarketArchive({
+          daysBack: toNumber(parseOptionValue(subArgs, '--days'), 180),
+          interval: parseOptionValue(subArgs, '--interval') || parseOptionValue(subArgs, '--timeframe') || '1h',
+          maxMarkets: toNumber(parseOptionValue(subArgs, '--max-markets'), 500),
+          startOffset: toNumber(parseOptionValue(subArgs, '--start-offset') || parseOptionValue(subArgs, '--offset'), 0),
+          category: parseOptionValue(subArgs, '--category') || 'all',
+          root: parseOptionValue(subArgs, '--archive-root'),
+          includeNo: subArgs.includes('--include-no'),
+          noCache: subArgs.includes('--no-cache'),
+        });
+        if (useJson) {
+          console.log(JSON.stringify(archiveResult));
+        } else {
+          console.log(`${ansi.boldCyan}Polymarket History Archive Ingest${ansi.reset}`);
+          console.log(`  markets:    ${archiveResult.markets_archived ?? 0}`);
+          console.log(`  tokens:     ${archiveResult.tokens_archived ?? 0}`);
+          console.log(`  prices:     ${archiveResult.price_points ?? 0}`);
+          console.log(`  features:   ${archiveResult.feature_rows ?? 0}`);
+          console.log(`  missing:    ${archiveResult.missing_history ?? 0}`);
+        }
+      } else {
+        const toNumber = (value: string | undefined, fallback: number): number => {
+          const parsed = Number(value);
+          return Number.isFinite(parsed) ? parsed : fallback;
+        };
+        const orderbookLiteResult = await runPolymarketOrderbookLiteBackfill({
+          tagId: toNumber(parseOptionValue(subArgs, '--tag-id'), 21),
+          daysBack: toNumber(parseOptionValue(subArgs, '--days'), 365),
+          strategy: parseOptionValue(subArgs, '--strategy') || 'low_prob_dip',
+          maxMarkets: toNumber(parseOptionValue(subArgs, '--max-markets'), 200),
+          entryThreshold: toNumber(parseOptionValue(subArgs, '--entry-threshold'), 0.15),
+          interval: parseOptionValue(subArgs, '--interval') || parseOptionValue(subArgs, '--timeframe') || '1d',
+          archiveRoot: parseOptionValue(subArgs, '--archive-root'),
+          fee: toNumber(parseOptionValue(subArgs, '--fee'), 0),
+          halfSpreadEstimate: toNumber(parseOptionValue(subArgs, '--half-spread') || parseOptionValue(subArgs, '--half-spread-estimate'), 0.01),
+          impactY: toNumber(parseOptionValue(subArgs, '--impact-y'), 1),
+          orderNotional: toNumber(parseOptionValue(subArgs, '--order-notional'), 10),
+          rollingMarketVolume: parseOptionValue(subArgs, '--rolling-market-volume') !== undefined
+            ? Number(parseOptionValue(subArgs, '--rolling-market-volume'))
+            : undefined,
+          captureThrottleMs: toNumber(parseOptionValue(subArgs, '--capture-throttle-ms') || parseOptionValue(subArgs, '--throttle-ms'), 250),
+          pmxtApiKey: parseOptionValue(subArgs, '--pmxt-api-key') || process.env.PMXT_API_KEY || '',
+          pmxtBaseUrl: parseOptionValue(subArgs, '--pmxt-base-url') || process.env.PMXT_BASE_URL || 'https://api.pmxt.dev',
+          fromArchive: !subArgs.includes('--live-fetch') && !subArgs.includes('--no-archive'),
+          repairMissing: subArgs.includes('--repair-missing'),
+          noCache: subArgs.includes('--no-cache'),
+        });
+        if (useJson) {
+          console.log(JSON.stringify(orderbookLiteResult));
+        } else {
+          console.log(`${ansi.boldCyan}Polymarket History Orderbook Lite${ansi.reset}`);
+          console.log(`  downloaded: ${orderbookLiteResult.downloadedSnapshots ?? 0}`);
+          console.log(`  failures:   ${orderbookLiteResult.failedSnapshots ?? 0}`);
+        }
       }
     } else if (sub === 'buy' || sub === 'sell') {
       const tokenId = args[2];
