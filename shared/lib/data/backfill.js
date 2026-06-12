@@ -9,7 +9,12 @@ const BARS_PER_DAY = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const PROVIDER_MAX_BARS = 1000;
+const CRYPTO_PROVIDER_MAX_BARS = 1000;
+const EQUITY_PROVIDER_MAX_BARS = 10000;
+
+function providerMaxBarsFor(family) {
+  return family === 'crypto' ? CRYPTO_PROVIDER_MAX_BARS : EQUITY_PROVIDER_MAX_BARS;
+}
 
 function toIso(ts) {
   return Number.isFinite(ts) ? new Date(ts).toISOString() : null;
@@ -19,6 +24,10 @@ function windowText(startTs, endTs) {
   const start = toIso(startTs) || 'unknown';
   const end = toIso(endTs) || 'unknown';
   return `[${start} - ${end}]`;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function candleWindow(candles) {
@@ -49,20 +58,21 @@ function attachBackfillMeta(candles, meta) {
   return candles;
 }
 
-async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEndTs = null) {
+async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEndTs = null, options = {}) {
   if (typeof fetchFn !== 'function') {
     throw new Error(`No fetch function supplied for ${symbol}:${timeframe}`);
   }
 
   const marketType = family === 'crypto' ? 'crypto' : 'equities';
   const barsPerDay = BARS_PER_DAY[marketType][timeframe] || 1;
-  const providerMaxBars = PROVIDER_MAX_BARS;
+  const providerMaxBars = providerMaxBarsFor(family);
   const maxDaysPerChunk = Math.max(1, Math.floor(providerMaxBars / barsPerDay));
   const requestedEndTs = forcedEndTs || Date.now();
   let currentEndTs = requestedEndTs;
   const targetStartTs = requestedEndTs - (days * DAY_MS);
   const allCandles = [];
   const chunks = [];
+  const chunkDelayMs = Math.max(0, Number(options.chunkDelayMs || 0));
 
   while (currentEndTs > targetStartTs) {
     let currentStartTs = currentEndTs - (maxDaysPerChunk * DAY_MS);
@@ -73,7 +83,7 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
       if (family === 'crypto') {
         chunk = await fetchFn(symbol, providerMaxBars, timeframe, currentStartTs, currentEndTs);
       } else {
-        chunk = await fetchFn(symbol, timeframe, null, currentStartTs, currentEndTs);
+        chunk = await fetchFn(symbol, timeframe, providerMaxBars, currentStartTs, currentEndTs);
       }
 
       if (!chunk || chunk.length === 0) break;
@@ -85,7 +95,17 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
         max_bars: providerMaxBars,
       });
       allCandles.push(...chunk);
-      currentEndTs = chunk[0].openTime - 1;
+      if (currentStartTs <= targetStartTs) {
+        break;
+      }
+      const nextEndTs = chunk[0].openTime - 1;
+      if (nextEndTs >= currentEndTs) {
+        break;
+      }
+      currentEndTs = nextEndTs;
+      if (chunkDelayMs > 0 && currentEndTs > targetStartTs) {
+        await sleep(chunkDelayMs);
+      }
     } catch (error) {
       console.error(`  [BACKFILL] Chunk failed for ${symbol}:${timeframe} ${windowText(currentStartTs, currentEndTs)} max_bars=${providerMaxBars}: ${error.message}`);
       break;
@@ -136,8 +156,9 @@ async function fetchParallelBackfill(symbol, timeframe, totalDays, family, provi
   const daysPerWorker = totalDays / numWorkers;
   const now = Date.now();
   const requestedStartTs = now - (totalDays * DAY_MS);
+  const providerMaxBars = providerMaxBarsFor(family);
 
-  console.log(`[PARALLEL] Orchestrating ${numWorkers} workers for ${totalDays} days of ${symbol}:${timeframe} using ${primaryProvider} ${windowText(requestedStartTs, now)} max_bars=${PROVIDER_MAX_BARS}`);
+  console.log(`[PARALLEL] Orchestrating ${numWorkers} workers for ${totalDays} days of ${symbol}:${timeframe} using ${primaryProvider} ${windowText(requestedStartTs, now)} max_bars=${providerMaxBars}`);
 
   const tasks = Array.from({ length: numWorkers }).map((_, index) => {
     const endTs = now - (index * daysPerWorker * DAY_MS);
@@ -158,7 +179,7 @@ async function fetchParallelBackfill(symbol, timeframe, totalDays, family, provi
     actual_start_ts: actual.startTs,
     actual_end_ts: actual.endTs,
     actual_window: windowText(actual.startTs, actual.endTs),
-    provider_max_bars: PROVIDER_MAX_BARS,
+    provider_max_bars: providerMaxBars,
     workers: numWorkers,
     worker_windows: results.map((candles, index) => ({
       worker: index + 1,
@@ -172,5 +193,6 @@ module.exports = {
   fetchPaginated,
   fetchParallelBackfill,
   BARS_PER_DAY,
+  providerMaxBarsFor,
   windowText,
 };
