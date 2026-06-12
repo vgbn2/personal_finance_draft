@@ -10,6 +10,7 @@ const {
   renderSearchBar: renderSearchBarHelper,
   renderSelectRow,
   renderMultiSelectRow,
+  renderHelpOverlay,
 } = require('./render_helpers');
 
 let _authEmail = null;
@@ -216,13 +217,14 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
   let selectedIndex = 0;
   let filterText = '';
   let searchMode = false;
+  let helpMode = false;
   const rawOptions = typeof options === 'function' ? await options() : options;
   const resolvedOptions = rawOptions.map(o => (typeof o === 'object' ? o : { label: String(o), value: o }));
   const initSet = new Set(initialValues);
   const selectedIndices = new Set(
     resolvedOptions.reduce((acc, o, i) => { if (initSet.has(o.value)) acc.push(i); return acc; }, [])
   );
-  
+
   const PAGE_SIZE = derivePageSize(layoutConfig().multiSelectPageSize, process.stdout.rows);
   let scrollOffset = 0;
 
@@ -246,6 +248,17 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
       getFiltered().map(fi => resolvedOptions.findIndex(o => o.value === fi.value && o.label === fi.label)).filter(i => i >= 0);
 
     const render = () => {
+      const time = formatTimeForSettings();
+      if (helpMode) {
+        const buffer = renderHelpOverlay(question, time, 'multi');
+        if (prevLineCount > 0) {
+          process.stdout.write(`\x1b[${prevLineCount}A`);
+          process.stdout.write('\x1b[J');
+        }
+        process.stdout.write(buffer);
+        prevLineCount = visualLineCount(buffer);
+        return;
+      }
       const grouped = buildGrouped();
       const customState = buildCustomSelection(resolvedOptions, filterText);
       if (selectedIndex >= grouped.length) selectedIndex = Math.max(0, grouped.length - 1);
@@ -254,7 +267,6 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
       else if (selectedIndex >= scrollOffset + PAGE_SIZE) scrollOffset = selectedIndex - PAGE_SIZE + 1;
       const visible = grouped.slice(scrollOffset, scrollOffset + PAGE_SIZE);
       let buffer = '';
-      const time = formatTimeForSettings();
       const selCount = selectedIndices.size;
       // Title bar
       buffer += renderHeader(question, time, { selCount });
@@ -303,6 +315,12 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
     render();
 
     const handleKey = (key) => {
+      // '?' toggles help overlay; any other key dismisses it (Ctrl-C falls
+      // through to the normal exit path so help cannot swallow it).
+      if (helpMode && key !== A.KEY_CTRL_C) { helpMode = false; render(); return; }
+      if (helpMode) { helpMode = false; }
+      if (key === '?') { helpMode = true; render(); return; }
+
       const isEnter = /[\r\n]/.test(key);
       const isControl = key === A.KEY_CTRL_C || isEnter || key === A.KEY_ESC || key === A.KEY_BS || key === '\b' || key === ' ';
       const isArrow = key === A.KEY_UP || key === A.KEY_DOWN;
@@ -415,6 +433,7 @@ async function promptSelect(question, options) {
   let selectedIndex = 0;
   let filterText = '';
   let searchMode = false;
+  let helpMode = false;
   const rawOptions = typeof options === 'function' ? await options() : options;
 
   // Normalize options to object shape
@@ -432,18 +451,29 @@ async function promptSelect(question, options) {
     const getGrouped = () => groupedOptions(resolvedOptions, filterText);
 
     const render = () => {
+      const time = formatTimeForSettings();
+      if (helpMode) {
+        const buffer = renderHelpOverlay(question, time, 'select');
+        if (prevLineCount > 0) {
+          process.stdout.write(`\x1b[${prevLineCount}A`);
+          process.stdout.write('\x1b[J');
+        }
+        process.stdout.write(buffer);
+        prevLineCount = visualLineCount(buffer);
+        return;
+      }
+
       const { filtered, grouped } = getGrouped();
 
       if (selectedIndex >= grouped.length) selectedIndex = Math.max(0, grouped.length - 1);
       while (grouped[selectedIndex]?.type === 'header' && selectedIndex < grouped.length - 1) selectedIndex++;
-      
+
       if (selectedIndex < scrollOffset) scrollOffset = selectedIndex;
       else if (selectedIndex >= scrollOffset + PAGE_SIZE) scrollOffset = selectedIndex - PAGE_SIZE + 1;
 
       const visible = grouped.slice(scrollOffset, scrollOffset + PAGE_SIZE);
-      
+
       let buffer = '';
-      const time = formatTimeForSettings();
 
       buffer += renderHeader(question, time);
       buffer += separator();
@@ -470,6 +500,12 @@ async function promptSelect(question, options) {
     render();
 
     const handleKey = (key) => {
+      // '?' toggles help overlay; any other key dismisses it (Ctrl-C falls
+      // through to the normal exit path so help cannot swallow it).
+      if (helpMode && key !== A.KEY_CTRL_C) { helpMode = false; render(); return; }
+      if (helpMode) { helpMode = false; }
+      if (key === '?') { helpMode = true; render(); return; }
+
       // Recognize standard keys
       const isEnter = /[\r\n]/.test(key);
       const isControl = key === A.KEY_CTRL_C || isEnter || key === A.KEY_ESC || key === A.KEY_BS || key === '\b';

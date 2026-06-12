@@ -14,6 +14,7 @@ const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, ge
 const { compareModels } = require('../../../../shared/lib/ml/models');
 const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation');
 const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal } = require('../../tui');
+const A = require('../../../../shared/lib/ui/ansi');
 
 const utils = require('../../lib/utils.js');
 const { usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption } = utils;
@@ -359,34 +360,39 @@ async function quoteProviderHeaderState() {
 }
 
 function renderCockpit(model) {
-  const lines = [];
-  const header = `\x1b[1;36m${model.title}\x1b[0m \x1b[90m| ${model.time}\x1b[0m`;
-  lines.push(header);
-  lines.push('\x1b[90m' + '═'.repeat(80) + '\x1b[0m');
-  
-  const statusColor = (s) => s === 'ok' || s === 'available' ? '\x1b[32m' : (s === 'warn' ? '\x1b[33m' : '\x1b[31m');
-  const backendStatus = `${statusColor(model.status.backend)}${model.status.backend}\x1b[0m`;
-  const cacheStatus = `${statusColor(model.status.cache)}${model.status.cache}\x1b[0m`;
-  const quoteStatus = `${statusColor(model.status.quote_provider)}${model.status.quote_provider}\x1b[0m`;
+  // Rich-gated rule character: ═ when Unicode is available, = otherwise.
+  const dline = A.richGlyph('dline', isRichTerminal);
+  // Rich-gated status indicator: ■ when Unicode is available, * otherwise.
+  const indicator = A.richGlyph('indicator', isRichTerminal);
 
-  lines.push(`  \x1b[1mSystem:\x1b[0m backend=${backendStatus}  cache=${cacheStatus}  quotes=${quoteStatus}`);
-  lines.push('\x1b[90m' + '─'.repeat(80) + '\x1b[0m');
+  const lines = [];
+  lines.push(`${A.c(A.SEMANTIC.HEADER, model.title)} ${A.muted('| ' + model.time)}`);
+  lines.push(A.muted(dline.repeat(80)));
+
+  const backendStatus = A.c(A.statusColor(model.status.backend), model.status.backend);
+  const cacheStatus   = A.c(A.statusColor(model.status.cache),   model.status.cache);
+  const quoteStatus   = A.c(A.statusColor(model.status.quote_provider), model.status.quote_provider);
+
+  lines.push(`  ${A.c(A.BOLD, 'System:')} backend=${backendStatus}  cache=${cacheStatus}  quotes=${quoteStatus}`);
+  lines.push(A.muted(A.GLYPH.hline.repeat(80)));
 
   for (const card of model.cards) {
-    const cardColor = statusColor(card.state);
-    lines.push(`  ${cardColor}■\x1b[0m \x1b[1m${card.title.toUpperCase()}\x1b[0m \x1b[90m(${card.subtitle})\x1b[0m`);
-    
+    const dot = A.c(A.statusColor(card.state), indicator);
+    lines.push(`  ${dot} ${A.c(A.BOLD, card.title.toUpperCase())} ${A.muted('(' + card.subtitle + ')')}`);
+
     const metrics = Object.entries(card.metrics || {}).filter(([, value]) => value != null);
     if (metrics.length) {
-      const metricLine = metrics.map(([key, value]) => `\x1b[90m${key}=\x1b[0m\x1b[37m${String(renderHumanValue(value)).trim()}\x1b[0m`).join('  ');
+      const metricLine = metrics
+        .map(([key, value]) => `${A.muted(key + '=')}${A.c(A.WHITE, String(renderHumanValue(value)).trim())}`)
+        .join('  ');
       lines.push(`    ${metricLine}`);
     }
     lines.push('');
   }
-  
-  lines.push('\x1b[90m' + '─'.repeat(80) + '\x1b[0m');
-  lines.push('  \x1b[1mCommands:\x1b[0m status | backend status | quotes status | models | bt | \x1b[36mtrade balance\x1b[0m');
-  lines.push('  \x1b[90mTip: use --inspect <status|features|model|backtest|portfolio> for raw JSON.\x1b[0m');
+
+  lines.push(A.muted(A.GLYPH.hline.repeat(80)));
+  lines.push(`  ${A.c(A.BOLD, 'Commands:')} status | backend status | quotes status | models | bt | ${A.c(A.CYAN, 'trade balance')}`);
+  lines.push(A.muted('  Tip: use --inspect <status|features|model|backtest|portfolio> for raw JSON.'));
   return lines.join('\n');
 }
 

@@ -52,6 +52,8 @@ const KEY_RIGHT = `${ESC}[C`;
 const KEY_LEFT = `${ESC}[D`;
 
 // ASCII UI glyphs. Prefer these over terminal-specific Unicode symbols.
+// Rich equivalents (Unicode) are gated by isRichTerminal() at call sites;
+// this object always contains the ASCII fallback values.
 const GLYPH = {
   pointer: '>',
   selected: '[x]',
@@ -64,7 +66,33 @@ const GLYPH = {
   marker: '^',
   pair: '<->',
   warning: '!',
+  // Box-drawing / status glyphs (rich-gate these at call sites)
+  dline: '=',        // ASCII fallback for ═ (double horizontal rule)
+  indicator: '*',    // ASCII fallback for ■ (status indicator dot)
 };
+
+// Rich-terminal Unicode alternatives for GLYPH keys that have them.
+// Only consume via richGlyph(key) which applies the isRichTerminal gate.
+const GLYPH_RICH = {
+  dline: '═',
+  indicator: '■',
+};
+
+/**
+ * Return the rich Unicode glyph for a key when isRichTerminalFn() is true,
+ * otherwise return the ASCII GLYPH fallback.
+ *
+ * @param {string} key             - key in GLYPH / GLYPH_RICH
+ * @param {()=>boolean} isRichFn   - isRichTerminal gate (passed in to avoid
+ *                                    circular dep between ansi.js and engine.js)
+ * @returns {string}
+ */
+function richGlyph(key, isRichFn) {
+  if (isRichFn && isRichFn() && GLYPH_RICH[key] !== undefined) {
+    return GLYPH_RICH[key];
+  }
+  return GLYPH[key] !== undefined ? GLYPH[key] : key;
+}
 
 function c(code, text) {
   return code + text + RESET;
@@ -151,6 +179,8 @@ module.exports = {
   KEY_RIGHT,
   KEY_LEFT,
   GLYPH,
+  GLYPH_RICH,
+  richGlyph,
   SEMANTIC,
   c,
   bold,
