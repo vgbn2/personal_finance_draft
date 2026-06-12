@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "active_profile_id": "custom_two_step_evaluation_null",
+  "profiles": {
+    "vprop_starter_2_step": {
+      "id": "vprop_starter_2_step",
+      "name": "VProp Starter 2-Step",
+      "firm": "VProp",
+      "account_type": "one_step",
+      "step_count": 1,
+      "description": "Starter template for small-account evaluations with tight daily loss control.",
+      "tags": [],
+      "rules": {
+        "max_daily_loss": 0,
+        "max_total_loss": 0,
+        "min_trading_days": 4,
+        "profit_target": 0.1,
+        "consistency_cap": 0.4,
+        "max_news_window_minutes": 0,
+        "allow_overnight": true,
+        "allow_weekend": true,
+        "allow_hedging": true,
+        "allow_ea": true
+      },
+      "phases": [
+        {
+          "name": "step_1",
+          "profit_target": 0.1,
+          "notes": ""
+        }
+      ],
+      "custom_metrics": {},
+      "notes": [],
+      "updated_at": "2026-06-02T11:47:22.318Z"
+    },
+    "ftmo_standard_2_step": {
+      "id": "ftmo_standard_2_step",
+      "name": "FTMO Standard 2-Step",
+      "firm": "FTMO",
+      "account_type": "two_step",
+      "step_count": 2,
+      "description": "Generic two-step template with moderate consistency pressure.",
+      "tags": [],
+      "rules": {
+        "max_daily_loss": 0.05,
+        "max_total_loss": 0.1,
+        "min_trading_days": 4,
+        "profit_target": 0.1,
+        "consistency_cap": 0.5,
+        "max_news_window_minutes": 2,
+        "allow_overnight": true,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      },
+      "phases": [
+        {
+          "name": "step_1",
+          "profit_target": 0.1,
+          "notes": ""
+        },
+        {
+          "name": "step_2",
+          "profit_target": 0.05,
+          "notes": ""
+        }
+      ],
+      "custom_metrics": {},
+      "notes": [],
+      "updated_at": "2026-06-01T14:20:03.142Z"
+    },
+    "topstep_consistency_1_step": {
+      "id": "topstep_consistency_1_step",
+      "name": "Topstep Consistency 1-Step",
+      "firm": "Topstep",
+      "account_type": "one_step",
+      "step_count": 1,
+      "description": "Futures-style one-step template emphasizing consistency and daily loss discipline.",
+      "tags": [],
+      "rules": {
+        "max_daily_loss": 0.03,
+        "max_total_loss": 0.05,
+        "min_trading_days": 5,
+        "profit_target": 0.08,
+        "consistency_cap": 0.5,
+        "max_news_window_minutes": 3,
+        "allow_overnight": true,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      },
+      "phases": [
+        {
+          "name": "funding",
+          "profit_target": 0.08,
+          "notes": ""
+        }
+      ],
+      "custom_metrics": {},
+      "notes": [],
+      "updated_at": "2026-06-01T14:20:03.142Z"
+    },
+    "the5ers_growth_instant": {
+      "id": "the5ers_growth_instant",
+      "name": "The5ers Growth Instant",
+      "firm": "The5ers",
+      "account_type": "instant",
+      "step_count": 0,
+      "description": "Instant-funding starter template for traders that need tighter drawdown control.",
+      "tags": [],
+      "rules": {
+        "max_daily_loss": 0.03,
+        "max_total_loss": 0.05,
+        "min_trading_days": 1,
+        "profit_target": null,
+        "consistency_cap": 0.25,
+        "max_news_window_minutes": 2,
+        "allow_overnight": false,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      },
+      "phases": [],
+      "custom_metrics": {},
+      "notes": [],
+      "updated_at": "2026-06-01T14:20:03.142Z"
+    },
+    "fundednext_evaluation_2_step": {
+      "id": "fundednext_evaluation_2_step",
+      "name": "FundedNext Evaluation 2-Step",
+      "firm": "FundedNext",
+      "account_type": "two_step",
+      "step_count": 2,
+      "description": "Two-step starter profile with a stricter consistency cap and news avoidance.",
+      "tags": [],
+      "rules": {
+        "max_daily_loss": 0.04,
+        "max_total_loss": 0.06,
+        "min_trading_days": 5,
+        "profit_target": 0.1,
+        "consistency_cap": 0.35,
+        "max_news_window_minutes": 2,
+        "allow_overnight": false,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      },
+      "phases": [
+        {
+          "name": "step_1",
+          "profit_target": 0.1,
+          "notes": ""
+        },
+        {
+          "name": "step_2",
+          "profit_target": 0.05,
+          "notes": ""
+        }
+      ],
+      "custom_metrics": {},
+      "notes": [],
+      "updated_at": "2026-06-01T14:20:03.142Z"
+    },
+    "propfirm_one_step_one_step": {
+      "id": "propfirm_one_step_one_step",
+      "name": "Legacy One-Step",
+      "firm": "Custom",
+      "account_type": "one_step",
+      "step_count": 1,
+      "description": "Legacy one-step profile normalized from an older blank entry.",
+      "tags": [],
+      "rules": {
+        "max_daily_loss": 0.04,
+        "max_total_loss": 0.05,
+        "min_trading_days": 3,
+        "profit_target": 0.08,
+        "consistency_cap": 0.4,
+        "max_news_window_minutes": 2,
+        "allow_overnight": false,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      },
+      "phases": [
+        {
+          "name": "step_1",
+          "profit_target": 0.1,
+          "notes": ""
+        }
+      ],
+      "custom_metrics": {},
+      "notes": [],
+      "updated_at": "2026-06-01T14:20:03.141Z"
+    },
+    "custom_two_step_evaluation_null": {
+      "id": "custom_two_step_evaluation_null",
+      "name": "Two-Step Evaluation",
+      "firm": "Custom",
+      "account_type": "two_step",
+      "step_count": 2,
+      "description": "Two-Step Evaluation prop-firm profile",
+      "tags": [],
+      "rules": {
+        "max_daily_loss": 0.04,
+        "max_total_loss": 0.06,
+        "min_trading_days": 4,
+        "profit_target": 0.1,
+        "consistency_cap": 0.35,
+        "max_news_window_minutes": 2,
+        "allow_overnight": false,
+        "allow_weekend": false,
+        "allow_hedging": false,
+        "allow_ea": true
+      },
+      "phases": [
+        {
+          "name": "step_1",
+          "profit_target": 0.1,
+          "notes": ""
+        },
+        {
+          "name": "step_2",
+          "profit_target": 0.05,
+          "notes": ""
+        }
+      ],
+      "custom_metrics": {},
+      "notes": [],
+      "updated_at": "2026-06-02T01:26:51.442Z"
+    }
+  },
+  "updated_at": "2026-06-02T11:47:22.318Z"
+}

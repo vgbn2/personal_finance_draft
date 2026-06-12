@@ -1,0 +1,6 @@
+{
+  "mode": "paper",
+  "symbols": ["BTCUSDT"],
+  "timeframe": "1d",
+  "provider": "example_provider"
+}

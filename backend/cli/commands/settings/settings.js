@@ -7,6 +7,7 @@ const {
   VALID_TIMEZONES,
   cloneDefaultSettings,
   loadSettings,
+  normalizeFavoriteSymbols,
   persistSettings,
 } = require('../../../../shared/lib/settings/user_settings');
 const utils = require('../../lib/utils');
@@ -19,6 +20,7 @@ function renderHuman(settings) {
   console.log(`\n${paint(A.B_CYAN, 'SOVEREIGN')} ${A.muted('— User Settings')}\n${sep}`);
   console.log(`  ${paint(A.BOLD, 'Timezone')}          ${settings.timezone}`);
   console.log(`  ${paint(A.BOLD, 'Layout')}            ${settings.layout}`);
+  console.log(`  ${paint(A.BOLD, 'Favourite Symbols')} ${Array.isArray(settings.favorite_symbols) && settings.favorite_symbols.length ? settings.favorite_symbols.join(', ') : '(none)'}`);
   console.log(`\n  ${paint(A.BOLD, 'Trading Params')}`);
   const t = settings.trading;
   console.log(`    position_size    ${t.position_size} USDC`);
@@ -103,6 +105,28 @@ async function commandSettings(args, { settingsPath } = {}) {
     return 0;
   }
 
+  if (sub === 'favorites') {
+    const symbolsIdx = args.indexOf('--symbols');
+    const symbolsRaw = symbolsIdx !== -1 ? args[symbolsIdx + 1] : null;
+    const settings = loadSettings(settingsPath);
+    if (symbolsRaw !== null && symbolsRaw !== undefined) {
+      settings.favorite_symbols = normalizeFavoriteSymbols(symbolsRaw);
+      persistSettings(settings, settingsPath);
+    }
+    const payload = {
+      ok: true,
+      type: 'user_settings',
+      favorite_symbols: settings.favorite_symbols,
+    };
+    if (useJson) {
+      printPayload(payload, args);
+    } else {
+      const list = settings.favorite_symbols.length ? settings.favorite_symbols.join(', ') : '(none)';
+      console.log(`${paint(A.GREEN, '●')} Favourite symbols: ${paint(A.BOLD, list)}`);
+    }
+    return 0;
+  }
+
   if (sub === 'params') {
     const settings = loadSettings(settingsPath);
     const t = settings.trading;
@@ -162,7 +186,7 @@ async function commandSettings(args, { settingsPath } = {}) {
     return 0;
   }
 
-  printPayload({ ok: false, error: `Unknown settings subcommand: ${sub}. Valid: show, timezone, layout, params, flags, alerts, reset` }, args);
+  printPayload({ ok: false, error: `Unknown settings subcommand: ${sub}. Valid: show, timezone, layout, favorites, params, flags, alerts, reset` }, args);
   return 1;
 }
 

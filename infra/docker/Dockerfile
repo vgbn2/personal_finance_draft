@@ -43,7 +43,7 @@ COPY . .
 # so the binary lands at backend/core/build/sovereign_wealth (no Release/ subdir).
 RUN mkdir -p backend/core/build \
     && cd backend/core/build \
-    && cmake .. -DCMAKE_BUILD_TYPE=Release \
+    && cmake .. -DCMAKE_BUILD_TYPE=Release -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON \
     && make -j$(nproc) sovereign_wealth
 
 # --- Runtime ---

@@ -28,11 +28,30 @@ test('settings show returns full settings shape with all required keys', () => {
     assert.equal(payload.type, 'user_settings');
     assert.equal(typeof payload.timezone, 'string');
     assert.equal(typeof payload.layout, 'string');
+    assert.ok(Array.isArray(payload.favorite_symbols));
     assert.equal(typeof payload.trading, 'object');
     assert.equal(typeof payload.trading.position_size, 'number');
     assert.equal(typeof payload.trading.stop_loss, 'number');
     assert.equal(typeof payload.feature_flags, 'object');
     assert.equal(typeof payload.alerts, 'object');
+  });
+});
+
+test('settings favorites show and set round-trip', () => {
+  withTempSettings((file) => {
+    const initial = runSettings(['show'], file);
+    assert.ok(Array.isArray(initial.favorite_symbols));
+    assert.ok(initial.favorite_symbols.length > 0);
+
+    const list = runSettings(['favorites'], file);
+    assert.deepEqual(list.favorite_symbols, initial.favorite_symbols);
+
+    const set = runSettings(['favorites', '--symbols', 'TSLA, NVDA, tsla,  AAPL '], file);
+    assert.equal(set.ok, true);
+    assert.deepEqual(set.favorite_symbols, ['TSLA', 'NVDA', 'AAPL']);
+
+    const show = runSettings(['show'], file);
+    assert.deepEqual(show.favorite_symbols, ['TSLA', 'NVDA', 'AAPL']);
   });
 });
 
@@ -85,6 +104,10 @@ test('tui settings flag picker includes auto_backfill', () => {
   assert.ok(picker);
   assert.ok(Array.isArray(picker.flags['--flag'].options));
   assert.ok(picker.flags['--flag'].options.includes('auto_backfill'));
+});
+
+test('tui settings menu exposes favourite symbols list', () => {
+  assert.ok(manifest.commands.settings.some((item) => item.id === 'favorites'));
 });
 
 test('settings reset restores defaults and show matches default shape', () => {

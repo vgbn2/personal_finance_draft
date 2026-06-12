@@ -5,8 +5,10 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const { ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
 const utils = require('../../lib/utils.js');
+const { pickAssets } = require('../../tui/asset_picker');
 const { canLiveExecute, getRuntimeMode } = require('../../../../shared/lib/brokers/capabilities');
 const { featureGate } = require('../../../../shared/lib/settings/runtime');
+const { loadSettings } = require('../../../../shared/lib/settings/user_settings');
 const { runGatewayCommand, buildTradeGatewayLaunch } = require('../../../../shared/lib/runtime/backend_bridge');
 const {
   pageText,
@@ -670,63 +672,82 @@ async function promptTradeDeskArgs() {
   global.suppressLogs = true;
   process.stdout.write(A.CLR_ALL + A.HOME);
 
-  const action = await promptSelect('Trade desk action:', [
-    { label: 'Balance snapshot', value: 'balance' },
-    { label: 'Aggregate Portfolio (Live / Live-Paper / Paper)', value: 'aggregate_portfolio' },
-    { label: 'Buy order', value: 'buy' },
-    { label: 'Sell order', value: 'sell' },
-    { label: 'Process proposed orders file', value: 'process' },
-    { label: 'Cancel', value: 'cancel' },
-  ]);
+  while (true) {
+    const action = await promptSelect('Trade desk action:', [
+      { label: 'Balance snapshot', value: 'balance' },
+      { label: 'Aggregate Portfolio (Live / Live-Paper / Paper)', value: 'aggregate_portfolio' },
+      { label: 'Favourite symbols', value: 'favorites' },
+      { label: 'Buy order', value: 'buy' },
+      { label: 'Sell order', value: 'sell' },
+      { label: 'Process proposed orders file', value: 'process' },
+      { label: 'Cancel', value: 'cancel' },
+    ]);
 
-  global.suppressLogs = false;
+    global.suppressLogs = false;
 
-  if (action === 'cancel') {
-    return null;
-  }
-  if (action === 'balance' || action === 'aggregate_portfolio') {
-    return [action];
-  }
-  if (action === 'process') {
-    const filePath = await promptText('Orders file path:', 'proposed_orders.json');
-    const live = await promptConfirm('Execute live orders from file?');
-    return ['process', filePath, ...(live ? ['--live'] : [])];
-  }
-
-  const symbol = String(await promptText('Symbol:', 'AAPL')).toUpperCase();
-  const qty = await promptText('Quantity:', '1');
-
-  const orderType = await promptSelect('Order type:', [
-    { label: 'Market', value: 'market' },
-    { label: 'Limit', value: 'limit' },
-  ]);
-  const commandArgs = [action, symbol, qty, orderType];
-  if (orderType === 'limit') {
-    const price = await promptText('Limit price:', '');
-    if (price) {
-      commandArgs.push(price);
+    if (action === 'cancel') {
+      return null;
     }
+    if (action === 'favorites') {
+      const favorites = currentFavoriteSymbols();
+      console.log([
+        '',
+        A.BOLD + 'Favourite Symbols' + A.RESET,
+        A.GRAY + '='.repeat(72) + A.RESET,
+        ...(favorites.length
+          ? favorites.map((symbol, index) => `  ${String(index + 1).padStart(2, '0')}. ${symbol}`)
+          : ['  No favourite symbols saved yet.']),
+        '',
+      ].join('\n'));
+      continue;
+    }
+    if (action === 'balance' || action === 'aggregate_portfolio') {
+      return [action];
+    }
+    if (action === 'process') {
+      const filePath = await promptText('Orders file path:', 'proposed_orders.json');
+      const live = await promptConfirm('Execute live orders from file?');
+      return ['process', filePath, ...(live ? ['--live'] : [])];
+    }
+
+    const symbol = await promptTradeSymbol();
+    if (!symbol) {
+      return null;
+    }
+    const qty = await promptText('Quantity:', '1');
+
+    const orderType = await promptSelect('Order type:', [
+      { label: 'Market', value: 'market' },
+      { label: 'Limit', value: 'limit' },
+    ]);
+    const commandArgs = [action, symbol, qty, orderType];
+    if (orderType === 'limit') {
+      const price = await promptText('Limit price:', '');
+      if (price) {
+        commandArgs.push(price);
+      }
+    }
+    const live = await promptConfirm('Execute live order?');
+    console.log([
+      '',
+      A.BOLD + 'Order Preview' + A.RESET,
+      `  side=${action}`,
+      `  symbol=${symbol}`,
+      `  qty=${qty}`,
+      `  type=${orderType}`,
+      ...(orderType === 'limit' && commandArgs[4] ? [`  price=${commandArgs[4]}`] : []),
+      `  mode=${live ? 'LIVE' : 'DRY-RUN'}`,
+      '',
+    ].join('\n'));
+    const proceed = await promptConfirm('Send this order to the gateway?');
+    if (!proceed) {
+      return null;
+    }
+    if (live) {
+      commandArgs.push('--live');
+    }
+    return commandArgs;
   }
-  const live = await promptConfirm('Execute live order?');
-  console.log([
-    '',
-    A.BOLD + 'Order Preview' + A.RESET,
-    `  side=${action}`,
-    `  symbol=${symbol}`,
-    `  qty=${qty}`,
-    `  type=${orderType}`,
-    ...(orderType === 'limit' && commandArgs[4] ? [`  price=${commandArgs[4]}`] : []),
-    `  mode=${live ? 'LIVE' : 'DRY-RUN'}`,
-    '',
-  ].join('\n'));
-  const proceed = await promptConfirm('Send this order to the gateway?');
-  if (!proceed) {
-    return null;
-  }
-  if (live) {
-    commandArgs.push('--live');
-  }
-  return commandArgs;
 }
 
 /**
@@ -738,6 +759,40 @@ async function fetchBalance(live = false) {
     throw new Error(payload.error || 'Failed to fetch balance');
   }
   return payload;
+}
+
+function currentFavoriteSymbols() {
+  try {
+    const settings = loadSettings();
+    return Array.isArray(settings.favorite_symbols) ? settings.favorite_symbols : [];
+  } catch {
+    return [];
+  }
+}
+
+function renderFavoriteSymbolsList(symbols = []) {
+  return [
+    A.B_CYAN + 'Favourite Symbols' + A.RESET,
+    A.GRAY + '='.repeat(72) + A.RESET,
+    ...(symbols.length
+      ? symbols.map((symbol, index) => `  ${String(index + 1).padStart(2, '0')}. ${symbol}`)
+      : ['  No favourite symbols saved yet.']),
+  ].join('\n');
+}
+
+async function promptTradeSymbol() {
+  const favorites = currentFavoriteSymbols();
+  if (!isRichTerminal()) {
+    const fallback = favorites[0] || 'AAPL';
+    return String(await promptText('Symbol:', fallback)).toUpperCase();
+  }
+
+  const selected = await pickAssets({
+    label: 'Trade desk symbol',
+    prompt: 'Select symbol:',
+    favoriteSymbols: favorites,
+  });
+  return selected ? String(selected).toUpperCase() : null;
 }
 
 /**
@@ -833,6 +888,12 @@ async function commandPolymarket(args) {
  */
 async function commandTrade(args) {
   const subcommand = args[0];
+
+  if (subcommand === 'favorites') {
+    const favorites = currentFavoriteSymbols();
+    pageText(renderFavoriteSymbolsList(favorites), args);
+    return 0;
+  }
   
   if (subcommand === 'balance' && hasFlag(args, '--json')) {
       try {
