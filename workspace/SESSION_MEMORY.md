@@ -1,4 +1,27 @@
-﻿## Session Memory - 2026-06-12 (session 18b) Delegated waves: C++ 29/29, TUI Phase A, RAM fixes; Codex slice integrated
+﻿## Session Memory - 2026-06-12 (session 21) Mass-implement: Codex slice + TUI Phase B + 5m crypto Phase 1; suite 385/385
+
+{
+  "work": "Mass-implement over carryovers. Batch 0: reviewed+integrated the uncommitted sessions-19/20 Codex slice (1f6b5e45). Batch 1: TUI Phase B via Sonnet agent, Fable-reviewed (b64cf57c). Batch 2: C++ indicators S-fix found ALREADY in HEAD (e0ad1ff7) -- DEV_REVIEW entry was stale. Batch 4: 5m crypto Phase 1 via Sonnet agent + a 5-defect Fable correction pass (c3fbc3ba); full 18-symbol 5y backfill launched in background at close.",
+  "key_mechanism": "TwelveData sits BEFORE binance in data_sources.yaml crypto providers and silently caps history at exactly 5,000 bars; the provider loop breaks on first success, so deep fetches never reached Binance (probe: 30d returned 5,000 not 8,640, deterministic). Fix pattern: options.provider pinning in ingestMarketData. Two other durable traps: (a) push(...spread) overflows the call stack above ~100k elements -- the merged history is 146k records; (b) writeTsIndex REPLACES bins from JSON-derived snapshots, so capping JSON requires merge-protected sub-daily bins or later shallow ingests truncate deep backfills. ALSO: agent-run gates lie by omission -- the 5m agent's probe tested fetch+ts-index directly and missed all 5 command-path defects; the orchestrator MUST run the real command end-to-end.",
+  "verified": [
+    "Full suite 385/385 exit 0 (Fable-run twice; baseline was 342).",
+    "Codex slice: focused polymarket bundle 35/35, gateway tsc clean.",
+    "TUI: 99/99 across the TUI surface; status --json 0 real ANSI chars (NOTE: PS 5.1 has no backtick-e escape -- naive count matches letter e, false-positive 122).",
+    "5m: crypto-deep-backfill --days 30 BTCUSDT -> 8,640 bars, bin spans full window, merge preserved prior bars; --days 2 -> guarded exit 1; 160k-record no-RangeError test; writeTsIndex shallow-write preserves 1000-bar deep bin (1010 after).",
+    "ctest -C Debug 29/29 re-verified (C++ agent)."
+  ],
+  "user_decisions": [
+    "Batches 1+2+4 selected; Batch 3 NDJSON skipped. Commit per verified batch. TUI Unicode rich-gated default-on. 5m depth: 5 YEARS.",
+    "Sonnet subagent session limit hit mid-session (resets 20:30 Asia/Saigon) -- correction wave implemented by Fable directly per user 'continue'."
+  ],
+  "remaining": [
+    "Background 5y backfill result to verify next session: per-symbol bars, ~430MB storage, rerun idempotent.",
+    "CLI lazy-requires (RAM #5, optional) deferred; NDJSON streaming (RAM #2) needs user sign-off; merge feat/ml-onnx-section -> main = user; graphify-out deprioritized.",
+    "5m Phases 2-4 (equities/Alpaca, FX paid-provider decision, ML feature-builder 5m) unstarted per scoping doc."
+  ],
+  "dcs": 0.96
+}
+## Session Memory - 2026-06-12 (session 18b) Delegated waves: C++ 29/29, TUI Phase A, RAM fixes; Codex slice integrated
 
 {
   "work": "User authorized standing delegation (baked into session-orchestrator SKILL.md + memory). 7 agents: TUI inventory (Explore) -> Fable wrote TUI_REVAMP_SPEC.md; C++ S-fixes; RAM profile; 5-min data scoping; TUI W1+W5 (spinner/progress); TUI W2-W4 (semantic colors/render helpers/page size); RAM fixes #1+#3. Fable reviewed all diffs, re-ran all gates, committed 6 batches (e0ad1ff7, d51bfbc1, ac7b10ed, 508b7d68, 0e90e2a0, close-out). Also reviewed + integrated a CONCURRENT Codex session's polymarket archive/backtest slice.",
