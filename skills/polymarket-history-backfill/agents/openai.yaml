@@ -1,0 +1,4 @@
+interface:
+  display_name: "Polymarket History Backfill"
+  short_description: "Plan and build Polymarket history archives"
+  default_prompt: "Use $polymarket-history-backfill to plan and implement Polymarket historical backfill and replay backtesting."
