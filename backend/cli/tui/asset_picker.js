@@ -10,6 +10,42 @@
 const { get_Full_Universe_Symbols, isRichTerminal } = require('../lib/utils');
 const { normalizeFavoriteSymbols } = require('../../../shared/lib/settings/user_settings');
 const { promptMultiSelect, promptSelect } = require('./engine/engine');
+const A = require('../../../shared/lib/ui/ansi');
+
+// ---------------------------------------------------------------------------
+// Hierarchy cache — avoids re-fetching the full universe on repeated calls
+// within the same process (e.g. multi-symbol workflows).  TTL: 60 seconds.
+// ---------------------------------------------------------------------------
+let _hierarchyCache = null;
+let _hierarchyCacheAt = 0;
+const HIERARCHY_CACHE_TTL_MS = 60_000;
+
+function _getCachedUniverse() {
+  const now = Date.now();
+  if (_hierarchyCache && (now - _hierarchyCacheAt) < HIERARCHY_CACHE_TTL_MS) {
+    return _hierarchyCache;
+  }
+  return null;
+}
+
+function _setCachedUniverse(value) {
+  _hierarchyCache = value;
+  _hierarchyCacheAt = Date.now();
+}
+
+/** Exposed for tests only — resets the in-process cache. */
+function _clearHierarchyCache() {
+  _hierarchyCache = null;
+  _hierarchyCacheAt = 0;
+}
+
+/**
+ * Render a step-header line using semantic ANSI codes.
+ * e.g.  "Label - Step 1 of 2: filter by family (none = all)"
+ */
+function _stepHeader(label, step, total, hint) {
+  return `\n${A.c(A.SEMANTIC.HEADER, label)} ${A.muted('- Step ' + step + ' of ' + total + ': ' + hint)}`;
+}
 
 /**
  * Build the hierarchical category -> sector -> symbol structure used in the picker.
@@ -128,11 +164,15 @@ async function pickAssets(opts = {}) {
 
   if (!isRichTerminal()) return null;
 
-  let rawUniverse;
-  try {
-    rawUniverse = await get_Full_Universe_Symbols();
-  } catch {
-    rawUniverse = [];
+  // Use cached universe when available to avoid redundant fetches.
+  let rawUniverse = _getCachedUniverse();
+  if (!rawUniverse) {
+    try {
+      rawUniverse = await get_Full_Universe_Symbols();
+    } catch {
+      rawUniverse = [];
+    }
+    _setCachedUniverse(rawUniverse);
   }
 
   const normalizedFavorites = normalizeFavoriteSymbols(favoriteSymbols);
@@ -145,7 +185,7 @@ async function pickAssets(opts = {}) {
     const favoriteSet = new Set(normalizedFavorites);
     const favoriteUniverse = rawUniverse.filter((u) => u && favoriteSet.has(u.symbol));
     if (favoriteUniverse.length > 0) {
-      console.log(`\n\x1b[1;36m${label}\x1b[0m \x1b[90m- Step 1 of 2: choose symbol source\x1b[0m`);
+      console.log(_stepHeader(label, 1, 2, 'choose symbol source'));
       const source = await promptSelect('Symbol source:', [
         { label: 'Favourite symbols', value: 'favorites' },
         { label: 'Browse all symbols', value: 'all' },
@@ -171,7 +211,7 @@ async function pickAssets(opts = {}) {
     }));
 
     if (familyChoices.length > 0) {
-      console.log(`\n\x1b[1;36m${label}\x1b[0m \x1b[90m- Step 1 of 2: filter by family (none = all)\x1b[0m`);
+      console.log(_stepHeader(label, 1, 2, 'filter by family (none = all)'));
       const picked = await promptMultiSelect('Include families:', familyChoices);
       if (picked === null) return null;
       selectedFamilies = picked;
@@ -184,7 +224,7 @@ async function pickAssets(opts = {}) {
     const favoriteChoices = buildSimpleChoices(sourceUniverse);
     if (favoriteChoices.length === 0) return multi ? [] : null;
 
-    console.log(`\n\x1b[1;36m${label}\x1b[0m \x1b[90m- Step 2 of 2: select symbol${multi ? 's' : ''}\x1b[0m`);
+    console.log(_stepHeader(label, 2, 2, `select symbol${multi ? 's' : ''}`));
     if (multi) {
       const defaultPrompt = min > 1 ? `Select symbols (min ${min}):` : 'Select symbols:';
       const selected = await promptMultiSelect(prompt || defaultPrompt, favoriteChoices, { initialValues: preSelected });
@@ -203,10 +243,10 @@ async function pickAssets(opts = {}) {
 
   if (preSelected.length > 0) {
     const list = preSelected.slice(0, 4).join(', ') + (preSelected.length > 4 ? ` +${preSelected.length - 4}` : '');
-    console.log(`\x1b[90mPre-selected: \x1b[36m${list}\x1b[90m - adjust freely\x1b[0m`);
+    console.log(`${A.muted('Pre-selected:')} ${A.c(A.CYAN, list)} ${A.muted('- adjust freely')}`);
   }
 
-  console.log(`\x1b[1;36m${label}\x1b[0m \x1b[90m- Step 2 of 2: select symbol${multi ? 's' : ''}\x1b[0m`);
+  console.log(_stepHeader(label, 2, 2, `select symbol${multi ? 's' : ''}`));
 
   if (multi) {
     const defaultPrompt = min > 1 ? `Select symbols (min ${min}):` : 'Select symbols:';
@@ -221,4 +261,4 @@ async function pickAssets(opts = {}) {
   return selected || null;
 }
 
-module.exports = { pickAssets, buildHierarchy, buildChoices, resolveSectorValues };
+module.exports = { pickAssets, buildHierarchy, buildChoices, resolveSectorValues, _clearHierarchyCache, _stepHeader };
