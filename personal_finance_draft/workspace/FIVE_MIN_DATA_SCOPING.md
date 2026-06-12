@@ -375,7 +375,20 @@ After Phase 2 data exists: explicit `maxBarsPerSymbol` for `ml dump` at 5m (O(n�
 window — cap ~2k-5k bars interactive), 5m feature-frame perf test. Full-depth 5m is for
 backtesting/replay, not direct `buildMLFeatureFrame` input.
 
-### 8e. Decision gates before Phase 2 starts
+### 8e. USER DECISION (2026-06-12 session 22): synthetic 5m is experimental-only
+
+The user ruled on the synthetic-bars half of §7 Q3: **daily-aggregated "5m" bars for non-crypto
+families must NOT be polled into the main data used for ML training or backtesting — experimental
+use only.** Only native sub-daily fetches (crypto today; equities after Phase 2) qualify as
+trainable/backtestable 5m data.
+
+Implementation follow-up for the Phase 2 session (not yet done): enforce this at the consumer
+boundary — either drop `"5m"` from non-crypto `timeframes` in `data_sources.yaml`, or tag
+aggregated records (e.g. `derived_from: '1d'`) and have `ml dump` / backtest loaders filter
+sub-daily records whose provenance is daily aggregation. Tagging is the stronger fix (config
+removal alone won't protect against already-cached synthetic bars in old bins/JSON).
+
+### 8f. Decision gates before Phase 2 starts
 
 1. §7 Q2: proceed with equities now, or crypto-only sufficient near-term? (Q1 depth was answered
    for crypto: 5 years.)

@@ -26,7 +26,12 @@ boot) never has to read tens of thousands of tokens of accumulated history.
   command now fails loudly on zero-bars-with-errors. Proven: real command at 400d → 115,200 bars
   persisted exactly; suite **387/387** (new baseline). Fix UNCOMMITTED pending user. Fresh
   18-symbol 1825d rerun launched in background — **verify per-symbol counts** (BTCUSDT ≈ 525k)
-  when it completes / next session. Trail: `workspace/handoff/2026-06-12.md` session 22.
+  when it completes / next session; at session close it was 5/18 done with every symbol landing
+  the full 525,506 bars. Trail: `workspace/handoff/2026-06-12.md` session 22.
+- **USER DECISION (s22): synthetic 5m = experimental-only.** Daily-aggregated "5m" bars for
+  non-crypto families must NOT feed ML training or backtests; only native deep 5m qualifies.
+  Enforcement is a Phase 2 work item (provenance-tag aggregated records + filter in ml dump /
+  backtest loaders — tagging beats config removal). Plan: FIVE_MIN_DATA_SCOPING.md §8/§8e.
 - **TwelveData 5,000-bar provider-chain trap (NEW, durable):** twelve sits before/early in EVERY
   family's provider chain in `config/markets/data_sources.yaml` and silently caps history at
   exactly 5,000 bars; the ingest provider loop breaks on first success. Crypto deep path now pins

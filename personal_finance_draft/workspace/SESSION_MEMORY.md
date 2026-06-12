@@ -10,7 +10,7 @@
     "Failure visibility: stubbed silent-failure shape now produces ok:false, symbol error text, error_messages[], non-TTY per-symbol logging."
   ],
   "user_decisions": [
-    "None taken in-session yet: fix is UNCOMMITTED (commit = user decision per standing rule); 1825d rerun relaunch was within the carryover's explicit 'rerun failed symbols' instruction."
+    "Commit approved + executed (a565f39b fix, 38077afa/1bc65204/00bb388c docs).", "Synthetic daily-aggregated 5m bars are EXPERIMENTAL-ONLY -- never ML training or backtest input; only native deep 5m qualifies (enforcement = Phase 2 work item, provenance tagging preferred).", "5m Phases 2-4 plan approved into FIVE_MIN_DATA_SCOPING.md section 8."
   ],
   "remaining": [
     "Verify the in-flight 18-symbol 1825d rerun per-symbol counts (BTCUSDT ~525k; SUI/PEPE/WIF/POL listing-bounded; RNDRUSDT delisted -- may legitimately fail loudly now).",
@@ -1188,6 +1188,7 @@
   ],
   "dcs": 0.96
 }
+
 
 
 
