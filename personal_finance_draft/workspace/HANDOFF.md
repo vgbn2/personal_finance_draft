@@ -18,7 +18,21 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
-- **5-year 5m crypto backfill — FAILED SILENTLY, root cause FIXED, rerun in flight (session 22).**
+- **5m deep-data status (session 23): crypto + US equities are now populated with native 5m.**
+  Crypto 1825d rerun finished; 13 configured symbols have full 525,506-bar bins and listing/provider
+  limited symbols are shorter (SUI/PEPE/WIF/POL/RNDR). US equity Phase 2 also finished:
+  `equity-deep-backfill --days 1825 --chunk-delay-ms 500 --json` succeeded for 33/33 Alpaca-eligible
+  US symbols, skipped 44 non-US symbols loudly, and ts-index verification found 3,101,322 merged
+  `provider=alpaca` 5m rows across those 33 symbols.
+- **Synthetic 5m guard is implemented.** Daily-aggregated lower-timeframe records now carry
+  `derived_from_timeframe` / `experimental_only`; validation rejects them as `synthetic_lower_timeframe`;
+  `ml dump` excludes experimental 5m by default and exposes `--include-experimental-5m`. US equity
+  Alpaca 5m is now the promoted native non-crypto path.
+- **Remaining 5m gaps:** Phase 3 indices/commodities/FX still need a provider/budget decision (or
+  a Yahoo 60-day accumulate-forward stop-gap). Equity 5m still needs a session-gap guard before it
+  feeds indicator/backtest consumers, and ML needs explicit 5m caps/perf gates.
+
+- **SUPERSEDED by session 23 5m status above:** session 22 crypto failure/root-cause trail retained below for history.
   Session 21's background run finished `ok:true exit 0` with **0 deep bars for all 17 live
   symbols**: `snapshot.sources.push(...records)` in the ingest provider loop RangeError'd at
   ~525k records and the loop's catch swallowed it. Fixed via `appendRecords()` plain-loop helper
@@ -28,7 +42,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
   18-symbol 1825d rerun launched in background — **verify per-symbol counts** (BTCUSDT ≈ 525k)
   when it completes / next session; at session close it was 5/18 done with every symbol landing
   the full 525,506 bars. Trail: `workspace/handoff/2026-06-12.md` session 22.
-- **USER DECISION (s22): synthetic 5m = experimental-only.** Daily-aggregated "5m" bars for
+- **SUPERSEDED by synthetic guard status above:** Daily-aggregated "5m" bars for
   non-crypto families must NOT feed ML training or backtests; only native deep 5m qualifies.
   Enforcement is a Phase 2 work item (provenance-tag aggregated records + filter in ml dump /
   backtest loaders — tagging beats config removal). Plan: FIVE_MIN_DATA_SCOPING.md §8/§8e.

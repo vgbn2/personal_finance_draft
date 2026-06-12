@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-12T08:41:40.322Z",
+  "updated_at": "2026-06-12T19:45:06.136Z",
   "strategies": {
     "config/strategies/mean_reversion.yaml": {
       "path": "config/strategies/mean_reversion.yaml",
@@ -11,8 +11,8 @@
       "score": 30,
       "verdict": "do-not-trust-yet",
       "trust_state": "do-not-trust-yet",
-      "last_backtest_at": "2026-06-12T08:41:34.972Z",
-      "updated_at": "2026-06-12T08:41:34.975Z",
+      "last_backtest_at": "2026-06-12T19:45:03.928Z",
+      "updated_at": "2026-06-12T19:45:03.929Z",
       "time_weighted_variance": 0.0014221541078175005,
       "time_weighted_stddev": 0.037711458574516854,
       "prop_firm_score": 4,
@@ -32,8 +32,8 @@
       "score": 45,
       "verdict": "do-not-trust-yet",
       "trust_state": "do-not-trust-yet",
-      "last_backtest_at": "2026-06-12T08:41:39.642Z",
-      "updated_at": "2026-06-12T08:41:39.643Z",
+      "last_backtest_at": "2026-06-12T19:45:04.929Z",
+      "updated_at": "2026-06-12T19:45:04.931Z",
       "time_weighted_variance": 0.0010436143875513643,
       "time_weighted_stddev": 0.03230502108885497,
       "prop_firm_score": 6,
@@ -53,8 +53,8 @@
       "score": 30,
       "verdict": "do-not-trust-yet",
       "trust_state": "do-not-trust-yet",
-      "last_backtest_at": "2026-06-12T08:41:40.321Z",
-      "updated_at": "2026-06-12T08:41:40.322Z",
+      "last_backtest_at": "2026-06-12T19:45:06.135Z",
+      "updated_at": "2026-06-12T19:45:06.136Z",
       "time_weighted_variance": 0.0009525682673377977,
       "time_weighted_stddev": 0.03086370469236961,
       "prop_firm_score": 27,
@@ -252,6 +252,27 @@
       "prop_firm_trading_days": 68,
       "prop_firm_best_day_share": 0.06988361301297773,
       "updated_at": "2026-06-02T01:32:16.461Z"
+    },
+    "config/strategies/crypto_layer1_momentum.yaml": {
+      "path": "config/strategies/crypto_layer1_momentum.yaml",
+      "name": "crypto_layer1_momentum",
+      "family": "momentum",
+      "lane": "single_asset",
+      "role": "strategy",
+      "grade": "F",
+      "score": 0,
+      "verdict": "do-not-trust-yet",
+      "trust_state": "do-not-trust-yet",
+      "last_backtest_at": "2026-06-12T19:40:42.448Z",
+      "time_weighted_variance": 0,
+      "time_weighted_stddev": 0,
+      "prop_firm_score": 0,
+      "prop_firm_grade": "F",
+      "prop_firm_verdict": "breach-risk",
+      "prop_firm_passable": false,
+      "prop_firm_trading_days": 18,
+      "prop_firm_best_day_share": 0,
+      "updated_at": "2026-06-12T19:40:45.371Z"
     }
   }
 }

@@ -802,3 +802,51 @@ Phases 2-4 plan written into FIVE_MIN_DATA_SCOPING.md section 8 (00bb388c). USER
 synthetic daily-aggregated 5m bars = experimental-only, never ML/backtest input; enforcement
 (provenance tagging + loader filter) queued for Phase 2. Rerun at close: 5/18 symbols, each at
 525,506 bars (full 5y). Session ended via session-orchestrator close-out.
+
+## 2026-06-12 - Session 23: session-orchestrator boot
+
+**Prompts:** `$session orcharestrator` (interpreted as `/session-orchestrator` boot).
+
+**Outcome:** Boot loaded repo truth through the current Gemini bootstrap order: `workspace/HANDOFF.md`,
+`workspace/handoff/2026-06-12.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, and
+`docs/engineering/codebase_org.md`. Current carryovers remain: verify the full 18-symbol 1825d 5m
+crypto rerun per-symbol counts, enforce the synthetic-5m experimental-only boundary before ML/backtest
+use, avoid the TwelveData 5,000-bar trap in later deep 5m phases, and keep NDJSON/RAM/lazy-require work
+deferred until selected. Graph report was stale (`6eea7b77` vs current `5740b7db`), so `graphify update .`
+was run and refreshed `graphify-out` to 9,535 nodes, 14,673 edges, and 743 communities. Worktree already
+had pre-existing runtime artifact modifications in `storage/data/backtests/latest_backtest.json` and
+`storage/data/strategy_grade_index.json`; left untouched.
+
+## 2026-06-12 - Session 23b: 5m other-symbol expansion
+
+**Prompts:** `plan what is needed to be done this session and go on`; `next is the 5min data all the way for other symbols`; `done?`.
+
+**Outcome:** Implemented and ran native Alpaca US-equity 5m Phase 2. New `equity-deep-backfill`
+command planned 33 eligible US symbols and 44 explicit non-US skips, then live backfilled 33/33 over
+1,825 days with `--chunk-delay-ms 500`: 3,100,888 fetched bars reported by command; ts-index
+verification found 3,101,322 merged `provider=alpaca` 5m rows and no missing bins. Crypto 1825d
+rerun was also verified complete/no longer running. Verification: affected bundle 47/47 and full
+`npm.cmd test` 395/395.
+
+## 2026-06-13 - Session 23c: retrospective close-out
+
+**Prompt:** `$session-retrospective`.
+
+**Outcome:** Ran the session-retrospective workflow against the completed 5m data session. Appended
+durable truths, near misses, evidence, and planning rules to `workspace/SESSION_MEMORY.md`; added
+cross-project deep historical data lessons to `workspace/CROSS_PROJECT_LEARNINGS.md`.
+
+## 2026-06-13 - Session 24: boot (Claude orchestrator)
+
+**Prompts:** `/session-orchestrator` boot (no task prompt yet).
+
+**Outcome:** Boot per orchestrator protocol: HANDOFF.md pointer + carryovers, handoff/2026-06-12.md
+(sessions 22-23b), SESSION_MEMORY.md, STATE.md. Harness-tracked background task for the 18-symbol
+1825d crypto rerun reported completed (exit 0); its JSON tail confirms per-symbol results (13 full
+525,506-bar symbols; PEPE 326,571 / WIF 238,780 / POL 183,534 listing-bounded; RNDR 969 stale) --
+closes the session-23 "capture final per-symbol counts" carryover. Found sessions 23/23b code+docs
+batch ENTIRELY UNCOMMITTED in the working tree (19 modified files + new equity_5m_backfill.test.js;
+suite was 395/395 at session 23b close); writers quiescent since 02:36. Also flagged large user
+transfer artifacts untracked at repo root: personal_finance_draft-state.zip (136MB),
+personal_finance_draft.bundle (400MB), and `vgbn1@vgbn-` (400MB, byte-size-identical to the bundle --
+looks like a botched scp destination). Awaiting user direction; commit decision is the user's.
