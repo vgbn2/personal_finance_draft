@@ -3,6 +3,7 @@
 const {
   fetchResolvedGammaMarkets,
   fetchClobPriceHistory,
+  capturePolymarketOrderbookLite,
   loadArchivedMarketIndex,
   loadArchivedPriceSeries,
   summarizeArchiveCoverage,
@@ -118,9 +119,13 @@ async function runPolymarketBacktest(opts = {}) {
     impactY       = 1,
     orderNotional = 10,
     rollingMarketVolume = undefined,
+    captureOrderbookLite = false,
+    pmxtApiKey = process.env.PMXT_API_KEY || '',
+    pmxtBaseUrl = process.env.PMXT_BASE_URL || 'https://api.pmxt.dev',
     noCache      = false,
     _fetchMarkets = fetchResolvedGammaMarkets,
     _fetchHistory = fetchClobPriceHistory,
+    _captureOrderbookLite = capturePolymarketOrderbookLite,
     _loadMarkets = loadArchivedMarketIndex,
     _loadPrices = loadArchivedPriceSeries,
     _summarizeArchive = summarizeArchiveCoverage,
@@ -160,6 +165,8 @@ async function runPolymarketBacktest(opts = {}) {
   let maxDrawdown = 0;
   let totalHoldHours = 0;
   let holdCount = 0;
+  let orderbookLiteCaptured = 0;
+  let orderbookLiteFailures = 0;
 
   for (const market of markets) {
     const tokenId = yesTokenId(market);
@@ -215,14 +222,57 @@ async function runPolymarketBacktest(opts = {}) {
 
     if (!entry) continue;
 
+    let entryOrderbookLite = null;
+    let exitOrderbookLite = null;
+    if (captureOrderbookLite) {
+      const entrySince = new Date(entry.timestamp).getTime();
+      const exitSince = market.end_date || market.endDate || market.close_time
+        ? new Date(market.end_date || market.endDate || market.close_time).getTime()
+        : null;
+
+      const entryBook = await _captureOrderbookLite(market, tokenId, {
+        root: archiveRoot,
+        role: 'entry',
+        since: Number.isFinite(entrySince) ? entrySince : undefined,
+        apiKey: pmxtApiKey,
+        baseUrl: pmxtBaseUrl,
+      });
+      if (entryBook.ok && Array.isArray(entryBook.rows) && entryBook.rows.length > 0) {
+        entryOrderbookLite = entryBook.rows[0];
+        orderbookLiteCaptured += entryBook.rows.length;
+      } else {
+        orderbookLiteFailures++;
+      }
+
+      if (Number.isFinite(exitSince)) {
+        const exitBook = await _captureOrderbookLite(market, tokenId, {
+          root: archiveRoot,
+          role: 'exit',
+          since: exitSince,
+          apiKey: pmxtApiKey,
+          baseUrl: pmxtBaseUrl,
+        });
+        if (exitBook.ok && Array.isArray(exitBook.rows) && exitBook.rows.length > 0) {
+          exitOrderbookLite = exitBook.rows[0];
+          orderbookLiteCaptured += exitBook.rows.length;
+        } else {
+          orderbookLiteFailures++;
+        }
+      }
+    }
+
     trades++;
     const executionCost = estimatePolymarketExecutionCost({
       fee,
-      half_spread_estimate: halfSpreadEstimate,
+      half_spread_estimate: entryOrderbookLite && Number.isFinite(Number(entryOrderbookLite.spread))
+        ? Number(entryOrderbookLite.spread) / 2
+        : halfSpreadEstimate,
       Y: impactY,
       rolling_volatility: rollingVolatilityAtEntry(series, entry, interval),
       order_notional: orderNotional,
-      rolling_market_volume: volumeForCostModel(market, rollingMarketVolume),
+      rolling_market_volume: entryOrderbookLite && Number.isFinite(Number(entryOrderbookLite.depth_5pct))
+        ? Number(entryOrderbookLite.depth_5pct)
+        : volumeForCostModel(market, rollingMarketVolume),
     });
     const tradeGrossPnl = resolutionPrice - entry.price;
     const pnl = tradeGrossPnl - executionCost.total_cost;
@@ -255,6 +305,10 @@ async function runPolymarketBacktest(opts = {}) {
       fallbackOnly:    historySource === 'gamma_outcome_price_fallback',
       historySource,
       holdHours:       hold,
+      orderbookLite:   entryOrderbookLite ? {
+        entry: entryOrderbookLite,
+        exit: exitOrderbookLite,
+      } : null,
     });
   }
 
@@ -280,6 +334,8 @@ async function runPolymarketBacktest(opts = {}) {
     gammaFallbacks,
     fallbackOnlyCount,
     gammaSkipped,
+    orderbookLiteCaptured,
+    orderbookLiteFailures,
     trades,
     wins,
     losses:          trades - wins,

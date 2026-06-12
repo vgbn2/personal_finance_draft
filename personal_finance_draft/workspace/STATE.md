@@ -386,6 +386,14 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
 - Order-book history is deliberately not dense-archived. PMXT/order-book-lite remains phase 2 for
   candidate trade windows only, after price-history signals survive basic replay.
 
+## Update - 2026-06-12 Polymarket orderbook-lite phase 2
+
+- Added PMXT-based candidate-window snapshots behind `--capture-orderbook-lite`. The archive now
+  stores derived order-book rows under `storage/data/polymarket_history/orderbooks-lite/` with
+  best bid/ask, mid, spread, 1% and 5% depth, timestamp, and source.
+- PMXT requests use `https://api.pmxt.dev` and require `PMXT_API_KEY`; the feature stays opt-in
+  and the tests inject mock fetchers so the suite remains no-network.
+
 ## Update - 2026-06-12 session 18b - roadmap waves 2/6/7/8 progress; "29/29 C++ tests" claim TRUE again
 
 - C++ ctest fixture debt CLEARED (`e0ad1ff7`): ctest -C Debug 29/29 (the Key Accomplishments
