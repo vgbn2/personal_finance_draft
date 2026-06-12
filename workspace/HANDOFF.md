@@ -18,6 +18,21 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **5-year 5m crypto backfill (NEW, 2026-06-12 session 21): VERIFY NEXT SESSION.** An 18-symbol
+  sequential `crypto-deep-backfill --days 1825` run was launched in the background at session
+  close (~50 min, ~430MB into `storage/data/ts/`). Next session: check per-symbol bar counts
+  (`readTsIndex` probe; BTCUSDT 5y ≈ 525k bars), rerun the command for any failed symbols
+  (idempotent — bins merge). Code: `c3fbc3ba`.
+- **TwelveData 5,000-bar provider-chain trap (NEW, durable):** twelve sits before/early in EVERY
+  family's provider chain in `config/markets/data_sources.yaml` and silently caps history at
+  exactly 5,000 bars; the ingest provider loop breaks on first success. Crypto deep path now pins
+  `options.provider='binance'`. Equities/indices/commodities deep backfills (5m Phases 2-3) will
+  hit the same wall — pin their providers too.
+- **Deferred from session 21:** CLI lazy-requires (RAM #5, optional — agent session limit + file
+  overlap); NDJSON streaming (RAM #2) still needs user format sign-off; 5m Phases 2-4 per
+  FIVE_MIN_DATA_SCOPING.md.
+- **Suite baseline is now 385/385** (session 21; was 342). Branch `feat/ml-onnx-section` remains
+  ready for the user's merge decision.
 - **Parked 2026-06-11 batch — RESOLVED (2026-06-12 session 18b):** the user's own checkpoint
   commit `76ef48fb` (10:38) committed the entire ~770-line parked working-tree batch (status.js
   recovered_live, trade.js, asset_picker.js, manifest.js, cli_executor.js, configs + many
