@@ -519,7 +519,19 @@ int printPortfolio(const std::vector<std::string>& args) {
 int printIndicators(const std::vector<std::string>& args) {
     const std::string symbol = optionValue(args, "--symbol", "AAPL");
     const std::string timeframe = optionValue(args, "--timeframe", "1d");
-    const auto input = std::filesystem::path(optionValue(args, "--input", "storage/data/cache/backtest_history.json"));
+    const std::string input_arg = optionValue(args, "--input");
+    std::filesystem::path input;
+    if (!input_arg.empty()) {
+        input = std::filesystem::path(input_arg);
+    } else {
+        const std::filesystem::path equities_partition("storage/data/cache/equities/backtest_history.json");
+        if (std::filesystem::exists(equities_partition)) {
+            input = equities_partition;
+        } else {
+            std::cout << "{\"ok\":false,\"error\":\"no --input provided and default equities partition not found; pass --input <path>\"}";
+            return 1;
+        }
+    }
     const std::size_t max_bars = parseSizeOption(args, "--max-bars", 0U);
     const std::size_t show_last = parseSizeOption(args, "--show-last", 5U);
 
