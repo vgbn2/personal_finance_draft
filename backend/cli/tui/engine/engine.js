@@ -4,6 +4,13 @@ const A = require('../../../../shared/lib/ansi');
 const { formatTimeForSettings, layoutConfig } = require('../../../../shared/lib/settings/runtime');
 const { registerCtrlCPress } = require('../../lib/exit_guard');
 const { renderSigmaSparkline, renderCorrelationHeatmap, centerCell } = require('../visualizations');
+const {
+  renderSeparator,
+  renderHeader,
+  renderSearchBar: renderSearchBarHelper,
+  renderSelectRow,
+  renderMultiSelectRow,
+} = require('./render_helpers');
 
 let _authEmail = null;
 function setAuthEmail(email) { _authEmail = email; }
@@ -39,23 +46,46 @@ function isRichTerminal() {
   return process.stdout.isTTY && !process.env.CI;
 }
 
+// ---------------------------------------------------------------------------
+// W4 — Dynamic page-size derivation.
+//
+// Preset values from layoutConfig() are now treated as *caps* (maximum).
+// On a live TTY the effective page size is derived from the terminal height:
+//   effectivePageSize = clamp(rows - chromeLines, 5, cap)
+// On non-TTY (CI, pipe, --json) process.stdout.rows is undefined and the
+// preset cap is returned unchanged, preserving prior behavior.
+//
+// chromeLines: number of non-list rows the prompt renders
+//   (title + top-sep + bottom-sep + search = 4 for both prompts).
+// ---------------------------------------------------------------------------
+const CHROME_LINES = 4;
+
+/**
+ * Derive effective page size from terminal rows and a preset cap.
+ * Pure function — no side effects.
+ *
+ * @param {number} cap         - maximum page size (preset from layoutConfig)
+ * @param {number|undefined} rows - process.stdout.rows (undefined in non-TTY)
+ * @param {number} [chromeLines]  - non-list rows the prompt occupies (default 4)
+ * @returns {number} effective page size
+ */
+function derivePageSize(cap, rows, chromeLines) {
+  const chrome = (chromeLines !== undefined) ? chromeLines : CHROME_LINES;
+  if (!rows || rows <= 0) return cap;  // non-TTY: fall back to preset
+  const derived = rows - chrome;
+  return Math.max(5, Math.min(cap, derived));
+}
+
 function paint(code, text) {
   return A.c(code, text);
 }
 
-function separator(width = 80) {
-  return `${A.GRAY}${A.GLYPH.hline.repeat(width)}${A.RESET}\n`;
+function separator(width) {
+  return renderSeparator(width);
 }
 
 function searchBar(filterText, searchMode, matchCount) {
-  const suffix = matchCount === 1 ? 'match' : 'matches';
-  if (searchMode && filterText) {
-    return `${paint(A.B_CYAN, A.GLYPH.pointer)} ${paint(A.BOLD, filterText)}${paint(A.BLINK, '_')}  ${A.muted(`${matchCount} ${suffix}`)}`;
-  }
-  if (searchMode) {
-    return `${paint(A.B_CYAN, A.GLYPH.pointer)} ${A.muted('type to search...')}${paint(A.BLINK, '_')}  ${A.muted(`(${matchCount} items)`)}`;
-  }
-  return A.muted(`${A.GLYPH.pointer} / to search...  (${matchCount} items)`);
+  return renderSearchBarHelper(filterText, searchMode, matchCount);
 }
 
 function searchText(value) {
@@ -150,11 +180,11 @@ function customSelectionBar(customState) {
   const custom = customState.custom.slice(0, 8).join(', ');
   const more = customState.custom.length > 8 ? ` +${customState.custom.length - 8} more` : '';
   const missing = customState.missing.length
-    ? ` ${paint(A.YELLOW, `Missing: ${customState.missing.join(', ')}`)}`
+    ? ` ${paint(A.SEMANTIC.ERROR, `Missing: ${customState.missing.join(', ')}`)}`
     : '';
   const useText = customState.custom.length
-    ? `${paint(A.GREEN, `Custom: ${custom}${more}`)}`
-    : paint(A.YELLOW, 'Custom: no selectable matches');
+    ? `${paint(A.SEMANTIC.SUCCESS, `Custom: ${custom}${more}`)}`
+    : paint(A.SEMANTIC.WARN, 'Custom: no selectable matches');
   return `  ${useText}${missing}\n`;
 }
 
@@ -193,7 +223,7 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
     resolvedOptions.reduce((acc, o, i) => { if (initSet.has(o.value)) acc.push(i); return acc; }, [])
   );
   
-  const PAGE_SIZE = layoutConfig().multiSelectPageSize;
+  const PAGE_SIZE = derivePageSize(layoutConfig().multiSelectPageSize, process.stdout.rows);
   let scrollOffset = 0;
 
   return new Promise(resolve => {
@@ -226,12 +256,9 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
       let buffer = '';
       const time = formatTimeForSettings();
       const selCount = selectedIndices.size;
-      const SEP = separator(80);
       // Title bar
-      buffer += `${paint(A.B_CYAN, 'SOVEREIGN')} ${A.muted(`| ${time} |`)} ${paint(A.BOLD, question)}`;
-      if (selCount > 0) buffer += ` ${paint(A.GREEN, `(${selCount})`)}`;
-      buffer += '\n';
-      buffer += SEP;
+      buffer += renderHeader(question, time, { selCount });
+      buffer += separator();
       const matchCount = filterText
         ? getFiltered().filter(o => !o.isSectorHeader).length
         : resolvedOptions.filter(o => !o.isSectorHeader).length;
@@ -245,35 +272,23 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
         if (item.type === 'select_all') {
           const fi = getFilteredIndices();
           const allChecked = fi.length > 0 && fi.every(idx => selectedIndices.has(idx));
-          const saPrefix = allChecked ? paint(A.GREEN, A.GLYPH.selected) : A.GLYPH.empty;
-          const saLabel = allChecked ? 'Deselect All' : 'Select All';
-          buffer += isSelected
-            ? `  ${paint(A.GREEN, A.GLYPH.pointer)} ${saPrefix} ${paint(A.YELLOW, saLabel)}\n`
-            : `    ${saPrefix} ${paint(A.YELLOW, saLabel)}\n`;
-        } else if (item.type === 'header') {
-          buffer += `\n  ${paint(A.B_YELLOW, `--- ${item.label.toUpperCase()} ---`)}\n`;
+          buffer += renderMultiSelectRow(item, isSelected, false, null, { allChecked });
         } else if (item.isSectorHeader) {
           // Tri-state sector header: shows selected/total child count
           const childIndices = resolvedOptions.reduce((acc, o, idx) => {
             if (o.sectorGroup === item.sectorGroup && !o.isSectorHeader) acc.push(idx);
             return acc;
           }, []);
-          const selCount = childIndices.filter(idx => selectedIndices.has(idx)).length;
+          const sc = childIndices.filter(idx => selectedIndices.has(idx)).length;
           const total = childIndices.length;
-          const prefix = selCount === total && total > 0 ? paint(A.GREEN, A.GLYPH.selected) : selCount > 0 ? paint(A.YELLOW, A.GLYPH.partial) : A.GLYPH.empty;
-          buffer += isSelected
-            ? `  ${paint(A.GREEN, A.GLYPH.pointer)} ${prefix} ${paint(A.B_YELLOW, item.label || item.value)}\n`
-            : `    ${prefix} ${paint(A.YELLOW, item.label || item.value)}\n`;
+          buffer += renderMultiSelectRow(item, isSelected, false, { selCount: sc, total }, null);
         } else {
           const foundIdx = resolvedOptions.findIndex(o => o.value === item.value && o.label === item.label);
           const isChecked = selectedIndices.has(foundIdx);
-          const prefix = isChecked ? paint(A.GREEN, A.GLYPH.selected) : A.GLYPH.empty;
-          buffer += isSelected
-            ? `  ${paint(A.GREEN, A.GLYPH.pointer)} ${prefix} ${paint(A.CYAN, item.label || item.value)}\n`
-            : `    ${prefix} ${item.label || item.value}\n`;
+          buffer += renderMultiSelectRow(item, isSelected, isChecked, null, null);
         }
       });
-      buffer += SEP;
+      buffer += separator();
       if (searchMode && filterText) buffer += customSelectionBar(customState);
       buffer += `  ${searchDisplay}\n`;
       // Line-counting redraw: reliable on Windows ConPTY where CUR_SAVE/CUR_RESTORE fail.
@@ -408,7 +423,7 @@ async function promptSelect(question, options) {
     return { label: String(o), value: o };
   });
 
-  const PAGE_SIZE = layoutConfig().selectPageSize;
+  const PAGE_SIZE = derivePageSize(layoutConfig().selectPageSize, process.stdout.rows);
   let scrollOffset = 0;
 
   return new Promise(resolve => {
@@ -429,10 +444,9 @@ async function promptSelect(question, options) {
       
       let buffer = '';
       const time = formatTimeForSettings();
-      const statusLine = _statusLine || A.muted('Status: checking...');
-      
-      buffer += `${paint(A.B_CYAN, 'SOVEREIGN')} ${A.muted(`| ${time} |`)} ${paint(A.BOLD, question)}\n`;
-      buffer += separator(80);
+
+      buffer += renderHeader(question, time);
+      buffer += separator();
       if (visible.length === 0) {
         buffer += `    ${A.muted('No matches')}\n`;
       }
@@ -440,17 +454,9 @@ async function promptSelect(question, options) {
       for (let i = 0; i < visible.length; i++) {
         const item = visible[i];
         const isSelected = (i + scrollOffset) === selectedIndex;
-        
-        if (item.type === 'header') {
-            buffer += `\n  ${paint(A.B_YELLOW, `--- ${item.label.toUpperCase()} ---`)}\n`;
-        } else {
-            const line = isSelected 
-              ? `  ${paint(A.GREEN, A.GLYPH.pointer)} ${paint(A.CYAN, item.label || item.value || item)}`
-              : `    ${item.label || item.value || item}`;
-            buffer += line + '\n';
-        }
+        buffer += renderSelectRow(item, isSelected);
       }
-      buffer += separator(80);
+      buffer += separator();
       buffer += `  ${searchBar(filterText, searchMode, filtered.length)}\n`;
 
       if (prevLineCount > 0) {
@@ -561,7 +567,7 @@ async function promptText(question, defaultValue = '') {
   process.stdin.resume();
   process.stdin.setEncoding('utf8');
   let input = '';
-  process.stdout.write(`${paint(A.CYAN, '?')} ${paint(A.BOLD, question)} ${defaultValue ? `${A.muted(`(${defaultValue})`)} ` : ''}`);
+  process.stdout.write(`${paint(A.SEMANTIC.HEADER, '?')} ${paint(A.BOLD, question)} ${defaultValue ? `${A.muted(`(${defaultValue})`)} ` : ''}`);
   return new Promise(resolve => {
     const onKey = (key) => {
       if (/[\r\n]/.test(key)) {
@@ -610,7 +616,7 @@ async function resolveFlags(flags) {
     } else if (spec.type === 'text') {
       value = await promptText(`${label}:`, spec.default);
       if (spec.required && !value) {
-        process.stdout.write(`\n${paint(A.RED, `${A.GLYPH.warning} ${label} is required.`)}\n`);
+        process.stdout.write(`\n${paint(A.SEMANTIC.ERROR, `${A.GLYPH.warning} ${label} is required.`)}\n`);
         return null;
       }
     } else if (spec.type === 'confirm') {
@@ -667,7 +673,7 @@ function clearScreen() {
 
 async function runInteractiveMenu(handleCommand) {
   clearScreen();
-  console.log(`${paint(A.B_CYAN, 'SOVEREIGN TERMINAL')} ${A.muted('v1.2.2')}`);
+  console.log(`${paint(A.SEMANTIC.HEADER, 'SOVEREIGN TERMINAL')} ${A.muted('v1.2.2')}`);
   console.log(`${A.muted('Navigate with Up/Down arrows and Enter.')}\n`);
 
   let lastFullArgs = null;
@@ -691,11 +697,11 @@ async function runInteractiveMenu(handleCommand) {
       let action = 'rerun';
       while (action === 'rerun') {
         clearScreen();
-        console.log(`${paint(A.B_CYAN, 'SOVEREIGN')} ${A.muted(`> ${lastFullArgs.join(' ')}`)}\n`);
+        console.log(`${paint(A.SEMANTIC.HEADER, 'SOVEREIGN')} ${A.muted(`> ${lastFullArgs.join(' ')}`)}\n`);
         try {
           await handleCommand(lastFullArgs);
         } catch (error) {
-          console.error(`${paint(A.RED, 'Error:')} ${error.message}`);
+          console.error(`${paint(A.SEMANTIC.ERROR, 'Error:')} ${error.message}`);
         }
         process.stdout.write(`\n${A.muted(A.GLYPH.hline.repeat(60))}\n`);
         process.stdout.write(A.muted('  Enter: menu | R: rerun function | B/Esc: back'));
@@ -726,12 +732,12 @@ async function runInteractiveMenu(handleCommand) {
 
       while (action === 'rerun') {
         clearScreen();
-        console.log(`${paint(A.B_CYAN, 'SOVEREIGN')} ${A.muted(`> ${fullArgs.join(' ')}`)}\n`);
+        console.log(`${paint(A.SEMANTIC.HEADER, 'SOVEREIGN')} ${A.muted(`> ${fullArgs.join(' ')}`)}\n`);
 
         try {
           await handleCommand(fullArgs);
         } catch (error) {
-          console.error(`${paint(A.RED, 'Error:')} ${error.message}`);
+          console.error(`${paint(A.SEMANTIC.ERROR, 'Error:')} ${error.message}`);
         }
 
         process.stdout.write(`\n${A.muted(A.GLYPH.hline.repeat(60))}\n`);
@@ -767,6 +773,7 @@ module.exports = {
     keyTokens,
     postCommandActionForKey,
     centerCell,
-    buildCustomSelection
+    buildCustomSelection,
+    derivePageSize,
   }
 };
