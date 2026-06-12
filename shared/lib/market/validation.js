@@ -102,6 +102,7 @@ const PROVIDER_START_DATES = {
 };
 
 const LOWER_TIMEFRAMES = new Set(['tick', '1m', '5m', '15m', '30m', '1h', '4h']);
+const DAILY_OR_ABOVE_TIMEFRAMES = new Set(['1d', '1w', '1mo']);
 
 function isFiniteNumber(value) {
   return typeof value === 'number' && Number.isFinite(value);
@@ -240,6 +241,15 @@ function isLowerTimeframe(record) {
   return LOWER_TIMEFRAMES.has(record.timeframe || '');
 }
 
+function derivedFromTimeframe(record) {
+  return String(
+    record.derived_from_timeframe ||
+    record.source_timeframe ||
+    record.base_timeframe ||
+    '',
+  ).toLowerCase();
+}
+
 function providerStartDate(record) {
   const name = normalizedProviderName(record);
   for (const [provider, start] of Object.entries(PROVIDER_START_DATES)) {
@@ -277,14 +287,26 @@ function addTemporalProvenanceIssues(record, report, index) {
   }
 
   const label = sourceLabel(record);
-  if (isLowerTimeframe(record) && (label.includes('synthetic') || label.includes('deconstruct'))) {
+  const derivedFrom = derivedFromTimeframe(record);
+  if (
+    isLowerTimeframe(record) &&
+    (
+      label.includes('synthetic') ||
+      label.includes('deconstruct') ||
+      label.includes('daily_aggregate') ||
+      DAILY_OR_ABOVE_TIMEFRAMES.has(derivedFrom) ||
+      ((record.timeframe || '') === '5m' && label.includes('rollup'))
+    )
+  ) {
     addIssue(
       report,
       'error',
       'synthetic_lower_timeframe',
       record,
       index,
-      'lower-timeframe bar is synthetic/deconstructed and must not be treated as live history',
+      derivedFrom
+        ? `lower-timeframe bar is derived from ${derivedFrom} history and must not be treated as live history`
+        : 'lower-timeframe bar is synthetic/deconstructed and must not be treated as live history',
     );
   } else if (isLowerTimeframe(record) && label.includes('rollup')) {
     addIssue(

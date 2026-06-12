@@ -60,10 +60,11 @@ async function commandFeaturesDump(args) {
   const outPath = optionValue(args, '--out', path.join(REPO_ROOT, 'storage', 'data', 'ml', 'feature_frame.csv'));
   const useFred = !hasFlag(args, '--no-fred');
   const json = hasFlag(args, '--json');
+  const includeExperimentalSynthetic5m = hasFlag(args, '--include-experimental-5m');
 
   // Cap bars per symbol to the requested window (1d => ~1 bar/day). Bounds the O(n^2) build.
   const maxBarsPerSymbol = timeframe === '1d' ? days : 0;
-  const assetSources = loadAssetSourcesFromCache(symbols, timeframe, { maxBarsPerSymbol });
+  const assetSources = loadAssetSourcesFromCache(symbols, timeframe, { maxBarsPerSymbol, includeExperimentalSynthetic5m });
   if (assetSources.length === 0) {
     const msg = { ok: false, error: 'no_asset_sources', symbols, timeframe, hint: 'check storage/data/cache/<family>/backtest_history.json' };
     console.log(json ? JSON.stringify(msg, null, 2) : `No cached bars for symbols=[${symbols.join(',')}] timeframe=${timeframe}`);
@@ -74,7 +75,7 @@ async function commandFeaturesDump(args) {
   const anchors = {};
   const anchorReport = {};
   for (const [name, sym] of Object.entries(CACHE_ANCHORS)) {
-    const series = cacheCloseSeriesAnchor(sym, timeframe);
+    const series = cacheCloseSeriesAnchor(sym, timeframe, { includeExperimentalSynthetic5m });
     if (series.length > 0) { anchors[name] = series; anchorReport[name] = series.length; }
   }
   Object.assign(anchors, loadCryptoAggregateAnchors());
@@ -102,6 +103,7 @@ async function commandFeaturesDump(args) {
   const meta = {
     out: outPath, rows, feature_columns: columns.length,
     assets: frame.meta.assets, symbols, timeframe, horizon, corr_period: corrPeriod, deadzone,
+    include_experimental_5m: includeExperimentalSynthetic5m,
     anchors: anchorReport, cross_family_features: frame.feature_names,
     dropped_no_label: frame.meta.dropped_no_label, generated_at: frame.generated_at,
   };
@@ -180,7 +182,7 @@ async function commandMl(args) {
   if (sub === 'dump') return commandFeaturesDump(args.slice(1));
   if (sub === 'aggregates' && args[1] === 'refresh') return commandAggregatesRefresh(args.slice(2));
   console.log('Usage:');
-  console.log('  sovereign ml dump [--symbols A,B] [--timeframe 1d] [--horizon 5] [--corr-period 20] [--days 1095] [--out path] [--no-fred] [--json]');
+  console.log('  sovereign ml dump [--symbols A,B] [--timeframe 1d] [--horizon 5] [--corr-period 20] [--days 1095] [--out path] [--no-fred] [--include-experimental-5m] [--json]');
   console.log('  sovereign ml aggregates refresh [--days 365] [--throttle-ms 1500] [--universe BTC,ETH,...] [--out path] [--json]');
   return sub ? 1 : 0;
 }
