@@ -120,10 +120,15 @@ function buildMLFeatureFrame(opts = {}) {
     const closes = bars.map((b) => Number(b.close));
     const assetRet = toReturns(closes);
 
-    // Pre-align anchor returns onto this asset's date axis (forward-filled, point-in-time).
+    // Pre-align anchor returns and level series onto this asset's date axis (forward-filled,
+    // point-in-time). Both are computed once per (symbol, anchor) pair outside the row loop;
+    // the aligned level array is reused inside the loop via .slice(0, i+1) for trailingReturn,
+    // eliminating O(n) redundant forwardFillOnto calls per anchor per row.
     const anchorRet = {};
+    const anchorAligned = {}; // full forward-filled level series, pre-computed once per anchor
     for (const name of anchorNames) {
-      anchorRet[name] = toReturns(forwardFillOnto(dates, anchors[name]));
+      anchorAligned[name] = forwardFillOnto(dates, anchors[name]);
+      anchorRet[name] = toReturns(anchorAligned[name]);
     }
 
     for (let i = 0; i < bars.length; i += 1) {
@@ -143,8 +148,9 @@ function buildMLFeatureFrame(opts = {}) {
       // Cross-family features (corr + anchor momentum/regime input), all <= date i.
       for (const name of anchorNames) {
         const corr = rollingPairCorr(assetRet, anchorRet[name], i, corrPeriod);
+        // Use the pre-computed aligned level array; only slice to the current row window.
         const mom = i + 1 >= corrPeriod
-          ? trailingReturn(forwardFillOnto(dates, anchors[name]).slice(0, i + 1), corrPeriod)
+          ? trailingReturn(anchorAligned[name].slice(0, i + 1), corrPeriod)
           : null;
         out[`xf_corr_${name}`] = isNum(corr) ? corr : null;
         out[`regime_${name}_mom`] = isNum(mom) ? mom : null;

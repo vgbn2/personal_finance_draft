@@ -14,6 +14,23 @@ const path = require('node:path');
 const { REPO_ROOT, STORAGE_TS_DIR } = require('../runtime/paths');
 const { readTsIndex } = require('../market/validation');
 
+// Module-level cache for readFamilySources().
+// Keyed by resolved cacheRoot so per-root correctness is preserved.
+// TTL: 60 seconds — long-lived processes (API server, bot) revalidate periodically
+// rather than serving stale data forever, while a single ml-dump invocation (< 60 s)
+// pays the JSON parse cost only once regardless of how many anchor symbols are loaded.
+const _familySourcesCache = new Map(); // key -> { data: Array, expireAt: number }
+const _FAMILY_CACHE_TTL_MS = 60_000;
+
+/** Evict the cache for the given root (or all roots if root is null/undefined). For tests. */
+function clearFamilySourcesCache(cacheRoot) {
+  if (cacheRoot == null) {
+    _familySourcesCache.clear();
+  } else {
+    _familySourcesCache.delete(path.resolve(cacheRoot));
+  }
+}
+
 function defaultCacheRoot() {
   return path.join(REPO_ROOT, 'storage', 'data', 'cache');
 }
@@ -65,9 +82,16 @@ function mergeSourceRecords(jsonRecords, tsRecords) {
 }
 
 function readFamilySources(cacheRoot) {
-  const root = cacheRoot || defaultCacheRoot();
+  const root = path.resolve(cacheRoot || defaultCacheRoot());
+  const now = Date.now();
+  const cached = _familySourcesCache.get(root);
+  if (cached && now < cached.expireAt) return cached.data;
+
   const out = [];
-  if (!fs.existsSync(root)) return out;
+  if (!fs.existsSync(root)) {
+    _familySourcesCache.set(root, { data: out, expireAt: now + _FAMILY_CACHE_TTL_MS });
+    return out;
+  }
   for (const family of fs.readdirSync(root)) {
     const file = path.join(root, family, 'backtest_history.json');
     if (!fs.existsSync(file)) continue;
@@ -79,6 +103,7 @@ function readFamilySources(cacheRoot) {
       // skip unreadable/partial cache file
     }
   }
+  _familySourcesCache.set(root, { data: out, expireAt: now + _FAMILY_CACHE_TTL_MS });
   return out;
 }
 
@@ -185,4 +210,5 @@ module.exports = {
   loadAssetSourcesFromCache,
   cacheCloseSeriesAnchor,
   frameToCsv,
+  clearFamilySourcesCache,
 };
