@@ -172,8 +172,8 @@ const COMMAND_MANIFEST = {
       }}
     ],
     backend: [
-      { id: 'status', prefix: ['backend'], label: 'Backend Status' },
-      { id: 'stats', prefix: ['backend'], label: 'Backend Stats' },
+      { id: 'status', prefix: ['backend'], label: 'Backend Status', args: [] },
+      { id: 'stats', prefix: ['backend'], label: 'Backend Stats', args: [] },
       { id: 'summary', prefix: ['backend', 'data'], label: 'Backend Data Summary', loading: true, flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--max-bars': { type: 'text', default: '0', label: 'Max Bars (0 = All)' }
@@ -189,8 +189,8 @@ const COMMAND_MANIFEST = {
         '--interval': { type: 'text', default: '30', label: 'Poll interval (seconds)' },
         '--no-poll': { type: 'confirm', label: 'One-shot (no live poll)?', default: false },
       }},
-      { id: 'universe', prefix: ['backend'], label: 'Backend Universe' },
-      { id: 'integrity', prefix: ['backend'], label: 'Backend Integrity' }
+      { id: 'universe', prefix: ['backend'], label: 'Backend Universe', args: [] },
+      { id: 'integrity', prefix: ['backend'], label: 'Backend Integrity', args: [] }
     ],
     research: [
       { id: 'features', label: 'Features / Indicators', flags: {
@@ -209,7 +209,7 @@ const COMMAND_MANIFEST = {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
       }},
-      { id: 'edge-decay', label: 'Edge Decay  (Rolling window alpha check)', loading: true, flags: {
+      { id: 'edge-decay', label: 'Edge Decay (Rolling window alpha check)', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--symbol': { type: 'text', default: '', label: 'Symbol filter (optional)' }

@@ -97,3 +97,24 @@ test('TUI trade menu exposes a favourite symbols action', () => {
   const tradeMenu = manifest.commands.trade;
   assert.ok(tradeMenu.some((entry) => entry.id === 'favorites'));
 });
+
+// Phase B: ? help overlay -----------------------------------------------
+
+test('TUI ? key shows keyboard shortcuts overlay in category menu', async () => {
+  const session = createTuiSession();
+  try {
+    await session.waitFor(/Select Category:/);
+    // Press '?' to open the help overlay
+    await session.send(['?']);
+    await session.waitFor(/Keyboard shortcuts/);
+
+    const output = session.snapshot();
+    assert.match(output, /Keyboard shortcuts/);
+    // Standard keybinds should be listed
+    assert.match(output, /Up \/ Down/);
+    assert.match(output, /Enter/);
+    assert.match(output, /to close help/);
+  } finally {
+    session.kill();
+  }
+});
