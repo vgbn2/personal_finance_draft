@@ -14,6 +14,9 @@ const path = require('node:path');
 const { REPO_ROOT, STORAGE_TS_DIR } = require('../runtime/paths');
 const { readTsIndex } = require('../market/validation');
 
+const NATIVE_CRYPTO_5M_PROVIDERS = new Set(['binance', 'coinbase', 'twelve', 'finnhub']);
+const DAILY_OR_ABOVE_TIMEFRAMES = new Set(['1d', '1w', '1mo']);
+
 // Module-level cache for readFamilySources().
 // Keyed by resolved cacheRoot so per-root correctness is preserved.
 // TTL: 60 seconds — long-lived processes (API server, bot) revalidate periodically
@@ -81,6 +84,44 @@ function mergeSourceRecords(jsonRecords, tsRecords) {
   return out;
 }
 
+function normalizedProvider(record) {
+  return String(record.provider || record.source || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+}
+
+function sourceLabel(record) {
+  return String(record.source || record.provenance || record.provider || '').toLowerCase();
+}
+
+function derivedFromTimeframe(record) {
+  return String(
+    record.derived_from_timeframe ||
+    record.source_timeframe ||
+    record.base_timeframe ||
+    '',
+  ).toLowerCase();
+}
+
+function isExperimentalSynthetic5mRecord(record) {
+  if (!record || record.timeframe !== '5m') return false;
+
+  const label = sourceLabel(record);
+  const derivedFrom = derivedFromTimeframe(record);
+  if (
+    label.includes('synthetic') ||
+    label.includes('deconstruct') ||
+    label.includes('daily_aggregate') ||
+    DAILY_OR_ABOVE_TIMEFRAMES.has(derivedFrom) ||
+    label.includes('rollup')
+  ) {
+    return true;
+  }
+
+  const family = String(record.family || '').toLowerCase();
+  const provider = normalizedProvider(record);
+  if (family !== 'crypto') return true;
+  return !NATIVE_CRYPTO_5M_PROVIDERS.has(provider);
+}
+
 function readFamilySources(cacheRoot) {
   const root = path.resolve(cacheRoot || defaultCacheRoot());
   const now = Date.now();
@@ -120,7 +161,9 @@ function loadAssetSourcesFromCache(symbols, timeframe = '1d', opts = {}) {
   );
   // Fill the rest of the universe from the binary ts index (it carries the full backfill).
   const tsRecords = readTsSources(symbols, timeframe, opts.tsDir);
-  const filtered = mergeSourceRecords(jsonFiltered, tsRecords);
+  const includeExperimentalSynthetic5m = Boolean(opts.includeExperimentalSynthetic5m);
+  const filtered = mergeSourceRecords(jsonFiltered, tsRecords)
+    .filter((record) => includeExperimentalSynthetic5m || !isExperimentalSynthetic5mRecord(record));
 
   // Cap to the most recent N bars per symbol — the expanding-window feature build is
   // O(n^2), so unbounded 7000-bar histories are impractical. Default: no cap.
@@ -149,13 +192,16 @@ function cacheCloseSeriesAnchor(symbol, timeframe = '1d', opts = {}) {
   const sym = String(symbol).toUpperCase();
   const jsonAll = readFamilySources(opts.cacheRoot);
   const byDay = new Map();
+  const includeExperimentalSynthetic5m = Boolean(opts.includeExperimentalSynthetic5m);
   // ts-index first, then JSON cache overrides same-day closes (JSON precedence).
   for (const r of readTsSources([sym], timeframe, opts.tsDir)) {
+    if (!includeExperimentalSynthetic5m && isExperimentalSynthetic5mRecord(r)) continue;
     if (!Number.isFinite(Number(r.close))) continue;
     byDay.set(String(r.timestamp).slice(0, 10), Number(r.close));
   }
   for (const r of jsonAll) {
     if (!r || r.timeframe !== timeframe || String(r.symbol).toUpperCase() !== sym) continue;
+    if (!includeExperimentalSynthetic5m && isExperimentalSynthetic5mRecord(r)) continue;
     if (!Number.isFinite(Number(r.close))) continue;
     byDay.set(String(r.timestamp).slice(0, 10), Number(r.close));
   }
@@ -211,4 +257,5 @@ module.exports = {
   cacheCloseSeriesAnchor,
   frameToCsv,
   clearFamilySourcesCache,
+  isExperimentalSynthetic5mRecord,
 };
