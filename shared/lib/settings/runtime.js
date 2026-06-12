@@ -41,6 +41,12 @@ function featureGate(flagName, options = {}) {
   };
 }
 
+// layoutConfig page-size semantics (W4):
+// selectPageSize / multiSelectPageSize are now treated as *caps* (maximums).
+// The engine derives the effective page size from process.stdout.rows at
+// prompt-invocation time: clamp(rows - chromeLines, 5, presetCap).
+// On non-TTY (CI, pipe) rows is undefined and the preset value is used as-is.
+// Default values are unchanged from before W4.
 function layoutConfig(settings = loadRuntimeSettings()) {
   const layout = settings?.layout || 'default';
   if (layout === 'compact') {

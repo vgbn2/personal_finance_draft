@@ -78,6 +78,31 @@ function muted(text) {
   return c(GRAY, text);
 }
 
+// ---------------------------------------------------------------------------
+// SEMANTIC color map — one definition, one comment block.
+// Use these names in TUI code instead of raw color codes so the visual
+// language stays consistent across all prompts.
+//
+//   HEADER   — titles and section labels        (bold cyan)
+//   SELECTED — focused/checked/active items     (green)
+//   SUCCESS  — positive outcomes, custom match  (green)
+//   WARN     — degraded / partial state         (yellow)
+//   PARTIAL  — mixed selection, partial match   (yellow)
+//   ERROR    — failures, missing terms          (red)
+//   MUTED    — timestamps, hints, decorators    (gray)
+//   VALUE    — visible text of selectable items (bold white)
+// ---------------------------------------------------------------------------
+const SEMANTIC = {
+  HEADER:   B_CYAN,
+  SELECTED: GREEN,
+  SUCCESS:  GREEN,
+  WARN:     YELLOW,
+  PARTIAL:  YELLOW,
+  ERROR:    RED,
+  MUTED:    GRAY,
+  VALUE:    B_WHITE,
+};
+
 function statusColor(status) {
   if (status === 'ok' || status === 'available' || status === true) return GREEN;
   if (status === 'warn' || status === 'warning') return YELLOW;
@@ -126,6 +151,7 @@ module.exports = {
   KEY_RIGHT,
   KEY_LEFT,
   GLYPH,
+  SEMANTIC,
   c,
   bold,
   muted,
