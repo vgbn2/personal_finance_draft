@@ -10,7 +10,7 @@ class SimpleMovingRegimeDetector final : public IRegimeDetector {
 public:
     void update(const std::vector<double>& prices, const std::vector<double>& volumes) override {
         (void)volumes;
-        if (prices.size() < 21) {
+        if (prices.size() < 20) {
             state_ = {MarketRegime::UNDEFINED, 0.0, "Insufficient data"};
             return;
         }
