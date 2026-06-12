@@ -301,6 +301,17 @@ function parseCsvTable(text) {
   return rows;
 }
 
+// V8 passes spread arguments on the call stack, so target.push(...records)
+// throws RangeError above ~100k elements. Deep sub-daily backfills routinely
+// return 100k-525k records, and the provider loop's try/catch would swallow
+// that RangeError as a generic provider failure (the symbol silently yields
+// zero bars). Every push of a fetched/aggregated record array must go through
+// this loop instead.
+function appendRecords(target, records) {
+  for (const record of records || []) target.push(record);
+  return target;
+}
+
 function providerErrorIsResolvedBySource(error, sources) {
   if (!error || !error.symbol) return false;
   const symbol = String(error.symbol).trim().toUpperCase();
@@ -529,7 +540,7 @@ async function loadExternalQuoteInputs(config) {
 
   for (const provider of providers) {
     const result = await loadExternalQuoteProvider(provider);
-    output.records.push(...result.records);
+    appendRecords(output.records, result.records);
     if (result.provider_check) output.provider_checks.push(result.provider_check);
     if (result.error) output.errors.push(result.error);
   }
@@ -740,7 +751,7 @@ async function fetchEquityOrIndexSnapshot(family, provider, symbol, timeframes, 
     if (aggregated.length > 0) {
       if (historyDays > 5) {
        
-        output.push(...aggregated);
+        appendRecords(output, aggregated);
       } else {
         output.push({
           ...aggregated[aggregated.length - 1],
@@ -786,7 +797,7 @@ async function fetchCommoditySnapshot(family, provider, symbol, timeframes, conf
     if (aggregated.length > 0) {
       if (historyDays > 5) {
        
-        output.push(...aggregated);
+        appendRecords(output, aggregated);
       } else {
         output.push({
           ...aggregated[aggregated.length - 1],
@@ -1463,7 +1474,7 @@ async function ingestMarketData(options = {}) {
     // 1. External Quote Feeds
     if (!targetFamily || targetFamily === 'fx' || targetFamily === 'quote_feeds') {
       const externalQuotes = await loadExternalQuoteInputs(config);
-      snapshot.sources.push(...externalQuotes.records);
+      appendRecords(snapshot.sources, externalQuotes.records);
       snapshot.errors.push(...externalQuotes.errors);
       snapshot.provider_checks.push(...externalQuotes.provider_checks);
     }
@@ -1563,14 +1574,14 @@ async function ingestMarketData(options = {}) {
           for (const tf of syncTimeframes) {
               const derived = deriveHighTfFromLocalDaily(family.id, item, tf);
               if (derived) {
-                  localDerived.push(...derived);
+                  appendRecords(localDerived, derived);
               } else {
                   remoteTimeframes.push(tf);
               }
           }
 
           if (localDerived.length > 0) {
-              snapshot.sources.push(...localDerived);
+              appendRecords(snapshot.sources, localDerived);
               if (remoteTimeframes.length === 0) resolved = true;
           }
 
@@ -1601,7 +1612,7 @@ async function ingestMarketData(options = {}) {
                   }
               });
 
-              snapshot.sources.push(...records); 
+              appendRecords(snapshot.sources, records);
               resolved = true;
               break;
             } catch (error) {
@@ -1636,7 +1647,7 @@ async function ingestMarketData(options = {}) {
             if (!provider) continue;
             try {
               const records = normalizeFetchedRecords(await fetcher(provider, item, null, optionsConfig, options), fetchContext(family.id, provider, item));
-              snapshot.sources.push(...records); 
+              appendRecords(snapshot.sources, records);
               resolved = true;
               break;
             } catch (error) {
@@ -1948,7 +1959,7 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
     if (aggregated.length > 0) {
       const filtered = aggregated.filter(r => new Date(r.timestamp).getTime() >= targetStartMs);
       if (historyDays > 5) {
-        output.push(...filtered);
+        appendRecords(output, filtered);
       } else if (filtered.length > 0) {
         output.push({
           ...filtered[filtered.length - 1],
@@ -2021,5 +2032,6 @@ module.exports = {
   resolveCommoditySymbol,
   resolveFredSeries,
   resolveWorldBankIndicator,
+  appendRecords,
 };
 

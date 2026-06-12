@@ -825,11 +825,23 @@ async function commandCryptoDeepBackfill(args) {
       });
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
       const fiveMBars = (snapshot.sources || []).filter(r => r.timeframe === '5m' && r.symbol === symbol);
-      for (const e of (snapshot.errors || [])) allErrors.push(e);
-      results.ok++;
-      symbolResults.push({ symbol, ok: true, bars_5m: fiveMBars.length, elapsed_s: Number(elapsed), errors: (snapshot.errors || []).length });
+      const snapErrors = snapshot.errors || [];
+      for (const e of snapErrors) allErrors.push(e);
+      // Zero bars alongside ingest errors means the fetch failed inside the
+      // provider loop (the loop's catch swallows exceptions per provider) --
+      // count it as a failed symbol instead of reporting silent success.
+      const symbolOk = fiveMBars.length > 0 || snapErrors.length === 0;
+      if (symbolOk) results.ok++; else results.errors++;
+      const entry = { symbol, ok: symbolOk, bars_5m: fiveMBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
+      if (!symbolOk) {
+        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || 'no 5m bars ingested';
+      }
+      symbolResults.push(entry);
       if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} \x1b[32m${symbol}\x1b[0m 5m: ${fiveMBars.length} bars (${elapsed}s)\n`);
+        const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
+        process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m 5m: ${fiveMBars.length} bars (${elapsed}s)\n`);
+      } else {
+        console.log(`${progress} ${symbol} 5m: ${fiveMBars.length} bars (${elapsed}s)${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
       }
     } catch (err) {
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
@@ -864,6 +876,7 @@ async function commandCryptoDeepBackfill(args) {
     days,
     delay_ms: delayMs,
     symbol_results: symbolResults,
+    error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
     output: DEFAULT_HISTORY,
   }, args);
   return results.errors === 0 ? 0 : 1;
