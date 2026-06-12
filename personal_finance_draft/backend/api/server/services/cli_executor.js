@@ -16,8 +16,8 @@ const {
 const { calculateRollingFeatureFrame } = require('../../../../shared/lib/market/indicators');
 const { compareModels } = require('../../../../shared/lib/ml/models');
 
-// backtest_history.json is this service's specific read target — distinct from the CLI's cache dir
-const DEFAULT_HISTORY = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'backtest_history.json');
+// The API fallback should read the canonical live cache snapshot, not the backtest report cache.
+const DEFAULT_HISTORY = DEFAULT_SNAPSHOT;
 // Alias: API layer named this DEFAULT_BACKTEST_REPORT; canonical name is DEFAULT_BACKTEST
 const DEFAULT_BACKTEST_REPORT = DEFAULT_BACKTEST;
 
@@ -241,6 +241,63 @@ function resolveHistorySlice(records, symbol, timeframe, limit) {
   return filtered;
 }
 
+function bucketKeyForTimeframe(timestamp, timeframe) {
+  const text = String(timestamp || '');
+  const date = new Date(text);
+  if (!Number.isFinite(date.getTime())) {
+    return text;
+  }
+
+  if (timeframe === '1w') {
+    const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const dayIndex = utc.getUTCDay();
+    const offset = dayIndex === 0 ? 6 : dayIndex - 1;
+    utc.setUTCDate(utc.getUTCDate() - offset);
+    return utc.toISOString().slice(0, 10);
+  }
+
+  if (timeframe === '1mo') {
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    return `${date.getUTCFullYear()}-${month}`;
+  }
+
+  return text;
+}
+
+function deriveCompressedHistory(records, symbol, timeframe, limit) {
+  const symbolKey = stringOrFallback(symbol, '').toUpperCase();
+  const sourceRecords = sortRecordsByTime(
+    records.filter((record) => record.symbol === symbolKey && record.timeframe === '1d'),
+  );
+  if (!sourceRecords.length) {
+    return [];
+  }
+
+  const grouped = new Map();
+  for (const record of sourceRecords) {
+    const bucket = bucketKeyForTimeframe(record.timestamp, timeframe);
+    grouped.set(bucket, {
+      ...record,
+      timeframe,
+      timestamp: bucket,
+    });
+  }
+
+  let derived = sortRecordsByTime([...grouped.values()]);
+  if (limit > 0 && derived.length > limit) {
+    derived = derived.slice(-limit);
+  }
+  return derived;
+}
+
+function hasUsefulCorrelationPayload(payload) {
+  return Boolean(payload)
+    && payload.ok !== false
+    && Number(payload.sample_size || 0) > 0
+    && Array.isArray(payload.values)
+    && payload.values.length > 0;
+}
+
 function buildMarketDataSummary(query = {}) {
   const input = stringOrFallback(query.input, DEFAULT_HISTORY);
   const symbol = stringOrFallback(query.symbol, 'AAPL');
@@ -313,14 +370,18 @@ function buildCorrelationMatrix(query = {}) {
   const timeframe = stringOrFallback(query.timeframe, '1d');
   const limit = parseLimit(query.max_bars);
   const requestedSymbols = parseSymbolList(query.symbols);
-  const records = loadHistoryRecords(input).filter((record) => !timeframe || record.timeframe === timeframe);
+  const allRecords = loadHistoryRecords(input);
+  const records = allRecords.filter((record) => !timeframe || record.timeframe === timeframe);
   const symbols = requestedSymbols.length
     ? requestedSymbols.map((symbol) => symbol.toUpperCase())
-    : [...new Set(records.map((record) => record.symbol).filter(Boolean))];
+    : [...new Set((records.length ? records : allRecords).map((record) => record.symbol).filter(Boolean))];
   const bySymbol = new Map();
 
   for (const symbol of symbols) {
-    const slice = resolveHistorySlice(records, symbol, timeframe, limit);
+    let slice = resolveHistorySlice(records, symbol, timeframe, limit);
+    if (!slice.length && (timeframe === '1w' || timeframe === '1mo')) {
+      slice = deriveCompressedHistory(allRecords, symbol, timeframe, limit);
+    }
     const byTimestamp = new Map(slice.map((record) => [String(record.timestamp || ''), record]));
     bySymbol.set(symbol, byTimestamp);
   }
@@ -333,13 +394,18 @@ function buildCorrelationMatrix(query = {}) {
     return new Set([...shared].filter((timestamp) => timestamps.has(timestamp)));
   }, new Set());
   const alignedTimestamps = [...commonTimestamps].sort((left, right) => left.localeCompare(right));
-  const alignedValues = symbols.map((symbol) => alignedTimestamps.map((timestamp) => Number(bySymbol.get(symbol).get(timestamp)?.close)).filter((value) => Number.isFinite(value)));
+  const alignedValues = symbols.map((symbol) => alignedTimestamps.map((timestamp) => Number(bySymbol.get(symbol).get(timestamp)?.close)));
+  const completeIndices = alignedTimestamps
+    .map((_, index) => index)
+    .filter((index) => alignedValues.every((series) => Number.isFinite(series[index])));
+  const finalTimestamps = completeIndices.map((index) => alignedTimestamps[index]);
+  const finalValues = alignedValues.map((series) => completeIndices.map((index) => series[index]));
   const size = symbols.length;
   const values = Array.from({ length: size }, (_, rowIndex) => Array.from({ length: size }, (_, columnIndex) => {
     if (rowIndex === columnIndex) {
       return 1;
     }
-    return pearsonCorrelation(alignedValues[rowIndex], alignedValues[columnIndex]);
+    return pearsonCorrelation(finalValues[rowIndex], finalValues[columnIndex]);
   }));
 
   return {
@@ -353,7 +419,7 @@ function buildCorrelationMatrix(query = {}) {
     timeframe,
     labels: symbols,
     values,
-    sample_size: alignedTimestamps.length,
+    sample_size: finalTimestamps.length,
   };
 }
 
@@ -599,11 +665,11 @@ function backendCorrelation(query = {}) {
     '--json',
     ];
     const backend = runBackend(args);
-    if (backend.available) {
+    if (hasUsefulCorrelationPayload(backend)) {
       return backend;
     }
     const nodeCli = runNodeCli(['backend', ...args]);
-    if (nodeCli.ok) {
+    if (hasUsefulCorrelationPayload(nodeCli)) {
       return nodeCli;
     }
     return localBackendFallback('correlation', query);
@@ -978,6 +1044,7 @@ module.exports = {
   backendDataSummary,
   backendPortfolio,
   backendUniverse,
+  buildCorrelationMatrix,
   backendIndicators,
   backendStats,
   backtestSummary,
