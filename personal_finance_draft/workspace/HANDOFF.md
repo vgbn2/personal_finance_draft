@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-12.md`**
+- Latest/current handoff: **`workspace/handoff/2026-06-13.md`**
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -18,6 +18,12 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **Sessions 23/23b batch COMMITTED (session 24, 2026-06-13):** the synthetic-5m guard + equity 5m
+  Phase 2 work below was found entirely uncommitted at boot; independently re-verified (readTsIndex
+  probe matched 23b's claims exactly; full suite 395/395 re-run) and landed in `a19d6323` (guard),
+  `60458a7a` (equity 5m), `58130cb9` (docs). **Suite baseline is now 395/395.** Untracked ~937MB of
+  user transfer artifacts remain at repo root (state.zip / .bundle / `vgbn1@vgbn-` botched-scp file)
+  — do not commit; user cleanup pending.
 - **5m deep-data status (session 23): crypto + US equities are now populated with native 5m.**
   Crypto 1825d rerun finished; 13 configured symbols have full 525,506-bar bins and listing/provider
   limited symbols are shorter (SUI/PEPE/WIF/POL/RNDR). US equity Phase 2 also finished:
