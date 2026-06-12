@@ -48,7 +48,8 @@ inline LiveMarketSnapshotSummary summarize_live_market_snapshot(const std::strin
     const std::string text = read_text_file(path);
     LiveMarketSnapshotSummary summary;
 
-    if (text.find("\"mode\": \"live\"") != std::string::npos) {
+    if (text.find("\"mode\": \"live\"") != std::string::npos ||
+        text.find("\"mode\": \"recovered_live\"") != std::string::npos) {
         summary.mode = "live";
     }
 
