@@ -174,6 +174,24 @@ function polymarketHistoryPayload(snapshot, args = [], options = {}) {
   };
 }
 
+async function runPolymarketArchiveIngest(args, deps = {}) {
+  const history = deps.history || require('../../../../shared/lib/market/polymarket_history.js');
+  const daysBack = numericOption(args, '--days', numericOption(args, '--history-days', 180));
+  const interval = optionValue(args, '--interval', optionValue(args, '--timeframe', '1h'));
+  const maxMarkets = numericOption(args, '--max-markets', 500);
+  const category = optionValue(args, '--category', 'all');
+  const archiveRoot = optionValue(args, '--archive-root', undefined);
+  return history.backfillPolymarketArchive({
+    daysBack,
+    interval,
+    maxMarkets,
+    category,
+    root: archiveRoot,
+    includeNo: hasFlag(args, '--include-no'),
+    noCache: hasFlag(args, '--no-cache'),
+  });
+}
+
 function parseGatewayJsonOutput(stdout, label) {
   const lines = String(stdout || '').split('\n');
   const jsonLine = lines.find((line) => {
@@ -831,6 +849,11 @@ async function commandPolymarket(args) {
       return 1;
     }
   }
+  if ((sub === 'research' && args[1] === 'ingest') || (sub === 'history' && args[1] === 'ingest')) {
+    const result = await runPolymarketArchiveIngest(args);
+    printPayload(result, args);
+    return result.ok ? 0 : 1;
+  }
   if (sub === 'history') {
     const event = optionValue(args, '--event', optionValue(args, '--symbol', null));
     const historyDays = numericOption(args, '--history-days', numericOption(args, '--days', 30));
@@ -853,8 +876,31 @@ async function commandPolymarket(args) {
     const strategy       = optionValue(args, '--strategy', 'low_prob_dip');
     const maxMarkets     = numericOption(args, '--max-markets', 20);
     const entryThreshold = numericOption(args, '--entry-threshold', 0.15);
+    const interval       = optionValue(args, '--interval', optionValue(args, '--timeframe', '1d'));
+    const archiveRoot    = optionValue(args, '--archive-root', undefined);
+    const fee            = numericOption(args, '--fee', 0);
+    const halfSpreadEstimate = numericOption(args, '--half-spread', numericOption(args, '--half-spread-estimate', 0.01));
+    const impactY        = numericOption(args, '--impact-y', 1);
+    const orderNotional  = numericOption(args, '--order-notional', 10);
+    const rollingMarketVolume = numericOption(args, '--rolling-market-volume', undefined);
     const noCache        = hasFlag(args, '--no-cache');
-    const result = await runPolymarketBacktest({ tagId, daysBack, strategy, maxMarkets, entryThreshold, noCache });
+    const result = await runPolymarketBacktest({
+      tagId,
+      daysBack,
+      strategy,
+      maxMarkets,
+      entryThreshold,
+      interval,
+      archiveRoot,
+      fee,
+      halfSpreadEstimate,
+      impactY,
+      orderNotional,
+      rollingMarketVolume,
+      fromArchive: !hasFlag(args, '--live-fetch') && !hasFlag(args, '--no-archive'),
+      repairMissing: hasFlag(args, '--repair-missing'),
+      noCache,
+    });
     printPayload(result, args);
     return result.ok ? 0 : 1;
   }
@@ -1374,6 +1420,7 @@ module.exports = {
   commandMt5Profile,
   commandBot,
   commandPolymarket,
+  runPolymarketArchiveIngest,
   polymarketHistoryPayload,
   commandTrade,
   inspectMt5Setup,
