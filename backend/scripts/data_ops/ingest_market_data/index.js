@@ -38,7 +38,7 @@ function deriveHighTfFromLocalDaily(family, symbol, targetTf) {
     }));
 
     const provider = dailyRecords[0].provider || 'local-aggregate';
-    const aggregated = aggregateCandles(candlesWithOpenTime, targetTf, symbol, provider, family);
+    const aggregated = aggregateCandles(candlesWithOpenTime, targetTf, symbol, provider, family, { sourceTimeframe: '1d' });
 
     if (aggregated.length > 0) {
        console.log(`[INGEST] Derived ${aggregated.length} ${targetTf} bars for ${symbol} from local 1d cache (${dailyRecords.length} bars)`);
@@ -390,11 +390,15 @@ async function fetchStooqDailyHistory(symbol) {
   return parseStooqCsv(csv);
 }
 
-function aggregateCandles(candles, interval, symbol, provider, family = "unknown") {
+function aggregateCandles(candles, interval, symbol, provider, family = "unknown", options = {}) {
   const intervalMs = SUPPORTED_INTERVALS[interval];
   if (!intervalMs) {
     throw new Error(`Unsupported timeframe: ${interval}`);
   }
+  const sourceTimeframe = options.sourceTimeframe || options.baseTimeframe || null;
+  const sourceIntervalMs = sourceTimeframe ? SUPPORTED_INTERVALS[sourceTimeframe] : null;
+  const derivedFromDaily = sourceIntervalMs && sourceIntervalMs >= SUPPORTED_INTERVALS['1d'] && intervalMs < SUPPORTED_INTERVALS['1d'];
+  const source = sourceTimeframe ? `${provider}-rollup-from-${sourceTimeframe}` : `${provider}-rollup`;
 
   const buckets = new Map();
   for (const candle of candles) {
@@ -412,7 +416,10 @@ function aggregateCandles(candles, interval, symbol, provider, family = "unknown
         low: candle.low,
         close: candle.close,
         volume: candle.volume,
-        source: `${provider}-rollup`,
+        source,
+        provenance: source,
+        ...(sourceTimeframe ? { derived_from_timeframe: sourceTimeframe } : {}),
+        ...(derivedFromDaily ? { experimental_only: true, experimental_reason: 'daily_derived_lower_timeframe' } : {}),
       });
       continue;
     }
@@ -722,32 +729,118 @@ function resolveWorldBankIndicator(metric, config) {
 }
 
 async function fetchEquityOrIndexSnapshot(family, provider, symbol, timeframes, config, options = {}) {
+  timeframes = timeframes || ['1d'];
   const historyDays = options.historyDays || options.days || 5;
   const startTime = options.startTime || null;
   const endTime = options.endTime || null;
+  const targetStartMs = startTime || (Date.now() - (historyDays * 24 * 60 * 60 * 1000));
+  const subDailyTimeframes = timeframes.filter(tf => {
+    const ms = SUPPORTED_INTERVALS[tf];
+    return ms !== undefined && ms <= INTRADAY_THRESHOLD_MS;
+  });
+  const dailyOrAbove = timeframes.filter(tf => {
+    const ms = SUPPORTED_INTERVALS[tf];
+    return ms !== undefined && ms > INTRADAY_THRESHOLD_MS;
+  });
+  const output = [];
+
+  if (provider === 'alpaca' && subDailyTimeframes.length > 0) {
+    const providerSymbol = resolveEquityOrIndexSymbol(family, symbol, provider);
+    if (!providerSymbol) {
+      throw new Error(`No ${provider} symbol mapping for ${symbol}`);
+    }
+
+    const ORDER = ['1m', '5m', '15m', '30m', '1h', '4h'];
+    const finestSubDaily = ORDER.find(tf => subDailyTimeframes.includes(tf)) || subDailyTimeframes[0];
+    let nativeCandles = null;
+    try {
+      nativeCandles = await fetchPaginated(providerSymbol, finestSubDaily, historyDays, family, fetchAlpacaBaseCandles, endTime || null, {
+        chunkDelayMs: options.chunkDelayMs || 0,
+      });
+    } catch (err) {
+      console.warn(`[INGEST] Native ${finestSubDaily} fetch failed for ${symbol} via ${provider}: ${err.message}`);
+    }
+
+    if (nativeCandles && nativeCandles.length > 0) {
+      const nativeBarsForAgg = nativeCandles.map(c => ({
+        openTime: c.openTime,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+        volume: c.volume,
+      }));
+
+      for (const tf of subDailyTimeframes) {
+        if (!SUPPORTED_INTERVALS[tf]) continue;
+        const aggregated = tf === finestSubDaily
+          ? nativeCandles.map(c => ({
+              family,
+              provider,
+              symbol,
+              timeframe: tf,
+              timestamp: new Date(c.openTime).toISOString(),
+              open: c.open,
+              high: c.high,
+              low: c.low,
+              close: c.close,
+              volume: c.volume,
+            }))
+          : aggregateCandles(nativeBarsForAgg, tf, symbol, provider, family, { sourceTimeframe: finestSubDaily });
+
+        if (aggregated.length > 0) {
+          for (const r of aggregated) {
+            if (new Date(r.timestamp).getTime() >= targetStartMs) output.push(r);
+          }
+        }
+      }
+    }
+  }
+
+  const unresolvedSubDailyTimeframes = subDailyTimeframes.filter(tf => !output.some(r => r.timeframe === tf));
+  if (provider === 'alpaca' && unresolvedSubDailyTimeframes.length > 0) {
+    if (dailyOrAbove.length === 0) {
+      throw new Error(`No native Alpaca ${unresolvedSubDailyTimeframes.join(',')} candles returned for ${symbol}`);
+    }
+    console.warn(`[INGEST] Alpaca returned no native ${unresolvedSubDailyTimeframes.join(',')} candles for ${symbol}; not synthesizing sub-daily bars from daily data`);
+  }
+
+  const remainingTimeframes = [
+    ...dailyOrAbove,
+    ...(provider === 'alpaca' ? [] : unresolvedSubDailyTimeframes),
+  ];
+
+  if (remainingTimeframes.length === 0) return output;
 
   let baseCandles = null;
+  let baseTimeframe = '1d';
   if (provider === 'stooq') {
     const stooqSymbol = resolveStooqSymbol(family, symbol);
     if (!stooqSymbol) {
       throw new Error(`No stooq symbol mapping for ${symbol}`);
     }
     baseCandles = await fetchStooqDailyHistory(stooqSymbol);
+  } else if (provider === 'alpaca') {
+    const providerSymbol = resolveEquityOrIndexSymbol(family, symbol, provider);
+    if (!providerSymbol) {
+      throw new Error(`No ${provider} symbol mapping for ${symbol}`);
+    }
+    baseCandles = await fetchAlpacaBaseCandles(providerSymbol, Math.max(100, Math.ceil(historyDays * 1.5)), '1d', startTime, endTime);
   } else {
     const providerSymbol = resolveEquityOrIndexSymbol(family, symbol, provider);
     if (!providerSymbol) {
       throw new Error(`No ${provider} symbol mapping for ${symbol}`);
     }
-    const { base: bestBase, effectiveDays } = selectYahooBase(timeframes, historyDays);
+    const { base: bestBase, effectiveDays } = selectYahooBase(remainingTimeframes, historyDays);
+    baseTimeframe = bestBase;
     baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, effectiveDays, startTime, endTime);
   }
-  const output = [];
 
-  for (const timeframe of timeframes) {
+  for (const timeframe of remainingTimeframes) {
     if (!SUPPORTED_INTERVALS[timeframe]) {
       throw new Error(`Unsupported derived timeframe: ${timeframe}`);
     }
-    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family); 
+    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family, { sourceTimeframe: baseTimeframe });
     if (aggregated.length > 0) {
       if (historyDays > 5) {
        
@@ -772,6 +865,7 @@ async function fetchCommoditySnapshot(family, provider, symbol, timeframes, conf
   const endTime = options.endTime || null;
 
   let baseCandles = null;
+  let baseTimeframe = '1d';
   if (provider === 'stooq') {
     const stooqSymbol = resolveStooqSymbol('commodities', symbol);
     if (!stooqSymbol) {
@@ -785,6 +879,7 @@ async function fetchCommoditySnapshot(family, provider, symbol, timeframes, conf
     }
    
     const bestBase = (historyDays > 730 || !timeframes.includes("1h")) ? "1d" : "1h"; 
+    baseTimeframe = bestBase;
     baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, historyDays, startTime, endTime);
   }
   const output = [];
@@ -793,7 +888,7 @@ async function fetchCommoditySnapshot(family, provider, symbol, timeframes, conf
     if (!SUPPORTED_INTERVALS[timeframe]) {
       throw new Error(`Unsupported derived timeframe: ${timeframe}`);
     }
-    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family); 
+    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family, { sourceTimeframe: baseTimeframe });
     if (aggregated.length > 0) {
       if (historyDays > 5) {
        
@@ -1590,7 +1685,7 @@ async function ingestMarketData(options = {}) {
             // deep backfill must hit binance natively -- TwelveData earlier in the
             // chain silently caps history at 5,000 bars and would win the break).
             const providerList = options.provider
-              ? section.providers.filter((p) => p === options.provider)
+              ? [options.provider]
               : section.providers;
             for (const provider of providerList) {
               if (!provider) continue;
@@ -1887,7 +1982,7 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
               close: c.close,
               volume: c.volume,
             }))
-          : aggregateCandles(nativeBarsForAgg, tf, symbol, provider, family);
+          : aggregateCandles(nativeBarsForAgg, tf, symbol, provider, family, { sourceTimeframe: finestSubDaily });
 
         if (aggregated.length > 0) {
           // No JSON cap here: the snapshot must carry FULL depth so the binary
@@ -1955,7 +2050,7 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
     if (!SUPPORTED_INTERVALS[timeframe]) {
       throw new Error(`Unsupported crypto timeframe: ${timeframe}`);
     }
-    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family);
+    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family, { sourceTimeframe: '1d' });
     if (aggregated.length > 0) {
       const filtered = aggregated.filter(r => new Date(r.timestamp).getTime() >= targetStartMs);
       if (historyDays > 5) {
