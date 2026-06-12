@@ -10,6 +10,7 @@ const {
   loadAssetSourcesFromCache,
   cacheCloseSeriesAnchor,
   frameToCsv,
+  isExperimentalSynthetic5mRecord,
 } = require('../../../shared/lib/ml/dataset');
 const { writeTsIndex } = require('../../../shared/lib/market/validation');
 
@@ -45,6 +46,12 @@ function makeTempCache() {
   sources.push({ symbol: 'BBB', family: 'equities', timeframe: '1h', timestamp: '2026-02-01T00:00:00.000Z', close: 5 });
   fs.writeFileSync(path.join(fam, 'backtest_history.json'), JSON.stringify({ sources }), 'utf8');
   return root;
+}
+
+function writeFamilyCache(root, family, sources) {
+  const fam = path.join(root, family);
+  fs.mkdirSync(fam, { recursive: true });
+  fs.writeFileSync(path.join(fam, 'backtest_history.json'), JSON.stringify({ sources }), 'utf8');
 }
 
 test('loadAssetSourcesFromCache filters by symbol+timeframe and caps bars', () => {
@@ -93,6 +100,57 @@ test('loadAssetSourcesFromCache dedupes JSON+ts on symbol+timestamp (JSON wins)'
   assert.strictEqual(recs.length, 11, '10 JSON + 1 ts-only (overlap deduped)');
   const feb01 = recs.find((r) => r.timestamp.startsWith('2026-02-01'));
   assert.strictEqual(feb01.close, 100, 'JSON close wins on overlap, not the ts 999');
+});
+
+test('loadAssetSourcesFromCache excludes experimental 5m records unless opted in', () => {
+  const cacheRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mlcache-'));
+  writeFamilyCache(cacheRoot, 'equities', [
+    {
+      symbol: 'SPY', family: 'equities', provider: 'twelve', timeframe: '5m',
+      timestamp: '2026-02-01T00:00:00.000Z', open: 100, high: 101, low: 99, close: 100, volume: 10,
+      source: 'twelve-rollup-from-1d', derived_from_timeframe: '1d',
+    },
+  ]);
+  writeFamilyCache(cacheRoot, 'crypto', [
+    {
+      symbol: 'BTCUSDT', family: 'crypto', provider: 'binance', timeframe: '5m',
+      timestamp: '2026-02-01T00:00:00.000Z', open: 10, high: 11, low: 9, close: 10, volume: 7,
+    },
+  ]);
+
+  const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mlts-'));
+  writeTsIndex(tsDir, { sources: [
+    {
+      symbol: 'SPY', family: 'equities', provider: 'twelve', timeframe: '5m',
+      timestamp: '2026-02-02T00:00:00.000Z', open: 101, high: 102, low: 100, close: 101, volume: 10,
+    },
+    {
+      symbol: 'POLUSDT', family: 'crypto', provider: 'coingecko', timeframe: '5m',
+      timestamp: '2026-02-02T00:00:00.000Z', open: 1, high: 2, low: 1, close: 1.5, volume: 1,
+    },
+    {
+      symbol: 'ETHUSDT', family: 'crypto', provider: 'binance', timeframe: '5m',
+      timestamp: '2026-02-02T00:00:00.000Z', open: 20, high: 21, low: 19, close: 20, volume: 7,
+    },
+  ] });
+
+  const defaultRows = loadAssetSourcesFromCache([], '5m', { cacheRoot, tsDir });
+  assert.deepStrictEqual(defaultRows.map((r) => r.symbol).sort(), ['BTCUSDT', 'ETHUSDT']);
+  assert.equal(cacheCloseSeriesAnchor('SPY', '5m', { cacheRoot, tsDir }).length, 0);
+
+  const experimentalRows = loadAssetSourcesFromCache([], '5m', {
+    cacheRoot,
+    tsDir,
+    includeExperimentalSynthetic5m: true,
+  });
+  assert.deepStrictEqual(experimentalRows.map((r) => r.symbol).sort(), ['BTCUSDT', 'ETHUSDT', 'POLUSDT', 'SPY', 'SPY']);
+});
+
+test('isExperimentalSynthetic5mRecord classifies non-native and daily-derived 5m', () => {
+  assert.equal(isExperimentalSynthetic5mRecord({ family: 'crypto', provider: 'binance', timeframe: '5m' }), false);
+  assert.equal(isExperimentalSynthetic5mRecord({ family: 'crypto', provider: 'coingecko', timeframe: '5m' }), true);
+  assert.equal(isExperimentalSynthetic5mRecord({ family: 'equities', provider: 'twelve', timeframe: '5m' }), true);
+  assert.equal(isExperimentalSynthetic5mRecord({ family: 'crypto', provider: 'binance', timeframe: '5m', source: 'binance-rollup-from-1d', derived_from_timeframe: '1d' }), true);
 });
 
 test('cacheCloseSeriesAnchor resolves a ts-only anchor symbol', () => {
