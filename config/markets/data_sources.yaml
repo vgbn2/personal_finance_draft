@@ -198,8 +198,7 @@ quality:
   reject_lookahead: true
   max_missing_ratio: 0.01
   integrity_timeframes: ["1d"]
-  # RNDRUSDT is migrated/delisted. VRE currently resolves only stale provider
-  # data for the configured VN real-estate ticker until exchange-aware mapping exists.
-  integrity_exceptions: ["RNDRUSDT", "VRE"]
+  # RNDRUSDT is migrated/delisted and remains the active integrity exception.
+  integrity_exceptions: ["RNDRUSDT"]
 
 
