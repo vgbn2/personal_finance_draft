@@ -746,6 +746,130 @@ async function commandLoc(args) {
 }
 
 /**
+ * Handles the 'crypto-deep-backfill' command.
+ *
+ * Runs a sequential (one symbol at a time) deep 5m backfill for the crypto family
+ * using Binance as the native intraday provider. Sequential processing is required
+ * to stay within Binance's 6,000 weight/minute IP budget — parallel workers would
+ * exceed it immediately at 5m depth (§5a of the scoping document).
+ *
+ * Example: sovereign data crypto-deep-backfill --days 1825 --delay-ms 200
+ */
+async function commandCryptoDeepBackfill(args) {
+  const { loadConfig, ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
+  const days = numericOption(args, '--days', 1825); // 5 years default
+  const delayMs = numericOption(args, '--delay-ms', 0); // inter-symbol delay; 0 = no sleep
+  const dryRun = hasFlag(args, '--dry-run');
+  const symbolArg = optionValue(args, '--symbol', null); // single-symbol override
+
+  const config = await loadConfig();
+  const cryptoSymbols = config.crypto?.symbols || [];
+  const symbols = symbolArg ? cryptoSymbols.filter(s => s === symbolArg) : cryptoSymbols;
+
+  if (symbols.length === 0) {
+    printPayload({ ok: false, error: symbolArg ? `Symbol ${symbolArg} not found in crypto universe` : 'No crypto symbols configured' }, args);
+    return 1;
+  }
+
+  // historyDays <= 5 falls into the legacy daily-aggregation path in
+  // fetchCryptoSnapshot and would synthesize fake 5m bars from 1d candles.
+  if (days <= 5) {
+    printPayload({ ok: false, error: 'crypto-deep-backfill requires --days > 5 (native intraday fetch); use plain ingest for short windows' }, args);
+    return 1;
+  }
+
+  if (dryRun) {
+    printPayload({
+      ok: true,
+      dry_run: true,
+      symbols: symbols.length,
+      symbol_list: symbols,
+      timeframe: '5m',
+      days,
+      delay_ms: delayMs,
+      // Estimated: 526 calls/symbol × 5 weight = 2,630 weight; 18 symbols = 47,340 weight
+      estimated_api_calls: symbols.length * Math.ceil((days / 365.25) * 365.25 * 288 / 1000),
+      message: `Would sequentially backfill 5m data for ${symbols.length} crypto symbols over ${days} days. Re-run without --dry-run to execute.`,
+    }, args);
+    return 0;
+  }
+
+  const results = { ok: 0, errors: 0 };
+  const allErrors = [];
+  const symbolResults = [];
+
+  console.log(`[CRYPTO-DEEP-BACKFILL] Starting sequential 5m backfill: ${symbols.length} symbols, ${days} days, delay=${delayMs}ms`);
+
+  for (let i = 0; i < symbols.length; i++) {
+    const symbol = symbols[i];
+    const progress = `[${i + 1}/${symbols.length}]`;
+    if (process.stdout.isTTY) {
+      process.stdout.write(`\r\x1b[K${progress} ${symbol} 5m ...`);
+    } else {
+      console.log(`${progress} Backfilling ${symbol} 5m (${days} days)`);
+    }
+
+    const start = Date.now();
+    try {
+      const snapshot = await ingestMarketData({
+        family: 'crypto',
+        symbol,
+        timeframe: '5m',
+        historyDays: days,
+        provider: 'binance', // pin: TwelveData earlier in the chain caps at 5,000 bars
+        force: true, // deep backfill always re-fetches; freshness short-circuits don't apply
+        // Per-run snapshot only. The merged history can exceed 100k records
+        // (spreading it overflows the call stack), and ingestMarketData already
+        // persists scoped JSON + partitioned history + ts-index itself.
+        returnAttemptSnapshot: true,
+      });
+      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+      const fiveMBars = (snapshot.sources || []).filter(r => r.timeframe === '5m' && r.symbol === symbol);
+      for (const e of (snapshot.errors || [])) allErrors.push(e);
+      results.ok++;
+      symbolResults.push({ symbol, ok: true, bars_5m: fiveMBars.length, elapsed_s: Number(elapsed), errors: (snapshot.errors || []).length });
+      if (process.stdout.isTTY) {
+        process.stdout.write(`\r\x1b[K${progress} \x1b[32m${symbol}\x1b[0m 5m: ${fiveMBars.length} bars (${elapsed}s)\n`);
+      }
+    } catch (err) {
+      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+      allErrors.push({ symbol, timeframe: '5m', family: 'crypto', message: err.message });
+      results.errors++;
+      symbolResults.push({ symbol, ok: false, bars_5m: 0, elapsed_s: Number(elapsed), error: err.message });
+      if (process.stdout.isTTY) {
+        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m 5m: FAILED (${err.message})\n`);
+      } else {
+        console.error(`${progress} ${symbol} FAILED: ${err.message}`);
+      }
+    }
+
+    // Inter-symbol delay to avoid Binance rate-limit pressure
+    if (delayMs > 0 && i < symbols.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+
+  if (process.stdout.isTTY) process.stdout.write('\n');
+
+  // No persistence step here: ingestMarketData already wrote the scoped
+  // snapshot, the partitioned JSON history, and the binary ts-index per symbol.
+
+  printPayload({
+    ok: results.errors === 0,
+    symbols: symbols.length,
+    successful: results.ok,
+    errors: results.errors,
+    total_5m_bars: symbolResults.reduce((n, r) => n + (r.bars_5m || 0), 0),
+    timeframe: '5m',
+    days,
+    delay_ms: delayMs,
+    symbol_results: symbolResults,
+    output: DEFAULT_HISTORY,
+  }, args);
+  return results.errors === 0 ? 0 : 1;
+}
+
+/**
  * Handles the 'universe' command.
  */
 async function commandUniverse(args) {
@@ -793,5 +917,6 @@ module.exports = {
   commandWatch,
   commandPrune,
   commandLoc,
-  commandUniverse
+  commandUniverse,
+  commandCryptoDeepBackfill,
 };
