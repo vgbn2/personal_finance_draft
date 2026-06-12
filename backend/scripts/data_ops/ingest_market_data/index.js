@@ -82,6 +82,7 @@ const { fetchPaginated, fetchParallelBackfill, BARS_PER_DAY } = require('../../.
 const CONFIG_PATH = path.join(REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
 const OPTIONS_CONFIG_PATH = path.join(REPO_ROOT, 'config', 'markets', 'options_data.yaml');
 const CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch.json');
+const SCOPED_CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch_scoped.json');
 const HISTORY_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache');
 const TS_INDEX_PATH = path.join(REPO_ROOT, 'storage', 'data', 'ts');
 
@@ -602,6 +603,17 @@ function normalizeFetchedRecords(records, context) {
     throw new Error(context + ' returned ' + (list.length - valid.length) + ' invalid record(s)');
   }
   return valid;
+}
+
+function isScopedSnapshotRequest(options = {}) {
+  const requestedDays = Number(options.historyDays || options.days || 0);
+  return Boolean(
+    options.family ||
+    options.symbol ||
+    requestedDays > 5 ||
+    options.history ||
+    options.backfill
+  );
 }
 
 function isDedupableQuoteRecord(record) {
@@ -1402,6 +1414,8 @@ function parseHierarchicalTags(categories, pathTags = {}) {
 async function ingestMarketData(options = {}) {
   try {
     const targetFamily = options.family || null;
+    const scopedSnapshot = isScopedSnapshotRequest(options);
+    const requestedDays = Number(options.historyDays || options.days || 0);
     const config = await loadConfig();
     const optionsConfig = await loadOptionsConfig();
     
@@ -1432,11 +1446,18 @@ async function ingestMarketData(options = {}) {
     }
 
     const snapshot = {
-      mode: 'live',
+      mode: requestedDays > 5 ? 'provider_history' : 'live',
       fetched_at: new Date().toISOString(),
       sources: [],
       errors: [],
       provider_checks: collectIngestSkipChecks(config, optionsConfig, targetFamily),
+      snapshot_scope: {
+        kind: scopedSnapshot ? 'scoped' : 'global',
+        representative_of_global_live_health: !scopedSnapshot,
+        target_family: targetFamily,
+        target_symbol: options.symbol || null,
+        requested_days: requestedDays || null,
+      },
     };
 
     // 1. External Quote Feeds
@@ -1684,7 +1705,8 @@ async function ingestMarketData(options = {}) {
 
     console.log('[INGEST] Saving to local filesystem cache...');
     await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
-    await fs.writeFile(CACHE_PATH, JSON.stringify(preservedSnapshot, null, 2), 'utf8');
+    const latestSnapshotPath = scopedSnapshot ? SCOPED_CACHE_PATH : CACHE_PATH;
+    await fs.writeFile(latestSnapshotPath, JSON.stringify(preservedSnapshot, null, 2), 'utf8');
 
     // Write family-partitioned long-term history (merge with full archive first)
     const fullHistory = mergeSnapshots(existingHistory, preservedSnapshot);

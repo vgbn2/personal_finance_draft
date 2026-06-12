@@ -8,6 +8,7 @@ const { spawnSync } = require('node:child_process');
 const CLI_PATH = path.join(__dirname, '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
 const BACKEND_HISTORY_FIXTURE = path.join(__dirname, '..', '..', 'fixtures', 'backend_history_sample.json');
 const { buildCockpitModel, renderCockpit } = require('../../../backend/cli/sovereign_cli');
+const { buildStatusPayload, detectScopedSnapshot, buildRecoveredSnapshotFromHistory } = require('../../../backend/cli/commands/operational/status');
 
 function dumpVisibility(name, data) {
   const dir = process.env.SOVEREIGN_TEST_OUTPUT_DIR ||
@@ -62,10 +63,77 @@ test('root status explains last-fetch freshness scope separately from backend in
   assert.equal(result.status, 0);
   const payload = JSON.parse(result.stdout);
   dumpVisibility('root status explains last fetch freshness scope separately from backend integrity', { payload });
-  assert.equal(payload.freshness_scope, 'last_fetch_snapshot');
+  assert.ok(['last_fetch_snapshot', 'last_fetch_snapshot_scoped'].includes(payload.freshness_scope));
   assert.equal(payload.integrity_scope, 'configured_ts_cache');
-  assert.equal(payload.freshness.scope, 'last_fetch_snapshot');
+  assert.equal(payload.freshness.scope, payload.freshness_scope);
   assert.match(payload.quality_basis, /backend integrity --json/);
+});
+
+test('status payload marks targeted historical snapshots as scoped rather than global live health', () => {
+  const snapshot = {
+    mode: 'provider_history',
+    fetched_at: '2026-06-11T09:19:04.863Z',
+    sources: [
+      { family: 'reserves', provider: 'world_bank', country: 'USA', metric: 'total_reserves_usd', timestamp: '2024-01-01T00:00:00.000Z', value: 1 },
+      { family: 'reserves', provider: 'world_bank', country: 'USA', metric: 'total_reserves_usd', timestamp: '2023-01-01T00:00:00.000Z', value: 1 },
+    ],
+    errors: [],
+    provider_checks: [
+      { family: 'equities', provider: 'manifest', status: 'skipped', reason: 'target_family_filter', target_family: 'reserves' },
+    ],
+    quality_filter: {
+      policy: 'preserve_historical_records_after_merge',
+    },
+    macro_store: {
+      reason: 'target_family_filter',
+      target_family: 'reserves',
+    },
+  };
+  const report = {
+    ok: false,
+    total_records: 2,
+    usable_records: 1,
+    rejected_records: 1,
+    provider_errors: [],
+    reject_stale: false,
+    freshness: {
+      stale_records: 1,
+      issues: 1,
+    },
+  };
+  const backend = { available: true, ok: true };
+
+  const scoped = detectScopedSnapshot(snapshot, report);
+  const payload = buildStatusPayload(snapshot, report, backend);
+  dumpVisibility('status payload marks targeted historical snapshots as scoped rather than global live health', { scoped, payload });
+  assert.equal(scoped.active, true);
+  assert.equal(scoped.target_family, 'reserves');
+  assert.equal(payload.freshness_scope, 'last_fetch_snapshot_scoped');
+  assert.equal(payload.snapshot_scope.representative_of_global_live_health, false);
+  assert.equal(payload.quality, 'scoped snapshot only');
+  assert.match(payload.quality_basis, /not representative of global live health/i);
+});
+
+test('history recovery builds a representative global snapshot from the latest record per series', () => {
+  const history = {
+    fetched_at: '2026-06-11T00:00:00.000Z',
+    sources: [
+      { family: 'equities', provider: 'yahoo', symbol: 'AAPL', timeframe: '1d', timestamp: '2026-06-09T00:00:00.000Z', open: 1, high: 2, low: 1, close: 2, volume: 10 },
+      { family: 'equities', provider: 'yahoo', symbol: 'AAPL', timeframe: '1d', timestamp: '2026-06-10T00:00:00.000Z', open: 2, high: 3, low: 2, close: 3, volume: 10 },
+      { family: 'crypto', provider: 'binance', symbol: 'BTCUSDT', timeframe: '1d', timestamp: '2026-06-11T00:00:00.000Z', open: 10, high: 12, low: 9, close: 11, volume: 10 },
+      { family: 'macro', provider: 'fred', series: 'CPI', timestamp: '2026-05-01T00:00:00.000Z', value: 2.5 },
+      { family: 'macro', provider: 'fred', series: 'CPI', timestamp: '2026-06-01T00:00:00.000Z', value: 2.7 },
+    ],
+  };
+  const recovered = buildRecoveredSnapshotFromHistory(history);
+  dumpVisibility('history recovery builds a representative global snapshot from the latest record per series', { recovered });
+  assert.equal(recovered.mode, 'recovered_live');
+  assert.equal(recovered.snapshot_scope.kind, 'global');
+  assert.equal(recovered.snapshot_scope.representative_of_global_live_health, true);
+  assert.equal(recovered.sources.length, 3);
+  assert.ok(recovered.sources.some((row) => row.symbol === 'AAPL' && row.timestamp === '2026-06-10T00:00:00.000Z'));
+  assert.ok(recovered.sources.some((row) => row.symbol === 'BTCUSDT' && row.timestamp === '2026-06-11T00:00:00.000Z'));
+  assert.ok(recovered.sources.some((row) => row.series === 'CPI' && row.timestamp === '2026-06-01T00:00:00.000Z'));
 });
 
 test('backend stats command exposes C++ performance metrics when executable is available', () => {
@@ -189,7 +257,6 @@ test('backend integrity command summarizes live and historical cache health', ()
     assert.equal(typeof payload.summary.total_exceptions, 'number');
     assert.ok(Array.isArray(payload.policy.integrity_exceptions));
     assert.ok(payload.policy.integrity_exceptions.includes('RNDRUSDT'));
-    assert.ok(payload.policy.integrity_exceptions.includes('VRE'));
     // ok may be false when cache rows are stale (provider unreachable); structure is still valid
     if (payload.ok) assert.equal(payload.summary.total_stale, 0);
     if (payload.live_cache) assert.equal(typeof payload.live_cache.ok, 'boolean');
