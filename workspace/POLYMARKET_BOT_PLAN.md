@@ -71,6 +71,7 @@ PMXT/order-book policy:
 - Do not dense-archive full historical order books by default.
 - Use PMXT historical order-book snapshots only after a price-history strategy produces candidate trades.
 - Store derived candidate-window fields under `orderbooks-lite/`: best bid, best ask, mid, spread, depth_1pct, depth_5pct, snapshot_ts, source.
+- PMXT requests require `PMXT_API_KEY` against `https://api.pmxt.dev`; capture is opt-in and no-network tests use injected fetchers.
 
 ---
 
@@ -101,6 +102,7 @@ Current implementation notes:
 - Use `--live-fetch` or `--no-archive` to force the live historical fetch path.
 - Use `--repair-missing` to fetch missing token histories while replaying archive markets.
 - Execution costs are included by default and can be configured with `--fee`, `--half-spread`, `--impact-y`, `--order-notional`, and `--rolling-market-volume`.
+- Use `--capture-orderbook-lite` to write candidate-window PMXT snapshots into `orderbooks-lite/` when `PMXT_API_KEY` is available.
 - Result payloads label `source`, `archiveCoverage`, `fallbackOnlyCount`, `grossPnl`, `totalExecutionCost`, net `totalPnl`, `evPerTrade`, `maxDrawdown`, and `avgHoldTimeHours`.
 
 ---
