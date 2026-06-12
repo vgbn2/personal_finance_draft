@@ -790,3 +790,9 @@ ok:true). Root cause: push(...records) call-spread RangeError swallowed by the i
 catch. Fixed (appendRecords helper, 9 sites + loud failure semantics), 2 regression tests, real
 400d command run -> 115,200 bars exact, suite 387/387. User approved commit-now. 1825d rerun in
 flight at write time.
+
+**Session 22 close-out:** Prompts: `/session-orchestrator` (boot); commit approval (AskUserQuestion:
+"Commit now"); "can i end the session here ... explain the backfill chunk mechanic" (-> close-out).
+Outcome: 2 commits (a565f39b fix, 38077afa docs). Suite 387/387. 18-symbol 1825d rerun left running
+detached at close -- VERIFY per-symbol counts next session (BTCUSDT ~525k; log at the harness task
+file or just probe readTsIndex).
