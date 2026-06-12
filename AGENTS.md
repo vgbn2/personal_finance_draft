@@ -5,6 +5,7 @@ Use the following skills when they match the task:
 - `codex` for implementation work, repo truth, and verification.
 - `claude` for blast-through audits, gap finding, and debt surfacing.
 - `gemini` for session bootstrap, continuity, and research-oriented context loading.
+- `polymarket-history-backfill` for Polymarket historical data, PMXT/order-book decisions, market impact modeling, and replay backtest implementation.
 
 Project guidance:
 

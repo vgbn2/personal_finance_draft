@@ -742,8 +742,18 @@ fixture-path failures queued as S-fixes). Mid-wave incident (2 unexplained Polym
 resolved benign: user's own UI bets; open order cancelled on request. 12 commits total this
 session. Trail: workspace/handoff/2026-06-12.md.
 
-## 2026-06-12 - Session 18: boot
+## 2026-06-12 - Session 18b (Claude): delegated waves + Codex-slice integration + close
 
-**Prompt:** `/session-orchestrator` (session boot; no task prompt yet)
+**Prompts:** `/session-orchestrator` (boot); "continue with the waves, you can delegate tasks to
+other agents (put that into skill)"; AskUserQuestion answers (commit all 4 batches; review +
+integrate the concurrent polymarket work); "continue"; `/session-orchestrator` (close).
 
-**Outcome:** (pending - to be filled at session close)
+**Outcome:** Standing delegation baked into the session-orchestrator skill. 7 agents ran: TUI
+inventory -> TUI_REVAMP_SPEC.md; C++ S-fixes (ctest Debug 29/29 + exact ML parity, incl. a real
+regime_detector off-by-one); RAM profile -> hotspots #1+#3 fixed (ml dump 21.9s->2.8s,
+SHA256-identical output); 5-min data scoping doc; TUI Phase A (spinner/progress/semantic
+colors/render helpers/page size, +44 tests). Boot had flagged ~770 uncommitted lines — resolved
+mid-session by the USER's own checkpoint commit 76ef48fb (parked 06-11 batch now committed; TUI
+Phase B unblocked). A concurrent Codex session's polymarket archive/backtest slice (13:30-15:43)
+was reviewed and integrated (28/28 tests). 6 commits: e0ad1ff7, d51bfbc1, ac7b10ed, 508b7d68,
+0e90e2a0 + close-out. Suite at close: 342/342. Trail: workspace/handoff/2026-06-12.md (18 + 18b).
