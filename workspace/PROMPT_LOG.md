@@ -796,3 +796,9 @@ flight at write time.
 Outcome: 2 commits (a565f39b fix, 38077afa docs). Suite 387/387. 18-symbol 1825d rerun left running
 detached at close -- VERIFY per-symbol counts next session (BTCUSDT ~525k; log at the harness task
 file or just probe readTsIndex).
+
+**Session 22 final:** User asked about other-family deep 5m -> answered (crypto-only today),
+Phases 2-4 plan written into FIVE_MIN_DATA_SCOPING.md section 8 (00bb388c). USER DECISION recorded:
+synthetic daily-aggregated 5m bars = experimental-only, never ML/backtest input; enforcement
+(provenance tagging + loader filter) queued for Phase 2. Rerun at close: 5/18 symbols, each at
+525,506 bars (full 5y). Session ended via session-orchestrator close-out.
