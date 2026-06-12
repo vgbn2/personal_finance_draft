@@ -1575,7 +1575,13 @@ async function ingestMarketData(options = {}) {
           }
 
           if (!resolved) {
-            for (const provider of section.providers) {
+            // options.provider pins the provider chain to one entry (e.g. the 5m
+            // deep backfill must hit binance natively -- TwelveData earlier in the
+            // chain silently caps history at 5,000 bars and would win the break).
+            const providerList = options.provider
+              ? section.providers.filter((p) => p === options.provider)
+              : section.providers;
+            for (const provider of providerList) {
               if (!provider) continue;
               try {
                 const providerSymbol = (family.id === 'equities' || family.id === 'indices') ? resolveEquityOrIndexSymbol(family.id, item, provider) : item;
@@ -1706,11 +1712,14 @@ async function ingestMarketData(options = {}) {
     console.log('[INGEST] Saving to local filesystem cache...');
     await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
     const latestSnapshotPath = scopedSnapshot ? SCOPED_CACHE_PATH : CACHE_PATH;
-    await fs.writeFile(latestSnapshotPath, JSON.stringify(preservedSnapshot, null, 2), 'utf8');
+    await fs.writeFile(latestSnapshotPath, JSON.stringify(capSubDailyJsonView(preservedSnapshot), null, 2), 'utf8');
 
-    // Write family-partitioned long-term history (merge with full archive first)
+    // Write family-partitioned long-term history (merge with full archive first).
+    // JSON gets the sub-daily-capped view (<=30m bars limited to the last
+    // FIVE_MIN_JSON_CAP_DAYS); the binary ts-index gets FULL depth and is
+    // merge-protected in writeTsIndex so capped-JSON rebuilds cannot truncate it.
     const fullHistory = mergeSnapshots(existingHistory, preservedSnapshot);
-    writePartitionedSnapshot(HISTORY_PATH, fullHistory);
+    writePartitionedSnapshot(HISTORY_PATH, capSubDailyJsonView(fullHistory));
 
     // Write per-symbol binary index for fast targeted reads
     writeTsIndex(TS_INDEX_PATH, fullHistory);
@@ -1776,10 +1785,122 @@ if (require.main === module) {
     });
 }
 
+// Timeframes at or below this duration are considered "sub-daily" and require
+// native intraday bars — aggregation from 1d base produces only 1 synthetic bar/day.
+const INTRADAY_THRESHOLD_MS = 4 * 60 * 60 * 1000; // 4h in ms
+
+// JSON backtest_history.json cap for high-frequency timeframes: full depth lives in
+// the binary ts-index only. Cap prevents unbounded JSON bloat (§3b risk).
+const FIVE_MIN_JSON_CAP_DAYS = 90;
+
+/**
+ * Return a shallow view of `snapshot` whose sub-daily (<=30m) sources are
+ * limited to the last FIVE_MIN_JSON_CAP_DAYS. Used for JSON writes only —
+ * the binary ts-index must always receive the uncapped snapshot.
+ */
+function capSubDailyJsonView(snapshot) {
+  if (!snapshot || !Array.isArray(snapshot.sources)) return snapshot;
+  const capMs = SUPPORTED_INTERVALS['30m'];
+  const cutoff = Date.now() - FIVE_MIN_JSON_CAP_DAYS * 24 * 60 * 60 * 1000;
+  const capped = [];
+  let dropped = 0;
+  for (const r of snapshot.sources) {
+    const intervalMs = SUPPORTED_INTERVALS[r.timeframe];
+    if (intervalMs !== undefined && intervalMs <= capMs && new Date(r.timestamp).getTime() < cutoff) {
+      dropped++;
+      continue;
+    }
+    capped.push(r);
+  }
+  if (dropped === 0) return snapshot;
+  return { ...snapshot, sources: capped };
+}
+
 async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypto', options = {}) {
   const historyDays = options.historyDays || options.days || 5;
   const startTime = options.startTime || null;
   const endTime = options.endTime || null;
+
+  // Determine if any requested timeframe is sub-daily (requires native intraday bars)
+  const subDailyTimeframes = timeframes.filter(tf => {
+    const ms = SUPPORTED_INTERVALS[tf];
+    return ms !== undefined && ms <= INTRADAY_THRESHOLD_MS;
+  });
+  const dailyOrAbove = timeframes.filter(tf => {
+    const ms = SUPPORTED_INTERVALS[tf];
+    return ms !== undefined && ms > INTRADAY_THRESHOLD_MS;
+  });
+
+  const output = [];
+  const targetStartMs = startTime || (Date.now() - (historyDays * 24 * 60 * 60 * 1000));
+
+  // --- Sub-daily branch: route to native Binance fetch via fetchPaginated ---
+  // This produces real intraday bars instead of the 1-bar-per-day aggregation from 1d base.
+  // Only for binance/coinbase providers (not coingecko/alpaca which lack 5m intraday depth).
+  if (subDailyTimeframes.length > 0 && historyDays > 5 && (provider === 'binance' || provider === 'coinbase')) {
+    // Fetch at the finest sub-daily timeframe requested; coarser sub-daily TFs aggregate from it.
+    const ORDER = ['5m', '15m', '30m', '1h', '4h'];
+    const finestSubDaily = ORDER.find(tf => subDailyTimeframes.includes(tf)) || subDailyTimeframes[0];
+
+    let nativeCandles = null;
+    try {
+      // fetchPaginated handles chunked pagination (3-day chunks for 5m), sequential, rate-safe.
+      nativeCandles = await fetchPaginated(symbol, finestSubDaily, historyDays, 'crypto', fetchBinanceBaseCandles, endTime || null);
+    } catch (err) {
+      console.warn(`[INGEST] Native ${finestSubDaily} fetch failed for ${symbol} via ${provider}: ${err.message}`);
+    }
+
+    if (nativeCandles && nativeCandles.length > 0) {
+      // Convert fetchPaginated output {openTime, open, high, low, close, volume} to snapshot record shape
+      const nativeBarsForAgg = nativeCandles.map(c => ({
+        openTime: c.openTime,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+        volume: c.volume,
+      }));
+
+      for (const tf of subDailyTimeframes) {
+        if (!SUPPORTED_INTERVALS[tf]) continue;
+        const aggregated = tf === finestSubDaily
+          ? nativeCandles.map(c => ({
+              family,
+              provider,
+              symbol,
+              timeframe: tf,
+              timestamp: new Date(c.openTime).toISOString(),
+              open: c.open,
+              high: c.high,
+              low: c.low,
+              close: c.close,
+              volume: c.volume,
+            }))
+          : aggregateCandles(nativeBarsForAgg, tf, symbol, provider, family);
+
+        if (aggregated.length > 0) {
+          // No JSON cap here: the snapshot must carry FULL depth so the binary
+          // ts-index receives it. The 90-day JSON cap is applied at write time
+          // in the save block (capSubDailyJsonView). Plain loop, not push(...):
+          // a 5-year 5m fetch is ~526k records and spread args overflow the stack.
+          for (const r of aggregated) {
+            if (new Date(r.timestamp).getTime() >= targetStartMs) output.push(r);
+          }
+        }
+      }
+    }
+    // Fall through to daily aggregation for any dailyOrAbove timeframes still needed
+  }
+
+  // --- Daily-and-above branch (or sub-daily fallback when native fetch unavailable) ---
+  const remainingTimeframes = [
+    ...dailyOrAbove,
+    // Include sub-daily TFs that weren't handled (e.g., provider is coingecko/alpaca, or native fetch failed)
+    ...subDailyTimeframes.filter(tf => !output.some(r => r.timeframe === tf)),
+  ];
+
+  if (remainingTimeframes.length === 0) return output;
+
   let baseCandles = null;
 
   // Primary Provider Fetch
@@ -1789,7 +1910,7 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
     let fetchBase = fetchBinanceBaseCandles;
     if (provider === 'coinbase') fetchBase = fetchCoinbaseBaseCandles;
     else if (provider === 'alpaca') fetchBase = fetchAlpacaBaseCandles;
-    
+
     try {
       const limit = Math.max(100, Math.ceil(historyDays * 1.5));
       baseCandles = await fetchBase(symbol, limit, '1d', startTime, endTime);
@@ -1801,7 +1922,7 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
   // Yahoo Fallback (only if primary failed and history requested)
   if (!baseCandles && historyDays > 5 && (provider === 'binance' || provider === 'coinbase')) {
     const yahooSymbol = COINBASE_PRODUCTS[symbol] || symbol;
-    const { base: bestBase, effectiveDays } = selectYahooBase(timeframes, historyDays);
+    const { base: bestBase, effectiveDays } = selectYahooBase(remainingTimeframes, historyDays);
     try {
       baseCandles = await fetchYahooBaseCandles(yahooSymbol, bestBase, effectiveDays, startTime, endTime);
       console.log(`[INGEST] Using Yahoo fallback for ${symbol} (${bestBase}, ${effectiveDays}d)`);
@@ -1811,16 +1932,19 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
   }
 
   if (!baseCandles) {
-      throw new Error(`Failed to fetch crypto data for ${symbol} via ${provider} or fallbacks`);
+    if (output.length > 0) {
+      // Sub-daily succeeded; daily base failed — not fatal if caller only needs sub-daily
+      console.warn(`[INGEST] Daily base fetch failed for ${symbol} via ${provider}; returning sub-daily results only`);
+      return output;
+    }
+    throw new Error(`Failed to fetch crypto data for ${symbol} via ${provider} or fallbacks`);
   }
-  const output = [];
-  const targetStartMs = startTime || (Date.now() - (historyDays * 24 * 60 * 60 * 1000));
 
-  for (const timeframe of timeframes) {
+  for (const timeframe of remainingTimeframes) {
     if (!SUPPORTED_INTERVALS[timeframe]) {
       throw new Error(`Unsupported crypto timeframe: ${timeframe}`);
     }
-    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family); 
+    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family);
     if (aggregated.length > 0) {
       const filtered = aggregated.filter(r => new Date(r.timestamp).getTime() >= targetStartMs);
       if (historyDays > 5) {
@@ -1888,6 +2012,7 @@ module.exports = {
   parseStooqCsv,
   unresolvedProviderErrors,
   fetchCryptoSnapshot,
+  capSubDailyJsonView,
   fetchEquityOrIndexSnapshot,
   fetchCommoditySnapshot,
   fetchYahooOptionsSnapshot,
