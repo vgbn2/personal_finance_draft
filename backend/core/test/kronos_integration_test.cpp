@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iostream>
 #include <vector>
 #include <stdexcept>
@@ -10,16 +11,40 @@
 using namespace sovereign;
 using namespace sovereign::ml;
 
+namespace {
+
+std::filesystem::path locateRepoRoot() {
+#ifdef SOVEREIGN_REPO_ROOT
+    const std::filesystem::path macro_root(SOVEREIGN_REPO_ROOT);
+    if (std::filesystem::exists(macro_root / "storage" / "data" / "cache" / "crypto" / "backtest_history.json")) {
+        return macro_root;
+    }
+#endif
+    const std::filesystem::path candidates[] = {
+        std::filesystem::current_path(),
+        std::filesystem::current_path().parent_path(),
+        std::filesystem::current_path().parent_path().parent_path(),
+        std::filesystem::current_path().parent_path().parent_path().parent_path(),
+    };
+    for (const auto& candidate : candidates) {
+        if (std::filesystem::exists(candidate / "storage" / "data" / "cache" / "crypto" / "backtest_history.json")) {
+            return candidate;
+        }
+    }
+    return std::filesystem::current_path();
+}
+
+} // namespace
+
 int main() {
     try {
         KronosTokenizer tokenizer;
         KronosTensorBuilder tensor_builder(3); // Small window for testing
-        
-        // Load empirical data instead of dummy values
-        auto snapshot = loadMarketDataSnapshot("storage/data/cache/backtest_history.json", "BTCUSDT", "1d", 5);
-        if (snapshot.bars.size() < 4) {
-            snapshot = loadMarketDataSnapshot("../../../storage/data/cache/backtest_history.json", "BTCUSDT", "1d", 5);
-        }
+
+        // Load empirical data from the crypto partition (BTCUSDT 1d bars)
+        const auto repo_root = locateRepoRoot();
+        const auto data_path = repo_root / "storage" / "data" / "cache" / "crypto" / "backtest_history.json";
+        auto snapshot = loadMarketDataSnapshot(data_path, "BTCUSDT", "1d", 5);
         if (snapshot.bars.size() < 4) {
             throw std::runtime_error("Not enough empirical data points for Kronos test (need at least 4)");
         }
@@ -38,7 +63,10 @@ int main() {
             throw std::runtime_error("Expected windows size to be tokens.size() - 2");
         }
 
-        OnnxModel model("models/kronos_base.onnx");
+        // Use the committed smoke model (row-mean over int64 window tokens).
+        // A dedicated kronos_base.onnx would be loaded here once trained and committed.
+        const std::string model_path = (repo_root / "storage" / "models" / "smoke.onnx").string();
+        OnnxModel model(model_path);
         auto flat_input = tensor_builder.flatten(windows);
         
         auto result = model.predict(flat_input, windows.size(), 3);
