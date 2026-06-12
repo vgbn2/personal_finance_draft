@@ -309,3 +309,76 @@ The following 5 questions must be answered before implementation starts:
 ---
 
 *End of scoping document. No code was modified during this research pass.*
+
+---
+
+## 8. Implementation Plan — extending the deep-backfill framework to other families
+*(added 2026-06-12 session 22, after Phase 1 landed + was hardened)*
+
+### 8a. What Phase 1 proved reusable (the framework)
+
+Phase 1 (crypto, `c3fbc3ba` + spread-fix `a565f39b`) validated a stack that is already
+family-agnostic — new families reuse it, they don't reinvent it:
+
+| Layer | Component | Family-specific? |
+|---|---|---|
+| Pagination walk | `fetchPaginated` (backfill.js) — chunk = `floor(1000 / BARS_PER_DAY[family][tf])`, walks backward anchored to earliest-bar-received | NO — `BARS_PER_DAY.equities` already defined (78/day → 12-day chunks) |
+| Provider pinning | `ingestMarketData options.provider` (the TwelveData 5,000-bar trap exists in EVERY family's chain) | NO |
+| Record assembly | `appendRecords()` plain-loop (the >100k call-spread fix already covers the equity/commodity aggregation sites at index.js:743/789) | NO |
+| Storage | merge-protected sub-daily bins (`SUB_DAILY_PRESERVED_TIMEFRAMES`), 90-day JSON cap (`capSubDailyJsonView`) | NO — both are timeframe-keyed, not family-keyed |
+| Command shape | `crypto-deep-backfill`: sequential, dry-run plan math, per-symbol results, loud zero-bars-with-errors failure | Pattern to generalize |
+
+What IS family-specific: the native sub-daily fetch branch (currently only in
+`fetchCryptoSnapshot`, index.js:1840) and the provider adapter itself.
+
+### 8b. Phase 2 — US equities via Alpaca (next, M effort)
+
+1. **Alpaca adapter** (`shared/lib/providers/alpaca.js`): timeframe map (`5m`→`5Min`, `15m`→`15Min`,
+   `1h`→`1Hour`, `1d`→`1Day`) — today the raw `'5m'` string would 422; `next_page_token` cursor
+   loop (Alpaca returns up to 10k bars/request, so one fetchPaginated chunk = one request + rare
+   cursor follow); `adjustment=split` parameter (NVDA/TSLA/AAPL splits otherwise poison returns).
+2. **Native sub-daily branch in `fetchEquityOrIndexSnapshot`** (index.js:713) mirroring the crypto
+   branch at 1840: finest sub-daily TF ≤ 4h AND historyDays > 5 AND provider === 'alpaca' → route
+   through `fetchPaginated(symbol, tf, days, 'equities', alpacaFetchFn)`; coarser sub-daily TFs
+   aggregate from it; use `appendRecords`, never push-spread.
+3. **Generalize the command**: either `equity-deep-backfill` cloning the crypto command, or
+   (preferred) one `deep-backfill --family crypto|equities` that selects symbol list + pinned
+   provider per family. US-only filter: skip VN/UK/GER/IN symbols loudly (`skipped_no_provider`),
+   never silently.
+4. **Session-gap guard** before equity 5m enters the indicator pipeline (overnight/weekend gaps
+   corrupt RSI/ATR) — flag-gated, scope-checked against `aggregateCandles` consumers.
+5. **Gates (apply the s22 lessons)**: regression test PAST 100k records through the REAL command
+   path (not just the fetcher layer); real end-to-end run at >limit depth (e.g. SPY `--days 2000`
+   ≈ 390k bars) verified via `readTsIndex` count + span; dry-run math test.
+
+Depth honesty: Alpaca SIP history ≈ 7y, free-tier practical ≈ 5y for liquid names. ~20 US symbols
+× 5y ≈ 90 MB binary. Rate: undocumented (~200 req/min community figure) → keep sequential +
+`--delay-ms`, same as crypto.
+
+### 8c. Phase 3 — indices/commodities/FX (blocked on user decisions, with a free stop-gap)
+
+- **No free deep 5m provider exists** for these (Yahoo caps 5m at 60d; Stooq/Frankfurter/ECB are
+  daily; TwelveData free = 17d). Real depth needs a paid plan (TwelveData $29+/mo, Polygon $79/mo)
+  or a new integration (OANDA for FX) — **user budget decision, unchanged from §7 Q3**.
+- **Free stop-gap worth doing regardless — "accumulate forward"**: Yahoo serves a rolling 60d of
+  5m for indices/commodities. A scheduled shallow ingest (weekly is enough; 60d window, merge-
+  protected bins) makes history GROW from today forward at zero cost: after a year, ~1y of real
+  5m depth. Small work item: schedule it + pin provider + verify bins grow (the merge-protection
+  test already pins the storage behavior). Commodity contract-roll gaps (§5e) and session gaps
+  still apply to consumers.
+- Until then: consider removing `"5m"` from those families' `timeframes` in `data_sources.yaml`
+  so daily-aggregated synthetic 5m bars stop masquerading as real ones (§7 Q3, still open).
+
+### 8d. Phase 4 — ML feature builder (unchanged)
+
+After Phase 2 data exists: explicit `maxBarsPerSymbol` for `ml dump` at 5m (O(n²) expanding
+window — cap ~2k-5k bars interactive), 5m feature-frame perf test. Full-depth 5m is for
+backtesting/replay, not direct `buildMLFeatureFrame` input.
+
+### 8e. Decision gates before Phase 2 starts
+
+1. §7 Q2: proceed with equities now, or crypto-only sufficient near-term? (Q1 depth was answered
+   for crypto: 5 years.)
+2. Command shape: generic `deep-backfill --family` vs per-family commands.
+3. §7 Q3 for Phase 3: paid provider budget yes/no; adopt the free accumulate-forward stop-gap?
+4. §7 Q5: live-ops refresh cadence (only relevant once a strategy consumes 5m live).
