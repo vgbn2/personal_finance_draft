@@ -1,4 +1,25 @@
-﻿## Session Memory - 2026-06-12 (session 21) Mass-implement: Codex slice + TUI Phase B + 5m crypto Phase 1; suite 385/385
+﻿## Session Memory - 2026-06-12 (session 22) 5y backfill silent failure root-caused + fixed; suite 387/387; rerun in flight
+
+{
+  "work": "Boot verification of the session-21 carryover found the 18-symbol 5y 5m backfill mid-run but delivering nothing; let it finish (ok:true exit 0, bars_5m:0 for all 17 live symbols), root-caused the silent failure, fixed it (Fable-direct, ~40-line diff), added regression tests, re-proved with the real command at 400d, relaunched the full 1825d run in background.",
+  "key_mechanism": "V8 passes call-spread arguments on the stack: snapshot.sources.push(...records) at ingest_market_data/index.js:1604 throws RangeError above ~100k elements (5y 5m = ~525k), and the provider-loop catch swallowed it as a generic provider error -> symbol resolved with ZERO records while the command reported ok:true/exit 0. Session 21 had fixed the SAME defect class one layer deeper (fetchCryptoSnapshot) and its 160k-bar test only exercised that layer -- a regression test at the wrong layer passes while the layer above fails. Array-literal spreads ([...a,...b]) are safe (iteration, not call stack); only call-spreads break. Diagnosis signature for next time: per-symbol errors:2 ('Maximum call stack size exceeded' + 'No provider resolved'), full-pace fetching (API cache files accruing) with no bin growth, shallow probes (30d/120d) green.",
+  "verified": [
+    "Real command end-to-end: crypto-deep-backfill --days 400 --symbol BTCUSDT -> 115,200 bars (exactly 400x288), errors 0, exit 0; readTsIndex confirms 115,200 bars spanning exactly 400.0 days (pre-fix this depth RangeError'd).",
+    "Focused bundle 16/16 (2 new: appendRecords 250k no-RangeError; zero-bars-with-errors -> ok:false + error_messages).",
+    "Full suite 387/387 exit 0 (new baseline; was 385).",
+    "Failure visibility: stubbed silent-failure shape now produces ok:false, symbol error text, error_messages[], non-TTY per-symbol logging."
+  ],
+  "user_decisions": [
+    "None taken in-session yet: fix is UNCOMMITTED (commit = user decision per standing rule); 1825d rerun relaunch was within the carryover's explicit 'rerun failed symbols' instruction."
+  ],
+  "remaining": [
+    "Verify the in-flight 18-symbol 1825d rerun per-symbol counts (BTCUSDT ~525k; SUI/PEPE/WIF/POL listing-bounded; RNDRUSDT delisted -- may legitimately fail loudly now).",
+    "Commit decision for the 3-file fix; concurrent Codex session alive at boot -- re-check git status before staging.",
+    "Unchanged carryovers: CLI lazy-requires (optional), NDJSON sign-off, 5m Phases 2-4, merge feat/ml-onnx-section -> main."
+  ],
+  "dcs": 0.97
+}
+## Session Memory - 2026-06-12 (session 21) Mass-implement: Codex slice + TUI Phase B + 5m crypto Phase 1; suite 385/385
 
 {
   "work": "Mass-implement over carryovers. Batch 0: reviewed+integrated the uncommitted sessions-19/20 Codex slice (1f6b5e45). Batch 1: TUI Phase B via Sonnet agent, Fable-reviewed (b64cf57c). Batch 2: C++ indicators S-fix found ALREADY in HEAD (e0ad1ff7) -- DEV_REVIEW entry was stale. Batch 4: 5m crypto Phase 1 via Sonnet agent + a 5-defect Fable correction pass (c3fbc3ba); full 18-symbol 5y backfill launched in background at close.",
@@ -1167,6 +1188,7 @@
   ],
   "dcs": 0.96
 }
+
 
 
 
