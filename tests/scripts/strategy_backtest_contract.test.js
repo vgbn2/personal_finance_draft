@@ -48,6 +48,20 @@ test('market validation rejects impossible crypto history and lower-timeframe sy
         family: 'equities',
         provider: 'twelve',
         symbol: 'SPY',
+        timeframe: '5m',
+        timestamp: '2024-01-01T00:00:00.000Z',
+        open: 470,
+        high: 472,
+        low: 468,
+        close: 471,
+        volume: 1000,
+        source: 'twelve-rollup-from-1d',
+        derived_from_timeframe: '1d',
+      },
+      {
+        family: 'equities',
+        provider: 'twelve',
+        symbol: 'SPY',
         timeframe: '1d',
         timestamp: '2024-01-01T00:00:00.000Z',
         open: 470,
@@ -61,7 +75,7 @@ test('market validation rejects impossible crypto history and lower-timeframe sy
   });
 
   assert.equal(report.ok, false);
-  assert.equal(report.rejected_records, 2);
+  assert.equal(report.rejected_records, 3);
   assert.equal(usableSources.length, 1);
   assert.equal(usableSources[0].symbol, 'SPY');
   assert.ok(report.issues.some((issue) => issue.code === 'before_family_inception'));
