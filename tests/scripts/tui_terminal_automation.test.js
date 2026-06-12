@@ -76,3 +76,24 @@ test('TUI automation harness keeps optimize free of prop-firm prompts', async ()
     session.kill();
   }
 });
+
+test('TUI automation harness opens a symbol source selector in the trade desk', async () => {
+  const session = createTuiSession({ args: ['trade'] });
+  try {
+    await session.waitFor(/Trade desk action:/);
+    await session.send([...repeat(keys.down, 3), keys.enter]);
+    await session.waitFor(/Symbol source:/);
+
+    const output = session.snapshot();
+    assert.match(output, /Symbol source:/);
+    assert.match(output, /Favourite symbols/);
+    assert.match(output, /Browse all symbols/);
+  } finally {
+    session.kill();
+  }
+});
+
+test('TUI trade menu exposes a favourite symbols action', () => {
+  const tradeMenu = manifest.commands.trade;
+  assert.ok(tradeMenu.some((entry) => entry.id === 'favorites'));
+});

@@ -1,7 +1,7 @@
 # Session Memory Index
 
 This file tracks project-specific, volatile findings and current session state.
-For persistent, durable project protocols, refer to `.codex/skills/repo-global-protocol/SKILL.md`.
+For persistent, durable project protocols, refer to `skills/codex/SKILL.md`.
 
 ## Active Findings & Risks
 - **Security (Web Server):** Bound to `127.0.0.1`. Do not override without adding authentication.
@@ -16,7 +16,7 @@ For persistent, durable project protocols, refer to `.codex/skills/repo-global-p
 
 
 
-- **2026-05-23**: Added the agentic coding hard copy and new repo skills: evidence-first-testing, subagent-contracts, technical-debt-ledger, and verification-gates.
+- **2026-05-23**: Aligned the repo workflow around the three umbrella skills: codex, claude, and gemini.
 
 - **2026-05-23**: Added docs/agentic_coding.md and linked it from the docs index and contributor guide as the human-facing summary of the agentic coding standard.
 
