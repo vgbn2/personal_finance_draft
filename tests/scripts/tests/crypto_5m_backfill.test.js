@@ -511,12 +511,14 @@ test('fetchCryptoSnapshot survives a >150k-bar native fetch without RangeError',
  * The command does lazy require() inside its body, so we must hold the stub active
  * until the async command resolves — not just during module load.
  */
-async function runDeepBackfillWithStubs(cmdArgs, fakeConfig) {
+async function runDeepBackfillWithStubs(cmdArgs, fakeConfig, snapshotFactory = null) {
   const dataPath   = path.resolve(REPO_ROOT, 'backend/cli/commands/data/data.js');
   const ingestPath = path.resolve(REPO_ROOT, 'backend/scripts/data_ops/ingest_market_data.js');
   const utilsPath  = path.resolve(REPO_ROOT, 'backend/cli/lib/utils.js');
 
-  const ingestStub = async () => ({ sources: [], errors: [], mode: 'test' });
+  const ingestStub = async (...args) => (
+    snapshotFactory ? snapshotFactory(...args) : { sources: [], errors: [], mode: 'test' }
+  );
   ingestStub.loadConfig    = async () => fakeConfig;
   ingestStub.ingestMarketData = ingestStub;
 
@@ -578,6 +580,42 @@ test('commandCryptoDeepBackfill rejects --days <= 5 (legacy aggregation path wou
   assert.ok(outputs.length > 0, 'should emit a printPayload call');
   assert.strictEqual(outputs[0].ok, false, 'days <= 5 must be rejected');
   assert.match(String(outputs[0].error), /--days > 5/, 'error should explain the > 5 requirement');
+});
+
+test('appendRecords absorbs >200k records without RangeError (provider-loop spread regression)', () => {
+  const ingestPath = path.resolve(REPO_ROOT, 'backend/scripts/data_ops/ingest_market_data/index.js');
+  const { appendRecords } = require(ingestPath);
+
+  const COUNT = 250000; // a 5y 5m backfill is ~525k; 250k is past the V8 spread-args limit
+  const big = Array.from({ length: COUNT }, (_, i) => i);
+  const target = [-1];
+  appendRecords(target, big);
+  assert.strictEqual(target.length, COUNT + 1, 'all records appended');
+  assert.strictEqual(target[0], -1, 'existing elements preserved');
+  assert.strictEqual(target[COUNT], COUNT - 1, 'order preserved');
+});
+
+test('commandCryptoDeepBackfill fails the run when a symbol yields zero bars with ingest errors', async () => {
+  const fakeConfig = {
+    crypto: { symbols: ['BTCUSDT'], timeframes: ['5m', '1d'] },
+    equities: { symbols: [] }, indices: { symbols: [] },
+    commodities: { symbols: [] }, fx: { symbols: [] },
+  };
+
+  // Reproduces the silent-failure shape: ingest swallows a provider exception
+  // (e.g. the pre-fix push(...records) RangeError) and returns an empty
+  // snapshot with errors. The command must NOT report ok:true / exit 0.
+  const outputs = await runDeepBackfillWithStubs(['--days', '1825'], fakeConfig, () => ({
+    sources: [],
+    errors: [{ provider: 'binance', symbol: 'BTCUSDT', family: 'crypto', message: 'Maximum call stack size exceeded' }],
+    mode: 'test',
+  }));
+
+  const out = outputs[0];
+  assert.strictEqual(out.ok, false, 'run must not report silent success');
+  assert.strictEqual(out.symbol_results[0].ok, false, 'symbol must be marked failed');
+  assert.match(String(out.symbol_results[0].error), /call stack/, 'symbol entry carries the error');
+  assert.ok((out.error_messages || []).some(m => /call stack/.test(m)), 'payload surfaces error messages');
 });
 
 test('commandCryptoDeepBackfill dry-run with --symbol filters to single symbol', async () => {
