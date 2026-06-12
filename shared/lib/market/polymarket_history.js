@@ -96,6 +96,7 @@ function normalizeGammaMarket(market = {}) {
     condition_id: String(market.conditionId || market.condition_id || '').trim() || null,
     question: String(market.question || market.title || market.groupItemTitle || '').trim(),
     category: String(market.category || market.categorySlug || market.tagSlug || market.tag || '').trim() || null,
+    created_at: market.createdAt || market.created_at || market.created_time || market.startDate || market.start_date || null,
     end_date: market.endDate || market.end_date || market.close_time || market.resolutionTime || null,
     closed: market.closed === true || String(market.closed).toLowerCase() === 'true',
     volume: finiteNumber(market.volume, finiteNumber(market.volumeNum, 0)) || 0,
@@ -439,8 +440,19 @@ async function capturePolymarketOrderbookLite(market, tokenId, opts = {}) {
     fetcher,
   } = opts;
 
-  const outcomeId = market.condition_id || market.conditionId || market.market_id || market.id || market.slug;
-  const outcome = opts.outcome || tokenId;
+  const tokens = Array.isArray(market.tokens) ? market.tokens : [];
+  const token = tokens.find((item) => String(item && (item.token_id || item.tokenId || item.id || '')).trim() === String(tokenId).trim());
+  const tokenOutcome = token && token.outcome ? String(token.outcome).trim().toLowerCase() : '';
+  const rawTokenIds = Array.isArray(market.clobTokenIds)
+    ? market.clobTokenIds
+    : (typeof market.clobTokenIds === 'string' ? safeJsonParse(market.clobTokenIds, []) : []);
+  const yesId = yesTokenId(market);
+  const outcomeId = market.id || market.market_id || market.slug || market.conditionId || market.condition_id || tokenId;
+  const outcome = opts.outcome
+    || (yesId && String(yesId) === String(tokenId) ? 'yes' : null)
+    || (rawTokenIds.length > 1 && String(rawTokenIds[1]) === String(tokenId) ? 'no' : null)
+    || (tokenOutcome === 'yes' || tokenOutcome === 'no' ? tokenOutcome : null)
+    || tokenId;
   const result = await fetchPmxtOrderBookHistory({
     outcomeId,
     outcome,
@@ -513,6 +525,7 @@ async function backfillPolymarketArchive(opts = {}) {
     interval = '1h',
     maxMarkets = 200,
     pageLimit = 200,
+    startOffset = 0,
     category = 'all',
     noCache = false,
     includeNo = false,
@@ -525,7 +538,7 @@ async function backfillPolymarketArchive(opts = {}) {
   const paths = ensureArchive(root);
   const cutoff = daysBack > 0 ? Date.now() - daysBack * 86400 * 1000 : 0;
   const markets = [];
-  let offset = 0;
+  let offset = Math.max(0, Number(startOffset) || 0);
 
   while (markets.length < maxMarkets) {
     const limit = Math.min(pageLimit, maxMarkets - markets.length);

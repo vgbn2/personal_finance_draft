@@ -179,12 +179,14 @@ async function runPolymarketArchiveIngest(args, deps = {}) {
   const daysBack = numericOption(args, '--days', numericOption(args, '--history-days', 180));
   const interval = optionValue(args, '--interval', optionValue(args, '--timeframe', '1h'));
   const maxMarkets = numericOption(args, '--max-markets', 500);
+  const startOffset = numericOption(args, '--start-offset', numericOption(args, '--offset', 0));
   const category = optionValue(args, '--category', 'all');
   const archiveRoot = optionValue(args, '--archive-root', undefined);
   return history.backfillPolymarketArchive({
     daysBack,
     interval,
     maxMarkets,
+    startOffset,
     category,
     root: archiveRoot,
     includeNo: hasFlag(args, '--include-no'),
@@ -849,8 +851,49 @@ async function commandPolymarket(args) {
       return 1;
     }
   }
-  if ((sub === 'research' && args[1] === 'ingest') || (sub === 'history' && args[1] === 'ingest')) {
+  if ((sub === 'research' && args[1] === 'ingest') || (sub === 'history' && (args[1] === 'ingest' || args[1] === 'backfill'))) {
     const result = await runPolymarketArchiveIngest(args);
+    printPayload(result, args);
+    return result.ok ? 0 : 1;
+  }
+  if (sub === 'history' && (args[1] === 'backfill' || args[1] === 'orderbook-lite')) {
+    const { runPolymarketOrderbookLiteBackfill } = require('./polymarket_backtest.js');
+    const tagId          = numericOption(args, '--tag-id', 21);
+    const daysBack       = numericOption(args, '--days', 365);
+    const strategy       = optionValue(args, '--strategy', 'low_prob_dip');
+    const maxMarkets     = numericOption(args, '--max-markets', 200);
+    const entryThreshold = numericOption(args, '--entry-threshold', 0.15);
+    const interval       = optionValue(args, '--interval', optionValue(args, '--timeframe', '1d'));
+    const archiveRoot    = optionValue(args, '--archive-root', undefined);
+    const fee            = numericOption(args, '--fee', 0);
+    const halfSpreadEstimate = numericOption(args, '--half-spread', numericOption(args, '--half-spread-estimate', 0.01));
+    const impactY        = numericOption(args, '--impact-y', 1);
+    const orderNotional  = numericOption(args, '--order-notional', 10);
+    const rollingMarketVolume = numericOption(args, '--rolling-market-volume', undefined);
+    const captureThrottleMs = numericOption(args, '--capture-throttle-ms', numericOption(args, '--throttle-ms', 250));
+    const pmxtApiKey = optionValue(args, '--pmxt-api-key', process.env.PMXT_API_KEY || '');
+    const pmxtBaseUrl = optionValue(args, '--pmxt-base-url', process.env.PMXT_BASE_URL || 'https://api.pmxt.dev');
+    const noCache        = hasFlag(args, '--no-cache');
+    const result = await runPolymarketOrderbookLiteBackfill({
+      tagId,
+      daysBack,
+      strategy,
+      maxMarkets,
+      entryThreshold,
+      interval,
+      archiveRoot,
+      fee,
+      halfSpreadEstimate,
+      impactY,
+      orderNotional,
+      rollingMarketVolume,
+      captureThrottleMs,
+      pmxtApiKey,
+      pmxtBaseUrl,
+      fromArchive: !hasFlag(args, '--live-fetch') && !hasFlag(args, '--no-archive'),
+      repairMissing: hasFlag(args, '--repair-missing'),
+      noCache,
+    });
     printPayload(result, args);
     return result.ok ? 0 : 1;
   }
@@ -884,6 +927,7 @@ async function commandPolymarket(args) {
     const orderNotional  = numericOption(args, '--order-notional', 10);
     const rollingMarketVolume = numericOption(args, '--rolling-market-volume', undefined);
     const captureOrderbookLite = hasFlag(args, '--capture-orderbook-lite');
+    const captureThrottleMs = numericOption(args, '--capture-throttle-ms', numericOption(args, '--throttle-ms', 250));
     const pmxtApiKey = optionValue(args, '--pmxt-api-key', process.env.PMXT_API_KEY || '');
     const pmxtBaseUrl = optionValue(args, '--pmxt-base-url', process.env.PMXT_BASE_URL || 'https://api.pmxt.dev');
     const noCache        = hasFlag(args, '--no-cache');
@@ -901,6 +945,7 @@ async function commandPolymarket(args) {
       orderNotional,
       rollingMarketVolume,
       captureOrderbookLite,
+      captureThrottleMs,
       pmxtApiKey,
       pmxtBaseUrl,
       fromArchive: !hasFlag(args, '--live-fetch') && !hasFlag(args, '--no-archive'),
