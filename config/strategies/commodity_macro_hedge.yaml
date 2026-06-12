@@ -1,0 +1,62 @@
+engine: auto
+name: commodity_macro_hedge
+kind: mean_reversion
+family: mean_reversion
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: xgboost
+sections:
+  hypothesis: "Commodities exhibit macro-driven mean reversion around CPI/PPI anchors; coupling price technicals with macro data improves signal quality."
+  universe:
+    - XAUUSD
+    - XAGUSD
+    - USOIL
+  signals:
+    entry: "Signal > 0.74"
+    exit: "Hold 10 days"
+  data:
+    required_sources:
+      - price_volume
+      - macro
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.52
+    max_holding_days: 10
+    risk_weight: 0.09
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+  notes:
+    - "v2: threshold 0.66→0.74, hold 7→10d, universe 5→3 (dropped WHEAT/CORN — low data quality)"
+    - "Backtest finding: original had 851 trades/year — friction killed returns"
+    - "WHEAT/CORN removed: agricultural data quality poor, seasonal patterns need separate model"
+    - "Target <100 trades/year given 10d hold on 3 symbols"

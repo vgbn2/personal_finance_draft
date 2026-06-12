@@ -20,6 +20,7 @@ const VALID_FLAGS = new Set([
 const DEFAULTS = {
   timezone: 'UTC',
   layout: 'default',
+  favorite_symbols: ['AAPL', 'MSFT', 'SPY', 'BTCUSDT', 'ETHUSDT'],
   trading: {
     position_size: 100,
     stop_loss: 0.05,
@@ -44,6 +45,7 @@ const DEFAULTS = {
 function cloneDefaultSettings() {
   return {
     ...DEFAULTS,
+    favorite_symbols: [...DEFAULTS.favorite_symbols],
     trading: { ...DEFAULTS.trading },
     feature_flags: { ...DEFAULTS.feature_flags },
     alerts: { ...DEFAULTS.alerts },
@@ -62,12 +64,30 @@ function safeReadJson(filePath) {
   }
 }
 
+function normalizeFavoriteSymbols(value) {
+  const values = Array.isArray(value)
+    ? value
+    : String(value || '')
+      .split(',')
+      .map((entry) => entry.trim());
+
+  const seen = new Set();
+  return values
+    .map((entry) => String(entry || '').trim().toUpperCase())
+    .filter((entry) => {
+      if (!entry || seen.has(entry)) return false;
+      seen.add(entry);
+      return true;
+    });
+}
+
 function loadSettings(settingsPath) {
   const stored = safeReadJson(resolveSettingsPath(settingsPath));
   if (!stored || typeof stored !== 'object') return cloneDefaultSettings();
   return {
     timezone: stored.timezone || DEFAULTS.timezone,
     layout: stored.layout || DEFAULTS.layout,
+    favorite_symbols: normalizeFavoriteSymbols(stored.favorite_symbols ?? DEFAULTS.favorite_symbols),
     trading: { ...DEFAULTS.trading, ...(stored.trading || {}) },
     feature_flags: { ...DEFAULTS.feature_flags, ...(stored.feature_flags || {}) },
     alerts: { ...DEFAULTS.alerts, ...(stored.alerts || {}) },
@@ -89,4 +109,5 @@ module.exports = {
   loadSettings,
   persistSettings,
   resolveSettingsPath,
+  normalizeFavoriteSymbols,
 };

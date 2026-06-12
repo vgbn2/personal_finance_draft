@@ -1,0 +1,23 @@
+indicators:
+  kalman:
+    process_noise: 0.001
+    measurement_noise: 1.0
+  rsi:
+    period: 14
+  macd:
+    fast: 12
+    slow: 26
+  volatility:
+    period: 20
+  bollinger:
+    period: 20
+  atr:
+    period: 14
+  stochastic:
+    period: 14
+    signal: 3
+  returns:
+    fast: 1
+    slow: 5
+  sma:
+    slow: 50
