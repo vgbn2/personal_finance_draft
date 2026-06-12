@@ -37,6 +37,12 @@ function round4(value) {
   return Math.round(Number(value || 0) * 10000) / 10000;
 }
 
+function sleep(ms) {
+  const delay = Number(ms);
+  if (!Number.isFinite(delay) || delay <= 0) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, delay));
+}
+
 function rollingVolatilityAtEntry(series, entry, interval) {
   const index = series.findIndex((point) => (
     point.timestamp === entry.timestamp && point.price === entry.price
@@ -120,6 +126,7 @@ async function runPolymarketBacktest(opts = {}) {
     orderNotional = 10,
     rollingMarketVolume = undefined,
     captureOrderbookLite = false,
+    captureThrottleMs = 0,
     pmxtApiKey = process.env.PMXT_API_KEY || '',
     pmxtBaseUrl = process.env.PMXT_BASE_URL || 'https://api.pmxt.dev',
     noCache      = false,
@@ -198,7 +205,55 @@ async function runPolymarketBacktest(opts = {}) {
       const fp = gammaFinalPrice(market);
       if (fp !== null) {
         // Skip markets where Gamma price is at resolution boundary — no pre-entry signal
-        if (fp <= 0.01 || fp >= 0.99) { gammaSkipped++; continue; }
+        if (fp <= 0.01 || fp >= 0.99) {
+          gammaSkipped++;
+          if (captureOrderbookLite) {
+            const endRaw = market.end_date || market.endDate || market.close_time || null;
+            const createdRaw = market.created_at || market.createdAt || market.start_date || market.startDate || null;
+            const endSince = endRaw ? new Date(endRaw).getTime() : NaN;
+            const createdSince = createdRaw ? new Date(createdRaw).getTime() : NaN;
+            const fallbackSince = Number.isFinite(createdSince)
+              ? createdSince
+              : (Number.isFinite(endSince) ? Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000)) : NaN);
+            const fallbackUntil = Number.isFinite(endSince) ? endSince : undefined;
+
+            if (Number.isFinite(fallbackSince)) {
+              const openBook = await _captureOrderbookLite(market, tokenId, {
+                root: archiveRoot,
+                role: 'open',
+                since: fallbackSince,
+                until: Number.isFinite(fallbackUntil) ? fallbackUntil : undefined,
+                apiKey: pmxtApiKey,
+                baseUrl: pmxtBaseUrl,
+              });
+              if (openBook.ok && Array.isArray(openBook.rows) && openBook.rows.length > 0) {
+                orderbookLiteCaptured += openBook.rows.length;
+              } else {
+                orderbookLiteFailures++;
+              }
+              await sleep(captureThrottleMs);
+            }
+
+            if (Number.isFinite(endSince)) {
+              const closeWindowStart = Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000));
+              const closeBook = await _captureOrderbookLite(market, tokenId, {
+                root: archiveRoot,
+                role: 'close',
+                since: closeWindowStart,
+                until: endSince,
+                apiKey: pmxtApiKey,
+                baseUrl: pmxtBaseUrl,
+              });
+              if (closeBook.ok && Array.isArray(closeBook.rows) && closeBook.rows.length > 0) {
+                orderbookLiteCaptured += closeBook.rows.length;
+              } else {
+                orderbookLiteFailures++;
+              }
+              await sleep(captureThrottleMs);
+            }
+          }
+          continue;
+        }
         const ts = market.end_date || market.endDate || new Date().toISOString();
         series = [{ timestamp: ts, price: fp }];
         gammaFallbacks++;
@@ -207,7 +262,54 @@ async function runPolymarketBacktest(opts = {}) {
       }
     }
 
-    if (series.length === 0) continue;
+    if (series.length === 0) {
+      if (captureOrderbookLite) {
+        const endRaw = market.end_date || market.endDate || market.close_time || null;
+        const createdRaw = market.created_at || market.createdAt || market.start_date || market.startDate || null;
+        const endSince = endRaw ? new Date(endRaw).getTime() : NaN;
+        const createdSince = createdRaw ? new Date(createdRaw).getTime() : NaN;
+        const fallbackSince = Number.isFinite(createdSince)
+          ? createdSince
+          : (Number.isFinite(endSince) ? Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000)) : NaN);
+        const fallbackUntil = Number.isFinite(endSince) ? endSince : undefined;
+
+        if (Number.isFinite(fallbackSince)) {
+          const openBook = await _captureOrderbookLite(market, tokenId, {
+            root: archiveRoot,
+            role: 'open',
+            since: fallbackSince,
+            until: Number.isFinite(fallbackUntil) ? fallbackUntil : undefined,
+            apiKey: pmxtApiKey,
+            baseUrl: pmxtBaseUrl,
+          });
+          if (openBook.ok && Array.isArray(openBook.rows) && openBook.rows.length > 0) {
+            orderbookLiteCaptured += openBook.rows.length;
+          } else {
+            orderbookLiteFailures++;
+          }
+          await sleep(captureThrottleMs);
+        }
+
+        if (Number.isFinite(endSince)) {
+          const closeWindowStart = Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000));
+          const closeBook = await _captureOrderbookLite(market, tokenId, {
+            root: archiveRoot,
+            role: 'close',
+            since: closeWindowStart,
+            until: endSince,
+            apiKey: pmxtApiKey,
+            baseUrl: pmxtBaseUrl,
+          });
+          if (closeBook.ok && Array.isArray(closeBook.rows) && closeBook.rows.length > 0) {
+            orderbookLiteCaptured += closeBook.rows.length;
+          } else {
+            orderbookLiteFailures++;
+          }
+          await sleep(captureThrottleMs);
+        }
+      }
+      continue;
+    }
 
     const { yesWon, resolutionPrice } = resolveOutcome(market);
 
@@ -220,7 +322,57 @@ async function runPolymarketBacktest(opts = {}) {
       return { ok: false, error: `Unknown strategy '${strategy}'. Use: low_prob_dip | mean_revert` };
     }
 
-    if (!entry) continue;
+    if (!entry) {
+      if (captureOrderbookLite) {
+        // When used as a historical downloader, preserve a fallback close-window
+        // snapshot even if the strategy never fires. This keeps the archive useful
+        // on sparse or low-signal markets instead of skipping them entirely.
+        const endRaw = market.end_date || market.endDate || market.close_time || null;
+        const createdRaw = market.created_at || market.createdAt || market.start_date || market.startDate || null;
+        const endSince = endRaw ? new Date(endRaw).getTime() : NaN;
+        const createdSince = createdRaw ? new Date(createdRaw).getTime() : NaN;
+        const fallbackSince = Number.isFinite(createdSince)
+          ? createdSince
+          : (Number.isFinite(endSince) ? Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000)) : NaN);
+        const fallbackUntil = Number.isFinite(endSince) ? endSince : undefined;
+
+        if (Number.isFinite(fallbackSince)) {
+          const openBook = await _captureOrderbookLite(market, tokenId, {
+            root: archiveRoot,
+            role: 'open',
+            since: fallbackSince,
+            until: Number.isFinite(fallbackUntil) ? fallbackUntil : undefined,
+            apiKey: pmxtApiKey,
+            baseUrl: pmxtBaseUrl,
+          });
+          if (openBook.ok && Array.isArray(openBook.rows) && openBook.rows.length > 0) {
+            orderbookLiteCaptured += openBook.rows.length;
+          } else {
+            orderbookLiteFailures++;
+          }
+          await sleep(captureThrottleMs);
+        }
+
+        if (Number.isFinite(endSince)) {
+          const closeWindowStart = Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000));
+          const closeBook = await _captureOrderbookLite(market, tokenId, {
+            root: archiveRoot,
+            role: 'close',
+            since: closeWindowStart,
+            until: endSince,
+            apiKey: pmxtApiKey,
+            baseUrl: pmxtBaseUrl,
+          });
+          if (closeBook.ok && Array.isArray(closeBook.rows) && closeBook.rows.length > 0) {
+            orderbookLiteCaptured += closeBook.rows.length;
+          } else {
+            orderbookLiteFailures++;
+          }
+          await sleep(captureThrottleMs);
+        }
+      }
+      continue;
+    }
 
     let entryOrderbookLite = null;
     let exitOrderbookLite = null;
@@ -243,6 +395,7 @@ async function runPolymarketBacktest(opts = {}) {
       } else {
         orderbookLiteFailures++;
       }
+      await sleep(captureThrottleMs);
 
       if (Number.isFinite(exitSince)) {
         const exitBook = await _captureOrderbookLite(market, tokenId, {
@@ -258,6 +411,7 @@ async function runPolymarketBacktest(opts = {}) {
         } else {
           orderbookLiteFailures++;
         }
+        await sleep(captureThrottleMs);
       }
     }
 
@@ -352,4 +506,24 @@ async function runPolymarketBacktest(opts = {}) {
   };
 }
 
-module.exports = { runPolymarketBacktest, signalLowProbDip, signalMeanRevert };
+async function runPolymarketOrderbookLiteBackfill(opts = {}) {
+  const result = await runPolymarketBacktest({
+    ...opts,
+    captureOrderbookLite: true,
+  });
+
+  return {
+    ...result,
+    ok: Boolean(result && result.ok),
+    mode: 'orderbook_lite_backfill',
+    downloadedSnapshots: Number(result && result.orderbookLiteCaptured) || 0,
+    failedSnapshots: Number(result && result.orderbookLiteFailures) || 0,
+  };
+}
+
+module.exports = {
+  runPolymarketBacktest,
+  runPolymarketOrderbookLiteBackfill,
+  signalLowProbDip,
+  signalMeanRevert,
+};
