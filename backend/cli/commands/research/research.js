@@ -22,8 +22,9 @@ const { compareModels } = require('../../../../shared/lib/ml/models.js');
 const { mergeSnapshots, readSnapshot, 
         validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation.js');
 
-const { runInteractiveMenu, handleIntersection, promptSelect, 
+const { runInteractiveMenu, handleIntersection, promptSelect,
         promptText, promptConfirm, isRichTerminal } = require('../../tui/index.js');
+const { createProgress } = require('../../tui/progress.js');
 const { resolvePropFirmProfile } = require('../../../../shared/lib/profiles/prop_firms.js');
 const { classifyStrategyAssetMode, formatStrategyAssetModeLabel } = require('../../../../shared/lib/strategy/registry.js');
 
@@ -1822,20 +1823,21 @@ async function commandEdgeDecay(args) {
   const nowTs = Date.now();
 
   const windows = [];
-  await withLoadingAnimation('Running edge decay analysis', async () => {
-    for (const days of WINDOWS) {
-      const fromIso = new Date(nowTs - days * 86400_000).toISOString();
-      const slice = filterFeatureFrame(fullFrame, { timeframe, from: fromIso });
-      if (!slice || slice.feature_count === 0) continue;
-      const bt = runBacktest(slice, backtestOptions);
-      windows.push({ label: `${days}d`, days, ...bt.metrics });
-    }
-    const fullFiltered = filterFeatureFrame(fullFrame, { timeframe });
-    if (fullFiltered && fullFiltered.feature_count > 0) {
-      const bt = runBacktest(fullFiltered, backtestOptions);
-      windows.push({ label: 'full', days: null, ...bt.metrics });
-    }
-  }, args);
+  const _edgeProgress = createProgress('Edge decay analysis', WINDOWS.length + 1);
+  for (const days of WINDOWS) {
+    const fromIso = new Date(nowTs - days * 86400_000).toISOString();
+    const slice = filterFeatureFrame(fullFrame, { timeframe, from: fromIso });
+    if (!slice || slice.feature_count === 0) { _edgeProgress.tick(1, `${days}d skipped`); continue; }
+    const bt = runBacktest(slice, backtestOptions);
+    windows.push({ label: `${days}d`, days, ...bt.metrics });
+    _edgeProgress.tick(1, `${days}d`);
+  }
+  const fullFiltered = filterFeatureFrame(fullFrame, { timeframe });
+  if (fullFiltered && fullFiltered.feature_count > 0) {
+    const bt = runBacktest(fullFiltered, backtestOptions);
+    windows.push({ label: 'full', days: null, ...bt.metrics });
+  }
+  _edgeProgress.done();
 
   if (windows.length < 2) {
     printPayload({ error: 'Insufficient data for edge decay analysis. Run backfill first.' }, args);
