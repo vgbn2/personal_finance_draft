@@ -217,6 +217,7 @@ const COMMAND_MANIFEST = {
     ],
     settings: [
       { id: 'show',     prefix: ['settings'], label: 'Show Current Config', args: [] },
+      { id: 'favorites', prefix: ['settings'], label: 'Favourite Symbols', args: [] },
       { id: 'timezone', prefix: ['settings'], label: 'Set Timezone', flags: {
         '--value': { type: 'select', options: TIMEZONE_OPTIONS, label: 'Timezone' }
       }},
@@ -251,6 +252,7 @@ const COMMAND_MANIFEST = {
       { id: 'alpaca',       label: 'Alpaca', args: [] },
       { id: 'mt5',          label: 'MT5 / EA', args: [] },
       { id: 'add-platform', label: '+ Add Broker', args: [] },
+      { id: 'favorites',    label: 'Favourite Symbols', args: [] },
       { id: 'auto-trade',   label: 'Auto-Trade Loop', flags: {
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' },
         '--live':     { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
