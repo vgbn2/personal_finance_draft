@@ -3,8 +3,46 @@ const { fetchJson } = require('./common');
 // Alpaca API configuration
 // Expects ALPACA_API_KEY and ALPACA_API_SECRET in the environment
 const BASE_URL = 'https://data.alpaca.markets/v2';
+const DEFAULT_LIMIT = 1000;
+const DEFAULT_PAGINATED_LIMIT = 10000;
+const MAX_PAGES = 1000;
 
-async function fetchAlpacaBaseCandles(symbol, limit = 1000, timeframe = '1Day', startTs = null, endTs = null) {
+const TIMEFRAME_MAP = {
+  '1m': '1Min',
+  '5m': '5Min',
+  '15m': '15Min',
+  '30m': '30Min',
+  '1h': '1Hour',
+  '1d': '1Day',
+};
+
+function normalizeAlpacaArgs(symbol, limitOrTimeframe = DEFAULT_LIMIT, timeframeOrLimit = '1Day', startTs = null, endTs = null) {
+  if (typeof limitOrTimeframe === 'string') {
+    const parsedLimit = Number(timeframeOrLimit);
+    return {
+      symbol,
+      timeframe: limitOrTimeframe,
+      limit: Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : DEFAULT_PAGINATED_LIMIT,
+      startTs,
+      endTs,
+    };
+  }
+
+  const parsedLimit = Number(limitOrTimeframe);
+  return {
+    symbol,
+    timeframe: timeframeOrLimit || '1Day',
+    limit: Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : DEFAULT_LIMIT,
+    startTs,
+    endTs,
+  };
+}
+
+function alpacaTimeframe(timeframe) {
+  return TIMEFRAME_MAP[timeframe] || timeframe;
+}
+
+async function fetchAlpacaBaseCandles(symbol, limitOrTimeframe = DEFAULT_LIMIT, timeframeOrLimit = '1Day', startTs = null, endTs = null) {
   const apiKey = process.env.ALPACA_API_KEY;
   const apiSecret = process.env.ALPACA_API_SECRET;
   
@@ -12,41 +50,57 @@ async function fetchAlpacaBaseCandles(symbol, limit = 1000, timeframe = '1Day', 
     throw new Error("Alpaca API credentials (ALPACA_API_KEY, ALPACA_API_SECRET) missing");
   }
 
-  const url = new URL(`${BASE_URL}/stocks/bars`);
-  url.searchParams.set('symbols', symbol);
-  url.searchParams.set('timeframe', timeframe);
-  url.searchParams.set('limit', limit);
-  
-  if (startTs) {
-    url.searchParams.set('start', new Date(startTs).toISOString());
-  }
-  if (endTs) {
-    url.searchParams.set('end', new Date(endTs).toISOString());
-  }
+  const args = normalizeAlpacaArgs(symbol, limitOrTimeframe, timeframeOrLimit, startTs, endTs);
+  const headers = {
+    'APCA-API-KEY-ID': apiKey,
+    'APCA-API-SECRET-KEY': apiSecret,
+    'Accept': 'application/json'
+  };
+  const allBars = [];
+  let pageToken = null;
+  let pages = 0;
 
-  const response = await fetchJson(url.toString(), {
-    headers: {
-      'APCA-API-KEY-ID': apiKey,
-      'APCA-API-SECRET-KEY': apiSecret,
-      'Accept': 'application/json'
+  do {
+    const url = new URL(`${BASE_URL}/stocks/bars`);
+    url.searchParams.set('symbols', args.symbol);
+    url.searchParams.set('timeframe', alpacaTimeframe(args.timeframe));
+    url.searchParams.set('limit', String(args.limit));
+    url.searchParams.set('adjustment', process.env.ALPACA_ADJUSTMENT || 'split');
+    url.searchParams.set('sort', 'asc');
+    url.searchParams.set('feed', process.env.ALPACA_DATA_FEED || 'iex');
+    if (args.startTs) {
+      url.searchParams.set('start', new Date(args.startTs).toISOString());
     }
-  });
+    if (args.endTs) {
+      url.searchParams.set('end', new Date(args.endTs).toISOString());
+    }
+    if (pageToken) {
+      url.searchParams.set('page_token', pageToken);
+    }
 
-  const bars = response.bars?.[symbol];
-  if (!bars || bars.length === 0) {
+    const response = await fetchJson(url.toString(), { headers });
+    const bars = response?.bars?.[args.symbol] || [];
+    allBars.push(...bars);
+    pageToken = response?.next_page_token || null;
+    pages++;
+  } while (pageToken && pages < MAX_PAGES);
+
+  if (allBars.length === 0) {
     return [];
   }
 
-  return bars.map(bar => ({
+  return allBars.map(bar => ({
     openTime: new Date(bar.t).getTime(),
     open: bar.o,
     high: bar.h,
     low: bar.l,
     close: bar.c,
     volume: bar.v
-  }));
+  })).sort((a, b) => a.openTime - b.openTime);
 }
 
 module.exports = {
-  fetchAlpacaBaseCandles
+  fetchAlpacaBaseCandles,
+  alpacaTimeframe,
+  normalizeAlpacaArgs,
 };
