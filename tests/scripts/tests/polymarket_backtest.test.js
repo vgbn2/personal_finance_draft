@@ -1,12 +1,25 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 const {
   runPolymarketBacktest,
   signalLowProbDip,
   signalMeanRevert,
 } = require('../../../backend/cli/commands/trade/polymarket_backtest.js');
-const { buildPriceSeries, inferWinner, gammaFinalPrice } = require('../../../shared/lib/polymarket_history.js');
+const { runPolymarketArchiveIngest } = require('../../../backend/cli/commands/trade/trade.js');
+const {
+  buildPriceSeries,
+  inferWinner,
+  gammaFinalPrice,
+  writePolymarketArchiveChunk,
+} = require('../../../shared/lib/polymarket_history.js');
+
+function tempArchive() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'polybt-'));
+}
 
 // --- Unit tests for signal helpers ---
 
@@ -32,6 +45,18 @@ test('signalLowProbDip returns null when all early prices exceed threshold', () 
   assert.equal(entry, null);
 });
 
+test('signalLowProbDip enters on the first threshold crossing, not the cheapest future point', () => {
+  const series = [
+    { timestamp: '2025-01-01T00:00:00.000Z', price: 0.20 },
+    { timestamp: '2025-01-02T00:00:00.000Z', price: 0.14 },
+    { timestamp: '2025-01-03T00:00:00.000Z', price: 0.05 },
+    { timestamp: '2025-01-04T00:00:00.000Z', price: 0.13 },
+  ];
+  const entry = signalLowProbDip(series, { entryThreshold: 0.15 });
+  assert.equal(entry.timestamp, '2025-01-02T00:00:00.000Z');
+  assert.equal(entry.price, 0.14);
+});
+
 test('signalMeanRevert returns null when no dip below MA - 1std', () => {
   // Flat series: std ≈ 0, trigger ≈ MA, no point strictly below
   const series = [0.5, 0.5, 0.5, 0.5, 0.5].map((price, i) => ({
@@ -51,6 +76,23 @@ test('signalMeanRevert fires when a price dips below MA - std', () => {
   const entry = signalMeanRevert(series);
   assert.ok(entry !== null, 'Expected a dip entry');
   assert.ok(entry.price <= 0.12, 'Entry price should be at the dip');
+});
+
+test('signalMeanRevert only uses prices available at each decision point', () => {
+  const base = [0.50, 0.51, 0.49, 0.50, 0.41, 0.40];
+  const series = base.map((price, i) => ({
+    timestamp: new Date(Date.parse('2025-02-01') + i * 86400000).toISOString(),
+    price,
+  }));
+  const mutated = series.map((point, index) => (
+    index === series.length - 1
+      ? { ...point, price: 0.99 }
+      : point
+  ));
+  const entry = signalMeanRevert(series);
+  const changed = signalMeanRevert(mutated);
+  assert.ok(entry !== null);
+  assert.deepEqual(entry, changed, 'future-only changes must not affect the entry point');
 });
 
 // --- buildPriceSeries unit tests ---
@@ -152,6 +194,81 @@ test('runPolymarketBacktest produces correct P&L report with fixture data', asyn
   assert.equal(typeof result.winRate, 'number');
   assert.equal(result.results.length, 2);
   assert.ok(result.results[0].pnl !== undefined);
+  assert.ok(result.totalExecutionCost > 0, 'default execution-cost model should be visible');
+  assert.ok(result.grossPnl > result.totalPnl, 'net P&L should subtract execution costs');
+});
+
+test('runPolymarketBacktest replays from local archive without live fetch', async () => {
+  const root = tempArchive();
+  try {
+    writePolymarketArchiveChunk({
+      markets: [{
+        id: 'mkt-archive',
+        question: 'Will archive replay work?',
+        endDate: '2026-02-01T00:00:00.000Z',
+        tokens: [{ outcome: 'Yes', token_id: 'tok-archive' }],
+        bestAsk: '1',
+        volume: 5000,
+      }],
+      tokenId: 'tok-archive',
+      prices: [
+        { t: 1700000000, p: 0.08 },
+        { t: 1700086400, p: 0.30 },
+      ],
+    }, { root });
+
+    const result = await runPolymarketBacktest({
+      archiveRoot: root,
+      strategy: 'low_prob_dip',
+      maxMarkets: 1,
+      entryThreshold: 0.15,
+      _fetchHistory: async () => {
+        throw new Error('live history fetch should not run for archive replay');
+      },
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.source, 'archive');
+    assert.equal(result.archivePriceHits, 1);
+    assert.equal(result.fallbackOnlyCount, 0);
+    assert.equal(result.trades, 1);
+    assert.equal(result.results[0].historySource, 'archive');
+    assert.equal(result.archiveCoverage.price_files, 1);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('runPolymarketArchiveIngest parses archive ingest options without network', async () => {
+  const calls = [];
+  const result = await runPolymarketArchiveIngest([
+    'research',
+    'ingest',
+    '--days', '90',
+    '--interval', '1h',
+    '--max-markets', '3',
+    '--category', 'crypto',
+    '--archive-root', 'C:/tmp/polyhist-test',
+    '--include-no',
+    '--no-cache',
+  ], {
+    history: {
+      backfillPolymarketArchive: async (opts) => {
+        calls.push(opts);
+        return { ok: true, archive_root: opts.root, markets_archived: 0 };
+      },
+    },
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].daysBack, 90);
+  assert.equal(calls[0].interval, '1h');
+  assert.equal(calls[0].maxMarkets, 3);
+  assert.equal(calls[0].category, 'crypto');
+  assert.equal(calls[0].root, 'C:/tmp/polyhist-test');
+  assert.equal(calls[0].includeNo, true);
+  assert.equal(calls[0].noCache, true);
 });
 
 test('runPolymarketBacktest uses Gamma outcomePrices fallback when CLOB is empty', async () => {
