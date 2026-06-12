@@ -850,3 +850,10 @@ suite was 395/395 at session 23b close); writers quiescent since 02:36. Also fla
 transfer artifacts untracked at repo root: personal_finance_draft-state.zip (136MB),
 personal_finance_draft.bundle (400MB), and `vgbn1@vgbn-` (400MB, byte-size-identical to the bundle --
 looks like a botched scp destination). Awaiting user direction; commit decision is the user's.
+
+**Session 24 outcome:** User chose verify+commit and asked to verify the Codex equity backfill
+(SESSION_MEMORY l1192-1220). Verified independently: readTsIndex probe = 33 Alpaca bins /
+3,101,322 merged 5m rows (exact match), crypto 13 symbols >=525,506 bars; full diff reviewed
+(clean); full suite re-run 395/395 exit 0. Committed in 3 batches: a19d6323 (synthetic-5m guard),
+60458a7a (equity 5m Phase 2), 58130cb9 (docs+artifacts), then handoff/2026-06-13.md created and
+pointer updated. 5m crypto+US-equity native deep data is now CLOSED on feat/ml-onnx-section.
