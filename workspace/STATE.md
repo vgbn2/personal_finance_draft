@@ -410,3 +410,22 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
   backfill mandatory (rate-weight budget), ~259MB/3y for 18 symbols; user decisions in section 7.
 - Concurrent Codex polymarket archive/backtest slice reviewed + integrated (`0e90e2a0`), 28/28
   tests. Suite at close: 342/342.
+
+## Update - 2026-06-12 session 21 - Codex slice integrated, TUI Phase B landed, 5m crypto deep data Phase 1 live
+
+- Sessions 19/20 Codex polymarket slice (orderbook-lite backfill lane + history-backfill repoint +
+  --start-offset) reviewed and committed (`1f6b5e45`); focused bundle 35/35, gateway tsc clean.
+- TUI Phase B landed (`b64cf57c`) per TUI_REVAMP_SPEC.md: rich-gated cockpit glyphs (user decision:
+  Unicode default-on for rich terminals), asset-picker 60s hierarchy cache, `?` keybind help overlay,
+  manifest tuning. TUI surface 99/99; `--json` still 0 ANSI bytes.
+- 5-minute crypto historical data Phase 1 is REAL (`c3fbc3ba`): new `crypto-deep-backfill` command
+  (sequential, Binance-pinned, 5y default), native 5m routing in fetchCryptoSnapshot, 90-day JSON cap
+  applied at write time only, merge-protected sub-daily ts-index bins. Full 18-symbol 5-year backfill
+  launched at session close (background).
+- **Durable gotcha (grade-relevant):** the crypto provider chain lists TwelveData before Binance and
+  TwelveData silently caps history at exactly 5,000 bars; first-success break means any deep fetch
+  through the generic chain gets 5,000 bars max. `ingestMarketData` now accepts `options.provider`
+  to pin the chain. Watch for the same trap in equities/indices/commodities (twelve is first there too).
+- Correction: DEV_REVIEW 2026-06-12 C++ table finding #2 (indicators default --input) was already
+  fixed in `e0ad1ff7`; entry was stale. ctest -C Debug still 29/29.
+- Suite: **385/385 exit 0** (new baseline; was 342).

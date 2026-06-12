@@ -757,3 +757,21 @@ mid-session by the USER's own checkpoint commit 76ef48fb (parked 06-11 batch now
 Phase B unblocked). A concurrent Codex session's polymarket archive/backtest slice (13:30-15:43)
 was reviewed and integrated (28/28 tests). 6 commits: e0ad1ff7, d51bfbc1, ac7b10ed, 508b7d68,
 0e90e2a0 + close-out. Suite at close: 342/342. Trail: workspace/handoff/2026-06-12.md (18 + 18b).
+
+
+## 2026-06-12 - Session 21 (Claude): boot
+
+**Prompts:** `/session-orchestrator` (boot).
+
+**Outcome:** (session open) Boot found an UNCOMMITTED ~531-line diff in the tree: session 19/20
+Codex work (orderbook-lite phase 2 follow-ups + history backfill repoint + --start-offset) across
+polymarket_backtest.js, trade.js, gateway index.ts, polymarket_history.js, orderbook_lite test,
+handoff doc. Last write 16:59 (handoff close-out), boot at 17:01 -- writer likely just closed but
+quiescence unconfirmed. HEAD = 584d8465 on feat/ml-onnx-section.
+
+**Session 21 close-out:** Prompts: `/session-orchestrator` (boot); "plan, mass implementation, what
+is easy can delegate to other agents to save tokens" (-> /mass-implement); AskUserQuestion answers
+(Batches 1+2+4, commit-per-batch, rich-gated Unicode, 5y depth); "continue" (after subagent session
+limit). Outcome: 3 commits (1f6b5e45 Codex slice, b64cf57c TUI Phase B, c3fbc3ba 5m Phase 1 with
+5-defect Fable correction pass incl. the TwelveData 5,000-bar provider-chain trap). Suite 385/385.
+18-symbol 5y backfill running in background at close. Trail: workspace/handoff/2026-06-12.md s21.
