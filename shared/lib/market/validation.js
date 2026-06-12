@@ -596,6 +596,9 @@ function tsIndexPath(tsDir, symbol, timeframe) {
  * tsDir should be e.g. storage/data/ts/
  * Only OHLCV families are indexed (equities, indices, crypto, commodities).
  */
+// Timeframes whose bins are merge-protected in writeTsIndex (see loop below).
+const SUB_DAILY_PRESERVED_TIMEFRAMES = new Set(['1m', '5m', '15m', '30m']);
+
 function writeTsIndex(tsDir, snapshot) {
   if (!snapshot || !Array.isArray(snapshot.sources)) return;
   fs.mkdirSync(tsDir, { recursive: true });
@@ -625,6 +628,26 @@ function writeTsIndex(tsDir, snapshot) {
 
   for (const [key, { records, meta }] of groups) {
     if (!meta || records.length === 0) continue;
+
+    // Sub-daily bins hold deeper history than the (90-day-capped) JSON
+    // partitions snapshots are rebuilt from, so replacing the bin from a
+    // shallow snapshot would silently truncate a deep backfill. Merge with
+    // the existing bin instead; new records win on timestamp conflict.
+    // Daily-and-above keeps replace semantics (their JSON carries full depth).
+    if (SUB_DAILY_PRESERVED_TIMEFRAMES.has(meta.timeframe)) {
+      const existing = readTsIndex(tsDir, meta.symbol, meta.timeframe);
+      if (existing && existing.length > 0) {
+        const newMs = new Set();
+        for (const r of records) {
+          const ms = Date.parse(r.timestamp);
+          if (Number.isFinite(ms)) newMs.add(ms);
+        }
+        for (const r of existing) {
+          const ms = Date.parse(r.timestamp);
+          if (Number.isFinite(ms) && !newMs.has(ms)) records.push(r);
+        }
+      }
+    }
 
     // Sort by timestamp ascending, deduplicate by ms timestamp
     records.sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));

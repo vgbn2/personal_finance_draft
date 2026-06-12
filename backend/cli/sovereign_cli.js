@@ -11,7 +11,7 @@ const { commandBackend } = require('./commands/tools/backend.js');
 const { commandQuotes } = require('./commands/quotes/quotes.js');
 const { commandStrategyMenu, commandPropFirmMenu } = require('./commands/strategy/strategy.js');
 const { commandBacktest, commandOptimize, commandEdgeDecay, commandDemo, commandIndicators, commandModelCompare } = require('./commands/research/research.js');
-const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandValidate, commandPrune, commandLoc, commandUniverse } = require('./commands/data/data.js');
+const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandValidate, commandPrune, commandLoc, commandUniverse, commandCryptoDeepBackfill } = require('./commands/data/data.js');
 const { commandTrade, buildTradeGatewayLaunch, commandMt5, commandMt5Profile, commandMt5Connect, commandMt5Bridge, commandAutoTrade, commandAddPlatform, commandAgent, commandPolymarket, commandBot } = require('./commands/trade/trade.js');
 const { commandLogin, commandRegister, commandLogout, commandAuthStatus } = require('./commands/account/auth.js');
 const { commandSettings } = require('./commands/settings/settings.js');
@@ -42,8 +42,9 @@ async function handleCommand(args) {
     watch:            (a) => commandWatch(a),
     ingest:           (a) => commandIngest(a),
     backfill:         (a) => commandBackfill(a),
-    'mass-backfill':  (a) => commandMassBackfill(a),
-    'cache-clean':    (a) => commandCacheClean(a),
+    'mass-backfill':         (a) => commandMassBackfill(a),
+    'crypto-deep-backfill':  (a) => commandCryptoDeepBackfill(a),
+    'cache-clean':           (a) => commandCacheClean(a),
     universe:         (a) => commandUniverse(a),
     check:            (a) => commandValidate(a),
     // --- Backend (manifest: backend) ---

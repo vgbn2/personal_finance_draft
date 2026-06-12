@@ -6,7 +6,11 @@ async function fetchBinanceBaseCandles(symbol, limit = 1000, interval = '1d', st
   let currentEndTime = endTime || Date.now();
   let remaining = limit;
   let calls = 0;
-  const MAX_CALLS = 20; // Safety cap
+  // When startTime is provided (bounded window via fetchPaginated), a single API call
+  // covers the chunk and the loop exits naturally via the break conditions below.
+  // When startTime is absent (unbounded/legacy callers), cap at 600 to support
+  // deep 5m backfills (5y = 526 calls) without an artificial 20-call ceiling.
+  const MAX_CALLS = startTime ? 2 : 600;
 
   while (remaining > 0 && calls < MAX_CALLS) {
     const fetchLimit = Math.min(remaining, MAX_PER_CALL);
