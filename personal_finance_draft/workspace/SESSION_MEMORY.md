@@ -1,4 +1,30 @@
-﻿## Session Memory - 2026-06-12 (session 17b/c) Delegated waves landed (audit findings cleared, retry rollout) + C++ verified
+﻿## Session Memory - 2026-06-12 (session 18b) Delegated waves: C++ 29/29, TUI Phase A, RAM fixes; Codex slice integrated
+
+{
+  "work": "User authorized standing delegation (baked into session-orchestrator SKILL.md + memory). 7 agents: TUI inventory (Explore) -> Fable wrote TUI_REVAMP_SPEC.md; C++ S-fixes; RAM profile; 5-min data scoping; TUI W1+W5 (spinner/progress); TUI W2-W4 (semantic colors/render helpers/page size); RAM fixes #1+#3. Fable reviewed all diffs, re-ran all gates, committed 6 batches (e0ad1ff7, d51bfbc1, ac7b10ed, 508b7d68, 0e90e2a0, close-out). Also reviewed + integrated a CONCURRENT Codex session's polymarket archive/backtest slice.",
+  "key_mechanism": "Two structural discoveries: (1) user checkpoint commit 76ef48fb (10:38, 'chore: checkpoint current state') landed MID-SESSION and committed the entire parked 2026-06-11 batch -- mid-session HEAD/tree drift is now a proven failure mode; re-check git status before staging. (2) Concurrent Codex sessions write to the tree during Claude waves (polymarket slice, 13:30-15:43, confirmed by skills/polymarket-history-backfill/agents/openai.yaml) -- unexplained new files may be live concurrent work, not agent scope violations; check mtimes for writer quiescence before integrating. Also: Release NDEBUG masks assert-only C++ test failures -- the true ctest baseline was 25/29 not 27/29; regime_detector guard was a real off-by-one (wants 21, reads exactly last 20).",
+  "verified": [
+    "ctest -C Debug 29/29 (Fable-run) + ml compare parity bit-identical to Phase-3 proof; indicators default-partition probe works on rebuilt Release binary.",
+    "Full suite 342/342 at close (284 baseline +44 TUI tests +14 polymarket); status --json has 0 ANSI escape bytes.",
+    "RAM fix proof: feature CSV SHA256 byte-identical pre/post; anchor probe 1452MB/41s -> 754MB/3.1s; ml dump 21.9s -> 2.8s. Cache-by-reference verified safe (both callers non-mutating).",
+    "TUI W3 refactor frame-identity proven at 80 cols; statusLine removal was already-dead code at HEAD (declared, never rendered).",
+    "Codex polymarket tests 28/28 (16+8+4); its tests pin point-in-time correctness (no look-ahead)."
+  ],
+  "user_decisions": [
+    "Standing delegation authorization recorded in skill -- only live-spend + commit/merge still need approval.",
+    "Commit all 4 wave batches: yes. Codex polymarket slice: review + integrate now (committed 0e90e2a0).",
+    "Parked 2026-06-11 batch: resolved by the user's own checkpoint commit, not by an in-session decision."
+  ],
+  "remaining": [
+    "TUI Phase B (UNBLOCKED): status.js cockpit polish, asset_picker caching, ? help overlay, manifest tuning -- spec section in TUI_REVAMP_SPEC.md.",
+    "NDJSON streaming for 377MB family JSONs (RAM #2, M) -- needs user sign-off on format migration; CLI lazy-requires (RAM #5) optional.",
+    "5-min data Phase 1 (Binance crypto, SEQUENTIAL backfill -- 4-parallel workers would hit rate bans): FIVE_MIN_DATA_SCOPING.md section 7 user decisions pending.",
+    "Polymarket archive: fixture-tested only -- first real ingest run + replay still to do.",
+    "Monolith deconstruction (roadmap 4); merge feat/ml-onnx-section -> main still the user's; graphify-out refresh still deprioritized."
+  ],
+  "dcs": 0.97
+}
+## Session Memory - 2026-06-12 (session 17b/c) Delegated waves landed (audit findings cleared, retry rollout) + C++ verified
 
 {
   "work": "Blast-through (focused) graded the session-17 change surface, then 'plan and delegate': 4 Sonnet agents (3 parallel + 1 wave-2) implemented all audit findings; Fable specced, reviewed every diff, re-ran gates, committed per batch. Then verified the C++ backend (roadmap item 6) behaviorally.",
@@ -1118,5 +1144,6 @@
   ],
   "dcs": 0.96
 }
+
 
 

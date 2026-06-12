@@ -18,6 +18,14 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **Parked 2026-06-11 batch — RESOLVED (2026-06-12 session 18b):** the user's own checkpoint
+  commit `76ef48fb` (10:38) committed the entire ~770-line parked working-tree batch (status.js
+  recovered_live, trade.js, asset_picker.js, manifest.js, cli_executor.js, configs + many
+  previously-untracked files). TUI Phase B (workspace/TUI_REVAMP_SPEC.md) is therefore unblocked.
+- **Concurrent-session caution (NEW, durable):** Codex sessions write to this tree while Claude
+  sessions run (proven 2026-06-12: polymarket slice landed 13:30-15:43 mid-wave). Before staging
+  ANYTHING, re-check `git status` + file mtimes; integrate via review, don't assume agent scope
+  violations.
 - **`feat/ml-onnx-section` — AUDITED + FIXED + COMMITTED (sessions 11-12, 2026-06-11).**
   The unrecorded 2026-06-10 work was audited (7 new failing test files, broken
   `runGatewayCommand`, tracked→untracked deps), then fixed via Sonnet-delegated waves and

@@ -1,7 +1,8 @@
 {
-  "data_quality_ok": false,
+  "source_mode": "recovered_live",
+  "data_quality_ok": true,
   "data_quality_report": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\personal_finance_draft\\storage\\data\\cache\\data_quality_report.json",
-  "generated_at": "2026-06-10T16:48:06.205Z",
+  "generated_at": "2026-06-12T08:34:21.991Z",
   "indicator_periods": {
     "returnFast": 1,
     "returnSlow": 5,
@@ -17,6 +18,1322 @@
     "sessionTimezoneOffsetMinutes": 0
   },
   "feature_count": 0,
-  "skipped": [],
+  "skipped": [
+    {
+      "key": "XAUUSD:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAGUSD:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XCUUSD:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "USOIL:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NG:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "WHEAT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAUUSD:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAGUSD:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAGUSD:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAUUSD:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XCUUSD:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XCUUSD:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "USOIL:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "USOIL:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NG:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NG:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "WHEAT:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "WHEAT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CORN:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CORN:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CORN:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SOYBN:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SOYBN:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SOYBN:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "UKOIL:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "UKOIL:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "UKOIL:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAUUSD:1m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAUUSD:tick",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BTCUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BTCUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BTCUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ETHUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BTCUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "LINKUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ETHUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BNBUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XRPUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DOGEUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ADAUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BNBUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BNBUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ETHUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BNBUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XRPUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DOGEUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ADAUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "LINKUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XRPUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ADAUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XRPUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ADAUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "LINKUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FETUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FETUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FETUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FETUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "LINKUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DOGEUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SOLUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SOLUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SHIBUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AVAXUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AVAXUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SNXUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SHIBUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "POLUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SOLUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DOTUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "UNIUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AVAXUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AVAXUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NEARUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "INJUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NEARUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NEARUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NEARUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "INJUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AAVEUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "INJUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "INJUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SHIBUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SHIBUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DOGEUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SOLUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ETHUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "LDOUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "PEPEUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "PEPEUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SUIUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "PEPEUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "PEPEUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FLOKIUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SUIUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SUIUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SUIUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SUIUSDT:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "POLUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "WIFUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BONKUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "WIFUSDT:1mo",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "WIFUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "WIFUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TAOUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "POLUSDT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "POLUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SPY:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ORCL:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SBUX:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NKE:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "WFC:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MS:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DIS:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VZ:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MCD:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BP:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SHEL:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AZN:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ALV:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DIA:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSTR:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "QQQ:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "INFY:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GS:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "IWM:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AAPL:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSFT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NVDA:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GOOGL:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AMZN:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NFLX:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AMD:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FMC:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CRM:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ADBE:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "JPM:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BAC:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GSK:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "RIO:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SAP:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VOW3:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SMCI:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TMUS:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MBG:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AVGO:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VCB:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CTG:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FPT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CMG:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSN:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "HPG:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TSLA:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VIC:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VNM:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "META:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GAS:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BID:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BABA:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VRE:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VHM:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TCB:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "COIN:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GOOGL:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AMZN:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "META:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSTR:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SMCI:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "COIN:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SPY:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "IWM:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "QQQ:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ORCL:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SBUX:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DIA:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NKE:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TMUS:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VNM:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSFT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NVDA:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NFLX:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AAPL:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TSLA:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BABA:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AMD:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSN:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "HPG:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FMC:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GAS:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VCB:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BID:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CTG:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TCB:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FPT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CMG:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VIC:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VHM:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ARM:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ARM:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AAPL:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSFT:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NVDA:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TSLA:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NFLX:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AMD:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BABA:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ARM:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CMG:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GOOGL:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "META:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AMZN:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "COIN:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSTR:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SMCI:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SPY:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "QQQ:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "IWM:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DIA:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ORCL:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SBUX:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NKE:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TMUS:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "HPG:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FMC:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GAS:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VCB:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BID:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TCB:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CTG:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FPT:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VIC:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VHM:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VNM:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSN:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NZDUSD:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "USDSEK:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "USDJPY:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "USDCAD:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AUDUSD:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GBPUSD:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "EURGBP:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GBPUSD:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "USDJPY:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AUDUSD:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "HSI:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "N225:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SPX:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NDX:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DJI:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "IXIC:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "RUT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FTSE:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DAX:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FCHI:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VIX:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SPX:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NDX:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "IXIC:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FCHI:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "HSI:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "DAX:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SPX:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VIX:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    }
+  ],
   "features": []
 }

@@ -374,3 +374,31 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
   (37d2d6d2 kill-switch auth, 32cb5637 failure semantics + classifier + masking, cafe6eea
   FOK/deadline guard, 6875f1fa dedup + retry rollout). Suite 284/284. backend/api/app.js gate
   expected to lift C->B next audit.
+
+## Update - 2026-06-12 Polymarket historical archive/backtest implementation
+
+- Added the repo-local `polymarket-history-backfill` skill and implemented the first archive-first
+  research slice: normalized resolved markets, CLOB price curves, generated point-in-time feature
+  rows, and local archive coverage under ignored `storage/data/polymarket_history/`.
+- New command surface: `polymarket research ingest` / `polymarket history ingest` writes the
+  generated archive; `polymarket backtest` now prefers archive replay by default and labels archive
+  coverage, fallback-only Gamma markets, gross/net PnL, execution costs, EV, drawdown, and hold time.
+- Order-book history is deliberately not dense-archived. PMXT/order-book-lite remains phase 2 for
+  candidate trade windows only, after price-history signals survive basic replay.
+
+## Update - 2026-06-12 session 18b - roadmap waves 2/6/7/8 progress; "29/29 C++ tests" claim TRUE again
+
+- C++ ctest fixture debt CLEARED (`e0ad1ff7`): ctest -C Debug 29/29 (the Key Accomplishments
+  "29/29" claim is accurate again). Bonus real bug fixed: regime_detector off-by-one guard
+  (Release NDEBUG had masked 2 regime-test failures; honest prior baseline was 25/29).
+- TUI Phase A landed (`d51bfbc1`) per workspace/TUI_REVAMP_SPEC.md: spinner + progress utilities,
+  SEMANTIC color language, render-helper extraction, terminal-height-aware page sizes. Phase B
+  (status/asset_picker/manifest polish) UNBLOCKED by the user checkpoint 76ef48fb committing the
+  formerly-parked 2026-06-11 batch.
+- ML data layer perf (`ac7b10ed`): readFamilySources 60s-TTL memoization + loop-invariant hoist;
+  ml dump 21.9s -> 2.8s, anchor stage 1452MB -> 754MB, output SHA256-identical. Next RAM target
+  (needs user sign-off): NDJSON streaming for the 377MB family JSONs (hotspot #2).
+- Item 8 scoped (workspace/FIVE_MIN_DATA_SCOPING.md): Phase 1 = crypto 5m via Binance, sequential
+  backfill mandatory (rate-weight budget), ~259MB/3y for 18 symbols; user decisions in section 7.
+- Concurrent Codex polymarket archive/backtest slice reviewed + integrated (`0e90e2a0`), 28/28
+  tests. Suite at close: 342/342.
