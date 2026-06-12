@@ -1,6 +1,7 @@
 const MANIFEST = require('./manifest');
 const { promptSelect, promptText, promptConfirm, isRichTerminal } = require('./engine/engine');
 const A = require('../../../shared/lib/ui/ansi');
+const { startSpinner } = require('./spinner');
 
 /**
  * INTERSECTION
@@ -85,7 +86,12 @@ async function handleIntersection(args, handleCommand) {
 
   if (spec.loading) {
     const label = spec.label.replace(/\s*\(.*\)$/, '');
-    process.stdout.write(`${A.muted(`${A.GLYPH.pointer} ${label}...`)}\n`);
+    const spinner = startSpinner(label);
+    try {
+      return await handleCommand(finalArgs);
+    } finally {
+      spinner.stop();
+    }
   }
 
   return handleCommand(finalArgs);
