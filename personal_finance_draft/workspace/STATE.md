@@ -429,3 +429,40 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
 - Correction: DEV_REVIEW 2026-06-12 C++ table finding #2 (indicators default --input) was already
   fixed in `e0ad1ff7`; entry was stale. ctest -C Debug still 29/29.
 - Suite: **385/385 exit 0** (new baseline; was 342).
+
+## Update - 2026-06-12 session 23 - synthetic 5m consumer guard + backfill still running
+
+- Implemented the session-22 user decision that synthetic/daily-aggregated 5m is experimental-only:
+  future aggregate records now carry `derived_from_timeframe` / `experimental_only` metadata; validation
+  rejects daily-derived lower-timeframe records as `synthetic_lower_timeframe`; `ml dump` excludes
+  experimental 5m by default and exposes `--include-experimental-5m` for explicit research opt-in.
+- Added regression coverage in `tests/scripts/tests/ml_dataset.test.js` and
+  `tests/scripts/strategy_backtest_contract.test.js`; verification passed:
+  `node --test tests/scripts/tests/ml_dataset.test.js tests/scripts/strategy_backtest_contract.test.js`,
+  `node --test tests/scripts/tests/crypto_5m_backfill.test.js`, and full `npm.cmd test` = **389/389**.
+- The session-22 1825d crypto backfill process is still active as of this update:
+  PID 14380, command `backend/cli/sovereign_cli.js crypto-deep-backfill --days 1825 --delay-ms 250 --json`.
+  Header probes show it is making progress and has rewritten bins through NEAR/AVAX/FET/POL, but INJ/RNDR
+  still need final verification after the process exits.
+
+## Update - 2026-06-12 session 23b - US equity 5m Phase 2 landed; crypto rerun verified complete
+
+- Verified the session-22 crypto 1825d 5m rerun has exited. Ts-index header probe found 13 configured
+  crypto symbols at the full 525,506 bars; newer/listing/provider-limited symbols remain shorter
+  (SUI/PEPE/WIF/POL/RNDR), not a live process issue.
+- Implemented native US-equity 5m Phase 2 via Alpaca:
+  `fetchAlpacaBaseCandles` now maps internal timeframes to Alpaca (`5m` -> `5Min`), follows
+  `next_page_token`, defaults to `feed=iex`, and requests `adjustment=split`; `fetchPaginated`
+  uses 10,000-bar equity chunks and supports `chunkDelayMs`; `fetchEquityOrIndexSnapshot` routes
+  Alpaca sub-daily requests through native paginated bars and refuses to synthesize missing Alpaca 5m
+  from daily data.
+- Added `equity-deep-backfill` CLI. Dry run over real config planned 33 Alpaca-eligible US symbols
+  and 44 explicit non-US skips. Live run:
+  `node backend/cli/sovereign_cli.js equity-deep-backfill --days 1825 --chunk-delay-ms 500 --json`
+  succeeded for 33/33, skipped 44, reported 3,100,888 fetched bars; ts-index verification found
+  3,101,322 merged `provider=alpaca` 5m rows across the 33 US symbols, no missing bins.
+- Added no-network coverage in `tests/scripts/tests/equity_5m_backfill.test.js` for Alpaca pagination,
+  equity chunk sizing, native ingestion, no-synthetic fallback, dry-run skips, and provider-pinned
+  command execution. Affected bundle passed 47/47; full `npm.cmd test` passed **395/395**.
+- Remaining 5m work: Phase 3 indices/commodities/FX provider decision or Yahoo 60-day accumulate-forward
+  stop-gap, equity session-gap guard before indicators/backtests, and ML 5m cap/performance gates.

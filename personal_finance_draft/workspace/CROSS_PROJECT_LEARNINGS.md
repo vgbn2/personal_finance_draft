@@ -219,3 +219,20 @@ _Updated: 2026-06-04. Append; never rewrite._
 - **Write the plan from the runtime, not the other way around**: the operational checklist became truthful only after the actual CLI commands, temp-file writes, and test coverage existed.
 - **Verification needs a no-secrets path**: the most useful regression tests were the ones that proved setup/doctor behavior with empty env state, not just happy-path credentialed runs.
 - **Persist the cleanup in workspace notes immediately**: once the plan was fully checked off, the durable repo memory needed an explicit completion note so future sessions do not reopen closed items.
+
+---
+
+## 12. Deep Historical Data Retrospective
+
+### Architectural truths learned
+- **Provider pinning is a data contract**: if a job needs multi-year 5m depth, the chosen provider is part of the correctness spec. A generic provider chain can return a "successful" shallow result from the first provider and block the deeper provider from ever running.
+- **Synthetic bars need first-class provenance**: derived lower-timeframe records are not equivalent to native bars. They need explicit tags, validation rejection when used as real history, and consumer opt-in for experimental analysis.
+- **Scale bugs live above the fetcher**: provider adapters can pass unit tests while the CLI/provider loop/persistence path fails at real depth. Representative command runs past the known cap are required for backfill features.
+- **Binary artifact verification must use the native format**: command output proves fetch behavior; ts-index header/meta or `readTsIndex` proves persisted availability. Both counts are useful, but they answer different questions.
+- **Entitlement parameters are runtime compatibility**: market-data adapters should surface feed/plan choices such as Alpaca `feed=iex` vs SIP, because 403 entitlement failures are not network bugs.
+
+### Planning rules
+- For every future deep-data family, decide depth target, provider entitlement, provider pin, skip policy, and artifact verification before implementation.
+- Label fetched rows, persisted rows, and merged rows separately in status reports.
+- Add a monotonic progress guard to every historical pagination loop.
+- Treat session gaps as part of the data contract before applying intraday indicators to equities, futures, or commodities.

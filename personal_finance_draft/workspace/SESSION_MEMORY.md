@@ -1189,6 +1189,36 @@
   "dcs": 0.96
 }
 
+## Session Memory - 2026-06-13 Session retrospective: Deep 5m data contracts
+
+{
+  "work": "Closed the native 5m data expansion session: synthetic 5m consumer guard, completed crypto rerun verification, implemented and live-ran Alpaca US-equity 5m Phase 2, and updated repo-truth handoff files.",
+  "architectural_truths": [
+    "Provider choice is part of the data contract, not an implementation detail. Deep-history jobs must pin the provider that can satisfy the required depth; generic first-success provider chains can silently choose shallow providers such as TwelveData.",
+    "Synthetic lower-timeframe bars are a provenance boundary. Daily-derived 5m bars must carry explicit experimental provenance and be excluded from ML/backtest consumers by default.",
+    "Representative-scale command tests are mandatory for deep backfills. Layer-local tests can pass while the real command fails at the provider loop, persistence loop, or CLI accounting layer.",
+    "Binary time-series artifacts need native-format verification. The authoritative close-out check is the ts-index header/meta/count probe or `readTsIndex`, not inferred command output or ad hoc magic strings.",
+    "Feed entitlement is an operational compatibility surface. Alpaca SIP returned 403 for the available account, while `feed=iex` succeeded; provider adapters should make the entitlement choice explicit and overridable.",
+    "Live data writes and verification can diverge by small merge counts. The command reported fetched bars, while post-run ts-index reported merged bars after existing records were preserved; future reports should label fetched vs merged counts separately."
+  ],
+  "mistakes_or_near_misses": [
+    "The first ts-index probe assumed the wrong binary magic (`TSDB` instead of `SOVT`). Corrective rule: use repo-native `readTsIndex`/validation constants or inspect the actual format before making completeness claims.",
+    "The initial Alpaca probe used the default provider request without an explicit feed and hit HTTP 403. Corrective rule: treat provider feed/plan parameters as required config when adding market-data adapters.",
+    "The first equity pagination test exposed a no-progress loop hazard when a provider returns a bar later than the window start. Corrective rule: every paginated historical loop needs a monotonic progress guard."
+  ],
+  "verified_artifacts": [
+    "Crypto 1825d rerun no longer running; 13 configured crypto symbols at full 525,506 5m bars; listing/provider-limited symbols shorter as expected.",
+    "Alpaca US-equity live run succeeded for 33/33 eligible symbols, skipped 44 non-US symbols, command reported 3,100,888 fetched bars, and ts-index verification found 3,101,322 merged Alpaca 5m rows with no missing bins.",
+    "Affected bundle passed 47/47 and full `npm.cmd test` passed 395/395."
+  ],
+  "future_planning_rules": [
+    "For Phase 3 indices/commodities/FX, decide provider depth and entitlement before writing ingestion code; if using Yahoo 60-day accumulate-forward, label it explicitly as shallow-forward accumulation.",
+    "Before equity 5m feeds indicators/backtests, add session-gap awareness for overnight/weekend gaps.",
+    "Before full-depth 5m feeds ML feature generation, enforce max-bar caps/performance gates and label interactive vs replay/backtest use."
+  ],
+  "dcs": 0.98
+}
+
 
 
 

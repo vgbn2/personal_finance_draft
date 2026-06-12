@@ -355,6 +355,13 @@ Depth honesty: Alpaca SIP history ≈ 7y, free-tier practical ≈ 5y for liquid 
 × 5y ≈ 90 MB binary. Rate: undocumented (~200 req/min community figure) → keep sequential +
 `--delay-ms`, same as crypto.
 
+Implementation status (2026-06-12 session 23): **Phase 2 landed and the live backfill completed.**
+`equity-deep-backfill` now pins provider `alpaca`, defaults Alpaca bars to feed `iex` with
+`adjustment=split`, supports `--chunk-delay-ms`, and loudly reports unsupported non-US symbols as
+skips. Live run: 33/33 Alpaca-eligible US equity symbols succeeded over 1,825 days, 44 non-US
+equities skipped, command reported 3,100,888 fetched bars, and ts-index verification found
+3,101,322 merged `provider=alpaca` 5m rows across the 33 US symbols (no missing bins).
+
 ### 8c. Phase 3 — indices/commodities/FX (blocked on user decisions, with a free stop-gap)
 
 - **No free deep 5m provider exists** for these (Yahoo caps 5m at 60d; Stooq/Frankfurter/ECB are
@@ -382,16 +389,18 @@ families must NOT be polled into the main data used for ML training or backtesti
 use only.** Only native sub-daily fetches (crypto today; equities after Phase 2) qualify as
 trainable/backtestable 5m data.
 
-Implementation follow-up for the Phase 2 session (not yet done): enforce this at the consumer
-boundary — either drop `"5m"` from non-crypto `timeframes` in `data_sources.yaml`, or tag
-aggregated records (e.g. `derived_from: '1d'`) and have `ml dump` / backtest loaders filter
-sub-daily records whose provenance is daily aggregation. Tagging is the stronger fix (config
-removal alone won't protect against already-cached synthetic bars in old bins/JSON).
+Implementation follow-up status (2026-06-12 session 23): **guard implemented for current consumers.**
+Future aggregate records now carry `derived_from_timeframe` / `experimental_only` metadata when a
+lower timeframe is derived from daily-or-above bars; validation rejects those records as
+`synthetic_lower_timeframe`. `ml dump` now excludes experimental 5m records by default from both
+JSON cache and binary ts-index inputs, with `--include-experimental-5m` as an explicit research
+opt-in. Because old binary ts-index rows cannot preserve per-record provenance, the ML loader also
+defaults non-crypto 5m rows to experimental-only until a native provider path is explicitly promoted.
+The Phase 2 Alpaca branch is now the promoted native path for US equity 5m rows.
 
-### 8f. Decision gates before Phase 2 starts
+### 8f. Remaining decision gates after Phase 2
 
-1. §7 Q2: proceed with equities now, or crypto-only sufficient near-term? (Q1 depth was answered
-   for crypto: 5 years.)
-2. Command shape: generic `deep-backfill --family` vs per-family commands.
-3. §7 Q3 for Phase 3: paid provider budget yes/no; adopt the free accumulate-forward stop-gap?
-4. §7 Q5: live-ops refresh cadence (only relevant once a strategy consumes 5m live).
+1. §7 Q3 for Phase 3: paid provider budget yes/no; adopt the free accumulate-forward stop-gap?
+2. §7 Q5: live-ops refresh cadence (only relevant once a strategy consumes 5m live).
+3. Session-gap guard before equity 5m feeds indicator/backtest consumers.
+4. ML 5m caps/performance gates before full-depth 5m enters feature generation.
