@@ -129,6 +129,56 @@ function renderMultiSelectRow(item, isSelected, isChecked, sectorState, selectAl
     : `    ${prefix} ${label}\n`;
 }
 
+// ---------------------------------------------------------------------------
+// Help overlay — shows keybind reference when user presses '?'.
+// Rendered in-place via the same line-counting repaint model so that
+// CUR_SAVE/CUR_RESTORE (broken on Windows ConPTY) are never emitted.
+// ---------------------------------------------------------------------------
+
+const HELP_KEYBINDS_SELECT = [
+  ['Up / Down',  'Move selection'],
+  ['Enter',      'Confirm'],
+  ['/',          'Enter search'],
+  ['Backspace',  'Delete search char'],
+  ['ESC',        'Cancel / clear search'],
+  ['?',          'Show this help (any key to close)'],
+];
+
+const HELP_KEYBINDS_MULTI = [
+  ['Up / Down',  'Move cursor'],
+  ['Space',      'Toggle selection'],
+  ['Enter',      'Confirm'],
+  ['/',          'Enter search'],
+  ['Backspace',  'Delete search char'],
+  ['ESC',        'Cancel / clear search'],
+  ['?',          'Show this help (any key to close)'],
+];
+
+/**
+ * Render the ? help overlay.
+ * @param {string}   question   - current prompt question (shown in header)
+ * @param {string}   time       - formatted time
+ * @param {'select'|'multi'} mode
+ * @returns {string} rendered buffer (no side effects)
+ */
+function renderHelpOverlay(question, time, mode) {
+  const binds = mode === 'multi' ? HELP_KEYBINDS_MULTI : HELP_KEYBINDS_SELECT;
+  const w = sepWidth();
+  let buffer = '';
+  buffer += renderHeader(question, time);
+  buffer += renderSeparator(w);
+  buffer += `  ${A.c(A.SEMANTIC.HEADER, 'Keyboard shortcuts')}\n`;
+  buffer += '\n';
+  for (const [key, desc] of binds) {
+    const keyCol = A.c(A.SEMANTIC.VALUE, key.padEnd(14));
+    buffer += `    ${keyCol}  ${A.muted(desc)}\n`;
+  }
+  buffer += '\n';
+  buffer += renderSeparator(w);
+  buffer += `  ${A.muted('Press any key to close help.')}\n`;
+  return buffer;
+}
+
 module.exports = {
   sepWidth,
   renderSeparator,
@@ -136,4 +186,7 @@ module.exports = {
   renderSearchBar,
   renderSelectRow,
   renderMultiSelectRow,
+  renderHelpOverlay,
+  HELP_KEYBINDS_SELECT,
+  HELP_KEYBINDS_MULTI,
 };
