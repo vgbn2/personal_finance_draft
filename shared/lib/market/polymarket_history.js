@@ -143,6 +143,10 @@ function tokenFeaturePath(tokenId, root = CACHE_DIR) {
   return path.join(archivePaths(root).featuresDir, `${String(tokenId).replace(/[^a-zA-Z0-9_-]/g, '_')}.json`);
 }
 
+function tokenOrderbookLitePath(tokenId, root = CACHE_DIR) {
+  return path.join(archivePaths(root).orderbooksLiteDir, `${String(tokenId).replace(/[^a-zA-Z0-9_-]/g, '_')}.jsonl`);
+}
+
 function readJsonFile(filePath, fallback = null) {
   try { return JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { return fallback; }
 }
@@ -150,6 +154,13 @@ function readJsonFile(filePath, fallback = null) {
 function writeJsonFile(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
+}
+
+function appendJsonLines(filePath, rows = []) {
+  if (!Array.isArray(rows) || rows.length === 0) return;
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const payload = rows.map((row) => JSON.stringify(row)).join('\n') + '\n';
+  fs.appendFileSync(filePath, payload, 'utf8');
 }
 
 function loadArchivedMarketIndex(opts = {}) {
@@ -170,6 +181,21 @@ function loadArchivedFeatureRows(tokenId, opts = {}) {
   const root = opts.root || CACHE_DIR;
   const payload = readJsonFile(tokenFeaturePath(tokenId, root), []);
   return Array.isArray(payload) ? payload : [];
+}
+
+function loadArchivedOrderbookLite(tokenId, opts = {}) {
+  if (!tokenId) return [];
+  const root = opts.root || CACHE_DIR;
+  const filePath = tokenOrderbookLitePath(tokenId, root);
+  if (!fs.existsSync(filePath)) return [];
+  return fs.readFileSync(filePath, 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      try { return JSON.parse(line); } catch { return null; }
+    })
+    .filter(Boolean);
 }
 
 function writePolymarketArchiveChunk(record = {}, opts = {}) {
@@ -220,8 +246,12 @@ function summarizeArchiveCoverage(root = CACHE_DIR) {
   const featureFiles = fs.existsSync(paths.featuresDir)
     ? fs.readdirSync(paths.featuresDir).filter((name) => name.endsWith('.json'))
     : [];
+  const orderbookFiles = fs.existsSync(paths.orderbooksLiteDir)
+    ? fs.readdirSync(paths.orderbooksLiteDir).filter((name) => name.endsWith('.jsonl'))
+    : [];
   let pricePoints = 0;
   let featureRows = 0;
+  let orderbookSnapshots = 0;
   priceFiles.forEach((name) => {
     const rows = readJsonFile(path.join(paths.pricesDir, name), []);
     if (Array.isArray(rows)) pricePoints += rows.length;
@@ -229,6 +259,13 @@ function summarizeArchiveCoverage(root = CACHE_DIR) {
   featureFiles.forEach((name) => {
     const rows = readJsonFile(path.join(paths.featuresDir, name), []);
     if (Array.isArray(rows)) featureRows += rows.length;
+  });
+  orderbookFiles.forEach((name) => {
+    const rows = fs.readFileSync(path.join(paths.orderbooksLiteDir, name), 'utf8')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    orderbookSnapshots += rows.length;
   });
   const indexedTokenIds = new Set();
   markets.forEach((market) => {
@@ -242,10 +279,13 @@ function summarizeArchiveCoverage(root = CACHE_DIR) {
     indexed_tokens: indexedTokenIds.size,
     price_files: priceFiles.length,
     feature_files: featureFiles.length,
+    orderbook_files: orderbookFiles.length,
     price_points: pricePoints,
     feature_rows: featureRows,
+    orderbook_snapshots: orderbookSnapshots,
     missing_price_files: Math.max(0, indexedTokenIds.size - priceFiles.length),
     missing_feature_files: Math.max(0, indexedTokenIds.size - featureFiles.length),
+    missing_orderbook_files: Math.max(0, indexedTokenIds.size - orderbookFiles.length),
   };
 }
 
@@ -270,6 +310,176 @@ function primaryTokenIds(market, includeNo = false) {
     if (no && (!yes || no.token_id !== yes.token_id)) selected.push(no);
   }
   return selected.map((token) => String(token.token_id)).filter(Boolean);
+}
+
+function normalizeBookSide(entries, side = 'ask') {
+  const direction = side === 'bid' ? -1 : 1;
+  return (Array.isArray(entries) ? entries : [])
+    .map((entry) => ({
+      price: Number(entry.price),
+      size: Number(entry.size),
+      orderCount: Number(entry.orderCount),
+    }))
+    .filter((entry) => Number.isFinite(entry.price) && Number.isFinite(entry.size) && entry.price > 0 && entry.price < 1 && entry.size > 0)
+    .sort((a, b) => direction * (a.price - b.price));
+}
+
+function computeBookDepth(book, mid, pct = 0.01) {
+  if (!Number.isFinite(mid) || mid <= 0) return 0;
+  const lower = mid * (1 - pct);
+  const upper = mid * (1 + pct);
+  const bids = normalizeBookSide(book.bids, 'bid').filter((entry) => entry.price >= lower);
+  const asks = normalizeBookSide(book.asks, 'ask').filter((entry) => entry.price <= upper);
+  return [...bids, ...asks].reduce((sum, entry) => sum + entry.size, 0);
+}
+
+function normalizePmxtOrderBookSnapshot(payload, context = {}) {
+  const data = payload && payload.data !== undefined ? payload.data : payload;
+  const snapshots = Array.isArray(data) ? data : (data ? [data] : []);
+  return snapshots.map((snapshot) => {
+    const bids = normalizeBookSide(snapshot.bids, 'bid');
+    const asks = normalizeBookSide(snapshot.asks, 'ask');
+    const bestBid = bids[0] ? bids[0].price : null;
+    const bestAsk = asks[0] ? asks[0].price : null;
+    const lastTradePrice = finiteNumber(snapshot.lastTradePrice ?? snapshot.last_trade_price, null);
+    const mid = Number.isFinite(bestBid) && Number.isFinite(bestAsk)
+      ? (bestBid + bestAsk) / 2
+      : lastTradePrice;
+    const snapshotMs = finiteNumber(snapshot.timestamp ?? snapshot.ts ?? null, null);
+    const datetime = snapshot.datetime || snapshot.dateTime || snapshot.iso || null;
+    const resolvedMs = Number.isFinite(snapshotMs)
+      ? (snapshotMs > 10_000_000_000 ? snapshotMs : snapshotMs * 1000)
+      : (datetime ? Date.parse(datetime) : null);
+    const source = snapshot.sourceMetadata && (snapshot.sourceMetadata.source || snapshot.sourceMetadata.provider)
+      ? String(snapshot.sourceMetadata.source || snapshot.sourceMetadata.provider)
+      : 'pmxt';
+    const orderbookMid = Number.isFinite(mid) ? mid : null;
+    return {
+      market_id: context.marketId || null,
+      condition_id: context.conditionId || null,
+      token_id: context.tokenId || null,
+      outcome: context.outcome || null,
+      role: context.role || 'entry',
+      requested_since: context.since ?? null,
+      requested_until: context.until ?? null,
+      snapshot_ts: Number.isFinite(resolvedMs) ? Math.floor(resolvedMs / 1000) : null,
+      snapshot_iso: Number.isFinite(resolvedMs) ? new Date(resolvedMs).toISOString() : null,
+      source,
+      best_bid: bestBid,
+      best_ask: bestAsk,
+      mid: orderbookMid,
+      spread: Number.isFinite(bestBid) && Number.isFinite(bestAsk)
+        ? Math.round((bestAsk - bestBid) * 1000000) / 1000000
+        : null,
+      depth_1pct: computeBookDepth(snapshot, orderbookMid, 0.01),
+      depth_5pct: computeBookDepth(snapshot, orderbookMid, 0.05),
+      last_trade_price: lastTradePrice,
+      is_neg_risk: Boolean(snapshot.isNegRisk),
+      raw_source: snapshot.sourceMetadata || null,
+    };
+  });
+}
+
+async function fetchPmxtOrderBookHistory(opts = {}) {
+  const {
+    outcomeId,
+    outcome,
+    since,
+    until,
+    limit = 1,
+    apiKey = process.env.PMXT_API_KEY || '',
+    baseUrl = process.env.PMXT_BASE_URL || 'https://api.pmxt.dev',
+    fetcher = fetchWithRetry || fetch,
+  } = opts;
+
+  if (!outcomeId) return { ok: false, error: 'Missing outcomeId' };
+  const url = new URL(`/api/polymarket/fetchOrderBook`, baseUrl);
+  url.searchParams.set('outcomeId', String(outcomeId));
+  if (outcome) url.searchParams.set('outcome', String(outcome));
+  if (since !== undefined && since !== null) url.searchParams.set('since', String(since));
+  if (until !== undefined && until !== null) url.searchParams.set('until', String(until));
+  if (limit !== undefined && limit !== null) url.searchParams.set('limit', String(limit));
+
+  const headers = { Accept: 'application/json' };
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
+  let res;
+  try {
+    res = await fetcher(url.toString(), { headers });
+  } catch (err) {
+    return { ok: false, error: err && err.message ? err.message : String(err), url: url.toString() };
+  }
+
+  if (!res.ok) {
+    return { ok: false, error: `PMXT ${res.status}: ${res.statusText}`, url: url.toString() };
+  }
+
+  let body;
+  try {
+    body = await res.json();
+  } catch (err) {
+    return { ok: false, error: err && err.message ? err.message : String(err), url: url.toString() };
+  }
+
+  return { ok: true, source: 'pmxt_archive', data: body, url: url.toString() };
+}
+
+async function capturePolymarketOrderbookLite(market, tokenId, opts = {}) {
+  if (!market || !tokenId) {
+    return { ok: false, error: 'Missing market or tokenId' };
+  }
+  const {
+    root = CACHE_DIR,
+    role = 'entry',
+    since,
+    until,
+    limit = 1,
+    apiKey,
+    baseUrl,
+    fetcher,
+  } = opts;
+
+  const outcomeId = market.condition_id || market.conditionId || market.market_id || market.id || market.slug;
+  const outcome = opts.outcome || tokenId;
+  const result = await fetchPmxtOrderBookHistory({
+    outcomeId,
+    outcome,
+    since,
+    until,
+    limit,
+    apiKey,
+    baseUrl,
+    fetcher,
+  });
+  if (!result.ok) return result;
+
+  const rows = normalizePmxtOrderBookSnapshot(result.data, {
+    marketId: market.market_id || market.id || null,
+    conditionId: market.condition_id || market.conditionId || null,
+    tokenId,
+    outcome,
+    role,
+    since,
+    until,
+  });
+  if (rows.length === 0) {
+    return { ok: true, source: result.source, rows: [], warnings: [{ code: 'empty_orderbook_snapshot' }] };
+  }
+
+  const record = {
+    tokenId,
+    marketId: market.market_id || market.id || null,
+    conditionId: market.condition_id || market.conditionId || null,
+    role,
+    rows,
+  };
+  appendJsonLines(tokenOrderbookLitePath(tokenId, root), rows.map((row) => ({
+    ...row,
+    market_id: record.marketId,
+    condition_id: record.conditionId,
+  })));
+
+  return { ok: true, source: result.source, rows, url: result.url };
 }
 
 async function fetchJson(url, label) {
@@ -580,13 +790,18 @@ module.exports = {
   fetchClobPriceHistory,
   loadArchivedMarketIndex,
   loadArchivedFeatureRows,
+  loadArchivedOrderbookLite,
   loadArchivedPriceSeries,
   normalizeGammaMarket,
   normalizePriceHistory,
+  normalizePmxtOrderBookSnapshot,
+  fetchPmxtOrderBookHistory,
+  capturePolymarketOrderbookLite,
   readPolymarketArchive,
   summarizeArchiveCoverage,
   tokenFeaturePath,
   tokenPricePath,
+  tokenOrderbookLitePath,
   writePolymarketArchiveChunk,
   yesTokenId,
   inferWinner,

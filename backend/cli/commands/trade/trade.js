@@ -883,6 +883,9 @@ async function commandPolymarket(args) {
     const impactY        = numericOption(args, '--impact-y', 1);
     const orderNotional  = numericOption(args, '--order-notional', 10);
     const rollingMarketVolume = numericOption(args, '--rolling-market-volume', undefined);
+    const captureOrderbookLite = hasFlag(args, '--capture-orderbook-lite');
+    const pmxtApiKey = optionValue(args, '--pmxt-api-key', process.env.PMXT_API_KEY || '');
+    const pmxtBaseUrl = optionValue(args, '--pmxt-base-url', process.env.PMXT_BASE_URL || 'https://api.pmxt.dev');
     const noCache        = hasFlag(args, '--no-cache');
     const result = await runPolymarketBacktest({
       tagId,
@@ -897,6 +900,9 @@ async function commandPolymarket(args) {
       impactY,
       orderNotional,
       rollingMarketVolume,
+      captureOrderbookLite,
+      pmxtApiKey,
+      pmxtBaseUrl,
       fromArchive: !hasFlag(args, '--live-fetch') && !hasFlag(args, '--no-archive'),
       repairMissing: hasFlag(args, '--repair-missing'),
       noCache,
