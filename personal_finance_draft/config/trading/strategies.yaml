@@ -1,0 +1,53 @@
+strategies:
+  kronos_momentum:
+    enabled: false
+    asset_universe: ["SPY", "QQQ", "AAPL", "MSFT", "BTCUSDT"]
+    model: "kronos_base"
+    signal_threshold: 0.65
+    max_holding_days: 5
+    risk_weight: 0.4
+  asset_class_cnns:
+    enabled: false
+    equities:
+      model: "cnn_equities_v1"
+      inputs: ["price_volume", "options", "holdings", "breadth", "sentiment"]
+    crypto:
+      model: "cnn_crypto_v1"
+      inputs: ["price_volume", "funding", "crypto_tx", "onchain", "sentiment"]
+    commodities:
+      model: "cnn_commodities_v1"
+      inputs: ["price_volume", "weather", "satellite_nrt", "cargo", "reserves"]
+    fx_macro:
+      model: "cnn_fx_macro_v1"
+      inputs: ["fx", "macro", "macro_alt", "pmi", "reserves", "prediction_market"]
+    correlation:
+      model: "linear_correlation_baseline_v1"
+      inputs: ["pairwise_returns", "cross_asset_corr", "lead_lag_score"]
+  macro_regime_filter:
+    enabled: false
+    model: "regime_classifier"
+    allowed_regimes: ["expansion", "risk_on"]
+    risk_weight: 0.6
+promotion:
+  require_backtest: true
+  require_walk_forward: true
+  require_paper_trade: true
+  min_sharpe_ratio: 1.5
+  max_drawdown_limit: 0.15
+
+registry:
+  files:
+    - "config/strategies/ai_sector_momentum.yaml"
+    - "config/strategies/commodity_macro_hedge.yaml"
+    - "config/strategies/crypto_breadth_momentum.yaml"
+    - "config/strategies/crypto_layer1_momentum.yaml"
+    - "config/strategies/defensive_rotation.yaml"
+    - "config/strategies/defi_ecosystem_momentum.yaml"
+    - "config/strategies/forex_trend_breakout.yaml"
+    - "config/strategies/global_equity_rotation.yaml"
+    - "config/strategies/mean_reversion.yaml"
+    - "config/strategies/ml_multi_asset.yaml"
+    - "config/strategies/tech_alpha_xgboost.yaml"
+    - "config/strategies/trend_following.yaml"
+    - "config/strategies/vietnam_equity_growth.yaml"
+    - "config/strategies/volume_profile.yaml"

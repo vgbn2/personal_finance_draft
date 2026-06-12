@@ -8,7 +8,7 @@ This file contains foundational mandates for the Gemini CLI agent. These rules t
 - **Dynamic Context**: Prioritize dynamic discovery (e.g., scanning the cache for symbols) over hardcoded defaults (e.g., `SPY/QQQ`).
 
 ## 2. Operational Directives
-- **First Read**: For non-trivial work in this repository, read `.codex/skills/repo-global-protocol/SKILL.md` before broad exploration so Gemini inherits the canonical repo workflow, truth map, and update rules.
+- **First Read**: For non-trivial work in this repository, read `skills/gemini/SKILL.md` before broad exploration so Gemini inherits the canonical repo workflow, truth map, and update rules.
 - **Blast-Through Protocol**: When "blasting through", focus on high-signal architectural audits, identifying data gaps, and removing hardcoding.
 - **Blast-Through Grading**: Every blast-through pass must assign a cleanliness grade to each major folder or section reviewed.
   - `A`: Clean, canonical, low drift, strong verification, minimal stale artifacts.

@@ -10,7 +10,9 @@ This file is the shared entry point for Gemini sessions, sub-agents, and other C
 4. `workspace/STATE.md`
 5. `workspace/NEXT_SESSION_GOAL.md`
 6. `graphify-out/GRAPH_REPORT.md` when the codebase changed recently
-7. `.gemini/skills/all-skills-loader/SKILL.md`
+7. `skills/codex/SKILL.md`
+8. `skills/claude/SKILL.md`
+9. `skills/gemini/SKILL.md`
 
 ## Always Do
 

@@ -1,0 +1,60 @@
+engine: auto
+name: defensive_rotation
+kind: mean_reversion
+family: mean_reversion
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: xgboost
+sections:
+  hypothesis: "Rotate toward defensive assets when broad risk appetite weakens."
+  universe:
+    - SPY
+    - QQQ
+    - BTCUSDT
+    - XAUUSD
+  signals:
+    entry: "Signal > 0.62"
+    exit: "Hold 4 days"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.62
+    max_holding_days: 4
+    risk_weight: 0.10
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

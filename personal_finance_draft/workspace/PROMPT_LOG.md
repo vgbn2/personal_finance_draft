@@ -741,3 +741,9 @@ Suite 284/284. C++ backend verified behaviorally (exact ML parity match; ctest 2
 fixture-path failures queued as S-fixes). Mid-wave incident (2 unexplained Polymarket trades)
 resolved benign: user's own UI bets; open order cancelled on request. 12 commits total this
 session. Trail: workspace/handoff/2026-06-12.md.
+
+## 2026-06-12 - Session 18: boot
+
+**Prompt:** `/session-orchestrator` (session boot; no task prompt yet)
+
+**Outcome:** (pending - to be filled at session close)
