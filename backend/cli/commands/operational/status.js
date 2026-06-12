@@ -124,6 +124,190 @@ function summarizePortfolioCard(portfolio) {
   };
 }
 
+function latestSeriesKey(record = {}) {
+  return [
+    record.family || 'unknown',
+    record.symbol || record.underlying || record.series || record.location || record.region || record.country || record.chain || record.metric || 'unknown',
+    record.timeframe || record.component || record.metric || record.option_type || 'point',
+  ].join(':');
+}
+
+function buildRecoveredSnapshotFromHistory(historySnapshot) {
+  const sourceSnapshot = historySnapshot && Array.isArray(historySnapshot.sources) ? historySnapshot : { sources: [], errors: [] };
+  const latestBySeries = new Map();
+
+  for (const record of sourceSnapshot.sources) {
+    if (!record || !record.timestamp) continue;
+    const key = latestSeriesKey(record);
+    const current = latestBySeries.get(key);
+    if (!current || String(record.timestamp) > String(current.timestamp)) {
+      latestBySeries.set(key, record);
+    }
+  }
+
+  return {
+    mode: 'recovered_live',
+    fetched_at: new Date().toISOString(),
+    recovered_from: 'partitioned_history',
+    sources: Array.from(latestBySeries.values()),
+    errors: [],
+    provider_checks: [],
+    snapshot_scope: {
+      kind: 'global',
+      representative_of_global_live_health: true,
+      target_family: null,
+      target_symbol: null,
+      requested_days: null,
+      recovery_source: 'partitioned_history',
+    },
+  };
+}
+
+function detectScopedSnapshot(snapshot, report) {
+  const sourceSnapshot = snapshot && typeof snapshot === 'object' ? snapshot : {};
+  const scope = sourceSnapshot.snapshot_scope && typeof sourceSnapshot.snapshot_scope === 'object'
+    ? sourceSnapshot.snapshot_scope
+    : null;
+  if (scope && scope.kind === 'scoped') {
+    return {
+      active: true,
+      kind: 'scoped',
+      target_family: scope.target_family || null,
+      target_symbol: scope.target_symbol || null,
+      requested_days: scope.requested_days || null,
+      representative_of_global_live_health: false,
+      reason: 'snapshot_scope_metadata',
+    };
+  }
+
+  const macroStoreTargetFamily = sourceSnapshot.macro_store && sourceSnapshot.macro_store.target_family
+    ? String(sourceSnapshot.macro_store.target_family)
+    : null;
+  const providerChecks = Array.isArray(sourceSnapshot.provider_checks) ? sourceSnapshot.provider_checks : [];
+  const targetFamilyFilter = providerChecks.find((check) => check && check.reason === 'target_family_filter' && check.target_family);
+  const families = new Set((Array.isArray(sourceSnapshot.sources) ? sourceSnapshot.sources : []).map((row) => row && row.family).filter(Boolean));
+  const historicalPolicy = String(sourceSnapshot.quality_filter && sourceSnapshot.quality_filter.policy || '').includes('preserve_historical_records');
+
+  if (macroStoreTargetFamily || targetFamilyFilter || (historicalPolicy && families.size === 1 && report && report.total_records > 0)) {
+    return {
+      active: true,
+      kind: 'scoped',
+      target_family: macroStoreTargetFamily || (targetFamilyFilter ? targetFamilyFilter.target_family : (families.size === 1 ? [...families][0] : null)),
+      target_symbol: null,
+      requested_days: null,
+      representative_of_global_live_health: false,
+      reason: macroStoreTargetFamily || targetFamilyFilter ? 'target_family_filter' : 'single_family_historical_snapshot',
+    };
+  }
+
+  return {
+    active: false,
+    kind: 'global',
+    target_family: null,
+    target_symbol: null,
+    requested_days: null,
+    representative_of_global_live_health: true,
+    reason: null,
+  };
+}
+
+function loadStatusSnapshot() {
+  const snapshot = readSnapshot(DEFAULT_SNAPSHOT);
+  const validation = validateSnapshot(snapshot);
+  const scoped = detectScopedSnapshot(snapshot, validation.report);
+
+  if (!scoped.active) {
+    return {
+      snapshot,
+      report: validation.report,
+      recovered: false,
+      previous_scope: scoped,
+    };
+  }
+
+  const historySnapshot = readSnapshot(DEFAULT_HISTORY);
+  if (!historySnapshot || !Array.isArray(historySnapshot.sources) || historySnapshot.sources.length === 0) {
+    return {
+      snapshot,
+      report: validation.report,
+      recovered: false,
+      previous_scope: scoped,
+    };
+  }
+
+  const recoveredSnapshot = buildRecoveredSnapshotFromHistory(historySnapshot);
+  const recoveredValidation = validateSnapshot(recoveredSnapshot);
+  if (recoveredValidation.report.usable_records <= validation.report.usable_records) {
+    return {
+      snapshot,
+      report: validation.report,
+      recovered: false,
+      previous_scope: scoped,
+    };
+  }
+
+  const persistedSnapshot = {
+    ...recoveredSnapshot,
+    sources: recoveredValidation.usableSources,
+    recovery: {
+      source: 'partitioned_history',
+      previous_scope: scoped,
+      previous_records: validation.report.total_records,
+      previous_usable_records: validation.report.usable_records,
+      recovered_records: recoveredValidation.report.total_records,
+      recovered_usable_records: recoveredValidation.report.usable_records,
+    },
+  };
+  writeJson(DEFAULT_SNAPSHOT, persistedSnapshot);
+
+  return {
+    snapshot: persistedSnapshot,
+    report: {
+      ...recoveredValidation.report,
+      total_records: persistedSnapshot.sources.length,
+      usable_records: persistedSnapshot.sources.length,
+      rejected_records: 0,
+    },
+    recovered: true,
+    previous_scope: scoped,
+  };
+}
+
+function buildStatusPayload(snapshot, report, backend) {
+  const scoped = detectScopedSnapshot(snapshot, report);
+  const freshnessScope = scoped.active ? 'last_fetch_snapshot_scoped' : 'last_fetch_snapshot';
+  const quality = scoped.active ? 'scoped snapshot only' : (report.ok ? 'ok' : 'needs attention');
+  const qualityBasis = scoped.active
+    ? 'latest snapshot is scoped to a targeted or historical ingest and is not representative of global live health; run `backend integrity --json` for configured cache coverage'
+    : 'most recent fetch snapshot; run `backend integrity --json` for configured symbol/timeframe cache coverage';
+
+  return {
+    phase: currentPhaseLabel(),
+    backend: backend.available ? 'available' : 'unavailable',
+    backend_ok: Boolean(backend.ok),
+    cache_mode: snapshot.mode || 'unknown',
+    fetched_at: snapshot.fetched_at || 'unknown',
+    records: report.total_records,
+    usable_records: report.usable_records,
+    rejected_records: report.rejected_records,
+    stale_records: report.freshness.stale_records,
+    freshness_scope: freshnessScope,
+    integrity_scope: 'configured_ts_cache',
+    freshness: {
+      scope: freshnessScope,
+      reject_stale: report.reject_stale,
+      stale_records: report.freshness.stale_records,
+      issues: report.freshness.issues,
+    },
+    snapshot_scope: scoped,
+    provider_errors: report.provider_errors.length,
+    quality,
+    quality_basis: qualityBasis,
+    recovery: snapshot && snapshot.recovery ? snapshot.recovery : null,
+    next: 'run demo for sample indicators, model comparison, and backtest',
+  };
+}
+
 function buildCockpitModel(opts = {}) {
   const snapshot = safeReadJson(DEFAULT_SNAPSHOT);
   const quality = safeReadJson(DEFAULT_QUALITY_REPORT);
@@ -219,35 +403,12 @@ function cockpitInspectPayload(name) {
 }
 
 function commandStatus(args) {
-  const snapshot = readSnapshot(DEFAULT_SNAPSHOT);
-  const { report } = validateSnapshot(snapshot);
+  const loaded = loadStatusSnapshot();
+  const snapshot = loaded.snapshot;
+  const report = loaded.report;
   const backend = runBackendStatus(args);
-  const freshnessScope = 'last_fetch_snapshot';
-  const integrityScope = 'configured_ts_cache';
   writeJson(DEFAULT_QUALITY_REPORT, report);
-  printPayload({
-    phase: currentPhaseLabel(),
-    backend: backend.available ? 'available' : 'unavailable',
-    backend_ok: Boolean(backend.ok),
-    cache_mode: snapshot.mode || 'unknown',
-    fetched_at: snapshot.fetched_at || 'unknown',
-    records: report.total_records,
-    usable_records: report.usable_records,
-    rejected_records: report.rejected_records,
-    stale_records: report.freshness.stale_records,
-    freshness_scope: freshnessScope,
-    integrity_scope: integrityScope,
-    freshness: {
-      scope: freshnessScope,
-      reject_stale: report.reject_stale,
-      stale_records: report.freshness.stale_records,
-      issues: report.freshness.issues,
-    },
-    provider_errors: report.provider_errors.length,
-    quality: report.ok ? 'ok' : 'needs attention',
-    quality_basis: 'most recent fetch snapshot; run `backend integrity --json` for configured symbol/timeframe cache coverage',
-    next: 'run demo for sample indicators, model comparison, and backtest',
-  }, args);
+  printPayload(buildStatusPayload(snapshot, report, backend), args);
   return 0;
 }
 
@@ -263,6 +424,20 @@ async function commandCockpit(args) {
 }
 
 module.exports = {
-  summarizeModelCard, summarizeBacktestCard, summarizeStatusCard, summarizeFeaturesCard, summarizePortfolioCard, buildCockpitModel, quoteProviderHeaderState, renderCockpit, cockpitInspectPayload, commandStatus, commandCockpit
+  summarizeModelCard,
+  summarizeBacktestCard,
+  summarizeStatusCard,
+  summarizeFeaturesCard,
+  summarizePortfolioCard,
+  buildCockpitModel,
+  quoteProviderHeaderState,
+  renderCockpit,
+  cockpitInspectPayload,
+  detectScopedSnapshot,
+  buildRecoveredSnapshotFromHistory,
+  loadStatusSnapshot,
+  buildStatusPayload,
+  commandStatus,
+  commandCockpit,
 };
 
