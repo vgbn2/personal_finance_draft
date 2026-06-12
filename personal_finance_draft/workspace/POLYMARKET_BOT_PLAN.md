@@ -47,14 +47,30 @@ Already implemented as `polymarket price-history --token <id>`.
 storage/data/polymarket_history/
   markets_index.json        # [{conditionId, question, tokens:[{id,outcome}], resolved, winner, volume, endDate}]
   prices/<token_id>.json    # [{t, p}] hourly snapshots
+  features/<token_id>.json  # point-in-time rolling features derived from prices
+  orderbooks-lite/<token_id>.jsonl # candidate-time spread/depth snapshots only
 ```
 
 ### Ingest script
-`backend/cli/commands/trade/polymarket_research.js`
-- `polymarket research ingest --days 90 --category crypto`
-  1. Paginate Gamma for closed markets in window
-  2. For each market, fetch CLOB price history for YES token
-  3. Write to `storage/data/polymarket_history/`
+Implemented command surface:
+- `polymarket research ingest --days 90 --interval 1h --max-markets 500 --category crypto --json`
+- `polymarket history ingest --days 90 --interval 1h --max-markets 500 --category crypto --json`
+
+Implementation owner:
+- `shared/lib/market/polymarket_history.js` normalizes Gamma closed markets, CLOB price history, local archive reads/writes, coverage summaries, and feature-file generation.
+- `storage/data/polymarket_history/` is generated local state and is ignored by git.
+
+Ingest flow:
+1. Paginate Gamma for closed markets in window.
+2. For each market, fetch CLOB price history for YES token by default.
+3. Write normalized prices to `storage/data/polymarket_history/prices/`.
+4. Write point-in-time feature rows to `storage/data/polymarket_history/features/`.
+5. Report coverage: markets archived, token histories, price points, feature rows, missing history.
+
+PMXT/order-book policy:
+- Do not dense-archive full historical order books by default.
+- Use PMXT historical order-book snapshots only after a price-history strategy produces candidate trades.
+- Store derived candidate-window fields under `orderbooks-lite/`: best bid, best ask, mid, spread, depth_1pct, depth_5pct, snapshot_ts, source.
 
 ---
 
@@ -77,8 +93,15 @@ storage/data/polymarket_history/
 - Sharpe equivalent (EV / stddev of returns)
 
 ### Output
-`polymarket research backtest --strategy low_prob_dip --days 90`
+`polymarket backtest --strategy low_prob_dip --days 90 --json`
 → JSON report: `{trades: N, win_rate: 0.XX, ev_per_trade: $X.XX, max_drawdown: $X.XX}`
+
+Current implementation notes:
+- Backtests prefer local archive reads when `markets_index.json` exists.
+- Use `--live-fetch` or `--no-archive` to force the live historical fetch path.
+- Use `--repair-missing` to fetch missing token histories while replaying archive markets.
+- Execution costs are included by default and can be configured with `--fee`, `--half-spread`, `--impact-y`, `--order-notional`, and `--rolling-market-volume`.
+- Result payloads label `source`, `archiveCoverage`, `fallbackOnlyCount`, `grossPnl`, `totalExecutionCost`, net `totalPnl`, `evPerTrade`, `maxDrawdown`, and `avgHoldTimeHours`.
 
 ---
 
@@ -186,7 +209,7 @@ services:
 
 ## Decision gate before bot goes live
 
-Run `polymarket research backtest` on 90 days of data.
+Run `polymarket backtest --strategy low_prob_dip --days 90 --json` after archive ingest.
 - EV per trade must be > $0 after fees
 - Win rate on closed positions must be > 45%
 - Max drawdown must be < 30% of total capital
