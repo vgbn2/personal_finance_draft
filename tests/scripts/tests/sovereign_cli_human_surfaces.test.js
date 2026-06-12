@@ -27,7 +27,10 @@ test('cockpit render uses readable ASCII separators', () => {
   dumpVisibility('cockpit render uses readable ascii separators', { rendered });
   assert.equal(rendered.includes('â'), false);
   assert.match(rendered, /LIVE/);
-  assert.match(rendered, /[═─]{10,}/);
+  // Accept both ASCII fallback ('-' / '=') and rich Unicode ('─' / '═') separators.
+  // renderCockpit gates the glyph choice on isRichTerminal() so test environments
+  // (non-TTY) receive ASCII equivalents.
+  assert.match(rendered, /[═─=\-]{10,}/);
 });
 
 test('cockpit model renders status, model, backtest, and portfolio cards', () => {
