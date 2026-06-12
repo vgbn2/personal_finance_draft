@@ -18,11 +18,15 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
-- **5-year 5m crypto backfill (NEW, 2026-06-12 session 21): VERIFY NEXT SESSION.** An 18-symbol
-  sequential `crypto-deep-backfill --days 1825` run was launched in the background at session
-  close (~50 min, ~430MB into `storage/data/ts/`). Next session: check per-symbol bar counts
-  (`readTsIndex` probe; BTCUSDT 5y ≈ 525k bars), rerun the command for any failed symbols
-  (idempotent — bins merge). Code: `c3fbc3ba`.
+- **5-year 5m crypto backfill — FAILED SILENTLY, root cause FIXED, rerun in flight (session 22).**
+  Session 21's background run finished `ok:true exit 0` with **0 deep bars for all 17 live
+  symbols**: `snapshot.sources.push(...records)` in the ingest provider loop RangeError'd at
+  ~525k records and the loop's catch swallowed it. Fixed via `appendRecords()` plain-loop helper
+  (+8 sibling sites incl. the equity/commodity aggregation paths that 5m Phases 2-3 would hit);
+  command now fails loudly on zero-bars-with-errors. Proven: real command at 400d → 115,200 bars
+  persisted exactly; suite **387/387** (new baseline). Fix UNCOMMITTED pending user. Fresh
+  18-symbol 1825d rerun launched in background — **verify per-symbol counts** (BTCUSDT ≈ 525k)
+  when it completes / next session. Trail: `workspace/handoff/2026-06-12.md` session 22.
 - **TwelveData 5,000-bar provider-chain trap (NEW, durable):** twelve sits before/early in EVERY
   family's provider chain in `config/markets/data_sources.yaml` and silently caps history at
   exactly 5,000 bars; the ingest provider loop breaks on first success. Crypto deep path now pins

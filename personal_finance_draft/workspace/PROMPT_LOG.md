@@ -775,3 +775,18 @@ is easy can delegate to other agents to save tokens" (-> /mass-implement); AskUs
 limit). Outcome: 3 commits (1f6b5e45 Codex slice, b64cf57c TUI Phase B, c3fbc3ba 5m Phase 1 with
 5-defect Fable correction pass incl. the TwelveData 5,000-bar provider-chain trap). Suite 385/385.
 18-symbol 5y backfill running in background at close. Trail: workspace/handoff/2026-06-12.md s21.
+
+## 2026-06-12 — session 22
+
+**Prompts:** `/session-orchestrator` (boot).
+
+**Outcome:** (session open) Boot on feat/ml-onnx-section @ 981323d8. Tree near-clean (only
+storage/data/backtests/latest_backtest.json + strategy_grade_index.json modified — runtime
+artifacts). First action: verify the 18-symbol 5y 5m crypto-deep-backfill launched at session 21
+close (per HANDOFF carryover).
+
+**Session 22 progress:** Verified the 5y backfill carryover -> found silent failure (0 deep bars,
+ok:true). Root cause: push(...records) call-spread RangeError swallowed by the ingest provider-loop
+catch. Fixed (appendRecords helper, 9 sites + loud failure semantics), 2 regression tests, real
+400d command run -> 115,200 bars exact, suite 387/387. User approved commit-now. 1825d rerun in
+flight at write time.
