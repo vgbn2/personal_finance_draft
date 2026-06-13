@@ -95,6 +95,7 @@ const {
   YAHOO_INDEX_SYMBOLS,
   YAHOO_COMMODITY_SYMBOLS,
   YAHOO_COMMODITY_REVERSE,
+  YAHOO_FX_SYMBOLS,
   STOOQ_EQUITY_SUFFIX,
   STOOQ_INDEX_SYMBOLS,
   STOOQ_COMMODITY_SYMBOLS,
@@ -877,10 +878,23 @@ async function fetchCommoditySnapshot(family, provider, symbol, timeframes, conf
     if (!providerSymbol) {
       throw new Error(`No ${provider} symbol mapping for ${symbol}`);
     }
-   
-    const bestBase = (historyDays > 730 || !timeframes.includes("1h")) ? "1d" : "1h"; 
+
+    const allSubDaily = timeframes.length > 0 && timeframes.every(tf => {
+      const ms = SUPPORTED_INTERVALS[tf];
+      return ms !== undefined && ms <= INTRADAY_THRESHOLD_MS;
+    });
+    let bestBase;
+    let effectiveDaysForFetch;
+    if (allSubDaily) {
+      const { base, effectiveDays } = selectYahooBase(timeframes, historyDays);
+      bestBase = base;
+      effectiveDaysForFetch = effectiveDays;
+    } else {
+      bestBase = (historyDays > 730 || !timeframes.includes("1h")) ? "1d" : "1h";
+      effectiveDaysForFetch = historyDays;
+    }
     baseTimeframe = bestBase;
-    baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, historyDays, startTime, endTime);
+    baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, effectiveDaysForFetch, startTime, endTime);
   }
   const output = [];
 
@@ -892,6 +906,54 @@ async function fetchCommoditySnapshot(family, provider, symbol, timeframes, conf
     if (aggregated.length > 0) {
       if (historyDays > 5) {
        
+        appendRecords(output, aggregated);
+      } else {
+        output.push({
+          ...aggregated[aggregated.length - 1],
+          family,
+        });
+      }
+    }
+  }
+
+  return output;
+}
+
+async function fetchFxSnapshot(family, provider, symbol, timeframes, config, options = {}) {
+  const historyDays = options.historyDays || options.days || 5;
+  const startTime = options.startTime || null;
+  const endTime = options.endTime || null;
+
+  const providerSymbol = YAHOO_FX_SYMBOLS[String(symbol).toUpperCase()];
+  if (!providerSymbol) {
+    throw new Error(`No ${provider} symbol mapping for ${symbol}`);
+  }
+
+  let baseTimeframe;
+  let effectiveDaysForFetch;
+  const allSubDaily = timeframes.length > 0 && timeframes.every(tf => {
+    const ms = SUPPORTED_INTERVALS[tf];
+    return ms !== undefined && ms <= INTRADAY_THRESHOLD_MS;
+  });
+  if (allSubDaily) {
+    const { base, effectiveDays } = selectYahooBase(timeframes, historyDays);
+    baseTimeframe = base;
+    effectiveDaysForFetch = effectiveDays;
+  } else {
+    baseTimeframe = (historyDays > 730 || !timeframes.includes('1h')) ? '1d' : '1h';
+    effectiveDaysForFetch = historyDays;
+  }
+
+  const baseCandles = await fetchYahooBaseCandles(providerSymbol, baseTimeframe, effectiveDaysForFetch, startTime, endTime);
+  const output = [];
+
+  for (const timeframe of timeframes) {
+    if (!SUPPORTED_INTERVALS[timeframe]) {
+      throw new Error(`Unsupported derived timeframe: ${timeframe}`);
+    }
+    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family, { sourceTimeframe: baseTimeframe });
+    if (aggregated.length > 0) {
+      if (historyDays > 5) {
         appendRecords(output, aggregated);
       } else {
         output.push({
@@ -1359,6 +1421,7 @@ const FAMILIES_MANIFEST = [
         const { fetchTradingViewQuotes } = require('../../../../shared/lib/providers/tradingview');
         return fetchTradingViewQuotes([s]);
       }
+        if (p === 'yahoo') return fetchFxSnapshot('fx', p, s, t, cfg, opts);
         if (p === 'frankfurter') {
           if (opts?.historyDays) {
             return fetchFrankfurterHistory(s, opts.historyDays);
@@ -2121,6 +2184,7 @@ module.exports = {
   capSubDailyJsonView,
   fetchEquityOrIndexSnapshot,
   fetchCommoditySnapshot,
+  fetchFxSnapshot,
   fetchYahooOptionsSnapshot,
   resolveEquityOrIndexSymbol,
   resolveStooqSymbol,
