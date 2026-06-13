@@ -63,12 +63,19 @@ async function commandFeaturesDump(args) {
   const includeExperimentalSynthetic5m = hasFlag(args, '--include-experimental-5m');
 
   const maxBarsOption = numericOption(args, '--max-bars-per-symbol', 0);
+  const maxRows5mOption = numericOption(args, '--max-rows-5m', 0);
 
   // Cap bars per symbol to the requested window (1d => ~1 bar/day). Bounds the O(n^2) build.
   let maxBarsPerSymbol = maxBarsOption;
   if (maxBarsPerSymbol <= 0) {
     if (timeframe === '1d') {
       maxBarsPerSymbol = days;
+    } else if (timeframe === '5m') {
+      // 5m bins can be 525k rows/symbol -- explicit cap to prevent OOM on large dumps.
+      // Override with --max-rows-5m <n> or --max-bars-per-symbol <n>.
+      const cap5m = maxRows5mOption > 0 ? maxRows5mOption : 100000;
+      maxBarsPerSymbol = cap5m;
+      if (!json) console.log(`[VISIBILITY] ml-dump: 5m cap=${cap5m} bars/symbol (override with --max-rows-5m)`);
     } else {
       // Safe default cap for intraday timeframes to prevent O(n^2) scaling issues
       maxBarsPerSymbol = 50000;
