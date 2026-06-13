@@ -295,7 +295,11 @@ function addTemporalProvenanceIssues(record, report, index) {
       label.includes('deconstruct') ||
       label.includes('daily_aggregate') ||
       DAILY_OR_ABOVE_TIMEFRAMES.has(derivedFrom) ||
-      ((record.timeframe || '') === '5m' && label.includes('rollup'))
+      // 5m rollups are synthetic ONLY when not provably aggregated from a native
+      // sub-daily base. A 'rollup-from-5m' identity passthrough (derived_from_timeframe
+      // in LOWER_TIMEFRAMES) is native Yahoo 5m and must remain storable; legacy
+      // untagged 5m rollups (no sub-daily provenance) stay rejected.
+      ((record.timeframe || '') === '5m' && label.includes('rollup') && !LOWER_TIMEFRAMES.has(derivedFrom))
     )
   ) {
     addIssue(
