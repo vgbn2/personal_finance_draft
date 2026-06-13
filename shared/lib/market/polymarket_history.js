@@ -9,6 +9,7 @@ const GAMMA_BASE = 'https://gamma-api.polymarket.com';
 const CLOB_BASE  = 'https://clob.polymarket.com';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const ARCHIVE_SCHEMA_VERSION = 'sovereign.polymarket.history/v1';
+const ARCHIVE_SCHEMA_VERSION_V2 = 'sovereign.polymarket.history/v2';
 const { buildPolymarketFeatureRows } = require('./polymarket_features.js');
 
 let fetchWithRetry = null;
@@ -494,9 +495,9 @@ async function capturePolymarketOrderbookLite(market, tokenId, opts = {}) {
   return { ok: true, source: result.source, rows, url: result.url };
 }
 
-async function fetchJson(url, label) {
+async function fetchJson(url, label, retryOpts = { attempts: 3, baseDelayMs: 250 }) {
   const request = fetchWithRetry || fetch;
-  const res = await request(url, { headers: { Accept: 'application/json' } }, { attempts: 3, baseDelayMs: 250 });
+  const res = await request(url, { headers: { Accept: 'application/json' } }, retryOpts);
   if (!res.ok) throw new Error(`${label} ${res.status}: ${res.statusText}`);
   return res.json();
 }
@@ -509,8 +510,9 @@ async function fetchResolvedGammaMarketsPage(opts = {}) {
     ascending = false,
   } = opts;
   const url = `${GAMMA_BASE}/markets?closed=true&limit=${limit}&offset=${offset}&order=${encodeURIComponent(order)}&ascending=${ascending ? 'true' : 'false'}`;
+  const backfillRetryOpts = { attempts: 5, baseDelayMs: 1000, retryOn429: true };
   try {
-    const markets = await fetchJson(url, 'Gamma');
+    const markets = await fetchJson(url, 'Gamma', backfillRetryOpts);
     if (!Array.isArray(markets)) return { ok: false, error: 'Gamma response is not an array', raw: markets };
     return { ok: true, source: 'api', data: markets, url };
   } catch (err) {
@@ -532,6 +534,9 @@ async function backfillPolymarketArchive(opts = {}) {
     generateFeatures = true,
     fetchMarketsPage = fetchResolvedGammaMarketsPage,
     fetchHistory = fetchClobPriceHistory,
+    refresh = false,
+    delayMs = 0,
+    sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
   } = opts;
   const warnings = [];
   const errors = [];
@@ -539,6 +544,7 @@ async function backfillPolymarketArchive(opts = {}) {
   const cutoff = daysBack > 0 ? Date.now() - daysBack * 86400 * 1000 : 0;
   const markets = [];
   let offset = Math.max(0, Number(startOffset) || 0);
+  const startedAt = new Date().toISOString();
 
   while (markets.length < maxMarkets) {
     const limit = Math.min(pageLimit, maxMarkets - markets.length);
@@ -560,15 +566,95 @@ async function backfillPolymarketArchive(opts = {}) {
     if (rows.length < limit) break;
   }
 
-  writeJsonFile(paths.marketsIndex, markets);
+  // Merge markets index: load existing, overlay this run's markets (new wins), sort by end_date desc.
+  {
+    const existingIndex = loadArchivedMarketIndex({ root });
+    const indexMap = new Map();
+    for (const m of existingIndex) {
+      const key = (m.market_id != null && m.market_id !== '') ? m.market_id : m.condition_id;
+      if (key) indexMap.set(key, m);
+    }
+    for (const m of markets) {
+      const key = (m.market_id != null && m.market_id !== '') ? m.market_id : m.condition_id;
+      if (key) indexMap.set(key, m);
+      else indexMap.set(Symbol(), m); // no key: keep without overwriting
+    }
+    const merged = Array.from(indexMap.values()).sort((a, b) => {
+      const da = a.end_date ? new Date(a.end_date).getTime() : null;
+      const db = b.end_date ? new Date(b.end_date).getTime() : null;
+      if (da === null && db === null) return 0;
+      if (da === null) return 1;  // nulls last
+      if (db === null) return -1;
+      return db - da; // descending
+    });
+    writeJsonFile(paths.marketsIndex, merged);
+  }
 
   let tokensArchived = 0;
   let pricePoints = 0;
   let featureRows = 0;
   let missingHistory = 0;
+  let skippedExisting = 0;
+  let fetchCount = 0; // count real fetches for inter-call delay tracking
+
   for (const market of markets) {
     for (const tokenId of primaryTokenIds(market, includeNo)) {
+      // Skip-existing: if not refresh and a non-empty price file exists, skip the fetch.
+      if (!refresh) {
+        const pricePath = tokenPricePath(tokenId, root);
+        let onDiskPrices = null;
+        try {
+          const raw = JSON.parse(fs.readFileSync(pricePath, 'utf8'));
+          if (Array.isArray(raw) && raw.length > 0) onDiskPrices = raw;
+        } catch { /* file missing or invalid */ }
+
+        if (onDiskPrices !== null) {
+          // Count on-disk points toward totals.
+          tokensArchived++;
+          pricePoints += onDiskPrices.length;
+          skippedExisting++;
+
+          // If features file is missing, regenerate from on-disk prices.
+          if (generateFeatures) {
+            const featPath = tokenFeaturePath(tokenId, root);
+            const featExists = fs.existsSync(featPath);
+            if (!featExists) {
+              try {
+                const normalizedPrices = normalizePriceHistory(onDiskPrices);
+                const features = buildPolymarketFeatureRows(normalizedPrices, {
+                  interval,
+                  marketEndTime: market.end_date,
+                });
+                writeJsonFile(featPath, features);
+                featureRows += features.length;
+              } catch (err) {
+                warnings.push({
+                  code: 'feature_generation_skipped',
+                  token_id: tokenId,
+                  market_id: market.market_id,
+                  error: err && err.message ? err.message : String(err),
+                });
+              }
+            } else {
+              // Count existing feature rows.
+              try {
+                const existingFeatures = JSON.parse(fs.readFileSync(featPath, 'utf8'));
+                if (Array.isArray(existingFeatures)) featureRows += existingFeatures.length;
+              } catch { /* ignore */ }
+            }
+          }
+          continue; // skip fetch
+        }
+      }
+
+      // Inter-call delay: only between real fetches (not before the first, not after skips).
+      if (delayMs > 0 && fetchCount > 0) {
+        await sleep(delayMs);
+      }
+
       const history = await fetchHistory(tokenId, interval, noCache);
+      fetchCount++;
+
       if (!history.ok) {
         errors.push({ token_id: tokenId, error: history.error || 'history_fetch_failed' });
         continue;
@@ -602,16 +688,53 @@ async function backfillPolymarketArchive(opts = {}) {
     }
   }
 
-  const manifest = {
-    schema: ARCHIVE_SCHEMA_VERSION,
-    generated_at: new Date().toISOString(),
+  const finishedAt = new Date().toISOString();
+
+  // Build v2 manifest with run history and legacy top-level mirror keys.
+  const totals = summarizeArchiveCoverage(root);
+  const thisRunEntry = {
+    started_at: startedAt,
+    finished_at: finishedAt,
+    start_offset: Math.max(0, Number(startOffset) || 0),
+    max_markets: maxMarkets,
     days_back: daysBack,
     interval,
     category,
-    market_count: markets.length,
+    markets_scanned: markets.length,
+    markets_archived: markets.length,
     tokens_archived: tokensArchived,
     price_points: pricePoints,
     feature_rows: featureRows,
+    missing_history_count: missingHistory,
+    errors_count: errors.length,
+    skipped_existing: skippedExisting,
+    delay_ms: delayMs,
+    refresh,
+  };
+
+  // Load previous runs from existing manifest (v2 only; v1 or missing → no runs).
+  let previousRuns = [];
+  try {
+    const existingManifest = readJsonFile(paths.manifest, null);
+    if (
+      existingManifest &&
+      existingManifest.schema === ARCHIVE_SCHEMA_VERSION_V2 &&
+      Array.isArray(existingManifest.runs)
+    ) {
+      previousRuns = existingManifest.runs;
+    }
+  } catch { /* ignore */ }
+
+  const manifest = {
+    schema: ARCHIVE_SCHEMA_VERSION_V2,
+    generated_at: finishedAt,
+    totals,
+    runs: [...previousRuns, thisRunEntry].slice(-50),
+    // Legacy v1 mirror keys — keep unknown consumers working.
+    market_count: totals.markets,
+    tokens_archived: totals.price_files,
+    price_points: totals.price_points,
+    feature_rows: totals.feature_rows,
     missing_history_count: missingHistory,
     errors_count: errors.length,
   };
@@ -628,6 +751,9 @@ async function backfillPolymarketArchive(opts = {}) {
     feature_rows: featureRows,
     missing_history: missingHistory,
     skipped: warnings.length,
+    skipped_existing: skippedExisting,
+    delay_ms: delayMs,
+    refresh,
     warnings,
     errors,
   };
@@ -689,9 +815,10 @@ async function fetchClobPriceHistory(tokenId, interval = '1d', noCache = false) 
   const fidelity = fidelityMap[interval] || 86400;
   const url = `${CLOB_BASE}/prices-history?market=${encodeURIComponent(tokenId)}&interval=max&fidelity=${fidelity}`;
 
+  const backfillRetryOpts = { attempts: 5, baseDelayMs: 1000, retryOn429: true };
   let raw;
   try {
-    raw = await fetchJson(url, 'CLOB');
+    raw = await fetchJson(url, 'CLOB', backfillRetryOpts);
   } catch (err) {
     return { ok: false, error: err && err.message ? err.message : String(err) };
   }
@@ -795,6 +922,7 @@ function buildPriceSeries(rawHistory) {
 
 module.exports = {
   ARCHIVE_SCHEMA_VERSION,
+  ARCHIVE_SCHEMA_VERSION_V2,
   archivePaths,
   backfillPolymarketArchive,
   ensureArchive,
