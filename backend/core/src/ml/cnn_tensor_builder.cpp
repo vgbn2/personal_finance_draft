@@ -96,7 +96,7 @@ CnnTensor buildTensorImpl(const FrameT& frame,
 }
 
 } // namespace
-//ide error-dev review
+
 CnnTensorBuilder::CnnTensorBuilder(size_t window_size) : m_window_size(window_size) {}
 
 CnnTensor CnnTensorBuilder::build(const indicators::IndicatorFrame& frame,
