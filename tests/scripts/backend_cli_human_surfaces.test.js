@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
-const { buildMassBackfillExecutionPlan } = require('../../backend/cli/commands/data/data.js');
+const { buildMassBackfillExecutionPlan, massBackfillUniverse } = require('../../backend/cli/commands/data/data.js');
 const { renderBackendUniverse } = require('../../backend/cli/commands/tools/backend.js');
 const { inspectMt5Setup } = require('../../backend/cli/commands/trade/trade.js');
 
@@ -24,6 +24,33 @@ test('mass backfill plan skips fresh jobs without hiding stale ones', () => {
     plan.jobs.map((job) => `${job.symbol}:${job.timeframe}`),
     ['AAPL:1h', 'BTCUSDT:1d', 'BTCUSDT:1h'],
   );
+});
+
+test('massBackfillUniverse covers universe_matrix grid symbols, not just the flat list', () => {
+  const config = {
+    equities: {
+      symbols: ['AAPL', 'SPY'],
+      universe_matrix: {
+        grid: {
+          USA: { financials: ['JPM', 'GS'], technology: ['AAPL'] },
+          VN: { financials: ['VCB'] },
+        },
+      },
+    },
+    crypto: { symbols: ['BTCUSDT'] },
+    indices: { symbols: ['SPX'] },
+  };
+
+  const { symbols, familyBySymbol } = massBackfillUniverse(config, ['equities', 'crypto', 'indices']);
+
+  // Grid-only symbols (JPM/GS/VCB) must be included alongside the flat list.
+  for (const s of ['AAPL', 'SPY', 'JPM', 'GS', 'VCB', 'BTCUSDT', 'SPX']) {
+    assert.ok(symbols.includes(s), `${s} should be in the mass-backfill universe`);
+  }
+  // Deduped (AAPL is in both flat and grid).
+  assert.equal(symbols.filter((s) => s === 'AAPL').length, 1);
+  assert.equal(familyBySymbol.JPM, 'equities');
+  assert.equal(familyBySymbol.BTCUSDT, 'crypto');
 });
 
 test('backend universe renderer stays human and points users to integrity for freshness', () => {
