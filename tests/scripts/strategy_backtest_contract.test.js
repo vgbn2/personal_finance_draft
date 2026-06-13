@@ -83,6 +83,33 @@ test('market validation rejects impossible crypto history and lower-timeframe sy
   assert.ok(report.issues.some((issue) => issue.code === 'synthetic_lower_timeframe'));
 });
 
+test('market validation stores native sub-daily-sourced 5m but rejects untagged 5m rollups', () => {
+  const { report, usableSources } = validateSnapshot({
+    mode: 'provider_history',
+    fetched_at: '2026-06-13T00:00:00.000Z',
+    sources: [
+      {
+        // Native Yahoo 5m: aggregateCandles identity passthrough tags the base
+        // timeframe as 5m. Must remain storable (rollup label + sub-daily provenance).
+        family: 'commodities', provider: 'yahoo', symbol: 'XAUUSD', timeframe: '5m',
+        timestamp: '2026-05-01T13:30:00.000Z', open: 2300, high: 2305, low: 2298, close: 2302,
+        volume: 0, source: 'yahoo-rollup-from-5m', derived_from_timeframe: '5m',
+      },
+      {
+        // Legacy untagged 5m rollup (no sub-daily provenance) stays rejected.
+        family: 'indices', provider: 'twelve', symbol: 'SPX', timeframe: '5m',
+        timestamp: '2026-05-01T13:30:00.000Z', open: 5000, high: 5010, low: 4995, close: 5005,
+        volume: 0, source: 'twelve-rollup',
+      },
+    ],
+  });
+
+  assert.equal(report.rejected_records, 1);
+  assert.equal(usableSources.length, 1);
+  assert.equal(usableSources[0].symbol, 'XAUUSD');
+  assert.ok(report.issues.some((i) => i.code === 'synthetic_lower_timeframe' && i.family === 'indices'));
+});
+
 test('cache-clean quarantines rejected cache records and keeps usable history', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-cache-clean-'));
   const cryptoDir = path.join(tempRoot, 'crypto');
