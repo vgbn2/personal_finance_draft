@@ -13,7 +13,7 @@ const {
   calculateRollingFeatureFrame,
   pearsonCorrelation,
   returns: trailingReturn,
-} = require('../indicators');
+} = require('../market/indicators');
 
 function isNum(v) {
   return typeof v === 'number' && Number.isFinite(v);

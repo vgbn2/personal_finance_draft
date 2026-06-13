@@ -6,7 +6,7 @@ const test = require('node:test');
 
 const {
   assessPropFirmSuitability,
-} = require('../../shared/lib/backtest');
+} = require('../../shared/lib/strategy/backtest');
 const {
   formatPropFirmChoiceDescription,
   formatPropFirmChoiceLabel,
