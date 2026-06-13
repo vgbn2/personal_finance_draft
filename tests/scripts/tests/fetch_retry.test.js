@@ -256,3 +256,120 @@ test('fetchWithRetry does not retry on non-transport errors (e.g. AbortError)', 
     globalThis.fetch = originalFetch;
   }
 });
+
+// ── retryOn429 tests ──────────────────────────────────────────────────────────
+
+// Helper: build a Response-like object that also carries headers.
+function makeResponseWithHeaders(status, headers = {}, body = '') {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: {
+      get: (name) => headers[name.toLowerCase()] ?? null,
+    },
+    text: async () => body,
+    json: async () => JSON.parse(body),
+  };
+}
+
+test('fetchWithRetry retryOn429: retries on 429 and succeeds on later 200', async () => {
+  let calls = 0;
+  const mockFetch = async () => {
+    calls++;
+    if (calls < 3) return makeResponseWithHeaders(429);
+    return makeResponseWithHeaders(200, {}, '{"ok":true}');
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = mockFetch;
+  try {
+    const resp = await fetchWithRetry(
+      'https://example.com/api',
+      {},
+      { attempts: 5, baseDelayMs: 0, retryOn429: true },
+    );
+    assert.equal(resp.status, 200);
+    assert.equal(calls, 3, 'Should have retried twice before succeeding');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('fetchWithRetry retryOn429: Retry-After header is honored', async () => {
+  const waited = [];
+  const originalFetch = globalThis.fetch;
+
+  // Patch setTimeout to capture delays without actually waiting.
+  const originalSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms) => {
+    waited.push(ms);
+    fn(); // call immediately
+    return 0;
+  };
+  globalThis.fetch = async () => {
+    if (waited.length === 0) {
+      // First attempt: return 429 with Retry-After: 2 (seconds)
+      return makeResponseWithHeaders(429, { 'retry-after': '2' });
+    }
+    return makeResponseWithHeaders(200, {}, '{}');
+  };
+
+  try {
+    const resp = await fetchWithRetry(
+      'https://example.com/api',
+      {},
+      { attempts: 3, baseDelayMs: 0, retryOn429: true },
+    );
+    assert.equal(resp.status, 200);
+    // The delay passed to setTimeout should be max(0, 2000) = 2000ms.
+    assert.ok(waited.some((ms) => ms >= 2000), `Expected a wait >= 2000ms; got: ${JSON.stringify(waited)}`);
+  } finally {
+    globalThis.fetch = originalFetch;
+    globalThis.setTimeout = originalSetTimeout;
+  }
+});
+
+test('fetchWithRetry default behavior: 429 WITHOUT retryOn429 returns immediately', async () => {
+  let calls = 0;
+  const mockFetch = async () => {
+    calls++;
+    return makeResponseWithHeaders(429);
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = mockFetch;
+  try {
+    const resp = await fetchWithRetry(
+      'https://example.com/api',
+      {},
+      { attempts: 3, baseDelayMs: 0 }, // retryOn429 defaults to false
+    );
+    assert.equal(resp.status, 429);
+    assert.equal(calls, 1, '429 without retryOn429 must not be retried');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('fetchWithRetry retryOn429: final-attempt 429 is returned, not thrown', async () => {
+  let calls = 0;
+  const mockFetch = async () => {
+    calls++;
+    return makeResponseWithHeaders(429);
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = mockFetch;
+  try {
+    // Should NOT throw; should return the 429 response.
+    const resp = await fetchWithRetry(
+      'https://example.com/api',
+      {},
+      { attempts: 3, baseDelayMs: 0, retryOn429: true },
+    );
+    assert.equal(resp.status, 429, 'Final-attempt 429 must be returned, not thrown');
+    assert.equal(calls, 3, 'All 3 attempts should have been made');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
