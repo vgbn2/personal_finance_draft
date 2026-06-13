@@ -2011,10 +2011,11 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
     const ORDER = ['5m', '15m', '30m', '1h', '4h'];
     const finestSubDaily = ORDER.find(tf => subDailyTimeframes.includes(tf)) || subDailyTimeframes[0];
 
+    const fetchBaseFn = provider === 'coinbase' ? fetchCoinbaseBaseCandles : fetchBinanceBaseCandles;
     let nativeCandles = null;
     try {
       // fetchPaginated handles chunked pagination (3-day chunks for 5m), sequential, rate-safe.
-      nativeCandles = await fetchPaginated(symbol, finestSubDaily, historyDays, 'crypto', fetchBinanceBaseCandles, endTime || null);
+      nativeCandles = await fetchPaginated(symbol, finestSubDaily, historyDays, 'crypto', fetchBaseFn, endTime || null);
     } catch (err) {
       console.warn(`[INGEST] Native ${finestSubDaily} fetch failed for ${symbol} via ${provider}: ${err.message}`);
     }
