@@ -98,6 +98,50 @@ test('fetchAlpacaBaseCandles maps 5m to Alpaca 5Min and follows page tokens', as
   });
 });
 
+test('fetchAlpacaBaseCandles clamps SIP windows away from the recent-data blackout', async () => {
+  await withAlpacaEnv(async () => {
+    process.env.ALPACA_DATA_FEED = 'sip';
+    const calls = [];
+    const fetchJson = async (url) => {
+      calls.push(url);
+      return { bars: { AAPL: [] } };
+    };
+    const { fetchAlpacaBaseCandles } = freshRequire(alpacaPath, {
+      [commonPath]: { fetchJson },
+    });
+
+    const now = Date.now();
+    await fetchAlpacaBaseCandles('AAPL', '5m', 10000, now - 86400000, now);
+    assert.strictEqual(calls.length, 1);
+    const end = new Date(new URL(calls[0]).searchParams.get('end')).getTime();
+    assert.ok(end <= now - 15 * 60 * 1000, 'sip end must sit behind the ~15min blackout');
+    assert.strictEqual(new URL(calls[0]).searchParams.get('feed'), 'sip');
+
+    // Degenerate window entirely inside the blackout: no request at all.
+    const bars = await fetchAlpacaBaseCandles('AAPL', '5m', 10000, now - 60 * 1000, now);
+    assert.deepStrictEqual(bars, []);
+    assert.strictEqual(calls.length, 1);
+  });
+});
+
+test('fetchAlpacaBaseCandles leaves iex windows unclamped', async () => {
+  await withAlpacaEnv(async () => {
+    const calls = [];
+    const fetchJson = async (url) => {
+      calls.push(url);
+      return { bars: { AAPL: [] } };
+    };
+    const { fetchAlpacaBaseCandles } = freshRequire(alpacaPath, {
+      [commonPath]: { fetchJson },
+    });
+
+    const now = Date.now();
+    await fetchAlpacaBaseCandles('AAPL', '5m', 10000, now - 86400000, now);
+    const end = new Date(new URL(calls[0]).searchParams.get('end')).getTime();
+    assert.strictEqual(end, now);
+  });
+});
+
 test('fetchPaginated uses 10000-bar chunks for equity 5m windows', async () => {
   const { fetchPaginated, providerMaxBarsFor } = require(backfillPath);
   const calls = [];

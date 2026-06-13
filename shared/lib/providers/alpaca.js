@@ -6,6 +6,9 @@ const BASE_URL = 'https://data.alpaca.markets/v2';
 const DEFAULT_LIMIT = 1000;
 const DEFAULT_PAGINATED_LIMIT = 10000;
 const MAX_PAGES = 1000;
+// Free-plan SIP queries 403 when the window touches the most recent ~15 minutes
+// ("subscription does not permit querying recent SIP data"); clamp with margin.
+const SIP_RECENT_BLACKOUT_MS = 16 * 60 * 1000;
 
 const TIMEFRAME_MAP = {
   '1m': '1Min',
@@ -51,6 +54,14 @@ async function fetchAlpacaBaseCandles(symbol, limitOrTimeframe = DEFAULT_LIMIT, 
   }
 
   const args = normalizeAlpacaArgs(symbol, limitOrTimeframe, timeframeOrLimit, startTs, endTs);
+  const feed = process.env.ALPACA_DATA_FEED || 'iex';
+  if (feed === 'sip') {
+    const maxEndTs = Date.now() - SIP_RECENT_BLACKOUT_MS;
+    args.endTs = args.endTs ? Math.min(args.endTs, maxEndTs) : maxEndTs;
+    if (args.startTs && args.startTs >= args.endTs) {
+      return [];
+    }
+  }
   const headers = {
     'APCA-API-KEY-ID': apiKey,
     'APCA-API-SECRET-KEY': apiSecret,
