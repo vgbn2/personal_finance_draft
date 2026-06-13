@@ -186,6 +186,14 @@ const COMMAND_MANIFEST = {
         '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
+      { id: 'intraday-accumulate', label: 'Intraday Accumulate (Yahoo 15m/30m/1h: indices/commodities/fx)', loading: true, flags: {
+        '--timeframe': { type: 'select', options: ['15m', '30m', '1h'], label: 'Timeframe', default: '1h' },
+        '--family': { type: 'select', options: ['all', 'indices', 'commodities', 'fx'], label: 'Family', default: 'all' },
+        '--symbols': { type: 'text', default: '', label: 'Symbol filter, comma-separated (blank = all in family)' },
+        '--days': { type: 'text', default: '730', label: 'Days (15m/30m cap 60d, 1h cap 730d)' },
+        '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
+        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
+      }},
       { id: 'cache-clean', label: 'Cache Clean (Quarantine rejected records)', flags: {
         '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
       }}
