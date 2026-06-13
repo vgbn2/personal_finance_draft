@@ -167,6 +167,25 @@ const COMMAND_MANIFEST = {
         '--concurrency': { type: 'text', default: '5', label: 'Parallel jobs' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
+      { id: 'crypto-deep-backfill', label: 'Crypto Deep Backfill (native 5m, Binance)', loading: true, flags: {
+        '--days': { type: 'text', default: '1825', label: 'Days (Binance 5m ~2017; up to ~3300)' },
+        '--symbol': { type: 'text', default: '', label: 'Symbol filter (blank = all configured)' },
+        '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
+        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
+      }},
+      { id: 'equity-deep-backfill', label: 'Equity Deep Backfill (native 5m, Alpaca US)', loading: true, flags: {
+        '--days': { type: 'text', default: '1825', label: 'Days (SIP ~2016 w/ ALPACA_DATA_FEED=sip; up to ~3850)' },
+        '--symbol': { type: 'text', default: '', label: 'Symbol filter (blank = all US-eligible)' },
+        '--chunk-delay-ms': { type: 'text', default: '500', label: 'Delay between page chunks (ms)' },
+        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
+      }},
+      { id: 'five-min-accumulate', label: 'Five-Min Accumulate (Yahoo 5m: indices/commodities/fx)', loading: true, flags: {
+        '--family': { type: 'select', options: ['all', 'indices', 'commodities', 'fx'], label: 'Family', default: 'all' },
+        '--symbol': { type: 'text', default: '', label: 'Symbol filter (blank = all in family)' },
+        '--days': { type: 'text', default: '59', label: 'Days (Yahoo 5m cap ~60 trading days)' },
+        '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
+        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
+      }},
       { id: 'cache-clean', label: 'Cache Clean (Quarantine rejected records)', flags: {
         '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
       }}
