@@ -181,16 +181,24 @@ async function runPolymarketArchiveIngest(args, deps = {}) {
   const maxMarkets = numericOption(args, '--max-markets', 500);
   const startOffset = numericOption(args, '--start-offset', numericOption(args, '--offset', 0));
   const category = optionValue(args, '--category', 'all');
-  const archiveRoot = optionValue(args, '--archive-root', undefined);
+  // optionValue's own default is null; passing a real default lets us omit `root`
+  // entirely when absent so backfillPolymarketArchive's `root = CACHE_DIR` applies
+  // (a literal null would defeat that default and crash archivePaths on path.join).
+  const archiveRoot = optionValue(args, '--archive-root', null);
   const delayMs = numericOption(args, '--delay-ms', 250);
   const refresh = hasFlag(args, '--refresh');
+  // Gamma order: 'id' (newest-closed first) tops out at empty hourly micro-markets;
+  // 'volumeNum' surfaces the data-rich resolved markets that actually have CLOB price
+  // history. Default to volumeNum for the archive (its whole purpose is usable history).
+  const order = optionValue(args, '--order', 'volumeNum');
   return history.backfillPolymarketArchive({
     daysBack,
     interval,
     maxMarkets,
     startOffset,
     category,
-    root: archiveRoot,
+    order,
+    ...(archiveRoot ? { root: archiveRoot } : {}),
     includeNo: hasFlag(args, '--include-no'),
     noCache: hasFlag(args, '--no-cache'),
     delayMs,
