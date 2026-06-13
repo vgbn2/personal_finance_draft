@@ -202,6 +202,98 @@ function buildMassBackfillExecutionPlan({ symbols, timeframes, familyBySymbol = 
   };
 }
 
+function classifyBackfillError(message = '') {
+  const text = String(message || '');
+  if (/EPERM/i.test(text) && /rename/i.test(text)) return 'filesystem_rename_eperm';
+  if (/ETIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN|fetch failed/i.test(text)) return 'provider_transport';
+  if (/rate|429|too many/i.test(text)) return 'provider_rate_limit';
+  return 'error';
+}
+
+function summarizeMassBackfillByFamily(jobResults = []) {
+  const families = {};
+  for (const result of jobResults) {
+    const family = result.family || 'unknown';
+    const timeframe = result.timeframe || 'unknown';
+    if (!families[family]) {
+      families[family] = {
+        jobs: 0,
+        ok: 0,
+        failed: 0,
+        records: 0,
+        provider_errors: 0,
+        timeframes: {},
+      };
+    }
+    const familySummary = families[family];
+    if (!familySummary.timeframes[timeframe]) {
+      familySummary.timeframes[timeframe] = { jobs: 0, ok: 0, failed: 0, records: 0, provider_errors: 0 };
+    }
+    const tfSummary = familySummary.timeframes[timeframe];
+    familySummary.jobs++;
+    tfSummary.jobs++;
+    familySummary.records += result.records || 0;
+    tfSummary.records += result.records || 0;
+    familySummary.provider_errors += result.provider_errors || 0;
+    tfSummary.provider_errors += result.provider_errors || 0;
+    if (result.ok) {
+      familySummary.ok++;
+      tfSummary.ok++;
+    } else {
+      familySummary.failed++;
+      tfSummary.failed++;
+    }
+  }
+  return families;
+}
+
+function renderMassBackfillReport(payload) {
+  const line = '-'.repeat(72);
+  const lines = [];
+  const status = payload.ok ? 'OK' : 'WARN';
+  lines.push(`\n[MASS BACKFILL REPORT] ${payload.fetched_at || new Date().toISOString()}`);
+  lines.push(`Coverage: ${payload.successful}/${payload.jobs} jobs OK | failed: ${payload.errors} | skipped: ${payload.skipped_jobs} | records: ${payload.records}`);
+  lines.push(`Policy: timeframes = ${(payload.timeframes || []).join(', ')} | days = ${payload.days} | concurrency = ${payload.concurrency}`);
+  lines.push(`Status: ${status}`);
+  lines.push(line);
+
+  for (const [family, summary] of Object.entries(payload.families || {})) {
+    const pct = summary.jobs > 0 ? Math.round(summary.ok / summary.jobs * 100) : 0;
+    const familyStatus = summary.failed === 0 ? 'OK' : summary.ok > 0 ? 'WARN' : 'FAIL';
+    lines.push(`\n${family.toUpperCase()}  ${familyStatus}  ${summary.ok}/${summary.jobs} jobs (${pct}%)  records:${summary.records} provider_errors:${summary.provider_errors}`);
+    for (const [tf, tfSummary] of Object.entries(summary.timeframes || {})) {
+      const tfStatus = tfSummary.failed === 0 ? 'OK' : tfSummary.ok > 0 ? 'WARN' : 'FAIL';
+      lines.push(`  ${tf.padEnd(5)} ${tfStatus.padEnd(4)} ${String(tfSummary.ok).padStart(4)}/${String(tfSummary.jobs).padEnd(4)} records:${tfSummary.records} provider_errors:${tfSummary.provider_errors}`);
+    }
+  }
+
+  if (Array.isArray(payload.failures) && payload.failures.length > 0) {
+    lines.push(`\nFailures (${payload.failures.length} shown${payload.failure_count > payload.failures.length ? ` of ${payload.failure_count}` : ''}):`);
+    for (const failure of payload.failures) {
+      lines.push(`  ${failure.family || 'unknown'}:${failure.symbol}:${failure.timeframe}  ${failure.code || 'error'}  ${failure.message}`);
+    }
+  }
+
+  if (Array.isArray(payload.skipped_preview) && payload.skipped_preview.length > 0) {
+    lines.push(`\nSkipped preview (${payload.skipped_jobs} total):`);
+    for (const skipped of payload.skipped_preview) {
+      lines.push(`  ${skipped.family || 'unknown'}:${skipped.symbol}:${skipped.timeframe}  ${skipped.reason}`);
+    }
+  }
+
+  lines.push(`\n${line}`);
+  lines.push(`SUMMARY: ${payload.successful}/${payload.jobs} jobs OK | ${payload.errors} failed | ${payload.skipped_jobs} skipped`);
+  if ((payload.failure_codes || []).includes('filesystem_rename_eperm')) {
+    lines.push('Next step: serialize backfills or add a ts-index/cache write lock; Windows blocked one or more atomic renames.');
+  } else if (payload.errors > 0) {
+    lines.push('Next step: inspect failures above, then rerun with --force for affected symbols/timeframes.');
+  } else {
+    lines.push('Next step: run backend integrity to confirm freshness after the backfill.');
+  }
+  lines.push('');
+  return lines.join('\n');
+}
+
 function backtestHistoryFiles(inputPath) {
   if (!inputPath || !fs.existsSync(inputPath)) return [];
   const stat = fs.statSync(inputPath);
@@ -515,6 +607,7 @@ async function commandMassBackfill(args) {
   const results = { ok: 0, errors: 0 };
   const allSources = [];
   const allErrors = [];
+  const jobResults = [];
   let completed = 0;
   const total = jobs.length;
   const completedBySymbol = new Map();
@@ -523,16 +616,38 @@ async function commandMassBackfill(args) {
     totalBySymbol.set(job.symbol, (totalBySymbol.get(job.symbol) || 0) + 1);
   });
 
-  async function runJob({ symbol, timeframe }) {
+  async function runJob({ symbol, timeframe, family }) {
     const syntheticArgs = ['--symbol', symbol, '--timeframe', timeframe, '--days', days];
     if (force) syntheticArgs.push('--force');
     try {
       const history = await loadHistoricalSources(syntheticArgs);
-      allSources.push(...(history.snapshot.sources || []));
-      allErrors.push(...(history.snapshot.errors || []));
+      const sources = history.snapshot.sources || [];
+      const errors = history.snapshot.errors || [];
+      allSources.push(...sources);
+      allErrors.push(...errors);
+      jobResults.push({
+        ok: true,
+        symbol,
+        timeframe,
+        family,
+        records: sources.length,
+        provider_errors: errors.length,
+      });
       results.ok++;
     } catch (err) {
-      allErrors.push({ symbol, timeframe, message: err.message });
+      const message = err.message || String(err);
+      const code = classifyBackfillError(message);
+      allErrors.push({ symbol, timeframe, family, code, message });
+      jobResults.push({
+        ok: false,
+        symbol,
+        timeframe,
+        family,
+        records: 0,
+        provider_errors: 0,
+        code,
+        message,
+      });
       results.errors++;
     }
     completed++;
@@ -553,9 +668,10 @@ async function commandMassBackfill(args) {
 
   if (process.stdout.isTTY) process.stdout.write('\n');
 
+  const fetchedAt = new Date().toISOString();
   const snapshot = {
     mode: 'mass_backfill',
-    fetched_at: new Date().toISOString(),
+    fetched_at: fetchedAt,
     sources: allSources,
     errors: allErrors,
   };
@@ -567,18 +683,46 @@ async function commandMassBackfill(args) {
   writeTsIndex(DEFAULT_TS_DIR, merged);
   writeJson(DEFAULT_QUALITY_REPORT, report);
 
-  printPayload({
+  const failures = jobResults
+    .filter((result) => !result.ok)
+    .map((result) => ({
+      family: result.family,
+      symbol: result.symbol,
+      timeframe: result.timeframe,
+      code: result.code || 'error',
+      message: result.message || 'unknown error',
+    }));
+  const payload = {
     ok: results.errors === 0,
+    type: 'mass_backfill_report',
+    fetched_at: fetchedAt,
     jobs: total,
     successful: results.ok,
     errors: results.errors,
+    failure_count: failures.length,
+    failure_codes: [...new Set(failures.map((failure) => failure.code))],
+    failures: failures.slice(0, 20),
     records: allSources.length,
     skipped_jobs: plan.skipped.length,
+    skipped_preview: plan.skipped.slice(0, 12).map((job) => ({
+      family: job.family,
+      symbol: job.symbol,
+      timeframe: job.timeframe,
+      reason: job.reason,
+      age_hours: job.age_hours ?? null,
+    })),
+    families: summarizeMassBackfillByFamily(jobResults),
     symbols: uniqueSymbols.length,
     timeframes,
     days,
+    concurrency,
     output: DEFAULT_HISTORY,
-  }, args);
+  };
+  if (hasFlag(args, '--json')) {
+    printPayload(payload, args);
+  } else {
+    console.log(renderMassBackfillReport(payload));
+  }
   return results.errors === 0 ? 0 : 1;
 }
 
@@ -1373,7 +1517,10 @@ async function commandFiveMinAccumulate(args) {
 
 module.exports = {
   buildMassBackfillExecutionPlan,
+  classifyBackfillError,
   massBackfillUniverse,
+  renderMassBackfillReport,
+  summarizeMassBackfillByFamily,
   ingestOptionsFromArgs,
   commandIngest,
   commandBackfill,
