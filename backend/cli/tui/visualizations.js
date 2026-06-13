@@ -1,4 +1,4 @@
-const A = require('../../../shared/lib/ansi');
+const A = require('../../../shared/lib/ui/ansi');
 
 function paint(code, text) {
   return A.c(code, text);
