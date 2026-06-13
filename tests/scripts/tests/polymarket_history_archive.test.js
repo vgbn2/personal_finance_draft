@@ -125,6 +125,44 @@ test('backfillPolymarketArchive ingests fixture markets without network', async 
   }
 });
 
+test('backfillPolymarketArchive paginates past the Gamma 100-row page cap', async () => {
+  const root = tempArchive();
+  try {
+    // Gamma returns at most 100 rows/page; simulate 100-row pages for offsets 0 and
+    // 100, then empty at 200. The old `rows.length < limit` break stopped after page 1.
+    const mkPage = (start, n) => Array.from({ length: n }, (_, i) => ({
+      id: `m${start + i}`,
+      question: `Q${start + i}`,
+      endDate: '2025-03-01T00:00:00.000Z',
+      tokens: [{ outcome: 'Yes', token_id: `tok-${start + i}` }],
+      bestAsk: '1',
+      volume: 100000 - (start + i),
+    }));
+    const pages = [];
+    const result = await backfillPolymarketArchive({
+      root,
+      daysBack: 0,
+      interval: '1h',
+      maxMarkets: 150,
+      pageLimit: 200, // requested > cap; must still page by offset
+      generateFeatures: false,
+      fetchMarketsPage: async ({ limit, offset }) => {
+        pages.push({ limit, offset });
+        if (offset >= 200) return { ok: true, data: [] };
+        return { ok: true, data: mkPage(offset, 100) };
+      },
+      fetchHistory: async () => ({ ok: true, source: 'fixture', data: [{ t: 1700000000, p: 0.5 }] }),
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.markets_archived, 150, 'must collect 150 across multiple 100-row pages, not stop at 100');
+    assert.ok(pages.length >= 2, 'must fetch more than one page');
+    assert.ok(pages.every((p) => p.limit <= 100), 'page request must be capped at the Gamma 100-row max');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // ── Skip-existing tests ───────────────────────────────────────────────────────
 
 test('backfillPolymarketArchive skip-existing: non-empty price file skips fetch', async () => {
