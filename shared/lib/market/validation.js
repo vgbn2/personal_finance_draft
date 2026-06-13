@@ -617,6 +617,11 @@ function tsIndexPath(tsDir, symbol, timeframe) {
   };
 }
 
+function atomicTempPath(targetPath) {
+  const suffix = `${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}`;
+  return `${targetPath}.${suffix}.tmp`;
+}
+
 /**
  * Writes a per-symbol binary time-series index from a snapshot.
  * tsDir should be e.g. storage/data/ts/
@@ -710,10 +715,12 @@ function writeTsIndex(tsDir, snapshot) {
     }
 
     const { bin, meta: metaPath } = tsIndexPath(tsDir, meta.symbol, meta.timeframe);
-    const tmpBin = bin + '.tmp';
+    const tmpBin = atomicTempPath(bin);
+    const tmpMeta = atomicTempPath(metaPath);
     fs.writeFileSync(tmpBin, buf);
     fs.renameSync(tmpBin, bin);
-    fs.writeFileSync(metaPath, JSON.stringify({ ...meta, count }), 'utf8');
+    fs.writeFileSync(tmpMeta, JSON.stringify({ ...meta, count }), 'utf8');
+    fs.renameSync(tmpMeta, metaPath);
   }
 }
 
