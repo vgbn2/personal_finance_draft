@@ -31,9 +31,11 @@ function isRetryableStatus(status) {
  *
  * @param {string | URL} url  - Request URL (passed directly to fetch).
  * @param {RequestInit}  [options={}] - Standard fetch options.
- * @param {{ attempts?: number, baseDelayMs?: number }} [retry={}]
+ * @param {{ attempts?: number, baseDelayMs?: number, retryOn429?: boolean }} [retry={}]
  *   attempts    - Total number of attempts (default 3).
  *   baseDelayMs - Base delay in ms; actual delay = baseDelayMs * 2^attemptIndex (default 300).
+ *   retryOn429  - When true, 429 responses are retried with Retry-After backoff (default false).
+ *                 On the final attempt the 429 response is returned as-is (not thrown).
  * @returns {Promise<Response>} The last successful response, or throws the last error.
  */
 async function fetchWithRetry(url, options = {}, retry = {}) {
@@ -43,6 +45,7 @@ async function fetchWithRetry(url, options = {}, retry = {}) {
   const baseDelayMs = typeof retry.baseDelayMs === 'number' && retry.baseDelayMs >= 0
     ? retry.baseDelayMs
     : 300;
+  const retryOn429 = retry.retryOn429 === true;
 
   let lastError;
   let lastResponse;
@@ -56,7 +59,25 @@ async function fetchWithRetry(url, options = {}, retry = {}) {
     try {
       const response = await fetch(url, options);
 
-      // 4xx responses are not retried — they represent a client/business error.
+      // 429 Too Many Requests — opt-in retry with Retry-After backoff.
+      if (response.status === 429 && retryOn429) {
+        if (attempt < attempts - 1) {
+          const retryAfterRaw = response.headers && response.headers.get
+            ? Number(response.headers.get('retry-after')) * 1000
+            : 0;
+          const retryAfterMs = Number.isFinite(retryAfterRaw) && retryAfterRaw > 0 ? retryAfterRaw : 0;
+          const backoffMs = baseDelayMs * Math.pow(2, attempt);
+          const waitMs = Math.max(backoffMs, retryAfterMs);
+          if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
+          lastResponse = response;
+          lastError = null;
+          continue;
+        }
+        // Final attempt: return the 429 as-is (do not throw).
+        return response;
+      }
+
+      // Other 4xx responses are not retried — they represent a client/business error.
       if (response.status >= 400 && response.status < 500) {
         return response;
       }
