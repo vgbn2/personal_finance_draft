@@ -636,3 +636,63 @@ test('commandCryptoDeepBackfill dry-run with --symbol filters to single symbol',
   assert.deepStrictEqual(out.symbol_list, ['BTCUSDT']);
   assert.strictEqual(out.days, 365);
 });
+
+test('fetchCryptoSnapshot routes 5m to native Coinbase fetch when provider is coinbase', async () => {
+  const ingestPath = path.resolve(REPO_ROOT, 'backend/scripts/data_ops/ingest_market_data/index.js');
+
+  const coinbaseCalls = [];
+  const binanceCalls = [];
+
+  const mockFetchCoinbaseBaseCandles = async (symbol, limit, interval, startTs, endTs) => {
+    coinbaseCalls.push({ symbol, limit, interval, startTs, endTs });
+    return [{ openTime: startTs, open: 100, high: 101, low: 99, close: 100.5, volume: 10 }];
+  };
+
+  const mockFetchBinanceBaseCandles = async (symbol, limit, interval, startTs, endTs) => {
+    binanceCalls.push({ symbol, limit, interval, startTs, endTs });
+    return [{ openTime: startTs, open: 100, high: 101, low: 99, close: 100.5, volume: 10 }];
+  };
+
+  // Stub the providers module to inject our mocks
+  const providersPath = path.resolve(REPO_ROOT, 'shared/lib/providers/index.js');
+  const realProviders = require(providersPath);
+  const stubbedProviders = {
+    ...realProviders,
+    fetchCoinbaseBaseCandles: mockFetchCoinbaseBaseCandles,
+    fetchBinanceBaseCandles: mockFetchBinanceBaseCandles,
+  };
+
+  // Stub fetchPaginated
+  const backfillMod = require(backfillPath);
+  const origFetchPaginated = backfillMod.fetchPaginated;
+
+  backfillMod.fetchPaginated = async (symbol, timeframe, days, family, fetchFn, forcedEndTs) => {
+    return origFetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEndTs);
+  };
+
+  try {
+    delete require.cache[ingestPath];
+    const stubs = { [providersPath]: stubbedProviders };
+    const orig = Module._load;
+    Module._load = function(request, parent, isMain) {
+      const resolved = (() => { try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; } })();
+      if (resolved && stubs[resolved]) return stubs[resolved];
+      return orig.apply(this, arguments);
+    };
+    let ingestMod;
+    try {
+      ingestMod = require(ingestPath);
+    } finally {
+      Module._load = orig;
+      delete require.cache[ingestPath];
+    }
+
+    const result = await ingestMod.fetchCryptoSnapshot('coinbase', 'BTCUSDT', ['5m', '1d'], 'crypto', { historyDays: 30 });
+
+    assert.strictEqual(coinbaseCalls.length > 0, true, 'Coinbase fetcher should be called');
+    assert.strictEqual(binanceCalls.length, 0, 'Binance fetcher should NOT be called');
+  } finally {
+    backfillMod.fetchPaginated = origFetchPaginated;
+  }
+});
+
