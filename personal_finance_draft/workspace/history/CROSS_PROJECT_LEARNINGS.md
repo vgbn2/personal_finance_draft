@@ -236,3 +236,19 @@ _Updated: 2026-06-04. Append; never rewrite._
 - Label fetched rows, persisted rows, and merged rows separately in status reports.
 - Add a monotonic progress guard to every historical pagination loop.
 - Treat session gaps as part of the data contract before applying intraday indicators to equities, futures, or commodities.
+
+---
+
+## 13. Correlation and Backfill Operator UX Retrospective
+
+### Architectural truths learned
+- **Analytics input source is a contract**: if durable intraday data lives in binary ts-index, analytics wrappers must not silently fall back to shallow JSON cache after a preflight failure. The fallback changes the diagnosis.
+- **Correlation needs coverage preflight**: selector groups and sectors are UX conveniences, but the resulting symbol set must share an overlap window before a matrix is meaningful. Report blockers before invoking the engine.
+- **Write contention needs a named failure class**: Windows `EPERM rename` is not just a generic backfill error. It indicates concurrent writer contention or file-lock interference and should be classified as `filesystem_rename_eperm`.
+- **Final report polish is not live-stream polish**: an integrity-style final report can be correct while provider fetch logs still interleave in the live stream. Treat final summary and live progress routing as separate work items.
+
+### Planning rules
+- Any command that builds a focused temp snapshot should expose the input source in both success and failure payloads.
+- For multi-symbol analytics, never transform an alignment failure into a missing-data failure by retrying through a weaker data source.
+- Add operator-facing failure codes before broadening automation; codes become the bridge between noisy runtime logs and actionable TUI summaries.
+- When a user asks for output to match a trusted report style, copy the report contract first, then separately decide whether to capture/suppress live provider logs.

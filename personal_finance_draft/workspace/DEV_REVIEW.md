@@ -1,22 +1,4 @@
-## Git Hygiene — uncommitted folder restructure — RESOLVED 2026-06-08 (commit `4d3fb4d`)
-- `backend/cli/commands/*` and `backend/api/server/routes/*` (flat → subdirectory restructure from `648ab69e`, 2026-05-29) is now committed with full rename tracking (`{ => account}/auth.js`, `{ => market}/analytics.js`, etc. — verified via `git show --stat HEAD`). `git status --porcelain` for both trees is clean; `dev.review.txt` deletion landed in the same commit.
-- Note: the user landed this via a broader self-driven commit (`4d3fb4d "changes"`) that also swept in unrelated monorepo-root WIP beyond the originally scoped 52-file batch — the restructure itself is intact and correctly tracked, so no follow-up needed on this entry.
-
-### Git Hygiene — `node_modules`/`.mcp.json` re-drift — RESOLVED 2026-06-08 session 8
-- The `4d3fb4d "changes"` commit above (broader-than-scoped) also re-introduced 4,533 files into tracking: `node_modules/` (1,116), `backend/gateway/node_modules/` (3,374), `storage/data/cache/` (42), `.mcp.json` (1) — the same drift class originally fixed in session 2. `structure_contract.test.js` regressed to 3/4.
-- Fixed with index-only `git rm -r --cached node_modules backend/gateway/node_modules storage/data/cache .mcp.json` (zero risk to working-tree files). `structure_contract.test.js` → 4/4; full suite unchanged at 226/232 before/after (6 pre-existing unrelated failures — the old "241/241" figure in session memory is stale, corrected here).
-- User approved the commit explicitly given the size (~4,533 deletions in the index).
-
-### Container ML — ONNX runtime flag — IN PROGRESS, blocked on Docker daemon (session 8)
-- `infra/docker/Dockerfile:46` was missing `-DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON` (flag exists in `backend/core/CMakeLists.txt:9`, default OFF) — container ML silently ran `deterministic_baseline` instead of the real trained models proven in Phase 3.
-- Edit made (`cmake .. -DCMAKE_BUILD_TYPE=Release -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON`) but **left uncommitted** — verification blocked by a wedged Docker Desktop daemon (zombie `com.docker.build` process, idle ~22h, predates this session; every `docker` CLI call hangs). User deferred the Docker Desktop restart needed to clear it. See `workspace/handoff/2026-06-08.md` session 8 for the full trace and exact resume steps (rebuild → `ml compare --json` → confirm `onnx_runtime` backend → commit).
-- Also surfaced a latent gap: `storage/models/*.onnx` are gitignored (`.gitignore:64`), so a genuine fresh-clone-to-remote-node deploy would silently fall back to baseline — flagged for a future user decision (commit the ~1MB binaries vs. add a model-sync step to `DEPLOY.md`'s flow), not silently fixed.
-
-### `run bot live` redirect — RESOLVED 2026-06-08 (reclassified, not a stub)
-- `backend/cli/commands/runner/run.js:105` hard-stops `sovereign run bot live` with "Not implemented here — use: sovereign bot run --live". Traced both paths: `run bot {paper|live}` is the *persistent unattended loop* manager (`runPaperBotLoop`/`run_loop.js`, used for `paper`/`backfill`); `bot run --live` (`commandBot` in `trade.js:1359` → gateway `runBotLoop`/`runCycle` in `cycle.ts:441`) is the real, fully-wired live path — gated by `featureGate('bot_autopilot')`, `canLiveExecute('alpaca')`, and an interactive `requireAuth` (PIN) prompt.
-- Conclusion: the redirect is an intentional safety boundary, not a completeness gap. Wiring `run bot live` to start an unattended persistent *live-money* loop would bypass the per-session auth/PIN gate that `bot run --live` enforces — a real-money safety regression, not an improvement. Leaving the hard-stop in place is correct design. Removing this from the open ledger; no code change needed.
-
-## Centralization Backlog
+##### Centralization Backlog
 
 | Pattern | Files (count) | Proposed unit | Effort | Grade impact |
 |---|---|---|---|---|
@@ -25,15 +7,6 @@
 Noted, not flagged: `parseArgs(argv)` in `scripts/strategies/ml_smoke_alpaca.js` and `ml_smoke_polymarket.js` share a ~6-line arg-loop shape. Only 2 files, each parses different flag sets (`--qty` vs none, `--dry` shared) — below the 3-file drift threshold and a shared helper would be more code than the duplication. No action needed.
 
 ---
-
-## Focused Audit - 2026-06-11 (`/blast-through` on the unrecorded `feat/ml-onnx-section` working tree)
-
-Scope: the ~28-file uncommitted diff (self-described in DEV_COMMENTS.md as "2026-06-10 Mass Audit
-& Ingestion Repair" — that session wrote no handoff/session-memory entry) plus carried gated
-sections. Full `npm test` run as the verification gate. **DCS this audit: 0.87** (Freshness 0.95
-— integrity ok:true, BTCUSDT through 2026-06-10; Schema 0.85 — failing indicator data-flow
-contract; Coverage 0.80 — 7 NEW failing test files vs the 226/232 baseline). Below the 0.95
-promotion bar: **do not commit this tree as-is.**
 
 ### P0 — `runGatewayCommand` throws on every call (`shared/lib/runtime/backend_bridge.js:72`)
 - `require.resolve('../../backend/gateway/src/index.ts')` resolves relative to
@@ -150,39 +123,7 @@ promotion bar: **do not commit this tree as-is.**
 | `runBackendCommand` duplicate | `tools/backend.js:433` local copy (8 call sites) + `backend_bridge.js:59` | migrate onto bridge AFTER timeout default fixed | M | tools C→B |
 | JSON-from-stdout extraction | bridge smart-extract + `trade.js parseGatewayJsonOutput` | one `parseJsonPayload` util in bridge | S | — |
 
-### RESOLUTION - 2026-06-11 session 12 (same-day fix pass, all P0/P1 items above cleared)
-
-All findings from the "Focused Audit - 2026-06-11" were fixed the same day (implementation
-delegated to Sonnet subagents per user preference; Fable reviewed diffs, re-ran gates, committed):
-
-- **runGatewayCommand P0** -> FIXED `358476f6`. Dead require.resolve deleted; buildTradeGatewayLaunch
-  moved into the bridge as the canonical launcher (trade.js re-exports); 30s default timeout removed
-  (opt-in only); JSON extraction respects exit status + payload.ok, reports exit_code. BONUS root
-  cause found during verification: `bot_state.ts:5` imported `brokers/supabase_env.js` (reorg
-  fallout; canonical is `auth/supabase_env.js`) -- the gateway could not boot under ts-node at all.
-- **Indicator manifest P0** -> FIXED `7d99af0f`. Inline flow-maps (unsupported by parseYamlRecursive)
-  rewritten to block style; non-object params guard + once-per-indicator warnings replace the silent
-  catch; new serving-contract guard test (indicators.manifest_parity.test.js).
-- **Tracked->untracked dependency drift** -> CLOSED `7d99af0f`/`e6716777`: config/system/ (6 files),
-  symbol_resolver.js, ecb.js, config/markets asset_mapping/options_data all tracked.
-- **Contract reconciliations** -> `b3b0fec5` (redaction: poly_address stays visible by design, new
-  keys covered) + `2bf1e482` (ALL 6 pre-existing baseline failures cleared too: 3 stale reorg
-  require-paths, 2 cli_ui sub-menu shape drifts, 1 notebooks verdict-cell position).
-- **P1/P2 ledger items** -> folded into `e6716777`: quote_router priorities reverted + inline
-  dev-review comments removed, research.js readmits point/untagged macro records, 1wk:30d fidelity
-  typo fixed, FRESHNESS_RULES 1w/1mo added, mass-backfill 7300d/c10 kept (user decision).
-- **ONNX fresh-clone gap** -> CLOSED `8e8b4adf`: trained .onnx binaries + serving manifest committed
-  (user decision); .gitignore hygiene (backend/cli/target/ carryover closed, *.jsonl blanket dropped).
-
-**Verification: full `npm test` = 263/263 pass, 0 failures — first fully green suite on record
-(previous best 226/232).** Dockerfile ONNX edit remains deliberately uncommitted (Docker-blocked).
-
-Still open from the backlog: migrate trade.js's 5 remaining direct buildTradeGatewayLaunch call
-sites + tools/backend.js's local runBackendCommand onto the bridge (M); ingest derive-before-fetch
-ordering (1-cycle lag); notebooks/ directory itself is still untracked (the notebooks_contract test
-would fail on a fresh clone -- scope decision for the user).
-
-## Deep Blast-Through - 2026-06-11 live dirty-tree audit
+### Deep Blast-Through - 2026-06-11 live dirty-tree audit
 
 Scope: hard-reading audit of the current `feat/ml-onnx-section` worktree after graph refresh.
 The graph was rebuilt from `6eea7b77` to 9205 nodes / 14200 edges / 730 communities. Runtime
@@ -318,13 +259,6 @@ Close clean-clone reproducibility before any broad commit: track or deliberately
 - Remaining nuance: this closes the reproducibility gap in the current staged index, but a true
   clean-clone proof still needs commit or clean-worktree/export verification.
 
-## Focused Audit - 2026-06-12 (session 17 blast-through: gateway change surface + gated carryovers)
-
-Scope: backend/gateway/src (CLOB V2 migration, polymarket sell, Alpaca 422 fixes), shared/lib/runtime
-bridge, backend/api/app.js (gated carryover -- GET-auth question RESOLVED this pass). Evidence: full
-suite 272/272 (52.7s) AFTER all session changes; gateway tsc clean; live matched Polymarket order +
-2 live Alpaca paper orders as behavioral proof. DCS 0.95.
-
 ### Findings (reviewer decisions required)
 
 | # | Severity | File:Line | Finding | Required decision / gate |
@@ -354,20 +288,7 @@ suite 272/272 (52.7s) AFTER all session changes; gateway tsc clean; live matched
 - app.js GET-auth question (carried since 2026-06-06): design is public-read + token-write + PROTECTED_GET_ROUTES; verified sound EXCEPT finding #1. /api/supabase/config exposes URL only (no keys) -- acceptable.
 - Stub scan: no new stubs on reachable paths. Dev-marker scan: gateway src clean (0 markers).
 
-## Resolutions + C++ verification - 2026-06-12 (session 17c)
-
-### Session-17 audit findings: ALL RESOLVED
-#1 kill-switch GET auth (37d2d6d2) | #2 exit-0-on-failure (32cb5637, proven live) |
-#3 FOK loss + #7 deadline guard (cafe6eea) | #4 clob_rejected category (32cb5637) |
-#5 derive-creds masking (32cb5637) | #6 pUSD display (32cb5637).
-Centralization backlog: fetch-retry rollout DONE (6875f1fa -- fetchWithRetry + retryTransient
-cover Gate.io fetch, gamma axios, cycle end-date fetch; trade.js has no raw fetches by
-construction); submit/preflight dedup DONE (6875f1fa). L2-header SDK adoption REJECTED with
-documented rationale: createL2Headers wants a ClobSigner object + WebCrypto HMAC and omits
-User-Agent/Accept -- hand-rolled builder in clob_factory stays canonical (remove backlog item).
-Suite after all waves: 284/284.
-
-### C++ backend verification (roadmap item 6) - findings
+#### C++ backend verification (roadmap item 6) - findings
 
 Verdict: core engines REAL and healthy; test harness has fixture-path debt.
 
@@ -378,16 +299,45 @@ Verdict: core engines REAL and healthy; test harness has fixture-path debt.
 | 3 | Medium | ctest 27/29: ingestion_adapter_test fails (looks for config/data_sources.yaml relative to build dir; real file = repo-root config/markets/data_sources.yaml) and kronos_integration_test fails (needs >=4 empirical data points, fixture absent). Fixture/CWD debt, NOT logic failures. | S fix: resolve config path from repo root / ship fixture; then STATE.md 29/29 claim true again |
 | 4 | Note | STATE.md "All 29/29 C++ core tests passing" is STALE (currently 27/29). Also carryover: core test mains are assert-only -> no-ops under Release NDEBUG; green Release ctest is weak evidence. Behavioral anchors (finding #1) are the real gate. | run ctest in Debug config when fixing #3 |
 
-## Resolutions - 2026-06-12 session 21
+### Resolved in this pass
 
-- C++ verification table finding #2 (indicators default --input, main.cpp:522): STALE -- already
-  fixed in `e0ad1ff7` (equities-partition default + missing-file guard). Verified by probe (default
-  run produces real output; explicit --input unchanged) + ctest -C Debug 29/29. No code change.
-- NEW centralization backlog item: `polymarket_backtest.js` duplicates the ~45-line orderbook-lite
-  fallback capture block 3x (gammaSkipped / empty-series / no-entry branches). Extract a
-  `captureFallbackWindows(market, tokenId, opts)` helper. Effort S. From the integrated Codex slice
-  (`1f6b5e45`); functional, tests green -- drift containment only.
-- NEW durable finding (fixed for crypto, latent elsewhere): provider chains break on first success
-  and TwelveData (first/early in equities, indices, commodities, crypto chains) silently caps
-  history at 5,000 bars. Crypto deep path now pins binance via `options.provider` (`c3fbc3ba`).
-  Equities/indices/commodities deep backfills will hit the same wall when implemented.
+| Severity | Classification | File:Line | Finding | Resolution / evidence |
+|---|---|---|---|---|
+| High | production | `shared/lib/market/validation.js:620`, `shared/lib/market/validation.js:718` | `writeTsIndex` still used a fixed `<bin>.tmp` path for every process. Session 25 already proved two separate deep-backfill processes can race the shared temp name and crash with EPERM. | Replaced fixed temp paths with process-unique atomic temp paths for bin and meta writes. Added `tests/scripts/tests/backfill_regression.test.js:128` to prove an existing `BTCUSDT_1d.bin.tmp` from another writer is not overwritten. Gates: `node --check shared/lib/market/validation.js`, focused backfill test, `npm.cmd run test:data`, `npm.cmd run test:structure`, and full `npm.cmd test` all passed. |
+| High | production | `backend/scripts/data_ops/ingest_market_data/index.js:2009` | Crypto native subdaily provider routing bug where Coinbase still called Binance base fetcher. | Fixed to route to `fetchCoinbaseBaseCandles` if provider is `coinbase`. Added unit test in `tests/scripts/tests/crypto_5m_backfill.test.js`. All tests passed. |
+| Medium | runtime-artifact | `storage/data/backtests/latest_backtest.json`, `storage/data/strategy_grade_index.json` | Runtime report JSON was tracked in Git and caused constant git status noise. | Untracked both files via `git rm --cached` and added them to `.gitignore`. |
+| Low | production | `backend/core/src/ml/cnn_inference.cpp:61`, `backend/core/src/ml/model_registry.cpp:52`, `backend/core/src/ml/onnx_model.cpp:18` | Active C++ ML source files contained legacy inline `dev review`/IDE comments. | Purged the comments from all three C++ source files and verified the release build compiles. |
+| P1 | production | `backend/cli/commands/research/ml.js:66`, `shared/lib/ml/dataset.js:169` | ML dataset builder lacked caps for intraday (5m) timeframes, risking O(n^2) memory/time blowup. | Implemented `--max-bars-per-symbol` and added a default 50,000 bar cap for intraday timeframes. Verified via new unit test in `ml_dataset.test.js`. |
+| P1 | production | `shared/lib/strategy/backtest.js:286`, `772`, `778` | Backtest annualization assumed 24/7 for equities and lacked session-gap checks (overnight/weekends). | Implemented active session periodsPerYear for equities (252 days * 6.5 hours) and calendar date session-gap guards. All tests passed. |
+| P2 | git-config | `data/skills/` | Stale broken symbolic directory junctions caused `warning: could not open directory` in git status. | Cleaned up all broken symlinks under `data/skills/` using PowerShell, resolving the warnings completely. |
+
+### Active findings
+
+| Severity | Classification | File / surface | Finding | Required next move |
+|---|---|---|---|---|
+| High | production/runtime-data | `backend integrity --json`, `storage/data/ts` | Current configured-cache integrity is red despite `status --json` being green. Fresh run: `ok:false`, `92/92 cached`, `0 missing`, `total_stale:3`, `total_exceptions:1`; stale symbols are `GBPUSD`, `USDJPY`, and `AUDUSD` on `1d`. `status --json` still reports last-fetch snapshot quality `ok`, so the health split is working, but the Phase-9 data posture is not fully green. | Refresh or repair FX daily cache, then rerun `backend integrity --json`. If provider data remains stale, record explicit exceptions with rationale instead of leaving integrity red. |
+| Medium | production | `shared/lib/providers/tradingview.js:78` | TradingView screener search remains explicitly stubbed. Tests can stay green because this is outside the mocked no-network suite, but the provider surface is not a complete live implementation. | Either implement metadata discovery or mark the command/provider as research-only/partial in the user-facing surface. |
+
+### Verified good
+
+- Clean-clone gap from 2026-06-11 is closed under the current structure contract: tracked `frame_backtester.{cpp,hpp}`, `scripts/classify_strategy_assets.js`, `scripts/mcp_stdio_probe.js`, `backend/api/tests/correlation_contract.test.js`, `.dockerignore`, notebook fixture set, and `notebooks/signal_library.json`.
+- `graphify update .` refreshed graph context to `9635` nodes / `14796` edges / `747` communities, built from `973656a9`.
+- Verification after the FW1 fix: `npm.cmd test` passed `431/431`.
+
+### Remaining findings and fix plan
+
+| Priority | Area | File / surface | Finding | Fix plan |
+|---|---|---|---|---|
+| P1 | Logic correctness | `backend/cli/commands/data/data.js:923`, `backend/cli/commands/data/data.js:1068`, `backend/cli/commands/data/data.js:1317` | Deep 5m commands mark a symbol OK when `fiveMBars.length > 0 || snapErrors.length === 0`. A silent empty provider response can report success with zero bars. Existing tests only cover zero bars with explicit errors. | Treat explicit backfill jobs as failed on zero target-timeframe bars unless the symbol is intentionally skipped/unsupported. Add crypto, equity, and five-min accumulate tests for zero bars with no errors. |
+| P1 | Runtime algorithm | `shared/lib/data/backfill.js:61`, `shared/lib/data/backfill.js:71`, `shared/lib/data/backfill.js:77` | `fetchPaginated` always walks the full requested window backward from the requested end. It does not inspect existing ts-index coverage, so resume/backfill work refetches already-covered history instead of fetching only missing windows. | Add a gap planner that reads existing symbol/timeframe coverage, emits missing windows, and fetches only gaps plus a small forward-refresh window. Keep full-window mode available for forced rebuilds. |
+| P1 | Runtime algorithm | `backend/cli/commands/data/data.js:453`, `backend/cli/commands/data/data.js:567` | `mass-backfill` accumulates all records across all jobs, then writes one large merged ts-index snapshot. This is memory-heavy and O(all history) at the end of every large run. | Persist per job or per symbol/timeframe incrementally, retain only counters/errors in memory, and make resumability explicit. |
+| P2 | UI | `backend/cli/tui/manifest.js:164`, `backend/cli/tui/manifest.js:170`, `backend/cli/tui/manifest.js:176`, `backend/cli/tui/manifest.js:182` | TUI exposes dry-run defaults, but not estimated runtime, provider entitlement/cap warnings, current integrity state, or "serialize large backfills" guidance. FW3 15m/30m/1h/4h native-poll is not exposed because it is not implemented yet. | Add preflight summary metadata for long-running data commands, including estimated calls/windows, provider, dry-run/execute distinction, and integrity warnings. Add FW3 command once implemented. |
+| P2 | Structure | `backend/scripts/data_ops/ingest_market_data/index.js` | Data ingestion remains a 1,982-line monolith spanning provider routing, derivation, quality filtering, persistence, and CLI orchestration. | Split by provider family and persistence boundary: crypto/equity-index/commodity/fx snapshot modules, `persist_snapshot`, and a thin orchestrator. Preserve current tests during extraction. |
+
+### Verification from this pass
+
+- `node --test tests/scripts/tests/crypto_5m_backfill.test.js tests/scripts/tests/equity_5m_backfill.test.js tests/scripts/tests/five_min_accumulate.test.js tests/scripts/tests/ml_dataset.test.js tests/scripts/strategy_backtest_contract.test.js` passed `56/56`.
+- `node --test tests/scripts/tui_terminal_automation.test.js` passed `6/6`.
+- The green tests cover current happy paths and explicit-error paths, but not the new silent-zero, Coinbase-routing, session-gap, intraday-cap, or gap-resume cases listed above.
+
+#
