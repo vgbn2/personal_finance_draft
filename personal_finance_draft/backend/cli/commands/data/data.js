@@ -1154,7 +1154,9 @@ function buildFiveMinAccumulatePlan(config, options = {}) {
     require('../../../scripts/data_ops/ingest_market_data/constants.js');
 
   const VALID_FAMILIES = ['indices', 'commodities', 'fx'];
-  const familyFilter = options.family ? String(options.family).trim().toLowerCase() : null;
+  // 'all' (or blank) means no family filter -- lets the TUI use a clean select.
+  const rawFamily = options.family ? String(options.family).trim().toLowerCase() : null;
+  const familyFilter = (rawFamily && rawFamily !== 'all') ? rawFamily : null;
   const symbolFilter = options.symbol ? String(options.symbol).trim().toUpperCase() : null;
 
   if (familyFilter && !VALID_FAMILIES.includes(familyFilter)) {
