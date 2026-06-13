@@ -3,6 +3,23 @@
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Direction Note - 2026-06-13 session 25 — 5m deep data complete for all families; daily-history regression fixed; Polymarket archive built
+- **Data layer is now broad + deep.** Native 5m: crypto (BTC/ETH to 2017, most alts 5y), US equities
+  (to 2016 via Alpaca SIP), indices/commodities/fx (Yahoo rolling ~84-day window via the repeatable
+  `five-min-accumulate` — re-run weekly to grow forward), + commodity ETF proxies on the Alpaca path.
+  Daily (1d) history is deep again across all families (1998-2017 by symbol) after fixing a real
+  regression where `writeTsIndex` REPLACE-semantics truncated deep daily bins to 1 bar on every ingest
+  (now merge-protected for all timeframes). Polymarket historical archive went from a 20-market sample
+  to ~2,045 volume-ordered resolved markets / 82,616 price points.
+- **No direction change** — this is data-completeness + correctness work within Phase 9, not a pivot.
+  ML/backtests still read daily from the cache; the deep daily restore unblocks honest daily training.
+- **Free-provider depth is now maxed** for the chosen symbols; true 20y/1M-bar 5m would need a paid
+  vendor (Polygon/FirstRate/Databento) — a future budget decision, not started.
+- **Known operational constraint:** deep crypto 5m backfills are inherently multi-hour (paginated
+  Binance + delays); `writeTsIndex` is not safe for two concurrent backfill PROCESSES (shared temp
+  filename → EPERM). Serialize backfills until FW1 (per-pid temp) lands. Full trail + follow-ups:
+  `workspace/handoff/2026-06-13.md` session 25 and `~/.claude/plans/hidden-exploring-river.md`.
+
 ## Direction Note - 2026-06-08 session 5 — TUI sub-menus fixed + first real-ONNX-driven order submissions proven
 
 - **Direction unchanged** (Phase 9 continues; ML buildout milestone advances within the established plan —

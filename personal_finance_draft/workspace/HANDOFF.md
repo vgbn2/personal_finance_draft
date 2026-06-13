@@ -18,6 +18,32 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 25 (2026-06-13) — 5m Phase 3 + daily fix + Polymarket bulk DONE (suite 422/422, 12 commits).**
+  Full trail: `workspace/handoff/2026-06-13.md` session 25. Headlines:
+  - **5m now covers ALL families:** indices/commodities/fx via new `five-min-accumulate` (Yahoo
+    `range=Nd` form, ~84 cal-days, no startTime); equities deepened to 2016 via Alpaca **SIP** feed
+    (set `ALPACA_DATA_FEED=sip`; free plan 403s only the last ~15min, now clamped); 8 commodity ETF
+    proxies (GLD/SLV/CPER/USO/BNO/UNG/WEAT/SOYB; **CORN excluded** — `{symbol}_{tf}.bin` collision).
+  - **DAILY-TRUNCATION REGRESSION FIXED (`7b050f3c`):** `writeTsIndex` now merge-protects ALL
+    timeframes (was REPLACE for daily/1h/4h → every ingest truncated deep daily bins to 1 bar; FX
+    survived via JSON). Daily repopulated deep everywhere (`ingest --family X --timeframe 1d
+    --history-days 7000`): equities 1998-2007, indices 1998, commodities 2003, crypto 2017.
+  - **Polymarket historical archive BUILT:** volume-ordered bulk (Gamma id-order = empty hourly
+    shells; `volumeNum` = data-rich) past the **Gamma 100-row page cap** → 2,045 markets / 82,616
+    price points. Archive hardened: skip-existing resume, index/manifest-v2 merge, 429 retry,
+    `--delay-ms`/`--refresh`. CLI null-`--archive-root` crash fixed.
+  - **mass-backfill coverage fixed (`d94f8e65`, FW5):** now unions flat symbols ∪ universe_matrix
+    grid (`massBackfillUniverse`) → 92→151 symbols; JPM/GS/AVGO/intl were being skipped.
+  - **Crypto 5m re-run to 2017 STOPPED mid-run by user ("took too long")** at ~11/18 symbols —
+    BTC/ETH at 926k bars (2017-08), BNB/XRP/ADA/LINK/DOGE/SOL extended; ~10 alts keep 5y depth
+    (idempotent — resume with one `crypto-deep-backfill --days 3300`, but flag the multi-hour runtime).
+  - **Open follow-ups (plan file `~/.claude/plans/hidden-exploring-river.md`, none blocking):**
+    FW1 per-pid `writeTsIndex` temp filename (concurrent backfills); FW3 native-poll intraday
+    15m/30m/1h/4h (user chose native poll — Yahoo 1h=730d > 5m-aggregation); FW2 monolith
+    deconstruction; FW6 backward-gap fetch. Plus the unchanged equity session-gap guard + ML 5m caps.
+  - **Durable trap:** `writeTsIndex` uses a fixed `<bin>.tmp` → two SEPARATE node processes racing it
+    EPERM-crash (one process is fine — sync fs serializes on the event loop). Serialize backfills.
+
 - **Sessions 23/23b batch COMMITTED (session 24, 2026-06-13):** the synthetic-5m guard + equity 5m
   Phase 2 work below was found entirely uncommitted at boot; independently re-verified (readTsIndex
   probe matched 23b's claims exactly; full suite 395/395 re-run) and landed in `a19d6323` (guard),
