@@ -1,3 +1,35 @@
+## Session Memory - 2026-06-13 (session 29) Blast-through refined to true audit skill; P3 guard WIRED; deep-intraday rollup + auto-derive; 8 shims wrongly-deleted-then-restored; suite 447/453 (6 pre-existing)
+
+{
+  "work": "Ran /blast-through (Focused, anchor 51b20b6c), refined the blast-through SKILL into a deterministic agent-consistent audit (recency-ranked queue + repo-wide hygiene sweep + consistency contract + audit anchor), then implemented surfaced gaps: wired the inert P3 equity session guard onto real consumer paths, built the deep-intraday rollup (5m->15m/30m/1h/4h, lossless) + auto-derive in deep-backfill, slimmed dead intraday_yahoo fns, fixed intraday silent-zero, deleted dead config dup. Hit and corrected a shim-deletion regression.",
+  "key_mechanisms": [
+    "P3: guardEquitySessionBars (shared/lib/market/equity_session.js) gates family in {equities,indices} AND sub-daily TF; called in loadAssetSourcesFromCache (dataset.js) + loadHistoricalSources (research.js) -- the RAW-bar boundaries (feature objects use as_of not timestamp, so NOT filterFeatureFrame). Removed misleading unused re-export from backtest.js.",
+    "Rollup: intraday-rollup reads deep 5m bin -> aggregateCandles -> merge-write coarser bins. LOSSLESS (5m read-only, separate per-TF bins, coarser-from-finer so no synthetic-guard trip). rollupFiveMinForSymbol helper shared by the command AND auto-rollup in crypto/equity-deep-backfill (--no-rollup opt-out). Deep depth was 5m-ONLY before (1h~730d, 30m/4h stale).",
+    "intraday_yahoo.js: Yahoo accepts interval=1h natively (live curl proof) -> the 1h->60m translation + fetch/aggregate fns were dead duplicate of the proven selectYahooBase path. Slimmed to constants-only; INTRADAY_MAX_DAYS sourced from YAHOO_MAX_DAYS (no dup).",
+    "Silent-zero: data.js intraday-accumulate symbolOk = bars>0 (was || errors===0); force:true means 0 bars is a real failure.",
+    "SHIM TRAP (durable): a literal require-grep falsely reported 8 shared/lib root shims as 0-importer dead. They are load-bearing via (1) sibling-relative requires, (2) #shared/* subpath aliases in package.json imports, (3) compiled dist/mcp_server/* artifacts. Deleting broke the suite at multiple layers. Restored all 8; migrated direct source callers to canonical instead. Dead-file check now requires all 4 resolution layers."
+  ],
+  "verified": [
+    "Full suite 447/453; the 6 fails (cockpit render/model, root status, polymarket auth-health/preflight, trade process) are PRE-EXISTING + environment-dependent (cache usable_records=0, creds) -- proven by clean-HEAD stash run giving the same 6. Zero new failures.",
+    "76/76 on all touched/new test files (equity_session guard mixed-family + loader-level drop; intraday_rollup lossless + OHLCV correctness; intraday silent-zero rc=1; constants contract; crypto/equity 5m backfill auto-rollup; module_loading alias migration; strategy_backtest shim migration).",
+    "Yahoo interval=1h and =60m both return valid candles (live curl)."
+  ],
+  "user_decisions": [
+    "P3 guard auto-applies at the shared loader (not opt-in).",
+    "intraday_yahoo slimmed to constants-only.",
+    "Deep-backfill auto-derives coarser TFs going forward (rollup command = catch-up only).",
+    "Skill-first sequencing.",
+    "Commit + handoff update approved (this session)."
+  ],
+  "remaining": [
+    "6 pre-existing env-dependent test failures (live cache/creds) -- separate from this work.",
+    "#shared/* alias map + MCP TS source could be repointed to canonical + dist rebuilt, THEN the 8 shims become deletable (not now).",
+    "Run intraday-rollup --family crypto / equities once to backfill the deep coarser bins for already-downloaded 5m (multi-second, local).",
+    "~937MB untracked root artifacts pending user cleanup."
+  ],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-13 (session 28) Committed sessions 26-27 batch; P3 equity session guard + P4 ML 5m cap; FW3 in-flight; suite 438/438
 
 {
