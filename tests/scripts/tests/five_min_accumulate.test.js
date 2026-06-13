@@ -83,6 +83,10 @@ test('buildFiveMinAccumulatePlan honors --family and --symbol filters', () => {
   assert.strictEqual(oneSym.requested_symbol_found, true);
 
   assert.throws(() => buildFiveMinAccumulatePlan(FAKE_CONFIG, { family: 'bogus' }), /Invalid --family/);
+
+  // 'all' (and blank) means no family filter -- the TUI select passes 'all'.
+  const allFam = buildFiveMinAccumulatePlan(FAKE_CONFIG, { family: 'all' });
+  assert.strictEqual(allFam.jobs.length, 6);
 });
 
 test('commandFiveMinAccumulate rejects --days beyond the Yahoo 5m cap and below the floor', async () => {
