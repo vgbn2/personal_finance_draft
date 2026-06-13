@@ -93,3 +93,45 @@ Close clean-clone reproducibility first. The minimum set to decide is:
 `scripts/mcp_stdio_probe.js`, `backend/api/tests/correlation_contract.test.js`, `.dockerignore`,
 and the notebook fixtures/contracts. Runtime is healthy locally; the main blocker is whether the
 repository alone can reproduce that health.
+
+---
+
+# Deep Blast-Through Update - 2026-06-13
+
+**Mode:** Fast Reading — Streak verification & path isolation
+**Graph:** Built from `973656a9`; 9610 nodes / 14773 edges / 750 communities.
+**DCS:** 0.98 (Healthy)
+
+## Strongest Gap Candidates
+
+| Candidate | Risk | Evidence | Recommended Move |
+| :--- | :---: | :--- | :--- |
+| **Coinbase Routing Bug** | P0 | `backend/scripts/data_ops/ingest_market_data/index.js` subdaily branch routes to `fetchBinanceBaseCandles` even when provider is `coinbase`. | Fix subdaily provider routing to direct to `fetchCoinbaseBaseCandles`. |
+| **Tracked Runtime Outputs** | P2 | `storage/data/backtests/latest_backtest.json` and `storage/data/strategy_grade_index.json` are tracked and dirty. | Untrack these files in git and add them to `.gitignore`. |
+| **Unbounded Intraday Datasets** | P1 | `backend/cli/commands/research/ml.js` caps 1d features but leaves 5m/intraday unbounded. | Add `--max-bars-per-symbol` and default timeframe caps. |
+| **Equity Backtest Gaps** | P1 | `shared/lib/strategy/backtest.js` annualizes at 24/7 and lacks session-gap filters for equities. | Add market-session policy by asset family to annualize equities correctly. |
+| **Stale C++ Comments** | P2 | Unresolved `dev review` comments exist in C++ ML files (`onnx_model.cpp`, `cnn_inference.cpp`, `model_registry.cpp`). | Purge inline `dev review` markers and replace with tests or documentation. |
+
+## Current Section Grades
+
+| Section | Grade | Reason |
+| :--- | :---: | :--- |
+| CLI/TUI/status/settings | **A** | Highly resilient, focused tests completely green. |
+| API/Web contracts | **A** | API routes and preflight checks verified green. |
+| shared/lib/runtime | **A** | bridge and fetch-retry mechanisms are clean and well-verified. |
+| C++ core | **B** | Compilation is stable and tests pass (29/29), but inline comments remain in active source. |
+| Data/ingestion | **B-** | Mono-pipeline index.js contains a Coinbase routing bug; stubs remain active. |
+| Gateway/Polymarket | **A** | CLOB V2 integration and error handling verified green. |
+| storage/data | **B** | Integrity check is 100% green, but tracked runtime JSONs cause git diff noise. |
+| ML & Strategies | **B** | Features are sound but dataset builder lacks caps for high-frequency timeframes. |
+
+## Verification Evidence
+
+- `npm test` -> `429/429` passed.
+- `ctest` -> `29/29` passed.
+- `backend integrity --json` -> `"ok": true`, 92/92 cached.
+- `ml compare` -> python/C++ bit-identical output.
+
+## Next Cleanup Move
+
+Fix the P0 Coinbase routing bug in the ingestion pipeline and untrack the dirty runtime-generated reports (`latest_backtest.json` and `strategy_grade_index.json`) to keep the Git workspace pristine.

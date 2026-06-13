@@ -902,3 +902,144 @@ BTC/ETH extended to 926k bars (2017-08), BNB/XRP/ADA/LINK/DOGE/SOL also extended
 keep 5y depth (idempotent, resumable). TUI dispatch verified end-to-end via the pipe harness.
 Open follow-ups (none blocking): FW1 per-pid temp filename, FW2 monolith deconstruction, FW3
 native-poll intraday 15m/30m/1h/4h, FW6 backward-gap fetch.
+
+## 2026-06-13 - Session 26: boot (Codex)
+
+**Prompt:** `session boot`.
+
+**Outcome:** Booted from repo-local Gemini protocol: `workspace/HANDOFF.md`, latest dated handoff
+`workspace/handoff/2026-06-13.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`,
+`docs/engineering/codebase_org.md`, and `graphify-out/GRAPH_REPORT.md`. Refreshed stale graph
+context because the previous graph was built from `5740b7db` while current `HEAD` is `973656a9`;
+`graphify update .` rebuilt `9570` nodes / `14724` edges / `742` communities and skipped HTML viz
+because the graph exceeds the 5000-node limit. Active carryover remains session-25 data follow-up
+work: serialize deep backfill processes until FW1, warn before resuming the multi-hour crypto-alt
+backfill, and prioritize FW1/FW3 plus equity 5m session-gap and ML 5m caps if continuing the data
+track. Current branch: `feat/ml-onnx-section`; pre-existing dirty workspace includes
+`storage/data/backtests/latest_backtest.json`, `storage/data/strategy_grade_index.json`, and root
+transfer artifacts.
+
+## 2026-06-13 - Session 26: deep blast-through (Codex)
+
+**Prompt:** `deep blast through`, then `continue` after interruption.
+
+**Outcome:** Ran hard-reading blast-through with repo-local `claude` plus the global
+`blast-through` workflow. Confirmed the old clean-clone load-bearing asset gap is closed by
+`test:structure`, but found a current health split: `status --json` is green while
+`backend integrity --json` is red for FX `GBPUSD`, `USDJPY`, and `AUDUSD` on `1d`
+(`ok:false`, `92/92 cached`, `0 missing`, `total_stale:3`, `total_exceptions:1`). Implemented the
+session-25 FW1 writer fix: `writeTsIndex` now uses process-unique atomic temp paths for bin/meta
+writes instead of shared `<bin>.tmp`; added a regression test. Verification passed:
+`node --check shared/lib/market/validation.js`, focused backfill regression, `npm.cmd run
+test:data`, `npm.cmd run test:structure`, `npm.cmd run test:api`, and full `npm.cmd test` =
+`423/423`. Recorded remaining audit queue in `workspace/DEV_REVIEW.md` and integrity correction in
+`workspace/STATE.md`.
+
+## 2026-06-13 - Session 26b: remaining-section blast (Codex)
+
+**Prompt:** `i want to do another blast of the remaining section, then report it to me, plan what needed to be fixed, logic wise, run time algorithim to optimize , compatitbily, user interface`
+
+**Outcome:** Ran a second audit pass over the sections left open by the handoff: FW3 native-poll
+intraday, FW6 backward-gap fetch, FW2 ingestion monolith, equity 5m session/backtest guards, ML 5m
+caps, compatibility hygiene, and TUI exposure. Focused probes stayed green:
+`node --test tests/scripts/tests/crypto_5m_backfill.test.js tests/scripts/tests/equity_5m_backfill.test.js tests/scripts/tests/five_min_accumulate.test.js tests/scripts/tests/ml_dataset.test.js tests/scripts/strategy_backtest_contract.test.js`
+= `56/56`; `node --test tests/scripts/tui_terminal_automation.test.js` = `6/6`. Recorded the
+prioritized logic/runtime/compatibility/UI fix plan in `workspace/DEV_REVIEW.md` and summarized it
+in `workspace/STATE.md`.
+
+## 2026-06-13 - Session 26c: correlation 5m sector failure (Codex)
+
+**Prompt:** User showed `backend correlation --timeframe 5m --max-bars 5000000 --method auto`
+failing after selecting Crypto -> Layer1 in the TUI and asked to find another problem.
+
+**Outcome:** Reproduced the Layer1 failure and found the real issue: the selected sector includes
+`MATICUSDT` and `POLUSDT`, whose 5m date ranges do not overlap. The wrapper then fell back from the
+focused ts-index snapshot to stale `storage/data/cache` JSON, causing misleading C++ `no_matching_bars`
+errors for other symbols. Fixed `backend/cli/commands/tools/backend.js` so multi-symbol focused
+correlation preflight failures return `code:"no_common_correlation_dates"` with coverage and blocker
+hints instead of falling back. Verification: syntax check, reproduced Layer1 blocker report, successful
+overlapping crypto subset, backend human surfaces `12/12`, TUI automation `6/6`, TUI search contracts
+`8/8`.
+
+## 2026-06-13 - Session 26d: correlation input checklist (Codex)
+
+**Prompt:** User pointed at `ok:false input: .../storage/data/cache` and asked for checklist
+planning.
+
+**Outcome:** Created `workspace/CORRELATION_INPUT_CHECKLIST.md` as the runbook for this failure
+class. It records the meaning of stale cache fallback, completed preflight fix, remaining regression
+tests, selector-side warning, optional blocker-dropping mode, input-source contract, and the
+MATIC/POL data-overlap decision.
+
+## 2026-06-13 - Session 26e: correlation checklist mass implementation (Codex)
+
+**Prompt:** `mass implement`
+
+**Outcome:** Implemented the correlation input checklist. Added regression coverage in
+`tests/scripts/tests/backend_correlation_preflight.test.js`, added testable focused-correlation
+preflight options, added human-readable blocker/coverage output, added `--drop-non-overlap`, and
+exposed that flag in the Backend Correlation TUI manifest. Verified live Layer1 behavior: without
+the flag the command reports `MATICUSDT/POLUSDT` blockers from `storage/data/ts`; with the flag it
+drops those symbols and returns a 9-symbol C++ matrix. Verification gates passed: backend tools
+syntax, TUI manifest syntax, new preflight test `4/4`, combined backend/TUI/correlation slice
+`30/30`, and backfill regression `3/3`.
+
+## 2026-06-13 - Session 26f: mass-backfill integrity-style report (Codex)
+
+**Prompt:** User showed noisy `mass-backfill`/ingest output with interleaved Yahoo fetch lines,
+skipped counters, and Windows `EPERM rename` failures, then asked for ingest to show in the same
+format as `backend integrity`.
+
+**Outcome:** Added `renderMassBackfillReport`, family/timeframe aggregation, failure classification,
+and structured final payloads to `backend/cli/commands/data/data.js`. Non-JSON mass-backfill now
+ends with `[MASS BACKFILL REPORT]` including coverage, policy, family/timeframe sections, skipped
+preview, failure table, and next-step guidance. `EPERM rename` is classified as
+`filesystem_rename_eperm`. Added tests in `tests/scripts/backend_cli_human_surfaces.test.js`.
+Verification passed: syntax checks, backend human surfaces `6/6`, focused backfill/deep-data slice
+`33/33`, and `npm.cmd run test:data` `5/5`. Remaining limitation: provider fetch logs still stream
+during execution; a separate quiet/log-routing pass is needed to make the live stream fully
+table-driven.
+
+## 2026-06-13 - Session 26g: session retrospective (Codex)
+
+**Prompt:** `$session-retrospective`
+
+**Outcome:** Closed the session with repo-truth retrospective entries. Appended architectural truths,
+mistakes/near-misses, verification evidence, and remaining carryover to `workspace/SESSION_MEMORY.md`.
+Added cross-project lessons about analytics input-source contracts, correlation overlap preflight,
+Windows write-contention classification, and final-report vs live-stream UX separation to
+`workspace/CROSS_PROJECT_LEARNINGS.md`.
+
+
+## Session 2026-06-13 (session 28 boot — Antigravity/Gemini)
+Prompt: /session-orchestrator
+
+Loaded HANDOFF.md (pointer → workspace/handoff/2026-06-13.md, sessions 24+25 already closed),
+SESSION_MEMORY.md (session 25 top = suite 422/422, 5m Phase 3 all families done), and STATE.md
+(Phase 9: Strategic Intelligence & TUI Integration — ACTIVE; current suite baseline per STATE =
+429/429 JS + 29/29 C++ after session 27 hygiene pass).
+
+HEAD: `973656a9` (docs close-out for session 25). Working tree has significant staged/unstaged changes:
+- Several backend JS files modified (data.js, ml.js, backend.js, manifest.js, ingest index.js, CPP ML files)
+- Large docs/operational/ rename wave (R entries — docs reorganized into guides/ / local_first/ / roadmap/ subdirs)
+- Many workspace/session_memory/ files added (session memory archival ongoing)
+- workspace/reports/ / workspace/plans/ / workspace/history/ renames
+- Untracked: scripts/dev/check_hygiene.js, skills/blast-through/, skills/repo-hygiene/,
+  tests/scripts/tests/backend_correlation_preflight.test.js, workspace/checklists/
+
+Notable recent sessions (26c/26e/26f/27): correlation preflight fix, mass-backfill report,
+blast-through streak audit. Suite now 429/429 JS per session 27 note.
+
+Open carryovers:
+- ~937MB untracked root artifacts (state.zip / .bundle / vgbn1@vgbn-) pending user cleanup
+- Resume ~10 crypto alts to listing dates (multi-hour crypto-deep-backfill --days 3300)
+- FW1 per-pid writeTsIndex temp; FW3 native-poll intraday 15m/30m/1h/4h; FW2 monolith; FW6 gap-fetch
+- Equity 5m session-gap guard; ML 5m caps/perf gates
+- merge feat/ml-onnx-section → main = user decision
+- FX integrity: GBPUSD/USDJPY/AUDUSD 1d cache stale (session 26 finding)
+- Uncommitted working tree (docs renaming wave, new skills, hygiene script, correlation preflight test)
+
+graphify-out: refresh deferred (deprioritized by user 2026-06-11; no blocking navigation need).
+
+Awaiting user direction.
+

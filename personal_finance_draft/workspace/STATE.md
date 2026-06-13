@@ -3,6 +3,88 @@
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Hygiene & Skill Automation Note - 2026-06-13
+- Automated repository hygiene checks with a new script: [check_hygiene.js](file:///C:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/scripts/dev/check_hygiene.js).
+- Wired `check_hygiene.js` to the npm script `npm run hygiene` and integrated it into the structure contract test suite [structure_contract.test.js](file:///C:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/tests/scripts/structure_contract.test.js).
+- Verified repository hygiene checks are 100% green and verified by `npm run test:structure` / `npm test` (now 432/432 passing).
+- Documented automated verification inside the [repo-hygiene SKILL.md](file:///C:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/skills/repo-hygiene/SKILL.md) file to provide a strict checklist process for all future agents.
+- Resolved a stale comment marker (`//ide error-dev review`) inside [cnn_tensor_builder.cpp](file:///C:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/backend/core/src/ml/cnn_tensor_builder.cpp#L99) detected by the new hygiene automation.
+
+## Audit Note - 2026-06-13 session 27 - blast-through streak audit
+- Performed a streak-wide `/blast-through` audit. Re-verified the repository state against clean-clone reproducibility, data integrity, and pipeline boundaries.
+- Verification: Full test suite is 100% green (`429/429` JS tests pass, `29/29` C++ core tests pass). Backend integrity is completely clean (`92/92` cached, `0` stale, `"ok": true`).
+- Gaps isolated: Identified P0 Coinbase routing bug in crypto native subdaily ingestion, tracked runtime report JSON git noise, lack of intraday caps in ML dataset builder, lack of session-gap guards in equity backtesting, and stale C++ dev review comments.
+- Updated `workspace/BLAST_THROUGH_REPORT.md` and created the `blast_through_report.md` artifact.
+
+## Fix Note - 2026-06-13 session 26c - correlation 5m sector preflight
+- Fixed a misleading failure in `backend correlation --timeframe 5m --method auto` when the TUI
+  selector expands a sector whose members have no common 5m date overlap. The Layer1 crypto set
+  currently fails overlap because `MATICUSDT` 5m ends on `2024-09-10` while `POLUSDT` starts on
+  `2024-09-13`; previously the wrapper fell back to stale `storage/data/cache` JSON and produced
+  misleading C++ `no_matching_bars` errors for other symbols.
+- The wrapper now fails at CLI preflight with `code:"no_common_correlation_dates"`, reports per-symbol
+  coverage, and names blockers (`MATICUSDT`, `POLUSDT`) instead of pretending the ts-index data is
+  absent.
+- Verification: `node --check backend/cli/commands/tools/backend.js`; reproduced Layer1 command now
+  returns the preflight blocker report; an overlapping 7-symbol crypto 5m command still succeeds via
+  a temp snapshot; backend human surfaces passed `12/12`, TUI automation `6/6`, and TUI search/heatmap
+  contracts `8/8`.
+- Checklist plan created: `workspace/CORRELATION_INPUT_CHECKLIST.md` covers the remaining regression
+  tests, selector UX warning, optional blocker-dropping mode, and the MATIC/POL overlap decision.
+
+## Implementation Note - 2026-06-13 session 26e - correlation checklist mass implementation
+- Mass-implemented the correlation input checklist except for the actual MATIC/POL data refresh
+  decision. Added isolated ts-index regression coverage for no-overlap preflight, blocker-dropping,
+  and C++ consumption of overlapping focused snapshots.
+- Added `--drop-non-overlap` to `backend correlation` and exposed it in the TUI manifest. Without
+  the flag, Layer1 5m now fails before C++ with coverage/blocker output; with the flag, the same
+  set drops `MATICUSDT` and `POLUSDT` and returns a 9-symbol matrix.
+- Verification: `node --check backend/cli/commands/tools/backend.js`, `node --check
+  backend/cli/tui/manifest.js`, new preflight test `4/4`, combined backend/TUI/correlation slice
+  `30/30`, and FW1 backfill regression `3/3`.
+
+## Implementation Note - 2026-06-13 session 26f - mass-backfill integrity-style report
+- Added an integrity-style final renderer for `data mass-backfill`. Non-JSON execution now ends with
+  `[MASS BACKFILL REPORT]`, coverage totals, policy line, family/timeframe sections, skipped preview,
+  failure table, and next-step guidance. Windows `EPERM rename` failures are classified as
+  `filesystem_rename_eperm` and point to serialization/write-lock follow-up.
+- JSON mode remains machine-readable and now includes `type:"mass_backfill_report"`, `families`,
+  `failures`, `failure_codes`, and `skipped_preview`.
+- Verification: `node --check backend/cli/commands/data/data.js`, `node --check
+  tests/scripts/backend_cli_human_surfaces.test.js`, backend human surfaces `6/6`, focused
+  backfill/deep-data slice `33/33`, and `npm.cmd run test:data` `5/5`.
+- Remaining limitation: provider fetch logs such as `[YAHOO] Fetched ...` still stream during the run;
+  this pass standardizes the final report. A separate quiet/log-routing pass is needed if the live
+  stream itself must be fully table-driven.
+
+## Audit Note - 2026-06-13 session 26b - remaining-section blast plan
+- Second blast covered the handoff sections not deeply closed by FW1: FW3 native-poll
+  intraday, FW6 backward-gap fetch, FW2 ingestion structure, equity 5m session/backtest
+  semantics, ML intraday caps, compatibility hygiene, and TUI exposure.
+- Highest-priority fix order: Coinbase native-subdaily provider routing, silent-zero
+  deep-backfill failures, gap-aware resume fetches, ML 5m row caps, and equity session-gap
+  backtest semantics. See `workspace/DEV_REVIEW.md` "Remaining Section Blast - 2026-06-13
+  session 26b" for the detailed plan.
+- Focused verification during the audit stayed green: data/backfill/ML/backtest focused
+  tests passed `56/56`, and TUI automation passed `6/6`. The gaps are missing-case and
+  algorithmic coverage gaps, not current suite failures.
+
+## Audit Note - 2026-06-13 session 26 - deep blast-through integrity correction + FW1 writer fix
+- **Current integrity is not green.** Fresh `backend integrity --json` during session 26 returned
+  `ok:false`, `92/92 cached`, `0 missing`, `total_stale:3`, `total_exceptions:1`; stale configured
+  cache entries are FX `GBPUSD`, `USDJPY`, and `AUDUSD` on `1d`. `status --json` remains green for
+  the latest-fetch snapshot (`quality:"ok"`), which confirms the health-scope split is working, but
+  data-cache integrity needs a targeted FX refresh/exception decision before claiming full green.
+- **FW1 landed locally:** `writeTsIndex` now uses process-unique atomic temp filenames for `.bin`
+  and `.meta.json` writes instead of the shared `<bin>.tmp` path that could EPERM-crash when two
+  separate Node backfill processes wrote the same bin. Regression coverage added in
+  `tests/scripts/tests/backfill_regression.test.js`.
+- **Verification:** `node --check shared/lib/market/validation.js`, focused backfill regression,
+  `npm.cmd run test:data`, `npm.cmd run test:structure`, `npm.cmd run test:api`, and full
+  `npm.cmd test` all passed; full suite baseline is now **423/423** after adding the FW1 test.
+- **Open audit queue:** see `workspace/DEV_REVIEW.md` session 26 for the remaining runtime JSON
+  artifact hygiene, TradingView stub, and C++ ML dev-review comment findings.
+
 ## Direction Note - 2026-06-13 session 25 — 5m deep data complete for all families; daily-history regression fixed; Polymarket archive built
 - **Data layer is now broad + deep.** Native 5m: crypto (BTC/ETH to 2017, most alts 5y), US equities
   (to 2016 via Alpaca SIP), indices/commodities/fx (Yahoo rolling ~84-day window via the repeatable
