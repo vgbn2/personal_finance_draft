@@ -151,6 +151,9 @@ test('isExperimentalSynthetic5mRecord classifies non-native and daily-derived 5m
   assert.equal(isExperimentalSynthetic5mRecord({ family: 'crypto', provider: 'coingecko', timeframe: '5m' }), true);
   assert.equal(isExperimentalSynthetic5mRecord({ family: 'equities', provider: 'twelve', timeframe: '5m' }), true);
   assert.equal(isExperimentalSynthetic5mRecord({ family: 'crypto', provider: 'binance', timeframe: '5m', source: 'binance-rollup-from-1d', derived_from_timeframe: '1d' }), true);
+  // Native Phase-3 Yahoo 5m for fx and indices stays experimental for ML (deliberate decision)
+  assert.equal(isExperimentalSynthetic5mRecord({ family: 'fx', provider: 'yahoo', timeframe: '5m' }), true);
+  assert.equal(isExperimentalSynthetic5mRecord({ family: 'indices', provider: 'yahoo', timeframe: '5m' }), true);
 });
 
 test('cacheCloseSeriesAnchor resolves a ts-only anchor symbol', () => {
