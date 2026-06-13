@@ -857,3 +857,48 @@ looks like a botched scp destination). Awaiting user direction; commit decision 
 (clean); full suite re-run 395/395 exit 0. Committed in 3 batches: a19d6323 (synthetic-5m guard),
 60458a7a (equity 5m Phase 2), 58130cb9 (docs+artifacts), then handoff/2026-06-13.md created and
 pointer updated. 5m crypto+US-equity native deep data is now CLOSED on feat/ml-onnx-section.
+
+## 2026-06-13 - Session 25: 5m Phase 3 (other families + Polymarket bulk)
+
+**Prompt:** "expand to other assets family as well as polymarket historical data ... stocks back 20 years should have ~1M 5min bars?"
+
+**Plan:** approved via ExitPlanMode (Ultraplan cloud handoff failed -- repo too large to teleport;
+continued locally). Depth reality surfaced: Yahoo caps 5m at ~60 trading days; free max depth is
+Alpaca SIP (2016) for equities, Binance (2017) for crypto, Yahoo-60d-harvested-forward for
+indices/commodities/fx. True 20y/1M-bar 5m needs a paid vendor.
+
+**Wave 0 probes:** Alpaca IEX only to 2020-07 but SIP works to 2016-01 (free plan 403s only the last
+~15min); Yahoo 5m works for ^GSPC/GC=F/all =X fx via the range=Nd form (~84 calendar days, period1/2
+422s past 60); CLOB 30 calls/1.8s no 429.
+
+**Committed (5 commits on feat/ml-onnx-section):**
+- a881ffbe native Yahoo 5m fetchers (commodity guarded sub-daily branch + fetchFxSnapshot + YAHOO_FX_SYMBOLS)
+- b4edaad2 Polymarket archive hardening (skip-existing resume, index/manifest-v2 merge, opt-in 429
+  retry, --delay-ms/--refresh)
+- f34f594d five-min-accumulate command + 8 commodity ETF proxies + Alpaca SIP clamp
+- dead1fce validation fix: native sub-daily-sourced 5m no longer rejected at storage (session-23 guard
+  was stripping every native non-crypto 5m bar -- silent zero; +regression test)
+
+**Verified:** full suite 419/419 (was 395; +24 new). Live accumulate: SPX 4915 / XAUUSD 13605 /
+EURUSD 16651 bins via readTsIndex; re-run proved merge protection (no shrink). Full 30-symbol
+accumulate: 30/30 ok, 0 errors, 329,396 5m bars across indices+commodities+fx.
+
+**In flight (background, sequential -- they each rewrite the full ts-index so cannot overlap):**
+equity-deep-backfill --days 3850 with ALPACA_DATA_FEED=sip (41 US symbols incl. 8 commodity ETF
+proxies, back to 2016). NEXT: crypto-deep-backfill --days 3300 (Binance ~2017 inception), then
+polymarket history backfill --max-markets 2000 --interval 1h --delay-ms 300. ts bins are gitignored
+so these populate local data only -- nothing to commit.
+
+**Session 25 outcome (full):** Committed 11 changes on feat/ml-onnx-section (suite 422/422):
+native Yahoo 5m fetchers, Polymarket archive hardening, five-min-accumulate + commodity ETF
+proxies + Alpaca SIP clamp, validation fix for native 5m storage, TUI manifest surfacing,
+universal ts-index merge-protection (DAILY-TRUNCATION fix), Polymarket null-root + volume-order +
+100-row pagination fixes, and FW5 mass-backfill grid-symbol coverage (92->151 symbols).
+Live results: 30-symbol Yahoo 5m accumulate (329k bars); equity 5m to 2016 via SIP (41/41,
+AAPL 456k); daily history repopulated deep across all families (equities to 1998-2007, indices
+1998, commodities 2003, crypto 2017) + proven durable; Polymarket bulk 2000 markets / 82,616 price
+points. Crypto 5m re-run to 2017 STOPPED by user mid-run ("took too long") at ~11/18 symbols --
+BTC/ETH extended to 926k bars (2017-08), BNB/XRP/ADA/LINK/DOGE/SOL also extended; remaining alts
+keep 5y depth (idempotent, resumable). TUI dispatch verified end-to-end via the pipe harness.
+Open follow-ups (none blocking): FW1 per-pid temp filename, FW2 monolith deconstruction, FW3
+native-poll intraday 15m/30m/1h/4h, FW6 backward-gap fetch.
