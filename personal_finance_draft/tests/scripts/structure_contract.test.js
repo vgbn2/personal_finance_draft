@@ -131,3 +131,12 @@ test('default api gate includes the correlation contract', () => {
     'test:api should run the correlation contract'
   );
 });
+
+test('repository hygiene checks pass', () => {
+  const result = spawnSync('node', [path.join(REPO_ROOT, 'scripts', 'dev', 'check_hygiene.js')], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, `Hygiene checks failed:\n${result.stdout}`);
+});
+
