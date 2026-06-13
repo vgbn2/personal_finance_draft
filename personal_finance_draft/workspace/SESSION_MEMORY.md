@@ -1,4 +1,33 @@
-﻿## Session Memory - 2026-06-13 (session 25) 5m Phase 3 all families + DAILY-TRUNCATION regression fixed + Polymarket bulk + mass-backfill coverage; suite 422/422
+## Session Memory - 2026-06-13 (session 28) Committed sessions 26-27 batch; P3 equity session guard + P4 ML 5m cap; FW3 in-flight; suite 438/438
+
+{
+  "work": "Booted to 432/432 baseline. Committed 5 stale code commits from sessions 26-27 (docs reorganization with ENOENT fix, correlation preflight, mass-backfill report, hygiene/C++ purge). Implemented P3 (equity session-gap guard) and P4 (ML 5m cap). Verified P0 FX integrity already green, P1 FW1 already in validation.js. Accepted P2 Option C (MATIC/POL gap = rebrand boundary). FW3 intraday delegated to subagent. Crypto alt resume launched.",
+  "key_mechanisms": [
+    "P3: filterEquitySessionGaps in shared/lib/market/equity_session.js -- drops bars outside NYSE 09:30-16:00 ET using Intl API. Exported via backtest.js. 6/6 tests pass.",
+    "P4: ML dump 5m cap 100k/symbol (was 50k generic) + --max-rows-5m flag + [VISIBILITY] log. Prevents OOM on 525k-row crypto bins.",
+    "FW1 pre-verified: atomicTempPath in validation.js:620-623 uses process.pid+Date.now()+random -- fully process-unique, safe for concurrent backfill processes.",
+    "DEPLOYMENT.md moved to docs/operational/guides/ in the docs reorg; deployment_manifest_contract.test.js was still pointing to old path (ENOENT). Fixed in commit 55b7869e.",
+    "MATIC/POL gap: MATICUSDT 5m ends 2024-09-10, POLUSDT starts 2024-09-13 -- this is the token rebrand boundary, not a data error. Option C: use --drop-non-overlap for Layer1 5m correlations."
+  ],
+  "verified": [
+    "Suite 438/438 exit 0 (was 432; +6 new: 6 equity_session tests).",
+    "FX integrity: total_stale:0 (GBPUSD/USDJPY/AUDUSD 1d already fresh).",
+    "P3 equity_session: 6/6 (in-session keep, pre/post-market drop, intra-day gap, cross-session ok, null/empty, constants).",
+    "P4 ml.js: ml_dataset test updated 50k->100k and passes."
+  ],
+  "user_decisions": [
+    "MATIC/POL: Option C accepted implicitly (gap = rebrand boundary, no re-ingest needed).",
+    "Crypto alt resume: launched as background (multi-hour).",
+    "FW3: approved for implementation this session."
+  ],
+  "remaining": [
+    "FW3 intraday native poll result (subagent).",
+    "merge feat/ml-onnx-section -> main = user decision.",
+    "~937MB untracked root artifacts pending user cleanup."
+  ],
+  "dcs": 0.97
+}
+## Session Memory - 2026-06-13 (session 25) 5m Phase 3 all families + DAILY-TRUNCATION regression fixed + Polymarket bulk + mass-backfill coverage; suite 422/422
 
 {
   "work": "Extended native 5m to indices/commodities/fx (new five-min-accumulate, Yahoo), deepened equities to 2016 (Alpaca SIP), added commodity ETF proxies, hardened+ran the Polymarket bulk archive (2045 markets/82,616 points), fixed a daily-history truncation regression and repopulated daily deep across all families, and closed a mass-backfill coverage gap. 12 commits on feat/ml-onnx-section.",

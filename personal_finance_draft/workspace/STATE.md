@@ -3,6 +3,15 @@
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Implementation Note - 2026-06-13 session 28 - P3/P4 + sessions 26-27 batch committed
+- Committed sessions 26-27 uncommitted batch (5 commits): docs reorg with ENOENT fix, correlation preflight, mass-backfill report, hygiene/C++ purge.
+- P3: equity session-gap guard implemented (shared/lib/market/equity_session.js, filterEquitySessionGaps, 6 tests).
+- P4: ML 5m cap 100k/symbol (was 50k generic) with --max-rows-5m flag and [VISIBILITY] log.
+- FW1 verified pre-existing in validation.js:620-623 (atomicTempPath with process.pid).
+- FX integrity: total_stale:0 already green.
+- Suite baseline: 438/438 JS (was 432).
+- FW3 native intraday delegated to subagent; crypto alt resume launched.
+
 ## Hygiene & Skill Automation Note - 2026-06-13
 - Automated repository hygiene checks with a new script: [check_hygiene.js](file:///C:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/scripts/dev/check_hygiene.js).
 - Wired `check_hygiene.js` to the npm script `npm run hygiene` and integrated it into the structure contract test suite [structure_contract.test.js](file:///C:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/tests/scripts/structure_contract.test.js).
