@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const A = require('#shared/ansi');
+const A = require('#shared/ui/ansi');
 const utils = require('../../lib/utils.js');
 const { pageText, printPayload, hasFlag, optionValue } = utils;
 const { promptSelect, promptText } = require('../../tui');

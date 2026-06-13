@@ -10,6 +10,7 @@ const {
 } = require('../../../scripts/data_ops/ingest_market_data.js');
 
 const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quote_router.js');
+const { guardEquitySessionBars } = require('../../../../shared/lib/market/equity_session.js');
 const { upsertStrategyGradeRecord, inferStrategyTaxonomy, normalizeStrategyPath } = require('../../../../shared/lib/strategy/registry.js');
 
 const { filterFeatureFrame, runBacktest, splitFeatureFrame, rollingWalkForward } = require('../../../../shared/lib/strategy/backtest.js');
@@ -341,10 +342,17 @@ async function loadHistoricalSources(args) {
       }
   }
 
+  // Drop pre/post-market equity & index intraday bars before features/backtests
+  // consume them (other families and daily bars pass through untouched).
+  const sessionGuard = guardEquitySessionBars(sources);
+  if (sessionGuard.dropped > 0 && hasFlag(args, '--debug')) {
+    console.log(`[BACKFILL] equity session guard dropped ${sessionGuard.dropped} out-of-session intraday bars`);
+  }
+
   const snapshot = {
     mode: 'provider_history',
     fetched_at: new Date().toISOString(),
-    sources,
+    sources: sessionGuard.records,
     backfill_windows: backfillWindows,
   };
   return validatedSnapshot(snapshot);

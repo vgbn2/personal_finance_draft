@@ -27,8 +27,8 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { REPO_ROOT } = require('../../shared/lib/paths');
-const { rsi, rollingVolatility } = require('../../shared/lib/indicators');
+const { REPO_ROOT } = require('../../shared/lib/runtime/paths');
+const { rsi, rollingVolatility } = require('../../shared/lib/market/indicators');
 
 const BACKTEST_PATH = path.join(REPO_ROOT, 'storage', 'data', 'backtests', 'latest_backtest.json');
 const RSI_PERIOD = 14;
