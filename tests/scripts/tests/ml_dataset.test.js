@@ -221,9 +221,9 @@ test('commandFeaturesDump parses --max-bars-per-symbol and uses safe defaults', 
     await commandFeaturesDump(['--symbols', 'AAA', '--json', '--days', '365']);
     assert.strictEqual(passedMaxBars, 365, 'default for 1d should be the --days value');
 
-    // Test 3: default for 5m intraday is 50000
+    // Test 3: default for 5m intraday is 100000 (explicit cap, raised from 50k to handle 525k-row crypto bins)
     await commandFeaturesDump(['--symbols', 'AAA', '--json', '--timeframe', '5m']);
-    assert.strictEqual(passedMaxBars, 50000, 'default for 5m should be the 50000 safe cap');
+    assert.strictEqual(passedMaxBars, 100000, 'default for 5m should be the 100000 safe cap');
   } finally {
     Module._load = orig;
     delete require.cache[mlCmdPath];
