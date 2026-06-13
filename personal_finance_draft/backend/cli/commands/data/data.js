@@ -159,6 +159,28 @@ function inspectMassBackfillJob(job, options = {}) {
   };
 }
 
+/**
+ * Collects the full backfill universe for the given families: the flat
+ * `symbols` list UNION the universe_matrix grid (via equityUniverseEntries),
+ * so grid-only symbols (e.g. JPM/BAC/GS, which live only in equities'
+ * universe_matrix.USA and not the flat list) are not silently skipped by
+ * routine mass-backfill the way they were before.
+ * Returns { symbols: string[] (deduped), familyBySymbol: Record<string,string> }.
+ * First family to claim a symbol wins the familyBySymbol mapping.
+ */
+function massBackfillUniverse(config, families) {
+  const symbols = [];
+  const familyBySymbol = {};
+  for (const f of families) {
+    for (const entry of equityUniverseEntries(config[f] || {})) {
+      const s = entry.symbol;
+      if (!familyBySymbol[s]) familyBySymbol[s] = f;
+      symbols.push(s);
+    }
+  }
+  return { symbols: [...new Set(symbols)], familyBySymbol };
+}
+
 function buildMassBackfillExecutionPlan({ symbols, timeframes, familyBySymbol = {}, inspectJob = inspectMassBackfillJob, force = false }) {
   const jobs = [];
   const skipped = [];
@@ -440,15 +462,8 @@ async function commandMassBackfill(args) {
 
   const config = await loadConfig();
   const families = ['equities', 'indices', 'commodities', 'fx', 'crypto'];
-  const symbols = [];
-  const familyBySymbol = {};
-  for (const f of families) {
-    for (const s of (config[f]?.symbols || [])) {
-      if (!familyBySymbol[s]) familyBySymbol[s] = f;
-      symbols.push(s);
-    }
-  }
-  const uniqueSymbols = [...new Set(symbols)];
+  // flat symbols ∪ universe_matrix grid, so grid-only symbols are covered.
+  const { symbols: uniqueSymbols, familyBySymbol } = massBackfillUniverse(config, families);
   const plan = buildMassBackfillExecutionPlan({
     symbols: uniqueSymbols,
     timeframes,
@@ -475,7 +490,7 @@ async function commandMassBackfill(args) {
         reason: job.reason,
         age_hours: job.age_hours ?? null,
       })),
-      message: `Would backfill ${jobs.length} combinations (${symbols.length} symbols × ${timeframes.length} timeframes). Re-run without --dry-run to execute.`,
+      message: `Would backfill ${jobs.length} combinations (${uniqueSymbols.length} symbols × ${timeframes.length} timeframes). Re-run without --dry-run to execute.`,
     }, args);
     return 0;
   }
@@ -1358,6 +1373,7 @@ async function commandFiveMinAccumulate(args) {
 
 module.exports = {
   buildMassBackfillExecutionPlan,
+  massBackfillUniverse,
   ingestOptionsFromArgs,
   commandIngest,
   commandBackfill,
