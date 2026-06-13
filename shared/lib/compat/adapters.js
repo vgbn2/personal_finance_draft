@@ -9,7 +9,7 @@
  */
 
 const providers = require('../providers');
-const backfill = require('../backfill');
+const backfill = require('../data/backfill');
 
 function fetchText(url, accept = 'text/plain') {
   return providers.cachedFetch(url, {

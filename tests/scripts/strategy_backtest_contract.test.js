@@ -4,7 +4,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
 const { spawnSync } = require('node:child_process');
-const { renderEquityCurveChart } = require('../../shared/lib/backtest');
+const { renderEquityCurveChart } = require('../../shared/lib/strategy/backtest');
 const { validateSnapshot } = require('../../shared/lib/market_validation');
 const { STRATEGY_GRADE_INDEX_PATH } = require('../../shared/lib/strategy_registry');
 
@@ -495,8 +495,8 @@ test('--days restricts the backtest window to the requested number of days', () 
 });
 
 test('live backtest includes rolling walk-forward result', () => {
-  const { rollingWalkForward, runBacktest } = require('../../shared/lib/backtest');
-  const { calculateRollingFeatureFrame } = require('../../shared/lib/indicators');
+  const { rollingWalkForward, runBacktest } = require('../../shared/lib/strategy/backtest');
+  const { calculateRollingFeatureFrame } = require('../../shared/lib/market/indicators');
 
   const now = Date.now();
   const bars = [];
@@ -519,9 +519,9 @@ test('live backtest includes rolling walk-forward result', () => {
   assert.ok(!Object.prototype.hasOwnProperty.call(wf.folds[0].out_of_sample, 'trade_logs'));
 });
 
-test('auto backtest uses the local C++ backend when available', { skip: !require('../../shared/lib/backend_bridge').backendAvailable() }, () => {
-  const { runBacktest } = require('../../shared/lib/backtest');
-  const { calculateRollingFeatureFrame } = require('../../shared/lib/indicators');
+test('auto backtest uses the local C++ backend when available', { skip: !require('../../shared/lib/runtime/backend_bridge').backendAvailable() }, () => {
+  const { runBacktest } = require('../../shared/lib/strategy/backtest');
+  const { calculateRollingFeatureFrame } = require('../../shared/lib/market/indicators');
 
   const now = Date.now();
   const bars = [];
@@ -551,8 +551,8 @@ test('auto backtest uses the local C++ backend when available', { skip: !require
 });
 
 test('monte carlo stress keeps retained paths sparse', () => {
-  const { runBacktest } = require('../../shared/lib/backtest');
-  const { calculateRollingFeatureFrame } = require('../../shared/lib/indicators');
+  const { runBacktest } = require('../../shared/lib/strategy/backtest');
+  const { calculateRollingFeatureFrame } = require('../../shared/lib/market/indicators');
 
   const now = Date.now();
   const bars = [];

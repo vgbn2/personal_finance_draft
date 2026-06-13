@@ -40,8 +40,8 @@ test('backend api entry point loads without broken requires', () => {
 test('#shared/* subpath imports resolve correctly', () => {
   const result = spawnSync(process.execPath, ['-e', `
     require('#shared/market_validation');
-    require('#shared/indicators');
-    require('#shared/backtest');
+    require('#shared/market/indicators');
+    require('#shared/strategy/backtest');
   `], { cwd: REPO_ROOT, encoding: 'utf8' });
   assert.equal(result.status, 0, `#shared/* imports failed:\n${result.stderr}`);
 });

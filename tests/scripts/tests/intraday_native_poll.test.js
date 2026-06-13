@@ -1,15 +1,15 @@
 'use strict';
 
 /**
- * FW3: Native-poll intraday data fetch tests (15m, 30m, 1h, 4h)
+ * FW3: Native-poll intraday data tests (15m, 30m, 1h)
  *
- * Test suites:
- *   1. Shape test        — fetchYahooIntradayBars mock returns correct OHLCV fields
- *   2. Depth validation  — 1h stubbed shape check (≥700 bars for 730d window)
- *   3. CLI flag parsing  — --timeframe 30m parses correctly in buildIntradayAccumulatePlan
- *   4. Dry-run           — commandIntradayAccumulate exits 0 without writing
- *   5. 4h flag rejection — --timeframe 4h returns rc=1 with informative error
- *   6. aggregate1hTo4h   — 4h client-side aggregation produces correct bucket OHLCV
+ * The actual fetch/aggregation runs through the shared ingest path
+ * (selectYahooBase → fetchYahooBaseCandles → aggregateCandles); intraday_yahoo.js
+ * is constants-only, so these tests cover the constants contract + the command:
+ *   1. Constants contract — SUPPORTED_INTRADAY_TFS + INTRADAY_MAX_DAYS (sourced from YAHOO_MAX_DAYS)
+ *   2. CLI flag parsing   — --timeframe 30m parses correctly in buildIntradayAccumulatePlan
+ *   3. Dry-run            — commandIntradayAccumulate exits 0 without writing
+ *   4. 4h flag rejection  — --timeframe 4h returns rc=1 with informative error
  */
 
 const test   = require('node:test');
@@ -76,79 +76,27 @@ const FAKE_CONFIG = {
   fx:          { symbols: ['EURUSD', 'USDJPY'] },
 };
 
-// ─── 1. Shape test ───────────────────────────────────────────────────────────
+// ─── 1. Constants contract ───────────────────────────────────────────────────
 
-test('fetchYahooIntradayBars module exposes correct exports and field contracts', () => {
+test('intraday_yahoo exposes constants-only contract sourced from YAHOO_MAX_DAYS', () => {
   const mod = require(intradayPath);
+  const { YAHOO_MAX_DAYS } = require(path.resolve(REPO_ROOT, 'backend/scripts/data_ops/ingest_market_data/constants.js'));
 
-  // Module shape
-  assert.ok(typeof mod.fetchYahooIntradayBars === 'function', 'fetchYahooIntradayBars must be a function');
-  assert.ok(typeof mod.candlesToRecords       === 'function', 'candlesToRecords must be a function');
-  assert.ok(typeof mod.aggregate1hTo4h        === 'function', 'aggregate1hTo4h must be a function');
-  assert.ok(Array.isArray(mod.SUPPORTED_INTRADAY_TFS), 'SUPPORTED_INTRADAY_TFS must be an array');
-  assert.ok(typeof mod.INTRADAY_MAX_DAYS === 'object', 'INTRADAY_MAX_DAYS must be an object');
-  assert.ok(typeof mod.YAHOO_INTERVAL_STRINGS === 'object', 'YAHOO_INTERVAL_STRINGS must be an object');
+  // Constants-only module: the dead fetch/aggregate functions were removed (production
+  // routes through the shared selectYahooBase/aggregateCandles path).
+  assert.strictEqual(mod.fetchYahooIntradayBars, undefined, 'dead fetch fn removed');
+  assert.strictEqual(mod.candlesToRecords, undefined, 'dead records fn removed');
+  assert.strictEqual(mod.aggregate1hTo4h, undefined, 'dead aggregate fn removed');
 
-  // Supported timeframes
-  assert.deepStrictEqual(mod.SUPPORTED_INTRADAY_TFS.sort(), ['15m', '1h', '30m'], 'must support 15m, 30m, 1h');
+  assert.deepStrictEqual(mod.SUPPORTED_INTRADAY_TFS.slice().sort(), ['15m', '1h', '30m']);
 
-  // Depth limits
-  assert.strictEqual(mod.INTRADAY_MAX_DAYS['15m'], 60);
-  assert.strictEqual(mod.INTRADAY_MAX_DAYS['30m'], 60);
-  assert.strictEqual(mod.INTRADAY_MAX_DAYS['1h'],  730);
-  assert.strictEqual(mod.INTRADAY_MAX_DAYS['4h'],  730);
-
-  // Yahoo interval strings
-  assert.strictEqual(mod.YAHOO_INTERVAL_STRINGS['15m'], '15m');
-  assert.strictEqual(mod.YAHOO_INTERVAL_STRINGS['30m'], '30m');
-  assert.strictEqual(mod.YAHOO_INTERVAL_STRINGS['1h'],  '60m', 'Yahoo uses 60m for 1h');
-  assert.strictEqual(mod.YAHOO_INTERVAL_STRINGS['4h'],  '60m', '4h must also use 60m (client aggregated)');
+  // INTRADAY_MAX_DAYS must mirror the single canonical YAHOO_MAX_DAYS table (no drift).
+  for (const tf of ['15m', '30m', '1h', '4h']) {
+    assert.strictEqual(mod.INTRADAY_MAX_DAYS[tf], YAHOO_MAX_DAYS[tf], `${tf} cap matches YAHOO_MAX_DAYS`);
+  }
 });
 
-// ─── 2. Depth validation (stubbed shape check for 1h ≥700 bars) ─────────────
-
-test('candlesToRecords shape: 730-day 1h stub generates ≥700 bars with correct OHLCV fields', () => {
-  const { candlesToRecords } = require(intradayPath);
-
-  // Synthesize 730 daily * 7 hourly per day = 5,110 raw 1h candles (realistic upper bound)
-  // For simplicity, generate 730 representative bars spaced 1h apart
-  const RAW_BAR_COUNT = 730;
-  const baseTime = Date.now() - RAW_BAR_COUNT * 60 * 60 * 1000;
-  const rawCandles = Array.from({ length: RAW_BAR_COUNT }, (_, i) => ({
-    openTime: baseTime + i * 60 * 60 * 1000,
-    open:   100 + i * 0.01,
-    high:   101 + i * 0.01,
-    low:    99  + i * 0.01,
-    close:  100.5 + i * 0.01,
-    volume: 1000 + i,
-  }));
-
-  const records = candlesToRecords(rawCandles, 'SPX', '1h', 'indices');
-
-  // Depth check: ≥700 bars
-  assert.ok(records.length >= 700, `Expected ≥700 records, got ${records.length}`);
-
-  // Field shape check on first record
-  const r = records[0];
-  assert.ok(typeof r.family    === 'string', 'family must be string');
-  assert.ok(typeof r.provider  === 'string', 'provider must be string');
-  assert.ok(typeof r.symbol    === 'string', 'symbol must be string');
-  assert.ok(typeof r.timeframe === 'string', 'timeframe must be string');
-  assert.ok(typeof r.timestamp === 'string', 'timestamp must be ISO string');
-  assert.ok(Number.isFinite(r.open),   'open must be finite');
-  assert.ok(Number.isFinite(r.high),   'high must be finite');
-  assert.ok(Number.isFinite(r.low),    'low must be finite');
-  assert.ok(Number.isFinite(r.close),  'close must be finite');
-  assert.ok(Number.isFinite(r.volume), 'volume must be finite');
-
-  // Values
-  assert.strictEqual(r.family,    'indices');
-  assert.strictEqual(r.provider,  'yahoo');
-  assert.strictEqual(r.symbol,    'SPX');
-  assert.strictEqual(r.timeframe, '1h');
-});
-
-// ─── 3. CLI flag parsing ─────────────────────────────────────────────────────
+// ─── 2. CLI flag parsing ─────────────────────────────────────────────────────
 
 test('buildIntradayAccumulatePlan parses --timeframe 30m correctly and maps symbols', () => {
   const { buildIntradayAccumulatePlan } = freshData();
@@ -256,51 +204,21 @@ test('commandIntradayAccumulate rejects --days exceeding timeframe cap', async (
   assert.match(outputs[0].error, /at most --days 60/);
 });
 
-// ─── 6. aggregate1hTo4h ──────────────────────────────────────────────────────
+// ─── 5. Silent-zero guard ────────────────────────────────────────────────────
 
-test('aggregate1hTo4h correctly buckets 1h candles into 4h OHLCV bars', () => {
-  const { aggregate1hTo4h } = require(intradayPath);
-
-  const FOUR_H = 4 * 60 * 60 * 1000;
-  const base   = Math.floor(Date.now() / FOUR_H) * FOUR_H;  // align to bucket boundary
-
-  // 4 1h candles → 1 4h candle
-  const candles = [
-    { openTime: base + 0 * 3600000, open: 100, high: 102, low:  99, close: 101, volume: 1000 },
-    { openTime: base + 1 * 3600000, open: 101, high: 105, low: 100, close: 104, volume: 1200 },
-    { openTime: base + 2 * 3600000, open: 104, high: 106, low: 103, close: 105, volume:  800 },
-    { openTime: base + 3 * 3600000, open: 105, high: 107, low: 104, close: 106, volume:  900 },
-  ];
-
-  const result = aggregate1hTo4h(candles);
-
-  assert.strictEqual(result.length, 1, 'Should produce exactly one 4h bar');
-  const bar = result[0];
-  assert.strictEqual(bar.openTime, base, 'openTime must be bucket start');
-  assert.strictEqual(bar.open,   100,    'open must be first candle open');
-  assert.strictEqual(bar.high,   107,    'high must be max across candles');
-  assert.strictEqual(bar.low,     99,    'low must be min across candles');
-  assert.strictEqual(bar.close,  106,    'close must be last candle close');
-  assert.strictEqual(bar.volume, 3900,   'volume must be sum of all candles');
-});
-
-test('aggregate1hTo4h handles candles spanning multiple 4h buckets', () => {
-  const { aggregate1hTo4h } = require(intradayPath);
-
-  const FOUR_H = 4 * 60 * 60 * 1000;
-  const base   = Math.floor(Date.now() / FOUR_H) * FOUR_H;
-
-  // 8 hours → 2 buckets
-  const candles = Array.from({ length: 8 }, (_, i) => ({
-    openTime: base + i * 3600000,
-    open: 100,  high: 101, low: 99, close: 100, volume: 100,
-  }));
-
-  const result = aggregate1hTo4h(candles);
-  assert.strictEqual(result.length, 2, 'Should produce 2 four-hour bars for 8 hours of data');
-  assert.strictEqual(result[0].openTime, base);
-  assert.strictEqual(result[1].openTime, base + FOUR_H);
-  // Each bucket sums 4 × 100 = 400
-  assert.strictEqual(result[0].volume, 400);
-  assert.strictEqual(result[1].volume, 400);
+test('commandIntradayAccumulate counts a zero-bar / no-error symbol as FAILED (no silent success)', async () => {
+  // An empty provider response with no explicit error must NOT report ok.
+  const { outputs, rc } = await runAccumulateWithStubs(
+    ['--timeframe', '1h', '--symbols', 'SPX', '--json'],
+    FAKE_CONFIG,
+    () => ({ sources: [], errors: [] }),
+  );
+  assert.strictEqual(rc, 1, 'zero bars + no error must exit 1');
+  const out = outputs[0];
+  assert.strictEqual(out.ok, false);
+  assert.strictEqual(out.errors, 1);
+  assert.strictEqual(out.successful, 0);
+  const spx = (out.symbol_results || []).find((r) => r.symbol === 'SPX');
+  assert.ok(spx && spx.ok === false, 'SPX must be marked failed');
+  assert.match(spx.error, /no native Yahoo/i);
 });
