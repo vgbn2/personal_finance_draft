@@ -11,7 +11,6 @@ const {
   normalizeProfile,
   resolvePropFirmProfile,
 } = require('../profiles/prop_firms');
-const { filterEquitySessionGaps } = require('../market/equity_session');
 
 function maxDrawdown(equityCurve) {
   let peak = 1;
@@ -1070,7 +1069,6 @@ function runBacktest(featureFrame, options = {}) {
 
 module.exports = {
   filterFeatureFrame,
-  filterEquitySessionGaps,
   historicalTailRisk,
   monteCarloStress,
   buyHoldBenchmark,

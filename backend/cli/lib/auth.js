@@ -8,7 +8,7 @@ const { classifySupabaseError } = require('../../../shared/lib/supabase_errors')
 const SESSION_DIR  = path.join(os.homedir(), '.sovereign');
 const SESSION_PATH = path.join(SESSION_DIR, 'session.json');
 
-const A = require('../../../shared/lib/ansi');
+const A = require('../../../shared/lib/ui/ansi');
 const { RESET, RED, YELLOW, GREEN, CYAN, BOLD, GRAY } = A;
 
 // ─── Non-TTY stdin queue ──────────────────────────────────────────────────────

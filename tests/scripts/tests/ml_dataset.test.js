@@ -54,6 +54,22 @@ function writeFamilyCache(root, family, sources) {
   fs.writeFileSync(path.join(fam, 'backtest_history.json'), JSON.stringify({ sources }), 'utf8');
 }
 
+test('loadAssetSourcesFromCache drops pre/post-market equity intraday bars (session guard on the real consumer path)', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mlsess-'));
+  // ET hours → UTC (June EDT = UTC-4). 04:00 ET pre-market, 12:00 ET in-session, 17:00 ET post-market.
+  const bar = (etHour, label) => ({
+    symbol: 'EQ', family: 'equities', timeframe: '15m', provider: 'alpaca',
+    timestamp: `2026-06-12T${String(etHour + 4).padStart(2, '0')}:00:00.000Z`,
+    open: 10, high: 11, low: 9, close: 10, volume: 5, label,
+  });
+  writeFamilyCache(root, 'equities', [bar(4, 'pre'), bar(12, 'in'), bar(17, 'post')]);
+
+  const out = loadAssetSourcesFromCache(['EQ'], '15m', { cacheRoot: root });
+  assert.strictEqual(out.length, 1, 'only the in-session 15m bar survives the loader');
+  assert.strictEqual(out[0].label, 'in');
+  console.log(JSON.stringify({ type: 'ml_dataset_test', case: 'session_guard_loader', kept: out.length }));
+});
+
 test('loadAssetSourcesFromCache filters by symbol+timeframe and caps bars', () => {
   const root = makeTempCache();
   const all = loadAssetSourcesFromCache(['AAA'], '1d', { cacheRoot: root });
@@ -107,7 +123,9 @@ test('loadAssetSourcesFromCache excludes experimental 5m records unless opted in
   writeFamilyCache(cacheRoot, 'equities', [
     {
       symbol: 'SPY', family: 'equities', provider: 'twelve', timeframe: '5m',
-      timestamp: '2026-02-01T00:00:00.000Z', open: 100, high: 101, low: 99, close: 100, volume: 10,
+      // 15:00Z = 10:00 ET (Feb EST), in NYSE session so the session guard keeps it;
+      // this case is about experimental-5m inclusion, not session timing.
+      timestamp: '2026-02-01T15:00:00.000Z', open: 100, high: 101, low: 99, close: 100, volume: 10,
       source: 'twelve-rollup-from-1d', derived_from_timeframe: '1d',
     },
   ]);
@@ -122,7 +140,7 @@ test('loadAssetSourcesFromCache excludes experimental 5m records unless opted in
   writeTsIndex(tsDir, { sources: [
     {
       symbol: 'SPY', family: 'equities', provider: 'twelve', timeframe: '5m',
-      timestamp: '2026-02-02T00:00:00.000Z', open: 101, high: 102, low: 100, close: 101, volume: 10,
+      timestamp: '2026-02-02T15:00:00.000Z', open: 101, high: 102, low: 100, close: 101, volume: 10,
     },
     {
       symbol: 'POLUSDT', family: 'crypto', provider: 'coingecko', timeframe: '5m',

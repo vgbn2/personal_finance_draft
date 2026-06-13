@@ -194,6 +194,12 @@ const COMMAND_MANIFEST = {
         '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
+      { id: 'intraday-rollup', label: 'Intraday Rollup (derive 15m/30m/1h/4h from deep 5m bins, no network)', loading: true, flags: {
+        '--family': { type: 'select', options: ['all', 'crypto', 'equities'], label: 'Family (blank/all = every symbol with a deep 5m bin)', default: 'all' },
+        '--symbols': { type: 'text', default: '', label: 'Symbol filter, comma-separated (blank = all)' },
+        '--timeframes': { type: 'text', default: '15m,30m,1h,4h', label: 'Target timeframes to derive' },
+        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
+      }},
       { id: 'cache-clean', label: 'Cache Clean (Quarantine rejected records)', flags: {
         '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
       }}

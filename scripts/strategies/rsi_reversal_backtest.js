@@ -29,7 +29,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { REPO_ROOT } = require('../../shared/lib/paths');
+const { REPO_ROOT } = require('../../shared/lib/runtime/paths');
 const { inferFamily, normalizeSymbol } = require('../../shared/lib/quote_router');
 const { loadBars } = require('./rsi_reversal_signal');
 const {

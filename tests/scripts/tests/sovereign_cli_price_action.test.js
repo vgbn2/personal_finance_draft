@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { historicalTailRisk, monteCarloStress, runBacktest } = require('../../../shared/lib/backtest');
+const { historicalTailRisk, monteCarloStress, runBacktest } = require('../../../shared/lib/strategy/backtest');
 const {
   calculateDivergenceSignals,
   calculateRollingFeatureFrame,
@@ -12,7 +12,7 @@ const {
   calculateSessionVolumeProfile,
   generateSampleBars,
   rsi,
-} = require('../../../shared/lib/indicators');
+} = require('../../../shared/lib/market/indicators');
 const { compareModels, modelCandidates } = require('../../../shared/lib/models');
 
 function dumpVisibility(name, data) {
