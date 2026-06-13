@@ -1,0 +1,17 @@
+[Unit]
+Description=Sovereign Trading Platform API
+After=network.target
+
+[Service]
+Type=simple
+User=sovereign
+WorkingDirectory=/opt/sovereign
+ExecStart=/usr/bin/node backend/api/app.js
+Restart=always
+Environment=NODE_ENV=production
+Environment=SOVEREIGN_WEB_PORT=8787
+# Load sensitive keys from .env
+# EnvironmentFile=/opt/sovereign/.env
+
+[Install]
+WantedBy=multi-user.target

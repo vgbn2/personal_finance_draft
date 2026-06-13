@@ -2,11 +2,11 @@
   "name": "sovereign-mcp-server",
   "version": "1.0.0",
   "description": "MCP Server bridge for Sovereign CLI",
-  "main": "dist/index.js",
+  "main": "../../dist/mcp_server/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "inspect": "mcp-inspector dist/index.js"
+    "start": "node ../../dist/mcp_server/index.js",
+    "inspect": "mcp-inspector ../../dist/mcp_server/index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",

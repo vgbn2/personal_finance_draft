@@ -3,10 +3,11 @@ const assert = require('node:assert/strict');
 
 const fsPromises = require('node:fs/promises');
 const providersPath = require.resolve('../../shared/lib/providers');
-const marketValidationPath = require.resolve('../../shared/lib/market_validation');
-const supabasePath = require.resolve('../../shared/lib/supabase_admin');
-const macroStorePath = require.resolve('../../shared/lib/macro_store');
+const marketValidationPath = require.resolve('../../shared/lib/market/validation');
+const supabasePath = require.resolve('../../shared/lib/supabase/admin');
+const macroStorePath = require.resolve('../../shared/lib/data/macro_store');
 const ingestPath = require.resolve('../../backend/scripts/data_ops/ingest_market_data');
+const ingestIndexPath = require.resolve('../../backend/scripts/data_ops/ingest_market_data/index.js');
 
 function clearModule(modulePath) {
   delete require.cache[modulePath];
@@ -48,6 +49,8 @@ function withStubbedIngestEnvironment(stubs, run) {
         },
       }),
       mergeSnapshots: (_existing, snapshot) => snapshot,
+      writePartitionedSnapshot: () => {},
+      writeTsIndex: () => {},
     },
   };
 
@@ -81,14 +84,21 @@ function withStubbedIngestEnvironment(stubs, run) {
     },
   };
 
+  const writeCalls = [];
   fsPromises.mkdir = async () => {};
-  fsPromises.writeFile = async () => {};
+  fsPromises.writeFile = async (filePath, ...args) => {
+    writeCalls.push(String(filePath));
+    if (typeof stubs.writeFile === 'function') {
+      return stubs.writeFile(filePath, ...args);
+    }
+  };
   fsPromises.readFile = originalReadFile;
 
   clearModule(ingestPath);
+  clearModule(ingestIndexPath);
 
   try {
-    return run(require(ingestPath));
+    return run(require(ingestPath), { writeCalls });
   } finally {
     fsPromises.writeFile = originalWriteFile;
     fsPromises.mkdir = originalMkdir;
@@ -107,6 +117,7 @@ function withStubbedIngestEnvironment(stubs, run) {
     else clearModule(macroStorePath);
 
     clearModule(ingestPath);
+    clearModule(ingestIndexPath);
   }
 }
 
@@ -168,7 +179,7 @@ test('reserves history ingest path keeps country and metric context through the 
         },
       ],
     },
-  }, async ({ ingestMarketData }) => {
+  }, async ({ ingestMarketData }, { writeCalls }) => {
     const snapshot = await ingestMarketData({ family: 'reserves', historyDays: 3650 });
     const reserveRows = snapshot.sources.filter((row) => row.family === 'reserves');
 
@@ -177,6 +188,11 @@ test('reserves history ingest path keeps country and metric context through the 
     assert.ok(reserveRows.every((row) => row.country));
     assert.ok(reserveRows.every((row) => row.metric));
     assert.equal(snapshot.errors.length, 0);
+    assert.equal(snapshot.mode, 'provider_history');
+    assert.equal(snapshot.snapshot_scope.kind, 'scoped');
+    assert.equal(snapshot.snapshot_scope.target_family, 'reserves');
+    assert.equal(snapshot.snapshot_scope.representative_of_global_live_health, false);
+    assert.ok(Array.isArray(writeCalls));
 
     console.log(JSON.stringify({
       type: 'reserves_ingest_contract',

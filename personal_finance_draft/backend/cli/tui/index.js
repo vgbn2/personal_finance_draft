@@ -1,4 +1,4 @@
-const engine = require('./engine');
+const engine = require('./engine/engine');
 const intersection = require('./intersection');
 const manifest = require('./manifest');
 

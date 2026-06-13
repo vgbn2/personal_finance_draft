@@ -2,10 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const { categoryFor } = require('../dev/organize_test_fixture_outputs');
-const { FIXTURE_PATH } = require('../dev/refresh_real_bars_fixture');
-const { probeParallelBackfill } = require('../dev/parallel_backfill_probe');
-const { compareModelRegistries } = require('../dev/model_registry_parity');
+const { categoryFor } = require('../../../backend/scripts/dev/organize_test_fixture_outputs');
+const { FIXTURE_PATH } = require('../../../backend/scripts/dev/refresh_real_bars_fixture');
+const { probeParallelBackfill } = require('../../../backend/scripts/dev/parallel_backfill_probe');
+const { compareModelRegistries } = require('../../../backend/scripts/dev/model_registry_parity');
+const { withLoadingAnimation } = require('../../../backend/cli/lib/utils');
 
 test('development utilities expose safe paths and fixture categories', () => {
   assert.equal(categoryFor('validator_rejects_bad_ohlc.json'), 'validation');
@@ -54,4 +55,29 @@ test('JavaScript and C++ model registries expose the same candidate contract', (
     cpp_count: report.cpp_count,
     families: report.families,
   }, null, 2));
+});
+
+test('loading animation helper renders and clears without waiting for TTY output', async () => {
+  const writes = [];
+  const stream = {
+    write(chunk) {
+      writes.push(String(chunk));
+      return true;
+    },
+  };
+
+  const result = await withLoadingAnimation(
+    'Running backtest',
+    async () => {
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      return 42;
+    },
+    [],
+    { enabled: true, stream, intervalMs: 5, frames: ['|', '/', '-'] }
+  );
+
+  assert.equal(result, 42);
+  assert.ok(writes.some((chunk) => chunk.includes('Running backtest')));
+  assert.ok(writes.some((chunk) => chunk.includes('/') || chunk.includes('-')));
+  assert.equal(writes.at(-1), '\r\x1b[2K');
 });

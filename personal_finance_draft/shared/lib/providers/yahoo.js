@@ -9,7 +9,7 @@ async function fetchYahooBaseCandles(symbol, interval = '1d', rangeDays = 5, sta
     url.searchParams.set('period1', Math.floor(startTime / 1000));
     url.searchParams.set('period2', Math.floor(queryEndTime / 1000));
   } else {
-    // [gemini-work] Use the day count directly; 'max' can be unreliable for some symbols/intervals
+   
     url.searchParams.set('range', `${rangeDays}d`);
   }
 

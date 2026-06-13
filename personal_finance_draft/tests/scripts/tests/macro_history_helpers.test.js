@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const commonPath = require.resolve('../lib/providers/common');
-const macroPath = require.resolve('../lib/providers/macro');
+const commonPath = require.resolve('../../../shared/lib/providers/common');
+const macroPath = require.resolve('../../../shared/lib/providers/macro');
 
 function withStubbedCommon(fetchJsonImpl, run) {
   const originalCommon = require.cache[commonPath];

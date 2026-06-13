@@ -1,32 +1,24 @@
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
+const A = require('../../../shared/lib/ui/ansi');
+
 const {
-  fetchBinanceBaseCandles, fetchCoinbaseBaseCandles, fetchKalshiHistoricalCandlesticks,
-  fetchKalshiHistoricalMarkets, fetchStooqDailyHistory, fetchPolymarketHistoricalPrices,
-  fetchYahooBaseCandles, fetchPaginated, fetchParallelBackfill, ingestMarketData,
-  dedupePreferredMarketQuotes, loadConfig, loadExternalQuoteInputs,
-  resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
-} = require('../../scripts/data_ops/ingest_market_data');
-const { DEFAULT_PROVIDER_PRIORITY } = require('../../../shared/lib/quote_router');
-const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../shared/lib/backtest');
-const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../shared/lib/indicators');
-const { compareModels } = require('../../../shared/lib/models');
-const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../shared/lib/market_validation');
+  REPO_ROOT,
+  BACKEND_CANDIDATES,
+  CLI_CANDIDATES,
+  DEFAULT_SNAPSHOT,
+  DEFAULT_QUALITY_REPORT,
+  DEFAULT_FEATURES,
+  DEFAULT_MODEL_REPORT,
+  DEFAULT_BACKTEST,
+  DEFAULT_STATE_PATH,
+} = require('../../../shared/lib/runtime/paths');
 
-const { 
-  REPO_ROOT, 
-  BACKEND_CANDIDATES, 
-  CLI_CANDIDATES 
-} = require('../../../shared/lib/paths');
+const { loadMarketConfig } = require('../../../shared/lib/runtime/config_loader');
 
-const DEFAULT_SNAPSHOT = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch.json');
-const DEFAULT_QUALITY_REPORT = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'data_quality_report.json');
-const DEFAULT_HISTORY = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'backtest_history.json');
-const DEFAULT_FEATURES = path.join(REPO_ROOT, 'storage', 'data', 'features', 'latest_features.json');
-const DEFAULT_MODEL_REPORT = path.join(REPO_ROOT, 'storage', 'data', 'models', 'latest_model_comparison.json');
-const DEFAULT_BACKTEST = path.join(REPO_ROOT, 'storage', 'data', 'backtests', 'latest_backtest.json');
-const DEFAULT_STATE_PATH = path.join(REPO_ROOT, 'workspace', 'STATE.md');
+// Cache directory (not a file) — local to CLI, not shared with API layer
+const DEFAULT_HISTORY = path.join(REPO_ROOT, 'storage', 'data', 'cache');
 
 const HELP_TOPICS = {
   overview: [
@@ -34,17 +26,20 @@ const HELP_TOPICS = {
     '',
     'Daily commands',
     '  status        Show phase, cache, and data-quality status',
+    '  setup         Configure broker credentials locally',
+    '  doctor        Inspect local runtime and broker readiness',
     '  cockpit       Open the terminal dashboard',
     '  backend       Show C++ backend runtime, stats, data, correlation, and integrity',
     '  quotes        Show configured Headway MT5/MT5/Webull quote imports and dedup status',
     '  strategy new  Create a validated strategy plan file',
+    '  strategy prop-firms  Manage prop-firm profiles and rule presets',
+    '  strategy sync  Refresh the strategy registry from config/strategies',
     '  backfill      Build a historical cache for real-data backtests',
     '  demo          Run sample features, models, backtest, and period optimization',
     '  check         Validate the current live cache',
-    '  bt            Run the live-cache backtest',
-    '  bt --sample   Run the deterministic validation backtest',
+    '  bt            Run the backtest against live cache data',
     '  optimize      Test indicator periods against backtest metrics',
-    '  trade         Place trades and check balances (Alpaca)',
+    '  trade         Place trades and manage broker connections (Alpaca, MT5, add-platform)',
     '  watch         Periodically synchronize market data in the background',
     '  loc           Count lines of code in the project',
     '',
@@ -62,14 +57,16 @@ const HELP_TOPICS = {
     '',
     'Operational',
     '  status',
+    '  setup [alpaca|gateio|mt5|polymarket|supabase] [--json] [--dry-run]',
+    '  doctor [runtime|data|alpaca|gateio|mt5|polymarket|supabase] [--json] [--no-network]',
     '  backend status | backend stats [--equity 100,110,105]',
     '  backend data summary [--symbol AAPL] [--timeframe 1d] [--input path]',
-    '  backend correlation [--symbols AAPL,MSFT,SPX] [--timeframe 1d] [--input path]',
+    '  backend correlation [--symbols AAPL,MSFT,SPY] [--timeframe 1d] [--method auto|pearson-returns|fx-returns|pearson-levels] [--input path]',
     '  backend universe [--input path] [--max-entries 0]',
     '  backend integrity [--json]',
     '  quotes status [--json]',
     '  strategy new <name> [--kind momentum] [--model cnn_v3] [--output path]',
-    '  strategy list | strategy validate | strategy interactive',
+    '  strategy list | strategy validate | strategy interactive | strategy prop-firms | strategy sync',
     '  strategy run_automated [--interval 15] [--live]',
     '  ingest [--full]',
     '  backfill [--timeframe 1d] [--days 365] [--symbol S] [--include-prediction] [--20-years]',
@@ -79,10 +76,10 @@ const HELP_TOPICS = {
     '  loc',
     '',
     'Research',
-    '  features | indicators [--sample] [--timeframe 1d]',
-    '  models | model compare [--sample] [--timeframe 1d] [--horizon 5]',
-    '  bt | backtest [--sample] [--timeframe 1d] [--from YYYY-MM-DD] [--to YYYY-MM-DD]',
-    '  optimize [--sample] [--timeframe 1d]',
+    '  features | indicators [--timeframe 1d]',
+    '  models | model compare [--timeframe 1d] [--horizon 5]',
+    '  bt | backtest [--timeframe 1d] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--prop-firm profile]',
+    '  optimize [--timeframe 1d]',
     '',
     'Output files',
     `  quality:  ${DEFAULT_QUALITY_REPORT}`,
@@ -95,13 +92,13 @@ const HELP_TOPICS = {
     'Backtest Help',
     '',
     'Basic',
-    '  node scripts/cli/sovereign_cli.js bt',
+    '  node backend/cli/sovereign_cli.js bt',
     '',
     'Useful options',
     '  --timeframe 1d          Use one timeframe only',
     '  --from YYYY-MM-DD       Start date filter',
     '  --to YYYY-MM-DD         End date filter',
-    '  --sample-size 1000      Deterministic sample bars per symbol',
+
     '  --train-ratio 0.70      First slice used for period selection',
     '  --horizon 5             Holding period in bars',
     '  --threshold 0.55        Minimum model confidence',
@@ -109,7 +106,8 @@ const HELP_TOPICS = {
     '  --slippage-bps 3        Slippage per side',
     '  --cost-bps 5            Backward-compatible total cost hint',
     '  --tail-alpha 0.05       Tail risk confidence level',
-    '  --monte-carlo-runs 1000 Bootstrap stress runs',
+    '  --monte-carlo-runs 200  Bootstrap stress runs',
+    '  --prop-firm PROFILE     Select a prop-firm profile (or none)',
     '  --relevance-floor 0.30  Filter backfilled data by reliability score',
     '  --model cnn_window_v0   Model candidate to backtest; run `models --json` to compare candidates per asset',
     '  --allow-degraded       Permit backtest despite data-quality errors',
@@ -131,7 +129,7 @@ const HELP_TOPICS = {
     '  Periodically synchronizes market data in the background.',
     '',
     'Usage',
-    '  node scripts/cli/sovereign_cli.js watch [--family crypto|fx|all] [--interval 15]',
+    '  node backend/cli/sovereign_cli.js watch [--family crypto|fx|all] [--interval 15]',
     '',
     'Options',
     '  --family    The data family to monitor (default: crypto)',
@@ -141,10 +139,10 @@ const HELP_TOPICS = {
     'Indicator Period Help',
     '',
     'Single run',
-    '  node scripts/cli/sovereign_cli.js bt --sample --rsi 7 --atr 7 --bollinger 10 --volatility 10',
+    '  node backend/cli/sovereign_cli.js bt --allow-degraded --rsi 7 --atr 7 --bollinger 10 --volatility 10',
     '',
     'Grid search',
-    '  node scripts/cli/sovereign_cli.js optimize --sample',
+    '  node backend/cli/sovereign_cli.js optimize --allow-degraded',
     '',
     'Period options',
     '  --return-fast N',
@@ -164,25 +162,24 @@ const HELP_TOPICS = {
     'Examples',
     '',
     'Check the live cache',
-    '  node scripts/cli/sovereign_cli.js status',
-    '  node scripts/cli/sovereign_cli.js check',
+    '  node backend/cli/sovereign_cli.js status',
+    '  node backend/cli/sovereign_cli.js check',
     '',
     'Run an end-to-end deterministic research demo',
-    '  node scripts/cli/sovereign_cli.js demo',
+    '  node backend/cli/sovereign_cli.js demo',
     '',
     'Run a timeframe-aware live backtest',
-    '  node scripts/cli/sovereign_cli.js backfill --timeframe 1d --days 365 --include-prediction --relevance-floor 0.30',
-    '  node scripts/cli/sovereign_cli.js bt --input data/cache/backtest_history.json --timeframe 1d',
-    '  node scripts/cli/sovereign_cli.js bt --timeframe 1d --from 2025-02-01 --to 2025-04-30',
-    '  node scripts/cli/sovereign_cli.js bt --timeframe 1d --fee-bps 2 --slippage-bps 3 --tail-alpha 0.05 --monte-carlo-runs 2000',
-    '  node scripts/cli/sovereign_cli.js optimize --sample --sample-size 1000 --train-ratio 0.7',
+    '  node backend/cli/sovereign_cli.js backfill --timeframe 1d --days 365 --include-prediction --relevance-floor 0.30',
+    '  node backend/cli/sovereign_cli.js bt --input storage/data/cache/backtest_history.json --timeframe 1d',
+    '  node backend/cli/sovereign_cli.js bt --timeframe 1d --from 2025-02-01 --to 2025-04-30',
+    '  node backend/cli/sovereign_cli.js bt --timeframe 1d --fee-bps 2 --slippage-bps 3 --tail-alpha 0.05 --monte-carlo-runs 2000',
+    '  node backend/cli/sovereign_cli.js optimize --allow-degraded --train-ratio 0.7',
     '',
     'Try a specific indicator configuration',
-    '  node scripts/cli/sovereign_cli.js bt --sample --rsi 7 --atr 7 --bollinger 10 --volatility 10',
-    '  node scripts/cli/sovereign_cli.js bt --sample --sample-size 1000 --train-ratio 0.7',
+    '  node backend/cli/sovereign_cli.js bt --allow-degraded --rsi 7 --atr 7 --bollinger 10 --volatility 10',
     '',
     'Get JSON for another tool',
-    '  node scripts/cli/sovereign_cli.js bt --json',
+    '  node backend/cli/sovereign_cli.js bt --json',
   ],
 };
 
@@ -190,16 +187,16 @@ const IS_DEBUG = process.argv.includes('--debug') || process.env.SOVEREIGN_DEBUG
 
 const logger = {
   info: (msg) => console.log(`[INFO] ${msg}`),
-  warn: (msg) => console.warn(`\x1b[33m[WARN] ${msg}\x1b[0m`),
+  warn: (msg) => console.warn(A.c(A.YELLOW, `[WARN] ${msg}`)),
   error: (msg, err) => {
-    console.error(`\x1b[31m[ERROR] ${msg}\x1b[0m`);
+    console.error(A.c(A.RED, `[ERROR] ${msg}`));
     if (IS_DEBUG && err) {
-      console.error(`\x1b[2m${err.stack || err}\x1b[0m`);
+      console.error(A.c(A.DIM, err.stack || err));
     }
   },
   debug: (msg, data) => {
     if (IS_DEBUG) {
-      console.log(`\x1b[36m[DEBUG] ${msg}\x1b[0m`);
+      console.log(A.c(A.CYAN, `[DEBUG] ${msg}`));
       if (data) console.log(JSON.stringify(data, null, 2));
     }
   },
@@ -255,6 +252,43 @@ function printPayload(payload, args) {
   for (const [key, value] of Object.entries(payload)) {
     const rendered = renderHumanValue(value);
     console.log(`${key}: ${rendered}`);
+  }
+}
+
+function shouldAnimate(args = []) {
+  return process.stdout.isTTY
+    && !hasFlag(args, '--json')
+    && !hasFlag(args, '--no-spinner')
+    && !hasFlag(args, '--quiet');
+}
+
+async function withLoadingAnimation(label, task, args = [], options = {}) {
+  const enabled = options.enabled !== undefined ? options.enabled : shouldAnimate(args);
+  if (!enabled) return await task();
+
+  const stream = options.stream || process.stdout;
+  const frames = options.frames || ['|', '/', '-', '\\'];
+  const intervalMs = options.intervalMs || 80;
+  const suffix = options.suffix || '';
+  let index = 0;
+  let stopped = false;
+
+  const render = () => {
+    if (stopped) return;
+    const frame = frames[index++ % frames.length];
+    stream.write(`\r\x1b[2K${label} ${frame}${suffix}`);
+  };
+
+  stream.write(`\r\x1b[2K${label} ${frames[0]}${suffix}`);
+  const timer = setInterval(render, intervalMs);
+  if (timer.unref) timer.unref();
+
+  try {
+    return await task();
+  } finally {
+    stopped = true;
+    clearInterval(timer);
+    stream.write('\r\x1b[2K');
   }
 }
 
@@ -335,18 +369,39 @@ const {
 function get_Current_Universe_Symbols() {
   try {
     if (!fs.existsSync(DEFAULT_HISTORY)) return [];
-    const data = JSON.parse(fs.readFileSync(DEFAULT_HISTORY, 'utf8'));
-    const seen = new Set();
-    const universe = [];
     
-    (data.sources || []).forEach(s => {
-        const symbol = s.symbol || s.underlying || s.series || s.metric || s.event;
-        if (!symbol) return;
-        const key = `${s.family}:${symbol}`;
-        if (seen.has(key)) return;
-        seen.add(key);
-        universe.push({ symbol, family: s.family });
-    });
+    const universe = [];
+    const seen = new Set();
+
+    // Scan all family subdirectories for backtest_history.json
+    const families = fs.readdirSync(DEFAULT_HISTORY);
+    for (const family of families) {
+      const familyPath = path.join(DEFAULT_HISTORY, family);
+      if (!fs.statSync(familyPath).isDirectory()) continue;
+
+      const historyPath = path.join(familyPath, 'backtest_history.json');
+      if (!fs.existsSync(historyPath)) continue;
+
+      try {
+        const data = JSON.parse(fs.readFileSync(historyPath, 'utf8'));
+        (data.sources || []).forEach(s => {
+            const symbol = s.symbol || s.underlying || s.series || s.metric || s.event;
+            if (!symbol) return;
+            const key = `${s.family || family}:${symbol}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            universe.push({ 
+              symbol, 
+              family: s.family || family,
+              market: s.config_market || null,
+              sector: s.config_sector || null,
+              coordinate_id: s.coordinate_id || null
+            });
+        });
+      } catch (e) {
+        logger.error(`Failed to parse history for family ${family}`, e);
+      }
+    }
     
     return universe;
   } catch (e) {
@@ -355,39 +410,96 @@ function get_Current_Universe_Symbols() {
 }
 
 /**
+ * Returns every symbol from data_sources.yaml PLUS anything already in
+ * backtest_history.json that isn't in the config.
+ * Tradeable families only (excludes weather, flight, onchain, etc.).
+ * Returns enriched objects: { symbol, family, market, sector, coordinate_id }.
+ */
+async function get_Full_Universe_Symbols() {
+  const TRADEABLE = new Set(['equities','indices','commodities','fx','crypto','macro','pmi','sentiment','reserves','holdings','equities_options','stock_options','prediction_market']);
+  const seen = new Set();
+  const universe = [];
+
+  const add = (symbol, family, market = null, sector = null) => {
+    if (!symbol || seen.has(symbol)) return;
+    seen.add(symbol);
+    const coordinate_id = market && sector ? `${market}-${sector}-${symbol}`.toUpperCase() : (market ? `${market}-${symbol}`.toUpperCase() : symbol);
+    universe.push({ symbol, family, market, sector, coordinate_id });
+  };
+
+  // 1. Parse data_sources.yaml using loadMarketConfig
+  try {
+    const yamlPath = path.join(REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
+    const config = await loadMarketConfig(yamlPath);
+    
+    for (const [family, data] of Object.entries(config)) {
+      if (!TRADEABLE.has(family) || !data.enabled) continue;
+
+      // Handle universe_matrix first (most specific)
+      if (data.universe_matrix && data.universe_matrix.grid) {
+        for (const [market, sectors] of Object.entries(data.universe_matrix.grid)) {
+          for (const [sector, symbols] of Object.entries(sectors)) {
+            if (Array.isArray(symbols)) {
+              symbols.forEach(sym => add(sym, family, market, sector));
+            }
+          }
+        }
+      }
+
+      // Handle raw symbols/series list
+      const rawList = data.symbols || data.series || [];
+      if (Array.isArray(rawList)) {
+        rawList.forEach(sym => add(sym, family));
+      }
+    }
+  } catch (e) {
+    logger.error('Failed to load market config in get_Full_Universe_Symbols', e);
+  }
+
+  // 2. Merge anything in backtest_history.json not already in config
+  try {
+    if (fs.existsSync(DEFAULT_HISTORY)) {
+      const families = fs.readdirSync(DEFAULT_HISTORY);
+      for (const family of families) {
+        const histPath = path.join(DEFAULT_HISTORY, family, 'backtest_history.json');
+        if (!fs.existsSync(histPath)) continue;
+        const data = JSON.parse(fs.readFileSync(histPath, 'utf8'));
+        (data.sources || []).forEach(s => {
+          const sym = s.symbol || s.underlying || s.series || s.metric || s.event;
+          if (sym && TRADEABLE.has(s.family || family)) add(sym, s.family || family);
+        });
+      }
+    }
+  } catch (e) { /* ignore */ }
+
+  return universe;
+}
+
+/**
  * Attempts to resolve short symbols (BTC) to canonical ones (BTCUSDT)
  * based on the active universe.
  */
-function resolveSymbols(inputSymbols) {
-    const universe = get_Current_Universe_Symbols();
-    const symbols = Array.isArray(inputSymbols) ? inputSymbols : String(inputSymbols || '').split(',').map(s => s.trim()).filter(Boolean);
-    
-    return symbols.map(s => {
-        const upper = s.toUpperCase();
-        
-        // Match logic:
-        // 1. Exact match in universe objects
-        // 2. Fuzzy match (starts/ends with) in universe objects
-        // 3. Fallback to the original upper-cased input
-        
-        const exact = universe.find(u => u.symbol && String(u.symbol).toUpperCase() === upper);
-        if (exact) return exact.symbol;
+const { resolveSymbols } = require('../../../shared/lib/market/symbol_resolver');
 
-        const fuzzy = universe.find(u => {
-            const sym = String(u.symbol || '').toUpperCase();
-            return sym && (sym.startsWith(upper) || sym.endsWith(upper));
-        });
-        
-        return fuzzy ? fuzzy.symbol : upper;
-    });
+function buildStatusLine(authEmail) {
+  const backendOk = BACKEND_CANDIDATES.some(c => fs.existsSync(c));
+  const cacheOk = fs.existsSync(DEFAULT_SNAPSHOT);
+  const backendLabel = backendOk ? A.c(A.GREEN, 'OK') : A.c(A.RED, 'Missing');
+  const cacheLabel = cacheOk ? A.c(A.GREEN, 'Valid') : A.c(A.YELLOW, 'Empty');
+  const authPart = authEmail
+    ? `${A.muted(' | ')}${A.c(A.GREEN, '●')} ${A.muted(authEmail)}`
+    : `${A.muted(' | ')}${A.c(A.YELLOW, '○')} ${A.muted('Not signed in')}`;
+  return `${A.muted('Backend: ')}${backendLabel}${A.muted(' | Cache: ')}${cacheLabel}${authPart}`;
 }
 
 module.exports = {
   REPO_ROOT, DEFAULT_SNAPSHOT, DEFAULT_QUALITY_REPORT, DEFAULT_HISTORY,
   DEFAULT_FEATURES, DEFAULT_MODEL_REPORT, DEFAULT_BACKTEST, DEFAULT_STATE_PATH,
   BACKEND_CANDIDATES, HELP_TOPICS,
-  usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption,
+  usage, helpText, pageText, optionValue, hasFlag, printPayload, shouldAnimate, withLoadingAnimation, currentPhaseLabel,
+  formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption,
   runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal,
-  get_Current_Universe_Symbols, resolveSymbols, logger,
-  promptMultiSelect: require('../tui/engine').promptMultiSelect
+  buildStatusLine,
+  get_Current_Universe_Symbols, get_Full_Universe_Symbols, resolveSymbols, logger,
+  promptMultiSelect: require('../tui/engine/engine').promptMultiSelect
 };

@@ -95,6 +95,35 @@ Ask user to confirm or modify.
 
 ---
 
+## 5b. Reset Session Files (if starting fresh)
+
+If DECISIONS.md or JOURNAL.md contain entries from a previous milestone, reset them to prevent monolithic growth:
+
+**PowerShell:**
+```powershell
+# Only reset if files are non-empty and no archive exists yet
+if ((Test-Path ".gsd/DECISIONS.md") -and (Get-Content ".gsd/DECISIONS.md" | Measure-Object -Line).Lines -gt 5) {
+    Set-Content ".gsd/DECISIONS.md" "# Decisions`n`n---`n"
+}
+if ((Test-Path ".gsd/JOURNAL.md") -and (Get-Content ".gsd/JOURNAL.md" | Measure-Object -Line).Lines -gt 5) {
+    Set-Content ".gsd/JOURNAL.md" "# Journal`n`n---`n"
+}
+```
+
+**Bash:**
+```bash
+if [ -f ".gsd/DECISIONS.md" ] && [ "$(wc -l < .gsd/DECISIONS.md)" -gt 5 ]; then
+    printf '# Decisions\n\n---\n' > .gsd/DECISIONS.md
+fi
+if [ -f ".gsd/JOURNAL.md" ] && [ "$(wc -l < .gsd/JOURNAL.md)" -gt 5 ]; then
+    printf '# Journal\n\n---\n' > .gsd/JOURNAL.md
+fi
+```
+
+> **Note:** Only resets if files have grown beyond a header. If running `/complete-milestone` first, files are already archived and reset.
+
+---
+
 ## 6. Commit
 
 ```bash

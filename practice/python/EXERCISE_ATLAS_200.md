@@ -9,6 +9,11 @@ This atlas is your roadmap to mastering the **Bio-Quant Engine** and the **Sover
 
 ---
 
+> [!IMPORTANT]
+> **The 5-Unit Synthesis Rule**: Every 5 exercises, you will face a "Synthesis Exam". 
+> Unlike standard exercises, these exams require you to combine ALL previous logic into a single, production-grade script. 
+> Failure to pass a Synthesis Exam blocks entry into the next unit.
+
 ## 📕 Book 01: Pythonic Sovereignty (Fundamentals)
 *Focus: Logic, Scoping, and "Thinking in Python"*
 **Difficulty**: 🟦 L1 (Foundational)
@@ -22,19 +27,20 @@ This atlas is your roadmap to mastering the **Bio-Quant Engine** and the **Sover
 2. **Glucose Arithmetic** (Primitive Types, Operators)
 3. **The Nightscout Polling Loop** (While Loops)
 4. **Insulin Dosage Conditionals** (If/Else logic)
-5. **Hyper/Hypo Range Constants** (Variables, Scoping)
+5. **[EXAM 0.1] Hyper/Hypo Range Constants** (Scoping & logic)
 6. **Biometric List Slicing** (Lists, Sequences)
 7. **The CGM Data Dictionary** (Dicts, Keys)
 8. **Functional Dose Calculation** (Functions, Returns)
 9. **The Heart Rate Exception** (Try/Except)
-10. **The Calibration Decorator** (Basics of Decorators)
+10. **[EXAM 0.2] The Calibration Decorator** (Logic hardening)
 11. **Glucose Guard (Challenge)** (Anomaly Detection)
 12. **The Sliding Window Audit** (Queue management)
     - *Challenge*: Implement **Z-Score Outlier Rejection**. Flag readings > 3σ from mean as `ANOMALY`.
 13. **Velocity Estimation** (Math Logic)
     - *Challenge*: Calculate **Metabolic Acceleration** (the 2nd derivative of glucose).
 14. **The Trend Alert System** (Nested Logic)
-15. **Telemetry I/O** (Simple File Write)
+15. **[EXAM 01] The Metabolic Guardian** (Synthesis Phase)
+    - *Challenge*: Create a unified script using 11, 12, 13, and 14 to filter a "Mystery Stream".
 16. **The User Profile Class** (Classes, __init__)
 17. **Encapsulating Traits** (Private vs Public)
 18. **The Inheritance of Biometrics** (Class Inheritance)

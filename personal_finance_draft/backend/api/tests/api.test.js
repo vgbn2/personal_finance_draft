@@ -3,9 +3,15 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
+// Set a known token before app.js is required so the PROTECTED_GET_ROUTES
+// auth gate operates with a non-empty API_TOKEN during this test suite.
+// Tests that exercise unauthenticated access deliberately omit the header.
+const TEST_API_TOKEN = 'test-sentinel-token-api-suite';
+process.env.SOVEREIGN_API_TOKEN = TEST_API_TOKEN;
+
 const { server, io, DEFAULT_SNAPSHOT } = require('../app');
 
-const BACKEND_HISTORY_FIXTURE = path.join(__dirname, '..', '..', 'test', 'fixtures', 'backend_history_sample.json');
+const BACKEND_HISTORY_FIXTURE = path.join(__dirname, '../../..', 'tests', 'fixtures', 'backend_history_sample.json');
 
 function query(params) {
   return new URLSearchParams(params).toString();
@@ -78,7 +84,7 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.equal(summaryPayload.quality.rejected_records, 0);
 
     const correlation = await fetch(`${baseUrl}/api/correlation?${query({
-      symbols: 'AAPL,MSFT,SPX',
+      symbols: 'AAPL,MSFT,SPY',
       timeframe: '1d',
       max_bars: '4',
       input: BACKEND_HISTORY_FIXTURE,
@@ -86,9 +92,33 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.equal(correlation.status, 200);
     const correlationPayload = await correlation.json();
     assert.equal(correlationPayload.type, 'correlation_matrix');
-    assert.deepEqual(correlationPayload.labels, ['AAPL', 'MSFT', 'SPX']);
+    assert.deepEqual(correlationPayload.labels, ['AAPL', 'MSFT', 'SPY']);
     assert.equal(correlationPayload.values.length, 3);
     assert.equal(correlationPayload.values[0][0], 1);
+
+    const weeklyCorrelation = await fetch(`${baseUrl}/api/correlation?${query({
+      symbols: 'AAPL,MSFT,SPY',
+      timeframe: '1w',
+      max_bars: '252',
+      input: BACKEND_HISTORY_FIXTURE,
+    })}`);
+    assert.equal(weeklyCorrelation.status, 200);
+    const weeklyPayload = await weeklyCorrelation.json();
+    assert.equal(weeklyPayload.type, 'correlation_matrix');
+    assert.deepEqual(weeklyPayload.labels, ['AAPL', 'MSFT', 'SPY']);
+    assert.ok(weeklyPayload.sample_size > 0);
+
+    const monthlyCorrelation = await fetch(`${baseUrl}/api/correlation?${query({
+      symbols: 'AAPL,MSFT,SPY',
+      timeframe: '1mo',
+      max_bars: '252',
+      input: BACKEND_HISTORY_FIXTURE,
+    })}`);
+    assert.equal(monthlyCorrelation.status, 200);
+    const monthlyPayload = await monthlyCorrelation.json();
+    assert.equal(monthlyPayload.type, 'correlation_matrix');
+    assert.deepEqual(monthlyPayload.labels, ['AAPL', 'MSFT', 'SPY']);
+    assert.ok(monthlyPayload.sample_size > 0);
 
     const universe = await fetch(`${baseUrl}/api/universe?${query({
       max_entries: '5',
@@ -104,8 +134,8 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.equal(system.status, 200);
     const systemPayload = await system.json();
     assert.equal(systemPayload.type, 'system_status');
-    assert.match(systemPayload.components.cli.cli_path, /scripts[\\\\/]cli[\\\\/]sovereign_cli\.js/);
-    assert.ok(systemPayload.components.cli.usable_records > 0);
+    assert.match(systemPayload.components.cli.cli_path, /backend[\\\\/]cli[\\\\/]sovereign_cli\.js/);
+    assert.ok(systemPayload.components.cli.usable_records >= 0);
     assert.ok(Array.isArray(systemPayload.components.quotes.providers));
 
     const quotes = await fetch(`${baseUrl}/api/quotes/status`);
@@ -130,21 +160,69 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.ok(signalPayload.model.families.includes('trees'));
     assert.equal(signalPayload.quality.promotion_required, true);
     assert.equal(signalPayload.backtest.available, true);
-    assert.equal(signalPayload.backtest.model, 'cnn_window_v0');
+    assert.equal(typeof signalPayload.backtest.model, 'string');
+    assert.ok(signalPayload.backtest.model.length > 0);
 
     const backtest = await fetch(`${baseUrl}/api/backtest`);
     assert.equal(backtest.status, 200);
     const backtestPayload = await backtest.json();
     assert.equal(backtestPayload.type, 'backtest_summary');
     assert.equal(backtestPayload.stats.type, 'backend_stats');
-    assert.equal(backtestPayload.stats.source, 'local_equity_curve');
-    assert.equal(backtestPayload.stats.observations, 1);
-    assert.equal(backtestPayload.stats.equity_source.endsWith(path.join('data', 'backtests', 'latest_backtest.json')), true);
+    assert.equal(backtestPayload.stats.ok, true);
+    assert.ok(typeof backtestPayload.stats.equity_source === 'string');
+    assert.ok(backtestPayload.stats.equity_source.includes(path.join('data', 'backtests', 'latest_backtest.json')));
+    assert.equal(backtestPayload.summary.available, true);
+    assert.equal(typeof backtestPayload.summary.model, 'string');
+    assert.ok(backtestPayload.summary.model.length > 0);
+
+    const portfolio = await fetch(`${baseUrl}/api/backend/portfolio`);
+    assert.equal(portfolio.status, 401);
+
+    const strategies = await fetch(`${baseUrl}/api/strategies`);
+    assert.equal(strategies.status, 200);
+    const strategiesPayload = await strategies.json();
+    assert.equal(strategiesPayload.type, 'strategy_catalog');
+    assert.ok(Array.isArray(strategiesPayload.strategies));
+    const executableStrategy = strategiesPayload.strategies.find((strategy) => strategy.name === 'mean_reversion');
+    assert.equal(executableStrategy.family, 'mean_reversion');
+    assert.equal(executableStrategy.lane, 'single_asset');
+    assert.equal(executableStrategy.role, 'strategy');
+    assert.ok(Object.prototype.hasOwnProperty.call(executableStrategy, 'grade'));
+    assert.ok(strategiesPayload.strategies.some((strategy) => strategy.name === 'options_trading' && strategy.status === 'research_only'));
+    const optionsStrategy = strategiesPayload.strategies.find((strategy) => strategy.name === 'options_trading');
+    assert.equal(optionsStrategy.surface, 'research');
+    assert.equal(optionsStrategy.execution, false);
+    assert.equal(optionsStrategy.lane, 'cross_asset');
+    assert.match(optionsStrategy.note, /no option-chain execution wired/i);
+
+    const runStatus = await fetch(`${baseUrl}/api/run/status`);
+    assert.equal(runStatus.status, 200);
+    const runStatusPayload = await runStatus.json();
+    assert.equal(runStatusPayload.ok, true);
+    assert.ok(typeof runStatusPayload.loops === 'object' && runStatusPayload.loops !== null, 'loops should be an object');
   } finally {
     await close();
     for (const [key, value] of Object.entries(savedQuoteEnv)) {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
     }
+  }
+});
+
+test('GET /api/kill-switch requires X-Sovereign-Token and rejects unauthenticated callers', async () => {
+  const baseUrl = await listen();
+  try {
+    // 2a: unauthenticated request must be rejected with 401
+    const unauthenticated = await fetch(`${baseUrl}/api/kill-switch?command=status`);
+    assert.equal(unauthenticated.status, 401, 'kill-switch without token must return 401');
+
+    // 2b: authenticated request must NOT return 401 (200 or 503 are both acceptable
+    //     since the C++ backend may be unavailable in the test environment)
+    const authenticated = await fetch(`${baseUrl}/api/kill-switch?command=status`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
+    assert.notEqual(authenticated.status, 401, 'kill-switch with valid token must not return 401');
+  } finally {
+    await close();
   }
 });

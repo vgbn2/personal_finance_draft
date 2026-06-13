@@ -7,6 +7,7 @@
 #include "../utils/constants.hpp"
 
 #include <cstddef>
+#include <map>
 #include <optional>
 #include <span>
 #include <string>
@@ -14,6 +15,8 @@
 #include <utility>
 
 namespace sovereign::indicators {
+
+using ParameterMap = std::map<std::string, double>;
 
 struct KalmanResult {
     double estimate;
@@ -54,7 +57,7 @@ public:
     static std::vector<double> rateOfChangeSeries(const std::vector<double>& closes, std::size_t lookback);
     static std::vector<double> rollingVolatilitySeries(const std::vector<double>& closes, std::size_t period);
     static std::vector<KalmanResult> kalmanSeriesWithVariance(const std::vector<double>& closes, double process_noise, double measurement_noise);
-    static IndicatorFrame buildFrame(std::span<const OhlcvBar> bars);
+    static IndicatorFrame buildFrame(std::span<const OhlcvBar> bars, const ParameterMap& params = {});
 };
 
 } // namespace sovereign::indicators

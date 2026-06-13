@@ -80,6 +80,14 @@ New-Item -ItemType Directory -Force ".gsd/milestones/{name}"
 
 # Move phase-specific files
 Move-Item ".gsd/phases/*" ".gsd/milestones/{name}/"
+
+# Archive decisions and journal (prevent monolithic growth across milestones)
+if (Test-Path ".gsd/DECISIONS.md") {
+    Copy-Item ".gsd/DECISIONS.md" ".gsd/milestones/{name}/DECISIONS.md"
+}
+if (Test-Path ".gsd/JOURNAL.md") {
+    Copy-Item ".gsd/JOURNAL.md" ".gsd/milestones/{name}/JOURNAL.md"
+}
 ```
 
 **Bash:**
@@ -89,6 +97,10 @@ mkdir -p ".gsd/milestones/{name}"
 
 # Move phase-specific files
 mv .gsd/phases/* ".gsd/milestones/{name}/"
+
+# Archive decisions and journal (prevent monolithic growth across milestones)
+[ -f ".gsd/DECISIONS.md" ] && cp ".gsd/DECISIONS.md" ".gsd/milestones/{name}/DECISIONS.md"
+[ -f ".gsd/JOURNAL.md" ] && cp ".gsd/JOURNAL.md" ".gsd/milestones/{name}/JOURNAL.md"
 ```
 
 ---
@@ -97,6 +109,51 @@ mv .gsd/phases/* ".gsd/milestones/{name}/"
 
 Clear ROADMAP.md phases section (keep header).
 Update STATE.md to show milestone complete.
+
+**Reset DECISIONS.md** — replace contents with a fresh header referencing the archive:
+
+```markdown
+# Decisions
+
+> Previous milestone decisions archived in `.gsd/milestones/{name}/DECISIONS.md`
+
+---
+```
+
+**Reset JOURNAL.md** — replace contents with a fresh header:
+
+```markdown
+# Journal
+
+> Previous milestone journal archived in `.gsd/milestones/{name}/JOURNAL.md`
+
+---
+```
+
+---
+
+## 5c. Refresh Architecture
+
+Update `.gsd/ARCHITECTURE.md` to reflect the current state of the codebase after the milestone:
+
+1. **Scan the project** — identify new components, removed modules, changed dependencies
+2. **Update the architecture diagram** — reflect structural changes from this milestone
+3. **Update STACK.md** — refresh technology and dependency information
+4. **Keep it lean** — remove details about components that no longer exist; summarize, don't accumulate
+
+> This prevents ARCHITECTURE.md from becoming stale or bloated across milestones (addresses the issue where architecture only updates via `/map`).
+
+---
+
+## 5d. Update Requirements
+
+If `.gsd/REQUIREMENTS.md` exists, mark completed requirements:
+
+1. Read each requirement's status
+2. Cross-reference with milestone deliverables and verification results
+3. Mark satisfied requirements as `Complete`
+4. Mark deferred items as `Deferred` with reason
+5. Archive the requirements snapshot into `.gsd/milestones/{name}/REQUIREMENTS.md`
 
 ---
 

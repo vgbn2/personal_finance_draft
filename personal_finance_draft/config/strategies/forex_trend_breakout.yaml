@@ -1,0 +1,61 @@
+engine: auto
+name: forex_trend_breakout
+kind: momentum
+family: momentum
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: cnn_v3
+sections:
+  hypothesis: "Forex breakouts from low-ATR consolidation zones tend to follow through; CNN detects consolidation-breakout patterns across major pairs."
+  universe:
+    - EURUSD
+    - USDJPY
+    - GBPUSD
+  signals:
+    entry: "Signal > 0.73"
+    exit: "Hold 7 days"
+  data:
+    required_sources:
+      - price_volume
+      - macro
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.52
+    max_holding_days: 7
+    risk_weight: 0.07
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+  notes:
+    - "v2: threshold 0.67→0.73, hold 5→7d, universe 5→3 (EUR/JPY/GBP — highest central bank divergence)"
+    - "Dropped AUDUSD/USDCAD: commodity-correlated, macro signal weaker"
+    - "Forex 1d only — 7d hold on 3 symbols targets ~80 trades/year"
+    - "macro feed critical for rate-decision windows (Fed/ECB/BoJ)"

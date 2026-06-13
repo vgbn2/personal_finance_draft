@@ -1,0 +1,61 @@
+engine: auto
+name: ai_sector_momentum
+kind: momentum
+family: momentum
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: lstm_v1
+sections:
+  hypothesis: "AI/ML narrative tokens cluster in synchronized momentum; LSTM captures temporal sector leadership rotation."
+  universe:
+    - FETUSDT
+    - TAOUSDT
+  signals:
+    entry: "Signal > 0.72"
+    exit: "Hold 7 days"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+      - on_chain
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.72
+    max_holding_days: 7
+    risk_weight: 0.08
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+  notes:
+    - "v3: threshold 0.68→0.72, hold 5→7d, universe 3→2 (FET+TAO — highest market cap AI tokens)"
+    - "RNDRUSDT dropped: lower liquidity, higher noise-to-signal ratio"
+    - "on_chain feed provides network activity pulse unique to AI token valuation"
+    - "Target <80 trades/year on 2 symbols with 7d hold"

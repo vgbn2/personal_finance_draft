@@ -2,9 +2,9 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { normalizeExternalQuotePayload } = require('../../../shared/lib/quote_router');
+const { normalizeExternalQuotePayload } = require('../../../shared/lib/market/quote_router');
 
-require('../../../shared/lib/env');
+require('../../../shared/lib/runtime/env');
 
 const COMMON_FILE = process.env.SOVEREIGN_HEADWAY_MT5_QUOTES_PATH || 
                    process.env.HEADWAY_MT5_QUOTES_PATH || 

@@ -43,6 +43,8 @@ if(SOVEREIGN_ENABLE_ONNX_RUNTIME)
     )
     FetchContent_MakeAvailable(onnxruntime_release)
 
+    set(SOVEREIGN_ONNXRUNTIME_LIBDIR "${onnxruntime_release_SOURCE_DIR}/lib" CACHE INTERNAL "onnxruntime lib dir")
+
     add_library(onnxruntime::onnxruntime SHARED IMPORTED)
 
     set_target_properties(onnxruntime::onnxruntime PROPERTIES
@@ -65,6 +67,20 @@ if(SOVEREIGN_ENABLE_ONNX_RUNTIME)
     endif()
 endif()
 
+# Copies the onnxruntime shared libs next to a target's executable on Windows so
+# the loader finds them at runtime (otherwise the exe fails with STATUS_DLL_NOT_FOUND).
+# No-op when ONNX is disabled or on non-Windows platforms.
+function(sovereign_copy_onnx_runtime target)
+    if(SOVEREIGN_ENABLE_ONNX_RUNTIME AND CMAKE_SYSTEM_NAME MATCHES "Windows")
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${SOVEREIGN_ONNXRUNTIME_LIBDIR}/onnxruntime.dll" "$<TARGET_FILE_DIR:${target}>"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${SOVEREIGN_ONNXRUNTIME_LIBDIR}/onnxruntime_providers_shared.dll" "$<TARGET_FILE_DIR:${target}>"
+            VERBATIM)
+    endif()
+endfunction()
+
 # Core Library Sources
 set(CORE_SOURCES
     src/correlation/correlation_engine.cpp
@@ -75,6 +91,7 @@ set(CORE_SOURCES
     src/trading_system.cpp
     src/replay/strategy_runner.cpp
     src/backtest/backtester.cpp
+    src/backtest/frame_backtester.cpp
     src/indicators/indicator_engine.cpp
     src/risk/cost_model.cpp
     src/portfolio/pnl_calculator.cpp
@@ -89,6 +106,7 @@ set(CORE_SOURCES
     src/ingestion/macro_ingestion.cpp
     src/ingestion/news_ingestion.cpp
     src/ingestion/stream_router.cpp
+    src/ml/kalman_filter.cpp
     src/ml/sentiment_ingestion.cpp
     src/ml/kronos_tokenizer.cpp
     src/ml/kronos_tensor_builder.cpp
@@ -119,7 +137,7 @@ set(CORE_SOURCES
 )
 
 add_library(sovereign_core STATIC ${CORE_SOURCES})
-target_include_directories(sovereign_core PUBLIC src)
+target_include_directories(sovereign_core PUBLIC src include)
 
 target_compile_definitions(sovereign_core PRIVATE
     SOVEREIGN_ONNX_RUNTIME_ENABLED=$<BOOL:${SOVEREIGN_ENABLE_ONNX_RUNTIME}>
@@ -132,6 +150,15 @@ endif()
 # Main Executable
 add_executable(sovereign_wealth src/main.cpp)
 target_link_libraries(sovereign_wealth PRIVATE sovereign_core)
+target_compile_definitions(sovereign_wealth PRIVATE
+    SOVEREIGN_ONNX_RUNTIME_ENABLED=$<BOOL:${SOVEREIGN_ENABLE_ONNX_RUNTIME}>
+)
+if(SOVEREIGN_ENABLE_ONNX_RUNTIME)
+    # sovereign_core is STATIC and links onnxruntime PRIVATE, so the final exe must
+    # satisfy the Ort symbols itself.
+    target_link_libraries(sovereign_wealth PRIVATE onnxruntime::onnxruntime)
+endif()
+sovereign_copy_onnx_runtime(sovereign_wealth)
 
 # Testing
 enable_testing()
@@ -182,11 +209,14 @@ target_compile_definitions(kronos_integration_test PRIVATE
 if(SOVEREIGN_ENABLE_ONNX_RUNTIME)
     target_link_libraries(kronos_integration_test PRIVATE onnxruntime::onnxruntime)
 endif()
+sovereign_copy_onnx_runtime(kronos_integration_test)
 
 target_compile_definitions(onnx_model_test PRIVATE
     SOVEREIGN_ONNX_RUNTIME_ENABLED=$<BOOL:${SOVEREIGN_ENABLE_ONNX_RUNTIME}>
+    SOVEREIGN_REPO_ROOT="${CMAKE_CURRENT_LIST_DIR}/../.."
 )
 if(SOVEREIGN_ENABLE_ONNX_RUNTIME)
     target_link_libraries(onnx_model_test PRIVATE onnxruntime::onnxruntime)
 endif()
+sovereign_copy_onnx_runtime(onnx_model_test)
 

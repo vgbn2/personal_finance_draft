@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { nativeToolchainStatus } = require('../dev/native_toolchain_check');
+const { nativeToolchainStatus } = require('../../../backend/scripts/dev/native_toolchain_check');
 
 test('native toolchain status reports required CMake gates and compiler fallback', () => {
   const status = nativeToolchainStatus();

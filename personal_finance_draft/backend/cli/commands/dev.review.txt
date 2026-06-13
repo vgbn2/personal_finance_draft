@@ -1,3 +1,0 @@
-C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\personal_finance_draft\backend\cli\commands\backend.js 
-C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\personal_finance_draft\backend\cli\commands\research.js
-need refactor

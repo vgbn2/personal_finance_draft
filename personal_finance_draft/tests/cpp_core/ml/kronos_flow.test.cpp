@@ -1,6 +1,6 @@
-#include "../../cpp_core/src/ml/kronos_tokenizer.hpp"
-#include "../../cpp_core/src/ml/kronos_tensor_builder.hpp"
-#include "../../cpp_core/src/data/data_snapshot.hpp"
+#include "../../../backend/core/src/ml/kronos_tokenizer.hpp"
+#include "../../../backend/core/src/ml/kronos_tensor_builder.hpp"
+#include "../../../backend/core/src/data/data_snapshot.hpp"
 #include <cassert>
 #include <iostream>
 #include <vector>
