@@ -49,7 +49,6 @@ struct SignalParts {
     double trend = 0.0;
     double volatility = 0.0;
 };
-//why are we using macd, rsi and hard coded values? dev review
 SignalParts signalParts(const features::FeatureRow& row) {
     const double close = std::max(valueOrZero(row, "close"), 1.0);
     SignalParts parts;

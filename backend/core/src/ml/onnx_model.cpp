@@ -15,7 +15,6 @@
 
 namespace sovereign {
 namespace ml {
-// IDE error -dev review
 struct OnnxModel::Impl {
     std::string model_name = "Kronos-Base";
     bool initialized = false;

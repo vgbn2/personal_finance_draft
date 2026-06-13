@@ -58,7 +58,7 @@ CnnInferenceResult CnnInferenceEngine::predict(const CnnTensor& tensor) const {
 
     const double down = std::max(0.0, 0.5 - 0.25 * trend_signal - 0.10 * mean_signal + 0.10 * vol_penalty);
     const double neutral = std::max(0.0, 0.35 + 0.15 * (1.0 - std::abs(trend_signal)) - 0.05 * vol_penalty);
-    const double up = std::max(0.0, 0.5 + 0.25 * trend_signal + 0.10 * mean_signal - 0.10 * vol_penalty);// questioning this part-dev review
+    const double up = std::max(0.0, 0.5 + 0.25 * trend_signal + 0.10 * mean_signal - 0.10 * vol_penalty);
 
     result.probabilities = normalizeScores(down, neutral, up);
     result.predicted_class = static_cast<int>(std::distance(

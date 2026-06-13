@@ -122,13 +122,14 @@ storage/data/ts/
 backend/scripts/data/cache/
 storage/db/*.sqlite3
 storage/exports/*.csv
+storage/data/backtests/latest_backtest.json
+storage/data/strategy_grade_index.json
 
 # Generated notebook/model artifacts
 models/*.onnx
 notebooks/*.ipynb
 Frontend/dashboard/*.zip
 __pycache__/
-
 # Compiled Binaries
 *.exe
 *.o
