@@ -757,6 +757,7 @@ function runBacktestJs(featureFrame, options = {}) {
   const byKey = new Map();
 
   const filteredFrame = filterFeatureFrame(featureFrame, { timeframe, from, to });
+  const family = options.family || (filteredFrame.features && filteredFrame.features[0] && filteredFrame.features[0].family) || 'crypto';
   const benchmark = buyHoldBenchmark(filteredFrame, { costBps, feeBps, slippageBps });
   for (const feature of filteredFrame.features || []) {
     if (!byKey.has(feature.key)) byKey.set(feature.key, []);
@@ -773,6 +774,14 @@ function runBacktestJs(featureFrame, options = {}) {
       const prediction = model.predict(rows[i]);
       if (prediction.direction !== 'long' || prediction.confidence < threshold) {
         continue;
+      }
+      // Session-gap guard for equities: reject trades crossing overnight or weekend gaps
+      if (family === 'equities' && rows[i].timeframe !== '1d') {
+        const entryDate = rows[i].as_of.substring(0, 10);
+        const exitDate = rows[i + horizon].as_of.substring(0, 10);
+        if (entryDate !== exitDate) {
+          continue;
+        }
       }
       const entry = rows[i].close;
       const exit = rows[i + horizon].close;
@@ -841,8 +850,8 @@ function runBacktestJs(featureFrame, options = {}) {
       net_return: equity - 1,
       gross_return: trades.reduce((acc, trade) => acc * (1 + trade.gross_return), 1) - 1,
       max_drawdown: maxDrawdown(equityCurve),
-      sharpe_ratio: annualizedSharpe(returns, primaryTimeframe, horizon),
-      sortino_ratio: annualizedSortino(returns, primaryTimeframe, horizon),
+      sharpe_ratio: annualizedSharpe(returns, primaryTimeframe, horizon, family),
+      sortino_ratio: annualizedSortino(returns, primaryTimeframe, horizon, family),
       win_rate: trades.length ? wins / trades.length : 0,
       hit_rate: trades.length ? wins / trades.length : 0,
       expectancy: trades.length ? mean(returns) : 0,

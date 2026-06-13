@@ -1,12 +1,15 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
+const fs = require('node:fs');
 const Module = require('node:module');
+const os = require('node:os');
 const path = require('node:path');
 
 const researchPath = path.resolve(__dirname, '../../../backend/cli/commands/research/research.js');
 const ingestPath = path.resolve(__dirname, '../../../backend/scripts/data_ops/ingest_market_data.js');
 const configLoaderPath = path.resolve(__dirname, '../../../shared/lib/runtime/config_loader.js');
 const researchConfigPath = path.resolve(__dirname, '../../../backend/cli/lib/research_config.js');
+const validationPath = path.resolve(__dirname, '../../../shared/lib/market/validation.js');
 
 function freshRequire(filePath) {
   delete require.cache[filePath];
@@ -120,4 +123,35 @@ test('historical backfill stays pinned when a timeframe is explicit', async () =
       assert.deepEqual(calls.map((call) => call.timeframe), ['1h']);
     },
   );
+});
+
+test('ts-index writer uses process-unique temp files', () => {
+  const { writeTsIndex, readTsIndex } = require(validationPath);
+  const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-ts-index-'));
+  const fixedTmp = path.join(tsDir, 'BTCUSDT_1d.bin.tmp');
+  fs.writeFileSync(fixedTmp, 'foreign-writer-temp', 'utf8');
+
+  try {
+    writeTsIndex(tsDir, {
+      sources: [{
+        family: 'crypto',
+        symbol: 'BTCUSDT',
+        timeframe: '1d',
+        timestamp: '2026-06-13T00:00:00.000Z',
+        open: 100,
+        high: 110,
+        low: 90,
+        close: 105,
+        volume: 12,
+        provider: 'test',
+      }],
+    });
+
+    const rows = readTsIndex(tsDir, 'BTCUSDT', '1d');
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].close, 105);
+    assert.equal(fs.readFileSync(fixedTmp, 'utf8'), 'foreign-writer-temp');
+  } finally {
+    fs.rmSync(tsDir, { recursive: true, force: true });
+  }
 });
