@@ -23,6 +23,7 @@
     "test:deploy": "node --test tests/scripts/deployment_manifest_contract.test.js",
     "test:macro": "node --test tests/scripts/macro_history_helpers.test.js tests/scripts/macro_ingestion_contract.test.js tests/scripts/macro_store_contract.test.js",
     "test:secrets": "node backend/scripts/dev/secret_pattern_check.js",
+    "hygiene": "node scripts/dev/check_hygiene.js",
     "verify:strict": "npm run test:contracts && npm run test:secrets && npm test"
   },
   "keywords": [],
