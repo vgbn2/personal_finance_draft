@@ -182,6 +182,8 @@ async function runPolymarketArchiveIngest(args, deps = {}) {
   const startOffset = numericOption(args, '--start-offset', numericOption(args, '--offset', 0));
   const category = optionValue(args, '--category', 'all');
   const archiveRoot = optionValue(args, '--archive-root', undefined);
+  const delayMs = numericOption(args, '--delay-ms', 250);
+  const refresh = hasFlag(args, '--refresh');
   return history.backfillPolymarketArchive({
     daysBack,
     interval,
@@ -191,6 +193,8 @@ async function runPolymarketArchiveIngest(args, deps = {}) {
     root: archiveRoot,
     includeNo: hasFlag(args, '--include-no'),
     noCache: hasFlag(args, '--no-cache'),
+    delayMs,
+    refresh,
   });
 }
 
