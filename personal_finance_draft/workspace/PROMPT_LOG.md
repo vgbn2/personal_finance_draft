@@ -1052,3 +1052,15 @@ FW3 intraday native poll delegated to subagent. Crypto alt resume launched.
 P0 FX integrity pre-verified green. P1 FW1 pre-verified in validation.js.
 P2 MATIC/POL: Option C (rebrand boundary, use --drop-non-overlap).
 HEAD: 77ec6479 | Suite: 438/438 JS | 29/29 C++
+
+## 2026-06-13 session 29 (Claude orchestrator)
+PROMPT: /blast-through (Focused audit) -> "plan to fix" -> broaden scope (find other gaps,
+make blast-through a true agent-consistent audit skill w/ commit-recency ranking + repo-wide
+hygiene, answer "was 5m deep-backfill generalized to other TFs + implemented?") -> "do it".
+WORK: Refined blast-through SKILL (recency queue + hygiene sweep + consistency contract + anchor).
+Wired the inert P3 equity session guard onto real consumer paths. Built deep-intraday rollup
+(5m->15m/30m/1h/4h, lossless) + auto-derive in deep-backfill. Slimmed dead intraday_yahoo fns,
+fixed intraday silent-zero, deleted dead config dup. Hit+corrected a shim-deletion regression
+(8 shims load-bearing via relative/#shared-alias/dist layers -> restored).
+RESULT: committed 217d21e5 on branch feat/session-guard-intraday-rollup. Suite 447/453 (6
+pre-existing env-dependent fails). HEAD: 217d21e5 | Suite: 447/453 JS.

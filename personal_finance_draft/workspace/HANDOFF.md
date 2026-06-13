@@ -18,6 +18,27 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 29 (2026-06-13) — blast-through refine + P3 guard WIRED + deep-intraday rollup + shim correction.**
+  Committed `217d21e5` on branch **`feat/session-guard-intraday-rollup`** (NOT merged to main = user
+  decision). Suite **447/453** (the 6 fails are pre-existing env-dependent: cockpit/status cache state +
+  polymarket/trade creds — proven identical to clean HEAD; zero new failures). Full trail:
+  `workspace/handoff/2026-06-13.md` session 29. Headlines:
+  - **P3 equity session guard now actually applied** (was inert) — `guardEquitySessionBars` runs in
+    `loadAssetSourcesFromCache` (ML) + `loadHistoricalSources` (backtest), gated to equity/index sub-daily.
+  - **Deep-intraday rollup** — deep depth was 5m-ONLY; new `intraday-rollup` derives 15m/30m/1h/4h from
+    deep 5m **losslessly**; deep-backfill now auto-derives coarser TFs (`--no-rollup` opt-out).
+    **NEXT STEP (user): run `intraday-rollup --family crypto` / `--family equities` once** to backfill
+    coarser bins for the 5m already on disk (local, seconds).
+  - **Cleanups:** intraday_yahoo slimmed to constants-only (Yahoo accepts `1h` natively); intraday
+    silent-zero fixed; dead `config/data_sources.yaml` dup deleted.
+  - **DURABLE TRAP:** the 8 `shared/lib` root shims (`paths/ansi/indicators/backtest/backend_bridge/
+    backfill/feature_builder/ai_client`) are LOAD-BEARING via sibling-relative requires, `#shared/*`
+    aliases, AND compiled `dist/` artifacts — a literal-grep deletion broke the build. Restored all 8;
+    direct source callers migrated to canonical. A module is "dead" only if it has no consumer across all
+    four layers. Blast-through SKILL refined (global) with this rule + recency-ranked queue + hygiene sweep.
+  - **Untracked, deliberately NOT staged (not session-29 work):** `.antigravitycli/`,
+    `scripts/dev/check_hygiene.js`, repo-local `skills/`, `tests/.../backend_correlation_preflight.test.js`.
+
 - **SESSION 25 (2026-06-13) — 5m Phase 3 + daily fix + Polymarket bulk DONE (suite 422/422, 12 commits).**
   Full trail: `workspace/handoff/2026-06-13.md` session 25. Headlines:
   - **5m now covers ALL families:** indices/commodities/fx via new `five-min-accumulate` (Yahoo
