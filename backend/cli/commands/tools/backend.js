@@ -246,6 +246,101 @@ function synthesizeFormulaSeries(allSources, symbolSet, timeframe) {
   return synthesized;
 }
 
+function summarizeCoverage(symbols, bySym) {
+  const coverage = {};
+  for (const sym of symbols) {
+    const dates = [...(bySym[sym] || new Set())].sort();
+    coverage[sym] = {
+      dates: dates.length,
+      first: dates[0] || null,
+      last: dates[dates.length - 1] || null,
+    };
+  }
+  return coverage;
+}
+
+function commonDateCount(symbols, bySym) {
+  let common = null;
+  for (const sym of symbols) {
+    const dates = bySym[sym] || new Set();
+    if (common === null) {
+      common = new Set(dates);
+      continue;
+    }
+    for (const d of common) {
+      if (!dates.has(d)) common.delete(d);
+    }
+  }
+  return common ? common.size : 0;
+}
+
+function noOverlapBlockers(symbols, bySym) {
+  if (symbols.length <= 2) return symbols;
+  return symbols.filter((sym) => commonDateCount(symbols.filter((s) => s !== sym), bySym) > 0);
+}
+
+function commonDatesFor(symbols, bySym) {
+  let common = null;
+  for (const sym of symbols) {
+    const dates = bySym[sym] || new Set();
+    if (common === null) {
+      common = new Set(dates);
+      continue;
+    }
+    for (const d of common) {
+      if (!dates.has(d)) common.delete(d);
+    }
+  }
+  return common;
+}
+
+function focusedCorrelationError(code, error, symbols, timeframe, bySym, extra = {}) {
+  return {
+    ok: false,
+    type: 'correlation_matrix',
+    engine: 'sovereign_cli_preflight',
+    schema_version: 1,
+    code,
+    error,
+    timeframe,
+    symbols,
+    quality: {
+      ok: false,
+      coverage: summarizeCoverage(symbols, bySym),
+      ...extra,
+    },
+  };
+}
+
+function renderCorrelationPreflightError(payload) {
+  const lines = [];
+  lines.push('Correlation preflight failed');
+  lines.push(`Reason: ${payload.error || payload.code || 'unknown'}`);
+  if (payload.quality?.hint) lines.push(`Hint: ${payload.quality.hint}`);
+  if (Array.isArray(payload.quality?.blockers) && payload.quality.blockers.length > 0) {
+    lines.push(`Blockers: ${payload.quality.blockers.join(', ')}`);
+  }
+  const coverage = payload.quality?.coverage || {};
+  const symbols = payload.symbols || Object.keys(coverage);
+  if (symbols.length > 0) {
+    lines.push('');
+    lines.push('Coverage:');
+    lines.push('symbol           dates  first        last');
+    for (const sym of symbols) {
+      const c = coverage[sym] || {};
+      lines.push(`${sym.padEnd(15)} ${String(c.dates || 0).padStart(5)}  ${c.first || '-'}  ${c.last || '-'}`);
+    }
+  }
+  lines.push('');
+  lines.push('Next: remove blockers, pass --drop-non-overlap, or choose a broader timeframe.');
+  return lines.join('\n');
+}
+
+function renderDroppedCorrelationSymbols(symbols = []) {
+  if (!symbols.length) return '';
+  return `Dropped non-overlapping symbols: ${symbols.join(', ')}`;
+}
+
 /**
  * Builds a focused temp snapshot for the C++ engine containing only the
  * requested symbols+timeframe. Read strategy (fastest first):
@@ -253,11 +348,15 @@ function synthesizeFormulaSeries(allSources, symbolSet, timeframe) {
  *   2. Family JSON partition fallback — for symbols not yet indexed
  * Returns { tmpPath, lastPrices } or null if no data found.
  */
-function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = false) {
+function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = false, options = {}) {
   const vlog = (...a) => { if (verbose) console.log(...a); };
   const vwarn = (...a) => { if (verbose) console.warn(...a); };
+  const tsIndexPath = options.tsIndexPath || DEFAULT_TS_INDEX;
+  const historyPath = options.historyPath || DEFAULT_HISTORY;
+  const dropNonOverlap = Boolean(options.dropNonOverlap);
   let sources = [];
   const missingFromIndex = new Set();
+  const droppedSymbols = [];
   
   // A. Expand symbolSet to include formula components
   const expandedSet = new Set(symbolSet);
@@ -268,9 +367,9 @@ function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = fal
   }
 
   // 1. Try binary ts index first (fast path)
-  if (fs.existsSync(DEFAULT_TS_INDEX)) {
+  if (fs.existsSync(tsIndexPath)) {
     for (const sym of expandedSet) {
-      const records = readTsIndex(DEFAULT_TS_INDEX, sym, timeframe);
+      const records = readTsIndex(tsIndexPath, sym, timeframe);
       if (records && records.length > 0) {
         for (const r of records) sources.push(r);
       } else {
@@ -282,7 +381,7 @@ function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = fal
   }
 
   // 2. Family JSON fallback for symbols not in ts index
-  if (missingFromIndex.size > 0 && fs.existsSync(DEFAULT_HISTORY) && fs.statSync(DEFAULT_HISTORY).isDirectory()) {
+  if (missingFromIndex.size > 0 && fs.existsSync(historyPath) && fs.statSync(historyPath).isDirectory()) {
     const neededFamilies = new Set();
     for (const u of universe) {
       if (missingFromIndex.has(u.symbol) && u.family) neededFamilies.add(u.family);
@@ -291,10 +390,10 @@ function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = fal
     neededFamilies.add('fx');
     neededFamilies.add('macro');
     
-    const familiesToScan = neededFamilies.size > 0 ? [...neededFamilies] : fs.readdirSync(DEFAULT_HISTORY);
+    const familiesToScan = neededFamilies.size > 0 ? [...neededFamilies] : fs.readdirSync(historyPath);
 
     for (const family of familiesToScan) {
-      const histPath = path.join(DEFAULT_HISTORY, family, 'backtest_history.json');
+      const histPath = path.join(historyPath, family, 'backtest_history.json');
       if (!fs.existsSync(histPath)) continue;
       try {
         const data = JSON.parse(fs.readFileSync(histPath, 'utf8'));
@@ -332,7 +431,7 @@ function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = fal
   // Threshold: at least 30 dates required. Symbols below this are logged and excluded.
   const MIN_DATES_FOR_CORRELATION = 30;
   const thinSyms = [...symbolSet].filter(sym => bySym[sym].size < MIN_DATES_FOR_CORRELATION);
-  const eligibleSyms = [...symbolSet].filter(sym => bySym[sym].size >= MIN_DATES_FOR_CORRELATION);
+  let eligibleSyms = [...symbolSet].filter(sym => bySym[sym].size >= MIN_DATES_FOR_CORRELATION);
 
   if (thinSyms.length > 0) {
     vwarn(`[VISIBILITY] Excluded ${thinSyms.length} symbols with < ${MIN_DATES_FOR_CORRELATION} dates: ${thinSyms.join(', ')}`);
@@ -340,6 +439,20 @@ function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = fal
 
   if (eligibleSyms.length < 2) {
     vwarn(`[VISIBILITY] Not enough symbols with sufficient data for correlation (need ≥ 2, got ${eligibleSyms.length})`);
+    if (symbolSet.size >= 2) {
+      return focusedCorrelationError(
+        'insufficient_correlation_coverage',
+        `Need at least 2 symbols with >= ${MIN_DATES_FOR_CORRELATION} ${timeframe} dates for correlation.`,
+        [...symbolSet],
+        timeframe,
+        bySym,
+        {
+          minimum_dates: MIN_DATES_FOR_CORRELATION,
+          thin_symbols: thinSyms,
+          eligible_symbols: eligibleSyms,
+        },
+      );
+    }
     return null;
   }
 
@@ -358,7 +471,31 @@ function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = fal
 
   if (!commonDates || commonDates.size === 0) {
       vwarn(`[VISIBILITY] Intersection failed! No common dates among eligible symbols: ${eligibleSyms.join(', ')}`);
-      return null;
+      const blockers = noOverlapBlockers(eligibleSyms, bySym);
+      const retained = eligibleSyms.filter((sym) => !blockers.includes(sym));
+      const retainedCommonDates = retained.length >= 2 ? commonDatesFor(retained, bySym) : null;
+      if (dropNonOverlap && blockers.length > 0 && retained.length >= 2 && retainedCommonDates && retainedCommonDates.size > 0) {
+        for (const blocker of blockers) {
+          symbolSet.delete(blocker);
+          droppedSymbols.push(blocker);
+        }
+        eligibleSyms = retained;
+        commonDates = retainedCommonDates;
+      } else {
+      return focusedCorrelationError(
+        'no_common_correlation_dates',
+        `No common ${timeframe} dates across selected symbols. Remove stale/non-overlapping symbols or choose a broader timeframe.`,
+        eligibleSyms,
+        timeframe,
+        bySym,
+        {
+          blockers,
+          hint: blockers.length > 0
+            ? `Try removing: ${blockers.slice(0, 6).join(', ')}${blockers.length > 6 ? ' +' + (blockers.length - 6) + ' more' : ''}`
+            : 'Try a smaller symbol set or a broader timeframe.',
+        },
+      );
+      }
   }
 
   // Restrict symbolSet to eligible symbols only
@@ -382,7 +519,18 @@ function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = fal
   const alignedSources = Object.values(finalMap);
   vlog(`[VISIBILITY] Final aligned snapshot: ${alignedSources.length} records (${commonDates.size} unique dates per symbol)`);
 
-  if (alignedSources.length === 0) return null;
+  if (alignedSources.length === 0) {
+    if (symbolSet.size >= 2) {
+      return focusedCorrelationError(
+        'empty_aligned_correlation_snapshot',
+        `No aligned ${timeframe} records remained after correlation prefiltering.`,
+        [...symbolSet],
+        timeframe,
+        bySym,
+      );
+    }
+    return null;
+  }
 
   const tmpPath = path.join(os.tmpdir(), `sovereign_corr_${Date.now()}.json`);
   fs.writeFileSync(tmpPath, JSON.stringify({ sources: alignedSources, mode: 'focused_correlation' }), 'utf8');
@@ -397,7 +545,13 @@ function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = fal
     }
   }
 
-  return { tmpPath, lastPrices };
+  return {
+    tmpPath,
+    lastPrices,
+    symbols: [...symbolSet],
+    droppedSymbols,
+    coverage: summarizeCoverage([...symbolSet, ...droppedSymbols], bySym),
+  };
 }
 
 function familyForSymbol(symbol, universe = []) {
@@ -779,11 +933,9 @@ async function runBackendCorrelation(args = [], preSelectedSymbol = null) {
     return { ok: false, error: `Need ≥2 symbols with cached data. ${available.length} available, ${unavailable.length} skipped.` };
   }
 
-  const resolved = available.join(',');
-  const symCount = available.length;
+  let effectiveSymbols = [...available];
   const requestedMethodRaw = optionValue(args, '--method', null);
   const requestedMethod = requestedMethodRaw === 'auto' ? null : requestedMethodRaw;
-  const correlationMethod = resolveCorrelationMethod(available, cachedUniverse, requestedMethod);
 
   // Build a focused temp snapshot: only requested symbols+timeframe.
   // Reduces C++ I/O from ~186MB full archive to a few MB of relevant records.
@@ -791,10 +943,31 @@ async function runBackendCorrelation(args = [], preSelectedSymbol = null) {
   let inputPath = userInput || DEFAULT_HISTORY;
   let tmpSnapshot = null;
   let lastPrices = {};
+  let droppedSymbols = [];
   if (!userInput) {
-    const focused = buildFocusedSnapshot(new Set(available), requestedTimeframe, cachedUniverse, process.argv.includes('--verbose'));
-    if (focused) { tmpSnapshot = focused.tmpPath; lastPrices = focused.lastPrices; inputPath = tmpSnapshot; }
+    const focused = buildFocusedSnapshot(new Set(available), requestedTimeframe, cachedUniverse, process.argv.includes('--verbose'), {
+      dropNonOverlap: hasFlag(args, '--drop-non-overlap'),
+    });
+    if (focused && focused.error) {
+      return {
+        ...backendAvailability(),
+        exit_code: 1,
+        input: DEFAULT_TS_INDEX,
+        ...focused,
+      };
+    }
+    if (focused) {
+      tmpSnapshot = focused.tmpPath;
+      lastPrices = focused.lastPrices;
+      inputPath = tmpSnapshot;
+      effectiveSymbols = focused.symbols || effectiveSymbols;
+      droppedSymbols = focused.droppedSymbols || [];
+    }
   }
+
+  const resolved = effectiveSymbols.join(',');
+  const symCount = effectiveSymbols.length;
+  const correlationMethod = resolveCorrelationMethod(effectiveSymbols, cachedUniverse, requestedMethod);
 
   const backendArgs = [
     'correlation',
@@ -831,6 +1004,7 @@ async function runBackendCorrelation(args = [], preSelectedSymbol = null) {
     (actualMs) => { _correlationTimingMs.set(symCount, actualMs); });
   if (tmpSnapshot) try { fs.unlinkSync(tmpSnapshot); } catch (_) {}
   if (result && Object.keys(lastPrices).length > 0) result._lastPrices = lastPrices;
+  if (result && droppedSymbols.length > 0) result._droppedSymbols = droppedSymbols;
   if (result && correlationMethod === 'fx-returns' && resolveCorrelationMethod(available, cachedUniverse) === 'fx-returns') {
     result._fxNote = 'FX pairs are directional: BASE up / QUOTE down; matrix uses log returns.';
   }
@@ -1516,12 +1690,20 @@ async function commandBackend(args) {
     
     if (subcommand === 'correlation' && payload.ok && !hasFlag(args, '--json')) {
         const { renderCorrelationHeatmap } = require('../../tui/index.js');
+        if (Array.isArray(payload._droppedSymbols) && payload._droppedSymbols.length > 0) {
+          console.log(renderDroppedCorrelationSymbols(payload._droppedSymbols));
+        }
         console.log('\n' + renderCorrelationHeatmap(payload.labels, payload.values, payload._lastPrices || {}, {
           method: payload.method,
           transform: payload.transform,
           note: payload._fxNote
         }));
         return 0;
+    }
+
+    if (subcommand === 'correlation' && !payload.ok && payload.engine === 'sovereign_cli_preflight' && !hasFlag(args, '--json')) {
+        console.error(renderCorrelationPreflightError(payload));
+        return 1;
     }
 
     if (subcommand === 'integrity' && !hasFlag(args, '--json')) {
@@ -1596,5 +1778,11 @@ module.exports = {
   reportSnapshotIntegrity, 
   runBackendIntegrity, 
   backendAvailability, 
-  commandBackend
+  commandBackend,
+  _test: {
+    buildFocusedSnapshot,
+    renderCorrelationPreflightError,
+    summarizeCoverage,
+    noOverlapBlockers,
+  }
 };
