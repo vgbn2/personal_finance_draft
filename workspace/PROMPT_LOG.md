@@ -1043,3 +1043,12 @@ graphify-out: refresh deferred (deprioritized by user 2026-06-11; no blocking na
 
 Awaiting user direction.
 
+## Session 2026-06-13 (session 28 close — Antigravity/Gemini)
+Prompt: /subagent-contracts /goal
+
+Session completed with /goal. Committed sessions 26-27 batch (5 commits, suite 432->438).
+P3 equity session guard + P4 ML 5m cap implemented and committed (77ec6479).
+FW3 intraday native poll delegated to subagent. Crypto alt resume launched.
+P0 FX integrity pre-verified green. P1 FW1 pre-verified in validation.js.
+P2 MATIC/POL: Option C (rebrand boundary, use --drop-non-overlap).
+HEAD: 77ec6479 | Suite: 438/438 JS | 29/29 C++
