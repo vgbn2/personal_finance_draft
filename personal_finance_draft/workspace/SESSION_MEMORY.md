@@ -1,4 +1,34 @@
-﻿## Session Memory - 2026-06-12 (session 22) 5y backfill silent failure root-caused + fixed; suite 387/387; rerun in flight
+﻿## Session Memory - 2026-06-13 (session 25) 5m Phase 3 all families + DAILY-TRUNCATION regression fixed + Polymarket bulk + mass-backfill coverage; suite 422/422
+
+{
+  "work": "Extended native 5m to indices/commodities/fx (new five-min-accumulate, Yahoo), deepened equities to 2016 (Alpaca SIP), added commodity ETF proxies, hardened+ran the Polymarket bulk archive (2045 markets/82,616 points), fixed a daily-history truncation regression and repopulated daily deep across all families, and closed a mass-backfill coverage gap. 12 commits on feat/ml-onnx-section.",
+  "key_mechanisms": [
+    "DAILY-TRUNCATION ROOT CAUSE + FIX (commit 7b050f3c): writeTsIndex rebuilds EVERY bin from the passed snapshot, which is sourced from the sub-daily-capped JSON partition + a shallow live fetch. Deep daily/1h/4h lived ONLY in the bins (never JSON) yet used REPLACE semantics, so every ingest (incl. the 5m deep backfills) overwrote the deep *_1d.bin of ALL symbols to the 1 live bar. FX 1d survived only because frankfurter/ecb daily also lands in JSON. Fix: merge-protection is now UNIVERSAL across timeframes (read existing bin + merge, new-wins-on-timestamp). Repopulate via `ingest --family X --timeframe 1d --history-days 7000` (freshness won't skip: the 1-bar cache doesn't cover the requested range). Proven durable: AAPL 1d held at 4822 through 3 subsequent full-index rewrites.",
+    "Yahoo 5m depth: the range=Nd URL form (no startTime) counts TRADING days and returns ~84 calendar days; period1/period2 spanning >60 calendar days returns HTTP 422. So accumulate passes NO startTime. selectYahooBase picks 5m base for an all-sub-daily set; coarser TFs aggregate from it.",
+    "Alpaca: IEX historical 5m starts only 2020-07, but SIP works back to 2016-01 on this account; free plan 403s when the window touches the last ~15min ('subscription does not permit querying recent SIP data'). fetchAlpacaBaseCandles now clamps the request end to now-16min when feed==='sip' (ALPACA_DATA_FEED env).",
+    "Native sub-daily 5m was being STRIPPED at storage (commit dead1fce): the session-23 synthetic guard rejected ANY 5m source containing 'rollup', but the 5m->5m identity passthrough labels source 'yahoo-rollup-from-5m'. Fixed: the 5m-rollup clause fires only when derived_from_timeframe is NOT a sub-daily TF.",
+    "Polymarket: Gamma /markets hard-caps a page at 100 rows regardless of `limit` (commit c7893390 paginates by offset, capped at 100) AND order=id surfaces empty hourly micro-markets while order=volumeNum surfaces data-rich markets (commit 474f6bf6 defaults to volumeNum + fixes a null --archive-root crash where optionValue's own null default defeated `root = CACHE_DIR`).",
+    "mass-backfill collected only config[family].symbols (flat), MISSING universe_matrix grid-only symbols (JPM/GS/AVGO/intl). massBackfillUniverse now unions flat ∪ grid (commit d94f8e65); 92->151 symbols.",
+    "DURABLE TRAP: writeTsIndex writes a FIXED <bin>.tmp then renameSync — safe WITHIN one process (synchronous fs serializes on the single-threaded event loop, so mass-backfill --concurrency N is fine) but two SEPARATE node processes racing the shared .tmp throw EPERM with no catch -> serialize backfill processes (FW1 = per-pid temp suffix)."
+  ],
+  "verified": [
+    "Full suite 422/422 exit 0 (was 395).",
+    "Live: 30-symbol Yahoo accumulate 329,396 5m bars; equity SIP 41/41 to 2016 (AAPL 456k); daily repopulated deep (equities 1998-2007, indices 1998, commodities 2003, crypto 2017); Polymarket bulk 2045 markets/82,616 price points.",
+    "TUI verified via pipe harness: 3 new commands render in the Operational menu + five-min-accumulate dispatches (select/text/confirm widgets) -> dry-run plan output."
+  ],
+  "user_decisions": [
+    "Plan approved (Ultraplan cloud failed -- repo too large to teleport; ran locally). Commits pre-authorized via ExitPlanMode allowedPrompts.",
+    "Intraday 15m/30m/1h/4h: NATIVE POLL per TF, not 5m-aggregation (deeper for Yahoo 1h=730d). Deferred (FW3).",
+    "Crypto 5m re-run to 2017 STOPPED mid-run ('took too long') at ~11/18 -- BTC/ETH to 926k bars; ~10 alts keep 5y depth (resumable). Flag multi-hour runtime before launching deep crypto runs."
+  ],
+  "remaining": [
+    "Resume ~10 crypto alts (PEPE/WIF/SHIB/FET/POL/AVAX/NEAR/INJ/SUI/RNDR) to listing dates -- one crypto-deep-backfill --days 3300 run, multi-hour.",
+    "FW1 per-pid writeTsIndex temp; FW3 native-poll intraday; FW2 monolith deconstruction; FW6 backward-gap fetch; equity session-gap guard; ML 5m caps; merge feat/ml-onnx-section -> main (user).",
+    "~937MB untracked root artifacts (state.zip/.bundle/vgbn1@vgbn-) pending user cleanup."
+  ],
+  "dcs": 0.97
+}
+## Session Memory - 2026-06-12 (session 22) 5y backfill silent failure root-caused + fixed; suite 387/387; rerun in flight
 
 {
   "work": "Boot verification of the session-21 carryover found the 18-symbol 5y 5m backfill mid-run but delivering nothing; let it finish (ok:true exit 0, bars_5m:0 for all 17 live symbols), root-caused the silent failure, fixed it (Fable-direct, ~40-line diff), added regression tests, re-proved with the real command at 400d, relaunched the full 1825d run in background.",
