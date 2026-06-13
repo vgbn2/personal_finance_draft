@@ -2,10 +2,15 @@ sources:
   equities:
     enabled: true
     providers: ["finnhub", "twelve", "stooq", "yahoo", "tradingview"]
-    symbols: ["AAPL", "MSFT", "NVDA", "TSLA", "GOOGL", "META", "AMZN", "NFLX", "AMD", "BABA", "ARM", "MSTR", "COIN", "SMCI", "SPY", "QQQ", "IWM", "DIA", "ORCL", "SBUX", "NKE", "TMUS", "VCB", "BID", "CTG", "TCB", "FPT", "CMG", "VIC", "VHM", "VRE", "VNM", "MSN", "HPG", "FMC", "GAS"]
+    # Commodity ETF proxies (GLD/SLV/...) ride the native Alpaca 5m equity path to get deep
+    # intraday history that the cash/futures commodities symbols cannot. CORN ETF is deliberately
+    # EXCLUDED: ts-index files are {symbol}_{timeframe}.bin, so a "CORN" ETF would collide with the
+    # canonical commodities "CORN" bin. VIX has no honest ETF proxy (VIXY/UVXY are futures-decay
+    # products, not a spot-index tracker), so it stays index-only via five-min-accumulate.
+    symbols: ["AAPL", "MSFT", "NVDA", "TSLA", "GOOGL", "META", "AMZN", "NFLX", "AMD", "BABA", "ARM", "MSTR", "COIN", "SMCI", "SPY", "QQQ", "IWM", "DIA", "ORCL", "SBUX", "NKE", "TMUS", "VCB", "BID", "CTG", "TCB", "FPT", "CMG", "VIC", "VHM", "VRE", "VNM", "MSN", "HPG", "FMC", "GAS", "GLD", "SLV", "CPER", "USO", "BNO", "UNG", "WEAT", "SOYB"]
     universe_matrix:
       x_axis_markets: ["USA", "VN", "IN", "UK", "GER"]
-      y_axis_sectors: ["technology", "financials", "energy", "healthcare", "mining", "automotive", "industrials", "real_estate", "consumer", "communication_services", "consumer_discretionary", "indices"]
+      y_axis_sectors: ["technology", "financials", "energy", "healthcare", "mining", "automotive", "industrials", "real_estate", "consumer", "communication_services", "consumer_discretionary", "indices", "commodity_etfs"]
       grid:
         USA:
           technology: ["AAPL", "MSFT", "NVDA", "AMD", "AVGO", "ORCL", "CRM", "ADBE", "MSTR", "SMCI"]
@@ -13,6 +18,7 @@ sources:
           communication_services: ["GOOGL", "META", "DIS", "TMUS", "VZ"]
           consumer_discretionary: ["TSLA", "AMZN", "NFLX", "SBUX", "NKE", "MCD"]
           indices: ["SPY", "QQQ"]
+          commodity_etfs: ["GLD", "SLV", "CPER", "USO", "BNO", "UNG", "WEAT", "SOYB"]
         VN:
           financials: ["VCB", "BID", "CTG", "TCB"]
           technology: ["FPT", "CMG"]
