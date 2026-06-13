@@ -529,6 +529,7 @@ async function backfillPolymarketArchive(opts = {}) {
     pageLimit = 200,
     startOffset = 0,
     category = 'all',
+    order = 'id',
     noCache = false,
     includeNo = false,
     generateFeatures = true,
@@ -548,7 +549,7 @@ async function backfillPolymarketArchive(opts = {}) {
 
   while (markets.length < maxMarkets) {
     const limit = Math.min(pageLimit, maxMarkets - markets.length);
-    const page = await fetchMarketsPage({ limit, offset, noCache });
+    const page = await fetchMarketsPage({ limit, offset, order, noCache });
     if (!page.ok) return { ok: false, error: page.error, warnings, errors };
     const rows = Array.isArray(page.data) ? page.data : [];
     if (rows.length === 0) break;
