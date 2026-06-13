@@ -22,9 +22,9 @@ int main() {
     using namespace sovereign::indicators;
     using namespace sovereign::features;
 
-    std::filesystem::path cache_path = "data/cache/backtest_history.json";
+    std::filesystem::path cache_path = "storage/data/cache/backtest_history.json";
     if (!std::filesystem::exists(cache_path)) {
-        cache_path = "../../data/cache/backtest_history.json";
+        cache_path = "../../storage/data/cache/backtest_history.json";
     }
 
     if (!std::filesystem::exists(cache_path)) {

@@ -93,9 +93,14 @@ When triggered, write to `.gsd/STATE.md`:
 2. **Include** at minimum: current phase, current task, last action, next step
 3. **Then** inform the user of the situation and recommend `/pause`
 
-### Why
+### Rule 4: Diagnostic Pulse (Wave 7 Protocol)
 
-Sessions can terminate abruptly (usage limits, context limits, network errors). If the agent waits for the user to type `/pause`, it may never get the chance. By saving first and recommending second, state is always preserved.
+Whenever the system is paused specifically for **debugging** or due to the **3-strike rule**, a **Diagnostic Pulse** is mandatory:
+
+1. **Perform** a recursive scan of the project root and subdirectories.
+2. **Update** `.gsd/ARCHITECTURE.md` to reflect any new files or deleted orphans created during the failed work.
+3. **Log** any "shadow dependencies" (libraries added but not pinned in `requirements.txt`) to the `TODO.md` backlog.
+4. **Capture** the exact state of the `diabetic/` core engine to ensure the handoff includes correct module offsets.
 
 ## Integration
 

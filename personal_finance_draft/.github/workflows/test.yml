@@ -28,16 +28,20 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
+      - name: Scan tracked files for secret patterns
+        run: npm run test:secrets
+
       - name: Check active JavaScript entrypoints
         run: |
-          node --check scripts/lib/quote_router.js
-          node --check scripts/data_ops/ingest_market_data.js
-          node --check scripts/cli/sovereign_cli.js
-          node --check scripts/tui_cli/intersection.js
-          node --check web/app.js
+          node --check shared/lib/quote_router.js
+          node --check backend/scripts/data_ops/ingest_market_data.js
+          node --check backend/scripts/data_ops/ingest_market_data/index.js
+          node --check backend/cli/sovereign_cli.js
+          node --check backend/cli/tui/intersection.js
+          node --check backend/api/app.js
 
       - name: Type-check execution gateway
-        run: node node_modules/typescript/bin/tsc -p execution_gateway/tsconfig.json --noEmit
+        run: node node_modules/typescript/bin/tsc -p backend/gateway/tsconfig.json --noEmit
 
       - name: Run Node tests
         run: npm test

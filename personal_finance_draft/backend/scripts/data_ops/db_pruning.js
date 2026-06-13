@@ -7,10 +7,10 @@
 
 /**
  * Database Pruning and Archiving Script
- * Usage: node scripts/data_ops/db_pruning.js [--days 30] [--archive ./data/archive]
+ * Usage: node backend/scripts/data_ops/db_pruning.js [--days 30] [--archive ./storage/data/archive]
  */
 
-const { runMaintenance } = require('../../../shared/lib/db_pruning');
+const { runMaintenance } = require('../../../shared/lib/data/db_pruning');
 
 function getArg(name, fallback) {
   const idx = process.argv.indexOf(name);

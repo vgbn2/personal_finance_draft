@@ -1,110 +1,111 @@
 pub mod utils {
-    #[path = "utils/errors.rs"]
+    #[path = "errors.rs"]
     pub mod errors;
-    #[path = "utils/logger.rs"]
+    #[path = "logger.rs"]
     pub mod logger;
-    #[path = "utils/cli_formatter.rs"]
+    #[path = "cli_formatter.rs"]
     pub mod cli_formatter;
 }
 
 pub mod config {
-    #[path = "config/app_config.rs"]
+    #[path = "app_config.rs"]
     pub mod app_config;
-    #[path = "config/broker_config.rs"]
+    #[path = "broker_config.rs"]
     pub mod broker_config;
-    #[path = "config/strategy_config.rs"]
+    #[path = "strategy_config.rs"]
     pub mod strategy_config;
 }
 
 pub mod portfolio {
-    #[path = "portfolio/state.rs"]
+    #[path = "state.rs"]
     pub mod state;
-    #[path = "portfolio/pnl_calculator.rs"]
+    #[path = "pnl_calculator.rs"]
     pub mod pnl_calculator;
-    #[path = "portfolio/trade_log.rs"]
+    #[path = "trade_log.rs"]
     pub mod trade_log;
-    #[path = "portfolio/paper_trading.rs"]
+    #[path = "paper_trading.rs"]
     pub mod paper_trading;
 }
 
 pub mod backtest_queue {
-    #[path = "backtest_queue/job_queue.rs"]
+    #[path = "job_queue.rs"]
     pub mod job_queue;
-    #[path = "backtest_queue/job_worker.rs"]
+    #[path = "job_worker.rs"]
     pub mod job_worker;
-    #[path = "backtest_queue/progress_tracker.rs"]
+    #[path = "progress_tracker.rs"]
     pub mod progress_tracker;
 }
 
 pub mod notifications {
-    #[path = "notifications/alert_manager.rs"]
+    #[path = "alert_manager.rs"]
     pub mod alert_manager;
-    #[path = "notifications/email.rs"]
+    #[path = "email.rs"]
     pub mod email;
-    #[path = "notifications/telegram.rs"]
+    #[path = "telegram.rs"]
     pub mod telegram;
-    #[path = "notifications/webhook.rs"]
+    #[path = "webhook.rs"]
     pub mod webhook;
 }
 
 pub mod runtime_surface;
+pub mod js_surface;
 
 pub mod data_pipeline {
-    #[path = "data_pipeline/cache.rs"]
+    #[path = "cache.rs"]
     pub mod cache;
-    #[path = "data_pipeline/data_validator.rs"]
+    #[path = "data_validator.rs"]
     pub mod data_validator;
-    #[path = "data_pipeline/fred.rs"]
+    #[path = "fred.rs"]
     pub mod fred;
-    #[path = "data_pipeline/gate_io.rs"]
+    #[path = "gate_io.rs"]
     pub mod gate_io;
-    #[path = "data_pipeline/polymarket.rs"]
+    #[path = "polymarket.rs"]
     pub mod polymarket;
-    #[path = "data_pipeline/sentiment.rs"]
+    #[path = "sentiment.rs"]
     pub mod sentiment;
 }
 
 pub mod broker_api {
-    #[path = "broker_api/gate_io_api.rs"]
+    #[path = "gate_io_api.rs"]
     pub mod gate_io_api;
-    #[path = "broker_api/mt5_native.rs"]
+    #[path = "mt5_native.rs"]
     pub mod mt5_native;
-    #[path = "broker_api/order_executor.rs"]
+    #[path = "order_executor.rs"]
     pub mod order_executor;
 }
 
 pub mod commands {
-    #[path = "commands/analytics.rs"]
+    #[path = "analytics.rs"]
     pub mod analytics;
-    #[path = "commands/backtest.rs"]
+    #[path = "backtest.rs"]
     pub mod backtest;
-    #[path = "commands/correlation.rs"]
+    #[path = "correlation.rs"]
     pub mod correlation;
-    #[path = "commands/data.rs"]
+    #[path = "data.rs"]
     pub mod data;
-    #[path = "commands/execute.rs"]
+    #[path = "execute.rs"]
     pub mod execute;
-    #[path = "commands/macro.rs"]
+    #[path = "macro.rs"]
     pub mod macro_cmd;
-    #[path = "commands/notify.rs"]
+    #[path = "notify.rs"]
     pub mod notify;
-    #[path = "commands/optimize.rs"]
+    #[path = "optimize.rs"]
     pub mod optimize;
-    #[path = "commands/paper_trade.rs"]
+    #[path = "paper_trade.rs"]
     pub mod paper_trade;
-    #[path = "commands/portfolio.rs"]
+    #[path = "portfolio.rs"]
     pub mod portfolio;
-    #[path = "commands/retrain.rs"]
+    #[path = "retrain.rs"]
     pub mod retrain;
-    #[path = "commands/registry.rs"]
+    #[path = "registry.rs"]
     pub mod registry;
-    #[path = "commands/sentiment.rs"]
+    #[path = "sentiment.rs"]
     pub mod sentiment;
-    #[path = "commands/signal.rs"]
+    #[path = "signal.rs"]
     pub mod signal;
-    #[path = "commands/strategies.rs"]
+    #[path = "strategies.rs"]
     pub mod strategies;
-    #[path = "commands/test.rs"]
+    #[path = "test.rs"]
     pub mod test;
 }
 
@@ -115,3 +116,4 @@ pub use broker_api::mt5_native::{bridge_name as mt5_bridge_name, endpoint as mt5
 pub use broker_api::order_executor::{route_order, RoutedOrder};
 pub use commands::analytics::{analytics_command_name, analytics_summary, CommandSummary};
 pub use commands::registry::{command_names, command_registry, CommandRegistryEntry};
+pub use js_surface::{command_aliases, command_spec, command_specs, help_lines, CommandSpec};

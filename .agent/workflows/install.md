@@ -16,7 +16,7 @@ Look for GSD marker directories:
 
 **PowerShell:**
 ```powershell
-$alreadyInstalled = (Test-Path ".agent") -or (Test-Path ".gsd")
+$alreadyInstalled = (Test-Path ".agents") -or (Test-Path ".agent") -or (Test-Path ".gsd")
 if ($alreadyInstalled) {
     Write-Output "GSD files detected in this project."
 }
@@ -24,7 +24,7 @@ if ($alreadyInstalled) {
 
 **Bash:**
 ```bash
-if [ -d ".agent" ] || [ -d ".gsd" ]; then
+if [ -d ".agents" ] || [ -d ".agent" ] || [ -d ".gsd" ]; then
     echo "GSD files detected in this project."
 fi
 ```
@@ -66,6 +66,7 @@ git clone --depth 1 https://github.com/toonight/get-shit-done-for-antigravity.gi
 ```powershell
 # Core directories
 Copy-Item -Recurse ".gsd-install-temp\.agent" ".\"
+Copy-Item -Recurse ".gsd-install-temp\.agents" ".\"
 Copy-Item -Recurse ".gsd-install-temp\.gemini" ".\"
 Copy-Item -Recurse ".gsd-install-temp\.gsd" ".\"
 Copy-Item -Recurse ".gsd-install-temp\adapters" ".\"
@@ -82,6 +83,7 @@ Copy-Item -Force ".gsd-install-temp\model_capabilities.yaml" ".\"
 ```bash
 # Core directories
 cp -r .gsd-install-temp/.agent ./
+cp -r .gsd-install-temp/.agents ./
 cp -r .gsd-install-temp/.gemini ./
 cp -r .gsd-install-temp/.gsd ./
 cp -r .gsd-install-temp/adapters ./
@@ -145,7 +147,8 @@ B) No — Skip
 GSD for Antigravity has been installed.
 
 Files installed:
-• .agent/        (workflows + skills)
+• .agent/        (workflows)
+• .agents/       (skills — Agent Skills standard)
 • .gemini/       (Gemini integration)
 • .gsd/          (project state templates)
 • adapters/      (model-specific enhancements)

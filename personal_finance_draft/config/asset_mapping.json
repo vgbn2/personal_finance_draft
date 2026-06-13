@@ -1,7 +1,10 @@
 {
   "mapping": {
-    "Crypto": ["BTC", "USDT", "ETH"],
-    "FX": ["USD", "EUR", "JPY"],
-    "Equities": ["AAPL", "MSFT", "TSLA"]
+    "Crypto": ["BTC", "ETH", "SOL", "AVAX", "MATIC", "BNB", "XRP", "ADA", "DOT", "LINK", "UNI", "DOGE", "SHIB", "LTC", "ATOM", "NEAR", "APT", "OP", "ARB", "USDT", "USDC"],
+    "Indices": ["SPX", "NDX", "DJI", "VIX", "IXIC", "RUT", "DAX", "FTSE", "FCHI", "N225", "HSI", "SPY", "QQQ", "IWM", "DIA"],
+    "Commodities": ["XAU", "XAG", "XCU", "USOIL", "UKOIL", "GOLD", "SILVER", "OIL", "NG", "GC=F", "SI=F", "HG=F", "CL=F"],
+    "Forex": ["EUR", "GBP", "JPY", "CHF", "AUD", "CAD", "NZD", "CNY", "HKD", "SGD", "USD"],
+    "Macro": ["DXY", "TNX", "FVX", "TYX", "FEDFUNDS", "CPI", "PCE", "UNEMPLOYMENT"],
+    "Equities": []
   }
 }

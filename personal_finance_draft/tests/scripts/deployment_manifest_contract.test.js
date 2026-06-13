@@ -7,7 +7,7 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const DOCKER_COMPOSE = path.join(REPO_ROOT, 'infra', 'docker', 'docker-compose.yml');
 const K8S_DEPLOYMENT = path.join(REPO_ROOT, 'infra', 'deployment', 'kubernetes', 'deployment.yaml');
 const K8S_CONFIGMAP = path.join(REPO_ROOT, 'infra', 'deployment', 'kubernetes', 'configmap.yaml');
-const DEPLOYMENT_DOC = path.join(REPO_ROOT, 'docs', 'operational', 'DEPLOYMENT.md');
+const DEPLOYMENT_DOC = path.join(REPO_ROOT, 'docs', 'operational', 'guides', 'DEPLOYMENT.md');
 
 function read(filePath) {
   return fs.readFileSync(filePath, 'utf8');

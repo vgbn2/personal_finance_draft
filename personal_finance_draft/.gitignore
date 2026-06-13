@@ -2,12 +2,18 @@
 
 # Node.js
 node_modules/
+backend/api/node_modules/
+backend/gateway/node_modules/
+Frontend/dashboard/node_modules/
 dist/
+Frontend/dashboard/dist/
 npm-debug.log*
 
 # Build Directories
 build/
+backend/core/build/
 cpp_core/build/
+backend/cli/target/
 cli/target/
 web/node_modules/
 graphify-out/
@@ -17,6 +23,65 @@ graphify-out/
 .agents/
 .gemini/
 .gsd/
+.adal/
+.aider-desk/
+.augment/
+.autohand/
+.bob/
+.claude/
+.codeartsdoer/
+.codebuddy/
+.codemaker/
+.codestudio/
+.commandcode/
+.continue/
+.cortex/
+.crush/
+.devin/
+.factory/
+.forge/
+.goose/
+.hermes/
+.iflow/
+.inferencesh/
+.jazz/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.lingma/
+.mcpjam/
+.moxby/
+.mux/
+.neovate/
+.ona/
+.openhands/
+.pi/
+.pochi/
+.qoder/
+.qwen/
+.reasonix/
+.roo/
+.rovodev/
+.tabnine/
+.terramind/
+.tinycloud/
+.trae/
+.vibe/
+.windsurf/
+.zencoder/
+
+# Diagnostic Noise
+repo_tree.txt
+strucure_report.txt
+tracked_files.txt
+backend_candidates.txt
+training_data.jsonl
+.graphify_*
+
+# Legacy / Temp Binaries
+sovereign_wealth_console*
+terminus*
 
 # Local IDE and tooling caches
 .clangd
@@ -49,13 +114,22 @@ data/trades/*.sqlite
 data/*.db
 storage/data/*.csv
 storage/data/*.bin
+storage/data/cache/
+storage/data/ml/
+storage/data/paper_trading/
+storage/data/polymarket_history/
+storage/data/ts/
+backend/scripts/data/cache/
 storage/db/*.sqlite3
 storage/exports/*.csv
+storage/data/backtests/latest_backtest.json
+storage/data/strategy_grade_index.json
 
 # Generated notebook/model artifacts
 models/*.onnx
 notebooks/*.ipynb
-
+Frontend/dashboard/*.zip
+__pycache__/
 # Compiled Binaries
 *.exe
 *.o
@@ -70,3 +144,6 @@ notebooks/*.ipynb
 #   git rm --cached cpp_core/src/sovereign_wealth.exe
 #   git rm -r --cached docss/
 docss/
+
+# ML training virtualenv (local-only)
+.venv_ml/

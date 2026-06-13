@@ -71,6 +71,47 @@ std::vector<CorrelationPair> CorrelationEngine::pairwisePearson(std::span<const 
     return pairs;
 }
 
+std::vector<CorrelationDivergence> CorrelationEngine::computeDivergence(
+    std::span<const std::string> labels,
+    std::span<const std::vector<double>> series,
+    std::size_t short_window,
+    double threshold
+) {
+    if (labels.size() != series.size()) {
+        throw std::invalid_argument("labels and series must have the same length");
+    }
+
+    std::vector<CorrelationDivergence> results;
+    if (series.empty()) return results;
+
+    const std::size_t n = labels.size();
+    for (std::size_t i = 0; i < n; ++i) {
+        for (std::size_t j = i + 1; j < n; ++j) {
+            const auto& s1 = series[i];
+            const auto& s2 = series[j];
+
+            if (s1.size() < short_window || s2.size() < short_window) {
+                continue;
+            }
+
+            // Calculate long correlation (full series)
+            const double long_corr = pearsonCorrelation(s1, s2);
+
+            // Calculate short correlation (last short_window elements)
+            std::span<const double> s1_short(s1.data() + (s1.size() - short_window), short_window);
+            std::span<const double> s2_short(s2.data() + (s2.size() - short_window), short_window);
+            const double short_corr = pearsonCorrelation(s1_short, s2_short);
+
+            const double diff = std::abs(short_corr - long_corr);
+            if (diff > threshold) {
+                results.push_back({labels[i], labels[j], short_corr, long_corr, diff});
+            }
+        }
+    }
+
+    return results;
+}
+
 double pearsonCorrelation(std::span<const double> lhs, std::span<const double> rhs) {
     if (lhs.size() != rhs.size() || lhs.size() < 2U) {
         return 0.0;
@@ -104,6 +145,24 @@ double spearmanCorrelation(std::span<const double> lhs, std::span<const double> 
     const auto lhs_rank = rankValues(lhs);
     const auto rhs_rank = rankValues(rhs);
     return pearsonCorrelation(lhs_rank, rhs_rank);
+}
+
+std::vector<double> logReturnSeries(std::span<const double> prices) {
+    std::vector<double> returns;
+    if (prices.size() < 2U) {
+        return returns;
+    }
+
+    returns.reserve(prices.size() - 1U);
+    for (std::size_t i = 1; i < prices.size(); ++i) {
+        const double previous = prices[i - 1U];
+        const double current = prices[i];
+        if (previous <= 0.0 || current <= 0.0) {
+            continue;
+        }
+        returns.push_back(std::log(current / previous));
+    }
+    return returns;
 }
 
 } // namespace sovereign

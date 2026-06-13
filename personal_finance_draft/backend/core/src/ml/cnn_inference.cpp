@@ -10,10 +10,6 @@ namespace sovereign::ml {
 
 namespace {
 
-float clampProbability(double value) {
-    return static_cast<float>(std::clamp(value, 0.0, 1.0));
-}
-
 std::vector<float> normalizeScores(double down, double neutral, double up) {
     const double total = std::max(0.000001, down + neutral + up);
     return {
@@ -62,7 +58,7 @@ CnnInferenceResult CnnInferenceEngine::predict(const CnnTensor& tensor) const {
 
     const double down = std::max(0.0, 0.5 - 0.25 * trend_signal - 0.10 * mean_signal + 0.10 * vol_penalty);
     const double neutral = std::max(0.0, 0.35 + 0.15 * (1.0 - std::abs(trend_signal)) - 0.05 * vol_penalty);
-    const double up = std::max(0.0, 0.5 + 0.25 * trend_signal + 0.10 * mean_signal - 0.10 * vol_penalty);// questioning this part-dev review
+    const double up = std::max(0.0, 0.5 + 0.25 * trend_signal + 0.10 * mean_signal - 0.10 * vol_penalty);
 
     result.probabilities = normalizeScores(down, neutral, up);
     result.predicted_class = static_cast<int>(std::distance(

@@ -10,7 +10,7 @@ Key modules:
 - `tests/` for bridge and integration coverage
 
 Operational note:
-- The Node CLI in `scripts/cli/sovereign_cli.js` remains the active runtime
+- The Node CLI in `backend/cli/sovereign_cli.js` remains the active runtime
 surface.
 - This Rust crate exists for local CLI-core parity, contract tests, and future
 bridge work.

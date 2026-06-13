@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const helperPath = require.resolve('../../shared/lib/macro_store');
+const helperPath = require.resolve('../../shared/lib/data/macro_store');
 const supabaseJsPath = require.resolve('@supabase/supabase-js');
 
 function withStubbedSupabaseClient(run) {

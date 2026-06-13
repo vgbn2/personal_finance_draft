@@ -8,6 +8,11 @@ const common = require('./common');
 const weather = require('./weather');
 const interest = require('./interest');
 const alpaca = require('./alpaca');
+const tradingview = require('./tradingview');
+const coingecko = require('./coingecko');
+const finnhub = require('./finnhub');
+const twelve = require('./twelve');
+const ecb = require('./ecb');
 
 module.exports = {
   ...binance,
@@ -19,5 +24,10 @@ module.exports = {
   ...weather,
   ...interest,
   ...alpaca,
+  ...tradingview,
+  ...coingecko,
+  ...finnhub,
+  ...twelve,
+  ...ecb,
   ...common
 };

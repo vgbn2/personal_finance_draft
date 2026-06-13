@@ -1,0 +1,59 @@
+engine: auto
+name: crypto_layer1_momentum
+kind: momentum
+family: momentum
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: lstm_v1
+sections:
+  hypothesis: "Fast-moving momentum strategy for major Layer 1 crypto assets."
+  universe:
+    - BTCUSDT
+    - ETHUSDT
+    - SOLUSDT
+    - AVAXUSDT
+    - NEARUSDT
+  signals:
+    entry: "Signal > 0.60"
+    exit: "Hold 3 days"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.60
+    max_holding_days: 3
+    risk_weight: 0.15
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+  notes: []
