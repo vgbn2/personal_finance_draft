@@ -622,7 +622,12 @@ function tsIndexPath(tsDir, symbol, timeframe) {
  * tsDir should be e.g. storage/data/ts/
  * Only OHLCV families are indexed (equities, indices, crypto, commodities).
  */
-// Timeframes whose bins are merge-protected in writeTsIndex (see loop below).
+// All ts-index bins are merge-protected in writeTsIndex (see loop below). The
+// ts-index is the deepest store; the JSON partitions snapshots are rebuilt from
+// are sub-daily-capped AND, for most families, never carried deep daily/1h/4h at
+// all (that history lived only in the bins). So a snapshot rebuilt from JSON +
+// a shallow live fetch must NEVER truncate any bin — daily/1w/1mo/1h/4h included.
+// Retained for backward-compat references; merge-protection is now universal.
 const SUB_DAILY_PRESERVED_TIMEFRAMES = new Set(['1m', '5m', '15m', '30m']);
 
 function writeTsIndex(tsDir, snapshot) {
@@ -655,12 +660,15 @@ function writeTsIndex(tsDir, snapshot) {
   for (const [key, { records, meta }] of groups) {
     if (!meta || records.length === 0) continue;
 
-    // Sub-daily bins hold deeper history than the (90-day-capped) JSON
-    // partitions snapshots are rebuilt from, so replacing the bin from a
-    // shallow snapshot would silently truncate a deep backfill. Merge with
-    // the existing bin instead; new records win on timestamp conflict.
-    // Daily-and-above keeps replace semantics (their JSON carries full depth).
-    if (SUB_DAILY_PRESERVED_TIMEFRAMES.has(meta.timeframe)) {
+    // Merge-protection for EVERY timeframe: the bin is the deepest store, so a
+    // snapshot rebuilt from the (sub-daily-capped, daily-shallow) JSON partition
+    // must never truncate it. Merge with the existing bin; new records win on
+    // timestamp conflict (handles split/dividend adjustments to a given bar),
+    // existing records at other timestamps are preserved. Previously only
+    // {1m,5m,15m,30m} were protected and daily/1h/4h/1w/1mo used replace, which
+    // silently truncated deep daily bins (which never lived in JSON) to a single
+    // live bar on every ingest.
+    {
       const existing = readTsIndex(tsDir, meta.symbol, meta.timeframe);
       if (existing && existing.length > 0) {
         const newMs = new Set();

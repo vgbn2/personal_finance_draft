@@ -466,8 +466,12 @@ test('writeTsIndex merges sub-daily bins (shallow snapshot cannot truncate a dee
 
     const after5m = readTsIndex(tsDir, 'BTCUSDT', '5m');
     assert.strictEqual(after5m.length, 1010, '5m bin merged: deep 1000 preserved + 10 new');
+    // Daily is now merge-protected too: a shallow rebuild (deep daily lives only in
+    // the bin, never in the capped JSON partition) must NOT truncate it. Regression
+    // guard for the 1d->1-bar truncation found 2026-06-13.
+    // deep1d spans day-offsets 5..104, shallow1d spans 0..9 -> 5-bar overlap -> 105 distinct.
     const after1d = readTsIndex(tsDir, 'BTCUSDT', '1d');
-    assert.strictEqual(after1d.length, 10, '1d bin keeps replace semantics (JSON holds full daily depth)');
+    assert.strictEqual(after1d.length, 105, '1d bin merged: deep preserved + new, union of distinct timestamps (no truncation)');
   } finally {
     fs.rmSync(tsDir, { recursive: true, force: true });
   }
