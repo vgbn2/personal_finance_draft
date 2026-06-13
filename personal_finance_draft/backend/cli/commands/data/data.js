@@ -1139,6 +1139,221 @@ async function commandUniverse(args) {
   return 0;
 }
 
+/**
+ * Builds the job list for the 'five-min-accumulate' command.
+ *
+ * Covers Yahoo-native 5m data for indices, commodities, and FX families.
+ * Each family uses its own symbol-mapping table from the constants module.
+ *
+ * @param {object} config  - Loaded config (output of loadConfig())
+ * @param {object} options - { family?: string, symbol?: string }
+ * @returns {{ provider, timeframe, jobs, skipped_symbols, requested_symbol_found }}
+ */
+function buildFiveMinAccumulatePlan(config, options = {}) {
+  const { YAHOO_INDEX_SYMBOLS, YAHOO_COMMODITY_SYMBOLS, YAHOO_FX_SYMBOLS } =
+    require('../../../scripts/data_ops/ingest_market_data/constants.js');
+
+  const VALID_FAMILIES = ['indices', 'commodities', 'fx'];
+  const familyFilter = options.family ? String(options.family).trim().toLowerCase() : null;
+  const symbolFilter = options.symbol ? String(options.symbol).trim().toUpperCase() : null;
+
+  if (familyFilter && !VALID_FAMILIES.includes(familyFilter)) {
+    throw new Error(`Invalid --family "${familyFilter}". Must be one of: ${VALID_FAMILIES.join(', ')}`);
+  }
+
+  const FAMILY_MAPS = {
+    indices: YAHOO_INDEX_SYMBOLS,
+    commodities: YAHOO_COMMODITY_SYMBOLS,
+    fx: YAHOO_FX_SYMBOLS,
+  };
+
+  const families = VALID_FAMILIES.filter(f => !familyFilter || f === familyFilter);
+
+  const jobs = [];
+  const skipped_symbols = [];
+
+  for (const family of families) {
+    const configSymbols = config[family]?.symbols || [];
+    const yahooMap = FAMILY_MAPS[family];
+    const symbolsToProcess = symbolFilter
+      ? configSymbols.filter(s => String(s).trim().toUpperCase() === symbolFilter)
+      : configSymbols;
+
+    for (const sym of symbolsToProcess) {
+      const normalized = String(sym).trim().toUpperCase();
+      if (yahooMap[normalized]) {
+        jobs.push({ family, symbol: normalized });
+      } else {
+        skipped_symbols.push({ family, symbol: normalized, reason: 'no yahoo intraday symbol mapping' });
+      }
+    }
+  }
+
+  const requested_symbol_found = symbolFilter ? jobs.some(j => j.symbol === symbolFilter) || skipped_symbols.some(s => s.symbol === symbolFilter) : true;
+
+  return {
+    provider: 'yahoo',
+    timeframe: '5m',
+    jobs,
+    skipped_symbols,
+    requested_symbol_found,
+  };
+}
+
+/**
+ * Handles the 'five-min-accumulate' command.
+ *
+ * Harvests Yahoo's rolling ~60-day native 5m window for indices, commodities, and FX.
+ * Weekly re-runs grow history; ts-index bins are merge-protected so re-runs are safe.
+ *
+ * Example: sovereign five-min-accumulate --dry-run --json
+ */
+async function commandFiveMinAccumulate(args) {
+  const { loadConfig, ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
+
+  const days = numericOption(args, '--days', 59);
+  const delayMs = numericOption(args, '--delay-ms', 250);
+  const dryRun = hasFlag(args, '--dry-run');
+  const familyArg = optionValue(args, '--family', null);
+  const symbolArg = optionValue(args, '--symbol', null);
+
+  if (days <= 5) {
+    printPayload({ ok: false, error: 'five-min-accumulate requires --days > 5 (native intraday fetch); use plain ingest for short windows' }, args);
+    return 1;
+  }
+  if (days > 59) {
+    printPayload({ ok: false, error: 'five-min-accumulate supports at most --days 59 (Yahoo serves ~60 trading days of 5m; the request 422s beyond that)' }, args);
+    return 1;
+  }
+
+  const config = await loadConfig();
+
+  let plan;
+  try {
+    plan = buildFiveMinAccumulatePlan(config, { family: familyArg, symbol: symbolArg });
+  } catch (err) {
+    printPayload({ ok: false, error: err.message }, args);
+    return 1;
+  }
+
+  if (symbolArg && !plan.requested_symbol_found) {
+    printPayload({ ok: false, error: `Symbol ${String(symbolArg).toUpperCase()} not found in indices/commodities/fx universe` }, args);
+    return 1;
+  }
+
+  const { jobs, skipped_symbols } = plan;
+
+  if (dryRun) {
+    printPayload({
+      ok: true,
+      dry_run: true,
+      provider: 'yahoo',
+      timeframe: '5m',
+      days,
+      delay_ms: delayMs,
+      jobs: jobs.length,
+      job_list: jobs,
+      skipped: skipped_symbols.length,
+      skipped_symbols,
+      estimated_api_calls: jobs.length,
+      message: `Would fetch native Yahoo 5m (~60 trading days) for ${jobs.length} symbols across indices/commodities/fx. Re-run without --dry-run to execute. Re-run weekly to accumulate history (gaps appear if runs are >8 weeks apart).`,
+    }, args);
+    return 0;
+  }
+
+  const results = { ok: 0, errors: 0 };
+  const allErrors = [];
+  const symbolResults = [];
+  let total5mBars = 0;
+  const familyCounts = { indices: 0, commodities: 0, fx: 0 };
+
+  console.log(`[FIVE-MIN-ACCUMULATE] Starting Yahoo 5m harvest: ${jobs.length} symbols, ${days} days, delay=${delayMs}ms`);
+  if (skipped_symbols.length > 0) {
+    console.log(`[FIVE-MIN-ACCUMULATE] Skipping ${skipped_symbols.length} unmapped symbols`);
+  }
+
+  for (let i = 0; i < jobs.length; i++) {
+    const job = jobs[i];
+    const progress = `[${i + 1}/${jobs.length}]`;
+    if (process.stdout.isTTY) {
+      process.stdout.write(`\r\x1b[K${progress} ${job.symbol} (${job.family}) Yahoo 5m ...`);
+    } else {
+      console.log(`${progress} Fetching ${job.symbol} (${job.family}) Yahoo 5m (${days} days)`);
+    }
+
+    const start = Date.now();
+    try {
+      const snapshot = await ingestMarketData({
+        family: job.family,
+        symbol: job.symbol,
+        timeframe: '5m',
+        historyDays: days,
+        provider: 'yahoo',
+        force: true,
+        returnAttemptSnapshot: true,
+      });
+      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+      const fiveMBars = (snapshot.sources || []).filter(r => r.timeframe === '5m' && r.symbol === job.symbol);
+      const snapErrors = snapshot.errors || [];
+      for (const e of snapErrors) allErrors.push(e);
+
+      const symbolOk = fiveMBars.length > 0 || snapErrors.length === 0;
+      if (symbolOk) results.ok++; else results.errors++;
+      total5mBars += fiveMBars.length;
+      familyCounts[job.family] = (familyCounts[job.family] || 0) + 1;
+
+      const entry = { symbol: job.symbol, family: job.family, ok: symbolOk, bars_5m: fiveMBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
+      if (!symbolOk) {
+        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || 'no native Yahoo 5m bars ingested';
+      }
+      symbolResults.push(entry);
+
+      if (process.stdout.isTTY) {
+        const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
+        process.stdout.write(`\r\x1b[K${progress} ${color}${job.symbol}\x1b[0m (${job.family}) Yahoo 5m: ${fiveMBars.length} bars (${elapsed}s)\n`);
+      } else {
+        console.log(`${progress} ${job.symbol} (${job.family}) Yahoo 5m: ${fiveMBars.length} bars (${elapsed}s)${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
+      }
+    } catch (err) {
+      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+      allErrors.push({ symbol: job.symbol, timeframe: '5m', family: job.family, provider: 'yahoo', message: err.message });
+      results.errors++;
+      familyCounts[job.family] = (familyCounts[job.family] || 0) + 1;
+      symbolResults.push({ symbol: job.symbol, family: job.family, ok: false, bars_5m: 0, elapsed_s: Number(elapsed), error: err.message });
+      if (process.stdout.isTTY) {
+        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${job.symbol}\x1b[0m (${job.family}) Yahoo 5m: FAILED (${err.message})\n`);
+      } else {
+        console.error(`${progress} ${job.symbol} (${job.family}) FAILED: ${err.message}`);
+      }
+    }
+
+    if (delayMs > 0 && i < jobs.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+
+  if (process.stdout.isTTY) process.stdout.write('\n');
+
+  printPayload({
+    ok: results.errors === 0,
+    provider: 'yahoo',
+    timeframe: '5m',
+    days,
+    delay_ms: delayMs,
+    jobs: jobs.length,
+    skipped: skipped_symbols.length,
+    skipped_symbols,
+    successful: results.ok,
+    errors: results.errors,
+    total_5m_bars: total5mBars,
+    families: familyCounts,
+    symbol_results: symbolResults,
+    error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
+    output: DEFAULT_HISTORY,
+  }, args);
+  return results.errors === 0 ? 0 : 1;
+}
+
 module.exports = {
   buildMassBackfillExecutionPlan,
   ingestOptionsFromArgs,
@@ -1156,4 +1371,6 @@ module.exports = {
   commandEquityDeepBackfill,
   buildEquityDeepBackfillPlan,
   estimateEquity5mApiCalls,
+  commandFiveMinAccumulate,
+  buildFiveMinAccumulatePlan,
 };
