@@ -200,7 +200,8 @@ const COMMAND_MANIFEST = {
       { id: 'correlation', prefix: ['backend'], label: 'Backend Correlation', loading: true, flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--max-bars': { type: 'text', default: '252', label: 'Lookback Period (Bars)' },
-        '--method': { type: 'select', options: ['auto', 'pearson-returns', 'fx-returns', 'pearson-levels'], label: 'Correlation Method', default: 'auto' }
+        '--method': { type: 'select', options: ['auto', 'pearson-returns', 'fx-returns', 'pearson-levels'], label: 'Correlation Method', default: 'auto' },
+        '--drop-non-overlap': { type: 'confirm', label: 'Drop non-overlapping symbols automatically?', default: false }
       }},
       { id: 'visualize', prefix: ['backend'], label: 'Backend Visualize (Sigma Bands + Live Poll)', flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
