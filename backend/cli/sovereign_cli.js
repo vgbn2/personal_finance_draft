@@ -11,7 +11,7 @@ const { commandBackend } = require('./commands/tools/backend.js');
 const { commandQuotes } = require('./commands/quotes/quotes.js');
 const { commandStrategyMenu, commandPropFirmMenu } = require('./commands/strategy/strategy.js');
 const { commandBacktest, commandOptimize, commandEdgeDecay, commandDemo, commandIndicators, commandModelCompare } = require('./commands/research/research.js');
-const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandValidate, commandPrune, commandLoc, commandUniverse, commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate } = require('./commands/data/data.js');
+const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandValidate, commandPrune, commandLoc, commandUniverse, commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIntradayAccumulate } = require('./commands/data/data.js');
 const { commandTrade, buildTradeGatewayLaunch, commandMt5, commandMt5Profile, commandMt5Connect, commandMt5Bridge, commandAutoTrade, commandAddPlatform, commandAgent, commandPolymarket, commandBot } = require('./commands/trade/trade.js');
 const { commandLogin, commandRegister, commandLogout, commandAuthStatus } = require('./commands/account/auth.js');
 const { commandSettings } = require('./commands/settings/settings.js');
@@ -46,6 +46,7 @@ async function handleCommand(args) {
     'crypto-deep-backfill':  (a) => commandCryptoDeepBackfill(a),
     'equity-deep-backfill':  (a) => commandEquityDeepBackfill(a),
     'five-min-accumulate':   (a) => commandFiveMinAccumulate(a),
+    'intraday-accumulate':   (a) => commandIntradayAccumulate(a),
     'cache-clean':           (a) => commandCacheClean(a),
     universe:         (a) => commandUniverse(a),
     check:            (a) => commandValidate(a),
