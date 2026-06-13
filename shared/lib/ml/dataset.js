@@ -13,6 +13,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { REPO_ROOT, STORAGE_TS_DIR } = require('../runtime/paths');
 const { readTsIndex } = require('../market/validation');
+const { guardEquitySessionBars } = require('../market/equity_session');
 
 const NATIVE_CRYPTO_5M_PROVIDERS = new Set(['binance', 'coinbase', 'twelve', 'finnhub']);
 const DAILY_OR_ABOVE_TIMEFRAMES = new Set(['1d', '1w', '1mo']);
@@ -162,8 +163,12 @@ function loadAssetSourcesFromCache(symbols, timeframe = '1d', opts = {}) {
   // Fill the rest of the universe from the binary ts index (it carries the full backfill).
   const tsRecords = readTsSources(symbols, timeframe, opts.tsDir);
   const includeExperimentalSynthetic5m = Boolean(opts.includeExperimentalSynthetic5m);
-  const filtered = mergeSourceRecords(jsonFiltered, tsRecords)
+  const merged = mergeSourceRecords(jsonFiltered, tsRecords)
     .filter((record) => includeExperimentalSynthetic5m || !isExperimentalSynthetic5mRecord(record));
+  // Drop pre/post-market equity & index intraday bars before features are built
+  // (other families/daily bars pass through untouched). This is the real consumer
+  // boundary for the equity session-gap guard.
+  const filtered = guardEquitySessionBars(merged).records;
 
   // Cap to the most recent N bars per symbol — the expanding-window feature build is
   // O(n^2), so unbounded 7000-bar histories are impractical. Default: no cap.
