@@ -7,6 +7,9 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const CACHE_DIR = path.join(REPO_ROOT, 'storage', 'data', 'polymarket_history');
 const GAMMA_BASE = 'https://gamma-api.polymarket.com';
 const CLOB_BASE  = 'https://clob.polymarket.com';
+// Gamma /markets returns at most 100 rows per request regardless of the `limit`
+// query param, so deep pagination must page by offset rather than asking for more.
+const GAMMA_PAGE_MAX = 100;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const ARCHIVE_SCHEMA_VERSION = 'sovereign.polymarket.history/v1';
 const ARCHIVE_SCHEMA_VERSION_V2 = 'sovereign.polymarket.history/v2';
@@ -547,8 +550,11 @@ async function backfillPolymarketArchive(opts = {}) {
   let offset = Math.max(0, Number(startOffset) || 0);
   const startedAt = new Date().toISOString();
 
+  // Gamma hard-caps a page at 100 rows regardless of the requested limit, so a
+  // requested limit > 100 always comes back "short" — never treat that as the end
+  // of the catalog. Terminate only on an empty page (true end) or maxMarkets.
   while (markets.length < maxMarkets) {
-    const limit = Math.min(pageLimit, maxMarkets - markets.length);
+    const limit = Math.min(pageLimit, GAMMA_PAGE_MAX, maxMarkets - markets.length);
     const page = await fetchMarketsPage({ limit, offset, order, noCache });
     if (!page.ok) return { ok: false, error: page.error, warnings, errors };
     const rows = Array.isArray(page.data) ? page.data : [];
