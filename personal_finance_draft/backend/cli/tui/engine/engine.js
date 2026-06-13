@@ -1,6 +1,6 @@
 const readline = require('node:readline');
 const MANIFEST = require('../manifest');
-const A = require('../../../../shared/lib/ansi');
+const A = require('../../../../shared/lib/ui/ansi');
 const { formatTimeForSettings, layoutConfig } = require('../../../../shared/lib/settings/runtime');
 const { registerCtrlCPress } = require('../../lib/exit_guard');
 const { renderSigmaSparkline, renderCorrelationHeatmap, centerCell } = require('../visualizations');

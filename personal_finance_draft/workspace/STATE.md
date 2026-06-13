@@ -1,7 +1,19 @@
 # Project State - Sovereign Trading Platform
 
+<!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
+last_audited_commit: 51b20b6ca6b93f35aa67eb426b782413bfe704cc
+last_audit_date: 2026-06-13
+
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
+
+## Implementation Note - 2026-06-13 session 29 - blast-through refine + P3 wiring + deep-intraday rollup
+- Blast-through SKILL refined (global): recency-ranked audit queue, repo-wide hygiene sweep, agent-consistency contract, audit anchor (`last_audited_commit` above).
+- P3 equity session guard is now WIRED (was inert): `guardEquitySessionBars` runs in `loadAssetSourcesFromCache` (ML) + `loadHistoricalSources` (backtest), gated to equity/index sub-daily bars.
+- Deep-intraday rollup: new `intraday-rollup` command derives 15m/30m/1h/4h from the deep 5m (lossless); crypto/equity-deep-backfill now auto-derive coarser TFs (`--no-rollup` opt-out). Deep depth was 5m-only before.
+- `intraday_yahoo.js` slimmed to constants-only (Yahoo accepts `1h` natively); intraday silent-zero fixed; dead `config/data_sources.yaml` dup deleted.
+- CORRECTION: 8 `shared/lib` root shims are LOAD-BEARING (consumed via relative requires, `#shared/*` aliases, compiled `dist/`), NOT dead — a literal-grep deletion broke the build; restored all 8, migrated direct callers to canonical. See DEV_REVIEW session 29 + the four-layer dead-file rule.
+- Suite 447/453 (6 pre-existing env-dependent failures: cockpit/status cache state + polymarket/trade creds). Zero new failures.
 
 ## Implementation Note - 2026-06-13 session 28 - P3/P4 + sessions 26-27 batch committed
 - Committed sessions 26-27 uncommitted batch (5 commits): docs reorg with ENOENT fix, correlation preflight, mass-backfill report, hygiene/C++ purge.

@@ -340,4 +340,108 @@ Verdict: core engines REAL and healthy; test harness has fixture-path debt.
 - `node --test tests/scripts/tui_terminal_automation.test.js` passed `6/6`.
 - The green tests cover current happy paths and explicit-error paths, but not the new silent-zero, Coinbase-routing, session-gap, intraday-cap, or gap-resume cases listed above.
 
+---
+
+## Blast-Through Audit — 2026-06-13 session 29 (Claude orchestrator)
+
+Focused audit of the sessions 26-28 merge to `main` (commits `e232c4b5..51b20b6c`): FW3 intraday,
+P3 equity session guard, P4 ML 5m cap, config alias. DCS 0.97. Suite baseline 438/438 (carried).
+
+### P1 — P3 equity session guard is implemented but INERT (never called on any consumer path)
+- `shared/lib/market/equity_session.js` `filterEquitySessionGaps` is correct and unit-tested (6/6),
+  but `shared/lib/strategy/backtest.js` only **imports it (line 14) and re-exports it (line 1073)** —
+  `runBacktest` / `filterFeatureFrame` never invoke it, and the ML dataset builder
+  (`shared/lib/ml/dataset.js`) does not call it either. Grep proof: the only non-test references are
+  the import + the re-export.
+- **Impact:** the standing carryover "equity 5m session-gap guard BEFORE indicator/backtest
+  consumption" is **NOT closed**. STATE.md / SESSION_MEMORY / handoff say "guard implemented (6 tests)"
+  which overstates — the helper exists, the guard does not run. Equity intraday bars still reach
+  indicators/backtests un-filtered.
+- **Reviewer decision:** wire `filterEquitySessionGaps` into the equity branch of
+  `filterFeatureFrame`/`runBacktest` (and/or the ml dump loader) gated on family=equities/indices +
+  sub-daily timeframe, OR explicitly downgrade the docs to "helper available, integration pending."
+- **Gate:** a backtest/feature-frame test that feeds pre/post-market equity bars and asserts they are
+  dropped by the real consumer path (not the helper in isolation).
+
+### P2 — `intraday_yahoo.js` fetch/records/aggregate functions are dead exports (test-only)
+- `fetchYahooIntradayBars`, `candlesToRecords`, `aggregate1hTo4h` are referenced ONLY by
+  `tests/scripts/tests/intraday_native_poll.test.js`. The production command `commandIntradayAccumulate`
+  routes through `ingestMarketData({provider:'yahoo'})` → the pre-existing
+  `selectYahooBase`→`fetchYahooBaseCandles`→`aggregateCandles` path, which already handled 15m/30m/1h/4h.
+- The module's headline rationale — "Yahoo uses '60m' not '1h'" — is **empirically false**: a live probe
+  of `^GSPC?interval=1h` and `?interval=60m` both return valid candles. The production path sends `1h`
+  un-translated and works. So the `1h→60m` translation + the parallel fetch/aggregate logic are
+  unnecessary duplication of `selectYahooBase` (4h→1h base) and `aggregateCandles`.
+- The only production-consumed exports are the constants `SUPPORTED_INTRADAY_TFS` and
+  `INTRADAY_MAX_DAYS` — and `INTRADAY_MAX_DAYS` **duplicates** `YAHOO_MAX_DAYS` in `constants.js`
+  (both `{15m:60,30m:60,1h:730,4h:730}`; they will drift if one is edited).
+- **Reviewer decision:** keep `intraday_yahoo.js` as the constants-only home (re-export
+  `YAHOO_MAX_DAYS` instead of redefining) and delete the dead fetch/records/aggregate trio + their
+  shape tests, OR actually route the command through this module and retire the duplicate index.js
+  branch. Pick one owner for the Yahoo-intraday interval knowledge.
+
+### P2 — `commandIntradayAccumulate` replicates the known silent-zero success pattern
+- `backend/cli/commands/data/data.js:1725`: `const symbolOk = intradayBars.length > 0 || snapErrors.length === 0;`
+  — identical to the P1 "silent empty provider → reported OK with zero bars" finding already filed
+  above for `crypto/equity/five-min` deep commands. A symbol that returns no bars and no explicit
+  error is counted as success.
+- **Fix plan:** same as the existing silent-zero entry — an explicitly-requested job with zero
+  target-timeframe bars and no skip reason should be a failure. Add a zero-bars-no-errors test for
+  `intraday-accumulate`.
+
+### P3 — `config/data_sources.yaml` root alias is a dead 208-line duplicate
+- Commit `51b20b6c` added `config/data_sources.yaml` as a "backward-compat safety net" after a
+  `crypto-deep-backfill` ENOENT. The commit message itself concludes the backend "already uses
+  `config/markets/data_sources.yaml` correctly" and the ENOENT was "a stale process that had cached
+  the pre-reorg path." Grep confirms **zero code reads the root path**.
+- **Impact:** two full copies of `data_sources.yaml` now exist with nothing keeping them in sync —
+  a future edit to canonical `config/markets/data_sources.yaml` silently leaves the root copy stale,
+  and any code that later (re)acquires the root path would read drift.
+- **Reviewer decision:** delete `config/data_sources.yaml` (the stale process was the real cause, and
+  it is gone), OR if a safety net is genuinely wanted, replace the copy with a generated/symlinked
+  artifact + a structure-contract test asserting byte-equality with canonical.
+
+### P1 — Deep 5m depth was never generalized to coarser intraday timeframes (data-depth gap)
+- The "all-the-way to inception" deep backfill is **5m-only**: `commandCryptoDeepBackfill` /
+  `commandEquityDeepBackfill` hard-code `timeframe:'5m'`. Live bin evidence (`storage/data/ts/`):
+  `BTCUSDT_5m.bin`=44.5MB (to 2017) but `_1h.bin`=420KB (~730d Yahoo native), `_15m.bin`=1.8MB (~1yr),
+  and `_30m.bin`/`_4h.bin` are **stale from Jun 10** (untouched by sessions 25/28). Same shape for AAPL.
+- The deep 5m is **not rolled up** into coarser bins, even though `aggregateCandles`
+  (`ingest_market_data/index.js:394`) already does `5m→15m/30m/1h/4h`. Rollup is **lossless** (separate
+  per-TF bins; 5m preserved; merge-protected write; coarser-from-finer so the synthetic-5m guard doesn't
+  fire). No `intraday-rollup` command exists; `intraday-accumulate` even tells the user to "aggregate
+  from 1h bars" for 4h but provides no way to do it.
+- **Reviewer decision (approved):** add `intraday-rollup` to derive deep 15m/30m/1h/4h from the existing
+  deep 5m for crypto + US equities; refresh the stale 30m/4h bins.
+
+### P2 — shared/lib reorg shims are LOAD-BEARING, not dead (corrected 2026-06-13 s29)
+- Initial hygiene sweep using only `require('.../shared/lib/<name>')` literal-grep reported the 8 root
+  shims (`paths/ansi/indicators/backtest/backend_bridge/backfill/feature_builder/ai_client`) as dead
+  or near-dead. **That was wrong.** Deleting them broke the suite via THREE resolution layers the
+  literal grep missed:
+  1. **Sibling-relative requires** inside `shared/lib/<subdir>/` — e.g. `shared/lib/ml/feature_builder.js`
+     → `require('../indicators')`, `shared/lib/settings/user_settings.js` → `require('../paths')`,
+     `shared/lib/compat/adapters.js` → `require('../backfill')`.
+  2. **Subpath-import aliases** — `package.json` maps `#shared/*` → `./shared/lib/*.js`, so
+     `#shared/ansi`/`#shared/ai_client`/`#shared/indicators`/`#shared/backtest` all resolve to the root
+     shims (used by `trade.js`, `setup.js`, `module_loading.test.js`).
+  3. **Compiled build artifacts** — gitignored `dist/mcp_server/lib/{bridge,agent_gate}.js`
+     `require("../../../shared/lib/paths")` (compiled from the MCP TypeScript source).
+- **Resolution:** shims restored; they are intentional compatibility re-exports, NOT dead code. Direct
+  source callers WERE migrated to canonical category paths (14 literal sites + the relative + alias
+  sites), so the shims now have fewer consumers, but they must stay until the `#shared/*` alias map and
+  the MCP TS source are repointed and `dist/` rebuilt. **Durable lesson for the Hygiene Sweep:** a
+  module is only "dead" if it has no consumer across literal requires, sibling-relative requires,
+  `#shared/*`/subpath aliases, AND compiled `dist/` artifacts — grep all four before deleting.
+- `config/data_sources.yaml` (the root yaml dup) WAS genuinely dead (0 readers across code + dist) and
+  was deleted.
+
+### Verified good this pass
+- P4 ML 5m cap (`backend/cli/commands/research/ml.js`): clean — 100k default, `--max-rows-5m`
+  override, `[VISIBILITY]` log; `ml_dataset` test updated 50k→100k. 27/27 on the touched test trio.
+- `commandIntradayAccumulate` core: provider-pinned (`provider:'yahoo'`), real dry-run, `--days`
+  validated against the TF cap, loud per-symbol `[VISIBILITY]` logging, dedupe via ts-index merge.
+- No security findings in scope (no eval / dynamic require / secrets / exec in the changed files).
+- Yahoo accepts `interval=1h` (live-verified) — production FW3 path is functionally correct.
+
 #
