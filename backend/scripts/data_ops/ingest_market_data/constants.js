@@ -105,6 +105,19 @@ const YAHOO_COMMODITY_SYMBOLS = {
   SOYBN:  'ZS=F',   // Soybeans
 };
 
+const YAHOO_FX_SYMBOLS = {
+  EURUSD: 'EURUSD=X',
+  EURJPY: 'EURJPY=X',
+  EURGBP: 'EURGBP=X',
+  GBPUSD: 'GBPUSD=X',
+  USDJPY: 'USDJPY=X',
+  AUDUSD: 'AUDUSD=X',
+  USDCAD: 'USDCAD=X',
+  USDCHF: 'USDCHF=X',
+  NZDUSD: 'NZDUSD=X',
+  USDSEK: 'USDSEK=X',
+};
+
 // Maps any Yahoo-native commodity symbol back to the canonical name.
 // Used to normalize config entries that mistakenly use Yahoo syntax (GC=F etc.).
 const YAHOO_COMMODITY_REVERSE = {
@@ -178,6 +191,7 @@ module.exports = {
   YAHOO_INDEX_SYMBOLS,
   YAHOO_COMMODITY_SYMBOLS,
   YAHOO_COMMODITY_REVERSE,
+  YAHOO_FX_SYMBOLS,
   STOOQ_EQUITY_SUFFIX,
   STOOQ_INDEX_SYMBOLS,
   STOOQ_COMMODITY_SYMBOLS,
