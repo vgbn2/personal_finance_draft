@@ -55,8 +55,49 @@ function filterEquitySessionGaps(bars) {
   return kept;
 }
 
+// Families whose cash instruments only print during the NYSE regular session.
+// Commodities/fx trade ~24h and crypto 24/7, so they must NOT be session-clipped.
+var SESSION_GUARDED_FAMILIES = { equities: true, indices: true };
+
+// Timeframes fine enough that a session-hour filter is meaningful. Daily-and-above
+// (1d/1w/1mo) carry one bar per session and are passed through untouched.
+var SUB_DAILY_TFS = { '1m': true, '5m': true, '15m': true, '30m': true, '1h': true, '4h': true };
+
+/**
+ * guardEquitySessionBars(records) -- record-aware, family-gated session guard.
+ *
+ * Wraps the NYSE-hours filter so it can run at a raw-bar loader boundary that
+ * carries mixed families/timeframes. Only equity/index sub-daily bars are
+ * session-clipped (09:30-16:00 ET); every other record passes through unchanged.
+ * Records missing a timestamp are KEPT (never silently dropped).
+ *
+ * @param {Array<{family?:string, timeframe?:string, timestamp?:string}>} records
+ * @returns {{ records: Array, dropped: number }}
+ */
+function guardEquitySessionBars(records) {
+  if (!Array.isArray(records) || records.length === 0) return { records: records, dropped: 0 };
+
+  var kept = [];
+  var dropped = 0;
+  for (var i = 0; i < records.length; i++) {
+    var rec = records[i];
+    if (!rec) continue;
+    var fam = String(rec.family || '').toLowerCase();
+    var guarded = SESSION_GUARDED_FAMILIES[fam] && SUB_DAILY_TFS[rec.timeframe];
+    if (!guarded || !rec.timestamp) { kept.push(rec); continue; }
+    var minute;
+    try { minute = etMinuteOfDay(rec.timestamp); } catch (_) { kept.push(rec); continue; }
+    if (minute < NYSE_OPEN_MINUTES || minute >= NYSE_CLOSE_MINUTES) { dropped++; continue; }
+    kept.push(rec);
+  }
+  return { records: kept, dropped: dropped };
+}
+
 module.exports = {
   NYSE_OPEN_MINUTES: NYSE_OPEN_MINUTES,
   NYSE_CLOSE_MINUTES: NYSE_CLOSE_MINUTES,
+  SESSION_GUARDED_FAMILIES: SESSION_GUARDED_FAMILIES,
+  SUB_DAILY_TFS: SUB_DAILY_TFS,
   filterEquitySessionGaps: filterEquitySessionGaps,
+  guardEquitySessionBars: guardEquitySessionBars,
 };

@@ -1,5 +1,5 @@
 const path = require('node:path');
-const A = require('#shared/ansi');
+const A = require('#shared/ui/ansi');
 const { verifyPin, requireAuth } = require('../../lib/auth.js');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
@@ -1142,7 +1142,7 @@ async function commandMt5(args) {
 // does this actually works as intended? dev reiview
 async function commandAddPlatform(args) {
   const { promptPassword } = require('../../lib/auth.js');
-  const A = require('#shared/ansi');
+  const A = require('#shared/ui/ansi');
 
   console.log(`\n${A.c(A.B_CYAN, 'SOVEREIGN')} ${A.muted('— Add Broker / Platform')}\n`);
 
@@ -1199,7 +1199,7 @@ async function commandAddPlatform(args) {
     global.suppressLogs = false;
 
     // Ask AI for setup guidance
-    const { ask: aiAsk, isAvailable: aiAvailable } = require('#shared/ai_client');
+    const { ask: aiAsk, isAvailable: aiAvailable } = require('#shared/ai/ai_client');
     const aiReady = await aiAvailable();
     if (aiReady) {
       process.stdout.write(A.muted('\n  Asking AI for setup guidance...\n'));
@@ -1410,7 +1410,7 @@ async function commandAgent(args) {
   }
   const { agentLoop } = require('#shared/mcp_agent');
   const available = await (async () => {
-    try { const { isAvailable: check } = require('#shared/ai_client'); return check(); }
+    try { const { isAvailable: check } = require('#shared/ai/ai_client'); return check(); }
     catch { return false; }
   })();
 

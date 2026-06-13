@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { DEFAULT_USER_SETTINGS } = require('../paths');
+const { DEFAULT_USER_SETTINGS } = require('../runtime/paths');
 const { writeJson } = require('../market_validation');
 
 const VALID_TIMEZONES = new Set([
