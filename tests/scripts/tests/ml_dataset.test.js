@@ -183,3 +183,50 @@ test('frameToCsv emits header + numeric cells, blanks for null', () => {
   const goldIdx = columns.indexOf('xf_corr_GOLD');
   assert.strictEqual(lines[2].split(',')[goldIdx], '', 'null renders as empty cell');
 });
+
+test('commandFeaturesDump parses --max-bars-per-symbol and uses safe defaults', async () => {
+  const mlCmdPath = path.resolve(__dirname, '../../../backend/cli/commands/research/ml');
+  const datasetPath = path.resolve(__dirname, '../../../shared/lib/ml/dataset.js');
+
+  let passedMaxBars = null;
+  const mockLoadAssetSourcesFromCache = (symbols, timeframe, opts) => {
+    passedMaxBars = opts.maxBarsPerSymbol;
+    return []; // Return empty array so features dump exits early
+  };
+
+  const realDataset = require(datasetPath);
+  const Module = require('node:module');
+  const orig = Module._load;
+  Module._load = function(request, parent, isMain) {
+    const resolved = (() => { try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; } })();
+    if (resolved && path.normalize(resolved) === path.normalize(datasetPath)) {
+      return {
+        ...realDataset,
+        loadAssetSourcesFromCache: mockLoadAssetSourcesFromCache,
+      };
+    }
+    return orig.apply(this, arguments);
+  };
+
+  try {
+    delete require.cache[mlCmdPath];
+    delete require.cache[datasetPath];
+    const { commandFeaturesDump } = require(mlCmdPath);
+
+    // Test 1: explicit --max-bars-per-symbol 100
+    await commandFeaturesDump(['--max-bars-per-symbol', '100', '--symbols', 'AAA', '--json']);
+    assert.strictEqual(passedMaxBars, 100, 'should parse explicit --max-bars-per-symbol');
+
+    // Test 2: default for 1d timeframe is days (default 1095)
+    await commandFeaturesDump(['--symbols', 'AAA', '--json', '--days', '365']);
+    assert.strictEqual(passedMaxBars, 365, 'default for 1d should be the --days value');
+
+    // Test 3: default for 5m intraday is 50000
+    await commandFeaturesDump(['--symbols', 'AAA', '--json', '--timeframe', '5m']);
+    assert.strictEqual(passedMaxBars, 50000, 'default for 5m should be the 50000 safe cap');
+  } finally {
+    Module._load = orig;
+    delete require.cache[mlCmdPath];
+  }
+});
+

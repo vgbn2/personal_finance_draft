@@ -62,8 +62,18 @@ async function commandFeaturesDump(args) {
   const json = hasFlag(args, '--json');
   const includeExperimentalSynthetic5m = hasFlag(args, '--include-experimental-5m');
 
+  const maxBarsOption = numericOption(args, '--max-bars-per-symbol', 0);
+
   // Cap bars per symbol to the requested window (1d => ~1 bar/day). Bounds the O(n^2) build.
-  const maxBarsPerSymbol = timeframe === '1d' ? days : 0;
+  let maxBarsPerSymbol = maxBarsOption;
+  if (maxBarsPerSymbol <= 0) {
+    if (timeframe === '1d') {
+      maxBarsPerSymbol = days;
+    } else {
+      // Safe default cap for intraday timeframes to prevent O(n^2) scaling issues
+      maxBarsPerSymbol = 50000;
+    }
+  }
   const assetSources = loadAssetSourcesFromCache(symbols, timeframe, { maxBarsPerSymbol, includeExperimentalSynthetic5m });
   if (assetSources.length === 0) {
     const msg = { ok: false, error: 'no_asset_sources', symbols, timeframe, hint: 'check storage/data/cache/<family>/backtest_history.json' };
