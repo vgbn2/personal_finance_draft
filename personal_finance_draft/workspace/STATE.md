@@ -601,3 +601,31 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
   command execution. Affected bundle passed 47/47; full `npm.cmd test` passed **395/395**.
 - Remaining 5m work: Phase 3 indices/commodities/FX provider decision or Yahoo 60-day accumulate-forward
   stop-gap, equity session-gap guard before indicators/backtests, and ML 5m cap/performance gates.
+
+## Update - 2026-06-14 session 31 - Background backfill daemon + mixed base grain (1m crypto/equities, 5m Yahoo)
+
+- Added the **1m grain**: `'1m'` in `SUPPORTED_INTERVALS` (constants.js) and prepended to the
+  Binance/Coinbase intraday `ORDER` (index.js:2011); Alpaca already mapped `1m`->`1Min` and its
+  routing ORDER already led with `1m`, so no provider work was needed. 48-byte binary record
+  format is unchanged.
+- **Mixed base grain**: crypto + US equities now backfill a native 1m base (Binance/Alpaca SIP
+  serve deep 1m) and derive 5m/15m/30m/1h/4h locally; Yahoo families (indices/commodities/fx)
+  stay on a 5m base (Yahoo only serves ~7d of 1m). Per-family map `FAMILY_BASE_TF` in data.js.
+- Generalized the rollup: `rollupFiveMinForSymbol` -> `rollupFromBase(tsDir,symbol,baseTf,targets)`
+  (+ `listDeepSymbols`, `rollupTargetsAboveBase`); thin 5m wrappers kept for existing callers.
+  `crypto-deep-backfill` / `equity-deep-backfill` default to the 1m base with a `--base-tf` override.
+- New cache-availability probe `shared/lib/market/coverage.js` (`readCoverage`/`isFresh`/
+  `summarizeUniverse`): cheap header + 8-byte tail read for count/last-bar; reuses
+  `familyFreshnessThresholdMs` (added 1m thresholds: crypto 2h, equities 96h).
+- New top-level `backfill-daemon` CLI command (`backend/cli/commands/data/backfill_daemon.js`,
+  registered in sovereign_cli.js; invoke as `sovereign_cli.js backfill-daemon`, NOT under a `data`
+  prefix): cache-aware orchestrator — per (symbol, baseTf) it DEEP-fetches missing,
+  INCREMENTAL-refreshes stale, SKIPs fresh; rolls up after each fetch; prints per-symbol decision
+  lines + a per-cycle JSON summary. New Docker `backfill` service mirrors `bot`.
+- **Cost note:** 1m is ~5x the storage/fetch volume of 5m for crypto/equities. No destructive
+  migration — 1m backfill is additive and existing native 5m bins are refreshed via merge-protected rollup.
+- Verification: `node --test` on intraday_rollup (5/5, incl 1m->5m/15m lossless), coverage (4/4),
+  backfill_daemon (4/4, cold DEEP+rollup / warm SKIP no-wasted-fetch). Live 1m provider smoke
+  (Binance/Alpaca) NOT run in this session — requires network + API keys.
+- **Future phase (deferred):** 1m grain for Yahoo families is intentionally NOT pursued (provider
+  cap). If a finer-than-1m or tick grain is ever wanted, it is a separate record-format decision.

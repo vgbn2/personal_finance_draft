@@ -194,3 +194,24 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 2. The latest dated file in `workspace/handoff/` (see "Latest/current handoff" above).
 3. `workspace/SESSION_MEMORY.md` and `workspace/STATE.md` as before.
 4. Archives (`_archive_through_*.md`, `STATE_ARCHIVE.md`) only on demand for deep history.
+
+## Session 31 close-out (2026-06-14) — Background backfill daemon + mixed base grain (UNCOMMITTED)
+
+- Implemented the plan at `~/.claude/plans/resilient-riding-liskov.md` (ExitPlanMode-approved):
+  a passive background poller + a **mixed base grain** (1m for crypto/equities, 5m for Yahoo).
+- **All changes are UNCOMMITTED** on `feat/session-guard-intraday-rollup`. Next session: review the
+  diff and commit (suggested split: A) 1m grain core, B) coverage.js + daemon, C) docker + docs).
+- New files: `shared/lib/market/coverage.js`, `backend/cli/commands/data/backfill_daemon.js`,
+  `tests/scripts/tests/coverage.test.js`, `tests/scripts/tests/backfill_daemon.test.js`.
+- Edited: `constants.js` (+1m), `ingest_market_data/index.js` (crypto ORDER +1m),
+  `data.js` (rollupFromBase/listDeepSymbols/FAMILY_BASE_TF + deep-backfill base grain),
+  `validation.js` (export familyFreshnessThresholdMs + crypto/equities 1m thresholds),
+  `sovereign_cli.js` (register `backfill-daemon`), `infra/docker/docker-compose.yml` (backfill service),
+  `tests/.../equity_5m_backfill.test.js` (1m contract + legacy `--base-tf 5m`), `workspace/STATE.md`.
+- Command: `node backend/cli/sovereign_cli.js backfill-daemon [--once] [--families ...] [--interval-secs N]`
+  (top-level, NOT `data backfill-daemon` — dispatch is flat). Docker: `docker compose ... up -d backfill`.
+- Verification: new/affected suites green (57/57 across intraday_rollup, coverage, backfill_daemon,
+  equity_5m_backfill, equity_session, crypto_5m_backfill, ml_dataset). Full suite 458/465 — the 7 fails
+  are PRE-EXISTING (proven: safe-stash of my data edits left the same 6 trade/status fails; +1 hygiene
+  flagging a stale `.agents/skills/rigorous-feature-testing` folder). **Live 1m provider smoke NOT run
+  (needs network + Binance/Alpaca keys)** — run `crypto-deep-backfill --symbol BTCUSDT --days 7` next.
