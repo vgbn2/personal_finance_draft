@@ -30,11 +30,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { REPO_ROOT } = require('../../shared/lib/runtime/paths');
-const { inferFamily, normalizeSymbol } = require('../../shared/lib/quote_router');
+const { inferFamily, normalizeSymbol } = require('../../shared/lib/market/quote_router');
 const { loadBars } = require('./rsi_reversal_signal');
 const {
   analyzeSeries, extractActionable, RSI_PERIOD, OVERSOLD_TH, OVERBOUGHT_TH, COST_PCT, OOS_DATE,
-} = require('../../shared/lib/rsi_backtest');
+} = require('../../shared/lib/strategy/rsi_backtest');
 
 // Mirrors rsi_reversal.py CONFIG. forward_bars/regime_ma must match the notebook's
 // values for normalized returns (and verdicts) to be apples-to-apples comparable.
@@ -93,7 +93,7 @@ function fmtSigned(v, d = 2) {
 
 function printDetailRow(asset, timeframe, condLabel, entryLabel, stats, oos, tier) {
   if (!stats || !stats.ok) return;
-  const v = require('../../shared/lib/rsi_backtest').verdict(stats, oos, tier);
+  const v = require('../../shared/lib/strategy/rsi_backtest').verdict(stats, oos, tier);
   console.log(
     `  ${asset.padEnd(9)} ${timeframe.padEnd(4)} ${condLabel.padEnd(10)} ${entryLabel.padEnd(9)} `
     + `n=${String(stats.n).padEnd(4)} hit=${fmtPct(stats.hit_rate).padEnd(6)} `

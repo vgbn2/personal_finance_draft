@@ -15,7 +15,7 @@
 //
 // Usage: node scripts/strategies/ml_smoke_alpaca.js [--symbol AAPL] [--model xgboost_v1] [--qty 1] [--dry]
 
-require('#shared/env');
+require('#shared/runtime/env');
 const { getMlPrediction } = require('./ml_signal');
 const { commandTrade } = require('../../backend/cli/commands/trade/trade.js');
 

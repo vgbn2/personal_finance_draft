@@ -39,7 +39,7 @@ test('backend api entry point loads without broken requires', () => {
 
 test('#shared/* subpath imports resolve correctly', () => {
   const result = spawnSync(process.execPath, ['-e', `
-    require('#shared/market_validation');
+    require('#shared/market/validation');
     require('#shared/market/indicators');
     require('#shared/strategy/backtest');
   `], { cwd: REPO_ROOT, encoding: 'utf8' });

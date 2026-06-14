@@ -1244,7 +1244,7 @@ async function commandAddPlatform(args) {
 async function commandMt5Profile(args) {
   const {
     listMt5Profiles, upsertMt5Profile, deleteMt5Profile, getMt5ProfileChoices,
-  } = require('#shared/mt5_profiles');
+  } = require('#shared/profiles/mt5_profiles');
   const { promptPassword } = require('../../lib/auth.js');
   const subcommand = args[0] || 'list';
 
@@ -1283,7 +1283,7 @@ async function commandMt5Profile(args) {
     global.suppressLogs = false;
     const confirmed = await promptConfirm(`Delete MT5 profile for slot "${slot}"?`);
     if (!confirmed) return 0;
-    const { deleteMt5Profile: del } = require('#shared/mt5_profiles');
+    const { deleteMt5Profile: del } = require('#shared/profiles/mt5_profiles');
     const removed = del(slot);
     printPayload({ ok: true, removed }, args);
     return 0;
@@ -1298,7 +1298,7 @@ async function commandMt5Doctor(args) {
     getMt5Profile,
     getMt5ProfileChoices,
     getDefaultMt5TerminalPath,
-  } = require('#shared/mt5_profiles');
+  } = require('#shared/profiles/mt5_profiles');
 
   let slot = optionValue(args, '--slot', null);
   if (!slot) {
@@ -1329,7 +1329,7 @@ async function commandMt5Connect(args) {
   const { spawn } = require('node:child_process');
   const {
     getMt5Profile, getMt5ProfileChoices, getDefaultMt5TerminalPath,
-  } = require('#shared/mt5_profiles');
+  } = require('#shared/profiles/mt5_profiles');
 
   let slot = optionValue(args, '--slot', null);
   if (!slot) {
@@ -1408,7 +1408,7 @@ async function commandAgent(args) {
     printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
     return 1;
   }
-  const { agentLoop } = require('#shared/mcp_agent');
+  const { agentLoop } = require('#shared/mcp/agent');
   const available = await (async () => {
     try { const { isAvailable: check } = require('#shared/ai/ai_client'); return check(); }
     catch { return false; }

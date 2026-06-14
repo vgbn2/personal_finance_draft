@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { ENV_PATH } = require('../env');
+const { ENV_PATH } = require('../runtime/env');
 
 function parseEnvLine(line) {
   const trimmed = String(line || '').trim();
