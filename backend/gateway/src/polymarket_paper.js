@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { GAMMA_BASE, inferWinner } = require('../../../shared/lib/polymarket_history');
+const { GAMMA_BASE, inferWinner } = require('../../../shared/lib/market/polymarket_history');
 const { classifyPolymarketGatewayError } = require('./polymarket_errors.js');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');

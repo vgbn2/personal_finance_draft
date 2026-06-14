@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 // @ts-ignore
-import { REPO_ROOT } from '../../../shared/lib/paths';
+import { REPO_ROOT } from '../../../shared/lib/runtime/paths';
 
 const SETTINGS_PATH = process.env.SOVEREIGN_USER_SETTINGS_PATH
   || path.join(REPO_ROOT, 'storage', 'data', 'user_settings.json');

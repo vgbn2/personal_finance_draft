@@ -3,7 +3,7 @@ const os = require('node:os');
 const fs = require('node:fs');
 const readline = require('node:readline');
 const crypto = require('node:crypto');
-const { classifySupabaseError } = require('../../../shared/lib/supabase_errors');
+const { classifySupabaseError } = require('../../../shared/lib/supabase/errors');
 
 const SESSION_DIR  = path.join(os.homedir(), '.sovereign');
 const SESSION_PATH = path.join(SESSION_DIR, 'session.json');
