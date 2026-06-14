@@ -157,12 +157,12 @@ const COMMAND_MANIFEST = {
       }},
       { id: 'backfill', label: 'Backfill', loading: true, flags: {
         '--symbol': { type: 'text', prompt: 'Symbol (e.g. AAPL, BTCUSDT):' },
-        '--timeframe': { type: 'select', options: ['1mo','1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1d' },
+        '--timeframe': { type: 'select', options: ['1m','1mo','1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1d' },
         '--days': { type: 'text', default: '365', label: 'Days to backfill' },
         '--20-years': { type: 'confirm', label: '20 Year Deep History?', default: false }
       }},
       { id: 'mass-backfill', label: 'Mass Backfill (All symbols x all timeframes)', loading: true, flags: {
-        '--timeframes': { type: 'text', default: '1w,1d,1h,15m', label: 'Timeframes (comma-separated)' },
+        '--timeframes': { type: 'text', default: '1m,1w,1d,1h,15m', label: 'Timeframes (comma-separated)' },
         '--days': { type: 'text', default: '365', label: 'Days to backfill' },
         '--concurrency': { type: 'text', default: '5', label: 'Parallel jobs' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
