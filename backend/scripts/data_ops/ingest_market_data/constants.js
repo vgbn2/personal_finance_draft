@@ -5,6 +5,7 @@
 // so it can be required anywhere in the ingest folder without import cycles.
 
 const SUPPORTED_INTERVALS = {
+  '1m':  1  * 60 * 1000,
   '5m':  5  * 60 * 1000,
   '15m': 15 * 60 * 1000,
   '30m': 30 * 60 * 1000,

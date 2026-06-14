@@ -65,3 +65,32 @@ services:
           node backend/cli/sovereign_cli.js run bot paper --once --strategy low_prob_dip
           sleep $$INTERVAL
         done
+
+  backfill:
+    image: personal_finance:latest
+    env_file:
+      # Canonical config — the same .env the CLI uses. Required.
+      - path: ../../.env
+        required: true
+      # Optional production overrides (only loaded if present).
+      - path: ../../.env.production
+        required: false
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ../../storage:/app/storage
+    restart: unless-stopped
+    # Passive market-data poller: keeps every configured symbol backfilled at its base
+    # grain (1m crypto/equities, 5m Yahoo families) and rolled up to coarser TFs. It is
+    # cache-aware (skips fresh symbols) and runs no HTTP server, so disable the image's
+    # :8787 healthcheck to avoid a false "unhealthy".
+    healthcheck:
+      disable: true
+    # The daemon loops internally every BACKFILL_INTERVAL_SECS (default 1800s); the
+    # restart policy covers crashes. Set BACKFILL_INTERVAL_SECS in .env to override.
+    command:
+      - /bin/sh
+      - -c
+      - |
+        INTERVAL=$${BACKFILL_INTERVAL_SECS:-1800}
+        node backend/cli/sovereign_cli.js backfill-daemon --interval-secs $$INTERVAL
