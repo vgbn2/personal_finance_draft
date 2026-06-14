@@ -1,3 +1,31 @@
+## Session Memory - 2026-06-14 (session 33) Repo-portability bundler for Ubuntu transfer (mass-implement); embedded-repo-aware git bundle; verified by test-clone
+
+{
+  "work": "User: 'plan and mass implement' + wants old Ubuntu PC to access the repo (gitzip/bundler) + asked if Ubuntu can ingest data so the 8.6GB storage need not transfer. Ran /mass-implement, AskUserQuestion -> user chose bundle(monorepo)-only + (via ingest question) no data transfer. Built scripts/dev/make_bundle.js + npm run bundle. Committed on feat/session-guard-intraday-rollup.",
+  "key_mechanisms": [
+    "GIT ROOT IS THE CODEPTIT MONOREPO, not personal_finance_draft (which is a subdir). `git rev-parse --show-toplevel` = .../CODEPTIT. A git bundle is whole-repo only; you cannot bundle a subdir WITH history (would need filter-repo/subtree split). So 'bundle' = whole monorepo (58,076 files, 382.6 MiB --all).",
+    "22 EMBEDDED GIT REPOS (gitlinks, mode 160000, NO .gitmodules) live in the monorepo incl. personal_finance_draft/backend/polymarket-cli (51 commits). `git bundle --all` carries only their commit POINTERS, not contents -> a clone has empty dirs. make_bundle.js detects gitlinks via `git ls-files -s | mode==160000`, and for each populated one (.git exists + rev-list>0) emits a companion bundle into embedded/. Default --embedded pfd (only under personal_finance_draft/); --embedded all = all 22; none = skip.",
+    "OUTPUT MUST GO OUTSIDE THE WORKING TREE: check_hygiene.js flags untracked *.bundle/*.zip in-repo AND an in-tree bundle bloats the next one. Default outDir = <gitRoot>/../portable_exports (sibling of CODEPTIT). --out overrides (e.g. USB).",
+    "UBUNTU CAN RE-INGEST storage/data (8.6GB, gitignored) keyless for most providers: crypto=Binance api/v3/klines (no key header), indices/commodities/fx/equities-daily=Yahoo query1.finance + Frankfurter/ECB (no key). ONLY Alpaca equity intraday (ALPACA_API_KEY/SECRET) + macro (TwelveData/FRED/Finnhub) need keys. So no 8.6GB transfer needed; tradeoff = deep crypto backfill is multi-hour vs one-time USB copy. RESTORE_UBUNTU.md (auto-generated) documents clone->npm install->build C++->backfill-daemon."
+  ],
+  "verified": [
+    "npm run bundle -> CODEPTIT-2026-06-14.bundle 382.6 MiB + embedded/...polymarket-cli.bundle 242.7 KiB.",
+    "TEST-CLONE end-to-end (temp dir): git clone main bundle -> HEAD a4c85fe9, all 4 branches (main, feat/ml-onnx-section, feat/resilient-crypto-fallback, feat/session-guard-intraday-rollup), 58,076 files, personal_finance_draft/package.json checks out; embedded polymarket-cli restored = 49 files/51 commits. Temp cleaned.",
+    "npm run hygiene all-pass; npm run test:structure 8/8; only intended files changed (make_bundle.js new, package.json +1 script); portable_exports not seen by repo (outside tree)."
+  ],
+  "user_decisions": [
+    "bundle (monorepo) only (not project-zip).",
+    "no 8.6GB data transfer -> Ubuntu re-ingests.",
+    "'execute' -> commit + handoff."
+  ],
+  "remaining": [
+    "If the other 21 sub-projects' CONTENTS are wanted on Ubuntu: run --embedded all (default pfd ships only platform deps as content; rest are gitlink pointers).",
+    "Stale root personal_finance_draft.zip (15MB, May 24) can be deleted.",
+    "Unchanged carryovers: FW2 monolith deconstruction, FW6 backward-gap fetch, merge feat/ml-onnx-section -> main (user), live 1m provider smoke, ~937MB untracked root artifacts."
+  ],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-14 (session 32) Blast-through audit of s31 daemon (clean) + committed caller migration + fixed ALL 7 test fails; suite 465/465 (first fully green since s12); commits 6da0232b/2567d8f4/31f1357a
 
 {

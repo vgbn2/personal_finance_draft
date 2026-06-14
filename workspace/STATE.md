@@ -7,6 +7,26 @@ last_audit_date: 2026-06-14
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Implementation Note - 2026-06-14 session 33 - repo-portability bundler (Ubuntu transfer)
+- Added `scripts/dev/make_bundle.js` (+ `npm run bundle`): a repeatable `git bundle` generator so the
+  old Ubuntu PC can `git clone` this repo with full history. **The git root is the CODEPTIT monorepo**
+  (personal_finance_draft is a subdir), so a bundle is necessarily whole-repo — user chose monorepo.
+- **Embedded-repo handling (the non-obvious part):** the monorepo has **22 embedded git repos**
+  (gitlinks, NO `.gitmodules`), incl. `personal_finance_draft/backend/polymarket-cli` (51 commits). A
+  plain `--all` bundle carries only their commit POINTERS, not contents → the bundler emits a companion
+  bundle per populated embedded repo. Default `--embedded pfd` (only those under personal_finance_draft);
+  `--embedded all` for all 22; `--embedded none` to skip.
+- Output defaults OUTSIDE the working tree (`<gitRoot>/../portable_exports`) so it never bloats future
+  bundles or trips `check_hygiene.js` (which flags untracked `*.bundle`/`*.zip`). Generates
+  `bundle_manifest.json` + a generated `RESTORE_UBUNTU.md` (clone → npm install → build C++ → re-ingest).
+- **Data does NOT need transferring:** `storage/data` (8.6 GB, gitignored) re-ingests on Ubuntu —
+  crypto (Binance), indices/commodities/FX (Yahoo/Frankfurter), daily equities are all KEYLESS; only
+  Alpaca equity intraday + macro extras need keys. Deep crypto backfill is multi-hour (USB-copy is the
+  fast alternative).
+- **Verified:** `npm run bundle` → `CODEPTIT-2026-06-14.bundle` (382.6 MiB) + polymarket-cli companion
+  (242.7 KiB). Test-cloned into temp: HEAD `a4c85fe9`, all 4 branches, 58,076 files, pfd checks out,
+  embedded restored (49 files/51 commits). `npm run hygiene` all-pass; `test:structure` 8/8.
+
 ## Fix Note - 2026-06-14 session 32 - ALL 7 suite fails fixed; suite 465/465 (first fully green since s12)
 - The 7 long-standing "env-dependent" fails were **3 distinct root causes**, not one class:
   (1) **3 gateway tests** (polymarket auth-health/preflight, trade proposed-order) — `backend/gateway/
