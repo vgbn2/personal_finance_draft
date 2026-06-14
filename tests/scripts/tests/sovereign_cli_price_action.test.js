@@ -13,7 +13,7 @@ const {
   generateSampleBars,
   rsi,
 } = require('../../../shared/lib/market/indicators');
-const { compareModels, modelCandidates } = require('../../../shared/lib/models');
+const { compareModels, modelCandidates } = require('../../../shared/lib/ml/models');
 
 function dumpVisibility(name, data) {
   const dir = process.env.SOVEREIGN_TEST_OUTPUT_DIR ||

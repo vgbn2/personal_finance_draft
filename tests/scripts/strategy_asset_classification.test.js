@@ -5,7 +5,7 @@ const test = require('node:test');
 
 const REPO_ROOT = path.join(__dirname, '..', '..');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'classify_strategy_assets.js');
-const { classifyStrategyAssetMode } = require('../../shared/lib/strategy_registry');
+const { classifyStrategyAssetMode } = require('../../shared/lib/strategy/registry');
 const { inspectStrategyFile } = require('../../backend/cli/commands/strategy');
 
 test('strategy asset mode helper separates single, multi-asset, and portfolio management', () => {
