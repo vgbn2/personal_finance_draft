@@ -995,7 +995,11 @@ async function commandCryptoDeepBackfill(args) {
   const delayMs = numericOption(args, '--delay-ms', 0); // inter-symbol delay; 0 = no sleep
   const dryRun = hasFlag(args, '--dry-run');
   const symbolArg = optionValue(args, '--symbol', null); // single-symbol override
-  const skipRollup = hasFlag(args, '--no-rollup'); // by default, auto-derive 15m/30m/1h/4h from the 5m
+  const skipRollup = hasFlag(args, '--no-rollup'); // by default, auto-derive coarser TFs from the base
+  // Base grain: crypto serves deep native 1m via Binance, so 1m is the default base
+  // (5m/15m/… are then derived locally). Override with --base-tf 5m for the legacy path.
+  const baseTf = optionValue(args, '--base-tf', FAMILY_BASE_TF.crypto);
+  const rollupTargets = rollupTargetsAboveBase(baseTf);
 
   const config = await loadConfig();
   const cryptoSymbols = config.crypto?.symbols || [];
@@ -1019,13 +1023,13 @@ async function commandCryptoDeepBackfill(args) {
       dry_run: true,
       symbols: symbols.length,
       symbol_list: symbols,
-      timeframe: '5m',
+      timeframe: baseTf,
       days,
       delay_ms: delayMs,
-      // Estimated: 526 calls/symbol × 5 weight = 2,630 weight; 18 symbols = 47,340 weight
-      estimated_api_calls: symbols.length * Math.ceil((days / 365.25) * 365.25 * 288 / 1000),
-      auto_rollup: skipRollup ? false : ROLLUP_TARGET_TFS,
-      message: `Would sequentially backfill 5m data for ${symbols.length} crypto symbols over ${days} days${skipRollup ? '' : `, then auto-derive ${ROLLUP_TARGET_TFS.join('/')} locally`}. Re-run without --dry-run to execute.`,
+      // ~bars/day at base grain (1m=1440, 5m=288); /1000 ≈ requests at Binance's 1000-bar page.
+      estimated_api_calls: symbols.length * Math.ceil(days * (baseTf === '1m' ? 1440 : 288) / 1000),
+      auto_rollup: skipRollup ? false : rollupTargets,
+      message: `Would sequentially backfill ${baseTf} data for ${symbols.length} crypto symbols over ${days} days${skipRollup ? '' : `, then auto-derive ${rollupTargets.join('/')} locally`}. Re-run without --dry-run to execute.`,
     }, args);
     return 0;
   }
@@ -1034,15 +1038,15 @@ async function commandCryptoDeepBackfill(args) {
   const allErrors = [];
   const symbolResults = [];
 
-  console.log(`[CRYPTO-DEEP-BACKFILL] Starting sequential 5m backfill: ${symbols.length} symbols, ${days} days, delay=${delayMs}ms`);
+  console.log(`[CRYPTO-DEEP-BACKFILL] Starting sequential ${baseTf} backfill: ${symbols.length} symbols, ${days} days, delay=${delayMs}ms`);
 
   for (let i = 0; i < symbols.length; i++) {
     const symbol = symbols[i];
     const progress = `[${i + 1}/${symbols.length}]`;
     if (process.stdout.isTTY) {
-      process.stdout.write(`\r\x1b[K${progress} ${symbol} 5m ...`);
+      process.stdout.write(`\r\x1b[K${progress} ${symbol} ${baseTf} ...`);
     } else {
-      console.log(`${progress} Backfilling ${symbol} 5m (${days} days)`);
+      console.log(`${progress} Backfilling ${symbol} ${baseTf} (${days} days)`);
     }
 
     const start = Date.now();
@@ -1050,7 +1054,7 @@ async function commandCryptoDeepBackfill(args) {
       const snapshot = await ingestMarketData({
         family: 'crypto',
         symbol,
-        timeframe: '5m',
+        timeframe: baseTf,
         historyDays: days,
         provider: 'binance', // pin: TwelveData earlier in the chain caps at 5,000 bars
         force: true, // deep backfill always re-fetches; freshness short-circuits don't apply
@@ -1060,23 +1064,23 @@ async function commandCryptoDeepBackfill(args) {
         returnAttemptSnapshot: true,
       });
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      const fiveMBars = (snapshot.sources || []).filter(r => r.timeframe === '5m' && r.symbol === symbol);
+      const baseBars = (snapshot.sources || []).filter(r => r.timeframe === baseTf && r.symbol === symbol);
       const snapErrors = snapshot.errors || [];
       for (const e of snapErrors) allErrors.push(e);
       // Zero bars alongside ingest errors means the fetch failed inside the
       // provider loop (the loop's catch swallows exceptions per provider) --
       // count it as a failed symbol instead of reporting silent success.
-      const symbolOk = fiveMBars.length > 0 || snapErrors.length === 0;
+      const symbolOk = baseBars.length > 0 || snapErrors.length === 0;
       if (symbolOk) results.ok++; else results.errors++;
-      const entry = { symbol, ok: symbolOk, bars_5m: fiveMBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
+      const entry = { symbol, ok: symbolOk, base_timeframe: baseTf, bars: baseBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
       if (!symbolOk) {
-        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || 'no 5m bars ingested';
+        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || `no ${baseTf} bars ingested`;
       }
-      // Auto-derive coarser intraday bins from the just-written deep 5m (lossless,
+      // Auto-derive coarser intraday bins from the just-written deep base bin (lossless,
       // local, no extra network). Off with --no-rollup.
       if (symbolOk && !skipRollup) {
         try {
-          const roll = rollupFiveMinForSymbol(DEFAULT_TS_DIR, symbol, ROLLUP_TARGET_TFS);
+          const roll = rollupFromBase(DEFAULT_TS_DIR, symbol, baseTf, rollupTargets);
           if (roll.ok) entry.rolled_up = roll.derived;
         } catch (rollErr) {
           entry.rollup_error = rollErr.message;
@@ -1085,18 +1089,18 @@ async function commandCryptoDeepBackfill(args) {
       symbolResults.push(entry);
       if (process.stdout.isTTY) {
         const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
-        process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m 5m: ${fiveMBars.length} bars (${elapsed}s)\n`);
+        process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m ${baseTf}: ${baseBars.length} bars (${elapsed}s)\n`);
       } else {
-        const rollNote = entry.rolled_up ? ` + rollup ${ROLLUP_TARGET_TFS.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
-        console.log(`${progress} ${symbol} 5m: ${fiveMBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
+        const rollNote = entry.rolled_up ? ` + rollup ${rollupTargets.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
+        console.log(`${progress} ${symbol} ${baseTf}: ${baseBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
       }
     } catch (err) {
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      allErrors.push({ symbol, timeframe: '5m', family: 'crypto', message: err.message });
+      allErrors.push({ symbol, timeframe: baseTf, family: 'crypto', message: err.message });
       results.errors++;
-      symbolResults.push({ symbol, ok: false, bars_5m: 0, elapsed_s: Number(elapsed), error: err.message });
+      symbolResults.push({ symbol, ok: false, base_timeframe: baseTf, bars: 0, elapsed_s: Number(elapsed), error: err.message });
       if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m 5m: FAILED (${err.message})\n`);
+        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m ${baseTf}: FAILED (${err.message})\n`);
       } else {
         console.error(`${progress} ${symbol} FAILED: ${err.message}`);
       }
@@ -1118,8 +1122,8 @@ async function commandCryptoDeepBackfill(args) {
     symbols: symbols.length,
     successful: results.ok,
     errors: results.errors,
-    total_5m_bars: symbolResults.reduce((n, r) => n + (r.bars_5m || 0), 0),
-    timeframe: '5m',
+    total_base_bars: symbolResults.reduce((n, r) => n + (r.bars || 0), 0),
+    timeframe: baseTf,
     days,
     delay_ms: delayMs,
     symbol_results: symbolResults,
@@ -1143,7 +1147,11 @@ async function commandEquityDeepBackfill(args) {
   const chunkDelayMs = numericOption(args, '--chunk-delay-ms', 500);
   const dryRun = hasFlag(args, '--dry-run');
   const symbolArg = optionValue(args, '--symbol', null);
-  const skipRollup = hasFlag(args, '--no-rollup'); // by default, auto-derive 15m/30m/1h/4h from the 5m
+  const skipRollup = hasFlag(args, '--no-rollup'); // by default, auto-derive coarser TFs from the base
+  // Base grain: Alpaca SIP serves deep native 1m, so 1m is the default base
+  // (5m/15m/… derived locally). Override with --base-tf 5m for the legacy path.
+  const baseTf = optionValue(args, '--base-tf', FAMILY_BASE_TF.equities);
+  const rollupTargets = rollupTargetsAboveBase(baseTf);
 
   const config = await loadConfig();
   const plan = buildEquityDeepBackfillPlan(config, { symbol: symbolArg });
@@ -1178,13 +1186,13 @@ async function commandEquityDeepBackfill(args) {
       symbol_list: plan.symbols,
       skipped: plan.skipped_symbols.length,
       skipped_symbols: plan.skipped_symbols,
-      timeframe: plan.timeframe,
+      timeframe: baseTf,
       days,
       delay_ms: delayMs,
       chunk_delay_ms: chunkDelayMs,
       estimated_api_calls: estimateEquity5mApiCalls(plan.symbols.length, days),
-      auto_rollup: skipRollup ? false : ROLLUP_TARGET_TFS,
-      message: `Would sequentially backfill native 5m Alpaca data for ${plan.symbols.length} US equity symbols over ${days} days${skipRollup ? '' : `, then auto-derive ${ROLLUP_TARGET_TFS.join('/')} locally`}. Re-run without --dry-run to execute.`,
+      auto_rollup: skipRollup ? false : rollupTargets,
+      message: `Would sequentially backfill native ${baseTf} Alpaca data for ${plan.symbols.length} US equity symbols over ${days} days${skipRollup ? '' : `, then auto-derive ${rollupTargets.join('/')} locally`}. Re-run without --dry-run to execute.`,
     }, args);
     return 0;
   }
@@ -1193,7 +1201,7 @@ async function commandEquityDeepBackfill(args) {
   const allErrors = [];
   const symbolResults = [];
 
-  console.log(`[EQUITY-DEEP-BACKFILL] Starting sequential Alpaca 5m backfill: ${plan.symbols.length} symbols, ${days} days, delay=${delayMs}ms, chunk-delay=${chunkDelayMs}ms`);
+  console.log(`[EQUITY-DEEP-BACKFILL] Starting sequential Alpaca ${baseTf} backfill: ${plan.symbols.length} symbols, ${days} days, delay=${delayMs}ms, chunk-delay=${chunkDelayMs}ms`);
   if (plan.skipped_symbols.length > 0) {
     console.log(`[EQUITY-DEEP-BACKFILL] Skipping ${plan.skipped_symbols.length} unsupported equity symbols`);
   }
@@ -1202,9 +1210,9 @@ async function commandEquityDeepBackfill(args) {
     const symbol = plan.symbols[i];
     const progress = `[${i + 1}/${plan.symbols.length}]`;
     if (process.stdout.isTTY) {
-      process.stdout.write(`\r\x1b[K${progress} ${symbol} Alpaca 5m ...`);
+      process.stdout.write(`\r\x1b[K${progress} ${symbol} Alpaca ${baseTf} ...`);
     } else {
-      console.log(`${progress} Backfilling ${symbol} Alpaca 5m (${days} days)`);
+      console.log(`${progress} Backfilling ${symbol} Alpaca ${baseTf} (${days} days)`);
     }
 
     const start = Date.now();
@@ -1212,7 +1220,7 @@ async function commandEquityDeepBackfill(args) {
       const snapshot = await ingestMarketData({
         family: 'equities',
         symbol,
-        timeframe: plan.timeframe,
+        timeframe: baseTf,
         historyDays: days,
         provider: plan.provider,
         force: true,
@@ -1220,21 +1228,21 @@ async function commandEquityDeepBackfill(args) {
         returnAttemptSnapshot: true,
       });
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      const fiveMBars = (snapshot.sources || []).filter(r => r.timeframe === plan.timeframe && r.symbol === symbol);
+      const baseBars = (snapshot.sources || []).filter(r => r.timeframe === baseTf && r.symbol === symbol);
       const snapErrors = snapshot.errors || [];
       for (const e of snapErrors) allErrors.push(e);
 
-      const symbolOk = fiveMBars.length > 0 || snapErrors.length === 0;
+      const symbolOk = baseBars.length > 0 || snapErrors.length === 0;
       if (symbolOk) results.ok++; else results.errors++;
-      const entry = { symbol, ok: symbolOk, bars_5m: fiveMBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
+      const entry = { symbol, ok: symbolOk, base_timeframe: baseTf, bars: baseBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
       if (!symbolOk) {
-        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || 'no native Alpaca 5m bars ingested';
+        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || `no native Alpaca ${baseTf} bars ingested`;
       }
-      // Auto-derive coarser intraday bins from the just-written deep 5m (lossless,
+      // Auto-derive coarser intraday bins from the just-written deep base bin (lossless,
       // local, no extra network). Off with --no-rollup.
       if (symbolOk && !skipRollup) {
         try {
-          const roll = rollupFiveMinForSymbol(DEFAULT_TS_DIR, symbol, ROLLUP_TARGET_TFS);
+          const roll = rollupFromBase(DEFAULT_TS_DIR, symbol, baseTf, rollupTargets);
           if (roll.ok) entry.rolled_up = roll.derived;
         } catch (rollErr) {
           entry.rollup_error = rollErr.message;
@@ -1244,18 +1252,18 @@ async function commandEquityDeepBackfill(args) {
 
       if (process.stdout.isTTY) {
         const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
-        process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m Alpaca 5m: ${fiveMBars.length} bars (${elapsed}s)\n`);
+        process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m Alpaca ${baseTf}: ${baseBars.length} bars (${elapsed}s)\n`);
       } else {
-        const rollNote = entry.rolled_up ? ` + rollup ${ROLLUP_TARGET_TFS.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
-        console.log(`${progress} ${symbol} Alpaca 5m: ${fiveMBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
+        const rollNote = entry.rolled_up ? ` + rollup ${rollupTargets.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
+        console.log(`${progress} ${symbol} Alpaca ${baseTf}: ${baseBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
       }
     } catch (err) {
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      allErrors.push({ symbol, timeframe: plan.timeframe, family: 'equities', provider: plan.provider, message: err.message });
+      allErrors.push({ symbol, timeframe: baseTf, family: 'equities', provider: plan.provider, message: err.message });
       results.errors++;
-      symbolResults.push({ symbol, ok: false, bars_5m: 0, elapsed_s: Number(elapsed), error: err.message });
+      symbolResults.push({ symbol, ok: false, base_timeframe: baseTf, bars: 0, elapsed_s: Number(elapsed), error: err.message });
       if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m Alpaca 5m: FAILED (${err.message})\n`);
+        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m Alpaca ${baseTf}: FAILED (${err.message})\n`);
       } else {
         console.error(`${progress} ${symbol} FAILED: ${err.message}`);
       }
@@ -1276,8 +1284,8 @@ async function commandEquityDeepBackfill(args) {
     skipped_symbols: plan.skipped_symbols,
     successful: results.ok,
     errors: results.errors,
-    total_5m_bars: symbolResults.reduce((n, r) => n + (r.bars_5m || 0), 0),
-    timeframe: plan.timeframe,
+    total_base_bars: symbolResults.reduce((n, r) => n + (r.bars || 0), 0),
+    timeframe: baseTf,
     days,
     delay_ms: delayMs,
     chunk_delay_ms: chunkDelayMs,
@@ -1817,47 +1825,86 @@ async function commandIntradayAccumulate(args) {
   return results.errors === 0 ? 0 : 1;
 }
 
-// ─── intraday-rollup: derive deep 15m/30m/1h/4h from the deep 5m bins ────────
-// Enumerate symbols that have a deep `<symbol>_5m.bin` in the ts index.
-function listDeepFiveMinSymbols(tsDir) {
+// ─── intraday-rollup: derive coarser intraday bins from the finest native bin ───
+// All intraday timeframes, finest → coarsest. The base grain is whichever finest
+// bin a family stores natively (1m for crypto/equities, 5m for Yahoo families).
+const INTRADAY_TF_ORDER = ['1m', '5m', '15m', '30m', '1h', '4h'];
+
+// Per-family base (finest natively-fetched) grain. Crypto (Binance) and US equities
+// (Alpaca SIP) serve deep 1m; Yahoo families (indices/commodities/fx) only get ~7d
+// of 1m so they stay on a 5m base (Yahoo serves ~60d of 5m).
+const FAMILY_BASE_TF = {
+  crypto: '1m',
+  equities: '1m',
+  indices: '5m',
+  commodities: '5m',
+  fx: '5m',
+};
+
+// Coarser intraday targets to derive from a given base grain (everything above it).
+function rollupTargetsAboveBase(baseTf) {
+  const i = INTRADAY_TF_ORDER.indexOf(baseTf);
+  if (i < 0) return ['15m', '30m', '1h', '4h'];
+  return INTRADAY_TF_ORDER.slice(i + 1);
+}
+
+// Enumerate symbols that have a deep `<symbol>_<baseTf>.bin` in the ts index.
+function listDeepSymbols(tsDir, baseTf = '5m') {
   let files;
   try { files = fs.readdirSync(tsDir); } catch (_) { return []; }
-  const suffix = '_5m.bin';
+  const suffix = `_${baseTf}.bin`;
   return files.filter((f) => f.endsWith(suffix)).map((f) => f.slice(0, -suffix.length));
 }
 
+// Back-compat wrapper: 5m-base enumeration (existing intraday-rollup callers).
+function listDeepFiveMinSymbols(tsDir) {
+  return listDeepSymbols(tsDir, '5m');
+}
+
 // Read just the tiny meta sidecar to gate by family without loading the big bin.
-function readFiveMinBinFamily(tsDir, symbol) {
+function readBinFamily(tsDir, symbol, baseTf = '5m') {
   try {
-    const meta = JSON.parse(fs.readFileSync(path.join(tsDir, `${symbol}_5m.meta.json`), 'utf8'));
+    const meta = JSON.parse(fs.readFileSync(path.join(tsDir, `${symbol}_${baseTf}.meta.json`), 'utf8'));
     return String(meta.family || '').toLowerCase();
   } catch (_) { return null; }
 }
 
-// Derive coarser intraday bins for one symbol from its deep 5m bin. Lossless:
-// the 5m bin is read-only; coarser bins are written merge-protected. Shared by
-// `intraday-rollup` and the auto-rollup step of the deep-backfill commands.
-function rollupFiveMinForSymbol(tsDir, symbol, timeframes) {
+// Back-compat wrapper.
+function readFiveMinBinFamily(tsDir, symbol) {
+  return readBinFamily(tsDir, symbol, '5m');
+}
+
+// Derive coarser intraday bins for one symbol from its deep `baseTf` bin. Lossless:
+// the base bin is read-only; coarser bins are written merge-protected. Shared by
+// `intraday-rollup`, the deep-backfill commands, and the backfill daemon.
+function rollupFromBase(tsDir, symbol, baseTf, timeframes) {
   const { aggregateCandles } = require('../../../scripts/data_ops/ingest_market_data.js');
-  const records5m = readTsIndex(tsDir, symbol, '5m');
-  if (!records5m || records5m.length === 0) {
-    return { ok: false, error: 'no readable 5m bin', source_5m_bars: 0, derived: {} };
+  const baseRecords = readTsIndex(tsDir, symbol, baseTf);
+  if (!baseRecords || baseRecords.length === 0) {
+    return { ok: false, error: `no readable ${baseTf} bin`, source_bars: 0, base_timeframe: baseTf, derived: {} };
   }
-  const provider = records5m[0].provider || 'rollup';
-  const family = records5m[0].family || 'unknown';
-  const candles = records5m.map((r) => ({
+  const provider = baseRecords[0].provider || 'rollup';
+  const family = baseRecords[0].family || 'unknown';
+  const candles = baseRecords.map((r) => ({
     openTime: Date.parse(r.timestamp),
     open: r.open, high: r.high, low: r.low, close: r.close, volume: r.volume,
   }));
   const derivedSources = [];
   const tfCounts = {};
   for (const tf of timeframes) {
-    const derived = aggregateCandles(candles, tf, symbol, provider, family, { sourceTimeframe: '5m' });
+    const derived = aggregateCandles(candles, tf, symbol, provider, family, { sourceTimeframe: baseTf });
     tfCounts[tf] = derived.length;
     for (const rec of derived) derivedSources.push(rec);
   }
   writeTsIndex(tsDir, { sources: derivedSources });
-  return { ok: true, source_5m_bars: records5m.length, derived: tfCounts };
+  return { ok: true, source_bars: baseRecords.length, base_timeframe: baseTf, derived: tfCounts };
+}
+
+// Back-compat wrapper: 5m-base rollup (existing deep-backfill + intraday-rollup callers).
+function rollupFiveMinForSymbol(tsDir, symbol, timeframes) {
+  const res = rollupFromBase(tsDir, symbol, '5m', timeframes);
+  // Preserve the legacy field name used by existing callers/tests.
+  return { ...res, source_5m_bars: res.source_bars || 0 };
 }
 
 const ROLLUP_TARGET_TFS = ['15m', '30m', '1h', '4h'];
@@ -1992,4 +2039,12 @@ module.exports = {
   buildIntradayAccumulatePlan,
   commandIntradayRollup,
   listDeepFiveMinSymbols,
+  listDeepSymbols,
+  rollupFromBase,
+  rollupFiveMinForSymbol,
+  readBinFamily,
+  rollupTargetsAboveBase,
+  FAMILY_BASE_TF,
+  INTRADAY_TF_ORDER,
+  DEFAULT_TS_DIR,
 };
