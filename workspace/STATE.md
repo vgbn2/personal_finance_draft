@@ -7,6 +7,22 @@ last_audit_date: 2026-06-14
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Fix Note - 2026-06-14 session 32 - ALL 7 suite fails fixed; suite 465/465 (first fully green since s12)
+- The 7 long-standing "env-dependent" fails were **3 distinct root causes**, not one class:
+  (1) **3 gateway tests** (polymarket auth-health/preflight, trade proposed-order) — `backend/gateway/
+  node_modules/dotenv` was a CORRUPTED partial install (missing `config.js`/`package.json`/`lib/main.js`)
+  → `import 'dotenv/config'` threw MODULE_NOT_FOUND, every gateway spawn exited 1. Reinstalled
+  `dotenv@^17.4.2` (gitignored — no repo change). (2) **3 cockpit/status tests** — `storage/data/cache/
+  last_fetch.json` absent → `buildStatusPayload` crashed on `null.mode` + cockpit showed mode `unknown`.
+  **Real code fix `31f1357a`:** `loadStatusSnapshot()` now recovers a `recovered_live` snapshot from
+  partitioned history when the primary is MISSING (was scoped-only), carries a non-null fallback,
+  null-guards `cache_mode`/`fetched_at`, and `buildCockpitModel` uses the recovering loader. (3) **1
+  hygiene test** — stray untracked `.agents/skills/rigorous-feature-testing` (orphan SKILL.md) → removed.
+- Also committed the 3-session-stale 22-file caller migration (`6da0232b`, shim→canonical require paths;
+  shims retained) + this audit's STATE note (`2567d8f4`). Suite 458/465 → **465/465**.
+- Local-env caveat: causes (1) and (3) touch gitignored/untracked paths — they won't persist in git and
+  may recur on another clone or if the skill-loader recreates the stray dir.
+
 ## Audit Note - 2026-06-14 session 31 - blast-through Focused Audit (anchor d95b92a7 -> 483d45cc)
 - DCS 0.96 start/end. Tier 1 = commit `483d45cc` (session 31 prod, age <1d); the two intervening
   commits are docs/chore. **Verdict: session-31 code is CLEAN and verified.**

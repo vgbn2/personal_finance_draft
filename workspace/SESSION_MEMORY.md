@@ -1,3 +1,31 @@
+## Session Memory - 2026-06-14 (session 32) Blast-through audit of s31 daemon (clean) + committed caller migration + fixed ALL 7 test fails; suite 465/465 (first fully green since s12); commits 6da0232b/2567d8f4/31f1357a
+
+{
+  "work": "Booted on HEAD 483d45cc (session-31 daemon work, now COMMITTED -- STATE/HANDOFF still said 'uncommitted', corrected). Ran /blast-through Focused Audit (anchor d95b92a7->483d45cc): session-31 code verified CLEAN. Committed the long-uncommitted 22-file caller migration (6da0232b) + STATE audit note (2567d8f4). Then user said 'fix the 7 fails' -- root-caused all 7 into THREE distinct causes (not one env class as prior sessions assumed) and fixed them. Suite 458/465 -> 465/465.",
+  "key_mechanisms": [
+    "THE 7 FAILS WERE 3 ROOT CAUSES, not 'env-dependent cache/creds' as sessions 29-31 lumped them: (1) 3 gateway tests (polymarket auth-health, polymarket preflight, trade proposed-order) -- backend/gateway/node_modules/dotenv was a CORRUPTED PARTIAL install (had README-es.md/config.d.ts + a stray skills/ dir but MISSING config.js/package.json/lib/main.js, mtime Jun13) so `import 'dotenv/config'` threw MODULE_NOT_FOUND and every gateway spawn exited 1. Fix: npm --prefix backend/gateway install dotenv@^17.4.2 --no-save (gitignored, no repo change). (2) 3 cockpit/status tests -- storage/data/cache/last_fetch.json absent on fresh checkout -> buildStatusPayload deref'd null.mode (crash exit 1) and cockpit rendered mode 'unknown' not 'recovered_live' so /LIVE/ never matched. (3) 1 hygiene test -- stray UNTRACKED .agents/skills/rigorous-feature-testing/ (orphan SKILL.md, created today by a skill-loader) not in check_hygiene allowlist. Fix: rm -rf (no repo change).",
+    "STATUS FIX (the only committed code, 31f1357a): loadStatusSnapshot() only ran partitioned-history recovery for SCOPED snapshots; a MISSING primary snapshot fell straight through as null. Extended recovery to the missing case (same recovered_live path already covered by the 'history recovery builds a representative global snapshot' test -- history has 303,598 sources -> 179 recovered -> 59 usable here), carried a non-null baseSnapshot through the unrecoverable fallbacks, null-guarded cache_mode/fetched_at in buildStatusPayload, and pointed buildCockpitModel at the recovering loader instead of safeReadJson(DEFAULT_SNAPSHOT). Genuine robustness fix (status works on a fresh clone), not test-gaming.",
+    "CALLER MIGRATION (6da0232b): the 22 tracked files with 1-2 line require-path swaps off root shims onto canonical category paths (../env->../runtime/env, #shared/env->#shared/runtime/env, market/quote_router, market/validation, strategy/registry, profiles/mt5_profiles) -- the session-29 'migrate direct callers, keep the shim' work, sitting unstaged for 3 sessions. Empirically safe (12 prod modules load, 53/53 changed-test files). Shims retained (still used by #shared/* aliases + dist/)."
+  ],
+  "verified": [
+    "Full suite 465/465 exit 0 -- FIRST fully green run since session 12 (was 458/465).",
+    "cockpit + status tests pass from a FRESH state (rm last_fetch.json then run): cockpit render+model + root status freshness scope all green.",
+    "3 gateway tests pass after dotenv reinstall (dotenv/config.js + package.json now present).",
+    "Caller migration: 12 changed prod modules load with no MODULE_NOT_FOUND; 7 changed test files 53/53.",
+    "Blast-through Tier-1 audit of 483d45cc: coverage.js + backfill_daemon.js load + 4/4 each; intraday_rollup 1m->5m/15m lossless 5/5; rollupTargetsAboveBase over INTRADAY_TF_ORDER=['1m','5m','15m','30m','1h','4h'] correct; manifest<->handler parity (sovereign_cli.js:52); no stub/security signatures; docker backfill image matches web/bot."
+  ],
+  "user_decisions": [
+    "Commit split: two commits (refactor + docs) chosen via AskUserQuestion; full npm test gate chosen before committing.",
+    "'fix the 7 fails' -> all 7 fixed."
+  ],
+  "remaining": [
+    "graphify-out refresh pending (code changed: status.js) -- deferred (heavyweight; +17/-6 only).",
+    "dotenv corruption + stray .agents dir are LOCAL-ENV fixes (gitignored/untracked) -- they won't persist in git; a fresh clone with the same corruption needs the same reinstall. The stray dir may reappear (skill-loader recreated it today).",
+    "Unchanged carryovers: FW2 monolith deconstruction, FW6 backward-gap fetch, merge feat/ml-onnx-section -> main (user), live 1m provider smoke (needs network+keys), ~937MB untracked root artifacts."
+  ],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-14 (session 30) Blast-through Focused Audit + mass-implement; 2 findings closed (data-depth rollup + dead config); suite 447/453; commit 5977c84e
 
 {

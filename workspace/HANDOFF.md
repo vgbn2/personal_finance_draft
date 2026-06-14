@@ -18,6 +18,17 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 32 (2026-06-14) — blast-through audit (s31 clean) + caller migration committed + ALL 7 test
+  fails fixed; suite 465/465 (first fully green since s12).** Full trail: `workspace/handoff/2026-06-14.md`
+  session 32. Commits `6da0232b` (22-file shim→canonical caller migration), `2567d8f4` (STATE audit note),
+  `31f1357a` (status recover-on-missing fix) on `feat/session-guard-intraday-rollup`. The 7 fails were
+  **3 distinct causes**, not the single "env cache/creds" class prior sessions assumed: (1) corrupted
+  `backend/gateway/node_modules/dotenv` → reinstalled (local-env, no repo change); (2) missing
+  `last_fetch.json` → real status null-crash + cockpit no-LIVE, fixed in code (`31f1357a`); (3) stray
+  untracked `.agents/skills/rigorous-feature-testing` → removed (local-env). **Note for next session:**
+  causes (1) and (3) are local-env and won't persist in git — if those tests fail again, reinstall dotenv /
+  re-remove the stray dir. `graphify-out` refresh still pending (status.js changed).
+
 - **SESSION 30 (2026-06-14) — blast-through Focused Audit + mass-implement; 2 findings closed.**
   Full trail: `workspace/handoff/2026-06-14.md`. (1) **Data-depth gap closed:** the session-29 30m/4h
   catch-up rollup was only half-run; ran `intraday-rollup --family crypto`+`--family equities` →
