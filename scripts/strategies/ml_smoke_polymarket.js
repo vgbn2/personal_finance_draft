@@ -19,7 +19,7 @@
 //
 // Usage: node scripts/strategies/ml_smoke_polymarket.js [--symbol BTCUSDT] [--model logistic_v1] [--dry]
 
-require('#shared/env');
+require('#shared/runtime/env');
 const { getMlPrediction } = require('./ml_signal');
 const { commandPolymarket } = require('../../backend/cli/commands/trade/trade.js');
 

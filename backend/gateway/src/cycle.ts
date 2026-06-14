@@ -13,7 +13,7 @@ import { fetchTradingInfo } from './market.js';
 import { createClobClient } from './clob_factory.js';
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
-const { PersistenceBridge } = require('../../../shared/lib/persistence_bridge');
+const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
 // @ts-ignore
 const { fetchWithRetry } = require('../../../shared/lib/runtime/fetch_retry');
 

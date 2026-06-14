@@ -17,9 +17,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { REPO_ROOT, STORAGE_TS_DIR } = require('../../shared/lib/runtime/paths');
-const { readTsIndex } = require('../../shared/lib/market_validation');
+const { readTsIndex } = require('../../shared/lib/market/validation');
 const { rsi, atr } = require('../../shared/lib/market/indicators');
-const { inferFamily, normalizeSymbol } = require('../../shared/lib/quote_router');
+const { inferFamily, normalizeSymbol } = require('../../shared/lib/market/quote_router');
 
 const LIBRARY_PATH = path.join(REPO_ROOT, 'notebooks', 'signal_library.json');
 
