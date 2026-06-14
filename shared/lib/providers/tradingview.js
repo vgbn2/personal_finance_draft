@@ -1,6 +1,6 @@
 let TradingView = null;
 try { TradingView = require('@mathieuc/tradingview'); } catch { /* optional dep — not installed in all envs */ }
-const { isFiniteNumber } = require('../market_validation');
+const { isFiniteNumber } = require('../market/validation');
 
 /**
  * Fetches real-time or delayed quotes and metadata (sector/industry) for a list of symbols.

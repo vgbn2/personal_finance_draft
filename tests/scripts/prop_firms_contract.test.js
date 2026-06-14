@@ -17,7 +17,7 @@ const {
   formatPropFirmProfileLabel,
   normalizeProfile,
   upsertPropFirmProfile,
-} = require('../../shared/lib/prop_firms');
+} = require('../../shared/lib/profiles/prop_firms');
 
 function tempStorePath() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'prop-firm-store-'));

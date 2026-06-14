@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   analyzeSeries, extractActionable, isActionable, MIN_SIGNALS,
-} = require('../../shared/lib/rsi_backtest');
+} = require('../../shared/lib/strategy/rsi_backtest');
 
 // End-to-end fixture: a seeded sine-wave + jitter price series that drives RSI
 // through repeated oversold/overbought crossovers and recoveries, so
