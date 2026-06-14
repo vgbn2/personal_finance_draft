@@ -167,37 +167,10 @@ const COMMAND_MANIFEST = {
       }}
     ],
     data: [
-      { id: 'mass-backfill', label: 'Mass Backfill (all symbols x all timeframes)', loading: true, flags: {
+      { id: 'mass-backfill', label: 'Deep Backfill (all symbols x all timeframes)', loading: true, flags: {
         '--timeframes': { type: 'text', default: '1m,1w,1d,1h,15m', label: 'Timeframes (comma-separated)' },
         '--days': { type: 'text', default: '365', label: 'Days to backfill' },
         '--concurrency': { type: 'text', default: '5', label: 'Parallel jobs' },
-        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
-      }},
-      { id: 'crypto-deep-backfill', label: 'Crypto Deep Backfill (Binance, native 1m)', loading: true, flags: {
-        '--days': { type: 'text', default: '1825', label: 'Days (up to ~3300 / 2017)' },
-        '--symbol': { type: 'text', default: '', label: 'Symbol filter (blank = all configured)' },
-        '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
-        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
-      }},
-      { id: 'equity-deep-backfill', label: 'Equity Deep Backfill (Alpaca US, native 1m)', loading: true, flags: {
-        '--days': { type: 'text', default: '1825', label: 'Days (SIP ~2016 w/ ALPACA_DATA_FEED=sip)' },
-        '--symbol': { type: 'text', default: '', label: 'Symbol filter (blank = all US-eligible)' },
-        '--chunk-delay-ms': { type: 'text', default: '500', label: 'Delay between page chunks (ms)' },
-        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
-      }},
-      { id: 'five-min-accumulate', label: 'Yahoo 5m Accumulate (indices/commodities/fx)', loading: true, flags: {
-        '--family': { type: 'select', options: ['all', 'indices', 'commodities', 'fx'], label: 'Family', default: 'all' },
-        '--symbol': { type: 'text', default: '', label: 'Symbol filter (blank = all in family)' },
-        '--days': { type: 'text', default: '59', label: 'Days (Yahoo 5m cap ~60 trading days)' },
-        '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
-        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
-      }},
-      { id: 'intraday-accumulate', label: 'Yahoo Intraday Accumulate (15m/30m/1h)', loading: true, flags: {
-        '--timeframe': { type: 'select', options: ['15m', '30m', '1h'], label: 'Timeframe', default: '1h' },
-        '--family': { type: 'select', options: ['all', 'indices', 'commodities', 'fx'], label: 'Family', default: 'all' },
-        '--symbols': { type: 'text', default: '', label: 'Symbol filter, comma-separated (blank = all in family)' },
-        '--days': { type: 'text', default: '730', label: 'Days (15m/30m cap 60d, 1h cap 730d)' },
-        '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
       { id: 'intraday-rollup', label: 'Intraday Rollup (derive coarser TFs from deep bins, no network)', loading: true, flags: {
