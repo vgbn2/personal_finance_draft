@@ -1,11 +1,37 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: d95b92a78
+last_audited_commit: 483d45cc
 last_audit_date: 2026-06-14
 
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
+
+## Audit Note - 2026-06-14 session 31 - blast-through Focused Audit (anchor d95b92a7 -> 483d45cc)
+- DCS 0.96 start/end. Tier 1 = commit `483d45cc` (session 31 prod, age <1d); the two intervening
+  commits are docs/chore. **Verdict: session-31 code is CLEAN and verified.**
+- New `shared/lib/market/coverage.js` (133 LOC) cheap-probe reads the bin header + 8-byte tail only;
+  binary layout (TS_MAGIC/8-byte header/48-byte record) mirrors validation.js — verified loads + 4/4 tests.
+- New `backend/cli/commands/data/backfill_daemon.js` (226 LOC): injected-executor design (unit-testable
+  no-network), registered in `sovereign_cli.js:52` (manifest↔handler parity OK), cache-gate decides
+  deep/incremental/skip. Loads clean; 4/4 tests. No eval/exec/secret/stub signatures.
+- `data.js` rollup generalized losslessly: `rollupFromBase(tsDir,sym,baseTf,targets)` +
+  `rollupTargetsAboveBase` over `INTRADAY_TF_ORDER=['1m','5m','15m','30m','1h','4h']`; thin 5m wrappers
+  kept for legacy callers. 1m→5m/15m lossless proven by test. Docker `backfill` service image name
+  matches web/bot (`personal_finance:latest`).
+- **FINDING A (uncommitted caller migration — debt, NOT a defect):** 22 tracked files carry uncommitted
+  1–2 line require-path swaps off root shims onto canonical category paths (`../env`→`../runtime/env`,
+  `#shared/env`→`#shared/runtime/env`, `../../shared/lib/env`→`.../runtime/env`, quote_router/validation/
+  registry/mt5_profiles/etc.). 32 ins / 32 del, pure path swaps. Empirically SAFE: all 12 changed prod
+  modules load with no MODULE_NOT_FOUND; the 7 changed test files pass 53/53. This is the
+  "migrate direct callers, keep the shim" hygiene work from session 29 sitting unstaged. Action: commit
+  as one `refactor(shared): migrate direct callers to canonical lib paths` (shims stay — aliases/dist still
+  use them). NOT urgent; one `git clean`/`checkout` from loss but tree is otherwise quiet.
+- **FINDING B (doc drift — low):** STATE.md L605-631, HANDOFF L198-217, and MEMORY.md
+  `project_mass_implement_state` all still say session-31 daemon work is "ALL UNCOMMITTED"; it is in fact
+  committed as `483d45cc`. The earlier carryover narrative is stale. (This note corrects the record.)
+- No new stub/security findings; no orphan commands; no new duplicate configs. 1m base bins not yet on
+  disk (live provider smoke deferred — needs network + Binance/Alpaca keys), which is expected, not a gap.
 
 ## Audit Note - 2026-06-14 session 30 - blast-through Focused Audit (anchor 51b20b6c -> d95b92a7)
 - DCS 0.97 start/end. Tier 1 = commit `217d21e5` (session 29 prod work, age <1d). Code is clean: P3
