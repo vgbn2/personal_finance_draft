@@ -26,13 +26,39 @@ test('drops pre-market and post-market bars', function() {
   console.log(JSON.stringify({ type: 'equity_session_test', case: 'pre_post_market', kept: result.length }));
 });
 
-test('drops intra-day gap over 10 min on same day', function() {
-  var bars = [ etBar(9, 30), etBar(9, 35), etBar(10, 0), etBar(10, 5) ];
+test('keeps in-session bars regardless of intra-session spacing (does NOT drop by gap)', function() {
+  // Invariant (per equity_session docstring): the guard filters by SESSION HOUR
+  // only; it must NOT drop intra-session bars for being far apart. A 25-min gap
+  // (09:35 -> 10:00) inside the session is expected and must survive.
+  var bars = [ etBar(9, 30), etBar(9, 35), etBar(10, 0), etBar(12, 30) ];
   var result = filterEquitySessionGaps(bars);
-  assert.ok(result.length >= 2);
-  assert.equal(result[0].timestamp, bars[0].timestamp);
-  assert.equal(result[1].timestamp, bars[1].timestamp);
-  console.log(JSON.stringify({ type: 'equity_session_test', case: 'intra_day_gap', kept: result.length }));
+  assert.equal(result.length, 4, 'all 4 in-session bars kept despite gaps');
+  assert.deepEqual(
+    result.map(function(b) { return b.timestamp; }),
+    bars.map(function(b) { return b.timestamp; }),
+    'order and identity preserved, nothing dropped'
+  );
+  console.log(JSON.stringify({ type: 'equity_session_test', case: 'spacing_not_a_drop_reason', input: bars.length, kept: result.length, dropped: bars.length - result.length }));
+});
+
+test('clips on EST (UTC-5) in winter, not a fixed summer offset (DST correctness)', function() {
+  // The guard converts via America/New_York precisely so it tracks DST. The rest of
+  // this suite builds bars with a hardcoded +4 (EDT) offset; here we use raw UTC for a
+  // WINTER date (2026-01-13, EST = UTC-5) and prove the boundary moves with the zone.
+  //   13:30Z = 08:30 ET pre-market  -> DROP  (a naive +4 offset would read 09:30 and wrongly KEEP)
+  //   14:30Z = 09:30 ET open        -> keep
+  //   20:55Z = 15:55 ET             -> keep
+  //   21:00Z = 16:00 ET close       -> DROP
+  var bars = [
+    { timestamp: '2026-01-13T13:30:00.000Z', open: 1, high: 1, low: 1, close: 1, volume: 1 },
+    { timestamp: '2026-01-13T14:30:00.000Z', open: 2, high: 2, low: 2, close: 2, volume: 1 },
+    { timestamp: '2026-01-13T20:55:00.000Z', open: 3, high: 3, low: 3, close: 3, volume: 1 },
+    { timestamp: '2026-01-13T21:00:00.000Z', open: 4, high: 4, low: 4, close: 4, volume: 1 },
+  ];
+  var result = filterEquitySessionGaps(bars);
+  assert.equal(result.length, 2, 'only the two EST in-session bars survive');
+  assert.deepEqual(result.map(function(b) { return b.timestamp; }), [bars[1].timestamp, bars[2].timestamp]);
+  console.log(JSON.stringify({ type: 'equity_session_test', case: 'dst_winter_est', input: bars.length, kept: result.length, kept_ts: result.map(function(b) { return b.timestamp; }) }));
 });
 
 test('allows cross-session boundary', function() {
