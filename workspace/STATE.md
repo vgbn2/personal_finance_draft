@@ -1,11 +1,26 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: 51b20b6ca6b93f35aa67eb426b782413bfe704cc
-last_audit_date: 2026-06-13
+last_audited_commit: d95b92a78
+last_audit_date: 2026-06-14
 
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
+
+## Audit Note - 2026-06-14 session 30 - blast-through Focused Audit (anchor 51b20b6c -> d95b92a7)
+- DCS 0.97 start/end. Tier 1 = commit `217d21e5` (session 29 prod work, age <1d). Code is clean: P3
+  guard (`equity_session.js`) verified wired into BOTH consumers (`research.js:347` backtest +
+  `dataset.js:171` ML); `intraday-rollup` has manifest↔handler parity; no stub/security signatures
+  in touched files. Suite baseline carried 447/453 (6 pre-existing env fails).
+- **FINDING 1 (data-depth, debt-clearing) — RESOLVED (session 30 mass-implement):** 30m + 4h intraday
+  bins were stale/shallow (session-29 catch-up rollup only refreshed 15m/1h). Ran `intraday-rollup
+  --family crypto` + `--family equities` (local, idempotent). Verified lossless: BTCUSDT 30m 1,440→154,404
+  / 4h 180→19,319 (both now span 2017-08-17→2026-06-13, matching 5m); AAPL 30m 777→81,502 / 4h 859→11,260
+  (span 2016-01-01→2026-06-12). 30m=5m/6, 4h=5m/48 exactly. Data only (storage/data/ts gitignored), no code change.
+- **FINDING 2 (config drift) — RESOLVED (session 30 mass-implement):** deleted the DEAD DIVERGENT
+  `config/markets/asset_mapping.json` (zero readers; production reads `config/asset_mapping.json` via
+  manifest.js:31; the stub diverged in content AND keys). Full suite still 447/453 (baseline, 6 pre-existing
+  env fails) — deletion broke nothing. config gate C→B.
 
 ## Implementation Note - 2026-06-13 session 29 - blast-through refine + P3 wiring + deep-intraday rollup
 - Blast-through SKILL refined (global): recency-ranked audit queue, repo-wide hygiene sweep, agent-consistency contract, audit anchor (`last_audited_commit` above).
