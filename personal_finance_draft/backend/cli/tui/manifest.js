@@ -68,7 +68,7 @@ function getCachedUniverse() {
   if (!fs.existsSync(cachePath)) {
       return { 
           symbols: configSymbols.length > 0 ? configSymbols : [{ label: 'AAPL', value: 'AAPL', category: 'Equities' }], 
-          timeframes: ['1mo','1wk','1d', '1h', '5m'] 
+          timeframes: ['1mo','1wk','1d', '1h', '5m','1m'] 
       };
   }
 
@@ -156,19 +156,13 @@ const COMMAND_MANIFEST = {
         '--timeframe': { type: 'select', options: ['1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1h' },
         '--history-days': { type: 'text', default: '', label: 'Historical days (blank = latest only)' }
       }},
-      { id: 'backfill', label: 'Backfill', loading: true, flags: {
-        '--symbol': { type: 'text', prompt: 'Symbol (e.g. AAPL, BTCUSDT):' },
-        '--timeframe': { type: 'select', options: ['1mo','1w', '1d', '1h', '15m', '1m'], label: 'Timeframe', default: '1d' },
-        '--days': { type: 'text', default: '365', label: 'Days to backfill' },
-        '--20-years': { type: 'confirm', label: '20 Year Deep History?', default: false }
-      }},
       { id: 'cache-clean', label: 'Cache Clean (Quarantine rejected records)', flags: {
         '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
       }}
     ],
     data: [
       { id: 'mass-backfill', label: 'Deep Backfill (all symbols x all timeframes)', loading: true, flags: {
-        '--timeframes': { type: 'text', default: '1m,5m,15m,1h,1d,1w', label: 'Timeframes (comma-separated)' },
+        '--timeframes': { type: 'text', default: '1mo,1w,1d,4h,1h,30m,15m,5m,1m', label: 'Timeframes (comma-separated)' },
         '--days': { type: 'text', default: '365', label: 'Days to backfill' },
         '--concurrency': { type: 'text', default: '5', label: 'Parallel jobs' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
@@ -179,6 +173,7 @@ const COMMAND_MANIFEST = {
         '--timeframes': { type: 'text', default: '15m,30m,1h,4h', label: 'Target timeframes to derive' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
+      { id: 'integrity', prefix: ['backend'], label: 'Integrity Check (data freshness report)', args: [] },
     ],
     backend: [
       { id: 'status', prefix: ['backend'], label: 'Backend Status', args: [] },
