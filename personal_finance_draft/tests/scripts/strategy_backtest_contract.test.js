@@ -5,8 +5,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 const { renderEquityCurveChart } = require('../../shared/lib/strategy/backtest');
-const { validateSnapshot } = require('../../shared/lib/market_validation');
-const { STRATEGY_GRADE_INDEX_PATH } = require('../../shared/lib/strategy_registry');
+const { validateSnapshot } = require('../../shared/lib/market/validation');
+const { STRATEGY_GRADE_INDEX_PATH } = require('../../shared/lib/strategy/registry');
 
 const REPO_ROOT = path.join(__dirname, '..', '..');
 const CLI = path.join(REPO_ROOT, 'backend', 'cli', 'sovereign_cli.js');
@@ -570,7 +570,7 @@ test('monte carlo stress keeps retained paths sparse', () => {
 });
 
 test('snapshot reader can load one family from history directories', () => {
-  const { readSnapshot } = require('../../shared/lib/market_validation');
+  const { readSnapshot } = require('../../shared/lib/market/validation');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-snapshot-family-'));
   const cryptoDir = path.join(root, 'crypto');
   const equitiesDir = path.join(root, 'equities');

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { classifyStrategyAssetMode, formatStrategyAssetModeLabel, normalizeStrategyUniverse } = require('../shared/lib/strategy_registry');
+const { classifyStrategyAssetMode, formatStrategyAssetModeLabel, normalizeStrategyUniverse } = require('../shared/lib/strategy/registry');
 const { inspectStrategyFile, readStrategyRegistry } = require('../backend/cli/commands/strategy');
 
 function parseArgs(argv) {
