@@ -216,8 +216,13 @@ function loadStatusSnapshot() {
   const snapshot = readSnapshot(DEFAULT_SNAPSHOT);
   const validation = validateSnapshot(snapshot);
   const scoped = detectScopedSnapshot(snapshot, validation.report);
+  const missing = !snapshot;
 
-  if (!scoped.active) {
+  // A present, global (non-scoped) snapshot is authoritative -- use it as-is.
+  // A MISSING snapshot (fresh checkout / no fetch yet) or a SCOPED/targeted snapshot
+  // both fall through to history recovery so status and the cockpit present a
+  // representative global view instead of crashing on null or showing 'unknown'.
+  if (!missing && !scoped.active) {
     return {
       snapshot,
       report: validation.report,
@@ -226,10 +231,14 @@ function loadStatusSnapshot() {
     };
   }
 
+  // When the primary snapshot is absent, carry a non-null empty snapshot through the
+  // fallback returns so downstream consumers never dereference null.
+  const baseSnapshot = snapshot || { mode: 'no_snapshot', fetched_at: null, sources: [], errors: [] };
+
   const historySnapshot = readSnapshot(DEFAULT_HISTORY);
   if (!historySnapshot || !Array.isArray(historySnapshot.sources) || historySnapshot.sources.length === 0) {
     return {
-      snapshot,
+      snapshot: baseSnapshot,
       report: validation.report,
       recovered: false,
       previous_scope: scoped,
@@ -240,7 +249,7 @@ function loadStatusSnapshot() {
   const recoveredValidation = validateSnapshot(recoveredSnapshot);
   if (recoveredValidation.report.usable_records <= validation.report.usable_records) {
     return {
-      snapshot,
+      snapshot: baseSnapshot,
       report: validation.report,
       recovered: false,
       previous_scope: scoped,
@@ -286,8 +295,8 @@ function buildStatusPayload(snapshot, report, backend) {
     phase: currentPhaseLabel(),
     backend: backend.available ? 'available' : 'unavailable',
     backend_ok: Boolean(backend.ok),
-    cache_mode: snapshot.mode || 'unknown',
-    fetched_at: snapshot.fetched_at || 'unknown',
+    cache_mode: (snapshot && snapshot.mode) || 'unknown',
+    fetched_at: (snapshot && snapshot.fetched_at) || 'unknown',
     records: report.total_records,
     usable_records: report.usable_records,
     rejected_records: report.rejected_records,
@@ -310,7 +319,9 @@ function buildStatusPayload(snapshot, report, backend) {
 }
 
 function buildCockpitModel(opts = {}) {
-  const snapshot = safeReadJson(DEFAULT_SNAPSHOT);
+  // Use the recovering loader (not a raw file read) so a fresh checkout with no
+  // last_fetch.json still presents a representative recovered_live snapshot.
+  const snapshot = loadStatusSnapshot().snapshot;
   const quality = safeReadJson(DEFAULT_QUALITY_REPORT);
   const features = safeReadJson(DEFAULT_FEATURES);
   const modelReport = safeReadJson(DEFAULT_MODEL_REPORT);
