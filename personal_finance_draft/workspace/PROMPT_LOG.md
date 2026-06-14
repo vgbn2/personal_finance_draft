@@ -1,3 +1,19 @@
+# Prompt Log - 2026-06-14 (session 30)
+
+## User Prompts — 2026-06-14 (session 30)
+/clear → /session-orchestrator (boot: HANDOFF pointer → handoff/2026-06-13.md, SESSION_MEMORY, STATE;
+HEAD d95b92a7, branch feat/session-guard-intraday-rollup, matched handoff). → /blast-through (Focused
+Audit, anchor 51b20b6c→d95b92a7): surfaced 2 findings — (1) 30m/4h intraday bins stale/shallow
+(session-29 catch-up rollup only half-run), (2) dead divergent config/markets/asset_mapping.json;
+confirmed session-29 prod code clean + the runGatewayCommand DEV_REVIEW P0 is stale. → "plan and mass
+implement" → /mass-implement: emitted checklist, AskUserQuestion (chose "Both batches"), Batch 1
+deleted the config stub (suite 447/453, unchanged), Batch 2 ran intraday-rollup crypto+equities
+(30m/4h backfilled to full 5m depth, lossless). Committed 5977c84e. → "end session" (this handoff).
+
+## Status — 2026-06-14 (session 30 handoff)
+Both findings closed + verified + committed. Suite 447/453 (6 pre-existing env fails). Branch unchanged;
+merge to main still a user decision. Code change was config-deletion only (data bins gitignored).
+
 # Prompt Log - 2026-06-08 (session 8 boot)
 
 ## Session Boot — 2026-06-08 (session 8)
