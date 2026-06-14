@@ -281,20 +281,37 @@ test('commandEquityDeepBackfill dry-run includes US equities and skips unsupport
   assert.ok(out.estimated_api_calls > 0);
 });
 
-test('commandEquityDeepBackfill executes ingest with Alpaca provider pin', async () => {
+test('commandEquityDeepBackfill executes ingest with Alpaca provider pin at the 1m base grain', async () => {
+  // Mixed-base grain: equities now default to a native 1m base (Alpaca SIP serves deep
+  // 1m); 5m/15m/… are derived locally. The fetch therefore requests timeframe '1m'.
   const fakeConfig = { equities: { symbols: ['AAPL'] } };
   const calls = [];
   const outputs = await runEquityBackfillWithStubs(['--symbol', 'AAPL', '--days', '30'], fakeConfig, (opts) => {
     calls.push(opts);
-    return { sources: [{ family: 'equities', provider: 'alpaca', symbol: 'AAPL', timeframe: '5m' }], errors: [] };
+    return { sources: [{ family: 'equities', provider: 'alpaca', symbol: 'AAPL', timeframe: '1m' }], errors: [] };
   });
 
   assert.strictEqual(calls.length, 1);
   assert.strictEqual(calls[0].family, 'equities');
   assert.strictEqual(calls[0].provider, 'alpaca');
-  assert.strictEqual(calls[0].timeframe, '5m');
+  assert.strictEqual(calls[0].timeframe, '1m', 'equity deep backfill fetches the 1m base');
   assert.strictEqual(calls[0].force, true);
   assert.strictEqual(calls[0].chunkDelayMs, 500);
   assert.strictEqual(outputs[0].ok, true);
-  assert.strictEqual(outputs[0].total_5m_bars, 1);
+  assert.strictEqual(outputs[0].timeframe, '1m');
+  assert.strictEqual(outputs[0].total_base_bars, 1);
+});
+
+test('commandEquityDeepBackfill --base-tf 5m preserves the legacy 5m-native path', async () => {
+  const fakeConfig = { equities: { symbols: ['AAPL'] } };
+  const calls = [];
+  const outputs = await runEquityBackfillWithStubs(['--symbol', 'AAPL', '--days', '30', '--base-tf', '5m'], fakeConfig, (opts) => {
+    calls.push(opts);
+    return { sources: [{ family: 'equities', provider: 'alpaca', symbol: 'AAPL', timeframe: '5m' }], errors: [] };
+  });
+
+  assert.strictEqual(calls.length, 1);
+  assert.strictEqual(calls[0].timeframe, '5m', '--base-tf 5m fetches native 5m');
+  assert.strictEqual(outputs[0].ok, true);
+  assert.strictEqual(outputs[0].total_base_bars, 1);
 });

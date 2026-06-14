@@ -5,6 +5,7 @@ const OHLCV_FAMILIES = new Set(['equities', 'indices', 'commodities', 'crypto', 
 const SCALAR_VALUE_FAMILIES = new Set(['pmi', 'macro', 'macro_alt', 'sentiment', 'breadth', 'prediction_market']);
 const FRESHNESS_RULES_MS = {
   equities: {
+    '1m': 96 * 60 * 60 * 1000,
     '5m': 96 * 60 * 60 * 1000,
     '15m': 96 * 60 * 60 * 1000,
     '30m': 96 * 60 * 60 * 1000,
@@ -35,6 +36,7 @@ const FRESHNESS_RULES_MS = {
     '1mo': 60 * 24 * 60 * 60 * 1000,
   },
   crypto: {
+    '1m': 2 * 60 * 60 * 1000,
     '5m': 3 * 60 * 60 * 1000,
     '15m': 6 * 60 * 60 * 1000,
     '30m': 12 * 60 * 60 * 1000,
@@ -770,6 +772,7 @@ module.exports = {
   OHLCV_FAMILIES,
   isFiniteNumber,
   isValidTimestamp,
+  familyFreshnessThresholdMs,
   mergeSnapshots,
   readSnapshot,
   readTsIndex,
