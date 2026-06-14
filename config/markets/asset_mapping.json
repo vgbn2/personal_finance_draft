@@ -1,7 +1,0 @@
-{
-  "mapping": {
-    "Crypto": ["BTC", "USDT", "ETH"],
-    "FX": ["USD", "EUR", "JPY"],
-    "Equities": ["AAPL", "MSFT", "TSLA"]
-  }
-}
