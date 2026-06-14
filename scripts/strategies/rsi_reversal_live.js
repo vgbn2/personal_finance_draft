@@ -28,11 +28,11 @@
 // Usage: node scripts/strategies/rsi_reversal_live.js [--trade] [--qty 1] [--confluence [model]] [--dry]
 //   (no flags = report only; --trade submits paper orders for fired equity/ETF signals)
 
-require('#shared/env');
+require('#shared/runtime/env');
 const { getRsiReversalSignal, actionableSignals } = require('./rsi_reversal_signal');
 const { getConfluenceSignal } = require('./rsi_ml_confluence');
 const { commandTrade } = require('../../backend/cli/commands/trade/trade.js');
-const { inferFamily } = require('../../shared/lib/quote_router');
+const { inferFamily } = require('../../shared/lib/market/quote_router');
 
 function parseArgs(argv) {
   const out = {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { agentLoop } = require('../shared/lib/mcp_agent');
+const { agentLoop } = require('../shared/lib/mcp/agent');
 
 async function test() {
   console.log('='.repeat(70));
