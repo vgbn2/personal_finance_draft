@@ -1,3 +1,28 @@
+## Session Memory - 2026-06-14 (session 30) Blast-through Focused Audit + mass-implement; 2 findings closed (data-depth rollup + dead config); suite 447/453; commit 5977c84e
+
+{
+  "work": "Booted per session-orchestrator (HEAD d95b92a7). Ran /blast-through Focused Audit (anchor 51b20b6c->d95b92a7), then /mass-implement on the two surfaced findings. DCS 0.97 start/end. Committed 5977c84e on feat/session-guard-intraday-rollup.",
+  "key_mechanisms": [
+    "DATA-DEPTH GAP (the headline finding): the skill's 'stale coarse bin vs fresh deep source' mtime check caught that session-29's deep-intraday catch-up rollup had only refreshed 15m/1h -- 30m/4h carried pre-rollup 06-10 mtimes and tiny sizes (BTCUSDT 4h=180 bars/30d vs 5m=926k/9yr). CODE WAS CORRECT (ROLLUP_TARGET_TFS=all 4; dry-run confirmed intent) -- just un-run. Fix = run the command, not edit code.",
+    "FIX: ran intraday-rollup --family crypto + --family equities (local, idempotent, no network). storage/data/ts is GITIGNORED so this is a data-only change with nothing to commit. Lossless: 30m=5m/6, 4h=5m/48.",
+    "CONFIG DRIFT: config/markets/asset_mapping.json was a DEAD DIVERGENT duplicate -- zero readers across js/cpp/hpp/ts/yaml (Grep tool confirmed); production reads config/asset_mapping.json via manifest.js:31. Diverged in content AND keys (FX vs Forex; Crypto:[BTC,USDT,ETH] vs full 21-symbol). git rm'd it.",
+    "STALE LEDGER LESSON: DEV_REVIEW.md is append-only, so old P0s linger. The 'runGatewayCommand throws on every call' P0 (session 11) is RESOLVED (session 12, bridge D->B); a live require() probe loads it fine. Always verify a ledger P0 with a live probe before treating it as open."
+  ],
+  "verified": [
+    "Post-deletion full suite 447/453 exit unchanged -- the 6 fails are pre-existing env-dependent (cockpit/status cache usable_records=0, polymarket/trade creds); deletion broke nothing.",
+    "readTsIndex gate: BTCUSDT 30m 1,440->154,404 / 4h 180->19,319 (span 2017-08-17->2026-06-13, matches 5m); AAPL 30m 777->81,502 / 4h 859->11,260 (span 2016-01-01->2026-06-12). 30m=5m/6, 4h=5m/48 exact.",
+    "Audit confirmed session-29 prod code clean: P3 guardEquitySessionBars wired into BOTH consumers (research.js:347 backtest, dataset.js:171 ML); intraday-rollup manifest parity (manifest.js:197); no stub/security signatures in Tier-1 touched files."
+  ],
+  "user_decisions": [
+    "Plan+mass-implement approved; 'Both batches' chosen via AskUserQuestion; commit at end approved."
+  ],
+  "remaining": [
+    "Resume ~10 crypto alts to listing dates (multi-hour). FW2 monolith deconstruction. FW6 backward-gap fetch. merge feat/ml-onnx-section -> main (user). ~937MB untracked root artifacts pending user cleanup.",
+    "Data-bin depth (incl. the 30m/4h just rebuilt) lives only in the working tree -- storage/data/ts is gitignored, so a fresh clone needs the rollup re-run (existing project convention, not new debt)."
+  ],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-13 (session 29) Blast-through refined to true audit skill; P3 guard WIRED; deep-intraday rollup + auto-derive; 8 shims wrongly-deleted-then-restored; suite 447/453 (6 pre-existing)
 
 {
