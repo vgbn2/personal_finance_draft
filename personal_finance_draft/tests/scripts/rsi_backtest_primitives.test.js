@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   betaCdf, betaPpf, tCdf, tPpf, median, quantile,
   rsiSeries, atrSeries, bayesHitRate, bayesNormReturn,
-} = require('../../shared/lib/rsi_backtest');
+} = require('../../shared/lib/strategy/rsi_backtest');
 
 // Reference values below are closed-form, not "the engine agrees with itself":
 //   Beta(2,2) has pdf 6x(1-x) -> cdf F(x) = 3x^2 - 2x^3 (no incomplete-beta machinery needed)
