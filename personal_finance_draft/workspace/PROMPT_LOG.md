@@ -1,3 +1,28 @@
+# Prompt Log - 2026-06-14 (session 33 boot)
+
+## Session Boot — 2026-06-14 (session 33)
+/session-orchestrator. Loaded HANDOFF.md (pointer → workspace/handoff/2026-06-14.md sessions 30+32),
+SESSION_MEMORY.md (sessions 21-32), STATE.md (current section + audit anchor 483d45cc). BOOTSTRAP.md
+not present (only HANDOFF/SESSION_MEMORY/STATE exist). HEAD a4c85fe9 (session-32 close-out doc),
+branch feat/session-guard-intraday-rollup — matches handoff record. Working tree changes are all
+parent-workspace .agent/skills + submodule pointers (pre-existing, noted in session-start status), not
+personal_finance_draft source. Suite last green 465/465 (session 32). Carryovers: graphify-out refresh
+(status.js changed), FW2 monolith deconstruction, FW6 backward-gap fetch, merge feat/ml-onnx-section →
+main (user), live 1m provider smoke (network+keys), ~937MB untracked root artifacts. Awaiting user direction.
+
+## User Prompts — 2026-06-14 (session 33)
+"plan and mass implement" + "i want the old PC ubuntu to be able to access the repo so i need gitzip and
+bundler" → "can it ingest inside the ubuntu machine so i don't have to bare the storage" → "execute".
+
+## Work — 2026-06-14 (session 33)
+/mass-implement. Recon found git root = CODEPTIT monorepo (pfd is a subdir) + 22 embedded gitlinks (incl.
+pfd/backend/polymarket-cli). AskUserQuestion → bundle(monorepo)-only + no data transfer (Ubuntu re-ingests
+keyless for crypto/indices/fx). Built scripts/dev/make_bundle.js (+ npm run bundle): monorepo --all bundle
++ companion bundle per populated embedded repo (--embedded pfd|all|none), output to ../portable_exports
+(outside tree), auto RESTORE_UBUNTU.md + manifest. Verified by test-clone (HEAD a4c85fe9, 4 branches,
+58,076 files, embedded restored 49/51). hygiene all-pass, test:structure 8/8. Committed on
+feat/session-guard-intraday-rollup.
+
 # Prompt Log - 2026-06-14 (session 30)
 
 ## User Prompts — 2026-06-14 (session 30)
