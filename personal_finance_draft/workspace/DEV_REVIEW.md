@@ -1,3 +1,14 @@
+### Blast-Through Focused Audit — 2026-06-14 session 30 (anchor 51b20b6c → d95b92a7)
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| P1 | data-depth | `storage/data/ts/*_{30m,4h}.bin` (introduced by rollup commit `217d21e5`, age <1d) | 30m + 4h intraday bins stale/shallow — BTCUSDT 5m=926,357 (2017→2026) & 15m=37,898, but 30m=1,440 / 4h=180 (only 2026-05-11→06-10); AAPL 30m=777 / 4h=859 (end 06-09). The session-29 catch-up rollup refreshed 15m+1h but not 30m+4h. **Code is correct** (`ROLLUP_TARGET_TFS=['15m','30m','1h','4h']`; dry-run confirms intent). | Run `intraday-rollup --family crypto` + `--family equities` (local, idempotent, ~seconds). Verify 30m/4h counts jump to match 5m depth. | data layer B (open); gap is data-state not code |
+| P2 | config | `config/markets/asset_mapping.json` (dead since reorg) | Divergent dead duplicate of `config/asset_mapping.json`. Zero readers across js/cpp/hpp/ts/yaml; production reads the root copy (`backend/cli/tui/manifest.js:31`). Diverges in content + keys (`FX` vs `Forex`; `Crypto:[BTC,USDT,ETH]` vs full 21-symbol universe) → edit-wrong-file trap. | Delete `config/markets/asset_mapping.json` (or add a byte-equality contract test if the second copy is intentional). | config C — GATED until removed |
+
+**Reviewer decision needed:** (1) confirm OK to run the catch-up `intraday-rollup` (writes 30m/4h bins);
+(2) confirm the `config/markets/asset_mapping.json` stub is dead and can be deleted.
+**Verification gate to clear:** post-rollup `readTsIndex` shows 30m/4h spanning the same range as 5m; full suite still green after stub deletion.
+
 ##### Centralization Backlog
 
 | Pattern | Files (count) | Proposed unit | Effort | Grade impact |
