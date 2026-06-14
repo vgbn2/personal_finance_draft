@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-13.md`**
+- Latest/current handoff: **`workspace/handoff/2026-06-14.md`**
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -17,6 +17,15 @@ boot) never has to read tens of thousands of tokens of accumulated history.
   2026-05-31 to 2026-06-07) are archived in `workspace/STATE_ARCHIVE.md`.
 
 ## Open carryovers (keep this list current)
+
+- **SESSION 30 (2026-06-14) — blast-through Focused Audit + mass-implement; 2 findings closed.**
+  Full trail: `workspace/handoff/2026-06-14.md`. (1) **Data-depth gap closed:** the session-29 30m/4h
+  catch-up rollup was only half-run; ran `intraday-rollup --family crypto`+`--family equities` →
+  BTCUSDT 30m 1,440→154,404 / 4h 180→19,319, AAPL 30m 777→81,502 / 4h 859→11,260 (lossless, full 5m
+  span; data only, `storage/data/ts` gitignored). (2) **Deleted dead divergent
+  `config/markets/asset_mapping.json`** (zero readers; production reads `config/asset_mapping.json`);
+  suite still 447/453. Audit confirmed session-29 prod code clean (P3 guard wired both consumers,
+  rollup manifest parity); the `runGatewayCommand` P0 in DEV_REVIEW is a stale entry (fixed session 12).
 
 - **SESSION 29 (2026-06-13) — blast-through refine + P3 guard WIRED + deep-intraday rollup + shim correction.**
   Committed `217d21e5` on branch **`feat/session-guard-intraday-rollup`** (NOT merged to main = user
