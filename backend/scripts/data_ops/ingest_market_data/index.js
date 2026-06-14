@@ -2008,7 +2008,8 @@ async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypt
   // Only for binance/coinbase providers (not coingecko/alpaca which lack 5m intraday depth).
   if (subDailyTimeframes.length > 0 && historyDays > 5 && (provider === 'binance' || provider === 'coinbase')) {
     // Fetch at the finest sub-daily timeframe requested; coarser sub-daily TFs aggregate from it.
-    const ORDER = ['5m', '15m', '30m', '1h', '4h'];
+    // '1m' leads the order so crypto can use a native 1-minute base (Binance serves deep 1m).
+    const ORDER = ['1m', '5m', '15m', '30m', '1h', '4h'];
     const finestSubDaily = ORDER.find(tf => subDailyTimeframes.includes(tf)) || subDailyTimeframes[0];
 
     const fetchBaseFn = provider === 'coinbase' ? fetchCoinbaseBaseCandles : fetchBinanceBaseCandles;
