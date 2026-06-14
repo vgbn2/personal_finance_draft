@@ -126,6 +126,7 @@ function getRegisteredStrategies() {
 const COMMAND_MANIFEST = {
   categories: [
     { id: 'op',         label: 'Operational Dashboard & Health' },
+    { id: 'data',       label: 'Data & Backfill' },
     { id: 'backend',    label: 'Backend Tools' },
     { id: 'research',   label: 'Research & Backtesting' },
     { id: 'trade',      label: 'Execution & Trading' },
@@ -161,32 +162,37 @@ const COMMAND_MANIFEST = {
         '--days': { type: 'text', default: '365', label: 'Days to backfill' },
         '--20-years': { type: 'confirm', label: '20 Year Deep History?', default: false }
       }},
-      { id: 'mass-backfill', label: 'Mass Backfill (All symbols x all timeframes)', loading: true, flags: {
+      { id: 'cache-clean', label: 'Cache Clean (Quarantine rejected records)', flags: {
+        '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
+      }}
+    ],
+    data: [
+      { id: 'mass-backfill', label: 'Mass Backfill (all symbols x all timeframes)', loading: true, flags: {
         '--timeframes': { type: 'text', default: '1m,1w,1d,1h,15m', label: 'Timeframes (comma-separated)' },
         '--days': { type: 'text', default: '365', label: 'Days to backfill' },
         '--concurrency': { type: 'text', default: '5', label: 'Parallel jobs' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
-      { id: 'crypto-deep-backfill', label: 'Crypto Deep Backfill (native 5m, Binance)', loading: true, flags: {
-        '--days': { type: 'text', default: '1825', label: 'Days (Binance 5m ~2017; up to ~3300)' },
+      { id: 'crypto-deep-backfill', label: 'Crypto Deep Backfill (Binance, native 1m)', loading: true, flags: {
+        '--days': { type: 'text', default: '1825', label: 'Days (up to ~3300 / 2017)' },
         '--symbol': { type: 'text', default: '', label: 'Symbol filter (blank = all configured)' },
         '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
-      { id: 'equity-deep-backfill', label: 'Equity Deep Backfill (native 5m, Alpaca US)', loading: true, flags: {
-        '--days': { type: 'text', default: '1825', label: 'Days (SIP ~2016 w/ ALPACA_DATA_FEED=sip; up to ~3850)' },
+      { id: 'equity-deep-backfill', label: 'Equity Deep Backfill (Alpaca US, native 1m)', loading: true, flags: {
+        '--days': { type: 'text', default: '1825', label: 'Days (SIP ~2016 w/ ALPACA_DATA_FEED=sip)' },
         '--symbol': { type: 'text', default: '', label: 'Symbol filter (blank = all US-eligible)' },
         '--chunk-delay-ms': { type: 'text', default: '500', label: 'Delay between page chunks (ms)' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
-      { id: 'five-min-accumulate', label: 'Five-Min Accumulate (Yahoo 5m: indices/commodities/fx)', loading: true, flags: {
+      { id: 'five-min-accumulate', label: 'Yahoo 5m Accumulate (indices/commodities/fx)', loading: true, flags: {
         '--family': { type: 'select', options: ['all', 'indices', 'commodities', 'fx'], label: 'Family', default: 'all' },
         '--symbol': { type: 'text', default: '', label: 'Symbol filter (blank = all in family)' },
         '--days': { type: 'text', default: '59', label: 'Days (Yahoo 5m cap ~60 trading days)' },
         '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
-      { id: 'intraday-accumulate', label: 'Intraday Accumulate (Yahoo 15m/30m/1h: indices/commodities/fx)', loading: true, flags: {
+      { id: 'intraday-accumulate', label: 'Yahoo Intraday Accumulate (15m/30m/1h)', loading: true, flags: {
         '--timeframe': { type: 'select', options: ['15m', '30m', '1h'], label: 'Timeframe', default: '1h' },
         '--family': { type: 'select', options: ['all', 'indices', 'commodities', 'fx'], label: 'Family', default: 'all' },
         '--symbols': { type: 'text', default: '', label: 'Symbol filter, comma-separated (blank = all in family)' },
@@ -194,15 +200,12 @@ const COMMAND_MANIFEST = {
         '--delay-ms': { type: 'text', default: '250', label: 'Delay between symbols (ms)' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
-      { id: 'intraday-rollup', label: 'Intraday Rollup (derive 15m/30m/1h/4h from deep 5m bins, no network)', loading: true, flags: {
-        '--family': { type: 'select', options: ['all', 'crypto', 'equities'], label: 'Family (blank/all = every symbol with a deep 5m bin)', default: 'all' },
+      { id: 'intraday-rollup', label: 'Intraday Rollup (derive coarser TFs from deep bins, no network)', loading: true, flags: {
+        '--family': { type: 'select', options: ['all', 'crypto', 'equities'], label: 'Family', default: 'all' },
         '--symbols': { type: 'text', default: '', label: 'Symbol filter, comma-separated (blank = all)' },
         '--timeframes': { type: 'text', default: '15m,30m,1h,4h', label: 'Target timeframes to derive' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
       }},
-      { id: 'cache-clean', label: 'Cache Clean (Quarantine rejected records)', flags: {
-        '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
-      }}
     ],
     backend: [
       { id: 'status', prefix: ['backend'], label: 'Backend Status', args: [] },
