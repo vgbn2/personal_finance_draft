@@ -2,7 +2,7 @@
 /**
  * backfill_daemon.js -- passive background market-data poller.
  *
- * Wired as `sovereign data backfill-daemon`. Once running (e.g. the Docker `backfill`
+ * Wired as `sovereign backfill-daemon`. Once running (e.g. the Docker `backfill`
  * service), it keeps every configured symbol backfilled at its base grain and rolled
  * up to all coarser intraday timeframes, printing a per-symbol decision line and a
  * per-cycle JSON summary for easy debugging.
@@ -10,6 +10,10 @@
  * Cache-aware: before polling a provider it checks what's already stored (bar count +
  * last-bar age) and only fetches symbols whose base bin is MISSING (deep backfill) or
  * STALE (incremental refresh). Fresh symbols are skipped, never silently re-fetched.
+ *
+ * Parallel provider lanes: crypto (Binance), equities (Alpaca), and Yahoo families
+ * (indices/commodities/fx) run concurrently — one lane per provider — so a slow
+ * Binance deep backfill doesn't block Yahoo or Alpaca and vice-versa.
  *
  * Mixed base grain: crypto + US equities use a native 1m base (5m/15m/… derived);
  * Yahoo families (indices/commodities/fx) use a 5m base (Yahoo only serves ~7d of 1m).
@@ -31,6 +35,18 @@ const { isFresh } = require('../../../../shared/lib/market/coverage.js');
 const ONE_M_FAMILIES = ['crypto', 'equities'];
 const YAHOO_FAMILIES = ['indices', 'commodities', 'fx'];
 const ALL_FAMILIES = [...ONE_M_FAMILIES, ...YAHOO_FAMILIES];
+
+// Provider lane each family belongs to.
+const FAMILY_LANE = {
+  crypto: 'binance',
+  equities: 'alpaca',
+  indices: 'yahoo',
+  commodities: 'yahoo',
+  fx: 'yahoo',
+};
+
+// Max concurrent jobs per provider lane (Yahoo rate-limits at ~429 above ~8).
+const LANE_CONCURRENCY = { binance: 3, alpaca: 3, yahoo: 5 };
 
 // Default fetch windows (days). Deep = first-fill cold history; incremental = recent
 // top-up for a stale-but-present bin (kept >5 because the native intraday fetch path
@@ -78,19 +94,54 @@ function fmtAge(ms) {
 }
 
 /**
- * runBackfillCycle -- one pass over the job universe. Pure orchestration: the cache
- * gate decides deep/incremental/skip per symbol, the injected executor fetches, and
- * the injected rollup derives coarser bins. Returns a structured summary.
+ * runWithConcurrency -- run async fn over items with a bounded concurrency pool.
+ * JS is single-threaded so shared state mutations between awaits are safe.
+ */
+async function runWithConcurrency(items, limit, fn) {
+  const executing = new Set();
+  for (const item of items) {
+    const p = fn(item).finally(() => executing.delete(p));
+    executing.add(p);
+    if (executing.size >= limit) await Promise.race(executing);
+  }
+  await Promise.all(executing);
+}
+
+/**
+ * groupIntoLanes -- split a flat job list into provider lanes.
+ * @returns {Array<{lane:string, concurrency:number, jobs:Array}>}
+ */
+function groupIntoLanes(jobs) {
+  const map = {};
+  for (const job of jobs) {
+    const lane = FAMILY_LANE[job.family] || 'yahoo';
+    if (!map[lane]) map[lane] = [];
+    map[lane].push(job);
+  }
+  return Object.entries(map).map(([lane, laneJobs]) => ({
+    lane,
+    concurrency: LANE_CONCURRENCY[lane] || 3,
+    jobs: laneJobs,
+  }));
+}
+
+/**
+ * runBackfillCycle -- one pass over the job universe.
+ *
+ * When o.parallelLanes === true (default), jobs are grouped by provider lane
+ * (binance/alpaca/yahoo) and all lanes run concurrently with per-lane concurrency
+ * limits. When false, jobs run sequentially (useful for deterministic tests).
  *
  * @param {object} o
  * @param {string} o.tsDir
  * @param {Array<{symbol,family,baseTf}>} o.jobs
  * @param {number} [o.now]
- * @param {(job, mode, days) => Promise<{ok:boolean, error?:string}>} o.execute  deep/incremental fetch
- * @param {(job) => {ok:boolean, derived?:object, error?:string}} o.rollup        derive coarser bins
+ * @param {(job, mode, days) => Promise<{ok:boolean, error?:string}>} o.execute
+ * @param {(job) => {ok:boolean, derived?:object, error?:string}} o.rollup
  * @param {(line:string) => void} [o.log]
- * @param {(tsDir,symbol,tf,family,now)=>object} [o.freshness]  defaults to coverage.isFresh
+ * @param {(tsDir,symbol,tf,family,now)=>object} [o.freshness]
  * @param {number} [o.cycle]
+ * @param {boolean} [o.parallelLanes]  default true
  */
 async function runBackfillCycle(o) {
   const tsDir = o.tsDir;
@@ -100,11 +151,13 @@ async function runBackfillCycle(o) {
   const cycle = o.cycle || 1;
   const deepDays = o.deepDays || DEFAULT_DEEP_DAYS;
   const incrementalDays = o.incrementalDays || INCREMENTAL_DAYS;
+  const parallelLanes = o.parallelLanes !== false; // default true
 
   const summary = { cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0, rolled_up: 0, errors: 0, failures: [] };
   const start = Date.now();
 
-  for (const job of o.jobs) {
+  // Process a single job — shared by both sequential and parallel paths.
+  async function processJob(job) {
     summary.scanned += 1;
     const gate = freshness(tsDir, job.symbol, job.baseTf, job.family, now);
     const action = decideAction(gate);
@@ -112,7 +165,7 @@ async function runBackfillCycle(o) {
     if (action === 'skip') {
       summary.skipped += 1;
       log(`[BACKFILL] cycle=${cycle} ${job.symbol} ${job.baseTf}: have=${gate.count} age=${fmtAge(gate.ageMs)} FRESH -> skip`);
-      continue;
+      return;
     }
 
     const days = action === 'deep' ? (deepDays[job.family] || 59) : incrementalDays;
@@ -128,11 +181,11 @@ async function runBackfillCycle(o) {
       summary.errors += 1;
       summary.failures.push({ symbol: job.symbol, family: job.family, action, error: (res && res.error) || 'fetch failed' });
       log(`[BACKFILL] cycle=${cycle} ${job.symbol} ${job.baseTf}: ${action.toUpperCase()} FAILED: ${(res && res.error) || 'fetch failed'}`);
-      continue;
+      return;
     }
     if (action === 'deep') summary.deep += 1; else summary.incremental += 1;
 
-    // Derive coarser bins from the freshly-written base bin (idempotent, merge-protected).
+    // Derive coarser bins from the freshly-written base bin.
     try {
       const roll = o.rollup(job);
       if (roll && roll.ok) {
@@ -141,6 +194,20 @@ async function runBackfillCycle(o) {
       }
     } catch (err) {
       log(`[BACKFILL] cycle=${cycle} ${job.symbol} rollup FAILED: ${err.message}`);
+    }
+  }
+
+  if (parallelLanes) {
+    // Run each provider lane concurrently; within each lane honour its concurrency cap.
+    const lanes = groupIntoLanes(o.jobs);
+    log(`[BACKFILL] cycle=${cycle} running ${lanes.length} provider lane(s) in parallel: ${lanes.map(l => `${l.lane}(${l.jobs.length}jobs,c=${l.concurrency})`).join(', ')}`);
+    await Promise.all(
+      lanes.map((l) => runWithConcurrency(l.jobs, l.concurrency, processJob))
+    );
+  } else {
+    // Sequential — used by tests or when explicitly disabled.
+    for (const job of o.jobs) {
+      await processJob(job);
     }
   }
 
@@ -186,6 +253,7 @@ async function commandBackfillDaemon(args) {
   const symbolFilter = symbolArg
     ? new Set(symbolArg.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean))
     : null;
+  const sequential = hasFlag(args, '--sequential'); // escape hatch for debugging
 
   const { loadConfig } = require('../../../scripts/data_ops/ingest_market_data.js');
   const log = (line) => console.log(line);
@@ -201,8 +269,12 @@ async function commandBackfillDaemon(args) {
     let jobs = buildJobUniverse(config, families);
     if (symbolFilter) jobs = jobs.filter((j) => symbolFilter.has(j.symbol));
 
-    console.log(`[BACKFILL] cycle=${cycle} start: ${jobs.length} jobs across ${families.join(',')} (ts-dir=${tsDir})`);
-    lastSummary = await runBackfillCycle({ tsDir, jobs, execute, rollup, log, cycle });
+    const lanes = groupIntoLanes(jobs);
+    console.log(`[BACKFILL] cycle=${cycle} start: ${jobs.length} jobs across ${families.join(',')} | lanes: ${lanes.map(l => `${l.lane}(${l.jobs.length})`).join(', ')} (ts-dir=${tsDir})`);
+    lastSummary = await runBackfillCycle({
+      tsDir, jobs, execute, rollup, log, cycle,
+      parallelLanes: !sequential,
+    });
 
     if (once) break;
     await new Promise((resolve) => setTimeout(resolve, intervalSecs * 1000));
@@ -217,10 +289,13 @@ module.exports = {
   commandBackfillDaemon,
   runBackfillCycle,
   buildJobUniverse,
+  groupIntoLanes,
   decideAction,
   makeRealExecutor,
   makeRealRollup,
   ALL_FAMILIES,
   DEFAULT_DEEP_DAYS,
   INCREMENTAL_DAYS,
+  LANE_CONCURRENCY,
+  FAMILY_LANE,
 };
