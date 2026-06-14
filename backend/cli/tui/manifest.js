@@ -157,7 +157,7 @@ const COMMAND_MANIFEST = {
       }},
       { id: 'backfill', label: 'Backfill', loading: true, flags: {
         '--symbol': { type: 'text', prompt: 'Symbol (e.g. AAPL, BTCUSDT):' },
-        '--timeframe': { type: 'select', options: ['1m','1mo','1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1d' },
+        '--timeframe': { type: 'select', options: ['1mo','1w', '1d', '1h', '15m', '1m'], label: 'Timeframe', default: '1d' },
         '--days': { type: 'text', default: '365', label: 'Days to backfill' },
         '--20-years': { type: 'confirm', label: '20 Year Deep History?', default: false }
       }},
