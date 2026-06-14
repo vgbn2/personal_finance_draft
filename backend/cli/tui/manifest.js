@@ -168,7 +168,7 @@ const COMMAND_MANIFEST = {
     ],
     data: [
       { id: 'mass-backfill', label: 'Deep Backfill (all symbols x all timeframes)', loading: true, flags: {
-        '--timeframes': { type: 'text', default: '1m,1w,1d,1h,15m', label: 'Timeframes (comma-separated)' },
+        '--timeframes': { type: 'text', default: '1m,5m,15m,1h,1d,1w', label: 'Timeframes (comma-separated)' },
         '--days': { type: 'text', default: '365', label: 'Days to backfill' },
         '--concurrency': { type: 'text', default: '5', label: 'Parallel jobs' },
         '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
