@@ -18,6 +18,14 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 33 (2026-06-15) — integrity display fix (1m + canonical order) + TUI data menu cleanup; SSH blocker deferred.**
+  Full trail: `workspace/handoff/2026-06-14.md` (session 33 continued block). Commits `d3a4b39a`
+  (integrity: add 1m + canonical TF sort) + `8c12ca7f` (tui: remove Backfill from Op Dashboard, add Integrity
+  to Data & Backfill). Suite **465/465**. Ubuntu `sshd` stopped on Windows — deferred to next session.
+  **Next-session first step:** elevated PowerShell → `Start-Service sshd`; then on Ubuntu
+  `git fetch windows && git merge windows/feat/session-guard-intraday-rollup`, then run
+  `crypto-deep-backfill --days 1825` for 1m crypto data.
+
 - **SESSION 32 (2026-06-14) — blast-through audit (s31 clean) + caller migration committed + ALL 7 test
   fails fixed; suite 465/465 (first fully green since s12).** Full trail: `workspace/handoff/2026-06-14.md`
   session 32. Commits `6da0232b` (22-file shim→canonical caller migration), `2567d8f4` (STATE audit note),

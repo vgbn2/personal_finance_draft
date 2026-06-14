@@ -1,3 +1,22 @@
+## Session Memory - 2026-06-15 (session 33 continued) integrity display fix + TUI data menu cleanup + Ubuntu SSH deferred
+
+{
+  "work": "Two small fixes + session close-out. (1) backend integrity was hiding 1m data and showing timeframes in wrong order. (2) TUI: removed Backfill from Op Dashboard, added Integrity Check to Data & Backfill. Ubuntu SSH (sshd stopped on Windows, needs elevated Start-Service) deferred to next session.",
+  "key_mechanisms": [
+    "INTEGRITY DISPLAY BUG: backend/cli/commands/tools/backend.js TIMEFRAMES array at line 1209 was built from Set([...requiredTimeframes,'5m','15m','30m','1h','4h','1d','1w']) -- no 1m. Fix: TF_CANONICAL_ORDER=['1m','5m','15m','30m','1h','4h','1d','1w','1mo'], filter by Set union that includes 1m. Per-symbol tfDetails also needed .sort() by canonical index (Object.entries order was insertion order = TIMEFRAMES iteration = also wrong before the fix).",
+    "TUI ENGINE REMINDER: engine reads MANIFEST.commands[categoryId] flat list only -- no submenu support. Adding a new category is the only way to group commands.",
+    "SSHD ON WINDOWS: Claude Code shell cannot Start-Service (no admin). User must run elevated PowerShell. Once running, Ubuntu fetches normally at 192.168.4.100:22.",
+    "UBUNTU DATA STATE: crypto mass-backfill routes through Yahoo (wrong) -> most crypto shows 1d:1 only. Crypto 1m needs crypto-deep-backfill (Binance). Equity 1m needs equity-deep-backfill (Alpaca SIP). FX intraday thin. After SSH sync, run these on Ubuntu."
+  ],
+  "verified": [
+    "npm test 465/465 after both commits.",
+    "node -e require('./backend/cli/commands/tools/backend.js') loads ok.",
+    "node -e require('./backend/cli/tui/manifest.js') loads ok."
+  ],
+  "commits": ["d3a4b39a (integrity: 1m + canonical order)", "8c12ca7f (tui: backfill out of op, integrity into data)"],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-14 (session 33) Repo-portability bundler for Ubuntu transfer (mass-implement); embedded-repo-aware git bundle; verified by test-clone
 
 {
