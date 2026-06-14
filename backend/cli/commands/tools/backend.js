@@ -1206,10 +1206,9 @@ async function runBackendIntegrity(args = []) {
     }
   } catch (_) { /* no snapshot yet — treat nothing as unreachable */ }
 
-  const TIMEFRAMES = [...new Set([
-    ...requiredTimeframes,
-    '5m', '15m', '30m', '1h', '4h', '1d', '1w',
-  ])];
+  const TF_CANONICAL_ORDER = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1mo'];
+  const tfBase = new Set([...requiredTimeframes, '1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w']);
+  const TIMEFRAMES = TF_CANONICAL_ORDER.filter(tf => tfBase.has(tf));
 
   const familyReport = {};
   const allSymbols = [];
@@ -1314,8 +1313,9 @@ async function runBackendIntegrity(args = []) {
         if (!primary) return;
         const staleTag = primary.stale ? ` [stale ${primary.age_h}h]` : '';
         
-        // Build timeframe:count strings for a clear breakdown
+        // Build timeframe:count strings in canonical order (smallest → largest)
         const tfDetails = Object.entries(s.timeframes)
+          .sort(([a], [b]) => TF_CANONICAL_ORDER.indexOf(a) - TF_CANONICAL_ORDER.indexOf(b))
           .map(([tf, meta]) => `${tf}:${meta.bars}`)
           .join(' ');
 
