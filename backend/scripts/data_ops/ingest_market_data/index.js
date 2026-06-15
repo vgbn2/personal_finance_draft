@@ -1720,10 +1720,10 @@ async function ingestMarketData(options = {}) {
               // Cache covers history but is stale. Just fetch the forward gap.
               const buffer = 1000 * 60 * 5; // 5m buffer
               fetchOptions.startTime = latestInCache - buffer; 
-              console.log(`[INGEST] ${family.id}:${item} identifies forward gap. Fetching from ${new Date(fetchOptions.startTime).toISOString()} to fill.`);
+              if (!global.suppressLogs) console.log(`[INGEST] ${family.id}:${item} identifies forward gap. Fetching from ${new Date(fetchOptions.startTime).toISOString()} to fill.`);
           }
 
-          console.log('[INGEST] Fetching ' + family.id + ':' + item);
+          if (!global.suppressLogs) console.log('[INGEST] Fetching ' + family.id + ':' + item);
           let resolved = false;
 
           // Local Aggregation Engine: Build 1w/1mo from 1d if available
@@ -1799,7 +1799,7 @@ async function ingestMarketData(options = {}) {
           ? items.filter(i => i === options.symbol)
           : items;
 
-        for (const item of filteredItems) { console.log('[INGEST] Fetching ' + family.id + ':' + item);
+        for (const item of filteredItems) { if (!global.suppressLogs) console.log('[INGEST] Fetching ' + family.id + ':' + item);
           let resolved = false;
           for (const provider of section.providers) {
             if (!provider) continue;
@@ -1878,7 +1878,7 @@ async function ingestMarketData(options = {}) {
       };
     }
 
-    console.log('[INGEST] Saving to local filesystem cache...');
+    if (!global.suppressLogs) console.log('[INGEST] Saving to local filesystem cache...');
     await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
     const latestSnapshotPath = scopedSnapshot ? SCOPED_CACHE_PATH : CACHE_PATH;
     await fs.writeFile(latestSnapshotPath, JSON.stringify(capSubDailyJsonView(preservedSnapshot), null, 2), 'utf8');
