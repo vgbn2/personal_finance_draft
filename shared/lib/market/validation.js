@@ -638,6 +638,114 @@ function atomicTempPath(targetPath) {
 // Retained for backward-compat references; merge-protection is now universal.
 const SUB_DAILY_PRESERVED_TIMEFRAMES = new Set(['1m', '5m', '15m', '30m']);
 
+/**
+ * mergeWriteBin(tsDir, meta, incoming) -- merge `incoming` records into the existing
+ * bin for (meta.symbol, meta.timeframe) and atomically rewrite it.
+ *
+ * STREAMING / CONSTANT-HEAP: the existing bin is the deepest store and can hold
+ * millions of rows (BTCUSDT 1m ≈ 3M). The old path called readTsIndex() to pull every
+ * existing record into a JS object (each with a fresh ISO timestamp string) just to
+ * merge — at backfill concurrency that materialized many millions of objects at once
+ * and exhausted the V8 heap (OOM). Here the existing bin is read only as a Buffer
+ * (external memory, NOT on the V8 heap) and merged with the (small) incoming window via
+ * a two-sorted-stream merge that copies retained rows as raw 48-byte slices. Only the
+ * incoming records are ever objects, so heap stays flat regardless of bin depth.
+ *
+ * Semantics are byte-identical to the previous object-based merge:
+ *   - merge-protected for EVERY timeframe (existing rows at non-conflicting timestamps
+ *     are always preserved — never truncated);
+ *   - on a timestamp conflict, the higher-priority provider wins; on equal priority the
+ *     incoming (new) row wins (handles split/dividend re-statements of a bar);
+ *   - output is sorted ascending and de-duplicated by millisecond timestamp.
+ * It also removes a latent `push(...existing)` call-spread that could RangeError above
+ * ~100k existing rows in the gap-fill branch.
+ */
+function mergeWriteBin(tsDir, meta, incoming) {
+  // Encode + sort + dedupe the incoming window (small). Keep-first on a tie matches the
+  // old sort-then-filter dedup.
+  const inc = [];
+  for (const r of incoming) {
+    const ms = Date.parse(r.timestamp);
+    if (Number.isFinite(ms)) inc.push({ ms, r });
+  }
+  inc.sort((a, b) => a.ms - b.ms);
+  const incDedup = [];
+  let prevMs = null;
+  for (const x of inc) {
+    if (x.ms !== prevMs) { incDedup.push(x); prevMs = x.ms; }
+  }
+
+  const { bin, meta: metaPath } = tsIndexPath(tsDir, meta.symbol, meta.timeframe);
+
+  // Read the existing bin as a Buffer only (no object materialization).
+  let existBuf = null;
+  let existCount = 0;
+  let existProvider = '';
+  if (fs.existsSync(bin) && fs.existsSync(metaPath)) {
+    const b = fs.readFileSync(bin);
+    if (b.length >= TS_HEADER_BYTES && b.toString('ascii', 0, 4) === TS_MAGIC) {
+      const c = b.readUInt32LE(4);
+      if (b.length >= TS_HEADER_BYTES + c * TS_RECORD_BYTES) { existBuf = b; existCount = c; }
+    }
+    try { existProvider = (JSON.parse(fs.readFileSync(metaPath, 'utf8')).provider) || ''; } catch (_) { /* keep '' */ }
+  }
+
+  const existingPriority = PROVIDER_PRIORITY[existProvider] ?? 0;
+  const incomingPriority = PROVIDER_PRIORITY[meta.provider] ?? 0;
+  // Higher-priority existing data is gap-fill-only: keep existing on a tie.
+  const existingWinsOnTie = existingPriority > incomingPriority;
+
+  const maxCount = existCount + incDedup.length;
+  const out = Buffer.allocUnsafe(TS_HEADER_BYTES + maxCount * TS_RECORD_BYTES);
+  let w = 0;
+
+  const copyExisting = (k) => {
+    const src = TS_HEADER_BYTES + k * TS_RECORD_BYTES;
+    existBuf.copy(out, TS_HEADER_BYTES + w * TS_RECORD_BYTES, src, src + TS_RECORD_BYTES);
+    w += 1;
+  };
+  const writeIncoming = (x) => {
+    const off = TS_HEADER_BYTES + w * TS_RECORD_BYTES;
+    out.writeDoubleLE(x.ms, off);
+    out.writeDoubleLE(Number(x.r.open)   || 0, off + 8);
+    out.writeDoubleLE(Number(x.r.high)   || 0, off + 16);
+    out.writeDoubleLE(Number(x.r.low)    || 0, off + 24);
+    out.writeDoubleLE(Number(x.r.close)  || 0, off + 32);
+    out.writeDoubleLE(Number(x.r.volume) || 0, off + 40);
+    w += 1;
+  };
+  const existMs = (k) => existBuf.readDoubleLE(TS_HEADER_BYTES + k * TS_RECORD_BYTES);
+
+  let i = 0;
+  let j = 0;
+  while (i < existCount && j < incDedup.length) {
+    const em = existMs(i);
+    const im = incDedup[j].ms;
+    if (em === im) {
+      if (existingWinsOnTie) copyExisting(i); else writeIncoming(incDedup[j]);
+      i += 1; j += 1;
+    } else if (em < im) {
+      copyExisting(i); i += 1;
+    } else {
+      writeIncoming(incDedup[j]); j += 1;
+    }
+  }
+  while (i < existCount) { copyExisting(i); i += 1; }
+  while (j < incDedup.length) { writeIncoming(incDedup[j]); j += 1; }
+
+  const count = w;
+  out.write(TS_MAGIC, 0, 'ascii');
+  out.writeUInt32LE(count, 4);
+  const finalBuf = out.subarray(0, TS_HEADER_BYTES + count * TS_RECORD_BYTES);
+
+  const tmpBin = atomicTempPath(bin);
+  const tmpMeta = atomicTempPath(metaPath);
+  fs.writeFileSync(tmpBin, finalBuf);
+  fs.renameSync(tmpBin, bin);
+  fs.writeFileSync(tmpMeta, JSON.stringify({ ...meta, count }), 'utf8');
+  fs.renameSync(tmpMeta, metaPath);
+}
+
 function writeTsIndex(tsDir, snapshot) {
   if (!snapshot || !Array.isArray(snapshot.sources)) return;
   fs.mkdirSync(tsDir, { recursive: true });
@@ -666,84 +774,14 @@ function writeTsIndex(tsDir, snapshot) {
     }
   }
 
-  for (const [key, { records, meta }] of groups) {
+  // Merge-protection for EVERY timeframe: the bin is the deepest store, so a snapshot
+  // rebuilt from the (sub-daily-capped, daily-shallow) JSON partition must never truncate
+  // it. mergeWriteBin merges each incoming window into the existing bin in flat heap (the
+  // existing bin is read as a Buffer, not millions of JS objects) — see its doc for the
+  // exact precedence/dedup semantics, which match the prior object-based merge.
+  for (const [, { records, meta }] of groups) {
     if (!meta || records.length === 0) continue;
-
-    // Merge-protection for EVERY timeframe: the bin is the deepest store, so a
-    // snapshot rebuilt from the (sub-daily-capped, daily-shallow) JSON partition
-    // must never truncate it. Merge with the existing bin; new records win on
-    // timestamp conflict (handles split/dividend adjustments to a given bar),
-    // existing records at other timestamps are preserved. Previously only
-    // {1m,5m,15m,30m} were protected and daily/1h/4h/1w/1mo used replace, which
-    // silently truncated deep daily bins (which never lived in JSON) to a single
-    // live bar on every ingest.
-    {
-      const existing = readTsIndex(tsDir, meta.symbol, meta.timeframe);
-      if (existing && existing.length > 0) {
-        const existingPriority = PROVIDER_PRIORITY[existing[0]?.provider] ?? 0;
-        const incomingPriority = PROVIDER_PRIORITY[meta.provider] ?? 0;
-        if (existingPriority > incomingPriority) {
-          // Existing data has higher quality (e.g. binance rollup vs yahoo polled):
-          // only fill genuine gaps — do not overwrite any timestamp already in the bin.
-          const existingMs = new Set();
-          for (const r of existing) {
-            const ms = Date.parse(r.timestamp);
-            if (Number.isFinite(ms)) existingMs.add(ms);
-          }
-          const gapRecords = records.filter(r => {
-            const ms = Date.parse(r.timestamp);
-            return Number.isFinite(ms) && !existingMs.has(ms);
-          });
-          records.length = 0;
-          records.push(...existing, ...gapRecords);
-        } else {
-          // Equal or higher incoming priority: new records win on timestamp conflict.
-          const newMs = new Set();
-          for (const r of records) {
-            const ms = Date.parse(r.timestamp);
-            if (Number.isFinite(ms)) newMs.add(ms);
-          }
-          for (const r of existing) {
-            const ms = Date.parse(r.timestamp);
-            if (Number.isFinite(ms) && !newMs.has(ms)) records.push(r);
-          }
-        }
-      }
-    }
-
-    // Sort by timestamp ascending, deduplicate by ms timestamp
-    records.sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
-    const seen = new Set();
-    const deduped = records.filter(r => {
-      const ms = Date.parse(r.timestamp);
-      if (!Number.isFinite(ms) || seen.has(ms)) return false;
-      seen.add(ms);
-      return true;
-    });
-
-    const count = deduped.length;
-    const buf = Buffer.allocUnsafe(TS_HEADER_BYTES + count * TS_RECORD_BYTES);
-    buf.write(TS_MAGIC, 0, 'ascii');
-    buf.writeUInt32LE(count, 4);
-
-    for (let i = 0; i < count; i++) {
-      const r = deduped[i];
-      const off = TS_HEADER_BYTES + i * TS_RECORD_BYTES;
-      buf.writeDoubleLE(Date.parse(r.timestamp), off);
-      buf.writeDoubleLE(Number(r.open)   || 0, off + 8);
-      buf.writeDoubleLE(Number(r.high)   || 0, off + 16);
-      buf.writeDoubleLE(Number(r.low)    || 0, off + 24);
-      buf.writeDoubleLE(Number(r.close)  || 0, off + 32);
-      buf.writeDoubleLE(Number(r.volume) || 0, off + 40);
-    }
-
-    const { bin, meta: metaPath } = tsIndexPath(tsDir, meta.symbol, meta.timeframe);
-    const tmpBin = atomicTempPath(bin);
-    const tmpMeta = atomicTempPath(metaPath);
-    fs.writeFileSync(tmpBin, buf);
-    fs.renameSync(tmpBin, bin);
-    fs.writeFileSync(tmpMeta, JSON.stringify({ ...meta, count }), 'utf8');
-    fs.renameSync(tmpMeta, metaPath);
+    mergeWriteBin(tsDir, meta, records);
   }
 }
 
@@ -790,6 +828,71 @@ function readTsIndex(tsDir, symbol, timeframe) {
   return records;
 }
 
+/**
+ * Like readTsIndex but materializes ONLY the records with timestamp >= sinceMs.
+ *
+ * The bin is time-sorted ascending and fixed-stride, so we read it into a Buffer
+ * (external memory — NOT counted against the V8 old-space heap), binary-search the
+ * first record at or after sinceMs, and build JS objects for just that tail. This
+ * keeps an incremental rollup off the multi-million-object cost of deserializing a
+ * deep base bin (e.g. BTCUSDT 1m ≈ 3M records) when only the recent window is needed
+ * — the deserialized objects, not the Buffer, are what blow the heap.
+ *
+ * sinceMs SHOULD be aligned to a clean bucket boundary (e.g. a UTC-day boundary, a
+ * multiple of every intraday interval up to 4h) so the first aggregated coarse bar in
+ * the window is fully covered and the merge-write stays lossless.
+ *
+ * Falls back to a full readTsIndex when sinceMs is not finite. Returns an array
+ * (possibly empty) or null if the bin/meta is missing or invalid.
+ */
+function readTsIndexSince(tsDir, symbol, timeframe, sinceMs) {
+  if (!Number.isFinite(sinceMs)) return readTsIndex(tsDir, symbol, timeframe);
+  const { bin, meta: metaPath } = tsIndexPath(tsDir, symbol, timeframe);
+  if (!fs.existsSync(bin) || !fs.existsSync(metaPath)) return null;
+
+  const buf = fs.readFileSync(bin);
+  if (buf.length < TS_HEADER_BYTES) return null;
+  if (buf.toString('ascii', 0, 4) !== TS_MAGIC) return null;
+
+  const count = buf.readUInt32LE(4);
+  if (buf.length < TS_HEADER_BYTES + count * TS_RECORD_BYTES) return null;
+
+  let meta;
+  try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf8')); } catch (_) { return null; }
+
+  // Binary-search the first index whose timestamp >= sinceMs (records are sorted asc).
+  let lo = 0;
+  let hi = count;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    const ms = buf.readDoubleLE(TS_HEADER_BYTES + mid * TS_RECORD_BYTES);
+    if (ms < sinceMs) lo = mid + 1; else hi = mid;
+  }
+
+  const records = [];
+  for (let i = lo; i < count; i++) {
+    const off = TS_HEADER_BYTES + i * TS_RECORD_BYTES;
+    const ts = buf.readDoubleLE(off);
+    records.push({
+      family:                 meta.family,
+      provider:               meta.provider,
+      symbol:                 meta.symbol,
+      timeframe:              meta.timeframe,
+      timestamp:              new Date(ts).toISOString(),
+      open:                   buf.readDoubleLE(off + 8),
+      high:                   buf.readDoubleLE(off + 16),
+      low:                    buf.readDoubleLE(off + 24),
+      close:                  buf.readDoubleLE(off + 32),
+      volume:                 buf.readDoubleLE(off + 40),
+      coordinate_id:          meta.coordinate_id || undefined,
+      config_market:          meta.config_market || undefined,
+      config_sector:          meta.config_sector || undefined,
+      derived_from_timeframe: meta.derived_from || undefined,
+    });
+  }
+  return records;
+}
+
 module.exports = {
   OHLCV_FAMILIES,
   isFiniteNumber,
@@ -798,6 +901,7 @@ module.exports = {
   mergeSnapshots,
   readSnapshot,
   readTsIndex,
+  readTsIndexSince,
   recordKey,
   validateSnapshot,
   writeJson,
