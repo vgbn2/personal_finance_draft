@@ -77,6 +77,11 @@ services:
         required: false
     environment:
       NODE_ENV: production
+      # Headroom for the merge-write path: an incremental crypto/equity cycle still
+      # reads the existing deep 1m bin (millions of rows) to merge-protect it. The
+      # per-lane concurrency cap keeps this bounded, but raise the V8 old-space ceiling
+      # above the ~4GB default so a long-running daemon never trips an OOM at the edge.
+      NODE_OPTIONS: --max-old-space-size=6144
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
