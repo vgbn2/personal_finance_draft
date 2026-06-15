@@ -53,7 +53,7 @@ test('strategy menu exposes registry sync without prop-firm actions', () => {
 });
 
 test('ingest TUI family selector maps to scoped ingest options', () => {
-  const ingest = manifest.commands.op.find((entry) => entry.id === 'ingest');
+  const ingest = manifest.commands.data.find((entry) => entry.id === 'ingest');
 
   assert.ok(ingest);
   assert.ok(ingest.flags);
