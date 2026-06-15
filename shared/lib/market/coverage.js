@@ -16,6 +16,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { familyFreshnessThresholdMs } = require('./validation.js');
 
+// How long to skip a symbol confirmed to have no data (delisted / never listed).
+const DEAD_SYMBOL_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 // Must match the binary format in validation.js (TS_MAGIC / header / record size).
 const TS_MAGIC = 'SOVT';
 const TS_HEADER_BYTES = 8;      // 4 magic + 4 count (uint32LE)
@@ -40,9 +43,21 @@ function binPaths(tsDir, symbol, timeframe) {
  *   ageMs     -- now - lastBarMs, or null when there is no bar to age
  */
 function readCoverage(tsDir, symbol, timeframe, now = Date.now()) {
-  const empty = { exists: false, count: 0, lastBarMs: null, ageMs: null };
+  const empty = { exists: false, count: 0, lastBarMs: null, ageMs: null, notFoundCheckedMs: null };
   const { bin, meta } = binPaths(tsDir, symbol, timeframe);
-  if (!fs.existsSync(bin) || !fs.existsSync(meta)) return empty;
+  if (!fs.existsSync(bin)) {
+    // No bin — check for a meta-only "not found" marker written after a 0-bar deep backfill.
+    if (fs.existsSync(meta)) {
+      try {
+        const m = JSON.parse(fs.readFileSync(meta, 'utf8'));
+        if (m.last_checked) {
+          return { exists: true, count: 0, lastBarMs: null, ageMs: null, notFoundCheckedMs: m.last_checked };
+        }
+      } catch (_) { /* ignore */ }
+    }
+    return empty;
+  }
+  if (!fs.existsSync(meta)) return empty;
 
   let fd;
   try {
@@ -85,7 +100,15 @@ function isFresh(tsDir, symbol, timeframe, family, now = Date.now()) {
   const cov = readCoverage(tsDir, symbol, timeframe, now);
   const thresholdMs = familyFreshnessThresholdMs({ family, timeframe });
   if (!cov.exists) return { fresh: false, reason: 'missing', ageMs: null, thresholdMs, count: 0, lastBarMs: null };
-  if (cov.count === 0 || cov.lastBarMs === null) {
+  if (cov.count === 0) {
+    // Meta-only "not found" marker: symbol was probed, returned 0 bars, retry after 7 days.
+    if (cov.notFoundCheckedMs && (now - cov.notFoundCheckedMs) < DEAD_SYMBOL_TTL_MS) {
+      const ageMs = now - cov.notFoundCheckedMs;
+      return { fresh: true, reason: 'not_found', ageMs, thresholdMs: DEAD_SYMBOL_TTL_MS, count: 0, lastBarMs: null };
+    }
+    return { fresh: false, reason: 'empty', ageMs: cov.ageMs, thresholdMs, count: cov.count, lastBarMs: cov.lastBarMs };
+  }
+  if (cov.lastBarMs === null) {
     return { fresh: false, reason: 'empty', ageMs: cov.ageMs, thresholdMs, count: cov.count, lastBarMs: cov.lastBarMs };
   }
   if (thresholdMs === null) {
