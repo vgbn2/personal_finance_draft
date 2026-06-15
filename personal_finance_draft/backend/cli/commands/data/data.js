@@ -1070,14 +1070,23 @@ async function commandCryptoDeepBackfill(args) {
       const baseBars = (snapshot.sources || []).filter(r => r.timeframe === baseTf && r.symbol === symbol);
       const snapErrors = snapshot.errors || [];
       for (const e of snapErrors) allErrors.push(e);
-      // Zero bars alongside ingest errors means the fetch failed inside the
-      // provider loop (the loop's catch swallows exceptions per provider) --
-      // count it as a failed symbol instead of reporting silent success.
-      const symbolOk = baseBars.length > 0 || snapErrors.length === 0;
+      // Deep backfill: 0 bars means delisted/never-listed — treat as failure.
+      const symbolOk = baseBars.length > 0;
       if (symbolOk) results.ok++; else results.errors++;
       const entry = { symbol, ok: symbolOk, base_timeframe: baseTf, bars: baseBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
       if (!symbolOk) {
-        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || `no ${baseTf} bars ingested`;
+        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || `no ${baseTf} bars returned (delisted or not listed on Binance)`;
+        // Write a meta-only "not found" marker so the daemon skips this symbol for 7 days.
+        try {
+          const fsSync = require('node:fs');
+          const safe = symbol.replace(/[^a-zA-Z0-9_]/g, '_');
+          const markerPath = path.join(DEFAULT_TS_DIR, `${safe}_${baseTf}.meta.json`);
+          fsSync.mkdirSync(DEFAULT_TS_DIR, { recursive: true });
+          fsSync.writeFileSync(markerPath, JSON.stringify({
+            symbol, timeframe: baseTf, family: 'crypto', provider: 'binance',
+            count: 0, last_checked: Date.now(),
+          }), 'utf8');
+        } catch (_) { /* non-fatal */ }
       }
       // Auto-derive coarser intraday bins from the just-written deep base bin (lossless,
       // local, no extra network). Off with --no-rollup.
