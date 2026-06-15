@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const OHLCV_FAMILIES = new Set(['equities', 'indices', 'commodities', 'crypto', 'fx', 'prediction_market']);
+const PROVIDER_PRIORITY = { binance: 3, alpaca: 3, yahoo: 1, twelvedata: 1, frankfurter: 1, ecb: 1 };
 const SCALAR_VALUE_FAMILIES = new Set(['pmi', 'macro', 'macro_alt', 'sentiment', 'breadth', 'prediction_market']);
 const FRESHNESS_RULES_MS = {
   equities: {
@@ -660,6 +661,7 @@ function writeTsIndex(tsDir, snapshot) {
         coordinate_id: s.coordinate_id || '',
         config_market: s.config_market || '',
         config_sector: s.config_sector || '',
+        ...(s.derived_from_timeframe ? { derived_from: s.derived_from_timeframe } : {}),
       };
     }
   }
@@ -678,14 +680,33 @@ function writeTsIndex(tsDir, snapshot) {
     {
       const existing = readTsIndex(tsDir, meta.symbol, meta.timeframe);
       if (existing && existing.length > 0) {
-        const newMs = new Set();
-        for (const r of records) {
-          const ms = Date.parse(r.timestamp);
-          if (Number.isFinite(ms)) newMs.add(ms);
-        }
-        for (const r of existing) {
-          const ms = Date.parse(r.timestamp);
-          if (Number.isFinite(ms) && !newMs.has(ms)) records.push(r);
+        const existingPriority = PROVIDER_PRIORITY[existing[0]?.provider] ?? 0;
+        const incomingPriority = PROVIDER_PRIORITY[meta.provider] ?? 0;
+        if (existingPriority > incomingPriority) {
+          // Existing data has higher quality (e.g. binance rollup vs yahoo polled):
+          // only fill genuine gaps — do not overwrite any timestamp already in the bin.
+          const existingMs = new Set();
+          for (const r of existing) {
+            const ms = Date.parse(r.timestamp);
+            if (Number.isFinite(ms)) existingMs.add(ms);
+          }
+          const gapRecords = records.filter(r => {
+            const ms = Date.parse(r.timestamp);
+            return Number.isFinite(ms) && !existingMs.has(ms);
+          });
+          records.length = 0;
+          records.push(...existing, ...gapRecords);
+        } else {
+          // Equal or higher incoming priority: new records win on timestamp conflict.
+          const newMs = new Set();
+          for (const r of records) {
+            const ms = Date.parse(r.timestamp);
+            if (Number.isFinite(ms)) newMs.add(ms);
+          }
+          for (const r of existing) {
+            const ms = Date.parse(r.timestamp);
+            if (Number.isFinite(ms) && !newMs.has(ms)) records.push(r);
+          }
         }
       }
     }
@@ -750,19 +771,20 @@ function readTsIndex(tsDir, symbol, timeframe) {
     const off = TS_HEADER_BYTES + i * TS_RECORD_BYTES;
     const ts = buf.readDoubleLE(off);
     records.push({
-      family:        meta.family,
-      provider:      meta.provider,
-      symbol:        meta.symbol,
-      timeframe:     meta.timeframe,
-      timestamp:     new Date(ts).toISOString(),
-      open:          buf.readDoubleLE(off + 8),
-      high:          buf.readDoubleLE(off + 16),
-      low:           buf.readDoubleLE(off + 24),
-      close:         buf.readDoubleLE(off + 32),
-      volume:        buf.readDoubleLE(off + 40),
-      coordinate_id: meta.coordinate_id || undefined,
-      config_market: meta.config_market || undefined,
-      config_sector: meta.config_sector || undefined,
+      family:                 meta.family,
+      provider:               meta.provider,
+      symbol:                 meta.symbol,
+      timeframe:              meta.timeframe,
+      timestamp:              new Date(ts).toISOString(),
+      open:                   buf.readDoubleLE(off + 8),
+      high:                   buf.readDoubleLE(off + 16),
+      low:                    buf.readDoubleLE(off + 24),
+      close:                  buf.readDoubleLE(off + 32),
+      volume:                 buf.readDoubleLE(off + 40),
+      coordinate_id:          meta.coordinate_id || undefined,
+      config_market:          meta.config_market || undefined,
+      config_sector:          meta.config_sector || undefined,
+      derived_from_timeframe: meta.derived_from || undefined,
     });
   }
   return records;
