@@ -1,3 +1,67 @@
+## Session Memory - 2026-06-15 (session 36) backfill-daemon OOM ROOT-CAUSED + fixed (streaming ts-index merge + windowed rollup + 1m-lane cap); hard-tested (byte-equiv vs git-original + child-process OOM differential); live daemon survives stock 4GB heap; suite 488/488; COMMITTED + session-35 batch
+
+{
+  "work": "User ran `backfill-daemon --once --concurrency 5` and it OOM'd (V8 heap, ~4GB) in the crypto lane. Root-caused, fixed at the root, hard-tested per user demand ('plan, test, run it yourself'), then refined the tests after user skepticism ('plan and fix those tests'). Committed the fix + the still-uncommitted session-35 batch + docs. Session end.",
+  "key_mechanisms": [
+    "TWO full-bin reads each materialized the whole multi-million-row 1m bin as JS objects (BTCUSDT 1m=3.08M, each with a fresh ISO timestamp string). At concurrency 3-5 across BTC/ETH/SOL this exceeded the ~4GB default V8 old-space. SINK 1 = the merge-write inside ingest (writeTsIndex called readTsIndex on the existing bin just to merge-protect). SINK 2 = rollupFromBase read the whole 1m bin again to derive coarser TFs.",
+    "FIX SINK 2 (windowed rollup): new readTsIndexSince(tsDir,sym,tf,sinceMs) in validation.js binary-searches the sorted bin Buffer and materializes ONLY the tail. rollupFromBase(...,{sinceMs}) re-derives just the recent window. Daemon passes sinceMs = utcDayFloor(now-(incrementalDays+1)d) for INCREMENTAL jobs (deep jobs still full). UTC-day alignment = a multiple of every intraday interval up to 4h, so NO partial coarse bars (lossless, byte-identical to full rollup). BTCUSDT rollup: 8,625 bars not 3.08M, heap 22MB.",
+    "FIX SINK 1 (streaming merge-write): writeTsIndex now calls mergeWriteBin (validation.js) which reads the existing bin as a Buffer ONLY (external memory, NOT V8 heap) and two-sorted-stream-merges it with the small incoming window — retained rows copied as raw 48-byte slices, only incoming rows are objects. Heap stays flat regardless of bin depth. Semantics byte-identical to the old object merge (merge-protect all TFs, higher-priority-provider wins on tie else incoming wins, sort+dedup). Also kills a latent push(...existing) call-spread RangeError in the gap-fill branch.",
+    "CONCURRENCY CAP: LANE_MAX_CONCURRENCY={binance:3,alpaca:3} in backfill_daemon.js. `--concurrency N` clamps the 1m lanes to their safe ceiling (bins ~100x bigger than Yahoo 5m) while Yahoo honors the full N. Prints a clamp note. Docker backfill service got NODE_OPTIONS=--max-old-space-size=6144 as insurance (interactive runs are safe at stock 4GB after the fix).",
+    "TEST DURABILITY TRAP (user-caught): my first merge test used `git show HEAD:validation.js` as the golden reference — which BREAKS the moment the work is committed (HEAD becomes the new code; the loader's own guard throws). Fixed: vendored a FROZEN referenceWriteTsIndex (verbatim transcription of the original object merge) in the test = durable golden, no git. A skip-safe test cross-checks the frozen ref vs the genuine git-HEAD original WHILE uncommitted (proves faithfulness), then skips cleanly forever after. Same skip-safe pattern for the OOM differential."
+  ],
+  "verified": [
+    "Suite 488/488 (was 471 at session start; +17). 0 fail 0 skip.",
+    "ts_merge_write.test.js 13 tests: 9 byte-equiv scenarios (bin+meta) vs frozen ref + 3 real deep bins + frozen-ref==git-original cross-check + NEW-survives-192MB-cap + ORIGINAL-OOMs-192MB-cap. OOM differential: original child status 134 (V8 OOM abort) on 1.3M-row bin, new child exit 0. Proven skip-safe: with git unavailable, 2 git-tests SKIP, 11 pass, 0 fail.",
+    "LIVE daemon (the real test): `backfill-daemon --once --families crypto --concurrency 5` at STOCK --max-old-space-size=4096 (the config that crashed twice) -> 18/18 crypto, 17 incremental+rollup, 1 skipped (RNDRUSDT dead), 0 errors, exit 0, 170s, peak RSS 2.68GB. Per-symbol ~17-38s (was ~57-110s, ~3x faster).",
+    "Post-run integrity: crypto 18/18 OK, bins GREW correctly (BTCUSDT 1m 3,078,419->3,078,472 +53 merged) with deep history preserved, no truncation/corruption."
+  ],
+  "user_decisions": [
+    "'full fix' (lane cap + windowed rollup) via AskUserQuestion; then 'plan, test, run it yourself (hard testing)'; then skeptical -> 'plan and fix those tests' (durability refactor); then 'commit then end sessions'.",
+    "Ubuntu machine turned OFF mid-session -> Ubuntu SSH/backfill carryover stays parked. Data/daemon NOT deleted (user asked 'do we need to delete it' -> no, data intact + valuable)."
+  ],
+  "commits": [
+    "(this session) 3 commits on feat/session-guard-intraday-rollup: (1) integrity/coverage/grain/polymarket [s35 core], (2) backfill memory fix + dead-symbol marker guard [s35+s36, data.js entangled], (3) workspace docs.",
+    "data.js carried BOTH s35 marker-guard AND s36 rollup-windowing (entangled in one file) -> committed together in commit 2."
+  ],
+  "remaining": [
+    "Intraday DEPTH inconsistency (NOT corruption): Yahoo TFs differ in native depth (VCB 5m~83d vs 1h~508d) — needs a network re-fetch pass if wanted.",
+    "storage/data/_quarantine_grain/ (8.3M, s35) is NOT gitignored (check-ignore confirmed) — left untracked, reversible, do not commit.",
+    "Unchanged: merge feat/ml-onnx-section->main (user), Ubuntu SSH sync + remote backfill (machine off), FW2 monolith, FW6 backward-gap. graphify-out refresh pending."
+  ],
+  "dcs": 0.97
+}
+
+## Session Memory - 2026-06-15 (session 35) blast-through deep pass: integrity 144× + marker clobber fix + intraday mixed-grain data repair + grain guard; suite 471/471; ALL UNCOMMITTED (HEAD e0cb6aa2)
+
+{
+  "work": "Blast-through audit (anchor 483d45cc->e0cb6aa2) + deep optimization + unused-code scan + rigorous testing, then a user-reported DATA-corruption diagnosis and reversible repair. Nothing committed (commit decision deferred to user).",
+  "key_mechanisms": [
+    "INTEGRITY 144x: runBackendIntegrity looped readTsIndex (full bin load, ~525k objects for a 1m crypto bin) per (symbol x tf) just for count+first/last ts. Swapped to readCoverage (header + two 8-byte head/tail reads); added firstBarMs to coverage.js. Proven IDENTICAL over all 1009 real bins (0 mismatches) + adversarial edge-case test (single-bar/empty/marker/truncated). Live 57,069ms -> ~380ms.",
+    "MARKER CLOBBER (Medium finding from s34 code): the dead-symbol not-found marker was written unconditionally over <sym>_<tf>.meta.json; for a symbol that ALREADY had a bin, a transient 0-bar fetch stripped coordinate_id/config_*/derived_from off real bars (OHLCV survived). Fix: extracted exported writeDeadSymbolMarker(tsDir,sym,tf,family,provider) that writes ONLY when no .bin exists. Tested both branches end-to-end.",
+    "OVER-EXPORTS: 94 shared/lib exports have no importer but are alive internal helpers (over-exported); only 1 truly dead (generatePolymarketFeatures alias -> removed). DURABLE LESSON: bulk regex prune REVERTED because an exported name often also lives in a second internal object literal (e.g. bollingerBands in the IndicatorMethods registry) -> line-removal corrupts internal state. Safe trimming needs AST-scoped editing; not worth it (zero importers = harmless).",
+    "MIXED-GRAIN DATA CORRUPTION (the headline, user-reported via integrity output): coarse daily data had leaked into intraday bins -- CORN_15m spanned 2002->2026 at ~1.5 bars/day (daily mislabeled as 15m), frozen by writeTsIndex merge-protection. Relic of the old daily-aggregation/synthetic-LTF era. Detector = early-window median bar-gap. 83 corrupt bins / 38 symbols: 9 commodity/metal (15m + some 4h leak) + 13 orphan crypto alts (all-synthetic, NOT in active 18-symbol config) + 4 stray 1m:5 stubs. FIX (user-authorized, REVERSIBLE): quarantined to storage/data/_quarantine_grain/ (MOVED not deleted, gitignored) + re-derived from deepest clean divisor (commodity 15m/4h<-5m, VN 4h<-1h to keep 508d native span). Re-scan 0 corrupt.",
+    "GRAIN GUARD: isGrainSuspect(tf,count,firstMs,lastMs) in coverage.js. CHEAP (head/tail only): flags intraday bin spanning >2yr with barsPerDay below per-TF floor (calibrated below legit p05: 5m>=24,15m>=11,30m>=4.6,1h>=3.4,4h>=1.35). The >2yr-span gate is the key discriminator -- it avoids false-flagging honest-thin RECENT 4h (sparse Yahoo intraday legitimately yields ~1 bar/day) AND native-deep 1h. Wired into backend integrity as advisory (grain_suspect flag + total_grain_suspect JSON + yellow line; NON-gating). 0 flagged across 941 live bins."
+  ],
+  "verified": [
+    "Full suite 471/471 (was 465; +6 tests: marker x2, integrity-equivalence x1, grain x1, coverage read-side x2).",
+    "Live backend integrity --json: ~365ms, ok:false, cached 92, stale 4 (PRE-EXISTING FX 1d weekend staleness, unrelated), grain_suspect 0.",
+    "Per-bin equivalence readCoverage vs readTsIndex: 1009 bins, 0 mismatches.",
+    "Post-fix grain re-scan: 0 corrupt; CORN 15m=3733 real 15m bars (medianGap 15min), NG 4h medianGap 240min, all rebuilds derived_from set."
+  ],
+  "user_decisions": [
+    "'plan and fix' x2 -> did the optimization + data repair.",
+    "AskUserQuestion: 'Yes -- quarantine + rebuild' (reversible, not hard-delete) for the data fix.",
+    "Bulk over-export prune reverted by me (broke a contract test); kept only the 1 genuine dead alias."
+  ],
+  "remaining": [
+    "COMMIT DECISION (user): nothing committed this session. Suggested split A perf/integrity, B fix/marker-guard, C refactor/polymarket-alias, D feat/grain-guard.",
+    "Intraday DEPTH inconsistency (NOT corruption, NOT fixed): Yahoo TFs have different native depths (VCB 5m~83d vs 1h~508d). Needs a network re-fetch pass if wanted.",
+    "Quarantine storage/data/_quarantine_grain/ (8.3M, gitignored) is reversible -- move bins back to restore.",
+    "graphify-out refresh still pending (code changed). Unchanged: FW2, FW6, merge feat/ml-onnx-section, Ubuntu SSH/backfill."
+  ],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-15 (session 33 continued) integrity display fix + TUI data menu cleanup + Ubuntu SSH deferred
 
 {

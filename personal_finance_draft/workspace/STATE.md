@@ -1,11 +1,78 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: 483d45cc
-last_audit_date: 2026-06-14
+last_audited_commit: e0cb6aa2
+last_audit_date: 2026-06-15
 
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
+
+## Fix Note - 2026-06-15 session 36 - backfill-daemon OOM fixed at the root (streaming ts-index merge + windowed rollup + 1m-lane cap)
+- **Symptom:** `backfill-daemon --once --concurrency 5` crashed with `FATAL ERROR: ... JavaScript heap
+  out of memory` in the crypto lane (~4GB). Not corruption — integrity confirmed all bins intact.
+- **Root cause:** each crypto incremental job materialized the entire multi-million-row 1m bin as JS
+  objects **twice** — (1) the merge-write inside `ingestMarketData` (`writeTsIndex` read the existing bin
+  via `readTsIndex` to merge-protect it), and (2) `rollupFromBase` read the whole 1m bin again to derive
+  coarser TFs. BTCUSDT 1m = 3.08M records (each with a fresh ISO timestamp string); at concurrency 3-5
+  across BTC/ETH/SOL this blew the ~4GB default V8 old-space.
+- **Fix (3 parts):**
+  - `shared/lib/market/validation.js`: `mergeWriteBin` — `writeTsIndex` now reads the existing bin as a
+    **Buffer only** (external memory, off the V8 heap) and two-sorted-stream-merges with the incoming
+    window, copying retained rows as raw 48-byte slices. Byte-identical semantics to the old object merge
+    (merge-protect all TFs; higher-priority provider wins on tie else incoming; sort+dedup). Also kills a
+    latent `push(...existing)` call-spread RangeError. New `readTsIndexSince` binary-searches the sorted
+    bin and materializes only the tail.
+  - `backend/cli/commands/data/data.js`: `rollupFromBase(...,{sinceMs})` re-derives only the recent
+    window for incremental jobs (UTC-day-aligned start = lossless, no partial coarse bars).
+  - `backend/cli/commands/data/backfill_daemon.js`: `LANE_MAX_CONCURRENCY={binance:3,alpaca:3}` clamps
+    `--concurrency` on the 1m lanes (Yahoo honors full); windowed-rollup wiring + clamp note.
+    `infra/docker/docker-compose.yml`: daemon `NODE_OPTIONS=--max-old-space-size=6144` (insurance).
+- **Hard-tested:** new `tests/scripts/tests/ts_merge_write.test.js` — byte-equivalence (bin+meta) vs a
+  FROZEN reference transcription of the original merge + 3 real deep bins; a child-process **OOM
+  differential** (original child status 134 on a 1.3M-row bin under a 192MB cap, new child exit 0); both
+  git-dependent checks are **skip-safe** so the suite survives commit. Live: `backfill-daemon --once
+  --families crypto --concurrency 5` at the stock 4GB heap → 18/18 crypto, 0 errors, exit 0, 170s, peak
+  RSS 2.68GB, ~3× faster per symbol; post-run integrity clean (bins grew, deep history preserved).
+- Suite **488/488**. Committed on `feat/session-guard-intraday-rollup` (3 commits incl. the still-pending
+  session-35 batch + docs).
+
+## Data-Repair Note - 2026-06-15 session 35 - mixed-grain intraday corruption fixed + guard added
+- **Found (user-reported via integrity output):** coarse data had leaked into intraday bins — e.g.
+  `CORN_15m.bin` spanned 2002→2026 with ~1.5 bars/day (daily data mislabeled as 15m), frozen in place
+  by `writeTsIndex` merge-protection. Proven by timestamp-gap inspection (early bars days apart, not
+  15 min). Root class: old daily-aggregation/synthetic-LTF era leaking into intraday bins.
+- **Scan (non-destructive):** early-window median bar-gap detector over all bins → 38 symbols / 83 bins
+  corrupt: (a) 9 commodity/metal `15m`+some `4h` (2002 leak); (b) 13 orphan crypto alts (AAVE/DOT/UNI/
+  MKR/MATIC/RNDR/… NOT in the active 18-symbol config) whose every intraday TF was synthetic daily.
+- **Fix (user-authorized, REVERSIBLE):** quarantined corrupt/synthetic bins to
+  `storage/data/_quarantine_grain/` (8.3M, gitignored — NOT deleted) and re-derived clean bins from the
+  deepest clean divisor: commodity `15m`/`4h`←`5m`, VN-stock `4h`←`1h` (preserves the ~508d native 1h
+  span). Also quarantined 4 stray `1m:5` stub bins (EURUSD/GBPUSD/USDJPY/XAUUSD). Verified: CORN 15m now
+  3,733 real 15m bars (medianGap 15min, 2025→2026); NG 4h medianGap 240min; full re-scan 0 corrupt.
+- **Guard (recurrence tripwire):** `isGrainSuspect(tf,count,firstMs,lastMs)` in coverage.js — cheap
+  (head/tail only): flags an intraday bin spanning >2yr with density below per-TF floor (calibrated
+  below legit p05). Wired into `backend integrity` (advisory `grain_suspect` flag + `total_grain_suspect`
+  in JSON, yellow report line; non-gating). Verified 0 flagged across 941 live bins; catches the 2002
+  leak shape, ignores honest-thin 4h + deep-dense 5m + native-deep 1h. Tested in coverage.test.js.
+- Data lives in gitignored `storage/data/ts`; quarantine is reversible (move files back). Suite 471/471.
+
+## Implementation Note - 2026-06-15 session 35 - deep blast: integrity 144× faster + marker fix + over-export scan
+- **`backend integrity` optimized 57s → 0.4s (144×), output-identical.** The report looped
+  `readTsIndex` over every (symbol×tf), loading whole bins (a 1m crypto bin ≈ 525k record objects)
+  just to read count + first/last ts. Now uses `readCoverage` (header + two 8-byte reads). Extended
+  `shared/lib/market/coverage.js` with `firstBarMs`. Proven equivalent over all **1009 real bins
+  (0 mismatches)**; live run 57,069 ms → 396 ms, same ok:false/92 cached/4 stale.
+- **Dead-symbol marker clobber fixed** (`data.js commandCryptoDeepBackfill`): the 0-bar not-found
+  marker is now written only when no `.bin` exists, so a transient 0-bar fetch can't strip
+  coordinate_id/config_*/derived_from off an existing sidecar. +2 regression tests in coverage.test.js.
+- **Unused-code scan:** 94 `shared/lib` exports have no external importer, but only **1 is genuinely
+  dead** — removed the redundant `generatePolymarketFeatures` alias in `polymarket_features.js` (real
+  fn `buildPolymarketFeatureRows` stays). The other ~88 are alive internal helpers (over-exports), NOT
+  dead logic. A bulk regex prune was attempted and **reverted**: an exported name often also lives in a
+  second internal object literal (e.g. `bollingerBands` in the `IndicatorMethods` registry), so
+  line-removal corrupted internal state and broke `indicators.manifest_parity.test.js`. Safe trimming
+  needs AST-scoped editing; given zero importers the risk isn't worth it — left as DEV_REVIEW backlog.
+- Suite **467/467** (was 465; +2). Anchor stays `e0cb6aa2` (changes uncommitted, pending user).
 
 ## Implementation Note - 2026-06-14 session 33 - repo-portability bundler (Ubuntu transfer)
 - Added `scripts/dev/make_bundle.js` (+ `npm run bundle`): a repeatable `git bundle` generator so the

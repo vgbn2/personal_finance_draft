@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-14.md`**
+- Latest/current handoff: **`workspace/handoff/2026-06-15.md`**
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -18,13 +18,43 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
-- **SESSION 33 (2026-06-15) — integrity display fix (1m + canonical order) + TUI data menu cleanup; SSH blocker deferred.**
-  Full trail: `workspace/handoff/2026-06-14.md` (session 33 continued block). Commits `d3a4b39a`
-  (integrity: add 1m + canonical TF sort) + `8c12ca7f` (tui: remove Backfill from Op Dashboard, add Integrity
-  to Data & Backfill). Suite **465/465**. Ubuntu `sshd` stopped on Windows — deferred to next session.
-  **Next-session first step:** elevated PowerShell → `Start-Service sshd`; then on Ubuntu
-  `git fetch windows && git merge windows/feat/session-guard-intraday-rollup`, then run
-  `crypto-deep-backfill --days 1825` for 1m crypto data.
+- **SESSION 36 (2026-06-15) — backfill-daemon OOM fixed at the root + hard-tested + COMMITTED. Suite
+  488/488.** Full trail: `workspace/handoff/2026-06-15.md` session 36. `backfill-daemon --concurrency 5`
+  was OOMing (V8 heap ~4GB) in the crypto lane because each incremental job deserialized the whole
+  multi-million-row 1m bin as JS objects **twice** (the `writeTsIndex` merge + `rollupFromBase`). Fix:
+  (1) `mergeWriteBin` — buffer-level two-sorted-stream merge in `writeTsIndex` (off-heap, byte-identical
+  to the old merge); (2) `readTsIndexSince` + windowed incremental rollup; (3) `LANE_MAX_CONCURRENCY`
+  clamp on the 1m lanes + Docker heap headroom. Hard-tested: byte-equiv vs a frozen reference + a
+  child-process OOM differential (original child status 134, new exit 0); live daemon survives the stock
+  4GB heap (18/18 crypto, 0 errors, ~3× faster). **This commit also landed the still-uncommitted
+  session-35 batch** (3 commits total; `data.js` carried both s35 marker-guard and s36 rollup-windowing
+  so they committed together). NOT committed (deliberate): `storage/data/_quarantine_grain/` (8.3M,
+  reversible, **not** gitignored), plus the usual untracked carryovers (`.antigravitycli/`, repo-local
+  `skills/`, `scripts/dev/check_hygiene.js`, `backend_correlation_preflight.test.js`). **Open (not
+  blocking):** intraday DEPTH inconsistency (Yahoo TFs differ in native depth — network re-fetch pass);
+  graphify-out refresh; merge `feat/ml-onnx-section`→main (user); Ubuntu SSH sync (machine off).
+
+- **SESSION 35 (2026-06-15) — blast-through deep pass: integrity 144× + marker clobber fix + intraday
+  mixed-grain DATA REPAIR + grain guard. ALL UNCOMMITTED on `feat/session-guard-intraday-rollup`
+  (HEAD still `e0cb6aa2`). Suite 471/471.** Full trail: `workspace/handoff/2026-06-15.md` session 35.
+  Headlines: (1) `backend integrity` 57s→0.4s via `readCoverage` (proven equivalent over 1009 bins);
+  (2) `writeDeadSymbolMarker` guard (no clobber of real bins); (3) redundant `generatePolymarketFeatures`
+  alias removed — bulk over-export prune reverted (needs AST, backlog); (4) **fixed coarse-data-leaked
+  intraday bins** (CORN_15m spanned 2002→2026): 83 corrupt bins quarantined to
+  `storage/data/_quarantine_grain/` (reversible, gitignored) + re-derived clean; `isGrainSuspect` guard
+  wired into integrity (0 flagged post-fix). **Next-session first step:** commit decision (split A perf,
+  B marker-guard, C polymarket-alias, D grain-guard). NOT a code change: the **intraday depth
+  inconsistency** (Yahoo TFs differ in native depth, e.g. VCB 5m≈83d vs 1h≈508d) remains — needs a
+  network re-fetch pass if wanted.
+
+- **SESSION 34 (2026-06-15) — daemon polish (TUI, concurrency, output, ingest gate) + dead-symbol gate.**
+  Full trail: `workspace/handoff/2026-06-15.md`. 5 commits on `feat/session-guard-intraday-rollup`:
+  `74b0ec67` (backfill-daemon→TUI + rollup-priority guard), `9b2fd784` (--concurrency flag),
+  `a57e392b` (daemon output compacted), `f405263c` (ts/bin freshness gate in ingest),
+  `e0cb6aa2` (dead-symbol gate: 7d skip after 0-bar deep backfill). Suite **465/465**.
+  Ubuntu `sshd` stopped on Windows — still deferred. **Next-session first step:** elevated PowerShell →
+  `Start-Service sshd`; then on Ubuntu `git fetch windows && git merge windows/feat/session-guard-intraday-rollup`,
+  then run `crypto-deep-backfill --days 1825` for 1m crypto data.
 
 - **SESSION 32 (2026-06-14) — blast-through audit (s31 clean) + caller migration committed + ALL 7 test
   fails fixed; suite 465/465 (first fully green since s12).** Full trail: `workspace/handoff/2026-06-14.md`
