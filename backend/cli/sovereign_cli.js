@@ -11,7 +11,7 @@ const { commandBackend } = require('./commands/tools/backend.js');
 const { commandQuotes } = require('./commands/quotes/quotes.js');
 const { commandStrategyMenu, commandPropFirmMenu } = require('./commands/strategy/strategy.js');
 const { commandBacktest, commandOptimize, commandEdgeDecay, commandDemo, commandIndicators, commandModelCompare } = require('./commands/research/research.js');
-const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandValidate, commandPrune, commandLoc, commandUniverse, commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIntradayAccumulate, commandIntradayRollup } = require('./commands/data/data.js');
+const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandClearApiCache, commandValidate, commandPrune, commandLoc, commandUniverse, commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIntradayAccumulate, commandIntradayRollup } = require('./commands/data/data.js');
 const { commandBackfillDaemon } = require('./commands/data/backfill_daemon.js');
 const { commandTrade, buildTradeGatewayLaunch, commandMt5, commandMt5Profile, commandMt5Connect, commandMt5Bridge, commandAutoTrade, commandAddPlatform, commandAgent, commandPolymarket, commandBot } = require('./commands/trade/trade.js');
 const { commandLogin, commandRegister, commandLogout, commandAuthStatus } = require('./commands/account/auth.js');
@@ -51,6 +51,7 @@ async function handleCommand(args) {
     'intraday-rollup':       (a) => commandIntradayRollup(a),
     'backfill-daemon':       (a) => commandBackfillDaemon(a),
     'cache-clean':           (a) => commandCacheClean(a),
+    'clear-api-cache':       (a) => commandClearApiCache(a),
     universe:         (a) => commandUniverse(a),
     check:            (a) => commandValidate(a),
     // --- Backend (manifest: backend) ---
