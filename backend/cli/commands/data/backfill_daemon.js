@@ -164,7 +164,8 @@ async function runBackfillCycle(o) {
 
     if (action === 'skip') {
       summary.skipped += 1;
-      return; // skips are counted in summary, not logged individually
+      if (gate.reason === 'not_found') log(`[BACKFILL] ${job.symbol}  ✗ no data on provider (skip 7d)`);
+      return;
     }
 
     const days = action === 'deep' ? (deepDays[job.family] || 59) : incrementalDays;
