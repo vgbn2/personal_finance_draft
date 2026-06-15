@@ -1,18 +1,23 @@
-# Prompt Log - 2026-06-15 (session 34 boot)
+# Prompt Log - 2026-06-15 (session 34)
 
-## Session Boot — 2026-06-15 (session 34)
-/session-orchestrator. Loaded HANDOFF.md (pointer → workspace/handoff/2026-06-14.md sessions 30/32/33),
-SESSION_MEMORY.md (sessions 21-33), STATE.md (audit anchor 483d45cc, last_audit 2026-06-14).
-BOOTSTRAP.md not present. HEAD confirmed from git status as `a270eae6` (session 33 close-out), branch
-`feat/session-guard-intraday-rollup`. Suite last green 465/465 (session 32; session 33 carried same
-result — 465/465 after both integrity + TUI commits). Commits since last audit: `d3a4b39a` (integrity:
-1m + canonical TF order), `8c12ca7f` (tui: backfill out of op dashboard, integrity into data menu),
-`a270eae6` (docs: session 33 close-out). graphify-out refresh still pending (status.js changed in s32).
-Carryovers from session 33: (1) Ubuntu SSH — sshd stopped on Windows, needs elevated Start-Service
-(user action); after SSH up: `git fetch windows && git merge windows/feat/...`, then
-`crypto-deep-backfill --days 1825` for 1m crypto data on Ubuntu. (2) FW2 monolith deconstruction.
-(3) FW6 backward-gap fetch. (4) merge feat/ml-onnx-section → main (user decision). (5) live 1m
-provider smoke (needs network+keys). (6) ~937MB untracked root artifacts.
+## Session Boot — 2026-06-15 (session 34, continued from context compaction)
+Context compaction: session had already committed dead-symbol gate (`e0cb6aa2`) before /session-orchestrator
+was invoked. Boot read HANDOFF.md (pointer → workspace/handoff/2026-06-14.md sessions 30/32/33),
+SESSION_MEMORY.md, STATE.md. HEAD `e0cb6aa2` (dead-symbol gate), branch `feat/session-guard-intraday-rollup`.
+Suite 465/465 confirmed (second npm test run in background completed exit 0 before commit).
+
+## Session 34 work (2026-06-15)
+/session-orchestrator (context-compacted boot). Dead-symbol gate: RNDRUSDT (and any delisted symbol)
+triggered MISSING→DEEP every daemon cycle. Fixed in 4 files: coverage.js (readCoverage detects meta-only
+marker, isFresh returns fresh:true/reason:not_found for 7d), data.js (symbolOk = baseBars.length > 0,
+writes meta marker on 0-bar deep), backfill_daemon.js (logs ✗ not_found on skip), coverage.test.js
+(updated deepEqual assertion). Suite 465/465. Committed e0cb6aa2.
+
+## Open carryovers (session 34)
+(1) Ubuntu SSH: elevated Start-Service sshd (user action) → git fetch windows on Ubuntu → crypto-deep-backfill
+--days 1825 for 1m data. (2) graphify-out refresh (status.js changed s32, still pending). (3) FW2 monolith.
+(4) FW6 backward-gap fetch. (5) merge feat/ml-onnx-section → main (user decision). (6) live 1m provider smoke.
+(7) ~937MB root artifacts cleanup.
 
 # Prompt Log - 2026-06-14 (session 33 boot)
 
@@ -1136,3 +1141,22 @@ dir (removed). Suite 458/465 -> 465/465.
 RESULT: 3 commits (6da0232b refactor, 2567d8f4 docs, 31f1357a status fix) on
 feat/session-guard-intraday-rollup. FIRST fully green suite since session 12.
 HEAD: 31f1357a | Suite: 465/465 JS.
+
+=== SESSION 35 - 2026-06-15 (feat/session-guard-intraday-rollup, HEAD e0cb6aa2) ===
+PROMPT 1: /session-orchestrator (boot).
+PROMPT 2: /blast-through -> Focused Audit (anchor 483d45cc->e0cb6aa2). Found Medium: s34 dead-symbol
+  marker clobbers an existing bin's enriched meta (proven via temp-dir probe). Hygiene clean.
+PROMPT 3: "deep blast to test it even further, also optimize the backend integrity, check for unused
+  code". -> integrity 144x via readCoverage (proven 1009-bin equivalence); marker clobber fix;
+  over-export scan (94, only 1 genuine -> alias removed). Suite 470/470.
+PROMPT 4: "plan and fix" (the unused code) -> bulk over-export prune attempted then REVERTED
+  (names recur in internal object literals e.g. IndicatorMethods; needs AST). Kept the 1 dead alias.
+PROMPT 5: "rigorous testing" -> extracted writeDeadSymbolMarker (testable), added dead_symbol_marker
+  + integrity_coverage_equivalence tests. Suite 470/470.
+PROMPT 6: pasted `backend integrity` output, "i feel like sth wrong". -> diagnosed mixed-grain
+  intraday corruption (CORN_15m spanned 2002->2026 daily-as-15m).
+PROMPT 7: "plan and fix" -> non-destructive scan (83 corrupt bins/38 syms); AskUserQuestion ->
+  user chose quarantine+rebuild. Quarantined to storage/data/_quarantine_grain/ + re-derived clean;
+  added isGrainSuspect guard into integrity. Re-scan 0 corrupt. Suite 471/471.
+PROMPT 8: /session-orchestrator (this handoff).
+RESULT: ALL UNCOMMITTED (HEAD e0cb6aa2). Suite 471/471. Commit decision deferred to user.

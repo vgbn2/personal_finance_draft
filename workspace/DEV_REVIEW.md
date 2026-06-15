@@ -456,3 +456,107 @@ P3 equity session guard, P4 ML 5m cap, config alias. DCS 0.97. Suite baseline 43
 - Yahoo accepts `interval=1h` (live-verified) — production FW3 path is functionally correct.
 
 #
+
+## Focused Audit - 2026-06-15 session 35 (blast-through, anchor 483d45cc -> e0cb6aa2)
+
+Tier 1 = the session-34 daemon/gate work. DCS 0.96. Hygiene sweep clean (no dup basenames, no dup
+configs). Manifest↔handler parity OK (`backfill-daemon`, `clear-api-cache` both registered,
+sovereign_cli.js:52/54). Priority guard verified correct; ingest freshness gate verified net-safe.
+
+### FINDING (Medium, data integrity) — dead-symbol marker clobbers an existing bin's enriched meta
+- **File:** `backend/cli/commands/data/data.js:1080-1089` (`commandCryptoDeepBackfill`, introduced
+  `e0cb6aa2`, age <1d).
+- **Finding:** the 0-bar "not found" marker is written with `fs.writeFileSync(<sym>_<tf>.meta.json, ...)`
+  **unconditionally**, with no check for an existing `.bin`. If a crypto symbol that ALREADY has a real
+  bin returns 0 bars from a deep backfill (transient Binance outage / 429 storm / temporary empty
+  response, not a true delisting), the marker overwrites the real meta sidecar and strips
+  `coordinate_id`, `config_market`, `config_sector`, and `derived_from`. The `.bin` (OHLCV) survives,
+  but every subsequent `readTsIndex` of that symbol returns those enrichment fields as `undefined`
+  until the next *successful* backfill rewrites full meta. If the symbol stays 0-bar, the loss is
+  permanent for the retained historical bars.
+- **Empirical proof (temp-dir probe, real writeTsIndex/readTsIndex):**
+  `BEFORE -> coordinate_id: crypto:TESTUSDT | config_sector: Layer1 | count: 1`
+  `AFTER  -> coordinate_id: undefined | config_sector: undefined | bin count: 1 | ohlcv intact: true`
+- **Reviewer decision:** confirm the intended invariant — the not-found marker should only exist when
+  there is genuinely NO bin (that is the case `readCoverage` keys on: `!existsSync(bin) && existsSync(meta)`).
+- **Fix (S):** guard the marker write with the bin path — only write when the `.bin` is absent:
+  `if (!fsSync.existsSync(path.join(DEFAULT_TS_DIR, \`${safe}_${baseTf}.bin\`))) { ...writeFileSync... }`.
+  Semantically correct (a symbol with real bars is not "dead") and removes the clobber entirely.
+- **Gate to clear:** add a regression test (existing enriched bin + 0-bar result → meta retains
+  coordinate_id/config_sector; bin-absent + 0-bar → marker written) and re-run the data suite.
+
+### Verified good this pass
+- `shared/lib/market/coverage.js` (new): read-only, cheap header+tail probe, no security surface,
+  8/8 tests. Minor cosmetic: the `count===0` *bin-present* return path omits the `notFoundCheckedMs`
+  field that the empty/`exists:false` path includes — harmless (`isFresh` treats `undefined` as falsy).
+- `writeTsIndex` PROVIDER_PRIORITY guard (`validation.js`, `74b0ec67`): correct. `rollupFromBase`
+  (data.js:1914) stamps the base bin's provider, so crypto-derived coarser bins carry `provider:'binance'`
+  (priority 3) and a yahoo poll (priority 1) cannot overwrite them. Equal-priority yahoo→yahoo falls to
+  the new-wins-on-conflict merge (gaps still filled). `derived_from` round-trips through the meta sidecar.
+- Ingest ts/bin freshness gate (`index.js`, `f405263c`): net-safe. It only fires when the snapshot check
+  already set `skipItem=true`; a fresh bin `continue`s (same outcome as before), a stale bin flips
+  `skipItem=false` to force a fetch — so the change can only *add* fetches or confirm an existing skip,
+  never newly suppress one. On `isFresh` error it falls through to the provider (fail-open).
+- `global.suppressLogs = true` in the daemon: established repo pattern (setup.js/run.js/strategy.js);
+  the daemon owns its whole process, so never resetting it is correct, not a leak.
+
+## Deep blast follow-up - 2026-06-15 session 35 (optimization + dead-code scan)
+
+### RESOLVED — dead-symbol marker clobber (was Medium finding above)
+- Fix applied at `data.js` (`commandCryptoDeepBackfill`): the not-found marker is now written
+  **only when no `.bin` exists** (`if (!fsSync.existsSync(binPath))`). A 0-bar result for a symbol
+  that already has bars is a transient provider failure, not a delisting — the guard stops it from
+  stripping `coordinate_id`/`config_*`/`derived_from` off a real sidecar.
+- Regression tests added to `coverage.test.js` (2): the not_found marker is honored for 7d then
+  re-probed; a real bin always wins over a marker (count from header, marker ignored). 6/6 green.
+
+### OPTIMIZATION — `backend integrity` 57s → 0.4s (144×), behavior-identical
+- `runBackendIntegrity` (`backend/cli/commands/tools/backend.js`) looped `readTsIndex(sym, tf)` over
+  every (symbol × timeframe), materializing the ENTIRE bin into record objects (a deep 1m crypto bin
+  is ~525k objects + ISO-string conversions) only to read count + first/last timestamp.
+- Swapped to `readCoverage` (header + two 8-byte head/tail reads, bin never loaded). Extended
+  `coverage.js` with `firstBarMs` (one head read) so the coverage span (`from`/`to`) is available.
+- **Verified:** live `backend integrity --json` 57,069 ms → 396 ms, same `ok:false` / 92 cached /
+  4 stale. Per-bin equivalence probe over ALL 1009 real bins: `{bars, from, to}` from readCoverage ==
+  readTsIndex, **0 mismatches**. Full suite 467/467. Also removed a pre-existing unused `firstTs` var.
+
+### BACKLOG (low) — shared/lib over-exports (public-surface bloat, NOT dead logic)
+- A scan of every `shared/lib/**/*.js` export vs all tracked `.js`/`.ts` found **94 exported names
+  with zero external importer**. Spot-checks (isValidTimestamp, bollingerBands, executeTool,
+  readTsSources, buyHoldBenchmark) all show the function is alive — called 3-4× *within its own
+  module* — but the `module.exports` entry has no consumer. These are unnecessary exports, not dead
+  code; the functions must NOT be deleted.
+- Caveat (four-layer rule): the raw list mixes in known false-positive classes — MCP exports
+  (`mcp/agent.js`, `mcp/gate.js`) can be consumed via compiled `dist/` (gitignored, not in the scan),
+  and root shims re-export whole objects without naming members. Any prune must verify per-item across
+  literal/sibling/alias/dist layers and re-run the suite. Recommend a dedicated debt-clearing pass
+  (trim export lists only, keep all function bodies); not done this session.
+
+#### UPDATE (same session) — bulk prune attempted, REVERTED; only the 1 genuine dead export removed
+- **Removed (kept):** `market/polymarket_features.js` redundant alias `generatePolymarketFeatures:
+  buildPolymarketFeatureRows` — the real fn `buildPolymarketFeatureRows` stays exported and is what
+  `polymarket_history.js` + the test actually import. Safe, suite green.
+- **Attempted + REVERTED:** a regex-driven prune of the 87 non-MCP over-exports broke
+  `indicators.manifest_parity.test.js`. **DURABLE LESSON:** an exported name frequently ALSO appears
+  in a *second internal object literal* in the same file (here `bollingerBands` is a member of the
+  `IndicatorMethods` registry that drives manifest-mode feature computation, not just `module.exports`).
+  A line-oriented "remove the line matching NAME" removed the FIRST match (the `IndicatorMethods`
+  member), silently corrupting the internal registry while leaving the export intact → `bollinger_*`
+  feature keys vanished. **Conclusion:** trimming `module.exports` members safely requires AST-scoped
+  editing (only the `module.exports` object node), not text/line matching. Given these exports are
+  provably harmless (zero importers) the cost/risk isn't worth a hand pass — left as backlog. All 30
+  bulk-touched files reverted to HEAD; suite restored to 467/467.
+
+#### Rigorous testing pass (same session)
+- Refactored the marker write into an exported, tsDir-injectable helper `writeDeadSymbolMarker(tsDir,
+  symbol, tf, family, provider)` (data.js) so the clobber guard is tested through the REAL function,
+  not a copy. `commandCryptoDeepBackfill` now records `entry.marker_written`.
+- New `tests/scripts/tests/dead_symbol_marker.test.js` (2): (a) no-bin → marker written, readCoverage
+  sees not_found, isFresh skips 7d then re-probes; (b) bin-present → write REFUSED (returns false),
+  readTsIndex still returns coordinate_id/config_sector for all bars (clobber fix proven end-to-end).
+- New `tests/scripts/tests/integrity_coverage_equivalence.test.js` (1): adversarial bins the 1009 real
+  bins don't cover — single-bar (firstBarMs===lastBarMs), empty-header (count 0), meta-only marker,
+  truncated (header says 10, file holds 2), and absent symbol — proving the integrity readCoverage path
+  derives `{bars,from,to}` byte-identical to the old readTsIndex path (or skips identically) on every branch.
+- Gate: **suite 470/470** (was 467; +3). Live `backend integrity --json` re-run post-refactor: 383 ms,
+  ok:false / 92 cached / 4 stale (unchanged). All shared/lib + data/daemon modules load.
