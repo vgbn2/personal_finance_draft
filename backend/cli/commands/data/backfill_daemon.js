@@ -48,6 +48,19 @@ const FAMILY_LANE = {
 // Max concurrent jobs per provider lane (Yahoo rate-limits at ~429 above ~8).
 const LANE_CONCURRENCY = { binance: 3, alpaca: 3, yahoo: 5 };
 
+// HARD memory-safe ceiling per lane — a `--concurrency` override is clamped to this.
+// The 1m lanes (binance/alpaca) touch multi-million-row bins (BTCUSDT 1m ≈ 3M records);
+// each in-flight job transiently materializes the existing bin as JS objects in the
+// merge-write, so running too many at once exhausts the V8 heap (OOM). Yahoo bins are
+// 5m and ~100× smaller, so that lane can take the full override. A lane absent here is
+// uncapped. (See windowed-rollup wiring below, which removes the second full-bin read.)
+const LANE_MAX_CONCURRENCY = { binance: 3, alpaca: 3 };
+
+const DAY_MS = 86400000;
+// Floor a timestamp to its UTC-day boundary — a multiple of every intraday interval up
+// to 4h, so a rollup window starting here produces no partial coarse bars.
+function utcDayFloor(ms) { return Math.floor(ms / DAY_MS) * DAY_MS; }
+
 // Default fetch windows (days). Deep = first-fill cold history; incremental = recent
 // top-up for a stale-but-present bin (kept >5 because the native intraday fetch path
 // requires --days > 5).
@@ -118,11 +131,12 @@ function groupIntoLanes(jobs, concurrencyOverride) {
     if (!map[lane]) map[lane] = [];
     map[lane].push(job);
   }
-  return Object.entries(map).map(([lane, laneJobs]) => ({
-    lane,
-    concurrency: concurrencyOverride || LANE_CONCURRENCY[lane] || 3,
-    jobs: laneJobs,
-  }));
+  return Object.entries(map).map(([lane, laneJobs]) => {
+    const requested = concurrencyOverride || LANE_CONCURRENCY[lane] || 3;
+    const ceiling = LANE_MAX_CONCURRENCY[lane]; // undefined = uncapped
+    const concurrency = ceiling ? Math.min(requested, ceiling) : requested;
+    return { lane, concurrency, jobs: laneJobs };
+  });
 }
 
 /**
@@ -189,9 +203,11 @@ async function runBackfillCycle(o) {
     if (action === 'deep') summary.deep += 1; else summary.incremental += 1;
     log(`[BACKFILL] ${job.symbol}  ok  ${elapsed}s`);
 
-    // Derive coarser bins from the freshly-written base bin.
+    // Derive coarser bins from the freshly-written base bin. For an incremental
+    // top-up only the recent window needs re-deriving, so the action is passed
+    // through — the real rollup uses it to read just the tail of the base bin.
     try {
-      const roll = o.rollup(job);
+      const roll = o.rollup(job, action);
       if (roll && roll.ok) {
         summary.rolled_up += 1;
         const n = Object.keys(roll.derived || {}).length;
@@ -236,8 +252,18 @@ function makeRealExecutor() {
 }
 
 // Real rollup executor: derive every coarser TF above the job's base grain.
-function makeRealRollup(tsDir) {
-  return (job) => rollupFromBase(tsDir, job.symbol, job.baseTf, rollupTargetsAboveBase(job.baseTf));
+// For an incremental top-up, re-derive only the recent window (last incrementalDays
+// + 1 day of margin, floored to a UTC-day boundary) instead of the entire deep base
+// bin — this is what keeps the daemon's per-cycle rollups off the heap-blowing
+// full-bin read. Deep (first-fill) jobs still re-derive the whole freshly-written bin.
+function makeRealRollup(tsDir, incrementalDays = INCREMENTAL_DAYS) {
+  return (job, action) => {
+    const targets = rollupTargetsAboveBase(job.baseTf);
+    const opts = action === 'incremental'
+      ? { sinceMs: utcDayFloor(Date.now() - (incrementalDays + 1) * DAY_MS) }
+      : {};
+    return rollupFromBase(tsDir, job.symbol, job.baseTf, targets, opts);
+  };
 }
 
 /**
@@ -279,6 +305,12 @@ async function commandBackfillDaemon(args) {
     const lanes = groupIntoLanes(jobs, concurrency || undefined);
     const laneStr = lanes.map(l => `${l.lane}×${l.jobs.length}(c=${l.concurrency})`).join('  ');
     log(`[BACKFILL] start: ${jobs.length} jobs — ${laneStr}`);
+    if (concurrency) {
+      const clamped = lanes.filter(l => l.concurrency < concurrency);
+      if (clamped.length) {
+        log(`[BACKFILL] note: --concurrency ${concurrency} clamped to ${clamped.map(l => `${l.lane}=${l.concurrency}`).join(' ')} (1m lanes touch multi-million-row bins)`);
+      }
+    }
     lastSummary = await runBackfillCycle({
       tsDir, jobs, execute, rollup, log, cycle,
       parallelLanes: !sequential,
@@ -306,5 +338,7 @@ module.exports = {
   DEFAULT_DEEP_DAYS,
   INCREMENTAL_DAYS,
   LANE_CONCURRENCY,
+  LANE_MAX_CONCURRENCY,
+  utcDayFloor,
   FAMILY_LANE,
 };
