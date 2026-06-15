@@ -205,7 +205,6 @@ module.exports = {
   BARS_PER_DAY,
   buildPolymarketFeatureRows,
   estimatePolymarketExecutionCost,
-  generatePolymarketFeatures: buildPolymarketFeatureRows,
   normalizePricePoints,
   rollingWindowBars,
 };
