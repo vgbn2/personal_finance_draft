@@ -1158,7 +1158,10 @@ function reportSnapshotIntegrity(inputPath, rejectStale = true) {
 }
 
 async function runBackendIntegrity(args = []) {
-  const { readTsIndex } = require('../../../../shared/lib/market/validation.js');
+  // Coverage probe (header + head/tail reads) instead of readTsIndex (full bin load):
+  // integrity only needs bar count + first/last timestamp per (symbol, tf), so a deep
+  // 1m bin (~525k bars) no longer has to be materialized into objects just to be counted.
+  const { readCoverage, isGrainSuspect } = require('../../../../shared/lib/market/coverage.js');
   const { loadMarketConfig } = require('../../../../shared/lib/runtime/config_loader.js');
   const TS_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
   const CONFIG_PATH = path.join(utils.REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
@@ -1212,6 +1215,7 @@ async function runBackendIntegrity(args = []) {
 
   const familyReport = {};
   const allSymbols = [];
+  const grainSuspects = []; // intraday bins claiming a multi-year span with implausibly low density
 
   for (const [family, data] of Object.entries(config)) {
     if (!OHLCV_FAMILIES.has(family) || !data.enabled) continue;
@@ -1227,23 +1231,33 @@ async function runBackendIntegrity(args = []) {
       const tfData = {};
       let hasSomething = false;
       for (const tf of TIMEFRAMES) {
-        const records = readTsIndex(TS_DIR, sym, tf);
-        if (!records || records.length === 0) continue;
+        const cov = readCoverage(TS_DIR, sym, tf, now);
+        // Skip empty bins and meta-only "not found" markers (count 0), plus any bin
+        // whose head/tail ts couldn't be read (truncated) — matches the prior
+        // readTsIndex null/empty behaviour exactly.
+        if (!cov.exists || cov.count === 0 || cov.lastBarMs === null || cov.firstBarMs === null) continue;
         hasSomething = true;
-        const lastTs = new Date(records[records.length - 1].timestamp).getTime();
-        const firstTs = new Date(records[0].timestamp).getTime();
+        const lastTs = cov.lastBarMs;
+        const firstTs = cov.firstBarMs;
         const staleThresh = STALE_MS[tf] || 72 * 60 * 60 * 1000;
         const ageMs = now - lastTs;
         const effectiveAge = (CALENDAR_EXEMPT_FAMILIES.has(family) && tf === '1d')
           ? Math.max(0, ageMs - weekendHoursElapsed(lastTs, now))
           : ageMs;
         tfData[tf] = {
-          bars: records.length,
-          from: records[0].timestamp.slice(0, 10),
-          to: records[records.length - 1].timestamp.slice(0, 10),
+          bars: cov.count,
+          from: new Date(firstTs).toISOString().slice(0, 10),
+          to: new Date(lastTs).toISOString().slice(0, 10),
           stale: effectiveAge > staleThresh,
           age_h: Math.round(ageMs / 3600000),
         };
+        // Cheap grain-corruption tripwire (head/tail data already in cov): a coarse-data leak
+        // into an intraday bin shows as a multi-year span with ~1 bar/day. Advisory only.
+        const grain = isGrainSuspect(tf, cov.count, firstTs, lastTs);
+        if (grain.suspect) {
+          tfData[tf].grain_suspect = true;
+          grainSuspects.push({ symbol: sym, family, timeframe: tf, bars: cov.count, bars_per_day: grain.barsPerDay, span_days: grain.spanDays });
+        }
       }
       const symInfo = { symbol: sym, family, timeframes: tfData };
       if (hasSomething) {
@@ -1284,6 +1298,12 @@ async function runBackendIntegrity(args = []) {
     console.log(`Policy: required timeframes = ${requiredTimeframes.join(', ')}`);
     if (integrityExceptions.size > 0) {
       console.log(`Policy: stale exceptions = ${Array.from(integrityExceptions).join(', ')}`);
+    }
+    if (grainSuspects.length > 0) {
+      console.log(`\x1b[33mGrain: ${grainSuspects.length} suspect intraday bin(s) — coarse data may have leaked into an intraday timeframe:\x1b[0m`);
+      for (const g of grainSuspects.slice(0, 20)) {
+        console.log(`  ${g.symbol} ${g.timeframe}: ${g.bars} bars over ${g.span_days}d (${g.bars_per_day}/day) — re-derive from the clean base`);
+      }
     }
     console.log(line);
 
@@ -1344,11 +1364,13 @@ async function runBackendIntegrity(args = []) {
       integrity_exceptions: Array.from(integrityExceptions),
     },
     families: familyReport,
+    grain_suspects: grainSuspects,
     summary: {
       total_config: Object.values(familyReport).reduce((s, r) => s + r.config_count, 0),
       total_cached: Object.values(familyReport).reduce((s, r) => s + r.cached.length, 0),
       total_missing: Object.values(familyReport).reduce((s, r) => s + r.missing.length, 0),
       total_stale: Object.values(familyReport).reduce((s, r) => s + r.stale.length, 0),
+      total_grain_suspect: grainSuspects.length,
       total_exceptions: Object.values(familyReport).reduce((s, r) => s + r.exceptions.length, 0),
       total_unreachable: Object.values(familyReport)
         .reduce((s, r) => s + r.stale.filter(e => e.provider_unreachable).length, 0),
