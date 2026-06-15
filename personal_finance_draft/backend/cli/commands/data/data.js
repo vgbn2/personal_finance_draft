@@ -10,7 +10,7 @@ const {
 } = require('../research/research.js');
 const { backfill20Years } = require('../../../../scripts/data_ops/backfill_20_years.js');
 const { runMaintenance } = require('../../../../shared/lib/data/db_pruning.js');
-const { validateSnapshot, writeJson, readSnapshot, mergeSnapshots, writePartitionedSnapshot, writeTsIndex, readTsIndex, recordKey } = require('../../../../shared/lib/market/validation.js');
+const { validateSnapshot, writeJson, readSnapshot, mergeSnapshots, writePartitionedSnapshot, writeTsIndex, readTsIndex, readTsIndexSince, recordKey } = require('../../../../shared/lib/market/validation.js');
 const utils = require('../../lib/utils.js');
 const { featureGate } = require('../../../../shared/lib/settings/runtime');
 const {
@@ -1076,17 +1076,8 @@ async function commandCryptoDeepBackfill(args) {
       const entry = { symbol, ok: symbolOk, base_timeframe: baseTf, bars: baseBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
       if (!symbolOk) {
         entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || `no ${baseTf} bars returned (delisted or not listed on Binance)`;
-        // Write a meta-only "not found" marker so the daemon skips this symbol for 7 days.
-        try {
-          const fsSync = require('node:fs');
-          const safe = symbol.replace(/[^a-zA-Z0-9_]/g, '_');
-          const markerPath = path.join(DEFAULT_TS_DIR, `${safe}_${baseTf}.meta.json`);
-          fsSync.mkdirSync(DEFAULT_TS_DIR, { recursive: true });
-          fsSync.writeFileSync(markerPath, JSON.stringify({
-            symbol, timeframe: baseTf, family: 'crypto', provider: 'binance',
-            count: 0, last_checked: Date.now(),
-          }), 'utf8');
-        } catch (_) { /* non-fatal */ }
+        // Mark the symbol as "not found" so the daemon skips it for 7 days (see writeDeadSymbolMarker).
+        entry.marker_written = writeDeadSymbolMarker(DEFAULT_TS_DIR, symbol, baseTf, 'crypto', 'binance');
       }
       // Auto-derive coarser intraday bins from the just-written deep base bin (lossless,
       // local, no extra network). Off with --no-rollup.
@@ -1905,9 +1896,57 @@ function readFiveMinBinFamily(tsDir, symbol) {
 // Derive coarser intraday bins for one symbol from its deep `baseTf` bin. Lossless:
 // the base bin is read-only; coarser bins are written merge-protected. Shared by
 // `intraday-rollup`, the deep-backfill commands, and the backfill daemon.
-function rollupFromBase(tsDir, symbol, baseTf, timeframes) {
+/**
+ * writeDeadSymbolMarker(tsDir, symbol, timeframe, family, provider) -- record a "no data on
+ * provider" marker so the backfill daemon skips a delisted/never-listed symbol for 7 days
+ * (DEAD_SYMBOL_TTL_MS in coverage.js) instead of re-deep-backfilling it every cycle.
+ *
+ * GUARD: the marker is written ONLY when no real `.bin` exists for (symbol, timeframe). A 0-bar
+ * result for a symbol that already has bars is a transient provider failure (outage/429/empty
+ * page), NOT a delisting — writing the stripped marker over a real `.meta.json` sidecar would
+ * clobber coordinate_id, config_market/config_sector and derived_from for the retained bars
+ * (readCoverage ignores the marker whenever a bin is present, so it would be harmful, not useless).
+ *
+ * @returns {boolean} true if a marker was written, false if skipped (bin present) or on error.
+ */
+function writeDeadSymbolMarker(tsDir, symbol, timeframe, family, provider) {
+  try {
+    const fsSync = require('node:fs');
+    const safe = String(symbol).replace(/[^a-zA-Z0-9_]/g, '_');
+    const binPath = path.join(tsDir, `${safe}_${timeframe}.bin`);
+    if (fsSync.existsSync(binPath)) return false; // real bars present — never clobber the sidecar
+    fsSync.mkdirSync(tsDir, { recursive: true });
+    fsSync.writeFileSync(
+      path.join(tsDir, `${safe}_${timeframe}.meta.json`),
+      JSON.stringify({ symbol, timeframe, family, provider, count: 0, last_checked: Date.now() }),
+      'utf8',
+    );
+    return true;
+  } catch (_) {
+    return false; // non-fatal: the daemon will just re-probe next cycle
+  }
+}
+
+/**
+ * rollupFromBase(tsDir, symbol, baseTf, timeframes, opts)
+ *
+ * Derives coarser intraday bins from a symbol's base bin by local OHLCV aggregation
+ * and merge-writes them (lossless; new-wins-on-timestamp).
+ *
+ * opts.sinceMs (optional): when finite, only the base bars at/after sinceMs are read
+ * and re-aggregated, instead of the entire (possibly multi-million-row) base bin. The
+ * coarser bins are merge-protected, so re-deriving just the recent tail updates the
+ * affected coarse bars while leaving deep history intact. sinceMs MUST be aligned to a
+ * UTC-day boundary (a multiple of every target interval up to 4h) so no coarse bar in
+ * the window is partial. This is what keeps the backfill daemon's per-cycle incremental
+ * rollups off the heap-blowing full-bin deserialization path.
+ */
+function rollupFromBase(tsDir, symbol, baseTf, timeframes, opts = {}) {
   const { aggregateCandles } = require('../../../scripts/data_ops/ingest_market_data.js');
-  const baseRecords = readTsIndex(tsDir, symbol, baseTf);
+  const sinceMs = Number.isFinite(opts.sinceMs) ? opts.sinceMs : null;
+  const baseRecords = sinceMs !== null
+    ? readTsIndexSince(tsDir, symbol, baseTf, sinceMs)
+    : readTsIndex(tsDir, symbol, baseTf);
   if (!baseRecords || baseRecords.length === 0) {
     return { ok: false, error: `no readable ${baseTf} bin`, source_bars: 0, base_timeframe: baseTf, derived: {} };
   }
@@ -2151,6 +2190,7 @@ module.exports = {
   listDeepSymbols,
   rollupFromBase,
   rollupFiveMinForSymbol,
+  writeDeadSymbolMarker,
   readBinFamily,
   rollupTargetsAboveBase,
   FAMILY_BASE_TF,
