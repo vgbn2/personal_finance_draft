@@ -111,7 +111,7 @@ async function runWithConcurrency(items, limit, fn) {
  * groupIntoLanes -- split a flat job list into provider lanes.
  * @returns {Array<{lane:string, concurrency:number, jobs:Array}>}
  */
-function groupIntoLanes(jobs) {
+function groupIntoLanes(jobs, concurrencyOverride) {
   const map = {};
   for (const job of jobs) {
     const lane = FAMILY_LANE[job.family] || 'yahoo';
@@ -120,7 +120,7 @@ function groupIntoLanes(jobs) {
   }
   return Object.entries(map).map(([lane, laneJobs]) => ({
     lane,
-    concurrency: LANE_CONCURRENCY[lane] || 3,
+    concurrency: concurrencyOverride || LANE_CONCURRENCY[lane] || 3,
     jobs: laneJobs,
   }));
 }
@@ -199,7 +199,7 @@ async function runBackfillCycle(o) {
 
   if (parallelLanes) {
     // Run each provider lane concurrently; within each lane honour its concurrency cap.
-    const lanes = groupIntoLanes(o.jobs);
+    const lanes = groupIntoLanes(o.jobs, o.concurrency);
     log(`[BACKFILL] cycle=${cycle} running ${lanes.length} provider lane(s) in parallel: ${lanes.map(l => `${l.lane}(${l.jobs.length}jobs,c=${l.concurrency})`).join(', ')}`);
     await Promise.all(
       lanes.map((l) => runWithConcurrency(l.jobs, l.concurrency, processJob))
@@ -254,6 +254,7 @@ async function commandBackfillDaemon(args) {
     ? new Set(symbolArg.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean))
     : null;
   const sequential = hasFlag(args, '--sequential'); // escape hatch for debugging
+  const concurrency = numericOption(args, '--concurrency', 0); // 0 = use per-lane defaults
 
   const { loadConfig } = require('../../../scripts/data_ops/ingest_market_data.js');
   const log = (line) => console.log(line);
@@ -269,11 +270,12 @@ async function commandBackfillDaemon(args) {
     let jobs = buildJobUniverse(config, families);
     if (symbolFilter) jobs = jobs.filter((j) => symbolFilter.has(j.symbol));
 
-    const lanes = groupIntoLanes(jobs);
+    const lanes = groupIntoLanes(jobs, concurrency || undefined);
     console.log(`[BACKFILL] cycle=${cycle} start: ${jobs.length} jobs across ${families.join(',')} | lanes: ${lanes.map(l => `${l.lane}(${l.jobs.length})`).join(', ')} (ts-dir=${tsDir})`);
     lastSummary = await runBackfillCycle({
       tsDir, jobs, execute, rollup, log, cycle,
       parallelLanes: !sequential,
+      concurrency: concurrency || undefined,
     });
 
     if (once) break;
