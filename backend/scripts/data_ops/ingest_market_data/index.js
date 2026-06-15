@@ -21,6 +21,8 @@ const {
   writeTsIndex,
 } = require('../../../../shared/lib/market/validation');
 
+const { isFresh } = require('../../../../shared/lib/market/coverage');
+
 /**
  * Attempts to aggregate a higher timeframe (1w, 1mo) from the local 1d binary cache.
  * Returns aggregated records or null if local data is insufficient.
@@ -85,6 +87,8 @@ const CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch.
 const SCOPED_CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch_scoped.json');
 const HISTORY_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache');
 const TS_INDEX_PATH = path.join(REPO_ROOT, 'storage', 'data', 'ts');
+const OHLCV_INGEST_FAMILIES = new Set(['crypto', 'equities', 'indices', 'commodities', 'fx']);
+const FAMILY_BASE_TF_MAP = { crypto: '1m', equities: '1m', indices: '5m', commodities: '5m', fx: '5m' };
 
 const {
   SUPPORTED_INTERVALS,
@@ -1689,6 +1693,23 @@ async function ingestMarketData(options = {}) {
           let skipItem = !force;
           let latestInCache = 0;
           let earliestInCache = Infinity;
+
+          // ts/bin gate: binary bins are the authoritative store and are more
+          // accurate than the snapshot-based check below (snapshot only covers
+          // JSON-ingested data, not symbols backfilled via crypto/equity-deep-backfill).
+          // Skip the provider loop entirely for bulk ingest when the bin is fresh.
+          // Single-symbol calls always fall through (user explicitly targeted the symbol).
+          // Bypassed when force=true (deep/incremental backfill always re-fetches).
+          if (skipItem && filteredItems.length > 1 && OHLCV_INGEST_FAMILIES.has(family.id)) {
+            const baseTfForFamily = FAMILY_BASE_TF_MAP[family.id] || syncTimeframes[0] || '1d';
+            try {
+              const binGate = isFresh(TS_INDEX_PATH, item, baseTfForFamily, family.id, now);
+              if (binGate.fresh) continue; // bin current — skip provider calls
+              skipItem = false;            // bin stale — fetch regardless of snapshot
+            } catch (_) {
+              skipItem = false;            // on error, fall through to provider
+            }
+          }
 
           for (const tf of syncTimeframes) {
               const cacheKey = `${family.id}:${item}:${tf}`;
