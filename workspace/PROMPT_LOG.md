@@ -1,3 +1,19 @@
+# Prompt Log - 2026-06-15 (session 34 boot)
+
+## Session Boot — 2026-06-15 (session 34)
+/session-orchestrator. Loaded HANDOFF.md (pointer → workspace/handoff/2026-06-14.md sessions 30/32/33),
+SESSION_MEMORY.md (sessions 21-33), STATE.md (audit anchor 483d45cc, last_audit 2026-06-14).
+BOOTSTRAP.md not present. HEAD confirmed from git status as `a270eae6` (session 33 close-out), branch
+`feat/session-guard-intraday-rollup`. Suite last green 465/465 (session 32; session 33 carried same
+result — 465/465 after both integrity + TUI commits). Commits since last audit: `d3a4b39a` (integrity:
+1m + canonical TF order), `8c12ca7f` (tui: backfill out of op dashboard, integrity into data menu),
+`a270eae6` (docs: session 33 close-out). graphify-out refresh still pending (status.js changed in s32).
+Carryovers from session 33: (1) Ubuntu SSH — sshd stopped on Windows, needs elevated Start-Service
+(user action); after SSH up: `git fetch windows && git merge windows/feat/...`, then
+`crypto-deep-backfill --days 1825` for 1m crypto data on Ubuntu. (2) FW2 monolith deconstruction.
+(3) FW6 backward-gap fetch. (4) merge feat/ml-onnx-section → main (user decision). (5) live 1m
+provider smoke (needs network+keys). (6) ~937MB untracked root artifacts.
+
 # Prompt Log - 2026-06-14 (session 33 boot)
 
 ## Session Boot — 2026-06-14 (session 33)
