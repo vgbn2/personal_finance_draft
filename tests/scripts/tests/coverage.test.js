@@ -44,7 +44,7 @@ test('readCoverage returns exact count + last-bar ms from a known bin (tail read
 test('readCoverage reports missing bins as exists:false (no crash)', () => {
   const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cov-'));
   const cov = readCoverage(tsDir, 'NOPE', '1m', Date.now());
-  assert.deepEqual(cov, { exists: false, count: 0, lastBarMs: null, ageMs: null });
+  assert.deepEqual(cov, { exists: false, count: 0, lastBarMs: null, ageMs: null, notFoundCheckedMs: null });
   console.log(JSON.stringify({ type: 'coverage_test', case: 'missing', exists: cov.exists }));
 });
 
