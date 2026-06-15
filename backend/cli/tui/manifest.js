@@ -136,19 +136,18 @@ const COMMAND_MANIFEST = {
   ],
   commands: {
     op: [
-      { id: 'status',   label: 'Status (live cache health + phase)', args: [] },
-      { id: 'cockpit',  label: 'Cockpit (live terminal dashboard)', args: [] },
-      { id: 'universe', label: 'Universe (symbol discovery)', args: [] },
-      { id: 'watch',    label: 'Watch (continuous live price sync)', flags: {
+      { id: 'status',   label: 'Status ', args: [] },
+      { id: 'cockpit',  label: 'Terminal dashboard', args: [] },
+      { id: 'watch',    label: 'Watch', flags: {
         '--family':   { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities', 'macro', 'prediction_market'], label: 'Family', default: 'all' },
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' }
       }},
-      { id: 'cache-clean', label: 'Cache Clean (quarantine corrupt snapshot records)', flags: {
+      { id: 'cache-clean', label: 'Cache Clean', flags: {
         '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
       }},
     ],
     data: [
-      { id: 'integrity',   prefix: ['backend'], label: 'Integrity (depth + freshness per symbol/TF)', args: [] },
+      { id: 'integrity',   prefix: ['backend'], label: 'Integrity', args: [] },
       { id: 'ingest',      label: 'Ingest ', loading: true, flags: {
         '--family': { type: 'select', options: [
           'all', 'crypto', 'fx', 'equities', 'indices', 'commodities',
@@ -160,10 +159,10 @@ const COMMAND_MANIFEST = {
         '--timeframe':    { type: 'select', options: ['1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1h' },
         '--history-days': { type: 'text', default: '', label: 'History days (blank = latest only)' }
       }},
-      { id: 'mass-backfill',   label: 'Deep Backfill', loading: true, flags: {
-        '--timeframes':  { type: 'text', default: '1mo,1w,1d,4h,1h,30m,15m,5m,1m', label: 'Timeframes (comma-separated)' },
-        '--days':        { type: 'text', default: '365', label: 'Days to backfill' },
-        '--concurrency': { type: 'text', default: '5', label: 'Parallel jobs' }
+      { id: 'backfill-daemon', label: 'Deep Backfill', loading: true, flags: {
+        '--once':          { type: 'confirm', label: 'Run once (no daemon loop)?', default: true },
+        '--families':      { type: 'text', default: '', label: 'Families (comma-separated, blank = all)' },
+        '--interval-secs': { type: 'text', default: '1800', label: 'Loop interval seconds (daemon mode only)' }
       }},
       { id: 'intraday-rollup', label: 'Intraday Rollup ', loading: true, flags: {
         '--family':     { type: 'select', options: ['all', 'crypto', 'equities'], label: 'Family', default: 'all' },
