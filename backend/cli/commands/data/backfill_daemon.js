@@ -164,43 +164,45 @@ async function runBackfillCycle(o) {
 
     if (action === 'skip') {
       summary.skipped += 1;
-      log(`[BACKFILL] cycle=${cycle} ${job.symbol} ${job.baseTf}: have=${gate.count} age=${fmtAge(gate.ageMs)} FRESH -> skip`);
-      return;
+      return; // skips are counted in summary, not logged individually
     }
 
     const days = action === 'deep' ? (deepDays[job.family] || 59) : incrementalDays;
-    log(`[BACKFILL] cycle=${cycle} ${job.symbol} ${job.baseTf}: have=${gate.count} age=${fmtAge(gate.ageMs)} ${gate.reason.toUpperCase()} -> ${action.toUpperCase()} (${days}d)`);
+    log(`[BACKFILL] ${job.symbol}  → ${action.toUpperCase()} ${days}d`);
 
+    const t0 = Date.now();
     let res;
     try {
       res = await o.execute(job, action, days);
     } catch (err) {
       res = { ok: false, error: err && err.message ? err.message : String(err) };
     }
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
     if (!res || !res.ok) {
       summary.errors += 1;
       summary.failures.push({ symbol: job.symbol, family: job.family, action, error: (res && res.error) || 'fetch failed' });
-      log(`[BACKFILL] cycle=${cycle} ${job.symbol} ${job.baseTf}: ${action.toUpperCase()} FAILED: ${(res && res.error) || 'fetch failed'}`);
+      log(`[BACKFILL] ${job.symbol}  FAILED  ${(res && res.error) || 'fetch failed'}`);
       return;
     }
     if (action === 'deep') summary.deep += 1; else summary.incremental += 1;
+    log(`[BACKFILL] ${job.symbol}  ok  ${elapsed}s`);
 
     // Derive coarser bins from the freshly-written base bin.
     try {
       const roll = o.rollup(job);
       if (roll && roll.ok) {
         summary.rolled_up += 1;
-        log(`[BACKFILL] cycle=${cycle} ${job.symbol} rollup: ${Object.entries(roll.derived || {}).map(([t, n]) => `${t}:${n}`).join(' ')}`);
+        const n = Object.keys(roll.derived || {}).length;
+        if (n > 0) log(`[BACKFILL] ${job.symbol}  +${n}TF`);
       }
     } catch (err) {
-      log(`[BACKFILL] cycle=${cycle} ${job.symbol} rollup FAILED: ${err.message}`);
+      log(`[BACKFILL] ${job.symbol}  rollup failed: ${err.message}`);
     }
   }
 
   if (parallelLanes) {
-    // Run each provider lane concurrently; within each lane honour its concurrency cap.
     const lanes = groupIntoLanes(o.jobs, o.concurrency);
-    log(`[BACKFILL] cycle=${cycle} running ${lanes.length} provider lane(s) in parallel: ${lanes.map(l => `${l.lane}(${l.jobs.length}jobs,c=${l.concurrency})`).join(', ')}`);
     await Promise.all(
       lanes.map((l) => runWithConcurrency(l.jobs, l.concurrency, processJob))
     );
@@ -256,6 +258,9 @@ async function commandBackfillDaemon(args) {
   const sequential = hasFlag(args, '--sequential'); // escape hatch for debugging
   const concurrency = numericOption(args, '--concurrency', 0); // 0 = use per-lane defaults
 
+  // Suppress verbose sub-command output — daemon owns all progress reporting.
+  global.suppressLogs = true;
+
   const { loadConfig } = require('../../../scripts/data_ops/ingest_market_data.js');
   const log = (line) => console.log(line);
   const execute = makeRealExecutor();
@@ -271,7 +276,8 @@ async function commandBackfillDaemon(args) {
     if (symbolFilter) jobs = jobs.filter((j) => symbolFilter.has(j.symbol));
 
     const lanes = groupIntoLanes(jobs, concurrency || undefined);
-    console.log(`[BACKFILL] cycle=${cycle} start: ${jobs.length} jobs across ${families.join(',')} | lanes: ${lanes.map(l => `${l.lane}(${l.jobs.length})`).join(', ')} (ts-dir=${tsDir})`);
+    const laneStr = lanes.map(l => `${l.lane}×${l.jobs.length}(c=${l.concurrency})`).join('  ');
+    log(`[BACKFILL] start: ${jobs.length} jobs — ${laneStr}`);
     lastSummary = await runBackfillCycle({
       tsDir, jobs, execute, rollup, log, cycle,
       parallelLanes: !sequential,

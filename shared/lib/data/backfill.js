@@ -107,7 +107,7 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
         await sleep(chunkDelayMs);
       }
     } catch (error) {
-      console.error(`  [BACKFILL] Chunk failed for ${symbol}:${timeframe} ${windowText(currentStartTs, currentEndTs)} max_bars=${providerMaxBars}: ${error.message}`);
+      if (!global.suppressLogs) console.error(`  [BACKFILL] Chunk failed for ${symbol}:${timeframe} ${windowText(currentStartTs, currentEndTs)} max_bars=${providerMaxBars}: ${error.message}`);
       break;
     }
   }
