@@ -1039,15 +1039,17 @@ async function commandCryptoDeepBackfill(args) {
   const allErrors = [];
   const symbolResults = [];
 
-  console.log(`[CRYPTO-DEEP-BACKFILL] Starting sequential ${baseTf} backfill: ${symbols.length} symbols, ${days} days, delay=${delayMs}ms`);
+  if (!global.suppressLogs) console.log(`[CRYPTO-DEEP-BACKFILL] Starting sequential ${baseTf} backfill: ${symbols.length} symbols, ${days} days, delay=${delayMs}ms`);
 
   for (let i = 0; i < symbols.length; i++) {
     const symbol = symbols[i];
     const progress = `[${i + 1}/${symbols.length}]`;
-    if (process.stdout.isTTY) {
-      process.stdout.write(`\r\x1b[K${progress} ${symbol} ${baseTf} ...`);
-    } else {
-      console.log(`${progress} Backfilling ${symbol} ${baseTf} (${days} days)`);
+    if (!global.suppressLogs) {
+      if (process.stdout.isTTY) {
+        process.stdout.write(`\r\x1b[K${progress} ${symbol} ${baseTf} ...`);
+      } else {
+        console.log(`${progress} Backfilling ${symbol} ${baseTf} (${days} days)`);
+      }
     }
 
     const start = Date.now();
@@ -1088,22 +1090,26 @@ async function commandCryptoDeepBackfill(args) {
         }
       }
       symbolResults.push(entry);
-      if (process.stdout.isTTY) {
-        const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
-        process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m ${baseTf}: ${baseBars.length} bars (${elapsed}s)\n`);
-      } else {
-        const rollNote = entry.rolled_up ? ` + rollup ${rollupTargets.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
-        console.log(`${progress} ${symbol} ${baseTf}: ${baseBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
+      if (!global.suppressLogs) {
+        if (process.stdout.isTTY) {
+          const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
+          process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m ${baseTf}: ${baseBars.length} bars (${elapsed}s)\n`);
+        } else {
+          const rollNote = entry.rolled_up ? ` + rollup ${rollupTargets.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
+          console.log(`${progress} ${symbol} ${baseTf}: ${baseBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
+        }
       }
     } catch (err) {
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
       allErrors.push({ symbol, timeframe: baseTf, family: 'crypto', message: err.message });
       results.errors++;
       symbolResults.push({ symbol, ok: false, base_timeframe: baseTf, bars: 0, elapsed_s: Number(elapsed), error: err.message });
-      if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m ${baseTf}: FAILED (${err.message})\n`);
-      } else {
-        console.error(`${progress} ${symbol} FAILED: ${err.message}`);
+      if (!global.suppressLogs) {
+        if (process.stdout.isTTY) {
+          process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m ${baseTf}: FAILED (${err.message})\n`);
+        } else {
+          console.error(`${progress} ${symbol} FAILED: ${err.message}`);
+        }
       }
     }
 
@@ -1113,24 +1119,26 @@ async function commandCryptoDeepBackfill(args) {
     }
   }
 
-  if (process.stdout.isTTY) process.stdout.write('\n');
+  if (!global.suppressLogs && process.stdout.isTTY) process.stdout.write('\n');
 
   // No persistence step here: ingestMarketData already wrote the scoped
   // snapshot, the partitioned JSON history, and the binary ts-index per symbol.
 
-  printPayload({
-    ok: results.errors === 0,
-    symbols: symbols.length,
-    successful: results.ok,
-    errors: results.errors,
-    total_base_bars: symbolResults.reduce((n, r) => n + (r.bars || 0), 0),
-    timeframe: baseTf,
-    days,
-    delay_ms: delayMs,
-    symbol_results: symbolResults,
-    error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
-    output: DEFAULT_HISTORY,
-  }, args);
+  if (!global.suppressLogs) {
+    printPayload({
+      ok: results.errors === 0,
+      symbols: symbols.length,
+      successful: results.ok,
+      errors: results.errors,
+      total_base_bars: symbolResults.reduce((n, r) => n + (r.bars || 0), 0),
+      timeframe: baseTf,
+      days,
+      delay_ms: delayMs,
+      symbol_results: symbolResults,
+      error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
+      output: DEFAULT_HISTORY,
+    }, args);
+  }
   return results.errors === 0 ? 0 : 1;
 }
 
@@ -1202,18 +1210,22 @@ async function commandEquityDeepBackfill(args) {
   const allErrors = [];
   const symbolResults = [];
 
-  console.log(`[EQUITY-DEEP-BACKFILL] Starting sequential Alpaca ${baseTf} backfill: ${plan.symbols.length} symbols, ${days} days, delay=${delayMs}ms, chunk-delay=${chunkDelayMs}ms`);
-  if (plan.skipped_symbols.length > 0) {
-    console.log(`[EQUITY-DEEP-BACKFILL] Skipping ${plan.skipped_symbols.length} unsupported equity symbols`);
+  if (!global.suppressLogs) {
+    console.log(`[EQUITY-DEEP-BACKFILL] Starting sequential Alpaca ${baseTf} backfill: ${plan.symbols.length} symbols, ${days} days, delay=${delayMs}ms, chunk-delay=${chunkDelayMs}ms`);
+    if (plan.skipped_symbols.length > 0) {
+      console.log(`[EQUITY-DEEP-BACKFILL] Skipping ${plan.skipped_symbols.length} unsupported equity symbols`);
+    }
   }
 
   for (let i = 0; i < plan.symbols.length; i++) {
     const symbol = plan.symbols[i];
     const progress = `[${i + 1}/${plan.symbols.length}]`;
-    if (process.stdout.isTTY) {
-      process.stdout.write(`\r\x1b[K${progress} ${symbol} Alpaca ${baseTf} ...`);
-    } else {
-      console.log(`${progress} Backfilling ${symbol} Alpaca ${baseTf} (${days} days)`);
+    if (!global.suppressLogs) {
+      if (process.stdout.isTTY) {
+        process.stdout.write(`\r\x1b[K${progress} ${symbol} Alpaca ${baseTf} ...`);
+      } else {
+        console.log(`${progress} Backfilling ${symbol} Alpaca ${baseTf} (${days} days)`);
+      }
     }
 
     const start = Date.now();
@@ -1251,22 +1263,26 @@ async function commandEquityDeepBackfill(args) {
       }
       symbolResults.push(entry);
 
-      if (process.stdout.isTTY) {
-        const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
-        process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m Alpaca ${baseTf}: ${baseBars.length} bars (${elapsed}s)\n`);
-      } else {
-        const rollNote = entry.rolled_up ? ` + rollup ${rollupTargets.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
-        console.log(`${progress} ${symbol} Alpaca ${baseTf}: ${baseBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
+      if (!global.suppressLogs) {
+        if (process.stdout.isTTY) {
+          const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
+          process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m Alpaca ${baseTf}: ${baseBars.length} bars (${elapsed}s)\n`);
+        } else {
+          const rollNote = entry.rolled_up ? ` + rollup ${rollupTargets.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
+          console.log(`${progress} ${symbol} Alpaca ${baseTf}: ${baseBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
+        }
       }
     } catch (err) {
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
       allErrors.push({ symbol, timeframe: baseTf, family: 'equities', provider: plan.provider, message: err.message });
       results.errors++;
       symbolResults.push({ symbol, ok: false, base_timeframe: baseTf, bars: 0, elapsed_s: Number(elapsed), error: err.message });
-      if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m Alpaca ${baseTf}: FAILED (${err.message})\n`);
-      } else {
-        console.error(`${progress} ${symbol} FAILED: ${err.message}`);
+      if (!global.suppressLogs) {
+        if (process.stdout.isTTY) {
+          process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m Alpaca ${baseTf}: FAILED (${err.message})\n`);
+        } else {
+          console.error(`${progress} ${symbol} FAILED: ${err.message}`);
+        }
       }
     }
 
@@ -1275,25 +1291,27 @@ async function commandEquityDeepBackfill(args) {
     }
   }
 
-  if (process.stdout.isTTY) process.stdout.write('\n');
+  if (!global.suppressLogs && process.stdout.isTTY) process.stdout.write('\n');
 
-  printPayload({
-    ok: results.errors === 0,
-    provider: plan.provider,
-    symbols: plan.symbols.length,
-    skipped: plan.skipped_symbols.length,
-    skipped_symbols: plan.skipped_symbols,
-    successful: results.ok,
-    errors: results.errors,
-    total_base_bars: symbolResults.reduce((n, r) => n + (r.bars || 0), 0),
-    timeframe: baseTf,
-    days,
-    delay_ms: delayMs,
-    chunk_delay_ms: chunkDelayMs,
-    symbol_results: symbolResults,
-    error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
-    output: DEFAULT_HISTORY,
-  }, args);
+  if (!global.suppressLogs) {
+    printPayload({
+      ok: results.errors === 0,
+      provider: plan.provider,
+      symbols: plan.symbols.length,
+      skipped: plan.skipped_symbols.length,
+      skipped_symbols: plan.skipped_symbols,
+      successful: results.ok,
+      errors: results.errors,
+      total_base_bars: symbolResults.reduce((n, r) => n + (r.bars || 0), 0),
+      timeframe: baseTf,
+      days,
+      delay_ms: delayMs,
+      chunk_delay_ms: chunkDelayMs,
+      symbol_results: symbolResults,
+      error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
+      output: DEFAULT_HISTORY,
+    }, args);
+  }
   return results.errors === 0 ? 0 : 1;
 }
 
