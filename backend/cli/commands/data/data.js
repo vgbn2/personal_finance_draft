@@ -26,6 +26,7 @@ const {
 } = utils;
 
 const DEFAULT_TS_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
+const API_CACHE_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'cache', 'api_responses');
 const EQUITY_DEEP_BACKFILL_PROVIDER = 'alpaca';
 const EQUITY_DEEP_BACKFILL_TIMEFRAME = '5m';
 const EQUITY_5M_BARS_PER_DAY = 78;
@@ -2012,6 +2013,86 @@ async function commandIntradayRollup(args) {
   return results.errors === 0 ? 0 : 1;
 }
 
+/**
+ * clear-api-cache: delete provider API response cache and/or ts bins.
+ *
+ * Flags:
+ *   --dry-run          show what would be deleted without deleting
+ *   --api              clear storage/data/cache/api_responses/ (default: true unless --ts-only)
+ *   --ts               also clear storage/data/ts/ bins
+ *   --ts-only          clear only ts bins (skip api_responses)
+ *   --symbol SYMBOL    with --ts: restrict to bins for that symbol (e.g. BTCUSDT)
+ *   --timeframe TF     with --ts + --symbol: restrict to a single timeframe bin
+ *
+ * Examples:
+ *   sovereign clear-api-cache --dry-run
+ *   sovereign clear-api-cache
+ *   sovereign clear-api-cache --ts --symbol BTCUSDT
+ *   sovereign clear-api-cache --ts-only --symbol AAPL --timeframe 1m
+ */
+function commandClearApiCache(args) {
+  const dryRun = hasFlag(args, '--dry-run');
+  const tsOnly = hasFlag(args, '--ts-only');
+  const includeTs = tsOnly || hasFlag(args, '--ts');
+  const includeApi = !tsOnly;
+  const symbolFilter = (optionValue(args, '--symbol', null) || '').toUpperCase() || null;
+  const tfFilter = optionValue(args, '--timeframe', null) || null;
+
+  const result = { ok: true, dry_run: dryRun, api_cache: null, ts_cache: null };
+
+  // --- API response cache ---
+  if (includeApi) {
+    const apiFiles = [];
+    let apiBytes = 0;
+    try {
+      for (const f of fs.readdirSync(API_CACHE_DIR)) {
+        if (!f.endsWith('.json')) continue;
+        const fp = path.join(API_CACHE_DIR, f);
+        try { apiBytes += fs.statSync(fp).size; } catch (_) {}
+        apiFiles.push(fp);
+      }
+    } catch (_) {}
+    if (!dryRun) {
+      let deleted = 0;
+      for (const fp of apiFiles) { try { fs.unlinkSync(fp); deleted++; } catch (_) {} }
+      result.api_cache = { deleted, freed_mb: +(apiBytes / 1e6).toFixed(1) };
+    } else {
+      result.api_cache = { would_delete: apiFiles.length, size_mb: +(apiBytes / 1e6).toFixed(1) };
+    }
+  }
+
+  // --- ts binary cache ---
+  if (includeTs) {
+    const tsFiles = [];
+    let tsBytes = 0;
+    try {
+      for (const f of fs.readdirSync(DEFAULT_TS_DIR)) {
+        if (!f.endsWith('.bin') && !f.endsWith('.meta.json')) continue;
+        // parse SYMBOL_TF.bin or SYMBOL_TF.meta.json
+        const base = f.replace(/\.meta\.json$/, '').replace(/\.bin$/, '');
+        const lastUnderscore = base.lastIndexOf('_');
+        const sym = lastUnderscore >= 0 ? base.slice(0, lastUnderscore).toUpperCase() : '';
+        const tf = lastUnderscore >= 0 ? base.slice(lastUnderscore + 1) : '';
+        if (symbolFilter && sym !== symbolFilter) continue;
+        if (tfFilter && tf !== tfFilter) continue;
+        const fp = path.join(DEFAULT_TS_DIR, f);
+        try { tsBytes += fs.statSync(fp).size; } catch (_) {}
+        tsFiles.push(fp);
+      }
+    } catch (_) {}
+    if (!dryRun) {
+      let deleted = 0;
+      for (const fp of tsFiles) { try { fs.unlinkSync(fp); deleted++; } catch (_) {} }
+      result.ts_cache = { deleted, freed_mb: +(tsBytes / 1e6).toFixed(1), symbol: symbolFilter || 'all', timeframe: tfFilter || 'all' };
+    } else {
+      result.ts_cache = { would_delete: tsFiles.length, size_mb: +(tsBytes / 1e6).toFixed(1), symbol: symbolFilter || 'all', timeframe: tfFilter || 'all' };
+    }
+  }
+
+  printPayload(result, args);
+  return 0;
+}
+
 module.exports = {
   buildMassBackfillExecutionPlan,
   classifyBackfillError,
@@ -2023,6 +2104,7 @@ module.exports = {
   commandBackfill,
   commandMassBackfill,
   commandCacheClean,
+  commandClearApiCache,
   inspectMassBackfillJob,
   commandValidate,
   commandWatch,

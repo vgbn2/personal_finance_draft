@@ -134,68 +134,65 @@ const COMMAND_MANIFEST = {
     { id: 'settings',   label: 'Settings & Preferences' },
     { id: 'account',    label: 'Account & Auth' },
   ],
-
   commands: {
     op: [
-      { id: 'status', label: 'Status (Phase, cache, quality)', args: [] },
-      { id: 'cockpit', label: 'Cockpit (Terminal dashboard)', args: [] },
-      { id: 'universe', label: 'Universe (Symbol discovery)', args: [] },
-      { id: 'watch', label: 'Watch (Semi-live data sync)', flags: {
-        '--family': { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities', 'macro', 'prediction_market'], label: 'Family', default: 'all' },     
+      { id: 'status',   label: 'Status (live cache health + phase)', args: [] },
+      { id: 'cockpit',  label: 'Cockpit (live terminal dashboard)', args: [] },
+      { id: 'universe', label: 'Universe (symbol discovery)', args: [] },
+      { id: 'watch',    label: 'Watch (continuous live price sync)', flags: {
+        '--family':   { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities', 'macro', 'prediction_market'], label: 'Family', default: 'all' },
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' }
       }},
-      { id: 'check', label: 'Check (Validate live cache)', args: [] },
-      { id: 'ingest', label: 'Ingest (Sync market data)', loading: true, flags: {
+      { id: 'cache-clean', label: 'Cache Clean (quarantine corrupt snapshot records)', flags: {
+        '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
+      }},
+    ],
+    data: [
+      { id: 'integrity',   prefix: ['backend'], label: 'Integrity (depth + freshness per symbol/TF)', args: [] },
+      { id: 'ingest',      label: 'Ingest ', loading: true, flags: {
         '--family': { type: 'select', options: [
           'all', 'crypto', 'fx', 'equities', 'indices', 'commodities',
           'macro', 'macro_alt', 'pmi', 'breadth', 'sentiment',
           'onchain', 'prediction_market', 'weather', 'flight',
           'crypto_tx', 'holdings', 'reserves'
         ], label: 'Family', default: 'all' },
-        '--symbol': { type: 'text', default: '', label: 'Symbol/event filter (optional)' },
-        '--timeframe': { type: 'select', options: ['1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1h' },
-        '--history-days': { type: 'text', default: '', label: 'Historical days (blank = latest only)' }
+        '--symbol':       { type: 'text', default: '', label: 'Symbol filter (optional)' },
+        '--timeframe':    { type: 'select', options: ['1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1h' },
+        '--history-days': { type: 'text', default: '', label: 'History days (blank = latest only)' }
       }},
-      { id: 'cache-clean', label: 'Cache Clean (Quarantine rejected records)', flags: {
-        '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
-      }}
-    ],
-    data: [
-      { id: 'mass-backfill', label: 'Deep Backfill (all symbols x all timeframes)', loading: true, flags: {
-        '--timeframes': { type: 'text', default: '1mo,1w,1d,4h,1h,30m,15m,5m,1m', label: 'Timeframes (comma-separated)' },
-        '--days': { type: 'text', default: '365', label: 'Days to backfill' },
-        '--concurrency': { type: 'text', default: '5', label: 'Parallel jobs' },
-        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
+      { id: 'mass-backfill',   label: 'Deep Backfill', loading: true, flags: {
+        '--timeframes':  { type: 'text', default: '1mo,1w,1d,4h,1h,30m,15m,5m,1m', label: 'Timeframes (comma-separated)' },
+        '--days':        { type: 'text', default: '365', label: 'Days to backfill' },
+        '--concurrency': { type: 'text', default: '5', label: 'Parallel jobs' }
       }},
-      { id: 'intraday-rollup', label: 'Intraday Rollup (derive coarser TFs from deep bins, no network)', loading: true, flags: {
-        '--family': { type: 'select', options: ['all', 'crypto', 'equities'], label: 'Family', default: 'all' },
-        '--symbols': { type: 'text', default: '', label: 'Symbol filter, comma-separated (blank = all)' },
-        '--timeframes': { type: 'text', default: '15m,30m,1h,4h', label: 'Target timeframes to derive' },
-        '--dry-run': { type: 'confirm', label: 'Dry run (preview only)?', default: true }
+      { id: 'intraday-rollup', label: 'Intraday Rollup ', loading: true, flags: {
+        '--family':     { type: 'select', options: ['all', 'crypto', 'equities'], label: 'Family', default: 'all' },
+        '--symbols':    { type: 'text', default: '', label: 'Symbol filter, comma-separated (blank = all)' },
+        '--timeframes': { type: 'text', default: '15m,30m,1h,4h', label: 'Target timeframes to derive' }
       }},
-      { id: 'integrity', prefix: ['backend'], label: 'Integrity Check (data freshness report)', args: [] },
+      { id: 'clear-api-cache', label: 'Clear API Cache', flags: {
+        '--dry-run':   { type: 'confirm', label: 'Preview only (no deletion)?', default: true },
+        '--ts':        { type: 'confirm', label: 'Also delete ts/ candle bins?', default: false },
+        '--symbol':    { type: 'text', default: '', label: 'Symbol filter for ts/ bins (blank = all)' },
+        '--timeframe': { type: 'text', default: '', label: 'Timeframe filter for ts/ bins (blank = all)' }
+      }},
     ],
     backend: [
       { id: 'status', prefix: ['backend'], label: 'Backend Status', args: [] },
       { id: 'stats', prefix: ['backend'], label: 'Backend Stats', args: [] },
-      { id: 'summary', prefix: ['backend', 'data'], label: 'Backend Data Summary', loading: true, flags: {
-        '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
-        '--max-bars': { type: 'text', default: '0', label: 'Max Bars (0 = All)' }
-      }},
-      { id: 'correlation', prefix: ['backend'], label: 'Backend Correlation', loading: true, flags: {
+      { id: 'correlation', prefix: ['backend'], label: 'Pearson Correlation', loading: true, flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--max-bars': { type: 'text', default: '252', label: 'Lookback Period (Bars)' },
         '--method': { type: 'select', options: ['auto', 'pearson-returns', 'fx-returns', 'pearson-levels'], label: 'Correlation Method', default: 'auto' },
         '--drop-non-overlap': { type: 'confirm', label: 'Drop non-overlapping symbols automatically?', default: false }
       }},
-      { id: 'visualize', prefix: ['backend'], label: 'Backend Visualize (Sigma Bands + Live Poll)', flags: {
+      { id: 'visualize', prefix: ['backend'], label: 'Sigma bands', flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--window': { type: 'text', default: '20', label: 'Rolling window (bars)' },
         '--interval': { type: 'text', default: '30', label: 'Poll interval (seconds)' },
         '--no-poll': { type: 'confirm', label: 'One-shot (no live poll)?', default: false },
       }},
       { id: 'universe', prefix: ['backend'], label: 'Backend Universe', args: [] },
-      { id: 'integrity', prefix: ['backend'], label: 'Backend Integrity', args: [] }
     ],
     research: [
       { id: 'features', label: 'Features / Indicators', flags: {
