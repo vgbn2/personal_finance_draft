@@ -21,7 +21,7 @@ const {
   writeTsIndex,
 } = require('../../../../shared/lib/market/validation');
 
-const { isFresh } = require('../../../../shared/lib/market/coverage');
+const { isFresh, readCoverage } = require('../../../../shared/lib/market/coverage');
 
 /**
  * Attempts to aggregate a higher timeframe (1w, 1mo) from the local 1d binary cache.
@@ -92,6 +92,8 @@ const FAMILY_BASE_TF_MAP = { crypto: '1m', equities: '1m', indices: '5m', commod
 
 const {
   SUPPORTED_INTERVALS,
+  parseTimeframeMs,
+  bucketStartFor,
   YAHOO_MAX_DAYS,
   selectYahooBase,
   COINBASE_PRODUCTS,
@@ -396,18 +398,18 @@ async function fetchStooqDailyHistory(symbol) {
 }
 
 function aggregateCandles(candles, interval, symbol, provider, family = "unknown", options = {}) {
-  const intervalMs = SUPPORTED_INTERVALS[interval];
+  const intervalMs = SUPPORTED_INTERVALS[interval] ?? parseTimeframeMs(interval);
   if (!intervalMs) {
     throw new Error(`Unsupported timeframe: ${interval}`);
   }
   const sourceTimeframe = options.sourceTimeframe || options.baseTimeframe || null;
-  const sourceIntervalMs = sourceTimeframe ? SUPPORTED_INTERVALS[sourceTimeframe] : null;
+  const sourceIntervalMs = sourceTimeframe ? (SUPPORTED_INTERVALS[sourceTimeframe] ?? parseTimeframeMs(sourceTimeframe)) : null;
   const derivedFromDaily = sourceIntervalMs && sourceIntervalMs >= SUPPORTED_INTERVALS['1d'] && intervalMs < SUPPORTED_INTERVALS['1d'];
   const source = sourceTimeframe ? `${provider}-rollup-from-${sourceTimeframe}` : `${provider}-rollup`;
 
   const buckets = new Map();
   for (const candle of candles) {
-    const bucketStart = Math.floor(candle.openTime / intervalMs) * intervalMs;
+    const bucketStart = bucketStartFor(candle.openTime, interval);
     const existing = buckets.get(bucketStart);
     if (!existing) {
       buckets.set(bucketStart, {
@@ -1697,15 +1699,21 @@ async function ingestMarketData(options = {}) {
           // ts/bin gate: binary bins are the authoritative store and are more
           // accurate than the snapshot-based check below (snapshot only covers
           // JSON-ingested data, not symbols backfilled via crypto/equity-deep-backfill).
-          // Skip the provider loop entirely for bulk ingest when the bin is fresh.
-          // Single-symbol calls always fall through (user explicitly targeted the symbol).
-          // Bypassed when force=true (deep/incremental backfill always re-fetches).
+          // Skip the provider loop entirely for bulk ingest only when the bin for the
+          // REQUESTED timeframe is BOTH fresh AND already covers the requested history
+          // depth. Gating on the requested TF (not the family base) is what lets an
+          // explicit deep `--timeframe 1d --history-days N` request through even when the
+          // base (5m/1m) bin is fresh. Single-symbol calls always fall through; force
+          // bypasses entirely (skipItem already false).
           if (skipItem && filteredItems.length > 1 && OHLCV_INGEST_FAMILIES.has(family.id)) {
-            const baseTfForFamily = FAMILY_BASE_TF_MAP[family.id] || syncTimeframes[0] || '1d';
+            const gateTf = syncTimeframes[0] || FAMILY_BASE_TF_MAP[family.id] || '1d';
             try {
-              const binGate = isFresh(TS_INDEX_PATH, item, baseTfForFamily, family.id, now);
-              if (binGate.fresh) continue; // bin current — skip provider calls
-              skipItem = false;            // bin stale — fetch regardless of snapshot
+              const binGate = isFresh(TS_INDEX_PATH, item, gateTf, family.id, now);
+              const cov = readCoverage(TS_INDEX_PATH, item, gateTf);
+              const coversDepth = cov && cov.exists && Number.isFinite(cov.firstBarMs)
+                && cov.firstBarMs <= targetStart;
+              if (binGate.fresh && coversDepth) continue; // fresh AND deep enough — skip
+              skipItem = false;            // stale or too shallow — fetch
             } catch (_) {
               skipItem = false;            // on error, fall through to provider
             }
