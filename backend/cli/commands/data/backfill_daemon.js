@@ -27,7 +27,7 @@ const {
 } = require('../../lib/utils.js');
 const {
   FAMILY_BASE_TF, rollupTargetsAboveBase, rollupFromBase, DEFAULT_TS_DIR,
-  commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate,
+  commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIngest,
   buildFiveMinAccumulatePlan, buildEquityDeepBackfillPlan,
 } = require('./data.js');
 const { isFresh } = require('../../../../shared/lib/market/coverage.js');
@@ -64,8 +64,38 @@ function utcDayFloor(ms) { return Math.floor(ms / DAY_MS) * DAY_MS; }
 // Default fetch windows (days). Deep = first-fill cold history; incremental = recent
 // top-up for a stale-but-present bin (kept >5 because the native intraday fetch path
 // requires --days > 5).
-const DEFAULT_DEEP_DAYS = { crypto: 1825, equities: 1825, indices: 59, commodities: 59, fx: 59 };
+// Deep = first-fill cold history. Crypto/equity 1m reach back to listing / the provider
+// floor (Binance to listing; Alpaca ~2016), so their windows are long. Yahoo families
+// have no deep intraday (≤30m capped ~60d), so their deep job only fills the recent 5m
+// window — their historical depth comes from the daily guard below, not this number.
+const DEFAULT_DEEP_DAYS = { crypto: 5650, equities: 7650, indices: 7650, commodities:7650, fx: 7650 };
 const INCREMENTAL_DAYS = 7;
+
+// Per-family DEEP acquisition plan: every timeframe to fetch NATIVELY at its maximum
+// depth from the deepest-capable provider, so one "Deep Backfill" run restores full
+// history at the finest grain each provider offers:
+//   - crypto: Binance 1m spans listing→now → 5m…1mo (incl. daily) all derive from it.
+//   - equities: Alpaca 1m only reaches ~2020, so deep daily is fetched from Yahoo (→1998).
+//   - indices/commodities/fx: no provider 1m; 5m via range-accumulate (~60d), plus native
+//     1h (~730d) and deep daily (Yahoo, or Frankfurter for fx → ~20y).
+// A deep job runs every step PER-SYMBOL (so the bulk-ingest freshness gate can't skip it);
+// rollup then refines the recent overlap and rebuilds 1w/1mo from the deep daily. The
+// merge keeps higher-priority recent bars (Alpaca) and deeper native bars. Supersedes the
+// older deepAlsoNeedsDaily guard. `days:null` ⇒ use the family's DEFAULT_DEEP_DAYS window.
+const DEEP_PLAN = {
+  crypto:      [{ tf: '1m', kind: 'crypto', days: null }],
+  equities:    [{ tf: '1m', kind: 'equity', days: null },
+                { tf: '1d', kind: 'ingest', provider: 'yahoo', days: 7300 }],
+  indices:     [{ tf: '1d', kind: 'ingest', provider: 'yahoo', days: 7300 },
+                { tf: '1h', kind: 'ingest', provider: 'yahoo', days: 730 },
+                { tf: '5m', kind: 'accumulate', days: null }],
+  commodities: [{ tf: '1d', kind: 'ingest', provider: 'yahoo', days: 7300 },
+                { tf: '1h', kind: 'ingest', provider: 'yahoo', days: 730 },
+                { tf: '5m', kind: 'accumulate', days: null }],
+  fx:          [{ tf: '1d', kind: 'ingest', provider: 'frankfurter', days: 7300 },
+                { tf: '1h', kind: 'ingest', provider: 'yahoo', days: 730 },
+                { tf: '5m', kind: 'accumulate', days: null }],
+};
 
 /**
  * buildJobUniverse(config, families) -- one row per (symbol, family) at its base grain.
@@ -174,7 +204,10 @@ async function runBackfillCycle(o) {
   async function processJob(job) {
     summary.scanned += 1;
     const gate = freshness(tsDir, job.symbol, job.baseTf, job.family, now);
-    const action = decideAction(gate);
+    let action = decideAction(gate);
+    // --deep-all: force every live symbol through the full DEEP_PLAN (ignore fresh/stale),
+    // but still respect dead-symbol markers so delisted symbols aren't retried each run.
+    if (o.forceDeep && gate.reason !== 'not_found') action = 'deep';
 
     if (action === 'skip') {
       summary.skipped += 1;
@@ -235,17 +268,50 @@ async function runBackfillCycle(o) {
   return summary;
 }
 
-// Real fetch executor: route to the family's ingest command with the computed window.
+// Run one DEEP_PLAN acquisition step for a symbol (per-symbol → bypasses the bulk gate).
+async function runDeepStep(job, step, deepDays) {
+  const sym = job.symbol;
+  if (step.kind === 'crypto') {
+    return commandCryptoDeepBackfill(['--symbol', sym, '--days', String(deepDays), '--json']);
+  }
+  if (step.kind === 'equity') {
+    return commandEquityDeepBackfill(['--symbol', sym, '--days', String(deepDays), '--json']);
+  }
+  if (step.kind === 'accumulate') {
+    return commandFiveMinAccumulate(['--family', job.family, '--symbol', sym, '--json']);
+  }
+  // kind === 'ingest': native fetch of one TF at its max depth from a pinned provider.
+  return commandIngest(['--family', job.family, '--symbol', sym, '--timeframe', step.tf,
+    '--history-days', String(step.days), '--provider', step.provider, '--force', '--json']);
+}
+
+// Real fetch executor. A DEEP job runs the family's full DEEP_PLAN (every TF at max
+// native depth, per-symbol, provider-pinned); an INCREMENTAL job tops off only the finest
+// grain (rollup then refreshes the recent coarse bars from it).
 function makeRealExecutor() {
-  return async (job, _mode, days) => {
-    const args = ['--symbol', job.symbol, '--days', String(days), '--json'];
+  return async (job, mode, days) => {
+    if (mode === 'deep') {
+      const steps = DEEP_PLAN[job.family] || [{ tf: job.baseTf, kind: 'accumulate', days: null }];
+      let okAny = false;
+      const errs = [];
+      for (const step of steps) {
+        try {
+          const rc = await runDeepStep(job, step, days);
+          if (rc === 0) okAny = true; else errs.push(`${step.tf}:exit ${rc}`);
+        } catch (e) {
+          errs.push(`${step.tf}:${e && e.message ? e.message : String(e)}`);
+        }
+      }
+      return { ok: okAny, error: errs.length ? errs.join('; ') : undefined };
+    }
+    // incremental: finest-grain top-off only.
     let rc;
     if (job.family === 'crypto') {
-      rc = await commandCryptoDeepBackfill(args);
+      rc = await commandCryptoDeepBackfill(['--symbol', job.symbol, '--days', String(days), '--json']);
     } else if (job.family === 'equities') {
-      rc = await commandEquityDeepBackfill(args);
+      rc = await commandEquityDeepBackfill(['--symbol', job.symbol, '--days', String(days), '--json']);
     } else {
-      rc = await commandFiveMinAccumulate(['--family', job.family, ...args]);
+      rc = await commandFiveMinAccumulate(['--family', job.family, '--symbol', job.symbol, '--days', String(days), '--json']);
     }
     return { ok: rc === 0, error: rc === 0 ? undefined : `exit ${rc}` };
   };
@@ -284,6 +350,7 @@ async function commandBackfillDaemon(args) {
     : null;
   const sequential = hasFlag(args, '--sequential'); // escape hatch for debugging
   const concurrency = numericOption(args, '--concurrency', 0); // 0 = use per-lane defaults
+  const deepAll = hasFlag(args, '--deep-all'); // force full DEEP_PLAN for every live symbol
 
   // Suppress verbose sub-command output — daemon owns all progress reporting.
   global.suppressLogs = true;
@@ -315,6 +382,7 @@ async function commandBackfillDaemon(args) {
       tsDir, jobs, execute, rollup, log, cycle,
       parallelLanes: !sequential,
       concurrency: concurrency || undefined,
+      forceDeep: deepAll,
     });
 
     if (once) break;
@@ -334,6 +402,7 @@ module.exports = {
   decideAction,
   makeRealExecutor,
   makeRealRollup,
+  DEEP_PLAN,
   ALL_FAMILIES,
   DEFAULT_DEEP_DAYS,
   INCREMENTAL_DAYS,

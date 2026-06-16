@@ -80,8 +80,10 @@ test('rollupFromBase derives 5m + 15m from a deep 1m bin, lossless (1m bin untou
   }
   writeTsIndex(tsDir, { sources });
 
-  // Targets above a 1m base must include 5m (the user's "derive the rest" guarantee).
-  assert.deepEqual(rollupTargetsAboveBase('1m'), ['5m', '15m', '30m', '1h', '4h']);
+  // Targets above a 1m base are the whole ladder up to monthly (the user's "ingest the
+  // base, derive every timeframe" guarantee).
+  assert.deepEqual(rollupTargetsAboveBase('1m'), ['5m', '15m', '30m', '1h', '4h', '1d', '1w', '1mo']);
+  assert.deepEqual(rollupTargetsAboveBase('5m'), ['15m', '30m', '1h', '4h', '1d', '1w', '1mo']);
 
   const before1m = readTsIndex(tsDir, 'TST', '1m');
   assert.equal(before1m.length, 30);
@@ -156,4 +158,69 @@ test('intraday-rollup fails clearly when no deep 5m bin matches', async () => {
   const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rollup-'));
   const rc = await commandIntradayRollup(['--ts-dir', tsDir, '--symbols', 'NONE', '--json']);
   assert.equal(rc, 1);
+});
+
+test('rollupFromBase derives daily + calendar-correct weekly/monthly from a 1m base (two-stage)', () => {
+  const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rollup-cal-'));
+  // One 1m bar at 12:00Z on each of 40 consecutive days from 2024-01-01 (Mon) — light
+  // fixture that still exercises daily→weekly→monthly routing across a month boundary.
+  const start = Date.parse('2024-01-01T12:00:00.000Z');
+  const sources = [];
+  for (let d = 0; d < 40; d += 1) {
+    const c = 100 + d;
+    sources.push({
+      symbol: 'TST', family: 'crypto', provider: 'binance', timeframe: '1m',
+      timestamp: new Date(start + d * 86400000).toISOString(),
+      open: c, high: c + 1, low: c - 1, close: c, volume: 1,
+    });
+  }
+  writeTsIndex(tsDir, { sources });
+
+  const res = rollupFromBase(tsDir, 'TST', '1m', rollupTargetsAboveBase('1m'));
+  assert.equal(res.ok, true);
+
+  // Stage 1: 40 distinct UTC days -> 40 daily bars.
+  const daily = readTsIndex(tsDir, 'TST', '1d');
+  assert.equal(daily.length, 40, '40 daily bars from 40 days of 1m');
+
+  // Stage 2: weekly bars all start on Monday (calendar, not Thursday/epoch-aligned).
+  const weekly = readTsIndex(tsDir, 'TST', '1w');
+  assert.ok(weekly.length >= 6 && weekly.length <= 7, `~6 weekly bars over 40 days, got ${weekly.length}`);
+  assert.ok(weekly.every((r) => new Date(r.timestamp).getUTCDay() === 1), 'every weekly bar starts on a Monday');
+
+  // Stage 2: monthly bars are calendar months (Jan + Feb), dated to the 1st.
+  const monthly = readTsIndex(tsDir, 'TST', '1mo').sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+  assert.deepEqual(monthly.map((r) => r.timestamp.slice(0, 10)), ['2024-01-01', '2024-02-01']);
+
+  console.log(JSON.stringify({ type: 'intraday_rollup_test', case: 'two_stage_calendar', daily: daily.length, weekly: weekly.length, monthly: monthly.length }));
+});
+
+test('rollupFromBase builds whole weekly bars from the FULL 1d bin even on an incremental (windowed) call', () => {
+  // Stage 2 (weekly/monthly) must read the entire 1d bin, never a day-aligned window, so
+  // an incremental daemon cycle can't leave a partial/truncated weekly bar behind.
+  const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rollup-wk-'));
+  const start = Date.parse('2024-01-01T00:00:00.000Z'); // Monday
+  const sources = [];
+  for (let d = 0; d < 60; d += 1) {
+    const c = 100 + d;
+    sources.push({
+      symbol: 'TST', family: 'crypto', provider: 'binance', timeframe: '1d',
+      timestamp: new Date(start + d * 86400000).toISOString(),
+      open: c, high: c + 1, low: c - 1, close: c, volume: 1,
+    });
+  }
+  writeTsIndex(tsDir, { sources }); // deep native 1d bin, no 1m/intraday
+
+  // Incremental call (day-aligned sinceMs only 5 days back) targeting weekly only.
+  const sinceMs = Date.parse('2024-02-25T00:00:00.000Z');
+  const res = rollupFromBase(tsDir, 'TST', '1m', ['1w'], { sinceMs });
+  assert.equal(res.ok, true);
+
+  const weekly = readTsIndex(tsDir, 'TST', '1w').sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+  // 60 days starting Mon 2024-01-01 spans 9 Mondays (weeks) — full coverage despite the window.
+  assert.ok(weekly.length >= 8, `weekly covers the full 60d span, got ${weekly.length}`);
+  assert.equal(weekly[0].timestamp, '2024-01-01T00:00:00.000Z', 'earliest weekly bar is the first Monday, not truncated to the window');
+  assert.ok(weekly.every((r) => new Date(r.timestamp).getUTCDay() === 1), 'all Mondays');
+
+  console.log(JSON.stringify({ type: 'intraday_rollup_test', case: 'weekly_full_from_daily', weekly: weekly.length, first: weekly[0].timestamp }));
 });

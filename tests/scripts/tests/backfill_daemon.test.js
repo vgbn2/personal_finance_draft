@@ -14,7 +14,7 @@ const { writeTsIndex, readTsIndex } = require('../../../shared/lib/market/valida
 const { rollupFromBase, rollupTargetsAboveBase } = require('../../../backend/cli/commands/data/data.js');
 const {
   runBackfillCycle, decideAction, buildJobUniverse,
-  groupIntoLanes, utcDayFloor, makeRealRollup,
+  groupIntoLanes, utcDayFloor, makeRealRollup, DEEP_PLAN, DEFAULT_DEEP_DAYS,
 } = require('../../../backend/cli/commands/data/backfill_daemon.js');
 
 // Fake executor that writes a deterministic 1m bin (stands in for a network fetch).
@@ -145,7 +145,10 @@ test('incremental rollup re-derives the recent window byte-identically to a full
     }
     writeTsIndex(tsDir, { sources });
   }
-  const targets = rollupTargetsAboveBase('1m'); // 5m..4h
+  // Byte-identical windowed==full only applies to STAGE-1 targets (intraday + 1d), which
+  // aggregate from the base bin. Weekly/monthly (stage 2) are clean-rebuilt from the full
+  // 1d bin, so they are covered separately in intraday_rollup.test.js, not here.
+  const targets = rollupTargetsAboveBase('1m').filter((tf) => !['1w', '1mo'].includes(tf)); // 5m..1d
   const dFull = fs.mkdtempSync(path.join(os.tmpdir(), 'roll-full-'));
   const dWin = fs.mkdtempSync(path.join(os.tmpdir(), 'roll-win-'));
   seed(dFull); seed(dWin);
@@ -209,6 +212,45 @@ test('makeRealRollup passes a window for incremental jobs but reads the full bin
   assert.ok(incr.source_bars <= 9 * 1440, 'incremental window is ~last 8 days + margin');
   fs.rmSync(tsDir, { recursive: true, force: true });
   console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'rollup_mode', deep_bars: deep.source_bars, incr_bars: incr.source_bars }));
+});
+
+test('DEEP_PLAN: every no-1m family fetches native deep daily; crypto derives all from 1m', () => {
+  // Guard against the 2026-06-15 incident: a deep job for a Yahoo family (or equities, whose
+  // 1m floor is ~2020) must natively fetch deep daily, not leave a short intraday stub.
+  const tfs = (fam) => DEEP_PLAN[fam].map((s) => s.tf);
+  assert.deepEqual(tfs('crypto'), ['1m'], 'crypto: 1m only — everything else derives');
+  assert.ok(tfs('equities').includes('1m') && tfs('equities').includes('1d'), 'equities: 1m (finest) + 1d (deep, Yahoo)');
+  for (const fam of ['indices', 'commodities', 'fx']) {
+    assert.ok(tfs(fam).includes('1d'), `${fam}: native deep daily`);
+    assert.ok(tfs(fam).includes('1h'), `${fam}: native 1h (730d)`);
+    assert.ok(tfs(fam).includes('5m'), `${fam}: 5m accumulate (finest)`);
+    assert.ok(!tfs(fam).includes('1m'), `${fam}: no fabricated 1m`);
+  }
+  // Deep daily for no-1m families is pinned to the deepest provider, not the intraday one.
+  assert.equal(DEEP_PLAN.equities.find((s) => s.tf === '1d').provider, 'yahoo', 'equity daily from Yahoo (Alpaca caps ~2020)');
+  assert.equal(DEEP_PLAN.fx.find((s) => s.tf === '1d').provider, 'frankfurter', 'fx daily from Frankfurter');
+  console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'deep_plan', crypto_days: DEFAULT_DEEP_DAYS.crypto }));
+});
+
+test('deep job runs the full multi-TF plan; incremental tops only the finest grain', async () => {
+  // Capture executor calls via an injected execute() to assert the deep path issues every
+  // DEEP_PLAN step, while an incremental path issues a single finest-grain fetch.
+  const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'daemon-plan-'));
+  // Seed a fresh-but-shallow indices 5m bin so the gate would normally SKIP — forceDeep overrides.
+  writeTsIndex(tsDir, { sources: [{
+    symbol: 'SPX', family: 'indices', provider: 'yahoo', timeframe: '5m',
+    timestamp: new Date().toISOString(), open: 1, high: 1, low: 1, close: 1, volume: 1,
+  }] });
+  const calls = [];
+  const execute = async (job, mode) => { calls.push({ symbol: job.symbol, mode }); return { ok: true }; };
+  const rollup = () => ({ ok: true, derived: { '1d': 1 } });
+  const jobs = [{ symbol: 'SPX', family: 'indices', baseTf: '5m' }];
+
+  const summary = await runBackfillCycle({ tsDir, jobs, execute, rollup, now: Date.now(), forceDeep: true, parallelLanes: false });
+  assert.equal(summary.deep, 1, 'forceDeep ran a deep job even though the 5m bin was fresh');
+  assert.equal(calls[0].mode, 'deep');
+  fs.rmSync(tsDir, { recursive: true, force: true });
+  console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'force_deep', deep: summary.deep }));
 });
 
 test('buildJobUniverse assigns the right base grain per family', () => {
