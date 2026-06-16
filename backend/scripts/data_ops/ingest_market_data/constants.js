@@ -16,6 +16,60 @@ const SUPPORTED_INTERVALS = {
   '1mo': 30 * 24 * 60 * 60 * 1000,
 };
 
+// ── Timeframe parsing & bucketing ───────────────────────────────────────────
+// Parse a timeframe string like '1m','5m','2h','3d','1w','3mo' into a descriptor.
+// Supports arbitrary multiples so callers can roll up custom timeframes. Returns
+// null for un-parseable input. `ms` is the fixed-millisecond span (for 'mo' it is
+// an APPROXIMATE 30d*n span used only for ordering/freshness — actual monthly
+// bucketing is calendar-based, see bucketStartFor). For 'w'/'mo' a `calendar`
+// flag marks that bucketStartFor must use calendar logic, not fixed-ms.
+const UNIT_MS = { m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000, w: 7 * 24 * 60 * 60 * 1000 };
+function parseTimeframe(tf) {
+  const match = /^(\d+)(mo|m|h|d|w)$/.exec(String(tf == null ? '' : tf).trim());
+  if (!match) return null;
+  const n = parseInt(match[1], 10);
+  const unit = match[2];
+  if (!Number.isInteger(n) || n <= 0) return null;
+  if (unit === 'mo') return { unit, n, ms: n * 30 * UNIT_MS.d, calendar: 'mo' };
+  if (unit === 'w') return { unit, n, ms: n * UNIT_MS.w, calendar: 'w' };
+  return { unit, n, ms: n * UNIT_MS[unit] };
+}
+
+// Millisecond span of a timeframe (for ordering/freshness/aggregation arithmetic).
+// Fast-paths the canonical map, falls back to the parser for custom timeframes.
+function parseTimeframeMs(tf) {
+  if (Object.prototype.hasOwnProperty.call(SUPPORTED_INTERVALS, tf)) return SUPPORTED_INTERVALS[tf];
+  const parsed = parseTimeframe(tf);
+  return parsed ? parsed.ms : null;
+}
+
+// Start (inclusive, UTC ms) of the bucket that `openTimeMs` falls into for `tf`.
+// Calendar-correct for weeks (Monday 00:00 UTC) and months (1st 00:00 UTC), so
+// '1w'/'1mo'/'2w'/'3mo' line up with real calendar periods instead of fixed
+// 7-day/30-day windows anchored to the Unix epoch (which is a Thursday). All
+// other timeframes use a deterministic fixed-ms floor from the epoch.
+const MONDAY_ANCHOR_MS = 4 * UNIT_MS.d; // 1970-01-05T00:00:00Z, the first Monday after the epoch
+function bucketStartFor(openTimeMs, tf) {
+  const parsed = parseTimeframe(tf);
+  if (!parsed) {
+    const ms = SUPPORTED_INTERVALS[tf];
+    if (!ms) throw new Error(`Unsupported timeframe: ${tf}`);
+    return Math.floor(openTimeMs / ms) * ms;
+  }
+  if (parsed.calendar === 'w') {
+    const weeksSinceAnchor = Math.floor((openTimeMs - MONDAY_ANCHOR_MS) / UNIT_MS.w);
+    const blockStartWeek = Math.floor(weeksSinceAnchor / parsed.n) * parsed.n;
+    return MONDAY_ANCHOR_MS + blockStartWeek * UNIT_MS.w;
+  }
+  if (parsed.calendar === 'mo') {
+    const d = new Date(openTimeMs);
+    const absMonth = d.getUTCFullYear() * 12 + d.getUTCMonth();
+    const blockStartAbs = Math.floor(absMonth / parsed.n) * parsed.n;
+    return Date.UTC(Math.floor(blockStartAbs / 12), blockStartAbs % 12, 1, 0, 0, 0, 0);
+  }
+  return Math.floor(openTimeMs / parsed.ms) * parsed.ms;
+}
+
 // Yahoo's max lookback per interval
 const YAHOO_MAX_DAYS = {
   '5m': 60, '15m': 60, '30m': 60,
@@ -185,6 +239,9 @@ const POLYMARKET_EVENT_KEYWORDS = {
 
 module.exports = {
   SUPPORTED_INTERVALS,
+  parseTimeframe,
+  parseTimeframeMs,
+  bucketStartFor,
   YAHOO_MAX_DAYS,
   selectYahooBase,
   COINBASE_PRODUCTS,
