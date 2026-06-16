@@ -161,6 +161,7 @@ const COMMAND_MANIFEST = {
       }},
       { id: 'backfill-daemon', label: 'Deep Backfill', loading: true, flags: {
         '--once':          { type: 'confirm', label: 'Run once (no daemon loop)?', default: true },
+        '--deep-all':      { type: 'confirm', label: 'Full rebuild? (force deep on every symbol, ignore freshness)', default: false },
         '--families':      { type: 'text', default: '', label: 'Families (comma-separated, blank = all)' },
         '--concurrency':   { type: 'text', default: '5', label: 'Symbols in parallel per provider' },
         '--interval-secs': { type: 'text', default: '1800', label: 'Loop interval seconds (daemon mode only)' }
