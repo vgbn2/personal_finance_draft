@@ -7,6 +7,40 @@ last_audit_date: 2026-06-15
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Implementation Note - 2026-06-15 session 37 - unify rollup to ALL timeframes + custom-TF support (fixes crypto 1w:1)
+- **Symptom:** `backend integrity` showed `1w:1` for every crypto symbol (BTCUSDT had `1d:3223`
+  but a single weekly bar) and deep-backfill "made no difference." Root cause: the rollup chain
+  was hard-capped at `4h` (`INTRADAY_TF_ORDER`/`rollupTargetsAboveBase`), so deep-backfill / daemon
+  / `intraday-rollup` never derived `1d`/`1w`/`1mo`. Weekly only ever came from a manual
+  `ingest --timeframe 1w` nobody ran.
+- **Change (mass-implement, 4 batches):** ingest the base grain, derive *everything* above it.
+  - `constants.js`: `parseTimeframe`/`parseTimeframeMs`/`bucketStartFor` — arbitrary `<n><unit>`
+    timeframes (`2h`,`6h`,`8h`,`12h`,`3d`…) + **calendar-correct** weekly (Monday 00:00 UTC) and
+    monthly (1st 00:00 UTC) bucketing (was fixed 7d-from-Thursday / 30d).
+  - `ingest_market_data/index.js` `aggregateCandles`: buckets via `bucketStartFor`, resolves
+    interval via `SUPPORTED_INTERVALS[tf] ?? parseTimeframeMs(tf)` (custom TFs work). The existing
+    `deriveHighTfFromLocalDaily` inherits the calendar fix for free.
+  - `data.js`: `FULL_TF_ORDER = [1m…1mo]`; `rollupTargetsAboveBase` returns the whole ladder above
+    the base; **two-stage `rollupFromBase`** — stage 1 (interval ≤ 1d) from the intraday base bin
+    (windowed via `sinceMs`); stage 2 (> 1d: 1w/1mo/N-day) clean-rebuilt from the **full 1d bin**
+    (small, no OOM, immune to the daemon's day-aligned window → no partial weekly/monthly bars).
+    Custom TFs routed by parsed interval (8h→from base, 3d→from daily) with no special-casing.
+  - `intraday-rollup` accepts ANY coarser `--timeframes` (validated via parser); default = full
+    ladder above 5m. Daemon needed no logic change (delegates to `rollupFromBase`).
+- **Result (live, local, no network — `intraday-rollup --family <all>`):** crypto `1w` 1→462
+  (BTCUSDT), `1mo` 107; weekly lands Monday, monthly on the 1st. Deep daily preserved everywhere
+  via merge (SPY/SPX `1d` still 1998→2026; XAUUSD 2003→2026), each now with proper `1w`/`1mo`.
+  Yahoo families keep authoritative native daily (SPX `1d:7000` unchanged); `1m`/`5m` untouched.
+- **Cleanup:** quarantined the stray single-bar `XAUUSD_1m` stub (the phantom `1m:1`) to
+  `storage/data/_quarantine_grain/` (reversible).
+- **Decisions (user):** 5m floor for Yahoo-only families (no fabricated 1m — provider-bound:
+  crypto=Binance, US-equities/ETFs=Alpaca; indices/raw-commodities/FX/VN-stocks=Yahoo→5m); make
+  weekly/monthly calendar-correct; add custom-TF rollup.
+- Suite **490 tests / 488 pass / 0 fail / 2 skipped** (the 2 skips are session-36 git-cross-check
+  tests; +2 new rollup tests). All changes UNCOMMITTED on `feat/session-guard-intraday-rollup`
+  (commit decision = user). Data (`storage/data/ts`) is gitignored — the rebuilt 1w/1mo live only
+  in the working tree.
+
 ## Fix Note - 2026-06-15 session 36 - backfill-daemon OOM fixed at the root (streaming ts-index merge + windowed rollup + 1m-lane cap)
 - **Symptom:** `backfill-daemon --once --concurrency 5` crashed with `FATAL ERROR: ... JavaScript heap
   out of memory` in the crypto lane (~4GB). Not corruption — integrity confirmed all bins intact.
