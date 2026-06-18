@@ -771,6 +771,49 @@ async function commandOptimize(args) {
     return 1;
   }
 
+function renderOptimize(payload) {
+  const line = '-'.repeat(72);
+  const lines = [`\n=== OPTIMIZATION RESULTS ===`];
+
+  lines.push(`Configurations Tested: ${payload.tested}`);
+  lines.push(`Output: ${payload.output}`);
+  
+  const toPct = (val) => val != null ? (val * 100).toFixed(2) + '%' : 'N/A';
+  const toNum = (val) => val != null ? val.toFixed(3) : 'N/A';
+
+  if (!payload.winner || payload.winner === 'none') {
+    lines.push(`\n[WINNER] None found.`);
+    lines.push(`\n${line}`);
+    return lines.join('\n');
+  }
+
+  lines.push(`\n[OPTIMAL CONFIGURATION]`);
+  for (const [key, val] of Object.entries(payload.winner)) {
+    if (key !== 'enabled_indicators') {
+      lines.push(`  ${key}: ${val}`);
+    }
+  }
+
+  lines.push(`\n[TRAINING METRICS (In-Sample)]`);
+  lines.push(`  Net Return:     ${toPct(payload.winner_net_return)}`);
+  lines.push(`  Max Drawdown:   ${toPct(payload.winner_max_drawdown)}`);
+  lines.push(`  Sharpe Ratio:   ${toNum(payload.winner_sharpe)}`);
+  lines.push(`  Sortino Ratio:  ${toNum(payload.winner_sortino)}`);
+  lines.push(`  Expected Value: ${toNum(payload.winner_ev)}`);
+  lines.push(`  Win Rate:       ${toPct(payload.winner_win_rate)}`);
+  lines.push(`  Tail VaR (95%): ${toPct(payload.winner_tail_var_95)}`);
+  lines.push(`  Loss Prob (MC): ${toPct(payload.winner_mc_loss_prob)}`);
+
+  lines.push(`\n[TESTING METRICS (Out-Of-Sample)]`);
+  lines.push(`  Trades:         ${payload.oos_trades}`);
+  lines.push(`  Net Return:     ${toPct(payload.oos_net_return)}`);
+  lines.push(`  Expected Value: ${toNum(payload.oos_ev)}`);
+  lines.push(`  Overfit Warn:   ${payload.oos_overfit_warning ? 'YES (Severely Degraded)' : 'No'}`);
+
+  lines.push(`\n${line}`);
+  return lines.join('\n');
+}
+
   const report = {
     generated_at: new Date().toISOString(),
     source_mode: snapshot.mode,
@@ -786,7 +829,8 @@ async function commandOptimize(args) {
     top: runs.slice(0, 10),
   };
   writeJson(output, report);
-  printPayload({
+  
+  const payload = {
     tested: report.tested,
     winner: report.winner ? report.winner.periods : 'none',
     indicator_periods: report.indicator_periods,
@@ -803,7 +847,13 @@ async function commandOptimize(args) {
     oos_ev: report.winner ? report.winner.oos_expected_value : 0,
     oos_overfit_warning: report.winner ? report.winner.overfit_warning : false,
     output,
-  }, args);
+  };
+  
+  if (hasFlag(args, '--json')) {
+    printPayload(payload, args);
+  } else {
+    console.log(renderOptimize(payload));
+  }
   return 0;
 }
 

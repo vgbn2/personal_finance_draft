@@ -147,7 +147,9 @@ const COMMAND_MANIFEST = {
       }},
     ],
     data: [
-      { id: 'integrity',   prefix: ['backend'], label: 'Integrity', args: [] },
+      { id: 'integrity',   prefix: ['backend'], label: 'Integrity', args: [], flags: {
+        '--audit-vintages': { type: 'confirm', label: 'Only show vintage anomalies?', default: false }
+      }},
       { id: 'ingest',      label: 'Ingest ', loading: true, flags: {
         '--family': { type: 'select', options: [
           'all', 'crypto', 'fx', 'equities', 'indices', 'commodities',

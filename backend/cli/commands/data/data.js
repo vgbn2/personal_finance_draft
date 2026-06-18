@@ -670,7 +670,8 @@ function commandValidate(args) {
   const snapshot = readSnapshot(input);
   const { report } = validateSnapshot(snapshot);
   writeJson(output, report);
-  printPayload({
+  
+  const payload = {
     ok: report.ok,
     total_records: report.total_records,
     usable_records: report.usable_records,
@@ -681,7 +682,35 @@ function commandValidate(args) {
     freshness_issues: report.freshness.issues,
     provider_errors: report.provider_errors.length,
     output,
-  }, args);
+  };
+
+  if (hasFlag(args, '--json')) {
+    printPayload(payload, args);
+  } else {
+    console.log(`\n=== DATA QUALITY CHECK ===`);
+    console.log(`Status:  ${report.ok ? 'PASS' : 'FAIL'}`);
+    console.log(`Records: ${report.usable_records} usable | ${report.rejected_records} rejected | ${report.total_records} total`);
+    console.log(`Issues:  ${report.counts.error} errors | ${report.counts.warning} warnings`);
+    if (report.freshness.stale_records > 0) {
+      console.log(`Stale:   ${report.freshness.stale_records} records are stale`);
+    }
+    
+    if (report.issues && report.issues.length > 0) {
+      console.log(`\nTop Issues (first 10):`);
+      const topIssues = report.issues.slice(0, 10);
+      topIssues.forEach(i => {
+         const parts = (i.key || '').split(':');
+         const sym = parts[2] || '?';
+         const tf = parts[3] || '?';
+         const sev = i.severity === 'error' ? 'FAIL' : 'WARN';
+         console.log(`  [${sev}] ${sym.padEnd(8)} | ${tf.padEnd(3)} | ${i.code.padEnd(16)} | ${i.message}`);
+      });
+      if (report.issues.length > 10) {
+         console.log(`  ... and ${report.issues.length - 10} more issues.`);
+      }
+    }
+    console.log(`\nDetailed JSON report written to:\n  ${output}\n`);
+  }
   return !report.ok ? 1 : 0;
 }
 

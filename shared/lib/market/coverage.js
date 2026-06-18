@@ -114,7 +114,17 @@ function readCoverage(tsDir, symbol, timeframe, now = Date.now()) {
 
     const lastBarMs = tsBuf.readDoubleLE(0);
     const ageMs = Number.isFinite(lastBarMs) ? now - lastBarMs : null;
-    return { exists: true, count, lastBarMs, firstBarMs, ageMs, notFoundCheckedMs: null };
+    
+    // Parse the sidecar meta file for origin details
+    let provider = 'unknown';
+    let derivedFrom = null;
+    try {
+      const m = JSON.parse(fs.readFileSync(meta, 'utf8'));
+      if (m.provider) provider = m.provider;
+      if (m.derived_from) derivedFrom = m.derived_from;
+    } catch (_) { /* ignore */ }
+
+    return { exists: true, count, lastBarMs, firstBarMs, ageMs, notFoundCheckedMs: null, provider, derivedFrom };
   } catch (_) {
     return empty;
   } finally {
