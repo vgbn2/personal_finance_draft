@@ -1,5 +1,5 @@
 const BLOCKED_ROUTES = [
-  '/api/auth/',
+  '/api/auth',
   '/api/supabase/config',
   '/api/kill-switch',
   '/api/config',
