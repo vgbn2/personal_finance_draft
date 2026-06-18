@@ -5,9 +5,9 @@ import * as path from 'node:path';
 import { spawnSync } from 'node:child_process';
 // @ts-ignore
 import Alpaca from '@alpacahq/alpaca-trade-api';
-import { createClobClient, resolveOwnerAddress, polymarketGet } from './clob_factory.js';
-import { runCycle, runBotLoop, runForceSell, runBotHealth } from './cycle.js';
-import { loadBotState, saveBotState } from './bot_state.js';
+import { createClobClient, resolveOwnerAddress, polymarketGet } from './clob_factory';
+import { runCycle, runBotLoop, runForceSell, runBotHealth } from './cycle';
+import { loadBotState, saveBotState } from './bot_state';
 // @ts-ignore
 const { buildAggregatedPortfolioSnapshot } = require('./polymarket_portfolio.js');
 // @ts-ignore

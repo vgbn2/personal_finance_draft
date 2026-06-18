@@ -72,9 +72,14 @@ function bucketStartFor(openTimeMs, tf) {
 
 // Yahoo's max lookback per interval
 const YAHOO_MAX_DAYS = {
-  '5m': 60, '15m': 60, '30m': 60,
-  '1h': 730, '4h': 730,
-  '1d': Infinity, '1w': Infinity, '1mo': Infinity,
+  '5m': 60,
+  '15m': 60, 
+  '30m': 60,
+  '1h': 730, 
+  '4h': 730,
+  '1d': Infinity, 
+  '1w': Infinity, 
+  '1mo': Infinity,
 };
 
 // Choose the finest Yahoo base interval that fits the requested days.
@@ -99,37 +104,6 @@ function selectYahooBase(timeframes, historyDays) {
   const base = finest === '4h' ? '1h' : finest;
   return { base, effectiveDays };
 }
-
-const COINBASE_PRODUCTS = {
-  BTCUSDT: 'BTC-USD',
-  ETHUSDT: 'ETH-USD',
-  BNBUSDT: 'BNB-USD',
-  SOLUSDT: 'SOL-USD',
-  XRPUSDT: 'XRP-USD',
-  DOGEUSDT: 'DOGE-USD',
-  SUIUSDT: 'SUI-USD',
-  ADAUSDT: 'ADA-USD',
-  LINKUSDT: 'LINK-USD',
-  PEPEUSDT: 'PEPE-USD',
-  WIFUSDT: 'WIF-USD',
-  SHIBUSDT: 'SHIB-USD',
-  FETUSDT: 'FET-USD',
-  POLUSDT: 'POL-USD',
-  AVAXUSDT: 'AVAX-USD',
-  NEARUSDT: 'NEAR-USD',
-  INJUSDT: 'INJ-USD',
-  RNDRUSDT: 'RNDR-USD',
-};
-
-const COINBASE_GRANULARITY = {
-  '1m': 60,
-  '5m': 300,
-  '15m': 900,
-  '30m': 1800,
-  '1h': 3600,
-  '4h': 14400,
-  '1d': 86400,
-};
 
 const YAHOO_INDEX_SYMBOLS = {
   SPX:  '^GSPC',
@@ -186,6 +160,37 @@ const YAHOO_COMMODITY_REVERSE = {
   'ZC=F': 'CORN',
   'ZS=F': 'SOYBN',
 };
+const COINBASE_PRODUCTS = {
+  BTCUSDT: 'BTC-USD',
+  ETHUSDT: 'ETH-USD',
+  BNBUSDT: 'BNB-USD',
+  SOLUSDT: 'SOL-USD',
+  XRPUSDT: 'XRP-USD',
+  DOGEUSDT: 'DOGE-USD',
+  SUIUSDT: 'SUI-USD',
+  ADAUSDT: 'ADA-USD',
+  LINKUSDT: 'LINK-USD',
+  PEPEUSDT: 'PEPE-USD',
+  WIFUSDT: 'WIF-USD',
+  SHIBUSDT: 'SHIB-USD',
+  FETUSDT: 'FET-USD',
+  POLUSDT: 'POL-USD',
+  AVAXUSDT: 'AVAX-USD',
+  NEARUSDT: 'NEAR-USD',
+  INJUSDT: 'INJ-USD',
+  RNDRUSDT: 'RNDR-USD',
+};
+
+const COINBASE_GRANULARITY = {
+  '1m': 60,
+  '5m': 300,
+  '15m': 900,
+  '30m': 1800,
+  '1h': 3600,
+  '4h': 14400,
+  '1d': 86400,
+};
+
 
 const STOOQ_EQUITY_SUFFIX = '.us';
 const STOOQ_INDEX_SYMBOLS = {
@@ -206,14 +211,14 @@ const KALSHI_API_BASE = 'https://external-api.kalshi.com/trade-api/v2';
 const POLYMARKET_GAMMA_BASE = 'https://gamma-api.polymarket.com';
 const POLYMARKET_CLOB_BASE = 'https://clob.polymarket.com';
 const OPEN_SKY_TOKEN_URL = 'https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token';
-const WEATHER_LOCATION_COORDS = {
+const WEATHER_LOCATION_COORDS = {//needs refinement dev-review
   us_gulf: { latitude: 29.7604, longitude: -95.3698 },
   us_midwest: { latitude: 41.8781, longitude: -87.6298 },
   europe_central: { latitude: 51.9244, longitude: 4.4777 },
   us_west: { latitude: 34.0522, longitude: -118.2437 },
 };
 
-const OPEN_SKY_REGIONS = {
+const OPEN_SKY_REGIONS = {//needs refinement dev-review
   us_gulf: { lamin: 24.0, lomin: -98.0, lamax: 31.5, lomax: -80.0 },
   us_midwest: { lamin: 35.0, lomin: -104.0, lamax: 49.0, lomax: -82.0 },
   europe_central: { lamin: 45.0, lomin: 5.0, lamax: 55.0, lomax: 20.0 },
@@ -223,14 +228,14 @@ function openSkyRegions() {
   return { ...OPEN_SKY_REGIONS };
 }
 
-const KALSHI_EVENT_KEYWORDS = {
+const KALSHI_EVENT_KEYWORDS = {//needs refinement dev-review
   fed_rate_cut_prob: ['fed', 'rate', 'cut'],
   us_recession_prob: ['recession'],
   inflation_above_target: ['inflation', 'cpi'],
   risk_off_spike: ['vix', 'volatility', 'recession', 'crash'],
 };
 
-const POLYMARKET_EVENT_KEYWORDS = {
+const POLYMARKET_EVENT_KEYWORDS = {//needs refinement dev-review
   fed_rate_cut_prob: ['fed', 'rate', 'cut'],
   us_recession_prob: ['recession'],
   inflation_above_target: ['inflation', 'cpi'],
