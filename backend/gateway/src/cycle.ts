@@ -8,9 +8,9 @@ import {
   type BotPosition,
   type BotState,
   type CycleResult,
-} from './bot_state.js';
-import { fetchTradingInfo } from './market.js';
-import { createClobClient } from './clob_factory.js';
+} from './bot_state';
+import { fetchTradingInfo } from './market';
+import { createClobClient } from './clob_factory';
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');

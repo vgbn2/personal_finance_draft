@@ -4,6 +4,15 @@ const fs = require('node:fs');
 const A = require('../../../shared/lib/ui/ansi');
 
 const {
+  runInteractiveMenu,
+  handleIntersection,
+  promptSelect,
+  promptText,
+  promptConfirm,
+  isRichTerminal
+} = require('../tui');
+const { resolveSymbols } = require('../../../shared/lib/market/symbol_resolver');
+const {
   REPO_ROOT,
   BACKEND_CANDIDATES,
   CLI_CANDIDATES,
@@ -357,14 +366,6 @@ function numericOption(args, name, fallback) {
   return Number.isFinite(value) ? value : fallback;
 }
 
-const {
-  runInteractiveMenu,
-  handleIntersection,
-  promptSelect,
-  promptText,
-  promptConfirm,
-  isRichTerminal
-} = require('../tui');
 
 function get_Current_Universe_Symbols() {
   try {
@@ -479,7 +480,6 @@ async function get_Full_Universe_Symbols() {
  * Attempts to resolve short symbols (BTC) to canonical ones (BTCUSDT)
  * based on the active universe.
  */
-const { resolveSymbols } = require('../../../shared/lib/market/symbol_resolver');
 
 function buildStatusLine(authEmail) {
   const backendOk = BACKEND_CANDIDATES.some(c => fs.existsSync(c));
