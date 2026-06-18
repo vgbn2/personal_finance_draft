@@ -419,13 +419,47 @@ function cockpitInspectPayload(name) {
   return lookup[name] || null;
 }
 
+function renderStatus(payload) {
+  const line = '-'.repeat(72);
+  const lines = [`\n=== SYSTEM STATUS ===`];
+  lines.push(`Phase:       ${payload.phase || 'Unknown'}`);
+  lines.push(`Backend:     ${payload.backend_ok ? 'OK' : 'ERROR'} (${payload.backend || 'unknown'})`);
+  lines.push(`Cache Mode:  ${payload.cache_mode || 'unknown'}`);
+  if (payload.fetched_at) lines.push(`Fetched At:  ${payload.fetched_at}`);
+  
+  lines.push(`\n[DATA QUALITY]`);
+  lines.push(`  State:            ${payload.quality || 'unknown'}`);
+  lines.push(`  Total Records:    ${payload.records || 0}`);
+  lines.push(`  Usable Records:   ${payload.usable_records || 0}`);
+  lines.push(`  Rejected Records: ${payload.rejected_records || 0}`);
+  lines.push(`  Stale Records:    ${payload.stale_records || 0}`);
+  lines.push(`  Provider Errors:  ${payload.provider_errors || 0}`);
+  
+  if (payload.recovery) {
+    lines.push(`\n[RECOVERY]`);
+    lines.push(`  ${payload.recovery}`);
+  }
+
+  if (payload.next) {
+    lines.push(`\nNext Step: ${payload.next}`);
+  }
+  lines.push(`${line}\n`);
+  return lines.join('\n');
+}
+
 function commandStatus(args) {
   const loaded = loadStatusSnapshot();
   const snapshot = loaded.snapshot;
   const report = loaded.report;
   const backend = runBackendStatus(args);
   writeJson(DEFAULT_QUALITY_REPORT, report);
-  printPayload(buildStatusPayload(snapshot, report, backend), args);
+  
+  const payload = buildStatusPayload(snapshot, report, backend);
+  if (hasFlag(args, '--json')) {
+    printPayload(payload, args);
+  } else {
+    console.log(renderStatus(payload));
+  }
   return 0;
 }
 
