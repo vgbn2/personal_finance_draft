@@ -123,6 +123,8 @@ async function runBackendIntegrity(args = []) {
           to: new Date(lastTs).toISOString().slice(0, 10),
           stale: effectiveAge > staleThresh,
           age_h: Math.round(ageMs / 3600000),
+          provider: cov.provider,
+          derived_from: cov.derivedFrom
         };
         // Cheap grain-corruption tripwire (head/tail data already in cov): a coarse-data leak
         // into an intraday bin shows as a multi-year span with ~1 bar/day. Advisory only.
@@ -156,6 +158,40 @@ async function runBackendIntegrity(args = []) {
       allSymbols.push(symInfo);
     }
     familyReport[family] = fReport;
+  }
+
+  // Audit Vintages mode
+  if (hasFlag(args, '--audit-vintages')) {
+    console.log(`\n=== VINTAGE ALIGNMENT AUDIT ===\n`);
+    let totalAnomalies = 0;
+    
+    for (const [family, r] of Object.entries(familyReport)) {
+      let familyAnomalies = [];
+      r.cached.forEach(s => {
+        let earliest = '9999-99-99';
+        let latestFrom = '0000-00-00';
+        Object.values(s.timeframes).forEach(meta => {
+          if (meta.from < earliest) earliest = meta.from;
+          if (meta.from > latestFrom) latestFrom = meta.from;
+        });
+        
+        const yearDiff = parseInt(latestFrom.substring(0,4)) - parseInt(earliest.substring(0,4));
+        if (yearDiff >= 1) {
+          familyAnomalies.push({ symbol: s.symbol, earliest, latestFrom, yearDiff });
+          totalAnomalies++;
+        }
+      });
+      
+      if (familyAnomalies.length > 0) {
+        console.log(`[ ${family.toUpperCase()} ] - ${familyAnomalies.length} symbols with mixed vintages`);
+        familyAnomalies.sort((a,b) => b.yearDiff - a.yearDiff).forEach(a => {
+          console.log(`  ${a.symbol.padEnd(10)} | Delta: ${a.yearDiff} years | Deepest: ${a.earliest} | Shallowest: ${a.latestFrom}`);
+        });
+        console.log('');
+      }
+    }
+    console.log(`Audit complete. Found ${totalAnomalies} mixed-vintage symbols.\n`);
+    return { ok: true, type: 'vintage_audit' };
   }
 
   // Render to console (non-JSON mode)
@@ -206,13 +242,16 @@ async function runBackendIntegrity(args = []) {
         if (!primary) return;
         const staleTag = primary.stale ? ` [stale ${primary.age_h}h]` : '';
 
-        // Build timeframe:count strings in canonical order (smallest -> largest)
-        const tfDetails = Object.entries(s.timeframes)
+        console.log(`  OK ${s.symbol.padEnd(12)} ${primary.from} -> ${primary.to}${staleTag}`);
+        Object.entries(s.timeframes)
           .sort(([a], [b]) => TF_CANONICAL_ORDER.indexOf(a) - TF_CANONICAL_ORDER.indexOf(b))
-          .map(([tf, meta]) => `${tf}:${meta.bars}`)
-          .join(' ');
-
-        console.log(`  OK ${s.symbol.padEnd(12)} ${primary.from} -> ${primary.to}  [${tfDetails}]${staleTag}`);
+          .forEach(([tf, meta]) => {
+            const range = (meta.from && meta.to) ? `[ ${meta.from} -> ${meta.to} ]` : '';
+            const bars = meta.bars.toString().padStart(8);
+            const provStr = meta.provider || 'unknown';
+            const rollupStr = meta.derived_from ? `true (from ${meta.derived_from})` : 'false';
+            console.log(`     └─ ${tf.padStart(3)}: ${bars} bars  ${range}  [ Source: ${provStr.padEnd(8)} | Rolled Up: ${rollupStr} ]`);
+          });
       });
     }
 

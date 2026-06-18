@@ -522,6 +522,78 @@ function backendAvailability() {
   return { available: false, path: null };
 }
 
+function renderBackendStatus(payload) {
+  const line = '-'.repeat(72);
+  const lines = [`\n=== BACKEND RUNTIME STATUS ===`];
+  
+  if (!payload.available) {
+    lines.push(`Status:  MISSING (Executable not found)`);
+    return lines.join('\n');
+  }
+
+  lines.push(`Status:  ${payload.ok ? 'OK' : 'ERROR'}`);
+  lines.push(`Engine:  ${payload.engine || 'unknown'} (schema v${payload.schema_version || 1})`);
+  lines.push(`Path:    ${payload.path || 'unknown'}`);
+  lines.push(`Scope:   ${payload.status_scope || 'unknown'}`);
+  
+  if (payload.snapshot) {
+    const s = payload.snapshot;
+    lines.push(`\n[SNAPSHOT]`);
+    lines.push(`  Path:   ${s.path}`);
+    lines.push(`  Status: ${s.exists ? `Found (${(s.bytes/1024).toFixed(1)} KB)` : 'MISSING'}`);
+  }
+
+  if (payload.quality_report) {
+    const q = payload.quality_report;
+    lines.push(`\n[QUALITY REPORT]`);
+    lines.push(`  Path:   ${q.path}`);
+    lines.push(`  Status: ${q.exists ? `Found (${(q.bytes/1024).toFixed(1)} KB)` : 'MISSING'}`);
+  }
+
+  if (payload.error) {
+    lines.push(`\n[ERROR] ${payload.error}`);
+  }
+
+  lines.push(`\n${line}`);
+  return lines.join('\n');
+}
+
+function renderBackendStats(payload) {
+  const line = '-'.repeat(72);
+  const lines = [`\n=== PERFORMANCE STATS ===`];
+  
+  if (!payload.ok) {
+    lines.push(`[ERROR] ${payload.error || 'Failed to compute stats'}`);
+    return lines.join('\n');
+  }
+
+  lines.push(`Source:        ${payload.equity_source || 'unknown'}`);
+  lines.push(`Observations:  ${payload.observations || 0}`);
+  
+  const toPct = (val) => val != null ? (val * 100).toFixed(2) + '%' : 'N/A';
+  const toNum = (val) => val != null ? val.toFixed(3) : 'N/A';
+
+  lines.push(`\n[METRICS]`);
+  lines.push(`  Cumulative Return: ${toPct(payload.cumulative_return)}`);
+  lines.push(`  Annualized Return: ${toPct(payload.annualized_return)}`);
+  lines.push(`  Volatility:        ${toPct(payload.volatility)}`);
+  lines.push(`  Max Drawdown:      ${toPct(payload.max_drawdown)}`);
+  lines.push(`  Sharpe Ratio:      ${toNum(payload.sharpe)}`);
+  lines.push(`  Sortino Ratio:     ${toNum(payload.sortino)}`);
+  lines.push(`  Calmar Ratio:      ${toNum(payload.calmar)}`);
+
+  if (payload.drawdown && payload.drawdown.peak_index != null) {
+    lines.push(`\n[DRAWDOWN EVENTS]`);
+    lines.push(`  Peak Index:     ${payload.drawdown.peak_index}`);
+    lines.push(`  Trough Index:   ${payload.drawdown.trough_index}`);
+    lines.push(`  Recovery Index: ${payload.drawdown.recovery_index || 'none'}`);
+    lines.push(`  Recovered:      ${payload.drawdown.recovered ? 'Yes' : 'No'}`);
+  }
+
+  lines.push(`\n${line}`);
+  return lines.join('\n');
+}
+
 async function commandBackend(args) {
   const subcommand = args[0] || 'status';
 
@@ -550,6 +622,16 @@ async function commandBackend(args) {
 
   try {
     const payload = await handler(args.slice(1));
+
+    if (subcommand === 'status' && !hasFlag(args, '--json')) {
+        console.log(renderBackendStatus(payload));
+        return payload.available !== false && payload.ok ? 0 : 1;
+    }
+
+    if (subcommand === 'stats' && !hasFlag(args, '--json')) {
+        console.log(renderBackendStats(payload));
+        return payload.available !== false && payload.ok ? 0 : 1;
+    }
 
     if (subcommand === 'correlation' && payload.ok && !hasFlag(args, '--json')) {
         const { renderCorrelationHeatmap } = require('../../tui/index.js');
