@@ -210,7 +210,27 @@ function addFreshnessIssue(report, severity, code, record, index, message) {
   }
 }
 
+function validatePoint(record, report, index) {
+  if (!isFiniteNumber(record.close) && !isFiniteNumber(record.price) && !isFiniteNumber(record.last) && !isFiniteNumber(record.value)) {
+    addIssue(report, 'error', 'invalid_price', record, index, `Point/tick record must have a valid non-negative close, price, value, or last field`);
+  }
+  if (isFiniteNumber(record.close) && record.close < 0) {
+    addIssue(report, 'error', 'invalid_price', record, index, `Point close must be non-negative`);
+  }
+  if (isFiniteNumber(record.bid) && record.bid < 0) {
+    addIssue(report, 'error', 'invalid_price', record, index, `Point bid must be non-negative`);
+  }
+  if (isFiniteNumber(record.ask) && record.ask < 0) {
+    addIssue(report, 'error', 'invalid_price', record, index, `Point ask must be non-negative`);
+  }
+}
+
 function validateOhlcv(record, report, index) {
+  const isPoint = ['point', 'tick'].includes(record.timeframe || record.quote_type || 'point');
+  if (isPoint || ('value' in record && !('open' in record))) {
+    return validatePoint(record, report, index);
+  }
+
   for (const field of ['open', 'high', 'low', 'close']) {
     if (!isFiniteNumber(record[field]) || record[field] < 0) {
       addIssue(report, 'error', 'invalid_price', record, index, `OHLCV field ${field} must be a non-negative number`);
