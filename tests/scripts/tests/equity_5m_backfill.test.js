@@ -11,8 +11,21 @@ const commonPath = path.resolve(REPO_ROOT, 'shared/lib/providers/common.js');
 const backfillPath = path.resolve(REPO_ROOT, 'shared/lib/data/backfill.js');
 const ingestIndexPath = path.resolve(REPO_ROOT, 'backend/scripts/data_ops/ingest_market_data/index.js');
 
+// ingest_market_data/index.js is split across sibling files (candle_utils.js,
+// manifests.js, providers/prediction.js, snapshot_fetchers.js). Those siblings bind
+// their own top-level provider imports at require-time, so purging only filePath's
+// cache entry leaves a stale (possibly differently-stubbed) sibling cached from a
+// previous test. Purge filePath's whole directory tree alongside it.
+function purgeModuleDirCache(filePath) {
+  const dirPrefix = path.dirname(filePath) + path.sep;
+  for (const key of Object.keys(require.cache)) {
+    if (key.startsWith(dirPrefix)) delete require.cache[key];
+  }
+}
+
 function freshRequire(filePath, stubs = {}) {
   delete require.cache[filePath];
+  purgeModuleDirCache(filePath);
   for (const k of Object.keys(stubs)) delete require.cache[k];
 
   const orig = Module._load;
@@ -30,6 +43,7 @@ function freshRequire(filePath, stubs = {}) {
   } finally {
     Module._load = orig;
     delete require.cache[filePath];
+    purgeModuleDirCache(filePath);
     for (const k of Object.keys(stubs)) delete require.cache[k];
   }
 }
@@ -174,6 +188,7 @@ test('fetchEquityOrIndexSnapshot routes Alpaca 5m to native paginated candles', 
 
   try {
     delete require.cache[ingestIndexPath];
+    purgeModuleDirCache(ingestIndexPath);
     const ingestMod = require(ingestIndexPath);
     const result = await ingestMod.fetchEquityOrIndexSnapshot(
       'equities',
@@ -199,6 +214,7 @@ test('fetchEquityOrIndexSnapshot routes Alpaca 5m to native paginated candles', 
   } finally {
     backfillMod.fetchPaginated = origFetchPaginated;
     delete require.cache[ingestIndexPath];
+    purgeModuleDirCache(ingestIndexPath);
   }
 });
 
@@ -209,6 +225,7 @@ test('fetchEquityOrIndexSnapshot does not synthesize Alpaca 5m from daily data w
 
   try {
     delete require.cache[ingestIndexPath];
+    purgeModuleDirCache(ingestIndexPath);
     const ingestMod = require(ingestIndexPath);
     await assert.rejects(
       () => ingestMod.fetchEquityOrIndexSnapshot('equities', 'alpaca', 'AAPL', ['5m'], {}, { historyDays: 30 }),
@@ -217,6 +234,7 @@ test('fetchEquityOrIndexSnapshot does not synthesize Alpaca 5m from daily data w
   } finally {
     backfillMod.fetchPaginated = origFetchPaginated;
     delete require.cache[ingestIndexPath];
+    purgeModuleDirCache(ingestIndexPath);
   }
 });
 
