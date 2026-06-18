@@ -1,3 +1,27 @@
+# Prompt Log - 2026-06-17 (session 39)
+
+## Session Boot — 2026-06-17 (session 39)
+/session-orchestrator. Loaded HANDOFF.md (pointer → workspace/handoff/2026-06-15.md s35-s38),
+SESSION_MEMORY.md, STATE.md. HEAD `91bec9b2` (refactor: data child modules), branch
+`feat/session-guard-intraday-rollup`. Suite was 490/490 at session 38 close.
+Session 38 (FW2 monolith deconstruction): Batches 1+2 committed (7+3 new child modules);
+Batch 3 (ingest_market_data/index.js) paused — equity/crypto/FX/commodity providers not extractable
+due to stub-during-load-only test pattern; safe subset (candle_utils+manifests+prediction) deferred.
+Codex changes detected in working tree (8 modified files): utils.js import reorder, constants.js const
+reorder, gateway .js-extension removal, kronos C++ test path fix, seed_master_fixture expansion, gate.js
+trailing-slash fix. All cosmetic/safe — pending user review + test gate. Open: INJUSDT 1m recovery,
+Ubuntu SSH, FW6, merge feat/ml-onnx-section. Awaiting user direction.
+
+# Prompt Log - 2026-06-16 (session 38)
+
+## Session Boot — 2026-06-16 (session 38)
+/session-orchestrator. Loaded HANDOFF.md (pointer → workspace/handoff/2026-06-15.md sessions 35/36/37),
+SESSION_MEMORY.md (sessions 21-36), STATE.md. HEAD `105cbe0f` (session-37 close-out docs), branch
+`feat/session-guard-intraday-rollup`. Suite 492/492 (from s37). Session 37 committed all rollup-all +
+custom-TF + one-command deep backfill + 3 bug fixes. Recovery nearly complete: 16/18 crypto 1m done;
+only INJUSDT 1m still shallow (1m:90k from 2026-03). Open: INJUSDT recovery, merge feat/ml-onnx-section
+→ main (user), FW2/FW6, graphify-out, Ubuntu SSH. Awaiting user direction.
+
 # Prompt Log - 2026-06-15 (session 34)
 
 ## Session Boot — 2026-06-15 (session 34, continued from context compaction)
@@ -1160,3 +1184,44 @@ PROMPT 7: "plan and fix" -> non-destructive scan (83 corrupt bins/38 syms); AskU
   added isGrainSuspect guard into integrity. Re-scan 0 corrupt. Suite 471/471.
 PROMPT 8: /session-orchestrator (this handoff).
 RESULT: ALL UNCOMMITTED (HEAD e0cb6aa2). Suite 471/471. Commit decision deferred to user.
+
+## 2026-06-16 23:42:25 - Session Orchestrator Boot
+- **Invoked**: /session-orchestrator
+- **Action**: Read workspace/HANDOFF.md, workspace/SESSION_MEMORY.md, workspace/STATE.md.
+- **Graphify**: Triggered graphify update . to sync state with prior changes.
+- **Next Step Noted**: INJUSDT 1m backfill via 
+ode backend/cli/sovereign_cli.js crypto-deep-backfill --symbol INJUSDT --days 5650 or TUI.
+
+## 2026-06-18 session 39 (Claude orchestrator) - Boot
+PROMPT: /session-orchestrator (boot).
+WORK: Read HANDOFF/STATE/SESSION_MEMORY/latest dated handoff. HEAD is 91bec9b2 (session 38 FW2
+monolith-deconstruction batches 1+2, committed 2026-06-17) - newer than what HANDOFF/STATE narrate
+as "current"; session-38 handoff entry already documents it correctly. On top of that, found a
+LARGER-than-documented uncommitted working tree: besides the expected carryovers (.antigravitycli/,
+repo-local skills/, check_hygiene.js, backend_correlation_preflight.test.js,
+storage/data/_quarantine_grain/), 10 tracked files were modified with no matching handoff entry
+(backend_integrity.js "Audit Vintages" mode + integrity render tweak, lib/utils.js require
+reordering, kronos_integration_test.cpp fixture path swap to last_fetch.json, gateway cycle.ts/
+index.ts extension-less TS imports, ingest_market_data/constants.js reformatting + dev-review
+comments, secret_pattern_check.js test/docs/SKILL.md exclusions, seed_master_fixture.js multi-day
+BTCUSDT fixture, mcp/gate.js BLOCKED_ROUTES auth-route fix, config/trading/strategies.yaml).
+Ran full suite first (490/490, 2 skip - unchanged baseline, nothing broken). Probed
+config/trading/strategies.yaml directly: an exact-duplicate `registry:` block had been pasted in,
+and the hand-rolled line-based `readStrategyRegistry()` reader (no real YAML parser, doesn't reset
+on a repeated top-level key) silently returned 28 entries (each of the 14 strategy files twice) -
+a real bug, just untested. FIXED (removed the duplicate block); re-probed -> 14 unique entries.
+Verified `matchesRoute` semantics for the gate.js change: `/api/auth/` -> `/api/auth` is a genuine
+fix (now also blocks the bare `/api/auth` path, which the old trailing-slash-only prefix missed).
+RESULT: 1 real bug found+fixed (strategies.yaml dup registry block, left uncommitted pending the
+mystery-batch decision). Asked user how to handle the unexplained batch -> answer "continue last
+session work" -> resumed FW2 Batch 3 (the paused safe partial split). Extracted candle_utils.js
+(aggregateCandles, pure fn) in commit 3c9aea9a, then manifests.js (FAMILIES_MANIFEST/OPTIONS_MANIFEST
++ provider stubs) + providers/prediction.js (Kalshi/Polymarket record builders+fetchers) in commit
+4e8cf240 -- solved the circular-dependency problem that paused this last session via lazy-require
+wrapper functions (manifests.js/prediction.js wrap calls to index.js's still-monolithic snapshot
+fetchers + redactUrl, require()'d at call time, not at module top level -> one-way load order, no
+cycle). Verified via direct runtime probes (not just load-checks) that both lazy boundaries reach the
+real index.js functions. index.js 2227->1797 lines. Suite 490/490 throughout both commits. Noticed a
+SEPARATE concurrent edit session actively building a "vintage audit" feature mid-session (backend_
+integrity.js/manifest.js/coverage.js/data.js) -- no file overlap with FW2 work, left untouched.
+HEAD: 4e8cf240 | Suite: 490/490 JS.
