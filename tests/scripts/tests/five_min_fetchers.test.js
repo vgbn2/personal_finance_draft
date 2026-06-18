@@ -9,6 +9,18 @@ const REPO_ROOT = path.resolve(__dirname, '../../..');
 const yahooPath = path.resolve(REPO_ROOT, 'shared/lib/providers/yahoo.js');
 const ingestIndexPath = path.resolve(REPO_ROOT, 'backend/scripts/data_ops/ingest_market_data/index.js');
 
+// ingest_market_data/index.js is split across sibling files (candle_utils.js,
+// manifests.js, providers/prediction.js, snapshot_fetchers.js). Those siblings bind
+// their own top-level provider imports at require-time, so purging only
+// ingestIndexPath's cache entry leaves a stale (possibly differently-stubbed)
+// sibling cached from a previous test. Purge the whole directory tree alongside it.
+const INGEST_DIR_PREFIX = path.dirname(ingestIndexPath) + path.sep;
+function purgeIngestModuleCache() {
+  for (const key of Object.keys(require.cache)) {
+    if (key.startsWith(INGEST_DIR_PREFIX)) delete require.cache[key];
+  }
+}
+
 function makeBar(openTime, close = 100) {
   return { openTime, open: close - 1, high: close + 1, low: close - 2, close, volume: 0 };
 }
@@ -68,6 +80,7 @@ function loadIngestWithYahooStub(captured) {
   const stubs = { [providersPath]: stubbedProviders };
 
   delete require.cache[ingestIndexPath];
+  purgeIngestModuleCache();
   for (const k of Object.keys(stubs)) delete require.cache[k];
 
   const orig = Module._load;
@@ -85,6 +98,7 @@ function loadIngestWithYahooStub(captured) {
   } finally {
     Module._load = orig;
     delete require.cache[ingestIndexPath];
+  purgeIngestModuleCache();
     for (const k of Object.keys(stubs)) delete require.cache[k];
   }
 }
@@ -167,8 +181,10 @@ test('fetchFxSnapshot mapping: symbol resolution and 5m base selection', async (
 
 test('fx dispatch: fetchFxSnapshot is exported from ingest index', () => {
   delete require.cache[ingestIndexPath];
+  purgeIngestModuleCache();
   const ingestMod = require(ingestIndexPath);
   delete require.cache[ingestIndexPath];
+  purgeIngestModuleCache();
 
   assert.strictEqual(typeof ingestMod.fetchFxSnapshot, 'function', 'fetchFxSnapshot must be exported');
 });
