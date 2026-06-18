@@ -20,6 +20,18 @@ const binancePath   = path.resolve(REPO_ROOT, 'shared/lib/providers/binance.js')
 const backfillPath  = path.resolve(REPO_ROOT, 'shared/lib/data/backfill.js');
 const commonPath    = path.resolve(REPO_ROOT, 'shared/lib/providers/common.js');
 
+// ingest_market_data/index.js is split across sibling files (candle_utils.js,
+// manifests.js, providers/prediction.js, snapshot_fetchers.js). Those siblings bind
+// their own top-level provider imports at require-time, so purging only ingestPath's
+// cache entry leaves a stale (possibly differently-stubbed) sibling cached from a
+// previous test. Purge the whole directory tree whenever ingestPath is purged.
+const INGEST_DIR_PREFIX = path.resolve(REPO_ROOT, 'backend/scripts/data_ops/ingest_market_data') + path.sep;
+function purgeIngestModuleCache() {
+  for (const key of Object.keys(require.cache)) {
+    if (key.startsWith(INGEST_DIR_PREFIX)) delete require.cache[key];
+  }
+}
+
 // ─── Helper: fresh require with optional stub map ─────────────────────────────
 function freshRequire(filePath, stubs = {}) {
   // Purge target and any stub targets from cache
@@ -225,6 +237,7 @@ test('fetchCryptoSnapshot routes 5m to native Binance fetch (not 1d aggregation)
   try {
     // Purge ingest cache to pick up fresh stubs
     delete require.cache[ingestPath];
+    purgeIngestModuleCache();
     const stubs = { [providersPath]: stubbedProviders };
     const orig = Module._load;
     Module._load = function(request, parent, isMain) {
@@ -238,6 +251,7 @@ test('fetchCryptoSnapshot routes 5m to native Binance fetch (not 1d aggregation)
     } finally {
       Module._load = orig;
       delete require.cache[ingestPath];
+    purgeIngestModuleCache();
     }
 
     const result = await ingestMod.fetchCryptoSnapshot('binance', 'BTCUSDT', ['5m', '1d'], 'crypto', { historyDays: 30 });
@@ -301,6 +315,7 @@ test('fetchCryptoSnapshot still produces 1d aggregated records alongside native 
 
   try {
     delete require.cache[ingestPath];
+    purgeIngestModuleCache();
     const stubs = { [providersPath]: stubbedProviders };
     const orig = Module._load;
     Module._load = function(request, parent, isMain) {
@@ -314,6 +329,7 @@ test('fetchCryptoSnapshot still produces 1d aggregated records alongside native 
     } finally {
       Module._load = orig;
       delete require.cache[ingestPath];
+    purgeIngestModuleCache();
     }
 
     const result = await ingestMod.fetchCryptoSnapshot('binance', 'BTCUSDT', ['5m', '1d'], 'crypto', { historyDays: 30 });
@@ -344,6 +360,7 @@ test('fetchCryptoSnapshot falls back to 1d aggregation when provider is coingeck
   };
 
   delete require.cache[ingestPath];
+    purgeIngestModuleCache();
   const stubs = { [providersPath]: stubbedProviders };
   const orig = Module._load;
   Module._load = function(request, parent, isMain) {
@@ -357,6 +374,7 @@ test('fetchCryptoSnapshot falls back to 1d aggregation when provider is coingeck
   } finally {
     Module._load = orig;
     delete require.cache[ingestPath];
+    purgeIngestModuleCache();
   }
 
   // coingecko provider → falls through to aggregation path (no native 5m)
@@ -390,6 +408,7 @@ test('fetchCryptoSnapshot returns FULL 5m depth (cap is applied at JSON-write ti
 
   try {
     delete require.cache[ingestPath];
+    purgeIngestModuleCache();
     const ingestMod = require(ingestPath);
 
     const result = await ingestMod.fetchCryptoSnapshot('binance', 'BTCUSDT', ['5m'], 'crypto', { historyDays });
@@ -404,6 +423,7 @@ test('fetchCryptoSnapshot returns FULL 5m depth (cap is applied at JSON-write ti
   } finally {
     backfillMod.fetchPaginated = origFetchPaginated;
     delete require.cache[ingestPath];
+    purgeIngestModuleCache();
   }
 });
 
@@ -494,6 +514,7 @@ test('fetchCryptoSnapshot survives a >150k-bar native fetch without RangeError',
 
   try {
     delete require.cache[ingestPath];
+    purgeIngestModuleCache();
     const ingestMod = require(ingestPath);
     const result = await ingestMod.fetchCryptoSnapshot('binance', 'BTCUSDT', ['5m'], 'crypto', { historyDays: 600 });
     const fiveM = result.filter(r => r.timeframe === '5m');
@@ -501,6 +522,7 @@ test('fetchCryptoSnapshot survives a >150k-bar native fetch without RangeError',
   } finally {
     backfillMod.fetchPaginated = origFetchPaginated;
     delete require.cache[ingestPath];
+    purgeIngestModuleCache();
   }
 });
 
@@ -550,6 +572,7 @@ async function runDeepBackfillWithStubs(cmdArgs, fakeConfig, snapshotFactory = n
     Module._load = orig;
     delete require.cache[dataPath];
     delete require.cache[ingestPath];
+    purgeIngestModuleCache();
   }
   return outputs;
 }
@@ -672,6 +695,7 @@ test('fetchCryptoSnapshot routes 5m to native Coinbase fetch when provider is co
 
   try {
     delete require.cache[ingestPath];
+    purgeIngestModuleCache();
     const stubs = { [providersPath]: stubbedProviders };
     const orig = Module._load;
     Module._load = function(request, parent, isMain) {
@@ -685,6 +709,7 @@ test('fetchCryptoSnapshot routes 5m to native Coinbase fetch when provider is co
     } finally {
       Module._load = orig;
       delete require.cache[ingestPath];
+    purgeIngestModuleCache();
     }
 
     const result = await ingestMod.fetchCryptoSnapshot('coinbase', 'BTCUSDT', ['5m', '1d'], 'crypto', { historyDays: 30 });
