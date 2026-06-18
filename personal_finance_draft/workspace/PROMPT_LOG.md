@@ -1225,3 +1225,17 @@ real index.js functions. index.js 2227->1797 lines. Suite 490/490 throughout bot
 SEPARATE concurrent edit session actively building a "vintage audit" feature mid-session (backend_
 integrity.js/manifest.js/coverage.js/data.js) -- no file overlap with FW2 work, left untouched.
 HEAD: 4e8cf240 | Suite: 490/490 JS.
+
+PROMPT (cont.): "complete uwhats left" -> asked which of [Batch 4 / commit vintage-audit batch] ->
+"Both of the above".
+WORK: (1) Verified the concurrent vintage-audit/render-output batch was coherent + green, committed
+in 2 commits (f90d3e28 feature, 93d9b1fc misc fixes); my strategies.yaml fix needed no commit (matched
+clean HEAD exactly once the local-only dup was removed). (2) Diagnosed + fixed the exact reason Batch 4
+was paused twice: tests stub shared/lib/providers via Module._load while reloading index.js fresh, but
+purge only index.js's cache entry -- a split-out sibling's stale cached provider bindings leak across
+tests. Extracted snapshot_fetchers.js (fetchCryptoSnapshot/fetchEquityOrIndexSnapshot/
+fetchCommoditySnapshot/fetchFxSnapshot + exclusive helpers); fixed the 3 affected test files to purge
+the whole ingest_market_data/ directory tree, not just index.js. 8 failures -> 0; full suite 490/490;
+re-ran affected files twice for ordering flakiness. Committed f26c6533.
+RESULT: FW2 monolith deconstruction fully complete (no paused pieces remain). index.js 2227->1342
+lines across the whole effort. HEAD: f26c6533 | Suite: 490/490 JS.
