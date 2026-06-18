@@ -15,7 +15,10 @@ const masterFixture = {
     { family: 'equities', provider: 'yahoo', symbol: 'QQQ', timestamp: '2026-05-28T12:00:00Z', open: 350, high: 355, low: 349, close: 352, volume: 1500000 },
     
     // Crypto
-    { family: 'crypto', provider: 'binance', symbol: 'BTCUSDT', timestamp: '2026-05-28T12:00:00Z', open: 60000, high: 61000, low: 59000, close: 60500, volume: 100 },
+    { family: 'crypto', provider: 'binance', symbol: 'BTCUSDT', timeframe: '1d', timestamp: '2026-05-25T12:00:00Z', open: 58000, high: 59000, low: 57000, close: 58500, volume: 100 },
+    { family: 'crypto', provider: 'binance', symbol: 'BTCUSDT', timeframe: '1d', timestamp: '2026-05-26T12:00:00Z', open: 58500, high: 59500, low: 58000, close: 59000, volume: 100 },
+    { family: 'crypto', provider: 'binance', symbol: 'BTCUSDT', timeframe: '1d', timestamp: '2026-05-27T12:00:00Z', open: 59000, high: 60500, low: 58500, close: 60000, volume: 100 },
+    { family: 'crypto', provider: 'binance', symbol: 'BTCUSDT', timeframe: '1d', timestamp: '2026-05-28T12:00:00Z', open: 60000, high: 61000, low: 59000, close: 60500, volume: 100 },
     { family: 'crypto', provider: 'coinbase', symbol: 'ETHUSDT', timestamp: '2026-05-28T12:00:00Z', open: 3000, high: 3100, low: 2900, close: 3050, volume: 1000 },
     
     // FX
