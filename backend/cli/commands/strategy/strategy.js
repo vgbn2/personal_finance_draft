@@ -733,6 +733,7 @@ async function commandPropFirmProfiles(args) {
 const EXECUTION_MEMORY = require('../../../../shared/lib/runtime/execution_memory.js');
 
 async function runAutomationPass(args, strategiesOverride = null) {
+    const settings = loadRuntimeSettings();
     const isLive = hasFlag(args, '--live');
     const refreshDays = numericOption(args, '--refresh-days', 2);
     const minTrustScore = numericOption(args, '--min-trust-score', 70);
@@ -783,6 +784,9 @@ async function runAutomationPass(args, strategiesOverride = null) {
    
     console.log(`[AUTOMATION] Fetching portfolio balance for dynamic sizing...`);
     const balanceObj = await fetchBalance(isLive).catch(err => {
+        if (isLive) {
+            throw new Error(`Critical: Failed to fetch balance in LIVE mode: ${err.message}`);
+        }
         console.warn(`\x1b[1;33m[WARNING]\x1b[0m Failed to fetch balance: ${err.message}. Using $100,000 baseline.`);
         return { EQUITY: 100000 };
     });
@@ -825,7 +829,17 @@ async function runAutomationPass(args, strategiesOverride = null) {
             // Freshness check: Signal must be within the last bar's timeframe
             const signalTs = new Date(signalTime).getTime();
             const now = Date.now();
-            const maxAgeMs = 24 * 60 * 60 * 1000; // 1 day for '1d' timeframe
+            const timeframeToMs = {
+                '5m': 5 * 60 * 1000,
+                '15m': 15 * 60 * 1000,
+                '30m': 30 * 60 * 1000,
+                '1h': 60 * 60 * 1000,
+                '4h': 4 * 60 * 60 * 1000,
+                '1d': 24 * 60 * 60 * 1000,
+                '1w': 7 * 24 * 60 * 60 * 1000
+            };
+            const barDurationMs = timeframeToMs[strategyTimeframe] || (24 * 60 * 60 * 1000);
+            const maxAgeMs = 1.5 * barDurationMs; // Allow 1.5 bars of age (buffer for fetch/cron delay)
 
             if (now - signalTs > maxAgeMs) {
                 console.log(`[AUTOMATION] Signal for ${lastTrade.symbol} is stale (${new Date(signalTs).toLocaleString()}). Skipping.`);
@@ -895,23 +909,24 @@ async function runAutomatedStrategies(args) {
     console.log(`[\x1b[1;35mAUTO\x1b[0m] Starting Strategy Automation Loop (Interval: ${intervalMinutes} min, Max Passes: ${passLabel})`);
     console.log('Press Ctrl+C to stop.');
 
-    const loop = async () => {
-        try {
-            passes++;
-            console.log(`[AUTOMATION] Starting Pass ${passes}/${passLabel}...`);
-            await runAutomationPass(args);
-        } catch (error) {
-            console.error(`[AUTOMATION] Pass failed: ${error.message}`);
-        }
-        if (maxPasses === 0 || passes < maxPasses) {
-            setTimeout(loop, intervalMs);
-        } else {
-            console.log(`[AUTOMATION] Reached max passes (${maxPasses}). Exiting.`);
-            process.exit(0);
-        }
-    };
-
-    loop();
+    return new Promise((resolve) => {
+        const loop = async () => {
+            try {
+                passes++;
+                console.log(`[AUTOMATION] Starting Pass ${passes}/${passLabel}...`);
+                await runAutomationPass(args);
+            } catch (error) {
+                console.error(`[AUTOMATION] Pass failed: ${error.message}`);
+            }
+            if (maxPasses === 0 || passes < maxPasses) {
+                setTimeout(loop, intervalMs);
+            } else {
+                console.log(`[AUTOMATION] Reached max passes (${maxPasses}). Exiting.`);
+                resolve(0);
+            }
+        };
+        loop();
+    });
 }
 // ------------------------------------------
 
