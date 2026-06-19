@@ -19,18 +19,24 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 40 (2026-06-19) — reviewed+fixed a concurrent batch (real bug: writeJson array/undefined
+  corruption risked wiping the live bot's trade-dedup memory) + CORRECTED session 39's origin-divergence
+  call + fast-forward pushed to origin's real branch name.** Full trail: `workspace/handoff/2026-06-19.md`
+  session 40. Session 39's "origin has unrelated, irreconcilable history" conclusion was WRONG — it
+  compared monorepo branch hashes against origin's subtree-only hashes (apples to oranges). Re-comparing
+  via a fresh `git subtree split` proved `origin/main` and `origin/feat/session-guard-intraday-rollup`
+  are the SAME commit (`be96d76c`) and a strict ancestor of local `feat/session-guard-intraday-rollup` —
+  every "origin-unique" commit session 39 worried about losing was already in local history. Did a clean
+  fast-forward push (`be96d76c..14c75eea`) to `origin/feat/session-guard-intraday-rollup` directly (no
+  force, no rewrite) and deleted the now-redundant `origin/local-main` /
+  `origin/local-feat-session-guard-intraday-rollup` (kept `local-feat-ml-onnx-section` and
+  `local-feat-resilient-crypto-fallback` — origin has no real branch of its own for those two). Did
+  **not** touch `origin/main` (that's the still-separate, still-open feat→main merge decision) and did
+  not update local `main` (still session-28-era, genuinely stale — low priority, reversible later). 4
+  leftover local scaffolding branches (`pfd-*-subtree`) remain, harmless.
 - **SESSION 39 (2026-06-19) — first real GitHub backup of this repo (subtree-split push), FW2 fully
-  done.** Full trail: `workspace/handoff/2026-06-19.md`. Discovered this directory's actual git root is
-  the whole CODEPTIT monorepo (not personal_finance_draft alone) and that `origin` already holds its own
-  divergent `main`/`feat/session-guard-intraday-rollup` history (commit `be96d76c`, real distinct work:
-  backfill-daemon parallel lanes, clear-api-cache command, TUI refactors — not in local history). Used
-  `git subtree split --prefix=personal_finance_draft <branch> -b <new>` (run from the monorepo
-  toplevel) to extract just this project's history, then pushed all 4 local branches under `local-*`
-  names so origin's existing branches stay untouched: `local-main`, `local-feat-session-guard-intraday-rollup`,
-  `local-feat-ml-onnx-section`, `local-feat-resilient-crypto-fallback`. **Next-session first step (user
-  decision, not started):** decide whether/how to reconcile origin's unique `be96d76c`-lineage commits
-  into local history, and whether `local-*` becomes the real tracked upstream going forward. 4 leftover
-  local scaffolding branches (`pfd-*-subtree`) are harmless byproducts, not cleaned up.
+  done.** Full trail: `workspace/handoff/2026-06-19.md`. Pushed under `local-*` names out of an
+  (incorrect, see session 40 above) belief that origin held irreconcilable divergent history.
 - **SESSION 39 (2026-06-18/19) — FW2 monolith deconstruction FULLY COMPLETE** (all 4 batches landed:
   backend/research/trade/data session 38 + candle_utils/manifests/providers-prediction/snapshot_fetchers
   this session). Root-caused and fixed the exact reason Batch 4 was paused twice (stale sibling-module
