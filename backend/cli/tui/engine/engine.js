@@ -47,6 +47,15 @@ function isRichTerminal() {
   return process.stdout.isTTY && !process.env.CI;
 }
 
+// Set by callers (e.g. the Ink dashboard's in-pane child spawns) whose stdin
+// is a piped, never-written, never-closed pipe -- without this, the non-TTY
+// readline fallback below still blocks on rl.question() forever instead of
+// erroring or returning. Also doubles as the AI-testability bypass: any test
+// runner can set this to get guaranteed non-blocking prompt resolution.
+function isNonInteractive() {
+  return process.env.SOVEREIGN_NONINTERACTIVE === 'true';
+}
+
 // ---------------------------------------------------------------------------
 // W4 — Dynamic page-size derivation.
 //
@@ -204,6 +213,7 @@ function keyTokens(input) {
 }
 
 async function promptMultiSelect(question, options, { initialValues = [] } = {}) {
+  if (isNonInteractive()) return initialValues;
   process.stdin.removeAllListeners('data');
   process.stdin.removeAllListeners('keypress');
   process.stdin.removeAllListeners('line');
@@ -411,6 +421,11 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
 }
 
 async function promptSelect(question, options) {
+  if (isNonInteractive()) {
+    const resolved = typeof options === 'function' ? await options() : options;
+    const first = resolved[0];
+    return first && first.value !== undefined ? first.value : first;
+  }
   if (!isRichTerminal()) {
     console.log(`\n? ${question}`);
     const resolved = typeof options === 'function' ? await options() : options;
@@ -589,6 +604,7 @@ async function promptSelect(question, options) {
 }
 
 async function promptText(question, defaultValue = '') {
+  if (isNonInteractive()) return defaultValue;
   if (!isRichTerminal()) {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     return new Promise(resolve => {
@@ -634,6 +650,10 @@ async function promptText(question, defaultValue = '') {
 }
 
 async function promptConfirm(question) {
+  // Explicit check (not just delegating to promptSelect's non-interactive
+  // path) -- a destructive action must default to "No", not promptSelect's
+  // generic "first option" rule, which here would be "Yes".
+  if (isNonInteractive()) return false;
   return await promptSelect(question, [
     { label: 'Yes', value: true },
     { label: 'No', value: false }
