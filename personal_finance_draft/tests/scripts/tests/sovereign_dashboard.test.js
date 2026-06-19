@@ -53,6 +53,7 @@ const keys = {
   right: '[C',
   left: '[D',
   enter: '\r',
+  tab: '\t',
   escape: '',
 };
 
@@ -255,10 +256,22 @@ test('dashboard App: shows PIN gate for live trading and passes PIN to child pro
 
   // It should start running
   assert.match(stdout.snapshot(), /Running:/, 'Command is running after PIN entry');
-  
-  // Wait for execution to finish
-  while (stdout.snapshot().includes('⌛ Running:')) {
+
+  // auto-trade --live is the real automation loop (backend/cli/commands/
+  // strategy/strategy.js runAutomatedStrategies) -- it only exits this fast
+  // if the ai_agent_trading feature flag is disabled (a feature-gate
+  // fast-fail); if someone has it enabled locally (e.g. while exercising the
+  // real PIN flow by hand), this spawns the genuine infinite loop and
+  // "wait for Running to clear" would hang forever. Bound the wait and abort
+  // via Escape (the dashboard's own kill-switch, exercised in the next test)
+  // so this test's outcome doesn't depend on that external, mutable setting.
+  const deadline = Date.now() + 3000;
+  while (stdout.snapshot().includes('⌛ Running:') && Date.now() < deadline) {
     await delay(50);
+  }
+  if (stdout.snapshot().includes('⌛ Running:')) {
+    await send(stdin, instance, [keys.escape]);
+    assert.match(stdout.snapshot(), /aborted[\s\S]*?user/);
   }
 });
 
@@ -289,5 +302,66 @@ test('dashboard App: in-pane running process can be aborted via Escape', async (
 
   // It should show aborted message
   assert.match(stdout.snapshot(), /aborted[\s\S]*?user/);
+});
+
+test('dashboard App: --symbol flag shows a live autocomplete suggestion list and Tab accepts it (single-value)', async (t) => {
+  const { render, default: React } = await Promise.all([import('ink'), import('react')])
+    .then(([ink, react]) => ({ render: ink.render, default: react.default }));
+  const h = React.createElement;
+  const { App } = await import('../../../backend/cli/sovereign_dashboard.mjs');
+
+  const stdin = makeFakeStdin();
+  const stdout = makeFakeStdout();
+  const onRun = () => {};
+
+  // Data(1) -> ingest(1): --family(0,sel), --symbol(1,txt,pickSymbol:single)
+  const instance = render(h(App, { initialCatI: 1, initialCmdI: 1, onRun }), {
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+  });
+  t.after(() => instance.unmount());
+  await instance.waitUntilRenderFlush();
+
+  await send(stdin, instance, [keys.enter]); // 'cmd' -> 'flags' (ingest has flags)
+  assert.match(stdout.snapshot(), /› ingest/);
+
+  await send(stdin, instance, [keys.down, keys.enter]); // move to --symbol, start editing
+  await send(stdin, instance, ['B', 'T', 'C']);
+  const typed = stdout.snapshot();
+  assert.match(typed, /↑↓ browse · Tab autocomplete/, 'a real cached-symbol suggestion list appears while typing');
+  assert.match(typed, /BTCUSDT/, 'the real cached universe surfaces a matching symbol, not just free text');
+
+  await send(stdin, instance, [keys.tab]); // accept the highlighted suggestion
+  await send(stdin, instance, [keys.enter]); // commit
+  assert.match(stdout.snapshot(), /\[BTCUSDT\]/, 'Tab-autocomplete filled the flag value from the suggestion');
+  assert.match(stdout.snapshot(), /sovereign ingest --family all --symbol BTCUSDT --timeframe 1h/);
+});
+
+test('dashboard App: --symbol flag autocomplete only replaces the in-progress segment for comma-sep (multi) fields', async (t) => {
+  const { render, default: React } = await Promise.all([import('ink'), import('react')])
+    .then(([ink, react]) => ({ render: ink.render, default: react.default }));
+  const h = React.createElement;
+  const { App } = await import('../../../backend/cli/sovereign_dashboard.mjs');
+
+  const stdin = makeFakeStdin();
+  const stdout = makeFakeStdout();
+  const onRun = () => {};
+
+  // Research(3) -> bt(2): --strategy(0,sel), --symbol(1,txt,pickSymbol:multi)
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: 2, onRun }), {
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+  });
+  t.after(() => instance.unmount());
+  await instance.waitUntilRenderFlush();
+
+  await send(stdin, instance, [keys.enter]); // 'cmd' -> 'flags' (bt has flags)
+  assert.match(stdout.snapshot(), /› bt/);
+
+  await send(stdin, instance, [keys.down, keys.enter]); // move to --symbol, start editing
+  await send(stdin, instance, ['A', 'A', 'P', 'L', ',', 'M', 'S']);
+  assert.match(stdout.snapshot(), /MSFT/, 'suggestions filter on the segment after the last comma, not the whole buffer');
+
+  await send(stdin, instance, [keys.tab]);
+  await send(stdin, instance, [keys.enter]); // commit
+  assert.match(stdout.snapshot(), /\[AAPL,MSFT\]/, 'Tab only replaced the partial "MS" segment, keeping "AAPL," intact');
 });
 
