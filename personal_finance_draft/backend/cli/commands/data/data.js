@@ -558,8 +558,12 @@ async function commandMassBackfill(args) {
       const history = await loadHistoricalSources(syntheticArgs);
       const sources = history.snapshot.sources || [];
       const errors = history.snapshot.errors || [];
-      allSources.push(...sources);
-      allErrors.push(...errors);
+      for (let i = 0; i < sources.length; i++) {
+        allSources.push(sources[i]);
+      }
+      for (let i = 0; i < errors.length; i++) {
+        allErrors.push(errors[i]);
+      }
       jobResults.push({
         ok: true,
         symbol,
