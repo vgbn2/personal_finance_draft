@@ -286,24 +286,7 @@ const COMMAND_MANIFEST = {
         '--entry-threshold': { type: 'text', default: '0.15', label: 'Max entry price (low_prob_dip)' },
       }},
       { id: 'derive-creds',  prefix: ['polymarket'], label: 'Derive L2 API Credentials' },
-      // --- Edge Trader Bot (CLI prefix `bot`; lives here because it only trades Polymarket) ---
-      { id: 'health', prefix: ['bot'], label: 'Bot: Health Check (credentials, API, balance)' },
-      { id: 'status', prefix: ['bot'], label: 'Bot: Status' },
-      { id: 'cycle',  prefix: ['bot'], label: 'Bot: Run Cycle (dry-run)', flags: {
-        '--live': { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
-      }},
-      { id: 'run',    prefix: ['bot'], label: 'Bot: Start Loop', flags: {
-        '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' },
-        '--live':     { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
-      }},
-      { id: 'config', prefix: ['bot'], label: 'Bot: Enable',
-        args: ['--key', 'enabled', '--value', 'true'] },
-      { id: 'config', prefix: ['bot'], label: 'Bot: Disable',
-        args: ['--key', 'enabled', '--value', 'false'] },
-      { id: 'config', prefix: ['bot'], label: 'Bot: View / Edit Config', flags: {
-        '--key':   { type: 'text', default: '', label: 'Config key (e.g. minEdgeThreshold)' },
-        '--value': { type: 'text', default: '', label: 'New value' }
-      }},
+      { id: 'bot',           label: 'Edge Trader Bot', args: [] },
     ],
   }
 };

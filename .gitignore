@@ -147,3 +147,11 @@ docss/
 
 # ML training virtualenv (local-only)
 .venv_ml/
+
+# Agent CLIs and local skills
+.antigravitycli/
+blast-through/
+repo-hygiene/
+
+# Quarantine data dumps
+_quarantine_grain/

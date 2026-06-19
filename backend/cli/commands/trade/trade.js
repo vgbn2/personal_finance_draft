@@ -377,10 +377,62 @@ async function commandAgent(args) {
   return result.status === 'ok' ? 0 : 1;
 }
 
+async function promptBotArgs() {
+  global.suppressLogs = true;
+  process.stdout.write(A.CLR_ALL + A.HOME);
+
+  while (true) {
+    const action = await promptSelect('Edge Trader Bot action:', [
+      { label: 'Health Check (credentials, API, balance)', value: 'health' },
+      { label: 'Status', value: 'status' },
+      { label: 'Run Cycle (single iteration)', value: 'cycle' },
+      { label: 'Start Loop (continuous)', value: 'run' },
+      { label: 'Enable Bot', value: 'enable' },
+      { label: 'Disable Bot', value: 'disable' },
+      { label: 'View / Edit Config', value: 'config' },
+      { label: 'Back', value: 'back' },
+    ]);
+
+    global.suppressLogs = false;
+
+    if (action === 'back') return null;
+
+    if (action === 'enable') return ['config', '--key', 'enabled', '--value', 'true'];
+    if (action === 'disable') return ['config', '--key', 'enabled', '--value', 'false'];
+    
+    if (action === 'config') {
+      const key = await promptText('Config key (e.g. minEdgeThreshold):', '');
+      if (!key) continue;
+      const val = await promptText(`New value for ${key}:`, '');
+      return ['config', '--key', key, '--value', val];
+    }
+
+    if (action === 'cycle' || action === 'run') {
+      let intervalArgs = [];
+      if (action === 'run') {
+        const interval = await promptText('Interval (minutes):', '15');
+        intervalArgs = ['--interval', interval];
+      }
+      const live = await promptConfirm('EXECUTE LIVE TRADES?');
+      return [action, ...intervalArgs, ...(live ? ['--live'] : [])];
+    }
+
+    return [action];
+  }
+}
+
 /**
  * Handles the 'bot' command — thin shell into the gateway bot commands.
  */
 async function commandBot(args) {
+  if (args.length === 0 && isRichTerminal()) {
+    const promptedArgs = await promptBotArgs();
+    if (!promptedArgs) {
+      console.log('Bot menu cancelled.');
+      return 0;
+    }
+    args = promptedArgs;
+  }
   const sub = args[0] || 'status';
   if (sub === 'cycle' || sub === 'run') {
     const gate = featureGate('bot_autopilot', { surface: `Bot ${sub}` });
