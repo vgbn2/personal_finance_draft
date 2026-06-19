@@ -45,6 +45,10 @@
     "@polymarket/clob-client-v2": "^1.0.6",
     "@supabase/supabase-js": "^2.106.2",
     "@types/node": "^25.9.1",
+    "ink": "^7.1.0",
+    "ink-select-input": "^6.2.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.2.7",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
     "viem": "^2.52.2"
