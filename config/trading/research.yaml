@@ -31,4 +31,4 @@ prediction_market:
 
 historical_defaults:
   sample_size: 120
-  fallback_days: 365
+  fallback_days: 1825
