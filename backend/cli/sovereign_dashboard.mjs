@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const {
   splitWords, isPlaceholderSelect, defaultFlagValues, cycleOption, buildArgv,
-  optionLabel, loadStrategyOptions, healthDot, loadDashboardHealth,
+  optionLabel, loadStrategyOptions, healthDot, loadDashboardHealth, isInteractiveCmd,
 } = require('./tui/dashboard_exec.js');
 
 // Resolved once at module load (mirrors tui/manifest.js's static-per-process
@@ -33,8 +33,14 @@ const INTERACTIVE_CMDS = new Set([
   'strategy',
   'prop-firms',
   'run',
-  'bot'
 ]);
+// 'bot' was previously blanket-listed here, forcing even cheap read-only
+// subcommands through the slow unmount->spawnSync->remount round-trip.
+// commandBot's only interactive picker (promptBotArgs) is gated on
+// `args.length === 0`, and every dashboard `bot` subcmd entry always passes
+// an explicit subcommand keyword -- so the picker is never reachable from
+// here. Runs in-pane now; SOVEREIGN_NONINTERACTIVE is the backstop if that
+// guard's assumption ever changes.
 
 // ── Palette ──────────────────────────────────────────────────────────────
 const CY  = '#4dd2d2';
@@ -63,7 +69,7 @@ const M = [
       },
       { id: 'cache-clean', label: 'cache-clean',  desc: 'Quarantine rejected cache records',
         flags: {
-          '--dry-run': { t:'yn', lbl:'Preview only? (no deletion)', def:true },
+          '--dry-run': { t:'yn', lbl:'Preview only? (no deletion)', def:true, warn:true },
         },
       },
     ],
@@ -102,7 +108,7 @@ const M = [
       },
       { id: 'clear-api-cache', label: 'clear-api-cache', desc: 'Delete provider API response cache',
         flags: {
-          '--dry-run':   { t:'yn',  lbl:'Preview only (no deletion)?', def:true },
+          '--dry-run':   { t:'yn',  lbl:'Preview only (no deletion)?', def:true, warn:true },
           '--ts':        { t:'yn',  lbl:'Also delete ts/ candle bins?', def:false },
           '--symbol':    { t:'txt', lbl:'Symbol filter for ts/ bins', def:'' },
           '--timeframe': { t:'txt', lbl:'Timeframe filter for ts/ bins', def:'' },
@@ -334,7 +340,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     onRun(argv, { catI, cmdI });
 
     const cmdStr = argv.join(' ');
-    const isInteractive = Array.from(INTERACTIVE_CMDS).some(ic => cmdStr.startsWith(ic) || cmdStr === ic);
+    const isInteractive = isInteractiveCmd(cmdStr, INTERACTIVE_CMDS);
 
     if (!isInteractive) {
       if (mountedRef.current) {
@@ -344,7 +350,11 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       }
       await new Promise(resolve => setTimeout(resolve, 50));
       try {
-        const env = { ...process.env, FORCE_COLOR: '1' };
+        // This child's stdin is a piped, never-written, never-closed pipe (no
+        // inherited TTY) -- tell the shared prompt stack (engine.js) to resolve
+        // any reachable promptSelect/promptText/promptConfirm/promptMultiSelect
+        // call instantly with its default instead of blocking on readline.
+        const env = { ...process.env, FORCE_COLOR: '1', SOVEREIGN_NONINTERACTIVE: 'true' };
         if (pin) {
           env.SOVEREIGN_TRADE_PIN = pin;
         }
@@ -788,4 +798,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   mountDashboard();
 }
 
-export { App, M };
+export { App, M, INTERACTIVE_CMDS };
