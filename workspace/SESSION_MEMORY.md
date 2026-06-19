@@ -1,3 +1,33 @@
+## Session Memory - 2026-06-19 (session 40) Reviewed+fixed a concurrent batch (writeJson array/undefined corruption bug, risked wiping live trade-dedup memory) + CORRECTED session 39's origin-divergence conclusion + fast-forward pushed to origin's real branch; suite 490/490
+
+{
+  "work": "Boot found a concurrent (non-Claude) batch uncommitted on feat/session-guard-intraday-rollup: 3 call-spread RangeError loop-fixes, a stale require-path fix, a config bump, and a rewritten writeJson(). Found+fixed a real bug in writeJson before committing. Then, per user's chosen session focus, re-investigated session 39's GitHub origin-reconciliation conclusion and found it was wrong; corrected it and pushed a genuine fast-forward to origin's real branch name.",
+  "key_mechanisms": [
+    "WRITEJSON BUG: the rewrite did `{...payload}` to special-case a `sources` array for streaming writes. Spreading an ARRAY payload into an object converts it to numeric-string keys ({\"0\":..,\"1\":..}), losing Array.isArray(). shared/lib/runtime/execution_memory.js persists the live bot's trade-dedup memory as exactly such an array ([[signalId,ts],...]) via writeJson(MEMORY_PATH, entries); the corrupted shape would make the next load's `Array.isArray(raw)` check fail and silently reset dedup memory to empty -- a real duplicate-live-order-execution risk on unattended-host restart. Also: JSON.stringify(undefined,null,2) returns the literal value `undefined` (not a string), so `.replace()` on it threw TypeError for any payload field with an explicit undefined value (JSON.stringify normally just drops those keys).",
+    "WRITEJSON FIX: non-plain-object payloads (Array.isArray, null, primitives) bypass the streaming path entirely and use plain JSON.stringify (byte-identical to pre-existing behavior); for object payloads, keys with value===undefined are skipped (matches JSON.stringify's own drop-undefined semantics) instead of crashing. Verified via 14 hand-built edge cases (array payload, null/empty/non-array sources, undefined fields, unicode, 5000-elem arrays, primitives) all byte-matching JSON.stringify output, plus a real save/init() round-trip against a BACKED-UP copy of the live execution_memory.json (restored byte-identical after).",
+    "ORIGIN RECONCILIATION ROOT-CAUSE OF SESSION 39's WRONG CONCLUSION: session 39 compared the MONOREPO's branch hashes directly against origin's subtree-only hashes -- those necessarily differ even for byte-identical content (the monorepo commit's tree includes every sibling project, so its hash differs from a subtree-extracted commit covering only personal_finance_draft/). Re-running `git subtree split --prefix=personal_finance_draft <branch>` on the CURRENT local branches and comparing THOSE to origin (git merge-base --is-ancestor, hash-based not inferred) showed origin/main and origin/feat/session-guard-intraday-rollup are the SAME commit (be96d76c) and a proven ancestor of local feat/session-guard-intraday-rollup. Every commit session 39 flagged as 'origin-unique, at risk' (b53cd1d4 parallel-provider-lanes daemon, be96d76c clear-api-cache, several TUI refactors) is already inside local feat's own history -- confirmed individually via is-ancestor, not just via the branch-tip check.",
+    "RECONCILIATION ACTION: re-split the now-5-commits-newer local feat/session-guard-intraday-rollup (131 commits), re-verified origin's tip was still a provable ancestor of the fresh split, checked for oversized new blobs (none), then `git push origin pfd-feat-session-guard-subtree:feat/session-guard-intraday-rollup` -- a TRUE fast-forward (be96d76c..14c75eea), no force flag, git would have refused if the ancestry proof were wrong. Deleted origin/local-main + origin/local-feat-session-guard-intraday-rollup (now fully redundant -- the real branches hold everything they held, plus more). Kept origin/local-feat-ml-onnx-section + origin/local-feat-resilient-crypto-fallback (origin has no branch of its own for either, so these remain the only backup). Deliberately did NOT fast-forward origin/main (would be equivalent to deciding the long-pending, separate feat-to-main merge question) and did not update local main (still session-28-era stale, lower priority, reversible later)."
+  ],
+  "verified": [
+    "writeJson: 14/14 edge cases byte-match JSON.stringify; full suite 490/490 before AND after the fix; real round-trip against a backed-up copy of the live execution_memory.json (2 original entries -> 3 after .add() -> file stayed a JSON array on disk -> fresh node process reloaded all 3 -> original 2-entry file restored byte-identical from backup).",
+    "Origin ancestry claims verified via git merge-base --is-ancestor (cryptographic/hash-based, not inferred) for: origin/feat tip vs fresh local split; each individually-named 'origin-unique' commit (be96d76c, b53cd1d4, 7994c5d6, 61182ece) vs local feat split.",
+    "No oversized blobs in the 5 new commits being pushed (git rev-list --objects + cat-file --batch-check, nothing close to the 50MB/100MB thresholds).",
+    "git push of the fast-forward succeeded cleanly (be96d76c..14c75eea); git ls-remote / git branch -r confirmed the 2 deletions and remaining branches afterward."
+  ],
+  "user_decisions": [
+    "AskUserQuestion (commit decision): 'Show me the writeJson bug fix first' -> walked through before/after diff + reasoning -> then 'Yes, commit now'.",
+    "AskUserQuestion (session focus): 'Origin GitHub history reconciliation' (of 4 options incl. ml-onnx merge / new task / stop here).",
+    "AskUserQuestion (push decision, after presenting the corrected finding): 'Yes, and also clean up the now-unnecessary local-* branches on origin' (most thorough of 3 options)."
+  ],
+  "remaining": [
+    "Local main (monorepo-level) is still session-28-era stale relative to both origin/main and local feat -- not updated this session, low priority/reversible.",
+    "origin/main still at be96d76c (not fast-forwarded) -- bundled with the separate, still-open feat/session-guard-intraday-rollup -> main (and feat/ml-onnx-section -> main) merge decisions.",
+    "4 local scratch branches from subtree splits (pfd-main-subtree, pfd-feat-session-guard-subtree, pfd-ml-onnx-subtree, pfd-resilient-crypto-subtree) -- harmless byproducts, not cleaned up.",
+    "Unchanged: Ubuntu LAN sync, FW6 backward-gap fetch, graphify-out refresh (stale since 2026-05-18, repeatedly deprioritized)."
+  ],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-18/19 (session 39) FW2 monolith deconstruction FULLY COMPLETE (Batches 3+4) + vintage-audit batch reviewed/committed + first real GitHub backup (subtree-split push); suite 490/490 throughout
 
 {
