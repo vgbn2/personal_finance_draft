@@ -586,7 +586,41 @@ function mergeSnapshots(base, update) {
 function writeJson(outputPath, payload) {
   const tempPath = `${outputPath}.tmp`;
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
+
+  // Only plain objects get the streaming "sources" fast path below — arrays (e.g.
+  // execution_memory's [[id, ts], ...] format) and primitives go through plain
+  // JSON.stringify so their shape on disk is unchanged.
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+    fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
+    fs.renameSync(tempPath, outputPath);
+    return;
+  }
+
+  const fd = fs.openSync(tempPath, 'w');
+  const sources = payload.sources;
+  const streamSources = Array.isArray(sources);
+
+  fs.writeSync(fd, '{\n');
+  let firstKey = true;
+  for (const [k, v] of Object.entries(payload)) {
+    if (k === 'sources' && streamSources) continue;
+    if (v === undefined) continue; // JSON.stringify drops undefined-valued keys; match that.
+    if (!firstKey) fs.writeSync(fd, ',\n');
+    fs.writeSync(fd, `  ${JSON.stringify(k)}: ${JSON.stringify(v, null, 2).replace(/\n/g, '\n  ')}`);
+    firstKey = false;
+  }
+
+  if (streamSources) {
+    if (!firstKey) fs.writeSync(fd, ',\n');
+    fs.writeSync(fd, `  "sources": [\n`);
+    for (let i = 0; i < sources.length; i++) {
+      fs.writeSync(fd, `    ${JSON.stringify(sources[i])}${i < sources.length - 1 ? ',' : ''}\n`);
+    }
+    fs.writeSync(fd, `  ]\n`);
+  }
+
+  fs.writeSync(fd, '}\n');
+  fs.closeSync(fd);
   fs.renameSync(tempPath, outputPath);
 }
 
