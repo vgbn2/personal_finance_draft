@@ -115,6 +115,60 @@ function loadDashboardHealth() {
   }
 }
 
+// Mirrors the legacy TUI's tui/manifest.js getCachedSymbols(): same cached-
+// universe data source (storage/data/cache/backtest_history.json, falling
+// back to config), used to power the dashboard's symbol-flag autocomplete
+// suggestion list. The legacy readline TUI shows a full pickAssets() wizard
+// for blank --symbol flags, but that's gated on isRichTerminal() and never
+// fires against the dashboard's piped, non-TTY child spawns -- this gives
+// the Ink dashboard its own lightweight, synchronous equivalent.
+function loadSymbolUniverse() {
+  try {
+    const { getCachedSymbols } = require('./manifest.js');
+    return getCachedSymbols();
+  } catch {
+    return [];
+  }
+}
+
+// For a comma-separated (multi) buffer, only the segment after the last
+// comma is "being typed" right now -- e.g. typing "AAPL,MS" should suggest
+// matches for "MS", not the whole string. Single-value buffers use the
+// whole buffer as the query.
+function currentSuggestionQuery(buffer, multi) {
+  const str = String(buffer || '');
+  if (!multi) return str;
+  const idx = str.lastIndexOf(',');
+  return idx === -1 ? str : str.slice(idx + 1).trim();
+}
+
+// Case-insensitive substring match against a symbol's value/label/category,
+// capped at `limit` results so the suggestion list stays on-screen. A blank
+// query returns the first `limit` universe entries (browse-without-typing).
+function filterSymbolSuggestions(universe, query, limit = 8) {
+  const list = universe || [];
+  const q = String(query || '').trim().toLowerCase();
+  if (!q) return list.slice(0, limit);
+  return list
+    .filter((u) => (
+      String(u.value || '').toLowerCase().includes(q) ||
+      String(u.label || '').toLowerCase().includes(q) ||
+      String(u.category || '').toLowerCase().includes(q)
+    ))
+    .slice(0, limit);
+}
+
+// Tab-autocomplete: single-value fields replace the whole buffer; comma-sep
+// (multi) fields replace only the last (possibly partial) segment after the
+// final comma, leaving prior selections intact -- e.g. "AAPL,MS" + Tab on
+// "MSFT" -> "AAPL,MSFT".
+function applySuggestionToBuffer(buffer, suggestionValue, multi) {
+  if (!multi) return suggestionValue;
+  const parts = String(buffer || '').split(',');
+  parts[parts.length - 1] = suggestionValue;
+  return parts.join(',');
+}
+
 // Same matching rule the dashboard uses to decide between the in-pane spawn
 // path and the unmount+inherit-TTY path: prefix match, not a whole-word
 // match (e.g. an INTERACTIVE_CMDS entry of 'run' matches any cmdStr starting
@@ -127,5 +181,6 @@ function isInteractiveCmd(cmdStr, interactiveCmds) {
 module.exports = {
   splitWords, isPlaceholderSelect, defaultFlagValues, cycleOption, buildArgv,
   optionValue, optionLabel, stripAnsi, loadStrategyOptions, healthDot, loadDashboardHealth,
-  isInteractiveCmd,
+  isInteractiveCmd, loadSymbolUniverse, currentSuggestionQuery, filterSymbolSuggestions,
+  applySuggestionToBuffer,
 };
