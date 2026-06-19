@@ -9,6 +9,8 @@ const {
   fetchWorldBankLatest,
   fetchFrankfurterHistory,
   fetchFrankfurterFx,
+  fetchEcbFx,
+  fetchEcbHistory,
 } = require('../../../../shared/lib/providers');
 
 const {
@@ -49,10 +51,12 @@ async function fetchBlockchairStats() { return {}; }
 async function fetchBlockchairOnchain() { return {}; }
 async function fetchSecHoldingsSnapshot() { return {}; }
 async function fetchSpGlobalFlashPmi() { return {}; }
-async function fetchEcbFx() { return {}; }
 async function fetchFxApiFx() { return {}; }
 async function fetchYahooBreadthProxy() { return {}; }
-async function fetchKalshiHistoricalMarkets() { return []; }
+// fetchKalshiHistoricalCandlesticks callers spread the result directly, so [] is the
+// correct empty shape. fetchKalshiHistoricalMarkets callers destructure { records }, so
+// a bare [] crashes with "records is not iterable" -- return the shape callers expect.
+async function fetchKalshiHistoricalMarkets() { return { records: [] }; }
 async function fetchKalshiHistoricalCandlesticks() { return []; }
 
 const FAMILIES_MANIFEST = [
