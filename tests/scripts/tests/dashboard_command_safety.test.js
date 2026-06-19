@@ -45,7 +45,12 @@ const HANG_TIMEOUT_MS = 20000;
 // Excluded from safety execution checks since they are guaranteed not to
 // hang by engine.js prompts, but will exceed the timeout bound.
 const HEAVY_COMPUTATIONAL_IDS = new Set([
-  'ingest', 'intraday-rollup', 'bt', 'optimize'
+  'ingest', 'intraday-rollup', 'bt', 'optimize',
+  // Scans the full API response cache directory (130k+ files / ~22GB in
+  // this repo's real local cache) -- fast in isolation (well under 20s)
+  // but intermittently exceeds the bound when the suite is under heavy
+  // concurrent I/O load (e.g. running alongside the rest of npm test).
+  'clear-api-cache',
 ]);
 
 let M, INTERACTIVE_CMDS;

@@ -12,6 +12,7 @@ const require = createRequire(import.meta.url);
 const {
   splitWords, isPlaceholderSelect, defaultFlagValues, cycleOption, buildArgv,
   optionLabel, loadStrategyOptions, healthDot, loadDashboardHealth, isInteractiveCmd,
+  loadSymbolUniverse, currentSuggestionQuery, filterSymbolSuggestions, applySuggestionToBuffer,
 } = require('./tui/dashboard_exec.js');
 
 // Resolved once at module load (mirrors tui/manifest.js's static-per-process
@@ -19,6 +20,12 @@ const {
 // registry is empty or unreadable.
 const STRATEGY_OPTIONS = loadStrategyOptions();
 const STRATEGY_FLAG_OPTS = STRATEGY_OPTIONS.length > 0 ? STRATEGY_OPTIONS : ['<registered strategies>'];
+
+// Same cached-symbol source the legacy TUI's pickAssets() wizard reads, but
+// that wizard is gated on isRichTerminal() and never fires against the
+// dashboard's piped child spawns -- this powers a lightweight autocomplete
+// suggestion list on --symbol-style flags instead (see pickSymbol below).
+const SYMBOL_UNIVERSE = loadSymbolUniverse();
 
 const INTERACTIVE_CMDS = new Set([
   'cockpit',
@@ -85,7 +92,7 @@ const M = [
       { id: 'ingest', label: 'ingest', desc: 'Fetch latest market data (all providers)',
         flags: {
           '--family':       { t:'sel', opts:['all','crypto','fx','equities','indices','commodities','macro','onchain','prediction_market'], lbl:'Data family', def:'all' },
-          '--symbol':       { t:'txt', lbl:'Symbol filter (optional)', def:'' },
+          '--symbol':       { t:'txt', lbl:'Symbol filter (optional)', def:'', pickSymbol:'single' },
           '--timeframe':    { t:'sel', opts:['1w','1d','1h','15m'], lbl:'Timeframe', def:'1h' },
           '--history-days': { t:'txt', lbl:'History days (blank = latest only)', def:'' },
         },
@@ -110,7 +117,7 @@ const M = [
         flags: {
           '--dry-run':   { t:'yn',  lbl:'Preview only (no deletion)?', def:true, warn:true },
           '--ts':        { t:'yn',  lbl:'Also delete ts/ candle bins?', def:false },
-          '--symbol':    { t:'txt', lbl:'Symbol filter for ts/ bins', def:'' },
+          '--symbol':    { t:'txt', lbl:'Symbol filter for ts/ bins', def:'', pickSymbol:'single' },
           '--timeframe': { t:'txt', lbl:'Timeframe filter for ts/ bins', def:'' },
         },
       },
@@ -131,7 +138,7 @@ const M = [
       },
       { id: 'backend visualize', label: 'backend visualize', desc: 'Sigma band live view (Bollinger)',
         flags: {
-          '--symbol':    { t:'txt', lbl:'Symbol to visualize (required)', def:'' },
+          '--symbol':    { t:'txt', lbl:'Symbol to visualize (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m'], lbl:'Timeframe', def:'1d' },
           '--window':    { t:'txt', lbl:'Rolling window (bars)', def:'20' },
           '--interval':  { t:'txt', lbl:'Poll interval (seconds)', def:'30' },
@@ -157,7 +164,7 @@ const M = [
       { id: 'bt', label: 'bt', desc: 'Backtest — OOS split, trust gate, prop-firm fit',
         flags: {
           '--strategy':       { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'' },
-          '--symbol':         { t:'txt', lbl:'Symbols comma-sep (blank = strategy universe)', def:'' },
+          '--symbol':         { t:'txt', lbl:'Symbols comma-sep (blank = strategy universe)', def:'', pickSymbol:'multi' },
           '--timeframe':      { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
           '--days':           { t:'txt', lbl:'History window (days)', def:'730' },
           '--allow-degraded': { t:'yn',  lbl:'Allow degraded data quality?', def:false },
@@ -166,7 +173,7 @@ const M = [
       { id: 'optimize', label: 'optimize', desc: 'Indicator period grid search (overfit-penalised)',
         flags: {
           '--strategy':  { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'' },
-          '--symbol':    { t:'txt', lbl:'Symbols comma-sep (blank = strategy universe)', def:'' },
+          '--symbol':    { t:'txt', lbl:'Symbols comma-sep (blank = strategy universe)', def:'', pickSymbol:'multi' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
         },
       },
@@ -174,7 +181,7 @@ const M = [
         flags: {
           '--strategy':  { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
-          '--symbol':    { t:'txt', lbl:'Symbol filter (optional)', def:'' },
+          '--symbol':    { t:'txt', lbl:'Symbol filter (optional)', def:'', pickSymbol:'single' },
         },
       },
     ],
@@ -316,6 +323,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const [flagValues, setFlagValues] = useState({});
   const [editing, setEditing] = useState(false);
   const [editBuffer, setEditBuffer] = useState('');
+  const [suggestIndex, setSuggestIndex] = useState(0);
   const [pinBuffer, setPinBuffer] = useState('');
   const [clock, setClock] = useState(() => new Date().toLocaleTimeString('en-GB'));
   const [health, setHealth] = useState(() => loadDashboardHealth());
@@ -416,6 +424,24 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     setEditing(false);
   }, [cmd && cmd.id]);
 
+  // Symbol-flag autocomplete: the active flag being edited (if any), whether
+  // it's marked for symbol suggestions, and the live-filtered candidate list
+  // for whatever's currently being typed (just the last comma-segment for
+  // multi-value fields). Computed once per render so both the keyboard
+  // handler and the flag panel's JSX agree on the same list.
+  const activeFlagKey  = (focus === 'flags' && flagI >= 0 && flagI < fkeys.length) ? fkeys[flagI] : null;
+  const activeFlagMeta = activeFlagKey ? cmd.flags[activeFlagKey] : null;
+  const hasSymbolSuggestions = !!(activeFlagMeta && activeFlagMeta.pickSymbol);
+  const suggestMulti = activeFlagMeta && activeFlagMeta.pickSymbol === 'multi';
+  const suggestions = hasSymbolSuggestions
+    ? filterSymbolSuggestions(SYMBOL_UNIVERSE, currentSuggestionQuery(editBuffer, suggestMulti))
+    : [];
+
+  function handleEditChange(value) {
+    setEditBuffer(value);
+    setSuggestIndex(0);
+  }
+
   function handleEditSubmit(value) {
     const fk = fkeys[flagI];
     setFlagValues(v => ({ ...v, [fk]: value }));
@@ -507,6 +533,24 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         handleRun(splitWords(sub.cmdStr));
       }
     } else if (focus === 'flags') {
+      if (editing) {
+        // Symbol-flag autocomplete: ↑↓ browse the live suggestion list, Tab
+        // accepts the highlighted one into editBuffer. Everything else
+        // (character typing, backspace, Enter-to-submit) is left to
+        // TextInput's own hook -- this branch must not fall through to the
+        // flagI-navigation logic below, which would hijack ↑↓ into moving
+        // the selected flag instead of the suggestion highlight.
+        if (hasSymbolSuggestions) {
+          if (key.upArrow)   { setSuggestIndex(i => Math.max(0, i - 1)); return; }
+          if (key.downArrow) { setSuggestIndex(i => Math.min(Math.max(suggestions.length - 1, 0), i + 1)); return; }
+          if (key.tab && suggestions[suggestIndex]) {
+            setEditBuffer((buf) => applySuggestionToBuffer(buf, suggestions[suggestIndex].value, suggestMulti));
+            setSuggestIndex(0);
+            return;
+          }
+        }
+        return;
+      }
       const maxI = fkeys.length; // trailing index == the "Run" row
       if (key.escape) { setFocus('cmd'); setFlagI(-1); return; }
       if (key.upArrow)   { setFlagI(i => Math.max(0, i - 1)); return; }
@@ -548,7 +592,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         }
       }
     }
-  }, { isActive: !editing || focus === 'pin' });
+  }, { isActive: !editing || focus === 'pin' || hasSymbolSuggestions });
 
   // ── Sidebar items ──────────────────────────────────────────────────────
   const sideItems = M.map((c, i) => {
@@ -628,7 +672,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       const active = focus === 'flags' && idx === flagI;
       const val = flagValues[f];
       const valueNode = (active && editing)
-        ? h(TextInput, { value: editBuffer, onChange: setEditBuffer, onSubmit: handleEditSubmit })
+        ? h(TextInput, { value: editBuffer, onChange: handleEditChange, onSubmit: handleEditSubmit })
         : h(Text, { color: m.warn ? RD : AM }, m.t === 'yn' ? (val ? '[Y]' : '[N]') : ('[' + (optionLabel(m, val) || '') + ']'));
       return h(Box, { key: f },
         h(Text, { color: active ? YL : DIM }, active ? '▸ ' : '  '),
@@ -637,9 +681,23 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         h(Text, { color: m.warn ? RD : MUT }, m.lbl),
       );
     });
+    // Symbol-flag autocomplete: a live suggestion list under the active row
+    // while editing a --symbol/--symbols-style flag, drawn from the real
+    // cached symbol universe (no network, no fresh fetch).
+    const suggestionRows = (editing && hasSymbolSuggestions)
+      ? [
+          h(Text, { key: '_hint', color: MUT },
+            suggestions.length > 0 ? '    ↑↓ browse · Tab autocomplete' : '    (no cached symbols match)'),
+          ...suggestions.map((s, i2) => h(Text, {
+            key: s.value,
+            color: i2 === suggestIndex ? YL : DIM,
+          }, (i2 === suggestIndex ? '    → ' : '      ') + s.value + (s.category ? '  (' + s.category + ')' : ''))),
+        ]
+      : [];
     flagPanel = h(Box, { flexDirection: 'column' },
       h(Text, { color: CY }, '  › ' + cmd.id),
       ...flagRows,
+      ...suggestionRows,
       h(Box, {},
         h(Text, { color: runActive ? GN : BDR }, runActive ? '▸ ' : '  '),
         h(Text, { color: runActive ? GN : MUT, bold: runActive }, '▶ Run'),
@@ -648,11 +706,13 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     );
   }
 
-  const footerHint = focus === 'flags'
-    ? '↑↓ field  ←→ change  ⏎ edit/run  esc back  q quit'
-    : focus === 'subcmd'
-      ? '↑↓ option  ⏎ run  esc/← back  q quit'
-      : '↑↓ category  ⏎/→ enter cmd  ↑↓ command  esc/← back  q quit';
+  const footerHint = (editing && hasSymbolSuggestions)
+    ? '↑↓ browse suggestions  Tab autocomplete  ⏎ commit typed text  q quit'
+    : focus === 'flags'
+      ? '↑↓ field  ←→ change  ⏎ edit/run  esc back  q quit'
+      : focus === 'subcmd'
+        ? '↑↓ option  ⏎ run  esc/← back  q quit'
+        : '↑↓ category  ⏎/→ enter cmd  ↑↓ command  esc/← back  q quit';
 
   const maxLines = Math.max(5, (process.stdout.rows || 24) - 10);
   const outputLines = output ? output.split('\n') : [];
