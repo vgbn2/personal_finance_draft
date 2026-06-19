@@ -1,11 +1,11 @@
 {
-  "source_mode": "provider_history",
+  "source_mode": "live",
   "data_quality_ok": true,
   "data_quality_report": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\personal_finance_draft\\storage\\data\\cache\\data_quality_report.json",
-  "generated_at": "2026-06-07T11:37:55.333Z",
+  "generated_at": "2026-06-19T17:03:56.696Z",
   "horizon": 5,
   "threshold": 0.55,
-  "feature_count": 0,
+  "feature_count": 25,
   "candidate_count": 14,
   "families": [
     "baseline",
@@ -411,5 +411,4 @@
       "by_symbol": [],
       "sample_trades": []
     }
-  ]
-}
+  ]}
