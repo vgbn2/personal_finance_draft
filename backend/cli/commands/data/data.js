@@ -25,7 +25,6 @@ const {
   DEFAULT_HISTORY
 } = utils;
 
-const DEFAULT_TS_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
 const API_CACHE_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'cache', 'api_responses');
 const MASS_BACKFILL_STALE_MS = {
   '5m': 6 * 60 * 60 * 1000,
@@ -39,7 +38,7 @@ const MASS_BACKFILL_STALE_MS = {
 };
 const WEEKEND_EXEMPT_FAMILIES = new Set(['equities', 'indices', 'commodities']);
 
-const { rollupFromBase, rollupTargetsAboveBase, writeDeadSymbolMarker, listDeepSymbols, listDeepFiveMinSymbols, readBinFamily, readFiveMinBinFamily, rollupFiveMinForSymbol, commandIntradayRollup, INTRADAY_TF_ORDER, FULL_TF_ORDER, FAMILY_BASE_TF } = require('./data_rollup.js');
+const { DEFAULT_TS_DIR, rollupFromBase, rollupTargetsAboveBase, writeDeadSymbolMarker, listDeepSymbols, listDeepFiveMinSymbols, readBinFamily, readFiveMinBinFamily, rollupFiveMinForSymbol, commandIntradayRollup, INTRADAY_TF_ORDER, FULL_TF_ORDER, FAMILY_BASE_TF } = require('./data_rollup.js');
 const { equityUniverseEntries, alpacaEquity5mSkipReason, buildEquityDeepBackfillPlan, estimateEquity5mApiCalls, commandCryptoDeepBackfill, commandEquityDeepBackfill } = require('./data_deep_backfill.js');
 const { buildFiveMinAccumulatePlan, commandFiveMinAccumulate, buildIntradayAccumulatePlan, commandIntradayAccumulate, commandUniverse } = require('./data_accumulate.js');
 
