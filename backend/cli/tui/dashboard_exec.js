@@ -115,7 +115,17 @@ function loadDashboardHealth() {
   }
 }
 
+// Same matching rule the dashboard uses to decide between the in-pane spawn
+// path and the unmount+inherit-TTY path: prefix match, not a whole-word
+// match (e.g. an INTERACTIVE_CMDS entry of 'run' matches any cmdStr starting
+// with "run"). Extracted so the AI-testable safety harness can exercise the
+// exact same allowlist instead of re-deriving a second copy that could drift.
+function isInteractiveCmd(cmdStr, interactiveCmds) {
+  return Array.from(interactiveCmds).some((ic) => cmdStr.startsWith(ic) || cmdStr === ic);
+}
+
 module.exports = {
   splitWords, isPlaceholderSelect, defaultFlagValues, cycleOption, buildArgv,
   optionValue, optionLabel, stripAnsi, loadStrategyOptions, healthDot, loadDashboardHealth,
+  isInteractiveCmd,
 };
