@@ -115,6 +115,14 @@ async function main() {
   }
 
   // Persistent TUI menu loop when no args provided
+  if (process.env.LEGACY_TUI !== '1' && process.stdin.isTTY) {
+    const { spawnSync } = require('child_process');
+    const path = require('path');
+    console.clear();
+    spawnSync('node', [path.join(__dirname, 'sovereign_dashboard.mjs')], { stdio: 'inherit' });
+    return 0;
+  }
+
   const { runInteractiveMenu, buildStatusLine } = utils;
   const { setAuthEmail, setStatusLine } = require('./tui/engine/engine.js');
   const authLib = require('./lib/auth');

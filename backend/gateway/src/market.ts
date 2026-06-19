@@ -10,7 +10,7 @@ export interface TradingInfo {
 export async function fetchTradingInfo(slug: string): Promise<TradingInfo | null> {
   const parts = slug.split('--');
   const eventSlug  = parts[0];
-  const marketSlug = parts.slice(1).join('--'); // re-join in case market slug contains '--'
+  const marketSlug = parts.slice(1).join('--') || slug; // re-join or use full slug
 
   let events: any[];
   try {

@@ -672,7 +672,8 @@ function commandValidate(args) {
   const input = optionValue(args, '--input', DEFAULT_SNAPSHOT);
   const output = optionValue(args, '--output', DEFAULT_QUALITY_REPORT);
   const snapshot = readSnapshot(input);
-  const { report } = validateSnapshot(snapshot);
+  const strict = hasFlag(args, '--strict');
+  const { report } = validateSnapshot(snapshot, { strict });
   writeJson(output, report);
   
   const payload = {
