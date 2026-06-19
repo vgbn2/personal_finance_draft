@@ -94,7 +94,9 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
         fetched_bars: chunk.length,
         max_bars: providerMaxBars,
       });
-      allCandles.push(...chunk);
+      for (let i = 0; i < chunk.length; i++) {
+        allCandles.push(chunk[i]);
+      }
       if (currentStartTs <= targetStartTs) {
         break;
       }
@@ -112,6 +114,9 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
     }
   }
 
+  // The chunks are fetched backwards in time, so the array is completely reverse-sorted.
+  // Reversing it first prevents V8's Timsort from blowing the call stack due to max recursion depth!
+  allCandles.reverse();
   const sorted = dedupeSortCandles(allCandles);
   const actual = candleWindow(sorted);
   return attachBackfillMeta(sorted, {
