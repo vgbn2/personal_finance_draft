@@ -318,6 +318,7 @@ async function commandIntradayRollup(args) {
 }
 
 module.exports = {
+  DEFAULT_TS_DIR,
   INTRADAY_TF_ORDER, FULL_TF_ORDER, FAMILY_BASE_TF,
   rollupTargetsAboveBase, listDeepSymbols, listDeepFiveMinSymbols,
   readBinFamily, readFiveMinBinFamily, writeDeadSymbolMarker, removeDerivedBin,
