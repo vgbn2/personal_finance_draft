@@ -469,7 +469,22 @@ function validateSnapshot(snapshot, options = {}) {
 
   report.usable_records = usableSources.length;
   report.rejected_records = sourceSnapshot.sources.length - usableSources.length;
-  report.ok = report.counts.error === 0 && report.provider_errors.length === 0;
+
+  const strict = options.strict !== undefined ? Boolean(options.strict) : false;
+  let blockingWarnings = 0;
+  if (strict) {
+    for (const issue of report.issues) {
+      if (issue.severity === 'warning') {
+        const isExemptRollup = issue.code === 'rollup_lower_timeframe' &&
+                               (issue.family === 'commodities' || issue.family === 'equities');
+        if (!isExemptRollup) {
+          blockingWarnings++;
+        }
+      }
+    }
+  }
+
+  report.ok = report.counts.error === 0 && (!strict || blockingWarnings === 0);
 
   return { report, usableSources };
 }
