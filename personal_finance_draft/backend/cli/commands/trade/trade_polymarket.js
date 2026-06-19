@@ -8,6 +8,7 @@ const utils = require('../../lib/utils.js');
 const { canLiveExecute, getRuntimeMode } = require('../../../../shared/lib/brokers/capabilities');
 const { featureGate } = require('../../../../shared/lib/settings/runtime');
 const { runGatewayCommand, buildTradeGatewayLaunch } = require('../../../../shared/lib/runtime/backend_bridge');
+const { requireAuth, verifyPin } = require('../../lib/auth.js');
 const A = require('#shared/ui/ansi');
 const {
   pageText,
@@ -706,6 +707,26 @@ async function commandPolymarket(args) {
   }
 
   if (sub === 'markets' && !hasFlag(args, '--json') && args.length === 1 && isRichTerminal()) {
+    // This browser leads into runPolymarketMarketActionLoop, which can place a real
+    // money order off a single y/n confirm with no further gate -- give it the same
+    // requireAuth + SOVEREIGN_TRADE_PIN MFA challenge commandTrade()'s --live path
+    // requires for every other broker (trade.js:288,293-323), checked once per
+    // browse session rather than per-order.
+    if (!(await requireAuth('Polymarket live trading'))) return 1;
+    const expectedPin = process.env.SOVEREIGN_TRADE_PIN;
+    if (expectedPin) {
+      const providedPin = optionValue(args, '--pin', null);
+      let inputPin = providedPin || await promptText('Enter Trade PIN to confirm LIVE Polymarket trading:', '');
+      if (!verifyPin(inputPin, expectedPin)) {
+        console.error(`${A.B_RED}[ERROR] Invalid or missing Trade PIN. LIVE Polymarket trading blocked.${A.RESET}`);
+        return 1;
+      }
+      console.log(`${A.B_GREEN}[AUTH] PIN verified. Proceeding with LIVE Polymarket trading...${A.RESET}`);
+    } else {
+      console.warn(`${A.B_YELLOW}[WARNING] SOVEREIGN_TRADE_PIN not set. LIVE Polymarket trading proceeding without MFA gate.${A.RESET}`);
+      const finalProceed = await promptConfirm('Confirm LIVE Polymarket trading WITHOUT a PIN set?');
+      if (!finalProceed) return 0;
+    }
     const browse = await promptPolymarketMarketBrowser();
     if (browse.cancelled) {
       console.log('Polymarket market browser cancelled.');
