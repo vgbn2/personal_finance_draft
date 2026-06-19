@@ -46,6 +46,7 @@ const VAL = '#e6edf3';
 const DIM = '#8b949e';
 const MUT = '#6e7681';
 const BDR = '#30363d';
+const DOT_COLOR = { good: '#3fb950', warn: '#d29922', bad: '#f85149' }; // GN/AM/RD by tone
 
 // ── Manifest (inlined from manifest.js) ─────────────────────────────────
 const M = [
@@ -383,6 +384,14 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     return () => clearInterval(t);
   }, []);
 
+  // header health dots (backend/cache/quotes) — local-disk reads only, no
+  // network, so a 10s cadence is plenty fresh without adding render cost to
+  // every keystroke-driven re-render.
+  useEffect(() => {
+    const t = setInterval(() => setHealth(loadDashboardHealth()), 10000);
+    return () => clearInterval(t);
+  }, []);
+
   // restore terminal on any exit
   useEffect(() => () => process.stdout.write('\x1b[?1049l'), []);
 
@@ -639,15 +648,19 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const outputLines = output ? output.split('\n') : [];
   const visibleLines = outputLines.slice(-maxLines);
 
+  const backendDot = healthDot(health.backend);
+  const cacheDot = healthDot(health.cache);
+  const quoteDot = healthDot(health.quote_provider);
+
   // ── Render ─────────────────────────────────────────────────────────────
   return h(Box, { flexDirection: 'column', height: process.stdout.rows },
 
     // Header
     h(Box, { borderStyle: 'round', borderColor: CY, paddingX: 1 },
       h(Text, { color: CY, bold: true }, 'SOVEREIGN  '),
-      h(Text, { color: DIM }, 'backend '), h(Text, { color: GN  }, '●'),
-      h(Text, { color: DIM }, '  cache '), h(Text, { color: AM  }, '◐'),
-      h(Text, { color: DIM }, '  quotes '), h(Text, { color: GN }, '●'),
+      h(Text, { color: DIM }, 'backend '), h(Text, { color: DOT_COLOR[backendDot.tone] }, backendDot.glyph),
+      h(Text, { color: DIM }, '  cache '), h(Text, { color: DOT_COLOR[cacheDot.tone] }, cacheDot.glyph),
+      h(Text, { color: DIM }, '  quotes '), h(Text, { color: DOT_COLOR[quoteDot.tone] }, quoteDot.glyph),
       h(Box,  { flexGrow: 1 }),
       h(Text, { color: MUT }, clock),
     ),
