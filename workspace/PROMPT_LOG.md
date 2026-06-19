@@ -1239,3 +1239,33 @@ the whole ingest_market_data/ directory tree, not just index.js. 8 failures -> 0
 re-ran affected files twice for ordering flakiness. Committed f26c6533.
 RESULT: FW2 monolith deconstruction fully complete (no paused pieces remain). index.js 2227->1342
 lines across the whole effort. HEAD: f26c6533 | Suite: 490/490 JS.
+
+PROMPT: "sync it all" -> AskUserQuestion (Ubuntu LAN sync, blocked / GitHub push) -> "Push to GitHub
+(all real branches)".
+WORK: git push origin main rejected -- discovered git root is the whole CODEPTIT monorepo (not this
+subdir), so the push tried to send every sibling project and GitHub's pre-receive hook blocked a 166MB
+unrelated .exe. Also discovered origin already has main/feat-session-guard-intraday-rollup at a
+totally unrelated commit (be96d76c, root 524e787d) with real distinct work (backfill-daemon parallel
+lanes, clear-api-cache command) -- two genuinely diverged, independently-evolved timelines, NOT a
+simple history-rewrite. AskUserQuestion x2: "push as new branch names" (don't touch/risk origin's
+history) + "only the personal_finance_draft subtree" (don't push the whole monorepo). Ran `git subtree
+split --prefix=personal_finance_draft <branch> -b <new>` from the monorepo toplevel for all 4 local
+branches (main, feat/session-guard-intraday-rollup, feat/ml-onnx-section,
+feat/resilient-crypto-fallback); pre-flight-checked for oversized blobs (none >21MB); pushed all 4 as
+local-main / local-feat-session-guard-intraday-rollup / local-feat-ml-onnx-section /
+local-feat-resilient-crypto-fallback. Verified via git ls-remote.
+RESULT: first real GitHub backup of this project, ever. Origin's existing branches untouched.
+Reconciling origin's unique be96d76c-lineage commits into local history is an open question, not
+started. HEAD unchanged (no new local commits this leg -- pure git/infra work). Suite: 490/490 JS
+(last verified before the sync work began).
+
+## 2026-06-19 - Session Orchestrator close-out
+PROMPT: /session-orchestrator (re-invoked mid-session, treated as a close-out request since no new
+task was given and the prior leg's work was already complete).
+WORK: Created workspace/handoff/2026-06-19.md (new dated file per convention, today's date rolled
+over from 2026-06-18 mid-session); updated HANDOFF.md pointer + added 2 carryover entries (GitHub
+sync milestone + FW2 completion summary); added a structured SESSION_MEMORY.md entry covering both;
+this PROMPT_LOG close-out entry. graphify-out refresh skipped (stale since 2026-05-18, consistent
+with many prior sessions' explicit deprioritization -- no code-graph-relevant decision pending on it).
+RESULT: Session 39 fully documented across all 4 workspace docs. HEAD: f26c6533 (local) /
+local-* branches on origin | Suite: 490/490 JS (last full run before the sync leg).
