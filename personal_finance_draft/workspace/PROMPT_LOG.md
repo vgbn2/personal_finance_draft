@@ -1297,3 +1297,42 @@ feat->main merge decision) or local main (still session-28-era stale).
 RESULT: feat/session-guard-intraday-rollup is now genuinely in sync between local and origin, no
 data at risk, no force-push used anywhere. HEAD: 5fe72fc8 (local) = 14c75eea (origin, after
 subtree split) | Suite: 490/490 JS.
+
+## 2026-06-19 - Session 41: first formal blast-through Gate Table + 4 real bugs found/fixed
+PROMPT: /blast-through (no further args).
+WORK: Full Audit (anchor e0cb6aa2->76fbe991). Repo-wide hygiene/security/completeness sweeps clean.
+3 parallel Explore agents covered the FW2 decomposition surface; caught and corrected 2 agent
+inaccuracies before reporting (a false "dead exports" claim, a false "new regression" framing) by
+verifying directly. Found 2 reachable bugs in manifests.js (undefined fetchEcbHistory call;
+fetchKalshiHistoricalMarkets return-shape mismatch crashing its only caller) -- both confirmed
+pre-existing via git show <commit>~1 against the pre-extraction monolith. Reported Gate Table,
+flagged 2 more items needing a human decision (Polymarket MFA/PIN gate parity, 6 dormant TUI-exposed
+ingest families).
+RESULT: Gate Table + findings written to workspace/DEV_REVIEW.md and workspace/STATE.md.
+
+## 2026-06-19 - Session 41 cont.: "continue" -> fixed the 2 confirmed P1 bugs
+PROMPT: "continue".
+WORK: Fixed manifests.js to import the real fetchEcbFx/fetchEcbHistory from
+shared/lib/providers/ecb.js instead of a local stub; fixed fetchKalshiHistoricalMarkets() to return
+{ records: [] } matching its caller's destructuring contract. Verified via direct probes + full
+suite before committing.
+RESULT: commit 5ca738aa. Suite 490/490.
+
+## 2026-06-19 - Session 41 cont.: dashboard file check + "act now" on remaining items
+PROMPT: user pointed at backend/cli/sovereign_dashboard.mjs ("check this and just go on with the
+rest"), then after my AskUserQuestion on the 2 remaining audit items, answered "act now".
+WORK: Reviewed sovereign_dashboard.mjs (a new Ink TUI, not mine -- read-only, flagged that command
+execution isn't wired up yet as FYI). Then implemented both remaining fixes: traced
+submitPolymarketBuyOrder's only call site and found commandPolymarket's "markets" browser reaches
+it with NO --live gate at all (worse than originally scoped) -- added the same
+requireAuth+SOVEREIGN_TRADE_PIN gate other brokers' live paths require. Removed the 6 dormant
+families (pmi/breadth/onchain/flight/crypto_tx/holdings) from tui/manifest.js's ingest --family
+dropdown. Mid-session, a concurrent process (confirmed: user's own parallel Ink TUI/Codex work)
+committed on top of mine and switched the checkout to a new branch feat/ink-tui-refactor without
+warning -- confirmed no data loss, left the checkout alone per instruction, re-checked git status
+before every commit for the rest of the session and staged only my own files via explicit
+pathspecs.
+RESULT: commits 91aafeef (fixes) + fab31f72 (docs). Suite 490/490 (one transient dip to 486/490
+conclusively traced to the concurrent process's in-progress sovereign_cli.js edit, not these fixes).
+feat/ink-tui-refactor (fab31f72) is now 5 commits ahead of feat/session-guard-intraday-rollup
+(76fbe991) -- flagged as a new open carryover, reconciliation deferred to next session.
