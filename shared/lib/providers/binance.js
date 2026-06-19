@@ -36,7 +36,9 @@ async function fetchBinanceBaseCandles(symbol, limit = 1000, interval = '1d', st
       };
     });
 
-    allBars.push(...bars);
+    for (let i = 0; i < bars.length; i++) {
+      allBars.push(bars[i]);
+    }
     remaining -= bars.length;
     calls++;
 
