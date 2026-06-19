@@ -1,11 +1,38 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: e0cb6aa2
-last_audit_date: 2026-06-15
+last_audited_commit: 76fbe991
+last_audit_date: 2026-06-19
 
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
+
+## Audit Note - 2026-06-19 session 41 - Full Audit (anchor e0cb6aa2 → 76fbe991), first formal Gate Table; 2 real reachable bugs found (both pre-existing, not new regressions)
+- First Full Audit run with the current blast-through schema (no prior Gate Table existed). Full findings,
+  evidence, and fix suggestions: `workspace/DEV_REVIEW.md` "Blast-Through Full Audit — 2026-06-19 session 41".
+- **Headline findings (both confirmed reachable in production, both confirmed pre-existing via `git show
+  <commit>~1` against the pre-FW2-extraction monolith — NOT regressions from this week's refactor):**
+  (1) `manifests.js:113` calls undefined `fetchEcbHistory` → `ReferenceError` if the FX provider chain
+  falls through to `ecb` with `--history-days` set; real impl sits unused in `shared/lib/providers/ecb.js`.
+  (2) `fetchKalshiHistoricalMarkets`/`Candlesticks` always `return []`; `research_sources.js` destructures
+  `{records}` off that and crashes with a generic `TypeError` (caught per-event, not fatal, but Kalshi
+  prediction-market history has never actually returned data despite 4 configured events).
+- **FW2 decomposition (this week's actual Tier-1 changes) verified CLEAN** — 3 parallel agent reviews +
+  direct spot-verification of the highest-stakes claims found no stale duplicates, no broken/circular
+  requires, no NEW stubs. Every bug found pre-dates this week; the splits just carried them forward
+  faithfully (same behavior, same line content, different file).
+- **Hygiene/Security/Surface-Parity sweeps: clean.** ~36 duplicate-basename pairs all resolve to the
+  documented root-shim architecture or genuinely-different domains; no eval/dynamic-require/secrets in
+  production; no manifest↔handler drift in spot-checked samples.
+- **Flagged for human security-policy review (not a code bug):** Polymarket's live-order path
+  (`trade_polymarket.js:507`) is gated by `canLiveExecute`/`featureGate` (deployment-mode/capability check)
+  rather than the `requireAuth`+`SOVEREIGN_TRADE_PIN` MFA challenge other brokers get — confirmed
+  pre-existing (byte-identical before this week's `trade.js` split too).
+- Gate Table: `ingest_market_data` C (2 real bugs), `research` C (shares blame for the Kalshi bug),
+  `data` B (1 minor centralization debt, `DEFAULT_TS_DIR` 3×), `tools/backend*` B (clean), `trade` B/security-flag
+  (clean split, pre-existing gate-parity question), `shared/lib/market` B (this session's writeJson fix
+  already closed the one real bug there). DCS 0.96→0.92 (the two confirmed bugs above are exactly the
+  "degraded paths" the score is flagging — both fully diagnosed, not requiring further investigation).
 
 ## Fix Note - 2026-06-19 session 40 - writeJson array/undefined-safety; reviewed+committed a concurrent batch
 - **Found at boot:** a concurrent (non-Claude) batch was sitting uncommitted on `feat/session-guard-intraday-rollup`:
