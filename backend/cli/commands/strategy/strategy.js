@@ -763,7 +763,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
     });
 
     // 2. Fetch latest data in batches per timeframe
-    const { commandBackfill } = require('../data.js');
+    const { commandBackfill } = require('../data/data.js');
     global.suppressLogs = true;
     try {
         for (const [timeframe, symbols] of refreshGroups.entries()) {
