@@ -1,11 +1,19 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: 1fbfcd9d
-last_audit_date: 2026-06-19
+last_audited_commit: d06db968
+last_audit_date: 2026-06-20
 
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
+
+## Implementation Note - 2026-06-20 session 47 - Repo Health Audit & Critical Strategy Automation Fixes
+- **Repo Health Audit**: Executed deep health audit line-by-line across CLI core modules (`backend/cli`), shared libraries (`shared/lib`), and deployment scripts. All 57 unit tests, 21 TUI dashboard integration tests, and 41 CLI contracts pass successfully (100% green).
+- **Strategy Automation Settings Bug Fixed**: Resolved a critical scoping issue in `backend/cli/commands/strategy/strategy.js` where the `settings` variable was undefined inside the `runAutomationPass` function. This would trigger a runtime `ReferenceError` the moment a real trading signal was generated and position-size allocation was computed.
+- **Fail-Closed Live Balance Gate**: Hardened live execution safety by ensuring that if a portfolio balance fetch fails in live trading mode (`isLive === true`), the system throws a hard error and halts, rather than falling back to a $100,000 baseline.
+- **Timeframe-Calibrated Freshness Gate**: Calibrated `maxAgeMs` dynamically based on the strategy's target timeframe (e.g. 1.5 bars of age) rather than hardcoding it to a fixed 1-day limit for all timeframes.
+- **Async Loop Refactor**: Refactored the main auto-trade runner `runAutomatedStrategies` to wrap the scheduler in a Promise that resolves cleanly, instead of executing a terminal-killing `process.exit(0)`.
+- **Empirical Validation**: Staged and committed all core fixes to `feat/ink-tui-refactor` (commit `d06db968`). Verified single-pass dry run runs cleanly with zero errors.
 
 ## Implementation Note - 2026-06-19 session 46 - Committing robust TUI and fixing safety test timeouts
 - **TUI Safety Test Execution Fix**: Resolved a test suite hang/timeout failure where the automated TUI safety execution check ran unmocked heavy computational commands (`ingest`, `intraday-rollup`, `bt`, `optimize`) that query external APIs or run full database scans by default, taking longer than the 20s timeout limit. Added a `HEAVY_COMPUTATIONAL_IDS` exclusion filter in `dashboard_command_safety.test.js` to bypass execution checks for these commands since their prompt-gate safety is already proven at the TUI engine level by `tui_engine_noninteractive.test.js`.
