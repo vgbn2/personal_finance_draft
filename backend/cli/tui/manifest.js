@@ -152,10 +152,14 @@ const COMMAND_MANIFEST = {
       }},
       { id: 'ingest',      label: 'Ingest ', loading: true, flags: {
         '--family': { type: 'select', options: [
+          // pmi/breadth/onchain/flight/crypto_tx/holdings removed: their fetchers in
+          // manifests.js are unimplemented stubs (silent return {}) with no config
+          // section enabling them (or explicitly enabled: false for onchain) -- picking
+          // one here always produced a silent no-op. See workspace/DEV_REVIEW.md.
           'all', 'crypto', 'fx', 'equities', 'indices', 'commodities',
-          'macro', 'macro_alt', 'pmi', 'breadth', 'sentiment',
-          'onchain', 'prediction_market', 'weather', 'flight',
-          'crypto_tx', 'holdings', 'reserves'
+          'macro', 'macro_alt', 'sentiment',
+          'prediction_market', 'weather',
+          'reserves'
         ], label: 'Family', default: 'all' },
         '--symbol':       { type: 'text', default: '', label: 'Symbol filter (optional)' },
         '--timeframe':    { type: 'select', options: ['1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1h' },
