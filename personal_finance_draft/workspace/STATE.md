@@ -1,7 +1,7 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: 76fbe991
+last_audited_commit: fab31f72
 last_audit_date: 2026-06-19
 
 ## Current Phase
@@ -28,11 +28,21 @@ Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
   (`trade_polymarket.js:507`) is gated by `canLiveExecute`/`featureGate` (deployment-mode/capability check)
   rather than the `requireAuth`+`SOVEREIGN_TRADE_PIN` MFA challenge other brokers get — confirmed
   pre-existing (byte-identical before this week's `trade.js` split too).
-- Gate Table: `ingest_market_data` C (2 real bugs), `research` C (shares blame for the Kalshi bug),
-  `data` B (1 minor centralization debt, `DEFAULT_TS_DIR` 3×), `tools/backend*` B (clean), `trade` B/security-flag
-  (clean split, pre-existing gate-parity question), `shared/lib/market` B (this session's writeJson fix
-  already closed the one real bug there). DCS 0.96→0.92 (the two confirmed bugs above are exactly the
-  "degraded paths" the score is flagging — both fully diagnosed, not requiring further investigation).
+- Gate Table (at audit time): `ingest_market_data` C (2 real bugs), `research` C (shares blame for the
+  Kalshi bug), `data` B (1 minor centralization debt, `DEFAULT_TS_DIR` 3×), `tools/backend*` B (clean),
+  `trade` B/security-flag (clean split, pre-existing gate-parity question), `shared/lib/market` B (this
+  session's writeJson fix already closed the one real bug there). DCS 0.96→0.92 (the two confirmed bugs
+  above are exactly the "degraded paths" the score is flagging — both fully diagnosed).
+- **All 4 reviewer-decision items subsequently acted on and fixed, same session** (user said "act now" on
+  the remaining two after reviewing): `ingest_market_data` C→A (`fetchEcbFx`/`fetchEcbHistory` wired to
+  the real `shared/lib/providers/ecb.js`, commit `5ca738aa`); `research` C→A (Kalshi stub shape fixed,
+  same commit); `trade` security-flag→A (Polymarket `markets` browser now gated by `requireAuth`+
+  `SOVEREIGN_TRADE_PIN`, same as every other broker's live path — tracing the call site found the gap was
+  actually worse than first scoped: reachable with **no** `--live` flag at all, only the `polymarket`
+  feature flag; commit `91aafeef`); TUI `ingest --family` dropdown lost its 6 dormant entries
+  (pmi/breadth/onchain/flight/crypto_tx/holdings), same commit. Gate Table is now all-OPEN; only the 2
+  trivial P3s (duplicate exports, `DEFAULT_TS_DIR` redefinition) remain, noted in the Centralization
+  Backlog, not gating. Audit anchor bumped to `fab31f72` (post-fix HEAD).
 
 ## Fix Note - 2026-06-19 session 40 - writeJson array/undefined-safety; reviewed+committed a concurrent batch
 - **Found at boot:** a concurrent (non-Claude) batch was sitting uncommitted on `feat/session-guard-intraday-rollup`:
