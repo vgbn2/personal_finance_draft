@@ -4,9 +4,8 @@ const { writeTsIndex, readTsIndex, mergeWriteBin } = require('../../../../shared
 const { featureGate } = require('../../../../shared/lib/settings/runtime');
 const utils = require('../../lib/utils.js');
 const { optionValue, numericOption, hasFlag, withLoadingAnimation, printPayload } = utils;
-const { rollupFromBase, rollupTargetsAboveBase, writeDeadSymbolMarker, FAMILY_BASE_TF } = require('./data_rollup.js');
+const { DEFAULT_TS_DIR, rollupFromBase, rollupTargetsAboveBase, writeDeadSymbolMarker, FAMILY_BASE_TF } = require('./data_rollup.js');
 
-const DEFAULT_TS_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
 const DEFAULT_HISTORY = utils.DEFAULT_HISTORY;
 
 const EQUITY_DEEP_BACKFILL_PROVIDER = 'alpaca';
