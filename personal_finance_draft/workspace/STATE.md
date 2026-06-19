@@ -7,6 +7,35 @@ last_audit_date: 2026-06-15
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Fix Note - 2026-06-19 session 40 - writeJson array/undefined-safety; reviewed+committed a concurrent batch
+- **Found at boot:** a concurrent (non-Claude) batch was sitting uncommitted on `feat/session-guard-intraday-rollup`:
+  3 `push(...spread)` -> loop conversions (the documented call-stack-RangeError trap, in
+  `data.js` mass-backfill, `backfill.js` paginated fetch, `binance.js` base-candle fetch) +
+  a stale `require('../data.js')` -> `require('../data/data.js')` fix in `strategy.js` (broken
+  by the FW2 monolith split) + `research.yaml` `fallback_days` 365->1825 + a rewritten
+  `writeJson()` in `shared/lib/market/validation.js` meant to stream large `sources` arrays.
+- **Real bug found in the rewritten `writeJson`:** it did `{...payload}`, which silently turns
+  array-shaped payloads into a numeric-keyed object on disk, and threw `TypeError` on any field
+  with an explicit `undefined` value (`JSON.stringify(undefined,...)` returns `undefined`, not a
+  string, so `.replace()` on it crashes). `shared/lib/runtime/execution_memory.js` -- the
+  **live bot's trade-dedup memory**, used to prevent duplicate order execution after an
+  unattended-host restart -- persists via `writeJson(MEMORY_PATH, entries)` where `entries` is a
+  plain array. The bug would have silently wiped that file's array shape on first `.save()`,
+  resetting dedup memory to empty on the next load.
+- **Fix:** non-plain-object payloads (arrays, primitives, `null`) bypass the streaming path
+  entirely and go through plain `JSON.stringify` (matches pre-existing behavior exactly); for
+  object payloads, keys with `undefined` values are skipped (matching `JSON.stringify`'s own
+  drop-undefined-keys semantics) instead of crashing. The `sources`-array streaming optimization
+  is preserved for its intended case.
+- **Verified:** 14 hand-built edge cases (array payload, null/empty/non-array `sources`,
+  `undefined` fields, unicode, 5000-element arrays, primitives) byte-match `JSON.stringify`
+  output; full suite 490/490; a real save/reload round-trip against a **backed-up copy** of the
+  live `storage/data/cache/execution_memory.json` (restored byte-identical afterward, no
+  permanent change to real data).
+- Commits: `ef05f356` (writeJson fix), `7743a6bc` (call-spread loops + strategy.js path fix),
+  `71033722` (research.yaml config), `3472fc9f`+`5fe72fc8` (pending session-39 docs).
+- Full trail incl. the GitHub origin-reconciliation correction: `workspace/handoff/2026-06-19.md` session 40.
+
 ## Implementation Note - 2026-06-15 session 37 - unify rollup to ALL timeframes + custom-TF support (fixes crypto 1w:1)
 - **Symptom:** `backend integrity` showed `1w:1` for every crypto symbol (BTCUSDT had `1d:3223`
   but a single weekly bar) and deep-backfill "made no difference." Root cause: the rollup chain

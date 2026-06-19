@@ -1269,3 +1269,31 @@ this PROMPT_LOG close-out entry. graphify-out refresh skipped (stale since 2026-
 with many prior sessions' explicit deprioritization -- no code-graph-relevant decision pending on it).
 RESULT: Session 39 fully documented across all 4 workspace docs. HEAD: f26c6533 (local) /
 local-* branches on origin | Suite: 490/490 JS (last full run before the sync leg).
+
+## 2026-06-19 - Session 40: reviewed concurrent batch + corrected origin reconciliation
+PROMPT: /clear then /session-orchestrator (fresh boot, no specific task given).
+WORK: Boot found an uncommitted concurrent batch (not mine) on feat/session-guard-intraday-rollup:
+3 push(...spread)->loop RangeError fixes (data.js/backfill.js/binance.js), a stale require-path
+fix (strategy.js), a research.yaml config bump, and a rewritten writeJson() in validation.js.
+Verified the batch before committing and found a real bug: writeJson's `{...payload}` silently
+corrupts array-shaped payloads into numeric-keyed objects and crashes on undefined field values --
+shared/lib/runtime/execution_memory.js (the live bot's trade-dedup memory) persists an array via
+writeJson, so the bug would have wiped dedup history on the bot's next restart. Fixed (bypass
+streaming for non-plain-object payloads, skip undefined keys), verified 14 edge cases + a real
+round-trip against a backed-up copy of the live execution_memory.json (restored after), full suite
+490/490. Committed in 5 commits (ef05f356, 7743a6bc, 71033722, 3472fc9f, 5fe72fc8 -- last two also
+landed the still-pending session-39 docs).
+User picked "Origin GitHub history reconciliation" as the session focus. Re-investigated session
+39's "irreconcilable divergent history" conclusion and found it was based on comparing the wrong
+hashes (monorepo branch hashes vs origin's subtree-only hashes). Re-ran git subtree split on the
+current local branches and proved via git merge-base --is-ancestor that origin/main and
+origin/feat/session-guard-intraday-rollup are the same commit (be96d76c) and a strict ancestor of
+local feat/session-guard-intraday-rollup -- every "origin-unique" commit session 39 worried about
+losing is already in local history. Did a genuine fast-forward push (be96d76c..14c75eea) to
+origin/feat/session-guard-intraday-rollup, then deleted the now-redundant origin/local-main and
+origin/local-feat-session-guard-intraday-rollup (kept the ml-onnx/resilient-crypto local-* backups
+-- origin has no real branch for those). Did not touch origin/main (separate, still-open
+feat->main merge decision) or local main (still session-28-era stale).
+RESULT: feat/session-guard-intraday-rollup is now genuinely in sync between local and origin, no
+data at risk, no force-push used anywhere. HEAD: 5fe72fc8 (local) = 14c75eea (origin, after
+subtree split) | Suite: 490/490 JS.
