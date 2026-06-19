@@ -6,11 +6,12 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-15.md`** (last update: 2026-06-18 session 39)
+- Latest/current handoff: **`workspace/handoff/2026-06-19.md`** (last update: 2026-06-19 session 39 cont.)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
 - Update the "Latest/current handoff" line above whenever a new dated file is created.
+- Prior day's detail: `workspace/handoff/2026-06-15.md` (sessions 34-39, through FW2 completion).
 - Deep history (everything accumulated before this convention started) lives in
   `workspace/handoff/_archive_through_2026-06-08.md` — read it only when you need pre-2026-06-08 detail.
 - `workspace/STATE.md` was similarly trimmed; older Correction Log/Update entries (sessions ~20-79,
@@ -18,6 +19,28 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 39 (2026-06-19) — first real GitHub backup of this repo (subtree-split push), FW2 fully
+  done.** Full trail: `workspace/handoff/2026-06-19.md`. Discovered this directory's actual git root is
+  the whole CODEPTIT monorepo (not personal_finance_draft alone) and that `origin` already holds its own
+  divergent `main`/`feat/session-guard-intraday-rollup` history (commit `be96d76c`, real distinct work:
+  backfill-daemon parallel lanes, clear-api-cache command, TUI refactors — not in local history). Used
+  `git subtree split --prefix=personal_finance_draft <branch> -b <new>` (run from the monorepo
+  toplevel) to extract just this project's history, then pushed all 4 local branches under `local-*`
+  names so origin's existing branches stay untouched: `local-main`, `local-feat-session-guard-intraday-rollup`,
+  `local-feat-ml-onnx-section`, `local-feat-resilient-crypto-fallback`. **Next-session first step (user
+  decision, not started):** decide whether/how to reconcile origin's unique `be96d76c`-lineage commits
+  into local history, and whether `local-*` becomes the real tracked upstream going forward. 4 leftover
+  local scaffolding branches (`pfd-*-subtree`) are harmless byproducts, not cleaned up.
+- **SESSION 39 (2026-06-18/19) — FW2 monolith deconstruction FULLY COMPLETE** (all 4 batches landed:
+  backend/research/trade/data session 38 + candle_utils/manifests/providers-prediction/snapshot_fetchers
+  this session). Root-caused and fixed the exact reason Batch 4 was paused twice (stale sibling-module
+  cache during `Module._load` provider-stubbing tests — fix: purge the whole `ingest_market_data/`
+  directory tree from `require.cache`, not just `index.js`'s own entry). `ingest_market_data/index.js`
+  2227→1342 lines. Also: fixed a real duplicate-`registry:`-block bug in `config/trading/strategies.yaml`
+  (silently double-listed all 14 strategies), and reviewed+committed a separate concurrent "vintage
+  audit"/human-readable-CLI-output batch that was actively being built mid-session by another tool/agent
+  (not mine — verified coherent and green before committing). Suite 490/490 throughout. Full trail:
+  `workspace/handoff/2026-06-15.md` session 39.
 - **SESSION 36 (2026-06-15) — backfill-daemon OOM fixed at the root + hard-tested + COMMITTED. Suite
   488/488.** Full trail: `workspace/handoff/2026-06-15.md` session 36. `backfill-daemon --concurrency 5`
   was OOMing (V8 heap ~4GB) in the crypto lane because each incremental job deserialized the whole
