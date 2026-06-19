@@ -1,3 +1,35 @@
+# Prompt Log - 2026-06-19 (session 43)
+
+## Session Boot — 2026-06-19 (session 43)
+/session-orchestrator. Loaded HANDOFF.md, SESSION_MEMORY.md (sessions 21-42), STATE.md. HEAD `9a9518b2`,
+branch `feat/ink-tui-refactor` (confirmed: session 41's "diverged by 5 commits" carryover was resolved
+session 42 via fast-forward — `feat/session-guard-intraday-rollup` is now also at `9a9518b2`, no
+divergence). Re-verified working tree matches session 42's close-out exactly: `sovereign_dashboard.mjs`,
+`backend/cli/tui/dashboard_exec.js`, and the 2 new test files (`dashboard_exec.test.js`,
+`sovereign_dashboard.test.js`) are still untracked; `sovereign_cli.js`/`market.ts`/`package.json`/
+`package-lock.json` still carry the concurrent (not-mine) Ink/React dep edits from session 41. Nothing
+committed since `9a9518b2`. graphify-out still stale (last chunk write 2026-06-09) — unchanged, repeatedly
+deprioritized by the user, not refreshing without an explicit ask given the heavyweight cost. Awaiting
+user direction: open carryover is the session-42 commit decision (dashboard_exec.js + dashboard wiring
+vs. the 2 test files) plus the still-unverified live-PTY interactive transition.
+
+# Prompt Log - 2026-06-19 (session 42)
+
+## Session Boot — 2026-06-19 (session 42)
+/session-orchestrator. Loaded HANDOFF.md (pointer → workspace/handoff/2026-06-19.md sessions 39/40/41),
+SESSION_MEMORY.md, STATE.md. HEAD `9a9518b2` (session 41 close-out docs), branch `feat/ink-tui-refactor`.
+Re-investigated session 41's open carryover ("feat/ink-tui-refactor vs feat/session-guard-intraday-rollup
+have diverged by 5 commits, ask user whether/how to reconcile"): `git merge-base --is-ancestor
+feat/session-guard-intraday-rollup feat/ink-tui-refactor` returns true and `git rev-list
+feat/ink-tui-refactor..feat/session-guard-intraday-rollup` is empty — session-guard-intraday-rollup has
+ZERO unique commits; it is a strict ancestor (pure fast-forward target), not a real divergence. Session 41's
+"diverged" wording was overcautious. The 4 pfd files still showing modified in git status (sovereign_cli.js
+dashboard-spawn wiring, market.ts slug fallback, package.json/package-lock.json ink/react deps) plus
+untracked sovereign_dashboard.mjs are unchanged since session 41 (same mtimes ~17:38/13:02/12:14) — still
+the user's own in-progress concurrent Ink TUI work, left untouched. Awaiting user direction on (a) whether
+to fast-forward/retire feat/session-guard-intraday-rollup now that it's confirmed safe, and (b) this
+session's actual task.
+
 # Prompt Log - 2026-06-17 (session 39)
 
 ## Session Boot — 2026-06-17 (session 39)
