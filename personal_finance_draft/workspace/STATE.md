@@ -1,11 +1,15 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: d06db968
+last_audited_commit: d21e25ce
 last_audit_date: 2026-06-20
 
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
+
+## Implementation Note - 2026-06-20 session 47 - Mass Implement: Consolidate TS Dir Definitions (data B → A)
+- **Consolidated `DEFAULT_TS_DIR`**: Cleared the centralization backlog item from `DEV_REVIEW.md` by exporting `DEFAULT_TS_DIR` from `data_rollup.js` and importing it destructured in both `data.js` and `data_deep_backfill.js`, eliminating duplicate path definitions.
+- **Empirical Validation**: Verified with both `npm run test:data` and the broader unit test suite (`node --test tests/scripts/tests/sovereign_cli.test.js`)—all tests passed. Staged and committed changes (commit `d21e25ce`).
 
 ## Implementation Note - 2026-06-20 session 47 - Repo Health Audit & Critical Strategy Automation Fixes
 - **Repo Health Audit**: Executed deep health audit line-by-line across CLI core modules (`backend/cli`), shared libraries (`shared/lib`), and deployment scripts. All 57 unit tests, 21 TUI dashboard integration tests, and 41 CLI contracts pass successfully (100% green).
