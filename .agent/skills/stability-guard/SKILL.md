@@ -1,3 +1,8 @@
+---
+name: stability-guard
+description: Stability and safety standards for maintaining clinical-grade system integrity in the diabetic-main suite.
+---
+
 # Skill: Stability Guard
 
 Architectural standards and patterns for maintaining clinical-grade system integrity in the "diabetic-main" suite.

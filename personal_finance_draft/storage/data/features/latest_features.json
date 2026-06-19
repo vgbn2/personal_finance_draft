@@ -1,8 +1,8 @@
 {
-  "source_mode": "recovered_live",
+  "source_mode": "live",
   "data_quality_ok": true,
   "data_quality_report": "C:\\Users\\Lenovo\\Desktop\\VGBN\\.vscode\\CODEPTIT\\personal_finance_draft\\storage\\data\\cache\\data_quality_report.json",
-  "generated_at": "2026-06-12T08:34:21.991Z",
+  "generated_at": "2026-06-19T14:40:39.204Z",
   "indicator_periods": {
     "returnFast": 1,
     "returnSlow": 5,
@@ -17,175 +17,80 @@
     "sessionStartHour": 0,
     "sessionTimezoneOffsetMinutes": 0
   },
-  "feature_count": 0,
+  "feature_count": 136,
   "skipped": [
-    {
-      "key": "XAUUSD:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XAGUSD:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XCUUSD:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "USOIL:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NG:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "WHEAT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XAUUSD:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XAGUSD:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XAGUSD:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XAUUSD:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XCUUSD:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XCUUSD:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "USOIL:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "USOIL:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NG:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NG:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "WHEAT:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "WHEAT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "CORN:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "CORN:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "CORN:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SOYBN:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SOYBN:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SOYBN:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "UKOIL:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "UKOIL:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "UKOIL:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XAUUSD:1m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
     {
       "key": "XAUUSD:tick",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "GT:1d",
+      "key": "DOTUSDT:1w",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "BTCUSDT:1w",
+      "key": "OKB:1w",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "BTCUSDT:1mo",
+      "key": "KCS:1w",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "BTCUSDT:1h",
+      "key": "UNIUSDT:1w",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "ETHUSDT:1h",
+      "key": "AAVEUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SNXUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "LDOUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FLOKIUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BONKUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "HT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CROUSDT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FTT:1w",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MKRUSDT:1w",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -195,407 +100,7 @@
       "bars": 1
     },
     {
-      "key": "LINKUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ETHUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "BNBUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XRPUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DOGEUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ADAUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "BNBUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "BNBUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ETHUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "BNBUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XRPUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DOGEUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ADAUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "LINKUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XRPUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ADAUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "XRPUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ADAUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "LINKUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "FETUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "FETUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "FETUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "FETUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "LINKUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DOGEUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SOLUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SOLUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SHIBUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AVAXUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AVAXUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SNXUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SHIBUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "POLUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SOLUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DOTUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "UNIUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AVAXUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AVAXUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NEARUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "INJUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NEARUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NEARUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NEARUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "INJUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AAVEUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "INJUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "INJUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SHIBUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SHIBUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DOGEUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SOLUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ETHUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "LDOUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "PEPEUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "PEPEUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SUIUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "PEPEUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "PEPEUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "FLOKIUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SUIUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SUIUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SUIUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SUIUSDT:4h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "POLUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "WIFUSDT:1w",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "BONKUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "WIFUSDT:1mo",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "WIFUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "WIFUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "TAOUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "POLUSDT:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "POLUSDT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SPY:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ORCL:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SBUX:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NKE:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "WFC:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "MS:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DIS:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "VZ:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "MCD:1d",
+      "key": "CPER:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -615,101 +120,6 @@
       "bars": 1
     },
     {
-      "key": "ALV:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DIA:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "MSTR:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "QQQ:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "INFY:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "GS:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "IWM:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AAPL:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "MSFT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NVDA:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "GOOGL:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AMZN:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NFLX:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AMD:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "FMC:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "CRM:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ADBE:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "JPM:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "BAC:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
       "key": "GSK:1d",
       "reason": "insufficient_history",
       "bars": 1
@@ -725,27 +135,247 @@
       "bars": 1
     },
     {
-      "key": "VOW3:1d",
+      "key": "ALV:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "SMCI:1d",
+      "key": "WHEAT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "TMUS:1d",
+      "key": "CORN:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "MBG:1d",
+      "key": "SOYBN:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "AVGO:1d",
+      "key": "WHEAT:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CORN:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SOYBN:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "WHEAT:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CORN:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SOYBN:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CPER:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CPER:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CPER:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CPER:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CPER:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BP:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BP:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BP:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BP:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BP:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SHEL:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SHEL:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SHEL:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SHEL:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SHEL:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AZN:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AZN:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AZN:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AZN:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "AZN:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GSK:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GSK:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GSK:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GSK:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GSK:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "RIO:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "RIO:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "RIO:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "RIO:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "RIO:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SAP:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SAP:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SAP:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SAP:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "SAP:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ALV:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ALV:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ALV:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "ALV:4h",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -755,7 +385,17 @@
       "bars": 1
     },
     {
+      "key": "BID:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
       "key": "CTG:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TCB:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -765,7 +405,22 @@
       "bars": 1
     },
     {
-      "key": "CMG:1d",
+      "key": "VIC:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VHM:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VRE:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VNM:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -780,22 +435,7 @@
       "bars": 1
     },
     {
-      "key": "TSLA:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "VIC:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "VNM:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "META:1d",
+      "key": "FMC:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -805,162 +445,337 @@
       "bars": 1
     },
     {
-      "key": "BID:1d",
+      "key": "XAUUSD:4h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "BABA:1d",
+      "key": "XAUUSD:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "VRE:1d",
+      "key": "XAGUSD:4h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "VHM:1d",
+      "key": "XAGUSD:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "TCB:1d",
+      "key": "XCUUSD:4h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "COIN:1d",
+      "key": "XCUUSD:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "GOOGL:1h",
+      "key": "USOIL:4h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "AMZN:1h",
+      "key": "USOIL:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "META:1h",
+      "key": "UKOIL:4h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "MSTR:1h",
+      "key": "UKOIL:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "SMCI:1h",
+      "key": "NG:4h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "COIN:1h",
+      "key": "NG:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "SPY:1h",
+      "key": "ETHUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "IWM:1h",
+      "key": "BNBUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "QQQ:1h",
+      "key": "SOLUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "ORCL:1h",
+      "key": "WIFUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "SBUX:1h",
+      "key": "FETUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "DIA:1h",
+      "key": "POLUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "NKE:1h",
+      "key": "AVAXUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "TMUS:1h",
+      "key": "NEARUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "VNM:1h",
+      "key": "INJUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "MSFT:1h",
+      "key": "RNDRUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "NVDA:1h",
+      "key": "DOTUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "NFLX:1h",
+      "key": "OKB:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "AAPL:1h",
+      "key": "KCS:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "TSLA:1h",
+      "key": "UNIUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "BABA:1h",
+      "key": "AAVEUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "AMD:1h",
+      "key": "SNXUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "MSN:1h",
+      "key": "LDOUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "HPG:1h",
+      "key": "FLOKIUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "FMC:1h",
+      "key": "BONKUSDT:1d",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "GAS:1h",
+      "key": "HT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CROUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FTT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MKRUSDT:1d",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAUUSD:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAUUSD:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAUUSD:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAGUSD:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAGUSD:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XAGUSD:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XCUUSD:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XCUUSD:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "XCUUSD:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "USOIL:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "USOIL:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "USOIL:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "UKOIL:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "UKOIL:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "UKOIL:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NG:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NG:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "NG:1h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VCB:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BID:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CTG:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TCB:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FPT:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VIC:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VHM:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VRE:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VNM:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSN:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "HPG:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FMC:4h",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GAS:4h",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -990,11 +805,6 @@
       "bars": 1
     },
     {
-      "key": "CMG:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
       "key": "VIC:1h",
       "reason": "insufficient_history",
       "bars": 1
@@ -1005,132 +815,42 @@
       "bars": 1
     },
     {
-      "key": "ARM:1d",
+      "key": "VRE:1h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "ARM:1h",
+      "key": "VNM:1h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "AAPL:15m",
+      "key": "MSN:1h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "MSFT:15m",
+      "key": "HPG:1h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "NVDA:15m",
+      "key": "FMC:30m",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "TSLA:15m",
+      "key": "FMC:1h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "NFLX:15m",
+      "key": "GAS:1h",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "AMD:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "BABA:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ARM:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "CMG:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "GOOGL:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "META:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AMZN:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "COIN:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "MSTR:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SMCI:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SPY:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "QQQ:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "IWM:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DIA:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "ORCL:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SBUX:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NKE:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "TMUS:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "HPG:15m",
+      "key": "FMC:5m",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -1140,7 +860,67 @@
       "bars": 1
     },
     {
-      "key": "GAS:15m",
+      "key": "VCB:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "BID:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "CTG:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TCB:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FPT:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VIC:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VHM:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VRE:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VNM:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "MSN:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "HPG:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "GAS:30m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VCB:5m",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -1150,12 +930,17 @@
       "bars": 1
     },
     {
+      "key": "BID:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
       "key": "BID:15m",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "TCB:15m",
+      "key": "CTG:5m",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -1165,7 +950,27 @@
       "bars": 1
     },
     {
+      "key": "TCB:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "TCB:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "FPT:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
       "key": "FPT:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VIC:5m",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -1175,7 +980,27 @@
       "bars": 1
     },
     {
+      "key": "VHM:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
       "key": "VHM:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VRE:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VRE:15m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
+      "key": "VNM:5m",
       "reason": "insufficient_history",
       "bars": 1
     },
@@ -1185,155 +1010,3105 @@
       "bars": 1
     },
     {
+      "key": "MSN:5m",
+      "reason": "insufficient_history",
+      "bars": 1
+    },
+    {
       "key": "MSN:15m",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "NZDUSD:1d",
+      "key": "HPG:5m",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "USDSEK:1d",
+      "key": "HPG:15m",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "USDJPY:1h",
+      "key": "GAS:5m",
       "reason": "insufficient_history",
       "bars": 1
     },
     {
-      "key": "USDCAD:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AUDUSD:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "GBPUSD:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "EURGBP:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "GBPUSD:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "USDJPY:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "AUDUSD:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "HSI:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "N225:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SPX:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NDX:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DJI:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "IXIC:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "RUT:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "FTSE:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DAX:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "FCHI:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "VIX:1d",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SPX:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "NDX:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "IXIC:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "FCHI:1h",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "HSI:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "DAX:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "SPX:15m",
-      "reason": "insufficient_history",
-      "bars": 1
-    },
-    {
-      "key": "VIX:15m",
+      "key": "GAS:15m",
       "reason": "insufficient_history",
       "bars": 1
     }
   ],
-  "features": []
-}
+  "features": [
+    {
+      "key": "XAUUSD:1mo",
+      "symbol": "XAUUSD",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 4167.5,
+      "return_fast": -0.08821405911567148
+    },
+    {
+      "key": "XAGUSD:1mo",
+      "symbol": "XAGUSD",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 64.09,
+      "return_fast": -0.15559947299077737
+    },
+    {
+      "key": "XCUUSD:1mo",
+      "symbol": "XCUUSD",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 6.304,
+      "return_fast": -0.016536661466458602
+    },
+    {
+      "key": "USOIL:1mo",
+      "symbol": "USOIL",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 75.26,
+      "return_fast": -0.15835383583091023
+    },
+    {
+      "key": "UKOIL:1mo",
+      "symbol": "UKOIL",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 79.17,
+      "return_fast": -0.14797675419715883
+    },
+    {
+      "key": "NG:1mo",
+      "symbol": "NG",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 3.212,
+      "return_fast": -0.03918635955728378
+    },
+    {
+      "key": "WHEAT:1mo",
+      "symbol": "WHEAT",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 613.25,
+      "return_fast": 0.0045045045045044585
+    },
+    {
+      "key": "CORN:1mo",
+      "symbol": "CORN",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 417.5,
+      "return_fast": -0.06547285954113036
+    },
+    {
+      "key": "SOYBN:1mo",
+      "symbol": "SOYBN",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 1142,
+      "return_fast": -0.03770802612176116
+    },
+    {
+      "key": "BTCUSDT:1mo",
+      "symbol": "BTCUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 62519.04,
+      "return_fast": -0.15026985326707365
+    },
+    {
+      "key": "ETHUSDT:1mo",
+      "symbol": "ETHUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 1692.08,
+      "return_fast": -0.1569150128798561
+    },
+    {
+      "key": "BNBUSDT:1mo",
+      "symbol": "BNBUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 572.58,
+      "return_fast": -0.19417352754908157
+    },
+    {
+      "key": "SOLUSDT:1mo",
+      "symbol": "SOLUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 68.27,
+      "return_fast": -0.17188258127122757
+    },
+    {
+      "key": "XRPUSDT:1mo",
+      "symbol": "XRPUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 1.236,
+      "return_fast": -0.07276819204801199
+    },
+    {
+      "key": "DOGEUSDT:1mo",
+      "symbol": "DOGEUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.088,
+      "return_fast": -0.1200000000000001
+    },
+    {
+      "key": "SUIUSDT:1mo",
+      "symbol": "SUIUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.789,
+      "return_fast": -0.11843575418994412
+    },
+    {
+      "key": "ADAUSDT:1mo",
+      "symbol": "ADAUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.178,
+      "return_fast": -0.2457627118644068
+    },
+    {
+      "key": "LINKUSDT:1mo",
+      "symbol": "LINKUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 8.284,
+      "return_fast": -0.09444687363358095
+    },
+    {
+      "key": "PEPEUSDT:1mo",
+      "symbol": "PEPEUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 0
+    },
+    {
+      "key": "WIFUSDT:1mo",
+      "symbol": "WIFUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.16,
+      "return_fast": -0.16666666666666663
+    },
+    {
+      "key": "SHIBUSDT:1mo",
+      "symbol": "SHIBUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 0
+    },
+    {
+      "key": "FETUSDT:1mo",
+      "symbol": "FETUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.191,
+      "return_fast": -0.28996282527881045
+    },
+    {
+      "key": "POLUSDT:1mo",
+      "symbol": "POLUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.078,
+      "return_fast": -0.16129032258064513
+    },
+    {
+      "key": "AVAXUSDT:1mo",
+      "symbol": "AVAXUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 6.035,
+      "return_fast": -0.32817544250250474
+    },
+    {
+      "key": "NEARUSDT:1mo",
+      "symbol": "NEARUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 2.112,
+      "return_fast": -0.08965517241379295
+    },
+    {
+      "key": "INJUSDT:1mo",
+      "symbol": "INJUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 5.054,
+      "return_fast": -0.23308042488619118
+    },
+    {
+      "key": "XAUUSD:1m",
+      "symbol": "XAUUSD",
+      "family": "commodities",
+      "provider": "headway_mt5",
+      "timeframe": "1m",
+      "as_of": "2026-05-21T01:02:00.000Z",
+      "bars": 5,
+      "close": 4539.11,
+      "return_fast": -0.00006388509494648087,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-05-21",
+      "session_volume_profile_poc": 4539.343333333333,
+      "session_volume_profile_vah": 4540.42,
+      "session_volume_profile_val": 4538.493333333333,
+      "session_volume_profile_vwap": 4538.833179155103,
+      "session_volume_profile_position": 0.32006920415222545,
+      "session_volume_profile_imbalance": 0.10177236944740754,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "RNDRUSDT:1mo",
+      "symbol": "RNDRUSDT",
+      "family": "crypto",
+      "provider": "coingecko",
+      "timeframe": "1mo",
+      "as_of": "2026-06-01T00:00:00.000Z",
+      "bars": 2,
+      "close": 1.661,
+      "return_fast": -0.045402298850574674
+    },
+    {
+      "key": "XAUUSD:1w",
+      "symbol": "XAUUSD",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 4167.5,
+      "return_fast": -0.03402637739610137
+    },
+    {
+      "key": "XAGUSD:1w",
+      "symbol": "XAGUSD",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 64.09,
+      "return_fast": -0.08956602031394267
+    },
+    {
+      "key": "XCUUSD:1w",
+      "symbol": "XCUUSD",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 6.304,
+      "return_fast": -0.03342532965348055
+    },
+    {
+      "key": "USOIL:1w",
+      "symbol": "USOIL",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 75.26,
+      "return_fast": -0.07086419753086415
+    },
+    {
+      "key": "UKOIL:1w",
+      "symbol": "UKOIL",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 79.17,
+      "return_fast": -0.055250596658711126
+    },
+    {
+      "key": "NG:1w",
+      "symbol": "NG",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 3.212,
+      "return_fast": 0.04761904761904767
+    },
+    {
+      "key": "WHEAT:1w",
+      "symbol": "WHEAT",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 613.25,
+      "return_fast": 0.049187339606501235
+    },
+    {
+      "key": "CORN:1w",
+      "symbol": "CORN",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 417.5,
+      "return_fast": 0.011508176862507602
+    },
+    {
+      "key": "SOYBN:1w",
+      "symbol": "SOYBN",
+      "family": "commodities",
+      "provider": "yahoo",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 1142,
+      "return_fast": 0.008833922261484162
+    },
+    {
+      "key": "BTCUSDT:1w",
+      "symbol": "BTCUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 62519.04,
+      "return_fast": -0.04851231124048072
+    },
+    {
+      "key": "ETHUSDT:1w",
+      "symbol": "ETHUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 1692.08,
+      "return_fast": -0.019436492391140536
+    },
+    {
+      "key": "BNBUSDT:1w",
+      "symbol": "BNBUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 572.58,
+      "return_fast": -0.07167755638061568
+    },
+    {
+      "key": "SOLUSDT:1w",
+      "symbol": "SOLUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 68.27,
+      "return_fast": -0.04222783389450058
+    },
+    {
+      "key": "XRPUSDT:1w",
+      "symbol": "XRPUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 1.236,
+      "return_fast": 0.042158516020236236
+    },
+    {
+      "key": "DOGEUSDT:1w",
+      "symbol": "DOGEUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.088,
+      "return_fast": -0.011235955056179803
+    },
+    {
+      "key": "SUIUSDT:1w",
+      "symbol": "SUIUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.789,
+      "return_fast": -0.01743462017434627
+    },
+    {
+      "key": "ADAUSDT:1w",
+      "symbol": "ADAUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.178,
+      "return_fast": -0.02732240437158473
+    },
+    {
+      "key": "LINKUSDT:1w",
+      "symbol": "LINKUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 8.284,
+      "return_fast": 0.012590147903679405
+    },
+    {
+      "key": "PEPEUSDT:1w",
+      "symbol": "PEPEUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 0
+    },
+    {
+      "key": "WIFUSDT:1w",
+      "symbol": "WIFUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.16,
+      "return_fast": -0.030303030303030276
+    },
+    {
+      "key": "SHIBUSDT:1w",
+      "symbol": "SHIBUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 0
+    },
+    {
+      "key": "FETUSDT:1w",
+      "symbol": "FETUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.191,
+      "return_fast": -0.09905660377358483
+    },
+    {
+      "key": "POLUSDT:1w",
+      "symbol": "POLUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 0.078,
+      "return_fast": 0.012987012987013102
+    },
+    {
+      "key": "AVAXUSDT:1w",
+      "symbol": "AVAXUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 6.035,
+      "return_fast": -0.11119293078055958
+    },
+    {
+      "key": "NEARUSDT:1w",
+      "symbol": "NEARUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 2.112,
+      "return_fast": -0.04779080252479706
+    },
+    {
+      "key": "INJUSDT:1w",
+      "symbol": "INJUSDT",
+      "family": "crypto",
+      "provider": "binance",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 2,
+      "close": 5.054,
+      "return_fast": -0.03402140672782872
+    },
+    {
+      "key": "RNDRUSDT:1w",
+      "symbol": "RNDRUSDT",
+      "family": "crypto",
+      "provider": "coingecko",
+      "timeframe": "1w",
+      "as_of": "2026-06-15T00:00:00.000Z",
+      "bars": 3,
+      "close": 1.661,
+      "return_fast": -0.045402298850574674
+    },
+    {
+      "key": "TAOUSDT:1w",
+      "symbol": "TAOUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1w",
+      "as_of": "2026-06-18T00:00:00.000Z",
+      "bars": 3,
+      "close": 225.4,
+      "return_fast": -0.004416961130742081
+    },
+    {
+      "key": "VOW3:1h",
+      "symbol": "VOW3",
+      "family": "equities",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-18T15:00:00.000Z",
+      "bars": 31,
+      "close": 84.1,
+      "return_fast": -0.002609108159392748,
+      "return_slow": -0.0033183218772221412,
+      "volatility": 0.006737886084058356,
+      "rsi": 19.093851132686126,
+      "macd": -1.7577245111317268,
+      "atr": 0.6457142857142871,
+      "bollinger_upper": 89.77303003619694,
+      "bollinger_middle": 86.19399999999999,
+      "bollinger_lower": 82.61496996380303,
+      "smc_score": -0.35,
+      "smc_bias": "bearish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 84.27958333333333,
+      "session_volume_profile_vah": 86.04583333333333,
+      "session_volume_profile_val": 84.08333333333334,
+      "session_volume_profile_vwap": 84.71451120537347,
+      "session_volume_profile_position": 0.008492569002115456,
+      "session_volume_profile_imbalance": -0.19570420553295376,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "BNO:1h",
+      "symbol": "BNO",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "1h",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 29,
+      "close": 43.88,
+      "return_fast": 0,
+      "return_slow": 0.02475478748248494,
+      "volatility": 0.008289205891517855,
+      "rsi": 46.701846965699204,
+      "macd": -0.5307573715352163,
+      "atr": 0.559000000000002,
+      "bollinger_upper": 44.49420779270668,
+      "bollinger_middle": 43.513799999999996,
+      "bollinger_lower": 42.53339220729331,
+      "smc_score": -0.35,
+      "smc_bias": "bearish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 42.64854166666667,
+      "session_volume_profile_vah": 43.70041666666667,
+      "session_volume_profile_val": 42.60958333333333,
+      "session_volume_profile_vwap": 43.007376792078645,
+      "session_volume_profile_position": 1,
+      "session_volume_profile_imbalance": 0.4666434266959119,
+      "session_volume_profile_acceptance": "above_value_area"
+    },
+    {
+      "key": "WEAT:1h",
+      "symbol": "WEAT",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "1h",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 29,
+      "close": 22.94,
+      "return_fast": -0.0004357298474945148,
+      "return_slow": 0.0013094718463553257,
+      "volatility": 0.0034740147227215186,
+      "rsi": 45.68965517241385,
+      "macd": 0.12102354162902529,
+      "atr": 0.09607142857142849,
+      "bollinger_upper": 23.288121240837906,
+      "bollinger_middle": 22.970149999999997,
+      "bollinger_lower": 22.652178759162087,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 22.9540625,
+      "session_volume_profile_vah": 23.15,
+      "session_volume_profile_val": 22.924374999999998,
+      "session_volume_profile_vwap": 22.971001785634336,
+      "session_volume_profile_position": 0.06925207756234235,
+      "session_volume_profile_imbalance": -0.10877819520819051,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "SOYB:1h",
+      "symbol": "SOYB",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "1h",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 29,
+      "close": 24.27,
+      "return_fast": 0,
+      "return_slow": -0.0004118616144975773,
+      "volatility": 0.0019191616765524555,
+      "rsi": 12.987012987012719,
+      "macd": 0.006357373843513869,
+      "atr": 0.048499999999999384,
+      "bollinger_upper": 24.523048340462662,
+      "bollinger_middle": 24.359599999999993,
+      "bollinger_lower": 24.196151659537325,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 24.2825,
+      "session_volume_profile_vah": 24.33,
+      "session_volume_profile_val": 24.265,
+      "session_volume_profile_vwap": 24.275939075184528,
+      "session_volume_profile_position": 0.07692307692306431,
+      "session_volume_profile_imbalance": -0.04949229320440538,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "INFY:1h",
+      "symbol": "INFY",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "1h",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 29,
+      "close": 10.57,
+      "return_fast": 0.0005679666792881566,
+      "return_slow": -0.011687704534829368,
+      "volatility": 0.012895562274920575,
+      "rsi": 6.137631742095394,
+      "macd": -0.4639282732028551,
+      "atr": 0.2039999999999995,
+      "bollinger_upper": 12.676371957522484,
+      "bollinger_middle": 11.4618,
+      "bollinger_lower": 10.247228042477516,
+      "smc_score": -0.35,
+      "smc_bias": "bearish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 10.94125,
+      "session_volume_profile_vah": 11.12,
+      "session_volume_profile_val": 10.625,
+      "session_volume_profile_vwap": 10.751394824953199,
+      "session_volume_profile_position": 0,
+      "session_volume_profile_imbalance": -0.2748406438684829,
+      "session_volume_profile_acceptance": "below_value_area"
+    },
+    {
+      "key": "BNO:5m",
+      "symbol": "BNO",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "5m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 313,
+      "close": 43.88,
+      "return_fast": 0,
+      "return_slow": 0.0018264840182649067,
+      "volatility": 0.0016766308214647414,
+      "rsi": 62.12121212121274,
+      "macd": 0.1294122530985078,
+      "atr": 0.05964285714285771,
+      "bollinger_upper": 43.94726033276392,
+      "bollinger_middle": 43.853500000000004,
+      "bollinger_lower": 43.75973966723609,
+      "smc_score": 0.2,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": true,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 42.49270833333333,
+      "session_volume_profile_vah": 43.155,
+      "session_volume_profile_val": 42.297916666666666,
+      "session_volume_profile_vwap": 43.0164694740605,
+      "session_volume_profile_position": 1,
+      "session_volume_profile_imbalance": 0.46178102991417136,
+      "session_volume_profile_acceptance": "above_value_area"
+    },
+    {
+      "key": "BNO:15m",
+      "symbol": "BNO",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "15m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 105,
+      "close": 43.88,
+      "return_fast": 0,
+      "return_slow": 0.0018264840182649067,
+      "volatility": 0.0031593847824254407,
+      "rsi": 85.61643835616434,
+      "macd": 0.1932383572541596,
+      "atr": 0.20142857142857146,
+      "bollinger_upper": 44.27984703407249,
+      "bollinger_middle": 43.33200000000001,
+      "bollinger_lower": 42.38415296592753,
+      "smc_score": 0.2,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": true,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 42.804375,
+      "session_volume_profile_vah": 43.93416666666667,
+      "session_volume_profile_val": 42.6875,
+      "session_volume_profile_vwap": 43.01901588488784,
+      "session_volume_profile_position": 0.9565508021390372,
+      "session_volume_profile_imbalance": 0.46041931289420207,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "BNO:30m",
+      "symbol": "BNO",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "30m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 53,
+      "close": 43.88,
+      "return_fast": 0,
+      "return_slow": 0.016917728852839042,
+      "volatility": 0.007367048184040087,
+      "rsi": 56.506849315068514,
+      "macd": -0.08112593653034139,
+      "atr": 0.3471428571428576,
+      "bollinger_upper": 44.36073340223646,
+      "bollinger_middle": 43.304500000000004,
+      "bollinger_lower": 42.248266597763546,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 42.64854166666667,
+      "session_volume_profile_vah": 43.85625,
+      "session_volume_profile_val": 42.60958333333333,
+      "session_volume_profile_vwap": 43.018903612655585,
+      "session_volume_profile_position": 1,
+      "session_volume_profile_imbalance": 0.4604793515210779,
+      "session_volume_profile_acceptance": "above_value_area"
+    },
+    {
+      "key": "WEAT:5m",
+      "symbol": "WEAT",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "5m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 302,
+      "close": 22.94,
+      "return_fast": -0.0004357298474945148,
+      "return_slow": 0.0010909884355225774,
+      "volatility": 0.0005647454018614021,
+      "rsi": 43.697478991597315,
+      "macd": 0.0003697386211847231,
+      "atr": 0.012999999999999139,
+      "bollinger_upper": 22.97209810831128,
+      "bollinger_middle": 22.94765,
+      "bollinger_lower": 22.92320189168872,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 22.9184375,
+      "session_volume_profile_vah": 22.959999999999997,
+      "session_volume_profile_val": 22.876875,
+      "session_volume_profile_vwap": 22.966049844130104,
+      "session_volume_profile_position": 0.7593984962406465,
+      "session_volume_profile_imbalance": -0.09140296186001097,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "WEAT:15m",
+      "symbol": "WEAT",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "15m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 105,
+      "close": 22.94,
+      "return_fast": -0.0004357298474945148,
+      "return_slow": -0.0006534524068828595,
+      "volatility": 0.0011635346950139899,
+      "rsi": 61.76470588235435,
+      "macd": -0.0223345618000117,
+      "atr": 0.032428571428571216,
+      "bollinger_upper": 23.006299430197114,
+      "bollinger_middle": 22.936099999999996,
+      "bollinger_lower": 22.86590056980288,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 22.9540625,
+      "session_volume_profile_vah": 22.971874999999997,
+      "session_volume_profile_val": 22.888749999999998,
+      "session_volume_profile_vwap": 22.971968718039204,
+      "session_volume_profile_position": 0.6165413533835037,
+      "session_volume_profile_imbalance": -0.11217094048842911,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "WEAT:30m",
+      "symbol": "WEAT",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "30m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 53,
+      "close": 22.94,
+      "return_fast": -0.0004357298474945148,
+      "return_slow": 0.000436109899694781,
+      "volatility": 0.0020006947795954463,
+      "rsi": 19.767441860464828,
+      "macd": 0.010552816835375012,
+      "atr": 0.07178571428571447,
+      "bollinger_upper": 23.24942874002691,
+      "bollinger_middle": 23.026249999999997,
+      "bollinger_lower": 22.803071259973084,
+      "smc_score": -0.35,
+      "smc_bias": "bearish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 22.9303125,
+      "session_volume_profile_vah": 22.959999999999997,
+      "session_volume_profile_val": 22.888749999999998,
+      "session_volume_profile_vwap": 22.97013037588744,
+      "session_volume_profile_position": 0.7192982456140876,
+      "session_volume_profile_imbalance": -0.10572061714890618,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "SOYB:5m",
+      "symbol": "SOYB",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "5m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 153,
+      "close": 24.27,
+      "return_fast": 0,
+      "return_slow": 0.00020605810838647542,
+      "volatility": 0.00039211117073112894,
+      "rsi": 55.20833333333209,
+      "macd": -0.009422390350334098,
+      "atr": 0.00828571428571426,
+      "bollinger_upper": 24.287956757331713,
+      "bollinger_middle": 24.268899999999995,
+      "bollinger_lower": 24.249843242668277,
+      "smc_score": 0.2,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": true,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0.5,
+      "divergence_bullish": true,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": true,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 24.3025,
+      "session_volume_profile_vah": 24.33,
+      "session_volume_profile_val": 24.265,
+      "session_volume_profile_vwap": 24.278732661105707,
+      "session_volume_profile_position": 0.07692307692306431,
+      "session_volume_profile_imbalance": -0.07277217588089531,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "SOYB:15m",
+      "symbol": "SOYB",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "15m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 88,
+      "close": 24.27,
+      "return_fast": 0,
+      "return_slow": -0.0004118616144975773,
+      "volatility": 0.0008371285450831182,
+      "rsi": 47.02380952380886,
+      "macd": -0.027590198226661755,
+      "atr": 0.019785714285713345,
+      "bollinger_upper": 24.30658480207264,
+      "bollinger_middle": 24.270649999999996,
+      "bollinger_lower": 24.234715197927354,
+      "smc_score": 0.2,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": true,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 24.2675,
+      "session_volume_profile_vah": 24.294999999999998,
+      "session_volume_profile_val": 24.255,
+      "session_volume_profile_vwap": 24.276809006956775,
+      "session_volume_profile_position": 0.3750000000000222,
+      "session_volume_profile_imbalance": -0.05674172463979472,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "SOYB:30m",
+      "symbol": "SOYB",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "30m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 50,
+      "close": 24.27,
+      "return_fast": 0,
+      "return_slow": -0.0004530291174168477,
+      "volatility": 0.0012574137928751453,
+      "rsi": 21.36222910216584,
+      "macd": -0.01798587689223652,
+      "atr": 0.03757142857142729,
+      "bollinger_upper": 24.501513204758805,
+      "bollinger_middle": 24.334899999999998,
+      "bollinger_lower": 24.16828679524119,
+      "smc_score": 0.2,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": true,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": -0.5,
+      "divergence_bullish": true,
+      "divergence_bearish": true,
+      "rsi_bullish_divergence": true,
+      "rsi_bearish_divergence": true,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": true,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 24.2675,
+      "session_volume_profile_vah": 24.299999999999997,
+      "session_volume_profile_val": 24.265,
+      "session_volume_profile_vwap": 24.277666354002655,
+      "session_volume_profile_position": 0.14285714285712836,
+      "session_volume_profile_imbalance": -0.06388628335546086,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "INFY:5m",
+      "symbol": "INFY",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "5m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 313,
+      "close": 10.57,
+      "return_fast": 0.0005679666792881566,
+      "return_slow": -0.0014170996693434468,
+      "volatility": 0.004521201202325935,
+      "rsi": 45.63106796116508,
+      "macd": -0.04611656097155681,
+      "atr": 0.057999999999999954,
+      "bollinger_upper": 10.628890048831732,
+      "bollinger_middle": 10.548,
+      "bollinger_lower": 10.467109951168268,
+      "smc_score": 0.2,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": true,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 1,
+      "divergence_bullish": true,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": true,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": true,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 10.80375,
+      "session_volume_profile_vah": 11.12,
+      "session_volume_profile_val": 10.57,
+      "session_volume_profile_vwap": 10.744611213383465,
+      "session_volume_profile_position": 0,
+      "session_volume_profile_imbalance": -0.2645624445204011,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "INFY:15m",
+      "symbol": "INFY",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "15m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 105,
+      "close": 10.57,
+      "return_fast": 0.0005679666792881566,
+      "return_slow": -0.0014170996693434468,
+      "volatility": 0.004597861154957172,
+      "rsi": 28.395061728395262,
+      "macd": -0.20141803257371294,
+      "atr": 0.07357142857142815,
+      "bollinger_upper": 10.881690793695036,
+      "bollinger_middle": 10.673549999999999,
+      "bollinger_lower": 10.465409206304962,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 10.52875,
+      "session_volume_profile_vah": 10.8725,
+      "session_volume_profile_val": 10.4875,
+      "session_volume_profile_vwap": 10.753522935446965,
+      "session_volume_profile_position": 0.2142857142857133,
+      "session_volume_profile_imbalance": -0.2780650537075223,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "INFY:30m",
+      "symbol": "INFY",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "30m",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 53,
+      "close": 10.57,
+      "return_fast": 0.0005679666792881566,
+      "return_slow": -0.016744186046511622,
+      "volatility": 0.012637224679472252,
+      "rsi": 11.978465679676944,
+      "macd": -0.33312510312850385,
+      "atr": 0.18149999999999938,
+      "bollinger_upper": 12.100754095587948,
+      "bollinger_middle": 11.06305,
+      "bollinger_lower": 10.025345904412053,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 10.94125,
+      "session_volume_profile_vah": 11.12,
+      "session_volume_profile_val": 10.57,
+      "session_volume_profile_vwap": 10.759338950359737,
+      "session_volume_profile_position": 0,
+      "session_volume_profile_imbalance": -0.2868771975147536,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "ALV:1h",
+      "symbol": "ALV",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "1h",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 29,
+      "close": 118.24,
+      "return_fast": -0.0002959205242021312,
+      "return_slow": 0.0012702176306207402,
+      "volatility": 0.005840442678955169,
+      "rsi": 36.85446009389671,
+      "macd": -2.6095834296239957,
+      "atr": 0.9384999999999997,
+      "bollinger_upper": 123.93580846735364,
+      "bollinger_middle": 119.53374999999998,
+      "bollinger_lower": 115.13169153264633,
+      "smc_score": 0.2,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": true,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 118.10604166666667,
+      "session_volume_profile_vah": 118.44,
+      "session_volume_profile_val": 117.67666666666666,
+      "session_volume_profile_vwap": 117.70959983748396,
+      "session_volume_profile_position": 0.7379912663755428,
+      "session_volume_profile_imbalance": 0.23161579149171743,
+      "session_volume_profile_acceptance": "inside_value_area"
+    },
+    {
+      "key": "BNO:1d",
+      "symbol": "BNO",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "1d",
+      "as_of": "2026-06-18T00:00:00.000Z",
+      "bars": 3,
+      "close": 43.88,
+      "return_fast": 0
+    },
+    {
+      "key": "WEAT:1d",
+      "symbol": "WEAT",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "1d",
+      "as_of": "2026-06-18T00:00:00.000Z",
+      "bars": 3,
+      "close": 22.94,
+      "return_fast": -0.0004357298474945148
+    },
+    {
+      "key": "SOYB:1d",
+      "symbol": "SOYB",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "1d",
+      "as_of": "2026-06-18T00:00:00.000Z",
+      "bars": 3,
+      "close": 24.27,
+      "return_fast": 0
+    },
+    {
+      "key": "INFY:1d",
+      "symbol": "INFY",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "1d",
+      "as_of": "2026-06-18T00:00:00.000Z",
+      "bars": 3,
+      "close": 10.57,
+      "return_fast": 0.0005679666792881566
+    },
+    {
+      "key": "XRPUSDT:1d",
+      "symbol": "XRPUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1d",
+      "as_of": "2026-06-19T00:00:00.000Z",
+      "bars": 3,
+      "close": 1.125,
+      "return_fast": -0.017467248908296984
+    },
+    {
+      "key": "DOGEUSDT:1d",
+      "symbol": "DOGEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1d",
+      "as_of": "2026-06-19T00:00:00.000Z",
+      "bars": 3,
+      "close": 0.082,
+      "return_fast": -0.012048192771084376
+    },
+    {
+      "key": "SUIUSDT:1d",
+      "symbol": "SUIUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1d",
+      "as_of": "2026-06-19T00:00:00.000Z",
+      "bars": 3,
+      "close": 0.712,
+      "return_fast": -0.024657534246575352
+    },
+    {
+      "key": "ADAUSDT:1d",
+      "symbol": "ADAUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1d",
+      "as_of": "2026-06-19T00:00:00.000Z",
+      "bars": 3,
+      "close": 0.16,
+      "return_fast": -0.024390243902439046
+    },
+    {
+      "key": "LINKUSDT:1d",
+      "symbol": "LINKUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1d",
+      "as_of": "2026-06-19T00:00:00.000Z",
+      "bars": 3,
+      "close": 7.858,
+      "return_fast": -0.020321655653908643
+    },
+    {
+      "key": "PEPEUSDT:1d",
+      "symbol": "PEPEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1d",
+      "as_of": "2026-06-19T00:00:00.000Z",
+      "bars": 3,
+      "close": 0
+    },
+    {
+      "key": "SHIBUSDT:1d",
+      "symbol": "SHIBUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1d",
+      "as_of": "2026-06-19T00:00:00.000Z",
+      "bars": 3,
+      "close": 0
+    },
+    {
+      "key": "TAOUSDT:1d",
+      "symbol": "TAOUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1d",
+      "as_of": "2026-06-19T00:00:00.000Z",
+      "bars": 4,
+      "close": 225.4,
+      "return_fast": -0.004416961130742081
+    },
+    {
+      "key": "BNO:4h",
+      "symbol": "BNO",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "4h",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 5,
+      "close": 43.88,
+      "return_fast": 0,
+      "smc_score": 0.2,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": true,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "WEAT:4h",
+      "symbol": "WEAT",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "4h",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 5,
+      "close": 22.94,
+      "return_fast": -0.0004357298474945148,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SOYB:4h",
+      "symbol": "SOYB",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "4h",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 5,
+      "close": 24.27,
+      "return_fast": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "INFY:4h",
+      "symbol": "INFY",
+      "family": "equities",
+      "provider": "yahoo",
+      "timeframe": "4h",
+      "as_of": "2026-06-18T20:00:00.000Z",
+      "bars": 5,
+      "close": 10.57,
+      "return_fast": 0.0005679666792881566,
+      "smc_score": -0.2,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": true,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "XRPUSDT:4h",
+      "symbol": "XRPUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "4h",
+      "as_of": "2026-06-19T08:00:00.000Z",
+      "bars": 12,
+      "close": 1.125,
+      "return_fast": 0,
+      "return_slow": -0.011423550087873324,
+      "smc_score": -0.2,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": true,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "DOGEUSDT:4h",
+      "symbol": "DOGEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "4h",
+      "as_of": "2026-06-19T08:00:00.000Z",
+      "bars": 12,
+      "close": 0.082,
+      "return_fast": 0,
+      "return_slow": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SUIUSDT:4h",
+      "symbol": "SUIUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "4h",
+      "as_of": "2026-06-19T08:00:00.000Z",
+      "bars": 12,
+      "close": 0.712,
+      "return_fast": 0,
+      "return_slow": 0.004231311706629048,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "ADAUSDT:4h",
+      "symbol": "ADAUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "4h",
+      "as_of": "2026-06-19T08:00:00.000Z",
+      "bars": 12,
+      "close": 0.16,
+      "return_fast": 0,
+      "return_slow": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "LINKUSDT:4h",
+      "symbol": "LINKUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "4h",
+      "as_of": "2026-06-19T08:00:00.000Z",
+      "bars": 12,
+      "close": 7.858,
+      "return_fast": -0.0019052457767052555,
+      "return_slow": 0.007048571062411746,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "PEPEUSDT:4h",
+      "symbol": "PEPEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "4h",
+      "as_of": "2026-06-19T08:00:00.000Z",
+      "bars": 12,
+      "close": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SHIBUSDT:4h",
+      "symbol": "SHIBUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "4h",
+      "as_of": "2026-06-19T08:00:00.000Z",
+      "bars": 12,
+      "close": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "TAOUSDT:4h",
+      "symbol": "TAOUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "4h",
+      "as_of": "2026-06-19T08:00:00.000Z",
+      "bars": 12,
+      "close": 225.4,
+      "return_fast": -0.010101010101010055,
+      "return_slow": -0.03344768439108059,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "XRPUSDT:1h",
+      "symbol": "XRPUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 1.125,
+      "return_fast": 0,
+      "return_slow": -0.006183745583038802,
+      "volatility": 0.004547796902487299,
+      "rsi": 26.829268292683125,
+      "atr": 0.00599999999999999,
+      "bollinger_upper": 1.1568303988336222,
+      "bollinger_middle": 1.1379000000000001,
+      "bollinger_lower": 1.1189696011663781,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0.5,
+      "divergence_bullish": true,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": true,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "DOGEUSDT:1h",
+      "symbol": "DOGEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 0.082,
+      "return_fast": 0,
+      "return_slow": -0.012048192771084376,
+      "volatility": 0.007643641425603104,
+      "rsi": 39.99999999999999,
+      "atr": 0.0007857142857142864,
+      "bollinger_upper": 0.08414642400437691,
+      "bollinger_middle": 0.08275000000000002,
+      "bollinger_lower": 0.08135357599562312,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SUIUSDT:1h",
+      "symbol": "SUIUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 0.712,
+      "return_fast": 0.0014064697609001975,
+      "return_slow": -0.006973500697350032,
+      "volatility": 0.006571259705879652,
+      "rsi": 38.775510204081634,
+      "atr": 0.00714285714285715,
+      "bollinger_upper": 0.7325447015586066,
+      "bollinger_middle": 0.7191,
+      "bollinger_lower": 0.7056552984413933,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "ADAUSDT:1h",
+      "symbol": "ADAUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 0.16,
+      "return_fast": -0.006211180124223614,
+      "return_slow": -0.006211180124223614,
+      "volatility": 0.007040781392803239,
+      "rsi": 38.46153846153846,
+      "atr": 0.0016428571428571443,
+      "bollinger_upper": 0.16517889756943244,
+      "bollinger_middle": 0.16205000000000003,
+      "bollinger_lower": 0.15892110243056762,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0.5,
+      "divergence_bullish": true,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": true,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "LINKUSDT:1h",
+      "symbol": "LINKUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 7.858,
+      "return_fast": 0.0002545824847250966,
+      "return_slow": -0.00682507583417602,
+      "volatility": 0.0053759203885354635,
+      "rsi": 29.752066115702547,
+      "atr": 0.060857142857142624,
+      "bollinger_upper": 8.063336047499371,
+      "bollinger_middle": 7.92645,
+      "bollinger_lower": 7.789563952500629,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "PEPEUSDT:1h",
+      "symbol": "PEPEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 0,
+      "rsi": 100,
+      "atr": 0,
+      "bollinger_upper": 0,
+      "bollinger_middle": 0,
+      "bollinger_lower": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SHIBUSDT:1h",
+      "symbol": "SHIBUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 0,
+      "rsi": 100,
+      "atr": 0,
+      "bollinger_upper": 0,
+      "bollinger_middle": 0,
+      "bollinger_lower": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "TAOUSDT:1h",
+      "symbol": "TAOUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 225.4,
+      "return_fast": -0.004856512141280356,
+      "return_slow": -0.018292682926829174,
+      "volatility": 0.008262536302234636,
+      "rsi": 25.6281407035176,
+      "atr": 2.9571428571428577,
+      "bollinger_upper": 238.7260644826151,
+      "bollinger_middle": 231.44499999999994,
+      "bollinger_lower": 224.16393551738477,
+      "smc_score": -0.35,
+      "smc_bias": "bearish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "CROUSDT:1h",
+      "symbol": "CROUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 0.058,
+      "return_fast": 0,
+      "return_slow": 0,
+      "volatility": 0.006619741856303844,
+      "rsi": 0,
+      "atr": 0.000285714285714284,
+      "bollinger_upper": 0.059303939201416966,
+      "bollinger_middle": 0.05835000000000003,
+      "bollinger_lower": 0.05739606079858309,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "UNIUSDT:1h",
+      "symbol": "UNIUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 3.057,
+      "return_fast": 0.001638269986893759,
+      "return_slow": 0.003281916639317206,
+      "volatility": 0.014610373482912447,
+      "rsi": 50.9394572025052,
+      "atr": 0.05828571428571431,
+      "bollinger_upper": 3.171014464084572,
+      "bollinger_middle": 3.05045,
+      "bollinger_lower": 2.929885535915428,
+      "smc_score": 0.35,
+      "smc_bias": "bullish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": -0.5,
+      "divergence_bullish": false,
+      "divergence_bearish": true,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": true,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "AAVEUSDT:1h",
+      "symbol": "AAVEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 72.36,
+      "return_fast": -0.0016556291390729116,
+      "return_slow": -0.012689316414244867,
+      "volatility": 0.010478452742322135,
+      "rsi": 40.51522248243556,
+      "atr": 1.1228571428571448,
+      "bollinger_upper": 75.59882213783021,
+      "bollinger_middle": 73.30499999999999,
+      "bollinger_lower": 71.01117786216977,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "LDOUSDT:1h",
+      "symbol": "LDOUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 24,
+      "close": 0.271,
+      "return_fast": -0.003676470588235281,
+      "return_slow": -0.02166064981949456,
+      "volatility": 0.010538611766584662,
+      "rsi": 41.935483870967715,
+      "atr": 0.0048571428571428455,
+      "bollinger_upper": 0.28392786184404917,
+      "bollinger_middle": 0.2753,
+      "bollinger_lower": 0.2666721381559508,
+      "smc_score": -0.9,
+      "smc_bias": "bearish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": true,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0.5,
+      "divergence_bullish": true,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": true,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SNXUSDT:1h",
+      "symbol": "SNXUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 23,
+      "close": 0.241,
+      "return_fast": -0.004132231404958664,
+      "return_slow": -0.008230452674897082,
+      "volatility": 0.007370493146494867,
+      "rsi": 44.44444444444444,
+      "atr": 0.0016428571428571443,
+      "bollinger_upper": 0.24652871926215097,
+      "bollinger_middle": 0.24324999999999997,
+      "bollinger_lower": 0.23997128073784896,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "GT:1h",
+      "symbol": "GT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "1h",
+      "as_of": "2026-06-18T19:30:00.000Z",
+      "bars": 7,
+      "close": 6.21,
+      "return_fast": 0.015535568274734235,
+      "return_slow": 0.013877551020408108,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false,
+      "session_volume_profile_session_key": "2026-06-18",
+      "session_volume_profile_poc": 6.115,
+      "session_volume_profile_vah": 6.16,
+      "session_volume_profile_val": 6.11,
+      "session_volume_profile_vwap": 6.138463051639997,
+      "session_volume_profile_position": 1,
+      "session_volume_profile_imbalance": 0.29807061816667896,
+      "session_volume_profile_acceptance": "above_value_area"
+    },
+    {
+      "key": "XRPUSDT:30m",
+      "symbol": "XRPUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "30m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 23,
+      "close": 1.125,
+      "return_fast": 0,
+      "return_slow": 0,
+      "volatility": 0.0027902140723696646,
+      "rsi": 37.5,
+      "atr": 0.004142857142857115,
+      "bollinger_upper": 1.1484434361536224,
+      "bollinger_middle": 1.13245,
+      "bollinger_lower": 1.1164565638463775,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "DOGEUSDT:30m",
+      "symbol": "DOGEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "30m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 23,
+      "close": 0.082,
+      "return_fast": 0,
+      "return_slow": 0,
+      "volatility": 0.006479385153473835,
+      "rsi": 50,
+      "atr": 0.0005714285714285719,
+      "bollinger_upper": 0.08384164078649989,
+      "bollinger_middle": 0.08250000000000002,
+      "bollinger_lower": 0.08115835921350015,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SUIUSDT:30m",
+      "symbol": "SUIUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "30m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 23,
+      "close": 0.712,
+      "return_fast": 0.0014064697609001975,
+      "return_slow": -0.004195804195804231,
+      "volatility": 0.003879171271092699,
+      "rsi": 42.857142857142854,
+      "atr": 0.00478571428571429,
+      "bollinger_upper": 0.7275565770501058,
+      "bollinger_middle": 0.71615,
+      "bollinger_lower": 0.7047434229498941,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "ADAUSDT:30m",
+      "symbol": "ADAUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "30m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 23,
+      "close": 0.16,
+      "return_fast": -0.006211180124223614,
+      "return_slow": -0.006211180124223614,
+      "volatility": 0.004628247650048325,
+      "rsi": 42.857142857142854,
+      "atr": 0.0011428571428571438,
+      "bollinger_upper": 0.16427321374946377,
+      "bollinger_middle": 0.16130000000000005,
+      "bollinger_lower": 0.15832678625053634,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "LINKUSDT:30m",
+      "symbol": "LINKUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "30m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 23,
+      "close": 7.858,
+      "return_fast": 0.0002545824847250966,
+      "return_slow": -0.0022854240731337017,
+      "volatility": 0.003219466900532797,
+      "rsi": 44.06779661016947,
+      "atr": 0.04142857142857118,
+      "bollinger_upper": 8.016082256654004,
+      "bollinger_middle": 7.9045000000000005,
+      "bollinger_lower": 7.792917743345996,
+      "smc_score": -0.75,
+      "smc_bias": "bearish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": true,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "PEPEUSDT:30m",
+      "symbol": "PEPEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "30m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 23,
+      "close": 0,
+      "rsi": 100,
+      "atr": 0,
+      "bollinger_upper": 0,
+      "bollinger_middle": 0,
+      "bollinger_lower": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SHIBUSDT:30m",
+      "symbol": "SHIBUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "30m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 23,
+      "close": 0,
+      "rsi": 100,
+      "atr": 0,
+      "bollinger_upper": 0,
+      "bollinger_middle": 0,
+      "bollinger_lower": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "TAOUSDT:30m",
+      "symbol": "TAOUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "30m",
+      "as_of": "2026-06-19T11:30:00.000Z",
+      "bars": 24,
+      "close": 225.4,
+      "return_fast": -0.00397702165267344,
+      "return_slow": -0.0026548672566371057,
+      "volatility": 0.00529193481891652,
+      "rsi": 44.91525423728817,
+      "atr": 1.9571428571428555,
+      "bollinger_upper": 233.15389227562724,
+      "bollinger_middle": 228.41499999999996,
+      "bollinger_lower": 223.67610772437268,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0.5,
+      "divergence_bullish": true,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": true,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "XRPUSDT:15m",
+      "symbol": "XRPUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "15m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 21,
+      "close": 1.125,
+      "return_fast": 0,
+      "return_slow": 0,
+      "volatility": 0.002335973810721367,
+      "rsi": 54.1666666666667,
+      "atr": 0.002428571428571399,
+      "bollinger_upper": 1.133610917097554,
+      "bollinger_middle": 1.12685,
+      "bollinger_lower": 1.120089082902446,
+      "smc_score": -0.35,
+      "smc_bias": "bearish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "DOGEUSDT:15m",
+      "symbol": "DOGEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "15m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 21,
+      "close": 0.082,
+      "return_fast": 0,
+      "return_slow": 0,
+      "volatility": 0.002625842737072703,
+      "rsi": 100,
+      "atr": 0.00021428571428571446,
+      "bollinger_upper": 0.08286414284285432,
+      "bollinger_middle": 0.08215000000000003,
+      "bollinger_lower": 0.08143585715714574,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SUIUSDT:15m",
+      "symbol": "SUIUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "15m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 21,
+      "close": 0.712,
+      "return_fast": 0.0014064697609001975,
+      "return_slow": 0.0014064697609001975,
+      "volatility": 0.002681847264309644,
+      "rsi": 54.54545454545455,
+      "atr": 0.0030714285714285743,
+      "bollinger_upper": 0.7173616122274619,
+      "bollinger_middle": 0.7130499999999999,
+      "bollinger_lower": 0.7087383877725378,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "ADAUSDT:15m",
+      "symbol": "ADAUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "15m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 21,
+      "close": 0.16,
+      "return_fast": -0.006211180124223614,
+      "return_slow": 0,
+      "volatility": 0.004173050626085372,
+      "rsi": 57.14285714285714,
+      "atr": 0.0009285714285714294,
+      "bollinger_upper": 0.16141355287256606,
+      "bollinger_middle": 0.16030000000000005,
+      "bollinger_lower": 0.15918644712743404,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "LINKUSDT:15m",
+      "symbol": "LINKUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "15m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 21,
+      "close": 7.858,
+      "return_fast": 0.0002545824847250966,
+      "return_slow": -0.0012709710218608006,
+      "volatility": 0.0021348403539900094,
+      "rsi": 47.524752475247325,
+      "atr": 0.033285714285714106,
+      "bollinger_upper": 7.9169944984074885,
+      "bollinger_middle": 7.876100000000001,
+      "bollinger_lower": 7.8352055015925135,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "PEPEUSDT:15m",
+      "symbol": "PEPEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "15m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 21,
+      "close": 0,
+      "rsi": 100,
+      "atr": 0,
+      "bollinger_upper": 0,
+      "bollinger_middle": 0,
+      "bollinger_lower": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SHIBUSDT:15m",
+      "symbol": "SHIBUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "15m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 21,
+      "close": 0,
+      "rsi": 100,
+      "atr": 0,
+      "bollinger_upper": 0,
+      "bollinger_middle": 0,
+      "bollinger_lower": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "TAOUSDT:15m",
+      "symbol": "TAOUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "15m",
+      "as_of": "2026-06-19T11:45:00.000Z",
+      "bars": 24,
+      "close": 225.4,
+      "return_fast": -0.005734450816056391,
+      "return_slow": 0.00044385264092317023,
+      "volatility": 0.0034387220590801973,
+      "rsi": 34.24657534246583,
+      "atr": 1.3857142857142861,
+      "bollinger_upper": 228.49294825571496,
+      "bollinger_middle": 226.71499999999997,
+      "bollinger_lower": 224.937051744285,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "XRPUSDT:5m",
+      "symbol": "XRPUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "5m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 25,
+      "close": 1.125,
+      "return_fast": 0,
+      "return_slow": 0.002673796791443861,
+      "volatility": 0.0011561390540097958,
+      "rsi": 50,
+      "atr": 0.0008571428571428262,
+      "bollinger_upper": 1.1276732137494636,
+      "bollinger_middle": 1.1247,
+      "bollinger_lower": 1.1217267862505365,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "DOGEUSDT:5m",
+      "symbol": "DOGEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "5m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 25,
+      "close": 0.082,
+      "return_fast": 0,
+      "return_slow": 0,
+      "volatility": 0,
+      "rsi": 100,
+      "atr": 0,
+      "bollinger_upper": 0.08200000000000005,
+      "bollinger_middle": 0.08200000000000002,
+      "bollinger_lower": 0.08199999999999999,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SUIUSDT:5m",
+      "symbol": "SUIUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "5m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 25,
+      "close": 0.712,
+      "return_fast": 0.0014064697609001975,
+      "return_slow": 0.004231311706629048,
+      "volatility": 0.0017208802883708991,
+      "rsi": 50,
+      "atr": 0.0018571428571428589,
+      "bollinger_upper": 0.7142671904291629,
+      "bollinger_middle": 0.7113499999999999,
+      "bollinger_lower": 0.708432809570837,
+      "smc_score": 0.9,
+      "smc_bias": "bullish",
+      "smc_bullish_structure_break": true,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "ADAUSDT:5m",
+      "symbol": "ADAUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "5m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 25,
+      "close": 0.16,
+      "return_fast": -0.006211180124223614,
+      "return_slow": 0,
+      "volatility": 0.0034197933458337804,
+      "rsi": 50,
+      "atr": 0.0005000000000000004,
+      "bollinger_upper": 0.1608181145747869,
+      "bollinger_middle": 0.16005000000000003,
+      "bollinger_lower": 0.15928188542521315,
+      "smc_score": 0.35,
+      "smc_bias": "bullish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "LINKUSDT:5m",
+      "symbol": "LINKUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "5m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 25,
+      "close": 7.858,
+      "return_fast": 0.0002545824847250966,
+      "return_slow": 0.001784803671595947,
+      "volatility": 0.001635517525299537,
+      "rsi": 42.15686274509792,
+      "atr": 0.012571428571428329,
+      "bollinger_upper": 7.884956665795435,
+      "bollinger_middle": 7.85945,
+      "bollinger_lower": 7.833943334204565,
+      "smc_score": 0.20000000000000007,
+      "smc_bias": "bearish",
+      "smc_bullish_structure_break": true,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "PEPEUSDT:5m",
+      "symbol": "PEPEUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "5m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 25,
+      "close": 0,
+      "rsi": 100,
+      "atr": 0,
+      "bollinger_upper": 0,
+      "bollinger_middle": 0,
+      "bollinger_lower": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "SHIBUSDT:5m",
+      "symbol": "SHIBUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "5m",
+      "as_of": "2026-06-19T11:00:00.000Z",
+      "bars": 22,
+      "close": 0,
+      "rsi": 100,
+      "atr": 0,
+      "bollinger_upper": 0,
+      "bollinger_middle": 0,
+      "bollinger_lower": 0,
+      "smc_score": 0,
+      "smc_bias": "neutral",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": false,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": false,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    },
+    {
+      "key": "TAOUSDT:5m",
+      "symbol": "TAOUSDT",
+      "family": "crypto",
+      "provider": "twelve",
+      "timeframe": "5m",
+      "as_of": "2026-06-19T11:55:00.000Z",
+      "bars": 36,
+      "close": 225.4,
+      "return_fast": -0.003095975232198067,
+      "return_slow": -0.004856512141280356,
+      "volatility": 0.0017773578663986473,
+      "rsi": 44.89795918367344,
+      "macd": -0.009239433738571279,
+      "atr": 0.8428571428571396,
+      "bollinger_upper": 227.12283428349613,
+      "bollinger_middle": 226.08499999999998,
+      "bollinger_lower": 225.04716571650383,
+      "smc_score": -1,
+      "smc_bias": "bearish",
+      "smc_bullish_structure_break": false,
+      "smc_bearish_structure_break": true,
+      "smc_bullish_liquidity_sweep": false,
+      "smc_bearish_liquidity_sweep": false,
+      "smc_bullish_fair_value_gap": false,
+      "smc_bearish_fair_value_gap": true,
+      "divergence_score": 0,
+      "divergence_bullish": false,
+      "divergence_bearish": false,
+      "rsi_bullish_divergence": false,
+      "rsi_bearish_divergence": false,
+      "macd_bullish_divergence": false,
+      "macd_bearish_divergence": false
+    }
+  ]}

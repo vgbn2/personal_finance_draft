@@ -1,3 +1,8 @@
+---
+name: security-safety
+description: Protocols for preventing secrets, credentials, and sensitive metadata from being committed or pushed to version control.
+---
+
 # Security Safety Protocol
 
 <role>

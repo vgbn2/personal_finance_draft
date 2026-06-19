@@ -1,3 +1,8 @@
+---
+name: sovereign-quant-design
+description: Institutional-grade engineering guidance for trading and wealth management systems with strict architectural and verification rules.
+---
+
 # SKILL: Sovereign Quant Design
 
 > **Mission**: Enforce disciplined, institutional-grade engineering for trading and wealth management.
