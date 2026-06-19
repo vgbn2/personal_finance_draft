@@ -11,6 +11,10 @@ const {
   optionLabel,
   stripAnsi,
   loadStrategyOptions,
+  loadSymbolUniverse,
+  currentSuggestionQuery,
+  filterSymbolSuggestions,
+  applySuggestionToBuffer,
 } = require('../../../backend/cli/tui/dashboard_exec.js');
 
 test('splitWords splits multi-word command ids and bot sub-command strings', () => {
@@ -126,4 +130,45 @@ test('buildArgv splits multi-word command ids into separate argv entries', () =>
   assert.deepEqual(buildArgv(cmd, { '--audit-vintages': true }),
     ['backend', 'integrity', '--audit-vintages']);
   assert.deepEqual(buildArgv(cmd, {}), ['backend', 'integrity']);
+});
+
+test('loadSymbolUniverse mirrors the real cached-symbol universe used by the legacy TUI', () => {
+  const { getCachedSymbols } = require('../../../backend/cli/tui/manifest.js');
+  const expected = getCachedSymbols();
+  const got = loadSymbolUniverse();
+  assert.deepEqual(got, expected);
+  assert.ok(got.length > 0, 'the repo cache is expected to have real symbols to suggest');
+  for (const entry of got) {
+    assert.ok(entry.value, 'every suggestion must carry a usable flag value');
+  }
+});
+
+test('currentSuggestionQuery isolates the in-progress segment for multi fields, uses the whole buffer for single fields', () => {
+  assert.equal(currentSuggestionQuery('AAPL,MS', true), 'MS');
+  assert.equal(currentSuggestionQuery('AAPL, MS', true), 'MS', 'trims whitespace after the comma');
+  assert.equal(currentSuggestionQuery('AAPL,', true), '', 'a trailing comma with nothing typed yet has a blank query');
+  assert.equal(currentSuggestionQuery('BTC', true), 'BTC', 'no comma yet -- the whole buffer is the query');
+  assert.equal(currentSuggestionQuery('AAPL,MSFT', false), 'AAPL,MSFT', 'single fields never split on commas');
+});
+
+test('filterSymbolSuggestions matches value/label/category case-insensitively and caps the result count', () => {
+  const universe = [
+    { label: 'BTCUSDT', value: 'BTCUSDT', category: 'Crypto' },
+    { label: 'AAPL', value: 'AAPL', category: 'Equities' },
+    { label: 'ETHUSDT', value: 'ETHUSDT', category: 'Crypto' },
+  ];
+  assert.deepEqual(filterSymbolSuggestions(universe, 'btc'), [universe[0]]);
+  assert.deepEqual(filterSymbolSuggestions(universe, 'CRYPTO'), [universe[0], universe[2]],
+    'matches against category too, not just value/label');
+  assert.deepEqual(filterSymbolSuggestions(universe, ''), universe, 'a blank query returns the (capped) universe as-is');
+  assert.deepEqual(filterSymbolSuggestions(universe, 'btc', 0), [], 'limit=0 caps to an empty result');
+  assert.deepEqual(filterSymbolSuggestions(universe, 'nonexistent-symbol'), []);
+});
+
+test('applySuggestionToBuffer replaces the whole buffer for single fields, only the last comma-segment for multi fields', () => {
+  assert.equal(applySuggestionToBuffer('anything typed', 'MSFT', false), 'MSFT');
+  assert.equal(applySuggestionToBuffer('AAPL,MS', 'MSFT', true), 'AAPL,MSFT');
+  assert.equal(applySuggestionToBuffer('MS', 'MSFT', true), 'MSFT', 'no comma yet -- the single segment is replaced');
+  assert.equal(applySuggestionToBuffer('AAPL,MSFT,NV', 'NVDA', true), 'AAPL,MSFT,NVDA',
+    'only the final segment is replaced, earlier selections survive');
 });
