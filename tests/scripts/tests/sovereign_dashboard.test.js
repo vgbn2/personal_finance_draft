@@ -286,15 +286,20 @@ test('dashboard App: in-pane running process can be aborted via Escape', async (
   const runCalls = [];
   const onRun = (argv, state) => runCalls.push({ argv, state });
 
-  // Start inside Operational category, status command (index 0)
-  const instance = render(h(App, { initialCatI: 0, initialCmdI: 0, onRun }), {
+  // Start inside Operational category on "watch" (index 2) -- a genuinely
+  // never-completing poller (unlike flagless "status", which can finish for
+  // real before the Escape keystroke arrives under heavy system load,
+  // racing this assertion; watch can't, so the abort path is exercised
+  // deterministically rather than depending on subprocess timing).
+  const instance = render(h(App, { initialCatI: 0, initialCmdI: 2, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
-  // Trigger Run
+  // Drill into watch's flags, move to the trailing Run row, trigger it.
   await send(stdin, instance, [keys.enter]);
+  await send(stdin, instance, [keys.down, keys.down, keys.enter]);
   assert.match(stdout.snapshot(), /Running:/);
 
   // Abort via Escape
