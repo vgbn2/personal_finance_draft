@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-19.md`** (last update: 2026-06-19 session 41)
+- Latest/current handoff: **`workspace/handoff/2026-06-19.md`** (last update: 2026-06-19 session 45)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -19,6 +19,22 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 45 (2026-06-19) — TUI Execution Robustness & AI-Testability implemented and verified.** Full trail: `workspace/handoff/2026-06-19.md` session 45. Implemented the plan in `tui_execution_robustness_plan.md` to map all manifest features, resolve interactive crashes (via async process abort key listeners, unmounting takeover commands, and direct TUI secure PIN inputs), and added an environment mocking bridge (`SOVEREIGN_MOCK=true` in `lib/auth.js`) for headless AI testability. Tested and verified that the entire test suite passes 100% cleanly (503/503 passing). All changes are currently uncommitted in the working tree.
+- **SESSION 42 (2026-06-19) — branch-divergence carryover RESOLVED (was never real, fast-forwarded);
+  Ink TUI execution wiring landed, UNCOMMITTED.** Full trail: `workspace/handoff/2026-06-19.md` session 42.
+
+  `feat/session-guard-intraday-rollup` had zero unique commits vs `feat/ink-tui-refactor` (proven via
+  `merge-base --is-ancestor` + empty `rev-list` diff) — fast-forwarded it, both branches now at `9a9518b2`,
+  no more divergence to track. Then implemented real command execution for the in-progress Ink dashboard
+  (`sovereign_dashboard.mjs`, still uncommitted — the user's own parallel work): flags-editing focus mode
+  (cycle/toggle/inline-text-edit) + an actual "▶ Run" action that spawns `sovereign_cli.js` as a real child
+  process with inherited stdio (so existing auth/PIN/confirm gates inside command handlers fire unchanged)
+  and remounts the dashboard afterward. New `backend/cli/tui/dashboard_exec.js` (pure argv-building
+  helpers) + 2 new test files (9 tests total, incl. a from-scratch fake-TTY Ink component harness — no new
+  npm dependency). Suite 501/501. **Not verified: the live interactive terminal transition** — this
+  sandbox has no PTY/tmux; a human needs to eyeball it in a real terminal at least once before trusting it
+  fully. **Next session: commit decision** (suggested split: A) dashboard_exec.js + dashboard wiring,
+  B) the 2 test files) — nothing staged yet, deliberately left for the user.
 - **SESSION 41 (2026-06-19) — first formal blast-through Gate Table; 4 real pre-existing bugs found
   AND fixed; worked alongside a concurrent Ink TUI refactor in the same working directory.** Full
   trail: `workspace/handoff/2026-06-19.md` session 41; findings ledger `workspace/DEV_REVIEW.md`.
