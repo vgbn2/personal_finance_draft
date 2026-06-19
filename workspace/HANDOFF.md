@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-19.md`** (last update: 2026-06-19 session 39 cont.)
+- Latest/current handoff: **`workspace/handoff/2026-06-19.md`** (last update: 2026-06-19 session 41)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -19,6 +19,26 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 41 (2026-06-19) — first formal blast-through Gate Table; 4 real pre-existing bugs found
+  AND fixed; worked alongside a concurrent Ink TUI refactor in the same working directory.** Full
+  trail: `workspace/handoff/2026-06-19.md` session 41; findings ledger `workspace/DEV_REVIEW.md`.
+  Full Audit (anchor `e0cb6aa2`→`76fbe991`) surfaced 2 reachable crash/no-op bugs in the FW2-extracted
+  `manifests.js` (undefined `fetchEcbHistory`; Kalshi stub return-shape mismatch) — both confirmed
+  pre-existing via diffing the pre-extraction monolith, both fixed (`5ca738aa`). User then said "act
+  now" on the remaining 2 reviewer-decision items: added a `requireAuth`+`SOVEREIGN_TRADE_PIN` gate to
+  Polymarket's live-order path (tracing the call site found it was reachable with **no** `--live` flag
+  at all — worse than first scoped) and removed 6 dormant families from the TUI ingest dropdown
+  (`91aafeef`). **Mid-session, another process committed "Backup before Ink TUI" and switched this
+  checkout to a NEW branch `feat/ink-tui-refactor`** without warning — confirmed expected (user's own
+  parallel Codex/TUI work), left the checkout alone per instruction, stayed alert to their further
+  concurrent edits (`sovereign_cli.js`, `market.ts`, new `sovereign_dashboard.mjs`) and never staged
+  anything outside explicit pathspecs. **Result: all 4 fix commits + docs landed on
+  `feat/ink-tui-refactor` (now `fab31f72`), which is 5 commits AHEAD of
+  `feat/session-guard-intraday-rollup` (still `76fbe991`) — these two branches have now diverged.**
+  Deliberately did not reconcile this (wasn't asked, and `feat/ink-tui-refactor` may be intentionally
+  isolated pending review). **Next session: ask the user whether/how to reconcile** — this is a
+  same-repo fast-forward question, NOT the monorepo-vs-subtree hash-mismatch trap from session
+  39/40, don't conflate them.
 - **SESSION 40 (2026-06-19) — reviewed+fixed a concurrent batch (real bug: writeJson array/undefined
   corruption risked wiping the live bot's trade-dedup memory) + CORRECTED session 39's origin-divergence
   call + fast-forward pushed to origin's real branch name.** Full trail: `workspace/handoff/2026-06-19.md`
