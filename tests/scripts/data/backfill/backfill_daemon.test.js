@@ -102,6 +102,42 @@ test('warm cycle SKIPs a fresh symbol — no wasted fetch, base bin unchanged', 
   console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'warm_cycle', skipped: summary.skipped, fetch_calls_total: calls.length, bars_1m: after.length }));
 });
 
+test('onJobDone fires exactly once per job with the right outcome, including silent freshness-skips', async () => {
+  // A freshness-skipped job (the common warm-run case) never emits a log line at
+  // all - onJobDone is the only way to count it, which is the whole point of this
+  // callback (it backs the dashboard's backfill-daemon progress bar / status file).
+  const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'daemon-'));
+  const okJob = { symbol: 'BTCUSDT', family: 'crypto', baseTf: '1m' };
+  const failJob = { symbol: 'ETHUSDT', family: 'crypto', baseTf: '1m' };
+  const skipJob = { symbol: 'SOLUSDT', family: 'crypto', baseTf: '1m' };
+
+  const execute = async (job) => {
+    if (job.symbol === failJob.symbol) return { ok: false, error: 'simulated failure' };
+    writeTsIndex(tsDir, { sources: [{
+      symbol: job.symbol, family: job.family, provider: 'binance', timeframe: job.baseTf,
+      timestamp: '2026-06-12T14:00:00.000Z', open: 1, high: 1, low: 1, close: 1, volume: 1,
+    }] });
+    return { ok: true };
+  };
+  const rollup = () => ({ ok: true, derived: {} });
+  // Only skipJob's gate reports fresh; the other two are missing -> deep.
+  const freshness = (tsDir2, symbol) => (symbol === skipJob.symbol
+    ? { reason: 'fresh', fresh: true }
+    : { reason: 'missing', fresh: false });
+
+  const events = [];
+  await runBackfillCycle({
+    tsDir, jobs: [okJob, failJob, skipJob], now: Date.now(), execute, rollup, freshness, cycle: 1,
+    onJobDone: (job, outcome) => events.push({ symbol: job.symbol, outcome }),
+  });
+
+  assert.equal(events.length, 3, 'fired once per job, including the silent skip');
+  const bySymbol = Object.fromEntries(events.map((e) => [e.symbol, e.outcome]));
+  assert.equal(bySymbol[okJob.symbol], 'ok');
+  assert.equal(bySymbol[failJob.symbol], 'failed');
+  assert.equal(bySymbol[skipJob.symbol], 'skipped');
+});
+
 test('OOM guard: --concurrency override is clamped on the 1m lanes, not on Yahoo', () => {
   // The 1m lanes (binance/alpaca) touch multi-million-row bins; a blanket high
   // concurrency exhausts the heap. The override must cap at the lane ceiling (3) for

@@ -178,9 +178,48 @@ function isInteractiveCmd(cmdStr, interactiveCmds) {
   return Array.from(interactiveCmds).some((ic) => cmdStr.startsWith(ic) || cmdStr === ic);
 }
 
+
+// Reads backfill-daemon's status file and returns it ONLY when it describes
+// a live, actively-progressing run -- regardless of whether the dashboard
+// itself started that process (a separate terminal, or the Docker `backfill`
+// service, write the exact same file). Returns null for: file missing/
+// unparseable, the writer's PID no longer exists (process.kill(pid,0) is the
+// standard cross-platform liveness probe -- it never actually signals
+// anything when the signal number is 0, just checks permission/existence),
+// or a status that isn't 'running'/'sleeping' (idle/stopped = nothing to show).
+// Known limitation: if a process crashed without the SIGINT/SIGTERM handler
+// running (so status stayed 'running') AND the OS later reuses that exact
+// PID for an unrelated process before this is next read, this would show a
+// stale phantom entry -- accepted as a low-probability, cosmetic-only risk
+// (it only affects this read-only progress display, nothing it gates).
+function readDaemonStatus(statusPath) {
+  const fs = require('node:fs');
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed.pid !== 'number') return null;
+  try {
+    process.kill(parsed.pid, 0);
+  } catch {
+    return null;
+  }
+  if (parsed.status !== 'running' && parsed.status !== 'sleeping') return null;
+  return parsed;
+}
+
+// Small fixed-width ASCII bar for the header strip -- e.g. renderProgressBar(3,10) -> '███░░░░░░░'.
+function renderProgressBar(completed, total, width = 10) {
+  if (!Number.isFinite(total) || total <= 0) return '░'.repeat(width);
+  const ratio = Math.max(0, Math.min(1, completed / total));
+  const filled = Math.round(ratio * width);
+  return '█'.repeat(filled) + '░'.repeat(width - filled);
+}
 module.exports = {
   splitWords, isPlaceholderSelect, defaultFlagValues, cycleOption, buildArgv,
   optionValue, optionLabel, stripAnsi, loadStrategyOptions, healthDot, loadDashboardHealth,
   isInteractiveCmd, loadSymbolUniverse, currentSuggestionQuery, filterSymbolSuggestions,
-  applySuggestionToBuffer,
+  applySuggestionToBuffer, readDaemonStatus, renderProgressBar,
 };

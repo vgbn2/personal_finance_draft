@@ -1,5 +1,8 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 const {
   splitWords,
@@ -15,6 +18,8 @@ const {
   buildSymbolPickerRows,
   groupValuesFor,
   toggleSet,
+  readDaemonStatus,
+  renderProgressBar,
 } = require('../../../../backend/cli/tui/dashboard_exec.js');
 
 test('splitWords splits multi-word command ids and bot sub-command strings', () => {
@@ -187,4 +192,40 @@ test('toggleSet is a tri-state check-all/uncheck-all toggle: adds whatever is mi
   assert.deepEqual([...toggleSet(new Set(['AAPL', 'MSFT']), ['MSFT', 'NVDA'])].sort(), ['AAPL', 'MSFT', 'NVDA'],
     'partial overlap counts as "not all in" -> adds the missing ones, keeps the rest');
   assert.deepEqual([...toggleSet(new Set(), [])], [], 'an empty group toggles to nothing, not an error');
+});
+
+test('renderProgressBar fills proportionally to completed/total and handles edge inputs', () => {
+  assert.equal(renderProgressBar(0, 10, 10), '░░░░░░░░░░');
+  assert.equal(renderProgressBar(5, 10, 10), '█████░░░░░');
+  assert.equal(renderProgressBar(10, 10, 10), '██████████');
+  assert.equal(renderProgressBar(0, 0, 10), '░░░░░░░░░░', 'zero total -> empty bar, not NaN/crash');
+  assert.equal(renderProgressBar(7, 5, 10), '██████████', 'over-100% clamps instead of overflowing');
+});
+
+test('readDaemonStatus only returns a status whose writer PID is alive AND whose status is running/sleeping', () => {
+  const statusPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'daemon-status-')), 'status.json');
+
+  // Missing file -> null, not a throw.
+  assert.equal(readDaemonStatus(statusPath), null);
+
+  fs.writeFileSync(statusPath, 'not json');
+  assert.equal(readDaemonStatus(statusPath), null, 'unparseable file -> null');
+
+  // This test process's own PID is guaranteed alive for the duration of the test.
+  const live = { pid: process.pid, status: 'running', completed_jobs: 3, total_jobs: 10, current_symbol: 'BTCUSDT' };
+  fs.writeFileSync(statusPath, JSON.stringify(live));
+  assert.deepEqual(readDaemonStatus(statusPath), live);
+
+  fs.writeFileSync(statusPath, JSON.stringify({ ...live, status: 'sleeping' }));
+  assert.ok(readDaemonStatus(statusPath), 'sleeping (between continuous-loop cycles) still counts as live');
+
+  fs.writeFileSync(statusPath, JSON.stringify({ ...live, status: 'idle' }));
+  assert.equal(readDaemonStatus(statusPath), null, 'idle (a finished --once run) -> nothing to show');
+
+  fs.writeFileSync(statusPath, JSON.stringify({ ...live, status: 'stopped' }));
+  assert.equal(readDaemonStatus(statusPath), null, 'stopped -> nothing to show');
+
+  // A PID essentially guaranteed not to exist (PIDs this large aren't issued).
+  fs.writeFileSync(statusPath, JSON.stringify({ ...live, pid: 999999 }));
+  assert.equal(readDaemonStatus(statusPath), null, 'dead PID -> null even if status says running (stale file)');
 });
