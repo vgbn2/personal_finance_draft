@@ -831,11 +831,19 @@ async function runExternal(argv, returnState) {
   if (!isInteractive) {
     return;
   }
+  // handleRun calls onRun (this function) fire-and-forget from inside an Ink
+  // useInput keypress handler, so the synchronous part of this async function
+  // still runs INSIDE that handler's call stack, before Ink has finished
+  // dispatching the keypress. Unmounting here used to happen before this
+  // await, tearing down Ink's stdin/raw-mode ownership mid-dispatch - the
+  // root cause of intermittent crashes on login/register/mt5/etc (every
+  // INTERACTIVE_CMDS entry). Wait for a fresh tick FIRST so the unmount
+  // always happens after the current keypress is fully handled.
+  await new Promise((resolve) => setImmediate(resolve));
   if (dashboard) {
     dashboard.unmount();
     dashboard = null;
   }
-  await new Promise((resolve) => setImmediate(resolve));
   console.log('\n$ sovereign ' + argv.join(' ') + '\n');
   spawnSync(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...argv], { stdio: 'inherit' });
   console.log('\n— press any key to return to dashboard —');
