@@ -12,7 +12,7 @@ const require = createRequire(import.meta.url);
 const {
   splitWords, isPlaceholderSelect, defaultFlagValues, cycleOption, buildArgv,
   optionLabel, loadStrategyOptions, healthDot, loadDashboardHealth, isInteractiveCmd,
-  loadSymbolUniverse, currentSuggestionQuery, filterSymbolSuggestions, applySuggestionToBuffer,
+  loadFullSymbolUniverse, buildSymbolPickerRows, groupValuesFor, toggleSet, firstSelectableIndex,
   readDaemonStatus, renderProgressBar,
 } = require('./tui/dashboard_exec.js');
 const { DAEMON_STATUS_PATH } = require('./commands/data/backfill_daemon.js');
@@ -23,11 +23,14 @@ const { DAEMON_STATUS_PATH } = require('./commands/data/backfill_daemon.js');
 const STRATEGY_OPTIONS = loadStrategyOptions();
 const STRATEGY_FLAG_OPTS = STRATEGY_OPTIONS.length > 0 ? STRATEGY_OPTIONS : ['<registered strategies>'];
 
-// Same cached-symbol source the legacy TUI's pickAssets() wizard reads, but
-// that wizard is gated on isRichTerminal() and never fires against the
-// dashboard's piped child spawns -- this powers a lightweight autocomplete
-// suggestion list on --symbol-style flags instead (see pickSymbol below).
-const SYMBOL_UNIVERSE = loadSymbolUniverse();
+// Same family/market/sector-tagged universe the legacy TUI's pickAssets()
+// wizard reads, resolved once at module load (top-level await -- a handful
+// of fast local file reads, not network). That wizard is gated on
+// isRichTerminal() and never fires against the dashboard's piped child
+// spawns -- this powers a real in-dashboard picker overlay instead (see
+// focus === 'symbolPicker' below): search-as-you-type, multi-select with
+// per-symbol and per-category checkboxes, grouped by family/market/sector.
+const SYMBOL_UNIVERSE = await loadFullSymbolUniverse();
 
 const INTERACTIVE_CMDS = new Set([
   'cockpit',
@@ -104,10 +107,11 @@ const M = [
           '--once':          { t:'yn',  lbl:'Run once (no daemon loop)?', def:true },
           '--deep-all':      { t:'yn',  lbl:'Full rebuild? (force, ignore freshness)', def:false },
           '--families':      { t:'txt', lbl:'Families comma-sep (blank = all)', def:'' },
+          '--symbols':       { t:'txt', lbl:'Symbols comma-sep (blank = all in family)', def:'', pickSymbol:'multi' },
           '--concurrency':   { t:'txt', lbl:'Symbols in parallel per provider', def:'5' },
-          '--interval-secs': { t:'txt', lbl:'Loop interval seconds (daemon only)', def:'1800' },
         },
       },
+      { id: 'stop-backfill-daemon', label: 'stop-backfill-daemon', desc: 'Stop the background backfill daemon', flags: {} },
       { id: 'intraday-rollup', label: 'intraday-rollup', desc: 'Derive coarser bins from 1m/5m base',
         flags: {
           '--family':     { t:'sel', opts:['all','crypto','equities'], lbl:'Family', def:'all' },
@@ -132,6 +136,7 @@ const M = [
       { id: 'backend stats',       label: 'backend stats',       desc: 'Equity curve statistics from backtest', flags: {} },
       { id: 'backend correlation', label: 'backend correlation', desc: 'Pearson correlation matrix → heatmap',
         flags: {
+          '--symbols':          { t:'txt', lbl:'Symbols comma-sep, min 2 (blank = default equities)', def:'', pickSymbol:'multi' },
           '--timeframe':        { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
           '--max-bars':         { t:'txt', lbl:'Lookback period (bars)', def:'252' },
           '--method':           { t:'sel', opts:['auto','pearson-returns','fx-returns','pearson-levels'], lbl:'Correlation method', def:'auto' },
@@ -325,7 +330,9 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const [flagValues, setFlagValues] = useState({});
   const [editing, setEditing] = useState(false);
   const [editBuffer, setEditBuffer] = useState('');
-  const [suggestIndex, setSuggestIndex] = useState(0);
+  const [pickerQuery, setPickerQuery] = useState('');
+  const [pickerIndex, setPickerIndex] = useState(0);
+  const [pickerSelected, setPickerSelected] = useState(() => new Set());
   const [pinBuffer, setPinBuffer] = useState('');
   const [clock, setClock] = useState(() => new Date().toLocaleTimeString('en-GB'));
   const [health, setHealth] = useState(() => loadDashboardHealth());
@@ -336,6 +343,12 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const [output, setOutput] = useState('');
   const [running, setRunning] = useState(false);
   const [lastExecuted, setLastExecuted] = useState([]);
+  // Output-panel scroll: the index of the first visible line. null means
+  // "auto-follow the tail" (always show the latest output, like `tail -f`) --
+  // the common case while a command streams. Once the user scrolls up it
+  // becomes a concrete index that stays put as new lines arrive, until they
+  // scroll back down to the bottom, which re-arms auto-follow.
+  const [outputScrollTop, setOutputScrollTop] = useState(null);
 
   const childRef = React.useRef(null);
   const mountedRef = React.useRef(true);
@@ -371,6 +384,21 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       return;
     }
 
+    if (argv[0] === 'stop-backfill-daemon') {
+      const status = readDaemonStatus(DAEMON_STATUS_PATH);
+      if (status && status.pid && status.status !== 'stopped') {
+        try {
+          process.kill(status.pid, 'SIGTERM');
+          if (mountedRef.current) setOutput(`Sent SIGTERM to backfill-daemon (pid ${status.pid}).\n`);
+        } catch (err) {
+          if (mountedRef.current) setOutput(`Failed to kill daemon (pid ${status.pid}): ${err.message}\n`);
+        }
+      } else {
+        if (mountedRef.current) setOutput('Daemon is not running or PID is unknown.\n');
+      }
+      return;
+    }
+
     const cmdStr = argv.join(' ');
     const isInteractive = isInteractiveCmd(cmdStr, INTERACTIVE_CMDS);
 
@@ -379,6 +407,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         setRunning(true);
         setLastExecuted(argv);
         setOutput('Running...\n');
+        setOutputScrollTop(null); // re-pin to the tail for the new run's output
       }
       await new Promise(resolve => setTimeout(resolve, 50));
       try {
@@ -456,23 +485,18 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     setEditing(false);
   }, [cmd && cmd.id]);
 
-  // Symbol-flag autocomplete: the active flag being edited (if any), whether
-  // it's marked for symbol suggestions, and the live-filtered candidate list
-  // for whatever's currently being typed (just the last comma-segment for
-  // multi-value fields). Computed once per render so both the keyboard
-  // handler and the flag panel's JSX agree on the same list.
-  const activeFlagKey  = (focus === 'flags' && flagI >= 0 && flagI < fkeys.length) ? fkeys[flagI] : null;
+  // Symbol picker: the flag being edited (valid in both 'flags' and
+  // 'symbolPicker' focus, since flagI doesn't change when the picker opens),
+  // whether it wants the picker at all, and the live-filtered/grouped row
+  // list for the current search query. Computed once per render so both the
+  // keyboard handler and the flag panel's JSX agree on the same rows.
+  const activeFlagKey  = ((focus === 'flags' || focus === 'symbolPicker') && flagI >= 0 && flagI < fkeys.length)
+    ? fkeys[flagI] : null;
   const activeFlagMeta = activeFlagKey ? cmd.flags[activeFlagKey] : null;
-  const hasSymbolSuggestions = !!(activeFlagMeta && activeFlagMeta.pickSymbol);
-  const suggestMulti = activeFlagMeta && activeFlagMeta.pickSymbol === 'multi';
-  const suggestions = hasSymbolSuggestions
-    ? filterSymbolSuggestions(SYMBOL_UNIVERSE, currentSuggestionQuery(editBuffer, suggestMulti))
-    : [];
-
-  function handleEditChange(value) {
-    setEditBuffer(value);
-    setSuggestIndex(0);
-  }
+  const pickerMulti = !!(activeFlagMeta && activeFlagMeta.pickSymbol === 'multi');
+  const pickerRows = React.useMemo(() => {
+    return focus === 'symbolPicker' ? buildSymbolPickerRows(SYMBOL_UNIVERSE, pickerQuery) : [];
+  }, [focus, pickerQuery]);
 
   function handleEditSubmit(value) {
     const fk = fkeys[flagI];
@@ -489,6 +513,24 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
 
   // keyboard
   useInput((input, key) => {
+    // Output-panel scrolling: works in every focus mode (incl. while a
+    // command is running) since the output panel is always visible
+    // alongside whatever else is on screen, not something you "enter".
+    if (key.pageUp || key.pageDown || key.home || key.end) {
+      const lines = output ? output.split('\n') : [];
+      const maxLines = Math.max(5, (process.stdout.rows || 24) - 10);
+      const maxTop = Math.max(0, lines.length - maxLines);
+      if (key.home) { setOutputScrollTop(maxTop === 0 ? null : 0); return; }
+      if (key.end) { setOutputScrollTop(null); return; }
+      setOutputScrollTop((top) => {
+        const current = top === null ? maxTop : top;
+        const next = key.pageUp ? current - maxLines : current + maxLines;
+        const clamped = Math.max(0, Math.min(maxTop, next));
+        return clamped >= maxTop ? null : clamped; // snap back to auto-follow at the bottom
+      });
+      return;
+    }
+
     if (running) {
       if (key.escape || input === 'c') {
         if (childRef.current) {
@@ -514,6 +556,71 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         setFocus('flags');
         setPinBuffer('');
         setEditing(false);
+      }
+      return;
+    }
+
+    if (focus === 'symbolPicker') {
+      // Hand-rolled (no ink-text-input) on purpose: TextInput's own internal
+      // useInput hook would also try to act on every keystroke (incl. Space,
+      // which here must always mean "toggle", never "type a space" -- search
+      // queries are symbol/category text, never contain spaces), and two
+      // independent hooks fighting over the same buffer is exactly the kind
+      // of bug class this whole feature is supposed to avoid introducing.
+      if (key.escape) { setFocus('flags'); return; }
+      if (key.upArrow) {
+        setPickerIndex((i) => {
+          if (pickerRows.length === 0) return 0;
+          let n = i;
+          do { n = n > 0 ? n - 1 : pickerRows.length - 1; }
+          while (pickerRows[n].type === 'header' && !pickerMulti && pickerRows.length > 1);
+          return n;
+        });
+        return;
+      }
+      if (key.downArrow) {
+        setPickerIndex((i) => {
+          if (pickerRows.length === 0) return 0;
+          let n = i;
+          do { n = n < pickerRows.length - 1 ? n + 1 : 0; }
+          while (pickerRows[n].type === 'header' && !pickerMulti && pickerRows.length > 1);
+          return n;
+        });
+        return;
+      }
+      if (key.backspace || key.delete) {
+        const newQuery = pickerQuery.slice(0, -1);
+        setPickerQuery(newQuery);
+        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(SYMBOL_UNIVERSE, newQuery), pickerMulti));
+        return;
+      }
+      if (input === ' ') {
+        if (!pickerMulti) return;
+        const row = pickerRows[pickerIndex];
+        if (!row) return;
+        if (row.type === 'header') {
+          setPickerSelected((s) => toggleSet(s, groupValuesFor(pickerRows, row.groupKey)));
+        } else {
+          setPickerSelected((s) => toggleSet(s, [row.value]));
+        }
+        return;
+      }
+      if (key.return) {
+        const row = pickerRows[pickerIndex];
+        const fk = activeFlagKey;
+        if (pickerMulti) {
+          setFlagValues((v) => ({ ...v, [fk]: [...pickerSelected].join(',') }));
+        } else if (row && row.type !== 'header') {
+          setFlagValues((v) => ({ ...v, [fk]: row.value }));
+        }
+        setFocus('flags');
+        return;
+      }
+      if (input && input.length === 1 && !key.ctrl && !key.meta) {
+        const newQuery = pickerQuery + input;
+        setPickerQuery(newQuery);
+        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(SYMBOL_UNIVERSE, newQuery), pickerMulti));
+        return;
       }
       return;
     }
@@ -565,24 +672,6 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         handleRun(splitWords(sub.cmdStr));
       }
     } else if (focus === 'flags') {
-      if (editing) {
-        // Symbol-flag autocomplete: ↑↓ browse the live suggestion list, Tab
-        // accepts the highlighted one into editBuffer. Everything else
-        // (character typing, backspace, Enter-to-submit) is left to
-        // TextInput's own hook -- this branch must not fall through to the
-        // flagI-navigation logic below, which would hijack ↑↓ into moving
-        // the selected flag instead of the suggestion highlight.
-        if (hasSymbolSuggestions) {
-          if (key.upArrow)   { setSuggestIndex(i => Math.max(0, i - 1)); return; }
-          if (key.downArrow) { setSuggestIndex(i => Math.min(Math.max(suggestions.length - 1, 0), i + 1)); return; }
-          if (key.tab && suggestions[suggestIndex]) {
-            setEditBuffer((buf) => applySuggestionToBuffer(buf, suggestions[suggestIndex].value, suggestMulti));
-            setSuggestIndex(0);
-            return;
-          }
-        }
-        return;
-      }
       const maxI = fkeys.length; // trailing index == the "Run" row
       if (key.escape) { setFocus('cmd'); setFlagI(-1); return; }
       if (key.upArrow)   { setFlagI(i => Math.max(0, i - 1)); return; }
@@ -616,6 +705,15 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       if (key.return) {
         if (meta.t === 'yn') {
           setFlagValues(v => ({ ...v, [fk]: !v[fk] }));
+        } else if (meta.pickSymbol) {
+          const currentVal = String(flagValues[fk] ?? '');
+          const multi = meta.pickSymbol === 'multi';
+          setPickerQuery('');
+          setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(SYMBOL_UNIVERSE, ''), multi));
+          setPickerSelected(new Set(multi
+            ? currentVal.split(',').map((s) => s.trim()).filter(Boolean)
+            : (currentVal ? [currentVal] : [])));
+          setFocus('symbolPicker');
         } else if (textLike) {
           setEditBuffer(String(flagValues[fk] ?? ''));
           setEditing(true);
@@ -624,7 +722,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         }
       }
     }
-  }, { isActive: !editing || focus === 'pin' || hasSymbolSuggestions });
+  }, { isActive: !editing || focus === 'pin' || focus === 'symbolPicker' });
 
   // ── Sidebar items ──────────────────────────────────────────────────────
   const sideItems = M.map((c, i) => {
@@ -639,7 +737,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // active row so the flag/sub-option panel below has room — showing the full
   // list AND a multi-flag panel at once can exceed terminal rows and corrupt
   // Ink's cursor-repositioning redraw (frames visually overlap).
-  const drilled = (focus === 'flags' || focus === 'subcmd' || focus === 'pin') && !!cmd;
+  const drilled = (focus === 'flags' || focus === 'subcmd' || focus === 'pin' || focus === 'symbolPicker') && !!cmd;
   const cmdRows = drilled
     ? [
         h(Box, { key: cmd.id },
@@ -673,6 +771,41 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       ),
       h(Text, { color: MUT }, '    (Press Escape to cancel execution)')
     );
+  } else if (focus === 'symbolPicker') {
+    const maxVisible = Math.max(6, (process.stdout.rows || 24) - 16);
+    const pickerScroll = pickerIndex >= maxVisible ? pickerIndex - maxVisible + 1 : 0;
+    const visibleRows = pickerRows.slice(pickerScroll, pickerScroll + maxVisible);
+    const rowNodes = visibleRows.length === 0
+      ? [h(Text, { key: '_empty', color: MUT }, '    (no matches — press Enter to use the typed text)')]
+      : visibleRows.map((row, idx) => {
+          const actualIdx = idx + pickerScroll;
+          const active = actualIdx === pickerIndex;
+          const arrow = active ? '▸ ' : '  ';
+          if (row.type === 'header') {
+            const groupVals = groupValuesFor(pickerRows, row.groupKey);
+            const checkedCount = groupVals.filter((v) => pickerSelected.has(v)).length;
+            const tag = pickerMulti ? ` [${checkedCount}/${groupVals.length}]` : '';
+            return h(Text, { key: row.groupKey, color: active ? YL : CY, bold: true }, arrow + row.label + tag);
+          }
+          if (row.type === 'custom') {
+            const checked = pickerMulti && pickerSelected.has(row.value);
+            const box = pickerMulti ? (checked ? '[x] ' : '[ ] ') : '';
+            return h(Text, { key: '_custom', color: active ? YL : AM }, arrow + box + `+ "${row.value}" (not cached)`);
+          }
+          const checked = pickerMulti && pickerSelected.has(row.value);
+          const box = pickerMulti ? (checked ? '[x] ' : '[ ] ') : '';
+          return h(Text, { key: row.value, color: active ? YL : VAL }, arrow + box + row.value);
+        });
+    flagPanel = h(Box, { flexDirection: 'column' },
+      h(Text, { color: CY, bold: true }, '  Select symbol' + (pickerMulti ? 's' : '') + ' — ' + activeFlagKey),
+      h(Box, {}, h(Text, { color: YL }, '  Search: '), h(Text, { color: VAL }, pickerQuery + '█')),
+      h(Text, { color: BDR }, '  ' + '─'.repeat(70)),
+      ...rowNodes,
+      h(Text, { color: BDR }, '  ' + '─'.repeat(70)),
+      pickerMulti
+        ? h(Text, { color: GN }, '  Selected (' + pickerSelected.size + '): ' + ([...pickerSelected].join(', ') || '(none)'))
+        : h(Text, { color: MUT }, '  ⏎ selects the highlighted row directly'),
+    );
   } else if (cmd.subcmds) {
     const subRows = cmd.subcmds.map((s, idx) => {
       const active = focus === 'subcmd' && idx === subcmdI;
@@ -704,7 +837,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       const active = focus === 'flags' && idx === flagI;
       const val = flagValues[f];
       const valueNode = (active && editing)
-        ? h(TextInput, { value: editBuffer, onChange: handleEditChange, onSubmit: handleEditSubmit })
+        ? h(TextInput, { value: editBuffer, onChange: setEditBuffer, onSubmit: handleEditSubmit })
         : h(Text, { color: m.warn ? RD : AM }, m.t === 'yn' ? (val ? '[Y]' : '[N]') : ('[' + (optionLabel(m, val) || '') + ']'));
       return h(Box, { key: f },
         h(Text, { color: active ? YL : DIM }, active ? '▸ ' : '  '),
@@ -713,23 +846,9 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         h(Text, { color: m.warn ? RD : MUT }, m.lbl),
       );
     });
-    // Symbol-flag autocomplete: a live suggestion list under the active row
-    // while editing a --symbol/--symbols-style flag, drawn from the real
-    // cached symbol universe (no network, no fresh fetch).
-    const suggestionRows = (editing && hasSymbolSuggestions)
-      ? [
-          h(Text, { key: '_hint', color: MUT },
-            suggestions.length > 0 ? '    ↑↓ browse · Tab autocomplete' : '    (no cached symbols match)'),
-          ...suggestions.map((s, i2) => h(Text, {
-            key: s.value,
-            color: i2 === suggestIndex ? YL : DIM,
-          }, (i2 === suggestIndex ? '    → ' : '      ') + s.value + (s.category ? '  (' + s.category + ')' : ''))),
-        ]
-      : [];
     flagPanel = h(Box, { flexDirection: 'column' },
       h(Text, { color: CY }, '  › ' + cmd.id),
       ...flagRows,
-      ...suggestionRows,
       h(Box, {},
         h(Text, { color: runActive ? GN : BDR }, runActive ? '▸ ' : '  '),
         h(Text, { color: runActive ? GN : MUT, bold: runActive }, '▶ Run'),
@@ -738,8 +857,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     );
   }
 
-  const footerHint = (editing && hasSymbolSuggestions)
-    ? '↑↓ browse suggestions  Tab autocomplete  ⏎ commit typed text  q quit'
+  const footerHint = focus === 'symbolPicker'
+    ? (pickerMulti
+        ? '↑↓ browse  Space toggle  ⏎ confirm  esc cancel  type to search'
+        : '↑↓ browse  ⏎ select  esc cancel  type to search')
     : focus === 'flags'
       ? '↑↓ field  ←→ change  ⏎ edit/run  esc back  q quit'
       : focus === 'subcmd'
@@ -748,7 +869,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
 
   const maxLines = Math.max(5, (process.stdout.rows || 24) - 10);
   const outputLines = output ? output.split('\n') : [];
-  const visibleLines = outputLines.slice(-maxLines);
+  const outputMaxTop = Math.max(0, outputLines.length - maxLines);
+  const outputTop = outputScrollTop === null ? outputMaxTop : Math.min(outputScrollTop, outputMaxTop);
+  const visibleLines = outputLines.slice(outputTop, outputTop + maxLines);
+  const outputScrolledUp = outputTop < outputMaxTop;
 
   const backendDot = healthDot(health.backend);
   const cacheDot = healthDot(health.cache);
@@ -795,7 +919,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         width: 76,
         flexShrink: 0,
         borderStyle: 'single',
-        borderColor: (focus === 'cmd' || focus === 'subcmd' || focus === 'flags') ? CY : BDR,
+        borderColor: (focus === 'cmd' || focus === 'subcmd' || focus === 'flags' || focus === 'symbolPicker') ? CY : BDR,
         flexDirection: 'column',
         paddingX: 1,
       },
@@ -825,7 +949,12 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
             ? h(Box, { flexDirection: 'column' },
                 h(Text, { color: GN, bold: true }, `$ sovereign ${lastExecuted.join(' ')}`),
                 h(Text, { color: BDR }, '─'.repeat(40)),
-                ...visibleLines.map((line, idx) => h(Text, { key: idx, color: VAL }, line))
+                ...visibleLines.map((line, idx) => h(Text, { key: idx, color: VAL }, line)),
+                outputLines.length > maxLines
+                  ? h(Text, { color: outputScrolledUp ? YL : MUT },
+                      `  [lines ${outputTop + 1}-${Math.min(outputTop + maxLines, outputLines.length)} of ${outputLines.length}]` +
+                      (outputScrolledUp ? '  PgDn/End to follow latest' : '  PgUp to scroll back'))
+                  : null,
               )
             : h(Box, { flexDirection: 'column' },
                 h(Text, { color: MUT }, 'No command executed yet.'),
