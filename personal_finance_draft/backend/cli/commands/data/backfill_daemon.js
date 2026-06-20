@@ -22,6 +22,7 @@
  * network; `commandBackfillDaemon` wires the real ingest commands.
  */
 
+const fs = require('node:fs');
 const path = require('node:path');
 const {
   optionValue, hasFlag, numericOption, printPayload,
@@ -439,8 +440,74 @@ async function commandBackfillDaemon(args) {
   return lastSummary && lastSummary.errors === 0 ? 0 : 1;
 }
 
+/**
+ * commandStopBackfillDaemon -- reads DAEMON_STATUS_PATH for the writer's pid and
+ * sends it SIGTERM. Works regardless of whether the running daemon was started
+ * from the dashboard, a separate terminal, or the Docker `backfill` service -
+ * the status file is the only thing tying this command to a real process.
+ *
+ * Graceful-shutdown caveat (Windows): the daemon's own SIGTERM handler (above,
+ * in commandBackfillDaemon) writes status:'stopped' before exiting - but only
+ * on platforms where SIGTERM is a real, catchable signal (Linux/the Docker
+ * `backfill` service). On native Windows, process.kill(pid, 'SIGTERM') sent
+ * from a SEPARATE process is a hard kill (confirmed empirically: the target's
+ * own 'SIGTERM' listener never runs) - the process dies just as reliably, but
+ * the status file is left showing its last 'running'/'sleeping' snapshot
+ * rather than 'stopped'. This is harmless for the dashboard's own display:
+ * readDaemonStatus's PID-liveness probe (process.kill(pid, 0)) independently
+ * detects the dead PID and returns null regardless of the stale status string.
+ * It only matters if something inspects the raw JSON file directly expecting
+ * an accurate 'stopped' marker on Windows specifically.
+ */
+async function commandStopBackfillDaemon(args) {
+  let status;
+  try {
+    status = JSON.parse(fs.readFileSync(DAEMON_STATUS_PATH, 'utf8'));
+  } catch (err) {
+    printPayload({ ok: false, reason: 'no_status_file', error: 'No backfill-daemon status file found - nothing appears to be running.' }, args);
+    return 1;
+  }
+
+  if (!status || typeof status.pid !== 'number') {
+    printPayload({ ok: false, reason: 'invalid_status_file', error: 'Status file is malformed (no pid recorded).' }, args);
+    return 1;
+  }
+
+  try {
+    process.kill(status.pid, 0); // liveness probe only - sends no real signal
+  } catch (err) {
+    printPayload({ ok: false, reason: 'not_running', pid: status.pid, error: `PID ${status.pid} from the status file is not running (already stopped or stale).` }, args);
+    return 1;
+  }
+
+  try {
+    process.kill(status.pid, 'SIGTERM');
+  } catch (err) {
+    printPayload({ ok: false, reason: 'kill_failed', pid: status.pid, error: err && err.message ? err.message : String(err) }, args);
+    return 1;
+  }
+
+  // Write the 'stopped' marker ourselves rather than relying on the target's own
+  // SIGTERM handler to do it - on Windows that handler never runs (see the
+  // caveat above), so without this the file would keep showing stale
+  // 'running'/'sleeping' data until overwritten by a future run. Harmless if
+  // the target IS gracefully shutting down concurrently: both writers use the
+  // same atomic writeJson, so this is at worst a last-write-wins race on a
+  // progress display, nothing safety-critical.
+  try {
+    writeJson(DAEMON_STATUS_PATH, { ...status, status: 'stopped', stopped_by: 'stop-backfill-daemon', updated_at: new Date().toISOString() });
+  } catch (_) { /* best-effort - the command's own success already reflects the real kill */ }
+
+  printPayload({
+    ok: true, pid: status.pid,
+    stopped_cycle: status.cycle, stopped_completed_jobs: status.completed_jobs, stopped_total_jobs: status.total_jobs,
+  }, args);
+  return 0;
+}
+
 module.exports = {
   commandBackfillDaemon,
+  commandStopBackfillDaemon,
   runBackfillCycle,
   buildJobUniverse,
   groupIntoLanes,
