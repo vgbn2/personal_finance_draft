@@ -13,6 +13,7 @@ const {
 } = require('../../../scripts/data_ops/ingest_market_data.js');
 
 const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quote_router.js');
+const { DEFAULT_INDICATOR_OPTIMIZATION } = require('../../../../shared/lib/runtime/paths.js');
 const { guardEquitySessionBars } = require('../../../../shared/lib/market/equity_session.js');
 const { upsertStrategyGradeRecord, inferStrategyTaxonomy, normalizeStrategyPath } = require('../../../../shared/lib/strategy/registry.js');
 
@@ -652,7 +653,7 @@ async function commandBacktest(args) {
 }
 
 async function commandOptimize(args) {
-  const output = optionValue(args, '--output', path.join(REPO_ROOT, 'data', 'models', 'latest_indicator_optimization.json'));
+  const output = optionValue(args, '--output', DEFAULT_INDICATOR_OPTIMIZATION);
 
   let strategyPath = resolveStrategyPathInput(optionValue(args, '--strategy', null));
   let strategyMeta = null;
