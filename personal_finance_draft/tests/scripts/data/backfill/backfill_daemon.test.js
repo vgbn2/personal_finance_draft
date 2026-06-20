@@ -12,10 +12,19 @@ const path = require('node:path');
 
 const { writeTsIndex, readTsIndex } = require('../../../../shared/lib/market/validation.js');
 const { rollupFromBase, rollupTargetsAboveBase } = require('../../../../backend/cli/commands/data/data.js');
+const { spawn } = require('node:child_process');
 const {
   runBackfillCycle, decideAction, buildJobUniverse,
   groupIntoLanes, utcDayFloor, makeRealRollup, DEEP_PLAN, DEFAULT_DEEP_DAYS,
+  commandStopBackfillDaemon, DAEMON_STATUS_PATH,
 } = require('../../../../backend/cli/commands/data/backfill_daemon.js');
+
+function waitForExit(child, timeoutMs = 3000) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('child did not exit in time')), timeoutMs);
+    child.once('exit', () => { clearTimeout(t); resolve(); });
+  });
+}
 
 // Fake executor that writes a deterministic 1m bin (stands in for a network fetch).
 function makeFakeFetcher(tsDir, calls) {
@@ -300,4 +309,47 @@ test('buildJobUniverse assigns the right base grain per family', () => {
   const spx = jobs.find((j) => j.symbol === 'SPX');
   if (spx) assert.equal(spx.baseTf, '5m', 'indices base = 5m');
   console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'universe', jobs: jobs.length, crypto_base: btc.baseTf }));
+});
+
+test('commandStopBackfillDaemon reports the right reason for a missing/malformed/dead-PID status file', async () => {
+  fs.mkdirSync(path.dirname(DAEMON_STATUS_PATH), { recursive: true });
+  const backup = fs.existsSync(DAEMON_STATUS_PATH) ? fs.readFileSync(DAEMON_STATUS_PATH) : null;
+  try {
+    fs.rmSync(DAEMON_STATUS_PATH, { force: true });
+    assert.equal(await commandStopBackfillDaemon(['--json']), 1, 'no status file -> exit 1');
+
+    fs.writeFileSync(DAEMON_STATUS_PATH, JSON.stringify({ status: 'running' })); // no pid field
+    assert.equal(await commandStopBackfillDaemon(['--json']), 1, 'malformed status (no pid) -> exit 1');
+
+    fs.writeFileSync(DAEMON_STATUS_PATH, JSON.stringify({ status: 'running', pid: 999999 }));
+    assert.equal(await commandStopBackfillDaemon(['--json']), 1, 'dead pid -> exit 1, does not throw');
+  } finally {
+    if (backup) fs.writeFileSync(DAEMON_STATUS_PATH, backup); else fs.rmSync(DAEMON_STATUS_PATH, { force: true });
+  }
+});
+
+test('commandStopBackfillDaemon SIGTERMs a real, live process named in the status file', async () => {
+  fs.mkdirSync(path.dirname(DAEMON_STATUS_PATH), { recursive: true });
+  const backup = fs.existsSync(DAEMON_STATUS_PATH) ? fs.readFileSync(DAEMON_STATUS_PATH) : null;
+  // A genuine disposable child process, NOT this test process itself (sending it SIGTERM
+  // would kill the test runner) - proves the command really signals a real PID, not just
+  // that it returns ok:true optimistically.
+  const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)']);
+  try {
+    fs.writeFileSync(DAEMON_STATUS_PATH, JSON.stringify({
+      status: 'running', pid: child.pid, cycle: 3, completed_jobs: 12, total_jobs: 40,
+    }));
+    const rc = await commandStopBackfillDaemon(['--json']);
+    assert.equal(rc, 0, 'live pid -> exit 0');
+    await waitForExit(child); // would time out (and fail the test) if SIGTERM was never actually sent
+    // The command writes its own 'stopped' marker rather than relying on the
+    // target's SIGTERM handler (which Windows never delivers to) - verify the
+    // file reflects that immediately, not just that the process died.
+    const after = JSON.parse(fs.readFileSync(DAEMON_STATUS_PATH, 'utf8'));
+    assert.equal(after.status, 'stopped');
+    assert.equal(after.stopped_by, 'stop-backfill-daemon');
+  } finally {
+    try { child.kill('SIGKILL'); } catch (_) { /* already dead, expected */ }
+    if (backup) fs.writeFileSync(DAEMON_STATUS_PATH, backup); else fs.rmSync(DAEMON_STATUS_PATH, { force: true });
+  }
 });
