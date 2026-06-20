@@ -22,6 +22,7 @@
  * network; `commandBackfillDaemon` wires the real ingest commands.
  */
 
+const path = require('node:path');
 const {
   optionValue, hasFlag, numericOption, printPayload,
 } = require('../../lib/utils.js');
@@ -31,6 +32,16 @@ const {
   buildFiveMinAccumulatePlan, buildEquityDeepBackfillPlan,
 } = require('./data.js');
 const { isFresh } = require('../../../../shared/lib/market/coverage.js');
+const { writeJson } = require('../../../../shared/lib/market/validation.js');
+const { STORAGE_DATA_DIR } = require('../../../../shared/lib/runtime/paths.js');
+
+// Progress/liveness state for ANY observer (the dashboard, a future web UI, a
+// human tailing the file) regardless of whether they started this process --
+// this daemon is meant to run headless (Docker `backfill` service, a separate
+// terminal) just as often as it's launched from the dashboard, and console.log
+// alone gives an external observer nothing to poll. Lives under the gitignored
+// cache/ dir (transient runtime state, not data worth tracking).
+const DAEMON_STATUS_PATH = path.join(STORAGE_DATA_DIR, 'cache', 'backfill_daemon_status.json');
 
 const ONE_M_FAMILIES = ['crypto', 'equities'];
 const YAHOO_FAMILIES = ['indices', 'commodities', 'fx'];
@@ -196,6 +207,11 @@ async function runBackfillCycle(o) {
   const deepDays = o.deepDays || DEFAULT_DEEP_DAYS;
   const incrementalDays = o.incrementalDays || INCREMENTAL_DAYS;
   const parallelLanes = o.parallelLanes !== false; // default true
+  // Fired once per job, after its outcome (skip/failed/ok) is final - the only
+  // way to count progress accurately, since a freshness-skipped job (the
+  // common case on a warm run) never logs a line at all. Optional; tests and
+  // the sequential/CLI-only callers don't need it.
+  const onJobDone = o.onJobDone || (() => {});
 
   const summary = { cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0, rolled_up: 0, errors: 0, failures: [] };
   const start = Date.now();
@@ -212,6 +228,7 @@ async function runBackfillCycle(o) {
     if (action === 'skip') {
       summary.skipped += 1;
       if (gate.reason === 'not_found') log(`[BACKFILL] ${job.symbol}  ✗ no data on provider (skip 7d)`);
+      onJobDone(job, 'skipped');
       return;
     }
 
@@ -231,10 +248,12 @@ async function runBackfillCycle(o) {
       summary.errors += 1;
       summary.failures.push({ symbol: job.symbol, family: job.family, action, error: (res && res.error) || 'fetch failed' });
       log(`[BACKFILL] ${job.symbol}  FAILED  ${(res && res.error) || 'fetch failed'}`);
+      onJobDone(job, 'failed');
       return;
     }
     if (action === 'deep') summary.deep += 1; else summary.incremental += 1;
     log(`[BACKFILL] ${job.symbol}  ok  ${elapsed}s`);
+    onJobDone(job, 'ok');
 
     // Derive coarser bins from the freshly-written base bin. For an incremental
     // top-up only the recent window needs re-deriving, so the action is passed
@@ -360,6 +379,18 @@ async function commandBackfillDaemon(args) {
   const execute = makeRealExecutor();
   const rollup = makeRealRollup(tsDir);
 
+  let statusState = null;
+  function writeStatus(patch) {
+    statusState = { ...statusState, ...patch, pid: process.pid, updated_at: new Date().toISOString() };
+    try { writeJson(DAEMON_STATUS_PATH, statusState); } catch (_) { /* best-effort - a stale read is caught by the PID-liveness check on the reader side */ }
+  }
+  function clearStatusOnExit(signal) {
+    writeStatus({ status: 'stopped', stopped_signal: signal || null });
+    process.exit(signal ? 130 : 0);
+  }
+  process.once('SIGINT', () => clearStatusOnExit('SIGINT'));
+  process.once('SIGTERM', () => clearStatusOnExit('SIGTERM'));
+
   let cycle = 0;
   let lastSummary = null;
   /* eslint-disable no-await-in-loop */
@@ -378,14 +409,28 @@ async function commandBackfillDaemon(args) {
         log(`[BACKFILL] note: --concurrency ${concurrency} clamped to ${clamped.map(l => `${l.lane}=${l.concurrency}`).join(' ')} (1m lanes touch multi-million-row bins)`);
       }
     }
+    let completedJobs = 0;
+    writeStatus({
+      status: 'running', cycle, total_jobs: jobs.length, completed_jobs: 0,
+      current_symbol: null, families, once, interval_secs: intervalSecs,
+      started_at: new Date().toISOString(),
+    });
     lastSummary = await runBackfillCycle({
       tsDir, jobs, execute, rollup, log, cycle,
       parallelLanes: !sequential,
       concurrency: concurrency || undefined,
       forceDeep: deepAll,
+      onJobDone: (job, outcome) => {
+        completedJobs += 1;
+        writeStatus({ completed_jobs: completedJobs, current_symbol: job.symbol, last_outcome: outcome });
+      },
     });
 
-    if (once) break;
+    if (once) {
+      writeStatus({ status: 'idle', completed_jobs: jobs.length, current_symbol: null });
+      break;
+    }
+    writeStatus({ status: 'sleeping', completed_jobs: jobs.length, current_symbol: null, next_run_at: new Date(Date.now() + intervalSecs * 1000).toISOString() });
     await new Promise((resolve) => setTimeout(resolve, intervalSecs * 1000));
   }
   /* eslint-enable no-await-in-loop */
@@ -410,4 +455,5 @@ module.exports = {
   LANE_MAX_CONCURRENCY,
   utcDayFloor,
   FAMILY_LANE,
+  DAEMON_STATUS_PATH,
 };
