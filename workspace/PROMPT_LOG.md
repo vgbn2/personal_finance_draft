@@ -1,3 +1,23 @@
+# Prompt Log - 2026-06-20 (session 48)
+
+## Session Boot — 2026-06-20 (session 48)
+/session-orchestrator (invoked mid-session, after the task was already done — boot sequence run
+retroactively for handoff sync). This session independently re-verified and executed the OTHER
+concurrent session's `workspace/plans/GAP_CLOSURE_PLAN_SESSION_47.md` (that session labeled its
+own work "session 47" in STATE.md — using "session 48" here to avoid number collision). Closed
+2.2 (gap-aware `fetchPaginated` + per-job/per-family incremental flush in `commandMassBackfill`),
+3.1 (3 hardcoded `data/`-root paths retargeted to `storage/data/`), 3.2 (purged
+`legacy/holygrailpoly/` + its test). 1.1/1.2 were already fixed; 2.1 closed as redundant
+(cosmetic-only re-split). Bonus: found+fixed a 7-file off-by-one relative-path bug in
+`tests/scripts/architecture/cli/core/` left over from an in-flight, unrelated test-directory
+reorg — was silently causing 18 of `npm test`'s 19 failures. Final: 530 pass/0 fail/2 skipped,
+`npm run hygiene` clean. Updated the plan doc with a status block so the other session doesn't
+redo this work. Nothing committed (deliberately — user didn't ask; the other session's large
+in-flight reorg + an unrelated `renameWithRetry` helper are also sitting uncommitted in the same
+tree, left untouched). graphify-out still stale (last chunk write 2026-06-09) — not refreshed,
+consistent with the long-standing precedent of deferring it absent an explicit ask (repeatedly
+deprioritized across ~15 prior sessions per HANDOFF.md history).
+
 # Prompt Log - 2026-06-19 (session 43)
 
 ## Session Boot — 2026-06-19 (session 43)
@@ -1368,3 +1388,85 @@ RESULT: commits 91aafeef (fixes) + fab31f72 (docs). Suite 490/490 (one transient
 conclusively traced to the concurrent process's in-progress sovereign_cli.js edit, not these fixes).
 feat/ink-tui-refactor (fab31f72) is now 5 commits ahead of feat/session-guard-intraday-rollup
 (76fbe991) -- flagged as a new open carryover, reconciliation deferred to next session.
+
+## 2026-06-20 - Session 46: Process cleanup and system verification
+PROMPT: /session-orchestrator + "kill those running ones" (boot & command).
+WORK: Boot found 7 active background subagents and 1 cleared background task. Terminated all 7 active subagents via manage_subagents. Audited active Node.js processes on Windows and verified no duplicate auto-trade loops are running (only standard CLI, TUI Dashboard, and MCP servers). Ran check_hygiene.js (all passed) and sovereign_cli.js doctor (verified Supabase, Alpaca, MT5, and Polymarket are all OK and reachable).
+RESULT: Clean process state with all background subagents killed. Workspace hygiene and doctor checks verified green. Handoff pointer updated.
+
+## 2026-06-20 - Session 48 (boot): /session-orchestrator, no further task given yet
+PROMPT: /session-orchestrator (boot only, no task text).
+WORK: Standard boot sequence. Found GAP_CLOSURE_PLAN_SESSION_47.md's own in-file "STATUS UPDATE"
+(written by a parallel/concurrent session) claims all 6 plan tasks (kill-switch route, gateway
+FOK/error-swallowing, mass-backfill gap-aware+incremental-flush, dual-root path consolidation,
+legacy/holygrailpoly purge, plus an unscoped 7-file test-path-depth bug) are CLOSED -- this
+supersedes STATE.md's top handoff note ("user designated Claude to execute Phase 1"), which is
+now stale. Independently re-verified rather than trusting the doc: ran `npm test` fresh (530
+pass / 0 fail / 2 skipped, exact match to the plan's claim) and `npm run hygiene` (clean). Cross-
+checked the claimed `tests/scripts/*` flat-to-categorized reorg: 82 old flat test files deleted
+(unstaged) vs 83 new files across 5 untracked category dirs (architecture/data/integration/
+strategy/tui) -- arithmetic reconciles exactly (82 - 1 deliberately-deleted legacy test + 2 new
+gap-closure tests = 83).
+RESULT: Ground truth confirmed -- the gap-closure work (Phases 1-3) is real, done, and verified,
+but 100% UNCOMMITTED in the working tree (no commit message anywhere mentions kill-switch/FOK/
+gap-aware-backfill/dual-root/legacy-purge). This is the same "concurrent session lands work
+uncommitted" pattern as sessions 39-41. graphify-out still stale since 2026-05-18 (deprioritized
+repeatedly, left alone). Holding for user direction on what to do this session (commit-split
+review vs. a new task) rather than assuming.
+
+## 2026-06-20 - Session 48 cont.: "Review + commit gap-closure work" -> 4 commits
+PROMPT: AskUserQuestion answer "Review + commit gap-closure work".
+WORK: Split the verified gap-closure diff into 4 logical commits. Hit the "git add stages the
+whole file's diff vs HEAD" trap immediately: legacy/holygrailpoly's deletion was already staged
+in the index from before this session and got swept into commit 1 despite not being explicitly
+git add-ed this turn -- caught via git diff --cached --stat, fixed with an immediate follow-up
+commit rather than amending.
+RESULT: e5e21ef1 (gap-aware fetch + incremental flush), 535c2e32 (orphaned test removal),
+824d038e (dual-root path consolidation), 36ffbe30 (test reorg + path-depth fix). Suite 530/0/2skip
+re-verified post-commit, hygiene clean.
+
+## 2026-06-20 - Session 48 cont.: user pasted TUI screenshots/terminal dumps + bug reports
+PROMPT: pasted cockpit output, a flags-editor screenshot, a Trade-desk menu dump, a login success
+dump, with embedded free-text: backfill-daemon not visualized (want a progress bar + ability to
+switch panels without stopping it, want screenshot review when mentioned), trade feature crashes
+the TUI + feels laggy, login still crashes + "the setting might need some refurnish".
+WORK: Found and viewed the 2 most recent screenshots (per the user's own instruction) -- a
+Settings panel and a `backend visualize` run erroring "Insufficient data for BTCUSDT on 4h".
+Created 4 tracked tasks and investigated each: (1) visualize data-source bug -- real bug, fixed;
+(2) login crash; (3) trade-desk crash -- traced both to the SAME root cause in runExternal's
+unmount ordering, fixed once; (4) backfill-daemon visualization -- scoped concretely (status-file
+gap, UI hard-lock during any in-pane run) rather than guessing, then asked the user how far to
+take it.
+RESULT: All 4 investigated with code-level evidence, not assumption. "Laggy" checked but
+inconclusive (ruled out one candidate, left one unconfirmed lead). Reported findings + asked for
+daemon-feature scope before implementing.
+
+## 2026-06-20 - Session 48 cont.: "Implement now: full scope incl. external daemons"
+PROMPT: AskUserQuestion answer choosing the most thorough of 3 daemon-feature scope options.
+WORK: backfill_daemon.js writes a pollable status file (pid/progress/current-symbol/state) via a
+new onJobDone callback (fires on every job outcome, including silent freshness-skips that
+previously never logged anything); SIGINT/SIGTERM handlers mark it stopped on exit. Dashboard
+polls it every 2s for a header progress bar, regardless of who started the daemon. Continuous-
+mode daemon launches detached+unref'd from the dashboard so navigating away doesn't kill it.
+Real end-to-end smoke-tested (`backfill-daemon --once --symbols BTCUSDT`), not just unit-tested.
+RESULT: Feature complete, new regression tests added (onJobDone outcomes, readDaemonStatus
+liveness rules, renderProgressBar edges), full suite + hygiene green. Reported back and asked
+about committing.
+
+## 2026-06-20 - Session 48 cont.: "yes" (commit the 3 TUI fixes/feature)
+PROMPT: "yes".
+WORK: sovereign_dashboard.mjs and dashboard_exec.js both turned out to have a separate,
+pre-existing, uncommitted symbol-picker feature (not mine) entangled at the file level with this
+session's crash-fix and daemon-feature edits -- confirmed via git show HEAD:<path> (HEAD's
+committed version still uses the OLD pre-symbol-picker function names). A plain git add would
+have committed that unreviewed feature as a side effect. Worked around by reconstructing each
+target commit's exact content from HEAD via a small Node string-replacement script, then staging
+the resulting blob directly via git hash-object -w + git update-index --cacheinfo -- never
+touching the working tree, so the live files (still symbol-picker+fixes mixed) were unaffected.
+RESULT: 3 clean commits (a5a8d1f1 visualize fix, 034c5b52 dashboard crash fix, e302f095 daemon
+feature). Verified after the fact: git diff (working tree vs new HEAD) showed exactly the
+untouched pre-existing symbol-picker diff for both files, nothing leaked, nothing lost. Suite
+537/534/1(pre-existing, user's own settings change)/2skip, hygiene clean. Also separately refined
+.agent/workflows/agy-schedule.md per an earlier mid-session ask (fixed a dead --research-only flag
+and a real gitignore-claim contradiction) -- left uncommitted per the user's actual request scope.
+

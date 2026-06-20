@@ -7,6 +7,33 @@ last_audit_date: 2026-06-20
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Implementation Note - 2026-06-20 session 48 - Gap-closure committed + 3 real TUI bugs fixed + backfill-daemon visualization
+- **Gap Closure Plan committed:** the session-47 plan below was fully implemented by a parallel
+  session but sitting 100% uncommitted; independently re-verified (`npm test` 530/0/2skip matching
+  the plan's own claim) before landing it in 4 commits (`e5e21ef1`/`535c2e32`/`824d038e`/`36ffbe30`).
+- **`backend visualize` "Insufficient data" bug fixed (`a5a8d1f1`):** `computeSigmaState` only read
+  the shallow `storage/data/cache/` snapshot, never the deep `ts-index` (confirmed BTCUSDT/4h:
+  17,098 ts-index bars vs 0 in the shallow cache). Now prefers the ts-index.
+- **Login + Trade-desk dashboard crash fixed, one root cause (`034c5b52`):** `runExternal` unmounted
+  Ink synchronously before its first `await`, mid-dispatch of the keypress that triggered it (fired
+  fire-and-forget from inside an Ink `useInput` handler). Reordered so the tick happens first.
+- **Backfill-daemon visualization, full scope (`e302f095`):** the daemon now writes a pollable
+  status file (`storage/data/cache/backfill_daemon_status.json`) regardless of who started it; the
+  dashboard polls it every 2s for a live header progress bar; starting the continuous loop from the
+  dashboard now spawns it detached so navigating away doesn't kill it.
+- **Durable trap, hit and worked around twice:** `git add <file>` + `git commit` stages/commits a
+  file's ENTIRE diff vs HEAD, not just newly-edited lines. Two files (`sovereign_dashboard.mjs`,
+  `dashboard_exec.js`) had a separate pre-existing uncommitted symbol-picker feature entangled with
+  this session's edits — isolated via `git hash-object -w` + `git update-index --cacheinfo` against
+  reconstructed HEAD-derived content, never touching the working tree.
+- Full trail: `workspace/handoff/2026-06-20.md` session 48; `workspace/SESSION_MEMORY.md` same date.
+  Suite 537/534/1(pre-existing, user's own settings change)/2skip. Hygiene clean.
+
+## Handoff Note - 2026-06-20 session 47 - Execution Delegated to Claude
+- **Gap Closure Plan**: Drafted `workspace/plans/GAP_CLOSURE_PLAN_SESSION_47.md` detailing the 3 phases of architectural and security remediation (Kill-Switch, Gateway FOK intent, monolith splitting, mass-backfill OOM fixes, and dual-root hygiene).
+- **Automated Schedule Active**: Configured and activated the `agy-schedule` cron (running every 2 hours) to handle health scans, market syncs, adaptive backfills, subagent research, and MT5 dry-run smart routing.
+- **Next Steps**: The user has designated Claude to execute Phase 1 (Security & Trading Logic Fixes) of the Gap Closure Plan. The workspace is fully prepped for the handoff.
+
 ## Implementation Note - 2026-06-20 session 47 - Mass Implement: Consolidate TS Dir Definitions (data B → A)
 - **Consolidated `DEFAULT_TS_DIR`**: Cleared the centralization backlog item from `DEV_REVIEW.md` by exporting `DEFAULT_TS_DIR` from `data_rollup.js` and importing it destructured in both `data.js` and `data_deep_backfill.js`, eliminating duplicate path definitions.
 - **Empirical Validation**: Verified with both `npm run test:data` and the broader unit test suite (`node --test tests/scripts/tests/sovereign_cli.test.js`)—all tests passed. Staged and committed changes (commit `d21e25ce`).
@@ -932,3 +959,7 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
 - **AI-Testability Design:** Designed `SOVEREIGN_MOCK=true` mode in `backend/cli/lib/auth.js` to bypass authentication and PIN gates, return mock sessions and successfully authorize live trade pipelines, making the CLI and dashboard 100% testable headlessly in CI or by AI agents.
 - **Verification:** Ran `npm test` and verified that the entire test suite of 505 tests continues to pass cleanly (503 passed, 2 skipped, 0 failed).
 
+## Scheduled AGY Run: 2026-06-20 18:11
+- **Action**: Executed manual trigger of /agy-schedule workflow.
+- **Status**: Completed gracefully in --dry-run mode.
+- **Metrics**: Saved to storage/data/portfolio_snapshot.log and committed cleanly.
