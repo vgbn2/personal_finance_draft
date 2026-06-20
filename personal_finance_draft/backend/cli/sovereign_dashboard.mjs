@@ -13,7 +13,9 @@ const {
   splitWords, isPlaceholderSelect, defaultFlagValues, cycleOption, buildArgv,
   optionLabel, loadStrategyOptions, healthDot, loadDashboardHealth, isInteractiveCmd,
   loadSymbolUniverse, currentSuggestionQuery, filterSymbolSuggestions, applySuggestionToBuffer,
+  readDaemonStatus, renderProgressBar,
 } = require('./tui/dashboard_exec.js');
+const { DAEMON_STATUS_PATH } = require('./commands/data/backfill_daemon.js');
 
 // Resolved once at module load (mirrors tui/manifest.js's static-per-process
 // registry read); falls back to the manual-text-entry placeholder if the
@@ -327,6 +329,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const [pinBuffer, setPinBuffer] = useState('');
   const [clock, setClock] = useState(() => new Date().toLocaleTimeString('en-GB'));
   const [health, setHealth] = useState(() => loadDashboardHealth());
+  // backfill-daemon status, polled from disk regardless of who started that
+  // process (this dashboard, a separate terminal, the Docker `backfill`
+  // service) -- see readDaemonStatus for the liveness/staleness rules.
+  const [daemonStatus, setDaemonStatus] = useState(() => readDaemonStatus(DAEMON_STATUS_PATH));
   const [output, setOutput] = useState('');
   const [running, setRunning] = useState(false);
   const [lastExecuted, setLastExecuted] = useState([]);
@@ -346,6 +352,24 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
 
   const handleRun = async (argv, pin) => {
     onRun(argv, { catI, cmdI });
+
+    // backfill-daemon's continuous loop (no --once) is a true background
+    // daemon, not a bounded task -- spawn it fully detached+unref'd so it
+    // keeps running no matter what the user does next in here, including
+    // exiting the dashboard entirely (matches how it already behaves when
+    // started from a separate terminal or the Docker `backfill` service).
+    // Its progress surfaces via the header's status-file poller, not by
+    // piping this child's stdout the way every other in-pane command does.
+    if (argv[0] === 'backfill-daemon' && !argv.includes('--once')) {
+      const child = spawn(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...argv], {
+        detached: true, stdio: 'ignore',
+      });
+      child.unref();
+      if (mountedRef.current) {
+        setOutput((c) => c + `\nStarted backfill-daemon in the background (pid ${child.pid}). It keeps running after you navigate away or exit the dashboard - watch the header indicator for progress. Stop it with: kill ${child.pid} (or its Docker/terminal equivalent if it's not this pid).\n`);
+      }
+      return;
+    }
 
     const cmdStr = argv.join(' ');
     const isInteractive = isInteractiveCmd(cmdStr, INTERACTIVE_CMDS);
@@ -407,6 +431,14 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // every keystroke-driven re-render.
   useEffect(() => {
     const t = setInterval(() => setHealth(loadDashboardHealth()), 10000);
+    return () => clearInterval(t);
+  }, []);
+
+  // backfill-daemon status: a faster cadence than the health dots since this
+  // is the whole point of the indicator (a moving progress bar) - cheap (one
+  // small JSON read + a no-op signal-0 liveness probe), so 2s is fine.
+  useEffect(() => {
+    const t = setInterval(() => setDaemonStatus(readDaemonStatus(DAEMON_STATUS_PATH)), 2000);
     return () => clearInterval(t);
   }, []);
 
@@ -721,6 +753,9 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const backendDot = healthDot(health.backend);
   const cacheDot = healthDot(health.cache);
   const quoteDot = healthDot(health.quote_provider);
+  const daemonBar = daemonStatus
+    ? renderProgressBar(daemonStatus.completed_jobs || 0, daemonStatus.total_jobs || 0, 10)
+    : null;
 
   // ── Render ─────────────────────────────────────────────────────────────
   return h(Box, { flexDirection: 'column', height: process.stdout.rows },
@@ -731,6 +766,9 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       h(Text, { color: DIM }, 'backend '), h(Text, { color: DOT_COLOR[backendDot.tone] }, backendDot.glyph),
       h(Text, { color: DIM }, '  cache '), h(Text, { color: DOT_COLOR[cacheDot.tone] }, cacheDot.glyph),
       h(Text, { color: DIM }, '  quotes '), h(Text, { color: DOT_COLOR[quoteDot.tone] }, quoteDot.glyph),
+      daemonStatus && h(Text, { color: DIM }, '  '),
+      daemonStatus && h(Text, { color: daemonStatus.status === 'sleeping' ? MUT : AM },
+        daemonStatus.status === 'sleeping' ? '⏾ backfill idle' : `⟳ backfill ${daemonBar} ${daemonStatus.completed_jobs || 0}/${daemonStatus.total_jobs || 0} ${daemonStatus.current_symbol || ''}`),
       h(Box,  { flexGrow: 1 }),
       h(Text, { color: MUT }, clock),
     ),
