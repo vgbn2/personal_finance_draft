@@ -539,10 +539,9 @@ async function commandMassBackfill(args) {
   }
 
   const results = { ok: 0, errors: 0 };
-  const allSources = [];
-  const allErrors = [];
   const jobResults = [];
   let completed = 0;
+  let recordsWritten = 0;
   const total = jobs.length;
   const completedBySymbol = new Map();
   const totalBySymbol = new Map();
@@ -550,18 +549,84 @@ async function commandMassBackfill(args) {
     totalBySymbol.set(job.symbol, (totalBySymbol.get(job.symbol) || 0) + 1);
   });
 
+  // Flush per family (not per overall run): writePartitionedSnapshot/readSnapshot are
+  // already family-partitioned on disk, so buffering and merging one family at a time
+  // (instead of accumulating every job's records into one run-wide array, then merging
+  // against a readSnapshot(DEFAULT_HISTORY) that recursively loads ALL families'
+  // existing history) bounds peak memory to one family's data instead of the whole
+  // universe's. The ts-index write stays per-job: writeTsIndex's merge-protected,
+  // symbol+timeframe-scoped bin writes are already safe at that finer grain.
+  const fetchedAt = new Date().toISOString();
+  const remainingByFamily = new Map();
+  jobs.forEach((job) => {
+    remainingByFamily.set(job.family, (remainingByFamily.get(job.family) || 0) + 1);
+  });
+  const sourcesByFamily = new Map();
+  const errorsByFamily = new Map();
+  const aggregateReport = {
+    ok: true,
+    mode: 'mass_backfill',
+    fetched_at: fetchedAt,
+    total_records: 0,
+    usable_records: 0,
+    rejected_records: 0,
+    counts: { error: 0, warning: 0 },
+    by_family: {},
+    rejected_keys: [],
+    issues: [],
+    provider_errors: [],
+    reject_stale: false,
+    freshness: { stale_records: 0, issues: 0 },
+    reliability: { samples: [] },
+  };
+
+  function flushFamily(family) {
+    const sources = sourcesByFamily.get(family) || [];
+    const errors = errorsByFamily.get(family) || [];
+    const snapshot = { mode: 'mass_backfill', fetched_at: fetchedAt, sources, errors };
+
+    const { report } = validateSnapshot(snapshot, { rejectStale: false });
+    aggregateReport.total_records += report.total_records;
+    aggregateReport.usable_records += report.usable_records;
+    aggregateReport.rejected_records += report.rejected_records;
+    aggregateReport.counts.error += report.counts.error;
+    aggregateReport.counts.warning += report.counts.warning;
+    Object.assign(aggregateReport.by_family, report.by_family);
+    aggregateReport.rejected_keys.push(...report.rejected_keys);
+    aggregateReport.issues.push(...report.issues);
+    aggregateReport.provider_errors.push(...report.provider_errors);
+    aggregateReport.freshness.stale_records += report.freshness.stale_records;
+    aggregateReport.freshness.issues += report.freshness.issues;
+    aggregateReport.ok = aggregateReport.ok && report.ok;
+
+    const existing = readSnapshot(DEFAULT_HISTORY, { family });
+    const merged = mergeSnapshots(existing, snapshot);
+    writePartitionedSnapshot(DEFAULT_HISTORY, merged);
+
+    recordsWritten += sources.length;
+    sourcesByFamily.delete(family);
+    errorsByFamily.delete(family);
+  }
+
   async function runJob({ symbol, timeframe, family }) {
     const syntheticArgs = ['--symbol', symbol, '--timeframe', timeframe, '--days', days];
     if (force) syntheticArgs.push('--force');
+    if (!sourcesByFamily.has(family)) sourcesByFamily.set(family, []);
+    if (!errorsByFamily.has(family)) errorsByFamily.set(family, []);
     try {
       const history = await loadHistoricalSources(syntheticArgs);
       const sources = history.snapshot.sources || [];
       const errors = history.snapshot.errors || [];
+      const familySources = sourcesByFamily.get(family);
+      const familyErrors = errorsByFamily.get(family);
       for (let i = 0; i < sources.length; i++) {
-        allSources.push(sources[i]);
+        familySources.push(sources[i]);
       }
       for (let i = 0; i < errors.length; i++) {
-        allErrors.push(errors[i]);
+        familyErrors.push(errors[i]);
+      }
+      if (sources.length > 0) {
+        writeTsIndex(DEFAULT_TS_DIR, { sources });
       }
       jobResults.push({
         ok: true,
@@ -575,7 +640,7 @@ async function commandMassBackfill(args) {
     } catch (err) {
       const message = err.message || String(err);
       const code = classifyBackfillError(message);
-      allErrors.push({ symbol, timeframe, family, code, message });
+      errorsByFamily.get(family).push({ symbol, timeframe, family, code, message });
       jobResults.push({
         ok: false,
         symbol,
@@ -593,6 +658,11 @@ async function commandMassBackfill(args) {
     if (process.stdout.isTTY) {
       process.stdout.write(`\r\x1b[K\x1b[90m[${completed}/${total}]\x1b[0m ${symbol}:${timeframe}  \x1b[90m(symbol ${completedBySymbol.get(symbol)}/${totalBySymbol.get(symbol)} | skipped ${plan.skipped.length})\x1b[0m`);
     }
+    const remaining = remainingByFamily.get(family) - 1;
+    remainingByFamily.set(family, remaining);
+    if (remaining === 0) {
+      flushFamily(family);
+    }
   }
 
   const queue = [...jobs];
@@ -606,20 +676,15 @@ async function commandMassBackfill(args) {
 
   if (process.stdout.isTTY) process.stdout.write('\n');
 
-  const fetchedAt = new Date().toISOString();
-  const snapshot = {
-    mode: 'mass_backfill',
-    fetched_at: fetchedAt,
-    sources: allSources,
-    errors: allErrors,
-  };
+  // Any family whose last job errored before producing sources may still have a
+  // non-empty error buffer that hasn't been flushed (flushFamily already runs when
+  // the last job for a family completes, success or failure, so this is just a
+  // defensive catch-all for families left in the maps due to an unexpected throw).
+  for (const family of new Set([...sourcesByFamily.keys(), ...errorsByFamily.keys()])) {
+    flushFamily(family);
+  }
 
-  const { report } = validateSnapshot(snapshot, { rejectStale: false });
-  const existing = readSnapshot(DEFAULT_HISTORY);
-  const merged = mergeSnapshots(existing, snapshot);
-  writePartitionedSnapshot(DEFAULT_HISTORY, merged);
-  writeTsIndex(DEFAULT_TS_DIR, merged);
-  writeJson(DEFAULT_QUALITY_REPORT, report);
+  writeJson(DEFAULT_QUALITY_REPORT, aggregateReport);
 
   const failures = jobResults
     .filter((result) => !result.ok)
@@ -640,7 +705,7 @@ async function commandMassBackfill(args) {
     failure_count: failures.length,
     failure_codes: [...new Set(failures.map((failure) => failure.code))],
     failures: failures.slice(0, 20),
-    records: allSources.length,
+    records: recordsWritten,
     skipped_jobs: plan.skipped.length,
     skipped_preview: plan.skipped.slice(0, 12).map((job) => ({
       family: job.family,
