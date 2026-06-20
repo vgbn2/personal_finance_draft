@@ -598,6 +598,22 @@ function mergeSnapshots(base, update) {
   return merged;
 }
 
+function renameWithRetry(src, dest, retries = 5, delayMs = 50) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      fs.renameSync(src, dest);
+      return;
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      if (err.code === 'ENOENT') {
+        try { fs.mkdirSync(path.dirname(dest), { recursive: true }); } catch (e) {}
+      }
+      const start = Date.now();
+      while (Date.now() - start < delayMs) {}
+    }
+  }
+}
+
 function writeJson(outputPath, payload) {
   const tempPath = `${outputPath}.tmp`;
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
@@ -607,7 +623,7 @@ function writeJson(outputPath, payload) {
   // JSON.stringify so their shape on disk is unchanged.
   if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
     fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
-    fs.renameSync(tempPath, outputPath);
+    renameWithRetry(tempPath, outputPath);
     return;
   }
 
@@ -636,7 +652,7 @@ function writeJson(outputPath, payload) {
 
   fs.writeSync(fd, '}\n');
   fs.closeSync(fd);
-  fs.renameSync(tempPath, outputPath);
+  renameWithRetry(tempPath, outputPath);
 }
 
 /**
@@ -810,9 +826,9 @@ function mergeWriteBin(tsDir, meta, incoming) {
   const tmpBin = atomicTempPath(bin);
   const tmpMeta = atomicTempPath(metaPath);
   fs.writeFileSync(tmpBin, finalBuf);
-  fs.renameSync(tmpBin, bin);
+  renameWithRetry(tmpBin, bin);
   fs.writeFileSync(tmpMeta, JSON.stringify({ ...meta, count }), 'utf8');
-  fs.renameSync(tmpMeta, metaPath);
+  renameWithRetry(tmpMeta, metaPath);
 }
 
 function writeTsIndex(tsDir, snapshot) {

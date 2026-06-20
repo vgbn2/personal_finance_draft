@@ -115,58 +115,96 @@ function loadDashboardHealth() {
   }
 }
 
-// Mirrors the legacy TUI's tui/manifest.js getCachedSymbols(): same cached-
-// universe data source (storage/data/cache/backtest_history.json, falling
-// back to config), used to power the dashboard's symbol-flag autocomplete
-// suggestion list. The legacy readline TUI shows a full pickAssets() wizard
-// for blank --symbol flags, but that's gated on isRichTerminal() and never
-// fires against the dashboard's piped, non-TTY child spawns -- this gives
-// the Ink dashboard its own lightweight, synchronous equivalent.
-function loadSymbolUniverse() {
+// Same data source the legacy TUI's pickAssets() wizard uses (parses
+// config/markets/data_sources.yaml's universe_matrix grid + merges anything
+// already in the backtest-history cache), carrying family/market/sector --
+// the depth needed for the same category/sector grouping pickAssets() shows.
+// That wizard is gated on isRichTerminal() and never fires against the
+// dashboard's piped, non-TTY child spawns, so this powers the Ink dashboard's
+// own modal picker overlay instead (see buildSymbolPickerRows below).
+async function loadFullSymbolUniverse() {
   try {
-    const { getCachedSymbols } = require('./manifest.js');
-    return getCachedSymbols();
+    const { get_Full_Universe_Symbols } = require('../lib/utils.js');
+    const universe = await get_Full_Universe_Symbols();
+    return universe.map((u) => ({
+      symbol: u.symbol,
+      category: `${String(u.family || 'other').toUpperCase()}: ${u.market || 'GLOBAL'}`,
+      sector: u.sector || u.family || 'Uncategorized',
+    }));
   } catch {
     return [];
   }
 }
 
-// For a comma-separated (multi) buffer, only the segment after the last
-// comma is "being typed" right now -- e.g. typing "AAPL,MS" should suggest
-// matches for "MS", not the whole string. Single-value buffers use the
-// whole buffer as the query.
-function currentSuggestionQuery(buffer, multi) {
-  const str = String(buffer || '');
-  if (!multi) return str;
-  const idx = str.lastIndexOf(',');
-  return idx === -1 ? str : str.slice(idx + 1).trim();
-}
-
-// Case-insensitive substring match against a symbol's value/label/category,
-// capped at `limit` results so the suggestion list stays on-screen. A blank
-// query returns the first `limit` universe entries (browse-without-typing).
-function filterSymbolSuggestions(universe, query, limit = 8) {
+// Flattens the universe into a renderable row list for the picker overlay:
+// one header row per (category, sector) pair present in the filtered set,
+// followed by its symbol rows -- mirrors the legacy buildHierarchy() +
+// buildChoices() shape (engine/asset_picker.js), just pre-flattened for a
+// React list instead of an ANSI-rendered one. A query filters by substring
+// match against symbol/category/sector; when the query doesn't exactly
+// match any known symbol, a leading "custom" row lets the user select the
+// typed text itself (e.g. for `ingest`, which can fetch a symbol that isn't
+// in the cache yet) -- the picker is an enhanced browser, not a restriction.
+function buildSymbolPickerRows(universe, query) {
   const list = universe || [];
   const q = String(query || '').trim().toLowerCase();
-  if (!q) return list.slice(0, limit);
-  return list
-    .filter((u) => (
-      String(u.value || '').toLowerCase().includes(q) ||
-      String(u.label || '').toLowerCase().includes(q) ||
-      String(u.category || '').toLowerCase().includes(q)
-    ))
-    .slice(0, limit);
+  const filtered = !q
+    ? list
+    : list.filter((u) => (
+        u.symbol.toLowerCase().includes(q) ||
+        u.category.toLowerCase().includes(q) ||
+        u.sector.toLowerCase().includes(q)
+      ));
+
+  const groups = new Map();
+  for (const u of filtered) {
+    const groupKey = `${u.category}::${u.sector}`;
+    if (!groups.has(groupKey)) groups.set(groupKey, { category: u.category, sector: u.sector, items: [] });
+    groups.get(groupKey).items.push(u);
+  }
+
+  const rows = [];
+  const trimmedQuery = String(query || '').trim();
+  const exactMatch = q && list.some((u) => u.symbol.toLowerCase() === q);
+  if (trimmedQuery && !exactMatch) {
+    rows.push({ type: 'custom', value: trimmedQuery.toUpperCase(), groupKey: null });
+  }
+  [...groups.keys()].sort().forEach((groupKey) => {
+    const { category, sector, items } = groups.get(groupKey);
+    rows.push({ type: 'header', groupKey, label: `${category} — ${sector}` });
+    items.slice().sort((a, b) => a.symbol.localeCompare(b.symbol))
+      .forEach((u) => rows.push({ type: 'item', value: u.symbol, groupKey }));
+  });
+  return rows;
 }
 
-// Tab-autocomplete: single-value fields replace the whole buffer; comma-sep
-// (multi) fields replace only the last (possibly partial) segment after the
-// final comma, leaving prior selections intact -- e.g. "AAPL,MS" + Tab on
-// "MSFT" -> "AAPL,MSFT".
-function applySuggestionToBuffer(buffer, suggestionValue, multi) {
-  if (!multi) return suggestionValue;
-  const parts = String(buffer || '').split(',');
-  parts[parts.length - 1] = suggestionValue;
-  return parts.join(',');
+function groupValuesFor(rows, groupKey) {
+  return rows.filter((r) => r.type === 'item' && r.groupKey === groupKey).map((r) => r.value);
+}
+
+// Tri-state toggle: if every value in `values` is already in `set`, removes
+// them all (uncheck-all); otherwise adds every one that's missing (check the
+// rest). Matches the legacy multi-select's sector-header / "select all"
+// toggle semantics exactly.
+function toggleSet(set, values) {
+  const next = new Set(set);
+  const allIn = values.length > 0 && values.every((v) => next.has(v));
+  if (allIn) values.forEach((v) => next.delete(v));
+  else values.forEach((v) => next.add(v));
+  return next;
+}
+
+// Where the picker's highlight should land right after a query changes
+// (typing or backspacing). Multi-select fields can land on a header (Space
+// toggles the whole group), so 0 is always fine there. Single-select fields
+// can't act on a header at all (Enter only commits an item/custom row), and
+// a header is often literally the first row whenever the query exactly
+// matches one symbol -- without this, typing a full ticker and pressing
+// Enter would silently do nothing.
+function firstSelectableIndex(rows, multi) {
+  if (multi) return 0;
+  const idx = rows.findIndex((r) => r.type !== 'header');
+  return idx === -1 ? 0 : idx;
 }
 
 // Same matching rule the dashboard uses to decide between the in-pane spawn
@@ -177,7 +215,6 @@ function applySuggestionToBuffer(buffer, suggestionValue, multi) {
 function isInteractiveCmd(cmdStr, interactiveCmds) {
   return Array.from(interactiveCmds).some((ic) => cmdStr.startsWith(ic) || cmdStr === ic);
 }
-
 
 // Reads backfill-daemon's status file and returns it ONLY when it describes
 // a live, actively-progressing run -- regardless of whether the dashboard
@@ -217,9 +254,10 @@ function renderProgressBar(completed, total, width = 10) {
   const filled = Math.round(ratio * width);
   return '█'.repeat(filled) + '░'.repeat(width - filled);
 }
+
 module.exports = {
   splitWords, isPlaceholderSelect, defaultFlagValues, cycleOption, buildArgv,
   optionValue, optionLabel, stripAnsi, loadStrategyOptions, healthDot, loadDashboardHealth,
-  isInteractiveCmd, loadSymbolUniverse, currentSuggestionQuery, filterSymbolSuggestions,
-  applySuggestionToBuffer, readDaemonStatus, renderProgressBar,
+  isInteractiveCmd, loadFullSymbolUniverse, buildSymbolPickerRows, groupValuesFor, toggleSet,
+  firstSelectableIndex, readDaemonStatus, renderProgressBar,
 };
