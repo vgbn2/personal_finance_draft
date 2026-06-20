@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-19.md`** (last update: 2026-06-19 session 45)
+- Latest/current handoff: **`workspace/handoff/2026-06-20.md`** (last update: 2026-06-20 session 48)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -19,6 +19,28 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 48 (2026-06-20) — Gap-closure plan committed (4 commits) + 3 real TUI bugs fixed + backfill-
+  daemon visualization feature, all committed; full trail `workspace/handoff/2026-06-20.md` session 48.**
+  Headlines: (1) reviewed and committed session-47's parallel "Gap Closure Plan" work
+  (`e5e21ef1`/`535c2e32`/`824d038e`/`36ffbe30`); (2) `backend visualize` "Insufficient data" bug fixed
+  (`a5a8d1f1`) — it only read the shallow last-fetch cache, never the deep ts-index; (3) the login AND
+  trade-desk dashboard crashes traced to ONE root cause and fixed (`034c5b52`) — `runExternal` unmounted
+  Ink synchronously, before yielding to the event loop, mid-keypress-dispatch; (4) backfill-daemon
+  visualization feature, full scope per user choice (`e302f095`) — daemon writes a pollable status file
+  regardless of who started it, dashboard shows a live header progress bar, continuous-mode daemon now
+  spawns detached so navigating away doesn't kill it. Hit and worked around the "git add stages the
+  WHOLE file's diff vs HEAD" trap twice (once accidental — `legacy/holygrailpoly` was pre-staged from
+  before the session and got swept into a commit, fixed with an immediate follow-up commit; once
+  deliberately avoided — `sovereign_dashboard.mjs`/`dashboard_exec.js` have a separate, pre-existing,
+  uncommitted symbol-picker feature entangled at the file level, isolated via `git hash-object`+
+  `update-index --cacheinfo` plumbing instead of touching the working tree). Suite 537/534/1-fail(pre-
+  existing, user's own settings change)/2-skip throughout. Confirmed the `agy-schedule` Antigravity cron
+  is genuinely active (15+ real metrics commits landed mid-session). **Next-session carryovers:** the
+  symbol-picker feature + `validation.js`'s `renameWithRetry` remain uncommitted (not mine, not
+  actioned); no backfill-daemon "stop" button exists yet (not asked for); the "laggy" complaint has one
+  unconfirmed lead (unmemoized per-keystroke symbol-picker recompute); `graphify-out` still stale since
+  2026-05-18.
+- **SESSION 46 (2026-06-20) — Active background process cleanup completed.** Full trail: `workspace/handoff/2026-06-20.md` session 46. Terminated all 7 active subagents and verified system processes. Verified repository hygiene (all checks pass) and ran environment diagnostics via `doctor` command.
 - **SESSION 45 (2026-06-19) — TUI Execution Robustness & AI-Testability implemented and verified.** Full trail: `workspace/handoff/2026-06-19.md` session 45. Implemented the plan in `tui_execution_robustness_plan.md` to map all manifest features, resolve interactive crashes (via async process abort key listeners, unmounting takeover commands, and direct TUI secure PIN inputs), and added an environment mocking bridge (`SOVEREIGN_MOCK=true` in `lib/auth.js`) for headless AI testability. Tested and verified that the entire test suite passes 100% cleanly (503/503 passing). All changes are currently uncommitted in the working tree.
 - **SESSION 42 (2026-06-19) — branch-divergence carryover RESOLVED (was never real, fast-forwarded);
   Ink TUI execution wiring landed, UNCOMMITTED.** Full trail: `workspace/handoff/2026-06-19.md` session 42.
