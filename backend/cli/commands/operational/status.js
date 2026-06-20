@@ -9,6 +9,7 @@ const {
   resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
 } = require('../../../scripts/data_ops/ingest_market_data');
 const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quote_router');
+const { DEFAULT_PORTFOLIO } = require('../../../../shared/lib/runtime/paths');
 const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../../shared/lib/strategy/backtest');
 const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../../shared/lib/market/indicators');
 const { compareModels } = require('../../../../shared/lib/ml/models');
@@ -110,7 +111,7 @@ function summarizePortfolioCard(portfolio) {
   const equity = portfolio && Number.isFinite(Number(portfolio.equity)) ? Number(portfolio.equity) : null;
   const exposure = portfolio && Number.isFinite(Number(portfolio.exposure)) ? Number(portfolio.exposure) : null;
   return {
-    source: path.join(REPO_ROOT, 'data', 'portfolio.json'),
+    source: DEFAULT_PORTFOLIO,
     last_checked: portfolio && portfolio.generated_at ? portfolio.generated_at : null,
     state: equity != null ? 'ok' : 'warn',
     title: equity != null ? `equity ${equity}` : 'portfolio unavailable',
@@ -326,7 +327,7 @@ function buildCockpitModel(opts = {}) {
   const features = safeReadJson(DEFAULT_FEATURES);
   const modelReport = safeReadJson(DEFAULT_MODEL_REPORT);
   const backtestReport = safeReadJson(DEFAULT_BACKTEST);
-  const portfolio = safeReadJson(path.join(REPO_ROOT, 'data', 'portfolio.json'));
+  const portfolio = safeReadJson(DEFAULT_PORTFOLIO);
   const statusCard = summarizeStatusCard(snapshot, quality);
   const modelCard = summarizeModelCard(modelReport);
   const backtestCard = summarizeBacktestCard(backtestReport);
