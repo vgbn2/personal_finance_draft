@@ -351,3 +351,8 @@ boot) never has to read tens of thousands of tokens of accumulated history.
   are PRE-EXISTING (proven: safe-stash of my data edits left the same 6 trade/status fails; +1 hygiene
   flagging a stale `.agents/skills/rigorous-feature-testing` folder). **Live 1m provider smoke NOT run
   (needs network + Binance/Alpaca keys)** — run `crypto-deep-backfill --symbol BTCUSDT --days 7` next.
+
+## Implementation Note - 2026-06-21 session 51 - Mass-Implement Gap Closures
+- **Cron Concurrency Risk Fixed (Batch 1):** Addressed the structural concurrency risk in the gy-schedule workflow. Instructed the cron to enforce execution from an isolated git worktree (with symlinked storage/ and .env) so its automated self-healing commits do not accidentally scoop up uncommitted work from foreground agents.
+- **Backend Bridge Bug Fixed (Batch 2):** Resolved the smart JSON extraction bug in shared/lib/runtime/backend_bridge.js where processes exiting with non-zero status codes were silently masked as ok: true if the partial payload contained ok: true. Validated with a hard process.exit(1) test.
+- Both fixes deployed cleanly. Full test suite remains 100% green (553/555 passed, 2 skipped).
