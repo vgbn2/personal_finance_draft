@@ -50,7 +50,7 @@ function executeSovereignCommand(command, args, options = {}) {
       const jsonStr = raw.substring(firstBrace, lastBrace + 1);
       const payload = JSON.parse(jsonStr);
       const merged = { ...payload };
-      if (typeof merged.ok !== 'boolean') merged.ok = result.status === 0;
+      merged.ok = (result.status === 0) && (payload.ok !== false);
       merged.exit_code = result.status;
       return merged;
     }
