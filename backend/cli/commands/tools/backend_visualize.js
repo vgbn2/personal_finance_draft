@@ -4,6 +4,13 @@ const { optionValue, hasFlag, DEFAULT_HISTORY } = utils;
 const { readSnapshot, readTsIndex } = require('../../../../shared/lib/market/validation.js');
 const { DEFAULT_TS_DIR } = require('../data/data_rollup.js');
 
+/**
+ * Calculates a prediction model signal based on price deviation in standard deviations (sigmas).
+ * @param {number} sigmas - Price deviation in standard deviations from the mean.
+ * @param {number} bandwidth - Bollinger Band bandwidth.
+ * @param {number} currentPrice - Latest close price.
+ * @returns {object} Direction, confidence level, reason, and rounded sigmas value.
+ */
 function sigmaPrediction(sigmas, bandwidth, currentPrice) {
   const absS = Math.abs(sigmas);
   const bwPct = bandwidth / (currentPrice || 1);
@@ -27,6 +34,13 @@ function sigmaPrediction(sigmas, bandwidth, currentPrice) {
   return { direction, confidence: Number(confidence.toFixed(3)), reason, sigmas: Number(sigmas.toFixed(4)) };
 }
 
+/**
+ * Computes Bollinger Band metrics and statistical sigma values for a symbol and timeframe.
+ * @param {string} symbol - Trading asset symbol.
+ * @param {string} timeframe - Target timeframe interval.
+ * @param {number} windowSize - Window size for mean and standard deviation computation.
+ * @returns {object|null} Computed statistics object or null if there is insufficient data.
+ */
 function computeSigmaState(symbol, timeframe, windowSize) {
   // Deep historical bars live in the ts-index, not the shallow last-fetch
   // cache (DEFAULT_HISTORY) - a symbol/timeframe can have thousands of bars
@@ -147,6 +161,11 @@ function renderSigmaFrame(symbol, timeframe, windowSize, state, pollIntervalSec,
   return buf;
 }
 
+/**
+ * Computes the number of lines required to display a buffer, accounting for ANSI codes and terminal column wrapping.
+ * @param {string} buf - The text buffer to analyze.
+ * @returns {number} The visual line count.
+ */
 function visualLineCount(buf) {
   const cols = process.stdout.columns || 80;
   const stripped = buf.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
