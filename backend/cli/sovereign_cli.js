@@ -109,7 +109,24 @@ async function handleCommand(args) {
   return await handler(args.slice(1));
 }
 
+// An EventEmitter that emits 'error' with zero listeners throws synchronously
+// and crashes the process -- bypassing async/await rejection handling
+// entirely, so no try/catch around a prompt call site can catch this class
+// of failure. The dashboard spawns every interactive command (login/register/
+// mt5/etc., see sovereign_dashboard.mjs's INTERACTIVE_CMDS) as a child with
+// stdio:'inherit'; Windows ConPTY + inherited stdio + repeated raw-mode
+// toggling (every masked-password prompt flips setRawMode true/false) is a
+// real-world source of a transient stdin transport error. One guard here
+// covers every prompt call site in the whole CLI, since they all share this
+// one process's process.stdin.
+function installStdinErrorGuard() {
+  process.stdin.on('error', (err) => {
+    console.error(`\n✖ stdin error: ${err && err.message ? err.message : err}`);
+  });
+}
+
 async function main() {
+  installStdinErrorGuard();
   const args = process.argv.slice(2);
   if (args.length > 0) {
     return await handleCommand(args);
