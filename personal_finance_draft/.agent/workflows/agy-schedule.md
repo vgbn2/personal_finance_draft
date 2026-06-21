@@ -33,6 +33,13 @@ These hold for the entire run. Violating any one means HALT, log to `workspace/A
 
 <process>
 
+## -1. Isolated Worktree Execution (Concurrency Isolation)
+**Action:** Ensure the cron operates in a dedicated, isolated environment so its auto-commits do not sweep up foreground session work.
+- **Worktree Check:** Before running any commands, check if you are already in the dedicated cron worktree (e.g., `../personal_finance_cron`).
+- **Create if Missing:** If not, create it: `git worktree add ../personal_finance_cron`.
+- **Symlink Data:** Gitignored state is not copied to new worktrees. You MUST symlink the `storage/` directory and `.env` file from the main working tree to the new worktree so market data (8GB+) and credentials are shared losslessly.
+- **Run from Worktree:** Change directory into the worktree and perform all subsequent steps (from Step 0 onward) from there.
+
 ## 0. Concurrency Lock, Crash Recovery & Global Risk Gate (Pre-Execution Kill Switch)
 **Action:** Establish exclusivity, recover from any prior crash, and verify account-level safety BEFORE anything else.
 
@@ -133,6 +140,7 @@ These hold for the entire run. Violating any one means HALT, log to `workspace/A
 </process>
 
 <success_criteria>
+- [ ] Executed within an isolated git worktree with symlinked storage/ and .env to protect foreground edits.
 - [ ] Single-run lock acquired; overlapping triggers aborted cleanly.
 - [ ] Crash recovery reconciled the intent journal; indeterminate orders halted rather than re-sent.
 - [ ] Global circuit breaker evaluated against an explicit `RISK_TZ` boundary; execution blocked if loss/drawdown limits breached.
