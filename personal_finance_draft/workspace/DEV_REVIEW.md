@@ -1,3 +1,140 @@
+### Blast-Through Deep Audit — 2026-06-21 session 52 (anchor d21e25ce → 3da6e612, recent code + data pipeline)
+
+DCS start ≈0.96 (carried from session 50/51 close) → end ≈0.96 (no crash/data-loss findings; two
+contained, non-blocking debts surfaced below — neither moves the mechanical formula, which stays
+clean: `backend integrity --json` reports `total_missing:0`, `total_stale:0`, `total_exceptions:0`
+across all 92 configured cache entries).
+
+**Tier 1 — commits since the last anchor (`git log d21e25ce..HEAD`), data-pipeline-relevant ones
+reviewed line-by-line (diff read in full, not just the commit message):**
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| — | runtime | `3da6e612` (this session) `shared/lib/runtime/backend_bridge.js:53` | `merged.ok` now unconditionally derives from `(status===0) && (payload.ok!==false)` instead of trusting a payload that already had `ok:true` before a non-zero exit. Already committed this session after a passing 553/553 suite run. | done | runtime A |
+| P2 | data/market | `0eda90fa` (2026-06-20) `shared/lib/market/validation.js:601` (`renameWithRetry`) | Retry delay is a **synchronous busy-wait spin loop** (`const start = Date.now(); while (Date.now()-start < delayMs) {}`) instead of `Atomics.wait`/an async backoff — pegs one CPU core and blocks the Node event loop for up to ~250ms (5 retries × 50ms default) per contended rename. Sits on the hot path for every `writeJson` and every `mergeWriteBin` call (i.e. every ts-index bin write and every JSON cache write in the whole pipeline) and has **zero test coverage** (`grep -rn renameWithRetry tests/` → no hits) despite replacing a bare `fs.renameSync` that 3 separate prior sessions (25/34/36) documented as a real cross-process EPERM crash risk. Not data-corrupting — it's strictly better than the prior hard crash — but the busy-wait is the wrong sync-sleep primitive in Node and the new retry path is unverified. | Swap the spin loop for `Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs)` (true OS-level blocking sleep, no CPU spin, no new dependency); add a unit test that forces one `EPERM`/`EBUSY` rename failure (mock `fs.renameSync` to throw once) and asserts the retry succeeds and the total wall-clock matches the backoff schedule. | data/market B — contained debt, not gating |
+| P4 | data/market | `0eda90fa`/historical, `shared/lib/market/coverage.js` `isGrainSuspect` guard | Live `backend integrity --json` flags 3 `grain_suspect` entries, all `CPER` (5m/15m/4h, ~7.2 bars/day over a 2150-day span vs. the calibrated floor). Directly probed via `readTsIndex` (not assumed): bar spacing inside the bin is genuinely 5-minute where present (gap=5min runs exist), interleaved with real multi-day gaps — **not** the daily-mislabeled-as-intraday corruption shape fixed in session 35 (CORN etc.), and CPER's same 2150-day span as the healthy GLD/SLV/USO/UNG peers (37-48 bars/day) rules out "thin recent Yahoo accumulate window" too. Most likely explanation: CPER is a genuinely low-liquidity ETF among the 8 commodity-ETF proxies — Alpaca's SIP feed only emits a bar when a trade occurs, so a thin name legitimately produces far fewer 5m bars than GLD/SLV. | No fix needed — the guard is doing its job (flagging a real density anomaly); just don't mistake it for corruption. If it recurs across more symbols, recalibrate `isGrainSuspect`'s per-TF floor to account for genuinely thin-liquidity names rather than raising the floor (would mask real corruption elsewhere). | informational only |
+| P4 | hygiene | `824d038e` (2026-06-20) | Path-consolidation commit is correct and complete (verified: zero live `REPO_ROOT,'data'` callers remain outside `docs/archive/sovereign_cli.og.js`), but left the pre-migration files behind: untracked, gitignored `data/cache/` and `data/models/latest_indicator_optimization.json` (stale, dated 2026-06-19, superseded by the now-active `storage/data/models/latest_indicator_optimization.json` dated 2026-06-21). Dead, harmless, zero git impact. | `rm -rf data/cache data/models/latest_indicator_optimization.json` locally whenever convenient — no urgency. | hygiene — trivial |
+| — | docs | `852130f8`/`85fea62f`/`d663d838`/`5ed03ced` (agy-schedule auto-doc sweep) | All 4 are pure-insertion JSDoc comment blocks on `backend_correlation.js`/`backend_visualize.js`/`backend_integrity.js`/`backend.js` — confirmed via `git show <sha> | grep -vE comment-prefixes` that every added line is a comment token, zero executable-line changes. | none needed | clean |
+| — | data | `e5e21ef1` (2026-06-20) gap-aware `fetchPaginated` + per-family incremental flush in `commandMassBackfill` | Traced the full logic by hand: `effectiveStartTs` narrowing is try/catch-guarded and falls back to the full window on any coverage-probe error; the per-family flush-on-last-job-of-family is synchronous (no `await` between the decrement and the `flushFamily` call), so it can't race against another concurrently-completing job for the same family; the end-of-run catch-all only re-flushes families whose map entries were never deleted, so a double-flush is structurally impossible. No bug found. | none needed | clean, well-tested (121+170 new test lines) |
+| — | data | `5d9d2e23` (2026-06-20) `commandStopBackfillDaemon` | Liveness-probes the pid (`process.kill(pid,0)`) before sending the real `SIGTERM`, handles 4 distinct failure modes explicitly (no status file / malformed status / not running / kill failed), and writes the `stopped` marker itself with a clearly-commented rationale for the documented Windows hard-kill-vs-graceful-handler gap. No bug found. | none needed | clean |
+
+**Tier 2 — hygiene/security/stub sweep (delegated to a sub-agent, then independently re-verified by
+the lead auditor for the one claim with real consequences — see below — per the skill's
+empirical-claim rule):**
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| P3 | hygiene | `shared/lib/{backfill,ingestion,market_validation}.js` (1-line root shims) | All 3 confirmed **dead across all 4 resolution layers** — re-verified personally (not just trusting the sub-agent's grep) given this exact shim layer was the site of a real false-negative 2026-06-13 (session 29: "shim trap" — literal-grep wrongly called load-bearing shims dead and broke the build). Independently checked: (a) no literal `require()` hits outside the shims' own bodies and `docs/archive/`; (b) no sibling-relative requires anywhere under `shared/lib/`; (c) `package.json`'s `#shared/*` imports alias has zero call sites using `#shared/backfill`, `#shared/ingestion`, or `#shared/market_validation`; (d) the project's own `./dist/mcp_server/*` compiled output only contains the unrelated string `"backfill"` as an MCP tool/CLI-argument name, never a `require()` of these paths. Also: `shared/lib/compat/adapters.js`'s comment claims canonical backfill logic "lives in `shared/lib/backfill.js`" but its own `require` already bypasses that shim straight to `../data/backfill` — the comment is stale. | Safe to delete the 3 shim files; fix the stale comment in `adapters.js`. Re-run the full suite after deletion per the skill's recovery rule. | hygiene — verified safe, not gating |
+| P3 | hygiene | `backend/cli/commands/data/backfill_daemon.js` (`makeRealExecutor`, `ALL_FAMILIES`, `INCREMENTAL_DAYS`, `LANE_CONCURRENCY`, `LANE_MAX_CONCURRENCY`, `FAMILY_LANE`), `data_rollup.js` (`removeDerivedBin`), `data.js` (`inspectMassBackfillJob`), `ingestion.js` (`runIngestBatch`), `validation.js` (`isValidTimestamp`) | 10 more exports came back 0-importer on a literal/sibling/alias/dist sweep, but **not independently re-verified by the lead auditor** (lower stakes than the root-shim claim, and the sub-agent itself flagged these as needing a second pass before action). | Do not delete without a dedicated follow-up pass; several of these read like deliberately-exported test seams or CLI-debug surfaces, not confirmed dead. | follow-up backlog, not gated |
+| — | security/stubs | the 8 core data-pipeline files (`backfill.js`, `ingestion.js`, `validation.js`, `coverage.js`, `data.js`, `data_deep_backfill.js`, `data_rollup.js`, `backfill_daemon.js`) | No `eval`/`new Function`/non-literal `require`/`exec`/hardcoded-secret/token-logging hits; no `TODO`/`FIXME`/`not implemented` markers; the 4 bare `return null` hits found are all legitimate guard returns (provider-no-match fallthrough, JSON-parse-error swallow ×2, ineligible-symbol negative result), none are silent stubs on a reachable path. | none needed | clean |
+| — | coverage gap, disclosed | `backend/scripts/data_ops/ingest_market_data/{index.js,manifests.js,snapshot_fetchers.js,providers/*}` | **Not re-scanned this pass** — no Tier 1 commit touched this directory, so per the Focused-Audit scope rule it carries forward its last graded status (B, session 41 FW2 audit) rather than being re-swept. Flagging explicitly rather than silently implying full coverage. | re-scan if/when a future commit touches this directory | ingest_market_data B (cached) |
+
+**Section grades (lens-scored, trend vs. last recorded):**
+
+| Section | Grade | Trend | Notes |
+|---|---|---|---|
+| `shared/lib/data/*` (backfill.js, ingestion.js, db_pruning.js, crypto_aggregates.js, macro_store.js) | A- | → (was clean) | gap-aware fetch well-tested; only debt is the dead-shim cosmetic note above |
+| `shared/lib/market/{validation,coverage}.js` | B | ↓ slight (was A on this lens) | renameWithRetry busy-wait + zero test coverage is the one real contained debt this pass |
+| `backend/cli/commands/data/*` (data.js, data_rollup.js, data_deep_backfill.js, backfill_daemon.js) | A- | → | incremental-flush + stop-daemon both clean; `data.js` (1,132 LOC) remains a size hotspot but not new debt |
+| `backend/scripts/data_ops/ingest_market_data/*` | B (cached) | → | not re-scanned this pass (no Tier 1 commits touched it); residual 1,342-LOC `index.js` is the accepted post-FW2 baseline, not new debt |
+
+**LOC breakdown, data pipeline (`wc -l`, 2026-06-21):** `ingest_market_data/index.js` 1,342 ·
+`data.js` 1,132 · `validation.js` 995 · `backend_visualize`-adjacent n/a · `data_accumulate.js` 549 ·
+`snapshot_fetchers.js` 519 · `backfill_daemon.js` 526 · `data_deep_backfill.js` 428 ·
+`data_rollup.js` 326 · `constants.js` 271 · `coverage.js` 204 · `manifests.js` 200 ·
+`backfill.js` 237 · `macro_store.js` 151 · `crypto_aggregates.js` 108 · `db_pruning.js` 99 ·
+`candle_utils.js` 52 · `ingestion.js` 55 · `intraday_yahoo.js` 33 · `index.js` (shared/lib/data) 4 ·
+**total 7,231 LOC** across the data pipeline's production files (test/docs excluded).
+
+##### Centralization Backlog (additions)
+
+| Pattern | Files (count) | Proposed unit | Effort | Grade impact |
+|---|---|---|---|---|
+| Root-shim retirement is further along than the architecture map assumes | `shared/lib/{backfill,ingestion,market_validation}.js` confirmed dead this pass; ~29 other root shims under `shared/lib/*.js` were never re-checked since the original migration (session 29) | A dedicated dead-shim sweep across all ~32 flat `shared/lib/*.js` files, 4-layer-verified each, not just these 3 | M | hygiene — opportunistic, not urgent |
+| Synchronous-sleep-via-busy-wait | `renameWithRetry` (1 file, but called from 4 sites on the hottest write path in the data layer) | Swap to `Atomics.wait` | S | data/market B→A |
+
+**Verification gate to clear:** none of this pass's findings are gating — Gate Table below is
+all-OPEN. The two real items (busy-wait sleep, dead-shim cleanup) are debt-clearing opportunities,
+not blockers.
+
+**Gate Table (2026-06-21 session 52):**
+```
+Section                                          Grade   Status
+────────────────────────────────────────────────  ─────   ──────────────────────────────
+shared/lib/data/*                                  A-     OPEN
+shared/lib/market/{validation,coverage}.js          B     OPEN (renameWithRetry debt, contained)
+backend/cli/commands/data/*                         A-     OPEN
+backend/scripts/data_ops/ingest_market_data/*       B     OPEN (cached, not re-scanned)
+shared/lib/runtime/backend_bridge.js                A     OPEN (this session's fix verified)
+dashboard/CLI interactive surface                   A     OPEN (session 50/51 fixes verified live)
+```
+
+**Verified this session:** full suite **555 tests / 553 pass / 0 fail / 2 skip** (run before
+committing session 51's batch); `backend integrity --json` live run (92/92 cached, 0 missing, 0
+stale, 0 exceptions, 3 grain_suspect — all explained); direct `readTsIndex` probes on CPER across
+5m/15m/4h/1d; direct 4-layer re-verification of the 3 dead-shim claims; full diff read (not just
+commit messages) for `e5e21ef1`, `824d038e`, `5d9d2e23`, `0eda90fa`, plus the 4 auto-doc commits.
+
+---
+
+### Blast-Through Deep Audit — 2026-06-21 session 52, continued (backend/api + backend/gateway)
+
+User asked "any more bugs in other sections?" after the data-pipeline pass above. Extended the
+Recency-Ranked Audit Queue to the two sections that hadn't been touched in ~10 sessions and carry
+the highest blast radius if wrong (exposed web port; real broker money movement): `backend/api/`
+(last real fix `37d2d6d2`, 2026-06-12) and `backend/gateway/src/` (last real fix `6875f1fa`,
+2026-06-12). Delegated both to sub-agents in parallel, then personally re-verified the one finding
+with real consequences (the path-traversal claim below) by reading the route file and the auth
+gate myself rather than trusting the report — confirmed accurate.
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| P2 | api/security | `backend/api/server/routes/market/sigma_band.js:46,48` (`computeSigmaBand`/`readJsonSafe`) | `query.input` (an HTTP query string param) flows unsanitized straight into `fs.readFileSync(filePath)` — no `path.resolve`+prefix containment check like the one `app.js:193-200` already uses for static files. **Personally verified**: `/api/sigma-band` is absent from both `isPublicRoute` (app.js:115-128) and `PROTECTED_GET_ROUTES` (app.js:54-60), and `checkSecurity`'s gate (`app.js:129`) only requires a token for non-GET requests or GETs explicitly in `PROTECTED_GET_ROUTES` — so this is reachable over the network with **zero authentication**. Actual blast radius is narrower than a typical arbitrary-file-read: the file is always `JSON.parse`'d first inside a try/catch that collapses every failure (missing file, permission denied, not valid JSON) into one identical `{ok:false,error:'snapshot_not_found'}` response — so raw file contents are never echoed back, and the only data that ever surfaces is specific numeric/string fields (`close`, `timestamp`) from records that already match a `{symbol,timeframe,close,timestamp}` shape inside a `sources`/`records`/`bars`/`data` array. Still a real, unauthenticated file-existence-and-JSON-shape oracle against the server's filesystem (distinguishes "valid JSON at this path" from "missing/unreadable/non-JSON"), and a foothold for further probing. | Mirror the existing `WEB_PUBLIC_ROOT`-prefix containment check used for static files, or simplest: drop the `query.input` override entirely and always read `DEFAULT_SNAPSHOT` (no legitimate caller appears to rely on overriding it — grep `Frontend/dashboard/src` for any caller passing `input=`). | **api — Security Surface caps at C, gated until fixed** |
+| P3 | api/security | `backend/api/server/services/cli_executor.js` (`backendStatus`, `backendDataSummary`, `backendCorrelation`, `backendUniverse`) | Same unvalidated `query.input` pattern, but lower severity — it's forwarded as one `spawnSync(..., {shell:false})` argv element (no shell injection), and all 4 routes (`/api/status`, `/api/data/summary`, `/api/correlation`, `/api/universe`) are already on the public allowlist by design. | Same containment fix as above, lower urgency since these were already intentionally public. | api — contained |
+| P3 | api | `backend/api/server/routes/system/kill_switch.js:6` | The (already token-gated) `query.command` is forwarded verbatim to the C++ backend as the kill-switch subcommand with no allowlist (`status`/`arm`/`disarm`/etc.). | Add an explicit subcommand allowlist. | api — low risk, token already required |
+| P4 | api/hygiene | `backend/api/server/middleware/{error_handler.js,logger.js,rate_limiter.js}` | Dead code — zero `require()` of any of the 3 files anywhere in `backend/api`; `app.js` uses its own inline security/rate-limit logic instead. | Delete, or wire in if an Express migration is ever intended. | api — trivial |
+| P4 | api | `shared/lib/mcp/gate.js:38-42` (`isMcpAllowed`) | Fails **open** (defaults `true`) for any pathname in neither `BLOCKED_ROUTES` nor `ALLOWED_ROUTES` — `/api/bot/cycle`, `/api/bot/sell`, `/api/bot/status`, `/api/signal/promote`, `/api/strategies`, `/api/sigma-band`, `/api/run/status` are all absent from both lists today. Not exploitable today since the real boundary is `app.js`'s API-token gate, not this MCP allowlist — but if this list is ever promoted to the primary gate, trading routes should be explicit `BLOCKED_ROUTES` entries rather than relying on fail-open. | Add the bot/trading routes to `BLOCKED_ROUTES` explicitly. | informational only |
+| — | api | `37d2d6d2` kill-switch token gate | Re-verified still intact and tested (`tests/api.test.js:212-224` asserts 401 without token). No regression. | none | clean |
+| — | api | command-injection / path-traversal-elsewhere / stub / secrets sweep | Exhaustive `exec(`/`execSync(` grep across `backend/api/server/**`: zero hits, both real spawn sites use `spawnSync(bin,[...argv],{shell:false})`. No hardcoded secrets, no `eval`, no token values logged, no mock-data stub handlers (`localBackendFallback` is a labeled real-fixture degraded mode, not fake data). | none | clean |
+| P2 | gateway | `backend/gateway/src/index.ts:728-755` (`ExecutionGateway.execute()`) returns `void`; failure is only visible by inspecting the mutated `order` object afterward | The `buy`/`sell` CLI path (`index.ts:2037-2051`) *does* check `order.status` post-call and sets `process.exitCode=1`/`ok:false` — combined with today's `backend_bridge.js` fix, that path is fully closed (exit code and payload now agree). But `processProposedOrders()` (`index.ts:757-801`, the `process` CLI command) loops `await this.execute(order)` per order and **never inspects `order.status` afterward** — no exit code, no `ok` field, a failed order in a batch silently becomes a console-only log line. Same gap at the `--demo` call site. Confirmed via grep that nothing currently wires the `process` CLI command through `backend_bridge.js`, so this is **real but dormant** — it activates the moment any future caller bridges that command. | Have `processProposedOrders` aggregate per-order failures into a summary `{ok, failed_count}` and a non-zero exit when any order failed, mirroring the buy/sell path. | gateway — dormant debt, not gating |
+| — | gateway | Centralization Backlog re-check (commit `6875f1fa`, 2026-06-12) — DEV_REVIEW's existing backlog row was stale and is corrected here | (a) raw-`fetch`-without-retry: **mostly fixed** — `index.ts`/`cycle.ts` import and use `fetchWithRetry` from `shared/lib/runtime/fetch_retry.js`, but `cycle.ts:69` (`fetchAiBets`), `cycle.ts:123` (bot-health check), and `market.ts:17` (`fetchTradingInfo`) still call raw `fetch` despite the retry helper already being imported in the same file in 2 of the 3 cases. (b) `submitPolymarketOrder`/`preflightPolymarketOrder` duplication: **fixed** — both now delegate to `_polymarketOrderCore` (`index.ts:1844`). (c) hand-rolled L2 HMAC vs. the SDK's `createL2Headers`: **still open, but by design** — the commit message explicitly records this was "aborted per spec gate" (the SDK helper needs a `ClobSigner`+WebCrypto and drops headers this gateway relies on), not a silent regression. | Close the 3 remaining raw-`fetch` call sites (S effort, same pattern already proven in the same files). Leave (c) as a documented design decision, not a bug. | gateway — centralization backlog corrected, not gating |
+| — | gateway | re-verified previously-fixed findings: FOK order type (`cycle.ts:251,381,483`), plaintext-secret masking (`index.ts:2267-2291`, `--reveal`-gated) | Both confirmed still intact, no regression. | none | clean |
+| P3 | gateway | `AlpacaAdapter.placeBracketOrder` (`index.ts:573`) | Still orphaned, zero callers repo-wide — unchanged from the last audit. | Implement a caller or remove; not urgent. | gateway — unchanged |
+| — | gateway | security/stub sweep | No `eval`/dynamic `require`/hardcoded secrets in `backend/gateway/src/*.ts`; no silent stub returns on a reachable order-submission or balance-check path (`market.ts`'s `return null` hits are benign read-only lookup-not-found, not execution). | none | clean |
+
+**Frontend/dashboard** (`Frontend/dashboard/src/`, 24 files): confirmed **not dead** — the API
+sub-agent cross-referenced every `/api/*` call against `Frontend/dashboard/src/lib/api.ts` and all
+major panels, found it actively wired to Supabase auth and the backend API (just not the *primary*
+interface since the TUI/dashboard CLI took over that role — it runs standalone via `npm run dev`,
+not through `infra/docker/docker-compose.yml`, which only has `web`+`bot` services). Not deep-dived
+beyond the cross-reference above.
+
+**backend/core (C++)**: not re-scanned this pass — zero commits have touched `backend/core/src`
+since `e0ad1ff7` (session 18b, ctest fixture fixes, ~10 sessions ago); carries forward its last
+verified state (29/29 ctest, ONNX parity proven) per the Focused-Audit scope rule rather than a
+fresh full re-scan.
+
+**Updated Gate Table (2026-06-21 session 52, full):**
+```
+Section                                          Grade   Status
+────────────────────────────────────────────────  ─────   ──────────────────────────────
+shared/lib/data/*                                  A-     OPEN
+shared/lib/market/{validation,coverage}.js          B     OPEN (renameWithRetry debt, contained)
+backend/cli/commands/data/*                         A-     OPEN
+backend/scripts/data_ops/ingest_market_data/*       B     OPEN (cached, not re-scanned)
+shared/lib/runtime/backend_bridge.js                A     OPEN (this session's fix verified)
+dashboard/CLI interactive surface                   A     OPEN (session 50/51 fixes verified live)
+backend/api/*                                       C     GATED — unauthenticated path-traversal
+                                                            oracle on /api/sigma-band (clear before
+                                                            adding new routes; debt-clearing exempt)
+backend/gateway/src/*                               B+    OPEN (1 dormant debt, 1 corrected backlog
+                                                            doc, otherwise clean re-verification)
+Frontend/dashboard/src/*                            B     OPEN (not stale, not deep-audited)
+backend/core (C++)                                  — (cached, last B/A — not re-scanned)
+```
+
+---
+
 ### Blast-Through Full Audit — 2026-06-21 (dashboard interactive surface)
 
 User-reported crashes on login/register/Polymarket-portfolio in the Ink dashboard
@@ -376,9 +513,9 @@ Close clean-clone reproducibility before any broad commit: track or deliberately
 
 | Pattern | Files (count) | Proposed unit | Effort | Grade impact |
 |---|---|---|---|---|
-| Raw fetch without transport retry (host egress flaps connect EACCES) | gateway index.ts gamma/data-api fetches, polymarket_paper.js, CLI fetch sites (3+) | shared/lib/runtime/fetch_retry.js (2-3 attempts, expo backoff on connect-class errors) | M | gateway error-handling B->A |
-| submitPolymarketOrder / preflightPolymarketOrder ~80% duplicated | index.ts (2 fns) | single prepare+optionally-post helper | S | drift containment |
-| Hand-rolled L2 HMAC headers in clob_factory authedGet | clob_factory.ts vs clob-client-v2 createL2Headers/updateBalanceAllowance exports | adopt SDK helpers, drop local copy | S | drift containment |
+| ~~Raw fetch without transport retry~~ — MOSTLY RESOLVED 2026-06-12 (`6875f1fa`), re-verified 2026-06-21 session 52: `shared/lib/runtime/fetch_retry.js` exists and is used in `index.ts`/`cycle.ts`. 3 call sites still raw: `cycle.ts:69` (`fetchAiBets`), `cycle.ts:123` (bot-health check), `market.ts:17` (`fetchTradingInfo`) | 3 remaining sites (was "3+ files", now narrowed to exactly 3 named lines) | wire the already-imported `fetchWithRetry` into the 3 named call sites | S | gateway error-handling B+ (was B, not yet A) |
+| ~~submitPolymarketOrder / preflightPolymarketOrder ~80% duplicated~~ — RESOLVED 2026-06-12 (`6875f1fa`), re-verified 2026-06-21 session 52: both delegate to `_polymarketOrderCore` (`index.ts:1844`) | — | — | — | done |
+| Hand-rolled L2 HMAC headers in clob_factory authedGet — re-verified 2026-06-21 session 52: still hand-rolled, but `6875f1fa`'s commit message records this was a deliberate, considered decision ("aborted per spec gate" — the SDK helper needs a `ClobSigner`+WebCrypto and drops headers this gateway relies on), not an oversight | clob_factory.ts vs clob-client-v2 createL2Headers/updateBalanceAllowance exports | keep as-is; revisit only if the SDK helper gains the missing header support | S | drift containment — accepted, not actionable |
 | (carryover, user-deprioritized) trade.js 5 launcher call sites + tools/backend.js local runBackendCommand | 2 files | bridge | M | unchanged |
 
 ### Orphans / parity
