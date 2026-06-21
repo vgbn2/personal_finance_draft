@@ -46,6 +46,7 @@ const {
 const { reportSnapshotIntegrity, runBackendIntegrity } = require('./backend_integrity.js');
 
 const { sigmaPrediction, computeSigmaState, renderSigmaFrame, visualLineCount, runBackendVisualize } = require('./backend_visualize.js');
+const { runBackendChart } = require('./backend_chart.js');
 
 /**
  * Locates the C++ backend binary among known candidate paths.
@@ -615,6 +616,7 @@ async function commandBackend(args) {
     portfolio: (a) => runBackendPortfolio(a),
     correlation: (a) => runBackendCorrelation(a),
     visualize: (a) => runBackendVisualize(a),
+    chart: (a) => runBackendChart(a),
     universe: (a) => runBackendUniverse(a),
     integrity: (a) => runBackendIntegrity(a),
     benchmark: (a) => runBackendBenchmark(a),
@@ -673,6 +675,11 @@ async function commandBackend(args) {
     }
 
     if (subcommand === 'visualize' && !hasFlag(args, '--json')) {
+        if (!payload.ok) console.error(`\x1b[1;31m[ERROR] ${payload.error}\x1b[0m`);
+        return payload.ok ? 0 : 1;
+    }
+
+    if (subcommand === 'chart' && !hasFlag(args, '--json')) {
         if (!payload.ok) console.error(`\x1b[1;31m[ERROR] ${payload.error}\x1b[0m`);
         return payload.ok ? 0 : 1;
     }
