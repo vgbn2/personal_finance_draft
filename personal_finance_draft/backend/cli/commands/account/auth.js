@@ -29,8 +29,13 @@ async function commandLogin(args) {
 
   console.log(`\n${paint(A.B_CYAN, 'SOVEREIGN')} ${A.muted('— Sign In')}\n`);
 
-  if (!email)    email    = await auth.promptLine('Email');
-  if (!password) password = await auth.promptPassword('Password');
+  try {
+    if (!email)    email    = await auth.promptLine('Email');
+    if (!password) password = await auth.promptPassword('Password');
+  } catch (error) {
+    console.error(`${paint(A.RED, '✖')} ${error.message}`);
+    return 1;
+  }
 
   if (!email || !password) {
     console.error(paint(A.RED, 'Email and password are required.'));
@@ -75,26 +80,32 @@ async function commandRegister(args) {
 
   console.log(`\n${paint(A.B_CYAN, 'SOVEREIGN')} ${A.muted('— Create Account')}\n`);
 
-  if (!email) email = await auth.promptLine('Email');
-  if (!email) { console.error(paint(A.RED, 'Email is required.')); return 1; }
-
   let password = '';
-  let attempts = 0;
-  while (attempts < 3) {
-    password = await auth.promptPasswordWithStrength('Password');
-    const { score, missing } = auth.evaluatePassword(password);
-    if (score >= 4) break; // Good or better required (Fair is still too weak)
-    console.log(`  ${paint(A.YELLOW, '⚠')}  Password too weak. Still needs: ${missing.join(', ')}`);
-    attempts++;
-    if (attempts === 3) {
-      console.error(paint(A.RED, 'Maximum attempts reached. Use a stronger password.'));
-      return 1;
-    }
-    console.log(A.muted('  Try again:\n'));
-  }
-  if (!password) { console.error(paint(A.RED, 'Maximum attempts reached. Use a stronger password.')); return 1; }
+  let confirm = '';
+  try {
+    if (!email) email = await auth.promptLine('Email');
+    if (!email) { console.error(paint(A.RED, 'Email is required.')); return 1; }
 
-  const confirm = await auth.promptPassword('Confirm password');
+    let attempts = 0;
+    while (attempts < 3) {
+      password = await auth.promptPasswordWithStrength('Password');
+      const { score, missing } = auth.evaluatePassword(password);
+      if (score >= 4) break; // Good or better required (Fair is still too weak)
+      console.log(`  ${paint(A.YELLOW, '⚠')}  Password too weak. Still needs: ${missing.join(', ')}`);
+      attempts++;
+      if (attempts === 3) {
+        console.error(paint(A.RED, 'Maximum attempts reached. Use a stronger password.'));
+        return 1;
+      }
+      console.log(A.muted('  Try again:\n'));
+    }
+    if (!password) { console.error(paint(A.RED, 'Maximum attempts reached. Use a stronger password.')); return 1; }
+
+    confirm = await auth.promptPassword('Confirm password');
+  } catch (error) {
+    console.error(`${paint(A.RED, '✖')} ${error.message}`);
+    return 1;
+  }
   if (confirm !== password) {
     console.error(`${paint(A.RED, '✖')} Passwords do not match.`);
     return 1;
