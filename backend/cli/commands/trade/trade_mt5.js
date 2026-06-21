@@ -177,7 +177,13 @@ async function commandAddPlatform(args) {
     const key = await promptText('Alpaca API Key ID:', '');
     global.suppressLogs = false;
     if (!key) { console.error('API Key ID is required.'); return 1; }
-    const secret = await promptPassword('Alpaca Secret Key');
+    let secret;
+    try {
+      secret = await promptPassword('Alpaca Secret Key');
+    } catch (error) {
+      console.error(`${A.c(A.RED, '✖')} ${error.message}`);
+      return 1;
+    }
     const mode = await promptSelect('Environment:', [
       { label: 'Paper trading (safe, simulated)', value: 'paper' },
       { label: 'Live trading (real money)', value: 'live' },
@@ -279,7 +285,13 @@ async function commandMt5Profile(args) {
     const server = await promptText('MT5 Server (e.g. ICMarkets-Live01):', '');
     global.suppressLogs = false;
     if (!server) { console.error('Server is required.'); return 1; }
-    const password = await promptPassword('MT5 Password (stored encrypted)');
+    let password;
+    try {
+      password = await promptPassword('MT5 Password (stored encrypted)');
+    } catch (error) {
+      console.error(`${A.c(A.RED, '✖')} ${error.message}`);
+      return 1;
+    }
     global.suppressLogs = true;
     const notes = await promptText('Notes (optional):', '');
     global.suppressLogs = false;
