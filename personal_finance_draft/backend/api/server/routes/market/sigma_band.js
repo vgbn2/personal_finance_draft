@@ -39,15 +39,15 @@ function sigmaPredict(close, upper, middle, lower) {
   return { direction: 'short', confidence: 0.3 + (0.5 - position) * 0.4, reason: 'below_midline_trend', sigma: sigmas };
 }
 
-function computeSigmaBand(query = {}) {
+function computeSigmaBand(query = {}, { snapshotPath = DEFAULT_SNAPSHOT } = {}) {
   const symbol = String(query.symbol || 'AAPL').toUpperCase();
   const timeframe = String(query.timeframe || '1d');
   const period = Math.max(5, Math.min(200, Number(query.period) || 20));
-  const inputPath = String(query.input || DEFAULT_SNAPSHOT);
+  const inputPath = snapshotPath;
 
   const payload = readJsonSafe(inputPath);
   if (!payload) {
-    return { ok: false, error: 'snapshot_not_found', input: inputPath };
+    return { ok: false, error: 'snapshot_not_found' };
   }
 
   const bars = extractBars(payload, symbol, timeframe);
@@ -116,5 +116,6 @@ module.exports = {
   path: '/api/sigma-band',
   status: (payload) => (payload && payload.ok ? 200 : 422),
   handle: (query = {}) => computeSigmaBand(query),
+  computeSigmaBand,
 };
 
