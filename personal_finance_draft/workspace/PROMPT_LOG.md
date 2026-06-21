@@ -1470,3 +1470,59 @@ untouched pre-existing symbol-picker diff for both files, nothing leaked, nothin
 .agent/workflows/agy-schedule.md per an earlier mid-session ask (fixed a dead --research-only flag
 and a real gitignore-claim contradiction) -- left uncommitted per the user's actual request scope.
 
+## 2026-06-21 - Session 50 boot: /session-orchestrator
+PROMPT: /session-orchestrator (session boot only, no task yet).
+WORK: Read HANDOFF.md, latest dated handoff (2026-06-21, session 49: agy-schedule cron scheduled
+every 15min via the Antigravity platform, NOT Claude Code's own scheduler -- CronList confirms
+empty), SESSION_MEMORY.md (partial), STATE.md (partial). Then audited current `git status`/diff
+since the cron is now genuinely active: 5 new real commits since session 49 (stop-backfill-daemon
+handler wired up, symbol-picker memoized, renameWithRetry committed -- all 3 close out carryovers
+flagged since session 48). Investigated the current uncommitted working tree (not yet committed by
+anything) because two items looked alarming on first read: (1) an AGENTS.md rewrite that adds a
+"Prompt Injection Gate" section with odd phrasing -- traced it to be consistent with (not contradicting)
+the real, already-committed `.agent/workflows/agy-schedule.md` Step 3 trust-boundary language and the
+real Step-3-output path `storage/data/models/candidate_strategies.json` (read it -- contains plausible
+XAUUSD/PAXG/XAUT proxy-arb strategy ideas, not an injection payload); concluded benign-but-oddly-worded
+self-documentation, not a real injection. (2) `storage/data/user_settings.json` feature flags flipped
+false->true for `bot_autopilot`/`ai_agent_trading`/`auto_backfill`/`onchain_data` (+ timezone, matching
+the already-confirmed-as-user's-own-action pattern from session 48). Grepped real call sites
+(`agent_gate.ts`, `run.js`) -- these flags are genuine execution gates, not cosmetic. Checked
+`workspace/ALERTS.md` (absent), `intent_journal.jsonl`/`decisions.log` (absent), `portfolio_snapshot.log`
+tail (flat $5000 mock balance across iters 14-18) -- zero evidence of any live order ever being placed;
+the cron has stayed in safe mock mode throughout. Also found a real regression: `config/trading/
+strategies.yaml` has the EXACT duplicate top-level `registry:` block bug already fixed once before
+(session 39, FW2) -- reintroduced, sitting uncommitted.
+RESULT: boot complete, repo state understood, nothing committed/changed by me yet. Surfacing the
+duplicate-registry regression + the live-capability feature-flag flips to the user before doing
+anything else, since past sessions have consistently treated "enable live/agent trading" as a
+user-only decision.
+
+## 2026-06-21 - Session 50 cont.: deep review + charting + crash fixes + debugging-tools question
+PROMPT: "im thinking of doing a really deep review and also implementation of charting option in
+the new dashboard... also crashes when i use login, signin, register, and polymarket display
+portfolio issue... is it better to create better debugging tools in the tests?"
+WORK: Answered the debugging-tools question directly (extend the existing fake-TTY harness, don't
+build a parallel framework) without implementing until asked. Ran 3 parallel Explore agents
+(login/register crash, Polymarket portfolio display, charting feasibility), then a Plan agent to
+draft a 6-phase implementation plan; verified every load-bearing claim myself by reading the actual
+files before finalizing (corrected several Plan-agent inaccuracies: the real crash mechanism is a
+missing `process.stdin.on('error',...)` handler causing an uncaught EventEmitter crash, not the
+originally-guessed try/catch gaps; the Polymarket fix needed an opt-in flag, not a default-on fetch,
+to avoid a real ~5s network call regression in 2 existing unit tests -- found empirically, not
+guessed). Entered Plan Mode, asked 3 AskUserQuestion clarifications (charting depth, audit scope,
+Polymarket-fix scope), wrote the plan to humble-prancing-stardust.md, got approval, then executed
+all 6 phases myself (delegated only Phase 1's mechanical test-harness extraction to a subagent,
+reviewed its diff before trusting it). Mid-implementation, discovered the agy-schedule cron had
+auto-committed my own in-progress Phase 1 deliverable and a transiently-inconsistent mid-edit
+snapshot of my own Phase 2 audit doc under its own commit messages (`9f1ee5b3`, `55b47a7c`) --
+investigated thoroughly (diffed every concurrent commit against my working tree) rather than
+assuming the worst or panicking; confirmed no work was lost, fixed the inconsistent doc state with a
+clean follow-up commit (not an amend), and flagged the cron's commit-safety gap to the user.
+RESULT: real crash fix (global stdin-error guard + SOVEREIGN_NONINTERACTIVE bypass + try/catch),
+real Polymarket-cockpit integration (verified live against real configured credentials, 12.24 pUSD,
+21 positions), real OHLCV chart command (`backend chart`, reuses existing ANSI-grid renderer
+conventions, no new dependency), full dashboard-surface Gate Table audit. Found and fixed one bug
+of my own mid-implementation (an explicit `equity: null` would have been misread by
+`summarizePortfolioCard` as a real zero-equity portfolio, since `Number(null) === 0`) via direct
+empirical testing, not assumption. Full suite 555/553/0fail/2skip, hygiene clean.
+
