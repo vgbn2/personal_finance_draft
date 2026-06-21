@@ -234,6 +234,13 @@ function synthesizeFormulaSeries(allSources, symbolSet, timeframe) {
   return synthesized;
 }
 
+/**
+ * Summarizes the date coverage for a list of symbols.
+ * 
+ * @param {string[]} symbols - Array of symbol names to summarize.
+ * @param {Object.<string, Set<string>>} bySym - Mapping of symbols to Sets of available date strings.
+ * @returns {Object.<string, {dates: number, first: string|null, last: string|null}>} Coverage summary keyed by symbol.
+ */
 function summarizeCoverage(symbols, bySym) {
   const coverage = {};
   for (const sym of symbols) {
@@ -247,6 +254,13 @@ function summarizeCoverage(symbols, bySym) {
   return coverage;
 }
 
+/**
+ * Calculates the total number of common dates shared across all provided symbols.
+ * 
+ * @param {string[]} symbols - Array of symbol names to check for intersection.
+ * @param {Object.<string, Set<string>>} bySym - Mapping of symbols to Sets of available date strings.
+ * @returns {number} The count of dates present in all symbol sets.
+ */
 function commonDateCount(symbols, bySym) {
   let common = null;
   for (const sym of symbols) {
@@ -262,11 +276,25 @@ function commonDateCount(symbols, bySym) {
   return common ? common.size : 0;
 }
 
+/**
+ * Identifies symbols that are causing a complete lack of overlap when intersected with the rest.
+ * 
+ * @param {string[]} symbols - Array of symbol names to evaluate.
+ * @param {Object.<string, Set<string>>} bySym - Mapping of symbols to Sets of available date strings.
+ * @returns {string[]} An array of symbol names that have no overlap with the remaining group.
+ */
 function noOverlapBlockers(symbols, bySym) {
   if (symbols.length <= 2) return symbols;
   return symbols.filter((sym) => commonDateCount(symbols.filter((s) => s !== sym), bySym) > 0);
 }
 
+/**
+ * Returns the set of common dates shared across all provided symbols.
+ * 
+ * @param {string[]} symbols - Array of symbol names to intersect.
+ * @param {Object.<string, Set<string>>} bySym - Mapping of symbols to Sets of available date strings.
+ * @returns {Set<string>|null} A Set containing the intersecting date strings, or null if empty initially.
+ */
 function commonDatesFor(symbols, bySym) {
   let common = null;
   for (const sym of symbols) {
