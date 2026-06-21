@@ -413,6 +413,42 @@ test('dashboard App: backend correlation exposes a --symbols flag (was previousl
   assert.match(stdout.snapshot(), /Select symbols — --symbols/, 'multi-select picker, matching its comma-sep contract');
 });
 
+test('dashboard App: backend chart resolves to the expected argv with a typed symbol', async (t) => {
+  const { render, default: React } = await Promise.all([import('ink'), import('react')])
+    .then(([ink, react]) => ({ render: ink.render, default: react.default }));
+  const h = React.createElement;
+  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+
+  const stdin = makeFakeStdin();
+  const stdout = makeFakeStdout();
+  let ranArgv = null;
+  const onRun = (argv) => { ranArgv = argv; };
+
+  // Backend(2) -> backend chart(5): status(0), stats(1), correlation(2),
+  // visualize(3), universe(4), chart(5) -- appended last, see the manifest
+  // comment for why (preserves universe's hardcoded index in another test).
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 5, onRun }), {
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+  });
+  t.after(() => instance.unmount());
+  await instance.waitUntilRenderFlush();
+
+  await send(stdin, instance, [keys.enter]);
+  assert.match(stdout.snapshot(), /› backend chart/);
+  assert.match(stdout.snapshot(), /--symbol/);
+
+  // flagI=0 is --symbol (txt, pickSymbol:'single') -> Enter opens the inline
+  // text editor, not the dedicated symbol-picker overlay (no pickAssets
+  // import in this fake-TTY harness) -- type a value and commit it.
+  await send(stdin, instance, [keys.enter]);
+  await send(stdin, instance, [...'BTCUSDT', keys.enter]);
+
+  // Cycle down to the trailing "Run" row and trigger it.
+  await send(stdin, instance, [keys.down, keys.down, keys.down, keys.down, keys.enter]);
+
+  assert.deepEqual(ranArgv, ['backend', 'chart', '--symbol', 'BTCUSDT', '--timeframe', '1d', '--bars', '200', '--width', '64']);
+});
+
 test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls back through real output, End jumps back to the live tail', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
