@@ -309,8 +309,14 @@ test('dashboard App: in-pane running process can be aborted via Escape', async (
   await send(stdin, instance, [keys.down, keys.down, keys.enter]);
   assert.match(stdout.snapshot(), /Running:/);
 
+  // Wait for the child process to be spawned (so childRef.current is populated)
+  await delay(100);
+
   // Abort via Escape
   await send(stdin, instance, [keys.escape]);
+
+  // Wait for the abort to register and re-render
+  await delay(50);
 
   // It should show aborted message
   assert.match(stdout.snapshot(), /aborted[\s\S]*?user/);
