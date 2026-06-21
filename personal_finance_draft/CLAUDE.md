@@ -45,9 +45,5 @@
 
 ## Architecture Plan (current)
 
-See conversation history for the 5-phase plan. Phase 0 (cleanup) is complete:
-- Rust CLI stubs deleted (`backend/cli/src/commands/`)
-- Skills consolidated to `.agents/skills/` (`.gemini/` and `.codex/` removed)
-- TUI menu labels cleaned up (no inline descriptions)
-
-**Next:** Phase 1 — centralized asset picker (`tui/asset_picker.js`)
+Tracked in `workspace/STATE.md` (`## Current Phase`) — that file is updated every session and is the
+real source of truth for project direction. Do not maintain a separate plan here.
