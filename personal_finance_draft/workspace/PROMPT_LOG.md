@@ -1,3 +1,74 @@
+# Prompt Log - 2026-06-22 (session 53)
+
+## Session Boot — 2026-06-22 (session 53)
+/session-orchestrator. Same conversation/context as session 52's close — reused the just-written
+HANDOFF.md/STATE.md/SESSION_MEMORY.md content rather than re-reading (repo-state check via `git
+log`/`git status` confirms nothing changed since: HEAD still `3da6e612`, no new cron commits yet).
+Working tree carries session 52's own uncommitted doc edits (DEV_REVIEW.md, HANDOFF.md, STATE.md,
+handoff/2026-06-21.md, PROMPT_LOG.md) plus the routine cron-generated data artifacts — nothing new.
+`workspace/BOOTSTRAP.md` confirmed absent (consistent with every prior session). Open carryover
+unchanged: the gating `backend/api/server/routes/market/sigma_band.js:46` path-traversal fix +
+4 batched non-gating items, per `workspace/HANDOFF.md`'s top carryover entry. Awaiting user
+direction.
+
+# Prompt Log - 2026-06-21 (session 52)
+
+## Session Boot — 2026-06-21 (session 52)
+/session-orchestrator. Loaded HANDOFF.md (pointer → workspace/handoff/2026-06-21.md sessions
+49/50/51), SESSION_MEMORY.md (sessions 21-48), STATE.md. Branch `feat/ink-tui-refactor`, HEAD
+`f27ad8c3` (docs close-out for session 50). The `agy-schedule` cron (`*/15 * * * *`, task-54) is
+confirmed still active — recent commits include `35fd2086 chore(metrics): auto-save portfolio
+state (Iteration 24)` and `852130f8 docs(auto): add function comments for backend_correlation.js`.
+Working tree has session 51's mass-implement batch sitting UNCOMMITTED: `.agent/workflows/
+agy-schedule.md` (+8, worktree-isolation instruction for the cron so its self-heal commits stop
+scooping up a foreground session's in-progress work), `AGENTS.md` (+32/-14), `shared/lib/runtime/
+backend_bridge.js` (the JSON-extraction masking bug fix — a non-zero exit code with `ok:true` in a
+truncated stdout payload was being read as success), plus `workspace/HANDOFF.md`/`STATE.md` doc
+updates describing both fixes. Per session 51's note, suite was 553/555/2skip green at the time.
+Also uncommitted: routine cron-generated data artifacts (`notebooks/signal_library.json`,
+`storage/data/models/latest_{indicator_optimization,model_comparison}.json`, `storage/data/
+features/latest_features.json`, `storage/data/user_settings.json`) — consistent with the recurring
+auto-save pattern, not reviewed as code. `workspace/BOOTSTRAP.md` does not exist (consistent with
+every prior session). graphify-out staleness not rechecked this boot (repeatedly deprioritized
+absent an explicit ask). Awaiting user direction — open carryover is the session-51 commit decision.
+
+## User Prompt — 2026-06-21 (session 52)
+"commit then deep blast through, checking the recent code and data pipeline"
+
+## Work — 2026-06-21 (session 52)
+Verified session 51's 5 reviewed files (full suite 553/553 green) and committed (`3da6e612`).
+Ran a deep `/blast-through` scoped to recent code + the data pipeline (anchor `d21e25ce`→
+`3da6e612`). Personally read every Tier-1 data-pipeline commit's full diff (`e5e21ef1` gap-aware
+fetch, `824d038e` path consolidation, `5d9d2e23` stop-daemon, `0eda90fa` renameWithRetry, plus the
+4 auto-doc JSDoc commits) rather than trusting commit messages; delegated the hygiene/security/stub
+sweep to a sub-agent, then independently re-verified its highest-stakes claim (3 root shims
+confirmed dead) myself across all 4 resolution layers given that exact shim class caused a real
+false-negative in session 29. Found 2 real, non-blocking debts: `renameWithRetry`'s busy-wait sleep
++ zero test coverage (P2), and a stale orphaned `data/cache/`+`data/models/*.json` left behind by
+the path-consolidation commit (P4, gitignored, harmless). Investigated a live `CPER` grain_suspect
+flag via direct `readTsIndex` probing — concluded genuine thin-liquidity ETF behavior, not data
+corruption. Full Gate Table + LOC breakdown written to `workspace/DEV_REVIEW.md`; audit anchor
+bumped to `3da6e612` in `workspace/STATE.md`. Gate Table is all-OPEN — nothing gated. Reported
+findings to the user; no fixes applied (audit-only pass, consistent with "flag don't fix" unless
+asked).
+
+## User Prompt — 2026-06-21 (session 52, continued)
+"any more bugs in other sections?"
+
+## Work — 2026-06-21 (session 52, continued)
+Extended the audit to `backend/api/` and `backend/gateway/src/` (both untouched ~10 sessions,
+highest blast-radius if wrong). Delegated both to parallel sub-agents, then personally re-verified
+the highest-stakes claim myself (read the route file + the app.js auth gate directly) rather than
+trusting the report. Confirmed a real, unauthenticated path-traversal/file-existence oracle in
+`backend/api/server/routes/market/sigma_band.js:46` (`query.input` -> `fs.readFileSync`, route is
+in neither the public allowlist nor `PROTECTED_GET_ROUTES`) — graded `backend/api/*` C/GATED.
+Gateway came back mostly clean: confirmed 2 of 3 old centralization-backlog items were actually
+already fixed back in 2026-06-12 (DEV_REVIEW.md's backlog rows were stale, corrected in place), the
+3rd (HMAC headers) was a deliberate documented decision not a bug, and found one new dormant
+(currently-unreached) gap in `processProposedOrders()`'s batch-order-failure handling. Frontend
+confirmed not dead (still wired to Supabase+API). C++ core not re-scanned (zero recent commits).
+Wrote it all into `workspace/DEV_REVIEW.md` + `STATE.md`; reported to user, no fixes applied yet.
+
 # Prompt Log - 2026-06-20 (session 48)
 
 ## Session Boot — 2026-06-20 (session 48)
@@ -1525,4 +1596,31 @@ conventions, no new dependency), full dashboard-surface Gate Table audit. Found 
 of my own mid-implementation (an explicit `equity: null` would have been misread by
 `summarizePortfolioCard` as a real zero-equity portfolio, since `Number(null) === 0`) via direct
 empirical testing, not assumption. Full suite 555/553/0fail/2skip, hygiene clean.
+
+## 2026-06-21 - Session 53: close the sigma-band gating finding from session 52's audit
+PROMPT: "/session-orchestrator" (boot only, no task text). Boot surfaced the open carryover from
+session 52's audit (the sigma-band gating bug, explicitly flagged as "next session first step") and
+a stale CLAUDE.md plan note ("Next: Phase 1 -- centralized asset picker", contradicted by the file
+already existing, 264 lines, committed at b64cf57c long before this session). Asked the user via
+AskUserQuestion which to prioritize; chose the security fix.
+WORK: Re-verified the finding directly against live code before trusting the docs (read
+sigma_band.js, confirmed query.input -> fs.readFileSync with no containment; read app.js's
+isPublicRoute/PROTECTED_GET_ROUTES gate logic line by line to confirm the route is genuinely
+unauthenticated for GET). Checked every real caller for legitimate use of `input=` (dashboard
+SigmaBandPanel.tsx/api.ts, MCP get_sigma_bands tool/schema -- which doesn't even call this route, it
+shells out to `backend visualize`) and found none, so planned to drop the override entirely rather
+than sanitize it. Entered Plan Mode (triggered externally), wrote the plan, got approval, then
+implemented: dropped `query.input` entirely from `computeSigmaBand`, added a code-only
+`{snapshotPath}` second argument (never reachable from query/HTTP) so the route's previously-zero
+test coverage could exercise real band-math against an injected fixture instead of the real,
+confirmed-missing-in-this-sandbox `backtest_history.json`. Wrote 3 new tests
+(`tests/web/server/sigma_band_route.test.js`), ran a manual before/after smoke check against the
+literal exploit shape, then ran the full suite + hygiene before asking the user to confirm the
+commit.
+RESULT: commit `03b3c8d5` on `feat/ink-tui-refactor`. Suite 558/556/0fail/2skip (was 555/553, exactly
++3 new tests, zero regressions); hygiene clean. `backend/api/*` no longer gated -- this was the only
+gating finding from session 52. Updated HANDOFF.md/STATE.md to close out the carryover and bumped
+the blast-through audit anchor to the post-fix commit. Non-gating items from session 52's audit
+(renameWithRetry busy-wait, dead shims, stale cache JSON, gateway batch-failure swallowing, 3
+remaining raw-fetch sites) remain open, none urgent -- not touched this session.
 

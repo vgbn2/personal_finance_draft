@@ -1,11 +1,55 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: d21e25ce
-last_audit_date: 2026-06-20
+last_audited_commit: 03b3c8d5
+last_audit_date: 2026-06-21
 
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
+
+## Fix Note - 2026-06-21 session 53 - sigma-band gating finding closed (commit 03b3c8d5)
+- Closed the one gating finding from session 52's audit below: `backend/api/server/routes/market/
+  sigma_band.js` no longer reads `query.input` at all — `computeSigmaBand` always resolves against
+  the fixed `DEFAULT_SNAPSHOT`. Verified no legitimate caller anywhere in the repo (dashboard panel,
+  MCP tool schema) ever sent `input`; the MCP `get_sigma_bands` tool doesn't even call this route.
+- Added a code-only `{ snapshotPath }` second argument (never reachable from `query`/HTTP — `handle`
+  still calls `computeSigmaBand(query)` with one argument) so the route's previously-zero test
+  coverage could exercise the real band-math without depending on the real, possibly-absent
+  `backtest_history.json`. New `tests/web/server/sigma_band_route.test.js` (3 tests): handle()
+  with/without a malicious `input` produce byte-identical output; real band stats computed
+  correctly against an injected fixture; `query.input` ignored even when both args are supplied.
+- **Verified:** suite 558/556/0fail/2skip (was 555/553, exactly +3 new tests, zero regressions);
+  `npm run hygiene` clean; manual before/after smoke check against the original exploit shape
+  (`input:'C:/Windows/win.ini'`) confirmed identical output with/without.
+- `backend/api/*` is no longer gated. Audit anchor bumped to this commit (post-fix HEAD).
+
+## Audit Note - 2026-06-21 session 52 - Deep blast-through (recent code + data pipeline)
+- Anchor `d21e25ce` → `3da6e612`. DCS ≈0.96 start/end — no crash/data-loss findings. Full Gate
+  Table + LOC breakdown in `workspace/DEV_REVIEW.md` ("Blast-Through Deep Audit — 2026-06-21
+  session 52"). Headlines: (1) `renameWithRetry` (`shared/lib/market/validation.js:601`, added
+  2026-06-20) implements its retry delay via a busy-wait CPU spin instead of `Atomics.wait`, and
+  has zero test coverage despite sitting on every `writeJson`/`mergeWriteBin` call in the pipeline
+  — contained debt, not gating, suggested fix is a one-line swap + a forced-failure unit test.
+  (2) 3 root shims (`shared/lib/{backfill,ingestion,market_validation}.js`) independently
+  4-layer-verified dead (re-checked myself, not just the sub-agent, given this exact shim layer
+  caused a real false-negative in session 29) — safe to delete. (3) Live `backend integrity --json`
+  flagged 3 `CPER` grain_suspect entries; direct `readTsIndex` probe confirmed genuine thin-liquidity
+  ETF behavior (real 5-min-spaced bars interleaved with real multi-day gaps), not the
+  daily-mislabeled-as-intraday corruption shape from session 35 — informational only. (4) The
+  recent gap-aware-fetch/incremental-flush (`e5e21ef1`), path-consolidation (`824d038e`), and
+  stop-daemon (`5d9d2e23`) commits all traced clean on full-diff review. Gate Table is all-OPEN;
+  no section gated.
+- **Extended same session ("any more bugs in other sections?"):** audited `backend/api/` and
+  `backend/gateway/src/` (both untouched ~10 sessions, highest blast-radius surfaces). **Real
+  finding, GATING:** `backend/api/server/routes/market/sigma_band.js:46` — `query.input` flows
+  unsanitized into `fs.readFileSync`, reachable with zero auth (`/api/sigma-band` is in neither
+  `isPublicRoute` nor `PROTECTED_GET_ROUTES`); personally re-verified the route registration and
+  auth gate before grading `backend/api/*` C/GATED. Bounded impact (JSON-shape+existence oracle,
+  not raw file exfiltration) but real and unauthenticated. Also corrected a stale Centralization
+  Backlog entry: gateway's 2026-06-12 fetch-retry rollout was reported unfixed but is ~90% done
+  (3 raw-fetch call sites remain). Gateway graded B+ (1 dormant, currently-unreached batch-order-
+  failure-swallowing gap). `Frontend/dashboard` confirmed not dead. `backend/core` (C++) not
+  re-scanned — zero commits touched it in ~10 sessions, carried forward.
 
 ## Implementation Note - 2026-06-21 session 51 - Scheduled agy-schedule workflow cron (Iteration 24)
 - **Iteration 24 (Dry-Run)**: Successfully executed iteration 24 of the `/agy-schedule` cron workflow.

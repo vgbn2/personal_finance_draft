@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-21.md`** (last update: 2026-06-21 session 49)
+- Latest/current handoff: **`workspace/handoff/2026-06-21.md`** (last update: 2026-06-21 session 52)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -19,6 +19,32 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 52 (2026-06-21) — Deep blast-through audit only, nothing fixed yet (deliberate — user
+  asked to note for next session, not fix now). Full findings + Gate Table: `workspace/DEV_REVIEW.md`
+  ("Blast-Through Deep Audit — 2026-06-21 session 52" + its "continued" block). Audit anchor
+  `3da6e612` in `STATE.md`.** **GATING BUG RESOLVED (session 53, commit `03b3c8d5`)** — see the
+  session 53 entry in `workspace/handoff/2026-06-21.md` for the full fix trail; `backend/api/*` is
+  no longer gated. Original finding kept below for history:
+  `backend/api/server/routes/market/sigma_band.js:46` (`computeSigmaBand`/`readJsonSafe`) reads
+  `query.input` straight into `fs.readFileSync` with no path-containment check, and the route
+  (`/api/sigma-band`) is reachable with **zero authentication** (absent from both `isPublicRoute`
+  and `PROTECTED_GET_ROUTES` in `backend/api/app.js`). Bounded impact (every read is `JSON.parse`'d
+  first, so raw file contents never echo back — it's a file-existence + JSON-shape oracle, not full
+  exfiltration) but real and unauthenticated; `backend/api/*` is graded **C/GATED** until this
+  lands. Fix = mirror the `WEB_PUBLIC_ROOT` containment check already used for static files in
+  `app.js:193-200`, or simplest: drop the `query.input` override entirely (no legitimate caller
+  appears to use it — check `Frontend/dashboard/src` for any `input=` caller first). **Other
+  non-gating items worth batching into the same pass** (all in `DEV_REVIEW.md`, none urgent): (1)
+  `renameWithRetry` (`shared/lib/market/validation.js:601`) busy-waits the CPU instead of sleeping
+  and has zero test coverage despite sitting on every ts-index/JSON-cache write — swap to
+  `Atomics.wait` + add a forced-EPERM-failure test; (2) 3 dead root shims
+  (`shared/lib/{backfill,ingestion,market_validation}.js`) are safe to delete (4-layer-verified,
+  not a repeat of the session-29 false-negative trap); (3) stale orphaned `data/cache/`+
+  `data/models/*.json` left over from the `824d038e` path consolidation (gitignored, harmless,
+  `rm -rf` whenever); (4) gateway's `processProposedOrders()` batch path silently swallows
+  per-order failures with no `ok:false`/exit code (dormant — only matters once something wires the
+  `process` CLI command through the bridge); (5) 3 raw-`fetch` call sites in gateway still lack the
+  retry helper that's already imported in the same files (`cycle.ts:69,123`, `market.ts:17`).
 - **SESSION 48 (2026-06-20) — Gap-closure plan committed (4 commits) + 3 real TUI bugs fixed + backfill-
   daemon visualization feature, all committed; full trail `workspace/handoff/2026-06-20.md` session 48.**
   Headlines: (1) reviewed and committed session-47's parallel "Gap Closure Plan" work
