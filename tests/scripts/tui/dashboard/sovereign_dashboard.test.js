@@ -1,73 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { PassThrough, Writable } = require('node:stream');
 const { setTimeout: delay } = require('node:timers/promises');
-
-const ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
-const SYNC_FRAME_START = '\x1b[?2026h';
-
-function stripAnsi(input) {
-  return String(input).replace(ANSI_RE, '');
-}
-
-// Ink wraps each repaint in a synchronized-update marker pair; isolating the
-// tail after the LAST start marker gives the current frame instead of the
-// whole accumulated transcript (needed for doesNotMatch assertions — content
-// from an earlier frame stays in the raw buffer forever otherwise).
-function lastFrame(raw) {
-  const idx = raw.lastIndexOf(SYNC_FRAME_START);
-  return idx === -1 ? raw : raw.slice(idx);
-}
-
-// Ink's App component pulls input via the readable-stream `.read()`/'readable'
-// protocol (not bare 'data' events), so the fake stdin must be a real Readable
-// (a PassThrough satisfies that) with TTY-only bits (isTTY/setRawMode/ref/unref)
-// stubbed on top — the same shape ink-testing-library uses under the hood.
-function makeFakeStdin() {
-  const stdin = new PassThrough();
-  stdin.isTTY = true;
-  stdin.setRawMode = () => stdin;
-  stdin.ref = () => stdin;
-  stdin.unref = () => stdin;
-  return stdin;
-}
-
-function makeFakeStdout() {
-  let buf = '';
-  const stdout = new Writable({
-    write(chunk, _enc, cb) {
-      buf += chunk.toString('utf8');
-      cb();
-    },
-  });
-  stdout.isTTY = true;
-  stdout.columns = 120;
-  stdout.rows = 40;
-  stdout.snapshot = () => stripAnsi(lastFrame(buf));
-  return stdout;
-}
-
-const keys = {
-  up: '[A',
-  down: '[B',
-  right: '[C',
-  left: '[D',
-  enter: '\r',
-  tab: '\t',
-  pageUp: '\x1b[5~',
-  pageDown: '\x1b[6~',
-  home: '\x1b[H',
-  end: '\x1b[F',
-  escape: '',
-};
-
-async function send(stdin, instance, sequence, gapMs = 25) {
-  for (const key of sequence) {
-    stdin.write(key);
-    await delay(gapMs);
-  }
-  await instance.waitUntilRenderFlush();
-}
+const { makeFakeStdin, makeFakeStdout, keys, send } = require('./_harness');
 
 test('dashboard App: navigate into a flagged command, edit flags, and trigger Run with the built argv', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
