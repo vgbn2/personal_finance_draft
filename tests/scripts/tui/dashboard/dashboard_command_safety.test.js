@@ -3,10 +3,13 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
 const { spawn } = require('node:child_process');
 
 const { buildArgv, defaultFlagValues, splitWords, isInteractiveCmd } =
   require('../../../../backend/cli/tui/dashboard_exec.js');
+const { withTimeout: withTimeoutHelper } = require('./_harness.js');
 
 const REPO_ROOT = path.join(__dirname, '../../../..//..');
 const CLI_PATH = path.join(REPO_ROOT, 'backend/cli/sovereign_cli.js');
@@ -82,14 +85,14 @@ function collectCases() {
   return cases;
 }
 
-function spawnChild(argv) {
-  const env = { ...process.env, SOVEREIGN_MOCK: 'true', SOVEREIGN_NONINTERACTIVE: 'true' };
+function spawnChild(argv, extraEnv) {
+  const env = { ...process.env, SOVEREIGN_MOCK: 'true', SOVEREIGN_NONINTERACTIVE: 'true', ...(extraEnv || {}) };
   return spawn(process.execPath, [CLI_PATH, ...argv], { cwd: REPO_ROOT, env });
 }
 
-function spawnAndWait(argv, timeoutMs) {
+function spawnAndWait(argv, timeoutMs, extraEnv) {
   return new Promise((resolve) => {
-    const child = spawnChild(argv);
+    const child = spawnChild(argv, extraEnv);
     let out = '';
     child.stdout.on('data', (d) => { out += d; });
     child.stderr.on('data', (d) => { out += d; });
@@ -118,6 +121,104 @@ test('every in-pane, non-state-mutating manifest command exits without hanging',
     if (timedOut) failures.push(`${id}: HUNG past ${HANG_TIMEOUT_MS}ms (argv=${JSON.stringify(argv)})`);
   }
   assert.deepEqual(failures, [], `the following commands hung:\n${failures.join('\n')}`);
+});
+
+// ---------------------------------------------------------------------------
+// Reproduces a real bug: INTERACTIVE_CMDS entries are spawned in-pane by the
+// dashboard via a piped, never-written, never-closed stdin (see
+// sovereign_dashboard.mjs's runExternal()). backend/cli/lib/auth.js's prompt
+// functions (promptLine/makeReadlineMasked, used by login/register) have no
+// SOVEREIGN_NONINTERACTIVE bypass today, unlike tui/engine/engine.js's
+// promptSelect/promptText/promptMultiSelect -- so any INTERACTIVE_CMDS entry
+// that ends up calling into auth.js's prompts can hang forever even with
+// SOVEREIGN_NONINTERACTIVE=true set. This test is EXPECTED to fail (red) for
+// login/register until that bypass is added; it intentionally does not skip
+// or special-case them.
+//
+// argv is derived the same way collectCases() above does for ordinary
+// manifest commands: look up each INTERACTIVE_CMDS id directly in the
+// manifest (every entry here is a top-level cmd, not a subcmd leaf) and run
+// buildArgv/defaultFlagValues against its real flag defs so this matches
+// what a user actually sees on first Enter. Entries with no flags (most of
+// them) just become their bare id split into words.
+function findManifestCmd(id) {
+  for (const cat of M) {
+    for (const cmd of cat.cmds) {
+      if (cmd.id === id) return cmd;
+      if (cmd.subcmds) {
+        for (const sub of cmd.subcmds) {
+          if (sub.cmdStr === id) return sub;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function argvForInteractiveCmd(id) {
+  const cmd = findManifestCmd(id);
+  if (cmd && cmd.flags) {
+    return buildArgv(cmd, defaultFlagValues(cmd));
+  }
+  // No manifest-derivable safe default (e.g. id not found, or a subcmd leaf
+  // with only a cmdStr) -- fall back to the bare id, same as splitWords(cmdStr).
+  return splitWords(id);
+}
+
+test('every INTERACTIVE_CMDS entry exits without hanging when spawned non-interactively', async () => {
+  const ids = Array.from(INTERACTIVE_CMDS);
+  assert.ok(ids.length > 0, 'expected INTERACTIVE_CMDS to be non-empty');
+
+  const failures = [];
+  for (const id of ids) {
+    const argv = argvForInteractiveCmd(id);
+    const { hung } = await withTimeoutHelper(
+      spawnAndWait(argv, HANG_TIMEOUT_MS, { SOVEREIGN_MOCK: 'true', SOVEREIGN_NONINTERACTIVE: 'true' }),
+      HANG_TIMEOUT_MS + 2000,
+      id,
+    );
+    if (hung) {
+      failures.push(`${id}: HUNG past ${HANG_TIMEOUT_MS}ms (argv=${JSON.stringify(argv)})`);
+    }
+  }
+  assert.deepEqual(failures, [], `the following INTERACTIVE_CMDS entries hung:\n${failures.join('\n')}`);
+});
+
+// The test above always runs with SOVEREIGN_MOCK=true, which makes
+// getAuthenticatedUser() short-circuit to a mock user -- commandLogin/
+// commandRegister return at the "already signed in" branch before ever
+// reaching promptLine/promptPassword. That's the right default for a broad
+// sweep (avoids real network calls for every command), but it means the
+// sweep above can never actually exercise -- or prove a fix for -- the real
+// auth.js prompt-hang bug. This test deliberately runs WITHOUT
+// SOVEREIGN_MOCK, with a fresh empty HOME/USERPROFILE (so auth.js's
+// SESSION_PATH, ~/.sovereign/session.json, resolves to a location with no
+// session file -- the real session must never be touched) and a fake-but-
+// present Supabase URL/key (so isSupabaseConfigured() is true and
+// commandLogin doesn't short-circuit on the "not configured" branch either).
+// This is the actual unauthenticated path that reaches promptLine/
+// promptPassword in auth.js -- SOVEREIGN_NONINTERACTIVE is what's supposed
+// to make those resolve immediately instead of hanging.
+test('login exits cleanly when unauthenticated and not mocked (real prompt-path repro)', async () => {
+  const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-test-home-'));
+  try {
+    const env = { ...process.env, SOVEREIGN_NONINTERACTIVE: 'true', HOME: tmpHome, USERPROFILE: tmpHome,
+      SOVEREIGN_SUPABASE_URL: 'https://example.invalid', SOVEREIGN_SUPABASE_PUBLISHABLE_KEY: 'test-key-not-real' };
+    delete env.SOVEREIGN_MOCK;
+    const child = spawn(process.execPath, [CLI_PATH, 'login'], { cwd: REPO_ROOT, env });
+    const waitPromise = new Promise((resolve) => {
+      let out = '';
+      child.stdout.on('data', (d) => { out += d; });
+      child.stderr.on('data', (d) => { out += d; });
+      child.on('exit', (code) => resolve({ code, out }));
+    });
+    const { hung, result } = await withTimeoutHelper(waitPromise, HANG_TIMEOUT_MS, 'login');
+    if (hung) child.kill('SIGKILL');
+    assert.ok(!hung, `login hung past ${HANG_TIMEOUT_MS}ms when unauthenticated and non-mocked -- prompt-path bypass did not take effect`);
+    assert.ok(result, 'expected a resolved exit result when not hung');
+  } finally {
+    fs.rmSync(tmpHome, { recursive: true, force: true });
+  }
 });
 
 for (const id of LONG_RUNNING_IDS) {
