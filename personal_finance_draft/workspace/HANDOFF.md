@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-21.md`** (last update: 2026-06-21 session 52)
+- Latest/current handoff: **`workspace/handoff/2026-06-21.md`** (last update: 2026-06-21 session 53)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -19,6 +19,27 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 53 (2026-06-21) — Closed both items surfaced after session 52's audit; nothing else
+  started.** Full trail: `workspace/handoff/2026-06-21.md` session 53; `workspace/SESSION_MEMORY.md`
+  same date. (1) Fixed the sigma-band gating bug (commit `03b3c8d5`) — dropped the unauthenticated
+  `query.input` path-read oracle in `backend/api/server/routes/market/sigma_band.js`, added the
+  route's first-ever test coverage (3 tests). (2) Fixed a stale `CLAUDE.md` doc note (commit
+  `ecfd8bc8`) — its "Architecture Plan" section claimed the centralized asset picker (`tui/
+  asset_picker.js`) was still upcoming; it had actually been done and integrated (9 real call sites)
+  since 2026-06-12. Replaced the unrecoverable 5-phase outline with a pointer to `workspace/
+  STATE.md`'s `## Current Phase`. Suite 558/556/0fail/2skip throughout (was 555/553 — +3 new tests,
+  zero regressions); hygiene clean. **`graphify-out` refresh deliberately skipped again** — still
+  stale since 2026-06-09, but this session's diff (one route fix, one new test file, one doc edit)
+  is too small to justify the refresh, consistent with how prior sessions have repeatedly deferred
+  it for similarly small diffs (e.g. session 32). **Next-session candidates** (none urgent, carried
+  from session 52's audit, still open): `renameWithRetry` (`shared/lib/market/validation.js:601`)
+  busy-waits the CPU instead of `Atomics.wait` and has zero test coverage despite sitting on every
+  ts-index/JSON-cache write; 3 dead root shims (`shared/lib/{backfill,ingestion,market_validation}.js`)
+  are safe to delete (4-layer-verified); a stale orphaned `data/cache/`+`data/models/*.json` left
+  over from the `824d038e` path consolidation (gitignored, harmless, delete whenever); gateway's
+  `processProposedOrders()` batch path silently swallows per-order failures (dormant, unreached
+  today); 3 raw-`fetch` call sites in gateway still lack the retry helper already imported in the
+  same files (`cycle.ts:69,123`, `market.ts:17`).
 - **SESSION 52 (2026-06-21) — Deep blast-through audit only, nothing fixed yet (deliberate — user
   asked to note for next session, not fix now). Full findings + Gate Table: `workspace/DEV_REVIEW.md`
   ("Blast-Through Deep Audit — 2026-06-21 session 52" + its "continued" block). Audit anchor

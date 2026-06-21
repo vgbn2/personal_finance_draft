@@ -1,3 +1,37 @@
+## Session Memory - 2026-06-21 (session 53) Closed both items surfaced by session 52's audit: sigma-band path-read oracle fixed + tested, stale CLAUDE.md architecture-plan note replaced; suite 558/556/0fail/2skip; 3 commits
+
+{
+  "work": "Boot (via /session-orchestrator) surfaced session 52's open carryover (the sigma-band gating bug, explicitly flagged 'next session first step') plus a self-noticed stale CLAUDE.md doc claim. Asked the user which to prioritize; fixed the security bug first, then separately planned and fixed the doc staleness on the user's follow-up 'plan for that'.",
+  "key_mechanisms": [
+    "SIGMA-BAND FIX: backend/api/server/routes/market/sigma_band.js's computeSigmaBand read `query.input` straight into fs.readFileSync with zero containment, and /api/sigma-band is absent from both isPublicRoute and PROTECTED_GET_ROUTES in app.js (confirmed live, not from memory: for a GET to a non-public, non-protected route, app.js:129's gate condition evaluates false, so no token check runs). Checked every real caller (Frontend dashboard's SigmaBandPanel.tsx/api.ts, the MCP get_sigma_bands tool -- which doesn't even call this route, it shells out to `backend visualize`) and found none ever send `input`. Dropped the override entirely rather than sanitizing it (no legitimate use to preserve).",
+    "TESTABILITY DESIGN: gave computeSigmaBand a second, code-only options parameter `{snapshotPath = DEFAULT_SNAPSHOT}` that handle() never populates (handle still calls computeSigmaBand(query) with a single positional arg, and app.js calls route.handle(query, {req,res,url}) -- the second arg is unused by this route's handle wrapper) so there is no path by which network/MCP input can ever reach snapshotPath. This let the route's previously-ZERO test coverage exercise real band-math/prediction logic against an injected fixture instead of the real backtest_history.json, which was confirmed MISSING in this sandbox (a fresh-checkout-style gap, same class as session 32's last_fetch.json absence).",
+    "NEW TESTS (tests/web/server/sigma_band_route.test.js, first coverage this route has ever had): (1) handle() with vs without a malicious `input` field (pointed at package.json) produce byte-identical results (stripped fetched_at first) -- proves the override has zero effect regardless of whether DEFAULT_SNAPSHOT exists; (2) computeSigmaBand against a synthetic 25-bar fixture written to os.tmpdir() returns correct ok:true band stats; (3) query.input is ignored even when both computeSigmaBand arguments are supplied together.",
+    "CLAUDE.md STALENESS: its 'Architecture Plan (current)' section said 'Next: Phase 1 -- centralized asset picker (tui/asset_picker.js)', implying that file didn't exist. It does -- 264 lines, real docstring, genuinely integrated via 9 real call sites (backend_correlation.js, sovereign_dashboard.mjs, backend_chart.js, backend_visualize.js, dashboard_exec.js, research.js, strategy.js, trade.js), committed 2026-06-12 (b64cf57c). So both Phase 0 (already marked done) and Phase 1 were done; Phases 2-4 were never written down anywhere except 'conversation history' this session can't access -- unrecoverable. Asked the user via AskUserQuestion rather than guessing whether to reconstruct, drop silently, or point elsewhere; user chose to point at workspace/STATE.md's '## Current Phase' (the project's real, continuously-updated phase tracker, on a completely different numbering scheme -- currently Phase 9) instead of maintaining a second plan inside CLAUDE.md.",
+    "PLAN MODE used for both fixes (the security fix was a system-triggered entry; the doc fix was user-requested via 'plan for that'). For the doc fix, skipped spawning Explore/Plan subagents per the workflow's own 'skip agents for trivial tasks' allowance -- did the verification (reading CLAUDE.md, asset_picker.js, git log -1 on the commit, grep for real callers) directly instead, since the scope was a single known file and a one-section edit.",
+    "GIT HYGIENE: each fix committed separately and reviewed before committing (route fix + new test file; then workspace docs bundling session 52's pre-existing uncommitted audit notes together with this session's close-out, since that's the same continuous documentation stream, not a different process's unrelated work -- confirmed via the established 'whose work is this' test before bundling, unlike the session-48 symbol-picker entanglement case which WAS genuinely separate). CLAUDE.md committed on its own as a 1-file, 2-section-line diff."
+  ],
+  "verified": [
+    "node --check on the fixed route file; node --test on the new file directly (3/3 pass) before running the full suite.",
+    "Manual before/after smoke check mirroring the literal exploit shape: `handle({symbol:'AAPL', input:'C:/Windows/win.ini'})` vs `handle({symbol:'AAPL'})` -- byte-identical JSON output (modulo fetched_at), confirming the oracle is closed regardless of environment state.",
+    "Full suite 558/556/0fail/2skip (was 555/553 -- exactly +3 new tests, zero regressions); npm run hygiene clean (both fixes).",
+    "asset_picker.js integration verified via Grep (9 real require sites across major command modules, not just the file existing) before concluding Phase 1 was actually done, not just present-but-unused."
+  ],
+  "user_decisions": [
+    "AskUserQuestion (session focus after boot): 'Fix the sigma-band security bug' (of 3 options incl. docs review or something else).",
+    "AskUserQuestion (commit the fix): 'Yes, commit now'.",
+    "AskUserQuestion (commit the bundled docs, which included session 52's pre-existing uncommitted audit notes layered with this session's close-out): 'Yes, commit as one docs commit'.",
+    "'plan for that' (free text, referring back to the CLAUDE.md staleness I'd flagged in my summary) -> re-entered Plan Mode for the doc fix.",
+    "AskUserQuestion (how to handle unrecoverable Phases 2-4): 'Replace with a pointer to STATE.md' (of 3 options incl. user reconstructing it from memory, or deleting with no replacement).",
+    "AskUserQuestion (commit the CLAUDE.md fix): 'Yes, commit now'."
+  ],
+  "remaining": [
+    "Non-gating items from session 52's audit, all still open, none urgent: renameWithRetry (validation.js:601) busy-wait + zero test coverage; 3 dead root shims (shared/lib/{backfill,ingestion,market_validation}.js) safe to delete; stale orphaned data/cache+data/models JSON from the 824d038e path consolidation; gateway's processProposedOrders() batch-failure-swallowing (dormant); 3 remaining raw-fetch call sites in gateway lacking the retry helper.",
+    "graphify-out still stale since 2026-06-09 -- deliberately not refreshed again (diff too small to justify it this session, consistent with many prior sessions' deferrals).",
+    "Several uncommitted, unrelated data/metrics JSON files were present at boot (notebooks/signal_library.json, storage/data/{features,models}/*.json, user_settings.json) -- not investigated or touched this session; likely agy-schedule cron output, origin unconfirmed."
+  ],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-20 (session 48) Gap-closure plan committed (4 commits, real bug fixed mid-review); 3 real TUI bugs investigated from user screenshots and fixed; backfill-daemon visualization feature built full-scope; suite 537/534/1(pre-existing)/2skip
 
 {
