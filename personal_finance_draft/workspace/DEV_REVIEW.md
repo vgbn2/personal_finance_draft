@@ -1,3 +1,44 @@
+### Blast-Through Full Audit — 2026-06-21 (dashboard interactive surface)
+
+User-reported crashes on login/register/Polymarket-portfolio in the Ink dashboard
+(`backend/cli/sovereign_dashboard.mjs`) prompted a full sweep of every `INTERACTIVE_CMDS` entry
+(`cockpit`, `polymarket markets`, `polymarket derive-creds`, `login`, `register`, `add-platform`,
+`alpaca`, `mt5`, `trade favorites`, `strategy`, `prop-firms`, `run` — confirmed exact set at
+`sovereign_dashboard.mjs:35-48`), since all 12 route through the same `runExternal()` →
+`spawnSync(stdio:'inherit')` chokepoint (line 995) — a shared-mechanism bug hits all of them, not
+just the 3 reported.
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| P1 | dashboard/CLI, repo-wide | `backend/cli/{engine.js,lib/auth.js,commands/data/data.js,commands/tools/backend_visualize.js}` — zero `process.stdin.on('error', ...)` handlers found anywhere under `backend/cli/` (grep-confirmed across all 6 raw `stdin.on('data', ...)` call sites) | An `EventEmitter` that emits `'error'` with no listener throws synchronously and **crashes the process** — bypassing `async`/`await` promise-rejection handling entirely, so no amount of `try`/`catch` around `await promptX(...)` call sites would catch it. Windows ConPTY + inherited `stdio:'inherit'` + repeated raw-mode toggling (every masked-password prompt flips `setRawMode` true→false) is exactly the kind of environment where a transient stdin transport error (`EIO`/`EPIPE`-class) is plausible — this is the most precise match found for a hard "crash" (vs. a clean rejection, which `sovereign_cli.js:143`'s top-level `main().catch(...)` already handles fine). | One `process.stdin.on('error', ...)` guard near the top of `sovereign_cli.js`'s `main()`, logging and falling through to the normal error/exit path instead of an uncaught crash. Covers all 12 `INTERACTIVE_CMDS` entries (and any future ones) in a single file, since they're all the same spawned child process sharing one `process.stdin`. | dashboard/CLI C — OPEN, fix planned next (Phase 3) |
+| P1 | dashboard/CLI | `backend/cli/lib/auth.js` — `promptLine`/`makeReadlineMasked` had no `SOVEREIGN_NONINTERACTIVE` bypass (unlike `tui/engine/engine.js:55-57`'s `isNonInteractive()`, already honored by `promptSelect`/`promptText`/`promptMultiSelect`) | This is *why* login/register had zero automated coverage — a piped, never-written, never-closed child stdin (exactly what `runExternal()` gives the spawned command) makes `promptLine`'s non-TTY branch (`readNonTtyLine()`) wait forever for a line that never arrives. Confirmed via a real repro test (see below): pre-fix, a non-mocked, unauthenticated `login` spawned with piped stdio hangs past a 20s timeout; this is a genuine, reproducible hang, not a hypothetical. | Add the same `isNonInteractive()` early-return guard to `promptLine`/`makeReadlineMasked` (mirrors `engine.js` exactly). Also: `_nonTtyRl` module-level singleton had no recreate-on-close path (`ensureNonTtyReader()`'s `if (_nonTtyRl) return;` returned even when the existing interface was already closed/dead). | dashboard/CLI C — FIXED + tested this session (Phase 1) |
+| P2 | account | `backend/cli/commands/account/auth.js:32-33,78,84,97` (`commandLogin`/`commandRegister`) | `auth.promptLine`/`promptPassword`/`promptPasswordWithStrength` calls are not wrapped in try/catch (the `loginWithCredentials`/`registerWithCredentials` network calls just below them in the same functions already are — inconsistent). Once the P1 stdin-error guard lands this stops being a crash and becomes a UX-polish item: a clean rejection (e.g. Ctrl-C, which `makeReadlineMasked` already turns into `reject(new Error('interrupted'))`) would still surface as a raw stack trace instead of a friendly message. | Wrap the prompt-call sequences in try/catch, same style as the network-call try/catches just below. | account C — OPEN, fix planned next (Phase 3) |
+| P2 | trade/mt5 | `backend/cli/commands/trade/trade_mt5.js` (`commandMt5`/`commandAddPlatform`/`commandMt5Profile`) | Same `lib/auth.js` `promptPassword` re-import, same missing-try/catch pattern as the row above. The P1 global stdin-error guard already covers this file's crash risk — **do not duplicate that fix here**, only the try/catch UX-polish is file-specific. Found a pre-existing developer self-flag directly above `commandAddPlatform`: `// does this actually works as intended? dev reiview` — corroborating evidence this path was already suspected, not newly discovered. | Wrap prompt-call sequences in try/catch (same pattern as account/auth.js). | trade/mt5 C — OPEN, fix planned next (Phase 3) |
+| P3 | strategy/runner | `backend/cli/commands/strategy/strategy.js`, `backend/cli/commands/runner/run.js` | Both files exclusively use `tui/index.js`'s re-exported `promptSelect`/`promptText`/`promptConfirm` (`engine.js`'s implementations) — **not** `lib/auth.js`'s prompts. `engine.js` already honors `SOVEREIGN_NONINTERACTIVE`. No file-specific auth.js-class bug here; these are already covered by the P1 global stdin-error guard for the crash class, and don't need a separate try/catch pass since none of their prompt call sites are any more or less guarded than the rest of `engine.js`'s callers (a repo-wide pattern, not specific to these 2 files). | No action needed beyond the P1 global fix. | strategy/runner B |
+| P3 | dashboard | Surface Parity spot-check: every `INTERACTIVE_CMDS` string vs. its manifest `id` | All 12 entries match an exact manifest `id` byte-for-byte (`cockpit`:75, `alpaca`:199, `mt5`:200, `add-platform`:201, `trade favorites`:202, `strategy`:214, `prop-firms`:215, `run`:216, `polymarket markets`:223, `polymarket derive-creds`:240, `login`:306, `register`:312) — no drift. Noted, non-blocking: `runExternal`'s match (`sovereign_dashboard.mjs:997`) is `cmdStr.startsWith(ic) || cmdStr === ic`, a prefix match rather than an id lookup — currently safe (no other manifest id starts with `"run"` followed by more characters that isn't already `"run"` itself, e.g. the unrelated `bot run` subcmd's `cmdStr` starts with `"bot"`, not `"run"`), but a future manifest id like `"run-once"` would silently and incorrectly match the `'run'` entry. | No fix needed now; flag for whoever next adds a manifest id starting with an existing `INTERACTIVE_CMDS` string. | dashboard B — clean, fragile-by-convention only |
+| P3 | operational/status | `backend/cli/commands/operational/status.js:110-127` (`summarizePortfolioCard`) | Expects `{equity, exposure, drawdown, readiness, generated_at}`; the only thing that ever feeds it (`safeReadJson(DEFAULT_PORTFOLIO)`, line 330) is `storage/data/portfolio.json`, whose actual on-disk shape is `{mode, cash, positions, open_orders, last_mark_at}` — already a latent shape mismatch independent of Polymarket. Documented here, not fixed here — see Phase 4 (Polymarket-cockpit integration) for the related, in-scope fix. | Out of scope for this pass; flagging so it isn't mistaken for a Polymarket-integration regression later. | operational/status C — documented, not gated |
+
+**Verification gate to clear:** all P1/P2 rows — DONE, see `RESOLVED 2026-06-21` below.
+
+**RESOLVED 2026-06-21 (same session):** the two P1 rows and both P2 rows fixed. `sovereign_cli.js`
+now installs a `process.stdin.on('error', ...)` guard before any command dispatch; `lib/auth.js`'s
+`promptLine`/`makeReadlineMasked` honor `SOVEREIGN_NONINTERACTIVE` and `ensureNonTtyReader()`
+recreates a dead `_nonTtyRl`; `commands/account/auth.js` and `commands/trade/trade_mt5.js` wrap
+their prompt-call sequences in try/catch. Verified via a real repro test
+(`tests/scripts/tui/dashboard/dashboard_command_safety.test.js`, `'login exits cleanly when
+unauthenticated and not mocked'`) that spawns `login` with piped stdio, no `SOVEREIGN_MOCK`, and a
+fresh empty `HOME`/`USERPROFILE` (so the real `~/.sovereign/session.json` is never touched) —
+confirmed hanging past 20s before the `lib/auth.js` fix, clean exit after. Full suite green; see
+Phase 3 close-out note below for exact counts.
+
+##### Centralization Backlog
+
+| Pattern | Files (count) | Proposed unit | Effort | Grade impact |
+|---|---|---|---|---|
+| `lib/auth.js` `promptPassword` re-import | 2 files (`commands/account/auth.js`, `commands/trade/trade_mt5.js`) | Both already share the single fixed implementation in `lib/auth.js` — no further consolidation needed, just don't duplicate the P1 stdin-error fix per-caller. | — | done (no action) |
+
+---
+
 ### Blast-Through Full Audit — 2026-06-19 session 41 (anchor e0cb6aa2 → 76fbe991, first formal Gate Table)
 
 DCS start ≈0.96 (carried from last audit close) → end 0.92 (2 confirmed-reachable bugs fully diagnosed below; not a halt condition, the "degraded paths" the formula flags are exactly the rows in this table).
