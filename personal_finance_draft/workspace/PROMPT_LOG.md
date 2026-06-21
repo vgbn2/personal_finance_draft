@@ -1624,3 +1624,26 @@ the blast-through audit anchor to the post-fix commit. Non-gating items from ses
 (renameWithRetry busy-wait, dead shims, stale cache JSON, gateway batch-failure swallowing, 3
 remaining raw-fetch sites) remain open, none urgent -- not touched this session.
 
+## 2026-06-21 - Session 53 cont.: fix the stale CLAUDE.md architecture-plan note
+PROMPT: "plan for that" (referring back to the stale-CLAUDE.md note flagged in the previous turn's
+summary).
+WORK: Re-entered Plan Mode for this small doc fix. Verified directly rather than guessing: CLAUDE.md
+claimed the centralized asset picker (`tui/asset_picker.js`) was still upcoming ("Next: Phase 1"),
+but the file already exists (264 lines, real docstring) and is genuinely integrated -- grepped 9 real
+require sites across major command modules (correlation, dashboard, chart, visualize, research,
+strategy, trade), and `git log` showed it landed 2026-06-12 (b64cf57c). So Phase 0 and Phase 1 were
+both done; the section's "5-phase plan" referenced "conversation history" for phases 2-4, which this
+session can't access -- unrecoverable. Asked the user via AskUserQuestion how to handle it rather than
+unilaterally picking reconstruct-vs-delete-vs-point-elsewhere; user chose to replace the orphaned
+outline with a pointer to `workspace/STATE.md`'s `## Current Phase` (the project's real, continuously
+maintained phase tracker, currently Phase 9 -- a totally different numbering scheme). Skipped
+spawning Explore/Plan subagents for this one (single known file, single-section edit, verification
+already done directly), per the plan workflow's own allowance to skip agents for trivial scope.
+RESULT: commit `ecfd8bc8` -- CLAUDE.md's Architecture Plan section now points at STATE.md instead of
+carrying a second, drifted plan. Docs-only change, no test/hygiene run needed (confirmed
+check_hygiene.js's Docs Alignment check doesn't inspect CLAUDE.md content). Also updated
+HANDOFF.md/SESSION_MEMORY.md with a full session 53 close-out covering both this and the sigma-band
+fix; deliberately skipped refreshing graphify-out again (still stale since 2026-06-09) since this
+session's total diff (one route fix, one test file, two doc edits) is too small to justify it,
+matching how prior sessions have repeatedly deferred the same refresh for similarly small diffs.
+
