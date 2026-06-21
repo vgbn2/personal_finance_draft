@@ -7,6 +7,9 @@ last_audit_date: 2026-06-20
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Implementation Note - 2026-06-21 session 49 - Scheduled agy-schedule workflow cron
+- **Scheduled agy-schedule workflow**: Configured a recurring cron job `*/15 * * * *` to run `/agy-schedule` every 15 minutes via the `schedule` tool (Task ID: `task-54`), ensuring continuous repository health sweeps, market data syncs, backtests, and metrics updates.
+
 ## Implementation Note - 2026-06-20 session 48 - Gap-closure committed + 3 real TUI bugs fixed + backfill-daemon visualization
 - **Gap Closure Plan committed:** the session-47 plan below was fully implemented by a parallel
   session but sitting 100% uncommitted; independently re-verified (`npm test` 530/0/2skip matching
