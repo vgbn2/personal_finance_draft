@@ -5,6 +5,14 @@ const utils = require('../../lib/utils.js');
 const { hasFlag } = utils;
 const { readSnapshot, validateSnapshot } = require('../../../../shared/lib/market/validation.js');
 
+/**
+ * Evaluates the integrity and quality of a cached data snapshot.
+ * Reads the snapshot file and returns structured stats on usability, errors, and issues.
+ *
+ * @param {string} inputPath - Absolute file path to the snapshot JSON
+ * @param {boolean} [rejectStale=true] - Whether to treat stale bars as unusable
+ * @returns {object} Structured integrity report payload
+ */
 function reportSnapshotIntegrity(inputPath, rejectStale = true) {
   try {
     const snapshot = readSnapshot(inputPath);
@@ -30,6 +38,13 @@ function reportSnapshotIntegrity(inputPath, rejectStale = true) {
   }
 }
 
+/**
+ * Runs a comprehensive availability and integrity report across all configured assets.
+ * Inspects binary TS indices and checks freshness and grain density floors.
+ *
+ * @param {Array<string>} [args=[]] - CLI arguments (supports --json, --audit-vintages, --force)
+ * @returns {Promise<object>} Structured availability summary or exit code indicators
+ */
 async function runBackendIntegrity(args = []) {
   // Coverage probe (header + head/tail reads) instead of readTsIndex (full bin load):
   // integrity only needs bar count + first/last timestamp per (symbol, tf), so a deep
