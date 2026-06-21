@@ -7,6 +7,14 @@ last_audit_date: 2026-06-20
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Implementation Note - 2026-06-21 session 51 - Scheduled agy-schedule workflow cron (Iteration 24)
+- **Iteration 24 (Dry-Run)**: Successfully executed iteration 24 of the `/agy-schedule` cron workflow.
+- **Actions taken**:
+  - Cleared stale `workspace/.agy.lock` after server restart.
+  - Health check ran cleanly (`status --json`).
+  - Codebase Documentation Sweep: Added JSDoc comments to date coverage utility functions in `backend/cli/commands/tools/backend_correlation.js`.
+  - Auto-saved portfolio state and docs changes via atomic commits.
+
 ## Implementation Note - 2026-06-21 session 50 - Dashboard crash fix + Polymarket-cockpit integration + OHLCV chart feature
 - **Root-caused the login/register dashboard crash** (distinct from the already-shipped `034c5b52` unmount-timing fix): zero `process.stdin.on('error', ...)` handlers existed anywhere under `backend/cli/` — an `EventEmitter` `'error'` with no listener crashes the process synchronously, bypassing all async/await rejection handling. Added one guard in `sovereign_cli.js`'s `main()` (covers all 12 `INTERACTIVE_CMDS` entries via the shared spawned-child `process.stdin`); separately, `lib/auth.js`'s `promptLine`/`makeReadlineMasked` now honor `SOVEREIGN_NONINTERACTIVE` (mirrors `engine.js`, and is what makes login/register testable headlessly for the first time) with `_nonTtyRl` recreate-on-close; `commands/account/auth.js` and `commands/trade/trade_mt5.js` wrap their prompt calls in try/catch. Full Gate Table audit in `workspace/DEV_REVIEW.md` ("Blast-Through Full Audit — 2026-06-21 (dashboard interactive surface)").
 - **Polymarket wired into the cockpit's portfolio card** (`status.js`'s `buildCockpitModel`/`summarizePortfolioCard`) — was previously reading only a static `portfolio.json` that has no `equity` field at all, so the card always showed "portfolio unavailable" regardless of Polymarket. Reuses the exact `spawnSync(buildTradeGatewayLaunch(...))` pattern already proven in `trade_polymarket.js`, opt-in via `buildCockpitModel({includePolymarket:true})` so the dashboard's existing fast, offline, periodic health-dot poller (`dashboard_exec.js`'s `loadDashboardHealth`) and every test caller stay untouched (caught empirically: making it the default added a real ~5s network round-trip to 2 previously-instant unit tests).
@@ -974,3 +982,8 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
 - **Action**: Executed manual trigger of /agy-schedule workflow.
 - **Status**: Completed gracefully in --dry-run mode.
 - **Metrics**: Saved to storage/data/portfolio_snapshot.log and committed cleanly.
+
+## Implementation Note - 2026-06-21 session 51 - Mass-Implement Gap Closures
+- **Cron Concurrency Risk Fixed (Batch 1):** Addressed the structural concurrency risk in the gy-schedule workflow. Instructed the cron to enforce execution from an isolated git worktree (with symlinked storage/ and .env) so its automated self-healing commits do not accidentally scoop up uncommitted work from foreground agents.
+- **Backend Bridge Bug Fixed (Batch 2):** Resolved the smart JSON extraction bug in shared/lib/runtime/backend_bridge.js where processes exiting with non-zero status codes were silently masked as ok: true if the partial payload contained ok: true. Validated with a hard process.exit(1) test.
+- Both fixes deployed cleanly. Full test suite remains 100% green (553/555 passed, 2 skipped).
