@@ -20,8 +20,22 @@ let _nonTtyQueue = [];
 let _nonTtyWaiters = [];
 let _nonTtyClosed = false;
 
+// Set by callers (e.g. the Ink dashboard's in-pane child spawns) whose stdin
+// is a piped, never-written, never-closed pipe -- without this, the non-TTY
+// readline fallback below still blocks forever instead of erroring or
+// returning. Also doubles as the AI-testability bypass: any test runner can
+// set this to get guaranteed non-blocking prompt resolution. Mirrors
+// tui/engine/engine.js's isNonInteractive().
+function isNonInteractive() {
+  return process.env.SOVEREIGN_NONINTERACTIVE === 'true';
+}
+
 function ensureNonTtyReader() {
-  if (_nonTtyRl) return;
+  if (_nonTtyRl && !_nonTtyClosed) return;
+  if (_nonTtyClosed) {
+    _nonTtyRl = null;
+    _nonTtyClosed = false;
+  }
   _nonTtyRl = readline.createInterface({ input: process.stdin, output: null, terminal: false });
   process.stdin.resume();
   _nonTtyRl.on('line', (line) => {
@@ -109,6 +123,13 @@ function renderStrengthBar(score) {
 // suppress ConPTY echo on Windows — raw mode is the only reliable gate.
 
 function makeReadlineMasked(label) {
+  // AI-testability / piped-pane bypass: resolve immediately without touching
+  // process.stdin at all — test harnesses may have a stdin that doesn't
+  // support raw mode, and child panes spawned by the dashboard have a piped
+  // stdin that is never written to and never closed.
+  if (isNonInteractive()) {
+    return Promise.resolve('');
+  }
   return new Promise((resolve, reject) => {
     process.stdout.write(`  ${label}: `);
 
@@ -189,6 +210,11 @@ async function promptPasswordWithStrength(label) {
 }
 
 async function promptLine(label) {
+  // AI-testability / piped-pane bypass: return immediately without writing
+  // to stdout or touching stdin (see makeReadlineMasked above).
+  if (isNonInteractive()) {
+    return '';
+  }
   if (!process.stdin.isTTY) {
     process.stdout.write(`  ${label}: `);
     const ans = await readNonTtyLine();
