@@ -153,6 +153,19 @@ const M = [
         },
       },
       { id: 'backend universe', label: 'backend universe', desc: 'Cached symbol inventory (all families)', flags: {} },
+      // Appended after 'backend universe' deliberately, not next to 'backend
+      // visualize' above -- sovereign_dashboard.test.js hardcodes initialCmdI:4
+      // for 'backend universe' (its real, fast, deterministically-long output
+      // is used to test panel scrolling); inserting earlier in this list would
+      // have silently shifted that index and broken an unrelated test.
+      { id: 'backend chart', label: 'backend chart', desc: 'OHLCV price chart (ANSI line chart)',
+        flags: {
+          '--symbol':    { t:'txt', lbl:'Symbol to chart (required)', def:'', pickSymbol:'single' },
+          '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
+          '--bars':      { t:'txt', lbl:'Bars to show (most recent N)', def:'200' },
+          '--width':     { t:'txt', lbl:'Chart width (columns)', def:'64' },
+        },
+      },
     ],
   },
   {

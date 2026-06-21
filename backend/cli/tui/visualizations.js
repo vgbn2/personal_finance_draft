@@ -1,4 +1,5 @@
 const A = require('../../../shared/lib/ui/ansi');
+const { sampleSeries } = require('../commands/research/research_render.js');
 
 function paint(code, text) {
   return A.c(code, text);
@@ -191,9 +192,74 @@ function renderCorrelationHeatmap(labels, values, prices = {}, meta = {}) {
   return buffer;
 }
 
+// OHLCV/line chart for the dashboard's `backend chart` command. Plots close
+// price as a continuous ANSI block-grid line (same grid/colors-array idiom
+// as renderSigmaSparkline above) -- downsamples via the same sampleSeries()
+// research_render.js already uses for its own return-tape/stress charts, so
+// a long history collapses to `width` columns instead of being truncated.
+function renderPriceChart(bars, width = 64, height = 12) {
+  if (!Array.isArray(bars) || bars.length === 0) {
+    return `\n  ${A.muted('No bars to chart.')}\n`;
+  }
+  const closes = bars.map((b) => b && b.close).filter((c) => typeof c === 'number' && Number.isFinite(c));
+  if (closes.length === 0) {
+    return `\n  ${A.muted('No usable close prices in the loaded bars.')}\n`;
+  }
+
+  const sampled = sampleSeries(closes, width);
+  const min = Math.min(...sampled);
+  const max = Math.max(...sampled);
+  const range = max - min;
+
+  const grid = Array.from({ length: height }, () => Array(width).fill(' '));
+  const colors = Array.from({ length: height }, () => Array(width).fill(''));
+
+  const rowForValue = (value) => {
+    const pct = range > 0 ? (value - min) / range : 0.5;
+    return height - 1 - Math.round(pct * (height - 1));
+  };
+
+  let prevRow = null;
+  for (let c = 0; c < sampled.length; c += 1) {
+    const rowIdx = rowForValue(sampled[c]);
+    const color = c > 0 && sampled[c] < sampled[c - 1] ? A.RED : A.GREEN;
+    // Fill the vertical span between this point and the previous one so the
+    // line reads as continuous rather than a scatter of disconnected dots.
+    const lo = prevRow === null ? rowIdx : Math.min(prevRow, rowIdx);
+    const hi = prevRow === null ? rowIdx : Math.max(prevRow, rowIdx);
+    for (let r = lo; r <= hi; r += 1) {
+      grid[r][c] = A.GLYPH.block;
+      colors[r][c] = color;
+    }
+    prevRow = rowIdx;
+  }
+
+  let buffer = `\n  ${paint(A.BOLD, 'Price Chart')} ${A.muted(`(${bars.length} bars loaded, ${closes.length} usable closes)`)}\n`;
+  const midRow = Math.floor((height - 1) / 2);
+  for (let r = 0; r < height; r += 1) {
+    const yVal = max - (range > 0 ? (r / (height - 1)) * range : 0);
+    const showTick = r === 0 || r === height - 1 || r === midRow;
+    const tick = showTick ? fmtPrice(yVal).padStart(8) : ' '.repeat(8);
+    buffer += ` ${A.muted(tick)} ${A.muted(A.GLYPH.vline)} `;
+    for (let c = 0; c < width; c += 1) buffer += colors[r][c] + grid[r][c] + A.RESET;
+    buffer += '\n';
+  }
+  buffer += ` ${' '.repeat(8)} ${A.muted(`+${A.GLYPH.hline.repeat(width)}`)}\n`;
+
+  const first = closes[0];
+  const last = closes[closes.length - 1];
+  const changePct = first !== 0 ? ((last - first) / first) * 100 : 0;
+  const changeColor = changePct >= 0 ? A.GREEN : A.RED;
+  buffer += `  ${A.muted('First:')} ${fmtPrice(first)}  ${A.muted('Last:')} ${fmtPrice(last)}  `;
+  buffer += `${changeColor}${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%${A.RESET}  `;
+  buffer += `${A.muted('High:')} ${fmtPrice(max)}  ${A.muted('Low:')} ${fmtPrice(min)}\n`;
+  return buffer;
+}
+
 module.exports = {
   fmtPrice,
   centerCell,
   renderSigmaSparkline,
   renderCorrelationHeatmap,
+  renderPriceChart,
 };
