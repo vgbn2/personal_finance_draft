@@ -1,3 +1,4 @@
 [2026-06-21 02:00:11Z] Auto-Trade Pass (Dry-Run): Scanned 26 strategies. Resolution: Mode resolved safe-by-default (mock mode active); no live trades submitted. Account equity evaluated at $97474.58.
 [2026-06-21 10:00:22Z] Auto-Trade Pass (Dry-Run): Scanned 13 strategies. Resolution: Mode resolved safe-by-default (mock mode active); no live trades submitted. Account equity evaluated at $97474.47.
 [2026-06-21 10:15:18Z] Auto-Trade Pass (Dry-Run): Scanned 13 strategies. Resolution: Mode resolved safe-by-default (mock mode active); no live trades submitted. Account equity evaluated at $97474.51.
+[2026-06-21T11:43:00Z] Iteration 24 (Dry-Run) | No valid signals found during this mock interval. Gates remain green.
