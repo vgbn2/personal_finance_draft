@@ -16,6 +16,9 @@ const { compareModels } = require('../../../../shared/lib/ml/models');
 const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation');
 const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal } = require('../../tui');
 const A = require('../../../../shared/lib/ui/ansi');
+const { buildTradeGatewayLaunch } = require('../../../../shared/lib/runtime/backend_bridge');
+const { parseGatewayJsonOutput } = require('../trade/trade_polymarket.js');
+const { buildAggregatedPortfolioSnapshot } = require('../../../gateway/src/polymarket_portfolio.js');
 
 const utils = require('../../lib/utils.js');
 const { usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption } = utils;
@@ -105,6 +108,52 @@ function summarizeFeaturesCard(features) {
     },
     payload: featureFrame,
   };
+}
+
+// Cockpit's portfolio card previously read ONLY the static storage/data/
+// portfolio.json (mode/cash/positions/open_orders/last_mark_at -- no equity
+// field at all today, so the card always showed "portfolio unavailable")
+// and never touched Polymarket. Reuses the exact spawnSync+parse pattern
+// already proven in trade_polymarket.js's own portfolio fetch (timeout:
+// 10000) -- returns null on any failure (not configured, unreachable,
+// timeout) so the cockpit degrades the same way it always has rather than
+// crashing or hanging the cockpit render.
+function fetchPolymarketPortfolioForCockpit() {
+  try {
+    const launch = buildTradeGatewayLaunch(['polymarket', 'portfolio', '--json']);
+    const r = spawnSync(launch.command, launch.args, {
+      cwd: REPO_ROOT, encoding: 'utf8', timeout: 10000, shell: launch.shell ?? false,
+    });
+    return r.stdout ? parseGatewayJsonOutput(r.stdout, 'polymarket portfolio') : null;
+  } catch {
+    return null;
+  }
+}
+
+// Folds Polymarket's pUSD balance into whatever the base portfolio object
+// already carries, via the already-tested buildAggregatedPortfolioSnapshot
+// (results=[] since no other broker-balance fetch currently feeds the
+// cockpit either -- this stays a scoped "add Polymarket" change, not a
+// full multi-broker aggregation). summarizePortfolioCard's own field
+// contract ({equity, exposure, drawdown, readiness, generated_at}) is left
+// unchanged; only the equity number gains Polymarket's contribution.
+function mergePolymarketIntoPortfolio(portfolio, polymarket) {
+  const base = portfolio && typeof portfolio === 'object' ? portfolio : {};
+  const aggregated = buildAggregatedPortfolioSnapshot([], polymarket);
+  const pmEntry = aggregated.brokers.find((b) => b.name === 'Polymarket') || null;
+  const baseEquity = Number.isFinite(Number(base.equity)) ? Number(base.equity) : null;
+  const pmEquity = pmEntry && pmEntry.status === 'connected' ? aggregated.total_equity : 0;
+  const merged = { ...base, polymarket: pmEntry };
+  // Omit the key entirely (rather than setting it to null) when neither side
+  // has a value -- summarizePortfolioCard does Number.isFinite(Number(x)),
+  // and Number(null) is 0 (finite!), so an explicit null would be
+  // misread as a real zero-equity portfolio instead of "no data available".
+  if (baseEquity != null || pmEquity) {
+    merged.equity = (baseEquity || 0) + pmEquity;
+  } else {
+    delete merged.equity;
+  }
+  return merged;
 }
 
 function summarizePortfolioCard(portfolio) {
@@ -328,11 +377,19 @@ function buildCockpitModel(opts = {}) {
   const modelReport = safeReadJson(DEFAULT_MODEL_REPORT);
   const backtestReport = safeReadJson(DEFAULT_BACKTEST);
   const portfolio = safeReadJson(DEFAULT_PORTFOLIO);
+  // Opt-in only: fetching Polymarket spawns a real gateway subprocess with a
+  // real network round-trip (~5s+, matches the existing trade_polymarket.js
+  // precedent) -- fine for the actual interactive `cockpit` CLI command
+  // (commandCockpit passes includePolymarket:true below), but every other
+  // caller of buildCockpitModel (tests included -- this function previously
+  // had zero network I/O) should keep getting the fast, offline, file-read-
+  // only behavior they already depend on.
+  const polymarket = opts.includePolymarket ? fetchPolymarketPortfolioForCockpit() : null;
   const statusCard = summarizeStatusCard(snapshot, quality);
   const modelCard = summarizeModelCard(modelReport);
   const backtestCard = summarizeBacktestCard(backtestReport);
   const featuresCard = summarizeFeaturesCard(features);
-  const portfolioCard = summarizePortfolioCard(portfolio);
+  const portfolioCard = summarizePortfolioCard(mergePolymarketIntoPortfolio(portfolio, polymarket));
   const cards = [
     statusCard,
     featuresCard,
@@ -466,7 +523,7 @@ function commandStatus(args) {
 
 async function commandCockpit(args) {
   const quoteState = await quoteProviderHeaderState();
-  const model = buildCockpitModel({ quoteState });
+  const model = buildCockpitModel({ quoteState, includePolymarket: true });
   if (hasFlag(args, '--json')) {
     printPayload(model, args);
     return 0;
@@ -481,6 +538,7 @@ module.exports = {
   summarizeStatusCard,
   summarizeFeaturesCard,
   summarizePortfolioCard,
+  mergePolymarketIntoPortfolio,
   buildCockpitModel,
   quoteProviderHeaderState,
   renderCockpit,
