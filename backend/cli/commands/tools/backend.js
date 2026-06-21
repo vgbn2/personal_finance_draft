@@ -227,6 +227,13 @@ function runBackendStatus(args = []) {
   ]);
 }
 
+/**
+ * Computes performance statistics on an equity curve.
+ * Extracts the equity curve either from --equity argument or reads the last backtest file.
+ *
+ * @param {Array<string>} args - CLI argument array
+ * @returns {object} Backend JSON payload containing metrics (cumulative return, volatility, Sharpe, etc.)
+ */
 function runBackendStats(args = []) {
   let equityCsv = optionValue(args, '--equity', null);
   let equitySource = equityCsv ? 'argument' : null;
@@ -515,6 +522,11 @@ function runBackendBenchmark(args = []) {
   };
 }
 
+/**
+ * Checks if a C++ backend binary is available in the candidate paths.
+ *
+ * @returns {{ available: boolean, path: (string|null) }} Availability flag and matched file path
+ */
 function backendAvailability() {
   for (const candidate of BACKEND_CANDIDATES) {
     if (fs.existsSync(candidate)) return { available: true, path: candidate };
