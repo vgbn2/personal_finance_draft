@@ -1,13 +1,28 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: 03b3c8d5
-last_audit_date: 2026-06-21
+last_audited_commit: 0903df6b
+last_audit_date: 2026-06-22
 
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
-## Implementation Note - 2026-06-22 session 54 - dashboard dev-review backlog + chat-style command input
+## Implementation Note - 2026-06-22 session 55 - blast-through audit + mass-implement (3 backlog debts cleared)
+- **Focused audit** (anchor `03b3c8d5`→`0903df6b`): session-54 TUI/chat surface traced clean. The new
+  LLM command resolver (`chat_llm_fallback.js`) verified **shell-safe by code-trace** — full chain
+  `text → manifest-validated flagValues → buildArgv (argv array) → spawn(execPath, [...argv])`, no
+  `shell:true` anywhere, plus a mandatory confirm gate. No security/crash/data-loss findings. DCS 0.95→0.99.
+- **Mass-implement, 3 batches, all verified** (suite 583/581/0fail/2skip; hygiene clean; gateway tsc exit 0):
+  - **A:** `renameWithRetry` (`shared/lib/market/validation.js:611`) CPU busy-wait → `Atomics.wait` real
+    sleep; exported + added `tests/scripts/lib/rename_with_retry.test.js` (3 tests, first-ever coverage).
+    verification lens **B→A** on shared/lib/market.
+  - **B:** deleted 3 dead root shims `shared/lib/{backfill,ingestion,market_validation}.js`.
+  - **C:** gateway 3 raw `fetch` → `fetchWithRetry` (`cycle.ts:69,123`, `market.ts:17`+import); finishes
+    the 2026-06-12 fetch-retry rollout.
+- **Caught my own audit error:** flagged `shared/lib/polymarket_history.js` as a 4th dead shim, but the
+  dead-check grep anchor missed the `.js`-extension require form; `polymarket_backtest.test.js` requires
+  it → deletion broke the test → **restored** (recovery rule). Lesson recorded: dead-check grep must use
+  `<name>(\.js)?['\"]`. Anchor stays `0903df6b` (audit pre-existed these fixes; new code uncommitted).
 - Closed all 15 dev-review annotations the user had left inline in `sovereign_dashboard.mjs`'s
   manifest: shared-root-cause crash fix for cockpit/polymarket markets/polymarket derive-creds/
   login (Windows console-group SIGINT broadcast killing the parent, not 4 separate bugs), a real
