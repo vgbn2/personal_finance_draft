@@ -778,6 +778,7 @@ class ExecutionGateway {
         });
       }
 
+      let failedCount = 0;
       for (const orderData of validation.orders) {
         const order: TradeOrder = {
           instrumentId: orderData.instrumentId,
@@ -789,6 +790,21 @@ class ExecutionGateway {
           timestamp: new Date()
         };
         await this.execute(order);
+        // execute() reports failure only by mutating order.status; inspect it
+        // here so a failed order in a batch is not silently lost as a
+        // console-only log line. Mirrors the buy/sell CLI path's post-execute
+        // status check + non-zero exit, so any future caller bridging the
+        // `process` command sees a real failure signal instead of ok.
+        if (order.status === OrderStatus.FAILED || order.status === OrderStatus.RISK_REJECTED) {
+          failedCount += 1;
+          console.error(`[GATEWAY] Order ${order.status} for ${order.instrumentId}: ${order.error || `Order ${order.status}`}`);
+        }
+      }
+      if (failedCount > 0) {
+        process.exitCode = 1;
+        console.error(`[GATEWAY] ${failedCount} of ${validation.orders.length} proposed order(s) failed.`);
+      } else {
+        console.log(`[GATEWAY] All ${validation.orders.length} proposed order(s) processed successfully.`);
       }
     } catch (error: any) {
       if (error.code === 'ENOENT') {
