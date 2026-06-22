@@ -1020,8 +1020,11 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // (rows-2, see the render return) which keeps Ink off its win32 full-clear path
   // (node_modules/ink/build/ink.js:100, gated on height >= viewport rows).
   // See memory: reference-ink-windows-fullscreen-lag.
+  // Full bordered box around the prompt so typed characters are visually
+  // contained inside it (Gemini/Claude-CLI style) rather than floating under
+  // a single top rule. Border brightens (cyan) when the chat bar has focus.
   const chatBar = h(Box, { flexDirection: 'column' },
-    h(Box, { borderStyle: 'single', borderTop: true, borderBottom: false, borderLeft: false, borderRight: false, borderColor: focus === 'chat' ? CY : BDR, paddingX: 1 },
+    h(Box, { borderStyle: 'round', borderColor: focus === 'chat' ? CY : BDR, paddingX: 1 },
       h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
       // Use ink-text-input's TextInput only when the bar is actively accepting
       // keystrokes (chat-focused, no pending LLM-confirm gate, nothing running)
