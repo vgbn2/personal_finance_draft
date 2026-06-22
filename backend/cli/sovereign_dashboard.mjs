@@ -1252,6 +1252,12 @@ function mountDashboard(initial) {
   // alt-screen + fullscreen made Ink mis-position the cursor on win32 conhost
   // (typed chars ghosted into the bottom-right corner). gemini-cli / Claude
   // Code render in normal flow on the same console; matching that fixes it.
+  // One-time clear (screen + scrollback + cursor home) so the inline frame
+  // starts on a blank slate -- without alt-screen, prior terminal content (a
+  // shell prompt, earlier typing) would otherwise linger on rows the
+  // non-fullscreen frame doesn't paint over. One-shot at mount, never per
+  // keystroke, so it doesn't reintroduce redraw flicker.
+  if (process.stdout.isTTY) process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
   dashboard = render(h(App, {
     initialCatI: initial ? initial.catI : 0,
     initialCmdI: initial ? initial.cmdI : -1,
