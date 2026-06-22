@@ -226,11 +226,14 @@ test('chat: Tab moves keyboard focus between the chat bar and the grid; the stat
   await delay(800);
 
   await send(stdin, instance, [keys.tab]);
-  assert.doesNotMatch(stdout.snapshot(), /› █/, 'chat bar shows no cursor once focus moves into the grid');
+  // The chat input is now an ink-text-input <TextInput> (it owns the real
+  // hardware cursor) rather than a hand-drawn `█`, so focus is asserted via the
+  // footer hint that switches with focus, not a literal cursor glyph.
+  assert.doesNotMatch(stdout.snapshot(), /type a command {2}⏎ run/, 'chat footer hint is gone once focus moves into the grid');
   assert.match(stdout.snapshot(), /↑↓ category/, 'footer hint switches to grid controls');
   assert.match(stdout.snapshot(), /Operational/, 'the grid was already visible and still is');
 
   await send(stdin, instance, [keys.tab]);
-  assert.match(stdout.snapshot(), /› █/, 'chat bar cursor returns once focus is back on it');
+  assert.match(stdout.snapshot(), /type a command {2}⏎ run/, 'chat footer hint returns once focus is back on it');
   assert.match(stdout.snapshot(), /Running: sovereign status/, 'the status line survived the round trip');
 });
