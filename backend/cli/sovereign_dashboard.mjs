@@ -170,10 +170,11 @@ const M = [
       // for 'backend universe' (its real, fast, deterministically-long output
       // is used to test panel scrolling); inserting earlier in this list would
       // have silently shifted that index and broken an unrelated test.
-      { id: 'backend chart', label: 'chart', desc: 'OHLCV price chart',//move this somewhere else? also the keyboard is still broken in this cl, as in i cant type well, redesgin the typing , dev suggest -- PARTIAL: type-to-edit fixed 2026-06-22; width now auto-clamps to terminal columns (renderPriceChart). NEXT SESSION (deferred, user-approved 2026-06-22): upgrade renderPriceChart to real candlesticks (open/high/low/close already cached per-bar) + a volume subplot + an SMA overlay, inspired by terminus's lightweight-charts feature set (candlestick body+wick, volume histogram, MA line) -- see backend/cli/tui/visualizations.js:200 renderPriceChart(). Effort ranked low/med/med respectively; candlesticks alone is the cheapest, highest-impact first step.
+      { id: 'backend chart', label: 'chart', desc: 'OHLCV price chart',// type-to-edit + width auto-clamp fixed 2026-06-22. CANDLESTICKS DONE 2026-06-22 (s55): `--style candle` renders OHLC body+wick via renderCandlestickChart() (visualizations.js). STILL TODO (deferred): volume subplot + SMA overlay (effort med/med) -- the remaining two thirds of the terminus/lightweight-charts-inspired upgrade.
         flags: {
           '--symbol':    { t:'txt', lbl:'Symbol to chart (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
+          '--style':     { t:'sel', opts:['line','candle'], lbl:'Chart style', def:'line' },
           '--bars':      { t:'txt', lbl:'Bars to show (most recent N)', def:'200' },
         },
       },

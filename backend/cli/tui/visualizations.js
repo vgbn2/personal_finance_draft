@@ -270,10 +270,113 @@ function renderPriceChart(bars, width = 64, height = 12) {
   return buffer;
 }
 
+// Candlestick variant of renderPriceChart: each column is one aggregated candle
+// (open/high/low/close bucketed from the bars) drawn as a high-low wick with an
+// open-close body, green when close>=open and red otherwise. Same width-clamp,
+// y-tick axis, and summary footer as renderPriceChart so the two are visually
+// interchangeable; opt-in via `backend chart --style candle`. OHLC is already
+// cached per bar, so this needs no new data path.
+function renderCandlestickChart(bars, width = 64, height = 12) {
+  if (!Array.isArray(bars) || bars.length === 0) {
+    return `\n  ${A.muted('No bars to chart.')}\n`;
+  }
+  // A candle needs at least a close; open/high/low fall back to close when a
+  // provider didn't supply them (renders as a thin doji rather than crashing).
+  const num = (v, fallback) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
+  const usable = bars.filter((b) => b && typeof b.close === 'number' && Number.isFinite(b.close));
+  if (usable.length === 0) {
+    return `\n  ${A.muted('No usable close prices in the loaded bars.')}\n`;
+  }
+
+  // Same +12-char label/border overhead clamp as renderPriceChart (see there).
+  const CHART_OVERHEAD = 12;
+  const terminalCols = process.stdout.columns;
+  if (terminalCols) {
+    width = Math.max(10, Math.min(width, terminalCols - CHART_OVERHEAD));
+  }
+
+  // Bucket the bars into `width` candles (open=first, close=last, high=max,
+  // low=min within each bucket) so a long history collapses to width columns
+  // instead of being truncated -- the OHLC analogue of sampleSeries().
+  const n = usable.length;
+  const candles = [];
+  for (let i = 0; i < width; i += 1) {
+    const start = Math.floor((i * n) / width);
+    const end = Math.max(start + 1, Math.floor(((i + 1) * n) / width));
+    const slice = usable.slice(start, end);
+    if (slice.length === 0) continue;
+    const c = num(slice[slice.length - 1].close, 0);
+    const o = num(slice[0].open, num(slice[0].close, c));
+    let hi = Math.max(o, c);
+    let lo = Math.min(o, c);
+    for (const b of slice) {
+      hi = Math.max(hi, num(b.high, num(b.close, c)));
+      lo = Math.min(lo, num(b.low, num(b.close, c)));
+    }
+    candles.push({ o, h: hi, l: lo, c });
+  }
+  if (candles.length === 0) {
+    return `\n  ${A.muted('No usable close prices in the loaded bars.')}\n`;
+  }
+
+  const max = Math.max(...candles.map((k) => k.h));
+  const min = Math.min(...candles.map((k) => k.l));
+  const range = max - min;
+  const rowForValue = (value) => {
+    const pct = range > 0 ? (value - min) / range : 0.5;
+    return height - 1 - Math.round(pct * (height - 1));
+  };
+
+  const cols = candles.length;
+  const grid = Array.from({ length: height }, () => Array(cols).fill(' '));
+  const colors = Array.from({ length: height }, () => Array(cols).fill(''));
+
+  for (let c = 0; c < cols; c += 1) {
+    const k = candles[c];
+    const color = k.c >= k.o ? A.GREEN : A.RED;
+    // Wick (high-low) first, then overlay the body (open-close) so the thicker
+    // body wins any shared cell.
+    const wickTop = rowForValue(k.h);
+    const wickBot = rowForValue(k.l);
+    for (let r = wickTop; r <= wickBot; r += 1) {
+      grid[r][c] = A.GLYPH.vline;
+      colors[r][c] = color;
+    }
+    const bodyTop = rowForValue(Math.max(k.o, k.c));
+    const bodyBot = rowForValue(Math.min(k.o, k.c));
+    for (let r = bodyTop; r <= bodyBot; r += 1) {
+      grid[r][c] = A.GLYPH.block;
+      colors[r][c] = color;
+    }
+  }
+
+  let buffer = `\n  ${paint(A.BOLD, 'Candlestick Chart')} ${A.muted(`(${bars.length} bars loaded, ${cols} candles)`)}\n`;
+  const midRow = Math.floor((height - 1) / 2);
+  for (let r = 0; r < height; r += 1) {
+    const yVal = max - (range > 0 ? (r / (height - 1)) * range : 0);
+    const showTick = r === 0 || r === height - 1 || r === midRow;
+    const tick = showTick ? fmtPrice(yVal).padStart(8) : ' '.repeat(8);
+    buffer += ` ${A.muted(tick)} ${A.muted(A.GLYPH.vline)} `;
+    for (let c = 0; c < cols; c += 1) buffer += colors[r][c] + grid[r][c] + A.RESET;
+    buffer += '\n';
+  }
+  buffer += ` ${' '.repeat(8)} ${A.muted(`+${A.GLYPH.hline.repeat(cols)}`)}\n`;
+
+  const first = usable[0].close;
+  const last = usable[usable.length - 1].close;
+  const changePct = first !== 0 ? ((last - first) / first) * 100 : 0;
+  const changeColor = changePct >= 0 ? A.GREEN : A.RED;
+  buffer += `  ${A.muted('First:')} ${fmtPrice(first)}  ${A.muted('Last:')} ${fmtPrice(last)}  `;
+  buffer += `${changeColor}${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%${A.RESET}  `;
+  buffer += `${A.muted('High:')} ${fmtPrice(max)}  ${A.muted('Low:')} ${fmtPrice(min)}\n`;
+  return buffer;
+}
+
 module.exports = {
   fmtPrice,
   centerCell,
   renderSigmaSparkline,
   renderCorrelationHeatmap,
   renderPriceChart,
+  renderCandlestickChart,
 };
