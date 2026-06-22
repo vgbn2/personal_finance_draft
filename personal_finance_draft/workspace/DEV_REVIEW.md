@@ -1,3 +1,43 @@
+### Mass-Implement (pass 2) — 2026-06-22 session 55 (carryovers + remaining debt)
+
+Second mass-implement pass same session — cleared the remaining debt item AND all four open
+carryovers. Suite **594/592/0fail/2skip**; hygiene clean; gateway tsc exit 0. Commits `4f65c7aa`
+(gateway), `79d2129f` + `2d17aa26` (chart), `77cd31a7` (typing lag).
+
+- **[x] Gateway `processProposedOrders` failure reporting** (`backend/gateway/src/index.ts:757-801`):
+  the batch loop now inspects `order.status` after each `execute()`, logs each failure, sets
+  `process.exitCode = 1`, and prints a success/failure summary — mirroring the buy/sell CLI path's
+  post-execute check. Closes the dormant "per-order failure silently swallowed" debt. error-handling lens.
+- **[x] Chart upgrade — ALL 3 parts (carryover #1)**: new `renderCandlestickChart()`
+  (`backend/cli/tui/visualizations.js`) draws OHLC body+wick (green/red by close-vs-open), an optional
+  yellow **SMA(N) overlay**, and an optional **volume histogram subplot** — same width-clamp/axis/summary
+  scaffold as `renderPriceChart`. Flags `--style candle`, `--sma <N>`, `--volume` wired through
+  `backend_chart.js` + the dashboard manifest (`--style` default `line` = non-breaking; `--sma`/`--volume`
+  default off so they don't perturb default `buildArgv`). 11 render tests + 2 contract-assertion updates +
+  dashboard nav-row count bump.
+- **[x] Typing-lag fix (carryover #2)**: root-caused to Ink 7's writer
+  (`node_modules/ink/build/ink.js:100`) doing a **full terminal clear+redraw every frame** when
+  `win32 && fullscreen` (rendered height ≥ viewport rows). The root Box forced `height:
+  process.stdout.rows` (exactly fullscreen). Fixed by capping to `rows-1` so Ink uses its incremental
+  line-diff `log-update` path; height stays `undefined` when rows is unknown (test harness unchanged).
+  **Verified by Ink-source analysis + fake-TTY harness; real-conhost confirmation is the user's (no
+  conhost in CI) — folded into the real-terminal carryover below.**
+- **[x] graphify-out refresh (carryover #4)**: AST-only structural refresh (no LLM cost) merged into
+  the existing graph — 11,015→11,542 nodes, 958 communities, `GRAPH_REPORT.md`+`graph.json` regenerated
+  (gitignored, not committed). Did NOT run full semantic extraction: the 297 "doc" changes were dominated
+  by noise (`.graphify_*` temp, `.venv_ml/`, `.antigravitycli/`, `settings.json`) — recommend tightening
+  `.graphifyignore` before any full semantic rebuild.
+- **[ ] Real-terminal confirmation (carryover #3) — STILL THE USER'S**: `bt --strategy` picker,
+  `backend visualize` force-ingest fallback, AND now the typing-lag fix all need a live conhost/terminal
+  check that can't run in CI. Their dev-review comments remain in place pending that.
+- **DOC CORRECTION — two backlog rows below are STALE (already fixed in prior sessions, not by me):**
+  (1) the **P1 "research/ingest C" Kalshi** row — `manifests.js:59-60` already return `{records:[]}`/`[]`
+  (correct shapes, no crash); (2) the **P2 "ingest/TUI C" unconfigured families** row —
+  `manifest.js:155-157` already removed pmi/breadth/onchain/flight/crypto_tx/holdings from the
+  `--family` dropdown. Neither section is actually C anymore; treat those two rows as resolved.
+
+---
+
 ### Mass-Implement — 2026-06-22 session 55 (closeout, anchor 0903df6b)
 
 Cleared three backlog debts from the audit below. Suite **583/581/0fail/2skip** (= 580 baseline + 3
