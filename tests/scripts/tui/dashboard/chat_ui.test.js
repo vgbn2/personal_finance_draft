@@ -46,11 +46,12 @@ test('chat: deterministic phrase runs immediately, no LLM call needed', async (t
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
-  assert.match(stdout.snapshot(), /SOVEREIGN CHAT/, 'boots straight into the chat box');
+  assert.match(stdout.snapshot(), /Operational/, 'the grid is visible on boot');
+  assert.match(stdout.snapshot(), /› /, 'the chat input bar is focused by default on boot');
 
   await send(stdin, instance, [...'backend chart AAPL 1h', keys.enter]);
   assert.equal(runCalls.length, 1);
-  assert.deepEqual(runCalls[0].argv, ['backend', 'chart', '--symbol', 'AAPL', '--timeframe', '1h', '--bars', '200', '--width', '64']);
+  assert.deepEqual(runCalls[0].argv, ['backend', 'chart', '--symbol', 'AAPL', '--timeframe', '1h', '--bars', '200']);
   assert.match(stdout.snapshot(), /Running: sovereign backend chart/);
 
   await waitUntilNotRunning(stdout);
@@ -152,7 +153,7 @@ test('chat: LLM unavailable degrades to a safe message, never hangs or runs anyt
   await send(stdin, instance, [...'zzqxw blorptastic nonsense', keys.enter]);
   await delay(300);
   await instance.waitUntilRenderFlush();
-  assert.match(stdout.snapshot(), /Still couldn't match that to a command/);
+  assert.match(stdout.snapshot(), /Couldn't match that to a command/);
   assert.equal(runCalls.length, 0);
 });
 
@@ -202,7 +203,7 @@ test('chat: a --live command resolved via chat still triggers the PIN gate', asy
   await delay(100);
 });
 
-test('chat: Tab switches to the grid view and back without losing chat history', async (t) => {
+test('chat: Tab moves keyboard focus between the chat bar and the grid; the status line persists', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
@@ -215,20 +216,21 @@ test('chat: Tab switches to the grid view and back without losing chat history',
   await instance.waitUntilRenderFlush();
 
   await send(stdin, instance, [...'status', keys.enter]);
-  assert.match(stdout.snapshot(), /Running: sovereign status/, 'chat transcript echoes the resolved command immediately');
-  // The chat view replaces the grid's Output panel entirely, so the
-  // "⌛ Running:" spinner text (the only externally-visible signal of the
-  // real `running` React state, which gates Tab at the top of useInput)
-  // never renders while in chat focus -- there is no observable proxy to
-  // poll here, unlike the equivalent grid-focus tests elsewhere in this
-  // suite. `status` is a fast, real subprocess spawn; a fixed delay long
-  // enough for it to exit is the pragmatic wait here.
+  assert.match(stdout.snapshot(), /Running: sovereign status/, 'chat status line echoes the resolved command immediately');
+  // The grid is always visible, including its Output panel, so unlike the
+  // old full-screen chat view there IS a "⌛ Running:" signal to poll for
+  // here -- but `status` is fast enough that it can still finish within one
+  // render tick. A short fixed delay covers the real subprocess exit either
+  // way; the real production safeguard (Escape aborts it) is exercised by
+  // the dedicated --live PIN-gate test above.
   await delay(800);
 
   await send(stdin, instance, [keys.tab]);
-  assert.match(stdout.snapshot(), /Operational/, 'Tab reveals the grid');
+  assert.doesNotMatch(stdout.snapshot(), /› █/, 'chat bar shows no cursor once focus moves into the grid');
+  assert.match(stdout.snapshot(), /↑↓ category/, 'footer hint switches to grid controls');
+  assert.match(stdout.snapshot(), /Operational/, 'the grid was already visible and still is');
 
   await send(stdin, instance, [keys.tab]);
-  assert.match(stdout.snapshot(), /SOVEREIGN CHAT/, 'Tab back to chat');
-  assert.match(stdout.snapshot(), /> status/, 'chat transcript survived the round trip');
+  assert.match(stdout.snapshot(), /› █/, 'chat bar cursor returns once focus is back on it');
+  assert.match(stdout.snapshot(), /Running: sovereign status/, 'the status line survived the round trip');
 });
