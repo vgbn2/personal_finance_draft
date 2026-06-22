@@ -175,6 +175,8 @@ const M = [
           '--symbol':    { t:'txt', lbl:'Symbol to chart (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
           '--style':     { t:'sel', opts:['line','candle'], lbl:'Chart style', def:'line' },
+          '--sma':       { t:'txt', lbl:'SMA overlay period (blank = off; candle only)', def:'' },
+          '--volume':    { t:'yn',  lbl:'Volume subplot (candle only)' },
           '--bars':      { t:'txt', lbl:'Bars to show (most recent N)', def:'200' },
         },
       },

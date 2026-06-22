@@ -276,7 +276,9 @@ function renderPriceChart(bars, width = 64, height = 12) {
 // y-tick axis, and summary footer as renderPriceChart so the two are visually
 // interchangeable; opt-in via `backend chart --style candle`. OHLC is already
 // cached per bar, so this needs no new data path.
-function renderCandlestickChart(bars, width = 64, height = 12) {
+function renderCandlestickChart(bars, width = 64, height = 12, opts = {}) {
+  const smaPeriod = Number.isFinite(opts.smaPeriod) ? Math.floor(opts.smaPeriod) : 0;
+  const showVolume = !!opts.showVolume;
   if (!Array.isArray(bars) || bars.length === 0) {
     return `\n  ${A.muted('No bars to chart.')}\n`;
   }
@@ -309,11 +311,13 @@ function renderCandlestickChart(bars, width = 64, height = 12) {
     const o = num(slice[0].open, num(slice[0].close, c));
     let hi = Math.max(o, c);
     let lo = Math.min(o, c);
+    let vol = 0;
     for (const b of slice) {
       hi = Math.max(hi, num(b.high, num(b.close, c)));
       lo = Math.min(lo, num(b.low, num(b.close, c)));
+      vol += num(b.volume, 0);
     }
-    candles.push({ o, h: hi, l: lo, c });
+    candles.push({ o, h: hi, l: lo, c, v: vol });
   }
   if (candles.length === 0) {
     return `\n  ${A.muted('No usable close prices in the loaded bars.')}\n`;
@@ -350,7 +354,24 @@ function renderCandlestickChart(bars, width = 64, height = 12) {
     }
   }
 
-  let buffer = `\n  ${paint(A.BOLD, 'Candlestick Chart')} ${A.muted(`(${bars.length} bars loaded, ${cols} candles)`)}\n`;
+  // Optional SMA overlay: simple moving average over the per-candle closes,
+  // drawn as a distinct yellow marker so the line reads on top of the candles
+  // (it overrides only the single cell at the average's row in each column).
+  if (smaPeriod > 1 && cols >= smaPeriod) {
+    const closesByCol = candles.map((k) => k.c);
+    for (let c = smaPeriod - 1; c < cols; c += 1) {
+      let sum = 0;
+      for (let j = c - smaPeriod + 1; j <= c; j += 1) sum += closesByCol[j];
+      const avg = sum / smaPeriod;
+      if (avg >= min && avg <= max) {
+        grid[rowForValue(avg)][c] = A.GLYPH.indicator; // '*'
+        colors[rowForValue(avg)][c] = A.YELLOW;
+      }
+    }
+  }
+
+  const smaLabel = smaPeriod > 1 ? ` ${A.c(A.YELLOW, `SMA(${smaPeriod})`)}` : '';
+  let buffer = `\n  ${paint(A.BOLD, 'Candlestick Chart')} ${A.muted(`(${bars.length} bars loaded, ${cols} candles)`)}${smaLabel}\n`;
   const midRow = Math.floor((height - 1) / 2);
   for (let r = 0; r < height; r += 1) {
     const yVal = max - (range > 0 ? (r / (height - 1)) * range : 0);
@@ -361,6 +382,31 @@ function renderCandlestickChart(bars, width = 64, height = 12) {
     buffer += '\n';
   }
   buffer += ` ${' '.repeat(8)} ${A.muted(`+${A.GLYPH.hline.repeat(cols)}`)}\n`;
+
+  // Optional volume subplot: a short histogram under the price grid, one bar
+  // per candle column, height-scaled to the largest bucket volume and colored
+  // by the candle's direction. Skipped entirely when no bar carried volume.
+  if (showVolume) {
+    const vols = candles.map((k) => k.v);
+    const maxVol = Math.max(...vols, 0);
+    if (maxVol > 0) {
+      const VOL_H = 3;
+      buffer += `  ${A.muted(`Volume (max ${maxVol.toLocaleString()})`)}\n`;
+      for (let r = 0; r < VOL_H; r += 1) {
+        const threshold = (VOL_H - r) / VOL_H; // top row needs the tallest bars
+        buffer += ` ${' '.repeat(8)} ${A.muted(A.GLYPH.vline)} `;
+        for (let c = 0; c < cols; c += 1) {
+          if (vols[c] / maxVol >= threshold) {
+            const color = candles[c].c >= candles[c].o ? A.GREEN : A.RED;
+            buffer += color + A.GLYPH.block + A.RESET;
+          } else {
+            buffer += ' ';
+          }
+        }
+        buffer += '\n';
+      }
+    }
+  }
 
   const first = usable[0].close;
   const last = usable[usable.length - 1].close;
