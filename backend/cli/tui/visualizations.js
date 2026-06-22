@@ -206,6 +206,20 @@ function renderPriceChart(bars, width = 64, height = 12) {
     return `\n  ${A.muted('No usable close prices in the loaded bars.')}\n`;
   }
 
+  // Each rendered row is `width` data columns PLUS a fixed margin: the
+  // 8-char price label, a space on each side of it, the vline separator,
+  // and one more trailing space (see the row-building loop below) -- 12
+  // chars of overhead. A caller-requested width wider than the real
+  // terminal wraps every row mid-line, which visibly shears the price-label
+  // column away from the data (reported: chart "breaks" once --width pushes
+  // the line past the terminal's actual column count, e.g. width > ~90 on a
+  // ~100-column window). Clamp to what the terminal can actually show.
+  const CHART_OVERHEAD = 12;
+  const terminalCols = process.stdout.columns;
+  if (terminalCols) {
+    width = Math.max(10, Math.min(width, terminalCols - CHART_OVERHEAD));
+  }
+
   const sampled = sampleSeries(closes, width);
   const min = Math.min(...sampled);
   const max = Math.max(...sampled);
