@@ -24,7 +24,7 @@ test('TUI automation harness can navigate into the research menu', async () => {
     const output = session.snapshot();
 
     assert.match(output, /Backtest \(Prop-firm fit\)/);
-    assert.match(output, /Optimize \(Indicators only\)/);
+    assert.match(output, /Optimize Indicators/);
   } finally {
     session.kill();
   }
@@ -70,7 +70,7 @@ test('TUI automation harness keeps optimize free of prop-firm prompts', async ()
     await session.waitFor(/Strategy:/);
 
     const output = session.snapshot();
-    assert.match(output, /Optimize \(Indicators only\)/);
+    assert.match(output, /Optimize Indicators/);
     assert.doesNotMatch(output, /Prop-firm profile:/);
   } finally {
     session.kill();
