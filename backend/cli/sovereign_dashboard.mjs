@@ -195,7 +195,7 @@ const M = [
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
         },
       },
-      { id: 'bt', label: 'bt', desc: 'Backtest — OOS split, trust gate, prop-firm fit',
+      { id: 'bt', label: 'bt', desc: 'Backtest trust gate, prop-firm fit',
         flags: {
           '--strategy':       { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'', pickStrategy:'single' },//i want to be able to choose strategies like choosing sym,bols, dev review -- RESOLVED: added pickStrategy:'single', reuses the same symbol-picker overlay (STRATEGY_UNIVERSE). Pending user confirmation.
           '--symbol':         { t:'txt', lbl:'Symbols comma-sep (blank = strategy universe)', def:'', pickSymbol:'multi' },
@@ -204,7 +204,7 @@ const M = [
           '--allow-degraded': { t:'yn',  lbl:'Allow degraded data quality?', def:false },
         },
       },
-      { id: 'optimize', label: 'optimize', desc: 'Indicator period grid search (overfit-penalised)',
+      { id: 'optimize', label: 'optimize', desc: 'Indicator period grid',
         flags: {
           '--strategy':  { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'' },
           '--symbol':    { t:'txt', lbl:'Symbols comma-sep (blank = strategy universe)', def:'', pickSymbol:'multi' },
@@ -255,7 +255,7 @@ const M = [
           '--timeframe':    { t:'sel', opts:['1d','1h','15m'], lbl:'Timeframe', def:'1h' },
         },
       },
-      { id: 'polymarket backtest', label: 'Backtest', desc: '',//doesnt work- dev review 
+      { id: 'polymarket backtest', label: 'bt', desc: 'Backtest',//doesnt work- dev review 
         flags: {
           '--strategy':        { t:'sel', opts:['low_prob_dip','mean_revert'], lbl:'Strategy', def:'low_prob_dip' },
           '--tag-id':          { t:'txt', lbl:'Gamma tag ID (21 = crypto 2023+)', def:'21' },
@@ -264,7 +264,7 @@ const M = [
           '--entry-threshold': { t:'txt', lbl:'Max entry price (low_prob_dip)', def:'0.15' },
         },
       },
-      { id: 'polymarket derive-creds', label: 'polymarket derive-creds', desc: 'Derive L2 API credentials from wallet', flags: {} },//crashes  dev review
+      { id: 'polymarket derive-creds', label: 'derive-creds', desc: 'Derive L2 API credentials from wallet', flags: {} },//crashes  dev review
       {
         id: 'bot',
         label: 'bot',
@@ -507,8 +507,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     return () => clearInterval(t);
   }, []);
 
-  // restore terminal on any exit
-  useEffect(() => () => process.stdout.write('\x1b[?1049l'), []);
+  // Normal-flow render (no alternate screen buffer) -- nothing to restore on exit.
 
   const cat   = M[catI];
   const cmd   = cmdI >= 0 ? cat.cmds[cmdI] : null;
@@ -630,7 +629,6 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         if (childRef.current) {
           try { childRef.current.kill('SIGINT'); } catch (e) {}
         }
-        process.stdout.write('\x1b[?1049l');
         exit();
         return;
       }
@@ -720,7 +718,6 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     // (e.g. "equity", "quick") must not silently exit the whole dashboard
     // mid-sentence. Ctrl+C still quits everywhere, chat included.
     if ((input === 'q' && focus !== 'chat') || (key.ctrl && input === 'c')) {
-      process.stdout.write('\x1b[?1049l');
       exit();
       return;
     }
@@ -1011,19 +1008,18 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // Tab (handled above) toggles whether this bar or the grid is receiving
   // keystrokes; the grid itself never gets hidden.
   //
-  // KNOWN ISSUE (typing lag on Windows / conhost.exe): typed characters lag and
-  // raw-echo in the wrong spot until a word boundary. Root cause is structural:
-  // this dashboard renders full-frame Ink inside the ALTERNATE screen buffer
-  // (\x1b[?1049h at mount), and on win32 Ink full-clears + redraws the WHOLE frame
-  // every keystroke (node_modules/ink/build/ink.js:100). conhost handles that
-  // poorly. ATTEMPT 1 (2026-06-22 s55, REVERTED): capping height to rows-1 routed
-  // Ink to its incremental line-diff path, but in the alt-screen that freed the
-  // bottom terminal row and conhost raw-echoed keystrokes onto it (a worse ghost-
-  // line artifact) -- confirmed by the user on real conhost. The durable fix is to
-  // stop full-frame-redrawing on each keystroke: render the chat input as its own
-  // single-line `\r`+clear-to-EOL prompt (the way Claude Code's own CLI does it),
-  // decoupled from Ink's frame -- a real architecture change, tracked as the open
-  // typing-lag item. See memory: reference-ink-windows-fullscreen-lag.
+  // TYPING-POSITIONING FIX (2026-06-22 s55): typed characters used to ghost into
+  // the bottom-right corner on Windows conhost. A raw-mode probe proved the
+  // terminal does NOT echo (raw mode works) -- the ghost was Ink MIS-POSITIONING
+  // its render. Root cause: the dashboard used to force the ALTERNATE screen
+  // buffer (\x1b[?1049h) AND a fullscreen height (height: process.stdout.rows);
+  // on win32 that combination makes Ink's per-keystroke full-frame redraw place
+  // the cursor wrong on conhost. The reference fix (how gemini-cli / Claude Code's
+  // own CLI stay smooth on the same console): render in NORMAL terminal flow, not
+  // fullscreen-in-alt-screen. So: no \x1b[?1049h, and a non-fullscreen height
+  // (rows-2, see the render return) which keeps Ink off its win32 full-clear path
+  // (node_modules/ink/build/ink.js:100, gated on height >= viewport rows).
+  // See memory: reference-ink-windows-fullscreen-lag.
   const chatBar = h(Box, { flexDirection: 'column' },
     h(Box, { borderStyle: 'single', borderTop: true, borderBottom: false, borderLeft: false, borderRight: false, borderColor: focus === 'chat' ? CY : BDR, paddingX: 1 },
       h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
@@ -1071,7 +1067,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     : null;
 
   // ── Render ─────────────────────────────────────────────────────────────
-  return h(Box, { flexDirection: 'column', height: process.stdout.rows },
+  // Non-fullscreen height (rows-2) keeps the dashboard tall/usable while staying
+  // under the viewport so Ink avoids its win32 full-clear-every-frame path; with
+  // the alt-screen buffer gone (see mountDashboard) this renders in normal flow.
+  return h(Box, { flexDirection: 'column', height: process.stdout.rows ? Math.max(10, process.stdout.rows - 2) : undefined },
 
     // Header
     h(Box, { borderStyle: 'round', borderColor: CY, paddingX: 1 },
@@ -1249,7 +1248,10 @@ async function runExternal(argv, returnState) {
 }
 
 function mountDashboard(initial) {
-  process.stdout.write('\x1b[?1049h');
+  // Normal terminal flow -- no alternate screen buffer (\x1b[?1049h). Forcing
+  // alt-screen + fullscreen made Ink mis-position the cursor on win32 conhost
+  // (typed chars ghosted into the bottom-right corner). gemini-cli / Claude
+  // Code render in normal flow on the same console; matching that fixes it.
   dashboard = render(h(App, {
     initialCatI: initial ? initial.catI : 0,
     initialCmdI: initial ? initial.cmdI : -1,
