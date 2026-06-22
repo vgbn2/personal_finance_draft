@@ -175,8 +175,8 @@ const M = [
           '--symbol':    { t:'txt', lbl:'Symbol to chart (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
           '--style':     { t:'sel', opts:['line','candle'], lbl:'Chart style', def:'line' },
-          '--sma':       { t:'txt', lbl:'SMA overlay period (blank = off; candle only)', def:'' },
-          '--volume':    { t:'yn',  lbl:'Volume subplot (candle only)' },
+          '--sma':       { t:'txt', lbl:'SMA overlay period', def:'' },
+          '--volume':    { t:'yn',  lbl:'Volume (candle only)' },
           '--bars':      { t:'txt', lbl:'Bars to show (most recent N)', def:'200' },
         },
       },
@@ -1008,19 +1008,19 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // Tab (handled above) toggles whether this bar or the grid is receiving
   // keystrokes; the grid itself never gets hidden.
   //
-  // KNOWN ISSUE (deferred to next session, user-approved 2026-06-22): on the
-  // legacy PowerShell console host (conhost.exe, not Windows Terminal),
-  // typed characters visually lag/appear in the wrong spot until a word
-  // boundary. Root cause: every keystroke here triggers a full Ink re-render
-  // of the ENTIRE multi-line screen (sidebar + content + output + this bar +
-  // footer), which requires multi-line cursor-up ANSI movement -- exactly
-  // the category of sequence that's flaky on that console host. A CLI-style
-  // single-line prompt (plain `\r` + clear-to-end-of-line + rewrite, no
-  // cursor-up needed) wouldn't hit this. Real fix: isolate this input's
-  // per-keystroke redraw from the rest of the tree (e.g. a raw single-line
-  // write path that bypasses Ink's full-tree reconciliation for keystrokes),
-  // not just "use a different terminal" -- not attempted yet, real
-  // architecture change.
+  // TYPING-LAG FIX (2026-06-22 s55): typed characters used to lag / land in the
+  // wrong spot until a word boundary on Windows (worst on conhost.exe). The real
+  // root cause turned out to be more specific than "full multi-line re-render":
+  // Ink 7 (node_modules/ink/build/ink.js:100) does a FULL terminal clear+redraw
+  // on EVERY frame whenever `process.platform === 'win32' && (wasFullscreen ||
+  // isFullscreen)` -- i.e. whenever the rendered height >= viewport rows. The
+  // root Box used to set `height: process.stdout.rows` (exactly fullscreen), so
+  // every keystroke cleared the whole screen. Fixed at the render root by capping
+  // height to rows-1 (see the render return below): Ink then takes its
+  // incremental log-update path (log-update.js:107+) that line-diffs and rewrites
+  // only the changed line. NOTE: verified via Ink-source analysis + the fake-TTY
+  // harness; final confirmation on a real conhost.exe is the user's to make (no
+  // conhost in CI), tracked with the other real-terminal items.
   const chatBar = h(Box, { flexDirection: 'column' },
     h(Box, { borderStyle: 'single', borderTop: true, borderBottom: false, borderLeft: false, borderRight: false, borderColor: focus === 'chat' ? CY : BDR, paddingX: 1 },
       h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
@@ -1061,7 +1061,20 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     : null;
 
   // ── Render ─────────────────────────────────────────────────────────────
-  return h(Box, { flexDirection: 'column', height: process.stdout.rows },
+  // Height is capped one row BELOW the viewport on purpose (not `process.stdout.rows`).
+  // Ink 7's writer (node_modules/ink/build/ink.js:100) does a FULL terminal clear +
+  // full redraw on every frame when `process.platform === 'win32' && (wasFullscreen ||
+  // isFullscreen)`, where fullscreen means rendered height >= viewport rows. That
+  // full-clear-per-keystroke is the typing-lag root cause (worst on conhost.exe). Keeping
+  // the frame at rows-1 makes isFullscreen false, so Ink falls through to its incremental
+  // log-update path (log-update.js:107+) which line-diffs and only rewrites the changed
+  // line(s) -- the single chat-input line per keystroke -- with no full clear. Costs one
+  // row of height; the output panel already reserves headroom (maxLines = rows-10) so the
+  // body never overflows back into the full-clear branch.
+  // When rows is unknown (non-TTY / test harness) leave height undefined exactly
+  // as before -- only constrain to rows-1 when we actually have a real viewport,
+  // so this neither clips the fake-TTY snapshot tests nor changes headless behavior.
+  return h(Box, { flexDirection: 'column', height: process.stdout.rows ? process.stdout.rows - 1 : undefined },
 
     // Header
     h(Box, { borderStyle: 'round', borderColor: CY, paddingX: 1 },
