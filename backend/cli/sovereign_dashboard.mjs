@@ -82,13 +82,13 @@ const M = [
     label: 'Operational', full: 'OPERATIONAL DASHBOARD & HEALTH',
     cmds: [
       { id: 'status',      label: 'status',      desc: 'System health snapshot',           flags: {} },
-      { id: 'cockpit',     label: 'cockpit',      desc: 'Terminal dashboard (cockpit model)', flags: {} },//crashed- dev review 22/06
-      { id: 'watch',       label: 'watch',        desc: 'Live data feed, polls every N min (set --symbol for a live price chart instead of the table)',// took long to boot,require a press of the esc key to reveal,ruin the interface in here, can this be replace by charting? references for charting  C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\terminus,C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\_resources\lightweight-charts dev suggest -- RESOLVED: raw cursor-control output piped into the dashboard panel is now TTY-guarded (no more garbled output); added an optional --symbol live-chart mode reusing renderPriceChart() and narrowing ingest to just that symbol (much faster boot than the whole-family fetch). terminus/lightweight-charts had no reusable Node-TUI pattern. Pending user confirmation.
+      { id: 'cockpit',     label: 'cockpit',      desc: 'Terminal dashboard', flags: {} },//crashed- dev review 22/06
+      { id: 'watch',       label: 'watch',        desc: 'Live data feed, polls every N min',// took long to boot,require a press of the esc key to reveal,ruin the interface in here, can this be replace by charting? references for charting  C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\terminus,C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\_resources\lightweight-charts dev suggest -- RESOLVED: raw cursor-control output piped into the dashboard panel is now TTY-guarded (no more garbled output); added an optional --symbol live-chart mode reusing renderPriceChart() and narrowing ingest to just that symbol (much faster boot than the whole-family fetch). terminus/lightweight-charts had no reusable Node-TUI pattern. Pending user confirmation.
         flags: {
           '--family':    { t:'sel', opts:['all','crypto','fx','equities','indices','commodities'], lbl:'Data family', def:'all' },
           '--interval':  { t:'txt', lbl:'Poll interval (minutes)', def:'15' },
-          '--symbol':    { t:'txt', lbl:'Symbol for live chart mode (blank = multi-symbol table)', def:'', pickSymbol:'single' },
-          '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Chart timeframe (only used with --symbol)', def:'1d' },
+          '--symbol':    { t:'txt', lbl:'Symbol for live chart mode', def:'', pickSymbol:'single' },
+          '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframes', def:'1d' },
         },
       },
       { id: 'cache-clean', label: 'cache-clean',  desc: 'Quarantine rejected cache records',
@@ -101,12 +101,12 @@ const M = [
   {
     label: 'Data', full: 'DATA & BACKFILL',
     cmds: [
-      { id: 'backend integrity', label: 'backend integrity', desc: 'Per-symbol freshness & coverage report',
+      { id: 'backend integrity', label: 'integrity', desc: 'Per-symbol freshness & coverage report',
         flags: {
           '--audit-vintages': { t:'yn', lbl:'Only show vintage anomalies?', def:false },
         },
       },
-      { id: 'ingest', label: 'ingest', desc: 'Fetch latest market data (all providers)',//load too long,require a press of the esc key to reveal, is this redundant?, dev question, 
+      { id: 'ingest', label: 'ingest', desc: 'Fetch latest market data',//load too long,require a press of the esc key to reveal, is this redundant?, dev question, 
         flags: {
           '--family':       { t:'sel', opts:['all','crypto','fx','equities','indices','commodities','macro','onchain','prediction_market'], lbl:'Data family', def:'all' },
           '--symbol':       { t:'txt', lbl:'Symbol filter (optional)', def:'', pickSymbol:'single' },
@@ -124,7 +124,7 @@ const M = [
         },
       },
       { id: 'stop-backfill-daemon', label: 'stop-backfill-daemon', desc: 'Stop the background backfill daemon', flags: {} },
-      { id: 'intraday-rollup', label: 'intraday-rollup', desc: 'Derive coarser bins from 1m/5m base (manual one-shot -- backfill-daemon does this continuously in the background)',//same backgroud action like backfill-daemon, dev suggest -- RESOLVED: confirmed backfill_daemon.js calls rollupFromBase every cycle; this command stays as the manual/recovery path, not a duplicate. Desc updated 2026-06-22, pending user confirmation.
+      { id: 'intraday-rollup', label: 'intraday-rollup', desc: 'Derive coarser bins from 1m/5m base',//same backgroud action like backfill-daemon, dev suggest -- RESOLVED: confirmed backfill_daemon.js calls rollupFromBase every cycle; this command stays as the manual/recovery path, not a duplicate. Desc updated 2026-06-22, pending user confirmation.
         flags: {
           '--family':     { t:'sel', opts:['all','crypto','equities'], lbl:'Family', def:'all' },
           '--symbols':    { t:'txt', lbl:'Symbol filter comma-sep (blank = all)', def:'' },
@@ -144,9 +144,9 @@ const M = [
   {
     label: 'Backend', full: 'BACKEND TOOLS (C++)',
     cmds: [
-      { id: 'backend status',      label: 'backend status',      desc: 'C++ backend health check', flags: {} },//is this redundant?, dev question -- RESOLVED: not redundant, status.js documents it as a separate complementary command to top-level `status` (different layer: C++ backend vs overall system). Pending user confirmation.
-      { id: 'backend stats',       label: 'backend stats',       desc: 'Equity-curve stats from a CSV/backtest file (ad-hoc --equity, not duplicated by `bt`)', flags: {} },//is this redundant?, dev question -- RESOLVED: `bt` already prints Sharpe/vol/cum-return for its own run, so this is redundant for that common case; its real value is computing stats on an arbitrary external --equity curve, which `bt` can't do. Desc updated 2026-06-22, pending user confirmation.
-      { id: 'backend correlation', label: 'backend correlation', desc: 'Pearson correlation matrix → heatmap',
+      { id: 'backend status',      label: 'status',      desc: 'C++ backend health check', flags: {} },//is this redundant?, dev question -- RESOLVED: not redundant, status.js documents it as a separate complementary command to top-level `status` (different layer: C++ backend vs overall system). Pending user confirmation.
+      { id: 'backend stats',       label: 'stats',       desc: 'Equity-curve stats from a CSV/backtest file', flags: {} },//is this redundant?, dev question -- RESOLVED: `bt` already prints Sharpe/vol/cum-return for its own run, so this is redundant for that common case; its real value is computing stats on an arbitrary external --equity curve, which `bt` can't do. Desc updated 2026-06-22, pending user confirmation.
+      { id: 'backend correlation', label: 'correlation', desc: 'Correlation matrix → heatmap',
         flags: {
           '--symbols':          { t:'txt', lbl:'Symbols comma-sep, min 2 (blank = default equities)', def:'', pickSymbol:'multi' },
           '--timeframe':        { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
@@ -155,7 +155,7 @@ const M = [
           '--drop-non-overlap': { t:'yn',  lbl:'Drop non-overlapping symbols auto?', def:false },
         },
       },
-      { id: 'backend visualize', label: 'backend visualize', desc: 'Sigma band live view (Bollinger)',//force ingest if lacking in bars, dev suggest -- RESOLVED: backend_visualize.js now runs one ingestMarketData() retry on insufficient bars before erroring. Pending user confirmation.
+      { id: 'backend visualize', label: 'visualize', desc: 'Sigma band live view',//force ingest if lacking in bars, dev suggest -- RESOLVED: backend_visualize.js now runs one ingestMarketData() retry on insufficient bars before erroring. Pending user confirmation.
         flags: {
           '--symbol':    { t:'txt', lbl:'Symbol to visualize (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m'], lbl:'Timeframe', def:'1d' },
@@ -164,18 +164,17 @@ const M = [
           '--no-poll':   { t:'yn',  lbl:'One-shot (no live poll)?', def:false },
         },
       },
-      { id: 'backend universe', label: 'backend universe', desc: 'Cached symbol inventory (all families)', flags: {} },//is this redundant?, deb question
+      { id: 'backend universe', label: 'universe', desc: 'Cached symbol inventory (all families)', flags: {} },//is this redundant?, deb question
       // Appended after 'backend universe' deliberately, not next to 'backend
       // visualize' above -- sovereign_dashboard.test.js hardcodes initialCmdI:4
       // for 'backend universe' (its real, fast, deterministically-long output
       // is used to test panel scrolling); inserting earlier in this list would
       // have silently shifted that index and broken an unrelated test.
-      { id: 'backend chart', label: 'backend chart', desc: 'OHLCV price chart (ANSI line chart)',//move this somewhere else? also the keyboard is still broken in this cl, as in i cant type well, redesgin the typing , dev suggest
+      { id: 'backend chart', label: 'chart', desc: 'OHLCV price chart',//move this somewhere else? also the keyboard is still broken in this cl, as in i cant type well, redesgin the typing , dev suggest -- PARTIAL: type-to-edit fixed 2026-06-22; width now auto-clamps to terminal columns (renderPriceChart). NEXT SESSION (deferred, user-approved 2026-06-22): upgrade renderPriceChart to real candlesticks (open/high/low/close already cached per-bar) + a volume subplot + an SMA overlay, inspired by terminus's lightweight-charts feature set (candlestick body+wick, volume histogram, MA line) -- see backend/cli/tui/visualizations.js:200 renderPriceChart(). Effort ranked low/med/med respectively; candlesticks alone is the cheapest, highest-impact first step.
         flags: {
           '--symbol':    { t:'txt', lbl:'Symbol to chart (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
           '--bars':      { t:'txt', lbl:'Bars to show (most recent N)', def:'200' },
-          '--width':     { t:'txt', lbl:'Chart width (columns)', def:'64' },
         },
       },
     ],
@@ -236,7 +235,7 @@ const M = [
           '--query': { t:'txt', lbl:'Task for the agent', def:'' },
         },
       },
-      { id: 'strategy',   label: 'strategy',   desc: 'Strategy management (create/list/backtest/toggle)', flags: {} },
+      { id: 'strategy',   label: 'strategy',   desc: 'Strategy management', flags: {} },
       { id: 'prop-firms', label: 'prop-firms', desc: 'Prop firm profile management', flags: {} },
       { id: 'run',        label: 'run',        desc: 'Persistent runners (paper bot, backfill loop)', flags: {} },
     ],
@@ -244,16 +243,16 @@ const M = [
   {
     label: 'Polymarket', full: 'PREDICTION MARKETS',
     cmds: [
-      { id: 'polymarket portfolio',    label: 'polymarket portfolio',    desc: 'Live portfolio & pUSD balance', flags: {} },
-      { id: 'polymarket markets',      label: 'polymarket markets',      desc: 'Browse & trade active markets (interactive)', flags: {} },//dev review:.,crashes
-      { id: 'polymarket history',      label: 'polymarket history',      desc: 'Historical CLOB price data for an event',//doesnt work, dev review
+      { id: 'polymarket portfolio',    label: 'Portfolio',    desc: 'Live portfolio & pUSD balance', flags: {} },
+      { id: 'polymarket markets',      label: 'Markets',      desc: 'Browse & trade active markets', flags: {} },//dev review:.,crashes
+      { id: 'polymarket history',      label: 'History',      desc: 'Historical CLOB price data for an event',//doesnt work, dev review
         flags: {
           '--event':        { t:'txt', lbl:'Prediction event key', def:'fed_rate_cut_prob' },
           '--history-days': { t:'txt', lbl:'Historical days', def:'30' },
           '--timeframe':    { t:'sel', opts:['1d','1h','15m'], lbl:'Timeframe', def:'1h' },
         },
       },
-      { id: 'polymarket backtest', label: 'polymarket backtest', desc: 'Resolved markets P&L backtest',//doesnt work- dev review 
+      { id: 'polymarket backtest', label: 'Backtest', desc: '',//doesnt work- dev review 
         flags: {
           '--strategy':        { t:'sel', opts:['low_prob_dip','mean_revert'], lbl:'Strategy', def:'low_prob_dip' },
           '--tag-id':          { t:'txt', lbl:'Gamma tag ID (21 = crypto 2023+)', def:'21' },
@@ -266,15 +265,15 @@ const M = [
       {
         id: 'bot',
         label: 'bot',
-        desc: 'Edge trader bot control panel',
+        desc: 'Bot control panel',
         subcmds: [
-          { id: 'health',  label: 'Health Check (credentials, API, balance)', desc: 'Check credentials, API, and balance', cmdStr: 'bot health' },
+          { id: 'health',  label: 'Health Check', desc: 'Check credentials, API, and balance', cmdStr: 'bot health' },
           { id: 'status',  label: 'Status',             desc: 'Show bot run status', cmdStr: 'bot status' },
           { id: 'cycle',   label: 'Run Cycle (dry-run)', desc: 'Run a single dry-run iteration', cmdStr: 'bot cycle' },
           { id: 'run',     label: 'Start Loop',         desc: 'Start continuous trading loop', cmdStr: 'bot run' },
           { id: 'enable',  label: 'Enable Bot',         desc: 'Enable the bot in config', cmdStr: 'bot config --key enabled --value true' },
           { id: 'disable', label: 'Disable Bot',        desc: 'Disable the bot in config', cmdStr: 'bot config --key enabled --value false' },
-          { id: 'config',  label: 'View / Edit Config', desc: 'Edit bot parameters', cmdStr: 'bot config' },
+          { id: 'config',  label: 'Config', desc: 'Edit bot parameters', cmdStr: 'bot config' },
           { id: 'back',    label: 'Back',               desc: 'Return to command list', cmdStr: '' }
         ]
       },
@@ -283,23 +282,23 @@ const M = [
   {
     label: 'Settings', full: 'SETTINGS & PREFERENCES',
     cmds: [
-      { id: 'settings show',      label: 'settings show',      desc: 'Show current config (all settings)', flags: {} },
-      { id: 'settings favorites', label: 'settings favorites', desc: 'Manage favourite symbols list',
+      { id: 'settings show',      label: 'Show',      desc: 'Show current config', flags: {} },
+      { id: 'settings favorites', label: 'Favorites', desc: 'Manage favourite symbols',
         flags: {
           '--symbols': { t:'txt', lbl:'Comma-sep symbol list', def:'' },
         },
       },
-      { id: 'settings timezone', label: 'settings timezone', desc: 'Set display timezone',
+      { id: 'settings timezone', label: 'Timezone', desc: 'Set display timezone',
         flags: {
           '--value': { t:'sel', opts:['UTC','Europe/London','Asia/Ho_Chi_Minh','Asia/Singapore','Asia/Tokyo','America/New_York','America/Los_Angeles'], lbl:'Timezone', def:'UTC' },
         },
       },
-      { id: 'settings layout', label: 'settings layout', desc: 'Set layout preset',
+      { id: 'settings layout', label: 'Layout', desc: 'Set layout preset',
         flags: {
           '--preset': { t:'sel', opts:['default','compact','research'], lbl:'Layout preset', def:'default' },
         },
       },
-      { id: 'settings params', label: 'settings params', desc: 'Default trading parameters',
+      { id: 'settings params', label: 'Params', desc: 'Default trading parameters',
         flags: {
           '--position-size':    { t:'txt', lbl:'Position size (USDC)', def:'100' },
           '--stop-loss':        { t:'txt', lbl:'Stop loss %', def:'0.05' },
@@ -309,32 +308,32 @@ const M = [
           '--polling-interval': { t:'txt', lbl:'Polling interval (seconds)', def:'60' },
         },
       },
-      { id: 'settings flags', label: 'settings flags', desc: 'Toggle feature flags (gates)',
+      { id: 'settings flags', label: 'Flags', desc: 'Toggle features',
         flags: {
           '--flag':  { t:'sel', opts:['polymarket','bot_autopilot','ai_agent_trading','multi_agent_research','onchain_data','auto_backfill'], lbl:'Feature flag', def:'' },
           '--value': { t:'sel', opts:['true','false'], lbl:'Enable?', def:'false' },
         },
       },
-      { id: 'settings alerts', label: 'settings alerts', desc: 'Alert delivery preferences',
+      { id: 'settings alerts', label: 'Alerts', desc: 'Alert preferences',
         flags: {
           '--email': { t:'yn', lbl:'Email alerts?', def:true },
           '--push':  { t:'yn', lbl:'Push alerts?',  def:false },
         },
       },
-      { id: 'settings reset', label: 'settings reset', desc: 'Reset all settings to defaults', flags: {} },
+      { id: 'settings reset', label: 'Reset', desc: 'Reset all to defaults', flags: {} },
     ],
   },
   {
     label: 'Account', full: 'ACCOUNT & AUTH (SUPABASE)',
     cmds: [
       { id: 'auth-status', label: 'auth-status', desc: 'Who am I / session expiry', flags: {} },
-      { id: 'login',       label: 'login',       desc: 'Sign in (Supabase email + password)',//crashes, also need an ip binding or sth like that to not having to login every now and then, dev suggests
+      { id: 'login',       label: 'login',       desc: 'Sign in',//crashes, also need an ip binding or sth like that to not having to login every now and then, dev suggests
         flags: {
           '--email':    { t:'txt', lbl:'Email address', def:'' },
           '--password': { t:'txt', lbl:'Password (prompted if omitted)', def:'' },
         },
       },
-      { id: 'register', label: 'register', desc: 'Create new account (email confirmation)',
+      { id: 'register', label: 'register', desc: 'Create new account',
         flags: {
           '--email': { t:'txt', lbl:'Email address', def:'' },
         },
@@ -365,8 +364,8 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const [pickerSelected, setPickerSelected] = useState(() => new Set());
   const [pinBuffer, setPinBuffer] = useState('');
   const [pendingRun, setPendingRun] = useState(null); // { cmd, flagValues } awaiting PIN confirmation
-  const [chatHistory, setChatHistory] = useState(() => []);
   const [chatInput, setChatInput] = useState('');
+  const [chatStatus, setChatStatus] = useState('');
   const [pendingLlmConfirm, setPendingLlmConfirm] = useState(null); // { cmd, flagValues, argv } awaiting explicit confirm
   const [clock, setClock] = useState(() => new Date().toLocaleTimeString('en-GB'));
   const [health, setHealth] = useState(() => loadDashboardHealth());
@@ -712,7 +711,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         }
         if (key.escape) {
           setPendingLlmConfirm(null);
-          setChatHistory((h) => [...h, { role: 'system', text: 'Cancelled.' }]);
+          setChatStatus('Cancelled.');
           return;
         }
         return;
@@ -721,12 +720,11 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         const text = chatInput.trim();
         setChatInput('');
         if (!text) return;
-        setChatHistory((h) => [...h, { role: 'user', text }]);
         const universes = { symbolUniverse: SYMBOL_UNIVERSE, strategyUniverse: STRATEGY_UNIVERSE };
         const result = parseChatInput(text, M, universes);
         if (result.ok) {
           const argv = buildArgv(result.cmd, result.flagValues);
-          setChatHistory((h) => [...h, { role: 'system', text: 'Running: sovereign ' + argv.join(' ') }]);
+          setChatStatus('Running: sovereign ' + argv.join(' '));
           runOrGatePin(result.cmd, result.flagValues);
           return;
         }
@@ -735,21 +733,15 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         // so it's fired off here and the result lands via state once it
         // resolves; the synchronous handler returns immediately rather than
         // blocking the keypress dispatch on a 30s-capped network call.
-        setChatHistory((h) => [...h, { role: 'system', text: 'Hmm, let me check that...' }]);
+        setChatStatus('Hmm, let me check that...');
         resolveWithLLM(text, M, universes).then((llmResult) => {
           if (!mountedRef.current) return;
           if (llmResult.ok) {
             const argv = buildArgv(llmResult.cmd, llmResult.flagValues);
             setPendingLlmConfirm({ cmd: llmResult.cmd, flagValues: llmResult.flagValues, argv });
-            setChatHistory((h) => [...h, {
-              role: 'confirm',
-              text: `Run "sovereign ${argv.join(' ')}"? [Enter] confirm  [Esc] cancel`,
-            }]);
+            setChatStatus(`Run "sovereign ${argv.join(' ')}"? [Enter] confirm  [Esc] cancel`);
           } else {
-            setChatHistory((h) => [...h, {
-              role: 'system',
-              text: "Still couldn't match that to a command. Try rephrasing, or press Tab for the menu.",
-            }]);
+            setChatStatus("Couldn't match that to a command. Try rephrasing.");
           }
         });
         return;
@@ -1007,25 +999,32 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
           ? '↑↓ option  ⏎ run  esc/← back  Tab chat  q quit'
           : '↑↓ category  ⏎/→ enter cmd  ↑↓ command  esc/← back  Tab chat  q quit';
 
-  const chatMaxLines = Math.max(5, (process.stdout.rows || 24) - 10);
-  const chatVisible = chatHistory.slice(-chatMaxLines);
-  const chatView = h(Box, {
-    flexDirection: 'column', flexGrow: 1, borderStyle: 'single', borderColor: CY, paddingX: 1,
-  },
-    h(Text, { color: CY, bold: true }, 'SOVEREIGN CHAT'),
-    h(Text, { color: MUT }, 'Type a command, e.g. "backend chart AAPL 1d" or "bt trend_following BTCUSDT". Tab for the full menu.'),
-    h(Text, { color: BDR }, '─'.repeat(96)),
-    h(Box, { flexDirection: 'column', flexGrow: 1 },
-      chatVisible.length === 0
-        ? h(Text, { color: MUT }, 'No commands yet -- type one below and press Enter.')
-        : chatVisible.map((entry, idx) => h(Text, {
-            key: idx,
-            color: entry.role === 'user' ? VAL : (entry.role === 'confirm' ? AM : GN),
-          }, (entry.role === 'user' ? '> ' : '  ') + entry.text)),
+  // Thin input bar, always visible underneath the grid -- not a separate
+  // page/section. A single top rule (no full box), the prompt + typed text,
+  // and one muted status line below for the last result/confirm prompt.
+  // Tab (handled above) toggles whether this bar or the grid is receiving
+  // keystrokes; the grid itself never gets hidden.
+  //
+  // KNOWN ISSUE (deferred to next session, user-approved 2026-06-22): on the
+  // legacy PowerShell console host (conhost.exe, not Windows Terminal),
+  // typed characters visually lag/appear in the wrong spot until a word
+  // boundary. Root cause: every keystroke here triggers a full Ink re-render
+  // of the ENTIRE multi-line screen (sidebar + content + output + this bar +
+  // footer), which requires multi-line cursor-up ANSI movement -- exactly
+  // the category of sequence that's flaky on that console host. A CLI-style
+  // single-line prompt (plain `\r` + clear-to-end-of-line + rewrite, no
+  // cursor-up needed) wouldn't hit this. Real fix: isolate this input's
+  // per-keystroke redraw from the rest of the tree (e.g. a raw single-line
+  // write path that bypasses Ink's full-tree reconciliation for keystrokes),
+  // not just "use a different terminal" -- not attempted yet, real
+  // architecture change.
+  const chatBar = h(Box, { flexDirection: 'column' },
+    h(Box, { borderStyle: 'single', borderTop: true, borderBottom: false, borderLeft: false, borderRight: false, borderColor: focus === 'chat' ? CY : BDR, paddingX: 1 },
+      h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
+      h(Text, { color: VAL }, chatInput + (focus === 'chat' ? '█' : '')),
     ),
-    h(Box, {},
-      h(Text, { color: CY }, '> '),
-      h(Text, { color: VAL }, chatInput + '█'),
+    h(Box, { paddingX: 1 },
+      h(Text, { color: MUT }, chatStatus || 'Tab to type a command (e.g. "backend chart AAPL 1d")')
     ),
   );
 
@@ -1077,7 +1076,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     // Body -- chat is the new default entry point (Tab switches to the grid
     // below); the grid itself, the symbol/strategy pickers, the PIN gate,
     // and the output panel are all completely unchanged.
-    focus === 'chat' ? chatView : focus === 'pin' ? pinView : h(Box, { flexDirection: 'row', flexGrow: 1 },
+    focus === 'pin' ? pinView : h(Box, { flexDirection: 'row', flexGrow: 1 },
 
       // Sidebar
       h(Box, {
@@ -1141,6 +1140,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
               )
       ),
     ),
+
+    // Chat bar -- always visible underneath the grid, except over the PIN
+    // gate (a deliberate full takeover for a security-critical prompt).
+    focus !== 'pin' && chatBar,
 
     // Footer
     h(Box, { borderStyle: 'single', borderColor: BDR, paddingX: 1 },

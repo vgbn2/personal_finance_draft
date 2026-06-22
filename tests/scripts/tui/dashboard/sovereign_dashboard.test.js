@@ -18,11 +18,15 @@ test('dashboard App: navigate into a flagged command, edit flags, and trigger Ru
   t.after(() => instance.unmount());
 
   await instance.waitUntilRenderFlush();
-  assert.match(stdout.snapshot(), /SOVEREIGN CHAT/, 'chat box is the default entry point on boot');
+  // The grid is always visible; the chat box is a thin input bar underneath
+  // it, not a separate page, and the chat input box has keyboard focus by
+  // default on boot.
+  assert.match(stdout.snapshot(), /Operational/, 'the grid is visible immediately on boot');
+  assert.match(stdout.snapshot(), /› /, 'the chat input bar is visible underneath the grid');
 
-  // Tab switches from the chat box into the existing grid view.
+  // Tab moves keyboard focus from the chat bar into the grid.
   await send(stdin, instance, [keys.tab]);
-  assert.match(stdout.snapshot(), /Operational/, 'Tab reveals the sidebar with the first category');
+  assert.match(stdout.snapshot(), /Operational/, 'Tab moves focus into the grid (still visible)');
 
   // side -> cmd: enter the Operational category's command list
   await send(stdin, instance, [keys.enter]);
@@ -462,7 +466,7 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   // Cycle down to the trailing "Run" row and trigger it.
   await send(stdin, instance, [keys.down, keys.down, keys.down, keys.down, keys.enter]);
 
-  assert.deepEqual(ranArgv, ['backend', 'chart', '--symbol', 'BTCUSDT', '--timeframe', '1d', '--bars', '200', '--width', '64']);
+  assert.deepEqual(ranArgv, ['backend', 'chart', '--symbol', 'BTCUSDT', '--timeframe', '1d', '--bars', '200']);
 });
 
 test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls back through real output, End jumps back to the live tail', async (t) => {
