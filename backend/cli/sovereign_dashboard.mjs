@@ -1008,19 +1008,19 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // Tab (handled above) toggles whether this bar or the grid is receiving
   // keystrokes; the grid itself never gets hidden.
   //
-  // TYPING-LAG FIX (2026-06-22 s55): typed characters used to lag / land in the
-  // wrong spot until a word boundary on Windows (worst on conhost.exe). The real
-  // root cause turned out to be more specific than "full multi-line re-render":
-  // Ink 7 (node_modules/ink/build/ink.js:100) does a FULL terminal clear+redraw
-  // on EVERY frame whenever `process.platform === 'win32' && (wasFullscreen ||
-  // isFullscreen)` -- i.e. whenever the rendered height >= viewport rows. The
-  // root Box used to set `height: process.stdout.rows` (exactly fullscreen), so
-  // every keystroke cleared the whole screen. Fixed at the render root by capping
-  // height to rows-1 (see the render return below): Ink then takes its
-  // incremental log-update path (log-update.js:107+) that line-diffs and rewrites
-  // only the changed line. NOTE: verified via Ink-source analysis + the fake-TTY
-  // harness; final confirmation on a real conhost.exe is the user's to make (no
-  // conhost in CI), tracked with the other real-terminal items.
+  // KNOWN ISSUE (typing lag on Windows / conhost.exe): typed characters lag and
+  // raw-echo in the wrong spot until a word boundary. Root cause is structural:
+  // this dashboard renders full-frame Ink inside the ALTERNATE screen buffer
+  // (\x1b[?1049h at mount), and on win32 Ink full-clears + redraws the WHOLE frame
+  // every keystroke (node_modules/ink/build/ink.js:100). conhost handles that
+  // poorly. ATTEMPT 1 (2026-06-22 s55, REVERTED): capping height to rows-1 routed
+  // Ink to its incremental line-diff path, but in the alt-screen that freed the
+  // bottom terminal row and conhost raw-echoed keystrokes onto it (a worse ghost-
+  // line artifact) -- confirmed by the user on real conhost. The durable fix is to
+  // stop full-frame-redrawing on each keystroke: render the chat input as its own
+  // single-line `\r`+clear-to-EOL prompt (the way Claude Code's own CLI does it),
+  // decoupled from Ink's frame -- a real architecture change, tracked as the open
+  // typing-lag item. See memory: reference-ink-windows-fullscreen-lag.
   const chatBar = h(Box, { flexDirection: 'column' },
     h(Box, { borderStyle: 'single', borderTop: true, borderBottom: false, borderLeft: false, borderRight: false, borderColor: focus === 'chat' ? CY : BDR, paddingX: 1 },
       h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
@@ -1061,20 +1061,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     : null;
 
   // ── Render ─────────────────────────────────────────────────────────────
-  // Height is capped one row BELOW the viewport on purpose (not `process.stdout.rows`).
-  // Ink 7's writer (node_modules/ink/build/ink.js:100) does a FULL terminal clear +
-  // full redraw on every frame when `process.platform === 'win32' && (wasFullscreen ||
-  // isFullscreen)`, where fullscreen means rendered height >= viewport rows. That
-  // full-clear-per-keystroke is the typing-lag root cause (worst on conhost.exe). Keeping
-  // the frame at rows-1 makes isFullscreen false, so Ink falls through to its incremental
-  // log-update path (log-update.js:107+) which line-diffs and only rewrites the changed
-  // line(s) -- the single chat-input line per keystroke -- with no full clear. Costs one
-  // row of height; the output panel already reserves headroom (maxLines = rows-10) so the
-  // body never overflows back into the full-clear branch.
-  // When rows is unknown (non-TTY / test harness) leave height undefined exactly
-  // as before -- only constrain to rows-1 when we actually have a real viewport,
-  // so this neither clips the fake-TTY snapshot tests nor changes headless behavior.
-  return h(Box, { flexDirection: 'column', height: process.stdout.rows ? process.stdout.rows - 1 : undefined },
+  return h(Box, { flexDirection: 'column', height: process.stdout.rows },
 
     // Header
     h(Box, { borderStyle: 'round', borderColor: CY, paddingX: 1 },
