@@ -42,6 +42,12 @@ function _writeCache(key, data) {
 }
 
 function archivePaths(root = CACHE_DIR) {
+  // `root = CACHE_DIR` only fires for `undefined` -- callers that thread an
+  // explicit `null` through (e.g. polymarket_backtest.js's --archive-root
+  // option defaulting through optionValue, which collapses an omitted flag
+  // to null) bypass it, so path.join(null, ...) throws. loadArchivedMarketIndex
+  // already guards with `opts.root || CACHE_DIR`; mirror that here too.
+  root = root || CACHE_DIR;
   return {
     root,
     manifest: path.join(root, 'manifest.json'),

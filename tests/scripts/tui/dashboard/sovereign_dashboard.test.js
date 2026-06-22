@@ -18,7 +18,11 @@ test('dashboard App: navigate into a flagged command, edit flags, and trigger Ru
   t.after(() => instance.unmount());
 
   await instance.waitUntilRenderFlush();
-  assert.match(stdout.snapshot(), /Operational/, 'sidebar shows the first category by default');
+  assert.match(stdout.snapshot(), /SOVEREIGN CHAT/, 'chat box is the default entry point on boot');
+
+  // Tab switches from the chat box into the existing grid view.
+  await send(stdin, instance, [keys.tab]);
+  assert.match(stdout.snapshot(), /Operational/, 'Tab reveals the sidebar with the first category');
 
   // side -> cmd: enter the Operational category's command list
   await send(stdin, instance, [keys.enter]);
@@ -119,6 +123,9 @@ test('dashboard App: bt --strategy flag cycles through real registered strategie
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
+  // Tab out of the chat box (the new default) into the grid view.
+  await send(stdin, instance, [keys.tab]);
+
   // side: Operational(0) -> Data(1) -> Backend(2) -> Research(3)
   await send(stdin, instance, [keys.down, keys.down, keys.down, keys.enter]);
   assert.match(stdout.snapshot(), /RESEARCH & BACKTESTING/);
@@ -210,10 +217,16 @@ test('dashboard App: shows PIN gate for live trading and passes PIN to child pro
   while (stdout.snapshot().includes('⌛ Running:') && Date.now() < deadline) {
     await delay(50);
   }
-  if (stdout.snapshot().includes('⌛ Running:')) {
-    await send(stdin, instance, [keys.escape]);
-    assert.match(stdout.snapshot(), /aborted[\s\S]*?user/);
-  }
+  // Unconditional, not "only if still running after the deadline": a real
+  // auto-trade --live child process got spawned the moment the PIN was
+  // submitted above, regardless of how this wait loop turns out. Relying
+  // on the "⌛ Running:" text alone to decide whether to abort left 8 real
+  // orphaned auto-trade processes running after repeated test runs during
+  // the chat-box feature's development (discovered via tasklist, not by
+  // this suite) -- Escape is the dashboard's own kill-switch and is safe to
+  // send even if the process already exited on its own.
+  await send(stdin, instance, [keys.escape]);
+  await delay(100);
 });
 
 test('dashboard App: in-pane running process can be aborted via Escape', async (t) => {
@@ -239,8 +252,11 @@ test('dashboard App: in-pane running process can be aborted via Escape', async (
   await instance.waitUntilRenderFlush();
 
   // Drill into watch's flags, move to the trailing Run row, trigger it.
+  // watch now has 4 flags (--family, --interval, --symbol, --timeframe --
+  // the latter two added for the optional live-chart mode), so the Run row
+  // sits 4 downs past the first flag instead of 2.
   await send(stdin, instance, [keys.enter]);
-  await send(stdin, instance, [keys.down, keys.down, keys.enter]);
+  await send(stdin, instance, [keys.down, keys.down, keys.down, keys.down, keys.enter]);
   assert.match(stdout.snapshot(), /Running:/);
 
   // Wait for the child process to be spawned (so childRef.current is populated)

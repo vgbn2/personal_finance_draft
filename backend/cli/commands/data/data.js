@@ -20,6 +20,7 @@ const {
   hasFlag,
   pageText,
   withLoadingAnimation,
+  shouldAnimate,
   DEFAULT_SNAPSHOT,
   DEFAULT_QUALITY_REPORT,
   DEFAULT_HISTORY
@@ -366,6 +367,15 @@ async function commandIngest(args) {
       printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
       return 1;
     }
+  }
+  // withLoadingAnimation silently skips its spinner on a non-TTY stdout (the
+  // case when this runs piped from the dashboard, not given a real TTY) --
+  // that's correct (a raw \r-spinner would just dump garbage into a piped
+  // stream), but it means zero output appears for the whole fetch duration,
+  // which reads as a hang. Print one explicit line first so there's visible
+  // progress in that case.
+  if (!shouldAnimate(args) && !hasFlag(args, '--json')) {
+    console.log(`Refreshing market cache (family=${ingestOptions.family || 'all'}, this can take a while)...`);
   }
   const snapshot = await withLoadingAnimation('Refreshing market cache', () => ingestMarketData(ingestOptions), args);
   if (hasFlag(args, '--full')) {
@@ -821,19 +831,43 @@ async function commandWatch(args) {
   const intervalMinutes = numericOption(args, '--interval', 15);
   const intervalMs = intervalMinutes * 60 * 1000;
 
+  // Optional live-chart mode: --symbol narrows watch to a single symbol and
+  // redraws its price history as an ANSI chart each cycle (reusing the same
+  // renderPriceChart() backend_chart.js already uses) instead of the
+  // multi-symbol latest-price table, addressing the request to chart `watch`
+  // instead of a plain table.
+  const chartSymbol = optionValue(args, '--symbol', null);
+  const chartTimeframe = optionValue(args, '--timeframe', '1d');
+
   let showLimit = 10;
   let latestBySymbol = new Map();
   let lastSyncTime = null;
   let lastSyncCount = 0;
   let lastSyncDuration = 0;
 
+  // When launched from the dashboard, this runs as a piped, non-TTY child
+  // (the dashboard only gives commands a real inherited TTY for
+  // INTERACTIVE_CMDS, and `watch` isn't one). console.clear() and the raw
+  // \r\x1b[K cursor-control writes below are meaningless on a pipe -- they
+  // land as literal control bytes in the dashboard's captured output text,
+  // visibly corrupting the rendered panel. Fall back to plain, append-only
+  // log lines in that case.
+  const isTTY = !!process.stdout.isTTY;
   const render = () => {
-    console.clear();
+    if (isTTY) console.clear();
     console.log(`\x1b[1;36mSOVEREIGN WATCH MODE\x1b[0m \x1b[90m(Family: ${family}, Interval: ${intervalMinutes}m)\x1b[0m`);
     console.log('\x1b[90mPress Ctrl+C to stop, Ctrl+T to show more.\x1b[0m\n');
 
     if (lastSyncTime) {
       process.stdout.write(`\x1b[32m✔\x1b[0m Last sync: \x1b[1m${lastSyncTime}\x1b[0m (\x1b[90m${lastSyncCount} records, ${lastSyncDuration}s\x1b[0m)\n\n`);
+    }
+
+    if (chartSymbol) {
+      const { renderPriceChart } = require('../../tui/visualizations.js');
+      const bars = (readTsIndex(DEFAULT_TS_DIR, chartSymbol, chartTimeframe) || [])
+        .filter((s) => typeof s.close === 'number' && isFinite(s.close));
+      console.log(renderPriceChart(bars, 64));
+      return;
     }
 
     if (latestBySymbol.size > 0) {
@@ -865,9 +899,19 @@ async function commandWatch(args) {
 
   const runIngest = async () => {
     const start = Date.now();
-    process.stdout.write(`\r\x1b[K\x1b[33m⌛\x1b[0m Synchronizing ${family} data...`);
+    const syncLabel = chartSymbol ? chartSymbol : family;
+    if (isTTY) {
+      process.stdout.write(`\r\x1b[K\x1b[33m⌛\x1b[0m Synchronizing ${syncLabel} data...`);
+    } else {
+      console.log(`Synchronizing ${syncLabel} data...`);
+    }
     try {
-      const snapshot = await ingestMarketData({ family: family === 'all' ? null : family });
+      // Chart mode only needs one symbol, not a whole-family ingest -- a
+      // huge win for the slow-boot complaint, since the table mode's
+      // multi-provider family fetch is exactly what made `watch` feel hung.
+      const snapshot = chartSymbol
+        ? await ingestMarketData({ symbol: chartSymbol, timeframe: chartTimeframe })
+        : await ingestMarketData({ family: family === 'all' ? null : family });
       lastSyncDuration = ((Date.now() - start) / 1000).toFixed(1);
       lastSyncTime = new Date().toLocaleTimeString();
 
@@ -884,7 +928,11 @@ async function commandWatch(args) {
       }
       render();
     } catch (error) {
-      process.stdout.write(`\r\x1b[K\x1b[31m✘\x1b[0m Sync failed: ${error.message}\n`);
+      if (isTTY) {
+        process.stdout.write(`\r\x1b[K\x1b[31m✘\x1b[0m Sync failed: ${error.message}\n`);
+      } else {
+        console.log(`Sync failed: ${error.message}`);
+      }
     }
   };
 
@@ -911,20 +959,26 @@ async function commandWatch(args) {
     if (global.suppressLogs) return; // Add suppression check
     const now = Date.now();
     const remaining = Math.max(0, nextRun - now);
-    const seconds = Math.floor(remaining / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const displaySeconds = seconds % 60;
 
-    const progressWidth = 20;
-    const progress = Math.min(1, (intervalMs - remaining) / intervalMs);
-    const filled = Math.floor(progress * progressWidth);
-    const empty = progressWidth - filled;
-    const progressBar = `\x1b[90m[\x1b[36m${'█'.repeat(filled)}\x1b[90m${'░'.repeat(empty)}]\x1b[0m`;
+    // The live countdown is only meaningful on a real TTY that can redraw
+    // the same line in place; piped (non-TTY) output would instead get one
+    // new line per second forever, flooding the dashboard's captured output.
+    if (isTTY) {
+      const seconds = Math.floor(remaining / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const displaySeconds = seconds % 60;
 
-    process.stdout.write(`\r\x1b[KNext refresh in: \x1b[1m${minutes}m ${displaySeconds}s\x1b[0m ${progressBar} `);
+      const progressWidth = 20;
+      const progress = Math.min(1, (intervalMs - remaining) / intervalMs);
+      const filled = Math.floor(progress * progressWidth);
+      const empty = progressWidth - filled;
+      const progressBar = `\x1b[90m[\x1b[36m${'█'.repeat(filled)}\x1b[90m${'░'.repeat(empty)}]\x1b[0m`;
+
+      process.stdout.write(`\r\x1b[KNext refresh in: \x1b[1m${minutes}m ${displaySeconds}s\x1b[0m ${progressBar} `);
+    }
 
     if (remaining <= 0) {
-      process.stdout.write('\n');
+      if (isTTY) process.stdout.write('\n');
       await runIngest();
       nextRun = Date.now() + intervalMs;
     }
