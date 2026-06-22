@@ -196,6 +196,20 @@ async function runBackendVisualize(args = []) {
   // Initial compute
   let state = computeSigmaState(symbol, timeframe, windowSize);
   if (!state) {
+    // Bars missing/insufficient -- try one ingest before giving up, instead
+    // of always requiring a separate manual `backend ingest` run first.
+    // Bounded to a single retry (not a loop) so a persistent failure (e.g.
+    // delisted symbol, no provider coverage) still surfaces as a real error
+    // rather than hanging.
+    try {
+      const { ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
+      await ingestMarketData({ symbol, timeframe });
+      state = computeSigmaState(symbol, timeframe, windowSize);
+    } catch {
+      // fall through to the existing error reporting below
+    }
+  }
+  if (!state) {
     const snap = readSnapshot(DEFAULT_HISTORY);
     if (!snap) return { ok: false, error: 'No cache data found. Run a backfill first.' };
     return { ok: false, error: `Insufficient data for ${symbol} on ${timeframe} (need ${windowSize}+ bars).` };
