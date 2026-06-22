@@ -139,7 +139,7 @@ const COMMAND_MANIFEST = {
       { id: 'status',   label: 'Status ', args: [] },
       { id: 'cockpit',  label: 'Terminal dashboard', args: [] },
       { id: 'watch',    label: 'Watch', flags: {
-        '--family':   { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities', 'macro', 'prediction_market'], label: 'Family', default: 'all' },
+        '--family':   { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities'], label: 'Family', default: 'all' },
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' }
       }},
       { id: 'cache-clean', label: 'Cache Clean', flags: {
@@ -214,11 +214,11 @@ const COMMAND_MANIFEST = {
         '--days': { type: 'text', default: '730', label: 'History window (days)' },
         '--allow-degraded': { type: 'confirm', label: 'Allow degraded data?', default: false }
       }},
-      { id: 'optimize', label: 'Optimize (Indicators only)', loading: true, flags: {
+      { id: 'optimize', label: 'Optimize Indicators', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
       }},
-      { id: 'edge-decay', label: 'Edge Decay (Rolling window alpha check)', loading: true, flags: {
+      { id: 'edge-decay', label: 'Edge Decay ', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--symbol': { type: 'text', default: '', label: 'Symbol filter (optional)' }
