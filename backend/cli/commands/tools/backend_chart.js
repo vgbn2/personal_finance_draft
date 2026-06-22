@@ -3,7 +3,7 @@ const utils = require('../../lib/utils.js');
 const { optionValue, DEFAULT_HISTORY } = utils;
 const { readSnapshot, readTsIndex } = require('../../../../shared/lib/market/validation.js');
 const { DEFAULT_TS_DIR } = require('../data/data_rollup.js');
-const { renderPriceChart } = require('../../tui/visualizations.js');
+const { renderPriceChart, renderCandlestickChart } = require('../../tui/visualizations.js');
 
 // Same deep-ts-index-first, shallow-cache-fallback pattern backend_visualize.js's
 // computeSigmaState() uses -- deep historical bars live in the ts-index, not the
@@ -26,6 +26,8 @@ async function runBackendChart(args = []) {
   const timeframe = optionValue(args, '--timeframe', '1d');
   const width = Math.max(10, parseInt(optionValue(args, '--width', '64'), 10) || 64);
   const barsWindow = Math.max(1, parseInt(optionValue(args, '--bars', '200'), 10) || 200);
+  // 'line' (default, existing behavior) or 'candle' (OHLC candlesticks).
+  const style = String(optionValue(args, '--style', 'line')).toLowerCase();
 
   if (!symbol && utils.isRichTerminal()) {
     const { pickAssets } = require('../../tui/asset_picker');
@@ -40,8 +42,9 @@ async function runBackendChart(args = []) {
   }
   const bars = allBars.slice(-barsWindow);
 
-  console.log(renderPriceChart(bars, width));
-  return { ok: true, symbol, timeframe, width, bars: bars.length, total_bars_available: allBars.length };
+  const isCandle = style === 'candle' || style === 'candles' || style === 'candlestick';
+  console.log(isCandle ? renderCandlestickChart(bars, width) : renderPriceChart(bars, width));
+  return { ok: true, symbol, timeframe, width, style: isCandle ? 'candle' : 'line', bars: bars.length, total_bars_available: allBars.length };
 }
 
 module.exports = { loadChartBars, runBackendChart };
