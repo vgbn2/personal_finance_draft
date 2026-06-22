@@ -608,8 +608,13 @@ function renameWithRetry(src, dest, retries = 5, delayMs = 50) {
       if (err.code === 'ENOENT') {
         try { fs.mkdirSync(path.dirname(dest), { recursive: true }); } catch (e) {}
       }
-      const start = Date.now();
-      while (Date.now() - start < delayMs) {}
+      // Block this thread for delayMs without a CPU busy-spin. Atomics.wait on
+      // a throwaway never-notified SharedArrayBuffer is a true OS-level sleep
+      // (the timeout branch returns 'timed-out'); it stays synchronous to match
+      // this function's contract and adds no dependency. The previous
+      // `while (Date.now()-start < delayMs) {}` pegged a core and blocked the
+      // event loop for up to ~250ms (5 × 50ms) per contended rename.
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs);
     }
   }
 }
@@ -988,6 +993,7 @@ module.exports = {
   readTsIndex,
   readTsIndexSince,
   recordKey,
+  renameWithRetry,
   validateSnapshot,
   writeJson,
   writePartitionedSnapshot,
