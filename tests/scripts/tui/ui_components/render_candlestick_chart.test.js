@@ -62,3 +62,26 @@ test('renderCandlestickChart buckets a long series into the requested number of 
   const out = stripAnsi(renderCandlestickChart(bars, 40, 6));
   assert.match(out, /5000 bars loaded, 40 candles/);
 });
+
+test('renderCandlestickChart draws an SMA overlay (labelled, yellow) when smaPeriod is set', () => {
+  const bars = Array.from({ length: 30 }, (_, i) => ({ open: 100 + i, high: 101 + i, low: 99 + i, close: 100 + i }));
+  const out = renderCandlestickChart(bars, 20, 8, { smaPeriod: 5 });
+  assert.match(stripAnsi(out), /SMA\(5\)/);
+  assert.match(out, new RegExp(A.YELLOW.replace(/\x1b\[/, '\\x1b\\[')), 'SMA marker/label is yellow');
+});
+
+test('renderCandlestickChart omits the SMA label when no period is given', () => {
+  const bars = Array.from({ length: 10 }, (_, i) => ({ open: i, high: i + 1, low: i - 1, close: i }));
+  assert.doesNotMatch(stripAnsi(renderCandlestickChart(bars, 8, 6)), /SMA\(/);
+});
+
+test('renderCandlestickChart renders a volume subplot when showVolume and bars carry volume', () => {
+  const bars = Array.from({ length: 20 }, (_, i) => ({ open: 100, high: 102, low: 98, close: 101, volume: 1000 + i * 100 }));
+  const out = stripAnsi(renderCandlestickChart(bars, 16, 6, { showVolume: true }));
+  assert.match(out, /Volume \(max/);
+});
+
+test('renderCandlestickChart skips the volume subplot when no bar carries volume', () => {
+  const bars = Array.from({ length: 10 }, () => ({ open: 100, high: 101, low: 99, close: 100 }));
+  assert.doesNotMatch(stripAnsi(renderCandlestickChart(bars, 8, 6, { showVolume: true })), /Volume \(max/);
+});
