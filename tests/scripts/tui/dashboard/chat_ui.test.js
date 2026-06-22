@@ -51,7 +51,7 @@ test('chat: deterministic phrase runs immediately, no LLM call needed', async (t
 
   await send(stdin, instance, [...'backend chart AAPL 1h', keys.enter]);
   assert.equal(runCalls.length, 1);
-  assert.deepEqual(runCalls[0].argv, ['backend', 'chart', '--symbol', 'AAPL', '--timeframe', '1h', '--bars', '200']);
+  assert.deepEqual(runCalls[0].argv, ['backend', 'chart', '--symbol', 'AAPL', '--timeframe', '1h', '--style', 'line', '--bars', '200']);
   assert.match(stdout.snapshot(), /Running: sovereign backend chart/);
 
   await waitUntilNotRunning(stdout);
