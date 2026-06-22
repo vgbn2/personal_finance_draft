@@ -7,6 +7,25 @@ last_audit_date: 2026-06-22
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Implementation Note - 2026-06-22 session 55 (pass 2) - all 4 carryovers + last debt item
+- Second mass-implement pass: cleared the remaining debt + **all four open carryovers**. Suite
+  **594/592/0fail/2skip**; hygiene clean; gateway tsc exit 0.
+- **Gateway `processProposedOrders`** (`index.ts:757-801`): inspects `order.status` per order, sets
+  `process.exitCode=1` + summary on any failure (was silently swallowed). Commit `4f65c7aa`.
+- **Chart upgrade — all 3 parts done** (carryover #1): `renderCandlestickChart()` with candlestick
+  body+wick, yellow SMA(N) overlay, volume subplot; `--style candle`/`--sma`/`--volume` flags.
+  Commits `79d2129f`, `2d17aa26`.
+- **Typing-lag fix** (carryover #2): root cause = Ink 7 full-clears every frame on `win32 && fullscreen`
+  (`ink/build/ink.js:100`); root Box forced `height: process.stdout.rows`. Capped to `rows-1` →
+  incremental line-diff path. Commit `77cd31a7`. **Real-conhost confirmation still the user's.**
+- **graphify-out** (carryover #4): AST-only refresh, 11,015→11,542 nodes / 958 communities
+  (gitignored, not committed). Full semantic skipped — doc-change set was mostly noise; tighten
+  `.graphifyignore` first.
+- **Carryover #3 (real-terminal confirmation)** remains the user's: `bt --strategy`, `backend visualize`
+  force-ingest, and now the typing-lag fix all need a live terminal check (no conhost in CI).
+- An external label-shortener (cron) trimmed the `--sma`/`--volume` manifest labels mid-session;
+  harmless, tests green, folded into the typing-lag commit and disclosed there.
+
 ## Implementation Note - 2026-06-22 session 55 - blast-through audit + mass-implement (3 backlog debts cleared)
 - **Focused audit** (anchor `03b3c8d5`→`0903df6b`): session-54 TUI/chat surface traced clean. The new
   LLM command resolver (`chat_llm_fallback.js`) verified **shell-safe by code-trace** — full chain
