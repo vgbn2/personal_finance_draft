@@ -1,3 +1,5 @@
+const { fetchWithRetry } = require('../../../shared/lib/runtime/fetch_retry');
+
 const GAMMA_API = 'https://gamma-api.polymarket.com';
 
 export interface TradingInfo {
@@ -14,7 +16,7 @@ export async function fetchTradingInfo(slug: string): Promise<TradingInfo | null
 
   let events: any[];
   try {
-    const res = await fetch(`${GAMMA_API}/events?slug=${encodeURIComponent(eventSlug)}`);
+    const res = await fetchWithRetry(`${GAMMA_API}/events?slug=${encodeURIComponent(eventSlug)}`);
     if (!res.ok) return null;
     const body = await res.json();
     events = Array.isArray(body) ? body : body?.data ?? [];
