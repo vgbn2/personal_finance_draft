@@ -16,12 +16,22 @@ const {
   readDaemonStatus, renderProgressBar,
 } = require('./tui/dashboard_exec.js');
 const { DAEMON_STATUS_PATH } = require('./commands/data/backfill_daemon.js');
+const { parseChatInput } = require('./tui/chat_parser.js');
+const { resolveWithLLM } = require('./tui/chat_llm_fallback.js');
 
 // Resolved once at module load (mirrors tui/manifest.js's static-per-process
 // registry read); falls back to the manual-text-entry placeholder if the
 // registry is empty or unreadable.
 const STRATEGY_OPTIONS = loadStrategyOptions();
 const STRATEGY_FLAG_OPTS = STRATEGY_OPTIONS.length > 0 ? STRATEGY_OPTIONS : ['<registered strategies>'];
+
+// Reshaped into the same {symbol, category, sector} shape buildSymbolPickerRows
+// expects, so `bt --strategy` can reuse the exact same picker overlay/keyboard
+// handling as `pickSymbol` flags instead of a second hand-rolled UI (the
+// strategy list is small and flat, so one synthetic category/sector is fine).
+const STRATEGY_UNIVERSE = STRATEGY_OPTIONS.length > 0
+  ? STRATEGY_OPTIONS.map((opt) => ({ symbol: opt.value, category: 'STRATEGY', sector: 'Registered' }))
+  : [];
 
 // Same family/market/sector-tagged universe the legacy TUI's pickAssets()
 // wizard reads, resolved once at module load (top-level await -- a handful
@@ -72,11 +82,13 @@ const M = [
     label: 'Operational', full: 'OPERATIONAL DASHBOARD & HEALTH',
     cmds: [
       { id: 'status',      label: 'status',      desc: 'System health snapshot',           flags: {} },
-      { id: 'cockpit',     label: 'cockpit',      desc: 'Terminal dashboard (cockpit model)', flags: {} },
-      { id: 'watch',       label: 'watch',        desc: 'Live data feed, polls every N min',
+      { id: 'cockpit',     label: 'cockpit',      desc: 'Terminal dashboard (cockpit model)', flags: {} },//crashed- dev review 22/06
+      { id: 'watch',       label: 'watch',        desc: 'Live data feed, polls every N min (set --symbol for a live price chart instead of the table)',// took long to boot,require a press of the esc key to reveal,ruin the interface in here, can this be replace by charting? references for charting  C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\terminus,C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\_resources\lightweight-charts dev suggest -- RESOLVED: raw cursor-control output piped into the dashboard panel is now TTY-guarded (no more garbled output); added an optional --symbol live-chart mode reusing renderPriceChart() and narrowing ingest to just that symbol (much faster boot than the whole-family fetch). terminus/lightweight-charts had no reusable Node-TUI pattern. Pending user confirmation.
         flags: {
-          '--family':   { t:'sel', opts:['all','crypto','fx','equities','indices','commodities','macro'], lbl:'Data family', def:'all' },
-          '--interval': { t:'txt', lbl:'Poll interval (minutes)', def:'15' },
+          '--family':    { t:'sel', opts:['all','crypto','fx','equities','indices','commodities'], lbl:'Data family', def:'all' },
+          '--interval':  { t:'txt', lbl:'Poll interval (minutes)', def:'15' },
+          '--symbol':    { t:'txt', lbl:'Symbol for live chart mode (blank = multi-symbol table)', def:'', pickSymbol:'single' },
+          '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Chart timeframe (only used with --symbol)', def:'1d' },
         },
       },
       { id: 'cache-clean', label: 'cache-clean',  desc: 'Quarantine rejected cache records',
@@ -94,7 +106,7 @@ const M = [
           '--audit-vintages': { t:'yn', lbl:'Only show vintage anomalies?', def:false },
         },
       },
-      { id: 'ingest', label: 'ingest', desc: 'Fetch latest market data (all providers)',
+      { id: 'ingest', label: 'ingest', desc: 'Fetch latest market data (all providers)',//load too long,require a press of the esc key to reveal, is this redundant?, dev question, 
         flags: {
           '--family':       { t:'sel', opts:['all','crypto','fx','equities','indices','commodities','macro','onchain','prediction_market'], lbl:'Data family', def:'all' },
           '--symbol':       { t:'txt', lbl:'Symbol filter (optional)', def:'', pickSymbol:'single' },
@@ -112,7 +124,7 @@ const M = [
         },
       },
       { id: 'stop-backfill-daemon', label: 'stop-backfill-daemon', desc: 'Stop the background backfill daemon', flags: {} },
-      { id: 'intraday-rollup', label: 'intraday-rollup', desc: 'Derive coarser bins from 1m/5m base',
+      { id: 'intraday-rollup', label: 'intraday-rollup', desc: 'Derive coarser bins from 1m/5m base (manual one-shot -- backfill-daemon does this continuously in the background)',//same backgroud action like backfill-daemon, dev suggest -- RESOLVED: confirmed backfill_daemon.js calls rollupFromBase every cycle; this command stays as the manual/recovery path, not a duplicate. Desc updated 2026-06-22, pending user confirmation.
         flags: {
           '--family':     { t:'sel', opts:['all','crypto','equities'], lbl:'Family', def:'all' },
           '--symbols':    { t:'txt', lbl:'Symbol filter comma-sep (blank = all)', def:'' },
@@ -132,8 +144,8 @@ const M = [
   {
     label: 'Backend', full: 'BACKEND TOOLS (C++)',
     cmds: [
-      { id: 'backend status',      label: 'backend status',      desc: 'C++ backend health check', flags: {} },
-      { id: 'backend stats',       label: 'backend stats',       desc: 'Equity curve statistics from backtest', flags: {} },
+      { id: 'backend status',      label: 'backend status',      desc: 'C++ backend health check', flags: {} },//is this redundant?, dev question -- RESOLVED: not redundant, status.js documents it as a separate complementary command to top-level `status` (different layer: C++ backend vs overall system). Pending user confirmation.
+      { id: 'backend stats',       label: 'backend stats',       desc: 'Equity-curve stats from a CSV/backtest file (ad-hoc --equity, not duplicated by `bt`)', flags: {} },//is this redundant?, dev question -- RESOLVED: `bt` already prints Sharpe/vol/cum-return for its own run, so this is redundant for that common case; its real value is computing stats on an arbitrary external --equity curve, which `bt` can't do. Desc updated 2026-06-22, pending user confirmation.
       { id: 'backend correlation', label: 'backend correlation', desc: 'Pearson correlation matrix → heatmap',
         flags: {
           '--symbols':          { t:'txt', lbl:'Symbols comma-sep, min 2 (blank = default equities)', def:'', pickSymbol:'multi' },
@@ -143,7 +155,7 @@ const M = [
           '--drop-non-overlap': { t:'yn',  lbl:'Drop non-overlapping symbols auto?', def:false },
         },
       },
-      { id: 'backend visualize', label: 'backend visualize', desc: 'Sigma band live view (Bollinger)',
+      { id: 'backend visualize', label: 'backend visualize', desc: 'Sigma band live view (Bollinger)',//force ingest if lacking in bars, dev suggest -- RESOLVED: backend_visualize.js now runs one ingestMarketData() retry on insufficient bars before erroring. Pending user confirmation.
         flags: {
           '--symbol':    { t:'txt', lbl:'Symbol to visualize (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m'], lbl:'Timeframe', def:'1d' },
@@ -152,13 +164,13 @@ const M = [
           '--no-poll':   { t:'yn',  lbl:'One-shot (no live poll)?', def:false },
         },
       },
-      { id: 'backend universe', label: 'backend universe', desc: 'Cached symbol inventory (all families)', flags: {} },
+      { id: 'backend universe', label: 'backend universe', desc: 'Cached symbol inventory (all families)', flags: {} },//is this redundant?, deb question
       // Appended after 'backend universe' deliberately, not next to 'backend
       // visualize' above -- sovereign_dashboard.test.js hardcodes initialCmdI:4
       // for 'backend universe' (its real, fast, deterministically-long output
       // is used to test panel scrolling); inserting earlier in this list would
       // have silently shifted that index and broken an unrelated test.
-      { id: 'backend chart', label: 'backend chart', desc: 'OHLCV price chart (ANSI line chart)',
+      { id: 'backend chart', label: 'backend chart', desc: 'OHLCV price chart (ANSI line chart)',//move this somewhere else? also the keyboard is still broken in this cl, as in i cant type well, redesgin the typing , dev suggest
         flags: {
           '--symbol':    { t:'txt', lbl:'Symbol to chart (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
@@ -183,7 +195,7 @@ const M = [
       },
       { id: 'bt', label: 'bt', desc: 'Backtest — OOS split, trust gate, prop-firm fit',
         flags: {
-          '--strategy':       { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'' },
+          '--strategy':       { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'', pickStrategy:'single' },//i want to be able to choose strategies like choosing sym,bols, dev review -- RESOLVED: added pickStrategy:'single', reuses the same symbol-picker overlay (STRATEGY_UNIVERSE). Pending user confirmation.
           '--symbol':         { t:'txt', lbl:'Symbols comma-sep (blank = strategy universe)', def:'', pickSymbol:'multi' },
           '--timeframe':      { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
           '--days':           { t:'txt', lbl:'History window (days)', def:'730' },
@@ -233,15 +245,15 @@ const M = [
     label: 'Polymarket', full: 'PREDICTION MARKETS',
     cmds: [
       { id: 'polymarket portfolio',    label: 'polymarket portfolio',    desc: 'Live portfolio & pUSD balance', flags: {} },
-      { id: 'polymarket markets',      label: 'polymarket markets',      desc: 'Browse & trade active markets (interactive)', flags: {} },
-      { id: 'polymarket history',      label: 'polymarket history',      desc: 'Historical CLOB price data for an event',
+      { id: 'polymarket markets',      label: 'polymarket markets',      desc: 'Browse & trade active markets (interactive)', flags: {} },//dev review:.,crashes
+      { id: 'polymarket history',      label: 'polymarket history',      desc: 'Historical CLOB price data for an event',//doesnt work, dev review
         flags: {
           '--event':        { t:'txt', lbl:'Prediction event key', def:'fed_rate_cut_prob' },
           '--history-days': { t:'txt', lbl:'Historical days', def:'30' },
           '--timeframe':    { t:'sel', opts:['1d','1h','15m'], lbl:'Timeframe', def:'1h' },
         },
       },
-      { id: 'polymarket backtest', label: 'polymarket backtest', desc: 'Resolved markets P&L backtest',
+      { id: 'polymarket backtest', label: 'polymarket backtest', desc: 'Resolved markets P&L backtest',//doesnt work- dev review 
         flags: {
           '--strategy':        { t:'sel', opts:['low_prob_dip','mean_revert'], lbl:'Strategy', def:'low_prob_dip' },
           '--tag-id':          { t:'txt', lbl:'Gamma tag ID (21 = crypto 2023+)', def:'21' },
@@ -250,7 +262,7 @@ const M = [
           '--entry-threshold': { t:'txt', lbl:'Max entry price (low_prob_dip)', def:'0.15' },
         },
       },
-      { id: 'polymarket derive-creds', label: 'polymarket derive-creds', desc: 'Derive L2 API credentials from wallet', flags: {} },
+      { id: 'polymarket derive-creds', label: 'polymarket derive-creds', desc: 'Derive L2 API credentials from wallet', flags: {} },//crashes  dev review
       {
         id: 'bot',
         label: 'bot',
@@ -316,7 +328,7 @@ const M = [
     label: 'Account', full: 'ACCOUNT & AUTH (SUPABASE)',
     cmds: [
       { id: 'auth-status', label: 'auth-status', desc: 'Who am I / session expiry', flags: {} },
-      { id: 'login',       label: 'login',       desc: 'Sign in (Supabase email + password)',
+      { id: 'login',       label: 'login',       desc: 'Sign in (Supabase email + password)',//crashes, also need an ip binding or sth like that to not having to login every now and then, dev suggests
         flags: {
           '--email':    { t:'txt', lbl:'Email address', def:'' },
           '--password': { t:'txt', lbl:'Password (prompted if omitted)', def:'' },
@@ -338,15 +350,24 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const [catI,  setCatI]  = useState(initialCatI);
   const [cmdI,  setCmdI]  = useState(initialCmdI);
   const [subcmdI, setSubcmdI] = useState(-1);
-  const [focus, setFocus] = useState(initialCmdI >= 0 ? 'cmd' : 'side');
+  // Default boot (no explicit initial position) lands in the chat box, the
+  // new primary entry point; an explicit initialCmdI (used after returning
+  // from a spawned command, and by tests that target the grid directly)
+  // still goes straight to 'cmd' as before.
+  const [focus, setFocus] = useState(initialCmdI >= 0 ? 'cmd' : 'chat');
   const [flagI, setFlagI] = useState(-1);
   const [flagValues, setFlagValues] = useState({});
   const [editing, setEditing] = useState(false);
   const [editBuffer, setEditBuffer] = useState('');
+  const [pickerUniverse, setPickerUniverse] = useState(() => SYMBOL_UNIVERSE);
   const [pickerQuery, setPickerQuery] = useState('');
   const [pickerIndex, setPickerIndex] = useState(0);
   const [pickerSelected, setPickerSelected] = useState(() => new Set());
   const [pinBuffer, setPinBuffer] = useState('');
+  const [pendingRun, setPendingRun] = useState(null); // { cmd, flagValues } awaiting PIN confirmation
+  const [chatHistory, setChatHistory] = useState(() => []);
+  const [chatInput, setChatInput] = useState('');
+  const [pendingLlmConfirm, setPendingLlmConfirm] = useState(null); // { cmd, flagValues, argv } awaiting explicit confirm
   const [clock, setClock] = useState(() => new Date().toLocaleTimeString('en-GB'));
   const [health, setHealth] = useState(() => loadDashboardHealth());
   // backfill-daemon status, polled from disk regardless of who started that
@@ -508,8 +529,8 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const activeFlagMeta = activeFlagKey ? cmd.flags[activeFlagKey] : null;
   const pickerMulti = !!(activeFlagMeta && activeFlagMeta.pickSymbol === 'multi');
   const pickerRows = React.useMemo(() => {
-    return focus === 'symbolPicker' ? buildSymbolPickerRows(SYMBOL_UNIVERSE, pickerQuery) : [];
-  }, [focus, pickerQuery]);
+    return focus === 'symbolPicker' ? buildSymbolPickerRows(pickerUniverse, pickerQuery) : [];
+  }, [focus, pickerQuery, pickerUniverse]);
 
   function handleEditSubmit(value) {
     const fk = fkeys[flagI];
@@ -518,10 +539,31 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   }
 
   function handlePinSubmit(pin) {
-    setFocus('flags');
+    const run = pendingRun || { cmd, flagValues };
+    setFocus(cmd ? 'flags' : 'chat');
     setEditing(false);
     setPinBuffer('');
-    handleRun(buildArgv(cmd, flagValues), pin);
+    setPendingRun(null);
+    handleRun(buildArgv(run.cmd, run.flagValues), pin);
+  }
+
+  // The one and only place that decides whether a command needs the PIN
+  // gate before running -- both the flags panel's "Run" row and the chat
+  // box's Enter-to-run path must go through this, never call handleRun
+  // directly, or a chat-resolved --live command would bypass the gate
+  // entirely (the gate previously lived inline in the Run-row handler only,
+  // coupled to the grid's own `cmd`/`flagValues` closure state).
+  function runOrGatePin(runCmd, runFlagValues) {
+    const isLive = runFlagValues['--live'] === true;
+    const expectedPin = process.env.SOVEREIGN_TRADE_PIN;
+    if (isLive && expectedPin) {
+      setPendingRun({ cmd: runCmd, flagValues: runFlagValues });
+      setPinBuffer('');
+      setFocus('pin');
+      setEditing(true);
+    } else {
+      handleRun(buildArgv(runCmd, runFlagValues));
+    }
   }
 
   // keyboard
@@ -566,9 +608,13 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
 
     if (focus === 'pin') {
       if (key.escape) {
-        setFocus('flags');
+        // Return to wherever this gate was triggered from: the grid's
+        // flags panel (a real cmd selected there) or the chat box (a
+        // chat-resolved --live command, which never touches cmdI).
+        setFocus(cmd ? 'flags' : 'chat');
         setPinBuffer('');
         setEditing(false);
+        setPendingRun(null);
       }
       return;
     }
@@ -604,7 +650,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       if (key.backspace || key.delete) {
         const newQuery = pickerQuery.slice(0, -1);
         setPickerQuery(newQuery);
-        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(SYMBOL_UNIVERSE, newQuery), pickerMulti));
+        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(pickerUniverse, newQuery), pickerMulti));
         return;
       }
       if (input === ' ') {
@@ -632,15 +678,84 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       if (input && input.length === 1 && !key.ctrl && !key.meta) {
         const newQuery = pickerQuery + input;
         setPickerQuery(newQuery);
-        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(SYMBOL_UNIVERSE, newQuery), pickerMulti));
+        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(pickerUniverse, newQuery), pickerMulti));
         return;
       }
       return;
     }
 
-    if (input === 'q' || (key.ctrl && input === 'c')) {
+    // Bare 'q' means quit in every read-only grid/picker mode, but the chat
+    // box is free-text entry -- a typed word containing the letter "q"
+    // (e.g. "equity", "quick") must not silently exit the whole dashboard
+    // mid-sentence. Ctrl+C still quits everywhere, chat included.
+    if ((input === 'q' && focus !== 'chat') || (key.ctrl && input === 'c')) {
       process.stdout.write('\x1b[?1049l');
       exit();
+      return;
+    }
+    // Tab toggles between the chat box (new default entry point) and the
+    // existing grid view, from anywhere in either.
+    if (key.tab) {
+      setFocus((f) => (f === 'chat' ? 'side' : 'chat'));
+      return;
+    }
+    if (focus === 'chat') {
+      // A pending LLM-resolved command always blocks further typing until
+      // explicitly confirmed or cancelled -- this is the mandatory confirm
+      // gate; there is no other path from an LLM resolution to handleRun.
+      if (pendingLlmConfirm) {
+        if (key.return) {
+          const { cmd: pCmd, flagValues: pFlags } = pendingLlmConfirm;
+          setPendingLlmConfirm(null);
+          runOrGatePin(pCmd, pFlags);
+          return;
+        }
+        if (key.escape) {
+          setPendingLlmConfirm(null);
+          setChatHistory((h) => [...h, { role: 'system', text: 'Cancelled.' }]);
+          return;
+        }
+        return;
+      }
+      if (key.return) {
+        const text = chatInput.trim();
+        setChatInput('');
+        if (!text) return;
+        setChatHistory((h) => [...h, { role: 'user', text }]);
+        const universes = { symbolUniverse: SYMBOL_UNIVERSE, strategyUniverse: STRATEGY_UNIVERSE };
+        const result = parseChatInput(text, M, universes);
+        if (result.ok) {
+          const argv = buildArgv(result.cmd, result.flagValues);
+          setChatHistory((h) => [...h, { role: 'system', text: 'Running: sovereign ' + argv.join(' ') }]);
+          runOrGatePin(result.cmd, result.flagValues);
+          return;
+        }
+        // Deterministic parse failed -- fall back to the local LLM resolver
+        // before giving up. This is async (a real network call to Ollama),
+        // so it's fired off here and the result lands via state once it
+        // resolves; the synchronous handler returns immediately rather than
+        // blocking the keypress dispatch on a 30s-capped network call.
+        setChatHistory((h) => [...h, { role: 'system', text: 'Hmm, let me check that...' }]);
+        resolveWithLLM(text, M, universes).then((llmResult) => {
+          if (!mountedRef.current) return;
+          if (llmResult.ok) {
+            const argv = buildArgv(llmResult.cmd, llmResult.flagValues);
+            setPendingLlmConfirm({ cmd: llmResult.cmd, flagValues: llmResult.flagValues, argv });
+            setChatHistory((h) => [...h, {
+              role: 'confirm',
+              text: `Run "sovereign ${argv.join(' ')}"? [Enter] confirm  [Esc] cancel`,
+            }]);
+          } else {
+            setChatHistory((h) => [...h, {
+              role: 'system',
+              text: "Still couldn't match that to a command. Try rephrasing, or press Tab for the menu.",
+            }]);
+          }
+        });
+        return;
+      }
+      if (key.backspace || key.delete) { setChatInput((s) => s.slice(0, -1)); return; }
+      if (input && !key.ctrl && !key.meta) { setChatInput((s) => s + input); return; }
       return;
     }
     if (focus === 'side') {
@@ -691,15 +806,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       if (key.downArrow) { setFlagI(i => Math.min(maxI, i + 1)); return; }
       if (flagI === maxI) {
         if (key.return) {
-          const isLive = flagValues['--live'] === true;
-          const expectedPin = process.env.SOVEREIGN_TRADE_PIN;
-          if (isLive && expectedPin) {
-            setPinBuffer('');
-            setFocus('pin');
-            setEditing(true);
-          } else {
-            handleRun(buildArgv(cmd, flagValues));
-          }
+          runOrGatePin(cmd, flagValues);
         }
         return;
       }
@@ -718,11 +825,13 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       if (key.return) {
         if (meta.t === 'yn') {
           setFlagValues(v => ({ ...v, [fk]: !v[fk] }));
-        } else if (meta.pickSymbol) {
+        } else if (meta.pickSymbol || meta.pickStrategy) {
+          const universe = meta.pickStrategy ? STRATEGY_UNIVERSE : SYMBOL_UNIVERSE;
           const currentVal = String(flagValues[fk] ?? '');
-          const multi = meta.pickSymbol === 'multi';
+          const multi = meta.pickSymbol === 'multi' || meta.pickStrategy === 'multi';
+          setPickerUniverse(universe);
           setPickerQuery('');
-          setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(SYMBOL_UNIVERSE, ''), multi));
+          setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(universe, ''), multi));
           setPickerSelected(new Set(multi
             ? currentVal.split(',').map((s) => s.trim()).filter(Boolean)
             : (currentVal ? [currentVal] : [])));
@@ -732,6 +841,27 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
           setEditing(true);
         } else {
           setFlagValues(v => ({ ...v, [fk]: cycleOption(meta, v[fk], 1) }));
+        }
+        return;
+      }
+      // Typing a printable character directly -- without pressing Enter
+      // first to switch into edit/picker mode -- used to do nothing at all
+      // while just browsing the flags panel, which read as a dead/broken
+      // keyboard for any text or symbol-picker flag. Jump straight into the
+      // right mode seeded with that keystroke, matching ordinary text-field
+      // muscle memory.
+      if ((textLike || meta.pickSymbol || meta.pickStrategy) && input && input.length === 1 && !key.ctrl && !key.meta) {
+        if (meta.pickSymbol || meta.pickStrategy) {
+          const universe = meta.pickStrategy ? STRATEGY_UNIVERSE : SYMBOL_UNIVERSE;
+          const multi = meta.pickSymbol === 'multi' || meta.pickStrategy === 'multi';
+          setPickerUniverse(universe);
+          setPickerQuery(input);
+          setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(universe, input), multi));
+          setPickerSelected(new Set());
+          setFocus('symbolPicker');
+        } else {
+          setEditBuffer(input);
+          setEditing(true);
         }
       }
     }
@@ -750,7 +880,12 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // active row so the flag/sub-option panel below has room — showing the full
   // list AND a multi-flag panel at once can exceed terminal rows and corrupt
   // Ink's cursor-repositioning redraw (frames visually overlap).
-  const drilled = (focus === 'flags' || focus === 'subcmd' || focus === 'pin' || focus === 'symbolPicker') && !!cmd;
+  // 'pin' intentionally excluded -- it's now rendered as a standalone
+  // top-level view (pinView below), not nested inside the grid, since a
+  // chat-resolved --live command has no corresponding grid cmd/cmdI
+  // selected (cmd would be null, which used to make the PIN gate silently
+  // fail to render at all).
+  const drilled = (focus === 'flags' || focus === 'subcmd' || focus === 'symbolPicker') && !!cmd;
   const cmdRows = drilled
     ? [
         h(Box, { key: cmd.id },
@@ -774,16 +909,6 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   let flagPanel;
   if (!cmd) {
     flagPanel = h(Text, { color: MUT }, '  ⏎ or → to enter command list');
-  } else if (focus === 'pin') {
-    flagPanel = h(Box, { flexDirection: 'column' },
-      h(Text, { color: RD, bold: true }, '  ⚠ LIVE EXECUTION SECURITY GATE'),
-      h(Text, { color: VAL }, '    Please enter your 4-digit Trade PIN to authorize live trades:'),
-      h(Box, { marginY: 1 },
-        h(Text, { color: YL }, '    PIN: '),
-        h(TextInput, { value: pinBuffer, onChange: setPinBuffer, onSubmit: handlePinSubmit, mask: '*' })
-      ),
-      h(Text, { color: MUT }, '    (Press Escape to cancel execution)')
-    );
   } else if (focus === 'symbolPicker') {
     const maxVisible = Math.max(6, (process.stdout.rows || 24) - 16);
     const pickerScroll = pickerIndex >= maxVisible ? pickerIndex - maxVisible + 1 : 0;
@@ -810,7 +935,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
           return h(Text, { key: row.value, color: active ? YL : VAL }, arrow + box + row.value);
         });
     flagPanel = h(Box, { flexDirection: 'column' },
-      h(Text, { color: CY, bold: true }, '  Select symbol' + (pickerMulti ? 's' : '') + ' — ' + activeFlagKey),
+      h(Text, { color: CY, bold: true }, '  Select ' + (activeFlagMeta && activeFlagMeta.pickStrategy ? 'strategy' : 'symbol') + (pickerMulti ? 's' : '') + ' — ' + activeFlagKey),
       h(Box, {}, h(Text, { color: YL }, '  Search: '), h(Text, { color: VAL }, pickerQuery + '█')),
       h(Text, { color: BDR }, '  ' + '─'.repeat(70)),
       ...rowNodes,
@@ -870,15 +995,54 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     );
   }
 
-  const footerHint = focus === 'symbolPicker'
-    ? (pickerMulti
-        ? '↑↓ browse  Space toggle  ⏎ confirm  esc cancel  type to search'
-        : '↑↓ browse  ⏎ select  esc cancel  type to search')
-    : focus === 'flags'
-      ? '↑↓ field  ←→ change  ⏎ edit/run  esc back  q quit'
-      : focus === 'subcmd'
-        ? '↑↓ option  ⏎ run  esc/← back  q quit'
-        : '↑↓ category  ⏎/→ enter cmd  ↑↓ command  esc/← back  q quit';
+  const footerHint = focus === 'chat'
+    ? 'type a command  ⏎ run  Tab menu  q quit'
+    : focus === 'symbolPicker'
+      ? (pickerMulti
+          ? '↑↓ browse  Space toggle  ⏎ confirm  esc cancel  type to search'
+          : '↑↓ browse  ⏎ select  esc cancel  type to search')
+      : focus === 'flags'
+        ? '↑↓ field  ←→ change  ⏎ edit/run  esc back  Tab chat  q quit'
+        : focus === 'subcmd'
+          ? '↑↓ option  ⏎ run  esc/← back  Tab chat  q quit'
+          : '↑↓ category  ⏎/→ enter cmd  ↑↓ command  esc/← back  Tab chat  q quit';
+
+  const chatMaxLines = Math.max(5, (process.stdout.rows || 24) - 10);
+  const chatVisible = chatHistory.slice(-chatMaxLines);
+  const chatView = h(Box, {
+    flexDirection: 'column', flexGrow: 1, borderStyle: 'single', borderColor: CY, paddingX: 1,
+  },
+    h(Text, { color: CY, bold: true }, 'SOVEREIGN CHAT'),
+    h(Text, { color: MUT }, 'Type a command, e.g. "backend chart AAPL 1d" or "bt trend_following BTCUSDT". Tab for the full menu.'),
+    h(Text, { color: BDR }, '─'.repeat(96)),
+    h(Box, { flexDirection: 'column', flexGrow: 1 },
+      chatVisible.length === 0
+        ? h(Text, { color: MUT }, 'No commands yet -- type one below and press Enter.')
+        : chatVisible.map((entry, idx) => h(Text, {
+            key: idx,
+            color: entry.role === 'user' ? VAL : (entry.role === 'confirm' ? AM : GN),
+          }, (entry.role === 'user' ? '> ' : '  ') + entry.text)),
+    ),
+    h(Box, {},
+      h(Text, { color: CY }, '> '),
+      h(Text, { color: VAL }, chatInput + '█'),
+    ),
+  );
+
+  // Standalone PIN-gate view, used for both the grid's "Run" row AND a
+  // chat-resolved --live command -- reads from pendingRun (always set by
+  // runOrGatePin right before this focus is entered) rather than the grid's
+  // own cmd/cmdI selection, which a chat-resolved command never sets.
+  const pinView = h(Box, { flexDirection: 'column', flexGrow: 1, borderStyle: 'single', borderColor: RD, paddingX: 1 },
+    h(Text, { color: RD, bold: true }, '⚠ LIVE EXECUTION SECURITY GATE'),
+    h(Text, { color: VAL }, 'Please enter your 4-digit Trade PIN to authorize live trades:'),
+    pendingRun && h(Text, { color: MUT }, 'sovereign ' + buildArgv(pendingRun.cmd, pendingRun.flagValues).join(' ')),
+    h(Box, { marginY: 1 },
+      h(Text, { color: YL }, 'PIN: '),
+      h(TextInput, { value: pinBuffer, onChange: setPinBuffer, onSubmit: handlePinSubmit, mask: '*' })
+    ),
+    h(Text, { color: MUT }, '(Press Escape to cancel execution)')
+  );
 
   const maxLines = Math.max(5, (process.stdout.rows || 24) - 10);
   const outputLines = output ? output.split('\n') : [];
@@ -910,8 +1074,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       h(Text, { color: MUT }, clock),
     ),
 
-    // Body
-    h(Box, { flexDirection: 'row', flexGrow: 1 },
+    // Body -- chat is the new default entry point (Tab switches to the grid
+    // below); the grid itself, the symbol/strategy pickers, the PIN gate,
+    // and the output panel are all completely unchanged.
+    focus === 'chat' ? chatView : focus === 'pin' ? pinView : h(Box, { flexDirection: 'row', flexGrow: 1 },
 
       // Sidebar
       h(Box, {
@@ -1021,14 +1187,49 @@ async function runExternal(argv, returnState) {
   // always happens after the current keypress is fully handled.
   await new Promise((resolve) => setImmediate(resolve));
   if (dashboard) {
-    dashboard.unmount();
+    try {
+      dashboard.unmount();
+    } catch (err) {
+      console.log('\n(dashboard unmount warning: ' + (err && err.message ? err.message : err) + ')\n');
+    }
     dashboard = null;
   }
-  console.log('\n$ sovereign ' + argv.join(' ') + '\n');
-  spawnSync(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...argv], { stdio: 'inherit' });
-  console.log('\n— press any key to return to dashboard —');
-  await waitForKeypress();
-  mountDashboard(returnState);
+  // The dev-review crash reports for cockpit/polymarket markets/derive-creds/
+  // login all trace to THIS shared launch path, not the commands themselves
+  // (each one runs clean standalone via `sovereign <cmd>` directly) -- so a
+  // single try/catch here, rather than four per-command fixes, is the actual
+  // fix. Any failure (spawn error, a remount throwing on corrupted Ink state)
+  // is reported and the loop still falls through to remounting instead of
+  // letting an uncaught exception kill the whole TUI process.
+  // dashboard.unmount() above restores cooked terminal mode (Ink no longer
+  // owns raw mode / its own SIGINT handling once unmounted). With raw mode
+  // off, a Ctrl+C typed while the child runs is a real console Ctrl+C event,
+  // not just a keypress byte -- and on Windows that event is broadcast to
+  // EVERY process attached to the console, including this parent. Node's
+  // default behavior for an unhandled SIGINT is immediate, silent process
+  // termination (no exception, so the try/catch below can never see it --
+  // this is what was actually causing the reported crashes, not a thrown
+  // error). A temporary no-op listener for the duration of the child's run
+  // absorbs that signal in the parent; the child (which owns its own
+  // readline/raw-mode handling) still sees and can act on it normally.
+  const sigintGuard = () => {};
+  process.on('SIGINT', sigintGuard);
+  try {
+    console.log('\n$ sovereign ' + argv.join(' ') + '\n');
+    spawnSync(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...argv], { stdio: 'inherit' });
+    console.log('\n— press any key to return to dashboard —');
+    await waitForKeypress();
+  } catch (err) {
+    console.log('\nError running command: ' + (err && err.message ? err.message : err) + '\n');
+  } finally {
+    process.removeListener('SIGINT', sigintGuard);
+  }
+  try {
+    mountDashboard(returnState);
+  } catch (err) {
+    console.log('\nFailed to restore dashboard: ' + (err && err.message ? err.message : err) + '\n');
+    process.exitCode = 1;
+  }
 }
 
 function mountDashboard(initial) {
