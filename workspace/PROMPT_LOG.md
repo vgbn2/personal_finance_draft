@@ -1,3 +1,34 @@
+# Prompt Log - 2026-06-22 (session 54)
+
+## Session Boot — 2026-06-22 (session 54)
+/session-orchestrator. New session (HEAD now `152247f0`, session 53's close-out is committed).
+`workspace/BOOTSTRAP.md` still absent. Working tree carries: (1) routine cron-generated data
+artifacts (notebooks/signal_library.json, storage/data/{features,models}/*.json,
+user_settings.json) — untouched, origin unconfirmed, consistent with prior sessions; (2) a
+user-driven "routine workspace archival" trim of STATE.md (1033→72 lines), HANDOFF.md
+(405→101 lines), SESSION_MEMORY.md (556→34 lines), and NEXT_SESSION_GOAL.md (cleared to a
+pointer stub) — all uncommitted, pre-dates this session's first message; (3) uncommitted edits
+to `backend/cli/sovereign_dashboard.mjs` — the user has hand-annotated ~14 dashboard menu
+entries with inline dev-review comments describing crashes (cockpit, polymarket markets,
+login), broken features (polymarket history/backtest), perf/UX gripes (watch + ingest slow to
+boot, esc-key-to-reveal, broken keyboard typing in backend chart), redundancy questions (backend
+status/stats/universe), and feature requests (replace watch with charting referencing
+terminus/lightweight-charts, strategy picker like symbol picker, session persistence for login,
+force-ingest from backend visualize); also dropped 'macro' from the `watch` command's `--family`
+sel options (one real, non-comment code change). Awaiting user direction on which to address.
+
+## Session Close — 2026-06-22 (session 54)
+"commit then end session". Closed out the full 15-item dev-review backlog plus a chat-style
+command input built as a new default entry point (rebuilt mid-session into a thin bar per user
+feedback, away from a full alternate page). 2 commits (`95a9c547`, `a0a5cda5`). Caught and fixed a
+real process leak (8 orphaned live-trading child processes from test runs, user-confirmed kill).
+Diagnosed but deferred (user-approved) two follow-ups: a candlestick/volume/SMA chart upgrade and
+isolating the chat bar's redraw to fix PowerShell typing lag — both documented inline in
+`sovereign_dashboard.mjs` and in `workspace/handoff/2026-06-22.md`. Full trail in that file;
+`workspace/SESSION_MEMORY.md` and `workspace/HANDOFF.md` updated. Suite 580/578/0fail/2skip;
+hygiene clean. `graphify-out` not refreshed — flagged as a next-session candidate given the size
+of this session's diff.
+
 # Prompt Log - 2026-06-22 (session 53)
 
 ## Session Boot — 2026-06-22 (session 53)
