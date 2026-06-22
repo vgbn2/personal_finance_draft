@@ -1,3 +1,64 @@
+### Mass-Implement — 2026-06-22 session 55 (closeout, anchor 0903df6b)
+
+Cleared three backlog debts from the audit below. Suite **583/581/0fail/2skip** (= 580 baseline + 3
+new tests); `npm run hygiene` clean; gateway `tsc --noEmit` exit 0.
+
+- **[x] Batch A — `renameWithRetry` busy-wait → real sleep + first-ever tests** (`shared/lib/market/validation.js:611`).
+  Swapped the `while (Date.now()-start < delayMs) {}` CPU spin for
+  `Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs)` (true OS-level sleep, no
+  event-loop block, no dependency). Exported the function; added `tests/scripts/lib/rename_with_retry.test.js`
+  (3 tests: transient-EPERM-then-success, real-sleep lower-bound proving it's not a no-op, rethrow
+  after exhausting retries). **verification lens B→A on shared/lib/market.**
+- **[x] Batch B — deleted 3 of 4 dead root shims.** `shared/lib/{backfill,ingestion,market_validation}.js`
+  removed (re-verified 0 consumers with a `.js`-aware grep + import/alias sweep). `polymarket_history.js`
+  was **wrongly flagged dead in the audit below and is KEPT** — see the corrected P3 row. **artifact-hygiene lens.**
+- **[x] Batch C — gateway raw `fetch` → `fetchWithRetry`** (`backend/gateway/src/cycle.ts:69,123`,
+  `backend/gateway/src/market.ts:17` + new import). Completes the 2026-06-12 fetch-retry rollout the
+  gateway was ~90% through. `tsc --noEmit -p backend/gateway/tsconfig.json` exit 0. **duplication/drift lens.**
+
+**Process lesson (durable):** the Hygiene Sweep's dead-module grep anchor must be `<name>(\.js)?['\"]`,
+not `<name>['\"]` — the bare form silently misses every `require('.../<name>.js')` with an explicit
+extension and produces a false "0 consumers" (this exact class caused the session-29 false negative too).
+
+---
+
+### Focused Audit — 2026-06-22 session 55 (anchor 03b3c8d5 → 0903df6b, session-54 TUI/chat surface)
+
+DCS start ≈0.95 (carried from session 54) → end ≈0.99. No crash/data-loss/security findings. The
+two new files and four modified production files from session 54's two code commits all traced clean
+on full-diff review; the headline risk (an LLM-assisted command resolver) is sound by construction.
+
+**Scope:** Focused. Tier 1 = `95a9c547` + `a0a5cda5` production files (8). Tier 3 (gated carryover) =
+none (`backend/api/*` ungated session 53). In-scope sections: `backend/cli/tui`, `backend/cli/commands/{data,tools}`, `shared/lib/market`.
+
+**Security — chat LLM fallback verified safe by code-trace, not assertion.** The new
+`chat_llm_fallback.js` resolves free text into a runnable command via the local Ollama client. Traced
+the full execution chain: `resolveWithLLM` → manifest validation (`command_id` must exist; every flag
+key must be a real flag, unknown keys dropped) → `flagValues` → `buildArgv` (`dashboard_exec.js:73`,
+`argv.push(key, str)` — array elements, never a concatenated string) → `spawn(process.execPath,
+[sovereign_cli.js, ...argv])` (`sovereign_dashboard.mjs:410/455/1222` — **no `shell:true` anywhere**).
+A malicious LLM-produced value therefore lands as a single inert argv element; there is no shell
+interpolation seam. Plus the caller enforces a mandatory confirm gate before any chat-resolved run.
+**No injection. No eval/dynamic-require.** Security lens: A.
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| P3 | shared/lib | `shared/lib/polymarket_history.js` (1-line root shim) | ~~4-layer dead-check all return 0 consumers~~ **CORRECTED (session 55 mass-implement): NOT dead.** The dead-check grep anchor `polymarket_history['\"]` missed `require('.../shared/lib/polymarket_history.js')` — the **`.js` extension** sits between the basename and the closing quote, so the regex never matched. `tests/scripts/strategy/polymarket_backtest.test.js` requires this shim with the extension. Deleting it broke that test; restored via recovery rule. The 3 session-52 shims (`backfill/ingestion/market_validation`) re-verified with a `.js`-aware grep + import/alias sweep = genuinely 0 consumers, and were deleted. | KEEP `polymarket_history.js` (load-bearing). Lesson: dead-check grep must use `<name>(\.js)?['\"]`. | shared/lib B (unchanged) |
+
+**Verified (live evidence, not reading alone):** `node --test chat_parser.test.js chat_ui.test.js`
+→ **22/22 pass** (incl. the mid-word false-positive guard, the mandatory LLM-confirm gate, the
+`--live` PIN gate from a chat-resolved command, and safe-degrade when Ollama is unavailable). Full
+suite unchanged from session-54 HEAD (580/578/0fail/2skip — no code changed since). Diffs of all 4
+modified files match their handoff claims exactly: `data.js` TTY-guards + chart mode, `backend_visualize.js`
+bounded single-retry force-ingest, `visualizations.js` width clamp (`terminalCols - 12`), `polymarket_history.js`
+`root = root || CACHE_DIR` null-guard mirroring the existing `loadArchivedMarketIndex` pattern.
+
+**Carryover debts (unchanged, none gating):** `renameWithRetry` busy-wait + zero coverage
+(`shared/lib/market/validation.js:601`, P2); 3 (now 4, incl. above) dead root shims; gateway's 3
+raw-`fetch` sites lacking the imported retry helper. None block new work.
+
+---
+
 ### Blast-Through Deep Audit — 2026-06-21 session 52 (anchor d21e25ce → 3da6e612, recent code + data pipeline)
 
 DCS start ≈0.96 (carried from session 50/51 close) → end ≈0.96 (no crash/data-loss findings; two
