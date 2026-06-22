@@ -466,7 +466,7 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   // Cycle down to the trailing "Run" row and trigger it.
   await send(stdin, instance, [keys.down, keys.down, keys.down, keys.down, keys.enter]);
 
-  assert.deepEqual(ranArgv, ['backend', 'chart', '--symbol', 'BTCUSDT', '--timeframe', '1d', '--bars', '200']);
+  assert.deepEqual(ranArgv, ['backend', 'chart', '--symbol', 'BTCUSDT', '--timeframe', '1d', '--style', 'line', '--bars', '200']);
 });
 
 test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls back through real output, End jumps back to the live tail', async (t) => {
