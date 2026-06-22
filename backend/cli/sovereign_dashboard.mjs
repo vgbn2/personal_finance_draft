@@ -1024,7 +1024,9 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // contained inside it (Gemini/Claude-CLI style) rather than floating under
   // a single top rule. Border brightens (cyan) when the chat bar has focus.
   const chatBar = h(Box, { flexDirection: 'column' },
-    h(Box, { borderStyle: 'round', borderColor: focus === 'chat' ? CY : BDR, paddingX: 1 },
+    // marginTop nudges the box down one row off the grid above it (terminals are
+    // row-based -- one row is the finest vertical step there is, no sub-row pixels).
+    h(Box, { borderStyle: 'round', borderColor: focus === 'chat' ? CY : BDR, paddingX: 1, marginTop: 1 },
       h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
       // Use ink-text-input's TextInput only when the bar is actively accepting
       // keystrokes (chat-focused, no pending LLM-confirm gate, nothing running)
