@@ -568,6 +568,35 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     }
   }
 
+  // Resolve + run a typed chat line. Invoked by the chat-bar <TextInput>'s
+  // onSubmit (Enter). Deterministic parse first; on a miss, fire the async local
+  // LLM resolver which lands a confirm gate via state. (Logic moved verbatim out
+  // of the old hand-rolled useInput chat handler so TextInput can own typing.)
+  function submitChat(raw) {
+    const text = (raw || '').trim();
+    setChatInput('');
+    if (!text) return;
+    const universes = { symbolUniverse: SYMBOL_UNIVERSE, strategyUniverse: STRATEGY_UNIVERSE };
+    const result = parseChatInput(text, M, universes);
+    if (result.ok) {
+      const argv = buildArgv(result.cmd, result.flagValues);
+      setChatStatus('Running: sovereign ' + argv.join(' '));
+      runOrGatePin(result.cmd, result.flagValues);
+      return;
+    }
+    setChatStatus('Hmm, let me check that...');
+    resolveWithLLM(text, M, universes).then((llmResult) => {
+      if (!mountedRef.current) return;
+      if (llmResult.ok) {
+        const argv = buildArgv(llmResult.cmd, llmResult.flagValues);
+        setPendingLlmConfirm({ cmd: llmResult.cmd, flagValues: llmResult.flagValues, argv });
+        setChatStatus(`Run "sovereign ${argv.join(' ')}"? [Enter] confirm  [Esc] cancel`);
+      } else {
+        setChatStatus("Couldn't match that to a command. Try rephrasing.");
+      }
+    });
+  }
+
   // keyboard
   useInput((input, key) => {
     // Output-panel scrolling: works in every focus mode (incl. while a
@@ -719,38 +748,12 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         }
         return;
       }
-      if (key.return) {
-        const text = chatInput.trim();
-        setChatInput('');
-        if (!text) return;
-        const universes = { symbolUniverse: SYMBOL_UNIVERSE, strategyUniverse: STRATEGY_UNIVERSE };
-        const result = parseChatInput(text, M, universes);
-        if (result.ok) {
-          const argv = buildArgv(result.cmd, result.flagValues);
-          setChatStatus('Running: sovereign ' + argv.join(' '));
-          runOrGatePin(result.cmd, result.flagValues);
-          return;
-        }
-        // Deterministic parse failed -- fall back to the local LLM resolver
-        // before giving up. This is async (a real network call to Ollama),
-        // so it's fired off here and the result lands via state once it
-        // resolves; the synchronous handler returns immediately rather than
-        // blocking the keypress dispatch on a 30s-capped network call.
-        setChatStatus('Hmm, let me check that...');
-        resolveWithLLM(text, M, universes).then((llmResult) => {
-          if (!mountedRef.current) return;
-          if (llmResult.ok) {
-            const argv = buildArgv(llmResult.cmd, llmResult.flagValues);
-            setPendingLlmConfirm({ cmd: llmResult.cmd, flagValues: llmResult.flagValues, argv });
-            setChatStatus(`Run "sovereign ${argv.join(' ')}"? [Enter] confirm  [Esc] cancel`);
-          } else {
-            setChatStatus("Couldn't match that to a command. Try rephrasing.");
-          }
-        });
-        return;
-      }
-      if (key.backspace || key.delete) { setChatInput((s) => s.slice(0, -1)); return; }
-      if (input && !key.ctrl && !key.meta) { setChatInput((s) => s + input); return; }
+      // Typing, backspace, and Enter-to-submit are owned by the <TextInput> in
+      // the chat bar (onChange + onSubmit=submitChat). Routing them through
+      // TextInput keeps the REAL hardware cursor inside the input box; the old
+      // hand-rolled `chatInput + '█'` render never positioned the terminal
+      // cursor, so on conhost.exe typed characters raw-echoed into the wrong
+      // corner. Nothing for the global handler to do in chat mode now.
       return;
     }
     if (focus === 'side') {
@@ -1024,7 +1027,14 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const chatBar = h(Box, { flexDirection: 'column' },
     h(Box, { borderStyle: 'single', borderTop: true, borderBottom: false, borderLeft: false, borderRight: false, borderColor: focus === 'chat' ? CY : BDR, paddingX: 1 },
       h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
-      h(Text, { color: VAL }, chatInput + (focus === 'chat' ? '█' : '')),
+      // Use ink-text-input's TextInput only when the bar is actively accepting
+      // keystrokes (chat-focused, no pending LLM-confirm gate, nothing running)
+      // so it owns the real terminal cursor. In every other state show a plain,
+      // cursorless echo of the buffer (matches the old non-focused appearance,
+      // and leaves Enter/Esc for the confirm gate / abort handlers).
+      (focus === 'chat' && !pendingLlmConfirm && !running)
+        ? h(TextInput, { value: chatInput, onChange: setChatInput, onSubmit: submitChat })
+        : h(Text, { color: VAL }, chatInput),
     ),
     h(Box, { paddingX: 1 },
       h(Text, { color: MUT }, chatStatus || 'Tab to type a command (e.g. "backend chart AAPL 1d")')
