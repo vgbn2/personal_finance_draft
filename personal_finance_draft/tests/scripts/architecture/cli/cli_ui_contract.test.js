@@ -10,7 +10,7 @@ test('optimize does not expose prop-firm selection', () => {
   const optimize = manifest.commands.research.find((entry) => entry.id === 'optimize');
   assert.ok(optimize);
   assert.ok(optimize.flags);
-  assert.match(optimize.label, /^Optimize \(Indicators only\)$/);
+  assert.match(optimize.label, /^Optimize Indicators$/);
   assert.equal(Object.prototype.hasOwnProperty.call(optimize.flags, '--prop-firm'), false);
 });
 
