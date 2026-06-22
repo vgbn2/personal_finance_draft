@@ -463,8 +463,9 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   await send(stdin, instance, [keys.enter]);
   await send(stdin, instance, [...'BTCUSDT', keys.enter]);
 
-  // Cycle down to the trailing "Run" row and trigger it.
-  await send(stdin, instance, [keys.down, keys.down, keys.down, keys.down, keys.enter]);
+  // Cycle down to the trailing "Run" row and trigger it. The chart command has
+  // 6 flag rows (symbol, timeframe, style, sma, volume, bars) above Run.
+  await send(stdin, instance, [keys.down, keys.down, keys.down, keys.down, keys.down, keys.down, keys.enter]);
 
   assert.deepEqual(ranArgv, ['backend', 'chart', '--symbol', 'BTCUSDT', '--timeframe', '1d', '--style', 'line', '--bars', '200']);
 });
