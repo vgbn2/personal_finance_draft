@@ -19,18 +19,22 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
-- **SESSION 55 (2026-06-22) — Blast-through audit + mass-implement: cleared 3 backlog debts.**
-  Full trail: `workspace/handoff/2026-06-22.md` (session 55) + `workspace/DEV_REVIEW.md` (mass-implement
-  closeout + the corrected session-55 audit block). (A) `renameWithRetry` busy-wait→`Atomics.wait` +
-  first-ever test coverage (`shared/lib/market/validation.js`, `tests/scripts/lib/rename_with_retry.test.js`);
-  (B) deleted 3 dead root shims (`shared/lib/{backfill,ingestion,market_validation}.js`) — a 4th,
-  `polymarket_history.js`, was wrongly flagged dead and is KEPT (load-bearing for `polymarket_backtest.test.js`;
-  dead-check grep blind spot now fixed in the blast-through skill); (C) finished the gateway fetch-retry
-  rollout (`cycle.ts:69,123`, `market.ts:17`→`fetchWithRetry`). Suite **583/581/0fail/2skip**, hygiene
-  clean, gateway `tsc` exit 0. **Still-open carryovers from session 54 (NOT touched this session):**
-  chart candlestick upgrade, chat-bar typing-lag fix, and real-terminal confirmation of the `bt
-  --strategy` picker + `backend visualize` force-ingest fallback. **Next non-feature gap:** gateway
-  `processProposedOrders()` silently swallows per-order failures (dormant). `graphify-out` still stale.
+- **SESSION 55 (2026-06-22) — Blast-through audit + TWO mass-implement passes. Cleared all queued
+  debt AND all four open carryovers. 7 commits.** Full trail: `workspace/handoff/2026-06-22.md`
+  (session 55) + `workspace/DEV_REVIEW.md` (both mass-implement closeouts + corrected audit block).
+  **Pass 1 (debt):** (A) `renameWithRetry` busy-wait→`Atomics.wait` + first-ever tests; (B) deleted 3
+  dead root shims (`backfill/ingestion/market_validation`) — `polymarket_history.js` was wrongly flagged
+  dead and KEPT (grep `.js`-extension blind spot, fixed in the blast-through skill); (C) gateway
+  fetch-retry rollout finished. **Pass 2 (carryovers + last debt):** gateway `processProposedOrders`
+  failure reporting (`4f65c7aa`); **chart upgrade all 3 parts** — candlesticks + SMA overlay + volume
+  subplot, `--style candle`/`--sma`/`--volume` (`79d2129f`, `2d17aa26`); **typing-lag fix** — Ink 7
+  full-clears every frame on `win32 && fullscreen`, capped root height to `rows-1` for the line-diff path
+  (`77cd31a7`); **graphify-out** AST-only refresh (11,015→11,542 nodes, gitignored). Suite
+  **594/592/0fail/2skip**, hygiene clean, gateway tsc exit 0.
+  **STILL OPEN — carryover #3, the user's to do (no conhost/real-terminal in CI):** live confirmation
+  of the `bt --strategy` picker, the `backend visualize` force-ingest fallback, AND the new typing-lag
+  fix. Their dev-review comments remain in place pending that. **Other:** consider tightening
+  `.graphifyignore` (doc-change set was mostly noise) before any full semantic graphify rebuild.
 - **SESSION 54 (2026-06-22) — Closed the full 15-item dev-review bug backlog on
   `sovereign_dashboard.mjs` (shared-root-cause crash fix for 4 commands, watch/ingest TTY-garbage
   fix, polymarket backtest null-path crash, type-to-edit, strategy picker, force-ingest fallback,
