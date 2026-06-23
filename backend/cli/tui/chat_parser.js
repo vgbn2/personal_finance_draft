@@ -211,6 +211,29 @@ function resolveFlags(cmd, tokens, universes = {}) {
   return { flagValues, missing };
 }
 
+// Ranked command list for the chat bar's "/"-suggestion dropdown. Same
+// prefix-then-substring preference as resolveCommand's single-best fallback,
+// but returns up to `limit` candidates instead of collapsing to one -- the
+// dropdown is a discoverability aid, not a parse, so ambiguity is fine here.
+// An empty query returns the first `limit` manifest commands as-typed (lets
+// a bare "/" show something useful instead of an empty list).
+function suggestCommands(M, query, limit = 6) {
+  const commands = allCommands(M);
+  const needle = String(query || '').trim().toLowerCase();
+  const toRow = (cmd) => ({ id: cmd.id, label: cmd.label, desc: cmd.desc });
+  if (!needle) return commands.slice(0, limit).map(toRow);
+
+  const prefix = [];
+  const contains = [];
+  for (const cmd of commands) {
+    const id = String(cmd.id).toLowerCase();
+    const label = String(cmd.label || '').toLowerCase();
+    if (id.startsWith(needle) || label.startsWith(needle)) prefix.push(cmd);
+    else if (id.includes(needle) || label.includes(needle)) contains.push(cmd);
+  }
+  return [...prefix, ...contains].slice(0, limit).map(toRow);
+}
+
 // Top-level entry point: text -> {ok, cmd, flagValues} | {ok:false, reason, candidates?, missing?}.
 function parseChatInput(text, M, universes = {}) {
   const tokens = tokenize(text);
@@ -229,6 +252,7 @@ function parseChatInput(text, M, universes = {}) {
 
 module.exports = {
   tokenize, resolveCommand, resolveFlags, parseChatInput,
+  allCommands, suggestCommands,
   // exported for chat_llm_fallback.js to reuse the same value-coercion
   // rules (never duplicate this logic between the deterministic and
   // LLM-assisted paths)

@@ -16,7 +16,7 @@ const {
   readDaemonStatus, renderProgressBar,
 } = require('./tui/dashboard_exec.js');
 const { DAEMON_STATUS_PATH } = require('./commands/data/backfill_daemon.js');
-const { parseChatInput } = require('./tui/chat_parser.js');
+const { parseChatInput, suggestCommands } = require('./tui/chat_parser.js');
 const { resolveWithLLM } = require('./tui/chat_llm_fallback.js');
 
 // Resolved once at module load (mirrors tui/manifest.js's static-per-process
@@ -298,7 +298,7 @@ const M = [
       },
       { id: 'settings layout', label: 'Layout', desc: 'Set layout preset',
         flags: {
-          '--preset': { t:'sel', opts:['default','compact','research'], lbl:'Layout preset', def:'default' },
+          '--preset': { t:'sel', opts:['default','compact','research','legacy'], lbl:'Layout preset ("legacy" exits this dashboard to the old prompt-based menu)', def:'default' },
         },
       },
       { id: 'settings params', label: 'Params', desc: 'Default trading parameters',
@@ -369,6 +369,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const [pendingRun, setPendingRun] = useState(null); // { cmd, flagValues } awaiting PIN confirmation
   const [chatInput, setChatInput] = useState('');
   const [chatStatus, setChatStatus] = useState('');
+  // "/"-prefixed chat input shows a live-filtered command dropdown (see
+  // chatSuggestions below); suggestIndex is the highlighted row, reset to 0
+  // whenever the input changes so it never points past a shrunk list.
+  const [suggestIndex, setSuggestIndex] = useState(0);
   const [pendingLlmConfirm, setPendingLlmConfirm] = useState(null); // { cmd, flagValues, argv } awaiting explicit confirm
   const [clock, setClock] = useState(() => new Date().toLocaleTimeString('en-GB'));
   const [health, setHealth] = useState(() => loadDashboardHealth());
@@ -389,9 +393,30 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const childRef = React.useRef(null);
   const mountedRef = React.useRef(true);
 
+  // "/"-suggestion dropdown: derived every render from chatInput, not stored
+  // as its own state, so it can never drift out of sync with what's typed.
+  // SUGGEST_LIMIT caps how many rows it can ever add below the input -- this
+  // exact count (not a guess) is what both the render below AND the cursor
+  // effect use to keep the hardware cursor glued to the input row no matter
+  // how many suggestion rows are currently showing.
+  const SUGGEST_LIMIT = 6;
+  const chatSuggestions = (focus === 'chat' && !pendingLlmConfirm && !running && chatInput.startsWith('/'))
+    ? suggestCommands(M, chatInput.slice(1), SUGGEST_LIMIT)
+    : [];
+  const showSuggestions = chatSuggestions.length > 0;
+  const activeSuggestIndex = showSuggestions ? Math.min(suggestIndex, chatSuggestions.length - 1) : 0;
+  // The number of extra rows the chat bar grows by right now -- the single
+  // source of truth shared between the actual render (suggestionList below)
+  // and the cursor-position math, so they can't independently drift.
+  const suggestionRowCount = chatSuggestions.length;
+
+  useEffect(() => {
+    setSuggestIndex(0);
+  }, [chatInput]);
+
   // Hardware cursor relocator: By calculating the precise X/Y coordinates of the chat input
   // within the dashboard's fixed height, we can physically move the real terminal cursor
-  // into the box instead of just hiding it! This ensures OS-level overlays (like IME 
+  // into the box instead of just hiding it! This ensures OS-level overlays (like IME
   // candidate windows) pop up exactly where you are typing.
   const { setCursorPosition } = useCursor();
   useEffect(() => {
@@ -401,19 +426,23 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     if (!process.stdout.isTTY) return;
     if (focus === 'chat' && !pendingLlmConfirm && !running) {
       // The dashboard height is deterministic: process.stdout.rows - 2 (minimum 10).
-      // The layout at the absolute bottom of the dashboard is exactly 4 lines (chatBar):
-      // H-4: Chat box top border
-      // H-3: Chat input line    <-- we want this Y coordinate
-      // H-2: Chat box bottom border
-      // H-1: Chat status text
+      // The chat bar is always anchored to the absolute bottom and is exactly
+      // 4 + suggestionRowCount lines tall:
+      //   top border, input line (<- cursor Y), [0..N suggestion rows],
+      //   bottom border, status text.
+      // Plain "H-3" only held while the bar was a fixed 4 lines; subtracting
+      // suggestionRowCount keeps the cursor glued to the input row even while
+      // the "/"-dropdown is open below it (was the latent bug: any row added
+      // under the input with no matching adjustment here silently breaks
+      // this the moment it renders).
       const H = process.stdout.rows ? Math.max(10, process.stdout.rows - 2) : 24;
       // X = 4 (1 for left border, 1 for padding, 2 for "› ") + chatInput length
-      setCursorPosition({ x: 4 + chatInput.length, y: H - 3 });
+      setCursorPosition({ x: 4 + chatInput.length, y: H - 3 - suggestionRowCount });
     } else {
       // When not typing, just let the hardware cursor go away naturally
       setCursorPosition(undefined);
     }
-  }, [focus, pendingLlmConfirm, running, chatInput, process.stdout.rows, setCursorPosition]);
+  }, [focus, pendingLlmConfirm, running, chatInput, suggestionRowCount, process.stdout.rows, setCursorPosition]);
 
   useEffect(() => {
     if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
@@ -516,6 +545,17 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         }
       }
     }
+
+    // "settings layout --preset legacy" just persisted to disk (the spawned
+    // child above ran and exited) -- that's not a display preference inside
+    // THIS dashboard, it's a request for the actual pre-Ink prompt-based menu
+    // (tui/engine.js's runInteractiveMenu, the real "legacy TUI"). Log out of
+    // this dashboard now so sovereign_cli.js's boot loop re-reads the setting
+    // and launches the real legacy menu next, instead of leaving the user
+    // looking at an unchanged grid.
+    if (argv[0] === 'settings' && argv[1] === 'layout' && argv.includes('legacy')) {
+      exit();
+    }
   };
 
   // live clock
@@ -605,7 +645,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // LLM resolver which lands a confirm gate via state. (Logic moved verbatim out
   // of the old hand-rolled useInput chat handler so TextInput can own typing.)
   function submitChat(raw) {
-    const text = (raw || '').trim();
+    // A leading "/" is just the suggestion-dropdown trigger, not part of the
+    // command itself -- strip it so "/chart AAPL 1d" (typed by hand or
+    // Tab-completed from the dropdown) parses identically to "chart AAPL 1d".
+    const text = (raw || '').trim().replace(/^\/+/, '');
     setChatInput('');
     if (!text) return;
     const universes = { symbolUniverse: SYMBOL_UNIVERSE, strategyUniverse: STRATEGY_UNIVERSE };
@@ -756,10 +799,14 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       return;
     }
     // Tab toggles between the chat box (new default entry point) and the
-    // existing grid view, from anywhere in either.
+    // existing grid view, from anywhere in either -- except while the
+    // "/"-suggestion dropdown is open, where Tab is repurposed below to
+    // accept the highlighted suggestion instead of leaving the chat box.
     if (key.tab) {
-      setFocus((f) => (f === 'chat' ? 'side' : 'chat'));
-      return;
+      if (!(focus === 'chat' && showSuggestions)) {
+        setFocus((f) => (f === 'chat' ? 'side' : 'chat'));
+        return;
+      }
     }
     if (focus === 'chat') {
       // A pending LLM-resolved command always blocks further typing until
@@ -778,6 +825,25 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
           return;
         }
         return;
+      }
+      // "/"-suggestion dropdown navigation. Up/Down/Tab are all ignored by
+      // <TextInput>'s own internal useInput (it only acts on left/right
+      // arrow, backspace/delete, return, and printable input), so handling
+      // them here never double-fires against the same keystroke.
+      if (showSuggestions) {
+        if (key.upArrow) {
+          setSuggestIndex((i) => (i - 1 + chatSuggestions.length) % chatSuggestions.length);
+          return;
+        }
+        if (key.downArrow) {
+          setSuggestIndex((i) => (i + 1) % chatSuggestions.length);
+          return;
+        }
+        if (key.tab) {
+          const picked = chatSuggestions[activeSuggestIndex];
+          if (picked) setChatInput(picked.id + ' ');
+          return;
+        }
       }
       // Typing, backspace, and Enter-to-submit are owned by the <TextInput> in
       // the chat bar (onChange + onSubmit=submitChat). Routing them through
@@ -1025,7 +1091,9 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   }
 
   const footerHint = focus === 'chat'
-    ? 'type a command  ⏎ run  Tab menu  q quit'
+    ? (showSuggestions
+        ? '↑↓ select  Tab fill  type a command  ⏎ run  q quit'
+        : 'type a command  ⏎ run  Tab menu  q quit')
     : focus === 'symbolPicker'
       ? (pickerMulti
           ? '↑↓ browse  Space toggle  ⏎ confirm  esc cancel  type to search'
@@ -1057,15 +1125,42 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // Full bordered box around the prompt so typed characters are visually
   // contained inside it (Gemini/Claude-CLI style) rather than floating under
   // a single top rule. Border brightens (cyan) when the chat bar has focus.
+  //
+  // CURSOR-ROBUSTNESS FIX (this session): two things used to break the
+  // cursor-relocation math above once any "/"-suggestion-style feature got
+  // added. (1) the input row had no height cap, so a typed line wider than
+  // the terminal would let Ink's default text wrapping grow this row to 2+
+  // lines, pushing the bottom border down and silently invalidating the
+  // hardcoded "H-3" cursor row -- height:1 + overflowY:'hidden' clip any
+  // overflow instead of letting it grow the box. (2) the suggestion list
+  // itself is a genuinely variable-height block; suggestionRowCount (shared
+  // with the cursor effect above) is the single source of truth for how many
+  // rows it adds, so the two can never drift out of sync. Each suggestion
+  // row also gets wrap:'truncate-end' for the same reason as (1) -- a long
+  // command id/description must clip, never wrap.
+  const inputRow = h(Box, { height: 1, overflowY: 'hidden' },
+    h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
+    (focus === 'chat' && !pendingLlmConfirm && !running)
+      ? h(TextInput, { value: chatInput, onChange: setChatInput, onSubmit: submitChat, showCursor: false })
+      : h(Text, { color: VAL, wrap: 'truncate-end' }, chatInput),
+  );
+  const suggestionList = showSuggestions
+    ? h(Box, { flexDirection: 'column' },
+        ...chatSuggestions.map((s, i) => h(Text, {
+          key: s.id,
+          color: i === activeSuggestIndex ? CY : MUT,
+          bold: i === activeSuggestIndex,
+          wrap: 'truncate-end',
+        }, (i === activeSuggestIndex ? '› ' : '  ') + s.id + (s.desc ? '  — ' + s.desc : ''))),
+      )
+    : null;
   const chatBar = h(Box, { flexDirection: 'column' },
-    h(Box, { borderStyle: 'round', borderColor: focus === 'chat' ? CY : BDR, paddingX: 1 },
-      h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
-      (focus === 'chat' && !pendingLlmConfirm && !running)
-        ? h(TextInput, { value: chatInput, onChange: setChatInput, onSubmit: submitChat, showCursor: false })
-        : h(Text, { color: VAL }, chatInput),
+    h(Box, { borderStyle: 'round', borderColor: focus === 'chat' ? CY : BDR, paddingX: 1, flexDirection: 'column' },
+      inputRow,
+      suggestionList,
     ),
     h(Box, { paddingX: 1 },
-      h(Text, { color: MUT }, chatStatus || 'Tab to type a command (e.g. "backend chart AAPL 1d")')
+      h(Text, { color: MUT }, chatStatus || 'Tab to type a command, or "/" to browse (e.g. "backend chart AAPL 1d")')
     ),
   );
 
