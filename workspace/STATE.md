@@ -16,6 +16,30 @@ the API-bot connections that place real orders, across all three execution surfa
 `backend/gateway/src/index.ts`, both live unattended bot loops — Polymarket's `cycle.ts` and the
 Alpaca tracker/cycle just built this session — and the PIN/auth/feature-gate chain). Nothing
 scoped into a plan yet; this is a framing flag for next session's boot, not a completed audit.
+This should be run as a real `blast-through` audit (see `skills/blast-through/SKILL.md`) against
+those specific directories — check `workspace/REVIEW_LEDGER.md` first for which of them are
+stalest (`backend/core` C++ hasn't been touched in ~10+ sessions; `shared/lib/runtime` is brand
+new and author-reviewed only).
+
+## Process change - 2026-06-23 session 57 - permanent Review Ledger + Stub/Duplication Sweep added to blast-through
+- User asked for a centralized, timestamped record of when each part of the repo was last reviewed,
+  plus a permanent stub/duplicate-cleanup pass folded into every blast-through run (not an occasional
+  deep-clean). Built both:
+- **`workspace/REVIEW_LEDGER.md`** (new) — one row per top-level directory: last-reviewed commit/date,
+  grade, and stub/dup sweep status. Centralized (one file, not per-folder) on purpose — this repo
+  already manages `STATE.md`/`HANDOFF.md`/`DEV_REVIEW.md` the same way, and a per-folder version would
+  be a new class of doc-rot risk the existing hygiene check doesn't scan for. Formalizes blast-through's
+  existing "Standardized Section Grades" output (previously one-shot, buried in `DEV_REVIEW.md` history)
+  into a cumulative, always-current record.
+- **`skills/blast-through/SKILL.md`** updated: Section 1 now reads the ledger first to prioritize the
+  stalest directories; new **Section 3 (permanent)** is a stub/duplicate sweep checklist that encodes
+  the session-55 dead-shim grep lesson directly (`<name>(\.js)?['"]`, not `<name>['"]` — the bare version
+  silently misses `require('.../name.js')` and produces false "0 consumers," which is exactly what
+  wrongly flagged `polymarket_history.js` as dead that session); new **Section 6 (permanent)** makes
+  updating the ledger a required last step of every run, not optional cleanup. Output Shape (now
+  Section 7) gained two new required items: sweep results and ledger-update confirmation.
+- Seeded the ledger's initial rows from already-known audit history (session 52-57 grades/dates) rather
+  than leaving it empty on day one.
 
 ## Implementation Note - 2026-06-23 session 57 - Alpaca position tracker + auto-exit loop (commit 17f565fb)
 - The Alpaca `auto-trade` automation loop (`strategy.js`'s `runAutomationPass`) was entry-only —
