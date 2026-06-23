@@ -1222,6 +1222,12 @@ async function commandStrategy(args) {
 async function commandStrategyMenu(args) {
   if (args.length > 0) return commandStrategy(args);
 
+  // In-pane (non-interactive, e.g. the dashboard's piped child) can't drive the
+  // picker; promptSelect would auto-resolve to the first option ('new') and
+  // fail with "strategy new requires a name". Show the registry list instead,
+  // matching how prop-firms/run render a read-only summary in the same context.
+  if (!isRichTerminal()) return commandStrategy(['list']);
+
   global.suppressLogs = true;
   const action = await promptSelect('Strategy:', [
     { label: 'New', value: 'new' },
