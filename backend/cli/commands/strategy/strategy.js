@@ -738,7 +738,16 @@ async function runAutomationPass(args, strategiesOverride = null) {
     const refreshDays = numericOption(args, '--refresh-days', 2);
     const minTrustScore = numericOption(args, '--min-trust-score', 70);
     const refreshGroups = new Map();
-    
+
+    // Review existing tracked positions for a target/stop/age exit BEFORE
+    // looking for new entries -- same ordering as the Polymarket bot cycle.
+    const { runAlpacaExitCheck } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
+    const exitResult = await runAlpacaExitCheck(args).catch((err) => ({ errors: [err.message] }));
+    if (exitResult.sellsExecuted) {
+        console.log(`[\x1b[1;33mEXIT\x1b[0m] Closed ${exitResult.sellsExecuted} position(s) on target/stop/age.`);
+    }
+    (exitResult.errors || []).forEach((e) => console.warn(`[AUTOMATION] Exit check: ${e}`));
+
     let targetStrategies;
     if (strategiesOverride) {
         targetStrategies = strategiesOverride;
@@ -882,7 +891,11 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 if (process.env.SOVEREIGN_TRADE_PIN) {
                     tradeArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
                 }
-                await commandTrade(tradeArgs);
+                const tradeExitCode = await commandTrade(tradeArgs);
+                if (tradeExitCode === 0 && tradeType === 'buy') {
+                    const { recordAlpacaEntry } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
+                    recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: true });
+                }
             }
  else {
                 console.log(`[\x1b[1;32mDRY-RUN\x1b[0m] Order simulated for ${lastTrade.symbol} | Calculated Qty: ${qty}.`);
