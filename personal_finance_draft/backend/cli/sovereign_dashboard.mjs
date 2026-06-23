@@ -237,6 +237,11 @@ const M = [
           '--live':     { t:'yn',  lbl:'⚠ EXECUTE LIVE TRADES?', def:false, warn:true },
         },
       },
+      { id: 'auto-trade status', label: 'positions', desc: 'Open auto-trade positions, live P&L, recent exits',
+        flags: {
+          '--live': { t:'yn', lbl:'Query LIVE account (vs paper)?', def:false },
+        },
+      },
       { id: 'agent',      label: 'agent',      desc: 'AI agent task runner (local Ollama)',
         flags: {
           '--query': { t:'txt', lbl:'Task for the agent', def:'' },
