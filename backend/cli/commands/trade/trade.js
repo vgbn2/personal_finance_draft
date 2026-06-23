@@ -382,13 +382,17 @@ async function commandAutoTradeStatus(args) {
 }
 
 async function commandAutoTrade(args) {
+  // Status is a read-only view of tracked positions / P&L -- it must work even
+  // when the ai_agent_trading live-trading flag is off (you should be able to
+  // see open positions without enabling the bot). Only the automation LOOP
+  // below is gated, so the status branch is checked first.
+  if (args[0] === 'status') {
+    return commandAutoTradeStatus(args.slice(1));
+  }
   const gate = featureGate('ai_agent_trading', { surface: 'Auto-trade loop' });
   if (!gate.ok) {
     printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
     return 1;
-  }
-  if (args[0] === 'status') {
-    return commandAutoTradeStatus(args.slice(1));
   }
   const { runAutomatedStrategies } = require('../strategy/strategy.js');
   return runAutomatedStrategies(args);
