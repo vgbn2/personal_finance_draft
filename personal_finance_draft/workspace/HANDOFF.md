@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-22.md`** (last update: 2026-06-22 session 55)
+- Latest/current handoff: **`workspace/handoff/2026-06-23.md`** (last update: 2026-06-23 session 56)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -19,6 +19,41 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 57 (2026-06-23) — Committed session 56; built Alpaca position tracker + auto-exit loop
+  (commit `17f565fb`); flagged SESSION 58 as a deep order-placement review.** Full trail:
+  `workspace/handoff/2026-06-23.md` session 57. Alpaca's `auto-trade` loop was entry-only (no stops/
+  targets/age-exit, no position memory) — built the JS equivalent of Polymarket's `bot_state.ts`/
+  `cycle.ts` (`shared/lib/runtime/{process_lock,alpaca_bot_state,alpaca_bot_cycle}.js`), wired into
+  `strategy.js`'s `runAutomationPass` (review/exit before new entries), new gateway `positions`
+  command, `auto-trade status` view. Verified live by hand (real fill-price reconciliation, a forced
+  age-exit closing a position + logging P&L, a real dry-run pass) plus suite 605/603/0fail/2skip
+  (+11 tests), hygiene clean, gateway tsc clean.
+  **NEXT SESSION (58) IS A DEEP REVIEW SESSION per explicit user instruction — read this first:**
+  check the relevant files and the API-bot connections that place real orders across **all three**
+  execution surfaces (TradFi/Alpaca equities, crypto/Alpaca+Gate.io, prediction markets/Polymarket).
+  Starting points are listed in the session-57 handoff entry (the three `BrokerAdapter` impls +
+  `ExecutionGateway.execute()` in `index.ts`, both live bot loops — Polymarket's `cycle.ts` and the
+  new Alpaca cycle this session built, the PIN/auth/feature-gate chain, and known-unreviewed items
+  like `processProposedOrders` and the Alpaca 422 fix). Nothing scoped yet — this is a framing flag,
+  not a plan.
+- **SESSION 56 (2026-06-23) — "/" chat suggestions + cursor-robustness generalization + legacy-TUI
+  engine switch (now symmetric both ways). UNCOMMITTED, 6 files.** Full trail:
+  `workspace/handoff/2026-06-23.md`. Chat bar's `/` now opens a live-filtered command dropdown
+  (↑↓/Tab) rendered inside the same bordered box; cursor-position math generalized from a fixed
+  `H-3` to `H-3-suggestionRowCount` (shared variable, can't drift) and a separate latent multi-line
+  text-wrap bug on long input was fixed alongside it (`height:1`+`overflowY:'hidden'` clip). First
+  "legacy mode" attempt (hiding the chat bar inside the same dashboard) was wrong per direct user
+  correction — REVERTED — and replaced with the real fix: `Settings > Layout > legacy` now exits
+  the Ink dashboard and hands off to the actual older `runInteractiveMenu` engine
+  (`tui/engine.js`), with the inverse wired too (picking `default`/`compact`/`research` from
+  *inside* that legacy menu now exits it back to the dashboard). `sovereign_cli.js`'s boot loop
+  only relaunches the other engine when the persisted layout actually changed during that run —
+  caught and fixed a self-inflicted "relaunch on every exit" regression that would have trapped a
+  normal `q`-quit. **STILL OPEN:** the legacy→dashboard switch direction is verified by code trace
+  only (no test harness drives the legacy menu's `promptSelect` flow) — needs a live-terminal
+  check, same caveat as every other interactive-TUI fix here (no real conhost in CI). Nothing
+  committed yet this session — pending user go-ahead. User floated screen-sharing as a future way
+  to debug interactive TUI changes together more directly; explicitly deferred, no action taken.
 - **SESSION 55 (2026-06-22) — Blast-through audit + TWO mass-implement passes. Cleared all queued
   debt AND all four open carryovers. 7 commits.** Full trail: `workspace/handoff/2026-06-22.md`
   (session 55) + `workspace/DEV_REVIEW.md` (both mass-implement closeouts + corrected audit block).

@@ -7,6 +7,73 @@ last_audit_date: 2026-06-22
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## NEXT SESSION FLAG (set 2026-06-23 session 57, by explicit user instruction)
+**Session 58 is a deep review session, not feature work.** Scope: check the relevant files and
+the API-bot connections that place real orders, across all three execution surfaces — TradFi
+(Alpaca equities), crypto (Alpaca crypto + Gate.io), and prediction markets (Polymarket). See
+`workspace/handoff/2026-06-23.md` session 57's closing block for suggested starting points
+(the three `BrokerAdapter` implementations + `ExecutionGateway.execute()` in
+`backend/gateway/src/index.ts`, both live unattended bot loops — Polymarket's `cycle.ts` and the
+Alpaca tracker/cycle just built this session — and the PIN/auth/feature-gate chain). Nothing
+scoped into a plan yet; this is a framing flag for next session's boot, not a completed audit.
+
+## Implementation Note - 2026-06-23 session 57 - Alpaca position tracker + auto-exit loop (commit 17f565fb)
+- The Alpaca `auto-trade` automation loop (`strategy.js`'s `runAutomationPass`) was entry-only —
+  backtested strategies fired live buys with no stop-loss/take-profit/max-holding-day exit and no
+  position memory beyond a signal-dedup ledger. Session 50's log shows 8 orphaned `auto-trade --live`
+  processes from exactly this gap. Built the JS equivalent of Polymarket's `bot_state.ts`/`cycle.ts`:
+  `shared/lib/runtime/process_lock.js` (PID-staleness lock), `alpaca_bot_state.js` (persistent
+  position/config state, atomic writes), `alpaca_bot_cycle.js` (pure `decideExit` target/stop/age
+  logic + `runAlpacaExitCheck`/`recordAlpacaEntry`).
+- Wired into `strategy.js`: `runAutomationPass` reviews/exits tracked positions before scanning for
+  new entries (mirrors Polymarket's review-then-buy ordering); records every live fill using the
+  broker's real average price (re-queried via a new gateway `positions` command), not the signal
+  price. New gateway `positions` command added specifically because `aggregate_portfolio` dedupes
+  by symbol across brokers and would contaminate a same-ticker exit check.
+- `auto-trade status` (CLI + one dashboard manifest entry) shows open positions, live P&L, recent
+  exits.
+- Scope was narrowed via `AskUserQuestion` before building: chose "full bot loop with exits" over a
+  read-only tracker, given the live-capital risk of leaving an entry-only loop running unattended.
+- **Verified live, not just unit tests:** smoke-tested the full entry→exit lifecycle by hand — real
+  fill-price reconciliation against simulated broker positions, a forced age-exit closing a tracked
+  position and logging realized P&L with no real order fired (dry-run), and a real
+  `auto-trade --passes 1` dry-run pass end-to-end. Suite **605/603/0fail/2skip** (+11 new tests, zero
+  regressions), `npm run hygiene` clean, gateway `tsc --noEmit` exit 0.
+- Also committed session 56's prior uncommitted work as-is (`5c5fb867`) after confirming the two
+  failures on the first full-suite run that session (`macro_ingestion_contract`,
+  `bt --strategy` cycling) were flakes (passed clean in isolation and on a clean rerun).
+
+## Implementation Note - 2026-06-23 session 56 - "/" chat suggestions + cursor-robustness + legacy-TUI engine switch (UNCOMMITTED)
+- Chat bar's `/` opens a live-filtered command dropdown rendered inside the same bordered box
+  (`suggestCommands`/`allCommands` exported from `chat_parser.js`); ↑↓ cycles, Tab fills the
+  highlighted command into the input (no double-handling -- `ink-text-input` already ignores
+  up/down/Tab internally). Cursor-position math generalized from a fixed `H-3` to
+  `H-3-suggestionRowCount` (one shared variable feeds both the render and the cursor effect).
+  Also fixed a separate latent bug: the input row had no height cap, so Ink's default text-wrap
+  could grow it on a long typed command and silently break the cursor regardless of this feature --
+  `height:1`+`overflowY:'hidden'` clips instead of growing now.
+- `Settings > Layout > legacy` now does what it should: exits the Ink dashboard
+  (`sovereign_dashboard.mjs`'s `handleRun` calls `exit()` right after the settings command
+  persists) and hands off to the real older `runInteractiveMenu` engine (`tui/engine.js`), already
+  toggled today via `LEGACY_TUI=1` env var in `sovereign_cli.js`. A first attempt that just hid the
+  chat bar inside the same dashboard was wrong (user: "NO DIFFERENCE, shouldn't it just log out of
+  this") -- reverted in favor of this. Wired the inverse too: picking `default`/`compact`/
+  `research` from inside the legacy menu (`tui/manifest.js` gained `'legacy'` as a 4th preset
+  option there too) now returns from `runInteractiveMenu` instead of looping its own menu, and
+  `sovereign_cli.js`'s `main()` is now a real loop between the two engines -- but only relaunches
+  when `loadSettings().layout` actually changed during that run (caught and fixed a self-inflicted
+  regression: a naive "relaunch on every exit" loop would trap a normal `q`-quit forever, since
+  neither engine's exit path distinguishes "quit" from "switched layout").
+- **Verified:** suite 594/592/0fail/2skip (multiple reruns); hygiene clean. Dashboard-self-exit
+  direction proven end-to-end via the Ink fake-TTY harness (throwaway smoke scripts, deleted after
+  each run). Legacy→dashboard direction verified by code trace + argv-shape matching only -- no
+  existing test harness drives `runInteractiveMenu`'s `promptSelect` flow.
+- **All UNCOMMITTED** on `feat/ink-tui-refactor`. 6 files: `sovereign_dashboard.mjs`,
+  `sovereign_cli.js`, `tui/chat_parser.js`, `tui/engine/engine.js`, `tui/manifest.js`,
+  `shared/lib/settings/user_settings.js`. Full trail: `workspace/handoff/2026-06-23.md`.
+- **Still open:** live-terminal confirmation of the legacy→dashboard switch direction. User
+  floated screen-sharing as a future way to debug interactive TUI work together; deferred.
+
 ## Fix Note - 2026-06-22/23 session 55 (cont.) - Windows-conhost typing-lag/cursor RESOLVED
 - The `sovereign_dashboard.mjs` chat-input typing bug on Windows conhost (chars ghosting/misplacing)
   is **fixed, user-confirmed**. A standalone raw-mode probe proved raw mode works + no terminal echo,
