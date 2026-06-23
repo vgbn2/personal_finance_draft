@@ -18,6 +18,7 @@ const {
   currentPhaseLabel,
   hasFlag,
   optionValue,
+  stripFlagValue,
   numericOption,
   printPayload,
 } = utils;
@@ -322,7 +323,10 @@ async function commandTrade(args) {
     }
   }
 
-  const launch = buildTradeGatewayLaunch(args);
+  // The PIN was consumed by the in-process gate above; strip it (and its value)
+  // so it never reaches the spawned gateway's argv, where it would be visible in
+  // OS process listings (tasklist/ps). The gateway does not read --pin.
+  const launch = buildTradeGatewayLaunch(stripFlagValue(args, '--pin'));
   const result = spawnSync(launch.command, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
