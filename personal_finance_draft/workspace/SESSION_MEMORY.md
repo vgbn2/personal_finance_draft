@@ -1,3 +1,34 @@
+## Session Memory - 2026-06-22/23 (session 55) Blast-through audit + 2 mass-implement passes (renameWithRetry+Atomics, 3 dead-shim deletions, gateway fetch-retry & processProposedOrders, full candlestick/SMA/volume chart upgrade, graphify AST refresh) THEN a long Windows-conhost typing-lag/cursor fix; ~14 commits; suite ended 594/592/0fail/2skip, hygiene clean
+
+{
+  "work": "Three phases. (1) Blast-through focused audit (anchor 03b3c8d5->0903df6b): session-54 chat/TUI surface clean; verified the new LLM command resolver is shell-safe by code-trace (argv-array spawn, no shell:true). (2) Mass-implement pass 1: renameWithRetry busy-wait->Atomics.wait + first tests; deleted 3 dead root shims (backfill/ingestion/market_validation) -- a 4th, polymarket_history, was WRONGLY flagged dead (grep blind spot: missed the .js-extension require form) and KEPT after a test broke; gateway 3 raw fetch->fetchWithRetry. (3) Mass-implement pass 2 (all 4 carryovers + last debt): gateway processProposedOrders failure reporting; full chart upgrade (renderCandlestickChart: candles + yellow SMA(N) overlay + volume subplot; --style/--sma/--volume flags); graphify-out AST-only refresh (11015->11542 nodes); typing-lag attempt. (4) Extended typing-lag/cursor debugging saga on sovereign_dashboard.mjs (Windows conhost), ultimately RESOLVED.",
+  "key_mechanisms": [
+    "DEAD-SHIM GREP BLIND SPOT: the 4-layer dead-check grep anchor `<name>['\"]` silently misses `require('.../<name>.js')` (the .js extension sits before the quote). Flagged polymarket_history.js as dead; deleting it broke polymarket_backtest.test.js. Restored via recovery rule; re-verified the other 3 with a `.js`-aware grep; FIXED the recipe in the blast-through SKILL.md so it can't recur (same false-negative class as session 29).",
+    "CHART UPGRADE non-breaking: renderCandlestickChart is a sibling of renderPriceChart reusing the same scaffold; --style defaults to 'line', --sma defaults '' and --volume is yn-false, so default buildArgv output is unchanged EXCEPT --style line. Each manifest flag added shifts the dashboard nav test's Run-row down-count (had to bump it) and the chat-parser positional fill / contract argv assertions (had to update 2).",
+    "TYPING-LAG ROOT CAUSE (the big one): chars ghosted/misplaced on Windows conhost. A standalone raw-mode probe (scripts/dev/diag_rawmode.mjs) proved raw mode works + NO terminal echo -> it was Ink MIS-POSITIONING, not echo. Cause: forced alt-screen buffer (\\x1b[?1049h) + fullscreen height made Ink's win32 per-keystroke FULL-frame redraw (ink/build/ink.js, gated on height>=viewport) place the cursor wrong on conhost. The hardware blinking cursor also sat at the frame bottom, never positioned into the input box.",
+    "TYPING-LAG WHAT FAILED: rows-1 height hack to dodge the fullscreen branch -- in the alt-screen it freed the bottom row and conhost raw-echoed there (worse ghost). Reverted.",
+    "TYPING-LAG WHAT WORKED (combination): render in NORMAL flow (drop \\x1b[?1049h; non-fullscreen rows-2 height, undefined when headless) + clear-on-mount + ink-text-input <TextInput> + (user-authored final piece) ink useCursor() relocating the REAL hardware cursor into the input cell with showCursor:false and explicit \\x1b[?25l/h. gemini-cli (_resources/gemini-cli) was the reference: it renders normal-flow by default (alt-screen opt-in) with a custom keypress parser.",
+    "TEST-HARNESS GOTCHA: any setCursorPosition / cursor-only Ink write emits a cursor-only frame that clobbers fake-TTY snapshot assertions (broke 2 dashboard tests). Guard all real-cursor logic + clear-on-mount + ?25l writes with `if (!process.stdout.isTTY) return;` (harness process.stdout.isTTY is false).",
+    "VIDEO REVIEW: no ffmpeg, but OpenCV (cv2) was available -- extracted evenly-spaced cropped frames from the user's .mp4 screen recording to Windows-temp PNGs (Read tool needs Windows paths, not /tmp) and read them as images to confirm typing behavior frame-by-frame."
+  ],
+  "verified": [
+    "Suite green at each commit; final 594 tests / 592 pass / 0 fail / 2 skip; npm run hygiene clean throughout; gateway tsc --noEmit exit 0.",
+    "Typing-lag fix user-confirmed via a screen recording (frames showed clean in-box typing) + their own live test ('problem resolved').",
+    "useCursor IS a real ink export (verified before trusting the user's change)."
+  ],
+  "user_decisions": [
+    "AskUserQuestion scopes: ran both mass-implement passes; 'all fours plus debt batches' for carryovers.",
+    "Drove the typing-lag fix direction (TextInput-first, then normal-flow); ultimately wrote the useCursor relocation fix themselves.",
+    "'problem resolved, end session' -- I made their uncommitted fix test-green (isTTY guard), committed it, and closed out."
+  ],
+  "remaining": [
+    "Carryover #3 (user's): live real-terminal confirmation of `bt --strategy` picker + `backend visualize` force-ingest fallback (no conhost in CI); dev-review comments left in place.",
+    "graphify-out stale again for the dashboard rewrite (deferred; consider tightening .graphifyignore before any full semantic rebuild -- doc-change set was mostly noise).",
+    "Gemini's paste-aware custom keypress parser NOT ported -- input still arrives in bursts; only matters if burst/paste mangling resurfaces."
+  ],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-22 (session 54) Closed the 15-item dashboard dev-review bug backlog and built a chat-style command input (new default entry point); 2 commits; suite 580/578/0fail/2skip
 
 {

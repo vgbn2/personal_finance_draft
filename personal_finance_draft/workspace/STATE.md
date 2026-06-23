@@ -7,6 +7,21 @@ last_audit_date: 2026-06-22
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Fix Note - 2026-06-22/23 session 55 (cont.) - Windows-conhost typing-lag/cursor RESOLVED
+- The `sovereign_dashboard.mjs` chat-input typing bug on Windows conhost (chars ghosting/misplacing)
+  is **fixed, user-confirmed**. A standalone raw-mode probe proved raw mode works + no terminal echo,
+  so it was Ink **mis-positioning**, not echo. Root cause: forced alternate screen buffer
+  (`\x1b[?1049h`) + fullscreen height made Ink's win32 per-keystroke full-frame redraw place the cursor
+  wrong on conhost.
+- Fix (several commits): render in **normal flow** (no alt-screen; non-fullscreen `rows-2` height,
+  `undefined` headless) `f47c0cb4`; clear-on-mount `7cf5e90d`; ink-text-input `<TextInput>` `e5976c6f`;
+  boxed input `6626a298`; **final (user-authored) `521372b3`** = ink `useCursor()` relocating the real
+  hardware cursor into the input cell + `showCursor:false` + `\x1b[?25l/h`, chat bar moved below footer.
+  Added an `!process.stdout.isTTY` guard so the cursor-only frame doesn't clobber fake-TTY snapshot
+  tests. The `rows-1` height hack `77cd31a7` was tried and **reverted** `54a664e3`.
+- **Verified:** suite 594/592/0fail/2skip, hygiene clean. Durable recipe in memory
+  `reference-ink-windows-fullscreen-lag`. graphify-out stale again for this dashboard rewrite (deferred).
+
 ## Implementation Note - 2026-06-22 session 55 (pass 2) - all 4 carryovers + last debt item
 - Second mass-implement pass: cleared the remaining debt + **all four open carryovers**. Suite
   **594/592/0fail/2skip**; hygiene clean; gateway tsc exit 0.
