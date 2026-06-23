@@ -796,6 +796,23 @@ async function runInteractiveMenu(handleCommand) {
           console.error(`${paint(A.SEMANTIC.ERROR, 'Error:')} ${error.message}`);
         }
 
+        // Settings > Set Layout Preset switching AWAY from "legacy" here is
+        // the inverse of sovereign_dashboard.mjs's own "legacy" preset (which
+        // exits THAT dashboard back to this menu) -- a request to switch
+        // engines back to the newer chat+grid dashboard, not a display
+        // preference inside this loop. Return immediately (skip the "press
+        // any key" prompt below, since this whole menu is about to close) so
+        // sovereign_cli.js's boot loop re-reads the setting and launches the
+        // dashboard next.
+        if (fullArgs[0] === 'settings' && fullArgs[1] === 'layout') {
+          const presetIdx = fullArgs.indexOf('--preset');
+          const preset = presetIdx !== -1 ? fullArgs[presetIdx + 1] : null;
+          if (preset && preset !== 'legacy') {
+            console.log(`\n${A.muted('Switching to the dashboard...')}`);
+            return;
+          }
+        }
+
         process.stdout.write(`\n${A.muted(A.GLYPH.hline.repeat(60))}\n`);
         process.stdout.write(A.muted('  Enter: menu | R: rerun function | B/Esc: back'));
         action = await waitForPostCommandAction();
