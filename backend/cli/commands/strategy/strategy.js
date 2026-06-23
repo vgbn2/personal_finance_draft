@@ -741,12 +741,20 @@ async function runAutomationPass(args, strategiesOverride = null) {
 
     // Review existing tracked positions for a target/stop/age exit BEFORE
     // looking for new entries -- same ordering as the Polymarket bot cycle.
-    const { runAlpacaExitCheck } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
+    const { runAlpacaExitCheck, canOpenPosition } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
     const exitResult = await runAlpacaExitCheck(args).catch((err) => ({ errors: [err.message] }));
     if (exitResult.sellsExecuted) {
         console.log(`[\x1b[1;33mEXIT\x1b[0m] Closed ${exitResult.sellsExecuted} position(s) on target/stop/age.`);
     }
     (exitResult.errors || []).forEach((e) => console.warn(`[AUTOMATION] Exit check: ${e}`));
+
+    // Read the post-exit position count + configured cap so new live entries
+    // below respect config.maxPositions (the auto-trade status view already
+    // implies this cap; it was previously never enforced on the entry path).
+    const { loadState: loadAlpacaBotState } = require('../../../../shared/lib/runtime/alpaca_bot_state.js');
+    const alpacaBotSnapshot = loadAlpacaBotState();
+    let openPositionCount = alpacaBotSnapshot.positions.length;
+    const maxOpenPositions = alpacaBotSnapshot.config.maxPositions;
 
     let targetStrategies;
     if (strategiesOverride) {
@@ -878,7 +886,12 @@ async function runAutomationPass(args, strategiesOverride = null) {
             }
 
             console.log(`[\x1b[1;32mSIGNAL\x1b[0m] Strategy ${strategy.name} trigger: ${tradeType.toUpperCase()} ${lastTrade.symbol} @ ${currentPrice} | Qty: ${qty} ($${(qty * currentPrice).toFixed(2)})`);
-            
+
+            if (isLive && !canOpenPosition(openPositionCount, maxOpenPositions)) {
+                console.log(`[AUTOMATION] Max open positions (${maxOpenPositions}) reached — skipping live entry for ${lastTrade.symbol}.`);
+                continue;
+            }
+
             if (isLive) {
                 console.log(`[\x1b[1;31mEXECUTE\x1b[0m] Sending LIVE order for ${lastTrade.symbol} (Qty: ${qty})...`);
                 const tradeArgs = [
@@ -895,6 +908,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 if (tradeExitCode === 0 && tradeType === 'buy') {
                     const { recordAlpacaEntry } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
                     recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: true });
+                    openPositionCount++;
                 }
             }
  else {
