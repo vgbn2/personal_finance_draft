@@ -828,6 +828,7 @@ Commands:
   buy <symbol> <qty> [type] [price]    Place a buy order
   sell <symbol> <qty> [type] [price]   Place a sell order
   balance                              Show account balance
+  positions                            Show open Alpaca positions (use --live for the live account)
   aggregate_portfolio                  Aggregate balances across all brokers
   polymarket portfolio                 Show pUSD, open orders, and filled positions
   polymarket debug                     Show signer/funder, balance, allowance, and account diagnostics
@@ -2071,6 +2072,15 @@ export async function main() {
         console.log(JSON.stringify(balances));
     } else {
         console.log(`[GATEWAY] Current Portfolio Balances:`, balances);
+    }
+  } else if (command === 'positions') {
+    // Alpaca-only position read (unlike aggregate_portfolio, which dedupes by
+    // symbol across brokers and would contaminate a same-ticker lookup).
+    const positions = await adapter.getPositions();
+    if (useJson) {
+        console.log(JSON.stringify({ ok: true, positions }));
+    } else {
+        console.log(`[GATEWAY] Alpaca Positions:`, positions);
     }
   } else if (command === 'aggregate_portfolio') {
     const isVerbose = !useJson;

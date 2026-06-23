@@ -271,6 +271,7 @@ const COMMAND_MANIFEST = {
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' },
         '--live':     { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
       }},
+      { id: 'auto-trade status', label: 'Auto-Trade Positions', args: [] },
       { id: 'agent',        label: 'AI Agent', flags: {
         '--query': { type: 'text', default: '', label: 'Task for the agent' }
       }},
