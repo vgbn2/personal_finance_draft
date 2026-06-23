@@ -51,10 +51,14 @@ const INTERACTIVE_CMDS = new Set([
   'add-platform',
   'alpaca',
   'mt5',
-  'trade favorites',
-  'strategy',
-  'prop-firms',
-  'run',
+  // 'trade favorites' / 'strategy' / 'prop-firms' / 'run' were here, but as
+  // INTERACTIVE_CMDS they unmounted the whole Ink dashboard into the old
+  // prompt-menu UI -- which read as "the trade section drops me into the
+  // legacy interface". They each render a safe, read-only summary when run
+  // non-interactively, so they now execute IN-PANE (output panel) like the
+  // rest of the dashboard. Only genuinely input-driven entries (alpaca trade
+  // desk, mt5, add-platform, login/register, the polymarket wizards, cockpit)
+  // still take over the terminal.
 ]);
 // 'bot' was previously blanket-listed here, forcing even cheap read-only
 // subcommands through the slow unmount->spawnSync->remount round-trip.
@@ -496,6 +500,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     const isInteractive = isInteractiveCmd(cmdStr, INTERACTIVE_CMDS);
 
     if (!isInteractive) {
+      lastRunArgv = argv;
       if (mountedRef.current) {
         setRunning(true);
         setLastExecuted(argv);
@@ -1297,6 +1302,22 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
 // prompts, requireAuth/PIN) behave exactly as they do outside the dashboard.
 // Ink owns raw mode while mounted, so it's unmounted first and remounted
 // after the child exits and the user acknowledges the output.
+// The long-standing cockpit/polymarket/trade "crashes" reports (see the
+// //crashes notes in M) have never left a stack trace -- the dashboard owns
+// the terminal, so a throw during the unmount->spawn->remount cycle scrolls
+// away or is masked by a redraw. Record the failing argv + full stack to
+// workspace/dashboard_crash.log so one live repro is enough to root-cause.
+let lastRunArgv = null;
+function logDashboardCrash(kind, err) {
+  try {
+    const fs = require('node:fs');
+    const logPath = path.join(__dirname, '..', '..', 'workspace', 'dashboard_crash.log');
+    const stack = (err && err.stack) || String(err);
+    fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${kind} | argv=[${(lastRunArgv || []).join(' ')}]\n${stack}\n\n`);
+    return logPath;
+  } catch { return null; }
+}
+
 let dashboard = null;
 
 function waitForKeypress() {
@@ -1314,6 +1335,7 @@ function waitForKeypress() {
 }
 
 async function runExternal(argv, returnState) {
+  lastRunArgv = argv;
   const cmdStr = argv.join(' ');
   const isInteractive = Array.from(INTERACTIVE_CMDS).some(ic => cmdStr.startsWith(ic) || cmdStr === ic);
   if (!isInteractive) {
@@ -1395,6 +1417,20 @@ function mountDashboard(initial) {
 // Guarded so this file can be imported (e.g. by tests) without launching the
 // real dashboard against the live process.stdin/stdout.
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  // Installed only on the real launch (not when tests import this module) so a
+  // crash during the interactive spawn cycle is recorded with its stack +
+  // failing command instead of vanishing. Also resets the cursor/colors so a
+  // crash doesn't leave the terminal in raw/hidden-cursor state.
+  process.on('uncaughtException', (err) => {
+    const p = logDashboardCrash('uncaughtException', err);
+    try { if (process.stdout.isTTY) process.stdout.write('\x1b[?25h\x1b[0m\n'); } catch { /* ignore */ }
+    console.error(`\n✖ Dashboard crashed (uncaughtException)${p ? ` — stack saved to ${p}` : ''}:\n${(err && err.stack) || err}\n`);
+    process.exit(1);
+  });
+  process.on('unhandledRejection', (err) => {
+    const p = logDashboardCrash('unhandledRejection', err);
+    console.error(`\n✖ Dashboard unhandled rejection${p ? ` — saved to ${p}` : ''}:\n${(err && err.stack) || err}\n`);
+  });
   mountDashboard();
 }
 
