@@ -1678,3 +1678,15 @@ fix; deliberately skipped refreshing graphify-out again (still stale since 2026-
 session's total diff (one route fix, one test file, two doc edits) is too small to justify it,
 matching how prior sessions have repeatedly deferred the same refresh for similarly small diffs.
 
+
+## Session 55 (2026-06-22, into 2026-06-23)
+/session-orchestrator boot -> /blast-through focused audit (anchor 03b3c8d5->0903df6b, clean; LLM
+resolver verified shell-safe) -> /mass-implement pass 1 (renameWithRetry->Atomics.wait + tests, 3
+dead-shim deletions, gateway fetch-retry) -> /mass-implement pass 2 ("all fours plus debt batches":
+gateway processProposedOrders, full candlestick+SMA+volume chart upgrade, graphify-out AST refresh,
+typing-lag attempt). Then a long Windows-conhost typing-lag/cursor debugging arc driven by the user's
+screenshots + a screen recording (reviewed via OpenCV frame extraction): raw-mode probe proved
+positioning-not-echo; tried rows-1 (reverted), TextInput, normal-flow render, clear-on-mount, boxed
+input; user authored the final useCursor() hardware-cursor relocation -> I made it test-green
+(isTTY guard) and committed. ~14 commits; suite 594/592/0fail/2skip, hygiene clean. "problem resolved,
+end session."

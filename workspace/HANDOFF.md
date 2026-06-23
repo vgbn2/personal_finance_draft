@@ -32,9 +32,19 @@ boot) never has to read tens of thousands of tokens of accumulated history.
   (`77cd31a7`); **graphify-out** AST-only refresh (11,015→11,542 nodes, gitignored). Suite
   **594/592/0fail/2skip**, hygiene clean, gateway tsc exit 0.
   **STILL OPEN — carryover #3, the user's to do (no conhost/real-terminal in CI):** live confirmation
-  of the `bt --strategy` picker, the `backend visualize` force-ingest fallback, AND the new typing-lag
-  fix. Their dev-review comments remain in place pending that. **Other:** consider tightening
-  `.graphifyignore` (doc-change set was mostly noise) before any full semantic graphify rebuild.
+  of the `bt --strategy` picker and the `backend visualize` force-ingest fallback. Their dev-review
+  comments remain in place pending that. **Other:** consider tightening `.graphifyignore` (doc-change
+  set was mostly noise) before any full semantic graphify rebuild.
+- **SESSION 55 (cont., into 2026-06-23) — TYPING-LAG/CURSOR BUG RESOLVED (carryover #2 closed,
+  user-confirmed).** Long arc on `sovereign_dashboard.mjs` Windows-conhost typing: chars ghosted/
+  misplaced. Root cause = forced alt-screen+fullscreen made Ink mis-position the cursor (a raw-mode
+  probe proved it was positioning, not echo). Fixed by rendering in **normal flow** (no `\x1b[?1049h`,
+  non-fullscreen height) + clear-on-mount + ink `<TextInput>` + (user-authored final piece, commit
+  `521372b3`) `useCursor()` relocating the hardware cursor into the input box with `showCursor:false`
+  + `\x1b[?25l/h`. I added an `isTTY` guard so the fake-TTY tests stay green. The `rows-1` hack was
+  tried and reverted. Suite **594/592/0fail/2skip**, hygiene clean. Full recipe in memory
+  `reference-ink-windows-fullscreen-lag`. graphify-out now stale again for the dashboard rewrite
+  (deferred). Throwaway `scripts/dev/diag_rawmode.mjs` deleted at close.
 - **SESSION 54 (2026-06-22) — Closed the full 15-item dev-review bug backlog on
   `sovereign_dashboard.mjs` (shared-root-cause crash fix for 4 commands, watch/ingest TTY-garbage
   fix, polymarket backtest null-path crash, type-to-edit, strategy picker, force-ingest fallback,
