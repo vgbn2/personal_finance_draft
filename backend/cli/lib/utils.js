@@ -253,6 +253,24 @@ function hasFlag(args, name) {
   return args.includes(name);
 }
 
+/**
+ * Returns a copy of args with every occurrence of a value-taking flag (and its
+ * following value) removed. Used to keep secrets like --pin out of a spawned
+ * subprocess's argv (visible in OS process listings) once they've been consumed
+ * in-process.
+ */
+function stripFlagValue(args, name) {
+  const out = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === name) {
+      i++; // skip the flag's value too
+      continue;
+    }
+    out.push(args[i]);
+  }
+  return out;
+}
+
 function printPayload(payload, args) {
   if (hasFlag(args, '--json')) {
     console.log(JSON.stringify(payload, null, 2));
@@ -496,7 +514,7 @@ module.exports = {
   REPO_ROOT, DEFAULT_SNAPSHOT, DEFAULT_QUALITY_REPORT, DEFAULT_HISTORY,
   DEFAULT_FEATURES, DEFAULT_MODEL_REPORT, DEFAULT_BACKTEST, DEFAULT_STATE_PATH,
   BACKEND_CANDIDATES, HELP_TOPICS,
-  usage, helpText, pageText, optionValue, hasFlag, printPayload, shouldAnimate, withLoadingAnimation, currentPhaseLabel,
+  usage, helpText, pageText, optionValue, hasFlag, stripFlagValue, printPayload, shouldAnimate, withLoadingAnimation, currentPhaseLabel,
   formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption,
   runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal,
   buildStatusLine,
