@@ -18,6 +18,45 @@ function decideExit(position, currentPrice, ageDays) {
   return null;
 }
 
+/**
+ * Pure entry gate -- whether another live position may be opened given the
+ * configured concurrency cap. Kept pure (no I/O) so the cap is unit-testable;
+ * callers load the count from state and pass it in.
+ * @param {number} openCount  currently-tracked open positions
+ * @param {number} maxPositions  configured cap (config.maxPositions)
+ * @returns {boolean}
+ */
+function canOpenPosition(openCount, maxPositions) {
+  if (!Number.isFinite(maxPositions) || maxPositions <= 0) return true; // no/invalid cap = unlimited
+  return openCount < maxPositions;
+}
+
+/**
+ * Pure: the quantity to RECORD for a freshly-filled entry. Prefers the broker's
+ * own reported position quantity (handles partial fills) over the requested qty,
+ * mirroring why fillPrice is taken from the broker rather than the signal price.
+ * @param {{quantity?: number|string}|undefined} brokerPos
+ * @param {number|string} requestedQty
+ * @returns {number}
+ */
+function resolveEntryQty(brokerPos, requestedQty) {
+  const brokerQty = brokerPos ? Number(brokerPos.quantity) : NaN;
+  return Number.isFinite(brokerQty) && brokerQty > 0 ? brokerQty : Number(requestedQty);
+}
+
+/**
+ * Pure: the quantity to SELL on exit, clamped to what the broker actually holds
+ * for that symbol. Prevents an oversell rejection when the tracked qty exceeds
+ * the real holding (partial fill, manual partial sale, or two bot positions
+ * stacked on the same symbol sharing one broker holding).
+ * @param {number} positionQty  qty recorded for the tracked position
+ * @param {number} availableQty  broker shares still available for this symbol
+ * @returns {number}
+ */
+function resolveExitQty(positionQty, availableQty) {
+  return Math.max(0, Math.min(Number(positionQty), Number(availableQty)));
+}
+
 function fetchAlpacaPositions(live) {
   const payload = runGatewayCommand(['positions', ...(live ? ['--live'] : []), '--json']);
   if (!payload.ok) return [];
@@ -35,6 +74,7 @@ function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true 
   const brokerPositions = fetchAlpacaPositions(live);
   const brokerPos = brokerPositions.find((p) => p.symbol === symbol);
   const fillPrice = brokerPos ? Number(brokerPos.averagePrice) : Number(requestedPrice);
+  const filledQty = resolveEntryQty(brokerPos, qty);
 
   const risk = strategy?.risk || {};
   const stopLossPct = Number.isFinite(risk.stop_loss_pct) ? risk.stop_loss_pct : state.config.defaultStopLossPct;
@@ -44,7 +84,7 @@ function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true 
   const position = {
     positionId: `${symbol}_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
     symbol,
-    qty: Number(qty),
+    qty: filledQty,
     strategyName: strategy?.name || 'unknown',
     entryPrice: Number(requestedPrice),
     fillPrice,
@@ -80,6 +120,9 @@ async function runAlpacaExitCheck(args = []) {
 
     const brokerPositions = fetchAlpacaPositions(isLive);
     const brokerBySymbol = new Map(brokerPositions.map((p) => [p.symbol, p]));
+    // Broker shares still sellable per symbol, decremented as we exit -- so two
+    // bot positions stacked on one symbol can't together oversell the holding.
+    const availableBySymbol = new Map(brokerPositions.map((p) => [p.symbol, Number(p.quantity)]));
     const remaining = [];
 
     for (const position of state.positions) {
@@ -98,10 +141,19 @@ async function runAlpacaExitCheck(args = []) {
         continue;
       }
 
+      const available = availableBySymbol.get(position.symbol) || 0;
+      const sellQty = resolveExitQty(position.qty, available);
+
       if (isLive) {
+        if (sellQty <= 0) {
+          // Broker holds nothing left for this symbol (already exited / sold
+          // manually) -- drop stale tracking instead of firing an oversell.
+          result.errors.push(`No broker shares left to exit ${position.symbol} (${exitReason}); dropping stale tracking.`);
+          continue;
+        }
         try {
           const { commandTrade } = require('../../../backend/cli/commands/trade/trade.js');
-          const sellArgs = ['sell', position.symbol, String(position.qty), 'market', '--live'];
+          const sellArgs = ['sell', position.symbol, String(sellQty), 'market', '--live'];
           if (process.env.SOVEREIGN_TRADE_PIN) sellArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
           const exitCode = await commandTrade(sellArgs);
           if (exitCode !== 0) {
@@ -109,6 +161,7 @@ async function runAlpacaExitCheck(args = []) {
             remaining.push(position);
             continue;
           }
+          availableBySymbol.set(position.symbol, available - sellQty);
         } catch (err) {
           result.errors.push(`Exit sell failed for ${position.symbol} (${exitReason}): ${err.message}`);
           remaining.push(position);
@@ -139,4 +192,4 @@ async function runAlpacaExitCheck(args = []) {
   }
 }
 
-module.exports = { decideExit, recordAlpacaEntry, runAlpacaExitCheck, fetchAlpacaPositions };
+module.exports = { decideExit, canOpenPosition, resolveEntryQty, resolveExitQty, recordAlpacaEntry, runAlpacaExitCheck, fetchAlpacaPositions };
