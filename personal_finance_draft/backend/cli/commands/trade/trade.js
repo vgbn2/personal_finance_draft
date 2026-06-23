@@ -339,11 +339,52 @@ async function commandTrade(args) {
  * Auto-trade execution loop. Delegates to strategy automation engine.
  * Belongs in Execution, not Strategy Management.
  */
+async function commandAutoTradeStatus(args) {
+  const { loadState } = require('../../../../shared/lib/runtime/alpaca_bot_state.js');
+  const { fetchAlpacaPositions } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
+  const state = loadState();
+  const live = hasFlag(args, '--live');
+  const brokerBySymbol = new Map(fetchAlpacaPositions(live).map((p) => [p.symbol, p]));
+
+  const positions = state.positions.map((pos) => {
+    const broker = brokerBySymbol.get(pos.symbol);
+    const currentPrice = broker && Number(broker.quantity) > 0 ? Number(broker.marketValue) / Number(broker.quantity) : pos.fillPrice;
+    return { ...pos, currentPrice, unrealizedPnl: (currentPrice - pos.fillPrice) * pos.qty };
+  });
+
+  if (hasFlag(args, '--json')) {
+    printPayload({ ok: true, config: state.config, positions, cycleHistory: state.cycleHistory, lastCycleAt: state.lastCycleAt }, args);
+    return 0;
+  }
+
+  console.log(`\n${A.B_CYAN}--- ALPACA AUTO-TRADE STATUS ---${A.RESET}`);
+  console.log(`  Enabled:   ${state.config.enabled ? A.GREEN + 'yes' : A.RED + 'no'}${A.RESET}   Last cycle: ${state.lastCycleAt ?? 'never'}`);
+  console.log(`  Positions: ${positions.length}/${state.config.maxPositions}   Default stop: ${(state.config.defaultStopLossPct * 100).toFixed(0)}%   Default target: ${(state.config.defaultTakeProfitPct * 100).toFixed(0)}%`);
+  if (positions.length) {
+    console.log(`\n  ${A.BOLD}Open Positions:${A.RESET}`);
+    positions.forEach((p) => {
+      const plColor = p.unrealizedPnl >= 0 ? A.GREEN : A.RED;
+      console.log(`    ${p.symbol.padEnd(6)} | Qty: ${String(p.qty).padEnd(6)} | Fill: $${p.fillPrice.toFixed(2)} | Now: $${p.currentPrice.toFixed(2)} | PnL: ${plColor}$${p.unrealizedPnl.toFixed(2)}${A.RESET} | Target: $${p.targetPrice.toFixed(2)} | Stop: $${p.stopPrice.toFixed(2)} | Strategy: ${p.strategyName}`);
+    });
+  }
+  if (state.cycleHistory.length) {
+    console.log(`\n  ${A.BOLD}Recent exits:${A.RESET}`);
+    state.cycleHistory.slice(0, 5).forEach((c) => {
+      const plColor = c.realizedPnl >= 0 ? A.GREEN : A.RED;
+      console.log(`    ${c.symbol.padEnd(6)} | ${c.exitReason.padEnd(6)} | PnL: ${plColor}$${c.realizedPnl.toFixed(2)}${A.RESET} | ${c.completedAt}`);
+    });
+  }
+  return 0;
+}
+
 async function commandAutoTrade(args) {
   const gate = featureGate('ai_agent_trading', { surface: 'Auto-trade loop' });
   if (!gate.ok) {
     printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
     return 1;
+  }
+  if (args[0] === 'status') {
+    return commandAutoTradeStatus(args.slice(1));
   }
   const { runAutomatedStrategies } = require('../strategy/strategy.js');
   return runAutomatedStrategies(args);
