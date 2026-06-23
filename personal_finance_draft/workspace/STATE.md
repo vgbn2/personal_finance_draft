@@ -20,6 +20,12 @@ This should be run as a real `blast-through` audit (see `skills/blast-through/SK
 those specific directories — check `workspace/REVIEW_LEDGER.md` first for which of them are
 stalest (`backend/core` C++ hasn't been touched in ~10+ sessions; `shared/lib/runtime` is brand
 new and author-reviewed only).
+**Include `backend/core` (C++) in scope even though it's untouched** (user's explicit call): an
+untouched directory with no commits in ~10+ sessions is likely fine (nothing's been breaking it),
+but "likely fine" isn't the same as "verified" — give it a lightweight pass (does it still build,
+does `ctest` still pass, any obvious stub/dead code per the Section 3 sweep) rather than a full deep
+audit, then stamp `workspace/REVIEW_LEDGER.md`'s row with a real timestamp either way. The point is
+closing the "carried forward unreviewed every time" gap, not spending the whole session there.
 
 ## Process change - 2026-06-23 session 57 - permanent Review Ledger + Stub/Duplication Sweep added to blast-through
 - User asked for a centralized, timestamped record of when each part of the repo was last reviewed,

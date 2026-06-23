@@ -19,7 +19,7 @@ detail still belongs in `DEV_REVIEW.md` and the dated `workspace/handoff/` files
 | `shared/lib/market` | `0903df6b` | 2026-06-22 | A | done (session 55) | `renameWithRetry` Atomics fix + first-ever test coverage. 3 dead shims deleted; `polymarket_history.js` wrongly flagged dead once — see Notes on the grep lesson in the skill file. |
 | `shared/lib/runtime` | `17f565fb` | 2026-06-23 | not yet graded | not yet run | New this session: `process_lock.js`, `alpaca_bot_state.js`, `alpaca_bot_cycle.js`. Author-reviewed only — first real review is part of the session 58 flag. |
 | `Frontend/dashboard` | `0903df6b` | 2026-06-22 | not graded (confirmed live) | not yet run | Confirmed not dead during the session-52 audit; no deeper sweep done. |
-| `backend/core` (C++) | — | — | not graded | not yet run | **Stalest entry in this ledger** — zero commits have touched it in roughly 10+ sessions; carried forward unreviewed every time. Prioritize next time C++ changes or a full sweep is in scope. |
+| `backend/core` (C++) | — | — | not graded | not yet run | **Stalest entry in this ledger** — zero commits have touched it in roughly 10+ sessions; carried forward unreviewed every time. **In scope for session 58 regardless of being untouched** (user's call: untouched probably means it still runs, but "probably" isn't "verified" — give it a lightweight build/`ctest`/stub-sweep pass and stamp this row with a real timestamp either way, don't just carry it forward again). |
 
 ## Stub/Duplicate Sweep status legend
 - **done (session N)** — a stub/dead-export/duplicate-logic sweep was run and any findings were
