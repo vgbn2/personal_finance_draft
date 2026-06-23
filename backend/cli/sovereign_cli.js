@@ -125,22 +125,11 @@ function installStdinErrorGuard() {
   });
 }
 
-async function main() {
-  installStdinErrorGuard();
-  const args = process.argv.slice(2);
-  if (args.length > 0) {
-    return await handleCommand(args);
-  }
-
-  // Persistent TUI menu loop when no args provided
-  if (process.env.LEGACY_TUI !== '1' && process.stdin.isTTY) {
-    const { spawnSync } = require('child_process');
-    const path = require('path');
-    console.clear();
-    spawnSync('node', [path.join(__dirname, 'sovereign_dashboard.mjs')], { stdio: 'inherit' });
-    return 0;
-  }
-
+// The real legacy TUI: the pre-Ink prompt-based menu (tui/engine.js's
+// runInteractiveMenu), distinct from sovereign_dashboard.mjs's grid+chat
+// renderer -- this is what `LEGACY_TUI=1` and Settings > Layout > legacy
+// both point to.
+async function runLegacyMenu() {
   const { runInteractiveMenu, buildStatusLine } = utils;
   const { setAuthEmail, setStatusLine } = require('./tui/engine/engine.js');
   const authLib = require('./lib/auth');
@@ -149,7 +138,53 @@ async function main() {
   if (user?.email) setAuthEmail(user.email);
   setStatusLine(buildStatusLine(user?.email || null));
   await runInteractiveMenu(handleCommand);
-  return 0;
+}
+
+async function main() {
+  installStdinErrorGuard();
+  const args = process.argv.slice(2);
+  if (args.length > 0) {
+    return await handleCommand(args);
+  }
+
+  const { loadSettings } = require('../../shared/lib/settings/user_settings.js');
+  const isLegacyLayout = () => process.env.LEGACY_TUI === '1' || loadSettings().layout === 'legacy';
+
+  if (!process.stdin.isTTY) {
+    // No menu to loop without a real TTY (CI, piped stdin) -- same
+    // single-shot fallback as before this engine-switch loop existed.
+    await runLegacyMenu();
+    return 0;
+  }
+
+  // Persistent TUI loop: whichever engine is "current" runs until the user
+  // either quits it outright (dashboard 'q'/Ctrl+C just lets the child
+  // process end naturally; the legacy menu's Exit/Ctrl+C call process.exit
+  // directly, bypassing this loop) or switches Settings > Layout to the
+  // other engine's side -- the dashboard self-exits on "legacy"
+  // (sovereign_dashboard.mjs's handleRun), the legacy menu returns on
+  // anything else (engine.js's runInteractiveMenu).
+  //
+  // Neither exit path is tagged "I switched engines" vs "I just quit" --
+  // both look identical from here (the child process simply ends). So the
+  // loop only re-launches the other engine when the persisted layout value
+  // actually changed during that run; if it's unchanged, the user quit
+  // normally and this returns, ending the whole CLI process same as before
+  // this loop existed.
+  let lastLayout = loadSettings().layout;
+  for (;;) {
+    if (isLegacyLayout()) {
+      await runLegacyMenu();
+    } else {
+      const { spawnSync } = require('child_process');
+      const path = require('path');
+      console.clear();
+      spawnSync('node', [path.join(__dirname, 'sovereign_dashboard.mjs')], { stdio: 'inherit' });
+    }
+    const currentLayout = loadSettings().layout;
+    if (currentLayout === lastLayout) return 0;
+    lastLayout = currentLayout;
+  }
 }
 
 if (require.main === module) {
