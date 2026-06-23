@@ -231,7 +231,12 @@ const COMMAND_MANIFEST = {
         '--value': { type: 'select', options: TIMEZONE_OPTIONS, label: 'Timezone' }
       }},
       { id: 'layout',   prefix: ['settings'], label: 'Set Layout Preset', flags: {
-        '--preset': { type: 'select', options: ['default', 'compact', 'research'], label: 'Preset', default: 'default' }
+        // "default"/"compact"/"research" picks within this same menu; any of
+        // them chosen from here switches back to the newer chat+grid
+        // dashboard (see runInteractiveMenu's post-command check in
+        // engine.js) -- the inverse of the dashboard's "legacy" preset,
+        // which exits IT back to this menu.
+        '--preset': { type: 'select', options: ['default', 'compact', 'research', 'legacy'], label: 'Preset', default: 'default' }
       }},
       { id: 'params',   prefix: ['settings'], label: 'Default Trading Params', flags: {
         '--position-size':       { type: 'text', default: '100',  label: 'Position size (USDC)' },
