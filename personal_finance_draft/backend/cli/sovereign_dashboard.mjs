@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { render, Box, Text, useApp, useInput } from 'ink';
+import { render, Box, Text, useApp, useInput, useCursor } from 'ink';
 import TextInput from 'ink-text-input';
 import { spawn, spawnSync } from 'node:child_process';
 import path from 'node:path';
@@ -389,9 +389,37 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const childRef = React.useRef(null);
   const mountedRef = React.useRef(true);
 
+  // Hardware cursor relocator: By calculating the precise X/Y coordinates of the chat input
+  // within the dashboard's fixed height, we can physically move the real terminal cursor
+  // into the box instead of just hiding it! This ensures OS-level overlays (like IME 
+  // candidate windows) pop up exactly where you are typing.
+  const { setCursorPosition } = useCursor();
   useEffect(() => {
+    // Real-terminal only: in the headless/fake-TTY test harness, emitting a
+    // cursor-position update produces a cursor-only frame that clobbers the
+    // snapshot the dashboard tests assert against. No-op when not a real TTY.
+    if (!process.stdout.isTTY) return;
+    if (focus === 'chat' && !pendingLlmConfirm && !running) {
+      // The dashboard height is deterministic: process.stdout.rows - 2 (minimum 10).
+      // The layout at the absolute bottom of the dashboard is exactly 4 lines (chatBar):
+      // H-4: Chat box top border
+      // H-3: Chat input line    <-- we want this Y coordinate
+      // H-2: Chat box bottom border
+      // H-1: Chat status text
+      const H = process.stdout.rows ? Math.max(10, process.stdout.rows - 2) : 24;
+      // X = 4 (1 for left border, 1 for padding, 2 for "› ") + chatInput length
+      setCursorPosition({ x: 4 + chatInput.length, y: H - 3 });
+    } else {
+      // When not typing, just let the hardware cursor go away naturally
+      setCursorPosition(undefined);
+    }
+  }, [focus, pendingLlmConfirm, running, chatInput, process.stdout.rows, setCursorPosition]);
+
+  useEffect(() => {
+    if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
     mountedRef.current = true;
     return () => {
+      if (process.stdout.isTTY) process.stdout.write('\x1b[?25h');
       mountedRef.current = false;
       if (childRef.current) {
         try { childRef.current.kill('SIGINT'); } catch (e) {}
@@ -456,7 +484,8 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
           env.SOVEREIGN_TRADE_PIN = pin;
         }
         const child = spawn(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...argv], {
-          env
+          env,
+          stdio: ['ignore', 'pipe', 'pipe']
         });
         childRef.current = child;
 
@@ -469,6 +498,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
 
         await new Promise((resolve) => {
           child.on('close', (code) => {
+            if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
             resolve(code);
           });
           child.on('error', (err) => {
@@ -480,7 +510,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         if (mountedRef.current) setOutput('Error executing command: ' + err.message);
       } finally {
         childRef.current = null;
-        if (mountedRef.current) setRunning(false);
+        if (mountedRef.current) {
+          if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
+          setRunning(false);
+        }
       }
     }
   };
@@ -622,6 +655,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
           try { childRef.current.kill('SIGINT'); } catch (e) {}
           setOutput((c) => c + '\n\n[Command aborted by user]\n');
         }
+        if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
         setRunning(false);
         return;
       }
@@ -1024,17 +1058,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // contained inside it (Gemini/Claude-CLI style) rather than floating under
   // a single top rule. Border brightens (cyan) when the chat bar has focus.
   const chatBar = h(Box, { flexDirection: 'column' },
-    // marginTop nudges the box down one row off the grid above it (terminals are
-    // row-based -- one row is the finest vertical step there is, no sub-row pixels).
-    h(Box, { borderStyle: 'round', borderColor: focus === 'chat' ? CY : BDR, paddingX: 1, marginTop: 1 },
+    h(Box, { borderStyle: 'round', borderColor: focus === 'chat' ? CY : BDR, paddingX: 1 },
       h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
-      // Use ink-text-input's TextInput only when the bar is actively accepting
-      // keystrokes (chat-focused, no pending LLM-confirm gate, nothing running)
-      // so it owns the real terminal cursor. In every other state show a plain,
-      // cursorless echo of the buffer (matches the old non-focused appearance,
-      // and leaves Enter/Esc for the confirm gate / abort handlers).
       (focus === 'chat' && !pendingLlmConfirm && !running)
-        ? h(TextInput, { value: chatInput, onChange: setChatInput, onSubmit: submitChat })
+        ? h(TextInput, { value: chatInput, onChange: setChatInput, onSubmit: submitChat, showCursor: false })
         : h(Text, { color: VAL }, chatInput),
     ),
     h(Box, { paddingX: 1 },
@@ -1158,14 +1185,14 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       ),
     ),
 
-    // Chat bar -- always visible underneath the grid, except over the PIN
-    // gate (a deliberate full takeover for a security-critical prompt).
-    focus !== 'pin' && chatBar,
-
     // Footer
     h(Box, { borderStyle: 'single', borderColor: BDR, paddingX: 1 },
       h(Text, { color: MUT }, footerHint),
     ),
+
+    // Chat bar -- always visible underneath the grid, except over the PIN
+    // gate (a deliberate full takeover for a security-critical prompt).
+    focus !== 'pin' && chatBar,
   );
 };
 
