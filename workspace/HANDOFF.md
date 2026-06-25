@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-23.md`** (last update: 2026-06-23 session 56)
+- Latest/current handoff: **`workspace/handoff/2026-06-23.md`** (last update: 2026-06-23 session 58)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -19,6 +19,74 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION 59 (2026-06-25) cont. — docs/ triage + workspace/BOOTSTRAP.md + docs/codebase_tour/
+  (9 new files, docs-only, UNCOMMITTED).** User felt they'd lost track of the codebase from heavy
+  AI-assisted work. Found the repo already has 30+ files under `docs/` that simply never get read at
+  session boot (fixed: `workspace/BOOTSTRAP.md` now exists and points at `docs/README.md`). Triage found
+  2 "canonical" docs are badly stale (`architecture_overview.md` calls live trading "*Planned*";
+  `capability_manifest.md` describes an old flat file layout) and 17 broken links in `docs/README.md`
+  itself (moved `docs/operational/*` files, hub never updated). Built `docs/codebase_tour/` — 8 modules
+  with real file:line-grounded explanations + hands-on labs for the genuine gap (current-code reverse
+  engineering; `docs/guide/` is a different, generic from-scratch teaching book). Full trail:
+  `workspace/STATE.md`'s "Process Note" + `workspace/BOOTSTRAP.md`. **Still open:** none of this is
+  committed yet; the stale docs flagged in the triage weren't rewritten, just flagged (deliberate —
+  out of scope for this pass, a future session's call on whether to fix or retire them).
+- **SESSION 59 (2026-06-25) — Focused blast-through + mass-implement same session. All 3 found
+  findings FIXED. 0 commits yet (pending user go-ahead).** Full trail: `workspace/DEV_REVIEW.md`
+  ("Focused Blast-Through" + "Mass-Implement" entries, both 2026-06-25 session 59). Audited the 2
+  commits the ledger hadn't seen yet (`13bc91f0`/`5e60babb`) — clean. Found and fixed: (1) the
+  session-58 oversell clamp's bookkeeping was wrong (`realizedPnl` off the pre-clamp qty, unsold
+  remainder dropped from tracking) — new pure `buildExitOutcome` helper in `alpaca_bot_cycle.js`
+  fixes it + 4 tests; (2) the PIN-strip fix only covered 1 of 8 `buildTradeGatewayLaunch` callers (no
+  active leak found, but fragile) — centralized into the chokepoint itself + 3 tests; (3) 5 stale
+  "crashes"/"TODO" dev-review comments in the dashboard manifest no longer matched reality — deleted/
+  corrected. Suite **623/621/0fail/2skip** (+7), hygiene clean. `shared/lib/runtime` B→A.
+  **Deliberately left alone:** `sovereign_dashboard.mjs:171` (redundancy question on `backend
+  universe`) and lines 260/267 ("doesn't work" on `polymarket history`/`backtest`, plausibly also
+  stale given the session-54/55 crash fixes, but not re-verified this pass) — flagged for a future
+  cleanup pass that actually checks them, not touched speculatively. **Still the user's:** the same
+  standing real-terminal confirmations below, plus a commit decision for this session's diff.
+  **Same session, follow-up fix:** user reported the Trade section *still* defaulted to "the legacy
+  version" even after the in-pane fix above — root cause was different: `alpaca`'s manifest entry had
+  no flags, so it always hit `commandTrade`'s `args.length===0` branch and launched the full
+  interactive trade wizard (a different code path from the literal legacy TUI, same full-screen-prompt
+  feel). Fixed: real flags added (`--action/--symbol/--qty/--order-type/--price/--pin/--live`) + a new
+  `buildTradeArgsFromActionFlag` helper in `trade.js` that translates them to the wizard's own
+  positional args; `alpaca` removed from `INTERACTIVE_CMDS`. 7 new tests, suite 630/628/0fail/2skip,
+  hygiene clean. See `workspace/STATE.md`'s "Fix Note" for the full trail.
+- **SESSION 58 (2026-06-23) cont. — Trade-section dashboard UX (commits `13bc91f0`, `5e60babb`).**
+  (1) "Trade section drops me into legacy" was `strategy`/`prop-firms`/`run`/`favorites` being in
+  `INTERACTIVE_CMDS` (unmounted the Ink dashboard into the old prompt UI) — moved them to **in-pane**;
+  `commandStrategyMenu` got a non-interactive `list` path; added a `dashboard_crash.log` global handler.
+  (2) Added a **`positions`** entry to the dashboard Trade section (the session-57 "dashboard entry" claim
+  was false — it only lived in the legacy `manifest.js`; the dashboard uses its own inline `M`); runs
+  in-pane with `--live`, and `auto-trade status` is no longer behind the `ai_agent_trading` gate. Suite
+  616/614/0fail/2skip; hygiene clean. **Still the user's:** live-terminal confirmation that activating
+  the trade commands now stays in-dashboard (no conhost in CI).
+
+- **SESSION 58 (2026-06-23) — Deep order-placement review DONE + all 4 findings FIXED in the same session
+  (mass-implement). 1 commit `cf4f7026`.** Fix pass closed every OPEN finding from the review: `maxPositions`
+  now enforced on entry (`canOpenPosition`), entry records broker filled qty (`resolveEntryQty`), exit sells
+  clamped to available broker shares per symbol (`resolveExitQty`+counter), trade PIN stripped from the
+  gateway subprocess argv (`stripFlagValue`), and the TUI "Positions" view got a `--live` toggle so its P&L
+  reads the live account. Suite **616/614/0fail/2skip** (+11 tests); manifest-sensitive tests 39/39; hygiene
+  clean. Grades: `shared/lib/runtime` B→**A**, `backend/cli` B→**B+**. **No remaining order-placement
+  findings.** Lower-priority leftovers (not gating, in `DEV_REVIEW.md`): Gate.io spot market-order semantics
+  want one empirical paper probe (unverified, not deep-audited); C++ `kronos_integration_test` needs ≥4
+  seeded data points; realized-P&L uses pre-sell snapshot price (logging only). Review trail below:
+- **SESSION 58 (2026-06-23) — Deep order-placement review (closes the session-57 flag).** Full trail: `workspace/handoff/2026-06-23.md`
+  session 58 + `workspace/DEV_REVIEW.md` ("Blast-Through Deep Review — 2026-06-23 session 58"). Ran as a
+  full blast-through (anchor `0903df6b`→`1c7227b7`, DCS 0.96→0.97), all 3 execution surfaces + new
+  `shared/lib/runtime` + lightweight `backend/core` C++ pass; `workspace/REVIEW_LEDGER.md` stamped (every
+  in-scope row now 2026-06-23; C++ no longer carried-forward-unreviewed). **No gating findings.**
+  Verified-good: gateway propagates non-zero exit on failed orders (no phantom positions), risk-engine +
+  PIN gate fail closed, Alpaca 422 fix intact, runtime tests 11/11, C++ 28/29 ctest (1 data-availability
+  fail, not a regression). **OPEN (next debt-clearing move, all on this/last session's code, awaiting user
+  go-ahead — nothing implemented):** (1) [Med-High] `maxPositions` never enforced on entry; (2) [Med]
+  trade PIN leaks into the gateway subprocess argv (`commandTrade`→`buildTradeGatewayLaunch`); (3) [Med]
+  entry records requested qty not broker filled qty → partial-fill exit oversell; (4) [Med] same-symbol
+  stacking → exit oversell. Suggested: one focused commit for 1/3/4 (`alpaca_bot_cycle.js`+`strategy.js`)
+  + one-line `--pin` strip in `trade.js` (#2).
 - **SESSION 57 (2026-06-23) — Committed session 56; built Alpaca position tracker + auto-exit loop
   (commit `17f565fb`); flagged SESSION 58 as a deep order-placement review.** Full trail:
   `workspace/handoff/2026-06-23.md` session 57. Alpaca's `auto-trade` loop was entry-only (no stops/
