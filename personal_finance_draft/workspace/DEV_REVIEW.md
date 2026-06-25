@@ -1,3 +1,76 @@
+### Mass-Implement — 2026-06-25 session 59 (3 batches, all findings from the audit below FIXED)
+
+Suite **623/621/0fail/2skip** (was 616/614 — +7 new tests: 4 on `buildExitOutcome`, 3 on
+`backend_bridge`), zero regressions; `npm run hygiene` clean. Nothing committed yet — pending
+user go-ahead.
+
+- **[x] Batch 1 (Medium) — exit-clamp bookkeeping fix.** `shared/lib/runtime/alpaca_bot_cycle.js`:
+  new pure `buildExitOutcome(position, exitReason, currentPrice, sellQty, cycleId, isLive)` helper
+  (same pattern as `decideExit`/`resolveExitQty` — "trivially unit-testable" by design). Computes
+  `realizedPnl` from the actually-sold qty instead of the pre-clamp `position.qty`, and returns the
+  unsold remainder as a still-open position (`{...position, qty: remainingQty}`) instead of silently
+  dropping it. Also hoisted the `sellQty<=0` "drop stale tracking" check out of the `isLive`-only
+  branch so dry-run gets the same correctness (a paper-account 0-balance is just as stale as a live
+  one). 4 new tests in `tests/scripts/lib/alpaca_bot_cycle.test.js`: full-exit regression (P&L
+  unchanged from before), the partial-clamp fix (P&L on sold qty only, remainder qty=4 stays tracked),
+  `dryRun` flag mirrors `isLive`, defensive over-clamp. **verification + completeness lenses, shared/lib/runtime B→A.**
+- **[x] Batch 2 (Low, defense-in-depth) — PIN strip centralized.** Moved `stripFlagValue` from
+  `backend/cli/lib/utils.js` into `shared/lib/runtime/backend_bridge.js` (correct dependency
+  direction — cli already depends on shared, not the reverse) and made `buildTradeGatewayLaunch`
+  strip `--pin` unconditionally at its single chokepoint, covering all 8 current callers instead of
+  just `commandTrade`. `utils.js` now re-exports the canonical implementation (its one existing
+  caller and the existing `strip_flag_value.test.js` import path are unchanged). New
+  `tests/scripts/lib/backend_bridge.test.js` (3 tests): `--pin`+value never reach the spawned argv,
+  no-pin args pass through untouched, `utils.js`'s export is the same reference (not a duplicate).
+  **duplication/drift lens, backend/cli stays B+.**
+- **[x] Batch 3 (Low, doc alignment) — 5 stale dev-review comments deleted/corrected.**
+  `sovereign_dashboard.mjs` lines 89 (`cockpit`), 259 (`polymarket markets`), 276
+  (`polymarket derive-creds`) — removed stale "crashes" markers (the session-54 SIGINT fix is
+  confirmed still in place). Line 177 (`backend chart`) — corrected the "STILL TODO: volume/SMA"
+  claim; both shipped session 55 and are visibly wired two lines below. Line 342 (`login`) — kept
+  the still-legitimate "session persistence" feature request, dropped only the stale "crashes"
+  clause. Comment-only changes, no behavior change. **doc-alignment lens.**
+- **Deliberately NOT touched (out of this batch's named scope):** `sovereign_dashboard.mjs:171`
+  ("is this redundant? dev question" on `backend universe`) and lines 260/267 ("doesn't work, dev
+  review" on `polymarket history`/`polymarket backtest`) — plausibly also stale (the backtest
+  null-path crash was fixed sessions 54/55) but weren't in the audited 5-item list and weren't
+  re-verified this pass; left for a future cleanup pass that actually checks them.
+
+---
+
+### Focused Blast-Through — 2026-06-25 session 59 (anchor `1c7227b7`→`5e60babb`, review-only)
+
+DCS 0.97→0.96. Scope per the Recency-Ranked Audit Queue: Tier 1 = the 3 commits made since the last
+audit anchor (`cf4f7026`, `13bc91f0`, `5e60babb` — the session-58 review-fix pass + trade-section UX
+fix), none of which had been audited yet (the ledger's "done (session 58)" stamp predates 2 of the 3).
+No section is currently gated (C or below), so no Tier-3 carryover was mandatory. Nothing fixed this
+pass — review-only, per the skill's default mode.
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| Medium | `shared/lib/runtime` | `alpaca_bot_cycle.js:144-184` (`runAlpacaExitCheck`, commit `cf4f7026`, 2026-06-23) | The Finding-4 oversell clamp (`resolveExitQty`) correctly stops a broker-level oversell when two tracked positions share one symbol and the broker holding is undersized, **but the bookkeeping after a clamped sell is wrong**: `realizedPnl` is computed from the full `position.qty` (line 172) instead of the actually-sold `sellQty`, and the position is unconditionally dropped from `state.positions` (never re-pushed to `remaining`) even when only part of it was sold — the unsold remainder becomes permanently untracked (no further stop/target/age protection, invisible to `auto-trade status`). `runAlpacaExitCheck` has **zero test coverage**; `alpaca_bot_cycle.test.js`'s 11 new tests only exercise the pure `resolveExitQty`/`canOpenPosition`/`resolveEntryQty` math in isolation, never this integration path. Verified empirically: traced every `--pin`-adjacent write/read in the file and confirmed the clamp branch (`sellQty < position.qty`, available > 0) is reachable and untested. | Track the unsold remainder: `if (sellQty < position.qty) remaining.push({...position, qty: position.qty - sellQty})` before/instead of dropping it, and compute `realizedPnl` from `sellQty`, not `position.qty`. Add an integration test that mocks a broker holding smaller than the combined tracked qty across two positions on one symbol. | OPEN |
+| Low (informational, **no active leak found**) | `backend/cli`, `shared/lib/runtime` | `backend_bridge.js:68` (`buildTradeGatewayLaunch`) has 8 call sites; only `trade.js:329` (`commandTrade`) strips `--pin` before spawn (the `cf4f7026` fix). Exhaustively traced all 3 places `--pin` is ever written into an args array (`strategy.js:905`, `alpaca_bot_cycle.js:157`, both Alpaca bot paths) and confirmed both terminate at the now-fixed `commandTrade` call — **today, nothing leaks.** But `commandBot` (`trade.js:509`) and `commandPolymarket`'s generic passthrough (`trade_polymarket.js:741-744`) build `gatewayArgs` from raw `args.slice(1)` with no strip; either would silently reopen the exact session-58 PIN-argv-leak finding the moment any future caller forwards `--pin` to them. The fix lives at one caller instead of the shared chokepoint every caller already goes through. | Move `stripFlagValue(args, '--pin')` inside `buildTradeGatewayLaunch` itself so all 8 current (and any future) callers get it for free, instead of relying on each call site to remember. | OPEN (defense-in-depth, not gating) |
+| Low | `backend/cli` (doc alignment) | `sovereign_dashboard.mjs:177` | Inline manifest comment on the `backend chart` entry claims SMA overlay + volume subplot are "STILL TODO (deferred)" — both shipped in session 55 (`79d2129f`/`2d17aa26`); the `--sma`/`--volume` flags are present and wired two lines below the comment that says they aren't. | Delete or correct the stale clause; the candlestick/SMA/volume upgrade is fully done. | trivial cleanup |
+| Low | `backend/cli` (doc alignment) | `sovereign_dashboard.mjs:89,259,276,342` | Inline "crashes / dev review" comments on `cockpit`, `polymarket markets`, `polymarket derive-creds`, `login` predate the session-54 shared-root-cause SIGINT fix (verified still in place: `runExternal`'s `sigintGuard`, lines 1342-1394) — all four were fixed but the comments were never updated, so they still read as open bugs. `login`'s comment also bundles a still-legitimate, separate feature request ("session persistence") that genuinely is still open — only the "crashes" clause is stale. | Trim the stale "crashes" clauses; keep the still-open feature-request text (e.g. login session persistence). | trivial cleanup |
+
+**Verified-good (no findings):** `canOpenPosition`'s wiring in `strategy.js:890,911` (sequential single-pass
+loop, `openPositionCount++` only after a confirmed `tradeExitCode===0` buy — no race, no double-count);
+`commandStrategyMenu`'s non-interactive `list` fallback (`strategy.js:1222-1229`); the dashboard's new
+`positions` entry (index 5, `auto-trade` stays index 4 — nav test's pinned index holds) and its `--live`
+flag wiring (`sovereign_dashboard.mjs:240-244`); `isInteractiveCmd`'s prefix match against
+`INTERACTIVE_CMDS` has no accidental over-match (checked every dashboard command id sharing a prefix with
+`alpaca`/`mt5`/`login`/`register`/`cockpit` — each set entry maps to exactly one menu command). Hygiene
+sweep: duplicate-basename pass run; the only Tier-1-relevant duplicate (`utils.js`) resolves to
+`backend/cli/lib/utils.js` (canonical, the one touched) vs `docs/archive/legacy_ui/js/utils.js` (archived,
+different domain) — not a real duplication.
+
+**Next debt-clearing move:** the `runAlpacaExitCheck` partial-clamp accounting fix (Medium finding above)
+is the highest-value next move — it's a live-money bookkeeping gap on the exact function the last two
+sessions were hardening for oversell safety, with no test coverage to catch a regression. The PIN
+centralization and the two stale-comment cleanups are cheap (<30 min combined) and can ride along.
+
+---
+
 ### Mass-Implement (pass 2) — 2026-06-22 session 55 (carryovers + remaining debt)
 
 Second mass-implement pass same session — cleared the remaining debt item AND all four open
@@ -888,3 +961,78 @@ sovereign_cli.js:52/54). Priority guard verified correct; ingest freshness gate 
   derives `{bars,from,to}` byte-identical to the old readTsIndex path (or skips identically) on every branch.
 - Gate: **suite 470/470** (was 467; +3). Live `backend integrity --json` re-run post-refactor: 383 ms,
   ok:false / 92 cached / 4 stale (unchanged). All shared/lib + data/daemon modules load.
+
+## Blast-Through Deep Review — 2026-06-23 session 58 (order-placement surfaces, all 3 brokers + C++ core)
+
+Scope: "Full ledger sweep" driven inline (user choice). Anchor `0903df6b` → HEAD `1c7227b7`. Deep-traced
+every live-order path across TradFi/Alpaca, crypto/Gate.io, prediction-markets/Polymarket, plus the new
+`shared/lib/runtime` Alpaca bot code (author-only reviewed until now) and a lightweight `backend/core`
+(C++) build/ctest/stub pass. DCS 0.96 start → 0.97 end. **No gating findings** (no unauthenticated
+exploit, no crash-on-first-use). Findings are risk-control gaps + one PIN exposure on the new live path.
+
+### Findings (recency order, severity-ranked)
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| **Medium-High** | Alpaca bot | `backend/cli/commands/strategy/strategy.js:880-898` + `shared/lib/runtime/alpaca_bot_cycle.js:33-60` (commit `17f565fb`, <1 day) | **`maxPositions` is never enforced.** `state.config.maxPositions` (default 10) is displayed by `auto-trade status` as `positions.length/maxPositions`, implying a cap, but neither `runAutomationPass` nor `recordAlpacaEntry` ever checks `state.positions.length` before opening a new LIVE position. An unattended loop can open unlimited concurrent live positions, exceeding its own configured concurrency limit. | Gate entry in `runAutomationPass` before the `commandTrade` buy (or have `recordAlpacaEntry` refuse + signal) when `state.positions.length >= config.maxPositions`. | Decision: implement cap |
+| **Medium** | PIN exposure | `backend/cli/commands/trade/trade.js:325` → `shared/lib/runtime/backend_bridge.js:68-101` | **Trade PIN leaks into the gateway subprocess command line.** `commandTrade` appends `--pin <SECRET>` to `args` (so the in-process gate at :293-310 can read it), then passes the *same* `args` to `buildTradeGatewayLaunch(args)`, which spawns the gateway (on win32 as a `powershell.exe -Command "& 'tsx' 'index.ts' … '--pin' 'SECRET'"` string) including the PIN. The PIN is then visible in OS process listings (`tasklist`/`Get-CimInstance Win32_Process`/`ps`). The gateway never even consumes `--pin` (the gate is JS-side), so it is a pure leak. Applies to both the auto-bot entry and exit sells. | Strip `--pin` and its value from `args` before `buildTradeGatewayLaunch(args)`. One fix point covers entry + exit + manual trades. | Decision: strip before spawn |
+| **Medium** | Alpaca bot | `shared/lib/runtime/alpaca_bot_cycle.js:33-59` (commit `17f565fb`) | **Entry records requested qty, not the broker's filled qty.** `recordAlpacaEntry` deliberately re-queries the broker for `fillPrice` (`brokerPos.averagePrice`) — correct — but still records `qty: Number(qty)` from the *request*. On a partial fill the tracked qty exceeds the real holding; the later exit sells `position.qty`, which can exceed the holding → broker oversell rejection, and the position never cleanly clears via this path. `brokerPos` is already in scope. | `qty: brokerPos ? Number(brokerPos.quantity) : Number(qty)`. | Decision: reconcile qty |
+| **Medium** | Alpaca bot | `shared/lib/runtime/alpaca_bot_cycle.js:85-117` + `strategy.js:826-905` (commit `17f565fb`) | **Same-symbol stacking → exit oversell.** No check against an already-tracked/already-held position before a new entry (each new bar yields a new `signalId`, so repeated buys of the same symbol create multiple tracked positions). The exit loop then sells each tracked position's `position.qty` independently against the *same* cycle-start broker snapshot, so two AAPL positions can try to sell more than the broker actually holds. Compounds the qty finding above. | Reconcile exit sell to `min(position.qty, brokerPos.quantity)` and/or dedup entries per symbol (skip entry if symbol already tracked/held). | Decision: cap exit qty |
+| **Low** | Alpaca bot | `alpaca_bot_cycle.js:92,119` | Realized P&L uses the pre-sell snapshot price (`marketValue/quantity` from the start of the cycle), not the actual exit fill. Logging-only, no capital impact. | Optional: re-query fill after the sell for accurate `realizedPnl`. | Informational |
+| **Low/Info** | C++ core | `backend/core` ctest | `kronos_integration_test` fails: "Not enough empirical data points for Kronos test (need at least 4)" — a data-availability failure in an integration test, not a code regression. 28/29 ctest green, including all order-relevant tests (`kill_switch`, `execution`, `portfolio_risk`). Build is current and compiles. | Seed ≥4 Kronos data points for the integration fixture, or mark it as requiring data. | Informational |
+
+### Verified-good (no action)
+- **Gateway single-order failure propagates a non-zero exit code** (`index.ts:2054-2057` sets
+  `process.exitCode = 1` on `FAILED`/`RISK_REJECTED`). This is what makes the bot's reliance on
+  `commandTrade`'s return code safe: a failed live buy is NOT recorded as a phantom tracked position,
+  and a failed live exit sell keeps the position tracked (`alpaca_bot_cycle.js:107-116`). Good.
+- **Risk-engine fails closed** (`RiskEngineBridge.checkRisk`, `index.ts:610-690`): missing/non-exec
+  binary or an engaged global kill-switch rejects the order in LIVE mode; the dry-run bypass is explicit
+  and guarded by `LIVE_TRADING!=='true' && !--live`. Good.
+- **PIN gate fails closed** (`trade.js:292-323`): unattended LIVE without `SOVEREIGN_TRADE_PIN` returns 1.
+  The gate runs on BOTH entry and exit because both call `commandTrade` in-process (not via a CLI spawn
+  that would bypass it). Good.
+- **Alpaca 422 fix intact** (`index.ts:497-504`): fractional equity orders forced to `time_in_force:'day'`.
+- **New runtime tests green**: `alpaca_bot_cycle.test.js` + `alpaca_bot_state.test.js` = 11/11 (`node --test`).
+  (Note: `npx jest` falsely "fails" these — jest mis-parses node:test files; always use `node --test`.)
+
+### Section 3 stub/duplicate sweep
+- Duplicate basenames resolved for all order-relevant modules. The `shared/lib/<name>.js` 1-line entries
+  (`backend_bridge`, `paths`, `env`, `execution_memory`, `config_loader`, `persistence_bridge`,
+  `run_loop`, `polymarket_history`) are **thin re-export shims** over the real impls in
+  `shared/lib/runtime/` (or `market/`) — migration layer, NOT dead (same class as the `polymarket_history`
+  false-positive from session 55; left intact). `docs/guide/examples/minimal_sovereign/.../config_loader.js`
+  is an isolated doc-example copy. No new dead shims, no divergent forks, no reachable stubs found on the
+  order-placement paths.
+
+### Grades (this pass)
+- `shared/lib/runtime` (Alpaca bot): **B** — clean, well-structured, mirrors the Polymarket `bot_state`/
+  `cycle` shape, fully tested (11/11); held below A by the unenforced `maxPositions` cap + the
+  requested-vs-filled qty reconciliation gaps (both real on a live-capital path).
+- `backend/gateway`: **B+** — robust exit-code propagation, fail-closed risk engine, validated proposed
+  orders; the PIN leak lives in the CLI wrapper, not the gateway.
+- `backend/cli` (trade/strategy live paths): **B** — PIN-in-argv leak + the bot entry/exit reconciliation.
+- `backend/core` (C++): **B** — lightweight pass: builds, 28/29 ctest green, 1 data-dependent test fail,
+  no obvious stub/dead code on the order path. First real stamp in the ledger.
+
+### Next debt-clearing move (not a feature)
+Implement the `maxPositions` cap + the two qty-reconciliation fixes in `alpaca_bot_cycle.js`/`strategy.js`
+(one focused commit, all on the brand-new code), and strip `--pin` from the gateway launch args in
+`commandTrade` (one-line, covers all three live paths). These four are the highest-value, lowest-risk
+fixes and all sit on code touched this/last session.
+
+### ✅ FIX-PASS CLOSEOUT — 2026-06-23 session 58 (commit `cf4f7026`)
+All four findings above are **RESOLVED**, plus the 5th TUI item found mid-pass:
+- **#1 maxPositions** → pure `canOpenPosition()`; `runAutomationPass` gates live entries against the
+  post-exit count + `config.maxPositions`, increments per recorded entry.
+- **#2 PIN leak** → exported `stripFlagValue(args,name)` (`utils.js`); `commandTrade` sanitizes args before
+  `buildTradeGatewayLaunch`. PIN no longer reaches the gateway argv.
+- **#3 entry qty** → pure `resolveEntryQty(brokerPos, requestedQty)` records the broker's filled qty.
+- **#4 exit oversell** → pure `resolveExitQty(positionQty, availableQty)` + per-symbol `availableBySymbol`
+  counter; skips firing when ≤0.
+- **#5 (TUI)** → "Positions" manifest entry gained a `--live` toggle so its P&L reads the live account.
+Verified: suite **616/614/0fail/2skip** (+11 tests), manifest-sensitive tests 39/39, hygiene clean.
+Grades: `shared/lib/runtime` B→**A**, `backend/cli` B→**B+**.
+**Remaining (non-gating, not yet done):** Gate.io spot market-order semantics (`index.ts:309-319`) want one
+empirical paper probe — covered at the gateway-execute level but not line-audited; realized-P&L pre-sell
+snapshot price (logging only); C++ `kronos_integration_test` needs ≥4 seeded data points.

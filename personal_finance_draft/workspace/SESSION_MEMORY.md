@@ -1,3 +1,93 @@
+## Session Memory - 2026-06-23 (session 58, cont.) Fixed all 4 review findings + trade-section UX; 3 commits (cf4f7026, 13bc91f0, 5e60babb); suite 616/614/0fail/2skip
+
+{
+  "work": "After the review (block below), the user ran /mass-implement twice and reported a trade-section bug. Three commits landed.",
+  "key_mechanisms": [
+    "REVIEW FIXES (cf4f7026): pure helpers canOpenPosition/resolveEntryQty/resolveExitQty in alpaca_bot_cycle.js + per-symbol availableBySymbol exit counter; strategy.js loads post-exit count and gates live entries on maxPositions; trade.js strips --pin before buildTradeGatewayLaunch (stripFlagValue, new export in utils.js); manifest.js legacy 'Positions' got a --live toggle. +11 tests (22 in the two runtime test files). shared/lib/runtime B->A, backend/cli B->B+.",
+    "TRADE SECTION 'GOES TO LEGACY' (13bc91f0) -- NOT a crash: strategy/prop-firms/run/'trade favorites' were in sovereign_dashboard.mjs's INTERACTIVE_CMDS, which unmounts the Ink dashboard and spawns the command with stdio:inherit -- those commands are old prompt-menus, so the user saw the 'legacy' UI. Removed them from INTERACTIVE_CMDS -> they run IN-PANE. commandStrategyMenu non-interactive auto-resolved promptSelect to the first option 'new' -> 'strategy new requires a name'; added `if (!isRichTerminal()) return commandStrategy(['list'])`. prop-firms/run/favorites already defaulted to a safe list.",
+    "STRUCTURAL GOTCHA: the Ink dashboard (sovereign_dashboard.mjs) uses its OWN inline `M` menu model with flag shape {t,opts,lbl,def} -- NOT tui/manifest.js (which is the LEGACY runInteractiveMenu engine, shape {type,options,label,default}). Editing manifest.js does NOT affect the dashboard. This is why my earlier 'tracker is in the dashboard' answer was WRONG and why the session-57 'one dashboard manifest entry' claim was false.",
+    "POSITIONS ENTRY (5e60babb): added {id:'auto-trade status', label:'positions', --live yn} to the dashboard M Trade section AFTER auto-trade (index 5; index 4 stays auto-trade so sovereign_dashboard.test.js's pinned initialCmdI:4 holds). Moved the read-only `status` branch AHEAD of the ai_agent_trading featureGate in commandAutoTrade so viewing positions never needs the live-trading flag.",
+    "CRASH CAPTURE: added a launch-guarded (process.argv[1]===this file) global uncaughtException/unhandledRejection handler writing argv+stack to workspace/dashboard_crash.log -- the long-standing //crashes reports never left a trace. Guarded so test imports of the module don't install it."
+  ],
+  "verified": [
+    "Suite 616/614/0fail/2skip at each commit (full runs; one run done by the user in their shell during a classifier outage). Dashboard + in-pane hang-safety sweep 19/19. Hygiene clean. C++ 28/29 ctest.",
+    "auto-trade status exits 0 with the feature flag OFF (read-only ungated). strategy in-pane shows the 14-strategy registry list (was erroring). Dashboard Trade entries: 4:auto-trade 5:auto-trade status."
+  ],
+  "user_decisions": [
+    "AskUserQuestion: trade-section behavior -> 'Run in-pane (stay in dashboard)'. Earlier mass-implement scopes -> implement all 4 findings + the TUI --live fix. Three explicit 'commit's / 'mass-implement's / 'fix that'.",
+    "INFRA: a sustained Anthropic safety-classifier outage repeatedly refused Edit/Bash mid-session ('temporarily unavailable, auto mode cannot determine safety'); retried until it recovered; user ran the full suite in their own PowerShell when my Bash was blocked."
+  ],
+  "remaining": [
+    "Real-terminal confirmation (user's, no conhost in CI): trade commands now stay in-dashboard (in-pane); plus standing bt --strategy / backend visualize checks.",
+    "Highest-impact open gap (DEV_REVIEW s58): Gate.io spot market-order semantics empirical paper probe (index.ts:309-319) -- amount=base-vs-quote + market TIF, reviewed at gateway level only.",
+    "graphify-out (repo root) stale since 2026-06-09; deferred (localized 7-file diff).",
+    "Lower: realized-P&L pre-sell snapshot price (logging only); C++ kronos_integration_test needs >=4 seeded data points."
+  ],
+  "dcs": 0.97
+}
+
+## Session Memory - 2026-06-23 (session 58) Deep order-placement review (the session-57 flag); full blast-through across all 3 execution surfaces + new shared/lib/runtime + lightweight C++ pass; review-only, 0 commits; DCS 0.96→0.97; no gating findings, 4 OPEN findings
+
+{
+  "work": "Boot via session-orchestrator. The standing flag (set sessions 57) was: session 58 is a deep review of every API-bot connection that places real orders. User chose 'Full ledger sweep' + 'I drive it inline' at boot (AskUserQuestion). Ran it as a real blast-through (anchor 0903df6b->HEAD 1c7227b7).",
+  "key_mechanisms": [
+    "GATEWAY EXIT-CODE PROPAGATION IS THE LOAD-BEARING SAFETY PROPERTY: the new Alpaca bot (entry in strategy.js, exit in alpaca_bot_cycle.js) keys ALL its position-tracking decisions off commandTrade's return code. Confirmed the gateway single-order CLI path sets process.exitCode=1 on FAILED/RISK_REJECTED (index.ts:2054-2057) -> spawnSync result.status=1 -> a failed live buy is never recorded as a phantom position, and a failed live exit sell keeps the position tracked (remaining.push at alpaca_bot_cycle.js:107-116). This was my initial worry; already handled.",
+    "BOTH live paths run the full PIN/auth gate because they call commandTrade IN-PROCESS (require), not via a CLI spawn that would bypass it. canLiveExecute + requireAuth + verifyPin all execute. PIN gate fails closed: unattended LIVE without SOVEREIGN_TRADE_PIN returns 1 (trade.js:317-320). Risk engine (RiskEngineBridge.checkRisk) also fails closed: missing binary or engaged kill-switch rejects in LIVE; dry-run bypass guarded by LIVE_TRADING!=='true' && !--live.",
+    "FINDING maxPositions UNENFORCED (Med-High): config.maxPositions (default 10) is DISPLAYED by auto-trade status as positions.length/maxPositions, implying a cap, but neither runAutomationPass nor recordAlpacaEntry checks state.positions.length before opening a new live position. Unattended loop can exceed its own concurrency limit.",
+    "FINDING PIN LEAK (Med): commandTrade appends --pin <SECRET> to args (so the JS gate can read it) then passes the SAME args to buildTradeGatewayLaunch(args) which spawns the gateway (win32: powershell -Command string) WITH --pin SECRET in the command line -> visible in tasklist/ps. Gateway never even consumes --pin. Pure leak. Fix: strip --pin+value before spawn (one point covers entry/exit/manual).",
+    "FINDING qty NOT RECONCILED (Med): recordAlpacaEntry re-queries the broker for fillPrice (correct) but records qty: Number(qty) from the REQUEST, not brokerPos.quantity (already in scope). Partial fill -> tracked qty > real holding -> later exit sells position.qty -> oversell rejection. Plus same-symbol stacking (each new bar = new signalId = new tracked position) lets the exit loop sell multiple positions for one symbol against one snapshot -> oversell.",
+    "C++ LIGHTWEIGHT PASS: ctest -C Debug in backend/core/build = 28/29 green; only fail is kronos_integration_test ('Not enough empirical data points... need at least 4') = data-availability, not a code regression. Order-relevant tests (kill_switch, execution, portfolio_risk) all green. Stamped the ledger row (first-ever) so it stops being carried-forward-unreviewed.",
+    "TESTING GOTCHA RE-CONFIRMED: npx jest FALSELY reports the runtime tests as failing because it mis-parses node:test files. The real runner is `node --test` (or npm test = node tests/run_node_tests.js). alpaca_bot_cycle.test.js + alpaca_bot_state.test.js = 11/11 under node --test."
+  ],
+  "verified": [
+    "C++ 28/29 ctest (1 data-availability fail). New runtime tests 11/11 via node --test.",
+    "Gateway exit-code propagation, fail-closed risk engine + PIN gate, Alpaca 422 fix — all confirmed by direct code trace.",
+    "Section 3 stub/dup sweep: the 1-line shared/lib/<name>.js entries (backend_bridge/paths/env/execution_memory/config_loader/persistence_bridge/run_loop/polymarket_history) are thin re-export shims over shared/lib/runtime|market — NOT dead (same class as the s55 polymarket_history false-positive). No reachable stubs on order paths."
+  ],
+  "user_decisions": [
+    "AskUserQuestion at boot: 'Full ledger sweep' (scope) + 'I drive it inline' (execution, no sub-agents)."
+  ],
+  "remaining": [
+    "4 OPEN findings, review-only, awaiting user go-ahead for a fix pass: (1) maxPositions cap, (2) PIN-strip-before-spawn, (3) qty reconciliation on entry, (4) exit oversell / same-symbol dedup. Suggested: one focused commit for 1/3/4 (alpaca_bot_cycle.js+strategy.js) + one-line trade.js fix for 2.",
+    "kronos_integration_test needs >=4 seeded Kronos data points (or mark data-required).",
+    "Pre-existing real-terminal carryovers untouched (legacy<->dashboard switch, bt --strategy picker, backend visualize force-ingest)."
+  ],
+  "dcs": 0.97
+}
+
+## Session Memory - 2026-06-23 (session 56) "/" chat suggestion dropdown + generalized cursor-position math + legacy-TUI engine switch made symmetric; 0 commits (all uncommitted, pending user go-ahead); suite ended 594/592/0fail/2skip, hygiene clean
+
+{
+  "work": "Picked up directly from session 55's typing-lag/cursor fix. User asked whether anything shaped like a command-suggestion dropdown would break the hardcoded H-3 cursor math, then asked for that feature plus a way back to the old TUI. Three rounds, two of them corrected mid-flight by the user.",
+  "key_mechanisms": [
+    "CURSOR MATH GENERALIZED: the existing H-3 cursor-Y math (session 55) assumed the chat bar was always exactly 4 fixed lines. Added a '/'-triggered command-suggestion dropdown (suggestCommands/allCommands exported from chat_parser.js) rendered INSIDE the same bordered box, and generalized the math to H-3-suggestionRowCount, with suggestionRowCount shared between the render and the cursor effect so they can't independently drift -- the exact failure mode the user was worried about.",
+    "SEPARATE LATENT BUG FOUND AND FIXED: while auditing the cursor math, found the chat input row had no height cap -- a long typed command could trigger Ink's default text-wrap and grow the row to 2+ lines, breaking the cursor regardless of the new suggestion feature. Fixed with height:1 + overflowY:'hidden' on that row (clips instead of growing); suggestion rows get wrap:'truncate-end' for the same reason.",
+    "NO DOUBLE-KEYSTROKE-HANDLING: verified from ink-text-input's source before wiring suggestion-list navigation that TextInput's own internal useInput hook explicitly ignores up/down arrow and Tab -- so the parent component's new handling of those keys for the dropdown never races with TextInput's own handling of the same keystroke.",
+    "FIRST 'LEGACY MODE' ATTEMPT WAS WRONG (direct user correction): built a legacy_tui feature-flag (later moved to layout='legacy') that just hid the chat bar inside the SAME Ink dashboard. User: 'NO DIFFERENCE, shouldn't it just log out of this and point to the manifest' -- there's a genuinely separate, older engine (tui/engine.js's runInteractiveMenu, prompt-based, already toggled today via LEGACY_TUI=1 env var) that the user meant. Fully reverted the dashboard-internal hiding logic (initial focus, cursor-effect guard, Tab guard, footer hint, render gating) rather than leaving it as dead weight alongside the real fix.",
+    "REAL FIX: Settings > Layout > legacy now makes the dashboard call exit() immediately after the settings command persists (sovereign_dashboard.mjs's handleRun), and sovereign_cli.js's boot loop re-reads the setting and launches the real runInteractiveMenu next.",
+    "SYMMETRY FOLLOW-UP (user's own next question): 'shouldn't the legacy have an option to switch to the newer one also?' -- added 'legacy' as a 4th --preset option to tui/manifest.js's OWN separate Settings entry (the legacy menu has its own independent manifest from the dashboard's), and made engine.js's runInteractiveMenu return (instead of looping back to its own menu) when the user picks any preset other than 'legacy' from inside it.",
+    "CAUGHT A SELF-INFLICTED REGRESSION BEFORE SHIPPING IT: restructuring sovereign_cli.js's main() into a naive 'relaunch the other engine after every exit' loop would have trapped a normal q-quit in an infinite relaunch -- neither engine's exit path distinguishes 'user quit' from 'switched layout' (both just end the child process the same way, no explicit signal). Fixed by tracking loadSettings().layout before and after each run and only looping when it actually changed; otherwise the loop returns, ending the whole CLI exactly as before this change existed."
+  ],
+  "verified": [
+    "Full suite 594/592/0fail/2skip across every edit round (multiple full reruns, not just once); npm run hygiene clean throughout.",
+    "Dashboard-self-exit direction proven end-to-end via the Ink fake-TTY harness: typed '/cha' and '/back' in chat and confirmed the dropdown renders inside the box with correct highlight/Tab-fill behavior (throwaway diag scripts, deleted after each); typed 'settings layout --preset legacy' via chat and confirmed the Ink instance actually exits (waitUntilExit resolves) and the setting persists to disk as 'legacy'; confirmed Settings>Layout>legacy boots the dashboard straight into the grid sidebar with no chat bar when set before launch.",
+    "Legacy->dashboard direction (the symmetry follow-up) verified by code trace + exact argv-shape matching only -- no existing test harness drives runInteractiveMenu's promptSelect flow, so this one still needs a live-terminal check.",
+    "Isolated a flaky test failure (sovereign_cli_human_surfaces.test.js) to a pre-existing environmental flake unrelated to this session's changes -- that test's code path (spawnSync with explicit args) is untouched by any edit here, and reran clean 3/3 times in isolation."
+  ],
+  "user_decisions": [
+    "'shouldnt it just be in the layout' -- redirected the legacy toggle from a new standalone feature_flag to the existing (previously-unused-stub) settings.layout field instead, alongside compact/research.",
+    "'NO DIFFERENCE, shouldnt it just logout of this and points to the manifest' -- rejected the in-dashboard chat-bar-hiding approach entirely, redirected to the real separate legacy engine (tui/engine.js).",
+    "'shoudlnt the legacy has an option to switch to the newer one also?' -- asked for and got the symmetric switch-back direction.",
+    "'seems done for now, those interactive things are hard to debugg, maybe if you can see the screen and work with me ut would be easier, laev this for the future' -- closing the session; floated screen-sharing as a future collaboration mode for interactive TUI work, explicitly deferred, no action taken."
+  ],
+  "remaining": [
+    "Live-terminal confirmation of the legacy->dashboard switch direction (pick default/compact/research from inside the real prompt-based menu, confirm it drops back into the dashboard) -- joins the existing pile of real-terminal-only carryovers (bt --strategy picker, backend visualize force-ingest, the typing-lag fix itself).",
+    "Nothing committed yet this session -- 6 files touched (sovereign_dashboard.mjs, sovereign_cli.js, tui/chat_parser.js, tui/engine/engine.js, tui/manifest.js, shared/lib/settings/user_settings.js), pending user go-ahead.",
+    "compact/research layout presets remain otherwise-unused stubs (set/persisted/displayed, no behavior) -- legacy is the first value in that field to actually do something; out of scope, just noted."
+  ],
+  "dcs": 0.93
+}
+
 ## Session Memory - 2026-06-22/23 (session 55) Blast-through audit + 2 mass-implement passes (renameWithRetry+Atomics, 3 dead-shim deletions, gateway fetch-retry & processProposedOrders, full candlestick/SMA/volume chart upgrade, graphify AST refresh) THEN a long Windows-conhost typing-lag/cursor fix; ~14 commits; suite ended 594/592/0fail/2skip, hygiene clean
 
 {
