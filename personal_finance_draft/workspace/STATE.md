@@ -1,31 +1,177 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: 0903df6b
-last_audit_date: 2026-06-22
+last_audited_commit: 5e60babb
+last_audit_date: 2026-06-25
 
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
-## NEXT SESSION FLAG (set 2026-06-23 session 57, by explicit user instruction)
-**Session 58 is a deep review session, not feature work.** Scope: check the relevant files and
-the API-bot connections that place real orders, across all three execution surfaces — TradFi
-(Alpaca equities), crypto (Alpaca crypto + Gate.io), and prediction markets (Polymarket). See
-`workspace/handoff/2026-06-23.md` session 57's closing block for suggested starting points
-(the three `BrokerAdapter` implementations + `ExecutionGateway.execute()` in
-`backend/gateway/src/index.ts`, both live unattended bot loops — Polymarket's `cycle.ts` and the
-Alpaca tracker/cycle just built this session — and the PIN/auth/feature-gate chain). Nothing
-scoped into a plan yet; this is a framing flag for next session's boot, not a completed audit.
-This should be run as a real `blast-through` audit (see `skills/blast-through/SKILL.md`) against
-those specific directories — check `workspace/REVIEW_LEDGER.md` first for which of them are
-stalest (`backend/core` C++ hasn't been touched in ~10+ sessions; `shared/lib/runtime` is brand
-new and author-reviewed only).
-**Include `backend/core` (C++) in scope even though it's untouched** (user's explicit call): an
-untouched directory with no commits in ~10+ sessions is likely fine (nothing's been breaking it),
-but "likely fine" isn't the same as "verified" — give it a lightweight pass (does it still build,
-does `ctest` still pass, any obvious stub/dead code per the Section 3 sweep) rather than a full deep
-audit, then stamp `workspace/REVIEW_LEDGER.md`'s row with a real timestamp either way. The point is
-closing the "carried forward unreviewed every time" gap, not spending the whole session there.
+## Process Note - 2026-06-25 session 59 - docs/ triage + workspace/BOOTSTRAP.md + docs/codebase_tour/ (UNCOMMITTED, 9 new files)
+- User: "I'm starting to feel like I'm forgetting a lot of things in this repo due to vibecoding without
+  documentation" — asked for a reverse-engineered, hands-on course covering the whole codebase.
+- **Discovery before building anything**: this repo already has 30+ files under `docs/` (a canonical
+  folder map, a 24-chapter ~5,000-line "build from scratch" book, architecture/product/technical specs,
+  operational guides) — none of it is read during normal session boot (`session-orchestrator` only reads
+  `workspace/*.md`; `CLAUDE.md` never mentions `docs/`). That's the more precise diagnosis than "no docs
+  exist": the docs exist and silently fall out of session memory every time.
+- **Triage findings** (full detail in `workspace/BOOTSTRAP.md`): `docs/engineering/codebase_org.md`
+  (2026-06-08) is accurate. `docs/engineering/architecture_overview.md` (header dated 2026-05-14) is
+  badly stale — it lists live broker execution as `*Planned*` and claims the C++ build doesn't compile
+  the trading modules; both are false today. `docs/engineering/capability_manifest.md` describes a flat
+  `backend/cli/commands/*.js` layout and SQLite/`data/` artifacts that don't match the real
+  domain-subfoldered layout and `storage/data/ts/` binary format. `docs/operational/guides/testing_surface.md`
+  describes a since-reorganized test layout. **17 of `docs/README.md`'s own links are broken** — every
+  `docs/operational/*.md` reference points at files that moved into `guides/`/`roadmap/`/`local_first/`
+  subfolders without the hub being updated.
+- **Fixes**:
+  1. `workspace/BOOTSTRAP.md` (new) — `session-orchestrator` already tries to read this file first every
+     boot; it just never existed. Points at `docs/README.md`, carries the 3 stale-doc corrections above
+     and the broken-link map, so this stops silently recurring.
+  2. `docs/codebase_tour/` (new, 8 files, ~750 lines) — the genuinely-missing layer: real `file:line`-grounded
+     module docs + hands-on labs (read this real file, trace this real order through N real files, run
+     this real command) for the C++ core, data ingestion, strategy/backtest/ML, the live trading gateway
+     (highest-stakes module — every claim spot-verified against current line numbers, not just trusted
+     from research-agent output), the TUI/CLI dispatch model, the web dashboard/API, and the real test
+     setup. Cross-links to existing `docs/engineering/*` instead of duplicating what's already accurate.
+- **Verified**: `npm run hygiene` clean after adding all 9 files. Every command cited in a lab was
+  cross-checked against this session's own direct file reads (not assumed from the research-agent
+  summaries alone) — e.g. `auto-trade --passes 1`'s `ai_agent_trading` feature-gate requirement was
+  confirmed by grep before being added as a lab caveat.
+- Nothing else changed; this is docs-only, additive, no code touched.
+
+## Fix Note - 2026-06-25 session 59 - Trade still defaulted to the interactive wizard ("legacy") from the dashboard (UNCOMMITTED)
+- User report: picking `alpaca` from the dashboard's Trade section still felt like "defaulting to the
+  legacy version" even after session 58's INTERACTIVE_CMDS fix. Root cause: the manifest's `alpaca`
+  entry had `flags: {}`, so it always launched with `args=[]`, which `commandTrade` treats as
+  "no args at all" -> the full multi-step interactive wizard (`promptTradeDeskArgs`: action -> symbol
+  -> qty -> order type -> live confirm), a different code path from the literal legacy TUI but the
+  same full-screen prompt-sequence experience.
+- Fix: the `alpaca` manifest entry now carries real `--action/--symbol/--qty/--order-type/--price/
+  --pin/--live` flags; a new pure `buildTradeArgsFromActionFlag` in `trade.js` translates them back
+  into the wizard's own positional shape (e.g. `['buy','AAPL','10','market']`) before `commandTrade`'s
+  dispatch, so the `args.length===0` branch is never reached from the dashboard. Removed `alpaca` from
+  `INTERACTIVE_CMDS` — it now runs in-pane like the rest of Trade. Bare CLI usage (`alpaca`/`trade`
+  with no args, typed directly in a terminal) is unchanged — still gets the guided wizard.
+- Verified: `defaultFlagValues`+`buildArgv` traced end-to-end confirming pressing Run with untouched
+  defaults yields `args=['balance']` after translation (never empty); a buy+live case traced to
+  `['buy','AAPL','5','market','--live']`. 7 new unit tests
+  (`tests/scripts/lib/trade_args_from_action_flag.test.js`). Full suite **630/628/0fail/2skip** (+7
+  over the post-mass-implement 623/621 baseline), hygiene clean — including the dashboard's own
+  snapshot/PIN-gate tests (unaffected).
+
+## Implementation Note - 2026-06-25 session 59 - Mass-implement: all 3 audit findings FIXED (UNCOMMITTED)
+- Closed all 3 findings from this session's own blast-through pass (below). Suite **623/621/0fail/2skip**
+  (+7 tests over the 616/614 baseline), hygiene clean. Nothing committed yet — pending user go-ahead.
+- **Exit-clamp bookkeeping (Medium, the real bug):** new pure `buildExitOutcome` helper in
+  `alpaca_bot_cycle.js` fixes `runAlpacaExitCheck` to record P&L on the actually-sold qty (not the
+  pre-clamp tracked qty) and keep the unsold remainder tracked instead of dropping it when a sell is
+  clamped (e.g. two positions stacked on one symbol sharing a broker balance). `shared/lib/runtime`
+  re-graded B→A. 4 new tests.
+- **PIN-strip centralization (Low, no active leak was found):** `stripFlagValue` moved into
+  `shared/lib/runtime/backend_bridge.js`; `buildTradeGatewayLaunch` now strips `--pin` unconditionally
+  for all 8 callers, not just `commandTrade`. `backend/cli/lib/utils.js` re-exports the canonical
+  version. 3 new tests.
+- **5 stale dev-review comments cleaned** in `sovereign_dashboard.mjs`'s manifest (doc-alignment only,
+  no behavior change) — see `DEV_REVIEW.md` for exactly which lines and why each was confirmed stale.
+- Files touched: `shared/lib/runtime/alpaca_bot_cycle.js`, `shared/lib/runtime/backend_bridge.js`,
+  `backend/cli/lib/utils.js`, `backend/cli/sovereign_dashboard.mjs`,
+  `tests/scripts/lib/alpaca_bot_cycle.test.js`, new `tests/scripts/lib/backend_bridge.test.js`.
+
+## Audit Note - 2026-06-25 session 59 - Focused blast-through (anchor 1c7227b7→5e60babb), review-only
+- Tier 1 = the 3 commits since the last anchor (`cf4f7026`,`13bc91f0`,`5e60babb`); 2 of the 3 had never
+  been audited. No section was gated, so no Tier-3 carryover was mandatory. Full findings + Gate Table:
+  `workspace/DEV_REVIEW.md` ("Focused Blast-Through — 2026-06-25 session 59"); `REVIEW_LEDGER.md` stamped.
+  DCS 0.97→0.96. **No gating findings; nothing fixed (review-only).**
+- **Real finding:** the session-58 oversell clamp (`resolveExitQty` in `alpaca_bot_cycle.js`) stops a
+  broker-level oversell when two tracked positions share one symbol, but `runAlpacaExitCheck`'s
+  bookkeeping afterward is wrong — `realizedPnl` uses the pre-clamp `position.qty` instead of the
+  actually-sold amount, and the unsold remainder is dropped from tracking entirely instead of staying
+  open. Zero test coverage on this integration function (only the pure helpers are tested). Medium,
+  not gating (the broker-safety property itself holds) — next debt-clearing move.
+- **Verified empirically (no active leak):** traced every `--pin` write site repo-wide and confirmed the
+  `cf4f7026` PIN-strip fix covers the only 2 paths that ever populate it; flagged (informational only)
+  that the strip lives at one caller instead of inside `buildTradeGatewayLaunch` itself, so it isn't
+  defense-in-depth against a future caller.
+- 5 stale "crashes"/"TODO" dev-review comments found in `sovereign_dashboard.mjs`'s manifest (chart
+  SMA/volume already shipped session 55; cockpit/polymarket-markets/derive-creds/login crash fix
+  confirmed still in place since session 54) — cosmetic, flagged for cleanup.
+- `shared/lib/runtime` re-graded A→B pending the fix above; `backend/cli` stays B+ (re-verified clean
+  on the 2 previously-unaudited commits).
+
+## Implementation Note - 2026-06-23 session 58 - Trade-section UX fixes (commits 13bc91f0, 5e60babb)
+- **Trade section "dropped me into legacy" (commit `13bc91f0`):** root-caused NOT a crash — `strategy`/
+  `prop-firms`/`run`/`trade favorites` were in `sovereign_dashboard.mjs`'s `INTERACTIVE_CMDS`, so
+  activating them unmounted the Ink dashboard into the old prompt-menu CLI (reads as the legacy UI).
+  They each render a safe read-only summary non-interactively, so they now run **in-pane**. Only truly
+  input-driven entries (alpaca/mt5/add-platform/login/register/polymarket wizards/cockpit) still take over.
+  `commandStrategyMenu` got a non-interactive `list` path (was auto-resolving to `new` → "requires a name").
+  Added a launch-guarded global crash handler writing to `workspace/dashboard_crash.log` (these `//crashes`
+  reports never left a stack before).
+- **CORRECTION to the session-57 claim** below ("CLI + one dashboard manifest entry"): that dashboard
+  entry only ever existed in the **legacy** `tui/manifest.js`, NOT the Ink dashboard's own inline `M` — so
+  the position tracker was invisible in the dashboard. **Fixed (commit `5e60babb`):** added a `positions`
+  entry (`auto-trade status`) to the dashboard Trade section (after `auto-trade`, index 5; index 4 stays
+  `auto-trade` so the nav test's pinned index holds), runs in-pane with a `--live` toggle. Also moved the
+  read-only `status` branch ahead of the `ai_agent_trading` feature gate so viewing positions never needs
+  the live-trading flag enabled. The dashboard uses its own `M`, not `manifest.js` — a structural gotcha
+  worth remembering.
+- **Verified:** suite 616/614/0fail/2skip across both commits; dashboard + in-pane hang-safety sweep 19/19;
+  hygiene clean. **Real-terminal confirmation still the user's** (in-pane feel, no conhost in CI).
+
+## Implementation Note - 2026-06-23 session 58 - All 4 review findings FIXED + TUI live toggle (commit cf4f7026)
+- Mass-implement pass closing the session-58 review's 4 OPEN findings (below), all on this/last session's
+  code. One commit `cf4f7026` (7 files, +183/−9), scoped to code+tests only (cron data artifacts + workspace
+  docs excluded per practice).
+- **Finding 1 (maxPositions):** `runAutomationPass` loads the post-exit position count + cap and gates new
+  live buys via pure `canOpenPosition(openCount, maxPositions)` in `alpaca_bot_cycle.js`; increments locally
+  per recorded entry. Dry-run path untouched (cap only gates `isLive`).
+- **Finding 3 (entry qty):** pure `resolveEntryQty(brokerPos, requestedQty)` — records the broker's filled
+  qty (partial-fill safe), falling back to requested only when the broker reports nothing usable.
+- **Finding 4 (exit oversell):** pure `resolveExitQty(positionQty, availableQty)` + a per-symbol
+  `availableBySymbol` counter decremented after each sell; skips firing (drops stale tracking) when ≤0, so
+  two stacked positions on one symbol can't oversell the real holding.
+- **Finding 2 (PIN leak):** new exported `stripFlagValue(args, name)` in `backend/cli/lib/utils.js`;
+  `commandTrade` now calls `buildTradeGatewayLaunch(stripFlagValue(args, '--pin'))` so the PIN (consumed by
+  the in-process gate) never reaches the spawned gateway's argv. One fix point covers manual + bot entry +
+  bot exit paths.
+- **TUI (the 5th item found mid-pass):** the dashboard "Positions" entry (`manifest.js`) got a `--live`
+  confirm toggle (default false) so `auto-trade status`'s P&L reads the live account instead of silently
+  showing paper positions while the bot trades live.
+- **Verified:** full suite **616/614/0fail/2skip** (was 605/603; +11 new pure-helper/strip tests, zero
+  regressions); manifest-sensitive tests (dashboard nav + `cli_ui_contract`) 39/39; `npm run hygiene` clean.
+  Grades moved: `shared/lib/runtime` B→**A**, `backend/cli` B→**B+** (ledger stamped at `cf4f7026`).
+- Session note: a sustained Anthropic-side safety-classifier outage repeatedly refused write/exec tool calls
+  this session; the full suite was run by the user in their shell, the rest verified once the classifier
+  recovered. No behavior impact.
+
+## Audit Note - 2026-06-23 session 58 - Deep order-placement review DONE (the session-57 flag, now closed)
+**The session-58 deep review ran as a full blast-through (anchor `0903df6b`→`1c7227b7`).** Full findings,
+verified-good list, stub/dup sweep, and per-section grades: `workspace/DEV_REVIEW.md` ("Blast-Through Deep
+Review — 2026-06-23 session 58"); ledger stamped in `workspace/REVIEW_LEDGER.md` (every in-scope row now
+has a real 2026-06-23 timestamp — `backend/core` is no longer carried-forward-unreviewed). DCS 0.96→0.97.
+**No gating findings.** All three execution surfaces traced; Polymarket `cycle.ts` and the new Alpaca
+cycle reviewed under live-trading scrutiny. Verified-good: gateway single-order failure propagates a
+non-zero exit code (so the bot never records a phantom position on a failed buy / never drops a position on
+a failed exit sell), risk-engine + PIN gate both fail closed, Alpaca 422 fix intact, new runtime tests
+11/11. **C++ core:** builds, 28/29 ctest green; the one fail (`kronos_integration_test`) is a data-
+availability failure ("need ≥4 points"), not a regression.
+
+**OPEN findings → next debt-clearing move (NOT new features; all on this/last session's code):**
+1. **[Medium-High] `maxPositions` never enforced** — `runAutomationPass`/`recordAlpacaEntry` open new live
+   positions without checking `state.positions.length` against `config.maxPositions` (the `auto-trade
+   status` view implies a cap that doesn't exist). Unattended loop can exceed its own concurrency limit.
+2. **[Medium] Trade PIN leaks into the gateway subprocess argv** — `commandTrade` passes `--pin <SECRET>`
+   through to `buildTradeGatewayLaunch(args)`; the PIN shows up in OS process listings. Gateway never
+   consumes it. Fix = strip `--pin`+value before spawn (one point covers all 3 live paths).
+3. **[Medium] Entry records requested qty, not broker filled qty** (`recordAlpacaEntry`) — partial fills
+   make the tracked qty exceed the real holding; the later exit can oversell. `brokerPos.quantity` is
+   already in scope.
+4. **[Medium] Same-symbol stacking → exit oversell** — no per-symbol dedup before entry; the exit loop
+   sells each tracked position's qty independently against one snapshot. Reconcile exit to
+   `min(position.qty, brokerPos.quantity)`.
+Suggested single focused commit for 1/3/4 (`alpaca_bot_cycle.js`+`strategy.js`) + a one-line fix for 2
+(`trade.js`). Nothing implemented this session — review-only per the flag.
 
 ## Process change - 2026-06-23 session 57 - permanent Review Ledger + Stub/Duplication Sweep added to blast-through
 - User asked for a centralized, timestamped record of when each part of the repo was last reviewed,

@@ -1690,3 +1690,137 @@ positioning-not-echo; tried rows-1 (reverted), TextInput, normal-flow render, cl
 input; user authored the final useCursor() hardware-cursor relocation -> I made it test-green
 (isTTY guard) and committed. ~14 commits; suite 594/592/0fail/2skip, hygiene clean. "problem resolved,
 end session."
+
+# Prompt Log - 2026-06-23 (session 56)
+
+## Session Boot — 2026-06-23 (session 56)
+/session-orchestrator (after /clear and /model -> Sonnet 4.6 default). New session, HEAD at
+fba8526e (session 55's close-out commit). Working tree carried only routine cron-generated data
+artifacts -- no uncommitted code at boot.
+
+## Session — "/" chat suggestions, cursor robustness, legacy-TUI engine switch
+User: "go back to the cursor problem, is there any problem surrounding the cursor like suggestion,
+command suggestions, command lists where user can type / and it suggests? From symbols to settings?"
+-- verified by direct code inspection that no such feature existed yet; user then asked for it to be
+built so the cursor "stays inside the box ... regardless of the situation," plus a settings option to
+go back to the legacy TUI. Built the "/" suggestion dropdown + generalized H-3-suggestionRowCount
+cursor math + fixed a separate latent text-wrap cursor bug. First legacy-mode attempt (hide chat bar
+in same dashboard) was wrong per user correction ("NO DIFFERENCE, shouldnt it just logout of this and
+points to the manifest") -- reverted and rewired to actually hand off to the real older
+runInteractiveMenu engine. User then asked for the inverse switch-back direction too -- added, plus
+caught and fixed a self-inflicted infinite-relaunch regression before shipping it. Suite
+594/592/0fail/2skip throughout; hygiene clean; nothing committed yet (6 files, pending user go-ahead).
+
+## Session Close — 2026-06-23 (session 56)
+User: "seems done for now, those interactive things are hard to debugg, maybe if you can see the
+screen and work with me ut would be easier, laev this for the future" -- closing the session.
+Floated screen-sharing as a future collaboration mode for interactive TUI debugging; explicitly
+deferred, no action taken. Updated HANDOFF.md (new carryover + pointer to today's dated file),
+STATE.md, SESSION_MEMORY.md, and this log per the session-orchestrator handoff rule. graphify-out
+not refreshed this session (no time/budget signal from the user to do so; diff is moderate -- 6
+files -- flag for next session if touching this code again).
+
+## Session — 2026-06-23 (session 58)
+Boot via /session-orchestrator. User flag (set s57): deep review of every real-order path. Ran it as a
+full blast-through (anchor 0903df6b→1c7227b7): all 3 execution surfaces + new shared/lib/runtime +
+lightweight C++ ctest (28/29; 1 data-availability fail). No gating findings; 4 OPEN (maxPositions
+unenforced, PIN-in-gateway-argv leak, entry qty not reconciled, same-symbol exit oversell) + a 5th TUI
+P&L item found mid-pass. User then ran /mass-implement twice: (1) fixed all 4 + TUI --live toggle ->
+commit cf4f7026 (suite 616/614). A sustained Anthropic safety-classifier outage repeatedly refused my
+write/exec tools mid-pass; user ran the full suite in their own shell. (2) User reported "the entire
+trade section crashes / goes to legacy" -- root-caused NOT a crash: strategy/prop-firms/run/favorites
+were in INTERACTIVE_CMDS so they unmounted the dashboard into the old prompt UI; moved them in-pane +
+commandStrategyMenu non-interactive list path + a dashboard_crash.log global handler -> commit 13bc91f0.
+Then discovered (and corrected) that the position tracker was never in the dashboard's own inline M (only
+the legacy manifest.js) -- added a "positions" entry to the dashboard Trade section + ungated read-only
+auto-trade status -> commit 5e60babb. 3 commits total; suite 616/614/0fail/2skip; hygiene clean.
+
+## Session Close — 2026-06-23 (session 58)
+Closed via /session-orchestrator handoff rule. Updated STATE.md/HANDOFF.md (incrementally through the
+session), this log, and SESSION_MEMORY.md. graphify-out (repo root, last 2026-06-09) NOT refreshed -- a
+localized 7-file diff, consistent with prior small-diff deferrals; flag for next session if touching this
+code. Remaining highest-impact gap: the Gate.io spot market-order semantics empirical paper probe
+(DEV_REVIEW.md s58); plus standing real-terminal confirmations (trade in-pane behavior, bt --strategy,
+backend visualize).
+
+# Prompt Log - 2026-06-25 (session 59)
+
+## Session Boot — 2026-06-25 (session 59)
+/session-orchestrator (after /model -> confirmed Sonnet 4.6 default, high effort). New session, two
+calendar days after session 58's close. HEAD still `5e60babb` (no cron commits landed in the gap despite
+the every-2h agy-schedule automation -- not investigated, just noted). Working tree carries session 58's
+own doc trail UNCOMMITTED (HANDOFF.md, STATE.md, SESSION_MEMORY.md, DEV_REVIEW.md, REVIEW_LEDGER.md,
+PROMPT_LOG.md, handoff/2026-06-23.md -- all consistent with the already-committed code in
+cf4f7026/13bc91f0/5e60babb, just never committed as docs) plus the usual routine cron-generated data
+artifacts (signal_library.json, storage/data/*.json incl. a new candidate_strategies.json) and the
+CODEPTIT-monorepo-level noise (unrelated sibling-project untracked/modified entries) -- none reviewed as
+code, consistent with every prior session. graphify-out exists at Jun 22 15:58, stale relative to the 3
+session-58 commits (small, 7-file diff) -- deferred per established small-diff precedent unless this
+session's work touches that code again. Standing open carryovers per HANDOFF.md: (1) real-terminal
+confirmation that trade commands now stay in-pane (session 58); (2) bt --strategy picker + backend
+visualize force-ingest fallback real-terminal checks (older); (3) Gate.io spot market-order semantics
+empirical probe (DEV_REVIEW.md s58, not deep-audited). Awaiting user direction.
+
+## Session — 2026-06-25 (session 59) /blast-through
+Focused Audit (Tier 1 = the 3 commits since the last anchor, `cf4f7026`/`13bc91f0`/`5e60babb`; no
+section gated, so no mandatory Tier-3). Traced the live-trading exit/PIN code by hand rather than
+trusting the prior session's "all 4 findings fixed" claim. Found the Finding-4 oversell clamp
+(`resolveExitQty`) correctly stops a broker-level oversell but its bookkeeping is wrong afterward
+(`realizedPnl` off the pre-clamp qty, unsold remainder dropped from tracking) -- `runAlpacaExitCheck`
+has zero integration test coverage, only the pure helpers are tested. Also traced every `--pin` write
+site repo-wide to check whether the PIN-argv-leak fix (`cf4f7026`) was complete: confirmed **no active
+leak today**, but the strip lives at one caller instead of inside `buildTradeGatewayLaunch` itself, so
+2 sibling call sites (`commandBot`, `commandPolymarket`) would silently reopen it if ever fed `--pin`.
+Found 5 stale "crashes"/"TODO" dev-review comments in the dashboard manifest that no longer match
+reality (chart SMA/volume shipped session 55; 4 crash fixes from session 54 still verified in place).
+Review-only, nothing fixed -- full findings in `DEV_REVIEW.md`, ledger stamped (`shared/lib/runtime`
+A->B pending the fix), `STATE.md` anchor moved to `5e60babb`. DCS 0.97->0.96.
+## Session — 2026-06-25 (session 59) /mass-implement
+User ran /mass-implement immediately after the audit above. 3 batches, all from that audit's own
+findings: (1) fixed the exit-clamp bookkeeping bug via a new pure `buildExitOutcome` helper in
+`alpaca_bot_cycle.js` (same testability pattern as the file's existing pure helpers) + 4 tests;
+(2) centralized the PIN strip into `buildTradeGatewayLaunch` itself (`shared/lib/runtime/
+backend_bridge.js`), `utils.js` now re-exports it instead of duplicating + 3 tests; (3) deleted/
+corrected 5 stale dev-review comments in the dashboard manifest. Deliberately left 3 other
+plausibly-stale comments untouched (out of the audited scope, not re-verified). Suite
+623/621/0fail/2skip (+7, zero regressions), hygiene clean. `shared/lib/runtime` re-graded B->A.
+Nothing committed -- asked the user for a commit go-ahead to close out.
+
+(Note: the line directly above this entry -- "## 2026-06-25`n**Prompt:** /session-orchestrator" --
+appeared in the working tree mid-session, not written by me; looks like an automated hook appending a
+prompt-log line with a literal backtick-n instead of an actual newline. Left in place rather than
+silently editing someone/something else's entry; flagging here per the append-only-correction
+convention in case it's worth fixing the hook's escaping later.)
+
+## User Prompt — 2026-06-25 (session 59)
+"it still defaults to the trade in the legacy version ,"
+
+## Work — 2026-06-25 (session 59)
+Traced it to a different root cause than session 58's fix: the dashboard's `alpaca` Trade entry had
+`flags: {}`, so it always launched with `args=[]` -- which `commandTrade` treats as "no args", landing
+in the full multi-step interactive wizard (`promptTradeDeskArgs`). Different code path from the literal
+legacy TUI, same full-screen-prompt feel the user is calling "legacy". Fix: real flags
+(`--action/--symbol/--qty/--order-type/--price/--pin/--live`) on the manifest entry + a new pure
+`buildTradeArgsFromActionFlag` helper in `trade.js` translating them to the wizard's own positional
+shape before dispatch; removed `alpaca` from `INTERACTIVE_CMDS`. Verified end-to-end (traced
+`buildArgv`+`defaultFlagValues` to confirm pressing Run with untouched defaults never yields an empty
+args array) + 7 new unit tests. Suite 630/628/0fail/2skip, hygiene clean. Nothing committed yet.
+
+## User Prompt — 2026-06-25 (session 59)
+"due to vibecoding without documentations... I'm starting to feel like I'm forgetting a lot of things in
+this repo, due to coding without documentation, now I want you to reverse engineer the code, give me a
+course to understand the codebase, [practice/sovereign path] to here"
+
+## Work — 2026-06-25 (session 59) — docs triage + BOOTSTRAP.md + codebase_tour
+Asked two clarifying questions first (format: hands-on labs vs narrative vs live walkthrough; scope:
+critical-path-first vs full breadth) — user picked hands-on labs + full breadth. Dispatched 8 parallel
+Explore agents (research only, no writes) to gather file:line-grounded facts across C++ core, data
+ingestion, strategy/backtest/ML, the trading gateway, TUI/CLI, web dashboard, testing, and architecture/
+auth. Before writing anything, discovered `docs/` already has 30+ files (canonical folder map, a
+24-chapter from-scratch book, specs, operational guides) that never get read at session boot — stopped
+and asked the user how to handle that instead of duplicating it; they picked "triage + wire into boot +
+build only what's missing." Triaged ~10 files directly (not just by date): found 2 "canonical" docs
+badly stale and 17 broken links in the hub itself. Created `workspace/BOOTSTRAP.md` (session-orchestrator
+already tries to read this every boot; it just never existed) and `docs/codebase_tour/` (8 modules,
+hands-on labs, every gateway-module claim personally re-verified against current line numbers rather
+than trusted from agent output alone). Hygiene clean. Nothing committed — docs-only, additive.
