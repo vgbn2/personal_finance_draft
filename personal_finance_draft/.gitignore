@@ -124,10 +124,16 @@ storage/db/*.sqlite3
 storage/exports/*.csv
 storage/data/backtests/latest_backtest.json
 storage/data/strategy_grade_index.json
+storage/data/features/latest_features.json
+storage/data/models/latest_indicator_optimization.json
+storage/data/models/latest_model_comparison.json
+storage/data/models/candidate_strategies.json
+storage/data/user_settings.json
 
 # Generated notebook/model artifacts
 models/*.onnx
 notebooks/*.ipynb
+notebooks/signal_library.json
 Frontend/dashboard/*.zip
 __pycache__/
 # Compiled Binaries
