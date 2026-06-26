@@ -18,6 +18,7 @@ const { commandLogin, commandRegister, commandLogout, commandAuthStatus } = requ
 const { commandSettings } = require('./commands/settings/settings.js');
 const { commandRunnerMenu } = require('./commands/runner/run.js');
 const { commandMl } = require('./commands/research/ml.js');
+const { commandBias } = require('./commands/research/bias.js');
 const { installDoubleCtrlCExit } = require('./lib/exit_guard');
 
 installDoubleCtrlCExit();
@@ -58,6 +59,7 @@ async function handleCommand(args) {
     // --- Backend (manifest: backend) ---
     backend:          (a) => commandBackend(a),
     // --- Research (manifest: research) ---
+    bias:             (a) => commandBias(a),
     bt:               (a) => commandBacktest(a),
     features:         (a) => commandIndicators(a),
     ml:               (a) => commandMl(a),
