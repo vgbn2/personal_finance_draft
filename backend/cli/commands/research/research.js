@@ -22,7 +22,7 @@ const { filterFeatureFrame, runBacktest, splitFeatureFrame, rollingWalkForward }
 const { calculateFeatureFrame, calculateRollingFeatureFrame,
         DEFAULT_PERIODS } = require('../../../../shared/lib/market/indicators.js');
 
-const { compareModels } = require('../../../../shared/lib/ml/models.js');
+const { compareModels, ONNX_MODEL_NAMES, MODEL_ALIASES } = require('../../../../shared/lib/ml/models.js');
 
 const { mergeSnapshots, readSnapshot,
         validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation.js');
@@ -541,6 +541,15 @@ async function commandBacktest(args) {
     engine: sampleMode ? 'js' : (strategyMeta?.engine || 'auto'),
   };
   const sampleWindowNote = backtestModeNote(sampleMode, quality);
+  // For real ONNX models, precompute predictions onto feature._onnxPred so the sync
+  // backtest loop can call model.predict() without blocking on async ONNX inference.
+  const resolvedModel = MODEL_ALIASES[model] || model;
+  if (ONNX_MODEL_NAMES.has(resolvedModel)) {
+    const { precomputeForFeatures } = require('../../../../shared/lib/ml/onnx_runner.js');
+    if (!hasFlag(args, '--json')) process.stdout.write('\x1b[90m⌛ running ONNX inference...\x1b[0m\n');
+    await precomputeForFeatures(resolvedModel, featureFrame.features || []);
+  }
+
   let inSample;
   let outOfSample;
   let fullBacktest;
