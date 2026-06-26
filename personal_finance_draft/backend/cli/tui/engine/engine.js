@@ -365,7 +365,8 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
         if (!searchMode) { searchMode = true; selectedIndex = 1; render(); }
         else { selectedIndex = filterText.length > 0 ? 1 : 0; render(); }
       } else if (isPrintable) {
-        if (searchMode) { filterText += key; selectedIndex = 1; render(); }
+        if (!searchMode) searchMode = true;
+        filterText += key; selectedIndex = 1; render();
       } else if (key === ' ') {
         const grouped = buildGrouped();
         const item = grouped[selectedIndex];
@@ -561,11 +562,10 @@ async function promptSelect(question, options) {
           render();
         }
       } else if (isPrintable) {
-        if (searchMode) {
-          filterText += key;
-          selectedIndex = 0;
-          render();
-        }
+        if (!searchMode) searchMode = true;
+        filterText += key;
+        selectedIndex = 0;
+        render();
       } else if (key === A.KEY_UP) {
         const { grouped } = getGrouped();
         if (grouped.length === 0) return;

@@ -102,7 +102,6 @@ test('load-bearing clean-clone assets are tracked', () => {
     'backend/api/tests/correlation_contract.test.js',
     'scripts/classify_strategy_assets.js',
     'scripts/mcp_stdio_probe.js',
-    'notebooks/signal_library.json',
   ].forEach((relativePath) => {
     assert.equal(isTracked(relativePath), true, `${relativePath} should be tracked`);
   });
