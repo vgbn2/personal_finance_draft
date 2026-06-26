@@ -384,9 +384,12 @@ const ONNX_MODEL_NAMES = new Set(['xgboost_v1', 'logistic_v1', 'regime_classifie
 
 function resolveModel(name) {
   const canonical = MODEL_ALIASES[name] || name;
-  return onnxModelCandidates.find((c) => c.name === canonical) ||
-    modelCandidates.find((c) => c.name === canonical) ||
-    modelCandidates[0];
+  const found = onnxModelCandidates.find((c) => c.name === canonical) ||
+    modelCandidates.find((c) => c.name === canonical);
+  if (found) return found;
+  const fallback = modelCandidates[0];
+  console.warn(`[models] Unknown model "${name}" (canonical: "${canonical}") — falling back to ${fallback.name}`);
+  return fallback;
 }
 
 function compareModels(featureFrame, options = {}) {
