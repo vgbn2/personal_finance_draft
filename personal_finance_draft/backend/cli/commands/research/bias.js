@@ -3,11 +3,16 @@
 const { optionValue, hasFlag, printPayload } = require('../../lib/utils.js');
 const { STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths.js');
 const { readTsIndexSince } = require('../../../../shared/lib/market/validation.js');
+const { fitHmm, permutationEntropy } = require('../../../../shared/lib/ml/hmm.js');
 
 const TF_CONFIG = [
-  { tf: '4h', label: 'short-term', horizon: '1–3 days',  lookbackDays: 60,   expiresBars: 3  },
-  { tf: '1d', label: 'medium-term', horizon: '1–3 weeks', lookbackDays: 400,  expiresBars: 7  },
-  { tf: '1w', label: 'long-term',  horizon: '1–3 months', lookbackDays: 1460, expiresBars: 4  },
+  { tf: '1m',  label: 'scalp',       horizon: '1–5 min',    lookbackDays: 2,    expiresBars: 3  },
+  { tf: '5m',  label: 'micro',       horizon: '15–30 min',  lookbackDays: 4,    expiresBars: 3  },
+  { tf: '15m', label: 'intraday-s',  horizon: '1–2 hrs',    lookbackDays: 7,    expiresBars: 4  },
+  { tf: '1h',  label: 'intraday',    horizon: '4–8 hrs',    lookbackDays: 21,   expiresBars: 4  },
+  { tf: '4h',  label: 'short-term',  horizon: '1–3 days',   lookbackDays: 60,   expiresBars: 3  },
+  { tf: '1d',  label: 'medium-term', horizon: '1–3 weeks',  lookbackDays: 400,  expiresBars: 7  },
+  { tf: '1w',  label: 'long-term',   horizon: '1–3 months', lookbackDays: 1460, expiresBars: 4  },
 ];
 
 function computeRsi(closes, period = 14) {
@@ -77,6 +82,16 @@ function analyzeTimeframe({ tf, label, horizon, lookbackDays, expiresBars }, sym
   const bias = score > 0.2 ? 'long' : score < -0.2 ? 'short' : 'neutral';
   const confidence = Math.min(1, Math.abs(score)).toFixed(2);
 
+  // Log-returns for HMM + entropy (at most last 500 bars to cap latency on 1m)
+  const logReturns = [];
+  const closesForHmm = closes.length > 500 ? closes.slice(-500) : closes;
+  for (let i = 1; i < closesForHmm.length; i++) {
+    if (closesForHmm[i] > 0 && closesForHmm[i-1] > 0)
+      logReturns.push(Math.log(closesForHmm[i] / closesForHmm[i-1]));
+  }
+  const regime = fitHmm(logReturns);
+  const entropy = permutationEntropy(closesForHmm.slice(-200), 3);
+
   return {
     tf, label, horizon, expiresBars, bars: bars.length,
     last: +last.toFixed(2),
@@ -87,6 +102,9 @@ function analyzeTimeframe({ tf, label, horizon, lookbackDays, expiresBars }, sym
     zScore: zScore !== null ? +zScore.toFixed(2) : null,
     atrPct: atrPct !== null ? +atrPct.toFixed(2) : null,
     trend, bias, confidence: +confidence, score: +score.toFixed(3),
+    regime: regime ? regime.label : null,
+    regimeProbs: regime ? { trending: regime.trendingProb, choppy: regime.choppyProb } : null,
+    entropy,
   };
 }
 
@@ -94,8 +112,8 @@ function aggregateBias(timeframes) {
   const valid = timeframes.filter(t => !t.error && t.bias);
   if (valid.length === 0) return { bias: 'neutral', confidence: 0, aligned: false };
 
-  // Weight: long-term counts most for structural bias
-  const weights = { '4h': 1, '1d': 2, '1w': 3 };
+  // Weight: long-term counts most for structural bias; scalp/micro timeframes are noise at this scale
+  const weights = { '1m': 0.2, '5m': 0.3, '15m': 0.5, '1h': 0.7, '4h': 1, '1d': 2, '1w': 3 };
   let weightedScore = 0, totalWeight = 0;
   for (const t of valid) {
     const w = weights[t.tf] || 1;
@@ -115,7 +133,7 @@ function renderTable(symbol, result) {
   const biasColor = (b) => b === 'long' ? GREEN : b === 'short' ? RED : YELLOW;
   const confBar = (c) => { const f = Math.round(c * 10); return `[${'█'.repeat(f)}${'░'.repeat(10 - f)}]`; };
 
-  console.log(`\n${BOLD}${CYAN}BTC BIAS — ${symbol}${RESET}  ${DIM}${new Date().toUTCString()}${RESET}`);
+  console.log(`\n${BOLD}${CYAN}BIAS — ${symbol}${RESET}  ${DIM}${new Date().toUTCString()}${RESET}`);
   console.log(DIM + '─'.repeat(72) + RESET);
 
   const agg = result.aggregate;
@@ -128,27 +146,44 @@ function renderTable(symbol, result) {
     console.log(`${BOLD}ML (${ml.model}):${RESET}  ${mc}${BOLD}${ml.direction.toUpperCase()}${RESET}  confidence ${confBar(ml.confidence)} ${(ml.confidence * 100).toFixed(0)}%`);
   }
 
-  console.log(DIM + '─'.repeat(72) + RESET);
-  console.log(`${BOLD}${'TF'.padEnd(5)} ${'Horizon'.padEnd(14)} ${'Bias'.padEnd(8)} ${'RSI'.padEnd(6)} ${'vs SMA20'.padEnd(10)} ${'Z-score'.padEnd(9)} ${'ATR%'.padEnd(7)} Expires${RESET}`);
+  console.log(DIM + '─'.repeat(88) + RESET);
+  console.log(`${BOLD}${'TF'.padEnd(5)} ${'Bias'.padEnd(8)} ${'RSI'.padEnd(6)} ${'vs SMA20'.padEnd(10)} ${'Z'.padEnd(7)} ${'Regime'.padEnd(10)} ${'Entropy'.padEnd(9)} Expires${RESET}`);
 
   for (const t of result.timeframes) {
     if (t.error) {
-      console.log(`${t.tf.padEnd(5)} ${t.label.padEnd(14)} ${DIM}no data (${t.bars} bars)${RESET}`);
+      console.log(`${t.tf.padEnd(5)} ${DIM}no data (${t.bars} bars)${RESET}`);
       continue;
     }
     const bc = biasColor(t.bias);
     const vs20 = t.sma20 ? (t.last > t.sma20 ? `${GREEN}above${RESET}` : `${RED}below${RESET}`) : DIM + 'n/a' + RESET;
     const zc = t.zScore !== null ? (t.zScore < -2 ? GREEN : t.zScore > 2 ? RED : '') : '';
+
+    // Regime: green=trending, yellow=choppy, dim=unknown
+    let regimeStr;
+    if (t.regime === 'trending') regimeStr = `${GREEN}trending${RESET}`;
+    else if (t.regime === 'choppy') regimeStr = `${YELLOW}choppy${RESET}`;
+    else regimeStr = DIM + 'n/a' + RESET;
+
+    // Entropy: green=low (orderly), red=high (random)
+    let entropyStr;
+    if (t.entropy !== null) {
+      const ec = t.entropy < 0.5 ? GREEN : t.entropy > 0.8 ? RED : YELLOW;
+      entropyStr = `${ec}${t.entropy.toFixed(2)}${RESET}`;
+    } else {
+      entropyStr = DIM + 'n/a' + RESET;
+    }
+
     console.log(
-      `${CYAN}${t.tf.padEnd(5)}${RESET} ${DIM}${t.label.padEnd(14)}${RESET} ${bc}${t.bias.padEnd(8)}${RESET}` +
+      `${CYAN}${t.tf.padEnd(5)}${RESET} ${bc}${t.bias.padEnd(8)}${RESET}` +
       ` ${(t.rsi !== null ? t.rsi.toFixed(1) : 'n/a').padEnd(6)}` +
-      ` ${vs20.padEnd(10 + 9)}` +  // +9 for escape codes
-      ` ${zc}${(t.zScore !== null ? t.zScore.toFixed(2) : 'n/a').padEnd(9)}${RESET}` +
-      ` ${(t.atrPct !== null ? t.atrPct.toFixed(1) + '%' : 'n/a').padEnd(7)}` +
-      ` ${t.expiresBars} bars (~${t.horizon.split('(')[0].trim().split('–')[1] || t.horizon})`
+      ` ${vs20.padEnd(10 + 9)}` +
+      ` ${zc}${(t.zScore !== null ? t.zScore.toFixed(2) : 'n/a').padEnd(7)}${RESET}` +
+      ` ${regimeStr.padEnd(10 + 9)}` +
+      ` ${entropyStr.padEnd(9 + 9)}` +
+      ` ${t.expiresBars}b (~${t.horizon.split('–')[1] || t.horizon})`
     );
   }
-  console.log(DIM + '─'.repeat(72) + RESET + '\n');
+  console.log(DIM + '─'.repeat(88) + RESET + '\n');
 }
 
 async function commandBias(args) {
