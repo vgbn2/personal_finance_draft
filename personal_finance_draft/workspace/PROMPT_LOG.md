@@ -10,6 +10,19 @@ code batch (Alpaca trade-flag fix + mass-implement 3 findings) was committed as 
 `3a2051d0` (PIN strip + exit P&L). Working tree: `.mcp.json` exists at project root (gitignored).
 Awaiting user direction for session 61.
 
+## Session 61 Prompts
+
+1. `/session-orchestrator` — boot
+2. `plan, mass implement, activate ponytail, and at the end, use ML to generate signals` — shipped 3 commits: dashboard comment cleanup (90beba31), ONNX inference runner + ML signals in bt + bias (68d29f66), interim handoff (ae6a79e4)
+3. `do you think a documentation skill is needed?` — answered: no, BOOTSTRAP.md + existing docs-sync covers it
+4. `give me a bias table, all the way down to the 1m, also, is hidden markov model implemented, and stuff related to it` — expanded bias 3→7 TFs; confirmed HMM absent from codebase
+5. `hidden markov model and entropy, also that unused stub of weather, satelite data (though sâtlite data seems overfitted)` — shipped commit 082389ad: 2-state Gaussian HMM + permutation entropy; weather/satellite confirmed absent from this project
+6. `/session-orchestrator` — close-out handoff
+
+## Session Close — 2026-06-26 (session 61)
+4 commits. ONNX inference live, bias 7-TF table with HMM + entropy. Suite 654/652/0fail/2skip.
+Next: bt --strategy xgboost_v1 smoke test; bias correlation feed; HMM 3-state variant.
+
 # Prompt Log - 2026-06-22 (session 54)
 
 ## Session Boot — 2026-06-22 (session 54)

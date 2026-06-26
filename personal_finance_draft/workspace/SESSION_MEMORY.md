@@ -202,6 +202,47 @@
 }
 
 ---
+SESSION 61 — 2026-06-26
+{
+  "session": 61,
+  "date": "2026-06-26",
+  "branch": "feat/ink-tui-refactor",
+  "commits": [
+    "90beba31 fix(dashboard): remove 3 stale dev-review comments",
+    "68d29f66 feat(ml): ONNX inference runner + real ML signals in bt + bias",
+    "ae6a79e4 chore(workspace): session 61 handoff (interim)",
+    "082389ad feat(ml): 2-state Gaussian HMM + permutation entropy in bias table"
+  ],
+  "suite": "654/652/0fail/2skip",
+  "verified_facts": [
+    "ONNX inference live: predict('logistic_v1', {rsi:65, close:50000}) → down/90% — real InferenceSession via onnxruntime-node",
+    "bias BTCUSDT --json now returns ml:{direction,confidence,model,class_probs} using logistic_v1 on 1d bar TA features",
+    "bias command expanded 3→7 timeframes: 1m/5m/15m/1h/4h/1d/1w with tuned lookbackDays and expiresBars per scale",
+    "HMM (shared/lib/ml/hmm.js): 2-state Gaussian Baum-Welch EM + Viterbi, log-space stable, maxBars=400 cap to bound 1m latency",
+    "permutation entropy order-3 normalized [0,1]: 0=perfectly orderly, 1=maximally random; financial markets cluster 0.95-0.97",
+    "bias table now shows Regime (green=trending/yellow=choppy) and Entropy columns",
+    "MODEL_ALIASES: xgboost→xgboost_v1, lr/logistic→logistic_v1; resolveModel() checks onnxModelCandidates first",
+    "precomputeForFeatures() pattern: attaches _onnxPred to feature rows before sync runBacktestJs — avoids async/sync mismatch",
+    "weather/satellite data stubs do NOT exist in this project — only matched .venv_ml/ Python packages and .claude/skills/ docs",
+    "ponytail activated: ~/.claude/CLAUDE.md has the /ponytail trigger entry"
+  ],
+  "cautions": [
+    "Entropy 0.95-0.97 across all crypto TFs is CORRECT (not a bug) — financial markets are near-random; small deviations from 1.0 are where tradeable patterns live",
+    "bt --strategy xgboost_v1 precompute path is wired but was NOT smoke-tested end-to-end this session (needs market data cache); could still return 0 trades if feature alignment fails",
+    "cross-family features (regime_*, xf_corr_*) are always missing for per-symbol inference — imputed with medians from feature_config.yaml; this is expected, not a bug",
+    "bias command invocation: node sovereign_cli.js bias BTCUSDT --json --no-backfill (NOT 'sovereign bias' — dispatch key is just 'bias')"
+  ],
+  "remaining": [
+    "bt --strategy xgboost_v1 smoke test — precompute path wired, needs end-to-end run with cached feature frame",
+    "bias correlation — mcp__sovereign__get_correlation not wired into bias output yet (MCP availability unclear in current env)",
+    "HMM candidates: 3-state variant (bull/bear/chop); multivariate observations (macd + volatility); entropy on RETURNS series (lower baseline than close-price entropy)",
+    "Gate.io market-order semantics empirical probe — index.ts:309-319, amount=base-vs-quote + market TIF, still pending",
+    "graphify-out refresh — stale, defer until next meaningful code block"
+  ],
+  "dcs": 0.96
+}
+
+---
 SESSION 60 — 2026-06-26
 {
   "session": 60,
