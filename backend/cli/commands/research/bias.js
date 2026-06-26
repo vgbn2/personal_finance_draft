@@ -370,4 +370,4 @@ async function commandBias(args) {
   return 0;
 }
 
-module.exports = { commandBias };
+module.exports = { commandBias, analyzeTimeframe, aggregateBias, TF_CONFIG };
