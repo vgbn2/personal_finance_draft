@@ -229,6 +229,22 @@ const M = [
           '--symbol':    { t:'txt', lbl:'Symbol filter (optional)', def:'', pickSymbol:'single' },
         },
       },
+      { id: 'bias', label: 'bias', desc: 'Multi-timeframe TA signal (VWAP, VP, HMM, Wyckoff)',
+        flags: {
+          '--symbol':       { t:'txt', lbl:'Symbol (default BTCUSDT)', def:'BTCUSDT', pickSymbol:'single' },
+          '--no-backfill':  { t:'yn',  lbl:'Skip auto-backfill?', def:false },
+        },
+      },
+      { id: 'scorecard', label: 'scorecard', desc: 'EdgeFinder-style ranked bias across all assets',
+        flags: {
+          '--family':      { t:'sel', opts:['','crypto','equities','fx','indices','commodities'], lbl:'Family filter (blank = all)', def:'' },
+          '--tf':          { t:'txt', lbl:'Timeframes comma-sep', def:'1h,4h,1d' },
+          '--direction':   { t:'sel', opts:['','long','short','neutral'], lbl:'Direction filter (blank = all)', def:'' },
+          '--min-conf':    { t:'txt', lbl:'Min confidence (0–1)', def:'0.3' },
+          '--top':         { t:'txt', lbl:'Max rows', def:'50' },
+          '--no-backfill': { t:'yn',  lbl:'Skip auto-backfill?', def:true },
+        },
+      },
     ],
   },
   {

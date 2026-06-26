@@ -222,6 +222,17 @@ const COMMAND_MANIFEST = {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--symbol': { type: 'text', default: '', label: 'Symbol filter (optional)' }
+      }},
+      { id: 'bias', label: 'Bias Signal', loading: true, flags: {
+        '--symbol': { type: 'text', default: 'BTCUSDT', label: 'Symbol' },
+        '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: false }
+      }},
+      { id: 'scorecard', label: 'Scorecard (EdgeFinder)', loading: true, flags: {
+        '--family': { type: 'select', options: ['', 'crypto', 'equities', 'fx', 'indices', 'commodities'], label: 'Family filter (blank = all)' },
+        '--tf': { type: 'text', default: '1h,4h,1d', label: 'Timeframes (comma-sep)' },
+        '--direction': { type: 'select', options: ['', 'long', 'short', 'neutral'], label: 'Direction filter (blank = all)' },
+        '--top': { type: 'text', default: '50', label: 'Max rows' },
+        '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: true }
       }}
     ],
     settings: [
