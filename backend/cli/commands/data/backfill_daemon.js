@@ -385,7 +385,10 @@ async function commandBackfillDaemon(args) {
     statusState = { ...statusState, ...patch, pid: process.pid, updated_at: new Date().toISOString() };
     try { writeJson(DAEMON_STATUS_PATH, statusState); } catch (_) { /* best-effort - a stale read is caught by the PID-liveness check on the reader side */ }
   }
+  // Hoisted before clearStatusOnExit so the handler can reference it via closure.
+  let liveFeedHandle = null;
   function clearStatusOnExit(signal) {
+    if (liveFeedHandle) try { liveFeedHandle.stop(); } catch (_) {}
     writeStatus({ status: 'stopped', stopped_signal: signal || null });
     process.exit(signal ? 130 : 0);
   }
@@ -395,14 +398,13 @@ async function commandBackfillDaemon(args) {
   // Start Binance WebSocket feed for crypto symbols so 1m bars land in the
   // ts-index in real time — independent of the polling cycle interval.
   // Only launched when crypto is in the active family list and not --once.
-  let liveFeed = null;
   if (!once && families.includes('crypto')) {
     try {
       const { startBinanceLiveFeed } = require('../../../../shared/lib/providers/binance.js');
       const initConfig = await loadConfig();
       const cryptoSymbols = (initConfig.crypto && initConfig.crypto.symbols) || [];
       if (cryptoSymbols.length > 0) {
-        liveFeed = startBinanceLiveFeed(cryptoSymbols, {
+        liveFeedHandle = startBinanceLiveFeed(cryptoSymbols, {
           tsDir,
           onError: (err) => log(`[WS] ${err.message}`),
         });
@@ -412,10 +414,6 @@ async function commandBackfillDaemon(args) {
       log(`[WS] could not start live feed: ${err.message}`);
     }
   }
-
-  // Augment the already-registered SIGINT/SIGTERM to also stop the live feed.
-  process.once('SIGINT', () => { if (liveFeed) try { liveFeed.stop(); } catch (_) {} });
-  process.once('SIGTERM', () => { if (liveFeed) try { liveFeed.stop(); } catch (_) {} });
 
   let cycle = 0;
   let lastSummary = null;
@@ -461,7 +459,7 @@ async function commandBackfillDaemon(args) {
   }
   /* eslint-enable no-await-in-loop */
 
-  if (liveFeed) try { liveFeed.stop(); } catch (_) {}
+  if (liveFeedHandle) try { liveFeedHandle.stop(); } catch (_) {}
   if (once) printPayload({ ok: lastSummary.errors === 0, ...lastSummary }, args);
   return lastSummary && lastSummary.errors === 0 ? 0 : 1;
 }
