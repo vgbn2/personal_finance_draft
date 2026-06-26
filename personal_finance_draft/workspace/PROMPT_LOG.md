@@ -1824,3 +1824,46 @@ badly stale and 17 broken links in the hub itself. Created `workspace/BOOTSTRAP.
 already tries to read this every boot; it just never existed) and `docs/codebase_tour/` (8 modules,
 hands-on labs, every gateway-module claim personally re-verified against current line numbers rather
 than trusted from agent output alone). Hygiene clean. Nothing committed — docs-only, additive.
+
+## User Prompt — 2026-06-25 (session 59)
+"commit this batch and put those into git ignore"
+
+## Work — 2026-06-25 (session 59) — commits + gitignore cleanup
+Read "those" as the long-flagged routine cron-generated files (notebooks/signal_library.json, the
+storage/data/{features,models}/latest_*.json caches, storage/data/user_settings.json, plus the new
+storage/data/models/candidate_strategies.json) -- confirmed by checking the existing .gitignore already
+ignores the identical sibling pattern (latest_backtest.json, strategy_grade_index.json), so this was
+closing a gap, not guessing blind. Extended .gitignore, `git rm --cached` the 5 already-tracked files
+(stay on disk, stop being tracked) -> commit `264e4ee2`. Then staged and committed only the docs/
+workspace-notes batch (workspace/BOOTSTRAP.md, docs/codebase_tour/, workspace/*.md) -> commit `2865299f`,
+explicitly excluding the still-held code batch (trade.js/alpaca_bot_cycle.js/backend_bridge.js/utils.js/
+sovereign_dashboard.mjs + tests) per the user's own split. Verified both commits landed clean and the
+remaining working tree is exactly the held code batch, nothing else.
+
+## Session — 2026-06-25 (session 59) /session-orchestrator (re-invoked mid-session)
+User re-ran the boot skill mid-session rather than at a new session's start. Re-checked git log/status
+(matched expectations, nothing surprising). Caught that workspace/STATE.md's and workspace/HANDOFF.md's
+docs-triage entries still said "UNCOMMITTED" even though that exact work had just been committed
+(`2865299f`) -- corrected both in place (small header-line fixes, not full rewrites) rather than leaving
+a stale claim standing. Found and closed a real gap in my own handoff hygiene: no `workspace/
+SESSION_MEMORY.md` entry existed yet for this entire session (blast-through + mass-implement + the
+alpaca-trade fix + the docs triage/rebuild + the commits) -- added one now, full session-59 arc, JSON
+block format matching prior entries. graphify-out refresh deliberately deferred again -- the remaining
+uncommitted code diff is moderate, consistent with how this repo has repeatedly deferred refreshes for
+similarly-sized diffs until after they're committed.
+
+## Session 60 — 2026-06-26
+
+User prompts (in order):
+1. [context restore] — session continued from s59 compaction
+2. "what if i want to go long" — conditions for BTC long trade
+3. "is that all from the mcp server?" — clarified analysis was from ts-index directly, not MCP
+4. "yeah, also check if i have signal for short term-long term also, like an expiry for signals"
+5. "current price?" — $59,635 (last 1h bar at 10:00 UTC)
+6. "to place trade we need real time data no?" — confirmed, discussed what's missing
+7. "yeah" — wire Binance WebSocket into backfill-daemon
+8. "should it be inside blast through or mass implement" — re ponytail; answered: neither, standalone
+9. "can we end session here, i mean i want to know if the signal is done..." — honest gap assessment
+10. "- The ML strategies... - It's not a single CLI command... - MCP tools need server... is this by design or error" — answered each
+11. /mass-implement — planned + built bias command + .mcp.json
+12. /session-orchestrator — this close-out

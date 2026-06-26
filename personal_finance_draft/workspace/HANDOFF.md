@@ -19,18 +19,20 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
-- **SESSION 59 (2026-06-25) cont. — docs/ triage + workspace/BOOTSTRAP.md + docs/codebase_tour/
-  (9 new files, docs-only, UNCOMMITTED).** User felt they'd lost track of the codebase from heavy
-  AI-assisted work. Found the repo already has 30+ files under `docs/` that simply never get read at
-  session boot (fixed: `workspace/BOOTSTRAP.md` now exists and points at `docs/README.md`). Triage found
-  2 "canonical" docs are badly stale (`architecture_overview.md` calls live trading "*Planned*";
-  `capability_manifest.md` describes an old flat file layout) and 17 broken links in `docs/README.md`
-  itself (moved `docs/operational/*` files, hub never updated). Built `docs/codebase_tour/` — 8 modules
-  with real file:line-grounded explanations + hands-on labs for the genuine gap (current-code reverse
-  engineering; `docs/guide/` is a different, generic from-scratch teaching book). Full trail:
-  `workspace/STATE.md`'s "Process Note" + `workspace/BOOTSTRAP.md`. **Still open:** none of this is
-  committed yet; the stale docs flagged in the triage weren't rewritten, just flagged (deliberate —
-  out of scope for this pass, a future session's call on whether to fix or retire them).
+- **SESSION 59 (2026-06-25) cont. — docs/ triage + workspace/BOOTSTRAP.md + docs/codebase_tour/.
+  Committed `2865299f` (docs) + `264e4ee2` (gitignore cleanup).** User felt they'd lost track of the
+  codebase from heavy AI-assisted work. Found the repo already has 30+ files under `docs/` that simply
+  never get read at session boot (fixed: `workspace/BOOTSTRAP.md` now exists and points at
+  `docs/README.md`). Triage found 2 "canonical" docs are badly stale (`architecture_overview.md` calls
+  live trading "*Planned*"; `capability_manifest.md` describes an old flat file layout) and 17 broken
+  links in `docs/README.md` itself (moved `docs/operational/*` files, hub never updated). Built
+  `docs/codebase_tour/` — 8 modules with real file:line-grounded explanations + hands-on labs for the
+  genuine gap (current-code reverse engineering; `docs/guide/` is a different, generic from-scratch
+  teaching book). Also untracked 5 routine cron-generated files + extended `.gitignore` (a recurring
+  noise pattern flagged across many prior sessions' notes, finally closed). Full trail:
+  `workspace/STATE.md`'s "Process Note" + `workspace/BOOTSTRAP.md`. **Still open:** the stale docs
+  flagged in the triage weren't rewritten, just flagged (deliberate — out of scope for this pass, a
+  future session's call on whether to fix or retire them).
 - **SESSION 59 (2026-06-25) — Focused blast-through + mass-implement same session. All 3 found
   findings FIXED. 0 commits yet (pending user go-ahead).** Full trail: `workspace/DEV_REVIEW.md`
   ("Focused Blast-Through" + "Mass-Implement" entries, both 2026-06-25 session 59). Audited the 2
@@ -244,3 +246,34 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 - **Cron Concurrency Risk Fixed (Batch 1):** Addressed the structural concurrency risk in the gy-schedule workflow. Instructed the cron to enforce execution from an isolated git worktree (with symlinked storage/ and .env) so its automated self-healing commits do not accidentally scoop up uncommitted work from foreground agents.
 - **Backend Bridge Bug Fixed (Batch 2):** Resolved the smart JSON extraction bug in shared/lib/runtime/backend_bridge.js where processes exiting with non-zero status codes were silently masked as ok: true if the partial payload contained ok: true. Validated with a hard process.exit(1) test.
 - Both fixes deployed cleanly. Full test suite remains 100% green (553/555 passed, 2 skipped).
+
+## Session 60 close-out (2026-06-26) — Signal pipeline + live data feed
+
+### What shipped (5 commits)
+- `f4820708` — type-to-search in all TUI pickers (no `/` prefix needed)
+- `2bdbeafa` — `bt` now reads ts-index (1601 daily bars, data_end today) when family is known
+- `3a2051d0` — PIN strip centralization + exit P&L bookkeeping fix
+- `0e6ffd15` — Binance WebSocket live feed wired into backfill-daemon (closed 1m klines → ts-index)
+- `1a47da70` — `sovereign bias <SYMBOL>` command: RSI/SMA/z-score/ATR across 4h/1d/1w, --json + coloured table
+
+### Current BTC bias (as of session close)
+SHORT across all 3 timeframes (4h RSI=27 oversold, 1d RSI=38, 1w RSI=36). Price $58,876, below all SMAs.
+Signal expiry: 4h = 3 bars (~3 days), 1d = 7 bars, 1w = 4 bars.
+
+### Open gaps (next session priorities)
+1. **ML retraining** — lstm_v1/cnn_window_v0 return 0 trades; need training pipeline on real ts-index data
+2. **bias + correlation** — `sovereign bias` is TA-only; wire mcp__sovereign__get_correlation into the output
+3. **ponytail global** — auto-mode blocked editing ~/.claude/CLAUDE.md; user adds manually:
+   ```
+   # ponytail
+   - **ponytail** (~/.claude/skills/ponytail/skills/ponytail/SKILL.md) - lazy senior dev mode
+   When the user types /ponytail, invoke the Skill tool with skill: "ponytail" before doing anything else.
+   ```
+4. **graphify-out refresh** — stale, defer until next meaningful code change
+5. **Gate.io market-order semantics** — empirical probe at index.ts:309-319 still pending
+
+### Boot notes for next session
+- `.mcp.json` exists at project root — mcp__sovereign__* tools should auto-load (gitignored, relative path)
+- API server: `node backend/api/app.js` (port 8787) if MCP tools don't load
+- Live feed: starts automatically when `backfill-daemon` runs without `--once`
+- Suite baseline: 631/0fail/2skip on branch feat/ink-tui-refactor

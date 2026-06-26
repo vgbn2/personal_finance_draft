@@ -7,7 +7,7 @@ last_audit_date: 2026-06-25
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
-## Process Note - 2026-06-25 session 59 - docs/ triage + workspace/BOOTSTRAP.md + docs/codebase_tour/ (UNCOMMITTED, 9 new files)
+## Process Note - 2026-06-25 session 59 - docs/ triage + workspace/BOOTSTRAP.md + docs/codebase_tour/ (committed `2865299f`, plus `264e4ee2` gitignore cleanup)
 - User: "I'm starting to feel like I'm forgetting a lot of things in this repo due to vibecoding without
   documentation" — asked for a reverse-engineered, hands-on course covering the whole codebase.
 - **Discovery before building anything**: this repo already has 30+ files under `docs/` (a canonical
@@ -393,3 +393,14 @@ Suggested single focused commit for 1/3/4 (`alpaca_bot_cycle.js`+`strategy.js`) 
 ## Implementation Note - 2026-06-21 session 49 - Scheduled agy-schedule workflow cron
 - **Scheduled agy-schedule workflow**: Configured a recurring cron job `*/15 * * * *` to run `/agy-schedule` every 15 minutes via the `schedule` tool (Task ID: `task-54`), ensuring continuous sweeps. Executed and verified iterations 1, 21, and 22 successfully in dry-run (mock) mode, confirming dynamic market data sync, broker connection health, auto-trade scanning, and codebase documentation sweeps.
 
+
+## State update — 2026-06-26 session 60
+
+Signal pipeline now functional end-to-end:
+- `bt` reads ts-index (not sparse last_fetch.json) — 1601 bars, data_end today
+- `sovereign bias <SYMBOL>` — TA-based long/short/neutral across 4h/1d/1w, auto-backfills first
+- Binance WebSocket feed live in backfill-daemon — 1m klines → ts-index in real time
+- .mcp.json at project root — MCP tools auto-load next session
+
+ML strategies still return 0 trades (lstm_v1/cnn_window_v0 untrained on real data) — separate gap.
+Suite: 631/0fail/2skip. Branch: feat/ink-tui-refactor.
