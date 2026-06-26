@@ -1,4 +1,40 @@
+## Session Memory - 2026-06-25 (session 59) Focused blast-through + mass-implement + a real bug fix + a full docs triage/rebuild; 2 commits so far (264e4ee2, 2865299f), 1 code batch still held uncommitted; suite 630/628/0fail/2skip at last full run
+
+{
+  "work": "Five phases. (1) Focused /blast-through (anchor 1c7227b7->5e60babb, Tier 1 = the 2 commits the ledger hadn't seen yet). (2) /mass-implement on that audit's own 3 findings. (3) User reported 'it still defaults to the trade in the legacy version' -- a different root cause than session 58's fix, found and fixed. (4) User: 'I'm forgetting things in this repo due to vibecoding without documentation, reverse engineer it, give me a course.' (5) 'commit this batch and put those into git ignore.'",
+  "key_mechanisms": [
+    "BLAST-THROUGH FOUND A REAL BUG IN THE SESSION-58 FIX ITSELF: the oversell clamp (resolveExitQty) correctly stops a broker-level oversell when two tracked positions share one symbol, but runAlpacaExitCheck's bookkeeping afterward was wrong -- realizedPnl used the pre-clamp position.qty instead of what was actually sold, and the unsold remainder was dropped from tracking entirely instead of staying open. Zero integration-test coverage on that function (only the pure helpers were tested). Also found (no active leak, verified by tracing every --pin write site repo-wide) that the cf4f7026 PIN-strip fix only covered 1 of 8 buildTradeGatewayLaunch callers.",
+    "MASS-IMPLEMENT FIX: new pure buildExitOutcome(position, exitReason, currentPrice, sellQty, cycleId, isLive) helper in alpaca_bot_cycle.js, same pure-function pattern as decideExit/resolveExitQty specifically so it's testable without mocking the broker/gateway. Centralized the PIN strip into buildTradeGatewayLaunch itself (shared/lib/runtime/backend_bridge.js) instead of just the one caller -- moved stripFlagValue there too (correct dependency direction, cli already depends on shared). +7 tests.",
+    "THE 'STILL DEFAULTS TO LEGACY' BUG WAS DIFFERENT FROM SESSION 58's: the alpaca dashboard entry had flags:{}, so it always launched commandTrade with args=[], which hits the args.length===0 branch -> the full multi-step interactive wizard (promptTradeDeskArgs). Fixed by giving the manifest entry real --action/--symbol/--qty/--order-type/--price/--pin/--live flags and a new pure buildTradeArgsFromActionFlag() that translates them back into the wizard's own positional shape before commandTrade's dispatch -- so args.length is never 0 from the dashboard. Removed alpaca from INTERACTIVE_CMDS. Verified end-to-end by tracing buildArgv+defaultFlagValues, not just by code review. +7 tests.",
+    "DOCS DISCOVERY (the big one): before building a 'reverse-engineering course' from scratch, checked whether docs already existed -- found docs/ already has 30+ files (a canonical folder map, a 24-chapter ~5000-line 'build from scratch' book, specs, operational guides) that NEVER get read at session boot (session-orchestrator only reads workspace/*.md; CLAUDE.md never mentions docs/). That's the real diagnosis, not 'no documentation exists'. Stopped and asked the user how to handle it (AskUserQuestion) instead of building something redundant.",
+    "TRIAGE FOUND REAL STALENESS, NOT JUST OLD DATES: docs/engineering/architecture_overview.md (header dated 2026-05-14) calls live broker execution '*Planned*' and claims the C++ build doesn't compile the trading modules -- both false today. docs/engineering/capability_manifest.md describes a flat backend/cli/commands/*.js layout and SQLite data/ artifacts that don't match the real domain-subfoldered layout and storage/data/ts/ binary format. docs/operational/guides/testing_surface.md describes a since-reorganized test layout. 17 of docs/README.md's OWN links are broken -- every docs/operational/*.md reference points at files that moved into guides/roadmap/local_first subfolders without the hub being updated.",
+    "FIX: workspace/BOOTSTRAP.md created (session-orchestrator already tries to read this first every boot; it just never existed -- that's WHY docs/ kept falling out of context for ~50+ sessions). Points at docs/README.md with the staleness corrections baked in. docs/codebase_tour/ created (8 modules, ~750 lines): real file:line-grounded explainers + hands-on labs for the genuine gap (current-code reverse engineering -- docs/guide/ is a different genre, generic teaching content with placeholder filenames, not this repo's real code). Every claim in the highest-stakes module (04_trading_gateway_live_orders.md) was personally re-verified against current line numbers via direct grep, not just trusted from the 8 parallel research agents' summaries.",
+    "RESEARCH WAVE PATTERN: dispatched 8 parallel Explore agents (research only, explicitly told not to write files) to gather file:line-grounded facts across C++ core, data pipeline, strategy/ML, trading gateway, TUI/CLI, web dashboard, testing, architecture/auth -- then personally wrote every module's actual prose and labs from their findings (never delegated the synthesis/understanding itself).",
+    "GIT HYGIENE CLOSED A LONG-STANDING RECURRING NOISE PATTERN: notebooks/signal_library.json, storage/data/{features,models}/latest_*.json, and storage/data/user_settings.json had shown up as routine cron-modified noise in git status across dozens of prior sessions' notes (always 'not reviewed as code, consistent with prior sessions', never actually fixed). User explicitly asked to gitignore them this session -- extended .gitignore (which already had the identical pattern for sibling files like latest_backtest.json/strategy_grade_index.json -- this was closing a gap in an existing convention, not inventing a new one) and git rm --cached the 5 already-tracked files. Files stay on disk, just stop being tracked.",
+    "COMMIT SCOPING: user said 'commit this batch' (the docs) while explicitly choosing to hold 'the still-uncommitted code from earlier' (the mass-implement + alpaca-fix code). Honored that split exactly -- two separate commits (chore: gitignore, docs: triage+BOOTSTRAP+codebase_tour), explicitly excluding backend/cli/commands/trade/trade.js, alpaca_bot_cycle.js, backend_bridge.js, utils.js, sovereign_dashboard.mjs, and their tests from both."
+  ],
+  "verified": [
+    "Suite 630/628/0fail/2skip after the alpaca-trade-flag fix (+7 over the post-mass-implement 623/621 baseline); npm run hygiene clean throughout, including after adding all 9 new docs files.",
+    "Every command cited in a codebase_tour lab was cross-checked against a real grep/read this session, not assumed from the research-agent summaries alone (e.g. confirmed auto-trade --passes 1 is gated behind ai_agent_trading before adding that as a lab caveat; confirmed the Gate.io adapter's real line numbers before citing them).",
+    "End-to-end traced (not just read) that pressing Run on the dashboard's alpaca entry with untouched defaults now produces args=['balance'] after translation, never an empty array."
+  ],
+  "user_decisions": [
+    "AskUserQuestion (course format + scope): 'Hands-on labs tied to real code' + 'Full breadth across every subsystem'.",
+    "AskUserQuestion (how to handle the discovered existing docs/ library): 'Triage + wire it into boot, then build only what's missing' -- rejected both 'ignore and duplicate' and 'just show me, build nothing yet'.",
+    "'commit this batch and put those into git ignore' -- interpreted 'those' as the long-flagged routine data-artifact files (high-confidence read from session history + the existing .gitignore's own sibling patterns), confirmed by checking which files actually fit before acting.",
+    "Explicitly chose to hold the code batch (trade.js/alpaca_bot_cycle.js/etc.) uncommitted for now, separate from the docs commit."
+  ],
+  "remaining": [
+    "The code batch (Alpaca trade-flag fix + mass-implement's 3 fixes) is still uncommitted on feat/ink-tui-refactor -- user's call on when to commit it.",
+    "The stale docs found in the triage (architecture_overview.md, capability_manifest.md, testing_surface.md, docs/README.md's 17 broken links) were flagged, not fixed -- deliberate, out of scope for this pass.",
+    "graphify-out not refreshed -- the uncommitted code diff is moderate-sized; deferred until after it's committed, consistent with prior-session precedent for this-sized diffs.",
+    "Standing real-terminal confirmations (trade in-pane behavior, bt --strategy picker, backend visualize force-ingest) and the Gate.io spot market-order semantics empirical probe remain open from before this session."
+  ],
+  "dcs": 0.96
+}
+
 ## Session Memory - 2026-06-23 (session 58, cont.) Fixed all 4 review findings + trade-section UX; 3 commits (cf4f7026, 13bc91f0, 5e60babb); suite 616/614/0fail/2skip
+
 
 {
   "work": "After the review (block below), the user ran /mass-implement twice and reported a trade-section bug. Three commits landed.",
@@ -161,6 +197,46 @@
     "Strategy picker (bt --strategy) and force-ingest fallback (backend visualize) still need real-terminal confirmation -- only verified via the fake-TTY harness so far; their dev-review comments are deliberately still in place pending that, per explicit instruction not to remove them until confirmed.",
     "graphify-out still stale -- not refreshed this session despite a large diff (2 new files, big dashboard rewrite); should refresh next session if touching this code again.",
     "Routine cron-generated data artifacts and several untracked workspace archive files present at every boot this session -- not investigated, consistent with prior sessions."
+  ],
+  "dcs": 0.95
+}
+
+---
+SESSION 60 — 2026-06-26
+{
+  "session": 60,
+  "date": "2026-06-26",
+  "branch": "feat/ink-tui-refactor",
+  "commits": [
+    "f4820708 fix(tui): type-to-search immediately in picker",
+    "2bdbeafa fix(backtest): auto-load ts-index when family is known",
+    "3a2051d0 fix(runtime): centralize PIN strip + exit-clamp P&L",
+    "0e6ffd15 feat(data): Binance WebSocket live feed in backfill-daemon",
+    "1a47da70 feat(research): sovereign bias command"
+  ],
+  "suite": "631/0fail/2skip",
+  "verified_facts": [
+    "bt now reads ts-index (1601 daily BTC bars, data_end today) when family is known — fixed loadUsableSources fallback in research_sources.js",
+    "type-to-search works in all pickers without pressing / first",
+    "sovereign bias BTCUSDT --json returns { bias, confidence, aligned, timeframes } across 4h/1d/1w",
+    "backfill-daemon now starts a Binance WebSocket feed on boot (crypto symbols, 1m), writes closed klines to ts-index via mergeWriteBin",
+    ".mcp.json written at project root — mcp__sovereign__* tools load automatically next session (file is gitignored by design)",
+    "ponytail skill cloned to ~/.claude/skills/ponytail and wired into project CLAUDE.md",
+    "API server started at port 8787 this session (not auto-started — must start manually or via .mcp.json next session)",
+    "ML strategies (lstm_v1, cnn_window_v0) still return 0 trades — model retraining is an open gap"
+  ],
+  "cautions": [
+    "BTC bias: SHORT across all 3 TFs as of 2026-06-26 close ($58,876). RSI 4h=27 (oversold), 1d=38, 1w=36. Below all SMAs.",
+    "Crypto/ETH/SOL correlation near zero — unusual breakdown, broad sell signal",
+    "mergeWriteBin is synchronous — the WebSocket onmessage handler calls it synchronously; OK for 1m cadence but would block the event loop on very high-frequency symbols",
+    "backfill-daemon --once mode does NOT start the WebSocket (by design — once means one poll cycle)",
+    ".mcp.json is gitignored — each machine needs its own copy; path is relative (dist/mcp_server/index.js)"
+  ],
+  "remaining": [
+    "ML model retraining — lstm_v1/cnn_window_v0 need training on real ts-index daily data before bt generates signals",
+    "sovereign bias command lacks correlation/entropy inputs (currently TA-only) — add mcp__sovereign__get_correlation feed",
+    "ponytail global CLAUDE.md entry blocked by auto-mode — user must add it manually",
+    "graphify-out stale — not refreshed this session"
   ],
   "dcs": 0.95
 }
