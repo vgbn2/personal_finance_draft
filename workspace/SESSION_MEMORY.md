@@ -1,3 +1,43 @@
+---
+SESSION 62 — 2026-06-26
+{
+  "session": 62,
+  "date": "2026-06-26",
+  "branch": "feat/ink-tui-refactor",
+  "commits": [
+    "b484f528 fix(bt): blast-through audit fixes — resolveModel warn + SIGINT liveFeed cleanup",
+    "bd99e471 feat(research): VWAP + Volume Profile in bias command; fix ANSI padding + stdio ternary",
+    "3150ec0b feat(research): multi-asset bias scorecard — sovereign scorecard command",
+    "b67fb5ca feat(tui): add bias + scorecard to Ink dashboard and legacy TUI manifest"
+  ],
+  "suite": "652/0fail/2skip",
+  "verified_facts": [
+    "blast-through audit of s60-61 (anchor 4ac77e8a): 4 findings, all fixed same session",
+    "resolveModel() now emits console.warn() before silent fallback to cnn_window_v0",
+    "ANSI padding: C_OVH=9 for GREEN/RED/YELLOW (5-byte escape), D_OVH=10 for DIM (6-byte escape) — corrects 1-char visual misalignment on n/a cells",
+    "backfill_daemon.js SIGINT: liveFeedHandle hoisted before clearStatusOnExit, single consolidated handler, no double-registration",
+    "bias.js: computeVwap (rolling 20-bar typical price VWAP), computeVolumeProfile (20-bin, POC+VAH/VAL+70% value area), classifyPhase (Wyckoff-inspired)",
+    "Volume on 1h+ rolled-up bars may be zero → VWAP/VP returns null (correct, not a bug)",
+    "sovereign scorecard: 36 crypto assets scored in 1.3s; chunks 8 symbols concurrently via Promise.allSettled",
+    "bias.js now exports analyzeTimeframe + aggregateBias + TF_CONFIG (scorecard reuses them)",
+    "Both bias and scorecard registered in Ink dashboard (sovereign_dashboard.mjs) AND legacy manifest (tui/manifest.js)",
+    "scorecard --no-backfill defaults to true in both TUIs (universe-scale run; backfill-daemon first)"
+  ],
+  "cautions": [
+    "Scorecard 'skipped' count reflects symbols with no local data at all — run backfill-daemon --once first for fresh coverage",
+    "Phase column in scorecard comes from highest-priority TF with non-null phase (prefer 1d > 4h > 1h > 1w > 15m > 5m > 1m)",
+    "bias ANSI overhead constants (C_OVH/D_OVH) must be updated if any new ANSI codes with different byte counts are added as column colorizers"
+  ],
+  "remaining": [
+    "bt --strategy xgboost_v1 smoke test — precompute path wired, not run end-to-end yet",
+    "bias correlation — mcp__sovereign__get_correlation not wired into bias output",
+    "Gate.io market-order semantics empirical probe — index.ts:309-319 still pending",
+    "graphify-out refresh — stale, defer"
+  ],
+  "dcs": 0.97
+}
+
+---
 ## Session Memory - 2026-06-25 (session 59) Focused blast-through + mass-implement + a real bug fix + a full docs triage/rebuild; 2 commits so far (264e4ee2, 2865299f), 1 code batch still held uncommitted; suite 630/628/0fail/2skip at last full run
 
 {
