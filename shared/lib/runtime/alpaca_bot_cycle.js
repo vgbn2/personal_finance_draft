@@ -57,6 +57,38 @@ function resolveExitQty(positionQty, availableQty) {
   return Math.max(0, Math.min(Number(positionQty), Number(availableQty)));
 }
 
+/**
+ * Pure: what to record/keep-tracking after exiting sellQty shares of a position.
+ * sellQty may be less than position.qty (resolveExitQty clamped it to the
+ * broker's available holding -- e.g. two tracked positions stacked on one
+ * symbol sharing a single broker balance). realizedPnl reflects only the
+ * shares actually sold, and the unsold remainder is returned as a still-open
+ * position instead of being silently dropped from tracking.
+ * @param {import('./alpaca_bot_state').AlpacaBotPosition} position
+ * @param {'target'|'stop'|'age'} exitReason
+ * @param {number} currentPrice
+ * @param {number} sellQty
+ * @param {string} cycleId
+ * @param {boolean} isLive
+ */
+function buildExitOutcome(position, exitReason, currentPrice, sellQty, cycleId, isLive) {
+  const soldQty = Math.max(0, Math.min(Number(sellQty), Number(position.qty)));
+  const remainingQty = position.qty - soldQty;
+  const historyEntry = {
+    cycleId,
+    positionId: position.positionId,
+    symbol: position.symbol,
+    exitReason,
+    exitPrice: currentPrice,
+    realizedPnl: (currentPrice - position.fillPrice) * soldQty,
+    soldQty,
+    completedAt: new Date().toISOString(),
+    dryRun: !isLive,
+  };
+  const remainingPosition = remainingQty > 0 ? { ...position, qty: remainingQty } : null;
+  return { historyEntry, remainingPosition };
+}
+
 function fetchAlpacaPositions(live) {
   const payload = runGatewayCommand(['positions', ...(live ? ['--live'] : []), '--json']);
   if (!payload.ok) return [];
@@ -144,13 +176,16 @@ async function runAlpacaExitCheck(args = []) {
       const available = availableBySymbol.get(position.symbol) || 0;
       const sellQty = resolveExitQty(position.qty, available);
 
+      if (sellQty <= 0) {
+        // Broker holds nothing left for this symbol (already exited / sold
+        // manually) -- drop stale tracking instead of firing an oversell.
+        // Applies in dry-run too: a paper account showing 0 shares means
+        // there is nothing to simulate exiting either.
+        result.errors.push(`No broker shares left to exit ${position.symbol} (${exitReason}); dropping stale tracking.`);
+        continue;
+      }
+
       if (isLive) {
-        if (sellQty <= 0) {
-          // Broker holds nothing left for this symbol (already exited / sold
-          // manually) -- drop stale tracking instead of firing an oversell.
-          result.errors.push(`No broker shares left to exit ${position.symbol} (${exitReason}); dropping stale tracking.`);
-          continue;
-        }
         try {
           const { commandTrade } = require('../../../backend/cli/commands/trade/trade.js');
           const sellArgs = ['sell', position.symbol, String(sellQty), 'market', '--live'];
@@ -169,17 +204,9 @@ async function runAlpacaExitCheck(args = []) {
         }
       }
 
-      const realizedPnl = (currentPrice - position.fillPrice) * position.qty;
-      state.cycleHistory = [{
-        cycleId: result.cycleId,
-        positionId: position.positionId,
-        symbol: position.symbol,
-        exitReason,
-        exitPrice: currentPrice,
-        realizedPnl,
-        completedAt: new Date().toISOString(),
-        dryRun: !isLive,
-      }, ...state.cycleHistory].slice(0, 50);
+      const { historyEntry, remainingPosition } = buildExitOutcome(position, exitReason, currentPrice, sellQty, result.cycleId, isLive);
+      state.cycleHistory = [historyEntry, ...state.cycleHistory].slice(0, 50);
+      if (remainingPosition) remaining.push(remainingPosition);
       result.sellsExecuted++;
     }
 
@@ -192,4 +219,4 @@ async function runAlpacaExitCheck(args = []) {
   }
 }
 
-module.exports = { decideExit, canOpenPosition, resolveEntryQty, resolveExitQty, recordAlpacaEntry, runAlpacaExitCheck, fetchAlpacaPositions };
+module.exports = { decideExit, canOpenPosition, resolveEntryQty, resolveExitQty, buildExitOutcome, recordAlpacaEntry, runAlpacaExitCheck, fetchAlpacaPositions };

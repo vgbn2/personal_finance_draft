@@ -253,23 +253,10 @@ function hasFlag(args, name) {
   return args.includes(name);
 }
 
-/**
- * Returns a copy of args with every occurrence of a value-taking flag (and its
- * following value) removed. Used to keep secrets like --pin out of a spawned
- * subprocess's argv (visible in OS process listings) once they've been consumed
- * in-process.
- */
-function stripFlagValue(args, name) {
-  const out = [];
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === name) {
-      i++; // skip the flag's value too
-      continue;
-    }
-    out.push(args[i]);
-  }
-  return out;
-}
+// Canonical implementation lives in shared/lib/runtime/backend_bridge.js
+// (buildTradeGatewayLaunch strips --pin unconditionally there too); re-exported
+// here so existing callers/tests in this module keep working unchanged.
+const { stripFlagValue } = require('../../../shared/lib/runtime/backend_bridge');
 
 function printPayload(payload, args) {
   if (hasFlag(args, '--json')) {
