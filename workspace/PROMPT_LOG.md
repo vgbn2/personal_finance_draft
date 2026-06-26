@@ -1,3 +1,15 @@
+# Prompt Log - 2026-06-26 (session 61)
+
+## Session Boot — 2026-06-26 (session 61)
+/session-orchestrator. Branch `feat/ink-tui-refactor`, HEAD `1a47da70` (session 60's last commit:
+sovereign bias command). Suite baseline 631/0fail/2skip. Key open gaps from session 60: (1) ML
+model retraining — lstm_v1/cnn_window_v0 return 0 trades, need training pipeline on real ts-index
+data; (2) sovereign bias is TA-only, lacks correlation feed; (3) ponytail global CLAUDE.md entry
+blocked by auto-mode — user must add manually; (4) graphify-out stale. Session 59's uncommitted
+code batch (Alpaca trade-flag fix + mass-implement 3 findings) was committed as session 60's
+`3a2051d0` (PIN strip + exit P&L). Working tree: `.mcp.json` exists at project root (gitignored).
+Awaiting user direction for session 61.
+
 # Prompt Log - 2026-06-22 (session 54)
 
 ## Session Boot — 2026-06-22 (session 54)

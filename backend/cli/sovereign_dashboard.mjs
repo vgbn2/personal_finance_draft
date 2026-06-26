@@ -175,7 +175,7 @@ const M = [
           '--no-poll':   { t:'yn',  lbl:'One-shot (no live poll)?', def:false },
         },
       },
-      { id: 'backend universe', label: 'universe', desc: 'Cached symbol inventory (all families)', flags: {} },//is this redundant?, deb question
+      { id: 'backend universe', label: 'universe', desc: 'Cached symbol inventory (all families)', flags: {} },
       // Appended after 'backend universe' deliberately, not next to 'backend
       // visualize' above -- sovereign_dashboard.test.js hardcodes initialCmdI:4
       // for 'backend universe' (its real, fast, deterministically-long output
@@ -274,14 +274,14 @@ const M = [
     cmds: [
       { id: 'polymarket portfolio',    label: 'Portfolio',    desc: 'Live portfolio & pUSD balance', flags: {} },
       { id: 'polymarket markets',      label: 'Markets',      desc: 'Browse & trade active markets', flags: {} },
-      { id: 'polymarket history',      label: 'History',      desc: 'Historical CLOB price data for an event',//doesnt work, dev review
+      { id: 'polymarket history',      label: 'History',      desc: 'Historical CLOB price data for an event',
         flags: {
           '--event':        { t:'txt', lbl:'Prediction event key', def:'fed_rate_cut_prob' },
           '--history-days': { t:'txt', lbl:'Historical days', def:'30' },
           '--timeframe':    { t:'sel', opts:['1d','1h','15m'], lbl:'Timeframe', def:'1h' },
         },
       },
-      { id: 'polymarket backtest', label: 'bt', desc: 'Backtest',//doesnt work- dev review 
+      { id: 'polymarket backtest', label: 'bt', desc: 'Backtest',
         flags: {
           '--strategy':        { t:'sel', opts:['low_prob_dip','mean_revert'], lbl:'Strategy', def:'low_prob_dip' },
           '--tag-id':          { t:'txt', lbl:'Gamma tag ID (21 = crypto 2023+)', def:'21' },
