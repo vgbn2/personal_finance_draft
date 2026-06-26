@@ -50,6 +50,74 @@ function computeZScore(closes, period = 20) {
   return sd === 0 ? 0 : (closes[closes.length - 1] - mean) / sd;
 }
 
+// Rolling VWAP over the last `period` bars using typical price (H+L+C)/3.
+function computeVwap(bars, period = 20) {
+  const w = bars.length > period ? bars.slice(-period) : bars;
+  const totalVol = w.reduce((s, b) => s + (b.volume || 0), 0);
+  if (totalVol === 0) return null;
+  return w.reduce((s, b) => s + ((b.high + b.low + b.close) / 3) * (b.volume || 0), 0) / totalVol;
+}
+
+// Volume Profile: bucket volume by price, return POC/VAH/VAL and price zone.
+// Returns null when bars have no volume or price range is zero.
+function computeVolumeProfile(bars, binCount = 20) {
+  if (bars.length < 10) return null;
+  const totalVol = bars.reduce((s, b) => s + (b.volume || 0), 0);
+  if (totalVol === 0) return null;
+
+  const lo = Math.min(...bars.map(b => b.low));
+  const hi = Math.max(...bars.map(b => b.high));
+  if (hi === lo) return null;
+
+  const binWidth = (hi - lo) / binCount;
+  const buckets = Array.from({ length: binCount }, (_, i) => ({
+    lo: lo + i * binWidth,
+    hi: lo + (i + 1) * binWidth,
+    vol: 0,
+  }));
+  for (const bar of bars) {
+    const typ = (bar.high + bar.low + bar.close) / 3;
+    const idx = Math.min(binCount - 1, Math.floor((typ - lo) / binWidth));
+    buckets[idx].vol += (bar.volume || 0);
+  }
+
+  const poc = buckets.reduce((a, b) => b.vol > a.vol ? b : a);
+  let lo_i = buckets.indexOf(poc);
+  let hi_i = lo_i;
+  let cum = poc.vol;
+  const target70 = totalVol * 0.7;
+  while (cum < target70 && (lo_i > 0 || hi_i < binCount - 1)) {
+    const addLo = lo_i > 0 ? buckets[lo_i - 1].vol : 0;
+    const addHi = hi_i < binCount - 1 ? buckets[hi_i + 1].vol : 0;
+    if (addLo >= addHi && lo_i > 0) { lo_i--; cum += addLo; }
+    else if (hi_i < binCount - 1) { hi_i++; cum += addHi; }
+    else break;
+  }
+
+  const pocPrice = (poc.lo + poc.hi) / 2;
+  const vahPrice = buckets[hi_i].hi;
+  const valPrice = buckets[lo_i].lo;
+  const last = bars[bars.length - 1].close;
+  const priceZone = last > vahPrice ? 'above_va' : last < valPrice ? 'below_va' : 'inside_va';
+
+  return {
+    poc: +pocPrice.toFixed(2),
+    vah: +vahPrice.toFixed(2),
+    val: +valPrice.toFixed(2),
+    priceZone,
+  };
+}
+
+// Wyckoff-inspired phase classifier combining trend, HMM regime, and volume profile zone.
+function classifyPhase(trend, regimeLabel, priceZone) {
+  if (priceZone === 'above_va') return trend === 'up' ? 'markup' : 'distribution';
+  if (priceZone === 'below_va') return trend === 'down' ? 'markdown' : 'accumulation';
+  // inside value area
+  if (trend === 'up') return 'reaccumulation';
+  if (trend === 'down') return 'redistribution';
+  return 'consolidation';
+}
+
 function analyzeTimeframe({ tf, label, horizon, lookbackDays, expiresBars }, symbol) {
   const sinceMs = Date.now() - lookbackDays * 24 * 60 * 60 * 1000;
   const bars = readTsIndexSince(STORAGE_TS_DIR, symbol, tf, sinceMs);
@@ -70,6 +138,15 @@ function analyzeTimeframe({ tf, label, horizon, lookbackDays, expiresBars }, sym
   const trendDown = recent[4] < recent[2] && recent[2] < recent[0];
   const trend = trendUp ? 'up' : trendDown ? 'down' : 'sideways';
 
+  // VWAP deviation — % above/below 20-bar VWAP
+  const vwap = computeVwap(bars, Math.min(bars.length, 20));
+  const vwapDev = vwap != null ? +((last - vwap) / vwap * 100).toFixed(2) : null;
+
+  // Volume profile over last 200 bars
+  const vpBars = bars.slice(-Math.min(bars.length, 200));
+  const vp = computeVolumeProfile(vpBars);
+  const phase = vp ? classifyPhase(trend, null, vp.priceZone) : null;
+
   // Score: each factor votes -1 (short), 0 (neutral), +1 (long)
   const votes = [];
   if (rsi !== null) votes.push(rsi < 30 ? 1 : rsi > 70 ? -1 : rsi < 45 ? -0.5 : rsi > 55 ? 0.5 : 0);
@@ -77,6 +154,8 @@ function analyzeTimeframe({ tf, label, horizon, lookbackDays, expiresBars }, sym
   if (sma50 !== null) votes.push(last > sma50 ? 1 : -1);
   if (zScore !== null) votes.push(zScore < -2 ? 0.5 : zScore > 2 ? -0.5 : zScore < -1 ? 0.25 : zScore > 1 ? -0.25 : 0);
   votes.push(trend === 'up' ? 1 : trend === 'down' ? -1 : 0);
+  if (vwapDev !== null) votes.push(vwapDev > 1 ? 0.5 : vwapDev < -1 ? -0.5 : 0);
+  if (vp !== null) votes.push(vp.priceZone === 'above_va' ? 0.5 : vp.priceZone === 'below_va' ? -0.5 : 0);
 
   const score = votes.reduce((a, b) => a + b, 0) / votes.length;
   const bias = score > 0.2 ? 'long' : score < -0.2 ? 'short' : 'neutral';
@@ -101,6 +180,10 @@ function analyzeTimeframe({ tf, label, horizon, lookbackDays, expiresBars }, sym
     sma200: sma200 !== null ? +sma200.toFixed(0) : null,
     zScore: zScore !== null ? +zScore.toFixed(2) : null,
     atrPct: atrPct !== null ? +atrPct.toFixed(2) : null,
+    vwap: vwap !== null ? +vwap.toFixed(2) : null,
+    vwapDev,
+    vp,
+    phase,
     trend, bias, confidence: +confidence, score: +score.toFixed(3),
     regime: regime ? regime.label : null,
     regimeProbs: regime ? { trending: regime.trendingProb, choppy: regime.choppyProb } : null,
@@ -130,11 +213,21 @@ function aggregateBias(timeframes) {
 
 function renderTable(symbol, result) {
   const RESET = '\x1b[0m', BOLD = '\x1b[1m', DIM = '\x1b[90m', RED = '\x1b[31m', GREEN = '\x1b[32m', YELLOW = '\x1b[33m', CYAN = '\x1b[36m';
+  // Overhead for padEnd: colored strings use a 5-byte escape + 4-byte reset = 9.
+  // DIM uses a 6-byte escape + 4-byte reset = 10. Use the right constant per value.
+  const C_OVH = GREEN.length + RESET.length;  // 9
+  const D_OVH = DIM.length  + RESET.length;   // 10
+
   const biasColor = (b) => b === 'long' ? GREEN : b === 'short' ? RED : YELLOW;
   const confBar = (c) => { const f = Math.round(c * 10); return `[${'█'.repeat(f)}${'░'.repeat(10 - f)}]`; };
 
+  // padCol: pads a pre-colored string so its visible width equals `visibleWidth`.
+  function padCol(str, visibleWidth, isDim) {
+    return str.padEnd(visibleWidth + (isDim ? D_OVH : C_OVH));
+  }
+
   console.log(`\n${BOLD}${CYAN}BIAS — ${symbol}${RESET}  ${DIM}${new Date().toUTCString()}${RESET}`);
-  console.log(DIM + '─'.repeat(72) + RESET);
+  console.log(DIM + '─'.repeat(100) + RESET);
 
   const agg = result.aggregate;
   const ac = biasColor(agg.bias);
@@ -146,8 +239,8 @@ function renderTable(symbol, result) {
     console.log(`${BOLD}ML (${ml.model}):${RESET}  ${mc}${BOLD}${ml.direction.toUpperCase()}${RESET}  confidence ${confBar(ml.confidence)} ${(ml.confidence * 100).toFixed(0)}%`);
   }
 
-  console.log(DIM + '─'.repeat(88) + RESET);
-  console.log(`${BOLD}${'TF'.padEnd(5)} ${'Bias'.padEnd(8)} ${'RSI'.padEnd(6)} ${'vs SMA20'.padEnd(10)} ${'Z'.padEnd(7)} ${'Regime'.padEnd(10)} ${'Entropy'.padEnd(9)} Expires${RESET}`);
+  console.log(DIM + '─'.repeat(100) + RESET);
+  console.log(`${BOLD}${'TF'.padEnd(5)} ${'Bias'.padEnd(8)} ${'RSI'.padEnd(6)} ${'vs SMA20'.padEnd(10)} ${'Z'.padEnd(7)} ${'VWAP%'.padEnd(7)} ${'VP Zone'.padEnd(10)} ${'Phase'.padEnd(14)} ${'Regime'.padEnd(10)} ${'Entropy'.padEnd(9)} Expires${RESET}`);
 
   for (const t of result.timeframes) {
     if (t.error) {
@@ -155,35 +248,78 @@ function renderTable(symbol, result) {
       continue;
     }
     const bc = biasColor(t.bias);
-    const vs20 = t.sma20 ? (t.last > t.sma20 ? `${GREEN}above${RESET}` : `${RED}below${RESET}`) : DIM + 'n/a' + RESET;
+
+    // vs SMA20
+    const vs20HasData = t.sma20 != null;
+    const vs20 = vs20HasData
+      ? (t.last > t.sma20 ? `${GREEN}above${RESET}` : `${RED}below${RESET}`)
+      : `${DIM}n/a${RESET}`;
     const zc = t.zScore !== null ? (t.zScore < -2 ? GREEN : t.zScore > 2 ? RED : '') : '';
 
+    // VWAP deviation
+    const vwapHasData = t.vwapDev != null;
+    let vwapStr;
+    if (vwapHasData) {
+      const vc = t.vwapDev > 1 ? GREEN : t.vwapDev < -1 ? RED : YELLOW;
+      vwapStr = `${vc}${(t.vwapDev > 0 ? '+' : '') + t.vwapDev.toFixed(1)}%${RESET}`;
+    } else {
+      vwapStr = `${DIM}n/a${RESET}`;
+    }
+
+    // VP Zone
+    const vpHasData = t.vp != null;
+    let vpZoneStr;
+    if (vpHasData) {
+      const zoneColor = t.vp.priceZone === 'above_va' ? GREEN : t.vp.priceZone === 'below_va' ? RED : YELLOW;
+      const zoneLabel = t.vp.priceZone === 'above_va' ? 'above VA' : t.vp.priceZone === 'below_va' ? 'below VA' : 'inside VA';
+      vpZoneStr = `${zoneColor}${zoneLabel}${RESET}`;
+    } else {
+      vpZoneStr = `${DIM}n/a${RESET}`;
+    }
+
+    // Phase
+    const phaseHasData = t.phase != null;
+    let phaseStr;
+    if (phaseHasData) {
+      const upPhases = new Set(['markup', 'reaccumulation', 'accumulation']);
+      const downPhases = new Set(['markdown', 'distribution', 'redistribution']);
+      const pc = upPhases.has(t.phase) ? GREEN : downPhases.has(t.phase) ? RED : YELLOW;
+      phaseStr = `${pc}${t.phase}${RESET}`;
+    } else {
+      phaseStr = `${DIM}n/a${RESET}`;
+    }
+
     // Regime: green=trending, yellow=choppy, dim=unknown
+    const regimeHasData = t.regime != null;
     let regimeStr;
     if (t.regime === 'trending') regimeStr = `${GREEN}trending${RESET}`;
     else if (t.regime === 'choppy') regimeStr = `${YELLOW}choppy${RESET}`;
-    else regimeStr = DIM + 'n/a' + RESET;
+    else regimeStr = `${DIM}n/a${RESET}`;
 
     // Entropy: green=low (orderly), red=high (random)
+    const entropyHasData = t.entropy != null;
     let entropyStr;
-    if (t.entropy !== null) {
+    if (entropyHasData) {
       const ec = t.entropy < 0.5 ? GREEN : t.entropy > 0.8 ? RED : YELLOW;
       entropyStr = `${ec}${t.entropy.toFixed(2)}${RESET}`;
     } else {
-      entropyStr = DIM + 'n/a' + RESET;
+      entropyStr = `${DIM}n/a${RESET}`;
     }
 
     console.log(
       `${CYAN}${t.tf.padEnd(5)}${RESET} ${bc}${t.bias.padEnd(8)}${RESET}` +
       ` ${(t.rsi !== null ? t.rsi.toFixed(1) : 'n/a').padEnd(6)}` +
-      ` ${vs20.padEnd(10 + 9)}` +
+      ` ${padCol(vs20, 10, !vs20HasData)}` +
       ` ${zc}${(t.zScore !== null ? t.zScore.toFixed(2) : 'n/a').padEnd(7)}${RESET}` +
-      ` ${regimeStr.padEnd(10 + 9)}` +
-      ` ${entropyStr.padEnd(9 + 9)}` +
+      ` ${padCol(vwapStr, 7, !vwapHasData)}` +
+      ` ${padCol(vpZoneStr, 10, !vpHasData)}` +
+      ` ${padCol(phaseStr, 14, !phaseHasData)}` +
+      ` ${padCol(regimeStr, 10, !regimeHasData)}` +
+      ` ${padCol(entropyStr, 9, !entropyHasData)}` +
       ` ${t.expiresBars}b (~${t.horizon.split('–')[1] || t.horizon})`
     );
   }
-  console.log(DIM + '─'.repeat(88) + RESET + '\n');
+  console.log(DIM + '─'.repeat(100) + RESET + '\n');
 }
 
 async function commandBias(args) {
@@ -198,7 +334,7 @@ async function commandBias(args) {
       const cliPath = require('path').resolve(__dirname, '../../sovereign_cli.js');
       if (!isJson) process.stdout.write('\x1b[90m⌛ refreshing crypto data...\x1b[0m\n');
       execFileSync(process.execPath, [cliPath, 'backfill-daemon', '--once', '--families', 'crypto'], {
-        stdio: isJson ? 'ignore' : 'ignore',
+        stdio: isJson ? 'ignore' : 'inherit',
         timeout: 90000,
       });
     } catch (_) { /* non-fatal — continue with cached data */ }
