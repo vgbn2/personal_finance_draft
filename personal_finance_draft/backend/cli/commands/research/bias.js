@@ -121,6 +121,13 @@ function renderTable(symbol, result) {
   const agg = result.aggregate;
   const ac = biasColor(agg.bias);
   console.log(`${BOLD}Overall:${RESET}  ${ac}${BOLD}${agg.bias.toUpperCase()}${RESET}  confidence ${confBar(agg.confidence)} ${(agg.confidence * 100).toFixed(0)}%  ${agg.aligned ? `${GREEN}✔ aligned${RESET}` : `${YELLOW}⚠ mixed${RESET}`}`);
+
+  if (result.ml) {
+    const ml = result.ml;
+    const mc = biasColor(ml.direction === 'up' ? 'long' : ml.direction === 'down' ? 'short' : 'neutral');
+    console.log(`${BOLD}ML (${ml.model}):${RESET}  ${mc}${BOLD}${ml.direction.toUpperCase()}${RESET}  confidence ${confBar(ml.confidence)} ${(ml.confidence * 100).toFixed(0)}%`);
+  }
+
   console.log(DIM + '─'.repeat(72) + RESET);
   console.log(`${BOLD}${'TF'.padEnd(5)} ${'Horizon'.padEnd(14)} ${'Bias'.padEnd(8)} ${'RSI'.padEnd(6)} ${'vs SMA20'.padEnd(10)} ${'Z-score'.padEnd(9)} ${'ATR%'.padEnd(7)} Expires${RESET}`);
 
@@ -164,7 +171,25 @@ async function commandBias(args) {
 
   const timeframes = TF_CONFIG.map(cfg => analyzeTimeframe(cfg, symbol));
   const aggregate = aggregateBias(timeframes);
-  const result = { symbol, generated_at: new Date().toISOString(), aggregate, timeframes };
+
+  // ML signal from logistic_v1 using the 1d bar's TA features (cross-family features imputed by model)
+  let mlSignal = null;
+  try {
+    const { predict } = require('../../../../shared/lib/ml/onnx_runner.js');
+    const daily = timeframes.find(t => t.tf === '1d' && !t.error);
+    if (daily) {
+      const featureObj = {
+        rsi: daily.rsi, macd: 0, atr: daily.atrPct != null ? daily.atrPct / 100 : null,
+        close: daily.last, return_fast: 0, return_slow: 0, volatility: daily.atrPct != null ? daily.atrPct / 100 : null,
+        bollinger_middle: daily.sma20, bollinger_upper: null, bollinger_lower: null,
+        divergence_score: 0, smc_score: 0,
+      };
+      const pred = await predict('logistic_v1', featureObj);
+      mlSignal = { direction: pred.direction, confidence: pred.confidence, model: 'logistic_v1', class_probs: pred.class_probs };
+    }
+  } catch (_) { /* non-fatal — onnxruntime-node may not be available in all envs */ }
+
+  const result = { symbol, generated_at: new Date().toISOString(), aggregate, timeframes, ml: mlSignal };
 
   if (isJson) {
     printPayload(result, args);

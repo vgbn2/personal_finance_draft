@@ -349,22 +349,44 @@ function perSymbolWinners(models) {
   });
 }
 
+// Real trained ONNX models — predictions precomputed onto feature._onnxPred before backtest runs.
+// predict() reads _onnxPred synchronously so the existing sync backtest loop is unchanged.
+const onnxModelCandidates = ['xgboost_v1', 'logistic_v1', 'regime_classifier'].map((name) => ({
+  name,
+  family: 'onnx',
+  status: 'onnx_model',
+  description: `Trained ONNX model (${name}) — use precomputeForFeatures() before runBacktestJs`,
+  predict(feature) {
+    if (feature._onnxPred) {
+      const { direction, confidence } = feature._onnxPred;
+      return { direction: direction === 'up' ? 'long' : 'flat', confidence };
+    }
+    return { direction: 'flat', confidence: 0 };
+  },
+}));
+
 // Short names used in strategy YAMLs → canonical model names
 const MODEL_ALIASES = {
-  xgboost:   'xgboost_ranker_v0',
+  xgboost:   'xgboost_v1',
   cnn_v3:    'cnn_window_v0',
   lstm_v1:   'lstm_sequence_v0',
   cnn:       'cnn_window_v0',
   lstm:      'lstm_sequence_v0',
   rf:        'random_forest_v0',
   dt:        'decision_tree_stump_v0',
-  lr:        'logistic_regression_v0',
+  lr:        'logistic_v1',
+  logistic:  'logistic_v1',
   svm:       'svm_margin_v0',
+  regime:    'regime_classifier',
 };
+
+const ONNX_MODEL_NAMES = new Set(['xgboost_v1', 'logistic_v1', 'regime_classifier']);
 
 function resolveModel(name) {
   const canonical = MODEL_ALIASES[name] || name;
-  return modelCandidates.find((c) => c.name === canonical) || modelCandidates[0];
+  return onnxModelCandidates.find((c) => c.name === canonical) ||
+    modelCandidates.find((c) => c.name === canonical) ||
+    modelCandidates[0];
 }
 
 function compareModels(featureFrame, options = {}) {
@@ -389,8 +411,10 @@ function compareModels(featureFrame, options = {}) {
 module.exports = {
   FEATURE_NAMES,
   MODEL_ALIASES,
+  ONNX_MODEL_NAMES,
   compareModels,
   modelCandidates,
+  onnxModelCandidates,
   perSymbolWinners,
   resolveModel,
   scoreModel,
