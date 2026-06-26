@@ -49,16 +49,23 @@ const INTERACTIVE_CMDS = new Set([
   'login',
   'register',
   'add-platform',
-  'alpaca',
   'mt5',
   // 'trade favorites' / 'strategy' / 'prop-firms' / 'run' were here, but as
   // INTERACTIVE_CMDS they unmounted the whole Ink dashboard into the old
   // prompt-menu UI -- which read as "the trade section drops me into the
   // legacy interface". They each render a safe, read-only summary when run
   // non-interactively, so they now execute IN-PANE (output panel) like the
-  // rest of the dashboard. Only genuinely input-driven entries (alpaca trade
-  // desk, mt5, add-platform, login/register, the polymarket wizards, cockpit)
-  // still take over the terminal.
+  // rest of the dashboard.
+  // 'alpaca' was here too -- with no flags, it always hit commandTrade's
+  // args.length===0 branch and fell into the multi-step interactive trade
+  // wizard (action -> symbol -> qty -> order type -> live confirm), the
+  // exact same "legacy" feel, just from a different code path. Now that the
+  // manifest entry carries real --action/--symbol/--qty/--order-type/--live
+  // flags (translated back to the wizard's own positional shape by
+  // buildTradeArgsFromActionFlag in trade.js), it never reaches that branch
+  // from here and runs in-pane like the rest of Trade. Only genuinely
+  // input-driven entries (mt5, add-platform, login/register, the polymarket
+  // wizards, cockpit) still take over the terminal.
 ]);
 // 'bot' was previously blanket-listed here, forcing even cheap read-only
 // subcommands through the slow unmount->spawnSync->remount round-trip.
@@ -86,7 +93,7 @@ const M = [
     label: 'Operational', full: 'OPERATIONAL DASHBOARD & HEALTH',
     cmds: [
       { id: 'status',      label: 'status',      desc: 'System health snapshot',           flags: {} },
-      { id: 'cockpit',     label: 'cockpit',      desc: 'Terminal dashboard', flags: {} },//crashed- dev review 22/06
+      { id: 'cockpit',     label: 'cockpit',      desc: 'Terminal dashboard', flags: {} },
       { id: 'watch',       label: 'watch',        desc: 'Live data feed, polls every N min',// took long to boot,require a press of the esc key to reveal,ruin the interface in here, can this be replace by charting? references for charting  C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\terminus,C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\_resources\lightweight-charts dev suggest -- RESOLVED: raw cursor-control output piped into the dashboard panel is now TTY-guarded (no more garbled output); added an optional --symbol live-chart mode reusing renderPriceChart() and narrowing ingest to just that symbol (much faster boot than the whole-family fetch). terminus/lightweight-charts had no reusable Node-TUI pattern. Pending user confirmation.
         flags: {
           '--family':    { t:'sel', opts:['all','crypto','fx','equities','indices','commodities'], lbl:'Data family', def:'all' },
@@ -174,7 +181,7 @@ const M = [
       // for 'backend universe' (its real, fast, deterministically-long output
       // is used to test panel scrolling); inserting earlier in this list would
       // have silently shifted that index and broken an unrelated test.
-      { id: 'backend chart', label: 'chart', desc: 'OHLCV price chart',// type-to-edit + width auto-clamp fixed 2026-06-22. CANDLESTICKS DONE 2026-06-22 (s55): `--style candle` renders OHLC body+wick via renderCandlestickChart() (visualizations.js). STILL TODO (deferred): volume subplot + SMA overlay (effort med/med) -- the remaining two thirds of the terminus/lightweight-charts-inspired upgrade.
+      { id: 'backend chart', label: 'chart', desc: 'OHLCV price chart',// type-to-edit + width auto-clamp fixed 2026-06-22. Candlestick/SMA/volume upgrade DONE 2026-06-22 (s55): --style candle renders OHLC body+wick, --sma/--volume add the overlay + subplot, all via renderCandlestickChart() (visualizations.js).
         flags: {
           '--symbol':    { t:'txt', lbl:'Symbol to chart (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
@@ -227,7 +234,17 @@ const M = [
   {
     label: 'Trade', full: 'EXECUTION & TRADING',
     cmds: [
-      { id: 'alpaca',       label: 'alpaca',       desc: 'Alpaca REST broker (US equities & crypto)', flags: {} },
+      { id: 'alpaca',       label: 'alpaca',       desc: 'Alpaca REST broker (US equities & crypto)',
+        flags: {
+          '--action':     { t:'sel', opts:['balance','aggregate_portfolio','favorites','buy','sell'], lbl:'Action', def:'balance' },
+          '--symbol':     { t:'txt', lbl:'Symbol (buy/sell)', def:'', pickSymbol:'single' },
+          '--qty':        { t:'txt', lbl:'Quantity (buy/sell)', def:'1' },
+          '--order-type': { t:'sel', opts:['market','limit'], lbl:'Order type (buy/sell)', def:'market' },
+          '--price':      { t:'txt', lbl:'Limit price (order-type=limit)', def:'' },
+          '--pin':        { t:'txt', lbl:'Trade PIN (if SOVEREIGN_TRADE_PIN is set)', def:'' },
+          '--live':       { t:'yn',  lbl:'⚠ EXECUTE LIVE TRADE?', def:false, warn:true },
+        },
+      },
       { id: 'mt5',          label: 'mt5',          desc: 'MT5 / EA terminal (forex, CFDs, futures)', flags: {} },
       { id: 'add-platform', label: 'add-platform', desc: '+ Add broker / trading platform wizard', flags: {} },
       { id: 'trade favorites', label: 'favorites',    desc: 'View / manage favourite symbols', flags: {} },
@@ -256,7 +273,7 @@ const M = [
     label: 'Polymarket', full: 'PREDICTION MARKETS',
     cmds: [
       { id: 'polymarket portfolio',    label: 'Portfolio',    desc: 'Live portfolio & pUSD balance', flags: {} },
-      { id: 'polymarket markets',      label: 'Markets',      desc: 'Browse & trade active markets', flags: {} },//dev review:.,crashes
+      { id: 'polymarket markets',      label: 'Markets',      desc: 'Browse & trade active markets', flags: {} },
       { id: 'polymarket history',      label: 'History',      desc: 'Historical CLOB price data for an event',//doesnt work, dev review
         flags: {
           '--event':        { t:'txt', lbl:'Prediction event key', def:'fed_rate_cut_prob' },
@@ -273,7 +290,7 @@ const M = [
           '--entry-threshold': { t:'txt', lbl:'Max entry price (low_prob_dip)', def:'0.15' },
         },
       },
-      { id: 'polymarket derive-creds', label: 'derive-creds', desc: 'Derive L2 API credentials from wallet', flags: {} },//crashes  dev review
+      { id: 'polymarket derive-creds', label: 'derive-creds', desc: 'Derive L2 API credentials from wallet', flags: {} },
       {
         id: 'bot',
         label: 'bot',
@@ -339,7 +356,7 @@ const M = [
     label: 'Account', full: 'ACCOUNT & AUTH (SUPABASE)',
     cmds: [
       { id: 'auth-status', label: 'auth-status', desc: 'Who am I / session expiry', flags: {} },
-      { id: 'login',       label: 'login',       desc: 'Sign in',//crashes, also need an ip binding or sth like that to not having to login every now and then, dev suggests
+      { id: 'login',       label: 'login',       desc: 'Sign in',// feature request (still open): session persistence so re-login isn't needed every time, dev suggests
         flags: {
           '--email':    { t:'txt', lbl:'Email address', def:'' },
           '--password': { t:'txt', lbl:'Password (prompted if omitted)', def:'' },

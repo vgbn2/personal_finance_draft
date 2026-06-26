@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { decideExit, canOpenPosition, resolveEntryQty, resolveExitQty } = require('../../../shared/lib/runtime/alpaca_bot_cycle');
+const { decideExit, canOpenPosition, resolveEntryQty, resolveExitQty, buildExitOutcome } = require('../../../shared/lib/runtime/alpaca_bot_cycle');
 
 /**
  * TEST: decideExit (pure target/stop/age exit decision)
@@ -83,4 +83,43 @@ test('resolveExitQty clamps the sell to the available broker shares', () => {
 test('resolveExitQty never returns a negative sell quantity', () => {
   assert.equal(resolveExitQty(10, 0), 0, 'nothing left to sell');
   assert.equal(resolveExitQty(10, -3), 0, 'defensive: negative availability clamps to 0');
+});
+
+/**
+ * TEST: buildExitOutcome (post-sell bookkeeping -- the fix for the session-59
+ * finding: a clamped sell must record P&L on what was actually sold and keep
+ * tracking the unsold remainder, not silently drop it).
+ */
+const fillPosition = { positionId: 'AAPL_1', symbol: 'AAPL', qty: 10, fillPrice: 100 };
+
+test('buildExitOutcome: full exit (sellQty === position.qty) closes the position and records full P&L', () => {
+  const { historyEntry, remainingPosition } = buildExitOutcome(fillPosition, 'target', 110, 10, 'cycle_1', true);
+  assert.equal(historyEntry.realizedPnl, 100, '(110-100)*10');
+  assert.equal(historyEntry.soldQty, 10);
+  assert.equal(historyEntry.dryRun, false);
+  assert.equal(remainingPosition, null, 'fully sold -- nothing left to track');
+});
+
+test('buildExitOutcome: clamped partial exit records P&L on the sold qty only and keeps the remainder tracked', () => {
+  // Broker holds only 6 of the 10 tracked shares (e.g. two stacked positions
+  // on one symbol sharing a single broker balance) -- resolveExitQty clamps
+  // the sell to 6.
+  const { historyEntry, remainingPosition } = buildExitOutcome(fillPosition, 'stop', 90, 6, 'cycle_2', true);
+  assert.equal(historyEntry.realizedPnl, -60, '(90-100)*6 -- NOT (90-100)*10');
+  assert.equal(historyEntry.soldQty, 6);
+  assert.ok(remainingPosition, 'unsold remainder must stay tracked, not be dropped');
+  assert.equal(remainingPosition.qty, 4, '10 tracked - 6 sold = 4 still open');
+  assert.equal(remainingPosition.symbol, 'AAPL');
+  assert.equal(remainingPosition.fillPrice, 100, 'remainder keeps its original entry fill price');
+});
+
+test('buildExitOutcome: dryRun flag mirrors the isLive argument', () => {
+  assert.equal(buildExitOutcome(fillPosition, 'age', 100, 10, 'c', false).historyEntry.dryRun, true);
+  assert.equal(buildExitOutcome(fillPosition, 'age', 100, 10, 'c', true).historyEntry.dryRun, false);
+});
+
+test('buildExitOutcome: a sellQty over the tracked qty clamps to the tracked qty (defensive)', () => {
+  const { historyEntry, remainingPosition } = buildExitOutcome(fillPosition, 'target', 110, 999, 'c', true);
+  assert.equal(historyEntry.soldQty, 10);
+  assert.equal(remainingPosition, null);
 });
