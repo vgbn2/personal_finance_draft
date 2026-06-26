@@ -392,6 +392,31 @@ async function commandBackfillDaemon(args) {
   process.once('SIGINT', () => clearStatusOnExit('SIGINT'));
   process.once('SIGTERM', () => clearStatusOnExit('SIGTERM'));
 
+  // Start Binance WebSocket feed for crypto symbols so 1m bars land in the
+  // ts-index in real time — independent of the polling cycle interval.
+  // Only launched when crypto is in the active family list and not --once.
+  let liveFeed = null;
+  if (!once && families.includes('crypto')) {
+    try {
+      const { startBinanceLiveFeed } = require('../../../../shared/lib/providers/binance.js');
+      const initConfig = await loadConfig();
+      const cryptoSymbols = (initConfig.crypto && initConfig.crypto.symbols) || [];
+      if (cryptoSymbols.length > 0) {
+        liveFeed = startBinanceLiveFeed(cryptoSymbols, {
+          tsDir,
+          onError: (err) => log(`[WS] ${err.message}`),
+        });
+        log(`[WS] live feed started for ${cryptoSymbols.length} crypto symbols`);
+      }
+    } catch (err) {
+      log(`[WS] could not start live feed: ${err.message}`);
+    }
+  }
+
+  // Augment the already-registered SIGINT/SIGTERM to also stop the live feed.
+  process.once('SIGINT', () => { if (liveFeed) try { liveFeed.stop(); } catch (_) {} });
+  process.once('SIGTERM', () => { if (liveFeed) try { liveFeed.stop(); } catch (_) {} });
+
   let cycle = 0;
   let lastSummary = null;
   /* eslint-disable no-await-in-loop */
@@ -436,6 +461,7 @@ async function commandBackfillDaemon(args) {
   }
   /* eslint-enable no-await-in-loop */
 
+  if (liveFeed) try { liveFeed.stop(); } catch (_) {}
   if (once) printPayload({ ok: lastSummary.errors === 0, ...lastSummary }, args);
   return lastSummary && lastSummary.errors === 0 ? 0 : 1;
 }
