@@ -227,9 +227,42 @@ async function promptTradeDeskArgs() {
 }
 
 /**
+ * Translates the dashboard flag-grid's named --action/--symbol/--qty/
+ * --order-type/--price into the same positional shape the CLI and the
+ * interactive wizard (promptTradeDeskArgs) both produce, e.g.
+ * ['buy', 'AAPL', '10', 'market']. Pure -- no I/O -- so it's unit-testable.
+ *
+ * Without this, picking 'alpaca' from the dashboard (whose flags carry no
+ * positional args) always hit commandTrade's `args.length === 0` branch and
+ * fell into the multi-step interactive wizard -- a full-screen prompt
+ * sequence that reads as "dropping into the legacy version" even though it
+ * isn't literally the legacy TUI engine. When --action is absent (bare CLI
+ * invocation, e.g. `trade buy AAPL 10 market` or no args at all), args pass
+ * through unchanged and the wizard still applies exactly as before.
+ */
+function buildTradeArgsFromActionFlag(args) {
+  if (!hasFlag(args, '--action')) return args;
+  const action = optionValue(args, '--action', 'balance');
+  let rest = args;
+  for (const flag of ['--action', '--symbol', '--qty', '--order-type', '--price']) {
+    rest = stripFlagValue(rest, flag);
+  }
+  if (action !== 'buy' && action !== 'sell') return [action, ...rest];
+
+  const symbol = String(optionValue(args, '--symbol', '') || '').toUpperCase();
+  const qty = optionValue(args, '--qty', '1');
+  const orderType = optionValue(args, '--order-type', 'market');
+  const price = optionValue(args, '--price', '');
+  const positional = [action, symbol, qty, orderType];
+  if (orderType === 'limit' && price) positional.push(price);
+  return [...positional, ...rest];
+}
+
+/**
  * Handles the 'trade' command.
  */
 async function commandTrade(args) {
+  args = buildTradeArgsFromActionFlag(args);
   const subcommand = args[0];
 
   if (subcommand === 'favorites') {
@@ -520,6 +553,7 @@ module.exports = {
   buildPolymarketCategoryChoices,
   buildPolymarketMarketChoices,
   buildTokenChoicePrompt,
+  buildTradeArgsFromActionFlag,
   buildTradeGatewayLaunch,
   commandAddPlatform,
   commandAgent,
