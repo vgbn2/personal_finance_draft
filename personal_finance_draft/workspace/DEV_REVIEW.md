@@ -1,3 +1,48 @@
+### Focused Blast-Through — 2026-06-26 session 62 (anchor `5e60babb`→`4ac77e8a`, review-only)
+
+DCS 0.96→0.96. Scope: Tier 1 = 9 commits since the last anchor (sessions 60–61). No gated sections
+(all ≥ B+). Tier 2 hotspot check on `sovereign_dashboard.mjs`, `manifest.js`, `data.js`, `trade.js`.
+Suite **652/650/0fail/2skip** (confirmed live run this session).
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| Low | `shared/lib/ml/models.js` | `models.js:386-389` | `resolveModel()` falls back **silently** to `modelCandidates[0]` (cnn_window_v0) for any unknown model name. A typo in a strategy YAML `model:` field silently produces results labeled with the wrong model. | Add a `console.warn` on unknown-name fallback, or throw. | OPEN |
+| Low | `backend/cli/commands/research/bias.js` | `bias.js:201` | `stdio: isJson ? 'ignore' : 'ignore'` — dead ternary, always `'ignore'`. Intent was presumably `'inherit'` or `'pipe'` when not JSON, so the backfill spinner line above it has context but the daemon output is always suppressed. | Change non-JSON branch to `'inherit'` or remove the ternary. | OPEN |
+| Low | `backend/cli/commands/research/bias.js` | `bias.js:158–186` | ANSI padding arithmetic uses `+9` (5 bytes for GREEN/RED/YELLOW + 4 for RESET). DIM is `\x1b[90m` = **6 bytes**, not 5. The `n/a` cells (rendered with DIM) get `padEnd` one char wider than the colored cells, making those columns 1 visible char too narrow. Cosmetic misalignment in Regime, Entropy, and vs-SMA20 columns when data is missing. | Change `const DIM_OVERHEAD = 10; const COLOR_OVERHEAD = 9;` and pass the appropriate one per value. | OPEN |
+| Info | `backend/cli/commands/data/backfill_daemon.js` | `backfill_daemon.js:392-393` + `417-418` | Two separate `process.once('SIGINT')` handlers registered: the first calls `process.exit(130)` before the second (`liveFeed.stop()`) can run. WebSocket is left open at OS level until process terminates. Functionally harmless (OS cleans up), but `liveFeed.stop()` is dead code on the shutdown path. | Call `if (liveFeed) liveFeed.stop()` inside `clearStatusOnExit()` before `process.exit()` — then the second `once` handlers can be removed. | OPEN |
+| Info | `shared/lib/ml/onnx_runner.js` | `onnx_runner.js:62-74` + `88-95` | `onnxruntime-node` is `require()`'d inside both `predict()` and `getSession()`. After `predict` passes its own early-exit check, `getSession` calls `require` again (cached, no overhead). The `try/catch` in `getSession` for missing-module is dead once `predict`'s check passed. | Pull `ort` as a module-level lazy singleton; avoids the double-require pattern. | OPEN (cosmetic) |
+
+**No gating findings. All sections OPEN.**
+
+#### Hygiene Sweep
+
+- **`shared/lib/models.js`** — 1-line shim (`module.exports = require('./ml/models')`). Zero production callers use this path; all 6 call sites use `shared/lib/ml/models.js` directly. Migration is complete — shim can be deleted. Keeping it is harmless, deleting removes noise from the duplicate-basename list.
+- **Duplicate basenames** — `models.js` is the only new pair introduced since s59. Audit confirmed it's shim-only (no divergent fork). All other named pairs from prior sessions unchanged.
+- **`[DEBUG]` console.log calls in `research_sources.js:223,231,236,242`** — all gated behind `hasFlag(args, '--debug')`. Not leaked debug logs.
+- **Test suite confirmed green**: 652/650/0fail/2skip (live run this session). Baseline matches s61 handoff.
+
+#### Centralization Backlog
+
+No new patterns found. The duplicate `models.js` pair (shim + canonical) remains the single migration-complete entry from prior sessions.
+
+#### Grade Trend Report
+
+| Directory | Last Grade | This Grade | Trend |
+|---|---|---|---|
+| `shared/lib/ml/` | (new s60-61) | **B** | — first formal stamp |
+| `backend/cli/commands/research/` | (new s60-61) | **B** | — first formal stamp |
+| `shared/lib/providers/` | (unchecked) | **B** | — first formal stamp |
+| `backend/cli` (other) | B+ (s59 cached) | B+ | = stable |
+| `shared/lib/market` | A (s55 cached) | A | = stable |
+| `shared/lib/runtime` | A (s59 cached) | A | = stable |
+| `backend/api` | B+ (s53 cached) | B+ | = stable |
+| `backend/gateway` | B+ (s58 cached) | B+ | = stable |
+| `backend/core` (C++) | B (s58 cached) | B | = stable |
+
+No section has been D or F for 2+ audits. No stale-debt escalations.
+
+---
+
 ### Mass-Implement — 2026-06-25 session 59 (3 batches, all findings from the audit below FIXED)
 
 Suite **623/621/0fail/2skip** (was 616/614 — +7 new tests: 4 on `buildExitOutcome`, 3 on
