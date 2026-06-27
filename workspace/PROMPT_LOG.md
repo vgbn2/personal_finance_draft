@@ -1,3 +1,14 @@
+# Prompt Log - 2026-06-28 (session 63)
+
+## Session Boot — 2026-06-28 (session 63)
+/session-orchestrator. Branch `feat/ink-tui-refactor`, HEAD `b67fb5ca` (session 62's last commit:
+bias + scorecard wired into both TUI engines). Suite baseline 652/0fail/2skip. Open gaps from
+session 62: (1) bt --strategy xgboost_v1 smoke test — precompute path wired, needs end-to-end run;
+(2) bias correlation — mcp__sovereign__get_correlation not wired; (3) scorecard --compact mode;
+(4) graphify-out stale; (5) Gate.io market-order empirical probe index.ts:309-319;
+(6) standing real-terminal confirmations (legacy↔dashboard switch, bt --strategy picker, backend
+visualize force-ingest). Awaiting user direction for session 63.
+
 # Prompt Log - 2026-06-26 (session 61)
 
 ## Session Boot — 2026-06-26 (session 61)

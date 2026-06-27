@@ -8,6 +8,9 @@
 
 ## Custom Skills — single source: `.agents/skills/`
 
+### Code Quality
+- `ponytail` - Lazy senior dev mode: YAGNI, stdlib first, minimum code that works. Levels: lite / full / ultra. Trigger: `/ponytail`
+
 ### Core Development
 - `code-review` - Code review automation
 - `multi-agent-research` - Research coordination
