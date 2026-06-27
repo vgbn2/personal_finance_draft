@@ -65,8 +65,6 @@ export async function resolveOwnerAddress(privateKey: string, funderAddress?: st
 // Fix: build L2 headers manually with POLY_ADDRESS = signer EOA, then use
 // axios (already installed by the SDK) so the transport matches the SDK exactly.
 
-interface L2Creds { key: string; secret: string; passphrase: string }
-
 function buildHmacSignature(secret: string, ts: number, method: string, path: string): string {
   const message = `${ts}GET${path}`;
   const key = Buffer.from(secret, 'base64');
@@ -74,7 +72,7 @@ function buildHmacSignature(secret: string, ts: number, method: string, path: st
   return sig.replace(/\+/g, '-').replace(/\//g, '_');
 }
 
-function buildL2Headers(address: string, creds: L2Creds, requestPath: string): Record<string, string> {
+function buildL2Headers(address: string, creds: { key: string; secret: string; passphrase: string }, requestPath: string): Record<string, string> {
   const ts  = Math.floor(Date.now() / 1000);
   const sig = buildHmacSignature(creds.secret, ts, 'GET', requestPath);
   return {
@@ -94,7 +92,7 @@ function buildL2Headers(address: string, creds: L2Creds, requestPath: string): R
  */
 export async function polymarketGet(path: string, queryParams: Record<string, string> = {}, opts: {
   privateKey?: string;
-  creds?: L2Creds;
+  creds?: { key: string; secret: string; passphrase: string };
   funderAddress?: string;
   signatureType?: number;
   host?: string;
@@ -118,7 +116,7 @@ export async function polymarketGet(path: string, queryParams: Record<string, st
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const axios = require('axios') as any;
   const url   = `${host}${path}`;
-  const headers = buildL2Headers(signerAddress, creds as L2Creds, path);
+  const headers = buildL2Headers(signerAddress, creds as { key: string; secret: string; passphrase: string }, path);
   const params = signatureType === undefined
     ? queryParams
     : { ...queryParams, signature_type: String(signatureType) };
