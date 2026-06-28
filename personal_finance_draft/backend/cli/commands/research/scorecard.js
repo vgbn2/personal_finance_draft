@@ -170,9 +170,16 @@ function renderScorecard(rows, tfKeys, elapsed, totalSymbols, skipped, ctx) {
     const pc   = phaseColor(r.phase);
     const rc   = r.regime === 'trending' ? GREEN : r.regime === 'choppy' ? YELLOW : DIM;
     const confStr = `${(r.confidence * 100).toFixed(0)}%`;
-    const alignedStr = r.aligned ? `${GREEN}✔${RESET}` : ' ';
-    const phaseStr = r.phase ? `${pc}${r.phase.slice(0, 14)}${RESET}` : `${DIM}n/a${RESET}`;
-    const regimeStr = r.regime ? `${rc}${r.regime}${RESET}` : `${DIM}n/a${RESET}`;
+
+    // pad(colored, visible) — pads a pre-colored string to `visible` chars wide
+    const pad = (colored, visibleText, w) => colored + ' '.repeat(Math.max(0, w - visibleText.length));
+
+    const alignedText = r.aligned ? '✔' : ' ';
+    const alignedStr  = r.aligned ? `${GREEN}✔${RESET}` : ' ';
+    const phaseText   = r.phase ? r.phase.slice(0, 14) : 'n/a';
+    const phaseStr    = r.phase ? `${pc}${phaseText}${RESET}` : `${DIM}n/a${RESET}`;
+    const regimeText  = r.regime || 'n/a';
+    const regimeStr   = r.regime ? `${rc}${r.regime}${RESET}` : `${DIM}n/a${RESET}`;
 
     const tfArrows = tfKeys.map(tf => {
       const b = r.tfs[tf];
@@ -192,12 +199,12 @@ function renderScorecard(rows, tfKeys, elapsed, totalSymbols, skipped, ctx) {
       `${CYAN}${String(i + 1).padEnd(4)}${RESET}` +
       `${r.symbol.padEnd(13)}` +
       `${DIM}${r.family.padEnd(13)}${RESET}` +
-      `${bc}${r.bias.padEnd(9)}${RESET}` +
+      pad(`${bc}${r.bias}${RESET}`, r.bias, 9) +
       `${confStr.padEnd(7)}` +
-      `${alignedStr.padEnd(9 + GREEN.length + RESET.length - 1)}` +
-      `${phaseStr.padEnd(16 + pc.length + RESET.length)}` +
+      pad(alignedStr, alignedText, 9) +
+      pad(phaseStr, phaseText, 16) +
       tfArrows +
-      `${regimeStr.padEnd(12 + rc.length + RESET.length)}` +
+      pad(regimeStr, regimeText, 12) +
       btcCorrStr
     );
   }
