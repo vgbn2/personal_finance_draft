@@ -1269,3 +1269,10 @@ this PROMPT_LOG close-out entry. graphify-out refresh skipped (stale since 2026-
 with many prior sessions' explicit deprioritization -- no code-graph-relevant decision pending on it).
 RESULT: Session 39 fully documented across all 4 workspace docs. HEAD: f26c6533 (local) /
 local-* branches on origin | Suite: 490/490 JS (last full run before the sync leg).
+
+## 2026-07-04 session 40 (Antigravity/Gemini pair) - Linux setup porting to feat/session-guard-intraday-rollup
+PROMPT: User switched to feat/session-guard-intraday-rollup and ran .\sv.
+WORK: Aborted merge-conflict cherry-pick. Checked out sv and start_local.sh directly from main. Created workspace/handoff/2026-07-04.md and updated HANDOFF.md pointer. Prepended SESSION_MEMORY.md.
+RESULT: Staged sv and start_local.sh as new files. Updated workspace logs.
+HEAD: 14c75eea (staged files: sv, start_local.sh) | Suite: 490/490 JS (last known baseline).
+

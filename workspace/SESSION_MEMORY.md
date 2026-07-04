@@ -1,3 +1,19 @@
+## Session Memory - 2026-07-04 - session 40 - Unix/Linux setup porting to feat/session-guard-intraday-rollup
+
+{
+  "work": "Ported Unix/Linux sv wrapper and start_local.sh from main branch to feat/session-guard-intraday-rollup.",
+  "key_mechanisms": [
+    "WRAPPER PORTING: Checked out 'sv' and 'start_local.sh' directly from local 'main' branch, avoiding merge conflicts on history files (PROMPT_LOG.md / SESSION_MEMORY.md).",
+    "WORKSPACE HANDOFF: Created new dated handoff file '2026-07-04.md' for the feature branch and updated HANDOFF.md pointer."
+  ],
+  "verified": [
+    "git status shows sv and start_local.sh staged as new files.",
+    "Files checked out are identical to the verified versions on main branch."
+  ],
+  "commits": ["ae7447a9 (feat(linux): port sv wrapper and start_local.sh setup to feat/session-guard-intraday-rollup)"],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-18/19 (session 39) FW2 monolith deconstruction FULLY COMPLETE (Batches 3+4) + vintage-audit batch reviewed/committed + first real GitHub backup (subtree-split push); suite 490/490 throughout
 
 {
