@@ -1,25 +1,40 @@
 {
   "version": 1,
   "skills": {
+    "blast-through": {
+      "source": "./skills/blast-through",
+      "sourceType": "local",
+      "computedHash": "fe62c4b86f94533ca165c4008a37e25fb5bdda61a7ab5874bdf11ecbdf3cc086"
+    },
     "claude": {
-      "source": "/home/vgbn1/Documents/codeptit/personal_finance_draft/skills/claude",
+      "source": "./skills/claude",
       "sourceType": "local",
       "computedHash": "3819f492cb9c698e495f63328640a6b5b947ad9c6c5da43c23bd2d7b1456eb1b"
     },
     "codex": {
-      "source": "/home/vgbn1/Documents/codeptit/personal_finance_draft/skills/codex",
+      "source": "./skills/codex",
       "sourceType": "local",
       "computedHash": "551a6f43767b4e197e3693d015db9222e6a4bb46889d674a1ad7b15d187d4b2a"
     },
     "gemini": {
-      "source": "/home/vgbn1/Documents/codeptit/personal_finance_draft/skills/gemini",
+      "source": "./skills/gemini",
       "sourceType": "local",
       "computedHash": "04bda590fe270d38a17775abae59ee79701652121a630c709a6c0a57a5ffbcdd"
     },
+    "mass-implement": {
+      "source": "./skills/mass-implement",
+      "sourceType": "local",
+      "computedHash": "9f9f2f6a07723adfc626ea54beb422353fe0548ae88f48cbc43827f9d685fd63"
+    },
     "polymarket-history-backfill": {
-      "source": "/home/vgbn1/Documents/codeptit/personal_finance_draft/skills/polymarket-history-backfill",
+      "source": "./skills/polymarket-history-backfill",
       "sourceType": "local",
       "computedHash": "565afbf35f9fe80c0be8a3af1086ca0e38ea5d6e81a9704ecc9c0f284c0b0ce2"
+    },
+    "session-orchestrator": {
+      "source": "./skills/session-orchestrator",
+      "sourceType": "local",
+      "computedHash": "7178f6634f966a42dcc4a195ea41904df0c5406a013282925b2ff7b60164b82d"
     }
   }
 }
