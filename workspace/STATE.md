@@ -691,3 +691,10 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
   (Binance/Alpaca) NOT run in this session — requires network + API keys.
 - **Future phase (deferred):** 1m grain for Yahoo families is intentionally NOT pursued (provider
   cap). If a finer-than-1m or tick grain is ever wanted, it is a separate record-format decision.
+
+## Update - 2026-07-04 - local skills synchronization and lockfile cleanup
+
+- Synchronized workspace custom agentic skills (`claude`, `codex`, `gemini`, `polymarket-history-backfill`) from `skills/` to `.agents/skills/` using the `skills` CLI.
+- Cleaned up `skills-lock.json` by removing 31 stale, deleted, or machine-specific Windows-absolute-path skills from previous developer environments.
+- Updated the remaining active skills in `skills-lock.json` to use relative paths (`./skills/<name>`), restoring clean-clone reproducibility.
+- Verified that `npx skills experimental_install` now correctly and successfully restores all project skills into the local `.agents/skills/` directory on a fresh Linux environment.
