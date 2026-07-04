@@ -4,13 +4,15 @@ SESSION 63 — 2026-07-04
   "session": 63,
   "date": "2026-07-04",
   "branch": "feat-ink-tui-refactor-split",
-  "commits": ["c4ec8aa7 (feat(linux): port sv and start_local.sh setup to split ink-tui branch)", "e815eb4d (docs(workspace): update logs for hyperglycemia-faint-predictor migration)"],
+  "commits": ["c4ec8aa7 (feat(linux): port sv and start_local.sh setup to split ink-tui branch)", "dea38ed4 (docs(workspace): update logs for personal_finance and storage migration)"],
   "suite": "652/0fail/2skip",
   "verified_facts": [
     "Created local subtree-split branch feat-ink-tui-refactor-split from origin/feat/ink-tui-refactor to access the newest June 28 code (Ink dashboard, scorecard, risk regimes, and HMM).",
     "Checked out sv and start_local.sh from main to restore Linux capability.",
     "Verified ./sv status runs successfully, rendering Phase 9 status.",
-    "Successfully copied hyperglycemia-faint-predictor from Windows SSD to Linux sibling directory with correct user ownership."
+    "Successfully copied hyperglycemia-faint-predictor from Windows SSD to Linux sibling directory with correct user ownership.",
+    "Successfully copied personal_finance from Windows SSD to Linux sibling directory with correct user ownership.",
+    "Triggered background copy of 30 GB storage/ directory from Windows to Linux personal_finance_draft/storage/ to preserve data."
   ]
 }
 

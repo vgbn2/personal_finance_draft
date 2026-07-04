@@ -1914,4 +1914,10 @@ HEAD: b2dc38ca | Suite: 652/0fail/2skip.
 PROMPT: migrate hyperglycemiafaint predcitor from window to here
 WORK: Located hyperglycemia-faint-predictor directory under mounted Windows NTFS drive. Copied it recursively to the Linux workspace parent folder (/home/vgbn1/Documents/codeptit/).
 RESULT: Folder successfully migrated to Linux with correct permissions.
-HEAD: b2dc38ca | Suite: 652/0fail/2skip.
+HEAD: cfeda5cd | Suite: 652/0fail/2skip.
+
+## 2026-07-04 session 65 (Antigravity/Gemini pair) - migrate sibling folders and storage
+PROMPT: migrate personal_finance and storage of personal_finance_draft
+WORK: Copied personal_finance sibling folder from Windows to Linux. Triggered background copy of 30 GB storage/ folder of personal_finance_draft from Windows to Linux to preserve historical data.
+RESULT: personal_finance copied. storage/ copy running in background. Workspace logs updated.
+HEAD: cfeda5cd | Suite: 652/0fail/2skip.
