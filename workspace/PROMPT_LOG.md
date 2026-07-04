@@ -1903,3 +1903,10 @@ User prompts (in order):
 10. "- The ML strategies... - It's not a single CLI command... - MCP tools need server... is this by design or error" — answered each
 11. /mass-implement — planned + built bias command + .mcp.json
 12. /session-orchestrator — this close-out
+
+## 2026-07-04 session 63 (Antigravity/Gemini pair) - Switch to newest Ink TUI branch
+PROMPT: User asked if there's a new dashboard layout in the newest version (28/6).
+WORK: Audited remote branches and found origin/feat/ink-tui-refactor contains June 28 commits (session 62). Since it's a monorepo branch, created local subtree-split branch feat-ink-tui-refactor-split of the personal_finance_draft prefix, switched to it, checked out sv and start_local.sh from main, and updated the workspace.
+RESULT: Created and checked out feat-ink-tui-refactor-split. sv and start_local.sh ported. Workspace logs updated.
+HEAD: e5e48176 (with local wrapper tools added) | Suite: 652/0fail/2skip.
+
