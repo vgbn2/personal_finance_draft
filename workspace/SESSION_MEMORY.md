@@ -1,3 +1,18 @@
+## Session Memory - 2026-07-04 - session 3 - Linux startup script
+
+{
+  "work": "Created Unix/Linux startup script 'start_local.sh' to match start_local.ps1.",
+  "key_mechanisms": [
+    "START_LOCAL.SH: Created a native bash script 'start_local.sh' that parallelizes running the Data Ingestor, Web API, and Execution Gateway, writing logs to logs/.",
+    "GRACEFUL CLEANUP: Used a SIGINT/SIGTERM trap in the script to kill all background processes on Ctrl+C."
+  ],
+  "verified": [
+    "Script parses and validates; executable permissions set."
+  ],
+  "commits": ["4b6e673e (feat(linux): add start_local.sh startup script for Linux and update workspace logs)"],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-07-04 - session 2 - Unix/Linux sv command wrapper
 
 {
