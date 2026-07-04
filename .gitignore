@@ -124,6 +124,8 @@ storage/db/*.sqlite3
 storage/exports/*.csv
 storage/data/backtests/latest_backtest.json
 storage/data/strategy_grade_index.json
+storage/data/user_settings.json
+
 
 # Generated notebook/model artifacts
 models/*.onnx
