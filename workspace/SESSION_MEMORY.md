@@ -1,3 +1,19 @@
+## Session Memory - 2026-07-04 - session 2 - Unix/Linux sv command wrapper
+
+{
+  "work": "Created Unix/Linux command wrapper script 'sv' at workspace root.",
+  "key_mechanisms": [
+    "UNIX SV WRAPPER: Created 'sv' bash script that invokes 'node --no-deprecation backend/cli/sovereign_cli.js' with arguments, matching the functionality of 'sv.ps1' on Windows.",
+    "EXECUTABLE PERMISSIONS: Set executable bit (+x) on 'sv' to allow direct invocation from bash/zsh."
+  ],
+  "verified": [
+    "./sv whoami runs successfully and displays Supabase local mode info.",
+    "./sv status runs successfully and renders the status check dashboard."
+  ],
+  "commits": ["cb70088e (feat(cli): add Unix/Linux sv command wrapper script and update workspace logs)"],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-07-04 - local skills synchronization and lockfile cleanup
 
 {
