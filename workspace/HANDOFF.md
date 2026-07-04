@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-06-14.md`**
+- Latest/current handoff: **`workspace/handoff/2026-07-04.md`**
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -18,6 +18,8 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
+- **SESSION (2026-07-04) — local skills synchronization and lockfile cleanup.**
+  Full trail: `workspace/handoff/2026-07-04.md`. Commits `3fe83a76` (skills-lock relative paths) + `c8c20627` (restore deleted skills). Restored `blast-through`, `mass-implement`, and `session-orchestrator` to the repository. Note: `storage/`, `tests/`, and `notebooks/` are missing from origin/main.
 - **SESSION 33 (2026-06-15) — integrity display fix (1m + canonical order) + TUI data menu cleanup; SSH blocker deferred.**
   Full trail: `workspace/handoff/2026-06-14.md` (session 33 continued block). Commits `d3a4b39a`
   (integrity: add 1m + canonical TF sort) + `8c12ca7f` (tui: remove Backfill from Op Dashboard, add Integrity

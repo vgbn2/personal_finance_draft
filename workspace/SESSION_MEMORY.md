@@ -1,4 +1,22 @@
+## Session Memory - 2026-07-04 - local skills synchronization and lockfile cleanup
+
+{
+  "work": "Restored clean-clone skills synchronization reproducibility on Linux and recovered deleted skills.",
+  "key_mechanisms": [
+    "SKILLS LOCKFILE CLEANUP: skills-lock.json contained 35 entries pointing to absolute Windows paths (C:\\\\Users\\\\Lenovo\\\\...) and stale/deleted skills. Rewrote the lockfile to specify only the 4 active workspace skills (claude, codex, gemini, polymarket-history-backfill) using relative paths (./skills/<name>).",
+    "RECOVERED SKILLS: Restored deleted blast-through, mass-implement, and session-orchestrator skills from git history. Registered and copied/linked them to .agents/skills/ using the skills CLI, then converted absolute paths to relative paths in skills-lock.json.",
+    "GIT CONFIGURATION: Configured local user identity (user.name/email) to match the project's commit history prior to committing."
+  ],
+  "verified": [
+    "npx skills experimental_install runs cleanly on Linux, restoring all 7 active skills into .agents/skills/.",
+    "Working tree is clean after removing side-effect directories."
+  ],
+  "commits": ["3fe83a76 (docs: sync skills and restore clean-clone path reproducibility)", "c8c20627 (docs: restore and sync blast-through, mass-implement, and session-orchestrator skills)"],
+  "dcs": 0.97
+}
+
 ## Session Memory - 2026-06-15 (session 33 continued) integrity display fix + TUI data menu cleanup + Ubuntu SSH deferred
+
 
 {
   "work": "Two small fixes + session close-out. (1) backend integrity was hiding 1m data and showing timeframes in wrong order. (2) TUI: removed Backfill from Op Dashboard, added Integrity Check to Data & Backfill. Ubuntu SSH (sshd stopped on Windows, needs elevated Start-Service) deferred to next session.",
