@@ -620,7 +620,7 @@ function renameWithRetry(src, dest, retries = 5, delayMs = 50) {
 }
 
 function writeJson(outputPath, payload) {
-  const tempPath = `${outputPath}.tmp`;
+  const tempPath = atomicTempPath(outputPath);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
   // Only plain objects get the streaming "sources" fast path below — arrays (e.g.

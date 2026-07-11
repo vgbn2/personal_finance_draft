@@ -11,7 +11,7 @@ async function commandLogin(args) {
 
   if (!auth.isSupabaseConfigured()) {
     console.error(paint(A.RED, 'Supabase not configured.'));
-    console.error(A.muted('Set SOVEREIGN_SUPABASE_URL and SOVEREIGN_SUPABASE_PUBLISHABLE_KEY in your .env'));
+    console.error(A.muted('Set SOVEREIGN_SUPABASE_URL and SOVEREIGN_SUPABASE_PUBLISHABLE_KEY in your .env, or the VITE_SUPABASE_* aliases.'));
     return 1;
   }
 
@@ -62,7 +62,7 @@ async function commandRegister(args) {
 
   if (!auth.isSupabaseConfigured()) {
     console.error(paint(A.RED, 'Supabase not configured.'));
-    console.error(A.muted('Set SOVEREIGN_SUPABASE_URL and SOVEREIGN_SUPABASE_PUBLISHABLE_KEY in your .env'));
+    console.error(A.muted('Set SOVEREIGN_SUPABASE_URL and SOVEREIGN_SUPABASE_PUBLISHABLE_KEY in your .env, or the VITE_SUPABASE_* aliases.'));
     return 1;
   }
 

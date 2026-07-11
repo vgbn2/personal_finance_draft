@@ -48,7 +48,7 @@ async function runBackendChart(args = []) {
 
   const isCandle = style === 'candle' || style === 'candles' || style === 'candlestick';
   console.log(isCandle
-    ? renderCandlestickChart(bars, width, 12, { smaPeriod, showVolume })
+    ? renderCandlestickChart(bars, width, 12, { smaPeriod, showVolume, totalWidth: true })
     : renderPriceChart(bars, width));
   return { ok: true, symbol, timeframe, width, style: isCandle ? 'candle' : 'line', sma: smaPeriod, volume: showVolume, bars: bars.length, total_bars_available: allBars.length };
 }

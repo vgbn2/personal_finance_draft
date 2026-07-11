@@ -1,7 +1,11 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildTradeGatewayLaunch, stripFlagValue } = require('../../../shared/lib/runtime/backend_bridge');
+const {
+  buildTradeGatewayLaunch,
+  spawnResultHasFatalError,
+  stripFlagValue,
+} = require('../../../shared/lib/runtime/backend_bridge');
 
 /**
  * TEST: buildTradeGatewayLaunch strips --pin unconditionally (session-59 fix --
@@ -24,4 +28,12 @@ test('buildTradeGatewayLaunch leaves args untouched when no --pin is present', (
 test('stripFlagValue is the same canonical export used by backend/cli/lib/utils.js', () => {
   const { stripFlagValue: utilsStripFlagValue } = require('../../../backend/cli/lib/utils.js');
   assert.equal(utilsStripFlagValue, stripFlagValue, 'utils.js must re-export the shared/lib/runtime implementation, not a duplicate');
+});
+
+test('spawn result errors are non-fatal when the child returned an exit status', () => {
+  const postRunError = new Error('spawnSync sovereign_wealth EPERM');
+
+  assert.equal(spawnResultHasFatalError({ error: postRunError, status: 0 }), false);
+  assert.equal(spawnResultHasFatalError({ error: postRunError, status: 1 }), false);
+  assert.equal(spawnResultHasFatalError({ error: postRunError, status: null }), true);
 });

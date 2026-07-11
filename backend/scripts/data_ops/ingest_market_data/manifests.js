@@ -45,14 +45,22 @@ function resolveWorldBankIndicator(...args) {
   return require('./index.js').resolveWorldBankIndicator(...args);
 }
 
+function notImplementedProvider(provider, family) {
+  const err = new Error(`${provider} ${family} provider is not implemented`);
+  err.code = 'not_implemented';
+  err.provider = provider;
+  err.family = family;
+  throw err;
+}
+
 // Provider adapters that still need full extraction share this narrow boundary.
-async function fetchOpenSkyRegion() { return {}; }
-async function fetchBlockchairStats() { return {}; }
-async function fetchBlockchairOnchain() { return {}; }
-async function fetchSecHoldingsSnapshot() { return {}; }
-async function fetchSpGlobalFlashPmi() { return {}; }
-async function fetchFxApiFx() { return {}; }
-async function fetchYahooBreadthProxy() { return {}; }
+async function fetchOpenSkyRegion() { return notImplementedProvider('opensky', 'flight'); }
+async function fetchBlockchairStats() { return notImplementedProvider('blockchair', 'crypto_tx'); }
+async function fetchBlockchairOnchain() { return notImplementedProvider('blockchair', 'onchain'); }
+async function fetchSecHoldingsSnapshot() { return notImplementedProvider('sec', 'holdings'); }
+async function fetchSpGlobalFlashPmi() { return notImplementedProvider('spglobal', 'pmi'); }
+async function fetchFxApiFx() { return notImplementedProvider('fxapi', 'fx'); }
+async function fetchYahooBreadthProxy() { return notImplementedProvider('yahoo', 'breadth'); }
 // fetchKalshiHistoricalCandlesticks callers spread the result directly, so [] is the
 // correct empty shape. fetchKalshiHistoricalMarkets callers destructure { records }, so
 // a bare [] crashes with "records is not iterable" -- return the shape callers expect.
@@ -185,6 +193,7 @@ const OPTIONS_MANIFEST = [
 ];
 
 module.exports = {
+  notImplementedProvider,
   fetchOpenSkyRegion,
   fetchBlockchairStats,
   fetchBlockchairOnchain,

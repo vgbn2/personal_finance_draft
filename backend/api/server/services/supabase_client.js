@@ -1,26 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
-const fs = require('node:fs');
-const path = require('node:path');
 const { cached, isCacheEnabled } = require('./ttl_cache');
 const { classifySupabaseError } = require('../../../../shared/lib/supabase/errors');
+const { loadLocalEnv } = require('../../../../shared/lib/runtime/env');
 
-function loadRootEnv() {
-  const envPath = path.resolve(__dirname, '..', '..', '..', '.env');
-  if (!fs.existsSync(envPath)) return;
-  const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
-    const index = trimmed.indexOf('=');
-    const key = trimmed.slice(0, index).trim();
-    const value = trimmed.slice(index + 1).trim();
-    if (key && process.env[key] === undefined) {
-      process.env[key] = value.replace(/^["']|["']$/g, '');
-    }
-  }
-}
-
-loadRootEnv();
+loadLocalEnv();
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.SOVEREIGN_SUPABASE_URL || '';
 const SUPABASE_PUBLISHABLE_KEY =

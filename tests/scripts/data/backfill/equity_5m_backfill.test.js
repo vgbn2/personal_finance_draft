@@ -52,11 +52,13 @@ function withAlpacaEnv(run) {
   const previous = {
     ALPACA_API_KEY: process.env.ALPACA_API_KEY,
     ALPACA_API_SECRET: process.env.ALPACA_API_SECRET,
+    ALPACA_SECRET_KEY: process.env.ALPACA_SECRET_KEY,
     ALPACA_DATA_FEED: process.env.ALPACA_DATA_FEED,
     ALPACA_ADJUSTMENT: process.env.ALPACA_ADJUSTMENT,
   };
   process.env.ALPACA_API_KEY = 'test-key';
   process.env.ALPACA_API_SECRET = 'test-secret';
+  delete process.env.ALPACA_SECRET_KEY;
   delete process.env.ALPACA_DATA_FEED;
   delete process.env.ALPACA_ADJUSTMENT;
   return Promise.resolve()
@@ -110,6 +112,41 @@ test('fetchAlpacaBaseCandles maps 5m to Alpaca 5Min and follows page tokens', as
     assert.strictEqual(secondUrl.searchParams.get('page_token'), 'next-page');
     assert.strictEqual(calls[0].options.headers['APCA-API-KEY-ID'], 'test-key');
   });
+});
+
+test('fetchAlpacaBaseCandles accepts documented ALPACA_SECRET_KEY alias', async () => {
+  const previous = {
+    ALPACA_API_KEY: process.env.ALPACA_API_KEY,
+    ALPACA_API_SECRET: process.env.ALPACA_API_SECRET,
+    ALPACA_SECRET_KEY: process.env.ALPACA_SECRET_KEY,
+    ALPACA_DATA_FEED: process.env.ALPACA_DATA_FEED,
+  };
+  process.env.ALPACA_API_KEY = 'doc-key';
+  process.env.ALPACA_SECRET_KEY = 'doc-secret';
+  delete process.env.ALPACA_API_SECRET;
+  delete process.env.ALPACA_DATA_FEED;
+
+  try {
+    const calls = [];
+    const fetchJson = async (url, options) => {
+      calls.push({ url, options });
+      return { bars: { AAPL: [{ t: new Date(Date.UTC(2026, 0, 1)).toISOString(), o: 1, h: 2, l: 0.5, c: 1.5, v: 100 }] } };
+    };
+    const { fetchAlpacaBaseCandles } = freshRequire(alpacaPath, {
+      [commonPath]: { fetchJson },
+    });
+
+    const bars = await fetchAlpacaBaseCandles('AAPL', 1, '1d');
+
+    assert.strictEqual(bars.length, 1);
+    assert.strictEqual(calls[0].options.headers['APCA-API-KEY-ID'], 'doc-key');
+    assert.strictEqual(calls[0].options.headers['APCA-API-SECRET-KEY'], 'doc-secret');
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 
 test('fetchAlpacaBaseCandles clamps SIP windows away from the recent-data blackout', async () => {
