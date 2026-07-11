@@ -3,6 +3,7 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const {
   ingestMarketData,
+  getIngestFamilyAvailability,
 } = require('../../../scripts/data_ops/ingest_market_data.js');
 const {
   loadHistoricalSources,
@@ -362,12 +363,23 @@ function ingestOptionsFromArgs(args) {
 
 async function commandIngest(args) {
   const ingestOptions = ingestOptionsFromArgs(args);
+  const unavailable = getIngestFamilyAvailability(ingestOptions.family);
   if (ingestOptions.family && ['onchain', 'crypto_tx', 'holdings', 'reserves'].includes(ingestOptions.family)) {
     const gate = featureGate('onchain_data', { surface: `Ingest family '${ingestOptions.family}'` });
     if (!gate.ok) {
       printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
       return 1;
     }
+  }
+  if (unavailable && !ingestOptions.dryRun) {
+    printPayload({
+      ok: false,
+      type: unavailable.status,
+      family: unavailable.family,
+      provider: unavailable.provider,
+      reason: `${unavailable.provider} ${unavailable.family} provider is not implemented`,
+    }, args);
+    return 1;
   }
   // withLoadingAnimation silently skips its spinner on a non-TTY stdout (the
   // case when this runs piped from the dashboard, not given a real TTY) --
