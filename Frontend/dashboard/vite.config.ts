@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    envPrefix: ['VITE_', 'SOVEREIGN_SUPABASE_URL', 'SOVEREIGN_SUPABASE_PUBLISHABLE_'],
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

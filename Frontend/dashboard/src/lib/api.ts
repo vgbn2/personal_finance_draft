@@ -3,15 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 export const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 export const API_ENDPOINTS = {
+  STATUS: `${API_BASE_URL}/api/status`,
   SYSTEM_STATUS: `${API_BASE_URL}/api/system/status`,
   SIGNAL: `${API_BASE_URL}/api/signal`,
   UNIVERSE: `${API_BASE_URL}/api/universe`,
   DATA_SUMMARY: `${API_BASE_URL}/api/data/summary`,
   CORRELATION: `${API_BASE_URL}/api/correlation`,
+  SCORECARD: `${API_BASE_URL}/api/scorecard`,
   BACKTEST: `${API_BASE_URL}/api/backtest`,
   PORTFOLIO: `${API_BASE_URL}/api/backend/portfolio`,
   AUTH_STATUS: `${API_BASE_URL}/api/auth/status`,

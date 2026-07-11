@@ -1,5 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 const SUPABASE_SERVICE_PATH = require.resolve('../../../../backend/api/server/services/supabase_client');
 const AUTH_ROUTE_PATH = require.resolve('../../../../backend/api/server/routes/account/auth');
@@ -108,5 +111,62 @@ test('supabase auth and database routes follow the expected contract', async () 
     restore();
     delete process.env.SUPABASE_URL;
     delete process.env.SUPABASE_PUBLISHABLE_KEY;
+  }
+});
+
+test('supabase service honors SOVEREIGN_ENV_FILE for migrated checkouts', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-supabase-env-'));
+  const envPath = path.join(tempDir, '.env');
+  fs.writeFileSync(
+    envPath,
+    [
+      'SOVEREIGN_SUPABASE_URL=https://migrated.example.supabase.co',
+      'SOVEREIGN_SUPABASE_PUBLISHABLE_KEY=sb_publishable_migrated_key',
+      '',
+    ].join('\n'),
+    'utf8',
+  );
+
+  const snapshot = {
+    SOVEREIGN_ENV_FILE: process.env.SOVEREIGN_ENV_FILE,
+    SOVEREIGN_SUPABASE_URL: process.env.SOVEREIGN_SUPABASE_URL,
+    SOVEREIGN_SUPABASE_PUBLISHABLE_KEY: process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY,
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+  };
+
+  process.env.SOVEREIGN_ENV_FILE = envPath;
+  delete process.env.SOVEREIGN_SUPABASE_URL;
+  delete process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY;
+  delete process.env.SUPABASE_URL;
+  delete process.env.SUPABASE_PUBLISHABLE_KEY;
+  delete process.env.SUPABASE_ANON_KEY;
+
+  clear(SUPABASE_SERVICE_PATH);
+  clear(AUTH_ROUTE_PATH);
+  clear(DATABASE_ROUTE_PATH);
+
+  try {
+    const service = require(SUPABASE_SERVICE_PATH);
+    const supabaseConfigRoute = require('../../../../backend/api/server/routes/account/supabase_config');
+    assert.equal(service.isConfigured(), true);
+    const payload = supabaseConfigRoute.handle();
+    assert.equal(payload.configured, true);
+    assert.equal(payload.url, 'https://migrated.example.supabase.co');
+    assert.equal(supabaseConfigRoute.status(payload), 200);
+  } finally {
+    if (snapshot.SOVEREIGN_ENV_FILE === undefined) delete process.env.SOVEREIGN_ENV_FILE;
+    else process.env.SOVEREIGN_ENV_FILE = snapshot.SOVEREIGN_ENV_FILE;
+    if (snapshot.SOVEREIGN_SUPABASE_URL === undefined) delete process.env.SOVEREIGN_SUPABASE_URL;
+    else process.env.SOVEREIGN_SUPABASE_URL = snapshot.SOVEREIGN_SUPABASE_URL;
+    if (snapshot.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY === undefined) delete process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY;
+    else process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY = snapshot.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY;
+    if (snapshot.SUPABASE_URL === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = snapshot.SUPABASE_URL;
+    if (snapshot.SUPABASE_PUBLISHABLE_KEY === undefined) delete process.env.SUPABASE_PUBLISHABLE_KEY;
+    else process.env.SUPABASE_PUBLISHABLE_KEY = snapshot.SUPABASE_PUBLISHABLE_KEY;
+    if (snapshot.SUPABASE_ANON_KEY === undefined) delete process.env.SUPABASE_ANON_KEY;
+    else process.env.SUPABASE_ANON_KEY = snapshot.SUPABASE_ANON_KEY;
   }
 });

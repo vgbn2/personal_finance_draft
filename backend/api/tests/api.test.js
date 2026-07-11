@@ -200,6 +200,58 @@ test('web API exposes backend health, data summary, and correlation', async () =
     const runStatusPayload = await runStatus.json();
     assert.equal(runStatusPayload.ok, true);
     assert.ok(typeof runStatusPayload.loops === 'object' && runStatusPayload.loops !== null, 'loops should be an object');
+
+    const unauthenticatedScorecard = await fetch(`${baseUrl}/api/scorecard?family=crypto&top=2`);
+    assert.equal(unauthenticatedScorecard.status, 401);
+
+    const scorecardRequest = fetch(`${baseUrl}/api/scorecard?family=crypto&top=2`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const healthDuringScorecardStart = Date.now();
+    const healthDuringScorecard = await fetch(`${baseUrl}/health`);
+    assert.equal(healthDuringScorecard.status, 200);
+    assert.ok(Date.now() - healthDuringScorecardStart < 2000, 'scorecard worker must not block API health checks');
+    const scorecard = await scorecardRequest;
+    assert.equal(scorecard.status, 200);
+    const scorecardPayload = await scorecard.json();
+    assert.equal(scorecardPayload.ok, true);
+    assert.equal(scorecardPayload.type, 'scorecard');
+    assert.equal(scorecardPayload.schema_version, 1);
+    assert.equal(scorecardPayload.filters.family, 'crypto');
+    assert.equal(scorecardPayload.filters.top, 2);
+    assert.ok(Array.isArray(scorecardPayload.rows));
+    assert.ok(scorecardPayload.rows.length <= 2);
+    assert.ok(scorecardPayload.total_symbols >= scorecardPayload.analyzed_symbols);
+
+    const cachedScorecard = await fetch(`${baseUrl}/api/scorecard?family=crypto&top=2`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
+    assert.equal(cachedScorecard.status, 200);
+    assert.equal((await cachedScorecard.json()).from_memory_cache, true);
+
+    const invalidScorecard = await fetch(`${baseUrl}/api/scorecard?direction=sideways`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
+    assert.equal(invalidScorecard.status, 400);
+    assert.equal((await invalidScorecard.json()).error_code, 'invalid_direction');
+
+    const invalidScorecardTf = await fetch(`${baseUrl}/api/scorecard?tf=1h,2h`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
+    assert.equal(invalidScorecardTf.status, 400);
+    assert.equal((await invalidScorecardTf.json()).error_code, 'invalid_timeframe');
+
+    const scorecardPreflight = await fetch(`${baseUrl}/api/scorecard`, {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://localhost:3000',
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'X-Sovereign-Token',
+      },
+    });
+    assert.equal(scorecardPreflight.status, 204);
+    assert.equal(scorecardPreflight.headers.get('access-control-allow-origin'), 'http://localhost:3000');
   } finally {
     await close();
     for (const [key, value] of Object.entries(savedQuoteEnv)) {

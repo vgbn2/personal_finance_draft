@@ -22,6 +22,7 @@ const {
 } = utils;
 
 const { readSnapshot, readTsIndex, validateSnapshot } = require('../../../../shared/lib/market/validation.js');
+const { spawnResultHasFatalError } = require('../../../../shared/lib/runtime/backend_bridge.js');
 const DEFAULT_TS_INDEX = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
 
 // Child modules
@@ -84,7 +85,7 @@ function runBackendCommand(commandArgs) {
     process.stderr.write(result.stderr);
   }
 
-  if (result.error) {
+  if (spawnResultHasFatalError(result)) {
     return {
       available: true,
       ok: false,

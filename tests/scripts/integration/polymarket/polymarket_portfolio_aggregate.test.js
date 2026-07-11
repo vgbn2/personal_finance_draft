@@ -30,7 +30,7 @@ test('aggregate portfolio synthetic fixture includes Polymarket pUSD in totals a
   );
 
   assert.equal(snapshot.total_usd, 175);
-  assert.equal(snapshot.total_equity, 195);
+  assert.equal(snapshot.total_equity, 196.5);
   assert.equal(snapshot.brokers.length, 3);
   assert.equal(snapshot.brokers[2].name, 'Polymarket');
   assert.equal(snapshot.brokers[2].position_count, 1);

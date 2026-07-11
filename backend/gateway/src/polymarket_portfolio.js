@@ -49,18 +49,21 @@ function buildAggregatedPortfolioSnapshot(results, polymarket) {
 
   if (polymarket && polymarket.ok) {
     const pUsd = toNumber(polymarket.balance && polymarket.balance.pUSD);
+    const positions = Array.isArray(polymarket.positions) ? polymarket.positions : [];
+    const markedPositionValue = positions.reduce(
+      (sum, position) => sum + toNumber(position && position.marketValue),
+      0,
+    );
     aggregated.total_usd += pUsd;
-    aggregated.total_equity += pUsd;
+    aggregated.total_equity += pUsd + markedPositionValue;
     aggregated.brokers.push({
       name: 'Polymarket',
       status: 'connected',
       balance: polymarket.balance || {},
-      position_count: Array.isArray(polymarket.positions) ? polymarket.positions.length : 0,
+      position_count: positions.length,
       cost_basis_unavailable_count: 0,
     });
-    if (Array.isArray(polymarket.positions)) {
-      addPositions(polymarket.positions);
-    }
+    addPositions(positions);
   } else if (polymarket && polymarket.configured) {
     aggregated.brokers.push({
       name: 'Polymarket',

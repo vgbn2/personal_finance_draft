@@ -1,10 +1,8 @@
-import 'dotenv/config';
+require('../../../shared/lib/runtime/env.js');
 import * as fs from 'node:fs/promises';
 import * as crypto from 'node:crypto';
 import * as path from 'node:path';
 import { spawnSync } from 'node:child_process';
-// @ts-ignore
-import Alpaca from '@alpacahq/alpaca-trade-api';
 import { createClobClient, resolveOwnerAddress, polymarketGet } from './clob_factory';
 import { runCycle, runBotLoop, runForceSell, runBotHealth } from './cycle';
 import { loadBotState, saveBotState } from './bot_state';
@@ -465,6 +463,7 @@ class AlpacaAdapter implements BrokerAdapter {
     this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? true;
 
     if (keyId && secretKey) {
+      const Alpaca = require('@alpacahq/alpaca-trade-api');
       this.alpaca = new Alpaca({
         keyId,
         secretKey,
