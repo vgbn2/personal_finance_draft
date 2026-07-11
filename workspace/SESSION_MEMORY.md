@@ -1,4 +1,63 @@
 ---
+SESSION 64 — 2026-07-05 (dependency mass-implement)
+{
+  "session": 64,
+  "date": "2026-07-05",
+  "branch": "feat-ink-tui-refactor-split",
+  "scope": "Dependency install repair after Windows-to-Ubuntu migration",
+  "verified_facts": [
+    "`start_local.sh` now launches the gateway through `node backend/cli/lib/run_trade_gateway.js --demo`, removing the hidden `npx tsx` dependency from the Linux local suite.",
+    "Root `package.json` now declares `@alpacahq/alpaca-trade-api` and `ethers`, matching runtime imports used by Alpaca and Polymarket wallet flows.",
+    "`npm ls --depth=0`, `npm ls --prefix backend/gateway --depth=0`, `npm ls --prefix backend/mcp_server --depth=0`, and `npm ls --prefix Frontend/dashboard --depth=0` all pass.",
+    "`npx tsc -p backend/gateway/tsconfig.json --noEmit`, `npm --prefix backend/mcp_server run build`, `node backend/cli/lib/run_trade_gateway.js --demo`, `bash -n start_local.sh`, and `timeout 8s ./start_local.sh` all passed their expected gates.",
+    "`README.md` now documents the required root and nested package installs plus Ubuntu native C++ dependencies."
+  ],
+  "remaining": [
+    "The sandbox may still block API port binding with `listen EPERM`; this is environment-specific, not a dependency failure.",
+    "Unrelated generated `storage/models/*` files remain dirty and were left untouched."
+  ]
+}
+
+---
+SESSION 64 — 2026-07-05
+{
+  "session": 64,
+  "date": "2026-07-05",
+  "branch": "feat-ink-tui-refactor-split",
+  "fix": "Polymarket derive-creds gateway startup",
+  "verified_facts": [
+    "Replaced eager gateway-side `import 'dotenv/config'` with the repo-native `shared/lib/runtime/env.js` loader in backend/gateway/src/index.ts, cycle.ts, and bot_state.ts.",
+    "Deferred the `@alpacahq/alpaca-trade-api` require until AlpacaAdapter construction so Polymarket-only commands no longer fail on an unrelated missing package at module load.",
+    "Verified `node backend/cli/sovereign_cli.js polymarket derive-creds` now reaches the expected `POLYMARKET_PRIVATE_KEY not set in .env` runtime check instead of crashing on module resolution."
+  ],
+  "remaining": [
+    "The user still needs a configured `POLYMARKET_PRIVATE_KEY` to actually derive and print credentials.",
+    "Unrelated dirty storage/model artifacts remain in the worktree by prior state."
+  ]
+}
+
+---
+SESSION 64 — 2026-07-05 (deep blast-through)
+{
+  "session": 64,
+  "date": "2026-07-05",
+  "branch": "feat-ink-tui-refactor-split",
+  "scope": "Ubuntu migration check",
+  "verified_facts": [
+    "`bash -n start_local.sh` passed.",
+    "`./sv status` and `node backend/cli/sovereign_cli.js status` returned the same system status payload.",
+    "`timeout 10s ./start_local.sh` launched the three services and then cleaned them up on SIGTERM; the dashboard bind failure observed in the sandbox was environment-specific, not treated as a repo bug.",
+    "The Linux bootstrap still depends on `npx tsx` even though the repo does not declare `tsx` in the root install path and has no local `node_modules/.bin/tsx`."
+  ],
+  "findings": [
+    "Medium: `start_local.sh:19` uses `npx tsx` without a repo-declared or locally installed `tsx`, making the Linux bootstrap dependent on external `npx` resolution/cache/global install."
+  ],
+  "remaining": [
+    "The hidden `npx tsx` dependency should be removed or made explicit so clean Ubuntu installs can bootstrap from repo-managed dependencies alone."
+  ]
+}
+
+---
 SESSION 63 — 2026-07-04
 {
   "session": 63,
@@ -259,6 +318,56 @@ SESSION 62 — 2026-06-26
 }
 
 ---
+SESSION 64 — 2026-07-05 — connective-tissue blast-through
+{
+  "session": 64,
+  "date": "2026-07-05",
+  "branch": "feat-ink-tui-refactor-split",
+  "scope": "upgraded blast-through connective-tissue sweep",
+  "findings": [
+    "Enabled ingest families still route to no-op provider stubs: pmi, flight, crypto_tx, holdings, onchain, breadth. Direct PMI fetcher probe returns {}. Not silent corruption because ingest records provider-resolution errors, but these are incomplete live data lanes.",
+    "Alpaca data provider reads only ALPACA_API_SECRET while .env.example/setup use ALPACA_SECRET_KEY and gateway accepts both. Direct preflight with ALPACA_API_KEY+ALPACA_SECRET_KEY fails as missing ALPACA_API_SECRET.",
+    "backend/gateway production code directly requires axios in clob_factory.ts and index.ts, but backend/gateway/package.json does not declare axios; it resolves through transitive installs today.",
+    "backend/api has stale Express-style middleware/helper scaffold next to the active custom HTTP server; low-priority cleanup, not a runtime bug."
+  ],
+  "verified_good": [
+    "TUI command ids with spaces are intentional: dashboard_exec.buildArgv() splits ids into argv.",
+    "Settings & Preferences is wired through sovereign_cli.js -> commandSettings and TUI prefix ['settings'].",
+    "All package-root npm ls checks passed.",
+    "npm run hygiene passed."
+  ],
+  "dcs": 0.95
+}
+
+---
+SESSION 64 — 2026-07-05 — connective-tissue mass-implement
+{
+  "session": 64,
+  "date": "2026-07-05",
+  "branch": "feat-ink-tui-refactor-split",
+  "scope": "mass-implement fixes for upgraded blast-through matrix",
+  "implemented": [
+    "Alpaca market-data provider now uses resolveAlpacaSettings(), accepting documented ALPACA_SECRET_KEY and legacy ALPACA_API_SECRET.",
+    "Placeholder ingest providers now throw structured not_implemented errors instead of returning empty objects.",
+    "backend/gateway now declares axios directly because production source requires it directly."
+  ],
+  "verified": [
+    "node --test tests/scripts/data/backfill/equity_5m_backfill.test.js",
+    "node --test tests/scripts/data/ingest/ingest_manifest_contract.test.js",
+    "direct ALPACA_SECRET_KEY probe returned one stubbed record",
+    "direct PMI manifest probe returned not_implemented",
+    "npm ls --prefix backend/gateway --depth=0",
+    "npx tsc -p backend/gateway/tsconfig.json --noEmit",
+    "npm run hygiene"
+  ],
+  "remaining": [
+    "Implement real provider adapters for pmi, flight, crypto_tx, holdings, onchain, and breadth if those lanes should produce data.",
+    "Low-priority API scaffold cleanup remains open."
+  ],
+  "dcs": 0.97
+}
+
+---
 SESSION 61 — 2026-06-26
 {
   "session": 61,
@@ -338,3 +447,122 @@ SESSION 60 — 2026-06-26
   ],
   "dcs": 0.95
 }
+
+## Session Memory - 2026-07-05 (session 66) Windows env sync
+{
+  "work": "Loaded session-orchestrator, then synced the active workspace .env from the Windows draft copy at /mnt/windows/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/.env.",
+  "verified": [
+    "The active env now contains POLYMARKET_PRIVATE_KEY, POLYMARKET_API_KEY, POLYMARKET_API_SECRET, and POLYMARKET_API_PASSPHRASE again.",
+    "buildPolymarketReport(process.env) returns ok: true after the sync.",
+    "commandPolymarket(['portfolio']) now gets past the config gate and reaches the live-network path."
+  ],
+  "remaining": [
+    "Polymarket portfolio access is currently blocked by network/DNS reachability to clob.polymarket.com (getaddrinfo EAI_AGAIN)."
+  ]
+}
+
+## Session Memory - 2026-07-10 (session 68) always-on host preparation
+{
+  "work": "Added a token-protected scorecard API backed by a worker-thread host-local ts-index calculation, a bounded 30-second async result cache, same-origin/VPN-safe browser routing, always-on deployment docs/env defaults, and automatic expired provider-cache pruning in each backfill cycle.",
+  "verified": [
+    "GET /api/scorecard requires X-Sovereign-Token and returns structured scorecard metadata plus ranked rows; identical requests share/cache one calculation.",
+    "CLI scorecard --json still emits its established raw array.",
+    "All-universe scorecard measured 7.08s wall, 167340 KB max RSS, 106% CPU; no GPU path is involved.",
+    "Current storage is about 30 GB total, with about 4.1 GB in storage/data/ts and about 28 GB in disposable provider API responses.",
+    "Focused API, worker responsiveness, CORS preflight, backfill, and cache-pruning tests passed; frontend build and hygiene passed."
+  ],
+  "cautions": [
+    "Full-universe backfill, not scorecard, controls host sizing: compose grants its Node process a 6 GB heap ceiling for 1-minute merge writes.",
+    "Use at least 2 shared vCPU, 8 GB RAM, and 80 GB SSD for the current universe; 4 vCPU, 12-16 GB RAM, and 120-160 GB SSD is the safer low-cost tier.",
+    "The existing provider cache was not deleted; future daemon cycles now prune it automatically.",
+    "Docker and graphify are unavailable in the current environment, so compose validation and graph refresh remain host-time checks."
+  ],
+  "remaining": [
+    "Install Docker on the selected host, copy configuration/secrets securely, and run the web plus backfill services.",
+    "Use a private VPN or SSH tunnel for port 8787; do not publish it directly.",
+    "Optionally clear the existing 28 GB provider cache with explicit approval before migration."
+  ]
+}
+
+## Session Memory - 2026-07-10 (session 68 follow-up) opt-in operational profiles
+{
+  "work": "Added opt-in Compose profiles for read-only portfolio monitoring, host health, host backups, and bounded Polymarket research capture; exposed the new portfolio monitor command in CLI help; updated env examples, deployment docs, and the deployment manifest contract.",
+  "verified": [
+    "Focused Node tests for host maintenance, portfolio monitoring, and the Polymarket research scheduler passed.",
+    "Deployment manifest contract passed.",
+    "node --check passed on the touched JS entrypoints.",
+    "npm run hygiene passed."
+  ],
+  "cautions": [
+    "Host-side Compose verification still needs Docker on the target machine.",
+    "The new profiles are opt-in and do not change the default web/backfill runtime."
+  ],
+  "remaining": [
+    "Validate the Compose profiles on a Docker host before using them unattended."
+  ]
+}
+
+## Session Memory - 2026-07-10 (session 69) review closeout and delegated next-session backlog
+{
+  "work": "Reviewed the session-68 deployment/runtime additions, ran a repo health check, then updated the mass-implement skill so score-improvement work must start with an evidence-backed Planning Mode instead of immediate edits.",
+  "verified": [
+    "mass-implement now requires planning output with objective, why-now, source, expected score movement, and verification for each ranked batch.",
+    "The stale repo-global-protocol reference was removed and replaced with actual repo truth sources: PROJECT_RULES.md, STATE.md, DEV_REVIEW.md, and README.md or nearest task doc.",
+    "The next-session implementation order is anchored to audited findings rather than chat memory."
+  ],
+  "cautions": [
+    "Operational promotion is still blocked by the reviewed session-68 issues: portfolio-monitor reads the wrong aggregate schema, host backups are unbounded, cross-container PID liveness is unreliable, and the polymarket-research profile can appear healthy while doing nothing.",
+    "There is still heavy pre-existing unrelated worktree churn; future fix batches must avoid reverting user changes."
+  ],
+  "remaining": [
+    "Batch 1: normalize aggregate_portfolio consumption in portfolio-monitor and add a production-shape contract test.",
+    "Batch 2: add host-backup retention/pruning policy with verification.",
+    "Batch 3: remove or replace the cross-container PID liveness check.",
+    "Batch 4: make polymarket-research fail visibly or auto-satisfy the required feature gate.",
+    "Batch 5: correct Compose env ownership and strengthen the deployment manifest contract."
+  ]
+}
+
+## Session Memory - 2026-07-11 (session 70) mass-implement closeout
+{
+  "work": "Closed the session-69 implementation backlog and the remaining host/deployment review blockers. `portfolio-monitor` now consumes the real aggregate portfolio shape, `host-backup` uses bounded provenance-scoped retention with a distinct retention-only exit path, the false PID liveness check is gone, `polymarket-research` fails visibly when it has nothing to capture, and Compose env ownership/docs/contracts are aligned.",
+  "verified": [
+    "Focused Node tests passed for host maintenance, backup CLI exit-code mapping, portfolio monitor, Polymarket research scheduler/history/orderbook/portfolio aggregate, and the deployment manifest contract.",
+    "node --check passed on the touched JS entrypoints.",
+    "npm run hygiene passed.",
+    "TypeScript no-emit passed for backend/gateway."
+  ],
+  "cautions": [
+    "Docker is still unavailable in this environment, so rendered Compose validation could not be run.",
+    "The repository still has one unrelated dashboard TUI failure in the full suite.",
+    "graphify remains unavailable locally."
+  ],
+  "remaining": [
+    "Run Compose validation on a Docker host if you need rendered profile verification.",
+    "Address the unrelated dashboard TUI test separately if you want a fully green whole-suite run."
+  ]
+}
+## Session Memory - 2026-07-11 (session 70 follow-up) native backend discovery
+
+```json
+{
+  "request": "make the backend reachable after it reported unavailable",
+  "root_cause": [
+    "the resolver omitted backend/core/build/sovereign_wealth, the standalone CMake single-config output",
+    "Node 25 surfaced a post-run spawnSync EPERM despite status 0 and valid stdout, which launchers treated as fatal"
+  ],
+  "implemented": [
+    "added the standard CMake output to shared backend candidates",
+    "added npm run native:build and aligned README/test:core paths",
+    "accepted completed child results when a numeric exit status proves the process ran"
+  ],
+  "verified": {
+    "native_build": "pass",
+    "backend_status": "available=true, ok=true, sovereign_cpp_core",
+    "focused_node_tests": "pass",
+    "native_ctest": "28/29; known Kronos insufficient-data failure only",
+    "hygiene": "pass",
+    "graphify": "unavailable"
+  }
+}
+```

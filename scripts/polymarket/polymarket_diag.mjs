@@ -1,17 +1,18 @@
 // Polymarket balance diagnostics
-// Run: node --experimental-vm-modules scripts/polymarket_diag.mjs
-//  OR: cd backend/gateway && node ../../scripts/polymarket_diag.mjs
+// Run: node --experimental-vm-modules scripts/polymarket/polymarket_diag.mjs
+//  OR: cd backend/gateway && node ../../scripts/polymarket/polymarket_diag.mjs
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot  = path.resolve(__dirname, '..', '..');
 const require = createRequire(import.meta.url);
 
-// Load .env from repo root
-const dotenv = require('dotenv');
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+const { loadLocalEnv } = require(path.join(repoRoot, 'shared/lib/runtime/env.js'));
+loadLocalEnv();
 
-const { ethers } = require('./backend/gateway/node_modules/ethers/lib/index.js');
+const { ethers } = require(path.join(repoRoot, 'backend/gateway/node_modules/ethers/lib/index.js'));
 
 const USDC_POLYGON = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'; // USDC.e on Polygon PoS
 
@@ -51,10 +52,16 @@ if (!hasL2) {
   console.log('Run: python polymarket_client.py   (then paste the output into .env)');
 } else {
   try {
-    const { ClobClient } = require('./backend/gateway/node_modules/@polymarket/clob-client/dist/index.js');
+    const { ClobClient } = require(path.join(repoRoot, 'backend/gateway/node_modules/@polymarket/clob-client-v2/dist/index.js'));
     const signer = new ethers.Wallet(pk);
-    const client = new ClobClient('https://clob.polymarket.com', 137, signer, {
-      key: apiKey, secret: apiSecret, passphrase: apiPassphrase,
+    const client = new ClobClient({
+      host: 'https://clob.polymarket.com',
+      chain: 137,
+      signer,
+      creds: {
+        key: apiKey, secret: apiSecret, passphrase: apiPassphrase,
+      },
+      retryOnError: true,
     });
 
     const bal = await client.getBalanceAllowance({ asset_type: 'COLLATERAL' });

@@ -125,6 +125,7 @@ storage/models/*.onnx
 notebooks/*.ipynb
 notebooks/signal_library.json
 Frontend/dashboard/*.zip
+__pycache__
 __pycache__/
 # Compiled Binaries
 *.exe

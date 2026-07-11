@@ -117,3 +117,7 @@ models:
   regime_classifier:
     input: cross_family
     n_features: 26
+  cnn_v1:
+    input: all
+    n_features: 48
+    window: 20

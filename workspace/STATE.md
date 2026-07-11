@@ -7,6 +7,42 @@ last_audit_date: 2026-06-26
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Fix Note - 2026-07-05 session 66 - Windows env sync
+- Synced the active workspace `.env` from the Windows draft copy at
+  `/mnt/windows/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/.env`.
+- Verified the Polymarket credential gate now sees the full set again:
+  `POLYMARKET_PRIVATE_KEY`, `POLYMARKET_API_KEY`, `POLYMARKET_API_SECRET`,
+  and `POLYMARKET_API_PASSPHRASE` are all present in the active env.
+- `buildPolymarketReport(process.env)` now returns `ok: true`, and
+  `commandPolymarket(['portfolio'])` now gets past the config check and reaches the
+  live-network path (`getaddrinfo EAI_AGAIN` here, which is environment/network, not config).
+
+## Fix Note - 2026-07-05 session 65 - migration/API repair
+- Closed the API env-loader mismatch found in the session-65 audit: `backend/api/server/services/supabase_client.js`
+  now uses the shared env loader, so `SOVEREIGN_ENV_FILE` works again for the API stack instead of
+  forcing a local-checkout `.env`.
+- Repaired the Polymarket helper scripts under `scripts/polymarket/`: repo-root anchoring now points at
+  the real project root, the helpers use the shared env loader and `@polymarket/clob-client-v2`, and the missing
+  `POLYMARKET_PRIVATE_KEY` path now exits cleanly instead of throwing a `TypeError`.
+- Added a regression for the migrated env-file path in
+  `tests/scripts/architecture/data_storage/supabase_route_contract.test.js`.
+- Verified: `node --test tests/scripts/architecture/data_storage/supabase_route_contract.test.js`;
+  `SOVEREIGN_ENV_FILE=/home/vgbn1/Documents/codeptit/personal_finance/.env node -e "const s=require('./backend/api/server/services/supabase_client'); console.log(JSON.stringify({configured:s.isConfigured()}));"` returned `{"configured":true}`;
+  Polymarket helper probes now fail on missing inputs rather than module resolution.
+
+## Fix Note - 2026-07-05 session 64 - Ubuntu dependency repair
+- Closed the migration dependency gap found in the same-session blast-through: `start_local.sh` no
+  longer relies on undeclared `npx tsx`; it uses the repo's existing `backend/cli/lib/run_trade_gateway.js`
+  wrapper.
+- Root dependencies now include `@alpacahq/alpaca-trade-api` and `ethers`, matching live gateway runtime
+  imports.
+- Nested installs for `backend/gateway`, `backend/mcp_server`, and `Frontend/dashboard` were restored so
+  `npm ls --prefix ... --depth=0` no longer reports `UNMET DEPENDENCY`.
+- `README.md` now documents the required multi-root install commands and Ubuntu native packages for the
+  optional C++ path.
+- Verified: root/gateway/MCP/frontend `npm ls`, gateway TypeScript, MCP build, gateway demo, and
+  `timeout 8s ./start_local.sh`.
+
 ## Process Note - 2026-06-25 session 59 - docs/ triage + workspace/BOOTSTRAP.md + docs/codebase_tour/ (committed `2865299f`, plus `264e4ee2` gitignore cleanup)
 - User: "I'm starting to feel like I'm forgetting a lot of things in this repo due to vibecoding without
   documentation" — asked for a reverse-engineered, hands-on course covering the whole codebase.
@@ -284,6 +320,30 @@ Suggested single focused commit for 1/3/4 (`alpaca_bot_cycle.js`+`strategy.js`) 
 - An external label-shortener (cron) trimmed the `--sma`/`--volume` manifest labels mid-session;
   harmless, tests green, folded into the typing-lag commit and disclosed there.
 
+## Audit Note - 2026-07-05 session 64 - Connective tissue blast-through
+- Ran the upgraded blast-through connective-tissue sweep after the Ubuntu dependency repair. No
+  `graphify-out/` artifact exists, so the pass used live `rg`, import/package/env scans, direct file
+  reads, and focused probes. DCS 0.96->0.95.
+- Findings recorded in `workspace/DEV_REVIEW.md`: enabled ingest provider stubs (`pmi`, `flight`,
+  `crypto_tx`, `holdings`, `onchain`, `breadth`) are incomplete live lanes; Alpaca data provider
+  ignores the documented `ALPACA_SECRET_KEY` alias; gateway directly imports transitive `axios`
+  without declaring it; API has low-priority stale Express-style scaffold.
+- Verified-good: package roots are installed cleanly; TUI command ids with spaces intentionally split
+  into argv; Settings & Preferences is now wired; `npm run hygiene` passed.
+
+## Implementation Note - 2026-07-05 session 64 - Connective tissue mass-implement
+- Closed the high/medium connective findings from the new blast-through matrix. DCS 0.95->0.97.
+- `shared/lib/providers/alpaca.js` now uses `resolveAlpacaSettings()`, so `ALPACA_SECRET_KEY` from
+  `.env.example` works for Alpaca market-data fetches as well as gateway/setup flows.
+- `backend/scripts/data_ops/ingest_market_data/manifests.js` now reports unfinished placeholder
+  providers as structured `not_implemented` errors instead of returning `{}`. This keeps
+  `ingest --family all` honest without inventing data.
+- `backend/gateway` now declares direct `axios@^1.18.1`, matching production imports in
+  `clob_factory.ts` and `index.ts`.
+- Verification: Alpaca provider/backfill test passed; new ingest manifest contract passed; direct
+  Alpaca alias probe returned one stubbed record; direct PMI probe returned `not_implemented`;
+  gateway `npm ls --depth=0`, gateway TypeScript, and repo hygiene all passed.
+
 ## Implementation Note - 2026-06-22 session 55 - blast-through audit + mass-implement (3 backlog debts cleared)
 - **Focused audit** (anchor `03b3c8d5`→`0903df6b`): session-54 TUI/chat surface traced clean. The new
   LLM command resolver (`chat_llm_fallback.js`) verified **shell-safe by code-trace** — full chain
@@ -404,3 +464,88 @@ Signal pipeline now functional end-to-end:
 
 ML strategies still return 0 trades (lstm_v1/cnn_window_v0 untrained on real data) — separate gap.
 Suite: 631/0fail/2skip. Branch: feat/ink-tui-refactor.
+
+## Implementation Note - 2026-07-09 - live feature mass-implement
+- Closed the highest-impact live-test findings from the 2026-07-08 review. DCS 0.86->0.91.
+- API indicators route now treats the existing exit-0 indicators CLI JSON as a successful API payload.
+  Live probe: `GET /api/indicators?symbol=BTCUSDT&timeframe=1d` returned HTTP 200 with
+  `feature_count: 120` and `ok: true`.
+- `ingest --dry-run` now passes `dryRun` into `ingestMarketData()` and returns a read-only
+  `dry_run_plan` before provider fetches, Supabase macro writes, local cache writes, partition writes,
+  or ts-index writes. Direct probe: `ingest --family pmi --dry-run --json` returned
+  `mode: dry_run`, `sources: 0`, `errors: 0`, `planned_fetches: 4`.
+- Dashboard Market Intel now reads global `/api/status` for quality cards instead of the default
+  `AAPL 1d` data-summary slice; websocket market-data refreshes now include the same status payload.
+- CLI scaling cleanup: `scorecard` suppresses carriage-return progress in non-TTY output and sizes
+  separators to the actual header width; candlestick `backend chart --width 40` now stays within
+  40 visible columns in total-width mode.
+- Data-write race cleanup: `shared/lib/market/validation.writeJson()` now uses unique atomic temp
+  paths instead of a shared `<target>.tmp`, matching the safer ts-index write pattern and removing the
+  observed sibling-process rename race.
+- Polymarket helper scripts now instantiate `@polymarket/clob-client-v2` with the object-shaped
+  constructor used by `backend/gateway/src/clob_factory.ts`; local SDK instantiation probe passed
+  without touching the external CLOB API.
+- Verification: focused Node tests passed for API indicators, ingest dry-run/stubs, candlestick
+  rendering, and writeJson temp paths; `backend/api/tests/api.test.js` passed with localhost bind
+  approval; frontend build passed with the pre-existing Supabase dynamic/static import and chunk-size
+  warnings; `npm run hygiene` passed. `git diff --check` still fails on the pre-existing
+  `storage/models/*` CRLF/trailing-whitespace churn, not on this pass's touched files.
+
+## Implementation Note - 2026-07-10 - always-on backfill and scorecard preparation
+- Added token-protected `GET /api/scorecard`, using the same research calculation as the CLI in a worker
+  with structured metadata, bounded query parameters, concurrent-request deduplication, and a 30-second
+  result cache. The worker keeps API health/status responsive during full-universe scoring. CLI JSON
+  compatibility remains unchanged.
+- Added automatic provider-response cache pruning to every backfill cycle: responses older than two
+  hours are removed and fresh entries are capped at 25,000. Canonical ts-index data is excluded.
+- Deployment target is `infra/docker/docker-compose.yml` services `web` plus `backfill`. Scorecard runs
+  CPU-only on the host against its mounted `storage/data/ts/`; the browser receives only JSON results.
+- Measured full scorecard: 7.08s, 167 MB max RSS, about one CPU core. Current storage: ~30 GB total,
+  ~4.1 GB ts-index, ~28 GB disposable API cache. Full current universe host floor: 2 vCPU/8 GB/80 GB
+  SSD; recommended low-cost tier: 4 vCPU/12-16 GB/120-160 GB SSD. No GPU required.
+- Production dashboard API calls now default to same-origin, and protected CORS preflights are handled
+  before token authentication so private-VPN and development origins can connect correctly.
+- Focused API/backfill/cache tests, frontend build, scoped diff check, and hygiene passed. Docker Compose
+  could not be validated locally because Docker is not installed; graphify refresh remains unavailable.
+
+## Implementation Note - 2026-07-10 - opt-in monitoring and research profiles
+- Added a read-only `portfolio-monitor` CLI surface and exposed it in help text.
+- Added opt-in Docker Compose profiles for `portfolio-monitor`, `host-health`, `host-backup`, and
+  `polymarket-research`.
+- Wired new env defaults and deployment documentation so the long-running jobs stay explicit and
+  bounded.
+- Verification passed for the new batch: focused host-maintenance, portfolio-monitor, Polymarket
+  research scheduler, deployment manifest contract, `node --check`, and `npm run hygiene`.
+
+## Correction Note - 2026-07-10 - mass-implement planning mode
+- Updated `.agents/skills/mass-implement/SKILL.md` so broad score-improvement requests now require an
+  explicit Planning Mode before edits.
+- Planning Mode now forces each ranked batch to state: objective, why now, exact source, expected
+  grade factor movement, and the verification gate that will prove completion.
+- Removed the stale `repo-global-protocol` reference and replaced it with current repo truth sources:
+  `PROJECT_RULES.md`, `workspace/STATE.md`, `workspace/DEV_REVIEW.md`, and `README.md` or the nearest
+  task-specific doc.
+
+## Implementation Note - 2026-07-11 - mass-implement closeout
+- `portfolio-monitor` now consumes the real gateway aggregate shape and fails closed on malformed
+  payloads.
+- `host-backup` now uses provenance-scoped retention, preserves successful publishes when pruning
+  fails, and returns a distinct retention-only exit code for Compose restart logic.
+- The cross-container PID liveness check was removed in favor of container-local freshness checks.
+- `polymarket-research` now fails visibly when it has nothing to capture instead of idling silently.
+- Compose env ownership and deployment contract checks were tightened, including the quoted backup
+  destination in the host-backup loop.
+- Verification for this batch: focused Node tests, `npm run hygiene`, `node --check` on touched JS,
+  and the gateway TypeScript no-emit check all passed.
+- Residuals: Docker and graphify are unavailable locally, and the full suite still has one unrelated
+  dashboard TUI failure outside this batch.
+## Implementation Note - 2026-07-11 - native backend discovery and launch
+
+- The C++ core is available at runtime after adding the actual standalone CMake output
+  `backend/core/build/sovereign_wealth` to the shared resolver.
+- `npm run native:build` is now the canonical configure/build entrypoint and disables optional ONNX
+  linkage for a deterministic local build; README and `test:core` use the same build tree.
+- Native subprocess handling no longer discards valid output when the runtime reports a post-run
+  spawn error together with a numeric child exit status.
+- Verified `backend status` as `available: true`, `ok: true`; focused Node tests and hygiene pass.
+  CTest remains at the documented 28/29 baseline due only to the Kronos data-availability fixture.

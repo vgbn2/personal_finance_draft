@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { renameWithRetry } = require('../../../shared/lib/market/validation');
+const { renameWithRetry, writeJson } = require('../../../shared/lib/market/validation');
 
 /**
  * TEST: renameWithRetry (cross-process EPERM/EBUSY safety + real sleep)
@@ -102,4 +102,31 @@ test('renameWithRetry rethrows after exhausting all retries', () => {
     fs.renameSync = realRename;
   }
   assert.equal(calls, 3, 'attempted exactly `retries` times before giving up');
+});
+
+test('writeJson uses a unique temp path per call to avoid sibling process rename races', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wj-'));
+  const dest = path.join(dir, 'report.json');
+  const realRename = fs.renameSync;
+  const tempPaths = [];
+
+  fs.renameSync = (from, to) => {
+    tempPaths.push(from);
+    return realRename(from, to);
+  };
+
+  try {
+    writeJson(dest, { sources: [{ symbol: 'AAPL', close: 1 }] });
+    writeJson(dest, { sources: [{ symbol: 'MSFT', close: 2 }] });
+  } finally {
+    fs.renameSync = realRename;
+  }
+
+  assert.equal(tempPaths.length, 2);
+  assert.equal(new Set(tempPaths).size, 2, 'successive writes must not share report.json.tmp');
+  assert.ok(tempPaths.every((tempPath) => tempPath.startsWith(`${dest}.`)));
+  assert.ok(tempPaths.every((tempPath) => tempPath.endsWith('.tmp')));
+  assert.equal(JSON.parse(fs.readFileSync(dest, 'utf8')).sources[0].symbol, 'MSFT');
+
+  fs.rmSync(dir, { recursive: true, force: true });
 });

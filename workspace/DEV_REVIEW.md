@@ -1,3 +1,231 @@
+### Mass-Implement Closeout - 2026-07-09 (live-test fixes)
+
+DCS 0.86->0.91. Closed or downgraded the strongest 2026-07-08 live-test findings:
+
+- **Closed:** API `/api/indicators` false-503. The route now returns HTTP 200 for
+  `symbol=BTCUSDT&timeframe=1d` with `feature_count: 120`.
+- **Closed:** `ingest --dry-run` side effects. Dry-run now returns a read-only plan before provider
+  fetch, macro-store write, cache write, partition write, or ts-index write.
+- **Closed:** Market Intel quality-card mismatch. The panel now reads global `/api/status`, and
+  websocket market-data updates emit `status` alongside universe/data-summary payloads.
+- **Closed:** candlestick total-width overflow and scorecard non-TTY progress noise. `backend chart
+  --width 40 --style candle --sma 20 --volume` measured max visible width 40; captured scorecard
+  output has no carriage returns and max width 103 matching the header.
+- **Closed:** fixed `<target>.tmp` JSON write race. `writeJson()` now uses unique atomic temp paths.
+- **Closed:** Polymarket helper v2 constructor drift. Helper scripts use the same object-shaped
+  `ClobClient` constructor as the gateway factory.
+- **Still open:** frontend Supabase chunk split warning and tracked `storage/models/*` CRLF/trailing
+  whitespace remain; the latter still makes full `git diff --check` fail.
+
+**Verification:** focused Node tests for API indicators, ingest dry-run/stubs, candlestick rendering,
+and writeJson temp paths passed; `backend/api/tests/api.test.js` passed with localhost bind approval;
+live `/api/indicators` probe returned 200; frontend build passed with known warnings; `npm run
+hygiene` passed; diff-check on this pass's touched files passed.
+
+### Live Feature Test - 2026-07-08 session 67 (CLI/API/dashboard surfaces)
+
+DCS 0.91->0.86. Scope: live CLI commands, localhost API probes, dashboard API wiring, terminal UI
+rendering, provider-stub behavior, and build warnings. Code was not changed in this pass.
+
+| Priority | Area | File:line | Live evidence | Finding | Fix / gate |
+|---|---|---|---|---|---|
+| **High** | API/dashboard indicators | `backend/api/server/services/cli_executor.js:799-820`; `backend/cli/commands/research/research.js:338-358` | `curl /api/indicators?symbol=BTCUSDT&timeframe=1d` returned HTTP 503 with `indicators_command_failed`; direct `node backend/cli/sovereign_cli.js indicators BTCUSDT --json` returned exit 0 with `feature_count: 120`. | The API wrapper treats parsed CLI output as success only when `nodeCli.ok` is truthy, but `commandIndicators()` prints successful JSON without an `ok` field. A working CLI feature is therefore exposed as a broken API endpoint. | Treat `exit_code === 0` as success or make indicators output include `ok: true`; gate with a route test proving `/api/indicators?symbol=BTCUSDT&timeframe=1d` returns 200 and feature counts. |
+| **High** | Ingest dry-run safety | `backend/cli/commands/data/data.js:342-380`; `backend/scripts/data_ops/ingest_market_data/index.js:889-902`, `:1150-1162`, `:1176-1189` | `node backend/cli/sovereign_cli.js ingest --family pmi --dry-run` printed `Refreshing market cache`, emitted Supabase write failure text, saved local filesystem cache, and reported `mode: live`; same pattern for `breadth`. | `ingest --dry-run` is accepted but ignored by the active ingest path. It still executes live fetch/write/persistence behavior, unlike other data commands with explicit dry-run guards. | Add `dryRun` to `ingestOptionsFromArgs()` and make `ingestMarketData()` skip external writes/cache persistence when set; gate by asserting no cache/ts-index/macro-store writes and output includes `dry_run: true`. |
+| **Medium** | Dashboard market-intel data | `Frontend/dashboard/src/components/panels/MarketIntelPanel.tsx:29-38`, `:87-105`; `backend/api/server/services/cli_executor.js:301-335` | Live `GET /api/data/summary` returned 200 but defaulted to `symbol: AAPL`, `timeframe: 1d`, `bars: 0`, `usable_records: 0`; the panel calls this endpoint with no query params and displays "Usable Records" and freshness from that payload. | The dashboard can show "Verified Integrity" as zero/nominal even though CLI status reports 2525 usable records. The panel is reading a default AAPL slice, not global data quality. | Either call a global quality/status endpoint for these cards or pass the selected symbol/timeframe intentionally; gate by checking the Market Intel cards agree with `status --json` or explicitly label the slice. |
+| **Medium** | Terminal UI scaling | `backend/cli/commands/research/scorecard.js:146-165`, `:198-213`, `:231-247`; `backend/cli/tui/visualizations.js:293-298`, `:374-417` | `scorecard --family crypto --top 8 --no-backfill` renders a 103-column header against `W = 98`; captured progress lines collapse to 124 columns because `\r` progress is emitted. `backend chart --width 60` produced max visible width 72; `--width 40` still hit 65 due axis/footer overhead. | Width flags and separators do not match actual visible output. In non-TTY/captured panes the candlestick chart does not clamp against requested width, and scorecard progress output is clunky in logs. | Compute table width from columns, suppress/properly newline progress in non-TTY, and treat `--width` as total output width or document it as plot-area width; gate with ANSI-stripped width tests. |
+| **Medium** | Backtest CLI UX and concurrency | `backend/cli/commands/research/research.js:301-321`, `:481-490`; `shared/lib/market/validation.js:622-631` | `bt --strategy cnn_window_v0 --json`, `bt --strategy logistic_v1 --json`, and `bt --strategy xgboost_v1 --json` all failed with `Strategy file is invalid ... (missing_file)`. Parallel backtest runs also hit `ENOENT ... rename ... data_quality_report.json.tmp -> data_quality_report.json` once. | The CLI accepts model-looking values under `--strategy` but resolves them as file paths, conflicting with stale handoff/doc examples. Concurrent research commands also share a fixed `data_quality_report.json.tmp` path for JSON writes. | Update docs/help to use `--model` or YAML strategy files; make `writeJson()` temp paths unique like `atomicTempPath()`; gate with parallel `bt` smoke and model-vs-strategy argument tests. |
+| **Medium** | Provider stubs still user-visible | `backend/scripts/data_ops/ingest_market_data/manifests.js:48-63`, `:142`, `:154-173`; `backend/cli/tui/manifest.js:155-158` | Direct probes return structured `not_implemented` for `pmi/spglobal`, `breadth/yahoo`, `flight/opensky`, `crypto_tx/blockchair`, `holdings/sec`, and `onchain/blockchair`; `ingest --family pmi --dry-run` still spends a live run on those lanes. | The stubs no longer silently return `{}`, which is good, but they remain reachable through CLI/config and create noisy failed live tests. | Disable unimplemented families from user-facing ingest selection or add "coming soon/not implemented" copy before execution; gate with `ingest --family <stub>` returning a fast, non-mutating not-implemented result. |
+| **Low** | Frontend bundle split | `Frontend/dashboard/src/lib/api.ts:33-41`; `Frontend/dashboard/src/App.tsx:8`; `Frontend/dashboard/src/components/layout/TopBar.tsx:6`; `Frontend/dashboard/src/components/panels/AuditLogPanel.tsx:4`; `Frontend/dashboard/src/components/panels/OverviewPanel.tsx:6`; `Frontend/dashboard/src/pages/LoginPage.tsx:2` | `npm --prefix Frontend/dashboard run build` passed, but Vite warned that `src/lib/supabase.ts` is dynamically imported while also statically imported elsewhere, and the main JS chunk is about 945 kB uncompressed. | The intended Supabase dynamic split is ineffective, and the dashboard bundle is already large enough to trigger Vite's warning. | Move Supabase auth/realtime consumers behind a consistent async boundary or accept it as eagerly loaded; gate by build output with no mixed dynamic/static import warning and smaller route chunks. |
+| **Low** | Stale API scaffold | `backend/api/server/services/data_formatter.js:1-18`; `backend/api/server/services/job_queue.js:1-23`; `backend/api/app.js:39-51` | `data_formatter.js` and `job_queue.js` are only referenced by `backend/api/tests/charts.test.js`; active `app.js` implements HTTP/rate-limit behavior inline. | Test-only service scaffolds sit beside the active API and can mislead future route work. | Delete or wire into production intentionally; gate with `rg` showing no production-dead service modules. |
+
+**Verified-good / environmental:** the API server bound successfully on escalated localhost and `/api/supabase/config`, `/api/status`, `/api/data/summary`, and `/api/backend/stats` responded. `/api/status` reported `backend: unavailable` but usable cache quality from the latest snapshot. Direct browser rendering was not performed; sandbox blocks localhost sockets without escalation, so probes were done via `curl`.
+
+### Blast-Through Triage - 2026-07-08 session 67 (dirty-worktree regression check)
+
+DCS 0.95->0.91. Scope: quick triage of the current uncommitted migration/connective-tissue diff, with
+focus on executable helper surfaces, env/auth/provider wiring, and commit-blocking hygiene.
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| **High** | `scripts/polymarket` helper surface | `scripts/polymarket/polymarket_positions.mjs:22`, `scripts/polymarket/polymarket_check_balance.mjs:34`, `scripts/polymarket/polymarket_diag.mjs:57`; compare `backend/gateway/src/clob_factory.ts:33,43` | The previous helper repair is only partial: the scripts import `@polymarket/clob-client-v2`, but still instantiate it with the legacy positional constructor. The installed v2 client constructor expects a single object argument, so `polymarket_positions.mjs` and `polymarket_check_balance.mjs` crash before any network call with `TypeError: Cannot read properties of undefined (reading 'endsWith')`; `polymarket_diag.mjs` catches and reports the same constructor error in its CLOB section. | Use the same object-shaped v2 constructor as the gateway factory, or route these scripts through the gateway's `createClobClient`/account helper so the SDK signature cannot drift twice. Include credentials as `creds: { key, secret, passphrase }`. | `node scripts/polymarket/polymarket_positions.mjs` should reach either a live-network response/error or an authenticated CLOB response, not a local constructor `TypeError`; same for `polymarket_check_balance.mjs` and the CLOB section of `polymarket_diag.mjs`. |
+| **Medium** | `storage/models` generated model contracts | `storage/models/feature_config.yaml:1`, `storage/models/metadata.json:1`, `storage/models/parity_python.json:1`, `storage/models/serving_manifest.txt:1` | Tracked generated model-contract files were rewritten with CRLF/no-final-newline churn. `git diff --check` fails with trailing-whitespace reports across these files, while `npm run hygiene` still says the workspace is pristine. These files are not pure throwaway noise: `backend/core/src/main.cpp` and strategy code read `storage/models/serving_manifest.txt`/`metadata.json`, so their generated state needs a normalized, reviewable commit boundary. | Normalize generated text outputs to LF + final newline, or make the generator write normalized text. If these are not intended to be reviewed in commits, decide that explicitly and untrack/ignore the non-load-bearing outputs instead of leaving them as dirty tracked artifacts. | `git diff --check` must pass; rerun the ML-serving smoke/parity path if semantic model metadata changed, not just line endings. |
+
+**Verified-good / dismissed:** targeted Supabase/API regression tests passed; `SOVEREIGN_ENV_FILE` works for the API path; Alpaca `ALPACA_SECRET_KEY` alias regression passed; ingest placeholder lanes now fail with structured `not_implemented`; frontend Vite build passed; gateway TypeScript and root/gateway `npm ls` passed. `graphify-out/` is absent, so no graph-based map was available for this triage.
+
+**Next cleanup move:** fix the Polymarket helper constructor drift first because it contradicts the previous closeout and blocks local account diagnostics; then normalize or exclude the generated model artifacts so `git diff --check` can be used as a reliable pre-commit gate.
+
+### Mass-Implement — 2026-07-05 session 65 (API env + Polymarket helper repair)
+
+Closed the two migration regressions from the session 65 audit. DCS 0.93->0.95.
+
+- **[x] API Supabase env loading now honors the migrated env-file path.** `backend/api/server/services/supabase_client.js` now uses the shared `shared/lib/runtime/env` loader instead of a local `.env` reader, so `SOVEREIGN_ENV_FILE` works again in the API stack. Added a regression to `tests/scripts/architecture/data_storage/supabase_route_contract.test.js` that writes a temp env file and proves `/api/supabase/config` reports the migrated URL as configured.
+- **[x] Polymarket helper scripts now resolve from the real repo root, honor the shared env loader, and use the installed v2 CLOB package.** `scripts/polymarket/polymarket_check_balance.mjs`, `polymarket_positions.mjs`, `polymarket_onchain.mjs`, `polymarket_find_key.mjs`, and `polymarket_diag.mjs` now anchor at `../../`, load env through `shared/lib/runtime/env`, and use `@polymarket/clob-client-v2` from the gateway install path. Added a missing-`POLYMARKET_PRIVATE_KEY` guard to `polymarket_positions.mjs` so it exits cleanly instead of throwing a `TypeError`.
+
+**Verification:** `node --test tests/scripts/architecture/data_storage/supabase_route_contract.test.js` passed;
+`SOVEREIGN_ENV_FILE=/home/vgbn1/Documents/codeptit/personal_finance/.env node -e "const s=require('./backend/api/server/services/supabase_client'); console.log(JSON.stringify({configured:s.isConfigured()}));"` returned `{"configured":true}`;
+`node scripts/polymarket/polymarket_check_balance.mjs` now exits on missing L2 credentials instead of module resolution;
+`node scripts/polymarket/polymarket_diag.mjs` now exits on missing private key;
+`node scripts/polymarket/polymarket_find_key.mjs` now exits with its usage message;
+`node scripts/polymarket/polymarket_positions.mjs` now exits on missing private key instead of throwing.
+
+**Grade movement:** `backend/api` C -> B; `scripts` C -> B-.
+
+### Blast-Through Connective-Tissue Sweep — 2026-07-05 session 65 (migration/API fragility)
+
+DCS 0.95->0.93. Scope: diagnose the post-migration API fragility the user reported, with emphasis on
+config resolution and runnable helper surfaces. I verified the live behavior directly instead of
+trusting the migration assumptions.
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| High | `backend/api` Supabase config | `backend/api/server/services/supabase_client.js:7-23`, `backend/api/server/routes/account/supabase_config.js:6-20` | The API stack still loads only the repo-root `.env` from the current checkout and never consults the migrated env-file path that the CLI now honors. In this checkout `isConfigured()` stays `false`, and `/api/supabase/config` returns `configured: false` even when `SOVEREIGN_ENV_FILE` points at the sibling migrated repo env. That is a concrete migration break: the API reports "Supabase not configured" while the credentials do exist in the migrated environment. | Route API config through the shared/migrated env loader, or add the sibling `personal_finance` env-file fallback used by the CLI auth path, so the API and CLI agree on what "configured" means. | OPEN |
+| Medium | `scripts/polymarket` helper surface | `scripts/polymarket/polymarket_check_balance.mjs:7-27`, `scripts/polymarket/polymarket_positions.mjs:6-14`, `scripts/polymarket/polymarket_onchain.mjs:6-14`, `scripts/polymarket/polymarket_find_key.mjs:7-10`, `scripts/polymarket/polymarket_diag.mjs:10-14` | The Polymarket helper scripts compute `repoRoot = path.resolve(__dirname, '..')`, which points at `scripts/` instead of the repo root. They then require gateway dependencies from `scripts/backend/...`, so they fail immediately with module-not-found errors when launched from the repository as documented. `polymarket_diag.mjs` adds a second brittle path bug by using a relative `./backend/...` require from the script file itself. | Anchor `repoRoot` at the actual project root (`path.resolve(__dirname, '..', '..')`) or derive it from a shared helper, and stop hardcoding nested gateway `node_modules` paths if the script is meant to be runnable after migration. | OPEN |
+
+#### Section grades
+
+| Section | Grade | Reason |
+|---|---|---|
+| `backend/api` | C | The active HTTP server still works structurally, but Supabase config resolution is migration-fragile and currently reports "not configured" in the migrated env layout. |
+| `scripts` | C | Polymarket helper scripts are documented as runnable, but the current path anchoring breaks them immediately from the repo root. |
+
+**Verification:** direct `isConfigured()` probe returned `false`; `/api/supabase/config` returned
+`configured: false`; the CLI auth path accepted the migrated env-file override while API did not;
+`scripts/polymarket_check_balance.mjs` and `scripts/polymarket_diag.mjs` both fail on broken module
+resolution from the current layout.
+
+**Next cleanup move:** unify env resolution across API/CLI first, then repair the Polymarket script
+root anchoring so the documented helper commands work again after migration.
+
+### Mass-Implement — 2026-07-05 session 64 (connective-tissue fixes)
+
+Closed the high/medium connective-tissue findings from the sweep above. DCS 0.95->0.97.
+
+- **[x] Alpaca env alias drift fixed.** `shared/lib/providers/alpaca.js` now resolves credentials
+  through the existing broker alias resolver, so the documented `ALPACA_SECRET_KEY` and the legacy
+  `ALPACA_API_SECRET` both satisfy market-data fetch preflight. Added a regression to
+  `tests/scripts/data/backfill/equity_5m_backfill.test.js` using only `ALPACA_API_KEY` +
+  `ALPACA_SECRET_KEY`; the stubbed request emitted one record and used the expected Alpaca headers.
+- **[x] Enabled provider stubs no longer return empty objects.** `manifests.js` now converts the
+  still-unimplemented provider lanes (`pmi`, `flight`, `crypto_tx`, `holdings`, `onchain`,
+  `breadth`, plus the `fxapi` fallback) into structured `not_implemented` errors with
+  `code`, `provider`, and `family`. This preserves honesty in `ingest --family all`: no synthetic
+  data and no ambiguous `{}` return shape. Added `tests/scripts/data/ingest/ingest_manifest_contract.test.js`.
+- **[x] Gateway direct dependency declared.** `backend/gateway/package.json` and lockfile now include
+  direct `axios@^1.18.1`, matching the two production `require('axios')` call sites in
+  `clob_factory.ts` and `index.ts`.
+
+**Verification:** `node --test tests/scripts/data/backfill/equity_5m_backfill.test.js` passed;
+`node --test tests/scripts/data/ingest/ingest_manifest_contract.test.js` passed; direct
+`ALPACA_SECRET_KEY` probe returned `{"records":1,"close":2}`; direct PMI probe returned
+`{"code":"not_implemented","provider":"spglobal","family":"pmi",...}`; `npm ls --prefix
+backend/gateway --depth=0` passed with `axios@1.18.1`; `npx tsc -p backend/gateway/tsconfig.json
+--noEmit` passed; `npm run hygiene` passed.
+
+**Grade movement:** `shared/lib/providers` B- -> B+; `backend/gateway` B -> B+; ingest provider-stub
+surface C -> B- because the stubs are still unimplemented, but now fail explicitly instead of
+pretending to be enabled data lanes. Remaining low-priority gap: stale API scaffold cleanup.
+
+### Blast-Through Connective Tissue Sweep — 2026-07-05 session 64 (stub/string/dependency matrix)
+
+DCS 0.96->0.95. Scope: full-repo connectivity sweep across active production roots after the
+Ubuntu migration repair. `graphify-out/` is absent, so this pass used live `rg`/package/env/import
+checks plus direct file reads. Total scanned file surface: 1080 repo files excluding `node_modules`
+and large storage caches. Hygiene passed after the audit (`npm run hygiene`).
+
+#### Connective-tissue / orphan matrix
+
+| Priority | Classification | Area | File:line | Finding | Required decision / fix | Gate |
+|---|---|---|---|---|---|---|
+| High | Incomplete | ingest/provider stubs | `backend/scripts/data_ops/ingest_market_data/manifests.js:49-55`, `:134`, `:146-149`, `:164-165`; `config/markets/data_sources.yaml:102-123`, `:148-157` | Enabled ingest families still point at no-op provider functions. `flight`, `crypto_tx`, `holdings`, `onchain`, and `breadth` are enabled in config and routed through fetchers that return `{}`; `pmi` is enabled earlier in the same config and routes through `fetchSpGlobalFlashPmi() { return {}; }`. Direct probe: `FAMILIES_MANIFEST.find(f=>f.id==='pmi').fetcher(...)` returns `{}`. The ingest loop converts empty records into `No <family> provider resolved successfully`, so this is not silent data corruption, but `ingest --family all` still spends time on families that cannot produce real data. | Either implement the real provider adapters, or mark these config families disabled until implemented, or expose them as explicit `not_implemented` provider checks instead of pretending they are enabled live data lanes. | OPEN |
+| Medium | Incomplete | env/string wiring | `.env.example:10-13`; `shared/lib/providers/alpaca.js:48-53`; `shared/lib/brokers/alpaca_env.js:28-30` | `.env.example` and setup/doctor use `ALPACA_SECRET_KEY`, and the gateway alias resolver accepts `ALPACA_SECRET_KEY`/`ALPACA_API_SECRET`, but the Alpaca market-data provider reads only `process.env.ALPACA_API_SECRET`. Direct probe with `ALPACA_API_KEY=test ALPACA_SECRET_KEY=test` fails before any network call: `Alpaca API credentials (ALPACA_API_KEY, ALPACA_API_SECRET) missing`. This can make trading setup look healthy while Alpaca data backfill fails. | Make `shared/lib/providers/alpaca.js` use `resolveAlpacaSettings()` or read both secret aliases; add a regression test that documented `.env.example` keys satisfy `fetchAlpacaBaseCandles` credential preflight. | OPEN |
+| Medium | Incomplete | dependency parity | `backend/gateway/src/clob_factory.ts:115-117`, `backend/gateway/src/index.ts:1119`; `backend/gateway/package.json:2-8` | Gateway source directly calls `require('axios')` in two production paths, but `backend/gateway/package.json` does not declare `axios`. It resolves today only because transitive dependencies hoist/install axios (`@alpacahq/alpaca-trade-api` and `@polymarket/clob-client-v2` both depend on it). Direct imports should be declared by the package that imports them; otherwise a package manager layout change can break Polymarket collateral/Gamma calls. | Add `axios` as a direct `backend/gateway` dependency, or replace direct axios usage with `fetchWithRetry`/native `fetch` so the gateway no longer imports it. | OPEN |
+| Low | Stale | API scaffold | `backend/api/server/middleware/error_handler.js:1`, `logger.js:1`, `rate_limiter.js:1`; `backend/api/server/services/cache.js:1`; `data_formatter.js:1`; `job_queue.js:1` | `backend/api/app.js` is a custom `http` server and implements its own security/rate-limit stack inline. These Express-style middleware modules are not imported by the active server. `data_formatter.js` and `job_queue.js` are only exercised by `backend/api/tests/charts.test.js`, not by production routes. This is stale scaffold/test-only code, not a runtime bug. | Either delete the dead scaffold and synthetic helper test, or wire the modules into the active server if they are intended to be canonical. | cleanup |
+
+#### Verified-good connective tissue
+
+- **Command strings:** current TUI command ids with spaces are intentional. `backend/cli/tui/dashboard_exec.js`
+  splits command ids with `splitWords()`, so `auto-trade status`, `settings favorites`, and
+  `trade favorites` map to real CLI subcommands rather than literal unknown commands.
+- **Settings surface:** prior ledger notes saying Settings & Preferences had no handler are stale.
+  `backend/cli/sovereign_cli.js` routes `settings` to `commandSettings()`, and
+  `backend/cli/tui/manifest.js` maps all settings entries through `prefix: ['settings']`.
+- **Dependency install state:** all package roots checked clean with `npm ls --depth=0`,
+  `npm ls --prefix backend/api --depth=0`, `npm ls --prefix backend/gateway --depth=0`,
+  `npm ls --prefix backend/mcp_server --depth=0`, and `npm ls --prefix Frontend/dashboard --depth=0`.
+  The remaining dependency issue is declaration hygiene (`axios` direct import), not missing installed
+  packages on this machine.
+- **Polymarket shim lesson:** `shared/lib/polymarket_history.js` is a legacy shim with test consumers;
+  this pass did not classify it dead. Use `<name>(\.js)?['"]` when checking these shims.
+
+#### Section grades
+
+| Section | Grade | Reason |
+|---|---|---|
+| `backend/scripts/data_ops/ingest_market_data` | C | Active ingest loop is real, but several enabled config families still terminate at provider no-op stubs. |
+| `shared/lib/providers` | B- | Core providers are real, but Alpaca env alias drift can break the documented setup path for data fetches. |
+| `backend/gateway` | B | Runtime dependency install is clean and TypeScript passed earlier, but direct `axios` import is undeclared in the gateway package. |
+| `backend/api` | B | Active routes are coherent, but unused Express-style scaffold remains beside the custom HTTP server. |
+| `backend/cli` / TUI | B+ | Command routing and Settings parity checked clean; no new command-string orphan found. |
+| repo bootstrap / dependencies | A- | Ubuntu dependency install path is now documented and installed; declaration hygiene still has the gateway `axios` caveat. |
+
+**Verification:** `npm run hygiene` passed; direct PMI stub probe returned `{}`; direct Alpaca
+credential preflight with documented `ALPACA_SECRET_KEY` failed as described; all package-root `npm ls`
+checks passed.
+
+**Next cleanup move:** fix the Alpaca alias drift first because it is a small, high-confidence wiring
+bug that can break a documented setup path. Then either implement/disable the enabled provider stubs
+as a deliberate data-roadmap batch.
+
+### Mass-Implement — 2026-07-05 session 64 (Ubuntu dependency repair)
+
+Closed the concrete dependency/install findings from the Ubuntu migration audit. DCS 0.95->0.97.
+
+- **[x] `start_local.sh` no longer depends on `npx tsx`.** The Linux launcher now starts the gateway
+  through `node backend/cli/lib/run_trade_gateway.js --demo`, reusing the existing `ts-node`
+  registration path already used by CLI gateway launches. This removes the hidden `tsx` dependency
+  from the default local suite.
+- **[x] Root runtime dependencies declared and installed.** Added `@alpacahq/alpaca-trade-api` and
+  `ethers` to the root install path because live Alpaca and Polymarket wallet paths import them at
+  runtime. `require.resolve('ethers')` and `require.resolve('@alpacahq/alpaca-trade-api')` now both
+  resolve from root.
+- **[x] Nested service dependencies installed.** `npm ls --prefix backend/gateway --depth=0`,
+  `npm ls --prefix backend/mcp_server --depth=0`, and `npm ls --prefix Frontend/dashboard --depth=0`
+  are now clean, removing the noisy `UNMET DEPENDENCY` errors seen after migration.
+- **[x] README dependency section added.** `README.md` now documents all package roots:
+  root, `backend/api`, `backend/gateway`, `backend/mcp_server`, and `Frontend/dashboard`, plus Ubuntu
+  native packages for the optional C++ path.
+
+**Verification:** root `npm ls --depth=0` clean; gateway `npm ls --prefix backend/gateway --depth=0`
+clean; MCP `npm ls --prefix backend/mcp_server --depth=0` clean; frontend `npm ls --prefix
+Frontend/dashboard --depth=0` clean; `npx tsc -p backend/gateway/tsconfig.json --noEmit` passed;
+`npm --prefix backend/mcp_server run build` passed; `node backend/cli/lib/run_trade_gateway.js --demo`
+ran successfully; `bash -n start_local.sh` passed; `timeout 8s ./start_local.sh` launched the local
+suite and cleaned up on SIGTERM.
+
+**Grade movement:** repo bootstrap B- -> A-. Remaining caveat: the API service can still fail to bind
+`127.0.0.1:8787` inside restricted sandboxes; that is environment-specific and not counted as a repo
+dependency issue.
+
+### Blast-Through Deep Review — 2026-07-05 session 64 (Ubuntu migration check)
+
+DCS 0.95→0.95. Scope: repo bootstrap / Linux launch path. I checked the active Ubuntu entrypoints
+and launch scripts after the Windows→Linux migration, with a focus on `sv`, `start_local.sh`, and
+the services they boot. `bash -n start_local.sh` passed. `./sv status` and `node
+backend/cli/sovereign_cli.js status` both reached the same system status output, so the CLI wrapper
+itself is fine. `timeout 10s ./start_local.sh` launched the three services and cleaned them up on
+SIGTERM; the dashboard log hit `listen EPERM` in this sandbox, which is an environment restriction
+here, not a repo bug.
+
+| Priority | Area | File:line | Finding | Fix | Gate |
+|---|---|---|---|---|---|
+| Medium | repo bootstrap | `start_local.sh:19` | Linux bootstrap depends on `npx tsx`, but the repo does not declare `tsx` in the root `package.json` and does not ship a local `node_modules/.bin/tsx` (`npm ls tsx --depth=0` is empty; `node_modules/.bin/tsx` is absent). On a clean Ubuntu machine this script is therefore coupled to an external `npx` fetch/cache/global install instead of the repo’s own dependencies. That is brittle for a migrated local setup and can fail offline or on a fresh machine. | Add `tsx` to the repo’s install path the script actually uses, or switch the script to a locally declared binary path that exists after the documented install step. | OPEN |
+
+**Verified-good:** `sv` is POSIX-safe (`#!/usr/bin/env bash`, `node --no-deprecation "$(dirname "$0")/backend/cli/sovereign_cli.js"`). `start_local.sh` has a valid shell syntax check and graceful shutdown trap. The `backend/api` service still uses the repo-local `dotenv` dependency from its own package manifest.
+
+**Section grades:** `repo bootstrap` B- (one hidden bootstrap dependency), `backend/api` B+ (no new code-path issue found in this pass), `backend/cli` B+ (wrapper path fine; no additional Linux regression found).
+
+**Next cleanup move:** remove the hidden `npx tsx` dependency from `start_local.sh` so the Linux bootstrap is reproducible from the repo install alone.
+
 ### Focused Blast-Through — 2026-06-26 session 62 (anchor `5e60babb`→`4ac77e8a`, review-only)
 
 DCS 0.96→0.96. Scope: Tier 1 = 9 commits since the last anchor (sessions 60–61). No gated sections
@@ -1081,3 +1309,69 @@ Grades: `shared/lib/runtime` B→**A**, `backend/cli` B→**B+**.
 **Remaining (non-gating, not yet done):** Gate.io spot market-order semantics (`index.ts:309-319`) want one
 empirical paper probe — covered at the gateway-execute level but not line-audited; realized-P&L pre-sell
 snapshot price (logging only); C++ `kronos_integration_test` needs ≥4 seeded data points.
+# Always-On Runtime Freshness Audit - 2026-07-10
+
+## Pre-Live Decisions
+
+- **HIGH - supervised portfolio/risk monitoring was absent from Compose.** This pass adds an opt-in
+  read-only `portfolio-monitor` service, plus host-health and host-backup profiles. The live broker
+  reconciliation paths are still separate and still gated; do not treat the new monitor as a trading
+  stop-loss engine.
+- **MEDIUM - source freshness outside the candle universe is still selective.** `backfill-daemon`
+  covers crypto/equities/indices/commodities/fx, and this pass adds an opt-in bounded
+  `polymarket-research` archive profile. Macro/PMI/onchain/holdings/sentiment families remain
+  unscheduled unless they become operationally required.
+- **MEDIUM - model/report regeneration is manual.** Fresh bars update scorecard calculations, but do not
+  retrain models or regenerate every cached model/backtest signal report. Define weekly/monthly or
+  drift-triggered retraining with validation and explicit promotion; do not retrain continuously.
+- **MEDIUM - alerts/backups are partially addressed, but not supervised end-to-end.** `host-health` and
+  `host-backup` now exist as opt-in profiles, but there is still no full alerting pipeline, broker-state
+  reconciliation alert, or centralized incident feed for unattended live operation.
+- **INFORMATIONAL - Polymarket order-book history is still bounded by scope.** Live orderbook lookup and
+  orderbook-lite archive commands exist, and the new research scheduler only records explicitly scoped
+  active tokens. Keep full-universe L2 capture off by default.
+
+## Mass-Implement Closeout - 2026-07-11
+
+The session-69 findings were converted into code and verified:
+- `portfolio-monitor` now reads the real `{live, live_paper, paper}` aggregate and fails closed on
+  malformed payloads.
+- `host-backup` now uses bounded retention, provenance-scoped pruning, and a distinct retention-only
+  exit code so Compose can distinguish retry-worthy prune failures from publish failures.
+- The false cross-container PID liveness check is gone; host health now relies on freshness checks that
+  are local to the container.
+- `polymarket-research` now fails visibly when it has nothing to capture, rather than idling as a
+  silent retry loop.
+- Compose env ownership/docs/contracts were tightened, including the quoted backup destination in the
+  host-backup loop.
+
+Grade-factor movement:
+- Runtime safety moved up: backup growth is bounded, pruning is provenance-scoped, and backup failures
+  no longer masquerade as success.
+- Deployment contract confidence moved up: the Compose contract now asserts the new profile behavior and
+  backup loop wiring directly.
+- Operational truthfulness moved up: research/profile and monitor surfaces now fail closed instead of
+  looking healthy while doing nothing.
+
+Verification:
+- focused Node tests for host maintenance, host-backup CLI, portfolio monitor, Polymarket scheduler /
+  history archive / orderbook / portfolio aggregate, and the deployment manifest contract
+- `npm run hygiene`
+- `node --check` on touched JS entrypoints
+- `./node_modules/.bin/tsc -p backend/gateway/tsconfig.json --noEmit`
+
+Residuals:
+- Docker is not available here, so rendered Compose validation still needs a Docker host.
+- The repository still has one unrelated dashboard TUI failure in the full suite.
+- `graphify` remains unavailable in this environment.
+## Mass-Implement Follow-up - 2026-07-11 - Native Backend Availability
+
+Closed a runtime contract mismatch that made the compiled C++ backend appear unavailable. The
+single-config CMake output path is now discoverable, the package/README build contract is aligned,
+and completed native child results are not rejected solely because Node also supplied a post-run
+spawn error. This improves contract truth, runtime availability, and verification without changing
+C++ behavior.
+
+Evidence: `npm run native:build` passed; human and JSON `backend status` both report OK; focused
+binary-discovery, toolchain, and backend-bridge tests passed; hygiene and diff checks passed. Native
+CTest remains 28/29 with only the existing Kronos insufficient-data failure. `graphify` unavailable.

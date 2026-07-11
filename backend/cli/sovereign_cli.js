@@ -6,6 +6,7 @@ const utils = require('./lib/utils.js');
 const { pageText, helpText, printPayload, logger } = utils;
 
 const { commandStatus, commandCockpit } = require('./commands/operational/status.js');
+const { commandPortfolioMonitor } = require('./commands/operational/portfolio_monitor.js');
 const { commandSetup, commandDoctor } = require('./commands/operational/setup.js');
 const { commandBackend } = require('./commands/tools/backend.js');
 const { commandQuotes } = require('./commands/quotes/quotes.js');
@@ -53,6 +54,7 @@ async function handleCommand(args) {
     'intraday-rollup':       (a) => commandIntradayRollup(a),
     'backfill-daemon':       (a) => commandBackfillDaemon(a),
     'stop-backfill-daemon':  (a) => commandStopBackfillDaemon(a),
+    'portfolio-monitor':     (a) => commandPortfolioMonitor(a),
     'cache-clean':           (a) => commandCacheClean(a),
     'clear-api-cache':       (a) => commandClearApiCache(a),
     universe:         (a) => commandUniverse(a),

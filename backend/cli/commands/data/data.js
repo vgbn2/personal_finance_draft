@@ -353,6 +353,7 @@ function ingestOptionsFromArgs(args) {
   // intraday-finest provider whose daily is shallow). ingestMarketData honors options.provider.
   if (provider) options.provider = provider;
   if (hasFlag(args, '--force')) options.force = true;
+  if (hasFlag(args, '--dry-run')) options.dryRun = true;
   if (Number.isFinite(historyDays) && historyDays > 0) {
     options.historyDays = historyDays;
   }
@@ -375,18 +376,22 @@ async function commandIngest(args) {
   // which reads as a hang. Print one explicit line first so there's visible
   // progress in that case.
   if (!shouldAnimate(args) && !hasFlag(args, '--json')) {
-    console.log(`Refreshing market cache (family=${ingestOptions.family || 'all'}, this can take a while)...`);
+    const verb = ingestOptions.dryRun ? 'Planning market cache refresh' : 'Refreshing market cache';
+    console.log(`${verb} (family=${ingestOptions.family || 'all'}, this can take a while)...`);
   }
-  const snapshot = await withLoadingAnimation('Refreshing market cache', () => ingestMarketData(ingestOptions), args);
+  const loadingLabel = ingestOptions.dryRun ? 'Planning market cache refresh' : 'Refreshing market cache';
+  const snapshot = await withLoadingAnimation(loadingLabel, () => ingestMarketData(ingestOptions), args);
   if (hasFlag(args, '--full')) {
     console.log(JSON.stringify(snapshot, null, 2));
     return 0;
   }
   printPayload({
+    dry_run: Boolean(snapshot.dry_run),
     mode: snapshot.mode,
     fetched_at: snapshot.fetched_at,
     sources: snapshot.sources.length,
     errors: snapshot.errors.length,
+    planned_fetches: snapshot.dry_run_plan ? snapshot.dry_run_plan.planned_fetches : undefined,
     provider_checks: (snapshot.provider_checks || []).length,
   }, args);
   return snapshot.errors.length === 0 ? 0 : 1;

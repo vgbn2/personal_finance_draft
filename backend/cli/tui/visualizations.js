@@ -5,6 +5,10 @@ function paint(code, text) {
   return A.c(code, text);
 }
 
+function visibleLength(value) {
+  return String(value).replace(/\x1b\[[0-9;]*m/g, '').length;
+}
+
 function fmtPrice(p) {
   if (p == null || !isFinite(p)) return '';
   if (p >= 1000) return '$' + (p / 1000).toFixed(1) + 'k';
@@ -291,7 +295,13 @@ function renderCandlestickChart(bars, width = 64, height = 12, opts = {}) {
   }
 
   // Same +12-char label/border overhead clamp as renderPriceChart (see there).
+  // By default `width` is the plot width for render-helper compatibility. CLI
+  // callers can pass totalWidth so a user-facing --width means full visible row
+  // width, not "data columns plus hidden axis/footer overhead".
   const CHART_OVERHEAD = 12;
+  const requestedWidth = Math.max(10, Math.floor(width) || 64);
+  const maxVisibleWidth = opts.totalWidth ? requestedWidth : null;
+  width = opts.totalWidth ? Math.max(10, requestedWidth - CHART_OVERHEAD) : requestedWidth;
   const terminalCols = process.stdout.columns;
   if (terminalCols) {
     width = Math.max(10, Math.min(width, terminalCols - CHART_OVERHEAD));
@@ -371,7 +381,11 @@ function renderCandlestickChart(bars, width = 64, height = 12, opts = {}) {
   }
 
   const smaLabel = smaPeriod > 1 ? ` ${A.c(A.YELLOW, `SMA(${smaPeriod})`)}` : '';
-  let buffer = `\n  ${paint(A.BOLD, 'Candlestick Chart')} ${A.muted(`(${bars.length} bars loaded, ${cols} candles)`)}${smaLabel}\n`;
+  let headerLine = `  ${paint(A.BOLD, 'Candlestick Chart')} ${A.muted(`(${bars.length} bars loaded, ${cols} candles)`)}${smaLabel}`;
+  if (maxVisibleWidth && visibleLength(headerLine) > maxVisibleWidth) {
+    headerLine = `  ${paint(A.BOLD, 'Candles')} ${A.muted(`(${bars.length} bars, ${cols} cols)`)}${smaLabel}`;
+  }
+  let buffer = `\n${headerLine}\n`;
   const midRow = Math.floor((height - 1) / 2);
   for (let r = 0; r < height; r += 1) {
     const yVal = max - (range > 0 ? (r / (height - 1)) * range : 0);
@@ -412,9 +426,14 @@ function renderCandlestickChart(bars, width = 64, height = 12, opts = {}) {
   const last = usable[usable.length - 1].close;
   const changePct = first !== 0 ? ((last - first) / first) * 100 : 0;
   const changeColor = changePct >= 0 ? A.GREEN : A.RED;
-  buffer += `  ${A.muted('First:')} ${fmtPrice(first)}  ${A.muted('Last:')} ${fmtPrice(last)}  `;
-  buffer += `${changeColor}${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%${A.RESET}  `;
-  buffer += `${A.muted('High:')} ${fmtPrice(max)}  ${A.muted('Low:')} ${fmtPrice(min)}\n`;
+  const changeText = `${changeColor}${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%${A.RESET}`;
+  const summaryLine = `  ${A.muted('First:')} ${fmtPrice(first)}  ${A.muted('Last:')} ${fmtPrice(last)}  ${changeText}  ${A.muted('High:')} ${fmtPrice(max)}  ${A.muted('Low:')} ${fmtPrice(min)}`;
+  if (maxVisibleWidth && visibleLength(summaryLine) > maxVisibleWidth) {
+    buffer += `  ${A.muted('First:')} ${fmtPrice(first)}  ${A.muted('Last:')} ${fmtPrice(last)}  ${changeText}\n`;
+    buffer += `  ${A.muted('High:')} ${fmtPrice(max)}  ${A.muted('Low:')} ${fmtPrice(min)}\n`;
+  } else {
+    buffer += `${summaryLine}\n`;
+  }
   return buffer;
 }
 

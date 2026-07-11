@@ -17,6 +17,7 @@ process.on('unhandledRejection', (reason, promise) => {
 const {
   backendUniverse,
   backendDataSummary,
+  backendStatus,
 } = require('./server/services/cli_executor');
 const ROUTES = require('./server/routes');
 const { isMcpRequest, isMcpAllowed, redactDeep } = require('../../shared/lib/mcp/gate');
@@ -57,9 +58,20 @@ const PROTECTED_GET_ROUTES = new Set([
   '/api/config',
   '/api/bot/status',
   '/api/kill-switch',
+  '/api/scorecard',
 ]);
 
-function setSecurityHeaders(res, origin) {
+function isAllowedOrigin(origin, req) {
+  if (!origin || ALLOWED_ORIGINS.includes(origin)) return true;
+  try {
+    const parsed = new URL(origin);
+    return ['http:', 'https:'].includes(parsed.protocol) && parsed.host === req.headers.host;
+  } catch (_) {
+    return false;
+  }
+}
+
+function setSecurityHeaders(res, origin, req) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'no-referrer');
@@ -67,15 +79,18 @@ function setSecurityHeaders(res, origin) {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
   res.setHeader('Content-Security-Policy', "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https:;");
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && isAllowedOrigin(origin, req)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Sovereign-Token, Authorization');
+  res.setHeader('Access-Control-Max-Age', '600');
 }
 
 function checkSecurity(req, res) {
   const origin = req.headers.origin;
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+  if (!isAllowedOrigin(origin, req)) {
     console.warn(`[SECURITY] Blocked origin: ${origin}`);
     res.writeHead(403);
     res.end('Forbidden: Origin not allowed');
@@ -98,6 +113,14 @@ function checkSecurity(req, res) {
     console.warn(`[SECURITY] Rate limit exceeded for IP: ${ip}`);
     res.writeHead(429);
     res.end('Too Many Requests');
+    return false;
+  }
+
+  // Browser preflights do not include the protected request's API token.
+  if (req.method === 'OPTIONS') {
+    setSecurityHeaders(res, origin, req);
+    res.writeHead(204);
+    res.end();
     return false;
   }
 
@@ -136,16 +159,7 @@ function checkSecurity(req, res) {
   }
 
   // Add response hardening and scoped CORS headers
-  setSecurityHeaders(res, origin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Sovereign-Token, Authorization');
-  res.setHeader('Access-Control-Max-Age', '600');
-  
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
-    return false;
-  }
+  setSecurityHeaders(res, origin, req);
 
   return true;
 }
@@ -270,9 +284,10 @@ const { Server } = require('socket.io');
 
 const io = new Server(server, {
   cors: {
-    origin: ALLOWED_ORIGINS,
+    origin: true,
     methods: ['GET', 'POST']
-  }
+  },
+  allowRequest: (req, callback) => callback(null, isAllowedOrigin(req.headers.origin, req)),
 });
 
 io.on('connection', (socket) => {
@@ -292,7 +307,8 @@ if (fs.existsSync(DEFAULT_SNAPSHOT)) {
       console.log('[TELEMETRY] Emitting real-time market data update');
       const universe = backendUniverse({});
       const dataSummary = backendDataSummary({});
-      io.emit('market_data', { universe, dataSummary });
+      const status = backendStatus({});
+      io.emit('market_data', { universe, dataSummary, status });
     }
   });
 }

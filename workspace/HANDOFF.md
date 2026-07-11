@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-07-04.md`** (last update: 2026-07-04 session 63)
+- Latest/current handoff: **`workspace/handoff/2026-07-11.md`** (last update: 2026-07-11 session 70)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -277,3 +277,32 @@ Signal expiry: 4h = 3 bars (~3 days), 1d = 7 bars, 1w = 4 bars.
 - API server: `node backend/api/app.js` (port 8787) if MCP tools don't load
 - Live feed: starts automatically when `backfill-daemon` runs without `--once`
 - Suite baseline: 631/0fail/2skip on branch feat/ink-tui-refactor
+
+## Update - 2026-07-10 session 68 follow-up
+- Added opt-in Compose profiles for `portfolio-monitor`, `host-health`, `host-backup`, and
+  `polymarket-research`.
+- Exposed `portfolio-monitor` in CLI help and documented the required env knobs and scope-file
+  contract.
+- Verification passed for the new batch: focused Node tests, deployment manifest contract,
+  `node --check`, and `npm run hygiene`.
+
+## Update - 2026-07-11 session 70 - mass-implement closeout
+
+The session-69 ranked backlog is resolved in code. `portfolio-monitor` now normalizes the real
+`{live, live_paper, paper}` aggregate shape and fails closed on malformed payloads. Host backups now
+use bounded retention, reject overlap, scope pruning to the originating `source_root`, and distinguish
+retention-only failures from publish failures. The false cross-container PID liveness check was replaced
+with container-local freshness checks. `polymarket-research` now fails visibly when it has nothing to
+capture, and Compose env ownership/docs were aligned with the active runtime contract.
+
+Verification completed on the touched surfaces:
+- focused host-maintenance, host-backup CLI, portfolio-monitor, Polymarket research scheduler/history/
+  orderbook/portfolio aggregate, and deployment manifest contract tests
+- `node --check` on touched JS entrypoints
+- `npm run hygiene`
+- `./node_modules/.bin/tsc -p backend/gateway/tsconfig.json --noEmit`
+
+Residuals:
+- `docker` is not installed here, so rendered Compose validation still needs a Docker host
+- the unrelated dashboard TUI suite still has one pre-existing failing test outside this batch
+- `graphify` remains unavailable in this environment

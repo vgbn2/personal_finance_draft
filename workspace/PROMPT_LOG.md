@@ -1,3 +1,92 @@
+## 2026-07-11 session 71 - session orchestrator boot
+PROMPT: user invoked `session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`,
+`workspace/STATE.md`, and the latest handoff history. Checked for `graphify-out`; the refresh target
+is still unavailable in this checkout, so there was nothing to refresh.
+RESULT: Boot context loaded. Waiting for the next task.
+
+## 2026-07-09 session 68 - session orchestrator boot
+PROMPT: user invoked `session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`,
+`workspace/STATE.md`, and the latest session history. Checked for `graphify-out`; the directory is
+absent in this checkout, so there was nothing to refresh.
+RESULT: Boot context loaded. Waiting for the next task.
+
+# Prompt Log - 2026-07-05 (session 65)
+
+## Session Boot — 2026-07-05 (session 65)
+/session-orchestrator. Booted via `session-orchestrator` and `codex` skills. Read
+`workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`,
+`workspace/STATE.md`, and `docs/README.md` per repo boot order. `graphify-out/` is not present in
+this checkout, so no refresh was possible. Working tree already contains unrelated dirty edits from
+the prior session; left untouched.
+
+Available skills in this repo:
+- `codex`
+- `claude`
+- `gemini`
+- `polymarket-history-backfill`
+- `session-orchestrator`
+- `skill-creator`
+- `skill-installer`
+- `blast-through`
+- `mass-implement`
+- `plugin-creator`
+
+Session goal from the user: `/session-orchestrator`. No code changes made.
+
+# Prompt Log - 2026-07-04 (session 64)
+
+## Session Boot — 2026-07-04 (session 64)
+/session-orchestrator. Booted via `session-orchestrator` and `codex` skills. Read
+`workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`,
+`workspace/STATE.md`, and `docs/README.md` per repo boot order. Current repo state:
+branch `feat-ink-tui-refactor-split` from the dated handoff, with unrelated dirty
+workspace files already present in `storage/models/` (`feature_config.yaml`,
+`metadata.json`, `parity_python.json`, `serving_manifest.txt`, and untracked
+`cnn_v1_meta.json`), left untouched.
+
+Available skills in this repo:
+- `codex`
+- `claude`
+- `gemini`
+- `polymarket-history-backfill`
+- `session-orchestrator`
+- `skill-creator`
+- `skill-installer`
+- `blast-through`
+- `mass-implement`
+- `plugin-creator`
+
+Session goal from the user: "sync repo, get skills". No code changes made.
+
+## Session Work — 2026-07-05 (session 64)
+Fixed the gateway startup path for `sovereign polymarket derive-creds` by replacing the
+eager `import 'dotenv/config'` dependency with the repo-native env loader
+`shared/lib/runtime/env.js` in `backend/gateway/src/{index.ts,cycle.ts,bot_state.ts}`.
+Also deferred the `@alpacahq/alpaca-trade-api` require until `AlpacaAdapter` is actually
+constructed, so Polymarket-only commands no longer fail on an unrelated missing package.
+Verified by rerunning `node backend/cli/sovereign_cli.js polymarket derive-creds`: the
+startup error is gone and the command now reaches the intended
+`POLYMARKET_PRIVATE_KEY not set in .env` check.
+
+## Session Work — 2026-07-05 (session 64, deep blast-through)
+Ran a migration-focused audit of the Ubuntu launch path. `bash -n start_local.sh` passed, `./sv
+status` matched `node backend/cli/sovereign_cli.js status`, and `timeout 10s ./start_local.sh`
+launched the three services with normal cleanup on SIGTERM. The only concrete repo issue found was
+that `start_local.sh` depends on `npx tsx` even though the repo does not declare `tsx` in the root
+install path and has no local `node_modules/.bin/tsx`; that makes the Linux bootstrap dependent on
+external `npx` resolution/caching instead of the documented repo dependencies.
+
+## Session Work — 2026-07-05 (session 64, dependency mass-implement)
+Ran a dependency-focused blast-through and mass-implement pass. Fixed `start_local.sh` to use
+`node backend/cli/lib/run_trade_gateway.js --demo` instead of `npx tsx`. Installed and declared the
+root gateway runtime dependencies `@alpacahq/alpaca-trade-api` and `ethers`, then installed nested
+dependencies for `backend/gateway`, `backend/mcp_server`, and `Frontend/dashboard`. Updated
+`README.md` with the multi-root install commands and Ubuntu native package notes. Verified clean
+`npm ls` for root/gateway/MCP/frontend, gateway `tsc --noEmit`, MCP build, gateway demo, and
+`timeout 8s ./start_local.sh`.
+
 # Prompt Log - 2026-06-28 (session 63)
 
 ## Session Boot — 2026-06-28 (session 63)
@@ -1842,6 +1931,40 @@ shape before dispatch; removed `alpaca` from `INTERACTIVE_CMDS`. Verified end-to
 `buildArgv`+`defaultFlagValues` to confirm pressing Run with untouched defaults never yields an empty
 args array) + 7 new unit tests. Suite 630/628/0fail/2skip, hygiene clean. Nothing committed yet.
 
+## User Prompt — 2026-07-05 (session 64)
+"$blast-through"
+
+## Work — 2026-07-05 (session 64) — upgraded connective-tissue sweep
+Used the upgraded repo-local `blast-through` skill. Since `graphify-out/` was absent, built the
+matrix from live `rg`, package-root checks, env key extraction, direct file reads, and focused probes.
+Recorded findings in `workspace/DEV_REVIEW.md` and updated `workspace/REVIEW_LEDGER.md`: enabled
+provider stubs still wired into ingest-all (`pmi`, `flight`, `crypto_tx`, `holdings`, `onchain`,
+`breadth`), Alpaca data env alias drift (`ALPACA_SECRET_KEY` documented but provider reads only
+`ALPACA_API_SECRET`), gateway direct `axios` import without direct dependency declaration, and low
+API scaffold cleanup. Verified TUI settings/space-id command routing clean. `npm run hygiene` passed.
+
+## User Prompt — 2026-07-05 (session 64)
+"$mass-implement"
+
+## Work — 2026-07-05 (session 64) — connective-tissue fixes
+Converted the high/medium blast-through findings into verified fixes. `shared/lib/providers/alpaca.js`
+now uses `resolveAlpacaSettings()` so the documented `ALPACA_SECRET_KEY` works for market-data fetches.
+`backend/scripts/data_ops/ingest_market_data/manifests.js` now returns explicit structured
+`not_implemented` errors for placeholder provider lanes instead of `{}`. `backend/gateway` now declares
+direct `axios`. Added targeted tests for Alpaca alias behavior and ingest manifest placeholder behavior.
+Verification: targeted Node tests passed, direct probes passed, gateway `npm ls` clean, gateway tsc clean,
+and hygiene clean.
+
+## User Prompt — 2026-07-05 (session 65)
+"$session-orchestrator"
+
+## Work — 2026-07-05 (session 65) — boot sequence
+Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`, and
+`workspace/STATE.md`. `graphify-out/` is absent, so no refresh was needed. Current active carryovers
+still point at the low-priority API scaffold cleanup and the remaining real implementation work for
+the placeholder ingest lanes if those data families should produce live records. No code changes in
+this boot step.
+
 ## User Prompt — 2026-06-25 (session 59)
 "due to vibecoding without documentations... I'm starting to feel like I'm forgetting a lot of things in
 this repo, due to coding without documentation, now I want you to reverse engineer the code, give me a
@@ -1921,3 +2044,120 @@ PROMPT: migrate personal_finance and storage of personal_finance_draft
 WORK: Copied personal_finance sibling folder from Windows to Linux. Triggered background copy of 30 GB storage/ folder of personal_finance_draft from Windows to Linux to preserve historical data.
 RESULT: personal_finance copied. storage/ copy running in background. Workspace logs updated.
 HEAD: cfeda5cd | Suite: 652/0fail/2skip.
+
+## 2026-07-05 session 66 — session orchestrator / end session
+PROMPT: user invoked `session-orchestrator`, then ended the session after confirming the Polymarket portfolio
+surface was configured from the Windows `.env` and only the live network path was failing.
+WORK: Loaded workspace bootstrap/handoff/session memory/state, confirmed the Windows draft `.env` exists,
+and synced the active workspace `.env` from the Windows draft copy so the Polymarket credential gate sees
+the full set again.
+RESULT: `buildPolymarketReport(process.env)` is now `ok: true`; `commandPolymarket(['portfolio'])`
+gets past config and reaches the live-network path (`getaddrinfo EAI_AGAIN` here).
+
+## 2026-07-08 session 67 - session bootstrap + blast-through triage
+PROMPT: user invoked `$session-orchestrator`, then `$blast-through`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`,
+`workspace/STATE.md`, latest dated handoff, and the `blast-through`/`claude` skills. Ran triage mode
+against the current dirty migration/connective-tissue diff.
+RESULT: Recorded two active findings in `workspace/DEV_REVIEW.md`: Polymarket helper scripts still use
+the legacy positional `ClobClient` constructor despite importing `@polymarket/clob-client-v2`, and tracked
+`storage/models/*` generated text artifacts currently fail `git diff --check` due CRLF/trailing-whitespace
+churn while `npm run hygiene` misses it. Targeted Supabase/API, Alpaca alias, ingest manifest, frontend
+build, gateway TypeScript, and dependency checks passed.
+
+## 2026-07-10 - session bootstrap
+PROMPT: user invoked `$session-orchestrator` and supplied the repository `AGENTS.md` instructions.
+WORK: Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`,
+`workspace/STATE.md`, `docs/README.md`, the current prompt-log tail, and the repo-local `codex` skill.
+Reconciled the stale handoff pointer against the newer 2026-07-09 Phase 9 update in `STATE.md`; inspected
+the existing dirty worktree without modifying user-owned changes. Attempted the required structural graph
+refresh with `graphify update .` because prior-session code changed.
+RESULT: Phase 9 remains active. The latest recorded batch wires indicators, honest ingest dry-runs, Market
+Intel status, CLI display fixes, atomic JSON temp paths, and the Polymarket v2 constructor; remaining work
+includes real providers for placeholder ingest families, live-network verification, and untrained ML
+strategies. `graphify-out/` remains absent because the refresh command failed with `graphify: command not
+found`. Existing `storage/models/*` whitespace churn and the broader dirty worktree remain untouched.
+
+## 2026-07-10 session 68 - always-on data host preparation
+PROMPT: user asked how backfill and scorecard could connect to an always-running computer, whether there
+was a link, then asked to set it up before selecting a host and explain where calculations run and how
+cheap the server can be. After an interrupted turn, user said "continue".
+WORK: Traced the existing Docker backfill service and scorecard ts-index path. Added a token-protected
+`/api/scorecard` route sharing the CLI calculation in a worker thread, structured response metadata,
+bounded validation, and a 30-second concurrent-request/result cache while preserving CLI JSON
+compatibility. Added same-origin/VPN-safe API routing, authenticated CORS preflight handling, env and
+deployment documentation. Measured storage/runtime pressure and found expired provider API responses
+were an unattended-host disk-growth risk, then added tested per-cycle pruning without touching ts-index.
+RESULT: Scorecard calculations run CPU-only on the always-on host. Full-universe measurement was 7.08s,
+167 MB max RSS, about one CPU core; backfill's 6 GB heap ceiling controls sizing. Minimum full-universe
+target is 2 vCPU/8 GB/80 GB SSD; recommended is 4 vCPU/12-16 GB/120-160 GB SSD. Focused tests, frontend
+build, diff check, and hygiene passed. Docker was unavailable for local Compose validation. Existing
+~28 GB disposable cache was not deleted; daemon cycles will prune it going forward.
+
+## 2026-07-10 session 68 - persistent updater audit
+PROMPT: user asked whether anything else needs constant updating, including trading bots, data polling,
+portfolio watching, and orderbook data.
+WORK: Ran a Fast Reading Mode data-integrity audit across Compose, persistent CLI/gateway loops, API and
+dashboard polling, quote producers, Polymarket history/orderbooks, model refresh, alerts, and backups.
+RESULT: Existing supervised paths are web, backfill plus Binance 1m WebSocket, and optional Polymarket
+paper bot. Live bot/risk reconciliation, alt-data cadence jobs, Polymarket orderbook/history capture,
+model/report refresh, alerts, and backups are not supervised. Full-universe L2 capture is not recommended
+by default; scoped active-token capture is the appropriate future shape. No runners were enabled.
+
+2026-07-10 session 68 follow-up: user said "continue" after the first batch agents hit usage limits.
+I took over locally, wired opt-in Compose profiles for `portfolio-monitor`, `host-health`,
+`host-backup`, and `polymarket-research`, updated CLI help/docs/env defaults, and moved into
+verification.
+
+2026-07-10 session 69 bootstrap: user invoked `session-orchestrator` again. Reloaded
+`workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`, and
+`workspace/STATE.md`; `graphify` is not installed in this environment, so the refresh step is not
+available here.
+
+2026-07-10 session 69 bootstrap follow-up: user invoked `$session-orchestrator` and provided the
+repo AGENTS instructions again. Reloaded the session-orchestrator skill, `workspace/BOOTSTRAP.md`,
+`workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, latest dated handoff
+`workspace/handoff/2026-07-10.md`, `docs/README.md`, the prompt-log tail, and current `git status`.
+No code changes were made. `graphify` is still unavailable in PATH, so the graph refresh remains
+blocked by missing local tooling.
+
+2026-07-11 session 70 follow-up: user asked to continue the mass-implement batch and check the C++
+backend. I confirmed `backend/core/` and `backend/core/CMakeLists.txt` exist, verified the native
+toolchain is available, and found no built `sovereign_wealth` binary in the tree. Then I closed the
+remaining host/deployment findings: quoted the host-backup destination in Compose, scoped backup
+retention to `source_root`, added a distinct retention-only exit code, and updated the contract tests
+plus workspace handoff/state records. Focused tests, `node --check`, `npm run hygiene`, and the
+gateway TypeScript no-emit check passed. Docker and graphify remain unavailable locally.
+
+## 2026-07-10 session 69 - review closeout and planning-mode hardening
+PROMPT: user asked for a blast-through review of the last session plus a repo health check, then asked
+ for objective score-raising planning to be added to `mass-implement`, and finally asked to end the
+ session with the fixes delegated to the next session.
+WORK: Completed a findings-first review and health check of the session-68 changes, verified the key
+ routes/tests/builds locally, then updated `.agents/skills/mass-implement/SKILL.md` so broad
+ score-improvement work now requires an evidence-backed Planning Mode before edits. Added the matching
+ correction note to `workspace/STATE.md` and wrote the ranked next-session fix backlog into handoff
+ files.
+RESULT: Future `mass-implement` runs must now state `objective`, `why now`, `source`, `expected score
+ movement`, and `verification` for each batch. Next-session priority order is fixed: portfolio schema
+ normalization, backup retention, false PID health removal, Polymarket research profile behavior, then
+ Compose env/manifest cleanup.
+
+## 2026-07-10 session 70 - session bootstrap
+PROMPT: user invoked `$session-orchestrator` and supplied the repository `AGENTS.md` instructions.
+WORK: Reloaded the session-orchestrator skill, `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, the active dated handoff,
+`docs/README.md`, the repo-local `codex` skill, the prompt-log tail, and current worktree status.
+RESULT: Phase 9 remains active. The audited next-work order is portfolio schema normalization,
+backup retention, false cross-container PID health removal, Polymarket research profile behavior,
+then Compose env/manifest cleanup. Prior-session code changes require a graph refresh, but
+`graphify` is not installed and `graphify-out/` is absent. Existing dirty worktree changes were
+left untouched.
+## User Prompt - 2026-07-11 (session 70 follow-up)
+"do sth to make the backend readable"
+
+## Work - 2026-07-11 (session 70 follow-up) - native backend discovery
+Interpreted "readable" in the context of the prior unavailable C++ backend report as reachable by the
+CLI. Built the C++ core from `backend/core` and found that CMake correctly emitted
+`backend/core/build/sovereign_wealth`, but the shared binary resolver did not search that standard
+single-config output path. Added the missing candidate and aligned the package/README build commands.

@@ -230,13 +230,48 @@ async function promptLine(label) {
 // ─── Supabase config ──────────────────────────────────────────────────────────
 
 function getSupabaseConfig() {
-  const url = process.env.SOVEREIGN_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const migrated = loadMigratedSupabaseConfig();
+  const url =
+    process.env.SOVEREIGN_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL ||
+    migrated.url ||
+    '';
   const key =
     process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY ||
     process.env.SUPABASE_PUBLISHABLE_KEY ||
     process.env.SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    migrated.key ||
     '';
   return { url, key };
+}
+
+function loadMigratedSupabaseConfig() {
+  const migratedEnvPath = path.join(path.dirname(path.resolve(__dirname, '..', '..', '..')), 'personal_finance', '.env');
+  const migratedEnvLocalPath = path.join(path.dirname(path.resolve(__dirname, '..', '..', '..')), 'personal_finance', '.env.local');
+  const candidates = [migratedEnvLocalPath, migratedEnvPath];
+  const config = { url: '', key: '' };
+
+  for (const candidate of candidates) {
+    if (!fs.existsSync(candidate)) continue;
+    const text = fs.readFileSync(candidate, 'utf8');
+    for (const line of text.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
+      const idx = trimmed.indexOf('=');
+      const key = trimmed.slice(0, idx).trim();
+      const value = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
+      if (!config.url && (key === 'SOVEREIGN_SUPABASE_URL' || key === 'SUPABASE_URL' || key === 'VITE_SUPABASE_URL')) {
+        config.url = value;
+      }
+      if (!config.key && (key === 'SOVEREIGN_SUPABASE_PUBLISHABLE_KEY' || key === 'SUPABASE_PUBLISHABLE_KEY' || key === 'SUPABASE_ANON_KEY' || key === 'VITE_SUPABASE_ANON_KEY')) {
+        config.key = value;
+      }
+      if (config.url && config.key) return config;
+    }
+  }
+  return config;
 }
 
 function isSupabaseConfigured() {
