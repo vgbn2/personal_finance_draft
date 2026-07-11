@@ -152,10 +152,8 @@ const COMMAND_MANIFEST = {
       }},
       { id: 'ingest',      label: 'Ingest ', loading: true, flags: {
         '--family': { type: 'select', options: [
-          // pmi/breadth/onchain/flight/crypto_tx/holdings removed: their fetchers in
-          // manifests.js are unimplemented stubs (silent return {}) with no config
-          // section enabling them (or explicitly enabled: false for onchain) -- picking
-          // one here always produced a silent no-op. See workspace/DEV_REVIEW.md.
+          // Unavailable families are omitted here and marked `not_implemented`
+          // in the canonical ingest manifest, which also guards direct CLI calls.
           'all', 'crypto', 'fx', 'equities', 'indices', 'commodities',
           'macro', 'macro_alt', 'sentiment',
           'prediction_market', 'weather',

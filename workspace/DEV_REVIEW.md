@@ -1375,3 +1375,54 @@ C++ behavior.
 Evidence: `npm run native:build` passed; human and JSON `backend status` both report OK; focused
 binary-discovery, toolchain, and backend-bridge tests passed; hygiene and diff checks passed. Native
 CTest remains 28/29 with only the existing Kronos insufficient-data failure. `graphify` unavailable.
+### Blast-Through Triage - 2026-07-11 session 70 follow-up
+
+DCS 0.91->0.91. Hard Reading Mode, triage scope. The current score remains below the 0.95
+promotion threshold because verification coverage is still the weakest factor. No production data
+was transformed in this audit.
+
+| Priority | Area | Evidence | Finding | Gate |
+|---|---|---|---|---|
+| **Medium** | Polymarket cockpit contract | `tests/scripts/integration/polymarket/cockpit_polymarket_merge.test.js:24-31`; `backend/gateway/src/polymarket_portfolio.js:50-59` | The full suite's recorded dashboard-adjacent failure is a stale synthetic assertion, not a production valuation regression. The aggregate intentionally defines Polymarket equity as pUSD cash plus marked position value, so the fixture is worth `12.5 + 0.5 = 13`; the test still expects `12.5`. Direct run reproduces 1/7 failed. | Update the assertion to 13 and state the cash-plus-marked-position invariant; rerun the focused file and full suite. |
+| **Medium** | Reserves ingestion test isolation | `tests/scripts/architecture/data_storage/macro_ingestion_contract.test.js:16-121,167-204`; `backend/scripts/data_ops/ingest_market_data/manifests.js:1-13` | The reserves contract stubs `fetchWorldBankHistory`, but the harness clears only the ingest index modules, not cached `manifests.js`, whose top-level destructuring retains the real provider function loaded during the preceding macro test. The test therefore reaches the real World Bank path, accumulated 2 provider errors, and took 171 seconds in the full suite. This is a non-hermetic test-harness defect; the transform assertions themselves were not disproved. | Include `manifests.js` in cache save/clear/restore or inject providers without module-cache mutation. Focused file must pass offline with zero provider calls and the full suite must no longer perform the 171-second reserves wait. |
+| **Medium / roadmap** | User-visible ingest stubs | `backend/scripts/data_ops/ingest_market_data/manifests.js:48-68,142,154-173`; `tests/scripts/data/ingest/ingest_manifest_contract.test.js:13-39` | Six enabled families still terminate at explicit `not_implemented` adapters. This is honest and tested, not silent synthetic data, but the CLI/config surface still advertises unavailable lanes. `ingest --family pmi --dry-run --json` was read-only (`sources:0`, `errors:0`) while advertising 4 planned fetches. | Disable or label the six families in user-facing selection, or implement the adapters; verify each unavailable family fails fast before provider/persistence work. |
+
+**Dismissed false positives:** the full suite was not hanging in the dashboard path; it continued
+through live-shaped ingestion and completed at 699 tests / 695 pass / 2 fail / 2 skip. The native
+Kronos failure also reproduced exactly as documented: its empirical fixture has fewer than four
+bars, while the native baseline remains 28/29; this is fixture availability debt, not evidence of a
+C++ runtime regression. The ingest dry-run contract passed and performed no writes.
+
+**Verification used:** full `npm test`; focused/direct cockpit and macro-ingestion contract runs;
+focused ingest manifest contract; live CLI dry-run plan; single-test Kronos CTest; direct reads of
+the production aggregation, ingest manifest, test harness, and Kronos fixture loader. `graphify-out/`
+is absent, so no graph map was available.
+
+**Next cleanup move:** repair the two deterministic test contracts first so the full suite becomes a
+trustworthy gate again; then decide whether the six ingest families are disabled roadmap entries or
+active implementation commitments.
+
+### Mass-Implement Closeout - 2026-07-11 session 70 follow-up
+
+DCS 0.91->0.95. Verification coverage recovered while freshness and schema claims were left
+unchanged.
+
+- **Closed:** Polymarket cockpit synthetic equity now asserts the production invariant: pUSD cash
+  plus marked position value (`12.5 + 0.5 = 13`).
+- **Closed:** the macro/reserves harness now saves, clears, and restores `manifests.js` with the
+  provider cache. The full-suite reserves path produced 9 rows (3 countries x 3 metrics), zero
+  provider errors, and completed in milliseconds instead of reaching the real World Bank provider.
+- **Closed:** the six unavailable ingest families have one canonical availability contract. Direct
+  live calls fail fast with structured `not_implemented`, dry-run plans zero fetches, all-family runs
+  skip them, and neither TUI offers them as runnable choices. Existing `onchain_data` feature-gate
+  precedence is preserved.
+
+Grade-factor movement: verification and contract truth improved; ingest path clarity improved from
+B- to B. No synthetic provider implementation was added.
+
+Verification: focused contracts 4/4 files green; direct live/dry-run PMI probes matched the expected
+exit and payload contracts; `npm run hygiene` passed; scoped `git diff --check` passed; full suite
+701 tests / 699 pass / 0 fail / 2 skip in 27 seconds.
+
+Remaining highest-impact gap: implement real adapters for the six unavailable families only when
+provider contracts, credential policy, normalization schema, and representative fixtures are defined.

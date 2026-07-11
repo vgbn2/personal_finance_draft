@@ -2161,3 +2161,36 @@ Interpreted "readable" in the context of the prior unavailable C++ backend repor
 CLI. Built the C++ core from `backend/core` and found that CMake correctly emitted
 `backend/core/build/sovereign_wealth`, but the shared binary resolver did not search that standard
 single-config output path. Added the missing candidate and aligned the package/README build commands.
+
+## User Prompt - 2026-07-11 (session 70 follow-up bootstrap)
+`$session-orchestrator`
+
+## Work - 2026-07-11 (session 70 follow-up bootstrap)
+Loaded the repo boot state for the new session: read `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, and `docs/README.md`. Confirmed the active
+handoff is `workspace/handoff/2026-07-11.md`, the project remains in Phase 9, and `graphify-out/`
+is absent in this environment so no graph refresh was possible.
+
+## User Prompt - 2026-07-11 (session 70 follow-up triage)
+`$blast-through`
+
+## Work - 2026-07-11 (session 70 follow-up triage)
+Ran the blast-through skill in triage mode with Hard Reading Mode. DCS remained 0.91 because
+verification coverage is still degraded. The full Node suite completed at 699 tests / 695 pass /
+2 fail / 2 skip: one stale Polymarket cockpit equity assertion and one non-hermetic reserves-ingest
+test that retains the real World Bank provider through a cached manifest module. Confirmed the six
+enabled ingest placeholder families still fail explicitly as `not_implemented`, while dry-run stays
+read-only. Reproduced the known Kronos insufficient-fixture failure and dismissed it as native
+runtime regression evidence. No production code was changed.
+
+## User Prompt - 2026-07-11 (session 70 follow-up implementation)
+`$mass-implement`
+
+## Work - 2026-07-11 (session 70 follow-up implementation)
+Converted the triage findings into two ranked batches. Fixed the stale Polymarket cockpit equity
+assertion and the macro/reserves module-cache isolation bug. Added canonical availability metadata
+and fast-fail behavior for six unimplemented ingest families, zero-fetch dry-run planning, explicit
+all-family skips, and matching Ink/legacy TUI exclusions while preserving feature-gate precedence.
+Focused contracts, direct live/dry-run probes, hygiene, syntax/diff checks, and the full suite passed.
+Final suite: 701 tests / 699 pass / 0 fail / 2 skip in 27 seconds. Ingest surface moved B- -> B;
+the six real provider adapters remain a deliberate roadmap gap.

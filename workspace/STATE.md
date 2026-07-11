@@ -549,3 +549,20 @@ Suite: 631/0fail/2skip. Branch: feat/ink-tui-refactor.
   spawn error together with a numeric child exit status.
 - Verified `backend status` as `available: true`, `ok: true`; focused Node tests and hygiene pass.
   CTest remains at the documented 28/29 baseline due only to the Kronos data-availability fixture.
+
+## Implementation Note - 2026-07-11 - test trust and ingest availability closeout
+
+- Restored the full Node test gate by aligning the Polymarket cockpit fixture with the production
+  cash-plus-marked-position equity contract and making the macro/reserves harness reload the cached
+  ingest manifest when swapping provider stubs.
+- The reserves integration contract is offline and deterministic again: 9 rows from 3 countries x
+  3 metrics, zero provider errors, and no 171-second real World Bank fallback.
+- Added canonical `not_implemented` availability metadata for `pmi`, `flight`, `crypto_tx`,
+  `holdings`, `onchain`, and `breadth`. Direct live CLI/library requests now fail before provider or
+  persistence work, `all` skips the lanes explicitly, dry-run reports zero planned fetches, and both
+  TUI selectors omit them. Existing feature-gate precedence remains intact.
+- Verification: focused contracts passed; direct PMI live probe returned exit 1 with structured
+  `not_implemented`; direct dry-run returned exit 0 with `planned_fetches: 0`; `npm run hygiene` and
+  scoped diff checks passed; full suite passed 701/699/0fail/2skip in 27 seconds.
+- Ingest surface grade moved B- -> B. Real provider implementations for the six unavailable families
+  remain a roadmap gap rather than being presented as working runtime paths.
