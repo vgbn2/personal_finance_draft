@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { Worker } = require('node:worker_threads');
 
 const {
   findBackendBinary,
@@ -15,6 +16,7 @@ const {
 } = require('../../../../shared/lib/runtime/paths');
 const { calculateRollingFeatureFrame } = require('../../../../shared/lib/market/indicators');
 const { compareModels } = require('../../../../shared/lib/ml/models');
+const { parseScorecardOptions } = require('../../../cli/commands/research/scorecard');
 
 // The API fallback should read the canonical live cache snapshot, not the backtest report cache.
 const DEFAULT_HISTORY = DEFAULT_SNAPSHOT;
@@ -23,6 +25,9 @@ const DEFAULT_BACKTEST_REPORT = DEFAULT_BACKTEST;
 
 const MEMORY_CACHE = new Map();
 const MEMORY_CACHE_TTL_MS = 5000; // 5 seconds cache for dashboard snappiness
+const SCORECARD_CACHE = new Map();
+const SCORECARD_CACHE_TTL_MS = 30000;
+const SCORECARD_CACHE_MAX_ENTRIES = 32;
 
 function withCache(key, producer) {
   const now = Date.now();
@@ -35,6 +40,53 @@ function withCache(key, producer) {
   const payload = producer();
   MEMORY_CACHE.set(key, { timestamp: now, payload });
   return payload;
+}
+
+async function withScorecardCache(key, producer) {
+  const now = Date.now();
+  const cached = SCORECARD_CACHE.get(key);
+  if (cached && now - cached.timestamp < SCORECARD_CACHE_TTL_MS) {
+    const payload = await cached.promise;
+    return { ...payload, from_memory_cache: true };
+  }
+
+  const promise = Promise.resolve()
+    .then(producer)
+    .catch((error) => ({ ok: false, type: 'scorecard', error: error.message }));
+  SCORECARD_CACHE.set(key, { timestamp: now, promise });
+
+  if (SCORECARD_CACHE.size > SCORECARD_CACHE_MAX_ENTRIES) {
+    const oldestKey = SCORECARD_CACHE.keys().next().value;
+    SCORECARD_CACHE.delete(oldestKey);
+  }
+
+  return promise;
+}
+
+function runScorecardWorker(args) {
+  return new Promise((resolve) => {
+    const worker = new Worker(path.join(__dirname, '../workers/scorecard_worker.js'), {
+      workerData: { args },
+      resourceLimits: { maxOldGenerationSizeMb: 512 },
+    });
+    let settled = false;
+    const finish = (payload) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(payload);
+    };
+    const timeout = setTimeout(() => {
+      worker.terminate();
+      finish({ ok: false, type: 'scorecard', error_code: 'scorecard_timeout', error: 'scorecard calculation timed out' });
+    }, 30000);
+    timeout.unref();
+    worker.once('message', finish);
+    worker.once('error', (error) => finish({ ok: false, type: 'scorecard', error_code: 'scorecard_worker_error', error: error.message }));
+    worker.once('exit', (code) => {
+      if (code !== 0) finish({ ok: false, type: 'scorecard', error_code: 'scorecard_worker_exit', error: `scorecard worker exited with code ${code}` });
+    });
+  });
 }
 
 function locateBackendBinary() {
@@ -810,10 +862,14 @@ function backendIndicators(query = {}) {
     ];
     // Indicators are primarily handled by the Node CLI which uses shared/lib/market/indicators
     const nodeCli = runNodeCli(args);
-    if (nodeCli.ok) {
-      return nodeCli;
+    if (nodeCli.exit_code === 0 && nodeCli.ok !== false && !nodeCli.error) {
+      return {
+        ...nodeCli,
+        ok: true,
+      };
     }
     return {
+      ...nodeCli,
       available: true,
       ok: false,
       error: nodeCli.error || 'indicators_command_failed',
@@ -942,7 +998,7 @@ function signalStatus(query = {}) {
       model: {
         available: Boolean(modelReport),
         winner: modelReport?.winner || null,
-        candidate_count: finiteNumber(modelReport?.candidate_count, 0),
+        candidate_count: Math.max(finiteNumber(modelReport?.candidate_count, 0), signals.length),
         feature_count: finiteNumber(modelReport?.feature_count, 0),
         families: Array.isArray(modelReport?.families) ? modelReport.families : [],
         data_quality_ok: modelReport?.data_quality_ok === true,
@@ -960,6 +1016,31 @@ function signalStatus(query = {}) {
 
 function cliStatus() {
   return withCache('cli_status', () => runNodeCli(['status', '--json']));
+}
+
+async function backendScorecard(query = {}) {
+  const family = stringOrFallback(query.family, '').toLowerCase();
+  const direction = stringOrFallback(query.direction, '').toLowerCase();
+  const timeframes = stringOrFallback(query.tf, '1h,4h,1d').toLowerCase();
+  if (direction && !['long', 'short', 'neutral'].includes(direction)) {
+    return { ok: false, type: 'scorecard', error_code: 'invalid_direction', error: 'direction must be long, short, or neutral' };
+  }
+  const timeframeOptions = parseScorecardOptions(['--tf', timeframes]);
+  const requestedTimeframes = timeframes.split(',').map((value) => value.trim()).filter(Boolean);
+  if (!timeframeOptions.ok || timeframeOptions.tfConfigs.length !== requestedTimeframes.length) {
+    return { ok: false, type: 'scorecard', error_code: 'invalid_timeframe', error: `invalid scorecard timeframe list: ${timeframes}` };
+  }
+  const minConfidence = clamp(finiteNumber(query.min_conf, 0.3), 0, 1);
+  const top = clamp(parseLimit(query.top) || 50, 1, 100);
+  const args = [
+    ...(family ? ['--family', family] : []),
+    ...(direction ? ['--direction', direction] : []),
+    '--tf', timeframes,
+    '--min-conf', String(minConfidence),
+    '--top', String(top),
+  ];
+  const cacheKey = JSON.stringify({ family, direction, timeframes, minConfidence, top });
+  return withScorecardCache(cacheKey, () => runScorecardWorker(args));
 }
 
 function systemStatus() {
@@ -1043,6 +1124,7 @@ module.exports = {
   backendCorrelation,
   backendDataSummary,
   backendPortfolio,
+  backendScorecard,
   backendUniverse,
   buildCorrelationMatrix,
   backendIndicators,

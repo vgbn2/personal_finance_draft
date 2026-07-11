@@ -85,3 +85,20 @@ test('renderCandlestickChart skips the volume subplot when no bar carries volume
   const bars = Array.from({ length: 10 }, () => ({ open: 100, high: 101, low: 99, close: 100 }));
   assert.doesNotMatch(stripAnsi(renderCandlestickChart(bars, 8, 6, { showVolume: true })), /Volume \(max/);
 });
+
+test('renderCandlestickChart totalWidth mode keeps visible rows within the requested CLI width', () => {
+  const bars = Array.from({ length: 80 }, (_, i) => ({
+    open: 100000 + i,
+    high: 100500 + i,
+    low: 99500 + i,
+    close: 100100 + i,
+    volume: 1000000 + i * 1000,
+  }));
+  const out = stripAnsi(renderCandlestickChart(bars, 40, 6, {
+    showVolume: true,
+    smaPeriod: 5,
+    totalWidth: true,
+  }));
+  const maxLine = Math.max(...out.split('\n').map((line) => line.length));
+  assert.ok(maxLine <= 40, `expected visible width <= 40, got ${maxLine}\n${out}`);
+});

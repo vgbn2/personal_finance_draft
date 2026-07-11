@@ -8,6 +8,10 @@ function backendAvailable() {
   return Boolean(findBackendBinary());
 }
 
+function spawnResultHasFatalError(result) {
+  return Boolean(result.error) && !Number.isInteger(result.status);
+}
+
 /**
  * Returns a copy of args with every occurrence of a value-taking flag (and its
  * following value) removed. Used to keep secrets like --pin out of a spawned
@@ -47,7 +51,9 @@ function executeSovereignCommand(command, args, options = {}) {
     process.stderr.write(result.stderr);
   }
 
-  if (result.error) {
+  // Some runtimes can report a post-run spawnSync error even though the child
+  // exited and produced usable output. A numeric status proves it did run.
+  if (spawnResultHasFatalError(result)) {
     return { ok: false, error: result.error.message, exit_code: result.status };
   }
 
@@ -145,6 +151,7 @@ function runGatewayCommand(gatewayArgs, options = {}) {
 
 module.exports = {
   backendAvailable,
+  spawnResultHasFatalError,
   stripFlagValue,
   buildTradeGatewayLaunch,
   runBackendCommand,

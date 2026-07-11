@@ -1,4 +1,4 @@
-import 'dotenv/config';
+require('../../../shared/lib/runtime/env.js');
 import * as crypto from 'node:crypto';
 import {
   loadBotStateWithFallback,

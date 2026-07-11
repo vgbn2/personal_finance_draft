@@ -37,3 +37,4 @@ npm run build
 - The local bridge in `../web/app.js` serves `dist/index.html`, not `src/` directly.
 - If you change frontend source files, rebuild `dist/` before treating the served bridge as updated.
 - API and Supabase configuration come from Vite environment variables such as `VITE_API_URL`, `VITE_API_TOKEN`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`.
+- The dashboard build also accepts the repo-native Supabase aliases `SOVEREIGN_SUPABASE_URL` and `SOVEREIGN_SUPABASE_PUBLISHABLE_KEY` for local `.env` files.

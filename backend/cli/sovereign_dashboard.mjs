@@ -9,6 +9,7 @@ import { createRequire } from 'node:module';
 const h = React.createElement;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
+require('#shared/runtime/env');
 const {
   splitWords, isPlaceholderSelect, defaultFlagValues, cycleOption, buildArgv,
   optionLabel, loadStrategyOptions, healthDot, loadDashboardHealth, isInteractiveCmd,

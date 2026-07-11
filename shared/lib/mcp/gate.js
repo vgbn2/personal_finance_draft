@@ -14,6 +14,7 @@ const ALLOWED_ROUTES = [
   '/api/backtest',
   '/api/correlation',
   '/api/indicators',
+  '/api/scorecard',
   '/api/universe',
   '/api/backend/portfolio',
   '/api/analytics',

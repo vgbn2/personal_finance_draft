@@ -143,12 +143,10 @@ function renderScorecard(rows, tfKeys, elapsed, totalSymbols, skipped, ctx) {
   const date = new Date().toUTCString();
   const families = [...new Set(rows.map(r => r.family))].join(', ') || 'all';
   const tfLabel  = tfKeys.join('/');
-  const W = 98;
 
   console.log(`\n${BOLD}${CYAN}SOVEREIGN SCORECARD${RESET}  ${DIM}${date}${RESET}`);
   console.log(`${DIM}Families: ${families} · TFs: ${tfLabel} · ${rows.length} assets scored${RESET}`);
   renderMarketContext(ctx);
-  console.log(DIM + '─'.repeat(W) + RESET);
 
   const hdr =
     '#'.padEnd(4) +
@@ -161,6 +159,8 @@ function renderScorecard(rows, tfKeys, elapsed, totalSymbols, skipped, ctx) {
     tfKeys.map(t => t.padEnd(5)).join('') +
     'Regime'.padEnd(12) +
     'BTC-r';
+  const W = Math.max(98, hdr.length);
+  console.log(DIM + '─'.repeat(W) + RESET);
   console.log(BOLD + hdr + RESET);
   console.log(DIM + '─'.repeat(W) + RESET);
 
@@ -213,8 +213,7 @@ function renderScorecard(rows, tfKeys, elapsed, totalSymbols, skipped, ctx) {
   console.log(`${DIM}Scored ${totalSymbols} assets in ${(elapsed / 1000).toFixed(1)}s  (${skipped} skipped — no data)${RESET}\n`);
 }
 
-async function commandScorecard(args) {
-  const isJson       = hasFlag(args, '--json');
+function parseScorecardOptions(args) {
   const familyFilter = optionValue(args, '--family', null);
   const dirFilter    = optionValue(args, '--direction', null);
   const tfArg        = optionValue(args, '--tf', '1h,4h,1d');
@@ -224,14 +223,36 @@ async function commandScorecard(args) {
   const tfKeys   = tfArg.split(',').map(s => s.trim()).filter(Boolean);
   const tfConfigs = tfKeys.map(key => TF_CONFIG.find(c => c.tf === key)).filter(Boolean);
   if (tfConfigs.length === 0) {
-    process.stderr.write(`[scorecard] No valid TFs in --tf "${tfArg}". Valid: ${TF_CONFIG.map(c => c.tf).join(',')}\n`);
-    return 1;
+    return {
+      ok: false,
+      error: `No valid TFs in --tf "${tfArg}". Valid: ${TF_CONFIG.map(c => c.tf).join(',')}`,
+    };
   }
 
-  if (!isJson) process.stdout.write(`\x1b[90m⌛ loading universe...\x1b[0m\r`);
+  return {
+    ok: true,
+    familyFilter,
+    dirFilter,
+    tfArg,
+    tfKeys,
+    tfConfigs,
+    minConf: Number.isFinite(minConf) ? minConf : 0.3,
+    topN: Number.isFinite(topN) ? topN : 50,
+  };
+}
+
+async function buildScorecard(args, { progressEnabled = false } = {}) {
+  const options = parseScorecardOptions(args);
+  if (!options.ok) return options;
+
+  const {
+    familyFilter, dirFilter, tfKeys, tfConfigs, minConf, topN,
+  } = options;
+
+  if (progressEnabled) process.stdout.write(`\x1b[90m⌛ loading universe...\x1b[0m\r`);
 
   // Load market context + BTC bars once (shared across all symbol analyses)
-  const marketCtx = isJson ? null : loadMarketContext();
+  const marketCtx = loadMarketContext();
   const btcBars = readTsIndexSince(STORAGE_TS_DIR, 'BTCUSDT', '1d', Date.now() - 35 * 24 * 60 * 60 * 1000);
 
   const universe = await get_Full_Universe_Symbols();
@@ -240,11 +261,13 @@ async function commandScorecard(args) {
     : universe;
 
   if (filtered.length === 0) {
-    process.stderr.write(`[scorecard] No symbols found${familyFilter ? ` for family "${familyFilter}"` : ''}.\n`);
-    return 1;
+    return {
+      ok: false,
+      error: `No symbols found${familyFilter ? ` for family "${familyFilter}"` : ''}.`,
+    };
   }
 
-  if (!isJson) process.stdout.write(`\x1b[90m⌛ analyzing ${filtered.length} assets across ${tfKeys.join('/')}...\x1b[0m\r`);
+  if (progressEnabled) process.stdout.write(`\x1b[90m⌛ analyzing ${filtered.length} assets across ${tfKeys.join('/')}...\x1b[0m\r`);
 
   const t0 = Date.now();
   const scorecard = [];
@@ -269,14 +292,54 @@ async function commandScorecard(args) {
 
   const skipped = filtered.length - scorecard.length;
 
+  return {
+    ok: true,
+    type: 'scorecard',
+    schema_version: 1,
+    generated_at: new Date().toISOString(),
+    elapsed_ms: elapsed,
+    total_symbols: filtered.length,
+    analyzed_symbols: scorecard.length,
+    skipped,
+    filters: {
+      family: familyFilter,
+      direction: dirFilter,
+      timeframes: tfKeys,
+      min_confidence: minConf,
+      top: topN,
+    },
+    market_context: marketCtx,
+    rows,
+  };
+}
+
+async function commandScorecard(args) {
+  const isJson = hasFlag(args, '--json');
+  const result = await buildScorecard(args, {
+    progressEnabled: !isJson && process.stdout.isTTY,
+  });
+
+  if (!result.ok) {
+    process.stderr.write(`[scorecard] ${result.error}\n`);
+    return 1;
+  }
+
   if (isJson) {
-    printPayload(rows, args);
+    // Keep the established CLI JSON contract (an array of ranked rows).
+    printPayload(result.rows, args);
   } else {
-    if (!isJson) process.stdout.write(' '.repeat(60) + '\r'); // clear spinner line
-    renderScorecard(rows, tfKeys, elapsed, filtered.length, skipped, marketCtx);
+    if (process.stdout.isTTY) process.stdout.write(' '.repeat(60) + '\r'); // clear spinner line
+    renderScorecard(
+      result.rows,
+      result.filters.timeframes,
+      result.elapsed_ms,
+      result.total_symbols,
+      result.skipped,
+      result.market_context,
+    );
   }
 
   return 0;
 }
 
-module.exports = { commandScorecard };
+module.exports = { commandScorecard, buildScorecard, parseScorecardOptions };

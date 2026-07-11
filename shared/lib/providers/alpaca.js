@@ -1,7 +1,8 @@
 const { fetchJson } = require('./common');
+const { resolveAlpacaSettings } = require('../brokers/alpaca_env');
 
 // Alpaca API configuration
-// Expects ALPACA_API_KEY and ALPACA_API_SECRET in the environment
+// Expects ALPACA_API_KEY plus ALPACA_SECRET_KEY or ALPACA_API_SECRET.
 const BASE_URL = 'https://data.alpaca.markets/v2';
 const DEFAULT_LIMIT = 1000;
 const DEFAULT_PAGINATED_LIMIT = 10000;
@@ -46,11 +47,10 @@ function alpacaTimeframe(timeframe) {
 }
 
 async function fetchAlpacaBaseCandles(symbol, limitOrTimeframe = DEFAULT_LIMIT, timeframeOrLimit = '1Day', startTs = null, endTs = null) {
-  const apiKey = process.env.ALPACA_API_KEY;
-  const apiSecret = process.env.ALPACA_API_SECRET;
+  const { keyId: apiKey, secretKey: apiSecret } = resolveAlpacaSettings(process.env);
   
   if (!apiKey || !apiSecret) {
-    throw new Error("Alpaca API credentials (ALPACA_API_KEY, ALPACA_API_SECRET) missing");
+    throw new Error("Alpaca API credentials (ALPACA_API_KEY, ALPACA_SECRET_KEY or ALPACA_API_SECRET) missing");
   }
 
   const args = normalizeAlpacaArgs(symbol, limitOrTimeframe, timeframeOrLimit, startTs, endTs);

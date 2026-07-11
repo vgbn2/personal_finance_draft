@@ -34,6 +34,7 @@ const {
 } = require('./data.js');
 const { isFresh } = require('../../../../shared/lib/market/coverage.js');
 const { writeJson } = require('../../../../shared/lib/market/validation.js');
+const { pruneApiCache } = require('../../../../shared/lib/providers/common.js');
 const { STORAGE_DATA_DIR } = require('../../../../shared/lib/runtime/paths.js');
 
 // Progress/liveness state for ANY observer (the dashboard, a future web UI, a
@@ -420,6 +421,14 @@ async function commandBackfillDaemon(args) {
   /* eslint-disable no-await-in-loop */
   for (;;) {
     cycle += 1;
+    try {
+      const pruned = await pruneApiCache();
+      if (pruned.deleted > 0) {
+        log(`[CACHE] pruned ${pruned.deleted} expired API responses (${(pruned.freed_bytes / 1e6).toFixed(1)} MB)`);
+      }
+    } catch (error) {
+      log(`[CACHE] prune skipped: ${error.message}`);
+    }
     const config = await loadConfig();
     let jobs = buildJobUniverse(config, families);
     if (symbolFilter) jobs = jobs.filter((j) => symbolFilter.has(j.symbol));

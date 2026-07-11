@@ -6,6 +6,10 @@ An active algorithmic trading platform with live order execution across equities
 
 ```bash
 npm install
+npm install --prefix backend/api
+npm install --prefix backend/gateway
+npm install --prefix backend/mcp_server
+npm install --prefix Frontend/dashboard
 node backend/cli/sovereign_cli.js status --json
 node backend/cli/sovereign_cli.js bias BTCUSDT
 node backend/cli/sovereign_cli.js scorecard --family crypto --top 20
@@ -23,11 +27,60 @@ Web API (port 8787):
 node backend/api/app.js
 ```
 
+Run the local Linux suite:
+
+```bash
+./start_local.sh
+```
+
 C++ core (optional — data integrity, correlation, portfolio risk):
 
 ```bash
-cmake -S . -B backend/core/build && cmake --build backend/core/build
+npm run native:build
+node backend/cli/sovereign_cli.js backend status --json
 ctest --test-dir backend/core/build
+```
+
+## Dependencies
+
+This repo has multiple Node package roots. After a fresh clone or Windows-to-Ubuntu migration, install
+each one explicitly:
+
+```bash
+npm install
+npm install --prefix backend/api
+npm install --prefix backend/gateway
+npm install --prefix backend/mcp_server
+npm install --prefix Frontend/dashboard
+```
+
+The root install powers the CLI, TUI, shared libraries, tests, and most gateway launches. The nested
+installs remove `UNMET DEPENDENCY` errors when checking or running each service directly.
+
+Current workspace check: all package roots resolve cleanly with `npm ls --depth=0`, so no extra
+libraries are required beyond the installs listed above unless you add or remove dependencies.
+
+Ubuntu system packages for the optional native/C++ path:
+
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake
+```
+
+Useful dependency checks:
+
+```bash
+npm ls --depth=0
+npm ls --prefix backend/api --depth=0
+npm ls --prefix backend/gateway --depth=0
+npm ls --prefix backend/mcp_server --depth=0
+npm ls --prefix Frontend/dashboard --depth=0
+```
+
+If `onnxruntime-node` reports blocked install scripts after `npm install`, review it with:
+
+```bash
+npm approve-scripts
 ```
 
 ## What Works Now

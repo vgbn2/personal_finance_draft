@@ -159,10 +159,13 @@ function checkAgentSkills() {
   ]);
 
   const allowedAgentsSkills = new Set([
+    'blast-through',
     'claude',
     'codex',
     'gemini',
-    'polymarket-history-backfill'
+    'mass-implement',
+    'polymarket-history-backfill',
+    'session-orchestrator'
   ]);
 
   // A. Check skills/

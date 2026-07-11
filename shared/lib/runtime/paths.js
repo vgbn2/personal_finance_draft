@@ -16,6 +16,7 @@ const BINARY_NAME = process.platform === 'win32' ? 'sovereign_wealth.exe' : 'sov
 const BACKEND_CANDIDATES = [
     path.join(REPO_ROOT, 'backend', 'core', 'build', 'Release', BINARY_NAME),
     path.join(REPO_ROOT, 'backend', 'core', 'build', 'Debug', BINARY_NAME),
+    path.join(REPO_ROOT, 'backend', 'core', 'build', BINARY_NAME),
     path.join(REPO_ROOT, 'build', 'backend', 'core', 'Release', BINARY_NAME),
     path.join(REPO_ROOT, 'build', 'backend', 'core', 'Debug', BINARY_NAME),
     path.join(REPO_ROOT, 'backend', 'core', 'build', 'manual', BINARY_NAME),
