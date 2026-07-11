@@ -139,7 +139,7 @@ const FAMILIES_MANIFEST = [
         return fetchCryptoSnapshot(p, s, t, 'crypto', opts);
       }
     },
-  { id: 'pmi', configKey: 'pmi', itemsKey: 'series', fetcher: async (p, s, t, cfg) => fetchSpGlobalFlashPmi() },
+  { id: 'pmi', configKey: 'pmi', itemsKey: 'series', availability: { status: 'not_implemented', provider: 'spglobal' }, fetcher: async (p, s, t, cfg) => fetchSpGlobalFlashPmi() },
   { id: 'macro', configKey: 'macro', itemsKey: 'series', fetcher: async (p, s, t, cfg, opts) => {
       const id = resolveFredSeries('macro', s, cfg);
       if (!id) throw new Error(`No FRED series mapping for ${s}`);
@@ -151,10 +151,10 @@ const FAMILIES_MANIFEST = [
     }
   },
   { id: 'weather', configKey: 'weather', itemsKey: 'locations', fetcher: (p, s, t, cfg) => fetchNasaPowerWeather(s).then(r => [r]) },
-  { id: 'flight', configKey: 'flight', itemsKey: 'regions', fetcher: (p, s, t, cfg) => fetchOpenSkyRegion(s).then(r => [r]) },
-  { id: 'crypto_tx', configKey: 'crypto_tx', itemsKey: 'chains', fetcher: (p, s, t, cfg) => fetchBlockchairStats(s).then(r => [r]) },
+  { id: 'flight', configKey: 'flight', itemsKey: 'regions', availability: { status: 'not_implemented', provider: 'opensky' }, fetcher: (p, s, t, cfg) => fetchOpenSkyRegion(s).then(r => [r]) },
+  { id: 'crypto_tx', configKey: 'crypto_tx', itemsKey: 'chains', availability: { status: 'not_implemented', provider: 'blockchair' }, fetcher: (p, s, t, cfg) => fetchBlockchairStats(s).then(r => [r]) },
   { id: 'sentiment', configKey: 'sentiment', itemsKey: null, fetcher: (p, s, t, cfg) => fetchAlternativeMeFearGreed().then(r => [r]) },
-  { id: 'holdings', configKey: 'holdings', itemsKey: 'symbols', fetcher: (p, s, t, cfg) => fetchSecHoldingsSnapshot(s, cfg).then(r => [r]) },
+  { id: 'holdings', configKey: 'holdings', itemsKey: 'symbols', availability: { status: 'not_implemented', provider: 'sec' }, fetcher: (p, s, t, cfg) => fetchSecHoldingsSnapshot(s, cfg).then(r => [r]) },
   { id: 'reserves', configKey: 'reserves', itemsKey: 'countries', fetcher: async (p, s, t, cfg, opts) => {
       const results = [];
       for (const m of cfg.reserves.metrics) {
@@ -169,8 +169,8 @@ const FAMILIES_MANIFEST = [
       return results;
     }
   },
-  { id: 'onchain', configKey: 'onchain', itemsKey: 'chains', fetcher: (p, s, t, cfg) => fetchBlockchairOnchain(s).then(r => [r]) },
-  { id: 'breadth', configKey: 'breadth', itemsKey: 'metrics', fetcher: (p, s, t, cfg) => fetchYahooBreadthProxy(s, cfg).then(r => [r]) },
+  { id: 'onchain', configKey: 'onchain', itemsKey: 'chains', availability: { status: 'not_implemented', provider: 'blockchair' }, fetcher: (p, s, t, cfg) => fetchBlockchairOnchain(s).then(r => [r]) },
+  { id: 'breadth', configKey: 'breadth', itemsKey: 'metrics', availability: { status: 'not_implemented', provider: 'yahoo' }, fetcher: (p, s, t, cfg) => fetchYahooBreadthProxy(s, cfg).then(r => [r]) },
   { id: 'prediction_market', configKey: 'prediction_market', itemsKey: 'events', fetcher: async (p, s, t, cfg, opts) => {
       if (p === 'polymarket') {
         if (opts?.historyDays || opts?.history || opts?.backfill) {
@@ -192,6 +192,16 @@ const OPTIONS_MANIFEST = [
   { id: 'stock_options', configKey: 'stock_options', itemsKey: 'underlyings', fetcher: (p, s, t, cfg) => fetchYahooOptionsSnapshot('stock_options', p, s) },
 ];
 
+function getIngestFamilyAvailability(familyId) {
+  const family = FAMILIES_MANIFEST.find((entry) => entry.id === familyId);
+  if (!family || !family.availability) return null;
+  return {
+    available: false,
+    family: family.id,
+    ...family.availability,
+  };
+}
+
 module.exports = {
   notImplementedProvider,
   fetchOpenSkyRegion,
@@ -204,6 +214,7 @@ module.exports = {
   fetchYahooBreadthProxy,
   fetchKalshiHistoricalMarkets,
   fetchKalshiHistoricalCandlesticks,
+  getIngestFamilyAvailability,
   FAMILIES_MANIFEST,
   OPTIONS_MANIFEST,
 };

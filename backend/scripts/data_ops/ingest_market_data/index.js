@@ -104,6 +104,22 @@ function buildDryRunFamilyPlan(manifest, config, targetFamily, options, kind) {
     const filteredItems = options.symbol ? items.filter((item) => item === options.symbol) : items;
     const timeframes = options.timeframe ? [options.timeframe] : (section.timeframes || ['1d']);
     const providers = Array.isArray(section.providers) ? section.providers.filter(Boolean) : [];
+    if (family.availability?.status === 'not_implemented') {
+      families.push({
+        family: family.id,
+        kind,
+        config_key: family.configKey,
+        enabled: true,
+        available: false,
+        reason: family.availability.status,
+        providers,
+        item_count: filteredItems.length,
+        timeframes,
+        planned_fetches: 0,
+        target_symbol: options.symbol || null,
+      });
+      continue;
+    }
     const fetchCount = filteredItems.length * Math.max(timeframes.length, 1) * Math.max(providers.length, 1);
 
     plannedFetches += fetchCount;
@@ -112,6 +128,7 @@ function buildDryRunFamilyPlan(manifest, config, targetFamily, options, kind) {
       kind,
       config_key: family.configKey,
       enabled: true,
+      available: true,
       providers,
       item_count: filteredItems.length,
       timeframes,
@@ -200,6 +217,7 @@ const {
   fetchYahooBreadthProxy,
   fetchKalshiHistoricalMarkets,
   fetchKalshiHistoricalCandlesticks,
+  getIngestFamilyAvailability,
   FAMILIES_MANIFEST,
   OPTIONS_MANIFEST,
 } = require('./manifests.js');
@@ -559,6 +577,13 @@ function collectIngestSkipChecks(config, optionsConfig, targetFamily = null) {
       continue;
     }
 
+    if (family.availability?.status === 'not_implemented') {
+      checks.push(ingestSkipCheck(family.id, 'not_implemented', {
+        provider: family.availability.provider,
+      }));
+      continue;
+    }
+
     const section = familySection(config, family);
     if (!section || !section.enabled) {
       checks.push(ingestSkipCheck(family.id, 'disabled_in_config'));
@@ -904,6 +929,34 @@ async function ingestMarketData(options = {}) {
     const scopedSnapshot = isScopedSnapshotRequest(options);
     const requestedDays = Number(options.historyDays || options.days || 0);
     const dryRun = Boolean(options.dryRun);
+    const unavailable = getIngestFamilyAvailability(targetFamily);
+    if (unavailable && !dryRun) {
+      return {
+        mode: 'not_implemented',
+        dry_run: false,
+        fetched_at: new Date().toISOString(),
+        sources: [],
+        errors: [{
+          code: unavailable.status,
+          family: unavailable.family,
+          provider: unavailable.provider,
+          message: `${unavailable.provider} ${unavailable.family} provider is not implemented`,
+        }],
+        provider_checks: [{
+          family: unavailable.family,
+          provider: unavailable.provider,
+          status: 'skipped',
+          reason: unavailable.status,
+        }],
+        snapshot_scope: {
+          kind: 'scoped',
+          representative_of_global_live_health: false,
+          target_family: targetFamily,
+          target_symbol: options.symbol || null,
+          requested_days: requestedDays || null,
+        },
+      };
+    }
     const config = await loadConfig();
     const optionsConfig = await loadOptionsConfig();
     
@@ -970,6 +1023,7 @@ async function ingestMarketData(options = {}) {
     // 2. Standard Families (Market Data)
     for (const family of FAMILIES_MANIFEST) {
       if (targetFamily && targetFamily !== family.id) continue;
+      if (family.availability?.status === 'not_implemented') continue;
       const section = config[family.configKey];
       if (!section || !section.enabled) continue;
 
@@ -1343,6 +1397,7 @@ module.exports = {
   loadConfig,
   loadOptionsConfig,
   collectIngestSkipChecks,
+  getIngestFamilyAvailability,
   loadExternalQuoteInputs,
   fetchNasaPowerWeather,
   fetchOpenSkyRegion,

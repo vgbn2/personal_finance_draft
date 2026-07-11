@@ -25,7 +25,7 @@ test('cockpit portfolio card shows Polymarket equity when connected', () => {
   const polymarket = { ok: true, configured: true, balance: { pUSD: 12.5 }, positions: [{ symbol: 'YES', quantity: 1, averagePrice: 0.5, marketValue: 0.5, unrealizedPl: 0 }] };
   const card = summarizePortfolioCard(mergePolymarketIntoPortfolio({ mode: 'paper' }, polymarket));
   assert.equal(card.state, 'ok');
-  assert.equal(card.metrics.equity, 12.5);
+  assert.equal(card.metrics.equity, 13, 'equity includes pUSD cash plus marked position value');
   assert.equal(card.payload.polymarket.name, 'Polymarket');
   assert.equal(card.payload.polymarket.status, 'connected');
   assert.equal(card.payload.polymarket.position_count, 1);
