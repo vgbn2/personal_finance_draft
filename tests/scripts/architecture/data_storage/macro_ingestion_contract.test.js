@@ -8,6 +8,7 @@ const supabasePath = require.resolve('../../../../shared/lib/supabase/admin');
 const macroStorePath = require.resolve('../../../../shared/lib/data/macro_store');
 const ingestPath = require.resolve('../../../../backend/scripts/data_ops/ingest_market_data');
 const ingestIndexPath = require.resolve('../../../../backend/scripts/data_ops/ingest_market_data/index.js');
+const manifestsPath = require.resolve('../../../../backend/scripts/data_ops/ingest_market_data/manifests.js');
 
 function clearModule(modulePath) {
   delete require.cache[modulePath];
@@ -18,6 +19,7 @@ function withStubbedIngestEnvironment(stubs, run) {
   const originalValidation = require.cache[marketValidationPath];
   const originalSupabase = require.cache[supabasePath];
   const originalMacroStore = require.cache[macroStorePath];
+  const originalManifests = require.cache[manifestsPath];
   const originalWriteFile = fsPromises.writeFile;
   const originalMkdir = fsPromises.mkdir;
   const originalReadFile = fsPromises.readFile;
@@ -96,6 +98,7 @@ function withStubbedIngestEnvironment(stubs, run) {
 
   clearModule(ingestPath);
   clearModule(ingestIndexPath);
+  clearModule(manifestsPath);
 
   try {
     return run(require(ingestPath), { writeCalls });
@@ -115,6 +118,9 @@ function withStubbedIngestEnvironment(stubs, run) {
 
     if (originalMacroStore) require.cache[macroStorePath] = originalMacroStore;
     else clearModule(macroStorePath);
+
+    if (originalManifests) require.cache[manifestsPath] = originalManifests;
+    else clearModule(manifestsPath);
 
     clearModule(ingestPath);
     clearModule(ingestIndexPath);

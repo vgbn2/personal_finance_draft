@@ -54,11 +54,15 @@ test('strategy menu exposes registry sync without prop-firm actions', () => {
 
 test('ingest TUI family selector maps to scoped ingest options', () => {
   const ingest = manifest.commands.data.find((entry) => entry.id === 'ingest');
+  const unavailableFamilies = ['pmi', 'flight', 'crypto_tx', 'holdings', 'onchain', 'breadth'];
 
   assert.ok(ingest);
   assert.ok(ingest.flags);
   assert.ok(ingest.flags['--family']);
   assert.ok(ingest.flags['--history-days']);
+  for (const family of unavailableFamilies) {
+    assert.equal(ingest.flags['--family'].options.includes(family), false);
+  }
   assert.equal(ingestOptionsFromArgs(['--family', 'commodities']).family, 'commodities');
   assert.deepEqual(
     ingestOptionsFromArgs(['--family', 'prediction_market', '--symbol', 'fed_rate_cut_prob', '--timeframe', '1h', '--history-days', '30']),
@@ -70,6 +74,17 @@ test('ingest TUI family selector maps to scoped ingest options', () => {
     }
   );
   assert.deepEqual(ingestOptionsFromArgs(['--family', 'all']), {});
+});
+
+test('legacy dashboard omits unavailable ingest families', async () => {
+  const { M } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const ingest = M.find((category) => category.label === 'Data').cmds
+    .find((entry) => entry.id === 'ingest');
+  const unavailableFamilies = ['pmi', 'flight', 'crypto_tx', 'holdings', 'onchain', 'breadth'];
+
+  for (const family of unavailableFamilies) {
+    assert.equal(ingest.flags['--family'].opts.includes(family), false);
+  }
 });
 
 test('polymarket TUI exposes historical price ingestion path', () => {

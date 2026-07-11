@@ -120,7 +120,7 @@ const M = [
       },
       { id: 'ingest', label: 'ingest', desc: 'Fetch latest market data',//load too long,require a press of the esc key to reveal, is this redundant?, dev question, 
         flags: {
-          '--family':       { t:'sel', opts:['all','crypto','fx','equities','indices','commodities','macro','onchain','prediction_market'], lbl:'Data family', def:'all' },
+          '--family':       { t:'sel', opts:['all','crypto','fx','equities','indices','commodities','macro','prediction_market'], lbl:'Data family', def:'all' },
           '--symbol':       { t:'txt', lbl:'Symbol filter (optional)', def:'', pickSymbol:'single' },
           '--timeframe':    { t:'sel', opts:['1w','1d','1h','15m'], lbl:'Timeframe', def:'1h' },
           '--history-days': { t:'txt', lbl:'History days (blank = latest only)', def:'' },
