@@ -92,7 +92,8 @@ npm approve-scripts
 
 **Research**
 - `sovereign bias <SYMBOL>` — 7-TF table (1m→1w) with RSI, VWAP, Volume Profile, Wyckoff phase, HMM regime, permutation entropy, ML signal
-- `sovereign scorecard [--family crypto] [--top 20]` — research ranking across assets whose requested timeframes are complete and fresh; rows expose source time and validity metadata
+- `sovereign scorecard [--family crypto] [--top 20] [--allow-degraded]` — compact technical ranking that fails closed by default; quorum mode labels partial-timeframe rows degraded and incomplete
+- `sovereign scorecard --schema 3 --fixture all-recorded [--symbol AAPL]` — research-only family catalog; use `--symbol` for factor and evidence drill-down
 - `sovereign bt --strategy <name>` — backtests against ts-index data; ONNX models (`xgboost_v1`, `logistic_v1`, `regime_classifier`) run inference via `onnxruntime-node`
 
 **Live execution**

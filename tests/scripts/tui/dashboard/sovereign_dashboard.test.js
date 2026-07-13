@@ -20,7 +20,7 @@ test('dashboard App: research scorecard launches the canonical all-recorded v3 c
   assert.match(stdout.snapshot(), /Schema \(3 = research shadow\)/);
   await send(stdin, instance, [keys.right, keys.down, keys.right, keys.right]);
   assert.match(stdout.snapshot(), /sovereign scorecard --schema 3 --fixture all-recorded/);
-  await send(stdin, instance, Array(9).fill(keys.down).concat(keys.enter));
+  await send(stdin, instance, Array(10).fill(keys.down).concat(keys.enter));
   assert.deepEqual(runCalls[0], ['scorecard', '--schema', '3', '--fixture', 'all-recorded', '--tf', '1h,4h,1d', '--min-conf', '0.3', '--top', '50', '--no-backfill']);
 });
 
