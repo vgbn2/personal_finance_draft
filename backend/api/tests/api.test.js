@@ -9,7 +9,7 @@ const path = require('node:path');
 const TEST_API_TOKEN = 'test-sentinel-token-api-suite';
 process.env.SOVEREIGN_API_TOKEN = TEST_API_TOKEN;
 
-const { server, io, DEFAULT_SNAPSHOT } = require('../app');
+const { server, io, DEFAULT_SNAPSHOT, PROTECTED_GET_ROUTES } = require('../app');
 
 const BACKEND_HISTORY_FIXTURE = path.join(__dirname, '../../..', 'tests', 'fixtures', 'backend_history_sample.json');
 
@@ -70,12 +70,18 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.match(appBundle.headers.get('content-type') || '', /javascript/);
     assert.match(await appBundle.text(), /\/api\/system\/status/);
 
+    const unauthenticatedOverride = await fetch(`${baseUrl}/api/data/summary?${query({
+      input: BACKEND_HISTORY_FIXTURE,
+    })}`);
+    assert.equal(unauthenticatedOverride.status, 401);
+    assert.equal((await unauthenticatedOverride.json()).error, 'authentication_required');
+
     const summary = await fetch(`${baseUrl}/api/data/summary?${query({
       symbol: 'AAPL',
       timeframe: '1d',
       max_bars: '5',
       input: BACKEND_HISTORY_FIXTURE,
-    })}`);
+    })}`, { headers: { 'X-Sovereign-Token': TEST_API_TOKEN } });
     assert.equal(summary.status, 200);
     const summaryPayload = await summary.json();
     assert.equal(summaryPayload.type, 'market_data_summary');
@@ -88,7 +94,7 @@ test('web API exposes backend health, data summary, and correlation', async () =
       timeframe: '1d',
       max_bars: '4',
       input: BACKEND_HISTORY_FIXTURE,
-    })}`);
+    })}`, { headers: { 'X-Sovereign-Token': TEST_API_TOKEN } });
     assert.equal(correlation.status, 200);
     const correlationPayload = await correlation.json();
     assert.equal(correlationPayload.type, 'correlation_matrix');
@@ -101,7 +107,7 @@ test('web API exposes backend health, data summary, and correlation', async () =
       timeframe: '1w',
       max_bars: '252',
       input: BACKEND_HISTORY_FIXTURE,
-    })}`);
+    })}`, { headers: { 'X-Sovereign-Token': TEST_API_TOKEN } });
     assert.equal(weeklyCorrelation.status, 200);
     const weeklyPayload = await weeklyCorrelation.json();
     assert.equal(weeklyPayload.type, 'correlation_matrix');
@@ -113,7 +119,7 @@ test('web API exposes backend health, data summary, and correlation', async () =
       timeframe: '1mo',
       max_bars: '252',
       input: BACKEND_HISTORY_FIXTURE,
-    })}`);
+    })}`, { headers: { 'X-Sovereign-Token': TEST_API_TOKEN } });
     assert.equal(monthlyCorrelation.status, 200);
     const monthlyPayload = await monthlyCorrelation.json();
     assert.equal(monthlyPayload.type, 'correlation_matrix');
@@ -123,7 +129,7 @@ test('web API exposes backend health, data summary, and correlation', async () =
     const universe = await fetch(`${baseUrl}/api/universe?${query({
       max_entries: '5',
       input: BACKEND_HISTORY_FIXTURE,
-    })}`);
+    })}`, { headers: { 'X-Sovereign-Token': TEST_API_TOKEN } });
     assert.equal(universe.status, 200);
     const universePayload = await universe.json();
     assert.equal(universePayload.type, 'market_universe');
@@ -149,7 +155,7 @@ test('web API exposes backend health, data summary, and correlation', async () =
 
     const signal = await fetch(`${baseUrl}/api/signal?${query({
       input: BACKEND_HISTORY_FIXTURE,
-    })}`);
+    })}`, { headers: { 'X-Sovereign-Token': TEST_API_TOKEN } });
     assert.equal(signal.status, 200);
     const signalPayload = await signal.json();
     assert.equal(signalPayload.type, 'signal_status');
@@ -217,12 +223,32 @@ test('web API exposes backend health, data summary, and correlation', async () =
     const scorecardPayload = await scorecard.json();
     assert.equal(scorecardPayload.ok, true);
     assert.equal(scorecardPayload.type, 'scorecard');
-    assert.equal(scorecardPayload.schema_version, 1);
+    assert.equal(scorecardPayload.schema_version, 2);
     assert.equal(scorecardPayload.filters.family, 'crypto');
     assert.equal(scorecardPayload.filters.top, 2);
     assert.ok(Array.isArray(scorecardPayload.rows));
+    assert.ok(Array.isArray(scorecardPayload.exclusions));
     assert.ok(scorecardPayload.rows.length <= 2);
     assert.ok(scorecardPayload.total_symbols >= scorecardPayload.analyzed_symbols);
+
+    const shadowScorecard = await fetch(`${baseUrl}/api/scorecard?schema=3&fixture=aapl-recorded`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
+    assert.equal(shadowScorecard.status, 200);
+    const shadowPayload = await shadowScorecard.json();
+    assert.equal(shadowPayload.type, 'analysis_shadow');
+    assert.equal(shadowPayload.schema_version, 3);
+    assert.equal(shadowPayload.research_only, true);
+    assert.equal(shadowPayload.decision_ready, false);
+    assert.equal(shadowPayload.fixture_id, 'aapl-recorded');
+    assert.equal(shadowPayload.rows.length, 1);
+    assert.equal(shadowPayload.counts.sec_observations, 1392);
+
+    const missingShadowFixture = await fetch(`${baseUrl}/api/scorecard?schema=3`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
+    assert.equal(missingShadowFixture.status, 400);
+    assert.equal((await missingShadowFixture.json()).error_code, 'invalid_fixture');
 
     const cachedScorecard = await fetch(`${baseUrl}/api/scorecard?family=crypto&top=2`, {
       headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
@@ -274,6 +300,26 @@ test('GET /api/kill-switch requires X-Sovereign-Token and rejects unauthenticate
       headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
     });
     assert.notEqual(authenticated.status, 401, 'kill-switch with valid token must not return 401');
+  } finally {
+    await close();
+  }
+});
+
+test('every protected GET route rejects missing and malformed credentials', async () => {
+  const baseUrl = await listen();
+  try {
+    assert.ok(PROTECTED_GET_ROUTES.size > 0);
+    for (const route of PROTECTED_GET_ROUTES) {
+      const missing = await fetch(`${baseUrl}${route}`);
+      assert.equal(missing.status, 401, `${route} must reject missing credentials`);
+      assert.equal((await missing.json()).error, 'authentication_required');
+
+      const malformed = await fetch(`${baseUrl}${route}`, {
+        headers: { Authorization: 'Basic not-a-bearer-token' },
+      });
+      assert.equal(malformed.status, 401, `${route} must reject malformed credentials`);
+      assert.equal((await malformed.json()).error, 'authentication_required');
+    }
   } finally {
     await close();
   }

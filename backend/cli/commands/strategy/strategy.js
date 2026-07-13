@@ -336,6 +336,11 @@ function buildAutomationTrustDecision(report, minTrustScore, isLive) {
   const alpha = Number.isFinite(trust.oos_alpha_vs_buy_hold) ? trust.oos_alpha_vs_buy_hold : null;
   const reasons = [];
 
+  // Live automation must not treat a statistical score as compensation for
+  // rejected or otherwise unverified market data.
+  if (report?.data_quality_ok !== true || report?.data_quality_summary?.ok === false) {
+    reasons.push('data quality is not verified');
+  }
   if (verdict !== 'researchable') reasons.push(`verdict=${verdict}`);
   if (score < minTrustScore) reasons.push(`score=${score}/100 < ${minTrustScore}`);
   if (alpha == null) reasons.push('missing oos alpha');
@@ -823,7 +828,6 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 '--model', strategy.model,
                 '--timeframe', strategyTimeframe,
                 '--threshold', String(strategy.risk?.signal_threshold || 0.65),
-                '--allow-degraded',
                 '--json',
                 ...universeArgs
             ]);
@@ -1262,5 +1266,5 @@ async function commandPropFirmMenu(args) {
 }
 
 module.exports = {
-  slugifyStrategyName, get_Current_Universe_Symbols, buildStrategyPlan, getStrategyRegistryPath, getStrategyDirectory, readStrategyRegistry, listStrategyFiles, strategySectionPresent, inspectStrategyFile, syncStrategyRegistry, strategyRegistryReport, registeredStrategyOptions, writeStrategyRegistry, interactiveStrategyWizard, commandPropFirmProfiles, commandStrategy, commandStrategyMenu, commandPropFirmMenu, runAutomatedStrategies
+  slugifyStrategyName, get_Current_Universe_Symbols, buildStrategyPlan, getStrategyRegistryPath, getStrategyDirectory, readStrategyRegistry, listStrategyFiles, strategySectionPresent, inspectStrategyFile, syncStrategyRegistry, strategyRegistryReport, registeredStrategyOptions, writeStrategyRegistry, interactiveStrategyWizard, commandPropFirmProfiles, commandStrategy, commandStrategyMenu, commandPropFirmMenu, runAutomatedStrategies, buildAutomationTrustDecision
 };

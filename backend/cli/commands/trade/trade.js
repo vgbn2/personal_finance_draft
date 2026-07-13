@@ -50,6 +50,7 @@ const {
   renderPolymarketOrderbookDetails,
   renderPolymarketPriceHistoryDetails,
   submitPolymarketBuyOrder,
+  authorizePolymarketLive,
 } = tradePolymarket;
 
 const {
@@ -522,20 +523,14 @@ async function commandBot(args) {
       printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
       return 1;
     }
-  }
-  if (hasFlag(args, '--live')) {
-    const liveGate = canLiveExecute('alpaca');
-    if (!liveGate.ok) {
-      printPayload({
-        ok: false,
-        broker: 'alpaca',
-        runtime_mode: getRuntimeMode(),
-        reason: liveGate.reason,
-      }, args);
-      console.error(`${A.B_RED}[ERROR] ${liveGate.reason}.${A.RESET}`);
+    const polymarketGate = featureGate('polymarket', { surface: `Bot ${sub}` });
+    if (!polymarketGate.ok) {
+      printPayload({ ok: false, type: 'feature_gate', feature_flag: polymarketGate.flag, reason: polymarketGate.reason, hint: polymarketGate.hint }, args);
       return 1;
     }
-    if (!(await requireAuth('bot live trading'))) return 1;
+  }
+  if (hasFlag(args, '--live')) {
+    if (!(await authorizePolymarketLive(args, 'Polymarket bot live trading'))) return 1;
   }
   const gatewayArgs = ['bot', sub, ...args.slice(1)];
   if (hasFlag(args, '--json')) gatewayArgs.push('--json');

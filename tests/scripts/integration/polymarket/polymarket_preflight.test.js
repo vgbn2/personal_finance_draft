@@ -34,3 +34,29 @@ test('polymarket buy --preflight rejects invalid quantity before any live submit
   assert.equal(payload.ok, false);
   assert.match(payload.error, /Quantity must be a positive number/);
 });
+
+test('polymarket gateway blocks direct live submission without CLI authorization', () => {
+  const result = spawnSync(process.execPath, [
+    GATEWAY_RUNNER,
+    'polymarket',
+    'buy',
+    'TOKEN_123',
+    '1',
+    '0.5',
+    '--live',
+    '--json',
+  ], {
+    cwd: path.resolve(__dirname, '..', '..', '..', '..'),
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      LIVE_TRADING: 'true',
+      SOVEREIGN_EXECUTION_AUTHORIZED: '',
+    },
+  });
+
+  assert.equal(result.status, 1);
+  const payload = JSON.parse(result.stdout.trim());
+  assert.equal(payload.ok, false);
+  assert.match(payload.error, /requires --live and CLI authorization/);
+});

@@ -20,6 +20,7 @@ const {
   backendStatus,
 } = require('./server/services/cli_executor');
 const ROUTES = require('./server/routes');
+const { getAuthStatus } = require('./server/services/supabase_client');
 const { isMcpRequest, isMcpAllowed, redactDeep } = require('../../shared/lib/mcp/gate');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
@@ -56,6 +57,7 @@ const PROTECTED_GET_ROUTES = new Set([
   '/api/backend/portfolio',
   '/api/cache/list',
   '/api/config',
+  '/api/database/status',
   '/api/bot/status',
   '/api/kill-switch',
   '/api/scorecard',
@@ -88,7 +90,15 @@ function setSecurityHeaders(res, origin, req) {
   res.setHeader('Access-Control-Max-Age', '600');
 }
 
-function checkSecurity(req, res) {
+async function hasAuthenticatedApiCaller(req) {
+  const token = req.headers['x-sovereign-token'];
+  if (API_TOKEN && token === API_TOKEN) return true;
+  if (!req.headers.authorization) return false;
+  const auth = await getAuthStatus(req);
+  return auth.authenticated === true;
+}
+
+async function checkSecurity(req, res) {
   const origin = req.headers.origin;
   if (!isAllowedOrigin(origin, req)) {
     console.warn(`[SECURITY] Blocked origin: ${origin}`);
@@ -134,26 +144,17 @@ function checkSecurity(req, res) {
   }
 
   // API Token check for data-modifying or sensitive routes
-  const token = req.headers['x-sovereign-token'];
-  const isPublicRoute = [
-    '/',
-    '/index.html',
-    '/health',
-    '/api/status',
-    '/api/signal',
-    '/api/data/summary',
-    '/api/correlation',
-    '/api/backend/stats',
-    '/api/universe',
-    '/api/cache/universe', // New public alias
-    '/api/indicators',     // New public endpoint
-    '/api/quotes/status'
-  ].includes(pathname);
-  if (!isPublicRoute && (req.method !== 'GET' || PROTECTED_GET_ROUTES.has(pathname))) {
-    if (!API_TOKEN || token !== API_TOKEN) {
+  const requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const privilegedQueryFields = ['input', 'quality_report', 'model_report', 'backtest_report', 'equity'];
+  const hasPrivilegedOverride = privilegedQueryFields.some((field) => requestUrl.searchParams.has(field));
+  const requiresAuthentication = req.method !== 'GET'
+    || PROTECTED_GET_ROUTES.has(pathname)
+    || hasPrivilegedOverride;
+  if (requiresAuthentication) {
+    if (!(await hasAuthenticatedApiCaller(req))) {
       console.warn(`[SECURITY] Missing or invalid API token from ${ip}`);
-      res.writeHead(401);
-      res.end('Unauthorized: API Token Required');
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'authentication_required' }));
       return false;
     }
   }
@@ -258,10 +259,10 @@ async function handleApi(req, res, url) {
   return false;
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   
-  if (!checkSecurity(req, res)) {
+  if (!(await checkSecurity(req, res))) {
     return;
   }
 
@@ -323,4 +324,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { server, io, DEFAULT_SNAPSHOT };
+module.exports = { server, io, DEFAULT_SNAPSHOT, PROTECTED_GET_ROUTES };

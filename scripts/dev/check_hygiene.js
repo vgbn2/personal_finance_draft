@@ -165,6 +165,7 @@ function checkAgentSkills() {
     'gemini',
     'mass-implement',
     'polymarket-history-backfill',
+    'refine-suggestion',
     'session-orchestrator'
   ]);
 

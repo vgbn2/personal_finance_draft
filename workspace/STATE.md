@@ -7,6 +7,47 @@ last_audit_date: 2026-06-26
 ## Current Phase
 Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
 
+## Mass-Implement Closeout - 2026-07-13 session 76 - auth freshness and baseline inventory
+
+- Removed the 30-second authorization-decision cache. Protected bearer requests and database status now
+  revalidate the Supabase user before trusting cached results; same-token revocation is covered.
+- Dashboard session restoration verifies the persisted candidate token with the provider, fails closed on
+  revocation/provider failure, and confirms local logout before clearing UI state.
+- Fixed TUI clipping that hid categories/commands at narrow widths and selected rows in wide-short
+  terminals; layout capacity is height-aware and uses explicit bounded more markers.
+- Kalshi historical fetches now report structured `not_implemented` instead of empty success. Existing
+  Polymarket historical contracts remain green.
+- Captured valid 80/100/120-column density baselines and classified duplicate/stub ownership. No API bind
+  widening or deletion occurred. The web dashboard remains responsive-layout gated.
+- Verification: contracts 28/28; full Node suite 730/728/0fail/2skip; frontend typecheck/build; hygiene;
+  secret scan 829/0; diff check. DCS remains 0.95 because data/model promotion state did not change.
+
+## Implementation Note - 2026-07-13 session 74 - interrupted TUI/Polymarket batch resumed
+
+- The previously interrupted mass-implement work on the dashboard input bar, layout density, Polymarket
+  lifecycle handling, and manifest parity was resumed from the existing dirty worktree and completed.
+- The CLI command bar now has a dedicated editor with working mid-line edits and width-aware rendering.
+- The dashboard layout now adapts to narrow terminals instead of flooding the TUI.
+- Polymarket ended/unknown positions now fail closed, and truncated trade history is treated as incomplete.
+- The dashboard manifest parity guard now covers the shared command surface and caught a real missing
+  `backfill-daemon --interval-secs` flag, which was restored.
+- Verification: focused dashboard/chat/Polymarket suites plus the manifest contract passed; the final
+  combined run passed 51/51 with zero failures.
+- The worktree still contains unrelated pre-existing changes outside this batch; keep future cleanup
+  narrow and preserve those boundaries.
+
+## Audit Note - 2026-07-12 session 74 - TUI interaction and Polymarket lifecycle
+
+- The Ink dashboard is not responsive below 120 columns: fixed 20+76-column panes flood an 80-column
+  terminal, and terminal-height resize does not update the component's numeric height/cursor layout.
+- The command bar's append, end Backspace, submit, focus, and PIN paths work, but mid-line cursor editing
+  is broken by the `showCursor:false` integration with the installed `ink-text-input`.
+- Polymarket fill-derived positions do not preserve resolved lifecycle status. Ended positions may be
+  labeled active and their cost-basis fallback can enter aggregate equity; this output is decision-gated
+  until active/ended/unknown projection fixtures and fail-closed valuation land.
+- TUI maintainability remains degraded by two drifting command manifests and a 957-line dashboard `App`.
+- This was review-only: focused tests passed 19/19; no production code or live external state changed.
+
 ## Fix Note - 2026-07-05 session 66 - Windows env sync
 - Synced the active workspace `.env` from the Windows draft copy at
   `/mnt/windows/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/.env`.
@@ -566,3 +607,310 @@ Suite: 631/0fail/2skip. Branch: feat/ink-tui-refactor.
   scoped diff checks passed; full suite passed 701/699/0fail/2skip in 27 seconds.
 - Ingest surface grade moved B- -> B. Real provider implementations for the six unavailable families
   remain a roadmap gap rather than being presented as working runtime paths.
+
+## Mass-Implement Closeout - 2026-07-11 session 72 - laptop runtime and signal trust
+
+- Removed the live-candle write-amplification failure: strictly newer ts-index records now use a
+  flush-before-count append path instead of reading and rewriting the full historical binary. Overlap,
+  correction, gap-fill, and provider-precedence writes retain the existing streaming merge behavior.
+  The equivalence suite remained byte-identical, and the 1.3-million-row / 192 MB heap child stress
+  completed successfully in the full suite.
+- Fresh base bins no longer suppress local coarse rollups. Warm daemon cycles still skip provider I/O,
+  but refresh bounded-tail rollups; failed rollups now increment cycle errors and produce structured
+  `stage: rollup` failures instead of looking healthy.
+- Scorecard schema v2 requires every requested timeframe to have at least 20 bars and remain fresh
+  within both family policy and the timeframe's declared signal horizon. Rows expose `data_as_of`,
+  `latest_bar_at`, `valid_until`, per-timeframe age, and identify confidence as heuristic vote strength.
+  The current stale crypto cache now returns an empty CLI scorecard instead of ranking partial/stale rows.
+- Signal schema v2 expires model-comparison reports after 24 hours by default, configurable through
+  `SOVEREIGN_SIGNAL_REPORT_MAX_AGE_MS`. The current 2026-06-21 report now exposes 17 expired candidates
+  and zero active signals. Dashboard review rejects stale/inactive IDs, requires a Supabase user context,
+  writes the user-owned audit event, and states `execution_started: false`; no order-execution claim remains.
+- Grade-factor movement: runtime safety improved for always-on storage, scorecard/signal contract truth
+  moved from permissive to fail-closed, false-active monitoring was removed, and deployment/UI docs now
+  match the implemented research-versus-execution boundary. No numeric DCS was recalculated.
+- Verification: focused data/research/API contracts passed; web API integration passed 2/2; dashboard Vite
+  production build passed; `npm run hygiene`, syntax checks, and `git diff --check` passed; full Node suite
+  passed 706 tests / 704 pass / 0 fail / 2 skip in 26.7 seconds.
+- Remaining highest-impact gap: the dashboard package omits `@types/react` and `@types/react-dom`, so its
+  standalone `tsc --noEmit` gate cannot run cleanly even though Vite builds. Environment least-privilege
+  separation also remains incomplete because Compose services still receive the shared runtime env files.
+
+## Audit Note - 2026-07-11 session 73 - production-readiness connective sweep
+
+- Verdict: **not approved for real-money decisions or live Polymarket execution**.
+- Gating execution defect: top-level/direct Polymarket `buy`/`sell` can submit without explicit `--live`,
+  PIN/auth, runtime-mode approval, or the shared C++ risk path.
+- Gating API defects: public research/data routes accept caller-controlled file paths; several response
+  caches omit response-shaping inputs; browser-bundled `VITE_API_TOKEN` is used as an admin-style bot
+  mutation credential without per-user server authorization.
+- Current data fails closed for decision use: crypto scorecard 0/36 eligible, model report expired,
+  latest backtest is sample-mode with zero trades, and integrity reports 15 stale symbols plus 9 grain
+  suspects. Correlation fallback still incorrectly reports `ok:true` at sample size zero.
+- UI is not operationally truthful: hardcoded LIVE state and decorative safety/execution controls; the
+  signal-review action currently references undefined `signalIds`. Frontend type-check fails, while Vite
+  emits one 945.88 kB JS chunk.
+- User-data positives: own-user Supabase RLS policies are committed, secret scan passed 829 files with
+  zero violations, and the Node suite passed 704/0/2. Remote RLS state was not verified.
+- Full findings, grades, orphan matrix, and clearance gates are in `workspace/DEV_REVIEW.md` under
+  "Connective-Tissue Production Readiness Audit - 2026-07-11 session 73".
+
+## Audit Follow-up - 2026-07-11 session 73 - remaining sections and language decision
+
+- Added a second P0 execution blocker: market orders carry no price, so the JS gateway sends zero
+  notional to C++ risk; the native engine approves because concentration is skipped. Portfolio equity
+  and drawdown are static environment proxies rather than current broker state.
+- Model comparison is not trained-ML comparison: architecture-named candidates such as CNN, XGBoost,
+  random forest, LSTM, and Transformer are deterministic formulas. Real ONNX candidates exist but are
+  excluded from `compareModels()` and the canonical model report.
+- MCP defaults backtests to `--allow-degraded`, and MCP live Polymarket inherits the direct order bypass.
+- Kubernetes, Terraform, and Heroku starters launch nonexistent `web/app.js`; only Docker Compose is
+  aligned. Supabase risk alerts are logging-only scaffolds.
+- Architecture decision: consolidate the control plane on TypeScript, retain only benchmark-justified
+  C++ compute kernels, keep simple authorization/risk in the typed gateway, and retire the Rust mirror.
+- Details and revised grades are appended to `workspace/DEV_REVIEW.md` under
+  "Connective-Tissue Follow-up - 2026-07-11 session 73 - remaining sections and language boundary".
+
+## Mass-Implement Closeout - 2026-07-11 session 73 - production safety and bloat
+
+- Direct Polymarket submission now requires explicit `--live`, runtime approval, authenticated CLI/PIN
+  authorization, a gateway authorization marker, explicit limit price, broker equity, current drawdown,
+  and native pre-trade risk approval. Market orders resolve broker quotes instead of sending zero notional.
+- Native risk now rejects non-positive notional/equity and treats the denominator as portfolio equity;
+  `--volatility` remains a temporary compatibility alias for older local binaries.
+- API path/equity overrides and every non-GET request require either the host token or a verified Supabase
+  bearer session. Browser assets no longer compile `VITE_API_TOKEN`; auth cache keys hash bearer tokens,
+  and data/correlation/universe cache keys include all response-shaping inputs.
+- Handcrafted architecture-named scorers are labeled `handcrafted_heuristic`, `trained=false`, and
+  `decision_ready=false`. Signal activation now also requires explicit trained/decision-ready metadata and
+  passing model/backtest quality. MCP backtests default to fail-closed data quality.
+- Frontend removed seven zero-consumer direct packages, added missing React typings, fixed signal review,
+  and lazy-loads secondary panels. Typecheck and build pass; initial JS fell from about 946 kB to 471 kB.
+- Kubernetes, Terraform, Heroku, and setup paths now use real entrypoints. Nine zero-reference native
+  placeholder headers were removed. Rust mirror deletion remains unperformed because it exceeds the
+  safe-deletion confirmation threshold.
+- Verification: full Node suite 710 total / 708 pass / 0 fail / 2 skip; API and focused safety contracts
+  pass; frontend typecheck/build pass; MCP and gateway TypeScript builds pass; model registry parity,
+  hygiene, deployment contract, and secret scan (829 files / 0 violations) pass. Native compiles fully;
+  26/29 CTest cases pass from `/tmp`, while three fixture-relative tests cannot locate repo data there.
+- Verdict remains research-only, not approved for real capital: current data integrity/freshness is still
+  failed, no validated decision-ready model is promoted, remote RLS was not verified, and live broker soak/
+  failure-mode tests remain outstanding. Frontend install also reports three high-severity transitive advisories.
+
+## Mass-Implement Closeout - 2026-07-13 session 75 - package and verification truth
+
+- Removed unused `express`, `ejs`, and `dotenv` API dependencies and regenerated the nested lockfile
+  offline. The API package now installs only its actual external runtime dependency, `socket.io`.
+- Pinned the MCP SDK to tested version `1.29.0`; the package, lockfile, installed tree, and TypeScript
+  build now agree on that exact version.
+- Repaired 15 stale npm-script test paths after the test-tree reorganization, serialized the aggregate
+  API gates that own process-global server state, and added a structure contract that rejects future
+  references to missing `.test.js` files.
+- Correlation fallback now requires at least two aligned observations and returns
+  `insufficient_aligned_observations` with `ok:false` instead of publishing a zero-sample healthy matrix.
+  Weekly/monthly derivation tests now use a stable checked-in fixture rather than mutable runtime cache.
+- Updated active API architecture docs to describe the native `node:http` plus Socket.IO bridge and the
+  built React dashboard path. Updated the portfolio-monitor fixture to satisfy the verified-active
+  Polymarket valuation contract without weakening production fail-closed behavior.
+- Verification: API package and MCP dependency roots resolve cleanly; MCP build passes; `test:api` passes
+  6/6; `test:contracts` passes 23/23 with 22 macro rows and 9 reserves rows; portfolio monitor passes 8/8;
+  the full Node suite completes with no failures; hygiene and `git diff --check` pass.
+- Grade-factor movement: `backend/api` clears dependency bloat and zero-sample false health but remains
+  trust-gated by broader production-readiness items; `backend/mcp_server` clears reproducibility drift but
+  remains policy-gated by the degraded-backtest behavior recorded in the review ledger.
+
+## Deferred Refinement - 2026-07-13 session 75 - API auth, UI density, and duplicate cleanup
+
+- User explicitly deferred implementation to a future session.
+- Added repo-local `$refine-suggestion` skill to convert rough or preference-based suggestions into
+  sourced objectives, measurable acceptance criteria, ranked batches, verification, and safety gates.
+- Refined the deferred work into `workspace/plans/FUTURE_API_AUTH_UI_DEDUP_REFINEMENT.md`.
+- Future order is: capture baselines; prove automatic Supabase session restoration; gate any wider API
+  bind behind authentication; reduce persistent UI characters with measured budgets; then remove or
+  consolidate verified duplicate/stub ownership across trade, research, backend, and data.
+- No API binding, login, UI, command schema, stub, or duplicate runtime behavior changed in this update.
+
+## Blast-Through + Mass-Implement Closeout - 2026-07-13 session 78
+
+- Continued the deferred responsive-dashboard batch from the current session handoff.
+- Added a dependency-free production-build Chrome/CDP harness at 375, 768, and 1440 pixels. The baseline
+  passed 1/6 and exposed unnamed navigation, persistent mobile controls, and fixed tablet grids.
+- Implemented one reachable ten-destination navigation, `aria-current` state, a collapsible research
+  sidebar below 1024px, 1/2/4 overview reflow, responsive fixed-grid panels, and bounded table surfaces.
+- Final responsive gate passes 6/6 and activates every destination at every viewport while checking page
+  and active-main overflow. Frontend typecheck/build, hygiene, and `git diff --check` pass.
+- `Frontend/dashboard` moves C / responsive-gated -> B- / live-browser-gated. Authenticated live-provider
+  browser soak remains open; no API bind widening, duplicate deletion, or market-data change occurred.
+- Next implementation returns to the recorded asset-analysis plan: shared contracts plus the US-equity,
+  fixed-3-month shadow schema, with the current scorecard kept live until parity is proven.
+
+## Mass-Implement Closeout - 2026-07-13 session 79 - analysis contracts and taxonomy
+
+- Wrote the eight-batch implementation plan at
+  `workspace/plans/ASSET_ANALYSIS_IMPLEMENTATION_BATCHES.md` and delegated only bounded additive work to
+  `gpt-5.6-luna`.
+- Added schema-v3 runtime contracts and a weight-free section registry for equities, crypto subtypes, FX,
+  commodity subtypes, and indices. Synthetic fixtures are explicitly labeled and validators fail closed
+  on provenance, timestamps, ranges, policy mismatch, duplicate/inapplicable domains, and missing reasons.
+- Added a shadow taxonomy inventory over the real market config. Current evidence: 316 configured inputs,
+  122 scoreable candidates, 108 evidence descriptors, 30 unsupported/ambiguous entries, 45 repeated
+  declarations, 57 repeated legacy-symbol declarations, and zero identity conflicts/symbol collisions.
+- Live schema-v2 scorecard, universe resolver, and market config hashes are unchanged. No provider fetch,
+  scoring weight, live ranking, API, UI, or data mutation was added.
+- Verification: focused analysis/taxonomy 9/9; live-v2 compatibility 2/2; structure 1/1; hygiene and secret
+  scan pass; diff check passes. Full suite 736 pass / 1 fail / 2 skip; the unrelated strategy-label test
+  passes 16/16 alone, indicating an existing parallel registry race.
+- Next gate is the technical v2-to-v3 shadow adapter, followed by point-in-time macro repair and only then
+  the US-equity three-month SEC/fundamental composer.
+
+## Blast-Through + Mass-Implement Closeout - 2026-07-13 session 80 - technical shadow adapter
+
+- Blast-through triage confirmed Batch 3 as the recorded critical path. The prior parallel TUI
+  strategy-label failure was not reproduced: its focused 16/16 gate and the full Node suite pass.
+- Added a pure schema-v2 to v3 technical shadow adapter. It preserves direction, score, confidence,
+  source timing, and validity while deriving deterministic evidence ids from complete timeframe details.
+- The adapter fails closed on incomplete rows/timeframes, histories below 20 bars, malformed timing, and
+  expired row or timeframe validity. No live ranking, provider, API, TUI, browser UI, or scoring weight changed.
+- Scoped DCS started and ended at **1.00** for the fixture-backed path: freshness 1.00, schema 1.00,
+  coverage 1.00. This is adapter-fixture confidence, not live-market readiness.
+- Verification: focused analysis/freshness gates 12/12; TUI strategy gate 16/16; hygiene; syntax;
+  `git diff --check`; full Node suite passes.
+- Grade movement: analysis shadow surface B -> B+ / macro-gated. Next gate is point-in-time macro release,
+  availability, vintage, and revision truth before any equity composer or policy weights.
+
+## Mass-Implement Closeout - 2026-07-13 session 80 - point-in-time macro truth
+
+- Completed asset-analysis Batch 4. Macro normalization now separates period end from release,
+  availability, ingestion, and vintage, and assigns revision identities without deleting legacy rows.
+- As-of selection fails closed: a row must have valid release/availability/ingestion order, and both
+  availability and local ingestion must precede the decision timestamp. Later visible revisions replace
+  earlier vintages only for decisions made after those revisions became usable.
+- Added a forward Supabase migration for normalized fields, revision-preserving uniqueness, timestamp
+  constraints, and point-in-time lookup indexing. Remote migration state was not changed or verified.
+- Evidence: 4 fixture revisions -> 3 point-in-time eligible + 1 legacy rejected; May 1 sees value 100,
+  June 1 sees value 102. Existing macro ingest still emits 22 rows and preserves history after merge.
+- Verification: focused analysis/macro 12/12; contract suite 29/29; full Node suite 743 total / 741 pass /
+  0 fail / 2 skip; hygiene, syntax, migration shape, and `git diff --check` pass.
+- Grade movement: macro storage C / period-time-only -> B+ / remote-migration-gated; analysis shadow
+  remains B+ and moves from macro-gated to equity-policy-gated. Next is Batch 5 only.
+
+## Session Close - 2026-07-13 session 80 - remaining phases evidence gate
+
+- User requested mass implementation of all remaining asset-analysis phases and session closeout.
+- Local evidence search found no recorded SEC EDGAR Company Facts artifact and no SEC fundamentals
+  adapter. Only explicitly synthetic analysis fixtures exist.
+- Batch 5 therefore remains blocked by its own acceptance gate: a recorded SEC artifact must prove
+  filing/release availability, normalized facts, and missing-fundamental degradation before policy weights
+  or a shadow equity row can be considered trustworthy.
+- Project phase gating prevents Batches 6-8 from starting on top of an unverified Batch 5. No fabricated
+  SEC data, invented weights, generic family policies, API/TUI exposure, or schema-v2 retirement was added.
+- The implementation plan header was corrected from Batches 1-2 to Batches 1-4 complete. The verified
+  session baseline remains full Node 743 total / 741 pass / 0 fail / 2 skip.
+- Restart gate: capture one provenance-recorded SEC Company Facts response for a US common equity, then
+  implement SEC normalization and the research-only equity 3m composer before advancing to Batch 6.
+
+## Mass-Implement Closeout - 2026-07-13 session 81 - SEC equity shadow policy
+
+- Completed Batch 5 using a recorded official Apple Inc. SEC Company Facts artifact rather than synthetic
+  fundamentals: 503 `us-gaap` concepts normalized into 1,392 observations across eight metrics.
+- The normalizer retains filing/accession/frame provenance, filters by decision-time availability, selects
+  visible restatements, and delays filing-date-only availability to the following UTC day.
+- The fundamental analyzer compares like-duration quarterly revenue and fails closed on missing history or
+  stale evidence. The research-only composer excludes missing fundamentals and never renormalizes weights.
+- Focused analysis 11/11, first full Node run, hygiene, syntax, and diff integrity passed. A repeated full
+  run hit unrelated parallel TUI file-level failures.
+- Grade movement: B+ / equity-policy-gated -> A- / service-parity-gated. Next is Batch 6 only.
+
+## Mass-Implement Closeout - 2026-07-13 session 81 - analysis phases 6-8
+
+- Completed canonical shadow service and thin CLI/authenticated-API parity. Schema v3 is explicit and
+  named-fixture-only; schema v2 remains live/default.
+- Added recorded family slices for FX, index, energy, BTC/ETH native-chain, and Aave protocol evidence.
+  Official unavailable feeds fail closed. Catalog truth is 7 rows: 0 eligible, 4 degraded, 3 excluded.
+- Added terminal research home/screener/workbench behavior to the existing scorecard surface, including
+  compact width budgets and provenance drill-down. No browser dashboard or provider ownership was added.
+- Added readiness evaluation. Promotion is rejected because synthetic parity evidence remains and no
+  point-in-time targets, OOS baseline, turnover/cost model, or calibration sample exists.
+- Verification: serialized full Node 755/753/0fail/2skip; focused phase gates pass; hygiene, syntax, API
+  auth, manifest parity, diff integrity, and secret checks pass.
+- Current grade: A- / promotion-blocked. Schema-v2 retirement is not authorized or evidence-safe.
+
+## Goal Completion Audit - 2026-07-13 session 81
+
+- Re-audited every Batch 6-8 acceptance gate against executable evidence rather than the earlier
+  closeout summary. Recorded-provider factors now reject decisions before artifact retrieval, factor
+  domains are proven applicable to each family policy, and catalog results are ordered only within the
+  requested family/state scope.
+- The real Ink dashboard test launches the existing scorecard command with canonical schema-v3 and the
+  `all-recorded` fixture; no parallel command or provider owner was introduced.
+- Final serialized verification after those repairs: 758 total / 756 pass / 0 fail / 2 skip. Focused
+  parity/readiness/family tests, authenticated API tests, TUI/manifest tests, hygiene, per-file syntax,
+  `git diff --check`, tracked secret scan (829 files / 0 violations), and direct new-file secret scan pass.
+- The persistent implementation goal is complete. This means all research-shadow phases are implemented
+  and verified; it does not authorize promotion, real-money use, or schema-v2 retirement.
+
+## Audit Note - 2026-07-13 session 81 - recent-work deep blast-through
+
+- Ran a full fast-reading blast-through against the current recent-work batch: session-81 analysis shadow
+  work, the current dirty diff, recent API auth/session surfaces, and the latest ingest/scorecard changes.
+- Confirmed one material trust gap in the new recorded-family analysis path: recorded FX, EIA, and
+  DefiLlama factors currently label `data_as_of` and derive `valid_until` from fixture retrieval time
+  instead of the underlying observation timestamps. The family-shadow catalog therefore overstates
+  freshness even though promotion remains blocked.
+- Confirmed one audit-integrity gap in `/api/signal/promote`: malformed `signalIds` are mutated by
+  sanitization before active-signal validation and audit-event persistence, so an authenticated caller can
+  coerce a bad ID into a different active ID instead of receiving a clean rejection.
+- Broad gate: `npm run hygiene` passed. `graphify-out` remains unavailable.
+- Grade movement: `shared/contracts/analysis` + `shared/lib/analysis` A- / promotion-blocked ->
+  B+ / freshness-truth-gated. `backend/api` stays B- and is now labeled audit-integrity-gated.
+
+## Audit Note - 2026-07-13 session 81 - execution and config triage
+
+- Ran a triage, Fast Reading Mode blast-through outside the prior analysis/signal findings. Scoped DCS
+  stayed **0.62**; no production code changed and live promotion remains halted.
+- Confirmed strategy automation always passes `--allow-degraded`; a direct trust probe showed elevated
+  data risk can still score 70/B/`researchable` and reach the default live threshold.
+- Confirmed the Polymarket bot uses the Alpaca live-capability gate and omits the Polymarket feature/PIN
+  authorization contract used by direct orders, including when invoked by the authenticated API.
+- Confirmed `/api/config` requires `public.user_config`, but no checked-in Supabase migration creates the
+  table, uniqueness contract, or own-user RLS policy.
+- Focused settings/strategy contracts passed 25/25; hygiene and diff integrity passed. Those tests do not
+  cover the three failing combinations above.
+- Grade movement: `backend/cli` C -> C- / live-integrity-gated; reviewed `backend/gateway` bot seam B+ ->
+  B- / caller-auth-gated; `backend/api` + `supabase` move to C+ / schema-contract-gated.
+
+## Mass-Implement Closeout - 2026-07-13 session 81 - audit trust repairs
+
+- Closed all five actionable findings from the two current blast-through reports without changing live
+  defaults or authorizing real-capital use.
+- Strategy automation no longer permits degraded backtests and independently fails closed on any
+  non-verified `data_quality_ok` result before it can reach live trade dispatch.
+- Polymarket bot cycles now require both the bot and Polymarket feature flags and reuse canonical
+  Polymarket capability, session, and PIN authorization instead of the Alpaca gate.
+- Added the forward `public.user_config` migration with composite `(user_id, config_key)` identity,
+  own-user RLS, and `updated_at` trigger. The API only persists known config keys with matching shapes.
+- Signal review rejects malformed IDs exactly; recorded provider factors now anchor freshness and validity
+  to source observations, with retrieval time retained only for availability/provenance diagnostics.
+- Verification: focused execution/settings 10/10, Supabase route 4/4, signal/analysis 9/9, full
+  `npm test` exit 0, hygiene exit 0, and diff integrity exit 0.
+- Grade recovery: `backend/cli` C / duplication-gated; reviewed `backend/gateway` B+ / fail-closed;
+  `backend/api` B- / deployment-gated; `supabase` B / remote-RLS-gated; analysis A- / promotion-blocked.
+  Real-capital promotion remains blocked by fresh data, validated models, remote RLS, and broker soak tests.
+
+## Mass-Implement Correction - 2026-07-13 session 81 - scorecard recovery contract
+
+- Schema-2 Scorecard now screens only the five price families it can technically analyze. The former
+  172-row denominator included 21 macro, sentiment, options, holdings, reserve, and prediction-market
+  series that cannot satisfy `1h/4h/1d` OHLCV requirements; the canonical screen/repair universe is 151.
+- Terminal output now distinguishes evaluated, eligible, excluded, confidence-filtered, and shown rows,
+  with exact exclusion totals grouped by reason and timeframe. Current cache diagnostics report 151
+  evaluated, 1 eligible, 150 excluded, and 1 filtered below the 0.30 screen threshold.
+- The Scorecard's advertised refresh path is now real: direct CLI runs perform a bounded selected-family
+  30-day refresh unless `--no-backfill` is set; a refresh failure blocks scoring. Dashboard defaults remain
+  cache-diagnostic to avoid hidden provider work and can explicitly turn the skip flag off for refresh.
+- `mass-backfill` now accepts a validated `--families` boundary shared with Scorecard. Its scorecard repair
+  dry run schedules 299 pending jobs across 151 symbols and `1h/4h/1d`; no provider write was run here.
+- Verification: scorecard/backfill/TUI focused contracts passed, full `npm test` passed, hygiene passed,
+  and `git diff --check` passed. Grade movement: schema-2 scorecard **B- / false-health-gated -> B+ /
+  refresh-contract-gated**. Remaining runtime gap is successful provider backfill and a fresh post-run
+  scorecard; no signal or live-trading claim is implied.

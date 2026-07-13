@@ -231,6 +231,39 @@ for (const [name, seedFn, incFn] of SCENARIOS) {
   });
 }
 
+test('pure append does not read or rewrite the historical binary payload', () => {
+  const dir = tmp('append-io');
+  referenceWriteTsIndex(dir, { sources: seedN(1000) });
+  const bin = filePath(dir, 'BTCUSDT', '1m', '.bin');
+  const originalReadFileSync = fs.readFileSync;
+  const originalWriteFileSync = fs.writeFileSync;
+  let historicalReads = 0;
+  let historicalRewrites = 0;
+
+  fs.readFileSync = (target, ...args) => {
+    if (String(target) === bin) historicalReads += 1;
+    return originalReadFileSync(target, ...args);
+  };
+  fs.writeFileSync = (target, ...args) => {
+    if (String(target) === bin || String(target).startsWith(`${bin}.`)) historicalRewrites += 1;
+    return originalWriteFileSync(target, ...args);
+  };
+
+  try {
+    writeTsIndex(dir, { sources: [rec('BTCUSDT', 'binance', '1m', M(1000), 500)] });
+  } finally {
+    fs.readFileSync = originalReadFileSync;
+    fs.writeFileSync = originalWriteFileSync;
+  }
+
+  const rows = readTsIndex(dir, 'BTCUSDT', '1m');
+  assert.equal(rows.length, 1001);
+  assert.equal(rows.at(-1).close, 500.5);
+  assert.equal(historicalReads, 0, 'append path reads only the header and last timestamp');
+  assert.equal(historicalRewrites, 0, 'append path does not create a full-bin replacement');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test('EQUIV real deep bin (copy of a live bin) + overlapping synthetic window == reference', () => {
   const { STORAGE_TS_DIR } = require('../../../../shared/lib/paths.js');
   let ran = 0;
@@ -350,10 +383,13 @@ function runOomChild(targetModule, baseDir) {
   return r;
 }
 
-test('NEW merge completes under a tight heap cap on a deep bin (no full materialization)', () => {
+test('NEW merge completes under a tight heap cap on a deep bin (no full materialization)', (t) => {
   const baseDir = buildDeepBin();
   const r = runOomChild(NEW_MODULE, baseDir);
   fs.rmSync(baseDir, { recursive: true, force: true });
+  if (r.error && r.error.code === 'EPERM') {
+    return t.skip('nested spawnSync is unavailable in this sandbox');
+  }
   assert.equal(r.status, 0, `new merge child should exit 0 under ${OOM_HEAP_MB}MB (stderr: ${(r.stderr || '').slice(-200)})`);
   assert.ok(/CHILD_OK/.test(r.stdout || ''), 'new merge child should print the completion sentinel');
   console.log(JSON.stringify({ type: 'ts_merge_write', case: 'new_survives_cap', deep: OOM_DEEP, heap_cap_mb: OOM_HEAP_MB, status: r.status }));

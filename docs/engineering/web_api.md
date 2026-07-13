@@ -55,7 +55,7 @@ GET /api/cache/list
 
 `/api/quotes/status` returns inspectable quote-source JSON even when quote providers are stale or not configured, so the dashboard can show the degraded state instead of hiding it behind a generic failure.
 
-`/api/signal` reads the latest local model-comparison and backtest artifacts, returns candidate signal rows, and keeps `promoted: false` until a separate promotion gate approves a model. The served dashboard uses this endpoint for the signal queue, model winner, threshold, and latest backtest summary.
+`/api/signal` reads the latest local model-comparison and backtest artifacts and returns candidate rows with explicit report age and validity metadata. Reports older than `SOVEREIGN_SIGNAL_REPORT_MAX_AGE_MS` (24 hours by default) remain inspectable but every candidate is expired and inactive. The dashboard review action records an authenticated Supabase audit event; it does not execute an order or promote a model into live trading.
 
 `/api/backtest` exposes the latest backtest summary plus backend stats when the native executable is available. When the native stats executable is unavailable locally, the web bridge can return a local `backend_stats` fallback from the recorded equity curve and label that fallback in the payload.
 

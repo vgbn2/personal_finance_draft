@@ -6,6 +6,7 @@ Use the following skills when they match the task:
 - `claude` for blast-through audits, gap finding, and debt surfacing.
 - `gemini` for session bootstrap, continuity, and research-oriented context loading.
 - `polymarket-history-backfill` for Polymarket historical data, PMXT/order-book decisions, market impact modeling, and replay backtest implementation.
+- `refine-suggestion` for turning rough, preference-based, or multi-area improvement ideas into scoped, evidence-backed prompts before implementation.
 
 Project guidance:
 

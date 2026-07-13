@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-07-11.md`** (last update: 2026-07-11 session 70)
+- Latest/current handoff: **`workspace/handoff/2026-07-13.md`** (last update: 2026-07-13 session 77)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -306,3 +306,27 @@ Residuals:
 - `docker` is not installed here, so rendered Compose validation still needs a Docker host
 - the unrelated dashboard TUI suite still has one pre-existing failing test outside this batch
 - `graphify` remains unavailable in this environment
+
+## Update - 2026-07-11 session 73 - safety hardening closeout
+
+The session-73 audit's highest-risk implementation gaps are closed: Polymarket direct orders and market
+orders fail closed through authorization plus quote/equity/drawdown-backed native risk; public API file
+overrides and browser-held admin tokens are removed; heuristic model reports cannot create active signals;
+MCP degraded mode is opt-in; the frontend typecheck/build is clean with secondary-panel code splitting;
+cloud entrypoints are real; and zero-reference placeholder headers/dependencies were pruned.
+
+Verification baseline is 708 pass / 0 fail / 2 skip in the full Node suite. Do not approve real-capital use
+yet. Next order: (1) restore fresh, non-suspect market data and pass integrity, (2) train/version/validate a
+decision-ready artifact with OOS sample floors, (3) run broker sandbox and failure-mode soak tests,
+(4) verify deployed Supabase RLS, (5) review the three frontend npm advisories, and (6) request explicit
+deletion approval before retiring the 30-file Rust mirror or larger legacy UI surfaces.
+
+## Update - 2026-07-13 session 80 - asset analysis handoff
+
+Batches 1-4 of `workspace/plans/ASSET_ANALYSIS_IMPLEMENTATION_BATCHES.md` are complete in shadow mode.
+Batch 5 is blocked because no provenance-recorded SEC Company Facts artifact or SEC fundamentals adapter
+exists locally. Do not fabricate the input or advance Batches 6-8 around this gate.
+
+Resume from `workspace/handoff/2026-07-13.md`. First capture a recorded SEC fixture, then implement SEC
+normalization and the research-only US-equity 3m composer. Keep schema v2 live. Current verified baseline:
+743 total / 741 pass / 0 fail / 2 skip. Remote macro migration and RLS remain unverified; graphify absent.

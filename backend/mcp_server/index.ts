@@ -68,7 +68,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           fee_bps: { type: 'number', description: 'Fee in basis points' },
           slippage_bps: { type: 'number', description: 'Slippage in basis points' },
           sample: { type: 'boolean', description: 'Run with deterministic generated bars instead of live cache' },
-          allow_degraded: { type: 'boolean', description: 'Proceed even when data quality is below ideal (default: true)' },
+          allow_degraded: { type: 'boolean', description: 'Proceed despite failed data-quality checks (default: false; research only)' },
         },
       },
     },

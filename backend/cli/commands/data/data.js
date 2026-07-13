@@ -507,6 +507,14 @@ async function commandMassBackfill(args) {
   const { loadConfig } = require('../../../scripts/data_ops/ingest_market_data.js');
   const timeframesArg = optionValue(args, '--timeframes', '1mo,1w,1d,1h,15m');
   const timeframes = timeframesArg.split(',').map(t => t.trim()).filter(Boolean);
+  const familiesArg = optionValue(args, '--families', 'equities,indices,commodities,fx,crypto');
+  const families = [...new Set(familiesArg.split(',').map((family) => family.trim()).filter(Boolean))];
+  const supportedFamilies = new Set(['equities', 'indices', 'commodities', 'fx', 'crypto']);
+  const unsupportedFamilies = families.filter((family) => !supportedFamilies.has(family));
+  if (families.length === 0 || unsupportedFamilies.length > 0) {
+    printPayload({ ok: false, error: `Unsupported --families value: ${familiesArg}. Supported: ${[...supportedFamilies].join(',')}` }, args);
+    return 1;
+  }
   // 20-year deep defaults: deep-paginated providers handle the volume; mind free-tier rate limits if raising concurrency further.
   const days = optionValue(args, '--days', '7300');
   const concurrency = numericOption(args, '--concurrency', 10);
@@ -514,7 +522,6 @@ async function commandMassBackfill(args) {
   const force = hasFlag(args, '--force');
 
   const config = await loadConfig();
-  const families = ['equities', 'indices', 'commodities', 'fx', 'crypto'];
   // flat symbols ∪ universe_matrix grid, so grid-only symbols are covered.
   const { symbols: uniqueSymbols, familyBySymbol } = massBackfillUniverse(config, families);
   const plan = buildMassBackfillExecutionPlan({
@@ -534,6 +541,7 @@ async function commandMassBackfill(args) {
       pending_jobs: jobs.length,
       skipped_jobs: plan.skipped.length,
       symbols: uniqueSymbols.length,
+      families,
       timeframes,
       days,
       concurrency,
@@ -557,6 +565,7 @@ async function commandMassBackfill(args) {
       records: 0,
       skipped_jobs: plan.skipped.length,
       symbols: uniqueSymbols.length,
+      families,
       timeframes,
       days,
       output: DEFAULT_HISTORY,
@@ -742,6 +751,7 @@ async function commandMassBackfill(args) {
       age_hours: job.age_hours ?? null,
     })),
     families: summarizeMassBackfillByFamily(jobResults),
+    requested_families: families,
     symbols: uniqueSymbols.length,
     timeframes,
     days,

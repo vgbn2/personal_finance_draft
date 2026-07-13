@@ -45,6 +45,29 @@ test('enabled placeholder ingest families fail explicitly instead of returning e
   }
 });
 
+test('Kalshi history fails visibly with structured provider metadata', async () => {
+  for (const fetchHistory of [
+    manifests.fetchKalshiHistoricalMarkets,
+    manifests.fetchKalshiHistoricalCandlesticks,
+  ]) {
+    await assert.rejects(
+      () => fetchHistory('event-or-market'),
+      (error) => {
+        assert.equal(error.code, 'not_implemented');
+        assert.equal(error.provider, 'kalshi');
+        assert.equal(error.family, 'prediction_market_history');
+        return true;
+      },
+    );
+  }
+
+  const prediction = manifests.FAMILIES_MANIFEST.find((entry) => entry.id === 'prediction_market');
+  await assert.rejects(
+    () => prediction.fetcher('kalshi', 'event', ['1d'], {}, { historyDays: 30 }),
+    (error) => error.code === 'not_implemented' && error.provider === 'kalshi',
+  );
+});
+
 test('ingestMarketData dry-run returns a read-only plan before provider fetch and persistence', async () => {
   const originalWriteFile = fsPromises.writeFile;
   const originalMkdir = fsPromises.mkdir;

@@ -2,7 +2,7 @@
 
 // backfill-daemon: proves the cache-aware orchestration without touching the network.
 // A cold cycle (no bins) must DEEP-fetch + roll up; a warm cycle (fresh bin) must
-// SKIP, leaving the base bin's count untouched (no wasted poll).
+// skip provider I/O while still refreshing local coarse rollups.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -82,7 +82,7 @@ test('cold cycle DEEP-fetches a missing symbol and rolls up coarser bins', async
   console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'cold_cycle', deep: summary.deep, rolled_up: summary.rolled_up, bars_1m: base1m.length, bars_5m: five.length, fetch_calls: calls.length }));
 });
 
-test('warm cycle SKIPs a fresh symbol — no wasted fetch, base bin unchanged', async () => {
+test('warm cycle skips provider fetch but restores coarse rollups from the fresh base', async () => {
   const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'daemon-'));
   const jobs = [{ symbol: 'BTCUSDT', family: 'crypto', baseTf: '1m' }];
   const calls = [];
@@ -96,6 +96,12 @@ test('warm cycle SKIPs a fresh symbol — no wasted fetch, base bin unchanged', 
   const callsAfterCold = calls.length;
   assert.equal(callsAfterCold, 1);
 
+  const oneHourBin = path.join(tsDir, 'BTCUSDT_1h.bin');
+  const oneHourMeta = path.join(tsDir, 'BTCUSDT_1h.meta.json');
+  fs.rmSync(oneHourBin);
+  fs.rmSync(oneHourMeta);
+  assert.equal(readTsIndex(tsDir, 'BTCUSDT', '1h'), null, 'test starts with a missing coarse bin');
+
   // Warm pass 1 hour after the last bar (< crypto 1m freshness of 2h) -> SKIP.
   const warmNow = Date.parse('2026-06-12T15:29:00Z');
   const summary = await runBackfillCycle({ tsDir, jobs, now: warmNow, execute: fetch, rollup, cycle: 2 });
@@ -103,12 +109,33 @@ test('warm cycle SKIPs a fresh symbol — no wasted fetch, base bin unchanged', 
   assert.equal(summary.skipped, 1, 'fresh symbol skipped');
   assert.equal(summary.deep, 0);
   assert.equal(summary.incremental, 0);
+  assert.equal(summary.rolled_up, 1, 'fresh base still triggered a local rollup');
   assert.equal(calls.length, callsAfterCold, 'no extra fetch issued on the warm cycle');
 
   const after = readTsIndex(tsDir, 'BTCUSDT', '1m');
   assert.equal(after.length, 30, '1m bin count unchanged');
+  assert.ok(readTsIndex(tsDir, 'BTCUSDT', '1h'), 'missing coarse bin restored without provider I/O');
 
   console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'warm_cycle', skipped: summary.skipped, fetch_calls_total: calls.length, bars_1m: after.length }));
+});
+
+test('rollup failure makes an otherwise skipped warm cycle fail visibly', async () => {
+  const events = [];
+  const summary = await runBackfillCycle({
+    tsDir: fs.mkdtempSync(path.join(os.tmpdir(), 'daemon-rollfail-')),
+    jobs: [{ symbol: 'BTCUSDT', family: 'crypto', baseTf: '1m' }],
+    now: Date.now(),
+    execute: async () => { throw new Error('provider must not run'); },
+    rollup: () => ({ ok: false, error: 'simulated rollup failure' }),
+    freshness: () => ({ reason: 'fresh', fresh: true }),
+    onJobDone: (_job, outcome) => events.push(outcome),
+  });
+
+  assert.equal(summary.skipped, 1);
+  assert.equal(summary.errors, 1);
+  assert.equal(summary.rollup_errors, 1);
+  assert.equal(summary.failures[0].stage, 'rollup');
+  assert.deepEqual(events, ['rollup_failed']);
 });
 
 test('onJobDone fires exactly once per job with the right outcome, including silent freshness-skips', async () => {
@@ -252,9 +279,11 @@ test('makeRealRollup passes a window for incremental jobs but reads the full bin
   const job = { symbol: 'ETHUSDT', family: 'crypto', baseTf: '1m' };
   const deep = rollup(job, 'deep');
   const incr = rollup(job, 'incremental');
+  const refresh = rollup(job, 'refresh');
   assert.equal(deep.source_bars, 12 * 1440, 'deep reads the whole bin');
   assert.ok(incr.source_bars < deep.source_bars, 'incremental reads only the tail');
   assert.ok(incr.source_bars <= 9 * 1440, 'incremental window is ~last 8 days + margin');
+  assert.equal(refresh.source_bars, incr.source_bars, 'fresh-base refresh uses the bounded tail window');
   fs.rmSync(tsDir, { recursive: true, force: true });
   console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'rollup_mode', deep_bars: deep.source_bars, incr_bars: incr.source_bars }));
 });

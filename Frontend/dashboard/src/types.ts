@@ -94,8 +94,8 @@ export interface MarketData {
   changePercent: number;
 }
 
-export type SignalStatus = 'GATED' | 'PROMOTED' | 'REJECTED';
-export type SignalDirection = 'LONG' | 'SHORT';
+export type SignalStatus = 'GATED' | 'REVIEWED' | 'REJECTED';
+export type SignalDirection = 'LONG' | 'SHORT' | 'NEUTRAL';
 
 export interface TradeSignal {
   id: string;
@@ -104,8 +104,10 @@ export interface TradeSignal {
   direction: SignalDirection;
   confidence: number; // 0.0 to 1.0
   status: SignalStatus;
-  timestamp: string;
+  timestamp: string | null;
   evidenceId: string;
+  validUntil?: string | null;
+  reason?: string;
 }
 
 export interface MetricTileData {

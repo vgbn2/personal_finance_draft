@@ -25,7 +25,15 @@ test('aggregate portfolio synthetic fixture includes Polymarket pUSD in totals a
       ok: true,
       configured: true,
       balance: { pUSD: 25 },
-      positions: [{ symbol: 'YES', quantity: 3, averagePrice: 0.5, marketValue: 1.5, unrealizedPl: 0 }],
+      positions: [{
+        symbol: 'YES',
+        quantity: 3,
+        averagePrice: 0.5,
+        marketValue: 1.5,
+        unrealizedPl: 0,
+        lifecycle: 'active',
+        valuationStatus: 'live_quote',
+      }],
     }
   );
 
@@ -40,4 +48,33 @@ test('aggregate portfolio synthetic fixture includes Polymarket pUSD in totals a
   assert.equal(snapshot.prediction_markets.polymarket.balance.pUSD, 25);
   assert.equal(snapshot.positions.length, 3);
   assert.deepEqual(snapshot.positions.map((position) => position.symbol), ['AAPL', 'BTC', 'YES']);
+});
+
+test('aggregate portfolio excludes ended, unknown, and unpriced Polymarket rows from marked equity', () => {
+  const snapshot = buildAggregatedPortfolioSnapshot([], {
+    ok: true,
+    configured: true,
+    balance: { pUSD: 10 },
+    positions: [
+      { symbol: 'ACTIVE', quantity: 2, averagePrice: 0.2, marketValue: 1, unrealizedPl: 0.6, lifecycle: 'active', valuationStatus: 'live_quote' },
+      { symbol: 'UNPRICED', quantity: 2, averagePrice: 0.2, marketValue: 0, unrealizedPl: 0, lifecycle: 'active', valuationStatus: 'unavailable' },
+      { symbol: 'ENDED', quantity: 5, averagePrice: 0.4, marketValue: 2, unrealizedPl: 0, lifecycle: 'ended', valuationStatus: 'unavailable' },
+      { symbol: 'UNKNOWN', quantity: 5, averagePrice: 0.4, marketValue: 2, unrealizedPl: 0, lifecycle: 'unknown', valuationStatus: 'unavailable' },
+    ],
+  });
+
+  assert.equal(snapshot.total_usd, 10);
+  assert.equal(snapshot.total_equity, 11);
+  assert.equal(snapshot.total_unrealized_pl, 0.6);
+  assert.equal(snapshot.valuation_unavailable_positions, 1);
+  assert.deepEqual(snapshot.positions.map((position) => position.symbol), ['ACTIVE']);
+  assert.deepEqual(snapshot.brokers[0], {
+    name: 'Polymarket',
+    status: 'connected',
+    balance: { pUSD: 10 },
+    position_count: 2,
+    ended_position_count: 1,
+    unknown_position_count: 1,
+    cost_basis_unavailable_count: 0,
+  });
 });
