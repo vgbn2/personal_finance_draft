@@ -2,8 +2,12 @@
 
 const { optionValue, hasFlag, printPayload } = require('../../lib/utils.js');
 const { STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths.js');
-const { readTsIndexSince } = require('../../../../shared/lib/market/validation.js');
+const {
+  familyFreshnessThresholdMs,
+  readTsIndexSince,
+} = require('../../../../shared/lib/market/validation.js');
 const { fitHmm, permutationEntropy } = require('../../../../shared/lib/ml/hmm.js');
+const { parseTimeframeMs } = require('../../../scripts/data_ops/ingest_market_data/constants.js');
 
 const TF_CONFIG = [
   { tf: '1m',  label: 'scalp',       horizon: '1–5 min',    lookbackDays: 2,    expiresBars: 3  },
@@ -118,10 +122,45 @@ function classifyPhase(trend, regimeLabel, priceZone) {
   return 'consolidation';
 }
 
-function analyzeTimeframe({ tf, label, horizon, lookbackDays, expiresBars }, symbol) {
-  const sinceMs = Date.now() - lookbackDays * 24 * 60 * 60 * 1000;
-  const bars = readTsIndexSince(STORAGE_TS_DIR, symbol, tf, sinceMs);
+function assessTimeframeFreshness(bars, { family, tf, expiresBars, now = Date.now() }) {
+  const lastBarAt = bars.length ? bars[bars.length - 1].timestamp : null;
+  const lastBarMs = Date.parse(lastBarAt || '');
+  const policyLimitMs = familyFreshnessThresholdMs({ family, timeframe: tf });
+  const timeframeMs = parseTimeframeMs(tf);
+  const signalLimitMs = Number.isFinite(timeframeMs) ? timeframeMs * expiresBars : null;
+  const limits = [policyLimitMs, signalLimitMs].filter((value) => Number.isFinite(value) && value > 0);
+  const freshnessLimitMs = limits.length ? Math.min(...limits) : null;
+  const ageMs = Number.isFinite(lastBarMs) ? Math.max(0, now - lastBarMs) : null;
+  const fresh = Number.isFinite(ageMs) && Number.isFinite(freshnessLimitMs)
+    ? ageMs <= freshnessLimitMs
+    : Number.isFinite(ageMs);
+
+  return {
+    fresh,
+    last_bar_at: Number.isFinite(lastBarMs) ? new Date(lastBarMs).toISOString() : null,
+    age_ms: ageMs,
+    freshness_limit_ms: freshnessLimitMs,
+    valid_until: Number.isFinite(lastBarMs) && Number.isFinite(freshnessLimitMs)
+      ? new Date(lastBarMs + freshnessLimitMs).toISOString()
+      : null,
+  };
+}
+
+function analyzeTimeframe({ tf, label, horizon, lookbackDays, expiresBars }, symbol, options = {}) {
+  const now = options.now ?? Date.now();
+  const tsDir = options.tsDir || STORAGE_TS_DIR;
+  const sinceMs = now - lookbackDays * 24 * 60 * 60 * 1000;
+  const bars = readTsIndexSince(tsDir, symbol, tf, sinceMs) || [];
   if (bars.length < 20) return { tf, label, horizon, expiresBars, error: 'insufficient data', bars: bars.length };
+
+  const family = options.family || bars[bars.length - 1].family || 'unknown';
+  const freshness = assessTimeframeFreshness(bars, { family, tf, expiresBars, now });
+  if (!freshness.fresh) {
+    return {
+      tf, label, horizon, expiresBars, error: 'stale data', bars: bars.length,
+      family, ...freshness,
+    };
+  }
 
   const closes = bars.map(b => b.close);
   const last = closes[closes.length - 1];
@@ -172,7 +211,7 @@ function analyzeTimeframe({ tf, label, horizon, lookbackDays, expiresBars }, sym
   const entropy = permutationEntropy(closesForHmm.slice(-200), 3);
 
   return {
-    tf, label, horizon, expiresBars, bars: bars.length,
+    tf, label, horizon, expiresBars, bars: bars.length, family, ...freshness,
     last: +last.toFixed(2),
     rsi: rsi !== null ? +rsi.toFixed(1) : null,
     sma20: sma20 !== null ? +sma20.toFixed(0) : null,
@@ -340,7 +379,8 @@ async function commandBias(args) {
     } catch (_) { /* non-fatal — continue with cached data */ }
   }
 
-  const timeframes = TF_CONFIG.map(cfg => analyzeTimeframe(cfg, symbol));
+  const now = Date.now();
+  const timeframes = TF_CONFIG.map(cfg => analyzeTimeframe(cfg, symbol, { now }));
   const aggregate = aggregateBias(timeframes);
 
   // ML signal from logistic_v1 using the 1d bar's TA features (cross-family features imputed by model)
@@ -370,4 +410,10 @@ async function commandBias(args) {
   return 0;
 }
 
-module.exports = { commandBias, analyzeTimeframe, aggregateBias, TF_CONFIG };
+module.exports = {
+  commandBias,
+  analyzeTimeframe,
+  aggregateBias,
+  assessTimeframeFreshness,
+  TF_CONFIG,
+};

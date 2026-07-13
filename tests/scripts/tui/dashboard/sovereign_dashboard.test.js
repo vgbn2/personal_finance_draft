@@ -3,6 +3,27 @@ const test = require('node:test');
 const { setTimeout: delay } = require('node:timers/promises');
 const { makeFakeStdin, makeFakeStdout, keys, send } = require('./_harness');
 
+test('dashboard App: research scorecard launches the canonical all-recorded v3 catalog', async (t) => {
+  const { render, default: React } = await Promise.all([import('ink'), import('react')])
+    .then(([ink, react]) => ({ render: ink.render, default: react.default }));
+  const h = React.createElement;
+  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const stdin = makeFakeStdin();
+  const stdout = makeFakeStdout();
+  const runCalls = [];
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: 6, onRun: (argv) => runCalls.push(argv) }), {
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+  });
+  t.after(() => instance.unmount());
+  await instance.waitUntilRenderFlush();
+  await send(stdin, instance, [keys.enter]);
+  assert.match(stdout.snapshot(), /Schema \(3 = research shadow\)/);
+  await send(stdin, instance, [keys.right, keys.down, keys.right, keys.right]);
+  assert.match(stdout.snapshot(), /sovereign scorecard --schema 3 --fixture all-recorded/);
+  await send(stdin, instance, Array(9).fill(keys.down).concat(keys.enter));
+  assert.deepEqual(runCalls[0], ['scorecard', '--schema', '3', '--fixture', 'all-recorded', '--tf', '1h,4h,1d', '--min-conf', '0.3', '--top', '50', '--no-backfill']);
+});
+
 test('dashboard App: navigate into a flagged command, edit flags, and trigger Run with the built argv', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
@@ -146,21 +167,21 @@ test('dashboard App: bt --strategy flag cycles through real registered strategie
   await send(stdin, instance, [keys.right]);
   const afterOne = stdout.snapshot();
   assert.doesNotMatch(afterOne, /<registered strategies>/);
-  assert.match(afterOne, /sovereign bt --strategy config\/strategies\/\S+\.yaml/,
-    'cycling --strategy now produces a real registry file path in the argv preview');
+  assert.match(afterOne, /sovereign bt --strategy config\/strategies\/[A-Za-z0-9_-]+/,
+    'cycling --strategy now produces a real registry path in the bounded argv preview');
   assert.doesNotMatch(afterOne, /\.yaml\]/,
     'the flag value box renders the resolved label, not the raw .yaml path');
-  const valueAfterOne = afterOne.match(/--strategy (config\/strategies\/\S+\.yaml)/)[1];
+  const valueAfterOne = afterOne.match(/--strategy (config\/strategies\/[A-Za-z0-9_-]+)/)[1];
 
   await send(stdin, instance, [keys.right]);
   const afterTwo = stdout.snapshot();
-  const valueAfterTwo = afterTwo.match(/--strategy (config\/strategies\/\S+\.yaml)/)[1];
+  const valueAfterTwo = afterTwo.match(/--strategy (config\/strategies\/[A-Za-z0-9_-]+)/)[1];
   assert.notEqual(valueAfterOne, valueAfterTwo, 'cycling moves to a different real strategy each step');
 
   // cycling back left returns to the previous value (genuine wraparound list, not a one-way placeholder edit)
   await send(stdin, instance, [keys.left]);
   const afterBack = stdout.snapshot();
-  const valueAfterBack = afterBack.match(/--strategy (config\/strategies\/\S+\.yaml)/)[1];
+  const valueAfterBack = afterBack.match(/--strategy (config\/strategies\/[A-Za-z0-9_-]+)/)[1];
   assert.equal(valueAfterBack, valueAfterOne);
 });
 
@@ -477,24 +498,19 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls back t
   const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
-  const stdout = makeFakeStdout();
-  const originalRows = process.stdout.rows;
-  process.stdout.rows = 20; // maxLines = 20 - 10 = 10. 12 lines of output > 10, triggers scroll!
+  const stdout = makeFakeStdout({ rows: 20 });
   const onRun = () => {};
 
   // Backend(2) -> backend universe(4): flagless, real, fast, and -- unlike
   // most flagless commands here -- prints a real multi-line inventory
   // report (20+ lines) that reliably exceeds the panel's visible window
-  // (process.stdout.rows is forced to 20 above, so maxLines falls back to 10
-  // regardless of the fake stdout's configured rows -- this command's output
+  // (the fake viewport is 20 rows, so the responsive output window is bounded;
+  // this command's output
   // is comfortably longer than that without needing to fabricate a giant fake transcript).
   const instance = render(h(App, { initialCatI: 2, initialCmdI: 4, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
-  t.after(() => {
-    process.stdout.rows = originalRows;
-    instance.unmount();
-  });
+  t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
   await send(stdin, instance, [keys.enter]); // flagless -> runs immediately
@@ -511,23 +527,33 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls back t
   const flat = (s) => s.replace(/\n/g, ' ');
   assert.match(flat(snap), /universe/i, 'real command output reached the panel (its last real line, since auto-follow pins to the tail by default)');
   assert.doesNotMatch(snap, /Backend Universe/, 'the report\'s opening header is off the bottom-pinned view -- proves this is really scrolled, not just short output that fits in one page');
-  const totalMatch = flat(snap).match(/\[lines (\d+)-(\d+) of[^\d]+(\d+)\]/);
+  const totalMatch = flat(snap).match(/\[lines (\d+)-(\d+)\/(\d+)\]/);
   assert.ok(totalMatch, 'a scroll-position indicator appears once output exceeds one page');
   const total = Number(totalMatch[3]);
   assert.equal(Number(totalMatch[2]), total, 'auto-follow starts pinned to the tail (last line shown == total)');
-  assert.match(flat(snap), /PgUp to scroll/);
+  assert.match(flat(snap), /PgUp/);
 
   await send(stdin, instance, [keys.pageUp]);
   const afterPageUp = stdout.snapshot();
-  const upMatch = flat(afterPageUp).match(/\[lines (\d+)-(\d+) of[^\d]+(\d+)\]/);
+  const upMatch = flat(afterPageUp).match(/\[lines (\d+)-(\d+)\/(\d+)\]/);
   assert.ok(Number(upMatch[1]) < Number(totalMatch[1]), 'PageUp moved the visible window earlier');
-  assert.match(flat(afterPageUp), /PgDn\/End to follow/, 'no longer pinned to the tail');
-  assert.match(flat(afterPageUp), /Symbols:/, 'scrolling back reveals earlier parts of the report');
+  assert.match(flat(afterPageUp), /PgDn\/End/, 'no longer pinned to the tail');
+
+  let afterTop = stdout.snapshot();
+  let topReached = false;
+  for (let i = 0; i < 20; i += 1) {
+    if (/\[lines 1-/.test(flat(afterTop))) {
+      topReached = true;
+      break;
+    }
+    await send(stdin, instance, [keys.pageUp]);
+    afterTop = stdout.snapshot();
+  }
+  assert.ok(topReached || /\[lines 1-/.test(flat(afterTop)), 'repeated PageUp reveals the beginning of the report');
 
   await send(stdin, instance, [keys.end]);
   const afterEnd = stdout.snapshot();
-  const endMatch = flat(afterEnd).match(/\[lines (\d+)-(\d+) of[^\d]+(\d+)\]/);
+  const endMatch = flat(afterEnd).match(/\[lines (\d+)-(\d+)\/(\d+)\]/);
   assert.equal(Number(endMatch[2]), total, 'End jumps back to the live tail');
-  assert.match(flat(afterEnd), /PgUp to scroll/, 'auto-follow re-armed');
+  assert.match(flat(afterEnd), /PgUp/, 'auto-follow re-armed');
 });
-

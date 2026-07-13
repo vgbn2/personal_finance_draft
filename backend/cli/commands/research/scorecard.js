@@ -4,6 +4,8 @@ const { optionValue, hasFlag, printPayload, get_Full_Universe_Symbols } = requir
 const { analyzeTimeframe, aggregateBias, TF_CONFIG } = require('./bias.js');
 const { STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths.js');
 const { readTsIndexSince } = require('../../../../shared/lib/market/validation.js');
+const { buildRecordedAppleShadow, RECORDED_AAPL_FIXTURE_ID } = require('../../../../shared/lib/analysis/services/equity_3m_shadow.js');
+const { buildAllRecordedShadowCatalog, ALL_RECORDED_FIXTURE_ID, filterShadowCatalog } = require('../../../../shared/lib/analysis/services/shadow_catalog.js');
 
 const RESET  = '\x1b[0m';
 const BOLD   = '\x1b[1m';
@@ -15,12 +17,15 @@ const CYAN   = '\x1b[36m';
 
 const ARROW = { long: '↑', short: '↓', neutral: '→', null: '.' };
 const PHASE_ORDER = ['1d', '4h', '1h', '1w', '15m', '5m', '1m'];
+const SCORECARD_FAMILIES = new Set(['equities', 'indices', 'commodities', 'fx', 'crypto']);
+const SCORECARD_REFRESH_DAYS = '30';
+const SCORECARD_REFRESH_CONCURRENCY = '3';
 
 // Load VIX + SPY + AUDUSD from ts-index to produce a single risk-on/off regime label.
-function loadMarketContext() {
-  const since = Date.now() - 60 * 24 * 60 * 60 * 1000;
+function loadMarketContext({ tsDir = STORAGE_TS_DIR, now = Date.now() } = {}) {
+  const since = now - 60 * 24 * 60 * 60 * 1000;
 
-  const vixBars = readTsIndexSince(STORAGE_TS_DIR, 'VIX', '1d', since);
+  const vixBars = readTsIndexSince(tsDir, 'VIX', '1d', since) || [];
   const vixLast = vixBars.length ? vixBars[vixBars.length - 1].close : null;
   const vixLabel = vixLast === null ? null
     : vixLast < 15 ? 'low' : vixLast < 25 ? 'normal' : vixLast < 35 ? 'elevated' : 'extreme';
@@ -33,8 +38,8 @@ function loadMarketContext() {
     return last > sma * 1.005 ? 'up' : last < sma * 0.995 ? 'down' : 'flat';
   }
 
-  const spyBias = sma20bias(readTsIndexSince(STORAGE_TS_DIR, 'SPY', '1d', since));
-  const audBias = sma20bias(readTsIndexSince(STORAGE_TS_DIR, 'AUDUSD', '1d', since));
+  const spyBias = sma20bias(readTsIndexSince(tsDir, 'SPY', '1d', since) || []);
+  const audBias = sma20bias(readTsIndexSince(tsDir, 'AUDUSD', '1d', since) || []);
 
   let regime = 'MIXED';
   if ((vixLabel === 'elevated' || vixLabel === 'extreme') && spyBias === 'down') regime = 'RISK-OFF';
@@ -45,10 +50,10 @@ function loadMarketContext() {
 
 // Pearson correlation of 30d log-returns between symbol and BTCUSDT.
 // btcBars: pre-fetched 1d bars for BTCUSDT (pass once, reuse per symbol).
-function computeBtcCorr(symbol, btcBars) {
+function computeBtcCorr(symbol, btcBars, { tsDir = STORAGE_TS_DIR, now = Date.now() } = {}) {
   if (symbol === 'BTCUSDT' || btcBars.length < 10) return null;
-  const since = Date.now() - 35 * 24 * 60 * 60 * 1000;
-  const symBars = readTsIndexSince(STORAGE_TS_DIR, symbol, '1d', since);
+  const since = now - 35 * 24 * 60 * 60 * 1000;
+  const symBars = readTsIndexSince(tsDir, symbol, '1d', since) || [];
   if (symBars.length < 10) return null;
 
   const btcMap = new Map(btcBars.map(b => [b.timestamp, b.close]));
@@ -83,8 +88,26 @@ function chunks(arr, size) {
   return out;
 }
 
-async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars) {
-  const tfs = tfConfigs.map(cfg => analyzeTimeframe(cfg, symbol));
+async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars, options = {}) {
+  const tfs = tfConfigs.map(cfg => analyzeTimeframe(cfg, symbol, { ...options, family }));
+  const invalid = tfs.filter((timeframe) => timeframe.error);
+  if (invalid.length > 0) {
+    return {
+      eligible: false,
+      exclusion: {
+        symbol,
+        family,
+        reasons: invalid.map((timeframe) => ({
+          timeframe: timeframe.tf,
+          reason: timeframe.error,
+          bars: timeframe.bars,
+          last_bar_at: timeframe.last_bar_at || null,
+          age_ms: timeframe.age_ms ?? null,
+          freshness_limit_ms: timeframe.freshness_limit_ms ?? null,
+        })),
+      },
+    };
+  }
   const agg = aggregateBias(tfs);
 
   // Phase + regime: take from highest-priority TF that has a value
@@ -100,11 +123,23 @@ async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars) {
   }
 
   const tfMap = {};
+  const timeframeDetails = {};
   for (const t of tfs) {
     tfMap[t.tf] = t.error ? null : t.bias;
+    timeframeDetails[t.tf] = {
+      bias: t.bias,
+      last_bar_at: t.last_bar_at,
+      age_ms: t.age_ms,
+      valid_until: t.valid_until,
+      bars: t.bars,
+    };
   }
 
+  const lastBarTimes = tfs.map((timeframe) => Date.parse(timeframe.last_bar_at));
+  const validUntilTimes = tfs.map((timeframe) => Date.parse(timeframe.valid_until));
+
   return {
+    eligible: true,
     symbol, family,
     bias: agg.bias,
     confidence: agg.confidence,
@@ -113,7 +148,13 @@ async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars) {
     phase,
     regime,
     tfs: tfMap,
-    btcCorr: computeBtcCorr(symbol, btcBars),
+    timeframe_details: timeframeDetails,
+    data_as_of: new Date(Math.min(...lastBarTimes)).toISOString(),
+    latest_bar_at: new Date(Math.max(...lastBarTimes)).toISOString(),
+    valid_until: new Date(Math.min(...validUntilTimes)).toISOString(),
+    complete: true,
+    confidence_kind: 'heuristic_vote_strength',
+    btcCorr: computeBtcCorr(symbol, btcBars, options),
   };
 }
 
@@ -139,10 +180,22 @@ function renderMarketContext(ctx) {
   console.log(parts.join(`  ${DIM}|${RESET}  `));
 }
 
-function renderScorecard(rows, tfKeys, elapsed, totalSymbols, skipped, ctx) {
+function renderExclusionSummary(summary) {
+  if (!summary || summary.total === 0) return;
+  const reasons = Object.entries(summary.by_reason)
+    .map(([reason, count]) => `${reason}: ${count}`)
+    .join(', ');
+  const timeframes = Object.entries(summary.by_timeframe)
+    .map(([timeframe, counts]) => `${timeframe} (${Object.entries(counts).map(([reason, count]) => `${reason}: ${count}`).join(', ')})`)
+    .join(' | ');
+  console.log(`${DIM}Excluded ${summary.total}: ${reasons}${RESET}`);
+  console.log(`${DIM}By timeframe: ${timeframes}${RESET}`);
+}
+
+function renderScorecard(rows, filters, elapsed, counts, ctx) {
   const date = new Date().toUTCString();
-  const families = [...new Set(rows.map(r => r.family))].join(', ') || 'all';
-  const tfLabel  = tfKeys.join('/');
+  const families = filters.family || 'all price families';
+  const tfLabel  = filters.timeframes.join('/');
 
   console.log(`\n${BOLD}${CYAN}SOVEREIGN SCORECARD${RESET}  ${DIM}${date}${RESET}`);
   console.log(`${DIM}Families: ${families} · TFs: ${tfLabel} · ${rows.length} assets scored${RESET}`);
@@ -156,7 +209,7 @@ function renderScorecard(rows, tfKeys, elapsed, totalSymbols, skipped, ctx) {
     'Conf'.padEnd(7) +
     'Aligned'.padEnd(9) +
     'Phase'.padEnd(16) +
-    tfKeys.map(t => t.padEnd(5)).join('') +
+    filters.timeframes.map(t => t.padEnd(5)).join('') +
     'Regime'.padEnd(12) +
     'BTC-r';
   const W = Math.max(98, hdr.length);
@@ -181,7 +234,7 @@ function renderScorecard(rows, tfKeys, elapsed, totalSymbols, skipped, ctx) {
     const regimeText  = r.regime || 'n/a';
     const regimeStr   = r.regime ? `${rc}${r.regime}${RESET}` : `${DIM}n/a${RESET}`;
 
-    const tfArrows = tfKeys.map(tf => {
+    const tfArrows = filters.timeframes.map(tf => {
       const b = r.tfs[tf];
       const c = b ? biasColor(b) : DIM;
       return `${c}${ARROW[b] || '.'}${RESET}    `;
@@ -210,7 +263,37 @@ function renderScorecard(rows, tfKeys, elapsed, totalSymbols, skipped, ctx) {
   }
 
   console.log(DIM + '─'.repeat(W) + RESET);
-  console.log(`${DIM}Scored ${totalSymbols} assets in ${(elapsed / 1000).toFixed(1)}s  (${skipped} skipped — no data)${RESET}\n`);
+  renderExclusionSummary(counts.exclusion_summary);
+  console.log(`${DIM}Evaluated ${counts.total_symbols} assets in ${(elapsed / 1000).toFixed(1)}s  (${counts.eligible_symbols} eligible, ${counts.excluded_symbols} excluded, ${counts.confidence_filtered} below confidence filter, ${rows.length} shown)${RESET}\n`);
+}
+
+function summarizeExclusions(exclusions) {
+  const summary = { total: exclusions.length, by_reason: {}, by_timeframe: {} };
+  for (const exclusion of exclusions) {
+    for (const detail of exclusion.reasons || []) {
+      const reason = detail.reason || 'analysis failed';
+      const timeframe = detail.timeframe || 'unknown';
+      summary.by_reason[reason] = (summary.by_reason[reason] || 0) + 1;
+      summary.by_timeframe[timeframe] = summary.by_timeframe[timeframe] || {};
+      summary.by_timeframe[timeframe][reason] = (summary.by_timeframe[timeframe][reason] || 0) + 1;
+    }
+  }
+  return summary;
+}
+
+function buildScorecardRefreshArgs(filters) {
+  return [
+    '--families', filters.family || [...SCORECARD_FAMILIES].join(','),
+    '--timeframes', filters.timeframes.join(','),
+    '--days', SCORECARD_REFRESH_DAYS,
+    '--concurrency', SCORECARD_REFRESH_CONCURRENCY,
+  ];
+}
+
+async function refreshScorecardData(filters, runner = null) {
+  const { commandMassBackfill } = require('../data/data.js');
+  return (runner || commandMassBackfill)(buildScorecardRefreshArgs(filters));
+  return commandMassBackfill(refreshArgs);
 }
 
 function parseScorecardOptions(args) {
@@ -222,7 +305,7 @@ function parseScorecardOptions(args) {
 
   const tfKeys   = tfArg.split(',').map(s => s.trim()).filter(Boolean);
   const tfConfigs = tfKeys.map(key => TF_CONFIG.find(c => c.tf === key)).filter(Boolean);
-  if (tfConfigs.length === 0) {
+  if (tfConfigs.length === 0 || tfConfigs.length !== tfKeys.length) {
     return {
       ok: false,
       error: `No valid TFs in --tf "${tfArg}". Valid: ${TF_CONFIG.map(c => c.tf).join(',')}`,
@@ -241,7 +324,20 @@ function parseScorecardOptions(args) {
   };
 }
 
-async function buildScorecard(args, { progressEnabled = false } = {}) {
+async function buildScorecard(args, runtime = {}) {
+  const requestedSchema = optionValue(args, '--schema');
+  if (requestedSchema === '3') {
+    const fixture = optionValue(args, '--fixture');
+    if (fixture === RECORDED_AAPL_FIXTURE_ID) return buildRecordedAppleShadow();
+    if (fixture === ALL_RECORDED_FIXTURE_ID) return filterShadowCatalog(buildAllRecordedShadowCatalog(), { family: optionValue(args, '--family', ''), symbol: optionValue(args, '--symbol', ''), state: optionValue(args, '--state', '') });
+    return { ok: false, error: `schema 3 shadow requires --fixture ${RECORDED_AAPL_FIXTURE_ID} or ${ALL_RECORDED_FIXTURE_ID}` };
+  }
+  const {
+    progressEnabled = false,
+    tsDir = STORAGE_TS_DIR,
+    now = Date.now(),
+    universeLoader = get_Full_Universe_Symbols,
+  } = runtime;
   const options = parseScorecardOptions(args);
   if (!options.ok) return options;
 
@@ -252,13 +348,14 @@ async function buildScorecard(args, { progressEnabled = false } = {}) {
   if (progressEnabled) process.stdout.write(`\x1b[90m⌛ loading universe...\x1b[0m\r`);
 
   // Load market context + BTC bars once (shared across all symbol analyses)
-  const marketCtx = loadMarketContext();
-  const btcBars = readTsIndexSince(STORAGE_TS_DIR, 'BTCUSDT', '1d', Date.now() - 35 * 24 * 60 * 60 * 1000);
+  const marketCtx = loadMarketContext({ tsDir, now });
+  const btcBars = readTsIndexSince(tsDir, 'BTCUSDT', '1d', now - 35 * 24 * 60 * 60 * 1000) || [];
 
-  const universe = await get_Full_Universe_Symbols();
-  const filtered = familyFilter
-    ? universe.filter(s => s.family === familyFilter)
-    : universe;
+  const universe = await universeLoader();
+  if (familyFilter && !SCORECARD_FAMILIES.has(familyFilter)) {
+    return { ok: false, error: `Family "${familyFilter}" is not supported by schema-2 technical scorecard.` };
+  }
+  const filtered = universe.filter((entry) => SCORECARD_FAMILIES.has(entry.family) && (!familyFilter || entry.family === familyFilter));
 
   if (filtered.length === 0) {
     return {
@@ -271,12 +368,22 @@ async function buildScorecard(args, { progressEnabled = false } = {}) {
 
   const t0 = Date.now();
   const scorecard = [];
+  const exclusions = [];
 
   for (const chunk of chunks(filtered, 8)) {
-    const results = await Promise.allSettled(chunk.map(s => analyzeSymbol(s, tfConfigs, btcBars)));
+    const results = await Promise.allSettled(chunk.map(s => analyzeSymbol(
+      s,
+      tfConfigs,
+      btcBars,
+      { tsDir, now },
+    )));
     for (const r of results) {
-      if (r.status === 'fulfilled') scorecard.push(r.value);
-      // rejected: silently skip (symbol with no data at all)
+      if (r.status === 'fulfilled' && r.value.eligible) {
+        const { eligible, ...row } = r.value;
+        scorecard.push(row);
+      }
+      else if (r.status === 'fulfilled') exclusions.push(r.value.exclusion);
+      else exclusions.push({ symbol: null, family: null, reasons: [{ reason: r.reason?.message || 'analysis failed' }] });
     }
   }
 
@@ -290,17 +397,25 @@ async function buildScorecard(args, { progressEnabled = false } = {}) {
   rows.sort((a, b) => b.score - a.score);
   if (topN > 0) rows = rows.slice(0, topN);
 
-  const skipped = filtered.length - scorecard.length;
+  const eligibleSymbols = scorecard.length;
+  const excludedSymbols = exclusions.length;
+  const confidenceFiltered = Math.max(0, eligibleSymbols - rows.length);
 
   return {
     ok: true,
     type: 'scorecard',
-    schema_version: 1,
-    generated_at: new Date().toISOString(),
+    schema_version: 2,
+    generated_at: new Date(now).toISOString(),
     elapsed_ms: elapsed,
     total_symbols: filtered.length,
-    analyzed_symbols: scorecard.length,
-    skipped,
+    // analyzed_symbols/skipped are retained for schema-2 compatibility.
+    analyzed_symbols: eligibleSymbols,
+    skipped: excludedSymbols,
+    eligible_symbols: eligibleSymbols,
+    excluded_symbols: excludedSymbols,
+    confidence_filtered: confidenceFiltered,
+    exclusion_summary: summarizeExclusions(exclusions),
+    exclusions,
     filters: {
       family: familyFilter,
       direction: dirFilter,
@@ -315,6 +430,20 @@ async function buildScorecard(args, { progressEnabled = false } = {}) {
 
 async function commandScorecard(args) {
   const isJson = hasFlag(args, '--json');
+  const requestedSchema = optionValue(args, '--schema');
+  if (requestedSchema !== '3' && !hasFlag(args, '--no-backfill')) {
+    const options = parseScorecardOptions(args);
+    if (!options.ok) {
+      process.stderr.write(`[scorecard] ${options.error}\n`);
+      return 1;
+    }
+    if (!isJson) process.stdout.write('\x1b[90m⌛ refreshing scorecard data...\x1b[0m\n');
+    const refreshExitCode = await refreshScorecardData({ family: options.familyFilter, timeframes: options.tfKeys });
+    if (refreshExitCode !== 0) {
+      process.stderr.write('[scorecard] refresh failed; refusing to score potentially stale data. Re-run with --no-backfill only for cache diagnostics.\n');
+      return 1;
+    }
+  }
   const result = await buildScorecard(args, {
     progressEnabled: !isJson && process.stdout.isTTY,
   });
@@ -325,16 +454,19 @@ async function commandScorecard(args) {
   }
 
   if (isJson) {
-    // Keep the established CLI JSON contract (an array of ranked rows).
-    printPayload(result.rows, args);
+    // Schema v2 keeps its established row-array contract; v3 emits its research envelope.
+    printPayload(result.schema_version === 3 ? result : result.rows, args);
   } else {
     if (process.stdout.isTTY) process.stdout.write(' '.repeat(60) + '\r'); // clear spinner line
+    if (result.schema_version === 3) {
+      process.stdout.write(renderShadowCatalog(result));
+      return 0;
+    }
     renderScorecard(
       result.rows,
-      result.filters.timeframes,
+      result.filters,
       result.elapsed_ms,
-      result.total_symbols,
-      result.skipped,
+      result,
       result.market_context,
     );
   }
@@ -342,4 +474,18 @@ async function commandScorecard(args) {
   return 0;
 }
 
-module.exports = { commandScorecard, buildScorecard, parseScorecardOptions };
+function renderShadowCatalog(result, { width = process.stdout.columns || 100 } = {}) {
+  const compact = width < 100;
+  const lines = [`Research shadow v3 | ${result.fixture_id} | NOT DECISION-READY`, `Rows ${result.counts.rows} | eligible ${result.counts.eligible ?? 0} | degraded ${result.counts.degraded ?? 0} | excluded ${result.counts.excluded ?? 0}`, compact ? 'ASSET      DIR   STR   COV   STATE' : 'ASSET      FAMILY       DIR   STRENGTH  COVERAGE  STATE'];
+  for (const row of result.rows) {
+    const asset = row.asset_descriptor.symbol.padEnd(10);
+    if (compact) lines.push(`${asset} ${row.direction.padEnd(5)} ${row.composite_strength.toFixed(2).padEnd(5)} ${row.coverage.toFixed(2).padEnd(5)} ${row.decision_state}`);
+    else lines.push(`${asset} ${row.asset_descriptor.family.padEnd(12)} ${row.direction.padEnd(5)} ${row.composite_strength.toFixed(2).padEnd(9)} ${row.coverage.toFixed(2).padEnd(9)} ${row.decision_state}`);
+    lines.push(`  factors: ${row.factor_results.map((factor) => `${factor.domain}=${factor.score.toFixed(2)}[${factor.quality}]`).join(', ')}`);
+    if (row.exclusion_reasons.length) lines.push(`  reasons: ${row.exclusion_reasons.join('; ')}`);
+    lines.push(`  evidence: ${row.factor_results.flatMap((factor) => factor.evidence_ids).slice(0, 4).join(', ')}`);
+  }
+  return `${lines.map((line) => line.slice(0, Math.max(40, width))).join('\n')}\n`;
+}
+
+module.exports = { commandScorecard, buildScorecard, parseScorecardOptions, renderShadowCatalog, renderScorecard, summarizeExclusions, buildScorecardRefreshArgs, refreshScorecardData, SCORECARD_FAMILIES };

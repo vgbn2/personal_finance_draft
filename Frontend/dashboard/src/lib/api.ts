@@ -4,7 +4,6 @@
  */
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
-export const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 export const API_ENDPOINTS = {
   STATUS: `${API_BASE_URL}/api/status`,
@@ -29,7 +28,6 @@ export const API_ENDPOINTS = {
 
 export const DEFAULT_HEADERS = {
   'Content-Type': 'application/json',
-  ...(API_TOKEN ? { 'X-Sovereign-Token': API_TOKEN } : {}),
 };
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {

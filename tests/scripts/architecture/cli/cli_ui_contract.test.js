@@ -87,6 +87,52 @@ test('legacy dashboard omits unavailable ingest families', async () => {
   }
 });
 
+test('legacy and dashboard manifests stay aligned on shared command ids and core flags', async () => {
+  const { M } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const modernCommands = new Map(M.flatMap((category) => category.cmds).map((entry) => [entry.id, entry]));
+  const legacyCommands = new Map(Object.entries(manifest.commands).flatMap(([categoryId, entries]) => entries.map((entry) => {
+    const id = categoryId === 'trade' && entry.id === 'favorites'
+      ? 'trade favorites'
+      : [...(entry.prefix || []), entry.id].join(' ');
+    return [id, entry];
+  })));
+
+  const modernOnly = [...modernCommands.keys()].filter((id) => !legacyCommands.has(id));
+  assert.deepEqual(
+    modernOnly.sort(),
+    ['backend chart', 'stop-backfill-daemon'],
+    'only the explicitly newer dashboard entries should exist in the inline manifest'
+  );
+
+  const legacyOnly = [...legacyCommands.keys()].filter((id) => !modernCommands.has(id));
+  assert.deepEqual(legacyOnly, [], 'the legacy manifest should not contain commands that the dashboard no longer knows about');
+
+  const flagAligned = [
+    'watch',
+    'backfill-daemon',
+    'backend correlation',
+    'backend visualize',
+    'backend universe',
+    'bt',
+    'optimize',
+    'scorecard',
+    'settings favorites',
+  ];
+
+  for (const id of flagAligned) {
+    const modern = modernCommands.get(id);
+    const legacy = legacyCommands.get(id);
+    assert.ok(modern, `expected modern manifest entry for ${id}`);
+    assert.ok(legacy, `expected legacy manifest entry for ${id}`);
+
+    const modernFlags = Object.keys(modern.flags || {}).sort();
+    const legacyFlags = Object.keys(legacy.flags || {}).sort();
+    for (const flag of legacyFlags) {
+      assert.ok(modernFlags.includes(flag), `modern manifest should retain legacy flag ${flag} for ${id}`);
+    }
+  }
+});
+
 test('polymarket TUI exposes historical price ingestion path', () => {
   const history = manifest.commands.polymarket.find((entry) => entry.id === 'history');
 

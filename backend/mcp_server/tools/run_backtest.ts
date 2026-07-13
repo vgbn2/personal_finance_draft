@@ -12,7 +12,7 @@ export const runBacktestSchema = z.object({
   fee_bps: z.number().optional().describe('Commission in basis points'),
   slippage_bps: z.number().optional().describe('Slippage in basis points'),
   sample: z.boolean().optional().describe('Run with deterministic generated bars instead of live cache'),
-  allow_degraded: z.boolean().optional().default(true).describe('Proceed even when data quality is below ideal (default: true)'),
+  allow_degraded: z.boolean().optional().default(false).describe('Proceed despite failed data-quality checks (default: false; research only)'),
 });
 
 export function runBacktest(args: z.infer<typeof runBacktestSchema>): ToolResponse {
@@ -30,7 +30,7 @@ export function runBacktest(args: z.infer<typeof runBacktestSchema>): ToolRespon
   if (args.fee_bps !== undefined) cliArgs.push('--fee-bps', args.fee_bps.toString());
   if (args.slippage_bps !== undefined) cliArgs.push('--slippage-bps', args.slippage_bps.toString());
   if (args.sample) cliArgs.push('--sample');
-  if (args.allow_degraded !== false) cliArgs.push('--allow-degraded');
+  if (args.allow_degraded === true) cliArgs.push('--allow-degraded');
 
   // Always request structured JSON so the LLM receives parseable output.
   cliArgs.push('--json');

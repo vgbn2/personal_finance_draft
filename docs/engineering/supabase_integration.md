@@ -32,7 +32,10 @@ Tables:
 
 All public tables have Row Level Security enabled. User-owned rows are scoped with `(select auth.uid())`; no table has broad anonymous data access.
 
-`macro_observations` stores normalized macro rows with the raw value, a unit label, and a unitless `signed_log1p` feature so CPI, PPI, rates, counts, and level series can live in one canonical table without losing the source value.
+`macro_observations` stores normalized macro rows with the raw value, a unit label, and a unitless
+`signed_log1p` feature. Point-in-time eligible rows also preserve period end, release time, availability
+time, vintage, and a revision id. Period-only legacy rows remain stored but are excluded from historical
+as-of selection so later revisions cannot leak into earlier decisions.
 
 ## Local Web API
 

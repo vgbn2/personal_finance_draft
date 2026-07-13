@@ -39,11 +39,22 @@ function signedLog1p(value) {
 }
 
 function normalizeObservedAt(record) {
-  const raw = record.timestamp || record.observed_at || null;
+  const raw = record.period_end || record.timestamp || record.observed_at || null;
   if (!raw) return null;
   const date = new Date(raw);
   if (Number.isNaN(date.getTime())) return null;
   return date.toISOString();
+}
+
+function normalizeTimestamp(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function macroRevisionId({ source, series, periodEnd, availableAt, vintage }) {
+  if (!source || !series || !periodEnd || !availableAt) return null;
+  return [source, series, periodEnd, availableAt, vintage || 'initial'].join(':');
 }
 
 function normalizeMacroObservation(record) {
@@ -51,18 +62,73 @@ function normalizeMacroObservation(record) {
   const observedAt = normalizeObservedAt(record);
   const rawValue = Number(record.value ?? record.close);
   const unit = MACRO_SERIES_UNITS[series] || 'level';
+  const periodEnd = normalizeObservedAt(record);
+  const releasedAt = normalizeTimestamp(record.released_at || record.release_date);
+  const availableAt = normalizeTimestamp(record.available_at || record.realtime_start);
+  const ingestedAt = normalizeTimestamp(record.ingested_at) || new Date().toISOString();
+  const vintage = record.vintage == null ? null : String(record.vintage);
+  const pointInTimeEligible = Boolean(
+    periodEnd && releasedAt && availableAt
+    && Date.parse(availableAt) >= Date.parse(releasedAt)
+    && Date.parse(ingestedAt) >= Date.parse(availableAt),
+  );
+  const revisionId = pointInTimeEligible
+    ? String(record.revision_id || macroRevisionId({
+      source: String(record.source || record.provider || 'fred'),
+      series,
+      periodEnd,
+      availableAt,
+      vintage,
+    }))
+    : `legacy:${String(record.source || record.provider || 'fred')}:${series}:${periodEnd || 'unknown'}`;
 
   return {
     family: 'macro',
     series,
     source: String(record.source || record.provider || 'fred'),
     observed_at: observedAt,
+    period_end: periodEnd,
+    released_at: releasedAt,
+    available_at: availableAt,
+    ingested_at: ingestedAt,
+    vintage,
+    revision_id: revisionId,
+    point_in_time_eligible: pointInTimeEligible,
     value: Number.isFinite(rawValue) ? rawValue : null,
     normalized_value: Number.isFinite(rawValue) ? signedLog1p(rawValue) : null,
     unit,
     normalization_method: 'signed_log1p',
     metadata: record,
   };
+}
+
+function selectMacroObservationsAsOf(records, asOf) {
+  const decisionAt = normalizeTimestamp(asOf);
+  if (!decisionAt) throw new TypeError('asOf must be a valid timestamp');
+  const decisionMs = Date.parse(decisionAt);
+  const selected = new Map();
+
+  for (const record of buildMacroObservationRows(records)) {
+    if (!record.point_in_time_eligible
+      || Date.parse(record.available_at) > decisionMs
+      || Date.parse(record.ingested_at) > decisionMs) continue;
+    const key = `${record.family}:${record.series}:${record.period_end}`;
+    const current = selected.get(key);
+    const currentAvailableMs = current ? Date.parse(current.available_at) : -Infinity;
+    const recordAvailableMs = Date.parse(record.available_at);
+    const newerAvailability = recordAvailableMs > currentAvailableMs;
+    const sameAvailabilityNewerIngest = current
+      && recordAvailableMs === currentAvailableMs
+      && Date.parse(record.ingested_at) > Date.parse(current.ingested_at);
+    if (!current || newerAvailability || sameAvailabilityNewerIngest) {
+      selected.set(key, record);
+    }
+  }
+
+  return [...selected.values()].sort((left, right) => {
+    const seriesOrder = left.series.localeCompare(right.series);
+    return seriesOrder || Date.parse(left.period_end) - Date.parse(right.period_end);
+  });
 }
 
 function buildMacroObservationRows(records) {
@@ -120,7 +186,7 @@ async function saveMacroObservations(records, options = {}) {
   for (const batch of chunkRows(rows, batchSize)) {
     const { error } = await supabase
       .from(options.table || 'macro_observations')
-      .upsert(batch, { onConflict: 'family,series,observed_at' });
+      .upsert(batch, { onConflict: 'revision_id' });
 
     if (error) {
       throw new Error(`macro_observations write failed: ${error.message}`);
@@ -146,6 +212,8 @@ module.exports = {
   buildMacroObservationRows,
   isConfigured,
   normalizeMacroObservation,
+  macroRevisionId,
   saveMacroObservations,
+  selectMacroObservationsAsOf,
   signedLog1p,
 };

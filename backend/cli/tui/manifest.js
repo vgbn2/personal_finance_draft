@@ -226,10 +226,15 @@ const COMMAND_MANIFEST = {
         '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: false }
       }},
       { id: 'scorecard', label: 'Scorecard (EdgeFinder)', loading: true, flags: {
+        '--schema': { type: 'select', options: ['2', '3'], label: 'Schema (3 = research shadow)', default: '2' },
+        '--fixture': { type: 'select', options: ['', 'aapl-recorded', 'all-recorded'], label: 'Schema 3 fixture', default: '' },
+        '--symbol': { type: 'text', default: '', label: 'Schema 3 workbench symbol' },
+        '--state': { type: 'select', options: ['', 'eligible', 'degraded', 'excluded'], label: 'Schema 3 decision state', default: '' },
         '--family': { type: 'select', options: ['', 'crypto', 'equities', 'fx', 'indices', 'commodities'], label: 'Family filter (blank = all)' },
         '--tf': { type: 'text', default: '1h,4h,1d', label: 'Timeframes (comma-sep)' },
         '--direction': { type: 'select', options: ['', 'long', 'short', 'neutral'], label: 'Direction filter (blank = all)' },
         '--top': { type: 'text', default: '50', label: 'Max rows' },
+        // The dashboard stays cache-diagnostic by default; turn this off to request a bounded refresh.
         '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: true }
       }}
     ],

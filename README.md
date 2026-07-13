@@ -87,12 +87,12 @@ npm approve-scripts
 
 **Data pipeline**
 - Binary ts-index format (`storage/data/ts/`) — 1m grain for crypto (Binance) and US equities (Alpaca), 5m/daily for Yahoo families
-- Binance WebSocket live feed in `backfill-daemon` — closed 1m klines written to ts-index in real time
+- Binance WebSocket live feed in `backfill-daemon` — strictly newer closed 1m klines append without rewriting deep history
 - `sovereign backfill-daemon [--once] [--families crypto|equities|...]`
 
 **Research**
 - `sovereign bias <SYMBOL>` — 7-TF table (1m→1w) with RSI, VWAP, Volume Profile, Wyckoff phase, HMM regime, permutation entropy, ML signal
-- `sovereign scorecard [--family crypto] [--top 20]` — EdgeFinder-style ranked table across all configured assets (~1.5s for 36 crypto)
+- `sovereign scorecard [--family crypto] [--top 20]` — research ranking across assets whose requested timeframes are complete and fresh; rows expose source time and validity metadata
 - `sovereign bt --strategy <name>` — backtests against ts-index data; ONNX models (`xgboost_v1`, `logistic_v1`, `regime_classifier`) run inference via `onnxruntime-node`
 
 **Live execution**
@@ -115,7 +115,7 @@ npm approve-scripts
 
 ```
 backend/cli/         Node CLI — commands, TUI, dispatch
-backend/api/         Express REST API (port 8787)
+backend/api/         Native Node HTTP API + Socket.IO bridge (port 8787)
 backend/gateway/     TypeScript execution gateway — all broker adapters
 backend/core/        C++ data integrity, correlation, portfolio risk (CMake/ctest)
 shared/lib/          Shared JS modules (market data, ML, runtime, settings)

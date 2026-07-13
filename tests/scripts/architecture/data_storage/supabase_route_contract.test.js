@@ -7,6 +7,8 @@ const path = require('node:path');
 const SUPABASE_SERVICE_PATH = require.resolve('../../../../backend/api/server/services/supabase_client');
 const AUTH_ROUTE_PATH = require.resolve('../../../../backend/api/server/routes/account/auth');
 const DATABASE_ROUTE_PATH = require.resolve('../../../../backend/api/server/routes/account/database');
+const CONFIG_ROUTE_PATH = require.resolve('../../../../backend/api/server/routes/account/config');
+const USER_CONFIG_MIGRATION = path.resolve(__dirname, '..', '..', '..', '..', 'supabase', 'migrations', '20260713110000_user_config.sql');
 
 function clear(modulePath) {
   delete require.cache[modulePath];
@@ -17,6 +19,7 @@ function loadRoutes(mockClient) {
   const originalService = require.cache[SUPABASE_SERVICE_PATH];
   const originalAuthRoute = require.cache[AUTH_ROUTE_PATH];
   const originalDbRoute = require.cache[DATABASE_ROUTE_PATH];
+  const originalConfigRoute = require.cache[CONFIG_ROUTE_PATH];
 
   require.cache[require.resolve('@supabase/supabase-js')] = {
     id: require.resolve('@supabase/supabase-js'),
@@ -30,15 +33,18 @@ function loadRoutes(mockClient) {
   clear(SUPABASE_SERVICE_PATH);
   clear(AUTH_ROUTE_PATH);
   clear(DATABASE_ROUTE_PATH);
+  clear(CONFIG_ROUTE_PATH);
 
   const service = require(SUPABASE_SERVICE_PATH);
   const authRoute = require(AUTH_ROUTE_PATH);
   const dbRoute = require(DATABASE_ROUTE_PATH);
+  const configRoute = require(CONFIG_ROUTE_PATH);
 
   return {
     service,
     authRoute,
     dbRoute,
+    configRoute,
     restore() {
       if (originalCreateClient) require.cache[require.resolve('@supabase/supabase-js')] = originalCreateClient;
       else clear(require.resolve('@supabase/supabase-js'));
@@ -48,6 +54,8 @@ function loadRoutes(mockClient) {
       else clear(AUTH_ROUTE_PATH);
       if (originalDbRoute) require.cache[DATABASE_ROUTE_PATH] = originalDbRoute;
       else clear(DATABASE_ROUTE_PATH);
+      if (originalConfigRoute) require.cache[CONFIG_ROUTE_PATH] = originalConfigRoute;
+      else clear(CONFIG_ROUTE_PATH);
     },
   };
 }
@@ -107,6 +115,101 @@ test('supabase auth and database routes follow the expected contract', async () 
       db_status: dbRoute.status(dbAuth),
       table_count: dbAuth.tables.length,
     }, null, 2));
+  } finally {
+    restore();
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_PUBLISHABLE_KEY;
+  }
+});
+
+test('authorization decisions are revalidated when the same token is revoked', async () => {
+  process.env.SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_test_key';
+  let revoked = false;
+  let validationCalls = 0;
+
+  const mockClient = () => ({
+    auth: {
+      getUser: async () => {
+        validationCalls += 1;
+        return revoked
+          ? { data: { user: null }, error: new Error('token revoked') }
+          : { data: { user: { id: 'user-123', email: 'a@example.com' } }, error: null };
+      },
+    },
+  });
+
+  const { service, restore } = loadRoutes(mockClient);
+  const req = { headers: { authorization: 'Bearer same-token' } };
+  try {
+    const valid = await service.getAuthStatus(req);
+    revoked = true;
+    const invalid = await service.getAuthStatus(req);
+
+    assert.equal(valid.authenticated, true);
+    assert.equal(invalid.authenticated, false);
+    assert.equal(invalid.ok, false);
+    assert.equal(validationCalls, 2, 'every authorization decision must reach the provider');
+  } finally {
+    restore();
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_PUBLISHABLE_KEY;
+  }
+});
+
+test('user config has a migrated own-user schema and validates persisted shapes', async () => {
+  process.env.SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_test_key';
+  const stored = new Map();
+  const mockClient = () => ({
+    auth: {
+      getUser: async (token) => ({
+        data: token === 'good-token' ? { user: { id: 'user-123', email: 'a@example.com' } } : { user: null },
+        error: token === 'good-token' ? null : new Error('invalid token'),
+      }),
+    },
+    from: (table) => {
+      assert.equal(table, 'user_config');
+      return {
+        select: () => ({
+          eq: async (_field, userId) => ({
+            data: [...stored.values()].filter((row) => row.user_id === userId),
+            error: null,
+          }),
+        }),
+        upsert: async (row) => {
+          stored.set(`${row.user_id}:${row.config_key}`, row);
+          return { error: null };
+        },
+      };
+    },
+  });
+
+  const { configRoute, restore } = loadRoutes(mockClient);
+  const req = { headers: { authorization: 'Bearer good-token' }, method: 'POST' };
+  try {
+    const saved = await configRoute.handle({
+      key: 'risk_thresholds',
+      value: { max_position_pct: 0.05, max_drawdown_pct: 0.15 },
+    }, { req });
+    assert.deepEqual(saved, { ok: true });
+
+    const fetched = await configRoute.handle({}, { req: { ...req, method: 'GET' } });
+    assert.equal(fetched.config.risk_thresholds.max_position_pct, 0.05);
+    assert.equal(fetched.config.dashboard_layout.default_tab, 'overview');
+
+    const invalid = await configRoute.handle({ key: 'risk_thresholds', value: { max_position_pct: 'bad' } }, { req });
+    assert.equal(invalid.error, 'invalid_config');
+    assert.equal(configRoute.status(invalid), 400);
+
+    const unknown = await configRoute.handle({ key: 'private_key', value: 'never-store-secrets-here' }, { req });
+    assert.equal(unknown.error, 'key_required');
+
+    const migration = fs.readFileSync(USER_CONFIG_MIGRATION, 'utf8');
+    assert.match(migration, /create table if not exists public\.user_config/i);
+    assert.match(migration, /primary key \(user_id, config_key\)/i);
+    assert.match(migration, /enable row level security/i);
+    assert.match(migration, /user_config_update_own/i);
   } finally {
     restore();
     delete process.env.SUPABASE_URL;

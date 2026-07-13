@@ -90,7 +90,14 @@ docker compose -f infra/docker/docker-compose.yml up -d --build web backfill
 The backfill service writes directly to the host-mounted `storage/data/ts/` index. The
 web service calculates scorecards on the same machine from that index; market data is
 not copied to the browser. Scorecard results are cached in memory for 30 seconds and
-identical concurrent requests share one calculation.
+identical concurrent requests share one calculation. Symbols are excluded unless every
+requested timeframe is present and fresh within its declared signal horizon. An empty
+scorecard is therefore a data-readiness result, not a successful zero-opportunity claim.
+
+Strictly newer live candles use an append path instead of rewriting the full historical
+binary file. The 30-minute daemon cycle still refreshes local coarse rollups when the base
+grain is fresh enough to skip provider polling, so WebSocket activity cannot strand stale
+`1h`, `4h`, or daily scorecard inputs.
 
 The scorecard endpoint requires `SOVEREIGN_API_TOKEN`:
 
@@ -102,7 +109,7 @@ curl -H "X-Sovereign-Token: $SOVEREIGN_API_TOKEN" \
 Keep port `8787` private. Reach it through an SSH tunnel or private VPN rather than
 publishing it directly to the internet. The API and scorecard are CPU-only; no GPU is
 used. Storage and memory pressure come mainly from deep 1-minute backfills and their
-merge-write path, not from the scorecard calculation.
+overlap/correction merge path, not from ordinary live-candle appends or scorecard calculation.
 
 Compose binds the host port to `127.0.0.1` by default. Set `SOVEREIGN_WEB_BIND` to a
 specific private VPN interface address only when that interface is access-controlled;

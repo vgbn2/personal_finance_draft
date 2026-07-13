@@ -44,9 +44,9 @@ the CORS config alongside the production origin.
 
 ## The frontend's side of the wire
 
-`Frontend/dashboard/src/lib/api.ts` exports `API_BASE_URL` (defaults to `http://localhost:8787`,
-overridable via `VITE_API_URL`), an `API_ENDPOINTS` object, and `DEFAULT_HEADERS` (adds
-`x-sovereign-token` if `VITE_API_TOKEN` is set, merges in a Supabase session token when available).
+`Frontend/dashboard/src/lib/api.ts` exports `API_BASE_URL` (same-origin by default,
+overridable via `VITE_API_URL`), an `API_ENDPOINTS` object, and `DEFAULT_HEADERS`. Protected calls use
+`getAuthHeaders()` to attach the signed-in user's Supabase bearer token; privileged host tokens are never compiled into browser assets.
 Components import these directly rather than going through a shared fetch wrapper with retry logic — if
 you're debugging a flaky frontend request, there's no central retry layer to check, just the individual
 component's `fetch` call.
