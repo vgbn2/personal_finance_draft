@@ -61,11 +61,12 @@ async function fetchSecHoldingsSnapshot() { return notImplementedProvider('sec',
 async function fetchSpGlobalFlashPmi() { return notImplementedProvider('spglobal', 'pmi'); }
 async function fetchFxApiFx() { return notImplementedProvider('fxapi', 'fx'); }
 async function fetchYahooBreadthProxy() { return notImplementedProvider('yahoo', 'breadth'); }
-// fetchKalshiHistoricalCandlesticks callers spread the result directly, so [] is the
-// correct empty shape. fetchKalshiHistoricalMarkets callers destructure { records }, so
-// a bare [] crashes with "records is not iterable" -- return the shape callers expect.
-async function fetchKalshiHistoricalMarkets() { return { records: [] }; }
-async function fetchKalshiHistoricalCandlesticks() { return []; }
+async function fetchKalshiHistoricalMarkets() {
+  return notImplementedProvider('kalshi', 'prediction_market_history');
+}
+async function fetchKalshiHistoricalCandlesticks() {
+  return notImplementedProvider('kalshi', 'prediction_market_history');
+}
 
 const FAMILIES_MANIFEST = [
   { id: 'equities', configKey: 'equities', itemsKey: 'symbols', fetcher: async (p, s, t, cfg, opts) => {
@@ -179,7 +180,7 @@ const FAMILIES_MANIFEST = [
         return fetchPolymarketMarkets(s, cfg, opts);
       }
       if (opts?.historyDays || opts?.history || opts?.backfill) {
-        return [];
+        return notImplementedProvider('kalshi', 'prediction_market_history');
       }
       const record = await fetchKalshiPredictionMarket(s, cfg);
       return record ? [record] : [];

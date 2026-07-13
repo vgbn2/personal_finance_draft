@@ -7,6 +7,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
 const { formatTimeForSettings, layoutConfig } = require('../../../../shared/lib/settings/runtime');
+const { buildAutomationTrustDecision } = require('../../../../backend/cli/commands/strategy/strategy');
 
 const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
 
@@ -21,10 +22,10 @@ function withTempSettings(settings, fn) {
   }
 }
 
-function runCli(args, settingsFile) {
+function runCli(args, settingsFile, extraEnv = {}) {
   return spawnSync(process.execPath, [CLI_PATH, ...args, '--json'], {
     encoding: 'utf8',
-    env: { ...process.env, SOVEREIGN_USER_SETTINGS_PATH: settingsFile },
+    env: { ...process.env, SOVEREIGN_USER_SETTINGS_PATH: settingsFile, ...extraEnv },
   });
 }
 
@@ -102,6 +103,38 @@ test('bot cycle is blocked when bot_autopilot flag is off', () => {
     const payload = JSON.parse(result.stdout.trim());
     assert.equal(payload.feature_flag, 'bot_autopilot');
   });
+});
+
+test('bot cycle is blocked when the Polymarket feature flag is off', () => {
+  withTempSettings(sampleSettings({ polymarket: false }), (file) => {
+    const result = runCli(['bot', 'cycle'], file);
+    assert.equal(result.status, 1);
+    const payload = JSON.parse(result.stdout.trim());
+    assert.equal(payload.feature_flag, 'polymarket');
+  });
+});
+
+test('live bot cycle fails closed without a trade PIN in noninteractive mode', () => {
+  withTempSettings(sampleSettings(), (file) => {
+    const result = runCli(['bot', 'cycle', '--live'], file, {
+      SOVEREIGN_MOCK: 'true',
+      SOVEREIGN_TRADE_PIN: '',
+      SOVEREIGN_NONINTERACTIVE: 'true',
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /PIN not set.*blocked/i);
+  });
+});
+
+test('live automation rejects elevated data quality even with a researchable trust score', () => {
+  const decision = buildAutomationTrustDecision({
+    data_quality_ok: false,
+    data_quality_summary: { ok: false, risk: 'elevated' },
+    trust_assessment: { score: 95, verdict: 'researchable', oos_alpha_vs_buy_hold: 0.10 },
+  }, 70, true);
+
+  assert.equal(decision.allowed, false);
+  assert.match(decision.reason, /data quality is not verified/);
 });
 
 test('auto-trade is blocked when ai_agent_trading flag is off', () => {

@@ -215,8 +215,31 @@ async function runBackfillCycle(o) {
   // the sequential/CLI-only callers don't need it.
   const onJobDone = o.onJobDone || (() => {});
 
-  const summary = { cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0, rolled_up: 0, errors: 0, failures: [] };
+  const summary = {
+    cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0,
+    rolled_up: 0, rollup_errors: 0, errors: 0, failures: [],
+  };
   const start = Date.now();
+
+  function runJobRollup(job, action) {
+    try {
+      const roll = o.rollup(job, action);
+      if (!roll || roll.ok === false) {
+        throw new Error((roll && roll.error) || 'rollup returned no successful result');
+      }
+      summary.rolled_up += 1;
+      const n = Object.keys(roll.derived || {}).length;
+      if (n > 0) log(`[BACKFILL] ${job.symbol}  +${n}TF`);
+      return true;
+    } catch (err) {
+      const error = err && err.message ? err.message : String(err);
+      summary.errors += 1;
+      summary.rollup_errors += 1;
+      summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error });
+      log(`[BACKFILL] ${job.symbol}  rollup failed: ${error}`);
+      return false;
+    }
+  }
 
   // Process a single job — shared by both sequential and parallel paths.
   async function processJob(job) {
@@ -229,8 +252,16 @@ async function runBackfillCycle(o) {
 
     if (action === 'skip') {
       summary.skipped += 1;
-      if (gate.reason === 'not_found') log(`[BACKFILL] ${job.symbol}  ✗ no data on provider (skip 7d)`);
-      onJobDone(job, 'skipped');
+      if (gate.reason === 'not_found') {
+        log(`[BACKFILL] ${job.symbol}  ✗ no data on provider (skip 7d)`);
+        onJobDone(job, 'skipped');
+        return;
+      }
+
+      // A live feed can keep the base grain fresh without touching stored coarse
+      // bins. Refresh local rollups even when no provider fetch is needed.
+      const rolledUp = runJobRollup(job, 'refresh');
+      onJobDone(job, rolledUp ? 'skipped' : 'rollup_failed');
       return;
     }
 
@@ -255,21 +286,11 @@ async function runBackfillCycle(o) {
     }
     if (action === 'deep') summary.deep += 1; else summary.incremental += 1;
     log(`[BACKFILL] ${job.symbol}  ok  ${elapsed}s`);
-    onJobDone(job, 'ok');
-
     // Derive coarser bins from the freshly-written base bin. For an incremental
     // top-up only the recent window needs re-deriving, so the action is passed
     // through — the real rollup uses it to read just the tail of the base bin.
-    try {
-      const roll = o.rollup(job, action);
-      if (roll && roll.ok) {
-        summary.rolled_up += 1;
-        const n = Object.keys(roll.derived || {}).length;
-        if (n > 0) log(`[BACKFILL] ${job.symbol}  +${n}TF`);
-      }
-    } catch (err) {
-      log(`[BACKFILL] ${job.symbol}  rollup failed: ${err.message}`);
-    }
+    const rolledUp = runJobRollup(job, action);
+    onJobDone(job, rolledUp ? 'ok' : 'rollup_failed');
   }
 
   if (parallelLanes) {
@@ -346,7 +367,7 @@ function makeRealExecutor() {
 function makeRealRollup(tsDir, incrementalDays = INCREMENTAL_DAYS) {
   return (job, action) => {
     const targets = rollupTargetsAboveBase(job.baseTf);
-    const opts = action === 'incremental'
+    const opts = action !== 'deep'
       ? { sinceMs: utcDayFloor(Date.now() - (incrementalDays + 1) * DAY_MS) }
       : {};
     return rollupFromBase(tsDir, job.symbol, job.baseTf, targets, opts);

@@ -77,10 +77,10 @@ export function MarketIntelPanel() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 animate-in slide-in-from-bottom-2 duration-300">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 animate-in slide-in-from-bottom-2 duration-300">
       
       {/* Header Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] p-5 rounded-xl flex flex-col gap-1 relative overflow-hidden group shadow-sm">
           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--color-brand-cyan)]" />
           <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-2">

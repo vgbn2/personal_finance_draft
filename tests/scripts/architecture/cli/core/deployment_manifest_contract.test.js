@@ -8,6 +8,9 @@ const DOCKER_COMPOSE = path.join(REPO_ROOT, 'infra', 'docker', 'docker-compose.y
 const K8S_DEPLOYMENT = path.join(REPO_ROOT, 'infra', 'deployment', 'kubernetes', 'deployment.yaml');
 const K8S_CONFIGMAP = path.join(REPO_ROOT, 'infra', 'deployment', 'kubernetes', 'configmap.yaml');
 const DEPLOYMENT_DOC = path.join(REPO_ROOT, 'docs', 'operational', 'guides', 'DEPLOYMENT.md');
+const TERRAFORM_MAIN = path.join(REPO_ROOT, 'infra', 'deployment', 'terraform', 'main.tf');
+const HEROKU_PROCFILE = path.join(REPO_ROOT, 'infra', 'deployment', 'heroku', 'Procfile');
+const HEROKU_APP = path.join(REPO_ROOT, 'infra', 'deployment', 'heroku', 'app.json');
 
 function read(filePath) {
   return fs.readFileSync(filePath, 'utf8');
@@ -25,6 +28,9 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   const deployment = read(K8S_DEPLOYMENT);
   const configmap = read(K8S_CONFIGMAP);
   const docs = read(DEPLOYMENT_DOC);
+  const terraform = read(TERRAFORM_MAIN);
+  const herokuProcfile = read(HEROKU_PROCFILE);
+  const herokuApp = read(HEROKU_APP);
   const web = composeService(compose, 'web');
   const bot = composeService(compose, 'bot');
   const portfolioMonitor = composeService(compose, 'portfolio-monitor');
@@ -63,6 +69,8 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.doesNotMatch(polymarketResearch, /^\s{6}POLYMARKET_RESEARCH_SCOPE_FILE:/m);
 
   assert.match(deployment, /containerPort:\s*8787/);
+  assert.match(deployment, /backend\/api\/app\.js/);
+  assert.doesNotMatch(deployment, /web\/app\.js/);
   assert.match(deployment, /name:\s*sovereign-supabase/);
   assert.match(deployment, /key:\s*url/);
   assert.match(deployment, /key:\s*publishable_key/);
@@ -70,6 +78,11 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
 
   assert.match(configmap, /SOVEREIGN_CACHE_TTL_MS:\s*"30000"/);
   assert.match(configmap, /SOVEREIGN_CACHE_MAX_ENTRIES:\s*"100"/);
+  assert.match(terraform, /backend\/api\/app\.js/);
+  assert.doesNotMatch(terraform, /web\/app\.js/);
+  assert.match(herokuProcfile, /backend\/api\/app\.js/);
+  assert.doesNotMatch(herokuProcfile, /web\/app\.js/);
+  assert.match(herokuApp, /backend\/cli\/sovereign_cli\.js/);
 
   assert.match(docs, /Supabase-backed database\/auth available/i);
   assert.match(docs, /sovereign-supabase/i);

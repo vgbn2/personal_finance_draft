@@ -40,8 +40,8 @@ export function QuoteHealthPanel() {
   const isHealthy = data?.ok && data?.enabled;
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 animate-in slide-in-from-bottom-2 duration-300">
-      <div className="flex items-center justify-between bg-[var(--bg-secondary)] border border-[var(--border-subtle)] p-4 rounded-xl shadow-sm">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 animate-in slide-in-from-bottom-2 duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] p-4 rounded-xl shadow-sm">
         <div className="flex flex-col">
           <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest flex items-center gap-2">
             <Database className="w-3 h-3" /> External Data Ingestion
@@ -59,7 +59,7 @@ export function QuoteHealthPanel() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className={cn(
           "border p-5 rounded-xl flex flex-col gap-1 shadow-sm border-l-4",
           isHealthy ? "bg-slate-900 border-slate-800 border-l-[var(--color-brand-green)]" : "bg-red-950/20 border-red-900/30 border-l-[var(--color-brand-red)]"

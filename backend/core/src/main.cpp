@@ -607,11 +607,11 @@ int printRiskCheck(const std::vector<std::string>& args) {
 
     sovereign::TradeOrder order{};
     const std::string notional_str = optionValue(args, "--notional", "0.0");
-    const std::string vol_str = optionValue(args, "--volatility", "1.0");
+    const std::string equity_str = optionValue(args, "--equity", optionValue(args, "--volatility", "0.0"));
     const std::string dd_str = optionValue(args, "--drawdown", "0.0");
     
     parseDoubleStrict(notional_str, order.notional);
-    parseDoubleStrict(vol_str, order.volatility);
+    parseDoubleStrict(equity_str, order.portfolio_equity);
     parseDoubleStrict(dd_str, order.current_drawdown);
 
     sovereign::PreTradeRisk engine(limits);
@@ -1005,7 +1005,7 @@ void printUsage() {
         << "  universe --input storage/data/cache/backtest_history.json --json\n"
         << "  portfolio --cash 10000.0 --positions \"AAPL,10,150,180;MSFT,5,300,320\"\n"
         << "  indicators --symbol AAPL --timeframe 1d --json\n"
-        << "  risk check --notional 1000 --volatility 5000 --drawdown 0.05\n"
+        << "  risk check --notional 1000 --equity 5000 --drawdown 0.05\n"
         << "  ml compare --frame storage/data/ml/feature_frame.csv --json\n"
         << "  ml predict --model xgboost_v1 --frame PATH [--limit N]\n";
 }

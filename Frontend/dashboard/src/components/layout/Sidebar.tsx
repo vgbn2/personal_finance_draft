@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { cn } from '../../lib/utils';
 import { API_ENDPOINTS, DEFAULT_HEADERS } from '../../lib/api';
 
-export function Sidebar() {
+interface SidebarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ open, onClose }: SidebarProps) {
   const [timeframe, setTimeframe] = useState('1h');
   const [model, setModel] = useState('XGBoost Ranker');
   const [universe, setUniverse] = useState<any[]>([]);
@@ -24,7 +29,15 @@ export function Sidebar() {
   }, []);
   
   return (
-    <aside className="w-[260px] bg-[var(--bg-secondary)] border-r border-[var(--border-subtle)] overflow-y-auto h-full flex flex-col p-4 shrink-0">
+    <aside
+      id="dashboard-sidebar"
+      aria-label="Research controls"
+      data-open={open ? 'true' : 'false'}
+      className="dashboard-sidebar w-[260px] bg-[var(--bg-secondary)] border-r border-[var(--border-subtle)] overflow-y-auto h-full flex flex-col p-4 shrink-0"
+    >
+      <button type="button" className="dashboard-sidebar-close" onClick={onClose}>
+        Close controls
+      </button>
       
       {/* Pillar 1: Data Ingestion */}
       <div className="sb-section">

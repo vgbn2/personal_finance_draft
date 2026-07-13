@@ -54,7 +54,14 @@ function productionSnapshot(overrides = {}) {
   ], {
     ok: true,
     balance: { pUSD: 100 },
-    positions: [{ symbol: 'YES', quantity: 100, averagePrice: 0.5, marketValue: 50 }],
+    positions: [{
+      symbol: 'YES',
+      quantity: 100,
+      averagePrice: 0.5,
+      marketValue: 50,
+      lifecycle: 'active',
+      valuationStatus: 'live_quote',
+    }],
   });
   const livePaper = buildAggregatedPortfolioSnapshot([
     {

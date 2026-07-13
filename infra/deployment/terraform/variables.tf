@@ -17,7 +17,7 @@ variable "app_title" {
 }
 
 variable "image" {
-  description = "Container image that contains the web/app.js entrypoint."
+  description = "Container image that contains the backend/api/app.js entrypoint."
   type        = string
   default     = "ghcr.io/vgbn2/personal_finance_draft-web:latest"
 }
@@ -29,7 +29,7 @@ variable "replicas" {
 }
 
 variable "web_port" {
-  description = "Container port exposed by web/app.js."
+  description = "Container port exposed by backend/api/app.js."
   type        = number
   default     = 8787
 }
