@@ -1,8 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const path = require('node:path');
 
-const { DEFAULT_SNAPSHOT } = require('../../../shared/lib/runtime/paths');
 const { buildCorrelationMatrix } = require('../server/services/cli_executor');
+
+const HISTORY_FIXTURE = path.join(__dirname, '../../..', 'tests', 'fixtures', 'backend_history_sample.json');
 
 function validateMatrix(payload, expectedTimeframe) {
   assert.equal(payload.ok, true);
@@ -20,9 +22,9 @@ function validateMatrix(payload, expectedTimeframe) {
   }
 }
 
-test('backend correlation fallback uses the canonical snapshot for weekly and monthly frames', () => {
+test('backend correlation fallback derives weekly and monthly frames from stable daily history', () => {
   const weekly = buildCorrelationMatrix({
-    input: DEFAULT_SNAPSHOT,
+    input: HISTORY_FIXTURE,
     symbols: 'AAPL,MSFT,SPY',
     timeframe: '1w',
     max_bars: '252',
@@ -30,10 +32,24 @@ test('backend correlation fallback uses the canonical snapshot for weekly and mo
   validateMatrix(weekly, '1w');
 
   const monthly = buildCorrelationMatrix({
-    input: DEFAULT_SNAPSHOT,
+    input: HISTORY_FIXTURE,
     symbols: 'AAPL,MSFT,SPY',
     timeframe: '1mo',
     max_bars: '252',
   });
   validateMatrix(monthly, '1mo');
+});
+
+test('backend correlation fallback fails closed without aligned observations', () => {
+  const payload = buildCorrelationMatrix({
+    input: HISTORY_FIXTURE,
+    symbols: 'UNKNOWN_A,UNKNOWN_B',
+    timeframe: '1d',
+    max_bars: '252',
+  });
+
+  assert.equal(payload.ok, false);
+  assert.equal(payload.available, false);
+  assert.equal(payload.sample_size, 0);
+  assert.equal(payload.error, 'insufficient_aligned_observations');
 });

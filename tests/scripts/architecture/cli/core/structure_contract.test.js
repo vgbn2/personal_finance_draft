@@ -131,6 +131,23 @@ test('default api gate includes the correlation contract', () => {
   );
 });
 
+test('npm test scripts reference existing test files', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
+
+  for (const [scriptName, command] of Object.entries(pkg.scripts)) {
+    const testFiles = [...command.matchAll(/(?:^|\s)([^\s]+\.test\.js)(?=\s|$)/g)]
+      .map((match) => match[1]);
+
+    for (const relativePath of testFiles) {
+      assert.equal(
+        exists(relativePath),
+        true,
+        `${scriptName} references missing test file ${relativePath}`
+      );
+    }
+  }
+});
+
 test('repository hygiene checks pass', () => {
   const result = spawnSync('node', [path.join(REPO_ROOT, 'scripts', 'dev', 'check_hygiene.js')], {
     cwd: REPO_ROOT,
@@ -138,4 +155,3 @@ test('repository hygiene checks pass', () => {
   });
   assert.equal(result.status, 0, `Hygiene checks failed:\n${result.stdout}`);
 });
-

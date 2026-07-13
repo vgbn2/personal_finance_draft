@@ -33,6 +33,7 @@
   }
 
   body {
+    margin: 0;
     background-color: var(--bg-primary);
     color: var(--text-main);
     font-family: var(--font-sans);
@@ -44,6 +45,93 @@
     font-family: var(--font-heading);
     letter-spacing: -0.05em;
   }
+}
+
+.dashboard-main { min-width: 0; }
+.dashboard-topbar { min-height: 56px; }
+.dashboard-tabs {
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+.dashboard-sidebar-toggle,
+.dashboard-sidebar-close,
+.dashboard-sidebar-overlay { display: none; }
+
+@media (max-width: 1023px) {
+  .dashboard-topbar {
+    position: relative;
+    min-height: 104px;
+    padding: 8px 12px 0;
+    align-items: stretch;
+  }
+  .dashboard-topbar-left {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .dashboard-brand {
+    min-height: 40px;
+    padding-right: 96px;
+  }
+  .dashboard-brand em { display: none; }
+  .dashboard-tabs { width: calc(100vw - 24px); }
+  .dashboard-actions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+  .dashboard-aux-actions { display: none; }
+  .dashboard-sidebar-toggle {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    color: var(--text-main);
+    background: var(--bg-tertiary);
+  }
+  .dashboard-sidebar {
+    position: fixed;
+    z-index: 1200;
+    top: 104px;
+    bottom: 0;
+    left: 0;
+    width: min(320px, calc(100vw - 32px));
+    height: auto;
+    transform: translateX(-105%);
+    transition: transform 180ms ease-out;
+    box-shadow: 12px 0 32px rgba(15, 23, 42, 0.18);
+  }
+  .dashboard-sidebar[data-open="true"] { transform: translateX(0); }
+  .dashboard-sidebar-close {
+    display: block;
+    align-self: flex-end;
+    margin-bottom: 16px;
+    color: var(--text-muted);
+    font: 600 11px var(--font-mono);
+    text-transform: uppercase;
+  }
+  .dashboard-sidebar-overlay {
+    display: block;
+    position: fixed;
+    z-index: 1100;
+    inset: 104px 0 0;
+    border: 0;
+    background: rgba(15, 23, 42, 0.36);
+  }
+}
+
+@media (max-width: 639px) {
+  .dashboard-tab {
+    height: 48px;
+    padding-inline: 12px;
+    font-size: 12px;
+  }
+  .dashboard-actions { gap: 6px; }
 }
 
 /* Custom Scrollbars */

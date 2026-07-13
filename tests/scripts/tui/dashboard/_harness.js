@@ -9,7 +9,7 @@
 const { PassThrough, Writable } = require('node:stream');
 const { setTimeout: delay } = require('node:timers/promises');
 
-const ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
+const ANSI_RE = /\x1b\[[0-?]*[ -/]*[@-~]/g;
 const SYNC_FRAME_START = '\x1b[?2026h';
 
 function stripAnsi(input) {
@@ -38,7 +38,7 @@ function makeFakeStdin() {
   return stdin;
 }
 
-function makeFakeStdout() {
+function makeFakeStdout(options = {}) {
   let buf = '';
   const stdout = new Writable({
     write(chunk, _enc, cb) {
@@ -47,8 +47,8 @@ function makeFakeStdout() {
     },
   });
   stdout.isTTY = true;
-  stdout.columns = 120;
-  stdout.rows = 40;
+  stdout.columns = options.columns || 120;
+  stdout.rows = options.rows || 40;
   stdout.snapshot = () => stripAnsi(lastFrame(buf));
   return stdout;
 }
@@ -64,6 +64,8 @@ const keys = {
   pageDown: '\x1b[6~',
   home: '\x1b[H',
   end: '\x1b[F',
+  backspace: '\x7f',
+  delete: '\x1b[3~',
   escape: '',
 };
 

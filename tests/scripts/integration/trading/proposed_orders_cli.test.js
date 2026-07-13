@@ -12,7 +12,7 @@ test('trade process accepts a local proposed-order file and prints a preview', (
   const ordersPath = path.join(tempDir, 'orders.json');
   fs.writeFileSync(ordersPath, JSON.stringify({
     orders: [
-      { instrumentId: 'AAPL', side: 'buy', quantity: 1, type: 'market' },
+      { instrumentId: 'AAPL', side: 'buy', quantity: 1, type: 'limit', price: 150 },
     ],
   }, null, 2), 'utf8');
 

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { render, Box, Text, useApp, useInput, useCursor } from 'ink';
+import { render, Box, Text, useApp, useInput, useWindowSize } from 'ink';
 import TextInput from 'ink-text-input';
 import { spawn, spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { CommandInput } from './tui/command_input.mjs';
 
 const h = React.createElement;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -19,6 +20,7 @@ const {
 const { DAEMON_STATUS_PATH } = require('./commands/data/backfill_daemon.js');
 const { parseChatInput, suggestCommands } = require('./tui/chat_parser.js');
 const { resolveWithLLM } = require('./tui/chat_llm_fallback.js');
+const { dashboardLayout, windowedRange } = require('./tui/dashboard_layout.js');
 
 // Resolved once at module load (mirrors tui/manifest.js's static-per-process
 // registry read); falls back to the manual-text-entry placeholder if the
@@ -133,6 +135,7 @@ const M = [
           '--families':      { t:'txt', lbl:'Families comma-sep (blank = all)', def:'' },
           '--symbols':       { t:'txt', lbl:'Symbols comma-sep (blank = all in family)', def:'', pickSymbol:'multi' },
           '--concurrency':   { t:'txt', lbl:'Symbols in parallel per provider', def:'5' },
+          '--interval-secs': { t:'txt', lbl:'Loop interval seconds (daemon mode only)', def:'1800' },
         },
       },
       { id: 'stop-backfill-daemon', label: 'stop-backfill-daemon', desc: 'Stop the background backfill daemon', flags: {} },
@@ -238,6 +241,10 @@ const M = [
       },
       { id: 'scorecard', label: 'scorecard', desc: 'EdgeFinder-style ranked bias across all assets',
         flags: {
+          '--schema':      { t:'sel', opts:['2','3'], lbl:'Schema (3 = research shadow)', def:'2' },
+          '--fixture':     { t:'sel', opts:['','aapl-recorded','all-recorded'], lbl:'Schema 3 fixture', def:'' },
+          '--symbol':      { t:'txt', lbl:'Schema 3 workbench symbol', def:'', pickSymbol:'single' },
+          '--state':       { t:'sel', opts:['','eligible','degraded','excluded'], lbl:'Schema 3 decision state', def:'' },
           '--family':      { t:'sel', opts:['','crypto','equities','fx','indices','commodities'], lbl:'Family filter (blank = all)', def:'' },
           '--tf':          { t:'txt', lbl:'Timeframes comma-sep', def:'1h,4h,1d' },
           '--direction':   { t:'sel', opts:['','long','short','neutral'], lbl:'Direction filter (blank = all)', def:'' },
@@ -392,6 +399,8 @@ const M = [
 // ── App ──────────────────────────────────────────────────────────────────
 const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const { exit } = useApp();
+  const viewport = useWindowSize();
+  const layout = dashboardLayout(viewport.columns, viewport.rows);
   const [catI,  setCatI]  = useState(initialCatI);
   const [cmdI,  setCmdI]  = useState(initialCmdI);
   const [subcmdI, setSubcmdI] = useState(-1);
@@ -438,13 +447,12 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
 
   // "/"-suggestion dropdown: derived every render from chatInput, not stored
   // as its own state, so it can never drift out of sync with what's typed.
-  // SUGGEST_LIMIT caps how many rows it can ever add below the input -- this
+  // The viewport policy caps how many rows may appear below the input -- this
   // exact count (not a guess) is what both the render below AND the cursor
   // effect use to keep the hardware cursor glued to the input row no matter
   // how many suggestion rows are currently showing.
-  const SUGGEST_LIMIT = 6;
   const chatSuggestions = (focus === 'chat' && !pendingLlmConfirm && !running && chatInput.startsWith('/'))
-    ? suggestCommands(M, chatInput.slice(1), SUGGEST_LIMIT)
+    ? suggestCommands(M, chatInput.slice(1), layout.suggestionLimit)
     : [];
   const showSuggestions = chatSuggestions.length > 0;
   const activeSuggestIndex = showSuggestions ? Math.min(suggestIndex, chatSuggestions.length - 1) : 0;
@@ -456,36 +464,6 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   useEffect(() => {
     setSuggestIndex(0);
   }, [chatInput]);
-
-  // Hardware cursor relocator: By calculating the precise X/Y coordinates of the chat input
-  // within the dashboard's fixed height, we can physically move the real terminal cursor
-  // into the box instead of just hiding it! This ensures OS-level overlays (like IME
-  // candidate windows) pop up exactly where you are typing.
-  const { setCursorPosition } = useCursor();
-  useEffect(() => {
-    // Real-terminal only: in the headless/fake-TTY test harness, emitting a
-    // cursor-position update produces a cursor-only frame that clobbers the
-    // snapshot the dashboard tests assert against. No-op when not a real TTY.
-    if (!process.stdout.isTTY) return;
-    if (focus === 'chat' && !pendingLlmConfirm && !running) {
-      // The dashboard height is deterministic: process.stdout.rows - 2 (minimum 10).
-      // The chat bar is always anchored to the absolute bottom and is exactly
-      // 4 + suggestionRowCount lines tall:
-      //   top border, input line (<- cursor Y), [0..N suggestion rows],
-      //   bottom border, status text.
-      // Plain "H-3" only held while the bar was a fixed 4 lines; subtracting
-      // suggestionRowCount keeps the cursor glued to the input row even while
-      // the "/"-dropdown is open below it (was the latent bug: any row added
-      // under the input with no matching adjustment here silently breaks
-      // this the moment it renders).
-      const H = process.stdout.rows ? Math.max(10, process.stdout.rows - 2) : 24;
-      // X = 4 (1 for left border, 1 for padding, 2 for "› ") + chatInput length
-      setCursorPosition({ x: 4 + chatInput.length, y: H - 3 - suggestionRowCount });
-    } else {
-      // When not typing, just let the hardware cursor go away naturally
-      setCursorPosition(undefined);
-    }
-  }, [focus, pendingLlmConfirm, running, chatInput, suggestionRowCount, process.stdout.rows, setCursorPosition]);
 
   useEffect(() => {
     if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
@@ -721,9 +699,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     // Output-panel scrolling: works in every focus mode (incl. while a
     // command is running) since the output panel is always visible
     // alongside whatever else is on screen, not something you "enter".
-    if (key.pageUp || key.pageDown || key.home || key.end) {
+    const commandInputActive = focus === 'chat' && !pendingLlmConfirm && !running;
+    if (key.pageUp || key.pageDown || ((key.home || key.end) && !commandInputActive)) {
       const lines = output ? output.split('\n') : [];
-      const maxLines = Math.max(5, (process.stdout.rows || 24) - 10);
+      const maxLines = layout.outputLines;
       const maxTop = Math.max(0, lines.length - maxLines);
       if (key.home) { setOutputScrollTop(maxTop === 0 ? null : 0); return; }
       if (key.end) { setOutputScrollTop(null); return; }
@@ -871,8 +850,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         return;
       }
       // "/"-suggestion dropdown navigation. Up/Down/Tab are all ignored by
-      // <TextInput>'s own internal useInput (it only acts on left/right
-      // arrow, backspace/delete, return, and printable input), so handling
+      // CommandInput ignores Up/Down/Tab so handling
       // them here never double-fires against the same keystroke.
       if (showSuggestions) {
         if (key.upArrow) {
@@ -889,12 +867,9 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
           return;
         }
       }
-      // Typing, backspace, and Enter-to-submit are owned by the <TextInput> in
-      // the chat bar (onChange + onSubmit=submitChat). Routing them through
-      // TextInput keeps the REAL hardware cursor inside the input box; the old
-      // hand-rolled `chatInput + '█'` render never positioned the terminal
-      // cursor, so on conhost.exe typed characters raw-echoed into the wrong
-      // corner. Nothing for the global handler to do in chat mode now.
+      // Editing and Enter-to-submit are owned by CommandInput, which keeps one
+      // logical cursor for text mutation and hardware placement. Nothing for
+      // the global navigation handler to do in chat mode.
       return;
     }
     if (focus === 'side') {
@@ -1007,12 +982,20 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   }, { isActive: !editing || focus === 'pin' || focus === 'symbolPicker' });
 
   // ── Sidebar items ──────────────────────────────────────────────────────
-  const sideItems = M.map((c, i) => {
+  const sideWindow = windowedRange(M.length, catI, layout.sidebarItemRows);
+  const visibleSideItems = M.slice(sideWindow.start, sideWindow.end).map((c, offset) => {
+    const i = sideWindow.start + offset;
     const on = i === catI;
     return h(Text, { key: c.label, color: on ? (focus === 'side' ? CY : YL) : DIM },
       (on ? '▸ ' : '  ') + c.label
     );
   });
+  const sideItems = [
+    sideWindow.above > 0 && h(Text, { key: '_side_above', color: MUT }, `  ↑ ${sideWindow.above} more`),
+    sideWindow.compact > 0 && h(Text, { key: '_side_more', color: MUT }, `  ↕ ${sideWindow.compact} more`),
+    ...visibleSideItems,
+    sideWindow.below > 0 && h(Text, { key: '_side_below', color: MUT }, `  ↓ ${sideWindow.below} more`),
+  ].filter(Boolean);
 
   // ── Command rows ───────────────────────────────────────────────────────
   // Drilled into a command's flags/sub-options: collapse the list to just the
@@ -1025,31 +1008,39 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   // selected (cmd would be null, which used to make the PIN gate silently
   // fail to render at all).
   const drilled = (focus === 'flags' || focus === 'subcmd' || focus === 'symbolPicker') && !!cmd;
+  const commandWindow = windowedRange(cat.cmds.length, Math.max(0, cmdI), layout.commandItemRows);
+  const visibleCommands = cat.cmds.slice(commandWindow.start, commandWindow.end);
   const cmdRows = drilled
     ? [
-        h(Box, { key: cmd.id },
+        h(Box, { key: cmd.id, height: 1, overflowY: 'hidden' },
           h(Text, { color: YL }, '▸ '),
           h(Box,  { width: 23 }, h(Text, { color: YL }, cmd.label)),
-          h(Text, { color: VAL }, cmd.desc),
+          h(Text, { color: VAL, wrap: 'truncate-end' }, cmd.desc),
         ),
       ]
-    : cat.cmds.map((c, i) => {
+    : [
+        commandWindow.above > 0 && h(Text, { key: '_cmd_above', color: MUT }, `  ↑ ${commandWindow.above} more`),
+        commandWindow.compact > 0 && h(Text, { key: '_cmd_more', color: MUT }, `  ↕ ${commandWindow.compact} more`),
+        ...visibleCommands.map((c, offset) => {
+        const i = commandWindow.start + offset;
         const on   = i === cmdI;
         const hasF = Object.keys(c.flags || {}).length > 0 || !!c.subcmds;
-        return h(Box, { key: c.id },
+        return h(Box, { key: c.id, height: 1, overflowY: 'hidden' },
           h(Text, { color: on ? YL : BDR }, on ? '▸ ' : '  '),
           h(Box,  { width: 23 }, h(Text, { color: on ? YL : DIM }, c.label)),
-          h(Text, { color: on ? VAL : MUT }, c.desc),
+          h(Text, { color: on ? VAL : MUT, wrap: 'truncate-end' }, c.desc),
           hasF && h(Text, { color: on ? AM : BDR }, '  ›'),
         );
-      });
+      }),
+        commandWindow.below > 0 && h(Text, { key: '_cmd_below', color: MUT }, `  ↓ ${commandWindow.below} more`),
+      ].filter(Boolean);
 
   // ── Flag panel ─────────────────────────────────────────────────────────
   let flagPanel;
   if (!cmd) {
     flagPanel = h(Text, { color: MUT }, '  ⏎ or → to enter command list');
   } else if (focus === 'symbolPicker') {
-    const maxVisible = Math.max(6, (process.stdout.rows || 24) - 16);
+    const maxVisible = layout.pickerRows;
     const pickerScroll = pickerIndex >= maxVisible ? pickerIndex - maxVisible + 1 : 0;
     const visibleRows = pickerRows.slice(pickerScroll, pickerScroll + maxVisible);
     const rowNodes = visibleRows.length === 0
@@ -1086,10 +1077,10 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   } else if (cmd.subcmds) {
     const subRows = cmd.subcmds.map((s, idx) => {
       const active = focus === 'subcmd' && idx === subcmdI;
-      return h(Box, { key: s.id },
+      return h(Box, { key: s.id, height: 1, overflowY: 'hidden' },
         h(Text, { color: active ? YL : BDR }, active ? '▸ ' : '  '),
         h(Box,  { width: 40 }, h(Text, { color: active ? YL : VAL }, s.label)),
-        h(Text, { color: active ? VAL : MUT }, s.desc),
+        h(Text, { color: active ? VAL : MUT, wrap: 'truncate-end' }, s.desc),
       );
     });
 
@@ -1099,13 +1090,13 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     flagPanel = h(Box, { flexDirection: 'column' },
       h(Text, { color: CY }, '  › ' + cmd.id + ' sub-options:'),
       ...subRows,
-      h(Text, { color: BDR, wrap: 'none' }, '  sovereign ' + (cmdStr ? cmdStr : cmd.id)),
+      h(Text, { color: BDR, wrap: 'truncate-end' }, '  sovereign ' + (cmdStr ? cmdStr : cmd.id)),
     );
   } else if (fkeys.length === 0) {
     flagPanel = h(Box, { flexDirection: 'column' },
       h(Text, { color: CY },  '  › ' + cmd.id),
       h(Text, { color: MUT }, '    no configurable flags · ⏎ to run'),
-      h(Text, { color: BDR, wrap: 'none' }, '  sovereign ' + cmd.id),
+      h(Text, { color: BDR, wrap: 'truncate-end' }, '  sovereign ' + cmd.id),
     );
   } else {
     const runActive = focus === 'flags' && flagI === fkeys.length;
@@ -1116,11 +1107,11 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
       const valueNode = (active && editing)
         ? h(TextInput, { value: editBuffer, onChange: setEditBuffer, onSubmit: handleEditSubmit })
         : h(Text, { color: m.warn ? RD : AM }, m.t === 'yn' ? (val ? '[Y]' : '[N]') : ('[' + (optionLabel(m, val) || '') + ']'));
-      return h(Box, { key: f },
+      return h(Box, { key: f, height: 1, overflowY: 'hidden' },
         h(Text, { color: active ? YL : DIM }, active ? '▸ ' : '  '),
         h(Box,  { width: 22 }, h(Text, { color: active ? YL : VAL }, f)),
         h(Box,  { width: 15 }, valueNode),
-        h(Text, { color: m.warn ? RD : MUT }, m.lbl),
+        h(Text, { color: m.warn ? RD : MUT, wrap: 'truncate-end' }, m.lbl),
       );
     });
     flagPanel = h(Box, { flexDirection: 'column' },
@@ -1130,7 +1121,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         h(Text, { color: runActive ? GN : BDR }, runActive ? '▸ ' : '  '),
         h(Text, { color: runActive ? GN : MUT, bold: runActive }, '▶ Run'),
       ),
-      h(Text, { color: BDR, wrap: 'none' }, '  sovereign ' + buildArgv(cmd, flagValues).join(' ')),
+      h(Text, { color: BDR, wrap: 'truncate-end' }, '  sovereign ' + buildArgv(cmd, flagValues).join(' ')),
     );
   }
 
@@ -1185,7 +1176,13 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
   const inputRow = h(Box, { height: 1, overflowY: 'hidden' },
     h(Text, { color: focus === 'chat' ? CY : MUT }, '› '),
     (focus === 'chat' && !pendingLlmConfirm && !running)
-      ? h(TextInput, { value: chatInput, onChange: setChatInput, onSubmit: submitChat, showCursor: false })
+      ? h(CommandInput, {
+          value: chatInput,
+          onChange: setChatInput,
+          onSubmit: submitChat,
+          active: true,
+          cursorY: layout.height - 2 - (layout.showChatStatus ? 1 : 0) - suggestionRowCount,
+        })
       : h(Text, { color: VAL, wrap: 'truncate-end' }, chatInput),
   );
   const suggestionList = showSuggestions
@@ -1198,12 +1195,12 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         }, (i === activeSuggestIndex ? '› ' : '  ') + s.id + (s.desc ? '  — ' + s.desc : ''))),
       )
     : null;
-  const chatBar = h(Box, { flexDirection: 'column' },
+  const chatBar = h(Box, { flexDirection: 'column', flexShrink: 0 },
     h(Box, { borderStyle: 'round', borderColor: focus === 'chat' ? CY : BDR, paddingX: 1, flexDirection: 'column' },
       inputRow,
       suggestionList,
     ),
-    h(Box, { paddingX: 1 },
+    layout.showChatStatus && h(Box, { paddingX: 1, height: 1, overflowY: 'hidden' },
       h(Text, { color: MUT }, chatStatus || 'Tab to type a command, or "/" to browse (e.g. "backend chart AAPL 1d")')
     ),
   );
@@ -1223,7 +1220,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     h(Text, { color: MUT }, '(Press Escape to cancel execution)')
   );
 
-  const maxLines = Math.max(5, (process.stdout.rows || 24) - 10);
+  const maxLines = layout.outputLines;
   const outputLines = output ? output.split('\n') : [];
   const outputMaxTop = Math.max(0, outputLines.length - maxLines);
   const outputTop = outputScrollTop === null ? outputMaxTop : Math.min(outputScrollTop, outputMaxTop);
@@ -1237,100 +1234,100 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
     ? renderProgressBar(daemonStatus.completed_jobs || 0, daemonStatus.total_jobs || 0, 10)
     : null;
 
-  // ── Render ─────────────────────────────────────────────────────────────
-  // Non-fullscreen height (rows-2) keeps the dashboard tall/usable while staying
-  // under the viewport so Ink avoids its win32 full-clear-every-frame path; with
-  // the alt-screen buffer gone (see mountDashboard) this renders in normal flow.
-  return h(Box, { flexDirection: 'column', height: process.stdout.rows ? Math.max(10, process.stdout.rows - 2) : undefined },
+  const contentRuleWidth = Math.max(8,
+    (layout.stacked ? layout.columns - layout.sidebarWidth : layout.contentWidth) - 4);
+  const outputRuleWidth = Math.max(8,
+    (layout.stacked ? layout.columns : layout.columns - layout.sidebarWidth - layout.contentWidth) - 4);
+  const oneLine = { overflowY: 'hidden' };
 
-    // Header
-    h(Box, { borderStyle: 'round', borderColor: CY, paddingX: 1 },
+  const sidebarPanel = h(Box, {
+    width: layout.sidebarWidth,
+    flexShrink: 0,
+    borderStyle: 'single',
+    borderColor: focus === 'side' ? CY : BDR,
+    flexDirection: 'column',
+    paddingX: 1,
+    overflowY: 'hidden',
+  },
+    h(Text, { color: DIM, wrap: 'truncate-end' }, 'MENU'),
+    h(Text, { color: BDR, wrap: 'truncate-end' }, '─'.repeat(Math.max(8, layout.sidebarWidth - 4))),
+    ...sideItems,
+  );
+
+  const contentPanel = h(Box, {
+    ...(layout.stacked ? { flexGrow: 1 } : { width: layout.contentWidth, flexShrink: 0 }),
+    borderStyle: 'single',
+    borderColor: (focus === 'cmd' || focus === 'subcmd' || focus === 'flags' || focus === 'symbolPicker') ? CY : BDR,
+    flexDirection: 'column',
+    paddingX: 1,
+    overflowY: 'hidden',
+  },
+    h(Text, { color: YL, bold: true, wrap: 'truncate-end' }, cat.full),
+    h(Text, { color: BDR, wrap: 'truncate-end' }, '─'.repeat(contentRuleWidth)),
+    ...cmdRows,
+    h(Text, { color: BDR, wrap: 'truncate-end' }, '─'.repeat(contentRuleWidth)),
+    flagPanel,
+  );
+
+  const outputPanel = h(Box, {
+    flexGrow: 1,
+    flexBasis: 0,
+    minHeight: layout.stacked ? 5 : undefined,
+    borderStyle: 'single',
+    borderColor: BDR,
+    flexDirection: 'column',
+    paddingX: 1,
+    overflowY: 'hidden',
+  },
+    h(Text, { color: CY, bold: true, wrap: 'truncate-end' }, 'COMMAND OUTPUT'),
+    h(Text, { color: BDR, wrap: 'truncate-end' }, '─'.repeat(outputRuleWidth)),
+    running
+      ? h(Box, { flexDirection: 'column', overflowY: 'hidden' },
+          h(Text, { color: YL, bold: true, wrap: 'truncate-end' }, `⌛ Running: sovereign ${lastExecuted.join(' ')}`),
+          h(Text, { color: MUT, wrap: 'truncate-end' }, 'Please wait for execution to complete...'),
+        )
+      : output
+        ? h(Box, { flexDirection: 'column', overflowY: 'hidden' },
+            h(Text, { color: GN, bold: true, wrap: 'truncate-end' }, `$ sovereign ${lastExecuted.join(' ')}`),
+            h(Text, { color: BDR, wrap: 'truncate-end' }, '─'.repeat(outputRuleWidth)),
+            ...visibleLines.map((line, idx) => h(Text, { key: idx, color: VAL, wrap: 'truncate-end' }, line)),
+            outputLines.length > maxLines
+              ? h(Text, { color: outputScrolledUp ? YL : MUT, wrap: 'truncate-end' },
+                  `[lines ${outputTop + 1}-${Math.min(outputTop + maxLines, outputLines.length)}/${outputLines.length}] ` +
+                  (outputScrolledUp ? 'PgDn/End' : 'PgUp'))
+              : null,
+          )
+        : h(Box, { flexDirection: 'column', overflowY: 'hidden' },
+            h(Text, { color: MUT, wrap: 'truncate-end' }, 'No command executed yet.'),
+            h(Text, { color: MUT, wrap: 'truncate-end' }, 'Select a command and choose Run to see output.'),
+          ),
+  );
+
+  const dashboardBody = layout.stacked
+    ? h(Box, { flexDirection: 'column', flexGrow: 1, overflowY: 'hidden' },
+        h(Box, { flexDirection: 'row', height: layout.stackedTopRows, flexShrink: 0, overflowY: 'hidden' }, sidebarPanel, contentPanel),
+        outputPanel,
+      )
+    : h(Box, { flexDirection: 'row', flexGrow: 1, overflowY: 'hidden' }, sidebarPanel, contentPanel, outputPanel);
+
+  // Non-fullscreen normal-flow rendering avoids the Windows conhost redraw
+  // failure while the viewport policy keeps every pane inside current bounds.
+  return h(Box, { flexDirection: 'column', height: layout.height, overflowY: 'hidden' },
+    layout.showHeader && h(Box, { borderStyle: 'round', borderColor: CY, paddingX: 1, flexShrink: 0, ...oneLine },
       h(Text, { color: CY, bold: true }, 'SOVEREIGN  '),
       h(Text, { color: DIM }, 'backend '), h(Text, { color: DOT_COLOR[backendDot.tone] }, backendDot.glyph),
       h(Text, { color: DIM }, '  cache '), h(Text, { color: DOT_COLOR[cacheDot.tone] }, cacheDot.glyph),
       h(Text, { color: DIM }, '  quotes '), h(Text, { color: DOT_COLOR[quoteDot.tone] }, quoteDot.glyph),
       daemonStatus && h(Text, { color: DIM }, '  '),
-      daemonStatus && h(Text, { color: daemonStatus.status === 'sleeping' ? MUT : AM },
+      daemonStatus && h(Text, { color: daemonStatus.status === 'sleeping' ? MUT : AM, wrap: 'truncate-end' },
         daemonStatus.status === 'sleeping' ? '⏾ backfill idle' : `⟳ backfill ${daemonBar} ${daemonStatus.completed_jobs || 0}/${daemonStatus.total_jobs || 0} ${daemonStatus.current_symbol || ''}`),
-      h(Box,  { flexGrow: 1 }),
+      h(Box, { flexGrow: 1 }),
       h(Text, { color: MUT }, clock),
     ),
-
-    // Body -- chat is the new default entry point (Tab switches to the grid
-    // below); the grid itself, the symbol/strategy pickers, the PIN gate,
-    // and the output panel are all completely unchanged.
-    focus === 'pin' ? pinView : h(Box, { flexDirection: 'row', flexGrow: 1 },
-
-      // Sidebar
-      h(Box, {
-        width: 20,
-        flexShrink: 0,
-        borderStyle: 'single',
-        borderColor: focus === 'side' ? CY : BDR,
-        flexDirection: 'column',
-        paddingX: 1,
-      },
-        h(Text, { color: DIM }, 'MENU'),
-        h(Text, { color: BDR }, '──────────────'),
-        ...sideItems,
-      ),
-
-      // Content
-      h(Box, {
-        width: 76,
-        flexShrink: 0,
-        borderStyle: 'single',
-        borderColor: (focus === 'cmd' || focus === 'subcmd' || focus === 'flags' || focus === 'symbolPicker') ? CY : BDR,
-        flexDirection: 'column',
-        paddingX: 1,
-      },
-        h(Text, { color: YL, bold: true }, cat.full),
-        h(Text, { color: BDR }, '─'.repeat(72)),
-        ...cmdRows,
-        h(Text, { color: BDR }, '─'.repeat(72)),
-        flagPanel,
-      ),
-
-      // Output
-      h(Box, {
-        flexGrow: 1,
-        borderStyle: 'single',
-        borderColor: BDR,
-        flexDirection: 'column',
-        paddingX: 1,
-      },
-        h(Text, { color: CY, bold: true }, 'COMMAND OUTPUT'),
-        h(Text, { color: BDR }, '─'.repeat(40)),
-        running
-          ? h(Box, { flexDirection: 'column' },
-              h(Text, { color: YL, bold: true }, `⌛ Running: sovereign ${lastExecuted.join(' ')}`),
-              h(Text, { color: MUT }, 'Please wait for execution to complete...'),
-            )
-          : output
-            ? h(Box, { flexDirection: 'column' },
-                h(Text, { color: GN, bold: true }, `$ sovereign ${lastExecuted.join(' ')}`),
-                h(Text, { color: BDR }, '─'.repeat(40)),
-                ...visibleLines.map((line, idx) => h(Text, { key: idx, color: VAL }, line)),
-                outputLines.length > maxLines
-                  ? h(Text, { color: outputScrolledUp ? YL : MUT },
-                      `  [lines ${outputTop + 1}-${Math.min(outputTop + maxLines, outputLines.length)} of ${outputLines.length}]` +
-                      (outputScrolledUp ? '  PgDn/End to follow latest' : '  PgUp to scroll back'))
-                  : null,
-              )
-            : h(Box, { flexDirection: 'column' },
-                h(Text, { color: MUT }, 'No command executed yet.'),
-                h(Text, { color: MUT }, 'Select a command and choose Run to see output.')
-              )
-      ),
+    focus === 'pin' ? pinView : dashboardBody,
+    layout.showFooter && h(Box, { borderStyle: 'single', borderColor: BDR, paddingX: 1, flexShrink: 0, ...oneLine },
+      h(Text, { color: MUT, wrap: 'truncate-end' }, footerHint),
     ),
-
-    // Footer
-    h(Box, { borderStyle: 'single', borderColor: BDR, paddingX: 1 },
-      h(Text, { color: MUT }, footerHint),
-    ),
-
-    // Chat bar -- always visible underneath the grid, except over the PIN
-    // gate (a deliberate full takeover for a security-critical prompt).
     focus !== 'pin' && chatBar,
   );
 };

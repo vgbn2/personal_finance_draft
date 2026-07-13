@@ -79,7 +79,7 @@ const modelCandidates = [
   {
     name: 'cnn_window_v0',
     family: 'neural',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'convolution-style scorer over latest technical feature row',
     predict(feature) {
       const p = signalParts(feature);
@@ -90,7 +90,7 @@ const modelCandidates = [
   {
     name: 'xgboost_ranker_v0',
     family: 'boosting',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'XGBoost-style boosted-tree ranker using nonlinear feature interactions',
     predict(feature) {
       const p = signalParts(feature);
@@ -105,7 +105,7 @@ const modelCandidates = [
   {
     name: 'gradient_boosted_trees_v0',
     family: 'boosting',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'gradient-boosted decision tree style ensemble over momentum, RSI, and risk',
     predict(feature) {
       const p = signalParts(feature);
@@ -119,7 +119,7 @@ const modelCandidates = [
   {
     name: 'random_forest_v0',
     family: 'trees',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'random-forest style majority vote across simple technical regimes',
     predict(feature) {
       const p = signalParts(feature);
@@ -138,7 +138,7 @@ const modelCandidates = [
   {
     name: 'decision_tree_stump_v0',
     family: 'trees',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'single decision tree stump for fast sanity checks',
     predict(feature) {
       const p = signalParts(feature);
@@ -149,7 +149,7 @@ const modelCandidates = [
   {
     name: 'logistic_regression_v0',
     family: 'linear',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'logistic linear margin over normalized technical features',
     predict(feature) {
       const p = signalParts(feature);
@@ -161,7 +161,7 @@ const modelCandidates = [
   {
     name: 'svm_margin_v0',
     family: 'linear',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'support-vector style margin around trend and volatility boundaries',
     predict(feature) {
       const p = signalParts(feature);
@@ -172,7 +172,7 @@ const modelCandidates = [
   {
     name: 'knn_pattern_v0',
     family: 'instance_based',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'nearest-neighbor style pattern proxy using return and RSI similarity bands',
     predict(feature) {
       const p = signalParts(feature);
@@ -185,7 +185,7 @@ const modelCandidates = [
   {
     name: 'naive_bayes_regime_v0',
     family: 'probabilistic',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'naive-Bayes style regime score from independent technical likelihood buckets',
     predict(feature) {
       const p = signalParts(feature);
@@ -200,7 +200,7 @@ const modelCandidates = [
   {
     name: 'lstm_sequence_v0',
     family: 'neural',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'sequence-model proxy emphasizing persistent multi-bar momentum',
     predict(feature) {
       const p = signalParts(feature);
@@ -211,7 +211,7 @@ const modelCandidates = [
   {
     name: 'transformer_attention_v0',
     family: 'neural',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'attention-style scorer weighting trend, volatility, and mean-reversion context',
     predict(feature) {
       const p = signalParts(feature);
@@ -224,7 +224,7 @@ const modelCandidates = [
   {
     name: 'momentum_baseline_v0',
     family: 'baseline',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'long when 5-period return is positive',
     predict(feature) {
       const score = valueOrZero(feature.close_return_5);
@@ -234,7 +234,7 @@ const modelCandidates = [
   {
     name: 'mean_reversion_baseline_v0',
     family: 'baseline',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'long when RSI is washed out, flat when overbought',
     predict(feature) {
       const rsi = valueOrZero(feature.rsi_14);
@@ -245,14 +245,20 @@ const modelCandidates = [
   {
     name: 'volatility_breakout_v0',
     family: 'baseline',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'long when trend is positive and realized volatility is not elevated',
     predict(feature) {
       const p = signalParts(feature);
       return predictionFromScore(p.breakout, 1);
     },
   },
-];
+].map((candidate) => ({
+  ...candidate,
+  trained: false,
+  decision_ready: false,
+  decision_scope: 'research_baseline_only',
+  description: `Handcrafted heuristic; not a trained model. ${candidate.description}`,
+}));
 
 function summarizeReturns(returns) {
   const wins = returns.filter((value) => value > 0).length;
@@ -337,7 +343,15 @@ function perSymbolWinners(models) {
     const candidates = models
       .map((model) => {
         const metrics = (model.by_symbol || []).find((row) => row.symbol === symbol);
-        return metrics ? { model: model.name, family: model.family, ...metrics } : null;
+        return metrics ? {
+          model: model.name,
+          family: model.family,
+          status: model.status,
+          trained: model.trained === true,
+          decision_ready: model.decision_ready === true,
+          decision_scope: model.decision_scope || null,
+          ...metrics,
+        } : null;
       })
       .filter(Boolean)
       .sort((a, b) => b.sharpe_like - a.sharpe_like || b.total_return - a.total_return);
@@ -404,6 +418,9 @@ function compareModels(featureFrame, options = {}) {
     threshold,
     feature_count: featureFrame.features ? featureFrame.features.length : 0,
     candidate_count: modelCandidates.length,
+    trained_candidate_count: modelCandidates.filter((model) => model.trained === true).length,
+    decision_ready: modelCandidates.some((model) => model.decision_ready === true),
+    decision_warning: 'Heuristic comparison is research-only unless a candidate is explicitly validated and decision_ready.',
     families: [...new Set(modelCandidates.map((model) => model.family))].sort(),
     winner: results[0] ? results[0].name : null,
     per_symbol_winners: perSymbolWinners(results),

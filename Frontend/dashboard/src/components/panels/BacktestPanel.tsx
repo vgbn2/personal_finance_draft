@@ -68,10 +68,10 @@ export function BacktestPanel() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 animate-in slide-in-from-bottom-2 duration-300">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 animate-in slide-in-from-bottom-2 duration-300">
       
       {/* Control Bar */}
-      <div className="flex items-center justify-between bg-[var(--bg-secondary)] border border-[var(--border-subtle)] p-4 rounded-xl shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] p-4 rounded-xl shadow-sm">
         <div className="flex flex-col">
           <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest">Research Runner</span>
           <span className="font-heading text-sm font-bold text-[var(--text-main)]">CNN Momentum Strategy v1.2</span>
@@ -97,7 +97,7 @@ export function BacktestPanel() {
 
       {/* Metrics Row */}
       {report && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl flex flex-col gap-1 shadow-sm border-l-4 border-l-[var(--color-brand-green)]">
             <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2">
               <TrendingUp className="w-3 h-3" /> Net Return
@@ -141,8 +141,8 @@ export function BacktestPanel() {
       )}
 
       {/* Details Area */}
-      <div className="grid grid-cols-12 gap-6 h-[300px]">
-        <div className="col-span-12 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl flex flex-col shadow-sm overflow-hidden">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 min-h-[300px]">
+        <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl flex flex-col shadow-sm overflow-hidden">
           <div className="h-10 border-b border-[var(--border-subtle)] flex items-center px-5 shrink-0 bg-[var(--bg-primary)] justify-between">
              <span className="font-heading text-xs font-bold uppercase tracking-wider text-[var(--text-main)] flex items-center gap-2">
                <Calendar className="w-3 h-3" /> Strategy Performance Details

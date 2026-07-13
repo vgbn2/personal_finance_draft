@@ -59,6 +59,17 @@ test('massBackfillUniverse covers universe_matrix grid symbols, not just the fla
   assert.equal(familyBySymbol.BTCUSDT, 'crypto');
 });
 
+test('mass backfill accepts the same supported price-family boundary as the technical scorecard', () => {
+  const config = {
+    equities: { symbols: ['AAPL'] },
+    crypto: { symbols: ['BTCUSDT'] },
+    macro: { symbols: ['CPI'] },
+  };
+  const { symbols, familyBySymbol } = massBackfillUniverse(config, ['crypto']);
+  assert.deepEqual(symbols, ['BTCUSDT']);
+  assert.deepEqual(familyBySymbol, { BTCUSDT: 'crypto' });
+});
+
 test('mass backfill report mirrors backend integrity section format', () => {
   const jobResults = [
     { ok: true, family: 'equities', symbol: 'AAPL', timeframe: '1h', records: 2550, provider_errors: 0 },
