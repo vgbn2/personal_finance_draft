@@ -74,6 +74,7 @@ CLI prefix: none (research commands dispatched directly as `sovereign <id>`)
 | Backtest (Prop-firm fit) | `sovereign bt` | `--strategy`, `--timeframe`, `--days`, `--allow-degraded` | PASS | Strategy picker reads the live registry; walk-forward and trust gate are wired. |
 | Optimize (Indicators only) | `sovereign optimize` | `--strategy`, `--timeframe` | PASS | Fast-fails when no usable features; no implicit cache refresh. |
 | Edge Decay (Rolling window alpha check) | `sovereign edge-decay` | `--strategy`, `--timeframe`, `--symbol` | PASS | |
+| Scorecard | `sovereign scorecard` | `--schema`, `--fixture`, `--symbol`, `--state`, `--family`, `--tf`, `--direction`, `--min-conf`, `--top`, `--allow-degraded`, `--no-backfill` | PASS | Both TUI manifests expose the same flags. Schema 2 defaults fail closed; partial coverage is opt-in and labeled degraded. Schema 3 uses catalog rows with single-asset evidence drill-down. |
 
 ---
 

@@ -6,6 +6,7 @@ const { STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths.js');
 const { readTsIndexSince } = require('../../../../shared/lib/market/validation.js');
 const { buildRecordedAppleShadow, RECORDED_AAPL_FIXTURE_ID } = require('../../../../shared/lib/analysis/services/equity_3m_shadow.js');
 const { buildAllRecordedShadowCatalog, ALL_RECORDED_FIXTURE_ID, filterShadowCatalog } = require('../../../../shared/lib/analysis/services/shadow_catalog.js');
+const { visibleLength, padVisibleRight, clipVisible } = require('./research_render.js');
 
 const RESET  = '\x1b[0m';
 const BOLD   = '\x1b[1m';
@@ -20,6 +21,57 @@ const PHASE_ORDER = ['1d', '4h', '1h', '1w', '15m', '5m', '1m'];
 const SCORECARD_FAMILIES = new Set(['equities', 'indices', 'commodities', 'fx', 'crypto']);
 const SCORECARD_REFRESH_DAYS = '30';
 const SCORECARD_REFRESH_CONCURRENCY = '3';
+
+function canColorize() {
+  return Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;
+}
+
+function tint(text, color, enabled = canColorize()) {
+  return enabled ? `${color}${text}${RESET}` : text;
+}
+
+function stateBadge(state, enabled = canColorize()) {
+  if (state === 'degraded') return tint('degraded', YELLOW, enabled);
+  if (state === 'excluded') return tint('excluded', RED, enabled);
+  return tint('eligible', GREEN, enabled);
+}
+
+function coverageText(row) {
+  if (!Number.isFinite(row.coverage)) return 'n/a';
+  return `${(row.coverage * 100).toFixed(0)}%`;
+}
+
+function joinSummaryParts(parts, colorize = canColorize()) {
+  return parts.filter(Boolean).join(colorize ? `  ${DIM}·${RESET}  ` : '  ·  ');
+}
+
+function wrapSegmentList(segments, width, indent, separator = ', ') {
+  const lines = [];
+  const continuation = ' '.repeat(visibleLength(indent));
+  let line = indent;
+  for (const segment of segments) {
+    const token = segment.trim();
+    if (!token) continue;
+    const next = line === indent ? `${indent}${token}` : `${line}${separator}${token}`;
+    if (visibleLength(next) > width && line !== indent) {
+      lines.push(line);
+      line = `${continuation}${token}`;
+    } else {
+      line = next;
+    }
+  }
+  if (line !== indent) lines.push(clipVisible(line, width));
+  return lines.length ? lines : [indent];
+}
+
+function summarizeShadowRows(rows) {
+  const counts = { eligible: 0, degraded: 0, excluded: 0 };
+  for (const row of rows) {
+    const state = row.decision_state || 'eligible';
+    counts[state] = (counts[state] || 0) + 1;
+  }
+  return counts;
+}
 
 // Load VIX + SPY + AUDUSD from ts-index to produce a single risk-on/off regime label.
 function loadMarketContext({ tsDir = STORAGE_TS_DIR, now = Date.now() } = {}) {
@@ -90,8 +142,26 @@ function chunks(arr, size) {
 
 async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars, options = {}) {
   const tfs = tfConfigs.map(cfg => analyzeTimeframe(cfg, symbol, { ...options, family }));
+  const valid = tfs.filter((timeframe) => !timeframe.error);
   const invalid = tfs.filter((timeframe) => timeframe.error);
-  if (invalid.length > 0) {
+  if (valid.length === 0) {
+    return {
+      eligible: false,
+      exclusion: {
+        symbol,
+        family,
+        reasons: invalid.map((timeframe) => ({
+          timeframe: timeframe.tf,
+          reason: timeframe.error,
+          bars: timeframe.bars,
+          last_bar_at: timeframe.last_bar_at || null,
+          age_ms: timeframe.age_ms ?? null,
+          freshness_limit_ms: timeframe.freshness_limit_ms ?? null,
+        })),
+      },
+    };
+  }
+  if (invalid.length > 0 && !options.allowDegraded) {
     return {
       eligible: false,
       exclusion: {
@@ -109,12 +179,14 @@ async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars, options = {
     };
   }
   const agg = aggregateBias(tfs);
+  const coverage = +(valid.length / tfs.length).toFixed(2);
+  const decisionState = invalid.length > 0 ? 'degraded' : 'eligible';
 
   // Phase + regime: take from highest-priority TF that has a value
   let phase = null;
   let regime = null;
   for (const key of PHASE_ORDER) {
-    const t = tfs.find(x => x.tf === key && !x.error);
+    const t = valid.find(x => x.tf === key);
     if (t) {
       if (phase === null && t.phase != null) phase = t.phase;
       if (regime === null && t.regime != null) regime = t.regime;
@@ -135,8 +207,8 @@ async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars, options = {
     };
   }
 
-  const lastBarTimes = tfs.map((timeframe) => Date.parse(timeframe.last_bar_at));
-  const validUntilTimes = tfs.map((timeframe) => Date.parse(timeframe.valid_until));
+  const lastBarTimes = valid.map((timeframe) => Date.parse(timeframe.last_bar_at)).filter((value) => Number.isFinite(value));
+  const validUntilTimes = valid.map((timeframe) => Date.parse(timeframe.valid_until)).filter((value) => Number.isFinite(value));
 
   return {
     eligible: true,
@@ -147,12 +219,22 @@ async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars, options = {
     score: agg.score,
     phase,
     regime,
+    decision_state: decisionState,
+    coverage,
+    degraded_reasons: invalid.map((timeframe) => ({
+      timeframe: timeframe.tf,
+      reason: timeframe.error,
+      bars: timeframe.bars,
+      last_bar_at: timeframe.last_bar_at || null,
+      age_ms: timeframe.age_ms ?? null,
+      freshness_limit_ms: timeframe.freshness_limit_ms ?? null,
+    })),
     tfs: tfMap,
     timeframe_details: timeframeDetails,
     data_as_of: new Date(Math.min(...lastBarTimes)).toISOString(),
     latest_bar_at: new Date(Math.max(...lastBarTimes)).toISOString(),
-    valid_until: new Date(Math.min(...validUntilTimes)).toISOString(),
-    complete: true,
+    valid_until: validUntilTimes.length ? new Date(Math.min(...validUntilTimes)).toISOString() : null,
+    complete: decisionState === 'eligible',
     confidence_kind: 'heuristic_vote_strength',
     btcCorr: computeBtcCorr(symbol, btcBars, options),
   };
@@ -162,109 +244,97 @@ function biasColor(b) {
   return b === 'long' ? GREEN : b === 'short' ? RED : YELLOW;
 }
 
-function phaseColor(p) {
-  if (!p) return DIM;
-  const up   = new Set(['markup', 'reaccumulation', 'accumulation']);
-  const down = new Set(['markdown', 'distribution', 'redistribution']);
-  return up.has(p) ? GREEN : down.has(p) ? RED : YELLOW;
-}
-
-function renderMarketContext(ctx) {
-  if (!ctx) return;
+function renderMarketContext(ctx, colorize = canColorize()) {
+  if (!ctx) return null;
   const { regime, vix, vixLabel, spyBias, audBias } = ctx;
   const rc = regime === 'RISK-OFF' ? RED : regime === 'RISK-ON' ? GREEN : YELLOW;
-  const parts = [`${BOLD}Market:${RESET} ${rc}${regime}${RESET}`];
-  if (vix !== null) parts.push(`VIX ${vix.toFixed(1)} ${DIM}(${vixLabel})${RESET}`);
-  if (spyBias) parts.push(`SPY: ${spyBias === 'up' ? GREEN : spyBias === 'down' ? RED : YELLOW}${spyBias}${RESET}`);
-  if (audBias) parts.push(`AUD/USD: ${audBias === 'up' ? GREEN : RED}${audBias === 'up' ? 'risk-on' : 'risk-off'}${RESET}`);
-  console.log(parts.join(`  ${DIM}|${RESET}  `));
+  const parts = [`Market ${tint(regime, rc, colorize)}`];
+  if (vix !== null) parts.push(`VIX ${vix.toFixed(1)} (${vixLabel})`);
+  if (spyBias) parts.push(`SPY ${spyBias}`);
+  if (audBias) parts.push(`AUD/USD ${audBias === 'up' ? 'risk-on' : 'risk-off'}`);
+  return joinSummaryParts(parts, colorize);
 }
 
-function renderExclusionSummary(summary) {
-  if (!summary || summary.total === 0) return;
+function renderExclusionSummary(summary, colorize = canColorize(), width = 100) {
+  if (!summary || summary.total === 0) return [];
   const reasons = Object.entries(summary.by_reason)
-    .map(([reason, count]) => `${reason}: ${count}`)
-    .join(', ');
+    .map(([reason, count]) => `${reason} ${count}`)
+    .join(' · ');
   const timeframes = Object.entries(summary.by_timeframe)
-    .map(([timeframe, counts]) => `${timeframe} (${Object.entries(counts).map(([reason, count]) => `${reason}: ${count}`).join(', ')})`)
-    .join(' | ');
-  console.log(`${DIM}Excluded ${summary.total}: ${reasons}${RESET}`);
-  console.log(`${DIM}By timeframe: ${timeframes}${RESET}`);
+    .map(([timeframe, counts]) => `${timeframe}: ${Object.entries(counts).map(([reason, count]) => `${reason} ${count}`).join(', ')}`);
+  return [
+    tint(`Data checks  ${reasons}`, DIM, colorize),
+    ...wrapSegmentList(timeframes, width, 'By timeframe  ', ' · ').map((line) => tint(line, DIM, colorize)),
+  ];
 }
 
-function renderScorecard(rows, filters, elapsed, counts, ctx) {
+function renderNoRows(counts, filters) {
+  if (counts.confidence_filtered > 0) {
+    const noun = counts.confidence_filtered === 1 ? 'candidate' : 'candidates';
+    return `No rows shown: ${counts.confidence_filtered} ${noun} below the ${(filters.min_confidence * 100).toFixed(0)}% confidence floor.`;
+  }
+  if (counts.direction_filtered > 0) {
+    const noun = counts.direction_filtered === 1 ? 'candidate' : 'candidates';
+    return `No rows shown: ${counts.direction_filtered} ${noun} did not match direction ${filters.direction}.`;
+  }
+  if (counts.excluded_symbols > 0) return 'No usable rows: all evaluated assets failed the requested data checks.';
+  return 'No rows match the current filters.';
+}
+
+function timeframeCell(row, timeframes, colorize) {
+  return timeframes.map((timeframe) => {
+    const bias = row.tfs[timeframe];
+    return tint(ARROW[bias] || '.', bias ? biasColor(bias) : DIM, colorize);
+  }).join('/');
+}
+
+function renderScorecard(rows, filters, elapsed, counts, ctx, options = {}) {
+  const width = Math.max(60, options.width || process.stdout.columns || 100);
+  const colorize = options.colorize ?? canColorize();
+  const compact = width < 100;
   const date = new Date().toUTCString();
   const families = filters.family || 'all price families';
   const tfLabel  = filters.timeframes.join('/');
+  const status = joinSummaryParts([
+    `${counts.eligible_symbols ?? 0} eligible`,
+    `${counts.degraded_symbols ?? 0} degraded`,
+    `${counts.excluded_symbols ?? 0} excluded`,
+    counts.confidence_filtered ? `${counts.confidence_filtered} below confidence` : null,
+    counts.direction_filtered ? `${counts.direction_filtered} direction-filtered` : null,
+    counts.truncated_symbols ? `${counts.truncated_symbols} beyond top limit` : null,
+    `${rows.length} shown`,
+  ], colorize);
+  const lines = [
+    '',
+    `${tint('SOVEREIGN SCORECARD', `${BOLD}${CYAN}`, colorize)}  ${tint(date, DIM, colorize)}`,
+    tint(`${counts.total_symbols} evaluated in ${(elapsed / 1000).toFixed(1)}s  ·  ${families}  ·  ${tfLabel}  ·  floor ${(filters.min_confidence * 100).toFixed(0)}%`, DIM, colorize),
+    `Status  ${status}`,
+  ];
+  const market = renderMarketContext(ctx, colorize);
+  if (market) lines.push(market);
 
-  console.log(`\n${BOLD}${CYAN}SOVEREIGN SCORECARD${RESET}  ${DIM}${date}${RESET}`);
-  console.log(`${DIM}Families: ${families} · TFs: ${tfLabel} · ${rows.length} assets scored${RESET}`);
-  renderMarketContext(ctx);
-
-  const hdr =
-    '#'.padEnd(4) +
-    'Symbol'.padEnd(13) +
-    'Family'.padEnd(13) +
-    'Bias'.padEnd(9) +
-    'Conf'.padEnd(7) +
-    'Aligned'.padEnd(9) +
-    'Phase'.padEnd(16) +
-    filters.timeframes.map(t => t.padEnd(5)).join('') +
-    'Regime'.padEnd(12) +
-    'BTC-r';
-  const W = Math.max(98, hdr.length);
-  console.log(DIM + '─'.repeat(W) + RESET);
-  console.log(BOLD + hdr + RESET);
-  console.log(DIM + '─'.repeat(W) + RESET);
-
-  for (let i = 0; i < rows.length; i++) {
-    const r = rows[i];
-    const bc   = biasColor(r.bias);
-    const pc   = phaseColor(r.phase);
-    const rc   = r.regime === 'trending' ? GREEN : r.regime === 'choppy' ? YELLOW : DIM;
-    const confStr = `${(r.confidence * 100).toFixed(0)}%`;
-
-    // pad(colored, visible) — pads a pre-colored string to `visible` chars wide
-    const pad = (colored, visibleText, w) => colored + ' '.repeat(Math.max(0, w - visibleText.length));
-
-    const alignedText = r.aligned ? '✔' : ' ';
-    const alignedStr  = r.aligned ? `${GREEN}✔${RESET}` : ' ';
-    const phaseText   = r.phase ? r.phase.slice(0, 14) : 'n/a';
-    const phaseStr    = r.phase ? `${pc}${phaseText}${RESET}` : `${DIM}n/a${RESET}`;
-    const regimeText  = r.regime || 'n/a';
-    const regimeStr   = r.regime ? `${rc}${r.regime}${RESET}` : `${DIM}n/a${RESET}`;
-
-    const tfArrows = filters.timeframes.map(tf => {
-      const b = r.tfs[tf];
-      const c = b ? biasColor(b) : DIM;
-      return `${c}${ARROW[b] || '.'}${RESET}    `;
-    }).join('');
-
-    // BTC-r: color-code; flag decorrelation (< 0.3) with ⚠
-    let btcCorrStr = `${DIM}-${RESET}`;
-    if (r.btcCorr !== null) {
-      const c = r.btcCorr > 0.6 ? DIM : r.btcCorr < 0.3 ? YELLOW : '';
-      const warn = r.btcCorr < 0.3 ? ' ⚠' : '';
-      btcCorrStr = `${c}${r.btcCorr.toFixed(2)}${warn}${RESET}`;
+  if (rows.length === 0) {
+    lines.push('', renderNoRows(counts, filters));
+  } else {
+    const header = compact
+      ? `${'#'.padEnd(3)}${'ASSET'.padEnd(14)}${'DIR'.padEnd(8)}${'CONF'.padEnd(6)}${'COV'.padEnd(6)}${'STATE'.padEnd(11)}TF ${tfLabel}`
+      : `${'#'.padEnd(3)}${'ASSET'.padEnd(14)}${'FAMILY'.padEnd(13)}${'DIR'.padEnd(8)}${'CONF'.padEnd(6)}${'COV'.padEnd(6)}${'STATE'.padEnd(11)}${'TF'.padEnd(12)}PHASE`;
+    lines.push('', tint(header, BOLD, colorize));
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const confidence = `${(row.confidence * 100).toFixed(0)}%`;
+      const coverage = coverageText(row);
+      const state = row.decision_state || 'eligible';
+      const prefix = `${String(i + 1).padEnd(3)}${row.symbol.padEnd(14)}`;
+      const core = `${padVisibleRight(tint(row.bias, biasColor(row.bias), colorize), 8)}${confidence.padEnd(6)}${coverage.padEnd(6)}${padVisibleRight(stateBadge(state, colorize), 11)}`;
+      if (compact) lines.push(`${prefix}${core}${timeframeCell(row, filters.timeframes, colorize)}`);
+      else lines.push(`${prefix}${row.family.padEnd(13)}${core}${padVisibleRight(timeframeCell(row, filters.timeframes, colorize), 12)}${row.phase || 'n/a'}`);
     }
-
-    console.log(
-      `${CYAN}${String(i + 1).padEnd(4)}${RESET}` +
-      `${r.symbol.padEnd(13)}` +
-      `${DIM}${r.family.padEnd(13)}${RESET}` +
-      pad(`${bc}${r.bias}${RESET}`, r.bias, 9) +
-      `${confStr.padEnd(7)}` +
-      pad(alignedStr, alignedText, 9) +
-      pad(phaseStr, phaseText, 16) +
-      tfArrows +
-      pad(regimeStr, regimeText, 12) +
-      btcCorrStr
-    );
   }
 
-  console.log(DIM + '─'.repeat(W) + RESET);
-  renderExclusionSummary(counts.exclusion_summary);
-  console.log(`${DIM}Evaluated ${counts.total_symbols} assets in ${(elapsed / 1000).toFixed(1)}s  (${counts.eligible_symbols} eligible, ${counts.excluded_symbols} excluded, ${counts.confidence_filtered} below confidence filter, ${rows.length} shown)${RESET}\n`);
+  const exclusionLines = renderExclusionSummary(counts.exclusion_summary, colorize, width);
+  if (exclusionLines.length) lines.push('', ...exclusionLines);
+  return `${lines.map((line) => clipVisible(line, width)).join('\n')}\n`;
 }
 
 function summarizeExclusions(exclusions) {
@@ -293,7 +363,6 @@ function buildScorecardRefreshArgs(filters) {
 async function refreshScorecardData(filters, runner = null) {
   const { commandMassBackfill } = require('../data/data.js');
   return (runner || commandMassBackfill)(buildScorecardRefreshArgs(filters));
-  return commandMassBackfill(refreshArgs);
 }
 
 function parseScorecardOptions(args) {
@@ -302,6 +371,7 @@ function parseScorecardOptions(args) {
   const tfArg        = optionValue(args, '--tf', '1h,4h,1d');
   const minConf      = parseFloat(optionValue(args, '--min-conf', '0.3'));
   const topN         = parseInt(optionValue(args, '--top', '50'), 10);
+  const allowDegraded = hasFlag(args, '--allow-degraded');
 
   const tfKeys   = tfArg.split(',').map(s => s.trim()).filter(Boolean);
   const tfConfigs = tfKeys.map(key => TF_CONFIG.find(c => c.tf === key)).filter(Boolean);
@@ -321,6 +391,7 @@ function parseScorecardOptions(args) {
     tfConfigs,
     minConf: Number.isFinite(minConf) ? minConf : 0.3,
     topN: Number.isFinite(topN) ? topN : 50,
+    allowDegraded,
   };
 }
 
@@ -342,7 +413,7 @@ async function buildScorecard(args, runtime = {}) {
   if (!options.ok) return options;
 
   const {
-    familyFilter, dirFilter, tfKeys, tfConfigs, minConf, topN,
+    familyFilter, dirFilter, tfKeys, tfConfigs, minConf, topN, allowDegraded,
   } = options;
 
   if (progressEnabled) process.stdout.write(`\x1b[90m⌛ loading universe...\x1b[0m\r`);
@@ -375,7 +446,7 @@ async function buildScorecard(args, runtime = {}) {
       s,
       tfConfigs,
       btcBars,
-      { tsDir, now },
+      { tsDir, now, allowDegraded },
     )));
     for (const r of results) {
       if (r.status === 'fulfilled' && r.value.eligible) {
@@ -391,15 +462,21 @@ async function buildScorecard(args, runtime = {}) {
 
   // Filter
   let rows = scorecard.filter(r => r.confidence >= minConf);
+  const confidenceFiltered = scorecard.length - rows.length;
+  const beforeDirection = rows.length;
   if (dirFilter) rows = rows.filter(r => r.bias === dirFilter);
+  const directionFiltered = beforeDirection - rows.length;
 
   // Sort: highest score (LONG) → 0 (neutral) → lowest (SHORT)
   rows.sort((a, b) => b.score - a.score);
+  const beforeTopLimit = rows.length;
   if (topN > 0) rows = rows.slice(0, topN);
+  const truncatedSymbols = beforeTopLimit - rows.length;
 
-  const eligibleSymbols = scorecard.length;
+  const eligibleSymbols = scorecard.filter((row) => row.decision_state === 'eligible').length;
+  const degradedSymbols = scorecard.filter((row) => row.decision_state === 'degraded').length;
+  const candidateSymbols = scorecard.length;
   const excludedSymbols = exclusions.length;
-  const confidenceFiltered = Math.max(0, eligibleSymbols - rows.length);
 
   return {
     ok: true,
@@ -409,11 +486,14 @@ async function buildScorecard(args, runtime = {}) {
     elapsed_ms: elapsed,
     total_symbols: filtered.length,
     // analyzed_symbols/skipped are retained for schema-2 compatibility.
-    analyzed_symbols: eligibleSymbols,
+    analyzed_symbols: candidateSymbols,
     skipped: excludedSymbols,
     eligible_symbols: eligibleSymbols,
+    degraded_symbols: degradedSymbols,
     excluded_symbols: excludedSymbols,
     confidence_filtered: confidenceFiltered,
+    direction_filtered: directionFiltered,
+    truncated_symbols: truncatedSymbols,
     exclusion_summary: summarizeExclusions(exclusions),
     exclusions,
     filters: {
@@ -462,30 +542,58 @@ async function commandScorecard(args) {
       process.stdout.write(renderShadowCatalog(result));
       return 0;
     }
-    renderScorecard(
+    process.stdout.write(renderScorecard(
       result.rows,
       result.filters,
       result.elapsed_ms,
       result,
       result.market_context,
-    );
+    ));
   }
 
   return 0;
 }
 
 function renderShadowCatalog(result, { width = process.stdout.columns || 100 } = {}) {
-  const compact = width < 100;
-  const lines = [`Research shadow v3 | ${result.fixture_id} | NOT DECISION-READY`, `Rows ${result.counts.rows} | eligible ${result.counts.eligible ?? 0} | degraded ${result.counts.degraded ?? 0} | excluded ${result.counts.excluded ?? 0}`, compact ? 'ASSET      DIR   STR   COV   STATE' : 'ASSET      FAMILY       DIR   STRENGTH  COVERAGE  STATE'];
+  width = Math.max(60, width);
+  const colorize = canColorize();
+  const summary = summarizeShadowRows(result.rows);
+  const showDetails = result.rows.length === 1;
+  const rowLabel = result.rows.length === 1 ? 'row' : 'rows';
+  const lines = [
+    `Research shadow v3  ${colorize ? `${DIM}|${RESET}` : '|'}  ${result.fixture_id}  ${colorize ? `${DIM}|${RESET}` : '|'}  NOT DECISION-READY`,
+    `Summary  ${joinSummaryParts([
+      `${result.rows.length} ${rowLabel}`,
+      `${summary.eligible} eligible`,
+      `${summary.degraded} degraded`,
+      `${summary.excluded} excluded`,
+    ], colorize)}`,
+  ];
+  if (result.rows.length === 0) {
+    lines.push('', 'No rows match the current research filters.');
+    return `${lines.map((line) => clipVisible(line, width)).join('\n')}\n`;
+  }
+
+  lines.push('', `${'ASSET'.padEnd(10)} ${'FAMILY'.padEnd(12)} ${'DIR'.padEnd(7)} ${'STR'.padEnd(5)} ${'COV'.padEnd(5)} ${'STATE'.padEnd(10)} WHY`);
   for (const row of result.rows) {
     const asset = row.asset_descriptor.symbol.padEnd(10);
-    if (compact) lines.push(`${asset} ${row.direction.padEnd(5)} ${row.composite_strength.toFixed(2).padEnd(5)} ${row.coverage.toFixed(2).padEnd(5)} ${row.decision_state}`);
-    else lines.push(`${asset} ${row.asset_descriptor.family.padEnd(12)} ${row.direction.padEnd(5)} ${row.composite_strength.toFixed(2).padEnd(9)} ${row.coverage.toFixed(2).padEnd(9)} ${row.decision_state}`);
-    lines.push(`  factors: ${row.factor_results.map((factor) => `${factor.domain}=${factor.score.toFixed(2)}[${factor.quality}]`).join(', ')}`);
-    if (row.exclusion_reasons.length) lines.push(`  reasons: ${row.exclusion_reasons.join('; ')}`);
-    lines.push(`  evidence: ${row.factor_results.flatMap((factor) => factor.evidence_ids).slice(0, 4).join(', ')}`);
+    const state = stateBadge(row.decision_state, colorize);
+    const coverage = coverageText(row).padEnd(5);
+    const reason = row.exclusion_reasons[0] || '-';
+    lines.push(`${asset} ${row.asset_descriptor.family.padEnd(12)} ${row.direction.padEnd(7)} ${row.composite_strength.toFixed(2).padEnd(5)} ${coverage} ${padVisibleRight(state, 10)} ${reason}`);
+    if (!showDetails) continue;
+
+    const detailWidth = Math.max(32, width - 4);
+    const factorSegments = row.factor_results.map((factor) => `${factor.domain}=${factor.score.toFixed(2)}[${factor.quality}]`);
+    const evidenceSegments = row.factor_results.flatMap((factor) => factor.evidence_ids).slice(0, 4);
+    lines.push(...wrapSegmentList(factorSegments, detailWidth, `  ${colorize ? `${DIM}factors${RESET}` : 'factors'}  `));
+    if (row.exclusion_reasons.length) {
+      lines.push(...wrapSegmentList(row.exclusion_reasons, detailWidth, `  ${colorize ? `${DIM}reasons${RESET}` : 'reasons'}  `));
+    }
+    lines.push(...wrapSegmentList(evidenceSegments, detailWidth, `  ${colorize ? `${DIM}evidence${RESET}` : 'evidence'}  `));
   }
-  return `${lines.map((line) => line.slice(0, Math.max(40, width))).join('\n')}\n`;
+  if (!showDetails) lines.push('', 'Use --symbol <asset> to inspect factors, reasons, and evidence.');
+  return `${lines.map((line) => clipVisible(line, width)).join('\n')}\n`;
 }
 
 module.exports = { commandScorecard, buildScorecard, parseScorecardOptions, renderShadowCatalog, renderScorecard, summarizeExclusions, buildScorecardRefreshArgs, refreshScorecardData, SCORECARD_FAMILIES };
