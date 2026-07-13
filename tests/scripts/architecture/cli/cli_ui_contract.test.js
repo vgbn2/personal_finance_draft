@@ -131,6 +131,12 @@ test('legacy and dashboard manifests stay aligned on shared command ids and core
       assert.ok(modernFlags.includes(flag), `modern manifest should retain legacy flag ${flag} for ${id}`);
     }
   }
+
+  assert.deepEqual(
+    Object.keys(modernCommands.get('scorecard').flags).sort(),
+    Object.keys(legacyCommands.get('scorecard').flags).sort(),
+    'scorecard flags must stay identical because both dashboards launch the same data-state contract'
+  );
 });
 
 test('polymarket TUI exposes historical price ingestion path', () => {
