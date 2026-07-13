@@ -914,3 +914,25 @@ Suite: 631/0fail/2skip. Branch: feat/ink-tui-refactor.
   and `git diff --check` passed. Grade movement: schema-2 scorecard **B- / false-health-gated -> B+ /
   refresh-contract-gated**. Remaining runtime gap is successful provider backfill and a fresh post-run
   scorecard; no signal or live-trading claim is implied.
+
+## Mass-Implement Closeout - 2026-07-13 - scorecard state-first usability
+
+- Replaced the schema-2 wide table with a width-bounded state-first report. Empty, excluded,
+  confidence-filtered, direction-filtered, truncated, eligible, and degraded outcomes now have distinct
+  summaries; empty results no longer render an empty table.
+- Added opt-in `--allow-degraded` quorum scoring for partial timeframe coverage. Quorum rows expose
+  coverage and missing-timeframe reasons, remain `decision_state: degraded`, and are explicitly
+  `complete: false`, so the schema-v2 adapter rejects them for promotion.
+- Fixed scorecard counters that had conflated confidence filtering with direction filtering and top-N
+  truncation. The three counts are now computed and reported independently.
+- Schema-3 catalog mode is one row per asset with the primary reason. Factor, reason, and evidence detail
+  is reserved for a single-asset `--symbol` workbench; empty filters explain that no rows matched.
+- Aligned both TUI scorecard manifests on all flags, including `--min-conf` and `--allow-degraded`, and
+  updated the real dashboard launch contract plus research documentation.
+- Current cache probe remains fail-closed: crypto `1h/4h/1d` evaluated 36 assets, with 0 eligible,
+  0 degraded, and 36 excluded. The compact output explains 18 stale and 56 insufficient-data checks;
+  this is data readiness, not a zero-opportunity claim.
+- Verification: focused scorecard/shadow/adapter contracts 12/12 plus schema parity 5/5; dashboard 13/13;
+  full Node suite 770/768/0fail/2skip; hygiene and `git diff --check` pass.
+- Grade movement: `backend/cli/commands/research` B -> B+ / data-readiness-gated. Overall `backend/cli`
+  remains C / duplication-gated because the two full command manifests still have separate owners.

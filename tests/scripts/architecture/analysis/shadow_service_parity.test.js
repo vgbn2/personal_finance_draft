@@ -50,17 +50,33 @@ test('terminal research screener and asset workbench stay compact and expose evi
   const rankedCrypto = await buildScorecard(['--schema', '3', '--fixture', 'all-recorded', '--family', 'crypto']);
   assert.deepEqual(rankedCrypto.rows.map((row) => row.asset_descriptor.symbol), ['AAVE', 'BTC', 'ETH']);
   assert.deepEqual(rankedCrypto.rows.map((row) => row.decision_state), ['degraded', 'excluded', 'excluded']);
+  const catalogOutput = renderShadowCatalog(rankedCrypto, { width: 80 });
+  assert.ok(catalogOutput.includes('Summary  3 rows  ·  0 eligible  ·  1 degraded  ·  2 excluded'));
+  assert.ok(catalogOutput.includes('Use --symbol <asset>'));
+  assert.ok(!catalogOutput.includes('  factors'));
+  assert.ok(!catalogOutput.includes('  evidence'));
+  assert.ok(catalogOutput.split('\n').every((line) => line.length <= 80));
+
   const workbench = await buildScorecard(['--schema', '3', '--fixture', 'all-recorded', '--symbol', 'CL']);
   assert.equal(workbench.rows.length, 1);
   assert.equal(workbench.rows[0].asset_descriptor.family, 'commodity');
   for (const width of [80, 100, 120]) {
     const output = renderShadowCatalog(workbench, { width });
     assert.ok(output.includes('NOT DECISION-READY'));
-    assert.ok(output.includes('factors:'));
-    assert.ok(output.includes('evidence:'));
+    assert.ok(output.includes('factors'));
+    assert.ok(output.includes('evidence'));
     assert.ok(output.split('\n').every((line) => line.length <= width));
   }
   console.log('terminal research UI: family_screener=2 asset_workbench=CL widths=80,100,120');
+});
+
+test('terminal research catalog explains empty filters without rendering a table', async () => {
+  const empty = await buildScorecard(['--schema', '3', '--fixture', 'all-recorded', '--state', 'eligible']);
+  assert.equal(empty.rows.length, 0);
+  const output = renderShadowCatalog(empty, { width: 80 });
+  assert.ok(output.includes('Summary  0 rows  ·  0 eligible  ·  0 degraded  ·  0 excluded'));
+  assert.ok(output.includes('No rows match the current research filters.'));
+  assert.ok(!output.includes('ASSET'));
 });
 
 test('schema-v3 adapters reject unnamed fixtures and schema-v2 remains the default', async () => {

@@ -250,6 +250,7 @@ const M = [
           '--direction':   { t:'sel', opts:['','long','short','neutral'], lbl:'Direction filter (blank = all)', def:'' },
           '--min-conf':    { t:'txt', lbl:'Min confidence (0–1)', def:'0.3' },
           '--top':         { t:'txt', lbl:'Max rows', def:'50' },
+          '--allow-degraded': { t:'yn', lbl:'Allow partial timeframe coverage?', def:false },
           '--no-backfill': { t:'yn',  lbl:'Skip auto-backfill?', def:true },
         },
       },

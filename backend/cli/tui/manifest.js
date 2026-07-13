@@ -233,7 +233,9 @@ const COMMAND_MANIFEST = {
         '--family': { type: 'select', options: ['', 'crypto', 'equities', 'fx', 'indices', 'commodities'], label: 'Family filter (blank = all)' },
         '--tf': { type: 'text', default: '1h,4h,1d', label: 'Timeframes (comma-sep)' },
         '--direction': { type: 'select', options: ['', 'long', 'short', 'neutral'], label: 'Direction filter (blank = all)' },
+        '--min-conf': { type: 'text', default: '0.3', label: 'Min confidence (0-1)' },
         '--top': { type: 'text', default: '50', label: 'Max rows' },
+        '--allow-degraded': { type: 'confirm', label: 'Allow partial coverage?', default: false },
         // The dashboard stays cache-diagnostic by default; turn this off to request a bounded refresh.
         '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: true }
       }}

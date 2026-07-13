@@ -1952,3 +1952,20 @@ to **B+ / fail-closed**; `backend/api` and `supabase` return to **B- / deploymen
 **B / remote-RLS-gated** respectively; recorded analysis returns to **A- / promotion-blocked**. These
 are code and contract grades only. Real-capital promotion remains blocked by live data, model validation,
 remote RLS verification, and broker soak evidence.
+
+## Scorecard Review and Mass-Implement - 2026-07-13
+
+The focused review covered schema-2 state accounting and rendering, schema-3 catalog/workbench output,
+both TUI scorecard manifests, and their executable contracts. All findings below are closed.
+
+| Priority | Area | Finding | Resolution / evidence |
+|---|---|---|---|
+| Medium | Schema-2 state truth | Quorum rows were labeled degraded but still emitted `complete: true`, contradicting their missing timeframe details. | Degraded rows now emit `complete: false`; the real technical-v2 adapter rejects the generated row as `incomplete_v2_row`. |
+| Medium | Filter accounting | `confidence_filtered` was calculated after direction and top-N filtering, so the summary mislabeled valid rows as low-confidence. | Confidence, direction, and truncation counts are computed at their own filter boundaries and covered independently. |
+| Medium | Terminal usability | Schema 2 always printed a wide multi-column header even with zero rows; schema 3 expanded every catalog row into factors/reasons/evidence and repeated state counts. | Schema 2 is width-bounded and omits empty tables. Schema 3 is a one-line catalog with single-asset drill-down. Direct 80/100/120-column and empty-state contracts pass. |
+| Low | TUI contract drift | The inline dashboard lacked `--allow-degraded`; the legacy manifest lacked `--min-conf`; parity only checked one direction. | Both scorecard flag sets are identical and the parity test now requires exact equality. The real Ink launch test traverses the new field. |
+
+Verification: direct current-cache CLI probes for schema 2 and schema 3; focused scorecard/shadow/adapter
+contracts; dashboard 13/13; full Node suite **770 total / 768 pass / 0 fail / 2 skip**; hygiene and diff
+integrity pass. `backend/cli/commands/research` is **B+ / data-readiness-gated**. The remaining operational
+gap is fresh provider coverage, not scorecard rendering or state disclosure.
