@@ -3,12 +3,9 @@
 // ingest_market_data imports are lazy (inside each function) so that test stubs
 // applied via Module._load intercept are always picked up fresh per call.
 
-const path = require('path');
-const fs = require('fs');
-
 const { guardEquitySessionBars } = require('../../../../shared/lib/market/equity_session.js');
 
-const { readSnapshot, validateSnapshot, readTsIndexSince } = require('../../../../shared/lib/market/validation.js');
+const { readSnapshot, validateSnapshot } = require('../../../../shared/lib/market/validation.js');
 
 const { loadResearchConfig } = require('../../lib/research_config.js');
 
@@ -16,38 +13,7 @@ const utils = require('../../lib/utils.js');
 
 const { optionValue, hasFlag, numericOption } = utils;
 
-const { DEFAULT_SNAPSHOT, DEFAULT_HISTORY } = utils;
-const { STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths.js');
-
-// Minimum usable sources to consider a snapshot adequate for rolling-window feature
-// computation (RSI-14/Bollinger-20 need at least 20 bars per symbol; 50 gives headroom
-// for the rolling-2-pass and OOS split).
-const MIN_BACKTEST_BARS = 50;
-
-// ---------------------------------------------------------------------------
-// loadSourcesFromTsIndex — synchronous bridge from binary ts-index → snapshot
-// sources format.  Scans TS_DIR for *_1d.meta.json files belonging to `family`,
-// then reads recent daily bars for each symbol.  Only called when the default
-// JSON snapshot is too sparse to support rolling-window feature computation.
-// ---------------------------------------------------------------------------
-function loadSourcesFromTsIndex(family, days = 400) {
-  const tsDir = STORAGE_TS_DIR;
-  if (!tsDir || !fs.existsSync(tsDir)) return [];
-  const sinceMs = Date.now() - days * 24 * 60 * 60 * 1000;
-  const sources = [];
-  let files;
-  try { files = fs.readdirSync(tsDir); } catch { return []; }
-  for (const file of files) {
-    if (!file.endsWith('_1d.meta.json')) continue;
-    try {
-      const meta = JSON.parse(fs.readFileSync(path.join(tsDir, file), 'utf8'));
-      if (meta.family !== family) continue;
-      const bars = readTsIndexSince(tsDir, meta.symbol, '1d', sinceMs);
-      sources.push(...bars);
-    } catch { /* skip unreadable bins */ }
-  }
-  return sources;
-}
+const { DEFAULT_SNAPSHOT } = utils;
 
 const researchConfig = loadResearchConfig();
 
@@ -74,23 +40,6 @@ function _historicalWindowFromArgs(args, fallbackDays) {
 function loadUsableSources(args, options = {}) {
   const input = optionValue(args, '--input', DEFAULT_SNAPSHOT);
   const family = options.family || null;
-
-  // Auto-fallback to ts-index: last_fetch.json is a sparse live-watch snapshot
-  // (~5 daily bars per symbol, all families mixed).  When a family is known and
-  // the caller did not explicitly pass --input, load fresh daily bars directly
-  // from the binary ts-index.  This is the authoritative source (3000+ bars per
-  // crypto symbol vs 5 in last_fetch.json).  Explicit --input always overrides.
-  if (input === DEFAULT_SNAPSHOT && family) {
-    const tsBars = loadSourcesFromTsIndex(family);
-    if (tsBars.length >= MIN_BACKTEST_BARS) {
-      const tsSnap = { mode: 'ts_index', sources: tsBars, errors: [] };
-      const { report: tsReport, usableSources: tsSources } = validateSnapshot(tsSnap);
-      if (tsSources.length >= MIN_BACKTEST_BARS) {
-        return { snapshot: { ...tsSnap, sources: tsSources }, quality: tsReport, loaded_family: family };
-      }
-    }
-  }
-
   const snapshot = readSnapshot(input, { family }) || readSnapshot(input);
   const { report, usableSources } = validateSnapshot(snapshot);
   return { snapshot: { ...snapshot, sources: usableSources }, quality: report, loaded_family: snapshot?.loaded_family || null };

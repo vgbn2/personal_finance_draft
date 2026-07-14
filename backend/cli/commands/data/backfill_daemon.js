@@ -22,8 +22,6 @@
  * network; `commandBackfillDaemon` wires the real ingest commands.
  */
 
-const fs = require('node:fs');
-const path = require('node:path');
 const {
   optionValue, hasFlag, numericOption, printPayload,
 } = require('../../lib/utils.js');
@@ -33,17 +31,6 @@ const {
   buildFiveMinAccumulatePlan, buildEquityDeepBackfillPlan,
 } = require('./data.js');
 const { isFresh } = require('../../../../shared/lib/market/coverage.js');
-const { writeJson } = require('../../../../shared/lib/market/validation.js');
-const { pruneApiCache } = require('../../../../shared/lib/providers/common.js');
-const { STORAGE_DATA_DIR } = require('../../../../shared/lib/runtime/paths.js');
-
-// Progress/liveness state for ANY observer (the dashboard, a future web UI, a
-// human tailing the file) regardless of whether they started this process --
-// this daemon is meant to run headless (Docker `backfill` service, a separate
-// terminal) just as often as it's launched from the dashboard, and console.log
-// alone gives an external observer nothing to poll. Lives under the gitignored
-// cache/ dir (transient runtime state, not data worth tracking).
-const DAEMON_STATUS_PATH = path.join(STORAGE_DATA_DIR, 'cache', 'backfill_daemon_status.json');
 
 const ONE_M_FAMILIES = ['crypto', 'equities'];
 const YAHOO_FAMILIES = ['indices', 'commodities', 'fx'];
@@ -209,37 +196,9 @@ async function runBackfillCycle(o) {
   const deepDays = o.deepDays || DEFAULT_DEEP_DAYS;
   const incrementalDays = o.incrementalDays || INCREMENTAL_DAYS;
   const parallelLanes = o.parallelLanes !== false; // default true
-  // Fired once per job, after its outcome (skip/failed/ok) is final - the only
-  // way to count progress accurately, since a freshness-skipped job (the
-  // common case on a warm run) never logs a line at all. Optional; tests and
-  // the sequential/CLI-only callers don't need it.
-  const onJobDone = o.onJobDone || (() => {});
 
-  const summary = {
-    cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0,
-    rolled_up: 0, rollup_errors: 0, errors: 0, failures: [],
-  };
+  const summary = { cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0, rolled_up: 0, errors: 0, failures: [] };
   const start = Date.now();
-
-  function runJobRollup(job, action) {
-    try {
-      const roll = o.rollup(job, action);
-      if (!roll || roll.ok === false) {
-        throw new Error((roll && roll.error) || 'rollup returned no successful result');
-      }
-      summary.rolled_up += 1;
-      const n = Object.keys(roll.derived || {}).length;
-      if (n > 0) log(`[BACKFILL] ${job.symbol}  +${n}TF`);
-      return true;
-    } catch (err) {
-      const error = err && err.message ? err.message : String(err);
-      summary.errors += 1;
-      summary.rollup_errors += 1;
-      summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error });
-      log(`[BACKFILL] ${job.symbol}  rollup failed: ${error}`);
-      return false;
-    }
-  }
 
   // Process a single job — shared by both sequential and parallel paths.
   async function processJob(job) {
@@ -252,16 +211,7 @@ async function runBackfillCycle(o) {
 
     if (action === 'skip') {
       summary.skipped += 1;
-      if (gate.reason === 'not_found') {
-        log(`[BACKFILL] ${job.symbol}  ✗ no data on provider (skip 7d)`);
-        onJobDone(job, 'skipped');
-        return;
-      }
-
-      // A live feed can keep the base grain fresh without touching stored coarse
-      // bins. Refresh local rollups even when no provider fetch is needed.
-      const rolledUp = runJobRollup(job, 'refresh');
-      onJobDone(job, rolledUp ? 'skipped' : 'rollup_failed');
+      if (gate.reason === 'not_found') log(`[BACKFILL] ${job.symbol}  ✗ no data on provider (skip 7d)`);
       return;
     }
 
@@ -281,16 +231,24 @@ async function runBackfillCycle(o) {
       summary.errors += 1;
       summary.failures.push({ symbol: job.symbol, family: job.family, action, error: (res && res.error) || 'fetch failed' });
       log(`[BACKFILL] ${job.symbol}  FAILED  ${(res && res.error) || 'fetch failed'}`);
-      onJobDone(job, 'failed');
       return;
     }
     if (action === 'deep') summary.deep += 1; else summary.incremental += 1;
     log(`[BACKFILL] ${job.symbol}  ok  ${elapsed}s`);
+
     // Derive coarser bins from the freshly-written base bin. For an incremental
     // top-up only the recent window needs re-deriving, so the action is passed
     // through — the real rollup uses it to read just the tail of the base bin.
-    const rolledUp = runJobRollup(job, action);
-    onJobDone(job, rolledUp ? 'ok' : 'rollup_failed');
+    try {
+      const roll = o.rollup(job, action);
+      if (roll && roll.ok) {
+        summary.rolled_up += 1;
+        const n = Object.keys(roll.derived || {}).length;
+        if (n > 0) log(`[BACKFILL] ${job.symbol}  +${n}TF`);
+      }
+    } catch (err) {
+      log(`[BACKFILL] ${job.symbol}  rollup failed: ${err.message}`);
+    }
   }
 
   if (parallelLanes) {
@@ -367,7 +325,7 @@ function makeRealExecutor() {
 function makeRealRollup(tsDir, incrementalDays = INCREMENTAL_DAYS) {
   return (job, action) => {
     const targets = rollupTargetsAboveBase(job.baseTf);
-    const opts = action !== 'deep'
+    const opts = action === 'incremental'
       ? { sinceMs: utcDayFloor(Date.now() - (incrementalDays + 1) * DAY_MS) }
       : {};
     return rollupFromBase(tsDir, job.symbol, job.baseTf, targets, opts);
@@ -402,54 +360,11 @@ async function commandBackfillDaemon(args) {
   const execute = makeRealExecutor();
   const rollup = makeRealRollup(tsDir);
 
-  let statusState = null;
-  function writeStatus(patch) {
-    statusState = { ...statusState, ...patch, pid: process.pid, updated_at: new Date().toISOString() };
-    try { writeJson(DAEMON_STATUS_PATH, statusState); } catch (_) { /* best-effort - a stale read is caught by the PID-liveness check on the reader side */ }
-  }
-  // Hoisted before clearStatusOnExit so the handler can reference it via closure.
-  let liveFeedHandle = null;
-  function clearStatusOnExit(signal) {
-    if (liveFeedHandle) try { liveFeedHandle.stop(); } catch (_) {}
-    writeStatus({ status: 'stopped', stopped_signal: signal || null });
-    process.exit(signal ? 130 : 0);
-  }
-  process.once('SIGINT', () => clearStatusOnExit('SIGINT'));
-  process.once('SIGTERM', () => clearStatusOnExit('SIGTERM'));
-
-  // Start Binance WebSocket feed for crypto symbols so 1m bars land in the
-  // ts-index in real time — independent of the polling cycle interval.
-  // Only launched when crypto is in the active family list and not --once.
-  if (!once && families.includes('crypto')) {
-    try {
-      const { startBinanceLiveFeed } = require('../../../../shared/lib/providers/binance.js');
-      const initConfig = await loadConfig();
-      const cryptoSymbols = (initConfig.crypto && initConfig.crypto.symbols) || [];
-      if (cryptoSymbols.length > 0) {
-        liveFeedHandle = startBinanceLiveFeed(cryptoSymbols, {
-          tsDir,
-          onError: (err) => log(`[WS] ${err.message}`),
-        });
-        log(`[WS] live feed started for ${cryptoSymbols.length} crypto symbols`);
-      }
-    } catch (err) {
-      log(`[WS] could not start live feed: ${err.message}`);
-    }
-  }
-
   let cycle = 0;
   let lastSummary = null;
   /* eslint-disable no-await-in-loop */
   for (;;) {
     cycle += 1;
-    try {
-      const pruned = await pruneApiCache();
-      if (pruned.deleted > 0) {
-        log(`[CACHE] pruned ${pruned.deleted} expired API responses (${(pruned.freed_bytes / 1e6).toFixed(1)} MB)`);
-      }
-    } catch (error) {
-      log(`[CACHE] prune skipped: ${error.message}`);
-    }
     const config = await loadConfig();
     let jobs = buildJobUniverse(config, families);
     if (symbolFilter) jobs = jobs.filter((j) => symbolFilter.has(j.symbol));
@@ -463,105 +378,24 @@ async function commandBackfillDaemon(args) {
         log(`[BACKFILL] note: --concurrency ${concurrency} clamped to ${clamped.map(l => `${l.lane}=${l.concurrency}`).join(' ')} (1m lanes touch multi-million-row bins)`);
       }
     }
-    let completedJobs = 0;
-    writeStatus({
-      status: 'running', cycle, total_jobs: jobs.length, completed_jobs: 0,
-      current_symbol: null, families, once, interval_secs: intervalSecs,
-      started_at: new Date().toISOString(),
-    });
     lastSummary = await runBackfillCycle({
       tsDir, jobs, execute, rollup, log, cycle,
       parallelLanes: !sequential,
       concurrency: concurrency || undefined,
       forceDeep: deepAll,
-      onJobDone: (job, outcome) => {
-        completedJobs += 1;
-        writeStatus({ completed_jobs: completedJobs, current_symbol: job.symbol, last_outcome: outcome });
-      },
     });
 
-    if (once) {
-      writeStatus({ status: 'idle', completed_jobs: jobs.length, current_symbol: null });
-      break;
-    }
-    writeStatus({ status: 'sleeping', completed_jobs: jobs.length, current_symbol: null, next_run_at: new Date(Date.now() + intervalSecs * 1000).toISOString() });
+    if (once) break;
     await new Promise((resolve) => setTimeout(resolve, intervalSecs * 1000));
   }
   /* eslint-enable no-await-in-loop */
 
-  if (liveFeedHandle) try { liveFeedHandle.stop(); } catch (_) {}
   if (once) printPayload({ ok: lastSummary.errors === 0, ...lastSummary }, args);
   return lastSummary && lastSummary.errors === 0 ? 0 : 1;
 }
 
-/**
- * commandStopBackfillDaemon -- reads DAEMON_STATUS_PATH for the writer's pid and
- * sends it SIGTERM. Works regardless of whether the running daemon was started
- * from the dashboard, a separate terminal, or the Docker `backfill` service -
- * the status file is the only thing tying this command to a real process.
- *
- * Graceful-shutdown caveat (Windows): the daemon's own SIGTERM handler (above,
- * in commandBackfillDaemon) writes status:'stopped' before exiting - but only
- * on platforms where SIGTERM is a real, catchable signal (Linux/the Docker
- * `backfill` service). On native Windows, process.kill(pid, 'SIGTERM') sent
- * from a SEPARATE process is a hard kill (confirmed empirically: the target's
- * own 'SIGTERM' listener never runs) - the process dies just as reliably, but
- * the status file is left showing its last 'running'/'sleeping' snapshot
- * rather than 'stopped'. This is harmless for the dashboard's own display:
- * readDaemonStatus's PID-liveness probe (process.kill(pid, 0)) independently
- * detects the dead PID and returns null regardless of the stale status string.
- * It only matters if something inspects the raw JSON file directly expecting
- * an accurate 'stopped' marker on Windows specifically.
- */
-async function commandStopBackfillDaemon(args) {
-  let status;
-  try {
-    status = JSON.parse(fs.readFileSync(DAEMON_STATUS_PATH, 'utf8'));
-  } catch (err) {
-    printPayload({ ok: false, reason: 'no_status_file', error: 'No backfill-daemon status file found - nothing appears to be running.' }, args);
-    return 1;
-  }
-
-  if (!status || typeof status.pid !== 'number') {
-    printPayload({ ok: false, reason: 'invalid_status_file', error: 'Status file is malformed (no pid recorded).' }, args);
-    return 1;
-  }
-
-  try {
-    process.kill(status.pid, 0); // liveness probe only - sends no real signal
-  } catch (err) {
-    printPayload({ ok: false, reason: 'not_running', pid: status.pid, error: `PID ${status.pid} from the status file is not running (already stopped or stale).` }, args);
-    return 1;
-  }
-
-  try {
-    process.kill(status.pid, 'SIGTERM');
-  } catch (err) {
-    printPayload({ ok: false, reason: 'kill_failed', pid: status.pid, error: err && err.message ? err.message : String(err) }, args);
-    return 1;
-  }
-
-  // Write the 'stopped' marker ourselves rather than relying on the target's own
-  // SIGTERM handler to do it - on Windows that handler never runs (see the
-  // caveat above), so without this the file would keep showing stale
-  // 'running'/'sleeping' data until overwritten by a future run. Harmless if
-  // the target IS gracefully shutting down concurrently: both writers use the
-  // same atomic writeJson, so this is at worst a last-write-wins race on a
-  // progress display, nothing safety-critical.
-  try {
-    writeJson(DAEMON_STATUS_PATH, { ...status, status: 'stopped', stopped_by: 'stop-backfill-daemon', updated_at: new Date().toISOString() });
-  } catch (_) { /* best-effort - the command's own success already reflects the real kill */ }
-
-  printPayload({
-    ok: true, pid: status.pid,
-    stopped_cycle: status.cycle, stopped_completed_jobs: status.completed_jobs, stopped_total_jobs: status.total_jobs,
-  }, args);
-  return 0;
-}
-
 module.exports = {
   commandBackfillDaemon,
-  commandStopBackfillDaemon,
   runBackfillCycle,
   buildJobUniverse,
   groupIntoLanes,
@@ -576,5 +410,4 @@ module.exports = {
   LANE_MAX_CONCURRENCY,
   utcDayFloor,
   FAMILY_LANE,
-  DAEMON_STATUS_PATH,
 };

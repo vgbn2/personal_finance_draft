@@ -8,7 +8,6 @@ const utils = require('../../lib/utils.js');
 const { canLiveExecute, getRuntimeMode } = require('../../../../shared/lib/brokers/capabilities');
 const { featureGate } = require('../../../../shared/lib/settings/runtime');
 const { runGatewayCommand, buildTradeGatewayLaunch } = require('../../../../shared/lib/runtime/backend_bridge');
-const { requireAuth, verifyPin } = require('../../lib/auth.js');
 const A = require('#shared/ui/ansi');
 const {
   pageText,
@@ -287,7 +286,7 @@ function fetchPolymarketPriceHistorySnapshot(tokenId, interval = '1h') {
 }
 
 function submitPolymarketBuyOrder(tokenId, size, price, tickSize) {
-  const gatewayArgs = ['polymarket', 'buy', tokenId, String(size), ...(price !== undefined ? [String(price)] : []), '--live'];
+  const gatewayArgs = ['polymarket', 'buy', tokenId, String(size), ...(price !== undefined ? [String(price)] : [])];
   if (tickSize !== undefined) gatewayArgs.push('--tick-size', String(tickSize));
   gatewayArgs.push('--json');
 
@@ -301,43 +300,6 @@ function submitPolymarketBuyOrder(tokenId, size, price, tickSize) {
     throw new Error(lines.join('\n'));
   }
   return payload;
-}
-
-async function authorizePolymarketLive(args, reason) {
-  const liveGate = canLiveExecute('polymarket');
-  if (!liveGate.ok) {
-    printPayload({
-      ok: false,
-      broker: 'polymarket',
-      runtime_mode: getRuntimeMode(),
-      reason: liveGate.reason,
-    }, args);
-    console.error(`${A.B_RED}[ERROR] ${liveGate.reason}.${A.RESET}`);
-    return false;
-  }
-  if (!(await requireAuth(reason))) return false;
-
-  const expectedPin = process.env.SOVEREIGN_TRADE_PIN;
-  const providedPin = optionValue(args, '--pin', null);
-  if (expectedPin) {
-    let inputPin = providedPin;
-    if (!inputPin && isRichTerminal()) {
-      inputPin = await promptText('Enter Trade PIN to confirm LIVE Polymarket trading:', '');
-    }
-    if (!verifyPin(inputPin, expectedPin)) {
-      console.error(`${A.B_RED}[ERROR] Invalid or missing Trade PIN. LIVE Polymarket trading blocked.${A.RESET}`);
-      return false;
-    }
-    console.log(`${A.B_GREEN}[AUTH] PIN verified. Proceeding with LIVE Polymarket trading...${A.RESET}`);
-    return true;
-  }
-
-  if (!isRichTerminal()) {
-    console.error(`${A.B_RED}[ERROR] SOVEREIGN_TRADE_PIN not set. Unattended LIVE Polymarket execution blocked (Fail-Closed).${A.RESET}`);
-    return false;
-  }
-  console.warn(`${A.B_YELLOW}[WARNING] SOVEREIGN_TRADE_PIN not set. LIVE Polymarket trading proceeding without MFA gate.${A.RESET}`);
-  return promptConfirm('Confirm LIVE Polymarket trading WITHOUT a PIN set?');
 }
 
 function deriveDefaultBuyPriceFromBook(snapshot) {
@@ -620,47 +582,21 @@ async function promptPolymarketMarketBrowser() {
  */
 async function commandPolymarket(args) {
   const sub = args[0] || 'portfolio';
-  const submitsOrder = (sub === 'buy' || sub === 'sell') && !hasFlag(args, '--preflight');
   const gate = featureGate('polymarket', { surface: `Polymarket ${sub}` });
   if (!gate.ok) {
     printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
     return 1;
   }
-  if (submitsOrder && !hasFlag(args, '--live')) {
-    printPayload({ ok: false, reason: 'Direct Polymarket orders require explicit --live authorization' }, args);
-    return 1;
-  }
-  let liveAuthorized = false;
   if (hasFlag(args, '--live')) {
-    liveAuthorized = await authorizePolymarketLive(args, 'Polymarket live trading');
-    if (!liveAuthorized) return 1;
-  }
-  if (sub === 'history' && args[1] === 'schedule') {
-    const { runPolymarketResearchScheduler } = require('../../../scripts/data_ops/polymarket_research_scheduler.js');
-    const scopeFile = optionValue(args, '--scope-file', null);
-    const tokenIds = String(optionValue(args, '--tokens', '') || '').split(',').map((value) => value.trim()).filter(Boolean);
-    try {
-      const result = await runPolymarketResearchScheduler({
-        scopeFile,
-        tokenIds: tokenIds.length ? tokenIds : undefined,
-        archiveRoot: optionValue(args, '--archive-root', undefined),
-        execute: hasFlag(args, '--execute'),
-        once: hasFlag(args, '--once') || !hasFlag(args, '--execute'),
-        pollSeconds: numericOption(args, '--poll-seconds', 300),
-        historyInterval: optionValue(args, '--history-interval', '5m'),
-        maxTokens: numericOption(args, '--max-tokens', 20),
-        retentionDays: numericOption(args, '--retention-days', 30),
-        maxRowsPerToken: numericOption(args, '--max-rows-per-token', 5000),
-        maxArchiveBytes: numericOption(args, '--max-archive-bytes', 5 * 1024 * 1024 * 1024),
-        capturePrices: !hasFlag(args, '--no-prices'),
-        captureOrderbooks: !hasFlag(args, '--no-orderbooks'),
-        pmxtApiKey: optionValue(args, '--pmxt-api-key', process.env.PMXT_API_KEY || ''),
-        pmxtBaseUrl: optionValue(args, '--pmxt-base-url', process.env.PMXT_BASE_URL || 'https://api.pmxt.dev'),
-      });
-      printPayload(result, args);
-      return result.ok ? 0 : 1;
-    } catch (err) {
-      printPayload({ ok: false, mode: 'research_scheduler', error: err.message }, args);
+    const liveGate = canLiveExecute('polymarket');
+    if (!liveGate.ok) {
+      printPayload({
+        ok: false,
+        broker: 'polymarket',
+        runtime_mode: getRuntimeMode(),
+        reason: liveGate.reason,
+      }, args);
+      console.error(`${A.B_RED}[ERROR] ${liveGate.reason}.${A.RESET}`);
       return 1;
     }
   }
@@ -770,21 +706,7 @@ async function commandPolymarket(args) {
   }
 
   if (sub === 'markets' && !hasFlag(args, '--json') && args.length === 1 && isRichTerminal()) {
-    // This browser leads into runPolymarketMarketActionLoop, which can place a real
-    // money order off a single y/n confirm with no further gate -- give it the same
-    // requireAuth + SOVEREIGN_TRADE_PIN MFA challenge commandTrade()'s --live path
-    // requires for every other broker (trade.js:288,293-323), checked once per
-    // browse session rather than per-order.
-    if (!(await authorizePolymarketLive(args, 'Polymarket live trading'))) return 1;
-    const previousAuthorization = process.env.SOVEREIGN_EXECUTION_AUTHORIZED;
-    process.env.SOVEREIGN_EXECUTION_AUTHORIZED = 'true';
-    let browse;
-    try {
-      browse = await promptPolymarketMarketBrowser();
-    } finally {
-      if (previousAuthorization === undefined) delete process.env.SOVEREIGN_EXECUTION_AUTHORIZED;
-      else process.env.SOVEREIGN_EXECUTION_AUTHORIZED = previousAuthorization;
-    }
+    const browse = await promptPolymarketMarketBrowser();
     if (browse.cancelled) {
       console.log('Polymarket market browser cancelled.');
       return 0;
@@ -803,16 +725,11 @@ async function commandPolymarket(args) {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
     shell: launch.shell ?? false,
-    env: {
-      ...process.env,
-      ...(liveAuthorized ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {}),
-    },
   });
   return result.status ?? 0;
 }
 
 module.exports = {
-  authorizePolymarketLive,
   polymarketHistoryPayload,
   runPolymarketArchiveIngest,
   parseGatewayJsonOutput,

@@ -3,7 +3,6 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const {
   ingestMarketData,
-  getIngestFamilyAvailability,
 } = require('../../../scripts/data_ops/ingest_market_data.js');
 const {
   loadHistoricalSources,
@@ -21,12 +20,12 @@ const {
   hasFlag,
   pageText,
   withLoadingAnimation,
-  shouldAnimate,
   DEFAULT_SNAPSHOT,
   DEFAULT_QUALITY_REPORT,
   DEFAULT_HISTORY
 } = utils;
 
+const DEFAULT_TS_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
 const API_CACHE_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'cache', 'api_responses');
 const MASS_BACKFILL_STALE_MS = {
   '5m': 6 * 60 * 60 * 1000,
@@ -40,7 +39,7 @@ const MASS_BACKFILL_STALE_MS = {
 };
 const WEEKEND_EXEMPT_FAMILIES = new Set(['equities', 'indices', 'commodities']);
 
-const { DEFAULT_TS_DIR, rollupFromBase, rollupTargetsAboveBase, writeDeadSymbolMarker, listDeepSymbols, listDeepFiveMinSymbols, readBinFamily, readFiveMinBinFamily, rollupFiveMinForSymbol, commandIntradayRollup, INTRADAY_TF_ORDER, FULL_TF_ORDER, FAMILY_BASE_TF } = require('./data_rollup.js');
+const { rollupFromBase, rollupTargetsAboveBase, writeDeadSymbolMarker, listDeepSymbols, listDeepFiveMinSymbols, readBinFamily, readFiveMinBinFamily, rollupFiveMinForSymbol, commandIntradayRollup, INTRADAY_TF_ORDER, FULL_TF_ORDER, FAMILY_BASE_TF } = require('./data_rollup.js');
 const { equityUniverseEntries, alpacaEquity5mSkipReason, buildEquityDeepBackfillPlan, estimateEquity5mApiCalls, commandCryptoDeepBackfill, commandEquityDeepBackfill } = require('./data_deep_backfill.js');
 const { buildFiveMinAccumulatePlan, commandFiveMinAccumulate, buildIntradayAccumulatePlan, commandIntradayAccumulate, commandUniverse } = require('./data_accumulate.js');
 
@@ -354,7 +353,6 @@ function ingestOptionsFromArgs(args) {
   // intraday-finest provider whose daily is shallow). ingestMarketData honors options.provider.
   if (provider) options.provider = provider;
   if (hasFlag(args, '--force')) options.force = true;
-  if (hasFlag(args, '--dry-run')) options.dryRun = true;
   if (Number.isFinite(historyDays) && historyDays > 0) {
     options.historyDays = historyDays;
   }
@@ -363,7 +361,6 @@ function ingestOptionsFromArgs(args) {
 
 async function commandIngest(args) {
   const ingestOptions = ingestOptionsFromArgs(args);
-  const unavailable = getIngestFamilyAvailability(ingestOptions.family);
   if (ingestOptions.family && ['onchain', 'crypto_tx', 'holdings', 'reserves'].includes(ingestOptions.family)) {
     const gate = featureGate('onchain_data', { surface: `Ingest family '${ingestOptions.family}'` });
     if (!gate.ok) {
@@ -371,39 +368,16 @@ async function commandIngest(args) {
       return 1;
     }
   }
-  if (unavailable && !ingestOptions.dryRun) {
-    printPayload({
-      ok: false,
-      type: unavailable.status,
-      family: unavailable.family,
-      provider: unavailable.provider,
-      reason: `${unavailable.provider} ${unavailable.family} provider is not implemented`,
-    }, args);
-    return 1;
-  }
-  // withLoadingAnimation silently skips its spinner on a non-TTY stdout (the
-  // case when this runs piped from the dashboard, not given a real TTY) --
-  // that's correct (a raw \r-spinner would just dump garbage into a piped
-  // stream), but it means zero output appears for the whole fetch duration,
-  // which reads as a hang. Print one explicit line first so there's visible
-  // progress in that case.
-  if (!shouldAnimate(args) && !hasFlag(args, '--json')) {
-    const verb = ingestOptions.dryRun ? 'Planning market cache refresh' : 'Refreshing market cache';
-    console.log(`${verb} (family=${ingestOptions.family || 'all'}, this can take a while)...`);
-  }
-  const loadingLabel = ingestOptions.dryRun ? 'Planning market cache refresh' : 'Refreshing market cache';
-  const snapshot = await withLoadingAnimation(loadingLabel, () => ingestMarketData(ingestOptions), args);
+  const snapshot = await withLoadingAnimation('Refreshing market cache', () => ingestMarketData(ingestOptions), args);
   if (hasFlag(args, '--full')) {
     console.log(JSON.stringify(snapshot, null, 2));
     return 0;
   }
   printPayload({
-    dry_run: Boolean(snapshot.dry_run),
     mode: snapshot.mode,
     fetched_at: snapshot.fetched_at,
     sources: snapshot.sources.length,
     errors: snapshot.errors.length,
-    planned_fetches: snapshot.dry_run_plan ? snapshot.dry_run_plan.planned_fetches : undefined,
     provider_checks: (snapshot.provider_checks || []).length,
   }, args);
   return snapshot.errors.length === 0 ? 0 : 1;
@@ -507,14 +481,6 @@ async function commandMassBackfill(args) {
   const { loadConfig } = require('../../../scripts/data_ops/ingest_market_data.js');
   const timeframesArg = optionValue(args, '--timeframes', '1mo,1w,1d,1h,15m');
   const timeframes = timeframesArg.split(',').map(t => t.trim()).filter(Boolean);
-  const familiesArg = optionValue(args, '--families', 'equities,indices,commodities,fx,crypto');
-  const families = [...new Set(familiesArg.split(',').map((family) => family.trim()).filter(Boolean))];
-  const supportedFamilies = new Set(['equities', 'indices', 'commodities', 'fx', 'crypto']);
-  const unsupportedFamilies = families.filter((family) => !supportedFamilies.has(family));
-  if (families.length === 0 || unsupportedFamilies.length > 0) {
-    printPayload({ ok: false, error: `Unsupported --families value: ${familiesArg}. Supported: ${[...supportedFamilies].join(',')}` }, args);
-    return 1;
-  }
   // 20-year deep defaults: deep-paginated providers handle the volume; mind free-tier rate limits if raising concurrency further.
   const days = optionValue(args, '--days', '7300');
   const concurrency = numericOption(args, '--concurrency', 10);
@@ -522,6 +488,7 @@ async function commandMassBackfill(args) {
   const force = hasFlag(args, '--force');
 
   const config = await loadConfig();
+  const families = ['equities', 'indices', 'commodities', 'fx', 'crypto'];
   // flat symbols ∪ universe_matrix grid, so grid-only symbols are covered.
   const { symbols: uniqueSymbols, familyBySymbol } = massBackfillUniverse(config, families);
   const plan = buildMassBackfillExecutionPlan({
@@ -541,7 +508,6 @@ async function commandMassBackfill(args) {
       pending_jobs: jobs.length,
       skipped_jobs: plan.skipped.length,
       symbols: uniqueSymbols.length,
-      families,
       timeframes,
       days,
       concurrency,
@@ -565,7 +531,6 @@ async function commandMassBackfill(args) {
       records: 0,
       skipped_jobs: plan.skipped.length,
       symbols: uniqueSymbols.length,
-      families,
       timeframes,
       days,
       output: DEFAULT_HISTORY,
@@ -575,9 +540,10 @@ async function commandMassBackfill(args) {
   }
 
   const results = { ok: 0, errors: 0 };
+  const allSources = [];
+  const allErrors = [];
   const jobResults = [];
   let completed = 0;
-  let recordsWritten = 0;
   const total = jobs.length;
   const completedBySymbol = new Map();
   const totalBySymbol = new Map();
@@ -585,84 +551,18 @@ async function commandMassBackfill(args) {
     totalBySymbol.set(job.symbol, (totalBySymbol.get(job.symbol) || 0) + 1);
   });
 
-  // Flush per family (not per overall run): writePartitionedSnapshot/readSnapshot are
-  // already family-partitioned on disk, so buffering and merging one family at a time
-  // (instead of accumulating every job's records into one run-wide array, then merging
-  // against a readSnapshot(DEFAULT_HISTORY) that recursively loads ALL families'
-  // existing history) bounds peak memory to one family's data instead of the whole
-  // universe's. The ts-index write stays per-job: writeTsIndex's merge-protected,
-  // symbol+timeframe-scoped bin writes are already safe at that finer grain.
-  const fetchedAt = new Date().toISOString();
-  const remainingByFamily = new Map();
-  jobs.forEach((job) => {
-    remainingByFamily.set(job.family, (remainingByFamily.get(job.family) || 0) + 1);
-  });
-  const sourcesByFamily = new Map();
-  const errorsByFamily = new Map();
-  const aggregateReport = {
-    ok: true,
-    mode: 'mass_backfill',
-    fetched_at: fetchedAt,
-    total_records: 0,
-    usable_records: 0,
-    rejected_records: 0,
-    counts: { error: 0, warning: 0 },
-    by_family: {},
-    rejected_keys: [],
-    issues: [],
-    provider_errors: [],
-    reject_stale: false,
-    freshness: { stale_records: 0, issues: 0 },
-    reliability: { samples: [] },
-  };
-
-  function flushFamily(family) {
-    const sources = sourcesByFamily.get(family) || [];
-    const errors = errorsByFamily.get(family) || [];
-    const snapshot = { mode: 'mass_backfill', fetched_at: fetchedAt, sources, errors };
-
-    const { report } = validateSnapshot(snapshot, { rejectStale: false });
-    aggregateReport.total_records += report.total_records;
-    aggregateReport.usable_records += report.usable_records;
-    aggregateReport.rejected_records += report.rejected_records;
-    aggregateReport.counts.error += report.counts.error;
-    aggregateReport.counts.warning += report.counts.warning;
-    Object.assign(aggregateReport.by_family, report.by_family);
-    aggregateReport.rejected_keys.push(...report.rejected_keys);
-    aggregateReport.issues.push(...report.issues);
-    aggregateReport.provider_errors.push(...report.provider_errors);
-    aggregateReport.freshness.stale_records += report.freshness.stale_records;
-    aggregateReport.freshness.issues += report.freshness.issues;
-    aggregateReport.ok = aggregateReport.ok && report.ok;
-
-    const existing = readSnapshot(DEFAULT_HISTORY, { family });
-    const merged = mergeSnapshots(existing, snapshot);
-    writePartitionedSnapshot(DEFAULT_HISTORY, merged);
-
-    recordsWritten += sources.length;
-    sourcesByFamily.delete(family);
-    errorsByFamily.delete(family);
-  }
-
   async function runJob({ symbol, timeframe, family }) {
     const syntheticArgs = ['--symbol', symbol, '--timeframe', timeframe, '--days', days];
     if (force) syntheticArgs.push('--force');
-    if (!sourcesByFamily.has(family)) sourcesByFamily.set(family, []);
-    if (!errorsByFamily.has(family)) errorsByFamily.set(family, []);
     try {
       const history = await loadHistoricalSources(syntheticArgs);
       const sources = history.snapshot.sources || [];
       const errors = history.snapshot.errors || [];
-      const familySources = sourcesByFamily.get(family);
-      const familyErrors = errorsByFamily.get(family);
       for (let i = 0; i < sources.length; i++) {
-        familySources.push(sources[i]);
+        allSources.push(sources[i]);
       }
       for (let i = 0; i < errors.length; i++) {
-        familyErrors.push(errors[i]);
-      }
-      if (sources.length > 0) {
-        writeTsIndex(DEFAULT_TS_DIR, { sources });
+        allErrors.push(errors[i]);
       }
       jobResults.push({
         ok: true,
@@ -676,7 +576,7 @@ async function commandMassBackfill(args) {
     } catch (err) {
       const message = err.message || String(err);
       const code = classifyBackfillError(message);
-      errorsByFamily.get(family).push({ symbol, timeframe, family, code, message });
+      allErrors.push({ symbol, timeframe, family, code, message });
       jobResults.push({
         ok: false,
         symbol,
@@ -694,11 +594,6 @@ async function commandMassBackfill(args) {
     if (process.stdout.isTTY) {
       process.stdout.write(`\r\x1b[K\x1b[90m[${completed}/${total}]\x1b[0m ${symbol}:${timeframe}  \x1b[90m(symbol ${completedBySymbol.get(symbol)}/${totalBySymbol.get(symbol)} | skipped ${plan.skipped.length})\x1b[0m`);
     }
-    const remaining = remainingByFamily.get(family) - 1;
-    remainingByFamily.set(family, remaining);
-    if (remaining === 0) {
-      flushFamily(family);
-    }
   }
 
   const queue = [...jobs];
@@ -712,15 +607,20 @@ async function commandMassBackfill(args) {
 
   if (process.stdout.isTTY) process.stdout.write('\n');
 
-  // Any family whose last job errored before producing sources may still have a
-  // non-empty error buffer that hasn't been flushed (flushFamily already runs when
-  // the last job for a family completes, success or failure, so this is just a
-  // defensive catch-all for families left in the maps due to an unexpected throw).
-  for (const family of new Set([...sourcesByFamily.keys(), ...errorsByFamily.keys()])) {
-    flushFamily(family);
-  }
+  const fetchedAt = new Date().toISOString();
+  const snapshot = {
+    mode: 'mass_backfill',
+    fetched_at: fetchedAt,
+    sources: allSources,
+    errors: allErrors,
+  };
 
-  writeJson(DEFAULT_QUALITY_REPORT, aggregateReport);
+  const { report } = validateSnapshot(snapshot, { rejectStale: false });
+  const existing = readSnapshot(DEFAULT_HISTORY);
+  const merged = mergeSnapshots(existing, snapshot);
+  writePartitionedSnapshot(DEFAULT_HISTORY, merged);
+  writeTsIndex(DEFAULT_TS_DIR, merged);
+  writeJson(DEFAULT_QUALITY_REPORT, report);
 
   const failures = jobResults
     .filter((result) => !result.ok)
@@ -741,7 +641,7 @@ async function commandMassBackfill(args) {
     failure_count: failures.length,
     failure_codes: [...new Set(failures.map((failure) => failure.code))],
     failures: failures.slice(0, 20),
-    records: recordsWritten,
+    records: allSources.length,
     skipped_jobs: plan.skipped.length,
     skipped_preview: plan.skipped.slice(0, 12).map((job) => ({
       family: job.family,
@@ -751,7 +651,6 @@ async function commandMassBackfill(args) {
       age_hours: job.age_hours ?? null,
     })),
     families: summarizeMassBackfillByFamily(jobResults),
-    requested_families: families,
     symbols: uniqueSymbols.length,
     timeframes,
     days,
@@ -773,8 +672,7 @@ function commandValidate(args) {
   const input = optionValue(args, '--input', DEFAULT_SNAPSHOT);
   const output = optionValue(args, '--output', DEFAULT_QUALITY_REPORT);
   const snapshot = readSnapshot(input);
-  const strict = hasFlag(args, '--strict');
-  const { report } = validateSnapshot(snapshot, { strict });
+  const { report } = validateSnapshot(snapshot);
   writeJson(output, report);
   
   const payload = {
@@ -858,43 +756,19 @@ async function commandWatch(args) {
   const intervalMinutes = numericOption(args, '--interval', 15);
   const intervalMs = intervalMinutes * 60 * 1000;
 
-  // Optional live-chart mode: --symbol narrows watch to a single symbol and
-  // redraws its price history as an ANSI chart each cycle (reusing the same
-  // renderPriceChart() backend_chart.js already uses) instead of the
-  // multi-symbol latest-price table, addressing the request to chart `watch`
-  // instead of a plain table.
-  const chartSymbol = optionValue(args, '--symbol', null);
-  const chartTimeframe = optionValue(args, '--timeframe', '1d');
-
   let showLimit = 10;
   let latestBySymbol = new Map();
   let lastSyncTime = null;
   let lastSyncCount = 0;
   let lastSyncDuration = 0;
 
-  // When launched from the dashboard, this runs as a piped, non-TTY child
-  // (the dashboard only gives commands a real inherited TTY for
-  // INTERACTIVE_CMDS, and `watch` isn't one). console.clear() and the raw
-  // \r\x1b[K cursor-control writes below are meaningless on a pipe -- they
-  // land as literal control bytes in the dashboard's captured output text,
-  // visibly corrupting the rendered panel. Fall back to plain, append-only
-  // log lines in that case.
-  const isTTY = !!process.stdout.isTTY;
   const render = () => {
-    if (isTTY) console.clear();
+    console.clear();
     console.log(`\x1b[1;36mSOVEREIGN WATCH MODE\x1b[0m \x1b[90m(Family: ${family}, Interval: ${intervalMinutes}m)\x1b[0m`);
     console.log('\x1b[90mPress Ctrl+C to stop, Ctrl+T to show more.\x1b[0m\n');
 
     if (lastSyncTime) {
       process.stdout.write(`\x1b[32m✔\x1b[0m Last sync: \x1b[1m${lastSyncTime}\x1b[0m (\x1b[90m${lastSyncCount} records, ${lastSyncDuration}s\x1b[0m)\n\n`);
-    }
-
-    if (chartSymbol) {
-      const { renderPriceChart } = require('../../tui/visualizations.js');
-      const bars = (readTsIndex(DEFAULT_TS_DIR, chartSymbol, chartTimeframe) || [])
-        .filter((s) => typeof s.close === 'number' && isFinite(s.close));
-      console.log(renderPriceChart(bars, 64));
-      return;
     }
 
     if (latestBySymbol.size > 0) {
@@ -926,19 +800,9 @@ async function commandWatch(args) {
 
   const runIngest = async () => {
     const start = Date.now();
-    const syncLabel = chartSymbol ? chartSymbol : family;
-    if (isTTY) {
-      process.stdout.write(`\r\x1b[K\x1b[33m⌛\x1b[0m Synchronizing ${syncLabel} data...`);
-    } else {
-      console.log(`Synchronizing ${syncLabel} data...`);
-    }
+    process.stdout.write(`\r\x1b[K\x1b[33m⌛\x1b[0m Synchronizing ${family} data...`);
     try {
-      // Chart mode only needs one symbol, not a whole-family ingest -- a
-      // huge win for the slow-boot complaint, since the table mode's
-      // multi-provider family fetch is exactly what made `watch` feel hung.
-      const snapshot = chartSymbol
-        ? await ingestMarketData({ symbol: chartSymbol, timeframe: chartTimeframe })
-        : await ingestMarketData({ family: family === 'all' ? null : family });
+      const snapshot = await ingestMarketData({ family: family === 'all' ? null : family });
       lastSyncDuration = ((Date.now() - start) / 1000).toFixed(1);
       lastSyncTime = new Date().toLocaleTimeString();
 
@@ -955,11 +819,7 @@ async function commandWatch(args) {
       }
       render();
     } catch (error) {
-      if (isTTY) {
-        process.stdout.write(`\r\x1b[K\x1b[31m✘\x1b[0m Sync failed: ${error.message}\n`);
-      } else {
-        console.log(`Sync failed: ${error.message}`);
-      }
+      process.stdout.write(`\r\x1b[K\x1b[31m✘\x1b[0m Sync failed: ${error.message}\n`);
     }
   };
 
@@ -986,26 +846,20 @@ async function commandWatch(args) {
     if (global.suppressLogs) return; // Add suppression check
     const now = Date.now();
     const remaining = Math.max(0, nextRun - now);
+    const seconds = Math.floor(remaining / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const displaySeconds = seconds % 60;
 
-    // The live countdown is only meaningful on a real TTY that can redraw
-    // the same line in place; piped (non-TTY) output would instead get one
-    // new line per second forever, flooding the dashboard's captured output.
-    if (isTTY) {
-      const seconds = Math.floor(remaining / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const displaySeconds = seconds % 60;
+    const progressWidth = 20;
+    const progress = Math.min(1, (intervalMs - remaining) / intervalMs);
+    const filled = Math.floor(progress * progressWidth);
+    const empty = progressWidth - filled;
+    const progressBar = `\x1b[90m[\x1b[36m${'█'.repeat(filled)}\x1b[90m${'░'.repeat(empty)}]\x1b[0m`;
 
-      const progressWidth = 20;
-      const progress = Math.min(1, (intervalMs - remaining) / intervalMs);
-      const filled = Math.floor(progress * progressWidth);
-      const empty = progressWidth - filled;
-      const progressBar = `\x1b[90m[\x1b[36m${'█'.repeat(filled)}\x1b[90m${'░'.repeat(empty)}]\x1b[0m`;
-
-      process.stdout.write(`\r\x1b[KNext refresh in: \x1b[1m${minutes}m ${displaySeconds}s\x1b[0m ${progressBar} `);
-    }
+    process.stdout.write(`\r\x1b[KNext refresh in: \x1b[1m${minutes}m ${displaySeconds}s\x1b[0m ${progressBar} `);
 
     if (remaining <= 0) {
-      if (isTTY) process.stdout.write('\n');
+      process.stdout.write('\n');
       await runIngest();
       nextRun = Date.now() + intervalMs;
     }
