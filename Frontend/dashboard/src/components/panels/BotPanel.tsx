@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_ENDPOINTS, DEFAULT_HEADERS } from '../../lib/api';
+import { API_ENDPOINTS, getAuthHeaders } from '../../lib/api';
 import { BotState, BotPosition, BotCycleResult } from '../../types';
 import { cn } from '../../lib/utils';
 
@@ -26,7 +26,7 @@ export function BotPanel() {
 
   const hydrate = async () => {
     try {
-      const res  = await fetch(API_ENDPOINTS.BOT_STATUS, { headers: DEFAULT_HEADERS });
+      const res  = await fetch(API_ENDPOINTS.BOT_STATUS, { headers: await getAuthHeaders() });
       const data = await res.json();
       if (data.ok) setState(data);
       else setError(data.error ?? 'Failed to load bot state');
@@ -45,7 +45,7 @@ export function BotPanel() {
     try {
       const res  = await fetch(API_ENDPOINTS.BOT_CYCLE, {
         method:  'POST',
-        headers: DEFAULT_HEADERS,
+        headers: await getAuthHeaders(),
         body:    JSON.stringify({ live: state?.config.liveTrading ? 'true' : 'false' }),
       });
       const data = await res.json();
@@ -65,7 +65,7 @@ export function BotPanel() {
     try {
       const res  = await fetch(API_ENDPOINTS.BOT_SELL, {
         method:  'POST',
-        headers: DEFAULT_HEADERS,
+        headers: await getAuthHeaders(),
         body:    JSON.stringify({ position_id: pos.positionId }),
       });
       const data = await res.json();
@@ -89,7 +89,7 @@ export function BotPanel() {
   const cfg = state?.config;
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
@@ -130,7 +130,7 @@ export function BotPanel() {
       )}
 
       {/* ── Stats bar ── */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {[
           { label: 'Balance (pUSD)', value: cfg ? `$${(state?.balance ?? 0).toFixed(2)}` : '—' },
           { label: 'Open Positions', value: `${state?.positions.length ?? 0} / ${cfg?.maxPositions ?? 0}` },
@@ -156,7 +156,7 @@ export function BotPanel() {
       )}
 
       {/* ── Open positions ── */}
-      <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg overflow-hidden">
+      <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg overflow-x-auto">
         <div className="px-4 py-2 border-b border-[var(--border-subtle)] text-xs font-mono text-[var(--text-muted)] uppercase tracking-widest">
           Open Positions ({state?.positions.length ?? 0})
         </div>
@@ -229,7 +229,7 @@ export function BotPanel() {
       {/* ── Config summary ── */}
       <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg p-4">
         <div className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-widest mb-3">Config</div>
-        <div className="grid grid-cols-3 gap-2 text-xs font-mono">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-mono">
           {cfg && Object.entries({
             'Min Edge':      `${((cfg.minEdgeThreshold ?? 0) * 100).toFixed(0)}%`,
             'Bet Size':      `$${cfg.positionSizeUsdc}`,

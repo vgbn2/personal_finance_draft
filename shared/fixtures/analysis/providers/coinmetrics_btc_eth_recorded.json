@@ -1,0 +1,30 @@
+{
+  "provenance": {
+    "source_url": "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics?assets=btc%2Ceth&metrics=AdrActCnt%2CTxCnt%2CFeeTotUSD&frequency=1d&page_size=10",
+    "retrieved_at": "2026-07-13T01:44:37Z",
+    "content_type": "application/json",
+    "provider": "Coin Metrics Community API",
+    "fetch_status": "unavailable",
+    "license_or_terms_note": "Coin Metrics Community API data is subject to the provider's terms of use; no data was redistributed because the unauthenticated endpoint denied this request."
+  },
+  "request": {
+    "assets": [
+      "btc",
+      "eth"
+    ],
+    "metrics": [
+      "AdrActCnt",
+      "TxCnt",
+      "FeeTotUSD"
+    ],
+    "frequency": "1d",
+    "page_size": 10
+  },
+  "payload": null,
+  "error": {
+    "type": "http_error",
+    "http_status": 403,
+    "message": "The Coin Metrics Community API returned HTTP 403 for two unauthenticated requests, including a request without date bounds.",
+    "response_body_recorded": false
+  }
+}

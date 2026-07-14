@@ -1,5 +1,7 @@
 #include "pre_trade_risk.hpp"
 
+#include <cmath>
+
 namespace sovereign {
 
 PreTradeRisk::PreTradeRisk(RiskLimits limits) : limits_(limits) {}
@@ -18,15 +20,24 @@ RiskDecision PreTradeRisk::validate(const TradeOrder& order) const {
         return decision;
     }
 
+    if (!std::isfinite(order.notional) || order.notional <= 0.0) {
+        decision.approved = false;
+        decision.reason = "CRITICAL: Order notional must be positive and finite.";
+        return decision;
+    }
+    if (!std::isfinite(order.portfolio_equity) || order.portfolio_equity <= 0.0) {
+        decision.approved = false;
+        decision.reason = "CRITICAL: Portfolio equity must be positive and finite.";
+        return decision;
+    }
+
     // 2. Concentration Check (Notional Limit)
-    double concentration_limit = 0.25; 
-    if (order.notional > 0 && order.volatility > 0) {
-        double current_concentration = order.notional / order.volatility;
-        if (current_concentration > concentration_limit) {
-            decision.approved = false;
-            decision.reason = "CRITICAL: Concentration limit exceeded (25% max).";
-            return decision;
-        }
+    const double concentration_limit = 0.25;
+    const double current_concentration = order.notional / order.portfolio_equity;
+    if (current_concentration > concentration_limit) {
+        decision.approved = false;
+        decision.reason = "CRITICAL: Concentration limit exceeded (25% max).";
+        return decision;
     }
 
     decision.approved = true;

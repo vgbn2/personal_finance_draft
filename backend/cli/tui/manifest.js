@@ -136,34 +136,39 @@ const COMMAND_MANIFEST = {
   ],
   commands: {
     op: [
-      { id: 'status',   label: 'Status (live cache health + phase)', args: [] },
-      { id: 'cockpit',  label: 'Cockpit (live terminal dashboard)', args: [] },
-      { id: 'universe', label: 'Universe (symbol discovery)', args: [] },
-      { id: 'watch',    label: 'Watch (continuous live price sync)', flags: {
-        '--family':   { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities', 'macro', 'prediction_market'], label: 'Family', default: 'all' },
+      { id: 'status',   label: 'Status ', args: [] },
+      { id: 'cockpit',  label: 'Terminal dashboard', args: [] },
+      { id: 'watch',    label: 'Watch', flags: {
+        '--family':   { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities'], label: 'Family', default: 'all' },
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' }
       }},
-      { id: 'cache-clean', label: 'Cache Clean (quarantine corrupt snapshot records)', flags: {
+      { id: 'cache-clean', label: 'Cache Clean', flags: {
         '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
       }},
     ],
     data: [
-      { id: 'integrity',   prefix: ['backend'], label: 'Integrity (depth + freshness per symbol/TF)', args: [] },
+      { id: 'integrity',   prefix: ['backend'], label: 'Integrity', args: [], flags: {
+        '--audit-vintages': { type: 'confirm', label: 'Only show vintage anomalies?', default: false }
+      }},
       { id: 'ingest',      label: 'Ingest ', loading: true, flags: {
         '--family': { type: 'select', options: [
+          // Unavailable families are omitted here and marked `not_implemented`
+          // in the canonical ingest manifest, which also guards direct CLI calls.
           'all', 'crypto', 'fx', 'equities', 'indices', 'commodities',
-          'macro', 'macro_alt', 'pmi', 'breadth', 'sentiment',
-          'onchain', 'prediction_market', 'weather', 'flight',
-          'crypto_tx', 'holdings', 'reserves'
+          'macro', 'macro_alt', 'sentiment',
+          'prediction_market', 'weather',
+          'reserves'
         ], label: 'Family', default: 'all' },
         '--symbol':       { type: 'text', default: '', label: 'Symbol filter (optional)' },
         '--timeframe':    { type: 'select', options: ['1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1h' },
         '--history-days': { type: 'text', default: '', label: 'History days (blank = latest only)' }
       }},
-      { id: 'mass-backfill',   label: 'Deep Backfill', loading: true, flags: {
-        '--timeframes':  { type: 'text', default: '1mo,1w,1d,4h,1h,30m,15m,5m,1m', label: 'Timeframes (comma-separated)' },
-        '--days':        { type: 'text', default: '365', label: 'Days to backfill' },
-        '--concurrency': { type: 'text', default: '5', label: 'Parallel jobs' }
+      { id: 'backfill-daemon', label: 'Deep Backfill', loading: true, flags: {
+        '--once':          { type: 'confirm', label: 'Run once (no daemon loop)?', default: true },
+        '--deep-all':      { type: 'confirm', label: 'Full rebuild? (force deep on every symbol, ignore freshness)', default: false },
+        '--families':      { type: 'text', default: '', label: 'Families (comma-separated, blank = all)' },
+        '--concurrency':   { type: 'text', default: '5', label: 'Symbols in parallel per provider' },
+        '--interval-secs': { type: 'text', default: '1800', label: 'Loop interval seconds (daemon mode only)' }
       }},
       { id: 'intraday-rollup', label: 'Intraday Rollup ', loading: true, flags: {
         '--family':     { type: 'select', options: ['all', 'crypto', 'equities'], label: 'Family', default: 'all' },
@@ -207,14 +212,32 @@ const COMMAND_MANIFEST = {
         '--days': { type: 'text', default: '730', label: 'History window (days)' },
         '--allow-degraded': { type: 'confirm', label: 'Allow degraded data?', default: false }
       }},
-      { id: 'optimize', label: 'Optimize (Indicators only)', loading: true, flags: {
+      { id: 'optimize', label: 'Optimize Indicators', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
       }},
-      { id: 'edge-decay', label: 'Edge Decay (Rolling window alpha check)', loading: true, flags: {
+      { id: 'edge-decay', label: 'Edge Decay ', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--symbol': { type: 'text', default: '', label: 'Symbol filter (optional)' }
+      }},
+      { id: 'bias', label: 'Bias Signal', loading: true, flags: {
+        '--symbol': { type: 'text', default: 'BTCUSDT', label: 'Symbol' },
+        '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: false }
+      }},
+      { id: 'scorecard', label: 'Scorecard (EdgeFinder)', loading: true, flags: {
+        '--schema': { type: 'select', options: ['2', '3'], label: 'Schema (3 = research shadow)', default: '2' },
+        '--fixture': { type: 'select', options: ['', 'aapl-recorded', 'all-recorded'], label: 'Schema 3 fixture', default: '' },
+        '--symbol': { type: 'text', default: '', label: 'Schema 3 workbench symbol' },
+        '--state': { type: 'select', options: ['', 'eligible', 'degraded', 'excluded'], label: 'Schema 3 decision state', default: '' },
+        '--family': { type: 'select', options: ['', 'crypto', 'equities', 'fx', 'indices', 'commodities'], label: 'Family filter (blank = all)' },
+        '--tf': { type: 'text', default: '1h,4h,1d', label: 'Timeframes (comma-sep)' },
+        '--direction': { type: 'select', options: ['', 'long', 'short', 'neutral'], label: 'Direction filter (blank = all)' },
+        '--min-conf': { type: 'text', default: '0.3', label: 'Min confidence (0-1)' },
+        '--top': { type: 'text', default: '50', label: 'Max rows' },
+        '--allow-degraded': { type: 'confirm', label: 'Allow partial coverage?', default: false },
+        // The dashboard stays cache-diagnostic by default; turn this off to request a bounded refresh.
+        '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: true }
       }}
     ],
     settings: [
@@ -224,7 +247,12 @@ const COMMAND_MANIFEST = {
         '--value': { type: 'select', options: TIMEZONE_OPTIONS, label: 'Timezone' }
       }},
       { id: 'layout',   prefix: ['settings'], label: 'Set Layout Preset', flags: {
-        '--preset': { type: 'select', options: ['default', 'compact', 'research'], label: 'Preset', default: 'default' }
+        // "default"/"compact"/"research" picks within this same menu; any of
+        // them chosen from here switches back to the newer chat+grid
+        // dashboard (see runInteractiveMenu's post-command check in
+        // engine.js) -- the inverse of the dashboard's "legacy" preset,
+        // which exits IT back to this menu.
+        '--preset': { type: 'select', options: ['default', 'compact', 'research', 'legacy'], label: 'Preset', default: 'default' }
       }},
       { id: 'params',   prefix: ['settings'], label: 'Default Trading Params', flags: {
         '--position-size':       { type: 'text', default: '100',  label: 'Position size (USDC)' },
@@ -259,6 +287,9 @@ const COMMAND_MANIFEST = {
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' },
         '--live':     { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
       }},
+     { id: 'auto-trade status', label: 'Positions', flags: {
+        '--live': { type: 'confirm', label: 'Show LIVE account positions?', default: false }
+      }},
       { id: 'agent',        label: 'AI Agent', flags: {
         '--query': { type: 'text', default: '', label: 'Task for the agent' }
       }},
@@ -283,24 +314,7 @@ const COMMAND_MANIFEST = {
         '--entry-threshold': { type: 'text', default: '0.15', label: 'Max entry price (low_prob_dip)' },
       }},
       { id: 'derive-creds',  prefix: ['polymarket'], label: 'Derive L2 API Credentials' },
-      // --- Edge Trader Bot (CLI prefix `bot`; lives here because it only trades Polymarket) ---
-      { id: 'health', prefix: ['bot'], label: 'Bot: Health Check (credentials, API, balance)' },
-      { id: 'status', prefix: ['bot'], label: 'Bot: Status' },
-      { id: 'cycle',  prefix: ['bot'], label: 'Bot: Run Cycle (dry-run)', flags: {
-        '--live': { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
-      }},
-      { id: 'run',    prefix: ['bot'], label: 'Bot: Start Loop', flags: {
-        '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' },
-        '--live':     { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
-      }},
-      { id: 'config', prefix: ['bot'], label: 'Bot: Enable',
-        args: ['--key', 'enabled', '--value', 'true'] },
-      { id: 'config', prefix: ['bot'], label: 'Bot: Disable',
-        args: ['--key', 'enabled', '--value', 'false'] },
-      { id: 'config', prefix: ['bot'], label: 'Bot: View / Edit Config', flags: {
-        '--key':   { type: 'text', default: '', label: 'Config key (e.g. minEdgeThreshold)' },
-        '--value': { type: 'text', default: '', label: 'New value' }
-      }},
+      { id: 'bot',           label: 'Edge Trader Bot', args: [] },
     ],
   }
 };

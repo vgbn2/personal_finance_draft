@@ -16,7 +16,7 @@ namespace {
 std::filesystem::path locateRepoRoot() {
 #ifdef SOVEREIGN_REPO_ROOT
     const std::filesystem::path macro_root(SOVEREIGN_REPO_ROOT);
-    if (std::filesystem::exists(macro_root / "storage" / "data" / "cache" / "crypto" / "backtest_history.json")) {
+    if (std::filesystem::exists(macro_root / "storage" / "data" / "cache" / "last_fetch.json")) {
         return macro_root;
     }
 #endif
@@ -27,7 +27,7 @@ std::filesystem::path locateRepoRoot() {
         std::filesystem::current_path().parent_path().parent_path().parent_path(),
     };
     for (const auto& candidate : candidates) {
-        if (std::filesystem::exists(candidate / "storage" / "data" / "cache" / "crypto" / "backtest_history.json")) {
+        if (std::filesystem::exists(candidate / "storage" / "data" / "cache" / "last_fetch.json")) {
             return candidate;
         }
     }
@@ -43,7 +43,7 @@ int main() {
 
         // Load empirical data from the crypto partition (BTCUSDT 1d bars)
         const auto repo_root = locateRepoRoot();
-        const auto data_path = repo_root / "storage" / "data" / "cache" / "crypto" / "backtest_history.json";
+        const auto data_path = repo_root / "storage" / "data" / "cache" / "last_fetch.json";
         auto snapshot = loadMarketDataSnapshot(data_path, "BTCUSDT", "1d", 5);
         if (snapshot.bars.size() < 4) {
             throw std::runtime_error("Not enough empirical data points for Kronos test (need at least 4)");

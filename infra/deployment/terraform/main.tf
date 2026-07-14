@@ -78,7 +78,7 @@ resource "kubernetes_deployment_v1" "web" {
           name              = "web"
           image             = var.image
           image_pull_policy = "IfNotPresent"
-          command           = ["node", "web/app.js"]
+          command           = ["node", "backend/api/app.js"]
 
           port {
             name           = "http"

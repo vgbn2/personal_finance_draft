@@ -10,7 +10,10 @@ const VALID_TIMEZONES = new Set([
   'Asia/Ho_Chi_Minh', 'Australia/Sydney',
 ]);
 
-const VALID_LAYOUTS = new Set(['default', 'compact', 'research']);
+// 'legacy' boots the dashboard into the pre-chat grid-only manifest TUI (no
+// chat bar, Tab is a no-op) instead of the chat-first default -- a layout
+// choice, same as 'compact'/'research', not a separate on/off flag.
+const VALID_LAYOUTS = new Set(['default', 'compact', 'research', 'legacy']);
 
 const VALID_FLAGS = new Set([
   'bot_autopilot', 'polymarket', 'onchain_data', 'multi_agent_research', 'auto_rebalance',

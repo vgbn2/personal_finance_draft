@@ -16,7 +16,7 @@ DASHBOARD_PID=$!
 
 # 3. Start Execution Gateway
 echo "[3/3] Starting Execution Gateway..."
-npx tsx backend/gateway/src/index.ts --demo > logs/gateway.log 2>&1 &
+node backend/cli/lib/run_trade_gateway.js --demo > logs/gateway.log 2>&1 &
 GATEWAY_PID=$!
 
 echo "All systems launched in the background."

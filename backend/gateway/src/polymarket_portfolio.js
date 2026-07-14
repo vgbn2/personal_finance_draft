@@ -3,12 +3,18 @@ function toNumber(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+const {
+  isMarkedActivePolymarketPosition,
+  partitionPolymarketPositions,
+} = require('./polymarket_positions.js');
+
 function buildAggregatedPortfolioSnapshot(results, polymarket) {
   const aggregated = {
     total_usd: 0,
     total_equity: 0,
     total_unrealized_pl: 0,
     cost_basis_unavailable_positions: 0,
+    valuation_unavailable_positions: 0,
     brokers: [],
     positions: [],
     prediction_markets: { polymarket },
@@ -49,18 +55,26 @@ function buildAggregatedPortfolioSnapshot(results, polymarket) {
 
   if (polymarket && polymarket.ok) {
     const pUsd = toNumber(polymarket.balance && polymarket.balance.pUSD);
+    const positions = Array.isArray(polymarket.positions) ? polymarket.positions : [];
+    const partitioned = partitionPolymarketPositions(positions);
+    const markedActive = partitioned.active.filter(isMarkedActivePolymarketPosition);
+    const markedPositionValue = markedActive.reduce(
+      (sum, position) => sum + toNumber(position && position.marketValue),
+      0,
+    );
+    aggregated.valuation_unavailable_positions += partitioned.active.length - markedActive.length;
     aggregated.total_usd += pUsd;
-    aggregated.total_equity += pUsd;
+    aggregated.total_equity += pUsd + markedPositionValue;
     aggregated.brokers.push({
       name: 'Polymarket',
       status: 'connected',
       balance: polymarket.balance || {},
-      position_count: Array.isArray(polymarket.positions) ? polymarket.positions.length : 0,
+      position_count: partitioned.active.length,
+      ended_position_count: partitioned.ended.length,
+      unknown_position_count: partitioned.unknown.length,
       cost_basis_unavailable_count: 0,
     });
-    if (Array.isArray(polymarket.positions)) {
-      addPositions(polymarket.positions);
-    }
+    addPositions(markedActive);
   } else if (polymarket && polymarket.configured) {
     aggregated.brokers.push({
       name: 'Polymarket',

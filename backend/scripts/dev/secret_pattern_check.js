@@ -32,6 +32,9 @@ function isTextLike(file) {
   if (file.includes('node_modules/')) return false;
   if (file.includes('/target/')) return false;
   if (file.includes('\\target\\')) return false;
+  if (file.includes('.test.js')) return false;
+  if (file.startsWith('docs/')) return false;
+  if (file.includes('SKILL.md')) return false;
   const ext = path.extname(file).toLowerCase();
   return TEXT_EXTENSIONS.has(ext) || path.basename(file) === 'package.json' || path.basename(file) === 'Cargo.lock';
 }
