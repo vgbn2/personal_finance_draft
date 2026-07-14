@@ -33,6 +33,43 @@ function quoteProviderPathLabel(provider) {
   return null;
 }
 
+function renderQuotes(payload) {
+  const line = '-'.repeat(72);
+  const lines = [`\n=== QUOTE PROVIDERS STATUS ===`];
+
+  lines.push(`State:    ${payload.ok ? 'OK' : 'ERROR'}`);
+  lines.push(`Enabled:  ${payload.enabled ? 'Yes' : 'No'}`);
+  lines.push(`Total Records:   ${payload.records}`);
+  lines.push(`Stale Records:   ${payload.stale_records}`);
+
+  lines.push(`\n[PROVIDERS]`);
+  for (const p of payload.providers) {
+    lines.push(`  * ${p.provider.padEnd(14)} | Priority: ${String(p.priority).padEnd(3)} | Status: ${p.status.padEnd(14)} | Records: ${p.records} (Stale: ${p.stale_records})`);
+  }
+
+  lines.push(`\n[DEDUPLICATION]`);
+  lines.push(`  Input:   ${payload.deduplication.input_records}`);
+  lines.push(`  Output:  ${payload.deduplication.output_records}`);
+  lines.push(`  Removed: ${payload.deduplication.removed_records}`);
+
+  if (payload.symbols && payload.symbols.length > 0) {
+    lines.push(`\n[SAMPLE SYMBOLS (Top 20)]`);
+    for (const s of payload.symbols) {
+      lines.push(`  ${s.family.padEnd(12)} | ${s.symbol.padEnd(8)} | ${s.timeframe.padEnd(5)} | Close: ${String(s.close).padEnd(8)} | ${s.timestamp}`);
+    }
+  }
+
+  if (payload.errors && payload.errors.length > 0) {
+    lines.push(`\n[ERRORS]`);
+    for (const e of payload.errors) {
+      lines.push(`  - ${e}`);
+    }
+  }
+
+  lines.push(`\n${line}`);
+  return lines.join('\n');
+}
+
 async function commandQuotes(args) {
   const subcommand = args[0] || 'status';
   if (subcommand !== 'status') {
@@ -114,7 +151,12 @@ async function commandQuotes(args) {
     symbols: selectedSymbols,
     errors: imported.errors,
   };
-  printPayload(payload, args);
+  
+  if (hasFlag(args, '--json')) {
+    printPayload(payload, args);
+  } else {
+    console.log(renderQuotes(payload));
+  }
   return payload.ok ? 0 : 1;
 }
 

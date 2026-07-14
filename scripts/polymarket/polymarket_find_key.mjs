@@ -1,11 +1,11 @@
 // Find which derivation path of your mnemonic produces the Polymarket auth wallet.
-// Run: node scripts/polymarket_find_key.mjs "<your 12/24 word mnemonic here>"
+// Run: node scripts/polymarket/polymarket_find_key.mjs "<your 12/24 word mnemonic here>"
 import { createRequire } from 'module';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot  = path.resolve(__dirname, '..');
+const repoRoot  = path.resolve(__dirname, '..', '..');
 const require   = createRequire(import.meta.url);
 const { ethers } = require(path.join(repoRoot, 'backend/gateway/node_modules/ethers/lib/index.js'));
 
@@ -17,7 +17,7 @@ const TARGETS = new Set([
 
 const mnemonic = process.argv[2];
 if (!mnemonic) {
-  console.error('Usage: node scripts/polymarket_find_key.mjs "<mnemonic phrase>"');
+  console.error('Usage: node scripts/polymarket/polymarket_find_key.mjs "<mnemonic phrase>"');
   process.exit(1);
 }
 

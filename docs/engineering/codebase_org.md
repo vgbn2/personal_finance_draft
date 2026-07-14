@@ -64,7 +64,7 @@ Agent and workflow state: `.codex/`, `.gemini/`, `.agents/`, `.claude/`, `.gsd/`
 
 ### `backend/`
 
-- `backend/api/`: local Node/Express API bridge and dashboard server. The root README points `node backend/api/app.js` here.
+- `backend/api/`: local native Node HTTP API, Socket.IO bridge, and dashboard server. The root README points `node backend/api/app.js` here.
 - `backend/api/server/routes/`: now grouped by domain (`account/`, `bot/`, `data/`, `market/`, `status/`, `system/`) with `index.js` as the stable registry.
 - `backend/cli/`: active Sovereign CLI/TUI entrypoint. The canonical executable is `backend/cli/sovereign_cli.js`.
 - `backend/cli/commands/`: grouped by workflow and domain (`account/`, `operational/`, `research/`, `runner/`, `settings/`, `strategy/`, `tools/`, `trade/`) with `sovereign_cli.js` as the stable dispatcher.

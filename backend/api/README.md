@@ -4,9 +4,9 @@ This directory contains the Node-based dashboard shell, API routes, and test
 fixtures that back the local web status view.
 
 Key areas:
-- `app.js` for the Express app and API composition
+- `app.js` for the native Node HTTP server, Socket.IO telemetry, and API composition
 - `server/` for routes, middleware, and service helpers
-- `public/` for the browser-facing dashboard shell
+- `../../Frontend/dashboard/dist/` for the built browser-facing dashboard
 - `tests/` for API and chart behavior
 
 Operational note:

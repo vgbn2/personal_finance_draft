@@ -22,9 +22,9 @@ module.exports = {
   '/api/strategies': require('./market/strategies'),
   '/api/config': require('./account/config'),
   '/api/sigma-band':  require('./market/sigma_band'),
+  '/api/scorecard':   require('./market/scorecard'),
   '/api/bot/status':  require('./bot/bot_status'),
   '/api/run/status':  require('./status/run_status'),
   '/api/bot/cycle':   require('./bot/bot_cycle'),
   '/api/bot/sell':    require('./bot/bot_sell'),
 };
-

@@ -1,3 +1,6 @@
+<<<<<<<< HEAD:shared/lib/ingestion.js
+module.exports = require('./data/ingestion');
+========
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { 
@@ -8,10 +11,10 @@ const {
   fetchWorldBankLatest,
   fetchKalshiPredictionEvent,
   fetchAlternativeMeFearGreed,
-  REPO_ROOT 
 } = require('../providers');
+const { DEFAULT_SNAPSHOT } = require('../runtime/paths');
 
-const CACHE_PATH = path.join(REPO_ROOT, 'data', 'cache', 'last_fetch.json');
+const CACHE_PATH = DEFAULT_SNAPSHOT;
 
 const FAMILIES_MANIFEST = [
   { id: 'equities', fetcher: async (p, s, t) => fetchYahooBaseCandles(s, t) },
@@ -53,3 +56,4 @@ module.exports = {
   FAMILIES_MANIFEST,
   runIngestBatch
 };
+>>>>>>>> feat-ink-tui-refactor-split:shared/lib/data/ingestion.js

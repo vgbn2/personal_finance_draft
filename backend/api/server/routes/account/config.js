@@ -36,15 +36,48 @@ const CONFIG_DEFAULTS = {
   },
 };
 
+const CONFIG_KEYS = new Set(Object.keys(CONFIG_DEFAULTS));
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
+}
+
+function matchesConfigShape(value, template) {
+  if (Array.isArray(template)) {
+    return Array.isArray(value) && value.every((entry) => typeof entry === 'string' && entry.length > 0);
+  }
+  if (isPlainObject(template)) {
+    if (!isPlainObject(value)) return false;
+    const keys = Object.keys(template);
+    return Object.keys(value).length === keys.length
+      && keys.every((key) => Object.hasOwn(value, key) && matchesConfigShape(value[key], template[key]));
+  }
+  if (typeof template === 'number') return typeof value === 'number' && Number.isFinite(value);
+  return typeof value === typeof template;
+}
+
+function isValidConfigValue(key, value) {
+  if (!CONFIG_KEYS.has(key) || !matchesConfigShape(value, CONFIG_DEFAULTS[key])) return false;
+  if (key === 'timezone') {
+    if (!value || value.length > 64) return false;
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: value });
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
 module.exports = {
   path: '/api/config',
   status: (payload) => {
     if (payload.ok) return 200;
     if (payload.error === 'auth_required') return 401;
-    if (payload.error === 'invalid_json' || payload.error === 'key_required') return 400;
+    if (payload.error === 'invalid_json' || payload.error === 'key_required' || payload.error === 'invalid_config') return 400;
     return 500;
   },
-  handle: async (_query, { req }) => {
+  handle: async (query, { req }) => {
     const auth = await getAuthStatus(req);
     if (!auth.authenticated) {
       return { ok: false, error: 'auth_required' };
@@ -53,18 +86,11 @@ module.exports = {
     const supabase = createSovereignSupabaseClient(req);
 
     if (req.method === 'POST') {
-      let body = {};
-      try {
-        const buffers = [];
-        for await (const chunk of req) buffers.push(chunk);
-        body = JSON.parse(Buffer.concat(buffers).toString());
-      } catch {
-        return { ok: false, error: 'invalid_json' };
-      }
-      const { key, value } = body;
-      if (!key || typeof key !== 'string' || key.length > 64 || !/^[a-z_]+$/.test(key)) {
+      const { key, value } = query;
+      if (!key || typeof key !== 'string' || key.length > 64 || !/^[a-z_]+$/.test(key) || !CONFIG_KEYS.has(key)) {
         return { ok: false, error: 'key_required' };
       }
+      if (!isValidConfigValue(key, value)) return { ok: false, error: 'invalid_config' };
       await setUserConfig(supabase, auth.user.id, key, value);
       return { ok: true };
     }
@@ -75,3 +101,5 @@ module.exports = {
   },
 };
 
+module.exports.CONFIG_DEFAULTS = CONFIG_DEFAULTS;
+module.exports.isValidConfigValue = isValidConfigValue;

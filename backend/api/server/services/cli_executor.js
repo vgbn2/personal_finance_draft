@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { Worker } = require('node:worker_threads');
 
 const {
   findBackendBinary,
@@ -15,6 +16,9 @@ const {
 } = require('../../../../shared/lib/runtime/paths');
 const { calculateRollingFeatureFrame } = require('../../../../shared/lib/market/indicators');
 const { compareModels } = require('../../../../shared/lib/ml/models');
+const { parseScorecardOptions } = require('../../../cli/commands/research/scorecard');
+const { buildRecordedAppleShadow, RECORDED_AAPL_FIXTURE_ID } = require('../../../../shared/lib/analysis/services/equity_3m_shadow');
+const { buildAllRecordedShadowCatalog, ALL_RECORDED_FIXTURE_ID, filterShadowCatalog } = require('../../../../shared/lib/analysis/services/shadow_catalog');
 
 // The API fallback should read the canonical live cache snapshot, not the backtest report cache.
 const DEFAULT_HISTORY = DEFAULT_SNAPSHOT;
@@ -23,6 +27,13 @@ const DEFAULT_BACKTEST_REPORT = DEFAULT_BACKTEST;
 
 const MEMORY_CACHE = new Map();
 const MEMORY_CACHE_TTL_MS = 5000; // 5 seconds cache for dashboard snappiness
+const SCORECARD_CACHE = new Map();
+const SCORECARD_CACHE_TTL_MS = 30000;
+const SCORECARD_CACHE_MAX_ENTRIES = 32;
+const SIGNAL_REPORT_MAX_AGE_MS = (() => {
+  const configured = Number.parseInt(process.env.SOVEREIGN_SIGNAL_REPORT_MAX_AGE_MS || '', 10);
+  return Number.isFinite(configured) && configured > 0 ? configured : 24 * 60 * 60 * 1000;
+})();
 
 function withCache(key, producer) {
   const now = Date.now();
@@ -35,6 +46,53 @@ function withCache(key, producer) {
   const payload = producer();
   MEMORY_CACHE.set(key, { timestamp: now, payload });
   return payload;
+}
+
+async function withScorecardCache(key, producer) {
+  const now = Date.now();
+  const cached = SCORECARD_CACHE.get(key);
+  if (cached && now - cached.timestamp < SCORECARD_CACHE_TTL_MS) {
+    const payload = await cached.promise;
+    return { ...payload, from_memory_cache: true };
+  }
+
+  const promise = Promise.resolve()
+    .then(producer)
+    .catch((error) => ({ ok: false, type: 'scorecard', error: error.message }));
+  SCORECARD_CACHE.set(key, { timestamp: now, promise });
+
+  if (SCORECARD_CACHE.size > SCORECARD_CACHE_MAX_ENTRIES) {
+    const oldestKey = SCORECARD_CACHE.keys().next().value;
+    SCORECARD_CACHE.delete(oldestKey);
+  }
+
+  return promise;
+}
+
+function runScorecardWorker(args) {
+  return new Promise((resolve) => {
+    const worker = new Worker(path.join(__dirname, '../workers/scorecard_worker.js'), {
+      workerData: { args },
+      resourceLimits: { maxOldGenerationSizeMb: 512 },
+    });
+    let settled = false;
+    const finish = (payload) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(payload);
+    };
+    const timeout = setTimeout(() => {
+      worker.terminate();
+      finish({ ok: false, type: 'scorecard', error_code: 'scorecard_timeout', error: 'scorecard calculation timed out' });
+    }, 30000);
+    timeout.unref();
+    worker.once('message', finish);
+    worker.once('error', (error) => finish({ ok: false, type: 'scorecard', error_code: 'scorecard_worker_error', error: error.message }));
+    worker.once('exit', (code) => {
+      if (code !== 0) finish({ ok: false, type: 'scorecard', error_code: 'scorecard_worker_exit', error: `scorecard worker exited with code ${code}` });
+    });
+  });
 }
 
 function locateBackendBinary() {
@@ -293,7 +351,7 @@ function deriveCompressedHistory(records, symbol, timeframe, limit) {
 function hasUsefulCorrelationPayload(payload) {
   return Boolean(payload)
     && payload.ok !== false
-    && Number(payload.sample_size || 0) > 0
+    && Number(payload.sample_size || 0) >= 2
     && Array.isArray(payload.values)
     && payload.values.length > 0;
 }
@@ -400,6 +458,7 @@ function buildCorrelationMatrix(query = {}) {
     .filter((index) => alignedValues.every((series) => Number.isFinite(series[index])));
   const finalTimestamps = completeIndices.map((index) => alignedTimestamps[index]);
   const finalValues = alignedValues.map((series) => completeIndices.map((index) => series[index]));
+  const hasSufficientOverlap = finalTimestamps.length >= 2;
   const size = symbols.length;
   const values = Array.from({ length: size }, (_, rowIndex) => Array.from({ length: size }, (_, columnIndex) => {
     if (rowIndex === columnIndex) {
@@ -409,8 +468,8 @@ function buildCorrelationMatrix(query = {}) {
   }));
 
   return {
-    available: true,
-    ok: true,
+    available: hasSufficientOverlap,
+    ok: hasSufficientOverlap,
     type: 'correlation_matrix',
     engine: 'sovereign_web_api',
     schema_version: 1,
@@ -420,6 +479,7 @@ function buildCorrelationMatrix(query = {}) {
     labels: symbols,
     values,
     sample_size: finalTimestamps.length,
+    error: hasSufficientOverlap ? null : 'insufficient_aligned_observations',
   };
 }
 
@@ -623,7 +683,9 @@ function backendStatus(query = {}) {
 function backendDataSummary(query = {}) {
   const symbol = stringOrFallback(query.symbol, 'SPY');
   const timeframe = stringOrFallback(query.timeframe, '1d');
-  return withCache(`summary:${symbol}:${timeframe}`, () => {
+  const input = stringOrFallback(query.input, DEFAULT_HISTORY);
+  const maxBars = stringOrFallback(query.max_bars, '0');
+  return withCache(`summary:${symbol}:${timeframe}:${input}:${maxBars}`, () => {
     const args = [
     'data',
     'summary',
@@ -632,9 +694,9 @@ function backendDataSummary(query = {}) {
     '--timeframe',
     timeframe,
     '--input',
-    stringOrFallback(query.input, DEFAULT_HISTORY),
+    input,
     '--max-bars',
-    stringOrFallback(query.max_bars, '0'),
+    maxBars,
     '--json',
     ];
     const backend = runBackend(args);
@@ -651,17 +713,20 @@ function backendDataSummary(query = {}) {
 
 function backendCorrelation(query = {}) {
   const symbols = stringOrFallback(query.symbols, 'AAPL,MSFT,SPY');
-  return withCache(`correlation:${symbols}`, () => {
+  const timeframe = stringOrFallback(query.timeframe, '1d');
+  const input = stringOrFallback(query.input, DEFAULT_HISTORY);
+  const maxBars = stringOrFallback(query.max_bars, '252');
+  return withCache(`correlation:${symbols}:${timeframe}:${input}:${maxBars}`, () => {
     const args = [
     'correlation',
     '--symbols',
     symbols,
     '--timeframe',
-    stringOrFallback(query.timeframe, '1d'),
+    timeframe,
     '--input',
-    stringOrFallback(query.input, DEFAULT_HISTORY),
+    input,
     '--max-bars',
-    stringOrFallback(query.max_bars, '252'),
+    maxBars,
     '--json',
     ];
     const backend = runBackend(args);
@@ -733,13 +798,15 @@ function backendStats(query = {}) {
 }
 
 function backendUniverse(query = {}) {
-  return withCache('universe', () => {
+  const input = stringOrFallback(query.input, DEFAULT_HISTORY);
+  const maxEntries = stringOrFallback(query.max_entries, '0');
+  return withCache(`universe:${input}:${maxEntries}`, () => {
     const args = [
     'universe',
     '--input',
-    stringOrFallback(query.input, DEFAULT_HISTORY),
+    input,
     '--max-entries',
-    stringOrFallback(query.max_entries, '0'),
+    maxEntries,
     '--json',
     ];
     const backend = runBackend(args);
@@ -810,10 +877,14 @@ function backendIndicators(query = {}) {
     ];
     // Indicators are primarily handled by the Node CLI which uses shared/lib/market/indicators
     const nodeCli = runNodeCli(args);
-    if (nodeCli.ok) {
-      return nodeCli;
+    if (nodeCli.exit_code === 0 && nodeCli.ok !== false && !nodeCli.error) {
+      return {
+        ...nodeCli,
+        ok: true,
+      };
     }
     return {
+      ...nodeCli,
       available: true,
       ok: false,
       error: nodeCli.error || 'indicators_command_failed',
@@ -857,12 +928,15 @@ function quoteSources() {
   return withCache('quote_sources', () => runNodeCli(['quotes', 'status', '--json']));
 }
 
-function signalStatus(query = {}) {
+function signalStatus(query = {}, runtime = {}) {
+  const now = runtime.now ?? Date.now();
+  const reportMaxAgeMs = runtime.reportMaxAgeMs || SIGNAL_REPORT_MAX_AGE_MS;
   const modelPath = stringOrFallback(query.model_report, DEFAULT_MODEL_REPORT);
   const backtestPath = stringOrFallback(query.backtest_report, DEFAULT_BACKTEST_REPORT);
   const threshold = finiteNumber(query.threshold, null) ?? finiteNumber(readJsonFile(modelPath)?.threshold, 0.55);
 
-  return withCache(`signal:${modelPath}:${backtestPath}:${threshold}:${query.input || 'latest'}`, () => {
+  const runtimeCacheSuffix = runtime.now === undefined ? '' : `:${now}:${reportMaxAgeMs}`;
+  return withCache(`signal:${modelPath}:${backtestPath}:${threshold}:${query.input || 'latest'}${runtimeCacheSuffix}`, () => {
     let modelReport = readJsonFile(modelPath);
     if (
       query.input
@@ -883,6 +957,7 @@ function signalStatus(query = {}) {
           source_mode: 'request_input',
           input: query.input,
           data_quality_ok: true,
+          generated_at: new Date(now).toISOString(),
           ...compareModels(featureFrame, {
             horizon: requestHorizon,
             threshold,
@@ -891,6 +966,12 @@ function signalStatus(query = {}) {
       }
     }
     const backtestReport = readJsonFile(backtestPath);
+    const reportGeneratedMs = Date.parse(modelReport?.generated_at || '');
+    const reportAgeMs = Number.isFinite(reportGeneratedMs) ? Math.max(0, now - reportGeneratedMs) : null;
+    const reportFresh = Number.isFinite(reportAgeMs) && reportAgeMs <= reportMaxAgeMs;
+    const reportValidUntil = Number.isFinite(reportGeneratedMs)
+      ? new Date(reportGeneratedMs + reportMaxAgeMs).toISOString()
+      : null;
     const perSymbol = Array.isArray(modelReport?.per_symbol_winners) ? modelReport.per_symbol_winners : [];
     const signals = perSymbol
       .map((entry, index) => {
@@ -901,16 +982,22 @@ function signalStatus(query = {}) {
         const expectedValue = finiteNumber(candidate.expectancy, 0);
         const totalReturn = finiteNumber(candidate.total_return, 0);
         const confidence = confidenceFromCandidate(candidate);
-        const active = confidence >= threshold && expectedValue > 0;
+        const decisionReady = candidate.trained === true && candidate.decision_ready === true;
+        const qualityApproved = modelReport?.data_quality_ok === true && backtestReport?.data_quality_ok === true;
+        const active = reportFresh && decisionReady && qualityApproved && confidence >= threshold && expectedValue > 0;
         return {
           signal_id: `${String(candidate.symbol || entry.symbol || 'asset').toLowerCase()}-${String(candidate.model || 'model').toLowerCase()}-${index}`,
           symbol: String(candidate.symbol || entry.symbol || '').toUpperCase(),
           model: candidate.model || entry.winner || null,
           family: candidate.family || null,
+          implementation_status: candidate.status || null,
+          trained: candidate.trained === true,
+          decision_ready: decisionReady,
           direction: directionFromReturn(expectedValue || totalReturn),
           confidence,
           threshold,
           active,
+          expired: !reportFresh,
           promoted: false,
           expected_value: expectedValue,
           hit_rate: finiteNumber(candidate.hit_rate, 0),
@@ -919,9 +1006,16 @@ function signalStatus(query = {}) {
           sharpe_like: finiteNumber(candidate.sharpe_like, 0),
           source: 'model_comparison',
           as_of: modelReport?.generated_at || backtestReport?.generated_at || null,
-          reason: active
-            ? 'candidate_above_threshold_not_promoted'
-            : 'candidate_for_review_not_promoted',
+          valid_until: reportValidUntil,
+          reason: !reportFresh
+            ? 'source_report_expired'
+            : !decisionReady
+              ? 'model_not_decision_ready'
+              : !qualityApproved
+                ? 'data_quality_not_approved'
+            : active
+              ? 'candidate_above_threshold_not_promoted'
+              : 'candidate_for_review_not_promoted',
         };
       })
       .filter(Boolean)
@@ -930,7 +1024,7 @@ function signalStatus(query = {}) {
     return {
       ok: Boolean(modelReport && perSymbol.length),
       type: 'signal_status',
-      schema_version: 1,
+      schema_version: 2,
       source: 'model_comparison',
       generated_at: modelReport?.generated_at || null,
       source_mode: modelReport?.source_mode || null,
@@ -938,20 +1032,31 @@ function signalStatus(query = {}) {
       active_signals: signals.filter((signal) => signal.active).length,
       candidate_signals: signals.length,
       promoted_signals: signals.filter((signal) => signal.promoted).length,
+      source_report: {
+        fresh: reportFresh,
+        age_ms: reportAgeMs,
+        max_age_ms: reportMaxAgeMs,
+        valid_until: reportValidUntil,
+      },
       signals,
       model: {
         available: Boolean(modelReport),
         winner: modelReport?.winner || null,
-        candidate_count: finiteNumber(modelReport?.candidate_count, 0),
+        candidate_count: Math.max(finiteNumber(modelReport?.candidate_count, 0), signals.length),
         feature_count: finiteNumber(modelReport?.feature_count, 0),
         families: Array.isArray(modelReport?.families) ? modelReport.families : [],
         data_quality_ok: modelReport?.data_quality_ok === true,
+        trained_candidate_count: finiteNumber(modelReport?.trained_candidate_count, 0),
+        decision_ready: modelReport?.decision_ready === true,
+        decision_warning: modelReport?.decision_warning || null,
       },
       backtest: backtestSummary(backtestReport),
       quality: {
         data_quality_ok: modelReport?.data_quality_ok === true && backtestReport?.data_quality_ok === true,
         model_report_available: Boolean(modelReport),
         backtest_report_available: Boolean(backtestReport),
+        report_fresh: reportFresh,
+        decision_ready_candidates: signals.filter((signal) => signal.decision_ready).length,
         promotion_required: true,
       },
     };
@@ -960,6 +1065,36 @@ function signalStatus(query = {}) {
 
 function cliStatus() {
   return withCache('cli_status', () => runNodeCli(['status', '--json']));
+}
+
+async function backendScorecard(query = {}) {
+  if (String(query.schema || '') === '3') {
+    if (String(query.fixture || '') === RECORDED_AAPL_FIXTURE_ID) return buildRecordedAppleShadow();
+    if (String(query.fixture || '') === ALL_RECORDED_FIXTURE_ID) return filterShadowCatalog(buildAllRecordedShadowCatalog(), { family: String(query.family || ''), symbol: String(query.symbol || ''), state: String(query.state || '') });
+    return { ok: false, type: 'analysis_shadow', schema_version: 3, error_code: 'invalid_fixture', error: `schema 3 shadow requires fixture=${RECORDED_AAPL_FIXTURE_ID} or ${ALL_RECORDED_FIXTURE_ID}` };
+  }
+  const family = stringOrFallback(query.family, '').toLowerCase();
+  const direction = stringOrFallback(query.direction, '').toLowerCase();
+  const timeframes = stringOrFallback(query.tf, '1h,4h,1d').toLowerCase();
+  if (direction && !['long', 'short', 'neutral'].includes(direction)) {
+    return { ok: false, type: 'scorecard', error_code: 'invalid_direction', error: 'direction must be long, short, or neutral' };
+  }
+  const timeframeOptions = parseScorecardOptions(['--tf', timeframes]);
+  const requestedTimeframes = timeframes.split(',').map((value) => value.trim()).filter(Boolean);
+  if (!timeframeOptions.ok || timeframeOptions.tfConfigs.length !== requestedTimeframes.length) {
+    return { ok: false, type: 'scorecard', error_code: 'invalid_timeframe', error: `invalid scorecard timeframe list: ${timeframes}` };
+  }
+  const minConfidence = clamp(finiteNumber(query.min_conf, 0.3), 0, 1);
+  const top = clamp(parseLimit(query.top) || 50, 1, 100);
+  const args = [
+    ...(family ? ['--family', family] : []),
+    ...(direction ? ['--direction', direction] : []),
+    '--tf', timeframes,
+    '--min-conf', String(minConfidence),
+    '--top', String(top),
+  ];
+  const cacheKey = JSON.stringify({ family, direction, timeframes, minConfidence, top });
+  return withScorecardCache(cacheKey, () => runScorecardWorker(args));
 }
 
 function systemStatus() {
@@ -1043,6 +1178,8 @@ module.exports = {
   backendCorrelation,
   backendDataSummary,
   backendPortfolio,
+  backendScorecard,
+  SIGNAL_REPORT_MAX_AGE_MS,
   backendUniverse,
   buildCorrelationMatrix,
   backendIndicators,

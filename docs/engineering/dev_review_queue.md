@@ -56,13 +56,13 @@ Scope: deep blast-through pass across active web/API, React/Vite dashboard, macr
 - Evidence used: search found `PAYEMS` in generated cockpit output fixtures after the config fix.
 - Clearance gate: fixture refresh command regenerates current outputs, and contract tests prove `ADP` no longer mirrors `NFP`.
 
-### DR-005: [RESOLVED] Implemented server-side gated persistence for signals
+### DR-005: [RESOLVED] Implemented server-side review persistence for signals
 
 - Severity: low (was high)
-- Files: `Frontend/dashboard/src/components/panels/SignalPanel.tsx`, `backend/api/server/routes/signal_promote.js`
-- Decision: Signals are now promoted via a real POST API call that persists an event to Supabase `audit_events`.
+- Files: `Frontend/dashboard/src/components/panels/SignalPanel.tsx`, `backend/api/server/routes/market/signal_promote.js`
+- Decision: Fresh active candidates can be reviewed through a real POST API call that persists an event to Supabase `audit_events`; this is not order execution.
 - Evidence: `SignalPanel.tsx` uses `fetch(API_ENDPOINTS.SIGNAL + '/promote')`; `signal_promote.js` handles the persistence.
-- Clearance gate: Promoting a signal in the UI creates a `SIGNAL_PROMOTION` row in the Supabase `audit_events` table.
+- Clearance gate: Recording a review creates an authenticated `SIGNAL_PROMOTION` audit row and returns `execution_started: false`.
 
 ### DR-006: Normalize phase and deployment documentation
 

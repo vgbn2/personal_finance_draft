@@ -6,7 +6,7 @@ namespace sovereign {
 
 struct TradeOrder {
     double notional;
-    double volatility;
+    double portfolio_equity;
     double current_drawdown;
 };
 

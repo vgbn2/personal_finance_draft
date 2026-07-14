@@ -8,6 +8,28 @@ function backendAvailable() {
   return Boolean(findBackendBinary());
 }
 
+function spawnResultHasFatalError(result) {
+  return Boolean(result.error) && !Number.isInteger(result.status);
+}
+
+/**
+ * Returns a copy of args with every occurrence of a value-taking flag (and its
+ * following value) removed. Used to keep secrets like --pin out of a spawned
+ * subprocess's argv (visible in OS process listings) once they've been consumed
+ * in-process.
+ */
+function stripFlagValue(args, name) {
+  const out = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === name) {
+      i++; // skip the flag's value too
+      continue;
+    }
+    out.push(args[i]);
+  }
+  return out;
+}
+
 /**
  * Robust execution of a command with REPO_ROOT context and environment merging.
  */
@@ -29,7 +51,9 @@ function executeSovereignCommand(command, args, options = {}) {
     process.stderr.write(result.stderr);
   }
 
-  if (result.error) {
+  // Some runtimes can report a post-run spawnSync error even though the child
+  // exited and produced usable output. A numeric status proves it did run.
+  if (spawnResultHasFatalError(result)) {
     return { ok: false, error: result.error.message, exit_code: result.status };
   }
 
@@ -50,7 +74,7 @@ function executeSovereignCommand(command, args, options = {}) {
       const jsonStr = raw.substring(firstBrace, lastBrace + 1);
       const payload = JSON.parse(jsonStr);
       const merged = { ...payload };
-      if (typeof merged.ok !== 'boolean') merged.ok = result.status === 0;
+      merged.ok = (result.status === 0) && (payload.ok !== false);
       merged.exit_code = result.status;
       return merged;
     }
@@ -66,6 +90,11 @@ function executeSovereignCommand(command, args, options = {}) {
  * @returns {object} Launch object with command and args.
  */
 function buildTradeGatewayLaunch(args = []) {
+  // Strip --pin unconditionally here (not just at the commandTrade call site)
+  // so every one of this function's callers is covered for free, including
+  // any future one -- a secret consumed in-process must never reach a
+  // spawned subprocess's argv (visible in OS process listings).
+  args = stripFlagValue(args, '--pin');
   // Suppress DEP0180 and similar Node deprecation warnings in gateway subprocesses
   if (!process.env.NODE_OPTIONS || !process.env.NODE_OPTIONS.includes('--no-deprecation')) {
     process.env.NODE_OPTIONS = ((process.env.NODE_OPTIONS || '') + ' --no-deprecation').trim();
@@ -122,6 +151,8 @@ function runGatewayCommand(gatewayArgs, options = {}) {
 
 module.exports = {
   backendAvailable,
+  spawnResultHasFatalError,
+  stripFlagValue,
   buildTradeGatewayLaunch,
   runBackendCommand,
   runGatewayCommand,
