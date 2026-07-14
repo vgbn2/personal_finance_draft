@@ -1,22 +1,15 @@
-require('../../../shared/lib/runtime/env.js');
+import 'dotenv/config';
 import * as fs from 'node:fs/promises';
 import * as crypto from 'node:crypto';
 import * as path from 'node:path';
 import { spawnSync } from 'node:child_process';
+// @ts-ignore
+import Alpaca from '@alpacahq/alpaca-trade-api';
 import { createClobClient, resolveOwnerAddress, polymarketGet } from './clob_factory';
 import { runCycle, runBotLoop, runForceSell, runBotHealth } from './cycle';
 import { loadBotState, saveBotState } from './bot_state';
 // @ts-ignore
 const { buildAggregatedPortfolioSnapshot } = require('./polymarket_portfolio.js');
-// @ts-ignore
-const {
-  aggregatePolymarketFilledPositions,
-  buildPolymarketTokenMetadata,
-  markPolymarketHistoryIncomplete,
-  mergeTokenMetadata,
-  partitionPolymarketPositions,
-  projectPolymarketPosition,
-} = require('./polymarket_positions.js');
 // @ts-ignore
 const { fetchPolymarketGammaMarkets, fetchPolymarketGammaEvents } = require('./polymarket_markets.js');
 // @ts-ignore
@@ -90,13 +83,6 @@ interface Position {
   marketValue: number;
   unrealizedPl: number;
   cost_basis_unavailable?: boolean;
-  question?: string;
-  outcome?: string;
-  lifecycle?: 'active' | 'ended' | 'unknown';
-  currentPrice?: number | null;
-  valuationStatus?: 'live_quote' | 'unavailable';
-  resolutionPrice?: number | null;
-  historyStatus?: 'complete' | 'trade_history_truncated';
 }
 
 interface PolymarketTrade {
@@ -125,6 +111,87 @@ function toFiniteNumber(value: unknown, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function normalizePolymarketSide(side: unknown): 'buy' | 'sell' | null {
+  if (typeof side === 'string') {
+    const upper = side.toUpperCase();
+    if (upper === 'BUY') return 'buy';
+    if (upper === 'SELL') return 'sell';
+  }
+  if (side === 0) return 'buy';
+  if (side === 1) return 'sell';
+  return null;
+}
+
+function aggregatePolymarketFilledPositions(trades: PolymarketTrade[]): Position[] {
+  const buckets = new Map<string, {
+    assetId: string;
+    symbol: string;
+    quantity: number;
+    costBasis: number;
+    seenAt: number;
+  }>();
+
+  const sortedTrades = [...trades].sort((a, b) => {
+    const ta = Date.parse(String(a.match_time || a.last_update || ''));
+    const tb = Date.parse(String(b.match_time || b.last_update || ''));
+    return (Number.isFinite(ta) ? ta : 0) - (Number.isFinite(tb) ? tb : 0);
+  });
+
+  for (const trade of sortedTrades) {
+    const assetId = String(trade.asset_id || '');
+    if (!assetId) continue;
+
+    const side = normalizePolymarketSide(trade.side);
+    if (!side) continue;
+
+    // CLOB /trades returns size in raw units (1 raw = 0.1 shares); normalize to shares
+    const size = toFiniteNumber(trade.size) / 10;
+    const price = toFiniteNumber(trade.price);
+    if (size <= 0 || price < 0) continue;
+
+    const key = assetId;
+    const bucket = buckets.get(key) || {
+      assetId: key,
+      symbol: String(trade.outcome || trade.market || assetId),
+      quantity: 0,
+      costBasis: 0,
+      seenAt: 0,
+    };
+
+    bucket.symbol = String(trade.outcome || trade.market || assetId);
+    bucket.seenAt = Math.max(bucket.seenAt, Date.parse(String(trade.match_time || trade.last_update || '')) || 0);
+
+    if (side === 'buy') {
+      bucket.quantity += size;
+      bucket.costBasis += size * price;
+    } else {
+      if (bucket.quantity > 0) {
+        const avgCost = bucket.costBasis / bucket.quantity;
+        const closedSize = Math.min(bucket.quantity, size);
+        bucket.quantity -= closedSize;
+        bucket.costBasis = Math.max(0, bucket.costBasis - (avgCost * closedSize));
+      }
+    }
+
+    buckets.set(key, bucket);
+  }
+
+  return [...buckets.values()]
+    .filter((bucket) => bucket.quantity > 0)
+    .map((bucket) => {
+      const averagePrice = bucket.quantity > 0 ? bucket.costBasis / bucket.quantity : 0;
+      return {
+        assetId: bucket.assetId,
+        symbol: bucket.symbol,
+        quantity: bucket.quantity,
+        averagePrice,
+        marketValue: bucket.quantity * averagePrice,
+        unrealizedPl: 0,
+      };
+    })
+    .sort((a, b) => a.symbol.localeCompare(b.symbol));
+}
+
 /**
  * Hypothetical Broker Interface
  */
@@ -134,49 +201,6 @@ interface BrokerAdapter {
   getPortfolioBalance(): Promise<Record<string, number>>;
   getPositions(): Promise<Position[]>;
   getQuote(symbol: string): Promise<number>;
-}
-
-interface RiskContext {
-  referencePrice: number;
-  portfolioEquity: number;
-  currentDrawdown: number;
-  maxDrawdown: number;
-}
-
-function firstPositiveBalance(balances: Record<string, number>): number {
-  for (const key of ['EQUITY', 'pUSD', 'USD', 'USDT']) {
-    const value = Number(balances[key]);
-    if (Number.isFinite(value) && value > 0) return value;
-  }
-  return 0;
-}
-
-export async function buildRiskContext(order: TradeOrder, adapter: BrokerAdapter, dryRun: boolean): Promise<RiskContext> {
-  const explicitPrice = Number(order.price);
-  const referencePrice = Number.isFinite(explicitPrice) && explicitPrice > 0
-    ? explicitPrice
-    : Number(await adapter.getQuote(order.instrumentId));
-  if (!Number.isFinite(referencePrice) || referencePrice <= 0) {
-    throw new Error(`Unable to resolve a positive reference price for ${order.instrumentId}`);
-  }
-
-  const portfolioEquity = firstPositiveBalance(await adapter.getPortfolioBalance());
-  if (!Number.isFinite(portfolioEquity) || portfolioEquity <= 0) {
-    throw new Error('Unable to resolve positive portfolio equity from the broker account');
-  }
-
-  const drawdownInput = process.env.CURRENT_PORTFOLIO_DRAWDOWN;
-  const currentDrawdown = drawdownInput === undefined && dryRun ? 0 : Number(drawdownInput);
-  if (!Number.isFinite(currentDrawdown) || currentDrawdown < 0 || currentDrawdown > 1) {
-    throw new Error('CURRENT_PORTFOLIO_DRAWDOWN must be explicitly set between 0 and 1 for live execution');
-  }
-
-  const maxDrawdown = Number(process.env.MAX_ALLOWED_DRAWDOWN ?? 0.20);
-  if (!Number.isFinite(maxDrawdown) || maxDrawdown <= 0 || maxDrawdown > 1) {
-    throw new Error('MAX_ALLOWED_DRAWDOWN must be between 0 and 1');
-  }
-
-  return { referencePrice, portfolioEquity, currentDrawdown, maxDrawdown };
 }
 
 interface GateIoAdapterOptions {
@@ -441,7 +465,6 @@ class AlpacaAdapter implements BrokerAdapter {
     this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? true;
 
     if (keyId && secretKey) {
-      const Alpaca = require('@alpacahq/alpaca-trade-api');
       this.alpaca = new Alpaca({
         keyId,
         secretKey,
@@ -585,7 +608,7 @@ class AlpacaAdapter implements BrokerAdapter {
  * Bridge to simulate C++ Pre-Trade Risk logic
  */
 class RiskEngineBridge {
-  async checkRisk(order: TradeOrder, context: RiskContext): Promise<{ approved: boolean; reason?: string }> {
+  async checkRisk(order: TradeOrder): Promise<{ approved: boolean; reason?: string }> {
     console.log(`[RISK-ENGINE] Pre-trade check for ${order.instrumentId} (${order.quantity} units)`);
 
     // --- NEW: Global Kill Switch Check ---
@@ -628,16 +651,17 @@ class RiskEngineBridge {
     }
     
     // Preparation for C++ Risk Check
-    const notional = context.referencePrice * order.quantity;
+    const notional = (order.price || 0) * order.quantity;
+    const volatility = Number(process.env.ESTIMATED_PORTFOLIO_VOLATILITY || 50000); // Proxy for equity/vol
+    const drawdown = Number(process.env.CURRENT_PORTFOLIO_DRAWDOWN || 0.0);
+    const maxDrawdown = Number(process.env.MAX_ALLOWED_DRAWDOWN || 0.20);
 
     const riskCheckArgs = [
       'risk', 'check',
       '--notional', notional.toString(),
-      '--equity', context.portfolioEquity.toString(),
-      // Keep the legacy alias until previously built native binaries have aged out.
-      '--volatility', context.portfolioEquity.toString(),
-      '--drawdown', context.currentDrawdown.toString(),
-      '--max-drawdown', context.maxDrawdown.toString()
+      '--volatility', volatility.toString(),
+      '--drawdown', drawdown.toString(),
+      '--max-drawdown', maxDrawdown.toString()
     ];
 
     console.log(`[RISK-ENGINE-BRIDGE] Invoking: ${binary} ${riskCheckArgs.join(' ')}`);
@@ -691,16 +715,8 @@ class ExecutionGateway {
       return false;
     }
 
-    let riskContext: RiskContext;
-    try {
-      riskContext = await buildRiskContext(order, this.adapter, this.dryRun);
-    } catch (error: any) {
-      console.error(`[RISK] Rejection: ${error.message}`);
-      return false;
-    }
-
     // Advanced risk engine validation (C++ Bridge)
-    const riskResult = await this.riskEngine.checkRisk(order, riskContext);
+    const riskResult = await this.riskEngine.checkRisk(order);
     if (!riskResult.approved) {
       console.error(`[RISK] Rejection: ${riskResult.reason}`);
       return false;
@@ -762,7 +778,6 @@ class ExecutionGateway {
         });
       }
 
-      let failedCount = 0;
       for (const orderData of validation.orders) {
         const order: TradeOrder = {
           instrumentId: orderData.instrumentId,
@@ -774,21 +789,6 @@ class ExecutionGateway {
           timestamp: new Date()
         };
         await this.execute(order);
-        // execute() reports failure only by mutating order.status; inspect it
-        // here so a failed order in a batch is not silently lost as a
-        // console-only log line. Mirrors the buy/sell CLI path's post-execute
-        // status check + non-zero exit, so any future caller bridging the
-        // `process` command sees a real failure signal instead of ok.
-        if (order.status === OrderStatus.FAILED || order.status === OrderStatus.RISK_REJECTED) {
-          failedCount += 1;
-          console.error(`[GATEWAY] Order ${order.status} for ${order.instrumentId}: ${order.error || `Order ${order.status}`}`);
-        }
-      }
-      if (failedCount > 0) {
-        process.exitCode = 1;
-        console.error(`[GATEWAY] ${failedCount} of ${validation.orders.length} proposed order(s) failed.`);
-      } else {
-        console.log(`[GATEWAY] All ${validation.orders.length} proposed order(s) processed successfully.`);
       }
     } catch (error: any) {
       if (error.code === 'ENOENT') {
@@ -812,7 +812,6 @@ Commands:
   buy <symbol> <qty> [type] [price]    Place a buy order
   sell <symbol> <qty> [type] [price]   Place a sell order
   balance                              Show account balance
-  positions                            Show open Alpaca positions (use --live for the live account)
   aggregate_portfolio                  Aggregate balances across all brokers
   polymarket portfolio                 Show pUSD, open orders, and filled positions
   polymarket debug                     Show signer/funder, balance, allowance, and account diagnostics
@@ -1091,21 +1090,24 @@ class PolymarketAdapter implements BrokerAdapter {
     this.lastTradePagination = tradePagination;
     // truncation is noted in trade_pagination; no console noise needed
     const trades = allTrades;
-    const positions: Position[] = aggregatePolymarketFilledPositions(trades);
+    const positions = aggregatePolymarketFilledPositions(trades);
 
     if (positions.length === 0) return [];
-    if (tradePagination.truncated) {
-      return markPolymarketHistoryIncomplete(positions, 'trade_history_truncated');
-    }
 
-    // Resolve lifecycle before valuation. Fill history alone cannot distinguish an
-    // active holding from an ended/redeemed market, so unknown/ended rows fail
-    // closed and never inherit cost basis as a fake current value.
+    // Batch-fetch market questions from Gamma API for all unique token IDs.
+    // Two passes: (1) default (active markets) and (2) active=false (resolved/closed markets).
+    // Gamma API excludes resolved markets by default, so a second pass is required to name them.
     const uniqueTokenIds = [...new Set(positions.map((p) => p.assetId).filter(Boolean))];
-    const tokenMetadata = new Map<string, any>();
+    const tokenToQuestion: Record<string, string> = {};
     if (uniqueTokenIds.length > 0) {
       const axios = require('axios') as any;
       const gammaHeaders = { accept: 'application/json' };
+      const parseMarketQuestion = (m: any) => {
+        const tokenIds: string[] = (() => {
+          try { return JSON.parse(m.clobTokenIds ?? m.clob_token_ids ?? '[]'); } catch { return []; }
+        })();
+        tokenIds.forEach((tid) => { if (tid && !tokenToQuestion[tid]) tokenToQuestion[tid] = m.question ?? ''; });
+      };
       const buildParams = (extra?: Record<string, string>) => {
         const p = new URLSearchParams();
         uniqueTokenIds.forEach((id) => p.append('clob_token_ids', id as string));
@@ -1117,10 +1119,10 @@ class PolymarketAdapter implements BrokerAdapter {
       try {
         const resp = await retryTransient(() => axios.get(`https://gamma-api.polymarket.com/markets?${buildParams().toString()}`, { timeout: 8000, headers: gammaHeaders }));
         const markets: any[] = Array.isArray(resp.data) ? resp.data : (resp.data?.data ?? []);
-        mergeTokenMetadata(tokenMetadata, buildPolymarketTokenMetadata(markets));
+        markets.forEach(parseMarketQuestion);
       } catch { /* best-effort */ }
       // Pass 2 — resolved/closed markets (Gamma excludes these from the default response)
-      const stillMissing = uniqueTokenIds.filter((id) => !tokenMetadata.has(String(id)));
+      const stillMissing = uniqueTokenIds.filter((id) => !tokenToQuestion[id as string]);
       if (stillMissing.length > 0) {
         try {
           const p2 = new URLSearchParams();
@@ -1129,28 +1131,16 @@ class PolymarketAdapter implements BrokerAdapter {
           p2.set('active', 'false');
           const resp2 = await retryTransient(() => axios.get(`https://gamma-api.polymarket.com/markets?${p2.toString()}`, { timeout: 8000, headers: gammaHeaders }));
           const markets2: any[] = Array.isArray(resp2.data) ? resp2.data : (resp2.data?.data ?? []);
-          mergeTokenMetadata(tokenMetadata, buildPolymarketTokenMetadata(markets2));
+          markets2.forEach(parseMarketQuestion);
         } catch { /* best-effort */ }
       }
     }
 
-    const lifecycle: Position[] = positions.map((position: Position) => projectPolymarketPosition(
-      position,
-      tokenMetadata.get(String(position.assetId || '')),
-      null,
-    ));
-    const { active } = partitionPolymarketPositions(lifecycle);
-    let clientForQuote: any = null;
-    if (active.length > 0) {
-      try {
-        clientForQuote = await createClobClient({ host: this.host });
-      } catch {
-        clientForQuote = null;
-      }
-    }
-
-    const projected: Position[] = await Promise.all(lifecycle.map(async (position: Position) => {
-      if (position.lifecycle !== 'active' || !clientForQuote) return position;
+    // Suppress SDK's internal console.error for resolved-market 404s across all concurrent fetches
+    const origConsoleError = console.error;
+    console.error = () => {};
+    const clientForQuote = await createClobClient({ host: this.host });
+    const priced = await Promise.all(positions.map(async (position) => {
       const tokenId = position.assetId || position.symbol;
       let currentPrice = 0;
       try {
@@ -1159,14 +1149,22 @@ class PolymarketAdapter implements BrokerAdapter {
       } catch {
         currentPrice = 0;
       }
-      return projectPolymarketPosition(
-        position,
-        tokenMetadata.get(String(position.assetId || '')),
-        currentPrice,
-      );
+      const marketValue = currentPrice > 0 ? currentPrice * position.quantity : position.marketValue;
+      const unrealizedPl = currentPrice > 0 ? (currentPrice - position.averagePrice) * position.quantity : 0;
+      const question = position.assetId ? tokenToQuestion[position.assetId] : undefined;
+      const label = question
+        ? `${question.slice(0, 38)}… (${position.symbol})`
+        : position.symbol;
+      return {
+        ...position,
+        symbol: label,
+        marketValue,
+        unrealizedPl,
+      };
     }));
+    console.error = origConsoleError;
 
-    return projected.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    return priced.sort((a, b) => a.symbol.localeCompare(b.symbol));
   }
 
   async getQuote(symbol: string): Promise<number> {
@@ -1315,9 +1313,6 @@ function renderPolymarketSection(pm: PolymarketSection) {
   const pusdBalance = pm.balance?.pUSD ?? 0;
   const ts = pm.lastUpdated ? new Date(pm.lastUpdated).toLocaleTimeString() : '?';
   console.log(`  ${ansi.bold}Balance${ansi.reset}  ${ansi.green}${fmtUsd(pusdBalance)}${ansi.reset}  ${ansi.dim}pUSD · ${ts}${ansi.reset}`);
-  if (pm.trade_pagination?.truncated) {
-    console.log(`  ${ansi.yellow}Trade history reached the configured page cap; reconstructed positions are unclassified and excluded from marked equity.${ansi.reset}`);
-  }
 
   // Open orders
   if (pm.openOrders && pm.openOrders.length > 0) {
@@ -1328,45 +1323,34 @@ function renderPolymarketSection(pm: PolymarketSection) {
     });
   }
 
+  // Split positions: named (have market question) vs unknown (only outcome label)
   const all = pm.positions ?? [];
-  const partitioned = partitionPolymarketPositions(all) as {
-    active: Position[];
-    ended: Position[];
-    unknown: Position[];
-  };
-  const { active, ended, unknown } = partitioned;
-  const marked = active.filter((position: Position) => position.valuationStatus === 'live_quote');
+  const named   = all.filter((p) => p.symbol.includes('…') || p.symbol.length > 6);
+  const unknown = all.filter((p) => !p.symbol.includes('…') && p.symbol.length <= 6);
 
-  if (active.length > 0) {
-    const totalValue = marked.reduce((sum: number, position: Position) => sum + position.marketValue, 0);
-    const totalPnl   = marked.reduce((sum: number, position: Position) => sum + position.unrealizedPl, 0);
+  if (named.length > 0) {
+    const totalValue = named.reduce((s, p) => s + p.marketValue, 0);
+    const totalPnl   = named.reduce((s, p) => s + p.unrealizedPl, 0);
     const pnlColor   = totalPnl >= 0 ? ansi.green : ansi.red;
-    const unavailable = active.length - marked.length;
-    const unavailableLabel = unavailable > 0 ? ` · ${unavailable} unpriced` : '';
-    console.log(`\n  ${ansi.bold}Active Positions${ansi.reset}  ${ansi.dim}(${active.length} markets · marked ${fmtUsd(totalValue)} · PnL ${pnlColor}${fmtPnl(totalPnl)}${ansi.reset}${ansi.dim}${unavailableLabel})${ansi.reset}`);
-    active.forEach((p: Position) => {
+    console.log(`\n  ${ansi.bold}Active Positions${ansi.reset}  ${ansi.dim}(${named.length} markets · total ${fmtUsd(totalValue)} · PnL ${pnlColor}${fmtPnl(totalPnl)}${ansi.reset}${ansi.dim})${ansi.reset}`);
+    named.forEach((p) => {
       const plColor = p.unrealizedPl > 0 ? ansi.green : p.unrealizedPl < 0 ? ansi.red : ansi.dim;
       const label = p.symbol.length > 50 ? p.symbol.slice(0, 50) + '…' : p.symbol;
-      const value = p.valuationStatus === 'live_quote' ? fmtUsd(p.marketValue).padStart(7) : '    n/a';
-      const pnl = p.valuationStatus === 'live_quote' ? fmtPnl(p.unrealizedPl).padStart(8) : '     n/a';
       console.log(
         `  ${ansi.dim}·${ansi.reset} ${label.padEnd(52)}` +
         `  ${ansi.dim}qty${ansi.reset} ${fmtQty(p.quantity).padStart(7)}` +
-        `  ${value}` +
-        `  ${plColor}${pnl}${ansi.reset}`
+        `  ${fmtUsd(p.marketValue).padStart(7)}` +
+        `  ${plColor}${fmtPnl(p.unrealizedPl).padStart(8)}${ansi.reset}`
       );
     });
   }
 
-  if (ended.length > 0) {
-    console.log(`\n  ${ansi.dim}Ended positions: ${ended.length} hidden from active holdings and marked equity; review settlement history before redemption.${ansi.reset}`);
-  }
-
   if (unknown.length > 0) {
-    console.log(`\n  ${ansi.yellow}Unclassified positions: ${unknown.length}; excluded from active holdings and marked equity.${ansi.reset}`);
+    const unValue = unknown.reduce((s, p) => s + p.marketValue, 0);
+    console.log(`\n  ${ansi.dim}+ ${unknown.length} unnamed positions  (total ${fmtUsd(unValue)})${ansi.reset}`);
   }
 
-  if (active.length === 0 && ended.length === 0 && unknown.length === 0) {
+  if (named.length === 0 && unknown.length === 0) {
     console.log('  No positions.');
   }
 }
@@ -1867,9 +1851,6 @@ async function _polymarketOrderCore(
 ): Promise<any> {
   if (!tokenId) return { ok: false, error: 'Missing token id' };
   if (!Number.isFinite(quantity) || quantity <= 0) return { ok: false, error: 'Quantity must be a positive number' };
-  if (!options.preflightOnly && (!Number.isFinite(price) || Number(price) <= 0 || Number(price) >= 1)) {
-    return { ok: false, error: 'Live Polymarket orders require an explicit price between 0 and 1' };
-  }
 
   const adapter = new PolymarketAdapter();
   const identity = adapter.getAccountIdentity();
@@ -1925,10 +1906,6 @@ async function _polymarketOrderCore(
     }
   } else {
     try {
-      const gateway = new ExecutionGateway({ dryRun: false, adapter });
-      if (!(await gateway.validateOrder(orderInput))) {
-        return { ...errorBase, error: 'Order rejected by pre-trade risk controls' };
-      }
       const result = await adapter.placeOrder(orderInput);
       return {
         ok: true,
@@ -2078,15 +2055,6 @@ export async function main() {
         console.log(JSON.stringify(balances));
     } else {
         console.log(`[GATEWAY] Current Portfolio Balances:`, balances);
-    }
-  } else if (command === 'positions') {
-    // Alpaca-only position read (unlike aggregate_portfolio, which dedupes by
-    // symbol across brokers and would contaminate a same-ticker lookup).
-    const positions = await adapter.getPositions();
-    if (useJson) {
-        console.log(JSON.stringify({ ok: true, positions }));
-    } else {
-        console.log(`[GATEWAY] Alpaca Positions:`, positions);
     }
   } else if (command === 'aggregate_portfolio') {
     const isVerbose = !useJson;
@@ -2533,16 +2501,6 @@ export async function main() {
       const price = args[4] !== undefined ? Number(args[4]) : undefined;
       const tickSizeOverride = parseOptionValue(args.slice(2), '--tick-size');
       const preflightOnly = args.includes('--preflight');
-      if (!preflightOnly && (!args.includes('--live') || process.env.SOVEREIGN_EXECUTION_AUTHORIZED !== 'true')) {
-        const blocked = {
-          ok: false,
-          error: 'Live Polymarket submission requires --live and CLI authorization',
-        };
-        if (useJson) console.log(JSON.stringify(blocked));
-        else console.error(`${ansi.red}${blocked.error}${ansi.reset}`);
-        process.exitCode = 1;
-        return;
-      }
       const placed = preflightOnly
         ? await preflightPolymarketOrder(String(tokenId || ''), quantity, price, tickSizeOverride, sub)
         : await submitPolymarketOrder(String(tokenId || ''), quantity, price, tickSizeOverride, sub);

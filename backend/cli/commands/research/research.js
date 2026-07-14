@@ -13,7 +13,6 @@ const {
 } = require('../../../scripts/data_ops/ingest_market_data.js');
 
 const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quote_router.js');
-const { DEFAULT_INDICATOR_OPTIMIZATION } = require('../../../../shared/lib/runtime/paths.js');
 const { guardEquitySessionBars } = require('../../../../shared/lib/market/equity_session.js');
 const { upsertStrategyGradeRecord, inferStrategyTaxonomy, normalizeStrategyPath } = require('../../../../shared/lib/strategy/registry.js');
 
@@ -22,7 +21,7 @@ const { filterFeatureFrame, runBacktest, splitFeatureFrame, rollingWalkForward }
 const { calculateFeatureFrame, calculateRollingFeatureFrame,
         DEFAULT_PERIODS } = require('../../../../shared/lib/market/indicators.js');
 
-const { compareModels, ONNX_MODEL_NAMES, MODEL_ALIASES } = require('../../../../shared/lib/ml/models.js');
+const { compareModels } = require('../../../../shared/lib/ml/models.js');
 
 const { mergeSnapshots, readSnapshot,
         validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation.js');
@@ -541,15 +540,6 @@ async function commandBacktest(args) {
     engine: sampleMode ? 'js' : (strategyMeta?.engine || 'auto'),
   };
   const sampleWindowNote = backtestModeNote(sampleMode, quality);
-  // For real ONNX models, precompute predictions onto feature._onnxPred so the sync
-  // backtest loop can call model.predict() without blocking on async ONNX inference.
-  const resolvedModel = MODEL_ALIASES[model] || model;
-  if (ONNX_MODEL_NAMES.has(resolvedModel)) {
-    const { precomputeForFeatures } = require('../../../../shared/lib/ml/onnx_runner.js');
-    if (!hasFlag(args, '--json')) process.stdout.write('\x1b[90m⌛ running ONNX inference...\x1b[0m\n');
-    await precomputeForFeatures(resolvedModel, featureFrame.features || []);
-  }
-
   let inSample;
   let outOfSample;
   let fullBacktest;
@@ -662,7 +652,7 @@ async function commandBacktest(args) {
 }
 
 async function commandOptimize(args) {
-  const output = optionValue(args, '--output', DEFAULT_INDICATOR_OPTIMIZATION);
+  const output = optionValue(args, '--output', path.join(REPO_ROOT, 'data', 'models', 'latest_indicator_optimization.json'));
 
   let strategyPath = resolveStrategyPathInput(optionValue(args, '--strategy', null));
   let strategyMeta = null;

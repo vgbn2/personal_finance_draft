@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-07-13.md`** (last update: 2026-07-13 session 77)
+- Latest/current handoff: **`workspace/handoff/2026-07-04.md`** (last update: 2026-07-04 session 40)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -19,200 +19,246 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Open carryovers (keep this list current)
 
-- **SESSION 59 (2026-06-25) cont. — docs/ triage + workspace/BOOTSTRAP.md + docs/codebase_tour/.
-  Committed `2865299f` (docs) + `264e4ee2` (gitignore cleanup).** User felt they'd lost track of the
-  codebase from heavy AI-assisted work. Found the repo already has 30+ files under `docs/` that simply
-  never get read at session boot (fixed: `workspace/BOOTSTRAP.md` now exists and points at
-  `docs/README.md`). Triage found 2 "canonical" docs are badly stale (`architecture_overview.md` calls
-  live trading "*Planned*"; `capability_manifest.md` describes an old flat file layout) and 17 broken
-  links in `docs/README.md` itself (moved `docs/operational/*` files, hub never updated). Built
-  `docs/codebase_tour/` — 8 modules with real file:line-grounded explanations + hands-on labs for the
-  genuine gap (current-code reverse engineering; `docs/guide/` is a different, generic from-scratch
-  teaching book). Also untracked 5 routine cron-generated files + extended `.gitignore` (a recurring
-  noise pattern flagged across many prior sessions' notes, finally closed). Full trail:
-  `workspace/STATE.md`'s "Process Note" + `workspace/BOOTSTRAP.md`. **Still open:** the stale docs
-  flagged in the triage weren't rewritten, just flagged (deliberate — out of scope for this pass, a
-  future session's call on whether to fix or retire them).
-- **SESSION 59 (2026-06-25) — Focused blast-through + mass-implement same session. All 3 found
-  findings FIXED. 0 commits yet (pending user go-ahead).** Full trail: `workspace/DEV_REVIEW.md`
-  ("Focused Blast-Through" + "Mass-Implement" entries, both 2026-06-25 session 59). Audited the 2
-  commits the ledger hadn't seen yet (`13bc91f0`/`5e60babb`) — clean. Found and fixed: (1) the
-  session-58 oversell clamp's bookkeeping was wrong (`realizedPnl` off the pre-clamp qty, unsold
-  remainder dropped from tracking) — new pure `buildExitOutcome` helper in `alpaca_bot_cycle.js`
-  fixes it + 4 tests; (2) the PIN-strip fix only covered 1 of 8 `buildTradeGatewayLaunch` callers (no
-  active leak found, but fragile) — centralized into the chokepoint itself + 3 tests; (3) 5 stale
-  "crashes"/"TODO" dev-review comments in the dashboard manifest no longer matched reality — deleted/
-  corrected. Suite **623/621/0fail/2skip** (+7), hygiene clean. `shared/lib/runtime` B→A.
-  **Deliberately left alone:** `sovereign_dashboard.mjs:171` (redundancy question on `backend
-  universe`) and lines 260/267 ("doesn't work" on `polymarket history`/`backtest`, plausibly also
-  stale given the session-54/55 crash fixes, but not re-verified this pass) — flagged for a future
-  cleanup pass that actually checks them, not touched speculatively. **Still the user's:** the same
-  standing real-terminal confirmations below, plus a commit decision for this session's diff.
-  **Same session, follow-up fix:** user reported the Trade section *still* defaulted to "the legacy
-  version" even after the in-pane fix above — root cause was different: `alpaca`'s manifest entry had
-  no flags, so it always hit `commandTrade`'s `args.length===0` branch and launched the full
-  interactive trade wizard (a different code path from the literal legacy TUI, same full-screen-prompt
-  feel). Fixed: real flags added (`--action/--symbol/--qty/--order-type/--price/--pin/--live`) + a new
-  `buildTradeArgsFromActionFlag` helper in `trade.js` that translates them to the wizard's own
-  positional args; `alpaca` removed from `INTERACTIVE_CMDS`. 7 new tests, suite 630/628/0fail/2skip,
-  hygiene clean. See `workspace/STATE.md`'s "Fix Note" for the full trail.
-- **SESSION 58 (2026-06-23) cont. — Trade-section dashboard UX (commits `13bc91f0`, `5e60babb`).**
-  (1) "Trade section drops me into legacy" was `strategy`/`prop-firms`/`run`/`favorites` being in
-  `INTERACTIVE_CMDS` (unmounted the Ink dashboard into the old prompt UI) — moved them to **in-pane**;
-  `commandStrategyMenu` got a non-interactive `list` path; added a `dashboard_crash.log` global handler.
-  (2) Added a **`positions`** entry to the dashboard Trade section (the session-57 "dashboard entry" claim
-  was false — it only lived in the legacy `manifest.js`; the dashboard uses its own inline `M`); runs
-  in-pane with `--live`, and `auto-trade status` is no longer behind the `ai_agent_trading` gate. Suite
-  616/614/0fail/2skip; hygiene clean. **Still the user's:** live-terminal confirmation that activating
-  the trade commands now stays in-dashboard (no conhost in CI).
+- **SESSION 39 (2026-06-19) — first real GitHub backup of this repo (subtree-split push), FW2 fully
+  done.** Full trail: `workspace/handoff/2026-06-19.md`. Discovered this directory's actual git root is
+  the whole CODEPTIT monorepo (not personal_finance_draft alone) and that `origin` already holds its own
+  divergent `main`/`feat/session-guard-intraday-rollup` history (commit `be96d76c`, real distinct work:
+  backfill-daemon parallel lanes, clear-api-cache command, TUI refactors — not in local history). Used
+  `git subtree split --prefix=personal_finance_draft <branch> -b <new>` (run from the monorepo
+  toplevel) to extract just this project's history, then pushed all 4 local branches under `local-*`
+  names so origin's existing branches stay untouched: `local-main`, `local-feat-session-guard-intraday-rollup`,
+  `local-feat-ml-onnx-section`, `local-feat-resilient-crypto-fallback`. **Next-session first step (user
+  decision, not started):** decide whether/how to reconcile origin's unique `be96d76c`-lineage commits
+  into local history, and whether `local-*` becomes the real tracked upstream going forward. 4 leftover
+  local scaffolding branches (`pfd-*-subtree`) are harmless byproducts, not cleaned up.
+- **SESSION 39 (2026-06-18/19) — FW2 monolith deconstruction FULLY COMPLETE** (all 4 batches landed:
+  backend/research/trade/data session 38 + candle_utils/manifests/providers-prediction/snapshot_fetchers
+  this session). Root-caused and fixed the exact reason Batch 4 was paused twice (stale sibling-module
+  cache during `Module._load` provider-stubbing tests — fix: purge the whole `ingest_market_data/`
+  directory tree from `require.cache`, not just `index.js`'s own entry). `ingest_market_data/index.js`
+  2227→1342 lines. Also: fixed a real duplicate-`registry:`-block bug in `config/trading/strategies.yaml`
+  (silently double-listed all 14 strategies), and reviewed+committed a separate concurrent "vintage
+  audit"/human-readable-CLI-output batch that was actively being built mid-session by another tool/agent
+  (not mine — verified coherent and green before committing). Suite 490/490 throughout. Full trail:
+  `workspace/handoff/2026-06-15.md` session 39.
+- **SESSION 36 (2026-06-15) — backfill-daemon OOM fixed at the root + hard-tested + COMMITTED. Suite
+  488/488.** Full trail: `workspace/handoff/2026-06-15.md` session 36. `backfill-daemon --concurrency 5`
+  was OOMing (V8 heap ~4GB) in the crypto lane because each incremental job deserialized the whole
+  multi-million-row 1m bin as JS objects **twice** (the `writeTsIndex` merge + `rollupFromBase`). Fix:
+  (1) `mergeWriteBin` — buffer-level two-sorted-stream merge in `writeTsIndex` (off-heap, byte-identical
+  to the old merge); (2) `readTsIndexSince` + windowed incremental rollup; (3) `LANE_MAX_CONCURRENCY`
+  clamp on the 1m lanes + Docker heap headroom. Hard-tested: byte-equiv vs a frozen reference + a
+  child-process OOM differential (original child status 134, new exit 0); live daemon survives the stock
+  4GB heap (18/18 crypto, 0 errors, ~3× faster). **This commit also landed the still-uncommitted
+  session-35 batch** (3 commits total; `data.js` carried both s35 marker-guard and s36 rollup-windowing
+  so they committed together). NOT committed (deliberate): `storage/data/_quarantine_grain/` (8.3M,
+  reversible, **not** gitignored), plus the usual untracked carryovers (`.antigravitycli/`, repo-local
+  `skills/`, `scripts/dev/check_hygiene.js`, `backend_correlation_preflight.test.js`). **Open (not
+  blocking):** intraday DEPTH inconsistency (Yahoo TFs differ in native depth — network re-fetch pass);
+  graphify-out refresh; merge `feat/ml-onnx-section`→main (user); Ubuntu SSH sync (machine off).
 
-- **SESSION 58 (2026-06-23) — Deep order-placement review DONE + all 4 findings FIXED in the same session
-  (mass-implement). 1 commit `cf4f7026`.** Fix pass closed every OPEN finding from the review: `maxPositions`
-  now enforced on entry (`canOpenPosition`), entry records broker filled qty (`resolveEntryQty`), exit sells
-  clamped to available broker shares per symbol (`resolveExitQty`+counter), trade PIN stripped from the
-  gateway subprocess argv (`stripFlagValue`), and the TUI "Positions" view got a `--live` toggle so its P&L
-  reads the live account. Suite **616/614/0fail/2skip** (+11 tests); manifest-sensitive tests 39/39; hygiene
-  clean. Grades: `shared/lib/runtime` B→**A**, `backend/cli` B→**B+**. **No remaining order-placement
-  findings.** Lower-priority leftovers (not gating, in `DEV_REVIEW.md`): Gate.io spot market-order semantics
-  want one empirical paper probe (unverified, not deep-audited); C++ `kronos_integration_test` needs ≥4
-  seeded data points; realized-P&L uses pre-sell snapshot price (logging only). Review trail below:
-- **SESSION 58 (2026-06-23) — Deep order-placement review (closes the session-57 flag).** Full trail: `workspace/handoff/2026-06-23.md`
-  session 58 + `workspace/DEV_REVIEW.md` ("Blast-Through Deep Review — 2026-06-23 session 58"). Ran as a
-  full blast-through (anchor `0903df6b`→`1c7227b7`, DCS 0.96→0.97), all 3 execution surfaces + new
-  `shared/lib/runtime` + lightweight `backend/core` C++ pass; `workspace/REVIEW_LEDGER.md` stamped (every
-  in-scope row now 2026-06-23; C++ no longer carried-forward-unreviewed). **No gating findings.**
-  Verified-good: gateway propagates non-zero exit on failed orders (no phantom positions), risk-engine +
-  PIN gate fail closed, Alpaca 422 fix intact, runtime tests 11/11, C++ 28/29 ctest (1 data-availability
-  fail, not a regression). **OPEN (next debt-clearing move, all on this/last session's code, awaiting user
-  go-ahead — nothing implemented):** (1) [Med-High] `maxPositions` never enforced on entry; (2) [Med]
-  trade PIN leaks into the gateway subprocess argv (`commandTrade`→`buildTradeGatewayLaunch`); (3) [Med]
-  entry records requested qty not broker filled qty → partial-fill exit oversell; (4) [Med] same-symbol
-  stacking → exit oversell. Suggested: one focused commit for 1/3/4 (`alpaca_bot_cycle.js`+`strategy.js`)
-  + one-line `--pin` strip in `trade.js` (#2).
-- **SESSION 57 (2026-06-23) — Committed session 56; built Alpaca position tracker + auto-exit loop
-  (commit `17f565fb`); flagged SESSION 58 as a deep order-placement review.** Full trail:
-  `workspace/handoff/2026-06-23.md` session 57. Alpaca's `auto-trade` loop was entry-only (no stops/
-  targets/age-exit, no position memory) — built the JS equivalent of Polymarket's `bot_state.ts`/
-  `cycle.ts` (`shared/lib/runtime/{process_lock,alpaca_bot_state,alpaca_bot_cycle}.js`), wired into
-  `strategy.js`'s `runAutomationPass` (review/exit before new entries), new gateway `positions`
-  command, `auto-trade status` view. Verified live by hand (real fill-price reconciliation, a forced
-  age-exit closing a position + logging P&L, a real dry-run pass) plus suite 605/603/0fail/2skip
-  (+11 tests), hygiene clean, gateway tsc clean.
-  **NEXT SESSION (58) IS A DEEP REVIEW SESSION per explicit user instruction — read this first:**
-  check the relevant files and the API-bot connections that place real orders across **all three**
-  execution surfaces (TradFi/Alpaca equities, crypto/Alpaca+Gate.io, prediction markets/Polymarket).
-  Starting points are listed in the session-57 handoff entry (the three `BrokerAdapter` impls +
-  `ExecutionGateway.execute()` in `index.ts`, both live bot loops — Polymarket's `cycle.ts` and the
-  new Alpaca cycle this session built, the PIN/auth/feature-gate chain, and known-unreviewed items
-  like `processProposedOrders` and the Alpaca 422 fix). Nothing scoped yet — this is a framing flag,
-  not a plan.
-- **SESSION 56 (2026-06-23) — "/" chat suggestions + cursor-robustness generalization + legacy-TUI
-  engine switch (now symmetric both ways). UNCOMMITTED, 6 files.** Full trail:
-  `workspace/handoff/2026-06-23.md`. Chat bar's `/` now opens a live-filtered command dropdown
-  (↑↓/Tab) rendered inside the same bordered box; cursor-position math generalized from a fixed
-  `H-3` to `H-3-suggestionRowCount` (shared variable, can't drift) and a separate latent multi-line
-  text-wrap bug on long input was fixed alongside it (`height:1`+`overflowY:'hidden'` clip). First
-  "legacy mode" attempt (hiding the chat bar inside the same dashboard) was wrong per direct user
-  correction — REVERTED — and replaced with the real fix: `Settings > Layout > legacy` now exits
-  the Ink dashboard and hands off to the actual older `runInteractiveMenu` engine
-  (`tui/engine.js`), with the inverse wired too (picking `default`/`compact`/`research` from
-  *inside* that legacy menu now exits it back to the dashboard). `sovereign_cli.js`'s boot loop
-  only relaunches the other engine when the persisted layout actually changed during that run —
-  caught and fixed a self-inflicted "relaunch on every exit" regression that would have trapped a
-  normal `q`-quit. **STILL OPEN:** the legacy→dashboard switch direction is verified by code trace
-  only (no test harness drives the legacy menu's `promptSelect` flow) — needs a live-terminal
-  check, same caveat as every other interactive-TUI fix here (no real conhost in CI). Nothing
-  committed yet this session — pending user go-ahead. User floated screen-sharing as a future way
-  to debug interactive TUI changes together more directly; explicitly deferred, no action taken.
-- **SESSION 55 (2026-06-22) — Blast-through audit + TWO mass-implement passes. Cleared all queued
-  debt AND all four open carryovers. 7 commits.** Full trail: `workspace/handoff/2026-06-22.md`
-  (session 55) + `workspace/DEV_REVIEW.md` (both mass-implement closeouts + corrected audit block).
-  **Pass 1 (debt):** (A) `renameWithRetry` busy-wait→`Atomics.wait` + first-ever tests; (B) deleted 3
-  dead root shims (`backfill/ingestion/market_validation`) — `polymarket_history.js` was wrongly flagged
-  dead and KEPT (grep `.js`-extension blind spot, fixed in the blast-through skill); (C) gateway
-  fetch-retry rollout finished. **Pass 2 (carryovers + last debt):** gateway `processProposedOrders`
-  failure reporting (`4f65c7aa`); **chart upgrade all 3 parts** — candlesticks + SMA overlay + volume
-  subplot, `--style candle`/`--sma`/`--volume` (`79d2129f`, `2d17aa26`); **typing-lag fix** — Ink 7
-  full-clears every frame on `win32 && fullscreen`, capped root height to `rows-1` for the line-diff path
-  (`77cd31a7`); **graphify-out** AST-only refresh (11,015→11,542 nodes, gitignored). Suite
-  **594/592/0fail/2skip**, hygiene clean, gateway tsc exit 0.
-  **STILL OPEN — carryover #3, the user's to do (no conhost/real-terminal in CI):** live confirmation
-  of the `bt --strategy` picker and the `backend visualize` force-ingest fallback. Their dev-review
-  comments remain in place pending that. **Other:** consider tightening `.graphifyignore` (doc-change
-  set was mostly noise) before any full semantic graphify rebuild.
-- **SESSION 55 (cont., into 2026-06-23) — TYPING-LAG/CURSOR BUG RESOLVED (carryover #2 closed,
-  user-confirmed).** Long arc on `sovereign_dashboard.mjs` Windows-conhost typing: chars ghosted/
-  misplaced. Root cause = forced alt-screen+fullscreen made Ink mis-position the cursor (a raw-mode
-  probe proved it was positioning, not echo). Fixed by rendering in **normal flow** (no `\x1b[?1049h`,
-  non-fullscreen height) + clear-on-mount + ink `<TextInput>` + (user-authored final piece, commit
-  `521372b3`) `useCursor()` relocating the hardware cursor into the input box with `showCursor:false`
-  + `\x1b[?25l/h`. I added an `isTTY` guard so the fake-TTY tests stay green. The `rows-1` hack was
-  tried and reverted. Suite **594/592/0fail/2skip**, hygiene clean. Full recipe in memory
-  `reference-ink-windows-fullscreen-lag`. graphify-out now stale again for the dashboard rewrite
-  (deferred). Throwaway `scripts/dev/diag_rawmode.mjs` deleted at close.
-- **SESSION 54 (2026-06-22) — Closed the full 15-item dev-review bug backlog on
-  `sovereign_dashboard.mjs` (shared-root-cause crash fix for 4 commands, watch/ingest TTY-garbage
-  fix, polymarket backtest null-path crash, type-to-edit, strategy picker, force-ingest fallback,
-  live-chart mode) AND built a chat-style command input as the new default entry point. Full
-  trail: `workspace/handoff/2026-06-22.md`.** Two commits: `95a9c547`, `a0a5cda5`. Suite
-  580/578/0fail/2skip throughout; hygiene clean. Caught and fixed a real process leak (8 orphaned
-  live-trading child processes from repeated test runs — killed with explicit user confirmation).
-  **`graphify-out` NOT refreshed** — large diff (2 new files, big dashboard rewrite), should
-  refresh next session if touching dashboard/chat code again. **Next-session candidates:** (1)
-  chart upgrade — candlesticks + volume + SMA overlay for `renderPriceChart()`
-  (`tui/visualizations.js:200`), researched and ranked, candlesticks alone is the cheap first step;
-  (2) chat bar typing lag on the legacy PowerShell console host — needs a single-line redraw path
-  isolated from the full Ink re-render, notes inline next to `chatBar` in `sovereign_dashboard.mjs`;
-  (3) strategy picker + force-ingest fallback still need real-terminal confirmation (only verified
-  via the fake-TTY test harness so far) — their dev-review comments are deliberately still in
-  place pending that.
-- **SESSION 53 (2026-06-21) — Closed both items surfaced after session 52's audit; nothing else
-  started.** Full trail: `workspace/handoff/2026-06-21.md` session 53; `workspace/SESSION_MEMORY.md`
-  same date. (1) Fixed the sigma-band gating bug (commit `03b3c8d5`) — dropped the unauthenticated
-  `query.input` path-read oracle in `backend/api/server/routes/market/sigma_band.js`, added the
-  route's first-ever test coverage (3 tests). (2) Fixed a stale `CLAUDE.md` doc note (commit
-  `ecfd8bc8`) — its "Architecture Plan" section claimed the centralized asset picker (`tui/
-  asset_picker.js`) was still upcoming; it had actually been done and integrated (9 real call sites)
-  since 2026-06-12. Replaced the unrecoverable 5-phase outline with a pointer to `workspace/
-  STATE.md`'s `## Current Phase`. Suite 558/556/0fail/2skip throughout (was 555/553 — +3 new tests,
-  zero regressions); hygiene clean. **`graphify-out` refresh deliberately skipped again** — still
-  stale since 2026-06-09, but this session's diff (one route fix, one new test file, one doc edit)
-  is too small to justify the refresh, consistent with how prior sessions have repeatedly deferred
-  it for similarly small diffs (e.g. session 32). **Next-session candidates** (none urgent, carried
-  from session 52's audit, still open): `renameWithRetry` (`shared/lib/market/validation.js:601`)
-  busy-waits the CPU instead of `Atomics.wait` and has zero test coverage despite sitting on every
-  ts-index/JSON-cache write; 3 dead root shims (`shared/lib/{backfill,ingestion,market_validation}.js`)
-  are safe to delete (4-layer-verified); a stale orphaned `data/cache/`+`data/models/*.json` left
-  over from the `824d038e` path consolidation (gitignored, harmless, delete whenever); gateway's
-  `processProposedOrders()` batch path silently swallows per-order failures (dormant, unreached
-  today); 3 raw-`fetch` call sites in gateway still lack the retry helper already imported in the
-  same files (`cycle.ts:69,123`, `market.ts:17`).
-- **SESSION 52 (2026-06-21) — Deep blast-through audit only, nothing fixed yet (deliberate — user
-  asked to note for next session, not fix now). Full findings + Gate Table: `workspace/DEV_REVIEW.md`
-  ("Blast-Through Deep Audit — 2026-06-21 session 52" + its "continued" block). Audit anchor
-  `3da6e612` in `STATE.md`.** **GATING BUG RESOLVED (session 53, commit `03b3c8d5`)** — see the
-  session 53 entry in `workspace/handoff/2026-06-21.md` for the full fix trail; `backend/api/*` is
-  no longer gated. Original finding kept below for history:
-  `backend/api/server/routes/market/sigma_band.js:46` (`computeSigmaBand`/`readJsonSafe`) reads
-  `query.input` straight into `fs.readFileSync` with no path-containment check, and the route
-  (`/api/sigma-band`) is reachable with **zero authentication** (absent from both `isPublicRoute`
-  and `PROTECTED_GET_ROUTES` in `backend/api/app.js`). Bounded impact (every read is `JSON.parse`'d
-  first, so raw file contents never echo back — it's a file-existence + JSON-shape oracle, not full
-  exfiltration) but real and unauthenticated; `backend/api/*` is graded **C/GATED** until this
-  lands. Fix = mirror the `WEB_PUBLIC_ROOT` containment check already used for static files in
-  `app.js:193-200`, or simplest: drop the `query.input` override entirely (no legitimate caller
-  appears to use it — check `Frontend/dashboard/src` for any `input=` caller first). **Other
-  non-gating items worth batching into the same pass** (all in `DEV_REVIEW.md`, none urgent): (1)
-  `renameWithRetry` (`shared/lib/market/validation.js:601`) busy-waits the CPU instead of sleeping
-  and has zero test coverage despite sitting on every ts-index/JSON-cache write — swap to
-  `Atomics.wait` + add a forced-EPERM-failure test; (2) 3 dead root shims
-  (`shared/lib/{backfill,ingestion,market_validation}.js`) are safe to delete (4-layer-verified,
-  not a repeat of the session-29 false-negative trap); (3) stale orphaned `data/cache/`+
-  `data/models/*.json` left over from the `824d038e` path consolidation (gitignored, harmless,
-  `rm -rf` whenever); (4) gateway's `processProposedOrders()` batch path silently swallows
-  per-order failures with no `ok:false`/exit code (dormant — only matters once something wires the
-  `process` CLI command through the bridge); (5) 3 raw-`fetch` call sites in gateway still lack the
-  retry helper that's already imported in the same files (`cycle.ts:69,123`, `market.ts:17`).
+- **SESSION 35 (2026-06-15) — blast-through deep pass: integrity 144× + marker clobber fix + intraday
+  mixed-grain DATA REPAIR + grain guard. ALL UNCOMMITTED on `feat/session-guard-intraday-rollup`
+  (HEAD still `e0cb6aa2`). Suite 471/471.** Full trail: `workspace/handoff/2026-06-15.md` session 35.
+  Headlines: (1) `backend integrity` 57s→0.4s via `readCoverage` (proven equivalent over 1009 bins);
+  (2) `writeDeadSymbolMarker` guard (no clobber of real bins); (3) redundant `generatePolymarketFeatures`
+  alias removed — bulk over-export prune reverted (needs AST, backlog); (4) **fixed coarse-data-leaked
+  intraday bins** (CORN_15m spanned 2002→2026): 83 corrupt bins quarantined to
+  `storage/data/_quarantine_grain/` (reversible, gitignored) + re-derived clean; `isGrainSuspect` guard
+  wired into integrity (0 flagged post-fix). **Next-session first step:** commit decision (split A perf,
+  B marker-guard, C polymarket-alias, D grain-guard). NOT a code change: the **intraday depth
+  inconsistency** (Yahoo TFs differ in native depth, e.g. VCB 5m≈83d vs 1h≈508d) remains — needs a
+  network re-fetch pass if wanted.
+
+- **SESSION 34 (2026-06-15) — daemon polish (TUI, concurrency, output, ingest gate) + dead-symbol gate.**
+  Full trail: `workspace/handoff/2026-06-15.md`. 5 commits on `feat/session-guard-intraday-rollup`:
+  `74b0ec67` (backfill-daemon→TUI + rollup-priority guard), `9b2fd784` (--concurrency flag),
+  `a57e392b` (daemon output compacted), `f405263c` (ts/bin freshness gate in ingest),
+  `e0cb6aa2` (dead-symbol gate: 7d skip after 0-bar deep backfill). Suite **465/465**.
+  Ubuntu `sshd` stopped on Windows — still deferred. **Next-session first step:** elevated PowerShell →
+  `Start-Service sshd`; then on Ubuntu `git fetch windows && git merge windows/feat/session-guard-intraday-rollup`,
+  then run `crypto-deep-backfill --days 1825` for 1m crypto data.
+
+- **SESSION 32 (2026-06-14) — blast-through audit (s31 clean) + caller migration committed + ALL 7 test
+  fails fixed; suite 465/465 (first fully green since s12).** Full trail: `workspace/handoff/2026-06-14.md`
+  session 32. Commits `6da0232b` (22-file shim→canonical caller migration), `2567d8f4` (STATE audit note),
+  `31f1357a` (status recover-on-missing fix) on `feat/session-guard-intraday-rollup`. The 7 fails were
+  **3 distinct causes**, not the single "env cache/creds" class prior sessions assumed: (1) corrupted
+  `backend/gateway/node_modules/dotenv` → reinstalled (local-env, no repo change); (2) missing
+  `last_fetch.json` → real status null-crash + cockpit no-LIVE, fixed in code (`31f1357a`); (3) stray
+  untracked `.agents/skills/rigorous-feature-testing` → removed (local-env). **Note for next session:**
+  causes (1) and (3) are local-env and won't persist in git — if those tests fail again, reinstall dotenv /
+  re-remove the stray dir. `graphify-out` refresh still pending (status.js changed).
+
+- **SESSION 30 (2026-06-14) — blast-through Focused Audit + mass-implement; 2 findings closed.**
+  Full trail: `workspace/handoff/2026-06-14.md`. (1) **Data-depth gap closed:** the session-29 30m/4h
+  catch-up rollup was only half-run; ran `intraday-rollup --family crypto`+`--family equities` →
+  BTCUSDT 30m 1,440→154,404 / 4h 180→19,319, AAPL 30m 777→81,502 / 4h 859→11,260 (lossless, full 5m
+  span; data only, `storage/data/ts` gitignored). (2) **Deleted dead divergent
+  `config/markets/asset_mapping.json`** (zero readers; production reads `config/asset_mapping.json`);
+  suite still 447/453. Audit confirmed session-29 prod code clean (P3 guard wired both consumers,
+  rollup manifest parity); the `runGatewayCommand` P0 in DEV_REVIEW is a stale entry (fixed session 12).
+
+- **SESSION 29 (2026-06-13) — blast-through refine + P3 guard WIRED + deep-intraday rollup + shim correction.**
+  Committed `217d21e5` on branch **`feat/session-guard-intraday-rollup`** (NOT merged to main = user
+  decision). Suite **447/453** (the 6 fails are pre-existing env-dependent: cockpit/status cache state +
+  polymarket/trade creds — proven identical to clean HEAD; zero new failures). Full trail:
+  `workspace/handoff/2026-06-13.md` session 29. Headlines:
+  - **P3 equity session guard now actually applied** (was inert) — `guardEquitySessionBars` runs in
+    `loadAssetSourcesFromCache` (ML) + `loadHistoricalSources` (backtest), gated to equity/index sub-daily.
+  - **Deep-intraday rollup** — deep depth was 5m-ONLY; new `intraday-rollup` derives 15m/30m/1h/4h from
+    deep 5m **losslessly**; deep-backfill now auto-derives coarser TFs (`--no-rollup` opt-out).
+    **NEXT STEP (user): run `intraday-rollup --family crypto` / `--family equities` once** to backfill
+    coarser bins for the 5m already on disk (local, seconds).
+  - **Cleanups:** intraday_yahoo slimmed to constants-only (Yahoo accepts `1h` natively); intraday
+    silent-zero fixed; dead `config/data_sources.yaml` dup deleted.
+  - **DURABLE TRAP:** the 8 `shared/lib` root shims (`paths/ansi/indicators/backtest/backend_bridge/
+    backfill/feature_builder/ai_client`) are LOAD-BEARING via sibling-relative requires, `#shared/*`
+    aliases, AND compiled `dist/` artifacts — a literal-grep deletion broke the build. Restored all 8;
+    direct source callers migrated to canonical. A module is "dead" only if it has no consumer across all
+    four layers. Blast-through SKILL refined (global) with this rule + recency-ranked queue + hygiene sweep.
+  - **Untracked, deliberately NOT staged (not session-29 work):** `.antigravitycli/`,
+    `scripts/dev/check_hygiene.js`, repo-local `skills/`, `tests/.../backend_correlation_preflight.test.js`.
+
+- **SESSION 25 (2026-06-13) — 5m Phase 3 + daily fix + Polymarket bulk DONE (suite 422/422, 12 commits).**
+  Full trail: `workspace/handoff/2026-06-13.md` session 25. Headlines:
+  - **5m now covers ALL families:** indices/commodities/fx via new `five-min-accumulate` (Yahoo
+    `range=Nd` form, ~84 cal-days, no startTime); equities deepened to 2016 via Alpaca **SIP** feed
+    (set `ALPACA_DATA_FEED=sip`; free plan 403s only the last ~15min, now clamped); 8 commodity ETF
+    proxies (GLD/SLV/CPER/USO/BNO/UNG/WEAT/SOYB; **CORN excluded** — `{symbol}_{tf}.bin` collision).
+  - **DAILY-TRUNCATION REGRESSION FIXED (`7b050f3c`):** `writeTsIndex` now merge-protects ALL
+    timeframes (was REPLACE for daily/1h/4h → every ingest truncated deep daily bins to 1 bar; FX
+    survived via JSON). Daily repopulated deep everywhere (`ingest --family X --timeframe 1d
+    --history-days 7000`): equities 1998-2007, indices 1998, commodities 2003, crypto 2017.
+  - **Polymarket historical archive BUILT:** volume-ordered bulk (Gamma id-order = empty hourly
+    shells; `volumeNum` = data-rich) past the **Gamma 100-row page cap** → 2,045 markets / 82,616
+    price points. Archive hardened: skip-existing resume, index/manifest-v2 merge, 429 retry,
+    `--delay-ms`/`--refresh`. CLI null-`--archive-root` crash fixed.
+  - **mass-backfill coverage fixed (`d94f8e65`, FW5):** now unions flat symbols ∪ universe_matrix
+    grid (`massBackfillUniverse`) → 92→151 symbols; JPM/GS/AVGO/intl were being skipped.
+  - **Crypto 5m re-run to 2017 STOPPED mid-run by user ("took too long")** at ~11/18 symbols —
+    BTC/ETH at 926k bars (2017-08), BNB/XRP/ADA/LINK/DOGE/SOL extended; ~10 alts keep 5y depth
+    (idempotent — resume with one `crypto-deep-backfill --days 3300`, but flag the multi-hour runtime).
+  - **Open follow-ups (plan file `~/.claude/plans/hidden-exploring-river.md`, none blocking):**
+    FW1 per-pid `writeTsIndex` temp filename (concurrent backfills); FW3 native-poll intraday
+    15m/30m/1h/4h (user chose native poll — Yahoo 1h=730d > 5m-aggregation); FW2 monolith
+    deconstruction; FW6 backward-gap fetch. Plus the unchanged equity session-gap guard + ML 5m caps.
+  - **Durable trap:** `writeTsIndex` uses a fixed `<bin>.tmp` → two SEPARATE node processes racing it
+    EPERM-crash (one process is fine — sync fs serializes on the event loop). Serialize backfills.
+
+- **Sessions 23/23b batch COMMITTED (session 24, 2026-06-13):** the synthetic-5m guard + equity 5m
+  Phase 2 work below was found entirely uncommitted at boot; independently re-verified (readTsIndex
+  probe matched 23b's claims exactly; full suite 395/395 re-run) and landed in `a19d6323` (guard),
+  `60458a7a` (equity 5m), `58130cb9` (docs). **Suite baseline is now 395/395.** Untracked ~937MB of
+  user transfer artifacts remain at repo root (state.zip / .bundle / `vgbn1@vgbn-` botched-scp file)
+  — do not commit; user cleanup pending.
+- **5m deep-data status (session 23): crypto + US equities are now populated with native 5m.**
+  Crypto 1825d rerun finished; 13 configured symbols have full 525,506-bar bins and listing/provider
+  limited symbols are shorter (SUI/PEPE/WIF/POL/RNDR). US equity Phase 2 also finished:
+  `equity-deep-backfill --days 1825 --chunk-delay-ms 500 --json` succeeded for 33/33 Alpaca-eligible
+  US symbols, skipped 44 non-US symbols loudly, and ts-index verification found 3,101,322 merged
+  `provider=alpaca` 5m rows across those 33 symbols.
+- **Synthetic 5m guard is implemented.** Daily-aggregated lower-timeframe records now carry
+  `derived_from_timeframe` / `experimental_only`; validation rejects them as `synthetic_lower_timeframe`;
+  `ml dump` excludes experimental 5m by default and exposes `--include-experimental-5m`. US equity
+  Alpaca 5m is now the promoted native non-crypto path.
+- **Remaining 5m gaps:** Phase 3 indices/commodities/FX still need a provider/budget decision (or
+  a Yahoo 60-day accumulate-forward stop-gap). Equity 5m still needs a session-gap guard before it
+  feeds indicator/backtest consumers, and ML needs explicit 5m caps/perf gates.
+
+- **SUPERSEDED by session 23 5m status above:** session 22 crypto failure/root-cause trail retained below for history.
+  Session 21's background run finished `ok:true exit 0` with **0 deep bars for all 17 live
+  symbols**: `snapshot.sources.push(...records)` in the ingest provider loop RangeError'd at
+  ~525k records and the loop's catch swallowed it. Fixed via `appendRecords()` plain-loop helper
+  (+8 sibling sites incl. the equity/commodity aggregation paths that 5m Phases 2-3 would hit);
+  command now fails loudly on zero-bars-with-errors. Proven: real command at 400d → 115,200 bars
+  persisted exactly; suite **387/387** (new baseline). Fix UNCOMMITTED pending user. Fresh
+  18-symbol 1825d rerun launched in background — **verify per-symbol counts** (BTCUSDT ≈ 525k)
+  when it completes / next session; at session close it was 5/18 done with every symbol landing
+  the full 525,506 bars. Trail: `workspace/handoff/2026-06-12.md` session 22.
+- **SUPERSEDED by synthetic guard status above:** Daily-aggregated "5m" bars for
+  non-crypto families must NOT feed ML training or backtests; only native deep 5m qualifies.
+  Enforcement is a Phase 2 work item (provenance-tag aggregated records + filter in ml dump /
+  backtest loaders — tagging beats config removal). Plan: FIVE_MIN_DATA_SCOPING.md §8/§8e.
+- **TwelveData 5,000-bar provider-chain trap (NEW, durable):** twelve sits before/early in EVERY
+  family's provider chain in `config/markets/data_sources.yaml` and silently caps history at
+  exactly 5,000 bars; the ingest provider loop breaks on first success. Crypto deep path now pins
+  `options.provider='binance'`. Equities/indices/commodities deep backfills (5m Phases 2-3) will
+  hit the same wall — pin their providers too.
+- **Deferred from session 21:** CLI lazy-requires (RAM #5, optional — agent session limit + file
+  overlap); NDJSON streaming (RAM #2) still needs user format sign-off; 5m Phases 2-4 per
+  FIVE_MIN_DATA_SCOPING.md.
+- **Suite baseline is now 385/385** (session 21; was 342). Branch `feat/ml-onnx-section` remains
+  ready for the user's merge decision.
+- **Parked 2026-06-11 batch — RESOLVED (2026-06-12 session 18b):** the user's own checkpoint
+  commit `76ef48fb` (10:38) committed the entire ~770-line parked working-tree batch (status.js
+  recovered_live, trade.js, asset_picker.js, manifest.js, cli_executor.js, configs + many
+  previously-untracked files). TUI Phase B (workspace/TUI_REVAMP_SPEC.md) is therefore unblocked.
+- **Concurrent-session caution (NEW, durable):** Codex sessions write to this tree while Claude
+  sessions run (proven 2026-06-12: polymarket slice landed 13:30-15:43 mid-wave). Before staging
+  ANYTHING, re-check `git status` + file mtimes; integrate via review, don't assume agent scope
+  violations.
+- **`feat/ml-onnx-section` — AUDITED + FIXED + COMMITTED (sessions 11-12, 2026-06-11).**
+  The unrecorded 2026-06-10 work was audited (7 new failing test files, broken
+  `runGatewayCommand`, tracked→untracked deps), then fixed via Sonnet-delegated waves and
+  landed in 6 commits (`358476f6`..`8e8b4adf`). **Full suite now 263/263 — first fully green
+  run on record** (all 6 pre-existing baseline failures cleared too). Trail:
+  `workspace/handoff/2026-06-11.md`, DEV_REVIEW.md "Focused Audit - 2026-06-11" + RESOLUTION.
+  Branch is ready for the user's merge decision (feat/ml-onnx-section → main).
+- **`backend/cli/target/` hygiene — CLOSED** (committed in `8e8b4adf`).
+- **`.onnx` models latent gap — CLOSED** (binaries + serving manifest committed in `8e8b4adf`).
+- **DEPRIORITIZED by user (2026-06-11, "not important, skip"):** Docker/ONNX container
+  verification (Dockerfile:46 edit stays uncommitted in the working tree — don't lose it, but
+  don't push it either), centralization backlog (trade.js launcher call sites,
+  tools/backend.js local runBackendCommand), untracked `notebooks/`, graphify-out refresh.
+  Do NOT proactively resume these; wait for the user to re-raise.
+
+- **shared/lib reorg + workspace doc archival — DONE (session 10, 2026-06-09), but READ THIS:**
+  the reorg STATE.md had been claiming as "done" since 2026-06-08 was actually sitting **entirely
+  uncommitted** (new canonical `shared/lib/{runtime,market,strategy,...}` dirs untracked, old
+  files gutted to shims only in the working tree — one `git clean -fd` from total loss). Same for
+  the doc archival (`STATE_ARCHIVE.md`/`workspace/handoff/`/`workspace/archive/`). Landed in
+  `f4a97e94` (191 files) + a follow-up commit (21 files). **Lesson for future sessions: when
+  STATE.md says a restructure is "done," verify with `git status`, not just by reading the
+  doc** — this is the third time this drift class has bitten the project (`648ab69e`, `4d3fb4d`,
+  now this). Full trace: `workspace/handoff/2026-06-09.md` session 10.
+- **New hygiene flag (not fixed)**: `backend/cli/target/` — 2,151 untracked Rust build-artifact
+  files. Should probably go in `.gitignore`; currently a `git add backend/` trap (caught and
+  walked back during session 10's commit, see above). Small, easy follow-up.
+- **Scalping-bot pivot scoping — DONE.** Scoping doc written at `workspace/SCALPING_BOT_SCOPING.md`
+  (5 sections: strategy module shape, sub-minute cycle reqs, order-book data needs, latency/fee
+  modeling, open risks/decisions — all with file:line refs). Verdict: this is a second execution
+  architecture, not a config change; weeks not days. The pivot decision (whether/how to proceed)
+  is still the **user's** to make — doc ends with 4 open questions (venue, thesis, validation
+  window, resourcing) that need answers before any planning/implementation pass starts.
+- `.mcp.json` test-gate / git-hygiene drift — **DONE (session 8)**. Turned out bigger than scoped
+  (4,533 files: `node_modules/` + `backend/gateway/node_modules/` + `storage/data/cache/` +
+  `.mcp.json` had drifted back into tracking via the broad `4d3fb4d "changes"` commit). Fixed with
+  index-only `git rm -r --cached`; `structure_contract.test.js` → 4/4; committed.
+- `infra/docker/DEPLOY.md` — **DONE (session 8)**. Was untracked but accurate; committed as-is
+  (gateway-service removal + `macro_features.cpp` fix were already in `4d3fb4d`).
+- **Container ML ONNX enablement — BLOCKED on Docker Desktop (session 8).** Edited
+  `infra/docker/Dockerfile:46` to add `-DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON` (uncommitted —
+  deliberately left unverified-and-uncommitted). Rebuild couldn't be verified: Docker Desktop's
+  daemon was wedged by a **stale zombie `com.docker.build` process (PID 166360, idle ~22h, started
+  2026-06-07 17:25 — predates this session)**; every `docker` CLI call (`images`, `ps`, `compose ps`)
+  hung indefinitely. Killing the PID directly was blocked by the harness's destructive-action
+  classifier. User chose to **defer the Docker Desktop restart to later** rather than do it now.
+  **Next session**: user restarts Docker Desktop first (clears the wedge), then re-run
+  `docker compose -f infra/docker/docker-compose.yml build && ... up -d`, verify
+  `docker exec docker-web-1 ... ml compare --json` reports `"backend":"onnx_runtime"` (not
+  `deterministic_baseline`, cross-check against Phase-3 parity: xgboost 0.666376 / logistic
+  0.468378 / regime 0.456982), THEN commit the Dockerfile edit. Don't commit the edit before
+  verifying — an unverified build-config change in `Dockerfile` could silently break the image.
+- **Latent gap (flagged, not fixed)**: trained `.onnx` model files are gitignored
+  (`.gitignore:64` → `models/*.onnx`). Local `docker compose build` picks them up fine (build
+  context = local working tree), but a genuine "clone to fresh remote Linux node" deploy would be
+  missing the trained models and silently fall back to `deterministic_baseline`. Needs a future
+  user decision: commit the small (~1MB) `.onnx` binaries, or add a model-sync/retrain step to
+  the documented deploy flow in `DEPLOY.md`.
+- `run bot live` "stub" was investigated this session and **reclassified as resolved** (intentional
+  safety redirect, not a gap) — see `workspace/DEV_REVIEW.md` and
+  `workspace/handoff/2026-06-08.md` session 7 for the full trace.
 
 ## Boot reading order (for session-orchestrator)
 
@@ -241,92 +287,3 @@ boot) never has to read tens of thousands of tokens of accumulated history.
   are PRE-EXISTING (proven: safe-stash of my data edits left the same 6 trade/status fails; +1 hygiene
   flagging a stale `.agents/skills/rigorous-feature-testing` folder). **Live 1m provider smoke NOT run
   (needs network + Binance/Alpaca keys)** — run `crypto-deep-backfill --symbol BTCUSDT --days 7` next.
-
-## Implementation Note - 2026-06-21 session 51 - Mass-Implement Gap Closures
-- **Cron Concurrency Risk Fixed (Batch 1):** Addressed the structural concurrency risk in the gy-schedule workflow. Instructed the cron to enforce execution from an isolated git worktree (with symlinked storage/ and .env) so its automated self-healing commits do not accidentally scoop up uncommitted work from foreground agents.
-- **Backend Bridge Bug Fixed (Batch 2):** Resolved the smart JSON extraction bug in shared/lib/runtime/backend_bridge.js where processes exiting with non-zero status codes were silently masked as ok: true if the partial payload contained ok: true. Validated with a hard process.exit(1) test.
-- Both fixes deployed cleanly. Full test suite remains 100% green (553/555 passed, 2 skipped).
-
-## Session 60 close-out (2026-06-26) — Signal pipeline + live data feed
-
-### What shipped (5 commits)
-- `f4820708` — type-to-search in all TUI pickers (no `/` prefix needed)
-- `2bdbeafa` — `bt` now reads ts-index (1601 daily bars, data_end today) when family is known
-- `3a2051d0` — PIN strip centralization + exit P&L bookkeeping fix
-- `0e6ffd15` — Binance WebSocket live feed wired into backfill-daemon (closed 1m klines → ts-index)
-- `1a47da70` — `sovereign bias <SYMBOL>` command: RSI/SMA/z-score/ATR across 4h/1d/1w, --json + coloured table
-
-### Current BTC bias (as of session close)
-SHORT across all 3 timeframes (4h RSI=27 oversold, 1d RSI=38, 1w RSI=36). Price $58,876, below all SMAs.
-Signal expiry: 4h = 3 bars (~3 days), 1d = 7 bars, 1w = 4 bars.
-
-### Open gaps (next session priorities)
-1. **ML retraining** — lstm_v1/cnn_window_v0 return 0 trades; need training pipeline on real ts-index data
-2. **bias + correlation** — `sovereign bias` is TA-only; wire mcp__sovereign__get_correlation into the output
-3. **ponytail global** — auto-mode blocked editing ~/.claude/CLAUDE.md; user adds manually:
-   ```
-   # ponytail
-   - **ponytail** (~/.claude/skills/ponytail/skills/ponytail/SKILL.md) - lazy senior dev mode
-   When the user types /ponytail, invoke the Skill tool with skill: "ponytail" before doing anything else.
-   ```
-4. **graphify-out refresh** — stale, defer until next meaningful code change
-5. **Gate.io market-order semantics** — empirical probe at index.ts:309-319 still pending
-
-### Boot notes for next session
-- `.mcp.json` exists at project root — mcp__sovereign__* tools should auto-load (gitignored, relative path)
-- API server: `node backend/api/app.js` (port 8787) if MCP tools don't load
-- Live feed: starts automatically when `backfill-daemon` runs without `--once`
-- Suite baseline: 631/0fail/2skip on branch feat/ink-tui-refactor
-
-## Update - 2026-07-10 session 68 follow-up
-- Added opt-in Compose profiles for `portfolio-monitor`, `host-health`, `host-backup`, and
-  `polymarket-research`.
-- Exposed `portfolio-monitor` in CLI help and documented the required env knobs and scope-file
-  contract.
-- Verification passed for the new batch: focused Node tests, deployment manifest contract,
-  `node --check`, and `npm run hygiene`.
-
-## Update - 2026-07-11 session 70 - mass-implement closeout
-
-The session-69 ranked backlog is resolved in code. `portfolio-monitor` now normalizes the real
-`{live, live_paper, paper}` aggregate shape and fails closed on malformed payloads. Host backups now
-use bounded retention, reject overlap, scope pruning to the originating `source_root`, and distinguish
-retention-only failures from publish failures. The false cross-container PID liveness check was replaced
-with container-local freshness checks. `polymarket-research` now fails visibly when it has nothing to
-capture, and Compose env ownership/docs were aligned with the active runtime contract.
-
-Verification completed on the touched surfaces:
-- focused host-maintenance, host-backup CLI, portfolio-monitor, Polymarket research scheduler/history/
-  orderbook/portfolio aggregate, and deployment manifest contract tests
-- `node --check` on touched JS entrypoints
-- `npm run hygiene`
-- `./node_modules/.bin/tsc -p backend/gateway/tsconfig.json --noEmit`
-
-Residuals:
-- `docker` is not installed here, so rendered Compose validation still needs a Docker host
-- the unrelated dashboard TUI suite still has one pre-existing failing test outside this batch
-- `graphify` remains unavailable in this environment
-
-## Update - 2026-07-11 session 73 - safety hardening closeout
-
-The session-73 audit's highest-risk implementation gaps are closed: Polymarket direct orders and market
-orders fail closed through authorization plus quote/equity/drawdown-backed native risk; public API file
-overrides and browser-held admin tokens are removed; heuristic model reports cannot create active signals;
-MCP degraded mode is opt-in; the frontend typecheck/build is clean with secondary-panel code splitting;
-cloud entrypoints are real; and zero-reference placeholder headers/dependencies were pruned.
-
-Verification baseline is 708 pass / 0 fail / 2 skip in the full Node suite. Do not approve real-capital use
-yet. Next order: (1) restore fresh, non-suspect market data and pass integrity, (2) train/version/validate a
-decision-ready artifact with OOS sample floors, (3) run broker sandbox and failure-mode soak tests,
-(4) verify deployed Supabase RLS, (5) review the three frontend npm advisories, and (6) request explicit
-deletion approval before retiring the 30-file Rust mirror or larger legacy UI surfaces.
-
-## Update - 2026-07-13 session 80 - asset analysis handoff
-
-Batches 1-4 of `workspace/plans/ASSET_ANALYSIS_IMPLEMENTATION_BATCHES.md` are complete in shadow mode.
-Batch 5 is blocked because no provenance-recorded SEC Company Facts artifact or SEC fundamentals adapter
-exists locally. Do not fabricate the input or advance Batches 6-8 around this gate.
-
-Resume from `workspace/handoff/2026-07-13.md`. First capture a recorded SEC fixture, then implement SEC
-normalization and the research-only US-equity 3m composer. Keep schema v2 live. Current verified baseline:
-743 total / 741 pass / 0 fail / 2 skip. Remote macro migration and RLS remain unverified; graphify absent.
