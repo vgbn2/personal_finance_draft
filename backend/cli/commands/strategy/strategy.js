@@ -336,6 +336,11 @@ function buildAutomationTrustDecision(report, minTrustScore, isLive) {
   const alpha = Number.isFinite(trust.oos_alpha_vs_buy_hold) ? trust.oos_alpha_vs_buy_hold : null;
   const reasons = [];
 
+  // Live automation must not treat a statistical score as compensation for
+  // rejected or otherwise unverified market data.
+  if (report?.data_quality_ok !== true || report?.data_quality_summary?.ok === false) {
+    reasons.push('data quality is not verified');
+  }
   if (verdict !== 'researchable') reasons.push(`verdict=${verdict}`);
   if (score < minTrustScore) reasons.push(`score=${score}/100 < ${minTrustScore}`);
   if (alpha == null) reasons.push('missing oos alpha');
@@ -733,11 +738,29 @@ async function commandPropFirmProfiles(args) {
 const EXECUTION_MEMORY = require('../../../../shared/lib/runtime/execution_memory.js');
 
 async function runAutomationPass(args, strategiesOverride = null) {
+    const settings = loadRuntimeSettings();
     const isLive = hasFlag(args, '--live');
     const refreshDays = numericOption(args, '--refresh-days', 2);
     const minTrustScore = numericOption(args, '--min-trust-score', 70);
     const refreshGroups = new Map();
-    
+
+    // Review existing tracked positions for a target/stop/age exit BEFORE
+    // looking for new entries -- same ordering as the Polymarket bot cycle.
+    const { runAlpacaExitCheck, canOpenPosition } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
+    const exitResult = await runAlpacaExitCheck(args).catch((err) => ({ errors: [err.message] }));
+    if (exitResult.sellsExecuted) {
+        console.log(`[\x1b[1;33mEXIT\x1b[0m] Closed ${exitResult.sellsExecuted} position(s) on target/stop/age.`);
+    }
+    (exitResult.errors || []).forEach((e) => console.warn(`[AUTOMATION] Exit check: ${e}`));
+
+    // Read the post-exit position count + configured cap so new live entries
+    // below respect config.maxPositions (the auto-trade status view already
+    // implies this cap; it was previously never enforced on the entry path).
+    const { loadState: loadAlpacaBotState } = require('../../../../shared/lib/runtime/alpaca_bot_state.js');
+    const alpacaBotSnapshot = loadAlpacaBotState();
+    let openPositionCount = alpacaBotSnapshot.positions.length;
+    const maxOpenPositions = alpacaBotSnapshot.config.maxPositions;
+
     let targetStrategies;
     if (strategiesOverride) {
         targetStrategies = strategiesOverride;
@@ -763,7 +786,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
     });
 
     // 2. Fetch latest data in batches per timeframe
-    const { commandBackfill } = require('../data.js');
+    const { commandBackfill } = require('../data/data.js');
     global.suppressLogs = true;
     try {
         for (const [timeframe, symbols] of refreshGroups.entries()) {
@@ -783,6 +806,9 @@ async function runAutomationPass(args, strategiesOverride = null) {
    
     console.log(`[AUTOMATION] Fetching portfolio balance for dynamic sizing...`);
     const balanceObj = await fetchBalance(isLive).catch(err => {
+        if (isLive) {
+            throw new Error(`Critical: Failed to fetch balance in LIVE mode: ${err.message}`);
+        }
         console.warn(`\x1b[1;33m[WARNING]\x1b[0m Failed to fetch balance: ${err.message}. Using $100,000 baseline.`);
         return { EQUITY: 100000 };
     });
@@ -802,7 +828,6 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 '--model', strategy.model,
                 '--timeframe', strategyTimeframe,
                 '--threshold', String(strategy.risk?.signal_threshold || 0.65),
-                '--allow-degraded',
                 '--json',
                 ...universeArgs
             ]);
@@ -825,7 +850,17 @@ async function runAutomationPass(args, strategiesOverride = null) {
             // Freshness check: Signal must be within the last bar's timeframe
             const signalTs = new Date(signalTime).getTime();
             const now = Date.now();
-            const maxAgeMs = 24 * 60 * 60 * 1000; // 1 day for '1d' timeframe
+            const timeframeToMs = {
+                '5m': 5 * 60 * 1000,
+                '15m': 15 * 60 * 1000,
+                '30m': 30 * 60 * 1000,
+                '1h': 60 * 60 * 1000,
+                '4h': 4 * 60 * 60 * 1000,
+                '1d': 24 * 60 * 60 * 1000,
+                '1w': 7 * 24 * 60 * 60 * 1000
+            };
+            const barDurationMs = timeframeToMs[strategyTimeframe] || (24 * 60 * 60 * 1000);
+            const maxAgeMs = 1.5 * barDurationMs; // Allow 1.5 bars of age (buffer for fetch/cron delay)
 
             if (now - signalTs > maxAgeMs) {
                 console.log(`[AUTOMATION] Signal for ${lastTrade.symbol} is stale (${new Date(signalTs).toLocaleString()}). Skipping.`);
@@ -855,7 +890,12 @@ async function runAutomationPass(args, strategiesOverride = null) {
             }
 
             console.log(`[\x1b[1;32mSIGNAL\x1b[0m] Strategy ${strategy.name} trigger: ${tradeType.toUpperCase()} ${lastTrade.symbol} @ ${currentPrice} | Qty: ${qty} ($${(qty * currentPrice).toFixed(2)})`);
-            
+
+            if (isLive && !canOpenPosition(openPositionCount, maxOpenPositions)) {
+                console.log(`[AUTOMATION] Max open positions (${maxOpenPositions}) reached — skipping live entry for ${lastTrade.symbol}.`);
+                continue;
+            }
+
             if (isLive) {
                 console.log(`[\x1b[1;31mEXECUTE\x1b[0m] Sending LIVE order for ${lastTrade.symbol} (Qty: ${qty})...`);
                 const tradeArgs = [
@@ -868,7 +908,12 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 if (process.env.SOVEREIGN_TRADE_PIN) {
                     tradeArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
                 }
-                await commandTrade(tradeArgs);
+                const tradeExitCode = await commandTrade(tradeArgs);
+                if (tradeExitCode === 0 && tradeType === 'buy') {
+                    const { recordAlpacaEntry } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
+                    recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: true });
+                    openPositionCount++;
+                }
             }
  else {
                 console.log(`[\x1b[1;32mDRY-RUN\x1b[0m] Order simulated for ${lastTrade.symbol} | Calculated Qty: ${qty}.`);
@@ -895,23 +940,24 @@ async function runAutomatedStrategies(args) {
     console.log(`[\x1b[1;35mAUTO\x1b[0m] Starting Strategy Automation Loop (Interval: ${intervalMinutes} min, Max Passes: ${passLabel})`);
     console.log('Press Ctrl+C to stop.');
 
-    const loop = async () => {
-        try {
-            passes++;
-            console.log(`[AUTOMATION] Starting Pass ${passes}/${passLabel}...`);
-            await runAutomationPass(args);
-        } catch (error) {
-            console.error(`[AUTOMATION] Pass failed: ${error.message}`);
-        }
-        if (maxPasses === 0 || passes < maxPasses) {
-            setTimeout(loop, intervalMs);
-        } else {
-            console.log(`[AUTOMATION] Reached max passes (${maxPasses}). Exiting.`);
-            process.exit(0);
-        }
-    };
-
-    loop();
+    return new Promise((resolve) => {
+        const loop = async () => {
+            try {
+                passes++;
+                console.log(`[AUTOMATION] Starting Pass ${passes}/${passLabel}...`);
+                await runAutomationPass(args);
+            } catch (error) {
+                console.error(`[AUTOMATION] Pass failed: ${error.message}`);
+            }
+            if (maxPasses === 0 || passes < maxPasses) {
+                setTimeout(loop, intervalMs);
+            } else {
+                console.log(`[AUTOMATION] Reached max passes (${maxPasses}). Exiting.`);
+                resolve(0);
+            }
+        };
+        loop();
+    });
 }
 // ------------------------------------------
 
@@ -1180,6 +1226,12 @@ async function commandStrategy(args) {
 async function commandStrategyMenu(args) {
   if (args.length > 0) return commandStrategy(args);
 
+  // In-pane (non-interactive, e.g. the dashboard's piped child) can't drive the
+  // picker; promptSelect would auto-resolve to the first option ('new') and
+  // fail with "strategy new requires a name". Show the registry list instead,
+  // matching how prop-firms/run render a read-only summary in the same context.
+  if (!isRichTerminal()) return commandStrategy(['list']);
+
   global.suppressLogs = true;
   const action = await promptSelect('Strategy:', [
     { label: 'New', value: 'new' },
@@ -1214,5 +1266,5 @@ async function commandPropFirmMenu(args) {
 }
 
 module.exports = {
-  slugifyStrategyName, get_Current_Universe_Symbols, buildStrategyPlan, getStrategyRegistryPath, getStrategyDirectory, readStrategyRegistry, listStrategyFiles, strategySectionPresent, inspectStrategyFile, syncStrategyRegistry, strategyRegistryReport, registeredStrategyOptions, writeStrategyRegistry, interactiveStrategyWizard, commandPropFirmProfiles, commandStrategy, commandStrategyMenu, commandPropFirmMenu, runAutomatedStrategies
+  slugifyStrategyName, get_Current_Universe_Symbols, buildStrategyPlan, getStrategyRegistryPath, getStrategyDirectory, readStrategyRegistry, listStrategyFiles, strategySectionPresent, inspectStrategyFile, syncStrategyRegistry, strategyRegistryReport, registeredStrategyOptions, writeStrategyRegistry, interactiveStrategyWizard, commandPropFirmProfiles, commandStrategy, commandStrategyMenu, commandPropFirmMenu, runAutomatedStrategies, buildAutomationTrustDecision
 };

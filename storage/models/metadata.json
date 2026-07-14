@@ -1,0 +1,64 @@
+{
+  "schema": "sovereign.ml.metadata/v2",
+  "generated_by": "scripts/ml/train.py",
+  "feature_config": "models/feature_config.yaml",
+  "label_classes": {
+    "0": "down",
+    "1": "flat",
+    "2": "up"
+  },
+  "horizon_note": "3-class N-bar forward direction; see feature_frame.meta.json for horizon/deadzone",
+  "dataset": {
+    "rows": 123437,
+    "train": 98749,
+    "holdout": 24688,
+    "feature_columns": 38
+  },
+  "models": [
+    {
+      "name": "xgboost_v1",
+      "path": "models/xgboost_v1.onnx",
+      "input_set": "all",
+      "n_features": 38,
+      "holdout_accuracy": 0.5168,
+      "baseline_accuracy": 0.5007,
+      "lift_vs_baseline": 0.0161,
+      "ir_version": 9,
+      "opset": 1,
+      "beats_baseline": true,
+      "status": "trained_prototype",
+      "promoted": true,
+      "feature_config": "models/feature_config.yaml"
+    },
+    {
+      "name": "logistic_v1",
+      "path": "models/logistic_v1.onnx",
+      "input_set": "all",
+      "n_features": 38,
+      "holdout_accuracy": 0.5226,
+      "baseline_accuracy": 0.5007,
+      "lift_vs_baseline": 0.0219,
+      "ir_version": 9,
+      "opset": 15,
+      "beats_baseline": true,
+      "status": "trained_prototype",
+      "promoted": true,
+      "feature_config": "models/feature_config.yaml"
+    },
+    {
+      "name": "regime_classifier",
+      "path": "models/regime_classifier.onnx",
+      "input_set": "cross_family",
+      "n_features": 26,
+      "holdout_accuracy": 0.5238,
+      "baseline_accuracy": 0.5007,
+      "lift_vs_baseline": 0.0231,
+      "ir_version": 9,
+      "opset": 15,
+      "beats_baseline": true,
+      "status": "trained_prototype",
+      "promoted": true,
+      "feature_config": "models/feature_config.yaml"
+    }
+  ]
+}

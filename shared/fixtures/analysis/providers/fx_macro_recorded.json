@@ -1,0 +1,67 @@
+{
+  "provenance": {
+    "source_url": [
+      "https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A?startPeriod=2026-07-10&endPeriod=2026-07-10&format=csvdata",
+      "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value_month=202607"
+    ],
+    "retrieved_at": "2026-07-13T01:44:44Z",
+    "content_type": [
+      "text/csv",
+      "text/xml; charset=UTF-8"
+    ],
+    "provider": [
+      "European Central Bank",
+      "U.S. Department of the Treasury"
+    ],
+    "terms_rate_limit_note": "Both official endpoints were accessible without an API key. Neither response nor the linked feed documentation stated a numeric request-rate limit; downstream use remains subject to each publisher's legal and reuse terms.",
+    "fetch_status": "success"
+  },
+  "payload": {
+    "ecb_exchange_rate": {
+      "KEY": "EXR.D.USD.EUR.SP00.A",
+      "FREQ": "D",
+      "CURRENCY": "USD",
+      "CURRENCY_DENOM": "EUR",
+      "EXR_TYPE": "SP00",
+      "EXR_SUFFIX": "A",
+      "TIME_PERIOD": "2026-07-10",
+      "OBS_VALUE": "1.143",
+      "OBS_STATUS": "A",
+      "OBS_CONF": "F",
+      "OBS_PRE_BREAK": "",
+      "OBS_COM": "",
+      "TIME_FORMAT": "P1D",
+      "BREAKS": "",
+      "COLLECTION": "A",
+      "COMPILING_ORG": "",
+      "DISS_ORG": "",
+      "DOM_SER_IDS": "",
+      "PUBL_ECB": "",
+      "PUBL_MU": "",
+      "PUBL_PUBLIC": "",
+      "UNIT_INDEX_BASE": "99Q1=100",
+      "COMPILATION": "",
+      "COVERAGE": "",
+      "DECIMALS": "4",
+      "NAT_TITLE": "",
+      "SOURCE_AGENCY": "4F0",
+      "SOURCE_PUB": "",
+      "TITLE": "US dollar/Euro ECB reference exchange rate",
+      "TITLE_COMPL": "ECB reference exchange rate, US dollar/Euro, 2.15 pm (C.E.T.)",
+      "UNIT": "USD",
+      "UNIT_MULT": "0"
+    },
+    "treasury_yield_curve": {
+      "feed_updated": "2026-07-10T15:44:45Z",
+      "records": [
+        {"Id":264,"NEW_DATE":"2026-07-01T00:00:00","BC_1MONTH":3.67,"BC_1_5MONTH":3.71,"BC_2MONTH":3.72,"BC_3MONTH":3.85,"BC_4MONTH":3.95,"BC_6MONTH":4,"BC_1YEAR":4,"BC_2YEAR":4.17,"BC_3YEAR":4.19,"BC_5YEAR":4.24,"BC_7YEAR":4.35,"BC_10YEAR":4.48,"BC_20YEAR":4.97,"BC_30YEAR":4.97,"BC_30YEARDISPLAY":4.97},
+        {"Id":265,"NEW_DATE":"2026-07-02T00:00:00","BC_1MONTH":3.7,"BC_1_5MONTH":3.73,"BC_2MONTH":3.81,"BC_3MONTH":3.82,"BC_4MONTH":3.91,"BC_6MONTH":3.98,"BC_1YEAR":3.96,"BC_2YEAR":4.14,"BC_3YEAR":4.16,"BC_5YEAR":4.23,"BC_7YEAR":4.35,"BC_10YEAR":4.49,"BC_20YEAR":4.99,"BC_30YEAR":4.98,"BC_30YEARDISPLAY":4.98},
+        {"Id":266,"NEW_DATE":"2026-07-06T00:00:00","BC_1MONTH":3.69,"BC_1_5MONTH":3.75,"BC_2MONTH":3.81,"BC_3MONTH":3.87,"BC_4MONTH":3.93,"BC_6MONTH":3.98,"BC_1YEAR":3.95,"BC_2YEAR":4.13,"BC_3YEAR":4.14,"BC_5YEAR":4.21,"BC_7YEAR":4.33,"BC_10YEAR":4.48,"BC_20YEAR":4.99,"BC_30YEAR":4.99,"BC_30YEARDISPLAY":4.99},
+        {"Id":267,"NEW_DATE":"2026-07-07T00:00:00","BC_1MONTH":3.69,"BC_1_5MONTH":3.74,"BC_2MONTH":3.82,"BC_3MONTH":3.86,"BC_4MONTH":3.94,"BC_6MONTH":3.99,"BC_1YEAR":4.06,"BC_2YEAR":4.19,"BC_3YEAR":4.18,"BC_5YEAR":4.27,"BC_7YEAR":4.4,"BC_10YEAR":4.55,"BC_20YEAR":5.05,"BC_30YEAR":5.05,"BC_30YEARDISPLAY":5.05},
+        {"Id":268,"NEW_DATE":"2026-07-08T00:00:00","BC_1MONTH":3.67,"BC_1_5MONTH":3.74,"BC_2MONTH":3.82,"BC_3MONTH":3.87,"BC_4MONTH":3.94,"BC_6MONTH":3.99,"BC_1YEAR":4.06,"BC_2YEAR":4.21,"BC_3YEAR":4.21,"BC_5YEAR":4.31,"BC_7YEAR":4.43,"BC_10YEAR":4.56,"BC_20YEAR":5.07,"BC_30YEAR":5.06,"BC_30YEARDISPLAY":5.06},
+        {"Id":269,"NEW_DATE":"2026-07-09T00:00:00","BC_1MONTH":3.72,"BC_1_5MONTH":3.72,"BC_2MONTH":3.79,"BC_3MONTH":3.83,"BC_4MONTH":3.91,"BC_6MONTH":3.96,"BC_1YEAR":4.02,"BC_2YEAR":4.16,"BC_3YEAR":4.18,"BC_5YEAR":4.27,"BC_7YEAR":4.4,"BC_10YEAR":4.54,"BC_20YEAR":5.06,"BC_30YEAR":5.05,"BC_30YEARDISPLAY":5.05},
+        {"Id":270,"NEW_DATE":"2026-07-10T00:00:00","BC_1MONTH":3.71,"BC_1_5MONTH":3.74,"BC_2MONTH":3.81,"BC_3MONTH":3.85,"BC_4MONTH":3.94,"BC_6MONTH":3.99,"BC_1YEAR":4.06,"BC_2YEAR":4.21,"BC_3YEAR":4.22,"BC_5YEAR":4.3,"BC_7YEAR":4.42,"BC_10YEAR":4.56,"BC_20YEAR":5.08,"BC_30YEAR":5.06,"BC_30YEARDISPLAY":5.06}
+      ]
+    }
+  }
+}

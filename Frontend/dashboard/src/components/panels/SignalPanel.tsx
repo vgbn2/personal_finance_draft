@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TradeSignal } from '../../types';
 import { cn } from '../../lib/utils';
 import { Eye, ShieldAlert } from 'lucide-react';
-import { API_ENDPOINTS, DEFAULT_HEADERS } from '../../lib/api';
+import { API_ENDPOINTS, getAuthHeaders } from '../../lib/api';
 
 export function SignalPanel() {
   const [signals, setSignals] = useState<TradeSignal[]>([]);
@@ -14,7 +14,8 @@ export function SignalPanel() {
   useEffect(() => {
     const hydrateSignals = async () => {
       try {
-        const res = await fetch(API_ENDPOINTS.SIGNAL, { headers: DEFAULT_HEADERS });
+        const headers = await getAuthHeaders();
+        const res = await fetch(API_ENDPOINTS.SIGNAL, { headers });
         const data = await res.json();
         if (data.ok && Array.isArray(data.signals)) {
           const normalized = data.signals.map((s: any) => ({
@@ -23,9 +24,11 @@ export function SignalPanel() {
             model: s.model,
             direction: s.direction.toUpperCase(),
             confidence: s.confidence,
-            status: s.promoted ? 'PROMOTED' : 'GATED',
+            status: s.expired || !s.active ? 'REJECTED' : s.promoted ? 'REVIEWED' : 'GATED',
             timestamp: s.as_of,
-            evidenceId: s.family || 'N/A'
+            evidenceId: s.family || 'N/A',
+            validUntil: s.valid_until,
+            reason: s.reason
           }));
           setSignals(normalized);
         }
@@ -42,6 +45,7 @@ export function SignalPanel() {
   const gatedCount = signals.filter(s => s.status === 'GATED').length;
 
   const toggleSelect = (id: string) => {
+    if (!signals.some(signal => signal.id === id && signal.status === 'GATED')) return;
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
@@ -50,17 +54,17 @@ export function SignalPanel() {
     
     setVerifying(true);
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(API_ENDPOINTS.SIGNAL + '/promote', {
         method: 'POST',
-        headers: DEFAULT_HEADERS,
-        body: JSON.stringify({ signalIds })
+        headers,
+        body: JSON.stringify({ signalIds: selectedIds })
       });
       const data = await res.json();
 
       if (data.ok) {
-        alert(`Waterproof Gate: ${selectedIds.length} signals successfully promoted to live execution.`);
-        // Update local state to reflect promotion
-        setSignals(prev => prev.map(s => selectedIds.includes(s.id) ? { ...s, status: 'PROMOTED' } : s));
+        alert(`${selectedIds.length} signal review decisions recorded. No order was executed.`);
+        setSignals(prev => prev.map(s => selectedIds.includes(s.id) ? { ...s, status: 'REVIEWED' } : s));
         setSelectedIds([]);
       } else {
         throw new Error(data.error || 'Promotion failed');
@@ -101,7 +105,7 @@ export function SignalPanel() {
       <div className="p-6 pb-2">
         <h2 className="text-[32px] text-[var(--text-main)] mb-1">Candidate Signal Queue</h2>
         <p className="text-[var(--text-muted)] text-sm mb-6 max-w-2xl">
-          Empirically verify path signatures before promoting to the executing matrix. Unverified models are permanently sandboxed.
+          Review fresh model candidates before recording a decision. This queue does not execute orders.
         </p>
       </div>
 
@@ -114,7 +118,7 @@ export function SignalPanel() {
                   <input 
                     type="checkbox" 
                     onChange={(e) => {
-                      if (e.target.checked) setSelectedIds(signals.map(s => s.id));
+                      if (e.target.checked) setSelectedIds(signals.filter(s => s.status === 'GATED').map(s => s.id));
                       else setSelectedIds([]);
                     }}
                     checked={selectedIds.length === signals.length && signals.length > 0}
@@ -154,17 +158,21 @@ export function SignalPanel() {
                         className="accent-[var(--color-brand-cyan)] rounded" 
                       />
                     </td>
-                    <td className="font-bold flex flex-col group relative" title="H2V: Binance OHLCV, 5m lag">
+                    <td className="font-bold flex flex-col group relative" title={`Source report: ${signal.timestamp || 'unknown'}`}>
                       <span className="border-b border-dashed border-gray-400 w-fit">{signal.asset}</span>
                       <span className="text-[9px] text-[var(--text-faint)] absolute -bottom-3 hidden group-hover:block whitespace-nowrap bg-[var(--bg-secondary)] border border-[var(--border-subtle)] px-1 rounded shadow-sm z-10 text-[var(--color-brand-green)]">
-                        Waterproof: Verified
+                        {signal.status === 'REJECTED' ? 'Expired or inactive source report' : `Valid until ${signal.validUntil ? new Date(signal.validUntil).toLocaleString() : 'unknown'}`}
                       </span>
                     </td>
                     <td className="text-[var(--color-brand-violet)]">{signal.model}</td>
                     <td>
                       <span className={cn(
                         "px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider",
-                        signal.direction === 'LONG' ? "bg-[var(--color-brand-green)]/10 text-[var(--color-brand-green)]" : "bg-[var(--color-brand-red)]/10 text-[var(--color-brand-red)]"
+                        signal.direction === 'LONG'
+                          ? "bg-[var(--color-brand-green)]/10 text-[var(--color-brand-green)]"
+                          : signal.direction === 'SHORT'
+                            ? "bg-[var(--color-brand-red)]/10 text-[var(--color-brand-red)]"
+                            : "bg-[var(--color-brand-amber)]/10 text-[var(--color-brand-amber)]"
                       )}>
                         {signal.direction}
                       </span>
@@ -220,7 +228,7 @@ export function SignalPanel() {
           )}
         >
           <span className="relative z-10">
-            {verifying ? '[VERIFYING...]' : `[VERIFY & PROMOTE] (${holdProgress > 0 ? 'HOLDING...' : 'Hold 2s'})`}
+            {verifying ? '[RECORDING...]' : `[REVIEW & RECORD] (${holdProgress > 0 ? 'HOLDING...' : 'Hold 2s'})`}
           </span>
           {holdProgress > 0 && (
             <div 

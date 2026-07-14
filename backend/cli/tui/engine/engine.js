@@ -47,6 +47,15 @@ function isRichTerminal() {
   return process.stdout.isTTY && !process.env.CI;
 }
 
+// Set by callers (e.g. the Ink dashboard's in-pane child spawns) whose stdin
+// is a piped, never-written, never-closed pipe -- without this, the non-TTY
+// readline fallback below still blocks on rl.question() forever instead of
+// erroring or returning. Also doubles as the AI-testability bypass: any test
+// runner can set this to get guaranteed non-blocking prompt resolution.
+function isNonInteractive() {
+  return process.env.SOVEREIGN_NONINTERACTIVE === 'true';
+}
+
 // ---------------------------------------------------------------------------
 // W4 — Dynamic page-size derivation.
 //
@@ -204,6 +213,7 @@ function keyTokens(input) {
 }
 
 async function promptMultiSelect(question, options, { initialValues = [] } = {}) {
+  if (isNonInteractive()) return initialValues;
   process.stdin.removeAllListeners('data');
   process.stdin.removeAllListeners('keypress');
   process.stdin.removeAllListeners('line');
@@ -355,7 +365,8 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
         if (!searchMode) { searchMode = true; selectedIndex = 1; render(); }
         else { selectedIndex = filterText.length > 0 ? 1 : 0; render(); }
       } else if (isPrintable) {
-        if (searchMode) { filterText += key; selectedIndex = 1; render(); }
+        if (!searchMode) searchMode = true;
+        filterText += key; selectedIndex = 1; render();
       } else if (key === ' ') {
         const grouped = buildGrouped();
         const item = grouped[selectedIndex];
@@ -411,6 +422,11 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
 }
 
 async function promptSelect(question, options) {
+  if (isNonInteractive()) {
+    const resolved = typeof options === 'function' ? await options() : options;
+    const first = resolved[0];
+    return first && first.value !== undefined ? first.value : first;
+  }
   if (!isRichTerminal()) {
     console.log(`\n? ${question}`);
     const resolved = typeof options === 'function' ? await options() : options;
@@ -546,11 +562,10 @@ async function promptSelect(question, options) {
           render();
         }
       } else if (isPrintable) {
-        if (searchMode) {
-          filterText += key;
-          selectedIndex = 0;
-          render();
-        }
+        if (!searchMode) searchMode = true;
+        filterText += key;
+        selectedIndex = 0;
+        render();
       } else if (key === A.KEY_UP) {
         const { grouped } = getGrouped();
         if (grouped.length === 0) return;
@@ -589,6 +604,7 @@ async function promptSelect(question, options) {
 }
 
 async function promptText(question, defaultValue = '') {
+  if (isNonInteractive()) return defaultValue;
   if (!isRichTerminal()) {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     return new Promise(resolve => {
@@ -634,6 +650,10 @@ async function promptText(question, defaultValue = '') {
 }
 
 async function promptConfirm(question) {
+  // Explicit check (not just delegating to promptSelect's non-interactive
+  // path) -- a destructive action must default to "No", not promptSelect's
+  // generic "first option" rule, which here would be "Yes".
+  if (isNonInteractive()) return false;
   return await promptSelect(question, [
     { label: 'Yes', value: true },
     { label: 'No', value: false }
@@ -774,6 +794,23 @@ async function runInteractiveMenu(handleCommand) {
           await handleCommand(fullArgs);
         } catch (error) {
           console.error(`${paint(A.SEMANTIC.ERROR, 'Error:')} ${error.message}`);
+        }
+
+        // Settings > Set Layout Preset switching AWAY from "legacy" here is
+        // the inverse of sovereign_dashboard.mjs's own "legacy" preset (which
+        // exits THAT dashboard back to this menu) -- a request to switch
+        // engines back to the newer chat+grid dashboard, not a display
+        // preference inside this loop. Return immediately (skip the "press
+        // any key" prompt below, since this whole menu is about to close) so
+        // sovereign_cli.js's boot loop re-reads the setting and launches the
+        // dashboard next.
+        if (fullArgs[0] === 'settings' && fullArgs[1] === 'layout') {
+          const presetIdx = fullArgs.indexOf('--preset');
+          const preset = presetIdx !== -1 ? fullArgs[presetIdx + 1] : null;
+          if (preset && preset !== 'legacy') {
+            console.log(`\n${A.muted('Switching to the dashboard...')}`);
+            return;
+          }
         }
 
         process.stdout.write(`\n${A.muted(A.GLYPH.hline.repeat(60))}\n`);

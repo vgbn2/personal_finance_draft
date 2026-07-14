@@ -1,26 +1,10 @@
 const { createClient } = require('@supabase/supabase-js');
-const fs = require('node:fs');
-const path = require('node:path');
+const crypto = require('node:crypto');
 const { cached, isCacheEnabled } = require('./ttl_cache');
 const { classifySupabaseError } = require('../../../../shared/lib/supabase/errors');
+const { loadLocalEnv } = require('../../../../shared/lib/runtime/env');
 
-function loadRootEnv() {
-  const envPath = path.resolve(__dirname, '..', '..', '..', '.env');
-  if (!fs.existsSync(envPath)) return;
-  const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
-    const index = trimmed.indexOf('=');
-    const key = trimmed.slice(0, index).trim();
-    const value = trimmed.slice(index + 1).trim();
-    if (key && process.env[key] === undefined) {
-      process.env[key] = value.replace(/^["']|["']$/g, '');
-    }
-  }
-}
-
-loadRootEnv();
+loadLocalEnv();
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.SOVEREIGN_SUPABASE_URL || '';
 const SUPABASE_PUBLISHABLE_KEY =
@@ -48,6 +32,10 @@ function getBearerToken(req) {
   return match ? match[1] : '';
 }
 
+function tokenCacheKey(token) {
+  return token ? crypto.createHash('sha256').update(token).digest('hex').slice(0, 24) : 'anonymous';
+}
+
 function createSovereignSupabaseClient(req) {
   if (!isConfigured()) return null;
   const token = getBearerToken(req);
@@ -64,52 +52,63 @@ function createSovereignSupabaseClient(req) {
 
 async function getAuthStatus(req) {
   const token = getBearerToken(req);
-  return cached(`auth:${token || 'anonymous'}`, 30000, async () => {
-    const status = {
-      ok: true,
-      type: 'auth_status',
-      configured: isConfigured(),
-      authenticated: false,
-      user: null,
-      cache_enabled: isCacheEnabled(),
-    };
+  const status = {
+    ok: true,
+    type: 'auth_status',
+    configured: isConfigured(),
+    authenticated: false,
+    user: null,
+    cache_enabled: isCacheEnabled(),
+  };
 
-    if (!status.configured) {
-      status.ok = false;
-      status.error = 'supabase_not_configured';
-      return status;
-    }
-    if (!token) return status;
+  if (!status.configured) {
+    status.ok = false;
+    status.error = 'supabase_not_configured';
+    return status;
+  }
+  if (!token) return status;
 
-    const supabase = createSovereignSupabaseClient(req);
-    try {
-      const { data, error } = await supabase.auth.getUser(token);
-      if (error) {
-        status.ok = false;
-        status.error = classifySupabaseError(error, 'reach the Supabase auth service');
-        return status;
-      }
-
-      status.authenticated = Boolean(data.user);
-      status.user = data.user
-        ? {
-            id: data.user.id,
-            email: data.user.email || null,
-            role: data.user.role || null,
-          }
-        : null;
-    } catch (error) {
+  const supabase = createSovereignSupabaseClient(req);
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error) {
       status.ok = false;
       status.error = classifySupabaseError(error, 'reach the Supabase auth service');
       return status;
     }
+
+    status.authenticated = Boolean(data.user);
+    status.user = data.user
+      ? {
+          id: data.user.id,
+          email: data.user.email || null,
+          role: data.user.role || null,
+        }
+      : null;
+  } catch (error) {
+    status.ok = false;
+    status.error = classifySupabaseError(error, 'reach the Supabase auth service');
     return status;
-  });
+  }
+  return status;
 }
 
 async function getDatabaseStatus(req) {
   const token = getBearerToken(req);
-  return cached(`db:${token || 'anonymous'}`, 15000, async () => {
+  const auth = await getAuthStatus(req);
+  if (!auth.authenticated) {
+    return {
+      ok: false,
+      type: 'database_status',
+      configured: isConfigured(),
+      authenticated: false,
+      tables: EXPECTED_TABLES.map((name) => ({ name, readable: false, count: null })),
+      cache_enabled: isCacheEnabled(),
+      error: auth.error || 'auth_required',
+    };
+  }
+
+  return cached(`db:${tokenCacheKey(token)}`, 15000, async () => {
     const status = {
       ok: true,
       type: 'database_status',
@@ -125,13 +124,7 @@ async function getDatabaseStatus(req) {
       return status;
     }
 
-    const auth = await getAuthStatus(req);
-    status.authenticated = auth.authenticated;
-    if (!auth.authenticated) {
-      status.ok = false;
-      status.error = 'auth_required';
-      return status;
-    }
+    status.authenticated = true;
 
     const supabase = createSovereignSupabaseClient(req);
     const checks = await Promise.all(

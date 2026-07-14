@@ -16,6 +16,7 @@ const BINARY_NAME = process.platform === 'win32' ? 'sovereign_wealth.exe' : 'sov
 const BACKEND_CANDIDATES = [
     path.join(REPO_ROOT, 'backend', 'core', 'build', 'Release', BINARY_NAME),
     path.join(REPO_ROOT, 'backend', 'core', 'build', 'Debug', BINARY_NAME),
+    path.join(REPO_ROOT, 'backend', 'core', 'build', BINARY_NAME),
     path.join(REPO_ROOT, 'build', 'backend', 'core', 'Release', BINARY_NAME),
     path.join(REPO_ROOT, 'build', 'backend', 'core', 'Debug', BINARY_NAME),
     path.join(REPO_ROOT, 'backend', 'core', 'build', 'manual', BINARY_NAME),
@@ -104,6 +105,8 @@ const DEFAULT_BACKTEST      = path.join(STORAGE_DATA_DIR, 'backtests', 'latest_b
 const DEFAULT_STATE_PATH    = path.join(REPO_ROOT, 'workspace', 'STATE.md');
 const DEFAULT_USER_SETTINGS = path.join(STORAGE_DATA_DIR, 'user_settings.json');
 const STORAGE_TS_DIR        = path.join(STORAGE_DATA_DIR, 'ts');
+const DEFAULT_PORTFOLIO     = path.join(STORAGE_DATA_DIR, 'portfolio.json');
+const DEFAULT_INDICATOR_OPTIMIZATION = path.join(STORAGE_DATA_DIR, 'models', 'latest_indicator_optimization.json');
 
 module.exports = {
     REPO_ROOT,
@@ -117,6 +120,8 @@ module.exports = {
     DEFAULT_STATE_PATH,
     DEFAULT_USER_SETTINGS,
     STORAGE_TS_DIR,
+    DEFAULT_PORTFOLIO,
+    DEFAULT_INDICATOR_OPTIMIZATION,
     findBackendBinary,
     findNodeCli,
     findTool,

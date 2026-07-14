@@ -9,12 +9,16 @@ const {
   resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
 } = require('../../../scripts/data_ops/ingest_market_data');
 const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quote_router');
+const { DEFAULT_PORTFOLIO } = require('../../../../shared/lib/runtime/paths');
 const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../../shared/lib/strategy/backtest');
 const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../../shared/lib/market/indicators');
 const { compareModels } = require('../../../../shared/lib/ml/models');
 const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation');
 const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal } = require('../../tui');
 const A = require('../../../../shared/lib/ui/ansi');
+const { buildTradeGatewayLaunch } = require('../../../../shared/lib/runtime/backend_bridge');
+const { parseGatewayJsonOutput } = require('../trade/trade_polymarket.js');
+const { buildAggregatedPortfolioSnapshot } = require('../../../gateway/src/polymarket_portfolio.js');
 
 const utils = require('../../lib/utils.js');
 const { usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption } = utils;
@@ -106,11 +110,57 @@ function summarizeFeaturesCard(features) {
   };
 }
 
+// Cockpit's portfolio card previously read ONLY the static storage/data/
+// portfolio.json (mode/cash/positions/open_orders/last_mark_at -- no equity
+// field at all today, so the card always showed "portfolio unavailable")
+// and never touched Polymarket. Reuses the exact spawnSync+parse pattern
+// already proven in trade_polymarket.js's own portfolio fetch (timeout:
+// 10000) -- returns null on any failure (not configured, unreachable,
+// timeout) so the cockpit degrades the same way it always has rather than
+// crashing or hanging the cockpit render.
+function fetchPolymarketPortfolioForCockpit() {
+  try {
+    const launch = buildTradeGatewayLaunch(['polymarket', 'portfolio', '--json']);
+    const r = spawnSync(launch.command, launch.args, {
+      cwd: REPO_ROOT, encoding: 'utf8', timeout: 10000, shell: launch.shell ?? false,
+    });
+    return r.stdout ? parseGatewayJsonOutput(r.stdout, 'polymarket portfolio') : null;
+  } catch {
+    return null;
+  }
+}
+
+// Folds Polymarket's pUSD balance into whatever the base portfolio object
+// already carries, via the already-tested buildAggregatedPortfolioSnapshot
+// (results=[] since no other broker-balance fetch currently feeds the
+// cockpit either -- this stays a scoped "add Polymarket" change, not a
+// full multi-broker aggregation). summarizePortfolioCard's own field
+// contract ({equity, exposure, drawdown, readiness, generated_at}) is left
+// unchanged; only the equity number gains Polymarket's contribution.
+function mergePolymarketIntoPortfolio(portfolio, polymarket) {
+  const base = portfolio && typeof portfolio === 'object' ? portfolio : {};
+  const aggregated = buildAggregatedPortfolioSnapshot([], polymarket);
+  const pmEntry = aggregated.brokers.find((b) => b.name === 'Polymarket') || null;
+  const baseEquity = Number.isFinite(Number(base.equity)) ? Number(base.equity) : null;
+  const pmEquity = pmEntry && pmEntry.status === 'connected' ? aggregated.total_equity : 0;
+  const merged = { ...base, polymarket: pmEntry };
+  // Omit the key entirely (rather than setting it to null) when neither side
+  // has a value -- summarizePortfolioCard does Number.isFinite(Number(x)),
+  // and Number(null) is 0 (finite!), so an explicit null would be
+  // misread as a real zero-equity portfolio instead of "no data available".
+  if (baseEquity != null || pmEquity) {
+    merged.equity = (baseEquity || 0) + pmEquity;
+  } else {
+    delete merged.equity;
+  }
+  return merged;
+}
+
 function summarizePortfolioCard(portfolio) {
   const equity = portfolio && Number.isFinite(Number(portfolio.equity)) ? Number(portfolio.equity) : null;
   const exposure = portfolio && Number.isFinite(Number(portfolio.exposure)) ? Number(portfolio.exposure) : null;
   return {
-    source: path.join(REPO_ROOT, 'data', 'portfolio.json'),
+    source: DEFAULT_PORTFOLIO,
     last_checked: portfolio && portfolio.generated_at ? portfolio.generated_at : null,
     state: equity != null ? 'ok' : 'warn',
     title: equity != null ? `equity ${equity}` : 'portfolio unavailable',
@@ -326,12 +376,20 @@ function buildCockpitModel(opts = {}) {
   const features = safeReadJson(DEFAULT_FEATURES);
   const modelReport = safeReadJson(DEFAULT_MODEL_REPORT);
   const backtestReport = safeReadJson(DEFAULT_BACKTEST);
-  const portfolio = safeReadJson(path.join(REPO_ROOT, 'data', 'portfolio.json'));
+  const portfolio = safeReadJson(DEFAULT_PORTFOLIO);
+  // Opt-in only: fetching Polymarket spawns a real gateway subprocess with a
+  // real network round-trip (~5s+, matches the existing trade_polymarket.js
+  // precedent) -- fine for the actual interactive `cockpit` CLI command
+  // (commandCockpit passes includePolymarket:true below), but every other
+  // caller of buildCockpitModel (tests included -- this function previously
+  // had zero network I/O) should keep getting the fast, offline, file-read-
+  // only behavior they already depend on.
+  const polymarket = opts.includePolymarket ? fetchPolymarketPortfolioForCockpit() : null;
   const statusCard = summarizeStatusCard(snapshot, quality);
   const modelCard = summarizeModelCard(modelReport);
   const backtestCard = summarizeBacktestCard(backtestReport);
   const featuresCard = summarizeFeaturesCard(features);
-  const portfolioCard = summarizePortfolioCard(portfolio);
+  const portfolioCard = summarizePortfolioCard(mergePolymarketIntoPortfolio(portfolio, polymarket));
   const cards = [
     statusCard,
     featuresCard,
@@ -419,19 +477,53 @@ function cockpitInspectPayload(name) {
   return lookup[name] || null;
 }
 
+function renderStatus(payload) {
+  const line = '-'.repeat(72);
+  const lines = [`\n=== SYSTEM STATUS ===`];
+  lines.push(`Phase:       ${payload.phase || 'Unknown'}`);
+  lines.push(`Backend:     ${payload.backend_ok ? 'OK' : 'ERROR'} (${payload.backend || 'unknown'})`);
+  lines.push(`Cache Mode:  ${payload.cache_mode || 'unknown'}`);
+  if (payload.fetched_at) lines.push(`Fetched At:  ${payload.fetched_at}`);
+  
+  lines.push(`\n[DATA QUALITY]`);
+  lines.push(`  State:            ${payload.quality || 'unknown'}`);
+  lines.push(`  Total Records:    ${payload.records || 0}`);
+  lines.push(`  Usable Records:   ${payload.usable_records || 0}`);
+  lines.push(`  Rejected Records: ${payload.rejected_records || 0}`);
+  lines.push(`  Stale Records:    ${payload.stale_records || 0}`);
+  lines.push(`  Provider Errors:  ${payload.provider_errors || 0}`);
+  
+  if (payload.recovery) {
+    lines.push(`\n[RECOVERY]`);
+    lines.push(`  ${payload.recovery}`);
+  }
+
+  if (payload.next) {
+    lines.push(`\nNext Step: ${payload.next}`);
+  }
+  lines.push(`${line}\n`);
+  return lines.join('\n');
+}
+
 function commandStatus(args) {
   const loaded = loadStatusSnapshot();
   const snapshot = loaded.snapshot;
   const report = loaded.report;
   const backend = runBackendStatus(args);
   writeJson(DEFAULT_QUALITY_REPORT, report);
-  printPayload(buildStatusPayload(snapshot, report, backend), args);
+  
+  const payload = buildStatusPayload(snapshot, report, backend);
+  if (hasFlag(args, '--json')) {
+    printPayload(payload, args);
+  } else {
+    console.log(renderStatus(payload));
+  }
   return 0;
 }
 
 async function commandCockpit(args) {
   const quoteState = await quoteProviderHeaderState();
-  const model = buildCockpitModel({ quoteState });
+  const model = buildCockpitModel({ quoteState, includePolymarket: true });
   if (hasFlag(args, '--json')) {
     printPayload(model, args);
     return 0;
@@ -446,6 +538,7 @@ module.exports = {
   summarizeStatusCard,
   summarizeFeaturesCard,
   summarizePortfolioCard,
+  mergePolymarketIntoPortfolio,
   buildCockpitModel,
   quoteProviderHeaderState,
   renderCockpit,
