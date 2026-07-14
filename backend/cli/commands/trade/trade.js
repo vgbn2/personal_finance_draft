@@ -18,7 +18,6 @@ const {
   currentPhaseLabel,
   hasFlag,
   optionValue,
-  stripFlagValue,
   numericOption,
   printPayload,
 } = utils;
@@ -50,7 +49,6 @@ const {
   renderPolymarketOrderbookDetails,
   renderPolymarketPriceHistoryDetails,
   submitPolymarketBuyOrder,
-  authorizePolymarketLive,
 } = tradePolymarket;
 
 const {
@@ -228,42 +226,9 @@ async function promptTradeDeskArgs() {
 }
 
 /**
- * Translates the dashboard flag-grid's named --action/--symbol/--qty/
- * --order-type/--price into the same positional shape the CLI and the
- * interactive wizard (promptTradeDeskArgs) both produce, e.g.
- * ['buy', 'AAPL', '10', 'market']. Pure -- no I/O -- so it's unit-testable.
- *
- * Without this, picking 'alpaca' from the dashboard (whose flags carry no
- * positional args) always hit commandTrade's `args.length === 0` branch and
- * fell into the multi-step interactive wizard -- a full-screen prompt
- * sequence that reads as "dropping into the legacy version" even though it
- * isn't literally the legacy TUI engine. When --action is absent (bare CLI
- * invocation, e.g. `trade buy AAPL 10 market` or no args at all), args pass
- * through unchanged and the wizard still applies exactly as before.
- */
-function buildTradeArgsFromActionFlag(args) {
-  if (!hasFlag(args, '--action')) return args;
-  const action = optionValue(args, '--action', 'balance');
-  let rest = args;
-  for (const flag of ['--action', '--symbol', '--qty', '--order-type', '--price']) {
-    rest = stripFlagValue(rest, flag);
-  }
-  if (action !== 'buy' && action !== 'sell') return [action, ...rest];
-
-  const symbol = String(optionValue(args, '--symbol', '') || '').toUpperCase();
-  const qty = optionValue(args, '--qty', '1');
-  const orderType = optionValue(args, '--order-type', 'market');
-  const price = optionValue(args, '--price', '');
-  const positional = [action, symbol, qty, orderType];
-  if (orderType === 'limit' && price) positional.push(price);
-  return [...positional, ...rest];
-}
-
-/**
  * Handles the 'trade' command.
  */
 async function commandTrade(args) {
-  args = buildTradeArgsFromActionFlag(args);
   const subcommand = args[0];
 
   if (subcommand === 'favorites') {
@@ -357,10 +322,7 @@ async function commandTrade(args) {
     }
   }
 
-  // The PIN was consumed by the in-process gate above; strip it (and its value)
-  // so it never reaches the spawned gateway's argv, where it would be visible in
-  // OS process listings (tasklist/ps). The gateway does not read --pin.
-  const launch = buildTradeGatewayLaunch(stripFlagValue(args, '--pin'));
+  const launch = buildTradeGatewayLaunch(args);
   const result = spawnSync(launch.command, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
@@ -377,52 +339,7 @@ async function commandTrade(args) {
  * Auto-trade execution loop. Delegates to strategy automation engine.
  * Belongs in Execution, not Strategy Management.
  */
-async function commandAutoTradeStatus(args) {
-  const { loadState } = require('../../../../shared/lib/runtime/alpaca_bot_state.js');
-  const { fetchAlpacaPositions } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
-  const state = loadState();
-  const live = hasFlag(args, '--live');
-  const brokerBySymbol = new Map(fetchAlpacaPositions(live).map((p) => [p.symbol, p]));
-
-  const positions = state.positions.map((pos) => {
-    const broker = brokerBySymbol.get(pos.symbol);
-    const currentPrice = broker && Number(broker.quantity) > 0 ? Number(broker.marketValue) / Number(broker.quantity) : pos.fillPrice;
-    return { ...pos, currentPrice, unrealizedPnl: (currentPrice - pos.fillPrice) * pos.qty };
-  });
-
-  if (hasFlag(args, '--json')) {
-    printPayload({ ok: true, config: state.config, positions, cycleHistory: state.cycleHistory, lastCycleAt: state.lastCycleAt }, args);
-    return 0;
-  }
-
-  console.log(`\n${A.B_CYAN}--- ALPACA AUTO-TRADE STATUS ---${A.RESET}`);
-  console.log(`  Enabled:   ${state.config.enabled ? A.GREEN + 'yes' : A.RED + 'no'}${A.RESET}   Last cycle: ${state.lastCycleAt ?? 'never'}`);
-  console.log(`  Positions: ${positions.length}/${state.config.maxPositions}   Default stop: ${(state.config.defaultStopLossPct * 100).toFixed(0)}%   Default target: ${(state.config.defaultTakeProfitPct * 100).toFixed(0)}%`);
-  if (positions.length) {
-    console.log(`\n  ${A.BOLD}Open Positions:${A.RESET}`);
-    positions.forEach((p) => {
-      const plColor = p.unrealizedPnl >= 0 ? A.GREEN : A.RED;
-      console.log(`    ${p.symbol.padEnd(6)} | Qty: ${String(p.qty).padEnd(6)} | Fill: $${p.fillPrice.toFixed(2)} | Now: $${p.currentPrice.toFixed(2)} | PnL: ${plColor}$${p.unrealizedPnl.toFixed(2)}${A.RESET} | Target: $${p.targetPrice.toFixed(2)} | Stop: $${p.stopPrice.toFixed(2)} | Strategy: ${p.strategyName}`);
-    });
-  }
-  if (state.cycleHistory.length) {
-    console.log(`\n  ${A.BOLD}Recent exits:${A.RESET}`);
-    state.cycleHistory.slice(0, 5).forEach((c) => {
-      const plColor = c.realizedPnl >= 0 ? A.GREEN : A.RED;
-      console.log(`    ${c.symbol.padEnd(6)} | ${c.exitReason.padEnd(6)} | PnL: ${plColor}$${c.realizedPnl.toFixed(2)}${A.RESET} | ${c.completedAt}`);
-    });
-  }
-  return 0;
-}
-
 async function commandAutoTrade(args) {
-  // Status is a read-only view of tracked positions / P&L -- it must work even
-  // when the ai_agent_trading live-trading flag is off (you should be able to
-  // see open positions without enabling the bot). Only the automation LOOP
-  // below is gated, so the status branch is checked first.
-  if (args[0] === 'status') {
-    return commandAutoTradeStatus(args.slice(1));
-  }
   const gate = featureGate('ai_agent_trading', { surface: 'Auto-trade loop' });
   if (!gate.ok) {
     printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
@@ -460,62 +377,10 @@ async function commandAgent(args) {
   return result.status === 'ok' ? 0 : 1;
 }
 
-async function promptBotArgs() {
-  global.suppressLogs = true;
-  process.stdout.write(A.CLR_ALL + A.HOME);
-
-  while (true) {
-    const action = await promptSelect('Edge Trader Bot action:', [
-      { label: 'Health Check (credentials, API, balance)', value: 'health' },
-      { label: 'Status', value: 'status' },
-      { label: 'Run Cycle (single iteration)', value: 'cycle' },
-      { label: 'Start Loop (continuous)', value: 'run' },
-      { label: 'Enable Bot', value: 'enable' },
-      { label: 'Disable Bot', value: 'disable' },
-      { label: 'View / Edit Config', value: 'config' },
-      { label: 'Back', value: 'back' },
-    ]);
-
-    global.suppressLogs = false;
-
-    if (action === 'back') return null;
-
-    if (action === 'enable') return ['config', '--key', 'enabled', '--value', 'true'];
-    if (action === 'disable') return ['config', '--key', 'enabled', '--value', 'false'];
-    
-    if (action === 'config') {
-      const key = await promptText('Config key (e.g. minEdgeThreshold):', '');
-      if (!key) continue;
-      const val = await promptText(`New value for ${key}:`, '');
-      return ['config', '--key', key, '--value', val];
-    }
-
-    if (action === 'cycle' || action === 'run') {
-      let intervalArgs = [];
-      if (action === 'run') {
-        const interval = await promptText('Interval (minutes):', '15');
-        intervalArgs = ['--interval', interval];
-      }
-      const live = await promptConfirm('EXECUTE LIVE TRADES?');
-      return [action, ...intervalArgs, ...(live ? ['--live'] : [])];
-    }
-
-    return [action];
-  }
-}
-
 /**
  * Handles the 'bot' command — thin shell into the gateway bot commands.
  */
 async function commandBot(args) {
-  if (args.length === 0 && isRichTerminal()) {
-    const promptedArgs = await promptBotArgs();
-    if (!promptedArgs) {
-      console.log('Bot menu cancelled.');
-      return 0;
-    }
-    args = promptedArgs;
-  }
   const sub = args[0] || 'status';
   if (sub === 'cycle' || sub === 'run') {
     const gate = featureGate('bot_autopilot', { surface: `Bot ${sub}` });
@@ -523,14 +388,20 @@ async function commandBot(args) {
       printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
       return 1;
     }
-    const polymarketGate = featureGate('polymarket', { surface: `Bot ${sub}` });
-    if (!polymarketGate.ok) {
-      printPayload({ ok: false, type: 'feature_gate', feature_flag: polymarketGate.flag, reason: polymarketGate.reason, hint: polymarketGate.hint }, args);
-      return 1;
-    }
   }
   if (hasFlag(args, '--live')) {
-    if (!(await authorizePolymarketLive(args, 'Polymarket bot live trading'))) return 1;
+    const liveGate = canLiveExecute('alpaca');
+    if (!liveGate.ok) {
+      printPayload({
+        ok: false,
+        broker: 'alpaca',
+        runtime_mode: getRuntimeMode(),
+        reason: liveGate.reason,
+      }, args);
+      console.error(`${A.B_RED}[ERROR] ${liveGate.reason}.${A.RESET}`);
+      return 1;
+    }
+    if (!(await requireAuth('bot live trading'))) return 1;
   }
   const gatewayArgs = ['bot', sub, ...args.slice(1)];
   if (hasFlag(args, '--json')) gatewayArgs.push('--json');
@@ -548,7 +419,6 @@ module.exports = {
   buildPolymarketCategoryChoices,
   buildPolymarketMarketChoices,
   buildTokenChoicePrompt,
-  buildTradeArgsFromActionFlag,
   buildTradeGatewayLaunch,
   commandAddPlatform,
   commandAgent,

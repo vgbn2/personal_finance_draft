@@ -90,69 +90,6 @@ const TS_INDEX_PATH = path.join(REPO_ROOT, 'storage', 'data', 'ts');
 const OHLCV_INGEST_FAMILIES = new Set(['crypto', 'equities', 'indices', 'commodities', 'fx']);
 const FAMILY_BASE_TF_MAP = { crypto: '1m', equities: '1m', indices: '5m', commodities: '5m', fx: '5m' };
 
-function buildDryRunFamilyPlan(manifest, config, targetFamily, options, kind) {
-  const families = [];
-  let plannedFetches = 0;
-
-  for (const family of manifest) {
-    if (targetFamily && targetFamily !== family.id) continue;
-    const section = config[family.configKey];
-    if (!section || !section.enabled) continue;
-
-    const configuredItems = family.itemsKey ? section[family.itemsKey] : ['fear_and_greed'];
-    const items = Array.isArray(configuredItems) ? configuredItems : [];
-    const filteredItems = options.symbol ? items.filter((item) => item === options.symbol) : items;
-    const timeframes = options.timeframe ? [options.timeframe] : (section.timeframes || ['1d']);
-    const providers = Array.isArray(section.providers) ? section.providers.filter(Boolean) : [];
-    if (family.availability?.status === 'not_implemented') {
-      families.push({
-        family: family.id,
-        kind,
-        config_key: family.configKey,
-        enabled: true,
-        available: false,
-        reason: family.availability.status,
-        providers,
-        item_count: filteredItems.length,
-        timeframes,
-        planned_fetches: 0,
-        target_symbol: options.symbol || null,
-      });
-      continue;
-    }
-    const fetchCount = filteredItems.length * Math.max(timeframes.length, 1) * Math.max(providers.length, 1);
-
-    plannedFetches += fetchCount;
-    families.push({
-      family: family.id,
-      kind,
-      config_key: family.configKey,
-      enabled: true,
-      available: true,
-      providers,
-      item_count: filteredItems.length,
-      timeframes,
-      planned_fetches: fetchCount,
-      target_symbol: options.symbol || null,
-    });
-  }
-
-  return { families, plannedFetches };
-}
-
-function buildIngestDryRunPlan(config, optionsConfig, targetFamily, options) {
-  const market = buildDryRunFamilyPlan(FAMILIES_MANIFEST, config, targetFamily, options, 'market');
-  const optionsFamilies = buildDryRunFamilyPlan(OPTIONS_MANIFEST, optionsConfig, targetFamily, options, 'options');
-  return {
-    target_family: targetFamily,
-    target_symbol: options.symbol || null,
-    target_timeframe: options.timeframe || null,
-    requested_days: Number(options.historyDays || options.days || 0) || null,
-    planned_fetches: market.plannedFetches + optionsFamilies.plannedFetches,
-    families: [...market.families, ...optionsFamilies.families],
-  };
-}
-
 const {
   SUPPORTED_INTERVALS,
   parseTimeframeMs,
@@ -217,7 +154,6 @@ const {
   fetchYahooBreadthProxy,
   fetchKalshiHistoricalMarkets,
   fetchKalshiHistoricalCandlesticks,
-  getIngestFamilyAvailability,
   FAMILIES_MANIFEST,
   OPTIONS_MANIFEST,
 } = require('./manifests.js');
@@ -577,13 +513,6 @@ function collectIngestSkipChecks(config, optionsConfig, targetFamily = null) {
       continue;
     }
 
-    if (family.availability?.status === 'not_implemented') {
-      checks.push(ingestSkipCheck(family.id, 'not_implemented', {
-        provider: family.availability.provider,
-      }));
-      continue;
-    }
-
     const section = familySection(config, family);
     if (!section || !section.enabled) {
       checks.push(ingestSkipCheck(family.id, 'disabled_in_config'));
@@ -928,35 +857,6 @@ async function ingestMarketData(options = {}) {
     const targetFamily = options.family || null;
     const scopedSnapshot = isScopedSnapshotRequest(options);
     const requestedDays = Number(options.historyDays || options.days || 0);
-    const dryRun = Boolean(options.dryRun);
-    const unavailable = getIngestFamilyAvailability(targetFamily);
-    if (unavailable && !dryRun) {
-      return {
-        mode: 'not_implemented',
-        dry_run: false,
-        fetched_at: new Date().toISOString(),
-        sources: [],
-        errors: [{
-          code: unavailable.status,
-          family: unavailable.family,
-          provider: unavailable.provider,
-          message: `${unavailable.provider} ${unavailable.family} provider is not implemented`,
-        }],
-        provider_checks: [{
-          family: unavailable.family,
-          provider: unavailable.provider,
-          status: 'skipped',
-          reason: unavailable.status,
-        }],
-        snapshot_scope: {
-          kind: 'scoped',
-          representative_of_global_live_health: false,
-          target_family: targetFamily,
-          target_symbol: options.symbol || null,
-          requested_days: requestedDays || null,
-        },
-      };
-    }
     const config = await loadConfig();
     const optionsConfig = await loadOptionsConfig();
     
@@ -987,8 +887,7 @@ async function ingestMarketData(options = {}) {
     }
 
     const snapshot = {
-      mode: dryRun ? 'dry_run' : (requestedDays > 5 ? 'provider_history' : 'live'),
-      dry_run: dryRun,
+      mode: requestedDays > 5 ? 'provider_history' : 'live',
       fetched_at: new Date().toISOString(),
       sources: [],
       errors: [],
@@ -1002,16 +901,6 @@ async function ingestMarketData(options = {}) {
       },
     };
 
-    if (dryRun) {
-      snapshot.dry_run_plan = buildIngestDryRunPlan(config, optionsConfig, targetFamily, options);
-      snapshot.provider_checks.push({
-        status: 'skipped',
-        reason: 'dry_run',
-        planned_fetches: snapshot.dry_run_plan.planned_fetches,
-      });
-      return snapshot;
-    }
-
     // 1. External Quote Feeds
     if (!targetFamily || targetFamily === 'fx' || targetFamily === 'quote_feeds') {
       const externalQuotes = await loadExternalQuoteInputs(config);
@@ -1023,7 +912,6 @@ async function ingestMarketData(options = {}) {
     // 2. Standard Families (Market Data)
     for (const family of FAMILIES_MANIFEST) {
       if (targetFamily && targetFamily !== family.id) continue;
-      if (family.availability?.status === 'not_implemented') continue;
       const section = config[family.configKey];
       if (!section || !section.enabled) continue;
 
@@ -1397,7 +1285,6 @@ module.exports = {
   loadConfig,
   loadOptionsConfig,
   collectIngestSkipChecks,
-  getIngestFamilyAvailability,
   loadExternalQuoteInputs,
   fetchNasaPowerWeather,
   fetchOpenSkyRegion,
@@ -1452,3 +1339,4 @@ module.exports = {
   resolveWorldBankIndicator,
   appendRecords,
 };
+

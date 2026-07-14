@@ -1,6 +1,3 @@
-<<<<<<<< HEAD:shared/lib/backfill.js
-module.exports = require('./data/backfill');
-========
 const { fetchBinanceBaseCandles } = require('../providers/binance');
 const { fetchCoinbaseBaseCandles } = require('../providers/coinbase');
 const { fetchYahooBaseCandles } = require('../providers/yahoo');
@@ -71,48 +68,15 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
   const providerMaxBars = providerMaxBarsFor(family);
   const maxDaysPerChunk = Math.max(1, Math.floor(providerMaxBars / barsPerDay));
   const requestedEndTs = forcedEndTs || Date.now();
-  const targetStartTs = requestedEndTs - (days * DAY_MS);
-
-  // Gap-aware fetch (opt-in via options.tsDir): if the ts-index already has
-  // bars covering the back of this window, only walk forward from the last
-  // covered bar instead of blindly re-walking the whole requested range --
-  // the common case for a repeated/refresh backfill on a universe that's
-  // already deep. readCoverage only reports the bin's overall first/last bar
-  // (not internal holes), so this narrows the FRONT of the window when
-  // coverage already reaches back far enough; it does not yet detect/backfill
-  // a gap that starts mid-window (the long-deferred "FW6 backward-gap fetch"
-  // item) -- that stays a separate, not-yet-implemented enhancement.
-  // The 1-day overlap re-fetches the most recent already-covered bar(s) too,
-  // since the newest bar can still be a not-yet-closed, incomplete candle at
-  // the time it was first written; writeTsIndex's merge-protection already
-  // dedupes the overlap safely (proven via the backfill-daemon OOM fix).
-  let effectiveStartTs = targetStartTs;
-  let gapAwareMeta = null;
-  if (options.tsDir) {
-    try {
-      const { readCoverage } = require('../market/coverage.js');
-      const cov = readCoverage(options.tsDir, symbol, timeframe);
-      if (cov.exists && cov.lastBarMs != null && cov.lastBarMs > targetStartTs) {
-        effectiveStartTs = Math.min(requestedEndTs, Math.max(targetStartTs, cov.lastBarMs - DAY_MS));
-        gapAwareMeta = {
-          gap_aware: true,
-          existing_first_bar_ms: cov.firstBarMs,
-          existing_last_bar_ms: cov.lastBarMs,
-          narrowed_from_start_ts: targetStartTs,
-          narrowed_to_start_ts: effectiveStartTs,
-        };
-      }
-    } catch (_) { /* coverage probe is best-effort; fall back to the full window on any error */ }
-  }
-
   let currentEndTs = requestedEndTs;
+  const targetStartTs = requestedEndTs - (days * DAY_MS);
   const allCandles = [];
   const chunks = [];
   const chunkDelayMs = Math.max(0, Number(options.chunkDelayMs || 0));
 
-  while (currentEndTs > effectiveStartTs) {
+  while (currentEndTs > targetStartTs) {
     let currentStartTs = currentEndTs - (maxDaysPerChunk * DAY_MS);
-    if (currentStartTs < effectiveStartTs) currentStartTs = effectiveStartTs;
+    if (currentStartTs < targetStartTs) currentStartTs = targetStartTs;
 
     try {
       let chunk;
@@ -133,7 +97,7 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
       for (let i = 0; i < chunk.length; i++) {
         allCandles.push(chunk[i]);
       }
-      if (currentStartTs <= effectiveStartTs) {
+      if (currentStartTs <= targetStartTs) {
         break;
       }
       const nextEndTs = chunk[0].openTime - 1;
@@ -141,7 +105,7 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
         break;
       }
       currentEndTs = nextEndTs;
-      if (chunkDelayMs > 0 && currentEndTs > effectiveStartTs) {
+      if (chunkDelayMs > 0 && currentEndTs > targetStartTs) {
         await sleep(chunkDelayMs);
       }
     } catch (error) {
@@ -169,7 +133,6 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
     max_days_per_chunk: maxDaysPerChunk,
     chunks,
     fetched_bars: sorted.length,
-    gap_aware: gapAwareMeta,
   });
 }
 
@@ -238,4 +201,3 @@ module.exports = {
   providerMaxBarsFor,
   windowText,
 };
->>>>>>>> feat-ink-tui-refactor-split:shared/lib/data/backfill.js
