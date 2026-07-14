@@ -1,16 +1,8 @@
 'use strict';
 const utils = require('../../lib/utils.js');
 const { optionValue, hasFlag, DEFAULT_HISTORY } = utils;
-const { readSnapshot, readTsIndex } = require('../../../../shared/lib/market/validation.js');
-const { DEFAULT_TS_DIR } = require('../data/data_rollup.js');
+const { readSnapshot } = require('../../../../shared/lib/market/validation.js');
 
-/**
- * Calculates a prediction model signal based on price deviation in standard deviations (sigmas).
- * @param {number} sigmas - Price deviation in standard deviations from the mean.
- * @param {number} bandwidth - Bollinger Band bandwidth.
- * @param {number} currentPrice - Latest close price.
- * @returns {object} Direction, confidence level, reason, and rounded sigmas value.
- */
 function sigmaPrediction(sigmas, bandwidth, currentPrice) {
   const absS = Math.abs(sigmas);
   const bwPct = bandwidth / (currentPrice || 1);
@@ -34,32 +26,15 @@ function sigmaPrediction(sigmas, bandwidth, currentPrice) {
   return { direction, confidence: Number(confidence.toFixed(3)), reason, sigmas: Number(sigmas.toFixed(4)) };
 }
 
-/**
- * Computes Bollinger Band metrics and statistical sigma values for a symbol and timeframe.
- * @param {string} symbol - Trading asset symbol.
- * @param {string} timeframe - Target timeframe interval.
- * @param {number} windowSize - Window size for mean and standard deviation computation.
- * @returns {object|null} Computed statistics object or null if there is insufficient data.
- */
 function computeSigmaState(symbol, timeframe, windowSize) {
-  // Deep historical bars live in the ts-index, not the shallow last-fetch
-  // cache (DEFAULT_HISTORY) - a symbol/timeframe can have thousands of bars
-  // on disk while the cache holds only what the most recent fetch touched.
-  // Prefer the ts-index; fall back to the cache only for a symbol/timeframe
-  // that's never been deep-backfilled (no .bin file at all).
-  const tsBars = readTsIndex(DEFAULT_TS_DIR, symbol, timeframe);
-  let bars;
-  if (tsBars && tsBars.length > 0) {
-    bars = tsBars.filter(s => typeof s.close === 'number' && isFinite(s.close));
-  } else {
-    const snapshot = readSnapshot(DEFAULT_HISTORY);
-    if (!snapshot) return null;
-    bars = (snapshot.sources || []).filter(s =>
-      s.symbol === symbol &&
-      (!s.timeframe || s.timeframe === timeframe) &&
-      typeof s.close === 'number' && isFinite(s.close)
-    ).sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
-  }
+  const snapshot = readSnapshot(DEFAULT_HISTORY);
+  if (!snapshot) return null;
+
+  const bars = (snapshot.sources || []).filter(s =>
+    s.symbol === symbol &&
+    (!s.timeframe || s.timeframe === timeframe) &&
+    typeof s.close === 'number' && isFinite(s.close)
+  ).sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
 
   if (bars.length < windowSize) return null;
 
@@ -161,11 +136,6 @@ function renderSigmaFrame(symbol, timeframe, windowSize, state, pollIntervalSec,
   return buf;
 }
 
-/**
- * Computes the number of lines required to display a buffer, accounting for ANSI codes and terminal column wrapping.
- * @param {string} buf - The text buffer to analyze.
- * @returns {number} The visual line count.
- */
 function visualLineCount(buf) {
   const cols = process.stdout.columns || 80;
   const stripped = buf.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
@@ -195,20 +165,6 @@ async function runBackendVisualize(args = []) {
 
   // Initial compute
   let state = computeSigmaState(symbol, timeframe, windowSize);
-  if (!state) {
-    // Bars missing/insufficient -- try one ingest before giving up, instead
-    // of always requiring a separate manual `backend ingest` run first.
-    // Bounded to a single retry (not a loop) so a persistent failure (e.g.
-    // delisted symbol, no provider coverage) still surfaces as a real error
-    // rather than hanging.
-    try {
-      const { ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
-      await ingestMarketData({ symbol, timeframe });
-      state = computeSigmaState(symbol, timeframe, windowSize);
-    } catch {
-      // fall through to the existing error reporting below
-    }
-  }
   if (!state) {
     const snap = readSnapshot(DEFAULT_HISTORY);
     if (!snap) return { ok: false, error: 'No cache data found. Run a backfill first.' };

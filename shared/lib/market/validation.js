@@ -1,6 +1,3 @@
-<<<<<<<< HEAD:shared/lib/market_validation.js
-module.exports = require('./market/validation');
-========
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -472,22 +469,7 @@ function validateSnapshot(snapshot, options = {}) {
 
   report.usable_records = usableSources.length;
   report.rejected_records = sourceSnapshot.sources.length - usableSources.length;
-
-  const strict = options.strict !== undefined ? Boolean(options.strict) : false;
-  let blockingWarnings = 0;
-  if (strict) {
-    for (const issue of report.issues) {
-      if (issue.severity === 'warning') {
-        const isExemptRollup = issue.code === 'rollup_lower_timeframe' &&
-                               (issue.family === 'commodities' || issue.family === 'equities');
-        if (!isExemptRollup) {
-          blockingWarnings++;
-        }
-      }
-    }
-  }
-
-  report.ok = report.counts.error === 0 && (!strict || blockingWarnings === 0);
+  report.ok = report.counts.error === 0 && report.provider_errors.length === 0;
 
   return { report, usableSources };
 }
@@ -601,29 +583,8 @@ function mergeSnapshots(base, update) {
   return merged;
 }
 
-function renameWithRetry(src, dest, retries = 5, delayMs = 50) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      fs.renameSync(src, dest);
-      return;
-    } catch (err) {
-      if (i === retries - 1) throw err;
-      if (err.code === 'ENOENT') {
-        try { fs.mkdirSync(path.dirname(dest), { recursive: true }); } catch (e) {}
-      }
-      // Block this thread for delayMs without a CPU busy-spin. Atomics.wait on
-      // a throwaway never-notified SharedArrayBuffer is a true OS-level sleep
-      // (the timeout branch returns 'timed-out'); it stays synchronous to match
-      // this function's contract and adds no dependency. The previous
-      // `while (Date.now()-start < delayMs) {}` pegged a core and blocked the
-      // event loop for up to ~250ms (5 × 50ms) per contended rename.
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs);
-    }
-  }
-}
-
 function writeJson(outputPath, payload) {
-  const tempPath = atomicTempPath(outputPath);
+  const tempPath = `${outputPath}.tmp`;
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
   // Only plain objects get the streaming "sources" fast path below — arrays (e.g.
@@ -631,7 +592,7 @@ function writeJson(outputPath, payload) {
   // JSON.stringify so their shape on disk is unchanged.
   if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
     fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
-    renameWithRetry(tempPath, outputPath);
+    fs.renameSync(tempPath, outputPath);
     return;
   }
 
@@ -660,7 +621,7 @@ function writeJson(outputPath, payload) {
 
   fs.writeSync(fd, '}\n');
   fs.closeSync(fd);
-  renameWithRetry(tempPath, outputPath);
+  fs.renameSync(tempPath, outputPath);
 }
 
 /**
@@ -718,78 +679,6 @@ function atomicTempPath(targetPath) {
   return `${targetPath}.${suffix}.tmp`;
 }
 
-function encodeTsRecords(records) {
-  const buffer = Buffer.allocUnsafe(records.length * TS_RECORD_BYTES);
-  for (let i = 0; i < records.length; i += 1) {
-    const { ms, r } = records[i];
-    const offset = i * TS_RECORD_BYTES;
-    buffer.writeDoubleLE(ms, offset);
-    buffer.writeDoubleLE(Number(r.open) || 0, offset + 8);
-    buffer.writeDoubleLE(Number(r.high) || 0, offset + 16);
-    buffer.writeDoubleLE(Number(r.low) || 0, offset + 24);
-    buffer.writeDoubleLE(Number(r.close) || 0, offset + 32);
-    buffer.writeDoubleLE(Number(r.volume) || 0, offset + 40);
-  }
-  return buffer;
-}
-
-/**
- * Appends a strictly newer suffix without copying the historical bin. Candle bytes are
- * flushed before the header count is advanced, so an interrupted append leaves either
- * the old readable count or the complete new count. Overlaps and corrections return
- * false and continue through the precedence-aware merge below.
- */
-function tryAppendBin(bin, metaPath, meta, incoming) {
-  if (incoming.length === 0 || !fs.existsSync(bin) || !fs.existsSync(metaPath)) return false;
-
-  try {
-    JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-  } catch (_) {
-    return false;
-  }
-
-  let fd;
-  try {
-    fd = fs.openSync(bin, 'r+');
-    const header = Buffer.allocUnsafe(TS_HEADER_BYTES);
-    if (fs.readSync(fd, header, 0, header.length, 0) !== header.length) return false;
-    if (header.toString('ascii', 0, 4) !== TS_MAGIC) return false;
-
-    const existingCount = header.readUInt32LE(4);
-    const expectedBytes = TS_HEADER_BYTES + existingCount * TS_RECORD_BYTES;
-    if (fs.fstatSync(fd).size < expectedBytes) return false;
-
-    if (existingCount > 0) {
-      const lastTimestamp = Buffer.allocUnsafe(8);
-      const lastOffset = TS_HEADER_BYTES + (existingCount - 1) * TS_RECORD_BYTES;
-      if (fs.readSync(fd, lastTimestamp, 0, 8, lastOffset) !== 8) return false;
-      if (incoming[0].ms <= lastTimestamp.readDoubleLE(0)) return false;
-    }
-
-    const encoded = encodeTsRecords(incoming);
-    fs.writeSync(fd, encoded, 0, encoded.length, expectedBytes);
-    fs.ftruncateSync(fd, expectedBytes + encoded.length);
-    fs.fsyncSync(fd);
-
-    const countBuffer = Buffer.allocUnsafe(4);
-    const count = existingCount + incoming.length;
-    countBuffer.writeUInt32LE(count, 0);
-    fs.writeSync(fd, countBuffer, 0, countBuffer.length, 4);
-    fs.fsyncSync(fd);
-
-    const tmpMeta = atomicTempPath(metaPath);
-    fs.writeFileSync(tmpMeta, JSON.stringify({ ...meta, count }), 'utf8');
-    renameWithRetry(tmpMeta, metaPath);
-    return true;
-  } catch (_) {
-    return false;
-  } finally {
-    if (fd !== undefined) {
-      try { fs.closeSync(fd); } catch (_) { /* best effort after a failed append */ }
-    }
-  }
-}
-
 /**
  * Writes a per-symbol binary time-series index from a snapshot.
  * tsDir should be e.g. storage/data/ts/
@@ -805,8 +694,7 @@ const SUB_DAILY_PRESERVED_TIMEFRAMES = new Set(['1m', '5m', '15m', '30m']);
 
 /**
  * mergeWriteBin(tsDir, meta, incoming) -- merge `incoming` records into the existing
- * bin for (meta.symbol, meta.timeframe). Strictly newer records use the durable append
- * path above; overlaps atomically rewrite through the streaming merge below.
+ * bin for (meta.symbol, meta.timeframe) and atomically rewrite it.
  *
  * STREAMING / CONSTANT-HEAP: the existing bin is the deepest store and can hold
  * millions of rows (BTCUSDT 1m ≈ 3M). The old path called readTsIndex() to pull every
@@ -842,8 +730,6 @@ function mergeWriteBin(tsDir, meta, incoming) {
   }
 
   const { bin, meta: metaPath } = tsIndexPath(tsDir, meta.symbol, meta.timeframe);
-
-  if (tryAppendBin(bin, metaPath, meta, incDedup)) return;
 
   // Read the existing bin as a Buffer only (no object materialization).
   let existBuf = null;
@@ -909,9 +795,9 @@ function mergeWriteBin(tsDir, meta, incoming) {
   const tmpBin = atomicTempPath(bin);
   const tmpMeta = atomicTempPath(metaPath);
   fs.writeFileSync(tmpBin, finalBuf);
-  renameWithRetry(tmpBin, bin);
+  fs.renameSync(tmpBin, bin);
   fs.writeFileSync(tmpMeta, JSON.stringify({ ...meta, count }), 'utf8');
-  renameWithRetry(tmpMeta, metaPath);
+  fs.renameSync(tmpMeta, metaPath);
 }
 
 function writeTsIndex(tsDir, snapshot) {
@@ -1071,10 +957,8 @@ module.exports = {
   readTsIndex,
   readTsIndexSince,
   recordKey,
-  renameWithRetry,
   validateSnapshot,
   writeJson,
   writePartitionedSnapshot,
   writeTsIndex,
 };
->>>>>>>> feat-ink-tui-refactor-split:shared/lib/market/validation.js
