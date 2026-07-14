@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { cn } from '../../lib/utils';
 import { MetricTileData } from '../../types';
 import { Terminal, ShieldCheck, Activity, AlertTriangle, Zap } from 'lucide-react';
-import { API_ENDPOINTS, DEFAULT_HEADERS } from '../../lib/api';
+import { API_ENDPOINTS, getAuthHeaders } from '../../lib/api';
 import { subscribeToOrders } from '../../lib/supabase';
 
 const METRICS: MetricTileData[] = [
@@ -20,10 +20,11 @@ export function OverviewPanel() {
   useEffect(() => {
     const hydrateSystem = async () => {
       try {
+        const headers = await getAuthHeaders();
         const [sysRes, killRes, signalRes] = await Promise.all([
-          fetch(API_ENDPOINTS.SYSTEM_STATUS, { headers: DEFAULT_HEADERS }),
-          fetch(API_ENDPOINTS.KILL_SWITCH, { headers: DEFAULT_HEADERS }),
-          fetch(API_ENDPOINTS.SIGNAL, { headers: DEFAULT_HEADERS })
+          fetch(API_ENDPOINTS.SYSTEM_STATUS, { headers }),
+          fetch(API_ENDPOINTS.KILL_SWITCH, { headers }),
+          fetch(API_ENDPOINTS.SIGNAL, { headers })
         ]);
         
         const data = await sysRes.json();
@@ -56,7 +57,7 @@ export function OverviewPanel() {
     const hydrateCorrelation = async () => {
       try {
         const assets = 'AAPL,MSFT,TSLA,NVDA,BTCUSDT,ETHUSDT,XAUUSD,BRENT,EURUSD';
-        const res = await fetch(`${API_ENDPOINTS.CORRELATION}?symbols=${assets}&max_bars=120`, { headers: DEFAULT_HEADERS });
+        const res = await fetch(`${API_ENDPOINTS.CORRELATION}?symbols=${assets}&max_bars=120`, { headers: await getAuthHeaders() });
         const data = await res.json();
         if (data.ok) {
           setCorrelation(data);
@@ -99,10 +100,10 @@ export function OverviewPanel() {
   }, []);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 animate-in slide-in-from-bottom-2 duration-300">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 animate-in slide-in-from-bottom-2 duration-300">
       
       {/* Metrics Row */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {metrics.map((metric, idx) => {
           const colorMap = {
             cyan: 'var(--color-brand-cyan)',
@@ -128,9 +129,9 @@ export function OverviewPanel() {
         })}
       </div>
 
-      <div className="grid grid-cols-12 gap-6 h-[400px]">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6 min-h-[400px] xl:h-[400px]">
         {/* Terminal Card (65% ~ col-span-8) */}
-        <div className="col-span-8 bg-slate-900 border border-slate-800 rounded-xl relative flex flex-col overflow-hidden shadow-sm">
+        <div className="xl:col-span-8 min-h-[300px] bg-slate-900 border border-slate-800 rounded-xl relative flex flex-col overflow-hidden shadow-sm">
           <div className="h-10 border-b border-slate-800 flex items-center px-5 gap-3 bg-slate-800/50 shrink-0">
              <ShieldCheck className="w-4 h-4 text-[var(--color-brand-green)]" />
              <span className="font-mono text-[10px] text-slate-400 tracking-widest uppercase">Secured Log Stream [ENCRYPTED]</span>
@@ -153,7 +154,7 @@ export function OverviewPanel() {
         </div>
 
         {/* Correlation Heatmap (35% ~ col-span-4) */}
-        <div className="col-span-4 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl flex flex-col shadow-sm">
+        <div className="xl:col-span-4 min-h-[300px] bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl flex flex-col shadow-sm">
           <div className="h-10 border-b border-[var(--border-subtle)] flex items-center px-5 shrink-0 bg-[var(--bg-primary)]">
              <span className="font-heading text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">Live Correlation</span>
           </div>

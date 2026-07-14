@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, Bot, Database, GitMerge, LayoutDashboard, LineChart, LogOut, Server, Settings, User, Lock, Unlock, TrendingUp } from 'lucide-react';
+import { Activity, Bot, Database, GitMerge, LayoutDashboard, LineChart, LogOut, Menu, Server, Settings, User, Lock, Unlock, TrendingUp, X } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { TabId } from '../../types';
 import { cn } from '../../lib/utils';
-import { supabase, subscribeToOrders } from '../../lib/supabase';
+import { subscribeToOrders } from '../../lib/supabase';
 
 interface TopBarProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
   session: Session | null;
+  onLogout: () => Promise<boolean>;
+  sidebarOpen: boolean;
+  onSidebarToggle: () => void;
 }
 
 function SafetyLock() {
@@ -48,33 +51,46 @@ const TABS: { id: TabId; label: string; number: string; icon: React.ReactNode }[
   { id: 'telemetry', label: 'Telemetry', number: '07', icon: <Activity className="w-4 h-4" /> },
   { id: 'sigma_band', label: 'Sigma Band', number: '08', icon: <TrendingUp className="w-4 h-4" /> },
   { id: 'bot',        label: 'Edge Bot',   number: '09', icon: <Bot className="w-4 h-4" /> },
+  { id: 'settings',   label: 'Settings',   number: '10', icon: <Settings className="w-4 h-4" /> },
 ];
 
-export function TopBar({ activeTab, onTabChange, session }: TopBarProps) {
+export function TopBar({ activeTab, onTabChange, session, onLogout, sidebarOpen, onSidebarToggle }: TopBarProps) {
   const userEmail = session?.user?.email ?? null;
+  const [logoutFailed, setLogoutFailed] = useState(false);
 
   async function handleLogout() {
-    if (supabase) await supabase.auth.signOut();
+    setLogoutFailed(!(await onLogout()));
   }
 
   return (
-    <header className="h-14 bg-[var(--bg-secondary)] border-b border-[var(--border-subtle)] flex items-center justify-between px-6 z-[1000] sticky top-0 shrink-0">
+    <header className="dashboard-topbar bg-[var(--bg-secondary)] border-b border-[var(--border-subtle)] flex items-center justify-between px-6 z-[1000] sticky top-0 shrink-0">
       {/* Brand Slot */}
-      <div className="flex items-center gap-6">
-        <div className="font-heading font-bold text-lg tracking-tight text-[var(--text-main)]">
+      <div className="dashboard-topbar-left flex items-center gap-6 min-w-0">
+        <div className="dashboard-brand flex items-center gap-3 font-heading font-bold text-lg tracking-tight text-[var(--text-main)] whitespace-nowrap">
+          <button
+            type="button"
+            className="dashboard-sidebar-toggle"
+            aria-controls="dashboard-sidebar"
+            aria-expanded={sidebarOpen}
+            aria-label={sidebarOpen ? 'Close research controls' : 'Open research controls'}
+            onClick={onSidebarToggle}
+          >
+            {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
           Sovereign <em className="not-italic text-[var(--color-brand-cyan)] font-normal">Research OS</em>
         </div>
 
         {/* Global Tab Navigation */}
-        <nav className="flex items-center h-full">
+        <nav aria-label="Dashboard views" className="dashboard-tabs flex items-center h-full min-w-0 overflow-x-auto">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
+                aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  "h-14 px-4 flex items-center gap-2 text-sm font-medium transition-colors border-b-2",
+                  "dashboard-tab h-14 px-4 flex items-center gap-2 text-sm font-medium transition-colors border-b-2 shrink-0",
                   isActive
                     ? "border-[var(--color-brand-cyan)] text-[var(--color-brand-cyan)]"
                     : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-tertiary)]"
@@ -89,8 +105,8 @@ export function TopBar({ activeTab, onTabChange, session }: TopBarProps) {
       </div>
 
       {/* Global Actions & Auth */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3 pr-4 border-r border-[var(--border-subtle)]">
+      <div className="dashboard-actions flex items-center gap-4 shrink-0">
+        <div className="dashboard-aux-actions flex items-center gap-3 pr-4 border-r border-[var(--border-subtle)]">
           <SafetyLock />
           <button className="btn-ghost py-1.5 h-8">Ingest Snapshot</button>
           <div className="flex items-center gap-2 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-full px-3 py-1 h-8">
@@ -98,20 +114,6 @@ export function TopBar({ activeTab, onTabChange, session }: TopBarProps) {
             <span className="font-mono text-[10px] font-bold text-[var(--color-brand-green)] tracking-wider">LIVE</span>
           </div>
         </div>
-
-        {/* Settings */}
-        <button
-          onClick={() => onTabChange('settings')}
-          className={cn(
-            "w-8 h-8 rounded-full border flex items-center justify-center transition-colors",
-            activeTab === 'settings'
-              ? "border-[var(--color-brand-cyan)] text-[var(--color-brand-cyan)]"
-              : "border-[var(--border-subtle)] bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
-          )}
-          title="Settings"
-        >
-          <Settings className="w-3.5 h-3.5" />
-        </button>
 
         {/* User */}
         <div className="flex items-center gap-2 text-[var(--text-muted)]">
@@ -124,7 +126,7 @@ export function TopBar({ activeTab, onTabChange, session }: TopBarProps) {
           {userEmail && (
             <button
               onClick={handleLogout}
-              title="Sign out"
+              title={logoutFailed ? 'Sign out failed; session is still active' : 'Sign out'}
               className="w-7 h-7 flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />

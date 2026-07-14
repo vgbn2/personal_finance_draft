@@ -134,20 +134,20 @@ ModelScore summarizeModel(
 
 const std::vector<ModelCandidate>& defaultModelRegistry() {
     static const std::vector<ModelCandidate> registry = {
-        {"cnn_window_v0", "neural", "deterministic_adapter", "convolution-style scorer over latest technical features"},
-        {"xgboost_ranker_v0", "boosting", "deterministic_adapter", "XGBoost-style boosted-tree ranker adapter"},
-        {"gradient_boosted_trees_v0", "boosting", "deterministic_adapter", "gradient-boosted tree ensemble adapter"},
-        {"random_forest_v0", "trees", "deterministic_adapter", "random-forest style majority vote adapter"},
-        {"decision_tree_stump_v0", "trees", "deterministic_adapter", "single decision tree stump sanity-check adapter"},
-        {"logistic_regression_v0", "linear", "deterministic_adapter", "logistic linear margin adapter"},
-        {"svm_margin_v0", "linear", "deterministic_adapter", "support-vector style margin adapter"},
-        {"knn_pattern_v0", "instance_based", "deterministic_adapter", "nearest-neighbor style pattern adapter"},
-        {"naive_bayes_regime_v0", "probabilistic", "deterministic_adapter", "naive-Bayes style regime adapter"},
-        {"lstm_sequence_v0", "neural", "deterministic_adapter", "sequence-model momentum adapter"},
-        {"transformer_attention_v0", "neural", "deterministic_adapter", "attention-style context adapter"},
-        {"momentum_baseline_v0", "baseline", "deterministic_adapter", "positive five-period return baseline"},
-        {"mean_reversion_baseline_v0", "baseline", "deterministic_adapter", "RSI washout mean-reversion baseline"},
-        {"volatility_breakout_v0", "baseline", "deterministic_adapter", "trend and volatility breakout baseline"},
+        {"cnn_window_v0", "neural", "handcrafted_heuristic", "convolution-style scorer over latest technical features"},
+        {"xgboost_ranker_v0", "boosting", "handcrafted_heuristic", "XGBoost-style boosted-tree ranker adapter"},
+        {"gradient_boosted_trees_v0", "boosting", "handcrafted_heuristic", "gradient-boosted tree ensemble adapter"},
+        {"random_forest_v0", "trees", "handcrafted_heuristic", "random-forest style majority vote adapter"},
+        {"decision_tree_stump_v0", "trees", "handcrafted_heuristic", "single decision tree stump sanity-check adapter"},
+        {"logistic_regression_v0", "linear", "handcrafted_heuristic", "logistic linear margin adapter"},
+        {"svm_margin_v0", "linear", "handcrafted_heuristic", "support-vector style margin adapter"},
+        {"knn_pattern_v0", "instance_based", "handcrafted_heuristic", "nearest-neighbor style pattern adapter"},
+        {"naive_bayes_regime_v0", "probabilistic", "handcrafted_heuristic", "naive-Bayes style regime adapter"},
+        {"lstm_sequence_v0", "neural", "handcrafted_heuristic", "sequence-model momentum adapter"},
+        {"transformer_attention_v0", "neural", "handcrafted_heuristic", "attention-style context adapter"},
+        {"momentum_baseline_v0", "baseline", "handcrafted_heuristic", "positive five-period return baseline"},
+        {"mean_reversion_baseline_v0", "baseline", "handcrafted_heuristic", "RSI washout mean-reversion baseline"},
+        {"volatility_breakout_v0", "baseline", "handcrafted_heuristic", "trend and volatility breakout baseline"},
     };
     return registry;
 }

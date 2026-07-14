@@ -3,8 +3,9 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const {
   ingestMarketData,
+  getIngestFamilyAvailability,
 } = require('../../../scripts/data_ops/ingest_market_data.js');
-const { 
+const {
   loadHistoricalSources,
   loadPredictionMarketHistory,
 } = require('../research/research.js');
@@ -14,23 +15,19 @@ const { validateSnapshot, writeJson, readSnapshot, mergeSnapshots, writePartitio
 const utils = require('../../lib/utils.js');
 const { featureGate } = require('../../../../shared/lib/settings/runtime');
 const {
-  printPayload, 
-  optionValue, 
-  numericOption, 
-  hasFlag, 
+  printPayload,
+  optionValue,
+  numericOption,
+  hasFlag,
   pageText,
   withLoadingAnimation,
+  shouldAnimate,
   DEFAULT_SNAPSHOT,
   DEFAULT_QUALITY_REPORT,
   DEFAULT_HISTORY
 } = utils;
 
-const DEFAULT_TS_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
 const API_CACHE_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'cache', 'api_responses');
-const EQUITY_DEEP_BACKFILL_PROVIDER = 'alpaca';
-const EQUITY_DEEP_BACKFILL_TIMEFRAME = '5m';
-const EQUITY_5M_BARS_PER_DAY = 78;
-const EQUITY_5M_PROVIDER_MAX_BARS = 10000;
 const MASS_BACKFILL_STALE_MS = {
   '5m': 6 * 60 * 60 * 1000,
   '15m': 12 * 60 * 60 * 1000,
@@ -43,76 +40,9 @@ const MASS_BACKFILL_STALE_MS = {
 };
 const WEEKEND_EXEMPT_FAMILIES = new Set(['equities', 'indices', 'commodities']);
 
-function equityUniverseEntries(section = {}) {
-  const entries = new Map();
-  const add = (symbol, market = null) => {
-    const normalized = String(symbol || '').trim().toUpperCase();
-    if (!normalized) return;
-    if (!entries.has(normalized)) {
-      entries.set(normalized, { symbol: normalized, market: market || null });
-      return;
-    }
-    const entry = entries.get(normalized);
-    if (!entry.market && market) entry.market = market;
-  };
-
-  for (const symbol of section.symbols || []) add(symbol);
-
-  const grid = section.universe_matrix?.grid || {};
-  for (const [market, sectors] of Object.entries(grid)) {
-    if (!sectors || typeof sectors !== 'object') continue;
-    for (const symbols of Object.values(sectors)) {
-      for (const symbol of symbols || []) add(symbol, market);
-    }
-  }
-
-  return Array.from(entries.values());
-}
-
-function alpacaEquity5mSkipReason(entry) {
-  const market = entry.market ? String(entry.market).toUpperCase() : null;
-  if (market && market !== 'USA') {
-    return `market ${market} is not covered by Alpaca US equity 5m backfill`;
-  }
-  if (!/^[A-Z][A-Z0-9.-]{0,11}$/.test(entry.symbol)) {
-    return 'symbol format is not an Alpaca US equity ticker';
-  }
-  return null;
-}
-
-function buildEquityDeepBackfillPlan(config, options = {}) {
-  const section = config.equities || {};
-  const requestedSymbol = options.symbol ? String(options.symbol).trim().toUpperCase() : null;
-  const entries = equityUniverseEntries(section);
-  const filteredEntries = requestedSymbol
-    ? entries.filter((entry) => entry.symbol === requestedSymbol)
-    : entries;
-
-  const symbols = [];
-  const skipped_symbols = [];
-  for (const entry of filteredEntries) {
-    const reason = alpacaEquity5mSkipReason(entry);
-    if (reason) {
-      skipped_symbols.push({ symbol: entry.symbol, market: entry.market || null, reason });
-    } else {
-      symbols.push(entry.symbol);
-    }
-  }
-
-  return {
-    provider: EQUITY_DEEP_BACKFILL_PROVIDER,
-    timeframe: EQUITY_DEEP_BACKFILL_TIMEFRAME,
-    symbols,
-    skipped_symbols,
-    requested_symbol_found: requestedSymbol ? filteredEntries.length > 0 : true,
-    configured_symbols: entries.length,
-  };
-}
-
-function estimateEquity5mApiCalls(symbolCount, days) {
-  const maxDaysPerChunk = Math.max(1, Math.floor(EQUITY_5M_PROVIDER_MAX_BARS / EQUITY_5M_BARS_PER_DAY));
-  return symbolCount * Math.ceil(days / maxDaysPerChunk);
-}
+const { DEFAULT_TS_DIR, rollupFromBase, rollupTargetsAboveBase, writeDeadSymbolMarker, listDeepSymbols, listDeepFiveMinSymbols, readBinFamily, readFiveMinBinFamily, rollupFiveMinForSymbol, commandIntradayRollup, INTRADAY_TF_ORDER, FULL_TF_ORDER, FAMILY_BASE_TF } = require('./data_rollup.js');
+const { equityUniverseEntries, alpacaEquity5mSkipReason, buildEquityDeepBackfillPlan, estimateEquity5mApiCalls, commandCryptoDeepBackfill, commandEquityDeepBackfill } = require('./data_deep_backfill.js');
+const { buildFiveMinAccumulatePlan, commandFiveMinAccumulate, buildIntradayAccumulatePlan, commandIntradayAccumulate, commandUniverse } = require('./data_accumulate.js');
 
 function weekendHoursElapsed(fromTs, toTs) {
   let ms = 0;
@@ -414,11 +344,17 @@ function ingestOptionsFromArgs(args) {
   const family = optionValue(args, '--family', 'all');
   const symbol = optionValue(args, '--symbol', null);
   const timeframe = optionValue(args, '--timeframe', null);
+  const provider = optionValue(args, '--provider', null);
   const historyDays = numericOption(args, '--history-days', null) ?? numericOption(args, '--days', null);
   const options = {};
   if (family && family !== 'all') options.family = family;
   if (symbol) options.symbol = symbol;
   if (timeframe) options.timeframe = timeframe;
+  // Pin a single provider for the fetch (e.g. deep daily must hit Yahoo/Frankfurter, not the
+  // intraday-finest provider whose daily is shallow). ingestMarketData honors options.provider.
+  if (provider) options.provider = provider;
+  if (hasFlag(args, '--force')) options.force = true;
+  if (hasFlag(args, '--dry-run')) options.dryRun = true;
   if (Number.isFinite(historyDays) && historyDays > 0) {
     options.historyDays = historyDays;
   }
@@ -427,6 +363,7 @@ function ingestOptionsFromArgs(args) {
 
 async function commandIngest(args) {
   const ingestOptions = ingestOptionsFromArgs(args);
+  const unavailable = getIngestFamilyAvailability(ingestOptions.family);
   if (ingestOptions.family && ['onchain', 'crypto_tx', 'holdings', 'reserves'].includes(ingestOptions.family)) {
     const gate = featureGate('onchain_data', { surface: `Ingest family '${ingestOptions.family}'` });
     if (!gate.ok) {
@@ -434,16 +371,39 @@ async function commandIngest(args) {
       return 1;
     }
   }
-  const snapshot = await withLoadingAnimation('Refreshing market cache', () => ingestMarketData(ingestOptions), args);
+  if (unavailable && !ingestOptions.dryRun) {
+    printPayload({
+      ok: false,
+      type: unavailable.status,
+      family: unavailable.family,
+      provider: unavailable.provider,
+      reason: `${unavailable.provider} ${unavailable.family} provider is not implemented`,
+    }, args);
+    return 1;
+  }
+  // withLoadingAnimation silently skips its spinner on a non-TTY stdout (the
+  // case when this runs piped from the dashboard, not given a real TTY) --
+  // that's correct (a raw \r-spinner would just dump garbage into a piped
+  // stream), but it means zero output appears for the whole fetch duration,
+  // which reads as a hang. Print one explicit line first so there's visible
+  // progress in that case.
+  if (!shouldAnimate(args) && !hasFlag(args, '--json')) {
+    const verb = ingestOptions.dryRun ? 'Planning market cache refresh' : 'Refreshing market cache';
+    console.log(`${verb} (family=${ingestOptions.family || 'all'}, this can take a while)...`);
+  }
+  const loadingLabel = ingestOptions.dryRun ? 'Planning market cache refresh' : 'Refreshing market cache';
+  const snapshot = await withLoadingAnimation(loadingLabel, () => ingestMarketData(ingestOptions), args);
   if (hasFlag(args, '--full')) {
     console.log(JSON.stringify(snapshot, null, 2));
     return 0;
   }
   printPayload({
+    dry_run: Boolean(snapshot.dry_run),
     mode: snapshot.mode,
     fetched_at: snapshot.fetched_at,
     sources: snapshot.sources.length,
     errors: snapshot.errors.length,
+    planned_fetches: snapshot.dry_run_plan ? snapshot.dry_run_plan.planned_fetches : undefined,
     provider_checks: (snapshot.provider_checks || []).length,
   }, args);
   return snapshot.errors.length === 0 ? 0 : 1;
@@ -489,7 +449,7 @@ async function commandBackfill(args) {
   const predictionHistory = hasFlag(args, '--include-prediction')
     ? await withLoadingAnimation('Loading prediction history', () => loadPredictionMarketHistory(args), args)
     : { sources: [], errors: [] };
-  
+
   const snapshot = {
     mode: 'backtest_history',
     fetched_at: new Date().toISOString(),
@@ -497,10 +457,10 @@ async function commandBackfill(args) {
     errors: [...(marketHistory.snapshot.errors || []), ...(predictionHistory.errors || [])],
     backfill_windows: [...(marketHistory.snapshot.backfill_windows || [])],
   };
-  
+
   const { report } = validateSnapshot(snapshot, { rejectStale: false });
   const byKeyScore = new Map((report.reliability?.samples || []).map((sample) => [sample.key, sample.score]));
-  
+
   const filteredSources = relevanceFloor > 0
     ? snapshot.sources.filter((record, index) => {
       const key = `${record.family || 'unknown'}:${record.provider || 'unknown'}:${record.symbol || record.underlying || record.series || record.location || record.region || record.country || record.chain || record.metric || 'unknown'}:${record.timeframe || record.component || record.metric || record.option_type || 'point'}:${record.timestamp || `index_${index}`}`;
@@ -508,11 +468,11 @@ async function commandBackfill(args) {
       return Number.isFinite(score) ? score >= relevanceFloor : true;
     })
     : snapshot.sources;
-    
+
   const filteredSnapshot = { ...snapshot, sources: filteredSources };
   const filteredReport = validateSnapshot(filteredSnapshot, { rejectStale: false }).report;
 
-  // For backfill, we use the root directory if output is default, 
+  // For backfill, we use the root directory if output is default,
   // and writePartitionedSnapshot will handle the subdirectory logic.
   const existing = readSnapshot(output);
   const preservedSnapshot = mergeSnapshots(existing, filteredSnapshot);
@@ -523,9 +483,9 @@ async function commandBackfill(args) {
     writeJson(output, preservedSnapshot);
   }
   writeTsIndex(DEFAULT_TS_DIR, preservedSnapshot);
-  
+
   writeJson(DEFAULT_QUALITY_REPORT, filteredReport);
-  
+
   printPayload({
     mode: filteredSnapshot.mode,
     records: filteredSnapshot.sources.length,
@@ -547,6 +507,14 @@ async function commandMassBackfill(args) {
   const { loadConfig } = require('../../../scripts/data_ops/ingest_market_data.js');
   const timeframesArg = optionValue(args, '--timeframes', '1mo,1w,1d,1h,15m');
   const timeframes = timeframesArg.split(',').map(t => t.trim()).filter(Boolean);
+  const familiesArg = optionValue(args, '--families', 'equities,indices,commodities,fx,crypto');
+  const families = [...new Set(familiesArg.split(',').map((family) => family.trim()).filter(Boolean))];
+  const supportedFamilies = new Set(['equities', 'indices', 'commodities', 'fx', 'crypto']);
+  const unsupportedFamilies = families.filter((family) => !supportedFamilies.has(family));
+  if (families.length === 0 || unsupportedFamilies.length > 0) {
+    printPayload({ ok: false, error: `Unsupported --families value: ${familiesArg}. Supported: ${[...supportedFamilies].join(',')}` }, args);
+    return 1;
+  }
   // 20-year deep defaults: deep-paginated providers handle the volume; mind free-tier rate limits if raising concurrency further.
   const days = optionValue(args, '--days', '7300');
   const concurrency = numericOption(args, '--concurrency', 10);
@@ -554,7 +522,6 @@ async function commandMassBackfill(args) {
   const force = hasFlag(args, '--force');
 
   const config = await loadConfig();
-  const families = ['equities', 'indices', 'commodities', 'fx', 'crypto'];
   // flat symbols ∪ universe_matrix grid, so grid-only symbols are covered.
   const { symbols: uniqueSymbols, familyBySymbol } = massBackfillUniverse(config, families);
   const plan = buildMassBackfillExecutionPlan({
@@ -574,6 +541,7 @@ async function commandMassBackfill(args) {
       pending_jobs: jobs.length,
       skipped_jobs: plan.skipped.length,
       symbols: uniqueSymbols.length,
+      families,
       timeframes,
       days,
       concurrency,
@@ -597,6 +565,7 @@ async function commandMassBackfill(args) {
       records: 0,
       skipped_jobs: plan.skipped.length,
       symbols: uniqueSymbols.length,
+      families,
       timeframes,
       days,
       output: DEFAULT_HISTORY,
@@ -606,10 +575,9 @@ async function commandMassBackfill(args) {
   }
 
   const results = { ok: 0, errors: 0 };
-  const allSources = [];
-  const allErrors = [];
   const jobResults = [];
   let completed = 0;
+  let recordsWritten = 0;
   const total = jobs.length;
   const completedBySymbol = new Map();
   const totalBySymbol = new Map();
@@ -617,15 +585,85 @@ async function commandMassBackfill(args) {
     totalBySymbol.set(job.symbol, (totalBySymbol.get(job.symbol) || 0) + 1);
   });
 
+  // Flush per family (not per overall run): writePartitionedSnapshot/readSnapshot are
+  // already family-partitioned on disk, so buffering and merging one family at a time
+  // (instead of accumulating every job's records into one run-wide array, then merging
+  // against a readSnapshot(DEFAULT_HISTORY) that recursively loads ALL families'
+  // existing history) bounds peak memory to one family's data instead of the whole
+  // universe's. The ts-index write stays per-job: writeTsIndex's merge-protected,
+  // symbol+timeframe-scoped bin writes are already safe at that finer grain.
+  const fetchedAt = new Date().toISOString();
+  const remainingByFamily = new Map();
+  jobs.forEach((job) => {
+    remainingByFamily.set(job.family, (remainingByFamily.get(job.family) || 0) + 1);
+  });
+  const sourcesByFamily = new Map();
+  const errorsByFamily = new Map();
+  const aggregateReport = {
+    ok: true,
+    mode: 'mass_backfill',
+    fetched_at: fetchedAt,
+    total_records: 0,
+    usable_records: 0,
+    rejected_records: 0,
+    counts: { error: 0, warning: 0 },
+    by_family: {},
+    rejected_keys: [],
+    issues: [],
+    provider_errors: [],
+    reject_stale: false,
+    freshness: { stale_records: 0, issues: 0 },
+    reliability: { samples: [] },
+  };
+
+  function flushFamily(family) {
+    const sources = sourcesByFamily.get(family) || [];
+    const errors = errorsByFamily.get(family) || [];
+    const snapshot = { mode: 'mass_backfill', fetched_at: fetchedAt, sources, errors };
+
+    const { report } = validateSnapshot(snapshot, { rejectStale: false });
+    aggregateReport.total_records += report.total_records;
+    aggregateReport.usable_records += report.usable_records;
+    aggregateReport.rejected_records += report.rejected_records;
+    aggregateReport.counts.error += report.counts.error;
+    aggregateReport.counts.warning += report.counts.warning;
+    Object.assign(aggregateReport.by_family, report.by_family);
+    aggregateReport.rejected_keys.push(...report.rejected_keys);
+    aggregateReport.issues.push(...report.issues);
+    aggregateReport.provider_errors.push(...report.provider_errors);
+    aggregateReport.freshness.stale_records += report.freshness.stale_records;
+    aggregateReport.freshness.issues += report.freshness.issues;
+    aggregateReport.ok = aggregateReport.ok && report.ok;
+
+    const existing = readSnapshot(DEFAULT_HISTORY, { family });
+    const merged = mergeSnapshots(existing, snapshot);
+    writePartitionedSnapshot(DEFAULT_HISTORY, merged);
+
+    recordsWritten += sources.length;
+    sourcesByFamily.delete(family);
+    errorsByFamily.delete(family);
+  }
+
   async function runJob({ symbol, timeframe, family }) {
     const syntheticArgs = ['--symbol', symbol, '--timeframe', timeframe, '--days', days];
     if (force) syntheticArgs.push('--force');
+    if (!sourcesByFamily.has(family)) sourcesByFamily.set(family, []);
+    if (!errorsByFamily.has(family)) errorsByFamily.set(family, []);
     try {
       const history = await loadHistoricalSources(syntheticArgs);
       const sources = history.snapshot.sources || [];
       const errors = history.snapshot.errors || [];
-      allSources.push(...sources);
-      allErrors.push(...errors);
+      const familySources = sourcesByFamily.get(family);
+      const familyErrors = errorsByFamily.get(family);
+      for (let i = 0; i < sources.length; i++) {
+        familySources.push(sources[i]);
+      }
+      for (let i = 0; i < errors.length; i++) {
+        familyErrors.push(errors[i]);
+      }
+      if (sources.length > 0) {
+        writeTsIndex(DEFAULT_TS_DIR, { sources });
+      }
       jobResults.push({
         ok: true,
         symbol,
@@ -638,7 +676,7 @@ async function commandMassBackfill(args) {
     } catch (err) {
       const message = err.message || String(err);
       const code = classifyBackfillError(message);
-      allErrors.push({ symbol, timeframe, family, code, message });
+      errorsByFamily.get(family).push({ symbol, timeframe, family, code, message });
       jobResults.push({
         ok: false,
         symbol,
@@ -656,6 +694,11 @@ async function commandMassBackfill(args) {
     if (process.stdout.isTTY) {
       process.stdout.write(`\r\x1b[K\x1b[90m[${completed}/${total}]\x1b[0m ${symbol}:${timeframe}  \x1b[90m(symbol ${completedBySymbol.get(symbol)}/${totalBySymbol.get(symbol)} | skipped ${plan.skipped.length})\x1b[0m`);
     }
+    const remaining = remainingByFamily.get(family) - 1;
+    remainingByFamily.set(family, remaining);
+    if (remaining === 0) {
+      flushFamily(family);
+    }
   }
 
   const queue = [...jobs];
@@ -669,20 +712,15 @@ async function commandMassBackfill(args) {
 
   if (process.stdout.isTTY) process.stdout.write('\n');
 
-  const fetchedAt = new Date().toISOString();
-  const snapshot = {
-    mode: 'mass_backfill',
-    fetched_at: fetchedAt,
-    sources: allSources,
-    errors: allErrors,
-  };
+  // Any family whose last job errored before producing sources may still have a
+  // non-empty error buffer that hasn't been flushed (flushFamily already runs when
+  // the last job for a family completes, success or failure, so this is just a
+  // defensive catch-all for families left in the maps due to an unexpected throw).
+  for (const family of new Set([...sourcesByFamily.keys(), ...errorsByFamily.keys()])) {
+    flushFamily(family);
+  }
 
-  const { report } = validateSnapshot(snapshot, { rejectStale: false });
-  const existing = readSnapshot(DEFAULT_HISTORY);
-  const merged = mergeSnapshots(existing, snapshot);
-  writePartitionedSnapshot(DEFAULT_HISTORY, merged);
-  writeTsIndex(DEFAULT_TS_DIR, merged);
-  writeJson(DEFAULT_QUALITY_REPORT, report);
+  writeJson(DEFAULT_QUALITY_REPORT, aggregateReport);
 
   const failures = jobResults
     .filter((result) => !result.ok)
@@ -703,7 +741,7 @@ async function commandMassBackfill(args) {
     failure_count: failures.length,
     failure_codes: [...new Set(failures.map((failure) => failure.code))],
     failures: failures.slice(0, 20),
-    records: allSources.length,
+    records: recordsWritten,
     skipped_jobs: plan.skipped.length,
     skipped_preview: plan.skipped.slice(0, 12).map((job) => ({
       family: job.family,
@@ -713,6 +751,7 @@ async function commandMassBackfill(args) {
       age_hours: job.age_hours ?? null,
     })),
     families: summarizeMassBackfillByFamily(jobResults),
+    requested_families: families,
     symbols: uniqueSymbols.length,
     timeframes,
     days,
@@ -734,9 +773,11 @@ function commandValidate(args) {
   const input = optionValue(args, '--input', DEFAULT_SNAPSHOT);
   const output = optionValue(args, '--output', DEFAULT_QUALITY_REPORT);
   const snapshot = readSnapshot(input);
-  const { report } = validateSnapshot(snapshot);
+  const strict = hasFlag(args, '--strict');
+  const { report } = validateSnapshot(snapshot, { strict });
   writeJson(output, report);
-  printPayload({
+  
+  const payload = {
     ok: report.ok,
     total_records: report.total_records,
     usable_records: report.usable_records,
@@ -747,7 +788,35 @@ function commandValidate(args) {
     freshness_issues: report.freshness.issues,
     provider_errors: report.provider_errors.length,
     output,
-  }, args);
+  };
+
+  if (hasFlag(args, '--json')) {
+    printPayload(payload, args);
+  } else {
+    console.log(`\n=== DATA QUALITY CHECK ===`);
+    console.log(`Status:  ${report.ok ? 'PASS' : 'FAIL'}`);
+    console.log(`Records: ${report.usable_records} usable | ${report.rejected_records} rejected | ${report.total_records} total`);
+    console.log(`Issues:  ${report.counts.error} errors | ${report.counts.warning} warnings`);
+    if (report.freshness.stale_records > 0) {
+      console.log(`Stale:   ${report.freshness.stale_records} records are stale`);
+    }
+    
+    if (report.issues && report.issues.length > 0) {
+      console.log(`\nTop Issues (first 10):`);
+      const topIssues = report.issues.slice(0, 10);
+      topIssues.forEach(i => {
+         const parts = (i.key || '').split(':');
+         const sym = parts[2] || '?';
+         const tf = parts[3] || '?';
+         const sev = i.severity === 'error' ? 'FAIL' : 'WARN';
+         console.log(`  [${sev}] ${sym.padEnd(8)} | ${tf.padEnd(3)} | ${i.code.padEnd(16)} | ${i.message}`);
+      });
+      if (report.issues.length > 10) {
+         console.log(`  ... and ${report.issues.length - 10} more issues.`);
+      }
+    }
+    console.log(`\nDetailed JSON report written to:\n  ${output}\n`);
+  }
   return !report.ok ? 1 : 0;
 }
 
@@ -757,9 +826,9 @@ function commandValidate(args) {
 async function commandPrune(args) {
   const days = numericOption(args, '--days', 30);
   const archive = optionValue(args, '--archive', null);
-  
+
   console.log(`[MAINTENANCE] Starting database pruning (Retention: ${days} days)...`);
-  
+
   try {
     const results = await withLoadingAnimation('Pruning database', () => runMaintenance(days, archive), args);
     printPayload({
@@ -789,19 +858,43 @@ async function commandWatch(args) {
   const intervalMinutes = numericOption(args, '--interval', 15);
   const intervalMs = intervalMinutes * 60 * 1000;
 
+  // Optional live-chart mode: --symbol narrows watch to a single symbol and
+  // redraws its price history as an ANSI chart each cycle (reusing the same
+  // renderPriceChart() backend_chart.js already uses) instead of the
+  // multi-symbol latest-price table, addressing the request to chart `watch`
+  // instead of a plain table.
+  const chartSymbol = optionValue(args, '--symbol', null);
+  const chartTimeframe = optionValue(args, '--timeframe', '1d');
+
   let showLimit = 10;
   let latestBySymbol = new Map();
   let lastSyncTime = null;
   let lastSyncCount = 0;
   let lastSyncDuration = 0;
 
+  // When launched from the dashboard, this runs as a piped, non-TTY child
+  // (the dashboard only gives commands a real inherited TTY for
+  // INTERACTIVE_CMDS, and `watch` isn't one). console.clear() and the raw
+  // \r\x1b[K cursor-control writes below are meaningless on a pipe -- they
+  // land as literal control bytes in the dashboard's captured output text,
+  // visibly corrupting the rendered panel. Fall back to plain, append-only
+  // log lines in that case.
+  const isTTY = !!process.stdout.isTTY;
   const render = () => {
-    console.clear();
+    if (isTTY) console.clear();
     console.log(`\x1b[1;36mSOVEREIGN WATCH MODE\x1b[0m \x1b[90m(Family: ${family}, Interval: ${intervalMinutes}m)\x1b[0m`);
     console.log('\x1b[90mPress Ctrl+C to stop, Ctrl+T to show more.\x1b[0m\n');
 
     if (lastSyncTime) {
-      process.stdout.write(`\x1b[32m\u2714\x1b[0m Last sync: \x1b[1m${lastSyncTime}\x1b[0m (\x1b[90m${lastSyncCount} records, ${lastSyncDuration}s\x1b[0m)\n\n`);
+      process.stdout.write(`\x1b[32m✔\x1b[0m Last sync: \x1b[1m${lastSyncTime}\x1b[0m (\x1b[90m${lastSyncCount} records, ${lastSyncDuration}s\x1b[0m)\n\n`);
+    }
+
+    if (chartSymbol) {
+      const { renderPriceChart } = require('../../tui/visualizations.js');
+      const bars = (readTsIndex(DEFAULT_TS_DIR, chartSymbol, chartTimeframe) || [])
+        .filter((s) => typeof s.close === 'number' && isFinite(s.close));
+      console.log(renderPriceChart(bars, 64));
+      return;
     }
 
     if (latestBySymbol.size > 0) {
@@ -833,9 +926,19 @@ async function commandWatch(args) {
 
   const runIngest = async () => {
     const start = Date.now();
-    process.stdout.write(`\r\x1b[K\x1b[33m\u231b\x1b[0m Synchronizing ${family} data...`);
+    const syncLabel = chartSymbol ? chartSymbol : family;
+    if (isTTY) {
+      process.stdout.write(`\r\x1b[K\x1b[33m⌛\x1b[0m Synchronizing ${syncLabel} data...`);
+    } else {
+      console.log(`Synchronizing ${syncLabel} data...`);
+    }
     try {
-      const snapshot = await ingestMarketData({ family: family === 'all' ? null : family });
+      // Chart mode only needs one symbol, not a whole-family ingest -- a
+      // huge win for the slow-boot complaint, since the table mode's
+      // multi-provider family fetch is exactly what made `watch` feel hung.
+      const snapshot = chartSymbol
+        ? await ingestMarketData({ symbol: chartSymbol, timeframe: chartTimeframe })
+        : await ingestMarketData({ family: family === 'all' ? null : family });
       lastSyncDuration = ((Date.now() - start) / 1000).toFixed(1);
       lastSyncTime = new Date().toLocaleTimeString();
 
@@ -852,7 +955,11 @@ async function commandWatch(args) {
       }
       render();
     } catch (error) {
-      process.stdout.write(`\r\x1b[K\x1b[31m\u2718\x1b[0m Sync failed: ${error.message}\n`);
+      if (isTTY) {
+        process.stdout.write(`\r\x1b[K\x1b[31m✘\x1b[0m Sync failed: ${error.message}\n`);
+      } else {
+        console.log(`Sync failed: ${error.message}`);
+      }
     }
   };
 
@@ -879,20 +986,26 @@ async function commandWatch(args) {
     if (global.suppressLogs) return; // Add suppression check
     const now = Date.now();
     const remaining = Math.max(0, nextRun - now);
-    const seconds = Math.floor(remaining / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const displaySeconds = seconds % 60;
 
-    const progressWidth = 20;
-    const progress = Math.min(1, (intervalMs - remaining) / intervalMs);
-    const filled = Math.floor(progress * progressWidth);
-    const empty = progressWidth - filled;
-    const progressBar = `\x1b[90m[\x1b[36m${'█'.repeat(filled)}\x1b[90m${'░'.repeat(empty)}]\x1b[0m`;
+    // The live countdown is only meaningful on a real TTY that can redraw
+    // the same line in place; piped (non-TTY) output would instead get one
+    // new line per second forever, flooding the dashboard's captured output.
+    if (isTTY) {
+      const seconds = Math.floor(remaining / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const displaySeconds = seconds % 60;
 
-    process.stdout.write(`\r\x1b[KNext refresh in: \x1b[1m${minutes}m ${displaySeconds}s\x1b[0m ${progressBar} `);
+      const progressWidth = 20;
+      const progress = Math.min(1, (intervalMs - remaining) / intervalMs);
+      const filled = Math.floor(progress * progressWidth);
+      const empty = progressWidth - filled;
+      const progressBar = `\x1b[90m[\x1b[36m${'█'.repeat(filled)}\x1b[90m${'░'.repeat(empty)}]\x1b[0m`;
+
+      process.stdout.write(`\r\x1b[KNext refresh in: \x1b[1m${minutes}m ${displaySeconds}s\x1b[0m ${progressBar} `);
+    }
 
     if (remaining <= 0) {
-      process.stdout.write('\n');
+      if (isTTY) process.stdout.write('\n');
       await runIngest();
       nextRun = Date.now() + intervalMs;
     }
@@ -904,7 +1017,7 @@ async function commandWatch(args) {
 async function commandLoc(args) {
   const isJson = hasFlag(args, '--json');
   if (!isJson) console.log('Counting project lines (excluding artifacts)...');
-  
+
   const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
   const TARGET_DIRS = ['backend', 'Frontend', 'shared', 'tests', 'infra', 'supabase'];
   const EXCLUDED_DIRS = ['node_modules', 'build', 'dist', '.git', '.gemini', '.codex', '.agents'];
@@ -929,7 +1042,7 @@ async function commandLoc(args) {
     const files = fs.readdirSync(dir);
     for (const file of files) {
       const fullPath = path.join(dir, file);
-      
+
       // Check exclusions early
       if (EXCLUDED_DIRS.some(ex => fullPath.includes(`${path.sep}${ex}`) || fullPath.endsWith(`${path.sep}${ex}`))) {
         continue;
@@ -978,1039 +1091,6 @@ async function commandLoc(args) {
     }
     return 1;
   }
-}
-
-/**
- * Handles the 'crypto-deep-backfill' command.
- *
- * Runs a sequential (one symbol at a time) deep 5m backfill for the crypto family
- * using Binance as the native intraday provider. Sequential processing is required
- * to stay within Binance's 6,000 weight/minute IP budget — parallel workers would
- * exceed it immediately at 5m depth (§5a of the scoping document).
- *
- * Example: sovereign data crypto-deep-backfill --days 1825 --delay-ms 200
- */
-async function commandCryptoDeepBackfill(args) {
-  const { loadConfig, ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
-  const days = numericOption(args, '--days', 1825); // 5 years default
-  const delayMs = numericOption(args, '--delay-ms', 0); // inter-symbol delay; 0 = no sleep
-  const dryRun = hasFlag(args, '--dry-run');
-  const symbolArg = optionValue(args, '--symbol', null); // single-symbol override
-  const skipRollup = hasFlag(args, '--no-rollup'); // by default, auto-derive coarser TFs from the base
-  // Base grain: crypto serves deep native 1m via Binance, so 1m is the default base
-  // (5m/15m/… are then derived locally). Override with --base-tf 5m for the legacy path.
-  const baseTf = optionValue(args, '--base-tf', FAMILY_BASE_TF.crypto);
-  const rollupTargets = rollupTargetsAboveBase(baseTf);
-
-  const config = await loadConfig();
-  const cryptoSymbols = config.crypto?.symbols || [];
-  const symbols = symbolArg ? cryptoSymbols.filter(s => s === symbolArg) : cryptoSymbols;
-
-  if (symbols.length === 0) {
-    printPayload({ ok: false, error: symbolArg ? `Symbol ${symbolArg} not found in crypto universe` : 'No crypto symbols configured' }, args);
-    return 1;
-  }
-
-  // historyDays <= 5 falls into the legacy daily-aggregation path in
-  // fetchCryptoSnapshot and would synthesize fake 5m bars from 1d candles.
-  if (days <= 5) {
-    printPayload({ ok: false, error: 'crypto-deep-backfill requires --days > 5 (native intraday fetch); use plain ingest for short windows' }, args);
-    return 1;
-  }
-
-  if (dryRun) {
-    printPayload({
-      ok: true,
-      dry_run: true,
-      symbols: symbols.length,
-      symbol_list: symbols,
-      timeframe: baseTf,
-      days,
-      delay_ms: delayMs,
-      // ~bars/day at base grain (1m=1440, 5m=288); /1000 ≈ requests at Binance's 1000-bar page.
-      estimated_api_calls: symbols.length * Math.ceil(days * (baseTf === '1m' ? 1440 : 288) / 1000),
-      auto_rollup: skipRollup ? false : rollupTargets,
-      message: `Would sequentially backfill ${baseTf} data for ${symbols.length} crypto symbols over ${days} days${skipRollup ? '' : `, then auto-derive ${rollupTargets.join('/')} locally`}. Re-run without --dry-run to execute.`,
-    }, args);
-    return 0;
-  }
-
-  const results = { ok: 0, errors: 0 };
-  const allErrors = [];
-  const symbolResults = [];
-
-  console.log(`[CRYPTO-DEEP-BACKFILL] Starting sequential ${baseTf} backfill: ${symbols.length} symbols, ${days} days, delay=${delayMs}ms`);
-
-  for (let i = 0; i < symbols.length; i++) {
-    const symbol = symbols[i];
-    const progress = `[${i + 1}/${symbols.length}]`;
-    if (process.stdout.isTTY) {
-      process.stdout.write(`\r\x1b[K${progress} ${symbol} ${baseTf} ...`);
-    } else {
-      console.log(`${progress} Backfilling ${symbol} ${baseTf} (${days} days)`);
-    }
-
-    const start = Date.now();
-    try {
-      const snapshot = await ingestMarketData({
-        family: 'crypto',
-        symbol,
-        timeframe: baseTf,
-        historyDays: days,
-        provider: 'binance', // pin: TwelveData earlier in the chain caps at 5,000 bars
-        force: true, // deep backfill always re-fetches; freshness short-circuits don't apply
-        // Per-run snapshot only. The merged history can exceed 100k records
-        // (spreading it overflows the call stack), and ingestMarketData already
-        // persists scoped JSON + partitioned history + ts-index itself.
-        returnAttemptSnapshot: true,
-      });
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      const baseBars = (snapshot.sources || []).filter(r => r.timeframe === baseTf && r.symbol === symbol);
-      const snapErrors = snapshot.errors || [];
-      for (const e of snapErrors) allErrors.push(e);
-      // Zero bars alongside ingest errors means the fetch failed inside the
-      // provider loop (the loop's catch swallows exceptions per provider) --
-      // count it as a failed symbol instead of reporting silent success.
-      const symbolOk = baseBars.length > 0 || snapErrors.length === 0;
-      if (symbolOk) results.ok++; else results.errors++;
-      const entry = { symbol, ok: symbolOk, base_timeframe: baseTf, bars: baseBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
-      if (!symbolOk) {
-        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || `no ${baseTf} bars ingested`;
-      }
-      // Auto-derive coarser intraday bins from the just-written deep base bin (lossless,
-      // local, no extra network). Off with --no-rollup.
-      if (symbolOk && !skipRollup) {
-        try {
-          const roll = rollupFromBase(DEFAULT_TS_DIR, symbol, baseTf, rollupTargets);
-          if (roll.ok) entry.rolled_up = roll.derived;
-        } catch (rollErr) {
-          entry.rollup_error = rollErr.message;
-        }
-      }
-      symbolResults.push(entry);
-      if (process.stdout.isTTY) {
-        const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
-        process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m ${baseTf}: ${baseBars.length} bars (${elapsed}s)\n`);
-      } else {
-        const rollNote = entry.rolled_up ? ` + rollup ${rollupTargets.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
-        console.log(`${progress} ${symbol} ${baseTf}: ${baseBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
-      }
-    } catch (err) {
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      allErrors.push({ symbol, timeframe: baseTf, family: 'crypto', message: err.message });
-      results.errors++;
-      symbolResults.push({ symbol, ok: false, base_timeframe: baseTf, bars: 0, elapsed_s: Number(elapsed), error: err.message });
-      if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m ${baseTf}: FAILED (${err.message})\n`);
-      } else {
-        console.error(`${progress} ${symbol} FAILED: ${err.message}`);
-      }
-    }
-
-    // Inter-symbol delay to avoid Binance rate-limit pressure
-    if (delayMs > 0 && i < symbols.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
-  }
-
-  if (process.stdout.isTTY) process.stdout.write('\n');
-
-  // No persistence step here: ingestMarketData already wrote the scoped
-  // snapshot, the partitioned JSON history, and the binary ts-index per symbol.
-
-  printPayload({
-    ok: results.errors === 0,
-    symbols: symbols.length,
-    successful: results.ok,
-    errors: results.errors,
-    total_base_bars: symbolResults.reduce((n, r) => n + (r.bars || 0), 0),
-    timeframe: baseTf,
-    days,
-    delay_ms: delayMs,
-    symbol_results: symbolResults,
-    error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
-    output: DEFAULT_HISTORY,
-  }, args);
-  return results.errors === 0 ? 0 : 1;
-}
-
-/**
- * Handles the 'equity-deep-backfill' command.
- *
- * Runs a sequential native 5m backfill for Alpaca-eligible US equity symbols.
- * Non-US configured equities are reported as skipped instead of falling through
- * to Yahoo/Stooq daily-derived synthetic 5m data.
- */
-async function commandEquityDeepBackfill(args) {
-  const { loadConfig, ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
-  const days = numericOption(args, '--days', 1825);
-  const delayMs = numericOption(args, '--delay-ms', 0);
-  const chunkDelayMs = numericOption(args, '--chunk-delay-ms', 500);
-  const dryRun = hasFlag(args, '--dry-run');
-  const symbolArg = optionValue(args, '--symbol', null);
-  const skipRollup = hasFlag(args, '--no-rollup'); // by default, auto-derive coarser TFs from the base
-  // Base grain: Alpaca SIP serves deep native 1m, so 1m is the default base
-  // (5m/15m/… derived locally). Override with --base-tf 5m for the legacy path.
-  const baseTf = optionValue(args, '--base-tf', FAMILY_BASE_TF.equities);
-  const rollupTargets = rollupTargetsAboveBase(baseTf);
-
-  const config = await loadConfig();
-  const plan = buildEquityDeepBackfillPlan(config, { symbol: symbolArg });
-
-  if (symbolArg && !plan.requested_symbol_found) {
-    printPayload({ ok: false, error: `Symbol ${String(symbolArg).toUpperCase()} not found in equity universe` }, args);
-    return 1;
-  }
-
-  if (days <= 5) {
-    printPayload({ ok: false, error: 'equity-deep-backfill requires --days > 5 (native intraday fetch); use plain ingest for short windows' }, args);
-    return 1;
-  }
-
-  if (plan.symbols.length === 0) {
-    printPayload({
-      ok: false,
-      error: symbolArg
-        ? `Symbol ${String(symbolArg).toUpperCase()} is not supported by Alpaca US equity 5m backfill`
-        : 'No Alpaca-eligible US equity symbols configured',
-      skipped_symbols: plan.skipped_symbols,
-    }, args);
-    return 1;
-  }
-
-  if (dryRun) {
-    printPayload({
-      ok: true,
-      dry_run: true,
-      provider: plan.provider,
-      symbols: plan.symbols.length,
-      symbol_list: plan.symbols,
-      skipped: plan.skipped_symbols.length,
-      skipped_symbols: plan.skipped_symbols,
-      timeframe: baseTf,
-      days,
-      delay_ms: delayMs,
-      chunk_delay_ms: chunkDelayMs,
-      estimated_api_calls: estimateEquity5mApiCalls(plan.symbols.length, days),
-      auto_rollup: skipRollup ? false : rollupTargets,
-      message: `Would sequentially backfill native ${baseTf} Alpaca data for ${plan.symbols.length} US equity symbols over ${days} days${skipRollup ? '' : `, then auto-derive ${rollupTargets.join('/')} locally`}. Re-run without --dry-run to execute.`,
-    }, args);
-    return 0;
-  }
-
-  const results = { ok: 0, errors: 0 };
-  const allErrors = [];
-  const symbolResults = [];
-
-  console.log(`[EQUITY-DEEP-BACKFILL] Starting sequential Alpaca ${baseTf} backfill: ${plan.symbols.length} symbols, ${days} days, delay=${delayMs}ms, chunk-delay=${chunkDelayMs}ms`);
-  if (plan.skipped_symbols.length > 0) {
-    console.log(`[EQUITY-DEEP-BACKFILL] Skipping ${plan.skipped_symbols.length} unsupported equity symbols`);
-  }
-
-  for (let i = 0; i < plan.symbols.length; i++) {
-    const symbol = plan.symbols[i];
-    const progress = `[${i + 1}/${plan.symbols.length}]`;
-    if (process.stdout.isTTY) {
-      process.stdout.write(`\r\x1b[K${progress} ${symbol} Alpaca ${baseTf} ...`);
-    } else {
-      console.log(`${progress} Backfilling ${symbol} Alpaca ${baseTf} (${days} days)`);
-    }
-
-    const start = Date.now();
-    try {
-      const snapshot = await ingestMarketData({
-        family: 'equities',
-        symbol,
-        timeframe: baseTf,
-        historyDays: days,
-        provider: plan.provider,
-        force: true,
-        chunkDelayMs,
-        returnAttemptSnapshot: true,
-      });
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      const baseBars = (snapshot.sources || []).filter(r => r.timeframe === baseTf && r.symbol === symbol);
-      const snapErrors = snapshot.errors || [];
-      for (const e of snapErrors) allErrors.push(e);
-
-      const symbolOk = baseBars.length > 0 || snapErrors.length === 0;
-      if (symbolOk) results.ok++; else results.errors++;
-      const entry = { symbol, ok: symbolOk, base_timeframe: baseTf, bars: baseBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
-      if (!symbolOk) {
-        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || `no native Alpaca ${baseTf} bars ingested`;
-      }
-      // Auto-derive coarser intraday bins from the just-written deep base bin (lossless,
-      // local, no extra network). Off with --no-rollup.
-      if (symbolOk && !skipRollup) {
-        try {
-          const roll = rollupFromBase(DEFAULT_TS_DIR, symbol, baseTf, rollupTargets);
-          if (roll.ok) entry.rolled_up = roll.derived;
-        } catch (rollErr) {
-          entry.rollup_error = rollErr.message;
-        }
-      }
-      symbolResults.push(entry);
-
-      if (process.stdout.isTTY) {
-        const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
-        process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m Alpaca ${baseTf}: ${baseBars.length} bars (${elapsed}s)\n`);
-      } else {
-        const rollNote = entry.rolled_up ? ` + rollup ${rollupTargets.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
-        console.log(`${progress} ${symbol} Alpaca ${baseTf}: ${baseBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
-      }
-    } catch (err) {
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      allErrors.push({ symbol, timeframe: baseTf, family: 'equities', provider: plan.provider, message: err.message });
-      results.errors++;
-      symbolResults.push({ symbol, ok: false, base_timeframe: baseTf, bars: 0, elapsed_s: Number(elapsed), error: err.message });
-      if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m Alpaca ${baseTf}: FAILED (${err.message})\n`);
-      } else {
-        console.error(`${progress} ${symbol} FAILED: ${err.message}`);
-      }
-    }
-
-    if (delayMs > 0 && i < plan.symbols.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
-  }
-
-  if (process.stdout.isTTY) process.stdout.write('\n');
-
-  printPayload({
-    ok: results.errors === 0,
-    provider: plan.provider,
-    symbols: plan.symbols.length,
-    skipped: plan.skipped_symbols.length,
-    skipped_symbols: plan.skipped_symbols,
-    successful: results.ok,
-    errors: results.errors,
-    total_base_bars: symbolResults.reduce((n, r) => n + (r.bars || 0), 0),
-    timeframe: baseTf,
-    days,
-    delay_ms: delayMs,
-    chunk_delay_ms: chunkDelayMs,
-    symbol_results: symbolResults,
-    error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
-    output: DEFAULT_HISTORY,
-  }, args);
-  return results.errors === 0 ? 0 : 1;
-}
-
-/**
- * Handles the 'universe' command.
- */
-async function commandUniverse(args) {
-  const { loadConfig } = require('../../../scripts/data_ops/ingest_market_data.js');
-  const config = await loadConfig();
-  const families = ['equities', 'indices', 'commodities', 'fx', 'crypto'];
-  const universe = [];
-  
-  for (const f of families) {
-      const symbols = config[f]?.symbols || [];
-      for (const s of symbols) {
-          universe.push({ label: `${s} (${f})`, value: s, category: f });
-      }
-  }
-
-  if (hasFlag(args, '--json')) {
-      console.log(JSON.stringify(universe, null, 2));
-      return 0;
-  }
-
-  const { promptSelect } = require('../../tui/engine/engine.js');
-  
-  console.log(`\n\x1b[1;36mSovereign Asset Universe\x1b[0m`);
-  const selected = await promptSelect('Select an asset to analyze:', [
-      ...universe,
-      { label: 'Exit', value: null }
-  ]);
-
-  if (selected) {
-      console.log(`\x1b[32mSelected: ${selected}\x1b[0m`);
-      console.log(`To analyze this asset, run: \x1b[33msovereign backend correlation --symbols ${selected}\x1b[0m`);
-  }
-  return 0;
-}
-
-/**
- * Builds the job list for the 'five-min-accumulate' command.
- *
- * Covers Yahoo-native 5m data for indices, commodities, and FX families.
- * Each family uses its own symbol-mapping table from the constants module.
- *
- * @param {object} config  - Loaded config (output of loadConfig())
- * @param {object} options - { family?: string, symbol?: string }
- * @returns {{ provider, timeframe, jobs, skipped_symbols, requested_symbol_found }}
- */
-function buildFiveMinAccumulatePlan(config, options = {}) {
-  const { YAHOO_INDEX_SYMBOLS, YAHOO_COMMODITY_SYMBOLS, YAHOO_FX_SYMBOLS } =
-    require('../../../scripts/data_ops/ingest_market_data/constants.js');
-
-  const VALID_FAMILIES = ['indices', 'commodities', 'fx'];
-  // 'all' (or blank) means no family filter -- lets the TUI use a clean select.
-  const rawFamily = options.family ? String(options.family).trim().toLowerCase() : null;
-  const familyFilter = (rawFamily && rawFamily !== 'all') ? rawFamily : null;
-  const symbolFilter = options.symbol ? String(options.symbol).trim().toUpperCase() : null;
-
-  if (familyFilter && !VALID_FAMILIES.includes(familyFilter)) {
-    throw new Error(`Invalid --family "${familyFilter}". Must be one of: ${VALID_FAMILIES.join(', ')}`);
-  }
-
-  const FAMILY_MAPS = {
-    indices: YAHOO_INDEX_SYMBOLS,
-    commodities: YAHOO_COMMODITY_SYMBOLS,
-    fx: YAHOO_FX_SYMBOLS,
-  };
-
-  const families = VALID_FAMILIES.filter(f => !familyFilter || f === familyFilter);
-
-  const jobs = [];
-  const skipped_symbols = [];
-
-  for (const family of families) {
-    const configSymbols = config[family]?.symbols || [];
-    const yahooMap = FAMILY_MAPS[family];
-    const symbolsToProcess = symbolFilter
-      ? configSymbols.filter(s => String(s).trim().toUpperCase() === symbolFilter)
-      : configSymbols;
-
-    for (const sym of symbolsToProcess) {
-      const normalized = String(sym).trim().toUpperCase();
-      if (yahooMap[normalized]) {
-        jobs.push({ family, symbol: normalized });
-      } else {
-        skipped_symbols.push({ family, symbol: normalized, reason: 'no yahoo intraday symbol mapping' });
-      }
-    }
-  }
-
-  const requested_symbol_found = symbolFilter ? jobs.some(j => j.symbol === symbolFilter) || skipped_symbols.some(s => s.symbol === symbolFilter) : true;
-
-  return {
-    provider: 'yahoo',
-    timeframe: '5m',
-    jobs,
-    skipped_symbols,
-    requested_symbol_found,
-  };
-}
-
-/**
- * Handles the 'five-min-accumulate' command.
- *
- * Harvests Yahoo's rolling ~60-day native 5m window for indices, commodities, and FX.
- * Weekly re-runs grow history; ts-index bins are merge-protected so re-runs are safe.
- *
- * Example: sovereign five-min-accumulate --dry-run --json
- */
-async function commandFiveMinAccumulate(args) {
-  const { loadConfig, ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
-
-  const days = numericOption(args, '--days', 59);
-  const delayMs = numericOption(args, '--delay-ms', 250);
-  const dryRun = hasFlag(args, '--dry-run');
-  const familyArg = optionValue(args, '--family', null);
-  const symbolArg = optionValue(args, '--symbol', null);
-
-  if (days <= 5) {
-    printPayload({ ok: false, error: 'five-min-accumulate requires --days > 5 (native intraday fetch); use plain ingest for short windows' }, args);
-    return 1;
-  }
-  if (days > 59) {
-    printPayload({ ok: false, error: 'five-min-accumulate supports at most --days 59 (Yahoo serves ~60 trading days of 5m; the request 422s beyond that)' }, args);
-    return 1;
-  }
-
-  const config = await loadConfig();
-
-  let plan;
-  try {
-    plan = buildFiveMinAccumulatePlan(config, { family: familyArg, symbol: symbolArg });
-  } catch (err) {
-    printPayload({ ok: false, error: err.message }, args);
-    return 1;
-  }
-
-  if (symbolArg && !plan.requested_symbol_found) {
-    printPayload({ ok: false, error: `Symbol ${String(symbolArg).toUpperCase()} not found in indices/commodities/fx universe` }, args);
-    return 1;
-  }
-
-  const { jobs, skipped_symbols } = plan;
-
-  if (dryRun) {
-    printPayload({
-      ok: true,
-      dry_run: true,
-      provider: 'yahoo',
-      timeframe: '5m',
-      days,
-      delay_ms: delayMs,
-      jobs: jobs.length,
-      job_list: jobs,
-      skipped: skipped_symbols.length,
-      skipped_symbols,
-      estimated_api_calls: jobs.length,
-      message: `Would fetch native Yahoo 5m (~60 trading days) for ${jobs.length} symbols across indices/commodities/fx. Re-run without --dry-run to execute. Re-run weekly to accumulate history (gaps appear if runs are >8 weeks apart).`,
-    }, args);
-    return 0;
-  }
-
-  const results = { ok: 0, errors: 0 };
-  const allErrors = [];
-  const symbolResults = [];
-  let total5mBars = 0;
-  const familyCounts = { indices: 0, commodities: 0, fx: 0 };
-
-  console.log(`[FIVE-MIN-ACCUMULATE] Starting Yahoo 5m harvest: ${jobs.length} symbols, ${days} days, delay=${delayMs}ms`);
-  if (skipped_symbols.length > 0) {
-    console.log(`[FIVE-MIN-ACCUMULATE] Skipping ${skipped_symbols.length} unmapped symbols`);
-  }
-
-  for (let i = 0; i < jobs.length; i++) {
-    const job = jobs[i];
-    const progress = `[${i + 1}/${jobs.length}]`;
-    if (process.stdout.isTTY) {
-      process.stdout.write(`\r\x1b[K${progress} ${job.symbol} (${job.family}) Yahoo 5m ...`);
-    } else {
-      console.log(`${progress} Fetching ${job.symbol} (${job.family}) Yahoo 5m (${days} days)`);
-    }
-
-    const start = Date.now();
-    try {
-      const snapshot = await ingestMarketData({
-        family: job.family,
-        symbol: job.symbol,
-        timeframe: '5m',
-        historyDays: days,
-        provider: 'yahoo',
-        force: true,
-        returnAttemptSnapshot: true,
-      });
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      const fiveMBars = (snapshot.sources || []).filter(r => r.timeframe === '5m' && r.symbol === job.symbol);
-      const snapErrors = snapshot.errors || [];
-      for (const e of snapErrors) allErrors.push(e);
-
-      const symbolOk = fiveMBars.length > 0 || snapErrors.length === 0;
-      if (symbolOk) results.ok++; else results.errors++;
-      total5mBars += fiveMBars.length;
-      familyCounts[job.family] = (familyCounts[job.family] || 0) + 1;
-
-      const entry = { symbol: job.symbol, family: job.family, ok: symbolOk, bars_5m: fiveMBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
-      if (!symbolOk) {
-        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || 'no native Yahoo 5m bars ingested';
-      }
-      symbolResults.push(entry);
-
-      if (process.stdout.isTTY) {
-        const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
-        process.stdout.write(`\r\x1b[K${progress} ${color}${job.symbol}\x1b[0m (${job.family}) Yahoo 5m: ${fiveMBars.length} bars (${elapsed}s)\n`);
-      } else {
-        console.log(`${progress} ${job.symbol} (${job.family}) Yahoo 5m: ${fiveMBars.length} bars (${elapsed}s)${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
-      }
-    } catch (err) {
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      allErrors.push({ symbol: job.symbol, timeframe: '5m', family: job.family, provider: 'yahoo', message: err.message });
-      results.errors++;
-      familyCounts[job.family] = (familyCounts[job.family] || 0) + 1;
-      symbolResults.push({ symbol: job.symbol, family: job.family, ok: false, bars_5m: 0, elapsed_s: Number(elapsed), error: err.message });
-      if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${job.symbol}\x1b[0m (${job.family}) Yahoo 5m: FAILED (${err.message})\n`);
-      } else {
-        console.error(`${progress} ${job.symbol} (${job.family}) FAILED: ${err.message}`);
-      }
-    }
-
-    if (delayMs > 0 && i < jobs.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
-  }
-
-  if (process.stdout.isTTY) process.stdout.write('\n');
-
-  printPayload({
-    ok: results.errors === 0,
-    provider: 'yahoo',
-    timeframe: '5m',
-    days,
-    delay_ms: delayMs,
-    jobs: jobs.length,
-    skipped: skipped_symbols.length,
-    skipped_symbols,
-    successful: results.ok,
-    errors: results.errors,
-    total_5m_bars: total5mBars,
-    families: familyCounts,
-    symbol_results: symbolResults,
-    error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
-    output: DEFAULT_HISTORY,
-  }, args);
-  return results.errors === 0 ? 0 : 1;
-}
-
-/**
- * Builds the job list for the 'intraday-accumulate' command.
- *
- * Covers Yahoo-native 15m, 30m, 1h data for indices, commodities, and FX.
- * Same symbol-mapping tables as five-min-accumulate but with wider depth:
- *   15m/30m → 60 trading days, 1h → 730 days.
- *
- * @param {object} config  - Loaded config (output of loadConfig())
- * @param {object} options - { timeframe, family?, symbols?: string[] }
- * @returns {{ provider, timeframe, jobs, skipped_symbols, requested_symbol_found }}
- */
-function buildIntradayAccumulatePlan(config, options = {}) {
-  const { YAHOO_INDEX_SYMBOLS, YAHOO_COMMODITY_SYMBOLS, YAHOO_FX_SYMBOLS } =
-    require('../../../scripts/data_ops/ingest_market_data/constants.js');
-  const { SUPPORTED_INTRADAY_TFS, INTRADAY_MAX_DAYS } =
-    require('../../../scripts/data_ops/ingest_market_data/intraday_yahoo.js');
-
-  const VALID_FAMILIES = ['indices', 'commodities', 'fx'];
-  const rawTimeframe = options.timeframe ? String(options.timeframe).trim().toLowerCase() : '1h';
-  if (!SUPPORTED_INTRADAY_TFS.includes(rawTimeframe)) {
-    throw new Error(`Invalid --timeframe "${rawTimeframe}". Must be one of: ${SUPPORTED_INTRADAY_TFS.join(', ')}`);
-  }
-
-  const rawFamily = options.family ? String(options.family).trim().toLowerCase() : null;
-  const familyFilter = (rawFamily && rawFamily !== 'all') ? rawFamily : null;
-  if (familyFilter && !VALID_FAMILIES.includes(familyFilter)) {
-    throw new Error(`Invalid --family "${familyFilter}". Must be one of: ${VALID_FAMILIES.join(', ')}`);
-  }
-
-  // Optional explicit symbol list filter
-  const symbolFilter = options.symbols && options.symbols.length > 0
-    ? options.symbols.map((s) => String(s).trim().toUpperCase()).filter(Boolean)
-    : null;
-
-  const FAMILY_MAPS = {
-    indices:    YAHOO_INDEX_SYMBOLS,
-    commodities: YAHOO_COMMODITY_SYMBOLS,
-    fx:         YAHOO_FX_SYMBOLS,
-  };
-
-  const families = VALID_FAMILIES.filter((f) => !familyFilter || f === familyFilter);
-
-  const jobs = [];
-  const skipped_symbols = [];
-
-  for (const family of families) {
-    const configSymbols = config[family]?.symbols || [];
-    const yahooMap = FAMILY_MAPS[family];
-    const symbolsToProcess = symbolFilter
-      ? configSymbols.filter((s) => symbolFilter.includes(String(s).trim().toUpperCase()))
-      : configSymbols;
-
-    for (const sym of symbolsToProcess) {
-      const normalized = String(sym).trim().toUpperCase();
-      if (yahooMap[normalized]) {
-        jobs.push({ family, symbol: normalized, yahoo_symbol: yahooMap[normalized] });
-      } else {
-        skipped_symbols.push({ family, symbol: normalized, reason: 'no yahoo intraday symbol mapping' });
-      }
-    }
-  }
-
-  const requested_symbol_found = symbolFilter
-    ? symbolFilter.some((s) => jobs.some((j) => j.symbol === s) || skipped_symbols.some((sk) => sk.symbol === s))
-    : true;
-
-  const maxDays = INTRADAY_MAX_DAYS[rawTimeframe] ?? 60;
-
-  return {
-    provider: 'yahoo',
-    timeframe: rawTimeframe,
-    max_days: maxDays,
-    jobs,
-    skipped_symbols,
-    requested_symbol_found,
-  };
-}
-
-/**
- * Handles the 'intraday-accumulate' command.
- *
- * Harvests Yahoo's rolling native intraday window for indices, commodities, and FX:
- *   --timeframe 15m → ~60 trading days
- *   --timeframe 30m → ~60 trading days
- *   --timeframe 1h  → ~730 trading days
- *
- * Re-runs are merge-safe (ts-index bins deduplicate on timestamp).
- *
- * Example: sovereign data intraday-accumulate --timeframe 1h --dry-run
- */
-async function commandIntradayAccumulate(args) {
-  const { loadConfig, ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
-  const { INTRADAY_MAX_DAYS } =
-    require('../../../scripts/data_ops/ingest_market_data/intraday_yahoo.js');
-
-  const timeframe = optionValue(args, '--timeframe', '1h');
-  const familyArg = optionValue(args, '--family', null);
-  const symbolsArg = optionValue(args, '--symbols', null);
-  const dryRun = hasFlag(args, '--dry-run');
-
-  // --symbols accepts comma-separated list
-  const symbolsList = symbolsArg
-    ? symbolsArg.split(',').map((s) => s.trim()).filter(Boolean)
-    : null;
-
-  const VALID_TIMEFRAMES = ['15m', '30m', '1h'];
-  if (!VALID_TIMEFRAMES.includes(timeframe)) {
-    printPayload({
-      ok: false,
-      error: `intraday-accumulate supports --timeframe ${VALID_TIMEFRAMES.join(', ')}. '4h' is not available natively from Yahoo — aggregate from 1h bars.`,
-    }, args);
-    return 1;
-  }
-
-  const maxDays = INTRADAY_MAX_DAYS[timeframe] ?? 60;
-  const days = numericOption(args, '--days', maxDays);
-
-  if (days <= 0) {
-    printPayload({ ok: false, error: 'intraday-accumulate requires --days > 0' }, args);
-    return 1;
-  }
-  if (days > maxDays) {
-    printPayload({
-      ok: false,
-      error: `intraday-accumulate ${timeframe} supports at most --days ${maxDays} (Yahoo's intraday depth limit for this timeframe)`,
-    }, args);
-    return 1;
-  }
-
-  const delayMs = numericOption(args, '--delay-ms', 250);
-  const config = await loadConfig();
-
-  let plan;
-  try {
-    plan = buildIntradayAccumulatePlan(config, { timeframe, family: familyArg, symbols: symbolsList });
-  } catch (err) {
-    printPayload({ ok: false, error: err.message }, args);
-    return 1;
-  }
-
-  if (symbolsList && !plan.requested_symbol_found) {
-    printPayload({
-      ok: false,
-      error: `None of the requested symbols [${symbolsList.join(', ')}] found in indices/commodities/fx universe`,
-    }, args);
-    return 1;
-  }
-
-  const { jobs, skipped_symbols } = plan;
-
-  if (dryRun) {
-    printPayload({
-      ok: true,
-      dry_run: true,
-      provider: 'yahoo',
-      timeframe,
-      days,
-      delay_ms: delayMs,
-      max_days: plan.max_days,
-      jobs: jobs.length,
-      job_list: jobs,
-      skipped: skipped_symbols.length,
-      skipped_symbols,
-      estimated_api_calls: jobs.length,
-      message: `Would fetch native Yahoo ${timeframe} (~${plan.max_days} trading days) for ${jobs.length} symbols across indices/commodities/fx. Re-run without --dry-run to execute.`,
-    }, args);
-    return 0;
-  }
-
-  const results = { ok: 0, errors: 0 };
-  const allErrors = [];
-  const symbolResults = [];
-  let totalBars = 0;
-  const familyCounts = { indices: 0, commodities: 0, fx: 0 };
-
-  console.log(`[INTRADAY-ACCUMULATE] Starting Yahoo ${timeframe} harvest: ${jobs.length} symbols, ${days} days, delay=${delayMs}ms`);
-  if (skipped_symbols.length > 0) {
-    console.log(`[INTRADAY-ACCUMULATE] Skipping ${skipped_symbols.length} unmapped symbols`);
-  }
-
-  for (let i = 0; i < jobs.length; i++) {
-    const job = jobs[i];
-    const progress = `[${i + 1}/${jobs.length}]`;
-    if (process.stdout.isTTY) {
-      process.stdout.write(`\r\x1b[K${progress} ${job.symbol} (${job.family}) Yahoo ${timeframe} ...`);
-    } else {
-      console.log(`${progress} Fetching ${job.symbol} (${job.family}) Yahoo ${timeframe} (${days} days)`);
-    }
-
-    const start = Date.now();
-    try {
-      const snapshot = await ingestMarketData({
-        family: job.family,
-        symbol: job.symbol,
-        timeframe,
-        historyDays: days,
-        provider: 'yahoo',
-        force: true,
-        returnAttemptSnapshot: true,
-      });
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      const intradayBars = (snapshot.sources || []).filter(
-        (r) => r.timeframe === timeframe && r.symbol === job.symbol,
-      );
-      const snapErrors = snapshot.errors || [];
-      for (const e of snapErrors) allErrors.push(e);
-
-      // force:true ⇒ every job is an explicit fetch; zero target-timeframe bars is a
-      // real failure (an empty provider response must not report silent success).
-      const symbolOk = intradayBars.length > 0;
-      if (symbolOk) results.ok++; else results.errors++;
-      totalBars += intradayBars.length;
-      familyCounts[job.family] = (familyCounts[job.family] || 0) + 1;
-
-      const entry = {
-        symbol: job.symbol,
-        family: job.family,
-        ok: symbolOk,
-        bars: intradayBars.length,
-        elapsed_s: Number(elapsed),
-        errors: snapErrors.length,
-      };
-      if (!symbolOk) {
-        entry.error = snapErrors.map((e) => e.message).filter(Boolean).slice(0, 3).join(' | ') || `no native Yahoo ${timeframe} bars ingested`;
-      }
-      symbolResults.push(entry);
-
-      // [VISIBILITY] per-symbol bar count — required by Anti-Bullshit Testing Mandate
-      if (process.stdout.isTTY) {
-        const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
-        process.stdout.write(`\r\x1b[K${progress} ${color}${job.symbol}\x1b[0m (${job.family}) Yahoo ${timeframe}: ${intradayBars.length} bars (${elapsed}s)\n`);
-      } else {
-        console.log(`[VISIBILITY] ${progress} ${job.symbol} (${job.family}) Yahoo ${timeframe}: ${intradayBars.length} bars (${elapsed}s)${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
-      }
-    } catch (err) {
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      allErrors.push({ symbol: job.symbol, timeframe, family: job.family, provider: 'yahoo', message: err.message });
-      results.errors++;
-      familyCounts[job.family] = (familyCounts[job.family] || 0) + 1;
-      symbolResults.push({ symbol: job.symbol, family: job.family, ok: false, bars: 0, elapsed_s: Number(elapsed), error: err.message });
-      if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} \x1b[31m${job.symbol}\x1b[0m (${job.family}) Yahoo ${timeframe}: FAILED (${err.message})\n`);
-      } else {
-        console.error(`[VISIBILITY] ${progress} ${job.symbol} (${job.family}) FAILED: ${err.message}`);
-      }
-    }
-
-    if (delayMs > 0 && i < jobs.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-  }
-
-  if (process.stdout.isTTY) process.stdout.write('\n');
-
-  console.log(`[VISIBILITY] intraday-accumulate complete: ${results.ok} ok / ${results.errors} failed / ${totalBars} total ${timeframe} bars`);
-
-  printPayload({
-    ok: results.errors === 0,
-    provider: 'yahoo',
-    timeframe,
-    days,
-    delay_ms: delayMs,
-    jobs: jobs.length,
-    skipped: skipped_symbols.length,
-    skipped_symbols,
-    successful: results.ok,
-    errors: results.errors,
-    total_bars: totalBars,
-    families: familyCounts,
-    symbol_results: symbolResults,
-    error_messages: [...new Set(allErrors.map((e) => e.message).filter(Boolean))].slice(0, 24),
-    output: DEFAULT_HISTORY,
-  }, args);
-  return results.errors === 0 ? 0 : 1;
-}
-
-// ─── intraday-rollup: derive coarser intraday bins from the finest native bin ───
-// All intraday timeframes, finest → coarsest. The base grain is whichever finest
-// bin a family stores natively (1m for crypto/equities, 5m for Yahoo families).
-const INTRADAY_TF_ORDER = ['1m', '5m', '15m', '30m', '1h', '4h'];
-
-// Per-family base (finest natively-fetched) grain. Crypto (Binance) and US equities
-// (Alpaca SIP) serve deep 1m; Yahoo families (indices/commodities/fx) only get ~7d
-// of 1m so they stay on a 5m base (Yahoo serves ~60d of 5m).
-const FAMILY_BASE_TF = {
-  crypto: '1m',
-  equities: '1m',
-  indices: '5m',
-  commodities: '5m',
-  fx: '5m',
-};
-
-// Coarser intraday targets to derive from a given base grain (everything above it).
-function rollupTargetsAboveBase(baseTf) {
-  const i = INTRADAY_TF_ORDER.indexOf(baseTf);
-  if (i < 0) return ['15m', '30m', '1h', '4h'];
-  return INTRADAY_TF_ORDER.slice(i + 1);
-}
-
-// Enumerate symbols that have a deep `<symbol>_<baseTf>.bin` in the ts index.
-function listDeepSymbols(tsDir, baseTf = '5m') {
-  let files;
-  try { files = fs.readdirSync(tsDir); } catch (_) { return []; }
-  const suffix = `_${baseTf}.bin`;
-  return files.filter((f) => f.endsWith(suffix)).map((f) => f.slice(0, -suffix.length));
-}
-
-// Back-compat wrapper: 5m-base enumeration (existing intraday-rollup callers).
-function listDeepFiveMinSymbols(tsDir) {
-  return listDeepSymbols(tsDir, '5m');
-}
-
-// Read just the tiny meta sidecar to gate by family without loading the big bin.
-function readBinFamily(tsDir, symbol, baseTf = '5m') {
-  try {
-    const meta = JSON.parse(fs.readFileSync(path.join(tsDir, `${symbol}_${baseTf}.meta.json`), 'utf8'));
-    return String(meta.family || '').toLowerCase();
-  } catch (_) { return null; }
-}
-
-// Back-compat wrapper.
-function readFiveMinBinFamily(tsDir, symbol) {
-  return readBinFamily(tsDir, symbol, '5m');
-}
-
-// Derive coarser intraday bins for one symbol from its deep `baseTf` bin. Lossless:
-// the base bin is read-only; coarser bins are written merge-protected. Shared by
-// `intraday-rollup`, the deep-backfill commands, and the backfill daemon.
-function rollupFromBase(tsDir, symbol, baseTf, timeframes) {
-  const { aggregateCandles } = require('../../../scripts/data_ops/ingest_market_data.js');
-  const baseRecords = readTsIndex(tsDir, symbol, baseTf);
-  if (!baseRecords || baseRecords.length === 0) {
-    return { ok: false, error: `no readable ${baseTf} bin`, source_bars: 0, base_timeframe: baseTf, derived: {} };
-  }
-  const provider = baseRecords[0].provider || 'rollup';
-  const family = baseRecords[0].family || 'unknown';
-  const candles = baseRecords.map((r) => ({
-    openTime: Date.parse(r.timestamp),
-    open: r.open, high: r.high, low: r.low, close: r.close, volume: r.volume,
-  }));
-  const derivedSources = [];
-  const tfCounts = {};
-  for (const tf of timeframes) {
-    const derived = aggregateCandles(candles, tf, symbol, provider, family, { sourceTimeframe: baseTf });
-    tfCounts[tf] = derived.length;
-    for (const rec of derived) derivedSources.push(rec);
-  }
-  writeTsIndex(tsDir, { sources: derivedSources });
-  return { ok: true, source_bars: baseRecords.length, base_timeframe: baseTf, derived: tfCounts };
-}
-
-// Back-compat wrapper: 5m-base rollup (existing deep-backfill + intraday-rollup callers).
-function rollupFiveMinForSymbol(tsDir, symbol, timeframes) {
-  const res = rollupFromBase(tsDir, symbol, '5m', timeframes);
-  // Preserve the legacy field name used by existing callers/tests.
-  return { ...res, source_5m_bars: res.source_bars || 0 };
-}
-
-const ROLLUP_TARGET_TFS = ['15m', '30m', '1h', '4h'];
-
-/**
- * Handles 'intraday-rollup': derives coarser intraday bins (15m/30m/1h/4h) from the
- * already-deep native 5m bins by local OHLCV aggregation. No network. Lossless: the
- * 5m bin is read-only; coarser bins are written merge-protected (new-wins-on-timestamp),
- * so existing native bars at non-overlapping timestamps are preserved.
- *
- * Example: sovereign data intraday-rollup --family crypto --dry-run
- */
-async function commandIntradayRollup(args) {
-  const { aggregateCandles } = require('../../../scripts/data_ops/ingest_market_data.js');
-
-  const VALID_TFS = ['15m', '30m', '1h', '4h'];
-  const tfArg = optionValue(args, '--timeframes', '15m,30m,1h,4h');
-  const timeframes = tfArg.split(',').map((s) => s.trim()).filter(Boolean);
-  const badTf = timeframes.find((t) => !VALID_TFS.includes(t));
-  if (badTf || timeframes.length === 0) {
-    printPayload({ ok: false, error: `intraday-rollup --timeframes must be a non-empty subset of ${VALID_TFS.join(',')}; got '${tfArg}'` }, args);
-    return 1;
-  }
-
-  const rawFamily = optionValue(args, '--family', null);
-  const familyFilter = (rawFamily && rawFamily.toLowerCase() !== 'all') ? rawFamily.toLowerCase() : null;
-  const symbolsArg = optionValue(args, '--symbols', null);
-  const explicitSymbols = symbolsArg
-    ? symbolsArg.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
-    : null;
-  const dryRun = hasFlag(args, '--dry-run');
-  const tsDir = optionValue(args, '--ts-dir', DEFAULT_TS_DIR);  // overridable for tests
-
-  let symbols = listDeepFiveMinSymbols(tsDir);
-  if (explicitSymbols) symbols = symbols.filter((s) => explicitSymbols.includes(s.toUpperCase()));
-  if (familyFilter) symbols = symbols.filter((s) => readFiveMinBinFamily(tsDir, s) === familyFilter);
-  symbols.sort();
-
-  if (symbols.length === 0) {
-    printPayload({
-      ok: false,
-      error: `No symbols with a deep _5m.bin matched (family=${familyFilter || 'any'}, symbols=${explicitSymbols ? explicitSymbols.join(',') : 'all'})`,
-    }, args);
-    return 1;
-  }
-
-  if (dryRun) {
-    printPayload({
-      ok: true,
-      dry_run: true,
-      source_timeframe: '5m',
-      timeframes,
-      symbols: symbols.length,
-      symbol_list: symbols,
-      message: `Would derive ${timeframes.join('/')} from deep 5m bins for ${symbols.length} symbols (local aggregation, no network). 5m bins are read-only.`,
-    }, args);
-    return 0;
-  }
-
-  const results = { ok: 0, errors: 0 };
-  const allErrors = [];
-  const symbolResults = [];
-
-  console.log(`[INTRADAY-ROLLUP] Deriving ${timeframes.join('/')} from 5m for ${symbols.length} symbols`);
-
-  for (let i = 0; i < symbols.length; i++) {
-    const symbol = symbols[i];
-    const progress = `[${i + 1}/${symbols.length}]`;
-    const start = Date.now();
-    try {
-      const res = rollupFiveMinForSymbol(tsDir, symbol, timeframes);
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      if (!res.ok) {
-        results.errors++;
-        allErrors.push({ symbol, message: res.error });
-        symbolResults.push({ symbol, ok: false, error: res.error });
-        console.error(`[VISIBILITY] ${progress} ${symbol} FAILED: ${res.error}`);
-        continue;
-      }
-      results.ok++;
-      symbolResults.push({ symbol, ok: true, source_5m_bars: res.source_5m_bars, derived: res.derived, elapsed_s: Number(elapsed) });
-      const summary = timeframes.map((t) => `${t}:${res.derived[t]}`).join(' ');
-      console.log(`[VISIBILITY] ${progress} ${symbol} 5m=${res.source_5m_bars} -> ${summary} (${elapsed}s)`);
-    } catch (err) {
-      results.errors++;
-      allErrors.push({ symbol, message: err.message });
-      symbolResults.push({ symbol, ok: false, error: err.message });
-      console.error(`[VISIBILITY] ${progress} ${symbol} FAILED: ${err.message}`);
-    }
-  }
-
-  console.log(`[VISIBILITY] intraday-rollup complete: ${results.ok} ok / ${results.errors} failed across ${symbols.length} symbols`);
-
-  printPayload({
-    ok: results.errors === 0,
-    source_timeframe: '5m',
-    timeframes,
-    symbols: symbols.length,
-    successful: results.ok,
-    errors: results.errors,
-    symbol_results: symbolResults,
-    error_messages: [...new Set(allErrors.map((e) => e.message).filter(Boolean))].slice(0, 24),
-    output: DEFAULT_TS_DIR,
-  }, args);
-  return results.errors === 0 ? 0 : 1;
 }
 
 /**
@@ -2124,6 +1204,7 @@ module.exports = {
   listDeepSymbols,
   rollupFromBase,
   rollupFiveMinForSymbol,
+  writeDeadSymbolMarker,
   readBinFamily,
   rollupTargetsAboveBase,
   FAMILY_BASE_TF,

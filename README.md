@@ -1,81 +1,140 @@
 # Sovereign Trading Platform
 
-Sovereign is an active trading-platform prototype that has moved beyond file layout into local ingestion, validation, research/backtest commands, C++ backend inspection, and a local web/API dashboard bridge.
+An active algorithmic trading platform with live order execution across equities (Alpaca), prediction markets (Polymarket), and FX/CFD (MT5), a binary time-series data pipeline, ML inference (ONNX), and an Ink-based TUI dashboard.
 
-The earlier personal-finance/wealth work is legacy context. Treat it as done unless a variable becomes useful to trading, macro modeling, or consumer sentiment. For example, wage growth can be a macro labor-market feature, but this repository should not grow into a budgeting or salary-planning product.
-
-## Start Here
-
-Read the documentation in this order:
-
-1. [Documentation Hub](docs/README.md)
-2. [Quickstart Guide](docs/operational/QUICKSTART.md)
-3. [Architecture Overview](docs/engineering/architecture_overview.md)
-4. [Codebase Organization Map](docs/engineering/codebase_org.md)
-5. [Product Specification](docs/engineering/product_spec.md)
-6. [Engineering Standards](docs/engineering/engineering_standards.md)
-7. [Contributor Guide](docs/operational/CONTRIBUTING.md)
-
-## Current Phase
-
-Phase 8 production hardening and feature polish is complete. `workspace/STATE.md` is the current status anchor when older docs or fixtures drift.
-
-Buildable today:
-
-- local market data ingestion and strict cache validation
-- stocks, indices, FX, crypto, macro, weather, news/sentiment, and quote source boundaries
-- Node CLI operations through `backend/cli/sovereign_cli.js`
-- C++ backend inspection for status, data summaries, correlations, universe, portfolio, and integrity checks
-- sample features, model comparison, backtest, and optimization commands
-- local web/API bridge serving the built React dashboard from `Frontend/dashboard/dist` through `backend/api/app.js`
-- React/Vite source work under `Frontend/dashboard/src`
-
-Still planned or gated:
-
-- promoted live broker execution
-- production portfolio monitoring
-- broader Phase 6 hardening, benchmarking, and safety controls
-- deployment stack hardening
-- unified dashboard hydration across every panel
-
-## Quick Build
+## Quick Start
 
 ```bash
 npm install
-npm link
-cmake -S . -B build
-cmake --build build
-ctest --test-dir build/backend/core
+npm install --prefix backend/api
+npm install --prefix backend/gateway
+npm install --prefix backend/mcp_server
+npm install --prefix Frontend/dashboard
+node backend/cli/sovereign_cli.js status --json
+node backend/cli/sovereign_cli.js bias BTCUSDT
+node backend/cli/sovereign_cli.js scorecard --family crypto --top 20
 ```
 
-Run the local CLI:
+TUI dashboard:
 
 ```bash
-node backend/cli/sovereign_cli.js status --json
-node backend/cli/sovereign_cli.js check --strict
-sovereign setup
-sovereign doctor --json
+node backend/cli/sovereign_cli.js
 ```
 
-Run the local web/API bridge:
+Web API (port 8787):
 
 ```bash
 node backend/api/app.js
 ```
 
-Then open `http://127.0.0.1:8787` or inspect `http://127.0.0.1:8787/api/system/status`.
+Run the local Linux suite:
 
-## Documentation
+```bash
+./start_local.sh
+```
 
-The `docs/` folder is the main contributor documentation set. `workspace/STATE.md` remains the current status anchor when older docs drift.
+C++ core (optional — data integrity, correlation, portfolio risk):
 
-## Workspace State
+```bash
+npm run native:build
+node backend/cli/sovereign_cli.js backend status --json
+ctest --test-dir backend/core/build
+```
 
-These workspace files track active development and session memory:
+## Dependencies
 
-- [workspace/STATE.md](workspace/STATE.md)
-- [workspace/HANDOFF.md](workspace/HANDOFF.md)
-- [workspace/NEXT_SESSION_GOAL.md](workspace/NEXT_SESSION_GOAL.md)
-- [docs/memory/BLAST_THROUGH_REPORT.md](docs/memory/BLAST_THROUGH_REPORT.md)
+This repo has multiple Node package roots. After a fresh clone or Windows-to-Ubuntu migration, install
+each one explicitly:
 
-Keep them in sync with the code and `docs/` when the repo changes.
+```bash
+npm install
+npm install --prefix backend/api
+npm install --prefix backend/gateway
+npm install --prefix backend/mcp_server
+npm install --prefix Frontend/dashboard
+```
+
+The root install powers the CLI, TUI, shared libraries, tests, and most gateway launches. The nested
+installs remove `UNMET DEPENDENCY` errors when checking or running each service directly.
+
+Current workspace check: all package roots resolve cleanly with `npm ls --depth=0`, so no extra
+libraries are required beyond the installs listed above unless you add or remove dependencies.
+
+Ubuntu system packages for the optional native/C++ path:
+
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake
+```
+
+Useful dependency checks:
+
+```bash
+npm ls --depth=0
+npm ls --prefix backend/api --depth=0
+npm ls --prefix backend/gateway --depth=0
+npm ls --prefix backend/mcp_server --depth=0
+npm ls --prefix Frontend/dashboard --depth=0
+```
+
+If `onnxruntime-node` reports blocked install scripts after `npm install`, review it with:
+
+```bash
+npm approve-scripts
+```
+
+## What Works Now
+
+**Data pipeline**
+- Binary ts-index format (`storage/data/ts/`) — 1m grain for crypto (Binance) and US equities (Alpaca), 5m/daily for Yahoo families
+- Binance WebSocket live feed in `backfill-daemon` — strictly newer closed 1m klines append without rewriting deep history
+- `sovereign backfill-daemon [--once] [--families crypto|equities|...]`
+
+**Research**
+- `sovereign bias <SYMBOL>` — 7-TF table (1m→1w) with RSI, VWAP, Volume Profile, Wyckoff phase, HMM regime, permutation entropy, ML signal
+- `sovereign scorecard [--family crypto] [--top 20] [--allow-degraded]` — compact technical ranking that fails closed by default; quorum mode labels partial-timeframe rows degraded and incomplete
+- `sovereign scorecard --schema 3 --fixture all-recorded [--symbol AAPL]` — research-only family catalog; use `--symbol` for factor and evidence drill-down
+- `sovereign bt --strategy <name>` — backtests against ts-index data; ONNX models (`xgboost_v1`, `logistic_v1`, `regime_classifier`) run inference via `onnxruntime-node`
+
+**Live execution**
+- Alpaca equities: market/limit orders, position tracking, auto-exit loop (stop/target/age), `auto-trade` unattended mode
+- Polymarket prediction markets: CLOB v2 orders via `@polymarket/clob-client-v2`, live cycle (`cycle.ts`)
+- MT5: FX/CFD via gateway bridge
+- All paths gated behind `SOVEREIGN_TRADE_PIN` + `ai_agent_trading` feature flag; risk engine fails closed
+
+**TUI**
+- Ink dashboard (`sovereign_cli.js` with no args) — chat bar, flag grid, in-pane command output
+- `Settings > Layout > legacy` to switch to the older prompt-based engine and back
+- Both engines have `bias` and `scorecard` in the Research section
+
+**ML**
+- ONNX inference runner (`shared/lib/ml/onnx_runner.js`) — lazy singletons, feature imputation from `storage/models/feature_config.yaml`
+- 2-state Gaussian HMM (`shared/lib/ml/hmm.js`) — Baum-Welch EM + Viterbi, log-space stable
+- Permutation entropy (order-3, normalized) on price series
+
+## Architecture
+
+```
+backend/cli/         Node CLI — commands, TUI, dispatch
+backend/api/         Native Node HTTP API + Socket.IO bridge (port 8787)
+backend/gateway/     TypeScript execution gateway — all broker adapters
+backend/core/        C++ data integrity, correlation, portfolio risk (CMake/ctest)
+shared/lib/          Shared JS modules (market data, ML, runtime, settings)
+storage/             Runtime data (ts-index, models, db) — gitignored except config
+Frontend/dashboard/  React/Vite web dashboard
+infra/               Docker compose, deployment configs
+```
+
+Source of truth for current work: [`workspace/STATE.md`](workspace/STATE.md)  
+Session continuity: [`workspace/HANDOFF.md`](workspace/HANDOFF.md)  
+Code review history: [`workspace/DEV_REVIEW.md`](workspace/DEV_REVIEW.md)  
+Codebase tour: [`docs/codebase_tour/00_START_HERE.md`](docs/codebase_tour/00_START_HERE.md)
+
+## Tests
+
+```bash
+npm test                  # node --test runner (NOT jest — jest mis-parses these files)
+npm run hygiene           # lint + dead-import scan
+```
+
+Baseline: **652 pass / 0 fail / 2 skip** on `feat/ink-tui-refactor`.

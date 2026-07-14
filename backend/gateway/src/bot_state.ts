@@ -1,4 +1,4 @@
-import 'dotenv/config';
+require('../../../shared/lib/runtime/env.js');
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createClient } from '@supabase/supabase-js';

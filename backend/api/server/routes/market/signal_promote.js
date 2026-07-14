@@ -1,41 +1,55 @@
-const { createSovereignSupabaseClient } = require('../../services/supabase_client');
+const { signalStatus } = require('../../services/cli_executor');
+const {
+  createSovereignSupabaseClient,
+  getAuthStatus,
+} = require('../../services/supabase_client');
 
 module.exports = {
   path: '/api/signal/promote',
-  status: (payload) => (payload && payload.ok ? 200 : 400),
+  status: (payload) => {
+    if (payload && payload.ok) return 200;
+    if (payload && payload.error === 'auth_required') return 401;
+    if (payload && payload.error === 'Supabase not configured') return 503;
+    return 400;
+  },
   handle: async (query, { req }) => {
     if (req.method !== 'POST') {
       return { ok: false, error: 'Method Not Allowed' };
     }
 
-    // Parse body (simple JSON parsing)
-    let body = {};
-    try {
-      const buffers = [];
-      for await (const chunk of req) {
-        buffers.push(chunk);
-      }
-      const data = Buffer.concat(buffers).toString();
-      body = JSON.parse(data);
-    } catch (err) {
-      return { ok: false, error: 'Invalid JSON body' };
-    }
-
-    const { signalIds } = body;
+    // app.js has already parsed and merged the JSON request body into query.
+    const { signalIds } = query;
     if (!Array.isArray(signalIds) || signalIds.length === 0) {
       return { ok: false, error: 'Missing or invalid signalIds' };
     }
 
-    // SANITIZATION: Ensure all IDs are strings and within reasonable length
-    const sanitizedIds = signalIds
-      .filter(id => typeof id === 'string' && id.length > 0 && id.length < 128)
-      .map(id => id.replace(/[^a-zA-Z0-9\-_]/g, ''));
+    const invalidIds = signalIds.filter((id) => (
+      typeof id !== 'string' || id.length === 0 || id.length >= 128 || !/^[a-zA-Z0-9_-]+$/.test(id)
+    ));
+    if (invalidIds.length > 0) {
+      return { ok: false, error: 'invalid_signal_ids', rejected_signal_ids: invalidIds };
+    }
+    const requestedIds = [...signalIds];
 
-    if (sanitizedIds.length === 0) {
-      return { ok: false, error: 'No valid signal IDs provided after sanitization' };
+    const current = signalStatus();
+    const activeIds = new Set((current.signals || [])
+      .filter((signal) => signal.active && !signal.expired)
+      .map((signal) => signal.signal_id));
+    const rejectedIds = requestedIds.filter((id) => !activeIds.has(id));
+    if (rejectedIds.length > 0) {
+      return {
+        ok: false,
+        error: 'stale_or_inactive_signals',
+        rejected_signal_ids: rejectedIds,
+      };
     }
 
-    const supabase = createSovereignSupabaseClient();
+    const auth = await getAuthStatus(req);
+    if (!auth.authenticated) {
+      return { ok: false, error: 'auth_required' };
+    }
+
+    const supabase = createSovereignSupabaseClient(req);
     if (!supabase) {
       return { ok: false, error: 'Supabase not configured' };
     }
@@ -46,9 +60,10 @@ module.exports = {
         .from('audit_events')
         .insert({
           event_type: 'SIGNAL_PROMOTION',
+          user_id: auth.user.id,
           severity: 'info',
           metadata: {
-            signal_ids: sanitizedIds,
+            signal_ids: requestedIds,
             source: 'dashboard',
             promoted_at: new Date().toISOString()
           }
@@ -60,15 +75,16 @@ module.exports = {
       if (global.sovereignIo) {
         global.sovereignIo.emit('telemetry', {
           timestamp: new Date().toISOString(),
-          msg: `Dashboard promoted ${sanitizedIds.length} signals: ${sanitizedIds.slice(0, 3).join(', ')}${sanitizedIds.length > 3 ? '...' : ''}`,
+          msg: `Dashboard promoted ${requestedIds.length} signals: ${requestedIds.slice(0, 3).join(', ')}${requestedIds.length > 3 ? '...' : ''}`,
           level: 'info'
         });
       }
 
       return { 
         ok: true, 
-        message: `${signalIds.length} signals promoted successfully`,
-        promoted_count: signalIds.length 
+        message: `${requestedIds.length} signal review decisions recorded; no order was executed`,
+        promoted_count: requestedIds.length,
+        execution_started: false,
       };
     } catch (err) {
       console.error('[BACKEND] Promotion persistence failed:', err.message);
@@ -76,4 +92,3 @@ module.exports = {
     }
   },
 };
-

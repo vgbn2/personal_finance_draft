@@ -24,7 +24,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - node
-            - web/app.js
+            - backend/api/app.js
           envFrom:
             - configMapRef:
                 name: sovereign-web-config

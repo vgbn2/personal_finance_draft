@@ -1,0 +1,18 @@
+{
+  "provenance": {
+    "source_url": "https://www.spglobal.com/spdji/en/indices/equity/sp-500/",
+    "retrieved_at": "2026-07-13T01:45:00Z",
+    "content_type": "text/html",
+    "provider": "S&P Dow Jones Indices",
+    "terms_rate_limit_note": "The official index page did not expose a free structured S&P 500 constituent-breadth feed. No rate-limit could be determined because the attempted official request was denied with HTTP 403; S&P DJI licensing and data-use terms apply.",
+    "fetch_status": "unavailable"
+  },
+  "payload": {
+    "status": "unavailable",
+    "http_status": 403,
+    "requested_dataset": "S&P 500 point-in-time constituent breadth",
+    "error_code": "official_structured_breadth_unavailable",
+    "error_message": "The official S&P DJI index page returned HTTP 403 and no freely accessible official structured breadth payload was available. No third-party substitute was recorded.",
+    "records": []
+  }
+}

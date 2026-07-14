@@ -1,3 +1,6 @@
+<<<<<<<< HEAD:shared/lib/models.js
+module.exports = require('./ml/models');
+========
 const FEATURE_NAMES = [
   'return_fast',
   'return_slow',
@@ -79,7 +82,7 @@ const modelCandidates = [
   {
     name: 'cnn_window_v0',
     family: 'neural',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'convolution-style scorer over latest technical feature row',
     predict(feature) {
       const p = signalParts(feature);
@@ -90,7 +93,7 @@ const modelCandidates = [
   {
     name: 'xgboost_ranker_v0',
     family: 'boosting',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'XGBoost-style boosted-tree ranker using nonlinear feature interactions',
     predict(feature) {
       const p = signalParts(feature);
@@ -105,7 +108,7 @@ const modelCandidates = [
   {
     name: 'gradient_boosted_trees_v0',
     family: 'boosting',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'gradient-boosted decision tree style ensemble over momentum, RSI, and risk',
     predict(feature) {
       const p = signalParts(feature);
@@ -119,7 +122,7 @@ const modelCandidates = [
   {
     name: 'random_forest_v0',
     family: 'trees',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'random-forest style majority vote across simple technical regimes',
     predict(feature) {
       const p = signalParts(feature);
@@ -138,7 +141,7 @@ const modelCandidates = [
   {
     name: 'decision_tree_stump_v0',
     family: 'trees',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'single decision tree stump for fast sanity checks',
     predict(feature) {
       const p = signalParts(feature);
@@ -149,7 +152,7 @@ const modelCandidates = [
   {
     name: 'logistic_regression_v0',
     family: 'linear',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'logistic linear margin over normalized technical features',
     predict(feature) {
       const p = signalParts(feature);
@@ -161,7 +164,7 @@ const modelCandidates = [
   {
     name: 'svm_margin_v0',
     family: 'linear',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'support-vector style margin around trend and volatility boundaries',
     predict(feature) {
       const p = signalParts(feature);
@@ -172,7 +175,7 @@ const modelCandidates = [
   {
     name: 'knn_pattern_v0',
     family: 'instance_based',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'nearest-neighbor style pattern proxy using return and RSI similarity bands',
     predict(feature) {
       const p = signalParts(feature);
@@ -185,7 +188,7 @@ const modelCandidates = [
   {
     name: 'naive_bayes_regime_v0',
     family: 'probabilistic',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'naive-Bayes style regime score from independent technical likelihood buckets',
     predict(feature) {
       const p = signalParts(feature);
@@ -200,7 +203,7 @@ const modelCandidates = [
   {
     name: 'lstm_sequence_v0',
     family: 'neural',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'sequence-model proxy emphasizing persistent multi-bar momentum',
     predict(feature) {
       const p = signalParts(feature);
@@ -211,7 +214,7 @@ const modelCandidates = [
   {
     name: 'transformer_attention_v0',
     family: 'neural',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'attention-style scorer weighting trend, volatility, and mean-reversion context',
     predict(feature) {
       const p = signalParts(feature);
@@ -224,7 +227,7 @@ const modelCandidates = [
   {
     name: 'momentum_baseline_v0',
     family: 'baseline',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'long when 5-period return is positive',
     predict(feature) {
       const score = valueOrZero(feature.close_return_5);
@@ -234,7 +237,7 @@ const modelCandidates = [
   {
     name: 'mean_reversion_baseline_v0',
     family: 'baseline',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'long when RSI is washed out, flat when overbought',
     predict(feature) {
       const rsi = valueOrZero(feature.rsi_14);
@@ -245,14 +248,20 @@ const modelCandidates = [
   {
     name: 'volatility_breakout_v0',
     family: 'baseline',
-    status: 'deterministic_adapter',
+    status: 'handcrafted_heuristic',
     description: 'long when trend is positive and realized volatility is not elevated',
     predict(feature) {
       const p = signalParts(feature);
       return predictionFromScore(p.breakout, 1);
     },
   },
-];
+].map((candidate) => ({
+  ...candidate,
+  trained: false,
+  decision_ready: false,
+  decision_scope: 'research_baseline_only',
+  description: `Handcrafted heuristic; not a trained model. ${candidate.description}`,
+}));
 
 function summarizeReturns(returns) {
   const wins = returns.filter((value) => value > 0).length;
@@ -337,7 +346,15 @@ function perSymbolWinners(models) {
     const candidates = models
       .map((model) => {
         const metrics = (model.by_symbol || []).find((row) => row.symbol === symbol);
-        return metrics ? { model: model.name, family: model.family, ...metrics } : null;
+        return metrics ? {
+          model: model.name,
+          family: model.family,
+          status: model.status,
+          trained: model.trained === true,
+          decision_ready: model.decision_ready === true,
+          decision_scope: model.decision_scope || null,
+          ...metrics,
+        } : null;
       })
       .filter(Boolean)
       .sort((a, b) => b.sharpe_like - a.sharpe_like || b.total_return - a.total_return);
@@ -349,22 +366,47 @@ function perSymbolWinners(models) {
   });
 }
 
+// Real trained ONNX models — predictions precomputed onto feature._onnxPred before backtest runs.
+// predict() reads _onnxPred synchronously so the existing sync backtest loop is unchanged.
+const onnxModelCandidates = ['xgboost_v1', 'logistic_v1', 'regime_classifier'].map((name) => ({
+  name,
+  family: 'onnx',
+  status: 'onnx_model',
+  description: `Trained ONNX model (${name}) — use precomputeForFeatures() before runBacktestJs`,
+  predict(feature) {
+    if (feature._onnxPred) {
+      const { direction, confidence } = feature._onnxPred;
+      return { direction: direction === 'up' ? 'long' : 'flat', confidence };
+    }
+    return { direction: 'flat', confidence: 0 };
+  },
+}));
+
 // Short names used in strategy YAMLs → canonical model names
 const MODEL_ALIASES = {
-  xgboost:   'xgboost_ranker_v0',
+  xgboost:   'xgboost_v1',
   cnn_v3:    'cnn_window_v0',
   lstm_v1:   'lstm_sequence_v0',
   cnn:       'cnn_window_v0',
   lstm:      'lstm_sequence_v0',
   rf:        'random_forest_v0',
   dt:        'decision_tree_stump_v0',
-  lr:        'logistic_regression_v0',
+  lr:        'logistic_v1',
+  logistic:  'logistic_v1',
   svm:       'svm_margin_v0',
+  regime:    'regime_classifier',
 };
+
+const ONNX_MODEL_NAMES = new Set(['xgboost_v1', 'logistic_v1', 'regime_classifier']);
 
 function resolveModel(name) {
   const canonical = MODEL_ALIASES[name] || name;
-  return modelCandidates.find((c) => c.name === canonical) || modelCandidates[0];
+  const found = onnxModelCandidates.find((c) => c.name === canonical) ||
+    modelCandidates.find((c) => c.name === canonical);
+  if (found) return found;
+  const fallback = modelCandidates[0];
+  console.warn(`[models] Unknown model "${name}" (canonical: "${canonical}") — falling back to ${fallback.name}`);
+  return fallback;
 }
 
 function compareModels(featureFrame, options = {}) {
@@ -379,6 +421,9 @@ function compareModels(featureFrame, options = {}) {
     threshold,
     feature_count: featureFrame.features ? featureFrame.features.length : 0,
     candidate_count: modelCandidates.length,
+    trained_candidate_count: modelCandidates.filter((model) => model.trained === true).length,
+    decision_ready: modelCandidates.some((model) => model.decision_ready === true),
+    decision_warning: 'Heuristic comparison is research-only unless a candidate is explicitly validated and decision_ready.',
     families: [...new Set(modelCandidates.map((model) => model.family))].sort(),
     winner: results[0] ? results[0].name : null,
     per_symbol_winners: perSymbolWinners(results),
@@ -389,9 +434,12 @@ function compareModels(featureFrame, options = {}) {
 module.exports = {
   FEATURE_NAMES,
   MODEL_ALIASES,
+  ONNX_MODEL_NAMES,
   compareModels,
   modelCandidates,
+  onnxModelCandidates,
   perSymbolWinners,
   resolveModel,
   scoreModel,
 };
+>>>>>>>> feat-ink-tui-refactor-split:shared/lib/ml/models.js

@@ -5,4 +5,4 @@ build:
   docker:
     web: Dockerfile
 run:
-  web: node scripts/cli/sovereign_cli.js watch --full
+  web: node backend/api/app.js

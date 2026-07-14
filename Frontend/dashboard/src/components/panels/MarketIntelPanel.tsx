@@ -22,13 +22,15 @@ export function MarketIntelPanel() {
   const [universe, setUniverse] = useState<MarketUniverse | null>(null);
   const [quality, setQuality] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const staleRecords = quality?.freshness?.stale_records ?? quality?.stale_records ?? 0;
+  const freshnessState = quality?.freshness?.state || (staleRecords > 0 ? 'Degraded' : 'Nominal');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [uniRes, qualRes] = await Promise.all([
           fetch(API_ENDPOINTS.UNIVERSE, { headers: DEFAULT_HEADERS }),
-          fetch(API_ENDPOINTS.DATA_SUMMARY, { headers: DEFAULT_HEADERS })
+          fetch(API_ENDPOINTS.STATUS, { headers: DEFAULT_HEADERS })
         ]);
         
         const uniData = await uniRes.json();
@@ -46,10 +48,19 @@ export function MarketIntelPanel() {
     fetchData();
 
     // Stream real-time market data
-    const socket = io(API_BASE_URL);
+    const socket = io(API_BASE_URL || undefined);
     socket.on('market_data', (payload: any) => {
       if (payload.universe?.ok) setUniverse(payload.universe);
-      if (payload.dataSummary?.ok) setQuality(payload.dataSummary);
+      if (payload.status?.ok) setQuality(payload.status);
+      else if (payload.dataSummary?.ok) {
+        setQuality({
+          usable_records: payload.dataSummary.quality?.usable_records ?? 0,
+          stale_records: payload.dataSummary.quality?.stale_records ?? 0,
+          freshness: {
+            stale_records: payload.dataSummary.quality?.stale_records ?? 0,
+          },
+        });
+      }
     });
 
     return () => {
@@ -66,10 +77,10 @@ export function MarketIntelPanel() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 animate-in slide-in-from-bottom-2 duration-300">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 animate-in slide-in-from-bottom-2 duration-300">
       
       {/* Header Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] p-5 rounded-xl flex flex-col gap-1 relative overflow-hidden group shadow-sm">
           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--color-brand-cyan)]" />
           <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-2">
@@ -98,10 +109,10 @@ export function MarketIntelPanel() {
             <AlertCircle className="w-3 h-3" /> Data Freshness
           </span>
           <span className="font-mono text-2xl text-[var(--text-main)] font-semibold tracking-tight uppercase">
-            {quality?.freshness?.state || 'Nominal'}
+            {freshnessState}
           </span>
           <span className="font-mono text-[10px] text-[var(--text-faint)]">
-            {quality?.freshness?.stale_records || 0} stale items
+            {staleRecords} stale items
           </span>
         </div>
       </div>

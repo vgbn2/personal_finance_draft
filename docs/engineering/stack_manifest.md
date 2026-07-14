@@ -18,9 +18,7 @@
 | Package | Version | Purpose |
 |---------|---------|---------|
 | node:http | built-in | Local web/API server in `backend/api/app.js` |
-| express | ^4.18.0 | Listed in `backend/api/package.json`; not required by current `backend/api/app.js` runtime |
-| socket.io | ^4.5.0 | Planned streaming dashboard updates |
-| dotenv | ^16.0.0 | Environment configuration |
+| socket.io | ^4.5.0 | Live dashboard telemetry and market-data updates |
 
 ### CLI (Node.js)
 | Module | Purpose |
@@ -40,10 +38,10 @@
 | Service | Status | Purpose |
 |---------|--------|---------|
 | GitHub Actions | Planned | CI/CD automation |
-| Docker | Active | Local containerization (`docker/`) |
-| Kubernetes | Starter | Deployment manifests (`deployment/kubernetes/`) |
-| Terraform | Starter | Infrastructure as Code (`deployment/terraform/`) |
-| Heroku | Starter | Cloud deployment (`deployment/heroku/`) |
+| Docker | Active | Local containerization (`infra/docker/`) |
+| Kubernetes | Starter | Deployment manifests (`infra/deployment/kubernetes/`) |
+| Terraform | Starter | Infrastructure as Code (`infra/deployment/terraform/`) |
+| Heroku | Starter | Cloud deployment (`infra/deployment/heroku/`) |
 
 ## Configuration
 

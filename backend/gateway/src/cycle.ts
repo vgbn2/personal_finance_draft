@@ -1,4 +1,4 @@
-import 'dotenv/config';
+require('../../../shared/lib/runtime/env.js');
 import * as crypto from 'node:crypto';
 import {
   loadBotStateWithFallback,
@@ -8,9 +8,9 @@ import {
   type BotPosition,
   type BotState,
   type CycleResult,
-} from './bot_state.js';
-import { fetchTradingInfo } from './market.js';
-import { createClobClient } from './clob_factory.js';
+} from './bot_state';
+import { fetchTradingInfo } from './market';
+import { createClobClient } from './clob_factory';
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
@@ -66,7 +66,7 @@ interface TruthMachineBet {
 }
 
 async function fetchAiBets(): Promise<TruthMachineBet[]> {
-  const res = await fetch('https://truthmachine.live/api/best-bets?limit=50&min_edge=0');
+  const res = await fetchWithRetry('https://truthmachine.live/api/best-bets?limit=50&min_edge=0');
   if (!res.ok) throw new Error(`Truth Machine API error: ${res.status}`);
   const body = await res.json();
   return Array.isArray(body?.markets) ? body.markets : [];
@@ -120,7 +120,7 @@ export async function runBotHealth(): Promise<HealthResult> {
 
   // 4. Truth Machine reachable
   try {
-    const r = await fetch('https://truthmachine.live/api/best-bets?limit=1&min_edge=0');
+    const r = await fetchWithRetry('https://truthmachine.live/api/best-bets?limit=1&min_edge=0');
     checks.push({ label: 'Truth Machine API', ok: r.ok, detail: r.ok ? `${r.status} OK` : `${r.status} error` });
   } catch (e: any) {
     checks.push({ label: 'Truth Machine API', ok: false, detail: e.message });

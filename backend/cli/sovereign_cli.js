@@ -6,18 +6,21 @@ const utils = require('./lib/utils.js');
 const { pageText, helpText, printPayload, logger } = utils;
 
 const { commandStatus, commandCockpit } = require('./commands/operational/status.js');
+const { commandPortfolioMonitor } = require('./commands/operational/portfolio_monitor.js');
 const { commandSetup, commandDoctor } = require('./commands/operational/setup.js');
 const { commandBackend } = require('./commands/tools/backend.js');
 const { commandQuotes } = require('./commands/quotes/quotes.js');
 const { commandStrategyMenu, commandPropFirmMenu } = require('./commands/strategy/strategy.js');
 const { commandBacktest, commandOptimize, commandEdgeDecay, commandDemo, commandIndicators, commandModelCompare } = require('./commands/research/research.js');
 const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandClearApiCache, commandValidate, commandPrune, commandLoc, commandUniverse, commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIntradayAccumulate, commandIntradayRollup } = require('./commands/data/data.js');
-const { commandBackfillDaemon } = require('./commands/data/backfill_daemon.js');
+const { commandBackfillDaemon, commandStopBackfillDaemon } = require('./commands/data/backfill_daemon.js');
 const { commandTrade, buildTradeGatewayLaunch, commandMt5, commandMt5Profile, commandMt5Connect, commandMt5Bridge, commandAutoTrade, commandAddPlatform, commandAgent, commandPolymarket, commandBot } = require('./commands/trade/trade.js');
 const { commandLogin, commandRegister, commandLogout, commandAuthStatus } = require('./commands/account/auth.js');
 const { commandSettings } = require('./commands/settings/settings.js');
 const { commandRunnerMenu } = require('./commands/runner/run.js');
 const { commandMl } = require('./commands/research/ml.js');
+const { commandBias } = require('./commands/research/bias.js');
+const { commandScorecard } = require('./commands/research/scorecard.js');
 const { installDoubleCtrlCExit } = require('./lib/exit_guard');
 
 installDoubleCtrlCExit();
@@ -50,6 +53,8 @@ async function handleCommand(args) {
     'intraday-accumulate':   (a) => commandIntradayAccumulate(a),
     'intraday-rollup':       (a) => commandIntradayRollup(a),
     'backfill-daemon':       (a) => commandBackfillDaemon(a),
+    'stop-backfill-daemon':  (a) => commandStopBackfillDaemon(a),
+    'portfolio-monitor':     (a) => commandPortfolioMonitor(a),
     'cache-clean':           (a) => commandCacheClean(a),
     'clear-api-cache':       (a) => commandClearApiCache(a),
     universe:         (a) => commandUniverse(a),
@@ -57,6 +62,8 @@ async function handleCommand(args) {
     // --- Backend (manifest: backend) ---
     backend:          (a) => commandBackend(a),
     // --- Research (manifest: research) ---
+    bias:             (a) => commandBias(a),
+    scorecard:        (a) => commandScorecard(a),
     bt:               (a) => commandBacktest(a),
     features:         (a) => commandIndicators(a),
     ml:               (a) => commandMl(a),
@@ -108,13 +115,27 @@ async function handleCommand(args) {
   return await handler(args.slice(1));
 }
 
-async function main() {
-  const args = process.argv.slice(2);
-  if (args.length > 0) {
-    return await handleCommand(args);
-  }
+// An EventEmitter that emits 'error' with zero listeners throws synchronously
+// and crashes the process -- bypassing async/await rejection handling
+// entirely, so no try/catch around a prompt call site can catch this class
+// of failure. The dashboard spawns every interactive command (login/register/
+// mt5/etc., see sovereign_dashboard.mjs's INTERACTIVE_CMDS) as a child with
+// stdio:'inherit'; Windows ConPTY + inherited stdio + repeated raw-mode
+// toggling (every masked-password prompt flips setRawMode true/false) is a
+// real-world source of a transient stdin transport error. One guard here
+// covers every prompt call site in the whole CLI, since they all share this
+// one process's process.stdin.
+function installStdinErrorGuard() {
+  process.stdin.on('error', (err) => {
+    console.error(`\n✖ stdin error: ${err && err.message ? err.message : err}`);
+  });
+}
 
-  // Persistent TUI menu loop when no args provided
+// The real legacy TUI: the pre-Ink prompt-based menu (tui/engine.js's
+// runInteractiveMenu), distinct from sovereign_dashboard.mjs's grid+chat
+// renderer -- this is what `LEGACY_TUI=1` and Settings > Layout > legacy
+// both point to.
+async function runLegacyMenu() {
   const { runInteractiveMenu, buildStatusLine } = utils;
   const { setAuthEmail, setStatusLine } = require('./tui/engine/engine.js');
   const authLib = require('./lib/auth');
@@ -123,7 +144,53 @@ async function main() {
   if (user?.email) setAuthEmail(user.email);
   setStatusLine(buildStatusLine(user?.email || null));
   await runInteractiveMenu(handleCommand);
-  return 0;
+}
+
+async function main() {
+  installStdinErrorGuard();
+  const args = process.argv.slice(2);
+  if (args.length > 0) {
+    return await handleCommand(args);
+  }
+
+  const { loadSettings } = require('../../shared/lib/settings/user_settings.js');
+  const isLegacyLayout = () => process.env.LEGACY_TUI === '1' || loadSettings().layout === 'legacy';
+
+  if (!process.stdin.isTTY) {
+    // No menu to loop without a real TTY (CI, piped stdin) -- same
+    // single-shot fallback as before this engine-switch loop existed.
+    await runLegacyMenu();
+    return 0;
+  }
+
+  // Persistent TUI loop: whichever engine is "current" runs until the user
+  // either quits it outright (dashboard 'q'/Ctrl+C just lets the child
+  // process end naturally; the legacy menu's Exit/Ctrl+C call process.exit
+  // directly, bypassing this loop) or switches Settings > Layout to the
+  // other engine's side -- the dashboard self-exits on "legacy"
+  // (sovereign_dashboard.mjs's handleRun), the legacy menu returns on
+  // anything else (engine.js's runInteractiveMenu).
+  //
+  // Neither exit path is tagged "I switched engines" vs "I just quit" --
+  // both look identical from here (the child process simply ends). So the
+  // loop only re-launches the other engine when the persisted layout value
+  // actually changed during that run; if it's unchanged, the user quit
+  // normally and this returns, ending the whole CLI process same as before
+  // this loop existed.
+  let lastLayout = loadSettings().layout;
+  for (;;) {
+    if (isLegacyLayout()) {
+      await runLegacyMenu();
+    } else {
+      const { spawnSync } = require('child_process');
+      const path = require('path');
+      console.clear();
+      spawnSync('node', [path.join(__dirname, 'sovereign_dashboard.mjs')], { stdio: 'inherit' });
+    }
+    const currentLayout = loadSettings().layout;
+    if (currentLayout === lastLayout) return 0;
+    lastLayout = currentLayout;
+  }
 }
 
 if (require.main === module) {

@@ -21,7 +21,7 @@ services:
       SOVEREIGN_CACHE_TTL_MS: 30000
       SOVEREIGN_CACHE_MAX_ENTRIES: 100
     ports:
-      - "8787:8787"
+      - "${SOVEREIGN_WEB_BIND:-127.0.0.1}:8787:8787"
     volumes:
       - ../../storage:/app/storage
       - ../../workspace:/app/workspace
@@ -77,6 +77,11 @@ services:
         required: false
     environment:
       NODE_ENV: production
+      # Headroom for the merge-write path: an incremental crypto/equity cycle still
+      # reads the existing deep 1m bin (millions of rows) to merge-protect it. The
+      # per-lane concurrency cap keeps this bounded, but raise the V8 old-space ceiling
+      # above the ~4GB default so a long-running daemon never trips an OOM at the edge.
+      NODE_OPTIONS: --max-old-space-size=6144
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
@@ -94,3 +99,122 @@ services:
       - |
         INTERVAL=$${BACKFILL_INTERVAL_SECS:-1800}
         node backend/cli/sovereign_cli.js backfill-daemon --interval-secs $$INTERVAL
+
+  portfolio-monitor:
+    profiles: [monitoring]
+    image: personal_finance:latest
+    depends_on:
+      backfill:
+        condition: service_started
+    env_file:
+      - path: ../../.env
+        required: true
+      - path: ../../.env.production
+        required: false
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ../../storage:/app/storage
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    command:
+      - /bin/sh
+      - -c
+      - |
+        INTERVAL=$${PORTFOLIO_MONITOR_INTERVAL_SECS:-60}
+        while true; do
+          node backend/cli/sovereign_cli.js portfolio-monitor --once --json --interval-secs $${PORTFOLIO_MONITOR_INTERVAL_SECS:-60} --timeout-ms $${PORTFOLIO_MONITOR_TIMEOUT_MS:-45000} || exit $$?
+          sleep $$INTERVAL
+        done
+
+  host-health:
+    profiles: [monitoring]
+    image: personal_finance:latest
+    depends_on:
+      backfill:
+        condition: service_started
+    env_file:
+      - path: ../../.env
+        required: true
+      - path: ../../.env.production
+        required: false
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ../../storage:/app/storage
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    command:
+      - /bin/sh
+      - -c
+      - |
+        INTERVAL=$${HOST_HEALTH_INTERVAL_SECS:-300}
+        while true; do
+          node backend/scripts/ops/host_health.js --ts-max-age-min $${HOST_HEALTH_TS_MAX_AGE_MIN:-120} --min-free-gb $${HOST_HEALTH_MIN_FREE_GB:-10} --min-free-percent $${HOST_HEALTH_MIN_FREE_PERCENT:-10} || exit $$?
+          sleep $$INTERVAL
+        done
+
+  host-backup:
+    profiles: [monitoring]
+    image: personal_finance:latest
+    env_file:
+      - path: ../../.env
+        required: true
+      - path: ../../.env.production
+        required: false
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ../../storage:/app/storage
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    command:
+      - /bin/sh
+      - -c
+      - |
+        INTERVAL=$${HOST_BACKUP_INTERVAL_SECS:-86400}
+        while true; do
+          node backend/scripts/ops/host_backup.js --destination "$${HOST_BACKUP_ROOT:-/app/storage/backups/host}" --retention-days $${HOST_BACKUP_RETENTION_DAYS:-30} --max-count $${HOST_BACKUP_MAX_COUNT:-14}
+          STATUS=$$?
+          if [ "$$STATUS" -eq 3 ]; then
+            sleep $$INTERVAL
+            exit $$STATUS
+          fi
+          if [ "$$STATUS" -ne 0 ]; then exit $$STATUS; fi
+          sleep $$INTERVAL
+        done
+
+  polymarket-research:
+    profiles: [research]
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+    image: personal_finance:latest
+    env_file:
+      - path: ../../.env
+        required: true
+      - path: ../../.env.production
+        required: false
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ../../storage:/app/storage
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    command:
+      - /bin/sh
+      - -c
+      - |
+        if [ -z "$${POLYMARKET_RESEARCH_SCOPE_FILE}" ]; then
+          echo "POLYMARKET_RESEARCH_SCOPE_FILE is required" >&2
+          exit 1
+        fi
+        INTERVAL=$${POLYMARKET_RESEARCH_INTERVAL_SECS:-300}
+        while true; do
+          node backend/cli/sovereign_cli.js polymarket history schedule --scope-file "$${POLYMARKET_RESEARCH_SCOPE_FILE}" --execute --once --json --poll-seconds $${POLYMARKET_RESEARCH_INTERVAL_SECS:-300} --max-tokens $${POLYMARKET_RESEARCH_MAX_TOKENS:-20} --retention-days $${POLYMARKET_RESEARCH_RETENTION_DAYS:-30} --max-rows-per-token $${POLYMARKET_RESEARCH_MAX_ROWS_PER_TOKEN:-5000} --max-archive-bytes $${POLYMARKET_RESEARCH_MAX_ARCHIVE_BYTES:-5368709120} || exit $$?
+          sleep $$INTERVAL
+        done

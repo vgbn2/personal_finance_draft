@@ -4,6 +4,15 @@ const fs = require('node:fs');
 const A = require('../../../shared/lib/ui/ansi');
 
 const {
+  runInteractiveMenu,
+  handleIntersection,
+  promptSelect,
+  promptText,
+  promptConfirm,
+  isRichTerminal
+} = require('../tui');
+const { resolveSymbols } = require('../../../shared/lib/market/symbol_resolver');
+const {
   REPO_ROOT,
   BACKEND_CANDIDATES,
   CLI_CANDIDATES,
@@ -35,6 +44,7 @@ const HELP_TOPICS = {
     '  strategy prop-firms  Manage prop-firm profiles and rule presets',
     '  strategy sync  Refresh the strategy registry from config/strategies',
     '  backfill      Build a historical cache for real-data backtests',
+    '  portfolio-monitor  Read-only portfolio/risk monitor loop',
     '  demo          Run sample features, models, backtest, and period optimization',
     '  check         Validate the current live cache',
     '  bt            Run the backtest against live cache data',
@@ -70,6 +80,7 @@ const HELP_TOPICS = {
     '  strategy run_automated [--interval 15] [--live]',
     '  ingest [--full]',
     '  backfill [--timeframe 1d] [--days 365] [--symbol S] [--include-prediction] [--20-years]',
+    '  portfolio-monitor [--once] [--interval-secs 60] [--json]',
     '  check | validate [--input path] [--strict]',
     '  trade balance | trade <buy|sell> <symbol> <qty> [type] [price] [--live]',
     '  watch [--family crypto|fx|all] [--interval 15]',
@@ -244,6 +255,11 @@ function hasFlag(args, name) {
   return args.includes(name);
 }
 
+// Canonical implementation lives in shared/lib/runtime/backend_bridge.js
+// (buildTradeGatewayLaunch strips --pin unconditionally there too); re-exported
+// here so existing callers/tests in this module keep working unchanged.
+const { stripFlagValue } = require('../../../shared/lib/runtime/backend_bridge');
+
 function printPayload(payload, args) {
   if (hasFlag(args, '--json')) {
     console.log(JSON.stringify(payload, null, 2));
@@ -357,14 +373,6 @@ function numericOption(args, name, fallback) {
   return Number.isFinite(value) ? value : fallback;
 }
 
-const {
-  runInteractiveMenu,
-  handleIntersection,
-  promptSelect,
-  promptText,
-  promptConfirm,
-  isRichTerminal
-} = require('../tui');
 
 function get_Current_Universe_Symbols() {
   try {
@@ -479,7 +487,6 @@ async function get_Full_Universe_Symbols() {
  * Attempts to resolve short symbols (BTC) to canonical ones (BTCUSDT)
  * based on the active universe.
  */
-const { resolveSymbols } = require('../../../shared/lib/market/symbol_resolver');
 
 function buildStatusLine(authEmail) {
   const backendOk = BACKEND_CANDIDATES.some(c => fs.existsSync(c));
@@ -496,7 +503,7 @@ module.exports = {
   REPO_ROOT, DEFAULT_SNAPSHOT, DEFAULT_QUALITY_REPORT, DEFAULT_HISTORY,
   DEFAULT_FEATURES, DEFAULT_MODEL_REPORT, DEFAULT_BACKTEST, DEFAULT_STATE_PATH,
   BACKEND_CANDIDATES, HELP_TOPICS,
-  usage, helpText, pageText, optionValue, hasFlag, printPayload, shouldAnimate, withLoadingAnimation, currentPhaseLabel,
+  usage, helpText, pageText, optionValue, hasFlag, stripFlagValue, printPayload, shouldAnimate, withLoadingAnimation, currentPhaseLabel,
   formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption,
   runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal,
   buildStatusLine,

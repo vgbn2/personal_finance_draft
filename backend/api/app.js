@@ -17,8 +17,10 @@ process.on('unhandledRejection', (reason, promise) => {
 const {
   backendUniverse,
   backendDataSummary,
+  backendStatus,
 } = require('./server/services/cli_executor');
 const ROUTES = require('./server/routes');
+const { getAuthStatus } = require('./server/services/supabase_client');
 const { isMcpRequest, isMcpAllowed, redactDeep } = require('../../shared/lib/mcp/gate');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
@@ -55,11 +57,23 @@ const PROTECTED_GET_ROUTES = new Set([
   '/api/backend/portfolio',
   '/api/cache/list',
   '/api/config',
+  '/api/database/status',
   '/api/bot/status',
   '/api/kill-switch',
+  '/api/scorecard',
 ]);
 
-function setSecurityHeaders(res, origin) {
+function isAllowedOrigin(origin, req) {
+  if (!origin || ALLOWED_ORIGINS.includes(origin)) return true;
+  try {
+    const parsed = new URL(origin);
+    return ['http:', 'https:'].includes(parsed.protocol) && parsed.host === req.headers.host;
+  } catch (_) {
+    return false;
+  }
+}
+
+function setSecurityHeaders(res, origin, req) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'no-referrer');
@@ -67,15 +81,26 @@ function setSecurityHeaders(res, origin) {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
   res.setHeader('Content-Security-Policy', "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https:;");
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && isAllowedOrigin(origin, req)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Sovereign-Token, Authorization');
+  res.setHeader('Access-Control-Max-Age', '600');
 }
 
-function checkSecurity(req, res) {
+async function hasAuthenticatedApiCaller(req) {
+  const token = req.headers['x-sovereign-token'];
+  if (API_TOKEN && token === API_TOKEN) return true;
+  if (!req.headers.authorization) return false;
+  const auth = await getAuthStatus(req);
+  return auth.authenticated === true;
+}
+
+async function checkSecurity(req, res) {
   const origin = req.headers.origin;
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+  if (!isAllowedOrigin(origin, req)) {
     console.warn(`[SECURITY] Blocked origin: ${origin}`);
     res.writeHead(403);
     res.end('Forbidden: Origin not allowed');
@@ -101,6 +126,14 @@ function checkSecurity(req, res) {
     return false;
   }
 
+  // Browser preflights do not include the protected request's API token.
+  if (req.method === 'OPTIONS') {
+    setSecurityHeaders(res, origin, req);
+    res.writeHead(204);
+    res.end();
+    return false;
+  }
+
   // MCP agent gate — block sensitive routes before token check
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
   if (isMcpRequest(req) && !isMcpAllowed(pathname)) {
@@ -111,41 +144,23 @@ function checkSecurity(req, res) {
   }
 
   // API Token check for data-modifying or sensitive routes
-  const token = req.headers['x-sovereign-token'];
-  const isPublicRoute = [
-    '/',
-    '/index.html',
-    '/health',
-    '/api/status',
-    '/api/signal',
-    '/api/data/summary',
-    '/api/correlation',
-    '/api/backend/stats',
-    '/api/universe',
-    '/api/cache/universe', // New public alias
-    '/api/indicators',     // New public endpoint
-    '/api/quotes/status'
-  ].includes(pathname);
-  if (!isPublicRoute && (req.method !== 'GET' || PROTECTED_GET_ROUTES.has(pathname))) {
-    if (!API_TOKEN || token !== API_TOKEN) {
+  const requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const privilegedQueryFields = ['input', 'quality_report', 'model_report', 'backtest_report', 'equity'];
+  const hasPrivilegedOverride = privilegedQueryFields.some((field) => requestUrl.searchParams.has(field));
+  const requiresAuthentication = req.method !== 'GET'
+    || PROTECTED_GET_ROUTES.has(pathname)
+    || hasPrivilegedOverride;
+  if (requiresAuthentication) {
+    if (!(await hasAuthenticatedApiCaller(req))) {
       console.warn(`[SECURITY] Missing or invalid API token from ${ip}`);
-      res.writeHead(401);
-      res.end('Unauthorized: API Token Required');
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'authentication_required' }));
       return false;
     }
   }
 
   // Add response hardening and scoped CORS headers
-  setSecurityHeaders(res, origin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Sovereign-Token, Authorization');
-  res.setHeader('Access-Control-Max-Age', '600');
-  
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
-    return false;
-  }
+  setSecurityHeaders(res, origin, req);
 
   return true;
 }
@@ -244,10 +259,10 @@ async function handleApi(req, res, url) {
   return false;
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   
-  if (!checkSecurity(req, res)) {
+  if (!(await checkSecurity(req, res))) {
     return;
   }
 
@@ -270,9 +285,10 @@ const { Server } = require('socket.io');
 
 const io = new Server(server, {
   cors: {
-    origin: ALLOWED_ORIGINS,
+    origin: true,
     methods: ['GET', 'POST']
-  }
+  },
+  allowRequest: (req, callback) => callback(null, isAllowedOrigin(req.headers.origin, req)),
 });
 
 io.on('connection', (socket) => {
@@ -292,7 +308,8 @@ if (fs.existsSync(DEFAULT_SNAPSHOT)) {
       console.log('[TELEMETRY] Emitting real-time market data update');
       const universe = backendUniverse({});
       const dataSummary = backendDataSummary({});
-      io.emit('market_data', { universe, dataSummary });
+      const status = backendStatus({});
+      io.emit('market_data', { universe, dataSummary, status });
     }
   });
 }
@@ -307,4 +324,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { server, io, DEFAULT_SNAPSHOT };
+module.exports = { server, io, DEFAULT_SNAPSHOT, PROTECTED_GET_ROUTES };

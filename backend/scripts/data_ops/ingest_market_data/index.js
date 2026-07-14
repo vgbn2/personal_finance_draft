@@ -21,6 +21,8 @@ const {
   writeTsIndex,
 } = require('../../../../shared/lib/market/validation');
 
+const { isFresh, readCoverage } = require('../../../../shared/lib/market/coverage');
+
 /**
  * Attempts to aggregate a higher timeframe (1w, 1mo) from the local 1d binary cache.
  * Returns aggregated records or null if local data is insufficient.
@@ -85,9 +87,76 @@ const CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch.
 const SCOPED_CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch_scoped.json');
 const HISTORY_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache');
 const TS_INDEX_PATH = path.join(REPO_ROOT, 'storage', 'data', 'ts');
+const OHLCV_INGEST_FAMILIES = new Set(['crypto', 'equities', 'indices', 'commodities', 'fx']);
+const FAMILY_BASE_TF_MAP = { crypto: '1m', equities: '1m', indices: '5m', commodities: '5m', fx: '5m' };
+
+function buildDryRunFamilyPlan(manifest, config, targetFamily, options, kind) {
+  const families = [];
+  let plannedFetches = 0;
+
+  for (const family of manifest) {
+    if (targetFamily && targetFamily !== family.id) continue;
+    const section = config[family.configKey];
+    if (!section || !section.enabled) continue;
+
+    const configuredItems = family.itemsKey ? section[family.itemsKey] : ['fear_and_greed'];
+    const items = Array.isArray(configuredItems) ? configuredItems : [];
+    const filteredItems = options.symbol ? items.filter((item) => item === options.symbol) : items;
+    const timeframes = options.timeframe ? [options.timeframe] : (section.timeframes || ['1d']);
+    const providers = Array.isArray(section.providers) ? section.providers.filter(Boolean) : [];
+    if (family.availability?.status === 'not_implemented') {
+      families.push({
+        family: family.id,
+        kind,
+        config_key: family.configKey,
+        enabled: true,
+        available: false,
+        reason: family.availability.status,
+        providers,
+        item_count: filteredItems.length,
+        timeframes,
+        planned_fetches: 0,
+        target_symbol: options.symbol || null,
+      });
+      continue;
+    }
+    const fetchCount = filteredItems.length * Math.max(timeframes.length, 1) * Math.max(providers.length, 1);
+
+    plannedFetches += fetchCount;
+    families.push({
+      family: family.id,
+      kind,
+      config_key: family.configKey,
+      enabled: true,
+      available: true,
+      providers,
+      item_count: filteredItems.length,
+      timeframes,
+      planned_fetches: fetchCount,
+      target_symbol: options.symbol || null,
+    });
+  }
+
+  return { families, plannedFetches };
+}
+
+function buildIngestDryRunPlan(config, optionsConfig, targetFamily, options) {
+  const market = buildDryRunFamilyPlan(FAMILIES_MANIFEST, config, targetFamily, options, 'market');
+  const optionsFamilies = buildDryRunFamilyPlan(OPTIONS_MANIFEST, optionsConfig, targetFamily, options, 'options');
+  return {
+    target_family: targetFamily,
+    target_symbol: options.symbol || null,
+    target_timeframe: options.timeframe || null,
+    requested_days: Number(options.historyDays || options.days || 0) || null,
+    planned_fetches: market.plannedFetches + optionsFamilies.plannedFetches,
+    families: [...market.families, ...optionsFamilies.families],
+  };
+}
 
 const {
   SUPPORTED_INTERVALS,
+  parseTimeframeMs,
+  bucketStartFor,
   YAHOO_MAX_DAYS,
   selectYahooBase,
   COINBASE_PRODUCTS,
@@ -110,6 +179,48 @@ const {
   KALSHI_EVENT_KEYWORDS,
   POLYMARKET_EVENT_KEYWORDS,
 } = require('./constants');
+
+const { aggregateCandles } = require('./candle_utils');
+
+const {
+  parseStooqCsv,
+  resolveStooqSymbol,
+  fetchStooqDailyHistory,
+  resolveCommoditySymbol,
+  fetchEquityOrIndexSnapshot,
+  fetchCommoditySnapshot,
+  fetchFxSnapshot,
+  fetchCryptoSnapshot,
+} = require('./snapshot_fetchers.js');
+
+const {
+  fetchPredictionInterestSignal,
+  fetchGoogleCustomSearchInterest,
+  fetchKalshiPredictionMarket,
+  fetchPolymarketMarkets,
+  fetchPolymarketPriceHistory,
+  fetchPolymarketHistoricalPrices,
+  parsePolymarketTokenIds,
+  polymarketMarketRecord,
+  polymarketPriceHistoryRecords,
+  polymarketTimeframeFromOptions,
+} = require('./providers/prediction.js');
+
+const {
+  fetchOpenSkyRegion,
+  fetchBlockchairStats,
+  fetchBlockchairOnchain,
+  fetchSecHoldingsSnapshot,
+  fetchSpGlobalFlashPmi,
+  fetchEcbFx,
+  fetchFxApiFx,
+  fetchYahooBreadthProxy,
+  fetchKalshiHistoricalMarkets,
+  fetchKalshiHistoricalCandlesticks,
+  getIngestFamilyAvailability,
+  FAMILIES_MANIFEST,
+  OPTIONS_MANIFEST,
+} = require('./manifests.js');
 
 const {
   parseYamlList,
@@ -256,21 +367,6 @@ async function fetchBinary(url, accept = 'application/octet-stream,application/p
   return Buffer.from(await response.arrayBuffer());
 }
 
-async function fetchText(url, accept = 'application/xml,text/xml') {
-  const response = await cachedFetch(url, {
-    headers: {
-      accept,
-      'user-agent': 'sovereign-market-ingestor/1.0',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Request failed for ${redactUrl(url)}: ${response.status} ${response.statusText}`);
-  }
-
-  return response.text();
-}
-
 function parseCsvTable(text) {
   const lines = text.split(/\r?\n/).filter(Boolean);
   const headerIndex = lines.findIndex((line) => {
@@ -337,103 +433,6 @@ function removeRejectedSources(snapshot, rejectStale = true) {
   };
 }
 
-function parseStooqCsv(text) {
-  const lines = String(text || '').split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) {
-    throw new Error('Unable to parse Stooq CSV');
-  }
-  const header = lines[0].split(',').map((value) => value.trim().toLowerCase());
-  const cols = new Map(header.map((name, index) => [name, index]));
-  const records = [];
-  for (const line of lines.slice(1)) {
-    const parts = line.split(',');
-    if (parts.length < header.length) continue;
-    const date = parts[cols.get('date')];
-    const open = Number(parts[cols.get('open')]);
-    const high = Number(parts[cols.get('high')]);
-    const low = Number(parts[cols.get('low')]);
-    const close = Number(parts[cols.get('close')]);
-    const volume = Number(parts[cols.get('volume')]);
-    if (!date || [open, high, low, close].some((value) => !Number.isFinite(value))) continue;
-    records.push({
-      openTime: Date.parse(`${date}T00:00:00Z`),
-      open,
-      high,
-      low,
-      close,
-      volume: Number.isFinite(volume) ? volume : 0,
-    });
-  }
-  if (records.length === 0) {
-    throw new Error('Stooq CSV produced no usable candles');
-  }
-  return records.sort((a, b) => a.openTime - b.openTime);
-}
-
-function resolveStooqSymbol(family, symbol) {
-  if (family === 'equities') {
-    return `${String(symbol).toLowerCase()}${STOOQ_EQUITY_SUFFIX}`;
-  }
-  if (family === 'indices') {
-    return STOOQ_INDEX_SYMBOLS[symbol] || `${String(symbol).toLowerCase()}_us`;
-  }
-  if (family === 'commodities') {
-    return STOOQ_COMMODITY_SYMBOLS[symbol] || String(symbol).toLowerCase();
-  }
-  return null;
-}
-
-async function fetchStooqDailyHistory(symbol) {
-  const url = new URL('https://stooq.com/q/d/l/');
-  url.searchParams.set('s', symbol);
-  url.searchParams.set('i', 'd');
-  const csv = await fetchText(url.toString(), 'text/csv,text/plain');
-  return parseStooqCsv(csv);
-}
-
-function aggregateCandles(candles, interval, symbol, provider, family = "unknown", options = {}) {
-  const intervalMs = SUPPORTED_INTERVALS[interval];
-  if (!intervalMs) {
-    throw new Error(`Unsupported timeframe: ${interval}`);
-  }
-  const sourceTimeframe = options.sourceTimeframe || options.baseTimeframe || null;
-  const sourceIntervalMs = sourceTimeframe ? SUPPORTED_INTERVALS[sourceTimeframe] : null;
-  const derivedFromDaily = sourceIntervalMs && sourceIntervalMs >= SUPPORTED_INTERVALS['1d'] && intervalMs < SUPPORTED_INTERVALS['1d'];
-  const source = sourceTimeframe ? `${provider}-rollup-from-${sourceTimeframe}` : `${provider}-rollup`;
-
-  const buckets = new Map();
-  for (const candle of candles) {
-    const bucketStart = Math.floor(candle.openTime / intervalMs) * intervalMs;
-    const existing = buckets.get(bucketStart);
-    if (!existing) {
-      buckets.set(bucketStart, {
-        family,
-        provider,
-        symbol,
-        timeframe: interval,
-        timestamp: new Date(bucketStart).toISOString(),
-        open: candle.open,
-        high: candle.high,
-        low: candle.low,
-        close: candle.close,
-        volume: candle.volume,
-        source,
-        provenance: source,
-        ...(sourceTimeframe ? { derived_from_timeframe: sourceTimeframe } : {}),
-        ...(derivedFromDaily ? { experimental_only: true, experimental_reason: 'daily_derived_lower_timeframe' } : {}),
-      });
-      continue;
-    }
-
-    existing.high = Math.max(existing.high, candle.high);
-    existing.low = Math.min(existing.low, candle.low);
-    existing.close = candle.close;
-    existing.volume += candle.volume;
-  }
-
-  return Array.from(buckets.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-}
-
 function resolveEquityOrIndexSymbol(family, symbol, provider) {
   if (provider === 'yahoo' && family === 'indices') {
     return YAHOO_INDEX_SYMBOLS[symbol] || null;
@@ -446,14 +445,6 @@ function resolveEquityOrIndexSymbol(family, symbol, provider) {
   }
 
   return symbol;
-}
-
-function resolveCommoditySymbol(provider, symbol) {
-  if (provider !== 'yahoo') {
-    return null;
-  }
-
-  return YAHOO_COMMODITY_SYMBOLS[symbol] || null;
 }
 
 function quoteImportPath(provider) {
@@ -583,6 +574,13 @@ function collectIngestSkipChecks(config, optionsConfig, targetFamily = null) {
   for (const family of FAMILIES_MANIFEST) {
     if (targetFamily && targetFamily !== family.id) {
       checks.push(ingestSkipCheck(family.id, 'target_family_filter', { target_family: targetFamily }));
+      continue;
+    }
+
+    if (family.availability?.status === 'not_implemented') {
+      checks.push(ingestSkipCheck(family.id, 'not_implemented', {
+        provider: family.availability.provider,
+      }));
       continue;
     }
 
@@ -729,244 +727,6 @@ function resolveWorldBankIndicator(metric, config) {
   return mappings[metric] || metric;
 }
 
-async function fetchEquityOrIndexSnapshot(family, provider, symbol, timeframes, config, options = {}) {
-  timeframes = timeframes || ['1d'];
-  const historyDays = options.historyDays || options.days || 5;
-  const startTime = options.startTime || null;
-  const endTime = options.endTime || null;
-  const targetStartMs = startTime || (Date.now() - (historyDays * 24 * 60 * 60 * 1000));
-  const subDailyTimeframes = timeframes.filter(tf => {
-    const ms = SUPPORTED_INTERVALS[tf];
-    return ms !== undefined && ms <= INTRADAY_THRESHOLD_MS;
-  });
-  const dailyOrAbove = timeframes.filter(tf => {
-    const ms = SUPPORTED_INTERVALS[tf];
-    return ms !== undefined && ms > INTRADAY_THRESHOLD_MS;
-  });
-  const output = [];
-
-  if (provider === 'alpaca' && subDailyTimeframes.length > 0) {
-    const providerSymbol = resolveEquityOrIndexSymbol(family, symbol, provider);
-    if (!providerSymbol) {
-      throw new Error(`No ${provider} symbol mapping for ${symbol}`);
-    }
-
-    const ORDER = ['1m', '5m', '15m', '30m', '1h', '4h'];
-    const finestSubDaily = ORDER.find(tf => subDailyTimeframes.includes(tf)) || subDailyTimeframes[0];
-    let nativeCandles = null;
-    try {
-      nativeCandles = await fetchPaginated(providerSymbol, finestSubDaily, historyDays, family, fetchAlpacaBaseCandles, endTime || null, {
-        chunkDelayMs: options.chunkDelayMs || 0,
-      });
-    } catch (err) {
-      console.warn(`[INGEST] Native ${finestSubDaily} fetch failed for ${symbol} via ${provider}: ${err.message}`);
-    }
-
-    if (nativeCandles && nativeCandles.length > 0) {
-      const nativeBarsForAgg = nativeCandles.map(c => ({
-        openTime: c.openTime,
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-        volume: c.volume,
-      }));
-
-      for (const tf of subDailyTimeframes) {
-        if (!SUPPORTED_INTERVALS[tf]) continue;
-        const aggregated = tf === finestSubDaily
-          ? nativeCandles.map(c => ({
-              family,
-              provider,
-              symbol,
-              timeframe: tf,
-              timestamp: new Date(c.openTime).toISOString(),
-              open: c.open,
-              high: c.high,
-              low: c.low,
-              close: c.close,
-              volume: c.volume,
-            }))
-          : aggregateCandles(nativeBarsForAgg, tf, symbol, provider, family, { sourceTimeframe: finestSubDaily });
-
-        if (aggregated.length > 0) {
-          for (const r of aggregated) {
-            if (new Date(r.timestamp).getTime() >= targetStartMs) output.push(r);
-          }
-        }
-      }
-    }
-  }
-
-  const unresolvedSubDailyTimeframes = subDailyTimeframes.filter(tf => !output.some(r => r.timeframe === tf));
-  if (provider === 'alpaca' && unresolvedSubDailyTimeframes.length > 0) {
-    if (dailyOrAbove.length === 0) {
-      throw new Error(`No native Alpaca ${unresolvedSubDailyTimeframes.join(',')} candles returned for ${symbol}`);
-    }
-    console.warn(`[INGEST] Alpaca returned no native ${unresolvedSubDailyTimeframes.join(',')} candles for ${symbol}; not synthesizing sub-daily bars from daily data`);
-  }
-
-  const remainingTimeframes = [
-    ...dailyOrAbove,
-    ...(provider === 'alpaca' ? [] : unresolvedSubDailyTimeframes),
-  ];
-
-  if (remainingTimeframes.length === 0) return output;
-
-  let baseCandles = null;
-  let baseTimeframe = '1d';
-  if (provider === 'stooq') {
-    const stooqSymbol = resolveStooqSymbol(family, symbol);
-    if (!stooqSymbol) {
-      throw new Error(`No stooq symbol mapping for ${symbol}`);
-    }
-    baseCandles = await fetchStooqDailyHistory(stooqSymbol);
-  } else if (provider === 'alpaca') {
-    const providerSymbol = resolveEquityOrIndexSymbol(family, symbol, provider);
-    if (!providerSymbol) {
-      throw new Error(`No ${provider} symbol mapping for ${symbol}`);
-    }
-    baseCandles = await fetchAlpacaBaseCandles(providerSymbol, Math.max(100, Math.ceil(historyDays * 1.5)), '1d', startTime, endTime);
-  } else {
-    const providerSymbol = resolveEquityOrIndexSymbol(family, symbol, provider);
-    if (!providerSymbol) {
-      throw new Error(`No ${provider} symbol mapping for ${symbol}`);
-    }
-    const { base: bestBase, effectiveDays } = selectYahooBase(remainingTimeframes, historyDays);
-    baseTimeframe = bestBase;
-    baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, effectiveDays, startTime, endTime);
-  }
-
-  for (const timeframe of remainingTimeframes) {
-    if (!SUPPORTED_INTERVALS[timeframe]) {
-      throw new Error(`Unsupported derived timeframe: ${timeframe}`);
-    }
-    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family, { sourceTimeframe: baseTimeframe });
-    if (aggregated.length > 0) {
-      if (historyDays > 5) {
-       
-        appendRecords(output, aggregated);
-      } else {
-        output.push({
-          ...aggregated[aggregated.length - 1],
-          family,
-        });
-      }
-    }
-  }
-
-  return output;
-}
-
-async function fetchCommoditySnapshot(family, provider, symbol, timeframes, config, options = {}) {
-  // Normalize Yahoo-native symbols (GC=F, BZ=F, etc.) to canonical names
-  symbol = YAHOO_COMMODITY_REVERSE[symbol] || symbol;
-  const historyDays = options.historyDays || options.days || 5;
-  const startTime = options.startTime || null;
-  const endTime = options.endTime || null;
-
-  let baseCandles = null;
-  let baseTimeframe = '1d';
-  if (provider === 'stooq') {
-    const stooqSymbol = resolveStooqSymbol('commodities', symbol);
-    if (!stooqSymbol) {
-      throw new Error(`No stooq symbol mapping for ${symbol}`);
-    }
-    baseCandles = await fetchStooqDailyHistory(stooqSymbol);
-  } else {
-    const providerSymbol = resolveCommoditySymbol(provider, symbol);
-    if (!providerSymbol) {
-      throw new Error(`No ${provider} symbol mapping for ${symbol}`);
-    }
-
-    const allSubDaily = timeframes.length > 0 && timeframes.every(tf => {
-      const ms = SUPPORTED_INTERVALS[tf];
-      return ms !== undefined && ms <= INTRADAY_THRESHOLD_MS;
-    });
-    let bestBase;
-    let effectiveDaysForFetch;
-    if (allSubDaily) {
-      const { base, effectiveDays } = selectYahooBase(timeframes, historyDays);
-      bestBase = base;
-      effectiveDaysForFetch = effectiveDays;
-    } else {
-      bestBase = (historyDays > 730 || !timeframes.includes("1h")) ? "1d" : "1h";
-      effectiveDaysForFetch = historyDays;
-    }
-    baseTimeframe = bestBase;
-    baseCandles = await fetchYahooBaseCandles(providerSymbol, bestBase, effectiveDaysForFetch, startTime, endTime);
-  }
-  const output = [];
-
-  for (const timeframe of timeframes) {
-    if (!SUPPORTED_INTERVALS[timeframe]) {
-      throw new Error(`Unsupported derived timeframe: ${timeframe}`);
-    }
-    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family, { sourceTimeframe: baseTimeframe });
-    if (aggregated.length > 0) {
-      if (historyDays > 5) {
-       
-        appendRecords(output, aggregated);
-      } else {
-        output.push({
-          ...aggregated[aggregated.length - 1],
-          family,
-        });
-      }
-    }
-  }
-
-  return output;
-}
-
-async function fetchFxSnapshot(family, provider, symbol, timeframes, config, options = {}) {
-  const historyDays = options.historyDays || options.days || 5;
-  const startTime = options.startTime || null;
-  const endTime = options.endTime || null;
-
-  const providerSymbol = YAHOO_FX_SYMBOLS[String(symbol).toUpperCase()];
-  if (!providerSymbol) {
-    throw new Error(`No ${provider} symbol mapping for ${symbol}`);
-  }
-
-  let baseTimeframe;
-  let effectiveDaysForFetch;
-  const allSubDaily = timeframes.length > 0 && timeframes.every(tf => {
-    const ms = SUPPORTED_INTERVALS[tf];
-    return ms !== undefined && ms <= INTRADAY_THRESHOLD_MS;
-  });
-  if (allSubDaily) {
-    const { base, effectiveDays } = selectYahooBase(timeframes, historyDays);
-    baseTimeframe = base;
-    effectiveDaysForFetch = effectiveDays;
-  } else {
-    baseTimeframe = (historyDays > 730 || !timeframes.includes('1h')) ? '1d' : '1h';
-    effectiveDaysForFetch = historyDays;
-  }
-
-  const baseCandles = await fetchYahooBaseCandles(providerSymbol, baseTimeframe, effectiveDaysForFetch, startTime, endTime);
-  const output = [];
-
-  for (const timeframe of timeframes) {
-    if (!SUPPORTED_INTERVALS[timeframe]) {
-      throw new Error(`Unsupported derived timeframe: ${timeframe}`);
-    }
-    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family, { sourceTimeframe: baseTimeframe });
-    if (aggregated.length > 0) {
-      if (historyDays > 5) {
-        appendRecords(output, aggregated);
-      } else {
-        output.push({
-          ...aggregated[aggregated.length - 1],
-          family,
-        });
-      }
-    }
-  }
-
-  return output;
-}
-
 async function fetchYahooOptionsSnapshot(family, provider, underlying) {
   if (provider === 'cboe') {
     const url = new URL(`https://cdn.cboe.com/api/global/delayed_quotes/options/${encodeURIComponent(underlying)}.json`);
@@ -1086,423 +846,6 @@ async function fetchYahooOptionsSnapshot(family, provider, underlying) {
   return records;
 }
 
-function impliedProbability(market) {
-  const values = [
-    market.yes_bid,
-    market.yes_ask,
-    market.last_price,
-    market.yes_bid_dollars,
-    market.yes_ask_dollars,
-    market.last_price_dollars,
-  ]
-    .map((value) => Number(value))
-    .filter((value) => Number.isFinite(value));
-
-  if (values.length === 0) {
-    return null;
-  }
-
-  const average = values.reduce((sum, value) => sum + value, 0) / values.length;
-  return average > 1 ? average / 100 : average;
-}
-
-async function fetchGoogleCustomSearchInterest(query) {
-  const apiKey = process.env.GOOGLE_API_KEY || process.env.GOOGLE_CUSTOM_SEARCH_API_KEY;
-  const cx = process.env.GOOGLE_CSE_ID || process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID;
-  if (!apiKey || !cx) {
-    throw new Error('Google Custom Search credentials not configured');
-  }
-
-  const url = new URL('https://www.googleapis.com/customsearch/v1');
-  url.searchParams.set('key', apiKey);
-  url.searchParams.set('cx', cx);
-  url.searchParams.set('q', query);
-  url.searchParams.set('num', '10');
-
-  const payload = await fetchJson(url.toString());
-  const totalResults = Number(payload?.searchInformation?.totalResults || 0);
-  const items = Array.isArray(payload.items) ? payload.items : [];
-  const relevanceSignals = items.map((item) => String(item.title || item.snippet || '').toLowerCase());
-  const keywordHits = relevanceSignals.reduce((count, text) => count + (text.includes(String(query).toLowerCase()) ? 1 : 0), 0);
-  const interestScore = Math.max(0, Math.min(1,
-    (Math.log10(totalResults + 1) / 10) + (items.length / 50) + (keywordHits / 20),
-  ));
-
-  return {
-    family: 'sentiment',
-    provider: 'google_custom_search',
-    symbol: query.replace(/\s+/g, '_').toLowerCase(),
-    metric: 'search_interest',
-    timestamp: new Date().toISOString(),
-    value: Number(interestScore.toFixed(3)),
-    search_query: query,
-    search_total_results: totalResults,
-    result_count: items.length,
-    source_url: redactUrl(url.toString()),
-  };
-}
-
-function numberOrNull(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function parseJsonList(value) {
-  if (Array.isArray(value)) return value;
-  if (typeof value !== 'string') return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function eventKeywords(eventName, provider, config) {
-  const mappings = config.prediction_market_keywords || {};
-  const defaults = provider === 'polymarket' ? POLYMARKET_EVENT_KEYWORDS : KALSHI_EVENT_KEYWORDS;
-  return mappings[eventName] || defaults[eventName] || [String(eventName || '').replace(/_/g, ' ')];
-}
-
-function matchesPredictionEvent(record, eventName, provider, config) {
-  const keywords = eventKeywords(eventName, provider, config).filter(Boolean);
-  const text = [
-    record.title,
-    record.subtitle,
-    record.ticker,
-    record.event_ticker,
-    record.question,
-    record.slug,
-    record.description,
-  ].filter(Boolean).join(' ').toLowerCase();
-  return keywords.some((keyword) => text.includes(String(keyword).toLowerCase()));
-}
-
-function kalshiMarketRecord(eventName, market, sourceUrl) {
-  return {
-    family: 'prediction_market',
-    provider: 'kalshi',
-    symbol: eventName || market.ticker,
-    market_ticker: market.ticker,
-    event_ticker: market.event_ticker || null,
-    title: market.title || market.yes_sub_title || null,
-    timestamp: market.updated_time || market.close_time || market.open_time || new Date().toISOString(),
-    value: impliedProbability(market),
-    result: market.result || null,
-    status: market.status || null,
-    volume_fp: numberOrNull(market.volume_fp),
-    volume_24h_fp: numberOrNull(market.volume_24h_fp),
-    open_interest_fp: numberOrNull(market.open_interest_fp),
-    regulatory_venue: 'cftc_dcm',
-    source_url: sourceUrl,
-  };
-}
-
-async function fetchKalshiPredictionMarket(eventName, config) {
-  const direct = String(eventName || '').trim();
-  if (/^[A-Z0-9-]+$/.test(direct)) {
-    const sourceUrl = `${KALSHI_API_BASE}/events/${direct}`;
-    return kalshiMarketRecord(eventName, await fetchKalshiPredictionEvent(direct, config), sourceUrl);
-  }
-
-  const url = new URL(`${KALSHI_API_BASE}/markets`);
-  url.searchParams.set('limit', '200');
-  url.searchParams.set('status', 'open');
-  const payload = await fetchJson(url.toString());
-  const markets = Array.isArray(payload?.markets) ? payload.markets : [];
-  const match = markets.find((market) => matchesPredictionEvent(market, eventName, 'kalshi', config));
-  if (!match) {
-    return null;
-  }
-  return kalshiMarketRecord(eventName, match, redactUrl(url.toString()));
-}
-
-function parsePolymarketTokenIds(market = {}) {
-  const candidates = [
-    market.clobTokenIds,
-    market.clob_token_ids,
-    market.clobTokenIDs,
-    market.tokenIds,
-    market.token_ids,
-  ];
-  for (const value of candidates) {
-    const parsed = parseJsonList(value).map(String).filter(Boolean);
-    if (parsed.length > 0) return [...new Set(parsed)];
-    if (Array.isArray(value)) return [...new Set(value.map(String).filter(Boolean))];
-  }
-
-  const tokens = Array.isArray(market.tokens) ? market.tokens : [];
-  const tokenIds = tokens
-    .map((token) => token.token_id || token.tokenId || token.id)
-    .map(String)
-    .filter(Boolean);
-  return [...new Set(tokenIds)];
-}
-
-function polymarketMarketRecord(eventName, market, sourceUrl) {
-  const price = numberOrNull(
-    market.lastTradePrice ??
-    market.last_trade_price ??
-    market.bestAsk ??
-    market.bestBid ??
-    market.outcomePrice
-  );
-  return {
-    family: 'prediction_market',
-    provider: 'polymarket',
-    symbol: eventName || market.slug || market.id,
-    market_id: market.id || null,
-    condition_id: market.conditionId || market.condition_id || null,
-    question: market.question || market.title || null,
-    timestamp: market.updatedAt || market.updated_at || market.endDate || market.end_date || new Date().toISOString(),
-    value: price,
-    status: market.active === false ? 'inactive' : (market.closed ? 'closed' : 'active'),
-    volume: numberOrNull(market.volume ?? market.volumeNum),
-    liquidity: numberOrNull(market.liquidity ?? market.liquidityNum),
-    clob_token_ids: parsePolymarketTokenIds(market),
-    source_url: sourceUrl,
-  };
-}
-
-function polymarketHistoryPoints(payload) {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.history)) return payload.history;
-  if (Array.isArray(payload?.prices)) return payload.prices;
-  if (Array.isArray(payload?.data)) return payload.data;
-  return [];
-}
-
-function polymarketPriceHistoryRecords(symbol, market, tokenId, payload, options = {}, sourceUrl = '') {
-  const timeframe = polymarketTimeframeFromOptions(options);
-  const marketId = market.id || market.market_id || market.conditionId || market.condition_id || tokenId;
-  return polymarketHistoryPoints(payload)
-    .map((point) => predictionCandleRecord('polymarket', symbol, marketId, point, timeframe, sourceUrl, {
-      token_id: tokenId,
-      condition_id: market.conditionId || market.condition_id || null,
-      question: market.question || market.title || null,
-    }))
-    .filter((record) => record.close !== null && !Number.isNaN(Date.parse(record.timestamp)));
-}
-function predictionCandleRecord(provider, symbol, marketId, candle, timeframe, sourceUrl, extra = {}) {
-  const price = candle.price || candle.yes_bid || candle.yes_ask || {};
-  const open = numberOrNull(price.open ?? candle.p);
-  const high = numberOrNull(price.high ?? candle.p);
-  const low = numberOrNull(price.low ?? candle.p);
-  const close = numberOrNull(price.close ?? candle.p);
-  const unixSeconds = Number(candle.end_period_ts ?? candle.t);
-  return {
-    family: 'prediction_market',
-    provider,
-    symbol,
-    market_id: marketId,
-    timeframe,
-    timestamp: new Date(unixSeconds * 1000).toISOString(),
-    open,
-    high,
-    low,
-    close,
-    volume: numberOrNull(candle.volume) || 0,
-    open_interest: numberOrNull(candle.open_interest),
-    source: `${provider}-${timeframe}-prediction-history`,
-    source_url: redactUrl(sourceUrl),
-    ...extra,
-  };
-}
-
-function polymarketTimeframeFromOptions(options = {}) {
-  if (options.timeframe) return options.timeframe;
-  if (options.interval === '1d') return '1d';
-  const fidelity = Math.max(1, Math.floor(Number(options.fidelity) || 60));
-  if (fidelity >= 1440) return '1d';
-  if (fidelity % 60 === 0) return `${fidelity / 60}h`;
-  return `${fidelity}m`;
-}
-
-async function fetchPredictionInterestSignal(eventName, provider = 'google_custom_search') {
-  if (provider !== 'google_custom_search') {
-    throw new Error(`Unsupported prediction interest provider: ${provider}`);
-  }
-  const query = String(eventName || '').replace(/_/g, ' ');
-  return fetchGoogleCustomSearchInterest(query);
-}
-
-// Provider adapters that still need full extraction share this narrow boundary.
-async function fetchOpenSkyRegion() { return {}; }
-async function fetchBlockchairStats() { return {}; }
-async function fetchBlockchairOnchain() { return {}; }
-async function fetchSecHoldingsSnapshot() { return {}; }
-async function fetchSpGlobalFlashPmi() { return {}; }
-async function fetchEcbFx() { return {}; }
-async function fetchFxApiFx() { return {}; }
-async function fetchYahooBreadthProxy() { return {}; }
-async function fetchKalshiHistoricalMarkets() { return []; }
-async function fetchKalshiHistoricalCandlesticks() { return []; }
-async function fetchPolymarketMarkets(eventName, config = {}, options = {}) {
-  const url = new URL(`${POLYMARKET_GAMMA_BASE}/markets`);
-  url.searchParams.set('limit', String(options.limit || 200));
-  if (options.active !== false) url.searchParams.set('active', 'true');
-  if (options.closed === false) url.searchParams.set('closed', 'false');
-
-  const payload = await fetchJson(url.toString());
-  const markets = Array.isArray(payload) ? payload : (Array.isArray(payload?.markets) ? payload.markets : []);
-  return markets
-    .filter((market) => matchesPredictionEvent(market, eventName, 'polymarket', config))
-    .slice(0, options.maxMarkets || 3)
-    .map((market) => polymarketMarketRecord(eventName, market, redactUrl(url.toString())));
-}
-
-async function fetchPolymarketPriceHistory(tokenId, options = {}) {
-  if (!tokenId) return { payload: { history: [] }, sourceUrl: '' };
-  const url = new URL(`${POLYMARKET_CLOB_BASE}/prices-history`);
-  url.searchParams.set('market', tokenId);
-  url.searchParams.set('interval', options.interval || 'max');
-  url.searchParams.set('fidelity', String(options.fidelity || 60));
-  if (options.startTs) url.searchParams.set('startTs', String(options.startTs));
-  if (options.endTs) url.searchParams.set('endTs', String(options.endTs));
-  return {
-    payload: await fetchJson(url.toString()),
-    sourceUrl: redactUrl(url.toString()),
-  };
-}
-
-async function fetchPolymarketHistoricalPrices(eventName, config = {}, options = {}) {
-  const markets = await fetchPolymarketMarkets(eventName, config, options);
-  const records = [];
-  for (const marketRecord of markets) {
-    const tokenIds = marketRecord.clob_token_ids || [];
-    for (const tokenId of tokenIds.slice(0, options.maxTokens || 1)) {
-      const { payload, sourceUrl } = await fetchPolymarketPriceHistory(tokenId, options);
-      records.push(...polymarketPriceHistoryRecords(eventName, marketRecord, tokenId, payload, options, sourceUrl));
-    }
-  }
-  return records;
-}
-
-const FAMILIES_MANIFEST = [
-  { id: 'equities', configKey: 'equities', itemsKey: 'symbols', fetcher: async (p, s, t, cfg, opts) => {
-        if (p === 'tradingview') {
-          const { fetchTradingViewQuotes } = require('../../../../shared/lib/providers/tradingview');
-          return fetchTradingViewQuotes([s]);
-        }
-        if (p === 'finnhub') return fetchFinnhubSnapshot('equities', s, t, opts);
-        if (p === 'twelve') return fetchTwelveDataSnapshot('equities', s, t, opts);
-        return fetchEquityOrIndexSnapshot('equities', p, s, t, cfg, opts);
-      } 
-    },
-  { id: 'indices', configKey: 'indices', itemsKey: 'symbols', fetcher: async (p, s, t, cfg, opts) => {
-        if (p === 'tradingview') {
-          const { fetchTradingViewQuotes } = require('../../../../shared/lib/providers/tradingview');
-          return fetchTradingViewQuotes([s]);
-        }
-        if (p === 'twelve') return fetchTwelveDataSnapshot('indices', s, t, opts);
-        if (p === 'fred') {
-          const id = resolveFredSeries('indices', s, cfg);
-          if (!id) throw new Error(`No FRED series mapping for ${s}`);
-          if (opts?.historyDays) {
-              const records = await fetchFredHistory(id, opts.historyDays);
-            return records.map(r => ({ ...r, family: 'indices', symbol: s }));
-        }
-        return [{ ...await fetchFredLatest(id), family: 'indices', symbol: s }];
-      }
-      return fetchEquityOrIndexSnapshot('indices', p, s, t, cfg, opts);
-    } 
-  },
-  { id: 'commodities', configKey: 'commodities', itemsKey: 'symbols', fetcher: async (p, s, t, cfg, opts) => {
-        if (p === 'tradingview') {
-          const { fetchTradingViewQuotes } = require('../../../../shared/lib/providers/tradingview');
-          return fetchTradingViewQuotes([s]);
-        }
-        if (p === 'twelve') return fetchTwelveDataSnapshot('commodities', s, t, opts);
-        return fetchCommoditySnapshot('commodities', p, s, t, cfg, opts);
-      }
-    },
-  { id: 'fx', configKey: 'fx', itemsKey: 'symbols', fetcher: async (p, s, t, cfg, opts) => {
-      if (p === 'tradingview') {
-        const { fetchTradingViewQuotes } = require('../../../../shared/lib/providers/tradingview');
-        return fetchTradingViewQuotes([s]);
-      }
-        if (p === 'yahoo') return fetchFxSnapshot('fx', p, s, t, cfg, opts);
-        if (p === 'frankfurter') {
-          if (opts?.historyDays) {
-            return fetchFrankfurterHistory(s, opts.historyDays);
-          }
-          return [await fetchFrankfurterFx(s)];
-        }
-        if (p === 'finnhub') return fetchFinnhubSnapshot('fx', s, t, opts);
-        if (p === 'twelve') return fetchTwelveDataSnapshot('fx', s, t, opts);
-        if (p === 'fxapi') return [await fetchFxApiFx(s)];
-        if (p === 'ecb') {
-          if (opts?.historyDays) {
-            return fetchEcbHistory(s, opts.historyDays);
-          }
-          return [await fetchEcbFx(s)];
-        }
-        return [await fetchEcbFx(s)];
-      }
-    },
-  { id: 'crypto', configKey: 'crypto', itemsKey: 'symbols', fetcher: async (p, s, t, cfg, opts) => {
-        if (p === 'tradingview') {
-          const { fetchTradingViewQuotes } = require('../../../../shared/lib/providers/tradingview');
-          return fetchTradingViewQuotes([s]);
-        }
-        if (p === 'finnhub') return fetchFinnhubSnapshot('crypto', s, t, opts);
-        if (p === 'twelve') return fetchTwelveDataSnapshot('crypto', s, t, opts);
-        return fetchCryptoSnapshot(p, s, t, 'crypto', opts);
-      }
-    },
-  { id: 'pmi', configKey: 'pmi', itemsKey: 'series', fetcher: async (p, s, t, cfg) => fetchSpGlobalFlashPmi() },
-  { id: 'macro', configKey: 'macro', itemsKey: 'series', fetcher: async (p, s, t, cfg, opts) => {
-      const id = resolveFredSeries('macro', s, cfg);
-      if (!id) throw new Error(`No FRED series mapping for ${s}`);
-      if (opts?.historyDays) {
-        const records = await fetchFredHistory(id, opts.historyDays);
-        return records.map(r => ({ ...r, family: 'macro', series: s }));
-      }
-      return [{ ...await fetchFredLatest(id), family: 'macro', series: s }];
-    }
-  },
-  { id: 'weather', configKey: 'weather', itemsKey: 'locations', fetcher: (p, s, t, cfg) => fetchNasaPowerWeather(s).then(r => [r]) },
-  { id: 'flight', configKey: 'flight', itemsKey: 'regions', fetcher: (p, s, t, cfg) => fetchOpenSkyRegion(s).then(r => [r]) },
-  { id: 'crypto_tx', configKey: 'crypto_tx', itemsKey: 'chains', fetcher: (p, s, t, cfg) => fetchBlockchairStats(s).then(r => [r]) },
-  { id: 'sentiment', configKey: 'sentiment', itemsKey: null, fetcher: (p, s, t, cfg) => fetchAlternativeMeFearGreed().then(r => [r]) },
-  { id: 'holdings', configKey: 'holdings', itemsKey: 'symbols', fetcher: (p, s, t, cfg) => fetchSecHoldingsSnapshot(s, cfg).then(r => [r]) },
-  { id: 'reserves', configKey: 'reserves', itemsKey: 'countries', fetcher: async (p, s, t, cfg, opts) => {
-      const results = [];
-      for (const m of cfg.reserves.metrics) {
-        const indicator = resolveWorldBankIndicator(m, cfg);
-        if (opts?.historyDays) {
-          const records = await fetchWorldBankHistory(s, indicator, opts.historyDays);
-          results.push(...records.map(r => ({ ...r, family: 'reserves', country: s, metric: m })));
-        } else {
-          results.push({ ...await fetchWorldBankLatest(s, indicator, cfg), family: 'reserves', country: s, metric: m });
-        }
-      }
-      return results;
-    }
-  },
-  { id: 'onchain', configKey: 'onchain', itemsKey: 'chains', fetcher: (p, s, t, cfg) => fetchBlockchairOnchain(s).then(r => [r]) },
-  { id: 'breadth', configKey: 'breadth', itemsKey: 'metrics', fetcher: (p, s, t, cfg) => fetchYahooBreadthProxy(s, cfg).then(r => [r]) },
-  { id: 'prediction_market', configKey: 'prediction_market', itemsKey: 'events', fetcher: async (p, s, t, cfg, opts) => {
-      if (p === 'polymarket') {
-        if (opts?.historyDays || opts?.history || opts?.backfill) {
-          return fetchPolymarketHistoricalPrices(s, cfg, opts);
-        }
-        return fetchPolymarketMarkets(s, cfg, opts);
-      }
-      if (opts?.historyDays || opts?.history || opts?.backfill) {
-        return [];
-      }
-      const record = await fetchKalshiPredictionMarket(s, cfg);
-      return record ? [record] : [];
-    }
-  },
-];
-
-const OPTIONS_MANIFEST = [
-  { id: 'equities_options', configKey: 'equities_options', itemsKey: 'underlyings', fetcher: (p, s, t, cfg) => fetchYahooOptionsSnapshot('equities_options', p, s) },
-  { id: 'stock_options', configKey: 'stock_options', itemsKey: 'underlyings', fetcher: (p, s, t, cfg) => fetchYahooOptionsSnapshot('stock_options', p, s) },
-];
-
 /**
  * Parses the universe_matrix structure and returns a map of symbol -> tags + coordinate_id.
  */
@@ -1585,6 +928,35 @@ async function ingestMarketData(options = {}) {
     const targetFamily = options.family || null;
     const scopedSnapshot = isScopedSnapshotRequest(options);
     const requestedDays = Number(options.historyDays || options.days || 0);
+    const dryRun = Boolean(options.dryRun);
+    const unavailable = getIngestFamilyAvailability(targetFamily);
+    if (unavailable && !dryRun) {
+      return {
+        mode: 'not_implemented',
+        dry_run: false,
+        fetched_at: new Date().toISOString(),
+        sources: [],
+        errors: [{
+          code: unavailable.status,
+          family: unavailable.family,
+          provider: unavailable.provider,
+          message: `${unavailable.provider} ${unavailable.family} provider is not implemented`,
+        }],
+        provider_checks: [{
+          family: unavailable.family,
+          provider: unavailable.provider,
+          status: 'skipped',
+          reason: unavailable.status,
+        }],
+        snapshot_scope: {
+          kind: 'scoped',
+          representative_of_global_live_health: false,
+          target_family: targetFamily,
+          target_symbol: options.symbol || null,
+          requested_days: requestedDays || null,
+        },
+      };
+    }
     const config = await loadConfig();
     const optionsConfig = await loadOptionsConfig();
     
@@ -1615,7 +987,8 @@ async function ingestMarketData(options = {}) {
     }
 
     const snapshot = {
-      mode: requestedDays > 5 ? 'provider_history' : 'live',
+      mode: dryRun ? 'dry_run' : (requestedDays > 5 ? 'provider_history' : 'live'),
+      dry_run: dryRun,
       fetched_at: new Date().toISOString(),
       sources: [],
       errors: [],
@@ -1629,6 +1002,16 @@ async function ingestMarketData(options = {}) {
       },
     };
 
+    if (dryRun) {
+      snapshot.dry_run_plan = buildIngestDryRunPlan(config, optionsConfig, targetFamily, options);
+      snapshot.provider_checks.push({
+        status: 'skipped',
+        reason: 'dry_run',
+        planned_fetches: snapshot.dry_run_plan.planned_fetches,
+      });
+      return snapshot;
+    }
+
     // 1. External Quote Feeds
     if (!targetFamily || targetFamily === 'fx' || targetFamily === 'quote_feeds') {
       const externalQuotes = await loadExternalQuoteInputs(config);
@@ -1640,6 +1023,7 @@ async function ingestMarketData(options = {}) {
     // 2. Standard Families (Market Data)
     for (const family of FAMILIES_MANIFEST) {
       if (targetFamily && targetFamily !== family.id) continue;
+      if (family.availability?.status === 'not_implemented') continue;
       const section = config[family.configKey];
       if (!section || !section.enabled) continue;
 
@@ -1690,6 +1074,29 @@ async function ingestMarketData(options = {}) {
           let latestInCache = 0;
           let earliestInCache = Infinity;
 
+          // ts/bin gate: binary bins are the authoritative store and are more
+          // accurate than the snapshot-based check below (snapshot only covers
+          // JSON-ingested data, not symbols backfilled via crypto/equity-deep-backfill).
+          // Skip the provider loop entirely for bulk ingest only when the bin for the
+          // REQUESTED timeframe is BOTH fresh AND already covers the requested history
+          // depth. Gating on the requested TF (not the family base) is what lets an
+          // explicit deep `--timeframe 1d --history-days N` request through even when the
+          // base (5m/1m) bin is fresh. Single-symbol calls always fall through; force
+          // bypasses entirely (skipItem already false).
+          if (skipItem && filteredItems.length > 1 && OHLCV_INGEST_FAMILIES.has(family.id)) {
+            const gateTf = syncTimeframes[0] || FAMILY_BASE_TF_MAP[family.id] || '1d';
+            try {
+              const binGate = isFresh(TS_INDEX_PATH, item, gateTf, family.id, now);
+              const cov = readCoverage(TS_INDEX_PATH, item, gateTf);
+              const coversDepth = cov && cov.exists && Number.isFinite(cov.firstBarMs)
+                && cov.firstBarMs <= targetStart;
+              if (binGate.fresh && coversDepth) continue; // fresh AND deep enough — skip
+              skipItem = false;            // stale or too shallow — fetch
+            } catch (_) {
+              skipItem = false;            // on error, fall through to provider
+            }
+          }
+
           for (const tf of syncTimeframes) {
               const cacheKey = `${family.id}:${item}:${tf}`;
               const meta = universeMap.get(cacheKey);
@@ -1720,10 +1127,10 @@ async function ingestMarketData(options = {}) {
               // Cache covers history but is stale. Just fetch the forward gap.
               const buffer = 1000 * 60 * 5; // 5m buffer
               fetchOptions.startTime = latestInCache - buffer; 
-              console.log(`[INGEST] ${family.id}:${item} identifies forward gap. Fetching from ${new Date(fetchOptions.startTime).toISOString()} to fill.`);
+              if (!global.suppressLogs) console.log(`[INGEST] ${family.id}:${item} identifies forward gap. Fetching from ${new Date(fetchOptions.startTime).toISOString()} to fill.`);
           }
 
-          console.log('[INGEST] Fetching ' + family.id + ':' + item);
+          if (!global.suppressLogs) console.log('[INGEST] Fetching ' + family.id + ':' + item);
           let resolved = false;
 
           // Local Aggregation Engine: Build 1w/1mo from 1d if available
@@ -1799,7 +1206,7 @@ async function ingestMarketData(options = {}) {
           ? items.filter(i => i === options.symbol)
           : items;
 
-        for (const item of filteredItems) { console.log('[INGEST] Fetching ' + family.id + ':' + item);
+        for (const item of filteredItems) { if (!global.suppressLogs) console.log('[INGEST] Fetching ' + family.id + ':' + item);
           let resolved = false;
           for (const provider of section.providers) {
             if (!provider) continue;
@@ -1878,7 +1285,7 @@ async function ingestMarketData(options = {}) {
       };
     }
 
-    console.log('[INGEST] Saving to local filesystem cache...');
+    if (!global.suppressLogs) console.log('[INGEST] Saving to local filesystem cache...');
     await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
     const latestSnapshotPath = scopedSnapshot ? SCOPED_CACHE_PATH : CACHE_PATH;
     await fs.writeFile(latestSnapshotPath, JSON.stringify(capSubDailyJsonView(preservedSnapshot), null, 2), 'utf8');
@@ -1954,10 +1361,6 @@ if (require.main === module) {
     });
 }
 
-// Timeframes at or below this duration are considered "sub-daily" and require
-// native intraday bars — aggregation from 1d base produces only 1 synthetic bar/day.
-const INTRADAY_THRESHOLD_MS = 4 * 60 * 60 * 1000; // 4h in ms
-
 // JSON backtest_history.json cap for high-frequency timeframes: full depth lives in
 // the binary ts-index only. Cap prevents unbounded JSON bloat (§3b risk).
 const FIVE_MIN_JSON_CAP_DAYS = 90;
@@ -1985,153 +1388,6 @@ function capSubDailyJsonView(snapshot) {
   return { ...snapshot, sources: capped };
 }
 
-async function fetchCryptoSnapshot(provider, symbol, timeframes, family = 'crypto', options = {}) {
-  const historyDays = options.historyDays || options.days || 5;
-  const startTime = options.startTime || null;
-  const endTime = options.endTime || null;
-
-  // Determine if any requested timeframe is sub-daily (requires native intraday bars)
-  const subDailyTimeframes = timeframes.filter(tf => {
-    const ms = SUPPORTED_INTERVALS[tf];
-    return ms !== undefined && ms <= INTRADAY_THRESHOLD_MS;
-  });
-  const dailyOrAbove = timeframes.filter(tf => {
-    const ms = SUPPORTED_INTERVALS[tf];
-    return ms !== undefined && ms > INTRADAY_THRESHOLD_MS;
-  });
-
-  const output = [];
-  const targetStartMs = startTime || (Date.now() - (historyDays * 24 * 60 * 60 * 1000));
-
-  // --- Sub-daily branch: route to native Binance fetch via fetchPaginated ---
-  // This produces real intraday bars instead of the 1-bar-per-day aggregation from 1d base.
-  // Only for binance/coinbase providers (not coingecko/alpaca which lack 5m intraday depth).
-  if (subDailyTimeframes.length > 0 && historyDays > 5 && (provider === 'binance' || provider === 'coinbase')) {
-    // Fetch at the finest sub-daily timeframe requested; coarser sub-daily TFs aggregate from it.
-    // '1m' leads the order so crypto can use a native 1-minute base (Binance serves deep 1m).
-    const ORDER = ['1m', '5m', '15m', '30m', '1h', '4h'];
-    const finestSubDaily = ORDER.find(tf => subDailyTimeframes.includes(tf)) || subDailyTimeframes[0];
-
-    const fetchBaseFn = provider === 'coinbase' ? fetchCoinbaseBaseCandles : fetchBinanceBaseCandles;
-    let nativeCandles = null;
-    try {
-      // fetchPaginated handles chunked pagination (3-day chunks for 5m), sequential, rate-safe.
-      nativeCandles = await fetchPaginated(symbol, finestSubDaily, historyDays, 'crypto', fetchBaseFn, endTime || null);
-    } catch (err) {
-      console.warn(`[INGEST] Native ${finestSubDaily} fetch failed for ${symbol} via ${provider}: ${err.message}`);
-    }
-
-    if (nativeCandles && nativeCandles.length > 0) {
-      // Convert fetchPaginated output {openTime, open, high, low, close, volume} to snapshot record shape
-      const nativeBarsForAgg = nativeCandles.map(c => ({
-        openTime: c.openTime,
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-        volume: c.volume,
-      }));
-
-      for (const tf of subDailyTimeframes) {
-        if (!SUPPORTED_INTERVALS[tf]) continue;
-        const aggregated = tf === finestSubDaily
-          ? nativeCandles.map(c => ({
-              family,
-              provider,
-              symbol,
-              timeframe: tf,
-              timestamp: new Date(c.openTime).toISOString(),
-              open: c.open,
-              high: c.high,
-              low: c.low,
-              close: c.close,
-              volume: c.volume,
-            }))
-          : aggregateCandles(nativeBarsForAgg, tf, symbol, provider, family, { sourceTimeframe: finestSubDaily });
-
-        if (aggregated.length > 0) {
-          // No JSON cap here: the snapshot must carry FULL depth so the binary
-          // ts-index receives it. The 90-day JSON cap is applied at write time
-          // in the save block (capSubDailyJsonView). Plain loop, not push(...):
-          // a 5-year 5m fetch is ~526k records and spread args overflow the stack.
-          for (const r of aggregated) {
-            if (new Date(r.timestamp).getTime() >= targetStartMs) output.push(r);
-          }
-        }
-      }
-    }
-    // Fall through to daily aggregation for any dailyOrAbove timeframes still needed
-  }
-
-  // --- Daily-and-above branch (or sub-daily fallback when native fetch unavailable) ---
-  const remainingTimeframes = [
-    ...dailyOrAbove,
-    // Include sub-daily TFs that weren't handled (e.g., provider is coingecko/alpaca, or native fetch failed)
-    ...subDailyTimeframes.filter(tf => !output.some(r => r.timeframe === tf)),
-  ];
-
-  if (remainingTimeframes.length === 0) return output;
-
-  let baseCandles = null;
-
-  // Primary Provider Fetch
-  if (provider === 'coingecko') {
-    baseCandles = await fetchCoinGeckoBaseCandles(symbol, Math.max(historyDays, 365));
-  } else {
-    let fetchBase = fetchBinanceBaseCandles;
-    if (provider === 'coinbase') fetchBase = fetchCoinbaseBaseCandles;
-    else if (provider === 'alpaca') fetchBase = fetchAlpacaBaseCandles;
-
-    try {
-      const limit = Math.max(100, Math.ceil(historyDays * 1.5));
-      baseCandles = await fetchBase(symbol, limit, '1d', startTime, endTime);
-    } catch (err) {
-      console.warn(`[INGEST] Primary provider ${provider} failed for ${symbol}: ${err.message}. Attempting Yahoo fallback.`);
-    }
-  }
-
-  // Yahoo Fallback (only if primary failed and history requested)
-  if (!baseCandles && historyDays > 5 && (provider === 'binance' || provider === 'coinbase')) {
-    const yahooSymbol = COINBASE_PRODUCTS[symbol] || symbol;
-    const { base: bestBase, effectiveDays } = selectYahooBase(remainingTimeframes, historyDays);
-    try {
-      baseCandles = await fetchYahooBaseCandles(yahooSymbol, bestBase, effectiveDays, startTime, endTime);
-      console.log(`[INGEST] Using Yahoo fallback for ${symbol} (${bestBase}, ${effectiveDays}d)`);
-    } catch (err) {
-      console.warn(`[INGEST] Yahoo fallback failed for ${symbol}: ${err.message}`);
-    }
-  }
-
-  if (!baseCandles) {
-    if (output.length > 0) {
-      // Sub-daily succeeded; daily base failed — not fatal if caller only needs sub-daily
-      console.warn(`[INGEST] Daily base fetch failed for ${symbol} via ${provider}; returning sub-daily results only`);
-      return output;
-    }
-    throw new Error(`Failed to fetch crypto data for ${symbol} via ${provider} or fallbacks`);
-  }
-
-  for (const timeframe of remainingTimeframes) {
-    if (!SUPPORTED_INTERVALS[timeframe]) {
-      throw new Error(`Unsupported crypto timeframe: ${timeframe}`);
-    }
-    const aggregated = aggregateCandles(baseCandles, timeframe, symbol, provider, family, { sourceTimeframe: '1d' });
-    if (aggregated.length > 0) {
-      const filtered = aggregated.filter(r => new Date(r.timestamp).getTime() >= targetStartMs);
-      if (historyDays > 5) {
-        appendRecords(output, filtered);
-      } else if (filtered.length > 0) {
-        output.push({
-          ...filtered[filtered.length - 1],
-          family,
-        });
-      }
-    }
-  }
-
-  return output;
-}
-
 async function loadConfig() {
   return loadMarketConfig(CONFIG_PATH);
 }
@@ -2141,6 +1397,7 @@ module.exports = {
   loadConfig,
   loadOptionsConfig,
   collectIngestSkipChecks,
+  getIngestFamilyAvailability,
   loadExternalQuoteInputs,
   fetchNasaPowerWeather,
   fetchOpenSkyRegion,
@@ -2195,4 +1452,3 @@ module.exports = {
   resolveWorldBankIndicator,
   appendRecords,
 };
-

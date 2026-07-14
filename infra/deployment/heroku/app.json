@@ -20,6 +20,6 @@
     }
   },
   "scripts": {
-    "postdeploy": "node scripts/cli/sovereign_cli.js status --json"
+    "postdeploy": "node backend/cli/sovereign_cli.js status --json"
   }
 }

@@ -103,7 +103,8 @@ logs/
 storage/secrets/
 .mcp.json
 
-# Data
+# Data — raw inputs, caches, artifacts
+data/raw/
 data/cache/
 data/cache/*.json
 data/features/*.json
@@ -112,25 +113,19 @@ data/backtests/*.json
 data/backtests/*.sqlite
 data/trades/*.sqlite
 data/*.db
-storage/data/*.csv
-storage/data/*.bin
-storage/data/cache/
-storage/data/ml/
-storage/data/paper_trading/
-storage/data/polymarket_history/
-storage/data/ts/
+storage/backups/
+storage/data/
+storage/db/
+storage/exports/
 backend/scripts/data/cache/
-storage/db/*.sqlite3
-storage/exports/*.csv
-storage/data/backtests/latest_backtest.json
-storage/data/strategy_grade_index.json
-storage/data/user_settings.json
-
 
 # Generated notebook/model artifacts
 models/*.onnx
+storage/models/*.onnx
 notebooks/*.ipynb
+notebooks/signal_library.json
 Frontend/dashboard/*.zip
+__pycache__
 __pycache__/
 # Compiled Binaries
 *.exe
@@ -149,3 +144,11 @@ docss/
 
 # ML training virtualenv (local-only)
 .venv_ml/
+
+# Agent CLIs and local skills
+.antigravitycli/
+blast-through/
+repo-hygiene/
+
+# Quarantine data dumps
+_quarantine_grain/

@@ -116,9 +116,9 @@ Organized into **Pillars** (Vertical sections with 3px color-coded left borders)
   - Columns: [Asset, Model, Direction, Confidence, Status, Evidence].
   - `Confidence` column uses a custom progress bar component: `background: var(--bg-tertiary); height: 4px;`. Fill color based on confidence level (Violet to Green).
   - `Evidence` column: A `[VIEW]` button that opens an overlay showing the specific Path Signature or CNN tensor that triggered the signal.
-- **The Promotion Gate:**
+- **The Review Gate:**
   - A large action bar at the bottom: "2 Candidates Pending Review".
-  - Button: `[VERIFY & PROMOTE]`. Requires a 2-second hold (Empirical proof simulation).
+  - Button: `[REVIEW & RECORD]`. Requires a 2-second hold and records an audit decision; it does not execute an order.
 
 ### 4.3 Panel C: Market Intelligence (Deep Charts)
 - **Multi-Pane Charting:**
@@ -195,14 +195,14 @@ h2 { font-family: "Space Grotesk"; font-size: 32px; letter-spacing: -0.06em; mar
 
 ---
 
-## 8. USER FLOW: "PROMOTE TO EXECUTION"
+## 8. USER FLOW: "REVIEW AND RECORD"
 1. User adjusts **Confidence Threshold** in Sidebar (Pillar 2).
 2. `Signals` tab highlights in **Violet** (indicating new inference data).
 3. User clicks `Signals` tab. Signal Queue displays a list of "Gated" candidates.
 4. User hovers over **Evidence** to see the C++ tensor sample.
-5. User selects 2 assets and clicks **Verify & Promote**.
-6. A "Waterproof Gate" modal appears: "Confirming 2 signals against Live Order execution rules."
-7. User confirms. Signals move to **Promoted** (Green) and are logged in the `Audit Log` panel.
+5. User selects fresh active candidates and clicks **Review & Record**.
+6. The API revalidates that each candidate is still fresh and active, then authenticates the user.
+7. The decision is logged in the `Audit Log` panel. No broker order or live-execution promotion occurs.
 
 ---
 
