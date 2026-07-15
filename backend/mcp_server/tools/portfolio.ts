@@ -7,7 +7,7 @@ export const portfolioSchema = z.object({
   live: z.boolean().optional().default(false).describe('Whether to query live account (danger)'),
 });
 
-export function getPortfolio(args: z.infer<typeof portfolioSchema>): ToolResponse {
+export async function getPortfolio(args: z.infer<typeof portfolioSchema>): Promise<ToolResponse> {
   const action = args.mode === 'aggregate' ? 'aggregate_portfolio' : 'balance';
   const cliArgs = ['trade', action];
   if (args.live) cliArgs.push('--live');
