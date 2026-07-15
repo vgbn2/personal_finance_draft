@@ -494,7 +494,15 @@ async function commandBackfillDaemon(args) {
       },
     });
 
-    if (once) break;
+    if (once) {
+      writeDaemonStatus({
+        ...status,
+        status: 'idle',
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      break;
+    }
     writeDaemonStatus({ ...status, status: 'sleeping', next_run_at: new Date(Date.now() + intervalSecs * 1000).toISOString(), updated_at: new Date().toISOString() });
     await new Promise((resolve) => setTimeout(resolve, intervalSecs * 1000));
   }
