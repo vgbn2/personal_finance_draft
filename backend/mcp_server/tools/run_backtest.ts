@@ -15,7 +15,7 @@ export const runBacktestSchema = z.object({
   allow_degraded: z.boolean().optional().default(false).describe('Proceed despite failed data-quality checks (default: false; research only)'),
 });
 
-export function runBacktest(args: z.infer<typeof runBacktestSchema>): ToolResponse {
+export async function runBacktest(args: z.infer<typeof runBacktestSchema>): Promise<ToolResponse> {
   const cliArgs = ['bt'];
 
   if (args.strategy) cliArgs.push('--strategy', args.strategy);

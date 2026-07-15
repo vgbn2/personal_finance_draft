@@ -1,6 +1,4 @@
-import { spawnSync } from 'node:child_process';
-import * as path from 'node:path';
-import * as fs from 'node:fs';
+import { spawn } from 'node:child_process';
 // @ts-ignore
 import { REPO_ROOT, findNodeCli, CLI_CANDIDATES } from '../../../shared/lib/runtime/paths';
 import { ToolResponse } from './schemas';
@@ -33,55 +31,94 @@ export function extractJsonPayload(stdout: string): any | null {
   return null;
 }
 
-export function invokeSovereignCli(args: string[]): ToolResponse {
+export interface InvokeSovereignCliOptions {
+  timeoutMs?: number;
+  maxOutputBytes?: number;
+}
+
+const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_MAX_OUTPUT_BYTES = 1_000_000;
+
+function textResponse(text: string, isError = false): ToolResponse {
+  return {
+    content: [{ type: 'text', text }],
+    ...(isError ? { isError: true } : {}),
+  };
+}
+
+export function invokeSovereignCli(
+  args: string[],
+  options: InvokeSovereignCliOptions = {},
+): Promise<ToolResponse> {
   const cliPath = findNodeCli();
-  
+
   if (!cliPath) {
-    return {
-      content: [{ type: 'text', text: `Sovereign CLI entrypoint not found. Searched: ${CLI_CANDIDATES.join(', ')}` }],
-      isError: true,
-    };
+    return Promise.resolve(textResponse(
+      `Sovereign CLI entrypoint not found. Searched: ${CLI_CANDIDATES.join(', ')}`,
+      true,
+    ));
   }
 
-  try {
-    const result = spawnSync(process.execPath, [cliPath, ...args, '--json'], {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-      env: { ...process.env, SOVEREIGN_MFA_SKIP: 'true' }, // Example env override if needed
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const maxOutputBytes = options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
+  const cliArgs = args.includes('--json') ? args : [...args, '--json'];
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let stdout = '';
+    let stderr = '';
+    let outputBytes = 0;
+    let child: ReturnType<typeof spawn>;
+
+    const finish = (response: ToolResponse) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(response);
+    };
+
+    const appendOutput = (stream: 'stdout' | 'stderr', chunk: Buffer) => {
+      outputBytes += chunk.length;
+      if (outputBytes > maxOutputBytes) {
+        child.kill('SIGTERM');
+        finish(textResponse(`CLI output exceeded ${maxOutputBytes} bytes and was terminated.`, true));
+        return;
+      }
+      if (stream === 'stdout') stdout += chunk.toString('utf8');
+      else stderr += chunk.toString('utf8');
+    };
+
+    const timeout = setTimeout(() => {
+      child.kill('SIGTERM');
+      finish(textResponse(`CLI timed out after ${timeoutMs}ms and was terminated.`, true));
+    }, timeoutMs);
+
+    try {
+      child = spawn(process.execPath, [cliPath, ...cliArgs], {
+        cwd: REPO_ROOT,
+        env: { ...process.env },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch (err: any) {
+      finish(textResponse(`Bridge failure: ${err.message}`, true));
+      return;
+    }
+
+    child.stdout?.on('data', (chunk: Buffer) => appendOutput('stdout', chunk));
+    child.stderr?.on('data', (chunk: Buffer) => appendOutput('stderr', chunk));
+    child.on('error', (error) => finish(textResponse(`Execution error: ${error.message}`, true)));
+    child.on('close', (code, signal) => {
+      if (settled) return;
+      if (code !== 0) {
+        finish(textResponse(
+          `CLI returned error (${signal ? `signal ${signal}` : `exit code ${code}`}):\n${stderr || stdout}`,
+          true,
+        ));
+        return;
+      }
+
+      const parsed = extractJsonPayload(stdout);
+      finish(textResponse(parsed !== null ? JSON.stringify(parsed, null, 2) : (stdout || 'No output from CLI')));
     });
-
-    if (result.error) {
-      return {
-        content: [{ type: 'text', text: `Execution error: ${result.error.message}` }],
-        isError: true,
-      };
-    }
-
-    if (result.status !== 0) {
-      return {
-        content: [{ 
-          type: 'text', 
-          text: `CLI returned error (exit code ${result.status}):\n${result.stderr || result.stdout}` 
-        }],
-        isError: true,
-      };
-    }
-
-    const parsed = extractJsonPayload(result.stdout);
-    if (parsed !== null) {
-      return {
-        content: [{ type: 'text', text: JSON.stringify(parsed, null, 2) }],
-      };
-    }
-
-    // Fallback for non-JSON output if --json flag was ignored or failed
-    return {
-      content: [{ type: 'text', text: result.stdout || 'No output from CLI' }],
-    };
-  } catch (err: any) {
-    return {
-      content: [{ type: 'text', text: `Bridge failure: ${err.message}` }],
-      isError: true,
-    };
-  }
+  });
 }

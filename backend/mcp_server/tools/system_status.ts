@@ -4,6 +4,6 @@ import { ToolResponse } from '../lib/schemas';
 
 export const getSystemStatusSchema = z.object({});
 
-export function getSystemStatus(): ToolResponse {
+export async function getSystemStatus(): Promise<ToolResponse> {
   return invokeSovereignCli(['status']);
 }
