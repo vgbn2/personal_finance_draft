@@ -5,16 +5,16 @@ import { ToolResponse } from '../lib/schemas';
 
 export const getPolymarketMarketsSchema = z.object({
   category: z.string().optional().default('crypto').describe('Market category slug (e.g. crypto, politics, sports)'),
-  limit: z.number().optional().default(25).describe('Max markets to return (10 / 25 / 50)'),
+  limit: z.number().int().min(1).max(50).optional().default(25).describe('Max markets to return (1-50)'),
 });
 
-export function getPolymarketMarkets(args: z.infer<typeof getPolymarketMarketsSchema>): ToolResponse {
+export async function getPolymarketMarkets(args: z.infer<typeof getPolymarketMarketsSchema>): Promise<ToolResponse> {
   return invokeSovereignCli(['polymarket', 'markets', String(args.limit), '--category', args.category]);
 }
 
 export const getPolymarketPortfolioSchema = z.object({});
 
-export function getPolymarketPortfolio(): ToolResponse {
+export async function getPolymarketPortfolio(): Promise<ToolResponse> {
   return invokeSovereignCli(['polymarket', 'portfolio']);
 }
 
@@ -27,7 +27,7 @@ export const placePolymarketOrderSchema = z.object({
   confirm_live: z.boolean().optional().default(false).describe('Must be true when live=true; prevents accidental live execution from agents'),
 });
 
-export function placePolymarketOrder(args: z.infer<typeof placePolymarketOrderSchema>): ToolResponse {
+export async function placePolymarketOrder(args: z.infer<typeof placePolymarketOrderSchema>): Promise<ToolResponse> {
   if (args.price !== undefined && (args.price <= 0 || args.price >= 1)) {
     return {
       content: [{

@@ -25,6 +25,8 @@
 const {
   optionValue, hasFlag, numericOption, printPayload,
 } = require('../../lib/utils.js');
+const fs = require('fs');
+const path = require('path');
 const {
   FAMILY_BASE_TF, rollupTargetsAboveBase, rollupFromBase, DEFAULT_TS_DIR,
   commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIngest,
@@ -57,6 +59,52 @@ const LANE_CONCURRENCY = { binance: 3, alpaca: 3, yahoo: 5 };
 const LANE_MAX_CONCURRENCY = { binance: 3, alpaca: 3 };
 
 const DAY_MS = 86400000;
+const DAEMON_STATUS_PATH = path.resolve(__dirname, '../../../../storage/data/cache/backfill_daemon_status.json');
+
+function writeDaemonStatus(status) {
+  fs.mkdirSync(path.dirname(DAEMON_STATUS_PATH), { recursive: true });
+  const tempPath = `${DAEMON_STATUS_PATH}.${process.pid}.${Date.now()}.tmp`;
+  fs.writeFileSync(tempPath, `${JSON.stringify(status, null, 2)}\n`);
+  fs.renameSync(tempPath, DAEMON_STATUS_PATH);
+}
+
+function stopResult(args, payload) {
+  printPayload(payload, args);
+  return payload.ok ? 0 : 1;
+}
+
+async function commandStopBackfillDaemon(args) {
+  let status;
+  try {
+    status = JSON.parse(fs.readFileSync(DAEMON_STATUS_PATH, 'utf8'));
+  } catch (error) {
+    return stopResult(args, { ok: false, error: 'Backfill daemon status file is missing or unreadable.' });
+  }
+
+  const pid = Number(status.pid);
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return stopResult(args, { ok: false, error: 'Backfill daemon status does not contain a valid PID.' });
+  }
+  try {
+    process.kill(pid, 0);
+  } catch (error) {
+    return stopResult(args, { ok: false, error: `Backfill daemon PID ${pid} is not running.` });
+  }
+
+  try {
+    process.kill(pid, 'SIGTERM');
+  } catch (error) {
+    return stopResult(args, { ok: false, error: `Could not stop backfill daemon PID ${pid}: ${error.message}` });
+  }
+  writeDaemonStatus({
+    ...status,
+    status: 'stopped',
+    stopped_at: new Date().toISOString(),
+    stopped_by: 'stop-backfill-daemon',
+    updated_at: new Date().toISOString(),
+  });
+  return stopResult(args, { ok: true, pid, status: 'stopped' });
+}
 // Floor a timestamp to its UTC-day boundary — a multiple of every intraday interval up
 // to 4h, so a rollup window starting here produces no partial coarse bars.
 function utcDayFloor(ms) { return Math.floor(ms / DAY_MS) * DAY_MS; }
@@ -197,7 +245,7 @@ async function runBackfillCycle(o) {
   const incrementalDays = o.incrementalDays || INCREMENTAL_DAYS;
   const parallelLanes = o.parallelLanes !== false; // default true
 
-  const summary = { cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0, rolled_up: 0, errors: 0, failures: [] };
+  const summary = { cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0, rolled_up: 0, rollup_errors: 0, errors: 0, failures: [] };
   const start = Date.now();
 
   // Process a single job — shared by both sequential and parallel paths.
@@ -211,7 +259,32 @@ async function runBackfillCycle(o) {
 
     if (action === 'skip') {
       summary.skipped += 1;
+      // A fresh base bin can coexist with missing/stale derived bins after an interrupted
+      // rollup. Repair them locally without issuing another provider request.
+      try {
+        const roll = o.rollup(job, 'refresh');
+        if (!roll || !roll.ok) {
+          const error = (roll && roll.error) || 'rollup failed';
+          summary.errors += 1;
+          summary.rollup_errors += 1;
+          summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error });
+          log(`[BACKFILL] ${job.symbol}  rollup failed: ${error}`);
+          if (o.onJobDone) o.onJobDone(job, 'rollup_failed');
+          return;
+        }
+        summary.rolled_up += 1;
+        const n = Object.keys(roll.derived || {}).length;
+        if (n > 0) log(`[BACKFILL] ${job.symbol}  +${n}TF refresh`);
+      } catch (error) {
+        summary.errors += 1;
+        summary.rollup_errors += 1;
+        summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error: error.message });
+        log(`[BACKFILL] ${job.symbol}  rollup failed: ${error.message}`);
+        if (o.onJobDone) o.onJobDone(job, 'rollup_failed');
+        return;
+      }
       if (gate.reason === 'not_found') log(`[BACKFILL] ${job.symbol}  ✗ no data on provider (skip 7d)`);
+      if (o.onJobDone) o.onJobDone(job, 'skipped');
       return;
     }
 
@@ -231,6 +304,7 @@ async function runBackfillCycle(o) {
       summary.errors += 1;
       summary.failures.push({ symbol: job.symbol, family: job.family, action, error: (res && res.error) || 'fetch failed' });
       log(`[BACKFILL] ${job.symbol}  FAILED  ${(res && res.error) || 'fetch failed'}`);
+      if (o.onJobDone) o.onJobDone(job, 'failed');
       return;
     }
     if (action === 'deep') summary.deep += 1; else summary.incremental += 1;
@@ -245,10 +319,24 @@ async function runBackfillCycle(o) {
         summary.rolled_up += 1;
         const n = Object.keys(roll.derived || {}).length;
         if (n > 0) log(`[BACKFILL] ${job.symbol}  +${n}TF`);
+      } else {
+        const error = (roll && roll.error) || 'rollup failed';
+        summary.errors += 1;
+        summary.rollup_errors += 1;
+        summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error });
+        log(`[BACKFILL] ${job.symbol}  rollup failed: ${error}`);
+        if (o.onJobDone) o.onJobDone(job, 'rollup_failed');
+        return;
       }
     } catch (err) {
+      summary.errors += 1;
+      summary.rollup_errors += 1;
+      summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error: err.message });
       log(`[BACKFILL] ${job.symbol}  rollup failed: ${err.message}`);
+      if (o.onJobDone) o.onJobDone(job, 'rollup_failed');
+      return;
     }
+    if (o.onJobDone) o.onJobDone(job, 'ok');
   }
 
   if (parallelLanes) {
@@ -325,9 +413,9 @@ function makeRealExecutor() {
 function makeRealRollup(tsDir, incrementalDays = INCREMENTAL_DAYS) {
   return (job, action) => {
     const targets = rollupTargetsAboveBase(job.baseTf);
-    const opts = action === 'incremental'
-      ? { sinceMs: utcDayFloor(Date.now() - (incrementalDays + 1) * DAY_MS) }
-      : {};
+    const opts = action === 'deep'
+      ? {}
+      : { sinceMs: utcDayFloor(Date.now() - (incrementalDays + 1) * DAY_MS) };
     return rollupFromBase(tsDir, job.symbol, job.baseTf, targets, opts);
   };
 }
@@ -362,6 +450,15 @@ async function commandBackfillDaemon(args) {
 
   let cycle = 0;
   let lastSummary = null;
+  let stopping = false;
+  const stopDaemon = () => {
+    if (stopping) return;
+    stopping = true;
+    writeDaemonStatus({ status: 'stopped', pid: process.pid, cycle, stopped_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    process.exit(0);
+  };
+  process.once('SIGINT', stopDaemon);
+  process.once('SIGTERM', stopDaemon);
   /* eslint-disable no-await-in-loop */
   for (;;) {
     cycle += 1;
@@ -378,14 +475,27 @@ async function commandBackfillDaemon(args) {
         log(`[BACKFILL] note: --concurrency ${concurrency} clamped to ${clamped.map(l => `${l.lane}=${l.concurrency}`).join(' ')} (1m lanes touch multi-million-row bins)`);
       }
     }
+    const status = {
+      status: 'running', pid: process.pid, cycle, total_jobs: jobs.length, completed_jobs: 0,
+      current_symbol: null, families, once, started_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    };
+    writeDaemonStatus(status);
     lastSummary = await runBackfillCycle({
       tsDir, jobs, execute, rollup, log, cycle,
       parallelLanes: !sequential,
       concurrency: concurrency || undefined,
       forceDeep: deepAll,
+      onJobDone: (job, outcome) => {
+        status.completed_jobs += 1;
+        status.current_symbol = job.symbol;
+        status.last_outcome = outcome;
+        status.updated_at = new Date().toISOString();
+        writeDaemonStatus(status);
+      },
     });
 
     if (once) break;
+    writeDaemonStatus({ ...status, status: 'sleeping', next_run_at: new Date(Date.now() + intervalSecs * 1000).toISOString(), updated_at: new Date().toISOString() });
     await new Promise((resolve) => setTimeout(resolve, intervalSecs * 1000));
   }
   /* eslint-enable no-await-in-loop */
@@ -396,6 +506,7 @@ async function commandBackfillDaemon(args) {
 
 module.exports = {
   commandBackfillDaemon,
+  commandStopBackfillDaemon,
   runBackfillCycle,
   buildJobUniverse,
   groupIntoLanes,
@@ -410,4 +521,5 @@ module.exports = {
   LANE_MAX_CONCURRENCY,
   utcDayFloor,
   FAMILY_LANE,
+  DAEMON_STATUS_PATH,
 };

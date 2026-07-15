@@ -92,6 +92,9 @@ child.on('error', (error) => {
   if (status.error) throw new Error(`get_system_status failed: ${JSON.stringify(status.error)}`);
 
   const toolNames = tools.result.tools.map((tool) => tool.name);
+  const requiredToolNames = ['get_market_bias', 'get_scorecard', 'get_market_signal'];
+  const missingTools = requiredToolNames.filter((name) => !toolNames.includes(name));
+  if (missingTools.length) throw new Error(`MCP tool discovery missing: ${missingTools.join(', ')}`);
   const statusPayload = status.result.content?.[0]?.text || '';
   const parsedStatus = statusPayload ? JSON.parse(statusPayload) : {};
 

@@ -5,18 +5,18 @@ import { ToolResponse } from '../lib/schemas';
 export const getDataSummarySchema = z.object({
   symbol: z.string().optional().default('SPY').describe('Symbol to summarize (e.g. SPY)'),
   timeframe: z.string().optional().default('1d').describe('e.g. 1d, 1h'),
-  max_bars: z.number().optional().default(0).describe('Limit bars (0 for all)'),
+  max_bars: z.number().int().min(1).max(1000).optional().default(500).describe('Limit bars (maximum 1000)'),
 });
 
 export const getCorrelationSchema = z.object({
   symbols: z.string().optional().default('AAPL,MSFT,SPY').describe('Comma-separated symbols'),
   timeframe: z.string().optional().default('1d').describe('e.g. 1d, 1h'),
-  max_bars: z.number().optional().default(252).describe('Limit bars'),
+  max_bars: z.number().int().min(10).max(1000).optional().default(252).describe('Limit bars (10-1000)'),
   divergence: z.boolean().optional().default(false).describe('Include correlation divergence telemetry'),
-  threshold: z.number().optional().default(0.3).describe('Divergence threshold (0.0 to 1.0)'),
+  threshold: z.number().min(0).max(1).optional().default(0.3).describe('Divergence threshold (0.0 to 1.0)'),
 });
 
-export function getDataSummary(args: z.infer<typeof getDataSummarySchema>): ToolResponse {
+export async function getDataSummary(args: z.infer<typeof getDataSummarySchema>): Promise<ToolResponse> {
   const cliArgs = [
     'backend', 'data', 'summary',
     '--symbol', args.symbol,
@@ -27,7 +27,7 @@ export function getDataSummary(args: z.infer<typeof getDataSummarySchema>): Tool
   return invokeSovereignCli(cliArgs);
 }
 
-export function getCorrelation(args: z.infer<typeof getCorrelationSchema>): ToolResponse {
+export async function getCorrelation(args: z.infer<typeof getCorrelationSchema>): Promise<ToolResponse> {
   const cliArgs = [
     'backend', 'correlation',
     '--symbols', args.symbols,
@@ -52,14 +52,14 @@ export const getDataAvailabilitySchema = z.object({
 export const getSigmaBandsSchema = z.object({
   symbol: z.string().describe('Symbol to analyze (e.g. BTCUSDT)'),
   timeframe: z.string().optional().default('1d').describe('e.g. 1d, 1h'),
-  window: z.number().optional().default(20).describe('Rolling window size in bars'),
+  window: z.number().int().min(2).max(500).optional().default(20).describe('Rolling window size in bars (2-500)'),
 });
 
 export const getIndicatorsSchema = z.object({
   symbol: z.string().describe('Symbol to compute indicators for (e.g. AAPL)'),
   timeframe: z.string().optional().default('1d').describe('e.g. 1d, 1h'),
-  max_bars: z.number().optional().default(0).describe('Limit bars (0 for all)'),
-  show_last: z.number().optional().default(5).describe('Number of most recent indicator rows to show'),
+  max_bars: z.number().int().min(1).max(1000).optional().default(500).describe('Limit bars (maximum 1000)'),
+  show_last: z.number().int().min(1).max(100).optional().default(5).describe('Number of most recent indicator rows to show'),
 });
 
 export const getPriceSchema = z.object({
@@ -67,13 +67,13 @@ export const getPriceSchema = z.object({
   timeframe: z.string().optional().default('1d').describe('e.g. 1d, 1h'),
 });
 
-export function getDataAvailability(args: z.infer<typeof getDataAvailabilitySchema>): ToolResponse {
+export async function getDataAvailability(args: z.infer<typeof getDataAvailabilitySchema>): Promise<ToolResponse> {
   const cliArgs = ['backend', 'integrity', '--json'];
   if (args.family) cliArgs.push('--family', args.family);
   return invokeSovereignCli(cliArgs);
 }
 
-export function getSigmaBands(args: z.infer<typeof getSigmaBandsSchema>): ToolResponse {
+export async function getSigmaBands(args: z.infer<typeof getSigmaBandsSchema>): Promise<ToolResponse> {
   return invokeSovereignCli([
     'backend', 'visualize',
     '--symbol', args.symbol,
@@ -83,7 +83,7 @@ export function getSigmaBands(args: z.infer<typeof getSigmaBandsSchema>): ToolRe
   ]);
 }
 
-export function getIndicators(args: z.infer<typeof getIndicatorsSchema>): ToolResponse {
+export async function getIndicators(args: z.infer<typeof getIndicatorsSchema>): Promise<ToolResponse> {
   return invokeSovereignCli([
     'backend', 'indicators',
     '--symbol', args.symbol,
@@ -94,7 +94,7 @@ export function getIndicators(args: z.infer<typeof getIndicatorsSchema>): ToolRe
   ]);
 }
 
-export function getPrice(args: z.infer<typeof getPriceSchema>): ToolResponse {
+export async function getPrice(args: z.infer<typeof getPriceSchema>): Promise<ToolResponse> {
   return invokeSovereignCli([
     'backend', 'data', 'summary',
     '--symbol', args.symbol,

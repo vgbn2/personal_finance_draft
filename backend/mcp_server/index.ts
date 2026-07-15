@@ -23,6 +23,11 @@ import {
   getIndicators, getIndicatorsSchema,
   getPrice, getPriceSchema,
 } from './tools/backend_inspection';
+import {
+  getMarketBias, getMarketBiasSchema,
+  getScorecard, getScorecardSchema,
+  getMarketSignal, getMarketSignalSchema,
+} from './tools/research';
 import { getReportResource, listReportResources } from './resources/reports';
 import {
   getPolymarketMarkets, getPolymarketMarketsSchema,
@@ -112,13 +117,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: 'backfill',
-      description: 'Trigger data backfill for a symbol',
+      description: 'Write cached data for a symbol. Requires execute=true to acknowledge the write.',
       inputSchema: {
         type: 'object',
         properties: {
           symbol: { type: 'string', description: 'Symbol to backfill' },
           days: { type: 'number', description: 'Days to fetch' },
           timeframe: { type: 'string', description: 'Timeframe (e.g. 1d)' },
+          execute: { type: 'boolean', description: 'Must be true to acknowledge cache writes.' },
         },
         required: ['symbol'],
       },
@@ -131,7 +137,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           symbol: { type: 'string', description: 'Symbol to summarize (default: SPY)' },
           timeframe: { type: 'string', description: 'e.g., 1d, 1h' },
-          max_bars: { type: 'number', description: 'Limit bars (0 for all)' },
+          max_bars: { type: 'number', description: 'Limit bars (1-1000; default 500)' },
         },
       },
     },
@@ -143,7 +149,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           symbols: { type: 'string', description: 'Comma-separated symbols (default: AAPL,MSFT,SPY)' },
           timeframe: { type: 'string', description: 'e.g., 1d, 1h' },
-          max_bars: { type: 'number', description: 'Limit bars' },
+          max_bars: { type: 'number', description: 'Limit bars (10-1000)' },
           divergence: { type: 'boolean', description: 'Include correlation divergence telemetry' },
           threshold: { type: 'number', description: 'Divergence threshold (default: 0.3)' },
         },
@@ -167,7 +173,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           symbol: { type: 'string', description: 'Symbol to analyze (e.g. BTCUSDT)' },
           timeframe: { type: 'string', description: 'e.g. 1d, 1h' },
-          window: { type: 'number', description: 'Rolling window size in bars (default: 20)' },
+          window: { type: 'number', description: 'Rolling window size in bars (2-500; default 20)' },
         },
         required: ['symbol'],
       },
@@ -180,7 +186,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           symbol: { type: 'string', description: 'Symbol to analyze (e.g. AAPL)' },
           timeframe: { type: 'string', description: 'e.g. 1d, 1h' },
-          max_bars: { type: 'number', description: 'Limit bars (0 for all)' },
+          max_bars: { type: 'number', description: 'Limit bars (1-1000; default 500)' },
           show_last: { type: 'number', description: 'Number of recent indicator rows to return (default: 5)' },
         },
         required: ['symbol'],
@@ -199,8 +205,45 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: 'get_market_bias',
+      description: 'Read cached multi-timeframe market bias for one symbol. Does not refresh data or execute trades; inspect freshness before acting.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          symbol: { type: 'string', description: 'Symbol to analyze from the local cache (default: BTCUSDT)' },
+        },
+      },
+    },
+    {
+      name: 'get_scorecard',
+      description: 'Read cached, fail-closed technical scorecard rankings. Does not refresh data or execute trades; degraded rows are excluded unless explicitly requested for research.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          family: { type: 'string', enum: ['equities', 'crypto', 'indices', 'commodities', 'fx'], description: 'Asset family (default: crypto)' },
+          timeframes: { type: 'string', description: 'Comma-separated cached timeframes (default: 1h,4h,1d)' },
+          min_confidence: { type: 'number', description: 'Research confidence floor (default: 0.55)' },
+          top: { type: 'number', description: 'Maximum rows to return (default: 10)' },
+          direction: { type: 'string', enum: ['long', 'short', 'neutral'], description: 'Optional directional filter' },
+          allow_degraded: { type: 'boolean', description: 'Include incomplete rows for research only (default: false)' },
+        },
+      },
+    },
+    {
+      name: 'get_market_signal',
+      description: 'Reconcile cached market bias and fail-closed scorecard eligibility. Returns review_only or no_trade and never places orders.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          symbol: { type: 'string', description: 'Cached crypto symbol (default: BTCUSDT)' },
+          timeframes: { type: 'string', description: 'Comma-separated cached timeframes (default: 1h,4h,1d)' },
+          min_confidence: { type: 'number', description: 'Research confidence floor (default: 0.55)' },
+        },
+      },
+    },
+    {
       name: 'backfill_family',
-      description: 'Trigger data backfill for an entire asset family (equities, crypto, indices, etc.)',
+      description: 'Write cached data for an asset family. Requires execute=true to acknowledge the write.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -208,20 +251,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           days: { type: 'number', description: 'Days to fetch (default: 365)' },
           timeframe: { type: 'string', description: 'e.g. 1d, 1h' },
           force: { type: 'boolean', description: 'Force re-fetch even if data is fresh' },
+          execute: { type: 'boolean', description: 'Must be true to acknowledge cache writes.' },
         },
         required: ['family'],
       },
     },
     {
       name: 'backfill_all',
-      description: 'Mass backfill — every symbol in the configured universe across all specified timeframes. Use dry_run first to preview job count.',
+      description: 'Mass backfill across the configured universe. It is a no-write preview unless execute=true; dry_run always forces preview mode.',
       inputSchema: {
         type: 'object',
         properties: {
           timeframes: { type: 'string', description: 'Comma-separated timeframes (default: 1d,1h,15m)' },
           days: { type: 'number', description: 'Days of history per symbol (default: 365)' },
-          concurrency: { type: 'number', description: 'Parallel jobs (default: 5)' },
-          dry_run: { type: 'boolean', description: 'Preview job count without executing' },
+          concurrency: { type: 'number', description: 'Parallel jobs (1-10; default: 5)' },
+          dry_run: { type: 'boolean', description: 'Force a no-write preview' },
+          execute: { type: 'boolean', description: 'Set true to acknowledge cache writes. Defaults to preview.' },
         },
       },
     },
@@ -232,7 +277,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         type: 'object',
         properties: {
           category: { type: 'string', description: 'Category slug (e.g. crypto, politics, sports). Default: crypto' },
-          limit: { type: 'number', description: 'Max markets to return (10, 25, 50). Default: 25' },
+          limit: { type: 'number', description: 'Max markets to return (1-50). Default: 25' },
         },
       },
     },
@@ -308,6 +353,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<any> =>
       case 'get_price': {
         const args = getPriceSchema.parse(request.params.arguments);
         return getPrice(args);
+      }
+      case 'get_market_bias': {
+        const args = getMarketBiasSchema.parse(request.params.arguments);
+        return getMarketBias(args);
+      }
+      case 'get_scorecard': {
+        const args = getScorecardSchema.parse(request.params.arguments);
+        return getScorecard(args);
+      }
+      case 'get_market_signal': {
+        const args = getMarketSignalSchema.parse(request.params.arguments);
+        return getMarketSignal(args);
       }
       case 'backfill_family': {
         const args = backfillFamilySchema.parse(request.params.arguments);
