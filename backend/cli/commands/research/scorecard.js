@@ -535,7 +535,7 @@ async function commandScorecard(args) {
 
   if (isJson) {
     // Schema v2 keeps its established row-array contract; v3 emits its research envelope.
-    printPayload(result.schema_version === 3 ? result : result.rows, args);
+    printPayload(result.schema_version === 3 || hasFlag(args, '--envelope') ? result : result.rows, args);
   } else {
     if (process.stdout.isTTY) process.stdout.write(' '.repeat(60) + '\r'); // clear spinner line
     if (result.schema_version === 3) {

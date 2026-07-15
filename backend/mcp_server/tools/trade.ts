@@ -13,7 +13,7 @@ export const tradeSchema = z.object({
   confirm_live: z.boolean().optional().default(false).describe('Must be true when live=true; prevents accidental live execution from agents'),
 });
 
-export function trade(args: z.infer<typeof tradeSchema>): ToolResponse {
+export async function trade(args: z.infer<typeof tradeSchema>): Promise<ToolResponse> {
   if (args.live) {
     if (!args.confirm_live) {
       return {
