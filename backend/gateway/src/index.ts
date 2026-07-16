@@ -6,10 +6,26 @@ import { spawnSync } from 'node:child_process';
 // @ts-ignore
 import Alpaca from '@alpacahq/alpaca-trade-api';
 import { createClobClient, resolveOwnerAddress, polymarketGet } from './clob_factory';
-import { runCycle, runBotLoop, runForceSell, runBotHealth } from './cycle';
+import {
+  runCycle,
+  runBotLoop,
+  runForceSell,
+  runBotHealth,
+  type BotExecutionOptions,
+  type BotOrderIntent,
+} from './cycle';
 import { loadBotState, saveBotState } from './bot_state';
 // @ts-ignore
 const { buildAggregatedPortfolioSnapshot } = require('./polymarket_portfolio.js');
+// @ts-ignore
+const {
+  aggregatePolymarketFilledPositions,
+  buildPolymarketTokenMetadata,
+  markPolymarketHistoryIncomplete,
+  mergeTokenMetadata,
+  partitionPolymarketPositions,
+  projectPolymarketPosition,
+} = require('./polymarket_positions.js');
 // @ts-ignore
 const { fetchPolymarketGammaMarkets, fetchPolymarketGammaEvents } = require('./polymarket_markets.js');
 // @ts-ignore
@@ -83,6 +99,13 @@ interface Position {
   marketValue: number;
   unrealizedPl: number;
   cost_basis_unavailable?: boolean;
+  question?: string;
+  outcome?: string;
+  lifecycle?: 'active' | 'ended' | 'unknown';
+  currentPrice?: number | null;
+  valuationStatus?: 'live_quote' | 'unavailable';
+  resolutionPrice?: number | null;
+  historyStatus?: 'complete' | 'trade_history_truncated';
 }
 
 interface PolymarketTrade {
@@ -111,87 +134,6 @@ function toFiniteNumber(value: unknown, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function normalizePolymarketSide(side: unknown): 'buy' | 'sell' | null {
-  if (typeof side === 'string') {
-    const upper = side.toUpperCase();
-    if (upper === 'BUY') return 'buy';
-    if (upper === 'SELL') return 'sell';
-  }
-  if (side === 0) return 'buy';
-  if (side === 1) return 'sell';
-  return null;
-}
-
-function aggregatePolymarketFilledPositions(trades: PolymarketTrade[]): Position[] {
-  const buckets = new Map<string, {
-    assetId: string;
-    symbol: string;
-    quantity: number;
-    costBasis: number;
-    seenAt: number;
-  }>();
-
-  const sortedTrades = [...trades].sort((a, b) => {
-    const ta = Date.parse(String(a.match_time || a.last_update || ''));
-    const tb = Date.parse(String(b.match_time || b.last_update || ''));
-    return (Number.isFinite(ta) ? ta : 0) - (Number.isFinite(tb) ? tb : 0);
-  });
-
-  for (const trade of sortedTrades) {
-    const assetId = String(trade.asset_id || '');
-    if (!assetId) continue;
-
-    const side = normalizePolymarketSide(trade.side);
-    if (!side) continue;
-
-    // CLOB /trades returns size in raw units (1 raw = 0.1 shares); normalize to shares
-    const size = toFiniteNumber(trade.size) / 10;
-    const price = toFiniteNumber(trade.price);
-    if (size <= 0 || price < 0) continue;
-
-    const key = assetId;
-    const bucket = buckets.get(key) || {
-      assetId: key,
-      symbol: String(trade.outcome || trade.market || assetId),
-      quantity: 0,
-      costBasis: 0,
-      seenAt: 0,
-    };
-
-    bucket.symbol = String(trade.outcome || trade.market || assetId);
-    bucket.seenAt = Math.max(bucket.seenAt, Date.parse(String(trade.match_time || trade.last_update || '')) || 0);
-
-    if (side === 'buy') {
-      bucket.quantity += size;
-      bucket.costBasis += size * price;
-    } else {
-      if (bucket.quantity > 0) {
-        const avgCost = bucket.costBasis / bucket.quantity;
-        const closedSize = Math.min(bucket.quantity, size);
-        bucket.quantity -= closedSize;
-        bucket.costBasis = Math.max(0, bucket.costBasis - (avgCost * closedSize));
-      }
-    }
-
-    buckets.set(key, bucket);
-  }
-
-  return [...buckets.values()]
-    .filter((bucket) => bucket.quantity > 0)
-    .map((bucket) => {
-      const averagePrice = bucket.quantity > 0 ? bucket.costBasis / bucket.quantity : 0;
-      return {
-        assetId: bucket.assetId,
-        symbol: bucket.symbol,
-        quantity: bucket.quantity,
-        averagePrice,
-        marketValue: bucket.quantity * averagePrice,
-        unrealizedPl: 0,
-      };
-    })
-    .sort((a, b) => a.symbol.localeCompare(b.symbol));
-}
-
 /**
  * Hypothetical Broker Interface
  */
@@ -201,6 +143,49 @@ interface BrokerAdapter {
   getPortfolioBalance(): Promise<Record<string, number>>;
   getPositions(): Promise<Position[]>;
   getQuote(symbol: string): Promise<number>;
+}
+
+interface RiskContext {
+  referencePrice: number;
+  portfolioEquity: number;
+  currentDrawdown: number;
+  maxDrawdown: number;
+}
+
+function firstPositiveBalance(balances: Record<string, number>): number {
+  for (const key of ['EQUITY', 'pUSD', 'USD', 'USDT']) {
+    const value = Number(balances[key]);
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  return 0;
+}
+
+export async function buildRiskContext(order: TradeOrder, adapter: BrokerAdapter, dryRun: boolean): Promise<RiskContext> {
+  const explicitPrice = Number(order.price);
+  const referencePrice = Number.isFinite(explicitPrice) && explicitPrice > 0
+    ? explicitPrice
+    : Number(await adapter.getQuote(order.instrumentId));
+  if (!Number.isFinite(referencePrice) || referencePrice <= 0) {
+    throw new Error(`Unable to resolve a positive reference price for ${order.instrumentId}`);
+  }
+
+  const portfolioEquity = firstPositiveBalance(await adapter.getPortfolioBalance());
+  if (!Number.isFinite(portfolioEquity) || portfolioEquity <= 0) {
+    throw new Error('Unable to resolve positive portfolio equity from the broker account');
+  }
+
+  const drawdownInput = process.env.CURRENT_PORTFOLIO_DRAWDOWN;
+  const currentDrawdown = drawdownInput === undefined && dryRun ? 0 : Number(drawdownInput);
+  if (!Number.isFinite(currentDrawdown) || currentDrawdown < 0 || currentDrawdown > 1) {
+    throw new Error('CURRENT_PORTFOLIO_DRAWDOWN must be explicitly set between 0 and 1 for live execution');
+  }
+
+  const maxDrawdown = Number(process.env.MAX_ALLOWED_DRAWDOWN ?? 0.20);
+  if (!Number.isFinite(maxDrawdown) || maxDrawdown <= 0 || maxDrawdown > 1) {
+    throw new Error('MAX_ALLOWED_DRAWDOWN must be between 0 and 1');
+  }
+
+  return { referencePrice, portfolioEquity, currentDrawdown, maxDrawdown };
 }
 
 interface GateIoAdapterOptions {
@@ -608,7 +593,7 @@ class AlpacaAdapter implements BrokerAdapter {
  * Bridge to simulate C++ Pre-Trade Risk logic
  */
 class RiskEngineBridge {
-  async checkRisk(order: TradeOrder): Promise<{ approved: boolean; reason?: string }> {
+  async checkRisk(order: TradeOrder, context: RiskContext): Promise<{ approved: boolean; reason?: string }> {
     console.log(`[RISK-ENGINE] Pre-trade check for ${order.instrumentId} (${order.quantity} units)`);
 
     // --- NEW: Global Kill Switch Check ---
@@ -651,17 +636,16 @@ class RiskEngineBridge {
     }
     
     // Preparation for C++ Risk Check
-    const notional = (order.price || 0) * order.quantity;
-    const volatility = Number(process.env.ESTIMATED_PORTFOLIO_VOLATILITY || 50000); // Proxy for equity/vol
-    const drawdown = Number(process.env.CURRENT_PORTFOLIO_DRAWDOWN || 0.0);
-    const maxDrawdown = Number(process.env.MAX_ALLOWED_DRAWDOWN || 0.20);
+    const notional = context.referencePrice * order.quantity;
 
     const riskCheckArgs = [
       'risk', 'check',
       '--notional', notional.toString(),
-      '--volatility', volatility.toString(),
-      '--drawdown', drawdown.toString(),
-      '--max-drawdown', maxDrawdown.toString()
+      '--equity', context.portfolioEquity.toString(),
+      // Keep the legacy alias until previously built native binaries have aged out.
+      '--volatility', context.portfolioEquity.toString(),
+      '--drawdown', context.currentDrawdown.toString(),
+      '--max-drawdown', context.maxDrawdown.toString()
     ];
 
     console.log(`[RISK-ENGINE-BRIDGE] Invoking: ${binary} ${riskCheckArgs.join(' ')}`);
@@ -715,8 +699,16 @@ class ExecutionGateway {
       return false;
     }
 
+    let riskContext: RiskContext;
+    try {
+      riskContext = await buildRiskContext(order, this.adapter, this.dryRun);
+    } catch (error: any) {
+      console.error(`[RISK] Rejection: ${error.message}`);
+      return false;
+    }
+
     // Advanced risk engine validation (C++ Bridge)
-    const riskResult = await this.riskEngine.checkRisk(order);
+    const riskResult = await this.riskEngine.checkRisk(order, riskContext);
     if (!riskResult.approved) {
       console.error(`[RISK] Rejection: ${riskResult.reason}`);
       return false;
@@ -1090,24 +1082,20 @@ class PolymarketAdapter implements BrokerAdapter {
     this.lastTradePagination = tradePagination;
     // truncation is noted in trade_pagination; no console noise needed
     const trades = allTrades;
-    const positions = aggregatePolymarketFilledPositions(trades);
+    const positions: Position[] = aggregatePolymarketFilledPositions(trades);
 
     if (positions.length === 0) return [];
+    if (tradePagination.truncated) {
+      return markPolymarketHistoryIncomplete(positions, 'trade_history_truncated');
+    }
 
-    // Batch-fetch market questions from Gamma API for all unique token IDs.
-    // Two passes: (1) default (active markets) and (2) active=false (resolved/closed markets).
-    // Gamma API excludes resolved markets by default, so a second pass is required to name them.
+    // Fill history cannot distinguish an active holding from an ended market.
+    // Resolve lifecycle first so unknown and ended rows never inherit fake value.
     const uniqueTokenIds = [...new Set(positions.map((p) => p.assetId).filter(Boolean))];
-    const tokenToQuestion: Record<string, string> = {};
+    const tokenMetadata = new Map<string, any>();
     if (uniqueTokenIds.length > 0) {
       const axios = require('axios') as any;
       const gammaHeaders = { accept: 'application/json' };
-      const parseMarketQuestion = (m: any) => {
-        const tokenIds: string[] = (() => {
-          try { return JSON.parse(m.clobTokenIds ?? m.clob_token_ids ?? '[]'); } catch { return []; }
-        })();
-        tokenIds.forEach((tid) => { if (tid && !tokenToQuestion[tid]) tokenToQuestion[tid] = m.question ?? ''; });
-      };
       const buildParams = (extra?: Record<string, string>) => {
         const p = new URLSearchParams();
         uniqueTokenIds.forEach((id) => p.append('clob_token_ids', id as string));
@@ -1119,10 +1107,10 @@ class PolymarketAdapter implements BrokerAdapter {
       try {
         const resp = await retryTransient(() => axios.get(`https://gamma-api.polymarket.com/markets?${buildParams().toString()}`, { timeout: 8000, headers: gammaHeaders }));
         const markets: any[] = Array.isArray(resp.data) ? resp.data : (resp.data?.data ?? []);
-        markets.forEach(parseMarketQuestion);
+        mergeTokenMetadata(tokenMetadata, buildPolymarketTokenMetadata(markets));
       } catch { /* best-effort */ }
       // Pass 2 — resolved/closed markets (Gamma excludes these from the default response)
-      const stillMissing = uniqueTokenIds.filter((id) => !tokenToQuestion[id as string]);
+      const stillMissing = uniqueTokenIds.filter((id) => !tokenMetadata.has(String(id)));
       if (stillMissing.length > 0) {
         try {
           const p2 = new URLSearchParams();
@@ -1131,16 +1119,28 @@ class PolymarketAdapter implements BrokerAdapter {
           p2.set('active', 'false');
           const resp2 = await retryTransient(() => axios.get(`https://gamma-api.polymarket.com/markets?${p2.toString()}`, { timeout: 8000, headers: gammaHeaders }));
           const markets2: any[] = Array.isArray(resp2.data) ? resp2.data : (resp2.data?.data ?? []);
-          markets2.forEach(parseMarketQuestion);
+          mergeTokenMetadata(tokenMetadata, buildPolymarketTokenMetadata(markets2));
         } catch { /* best-effort */ }
       }
     }
 
-    // Suppress SDK's internal console.error for resolved-market 404s across all concurrent fetches
-    const origConsoleError = console.error;
-    console.error = () => {};
-    const clientForQuote = await createClobClient({ host: this.host });
-    const priced = await Promise.all(positions.map(async (position) => {
+    const lifecycle: Position[] = positions.map((position: Position) => projectPolymarketPosition(
+      position,
+      tokenMetadata.get(String(position.assetId || '')),
+      null,
+    ));
+    const { active } = partitionPolymarketPositions(lifecycle);
+    let clientForQuote: any = null;
+    if (active.length > 0) {
+      try {
+        clientForQuote = await createClobClient({ host: this.host });
+      } catch {
+        clientForQuote = null;
+      }
+    }
+
+    const projected: Position[] = await Promise.all(lifecycle.map(async (position: Position) => {
+      if (position.lifecycle !== 'active' || !clientForQuote) return position;
       const tokenId = position.assetId || position.symbol;
       let currentPrice = 0;
       try {
@@ -1149,22 +1149,14 @@ class PolymarketAdapter implements BrokerAdapter {
       } catch {
         currentPrice = 0;
       }
-      const marketValue = currentPrice > 0 ? currentPrice * position.quantity : position.marketValue;
-      const unrealizedPl = currentPrice > 0 ? (currentPrice - position.averagePrice) * position.quantity : 0;
-      const question = position.assetId ? tokenToQuestion[position.assetId] : undefined;
-      const label = question
-        ? `${question.slice(0, 38)}… (${position.symbol})`
-        : position.symbol;
-      return {
-        ...position,
-        symbol: label,
-        marketValue,
-        unrealizedPl,
-      };
+      return projectPolymarketPosition(
+        position,
+        tokenMetadata.get(String(position.assetId || '')),
+        currentPrice,
+      );
     }));
-    console.error = origConsoleError;
 
-    return priced.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    return projected.sort((a, b) => a.symbol.localeCompare(b.symbol));
   }
 
   async getQuote(symbol: string): Promise<number> {
@@ -1851,6 +1843,9 @@ async function _polymarketOrderCore(
 ): Promise<any> {
   if (!tokenId) return { ok: false, error: 'Missing token id' };
   if (!Number.isFinite(quantity) || quantity <= 0) return { ok: false, error: 'Quantity must be a positive number' };
+  if (!options.preflightOnly && (!Number.isFinite(price) || Number(price) <= 0 || Number(price) >= 1)) {
+    return { ok: false, error: 'Live Polymarket orders require an explicit price between 0 and 1' };
+  }
 
   const adapter = new PolymarketAdapter();
   const identity = adapter.getAccountIdentity();
@@ -1906,6 +1901,10 @@ async function _polymarketOrderCore(
     }
   } else {
     try {
+      const gateway = new ExecutionGateway({ dryRun: false, adapter });
+      if (!(await gateway.validateOrder(orderInput))) {
+        return { ...errorBase, error: 'Order rejected by pre-trade risk controls' };
+      }
       const result = await adapter.placeOrder(orderInput);
       return {
         ok: true,
@@ -1927,6 +1926,37 @@ async function _polymarketOrderCore(
 
 async function submitPolymarketOrder(tokenId: string, quantity: number, price?: number, tickSizeOverride?: string, side: 'buy' | 'sell' = 'buy'): Promise<any> {
   return _polymarketOrderCore(tokenId, quantity, price, tickSizeOverride, side, { preflightOnly: false });
+}
+
+function buildPolymarketBotExecutionOptions(): BotExecutionOptions {
+  const adapter = new PolymarketAdapter();
+  const gateway = new ExecutionGateway({ dryRun: false, adapter });
+
+  return {
+    authorizeOrder: async (intent: BotOrderIntent) => {
+      if (!Number.isFinite(intent.price) || intent.price <= 0 || intent.price >= 1) {
+        return { approved: false, reason: 'Prediction-market prices must be between 0 and 1' };
+      }
+      if (!Number.isFinite(intent.quantity) || intent.quantity <= 0) {
+        return { approved: false, reason: 'Bot order quantity must be positive' };
+      }
+
+      const order: TradeOrder = {
+        instrumentId: intent.instrumentId,
+        side: intent.side === 'SELL' ? OrderSide.SELL : OrderSide.BUY,
+        quantity: intent.quantity,
+        price: intent.price,
+        type: 'limit',
+        status: OrderStatus.PROPOSED,
+        timestamp: new Date(),
+      };
+      const approved = await gateway.validateOrder(order);
+      return {
+        approved,
+        reason: approved ? undefined : 'Order rejected by pre-trade risk controls',
+      };
+    },
+  };
 }
 
 async function preflightPolymarketOrder(tokenId: string, quantity: number, price?: number, tickSizeOverride?: string, side: 'buy' | 'sell' = 'buy'): Promise<any> {
@@ -2501,6 +2531,16 @@ export async function main() {
       const price = args[4] !== undefined ? Number(args[4]) : undefined;
       const tickSizeOverride = parseOptionValue(args.slice(2), '--tick-size');
       const preflightOnly = args.includes('--preflight');
+      if (!preflightOnly && (!args.includes('--live') || process.env.SOVEREIGN_EXECUTION_AUTHORIZED !== 'true')) {
+        const blocked = {
+          ok: false,
+          error: 'Live Polymarket submission requires --live and CLI authorization',
+        };
+        if (useJson) console.log(JSON.stringify(blocked));
+        else console.error(`${ansi.red}${blocked.error}${ansi.reset}`);
+        process.exitCode = 1;
+        return;
+      }
       const placed = preflightOnly
         ? await preflightPolymarketOrder(String(tokenId || ''), quantity, price, tickSizeOverride, sub)
         : await submitPolymarketOrder(String(tokenId || ''), quantity, price, tickSizeOverride, sub);
@@ -2528,9 +2568,24 @@ export async function main() {
     }
   } else if (command === 'bot') {
     const sub = (args[1] || 'status').toLowerCase();
+    const submitsOrder = sub === 'cycle' || sub === 'run' || sub === 'sell';
+    const botLive = process.env.LIVE_TRADING === 'true' || args.includes('--live');
+    if (submitsOrder && botLive && (!args.includes('--live') || process.env.SOVEREIGN_EXECUTION_AUTHORIZED !== 'true')) {
+      const blocked = {
+        ok: false,
+        error: 'Live Polymarket bot execution requires --live and CLI authorization',
+      };
+      if (useJson) console.log(JSON.stringify(blocked));
+      else console.error(`${ansi.red}${blocked.error}${ansi.reset}`);
+      process.exitCode = 1;
+      return;
+    }
+    const botExecutionOptions = submitsOrder && botLive
+      ? buildPolymarketBotExecutionOptions()
+      : {};
 
     if (sub === 'cycle') {
-      const result = await runCycle(args.slice(1));
+      const result = await runCycle(args.slice(1), botExecutionOptions);
       if (useJson) {
         console.log(JSON.stringify(result));
       } else {
@@ -2592,7 +2647,7 @@ export async function main() {
       }
 
     } else if (sub === 'run') {
-      await runBotLoop(args.slice(1));
+      await runBotLoop(args.slice(1), botExecutionOptions);
 
     } else if (sub === 'sell') {
       const idx = args.indexOf('--position-id');
@@ -2601,7 +2656,7 @@ export async function main() {
         console.error(`${ansi.red}--position-id required${ansi.reset}`);
         process.exit(1);
       }
-      const result = await runForceSell(posId, args.slice(1));
+      const result = await runForceSell(posId, args.slice(1), botExecutionOptions);
       if (useJson) {
         console.log(JSON.stringify(result));
       } else {
