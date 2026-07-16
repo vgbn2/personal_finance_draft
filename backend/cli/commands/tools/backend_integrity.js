@@ -34,7 +34,7 @@ async function runBackendIntegrity(args = []) {
   // Coverage probe (header + head/tail reads) instead of readTsIndex (full bin load):
   // integrity only needs bar count + first/last timestamp per (symbol, tf), so a deep
   // 1m bin (~525k bars) no longer has to be materialized into objects just to be counted.
-  const { readCoverage, isGrainSuspect } = require('../../../../shared/lib/market/coverage.js');
+  const { readCoverage, assessGrainIntegrity, grainCadencePolicy } = require('../../../../shared/lib/market/coverage.js');
   const { loadMarketConfig } = require('../../../../shared/lib/runtime/config_loader.js');
   const TS_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
   const CONFIG_PATH = path.join(utils.REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
@@ -128,10 +128,27 @@ async function runBackendIntegrity(args = []) {
         };
         // Cheap grain-corruption tripwire (head/tail data already in cov): a coarse-data leak
         // into an intraday bin shows as a multi-year span with ~1 bar/day. Advisory only.
-        const grain = isGrainSuspect(tf, cov.count, firstTs, lastTs);
+        const grain = assessGrainIntegrity(TS_DIR, sym, tf, family, cov);
         if (grain.suspect) {
           tfData[tf].grain_suspect = true;
-          grainSuspects.push({ symbol: sym, family, timeframe: tf, bars: cov.count, bars_per_day: grain.barsPerDay, span_days: grain.spanDays });
+          tfData[tf].grain_status = grain.status;
+          tfData[tf].grain_blocking = grain.blocking;
+          grainSuspects.push({
+            symbol: sym,
+            family,
+            timeframe: tf,
+            provider: cov.provider,
+            derived_from: cov.derivedFrom,
+            bars: cov.count,
+            from: new Date(firstTs).toISOString(),
+            to: new Date(lastTs).toISOString(),
+            bars_per_day: grain.barsPerDay,
+            span_days: grain.spanDays,
+            status: grain.status,
+            blocking: grain.blocking,
+            reason: grain.reason,
+            recent_cadence: grain.sample || null,
+          });
         }
       }
       const symInfo = { symbol: sym, family, timeframes: tfData };
@@ -201,6 +218,8 @@ async function runBackendIntegrity(args = []) {
     const totalConfig = Object.values(familyReport).reduce((s, r) => s + r.config_count, 0);
     const totalMissing = Object.values(familyReport).reduce((s, r) => s + r.missing.length, 0);
     const totalStale = Object.values(familyReport).reduce((s, r) => s + r.stale.length, 0);
+    const unexplainedGrain = grainSuspects.filter((entry) => entry.blocking);
+    const plausibleGrain = grainSuspects.filter((entry) => !entry.blocking);
 
     console.log(`\n[DATA AVAILABILITY REPORT] ${new Date().toISOString()}`);
     console.log(`Coverage: ${totalCached}/${totalConfig} cached | missing: ${totalMissing} | stale: ${totalStale}`);
@@ -209,9 +228,12 @@ async function runBackendIntegrity(args = []) {
       console.log(`Policy: stale exceptions = ${Array.from(integrityExceptions).join(', ')}`);
     }
     if (grainSuspects.length > 0) {
-      console.log(`\x1b[33mGrain: ${grainSuspects.length} suspect intraday bin(s) — coarse data may have leaked into an intraday timeframe:\x1b[0m`);
+      console.log(`\x1b[33mGrain: ${unexplainedGrain.length} unexplained, ${plausibleGrain.length} cadence-plausible across ${grainSuspects.length} density tripwire hit(s):\x1b[0m`);
       for (const g of grainSuspects.slice(0, 20)) {
-        console.log(`  ${g.symbol} ${g.timeframe}: ${g.bars} bars over ${g.span_days}d (${g.bars_per_day}/day) — re-derive from the clean base`);
+        const cadence = g.recent_cadence
+          ? `${g.recent_cadence.bars_per_active_day}/active-day, median gap ${g.recent_cadence.median_within_day_gap_minutes}m`
+          : 'no recent cadence sample';
+        console.log(`  ${g.blocking ? 'BLOCK' : 'OK   '} ${g.symbol} ${g.timeframe}: ${g.status} (${cadence}; ${g.provider || 'unknown'})`);
       }
     }
     console.log(line);
@@ -263,26 +285,36 @@ async function runBackendIntegrity(args = []) {
     if (totalStale > 0) {
       console.log('Next step: refresh stale symbols or re-run ingestion for the affected timeframes.');
     }
+    if (unexplainedGrain.length > 0) {
+      console.log('Next step: keep unexplained grain bins out of scoring until a source-backed rebuild preserves or improves history.');
+    }
     console.log('');
-    return { ok: totalMissing === 0, type: 'data_availability' };
+    return { ok: totalMissing === 0 && totalStale === 0 && unexplainedGrain.length === 0, type: 'data_availability' };
   }
 
   // JSON mode: return structured data
+  const unexplainedGrain = grainSuspects.filter((entry) => entry.blocking);
+  const plausibleGrain = grainSuspects.filter((entry) => !entry.blocking);
   return {
-    ok: Object.values(familyReport).every(r => r.missing.length === 0 && r.stale.length === 0),
+    ok: Object.values(familyReport).every(r => r.missing.length === 0 && r.stale.length === 0)
+      && unexplainedGrain.length === 0,
     type: 'data_availability',
     policy: {
       required_timeframes: requiredTimeframes,
       integrity_exceptions: Array.from(integrityExceptions),
+      grain_cadence: grainCadencePolicy(),
     },
     families: familyReport,
     grain_suspects: grainSuspects,
+    unexplained_grain_suspects: unexplainedGrain,
     summary: {
       total_config: Object.values(familyReport).reduce((s, r) => s + r.config_count, 0),
       total_cached: Object.values(familyReport).reduce((s, r) => s + r.cached.length, 0),
       total_missing: Object.values(familyReport).reduce((s, r) => s + r.missing.length, 0),
       total_stale: Object.values(familyReport).reduce((s, r) => s + r.stale.length, 0),
       total_grain_suspect: grainSuspects.length,
+      total_grain_cadence_plausible: plausibleGrain.length,
+      total_grain_unexplained: unexplainedGrain.length,
       total_exceptions: Object.values(familyReport).reduce((s, r) => s + r.exceptions.length, 0),
       total_unreachable: Object.values(familyReport)
         .reduce((s, r) => s + r.stale.filter(e => e.provider_unreachable).length, 0),

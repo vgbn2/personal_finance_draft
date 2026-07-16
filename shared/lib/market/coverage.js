@@ -26,6 +26,11 @@ const DEAD_SYMBOL_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 // observed legit per-TF p05 density (5m≥24, 15m≥11, 30m≥4.6, 1h≥3.4, 4h≥1.35 bars/day).
 const GRAIN_MIN_SPAN_MS = 730 * 24 * 60 * 60 * 1000; // only judge bins claiming > 2 years of history
 const GRAIN_DENSITY_FLOOR = { '5m': 10, '15m': 5, '30m': 3, '1h': 2, '4h': 1.5 };
+const GRAIN_SAMPLE_SIZE = 512;
+const GRAIN_SESSION_FAMILIES = new Set(['equities', 'indices', 'commodities']);
+const GRAIN_SESSION_ACTIVE_DAY_FLOOR = { '5m': 10, '15m': 5, '30m': 3, '1h': 2, '4h': 1.5 };
+const GRAIN_TIMEFRAME_MINUTES = { '5m': 5, '15m': 15, '30m': 30, '1h': 60, '4h': 240 };
+const GRAIN_MAX_GAP_MULTIPLIER = 2;
 
 /**
  * isGrainSuspect(timeframe, count, firstBarMs, lastBarMs) -- cheap mixed-grain detector.
@@ -43,6 +48,92 @@ function isGrainSuspect(timeframe, count, firstBarMs, lastBarMs) {
   const barsPerDay = spanDays > 0 ? count / spanDays : count;
   const suspect = spanMs > GRAIN_MIN_SPAN_MS && barsPerDay < floor;
   return { suspect, barsPerDay: +barsPerDay.toFixed(2), spanDays: Math.round(spanDays), floor };
+}
+
+function median(values) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor((sorted.length - 1) / 2)];
+}
+
+function classifyRecentGrainCadence(timeframe, family, timestamps) {
+  const floor = GRAIN_SESSION_ACTIVE_DAY_FLOOR[timeframe] ?? null;
+  const timeframeMinutes = GRAIN_TIMEFRAME_MINUTES[timeframe] ?? null;
+  const policy = {
+    sample_size: GRAIN_SAMPLE_SIZE,
+    min_bars_per_active_day: floor,
+    max_median_within_day_gap_minutes: timeframeMinutes === null
+      ? null
+      : timeframeMinutes * GRAIN_MAX_GAP_MULTIPLIER,
+  };
+
+  if (!GRAIN_SESSION_FAMILIES.has(family)) {
+    return {
+      status: 'unexplained',
+      blocking: true,
+      reason: 'continuous_market_density_below_floor',
+      policy,
+    };
+  }
+
+  const finite = [...new Set((timestamps || []).filter(Number.isFinite))].sort((a, b) => a - b);
+  const byDay = new Map();
+  for (const timestamp of finite) {
+    const day = new Date(timestamp).toISOString().slice(0, 10);
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(timestamp);
+  }
+
+  const daySamples = [...byDay.values()];
+  const completeDays = daySamples.length > 2 ? daySamples.slice(1, -1) : daySamples;
+  const dailyCounts = completeDays.map((day) => day.length);
+  const withinDayGaps = [];
+  for (const day of completeDays) {
+    for (let index = 1; index < day.length; index += 1) {
+      withinDayGaps.push((day[index] - day[index - 1]) / 60000);
+    }
+  }
+
+  const sampledBars = dailyCounts.reduce((sum, count) => sum + count, 0);
+  const barsPerActiveDay = completeDays.length > 0 ? sampledBars / completeDays.length : null;
+  const medianWithinDayGapMinutes = median(withinDayGaps);
+  const sample = {
+    bars: finite.length,
+    active_days: daySamples.length,
+    complete_active_days: completeDays.length,
+    bars_per_active_day: barsPerActiveDay === null ? null : +barsPerActiveDay.toFixed(2),
+    median_bars_per_active_day: median(dailyCounts),
+    median_within_day_gap_minutes: medianWithinDayGapMinutes,
+  };
+
+  if (completeDays.length < 5 || medianWithinDayGapMinutes === null || floor === null) {
+    return {
+      status: 'unexplained',
+      blocking: true,
+      reason: 'insufficient_recent_cadence_sample',
+      policy,
+      sample,
+    };
+  }
+
+  const densityMatches = barsPerActiveDay >= floor;
+  const gapMatches = medianWithinDayGapMinutes <= policy.max_median_within_day_gap_minutes;
+  const status = densityMatches && gapMatches ? 'cadence_plausible' : 'unexplained';
+  const reason = status === 'cadence_plausible'
+    ? 'recent_session_cadence_matches_timeframe'
+    : !densityMatches && !gapMatches
+      ? 'recent_density_and_gap_mismatch'
+      : !densityMatches
+        ? 'recent_active_day_density_below_floor'
+        : 'recent_within_day_gap_exceeds_timeframe';
+
+  return {
+    status,
+    blocking: status === 'unexplained',
+    reason,
+    policy,
+    sample,
+  };
 }
 
 // Must match the binary format in validation.js (TS_MAGIC / header / record size).
@@ -132,6 +223,73 @@ function readCoverage(tsDir, symbol, timeframe, now = Date.now()) {
   }
 }
 
+function readRecentTimestamps(tsDir, symbol, timeframe, limit = GRAIN_SAMPLE_SIZE) {
+  const { bin } = binPaths(tsDir, symbol, timeframe);
+  let fd;
+  try {
+    fd = fs.openSync(bin, 'r');
+    const header = Buffer.allocUnsafe(TS_HEADER_BYTES);
+    if (fs.readSync(fd, header, 0, TS_HEADER_BYTES, 0) < TS_HEADER_BYTES) return [];
+    if (header.toString('ascii', 0, 4) !== TS_MAGIC) return [];
+
+    const count = header.readUInt32LE(4);
+    const sampleCount = Math.min(count, Math.max(1, Math.min(4096, Math.floor(limit))));
+    if (sampleCount === 0) return [];
+
+    const startRecord = count - sampleCount;
+    const buffer = Buffer.allocUnsafe(sampleCount * TS_RECORD_BYTES);
+    const bytesRead = fs.readSync(
+      fd,
+      buffer,
+      0,
+      buffer.length,
+      TS_HEADER_BYTES + startRecord * TS_RECORD_BYTES,
+    );
+    const timestamps = [];
+    for (let offset = 0; offset + 8 <= bytesRead; offset += TS_RECORD_BYTES) {
+      const timestamp = buffer.readDoubleLE(offset);
+      if (Number.isFinite(timestamp)) timestamps.push(timestamp);
+    }
+    return timestamps;
+  } catch (_) {
+    return [];
+  } finally {
+    if (fd !== undefined) { try { fs.closeSync(fd); } catch (_) { /* ignore */ } }
+  }
+}
+
+function assessGrainIntegrity(tsDir, symbol, timeframe, family, coverage = null) {
+  const cov = coverage || readCoverage(tsDir, symbol, timeframe);
+  const raw = isGrainSuspect(timeframe, cov.count, cov.firstBarMs, cov.lastBarMs);
+  const coverageDetails = {
+    count: cov.count,
+    first_bar_at: Number.isFinite(cov.firstBarMs) ? new Date(cov.firstBarMs).toISOString() : null,
+    last_bar_at: Number.isFinite(cov.lastBarMs) ? new Date(cov.lastBarMs).toISOString() : null,
+    provider: cov.provider || null,
+    derived_from: cov.derivedFrom || null,
+  };
+  if (!raw.suspect) {
+    return { ...raw, ...coverageDetails, status: 'clear', blocking: false, reason: null };
+  }
+
+  const cadence = classifyRecentGrainCadence(
+    timeframe,
+    family,
+    readRecentTimestamps(tsDir, symbol, timeframe),
+  );
+  return { ...raw, ...coverageDetails, ...cadence };
+}
+
+function grainCadencePolicy() {
+  return {
+    initial_span_days: GRAIN_MIN_SPAN_MS / 86400000,
+    initial_calendar_density_floor: { ...GRAIN_DENSITY_FLOOR },
+    recent_sample_size: GRAIN_SAMPLE_SIZE,
+    session_active_day_floor: { ...GRAIN_SESSION_ACTIVE_DAY_FLOOR },
+    max_within_day_gap_multiplier: GRAIN_MAX_GAP_MULTIPLIER,
+  };
+}
+
 /**
  * isFresh(tsDir, symbol, timeframe, family[, now]) -- staleness gate.
  *
@@ -198,7 +356,11 @@ function summarizeUniverse(tsDir, jobs, now = Date.now()) {
 
 module.exports = {
   readCoverage,
+  readRecentTimestamps,
   isFresh,
   summarizeUniverse,
   isGrainSuspect,
+  classifyRecentGrainCadence,
+  assessGrainIntegrity,
+  grainCadencePolicy,
 };
