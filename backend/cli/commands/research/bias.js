@@ -8,6 +8,7 @@ const {
 } = require('../../../../shared/lib/market/validation.js');
 const { fitHmm, permutationEntropy } = require('../../../../shared/lib/ml/hmm.js');
 const { parseTimeframeMs } = require('../../../scripts/data_ops/ingest_market_data/constants.js');
+const { assessGrainIntegrity } = require('../../../../shared/lib/market/coverage.js');
 
 const TF_CONFIG = [
   { tf: '1m',  label: 'scalp',       horizon: '1–5 min',    lookbackDays: 2,    expiresBars: 3  },
@@ -149,11 +150,29 @@ function assessTimeframeFreshness(bars, { family, tf, expiresBars, now = Date.no
 function analyzeTimeframe({ tf, label, horizon, lookbackDays, expiresBars }, symbol, options = {}) {
   const now = options.now ?? Date.now();
   const tsDir = options.tsDir || STORAGE_TS_DIR;
+  if (options.family) {
+    const grainIntegrity = assessGrainIntegrity(tsDir, symbol, tf, options.family);
+    if (grainIntegrity.blocking) {
+      return {
+        tf, label, horizon, expiresBars, error: 'unexplained grain suspect', bars: grainIntegrity.count,
+        family: options.family, grain_integrity: grainIntegrity,
+      };
+    }
+  }
   const sinceMs = now - lookbackDays * 24 * 60 * 60 * 1000;
   const bars = readTsIndexSince(tsDir, symbol, tf, sinceMs) || [];
   if (bars.length < 20) return { tf, label, horizon, expiresBars, error: 'insufficient data', bars: bars.length };
 
   const family = options.family || bars[bars.length - 1].family || 'unknown';
+  if (!options.family) {
+    const grainIntegrity = assessGrainIntegrity(tsDir, symbol, tf, family);
+    if (grainIntegrity.blocking) {
+      return {
+        tf, label, horizon, expiresBars, error: 'unexplained grain suspect', bars: bars.length,
+        family, grain_integrity: grainIntegrity,
+      };
+    }
+  }
   const freshness = assessTimeframeFreshness(bars, { family, tf, expiresBars, now });
   if (!freshness.fresh) {
     return {
