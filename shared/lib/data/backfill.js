@@ -68,15 +68,37 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
   const providerMaxBars = providerMaxBarsFor(family);
   const maxDaysPerChunk = Math.max(1, Math.floor(providerMaxBars / barsPerDay));
   const requestedEndTs = forcedEndTs || Date.now();
-  let currentEndTs = requestedEndTs;
   const targetStartTs = requestedEndTs - (days * DAY_MS);
+
+  // Repeated backfills only need a one-day overlap with existing tail coverage.
+  // Internal holes remain a separate repair concern because coverage is boundary-only.
+  let effectiveStartTs = targetStartTs;
+  let gapAwareMeta = null;
+  if (options.tsDir) {
+    try {
+      const { readCoverage } = require('../market/coverage.js');
+      const coverage = readCoverage(options.tsDir, symbol, timeframe);
+      if (coverage.exists && coverage.lastBarMs != null && coverage.lastBarMs > targetStartTs) {
+        effectiveStartTs = Math.min(requestedEndTs, Math.max(targetStartTs, coverage.lastBarMs - DAY_MS));
+        gapAwareMeta = {
+          gap_aware: true,
+          existing_first_bar_ms: coverage.firstBarMs,
+          existing_last_bar_ms: coverage.lastBarMs,
+          narrowed_from_start_ts: targetStartTs,
+          narrowed_to_start_ts: effectiveStartTs,
+        };
+      }
+    } catch (_) { /* Fall back to the full requested window. */ }
+  }
+
+  let currentEndTs = requestedEndTs;
   const allCandles = [];
   const chunks = [];
   const chunkDelayMs = Math.max(0, Number(options.chunkDelayMs || 0));
 
-  while (currentEndTs > targetStartTs) {
+  while (currentEndTs > effectiveStartTs) {
     let currentStartTs = currentEndTs - (maxDaysPerChunk * DAY_MS);
-    if (currentStartTs < targetStartTs) currentStartTs = targetStartTs;
+    if (currentStartTs < effectiveStartTs) currentStartTs = effectiveStartTs;
 
     try {
       let chunk;
@@ -97,7 +119,7 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
       for (let i = 0; i < chunk.length; i++) {
         allCandles.push(chunk[i]);
       }
-      if (currentStartTs <= targetStartTs) {
+      if (currentStartTs <= effectiveStartTs) {
         break;
       }
       const nextEndTs = chunk[0].openTime - 1;
@@ -105,7 +127,7 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
         break;
       }
       currentEndTs = nextEndTs;
-      if (chunkDelayMs > 0 && currentEndTs > targetStartTs) {
+      if (chunkDelayMs > 0 && currentEndTs > effectiveStartTs) {
         await sleep(chunkDelayMs);
       }
     } catch (error) {
@@ -133,6 +155,7 @@ async function fetchPaginated(symbol, timeframe, days, family, fetchFn, forcedEn
     max_days_per_chunk: maxDaysPerChunk,
     chunks,
     fetched_bars: sorted.length,
+    gap_aware: gapAwareMeta,
   });
 }
 

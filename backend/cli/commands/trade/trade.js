@@ -18,6 +18,7 @@ const {
   currentPhaseLabel,
   hasFlag,
   optionValue,
+  stripFlagValue,
   numericOption,
   printPayload,
 } = utils;
@@ -226,10 +227,29 @@ async function promptTradeDeskArgs() {
   }
 }
 
+function buildTradeArgsFromActionFlag(args) {
+  if (!hasFlag(args, '--action')) return args;
+  const action = optionValue(args, '--action', 'balance');
+  let rest = args;
+  for (const flag of ['--action', '--symbol', '--qty', '--order-type', '--price']) {
+    rest = stripFlagValue(rest, flag);
+  }
+  if (action !== 'buy' && action !== 'sell') return [action, ...rest];
+
+  const symbol = String(optionValue(args, '--symbol', '') || '').toUpperCase();
+  const quantity = optionValue(args, '--qty', '1');
+  const orderType = optionValue(args, '--order-type', 'market');
+  const price = optionValue(args, '--price', '');
+  const positional = [action, symbol, quantity, orderType];
+  if (orderType === 'limit' && price) positional.push(price);
+  return [...positional, ...rest];
+}
+
 /**
  * Handles the 'trade' command.
  */
 async function commandTrade(args) {
+  args = buildTradeArgsFromActionFlag(args);
   const subcommand = args[0];
 
   if (subcommand === 'favorites') {
@@ -323,7 +343,8 @@ async function commandTrade(args) {
     }
   }
 
-  const launch = buildTradeGatewayLaunch(args);
+  // The PIN is consumed by the local gate and must not be exposed in child argv.
+  const launch = buildTradeGatewayLaunch(stripFlagValue(args, '--pin'));
   const result = spawnSync(launch.command, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
@@ -428,6 +449,7 @@ module.exports = {
   buildPolymarketCategoryChoices,
   buildPolymarketMarketChoices,
   buildTokenChoicePrompt,
+  buildTradeArgsFromActionFlag,
   buildTradeGatewayLaunch,
   commandAddPlatform,
   commandAgent,

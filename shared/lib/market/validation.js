@@ -583,8 +583,23 @@ function mergeSnapshots(base, update) {
   return merged;
 }
 
+function renameWithRetry(src, dest, retries = 5, delayMs = 50) {
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    try {
+      fs.renameSync(src, dest);
+      return;
+    } catch (error) {
+      if (attempt === retries - 1) throw error;
+      if (error.code === 'ENOENT') {
+        try { fs.mkdirSync(path.dirname(dest), { recursive: true }); } catch (_) { /* retry below */ }
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs);
+    }
+  }
+}
+
 function writeJson(outputPath, payload) {
-  const tempPath = `${outputPath}.tmp`;
+  const tempPath = atomicTempPath(outputPath);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
   // Only plain objects get the streaming "sources" fast path below — arrays (e.g.
@@ -592,7 +607,7 @@ function writeJson(outputPath, payload) {
   // JSON.stringify so their shape on disk is unchanged.
   if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
     fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
-    fs.renameSync(tempPath, outputPath);
+    renameWithRetry(tempPath, outputPath);
     return;
   }
 
@@ -621,7 +636,7 @@ function writeJson(outputPath, payload) {
 
   fs.writeSync(fd, '}\n');
   fs.closeSync(fd);
-  fs.renameSync(tempPath, outputPath);
+  renameWithRetry(tempPath, outputPath);
 }
 
 /**
@@ -679,6 +694,72 @@ function atomicTempPath(targetPath) {
   return `${targetPath}.${suffix}.tmp`;
 }
 
+function encodeTsRecords(records) {
+  const buffer = Buffer.allocUnsafe(records.length * TS_RECORD_BYTES);
+  for (let index = 0; index < records.length; index += 1) {
+    const { ms, r } = records[index];
+    const offset = index * TS_RECORD_BYTES;
+    buffer.writeDoubleLE(ms, offset);
+    buffer.writeDoubleLE(Number(r.open) || 0, offset + 8);
+    buffer.writeDoubleLE(Number(r.high) || 0, offset + 16);
+    buffer.writeDoubleLE(Number(r.low) || 0, offset + 24);
+    buffer.writeDoubleLE(Number(r.close) || 0, offset + 32);
+    buffer.writeDoubleLE(Number(r.volume) || 0, offset + 40);
+  }
+  return buffer;
+}
+
+function tryAppendBin(bin, metaPath, meta, incoming) {
+  if (incoming.length === 0 || !fs.existsSync(bin) || !fs.existsSync(metaPath)) return false;
+
+  try {
+    JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+  } catch (_) {
+    return false;
+  }
+
+  let fd;
+  try {
+    fd = fs.openSync(bin, 'r+');
+    const header = Buffer.allocUnsafe(TS_HEADER_BYTES);
+    if (fs.readSync(fd, header, 0, header.length, 0) !== header.length) return false;
+    if (header.toString('ascii', 0, 4) !== TS_MAGIC) return false;
+
+    const existingCount = header.readUInt32LE(4);
+    const expectedBytes = TS_HEADER_BYTES + existingCount * TS_RECORD_BYTES;
+    if (fs.fstatSync(fd).size < expectedBytes) return false;
+
+    if (existingCount > 0) {
+      const lastTimestamp = Buffer.allocUnsafe(8);
+      const lastOffset = TS_HEADER_BYTES + (existingCount - 1) * TS_RECORD_BYTES;
+      if (fs.readSync(fd, lastTimestamp, 0, 8, lastOffset) !== 8) return false;
+      if (incoming[0].ms <= lastTimestamp.readDoubleLE(0)) return false;
+    }
+
+    const encoded = encodeTsRecords(incoming);
+    fs.writeSync(fd, encoded, 0, encoded.length, expectedBytes);
+    fs.ftruncateSync(fd, expectedBytes + encoded.length);
+    fs.fsyncSync(fd);
+
+    const countBuffer = Buffer.allocUnsafe(4);
+    const count = existingCount + incoming.length;
+    countBuffer.writeUInt32LE(count, 0);
+    fs.writeSync(fd, countBuffer, 0, countBuffer.length, 4);
+    fs.fsyncSync(fd);
+
+    const tempMeta = atomicTempPath(metaPath);
+    fs.writeFileSync(tempMeta, JSON.stringify({ ...meta, count }), 'utf8');
+    renameWithRetry(tempMeta, metaPath);
+    return true;
+  } catch (_) {
+    return false;
+  } finally {
+    if (fd !== undefined) {
+      try { fs.closeSync(fd); } catch (_) { /* Best effort after a failed append. */ }
+    }
+  }
+}
+
 /**
  * Writes a per-symbol binary time-series index from a snapshot.
  * tsDir should be e.g. storage/data/ts/
@@ -694,7 +775,7 @@ const SUB_DAILY_PRESERVED_TIMEFRAMES = new Set(['1m', '5m', '15m', '30m']);
 
 /**
  * mergeWriteBin(tsDir, meta, incoming) -- merge `incoming` records into the existing
- * bin for (meta.symbol, meta.timeframe) and atomically rewrite it.
+ * bin for (meta.symbol, meta.timeframe). New suffixes append durably; overlaps rewrite.
  *
  * STREAMING / CONSTANT-HEAP: the existing bin is the deepest store and can hold
  * millions of rows (BTCUSDT 1m ≈ 3M). The old path called readTsIndex() to pull every
@@ -730,6 +811,8 @@ function mergeWriteBin(tsDir, meta, incoming) {
   }
 
   const { bin, meta: metaPath } = tsIndexPath(tsDir, meta.symbol, meta.timeframe);
+
+  if (tryAppendBin(bin, metaPath, meta, incDedup)) return;
 
   // Read the existing bin as a Buffer only (no object materialization).
   let existBuf = null;
@@ -795,9 +878,9 @@ function mergeWriteBin(tsDir, meta, incoming) {
   const tmpBin = atomicTempPath(bin);
   const tmpMeta = atomicTempPath(metaPath);
   fs.writeFileSync(tmpBin, finalBuf);
-  fs.renameSync(tmpBin, bin);
+  renameWithRetry(tmpBin, bin);
   fs.writeFileSync(tmpMeta, JSON.stringify({ ...meta, count }), 'utf8');
-  fs.renameSync(tmpMeta, metaPath);
+  renameWithRetry(tmpMeta, metaPath);
 }
 
 function writeTsIndex(tsDir, snapshot) {
@@ -957,6 +1040,7 @@ module.exports = {
   readTsIndex,
   readTsIndexSince,
   recordKey,
+  renameWithRetry,
   validateSnapshot,
   writeJson,
   writePartitionedSnapshot,

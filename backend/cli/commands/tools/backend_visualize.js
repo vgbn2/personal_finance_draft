@@ -1,7 +1,8 @@
 'use strict';
 const utils = require('../../lib/utils.js');
 const { optionValue, hasFlag, DEFAULT_HISTORY } = utils;
-const { readSnapshot } = require('../../../../shared/lib/market/validation.js');
+const { readSnapshot, readTsIndex } = require('../../../../shared/lib/market/validation.js');
+const { DEFAULT_TS_DIR } = require('../data/data_rollup.js');
 
 function sigmaPrediction(sigmas, bandwidth, currentPrice) {
   const absS = Math.abs(sigmas);
@@ -27,14 +28,19 @@ function sigmaPrediction(sigmas, bandwidth, currentPrice) {
 }
 
 function computeSigmaState(symbol, timeframe, windowSize) {
-  const snapshot = readSnapshot(DEFAULT_HISTORY);
-  if (!snapshot) return null;
-
-  const bars = (snapshot.sources || []).filter(s =>
-    s.symbol === symbol &&
-    (!s.timeframe || s.timeframe === timeframe) &&
-    typeof s.close === 'number' && isFinite(s.close)
-  ).sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
+  const tsBars = readTsIndex(DEFAULT_TS_DIR, symbol, timeframe);
+  let bars;
+  if (tsBars && tsBars.length > 0) {
+    bars = tsBars.filter(s => typeof s.close === 'number' && isFinite(s.close));
+  } else {
+    const snapshot = readSnapshot(DEFAULT_HISTORY);
+    if (!snapshot) return null;
+    bars = (snapshot.sources || []).filter(s =>
+      s.symbol === symbol &&
+      (!s.timeframe || s.timeframe === timeframe) &&
+      typeof s.close === 'number' && isFinite(s.close)
+    ).sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
+  }
 
   if (bars.length < windowSize) return null;
 
