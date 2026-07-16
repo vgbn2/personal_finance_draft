@@ -84,6 +84,57 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+export interface BotOrderIntent {
+  instrumentId: string;
+  price: number;
+  quantity: number;
+  side: 'BUY' | 'SELL';
+}
+
+export interface BotPreTradeDecision {
+  approved: boolean;
+  reason?: string;
+}
+
+export type BotPreTradeAuthorizer = (order: BotOrderIntent) => Promise<BotPreTradeDecision>;
+
+export interface BotExecutionOptions {
+  authorizeOrder?: BotPreTradeAuthorizer;
+}
+
+function liveBotAuthorizationError(args: string[]): string | null {
+  const live = process.env.LIVE_TRADING === 'true' || args.includes('--live');
+  if (!live) return null;
+  if (!args.includes('--live') || process.env.SOVEREIGN_EXECUTION_AUTHORIZED !== 'true') {
+    return 'Live Polymarket bot execution requires --live and CLI authorization';
+  }
+  return null;
+}
+
+export async function submitRiskApprovedFokOrder(
+  client: any,
+  intent: BotOrderIntent,
+  orderType: any,
+  authorizeOrder?: BotPreTradeAuthorizer,
+): Promise<any> {
+  if (!authorizeOrder) {
+    throw new Error('Bot pre-trade risk authorizer is unavailable');
+  }
+
+  const decision = await authorizeOrder(intent);
+  if (!decision.approved) {
+    throw new Error(`Bot pre-trade risk rejected: ${decision.reason || 'unspecified reason'}`);
+  }
+
+  const signed = await client.createOrder({
+    tokenID: intent.instrumentId,
+    price: intent.price,
+    size: intent.quantity,
+    side: intent.side,
+  });
+  return client.postOrder(signed, orderType);
+}
+
 function isFokCoolingDown(pos: Pick<BotPosition, 'lastFokFailTimestamp'>, cooldownMinutes: number): boolean {
   if (!pos.lastFokFailTimestamp) return false;
   const elapsed = (Date.now() - new Date(pos.lastFokFailTimestamp).getTime()) / 60000;
@@ -153,7 +204,10 @@ export async function runBotHealth(): Promise<HealthResult> {
 
 // ─── Core cycle ───────────────────────────────────────────────────────────────
 
-export async function runCycle(args: string[]): Promise<CycleResult & { skipped?: string[]; wouldBuy?: any[] }> {
+export async function runCycle(
+  args: string[],
+  options: BotExecutionOptions = {},
+): Promise<CycleResult & { skipped?: string[]; wouldBuy?: any[] }> {
   const cycleId   = `cycle_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
   const startedAt = new Date().toISOString();
   const live      = process.env.LIVE_TRADING === 'true' || args.includes('--live');
@@ -165,10 +219,42 @@ export async function runCycle(args: string[]): Promise<CycleResult & { skipped?
   let balanceBefore = 0;
   let balanceAfter: number | null = null;
 
+  const authorizationError = liveBotAuthorizationError(args);
+  if (authorizationError || (live && !options.authorizeOrder)) {
+    return {
+      cycleId,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      balanceBefore,
+      balanceAfter,
+      sellsExecuted,
+      buysFilled,
+      errors: [authorizationError || 'Bot pre-trade risk authorizer is unavailable'],
+      skipped,
+      wouldBuy,
+      dryRun: !live,
+    };
+  }
+
   // Check L2 credentials upfront — degrade gracefully instead of mid-cycle error
   const polySettings = resolvePolymarketClientSettings(process.env);
   const hasL2 = Boolean(polySettings.apiKey && polySettings.apiSecret && polySettings.apiPassphrase);
   if (!hasL2) {
+    if (live) {
+      return {
+        cycleId,
+        startedAt,
+        completedAt: new Date().toISOString(),
+        balanceBefore,
+        balanceAfter,
+        sellsExecuted,
+        buysFilled,
+        errors: ['Live Polymarket bot execution requires complete L2 credentials'],
+        skipped,
+        wouldBuy,
+        dryRun: false,
+      };
+    }
     skipped.push('balance check skipped — L2 credentials not set (run: polymarket derive-creds)');
   }
 
@@ -198,6 +284,21 @@ export async function runCycle(args: string[]): Promise<CycleResult & { skipped?
       } catch (e: any) {
         errors.push(`balance fetch failed: ${e.message}`);
       }
+    }
+    if (live && !client) {
+      return {
+        cycleId,
+        startedAt,
+        completedAt: new Date().toISOString(),
+        balanceBefore,
+        balanceAfter,
+        sellsExecuted,
+        buysFilled,
+        errors: errors.length ? errors : ['Live Polymarket bot client is unavailable'],
+        skipped,
+        wouldBuy,
+        dryRun: false,
+      };
     }
 
     // ── Phase 2: Fetch AI bets ────────────────────────────────────────────────
@@ -242,13 +343,12 @@ export async function runCycle(args: string[]): Promise<CycleResult & { skipped?
           if (live && client) {
             try {
               const { OrderType } = await import('@polymarket/clob-client-v2');
-              const signed = await client.createOrder({
-                tokenID: pos.tokenId,
+              const resp = await submitRiskApprovedFokOrder(client, {
+                instrumentId: pos.tokenId,
                 price:   fairPrice,
-                size:    pos.shares,
+                quantity: pos.shares,
                 side:    'SELL',
-              });
-              const resp = await client.postOrder(signed, OrderType.FOK);
+              }, OrderType.FOK, options.authorizeOrder);
               if (resp?.status === 'matched') {
                 sellsExecuted++;
                 await persistence.logOrder({ instrumentId: pos.tokenId, side: 'sell', quantity: pos.shares, price: fairPrice, type: 'market', status: 'filled', timestamp: new Date() }, 'polymarket', { slug: pos.slug, positionId: pos.positionId });
@@ -372,13 +472,12 @@ export async function runCycle(args: string[]): Promise<CycleResult & { skipped?
           if (live && client) {
             try {
               const { OrderType: OrderTypeBuy } = await import('@polymarket/clob-client-v2');
-              const signed = await client.createOrder({
-                tokenID: tokenId,
+              const resp = await submitRiskApprovedFokOrder(client, {
+                instrumentId: tokenId,
                 price,
-                size:    shares,
+                quantity: shares,
                 side:    'BUY',
-              });
-              const resp = await client.postOrder(signed, OrderTypeBuy.FOK);
+              }, OrderTypeBuy.FOK, options.authorizeOrder);
               if (resp?.status === 'matched') {
                 fillPrice = Number(resp.price ?? price);
                 filled    = true;
@@ -462,8 +561,18 @@ export async function runCycle(args: string[]): Promise<CycleResult & { skipped?
 
 // ─── Force-sell a specific position ──────────────────────────────────────────
 
-export async function runForceSell(positionId: string, args: string[]): Promise<{ ok: boolean; error?: string; pnl?: number }> {
+export async function runForceSell(
+  positionId: string,
+  args: string[],
+  options: BotExecutionOptions = {},
+): Promise<{ ok: boolean; error?: string; pnl?: number }> {
   const live  = process.env.LIVE_TRADING === 'true' || args.includes('--live');
+  const authorizationError = liveBotAuthorizationError(args);
+  if (authorizationError) return { ok: false, error: authorizationError };
+  if (live && !options.authorizeOrder) {
+    return { ok: false, error: 'Bot pre-trade risk authorizer is unavailable' };
+  }
+
   const state = await loadBotStateWithFallback();
   const pos   = state.positions.find(p => p.positionId === positionId);
   if (!pos) return { ok: false, error: `position ${positionId} not found` };
@@ -479,8 +588,12 @@ export async function runForceSell(positionId: string, args: string[]): Promise<
     const client = await createClobClient({ withCreds: true });
     const priceResp = await client.getPrice(pos.tokenId, 'BUY');
     const fairPrice = Number(priceResp?.price ?? priceResp ?? 0);
-    const signed    = await client.createOrder({ tokenID: pos.tokenId, price: fairPrice, size: pos.shares, side: 'SELL' });
-    const resp      = await client.postOrder(signed, OrderType.FOK);
+    const resp = await submitRiskApprovedFokOrder(client, {
+      instrumentId: pos.tokenId,
+      price: fairPrice,
+      quantity: pos.shares,
+      side: 'SELL',
+    }, OrderType.FOK, options.authorizeOrder);
 
     if (resp?.status !== 'matched') {
       // Defensively attempt cancel in case the FOK order rested (server should auto-cancel)
@@ -510,7 +623,14 @@ export async function runForceSell(positionId: string, args: string[]): Promise<
 
 // ─── Continuous loop (mirrors runAutomatedStrategies) ─────────────────────────
 
-export async function runBotLoop(args: string[]): Promise<void> {
+export async function runBotLoop(args: string[], options: BotExecutionOptions = {}): Promise<void> {
+  const live = process.env.LIVE_TRADING === 'true' || args.includes('--live');
+  const authorizationError = liveBotAuthorizationError(args);
+  if (authorizationError) throw new Error(authorizationError);
+  if (live && !options.authorizeOrder) {
+    throw new Error('Bot pre-trade risk authorizer is unavailable');
+  }
+
   const intervalMinutes = parseIntervalArg(args);
   const intervalMs      = intervalMinutes * 60 * 1000;
   let passes            = 0;
@@ -522,7 +642,7 @@ export async function runBotLoop(args: string[]): Promise<void> {
     passes++;
     console.log(`\n[BOT] === Pass ${passes} | ${new Date().toISOString()} ===`);
     try {
-      const result = await runCycle(args);
+      const result = await runCycle(args, options);
       console.log(`[BOT] Cycle complete — sold: ${result.sellsExecuted}, bought: ${result.buysFilled}, errors: ${result.errors.length}`);
       if (result.errors.length) result.errors.forEach(e => console.warn(`  [ERR] ${e}`));
     } catch (e: any) {
