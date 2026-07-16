@@ -3,9 +3,11 @@
 // ingest_market_data imports are lazy (inside each function) so that test stubs
 // applied via Module._load intercept are always picked up fresh per call.
 
+const path = require('node:path');
+const fs = require('node:fs');
 const { guardEquitySessionBars } = require('../../../../shared/lib/market/equity_session.js');
 
-const { readSnapshot, validateSnapshot } = require('../../../../shared/lib/market/validation.js');
+const { readSnapshot, validateSnapshot, readTsIndexSince } = require('../../../../shared/lib/market/validation.js');
 
 const { loadResearchConfig } = require('../../lib/research_config.js');
 
@@ -14,6 +16,26 @@ const utils = require('../../lib/utils.js');
 const { optionValue, hasFlag, numericOption } = utils;
 
 const { DEFAULT_SNAPSHOT } = utils;
+const { STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths.js');
+
+const MIN_BACKTEST_BARS = 50;
+
+function loadSourcesFromTsIndex(family, days = 400) {
+  if (!STORAGE_TS_DIR || !fs.existsSync(STORAGE_TS_DIR)) return [];
+  const sinceMs = Date.now() - days * 24 * 60 * 60 * 1000;
+  const sources = [];
+  let files;
+  try { files = fs.readdirSync(STORAGE_TS_DIR); } catch (_) { return []; }
+  for (const file of files) {
+    if (!file.endsWith('_1d.meta.json')) continue;
+    try {
+      const meta = JSON.parse(fs.readFileSync(path.join(STORAGE_TS_DIR, file), 'utf8'));
+      if (meta.family !== family) continue;
+      sources.push(...readTsIndexSince(STORAGE_TS_DIR, meta.symbol, '1d', sinceMs));
+    } catch (_) { /* Skip unreadable bins. */ }
+  }
+  return sources;
+}
 
 const researchConfig = loadResearchConfig();
 
@@ -40,6 +62,22 @@ function _historicalWindowFromArgs(args, fallbackDays) {
 function loadUsableSources(args, options = {}) {
   const input = optionValue(args, '--input', DEFAULT_SNAPSHOT);
   const family = options.family || null;
+
+  if (input === DEFAULT_SNAPSHOT && family) {
+    const tsBars = loadSourcesFromTsIndex(family);
+    if (tsBars.length >= MIN_BACKTEST_BARS) {
+      const tsSnapshot = { mode: 'ts_index', sources: tsBars, errors: [] };
+      const { report, usableSources } = validateSnapshot(tsSnapshot);
+      if (usableSources.length >= MIN_BACKTEST_BARS) {
+        return {
+          snapshot: { ...tsSnapshot, sources: usableSources },
+          quality: report,
+          loaded_family: family,
+        };
+      }
+    }
+  }
+
   const snapshot = readSnapshot(input, { family }) || readSnapshot(input);
   const { report, usableSources } = validateSnapshot(snapshot);
   return { snapshot: { ...snapshot, sources: usableSources }, quality: report, loaded_family: snapshot?.loaded_family || null };
