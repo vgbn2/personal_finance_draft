@@ -1,3 +1,52 @@
+## Session Memory - 2026-07-16 session 83 - session boot
+
+{
+  "work": "Booted the new session, loaded HANDOFF, SESSION_MEMORY, STATE, NEXT_SESSION_GOAL, and docs/README.",
+  "key_mechanisms": [
+    "Session-82 merge-recovery gate remains the active carryover.",
+    "graphify-out is absent, so no refresh was possible during boot."
+  ],
+  "remaining": [
+    "Run one reviewed merge-recovery batch from DEV_REVIEW session 82 before new evidence acquisition, analysis promotion work, TUI cleanup, or live trading."
+  ],
+  "dcs": 0.97
+}
+
+## Session Memory - 2026-07-16 session 83 - merge-recovery triage
+
+{
+  "work": "Ran blast-through triage in Fast Reading Mode against the active session-82 merge-recovery gate.",
+  "confirmed": [
+    "Direct Polymarket order authorization, explicit price, broker risk context, and native risk checks pass focused local tests.",
+    "LIVE_TRADING=true can make bot cycle and force-sell live without the --live-only CLI authorization gate; bot CLOB posts bypass ExecutionGateway native risk approval.",
+    "Archived HEAD still has four conflict-marked canonical shared modules and the root test runner is absent."
+  ],
+  "verified": [
+    "Polymarket preflight/auth 5/5; risk-context/backend-bridge 6/6; gateway TypeScript; current-tree eight-module load; git diff --check.",
+    "Clean HEAD archive four module loads fail with syntax errors; npm test exits MODULE_NOT_FOUND before discovery."
+  ],
+  "remaining": [
+    "Extend merge-recovery Batch 1 to fail closed for env-driven bot live mode and require equivalent native risk approval.",
+    "Complete Batch 2 and verify the committed archive plus restored canonical test runner."
+  ],
+  "dcs": 0.59
+}
+
+## Session Memory - 2026-07-15 session 82 - full deep blast-through after merge
+
+- Full / Hard audit at `49560981`; DCS `0.635 -> 0.590`; promotion and live execution blocked.
+- P0: merge removed Polymarket live authorization/PIN, explicit price, broker-backed risk context,
+  and native pre-trade approval before order placement.
+- P0: committed canonical env/ingestion/macro/model modules contain conflict markers; dirty repairs
+  and four untracked shims make only the local worktree load. Clean `git archive HEAD` fails.
+- P1: `npm test` runner missing; fallback 815 total / 747 pass / 59 fail / 9 skip. Analysis 19/19,
+  API 5/7, contracts 30/31, TUI 32/37; frontend typecheck/build and secrets pass.
+- P1: merge removed 4,896 workspace-history lines relative to parent 1; session 73-81 review detail
+  is recoverable from `49560981^1` but absent from the current DEV_REVIEW.
+- Data: 92/92 cached, 0 stale, 9 grain suspects; advisory flag does not reach scorecard consumers.
+- Next: one reviewed merge-recovery batch before research evidence work. Full gates are in
+  `workspace/DEV_REVIEW.md` session 82 and `workspace/handoff/2026-07-15.md`.
+
 ## Session Memory - 2026-07-04 - session 40 - Unix/Linux setup porting to feat/session-guard-intraday-rollup
 
 {
@@ -348,3 +397,235 @@
   ],
   "dcs": 0.96
 }
+
+## Recovered Merge History - 2026-07-16 session 83
+
+
+
+Source: `49560981^1:workspace/SESSION_MEMORY.md`. These sections were restored additively after merge-history loss; existing entries were not rewritten.
+
+
+
+## Session Memory - 2026-07-13 session 81 asset-analysis goal completion
+
+```json
+{
+  "goal": "Complete asset-analysis implementation Batches 6-8 while preserving schema v2 until explicit retirement approval",
+  "status": "complete",
+  "implemented": [
+    "Canonical schema-v3 shadow service with direct, CLI, API-adapter, and authenticated HTTP parity",
+    "Recorded family policies and fail-closed provider factors for equity, FX, index, energy, native crypto, and DeFi",
+    "Existing terminal scorecard extended into a canonical home, screener, and workbench with provenance",
+    "Promotion-readiness report that rejects unsupported decision-ready claims"
+  ],
+  "completion_audit": [
+    "Reject recorded evidence before retrieval time",
+    "Prove factor domains are applicable to each family policy",
+    "Prove state filters and within-family ordering",
+    "Launch the canonical all-recorded schema-v3 catalog through the real Ink dashboard"
+  ],
+  "verification": {
+    "full_node": "758 total / 756 pass / 0 fail / 2 skip",
+    "focused_analysis_api_tui": "pass",
+    "hygiene_diff_syntax": "pass",
+    "secret_scan": "829 tracked files / 0 violations plus clean direct new-file scan",
+    "graphify": "unavailable"
+  },
+  "safety": "Research-only; 0 eligible, 4 degraded, 3 excluded; promotion false; schema v2 remains live/default."
+}
+```
+
+## Session Memory - 2026-07-13 session 81 family-aware analysis
+
+```json
+{
+  "completed_batches": [5, 6, 7, 8],
+  "catalog": {"rows": 7, "eligible": 0, "degraded": 4, "excluded": 3},
+  "recorded_sources": ["SEC Company Facts", "ECB", "US Treasury", "EIA", "DefiLlama"],
+  "unavailable_sources": ["S&P structured breadth HTTP 403", "Coin Metrics HTTP 403"],
+  "interfaces": ["canonical service", "CLI JSON", "authenticated API", "terminal research screener/workbench"],
+  "readiness": {"promotion_approved": false, "synthetic_parity_evidence": 10},
+  "verification": {"full_node": "755 total / 753 pass / 0 fail / 2 skip", "hygiene": "pass", "secret_scan": "829 tracked / 0 plus direct new-file scan", "diff_check": "pass", "graphify": "unavailable"},
+  "retirement": "Schema v2 remains live/default; deletion needs evidence and explicit approval."
+}
+```
+
+## Session Memory - 2026-07-13 session 80 analysis batches 3-4 and closeout
+
+```json
+{
+  "completed": [
+    "Added a fail-closed technical v2-to-v3 shadow adapter with direction, strength, timing, and freshness parity.",
+    "Added revision-aware point-in-time macro normalization, as-of selection, and a forward Supabase migration.",
+    "Corrected the asset-analysis plan status to Batches 1-4 complete."
+  ],
+  "verification": {
+    "focused_analysis_macro": "12/12 pass",
+    "contracts": "29/29 pass",
+    "full_node": "743 total / 741 pass / 0 fail / 2 skip",
+    "hygiene": "pass",
+    "diff_check": "pass",
+    "graphify": "unavailable"
+  },
+  "blocked": [
+    "Batch 5 requires a provenance-recorded SEC Company Facts artifact and SEC normalization contract.",
+    "Batches 6-8 remain phase-gated until Batch 5 is verified.",
+    "The macro Supabase migration has not been applied or verified remotely."
+  ],
+  "next": "Capture one recorded US common-equity SEC Company Facts artifact without fabricating data, then implement the research-only equity 3m vertical slice."
+}
+```
+
+## Session Memory - 2026-07-11 session 73 remaining-section audit
+
+```json
+{
+  "request": "Check remaining sections and decide between C++, Rust, and JS for minimal bloat and dynamism.",
+  "additional_gates": [
+    "Market orders send zero notional to C++ pre-trade risk and are approved without concentration evaluation.",
+    "Canonical model comparison ranks architecture-named deterministic formulas and excludes real ONNX candidates.",
+    "MCP backtests allow degraded data by default and MCP Polymarket inherits the direct execution bypass.",
+    "Kubernetes, Terraform, and Heroku launch nonexistent web/app.js; Compose is the only aligned deployment."
+  ],
+  "architecture_decision": {
+    "control_plane": "TypeScript",
+    "native_compute": "narrow benchmark-justified C++ kernels only",
+    "rust": "retire/archive mirrored-contract-only CLI",
+    "most_dynamic": "JavaScript runtime",
+    "best_tradeoff": "TypeScript because it retains JS dynamism and adds contract checking"
+  },
+  "verification": {
+    "risk_probe_zero_notional": "approved",
+    "risk_probe_40pct_concentration": "rejected",
+    "mcp_build": "pass",
+    "cpp_implementation_files": "53 total, 52 compiled",
+    "placeholder_headers": "9, zero consumers"
+  }
+}
+```
+
+## Session Memory - 2026-07-11 session 73 production-readiness audit
+
+```json
+{
+  "request": "Refine and execute an audit for overengineering/stubs, real-trading decision readiness, UI bloat, and user-data safety.",
+  "mode": "connective-tissue / hard reading",
+  "verdict": "not approved for real-money decisions or live Polymarket execution",
+  "gating_findings": [
+    "Polymarket buy/sell bypasses explicit live, PIN/auth, runtime-mode, and C++ risk gates.",
+    "Public API routes accept caller-controlled file/report paths and some caches omit response-shaping inputs.",
+    "A browser-visible VITE_API_TOKEN authorizes bot mutations without per-user server authorization.",
+    "Current decision artifacts are stale/sample/empty and backend integrity is not green.",
+    "Cross-process ts-index writer serialization remains absent."
+  ],
+  "ui_findings": [
+    "Hardcoded LIVE and decorative safety/execution controls are not backend state.",
+    "Signal review references undefined signalIds and frontend type-check fails.",
+    "The dashboard emits one 945.88 kB JS chunk and retains an unused legacy shell.",
+    "The Rust CLI is a 30-file mirrored-contract-only parallel surface."
+  ],
+  "verification": {
+    "node_suite": "706 total / 704 pass / 0 fail / 2 skip",
+    "standalone_correlation_contract": "fail: zero sample matrix from canonical snapshot",
+    "frontend_build": "pass with 945.88 kB single-chunk warning",
+    "frontend_typecheck": "fail: 3 errors",
+    "gateway_typecheck": "pass",
+    "secret_scan": "829 files / 0 violations",
+    "hygiene": "pass",
+    "scorecard": "0 of 36 crypto symbols eligible",
+    "integrity": "92/92 cached; 15 stale; 9 grain suspects; ok=false"
+  },
+  "next": "Close the Polymarket execution bypass, public filesystem paths, and browser-held admin token before any real-money promotion."
+}
+```
+
+## Latest Pointer - 2026-07-11 session 73
+
+The latest work is the production-readiness audit and remaining-section/language follow-up recorded
+above. Session 72's concurrency constraint predates both session 73 entries despite their placement in
+this append-only file. Current decision: TypeScript control plane, narrow benchmark-backed C++ kernels,
+retire the Rust mirror; real-money promotion remains blocked by the execution, auth, data, and model
+truth findings in `workspace/DEV_REVIEW.md`.
+
+## Session Memory - 2026-07-12 session 74 TUI and Polymarket review
+
+```json
+{
+  "request": "Refine and review the CLI bottom input bar, TUI character bloat, Polymarket ended positions, and code readability/maintainability.",
+  "mode": "focused review only",
+  "confirmed_findings": [
+    "Basic input append/backspace/submit/focus works, but mid-line Left/Right editing is disabled by showCursor:false in the installed ink-text-input.",
+    "The fixed 20+76-column body floods an 80-column PTY and leaves no useful output pane at 100 columns.",
+    "Height resize is non-reactive; a 30-row mount still rendered 28 rows after resizing to 12.",
+    "Fill-derived Polymarket positions discard resolved lifecycle metadata, remain labeled active, and can feed cost-basis fallback value into aggregate equity.",
+    "Polymarket getPositions mutates console.error globally without guaranteed restoration.",
+    "Modern and legacy TUI manifests have command and flag drift; the modern App combines 25 state hooks and most dashboard responsibilities."
+  ],
+  "verification": {
+    "focused_tui_tests": "19 pass / 0 fail",
+    "real_pty": "80-column layout flood reproduced",
+    "input_probe": "end Backspace passed; mid-line cursor edit failed",
+    "resize_probe": "30 rows to 12 rows still emitted 28",
+    "live_polymarket_poll": "not performed",
+    "production_code_changed": false,
+    "graphify": "unavailable"
+  },
+  "next": "Fix Polymarket lifecycle projection first, then command input and responsive viewport contracts, then canonicalize manifests and decompose the dashboard."
+}
+```
+
+## Session Memory - 2026-07-13 session 75 closeout
+
+```json
+{
+  "completed": [
+    "Closed API dependency bloat and pinned the MCP SDK to 1.29.0.",
+    "Repaired stale npm test paths and made zero-sample correlation fail closed.",
+    "Created and validated the repo-local refine-suggestion skill."
+  ],
+  "deferred_by_user": [
+    "Prove automatic Supabase login/session restoration.",
+    "Evaluate wider API binding only after authentication is proven.",
+    "Reduce persistent UI character bloat with measured budgets.",
+    "Consolidate proven duplicate/stub ownership across trade, research, backend, and data."
+  ],
+  "refined_plan": "workspace/plans/FUTURE_API_AUTH_UI_DEDUP_REFINEMENT.md",
+  "skill": ".agents/skills/refine-suggestion/SKILL.md",
+  "first_next_action": "Invoke refine-suggestion on the saved plan and execute only the baseline inventory batch.",
+  "safety": "Do not widen API binding or perform broad deletion before baseline/auth evidence and required user approval.",
+  "verification": {
+    "skill_validation": "pass",
+    "diff_check": "pass",
+    "graphify": "unavailable"
+  }
+}
+```
+
+## Session Memory - 2026-07-13 session 76 blast-through and mass-implement
+
+```json
+{
+  "mode": "connective-tissue / fast reading",
+  "completed": [
+    "Removed cached authorization decisions and proved same-token revocation is denied immediately.",
+    "Verified persisted dashboard candidate tokens remotely and confirmed local logout before clearing state.",
+    "Restored category and command reachability across narrow and wide-short TUI viewports.",
+    "Made Kalshi historical unavailability fail visibly without changing Polymarket history.",
+    "Recorded corrected TUI density and duplicate/stub ownership baselines."
+  ],
+  "verification": {
+    "contracts": "28/28 pass",
+    "full_node": "730 total / 728 pass / 0 fail / 2 skip",
+    "frontend": "typecheck and build pass",
+    "hygiene": "pass",
+    "secret_scan": "829 files / 0 violations",
+    "graphify": "unavailable"
+  },
+  "remaining": [
+    "Add a browser/component viewport harness before changing the desktop-only web layout.",
+    "Consolidate the two TUI manifest owners only after adapter parity is locked.",
+    "Do not delete dead UI/data candidates until the recorded consumer matrix and confirmation gates are applied.",
+    "Real-capital promotion remains blocked by data/model/RLS/broker-soak gates."
+  ]
+}
+```

@@ -1,3 +1,48 @@
+# Prompt Log - 2026-07-16 (session 83)
+
+## Session Boot - 2026-07-16 (session 83)
+/session-orchestrator. Loaded `workspace/HANDOFF.md`, `workspace/handoff/2026-07-15.md`,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `workspace/NEXT_SESSION_GOAL.md`, and
+`docs/README.md`. Current carryover remains the session-82 merge-recovery gate in
+`workspace/NEXT_SESSION_GOAL.md`; `graphify-out` is absent, so no refresh was possible. No code
+changes yet.
+
+## Blast-Through Triage - 2026-07-16 (session 83)
+PROMPT: `$blast-through`.
+WORK: Triage / Fast Reading Mode against the active session-82 merge-recovery surface. Rechecked the clean
+`HEAD` archive, root test target, current shared-module repairs, direct Polymarket authorization/risk gates,
+and bot/CLI live-mode handoff. No production code was changed.
+RESULT: DCS remains `0.590`. Focused local auth/risk checks pass `11/11`, gateway TypeScript passes, and
+current modules load; however, env-driven bot live mode can bypass CLI authorization/native risk, archived
+`HEAD` still has four conflict-marked modules, and `npm test` still lacks its runner. Live remains blocked.
+
+## Session Boot - 2026-07-15 (session 82, reprise)
+/session-orchestrator. Loaded `workspace/HANDOFF.md`, `workspace/handoff/2026-07-15.md`,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `docs/README.md`, and `workspace/NEXT_SESSION_GOAL.md`.
+Current worktree is dirty with pre-existing edits in the canonical shared modules, repo docs, workspace
+handoff files, and local compatibility shims; `graphify-out` is still absent. Boot objective remains the
+session-82 merge-recovery gate in `workspace/NEXT_SESSION_GOAL.md` until told otherwise.
+
+## Session Boot — 2026-07-15 (session 82)
+/session-orchestrator. Loaded `workspace/HANDOFF.md` (pointer was stale; actual newest dated handoff on disk is `workspace/handoff/2026-07-13.md`), `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, and `docs/README.md` per bootstrap. HEAD/worktree state still needs a fresh diff pass; current tree is dirty with pre-existing local edits in `config/trading/research.yaml`, `scripts/dev/check_hygiene.js`, `shared/lib/data/ingestion.js`, `shared/lib/data/macro_store.js`, `shared/lib/ml/models.js`, `shared/lib/runtime/env.js`, `skills/blast-through/SKILL.md`, `skills/mass-implement/SKILL.md`, plus untracked `shared/lib/env.js`, `shared/lib/ingestion.js`, `shared/lib/macro_store.js`, `shared/lib/models.js`, and `skills/refine-suggestion/`. Latest handoff on disk is 2026-07-13 (sessions 74-81). `graphify-out` is absent. Next step is to reread the current handoff/STATE and decide whether the open analysis-shadow and terminal TUI backlog remain the active objective or whether the dirty tree implies a different continuation point.
+
+## Full Blast-Through - 2026-07-15 (session 82)
+PROMPT: `$blast-through deep`.
+WORK: Full / Hard audit with archive/merge-parent checks, clean-HEAD module probes, connective/import/
+env/command/orphan sweeps, dependency checks, focused and broad tests, schema-v3 and ts-index data-flow
+probes, frontend/gateway/native checks, and secret/hygiene gates. No production fixes were made.
+RESULT: P0 live execution regression and P0 clean-clone break confirmed. `npm test` runner missing;
+fallback 747/815 pass with 59 fails and 9 skips. API 5/7, contracts 30/31, TUI 32/37, analysis
+19/19. Local data 92/92 cached / 0 stale / 9 grain suspects. DCS `0.635 -> 0.590`.
+
+## Mass-Implement Planning Mode - 2026-07-15 (session 82)
+
+- Prompt: diagnostic and devise a plan to improve grade without unsupported score claims.
+- Outcome: recorded seven ranked, source-backed batches in
+  `workspace/plans/SESSION_82_MERGE_RECOVERY_GRADE_PLAN.md`; no production code edited.
+- Key correction: restore the missing history fixture before attributing correlation failures to production
+  code; independently repair native-backend fallback handling.
+
 # Prompt Log - 2026-06-17 (session 39)
 
 ## Session Boot — 2026-06-17 (session 39)
@@ -1276,3 +1321,384 @@ WORK: Aborted merge-conflict cherry-pick. Checked out sv and start_local.sh dire
 RESULT: Staged sv and start_local.sh as new files. Updated workspace logs.
 HEAD: 14c75eea (staged files: sv, start_local.sh) | Suite: 490/490 JS (last known baseline).
 
+## Recovered Merge History - 2026-07-16 session 83
+
+
+
+Source: `49560981^1:workspace/PROMPT_LOG.md`. These sections were restored additively after merge-history loss; existing entries were not rewritten.
+
+
+
+## 2026-07-13 session 81 - session orchestrator boot
+PROMPT: user invoked `$session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`,
+`workspace/STATE.md`, `workspace/handoff/2026-07-13.md`, and `docs/README.md` per the repo boot
+sequence. Confirmed `graphify-out` is absent in this checkout, so no graph refresh was possible.
+Checked the current worktree state and preserved the large pre-existing dirty diff untouched.
+RESULT: Boot context loaded and prompt history updated. Current carryovers remain the Batch 5
+asset-analysis evidence gate and the existing dirty-tree boundaries.
+
+## 2026-07-13 session 80 - remaining phases and session close
+PROMPT: user requested mass implementation of the remaining phases and end of session.
+WORK: Loaded the remaining phase contracts and searched local production, tests, fixtures, and storage for
+SEC Company Facts evidence. Found no recorded SEC artifact or adapter, enforced the Batch 5 phase gate,
+corrected the plan status, and wrote the durable closeout and restart instructions.
+RESULT: No unverified Batches 5-8 code was fabricated. Session closed with Batches 1-4 verified and Batch 5
+blocked on a provenance-recorded SEC fixture; graphify remains unavailable.
+
+## 2026-07-13 session 80 - mass-implement point-in-time macro
+PROMPT: user invoked `mass-implement` after technical Batch 3.
+WORK: Implemented Batch 4 revision-aware macro normalization, point-in-time as-of selection, a forward
+Supabase migration, timestamp-order and migration-shape contracts, documentation, and broad verification.
+RESULT: Macro look-ahead and revision-overwrite risks are closed at source/contract level. Remote migration
+application remains unverified; Batch 5 equity shadow policy is next.
+
+## 2026-07-13 session 80 - blast-through and mass-implement
+PROMPT: user invoked `blast-through` and `mass-implement`.
+WORK: Ran triage in Hard Reading Mode, confirmed the saved Batch 3 gap, implemented the technical
+schema-v2 to v3 shadow adapter, tightened verification to use the real v2 scorecard fixture, ran focused
+and broad gates, and updated the append-only workspace history.
+RESULT: Batch 3 is complete and verified. Live v2 behavior is unchanged; point-in-time macro observation
+truth is the next gated batch.
+
+## 2026-07-13 session 80 - session orchestrator boot
+PROMPT: user invoked `session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, and `workspace/handoff/2026-07-13.md`
+per repo boot order. Checked for `graphify-out`; it is absent in this checkout, so there was
+nothing to refresh.
+RESULT: Boot context loaded. The worktree still contains the existing unrelated dirty edits noted
+in the handoff; left untouched.
+
+## 2026-07-13 session 75 - session close
+PROMPT: user requested `end session`.
+WORK: Ran the session-orchestrator closeout, validated `$refine-suggestion`, confirmed the deferred plan
+and handoff links, updated the current handoff pointer and session memory, and checked for `graphify-out`.
+RESULT: Session closed with API binding/login, UI character reduction, and duplicate/stub consolidation
+deferred to `workspace/plans/FUTURE_API_AUTH_UI_DEDUP_REFINEMENT.md`. `graphify-out` is unavailable.
+
+## 2026-07-13 session 75 - deferred suggestion refinement skill
+PROMPT: user asked to leave API binding/automatic login, lower-character UI bloat, and duplicate/stub
+cleanup across trade, research, backend, and data for a future session, and requested a skill that
+refines suggestive prompts.
+WORK: Created and validated repo-local `$refine-suggestion`, registered it in `AGENTS.md`, and converted
+the rough suggestion into a guarded future-session prompt with evidence, scope, ranked batches,
+acceptance criteria, verification, and deletion/authentication constraints.
+RESULT: Deferred plan saved to `workspace/plans/FUTURE_API_AUTH_UI_DEDUP_REFINEMENT.md`. No requested
+future runtime behavior was implemented in this update.
+
+## 2026-07-13 session 75 - mass-implement package and contract closeout
+PROMPT: user invoked `mass-implement` after the connective-tissue audit.
+WORK: Removed unused API dependencies, pinned the MCP SDK, regenerated nested locks offline, repaired
+15 stale npm-script test paths, added a missing-path regression contract, made zero-sample correlation
+fail closed, aligned active API docs, and updated the portfolio-monitor fixture for the explicit
+Polymarket lifecycle contract.
+RESULT: API 6/6, contracts 23/23, portfolio monitor 8/8, MCP build, full Node suite, hygiene, and diff
+checks pass. API moved from dependency-bloat gated to trust-gated; MCP moved from reproducibility-gated
+to policy-gated.
+
+## 2026-07-13 session 75 - blast-through connective-tissue sweep
+PROMPT: user invoked `blast-through`.
+WORK: Ran a fast-reading connective-tissue audit on the resumed TUI/Polymarket implementation batch and
+the surrounding package/deployment wiring. Confirmed the new dashboard command editor and Polymarket
+lifecycle modules are intentional, test-backed runtime seams. Found two repo-level drift items: unused
+`express`/`ejs`/`dotenv` dependencies still declared in `backend/api/package.json` despite the native
+HTTP app entrypoint, and `@modelcontextprotocol/sdk` in `backend/mcp_server/package.json` still pinned
+to `latest`.
+RESULT: Focused test gate passed 26/26. DEV_REVIEW.md and REVIEW_LEDGER.md were updated with the audit
+findings and current section grades. No production code changed.
+
+## 2026-07-12 session 74 - session orchestrator boot
+PROMPT: user invoked `session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, and
+`workspace/handoff/2026-07-11.md` per repo boot order. Checked for `graphify-out`; it is
+absent in this checkout, so there was nothing to refresh.
+RESULT: Boot context loaded. Working tree already contains unrelated dirty edits from
+earlier work; left untouched.
+
+## 2026-07-11 session 73 - session orchestrator boot
+PROMPT: user invoked `session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`,
+`workspace/STATE.md`, and `docs/README.md` per repo boot order. Checked for `graphify-out`; it is
+absent in this checkout, so there was nothing to refresh.
+RESULT: Boot context loaded. Working tree already contains unrelated dirty edits from earlier work;
+left untouched.
+
+## User Prompt - 2026-07-11 session 73 production-readiness audit
+
+"check for overengineering stubs and whether is the repo usable to make real trading decision, UI
+BLOATing avoidance, data saftey for users? refine this prompt and go from it"
+
+## Refined Prompt / Work - 2026-07-11 session 73
+
+Determine whether active production paths are trustworthy enough to support real trading decisions by
+identifying dangerous/incomplete stubs, synthetic or stale data promotion, missing execution safeguards,
+UI complexity that obscures decision-critical state, and user-data exposure or destructive-write risks.
+Report only directly verified findings, grade reviewed sections, and define minimum safe-use gates.
+
+Executed a connective-tissue audit in Hard Reading Mode. Verified a direct Polymarket execution-gate
+bypass, public caller-controlled API file paths, a browser-held admin token boundary, misleading UI
+state, a broken signal-review action, stale/sample decision artifacts, a concurrent-writer gap, and
+UI/Rust bloat. Recorded the evidence and gates in `workspace/DEV_REVIEW.md`; no production code changed.
+
+## User Prompt - 2026-07-11 session 73 remaining sections and language
+
+"any other section? , also should this be written in c++/rust or JS, which is the least bloated but
+still serves it function, which one is the most dynamic"
+
+## Work - 2026-07-11 session 73 remaining sections and language
+
+Extended the connective-tissue audit in Fast Reading Mode across native risk, ML/model comparison,
+MCP, deployment variants, Supabase alerting, C++ compiled shells, and package dependencies. Confirmed
+zero-notional market-order risk approval, heuristic models presented under ML architecture names,
+degraded-by-default MCP backtests, and stale `web/app.js` cloud manifests. Recommended TypeScript as
+the control plane, narrow benchmark-backed C++ kernels, and retirement of the Rust mirror. No
+production code changed.
+
+## User Prompt - 2026-07-11 session 73 mass implementation
+
+`$mass-implement`
+
+## Work - 2026-07-11 session 73 mass implementation
+
+Converted the production-readiness audit into verified implementation batches. Closed direct Polymarket
+authorization and zero-notional market-risk gaps; hardened API/browser authentication and cache keys;
+made heuristic-model and MCP degraded-data behavior fail closed; restored frontend typechecking while
+cutting dependency and initial-bundle bloat; fixed stale deployment entrypoints; and removed nine orphan
+placeholder headers. Full Node suite passed 708/0/2; detailed residual live-capital blockers are recorded
+in `workspace/STATE.md` and `workspace/HANDOFF.md`.
+
+## Session Boot — 2026-07-12 (session 74)
+/session-orchestrator. Booted via `session-orchestrator`.
+Read `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`,
+`workspace/STATE.md`, and `workspace/handoff/2026-07-11.md` per repo boot order.
+Checked for `graphify-out`; it is absent in this checkout, so there was nothing to refresh.
+Working tree state not modified beyond this log update.
+
+## User Prompt - 2026-07-12 session 74 TUI and maintainability review
+
+"continue last session, also verify if the character input bar at the bottom of the screen in the CLI
+actually works as intended, check for UI bloat whether the current layout has too many character that
+flooded the TUI, check the polymarket section to update ended position to remove any redundancy, lastly,
+a repo reading to make the code readable, easy to read and maintain (refine this prompt before reviewing)"
+
+## Refined Review Prompt - 2026-07-12 session 74
+
+Continue from the current handoff and audit the CLI/TUI in four focused areas: verify the bottom input
+bar through its real character-entry, editing, submission, focus, and resize paths; assess visual density
+and identify borders, labels, duplicated metrics, wrapping, clipping, or panels that overwhelm common
+terminal sizes; review the Polymarket section's handling of ended or resolved positions and identify stale
+rows, duplicated information, redundant controls, or unclear lifecycle behavior; and perform a focused
+readability and maintainability review of the code behind these surfaces. Deliver ranked findings with
+file and line evidence, reproducible checks, severity, and an implementation plan. Distinguish confirmed
+defects from UX judgments and environment limitations. Do not change production code during this review.
+
+## Work - 2026-07-12 session 74 TUI and maintainability review
+
+Completed the refined review without changing production code. Confirmed that ordinary chat typing,
+end Backspace, submit, focus, and PIN routing work, while mid-line Left/Right editing fails because the
+installed input component disables cursor movement under `showCursor:false`. Reproduced an 80-column
+fixed-width layout flood, a non-reactive 30-to-12-row resize, and clipped suggestion/cursor math at short
+heights. Traced ended Polymarket positions from historical fill reduction through discarded resolved
+metadata, cost-basis fallback valuation, "Active Positions" rendering, and aggregate equity. Also found
+process-global `console.error` suppression without guaranteed restoration, a 51-vs-49 dual-manifest split
+with 11 shared flag-schema drifts, and a 957-line/25-state dashboard component. Focused TUI tests passed
+19/19. Ranked findings, grades, and implementation order are recorded in `workspace/DEV_REVIEW.md` and
+today's handoff. `graphify-out` remains unavailable.
+
+## User Prompt - 2026-07-12 session 74 mass implementation continuation
+
+`$mass-implement` / "you were halfway through"
+
+## Work Start - 2026-07-12 session 74 mass implementation continuation
+
+Resumed the interrupted implementation already present in the worktree. Existing partial changes include
+new command-input, responsive-layout, and Polymarket-position modules plus focused tests and gateway/
+dashboard integration edits. The continuation will validate and complete those batches in the audit's
+ranked order while preserving the broader session-73 dirty worktree.
+
+## Session Closeout - 2026-07-13 session 74
+
+The interrupted TUI/Polymarket implementation batch was completed and verified. The dashboard input
+bar now handles mid-line editing correctly, the layout no longer floods narrow terminals, Polymarket
+ended positions fail closed, and the manifest parity guard now covers the shared command surface. The
+next session should start from `workspace/handoff/2026-07-13.md`, then reread `workspace/STATE.md`
+before touching any new code.
+
+## User Prompt - 2026-07-13 session 76 boot
+
+`$session-orchestrator`
+
+## Work - 2026-07-13 session 76 boot
+
+Loaded `workspace/BOOTSTRAP.md`, the `workspace/HANDOFF.md` pointer, the active dated handoff
+`workspace/handoff/2026-07-13.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`,
+`docs/README.md`, `workspace/NEXT_SESSION_GOAL.md`, and the deferred refinement plan. Inspected the
+current worktree and preserved the uncommitted session 73-75 changes; `git diff --check` passes.
+`graphify`/`graphify-out` are unavailable and no `graphify-out/` artifact exists, so the required graph
+refresh remains blocked. The recorded next action is to invoke `$refine-suggestion` on
+`workspace/plans/FUTURE_API_AUTH_UI_DEDUP_REFINEMENT.md` and execute only its baseline/inventory batch;
+no product implementation began during this boot.
+
+## User Prompt - 2026-07-13 session 76 blast-through and mass-implement
+
+`$blast-through $mass-implement`
+
+## Refined Work Start - 2026-07-13 session 76
+
+Run a connective-tissue audit in Fast Reading Mode against the deferred API-authentication,
+UI-density, and duplicate/stub plan. First capture reproducible login/protected-route states, terminal
+and browser density budgets, and an owner/consumer classification for cleanup candidates. Then convert
+only directly verified findings into ranked implementation batches, preserving loopback defaults,
+authentication fail-closed behavior, honest unavailable features, deletion thresholds, and the existing
+dirty worktree. Full-repo grading and data-integrity work are deferred; no real-capital readiness claim
+is in scope.
+
+## Work Closeout - 2026-07-13 session 76
+
+The connective-tissue audit found and the mass-implement pass closed four trust gaps: stale cached bearer
+authorization, unverified/hanging dashboard session restoration, TUI navigation clipping across narrow
+and wide-short viewports, and silent-empty Kalshi history. Captured corrected 80/100/120-column density
+baselines and classified dead, compatibility, divergent, generated, and honest-unavailable candidates
+without deleting them or widening the API bind. Verification passed: contracts 28/28; full Node suite
+730 total / 728 pass / 0 fail / 2 skip; frontend typecheck/build; hygiene; secret scan 829/0; and
+`git diff --check`. `graphify-out` remains unavailable.
+
+## User Prompt - 2026-07-13 session 76 asset-analysis UI overhaul planning
+
+The user is considering a UI overhaul that separates asset analysis instead of placing every family in
+one generic surface. They want the scorecard to combine technical and fundamental evidence: macro inputs
+for non-equity/non-crypto families, earnings/fundamentals for stocks, and blockchain/on-chain inputs for
+crypto. They asked what must be researched and how to add these capabilities without making the current
+repository structure and UI ownership more fragmented.
+
+## Refined Planning Objective - 2026-07-13 session 76
+
+Design a family-aware analysis architecture and UI information model that preserves one canonical
+scorecard contract while delegating evidence collection and scoring to asset-specific modules. Define
+provider research, provenance/freshness requirements, family-specific metrics, scoring boundaries,
+responsive information hierarchy, staged migration, verification gates, and explicit anti-bloat rules.
+No production implementation begins during this planning pass.
+
+## Planning Outcome - 2026-07-13 session 76 asset-analysis UI overhaul
+
+Mapped the current scorecard/universe/provider/UI seams and completed primary-source research for SEC,
+Yahoo policy, FRED/ALFRED, Treasury, World Bank, IMF/OECD, EIA, CFTC, DefiLlama, Coin Metrics, and related
+crypto options. Saved the implementation-neutral architecture and staged migration at
+`workspace/plans/ASSET_ANALYSIS_UI_OVERHAUL.md`. The plan separates scoreable assets from evidence
+series, defines one canonical observation/factor/scorecard contract, uses versioned family policies,
+starts with a point-in-time US-equity vertical slice, and prohibits provider-to-UI or duplicated
+CLI/API score ownership. No production code changed.
+
+## User Decision - 2026-07-13 session 77 asset-analysis plan closeout
+
+The user selected personal-use scope, free-data-first preferences, and a preferred 3-month scoring
+horizon, then asked to end the session and leave the next-session plan in the handoff.
+
+## Session Closeout - 2026-07-13 session 77
+
+Translated the planning document into a concrete first vertical slice for the next session: US common
+equities only, fixed 3-month horizon, SEC EDGAR reported fundamentals plus existing technical evidence
+and a minimal macro overlay, with the new analysis contracts and equity family policy implemented in
+shadow mode before any broader UI or provider expansion. Updated `workspace/handoff/2026-07-13.md`
+and the `workspace/HANDOFF.md` pointer accordingly. No production code changed in this closeout.
+
+## User Prompt - 2026-07-13 session 78 boot
+
+`$session-orchestrator`
+
+## Work - 2026-07-13 session 78 boot
+
+Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/handoff/2026-07-13.md`,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `docs/README.md`, `workspace/NEXT_SESSION_GOAL.md`,
+and the tail of `workspace/PROMPT_LOG.md`. Confirmed the repo is already dirty across many tracked and
+untracked files, so this boot preserved the existing worktree and did not start implementation.
+`graphify-out/` is still absent; only `.graphifyignore` exists, so no graph refresh was possible.
+
+Recorded next-session implementation target from repo truth:
+
+1. Start from `workspace/handoff/2026-07-13.md`, then reread `workspace/STATE.md` and the current diff.
+2. Add a frontend browser/component viewport harness for 375, 768, and 1440 pixels.
+3. Capture tab reachability, sidebar collapse behavior, grid reflow, overflow, and accessible navigation
+   before editing the responsive layout.
+4. Keep API binding on loopback and do not begin broad duplicate deletion or manifest consolidation until
+   the recorded consumer/parity gates are applied.
+
+## User Prompt - 2026-07-13 session 78 implementation
+
+`$blast-through $mass-implement`
+
+Follow-up: `remember to continue last session discussion,continue`
+
+## Work - 2026-07-13 session 78 implementation
+
+Used `blast-through` in triage/Fast Reading Mode and handed the confirmed frontend P1 to
+`mass-implement`. Added a local Chrome/CDP production-build viewport harness, captured the untouched
+responsive baseline at 1/6 pass, then implemented accessible navigation, mobile/tablet sidebar collapse,
+responsive grids, and overflow bounds. Final responsive tests pass 6/6 at 375/768/1440; all ten
+destinations activate at every width. Frontend typecheck/build, repo hygiene, and `git diff --check` pass.
+No API binding, duplicate deletion, or data/model behavior changed. Updated the review ledger, developer
+review, state, handoff, and next-session goal; the next implementation returns to the session-77
+US-equity 3-month shadow-schema plan.
+
+## User Prompt - 2026-07-13 session 79
+
+`$mass-implement those, or do extensive planning,then delegate to a lesser model`
+
+## Work - 2026-07-13 session 79
+
+Used `mass-implement` in Planning Mode. Wrote an eight-batch, source-backed implementation plan, then
+delegated additive Batches 1-2 to `gpt-5.6-luna` with disjoint ownership. The main thread audited and
+corrected delegated contract drift, added strict v3 validators and a weight-free family section registry,
+and integrated a real-config shadow asset/evidence taxonomy. Current inventory is 316 configured inputs,
+122 scoreable candidates, 108 evidence descriptors, 30 unsupported/ambiguous entries, 45 repeated
+declarations, 57 repeated legacy-symbol declarations, zero identity conflicts, and zero cross-asset
+symbol collisions. Live schema-v2 hashes stayed unchanged. Focused gates, structure, hygiene, secret scan,
+and diff check pass. Full Node suite recorded 736 pass / 1 unrelated parallel strategy-label failure / 2
+skip; the failing file passes 16/16 in isolation. Next gate is the technical v2-to-v3 shadow adapter.
+
+## User Prompt - 2026-07-13 session 81 boot
+
+`$session-orchestrator`
+
+## Work - 2026-07-13 session 81 boot
+
+Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, the current dated handoff
+`workspace/handoff/2026-07-13.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`,
+`docs/README.md`, `workspace/NEXT_SESSION_GOAL.md`, and the prompt-log tail. Preserved the large existing
+tracked and untracked implementation set without modifying it. Confirmed `graphify` and `graphify-out`
+remain unavailable, so the graph could not be refreshed.
+
+Current repo-truth restart gate: asset-analysis Batches 1-4 are complete. Before Batch 5, capture one
+provenance-recorded SEC Company Facts artifact for a US common equity; then implement point-in-time SEC
+normalization, missing-fact degradation, and the research-only equity three-month composer. Do not begin
+the shadow service, family expansion, TUI exposure, or schema-v2 retirement until that evidence gate
+passes. The macro migration remains unapplied and unverified remotely.
+
+## User Prompt - 2026-07-13 session 81 mass implementation
+
+`$mass-implement`
+
+Follow-up: `$mass-implement untill all phase is done /goal`
+
+## Work - 2026-07-13 session 81 mass implementation
+
+Created a persistent goal and completed analysis Batches 5-8. External provider capture used the
+structured JSON air-gap. Added SEC/equity normalization and policy, canonical CLI/API service parity,
+five family slices with honest unavailable states, a seven-row terminal research catalog/screener/
+workbench, and a fail-closed readiness report. Catalog truth is 0 eligible / 4 degraded / 3 excluded;
+promotion is false. Serialized full Node passed 755/753/0fail/2skip. Schema-v2 retirement was not
+performed because evidence rejects promotion and deletion rules require explicit approval.
+
+## User Continuation - 2026-07-13 session 81
+
+`retry` / `continue` / `continue` / `conmtinue`
+
+## Goal Completion - 2026-07-13 session 81
+
+Resumed the serialized verification and audited the saved goal requirement by requirement. Closed the
+remaining proof gaps for provider retrieval-time lookahead, factor applicability, within-family ranking,
+and real Ink dashboard launch. Final Node verification passed 758/756/0fail/2skip; focused analysis,
+authenticated API, TUI/manifest, hygiene, syntax, diff, and secret gates pass. All implementation phases
+are complete in research-only shadow mode. Promotion and schema-v2 retirement remain intentionally denied.
