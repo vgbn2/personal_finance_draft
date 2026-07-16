@@ -157,6 +157,7 @@ async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars, options = {
           last_bar_at: timeframe.last_bar_at || null,
           age_ms: timeframe.age_ms ?? null,
           freshness_limit_ms: timeframe.freshness_limit_ms ?? null,
+          grain_integrity: timeframe.grain_integrity || null,
         })),
       },
     };
@@ -174,6 +175,7 @@ async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars, options = {
           last_bar_at: timeframe.last_bar_at || null,
           age_ms: timeframe.age_ms ?? null,
           freshness_limit_ms: timeframe.freshness_limit_ms ?? null,
+          grain_integrity: timeframe.grain_integrity || null,
         })),
       },
     };
@@ -228,6 +230,7 @@ async function analyzeSymbol({ symbol, family }, tfConfigs, btcBars, options = {
       last_bar_at: timeframe.last_bar_at || null,
       age_ms: timeframe.age_ms ?? null,
       freshness_limit_ms: timeframe.freshness_limit_ms ?? null,
+      grain_integrity: timeframe.grain_integrity || null,
     })),
     tfs: tfMap,
     timeframe_details: timeframeDetails,

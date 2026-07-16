@@ -258,7 +258,11 @@ test('backend integrity command summarizes live and historical cache health', ()
     assert.equal(typeof payload.summary.total_stale, 'number');
     assert.equal(typeof payload.summary.total_cached, 'number');
     assert.equal(typeof payload.summary.total_exceptions, 'number');
+    assert.equal(typeof payload.summary.total_grain_unexplained, 'number');
+    assert.equal(typeof payload.summary.total_grain_cadence_plausible, 'number');
     assert.ok(Array.isArray(payload.policy.integrity_exceptions));
+    assert.ok(Array.isArray(payload.grain_suspects));
+    assert.ok(Array.isArray(payload.unexplained_grain_suspects));
     assert.ok(payload.policy.integrity_exceptions.includes('RNDRUSDT'));
     // ok may be false when cache rows are stale (provider unreachable); structure is still valid
     if (payload.ok) assert.equal(payload.summary.total_stale, 0);
