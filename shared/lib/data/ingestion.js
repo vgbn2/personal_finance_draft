@@ -1,6 +1,3 @@
-<<<<<<<< HEAD:shared/lib/ingestion.js
-module.exports = require('./data/ingestion');
-========
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { 
@@ -56,4 +53,3 @@ module.exports = {
   FAMILIES_MANIFEST,
   runIngestBatch
 };
->>>>>>>> feat-ink-tui-refactor-split:shared/lib/data/ingestion.js

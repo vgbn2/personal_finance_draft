@@ -26,8 +26,8 @@ const os = require('node:os');
 const path = require('node:path');
 const cp = require('node:child_process');
 
-const REPO = path.resolve(__dirname, '../../..'); // personal_finance_draft
-const NEW_MODULE = require.resolve('../../../shared/lib/market/validation.js');
+const REPO = path.resolve(__dirname, '../../../..'); // personal_finance_draft
+const NEW_MODULE = require.resolve('../../../../shared/lib/market/validation.js');
 const { writeTsIndex, readTsIndex } = require(NEW_MODULE);
 
 const TS_MAGIC = 'SOVT';
@@ -232,7 +232,7 @@ for (const [name, seedFn, incFn] of SCENARIOS) {
 }
 
 test('EQUIV real deep bin (copy of a live bin) + overlapping synthetic window == reference', () => {
-  const { STORAGE_TS_DIR } = require('../../../shared/lib/paths.js');
+  const { STORAGE_TS_DIR } = require('../../../../shared/lib/paths.js');
   let ran = 0;
   for (const [sym, tf] of [['XAUUSD', '5m'], ['BTCUSDT', '4h'], ['BTCUSDT', '1h']]) {
     if (!fs.existsSync(filePath(STORAGE_TS_DIR, sym, tf, '.bin'))) continue;
