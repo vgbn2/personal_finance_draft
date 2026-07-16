@@ -49,6 +49,7 @@ const {
   renderPolymarketOrderbookDetails,
   renderPolymarketPriceHistoryDetails,
   submitPolymarketBuyOrder,
+  authorizePolymarketLive,
 } = tradePolymarket;
 
 const {
@@ -382,26 +383,30 @@ async function commandAgent(args) {
  */
 async function commandBot(args) {
   const sub = args[0] || 'status';
+  const submitsOrder = sub === 'cycle' || sub === 'run' || sub === 'sell';
+  if (submitsOrder && process.env.LIVE_TRADING === 'true' && !hasFlag(args, '--live')) {
+    printPayload({
+      ok: false,
+      reason: 'Live Polymarket bot execution requires explicit --live authorization',
+    }, args);
+    return 1;
+  }
   if (sub === 'cycle' || sub === 'run') {
     const gate = featureGate('bot_autopilot', { surface: `Bot ${sub}` });
     if (!gate.ok) {
       printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
       return 1;
     }
-  }
-  if (hasFlag(args, '--live')) {
-    const liveGate = canLiveExecute('alpaca');
-    if (!liveGate.ok) {
-      printPayload({
-        ok: false,
-        broker: 'alpaca',
-        runtime_mode: getRuntimeMode(),
-        reason: liveGate.reason,
-      }, args);
-      console.error(`${A.B_RED}[ERROR] ${liveGate.reason}.${A.RESET}`);
+    const polymarketGate = featureGate('polymarket', { surface: `Bot ${sub}` });
+    if (!polymarketGate.ok) {
+      printPayload({ ok: false, type: 'feature_gate', feature_flag: polymarketGate.flag, reason: polymarketGate.reason, hint: polymarketGate.hint }, args);
       return 1;
     }
-    if (!(await requireAuth('bot live trading'))) return 1;
+  }
+  let liveAuthorized = false;
+  if (hasFlag(args, '--live')) {
+    if (!(await authorizePolymarketLive(args, 'Polymarket bot live trading'))) return 1;
+    liveAuthorized = true;
   }
   const gatewayArgs = ['bot', sub, ...args.slice(1)];
   if (hasFlag(args, '--json')) gatewayArgs.push('--json');
@@ -410,6 +415,10 @@ async function commandBot(args) {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
     shell: launch.shell ?? false,
+    env: {
+      ...process.env,
+      ...(liveAuthorized ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {}),
+    },
   });
   return result.status ?? 0;
 }
