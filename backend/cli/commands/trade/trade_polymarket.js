@@ -635,6 +635,38 @@ async function commandPolymarket(args) {
     liveAuthorized = await authorizePolymarketLive(args, 'Polymarket live trading');
     if (!liveAuthorized) return 1;
   }
+  if (sub === 'history' && args[1] === 'schedule') {
+    const { runPolymarketResearchScheduler } = require('../../../scripts/data_ops/polymarket_research_scheduler.js');
+    const scopeFile = optionValue(args, '--scope-file', null);
+    const tokenIds = String(optionValue(args, '--tokens', '') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    try {
+      const result = await runPolymarketResearchScheduler({
+        scopeFile,
+        tokenIds: tokenIds.length ? tokenIds : undefined,
+        archiveRoot: optionValue(args, '--archive-root', undefined),
+        execute: hasFlag(args, '--execute'),
+        once: hasFlag(args, '--once') || !hasFlag(args, '--execute'),
+        pollSeconds: numericOption(args, '--poll-seconds', 300),
+        historyInterval: optionValue(args, '--history-interval', '5m'),
+        maxTokens: numericOption(args, '--max-tokens', 20),
+        retentionDays: numericOption(args, '--retention-days', 30),
+        maxRowsPerToken: numericOption(args, '--max-rows-per-token', 5000),
+        maxArchiveBytes: numericOption(args, '--max-archive-bytes', 5 * 1024 * 1024 * 1024),
+        capturePrices: !hasFlag(args, '--no-prices'),
+        captureOrderbooks: !hasFlag(args, '--no-orderbooks'),
+        pmxtApiKey: optionValue(args, '--pmxt-api-key', process.env.PMXT_API_KEY || ''),
+        pmxtBaseUrl: optionValue(args, '--pmxt-base-url', process.env.PMXT_BASE_URL || 'https://api.pmxt.dev'),
+      });
+      printPayload(result, args);
+      return result.ok ? 0 : 1;
+    } catch (error) {
+      printPayload({ ok: false, mode: 'research_scheduler', error: error.message }, args);
+      return 1;
+    }
+  }
   if ((sub === 'research' && args[1] === 'ingest') || (sub === 'history' && (args[1] === 'ingest' || args[1] === 'backfill'))) {
     const result = await runPolymarketArchiveIngest(args);
     printPayload(result, args);
