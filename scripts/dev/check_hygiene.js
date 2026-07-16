@@ -154,8 +154,11 @@ function checkAgentSkills() {
     'claude',
     'codex',
     'gemini',
+    'mass-implement',
     'polymarket-history-backfill',
-    'repo-hygiene'
+    'refine-suggestion',
+    'repo-hygiene',
+    'session-orchestrator'
   ]);
 
   const allowedAgentsSkills = new Set([
@@ -282,7 +285,96 @@ function checkCodeMarkers() {
   };
 }
 
-// 5. Documentation & State Alignment
+// 5. Clean-clone and package-script integrity
+function checkRepositoryIntegrity() {
+  const findings = [];
+  const markerPattern = '^(<<<<<<<|=======|>>>>>>>)';
+  const markerScopes = ['backend', 'shared', 'config', 'scripts', 'tests'];
+
+  for (const [label, args] of [
+    ['committed HEAD', ['grep', '-n', '-E', markerPattern, 'HEAD', '--', ...markerScopes]],
+    ['working tree', ['grep', '-n', '-E', markerPattern, '--', ...markerScopes]],
+  ]) {
+    const result = runGit(args);
+    if (result.status === 0) {
+      const matches = result.stdout.trim().split(/\r?\n/).filter(Boolean);
+      findings.push({
+        finding: `${label} contains conflict markers: ${matches.slice(0, 4).join(', ')}`,
+        surface: label,
+        action: 'Resolve conflict markers and verify the committed archive'
+      });
+    } else if (result.status !== 1) {
+      findings.push({
+        finding: `Unable to scan ${label} for conflict markers: ${result.stderr.trim() || `git exit ${result.status}`}`,
+        surface: label,
+        action: 'Repair the git marker scan before trusting hygiene'
+      });
+    }
+  }
+
+  const requiredTrackedFiles = [
+    'shared/lib/runtime/env.js',
+    'shared/lib/data/ingestion.js',
+    'shared/lib/data/macro_store.js',
+    'shared/lib/ml/models.js',
+    'shared/lib/env.js',
+    'shared/lib/ingestion.js',
+    'shared/lib/macro_store.js',
+    'shared/lib/models.js',
+    'tests/run_node_tests.js',
+    'tests/fixtures/backend_history_sample.json',
+    'tests/fixtures/real_bars_btc.json',
+  ];
+
+  for (const relativePath of requiredTrackedFiles) {
+    const result = runGit(['ls-files', '--error-unmatch', relativePath]);
+    if (result.status !== 0) {
+      findings.push({
+        finding: `Load-bearing clean-clone file is untracked or missing: ${relativePath}`,
+        surface: relativePath,
+        action: `Track ${relativePath} after verifying its current caller and provenance`
+      });
+    }
+  }
+
+  const packageFiles = [
+    'package.json',
+    'backend/api/package.json',
+    'backend/gateway/package.json',
+    'backend/mcp_server/package.json',
+    'Frontend/dashboard/package.json',
+  ];
+  const scriptTargetPattern = /(?:^|\s)([^\s"';&|]+\.(?:js|mjs|cjs|ts|sh))(?=$|\s|[;&|])/g;
+
+  for (const packageFile of packageFiles) {
+    const packagePath = path.join(WORKSPACE_ROOT, packageFile);
+    if (!fs.existsSync(packagePath)) continue;
+    const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+    const packageRoot = path.dirname(packagePath);
+
+    for (const [scriptName, command] of Object.entries(pkg.scripts || {})) {
+      for (const match of String(command).matchAll(scriptTargetPattern)) {
+        const target = match[1];
+        const normalized = target.replace(/\\/g, '/');
+        if (normalized.includes('*') || normalized.includes('/dist/') || normalized.startsWith('dist/')) continue;
+        if (!fs.existsSync(path.resolve(packageRoot, target))) {
+          findings.push({
+            finding: `${packageFile} script ${scriptName} references missing target ${target}`,
+            surface: packageFile,
+            action: `Restore ${target} or correct the ${scriptName} package script`
+          });
+        }
+      }
+    }
+  }
+
+  return {
+    pass: findings.length === 0,
+    findings
+  };
+}
+
+// 6. Documentation & State Alignment
 function checkDocsAlignment() {
   const findings = [];
   const statePath = path.join(WORKSPACE_ROOT, 'workspace', 'STATE.md');
@@ -340,6 +432,7 @@ function main() {
     'Symlinks': checkSymlinks(),
     'Agent Skills': checkAgentSkills(),
     'Code Markers': checkCodeMarkers(),
+    'Repository Integrity': checkRepositoryIntegrity(),
     'Docs Alignment': checkDocsAlignment()
   };
 

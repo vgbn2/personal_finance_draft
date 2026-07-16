@@ -102,9 +102,38 @@ test('load-bearing clean-clone assets are tracked', () => {
     'backend/api/tests/correlation_contract.test.js',
     'scripts/classify_strategy_assets.js',
     'scripts/mcp_stdio_probe.js',
+    'shared/lib/runtime/env.js',
+    'shared/lib/data/ingestion.js',
+    'shared/lib/data/macro_store.js',
+    'shared/lib/ml/models.js',
+    'shared/lib/env.js',
+    'shared/lib/ingestion.js',
+    'shared/lib/macro_store.js',
+    'shared/lib/models.js',
+    'tests/run_node_tests.js',
+    'tests/fixtures/backend_history_sample.json',
+    'tests/fixtures/real_bars_btc.json',
   ].forEach((relativePath) => {
     assert.equal(isTracked(relativePath), true, `${relativePath} should be tracked`);
   });
+});
+
+test('committed production and test sources contain no conflict markers', () => {
+  const result = git([
+    'grep',
+    '-n',
+    '-E',
+    '^(<<<<<<<|=======|>>>>>>>)',
+    'HEAD',
+    '--',
+    'backend',
+    'shared',
+    'config',
+    'scripts',
+    'tests',
+  ]);
+
+  assert.equal(result.status, 1, `Committed conflict markers found:\n${result.stdout}`);
 });
 
 test('frame backtester sources referenced by the native build are tracked', () => {

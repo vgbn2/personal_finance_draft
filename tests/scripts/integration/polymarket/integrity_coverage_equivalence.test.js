@@ -11,8 +11,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { writeTsIndex, readTsIndex } = require('../../../shared/lib/market/validation.js');
-const { readCoverage } = require('../../../shared/lib/market/coverage.js');
+const { writeTsIndex, readTsIndex } = require('../../../../shared/lib/market/validation.js');
+const { readCoverage } = require('../../../../shared/lib/market/coverage.js');
 
 const TS_MAGIC = 'SOVT';
 const HEADER = 8;
