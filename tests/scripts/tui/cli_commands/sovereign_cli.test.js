@@ -620,7 +620,7 @@ test('CLI backtest refuses stale live input by default', () => {
     payload.error,
   );
   if (/Data-quality validation failed:/.test(payload.error)) {
-    assert.match(payload.error, /2 stale records/);
+    assert.match(payload.error, /Fix with `check --strict` or `ingest`\/`backfill`\./);
   }
   dumpVisibility('CLI backtest refuses stale live input by default', { fixture, payload });
 });
