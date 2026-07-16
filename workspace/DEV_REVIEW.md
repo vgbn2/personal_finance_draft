@@ -1230,3 +1230,40 @@ to **B+ / fail-closed**; `backend/api` and `supabase` return to **B- / deploymen
 **B / remote-RLS-gated** respectively; recorded analysis returns to **A- / promotion-blocked**. These
 are code and contract grades only. Real-capital promotion remains blocked by live data, model validation,
 remote RLS verification, and broker soak evidence.
+
+## Mass-Implement Recovery Review - 2026-07-16 session 83
+
+### Findings closed
+
+| Prior finding | Resolution | Evidence |
+|---|---|---|
+| Polymarket bot could inherit live mode without CLI authorization/native risk | `bc9ce6de` requires explicit live authorization and native pre-trade approval. | Focused execution/risk 45/45, gateway TypeScript, full Node 0-fail. |
+| Clean `HEAD` contained conflict-marked modules and no test runner | `713b1f98` restored canonical modules/shims, runner, fixtures, and integrity guards. | Clean archive loaded 15 modules and found `tests/run_node_tests.js`. |
+| Session 73-81 continuity was truncated | `d851d7c6` additively recovered 90 sections with exact parent parity. | Ordered-subsequence and heading-parity checks passed. |
+| TUI/ingest contracts advertised unavailable or drifted behavior | `8e08ab6d` restored visible `not_implemented`, dry-run-before-write, and manifest parity. | TUI 218/218, contracts 31/31. |
+| Grain suspects were advisory-only | `d8d78545` classifies bounded recent cadence and blocks unexplained seams. | 8 plausible / 1 unexplained; `SOYB 5m` excluded before scorecard analysis. |
+| Residual merge seams kept the root suite red | `cb1c349f` restored ts-index reads, gap-aware backfill, durable append/rename, research fallback, trade flags/PIN stripping, and scheduler dispatch. | Former failure set 44/44 pass plus 2 skip; full Node 817 pass / 0 fail / 4 skip. |
+
+### Final grades
+
+| Section | Before | After | Remaining gate |
+|---|---|---|---|
+| Repository bootstrap/tests | D | B+ | Host portability beyond this Linux toolchain. |
+| Gateway/CLI live safety | F/D | B- | Independent review and live soak; no real-capital approval. |
+| API/contracts | C- | B | Deployment/remote service verification. |
+| Market integrity | C | B- | Provider-backed repair of unexplained `SOYB 5m`. |
+| Workspace continuity | D | B+ | Keep append-only closeout discipline. |
+| Combined actionable engine | D / nonexistent | D / nonexistent | Implement exact-asset research-only composition; no synthetic promotion. |
+
+### Verification
+
+- `npm test`: 821 total / 817 pass / 0 fail / 4 skip.
+- `npm run test:api`: 7/7; `npm run test:contracts`: 31/31.
+- `npm run test:core`: CMake build and CTest 29/29.
+- Gateway/MCP/frontend TypeScript and frontend production build pass.
+- Six package-root dependency trees pass; secret scan 814/0; hygiene and diff checks pass.
+- Clean archive smoke: 15 modules plus root runner. `graphify` is unavailable.
+
+The session-82 C+/B- recovery ceiling is achieved. Promotion remains blocked because one data seam is
+unexplained, no independent live soak exists, remote RLS is unverified, and the combined actionable engine
+still has no production composition caller.

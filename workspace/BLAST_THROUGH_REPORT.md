@@ -23,3 +23,33 @@ The massive 120+ file delta (TUI refactor, test suite restructure, and crash fix
 
 ## Required Decisions
 *No open decisions from this audit. See `STATE.md` for current phase priorities.*
+
+## Correction - 2026-07-15 session 82
+
+**Audit Anchor:** `49560981` plus dirty worktree
+**Mode:** full / Hard Reading Mode
+**Status:** unsafe for live execution and not clean-clone reproducible
+**DCS:** `0.635 -> 0.590`; promotion halted
+
+The earlier clean posture no longer describes this checkout. The July 14 merges introduced four
+committed conflict-marked shared modules, removed the canonical Node test runner, regressed live
+Polymarket authorization/native-risk gates, and truncated append-only workspace history. The working
+tree repairs only the module parse failures; those repairs and compatibility shims are not tracked.
+
+Critical order: restore live execution safety, reconcile clean-HEAD modules/shims, restore the test
+runner, recover session 73-81 history, then resolve nine grain suspects. Full evidence, orphan matrix,
+section grades, LOC, and gates are in `workspace/DEV_REVIEW.md` session 82.
+
+## Recovery Closeout - 2026-07-16 session 83
+
+**Audit Anchor:** `98bd86c3 -> cb1c349f`
+**Status:** C+/B- engineering recovery achieved; promotion still blocked
+
+All seven recovery batches are implemented in six scoped commits. Full Node is 821 total / 817 pass /
+0 fail / 4 skip; API 7/7; contracts 31/31; native 29/29; frontend, gateway, MCP, dependencies, secrets,
+hygiene, diff integrity, and a 15-module clean-archive smoke pass.
+
+The remaining data blocker is explicit rather than hidden: 92/92 assets are cached and no required daily
+window is stale, but `SOYB 5m` remains unexplained and is excluded before scoring. Eight other suspects
+match recent session cadence. Live-capital use, remote RLS, combined-engine promotion, and real OOS/cost
+calibration remain outside the achieved grade.

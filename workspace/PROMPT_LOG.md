@@ -16,6 +16,17 @@ RESULT: DCS remains `0.590`. Focused local auth/risk checks pass `11/11`, gatewa
 current modules load; however, env-driven bot live mode can bypass CLI authorization/native risk, archived
 `HEAD` still has four conflict-marked modules, and `npm test` still lacks its runner. Live remains blocked.
 
+## Mass-Implement - 2026-07-16 (session 83)
+PROMPT: `$mass-implement`.
+WORK: Executed the ranked session-82 merge-recovery plan end to end in six scoped commits. Restored
+Polymarket bot authorization/native risk, clean-clone modules and the Node runner, append-only workspace
+history, truthful ingest/TUI behavior, grain-suspect propagation, and residual timestamp-index/backfill/
+atomic-write/research/trade/scheduler seams. Preserved unrelated config and skill edits.
+RESULT: Full Node 821/817/0fail/4skip; API 7/7; contracts 31/31; native 29/29; frontend build/typecheck;
+gateway and MCP TypeScript; secret scan 814/0; package dependency checks, hygiene, diff check, and clean
+archive 15-module smoke pass. Integrity remains deliberately blocked by one unexplained `SOYB 5m` seam;
+no live-capital or schema-v3 promotion claim was made. `graphify` is unavailable.
+
 ## Session Boot - 2026-07-15 (session 82, reprise)
 /session-orchestrator. Loaded `workspace/HANDOFF.md`, `workspace/handoff/2026-07-15.md`,
 `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `docs/README.md`, and `workspace/NEXT_SESSION_GOAL.md`.

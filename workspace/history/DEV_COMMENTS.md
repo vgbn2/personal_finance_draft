@@ -104,3 +104,37 @@
   paths. Recomputed DCS = **0.87**. Full findings + reviewer decisions:
   `workspace/DEV_REVIEW.md` "Focused Audit - 2026-06-11". The 2026-06-10 session also wrote no
   handoff/session-memory entry — its work was only discoverable via `git status`.
+
+## Audit Findings - 2026-07-15 session 82
+
+### [LIVE EXECUTION] July 14 merge removed fail-closed Polymarket and risk gates
+- **Context:** `backend/gateway/src/index.ts`, `backend/cli/commands/trade/trade_polymarket.js`.
+- **Issue:** reachable live paths lost explicit live authorization, session/PIN handoff, broker-backed
+  risk context, and native pre-trade approval before order placement.
+- **Status:** P0 open; live execution blocked until restored and re-audited.
+
+### [CLEAN CLONE] Dirty worktree masks conflict-marked committed modules
+- **Context:** canonical env/ingestion/macro/model modules and root compatibility shims.
+- **Issue:** `HEAD` does not parse from a clean archive; local success depends on uncommitted repairs.
+- **Status:** P0 open; preserve repairs, reconcile explicitly, verify from `git archive HEAD`.
+
+### [FALSE HEALTH] Canonical tests and archive continuity are broken
+- **Context:** missing `tests/run_node_tests.js`, hygiene, and workspace state files.
+- **Issue:** `npm test` cannot start while hygiene reports pristine; merge-time history loss removed
+  session 73-81 review detail.
+- **Status:** P1 open; restore runner/history and add clean-HEAD validation.
+
+### [DATA DEGRADATION] Grain suspects are advisory-only
+- **Context:** integrity report and scorecard ts-index readers.
+- **Issue:** 9 suspect bins do not affect integrity `ok` or downstream scorecard consumption.
+- **Status:** P1 open; source-classify/rebuild and propagate degraded state before promotion.
+
+## Resolution - 2026-07-16 session 83
+
+- **Live execution:** closed locally in `bc9ce6de`; explicit CLI authorization and native risk approval
+  now gate bot order paths. Independent live-soak remains required before real-capital approval.
+- **Clean clone and false health:** closed in `713b1f98`, `d851d7c6`, and `cb1c349f`; committed archive
+  modules load, the canonical runner exists, workspace history is restored, and full Node is 0-fail.
+- **Data degradation:** contained in `d8d78545`; eight suspects are cadence-plausible and the one
+  unexplained `SOYB 5m` seam makes integrity fail and is excluded before scorecard analysis. Provider-backed
+  repair remains open; no binary cache was rewritten.

@@ -928,6 +928,27 @@ _Older Correction Log / Update entries (sessions ~20-79, 2026-05-31 to 2026-06-0
   conflict-marked canonical shared modules, and `npm test` cannot start because `tests/run_node_tests.js`
   is absent. Continue merge-recovery Batches 1-2 before any live trading or feature work.
 
+## Mass-Implement Closeout - 2026-07-16 session 83 - merge recovery complete
+
+- Completed the seven-batch session-82 recovery plan in six scoped commits: `bc9ce6de` restored
+  fail-closed Polymarket bot execution, `713b1f98` restored clean-clone/test contracts, `d851d7c6`
+  recovered session 73-81 history, `8e08ab6d` restored truthful ingest/TUI contracts, `d8d78545`
+  made unexplained grain fail closed, and `cb1c349f` restored the final merged data/CLI seams.
+- Canonical root verification is green: full Node 821 total / 817 pass / 0 fail / 4 skip; API 7/7;
+  contracts 31/31; native CTest 29/29; frontend typecheck/build; gateway and MCP TypeScript; six
+  dependency roots; hygiene; diff integrity; and secret scan 814 files / 0 violations.
+- A clean `git archive HEAD` loaded all 15 canonical/shim/changed modules and found the root test runner.
+  `graphify` and `graphify-out` remain unavailable, so no graph refresh is claimed.
+- Current integrity truth is 92/92 cached and 0 required-window stale. Of nine density suspects, eight
+  are cadence-plausible and one remains unexplained: `SOYB 5m` has 4,640 rows, 8.89 recent active-day
+  bars/day, and a 15-minute median gap. Integrity is correctly `ok:false`, and scorecard consumers exclude
+  that seam before analysis. No binary cache was rewritten.
+- Engineering recovery reached the planned C+/B- ceiling: bootstrap/tests are reproducible, gateway/CLI
+  execution is locally fail-closed, API/contracts are green, workspace history is recovered, and market
+  integrity propagates degradation. This does not approve real-capital execution, schema-v3 promotion, or
+  the combined actionable engine. Independent live-soak, remote RLS, real evidence/calibration, and the
+  unexplained grain repair remain open.
+
 ## Recovered Merge History - 2026-07-16 session 83
 
 
