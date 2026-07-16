@@ -1,6 +1,3 @@
-<<<<<<<< HEAD:shared/lib/macro_store.js
-module.exports = require('./data/macro_store');
-========
 const { createClient } = require('@supabase/supabase-js');
 
 require('../runtime/env');
@@ -220,4 +217,3 @@ module.exports = {
   selectMacroObservationsAsOf,
   signedLog1p,
 };
->>>>>>>> feat-ink-tui-refactor-split:shared/lib/data/macro_store.js

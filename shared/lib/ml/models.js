@@ -1,6 +1,3 @@
-<<<<<<<< HEAD:shared/lib/models.js
-module.exports = require('./ml/models');
-========
 const FEATURE_NAMES = [
   'return_fast',
   'return_slow',
@@ -442,4 +439,3 @@ module.exports = {
   resolveModel,
   scoreModel,
 };
->>>>>>>> feat-ink-tui-refactor-split:shared/lib/ml/models.js

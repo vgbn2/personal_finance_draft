@@ -1,6 +1,3 @@
-<<<<<<<< HEAD:shared/lib/env.js
-module.exports = require('./runtime/env');
-========
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -70,4 +67,3 @@ module.exports = {
   collectEnvPaths,
   loadLocalEnv,
 };
->>>>>>>> feat-ink-tui-refactor-split:shared/lib/runtime/env.js
