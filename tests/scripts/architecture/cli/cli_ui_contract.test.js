@@ -64,6 +64,10 @@ test('ingest TUI family selector maps to scoped ingest options', () => {
     assert.equal(ingest.flags['--family'].options.includes(family), false);
   }
   assert.equal(ingestOptionsFromArgs(['--family', 'commodities']).family, 'commodities');
+  assert.deepEqual(ingestOptionsFromArgs(['--family', 'pmi', '--dry-run']), {
+    family: 'pmi',
+    dryRun: true,
+  });
   assert.deepEqual(
     ingestOptionsFromArgs(['--family', 'prediction_market', '--symbol', 'fed_rate_cut_prob', '--timeframe', '1h', '--history-days', '30']),
     {
@@ -100,12 +104,20 @@ test('legacy and dashboard manifests stay aligned on shared command ids and core
   const modernOnly = [...modernCommands.keys()].filter((id) => !legacyCommands.has(id));
   assert.deepEqual(
     modernOnly.sort(),
-    ['backend chart', 'stop-backfill-daemon'],
-    'only the explicitly newer dashboard entries should exist in the inline manifest'
+    ['backend chart', 'bot', 'stop-backfill-daemon'],
+    'only explicitly newer dashboard entries and its bot submenu should be modern-only'
   );
 
   const legacyOnly = [...legacyCommands.keys()].filter((id) => !modernCommands.has(id));
-  assert.deepEqual(legacyOnly, [], 'the legacy manifest should not contain commands that the dashboard no longer knows about');
+  const modernBotCommands = modernCommands.get('bot').subcmds
+    .map((entry) => entry.cmdStr)
+    .filter(Boolean)
+    .map((command) => command.split(/\s+/).slice(0, 2).join(' '));
+  assert.deepEqual(
+    legacyOnly.sort(),
+    [...new Set(modernBotCommands)].sort(),
+    'legacy bot actions should match the commands exposed by the modern bot submenu'
+  );
 
   const flagAligned = [
     'watch',

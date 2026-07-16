@@ -152,10 +152,10 @@ const COMMAND_MANIFEST = {
       }},
       { id: 'ingest',      label: 'Ingest ', loading: true, flags: {
         '--family': { type: 'select', options: [
+          // Unavailable families remain guarded in the canonical ingest manifest.
           'all', 'crypto', 'fx', 'equities', 'indices', 'commodities',
-          'macro', 'macro_alt', 'pmi', 'breadth', 'sentiment',
-          'onchain', 'prediction_market', 'weather', 'flight',
-          'crypto_tx', 'holdings', 'reserves'
+          'macro', 'macro_alt', 'sentiment',
+          'prediction_market', 'weather', 'reserves'
         ], label: 'Family', default: 'all' },
         '--symbol':       { type: 'text', default: '', label: 'Symbol filter (optional)' },
         '--timeframe':    { type: 'select', options: ['1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1h' },
@@ -210,7 +210,7 @@ const COMMAND_MANIFEST = {
         '--days': { type: 'text', default: '730', label: 'History window (days)' },
         '--allow-degraded': { type: 'confirm', label: 'Allow degraded data?', default: false }
       }},
-      { id: 'optimize', label: 'Optimize (Indicators only)', loading: true, flags: {
+      { id: 'optimize', label: 'Optimize Indicators', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
       }},
@@ -218,6 +218,23 @@ const COMMAND_MANIFEST = {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--symbol': { type: 'text', default: '', label: 'Symbol filter (optional)' }
+      }},
+      { id: 'bias', label: 'Bias Signal', loading: true, flags: {
+        '--symbol': { type: 'text', default: 'BTCUSDT', label: 'Symbol' },
+        '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: false }
+      }},
+      { id: 'scorecard', label: 'Scorecard (EdgeFinder)', loading: true, flags: {
+        '--schema': { type: 'select', options: ['2', '3'], label: 'Schema (3 = research shadow)', default: '2' },
+        '--fixture': { type: 'select', options: ['', 'aapl-recorded', 'all-recorded'], label: 'Schema 3 fixture', default: '' },
+        '--symbol': { type: 'text', default: '', label: 'Schema 3 workbench symbol' },
+        '--state': { type: 'select', options: ['', 'eligible', 'degraded', 'excluded'], label: 'Schema 3 decision state', default: '' },
+        '--family': { type: 'select', options: ['', 'crypto', 'equities', 'fx', 'indices', 'commodities'], label: 'Family filter (blank = all)' },
+        '--tf': { type: 'text', default: '1h,4h,1d', label: 'Timeframes (comma-sep)' },
+        '--direction': { type: 'select', options: ['', 'long', 'short', 'neutral'], label: 'Direction filter (blank = all)' },
+        '--min-conf': { type: 'text', default: '0.3', label: 'Min confidence (0-1)' },
+        '--top': { type: 'text', default: '50', label: 'Max rows' },
+        '--allow-degraded': { type: 'confirm', label: 'Allow partial coverage?', default: false },
+        '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: true }
       }}
     ],
     settings: [
@@ -261,6 +278,9 @@ const COMMAND_MANIFEST = {
       { id: 'auto-trade',   label: 'Auto-Trade Loop', flags: {
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' },
         '--live':     { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
+      }},
+      { id: 'auto-trade status', label: 'Positions', flags: {
+        '--live': { type: 'confirm', label: 'Show LIVE account positions?', default: false }
       }},
       { id: 'agent',        label: 'AI Agent', flags: {
         '--query': { type: 'text', default: '', label: 'Task for the agent' }
