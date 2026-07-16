@@ -11,7 +11,7 @@ const { adaptTechnicalV2Row } = require('../../../shared/lib/analysis/analyzers/
 const { writeTsIndex } = require('../../../shared/lib/market/validation.js');
 
 const NOW = Date.parse('2026-07-11T12:00:00.000Z');
-const TF_MS = { '1h': 60 * 60 * 1000, '4h': 4 * 60 * 60 * 1000, '1d': 24 * 60 * 60 * 1000 };
+const TF_MS = { '5m': 5 * 60 * 1000, '1h': 60 * 60 * 1000, '4h': 4 * 60 * 60 * 1000, '1d': 24 * 60 * 60 * 1000 };
 
 function assertWithinWidth(output, width) {
   assert.ok(output.split('\n').every((line) => line.length <= width), `expected every line to fit ${width} columns:\n${output}`);
@@ -164,6 +164,44 @@ test('scorecard can have fresh eligible rows that still fall below the confidenc
     assert.match(output, /No rows shown: 1 candidate below the 30% confidence floor\./);
     assert.doesNotMatch(output, /ASSET\s+DIR/);
     assertWithinWidth(output, 80);
+  } finally {
+    fs.rmSync(tsDir, { recursive: true, force: true });
+  }
+});
+
+test('scorecard excludes a fresh bin whose recent cadence does not match its labeled grain', async () => {
+  const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'scorecard-grain-'));
+  try {
+    const sparseFiveMinute = Array.from({ length: 800 }, (_, index) => {
+      const close = 100 + index / 100;
+      return {
+        symbol: 'SUSPECT',
+        family: 'equities',
+        provider: 'test-provider',
+        timeframe: '5m',
+        timestamp: new Date(NOW - (799 - index) * TF_MS['1d'] - TF_MS['5m']).toISOString(),
+        open: close,
+        high: close + 1,
+        low: close - 1,
+        close,
+        volume: 100,
+      };
+    });
+    writeTsIndex(tsDir, { sources: sparseFiveMinute });
+
+    const result = await buildScorecard(
+      ['--family', 'equities', '--tf', '5m', '--min-conf', '0', '--top', '10'],
+      { tsDir, now: NOW, universeLoader: async () => [{ symbol: 'SUSPECT', family: 'equities' }] },
+    );
+
+    assert.equal(result.ok, true);
+    assert.equal(result.analyzed_symbols, 0);
+    assert.equal(result.excluded_symbols, 1);
+    assert.deepEqual(result.exclusion_summary.by_reason, { 'unexplained grain suspect': 1 });
+    const reason = result.exclusions[0].reasons[0];
+    assert.equal(reason.timeframe, '5m');
+    assert.equal(reason.grain_integrity.status, 'unexplained');
+    assert.equal(reason.grain_integrity.blocking, true);
   } finally {
     fs.rmSync(tsDir, { recursive: true, force: true });
   }

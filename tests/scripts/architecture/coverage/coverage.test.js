@@ -11,7 +11,13 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { writeTsIndex } = require('../../../../shared/lib/market/validation.js');
-const { readCoverage, isFresh, summarizeUniverse, isGrainSuspect } = require('../../../../shared/lib/market/coverage.js');
+const {
+  readCoverage,
+  isFresh,
+  summarizeUniverse,
+  isGrainSuspect,
+  classifyRecentGrainCadence,
+} = require('../../../../shared/lib/market/coverage.js');
 
 const Y = (s) => Date.parse(s);
 
@@ -34,6 +40,27 @@ test('isGrainSuspect flags coarse-data-leaked intraday bins, not honest-thin or 
   assert.equal(isGrainSuspect('1d', 5, Y('2002-01-01'), Y('2026-01-01')).suspect, false);
 
   console.log(JSON.stringify({ type: 'coverage_test', case: 'grain_suspect', leak: leak.suspect, leakBpd: leak.barsPerDay }));
+});
+
+test('recent session cadence separates plausible sparse history from an unexplained timeframe mismatch', () => {
+  const start = Y('2026-06-01T13:30:00.000Z');
+  const plausible = [];
+  const mismatched = [];
+  for (let day = 0; day < 20; day += 1) {
+    for (let bar = 0; bar < 30; bar += 1) plausible.push(start + day * 86400000 + bar * 5 * 60000);
+    for (let bar = 0; bar < 6; bar += 1) mismatched.push(start + day * 86400000 + bar * 15 * 60000);
+  }
+
+  const classified = classifyRecentGrainCadence('5m', 'equities', plausible);
+  assert.equal(classified.status, 'cadence_plausible');
+  assert.equal(classified.blocking, false);
+  assert.equal(classified.sample.median_within_day_gap_minutes, 5);
+
+  const unexplained = classifyRecentGrainCadence('5m', 'equities', mismatched);
+  assert.equal(unexplained.status, 'unexplained');
+  assert.equal(unexplained.blocking, true);
+  assert.equal(unexplained.reason, 'recent_density_and_gap_mismatch');
+  assert.equal(unexplained.sample.median_within_day_gap_minutes, 15);
 });
 
 // Write `n` crypto 1m bars ending exactly at `lastIso`, ascending.
