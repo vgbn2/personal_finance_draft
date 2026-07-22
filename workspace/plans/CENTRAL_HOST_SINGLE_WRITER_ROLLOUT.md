@@ -94,3 +94,44 @@ Date: 2026-07-22
 7. The pushed commit reproduces the broad test/build matrix from a clean archive.
 8. Runtime completion requires Docker health and data integrity with zero unexplained grain; live trading and
    schema-v3 promotion remain explicitly unapproved.
+
+## 2026-07-22 session 89 extension - host selection and failed Actions recovery
+
+### Evidence-backed host decision
+
+- Primary: Vultr Singapore `vc2-4c-8gb`, x86_64, 4 shared vCPU, 8 GB RAM, 160 GB SSD, USD 40/month cap.
+- Operational fallback: DigitalOcean Singapore Basic, the same 4 vCPU / 8 GB / 160 GB shape at USD 48/month.
+- Large-provider fallback: AWS Lightsail Singapore, 2 vCPU / 8 GB / 160 GB at USD 44/month.
+- Do not choose OCI Always Free A1 first: it is Arm-only for the useful free shape, the repo has no full arm64
+  deployment proof, free capacity is not guaranteed, and idle instances can be reclaimed.
+- Source records, billing caveats, and unresolved account/quota questions are preserved in
+  `workspace/research/central_host_options_2026-07-22.json`.
+
+No server is purchased or provisioned by this plan. Provider account access, payment authorization, exact
+regional inventory, and permission to spend USD 40/month remain operator decisions.
+
+### Confirmed GitHub failure chain
+
+1. `.github/workflows/deploy.yml` was never a deployment: it ran only on manual dispatch and had no host,
+   persisted volume, SSH target, registry, rollout, or supervisor.
+2. Its only path gate checked removed `docs/DEPLOYMENT.md`; the tracked guide moved to
+   `docs/operational/guides/DEPLOYMENT.md`, so the guard failed deterministically.
+3. The C++ test workflow pointed CTest at nonexistent `build/ci-debug/cpp_core`; the root CMake build writes
+   tests under `build/ci-debug/backend/core`.
+4. Once that directory was corrected, three native tests exposed hard-coded working-directory/runtime-cache
+   assumptions. All native empirical tests now use repository-rooted committed fixtures and do not silently
+   pass because an ignored cache is absent.
+5. The TradingView Git dependency used an SSH transport unsuitable for a noninteractive clean runner. It is
+   now pinned to the existing commit over HTTPS.
+
+Exact historical Actions run ids and independent server-side logs remain unavailable without authenticated
+read-only GitHub access. The structured local/remote evidence boundary is recorded in
+`workspace/research/github_deployment_failures_2026-07-22.json`.
+
+### Update topology
+
+The developer machine pushes reviewed commits. A tracked systemd timer on the central machine invokes the
+same fail-closed updater every five minutes. The updater fast-forwards only, starts only `web` and `backfill`,
+and records a last-success commit marker only after the web container healthcheck passes and `backfill` is
+running. Data freshness is a separate post-deploy integrity gate. A failed build or deployment-readiness check
+therefore retries on the next timer cycle instead of being hidden by an already-advanced Git checkout.

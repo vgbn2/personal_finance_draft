@@ -12,6 +12,9 @@ const DOCKER_DEPLOY_DOC = path.join(REPO_ROOT, 'infra', 'docker', 'DEPLOY.md');
 const CENTRAL_ENV_EXAMPLE = path.join(REPO_ROOT, '.env.central.example');
 const CENTRAL_PREFLIGHT = path.join(REPO_ROOT, 'backend', 'scripts', 'ops', 'central_host_preflight.js');
 const CENTRAL_UPDATER = path.join(REPO_ROOT, 'infra', 'docker', 'update-central-host.sh');
+const CENTRAL_UPDATER_INSTALLER = path.join(REPO_ROOT, 'infra', 'systemd', 'install-central-updater.sh');
+const CENTRAL_UPDATER_SERVICE = path.join(REPO_ROOT, 'infra', 'systemd', 'sovereign-central-update.service.in');
+const CENTRAL_UPDATER_TIMER = path.join(REPO_ROOT, 'infra', 'systemd', 'sovereign-central-update.timer');
 const TERRAFORM_MAIN = path.join(REPO_ROOT, 'infra', 'deployment', 'terraform', 'main.tf');
 const HEROKU_PROCFILE = path.join(REPO_ROOT, 'infra', 'deployment', 'heroku', 'Procfile');
 const HEROKU_APP = path.join(REPO_ROOT, 'infra', 'deployment', 'heroku', 'app.json');
@@ -36,6 +39,9 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   const centralEnv = read(CENTRAL_ENV_EXAMPLE);
   const centralPreflight = read(CENTRAL_PREFLIGHT);
   const centralUpdater = read(CENTRAL_UPDATER);
+  const centralUpdaterInstaller = read(CENTRAL_UPDATER_INSTALLER);
+  const centralUpdaterService = read(CENTRAL_UPDATER_SERVICE);
+  const centralUpdaterTimer = read(CENTRAL_UPDATER_TIMER);
   const terraform = read(TERRAFORM_MAIN);
   const herokuProcfile = read(HEROKU_PROCFILE);
   const herokuApp = read(HEROKU_APP);
@@ -143,10 +149,27 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(centralUpdater, /HEAD does not exactly match/);
   assert.match(centralUpdater, /central_host_preflight\.js/);
   assert.match(centralUpdater, /docker compose --env-file/);
+  assert.match(centralUpdater, /deployed_head_file=/);
+  assert.match(centralUpdater, /"\$\{deployed_head\}" == "\$\(git rev-parse HEAD\)"/);
+  assert.match(centralUpdater, /mv "\$\{deployed_head_tmp\}" "\$\{deployed_head_file\}"/);
+  assert.match(centralUpdater, /stack_is_deployment_ready/);
+  assert.match(centralUpdater, /SOVEREIGN_DEPLOY_FORCE/);
   assert.match(centralUpdater, /up -d --force-recreate web backfill/);
   assert.doesNotMatch(centralUpdater, /up -d[^\n]*\bbot\b/);
   assert.match(centralUpdater, /ps --status running --services backfill/);
-  assert.match(centralUpdater, /health_url="http:\/\/127\.0\.0\.1:8787\/health"/);
+  assert.match(centralUpdater, /docker inspect --format/);
+  assert.match(centralUpdater, /web_health.*healthy/);
+  assert.doesNotMatch(centralUpdater, /127\.0\.0\.1:8787\/health/);
+
+  assert.match(centralUpdaterInstaller, /systemctl enable --now sovereign-central-update\.timer/);
+  assert.match(centralUpdaterInstaller, /sovereign-central-update\.service\.in/);
+  assert.match(centralUpdaterInstaller, /Node\.js 20 or newer is required/);
+  assert.match(centralUpdaterInstaller, /docker compose version/);
+  assert.match(centralUpdaterService, /^User=@DEPLOY_USER@$/m);
+  assert.match(centralUpdaterService, /^WorkingDirectory=@REPO_ROOT@$/m);
+  assert.match(centralUpdaterService, /update-central-host\.sh/);
+  assert.match(centralUpdaterTimer, /^OnUnitInactiveSec=5min$/m);
+  assert.match(centralUpdaterTimer, /^Persistent=true$/m);
 
   console.log(JSON.stringify({
     type: 'deployment_manifest_contract',

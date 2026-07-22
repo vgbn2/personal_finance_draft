@@ -1,0 +1,114 @@
+{
+  "generated_at": "2026-07-22T07:57:08Z",
+  "repository": "vgbn2/personal_finance_draft",
+  "branch": "main",
+  "analyzed_head": "2f285b532e6fbb0f641532404eebd6b5c586dfbe",
+  "scope": "Pre-recovery workflow snapshot; findings describe main before the session-89 repairs are pushed.",
+  "runs": [],
+  "root_causes": [
+    {
+      "id": "deploy-workflow-is-a-guard-not-a-deployment",
+      "classification": "configuration",
+      "confidence": "confirmed_from_committed_workflow",
+      "summary": "The only deployment-named GitHub Actions workflow does not deploy to any host. It is a manual local-first guard with one read-only job and no host, registry, environment, artifact, SSH, or rollout step.",
+      "evidence": [
+        ".github/workflows/deploy.yml:1 names the workflow Deployment Guard.",
+        ".github/workflows/deploy.yml:3-4 exposes only workflow_dispatch, so pushes do not trigger it.",
+        ".github/workflows/deploy.yml:6-7 grants only contents: read.",
+        ".github/workflows/deploy.yml:9-23 defines only the Confirm deployment remains local-first guard job.",
+        ".github/workflows/deploy.yml:22 explicitly reports that production deployment is intentionally disabled."
+      ],
+      "workflow_url": "https://github.com/vgbn2/personal_finance_draft/actions/workflows/deploy.yml"
+    },
+    {
+      "id": "deployment-guard-checks-deleted-doc-path",
+      "classification": "code_configuration_drift",
+      "confidence": "confirmed_locally_reproducible",
+      "summary": "Every execution of Deployment Guard from the current main tree fails before its report step because Verify deployment docs checks a path that no longer exists.",
+      "failed_job": "Confirm deployment remains local-first",
+      "failed_step": "Verify deployment docs",
+      "error_summary": "test -s docs/DEPLOYMENT.md exits 1 because docs/DEPLOYMENT.md is absent; the tracked document is docs/operational/guides/DEPLOYMENT.md.",
+      "evidence": [
+        ".github/workflows/deploy.yml:17-18 runs test -s docs/DEPLOYMENT.md.",
+        "A local execution of the exact command on main at 2f285b532e6fbb0f641532404eebd6b5c586dfbe returned exit 1.",
+        "test -s docs/operational/guides/DEPLOYMENT.md returned exit 0.",
+        "Git history records the docs move in commit 488e6414d8db38f60b12b0ba7fd629eed14be0e0 on 2026-06-13, while deploy.yml still retains the old path.",
+        "deploy.yml was introduced by a02d1f193842240b831c2f6838461779a682c5cb on 2026-05-28 and has not been updated for the move."
+      ],
+      "workflow_url": "https://github.com/vgbn2/personal_finance_draft/actions/workflows/deploy.yml"
+    },
+    {
+      "id": "no-central-host-target",
+      "classification": "infrastructure",
+      "confidence": "confirmed_from_repository_and_task_context",
+      "summary": "There is no selected always-on host for GitHub Actions to update, so even a corrected workflow has no deployment destination.",
+      "evidence": [
+        "The repository now contains infra/docker/update-central-host.sh for host-side pull-and-recreate operation, but deploy.yml does not invoke a host or identify one.",
+        "No host URL, SSH target, self-hosted runner label, container registry publish step, or provider deployment action exists in deploy.yml."
+      ]
+    },
+    {
+      "id": "github-hosted-runner-is-not-the-poller",
+      "classification": "architecture",
+      "confidence": "confirmed_from_workflow_shape",
+      "summary": "The current GitHub Actions workflow cannot provide the persistent storage and continuously running backfill process required by the single-writer polling design; it only starts an ephemeral ubuntu-latest runner for a short guard job.",
+      "evidence": [
+        ".github/workflows/deploy.yml:12 selects ubuntu-latest rather than a persistent central host or self-hosted runner.",
+        "The workflow has no persisted volume, service startup, process supervision, health check, or remote update step."
+      ]
+    }
+  ],
+  "recommended_fixes": [
+    {
+      "priority": 1,
+      "scope": "workflow_truth",
+      "action": "Stop presenting Deployment Guard as a deployment. Either remove/rename it to Local-first deployment guard, or replace it only after a concrete central host is selected.",
+      "acceptance": "The Actions UI cannot be mistaken for an attempted production deployment."
+    },
+    {
+      "priority": 2,
+      "scope": "deterministic_guard_failure",
+      "action": "Update the docs check and report text from docs/DEPLOYMENT.md to docs/operational/guides/DEPLOYMENT.md, then add a repository test that asserts every workflow-referenced local path exists.",
+      "acceptance": "The exact Verify deployment docs command exits 0 in a clean checkout."
+    },
+    {
+      "priority": 3,
+      "scope": "hosting_decision",
+      "action": "Select one private always-on Linux host with Docker Compose, persistent disk, outbound provider access, SSH or VPN access, and backups. Keep GitHub-hosted runners out of the polling/data-storage role.",
+      "acceptance": "A named host passes backend/scripts/ops/central_host_preflight.js with .env.central and can run web plus the sole backfill writer."
+    },
+    {
+      "priority": 4,
+      "scope": "deployment_transport",
+      "action": "After the host exists, choose one update transport: host-initiated pull using the existing update-central-host.sh on a timer is preferred; alternatively use a tightly scoped self-hosted runner or SSH dispatch. Do not put trading or provider secrets in GitHub-hosted jobs.",
+      "acceptance": "A main update fast-forwards a clean host checkout, passes preflight, recreates only web and backfill, and proves health without exposing the service publicly."
+    },
+    {
+      "priority": 5,
+      "scope": "run_evidence",
+      "action": "Provide authenticated read-only GitHub Actions access, or export failed run logs, so exact run IDs, timestamps, job URLs, and any independent Test or Build failures can be classified rather than inferred.",
+      "acceptance": "The runs array can be populated from the Actions API with redacted failed-step evidence for each recent failed run."
+    }
+  ],
+  "unknowns": [
+    {
+      "item": "recent_run_metadata",
+      "reason": "The gh CLI is not installed, no GitHub token or gh configuration is available, and the unauthenticated GitHub Actions API returns 404 for this private or otherwise inaccessible repository.",
+      "missing": [
+        "run IDs",
+        "run URLs",
+        "run timestamps",
+        "head SHAs per run",
+        "server-side log excerpts"
+      ]
+    },
+    {
+      "item": "independent_test_and_build_failures",
+      "reason": "Without authenticated Actions logs, it is not possible to establish whether the Test and Build workflows also failed remotely or at which exact steps. The local full-suite result does not substitute for runner-specific evidence."
+    },
+    {
+      "item": "hosting_budget_and_provider_constraints",
+      "reason": "No budget, geographic preference, provider choice, uptime target, storage size, or acceptable maintenance model was supplied, so a specific host cannot be selected from repository evidence alone."
+    }
+  ]
+}

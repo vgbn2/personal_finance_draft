@@ -1,0 +1,377 @@
+{
+  "generated_at": "2026-07-22T14:59:07+07:00",
+  "requirements": {
+    "workload": "Private always-on central polling, cache writing, web/API reading, and Git-based updates for personal_finance_draft; no public application endpoint and no live trading.",
+    "minimum": {
+      "cpu": "2 shared vCPUs",
+      "memory_gb": 8,
+      "storage_gb": 80,
+      "storage_type": "SSD or NVMe",
+      "architecture": "x86_64 preferred",
+      "operating_system": "Ubuntu 24.04 LTS or another supported x86_64 Linux",
+      "software": [
+        "Docker Engine",
+        "Docker Compose v2",
+        "Node.js 22 LTS (Node.js 20 minimum for host preflight)",
+        "Git",
+        "SSH"
+      ],
+      "network": [
+        "Outbound HTTPS for provider polling and Git fetch/pull",
+        "Private operator access through SSH plus Tailscale or WireGuard",
+        "No public web/API listener required"
+      ]
+    },
+    "preferred": {
+      "cpu": "4 shared vCPUs",
+      "memory_gb": 8,
+      "storage_gb": 160,
+      "region": "Singapore or another nearby Asia region",
+      "reason": "Provides headroom for Docker image builds, concurrent read traffic, and backfill work while retaining an inexpensive shared-CPU profile."
+    },
+    "operational_constraints": [
+      "Run exactly one backfill/polling writer against the central cache.",
+      "Keep the dashboard bound to loopback or a private overlay address.",
+      "Use a provider firewall to permit SSH or overlay-VPN traffic only.",
+      "Do not depend on GitHub Pages, GitHub Actions hosting, or a GitHub application deployment product; Git is only the update transport."
+    ]
+  },
+  "options": [
+    {
+      "id": "vultr_sgp_vc2_4c_8gb",
+      "provider": "Vultr",
+      "product": "Cloud Compute shared CPU vc2-4c-8gb",
+      "region": "Singapore (sgp)",
+      "architecture": "x86_64 Intel",
+      "cpu": "4 shared vCPUs",
+      "memory_gb": 8,
+      "storage": "160 GB local SSD",
+      "bandwidth": "4,096 GB monthly plan allowance according to the public plans API",
+      "price": {
+        "currency": "USD",
+        "monthly_cap": 40,
+        "hourly": 0.055,
+        "tax_included": false
+      },
+      "private_access": "Supported through Linux SSH plus Tailscale or WireGuard; Vultr also supports firewall groups and VPC networking.",
+      "billing_caveats": [
+        "Non-GPU servers are billed hourly up to 672 hours per month.",
+        "The minimum billing unit is one hour.",
+        "Stopped instances continue to incur charges; destroy the instance to stop compute billing.",
+        "Optional backups, snapshots, reserved IPs, and other add-ons cost extra."
+      ],
+      "compatibility_risk": "low",
+      "availability_risk": "low_to_medium",
+      "availability_note": "The current official plans API lists this plan in sgp, but regional inventory can change during provisioning.",
+      "provisioning_url": "https://my.vultr.com/deploy/",
+      "fit": "Best verified paid Singapore price in this shortlist while meeting the preferred 4-vCPU, 8-GB, 160-GB shape."
+    },
+    {
+      "id": "aws_lightsail_singapore_8gb",
+      "provider": "Amazon Web Services",
+      "product": "Lightsail Linux/Unix General Purpose with public IPv4",
+      "region": "Asia Pacific (Singapore)",
+      "architecture": "x86_64-capable Linux bundle; confirm the selected blueprint architecture at creation",
+      "cpu": "2 vCPUs",
+      "memory_gb": 8,
+      "storage": "160 GB SSD",
+      "bandwidth": "5 TB transfer allowance; Singapore is not one of the Asia regions for which the published page halves the allowance",
+      "price": {
+        "currency": "USD",
+        "monthly_cap": 44,
+        "hourly": "on-demand hourly rate up to the monthly cap",
+        "tax_included": false
+      },
+      "private_access": "Supported through Linux SSH plus Tailscale or WireGuard; use the Lightsail firewall and keep the application bound privately.",
+      "billing_caveats": [
+        "Instances are billed hourly up to the monthly plan cost.",
+        "Stopped instances continue to accrue charges until deleted.",
+        "Only excess outbound transfer is charged after the plan allowance, although both inbound and outbound usage count toward the allowance.",
+        "Snapshots and other Lightsail resources are separate charges."
+      ],
+      "compatibility_risk": "low",
+      "availability_risk": "low",
+      "availability_note": "AWS documents Singapore Lightsail availability, but any specific bundle can still encounter temporary capacity limits.",
+      "provisioning_url": "https://lightsail.aws.amazon.com/ls/webapp/create/instance",
+      "fit": "Good fallback when predictable billing and a large provider are more important than having four vCPUs."
+    },
+    {
+      "id": "digitalocean_sgp_basic_8gb",
+      "provider": "DigitalOcean",
+      "product": "Basic Droplet, Regular CPU",
+      "region": "Singapore",
+      "architecture": "x86_64",
+      "cpu": "4 shared vCPUs",
+      "memory_gb": 8,
+      "storage": "160 GB SSD",
+      "bandwidth": "5,000 GiB included outbound transfer; inbound transfer is free",
+      "price": {
+        "currency": "USD",
+        "monthly_cap": 48,
+        "hourly": 0.07143,
+        "tax_included": false
+      },
+      "private_access": "Supported through Linux SSH plus Tailscale or WireGuard; Cloud Firewalls and VPC networking are available.",
+      "billing_caveats": [
+        "Since January 1, 2026, Droplets use per-second billing with a minimum of 60 seconds or USD 0.01.",
+        "Powered-off Droplets remain billable because resources stay reserved; destroy them to stop billing.",
+        "Outbound transfer above the pooled allowance is USD 0.01 per GiB.",
+        "Backups, snapshots, volumes, and taxes are additional."
+      ],
+      "compatibility_risk": "low",
+      "availability_risk": "low",
+      "availability_note": "The official pricing page lists Singapore among active data-center locations; final size inventory must be confirmed in the create screen.",
+      "provisioning_url": "https://cloud.digitalocean.com/droplets/new",
+      "fit": "Straightforward operational fallback with the preferred shape for USD 8 per month more than Vultr."
+    },
+    {
+      "id": "akamai_singapore_linode_8gb",
+      "provider": "Akamai Cloud Computing",
+      "product": "Shared CPU Linode 8 GB",
+      "region": "Singapore 2, SG (sg-sin-2) or Singapore, SG (ap-south)",
+      "architecture": "x86_64",
+      "cpu": "4 shared vCPUs",
+      "memory_gb": 8,
+      "storage": "160 GB SSD",
+      "bandwidth": "5 TB included transfer; general egress overage is USD 0.005 per GB and inbound is free",
+      "price": {
+        "currency": "USD",
+        "monthly_cap": 48,
+        "hourly": 0.072,
+        "tax_included": false
+      },
+      "private_access": "Supported through Linux SSH plus Tailscale or WireGuard; current Singapore 2 region metadata lists Cloud Firewall, VPC, and VLAN capabilities.",
+      "billing_caveats": [
+        "Compute is billed hourly up to a monthly cap and rounded to the nearest hour.",
+        "Powered-off instances remain billable until removed.",
+        "Taxes and optional backups are additional.",
+        "Pricing and plan availability can vary by region, so verify the selected Singapore site at checkout."
+      ],
+      "compatibility_risk": "low",
+      "availability_risk": "low_to_medium",
+      "availability_note": "The public regions API currently reports both Singapore core regions as status ok, including current compute and firewall capabilities.",
+      "provisioning_url": "https://cloud.linode.com/linodes/create",
+      "fit": "Equivalent resources and price to DigitalOcean with a second current Singapore core location available."
+    },
+    {
+      "id": "hetzner_sin_cpx32",
+      "provider": "Hetzner",
+      "product": "CPX32 Regular Performance shared AMD",
+      "region": "Singapore (SIN)",
+      "architecture": "x86_64 AMD",
+      "cpu": "4 shared vCPUs",
+      "memory_gb": 8,
+      "storage": "160 GB NVMe SSD",
+      "bandwidth": "At least 0.5 TB included in Singapore; official documentation gives a 0.5-5 TB range by CPX plan size. Shared host connectivity is 10 Gbit/s with an expected 300-500 Mbit/s per cloud server and no bandwidth guarantee.",
+      "price": {
+        "currency": "USD",
+        "monthly_cap": 57.99,
+        "hourly": 0.0929,
+        "tax_included": false,
+        "excludes": [
+          "public IPv4",
+          "applicable VAT or tax"
+        ]
+      },
+      "private_access": "Supported through Linux SSH plus Tailscale or WireGuard; Hetzner Cloud Firewalls and private Networks are available.",
+      "billing_caveats": [
+        "The listed Singapore CPX32 price is the new price effective June 15, 2026 and excludes public IPv4 and tax.",
+        "Servers are billed hourly up to a monthly cap and remain billable while they exist, even if powered off.",
+        "Singapore traffic overage is materially more expensive than European overage; verify the CPX32-specific included traffic in the order screen.",
+        "An EU CX33 alternative meets 4 vCPU, 8 GB RAM, and 80 GB NVMe at USD 9.99 per month excluding IPv4 and tax, but gives the Vietnam operator substantially higher interactive latency."
+      ],
+      "compatibility_risk": "low",
+      "availability_risk": "medium",
+      "availability_note": "Singapore is an active cloud location, but account verification and regional stock/limits must be passed before it is a usable host.",
+      "provisioning_url": "https://console.hetzner.cloud/",
+      "fit": "Technically strong but no longer price-leading in Singapore after the June 2026 price increase; its EU CX33 is the ultra-budget latency tradeoff."
+    },
+    {
+      "id": "oracle_oci_always_free_a1_singapore",
+      "provider": "Oracle Cloud Infrastructure",
+      "product": "Always Free VM.Standard.A1.Flex",
+      "region": "Home region must be Singapore (ap-singapore-1 or another eligible Singapore home region)",
+      "architecture": "Arm64 Ampere A1",
+      "cpu": "2 Arm OCPUs total under the current Always Free allowance",
+      "memory_gb": 12,
+      "storage": "Up to 200 GB combined boot and block volume storage in the home region; the default boot volume is 50 GB",
+      "bandwidth": "10 TB outbound data per month under current Always Free resources",
+      "price": {
+        "currency": "USD",
+        "monthly_cap": 0,
+        "hourly": 0,
+        "tax_included": true
+      },
+      "private_access": "Supported through SSH plus Tailscale or WireGuard; public IPv4 assignment is optional and OCI networking can place an instance in a private subnet.",
+      "billing_caveats": [
+        "Always Free compute and volume resources must be created in the tenancy home region.",
+        "Usage above the Always Free limits, non-home-region volumes, or paid add-ons can incur charges.",
+        "Free A1 capacity may be unavailable and Oracle explicitly documents out-of-host-capacity errors.",
+        "Idle Always Free instances may be reclaimed when CPU, network, and memory remain below documented thresholds for seven days."
+      ],
+      "compatibility_risk": "high",
+      "compatibility_note": "This is Arm-only for the useful free shape. The repository, native C++ build, Node dependencies, and Docker images have not been proven as a complete arm64 deployment contract; x86-only binaries or images could fail.",
+      "availability_risk": "high",
+      "availability_note": "Free-tier capacity is explicitly not guaranteed, and an idle polling host can be reclaimed. It is appropriate only as an experiment after an arm64 clean-build proof, not as the first dependable central host.",
+      "provisioning_url": "https://cloud.oracle.com/compute/instances/create",
+      "fit": "Zero-cost experiment that meets memory and storage needs, but it has the highest architecture, capacity, and lifecycle risk."
+    }
+  ],
+  "recommendation": {
+    "primary": "vultr_sgp_vc2_4c_8gb",
+    "reason": "It is the least expensive currently verified paid Singapore x86_64 option in this shortlist and exactly matches the preferred 4-vCPU, 8-GB, 160-GB shape. It provides a normal unmanaged Linux VM, so deployment is performed over SSH and does not depend on the GitHub deployment systems that have been failing.",
+    "fallback": "digitalocean_sgp_basic_8gb",
+    "fallback_reason": "It offers the same shape and Singapore location for USD 48 per month with simple per-second billing and a mature Droplet workflow.",
+    "large_provider_fallback": "aws_lightsail_singapore_8gb",
+    "large_provider_fallback_reason": "It is USD 44 per month and meets the minimum, but has only two vCPUs and therefore less build/backfill headroom.",
+    "ultra_budget_latency_tradeoff": "Hetzner EU CX33 at USD 9.99 per month excluding IPv4 and tax meets the minimum 4-vCPU, 8-GB, 80-GB shape, but should be selected only if Singapore latency is not important.",
+    "do_not_select_first": "oracle_oci_always_free_a1_singapore",
+    "do_not_select_first_reason": "The repository has no current full arm64 deployment proof, while OCI documents both free-capacity failures and idle-instance reclamation.",
+    "provisioning_boundary": "Before spending money, confirm the provider account can create the exact plan in the target region. Then provision one Ubuntu 24.04 x86_64 VM, restrict ingress to SSH or the overlay VPN, install Docker Engine and Compose v2, clone the repository, create .env.central locally with mode 0600, run the repository central-host preflight, and only then start web plus the single backfill writer."
+  },
+  "tradeoffs": [
+    {
+      "choice": "Singapore paid x86_64 VM",
+      "benefit": "Lowest latency from Vietnam, low compatibility risk, predictable capacity, and direct reuse of the tested Docker/Compose deployment path.",
+      "cost": "Approximately USD 40-58 per month before taxes and optional backups."
+    },
+    {
+      "choice": "Hetzner EU CX33",
+      "benefit": "Approximately USD 9.99 per month before IPv4 and tax with 4 vCPUs, 8 GB RAM, 80 GB NVMe, and generous EU traffic.",
+      "cost": "Higher Vietnam-to-Europe latency and a region farther from the operator; this is acceptable for unattended polling but less pleasant for interactive dashboard use."
+    },
+    {
+      "choice": "OCI Always Free Arm",
+      "benefit": "No monthly compute cost with 12 GB RAM and up to 200 GB total boot/block storage.",
+      "cost": "Unproven arm64 repo compatibility, no guaranteed capacity, and possible idle-resource reclamation."
+    },
+    {
+      "choice": "Self-hosted existing machine",
+      "benefit": "No new VM subscription and native x86_64 compatibility.",
+      "cost": "Depends on stable power, connectivity, remote recovery, Docker/Compose availability, and the operator accepting that the workstation becomes the always-on production-like host."
+    }
+  ],
+  "unknowns": [
+    "The maximum monthly budget and whether USD 40-48 per month is acceptable were not specified.",
+    "Provider account eligibility, payment-method acceptance, identity verification, and regional quota have not been tested; these can block provisioning even when a plan is advertised.",
+    "No latency measurements from the operator's Vietnam network to Singapore, Jakarta, or European regions were collected.",
+    "The current cache growth rate and required retention period were not measured, so 80-160 GB is a starting capacity rather than a long-term guarantee.",
+    "Optional backup requirements and acceptable recovery-point/recovery-time objectives were not specified.",
+    "No provider was purchased, provisioned, or contacted during this research task.",
+    "No arm64 clean build, full suite, or Docker deployment was run, so Oracle A1 remains compatibility-unproven."
+  ],
+  "sources": [
+    {
+      "provider": "Vultr",
+      "title": "Public plans API",
+      "url": "https://api.vultr.com/v2/plans?type=vc2",
+      "supports": [
+        "vc2-4c-8gb resources, USD 40 monthly and USD 0.055 hourly pricing, 4,096 GB allowance, x86 Intel architecture, and sgp availability"
+      ]
+    },
+    {
+      "provider": "Vultr",
+      "title": "How Am I Billed for My Servers?",
+      "url": "https://docs.vultr.com/support/platform/billing/how-am-i-billed-for-my-servers",
+      "supports": [
+        "hourly billing, 672-hour monthly cap for non-GPU servers, one-hour minimum, and continued billing while stopped"
+      ]
+    },
+    {
+      "provider": "Vultr",
+      "title": "How to Provision Vultr Cloud Compute Instances",
+      "url": "https://docs.vultr.com/products/compute/instances/cloud-compute/provisioning",
+      "supports": [
+        "shared-CPU provisioning, SSH key and firewall support, VPC/private-instance choices, and Ubuntu 24.04 x64 example"
+      ]
+    },
+    {
+      "provider": "DigitalOcean",
+      "title": "Droplet Pricing",
+      "url": "https://www.digitalocean.com/pricing/droplets",
+      "supports": [
+        "Basic 8-GiB 4-vCPU 160-GiB plan at USD 48 monthly, 5,000-GiB transfer, Singapore data center, and SSH access"
+      ]
+    },
+    {
+      "provider": "DigitalOcean",
+      "title": "Droplet Pricing documentation",
+      "url": "https://docs.digitalocean.com/products/droplets/details/pricing/",
+      "supports": [
+        "per-second billing since 2026, minimum charge, powered-off billing, pooled transfer, free inbound, and USD 0.01/GiB overage"
+      ]
+    },
+    {
+      "provider": "Amazon Web Services",
+      "title": "Amazon Lightsail Pricing",
+      "url": "https://aws.amazon.com/lightsail/pricing/",
+      "supports": [
+        "Linux public-IPv4 general-purpose 8-GB 2-vCPU 160-GB plan at USD 44 monthly, 5-TB allowance, and Singapore region availability"
+      ]
+    },
+    {
+      "provider": "Amazon Web Services",
+      "title": "Lightsail billing and account management FAQ",
+      "url": "https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-frequently-asked-questions-faq-billing-and-account-management.html",
+      "supports": [
+        "on-demand hourly billing to a monthly cap, stopped-resource billing, deletion boundary, and transfer allowance behavior"
+      ]
+    },
+    {
+      "provider": "Akamai Cloud Computing",
+      "title": "Akamai Cloud predictable pricing",
+      "url": "https://www.akamai.com/cloud/pricing",
+      "supports": [
+        "Linode 8-GB 4-vCPU 160-GB plan at USD 48 monthly or USD 0.072 hourly, 5-TB transfer, billing caveats, and egress pricing"
+      ]
+    },
+    {
+      "provider": "Akamai Cloud Computing",
+      "title": "Public regions API",
+      "url": "https://api.linode.com/v4/regions",
+      "supports": [
+        "Singapore and Singapore 2 core region status and current compute, firewall, VPC, VLAN, storage, and backup capabilities"
+      ]
+    },
+    {
+      "provider": "Hetzner",
+      "title": "Regular Performance cloud plans",
+      "url": "https://www.hetzner.com/cloud/regular-performance",
+      "supports": [
+        "CPX32 4-vCPU 8-GB 160-GB AMD shape, Singapore availability, hourly cap behavior, shared-link expectations, Linux, and cloud features"
+      ]
+    },
+    {
+      "provider": "Hetzner",
+      "title": "Hetzner Price Adjustment 15 June 2026",
+      "url": "https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/",
+      "supports": [
+        "current Singapore CPX32 USD 57.99 monthly and USD 0.0929 hourly price excluding IPv4 and VAT, plus EU CX33 USD 9.99 monthly"
+      ]
+    },
+    {
+      "provider": "Hetzner",
+      "title": "Traffic",
+      "url": "https://docs.hetzner.com/robot/general/traffic/",
+      "supports": [
+        "Singapore CPX included-traffic range and regional overage distinction"
+      ]
+    },
+    {
+      "provider": "Oracle Cloud Infrastructure",
+      "title": "Always Free Resources",
+      "url": "https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm",
+      "supports": [
+        "current 2-OCPU 12-GB Arm allowance, 200-GB home-region block storage, 10-TB outbound transfer, capacity errors, private addressing, and idle reclamation"
+      ]
+    },
+    {
+      "provider": "Oracle Cloud Infrastructure",
+      "title": "Public Cloud Regions",
+      "url": "https://www.oracle.com/apac/cloud/public-cloud-regions/",
+      "supports": [
+        "live Singapore and Singapore West OCI regions"
+      ]
+    }
+  ]
+}

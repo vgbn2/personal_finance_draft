@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
 
       - name: Install Node dependencies
@@ -60,5 +60,4 @@ jobs:
         run: cmake --build build/ci-debug --parallel
 
       - name: Run CTest
-        run: ctest --test-dir build/ci-debug/cpp_core --output-on-failure
-
+        run: ctest --test-dir build/ci-debug/backend/core --output-on-failure

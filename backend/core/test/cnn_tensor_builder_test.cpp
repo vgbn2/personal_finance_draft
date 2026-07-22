@@ -22,21 +22,14 @@ int main() {
     using namespace sovereign::indicators;
     using namespace sovereign::features;
 
-    std::filesystem::path cache_path = "storage/data/cache/backtest_history.json";
-    if (!std::filesystem::exists(cache_path)) {
-        cache_path = "../../storage/data/cache/backtest_history.json";
-    }
-
-    if (!std::filesystem::exists(cache_path)) {
-        std::cerr << "[TEST SKIP] Cache file not found at " << cache_path << ". Skipping real data pass.\n";
-        return 0;
-    }
+    const auto cache_path = std::filesystem::path(SOVEREIGN_REPO_ROOT)
+        / "tests" / "fixtures" / "real_bars_btc.json";
 
     std::cout << "[ANTI-BULLSHIT] Loading real market data for tensor validation: " << cache_path << "\n";
-    auto snapshot = loadMarketDataSnapshot(cache_path, "AAPL", "1d");
+    auto snapshot = loadMarketDataSnapshot(cache_path, "BTCUSDT", "1h");
 
     if (snapshot.bars.empty()) {
-        std::cerr << "[TEST FAIL] Loaded 0 bars for AAPL:1d from " << cache_path << "\n";
+        std::cerr << "[TEST FAIL] Loaded 0 bars for BTCUSDT:1h from " << cache_path << "\n";
         return 1;
     }
     std::cout << "[ANTI-BULLSHIT] Successfully loaded " << snapshot.bars.size() << " real bars.\n";
