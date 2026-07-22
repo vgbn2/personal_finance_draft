@@ -16,7 +16,7 @@ namespace {
 std::filesystem::path locateRepoRoot() {
 #ifdef SOVEREIGN_REPO_ROOT
     const std::filesystem::path macro_root(SOVEREIGN_REPO_ROOT);
-    if (std::filesystem::exists(macro_root / "storage" / "data" / "cache" / "last_fetch.json")) {
+    if (std::filesystem::exists(macro_root / "tests" / "fixtures" / "real_bars_btc.json")) {
         return macro_root;
     }
 #endif
@@ -27,7 +27,7 @@ std::filesystem::path locateRepoRoot() {
         std::filesystem::current_path().parent_path().parent_path().parent_path(),
     };
     for (const auto& candidate : candidates) {
-        if (std::filesystem::exists(candidate / "storage" / "data" / "cache" / "last_fetch.json")) {
+        if (std::filesystem::exists(candidate / "tests" / "fixtures" / "real_bars_btc.json")) {
             return candidate;
         }
     }
@@ -41,10 +41,10 @@ int main() {
         KronosTokenizer tokenizer;
         KronosTensorBuilder tensor_builder(3); // Small window for testing
 
-        // Load empirical data from the crypto partition (BTCUSDT 1d bars)
+        // Load the committed empirical BTC capture so clean CI does not depend on runtime cache state.
         const auto repo_root = locateRepoRoot();
-        const auto data_path = repo_root / "storage" / "data" / "cache" / "last_fetch.json";
-        auto snapshot = loadMarketDataSnapshot(data_path, "BTCUSDT", "1d", 5);
+        const auto data_path = repo_root / "tests" / "fixtures" / "real_bars_btc.json";
+        auto snapshot = loadMarketDataSnapshot(data_path, "BTCUSDT", "1h", 5);
         if (snapshot.bars.size() < 4) {
             throw std::runtime_error("Not enough empirical data points for Kronos test (need at least 4)");
         }

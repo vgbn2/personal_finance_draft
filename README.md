@@ -39,6 +39,8 @@ SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.
 The central stack runs one `backfill` writer beside the web/API scorecard reader, preserves host-mounted
 `storage/`, binds to loopback by default, and forces cloud-compute/non-live mode. Client machines use an
 SSH tunnel or private VPN and submit code changes through Git; they do not mount or write the ts-index.
+After the first manual deploy, the optional `infra/systemd/install-central-updater.sh` timer lets the host
+pull reviewed `main` updates every five minutes without turning a GitHub Actions runner into the poller.
 
 Run the local Linux suite:
 

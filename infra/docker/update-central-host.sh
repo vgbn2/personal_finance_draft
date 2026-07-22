@@ -8,6 +8,7 @@ remote_name="${SOVEREIGN_DEPLOY_REMOTE:-origin}"
 branch_name="${SOVEREIGN_DEPLOY_BRANCH:-main}"
 central_env_file="${SOVEREIGN_CENTRAL_ENV_FILE:-${repo_root}/.env.central}"
 deploy_lock="${SOVEREIGN_DEPLOY_LOCK:-/tmp/sovereign-central-deploy.lock}"
+deployed_head_file="${SOVEREIGN_DEPLOYED_HEAD_FILE:-${repo_root}/.git/sovereign-central-deployed-head}"
 
 cd "${repo_root}"
 exec 9>"${deploy_lock}"
@@ -45,13 +46,53 @@ fi
 
 node backend/scripts/ops/central_host_preflight.js
 docker compose --env-file "${central_env_file}" -f "${compose_file}" config --quiet
+
+stack_is_deployment_ready() {
+  local service
+  local web_container_id
+  local web_health
+  local web_running="false"
+  local backfill_running="false"
+  while IFS= read -r service; do
+    [[ "${service}" == "web" ]] && web_running="true"
+    [[ "${service}" == "backfill" ]] && backfill_running="true"
+  done < <(docker compose --env-file "${central_env_file}" -f "${compose_file}" ps --status running --services)
+
+  web_container_id="$(docker compose --env-file "${central_env_file}" -f "${compose_file}" ps -q web)"
+  web_health=""
+  if [[ -n "${web_container_id}" ]]; then
+    web_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "${web_container_id}" 2>/dev/null || true)"
+  fi
+
+  [[ "${web_running}" == "true" ]] \
+    && [[ "${backfill_running}" == "true" ]] \
+    && [[ "${web_health}" == "healthy" ]]
+}
+
+deployed_head=""
+[[ -f "${deployed_head_file}" ]] && deployed_head="$(<"${deployed_head_file}")"
+if [[ "${deployed_head}" == "$(git rev-parse HEAD)" ]] \
+  && [[ "${SOVEREIGN_DEPLOY_FORCE:-false}" != "true" ]] \
+  && stack_is_deployment_ready; then
+  echo "central host already current and deployment-ready: ${remote_name}/${branch_name}"
+  exit 0
+fi
+
 docker compose --env-file "${central_env_file}" -f "${compose_file}" build web
 docker compose --env-file "${central_env_file}" -f "${compose_file}" up -d --force-recreate web backfill
 
-health_url="http://127.0.0.1:8787/health"
 for attempt in $(seq 1 30); do
   backfill_running="$(docker compose --env-file "${central_env_file}" -f "${compose_file}" ps --status running --services backfill)"
-  if curl --silent --show-error --fail "${health_url}" >/dev/null && [[ "${backfill_running}" == "backfill" ]]; then
+  web_container_id="$(docker compose --env-file "${central_env_file}" -f "${compose_file}" ps -q web)"
+  web_health=""
+  if [[ -n "${web_container_id}" ]]; then
+    web_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "${web_container_id}" 2>/dev/null || true)"
+  fi
+  if [[ "${web_health}" == "healthy" ]] && [[ "${backfill_running}" == "backfill" ]]; then
+    deployed_head_tmp="${deployed_head_file}.tmp.$$"
+    umask 077
+    printf '%s\n' "$(git rev-parse HEAD)" > "${deployed_head_tmp}"
+    mv "${deployed_head_tmp}" "${deployed_head_file}"
     docker compose --env-file "${central_env_file}" -f "${compose_file}" ps web backfill
     echo "central host update complete: ${remote_name}/${branch_name}"
     exit 0
@@ -59,6 +100,6 @@ for attempt in $(seq 1 30); do
   sleep 2
 done
 
-echo "central host failed health verification: ${health_url}" >&2
+echo "central host failed deployment readiness: web health=${web_health:-missing}, backfill=${backfill_running:-missing}" >&2
 docker compose --env-file "${central_env_file}" -f "${compose_file}" ps web backfill >&2 || true
 exit 1
