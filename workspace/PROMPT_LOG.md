@@ -1816,3 +1816,19 @@ remaining proof gaps for provider retrieval-time lookahead, factor applicability
 and real Ink dashboard launch. Final Node verification passed 758/756/0fail/2skip; focused analysis,
 authenticated API, TUI/manifest, hygiene, syntax, diff, and secret gates pass. All implementation phases
 are complete in research-only shadow mode. Promotion and schema-v2 retirement remain intentionally denied.
+
+## User Prompt - 2026-07-22 session 89 deployment recovery
+
+`$session-orchestrator $blast-through rigours testing, and i also want you to debugg the tests followiung the protocal`
+
+Follow-ups: asked whether the repository is actually usable with one centralized polling machine and
+client machines that only update it; asked to plan and implement that topology; then clarified that no
+host had been selected and every GitHub deployment had failed.
+
+## Work - 2026-07-22 session 89 deployment recovery
+
+Selected blast-through `triage` in Fast Reading Mode for the deployment/workflow/test boundary. Delegated
+untrusted GitHub/provider research through the structured JSON air gap, then reproduced the committed
+workflow defects locally. Repaired the workflow and clean-runner native seams, selected a named Singapore
+host, and added retry-safe host-side systemd updates in `54f861eb`. Final verification and remaining external
+authority/evidence gates are recorded in the current dated handoff.

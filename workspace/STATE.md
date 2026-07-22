@@ -1346,3 +1346,20 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   safety/config/disk check and fails only unavailable Compose/daemon. Data is 92/92 cached with 72 stale,
   9 cadence-plausible notices, and 0 unexplained grain. No provider poll was run.
 - Live trading, public exposure, remote Supabase/RLS approval, and schema-v3 promotion remain blocked.
+
+## GitHub Deployment Recovery and Host Selection - 2026-07-22 session 89
+
+- Confirmed the former `deploy.yml` never deployed: it was manual-only, had no host, and failed on a moved
+  documentation path. It is now a truthful central-host readiness workflow rather than a false deployment.
+- Repaired the root-build CTest directory and five native fixture/cache seams. Fresh debug sanitizer CTest is
+  30/30; all empirical native paths now use tracked fixtures rather than ignored host cache.
+- Replaced the TradingView SSH dependency transport with the same pinned commit over HTTPS for clean runners.
+- Added a five-minute systemd host-side pull timer. The updater no-ops only when healthy at the last successful
+  commit, so a failed build/health check retries even after Git has fast-forwarded.
+- Host primary is Vultr Singapore x86_64, 4 shared vCPU / 8 GB / 160 GB SSD at USD 40/month; DigitalOcean
+  Singapore at USD 48/month is the fallback. Provisioning awaits explicit account/payment authorization.
+- Verification: Node 844/840/0fail/4skip; API 8/8; contracts 31/31; native debug 30/30; workflow/updater 7/7;
+  secrets 827/0; hygiene, shell syntax, YAML parse, lock dry-run, and diff checks pass.
+- Current data remains 92/92 cached with 72 stale, 9 cadence-plausible, and 0 unexplained. DCS is 0.765, so
+  live trading and schema-v3/model promotion remain blocked. No provider poll or host deployment was run.
+- Repository implementation is committed at `54f861eb`; Actions and target-host runtime proof remain external.

@@ -1419,3 +1419,56 @@ public exposure, schema-v3 promotion, and remote Supabase/RLS approval remain un
 - Pushed: `f9119729`, `cb47a921`, `59045be7`, and workspace closeout `309679ba` to `origin/main`.
 - Post-closeout preflight: clean Git and every environment/safety/disk/tool check except Docker Compose
   and daemon availability pass; no target runtime was started.
+
+## Deployment Failure Triage - 2026-07-22 session 89
+
+Blast-through used `triage` in Fast Reading Mode and stayed on the GitHub/deployment/native-test boundary.
+External GitHub/provider inputs were delegated through the repository's structured JSON air gap. No provider
+polling, runtime-data write, public exposure, or live execution was performed.
+
+### Confirmed findings and resolutions
+
+| Severity | Finding | Resolution and proof |
+|---|---|---|
+| P0 | The workflow named `deploy` was only a manual reminder and had no persistent host or rollout target. Its first command always failed because it checked deleted `docs/DEPLOYMENT.md`. | Recast it as a truthful manual `Central Host Readiness` gate against the real guide, preflight, Compose, updater, and systemd inputs. It explicitly states that no host is provisioned or started. Focused workflow contracts pass. |
+| P1 | The C++ workflow ran CTest from nonexistent `build/ci-debug/cpp_core`. | Pointed it at the generated root-build directory `build/ci-debug/backend/core`. A fresh debug sanitizer build reached all 30 tests. |
+| P1 | Three native tests relied on build-directory-relative paths or ignored runtime cache state; two more returned success when their cache was absent. | Rooted config/fixture reads through `SOVEREIGN_REPO_ROOT` and moved all five empirical consumers onto tracked captures. Clean-style debug CTest passes 30/30 with no cache-dependent skip. |
+| P1 | A public Git dependency resolved through interactive `git+ssh`, making clean noninteractive dependency installation fragile. | Pinned the existing TradingView commit over HTTPS in both package manifests. Offline lock validation passes and a regression contract bans the SSH form. |
+| P1 | A periodic host updater could restart the stack every cycle, while a naive Git-only no-op could hide a prior failed build after `HEAD` advanced. | Added a five-minute systemd pull timer and a last-success commit marker written only after web plus backfill health. Runtime harness proves healthy/current no-op and fast-forward rebuild/recreate without starting `bot`. |
+
+### Host decision and open authority gate
+
+- Primary: Vultr Singapore x86_64, 4 shared vCPU / 8 GB / 160 GB SSD, USD 40/month cap.
+- Fallback: DigitalOcean Singapore with the same shape at USD 48/month.
+- Do not use OCI Free Arm as the first dependable host; arm64 compatibility, free capacity, and lifecycle are
+  not proven for this repository.
+- Provisioning remains blocked only on operator account/payment authority and exact regional inventory. No
+  provider was purchased or contacted.
+- Historical GitHub run IDs/log excerpts remain unavailable without authenticated read-only Actions access;
+  repository-local deterministic failures are fixed, but GitHub green status must come from the pushed run.
+
+### Scoped grades and integrity
+
+| Section | Grade | Reason |
+|---|---|---|
+| `.github/workflows` | **B+ / server-run-gated** | Local paths, YAML, CTest directory, dependency transport, and readiness semantics are contracted; authenticated Actions evidence remains external. |
+| `infra/docker` + `infra/systemd` | **A- / target-host-gated** | Single-writer update automation is fail-closed, serialized, retry-safe, and runtime-tested; actual Docker host health is not yet available. |
+| `backend/core` test surface | **B+ / clean-fixture-gated** | Debug sanitizer CMake/CTest executes 30/30 against tracked empirical inputs with no runtime-cache skip. |
+| Deployment documentation | **A- / account-gated** | Docs now separate GitHub readiness, host persistence, developer push, systemd pull, secrets, and private access truthfully. |
+
+Data DCS starts and ends at **0.765**: freshness `20/92`, schema/grain `1.0` (zero unexplained grain), and
+coverage `1.0` (92/92 cached), using `0.3*Freshness + 0.4*Schema + 0.3*Coverage`. This is below 0.95, so
+model/schema promotion stays halted. The implementation is usable for private research, but current data is
+not fresh enough for an actionable claim until the central writer catches up.
+
+### Verification
+
+- Full Node: 844 total / 840 pass / 0 fail / 4 intentional skip.
+- API 8/8; contracts 31/31; tracked secret scan 827 files / 0 violations; hygiene pass.
+- Fresh debug sanitizer root build and CTest 30/30; local LeakSanitizer required `detect_leaks=0` because the
+  sandbox runs under ptrace, while address/undefined sanitizer instrumentation remained enabled.
+- Workflow/update focused contracts 7/7; shell syntax, YAML parse, offline lock validation, and diff integrity pass.
+- Current integrity: 92/92 cached, 72 stale, 9 cadence-plausible, 0 unexplained, 1 declared exception.
+- `graphify-out` remains unavailable, so no graph refresh is claimed.
+- Implementation committed locally as `54f861eb`; remote push and committed-archive proof follow the continuity
+  closeout commit.

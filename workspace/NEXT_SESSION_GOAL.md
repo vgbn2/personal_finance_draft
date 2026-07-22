@@ -1,5 +1,26 @@
 # Next Session Goal
 
+## 2026-07-22 session 89 critical override
+
+The repository-side GitHub/deployment repair is complete in `54f861eb`. Do not rebuild the readiness workflow, native
+fixture migration, HTTPS dependency pin, or host-side systemd updater. The selected target is Vultr Singapore
+`vc2-4c-8gb` at USD 40/month, with DigitalOcean Singapore 4 vCPU / 8 GB / 160 GB at USD 48/month as fallback.
+
+The next step requires operator authority:
+
+1. Approve a provider and monthly spend, verify the account can create the exact Singapore x86_64 shape, and
+   provision Ubuntu 24.04. Do not select OCI Free Arm without a separate arm64 clean-build deployment proof.
+2. Install Docker Engine/Compose v2, Git, `flock`, and `curl`; create a non-root deployment user with a
+   read-only Git deploy key; clone `origin/main`; create owner-only `.env.central` without execution secrets.
+3. Run the manual central updater once. Only after web health and the sole `backfill` writer are green, install
+   `infra/systemd/install-central-updater.sh` and verify its journal plus timer.
+4. Reach port 8787 only through SSH forwarding or an access-controlled private VPN. Let backfill catch up and
+   record target-host integrity; current source-host data is 92/92 cached but 72 stale with DCS 0.765.
+5. Obtain authenticated Actions evidence for the pushed Test, Build, and Central Host Readiness runs. Do not
+   infer GitHub green status from local tests.
+
+Live trading, public exposure, schema-v3/model promotion, and remote Supabase/RLS approval remain blocked.
+
 ## 2026-07-22 session 88 critical override
 
 The repository implementation is committed at `59045be7`, and publication/closeout is complete through

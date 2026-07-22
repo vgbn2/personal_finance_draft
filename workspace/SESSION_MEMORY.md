@@ -519,6 +519,33 @@ Source: `49560981^1:workspace/SESSION_MEMORY.md`. These sections were restored a
 }
 ```
 
+## Session Memory - 2026-07-22 session 89 deployment recovery
+
+```json
+{
+  "mode": "blast-through triage / fast reading",
+  "completed": [
+    "Diagnosed that the GitHub deploy workflow was a broken readiness reminder, not a host deployment.",
+    "Repaired the moved docs path, CTest root-build path, noninteractive Git dependency transport, and clean-checkout native fixture contracts.",
+    "Added a five-minute host-side systemd pull timer with last-success retry semantics.",
+    "Selected Vultr Singapore 4 vCPU, 8 GB, 160 GB at USD 40 per month as the primary host, with DigitalOcean Singapore as fallback."
+  ],
+  "verification": {
+    "node": "844 total / 840 pass / 0 fail / 4 skip",
+    "api": "8/8",
+    "contracts": "31/31",
+    "native_debug": "30/30 with LeakSanitizer disabled only for local ptrace limitation",
+    "workflow_updater": "7/7",
+    "secrets": "827 tracked files / 0 violations",
+    "hygiene": "pass",
+    "graphify": "unavailable"
+  },
+  "runtime_boundary": "No server was purchased or provisioned. GitHub green status and actual Docker/poller health remain external proof gates.",
+  "data": "92/92 cached, 72 stale, 9 cadence-plausible, 0 unexplained; DCS 0.765; model and schema promotion halted.",
+  "implementation_commit": "54f861eb"
+}
+```
+
 ## Session Memory - 2026-07-13 session 81 family-aware analysis
 
 ```json
