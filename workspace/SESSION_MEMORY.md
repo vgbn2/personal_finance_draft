@@ -5,7 +5,8 @@
   "commits": [
     "f9119729 test: harden repository verification gates",
     "cb47a921 chore(skills): strengthen audit and implementation workflows",
-    "59045be7 feat(ops): add private single-writer central host"
+    "59045be7 feat(ops): add private single-writer central host",
+    "309679ba docs(workspace): close central host rollout"
   ],
   "fixed": [
     "All canonical ts-index append and overlap writes now hold an ownership-token cross-process file lock with bounded stale recovery and periodic ownership refresh.",
@@ -18,7 +19,7 @@
     "Node 838 total / 834 pass / 0 fail / 4 intentional skip; API 8/8; contracts 31/31; native CTest 30/30; dashboard 13/13; responsive 6/6.",
     "Concurrent writer evidence: held writer blocks; append/append ends at 200; append/merge ends at 150; metadata counts match and no lock remains.",
     "Clean archive at 59045be7 passes new script syntax and focused runner, deployment, preflight, and lock contracts.",
-    "origin/main was fast-forwarded from 079c2eee through 59045be7."
+    "origin/main was fast-forwarded from 079c2eee through 309679ba; local HEAD and origin/main match."
   ],
   "remaining": [
     "Choose/provision the private central Docker host, create its owner-only .env.central, and run infra/docker/update-central-host.sh.",
@@ -26,7 +27,6 @@
     "Keep live trading and schema-v3 promotion blocked."
   ],
   "current_host_blockers": [
-    "working tree intentionally contains the workspace closeout",
     "Docker Compose plugin unavailable",
     "Docker daemon unavailable"
   ]

@@ -37,7 +37,7 @@ detail still belongs in `DEV_REVIEW.md` and the dated `workspace/handoff/` files
 | `shared/lib` canonical/root paths | `cb1c349f` | 2026-07-16 | B+ / canonical | clean archive 15-module load + structure/hygiene (s83) | Canonical modules and compatibility shims are committed, marker-free, and load from an extracted archive. |
 | `tests` | `59045be7` | 2026-07-22 | A- / broad-gate | API/native/dashboard/runner/concurrency matrix (s87-s88) | Node 838/834/0fail/4skip, API 8/8, native 30/30, dashboard 13/13, responsive 6/6; focused runner selection and cross-process writer races are contracted. |
 | `docs` testing/deployment guidance | `59045be7` | 2026-07-22 | B+ / aligned | command/discovery/private-host truth sweep (s87-s88) | Guides match verification topology and the private single-writer deployment boundary without claiming public/live readiness. |
-| `workspace` continuity | working tree closeout | 2026-07-22 | B+ / current | session-88 plan, evidence, handoff, and next-host gate | Current handoff records pushed implementation truth, workstation blockers, stale-data baseline, and the exact external host queue. |
+| `workspace` continuity | `309679ba` | 2026-07-22 | B+ / current | session-88 plan, evidence, handoff, and next-host gate | Current handoff records pushed implementation truth, Docker-only workstation blockers, stale-data baseline, and the exact external host queue. |
 
 ## Stub/Duplicate Sweep status legend
 - **done (session N)** — a stub/dead-export/duplicate-logic sweep was run and any findings were

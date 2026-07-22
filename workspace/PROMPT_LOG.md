@@ -14,11 +14,11 @@ RESULT: Working-tree Node is 838 total / 834 pass / 0 fail / 4 intentional skip;
 dependency roots, skills, hygiene, and diff integrity pass. Concurrent append/append and append/merge
 tests preserve exact 200-row and 150-row unions with matching metadata and no lock residue. A clean
 archive of commit `59045be7` passes updater/script syntax and the new focused contracts. Commits
-`f9119729`, `cb47a921`, and `59045be7` were pushed to `origin/main`.
+`f9119729`, `cb47a921`, `59045be7`, and closeout `309679ba` were pushed to `origin/main`.
 
 The current workstation is not the central deployment target: preflight passes the isolated environment,
-private bind, token policy, env-file mode, disk, `flock`, `curl`, and manifest checks, but fails on the
-intentionally dirty workspace plus unavailable Docker Compose/daemon. Current data integrity is 92/92
+private bind, token policy, env-file mode, clean/exact Git, disk, `flock`, `curl`, and manifest checks;
+only Docker Compose and daemon availability fail. Current data integrity is 92/92
 cached, 72 required-window stale, 9 cadence-plausible grain notices, and 0 unexplained grain. Runtime
 completion therefore remains gated on a selected private Docker host, its server-only `.env.central`,
 health plus running-backfill proof, and a post-poller freshness report. Live trading and schema-v3

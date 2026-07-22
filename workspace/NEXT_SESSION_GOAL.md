@@ -2,7 +2,8 @@
 
 ## 2026-07-22 session 88 critical override
 
-The repository implementation and publication phase is complete through pushed commit `59045be7`.
+The repository implementation is committed at `59045be7`, and publication/closeout is complete through
+pushed commit `309679ba`.
 Do not rebuild the writer lock, central preflight/updater, or session-87 test repairs. The private central
 host is code-ready but not runtime-proven because no target host was supplied and this workstation has no
 usable Docker Compose plugin or daemon.

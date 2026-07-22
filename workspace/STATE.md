@@ -1340,8 +1340,9 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
 - Verification: Node 838/834/0fail/4skip; API 8/8; contracts 31/31; native 30/30; dashboard 13/13;
   responsive 6/6; frontend/gateway/MCP builds; all dependency roots; skill validation; hygiene; diff.
   Clean archive `59045be7` passes new syntax and focused contracts.
-- Published commits `f9119729`, `cb47a921`, and `59045be7` to `origin/main`.
-- Runtime remains target-host-gated. Local preflight fails only dirty Git and unavailable Compose/daemon
-  after all safety/config/disk checks pass. Data is 92/92 cached with 72 stale required windows,
+- Published commits `f9119729`, `cb47a921`, `59045be7`, and closeout `309679ba` to `origin/main`;
+  local `HEAD` and the remote branch match.
+- Runtime remains target-host-gated. After closeout, local preflight passes clean Git plus every
+  safety/config/disk check and fails only unavailable Compose/daemon. Data is 92/92 cached with 72 stale,
   9 cadence-plausible notices, and 0 unexplained grain. No provider poll was run.
 - Live trading, public exposure, remote Supabase/RLS approval, and schema-v3 promotion remain blocked.
