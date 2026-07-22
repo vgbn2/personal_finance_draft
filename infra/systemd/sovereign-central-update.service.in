@@ -8,7 +8,9 @@ After=network-online.target docker.service
 Type=oneshot
 User=@DEPLOY_USER@
 Group=@DEPLOY_GROUP@
+SupplementaryGroups=docker
 WorkingDirectory=@REPO_ROOT@
+Environment=SOVEREIGN_NODE_BIN=@NODE_BIN@
 Environment=SOVEREIGN_CENTRAL_ENV_FILE=@REPO_ROOT@/.env.central
 ExecStart=@REPO_ROOT@/infra/docker/update-central-host.sh
 TimeoutStartSec=30min
