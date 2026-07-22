@@ -1,0 +1,4 @@
+interface:
+  display_name: "Refine Suggestion"
+  short_description: "Turn rough ideas into sourced implementation prompts"
+  default_prompt: "Use $refine-suggestion to turn this improvement idea into a scoped, evidence-backed prompt before implementation."
