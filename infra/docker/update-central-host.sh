@@ -9,6 +9,7 @@ branch_name="${SOVEREIGN_DEPLOY_BRANCH:-main}"
 central_env_file="${SOVEREIGN_CENTRAL_ENV_FILE:-${repo_root}/.env.central}"
 deploy_lock="${SOVEREIGN_DEPLOY_LOCK:-/tmp/sovereign-central-deploy.lock}"
 deployed_head_file="${SOVEREIGN_DEPLOYED_HEAD_FILE:-${repo_root}/.git/sovereign-central-deployed-head}"
+node_bin="${SOVEREIGN_NODE_BIN:-node}"
 
 cd "${repo_root}"
 exec 9>"${deploy_lock}"
@@ -44,7 +45,7 @@ if [[ "$(git rev-parse HEAD)" != "$(git rev-parse "${remote_name}/${branch_name}
   exit 75
 fi
 
-node backend/scripts/ops/central_host_preflight.js
+"${node_bin}" backend/scripts/ops/central_host_preflight.js
 docker compose --env-file "${central_env_file}" -f "${compose_file}" config --quiet
 
 stack_is_deployment_ready() {

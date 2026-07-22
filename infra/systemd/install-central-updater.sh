@@ -5,13 +5,14 @@ if [[ "${EUID}" -ne 0 ]]; then
   echo "run as root: sudo $0 <absolute-repo-path> <service-user>" >&2
   exit 77
 fi
-if [[ "$#" -ne 2 ]]; then
-  echo "usage: $0 <absolute-repo-path> <service-user>" >&2
+if [[ "$#" -lt 2 ]] || [[ "$#" -gt 3 ]]; then
+  echo "usage: $0 <absolute-repo-path> <service-user> [absolute-node-path]" >&2
   exit 64
 fi
 
 repo_root="$(realpath "$1")"
 service_user="$2"
+node_bin="${3:-$(command -v node || true)}"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 service_template="${script_dir}/sovereign-central-update.service.in"
 timer_source="${script_dir}/sovereign-central-update.timer"
@@ -30,13 +31,21 @@ if ! id "${service_user}" >/dev/null 2>&1; then
   echo "unknown service user: ${service_user}" >&2
   exit 67
 fi
-for required_command in node docker git curl flock systemctl; do
+for required_command in docker git curl flock systemctl; do
   if ! command -v "${required_command}" >/dev/null 2>&1; then
     echo "missing required host command: ${required_command}" >&2
     exit 69
   fi
 done
-node_major="$(node -p 'Number(process.versions.node.split(".")[0])')"
+if [[ -z "${node_bin}" ]] || [[ "${node_bin}" != /* ]] || [[ ! -x "${node_bin}" ]]; then
+  echo "an executable absolute Node.js path is required" >&2
+  exit 69
+fi
+if ! getent group docker >/dev/null 2>&1; then
+  echo "the docker group is required for the central updater service" >&2
+  exit 69
+fi
+node_major="$("${node_bin}" -p 'Number(process.versions.node.split(".")[0])')"
 if [[ ! "${node_major}" =~ ^[0-9]+$ ]] || (( node_major < 20 )); then
   echo "Node.js 20 or newer is required; Node.js 22 LTS is recommended" >&2
   exit 69
@@ -53,6 +62,7 @@ sed \
   -e "s|@REPO_ROOT@|${repo_root}|g" \
   -e "s|@DEPLOY_USER@|${service_user}|g" \
   -e "s|@DEPLOY_GROUP@|${service_group}|g" \
+  -e "s|@NODE_BIN@|${node_bin}|g" \
   "${service_template}" > "${rendered_service}"
 
 install -m 0644 "${rendered_service}" "${service_target}"

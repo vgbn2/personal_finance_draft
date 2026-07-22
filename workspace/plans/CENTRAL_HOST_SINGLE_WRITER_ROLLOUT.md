@@ -135,3 +135,15 @@ same fail-closed updater every five minutes. The updater fast-forwards only, sta
 and records a last-success commit marker only after the web container healthcheck passes and `backfill` is
 running. Data freshness is a separate post-deploy integrity gate. A failed build or deployment-readiness check
 therefore retries on the next timer cycle instead of being hidden by an already-advanced Git checkout.
+
+## 2026-07-22 session 90 correction - local validation only
+
+The operator rejected paid hosting but also explicitly declined using the current Lenovo laptop as the
+always-on host. This machine is a test bench only. Its measured capacity proves the Compose shape is feasible,
+but it must not receive the updater timer, lid/sleep changes, or a continuous `backfill` service.
+
+The deployment topology remains available for a future persistent machine: one sole `backfill` writer and a
+co-located web reader, with client machines using reviewed Git pushes and private access. The session-90 work
+is limited to an owner-only central environment generator plus portable NVM-Node/service-group fixes and local
+contract/config tests. No actual host is selected. Paid-provider research remains historical evidence rather
+than an active spend recommendation.

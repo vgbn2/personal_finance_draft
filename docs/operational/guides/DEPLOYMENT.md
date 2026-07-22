@@ -91,11 +91,13 @@ The supported small-host shape is one Docker host running the `web` and `backfil
 services from the repository root:
 
 ```bash
-cp .env.central.example .env.central
-chmod 600 .env.central
-# Fill SOVEREIGN_API_TOKEN and only the data-provider settings this host needs.
+npm run host:prepare-central-env
 SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.sh
 ```
+
+Running the environment preparer and Compose/config tests on a developer laptop is validation only. It does
+not select that laptop as the persistent host and must not install the timer, change its power policy, or
+start continuous provider polling. The eventual host remains an explicit operator decision.
 
 The updater refuses a dirty, divergent, wrong-branch, or locally-ahead checkout, takes an exclusive deployment
 lock, fast-forwards from `origin/main`, requires `HEAD` to equal the fetched remote branch, runs
