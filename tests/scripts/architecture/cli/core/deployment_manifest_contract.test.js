@@ -148,6 +148,7 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(centralUpdater, /git merge --ff-only/);
   assert.match(centralUpdater, /HEAD does not exactly match/);
   assert.match(centralUpdater, /central_host_preflight\.js/);
+  assert.match(centralUpdater, /SOVEREIGN_NODE_BIN/);
   assert.match(centralUpdater, /docker compose --env-file/);
   assert.match(centralUpdater, /deployed_head_file=/);
   assert.match(centralUpdater, /"\$\{deployed_head\}" == "\$\(git rev-parse HEAD\)"/);
@@ -165,7 +166,11 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(centralUpdaterInstaller, /sovereign-central-update\.service\.in/);
   assert.match(centralUpdaterInstaller, /Node\.js 20 or newer is required/);
   assert.match(centralUpdaterInstaller, /docker compose version/);
+  assert.match(centralUpdaterInstaller, /absolute-node-path/);
+  assert.match(centralUpdaterInstaller, /getent group docker/);
   assert.match(centralUpdaterService, /^User=@DEPLOY_USER@$/m);
+  assert.match(centralUpdaterService, /^SupplementaryGroups=docker$/m);
+  assert.match(centralUpdaterService, /^Environment=SOVEREIGN_NODE_BIN=@NODE_BIN@$/m);
   assert.match(centralUpdaterService, /^WorkingDirectory=@REPO_ROOT@$/m);
   assert.match(centralUpdaterService, /update-central-host\.sh/);
   assert.match(centralUpdaterTimer, /^OnUnitInactiveSec=5min$/m);
