@@ -1,16 +1,33 @@
 # Deploy — Sovereign Trading Platform
 
-## Prerequisites on VPS
+## Prerequisites on the central host
 - Docker 24+ and Docker Compose plugin
 - System-wide Node.js 22 LTS (Node.js 20 is the minimum for the host-side preflight)
 - 8GB RAM for the full-universe backfill profile
 - Git, `flock`, and `curl`
 - SSH tunnel or access-controlled private VPN; do not publish port 8787 to the internet
 
+## Local validation without hosting
+
+This checkout can validate the deployment inputs without designating the current laptop as the always-on host:
+
+```bash
+# Creates owner-only .env.central, generates a separate API token, and copies only
+# allowlisted data/research settings from .env. It never copies execution credentials.
+npm run host:prepare-central-env
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml config --quiet
+node --test tests/scripts/operational/prepare_central_env.test.js \
+  tests/scripts/operational/central_host_preflight.test.js \
+  tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js
+```
+
+Local validation must not install the updater timer, change lid/sleep policy, or start the continuous
+`backfill` service. The actual persistent host remains a separate operator decision.
+
 ## First deploy
 
 ```bash
-# 1. Clone to VPS
+# 1. Clone to the central host
 git clone <your-repo-url> personal_finance
 cd personal_finance
 
@@ -50,7 +67,7 @@ an intentional rebuild after an environment-only change.
 After the first successful deploy, install the five-minute systemd pull timer from the host checkout:
 
 ```bash
-sudo infra/systemd/install-central-updater.sh "$PWD" "$USER"
+sudo infra/systemd/install-central-updater.sh "$PWD" "$USER" "$(command -v node)"
 systemctl list-timers sovereign-central-update.timer
 journalctl -u sovereign-central-update.service -n 100 --no-pager
 ```
