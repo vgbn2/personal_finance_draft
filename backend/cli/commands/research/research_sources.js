@@ -275,7 +275,13 @@ async function loadHistoricalSources(args) {
 }
 
 async function loadPredictionMarketHistory(args) {
-  const { fetchKalshiHistoricalCandlesticks, fetchKalshiHistoricalMarkets, fetchPolymarketHistoricalPrices, loadConfig } = require('../../../scripts/data_ops/ingest_market_data.js');
+  const {
+    fetchKalshiHistoricalCandlesticks,
+    fetchKalshiHistoricalMarkets,
+    fetchPolymarketHistoricalPrices,
+    fetchPredictionInterestSignal,
+    loadConfig,
+  } = require('../../../scripts/data_ops/ingest_market_data.js');
   const config = await loadConfig();
   const defaults = researchConfig.prediction_market || {};
   const provider = optionValue(args, '--prediction-provider', 'all');

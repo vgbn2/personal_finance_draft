@@ -18,48 +18,50 @@ That means:
 
 `npm test`
 - Runs the broad Node suite through `tests/run_node_tests.js`
-- Covers `tests/scripts/tests/*.test.js`, `test/scripts/**/*.test.js`, and `backend/api/tests/*.test.js`
+- Covers `tests/scripts/**/*.test.js` and `tests/web/**/*.test.js`
+- Does not cover `backend/api/tests/`; run `npm run test:api` or `npm run verify:strict` for those
 
 `npm run test:api`
-- Runs `backend/api/tests/api.test.js`, `backend/api/tests/dashboard_contract.test.js`, and `backend/api/tests/charts.test.js`
+- Runs every active `backend/api/tests/*.test.js` file serially, including correlation and TTL-cache contracts
 - Verifies served dashboard entrypoint, API route health, summary/correlation/universe payloads, and contract drift
 
 `npm run test:data`
-- Runs `tests/scripts/backfill_regression.test.js`, `tests/scripts/lib/indicators.data_flow.test.js`, and `tests/scripts/config_integrity.test.js`
+- Runs `tests/scripts/data/backfill/backfill_regression.test.js`, `tests/scripts/lib/indicators.data_flow.test.js`, and `tests/scripts/architecture/cli/core/config_integrity.test.js`
 - Verifies input bars, config loading, and feature/data-flow boundaries
 
 `npm run test:macro`
-- Runs `tests/scripts/tests/macro_history_helpers.test.js`, `tests/scripts/macro_ingestion_contract.test.js`, and `tests/scripts/macro_store_contract.test.js`
+- Runs the macro history, ingestion, and store contracts under `tests/scripts/data/cache/` and `tests/scripts/architecture/data_storage/`
 - Verifies macro and reserves history mapping, the canonical macro normalization layer, and the full ingest entrypoint
 
 `npm run test:deploy`
-- Runs `tests/scripts/deployment_manifest_contract.test.js`
+- Runs `tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js`
 - Verifies Docker, Kubernetes, and deployment docs stay aligned on ports, cache settings, and Supabase secret wiring
 
 `npm run test:contracts`
 - Runs the contract-heavy slices: API, cache, Supabase routes, macro ingest, deployment, and config integrity
 
 `npm run verify:strict`
-- Runs `test:contracts` first, then the broader Node suite
-- Use this before claiming the repo is healthy after API, deployment, or ingestion changes
+- Runs the complete API gate, contract gate, secret scan, and broader Node suite
+- Native C++, MCP TypeScript, and frontend build/responsive gates remain separate because they have distinct toolchain requirements
+- Use this before claiming the Node/server surfaces are healthy after API, deployment, or ingestion changes
 
-`node --test tests/scripts/tests/cache_contract.test.js`
+`node --test tests/scripts/data/cache/cache_contract.test.js`
 - Verifies cache reuse and disable-mode freshness behavior
 
-`node --test tests/scripts/tests/supabase_route_contract.test.js`
+`node --test tests/scripts/architecture/data_storage/supabase_route_contract.test.js`
 - Verifies Supabase auth and database route contract shape with a mocked client
 
 ## Existing Verification Helpers
 
 These are not all unit tests, but they are important evidence surfaces:
 
-`node scripts/dev/native_toolchain_check.js`
+`node backend/scripts/dev/native_toolchain_check.js`
 - Verifies whether the local native C++ toolchain is actually runnable
 
-`node scripts/dev/model_registry_parity.js`
+`node backend/scripts/dev/model_registry_parity.js`
 - Checks JS and native model candidate registry parity
 
-`node scripts/dev/parallel_backfill_probe.js`
+`node backend/scripts/dev/parallel_backfill_probe.js`
 - Probes backfill behavior and is useful when debugging historical fetch paths
 
 `node backend/scripts/data_ops/ingest_market_data.js --family macro --days 30`
@@ -115,8 +117,7 @@ Integrated evidence checks:
 
 These are still needed and should be added in later passes:
 
-- authenticated Supabase browser/session contract tests
-- cache-behavior tests that prove repeated requests avoid repeated upstream calls
+- a remote Supabase session/RLS verification gate beyond the existing local contracts
 - live deployment smoke checks against a real container runtime
 - macro stale-data rejection tests through the full ingest path, not only helper-level mapping
 - macro normalization tests that prove raw values, units, and unitless features stay aligned before database writes
