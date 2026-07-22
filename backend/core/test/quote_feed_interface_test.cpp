@@ -38,10 +38,9 @@ public:
 } // namespace
 
 int main() {
-    auto snapshot = sovereign::loadMarketDataSnapshot("../../../tests/fixtures/backend_history_sample.json", "AAPL", "1d", 5);
-    if (snapshot.bars.empty()) {
-        snapshot = sovereign::loadMarketDataSnapshot("test/fixtures/backend_history_sample.json", "AAPL", "1d", 5);
-    }
+    const auto fixture_path = std::filesystem::path(SOVEREIGN_REPO_ROOT)
+        / "tests" / "fixtures" / "backend_history_sample.json";
+    auto snapshot = sovereign::loadMarketDataSnapshot(fixture_path, "AAPL", "1d", 5);
     if (!expect(snapshot.bars.size() > 0, "Expected to load empirical bars for test")) {
         return 1;
     }

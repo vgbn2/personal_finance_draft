@@ -1,0 +1,12 @@
+[Unit]
+Description=Check reviewed main for Sovereign central-host updates
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=5min
+RandomizedDelaySec=30s
+Persistent=true
+Unit=sovereign-central-update.service
+
+[Install]
+WantedBy=timers.target

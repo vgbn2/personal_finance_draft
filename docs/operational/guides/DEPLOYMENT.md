@@ -64,6 +64,11 @@ The repo includes the central-host container stack under `infra/docker/`:
 
 The stack is a private research/data deployment, not a live-trading promotion.
 
+GitHub Actions is not the host. `.github/workflows/deploy.yml` is a manual readiness check that validates
+the tracked preflight, updater, and Compose inputs on an ephemeral runner; it does not provision a server,
+retain `storage/`, poll providers continuously, or update a remote machine. Actual deployment starts only
+after an operator selects a persistent private host and runs the host-side updater below.
+
 ## Secrets Policy
 
 The current local prototype should not need live secrets for ordinary validation.
@@ -95,9 +100,18 @@ SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.
 The updater refuses a dirty, divergent, wrong-branch, or locally-ahead checkout, takes an exclusive deployment
 lock, fast-forwards from `origin/main`, requires `HEAD` to equal the fetched remote branch, runs
 `central_host_preflight.js`, validates Compose, builds the image, recreates only `web` and `backfill`, and
-waits for the loopback health endpoint plus a running backfill container. A developer machine updates code by
+waits for the web container's internal healthcheck plus a running backfill container. A developer machine updates code by
 pushing a reviewed commit; the central machine performs this serialized update. It does not mount a second
 copy of `storage/` and it does not accept client-side data writes.
+
+After the first successful manual deployment, `infra/systemd/install-central-updater.sh` can install the
+tracked five-minute host-side pull timer. The timer invokes the same fail-closed updater as the deployment
+user and no-ops only when the fetched branch matches its last-success marker, the web health endpoint passes,
+and the backfill container is running. This is deployment readiness, not proof that market data is fresh.
+Failed builds and health checks are retried on the next cycle; there is no automatic rollback after Compose
+has recreated services. This keeps GitHub
+credentials scoped to read-only source retrieval on the host and keeps all runtime/provider secrets off
+GitHub-hosted runners. See `infra/docker/DEPLOY.md` for the install and journal commands.
 
 The backfill service writes directly to the host-mounted `storage/data/ts/` index. The
 web service calculates scorecards on the same machine from that index; market data is
