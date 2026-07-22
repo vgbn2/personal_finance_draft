@@ -151,13 +151,43 @@ test('frame backtester sources referenced by the native build are tracked', () =
   });
 });
 
-test('default api gate includes the correlation contract', () => {
+test('every native test source is registered in both CMake manifests', () => {
+  const testDir = path.join(REPO_ROOT, 'backend', 'core', 'test');
+  const rootCmake = fs.readFileSync(path.join(REPO_ROOT, 'backend', 'core', 'CMakeLists.txt'), 'utf8');
+  const testCmake = fs.readFileSync(path.join(testDir, 'CMakeLists.txt'), 'utf8');
+  const testSources = fs.readdirSync(testDir)
+    .filter((file) => file.endsWith('_test.cpp'))
+    .sort();
+
+  for (const source of testSources) {
+    const registration = rootCmake.match(
+      new RegExp(`add_sovereign_test\\(([^\\s)]+)\\s+test/${source.replaceAll('.', '\\.')}\\)`)
+    );
+    assert.ok(registration, `${source} should be compiled and registered by backend/core/CMakeLists.txt`);
+    const target = registration[1];
+    assert.match(
+      testCmake,
+      new RegExp(`\\b${target}\\b`),
+      `${target} should appear in backend/core/test/CMakeLists.txt`
+    );
+  }
+});
+
+test('default and strict api gates include every active API test', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
-  assert.match(
-    pkg.scripts['test:api'],
-    /backend\/api\/tests\/correlation_contract\.test\.js/,
-    'test:api should run the correlation contract'
-  );
+  const apiTests = fs.readdirSync(path.join(REPO_ROOT, 'backend', 'api', 'tests'))
+    .filter((file) => file.endsWith('.test.js'))
+    .sort();
+
+  for (const file of apiTests) {
+    assert.match(
+      pkg.scripts['test:api'],
+      new RegExp(`backend/api/tests/${file.replaceAll('.', '\\.')}`),
+      `test:api should run ${file}`
+    );
+  }
+
+  assert.match(pkg.scripts['verify:strict'], /npm run test:api/, 'verify:strict should run the complete API gate');
 });
 
 test('npm test scripts reference existing test files', () => {
