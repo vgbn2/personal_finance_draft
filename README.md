@@ -27,6 +27,19 @@ Web API (port 8787):
 node backend/api/app.js
 ```
 
+Private central research host:
+
+```bash
+cp .env.central.example .env.central
+chmod 600 .env.central
+# Fill a random API token and data-provider keys only.
+SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.sh
+```
+
+The central stack runs one `backfill` writer beside the web/API scorecard reader, preserves host-mounted
+`storage/`, binds to loopback by default, and forces cloud-compute/non-live mode. Client machines use an
+SSH tunnel or private VPN and submit code changes through Git; they do not mount or write the ts-index.
+
 Run the local Linux suite:
 
 ```bash

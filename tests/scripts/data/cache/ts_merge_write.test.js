@@ -25,10 +25,15 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const cp = require('node:child_process');
+const { setTimeout: delay } = require('node:timers/promises');
 
 const REPO = path.resolve(__dirname, '../../../../'); // personal_finance_draft
 const NEW_MODULE = require.resolve('../../../../shared/lib/market/validation.js');
-const { writeTsIndex, readTsIndex } = require(NEW_MODULE);
+const { writeTsIndex, readTsIndex, tsWriteLockPath } = require(NEW_MODULE);
+const {
+  acquireFileLockSync,
+  releaseFileLockSync,
+} = require('../../../../shared/lib/runtime/file_lock.js');
 
 const TS_MAGIC = 'SOVT';
 const TS_RECORD_BYTES = 48;
@@ -157,6 +162,57 @@ function filePath(tsDir, sym, tf, ext) {
 }
 function readBytes(p) { return fs.existsSync(p) ? fs.readFileSync(p) : null; }
 
+let _writerChildPath;
+function writerChildPath() {
+  if (_writerChildPath) return _writerChildPath;
+  _writerChildPath = path.join(os.tmpdir(), `ts_writer_child_${process.pid}.js`);
+  fs.writeFileSync(_writerChildPath, `
+    const fs = require('node:fs');
+    const { writeTsIndex } = require(process.argv[2]);
+    const tsDir = process.argv[3];
+    const barrier = process.argv[4];
+    const sources = JSON.parse(Buffer.from(process.argv[5], 'base64url').toString('utf8'));
+    while (barrier !== '-' && !fs.existsSync(barrier)) {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5);
+    }
+    writeTsIndex(tsDir, { sources });
+    process.stdout.write(JSON.stringify({ ok: true, pid: process.pid, rows: sources.length }));
+  `);
+  process.on('exit', () => { try { fs.rmSync(_writerChildPath); } catch { /* best effort */ } });
+  return _writerChildPath;
+}
+
+function spawnWriter(tsDir, sources, barrier = '-') {
+  const encoded = Buffer.from(JSON.stringify(sources), 'utf8').toString('base64url');
+  const child = cp.spawn(process.execPath, [writerChildPath(), NEW_MODULE, tsDir, barrier, encoded], {
+    env: {
+      ...process.env,
+      SOVEREIGN_TS_WRITE_LOCK_TIMEOUT_MS: '5000',
+      SOVEREIGN_TS_WRITE_LOCK_STALE_MS: '60000',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let stdout = '';
+  let stderr = '';
+  child.stdout.on('data', (chunk) => { stdout += chunk; });
+  child.stderr.on('data', (chunk) => { stderr += chunk; });
+  const completed = new Promise((resolve, reject) => {
+    child.once('error', reject);
+    child.once('exit', (code, signal) => resolve({ code, signal, stdout, stderr }));
+  });
+  return { child, completed };
+}
+
+function assertTimestampUnion(tsDir, expectedCount) {
+  const rows = readTsIndex(tsDir, 'BTCUSDT', '1m');
+  assert.equal(rows.length, expectedCount);
+  assert.equal(new Set(rows.map((row) => row.timestamp)).size, expectedCount, 'no timestamp was lost or duplicated');
+  const meta = JSON.parse(fs.readFileSync(filePath(tsDir, 'BTCUSDT', '1m', '.meta.json'), 'utf8'));
+  assert.equal(meta.count, expectedCount, 'metadata count matches the serialized bin');
+  assert.equal(fs.existsSync(tsWriteLockPath(tsDir, 'BTCUSDT', '1m')), false, 'write lock is released');
+  return rows;
+}
+
 // Seed both dirs with byte-identical initial bins (write via the reference, mirror to the
 // new dir), so the only thing compared is the MERGE of `incoming`.
 function seedBoth(seedSources) {
@@ -262,6 +318,75 @@ test('pure append does not read or rewrite the historical binary payload', () =>
   assert.equal(historicalReads, 0, 'append path reads only the header and last timestamp');
   assert.equal(historicalRewrites, 0, 'append path does not create a full-bin replacement');
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('production ts writer waits for an existing cross-process lock and releases cleanly', async (t) => {
+  const dir = tmp('held-lock');
+  writeTsIndex(dir, { sources: seedN(2) });
+  const lockPath = tsWriteLockPath(dir, 'BTCUSDT', '1m');
+  const handle = acquireFileLockSync(lockPath, { timeoutMs: 1000, staleMs: 60000 });
+  const writer = spawnWriter(dir, [rec('BTCUSDT', 'binance', '1m', M(2), 500)]);
+
+  try {
+    await delay(100);
+    if (writer.child.exitCode !== null && writer.child.exitCode !== 0) {
+      const result = await writer.completed;
+      if (/EPERM|operation not permitted/i.test(result.stderr)) return t.skip('child processes unavailable in this sandbox');
+      assert.fail(`writer exited while the lock was held: ${result.stderr}`);
+    }
+    assert.equal(writer.child.exitCode, null, 'writer remains blocked while another owner holds the bin lock');
+    assert.equal(releaseFileLockSync(handle), true);
+    const result = await writer.completed;
+    assert.equal(result.code, 0, `writer completes after release: ${result.stderr}`);
+    assertTimestampUnion(dir, 3);
+    console.log(JSON.stringify({ type: 'ts_write_lock', case: 'held_lock', blocked_ms: 100, final_count: 3 }));
+  } finally {
+    releaseFileLockSync(handle);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('cross-process append/append and append/merge races preserve the exact timestamp union', async (t) => {
+  const cases = [
+    {
+      name: 'append_append',
+      left: Array.from({ length: 50 }, (_, k) => rec('BTCUSDT', 'binance', '1m', M(100 + k), 500 + k)),
+      right: Array.from({ length: 50 }, (_, k) => rec('BTCUSDT', 'binance', '1m', M(150 + k), 700 + k)),
+      expected: 200,
+    },
+    {
+      name: 'append_merge',
+      left: Array.from({ length: 50 }, (_, k) => rec('BTCUSDT', 'binance', '1m', M(100 + k), 900 + k)),
+      right: Array.from({ length: 70 }, (_, k) => rec('BTCUSDT', 'binance', '1m', M(50 + k), 1100 + k)),
+      expected: 150,
+    },
+  ];
+
+  for (const race of cases) {
+    const dir = tmp(race.name);
+    const barrier = path.join(dir, 'start.signal');
+    writeTsIndex(dir, { sources: seedN(100) });
+    const left = spawnWriter(dir, race.left, barrier);
+    const right = spawnWriter(dir, race.right, barrier);
+    fs.writeFileSync(barrier, 'go');
+    const [leftResult, rightResult] = await Promise.all([left.completed, right.completed]);
+    if (leftResult.code !== 0 || rightResult.code !== 0) {
+      const stderr = `${leftResult.stderr}\n${rightResult.stderr}`;
+      fs.rmSync(dir, { recursive: true, force: true });
+      if (/EPERM|operation not permitted/i.test(stderr)) return t.skip('child processes unavailable in this sandbox');
+      assert.fail(`${race.name} writer failed: ${stderr}`);
+    }
+    assertTimestampUnion(dir, race.expected);
+    console.log(JSON.stringify({
+      type: 'ts_write_lock',
+      case: race.name,
+      initial_count: 100,
+      left_rows: race.left.length,
+      right_rows: race.right.length,
+      final_count: race.expected,
+    }));
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('EQUIV real deep bin (copy of a live bin) + overlapping synthetic window == reference', () => {

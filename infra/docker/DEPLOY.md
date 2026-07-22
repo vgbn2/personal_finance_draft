@@ -2,8 +2,9 @@
 
 ## Prerequisites on VPS
 - Docker 24+ and Docker Compose plugin
-- 2GB RAM minimum (C++ build needs ~1.5GB)
-- Port 8787 open (or reverse proxy on 443 → 8787)
+- 8GB RAM for the full-universe backfill profile
+- Git, `flock`, and `curl`
+- SSH tunnel or access-controlled private VPN; do not publish port 8787 to the internet
 
 ## First deploy
 
@@ -12,17 +13,15 @@
 git clone <your-repo-url> personal_finance
 cd personal_finance
 
-# 2. Create your config file (.env is the single source for both the CLI and Docker)
-cp .env.example .env
-nano .env                     # fill in your values  (or: ./node_modules/.bin/sovereign setup <broker>)
-# Required: SOVEREIGN_API_TOKEN, all SOVEREIGN_SUPABASE_* keys, SOVEREIGN_TRADE_PIN
-# If using the Polymarket bot: POLYMARKET_PRIVATE_KEY + L2 API keys
-# Optional: create .env.production to override any value in production (loaded on top of .env)
-# Verify before deploying: ./node_modules/.bin/sovereign doctor --json --no-network
+# 2. Create the data/research-only environment.
+cp .env.central.example .env.central
+chmod 600 .env.central
+nano .env.central
+# Required: a random SOVEREIGN_API_TOKEN plus only the provider keys used for polling.
+# Forbidden here: SOVEREIGN_TRADE_PIN and Polymarket private/L2 execution credentials.
 
-# 3. Build and start
-docker compose -f infra/docker/docker-compose.yml build
-docker compose -f infra/docker/docker-compose.yml up -d
+# 3. Preflight, fast-forward, build, and start only web + backfill.
+SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.sh
 
 # 4. Verify
 curl http://localhost:8787/health
@@ -32,17 +31,21 @@ curl http://localhost:8787/health
 ## Subsequent deploys
 
 ```bash
-git pull
-docker compose -f infra/docker/docker-compose.yml build --no-cache
-docker compose -f infra/docker/docker-compose.yml up -d
+SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.sh
 ```
+
+The updater refuses dirty, wrong-branch, divergent, or locally-ahead Git state; uses `git merge --ff-only`;
+requires `HEAD` to equal the fetched remote branch; serializes deployments with `flock`; validates
+Docker/Compose/disk/private-bind/secret policy; recreates only `web` and `backfill`; and verifies both
+`http://127.0.0.1:8787/health` and a running backfill container before succeeding.
 
 ## Services
 
 | Service | Purpose |
 |---|---|
 | `web` | REST API + React dashboard on port 8787 |
-| `bot` | Paper-trading loop — one cycle every 30 min (set `BOT_INTERVAL_SECS` to override) |
+| `backfill` | Sole canonical market-data poller/writer |
+| `bot` | Opt-in paper loop under the `paper` profile; never live on this host |
 
 Note: the TypeScript execution gateway (`backend/gateway/src/index.ts`) is a one-shot
 CLI dispatcher, not a persistent server — `web`, `bot`, and the CLI/TUI spawn it
@@ -51,35 +54,34 @@ compose service.
 
 Start only the web service for read-only dashboard:
 ```bash
-docker compose -f infra/docker/docker-compose.yml up -d web
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml up -d web
 ```
 
-Enable the full bot stack (paper trading):
+Enable the optional paper stack:
 ```bash
-docker compose -f infra/docker/docker-compose.yml up -d
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml --profile paper up -d web backfill bot
 ```
 
 Stop the bot without stopping the dashboard:
 ```bash
-docker compose -f infra/docker/docker-compose.yml stop bot
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml stop bot
 ```
 
 ## Logs
 
 ```bash
-docker compose -f infra/docker/docker-compose.yml logs -f web
-docker compose -f infra/docker/docker-compose.yml logs -f bot
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml logs -f web
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml logs -f backfill
 ```
 
-## Reverse proxy (Caddy — recommended)
+## Private client access
 
-```
-your-domain.com {
-    reverse_proxy localhost:8787
-}
+```bash
+ssh -N -L 8787:127.0.0.1:8787 user@central-host
+# Open http://127.0.0.1:8787 on the client.
 ```
 
-For nginx, see `infra/deployment/nginx/` if present.
+An access-controlled private VPN bind is also supported. Public reverse-proxy exposure is not approved.
 
 ## Storage persistence
 
@@ -91,15 +93,14 @@ These directories are created automatically if missing.
 
 ## Configuration model
 
-One config file drives everything: **`.env`** (the same file the local CLI reads). Docker loads
-`.env` first (required), then `.env.production` on top of it **if present** (optional overrides for
-things like a production Supabase key or a different `BOT_INTERVAL_SECS`). Most self-hosters only need
-`.env`. Start from the template: `cp .env.example .env`.
+The central host uses **`.env.central`**, selected through `SOVEREIGN_CENTRAL_ENV_FILE`. Compose forces
+cloud-compute/non-live values after loading it. Local/private execution uses a separate environment and
+is not part of this deployment.
 
 ## Secrets
 
-Never commit `.env` or `.env.production` — both are in `.gitignore`, and `.dockerignore` keeps them
-out of the image (compose injects them at runtime via `env_file`).
+Never commit `.env.central`; it is ignored and injected at runtime. The tracked `.env.central.example`
+contains names and safe defaults only.
 Generate API tokens with: `openssl rand -hex 32`
 
 ## Troubleshooting
@@ -108,6 +109,8 @@ Generate API tokens with: `openssl rand -hex 32`
 |---|---|
 | `/health` returns 404 | Container not started — check `docker compose logs web` |
 | `/health` returns 500 | Check SOVEREIGN_SUPABASE_URL and SECRET_KEY in .env |
-| `env file ... not found` | You skipped step 2 — `cp .env.example .env` and fill it in |
-| C++ build fails | Ensure VPS has ≥1.5GB RAM available during build |
+| `env file ... not found` | Copy `.env.central.example`, fill `.env.central`, and set mode 600 |
+| Preflight rejects credentials | Remove execution PIN/private/L2 keys from the central environment |
+| Preflight rejects Docker | Install the Compose plugin and grant the operator daemon access |
+| C++ build fails | Ensure the host has sufficient RAM and disk headroom |
 | Dashboard blank | Frontend dist is built inside image — check `docker compose build` output for vite errors |
