@@ -1472,3 +1472,24 @@ not fresh enough for an actionable claim until the central writer catches up.
 - `graphify-out` remains unavailable, so no graph refresh is claimed.
 - Implementation committed locally as `54f861eb`; remote push and committed-archive proof follow the continuity
   closeout commit.
+
+## Local Deployment Validation Triage - 2026-07-22 session 90
+
+### Confirmed boundary and repairs
+
+| Severity | Finding | Resolution and proof |
+|---|---|---|
+| P1 | The current laptop was initially misclassified as the selected always-on host. | Corrected the plan and docs to testing-only; removed the local-host installer and lid/idle policy before installation. Timer is not found/inactive and no poller was started. |
+| P1 | A central env had to be prepared without copying the execution-heavy general `.env`. | Added an allowlist-only atomic generator with a fresh API token and mode 600. Tests prove aliases map, paper endpoint remains, existing output is preserved, and execution keys/values never appear. |
+| P1 | A future service could not find this repo's NVM Node and the interactive user lacks Docker socket access. | Installer accepts an absolute Node path; the service receives `SOVEREIGN_NODE_BIN` and only its own `docker` supplementary group. Rendered systemd verification and deployment contracts pass. |
+
+### Scoped grades and remaining gate
+
+| Section | Grade | Reason |
+|---|---|---|
+| Local deployment validation | **A- / daemon-build-gated** | Environment, Compose config, contracts, security policy, and full Node are green; Docker image/runtime testing is intentionally not authorized through this interactive account. |
+| Persistent hosting | **C / unselected** | The architecture is implemented, but paid providers are rejected and this laptop is excluded. No separate zero-cost host has been supplied. |
+
+Data DCS starts and ends at **0.765** because no provider poll or data mutation ran. Verification is Node
+846/842/0fail/4skip, deployment 4/4, secret scan 828/0, Compose config pass, rendered systemd pass, hygiene pass,
+and clean preflight with only interactive Docker-daemon access failing. Live/schema/model gates are unchanged.

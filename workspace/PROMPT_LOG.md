@@ -1832,3 +1832,23 @@ untrusted GitHub/provider research through the structured JSON air gap, then rep
 workflow defects locally. Repaired the workflow and clean-runner native seams, selected a named Singapore
 host, and added retry-safe host-side systemd updates in `54f861eb`. Final verification and remaining external
 authority/evidence gates are recorded in the current dated handoff.
+
+## User Prompt - 2026-07-22 session 90 local deployment validation
+
+`local hosting, wont waste money on allthat`
+
+Correction after reviewing the proposed local-host plan: the current Lenovo laptop is only for testing and
+must not become the actual always-on host.
+
+## Work - 2026-07-22 session 90 local deployment validation
+
+Selected blast-through `triage` in Fast Reading Mode and retained the existing single-writer architecture.
+Installed only the missing Compose v2 test prerequisite, added an owner-only central environment generator,
+and made the future systemd updater portable across NVM Node installs without granting the interactive user
+Docker access. After the user's correction, removed the proposed laptop-host installer and lid/idle policy
+before either was installed. No timer, container, provider poll, or power-policy change occurred.
+
+Committed the corrected testing-only implementation as `df3c5c57`. Full Node passed 846/842/0fail/4skip;
+focused deployment tests passed 4/4; Compose config, shell syntax, rendered systemd verification, secret scan
+828/0, hygiene, and diff checks passed. Clean-tree preflight passes every check except interactive Docker-daemon
+access, which remains intentionally unavailable on this test bench. No persistent host is selected.

@@ -740,3 +740,34 @@ truth findings in `workspace/DEV_REVIEW.md`.
   ]
 }
 ```
+
+## Local Deployment Validation Correction - 2026-07-22 session 90
+
+```json
+{
+  "scope": "current Lenovo laptop is a deployment test bench only, never the always-on host",
+  "commit": "df3c5c57",
+  "completed": [
+    "Installed Docker Compose v2 as a local validation prerequisite.",
+    "Generated ignored owner-only .env.central from an allowlist with a separate API token and no execution credentials.",
+    "Added portable NVM Node selection and service-only docker supplementary-group wiring for a future real host.",
+    "Corrected the rollout plan after the operator rejected actual hosting on this laptop."
+  ],
+  "verification": {
+    "node": "846 total / 842 pass / 0 fail / 4 skip",
+    "focused_deployment": "4/4 pass",
+    "secret_scan": "828 files / 0 violations",
+    "compose_config": "pass",
+    "systemd_render": "pass",
+    "hygiene": "pass",
+    "clean_preflight": "all checks pass except interactive docker-daemon access"
+  },
+  "not_done": [
+    "No systemd updater or timer installed.",
+    "No lid or sleep policy changed.",
+    "No container or provider poll started.",
+    "No persistent host selected and no hosting spend approved."
+  ],
+  "next": "Wait for a separate persistent zero-cost machine or an explicit hosting decision; keep this laptop testing-only."
+}
+```

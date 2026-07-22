@@ -1,5 +1,22 @@
 # Next Session Goal
 
+## 2026-07-22 session 90 critical override - current laptop is testing only
+
+The operator rejected both paid hosting and using the current Lenovo laptop as the always-on host. Do not
+install `sovereign-central-update.timer`, change this laptop's lid/sleep policy, grant its interactive user
+Docker socket access, or start the continuous `backfill` service. No persistent central host is selected.
+
+Local deployment-validation support is committed at `df3c5c57`: Compose v2 is installed, `.env.central` was
+generated locally with mode 600 and no execution credentials, Compose config renders, focused deployment
+contracts pass 4/4, secret scan is 828/0, hygiene passes, and full Node is 846/842/0fail/4skip. The clean-tree
+preflight passes every gate except Docker-daemon access for the interactive user; that remaining failure is
+intentional on this test bench. No systemd unit, power policy, container, or provider poll was started.
+
+The next deployment action is blocked until the operator supplies a separate persistent zero-cost machine or
+explicitly changes the hosting decision. Until then, keep the central-host architecture dormant and use this
+laptop only for config/contracts/tests. Live trading, public exposure, schema-v3/model promotion, and remote
+Supabase/RLS approval remain blocked.
+
 ## 2026-07-22 session 89 critical override
 
 The repository-side GitHub/deployment repair is complete in `54f861eb`. Do not rebuild the readiness workflow, native

@@ -1363,3 +1363,20 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
 - Current data remains 92/92 cached with 72 stale, 9 cadence-plausible, and 0 unexplained. DCS is 0.765, so
   live trading and schema-v3/model promotion remain blocked. No provider poll or host deployment was run.
 - Repository implementation is committed at `54f861eb`; Actions and target-host runtime proof remain external.
+
+## Local Deployment Validation Only - 2026-07-22 session 90
+
+- Corrected the session-89 host direction: paid hosting is rejected, and the current Lenovo laptop is also
+  explicitly not the persistent central host. No host is selected.
+- Added `host:prepare-central-env`, which generates an ignored mode-600 `.env.central`, creates a separate API
+  token, maps only allowlisted research/provider settings, retains the Alpaca paper endpoint, and cannot copy
+  trade PIN or Polymarket execution credentials.
+- Made the future systemd updater accept an explicit absolute Node binary and grant `docker` only to the service
+  process through `SupplementaryGroups`, avoiding dependence on interactive NVM PATH or user-group mutation.
+- Docker Compose v2 is installed for local config testing. No updater/timer was installed, no power policy was
+  changed, and no web/backfill container or provider poll was started on this laptop.
+- Verification at `df3c5c57`: Node 846/842/0fail/4skip; focused deployment 4/4; Compose config, rendered systemd,
+  shell syntax, secrets 828/0, hygiene, and diff checks pass. Clean preflight passes every check except Docker
+  daemon access for the interactive user, which remains an intentional test-bench boundary.
+- DCS remains 0.765 from the session-89 data baseline because no polling or integrity mutation occurred.
+  Live trading, public exposure, schema-v3/model promotion, and remote Supabase/RLS approval remain blocked.
