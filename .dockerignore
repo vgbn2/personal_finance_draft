@@ -8,6 +8,7 @@ Frontend/dashboard/node_modules/
 .env
 .env.*
 !.env.example
+!.env.central.example
 
 # Generated / cache — large, not needed at build time
 storage/data/cache/

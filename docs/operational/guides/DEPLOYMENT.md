@@ -1,20 +1,22 @@
 # Deployment Plan
 
-Deployment is still local-first. The repo does not ship a public production service yet, but the local prototype now has a buildable CLI, web/API bridge, and repo-local state files that make packaging work easier to stage later.
+Deployment is local/private-first. The repo supports one private, single-writer Docker host for market-data
+polling, scorecard calculation, and dashboard/API access. It does not ship a public production service or
+approve live-money execution.
 
 ## Current Status
 
-Current runtime remains local-only.
+Current runtime supports local use and a private central research host.
 
 Current runtime:
 
 - local prototype docs and starter assets
 - optional legacy local executable
 - optional local config examples
-- no network access
+- private dashboard/API access through an SSH tunnel or access-controlled VPN
 - Supabase-backed database/auth available when local or deployment env vars are provided
 - secrets required for deployment targets that use Supabase or protected write routes
-- no deployment target
+- no repository-owned public/cloud target; the operator supplies the private host
 
 ## Deployment Goals
 
@@ -54,13 +56,13 @@ Before any live execution deployment, the project must have:
 
 Docker is optional for the local prototype and should not be required for ordinary repo verification.
 
-The repo now includes a local container starter under `docker/`:
+The repo includes the central-host container stack under `infra/docker/`:
 
-- `docker/Dockerfile` builds the web/API bridge on top of `node:22-slim`
-- `docker/docker-compose.yml` runs the web service on port `8787`
-- `docker/.dockerignore` keeps build outputs, logs, and notebook/data noise out of the image context
+- `infra/docker/Dockerfile` builds the web/API bridge and native runtime
+- `infra/docker/docker-compose.yml` runs the default `web` + `backfill` stack
+- `.dockerignore` keeps secrets, build output, and runtime data out of the image context
 
-The container starter is for reproducibility and local packaging, not a replacement for direct CLI verification.
+The stack is a private research/data deployment, not a live-trading promotion.
 
 ## Secrets Policy
 
@@ -84,8 +86,18 @@ The supported small-host shape is one Docker host running the `web` and `backfil
 services from the repository root:
 
 ```bash
-docker compose -f infra/docker/docker-compose.yml up -d --build web backfill
+cp .env.central.example .env.central
+chmod 600 .env.central
+# Fill SOVEREIGN_API_TOKEN and only the data-provider settings this host needs.
+SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.sh
 ```
+
+The updater refuses a dirty, divergent, wrong-branch, or locally-ahead checkout, takes an exclusive deployment
+lock, fast-forwards from `origin/main`, requires `HEAD` to equal the fetched remote branch, runs
+`central_host_preflight.js`, validates Compose, builds the image, recreates only `web` and `backfill`, and
+waits for the loopback health endpoint plus a running backfill container. A developer machine updates code by
+pushing a reviewed commit; the central machine performs this serialized update. It does not mount a second
+copy of `storage/` and it does not accept client-side data writes.
 
 The backfill service writes directly to the host-mounted `storage/data/ts/` index. The
 web service calculates scorecards on the same machine from that index; market data is
@@ -98,6 +110,11 @@ Strictly newer live candles use an append path instead of rewriting the full his
 binary file. The 30-minute daemon cycle still refreshes local coarse rollups when the base
 grain is fresh enough to skip provider polling, so WebSocket activity cannot strand stale
 `1h`, `4h`, or daily scorecard inputs.
+
+Every symbol/timeframe append or overlap rewrite holds an ownership-token file lock. This makes the
+canonical store safe if a maintenance command overlaps the daemon, while the supported deployment still
+keeps exactly one `backfill` service. Lock acquisition times out rather than writing concurrently; an
+unchanged crashed-writer sidecar becomes reclaimable after the configured stale window.
 
 The scorecard endpoint requires `SOVEREIGN_API_TOKEN`:
 
@@ -115,6 +132,12 @@ Compose binds the host port to `127.0.0.1` by default. Set `SOVEREIGN_WEB_BIND` 
 specific private VPN interface address only when that interface is access-controlled;
 do not use `0.0.0.0` on an internet-reachable host.
 
+Central containers force `SOVEREIGN_RUNTIME_MODE=cloud-compute`, `LIVE_TRADING=false`, and
+`SOVEREIGN_EXECUTION_AUTHORIZED=false` after loading the environment file. The preflight rejects execution
+PINs and Polymarket private/L2 credentials in `.env.central`; keep live broker custody on a separately
+reviewed local/private runner. The paper bot is also opt-in under the `paper` profile and is never started by
+the central updater.
+
 Start with 2 shared vCPU, 8 GB RAM, and enough SSD space for at least twice the current
 `storage/` footprint. The backfill container is configured with a 6 GB V8 heap ceiling,
 so a 4 GB host is not a reliable choice for the full crypto/equity universe. A reduced
@@ -131,10 +154,13 @@ runtime.
 
 ```bash
 # Read-only portfolio and host monitors
-docker compose -f infra/docker/docker-compose.yml --profile monitoring up -d --build web backfill portfolio-monitor host-health host-backup
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml --profile monitoring up -d --build web backfill portfolio-monitor host-health host-backup
 
 # Bounded Polymarket research archive capture
-docker compose -f infra/docker/docker-compose.yml --profile research up -d --build polymarket-research
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml --profile research up -d --build polymarket-research
+
+# Optional paper bot; still forced into cloud-compute/non-live mode
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml --profile paper up -d web backfill bot
 ```
 
 `portfolio-monitor` polls the aggregated portfolio snapshot from the local gateway and writes a
@@ -158,5 +184,6 @@ instead of leaving an idle loop that appears healthy.
 All non-web profile services explicitly disable the image's inherited HTTP healthcheck because they
 do not listen on port `8787`. The research service carries its own image build definition, so the
 research-only `up --build` command does not depend on a prior web-service build.
-Runtime knobs are read from the ordered `env_file` entries inside each container; this allows optional
-`.env.production` values to override `.env` without being erased by host-side Compose interpolation.
+Runtime knobs come from the operator-owned `.env.central` selected through `SOVEREIGN_CENTRAL_ENV_FILE`.
+The same file is passed to Compose for private-bind interpolation and injected into the containers; explicit
+central-runtime overrides then enforce the non-live boundary.
