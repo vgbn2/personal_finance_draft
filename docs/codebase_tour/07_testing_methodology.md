@@ -1,10 +1,8 @@
 # Module 07 — How Tests Actually Run Today
 
-`docs/operational/guides/testing_surface.md` describes an older test layout (`npm run test:api`,
-`npm run test:macro`, separate `backend/api/tests/*.test.js` files) that has since been reorganized.
-Treat this module as the current replacement for its "how do I run tests" sections; its "Hard Rule"
-section (tests must show real data flow, not just pass/fail) is still good general guidance and worth
-keeping.
+`docs/operational/guides/testing_surface.md` is the grouped-command reference. This module explains how
+the runner behaves and how to debug individual slices. Its "Hard Rule" remains the governing standard:
+tests should show real data flow, not only pass/fail.
 
 ## The one gotcha that costs the most time if you don't know it
 
@@ -33,11 +31,10 @@ runner produced it before debugging the code.
 ## C++ tests
 
 ```bash
-ctest --test-dir backend/core/build -C Debug --output-on-failure
+npm run test:core
 ```
-30 test executables defined in `backend/core/CMakeLists.txt`, each its own binary linked against the
-`sovereign_core` static lib. Module 01 has the full list and the one standing, documented failure
-(`kronos_integration_test`, a data-availability gap, not a regression).
+This seeds the required fixture, builds the Release native target, and runs every executable registered
+with CTest. Read the emitted discovery/pass/fail counts rather than relying on a stale hard-coded total.
 
 ## Hygiene check
 

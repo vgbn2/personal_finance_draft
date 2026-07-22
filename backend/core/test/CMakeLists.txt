@@ -10,6 +10,7 @@ set(SOVEREIGN_CPP_CORE_TEST_TARGETS
     research_contract_test
     stats_test
     risk_test
+    cost_model_test
     crypto_replay_runner_test
     quote_feed_interface_test
     correlation_test

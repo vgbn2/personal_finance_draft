@@ -398,7 +398,7 @@ const M = [
 ];
 
 // ── App ──────────────────────────────────────────────────────────────────
-const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
+const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
   const { exit } = useApp();
   const viewport = useWindowSize();
   const layout = dashboardLayout(viewport.columns, viewport.rows);
@@ -535,29 +535,41 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun }) => {
         if (pin) {
           env.SOVEREIGN_TRADE_PIN = pin;
         }
-        const child = spawn(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...argv], {
-          env,
-          stdio: ['ignore', 'pipe', 'pipe']
-        });
-        childRef.current = child;
-
-        child.stdout.on('data', (data) => {
-          if (mountedRef.current) setOutput((c) => c + data.toString('utf8'));
-        });
-        child.stderr.on('data', (data) => {
-          if (mountedRef.current) setOutput((c) => c + data.toString('utf8'));
-        });
-
-        await new Promise((resolve) => {
-          child.on('close', (code) => {
-            if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
-            resolve(code);
+        if (executeInPane) {
+          const result = await executeInPane(argv, { env });
+          if (!result || !Number.isInteger(result.exitCode)) {
+            throw new TypeError('executeInPane must resolve to { exitCode, stdout, stderr }');
+          }
+          const stdout = result.stdout == null ? '' : String(result.stdout);
+          const stderr = result.stderr == null ? '' : String(result.stderr);
+          if (mountedRef.current && (stdout || stderr)) {
+            setOutput((c) => c + stdout + stderr);
+          }
+        } else {
+          const child = spawn(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...argv], {
+            env,
+            stdio: ['ignore', 'pipe', 'pipe']
           });
-          child.on('error', (err) => {
-            if (mountedRef.current) setOutput((c) => c + '\nError: ' + err.message);
-            resolve(-1);
+          childRef.current = child;
+
+          child.stdout.on('data', (data) => {
+            if (mountedRef.current) setOutput((c) => c + data.toString('utf8'));
           });
-        });
+          child.stderr.on('data', (data) => {
+            if (mountedRef.current) setOutput((c) => c + data.toString('utf8'));
+          });
+
+          await new Promise((resolve) => {
+            child.on('close', (code) => {
+              if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
+              resolve(code);
+            });
+            child.on('error', (err) => {
+              if (mountedRef.current) setOutput((c) => c + '\nError: ' + err.message);
+              resolve(-1);
+            });
+          });
+        }
       } catch (err) {
         if (mountedRef.current) setOutput('Error executing command: ' + err.message);
       } finally {
