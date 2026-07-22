@@ -1,4 +1,4 @@
-name: Deployment Guard
+name: Central Host Readiness
 
 on:
   workflow_dispatch:
@@ -7,17 +7,61 @@ permissions:
   contents: read
 
 jobs:
-  guard:
-    name: Confirm deployment remains local-first
+  readiness:
+    name: Validate private-host deployment inputs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify deployment docs
-        run: test -s docs/DEPLOYMENT.md
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
-      - name: Report guarded status
+      - name: Verify central-host surfaces
         run: |
-          echo "Production deployment is intentionally disabled while the active prototype remains local-first."
-          echo "Use this workflow as a manual reminder until docs/DEPLOYMENT.md promotes a concrete target."
+          test -s docs/operational/guides/DEPLOYMENT.md
+          test -s .env.central.example
+          test -s backend/scripts/ops/central_host_preflight.js
+          test -s infra/docker/docker-compose.yml
+          test -x infra/docker/update-central-host.sh
+          test -x infra/systemd/install-central-updater.sh
+          test -s infra/systemd/sovereign-central-update.service.in
+          test -s infra/systemd/sovereign-central-update.timer
+
+      - name: Check deployment entrypoint syntax
+        run: |
+          node --check backend/scripts/ops/central_host_preflight.js
+          bash -n infra/docker/update-central-host.sh
+          bash -n infra/systemd/install-central-updater.sh
+
+      - name: Prepare non-secret readiness environment
+        run: |
+          cp .env.central.example "$RUNNER_TEMP/.env.central"
+          chmod 600 "$RUNNER_TEMP/.env.central"
+          printf 'SOVEREIGN_API_TOKEN=%s\n' "$(openssl rand -hex 16)" >> "$GITHUB_ENV"
+
+      - name: Validate Compose manifest
+        env:
+          SOVEREIGN_CENTRAL_ENV_FILE: ${{ runner.temp }}/.env.central
+        run: docker compose --env-file "$SOVEREIGN_CENTRAL_ENV_FILE" -f infra/docker/docker-compose.yml config --quiet
+
+      - name: Run central-host preflight against the Actions runner
+        env:
+          SOVEREIGN_ENV_FILE: ${{ runner.temp }}/.env.central
+          SOVEREIGN_RUNTIME_MODE: cloud-compute
+          LIVE_TRADING: 'false'
+          SOVEREIGN_EXECUTION_AUTHORIZED: 'false'
+        run: node backend/scripts/ops/central_host_preflight.js
+
+      - name: Build the central-host image
+        env:
+          SOVEREIGN_CENTRAL_ENV_FILE: ${{ runner.temp }}/.env.central
+        run: docker compose --env-file "$SOVEREIGN_CENTRAL_ENV_FILE" -f infra/docker/docker-compose.yml build web
+
+      - name: Report readiness-only status
+        run: |
+          echo "### Central-host readiness passed" >> "$GITHUB_STEP_SUMMARY"
+          echo "This workflow validates committed deployment inputs only." >> "$GITHUB_STEP_SUMMARY"
+          echo "No host was provisioned, updated, or started by GitHub Actions." >> "$GITHUB_STEP_SUMMARY"

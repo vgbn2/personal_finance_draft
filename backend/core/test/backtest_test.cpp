@@ -20,22 +20,15 @@ bool expect(bool condition, const char* message) {
 int main() {
     using namespace sovereign;
 
-    // 1. Load real market data from cache
-    std::filesystem::path cache_path = "storage/data/cache/backtest_history.json";
-    if (!std::filesystem::exists(cache_path)) {
-        cache_path = "../../storage/data/cache/backtest_history.json";
-    }
-
-    if (!std::filesystem::exists(cache_path)) {
-        std::cerr << "[TEST SKIP] Cache file not found. Skipping real data pass.\n";
-        return 0;
-    }
+    // 1. Load a committed empirical capture; tests must not silently skip in a clean checkout.
+    const auto cache_path = std::filesystem::path(SOVEREIGN_REPO_ROOT)
+        / "tests" / "fixtures" / "real_bars_btc.json";
 
     std::cout << "[ANTI-BULLSHIT] Loading real market data for backtest validation: " << cache_path << "\n";
-    auto snapshot = loadMarketDataSnapshot(cache_path, "AAPL", "1d");
+    auto snapshot = loadMarketDataSnapshot(cache_path, "BTCUSDT", "1h");
     
     if (snapshot.bars.empty()) {
-        std::cerr << "[TEST FAIL] Loaded 0 bars for AAPL:1d\n";
+        std::cerr << "[TEST FAIL] Loaded 0 bars for BTCUSDT:1h\n";
         return 1;
     }
 
@@ -66,7 +59,7 @@ int main() {
 
     // 3. Test Mixed/Bad data (Fail Closed)
     auto mixed_bars = snapshot.bars;
-    mixed_bars[snapshot.bars.size()/2].asset_id = "crypto:BTCUSDT";
+    mixed_bars[snapshot.bars.size()/2].asset_id = "equities:AAPL";
     const auto mixed_result = Backtester::run(std::span<const OhlcvBar>(mixed_bars.data(), mixed_bars.size()));
     if (!expect(!mixed_result.summary.ok && mixed_result.summary.trades == 0U, "Expected mixed-asset input to fail closed")) {
         return 1;

@@ -2,6 +2,7 @@
 
 ## Prerequisites on VPS
 - Docker 24+ and Docker Compose plugin
+- System-wide Node.js 22 LTS (Node.js 20 is the minimum for the host-side preflight)
 - 8GB RAM for the full-universe backfill profile
 - Git, `flock`, and `curl`
 - SSH tunnel or access-controlled private VPN; do not publish port 8787 to the internet
@@ -36,8 +37,37 @@ SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.
 
 The updater refuses dirty, wrong-branch, divergent, or locally-ahead Git state; uses `git merge --ff-only`;
 requires `HEAD` to equal the fetched remote branch; serializes deployments with `flock`; validates
-Docker/Compose/disk/private-bind/secret policy; recreates only `web` and `backfill`; and verifies both
-`http://127.0.0.1:8787/health` and a running backfill container before succeeding.
+Docker/Compose/disk/private-bind/secret policy; recreates only `web` and `backfill`; and verifies the web
+container's internal healthcheck plus a running backfill container before succeeding.
+If the fetched branch matches the last successfully deployed commit, the web health endpoint passes, and the
+backfill container is running, it exits
+without rebuilding or restarting. The success marker lives under `.git/`, so a failed build or health check is
+retried on the next timer cycle even though Git already fast-forwarded. Set `SOVEREIGN_DEPLOY_FORCE=true` for
+an intentional rebuild after an environment-only change.
+
+## Automatic host-side updates
+
+After the first successful deploy, install the five-minute systemd pull timer from the host checkout:
+
+```bash
+sudo infra/systemd/install-central-updater.sh "$PWD" "$USER"
+systemctl list-timers sovereign-central-update.timer
+journalctl -u sovereign-central-update.service -n 100 --no-pager
+```
+
+Before enabling it, prove that the chosen service user can fetch the private repository non-interactively:
+
+```bash
+git fetch origin main
+```
+
+The developer machine then only pushes reviewed commits to `main`. The central host fetches and fast-forwards
+itself; GitHub-hosted runners never receive the host environment or provider credentials. Git/preflight/build
+failures occur before service replacement. A failure after Compose recreation can leave the new containers
+unhealthy; there is no automatic rollback. Persisted `storage/` remains mounted, the success marker stays old,
+and the timer retries the same commit while the failure remains visible in the systemd journal.
+Protect `main` and require the automatic Test and Build checks before merge; the host timer does not query
+GitHub check status itself.
 
 ## Services
 
