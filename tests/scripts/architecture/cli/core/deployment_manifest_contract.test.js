@@ -8,6 +8,10 @@ const DOCKER_COMPOSE = path.join(REPO_ROOT, 'infra', 'docker', 'docker-compose.y
 const K8S_DEPLOYMENT = path.join(REPO_ROOT, 'infra', 'deployment', 'kubernetes', 'deployment.yaml');
 const K8S_CONFIGMAP = path.join(REPO_ROOT, 'infra', 'deployment', 'kubernetes', 'configmap.yaml');
 const DEPLOYMENT_DOC = path.join(REPO_ROOT, 'docs', 'operational', 'guides', 'DEPLOYMENT.md');
+const DOCKER_DEPLOY_DOC = path.join(REPO_ROOT, 'infra', 'docker', 'DEPLOY.md');
+const CENTRAL_ENV_EXAMPLE = path.join(REPO_ROOT, '.env.central.example');
+const CENTRAL_PREFLIGHT = path.join(REPO_ROOT, 'backend', 'scripts', 'ops', 'central_host_preflight.js');
+const CENTRAL_UPDATER = path.join(REPO_ROOT, 'infra', 'docker', 'update-central-host.sh');
 const TERRAFORM_MAIN = path.join(REPO_ROOT, 'infra', 'deployment', 'terraform', 'main.tf');
 const HEROKU_PROCFILE = path.join(REPO_ROOT, 'infra', 'deployment', 'heroku', 'Procfile');
 const HEROKU_APP = path.join(REPO_ROOT, 'infra', 'deployment', 'heroku', 'app.json');
@@ -28,11 +32,16 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   const deployment = read(K8S_DEPLOYMENT);
   const configmap = read(K8S_CONFIGMAP);
   const docs = read(DEPLOYMENT_DOC);
+  const dockerDocs = read(DOCKER_DEPLOY_DOC);
+  const centralEnv = read(CENTRAL_ENV_EXAMPLE);
+  const centralPreflight = read(CENTRAL_PREFLIGHT);
+  const centralUpdater = read(CENTRAL_UPDATER);
   const terraform = read(TERRAFORM_MAIN);
   const herokuProcfile = read(HEROKU_PROCFILE);
   const herokuApp = read(HEROKU_APP);
   const web = composeService(compose, 'web');
   const bot = composeService(compose, 'bot');
+  const backfill = composeService(compose, 'backfill');
   const portfolioMonitor = composeService(compose, 'portfolio-monitor');
   const hostHealth = composeService(compose, 'host-health');
   const hostBackup = composeService(compose, 'host-backup');
@@ -41,7 +50,20 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(compose, /SOVEREIGN_WEB_PORT:\s*8787/);
   assert.match(compose, /SOVEREIGN_CACHE_TTL_MS:\s*30000/);
   assert.match(compose, /SOVEREIGN_CACHE_MAX_ENTRIES:\s*100/);
+  assert.match(compose, /x-central-runtime:\s*&central-runtime/);
+  assert.match(compose, /SOVEREIGN_RUNTIME_MODE:\s*cloud-compute/);
+  assert.match(compose, /LIVE_TRADING:\s*"false"/);
+  assert.match(compose, /SOVEREIGN_EXECUTION_AUTHORIZED:\s*"false"/);
+  assert.match(compose, /path:\s*\$\{SOVEREIGN_CENTRAL_ENV_FILE:-\.\.\/\.\.\/\.env\}/);
   assert.match(web, /\$\{SOVEREIGN_WEB_BIND:-127\.0\.0\.1\}:8787:8787/);
+  assert.match(web, /env_file:\s*\*central-env-files/);
+  assert.match(web, /<<:\s*\*central-runtime/);
+  assert.match(bot, /profiles:\s*\[\s*paper\s*\]/);
+  assert.match(bot, /environment:\s*\*central-runtime/);
+  assert.match(backfill, /env_file:\s*\*central-env-files/);
+  assert.match(backfill, /<<:\s*\*central-runtime/);
+  assert.match(web, /\.\.\/\.\.\/storage:\/app\/storage/);
+  assert.match(backfill, /\.\.\/\.\.\/storage:\/app\/storage/);
   assert.match(portfolioMonitor, /profiles:\s*\[\s*monitoring\s*\]/);
   assert.match(portfolioMonitor, /PORTFOLIO_MONITOR_INTERVAL_SECS:-60/);
   assert.match(portfolioMonitor, /portfolio-monitor[^\n]+\|\| exit \$\$\?/);
@@ -91,14 +113,48 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(docs, /polymarket-research/i);
   assert.match(docs, /persisted `polymarket` feature flag/i);
   assert.match(docs, /binds the host port to `127\.0\.0\.1` by default/i);
+  assert.match(docs, /update-central-host\.sh/i);
+  assert.match(docs, /single-writer/i);
+  assert.match(docs, /\.env\.central/i);
+  assert.match(docs, /SSH tunnel|private VPN/i);
   assert.doesNotMatch(docs, /no database/i);
   assert.doesNotMatch(docs, /no secrets/i);
+
+  assert.match(dockerDocs, /update-central-host\.sh/i);
+  assert.match(dockerDocs, /private/i);
+  assert.match(dockerDocs, /paper/i);
+  assert.match(dockerDocs, /Public reverse-proxy exposure is not approved/i);
+
+  assert.match(centralEnv, /^SOVEREIGN_RUNTIME_MODE=cloud-compute$/m);
+  assert.match(centralEnv, /^LIVE_TRADING=false$/m);
+  assert.match(centralEnv, /^SOVEREIGN_EXECUTION_AUTHORIZED=false$/m);
+  assert.doesNotMatch(centralEnv, /^SOVEREIGN_TRADE_PIN=/m);
+  assert.doesNotMatch(centralEnv, /^POLYMARKET_PRIVATE_KEY=/m);
+
+  assert.match(centralPreflight, /EXECUTION_ONLY_KEYS/);
+  assert.match(centralPreflight, /docker_compose/);
+  assert.match(centralPreflight, /git_clean/);
+  assert.match(centralPreflight, /private_bind/);
+
+  assert.match(centralUpdater, /flock -n 9/);
+  assert.match(centralUpdater, /git status --porcelain --untracked-files=all/);
+  assert.match(centralUpdater, /git branch --show-current/);
+  assert.match(centralUpdater, /git merge --ff-only/);
+  assert.match(centralUpdater, /HEAD does not exactly match/);
+  assert.match(centralUpdater, /central_host_preflight\.js/);
+  assert.match(centralUpdater, /docker compose --env-file/);
+  assert.match(centralUpdater, /up -d --force-recreate web backfill/);
+  assert.doesNotMatch(centralUpdater, /up -d[^\n]*\bbot\b/);
+  assert.match(centralUpdater, /ps --status running --services backfill/);
+  assert.match(centralUpdater, /health_url="http:\/\/127\.0\.0\.1:8787\/health"/);
 
   console.log(JSON.stringify({
     type: 'deployment_manifest_contract',
     compose_port: 8787,
     cache_ttl_ms: 30000,
     supabase_secret_ref: true,
+    central_runtime_fail_closed: true,
+    central_update_contract: true,
     docs_aligned: true,
   }, null, 2));
 });

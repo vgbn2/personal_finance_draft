@@ -1,5 +1,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+  refreshFileLockSync,
+  withFileLockSync,
+} = require('../runtime/file_lock.js');
 
 const OHLCV_FAMILIES = new Set(['equities', 'indices', 'commodities', 'crypto', 'fx', 'prediction_market']);
 const PROVIDER_PRIORITY = { binance: 3, alpaca: 3, yahoo: 1, twelvedata: 1, frankfurter: 1, ecb: 1 };
@@ -694,6 +698,24 @@ function atomicTempPath(targetPath) {
   return `${targetPath}.${suffix}.tmp`;
 }
 
+function tsWriteLockPath(tsDir, symbol, timeframe) {
+  return `${tsIndexPath(tsDir, symbol, timeframe).bin}.write.lock`;
+}
+
+function tsWriteLockOptions() {
+  return {
+    timeoutMs: process.env.SOVEREIGN_TS_WRITE_LOCK_TIMEOUT_MS,
+    staleMs: process.env.SOVEREIGN_TS_WRITE_LOCK_STALE_MS,
+  };
+}
+
+function requireTsWriteLock(lockHandle) {
+  if (refreshFileLockSync(lockHandle)) return;
+  const error = new Error(`Lost ownership of time-series write lock: ${lockHandle?.path || 'unknown'}`);
+  error.code = 'ELOCKLOST';
+  throw error;
+}
+
 function encodeTsRecords(records) {
   const buffer = Buffer.allocUnsafe(records.length * TS_RECORD_BYTES);
   for (let index = 0; index < records.length; index += 1) {
@@ -795,7 +817,7 @@ const SUB_DAILY_PRESERVED_TIMEFRAMES = new Set(['1m', '5m', '15m', '30m']);
  * It also removes a latent `push(...existing)` call-spread that could RangeError above
  * ~100k existing rows in the gap-fill branch.
  */
-function mergeWriteBin(tsDir, meta, incoming) {
+function mergeWriteBinUnlocked(tsDir, meta, incoming, lockHandle) {
   // Encode + sort + dedupe the incoming window (small). Keep-first on a tie matches the
   // old sort-then-filter dedup.
   const inc = [];
@@ -812,6 +834,7 @@ function mergeWriteBin(tsDir, meta, incoming) {
 
   const { bin, meta: metaPath } = tsIndexPath(tsDir, meta.symbol, meta.timeframe);
 
+  requireTsWriteLock(lockHandle);
   if (tryAppendBin(bin, metaPath, meta, incDedup)) return;
 
   // Read the existing bin as a Buffer only (no object materialization).
@@ -855,32 +878,49 @@ function mergeWriteBin(tsDir, meta, incoming) {
 
   let i = 0;
   let j = 0;
+  let recordsSinceLockRefresh = 0;
+  const checkpointLock = (processed = 1) => {
+    recordsSinceLockRefresh += processed;
+    if (recordsSinceLockRefresh < 100_000) return;
+    requireTsWriteLock(lockHandle);
+    recordsSinceLockRefresh = 0;
+  };
   while (i < existCount && j < incDedup.length) {
     const em = existMs(i);
     const im = incDedup[j].ms;
     if (em === im) {
       if (existingWinsOnTie) copyExisting(i); else writeIncoming(incDedup[j]);
-      i += 1; j += 1;
+      i += 1; j += 1; checkpointLock(2);
     } else if (em < im) {
-      copyExisting(i); i += 1;
+      copyExisting(i); i += 1; checkpointLock();
     } else {
-      writeIncoming(incDedup[j]); j += 1;
+      writeIncoming(incDedup[j]); j += 1; checkpointLock();
     }
   }
-  while (i < existCount) { copyExisting(i); i += 1; }
-  while (j < incDedup.length) { writeIncoming(incDedup[j]); j += 1; }
+  while (i < existCount) { copyExisting(i); i += 1; checkpointLock(); }
+  while (j < incDedup.length) { writeIncoming(incDedup[j]); j += 1; checkpointLock(); }
 
   const count = w;
   out.write(TS_MAGIC, 0, 'ascii');
   out.writeUInt32LE(count, 4);
   const finalBuf = out.subarray(0, TS_HEADER_BYTES + count * TS_RECORD_BYTES);
 
+  requireTsWriteLock(lockHandle);
   const tmpBin = atomicTempPath(bin);
   const tmpMeta = atomicTempPath(metaPath);
   fs.writeFileSync(tmpBin, finalBuf);
   renameWithRetry(tmpBin, bin);
   fs.writeFileSync(tmpMeta, JSON.stringify({ ...meta, count }), 'utf8');
   renameWithRetry(tmpMeta, metaPath);
+}
+
+function mergeWriteBin(tsDir, meta, incoming) {
+  const lockPath = tsWriteLockPath(tsDir, meta.symbol, meta.timeframe);
+  return withFileLockSync(
+    lockPath,
+    (lockHandle) => mergeWriteBinUnlocked(tsDir, meta, incoming, lockHandle),
+    tsWriteLockOptions(),
+  );
 }
 
 function writeTsIndex(tsDir, snapshot) {
@@ -1041,6 +1081,7 @@ module.exports = {
   readTsIndexSince,
   recordKey,
   renameWithRetry,
+  tsWriteLockPath,
   validateSnapshot,
   writeJson,
   writePartitionedSnapshot,
