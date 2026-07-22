@@ -1,3 +1,106 @@
+# Prompt Log - 2026-07-22 (session 88)
+
+## Private Central Host Rollout - 2026-07-22 (session 88)
+PROMPT: Asked whether the repository is actually usable with one centralized polling machine and another
+machine supplying updates, then asked to plan and implement the complete safe rollout.
+WORK: Used `refine-suggestion`, `mass-implement`, and `codex` after the session-87 evidence baseline.
+Recorded the scoped plan at `workspace/plans/CENTRAL_HOST_SINGLE_WRITER_ROLLOUT.md`; implemented an
+ownership-token cross-process time-series lock, adversarial writer tests, a data/research-only central
+Compose boundary, an isolated `.env.central` contract, a fail-closed host preflight, and a serialized
+fast-forward-only updater. Also repaired the deferred focused-runner selection seam after reproducing it.
+No external provider polling or public exposure was performed.
+RESULT: Working-tree Node is 838 total / 834 pass / 0 fail / 4 intentional skip; API 8/8, contracts
+31/31, secrets, native CTest 30/30, dashboard 13/13, responsive 6/6, frontend/gateway/MCP builds,
+dependency roots, skills, hygiene, and diff integrity pass. Concurrent append/append and append/merge
+tests preserve exact 200-row and 150-row unions with matching metadata and no lock residue. A clean
+archive of commit `59045be7` passes updater/script syntax and the new focused contracts. Commits
+`f9119729`, `cb47a921`, and `59045be7` were pushed to `origin/main`.
+
+The current workstation is not the central deployment target: preflight passes the isolated environment,
+private bind, token policy, env-file mode, disk, `flock`, `curl`, and manifest checks, but fails on the
+intentionally dirty workspace plus unavailable Docker Compose/daemon. Current data integrity is 92/92
+cached, 72 required-window stale, 9 cadence-plausible grain notices, and 0 unexplained grain. Runtime
+completion therefore remains gated on a selected private Docker host, its server-only `.env.central`,
+health plus running-backfill proof, and a post-poller freshness report. Live trading and schema-v3
+promotion remain blocked.
+
+## Rigorous Test Triage and Debugging - 2026-07-22 (session 87)
+PROMPT: `$session-orchestrator $blast-through rigours testing, and i also want you to debugg the tests followiung the protocal`.
+WORK: Started the session-orchestrator boot sequence; selected blast-through `triage` mode with Hard
+Reading Mode for the test system; loaded the current workspace truth, review ledger, repo guidance,
+dirty-tree boundary, and prior test baseline. The implementation phase will use the repo-local `codex`
+protocol after failures are reproduced and isolated. Existing session-84 code, test, skill, data-repair,
+and workspace changes remain user-owned and will be preserved. `graphify-out` is absent, so graph refresh
+is unavailable on this host.
+RESULT: Completed three confirmed repairs and one deterministic-test hardening batch. The prediction-
+market loader now imports and exercises the interest signal it already promised; the API and strict gates
+cover every active API test; both native CMake manifests register the cost-model test against the current
+production formula; and the dashboard scroll contract uses injected, nonzero fixture output instead of
+passing against an empty host result. Testing guidance and the native-manifest parity contract were aligned.
+Verification passed: API 8/8, contracts 31/31, secrets 818 files / 0 violations, full Node 826 total / 822
+pass / 0 fail / 4 intentional skip, native CTest 30/30, dashboard 13/13, responsive browser 6/6, frontend
+lint/typecheck/build, gateway TypeScript, MCP build, all package dependency roots, hygiene, and diff
+integrity. A clean-HEAD archive passed the canonical runner/entrypoint syntax smoke; the full repaired suite
+is working-tree evidence because the checkout remains intentionally dirty. DCS moved 0.95 -> 0.98.
+`graphify-out` remains unavailable, so no graph refresh was claimed.
+
+# Prompt Log - 2026-07-20 (session 86)
+
+## Session Boot - 2026-07-20 (session 86)
+PROMPT: `$session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, the handoff pointer and current dated handoff,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `docs/README.md`,
+`docs/engineering/codebase_org.md`, `workspace/NEXT_SESSION_GOAL.md`, the prompt-log tail, and the
+current dirty-tree diff. Preserved the existing uncommitted session-84 data-repair,
+research-default contract, skill, and workspace changes. `graphify` and `graphify-out` remain
+unavailable, so no graph refresh was possible.
+RESULT: The session-84 `SOYB 5m` repair and five-year research-default restoration remain the current
+recorded baseline. Live trading remains blocked pending independent execution-path review and host soak.
+If that work is not authorized, the next code gate is Batch 1 of
+`workspace/plans/SCHEMA2_SCHEMA3_COMBINED_ENGINE_PLAN.md`: exact canonical asset identity plus a
+research-only, always-`decision_ready:false` composition envelope. Remote Supabase migration/RLS state
+remains unverified.
+
+# Prompt Log - 2026-07-18 (session 85)
+
+## Session Boot - 2026-07-18 (session 85)
+PROMPT: `$session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, the handoff pointer and current dated handoff,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `docs/README.md`,
+`workspace/NEXT_SESSION_GOAL.md`, and the current dirty-tree diff. Preserved the existing uncommitted
+session-84 data-repair, research-default contract, skill, and workspace changes. `graphify` and
+`graphify-out` remain unavailable, so no graph refresh was possible.
+RESULT: The session-84 `SOYB 5m` repair and five-year default restoration are the current recorded
+baseline. Live trading remains blocked pending independent execution-path review and host soak. If that
+work is not authorized, the next code gate is Batch 1 of
+`workspace/plans/SCHEMA2_SCHEMA3_COMBINED_ENGINE_PLAN.md`: exact canonical asset identity plus a
+research-only, always-`decision_ready:false` composition envelope.
+
+# Prompt Log - 2026-07-17 (session 84)
+
+## Session Boot - 2026-07-17 (session 84)
+/session-orchestrator. Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, and `workspace/NEXT_SESSION_GOAL.md`.
+The current carryover is the session-83 critical override in `workspace/NEXT_SESSION_GOAL.md`;
+`graphify-out` is still absent, so no refresh was possible. No code changes yet.
+
+## Blast-Through Triage - 2026-07-17 (session 84)
+PROMPT: `$blast-through`.
+WORK: Triage / Fast Reading Mode against the session-83 evidence gates. Re-ran live integrity, traced the
+blocking `SOYB 5m` seam through coverage and scorecard consumers, checked the dirty research default, and
+ran focused fail-closed tests. No production or cache repair occurred during the audit.
+RESULT: Confirmed one blocking `SOYB 5m` grain and one uncontracted 1,825 -> 365 day research-default
+drift. Coverage/scorecard passed 21/21; market integrity remained B- and research defaults B-.
+
+## Mass-Implement - 2026-07-17 (session 84)
+PROMPT: `$mass-implement`.
+WORK: Delegated external provider retrieval into a structured JSON air-gap, validated and merge-applied
+Yahoo 5-minute data without shrinking the `SOYB` bin, restored the 1,825-day research default, added
+two-loader default contracts, and refreshed state/review/next-session records.
+RESULT: `SOYB 5m` grew 4,648 -> 6,052 rows; integrity is 92/92 cached, 0 stale, 9 cadence-plausible,
+0 unexplained, and `ok:true`. Full Node 823/819/0fail/4skip; focused research 46/46; writer/backfill
+33 pass/4 skip; coverage 21/21; hygiene and diff integrity pass. Live trading remains blocked.
+
 # Prompt Log - 2026-07-16 (session 83)
 
 ## Session Boot - 2026-07-16 (session 83)

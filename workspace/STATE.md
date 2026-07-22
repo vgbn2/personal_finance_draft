@@ -1276,3 +1276,72 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   and `git diff --check` passed. Grade movement: schema-2 scorecard **B- / false-health-gated -> B+ /
   refresh-contract-gated**. Remaining runtime gap is successful provider backfill and a fresh post-run
   scorecard; no signal or live-trading claim is implied.
+
+## Blast-Through Triage - 2026-07-17 session 84
+
+- Fast-reading triage kept repository DCS at 0.95; no data transformation or promotion occurred.
+- Live integrity remains fail-closed: 92/92 cached, 0 required-window stale, 8 cadence-plausible grain
+  suspects, and 1 blocking `SOYB 5m` seam. The active bin has 4,648 Twelve Data rows and a 15-minute
+  median recent gap despite its 5-minute label.
+- The focused coverage/scorecard gate passes 21/21 and proves unexplained grain is rejected before scoring.
+- Dirty `config/trading/research.yaml` reduces the default provider/prediction history window from the
+  committed five-year target (1,825 days) to one year (365 days) without a default-window test or policy note.
+- Next move remains a source-backed, non-shrinking `SOYB 5m` repair with before/after row, timestamp, gap,
+  and checksum evidence. Separately restore 1,825 days unless the one-year research policy is intentional.
+
+## Mass-Implement Closeout - 2026-07-17 session 84
+
+- Closed the blocking `SOYB 5m` seam through an air-gapped Yahoo provider artifact and the canonical
+  merge-protected ts-index writer. Cache history grew 4,648 -> 6,052 rows; first/last timestamps were
+  preserved, and the bin checksum changed from `0745ebca...c0a8a` to `c73f8c5d...dbed9`.
+- Recent cadence improved from 8.81 bars/active-day and a 15-minute median gap to 39.08 and 5 minutes.
+  Integrity is now `ok:true`: 92/92 cached, 0 missing, 0 stale, 9 cadence-plausible grain suspects,
+  and 0 unexplained.
+- Restored the configured research history default from 365 to 1,825 days and added contracts proving
+  both provider-history and prediction-market loaders use the five-year default.
+- Verification: research/default 46/46; writer/backfill 33 pass / 0 fail / 4 skip; coverage/scorecard
+  21/21; full Node 823 total / 819 pass / 0 fail / 4 skip; hygiene and diff integrity pass.
+- Grade movement: market integrity B- -> B / integrity-green; research default B- -> B+ / contracted.
+  Live trading remains blocked pending independent review and host soak.
+
+## Rigorous Test Triage and Debugging - 2026-07-22 session 87
+
+- Ran the session-orchestrator boot and blast-through `triage` protocol against the working tree, preserving
+  all pre-existing session-84 and later uncommitted changes. No network input or data mutation was used.
+- Repaired four demonstrated test boundaries: the prediction interest-history import/call, full active API
+  discovery inside `test:api` and `verify:strict`, dormant/misaligned native cost-model coverage in both
+  CMake manifests, and the dashboard scroll test's false-green zero-inventory path.
+- Added architecture enforcement for API-gate completeness, strict-gate inclusion, and native-source
+  registration parity. Updated testing docs to match the verified command topology.
+- Final verification: API 8/8; contracts 31/31; secrets 818 files / 0 violations; Node 826 total / 822 pass /
+  0 fail / 4 intentional skip; native CTest 30/30; dashboard 13/13; responsive browser 6/6; frontend
+  lint/typecheck/build; gateway TypeScript; MCP build; all package roots; hygiene; diff integrity.
+- Clean-HEAD evidence is limited to canonical runner/entrypoint syntax smoke. The complete repaired proof is
+  from the dirty working tree, and no commit was created. DCS moved 0.95 -> 0.98.
+- Final independent review found no blocker. A low-priority runner-selection argument-order seam remains;
+  live trading and schema-v3 promotion remain blocked. `graphify-out` is unavailable.
+
+## Private Central Host Rollout - 2026-07-22 session 88
+
+- Recorded and executed `workspace/plans/CENTRAL_HOST_SINGLE_WRITER_ROLLOUT.md`. The supported topology is
+  one private central `backfill` writer plus the co-located web/API reader; client machines update code by
+  Git and reach the service over an SSH tunnel or private VPN, never by sharing the ts-index write mount.
+- Added cross-process ownership-token locks around every canonical append/overlap time-series write,
+  periodic refresh during deep merges, bounded stale-sidecar reclamation, timeout failure, and
+  ownership-checked release. Concurrent production writers preserve exact timestamp unions and metadata.
+- Added the isolated data/research-only `.env.central` contract. Central Compose forces cloud-compute,
+  live=false, and execution-authorization=false; `bot` is opt-in under `paper`; default services remain
+  only `web` and `backfill`.
+- Added fail-closed preflight and deployment automation. Updates require clean `main`, fast-forward-only
+  fetched remote parity, a deployment `flock`, private bind, owner-only env, no execution credentials,
+  adequate disk/tooling, explicit web/backfill recreation, web health, and a running poller.
+- Closed the session-87 runner ergonomics seam by parsing Node options before targets and using explicit
+  file targets instead of broad discovery when supplied.
+- Verification: Node 838/834/0fail/4skip; API 8/8; contracts 31/31; native 30/30; dashboard 13/13;
+  responsive 6/6; frontend/gateway/MCP builds; all dependency roots; skill validation; hygiene; diff.
+  Clean archive `59045be7` passes new syntax and focused contracts.
+- Published commits `f9119729`, `cb47a921`, and `59045be7` to `origin/main`.
+- Runtime remains target-host-gated. Local preflight fails only dirty Git and unavailable Compose/daemon
+  after all safety/config/disk checks pass. Data is 92/92 cached with 72 stale required windows,
+  9 cadence-plausible notices, and 0 unexplained grain. No provider poll was run.
+- Live trading, public exposure, remote Supabase/RLS approval, and schema-v3 promotion remain blocked.

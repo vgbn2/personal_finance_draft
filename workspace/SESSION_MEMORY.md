@@ -1,3 +1,60 @@
+## Session Memory - 2026-07-22 session 88 - private central host rollout
+
+{
+  "work": "Planned, implemented, verified, committed, and pushed the single-writer private central research-host architecture without running provider polling or enabling execution.",
+  "commits": [
+    "f9119729 test: harden repository verification gates",
+    "cb47a921 chore(skills): strengthen audit and implementation workflows",
+    "59045be7 feat(ops): add private single-writer central host"
+  ],
+  "fixed": [
+    "All canonical ts-index append and overlap writes now hold an ownership-token cross-process file lock with bounded stale recovery and periodic ownership refresh.",
+    "Default central Compose starts web plus the sole backfill writer; paper, monitoring, and research loops require explicit profiles, and every service is forced to cloud-compute/non-live mode.",
+    "The central preflight validates a private bind, API token, no execution credentials, owner-only selected env file, clean Git, Docker/Compose, disk, flock, curl, and the manifest without printing secret values.",
+    "The updater locks deployments, rejects dirty/wrong-branch/divergent/locally-ahead state, requires exact fetched-remote parity, recreates only web and backfill, and verifies web health plus a running poller.",
+    "The Node runner now places options before targets and replaces broad discovery when an explicit file selector is supplied."
+  ],
+  "verified": [
+    "Node 838 total / 834 pass / 0 fail / 4 intentional skip; API 8/8; contracts 31/31; native CTest 30/30; dashboard 13/13; responsive 6/6.",
+    "Concurrent writer evidence: held writer blocks; append/append ends at 200; append/merge ends at 150; metadata counts match and no lock remains.",
+    "Clean archive at 59045be7 passes new script syntax and focused runner, deployment, preflight, and lock contracts.",
+    "origin/main was fast-forwarded from 079c2eee through 59045be7."
+  ],
+  "remaining": [
+    "Choose/provision the private central Docker host, create its owner-only .env.central, and run infra/docker/update-central-host.sh.",
+    "Prove web health, running backfill, and post-poller integrity/freshness on that host; current workstation data is 92/92 cached but 72 required windows are stale.",
+    "Keep live trading and schema-v3 promotion blocked."
+  ],
+  "current_host_blockers": [
+    "working tree intentionally contains the workspace closeout",
+    "Docker Compose plugin unavailable",
+    "Docker daemon unavailable"
+  ]
+}
+
+## Session Memory - 2026-07-22 session 87 - rigorous test debugging closeout
+
+{
+  "work": "Ran session-orchestrator boot, blast-through test triage, codex implementation, broad verification, and final hallucination review without committing the dirty multi-session tree.",
+  "fixed": [
+    "Prediction-market research history now imports and calls fetchPredictionInterestSignal, with loader-boundary tests locking the 1,825-day default.",
+    "test:api covers every active API test, including ttl_cache, and verify:strict now invokes the API gate.",
+    "Both native CMake manifests register cost_model_test; its assertions match the current production formula, and a manifest-parity test prevents future dormant native sources.",
+    "Dashboard scrolling now consumes deterministic injected universe output and proves real overflow instead of passing against zero inventory or an error path."
+  ],
+  "verified": [
+    "API 8/8; contracts 31/31; secrets 818 files / 0 violations; Node 826 total / 822 pass / 0 fail / 4 intentional skip; native CTest 30/30.",
+    "Dashboard 13/13; responsive Chrome 6/6; frontend lint/typecheck/build; gateway TypeScript; MCP build; dependency roots; hygiene; diff integrity.",
+    "A clean-HEAD archive passed canonical runner and entrypoint syntax smoke; the complete repaired suite is working-tree evidence because the checkout remains dirty."
+  ],
+  "remaining": [
+    "Decide how to stage or commit the current multi-session dirty tree; do not rerun the session-87 fixes.",
+    "Low-priority runner ergonomics remain: tests/run_node_tests.js appends user flags after discovery globs, so use direct node --test for exact focused selection until that seam is repaired.",
+    "Live trading remains blocked pending independent review and host soak; schema-v3 actionable promotion remains blocked."
+  ],
+  "dcs": 0.98
+}
+
 ## Session Memory - 2026-07-16 session 83 - session boot
 
 {

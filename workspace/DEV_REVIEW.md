@@ -1267,3 +1267,153 @@ remote RLS verification, and broker soak evidence.
 The session-82 C+/B- recovery ceiling is achieved. Promotion remains blocked because one data seam is
 unexplained, no independent live soak exists, remote RLS is unverified, and the combined actionable engine
 still has no production composition caller.
+
+## Blast-Through Triage - 2026-07-17 session 84
+
+**Mode:** triage / Fast Reading Mode. **DCS:** `0.95 -> 0.95` (carried repository confidence;
+no data transformation or promotion occurred).
+
+### Findings
+
+| Priority | Classification | Evidence | Impact | Required gate |
+|---|---|---|---|---|
+| **High** | **Confirmed blocking data seam** | Live `backend integrity --json`: 92/92 cached, 0 required-window stale, 8 cadence-plausible grain suspects, and 1 blocking suspect. `SOYB 5m` has 4,648 rows from Twelve Data over 2020-07-27 through 2026-07-16; the recent 512-row sample has 8.81 bars/active-day and a 15-minute median gap for a 5-minute label. Current checksum: `0745ebcaf40fb5e047043d8f6b2a085de8cb5a27ed2e2c1fc0558da40d6c0a8a`. | Integrity correctly returns `ok:false`; `SOYB 5m` cannot be promoted into scorecard analysis. | Repair only through an existing provider/backfill path. Record provider, pre/post row count, first/last timestamp, gap percentiles, and checksums; reject any repair that shrinks history. |
+| **Medium** | **Confirmed unverified policy drift** | Dirty `config/trading/research.yaml:34` changes `fallback_days` from 1,825 to 365. `research_sources.js:47-49,176,284` applies this default to both provider-history and prediction-market history. Commit `251677bc` established 1,825 days to match the five-year deep-backfill target; current tests cover explicit `--days` but not the configured default. | Default research and prediction-market requests silently lose four years of history, reducing sample depth unless callers pass `--days`. | Restore 1,825 unless the one-year policy is intentional; if intentional, document it and add a default-window contract for both loaders. |
+
+### Dismissed candidates
+
+- **Scorecard leakage:** dismissed. `bias.js` checks grain integrity before reading/scoring bars, and the
+  focused coverage/scorecard gate passes 21/21, including unexplained-grain rejection.
+- **Active writer corruption:** dismissed for this pass. Three `SOYB` `.tmp` files date from 2026-07-04,
+  no backfill/ingest process is running, and canonical reads resolve only exact `.bin`/`.meta.json` paths.
+  The stale files are cleanup debt, not evidence that the active bin is being overwritten.
+
+### Scoped grades
+
+| Section | Grade | Reason |
+|---|---|---|
+| `shared/lib/market` + local data | **B- / one-grain-blocked** | The detector and downstream fail-closed behavior are verified, but one source-backed repair is still required. |
+| `config/trading` + research history loaders | **B- / default-contract-gated** | The path is simple and explicit, but a production default changed without matching policy or regression evidence. |
+
+### Next narrow check
+
+Run a provider-backed `SOYB 5m` repair with preservation evidence. Do not mutate the cache during an
+audit-only pass, and do not treat the one-year research default as accepted policy without an owner decision.
+
+## Mass-Implement Closeout - 2026-07-17 session 84
+
+Both actionable session-84 triage findings are closed.
+
+| Finding | Resolution | Evidence |
+|---|---|---|
+| Blocking `SOYB 5m` grain | A restricted fetch worker used the existing Yahoo 5-minute provider path and wrote a structured candidate. The main process applied 1,775 session-valid rows through the canonical merge-protected ts-index writer. | Candidate: 1,776 rows, 1,661 source rows rejected before handoff, 1 session-close row dropped locally, 0 schema rejections. Merge: 4,648 -> 6,052 rows, +1,404, with 371 timestamp overlaps. First/last stayed `2020-07-27T14:45:00Z` / `2026-07-16T19:55:00Z`. |
+| One-year research default drift | Restored `historical_defaults.fallback_days: 1825` and added a contract covering both the provider-history and prediction-market default windows. | Focused research/backfill/CLI gate passes 46/46; full Node discovers the two new contracts. |
+
+### Data preservation evidence
+
+- Provider: Yahoo native 5-minute data through the existing provider adapter; the initial delegated
+  Alpaca attempt returned no rows and never touched the cache.
+- Candidate artifact: `storage/data/staging/soyb_5m_yahoo_candidate_2026-07-17.json`,
+  SHA-256 `783d940016c1b4ce5e8a3f9cf243c3efde2065c30998260aa4a6526c5e8041ad`.
+- Bin checksum: `0745ebcaf40fb5e047043d8f6b2a085de8cb5a27ed2e2c1fc0558da40d6c0a8a`
+  -> `c73f8c5d3df8a111f2bcae6fedf30816fa9aad4e96cc01bbe6a55ed8679dbed9`.
+- Full-history within-day gap percentiles improved from p50/p90/p95/p99
+  `25/150/210/310` minutes to `15/125/175/295`; maximum remained 420 minutes because older sparse
+  history was preserved instead of deleted.
+- Integrity's bounded recent sample improved from 8.81 bars/active-day with a 15-minute median gap to
+  39.08 bars/active-day with a 5-minute median gap.
+- Post-repair integrity: `ok:true`, 92/92 cached, 0 missing, 0 stale, 9 cadence-plausible grain
+  suspects, 0 unexplained, and 0 exceptions.
+
+### Verification and grades
+
+- Research/default focused gate: 46/46.
+- Writer/equity-backfill gate: 33 pass / 0 fail / 4 expected skips.
+- Coverage/scorecard fail-closed gate: 21/21.
+- Full Node: 823 total / 819 pass / 0 fail / 4 skip.
+- `npm run hygiene` and `git diff --check` pass.
+
+Grade movement: `shared/lib/market` + local data **B- / one-grain-blocked -> B / integrity-green**.
+`config/trading` + research history loaders **B- / default-contract-gated -> B+ / contracted**.
+Real-capital execution remains blocked pending independent review and live soak; this data repair does
+not approve schema-v3 promotion or the combined actionable engine.
+
+## Rigorous Test Triage and Debugging - 2026-07-22 session 87
+
+Blast-through `triage` used Hard Reading Mode for test claims, followed by focused repair and broad proof.
+The dirty-tree boundary was preserved throughout; working-tree results are not presented as committed-HEAD
+proof.
+
+### Confirmed findings and resolutions
+
+| Finding | Resolution | Evidence |
+|---|---|---|
+| Prediction-market history silently omitted the interest signal because `fetchPredictionInterestSignal` was never imported into the loader. The existing helper-only test could not see it. | Lazy-imported the fetcher beside the other ingest functions and extended the focused contract through both real loader boundaries. | The strengthened test failed 3/4 before the source repair and passes 4/4 after it; it verifies the 1,825-day window and one returned interest record. |
+| Root and strict gates did not cover the complete API surface; TTL cache was active but absent from `test:api`, and `verify:strict` skipped API tests entirely. | Added TTL cache to `test:api`, added the API gate to `verify:strict`, and made the structure contract enumerate every active API test. | API 8/8, contracts 31/31, and the complete strict gate pass. |
+| Native `cost_model_test.cpp` was dormant and asserted an obsolete linear formula; only 29 of 30 native test sources were registered. | Registered it in both CMake manifests, matched its numeric expectations to production, and added cross-manifest source-registration parity. | Native CTest 30/30; structure contract 11/11; sample values 2.0, 5.0, 11.0, and 11.1. |
+| Dashboard scrolling could pass while the real host command returned an error or zero inventory. | Added a narrow injectable in-pane execution seam and drove the test with 16 deterministic universe entries, nonzero record counts, and actual overflow. | Dashboard 13/13; the contract verifies argv, source, counts, and PageUp/PageDown/End movement. |
+
+### Dismissed or bounded observations
+
+- Concurrent full-suite executions produced transient file-level failures in the shared checkout; isolated
+  reruns and the final plain gates were green. They were shared-run interference, not a reproduced repo defect.
+- The first unapproved strict run could not bind the local API test socket in the sandbox. The approved
+  identical gate passed; this is a host permission boundary, not an application failure.
+- Frontend production build retains the known Vite static/dynamic Supabase import warning. Build,
+  typecheck, lint, and responsive browser coverage pass; no new regression was established.
+- The dashboard injectable proves deterministic success/nonzero output for this contract. Existing dashboard
+  tests continue to own abort, streaming, and nonzero-exit behavior; no production spawn default changed.
+
+### Scoped grades
+
+| Section | Grade | Reason |
+|---|---|---|
+| Research history loader/tests | **B+ / caller-contracted** | Both production loaders are exercised at their dependency boundary and lock the five-year default; wider research composition remains gated. |
+| API and strict test harness | **B+ / complete-active-gate** | Every active API file is enumerated into the gate and strict now invokes it. |
+| Native test surface | **B+ / manifest-parity-gated** | All 30 sources are registered through both manifests and execute, while broader native execution debt remains. |
+| Dashboard test surface | **B+ / deterministic** | The scroll contract proves real overflow with injected data and no host inventory dependency. |
+| Testing guidance | **B+ / aligned** | Commands and discovery boundaries match the verified repository topology. |
+
+### Verification
+
+- Strict gate: API 8/8; contracts 31/31; secrets 818 files / 0 violations; full Node ultimately 826 total /
+  822 pass / 0 fail / 4 intentional skip after the final architecture contract.
+- Native: CMake/CTest 30/30. Dashboard: 13/13. Responsive Chrome: 6/6 at 375, 768, and 1440 widths.
+- Frontend lint/typecheck/build, gateway TypeScript, MCP build, all package dependency roots, JS/MJS syntax,
+  hygiene, and diff integrity pass.
+- A clean-HEAD archive passed canonical runner and entrypoint syntax smoke only; the full repaired suite is
+  working-tree proof. DCS moved 0.95 -> 0.98. No commit or graph refresh was made.
+
+### Next narrow check
+
+Repair only the low-severity focused-runner argument-order seam if test ergonomics are selected next:
+`tests/run_node_tests.js` appends user flags/selectors after its discovery globs, so they do not reliably
+narrow a run. Until then, use direct `node --test`. Preserve the existing real-capital and schema-v3 blocks.
+
+## Private Central Host Implementation Review - 2026-07-22 session 88
+
+### Findings closed
+
+| Prior finding | Resolution | Proof |
+|---|---|---|
+| Canonical append/overlap writes had no per-bin cross-process exclusion. | Added an atomic ownership-token sidecar lock with timeout, bounded stale reclaim, deep-merge refresh, lost-ownership failure, and ownership-checked release. | Held-lock production writer blocks; concurrent append/append ends at 200 unique rows; append/merge ends at 150; metadata matches; no residue. |
+| Broad Compose startup included a bot and inherited execution-capable configuration. | Default stack is web + backfill; bot requires `paper`; every central service forces cloud-compute/non-live/no-execution authorization. | Deployment manifest contract and clean-archive focused tests pass. |
+| Manual updates could deploy dirty, divergent, locally-ahead, or unintended services. | Updater takes `flock`, requires clean expected branch and exact fetched-remote equality after `--ff-only`, builds web, recreates explicit web/backfill, and checks both health and poller state. | Shell syntax and static updater contract pass from working tree and clean archive. |
+| General `.env` could bleed execution credentials into a selected central env. | Central preflight parses only the selected `.env.central` plus explicit process overrides; it never imports the general auto-loader. | Regression fixture places a private key in adjacent `.env`; central validation stays green and the value is absent. |
+| Focused Node runner arguments followed broad discovery globs. | Runner separates options from targets, puts options first, and substitutes explicit test files for default discovery. | Runner contract 3/3; focused file invocation and full npm discovery pass. |
+
+### Current boundary
+
+The repository is usable as a private research/data system, and its central-host deployment path is now
+reproducible in committed code. It is not yet an operating central service on this workstation: Docker
+Compose and daemon checks fail, no external target host was supplied, and no provider polling was run.
+Current integrity is 92/92 cached, 72 stale, 9 cadence-plausible, and 0 unexplained. Live-money use,
+public exposure, schema-v3 promotion, and remote Supabase/RLS approval remain unapproved.
+
+### Verification and publication
+
+- Working tree: Node 838/834/0fail/4skip; API 8/8; contracts 31/31; native 30/30; dashboard 13/13;
+  responsive 6/6; frontend/gateway/MCP builds; dependencies; skills; hygiene; diff.
+- Clean archive `59045be7`: runner, preflight, lock, validation, and updater syntax plus focused runner,
+  deployment, preflight, and lock contracts pass.
+- Pushed: `f9119729`, `cb47a921`, and `59045be7` to `origin/main`.
