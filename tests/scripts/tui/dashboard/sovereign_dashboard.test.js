@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const { setTimeout: delay } = require('node:timers/promises');
 const { makeFakeStdin, makeFakeStdout, keys, send } = require('./_harness');
+const { renderBackendUniverse } = require('../../../../backend/cli/commands/tools/backend.js');
 
 test('dashboard App: research scorecard launches the canonical all-recorded v3 catalog', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
@@ -491,7 +492,7 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   assert.deepEqual(ranArgv, ['backend', 'chart', '--symbol', 'BTCUSDT', '--timeframe', '1d', '--style', 'line', '--bars', '200']);
 });
 
-test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls back through real output, End jumps back to the live tail', async (t) => {
+test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls through a non-empty inventory fixture, End jumps to the live tail', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
@@ -500,14 +501,29 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls back t
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout({ rows: 20 });
   const onRun = () => {};
+  const inventoryEntries = Array.from({ length: 16 }, (_, index) => ({
+    symbol: `FIXTURE_${String(index + 1).padStart(2, '0')}`,
+    records: 1,
+    timeframes: index % 2 === 0 ? ['1d', '1h'] : ['1d'],
+  }));
+  const inventoryOutput = renderBackendUniverse({
+    available: true,
+    ok: true,
+    input: 'fixture://scroll',
+    entries: inventoryEntries,
+    quality: { rejected_records: 2 },
+  });
+  const executions = [];
+  const executeInPane = async (argv) => {
+    executions.push(argv);
+    return { exitCode: 0, stdout: inventoryOutput, stderr: '' };
+  };
 
-  // Backend(2) -> backend universe(4): flagless, real, fast, and -- unlike
-  // most flagless commands here -- prints a real multi-line inventory
-  // report (20+ lines) that reliably exceeds the panel's visible window
-  // (the fake viewport is 20 rows, so the responsive output window is bounded;
-  // this command's output
-  // is comfortably longer than that without needing to fabricate a giant fake transcript).
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 4, onRun }), {
+  // Backend(2) -> backend universe(4). The synthetic contract fixture is
+  // intentionally non-empty and long enough to exceed the panel's viewport;
+  // using the host command here previously let `Symbols: 0` pass as a green
+  // scrolling test when the native backend executable was unavailable.
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 4, onRun, executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -519,13 +535,14 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls back t
     await delay(50);
     snap = stdout.snapshot();
   }
+  assert.deepEqual(executions, [['backend', 'universe']], 'the fixture went through the real dashboard command-selection seam');
 
   // The panel column is narrow enough to word-wrap long lines (including
   // the indicator text itself) across multiple display rows -- flatten
   // newlines before parsing it out, and match a short content fragment
   // guaranteed to survive wrapping intact rather than a full sentence.
   const flat = (s) => s.replace(/\n/g, ' ');
-  assert.match(flat(snap), /universe/i, 'real command output reached the panel (its last real line, since auto-follow pins to the tail by default)');
+  assert.match(flat(snap), /backend integrity/, 'the fixture report tail reached the panel');
   assert.doesNotMatch(snap, /Backend Universe/, 'the report\'s opening header is off the bottom-pinned view -- proves this is really scrolled, not just short output that fits in one page');
   const totalMatch = flat(snap).match(/\[lines (\d+)-(\d+)\/(\d+)\]/);
   assert.ok(totalMatch, 'a scroll-position indicator appears once output exceeds one page');
@@ -550,6 +567,16 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls back t
     afterTop = stdout.snapshot();
   }
   assert.ok(topReached || /\[lines 1-/.test(flat(afterTop)), 'repeated PageUp reveals the beginning of the report');
+  assert.match(afterTop, /Backend Universe/, 'the report header is reachable at the top');
+
+  await send(stdin, instance, [keys.pageDown]);
+  const sourcePage = stdout.snapshot();
+  assert.match(flat(sourcePage), /Source: fixture:\/\/scroll/, 'the rendered output came from the injected contract fixture');
+
+  await send(stdin, instance, [keys.pageDown]);
+  const countPage = stdout.snapshot();
+  assert.match(flat(countPage), /Symbols: 16 \| Records: 16/, 'the fixture proves positive inventory and record counts');
+  assert.doesNotMatch(flat(afterTop + sourcePage + countPage), /unavailable|Symbols:\s*0\b/i, 'backend errors and zero-inventory output are not accepted as scroll evidence');
 
   await send(stdin, instance, [keys.end]);
   const afterEnd = stdout.snapshot();
