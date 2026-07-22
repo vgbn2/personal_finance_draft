@@ -1,5 +1,15 @@
-# Run from repo root:  docker compose -f infra/docker/docker-compose.yml up -d
-# Or symlink this file to repo root and use:  docker compose up -d
+# Central research host. Default services are web + backfill only; paper, monitoring,
+# and research loops require explicit profiles. Keep SOVEREIGN_WEB_BIND private.
+
+x-central-runtime: &central-runtime
+  NODE_ENV: production
+  SOVEREIGN_RUNTIME_MODE: cloud-compute
+  LIVE_TRADING: "false"
+  SOVEREIGN_EXECUTION_AUTHORIZED: "false"
+
+x-central-env-files: &central-env-files
+  - path: ${SOVEREIGN_CENTRAL_ENV_FILE:-../../.env}
+    required: true
 
 services:
   web:
@@ -7,15 +17,9 @@ services:
       context: ../..
       dockerfile: infra/docker/Dockerfile
     image: personal_finance:latest
-    env_file:
-      # Canonical config — the same .env the CLI uses. Required.
-      - path: ../../.env
-        required: true
-      # Optional production overrides (only loaded if present).
-      - path: ../../.env.production
-        required: false
+    env_file: *central-env-files
     environment:
-      NODE_ENV: production
+      <<: *central-runtime
       SOVEREIGN_WEB_HOST: 0.0.0.0
       SOVEREIGN_WEB_PORT: 8787
       SOVEREIGN_CACHE_TTL_MS: 30000
@@ -34,19 +38,13 @@ services:
       start_period: 20s
 
   bot:
+    profiles: [paper]
     image: personal_finance:latest
     depends_on:
       web:
         condition: service_healthy
-    env_file:
-      # Canonical config — the same .env the CLI uses. Required.
-      - path: ../../.env
-        required: true
-      # Optional production overrides (only loaded if present).
-      - path: ../../.env.production
-        required: false
-    environment:
-      NODE_ENV: production
+    env_file: *central-env-files
+    environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
@@ -68,15 +66,9 @@ services:
 
   backfill:
     image: personal_finance:latest
-    env_file:
-      # Canonical config — the same .env the CLI uses. Required.
-      - path: ../../.env
-        required: true
-      # Optional production overrides (only loaded if present).
-      - path: ../../.env.production
-        required: false
+    env_file: *central-env-files
     environment:
-      NODE_ENV: production
+      <<: *central-runtime
       # Headroom for the merge-write path: an incremental crypto/equity cycle still
       # reads the existing deep 1m bin (millions of rows) to merge-protect it. The
       # per-lane concurrency cap keeps this bounded, but raise the V8 old-space ceiling
@@ -106,13 +98,8 @@ services:
     depends_on:
       backfill:
         condition: service_started
-    env_file:
-      - path: ../../.env
-        required: true
-      - path: ../../.env.production
-        required: false
-    environment:
-      NODE_ENV: production
+    env_file: *central-env-files
+    environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
@@ -134,13 +121,8 @@ services:
     depends_on:
       backfill:
         condition: service_started
-    env_file:
-      - path: ../../.env
-        required: true
-      - path: ../../.env.production
-        required: false
-    environment:
-      NODE_ENV: production
+    env_file: *central-env-files
+    environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
@@ -159,13 +141,8 @@ services:
   host-backup:
     profiles: [monitoring]
     image: personal_finance:latest
-    env_file:
-      - path: ../../.env
-        required: true
-      - path: ../../.env.production
-        required: false
-    environment:
-      NODE_ENV: production
+    env_file: *central-env-files
+    environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
@@ -193,13 +170,8 @@ services:
       context: ../..
       dockerfile: infra/docker/Dockerfile
     image: personal_finance:latest
-    env_file:
-      - path: ../../.env
-        required: true
-      - path: ../../.env.production
-        required: false
-    environment:
-      NODE_ENV: production
+    env_file: *central-env-files
+    environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped

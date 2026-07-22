@@ -98,6 +98,7 @@ logs/
 .env
 .env.*
 *.env
+!.env.central.example
 *.key
 *.pem
 storage/secrets/
