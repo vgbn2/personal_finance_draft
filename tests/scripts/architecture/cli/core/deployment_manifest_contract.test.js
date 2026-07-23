@@ -15,6 +15,8 @@ const CENTRAL_UPDATER = path.join(REPO_ROOT, 'infra', 'docker', 'update-central-
 const CENTRAL_UPDATER_INSTALLER = path.join(REPO_ROOT, 'infra', 'systemd', 'install-central-updater.sh');
 const CENTRAL_UPDATER_SERVICE = path.join(REPO_ROOT, 'infra', 'systemd', 'sovereign-central-update.service.in');
 const CENTRAL_UPDATER_TIMER = path.join(REPO_ROOT, 'infra', 'systemd', 'sovereign-central-update.timer');
+const DASHBOARD_ENV_EXAMPLE = path.join(REPO_ROOT, 'Frontend', 'dashboard', '.env.example');
+const BACKEND_API_PACKAGE = path.join(REPO_ROOT, 'backend', 'api', 'package.json');
 const TERRAFORM_MAIN = path.join(REPO_ROOT, 'infra', 'deployment', 'terraform', 'main.tf');
 const HEROKU_PROCFILE = path.join(REPO_ROOT, 'infra', 'deployment', 'heroku', 'Procfile');
 const HEROKU_APP = path.join(REPO_ROOT, 'infra', 'deployment', 'heroku', 'app.json');
@@ -42,6 +44,8 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   const centralUpdaterInstaller = read(CENTRAL_UPDATER_INSTALLER);
   const centralUpdaterService = read(CENTRAL_UPDATER_SERVICE);
   const centralUpdaterTimer = read(CENTRAL_UPDATER_TIMER);
+  const dashboardEnv = read(DASHBOARD_ENV_EXAMPLE);
+  const backendApiPackage = JSON.parse(read(BACKEND_API_PACKAGE));
   const terraform = read(TERRAFORM_MAIN);
   const herokuProcfile = read(HEROKU_PROCFILE);
   const herokuApp = read(HEROKU_APP);
@@ -130,6 +134,8 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(dockerDocs, /private/i);
   assert.match(dockerDocs, /paper/i);
   assert.match(dockerDocs, /Public reverse-proxy exposure is not approved/i);
+  assert.match(dockerDocs, /x86_64|amd64/i);
+  assert.match(dockerDocs, /16GB is recommended/i);
 
   assert.match(centralEnv, /^SOVEREIGN_RUNTIME_MODE=cloud-compute$/m);
   assert.match(centralEnv, /^LIVE_TRADING=false$/m);
@@ -141,6 +147,15 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(centralPreflight, /docker_compose/);
   assert.match(centralPreflight, /git_clean/);
   assert.match(centralPreflight, /private_bind/);
+  assert.match(centralPreflight, /architectureCheck/);
+  assert.match(centralPreflight, /memoryCheck/);
+
+  assert.match(dashboardEnv, /^VITE_API_URL=/m);
+  assert.match(dashboardEnv, /^VITE_SUPABASE_URL=/m);
+  assert.match(dashboardEnv, /^VITE_SUPABASE_ANON_KEY=/m);
+  assert.doesNotMatch(dashboardEnv, /GEMINI_API_KEY|APP_URL/);
+  assert.equal(backendApiPackage.dependencies['@supabase/supabase-js'], '2.106.2');
+  assert.ok(backendApiPackage.dependencies['socket.io']);
 
   assert.match(centralUpdater, /flock -n 9/);
   assert.match(centralUpdater, /git status --porcelain --untracked-files=all/);

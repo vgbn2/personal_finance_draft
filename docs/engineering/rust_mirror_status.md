@@ -1,43 +1,29 @@
 # Rust Mirror Status
 
-Generated: 2026-06-01
+Updated: 2026-07-23
 
-## Purpose
+## Decision
 
-The active CLI is the Node.js surface in `backend/cli/sovereign_cli.js`. The Rust tree in `backend/cli/src/` is a scaffold and should mirror the JavaScript command contracts only after the JS behavior is stable and contract-tested.
+The Rust CLI mirror is retired from the forward implementation plan. The active operational CLI remains
+`backend/cli/sovereign_cli.js`; performance-sensitive work belongs in narrow, benchmark-backed C++ kernels.
 
-## Command Map
+## Evidence
 
-| JS command | JS owner | Rust counterpart | Status | Primary data structures to mirror |
-| --- | --- | --- | --- | --- |
-| `status` | `commands/status.js` | Missing | Needs Rust module | system status payload, phase label, quote provider state, cache/data-quality summary |
-| `cockpit` | `commands/status.js` | Missing | Needs Rust module | cockpit model, provider header state, runtime surface rows |
-| `watch` | `commands/data.js` | `data.rs` | Partial placeholder | market config families, quote provider snapshots, polling interval |
-| `ingest` | `commands/data.js` | `data.rs` | Partial placeholder | ingest market data request, provider checks, snapshot writes |
-| `backfill` | `commands/data.js` | `data.rs` | Partial placeholder | historical candles, backfill windows, provider errors, family/timeframe routing |
-| `cache-clean` / `clean` | `commands/data.js` | Missing | Needs Rust module | cache paths, stale-file policy |
-| `validate` / `check` | `commands/data.js` | `data.rs` | Partial placeholder | `validateSnapshot` report, usable sources, rejected records, provider errors |
-| `backend` | `commands/backend.js` | Missing | Needs Rust module | backend integrity report, availability matrix, stale window summary |
-| `quotes` | `commands/quotes.js` | Missing | Needs Rust module | quote provider status, MT5/Webull paths, dedupe policy |
-| `strategy` | `commands/strategy.js` | `strategies.rs` | Partial placeholder | strategy YAML registry, `family/lane/role`, grade index, selector grouping |
-| `backtest` / `bt` | `commands/research.js` | `backtest.rs` | Partial placeholder | feature frame, backtest metrics, stress test, trust assessment, strategy grade record |
-| `indicators` / `features` | `commands/research.js` | `analytics.rs` or missing | Needs explicit Rust owner | rolling feature frame, indicator periods, feature counts |
-| `models` | `commands/research.js` | `retrain.rs` or missing | Needs explicit Rust owner | model comparison report, candidate families, promotion gates |
-| `optimize` | `commands/research.js` | `optimize.rs` | Partial placeholder | optimization grid, train/test metrics, overfit warning, indicator flags |
-| `trade` | `commands/trade.js` | `execute.rs`, `paper_trade.rs`, `broker_api` modules | Partial placeholder | trade intent, dry-run gateway, broker adapters, risk gate result |
-| `prune` / `db-prune` | `commands/data.js` | Missing | Needs Rust module | retention policy, removed records, snapshot compaction |
-| `demo` | `commands/research.js` | Missing | Needs Rust wrapper | indicators + models + backtest + optimize chained outputs |
-| `loc` | `commands/data.js` | Missing | Needs Rust module | file counts, line counts, repo path summary |
-| `universe` | `commands/data.js` | Missing | Needs Rust module | market universe entries, family/category tags, max entry limit |
+- The Rust tree under `backend/cli/src/` is an inactive scaffold.
+- Its command surface reports `mirrored-contract-only`; it does not provide an independent operational path.
+- Maintaining a third control-plane implementation adds dependency, build, and parity cost without measured
+  runtime benefit.
 
-## Translation Pattern
+## Maintenance boundary
 
-1. Treat the JavaScript JSON payload as the compatibility contract before porting a command.
-2. Mirror shared data shapes first: `Snapshot`, `ValidationReport`, `FeatureFrame`, `BacktestReport`, `StrategyMeta`, `StrategyGradeRecord`, `QuoteProviderStatus`, and `TradeIntent`.
-3. Keep command aliases identical to `sovereign_cli.js` so shell scripts and MCP tools do not fork behavior.
-4. Port one command family at a time: data quality, strategy registry, backtest/research, quotes, trade execution, then dashboard/status helpers.
-5. Every Rust command should have a fixture-backed parity test against the JS command before it replaces the active JS route.
+- Do not add new Rust command mirrors or port Node orchestration into Rust.
+- Do not describe the Rust tree as active, production, or a required build dependency.
+- Keep Node JSON contracts as the canonical CLI/MCP/API behavior.
+- Archive or delete the scaffold only in a separately reviewed broad-deletion change. Until then, treat it as
+  non-production reference code.
 
-## Current Recommendation
+## Reconsideration gate
 
-The Rust CLI now mirrors the current JS command surface and help topics at the contract level. The next step is to keep the Rust surface aligned whenever the JS CLI changes, and to port execution logic command-by-command only when the Rust toolchain and parity tests are available in this environment.
+Reopen the language decision only when profiling identifies a bottleneck that cannot be addressed cleanly in
+the existing C++ core and a benchmarked Rust proof shows a material advantage over both Node orchestration and
+a narrow C++ kernel.

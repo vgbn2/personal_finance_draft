@@ -50,6 +50,6 @@ Anti-bullshit mandate: never hardcode values or forge JSON just to pass tests.
 ## Tech Stack
 
 - **Core:** C++20 with CMake.
-- **CLI:** Node.js active; Rust remains planned unless superseded.
+- **CLI:** Node.js active; the Rust mirror is retired reference code unless a new benchmarked decision supersedes it.
 - **Web:** Node.js local web/API bridge active.
 - **Data:** JSON cache active; SQLite remains planned for later phases.

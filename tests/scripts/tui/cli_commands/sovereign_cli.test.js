@@ -383,8 +383,13 @@ test('historical --days window is used for candles and crypto limits', () => {
 
 test('status phase label comes from workspace state anchor', () => {
   const phase = currentPhaseLabel();
+  const statePath = path.resolve(__dirname, '..', '..', '..', '..', 'workspace', 'STATE.md');
+  const stateText = fs.readFileSync(statePath, 'utf8');
+  const expected = stateText.match(/^## Current Phase\r?\n([^\r\n]+)/m)?.[1]?.trim();
   dumpVisibility('status phase label comes from workspace state anchor', { phase });
-  assert.match(phase, /Phase 9: Strategic Intelligence & TUI Integration - ACTIVE/i);
+  assert.ok(expected, 'workspace state must expose a current phase anchor');
+  assert.equal(phase, expected);
+  assert.match(phase, /\bACTIVE\b/i);
 });
 
 test('trade gateway launch uses an available TypeScript runtime', () => {

@@ -11,18 +11,26 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const STORAGE_DATA_DIR = path.join(REPO_ROOT, 'storage', 'data');
 const API_CACHE_DIR = path.join(STORAGE_DATA_DIR, 'cache', 'api_responses');
 
-const BINARY_NAME = process.platform === 'win32' ? 'sovereign_wealth.exe' : 'sovereign_wealth';
+function backendBinaryName(platform = process.platform) {
+    return platform === 'win32' ? 'sovereign_wealth.exe' : 'sovereign_wealth';
+}
 
-const BACKEND_CANDIDATES = [
-    path.join(REPO_ROOT, 'backend', 'core', 'build', 'Release', BINARY_NAME),
-    path.join(REPO_ROOT, 'backend', 'core', 'build', 'Debug', BINARY_NAME),
-    path.join(REPO_ROOT, 'backend', 'core', 'build', BINARY_NAME),
-    path.join(REPO_ROOT, 'build', 'backend', 'core', 'Release', BINARY_NAME),
-    path.join(REPO_ROOT, 'build', 'backend', 'core', 'Debug', BINARY_NAME),
-    path.join(REPO_ROOT, 'backend', 'core', 'build', 'manual', BINARY_NAME),
-    path.join(REPO_ROOT, 'build', 'backend', 'core', BINARY_NAME),
-    path.join(REPO_ROOT, 'backend', 'core', 'src', BINARY_NAME),
-];
+function buildBackendCandidates(repoRoot = REPO_ROOT, platform = process.platform) {
+    const binaryName = backendBinaryName(platform);
+    const pathApi = platform === 'win32' ? path.win32 : path.posix;
+    return [
+        pathApi.join(repoRoot, 'backend', 'core', 'build', 'Release', binaryName),
+        pathApi.join(repoRoot, 'backend', 'core', 'build', 'Debug', binaryName),
+        pathApi.join(repoRoot, 'backend', 'core', 'build', binaryName),
+        pathApi.join(repoRoot, 'build', 'backend', 'core', 'Release', binaryName),
+        pathApi.join(repoRoot, 'build', 'backend', 'core', 'Debug', binaryName),
+        pathApi.join(repoRoot, 'backend', 'core', 'build', 'manual', binaryName),
+        pathApi.join(repoRoot, 'build', 'backend', 'core', binaryName),
+        pathApi.join(repoRoot, 'backend', 'core', 'src', binaryName),
+    ];
+}
+
+const BACKEND_CANDIDATES = buildBackendCandidates();
 
 const CLI_CANDIDATES = [
     path.join(REPO_ROOT, 'backend', 'cli', 'sovereign_cli.js'),
@@ -32,11 +40,18 @@ const CLI_CANDIDATES = [
  * Finds the C++ backend binary.
  * Priority: Env var > Candidates list
  */
-function findBackendBinary() {
-    if (process.env.SOVEREIGN_BACKEND_BIN && fs.existsSync(process.env.SOVEREIGN_BACKEND_BIN)) {
-        return process.env.SOVEREIGN_BACKEND_BIN;
+function findBackendBinary(options = {}) {
+    const repoRoot = options.repoRoot || REPO_ROOT;
+    const platform = options.platform || process.platform;
+    const env = options.env || process.env;
+    const existsSync = options.existsSync || fs.existsSync;
+    if (env.SOVEREIGN_BACKEND_BIN && existsSync(env.SOVEREIGN_BACKEND_BIN)) {
+        return env.SOVEREIGN_BACKEND_BIN;
     }
-    return BACKEND_CANDIDATES.find(c => fs.existsSync(c)) || null;
+    const candidates = repoRoot === REPO_ROOT && platform === process.platform
+        ? BACKEND_CANDIDATES
+        : buildBackendCandidates(repoRoot, platform);
+    return candidates.find(c => existsSync(c)) || null;
 }
 
 /**
@@ -122,6 +137,8 @@ module.exports = {
     STORAGE_TS_DIR,
     DEFAULT_PORTFOLIO,
     DEFAULT_INDICATOR_OPTIMIZATION,
+    backendBinaryName,
+    buildBackendCandidates,
     findBackendBinary,
     findNodeCli,
     findTool,
