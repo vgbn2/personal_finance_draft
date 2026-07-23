@@ -3,12 +3,19 @@
 
 const fs = require('node:fs');
 const net = require('node:net');
+const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { REPO_ROOT } = require('../../../shared/lib/runtime/paths.js');
 
 const MIN_API_TOKEN_LENGTH = 24;
 const DEFAULT_MIN_FREE_BYTES = 10 * 1024 ** 3;
+const MIN_INSTALLED_MEMORY_GIB = 8;
+const RECOMMENDED_INSTALLED_MEMORY_GIB = 16;
+// Linux reserves a fraction of installed RAM, so an 8 GiB machine commonly
+// reports slightly less than 8 GiB through os.totalmem().
+const DEFAULT_MIN_DETECTED_MEMORY_BYTES = Math.floor(7.5 * 1024 ** 3);
+const SUPPORTED_ARCHITECTURES = ['x64'];
 const EXECUTION_ONLY_KEYS = [
   'SOVEREIGN_TRADE_PIN',
   'POLYMARKET_PRIVATE_KEY',
@@ -150,6 +157,33 @@ function diskCheck(targetPath, minFreeBytes = DEFAULT_MIN_FREE_BYTES) {
   }
 }
 
+function memoryCheck(
+  totalMemoryBytes = os.totalmem(),
+  minDetectedBytes = DEFAULT_MIN_DETECTED_MEMORY_BYTES
+) {
+  const detectedBytes = Number(totalMemoryBytes);
+  const ok = Number.isFinite(detectedBytes) && detectedBytes >= minDetectedBytes;
+  return {
+    ok,
+    detected_bytes: Number.isFinite(detectedBytes) ? detectedBytes : null,
+    minimum_detected_bytes: minDetectedBytes,
+    minimum_installed_gib: MIN_INSTALLED_MEMORY_GIB,
+    recommended_installed_gib: RECOMMENDED_INSTALLED_MEMORY_GIB,
+    reason: ok ? 'healthy' : 'memory_below_full_universe_floor',
+  };
+}
+
+function architectureCheck(architecture = process.arch) {
+  const configured = String(architecture || '').trim();
+  const ok = SUPPORTED_ARCHITECTURES.includes(configured);
+  return {
+    ok,
+    architecture: configured || null,
+    supported_architectures: SUPPORTED_ARCHITECTURES,
+    reason: ok ? 'supported' : 'onnx_runtime_image_architecture_unsupported',
+  };
+}
+
 function envFileCheck(env, repoRoot) {
   const envPath = path.resolve(env.SOVEREIGN_ENV_FILE || path.join(repoRoot, '.env.central'));
   if (!fs.existsSync(envPath)) return { ok: false, path: envPath, reason: 'missing' };
@@ -181,6 +215,11 @@ function probeCentralHost(options = {}) {
       ok: fs.existsSync(path.join(repoRoot, 'infra', 'docker', 'docker-compose.yml')),
       path: path.join(repoRoot, 'infra', 'docker', 'docker-compose.yml'),
     },
+    architecture: architectureCheck(options.architecture),
+    memory: memoryCheck(
+      options.totalMemoryBytes,
+      options.minDetectedMemoryBytes ?? DEFAULT_MIN_DETECTED_MEMORY_BYTES
+    ),
     disk: diskCheck(storagePath, options.minFreeBytes ?? DEFAULT_MIN_FREE_BYTES),
   };
   return {
@@ -204,12 +243,18 @@ if (require.main === module) {
 }
 
 module.exports = {
+  DEFAULT_MIN_DETECTED_MEMORY_BYTES,
   DEFAULT_MIN_FREE_BYTES,
   EXECUTION_ONLY_KEYS,
   MIN_API_TOKEN_LENGTH,
+  MIN_INSTALLED_MEMORY_GIB,
+  RECOMMENDED_INSTALLED_MEMORY_GIB,
+  SUPPORTED_ARCHITECTURES,
+  architectureCheck,
   diskCheck,
   isPrivateBind,
   loadCentralEnvironment,
+  memoryCheck,
   parseEnvFile,
   probeCentralHost,
   validateCentralEnvironment,

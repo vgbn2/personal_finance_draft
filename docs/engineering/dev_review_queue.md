@@ -73,14 +73,16 @@ Scope: deep blast-through pass across active web/API, React/Vite dashboard, macr
 - Evidence used: targeted search found Phase 3 wording in root docs while state and handoff say Phase 4 is active.
 - Clearance gate: docs search shows one consistent phase story, and deployment docs distinguish local Docker/Kubernetes starters from production readiness.
 
-### DR-007: Decide the Rust CLI status
+### DR-007: [RESOLVED] Retire the Rust CLI mirror
 
-- Severity: medium
+- Severity: closed
 - Files: `backend/cli/**`, `backend/cli/sovereign_cli.js`, `workspace/DEV_COMMENTS.md`
-- Why it needs review: the Node CLI is the active command surface, while the Rust CLI is still described as mostly stubbed in dev comments.
-- Reviewer decision needed: either promote Rust with parity milestones or explicitly classify it as experimental until the Node CLI stabilizes.
-- Evidence used: current dev comments list Rust CLI parity as a strategic decision, while package scripts and web bridge call the Node CLI.
-- Clearance gate: command registry parity test exists or docs label Rust as experimental with no active-user path depending on it.
+- Decision: Node remains the active control plane; the `mirrored-contract-only` Rust tree is retired
+  reference code and receives no new command ports.
+- Evidence: package scripts, API/MCP bridges, and operational commands all use the Node CLI; no production
+  caller depends on the Rust crate.
+- Reconsideration gate: require a measured bottleneck and a benchmarked Rust proof that materially beats
+  both Node orchestration and a narrow C++ kernel.
 
 ### DR-008: [RESOLVED] Real ONNX Runtime linkage implemented
 
