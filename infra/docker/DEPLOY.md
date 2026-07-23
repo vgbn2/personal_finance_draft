@@ -3,7 +3,8 @@
 ## Prerequisites on the central host
 - Docker 24+ and Docker Compose plugin
 - System-wide Node.js 22 LTS (Node.js 20 is the minimum for the host-side preflight)
-- 8GB RAM for the full-universe backfill profile
+- x86_64/amd64 CPU for the current ONNX-enabled central image
+- 8GB installed RAM for the full-universe backfill profile; 16GB is recommended
 - Git, `flock`, and `curl`
 - SSH tunnel or access-controlled private VPN; do not publish port 8787 to the internet
 
@@ -56,6 +57,9 @@ The updater refuses dirty, wrong-branch, divergent, or locally-ahead Git state; 
 requires `HEAD` to equal the fetched remote branch; serializes deployments with `flock`; validates
 Docker/Compose/disk/private-bind/secret policy; recreates only `web` and `backfill`; and verifies the web
 container's internal healthcheck plus a running backfill container before succeeding.
+The preflight also rejects non-x64 hosts and detected memory below the 8GB-class floor before any image
+replacement. Linux may report slightly less than the installed module capacity, so the detected-byte threshold
+allows normal kernel reservation while still rejecting 4GB-class machines.
 If the fetched branch matches the last successfully deployed commit, the web health endpoint passes, and the
 backfill container is running, it exits
 without rebuilding or restarting. The success marker lives under `.git/`, so a failed build or health check is
@@ -159,5 +163,7 @@ Generate API tokens with: `openssl rand -hex 32`
 | `env file ... not found` | Copy `.env.central.example`, fill `.env.central`, and set mode 600 |
 | Preflight rejects credentials | Remove execution PIN/private/L2 keys from the central environment |
 | Preflight rejects Docker | Install the Compose plugin and grant the operator daemon access |
+| Preflight rejects architecture | Use an amd64/x86_64 host; arm64 requires the separate ONNX image experiment |
+| Preflight rejects memory | Install compatible RAM to reach at least 8GB total; use 16GB for safer catch-up |
 | C++ build fails | Ensure the host has sufficient RAM and disk headroom |
 | Dashboard blank | Frontend dist is built inside image — check `docker compose build` output for vite errors |

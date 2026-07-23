@@ -66,21 +66,6 @@ async function fetchTradingViewQuotes(symbols) {
   });
 }
 
-/**
- * Searches the TradingView screener for symbols in a specific sector or industry.
- * @param {string} market - 'america', 'crypto', 'forex', etc.
- * @param {Object} filters - Key-value filters (e.g., { sector: 'Technology' })
- * @returns {Promise<Object[]>}
- */
-async function searchTradingViewScreener(market = 'america', filters = {}) {
-    // Note: The mathieunls/tradingview-api library doesn't expose the screener directly in a simple way
-    // in the version commonly available. We might need a direct fetch if not supported.
-    // For now, we will stub this or use the Quote session's metadata discovery.
-    console.warn(`[TradingView] Screener search not fully implemented via wrapper. Use manual symbols.`);
-    return [];
-}
-
 module.exports = {
-  fetchTradingViewQuotes,
-  searchTradingViewScreener
+  fetchTradingViewQuotes
 };

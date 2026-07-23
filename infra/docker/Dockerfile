@@ -16,9 +16,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --ignore-scripts
 
-# --- Layer 1b: backend/api deps (web service entrypoint requires its own
-# express/socket.io/ejs/dotenv — it's a standalone sub-package, not hoisted
-# to the root node_modules) ---
+# --- Layer 1b: backend/api deps (web service requires its direct socket.io
+# and Supabase SDK dependencies; it is a standalone sub-package, not hoisted) ---
 COPY backend/api/package*.json ./backend/api/
 RUN cd backend/api && npm ci --ignore-scripts --omit=dev
 
