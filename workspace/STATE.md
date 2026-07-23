@@ -1453,3 +1453,17 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   strategy-to-live promotion, and combined-engine execution coupling remain explicitly deferred.
 - No implementation or runtime mutation occurred in session 94. Current DCS remains **0.716**, current source
   remains uncommitted, and the next session begins with dirty-tree classification and clean-archive proof.
+
+## System Design Review - 2026-07-24 session 96
+
+- Added a source-backed system-design review rubric to the canonical and mirrored `blast-through` skills and
+  `docs/engineering/blast_through_checklist.md`. Sources: ISO/IEC/IEEE 42010:2022 architecture-description
+  concepts and AWS Well-Architected six quality lenses.
+- Applied the rubric to the real provider -> validated data -> identity -> analysis -> decision -> paper/live ->
+  risk -> ledger -> monitoring -> recovery path. Whole-system design is **C- / composition-and-operations-gated**.
+- Confirmed the critical gaps are architectural composition and operational proof: competing paper state owners,
+  non-atomic paper persistence, distributed runtime policy, fixture-only combined engine, unqualified writer host,
+  and stale architecture documentation. Component tests remain strong but cannot close these system gates.
+- No provider poll, data transformation, host mutation, container, timer, bot cycle, live order, or promotion ran.
+- Next critical move: converge one effective runtime policy and one replayable canonical paper ledger; then qualify
+  the spare host and prove freshness, MCP, recovery, backup, rollback, and soak.

@@ -1595,3 +1595,61 @@ subgraphs before direct file reads.
 - The first broad Node run exposed one stale hardcoded phase expectation; production read the correct state
   anchor. The test now compares directly with that anchor and the full suite passes.
 - No commit was created. No provider polling, data mutation, container/timer, live order, or promotion ran.
+## System Design Review - 2026-07-24
+
+### Review method and source criteria
+
+This review uses two external architecture sources as criteria, not as proof of repository readiness:
+
+- [ISO/IEC/IEEE 42010:2022](https://www.iso.org/standard/74393.html): architecture descriptions should make
+  stakeholders, concerns, viewpoints, views, model kinds, and their relationships/rationale explicit.
+- [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/userguide/waf.html):
+  operational excellence, security, reliability, performance efficiency, cost optimization, and sustainability.
+
+The repository-specific critical path is:
+
+```text
+provider -> validated data -> canonical identity -> point-in-time analysis -> decision state
+         -> paper/live policy -> risk gate -> ledger -> monitoring -> backup/restart/rollback
+```
+
+Evidence labels are **proven**, **partial**, **unproven**, or **failed**. Component tests do not substitute for
+end-to-end deployment evidence.
+
+### Findings, severity ordered
+
+| Severity | Design finding | Evidence | Truth / closure gate |
+|---|---|---|---|
+| P0 | The system is not operationally live as a persistent data service. | `workspace/STATE.md` latest baseline: 92/92 cached, 87 required windows stale, DCS 0.716; no persistent writer or qualified host. | **Partial**. Qualify the spare host, run exactly one writer, restore freshness, then prove restart and soak. |
+| P1 | Paper execution has competing state owners instead of one canonical ledger. | `backend/gateway/src/polymarket_paper.js:21-67` owns `portfolio.json`, `fills.jsonl`, `pnl_log.jsonl`; `backend/gateway/src/bot_state.ts:63-115` owns `bot_state.json` and fire-and-forget Supabase `bot_state`; `backend/cli/commands/runner/run.js:32-60` invokes the paper path separately. | **Partial**. Converge order intent, risk decision, fill, position, resolution, and P&L into one append-only event/ledger model with replay and duplicate-cycle proof. |
+| P1 | Paper persistence is not crash-atomic. | `backend/gateway/src/polymarket_paper.js:60-67` writes the portfolio with `writeFileSync` and appends JSONL independently; a crash between writes can leave portfolio and audit files inconsistent. | **Unproven**. Add atomic snapshot/versioning or transaction/replay semantics and kill-process recovery tests. |
+| P1 | Runtime policy is distributed across environment variables, CLI flags, feature settings, and bot state. | `backend/gateway/src/cycle.ts:105-111,207-237` derives live mode from `LIVE_TRADING`/`--live`; `bot_state.ts:69-89` stores separate `liveTrading`; `run.js:32-60` owns another paper loop. | **Partial**. Create one effective runtime-policy object with precedence, mode, authorization, kill-switch, and blocking reasons consumed by CLI/API/MCP/gateway. |
+| P1 | The combined actionable engine is not a production system. | `shared/lib/analysis/services/shadow_catalog.js:19-38` hard-codes `all-recorded` fixture composition and `decision_ready:false`; `recorded_family_shadows.js:14-18` labels synthetic-parity inputs and fixture envelopes. | **D / nonexistent**. A production-reachable exact-asset, point-in-time composer must exist before this can be upgraded. |
+| P1 | Host and MCP runtime claims stop at local/fixture evidence. | MCP setup/probe contracts pass, but the latest state records `host_child_stdio_unavailable`; no real host initialize/list/read-only call, Docker service, backup restore, or soak is proven. | **Partial**. Require target-host evidence; do not call MCP or central hosting operational from local tests. |
+| P2 | Canonical architecture documentation is still contradictory. | `docs/engineering/architecture_overview.md:80,91-97` says broker routing is planned, trading modules do not compile, and real samples are missing, while current CMake/CTest and gateway paths are active. | **Failed documentation view**. Refresh the architecture view or explicitly mark it historical; ISO-style architecture views must agree with executable ownership. |
+
+### System-design grades
+
+| Area | Grade | Reason |
+|---|---|---|
+| Domain decomposition | **B** | Node orchestration, C++ core, shared providers, API/UI, gateway, and infra owners are recognizable; compatibility paths and policy duplication remain. |
+| Contracts and safety | **B-** | Fail-closed auth/live/MCP configuration is strong; end-to-end paper policy parity is not yet one contract. |
+| Data/decision lineage | **B-** | Validation, provenance, and degradation contracts exist; freshness and production combined composition are not proven. |
+| State and reliability | **C-** | Writer locking exists, but paper ledger atomicity, restart recovery, backup restore, and persistent host operation remain open. |
+| Deployment/operations | **C+ / host-gated** | Compose, updater, preflight, and systemd contracts exist; no selected host has produced runtime evidence. |
+| Research combined engine | **D / nonexistent** | Fixture-only composition is intentionally non-actionable and has no production caller. |
+| Whole-system design | **C- / composition-and-operations-gated** | The architecture is a substantial prototype/research platform, not a complete operating paper-trading system. |
+
+### Architecture completeness verdict
+
+The repository is structurally serious but horizontally incomplete. The main remaining work is not adding another
+provider or indicator; it is removing competing sources of truth and proving the runtime path as one system:
+
+1. one effective runtime policy;
+2. one canonical paper event ledger;
+3. one production exact-asset research composer;
+4. one qualified private writer host;
+5. one tested recovery/backup/rollback story.
+
+Until those five gates pass, green component tests should be read as **component readiness**, not production
+readiness.

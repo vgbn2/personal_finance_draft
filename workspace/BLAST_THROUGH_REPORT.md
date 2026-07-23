@@ -89,3 +89,35 @@ initialization. Frontend configuration moves **B- -> B+**, API package ownership
 Verification is Node 859/855/0fail/4skip, API 8/8, contracts 31/31, native 30/30, secrets 828/0, focused
 20/20, frontend/MCP builds, Compose render, hygiene, diff integrity, and a clean current-source snapshot.
 The implementation is uncommitted and a real-host MCP handshake remains external.
+
+## System Design Review - 2026-07-24
+
+Applied the new system-design rubric from the blast-through skill. Criteria are grounded in
+[ISO/IEC/IEEE 42010:2022](https://www.iso.org/standard/74393.html) for stakeholder concerns, viewpoints,
+views, model kinds, and architecture rationale, plus the [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/userguide/waf.html)
+for operational excellence, security, reliability, performance efficiency, cost optimization, and sustainability.
+
+### Verdict
+
+**Whole-system design: C- / composition-and-operations-gated.** The repo is a substantial research/data
+platform prototype with recognizable Node/C++/provider/API/UI/infra boundaries. It is not a complete operating
+paper-trading system yet.
+
+### Strongest design gaps
+
+1. **P0 operational freshness:** latest recorded integrity is 92/92 cached but 87 required windows stale; no
+   qualified persistent writer host exists; DCS is 0.716.
+2. **P1 state ownership:** `polymarket_paper.js` writes a portfolio plus JSONL audit files while `bot_state.ts`
+   owns a separate bot state file/Supabase record, and `run.js` owns another loop entrypoint. The paper ledger is
+   not yet one replayable source of truth.
+3. **P1 crash consistency:** `polymarket_paper.js:60-67` writes portfolio and event files independently; crash
+   recovery and atomic ledger semantics are not proven.
+4. **P1 runtime policy drift:** `cycle.ts`, `bot_state.ts`, feature settings, and runner flags each participate in
+   mode decisions. Safety gates exist, but one canonical effective-policy contract is still missing.
+5. **P1 combined engine:** schema-3 analysis is named-fixture/recorded-fixture composition with
+   `research_only:true` and `decision_ready:false`; no production exact-asset composer exists.
+6. **P2 architecture-view drift:** `docs/engineering/architecture_overview.md` still says broker routing is
+   planned and trading modules do not compile, contradicting the active gateway and native CTest surface.
+
+Section evidence and line-level findings are recorded in the corresponding 2026-07-24 section of
+`workspace/DEV_REVIEW.md`.

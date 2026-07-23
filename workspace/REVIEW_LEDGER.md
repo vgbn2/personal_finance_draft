@@ -13,6 +13,7 @@ detail still belongs in `DEV_REVIEW.md` and the dated `workspace/handoff/` files
 
 | Directory | Last Reviewed (commit) | Last Reviewed (date) | Grade | Stub/Dup Sweep | Notes |
 |---|---|---|---|---|---|
+| system design (cross-cutting) | `734f5d4f` | 2026-07-24 | C- / composition-and-operations-gated | runtime policy, paper ledger, exact-asset composer, host, and architecture-view sweep (s95) | ISO 42010 + AWS Well-Architected rubric applied; component tests are strong, but one canonical paper state, production composition, persistent writer, recovery, and host proof remain open. |
 | repo bootstrap / dependencies | working tree | 2026-07-23 | A- / clean-snapshot | package ownership, lock, build, and clean-source sweep (s93) | API now owns exact Supabase 2.106.2; offline lock refresh and focused tests pass from a clean current-source snapshot. Commit proof remains pending. |
 | `.github/workflows` | `54f861eb` | 2026-07-22 | B+ / server-run-gated | moved-path, CTest-root, Node-version, image-readiness sweep (s89) | Known deterministic failures are repaired and locally contracted; authenticated Actions run evidence remains external. |
 | `backend/scripts/data_ops/ingest_market_data` | working tree | 2026-07-13 | B+ / provider-roadmap | availability + silent-stub sweep (s76) | Six unavailable lanes remain explicit; Kalshi history now fails visibly instead of returning empty success. Real provider implementation remains pending. |

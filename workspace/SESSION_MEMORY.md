@@ -915,3 +915,25 @@ truth findings in `workspace/DEV_REVIEW.md`.
 }
 ```
 ```
+
+## System Design Review - 2026-07-24 session 96
+
+```json
+{
+  "mode": "review / Fast Reading Mode",
+  "criteria": [
+    "ISO/IEC/IEEE 42010:2022 stakeholders, concerns, viewpoints, views, model kinds, and relationships",
+    "AWS Well-Architected operational excellence, security, reliability, performance efficiency, cost optimization, sustainability"
+  ],
+  "system_grade": "C- / composition-and-operations-gated",
+  "findings": [
+    "paper state has competing portfolio/JSONL, bot_state JSON/Supabase, and runner owners",
+    "paper persistence lacks an atomic multi-file commit or replay boundary",
+    "runtime mode policy is distributed across environment, CLI, settings, and bot state",
+    "schema-3 combined analysis remains fixture-only and decision_ready:false",
+    "persistent writer host, MCP handshake, backup/restore, restart, rollback, and soak are unproven",
+    "architecture_overview.md contradicts current active gateway/native build truth"
+  ],
+  "next": "Converge one runtime policy and one canonical paper event ledger before adding more system surface."
+}
+```

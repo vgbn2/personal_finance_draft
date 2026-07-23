@@ -24,3 +24,15 @@
   ECC/buffering, and capacity; target 16 GB total, with 8 GB the fail-closed floor.
 - Current source is fully verified but uncommitted. Do not present it as committed `HEAD`.
 - Freshness remains the critical operational gap: 87 stale required windows and DCS 0.716.
+
+## 2026-07-24 system-design review
+
+- System design is **C- / composition-and-operations-gated** even though component tests are green.
+- Competing paper state owners remain: `polymarket_paper.js` portfolio/JSONL, `bot_state.ts` JSON/Supabase, and
+  the runner's separate loop path. Converge these before calling paper v1 complete.
+- `polymarket_paper.js:60-67` has no atomic multi-file commit/replay boundary; crash recovery is unproven.
+- Runtime mode policy is distributed across `cycle.ts`, `bot_state.ts`, feature flags, and runner arguments.
+- Schema-3 composition remains fixture-only and intentionally non-decision-ready; no production exact-asset
+  composer exists.
+- `docs/engineering/architecture_overview.md` is a stale architecture view and must be refreshed against current
+  CMake/gateway truth.

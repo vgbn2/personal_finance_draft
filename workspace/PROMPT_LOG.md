@@ -1,3 +1,18 @@
+# Prompt Log - 2026-07-24 (session 96)
+
+## System Design Blast-Through - 2026-07-24 (session 96)
+
+PROMPT: Asked to add system-design review to blast-through, obtain review criteria from a source, and review the
+code from a system-design perspective.
+WORK: Used `blast-through` in `review` / Fast Reading Mode. Added a source-backed rubric to both skill trees and
+the engineering checklist, using ISO/IEC/IEEE 42010:2022 architecture-description concepts and AWS Well-Architected
+quality lenses. Traced actual provider/data/analysis/decision/paper/ledger/API/UI/MCP/infra paths and recorded
+line-level findings in `workspace/DEV_REVIEW.md` and the blast-through report.
+RESULT: Whole-system design is C- / composition-and-operations-gated. The repo is a substantial research/data
+prototype, but not a complete operating paper-trading system: policy and paper state have competing owners,
+paper persistence is not crash-atomic, schema-3 composition is fixture-only, host/MCP/recovery evidence is external,
+and one architecture view is stale. No runtime or provider action occurred; `graphify-out` is unavailable.
+
 # Prompt Log - 2026-07-23 (session 95)
 
 ## Session Boot - 2026-07-23 (session 95)
