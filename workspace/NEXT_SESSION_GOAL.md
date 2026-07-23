@@ -1,5 +1,31 @@
 # Next Session Goal
 
+## 2026-07-24 session 100 critical override - recover test trust, then Private Paper v1
+
+The current execution plan is
+`workspace/plans/SESSION_100_DEEP_PRIVATE_PAPER_RECOVERY_PLAN.md`. It supersedes the batch order in the
+older Private Paper plan.
+
+Execute in this order:
+
+1. Seal the four continuity/audit files and establish a clean committed/archive boundary. Current `HEAD
+   111b1f6f` is one commit ahead of `origin/main`; do not force-push or mix source changes into continuity.
+2. Diagnose and fix the aggregate Node gate. Current evidence is 122/138 with 16 failures in both default and
+   serial aggregate runs, while representative files pass in focused groups. Prove the root class before
+   adding a shared isolation helper.
+3. Require two consecutive default aggregate passes and one serial aggregate pass with no canonical
+   settings/config/storage mutation.
+4. Implement one effective runtime-policy contract and prove `private-paper` cannot execute even under poisoned
+   live/auth/credential inputs.
+5. Implement one replayable paper event ledger and route paper-run, non-live bot cycle, runner, portfolio,
+   settlement, and restart recovery through it.
+6. Correct architecture/operator docs, then qualify the separate host, recover DCS to at least 0.95, and prove
+   host MCP/backup/restart/soak.
+7. Only after those gates, implement the read-only exact-asset combined research service and certify release.
+
+Keep the Lenovo testing-only. No provider polling, host mutation, container/timer, bot cycle, live order,
+execution credential, public bind, destructive migration, or promotion is authorized by this plan.
+
 ## 2026-07-23 session 94 critical override - implement Private Paper v1
 
 The refined implementation plan is saved at

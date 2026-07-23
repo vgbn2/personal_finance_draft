@@ -1653,3 +1653,88 @@ provider or indicator; it is removing competing sources of truth and proving the
 
 Until those five gates pass, green component tests should be read as **component readiness**, not production
 readiness.
+
+## Blast-Through Triage - 2026-07-24 session 98
+
+Mode: **triage / Fast Reading Mode**. Carried DCS: **0.716** (`5/92` required windows fresh, `87` stale);
+the freshness gate remains below the 0.95 promotion threshold. `graphify-out` is unavailable.
+
+### Confirmed findings
+
+| Severity | Classification | Finding | Evidence | Required closure gate |
+|---|---|---|---|---|
+| P1 | Incomplete / state-integrity risk | Paper fills and portfolio state are separate, non-atomic writes. | `backend/gateway/src/polymarket_paper.js:213-228` appends `fills.jsonl` during the loop, then writes `portfolio.json` only after the loop; `savePortfolio` uses direct `writeFileSync` at lines 60-63. A crash between these operations can leave an audit fill without the corresponding position snapshot. | One append-only event ledger or versioned atomic snapshot/replay protocol, plus kill-process recovery and duplicate-cycle tests. |
+| P1 | Incomplete / policy-drift risk | Runtime mode has multiple effective state owners. | `backend/gateway/src/cycle.ts:105-110,213-237`, `backend/gateway/src/index.ts:1992-1995,2572-2585`, and `backend/gateway/src/bot_state.ts:69-80` independently interpret `LIVE_TRADING`, `--live`, CLI authorization, and `config.liveTrading`; `bot_state.ts:100-107` asynchronously mirrors a separate Supabase `bot_state` record. | One runtime-policy object with precedence, mode, authorization, kill-switch, and blocking reasons consumed by CLI/API/MCP/gateway. |
+| P2 | Failed documentation view | The canonical architecture overview contradicts executable capabilities. | `docs/engineering/architecture_overview.md:80,93-97` still says broker routing is planned and trading modules do not compile, while current gateway paths exist and native CTest is recorded at 30/30. | Refresh or explicitly mark the view historical, then add a docs-to-runtime contract check. |
+
+### Dismissed false positives
+
+- Bot native-risk authorization is not currently an unguarded live-order bypass: the focused risk slice proves
+  missing authorizer and rejected native risk fail closed, and posting occurs only after approval (`16/16` pass).
+- `bot_state.ts` local JSON persistence itself is atomic via temp-file rename (`lines 151-157`); the finding is
+  cross-store policy/state convergence, not that individual write primitive.
+
+### Verification
+
+- Focused paper/bot lifecycle slice: **16/16 pass**, no failures or skips.
+- No provider poll, data mutation, container, timer, bot cycle, order, or promotion occurred.
+- DCS remains **0.716**; no data claim was promoted.
+
+### Next narrow check
+
+Design and review the canonical paper event schema and runtime-policy precedence before implementing either. Keep
+host qualification and freshness recovery external and blocked until the separate Ubuntu machine passes the hardware,
+disk, uptime, Docker, and host-side MCP gates.
+
+## Full Blast-Through - 2026-07-24 session 99
+
+Mode: **full / Fast Reading Mode**. Archive and connective-tissue checks were run against `HEAD 111b1f6f` plus
+the continuity-only working-tree edits. `graphify-out` remains unavailable.
+
+### Strongest findings
+
+| Priority | Classification | Finding | Evidence | Required gate |
+|---|---|---|---|---|
+| P0 | Failed / promotion-blocking | Required market-data freshness remains degraded. | Read-only `node backend/cli/sovereign_cli.js backend integrity --json`: `ok:false`, 92/92 cached, 0 missing, 87 stale required windows, 9 cadence-plausible grain notices, 0 unexplained grain, 1 declared exception. | Qualify the separate persistent host, run one writer, catch up, and prove target-host freshness plus restart/soak. No provider polling was run here. |
+| P1 | Incomplete / verification risk | The aggregate Node gate is not order-independent. | `npm test`: **122/138 pass, 16 fail**. The same analysis sequence including `shadow_service_parity` passes **25/25** when isolated; settings, secret, merge/proposed-order, and CLI/TUI failing files also pass in focused runs. Tests write shared cache/settings/output paths and mutate process environment; `tests/run_node_tests.js:42-55` forwards the same environment to one aggregate Node process. | Isolate each file's temp state and environment, restore all process/global state, then require the aggregate suite to pass in both default and serial modes. |
+| P1 | Incomplete / state-integrity risk | Paper persistence and runtime policy remain the critical production seams. | Prior triage confirmed `polymarket_paper.js:213-228` writes fills before portfolio snapshot; `cycle.ts`, `index.ts`, and `bot_state.ts` independently derive/store live mode. | Canonical replayable paper event ledger and one effective runtime-policy object, with kill/restart/duplicate-cycle proofs. |
+| P2 | Failed documentation view | Architecture overview still contradicts executable capabilities. | `docs/engineering/architecture_overview.md:80,93-97` says broker routing is planned and trading modules do not compile; active gateway/CMake paths and native CTest are documented at 30/30. | Refresh or mark historical and add docs/runtime parity coverage. |
+| P2 | Setup-only environment gap | The nested API package declares Supabase correctly but the current checkout lacks its installed copy. | `npm ls --prefix backend/api --depth=0` reports `UNMET DEPENDENCY @supabase/supabase-js@2.106.2`; `backend/api/package.json` and lock declare it, and README requires `npm install --prefix backend/api`. | Reinstall package-root dependencies in the target clone/image; do not treat this local setup miss as a manifest defect. |
+
+### Connective-tissue matrix
+
+| Surface | Classification | Result |
+|---|---|---|
+| `tests/run_node_tests.js` aggregate execution | **Incomplete / dangerous to trust as a release gate** | Runner wiring is correct for argument forwarding, but shared test state makes the full result order-sensitive; isolated files are greener than the aggregate gate. |
+| `tests/fixtures/**`, fixture-backed analysis services | **Intentional** | Explicit synthetic/recorded fixtures are labeled and research-only; no promotion was inferred from them. |
+| `scripts/dev/run_automated_strategies.js` / TradingView screener | **Stale/closed** | Prior sweep removed the zero-caller production placeholders; no new active orphan was found in this pass. |
+| `backend/api` Supabase dependency | **Intentional package boundary, incomplete local install** | Direct declaration and lock exist; current `npm ls` failure is missing nested installation. |
+| `backend integrity` command | **Wired** | The valid entrypoint is `sovereign backend integrity --json`; the bare `sovereign integrity` probe correctly returned unknown command. Documentation/codebase tour uses the prefixed form. |
+| architecture overview | **Stale** | Active runtime and CMake capability contradict the canonical document's old planned/uncompiled claims. |
+
+### Section grades
+
+| Section | Grade | Reason |
+|---|---|---|
+| archive / bootstrap | **A-** | Committed archive has canonical runner/CLI entrypoints, parses cleanly, and no actual conflict markers were found; continuity edits remain uncommitted. |
+| market-data trust | **B- / freshness-gated** | 92/92 cached and zero unexplained grain, but 87 required windows are stale and DCS is below promotion threshold. |
+| backend gateway / paper state | **C+ / ledger-gated** | Safety tests and local bot persistence are strong, but paper event atomicity and policy ownership are not converged. |
+| tests / verification | **C / isolation-gated** | 122/138 aggregate pass versus focused slices passing; the full release gate is not currently trustworthy as order-independent evidence. |
+| docs / architecture views | **C+ / parity-gated** | Current operational docs are mostly aligned, but the canonical architecture overview contains materially false capability claims. |
+| infra / MCP | **A- / real-host-gated** | Local contracts and builds are strong; Docker, host-side MCP handshake, backup/restore, and soak remain unproven. |
+| combined actionable engine | **D / nonexistent** | Fixture-only research composition remains intentionally non-actionable with no production exact-asset caller. |
+
+### Verification and LOC
+
+- Archive: `git archive HEAD` extraction, conflict-marker scan, canonical runner/CLI syntax checks passed.
+- Hygiene: `npm run hygiene` passed all categories.
+- Data: read-only integrity returned `ok:false` with the freshness counts above; no provider/data mutation ran.
+- Tests: focused paper/bot slice 16/16; focused representative reruns all passed; aggregate `npm test` 122/138,
+  16 failed; serial aggregate also 122/138, 16 failed.
+- Active inventory excluding generated/build/data/cache: 1,132 files at this pass; no production LOC changed.
+
+### Critical next move
+
+Repair the test isolation seam and record a clean aggregate gate first; then implement the canonical paper ledger and
+runtime-policy convergence plan. Host qualification, freshness recovery, MCP proof, and promotion remain external or
+blocked. Do not use the current green focused slices or the dirty continuity tree as committed production proof.

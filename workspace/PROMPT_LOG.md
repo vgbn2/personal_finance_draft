@@ -1980,3 +1980,49 @@ Used `session-orchestrator` to close the planning session. Saved the refined pro
 session memory, and project state. The release boundary is private single-user Polymarket paper production;
 real-money execution, public exposure, Alpaca/MT5 certification, Supabase/RLS production, and combined-engine
 promotion remain blocked. No implementation or runtime mutation occurred.
+
+## Session Boot - 2026-07-24 (session 97)
+PROMPT: `$session-orchestrator` (submitted twice).
+WORK: Loaded `workspace/BOOTSTRAP.md`, the current dated handoff, cumulative session memory, `workspace/STATE.md`,
+`docs/README.md`, and the next-session goal. Confirmed clean `HEAD` at `111b1f6f`, no working-tree changes,
+and no `graphify-out` artifact. Current direction remains system-design review follow-through: converge runtime
+policy and the canonical paper event ledger, then qualify the separate host and prove freshness, MCP, recovery,
+and soak. No code, provider, host, container, timer, bot, order, or promotion action occurred during boot.
+
+## User Prompt - 2026-07-24 session 98
+
+`$blast-through`
+
+## Work - 2026-07-24 session 98
+
+Ran a triage / Fast Reading Mode audit against the current system-design carryover. Confirmed three gaps:
+paper fills and portfolio snapshots are not crash-atomic, runtime mode has competing policy/state owners,
+and `docs/engineering/architecture_overview.md` still contradicts active gateway/CMake capability. The focused
+paper/bot lifecycle slice passed 16/16. DCS remains 0.716 because no provider poll or data mutation occurred;
+no implementation, host, container, timer, bot, order, or promotion action occurred.
+
+## User Prompt - 2026-07-24 session 99
+
+`deep blast`
+
+## Work - 2026-07-24 session 99
+
+Ran the full / Fast Reading Mode blast-through audit. Archive extraction and entrypoint syntax passed; hygiene
+passed. Read-only backend integrity returned `ok:false` with 92/92 cached, 87 stale required windows, 9
+cadence-plausible notices, and 0 unexplained grain. Aggregate Node returned 122/138 with 16 failures in both
+default and serial runs, while representative failed files passed in focused groups; recorded this as a shared
+test-state/order-isolation gate. Updated `DEV_REVIEW.md`, `REVIEW_LEDGER.md`, and `STATE.md`. No implementation,
+provider poll, data mutation, container, timer, bot, order, or promotion occurred.
+
+## User Prompt - 2026-07-24 session 100
+
+`deep plan`
+
+## Work - 2026-07-24 session 100
+
+Used `refine-suggestion` to convert the full audit into an implementation-ready recovery and Private Paper plan.
+Created `workspace/plans/SESSION_100_DEEP_PRIVATE_PAPER_RECOVERY_PLAN.md`, corrected the stale 28-path Batch 0
+assumption, and updated the next-session goal and state. The plan requires aggregate test trust before runtime
+policy or ledger edits, then one fail-closed policy, one replayable paper ledger, architecture truth, separate-host
+freshness/MCP/recovery, read-only combined research, and release certification. No implementation, provider poll,
+data mutation, host/container/timer, bot, order, or promotion occurred.

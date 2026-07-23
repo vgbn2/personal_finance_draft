@@ -22,6 +22,29 @@ last_audit_date: 2026-07-23
 ## Current Phase
 Phase 9: Research-platform operational stabilization - ACTIVE; model/schema/live-capital promotion BLOCKED
 
+## Full Blast-Through Note - 2026-07-24 session 99
+
+- Full Fast Reading Mode audit completed against `HEAD 111b1f6f` plus continuity-only working-tree edits.
+- Read-only integrity remains **ok:false**: 92/92 cached, 87 required-window stale, 9 cadence-plausible grain
+  notices, 0 unexplained grain, 1 declared exception. DCS remains **0.716**; no provider poll or data mutation ran.
+- Archive extraction, canonical entrypoint syntax, and `npm run hygiene` passed.
+- Aggregate Node verification is currently **122/138 pass / 16 fail** in both default and `--test-concurrency 1`
+  runs, while representative failed files and the first six analysis files pass when run in focused groups. This is
+  recorded as a test-isolation/order-dependence gate, not as 16 independently reproduced production defects.
+- Current critical path is now: repair aggregate test isolation -> converge one paper event ledger and one runtime
+  policy -> qualify the separate host and recover freshness -> prove host MCP/restart/soak. Combined actionable
+  engine, real-money execution, and schema/model promotion remain blocked.
+
+## Planning Note - 2026-07-24 session 100
+
+- Refined the full audit into `workspace/plans/SESSION_100_DEEP_PRIVATE_PAPER_RECOVERY_PLAN.md`.
+- Corrected the stale prior Batch 0 assumption: session-93 implementation is committed; current dirty state is
+  four continuity/audit files, and `HEAD 111b1f6f` is one commit ahead of `origin/main`.
+- New mandatory order: clean source boundary -> aggregate test-trust recovery -> unified runtime policy ->
+  canonical replayable paper ledger -> architecture truth -> separate-host freshness/MCP/recovery -> read-only
+  combined research -> release certification.
+- Planning only. No production code, provider/data state, host, container, timer, bot, order, or promotion changed.
+
 ## Implementation Note - 2026-06-15 session 37 - unify rollup to ALL timeframes + custom-TF support (fixes crypto 1w:1)
 - **Symptom:** `backend integrity` showed `1w:1` for every crypto symbol (BTCUSDT had `1d:3223`
   but a single weekly bar) and deep-backfill "made no difference." Root cause: the rollup chain
