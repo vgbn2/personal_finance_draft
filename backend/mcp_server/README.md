@@ -16,13 +16,17 @@ market universe, portfolio, trade gates, Polymarket tools).
 The server runs from the **compiled** output, not the TypeScript source:
 
 ```bash
-# from backend/mcp_server/
-npm run build      # tsc → repo-root dist/mcp_server/index.js
-npm start          # node ../../dist/mcp_server/index.js
+# from the repository root
+npm --prefix backend/mcp_server run build
+npm run setup:mcp
 ```
 
-`npm start` resolves to `node ../../dist/mcp_server/index.js` (repo-root `dist/`).
-An MCP stdio client should spawn that compiled entrypoint.
+`setup:mcp` validates the compiled entrypoint before writing `.mcp.json`, emits an absolute server path,
+and adds `SOVEREIGN_BACKEND_BIN` only when the platform-correct native binary exists. The write is atomic:
+validation failure does not truncate a previous local MCP configuration.
+
+From `backend/mcp_server/`, `npm start` still resolves to
+`node ../../dist/mcp_server/index.js` (repo-root `dist/`).
 
 ## Why not launch the `.ts` source directly
 
@@ -31,13 +35,25 @@ resolution in this project's module layout. The build step is therefore required
 before the server is reachable — always `npm run build` after changing tool source.
 Treat `dist/mcp_server/index.js` as the single reliable entrypoint.
 
-## Tool discovery smoke
+## Host stdio and tool-discovery probe
 
 ```bash
-npm run build
-# then point an MCP stdio client at dist/mcp_server/index.js and call tools/list
-# (verified tool_count: 20 — get_system_status, get_market_bias, get_scorecard, get_market_signal, run_backtest, …)
+node scripts/mcp_stdio_probe.js
 ```
+
+The probe first verifies that a known-good child can deliver stdout and stderr on the current host. It then
+uses the pinned MCP SDK stdio client to initialize, list tools, and call the read-only `get_system_status`
+tool. Results are JSON and identify the failed stage.
+
+- `ok: true` is host-side proof for initialize, `tools/list`, and the cached status call.
+- `host_child_stdio_unavailable` means the execution environment suppressed known-good child output. It is
+  host-inconclusive and must not be reported as an MCP server regression.
+- `mcp_child_exited_before_initialize`, `mcp_tools_list_*`, and `mcp_status_*` identify server/protocol stages
+  after the host transport self-test has passed.
+
+Always run this probe on the intended developer or central host before calling the MCP runtime operational.
+Directly starting `dist/mcp_server/index.js` proves only that the entrypoint loads; it does not prove a client
+can complete a stdio exchange.
 
 ## Cached Research Tools
 
