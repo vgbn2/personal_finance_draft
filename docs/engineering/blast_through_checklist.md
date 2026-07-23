@@ -132,6 +132,22 @@ For each checked section, record the review outcome in one line:
 - [ ] Completeness scan: stubs, TODO wire-ups, mock handlers, unreachable menu items, not-implemented paths.
 - [ ] Grade trend scan: flag repeated D/F grades as stale debt.
 
+### System Design Review Gate
+
+- [ ] Identify stakeholders, concerns, viewpoints, views, model kinds, and architecture rationale using the
+  ISO/IEC/IEEE 42010 vocabulary before calling the system complete.
+- [ ] Score the six Well-Architected quality lenses: operational excellence, security, reliability, performance
+  efficiency, cost optimization, and sustainability.
+- [ ] Trace the mandatory path: provider -> validated data -> canonical identity -> point-in-time analysis ->
+  decision state -> paper/live policy -> risk gate -> ledger -> monitoring -> backup/restart/rollback.
+- [ ] For every boundary, record the canonical owner, contract/schema, failure behavior, and evidence status:
+  proven, partial, unproven, or failed.
+- [ ] Treat duplicated state, fixture-only composition, unproven host/runtime behavior, and stale architecture
+  docs as system-design findings even when component tests pass.
+- [ ] Report a separate end-to-end system grade; never average component grades into it.
+- [ ] Source references: <https://www.iso.org/standard/74393.html> and
+  <https://docs.aws.amazon.com/wellarchitected/latest/userguide/waf.html>.
+
 ## 5. Evidence Rules
 
 - [ ] Prefer real artifacts or live snapshots over synthetic examples.
