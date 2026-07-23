@@ -1,0 +1,287 @@
+{
+  "researched_at": "2026-07-23T22:33:05+07:00",
+  "requirements": {
+    "workload": "One private, single-writer Docker Compose host running the web/API service and exactly one continuous backfill poller.",
+    "network": "Port 8787 must remain bound to loopback or an access-controlled private VPN interface; no direct public 0.0.0.0 exposure.",
+    "compute": {
+      "repo_documented_floor": "2 shared vCPU and 8 GB RAM for the full crypto/equity universe.",
+      "planning_target": "Prefer at least 4 vCPU and 8 GB RAM for safer backfill headroom.",
+      "gpu": "Not required."
+    },
+    "memory": "At least 8 GB RAM because the backfill container has a 6 GB V8 old-space ceiling; 4 GB hosts are not reliable for the full universe.",
+    "storage": {
+      "current_local_footprint": "Approximately 20 GB in storage/ on 2026-07-23.",
+      "minimum_capacity": "At least 40 GB usable persistent SSD, because repo guidance requires at least twice the current storage footprint.",
+      "preferred_capacity": "80 GB or more to leave room for Docker images, logs, overlap rewrites, and backfill growth.",
+      "semantics": "Host-mounted local storage must survive service restarts, image rebuilds, host reboots, and ordinary deployments."
+    },
+    "architecture": {
+      "preferred": "amd64/x86_64",
+      "current_arm64_blocker": "infra/docker/Dockerfile enables ONNX Runtime, while backend/core/CMakeLists.txt selects onnxruntime-linux-x64 for every Linux build. The current production image therefore is not proven arm64-compatible and is expected to fail or produce an unusable native binary on Arm until that build path is corrected and verified."
+    },
+    "operational": [
+      "Persistent 24/7 process execution; no idle sleep.",
+      "Docker Engine and Docker Compose support.",
+      "A stable local filesystem for canonical time-series data.",
+      "SSH tunnel or private VPN access.",
+      "No live-trading credentials or execution authorization on the central research host.",
+      "The current Lenovo development laptop remains a test bench only and is not an eligible always-on host."
+    ],
+    "repo_evidence": [
+      "docs/operational/guides/DEPLOYMENT.md:88",
+      "docs/operational/guides/DEPLOYMENT.md:118",
+      "docs/operational/guides/DEPLOYMENT.md:142",
+      "docs/operational/guides/DEPLOYMENT.md:157",
+      "infra/docker/docker-compose.yml:14",
+      "infra/docker/docker-compose.yml:67",
+      "infra/docker/Dockerfile:44",
+      "backend/core/CMakeLists.txt:25"
+    ]
+  },
+  "candidates": [
+    {
+      "name": "User-owned spare Ubuntu machine",
+      "cost_model": "Self-hosted on already-owned hardware. Provider charge is permanently zero, but total operating cost is not literally zero because the user supplies hardware, electricity, broadband, cooling, and optionally a UPS.",
+      "compute": "User-controlled. Suitable when the spare machine has at least 4 CPU threads or cores and 8 GB RAM; more RAM is preferable for backfill work.",
+      "storage": "Persistent local SSD/HDD under user control. Allocate at least 40 GB usable, preferably 80 GB or more, and keep a separate backup target.",
+      "persistence": "Persistent as long as the machine, disk, power, and internet remain available. Docker restart policies and the repo's systemd updater can resume services after reboot.",
+      "architecture": "amd64/x86_64 is the lowest-risk choice for the current image. Ubuntu Server and Docker also support arm64, but this repo's x64-only ONNX Runtime selection must be fixed and proven before using Arm.",
+      "fit": "BEST FIT if a separate spare machine meeting the CPU, RAM, storage, power, and network requirements already exists. It preserves the repo's intended single-host Compose architecture and private local storage without a provider fee.",
+      "blocking_constraints": [
+        "Availability of a separate spare machine is unconfirmed.",
+        "The current Lenovo laptop is explicitly excluded from always-on hosting.",
+        "The owner must provide reliable power, internet, disk health monitoring, backups, OS patching, and physical security.",
+        "Residential NAT or changing public IPs favor an outbound private VPN such as Tailscale rather than public port forwarding.",
+        "Tailscale Personal is free indefinitely for personal use, but it is not intended for commercial use."
+      ],
+      "official_sources": [
+        "https://documentation.ubuntu.com/server/reference/installation/system-requirements/",
+        "https://docs.docker.com/engine/install/ubuntu/",
+        "https://docs.docker.com/compose/install/linux/",
+        "https://tailscale.com/pricing",
+        "https://tailscale.com/docs/reference/tailscale-cli/serve"
+      ]
+    },
+    {
+      "name": "Oracle Cloud Infrastructure Always Free",
+      "cost_model": "Permanent-free Always Free resources in the tenancy home region, separate from Oracle's time-limited 30-day trial. Current official documentation updated 2026-06-29 lists a smaller Ampere allowance than the historically cited 4 OCPU/24 GB offer.",
+      "compute": "Current Always Free Ampere A1 allowance is 1,500 OCPU-hours and 9,000 GB-hours per month, equivalent to 2 Arm OCPUs and 12 GB RAM total. Oracle also offers up to two AMD E2.1.Micro VMs, but each has only 1 GB RAM and 1/8 OCPU baseline.",
+      "storage": "Up to 200 GB total Always Free Block Volume storage, including boot volumes, plus five volume backups.",
+      "persistence": "Block volumes are persistent, but Oracle may reclaim an Always Free compute instance considered idle over a seven-day period when CPU, network, and, for A1, memory utilization are each below documented thresholds.",
+      "architecture": "Ampere A1 is arm64. The repo's current production Docker build hardcodes an x64 ONNX Runtime archive on Linux, so the image is not deployable as-is on A1. The tiny E2.1.Micro alternative is amd64 but has insufficient RAM.",
+      "fit": "CONDITIONAL NEAR-FIT, NOT AN AS-IS FULL-STACK FIT. It has enough RAM and ample persistent disk, but only 2 OCPUs instead of the preferred 4 vCPU target, available capacity can be scarce, idle reclamation weakens persistence, and the current arm64 build blocker must be fixed first. It may support a measured reduced-universe profile after arm64 clean-build proof.",
+      "blocking_constraints": [
+        "Current permanent-free allowance is 2 OCPUs/12 GB, below the preferred 4 vCPU target.",
+        "Current repo production image is blocked on arm64 by an x64-only ONNX Runtime package URL.",
+        "Always Free A1 capacity can be unavailable in the selected home region.",
+        "Always Free compute can be reclaimed when Oracle classifies it as idle.",
+        "Most users need phone and payment-card verification even though the card is not charged without an upgrade.",
+        "Always Free compute must be provisioned in the tenancy home region.",
+        "A real arm64 Docker build, native binary load test, Compose start, health check, backfill soak, and storage-integrity test are required before selection."
+      ],
+      "official_sources": [
+        "https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier.htm",
+        "https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm"
+      ]
+    },
+    {
+      "name": "Google Cloud Compute Engine Free Tier",
+      "cost_model": "Permanent monthly Free Tier allowance with no stated end date, distinct from the $300/90-day new-customer trial. A billing account is required, and usage above free limits is billable on a paid billing account.",
+      "compute": "One e2-micro VM in eligible US regions. It exposes 2 guest vCPUs but sustains only 25% of one physical CPU in total and has 1 GB RAM.",
+      "storage": "30 GB-month of standard persistent disk is free.",
+      "persistence": "Persistent Disk survives VM restarts, but only 30 GB-month is free and the service depends on an active billing account.",
+      "architecture": "x86_64 on Intel or AMD E2 hosts, compatible in principle with the repo's current x64 build.",
+      "fit": "NO FIT for the full central stack. RAM is one eighth of the 8 GB floor, sustained CPU is far below the target, and free persistent disk is below the approximately 40 GB minimum derived from the current data footprint.",
+      "blocking_constraints": [
+        "Only 1 GB RAM.",
+        "Only 0.25 sustained vCPU in aggregate despite two vCPUs being visible to the guest.",
+        "Only 30 GB free standard persistent disk.",
+        "Free e2-micro compute is limited to us-west1, us-central1, and us-east1.",
+        "Only 1 GB monthly outbound transfer from North America to most destinations is included.",
+        "A billing account is required, and over-limit usage can incur charges."
+      ],
+      "official_sources": [
+        "https://cloud.google.com/free/docs/free-cloud-features",
+        "https://cloud.google.com/compute/docs/general-purpose-machines",
+        "https://cloud.google.com/products/compute"
+      ]
+    },
+    {
+      "name": "AWS EC2 Free Tier / Free Plan",
+      "cost_model": "Trial-credit, not permanent-free compute. New accounts on or after 2025-07-15 receive $100 at sign-up and may earn another $100; the Free Plan ends after six months or when credits are exhausted, whichever comes first.",
+      "compute": "Free-tier-eligible EC2 choices include m7i-flex.large at 2 vCPU/8 GiB and c7i-flex.large at 2 vCPU/4 GiB, plus smaller T3/T4g types. The 4 vCPU/8 GiB c7i-flex.xlarge exists but is not listed as Free Tier eligible.",
+      "storage": "EBS volume types can be Free Tier eligible, but storage consumes the finite account allowance or credits rather than providing a permanent zero-cost disk at this workload size.",
+      "persistence": "EBS is persistent during account operation, but the Free Plan account closes when the plan ends or credits run out. AWS retains content for 90 days before permanent deletion unless the account is upgraded.",
+      "architecture": "m7i-flex and c7i-flex are x86_64 and align with the current image; T4g is arm64 and has the same repo arm64 blocker as Oracle A1.",
+      "fit": "TEMPORARY PILOT ONLY. m7i-flex.large reaches the repo's documented 2 vCPU/8 GB floor, but not the preferred 4 vCPU target, and the free period cannot satisfy a persistent permanent-zero-cost requirement.",
+      "blocking_constraints": [
+        "Six-month or credit-exhaustion limit.",
+        "No permanent-free EC2 offer sized for this stack.",
+        "Free Plan account closure interrupts the host and eventually deletes data unless upgraded.",
+        "The 4 vCPU/8 GiB c7i-flex.xlarge is not among the listed Free Tier eligible instance types.",
+        "Storage and network usage consume credits and must be monitored."
+      ],
+      "official_sources": [
+        "https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html",
+        "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-free-tier-usage.html",
+        "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-launch-parameters.html",
+        "https://aws.amazon.com/ec2/instance-types/c7i/",
+        "https://aws.amazon.com/blogs/aws/new-seventh-generation-general-purpose-amazon-ec2-instances-m7i-flex-and-m7i/"
+      ]
+    },
+    {
+      "name": "GitHub Actions hosted runners",
+      "cost_model": "CI allowance, not hosting. Standard hosted runners are free and unlimited for public repositories; private GitHub Free accounts receive 2,000 minutes per month and 500 MB artifact storage.",
+      "compute": "A standard private-repository Linux runner has 2 CPU, 8 GB RAM, and 14 GB SSD for a single job.",
+      "storage": "Runner filesystems are job-scoped; artifact/cache storage is not a mounted durable filesystem for a continuously running single-writer data service.",
+      "persistence": "Each hosted job receives a new VM, and the VM is automatically decommissioned when the job finishes.",
+      "architecture": "x86_64 and arm64 runner variants exist, but both are ephemeral job environments.",
+      "fit": "NO FIT as a host. Appropriate only for the repo's existing readiness checks, tests, and image validation.",
+      "blocking_constraints": [
+        "No persistent VM between jobs.",
+        "No continuously running background poller.",
+        "Only 14 GB job SSD on the standard Linux runner.",
+        "Private-repository minute and artifact quotas.",
+        "Hosted runners cannot retain the canonical storage/ tree as a mounted local disk."
+      ],
+      "official_sources": [
+        "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+        "https://docs.github.com/en/actions/how-tos/manage-runners/github-hosted-runners/use-github-hosted-runners",
+        "https://docs.github.com/en/billing/concepts/product-billing/github-actions"
+      ]
+    },
+    {
+      "name": "Render Free",
+      "cost_model": "Permanent free preview tier with monthly limits, but free web services sleep and lack free persistent disks. This is a sleep/ephemeral offer, not an always-on host.",
+      "compute": "Free web-service resources are intended for preview and hobby workloads, not an 8 GB continuous backfill process.",
+      "storage": "Free web service filesystem is ephemeral. Persistent disks are available only on paid services. Free Postgres is limited to 1 GB and expires after 30 days.",
+      "persistence": "Free web services spin down after 15 minutes without inbound HTTP or WebSocket traffic; local filesystem changes are lost on redeploy, restart, or spin-down.",
+      "architecture": "Managed service/container platform rather than a user-controlled Docker Compose VM.",
+      "fit": "NO FIT. It cannot provide the required always-on poller, host-mounted canonical storage, private inbound access, or full Compose topology at zero cost.",
+      "blocking_constraints": [
+        "Idle spin-down after 15 minutes.",
+        "Ephemeral filesystem.",
+        "Persistent disks require a paid service.",
+        "Free web services cannot receive private-network traffic.",
+        "Free Postgres expires after 30 days and is not a substitute for the repo's file-backed time-series store.",
+        "Render states that free instances should not be used for production applications."
+      ],
+      "official_sources": [
+        "https://render.com/docs/free",
+        "https://render.com/docs/disks",
+        "https://render.com/docs/service-types"
+      ]
+    },
+    {
+      "name": "Railway Free",
+      "cost_model": "Permanent $0 plan with $1 of monthly resource credit after a one-time $5/30-day trial. Usage is metered; this is a tiny-app allowance, not free server capacity at the required size.",
+      "compute": "Free plan maximum is 1 vCPU and 0.5 GB RAM per service. Trial maximum is 2 vCPU and 1 GB RAM per service.",
+      "storage": "Free plan volume maximum is 0.5 GB; volume storage is metered at $0.15 per GB-month and counts against the $1 credit.",
+      "persistence": "Volumes can persist while the plan and credits remain valid, but workloads stop when credits are exhausted, and Free/Trial volume data is subject to deletion after expiry under Railway's retention policy.",
+      "architecture": "Managed container service rather than a full private Docker Compose VM.",
+      "fit": "NO FIT. CPU, RAM, volume size, monthly credit, and service topology are all below requirements.",
+      "blocking_constraints": [
+        "0.5 GB RAM versus the 8 GB floor.",
+        "1 vCPU versus the 4 vCPU planning target.",
+        "0.5 GB volume versus at least 40 GB required.",
+        "$1 monthly credit cannot fund a continuous 8 GB service.",
+        "Trial accounts receive only temporary credits and stateful volumes are not durable indefinitely after expiry."
+      ],
+      "official_sources": [
+        "https://docs.railway.com/pricing",
+        "https://docs.railway.com/pricing/plans",
+        "https://docs.railway.com/pricing/free-trial",
+        "https://railway.com/pricing"
+      ]
+    },
+    {
+      "name": "Fly.io",
+      "cost_model": "Short free trial only. The trial ends after seven days or two total VM hours, whichever is exhausted first; ongoing Machines and volumes are paid.",
+      "compute": "Trial machines are limited to at most 2 vCPU and 4 GB RAM per machine and automatically stop after five minutes.",
+      "storage": "Trial includes up to 20 GB of volume storage. After trial, provisioned volumes cost $0.15 per GB-month even when attached Machines are stopped.",
+      "persistence": "Fly Volumes are persistent local storage, but there is no permanent free compute/volume allowance for this workload. Apps stop when the trial ends unless billing is enabled.",
+      "architecture": "Managed Machines with x86 and Arm options, not a drop-in always-on Docker Compose host.",
+      "fit": "NO FIT. Trial duration, automatic stops, 4 GB memory ceiling, 2 vCPU ceiling, and paid ongoing volumes all violate requirements.",
+      "blocking_constraints": [
+        "Only two total trial VM hours or seven days.",
+        "Trial machines automatically stop after five minutes.",
+        "Maximum 4 GB RAM is below the repo's reliable floor.",
+        "Maximum 2 vCPU is below the planning target.",
+        "Only 20 GB trial volume versus at least 40 GB required.",
+        "Ongoing persistent volume and compute use is paid."
+      ],
+      "official_sources": [
+        "https://fly.io/docs/about/free-trial/",
+        "https://fly.io/docs/about/pricing/"
+      ]
+    }
+  ],
+  "recommendation": {
+    "verdict": "No third-party provider researched currently offers a genuinely permanent-free, as-is host satisfying the repo's preferred 4+ vCPU, 8 GB RAM, at least 40 GB persistent local storage, always-on Docker Compose, and private-access requirements.",
+    "primary": {
+      "choice": "A separate user-owned amd64 Ubuntu machine with at least 4 CPU threads or cores, 8 GB RAM, and preferably at least 80 GB SSD.",
+      "reason": "It is the only option that can satisfy the existing Compose architecture, x64 native build, persistent local single-writer store, always-on poller, and private network boundary without a recurring provider fee.",
+      "conditions": [
+        "It must be a separate spare machine, not the explicitly excluded development laptop.",
+        "Confirm hardware, disk health, power behavior, and broadband stability.",
+        "Use loopback plus SSH or a personal-use private VPN; do not expose port 8787 publicly.",
+        "Create a backup and restore path before starting continuous polling.",
+        "Run the repo's clean-host preflight, Compose build, health check, backfill smoke test, restart test, and a bounded soak before treating it as persistent."
+      ]
+    },
+    "secondary": {
+      "choice": "Oracle Cloud Always Free Ampere A1 only as an experimental reduced-profile candidate.",
+      "reason": "It is the only credible permanent-free provider VM with enough RAM and disk, but it is below the preferred CPU target, can be capacity-constrained or reclaimed, and is blocked by the current x64-only ONNX Runtime build path.",
+      "required_gates": [
+        "Add an architecture-aware ONNX Runtime package selection or a deliberately verified ONNX-disabled central image.",
+        "Prove a clean arm64 Docker build and native binary load in a disposable test environment.",
+        "Measure full and reduced backfill profiles under the current 2 OCPU/12 GB Always Free limit.",
+        "Select Oracle only if the measured profile stays fresh and storage-safe without exceeding free limits.",
+        "Do not describe the historical 4 OCPU/24 GB allowance as current; Oracle's 2026-06-29 documentation states 2 OCPU/12 GB."
+      ]
+    },
+    "temporary_only": [
+      "AWS Free Plan can provide a short pilot at approximately the repo floor, but it is not a permanent host.",
+      "Google Cloud's $300 trial can fund a correctly sized temporary VM, but the permanent Free Tier cannot.",
+      "GitHub Actions remains a readiness/CI surface, not the deployment host."
+    ],
+    "ruled_out": [
+      "Google Cloud permanent Compute Engine Free Tier",
+      "GitHub Actions hosted runners",
+      "Render Free",
+      "Railway Free",
+      "Fly.io free trial"
+    ]
+  },
+  "decision_tree": [
+    {
+      "if": "A separate user-owned amd64 machine with at least 4 CPU threads or cores, 8 GB RAM, and at least 40 GB usable persistent disk exists",
+      "then": "Choose it as the zero-provider-fee host, preferably with at least 80 GB SSD, private VPN or SSH access, backups, and the repo's fail-closed deployment workflow."
+    },
+    {
+      "if": "No qualifying spare machine exists, but code changes and a reduced workload profile are acceptable",
+      "then": "Treat Oracle Always Free A1 as a research candidate only: first fix and verify arm64 image support, then benchmark under the current 2 OCPU/12 GB allowance."
+    },
+    {
+      "if": "The full-universe workload must remain unchanged and the 4+ vCPU target is mandatory",
+      "then": "There is no verified permanent-zero-cost provider option in this research set; pause deployment until hardware is supplied or recurring hosting spend is approved."
+    },
+    {
+      "if": "Only a temporary deployment proof is needed",
+      "then": "Use AWS or Google trial credits with explicit deletion/backup deadlines, but do not record the result as a persistent-host selection."
+    },
+    {
+      "if": "The option sleeps, uses an ephemeral filesystem, lacks at least 8 GB RAM, lacks at least 40 GB durable storage, or cannot run the web and poller continuously",
+      "then": "Reject it for the central single-writer role; it may still be used for CI or a disposable preview."
+    }
+  ],
+  "uncertainties": [
+    "Whether the user has a separate spare Ubuntu-capable machine meeting the target hardware and uptime requirements.",
+    "Whether the approximately 20 GB current storage footprint will grow fast enough to make 40 GB inadequate; 80 GB or more is safer but should be tied to measured backfill growth.",
+    "Whether all native and JavaScript dependencies beyond the known ONNX Runtime URL are arm64-compatible; no clean arm64 image build has been run.",
+    "Whether Oracle A1 capacity is available in the user's chosen home region at sign-up time.",
+    "Whether Oracle's idle-reclamation heuristics would affect this poller's actual utilization profile.",
+    "How two Oracle OCPUs perform relative to the repo's stated two shared-vCPU floor and preferred four-vCPU target under real full-universe overlap rewrites.",
+    "Provider offers can change; the JSON reflects official documentation checked on 2026-07-23, including Oracle's 2026-06-29 Free Tier update."
+  ]
+}

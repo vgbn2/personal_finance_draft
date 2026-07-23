@@ -519,6 +519,34 @@ Source: `49560981^1:workspace/SESSION_MEMORY.md`. These sections were restored a
 }
 ```
 
+## Session Memory - 2026-07-23 session 94 plan closeout
+
+```json
+{
+  "plan": "workspace/plans/PRIVATE_PAPER_V1_PRODUCTION_PLAN.md",
+  "release_target": "private-paper-v1",
+  "scope": [
+    "private single-user Polymarket paper platform",
+    "Lenovo test bench only",
+    "qualified spare Ubuntu persistent host",
+    "canonical paper ledger",
+    "fresh data and single writer",
+    "read-only combined research",
+    "private API/dashboard/MCP",
+    "backup/restart/rollback/release proof"
+  ],
+  "deferred": [
+    "real-money orders and live canary",
+    "Alpaca/MT5 certification",
+    "public exposure",
+    "Supabase multi-user/RLS production",
+    "strategy-to-live promotion",
+    "combined engine driving Polymarket trades"
+  ],
+  "next": "Begin Batch 0 with dirty-tree classification and clean-archive proof; do not run a bot cycle."
+}
+```
+
 ## Session Memory - 2026-07-22 session 89 deployment recovery
 
 ```json
@@ -770,4 +798,120 @@ truth findings in `workspace/DEV_REVIEW.md`.
   ],
   "next": "Wait for a separate persistent zero-cost machine or an explicit hosting decision; keep this laptop testing-only."
 }
+```
+
+## Session Memory - 2026-07-23 session 92 full blast-through and planning
+
+```json
+{
+  "mode": "full / Fast Reading Mode",
+  "anchor": "cebd0658 plus audit/planning workspace changes",
+  "data": {
+    "cached": "92/92",
+    "missing": 0,
+    "stale_required_windows": 87,
+    "grain_cadence_plausible": 9,
+    "grain_unexplained": 0,
+    "exceptions": 1,
+    "dcs": 0.716
+  },
+  "mcp": {
+    "direct_server_start": "pass",
+    "sandbox_stdio_probe": "timeout before initialize",
+    "sandbox_child_stdio_control": "suppressed even for trivial nested child",
+    "generated_backend_path": "invalid Windows .exe path on Linux",
+    "real_backend_path": "backend/core/build/sovereign_wealth",
+    "plan": "workspace/plans/SESSION_91_MCP_RUNTIME_RECOVERY_PLAN.md"
+  },
+  "host": {
+    "current_laptop": "testing-only and excluded",
+    "primary_zero_fee_candidate": "known spare Ubuntu machine, hardware unverified",
+    "provider_research": "no permanent-free provider meets full as-is workload",
+    "conditional_fallback": "Oracle A1 only after arm64 image and reduced-profile proof",
+    "plan": "workspace/plans/SESSION_92_ZERO_COST_HOST_AND_TRUST_RECOVERY_PLAN.md"
+  },
+  "other_findings": [
+    "Frontend dashboard env example omits documented Supabase variables.",
+    "Backend API nested package omits its direct Supabase SDK dependency.",
+    "Rust and stack docs contradict the retire/archive decision.",
+    "Combined actionable engine remains D/nonexistent and fixture-only."
+  ],
+  "verification": {
+    "hygiene": "pass",
+    "structure": "1/1 pass",
+    "deployment": "11/11 pass",
+    "clean_archive": "2/2 focused tests plus syntax/conflict checks pass",
+    "package_roots": "5/5 installed roots resolve",
+    "graphify": "unavailable"
+  },
+  "safety": [
+    "No provider poll or data transformation.",
+    "No container, timer, or host mutation.",
+    "No live order or promotion.",
+    "Plans only; implementation deferred."
+  ],
+  "next": "Run read-only hardware qualification on the spare Ubuntu machine, then execute the MCP plan Batch 1 in a separate implementation turn."
+}
+```
+
+## Session Memory - 2026-07-23 session 93 mass implementation
+
+```json
+{
+  "completed": [
+    "Made MCP setup platform-aware, validated, absolute-path, and atomic.",
+    "Added known-good child stdio diagnosis and pinned-SDK read-only MCP probe stages.",
+    "Added x64 and 8 GB-class central-host preflight gates with a 16 GB recommendation.",
+    "Closed dashboard Supabase env and backend API direct dependency contracts.",
+    "Removed the zero-caller automation and TradingView screener stubs.",
+    "Aligned Rust retirement, ONNX, CI, and configuration documentation."
+  ],
+  "verification": {
+    "focused": "20/20 pass",
+    "api": "8/8 pass",
+    "contracts": "31/31 pass",
+    "node": "859 total / 855 pass / 0 fail / 4 skip",
+    "native": "30/30 pass",
+    "secrets": "828 files / 0 violations",
+    "frontend": "typecheck and build pass",
+    "mcp": "build pass; sandbox returns host_child_stdio_unavailable",
+    "compose_hygiene_diff": "pass",
+    "clean_current_source_snapshot": "focused tests and exact API lock pass; source stays clean"
+  },
+  "ram": {
+    "any_module_is_safe": false,
+    "minimum_total": "8 GB installed",
+    "recommended_total": "16 GB installed",
+    "must_match": ["DIMM or SO-DIMM", "DDR generation", "ECC/buffering", "slot and platform capacity"]
+  },
+  "blocked": [
+    "Real-host MCP stdio handshake is not yet proven.",
+    "Spare Ubuntu hardware and uptime are unverified.",
+    "Working tree is not committed HEAD.",
+    "DCS remains 0.716; live/schema/model promotion remains blocked."
+  ],
+  "next": "Collect spare-machine dmidecode/free/architecture/disk evidence, buy only compatible RAM if needed, then run host MCP proof and private-writer catch-up."
+}
+
+## Mass-Implement Verification - 2026-07-23 session 95
+
+```json
+{
+  "verification": {
+    "focused_deployment_mcp_preflight_structure": "32/32 pass",
+    "contracts": "31/31 pass",
+    "full_node": "859 total / 855 pass / 0 fail / 4 intentional skip",
+    "api_loopback": "pass when host-capable; restricted sandbox reports listen EPERM"
+  },
+  "seal": {
+    "attempted": true,
+    "result": "blocked: cannot create .git/index.lock because .git is read-only",
+    "committed_head_proof": false
+  },
+  "safety": [
+    "No provider poll, data transformation, container, timer, host mutation, bot cycle, live order, or promotion"
+  ],
+  "next": "Restore writable Git-index authority, commit functional session-93 paths separately from continuity artifacts, then prove a clean archive and fresh clone."
+}
+```
 ```

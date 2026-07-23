@@ -53,3 +53,39 @@ The remaining data blocker is explicit rather than hidden: 92/92 assets are cach
 window is stale, but `SOYB 5m` remains unexplained and is excluded before scoring. Eight other suspects
 match recent session cadence. Live-capital use, remote RLS, combined-engine promotion, and real OOS/cost
 calibration remain outside the achieved grade.
+
+## Full Audit Correction - 2026-07-23 session 92
+
+**Audit anchor:** `cebd0658` plus audit/planning workspace changes
+**Mode:** full / Fast Reading Mode
+**DCS:** `0.716 -> 0.716`; freshness is the only degraded factor
+
+The recovery-closeout data statement is historical. Current live integrity is 92/92 cached, 0 missing,
+87 required windows stale, 9 cadence-plausible notices, 0 unexplained grain, and 1 declared exception.
+No persistent writer is running.
+
+Strongest gaps:
+
+1. Qualify the known spare Ubuntu machine and recover freshness through the private single-writer stack.
+2. Repair the Linux-invalid MCP setup output and obtain a real host-side stdio handshake; sandbox child
+   transport failure is now separately reproduced.
+3. Close contained configuration/docs debt: dashboard Supabase env example, API direct dependency,
+   and Rust/stack status drift.
+
+Archive, hygiene, structure, dependency-root, and focused deployment checks pass. Detailed findings,
+orphan matrix, section grades, LOC, and plans are in `workspace/DEV_REVIEW.md` session 92.
+
+## Mass-Implement Closeout - 2026-07-23 session 93
+
+The MCP configuration defect, ambiguous sandbox probe, host RAM/architecture qualification gap, dashboard
+env example, API dependency ownership, Rust/stack status drift, and two approved zero-caller stubs are
+closed in the current source.
+
+MCP setup/probe moves from **C+ / config-and-host-stdio-gated** to **B / real-host-stdio-gated**: generated
+Linux paths are valid and contracted, and host transport failure is now distinguished before SDK
+initialization. Frontend configuration moves **B- -> B+**, API package ownership **B -> B+**, and docs
+**B+ -> A-**. Data trust stays **B- / freshness-gated** at DCS 0.716 because no writer or poll ran.
+
+Verification is Node 859/855/0fail/4skip, API 8/8, contracts 31/31, native 30/30, secrets 828/0, focused
+20/20, frontend/MCP builds, Compose render, hygiene, diff integrity, and a clean current-source snapshot.
+The implementation is uncommitted and a real-host MCP handshake remains external.

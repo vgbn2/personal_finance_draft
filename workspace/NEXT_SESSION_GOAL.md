@@ -1,5 +1,74 @@
 # Next Session Goal
 
+## 2026-07-23 session 94 critical override - implement Private Paper v1
+
+The refined implementation plan is saved at
+`workspace/plans/PRIVATE_PAPER_V1_PRODUCTION_PLAN.md`. This session ended in planning only; no production
+implementation was started.
+
+Execute in order:
+
+1. Batch 0: classify and seal the current dirty tree; do not reset or discard session-93 work. Require clean
+   archive/fresh-clone proof before new feature edits.
+2. Batch 1: unify runtime policy and make `private-paper` permanently non-live.
+3. Batch 2: converge `polymarket paper-run` and non-live `bot cycle` into one canonical paper ledger.
+4. Batch 3: qualify the spare Ubuntu host, inspect exact RAM compatibility before any purchase, deploy one
+   writer, and recover data integrity to DCS >= 0.95 with zero policy-stale required windows.
+5. Batch 4: implement the read-only combined engine and prove host-side MCP/API/UI parity.
+6. Batch 5: run 72-hour infrastructure soak, seven-day paper soak, backup/restore, rollback, and release proof.
+
+Keep the Lenovo test-only, the API private, live trading disabled, Supabase/public-user features disabled, and
+real-capital/schema/model promotion blocked. The first next-session command is a read-only `git status` plus
+dirty-tree classification; do not start a bot cycle.
+
+## 2026-07-23 session 93 critical override - qualify the spare host and prove MCP on real stdio
+
+The repository-side parts of the session-91 MCP plan are complete in the current working tree. Do not
+rebuild the platform-aware setup generator, host-stdio self-test, SDK probe, hardware preflight, Supabase
+package/env contracts, Rust status docs, or removed zero-caller stubs.
+
+The immediate gate is the separate spare Ubuntu machine:
+
+1. Collect `uname -m`, `free -h`, `df -h`, and
+   `sudo dmidecode -t system -t baseboard -t memory`.
+2. Do not buy or install "any RAM module." Match the machine's DIMM/SO-DIMM form factor, exact DDR
+   generation, non-ECC/ECC and buffered/unbuffered support, slot capacity, and motherboard/CPU maximum.
+   The full-universe gate is 8 GB installed total; 16 GB total is recommended for the 6 GB V8 backfill heap
+   plus OS, Docker, API, and build headroom.
+3. Select the machine only if it is x86_64/amd64, passes the memory gate, has at least 40 GB usable persistent
+   disk (80 GB preferred), and can remain reliably powered and connected.
+4. On that machine, build `backend/mcp_server`, run `npm run setup:mcp`, and require
+   `node scripts/mcp_stdio_probe.js` to return `ok:true` before calling MCP operational.
+5. Then follow Batches 1-3 of
+   `workspace/plans/SESSION_92_ZERO_COST_HOST_AND_TRUST_RECOVERY_PLAN.md` and require DCS at least 0.95
+   after catch-up and soak.
+
+Current-source verification is green, including a clean temporary Git snapshot, but the implementation is
+not committed. Review and commit the multi-session working tree before using clean committed `HEAD` as a
+deployment claim. Keep the Lenovo test bench, live trading, public exposure, schema/model promotion, and
+remote Supabase/RLS approval blocked.
+
+## 2026-07-23 session 92 critical override - qualify spare host, then recover MCP
+
+Current DCS is 0.716: 92/92 assets are cached, but 87 required windows are stale. The immediate external
+evidence gate is read-only hardware qualification of the known spare Ubuntu machine using Batch 0 of
+`workspace/plans/SESSION_92_ZERO_COST_HOST_AND_TRUST_RECOVERY_PLAN.md`. Do not enable this Lenovo test
+bench as the host.
+
+If the spare machine is amd64/x86_64 with at least 8 GB RAM, at least 40 GB usable persistent disk
+(80 GB preferred), reliable power/network, and acceptable uptime, select it as the zero-provider-fee host
+and continue the private single-writer deployment. If it fails those gates, do not start the full universe;
+either write a measured reduced-profile proposal or evaluate the Oracle Arm fallback only after arm64 image
+support is proven.
+
+The previous MCP problem has its own plan:
+`workspace/plans/SESSION_91_MCP_RUNTIME_RECOVERY_PLAN.md`. First correct the generated Linux backend path
+and probe diagnostics, then require a real host-side read-only stdio handshake. The sandbox timeout is not
+proof of server failure, and direct CLI success is not host MCP proof.
+
+Keep live trading, public exposure, schema-v3/model promotion, remote Supabase/RLS approval, provider polling
+on this laptop, and broad Rust/stub deletion blocked.
+
 ## 2026-07-22 session 90 critical override - current laptop is testing only
 
 The operator rejected both paid hosting and using the current Lenovo laptop as the always-on host. Do not

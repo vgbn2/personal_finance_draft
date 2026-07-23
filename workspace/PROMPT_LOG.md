@@ -1,3 +1,23 @@
+# Prompt Log - 2026-07-23 (session 95)
+
+## Session Boot - 2026-07-23 (session 95)
+PROMPT: `$session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, the current handoff pointer and dated handoff,
+`workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, and the prompt-log history. Confirmed the
+checkout remains dirty with the session-93 MCP/host-qualification implementation and session-94
+private paper production plan artifacts. `graphify`/`graphify-out` are unavailable on this host.
+RESULT: The active next gate remains session 94's clean-archive classification and proof. Do not start
+a bot cycle, provider poll, host mutation, container, timer, live order, or promotion during this boot.
+No code or runtime changes were made.
+
+# Prompt Log - 2026-07-22 (session 89)
+
+## Session Boot - 2026-07-22 (session 89)
+PROMPT: `$session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`,
+`workspace/STATE.md`, and the current prompt log. Confirmed `graphify-out` is absent on this host, so
+no graph refresh was possible. The checkout is clean and no code changes were made in this boot pass.
+
 # Prompt Log - 2026-07-22 (session 88)
 
 ## Private Central Host Rollout - 2026-07-22 (session 88)
@@ -1852,3 +1872,96 @@ Committed the corrected testing-only implementation as `df3c5c57`. Full Node pas
 focused deployment tests passed 4/4; Compose config, shell syntax, rendered systemd verification, secret scan
 828/0, hygiene, and diff checks passed. Clean-tree preflight passes every check except interactive Docker-daemon
 access, which remains intentionally unavailable on this test bench. No persistent host is selected.
+
+## Session Boot - 2026-07-22 (session 91)
+PROMPT: `$session-orchestrator`.
+WORK: Loaded `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`, and
+`workspace/STATE.md`, then checked the current dated handoff and prompt-log tail for continuity. Confirmed
+`graphify-out` is absent on this host, so no graph refresh was possible. No code changes were made in this
+boot pass.
+
+## Work - 2026-07-22 session 91 MCP-adjacent verification
+
+No repo-test MCP connector was exposed in this session's available MCP set, so I used the smallest local
+test slice that covers the recent central deployment-validation work. The focused Node test run passed
+11/11:
+
+- `tests/scripts/operational/prepare_central_env.test.js`
+- `tests/scripts/operational/central_host_preflight.test.js`
+- `tests/scripts/architecture/cli/core/central_host_updater_runtime.test.js`
+- `tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js`
+
+Verified behavior: isolated central env generation, fail-closed preflight checks, private-bind policy,
+updater no-op/rebuild/retry flow, and deployment-manifest/docs alignment. No code changes were made in this
+test pass.
+
+## Work - 2026-07-22 session 91 MCP setup attempt
+
+Generated the local `.mcp.json` via `node scripts/setup_mcp.js` and rebuilt `backend/mcp_server`.
+The repo's direct CLI paths still work: `node backend/cli/sovereign_cli.js status --json` returned the
+current phase and cache health, and `node backend/cli/sovereign_cli.js bias BTCUSDT` returned the cached
+trade bias output. However, the MCP stdio handshake from the SDK client to `dist/mcp_server/index.js`
+timed out before `connect` completed in this sandbox, matching the repo note that `scripts/mcp_stdio_probe.js`
+times out before initialization here and should be verified on the host. I did not and will not force live
+trading; the repo's live-trade gate remains unchanged.
+
+## Session Boot - 2026-07-23 (session 92)
+PROMPT: `$session-orchestrator`.
+WORK: Loaded the repository bootstrap, current dated handoff, cumulative session memory, and project
+state. Confirmed the active direction remains testing-only local deployment validation: no persistent
+host is selected, no timer/container/provider poll is authorized or running, and `graphify-out` is
+unavailable on this host. No code or runtime data changes were made during boot.
+
+## User Prompt - 2026-07-23 session 92
+
+`$blast-through deep, also continue planing the last session problem and then plan the current one`
+
+## Work - 2026-07-23 session 92
+
+Selected full audit mode with Fast Reading Mode. Refreshed integrity to 92/92 cached, 87 stale,
+9 cadence-plausible, and 0 unexplained; DCS fell to 0.716 because only 5/92 required windows are fresh.
+Ran the archive/connectivity/package/env/stub/docs checks, hygiene, structure, focused deployment 11/11,
+and clean-archive deployment/preparation 2/2.
+
+Bounded the session-91 MCP problem: the compiled server starts directly, the sandbox suppresses nested-child
+stdio, and the setup generator separately emits a nonexistent Windows backend path on Linux. Wrote
+`workspace/plans/SESSION_91_MCP_RUNTIME_RECOVERY_PLAN.md`.
+
+Delegated official-source zero-cost-host research through the structured JSON air gap. No permanent-free
+provider satisfies the full as-is workload; the known spare Ubuntu machine is primary if it meets the
+hardware/uptime gates, with Oracle A1 conditional on arm64/reduced-profile proof. Wrote
+`workspace/plans/SESSION_92_ZERO_COST_HOST_AND_TRUST_RECOVERY_PLAN.md` and updated current review/state/
+handoff continuity. No implementation, polling, container, timer, live order, or promotion occurred.
+
+## User Prompt - 2026-07-23 session 93
+
+`$mass implement, also is any ram module good/`
+
+## Work - 2026-07-23 session 93
+
+Executed the repository-side session-91 MCP recovery and contained session-92 trust-cleanup batches. Made
+MCP setup platform-aware and atomic, added host-child transport diagnostics plus a pinned-SDK read-only
+probe, and contracted both. Extended central-host preflight with x64 and 8 GB-class memory gates, documenting
+16 GB as recommended because the backfill heap alone permits 6 GB.
+
+Closed the dashboard Supabase env-example gap, nested API direct-dependency gap, stale Rust/ONNX/CI docs,
+zero-caller TradingView screener stub, and placeholder automated-strategy script. A stale phase-label test
+was corrected to compare against the actual append-only state anchor after broad verification exposed it.
+
+Verification is focused 20/20; API 8/8; contracts 31/31; secrets 828/0; Node 859 total / 855 pass / 0 fail /
+4 skip; native CTest 30/30; frontend and MCP builds; Compose render; hygiene and diff integrity. A temporary
+clean current-source Git snapshot also passed the focused contracts and exact API lock refresh. No commit,
+provider poll, data mutation, container, timer, live order, or promotion occurred.
+Regenerated the ignored local `.mcp.json` and verified that its server and Linux native-backend paths exist.
+
+## User Prompt - 2026-07-23 session 94
+
+`end this session, save the plan for next session to implement`
+
+## Work - 2026-07-23 session 94
+
+Used `session-orchestrator` to close the planning session. Saved the refined production plan at
+`workspace/plans/PRIVATE_PAPER_V1_PRODUCTION_PLAN.md` and updated the next-session goal, dated handoff,
+session memory, and project state. The release boundary is private single-user Polymarket paper production;
+real-money execution, public exposure, Alpaca/MT5 certification, Supabase/RLS production, and combined-engine
+promotion remain blocked. No implementation or runtime mutation occurred.

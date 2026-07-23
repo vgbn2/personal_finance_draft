@@ -1493,3 +1493,105 @@ not fresh enough for an actionable claim until the central writer catches up.
 Data DCS starts and ends at **0.765** because no provider poll or data mutation ran. Verification is Node
 846/842/0fail/4skip, deployment 4/4, secret scan 828/0, Compose config pass, rendered systemd pass, hygiene pass,
 and clean preflight with only interactive Docker-daemon access failing. Live/schema/model gates are unchanged.
+
+## Full Blast-Through - 2026-07-23 session 92
+
+Mode: **full / Fast Reading Mode**. Audit anchor: `cebd0658` plus planning/audit workspace changes.
+`graphify-out` is unavailable, so the audit used the current review ledger and unresolved deployment/MCP
+subgraphs before direct file reads.
+
+### Strongest findings
+
+| Priority | Classification | Finding | Evidence | Required decision / gate |
+|---|---|---|---|---|
+| P0 | **Dangerous if promoted; currently fail-closed** | The data plane has complete cached coverage but no persistent writer, so required-window freshness deteriorated from 20/92 fresh to 5/92 fresh. | Live `backend integrity --json`: 92/92 cached, 0 missing, 87 stale, 9 cadence-plausible, 0 unexplained, 1 declared exception. DCS `0.716`. | Qualify the known spare Ubuntu machine, deploy one private writer, and require target-host DCS >=0.95 after catch-up/soak. |
+| P1 | **Incomplete** | `scripts/setup_mcp.js` emits a nonexistent Windows `.exe` backend path on Linux. | Generated `.mcp.json` points to `build/backend/core/Debug/sovereign_wealth.exe`; canonical discovery finds the real `backend/core/build/sovereign_wealth`. | Implement and test `workspace/plans/SESSION_91_MCP_RUNTIME_RECOVERY_PLAN.md` Batch 1. |
+| P1 | **Incomplete / host-unproven** | The MCP stdio probe times out before initialize, but this sandbox suppresses output from even a trivial nested child. Direct server startup succeeds. | Probe fails at response `id=1`; minimal nested child exits 0 without stdout/stderr; direct `node dist/mcp_server/index.js` prints the server-ready line. | Add transport self-diagnostics, then require a host-side SDK handshake. Do not label the server broken or operational yet. |
+| P2 | **Incomplete config contract** | The dashboard env example omits every Supabase variable its login client and README require. | `Frontend/dashboard/.env.example` contains Gemini/App/Vite API only; `src/lib/supabase.ts` consumes Vite or Sovereign Supabase aliases. | Add safe public/publishable placeholders and a contract; never add secret/service-role keys. |
+| P2 | **Incomplete package boundary** | `backend/api/package.json` omits its direct `@supabase/supabase-js` import while Docker calls it a standalone sub-package. | Direct import in `server/services/supabase_client.js`; nested manifest declares only Socket.IO; root hoisting currently masks the omission. | Declare the direct dependency or explicitly make/remove the standalone package claim, regenerate lock, and test the image/package root. |
+| P2 | **Stale docs / duplicate language surface** | Stack docs call Rust active and recommend future command ports despite the durable retire/archive decision; all commands still return `mirrored-contract-only`. | `docs/engineering/stack_manifest.md`, `rust_mirror_status.md`, `backend/cli/src/main.rs`, and prior reviewer decision. | Align docs first; archive/delete the mirror only under separate broad-deletion approval. |
+
+### Connective-tissue / orphan matrix
+
+| Surface | Classification | Result |
+|---|---|---|
+| `scripts/dev/run_automated_strategies.js` | **Stale** | Previously confirmed zero-consumer placeholder; the real automation owner is `backend/cli/commands/strategy/strategy.js`. |
+| `searchTradingViewScreener` | **Incomplete/stale** | Exported, zero runtime callers, warns and returns empty; configured TradingView quote ingestion does not use it. |
+| unavailable OpenSky/Blockchair/SEC-holdings/SP Global/FXAPI/Kalshi-history adapters | **Intentional fail-closed** | Manifest declares `availability.status=not_implemented` and throws a typed error; no silent real-data promotion was found. |
+| schema-3 recorded services | **Intentional fixture-only** | CLI/API require named recorded fixtures and return research-only/non-decision-ready envelopes. |
+| combined actionable engine | **D / nonexistent** | Exact-identity contracts and fixture composers exist, but no production caller composes live/recorded point-in-time domains for one exact asset. |
+| root/nested package installs | **Mostly intentional** | All five `npm ls --depth=0` roots resolve. The API direct Supabase declaration is the one confirmed package-boundary gap. |
+
+### Section grades
+
+| Section | Grade | Reason |
+|---|---|---|
+| archive / repo bootstrap | **A- / working-tree-docs** | `HEAD` is linear and matches `origin/main`; clean archive has no conflict markers, key entrypoints parse, and focused archive tests pass. Only audit/planning docs are dirty. |
+| market-data trust | **B- / freshness-gated** | Coverage and schema/grain are complete, but 87 required windows are stale without the persistent writer. |
+| infra Docker/systemd/ops | **A- / real-host-gated** | Deployment contracts pass 11/11 and clean archive 2/2; no actual target host exists. |
+| MCP server/setup | **C+ / host-stdio-and-config-gated** | Source builds/direct server starts, but generated native path is invalid and a real stdio tool call is unproven. |
+| backend API package boundary | **B / package-contract-gated** | Runtime/API tests remain strong; nested direct dependency ownership is incomplete. |
+| frontend configuration | **B- / env-example-gated** | Runtime accepts safe aliases, but the shipped example cannot configure documented login. |
+| backend core portability | **B- / arm64-image-gated** | amd64 native proof is strong; Linux ONNX Runtime download is x64-only and blocks Oracle A1 as-is. |
+| tests and hygiene | **A- / external-runtime-gated** | Hygiene, structure, focused deployment, and clean archive gates pass; host MCP/Docker soak remains external. |
+| docs / workspace continuity | **B+ / current-drift-contained** | Current handoff chain is coherent; Rust/stack docs and the old audit anchor required this correction. |
+| combined actionable engine | **D / nonexistent** | Components cannot be averaged into a production combined engine; fixture-only schema-3 surfaces remain promotion-blocked. |
+
+### Evidence and LOC
+
+- Working tree: hygiene pass; structure 1/1; central deployment 11/11; `git diff --check` pass before state
+  updates; all five installed package roots resolve.
+- Clean `HEAD` archive: key files present, no conflict markers in active code/infra, CLI/API/setup syntax pass,
+  and environment-preparation plus deployment-manifest tests pass 2/2.
+- MCP: build artifact exists; direct server starts; probe times out; nested-child stdio suppression reproduced;
+  generated backend path is nonexistent while canonical Linux binary discovery succeeds.
+- Active inventory excluding generated/build/data cache: 1,129 files. Code LOC: JS 66,742; MJS 2,254;
+  TS 5,158; TSX 2,693; C++ 11,327 (`.cpp` + headers); Rust 994; Python 1,302; shell 241.
+  JSON LOC is dominated by recorded fixtures and is not treated as source-code bloat.
+- No data transformation, provider poll, container start, timer install, live order, or schema/model promotion
+  occurred. DCS starts and ends at **0.716**.
+
+### Plans
+
+- Last-session MCP problem:
+  `workspace/plans/SESSION_91_MCP_RUNTIME_RECOVERY_PLAN.md`.
+- Current critical path:
+  `workspace/plans/SESSION_92_ZERO_COST_HOST_AND_TRUST_RECOVERY_PLAN.md`.
+- Immediate next move: run the Batch 0 read-only hardware qualification on the old Ubuntu machine. If it
+  fails the 8 GB RAM / persistent disk / uptime gate, do not start the full writer.
+
+## Mass Implementation Review - 2026-07-23 session 93
+
+### Findings closed
+
+| Prior finding | Resolution | Proof |
+|---|---|---|
+| MCP setup emitted a nonexistent Windows binary on Linux and cwd-dependent server path. | Reused canonical platform discovery, validated absolute server/native paths, omitted missing native state, and wrote atomically. | Platform/temp-repo/current-checkout setup contracts pass; generated Linux config points at `backend/core/build/sovereign_wealth`. |
+| MCP timeout conflated sandbox transport failure with server failure. | Added a bounded known-good child stdout/stderr gate, pinned-SDK initialize/list/status flow, stage/error/process diagnostics, and cleanup. | Deterministic success/exit/malformed/suppression tests pass; live sandbox result is `host_child_stdio_unavailable`. |
+| Central host plan relied on manual architecture/RAM judgment. | Added fail-closed x64 and 8 GB-class checks; documented 16 GB as recommended. | Hardware/preflight contracts reject arm64 and 4 GB fixtures; current machine check is x64 with 28,578,398,208 detected bytes. |
+| Dashboard/API package examples were incomplete. | Added safe public Vite Supabase variables and exact API-owned SDK 2.106.2 manifest/lock. | Deployment contract, offline lock refresh, API tests, and clean snapshot pass. |
+| Rust status and two empty/stale exports contradicted current ownership. | Aligned canonical rules/owner docs and removed the zero-caller strategy placeholder and TradingView screener stub. | Targeted consumer search is empty; provider export/load and full Node pass. |
+
+### Grade movement
+
+| Section | Before | After | Remaining gate |
+|---|---|---|---|
+| MCP server/setup | C+ | **B / real-host-stdio-gated** | Successful SDK exchange on the intended non-sandbox host. |
+| Backend API package boundary | B | **B+ / direct-dependency-contracted** | Actual target image build/soak. |
+| Frontend configuration | B- | **B+ / configured** | Existing bundle-size/static-import warning remains nonblocking. |
+| Infra host qualification | A- | **A- / real-host-gated** | Spare-machine hardware, Docker, writer, restart, and soak evidence. |
+| Docs/owner truth | B+ | **A- / aligned** | Broad Rust scaffold deletion remains separately gated. |
+| Market-data trust | B- | **B- / freshness-gated** | 87 stale required windows; DCS remains 0.716. |
+
+### Verification and scope
+
+- Focused MCP/deployment/hardware: 20/20.
+- API 8/8; contracts 31/31; secrets 828 tracked files / 0 violations.
+- Full Node: 859 total / 855 pass / 0 fail / 4 intentional skip.
+- Native build and CTest 30/30; frontend typecheck/build; MCP build; Compose render; hygiene and diff pass.
+- Clean current-source temporary Git snapshot: MCP build, exact API lock refresh, and five focused test files
+  pass with clean source status after removing dependency symlinks.
+- Implementation footprint outside workspace: 22 source/test/docs files, approximately +999/-279 lines.
+- The first broad Node run exposed one stale hardcoded phase expectation; production read the correct state
+  anchor. The test now compares directly with that anchor and the full suite passes.
+- No commit was created. No provider polling, data mutation, container/timer, live order, or promotion ran.

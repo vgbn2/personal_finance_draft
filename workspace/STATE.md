@@ -1,11 +1,26 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: e0cb6aa2
-last_audit_date: 2026-06-15
+last_audited_commit: cebd0658
+last_audit_date: 2026-07-23
+
+## Mass-Implement Verification - 2026-07-23 session 95
+
+- Revalidated the session-93 MCP, central-preflight, deployment, and documentation implementation without
+  starting any provider, writer, container, timer, bot, order, or promotion path.
+- Focused deployment/MCP/preflight/structure gate: **32/32 pass**. Full contract gate: **31/31 pass**.
+- Canonical full Node suite: **859 total / 855 pass / 0 fail / 4 intentional skips**. The two API suites
+  initially reported failures only because the restricted sandbox denied loopback bind with `EPERM`; the
+  approved host-capable rerun passed both suites, and the full suite passed under the same capability.
+- Batch-0 sealing remains incomplete: Git cannot create `.git/index.lock` because the host exposes `.git` as
+  read-only. No staging or commit was performed, so the functional implementation remains working-tree proof,
+  not committed-`HEAD` proof. Existing workspace/plans/research continuity artifacts were preserved.
+- Next gate: restore writable Git-index authority, stage functional session-93 paths separately from continuity
+  files, commit, then run clean-archive/fresh-clone verification. Keep the Lenovo test-only and all live,
+  provider, host, and promotion boundaries unchanged.
 
 ## Current Phase
-Phase 9: Strategic Intelligence & TUI Integration - ACTIVE
+Phase 9: Research-platform operational stabilization - ACTIVE; model/schema/live-capital promotion BLOCKED
 
 ## Implementation Note - 2026-06-15 session 37 - unify rollup to ALL timeframes + custom-TF support (fixes crypto 1w:1)
 - **Symptom:** `backend integrity` showed `1w:1` for every crypto symbol (BTCUSDT had `1d:3223`
@@ -1380,3 +1395,61 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   daemon access for the interactive user, which remains an intentional test-bench boundary.
 - DCS remains 0.765 from the session-89 data baseline because no polling or integrity mutation occurred.
   Live trading, public exposure, schema-v3/model promotion, and remote Supabase/RLS approval remain blocked.
+
+## Full Blast-Through - 2026-07-23 session 92
+
+- Ran full / Fast Reading Mode against clean committed `cebd0658` plus audit/planning workspace changes.
+  Archive continuity is coherent; `graphify-out` remains unavailable.
+- Current integrity is 92/92 cached, 0 missing, 87 required windows stale, 9 cadence-plausible notices,
+  0 unexplained grain, and 1 declared exception. DCS is **0.716** (`freshness=5/92`, `schema=1.0`,
+  `coverage=1.0`), down from 0.765 because no persistent writer exists.
+- The session-91 MCP failure is split into two facts: the compiled server starts directly, while the sandbox
+  suppresses nested-child stdio and cannot prove a handshake; independently, `setup_mcp.js` emits a nonexistent
+  Windows backend path on Linux. Recovery is planned in
+  `workspace/plans/SESSION_91_MCP_RUNTIME_RECOVERY_PLAN.md`.
+- Official-source structured research found no permanent-free provider that meets the full as-is workload.
+  The known spare Ubuntu machine is the primary zero-provider-fee candidate if it passes amd64, 8 GB RAM,
+  persistent disk, power, and uptime gates. Oracle A1 is Arm/reduced-profile-only until the x64 ONNX image
+  path is corrected and measured. Current plan:
+  `workspace/plans/SESSION_92_ZERO_COST_HOST_AND_TRUST_RECOVERY_PLAN.md`.
+- Additional contained debt: dashboard Supabase env-example drift, API direct-dependency ownership,
+  stale Rust/stack docs, the old placeholder automation script, and the zero-caller TradingView screener stub.
+- The combined actionable engine remains **D / nonexistent**: exact-identity contracts and fixture-only schema-3
+  services exist, but no production caller composes point-in-time required domains for one exact asset.
+- Verification: hygiene pass, structure 1/1, focused deployment 11/11, clean archive deployment/preparation
+  2/2, five installed package roots resolve, and direct Linux native binary discovery succeeds. No provider
+  poll, data transformation, container, timer, live order, or model/schema promotion occurred.
+
+## Mass-Implement Closeout - 2026-07-23 session 93
+
+- Completed the repository-side MCP recovery: setup now uses canonical platform-aware binary discovery,
+  validates absolute paths before an atomic write, and omits nonexistent native paths.
+- Replaced the ambiguous manual timeout probe with a known-good child-stdio gate and pinned MCP SDK
+  initialize/list/read-only-status flow. This sandbox now returns the truthful
+  `host_child_stdio_unavailable` classification; real-host MCP proof is still pending.
+- Central-host preflight now rejects non-x64 machines and memory below the 8 GB-class full-universe floor.
+  Deployment guidance recommends 16 GB because the backfill heap permits 6 GB before OS, Docker, API, and
+  build overhead.
+- Closed contained audit debt: safe dashboard Supabase example variables, exact API Supabase dependency,
+  stale Docker comment, Rust retirement and active ONNX/CI docs, zero-caller TradingView screener export,
+  and the placeholder automated-strategy script.
+- Regenerated the ignored local `.mcp.json`; its absolute compiled-server and Linux native-backend paths both
+  exist. This is configuration-path proof, not a successful stdio exchange.
+- Verification: focused 20/20; API 8/8; contracts 31/31; full Node 859/855/0fail/4skip; native CTest 30/30;
+  secrets 828/0; frontend and MCP builds; Compose render; hygiene and diff checks. A clean temporary Git
+  snapshot of current source passed focused contracts and lock refresh without source drift.
+- The working tree is not committed, so this is current-source proof rather than committed-`HEAD` proof.
+  No data/provider/container/timer/live/promotion action occurred. DCS remains **0.716** and the combined
+  actionable engine remains **D / nonexistent**.
+
+## Planning Closeout - 2026-07-23 session 94
+
+- Refined and saved the next implementation plan at
+  `workspace/plans/PRIVATE_PAPER_V1_PRODUCTION_PLAN.md`.
+- The committed release target is now `private-paper-v1`: private single-user Polymarket paper production,
+  Lenovo test-only, qualified spare Ubuntu persistent host, canonical paper ledger, fresh single-writer data,
+  private API/dashboard/MCP, read-only combined research, and proven backup/restart/rollback.
+- Real-money execution, live canary, public exposure, Alpaca/MT5 certification, Supabase/RLS production,
+  strategy-to-live promotion, and combined-engine execution coupling remain explicitly deferred.
+- No implementation or runtime mutation occurred in session 94. Current DCS remains **0.716**, current source
+  remains uncommitted, and the next session begins with dirty-tree classification and clean-archive proof.
