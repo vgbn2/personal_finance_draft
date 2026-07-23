@@ -112,6 +112,76 @@ Use both a letter grade and a short reason:
 
 When grading, prefer architectural cleanliness over raw feature count. A small but coherent section can outscore a feature-rich but messy one.
 
+## System Design Review Criteria
+
+Use this section whenever the user asks for a system-design, architecture, completeness, production-readiness,
+or end-to-end review. This is a cross-cutting review, not a replacement for the folder cleanliness grades.
+
+### Source basis
+
+- **ISO/IEC/IEEE 42010:2022** requires an architecture description to be organized around architecture
+  stakeholders, concerns, viewpoints, views, model kinds, and their relationships. Use the official standard
+  description: <https://www.iso.org/standard/74393.html>.
+- **AWS Well-Architected Framework** supplies the quality lenses: operational excellence, security, reliability,
+  performance efficiency, cost optimization, and sustainability. Use the official framework description:
+  <https://docs.aws.amazon.com/wellarchitected/latest/userguide/waf.html>.
+
+The sources define the review vocabulary and quality concerns; they do not prove that this repository conforms.
+Repository evidence must come from production code, configuration, tests, deployed artifacts, or explicit external
+proof. A passing unit test alone is not an architecture proof.
+
+### Required review lenses
+
+1. **Context and stakeholder concerns** — identify the system boundary, intended users/operators, external
+   providers, safety owners, and the concerns each view must answer. Record unresolved concerns instead of
+   assuming the code's current shape is the target architecture.
+2. **Ownership and domain boundaries** — name the canonical owner of each responsibility; trace UI, API, CLI,
+   gateway, core, provider, storage, and infrastructure edges; flag hidden relative imports, copied policy,
+   and competing state owners.
+3. **Contracts and identity** — verify versioned schemas, exact asset/entity identity, authentication and
+   authorization contracts, error semantics, compatibility policy, and CLI/API/MCP parity at the real entrypoints.
+4. **Data and decision lineage** — trace source -> adapter -> validation -> storage -> feature/analysis -> decision
+   -> paper/live boundary -> ledger -> monitoring. Require provenance, point-in-time correctness, freshness,
+   quality, and an explicit degraded state at every promotion seam.
+5. **State, concurrency, and idempotency** — identify authoritative state, event/ledger semantics, locking,
+   atomicity, replay behavior, duplicate suppression, crash recovery, stale-lock recovery, and multi-writer policy.
+6. **Security and safety** — prove least privilege, secret isolation, private exposure, authorization, kill switches,
+   live/paper separation, fail-closed behavior, and that research output cannot reach an order path accidentally.
+7. **Reliability and recovery** — verify timeouts, retries, backpressure, bounded resource use, health semantics,
+   backup/restore, restart behavior, rollback, and failure-mode tests against the actual deployment topology.
+8. **Operational excellence and observability** — verify structured outcomes, useful metrics/logs, freshness and
+   integrity reports, alert ownership, runbooks, deployment markers, and an operator path for every failure state.
+9. **Performance, cost, and sustainability** — check workload limits, memory/disk/network budgets, provider quotas,
+   scaling assumptions, cost ceilings, and whether the chosen topology is measured rather than merely plausible.
+10. **Evolution and architecture rationale** — record major decisions, tradeoffs, migration seams, deprecated
+    paths, rollback strategy, and whether documentation views agree with the executable system.
+
+### Evidence classification and completeness gate
+
+For each lens, classify evidence as **proven**, **partial**, **unproven**, or **failed** and cite exact files,
+lines, commands, fixtures, or external host reports. Grade the system design separately from component cleanliness:
+
+- **A** — target architecture is explicit, responsibilities are coherent, critical runtime paths are deployed and
+  exercised, and recovery/operational evidence exists.
+- **B** — core boundaries and contracts are coherent, but one or more non-critical runtime or operational proofs
+  remain external.
+- **C** — substantial working components exist, but ownership/state/deployment seams can still drift or mislead.
+- **D** — architecture is mostly plans, fixtures, duplicated state, or disconnected adapters; promotion is not
+  credible.
+- **F** — the system can produce unsafe or false actionable behavior, bypasses a safety boundary, or cannot be
+  trusted as a system of record.
+
+Do not average component grades into a system grade. Report the lowest critical-path gate separately. For this
+repository, the mandatory path is:
+
+```text
+provider -> validated data -> canonical identity -> point-in-time analysis -> explicit decision state
+         -> paper/live policy -> risk gate -> ledger -> monitoring -> backup/restart/rollback
+```
+
+If any arrow is fixture-only, duplicated, stale, host-unproven, or bypassable, the end-to-end system remains
+incomplete even when the adjacent components test green.
+
 ## Combined Actionable Engine Gate
 
 When a repository contains separate technical, macro, fundamental, or schema-versioned engines, grade the combined actionable engine separately from its components.
