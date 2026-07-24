@@ -1,3 +1,53 @@
+### Mass-Implement Closeout - 2026-07-24 session 101
+
+| Priority | Area | Finding | Resolution / remaining gate |
+|---|---|---|---|
+| Closed | non-live bot position integrity | An unpriced aged paper position could satisfy `time_decay` and be removed with a zero-valued dry-run exit. | `determinePositionExitReason` now refuses non-finite or non-positive prices; the bot leaves the position open. The aged-unpriced regression contract passes. |
+| Closed | paper ledger lifecycle idempotency | Settlement keyed only by token and resolution price suppressed a later settlement after the same token was reopened. | Paper opens now carry a deterministic position identity and settlement idempotency keys include that lifecycle identity. Open-settle-reopen-settle coverage proves both closes are accepted. |
+| Closed for repository source | read-only remote client | No scoped client API, cached remote CLI, or login connector existed for a client machine. | Added a distinct read-only client token, cached-only status/bias endpoints, remote CLI views/watch states, Linux user-systemd and Windows scheduled-task connectors, private token files, authenticated health checks, and bounded SSH reconnect. Interactive CLI auto-open is opt-in and off by default. |
+| Closed after independent review | concurrency and client hardening | Review reproduced concurrent double-settlement and found paper quote, interval, cleartext-token, degraded-state, and SSH-connect-timeout gaps. | Settlement keys now use immutable position identity and duplicate appends do not report a second close; paper exits use credential-free observed prices; intervals require finite values; HTTP is loopback-only; degraded health is surfaced; SSH connection setup has a 10-second bound. |
+| P0 external | host/data/startup proof | Repository contracts cannot prove a real central host, SSH account, login task, network recovery, or fresh data. | On an approved separate host, provision a distinct client token, recover freshness, then validate Linux and Windows login/reconnect without enabling any client-side provider poll or writer. |
+| P0 release | committed-source proof | The implementation remains in the dirty working tree after continuity commit `87d896de`. | Review and commit the combined source batch separately, then run clean archive/fresh-clone gates before deployment claims. |
+
+Verification: host-capable aggregate Node **894 total / 890 pass / 0 fail / 4 intentional skips**; API
+**10/10**; gateway TypeScript no-emit, Bash syntax, PowerShell parser, hygiene, and diff checks pass. Read-only
+integrity remains 92/92 cached with 87 required-window stale, 9 cadence-plausible notices, 0 unexplained grain,
+and 1 declared exception. No provider poll, canonical-data write, service/task install, tunnel, bot cycle, order,
+public exposure, destructive migration, or promotion occurred.
+
+---
+
+### Blast-Through Triage - 2026-07-24 session 101
+
+| Priority | Area | File:line | Finding | Required decision / gate |
+|---|---|---|---|---|
+| P1 | non-live bot position integrity | `backend/gateway/src/cycle.ts:281-292,323-341,378-380` | Paper mode intentionally does not construct a credentialed CLOB client, but the exit loop still calls `client.getPrice`. The error is swallowed into `fairPrice=0`; an aged position can then satisfy `time_decay`, be counted as a dry-run sell, and be removed from `bot_state.json` without a valid exit quote or ledger close event. | Converge paper bot positions onto `paper_ledger.js`; require an injectable credential-free quote source, reject/unprice exits when no quote exists, and add an isolated aged-position contract proving no zero-price close. |
+| P1 | paper ledger lifecycle idempotency | `backend/gateway/src/polymarket_paper.js:443-466`; `backend/gateway/src/paper_ledger.js:223-235` | Settlement idempotency is only `settlement:<token>:<resolutionPrice>`. After a token is settled, reopened, and settles again at the same price, the second close is suppressed as a duplicate. Direct reproduction returned `accepted:0`, left `open_positions:1`, and reported cash `100.2`. | Include the opening position/event identity in the settlement key and add open -> settle -> reopen -> settle replay/projection/P&L coverage. Treat duplicate settlement as success only when the referenced position lifecycle is already closed. |
+| P0 external | data freshness | read-only `backend integrity --json` | Current integrity remains `ok:false`: 92/92 cached, 87 required-window stale, 9 cadence-plausible notices, 0 unexplained grain, and 1 declared exception. DCS remains 0.716 (`freshness=5/92`, schema and coverage both 1.0). | Keep model/release/live promotion blocked. Recover freshness only on the separately qualified single-writer host, then require `ok:true`, zero policy-stale required windows, and DCS >= 0.95. |
+
+Verification: paper-ledger passed 12/12, bot-risk passed 5/5, and the host-capable live guard passed 4/4;
+`npm run hygiene` and `git diff --check` passed. The restricted runner's file-level live-guard failure was
+confirmed as the known child-process sandbox limitation, not a repository regression. The source batch remains
+uncommitted after `87d896de`, so these are working-tree findings rather than committed release proof.
+
+---
+
+### Mass-Implement Recovery — 2026-07-24 session 100
+
+| Priority | Area | Finding | Resolution / remaining gate |
+|---|---|---|---|
+| Corrected | aggregate tests | Session 99 attributed 16 aggregate file failures to shared state/order isolation. Direct reproduction showed `spawnSync <node> EPERM`; the restricted sandbox was denying child processes. | No test-isolation helper was added. Host-capable runs: two default and one serial green before source edits; final JUnit report 876 total / 872 pass / 0 fail / 4 skip. |
+| Closed | runtime policy | Runtime profile, live intent, authorization, and gateway mode were independently derived. | `shared/lib/settings/runtime_policy.js` now owns a deterministic fingerprinted decision. Permanent paper/test profiles and unknown profiles fail closed; CLI/API/MCP status expose the contract; gateway adapters consume it. |
+| Closed | paper credential reachability | Gateway and non-live bot code could initialize credential-bearing adapters/clients in dry mode. | Paper gateway uses `SimulationAdapter`; bot CLOB initialization is guarded by `live && hasL2`. Static and poisoned-input contracts pass. |
+| Closed for canonical simulator | Polymarket paper persistence | Legacy fill append preceded a non-atomic portfolio snapshot, with no replay checksum, writer ownership, or crash recovery. | `paper_ledger.js` is append-only authority with checksum chain, lock token, idempotency, replay, atomic snapshot, settlement, crash recovery, truncated-tail failure, and strict legacy migration/archive. |
+| P0 open | bot-state convergence | Non-live `bot cycle` still mutates `storage/data/cache/bot_state.json`; it is not yet a pure projection of the canonical paper ledger. | Adapt bot paper fills/closes/status to ledger events, retain live audit state separately, and add restart/projection parity before G3 is complete. |
+| P0 external | host/data/MCP | No qualified persistent writer host; DCS remains 0.716 from the prior read-only snapshot; no real host MCP handshake/soak. | Continue host/release batches only after the bot-ledger gate and a reviewed committed source boundary. |
+
+Verification: runtime-policy 9/9; paper-ledger 12/12; TypeScript no-emit pass; hygiene pass; `git diff --check`
+pass; canonical JUnit report 876 tests, 0 failures, 4 intentional skips.
+
+---
+
 ### Blast-Through Focused Audit — 2026-06-14 session 30 (anchor 51b20b6c → d95b92a7)
 
 | Priority | Area | File:line | Finding | Fix | Gate |

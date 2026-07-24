@@ -1,8 +1,8 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: cebd0658
-last_audit_date: 2026-07-23
+last_audited_commit: 87d896de
+last_audit_date: 2026-07-24
 
 ## Mass-Implement Verification - 2026-07-23 session 95
 
@@ -21,6 +21,21 @@ last_audit_date: 2026-07-23
 
 ## Current Phase
 Phase 9: Research-platform operational stabilization - ACTIVE; model/schema/live-capital promotion BLOCKED
+
+## Blast-Through Triage - 2026-07-24 session 101
+
+- Fast-reading triage reviewed the current `87d896de` working-tree paper/runtime batch without running a bot,
+  provider poll, data mutation, container, timer, order, or promotion path.
+- Confirmed two P1 paper-state defects: non-live bot exits can remove an aged `bot_state.json` position after
+  the now-undefined CLOB client yields `fairPrice=0`, and repeated-token settlement uses an idempotency key that
+  suppresses the second legitimate close. The latter was reproduced directly: accepted 0, duplicate settlement,
+  one position still open, and cash 100.2.
+- Read-only integrity is still `ok:false`: 92/92 cached, 87 required-window stale, 9 cadence-plausible notices,
+  0 unexplained grain, and 1 declared exception. DCS remains 0.716, so promotion stays blocked.
+- Focused paper-ledger passed 12/12, bot-risk passed 5/5, host-capable live guard passed 4/4, and hygiene/diff checks
+  passed. The source batch is still uncommitted after `87d896de`.
+- Next critical move: repair bot/ledger lifecycle ownership and tests, rerun focused plus aggregate host gates,
+  then review/commit and prove a clean archive before any separate-host freshness work.
 
 ## Full Blast-Through Note - 2026-07-24 session 99
 
@@ -44,6 +59,27 @@ Phase 9: Research-platform operational stabilization - ACTIVE; model/schema/live
   canonical replayable paper ledger -> architecture truth -> separate-host freshness/MCP/recovery -> read-only
   combined research -> release certification.
 - Planning only. No production code, provider/data state, host, container, timer, bot, order, or promotion changed.
+
+## Mass-Implement Note - 2026-07-24 session 100
+
+- Sealed the continuity boundary in commit `87d896de`; source implementation after that commit remains in the
+  working tree pending review/commit.
+- Corrected the session-99 aggregate diagnosis. The 16-file failures were caused by the restricted sandbox
+  denying child processes with `spawnSync ... EPERM`, not by repository test isolation or order dependence.
+  Host-capable proof is green: two default runs and one serial run at 859 total / 855 pass / 0 fail / 4 skip
+  before implementation; the final post-implementation JUnit run is 876 total / 872 pass / 0 fail / 4 skip.
+- Added one fail-closed runtime policy owner and exposed its fingerprinted decision through CLI, API system
+  status, and MCP's CLI-backed status. Permanent paper/test and unknown profiles cannot execute under poisoned
+  live/auth/PIN/credential inputs. Paper paths do not initialize credentialed execution clients.
+- Added the canonical internal Polymarket paper event ledger: checksum chain, sequence, idempotency keys,
+  ownership-token lock, deterministic replay, atomic projection, crash recovery, settlement, and fail-closed
+  legacy migration with read-only archive. Paper-run, runner paper loops, portfolio display, settlement, and
+  restart replay use this owner.
+- Batch 3 remains open: non-live `bot cycle` still writes `bot_state.json` as a separate projection and must be
+  adapted to the canonical ledger before `private-paper-v1`. No provider polling, canonical data mutation, host,
+  container, timer, bot cycle, live order, or promotion ran.
+- Current gates: focused runtime policy 9/9; paper ledger 12/12; TypeScript no-emit pass; hygiene pass; canonical
+  Node 876 total / 872 pass / 0 fail / 4 intentional skips. DCS remains the prior read-only 0.716 snapshot.
 
 ## Implementation Note - 2026-06-15 session 37 - unify rollup to ALL timeframes + custom-TF support (fixes crypto 1w:1)
 - **Symptom:** `backend integrity` showed `1w:1` for every crypto symbol (BTCUSDT had `1d:3223`
@@ -1490,3 +1526,24 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
 - No provider poll, data transformation, host mutation, container, timer, bot cycle, live order, or promotion ran.
 - Next critical move: converge one effective runtime policy and one replayable canonical paper ledger; then qualify
   the spare host and prove freshness, MCP, recovery, backup, rollback, and soak.
+
+## Remote Client and Paper Lifecycle Implementation - 2026-07-24 session 101
+
+- Closed the two reproduced paper lifecycle defects: an unpriced aged non-live position can no longer be removed
+  as a zero-price time-decay exit, and settlement identity now distinguishes a reopened token's new position.
+- Added a distinct read-only `SOVEREIGN_CLIENT_TOKEN`, cached-only client status/bias API routes, and remote CLI
+  views with explicit connected, stale, unauthorized, degraded, unavailable, and reconnecting states.
+- Added per-user Linux systemd and Windows scheduled-task connectors. They maintain an SSH local forward and
+  authenticated cached-status check with bounded reconnect. Token material is kept in private files. Interactive
+  CLI auto-open is opt-in and disabled by default.
+- The central host remains the sole provider poller and canonical-data writer. The connector never starts polling,
+  backfill, a bot, a host, or a write path.
+- Independent review found and closed concurrent settlement duplication, missing paper quote evaluation,
+  non-finite refresh intervals, non-loopback cleartext HTTP, degraded-state misclassification, and unbounded SSH
+  connection setup.
+- Verification: host-capable Node 894 total / 890 pass / 0 fail / 4 intentional skips; API 10/10; gateway
+  TypeScript, Bash syntax, PowerShell parser, hygiene, and diff checks pass.
+- Read-only integrity remains 92/92 cached, 87 required-window stale, 9 cadence-plausible, 0 unexplained, and
+  1 declared exception. No service/task/tunnel was installed and no provider or data mutation ran.
+- This is dirty-working-tree source proof after `87d896de`, not committed-HEAD, real-host, real-login, freshness,
+  MCP, recovery, or soak proof.

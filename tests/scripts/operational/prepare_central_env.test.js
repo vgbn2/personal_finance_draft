@@ -20,6 +20,7 @@ test('central environment preparation copies only approved research settings and
     'LIVE_TRADING=false',
     'SOVEREIGN_EXECUTION_AUTHORIZED=false',
     'SOVEREIGN_API_TOKEN=',
+    'SOVEREIGN_CLIENT_TOKEN=',
     'SOVEREIGN_WEB_BIND=127.0.0.1',
     'BACKFILL_INTERVAL_SECS=1800',
     'ALPACA_API_KEY=',
@@ -58,6 +59,8 @@ test('central environment preparation copies only approved research settings and
   assert.equal(prepared.FINNHUB_API_KEY, 'finnhub-alias');
   assert.equal(prepared.TWELVE_DATA_API_KEY, 'twelve-alias');
   assert.equal(prepared.SOVEREIGN_API_TOKEN.length, 64);
+  assert.equal(prepared.SOVEREIGN_CLIENT_TOKEN.length, 64);
+  assert.notEqual(prepared.SOVEREIGN_CLIENT_TOKEN, prepared.SOVEREIGN_API_TOKEN);
   assert.notEqual(prepared.SOVEREIGN_API_TOKEN, 'must-not-reuse');
   assert.equal(prepared.SOVEREIGN_TRADE_PIN, undefined);
   assert.equal(prepared.POLYMARKET_PRIVATE_KEY, undefined);
@@ -69,7 +72,7 @@ test('central environment preparation copies only approved research settings and
 test('central environment preparation refuses an existing destination unless force is explicit', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-prepare-central-env-existing-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  fs.writeFileSync(path.join(root, '.env.central.example'), 'SOVEREIGN_API_TOKEN=\n');
+  fs.writeFileSync(path.join(root, '.env.central.example'), 'SOVEREIGN_API_TOKEN=\nSOVEREIGN_CLIENT_TOKEN=\n');
   fs.writeFileSync(path.join(root, '.env'), 'FRED_API_KEY=test\n');
   fs.writeFileSync(path.join(root, '.env.central'), 'preserve=true\n');
   assert.throws(() => prepareCentralEnvironment({ repoRoot: root }), /refusing to overwrite/);

@@ -1,97 +1,88 @@
 # Architecture
 
-> Generated for the current trading-platform prototype on 2026-05-14.
+> Verified against the executable repository on 2026-07-24.
 
 ## Overview
 
-Sovereign is organized as a trading platform, not a personal-finance app. The active architecture is now centered on validated data, feature extraction, backtesting/research, strategy cataloging, broker execution, and dashboard mirrors. Legacy compatibility files remain, but they should not define the mental model for new work.
+Sovereign is a local-first trading research platform. Its strongest production-reachable paths are validated
+market-data storage, indicators/features, backtests, research contracts, a Node CLI, a private API/dashboard,
+native C++ analytics/risk commands, and read-only MCP adapters. Live-capital promotion is blocked. The intended
+deployment profile is a private, single-writer paper-research host.
 
-## System Diagram
+## Executable ownership model
 
 ```text
-market / macro / news / sentiment sources
-        |
-        v
-ingestion adapters
-        |
-        v
-validated market frames + data quality reports
-        |
-        +--> indicators / feature frames --> CNN tensor builder --> model inference --> signals
-        |
-        +--> backtests / research / cost model / promotion gates
-        |
-        v
-strategy decisions
-        |
-        v
-pre-trade risk gates
-        |
-        v
-paper broker or live broker adapter
-        |
-        v
-trade log -> portfolio state -> monitoring, alerts, CLI, web API
+providers -> ingestion -> validation -> ts-index/cache
+                                      |
+                                      +-> features/backtests/research -> CLI/API/MCP/UI
+
+runtime environment + CLI intent + authorization + risk/feature gates
+                                      |
+                                      v
+                    shared/lib/settings/runtime_policy.js
+                                      |
+                  +-------------------+-------------------+
+                  |                                       |
+          private-paper/research                    eligible private runner
+          can_execute=false                         explicit live gates still required
+                  |
+                  v
+ backend/gateway/src/paper_ledger.js -> portfolio.v1.json
+        append-only authority              rebuildable projection
 ```
+
+The effective execution policy is owned by `shared/lib/settings/runtime_policy.js`. CLI broker gates and the
+gateway consume this contract; CLI status, API system status, and MCP `get_system_status` expose the same policy
+shape and deterministic fingerprint. `private-paper`, `cloud-compute`, and test profiles are permanently
+non-executing. Unknown profiles fail closed.
+
+The canonical internal Polymarket simulator is owned by `backend/gateway/src/paper_ledger.js`. Its chained JSONL
+event log is authoritative; `portfolio.v1.json` is an atomic, rebuildable projection carrying the ledger sequence
+and checksum. The owner enforces an ownership-token writer lock, deterministic idempotency keys, replay,
+checksum validation, and fail-closed truncated-tail handling. Legacy `fills.jsonl` and `portfolio.json` are
+migrated only when every imported fill is provably virtual and reconciles exactly; originals are copied to a
+read-only archive. Ambiguous or live-looking records are preserved and refused.
+
+The older non-live `bot cycle` still persists a separate `bot_state.json` projection. It no longer initializes a
+credentialed CLOB client in paper mode, but convergence of that state into the canonical event ledger remains an
+explicit release blocker.
 
 ## Components
 
-### C++ Core
+| Component | Active owner | Current role |
+|---|---|---|
+| Native analytics and risk | `backend/core` | Compiled C++ indicators, data inspection, backtests, kill switch, and risk contracts |
+| CLI and TUI | `backend/cli` | Primary orchestration and operator surface |
+| Execution gateway | `backend/gateway` | Dry-run/live boundary, broker adapters, Polymarket research and paper paths |
+| Runtime policy | `shared/lib/settings/runtime_policy.js` | One fail-closed execution decision and status contract |
+| Paper ledger | `backend/gateway/src/paper_ledger.js` | Internal Polymarket paper event authority and portfolio replay |
+| Private API/dashboard | `backend/api`, `Frontend/dashboard` | Thin authenticated views and command adapters |
+| MCP | `backend/mcp_server` | CLI-backed tools; operational only after a real host stdio handshake |
+| Configuration | `config` | Data, strategy, feature, risk, and deployment settings |
 
-- **Purpose:** active high-performance asset calculations, indicators, backtests, risk checks, CNN inference boundary, and execution contracts.
-- **Location:** `backend/core/src`
-- **Key folders:** `assets`, `data`, `ingestion`, `features`, `ml`, `backtest`, `research`, `risk`, `strategies`, `execution`, `portfolio`
+## Account and execution boundaries
 
-### CLI
+- Internal Polymarket paper simulation uses the repository event ledger and virtual cash. It is not a broker
+  account and never proves live readiness.
+- Alpaca paper is a broker-hosted account and is separate from the internal Polymarket ledger.
+- Live Alpaca, Polymarket, Gate.io, or MT5 execution requires an eligible private runtime plus explicit command,
+  authorization, feature, credential, kill-switch, and risk gates.
+- `private-paper` remains non-executing even if `LIVE_TRADING=true`, `--live`, authorization, a valid PIN, and
+  credentials are all present.
+- Research-only and paper UI must not imply real-money approval.
 
-- **Purpose:** orchestration layer for data refresh, signals, backtests, strategy scaffolding, portfolio state, execution, paper trading, retraining, and alerts.
-- **Location:** `backend/cli`
+## Deployment and recovery topology
 
-### Web
+The target is one qualified Ubuntu x86_64 private host with one persistent writer. The current Lenovo workstation
+is testing-only. API access must remain loopback/private-network scoped. Backups must capture the ledger,
+projections, configuration, and market data consistently; restore must prove ledger checksum and replay parity.
+No host is production-qualified until hardware, freshness, MCP stdio, backup/restore, restart, rollback, and soak
+gates pass.
 
-- **Purpose:** thin dashboard and API surface for strategies, signals, portfolio, backtests, and monitoring.
-- **Location:** `backend/api` and `Frontend/dashboard`
+## Current release blockers
 
-### Config
-
-- **Purpose:** source lists, feature windows, strategy parameters, risk limits, regime routing, app mode, and alerts.
-- **Location:** `config`
-
-### Models
-
-- **Purpose:** starter model artifacts and metadata for CNN and regime-classifier work.
-- **Location:** `models`
-
-## Data Flow
-
-Validated data is the boundary between ingestion and calculations. Calculations, CNN tensors, backtests, signals, and portfolio marks should only consume records that have passed data quality checks.
-
-## Integration Points
-
-| Provider | Type | Status | Purpose |
-|----------|------|--------|---------|
-| Binance | API | **Active** | Crypto spot and futures data |
-| Coinbase | API | **Active** | Crypto spot data |
-| Kalshi | API | **Active** | Prediction market / Event data |
-| Stooq | API | **Active** | Global equity and index history |
-| Polymarket | API | **Active** | Prediction market data |
-| Yahoo Finance | API | **Active** | Broad market history |
-| Headway MT5 | File | **Active** | Local MT5 export bridge |
-| Broker/exchange | API | *Planned* | Order routing after risk gates |
-
-## Conventions
-
-- Empty or comment-only files are legacy compatibility files that remain until the last cleanup pass.
-- New trading modules should use existing folder names instead of creating parallel structures.
-- Personal-finance logic is legacy/reference context.
-- Research-only strategy signals should be labeled clearly and must not be presented as executable order flow unless the gateway path is wired end to end.
-- Wage data is allowed only as macro labor-market or consumer-sentiment input.
-- Live execution must default off.
-
-## Technical Debt
-
-- [ ] Many modules still need fuller interfaces.
-- [ ] Build configuration does not yet compile the trading modules.
-- [ ] Existing legacy wealth files are inconsistent with the trading-platform direction.
-- [ ] Any remaining empty compatibility files in `backend/api`, `backend/cli`, or `Frontend/dashboard` need package/build definitions before they are runnable.
-- [ ] Real test samples are needed for data quality, indicators, CNN tensor creation, risk gates, and portfolio accounting.
+- Converge non-live bot state and status onto the canonical paper-ledger projection.
+- Prove a qualified separate host, one-writer operation, data freshness/DCS, recovery, and soak.
+- Complete a real host-side MCP initialize/list/read-only-status exchange.
+- Keep the combined exact-asset engine read-only and promotion-blocked until its own evidence gates pass.
+- Obtain authenticated CI and committed-release evidence before tagging `private-paper-v1`.

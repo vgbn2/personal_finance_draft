@@ -16,6 +16,8 @@ const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
 // @ts-ignore
 const { fetchWithRetry } = require('../../../shared/lib/runtime/fetch_retry');
+// @ts-ignore
+const { resolveRuntimePolicy } = require('../../../shared/lib/settings/runtime_policy');
 
 // ─── Gamma end-date helper ────────────────────────────────────────────────────
 
@@ -84,6 +86,44 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+export function determinePositionExitReason(
+  pos: Pick<BotPosition, 'side' | 'targetPrice' | 'stopPrice' | 'entryTimestamp' | 'aiProbabilityAtEntry'>,
+  fairPrice: number,
+  bet: Pick<TruthMachineBet, 'ai_probability'> | undefined,
+  maxPositionAgeHours: number,
+  nowMs = Date.now(),
+): string | null {
+  if (!Number.isFinite(fairPrice) || fairPrice <= 0) return null;
+  const aiProb = bet?.ai_probability ?? pos.aiProbabilityAtEntry;
+  const edge = pos.side === 'YES'
+    ? aiProb - fairPrice
+    : (1 - aiProb) - fairPrice;
+  const ageHours = (nowMs - new Date(pos.entryTimestamp).getTime()) / 3600000;
+
+  if (fairPrice >= 0.95) return 'resolved';
+  if (fairPrice >= pos.targetPrice) return 'target';
+  if (fairPrice <= pos.stopPrice) return 'stop_loss';
+  if (edge <= 0 && bet) return 'ai_reversal';
+  if (ageHours >= maxPositionAgeHours) return 'time_decay';
+  return null;
+}
+
+export async function resolveObservablePositionPrice(
+  pos: Pick<BotPosition, 'side' | 'tokenId'>,
+  bet: Pick<TruthMachineBet, 'market_price'> | undefined,
+  liveClient?: { getPrice(tokenId: string, side: string): Promise<any> },
+): Promise<number | null> {
+  let price: number;
+  if (liveClient) {
+    const response = await liveClient.getPrice(pos.tokenId, 'BUY');
+    price = Number(response?.price ?? response);
+  } else {
+    const yesPrice = Number(bet?.market_price);
+    price = pos.side === 'YES' ? yesPrice : 1 - yesPrice;
+  }
+  return Number.isFinite(price) && price > 0 && price <= 1 ? price : null;
+}
+
 export interface BotOrderIntent {
   instrumentId: string;
   price: number;
@@ -103,12 +143,13 @@ export interface BotExecutionOptions {
 }
 
 function liveBotAuthorizationError(args: string[]): string | null {
-  const live = process.env.LIVE_TRADING === 'true' || args.includes('--live');
-  if (!live) return null;
-  if (!args.includes('--live') || process.env.SOVEREIGN_EXECUTION_AUTHORIZED !== 'true') {
-    return 'Live Polymarket bot execution requires --live and CLI authorization';
+  const policy = resolveRuntimePolicy({ args, broker: 'polymarket' });
+  if (!policy.requested_live) return null;
+  if (policy.can_execute) return null;
+  if (policy.research_only) {
+    return `Live Polymarket bot execution blocked in ${policy.requested_profile} mode`;
   }
-  return null;
+  return 'Live Polymarket bot execution requires --live and CLI authorization';
 }
 
 export async function submitRiskApprovedFokOrder(
@@ -276,7 +317,7 @@ export async function runCycle(
   try {
     // ── Phase 1: Balance ──────────────────────────────────────────────────────
     let client: any;
-    if (hasL2) {
+    if (live && hasL2) {
       try {
         client = await createClobClient({ withCreds: true });
         const balData = await client.getBalanceAllowance({ asset_type: 'COLLATERAL' });
@@ -284,6 +325,8 @@ export async function runCycle(
       } catch (e: any) {
         errors.push(`balance fetch failed: ${e.message}`);
       }
+    } else if (!live) {
+      skipped.push('credentialed balance/client initialization skipped in paper mode');
     }
     if (live && !client) {
       return {
@@ -315,29 +358,24 @@ export async function runCycle(
     if (config.enabled || state.positions.length > 0) {
       for (const pos of state.positions) {
         try {
-          let fairPrice = 0;
-          try {
-            const priceResp = await client.getPrice(pos.tokenId, 'BUY');
-            fairPrice = Number(priceResp?.price ?? priceResp ?? 0);
-          } catch { /* use 0, most exit conditions will be skipped */ }
-
           const bet = betsBySlug.get(pos.slug);
-          const aiProb   = bet?.ai_probability ?? pos.aiProbabilityAtEntry;
-          const edge     = pos.side === 'YES'
-            ? aiProb - fairPrice
-            : (1 - aiProb) - fairPrice;
-          const ageHours = (Date.now() - new Date(pos.entryTimestamp).getTime()) / 3600000;
+          let fairPrice: number | null = null;
+          try {
+            fairPrice = await resolveObservablePositionPrice(pos, bet, live ? client : undefined);
+          } catch {
+            skipped.push(`position review skipped for ${pos.slug} - no observable exit price`);
+          }
+          if (fairPrice === null) {
+            continue;
+          }
 
-          const exitReasons: string[] = [];
-          if (fairPrice >= 0.95)                            exitReasons.push('resolved');
-          else if (fairPrice >= pos.targetPrice)            exitReasons.push('target');
-          else if (fairPrice > 0 && fairPrice <= pos.stopPrice) exitReasons.push('stop_loss');
-          else if (edge <= 0 && bet)                        exitReasons.push('ai_reversal');
-          else if (ageHours >= config.maxPositionAgeHours)  exitReasons.push('time_decay');
-
-          if (exitReasons.length === 0) continue;
-
-          const exitReason = exitReasons[0];
+          const exitReason = determinePositionExitReason(
+            pos,
+            fairPrice,
+            bet,
+            config.maxPositionAgeHours,
+          );
+          if (!exitReason) continue;
           console.log(`[BOT] ${live ? 'SELL' : 'DRY-RUN SELL'} ${pos.slug} (${pos.side}) — reason: ${exitReason}, fair: ${fairPrice}`);
 
           if (live && client) {

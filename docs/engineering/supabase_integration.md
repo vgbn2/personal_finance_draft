@@ -15,7 +15,9 @@ SOVEREIGN_SUPABASE_SECRET_KEY=
 Use a publishable key for browser and local web API flows. Do not place a Supabase secret key or legacy `service_role` key in browser-visible code.
 Use the secret key only for trusted server-side ingest jobs that need to write to your own database.
 
-If you set `SOVEREIGN_API_TOKEN`, use it only for write or admin-style routes. Public read endpoints do not need it.
+Use `SOVEREIGN_API_TOKEN` only for write or admin-style routes. When
+`SOVEREIGN_CLIENT_TOKEN` is configured, remote-client GET routes also require that scoped token or an existing
+authenticated dashboard session; `/api/client/status` and `/api/bias` require the client or admin host token.
 
 ## Schema
 

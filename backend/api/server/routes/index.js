@@ -1,6 +1,7 @@
 module.exports = {
   '/health': require('./status/health'),
   '/api/status': require('./status/status'),
+  '/api/client/status': require('./status/client_status'),
   '/api/data/summary': require('./data/data_summary'),
   '/api/analytics': require('./market/analytics'),
   '/api/auth/status': require('./account/auth'),
@@ -22,6 +23,7 @@ module.exports = {
   '/api/strategies': require('./market/strategies'),
   '/api/config': require('./account/config'),
   '/api/sigma-band':  require('./market/sigma_band'),
+  '/api/bias':        require('./market/bias'),
   '/api/scorecard':   require('./market/scorecard'),
   '/api/bot/status':  require('./bot/bot_status'),
   '/api/run/status':  require('./status/run_status'),

@@ -937,3 +937,85 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "next": "Converge one runtime policy and one canonical paper event ledger before adding more system surface."
 }
 ```
+
+## Session Memory - 2026-07-24 session 100 mass implementation closeout
+
+```json
+{
+  "committed_boundary": {
+    "head": "87d896de",
+    "meaning": "continuity-only commit; later runtime-policy and paper-ledger source remains uncommitted"
+  },
+  "completed": [
+    "Corrected aggregate failure diagnosis from test isolation to restricted-sandbox spawnSync EPERM.",
+    "Implemented one fail-closed fingerprinted runtime policy across CLI and gateway with CLI/API/MCP-backed status.",
+    "Made private-paper, cloud-compute, test, and unknown profiles non-executing under poisoned inputs.",
+    "Removed credentialed adapter/client initialization from paper gateway and non-live bot paths.",
+    "Implemented canonical Polymarket paper ledger with checksum chain, ownership lock, replay, atomic projection, idempotency, crash recovery, settlement, and strict legacy migration/archive.",
+    "Corrected architecture and durable workspace truth."
+  ],
+  "verification": {
+    "canonical_host_node": "876 total / 872 pass / 0 fail / 4 intentional skip",
+    "runtime_policy": "9/9 pass",
+    "paper_ledger": "12/12 pass",
+    "gateway_typescript": "no-emit pass",
+    "hygiene_diff": "pass",
+    "graphify": "unavailable"
+  },
+  "open": [
+    "Non-live bot cycle and bot_state.json remain a separate paper-state projection.",
+    "Current source batch is not committed HEAD.",
+    "Separate host, DCS recovery, MCP stdio, backup/restore, restart/rollback, and soak remain unproven.",
+    "DCS remains the prior read-only 0.716 snapshot."
+  ],
+  "next": "Converge bot paper state onto paper_ledger.js, add restart/idempotency/PnL/parity tests, rerun host gates, commit separately from 87d896de, then prove clean archive before host work.",
+  "safety": [
+    "Lenovo remains testing-only.",
+    "No provider poll or canonical data mutation.",
+    "No host, container, timer, bot cycle, live order, public exposure, destructive migration, or promotion."
+  ]
+}
+```
+
+## Session Memory - 2026-07-24 session 101 remote client implementation
+
+```json
+{
+  "completed": [
+    "Prevented aged unpriced non-live positions from producing zero-price exits.",
+    "Made repeated-token settlement idempotency position-lifecycle-specific.",
+    "Added distinct read-only client API authentication and cached status/bias endpoints.",
+    "Added remote CLI views and watch/reconnect state reporting.",
+    "Added Linux per-user systemd and Windows per-user scheduled-task SSH connectors.",
+    "Kept interactive CLI auto-open opt-in and disabled by default."
+  ],
+  "verification": {
+    "canonical_host_node": "894 total / 890 pass / 0 fail / 4 intentional skips",
+    "api": "10/10 pass",
+    "gateway_typescript": "no-emit pass",
+    "startup_parsers": "Bash and PowerShell pass",
+    "hygiene_diff": "pass",
+    "integrity": "92/92 cached, 87 stale, 9 cadence-plausible, 0 unexplained, 1 exception"
+  },
+  "open": [
+    "Implementation is not committed HEAD and needs clean archive/fresh-clone proof.",
+    "The ignored central env still needs a distinct client token on the approved central host.",
+    "No real Linux or Windows login connector, SSH tunnel, reconnect, or uninstall was exercised.",
+    "Central-host freshness, one-writer, MCP, backup/restore, rollback, and soak remain unproven.",
+    "Broad bot_state.json projection convergence remains a separate G3 gate."
+  ],
+  "independent_review_closed": [
+    "Immutable position identity prevents concurrent double-settlement.",
+    "Paper position review uses credential-free observed market prices.",
+    "Remote refresh intervals reject non-finite values.",
+    "Cleartext HTTP is restricted to loopback tunnels.",
+    "Host-declared degraded state is preserved.",
+    "SSH connection establishment has a 10-second timeout."
+  ],
+  "safety": [
+    "Lenovo remains testing-only.",
+    "Clients do not poll providers or write canonical market data.",
+    "No service, scheduled task, tunnel, host, container, timer, bot cycle, order, public exposure, destructive migration, or promotion ran."
+  ]
+}
+```

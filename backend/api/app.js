@@ -31,6 +31,7 @@ const HOST = process.env.SOVEREIGN_WEB_HOST || '127.0.0.1';
 
 // --- SECURITY MEASURES ---
 const API_TOKEN = process.env.SOVEREIGN_API_TOKEN || '';
+const CLIENT_TOKEN = process.env.SOVEREIGN_CLIENT_TOKEN || '';
 const ALLOWED_ORIGINS = [
   `http://${HOST}:${PORT}`, 
   `http://localhost:${PORT}`,
@@ -52,16 +53,35 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000).unref();
 
-// GET routes that require a token even though they are read-only
+const CLIENT_GET_ROUTES = new Set([
+  '/api/bias',
+  '/api/bot/status',
+  '/api/client/status',
+  '/api/data/summary',
+  '/api/scorecard',
+  '/api/signal',
+  '/api/universe',
+]);
+const STRICT_CLIENT_GET_ROUTES = new Set([
+  '/api/bias',
+  '/api/client/status',
+]);
+
+// GET routes that require a token even though they are read-only.
 const PROTECTED_GET_ROUTES = new Set([
   '/api/backend/portfolio',
   '/api/cache/list',
   '/api/config',
   '/api/database/status',
   '/api/bot/status',
+  '/api/bias',
+  '/api/client/status',
   '/api/kill-switch',
   '/api/scorecard',
 ]);
+if (CLIENT_TOKEN) {
+  for (const route of CLIENT_GET_ROUTES) PROTECTED_GET_ROUTES.add(route);
+}
 
 function isAllowedOrigin(origin, req) {
   if (!origin || ALLOWED_ORIGINS.includes(origin)) return true;
@@ -96,6 +116,26 @@ async function hasAuthenticatedApiCaller(req) {
   if (!req.headers.authorization) return false;
   const auth = await getAuthStatus(req);
   return auth.authenticated === true;
+}
+
+function requestTokens(req) {
+  const tokens = [];
+  const sovereignToken = req.headers['x-sovereign-token'];
+  if (typeof sovereignToken === 'string' && sovereignToken) {
+    tokens.push(sovereignToken);
+  }
+  const authorization = req.headers.authorization;
+  if (typeof authorization === 'string') {
+    const match = authorization.match(/^Bearer\s+(.+)$/i);
+    if (match && match[1]) tokens.push(match[1]);
+  }
+  return tokens;
+}
+
+function hasAuthenticatedClientCaller(req) {
+  const allowed = [CLIENT_TOKEN, API_TOKEN].filter(Boolean);
+  if (allowed.length === 0) return false;
+  return requestTokens(req).some((token) => allowed.includes(token));
 }
 
 async function checkSecurity(req, res) {
@@ -147,11 +187,30 @@ async function checkSecurity(req, res) {
   const requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const privilegedQueryFields = ['input', 'quality_report', 'model_report', 'backtest_report', 'equity'];
   const hasPrivilegedOverride = privilegedQueryFields.some((field) => requestUrl.searchParams.has(field));
+  const isStrictClientGet = req.method === 'GET'
+    && STRICT_CLIENT_GET_ROUTES.has(pathname);
+  const isWhitelistedClientGet = req.method === 'GET'
+    && CLIENT_GET_ROUTES.has(pathname)
+    && !hasPrivilegedOverride;
+  const requiresStrictClientAuthentication = isStrictClientGet;
+  const requiresClientRouteAuthentication = isWhitelistedClientGet
+    && Boolean(CLIENT_TOKEN);
   const requiresAuthentication = req.method !== 'GET'
     || PROTECTED_GET_ROUTES.has(pathname)
-    || hasPrivilegedOverride;
+    || hasPrivilegedOverride
+    || requiresStrictClientAuthentication
+    || requiresClientRouteAuthentication;
   if (requiresAuthentication) {
-    if (!(await hasAuthenticatedApiCaller(req))) {
+    let authenticated;
+    if (requiresStrictClientAuthentication) {
+      authenticated = hasAuthenticatedClientCaller(req);
+    } else if (requiresClientRouteAuthentication) {
+      authenticated = hasAuthenticatedClientCaller(req)
+        || await hasAuthenticatedApiCaller(req);
+    } else {
+      authenticated = await hasAuthenticatedApiCaller(req);
+    }
+    if (!authenticated) {
       console.warn(`[SECURITY] Missing or invalid API token from ${ip}`);
       res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: false, error: 'authentication_required' }));
@@ -324,4 +383,12 @@ if (require.main === module) {
   });
 }
 
-module.exports = { server, io, DEFAULT_SNAPSHOT, PROTECTED_GET_ROUTES };
+module.exports = {
+  server,
+  io,
+  CLIENT_GET_ROUTES,
+  DEFAULT_SNAPSHOT,
+  PROTECTED_GET_ROUTES,
+  STRICT_CLIENT_GET_ROUTES,
+  hasAuthenticatedClientCaller,
+};

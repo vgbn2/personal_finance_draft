@@ -1,5 +1,62 @@
 # Next Session Goal
 
+## 2026-07-24 session 101 critical override - seal remote client and qualify the real host
+
+Repository implementation is complete in the current dirty source tree after continuity commit `87d896de`.
+Do not rebuild the scoped client API, remote CLI, startup connectors, unpriced-exit guard, or repeated-token
+settlement identity.
+
+Current source proof:
+
+1. Host-capable Node aggregate: 894 total / 890 pass / 0 fail / 4 intentional skips.
+2. API aggregate: 10/10; gateway TypeScript, shell syntax, PowerShell parser, hygiene, and diff checks pass.
+3. Read-only integrity: 92/92 cached, 87 required-window stale, 9 cadence-plausible, 0 unexplained, 1 exception.
+4. No service/task/tunnel was installed and no provider poll or canonical-data write ran on the Lenovo.
+
+Execute next:
+
+1. Review is complete and its six findings are closed. Commit the combined session-100/101 source batch
+   separately from `87d896de`; prove clean archive and fresh-clone gates.
+2. On the separately approved central host only, regenerate or update `.env.central` with a distinct
+   `SOVEREIGN_CLIENT_TOKEN`, keep the API loopback/private, and recover DCS to at least 0.95 with zero
+   policy-stale required windows.
+3. Validate the authenticated SSH tunnel and cached `/api/client/status` from one Linux and one Windows client.
+   Install the per-user connector only on those clients; verify login, bounded reconnect, logs/status, and
+   uninstall. Interactive CLI auto-open stays off unless explicitly opted in.
+4. Prove central one-writer ownership, MCP stdio, backup/restore, restart/rollback, and soak before release claims.
+5. Return to full bot-ledger projection convergence if G3/private-paper-v1 certification is still the target;
+   the two reproduced lifecycle defects are fixed, but broad `bot_state.json` convergence remains a separate gate.
+
+Keep the Lenovo testing-only. Client machines must never poll providers or write canonical market data. Do not
+start a host, container, timer, bot cycle, live order, public bind, destructive migration, or promotion without
+the relevant explicit operator gate.
+
+## 2026-07-24 session 100 critical override - finish G3 bot-ledger convergence
+
+Continue `workspace/plans/SESSION_100_DEEP_PRIVATE_PAPER_RECOVERY_PLAN.md` from the current working-tree source
+batch after continuity commit `87d896de`.
+
+Completed and verified:
+
+1. The apparent aggregate isolation defect was sandbox `spawnSync EPERM`; host aggregate is green.
+2. One fail-closed runtime policy now protects CLI/gateway and appears in CLI/API/MCP-backed status.
+3. The canonical Polymarket simulator now has a replayable checksummed ledger, atomic projection, writer lock,
+   idempotency, crash recovery, settlement, and strict legacy migration/archive.
+4. Final host JUnit: 876 total / 872 pass / 0 fail / 4 intentional skips; focused policy 9/9 and ledger 12/12.
+
+Execute next:
+
+1. Adapt non-live `bot cycle`, bot status, and `bot_state.json` so paper positions/fills/closes are projections
+   of `paper_ledger.js`; keep live audit state separate and fail closed on ambiguous migration.
+2. Add bot restart, duplicate-cycle, close/P&L, projection parity, and no-credential/no-submit tests; rerun the
+   canonical host suite and hygiene.
+3. Review and commit the source batch separately from `87d896de`; prove committed archive/clean-source gates.
+4. Then qualify the separate Ubuntu host, recover DCS to at least 0.95, and prove one writer, MCP stdio,
+   backup/restore, restart/rollback, and soak.
+
+Do not poll providers or mutate canonical data on the Lenovo test machine. Do not start a host, container, timer,
+bot cycle, live order, public bind, destructive migration, or promotion without the plan's explicit gate.
+
 ## 2026-07-24 session 100 critical override - recover test trust, then Private Paper v1
 
 The current execution plan is

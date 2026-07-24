@@ -2026,3 +2026,78 @@ assumption, and updated the next-session goal and state. The plan requires aggre
 policy or ledger edits, then one fail-closed policy, one replayable paper ledger, architecture truth, separate-host
 freshness/MCP/recovery, read-only combined research, and release certification. No implementation, provider poll,
 data mutation, host/container/timer, bot, order, or promotion occurred.
+
+## User Prompt - 2026-07-24 session 100
+
+`$mass-implement`
+
+## Work - 2026-07-24 session 100
+
+Used the mass-implement workflow to execute the recovery plan through a partially complete Batch 3. Sealed the
+continuity boundary in `87d896de`; proved the aggregate failures were sandbox child-process EPERM rather than test
+isolation; implemented and surfaced one fail-closed runtime policy; removed credentialed adapter/client
+initialization from paper paths; and implemented a checksummed, locked, replayable Polymarket paper ledger with
+atomic projections, strict migration/archive, settlement, idempotency, and crash recovery.
+
+Verification: final host JUnit 876 total / 872 pass / 0 fail / 4 skip; focused runtime 9/9; ledger 12/12;
+TypeScript, hygiene, and diff checks pass. Non-live bot-state convergence remains the next G3 item. No provider
+poll, canonical data mutation, host/container/timer, bot cycle, live order, public exposure, or promotion occurred.
+
+## User Prompt - 2026-07-24 session 100
+
+`endsession here`
+
+## Work - 2026-07-24 session 100
+
+Used `session-orchestrator` to close without starting the remaining G3 work. Confirmed `HEAD 87d896de`, preserved
+the verified runtime-policy/paper-ledger source batch as an uncommitted working tree, and retained the exact
+next-session queue in `workspace/NEXT_SESSION_GOAL.md`. `graphify-out` is unavailable on this host, so no graph
+refresh was possible. No tests were rerun after the already-recorded final 876/0-failure JUnit gate, and no
+provider, data, host, container, timer, bot, order, public-exposure, or promotion action occurred during closeout.
+
+## User Prompt - 2026-07-24 session 101
+
+`$session-orchestrator`
+
+## Work - 2026-07-24 session 101
+
+Loaded the bootstrap, current dated handoff, next-session goal, session memory, project state, and documentation hub. Preserved the dirty runtime-policy/paper-ledger source batch from session 100; current queue remains bot-ledger convergence, focused contracts, source-batch review/commit, then clean committed-archive proof. `graphify` is unavailable on this host. No implementation, provider poll, canonical data mutation, host/container/timer, bot cycle, order, public exposure, or promotion occurred during boot.
+
+## User Prompt - 2026-07-24 session 101
+
+`blast through ,and identify problems in the workspace`
+
+## Work - 2026-07-24 session 101
+
+Ran blast-through triage in Fast Reading Mode against `HEAD 87d896de` plus the dirty runtime-policy/paper-ledger
+batch. Confirmed an unpriced aged-position removal path in non-live bot cycles and reproduced a repeated-token
+settlement idempotency collision that leaves the reopened position active. Read-only integrity remains 92/92
+cached with 87 required-window stale and DCS 0.716. Focused paper-ledger passed 12/12, bot-risk passed 5/5,
+host-capable live guard passed 4/4, and hygiene/diff checks passed. Updated DEV_REVIEW, REVIEW_LEDGER, and STATE. No implementation,
+provider poll, data mutation, host/container/timer, bot cycle, order, public exposure, or promotion occurred.
+
+## User Prompt - 2026-07-24 session 101
+
+`suggestion, can this be opened as a startup app, but is minimalized via bash script(for windows and linux ver), and it automatically activate data polling/sycning with the main host?, plan this along side the blast through via mass implement`
+
+Follow-up decision: the central host remains the sole poller and writer. Client login starts only a silent
+SSH connector by default; interactive CLI auto-open is optional and disabled by default.
+
+## User Prompt - 2026-07-24 session 101
+
+`Implement the plan.`
+
+Implementation started as disjoint batches: confirmed private-paper defect repair, read-only client API and
+remote CLI, then Windows/Linux per-user connector tooling. Existing dirty runtime-policy and paper-ledger work
+from session 100 is preserved in place. No host service, provider poll, canonical data mutation, bot cycle,
+order, public exposure, or promotion is authorized by this implementation pass.
+
+Implementation completed. Added the scoped cached client API, remote CLI, Linux user-systemd and Windows
+scheduled-task connectors, distinct client-token preparation/preflight, and operator documentation. CLI auto-open
+is opt-in and off by default; only the central host may poll providers or write canonical data. Fixed the
+unpriced-aged-exit and repeated-token-settlement defects with regression coverage. Final host-capable Node is
+An independent review found six issues; all were closed, including concurrent settlement idempotency, paper quote
+evaluation, finite refresh timing, loopback-only cleartext HTTP, degraded-state reporting, and SSH connect timeout.
+The post-review host-capable aggregate is 894 total / 890 pass / 0 fail / 4 intentional skips; API 10/10 and
+TypeScript/parser/hygiene/diff gates pass. Read-only integrity remains 92/92 cached with 87 stale. No
+service/task/tunnel or live runtime action was started.
