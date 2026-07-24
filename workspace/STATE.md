@@ -1,7 +1,7 @@
 # Project State - Sovereign Trading Platform
 
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
-last_audited_commit: 87d896de
+last_audited_commit: e0de66de
 last_audit_date: 2026-07-24
 
 ## Mass-Implement Verification - 2026-07-23 session 95
@@ -1545,5 +1545,5 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   TypeScript, Bash syntax, PowerShell parser, hygiene, and diff checks pass.
 - Read-only integrity remains 92/92 cached, 87 required-window stale, 9 cadence-plausible, 0 unexplained, and
   1 declared exception. No service/task/tunnel was installed and no provider or data mutation ran.
-- This is dirty-working-tree source proof after `87d896de`, not committed-HEAD, real-host, real-login, freshness,
-  MCP, recovery, or soak proof.
+- The implementation is committed at `e0de66de`. Real-host, real-login, freshness, MCP, recovery, clean-clone,
+  and soak proof remain separate gates.

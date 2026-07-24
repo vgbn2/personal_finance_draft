@@ -981,6 +981,7 @@ truth findings in `workspace/DEV_REVIEW.md`.
 
 ```json
 {
+  "commit": "e0de66de",
   "completed": [
     "Prevented aged unpriced non-live positions from producing zero-price exits.",
     "Made repeated-token settlement idempotency position-lifecycle-specific.",
@@ -998,7 +999,7 @@ truth findings in `workspace/DEV_REVIEW.md`.
     "integrity": "92/92 cached, 87 stale, 9 cadence-plausible, 0 unexplained, 1 exception"
   },
   "open": [
-    "Implementation is not committed HEAD and needs clean archive/fresh-clone proof.",
+    "Source is committed; clean archive/fresh-clone proof remains pending.",
     "The ignored central env still needs a distinct client token on the approved central host.",
     "No real Linux or Windows login connector, SSH tunnel, reconnect, or uninstall was exercised.",
     "Central-host freshness, one-writer, MCP, backup/restore, rollback, and soak remain unproven.",

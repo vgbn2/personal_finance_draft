@@ -2,7 +2,7 @@
 
 ## 2026-07-24 session 101 critical override - seal remote client and qualify the real host
 
-Repository implementation is complete in the current dirty source tree after continuity commit `87d896de`.
+Repository implementation is committed at `e0de66de` after the earlier continuity commit `87d896de`.
 Do not rebuild the scoped client API, remote CLI, startup connectors, unpriced-exit guard, or repeated-token
 settlement identity.
 
@@ -15,8 +15,8 @@ Current source proof:
 
 Execute next:
 
-1. Review is complete and its six findings are closed. Commit the combined session-100/101 source batch
-   separately from `87d896de`; prove clean archive and fresh-clone gates.
+1. Review is complete, its six findings are closed, and the source is committed. Prove clean archive and
+   fresh-clone gates from `e0de66de`.
 2. On the separately approved central host only, regenerate or update `.env.central` with a distinct
    `SOVEREIGN_CLIENT_TOKEN`, keep the API loopback/private, and recover DCS to at least 0.95 with zero
    policy-stale required windows.

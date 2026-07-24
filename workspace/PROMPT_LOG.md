@@ -2101,3 +2101,12 @@ evaluation, finite refresh timing, loopback-only cleartext HTTP, degraded-state 
 The post-review host-capable aggregate is 894 total / 890 pass / 0 fail / 4 intentional skips; API 10/10 and
 TypeScript/parser/hygiene/diff gates pass. Read-only integrity remains 92/92 cached with 87 stale. No
 service/task/tunnel or live runtime action was started.
+
+## User Prompt - 2026-07-24 session 101
+
+`commit, also comment, is this finally now available for use`
+
+Committed the verified combined session-100/101 implementation as `e0de66de`
+(`feat: add private remote client and harden paper runtime`). Repository source is now available for local
+read-only use and installation testing. Central-host synchronization is not operational until an approved host is
+configured with the distinct client token, fresh data, private API reachability, and a real client connector.
