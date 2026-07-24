@@ -19,6 +19,7 @@ const { compareModels } = require('../../../../shared/lib/ml/models');
 const { parseScorecardOptions } = require('../../../cli/commands/research/scorecard');
 const { buildRecordedAppleShadow, RECORDED_AAPL_FIXTURE_ID } = require('../../../../shared/lib/analysis/services/equity_3m_shadow');
 const { buildAllRecordedShadowCatalog, ALL_RECORDED_FIXTURE_ID, filterShadowCatalog } = require('../../../../shared/lib/analysis/services/shadow_catalog');
+const { resolveRuntimePolicy } = require('../../../../shared/lib/settings/runtime_policy');
 
 // The API fallback should read the canonical live cache snapshot, not the backtest report cache.
 const DEFAULT_HISTORY = DEFAULT_SNAPSHOT;
@@ -1145,6 +1146,7 @@ function systemStatus() {
       type: 'system_status',
       schema_version: 1,
       degraded: !components.quotes.ok || !components.cache.ok,
+      runtime_policy: cli.runtime_policy || resolveRuntimePolicy(),
       components,
     };
   });

@@ -36,7 +36,8 @@ cd personal_finance
 cp .env.central.example .env.central
 chmod 600 .env.central
 nano .env.central
-# Required: a random SOVEREIGN_API_TOKEN plus only the provider keys used for polling.
+# Required: distinct random SOVEREIGN_API_TOKEN and SOVEREIGN_CLIENT_TOKEN values,
+# plus only the provider keys used for polling.
 # Forbidden here: SOVEREIGN_TRADE_PIN and Polymarket private/L2 execution credentials.
 
 # 3. Preflight, fast-forward, build, and start only web + backfill.

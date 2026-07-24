@@ -1,8 +1,16 @@
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const { GAMMA_BASE, inferWinner } = require('../../../shared/lib/market/polymarket_history');
+const { resolveRuntimePolicy } = require('../../../shared/lib/settings/runtime_policy');
 const { classifyPolymarketGatewayError } = require('./polymarket_errors.js');
+const {
+  appendLedgerEvents,
+  initializeLedger,
+  ledgerPaths,
+  loadLedgerProjection,
+} = require('./paper_ledger.js');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const DEFAULT_STORAGE_DIR = path.join(REPO_ROOT, 'storage', 'data', 'paper_trading');
@@ -18,21 +26,18 @@ function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-function ensureStorageFiles(dir) {
-  ensureDir(dir);
-  for (const file of ['fills.jsonl', 'pnl_log.jsonl']) {
-    const target = path.join(dir, file);
-    if (!fs.existsSync(target)) fs.writeFileSync(target, '');
-  }
-}
-
 function toNumber(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function loadPortfolio(storageDir = DEFAULT_STORAGE_DIR, virtualBalance = 100) {
-  ensureStorageFiles(storageDir);
+  ensureDir(storageDir);
+  if (fs.existsSync(ledgerPaths(storageDir).ledger)) {
+    const loaded = loadLedgerProjection(storageDir, virtualBalance);
+    if (!loaded.ok) throw new Error(loaded.error);
+    return loaded.projection;
+  }
   const file = path.join(storageDir, 'portfolio.json');
   if (!fs.existsSync(file)) {
     return {
@@ -57,14 +62,121 @@ function loadPortfolio(storageDir = DEFAULT_STORAGE_DIR, virtualBalance = 100) {
   }
 }
 
-function savePortfolio(portfolio, storageDir = DEFAULT_STORAGE_DIR) {
-  ensureStorageFiles(storageDir);
-  fs.writeFileSync(path.join(storageDir, 'portfolio.json'), JSON.stringify(portfolio, null, 2));
-}
+function migrateLegacyPaperState(storageDir = DEFAULT_STORAGE_DIR, options = {}) {
+  ensureDir(storageDir);
+  if (fs.existsSync(ledgerPaths(storageDir).ledger)) {
+    const loaded = loadLedgerProjection(storageDir, options.virtualBalance || 100);
+    return loaded.ok ? { ok: true, migrated: false, projection: loaded.projection } : loaded;
+  }
+  const portfolioPath = path.join(storageDir, 'portfolio.json');
+  const fillsPath = path.join(storageDir, 'fills.jsonl');
+  const hasLegacyPortfolio = fs.existsSync(portfolioPath);
+  const fillText = fs.existsSync(fillsPath) ? fs.readFileSync(fillsPath, 'utf8') : '';
+  if (!hasLegacyPortfolio && !fillText.trim()) {
+    const initialized = initializeLedger(storageDir, options.virtualBalance || 100, { now: options.now });
+    return { ...initialized, migrated: false };
+  }
+  if (fillText && !fillText.endsWith('\n')) {
+    return { ok: false, error: 'legacy paper fills have a truncated final record; migration refused' };
+  }
 
-function appendJsonl(file, row, storageDir = DEFAULT_STORAGE_DIR) {
-  ensureStorageFiles(storageDir);
-  fs.appendFileSync(path.join(storageDir, file), `${JSON.stringify(row)}\n`);
+  let legacyPortfolio;
+  let fills;
+  try {
+    legacyPortfolio = JSON.parse(fs.readFileSync(portfolioPath, 'utf8'));
+    fills = fillText.split('\n').filter(Boolean).map(JSON.parse);
+  } catch {
+    return { ok: false, error: 'legacy paper state is malformed; migration refused' };
+  }
+  const positions = Array.isArray(legacyPortfolio.positions) ? legacyPortfolio.positions : [];
+  const positionsByToken = new Map(positions.map((position) => [String(position.token_id), position]));
+  const accepted = [];
+  const rejected = [];
+  for (const fill of fills) {
+    const position = positionsByToken.get(String(fill.token_id));
+    if (fill.virtual !== true || fill.side !== 'buy' || !position) {
+      rejected.push({ token_id: fill.token_id || null, reason: 'not provably virtual open position' });
+      continue;
+    }
+    accepted.push({ fill, position });
+  }
+  const expectedCash = Number((
+    Number(legacyPortfolio.starting_balance || 100)
+      - accepted.reduce((sum, row) => sum + Number(row.fill.shares) * Number(row.fill.price), 0)
+  ).toFixed(6));
+  if (
+    rejected.length > 0
+    || accepted.length !== positions.length
+    || Math.abs(expectedCash - Number(legacyPortfolio.virtual_balance)) > 1e-5
+  ) {
+    return {
+      ok: false,
+      error: 'legacy paper state is ambiguous; migration refused',
+      migration_report: {
+        accepted: accepted.length,
+        rejected: rejected.length,
+        duplicates: 0,
+        ambiguous: Math.max(rejected.length, Math.abs(accepted.length - positions.length)),
+      },
+    };
+  }
+
+  const archiveDir = path.join(storageDir, 'legacy_read_only');
+  fs.mkdirSync(archiveDir, { recursive: true });
+  for (const name of ['portfolio.json', 'fills.jsonl', 'pnl_log.jsonl', 'resolved_positions.jsonl']) {
+    const source = path.join(storageDir, name);
+    const target = path.join(archiveDir, name);
+    if (fs.existsSync(source) && !fs.existsSync(target)) {
+      fs.copyFileSync(source, target);
+      fs.chmodSync(target, 0o400);
+    }
+  }
+
+  const startingBalance = Number(legacyPortfolio.starting_balance || 100);
+  const initializationTime = legacyPortfolio.opened_at || options.now || new Date().toISOString();
+  const inputs = [{
+    event_type: 'ledger_initialized',
+    idempotency_key: `ledger_initialized:${startingBalance}`,
+    event_time: initializationTime,
+    cash_after: startingBalance,
+    source: 'legacy_internal_polymarket_paper_migration',
+  }, ...accepted.map(({ fill, position }) => {
+    const raw = JSON.stringify(fill);
+    const eventTime = fill.t || position.opened_at || initializationTime;
+    return {
+      event_type: 'paper_fill',
+      idempotency_key: `legacy_fill:${crypto.createHash('sha256').update(raw).digest('hex')}`,
+      cycle_id: `legacy:${eventTime}`,
+      event_time: eventTime,
+      decision_time: eventTime,
+      data_as_of: eventTime,
+      market_id: position.market_id,
+      token_id: position.token_id,
+      outcome: position.outcome,
+      strategy: position.strategy || fill.reason,
+      order_intent: { side: 'buy', migrated: true },
+      risk_decision: { approved: true, mode: 'paper', migrated: true },
+      paper_fill: fill,
+      position,
+      position_effect: 'open',
+      cash_delta: -Number((Number(fill.shares) * Number(fill.price)).toFixed(6)),
+    };
+  })];
+  const committed = appendLedgerEvents(storageDir, inputs, {
+    now: options.now,
+    startingBalance,
+  });
+  return {
+    ...committed,
+    migrated: committed.ok,
+    migration_report: {
+      accepted: accepted.length,
+      rejected: 0,
+      duplicates: committed.duplicates ? committed.duplicates.length : 0,
+      ambiguous: 0,
+      archive_dir: archiveDir,
+    },
+  };
 }
 
 function bestPrice(entries, compare) {
@@ -126,11 +238,19 @@ async function runPolymarketPaperRun(options = {}) {
   }
 
   const now = options.now || new Date().toISOString();
-  const portfolio = loadPortfolio(storageDir, virtualBalance);
-  if (!portfolio.opened_at) portfolio.opened_at = now;
-  portfolio.updated_at = now;
+  const cycleId = options.cycleId || `paper-run:${strategy}:${now}`;
+  const policy = resolveRuntimePolicy({
+    env: options.env || process.env,
+    args: [],
+    requestedLive: false,
+    broker: 'polymarket',
+    now,
+  });
+  const initialized = migrateLegacyPaperState(storageDir, { virtualBalance, now });
+  if (!initialized.ok) return initialized;
+  const portfolio = initialized.projection;
 
-  const fills = [];
+  const proposedEvents = [];
   const skipped = [];
   const existing = new Set(portfolio.positions.map((position) => String(position.token_id)));
 
@@ -197,6 +317,11 @@ async function runPolymarketPaperRun(options = {}) {
     }
     const shares = spend / price.midprice;
     const position = {
+      position_id: crypto
+        .createHash('sha256')
+        .update(`${cycleId}:${tokenId}:${now}`)
+        .digest('hex')
+        .slice(0, 32),
       token_id: tokenId,
       market_id: market.id || market.condition_id || null,
       question: market.question || null,
@@ -221,11 +346,41 @@ async function runPolymarketPaperRun(options = {}) {
       market: position.question,
       virtual: true,
     };
-    fills.push(fill);
-    appendJsonl('fills.jsonl', fill, storageDir);
+    proposedEvents.push({
+      event_type: 'paper_fill',
+      idempotency_key: `${cycleId}:buy:${tokenId}`,
+      cycle_id: cycleId,
+      event_time: now,
+      decision_time: now,
+      data_as_of: market.data_as_of || market.updated_at || now,
+      market_id: position.market_id,
+      condition_id: market.condition_id || position.market_id,
+      token_id: tokenId,
+      outcome: position.outcome,
+      strategy,
+      order_intent: {
+        side: 'buy',
+        max_position_usd: maxPositionUsd,
+        max_entry_price: maxEntryPrice,
+        max_spread: maxSpread,
+      },
+      policy_fingerprint: policy.policy_fingerprint,
+      risk_decision: { approved: true, mode: 'paper', max_position_usd: maxPositionUsd },
+      paper_fill: fill,
+      position,
+      position_effect: 'open',
+      cash_delta: -spend,
+      fees: 0,
+      slippage: 0,
+    });
   }
 
-  savePortfolio(portfolio, storageDir);
+  const committed = appendLedgerEvents(storageDir, proposedEvents, { now, startingBalance: virtualBalance });
+  if (!committed.ok) return committed;
+  const fills = committed.accepted.map((event) => event.paper_fill);
+  for (const key of committed.duplicates) {
+    skipped.push({ reason: 'duplicate paper intent', idempotency_key: key });
+  }
   return {
     ok: true,
     dry_run: true,
@@ -234,7 +389,10 @@ async function runPolymarketPaperRun(options = {}) {
     markets_scanned: markets.length,
     fills,
     skipped,
-    summary: summarizePortfolio(portfolio),
+    ledger_sequence: committed.projection.ledger_sequence,
+    ledger_checksum: committed.projection.ledger_checksum,
+    policy_fingerprint: policy.policy_fingerprint,
+    summary: summarizePortfolio(committed.projection),
   };
 }
 
@@ -245,6 +403,8 @@ async function runPolymarketPaperRun(options = {}) {
  * and virtual balance credited.
  */
 async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAGE_DIR) {
+  const migration = migrateLegacyPaperState(storageDir);
+  if (!migration.ok) return migration;
   const portfolio = loadPortfolio(storageDir);
   if (portfolio.positions.length === 0) return { ok: true, closed: [] };
 
@@ -282,17 +442,44 @@ async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAGE_DIR) 
     };
 
     // Credit back: original cost was shares * avg_price, we receive shares * resolutionPrice
-    portfolio.virtual_balance = Number(
-      (toNumber(portfolio.virtual_balance) + pos.shares * resolutionPrice).toFixed(6)
-    );
+    const cashCredit = Number((pos.shares * resolutionPrice).toFixed(6));
+    portfolio.virtual_balance = Number((toNumber(portfolio.virtual_balance) + cashCredit).toFixed(6));
     portfolio.positions.splice(i, 1);
-    appendJsonl('resolved_positions.jsonl', record, storageDir);
+    const settled = appendLedgerEvents(storageDir, [{
+      event_type: 'position_settled',
+      idempotency_key: `settlement:${pos.position_id || crypto
+        .createHash('sha256')
+        .update([
+          pos.market_id || '',
+          pos.token_id || '',
+          pos.opened_at || '',
+          pos.shares || '',
+          pos.avg_price || '',
+        ].join(':'))
+        .digest('hex')
+        .slice(0, 32)}`,
+      cycle_id: `resolution:${now}`,
+      event_time: now,
+      decision_time: now,
+      data_as_of: now,
+      market_id: pos.market_id,
+      token_id: pos.token_id,
+      outcome: pos.outcome,
+      strategy: pos.strategy,
+      policy_fingerprint: resolveRuntimePolicy({
+        requestedProfile: 'private-paper',
+        requestedLive: false,
+        now,
+      }).policy_fingerprint,
+      risk_decision: { approved: true, mode: 'paper-resolution' },
+      position_effect: 'close',
+      settlement: record,
+      cash_delta: cashCredit,
+      realized_pnl: record.pnl,
+    }], { now, startingBalance: portfolio.starting_balance });
+    if (!settled.ok) return settled;
+    if (settled.accepted.length === 0) continue;
     closed.push(record);
-  }
-
-  if (closed.length > 0) {
-    portfolio.updated_at = now;
-    savePortfolio(portfolio, storageDir);
   }
 
   return { ok: true, closed };
@@ -303,8 +490,8 @@ module.exports = {
   checkAndCloseResolvedPositions,
   deriveMidprice,
   loadPortfolio,
+  migrateLegacyPaperState,
   runPolymarketPaperRun,
-  savePortfolio,
   summarizePortfolio,
   yesTokenForMarket,
 };

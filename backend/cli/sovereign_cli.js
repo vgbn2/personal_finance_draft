@@ -7,6 +7,7 @@ const { pageText, helpText, printPayload, logger } = utils;
 
 const { commandStatus, commandCockpit } = require('./commands/operational/status.js');
 const { commandPortfolioMonitor } = require('./commands/operational/portfolio_monitor.js');
+const { commandRemote } = require('./commands/operational/remote.js');
 const { commandSetup, commandDoctor } = require('./commands/operational/setup.js');
 const { commandBackend } = require('./commands/tools/backend.js');
 const { commandQuotes } = require('./commands/quotes/quotes.js');
@@ -40,6 +41,7 @@ async function handleCommand(args) {
   const handlers = {
     // --- Operational (manifest: op) ---
     status:           (a) => commandStatus(a),
+    remote:           (a) => commandRemote(a),
     setup:            (a) => commandSetup(a),
     doctor:           (a) => commandDoctor(a),
     cockpit:          (a) => commandCockpit(a),
