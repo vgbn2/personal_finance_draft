@@ -37,6 +37,7 @@ function encodeEnvValue(value) {
 function renderCentralEnvironment(template, source, options = {}) {
   const replacements = {
     SOVEREIGN_API_TOKEN: options.apiToken || crypto.randomBytes(32).toString('hex'),
+    SOVEREIGN_CLIENT_TOKEN: options.clientToken || crypto.randomBytes(32).toString('hex'),
     SOVEREIGN_WEB_BIND: options.bind || '127.0.0.1',
   };
   const copiedKeys = [];
@@ -83,6 +84,7 @@ function prepareCentralEnvironment(options = {}) {
     output_path: outputPath,
     mode: '600',
     generated_api_token: true,
+    generated_client_token: true,
     copied_keys: copiedKeys.sort(),
     execution_credentials_copied: false,
   };

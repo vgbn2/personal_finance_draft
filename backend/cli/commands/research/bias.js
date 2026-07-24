@@ -380,31 +380,22 @@ function renderTable(symbol, result) {
   console.log(DIM + '─'.repeat(100) + RESET + '\n');
 }
 
-async function commandBias(args) {
-  const symbol = (args[0] || optionValue(args, '--symbol', 'BTCUSDT')).toUpperCase();
-  const isJson = hasFlag(args, '--json');
-  const skipBackfill = hasFlag(args, '--no-backfill');
-
-  // Auto-backfill before computing signal (per feedback: always refresh before market questions)
-  if (!skipBackfill) {
-    try {
-      const { execFileSync } = require('child_process');
-      const cliPath = require('path').resolve(__dirname, '../../sovereign_cli.js');
-      if (!isJson) process.stdout.write('\x1b[90m⌛ refreshing crypto data...\x1b[0m\n');
-      execFileSync(process.execPath, [cliPath, 'backfill-daemon', '--once', '--families', 'crypto'], {
-        stdio: isJson ? 'ignore' : 'inherit',
-        timeout: 90000,
-      });
-    } catch (_) { /* non-fatal — continue with cached data */ }
-  }
-
-  const now = Date.now();
-  const timeframes = TF_CONFIG.map(cfg => analyzeTimeframe(cfg, symbol, { now }));
+async function computeCachedBias(symbol = 'BTCUSDT', options = {}) {
+  const normalizedSymbol = String(symbol || 'BTCUSDT').toUpperCase();
+  const now = options.now ?? Date.now();
+  const analyze = options.analyzeTimeframe || analyzeTimeframe;
+  const timeframeConfig = options.timeframeConfig || TF_CONFIG;
+  const timeframes = timeframeConfig.map(cfg => analyze(cfg, normalizedSymbol, {
+    now,
+    ...(options.tsDir ? { tsDir: options.tsDir } : {}),
+    ...(options.family ? { family: options.family } : {}),
+  }));
   const aggregate = aggregateBias(timeframes);
 
   // ML signal from logistic_v1 using the 1d bar's TA features (cross-family features imputed by model)
   let mlSignal = null;
   try {
+    if (options.includeMl === false) throw new Error('ML disabled');
     const { predict } = require('../../../../shared/lib/ml/onnx_runner.js');
     const daily = timeframes.find(t => t.tf === '1d' && !t.error);
     if (daily) {
@@ -419,7 +410,47 @@ async function commandBias(args) {
     }
   } catch (_) { /* non-fatal — onnxruntime-node may not be available in all envs */ }
 
-  const result = { symbol, generated_at: new Date().toISOString(), aggregate, timeframes, ml: mlSignal };
+  const valid = timeframes.filter((timeframe) => !timeframe.error);
+  const latestBarMs = valid.reduce((latest, timeframe) => {
+    const value = Date.parse(timeframe.last_bar_at || '');
+    return Number.isFinite(value) ? Math.max(latest, value) : latest;
+  }, 0);
+  return {
+    symbol: normalizedSymbol,
+    generated_at: new Date(now).toISOString(),
+    data_as_of: latestBarMs > 0 ? new Date(latestBarMs).toISOString() : null,
+    stale: valid.length !== timeframes.length,
+    provenance: {
+      source: 'central_host_cached_ts_index',
+      cached_only: true,
+      provider_poll_triggered: false,
+    },
+    aggregate,
+    timeframes,
+    ml: mlSignal,
+  };
+}
+
+async function commandBias(args) {
+  const symbol = (args[0] || optionValue(args, '--symbol', 'BTCUSDT')).toUpperCase();
+  const isJson = hasFlag(args, '--json');
+  const skipBackfill = hasFlag(args, '--no-backfill');
+
+  // Interactive local use keeps its historical refresh behavior. Read-only
+  // clients and API routes call computeCachedBias directly.
+  if (!skipBackfill) {
+    try {
+      const { execFileSync } = require('child_process');
+      const cliPath = require('path').resolve(__dirname, '../../sovereign_cli.js');
+      if (!isJson) process.stdout.write('\x1b[90m⌛ refreshing crypto data...\x1b[0m\n');
+      execFileSync(process.execPath, [cliPath, 'backfill-daemon', '--once', '--families', 'crypto'], {
+        stdio: isJson ? 'ignore' : 'inherit',
+        timeout: 90000,
+      });
+    } catch (_) { /* non-fatal — continue with cached data */ }
+  }
+
+  const result = await computeCachedBias(symbol);
 
   if (isJson) {
     printPayload(result, args);
@@ -431,6 +462,7 @@ async function commandBias(args) {
 
 module.exports = {
   commandBias,
+  computeCachedBias,
   analyzeTimeframe,
   aggregateBias,
   assessTimeframeFreshness,

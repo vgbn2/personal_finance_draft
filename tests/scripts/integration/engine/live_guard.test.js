@@ -50,3 +50,57 @@ test('cloud-compute mode blocks direct polymarket live execution', () => {
   assert.equal(result.status, 1);
   assert.match(result.stdout, /Live execution blocked in cloud-compute mode/);
 });
+
+test('private-paper mode blocks live trade despite authorization and live environment poisoning', () => {
+  const result = spawnSync(process.execPath, [
+    CLI_PATH,
+    'trade',
+    'buy',
+    'AAPL',
+    '1',
+    'market',
+    '--live',
+    '--json',
+  ], {
+    cwd: path.resolve(__dirname, '..', '..', '..', '..'),
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      SOVEREIGN_RUNTIME_MODE: 'private-paper',
+      LIVE_TRADING: 'true',
+      SOVEREIGN_EXECUTION_AUTHORIZED: 'true',
+      SOVEREIGN_TRADE_PIN: '123456',
+    },
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /Live execution blocked in private-paper mode/);
+});
+
+test('private-paper mode blocks direct polymarket live execution under poisoned authorization', () => {
+  const result = spawnSync(process.execPath, [
+    CLI_PATH,
+    'polymarket',
+    'buy',
+    'TOKEN_123',
+    '1',
+    '0.5',
+    '--live',
+    '--pin',
+    '123456',
+    '--json',
+  ], {
+    cwd: path.resolve(__dirname, '..', '..', '..', '..'),
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      SOVEREIGN_RUNTIME_MODE: 'private-paper',
+      LIVE_TRADING: 'true',
+      SOVEREIGN_EXECUTION_AUTHORIZED: 'true',
+      SOVEREIGN_TRADE_PIN: '123456',
+    },
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /Live execution blocked in private-paper mode/);
+});

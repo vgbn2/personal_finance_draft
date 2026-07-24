@@ -19,7 +19,12 @@ require('ts-node').register({
 });
 
 const CYCLE_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'gateway', 'src', 'cycle.ts');
-const { runCycle, submitRiskApprovedFokOrder } = require(CYCLE_PATH);
+const {
+  determinePositionExitReason,
+  resolveObservablePositionPrice,
+  runCycle,
+  submitRiskApprovedFokOrder,
+} = require(CYCLE_PATH);
 
 function intent() {
   return {
@@ -42,6 +47,31 @@ test('bot FOK submission fails closed without a pre-trade authorizer', async () 
     /risk authorizer is unavailable/,
   );
   assert.equal(submitted, false);
+});
+
+test('aged paper position cannot exit without an observable price', () => {
+  const position = {
+    side: 'YES',
+    targetPrice: 0.3,
+    stopPrice: 0.05,
+    entryTimestamp: '2026-01-01T00:00:00.000Z',
+    aiProbabilityAtEntry: 0.6,
+  };
+  const now = Date.parse('2026-07-24T00:00:00.000Z');
+
+  assert.equal(determinePositionExitReason(position, 0, undefined, 24, now), null);
+  assert.equal(determinePositionExitReason(position, Number.NaN, undefined, 24, now), null);
+  assert.equal(determinePositionExitReason(position, 0.2, undefined, 24, now), 'time_decay');
+});
+
+test('paper position review uses credential-free observed market prices', async () => {
+  const yes = { side: 'YES', tokenId: 'yes-token' };
+  const no = { side: 'NO', tokenId: 'no-token' };
+  const bet = { market_price: 0.61 };
+
+  assert.equal(await resolveObservablePositionPrice(yes, bet), 0.61);
+  assert.ok(Math.abs((await resolveObservablePositionPrice(no, bet)) - 0.39) < 1e-12);
+  assert.equal(await resolveObservablePositionPrice(yes, undefined), null);
 });
 
 test('live bot cycle rejects missing L2 credentials before network or state work', async () => {
