@@ -19,6 +19,7 @@ const A = require('../../../../shared/lib/ui/ansi');
 const { buildTradeGatewayLaunch } = require('../../../../shared/lib/runtime/backend_bridge');
 const { parseGatewayJsonOutput } = require('../trade/trade_polymarket.js');
 const { buildAggregatedPortfolioSnapshot } = require('../../../gateway/src/polymarket_portfolio.js');
+const { resolveRuntimePolicy } = require('../../../../shared/lib/settings/runtime_policy');
 
 const utils = require('../../lib/utils.js');
 const { usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption } = utils;
@@ -364,6 +365,7 @@ function buildStatusPayload(snapshot, report, backend) {
     quality,
     quality_basis: qualityBasis,
     recovery: snapshot && snapshot.recovery ? snapshot.recovery : null,
+    runtime_policy: resolveRuntimePolicy(),
     next: 'run demo for sample indicators, model comparison, and backtest',
   };
 }
@@ -550,4 +552,3 @@ module.exports = {
   commandStatus,
   commandCockpit,
 };
-

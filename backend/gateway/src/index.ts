@@ -50,6 +50,8 @@ const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
 // @ts-ignore
 const { fetchWithRetry, retryTransient } = require('../../../shared/lib/runtime/fetch_retry');
+// @ts-ignore
+const { resolveRuntimePolicy } = require('../../../shared/lib/settings/runtime_policy');
 
 const ansi = {
   reset:       '\x1b[0m',
@@ -143,6 +145,28 @@ interface BrokerAdapter {
   getPortfolioBalance(): Promise<Record<string, number>>;
   getPositions(): Promise<Position[]>;
   getQuote(symbol: string): Promise<number>;
+}
+
+class SimulationAdapter implements BrokerAdapter {
+  async placeOrder(): Promise<{ orderId: string; status: string }> {
+    return { orderId: 'simulation-only', status: 'accepted' };
+  }
+
+  async cancelOrder(): Promise<boolean> {
+    return true;
+  }
+
+  async getPortfolioBalance(): Promise<Record<string, number>> {
+    return { USD: 100000, BUYING_POWER: 100000, EQUITY: 100000 };
+  }
+
+  async getPositions(): Promise<Position[]> {
+    return [];
+  }
+
+  async getQuote(): Promise<number> {
+    return 1;
+  }
 }
 
 interface RiskContext {
@@ -1989,9 +2013,15 @@ export async function main() {
     return;
   }
 
-  const isLive = process.env.LIVE_TRADING === 'true' || args.includes('--live');
+  const runtimePolicy = resolveRuntimePolicy({
+    args,
+    broker: args[0]?.toLowerCase() === 'polymarket' ? 'polymarket' : 'alpaca',
+  });
+  const isLive = runtimePolicy.can_execute;
   const useJson = args.includes('--json');
-  const adapter = new AlpacaAdapter({ simulateIfMissingCredentials: !isLive });
+  const adapter = isLive
+    ? new AlpacaAdapter({ simulateIfMissingCredentials: false })
+    : new SimulationAdapter();
   const gateway = new ExecutionGateway({ dryRun: !isLive, adapter });
   
   const command = args[0].toLowerCase();
@@ -2149,7 +2179,8 @@ export async function main() {
       livePaper.positions = dedupePositions(livePaper.positions);
 
       // "paper" bucket: this platform's own internal/simulated Polymarket dry-run ledger
-      // (storage/data/paper_trading/portfolio.json) — distinct from Alpaca's hosted paper account.
+      // (storage/data/paper_trading/events.jsonl, projected to portfolio.v1.json) —
+      // distinct from Alpaca's hosted paper account.
       const internalPaperPortfolio = loadInternalPaperPortfolio();
       const internalPaperSummary = summarizeInternalPaperPortfolio(internalPaperPortfolio);
       const paper = {
@@ -2531,10 +2562,13 @@ export async function main() {
       const price = args[4] !== undefined ? Number(args[4]) : undefined;
       const tickSizeOverride = parseOptionValue(args.slice(2), '--tick-size');
       const preflightOnly = args.includes('--preflight');
-      if (!preflightOnly && (!args.includes('--live') || process.env.SOVEREIGN_EXECUTION_AUTHORIZED !== 'true')) {
+      if (!preflightOnly && !runtimePolicy.can_execute) {
         const blocked = {
           ok: false,
-          error: 'Live Polymarket submission requires --live and CLI authorization',
+          error: runtimePolicy.research_only
+            ? `Live Polymarket submission blocked in ${runtimePolicy.requested_profile} mode`
+            : 'Live Polymarket submission requires --live and CLI authorization',
+          runtime_policy: runtimePolicy,
         };
         if (useJson) console.log(JSON.stringify(blocked));
         else console.error(`${ansi.red}${blocked.error}${ansi.reset}`);
@@ -2569,11 +2603,14 @@ export async function main() {
   } else if (command === 'bot') {
     const sub = (args[1] || 'status').toLowerCase();
     const submitsOrder = sub === 'cycle' || sub === 'run' || sub === 'sell';
-    const botLive = process.env.LIVE_TRADING === 'true' || args.includes('--live');
-    if (submitsOrder && botLive && (!args.includes('--live') || process.env.SOVEREIGN_EXECUTION_AUTHORIZED !== 'true')) {
+    const botLive = runtimePolicy.requested_live;
+    if (submitsOrder && botLive && !runtimePolicy.can_execute) {
       const blocked = {
         ok: false,
-        error: 'Live Polymarket bot execution requires --live and CLI authorization',
+        error: runtimePolicy.research_only
+          ? `Live Polymarket bot execution blocked in ${runtimePolicy.requested_profile} mode`
+          : 'Live Polymarket bot execution requires --live and CLI authorization',
+        runtime_policy: runtimePolicy,
       };
       if (useJson) console.log(JSON.stringify(blocked));
       else console.error(`${ansi.red}${blocked.error}${ansi.reset}`);

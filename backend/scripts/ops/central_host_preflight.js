@@ -99,6 +99,15 @@ function validateCentralEnvironment(env = process.env) {
       present: nonEmpty(env.SOVEREIGN_API_TOKEN),
       minimum_length: MIN_API_TOKEN_LENGTH,
     },
+    client_token: {
+      ok: nonEmpty(env.SOVEREIGN_CLIENT_TOKEN)
+        && env.SOVEREIGN_CLIENT_TOKEN.trim().length >= MIN_API_TOKEN_LENGTH
+        && env.SOVEREIGN_CLIENT_TOKEN.trim() !== String(env.SOVEREIGN_API_TOKEN || '').trim(),
+      present: nonEmpty(env.SOVEREIGN_CLIENT_TOKEN),
+      distinct_from_api_token: nonEmpty(env.SOVEREIGN_CLIENT_TOKEN)
+        && env.SOVEREIGN_CLIENT_TOKEN.trim() !== String(env.SOVEREIGN_API_TOKEN || '').trim(),
+      minimum_length: MIN_API_TOKEN_LENGTH,
+    },
     backfill_interval: {
       ok: Number.isInteger(intervalSecs) && intervalSecs >= 60 && intervalSecs <= 86400,
       seconds: Number.isFinite(intervalSecs) ? intervalSecs : null,

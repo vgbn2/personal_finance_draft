@@ -1,0 +1,15 @@
+[Unit]
+Description=Sovereign read-only client SSH connector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+UMask=0077
+ExecStart=@INSTALL_ROOT@/sovereign-client-connector.sh --config @CONFIG_FILE@
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=default.target

@@ -20,6 +20,7 @@ const SAFE_ENV = {
   LIVE_TRADING: 'false',
   SOVEREIGN_EXECUTION_AUTHORIZED: 'false',
   SOVEREIGN_API_TOKEN: 'a'.repeat(32),
+  SOVEREIGN_CLIENT_TOKEN: 'b'.repeat(32),
   SOVEREIGN_WEB_BIND: '127.0.0.1',
   BACKFILL_INTERVAL_SECS: '1800',
 };
@@ -48,6 +49,11 @@ test('central environment fails closed on live mode, public bind, short token, o
   assert.equal(validateCentralEnvironment({ ...SAFE_ENV, LIVE_TRADING: 'true' }).checks.live_trading_disabled.ok, false);
   assert.equal(validateCentralEnvironment({ ...SAFE_ENV, SOVEREIGN_WEB_BIND: '0.0.0.0' }).checks.private_bind.ok, false);
   assert.equal(validateCentralEnvironment({ ...SAFE_ENV, SOVEREIGN_API_TOKEN: 'short' }).checks.api_token.ok, false);
+  assert.equal(validateCentralEnvironment({ ...SAFE_ENV, SOVEREIGN_CLIENT_TOKEN: 'short' }).checks.client_token.ok, false);
+  assert.equal(validateCentralEnvironment({
+    ...SAFE_ENV,
+    SOVEREIGN_CLIENT_TOKEN: SAFE_ENV.SOVEREIGN_API_TOKEN,
+  }).checks.client_token.ok, false);
   const secretResult = validateCentralEnvironment({ ...SAFE_ENV, POLYMARKET_PRIVATE_KEY: 'must-not-print' });
   assert.equal(secretResult.checks.no_execution_secrets.ok, false);
   assert.deepEqual(secretResult.checks.no_execution_secrets.present_keys, ['POLYMARKET_PRIVATE_KEY']);
@@ -63,6 +69,7 @@ test('central environment loader reads only the selected file plus explicit proc
       'LIVE_TRADING=false',
       'SOVEREIGN_EXECUTION_AUTHORIZED=false',
       `SOVEREIGN_API_TOKEN=${'b'.repeat(32)}`,
+      `SOVEREIGN_CLIENT_TOKEN=${'c'.repeat(32)}`,
       'SOVEREIGN_WEB_BIND=127.0.0.1',
       'BACKFILL_INTERVAL_SECS=1800',
       '',
@@ -116,6 +123,7 @@ test('central host preflight reports clean tools, private env, hardware, manifes
     assert.equal(result.checks.memory.ok, true);
     assert.ok(invocations.some((args) => args.join(' ') === 'docker compose version'));
     assert.doesNotMatch(JSON.stringify(result), new RegExp(SAFE_ENV.SOVEREIGN_API_TOKEN));
+    assert.doesNotMatch(JSON.stringify(result), new RegExp(SAFE_ENV.SOVEREIGN_CLIENT_TOKEN));
     console.log(JSON.stringify({
       type: result.type,
       checks: Object.keys(result.checks).length,
