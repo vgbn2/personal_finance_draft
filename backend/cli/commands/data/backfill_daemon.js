@@ -38,6 +38,7 @@ const {
   PRICE_BEARING_FAMILIES,
   FAMILY_PROVIDER,
 } = require('../../../../shared/lib/market/configured_universe.js');
+const { errorCode, writeServiceHeartbeat } = require('../../../../shared/lib/runtime/service_heartbeat.js');
 
 const ALL_FAMILIES = [...PRICE_BEARING_FAMILIES];
 
@@ -74,6 +75,14 @@ function writeDaemonStatus(status) {
   const tempPath = `${DAEMON_STATUS_PATH}.${process.pid}.${Date.now()}.tmp`;
   fs.writeFileSync(tempPath, `${JSON.stringify(status, null, 2)}\n`);
   fs.renameSync(tempPath, DAEMON_STATUS_PATH);
+}
+
+function writeBackfillHeartbeat(patch) {
+  try {
+    writeServiceHeartbeat('backfill', patch);
+  } catch (_) {
+    // Observability cannot be allowed to stop the data writer.
+  }
 }
 
 function stopResult(args, payload) {
@@ -534,6 +543,7 @@ async function commandBackfillDaemon(args) {
     if (stopping) return;
     stopping = true;
     writeDaemonStatus({ status: 'stopped', pid: process.pid, cycle, stopped_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    writeBackfillHeartbeat({ state: 'stopped', attempted: false, next_run_at: null });
     process.exit(0);
   };
   process.once('SIGINT', stopDaemon);
@@ -559,6 +569,7 @@ async function commandBackfillDaemon(args) {
       current_symbol: null, families, once, started_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     };
     writeDaemonStatus(status);
+    writeBackfillHeartbeat({ state: 'running', next_run_at: null });
     lastSummary = await runBackfillCycle({
       tsDir, jobs, execute, rollup, log, cycle,
       parallelLanes: !sequential,
@@ -573,13 +584,25 @@ async function commandBackfillDaemon(args) {
         status.polls_started = pacing.started;
         status.updated_at = new Date().toISOString();
         writeDaemonStatus(status);
+        writeBackfillHeartbeat({ state: 'running', last_attempt_at: status.last_poll_start });
       },
       onJobDone: (job, outcome) => {
         status.completed_jobs += 1;
         status.current_symbol = job.symbol;
-        status.last_outcome = outcome;
+        status.last_outcome = {
+          ok: outcome && outcome.ok === true,
+          symbol: job.symbol,
+          family: job.family,
+          action: outcome && outcome.action ? String(outcome.action).slice(0, 48) : null,
+          error_code: outcome && outcome.error ? errorCode(outcome.error) : null,
+        };
         status.updated_at = new Date().toISOString();
         writeDaemonStatus(status);
+        writeBackfillHeartbeat({
+          state: outcome && outcome.ok === true ? 'healthy' : 'degraded',
+          success: outcome && outcome.ok === true,
+          error_code: outcome && outcome.error ? errorCode(outcome.error) : null,
+        });
       },
     });
 
@@ -590,9 +613,11 @@ async function commandBackfillDaemon(args) {
         completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
+      writeBackfillHeartbeat({ state: lastSummary && lastSummary.errors === 0 ? 'healthy' : 'degraded', success: lastSummary && lastSummary.errors === 0 });
       break;
     }
     writeDaemonStatus({ ...status, status: 'sleeping', next_run_at: new Date(Date.now() + intervalSecs * 1000).toISOString(), updated_at: new Date().toISOString() });
+    writeBackfillHeartbeat({ state: lastSummary && lastSummary.errors === 0 ? 'healthy' : 'degraded', success: lastSummary && lastSummary.errors === 0, next_run_at: new Date(Date.now() + intervalSecs * 1000).toISOString() });
     await new Promise((resolve) => setTimeout(resolve, intervalSecs * 1000));
   }
   /* eslint-enable no-await-in-loop */

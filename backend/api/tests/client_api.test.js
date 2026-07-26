@@ -62,6 +62,7 @@ test('role gate preserves viewer sessions and limits service-client capabilities
         '/api/market/monitor',
         '/api/scorecard',
         '/api/signal',
+        '/api/system/service-health',
         '/api/universe',
       ],
     );

@@ -7,6 +7,7 @@ const { runGatewayCommand } = require('../../../../shared/lib/runtime/backend_br
 const { parseYamlRecursive } = require('../../../../shared/lib/runtime/config_loader.js');
 const { writeJson } = require('../../../../shared/lib/market/validation.js');
 const { REPO_ROOT, STORAGE_DATA_DIR } = require('../../../../shared/lib/runtime/paths.js');
+const { errorCode, writeServiceHeartbeat } = require('../../../../shared/lib/runtime/service_heartbeat.js');
 
 const PORTFOLIO_MONITOR_STATUS_PATH = path.join(
   STORAGE_DATA_DIR,
@@ -177,7 +178,7 @@ function buildRiskAssessment(payload, previousStatus = {}, thresholds = DEFAULT_
       code: 'broker_unavailable',
       severity: 'warning',
       broker: String(broker.name || 'unknown'),
-      error: broker.error || null,
+      error_code: broker.error ? errorCode(broker.error) : null,
     }));
   breaches.push(...brokerErrors);
   const connectedBrokers = brokers
@@ -253,14 +254,29 @@ async function commandPortfolioMonitor(args) {
   let cycle = finiteNumber(status.cycle);
 
   const writeStatus = (patch) => {
+    const persistedPatch = {
+      ...patch,
+      error: patch.error ? errorCode(patch.error) : patch.error,
+    };
     status = {
       ...status,
-      ...patch,
+      ...persistedPatch,
       pid: process.pid,
       interval_secs: intervalSecs,
       updated_at: new Date().toISOString(),
     };
     writeJson(statusPath, status);
+    try {
+      const success = persistedPatch.status === 'healthy' || persistedPatch.ok === true;
+      writeServiceHeartbeat('portfolio_monitor', {
+        state: persistedPatch.status === 'stopped' ? 'stopped' : (persistedPatch.status === 'polling' ? 'running' : (success ? 'healthy' : 'degraded')),
+        success,
+        error_code: persistedPatch.error_code || persistedPatch.error || null,
+        next_run_at: persistedPatch.next_run_at || null,
+      });
+    } catch (_) {
+      // Monitoring publication must not change portfolio-monitor behavior.
+    }
   };
   const stop = (signal) => {
     try { writeStatus({ status: 'stopped', stopped_signal: signal }); } catch (_) {}

@@ -79,6 +79,8 @@ export function QuoteHealthPanel() {
   const [monitor, setMonitor] = useState<any>(null);
   const [providerData, setProviderData] = useState<any>(null);
   const [providerError, setProviderError] = useState(false);
+  const [serviceHealth, setServiceHealth] = useState<any>(null);
+  const [serviceError, setServiceError] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -99,7 +101,7 @@ export function QuoteHealthPanel() {
     controller.current = new AbortController();
     try {
       const headers = await getAuthHeaders();
-      const [monitorResult, providerResult] = await Promise.allSettled([
+      const [monitorResult, providerResult, serviceResult] = await Promise.allSettled([
         fetchCompleteMarketMonitor({
           url: API_ENDPOINTS.MARKET_MONITOR,
           headers,
@@ -110,6 +112,13 @@ export function QuoteHealthPanel() {
           signal: controller.current.signal,
         }).then(async (response) => {
           if (!response.ok) throw new Error('provider_status_unavailable');
+          return response.json();
+        }),
+        fetch(API_ENDPOINTS.SERVICE_HEALTH, {
+          headers,
+          signal: controller.current.signal,
+        }).then(async (response) => {
+          if (!response.ok) throw new Error('service_health_unavailable');
           return response.json();
         }),
       ]);
@@ -128,6 +137,18 @@ export function QuoteHealthPanel() {
         setProviderError(!quotes);
       } else if (providerResult.reason?.name !== 'AbortError') {
         setProviderError(true);
+      }
+      if (serviceResult.status === 'fulfilled') {
+        const services = Array.isArray(serviceResult.value?.services) ? serviceResult.value.services : [];
+        setServiceHealth({
+          counts: serviceResult.value?.counts || null,
+          services: services.filter((service: any) => (
+            service && typeof service.service === 'string' && typeof service.state === 'string'
+          )),
+        });
+        setServiceError(false);
+      } else if (serviceResult.reason?.name !== 'AbortError') {
+        setServiceError(true);
       }
     } catch (error: any) {
       if (mounted.current && error?.name !== 'AbortError') {
@@ -380,6 +401,35 @@ export function QuoteHealthPanel() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section data-service-health className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl shadow-sm overflow-hidden min-w-0">
+        <div className="h-10 border-b border-[var(--border-subtle)] flex items-center justify-between px-4 sm:px-5 bg-[var(--bg-primary)]">
+          <span className="font-heading text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">Service health context</span>
+          <span className="font-mono text-[9px] text-[var(--text-faint)]">separate from instrument freshness</span>
+        </div>
+        {serviceError || !serviceHealth ? (
+          <div className="p-6 text-center font-mono text-[10px] text-[var(--color-brand-amber)]">
+            Service heartbeat status is unavailable; canonical instrument freshness remains authoritative.
+          </div>
+        ) : (
+          <div className="overflow-x-auto min-w-0">
+            <table className="data-ledger min-w-[720px] w-full">
+              <thead className="bg-[var(--bg-tertiary)]"><tr><th>Service</th><th>State</th><th>Heartbeat age</th><th>Last success</th><th>Error</th></tr></thead>
+              <tbody>{serviceHealth.services.length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-8 text-[var(--text-faint)]">No service heartbeats reported.</td></tr>
+              ) : serviceHealth.services.map((service: any) => (
+                <tr key={service.service}>
+                  <td className="font-bold">{service.service}</td>
+                  <td className={service.state === 'healthy' || service.state === 'running' ? 'text-[var(--color-brand-green)]' : 'text-[var(--color-brand-amber)]'}>{service.state}</td>
+                  <td>{formatMarketAge(service.age_ms)}</td>
+                  <td>{service.last_success_at ? new Date(service.last_success_at).toLocaleString() : 'Never'}</td>
+                  <td className="text-[var(--text-muted)]">{service.error_code || service.reason || '—'}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl shadow-sm overflow-hidden min-w-0">
