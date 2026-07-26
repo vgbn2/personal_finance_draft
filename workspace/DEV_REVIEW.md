@@ -1788,3 +1788,143 @@ the continuity-only working-tree edits. `graphify-out` remains unavailable.
 Repair the test isolation seam and record a clean aggregate gate first; then implement the canonical paper ledger and
 runtime-policy convergence plan. Host qualification, freshness recovery, MCP proof, and promotion remain external or
 blocked. Do not use the current green focused slices or the dirty continuity tree as committed production proof.
+
+## Independent Hosting Security Review - 2026-07-26 session 103
+
+| Severity | Finding | Closure |
+|---|---|---|
+| P1 | `reauth` could allow the next request after a registry write failure because unpersisted state remained in memory. | Restore prior in-memory state on persistence failure; repeated-failure regression stays denied. |
+| P1 | `all-in-one` declared web-only but Compose/updater could still start `backfill`. | Put `backfill` behind `writer`; central updater requires `central-host` and refuses `all-in-one`. |
+| P2 | A misspelled capability normalized to an empty/public requirement. | Authorization detects unknown names and fails closed as `invalid_capability_policy`. |
+| P2 | Sidebar universe hydration omitted the current session bearer token. | Sidebar now resolves `getAuthHeaders()` before its request. |
+| P2 | Socket reconnect reused the token captured at panel mount. | Socket.IO uses an auth callback that resolves the current token for every handshake; two-token regression added. |
+
+No P0 remained after review. Post-closure evidence is Node 910/906/0fail/4skip, API 21/21, contracts 57/57,
+focused review tests 24/24, frontend type/build, Compose service rendering, secrets 846/0, hygiene, and diff.
+This is source-level proof only; real login, host/container runtime, SSH, proxy, multi-machine, restart,
+backup/restore, MCP, freshness, and soak are still operational gates.
+
+## Deep Blast-Through - 2026-07-26 session 104
+
+**Mode:** full / Hard Reading Mode
+**Audit anchor:** clean committed `HEAD c2e28993` plus a 56-file working batch (`+3218/-140`, 18 untracked)
+**Verdict:** no P0; **C+ / integrity-and-qualification-gated**; current batch is not release-ready
+**DCS:** `0.954348 -> 0.954348` (`freshness=78/92`, `schema=1.0`, `coverage=1.0`)
+
+The DCS threshold is numerically met, but `backend integrity --json` remains `ok:false`: all 92 configured
+assets are cached, 14 required Vietnamese-equity `1d` windows are stale, 9 grain notices are
+cadence-plausible, 0 are unexplained, and RNDRUSDT remains the one declared exception. DCS does not override
+the zero-policy-stale promotion gate.
+
+### Findings, severity ordered
+
+| Severity | Finding | Evidence and impact | Closure gate |
+|---|---|---|---|
+| P1 | Persistent paper runner crashes before startup. | `backend/cli/commands/runner/run.js:35-63` references `effectiveIntervalMin` and `intervalPolicy` in `runPaperBotLoop`, but defines them only in the unrelated backfill loop. Compose enters this non-`--once` path. | Resolve the paper interval inside `runPaperBotLoop`; add persistent-runner and Compose-command tests that reach scheduler creation without polling or submitting. |
+| P1 | Enabling segment mode on populated storage freezes reads on the old canonical bin. | `validation.js:954-962` writes new data only to segments, while `readTsIndex`, `readTsIndexSince`, and `coverage.readCoverage` consult segments only when the canonical bin is absent. Disposable proof: the manifest existed after a new segment write, but reads/coverage exposed only the one old canonical row. | Define and test an explicit canonical-to-segment migration/merge rule; keep `SOVEREIGN_TS_STORAGE=segments` blocked until mixed-store parity passes. |
+| P1 | Segment corruption and missing files fail open and can report false coverage. | `append_only_segments.js:95-115` records hashes, but `:119-153` never verifies them and silently skips missing/malformed files; `:175-185` sums manifest counts. Disposable proof: a deleted segment returned 0 rows while coverage claimed 1; a byte-corrupted segment returned close `999` without rejecting its stored SHA-256. | Fail closed on manifest, hash, length, missing-file, and timestamp errors; compute coverage from verified unique records or verified segment metadata. |
+| P1 | Compaction can remove a concurrent append from the active manifest. | `append_only_segments.js:158-172` reads and publishes across separate lock acquisitions, then filters the current manifest to only the compaction file. A writer landing in either lock gap remains physically retained but becomes unreachable. | Use one generation/transaction boundary or compare-and-swap manifest identity; add concurrent-append and interrupted-compaction recovery tests. |
+| P1 | Segment reads violate canonical provider precedence. | Canonical merging uses `PROVIDER_PRIORITY` at `validation.js:853-856`; segment reads use manifest-order last-write-wins at `append_only_segments.js:145-153`. Disposable proof: a later Yahoo row replaced Binance at the same timestamp. | Reuse the canonical precedence/tie contract and test overlapping providers and equal-priority replacement. |
+| P1 conditional | `reauth` is defeated by ordinary access-token rotation and has no explicit recovery path. | Human `session_id` is a hash of the current bearer token (`access_control.js:43-46,113-127`), while the registry keys only by that value (`auth_session_registry.js:173`). Disposable probe: the same user at a new IP with token B was allowed as `first_seen` after token A. The default remains `audit`, limiting immediate exposure. | Bind risk to stable verified user/session identity and add an explicit fresh-auth/owner approval transition for `pending_ip`. |
+| P2 | Backfill cadence is accidentally coupled to bot interval policy. | `run.js:10-14` applies `resolveBotInterval` to backfill and logs the requested rather than effective interval. Bot admin floors can silently change data cadence. | Restore an independent backfill interval contract and add an admin-bot-floor regression test. |
+| P2 | Segment durability is atomic-rename-only, not power-loss durable. | `append_only_segments.js:76-80,99-115` fsyncs segment bytes but not the renamed file's directory, manifest file, or manifest directory. | Add file/directory fsync ordering and a documented durability level; test recovery after each publication boundary. |
+| P2 | Machine-profile writer separation is descriptive, not enforced at the daemon entrypoint. | `deployment_profile.js:37-51` marks developer/client non-writer, but `backfill_daemon.js:510-517` has no profile gate and Compose's generic `writer` profile can be explicitly selected. This requires existing host authority, so it is configuration drift rather than privilege escalation. | Require `serviceAllowed(profile, 'backfill')` or an equivalent mandatory preflight at the actual writer entrypoint. |
+| P2 | Private auth-session runtime state is not ignored. | The default is `storage/runtime/auth_sessions.json` (`auth_session_registry.js:82-86`), but `.gitignore:107-121` does not cover `storage/runtime/`. | Ignore the exact private runtime path and add an artifact-hygiene contract. |
+| P3 | API authorization semantics have contained drift. | `/api/bot/cycle?live=true` requires `paper.operate`, not `live.execute`, but the non-TTY child receives no PIN and fails closed before execution. Kill-switch mutation is accepted via GET with `safety.control`, while POST falls to stricter `host.manage`. | Require `live.execute` before spawning the live child; make kill-switch mutation method/capability semantics explicit and tested. |
+| P3 | Canonical docs remain stale. | `docs/README.md` contains 14 missing links, mostly one directory too shallow; `README.md:168` still advertises the historical 652-test baseline. | Repair links and replace snapshot totals with a dated, clearly historical baseline or a generated current result. |
+
+### Connective-tissue / orphan matrix
+
+| Item | Classification | Evidence |
+|---|---|---|
+| Access policy, access control, deployment profile, Socket auth, host monitor | Intentional | Each has production callers, tests, and operator documentation; no zero-consumer module was confirmed. |
+| Paper interval wiring | Incomplete | Config/docs/tests name the policy, but the persistent runtime crashes before scheduling. |
+| Append-only segment store | Dangerous if enabled | Runtime caller exists, but mixed-store visibility, integrity, concurrency, and provider-precedence contracts fail. Default canonical storage is unaffected. |
+| IP `reauth` policy | Incomplete | Audit recording works; stable token-rotation semantics and a recovery transition do not. |
+| Backfill writer profile | Incomplete | Profile metadata and Compose naming exist, but the writer entrypoint does not enforce them. |
+| Docs hub / test baseline | Stale | Runtime paths exist under moved subdirectories and the aggregate has grown far beyond the advertised total. |
+
+No dangerous zero-consumer export, undeclared runtime package, or newly promoted synthetic fixture was confirmed.
+The `backend/api` `npm ls` warning is local-install state: its package and lock both declare exact Supabase
+`2.106.2`, and the image performs a dedicated `backend/api npm ci`.
+
+### Section grades
+
+| Section | Grade | Reason |
+|---|---|---|
+| System design (cross-cutting) | **C+ / integrity-and-qualification-gated** | Strong source contracts and verification, but paper runtime, optional storage integrity, data policy freshness, committed-source, recovery, and soak gates remain open. |
+| API authorization/session tracking | **B / reauth-and-method-gated** | Capability model is largely fail closed; token-rotation reauth and conditional method/capability semantics need repair. |
+| Frontend dashboard auth | **B+ / real-login-gated** | Current-token HTTP and Socket.IO reconnect wiring typechecks/builds; real login/reconnect remains external. |
+| CLI runner / interval settings | **D / persistent-paper-broken** | The advertised persistent paper cadence cannot start; one-shot tests do not exercise the fault. |
+| Backfill scheduler | **B / pacing-source-proven** | Global poll-start pacing is tested; local rollups, durable retry, thermal/disk hysteresis, and restart-safe queueing remain open. |
+| Append-only segment storage | **D / enablement-blocked** | Basic append tests pass, but migration visibility, corruption handling, compaction concurrency, coverage truth, and provider precedence fail. |
+| Market-data trust | **B / policy-stale** | DCS improved to 0.954348 with full coverage/schema, but 14 required windows keep integrity false and no writer soak is proven. |
+| Deployment/infra | **B / profile-and-runtime-gated** | Compose separation and preflight render correctly; writer-role enforcement and real host/recovery proof remain incomplete. |
+| Tests | **B+ / adversarial-integration-gated** | Host aggregate is fully green, but it missed the runner and segment recovery/concurrency seams. |
+| Docs | **C+ / link-and-baseline-drift** | New hosting guidance is useful, but the canonical hub and baseline remain stale. |
+| Workspace continuity | **A- / current-after-audit** | Findings, grades, DCS, proof boundary, and remediation order are now synchronized. |
+| Combined actionable engine | **D / nonexistent (unchanged)** | No changed file adds a production exact-asset, point-in-time combined decision caller. |
+
+### System-design evidence boundary
+
+The critical path remains:
+
+```text
+provider -> validated data -> canonical identity -> point-in-time analysis -> explicit decision state
+         -> paper/live policy -> risk gate -> ledger -> monitoring -> backup/restart/rollback
+```
+
+Context and role concerns are partial; authorization contracts are partial; segment data lineage and
+compaction state are failed when enabled; paper runtime reliability is failed; security remains fail closed on
+the actual live child; observability/performance are partial; backup/restart/rollback and real-host operation
+remain unproven. Component tests do not close these arrows.
+
+### Verification and evidence
+
+- Clean committed archive: extraction, canonical runner/CLI/API syntax, tracked-file presence, and conflict-marker
+  scan pass for `HEAD c2e28993`. This predates the dirty feature batch.
+- Current host-capable Node aggregate: **921 total / 917 pass / 0 fail / 4 intentional skips**. The sandbox-only
+  run reported 17 whole-file child-process failures; the unchanged host rerun closed them as `spawnSync`/PTY
+  environment artifacts.
+- Frontend TypeScript and production build pass; gateway TypeScript passes; shell syntax passes.
+- Compose renders plain `web`; `--profile writer` renders `web, backfill`.
+- Hygiene passes; tracked secret scan is **846 files / 0 violations**; direct scan of 18 untracked text files
+  found 0 violations; `git diff --check` passes.
+- Active non-generated inventory: 1,133 files. Working batch: 56 files, `+3218/-140`:
+  env 1 (`+11`); frontend 5 (`+55/-11`); root 2 (`+16/-2`); backend 15 (`+1230/-101`);
+  docs 4 (`+200`); infra 3 (`+46/-20`); shared 7 (`+626/-2`); tests 11 (`+542/-3`);
+  workspace 8 (`+492/-1`).
+- No audit-initiated provider poll, canonical-data transformation, runtime start/stop, order, public exposure,
+  destructive migration, or promotion occurred. The prior handoff's native workload may continue outside this
+  sandbox's process view.
+
+### Critical remediation order
+
+1. Repair and integration-test the persistent paper runner; separate bot and backfill cadence policy.
+2. Keep segment mode disabled. Repair mixed-store migration/reads, fail-closed integrity, provider precedence,
+   unique verified coverage, single-generation compaction, and fsync ordering; prove on disposable storage.
+3. Bind `reauth` to stable verified identity and add an explicit recovery transition.
+4. Enforce writer profile at the actual entrypoint; align live-cycle and kill-switch method/capability contracts;
+   ignore private runtime state.
+5. Repair docs, review/commit the source batch, and prove clean current-source archive/fresh-clone installation.
+6. Only then exercise approved web login/RBAC, SSH reconnect, backup/restore, restart/session retention,
+   one-writer/MCP/freshness, and soak gates.
+
+No production fix was implemented in this audit.
+
+## Mass-Implement Closure - 2026-07-26 session 104
+
+The ranked source repairs above are implemented and host-capable verified. The paper runner now resolves and
+schedules on its effective interval; backfill no longer uses bot cadence. Segment mode now merges canonical and
+segment rows through shared provider precedence, verifies active manifest/file integrity, reports verified unique
+coverage, compacts under one lock/generation boundary, and fsyncs publication boundaries. Stable human subject
+fingerprints preserve `reauth` history through bearer rotation; pending-IP approval is explicit and authenticated.
+Declared non-writer profiles refuse the backfill daemon. API live-cycle authorization requires `live.execute` at
+both policy and dispatch, POST kill-switch mutations require `safety.control`, private registry state is ignored,
+and docs/contracts were aligned.
+
+Verification: host `npm run test:contracts` 87/87 pass; host `npm test`, hygiene, `git diff --check`, syntax,
+and all repaired documentation paths pass. The sandbox's loopback `listen EPERM` remains an environment limit,
+not a repository test failure. No P1 from this session's source audit remains open. Remaining gaps are segment
+write-amplification/free-space/retry/thermal/soak qualification, 14 required stale data windows, current-source
+archive/fresh clone, and all external host/login/recovery/MCP/backup/rollback evidence.

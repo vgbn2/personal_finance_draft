@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { cn } from '../../lib/utils';
 import { Database, Layers, Globe, Activity, CheckCircle, AlertCircle } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
-import { API_ENDPOINTS, API_BASE_URL, DEFAULT_HEADERS } from '../../lib/api';
+import { API_ENDPOINTS, API_BASE_URL, getAuthHeaders, socketAuthProvider } from '../../lib/api';
 
 interface UniverseEntry {
   symbol: string;
@@ -26,11 +26,14 @@ export function MarketIntelPanel() {
   const freshnessState = quality?.freshness?.state || (staleRecords > 0 ? 'Degraded' : 'Nominal');
 
   useEffect(() => {
+    let active = true;
+    let socket: Socket | null = null;
     const fetchData = async () => {
       try {
+        const headers = await getAuthHeaders();
         const [uniRes, qualRes] = await Promise.all([
-          fetch(API_ENDPOINTS.UNIVERSE, { headers: DEFAULT_HEADERS }),
-          fetch(API_ENDPOINTS.STATUS, { headers: DEFAULT_HEADERS })
+          fetch(API_ENDPOINTS.UNIVERSE, { headers }),
+          fetch(API_ENDPOINTS.STATUS, { headers })
         ]);
         
         const uniData = await uniRes.json();
@@ -48,8 +51,9 @@ export function MarketIntelPanel() {
     fetchData();
 
     // Stream real-time market data
-    const socket = io(API_BASE_URL || undefined);
+    socket = io(API_BASE_URL || undefined, { auth: socketAuthProvider });
     socket.on('market_data', (payload: any) => {
+      if (!active) return;
       if (payload.universe?.ok) setUniverse(payload.universe);
       if (payload.status?.ok) setQuality(payload.status);
       else if (payload.dataSummary?.ok) {
@@ -64,7 +68,8 @@ export function MarketIntelPanel() {
     });
 
     return () => {
-      socket.disconnect();
+      active = false;
+      socket?.disconnect();
     };
   }, []);
 

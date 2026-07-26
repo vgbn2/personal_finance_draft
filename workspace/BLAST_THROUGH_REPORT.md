@@ -121,3 +121,29 @@ paper-trading system yet.
 
 Section evidence and line-level findings are recorded in the corresponding 2026-07-24 section of
 `workspace/DEV_REVIEW.md`.
+
+## Full Audit Correction - 2026-07-26 session 104
+
+**Audit anchor:** clean `HEAD c2e28993` plus 56-file dirty batch
+**Mode:** full / Hard Reading Mode
+**DCS:** `0.954348 -> 0.954348`; integrity remains `ok:false` with 14 policy-stale windows
+**Verdict:** no P0; **C+ / integrity-and-qualification-gated**
+
+Strongest gaps:
+
+1. The persistent paper runner crashes before scheduling because its effective interval variables are undefined.
+2. Opt-in segment storage is enablement-blocked: mixed canonical/segment reads freeze, corrupt or missing files
+   fail open, coverage can be false, compaction can orphan concurrent appends, and provider precedence drifts.
+3. Optional IP `reauth` is keyed by rotating access-token fingerprint and has no explicit recovery transition.
+4. Writer-profile enforcement, bot/backfill cadence separation, private runtime ignore rules, API method/capability
+   semantics, and canonical docs remain contained follow-ups.
+
+Verification is host-capable Node **921/917/0fail/4skip**, frontend type/build, gateway TypeScript, Compose
+rendering, Bash syntax, hygiene, tracked secrets **846/0**, untracked text secrets **18/0**, clean committed
+archive smoke, and diff integrity. Disposable segment probes reproduced masking, false coverage, unverified
+corruption, and provider-precedence loss. No production fix, provider poll, data transformation, runtime
+start/stop, order, public exposure, migration, or promotion was performed by the audit.
+
+Critical move: repair the paper runner first, then keep segment mode disabled until migration, fail-closed
+integrity, precedence, compaction, durability, and adversarial recovery gates pass. Full evidence, orphan matrix,
+grades, LOC, and remediation order are in `workspace/DEV_REVIEW.md`.

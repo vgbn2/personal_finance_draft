@@ -31,6 +31,7 @@ const DEFAULTS = {
     min_edge: 0.05,
     max_positions: 10,
     polling_interval: 60,
+    bot_interval_min: 1,
     backfill_interval_min: 1440,
   },
   feature_flags: {

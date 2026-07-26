@@ -1,5 +1,119 @@
 # Next Session Goal
 
+## 2026-07-26 session 104 mass-implement correction - commit and qualify the repaired batch
+
+The session-104 source P1s are repaired, committed, and host-capable contracts pass. The immediate gate is a
+clean archive and fresh-clone proof; do not treat the repair as operational qualification.
+
+1. Prove the committed archive and a fresh clone install/test path before any host claim.
+2. Keep segment storage opt-in. Before enabling it, quantify repeated-overlap write amplification, add durable
+   retry/queue state plus thermal/disk hysteresis and free-space compaction gates, then run interrupted-recovery
+   and controlled load/SSD/soak probes on disposable storage.
+3. Recover the 14 required stale equity windows through an explicitly approved writer/provider action and prove
+   zero policy-stale windows; DCS alone is not enough while integrity remains false.
+4. With separate approval, qualify real web login/RBAC, second-machine SSH/reconnect, session retention,
+   one-writer locking, MCP, backup/restore, restart/rollback, and soak. Keep live execution and public exposure
+   blocked.
+
+Current source evidence: host `npm run test:contracts` 87/87 pass; host aggregate, hygiene, diff integrity,
+and repaired docs links pass. No runtime action occurred during implementation.
+
+## 2026-07-26 session 104 critical override - repair runner and keep segment mode disabled
+
+The full hard-reading blast-through found no P0, but the current uncommitted feature batch is not
+promotion-ready. System grade is C+ / integrity-and-qualification-gated. Keep
+`SOVEREIGN_TS_STORAGE=segments` disabled and do not start or restart the paper runner from this source
+until the P1 defects below are repaired and independently reviewed.
+
+Execute next, in order:
+
+1. Move the effective interval resolver into the paper-runner loop and add a non-`--once` regression test;
+   the current loop references undefined `effectiveIntervalMin` and `intervalPolicy`.
+2. Redesign segment reads as one validated canonical-plus-segment view. Reject missing, corrupt, or
+   hash-mismatched active segments; preserve provider priority; make compaction lock the full
+   read/replace sequence; and prove interrupted/concurrent compaction recovery on disposable storage.
+3. Prevent token rotation from resetting reauthentication history. Key the registry to a stable principal
+   or enforce a bounded principal-level policy, add a controlled recovery path, and ignore/protect the
+   private runtime registry file.
+4. Separate backfill cadence from the bot interval policy, and enforce deployment-profile writer
+   capability at the backfill entrypoint instead of relying on descriptive Compose/profile intent.
+5. Repair the 14 broken `docs/README.md` links and replace the stale README test-count claim with a
+   reproducible verification command or current evidence.
+6. Rerun focused tests, the host-capable aggregate, secrets, hygiene, diff integrity, disposable segment
+   fault/race proofs, and an independent severity review. Only then review/commit the dirty source batch
+   and prove a clean committed archive/fresh clone.
+
+Current evidence: 921 total / 917 pass / 0 fail / 4 intentional skips; frontend lint/build, gateway
+TypeScript, secret scans, hygiene, and diff checks pass. Read-only integrity is 92/92 cached with 14
+policy-stale required windows and DCS 0.954348, so integrity remains false despite crossing 0.95.
+
+Do not infer host, writer, MCP, recovery, backup/restore, rollback, or soak readiness from local tests.
+No provider poll, runtime start/stop, bot cycle, order, public exposure, destructive migration, or
+promotion was authorized by the audit.
+
+## 2026-07-26 session 103 follow-up plan - smooth polling and preserve storage
+
+The deferred design is recorded in `workspace/plans/LOAD_SMOOTHING_AND_APPEND_ONLY_STORAGE_PLAN.md`.
+The current daemon has bounded per-lane concurrency but no gradual ramp, global poll-start budget, adaptive
+thermal/CPU backoff, or jitter. Current overlapping writes are logically merge-protected but can rewrite a full
+binary bin; higher-than-daily derived bins are clean-rebuilt. Treat the current load rehearsal as evidence only.
+
+Implemented in the current working tree:
+
+- Global poll-start pacing with warm-up, jitter, and load/RAM backoff in the backfill daemon.
+- Opt-in immutable SOVT segments with atomic manifests, compatibility reads, cheap coverage, and retained-old
+  generation compaction support.
+- Focused verification: 16 backfill tests and 3 segment-storage tests pass.
+
+Remaining implementation order:
+
+1. Add durable queued/retry state and fuller write-amplification instrumentation.
+2. Add temperature/disk hysteresis and a controlled compaction command with free-space gates.
+3. Prove segment-mode read parity and interrupted-compaction recovery on disposable storage.
+4. Run controlled laptop load tests and compare data parity, SSD writes, and recovery behavior. Never silently delete old
+   data.
+
+Paper-bot cadence is now separately implemented through `shared/lib/settings/interval_policy.js`: default 1 minute,
+personal setting/request, then administrator minimum. Restart the existing paper-bot process before expecting the
+new cadence to take effect.
+5. Run controlled laptop load tests and compare data parity, SSD writes, and recovery behavior.
+
+The word “instead” is treated as “write immutable segments/generations, then compact only after verification.”
+If indefinite version retention is intended, choose the storage budget before implementation.
+
+## 2026-07-26 session 103 critical override - exercise the all-in-one web-only rehearsal
+
+The role-based portable-hosting source is implemented in the current working tree above committed
+`HEAD c2e28993`; it is not yet committed. The laptop may now model every machine role through the
+`all-in-one` deployment profile, but plain Compose startup is web-only and the central updater refuses this
+rehearsal profile. `backfill` requires the explicit `writer` Compose profile.
+
+Current source proof:
+
+1. Host-capable Node aggregate: 910 total / 906 pass / 0 fail / 4 intentional skips.
+2. API: 21/21; contracts: 57/57; independent-review focus: 24/24.
+3. Frontend TypeScript and production build pass.
+4. Plain Compose renders only `web`; the `writer` profile renders `web` plus `backfill`.
+5. Secrets scan: 846 files / 0 violations; hygiene and diff checks pass.
+6. No service, container, timer, provider poll, writer, bot, order, public exposure, migration, or promotion ran.
+
+Execute next:
+
+1. Review and commit this source batch separately from the pre-existing prompt-log continuity edit. Then prove
+   clean committed archive/fresh-clone installation.
+2. With explicit operator approval, generate/review an owner-only `.env.central` using
+   `SOVEREIGN_DEPLOYMENT_PROFILE=all-in-one`, start only `web`, and test a real Supabase login plus viewer,
+   operator, and owner `401`/`403`/success boundaries.
+3. Verify a second-machine SSH tunnel and Socket.IO reconnect after token refresh. Treat loopback tunnel IPs as
+   opaque; do not claim original client-IP identity through SSH.
+4. Prove temporary backup/restore, restart, session-registry retention, and one-writer locking.
+5. Only after separate provider/data-mutation approval, start `backfill` with `--profile writer`, recover
+   freshness/DCS, and soak it. Do not use `update-central-host.sh` with `all-in-one`.
+6. Migrate to the mini PC by changing the deployment profile to `central-host`, restoring private env/data
+   separately, and rerunning the same login, SSH, backup, restart, one-writer, MCP, and soak gates.
+
+Keep live execution, public exposure, execution secrets, destructive migration, and promotion blocked.
+
 ## 2026-07-24 session 101 critical override - seal remote client and qualify the real host
 
 Repository implementation is committed at `e0de66de` after the earlier continuity commit `87d896de`.

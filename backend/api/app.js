@@ -20,8 +20,22 @@ const {
   backendStatus,
 } = require('./server/services/cli_executor');
 const ROUTES = require('./server/routes');
-const { getAuthStatus } = require('./server/services/supabase_client');
 const { isMcpRequest, isMcpAllowed, redactDeep } = require('../../shared/lib/mcp/gate');
+const {
+  CLIENT_ROUTE_CAPABILITIES,
+  CAPABILITIES,
+  PROTECTED_GET_CAPABILITIES,
+  authorize,
+  requiredCapabilities,
+} = require('../../shared/lib/auth/access_policy');
+const {
+  resolvePrincipal,
+  resolveSocketPrincipal,
+} = require('./server/services/access_control');
+const {
+  authSessionRegistry,
+  requestNetworkContext,
+} = require('./server/services/auth_session_registry');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const WEB_PUBLIC_ROOT = path.join(REPO_ROOT, 'Frontend', 'dashboard', 'dist');
@@ -30,7 +44,6 @@ const PORT = Number.parseInt(process.env.SOVEREIGN_WEB_PORT || process.env.PORT 
 const HOST = process.env.SOVEREIGN_WEB_HOST || '127.0.0.1';
 
 // --- SECURITY MEASURES ---
-const API_TOKEN = process.env.SOVEREIGN_API_TOKEN || '';
 const CLIENT_TOKEN = process.env.SOVEREIGN_CLIENT_TOKEN || '';
 const ALLOWED_ORIGINS = [
   `http://${HOST}:${PORT}`, 
@@ -53,32 +66,14 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000).unref();
 
-const CLIENT_GET_ROUTES = new Set([
-  '/api/bias',
-  '/api/bot/status',
-  '/api/client/status',
-  '/api/data/summary',
-  '/api/scorecard',
-  '/api/signal',
-  '/api/universe',
-]);
+const CLIENT_GET_ROUTES = new Set(Object.keys(CLIENT_ROUTE_CAPABILITIES));
 const STRICT_CLIENT_GET_ROUTES = new Set([
   '/api/bias',
   '/api/client/status',
 ]);
 
 // GET routes that require a token even though they are read-only.
-const PROTECTED_GET_ROUTES = new Set([
-  '/api/backend/portfolio',
-  '/api/cache/list',
-  '/api/config',
-  '/api/database/status',
-  '/api/bot/status',
-  '/api/bias',
-  '/api/client/status',
-  '/api/kill-switch',
-  '/api/scorecard',
-]);
+const PROTECTED_GET_ROUTES = new Set(Object.keys(PROTECTED_GET_CAPABILITIES));
 if (CLIENT_TOKEN) {
   for (const route of CLIENT_GET_ROUTES) PROTECTED_GET_ROUTES.add(route);
 }
@@ -108,34 +103,6 @@ function setSecurityHeaders(res, origin, req) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Sovereign-Token, Authorization');
   res.setHeader('Access-Control-Max-Age', '600');
-}
-
-async function hasAuthenticatedApiCaller(req) {
-  const token = req.headers['x-sovereign-token'];
-  if (API_TOKEN && token === API_TOKEN) return true;
-  if (!req.headers.authorization) return false;
-  const auth = await getAuthStatus(req);
-  return auth.authenticated === true;
-}
-
-function requestTokens(req) {
-  const tokens = [];
-  const sovereignToken = req.headers['x-sovereign-token'];
-  if (typeof sovereignToken === 'string' && sovereignToken) {
-    tokens.push(sovereignToken);
-  }
-  const authorization = req.headers.authorization;
-  if (typeof authorization === 'string') {
-    const match = authorization.match(/^Bearer\s+(.+)$/i);
-    if (match && match[1]) tokens.push(match[1]);
-  }
-  return tokens;
-}
-
-function hasAuthenticatedClientCaller(req) {
-  const allowed = [CLIENT_TOKEN, API_TOKEN].filter(Boolean);
-  if (allowed.length === 0) return false;
-  return requestTokens(req).some((token) => allowed.includes(token));
 }
 
 async function checkSecurity(req, res) {
@@ -187,35 +154,50 @@ async function checkSecurity(req, res) {
   const requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const privilegedQueryFields = ['input', 'quality_report', 'model_report', 'backtest_report', 'equity'];
   const hasPrivilegedOverride = privilegedQueryFields.some((field) => requestUrl.searchParams.has(field));
-  const isStrictClientGet = req.method === 'GET'
-    && STRICT_CLIENT_GET_ROUTES.has(pathname);
-  const isWhitelistedClientGet = req.method === 'GET'
-    && CLIENT_GET_ROUTES.has(pathname)
-    && !hasPrivilegedOverride;
-  const requiresStrictClientAuthentication = isStrictClientGet;
-  const requiresClientRouteAuthentication = isWhitelistedClientGet
-    && Boolean(CLIENT_TOKEN);
-  const requiresAuthentication = req.method !== 'GET'
-    || PROTECTED_GET_ROUTES.has(pathname)
-    || hasPrivilegedOverride
-    || requiresStrictClientAuthentication
-    || requiresClientRouteAuthentication;
-  if (requiresAuthentication) {
-    let authenticated;
-    if (requiresStrictClientAuthentication) {
-      authenticated = hasAuthenticatedClientCaller(req);
-    } else if (requiresClientRouteAuthentication) {
-      authenticated = hasAuthenticatedClientCaller(req)
-        || await hasAuthenticatedApiCaller(req);
-    } else {
-      authenticated = await hasAuthenticatedApiCaller(req);
-    }
-    if (!authenticated) {
-      console.warn(`[SECURITY] Missing or invalid API token from ${ip}`);
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: 'authentication_required' }));
-      return false;
-    }
+  const query = Object.fromEntries(requestUrl.searchParams.entries());
+  const required = requiredCapabilities({
+    method: req.method,
+    pathname,
+    hasClientToken: Boolean(CLIENT_TOKEN),
+    hasPrivilegedOverride,
+    query,
+  });
+  const principal = await resolvePrincipal(req);
+  const decision = authorize(principal, required);
+  const network = requestNetworkContext(req);
+  const sessionDecision = req.method === 'POST' && pathname === '/api/auth/session/reauth'
+    ? authSessionRegistry.approvePending(principal, network)
+    : authSessionRegistry.record(principal, network);
+  req.sovereignPrincipal = principal;
+  req.sovereignAuthorization = decision;
+  req.sovereignNetwork = network;
+  req.sovereignSessionRisk = sessionDecision;
+  if (!sessionDecision.allowed) {
+    console.warn(
+      `[SECURITY] ip_reauthentication_required principal=${principal.id || 'anonymous'}`
+      + ` risk=${sessionDecision.risk.reason}`,
+    );
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: false,
+      error: 'ip_reauthentication_required',
+    }));
+    return false;
+  }
+  if (!decision.allowed) {
+    const status = decision.authenticated ? 403 : 401;
+    console.warn(
+      `[SECURITY] ${decision.reason} from ${ip}`
+      + ` principal=${principal.id || 'anonymous'}`
+      + ` required=${decision.required.join(',') || 'none'}`,
+    );
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: false,
+      error: decision.reason,
+      required_capabilities: decision.required,
+    }));
+    return false;
   }
 
   // Add response hardening and scoped CORS headers
@@ -350,6 +332,37 @@ const io = new Server(server, {
   allowRequest: (req, callback) => callback(null, isAllowedOrigin(req.headers.origin, req)),
 });
 
+io.use(async (socket, next) => {
+  try {
+    const principal = await resolveSocketPrincipal(socket);
+    const decision = authorize(principal, [CAPABILITIES.STATUS_READ]);
+    if (!decision.allowed) {
+      const error = new Error(decision.reason);
+      error.data = {
+        code: decision.reason,
+        required_capabilities: decision.required,
+      };
+      next(error);
+      return;
+    }
+    const network = requestNetworkContext(socket.request);
+    const sessionDecision = authSessionRegistry.record(principal, network);
+    if (!sessionDecision.allowed) {
+      const error = new Error('ip_reauthentication_required');
+      error.data = { code: 'ip_reauthentication_required' };
+      next(error);
+      return;
+    }
+    socket.data.sovereignPrincipal = principal;
+    socket.data.sovereignNetwork = network;
+    next();
+  } catch (_) {
+    const error = new Error('authentication_required');
+    error.data = { code: 'authentication_required' };
+    next(error);
+  }
+});
+
 io.on('connection', (socket) => {
   console.log(`[TELEMETRY] Client connected: ${socket.id}`);
   socket.emit('status', { msg: 'Connected to Sovereign Telemetry', timestamp: new Date().toISOString() });
@@ -390,5 +403,5 @@ module.exports = {
   DEFAULT_SNAPSHOT,
   PROTECTED_GET_ROUTES,
   STRICT_CLIENT_GET_ROUTES,
-  hasAuthenticatedClientCaller,
+  checkSecurity,
 };

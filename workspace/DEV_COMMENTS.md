@@ -36,3 +36,19 @@
   composer exists.
 - `docs/engineering/architecture_overview.md` is a stale architecture view and must be refreshed against current
   CMake/gateway truth.
+
+## 2026-07-26 session 104 deep blast-through
+
+- P1: `backend/cli/commands/runner/run.js` cannot start the persistent paper loop because its interval-policy
+  variables are undefined in `runPaperBotLoop`; the same file also applies bot cadence policy to backfill.
+- P1: keep `SOVEREIGN_TS_STORAGE=segments` disabled. Existing canonical bins mask new segments; hashes and
+  missing files are not verified; manifest coverage can be false; compaction can orphan concurrent appends;
+  and lower-priority providers can overwrite preferred rows.
+- P1 conditional: IP `reauth` keys human sessions by access-token hash. Token rotation at a new IP becomes a new
+  allowed `first_seen` record, and no explicit approval/recovery route exists.
+- P2: developer/client non-writer profiles are not enforced by the backfill entrypoint; private
+  `storage/runtime/auth_sessions.json` is not ignored; segment publication lacks full fsync durability.
+- P3: conditional live-cycle capability and kill-switch method semantics drift from the role contract, although
+  downstream live execution remains fail closed. The docs hub has 14 broken links and README's test baseline is stale.
+- Current evidence: DCS 0.954348 but integrity `ok:false` with 14 stale required `1d` windows; host aggregate
+  921/917/0fail/4skip; dirty batch 56 files, +3218/-140. No production fix was made in the audit.

@@ -27,6 +27,7 @@ const {
 } = require('../../lib/utils.js');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const {
   FAMILY_BASE_TF, rollupTargetsAboveBase, rollupFromBase, DEFAULT_TS_DIR,
   commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIngest,
@@ -57,6 +58,17 @@ const LANE_CONCURRENCY = { binance: 3, alpaca: 3, yahoo: 5 };
 // 5m and ~100× smaller, so that lane can take the full override. A lane absent here is
 // uncapped. (See windowed-rollup wiring below, which removes the second full-bin read.)
 const LANE_MAX_CONCURRENCY = { binance: 3, alpaca: 3 };
+
+// Poll starts are globally paced in addition to the per-provider concurrency caps.
+// This prevents three lanes from all opening network/file/merge work at the same
+// instant on a small host. CLI defaults are intentionally conservative; tests may
+// pass zero or inject a clock/sleep implementation.
+const DEFAULT_POLL_GAP_MS = 500;
+const DEFAULT_WARMUP_JOBS = 4;
+const DEFAULT_WARMUP_GAP_MS = 1500;
+const DEFAULT_JITTER_MS = 125;
+const DEFAULT_HIGH_LOAD_RATIO = 1.25;
+const DEFAULT_HIGH_MEMORY_RATIO = 0.8;
 
 const DAY_MS = 86400000;
 const DAEMON_STATUS_PATH = path.resolve(__dirname, '../../../../storage/data/cache/backfill_daemon_status.json');
@@ -184,6 +196,67 @@ function fmtAge(ms) {
   return `${Math.round(h / 24)}d`;
 }
 
+function defaultResourceProbe() {
+  const cpus = Math.max(1, os.cpus().length || 1);
+  const load = os.loadavg()[0] || 0;
+  const memory = process.memoryUsage();
+  return {
+    load_ratio: load / cpus,
+    memory_ratio: memory.rss / Math.max(1, os.totalmem()),
+  };
+}
+
+function sleepMs(ms) {
+  if (!ms) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * createPollPacer -- one global token schedule shared by every provider lane.
+ * The schedule is deliberately start-based: a slow request does not hold the
+ * token, while simultaneous new requests cannot stampede the machine.
+ */
+function createPollPacer(options = {}) {
+  const gapMs = Math.max(0, Number(options.gapMs ?? DEFAULT_POLL_GAP_MS));
+  const warmupJobs = Math.max(0, Number(options.warmupJobs ?? DEFAULT_WARMUP_JOBS));
+  const warmupGapMs = Math.max(gapMs, Number(options.warmupGapMs ?? DEFAULT_WARMUP_GAP_MS));
+  const jitterMs = Math.max(0, Number(options.jitterMs ?? DEFAULT_JITTER_MS));
+  const highLoadRatio = Math.max(0, Number(options.highLoadRatio ?? DEFAULT_HIGH_LOAD_RATIO));
+  const highMemoryRatio = Math.max(0, Number(options.highMemoryRatio ?? DEFAULT_HIGH_MEMORY_RATIO));
+  const adaptiveMultiplier = Math.max(1, Number(options.adaptiveMultiplier ?? 2));
+  const now = options.now || (() => Date.now());
+  const sleep = options.sleep || sleepMs;
+  const random = options.random || Math.random;
+  const probe = options.resourceProbe || defaultResourceProbe;
+  let nextStartAt = now();
+  let started = 0;
+  let chain = Promise.resolve();
+
+  async function acquire(lane) {
+    let result;
+    // Serialise token allocation without serialising the actual provider request.
+    const turn = chain.then(async () => {
+      const resource = probe() || {};
+      const pressure = Number(resource.load_ratio) > highLoadRatio || Number(resource.memory_ratio) > highMemoryRatio;
+      const baseGap = started < warmupJobs ? warmupGapMs : gapMs;
+      const gap = pressure ? baseGap * adaptiveMultiplier : baseGap;
+      const jitter = jitterMs ? Math.floor(random() * (jitterMs + 1)) : 0;
+      const target = Math.max(now(), nextStartAt);
+      const wait = target - now();
+      if (wait > 0) await sleep(wait);
+      const grantedAt = now();
+      nextStartAt = grantedAt + gap + jitter;
+      started += 1;
+      result = { lane, started, wait_ms: Math.max(0, wait), gap_ms: gap, pressured: pressure };
+    });
+    chain = turn.catch(() => {});
+    await turn;
+    return result;
+  }
+
+  return { acquire, getState: () => ({ started, next_start_at: nextStartAt }) };
+}
+
 /**
  * runWithConcurrency -- run async fn over items with a bounded concurrency pool.
  * JS is single-threaded so shared state mutations between awaits are safe.
@@ -244,6 +317,13 @@ async function runBackfillCycle(o) {
   const deepDays = o.deepDays || DEFAULT_DEEP_DAYS;
   const incrementalDays = o.incrementalDays || INCREMENTAL_DAYS;
   const parallelLanes = o.parallelLanes !== false; // default true
+  const pollPacer = o.pollPacer || createPollPacer({
+    gapMs: o.pollGapMs,
+    warmupJobs: o.warmupJobs,
+    warmupGapMs: o.warmupGapMs,
+    jitterMs: o.jitterMs,
+    resourceProbe: o.resourceProbe,
+  });
 
   const summary = { cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0, rolled_up: 0, rollup_errors: 0, errors: 0, failures: [] };
   const start = Date.now();
@@ -294,6 +374,8 @@ async function runBackfillCycle(o) {
     const t0 = Date.now();
     let res;
     try {
+      const pacing = await pollPacer.acquire(FAMILY_LANE[job.family] || 'yahoo');
+      if (o.onPollStart) o.onPollStart(job, pacing);
       res = await o.execute(job, action, days);
     } catch (err) {
       res = { ok: false, error: err && err.message ? err.message : String(err) };
@@ -352,6 +434,7 @@ async function runBackfillCycle(o) {
   }
 
   summary.elapsed_s = Number(((Date.now() - start) / 1000).toFixed(1));
+  summary.polls_started = pollPacer.getState().started;
   log(JSON.stringify({ type: 'backfill_cycle', ...summary }));
   return summary;
 }
@@ -425,6 +508,17 @@ function makeRealRollup(tsDir, incrementalDays = INCREMENTAL_DAYS) {
  * with --once), wiring the real ingest commands as executors.
  */
 async function commandBackfillDaemon(args) {
+  // An explicitly selected machine profile is a security/ownership contract.
+  // Keep unprofiled local development backward compatible, but never allow a
+  // declared developer/client host to become a canonical writer by CLI accident.
+  if (process.env.SOVEREIGN_DEPLOYMENT_PROFILE) {
+    const { validateDeploymentProfile } = require('../../../../shared/lib/settings/deployment_profile.js');
+    const profile = validateDeploymentProfile(process.env.SOVEREIGN_DEPLOYMENT_PROFILE, { requireWriter: true });
+    if (!profile.ok) {
+      console.error(`[BACKFILL] Refusing writer start: ${profile.reason}`);
+      return 1;
+    }
+  }
   const intervalSecs = numericOption(args, '--interval-secs', 1800);
   const once = hasFlag(args, '--once');
   const tsDir = optionValue(args, '--ts-dir', DEFAULT_TS_DIR);
@@ -439,6 +533,10 @@ async function commandBackfillDaemon(args) {
   const sequential = hasFlag(args, '--sequential'); // escape hatch for debugging
   const concurrency = numericOption(args, '--concurrency', 0); // 0 = use per-lane defaults
   const deepAll = hasFlag(args, '--deep-all'); // force full DEEP_PLAN for every live symbol
+  const pollGapMs = numericOption(args, '--poll-gap-ms', DEFAULT_POLL_GAP_MS);
+  const warmupJobs = numericOption(args, '--warmup-jobs', DEFAULT_WARMUP_JOBS);
+  const warmupGapMs = numericOption(args, '--warmup-gap-ms', DEFAULT_WARMUP_GAP_MS);
+  const jitterMs = numericOption(args, '--poll-jitter-ms', DEFAULT_JITTER_MS);
 
   // Suppress verbose sub-command output — daemon owns all progress reporting.
   global.suppressLogs = true;
@@ -485,6 +583,16 @@ async function commandBackfillDaemon(args) {
       parallelLanes: !sequential,
       concurrency: concurrency || undefined,
       forceDeep: deepAll,
+      pollGapMs, warmupJobs, warmupGapMs, jitterMs,
+      onPollStart: (job, pacing) => {
+        status.current_symbol = job.symbol;
+        status.last_poll_start = new Date().toISOString();
+        status.last_poll_lane = pacing.lane;
+        status.last_poll_wait_ms = pacing.wait_ms;
+        status.polls_started = pacing.started;
+        status.updated_at = new Date().toISOString();
+        writeDaemonStatus(status);
+      },
       onJobDone: (job, outcome) => {
         status.completed_jobs += 1;
         status.current_symbol = job.symbol;
@@ -527,6 +635,7 @@ module.exports = {
   INCREMENTAL_DAYS,
   LANE_CONCURRENCY,
   LANE_MAX_CONCURRENCY,
+  createPollPacer,
   utcDayFloor,
   FAMILY_LANE,
   DAEMON_STATUS_PATH,

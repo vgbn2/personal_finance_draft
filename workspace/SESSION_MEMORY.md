@@ -1034,3 +1034,112 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "safety": "no runtime, provider, writer, bot, order, public exposure, migration, or promotion action"
 }
 ```
+
+## Session Memory - 2026-07-26 session 103 role-based portable hosting
+
+```json
+{
+  "head": "c2e28993",
+  "source_state": "uncommitted working tree",
+  "completed": [
+    "Capability RBAC for human and service principals across HTTP and Socket.IO.",
+    "Machine deployment profiles independent from user authorization.",
+    "All-in-one laptop rehearsal with enforced web-only plain Compose startup.",
+    "Optional private IP/session registry with token fingerprints and audit or reauth policy.",
+    "Current-session HTTP auth and per-handshake Socket.IO auth refresh.",
+    "Portable laptop-to-central-host migration guide."
+  ],
+  "independent_review": {
+    "p0": 0,
+    "closed_p1": 2,
+    "closed_p2": 3
+  },
+  "verification": {
+    "canonical_host_node": "910 total / 906 pass / 0 fail / 4 intentional skips",
+    "api": "21/21 pass",
+    "contracts": "57/57 pass",
+    "review_focus": "24/24 pass",
+    "frontend": "TypeScript and production build pass",
+    "compose": "plain web only; writer profile backfill plus web",
+    "secrets": "846 files / 0 violations",
+    "hygiene_diff": "pass",
+    "graphify": "unavailable: missing graphify module"
+  },
+  "open": [
+    "Review and commit the working-tree source, then prove committed archive and fresh clone.",
+    "Exercise real Supabase login and role boundaries on a web-only laptop runtime.",
+    "Exercise second-machine SSH, token refresh reconnect, backup/restore, restart, and session retention.",
+    "Qualify one writer, MCP, freshness, and soak before central-host availability claims."
+  ],
+  "safety": "No service, container, timer, provider poll, writer, bot, order, public exposure, migration, or promotion ran."
+}
+```
+
+## Session Memory - 2026-07-26 session 104 deep blast-through
+
+```json
+{
+  "head": "c2e289930670",
+  "mode": "claude full audit / Hard Reading Mode with blast-through",
+  "verdict": "No P0; C+ system grade; current uncommitted feature batch is not promotion-ready.",
+  "p1": [
+    "Persistent paper-runner loop references undefined interval variables.",
+    "Segment mode masks mixed canonical/segment state and fails open on missing or corrupt active segments.",
+    "Segment compaction can lose a concurrent append from the active manifest, and segment reads bypass provider precedence.",
+    "Conditional reauthentication can be reset by rotating to another valid bearer token for the same principal."
+  ],
+  "p2": [
+    "Backfill cadence incorrectly inherits the bot interval policy.",
+    "Segment manifest and rename durability lacks directory fsync.",
+    "Writer deployment profiles are descriptive at the backfill entrypoint.",
+    "The private auth-session registry path is not ignored by repository hygiene."
+  ],
+  "verification": {
+    "host_node": "921 total / 917 pass / 0 fail / 4 intentional skips",
+    "frontend": "lint and production build pass",
+    "gateway": "TypeScript no-emit pass",
+    "secrets": "846 tracked files and 18 untracked text files / 0 violations",
+    "hygiene_diff": "pass",
+    "clean_head_archive": "canonical runner, CLI and API syntax pass",
+    "graphify": "unavailable: missing graphify module"
+  },
+  "integrity": {
+    "cached": "92/92",
+    "policy_stale": 14,
+    "grain_suspects": "9 cadence-plausible / 0 unexplained",
+    "dcs": 0.954348,
+    "result": "false because policy-stale required windows remain"
+  },
+  "next": "Repair the paper runner first, keep segment mode disabled, then repair segment validation/concurrency and principal-level reauthentication before reviewing or committing the batch.",
+  "safety": "Audit made no production source fix and performed no provider poll, runtime start/stop, bot cycle, order, public exposure, destructive migration, or promotion."
+}
+```
+
+## Session Memory - 2026-07-26 session 104 mass-implement closure
+
+```json
+{
+  "work": "Repaired all confirmed session-104 source P1 defects and aligned selected P2/P3 contracts without runtime action.",
+  "closed": [
+    "Persistent paper scheduler now uses the effective centralized interval; backfill cadence is independent.",
+    "Segment storage merges canonical and segment rows with provider precedence, verified integrity/coverage, transactional compaction, and fsync publication ordering.",
+    "Human reauth uses stable subject identity with authenticated pending-IP confirmation.",
+    "Declared non-writer profiles refuse backfill; live API cycles and kill-switch mutation capabilities are explicit.",
+    "Private registry is ignored; docs links/baseline and contract-suite coverage are aligned."
+  ],
+  "verification": {
+    "contracts": "87/87 host-capable pass",
+    "aggregate": "host npm test pass",
+    "hygiene": "pass",
+    "diff": "pass",
+    "docs_targets": "pass"
+  },
+  "remaining": [
+    "Review/commit and prove clean current-source archive/fresh clone.",
+    "Segment write-amplification, free-space, retry, thermal/disk, interrupted recovery, and soak qualification.",
+    "Recover 14 policy-stale required data windows before integrity/promotion claims.",
+    "Real host login, SSH, one-writer, MCP, backup/restore, restart/rollback, and soak evidence."
+  ],
+  "safety": "No provider poll, runtime start/stop, bot cycle, order, public exposure, destructive migration, or promotion occurred during implementation."
+}
+```

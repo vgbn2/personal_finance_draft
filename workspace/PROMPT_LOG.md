@@ -2119,3 +2119,140 @@ Closed the session at a clean committed boundary after implementation commit `e0
 `755bded6`. No tests were rerun after the already-recorded 894/0-failure host aggregate because the later changes
 were continuity-only. `graphify-out` remains unavailable. No service, task, tunnel, host, provider poll,
 canonical-data write, bot cycle, order, public exposure, destructive migration, or promotion was started.
+
+## User Prompt - 2026-07-25 session 102
+
+`$session-orchestrator`
+
+## Work - 2026-07-25 session 102
+
+Ran the session-orchestrator boot sequence. Read `workspace/BOOTSTRAP.md`, the current dated handoff
+`workspace/handoff/2026-07-24.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `workspace/NEXT_SESSION_GOAL.md`,
+and `docs/README.md`. Verified a clean working tree at `HEAD c2e28993`; source commit `e0de66de` and continuity
+commits are present. No code changed in the prior session, so no graph refresh was attempted; `graphify-out` remains
+unavailable. No provider poll, canonical-data mutation, host/container/timer, bot cycle, order, public exposure,
+destructive migration, or promotion was started.
+
+## User Prompt - 2026-07-26 session 103
+
+`$session-orchestrator`
+
+## Work - 2026-07-26 session 103
+
+Ran the session-orchestrator boot sequence. Read `workspace/BOOTSTRAP.md`, the current handoff pointer and dated
+handoff `workspace/handoff/2026-07-24.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`,
+`workspace/NEXT_SESSION_GOAL.md`, and `docs/README.md`. Verified `HEAD c2e28993` on `main`, with only the existing
+prompt-log continuity edit in the working tree. No code changed in the prior session, so no graph refresh was
+attempted; `graphify-out` remains unavailable. No provider poll, canonical-data mutation, host/container/timer,
+bot cycle, order, public exposure, destructive migration, or promotion was started.
+
+## User Direction - 2026-07-26 session 103
+
+Asked whether login could be bound to an IP, whether IP storage is feasible, whether this laptop can rehearse
+hosting before buying a mini PC, whether the system can be portable across machines, and whether role-based
+configuration can control access. Requested a refined plan, then invoked `$mass-implement`.
+
+## Work - 2026-07-26 session 103
+
+Implemented role-based portable hosting with capability policy, human/service principals, route and Socket.IO
+enforcement, deployment profiles, optional privacy-aware IP/session records, web-only all-in-one startup,
+central-host writer separation, browser auth refresh, contracts, and operator/migration documentation.
+Independent review found two P1 and three P2 issues; all were closed. Final host-capable Node is
+910 total / 906 pass / 0 fail / 4 intentional skips; API 21/21, contracts 57/57, frontend type/build,
+Compose rendering, secrets, hygiene, and diff gates pass. `graphify` remains unavailable because its module is
+not installed. No runtime, provider, writer, bot, order, public-exposure, migration, or promotion action ran.
+
+## User Prompt - 2026-07-26 session 103
+
+`bash script to monitor cpu, ra, gpu useage?, or relevant apps?`
+
+## Work - 2026-07-26 session 103
+
+Added the foreground-only `npm run host:monitor` command with CPU/load/frequency, RAM/swap, thermal,
+NVIDIA/VRAM, available integrated-GPU, disk, busiest-process, relevant-app, and optional Docker statistics.
+Fixed an AWK portability issue found by the first real host snapshot and compacted application output.
+Bash syntax, focused behavior tests, npm invocation, and a final authoritative host snapshot pass. No service,
+timer, background monitor, or report writer was installed.
+
+## User Prompt - 2026-07-26 session 103
+
+`turn those on as well, i want to see the load`
+
+## Work - 2026-07-26 session 103
+
+Docker was checked but the current user lacks Docker socket permission. Started the equivalent native web/API,
+full 89-job backfill, and non-live paper bot workloads. The first load snapshot measured 29.8% overall CPU,
+124% backfill CPU, 2.5 GiB backfill RSS, 11/26 GiB RAM, 67 C package temperature, and 37% RTX usage. No
+live execution, updater timer, public binding, or container was started.
+
+## User Prompt - 2026-07-26 session 103
+
+`is therere a load sharein or gradual load scheme implemented?, i think it should spike the load no?, too volatile`
+
+`plan to share load between polls so it doest spike, also i want it to preserve the ssd by not overwriting old data when mass backfill, instead`
+
+## Work - 2026-07-26 session 103
+
+Confirmed that backfill has bounded provider-lane concurrency and append protection, but no gradual scheduler,
+global poll budget, adaptive thermal/CPU backoff, jitter, or immutable overlap storage. Recorded the deferred
+load-smoothing and append-only segment plan at `workspace/plans/LOAD_SMOOTHING_AND_APPEND_ONLY_STORAGE_PLAN.md`.
+Then implemented the first approved batches: global poll-start pacing with warm-up/jitter/load-RAM backoff,
+and an opt-in immutable SOVT segment/manifest store with compatibility reads, coverage, and retained-old-file
+compaction support. Focused verification is 16/16 backfill tests and 3/3 segment-storage tests. The active
+daemon was not restarted, so the prior workload remains on the old code until explicitly stopped/restarted.
+
+## User Prompt - 2026-07-26 session 103
+
+`change the interval to 1min, global interval<personal interval<admin interval`
+
+`before implementing, is it redundant`
+
+`okay do that`
+
+## Work - 2026-07-26 session 103
+
+Confirmed that separate independent timers would be redundant, so implemented one effective paper-bot interval
+resolver. Default cadence is 1 minute; personal settings/request may be slower; `SOVEREIGN_ADMIN_BOT_INTERVAL_MIN`
+is a host-wide minimum and wins through `max(global, personal, admin)`. Updated CLI runner, paper Compose profile,
+personal settings, docs, and tests. The existing bot process was not restarted.
+
+## User Prompt - 2026-07-26 session 104
+
+`$session-orchestrator`
+
+## Work - 2026-07-26 session 104
+
+Booted the session-orchestrator workflow. Read `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, the current
+dated handoff `workspace/handoff/2026-07-26.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`,
+`workspace/NEXT_SESSION_GOAL.md`, and the session-orchestrator skill. The working tree still contains the
+session-103 role-based hosting, load-smoothing/append-only storage, interval-policy source batch, and workspace
+continuity edits; no reset, cleanup, or source change was performed. The graph refresh was attempted and remains
+unavailable because the local `graphify` module is missing. No runtime workload was started or stopped by boot.
+
+## User Prompt - 2026-07-26 session 104
+
+`deep blast thorugh, follow every protocol`
+
+## Work - 2026-07-26 session 104
+
+Ran the `claude` full audit in Hard Reading Mode with the `blast-through` protocol, dirty-tree boundary,
+clean-HEAD archive comparison, focused connectivity/stub/config/docs/hygiene checks, disposable segment-store
+fault probes, host-capable aggregate verification, and independent severity review. No P0 was found, but the
+current uncommitted feature batch remains blocked by P1 paper-runner, segment-store, and conditional-reauth
+defects. Recorded the complete findings, grades, evidence limits, and remediation order in the workspace review,
+ledger, report, state, next-goal, memory, and dated handoff files. No production source fix, provider poll,
+runtime mutation, bot cycle, order, public exposure, destructive migration, or promotion was performed.
+
+## User Prompt - 2026-07-26 session 104
+
+`$mass-implement`
+
+## Work - 2026-07-26 session 104
+
+Used the ranked mass-implement and codex workflows to repair every confirmed session-104 source P1 and selected
+P2/P3 contract drift: persistent paper scheduling and independent backfill cadence; merged verified segment
+storage with provider precedence, fail-closed corruption handling, transactional compaction, and fsync ordering;
+stable human reauth plus pending-IP confirmation; writer profile enforcement; live-cycle/kill-switch capability
+alignment; registry hygiene; contract coverage; and documentation links/baseline. Host `npm run test:contracts`
+passes 87/87; host aggregate, hygiene, diff integrity, and docs-target checks pass. No provider poll, runtime,
+bot, order, public exposure, migration, or promotion action was performed.

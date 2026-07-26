@@ -36,6 +36,19 @@ chmod 600 .env.central
 SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.sh
 ```
 
+Portable all-in-one laptop rehearsal:
+
+```bash
+npm run host:prepare-central-env -- --profile all-in-one
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml config --quiet
+```
+
+Deployment profiles control which services a machine may run; access roles separately control what an
+authenticated user may do. The `all-in-one` profile makes every repository role available but defaults to
+web-only; `backfill` requires the explicit `writer` profile, and the central updater refuses the rehearsal
+profile. It does not automatically start provider polling, paper cycles, or other persistent work. See
+[`docs/operational/guides/role_based_hosting.md`](docs/operational/guides/role_based_hosting.md).
+
 The central stack runs one `backfill` writer beside the web/API scorecard reader, preserves host-mounted
 `storage/`, binds to loopback by default, and forces cloud-compute/non-live mode. Client machines use an
 SSH tunnel or private VPN and submit code changes through Git; they do not mount or write the ts-index.
@@ -152,4 +165,5 @@ npm test                  # node --test runner (NOT jest — jest mis-parses the
 npm run hygiene           # lint + dead-import scan
 ```
 
-Baseline: **652 pass / 0 fail / 2 skip** on `feat/ink-tui-refactor`.
+Run `npm test` for the current checkout's aggregate result. Historical totals are intentionally recorded in
+`workspace/STATE.md` and the dated handoff rather than presented here as a current guarantee.

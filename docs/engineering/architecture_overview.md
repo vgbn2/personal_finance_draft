@@ -55,6 +55,8 @@ explicit release blocker.
 | CLI and TUI | `backend/cli` | Primary orchestration and operator surface |
 | Execution gateway | `backend/gateway` | Dry-run/live boundary, broker adapters, Polymarket research and paper paths |
 | Runtime policy | `shared/lib/settings/runtime_policy.js` | One fail-closed execution decision and status contract |
+| Access policy | `shared/lib/auth/access_policy.js` | Deny-by-default roles, capabilities, and route requirements |
+| Deployment profiles | `shared/lib/settings/deployment_profile.js` | Portable all-in-one, central-host, developer, and client machine roles |
 | Paper ledger | `backend/gateway/src/paper_ledger.js` | Internal Polymarket paper event authority and portfolio replay |
 | Private API/dashboard | `backend/api`, `Frontend/dashboard` | Thin authenticated views and command adapters |
 | MCP | `backend/mcp_server` | CLI-backed tools; operational only after a real host stdio handshake |
@@ -62,6 +64,10 @@ explicit release blocker.
 
 ## Account and execution boundaries
 
+- Deployment profiles control machine services only; they never grant user capabilities.
+- Human sessions receive `viewer`, `analyst`, `operator`, or `owner` through trusted server-side mapping.
+  Service principals inherit no role capabilities and receive an explicit capability list.
+- Source IP is session audit/risk metadata, not authentication. SSH-loopback traffic is intentionally opaque.
 - Internal Polymarket paper simulation uses the repository event ledger and virtual cash. It is not a broker
   account and never proves live readiness.
 - Alpaca paper is a broker-hosted account and is separate from the internal Polymarket ledger.

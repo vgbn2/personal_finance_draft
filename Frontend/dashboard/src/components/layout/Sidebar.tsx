@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '../../lib/utils';
-import { API_ENDPOINTS, DEFAULT_HEADERS } from '../../lib/api';
+import { API_ENDPOINTS, getAuthHeaders } from '../../lib/api';
 
 interface SidebarProps {
   open: boolean;
@@ -15,7 +15,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   useEffect(() => {
     const hydrateUniverse = async () => {
       try {
-        const res = await fetch(API_ENDPOINTS.UNIVERSE, { headers: DEFAULT_HEADERS });
+        const headers = await getAuthHeaders();
+        const res = await fetch(API_ENDPOINTS.UNIVERSE, { headers });
         const data = await res.json();
         if (data.ok && Array.isArray(data.entries)) {
           setUniverse(data.entries);

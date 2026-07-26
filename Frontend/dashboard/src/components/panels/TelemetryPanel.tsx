@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Terminal as TerminalIcon, Wifi, WifiOff } from 'lucide-react';
-import { API_BASE_URL } from '../../lib/api';
+import { API_BASE_URL, socketAuthProvider } from '../../lib/api';
 
 interface LogEntry {
   timestamp: string;
@@ -16,13 +16,17 @@ const TelemetryPanel: React.FC = () => {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    // Initialize socket connection
-    const socket = io(API_BASE_URL);
+    const socket = io(API_BASE_URL, { auth: socketAuthProvider });
     socketRef.current = socket;
 
     socket.on('connect', () => {
       setConnected(true);
       addLog({ msg: 'WebSocket connected to backend', level: 'info' });
+    });
+
+    socket.on('connect_error', (error) => {
+      setConnected(false);
+      addLog({ msg: `WebSocket unavailable: ${error.message}`, level: 'warn' });
     });
 
     socket.on('disconnect', () => {
@@ -39,7 +43,8 @@ const TelemetryPanel: React.FC = () => {
     });
 
     return () => {
-      socket.disconnect();
+      socketRef.current?.disconnect();
+      socketRef.current = null;
     };
   }, []);
 

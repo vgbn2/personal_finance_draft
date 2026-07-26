@@ -1547,3 +1547,143 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   1 declared exception. No service/task/tunnel was installed and no provider or data mutation ran.
 - The implementation is committed at `e0de66de`. Real-host, real-login, freshness, MCP, recovery, clean-clone,
   and soak proof remain separate gates.
+
+## Role-Based Portable Hosting Implementation - 2026-07-26 session 103
+
+- Added a capability-based authorization layer for human roles (`viewer`, `analyst`, `operator`, `owner`) and
+  explicitly scoped service principals. API-token compatibility maps to owner; the distinct remote-client token
+  remains read-only. Route inventory, privileged overrides, kill-switch commands, and unknown mutations are
+  classified explicitly; unknown capability names fail closed.
+- Added deployment profiles (`all-in-one`, `central-host`, `developer`, `client`) independently from user
+  permissions. The laptop `all-in-one` profile can rehearse every machine role, but plain Compose renders only
+  `web`; `backfill` is behind the `writer` profile, and the central updater refuses `all-in-one`.
+- Added optional owner-only session/IP records using one-way session fingerprints rather than raw tokens.
+  Forwarded headers remain untrusted, SSH loopback is marked tunnel-opaque, and `reauth` stays fail closed after
+  registry read or repeated write failures.
+- Browser HTTP calls now carry the current Supabase bearer token where authorization may be required. Socket.IO
+  requires `status.read` and resolves fresh auth for every initial/reconnect handshake.
+- Independent review found no P0 and identified two P1 plus three P2 issues. All five were closed: repeated
+  registry-write fail-open, accidental all-in-one writer startup, unknown-capability fail-open, sidebar missing
+  auth, and stale Socket.IO reconnect auth.
+- Verification: host-capable Node **910 total / 906 pass / 0 fail / 4 intentional skips**; API **21/21**;
+  contracts **57/57**; review focus **24/24**; frontend TypeScript and production build pass; plain Compose
+  services=`web`, writer profile services=`backfill,web`; secrets **846/0**; hygiene and diff checks pass.
+- Grade movement: API access control **B / token-gated -> A- / capability-contracted, real-login-gated**.
+  Deployment portability **C / testing-only -> B / profile-contracted, runtime-unproven**.
+- This is uncommitted current-working-tree proof above `HEAD c2e28993`, not committed archive or fresh-clone
+  proof. No service, container, timer, provider poll, writer, bot cycle, order, public exposure, destructive
+  migration, or promotion ran. Real login, second-machine SSH, backup/restore, restart, one-writer, MCP,
+  freshness, and soak remain open.
+
+## Foreground Host Resource Monitor - 2026-07-26 session 103
+
+- Added `npm run host:monitor`, backed by `backend/scripts/ops/host_resource_monitor.sh`.
+- The foreground-only monitor reports sampled CPU usage, average frequency, load, RAM/swap, temperatures,
+  NVIDIA/available integrated-GPU activity, disk usage, top processes, and filtered hosting/development apps.
+  Optional `--containers` adds bounded Docker stats; `--once`, `--interval`, `--top`, `--filter`, and
+  `--no-clear` support scripts and diagnostics.
+- Verification: Bash syntax, three focused behavior cases, npm entrypoint, and an authoritative host snapshot
+  pass. The host snapshot saw CPU 4.9%, 8.4/26 GiB RAM used, package temperature 49 C, and the RTX 3050 at
+  5% GPU / 382 MiB of 6144 MiB VRAM. These readings are momentary, not capacity or soak proof.
+- No service or timer was installed; the monitor writes no report and stops with `Ctrl+C`.
+
+## Active Laptop Load Rehearsal - 2026-07-26 session 103
+
+- The local web/API server is running on `127.0.0.1:8787` and passed `/health`.
+- Docker Compose could not be used because the current user lacks `/var/run/docker.sock` access. The equivalent
+  native workloads were started explicitly with `.env.central`: full 89-job `backfill-daemon` at a 30-minute
+  cadence and the non-live Polymarket paper bot at a 30-minute cadence using `low_prob_dip`.
+- No live bot, deployment updater, timer, public bind, or container was started. Backfill is actively polling
+  configured providers and writing cache data by explicit user request.
+- First load snapshot: overall CPU 29.8%, highest backfill process 124% CPU and 2.5 GiB RSS, RAM 11/26 GiB,
+  package temperature 67 C, RTX 3050 37% GPU and 369 MiB VRAM. These are momentary readings, not a soak result.
+- Stop the native workloads with `Ctrl+C` in their running terminals; stop the web server with `Ctrl+C` in its
+  server terminal. Do not leave provider polling enabled unattended without a retention/soak decision.
+
+## Load Smoothing and Append-Only Storage Implementation - 2026-07-26 session 103
+
+- Implemented a global backfill poll-start pacer with provider-lane sharing, warm-up spacing, bounded jitter,
+  load/RAM pressure backoff, and daemon status fields for the latest poll start. Existing lane concurrency
+  ceilings remain safety caps rather than target utilization.
+- Added opt-in immutable SOVT segment storage at `shared/lib/market/append_only_segments.js`, atomic manifests,
+  compatibility reads and coverage, and explicit compaction that retains old segment files. The default
+  canonical `.bin` writer is unchanged; segment mode requires `SOVEREIGN_TS_STORAGE=segments`.
+- Verification: `tests/scripts/data/backfill/backfill_daemon.test.js` **16/16** and
+  `tests/scripts/data/cache/append_only_segments.test.js` **3/3**; Node syntax checks pass.
+- Remaining gates: durable queued/retry state, temperature/disk hysteresis, compaction command/free-space
+  budget, disposable-storage parity/recovery, write-amplification measurement, and laptop soak. The active
+  provider workload was not restarted, so it is still running the pre-change daemon code.
+
+## Paper Bot Interval Policy - 2026-07-26 session 103
+
+- Changed the paper-bot default cadence from 30 minutes to **1 minute** through one centralized resolver at
+  `shared/lib/settings/interval_policy.js`; the CLI runner and paper Compose profile use the same resolver.
+- Policy order is global minimum -> personal requested/settings interval -> administrator host minimum. The
+  effective interval is `max(global_minimum, personal_interval, admin_minimum)`, so personal settings cannot
+  bypass an administrator safety floor. Defaults are all 1 minute; `SOVEREIGN_ADMIN_BOT_INTERVAL_MIN` may
+  intentionally slow the host.
+- Added personal `trading.bot_interval_min` support and `settings params --bot-interval N`.
+- Verification: interval/settings tests **21/21**, syntax, hygiene, diff, and Compose config pass. The already
+  running paper-bot process was not restarted; it retains its prior 30-minute launch configuration until
+  explicitly stopped and restarted.
+
+## Deep Blast-Through Audit - 2026-07-26 session 104
+
+- Full / Hard Reading Mode audit completed against clean committed `HEAD c2e28993` plus the 56-file
+  (`+3218/-140`, 18 untracked) session-103 working batch.
+- Verdict: no P0; whole-system **C+ / integrity-and-qualification-gated**. Current source is not releasable or
+  operationally qualified.
+- Current read-only integrity improved to 92/92 cached, 14 required `1d` windows stale, 9 cadence-plausible,
+  0 unexplained, and 1 declared exception. DCS is **0.954348**, but integrity remains `ok:false`; the
+  zero-policy-stale promotion gate still blocks.
+- P1: the persistent paper runner crashes before scheduling because `runPaperBotLoop` references undefined
+  interval-policy variables.
+- P1: keep `SOVEREIGN_TS_STORAGE=segments` disabled. Mixed canonical/segment reads hide new segments;
+  checksum/missing-file failures are accepted; manifest coverage can be false; compaction can orphan concurrent
+  writes; and segment order can violate provider precedence.
+- P1 conditional: IP `reauth` keys human sessions by rotating bearer-token hash and has no explicit recovery
+  transition. The default `audit` policy limits immediate exposure.
+- P2/P3 follow-ups: separate bot/backfill cadence, enforce machine writer role at the writer entrypoint, add
+  complete fsync durability, ignore private runtime session state, align live-cycle/kill-switch capabilities,
+  and repair 14 docs-hub links plus the stale README test baseline.
+- Current verification: host Node **921 total / 917 pass / 0 fail / 4 intentional skips**; frontend type/build,
+  gateway TypeScript, Compose rendering, Bash syntax, hygiene, tracked secrets 846/0, untracked text secrets
+  18/0, clean committed archive smoke, and diff integrity pass.
+- No production fix, provider poll, canonical-data transformation, runtime start/stop, bot cycle, order, public
+  exposure, destructive migration, or promotion was performed by this audit. The prior handoff's native
+  workload may continue outside the sandbox's process view.
+- Critical order: repair the paper runner; harden segment migration/integrity/concurrency/precedence/durability
+  on disposable storage; repair stable reauth; close profile/API/artifact/docs debt; then review/commit and
+  prove clean current-source archive/fresh clone before approved runtime qualification.
+
+## Mass-Implement Correction - 2026-07-26 session 104
+
+- Repaired the persistent paper runner: it now resolves the centralized policy inside the paper loop and uses
+  the effective interval for the actual scheduler. Backfill retains its independent requested cadence.
+- Hardened opt-in segment storage: canonical and segment rows merge by the shared provider-precedence contract;
+  active manifests, checksums, byte lengths, timestamps, missing files, and coverage are verified fail closed;
+  compaction publishes one active generation while holding its writer lock; and publication fsyncs segment,
+  manifest, and containing directories. Segment mode remains non-operational until storage-budget and soak gates.
+- Bound human reauthentication records to a stable one-way subject fingerprint rather than a rotating bearer
+  token, added authenticated pending-IP confirmation, ignored the private registry file, enforced declared
+  writer profiles at the daemon, and required `live.execute` for API live cycles both at request policy and
+  route dispatch. Kill-switch POST now has the same `safety.control` contract as GET mutation.
+- Repaired the 14 documentation-hub links, replaced the stale README total with a reproducible command, and
+  made focused contracts include interval, runner, backfill, and segment tests.
+- Verification: host-capable `npm run test:contracts` **87/87 pass**; host-capable `npm test`, hygiene,
+  diff integrity, and all repaired documentation target checks pass. Sandbox API-suite failures remain the
+  known loopback `listen EPERM` limitation; the host rerun is authoritative.
+- Grade movement (source proof only): CLI runner **D -> B / scheduler-contracted**; segment storage
+  **D -> B / integrity-contracted**; API/session tracking **B -> B+ / stable-reauth-contracted**; docs
+  **C+ -> B / links-and-baseline-aligned**. System remains **C+ / integrity-and-qualification-gated**:
+  14 policy-stale windows, clean-current-source archive/fresh clone, storage-budget/retry/thermal/disk proof,
+  host login/recovery/MCP/backup/rollback/soak, and review/commit remain open.
+- No provider poll, runtime start/stop, bot cycle, order, public exposure, destructive migration, or promotion
+  was performed by this implementation pass.
+
+## Commit Checkpoint - 2026-07-26 session 104
+
+- The complete session-103/104 source and continuity batch is committed on `main`; use `git log -1` for the
+  immutable checkpoint ID. The repository secret scan passed 846 tracked files with 0 violations immediately
+  before the checkpoint. Committed-source proof does not replace fresh-clone, stale-data, host, recovery, or
+  soak qualification.

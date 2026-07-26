@@ -9,6 +9,8 @@ API; it does not run ingestion, backfills, bot cycles, orders, host restarts, or
 Generate `.env.central` with `npm run host:prepare-central-env`. This creates distinct
 `SOVEREIGN_API_TOKEN` and `SOVEREIGN_CLIENT_TOKEN` values. Keep the API bound to loopback or an approved
 private address. Put only the client-token value in an owner-readable file on each client.
+The client token is a `service` identity with an explicit read-only capability list; it does not inherit
+operator or owner permissions from the host's deployment profile.
 
 ## Linux
 
