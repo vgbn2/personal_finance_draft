@@ -5,6 +5,10 @@ const { featureGate } = require('../../../../shared/lib/settings/runtime');
 const utils = require('../../lib/utils.js');
 const { optionValue, numericOption, hasFlag, withLoadingAnimation, printPayload } = utils;
 const { rollupFromBase, rollupTargetsAboveBase, writeDeadSymbolMarker, FAMILY_BASE_TF } = require('./data_rollup.js');
+const {
+  equityUniverseEntries,
+  alpacaEquity5mSkipReason,
+} = require('../../../../shared/lib/market/configured_universe.js');
 
 const DEFAULT_TS_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
 const DEFAULT_HISTORY = utils.DEFAULT_HISTORY;
@@ -13,43 +17,6 @@ const EQUITY_DEEP_BACKFILL_PROVIDER = 'alpaca';
 const EQUITY_DEEP_BACKFILL_TIMEFRAME = '5m';
 const EQUITY_5M_BARS_PER_DAY = 78;
 const EQUITY_5M_PROVIDER_MAX_BARS = 10000;
-
-function equityUniverseEntries(section = {}) {
-  const entries = new Map();
-  const add = (symbol, market = null) => {
-    const normalized = String(symbol || '').trim().toUpperCase();
-    if (!normalized) return;
-    if (!entries.has(normalized)) {
-      entries.set(normalized, { symbol: normalized, market: market || null });
-      return;
-    }
-    const entry = entries.get(normalized);
-    if (!entry.market && market) entry.market = market;
-  };
-
-  for (const symbol of section.symbols || []) add(symbol);
-
-  const grid = section.universe_matrix?.grid || {};
-  for (const [market, sectors] of Object.entries(grid)) {
-    if (!sectors || typeof sectors !== 'object') continue;
-    for (const symbols of Object.values(sectors)) {
-      for (const symbol of symbols || []) add(symbol, market);
-    }
-  }
-
-  return Array.from(entries.values());
-}
-
-function alpacaEquity5mSkipReason(entry) {
-  const market = entry.market ? String(entry.market).toUpperCase() : null;
-  if (market && market !== 'USA') {
-    return `market ${market} is not covered by Alpaca US equity 5m backfill`;
-  }
-  if (!/^[A-Z][A-Z0-9.-]{0,11}$/.test(entry.symbol)) {
-    return 'symbol format is not an Alpaca US equity ticker';
-  }
-  return null;
-}
 
 function buildEquityDeepBackfillPlan(config, options = {}) {
   const section = config.equities || {};

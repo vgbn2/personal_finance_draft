@@ -3,6 +3,12 @@
 // Pure-data constants and the small pure helpers that operate only on them.
 // Extracted from index.js as a zero-dependency leaf module (no REPO_ROOT / fs / path),
 // so it can be required anywhere in the ingest folder without import cycles.
+const {
+  YAHOO_INDEX_SYMBOLS,
+  YAHOO_COMMODITY_SYMBOLS,
+  YAHOO_COMMODITY_REVERSE,
+  YAHOO_FX_SYMBOLS,
+} = require('../../../../shared/lib/market/provider_symbols.js');
 
 const SUPPORTED_INTERVALS = {
   '1m':  1  * 60 * 1000,
@@ -105,61 +111,6 @@ function selectYahooBase(timeframes, historyDays) {
   return { base, effectiveDays };
 }
 
-const YAHOO_INDEX_SYMBOLS = {
-  SPX:  '^GSPC',
-  NDX:  '^NDX',
-  DJI:  '^DJI',
-  VIX:  '^VIX',
-  RUT:  '^RUT',
-  DAX:  '^GDAXI',
-  FTSE: '^FTSE',
-  N225: '^N225',
-  IXIC: '^IXIC',   // NASDAQ Composite
-  FCHI: '^FCHI',   // CAC 40
-  HSI:  '^HSI',    // Hang Seng
-  AORD: '^AORD',   // ASX 200 (All Ordinaries)
-  IBEX: '^IBEX',   // IBEX 35
-  MIB:  'FTSEMIB.MI', // FTSE MIB Italy
-};
-
-const YAHOO_COMMODITY_SYMBOLS = {
-  XAUUSD: 'GC=F',   // Gold
-  XAGUSD: 'SI=F',   // Silver
-  XCUUSD: 'HG=F',   // Copper
-  USOIL:  'CL=F',   // WTI Crude
-  UKOIL:  'BZ=F',   // Brent Crude
-  NG:     'NG=F',   // Natural Gas
-  WHEAT:  'ZW=F',   // Wheat
-  CORN:   'ZC=F',   // Corn
-  SOYBN:  'ZS=F',   // Soybeans
-};
-
-const YAHOO_FX_SYMBOLS = {
-  EURUSD: 'EURUSD=X',
-  EURJPY: 'EURJPY=X',
-  EURGBP: 'EURGBP=X',
-  GBPUSD: 'GBPUSD=X',
-  USDJPY: 'USDJPY=X',
-  AUDUSD: 'AUDUSD=X',
-  USDCAD: 'USDCAD=X',
-  USDCHF: 'USDCHF=X',
-  NZDUSD: 'NZDUSD=X',
-  USDSEK: 'USDSEK=X',
-};
-
-// Maps any Yahoo-native commodity symbol back to the canonical name.
-// Used to normalize config entries that mistakenly use Yahoo syntax (GC=F etc.).
-const YAHOO_COMMODITY_REVERSE = {
-  'GC=F': 'XAUUSD',
-  'SI=F': 'XAGUSD',
-  'HG=F': 'XCUUSD',
-  'CL=F': 'USOIL',
-  'BZ=F': 'UKOIL',
-  'NG=F': 'NG',
-  'ZW=F': 'WHEAT',
-  'ZC=F': 'CORN',
-  'ZS=F': 'SOYBN',
-};
 const COINBASE_PRODUCTS = {
   BTCUSDT: 'BTC-USD',
   ETHUSDT: 'ETH-USD',
