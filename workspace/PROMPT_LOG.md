@@ -2334,3 +2334,22 @@ Real BTCUSDT proof requested 294 bytes from a 195,249,704-byte bin and took 2.38
 pass / 0 fail / 4 intentional skips, clean committed-archive focused storage tests passed 2/2, secrets passed
 860/0, and hygiene/diff checks passed. No provider poll, data write, runtime/profile change, bot cycle, order,
 public exposure, migration, or promotion occurred.
+
+## User Prompt - 2026-07-27 session 107
+
+`next, continue with the next batch`
+
+Follow-up idea: use a database of symbols instead of hardcoding them; then `continue with the plan`.
+
+## Work - 2026-07-27 session 107
+
+Applied the mass-implement preflight and completed Global Market Monitor Batch 2 at `a65f907a`. The writer and
+monitor now share one YAML-backed configured-universe owner; the read-only snapshot returns deterministic rows,
+explicit exclusions, independent freshness/provider/update/schedule state, and exact counter reconciliation.
+Current config resolves 89 supported price rows, 44 unsupported price entries, and 93 non-price coordinates.
+
+The symbol-database suggestion was refined into a deferred local-registry migration with identity/parity,
+dry-run, export, backup/rollback, compatibility, and no-ts-rekey gates. YAML remains canonical during Batches
+3-6. Contracts passed 101/101; aggregate passed 941 total / 937 pass / 0 fail / 4 intentional skips; clean
+archive focus passed 3/3; secrets passed 860/0; hygiene and diff checks passed. No provider, write, runtime,
+trading, public, migration, or promotion action occurred.

@@ -1,6 +1,6 @@
 # Global Market Monitor - Mass-Implement Plan
 
-Status: active; Batch 1 implemented and committed on 2026-07-27, Batches 2-6 remain.
+Status: active; Batches 1-2 implemented and committed on 2026-07-27, Batches 3-6 remain.
 
 ## Objective
 
@@ -235,8 +235,53 @@ Evidence:
 No provider poll, data write, runtime/profile change, bot cycle, order, public exposure, migration, or promotion
 occurred.
 
+## Batch 2 implementation checkpoint - 2026-07-27 session 107
+
+Batch 2 is committed at `a65f907a`. `config/markets/data_sources.yaml` remains the canonical configured-symbol
+registry. The backfill writer and monitor now resolve that registry through one shared owner, including one
+base-timeframe/provider policy, exact `family:symbol` identities, deterministic ordering, and explicit
+unsupported/non-price exclusions. Existing Yahoo provider symbols were moved into one shared translation table;
+they are not a second configured universe.
+
+The read-only snapshot owner emits one row per supported configured price instrument with independent
+freshness, provider, update, and market-schedule states. It fails individual corrupt/future/identity-mismatched
+records closed as `invalid`, keeps missing separate, preserves stale while an update is running, exposes unknown
+calendar basis, and reconciles freshness counters exactly. Canonical latest reads now return the already-verified
+header count; bounded segment/merged reads report an honest null count where exact overlap deduplication would
+require full materialization.
+
+Current-config evidence:
+
+- 89 supported price rows: crypto 18, equities 41, indices 11, commodities 9, and FX 10.
+- 44 configured price entries are explicit unsupported exclusions; 93 configured non-price coordinates are
+  counted separately.
+- One read-only real snapshot completed in 59 ms: 1 fresh, 51 delayed, 36 stale, 1 missing, 0 invalid. Provider
+  states remained unknown and update states idle because Batch 2 does not yet integrate heartbeat/provider
+  context.
+- Focused universe/storage/backfill tests pass; contracts pass 101/101; aggregate Node passes 941 total /
+  937 pass / 0 fail / 4 intentional skips; tracked secrets pass 860/0; hygiene and diff checks pass.
+- Clean committed archive focused tests pass 3/3.
+
+Security post-review found no open P0/P1. Malformed symbols are excluded before filesystem path construction;
+latest-record identity, timestamps, finite values, and integrity failures fail closed; provider/update enums are
+bounded; raw update errors are not echoed. The new shared owners contain no provider, network, process, or write
+primitive. API/auth/UI/runtime integration remains outside this batch.
+
+### Deferred symbol-registry database candidate
+
+The suggestion to replace config arrays and provider-symbol code with a symbol database is recorded as a
+roadmap feature, not an in-batch migration. A later design pass should compare the current version-controlled
+YAML registry with a local SQLite registry carrying stable `instrument_id`, aliases, provider symbols, market,
+base timeframe, schedule policy, enabled state, and schema version.
+
+Acceptance gates before migration: dry-run import with zero identity loss; writer/monitor universe parity against
+the current registry; explicit collision and unsupported reports; deterministic export for review; backup,
+rollback, and old-artifact compatibility; no ts-index rekey or destructive data rewrite. Remote/shared database
+hosting, automatic internet discovery, provider polling, and live symbol mutation are out of scope. Keep YAML as
+the source of truth until those gates are approved and verified.
+
 ## Next-session first action
 
-Run the mass-implement preflight against Batch 2, then implement only the canonical configured-universe and
-snapshot owner. Reuse `readLatestTsRecord()` and existing freshness policy; keep API, CLI, dashboard, heartbeat,
-provider polling, and segment enablement outside that batch.
+Run the mass-implement preflight against Batch 3, then implement only truthful CLI/API parity over the committed
+snapshot owner. Keep dashboard, service heartbeats, provider polling, data writes, symbol-database migration,
+public exposure, and segment enablement outside that batch.

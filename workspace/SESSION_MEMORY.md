@@ -1206,3 +1206,37 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "safety": "No provider poll, data write, runtime/profile change, bot cycle, order, public exposure, destructive migration, or promotion occurred."
 }
 ```
+
+## Session Memory - 2026-07-27 session 107 global monitor Batch 2
+
+```json
+{
+  "work": "Implemented and committed the canonical configured universe and read-only global market snapshot owner.",
+  "commit": "a65f907a",
+  "registry": "config/markets/data_sources.yaml remains canonical; provider symbols are one shared translation table",
+  "current_counts": {
+    "supported_price_rows": 89,
+    "excluded_price_entries": 44,
+    "not_price_bearing_coordinates": 93
+  },
+  "snapshot_probe": {
+    "duration_ms": 59,
+    "fresh": 1,
+    "delayed": 51,
+    "stale": 36,
+    "missing": 1,
+    "invalid": 0
+  },
+  "verification": {
+    "contracts": "101/101 pass",
+    "aggregate": "941 total / 937 pass / 0 fail / 4 intentional skips",
+    "clean_archive": "focused universe/latest/backfill tests 3/3 pass",
+    "secrets": "860 files / 0 violations",
+    "hygiene": "pass",
+    "diff": "pass"
+  },
+  "deferred": "Design a local symbol registry database only after dry-run identity, writer/monitor parity, deterministic export, backup/rollback, compatibility, and no-ts-rekey gates.",
+  "next": "Run the pre-implementation gate and implement only Batch 3 truthful CLI/API parity.",
+  "safety": "No provider poll, data write, runtime/profile change, bot cycle, order, public exposure, destructive migration, or promotion occurred."
+}
+```

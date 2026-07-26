@@ -1729,3 +1729,24 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   system remains integrity-and-qualification-gated; Batch 2 universe/snapshot ownership and all API/UI/runtime
   work remain open. No provider poll, canonical-data write, runtime/profile change, bot cycle, order, public
   exposure, destructive migration, or promotion occurred.
+
+## Global Market Monitor Batch 2 - 2026-07-27 session 107
+
+- Implemented and committed one configured-universe and snapshot owner at `a65f907a`. The backfill daemon and
+  monitor now resolve the same YAML-configured supported universe, base timeframe, and provider lane.
+- The resolver emits deterministic `family:symbol` identities plus explicit unsafe, unsupported-market,
+  missing-provider-map, and non-price exclusions. Current config resolves 89 supported price rows, 44 excluded
+  configured price entries, and 93 non-price coordinates.
+- The read-only snapshot emits independent freshness/provider/update/schedule states, exact reconciled freshness
+  counters, canonical record counts, honest null segment-overlap counts, and fail-closed per-row invalid state.
+  A current real snapshot completed in 59 ms: 1 fresh, 51 delayed, 36 stale, 1 missing, 0 invalid.
+- Verification: focused universe/storage/backfill/rollup files pass; contracts 101/101; aggregate 941 total /
+  937 pass / 0 fail / 4 intentional skips; clean committed archive focus 3/3; secrets 860/0; hygiene, syntax,
+  and diff checks pass.
+- Security post-review found no P0/P1. New owners have no network/process/write primitives; malformed identities,
+  future/corrupt records, unknown state enums, and raw update errors fail closed or remain explicitly unknown.
+- The user's symbol-database idea is recorded as a deferred local-registry design with identity, parity, dry-run
+  migration, export, backup, rollback, compatibility, and no-rekey gates. YAML remains canonical for now.
+- Grade movement is limited to contract truth, path clarity, duplication reduction, runtime safety, and
+  verification. API/CLI/dashboard/heartbeat and operational qualification remain open. No provider poll, data
+  write, runtime/profile change, bot cycle, order, public exposure, destructive migration, or promotion occurred.

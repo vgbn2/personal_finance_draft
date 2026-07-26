@@ -1948,3 +1948,24 @@ diff pass.
 Explicit deferral: canonical bins currently persist no full-file checksum. Do not hash every deep canonical bin
 on monitor refresh; design a separate writer-maintained checksum/version migration if that guarantee is later
 approved. Segment mode remains disabled.
+
+## Mass-Implement Review - 2026-07-27 session 107 - Global Monitor Batch 2
+
+No P0/P1 remains in Batch 2 scope. Commit `a65f907a` establishes one configured-universe owner shared by the
+writer and monitor and one read-only snapshot owner. Malformed symbols are excluded before path construction;
+duplicate declarations deduplicate by exact `family:symbol`; unsupported markets/provider mappings and
+non-price coordinates remain explicit; stale/future/corrupt/missing states do not collapse into a green row.
+
+Provider, update, and schedule states are independent of freshness. Unknown enums fail closed, raw update errors
+are not echoed, current record identity must match the requested family/symbol/timeframe, and per-row integrity
+failure does not abort or falsify global counters. The new owners contain no network, process, provider, or write
+primitive. Auth/API/UI/runtime/trading/credentials/public exposure are outside this batch.
+
+Evidence: current config resolves 89 supported price rows, 44 excluded price entries, and 93 non-price
+coordinates. The current read-only snapshot completed in 59 ms with reconciled 1 fresh / 51 delayed / 36 stale /
+1 missing / 0 invalid. Contracts 101/101, aggregate 941 total / 937 pass / 0 fail / 4 intentional skips, clean
+committed archive focus 3/3, secrets 860/0, hygiene, syntax, and diff checks pass.
+
+Deferred design: a local symbol registry database may replace YAML only after dry-run identity preservation,
+writer/monitor parity, deterministic export, collision reporting, backup/rollback, old-artifact compatibility,
+and no-ts-index-rekey proof. This is not authorization for a migration or remote database.
