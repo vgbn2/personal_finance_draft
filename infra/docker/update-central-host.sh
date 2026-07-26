@@ -38,6 +38,12 @@ export SOVEREIGN_RUNTIME_MODE="cloud-compute"
 export LIVE_TRADING="false"
 export SOVEREIGN_EXECUTION_AUTHORIZED="false"
 
+deployment_profile="$("${node_bin}" -e "const { loadCentralEnvironment } = require('./backend/scripts/ops/central_host_preflight.js'); process.stdout.write(loadCentralEnvironment().SOVEREIGN_DEPLOYMENT_PROFILE || 'central-host');")"
+if [[ "${deployment_profile}" != "central-host" ]]; then
+  echo "refusing central updater for deployment profile ${deployment_profile:-<missing>}; expected central-host" >&2
+  exit 78
+fi
+
 git fetch "${remote_name}" "${branch_name}"
 git merge --ff-only "${remote_name}/${branch_name}"
 if [[ "$(git rev-parse HEAD)" != "$(git rev-parse "${remote_name}/${branch_name}")" ]]; then
@@ -46,7 +52,7 @@ if [[ "$(git rev-parse HEAD)" != "$(git rev-parse "${remote_name}/${branch_name}
 fi
 
 "${node_bin}" backend/scripts/ops/central_host_preflight.js
-docker compose --env-file "${central_env_file}" -f "${compose_file}" config --quiet
+docker compose --env-file "${central_env_file}" -f "${compose_file}" --profile writer config --quiet
 
 stack_is_deployment_ready() {
   local service
@@ -57,9 +63,9 @@ stack_is_deployment_ready() {
   while IFS= read -r service; do
     [[ "${service}" == "web" ]] && web_running="true"
     [[ "${service}" == "backfill" ]] && backfill_running="true"
-  done < <(docker compose --env-file "${central_env_file}" -f "${compose_file}" ps --status running --services)
+  done < <(docker compose --env-file "${central_env_file}" -f "${compose_file}" --profile writer ps --status running --services)
 
-  web_container_id="$(docker compose --env-file "${central_env_file}" -f "${compose_file}" ps -q web)"
+  web_container_id="$(docker compose --env-file "${central_env_file}" -f "${compose_file}" --profile writer ps -q web)"
   web_health=""
   if [[ -n "${web_container_id}" ]]; then
     web_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "${web_container_id}" 2>/dev/null || true)"
@@ -79,12 +85,12 @@ if [[ "${deployed_head}" == "$(git rev-parse HEAD)" ]] \
   exit 0
 fi
 
-docker compose --env-file "${central_env_file}" -f "${compose_file}" build web
-docker compose --env-file "${central_env_file}" -f "${compose_file}" up -d --force-recreate web backfill
+docker compose --env-file "${central_env_file}" -f "${compose_file}" --profile writer build web
+docker compose --env-file "${central_env_file}" -f "${compose_file}" --profile writer up -d --force-recreate web backfill
 
 for attempt in $(seq 1 30); do
-  backfill_running="$(docker compose --env-file "${central_env_file}" -f "${compose_file}" ps --status running --services backfill)"
-  web_container_id="$(docker compose --env-file "${central_env_file}" -f "${compose_file}" ps -q web)"
+  backfill_running="$(docker compose --env-file "${central_env_file}" -f "${compose_file}" --profile writer ps --status running --services backfill)"
+  web_container_id="$(docker compose --env-file "${central_env_file}" -f "${compose_file}" --profile writer ps -q web)"
   web_health=""
   if [[ -n "${web_container_id}" ]]; then
     web_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' "${web_container_id}" 2>/dev/null || true)"
@@ -94,7 +100,7 @@ for attempt in $(seq 1 30); do
     umask 077
     printf '%s\n' "$(git rev-parse HEAD)" > "${deployed_head_tmp}"
     mv "${deployed_head_tmp}" "${deployed_head_file}"
-    docker compose --env-file "${central_env_file}" -f "${compose_file}" ps web backfill
+    docker compose --env-file "${central_env_file}" -f "${compose_file}" --profile writer ps web backfill
     echo "central host update complete: ${remote_name}/${branch_name}"
     exit 0
   fi
@@ -102,5 +108,5 @@ for attempt in $(seq 1 30); do
 done
 
 echo "central host failed deployment readiness: web health=${web_health:-missing}, backfill=${backfill_running:-missing}" >&2
-docker compose --env-file "${central_env_file}" -f "${compose_file}" ps web backfill >&2 || true
+docker compose --env-file "${central_env_file}" -f "${compose_file}" --profile writer ps web backfill >&2 || true
 exit 1

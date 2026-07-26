@@ -16,12 +16,18 @@ test('central environment preparation copies only approved research settings and
   const sourcePath = path.join(root, '.env');
   const outputPath = path.join(root, '.env.central');
   fs.writeFileSync(templatePath, [
+    'SOVEREIGN_DEPLOYMENT_PROFILE=central-host',
     'SOVEREIGN_RUNTIME_MODE=cloud-compute',
     'LIVE_TRADING=false',
     'SOVEREIGN_EXECUTION_AUTHORIZED=false',
     'SOVEREIGN_API_TOKEN=',
     'SOVEREIGN_CLIENT_TOKEN=',
     'SOVEREIGN_WEB_BIND=127.0.0.1',
+    'SOVEREIGN_DEFAULT_USER_ROLE=viewer',
+    'SOVEREIGN_USER_ROLE_MAP={}',
+    'SOVEREIGN_AUTH_SESSION_TRACKING=true',
+    'SOVEREIGN_IP_CHANGE_POLICY=audit',
+    'SOVEREIGN_TRUST_PROXY=false',
     'BACKFILL_INTERVAL_SECS=1800',
     'ALPACA_API_KEY=',
     'ALPACA_SECRET_KEY=',
@@ -60,6 +66,7 @@ test('central environment preparation copies only approved research settings and
   assert.equal(prepared.TWELVE_DATA_API_KEY, 'twelve-alias');
   assert.equal(prepared.SOVEREIGN_API_TOKEN.length, 64);
   assert.equal(prepared.SOVEREIGN_CLIENT_TOKEN.length, 64);
+  assert.equal(prepared.SOVEREIGN_DEPLOYMENT_PROFILE, 'central-host');
   assert.notEqual(prepared.SOVEREIGN_CLIENT_TOKEN, prepared.SOVEREIGN_API_TOKEN);
   assert.notEqual(prepared.SOVEREIGN_API_TOKEN, 'must-not-reuse');
   assert.equal(prepared.SOVEREIGN_TRADE_PIN, undefined);
@@ -77,4 +84,27 @@ test('central environment preparation refuses an existing destination unless for
   fs.writeFileSync(path.join(root, '.env.central'), 'preserve=true\n');
   assert.throws(() => prepareCentralEnvironment({ repoRoot: root }), /refusing to overwrite/);
   assert.equal(fs.readFileSync(path.join(root, '.env.central'), 'utf8'), 'preserve=true\n');
+});
+
+test('central environment preparation can render the explicit all-in-one rehearsal profile', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-prepare-all-in-one-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const templatePath = path.join(root, '.env.central.example');
+  const sourcePath = path.join(root, '.env');
+  const outputPath = path.join(root, '.env.central');
+  fs.writeFileSync(templatePath, [
+    'SOVEREIGN_DEPLOYMENT_PROFILE=central-host',
+    'SOVEREIGN_API_TOKEN=',
+    'SOVEREIGN_CLIENT_TOKEN=',
+    '',
+  ].join('\n'));
+  fs.writeFileSync(sourcePath, '');
+  prepareCentralEnvironment({
+    repoRoot: root,
+    templatePath,
+    sourcePath,
+    outputPath,
+    profile: 'all-in-one',
+  });
+  assert.equal(parseEnvFile(outputPath).SOVEREIGN_DEPLOYMENT_PROFILE, 'all-in-one');
 });

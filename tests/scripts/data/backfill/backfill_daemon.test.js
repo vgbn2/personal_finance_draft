@@ -15,8 +15,8 @@ const { rollupFromBase, rollupTargetsAboveBase } = require('../../../../backend/
 const { spawn } = require('node:child_process');
 const {
   runBackfillCycle, decideAction, buildJobUniverse,
-  groupIntoLanes, utcDayFloor, makeRealRollup, DEEP_PLAN, DEFAULT_DEEP_DAYS,
-  commandStopBackfillDaemon, DAEMON_STATUS_PATH,
+  groupIntoLanes, utcDayFloor, makeRealRollup, createPollPacer, DEEP_PLAN, DEFAULT_DEEP_DAYS,
+  commandBackfillDaemon, commandStopBackfillDaemon, DAEMON_STATUS_PATH,
 } = require('../../../../backend/cli/commands/data/backfill_daemon.js');
 
 function waitForExit(child, timeoutMs = 3000) {
@@ -44,6 +44,22 @@ function makeFakeFetcher(tsDir, calls) {
     return { ok: true };
   };
 }
+
+test('declared non-writer deployment profiles cannot start the canonical backfill daemon', async () => {
+  const prior = process.env.SOVEREIGN_DEPLOYMENT_PROFILE;
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    process.env.SOVEREIGN_DEPLOYMENT_PROFILE = 'developer';
+    assert.equal(await commandBackfillDaemon(['--once']), 1);
+    process.env.SOVEREIGN_DEPLOYMENT_PROFILE = 'client';
+    assert.equal(await commandBackfillDaemon(['--once']), 1);
+  } finally {
+    console.error = originalError;
+    if (prior === undefined) delete process.env.SOVEREIGN_DEPLOYMENT_PROFILE;
+    else process.env.SOVEREIGN_DEPLOYMENT_PROFILE = prior;
+  }
+});
 
 test('decideAction maps gate reasons to deep/incremental/skip', () => {
   assert.equal(decideAction({ reason: 'missing', fresh: false }), 'deep');
@@ -191,6 +207,49 @@ test('OOM guard: --concurrency override is clamped on the 1m lanes, not on Yahoo
   // A lower override is honored as-is (clamp only caps the upper bound).
   assert.equal(groupIntoLanes(jobs, 2).find((l) => l.lane === 'binance').concurrency, 2);
   console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'lane_clamp', binance: c('binance'), yahoo: c('yahoo') }));
+});
+
+test('global poll pacer spaces concurrent lanes and extends the gap under pressure', async () => {
+  let clock = 1000;
+  const sleeps = [];
+  const pacer = createPollPacer({
+    gapMs: 10,
+    warmupJobs: 0,
+    jitterMs: 0,
+    now: () => clock,
+    sleep: async (ms) => { sleeps.push(ms); clock += ms; },
+    resourceProbe: () => ({ load_ratio: 1.5, memory_ratio: 0.1 }),
+  });
+
+  const starts = await Promise.all(['binance', 'alpaca', 'yahoo'].map((lane) => pacer.acquire(lane)));
+  assert.deepEqual(starts.map((entry) => entry.lane), ['binance', 'alpaca', 'yahoo']);
+  assert.deepEqual(starts.map((entry) => entry.wait_ms), [0, 20, 20]);
+  assert.ok(starts.every((entry) => entry.pressured));
+  assert.deepEqual(sleeps, [20, 20]);
+  assert.equal(pacer.getState().started, 3);
+  console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'poll_pacer', starts: starts.length, final_clock: clock }));
+});
+
+test('runBackfillCycle reports paced poll starts without pacing freshness skips', async () => {
+  const events = [];
+  const summary = await runBackfillCycle({
+    tsDir: fs.mkdtempSync(path.join(os.tmpdir(), 'daemon-pacer-')),
+    jobs: [
+      { symbol: 'BTCUSDT', family: 'crypto', baseTf: '1m' },
+      { symbol: 'SPX', family: 'indices', baseTf: '5m' },
+    ],
+    now: Date.now(),
+    freshness: (_dir, symbol) => symbol === 'SPX'
+      ? { reason: 'fresh', fresh: true }
+      : { reason: 'missing', fresh: false },
+    execute: async () => ({ ok: true }),
+    rollup: () => ({ ok: true, derived: {} }),
+    pollPacer: createPollPacer({ gapMs: 0, warmupJobs: 0, jitterMs: 0 }),
+    onPollStart: (job, pacing) => events.push({ symbol: job.symbol, pacing }),
+  });
+  assert.equal(summary.polls_started, 1);
+  assert.deepEqual(events.map((event) => event.symbol), ['BTCUSDT']);
+  assert.equal(summary.skipped, 1);
 });
 
 test('utcDayFloor aligns a window start to a clean coarse-bar boundary', () => {

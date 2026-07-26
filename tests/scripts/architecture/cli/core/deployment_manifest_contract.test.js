@@ -69,6 +69,7 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(web, /env_file:\s*\*central-env-files/);
   assert.match(web, /<<:\s*\*central-runtime/);
   assert.match(bot, /profiles:\s*\[\s*paper\s*\]/);
+  assert.match(backfill, /profiles:\s*\[\s*writer\s*\]/);
   assert.match(bot, /environment:\s*\*central-runtime/);
   assert.match(backfill, /env_file:\s*\*central-env-files/);
   assert.match(backfill, /<<:\s*\*central-runtime/);
@@ -171,6 +172,8 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(centralUpdater, /stack_is_deployment_ready/);
   assert.match(centralUpdater, /SOVEREIGN_DEPLOY_FORCE/);
   assert.match(centralUpdater, /up -d --force-recreate web backfill/);
+  assert.match(centralUpdater, /deployment_profile.*central-host/);
+  assert.match(centralUpdater, /--profile writer/);
   assert.doesNotMatch(centralUpdater, /up -d[^\n]*\bbot\b/);
   assert.match(centralUpdater, /ps --status running --services backfill/);
   assert.match(centralUpdater, /docker inspect --format/);
