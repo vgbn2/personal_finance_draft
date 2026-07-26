@@ -18,3 +18,9 @@ available so the dashboard still renders current local state.
   canonical read-only snapshot owner. It accepts bounded filters plus
   `limit`/`offset`, keeps global counters independent of the page, and performs
   no provider request or market-data write.
+## Read-only service health
+
+`GET /api/system/service-health` requires the existing `data.read` capability and returns bounded, sanitized
+heartbeat records for the paper bot, backfill, portfolio monitor, host health, and host backup services. Missing
+or expired records are reported as unavailable. The endpoint never starts a process, polls a provider, writes
+market data, or reads the Docker socket.

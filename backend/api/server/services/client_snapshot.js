@@ -13,6 +13,7 @@ const {
 const {
   familyFreshnessThresholdMs,
 } = require('../../../../shared/lib/market/validation');
+const { errorCode } = require('../../../../shared/lib/runtime/service_heartbeat');
 const {
   computeCachedBias,
 } = require('../../../cli/commands/research/bias');
@@ -133,6 +134,16 @@ function summarizePoller(pollerFile, runStatusFile, now) {
     ? runStatusFile.value
     : null;
   const loopsAvailable = Boolean(loops && Object.keys(loops).length > 0);
+  const rawOutcome = report?.last_outcome;
+  const lastOutcome = rawOutcome && typeof rawOutcome === 'object'
+    ? {
+      ok: rawOutcome.ok === true,
+      symbol: typeof rawOutcome.symbol === 'string' ? rawOutcome.symbol.slice(0, 32) : null,
+      family: typeof rawOutcome.family === 'string' ? rawOutcome.family.slice(0, 32) : null,
+      action: typeof rawOutcome.action === 'string' ? rawOutcome.action.slice(0, 48) : null,
+      error_code: rawOutcome.error_code ? errorCode(rawOutcome.error_code) : (rawOutcome.error ? errorCode(rawOutcome.error) : null),
+    }
+    : null;
 
   return {
     available: pollerFile.available || loopsAvailable,
@@ -143,7 +154,7 @@ function summarizePoller(pollerFile, runStatusFile, now) {
     cycle: Number.isFinite(report?.cycle) ? report.cycle : null,
     families: Array.isArray(report?.families) ? report.families : [],
     once: typeof report?.once === 'boolean' ? report.once : null,
-    last_outcome: report?.last_outcome || null,
+    last_outcome: lastOutcome,
     updated_at: updatedAt,
     updated_age_ms: updatedAgeMs,
     next_run_at: nextRunAt,
