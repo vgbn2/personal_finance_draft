@@ -25,6 +25,20 @@ node --test tests/scripts/operational/prepare_central_env.test.js \
 Local validation must not install the updater timer, change lid/sleep policy, or start the continuous
 `backfill` service. The actual persistent host remains a separate operator decision.
 
+For the current laptop rehearsal, generate the explicit all-in-one profile:
+
+```bash
+npm run host:prepare-central-env -- --profile all-in-one
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml config --quiet
+```
+
+`all-in-one` makes web, writer, monitoring, research, paper, and connector roles available, but its declared
+default is web-only. Compose places `backfill` behind the explicit `writer` profile, and the central updater
+refuses `all-in-one`, so the laptop rehearsal cannot accidentally inherit the persistent-host startup path.
+It does not grant user permissions and does not start any service by itself. Role assignment, IP/session
+tracking, and the migration sequence are documented in
+`docs/operational/guides/role_based_hosting.md`.
+
 ## First deploy
 
 ```bash
@@ -96,7 +110,7 @@ GitHub check status itself.
 | Service | Purpose |
 |---|---|
 | `web` | REST API + React dashboard on port 8787 |
-| `backfill` | Sole canonical market-data poller/writer |
+| `backfill` | Sole canonical market-data poller/writer under the `writer` profile |
 | `bot` | Opt-in paper loop under the `paper` profile; never live on this host |
 
 Note: the TypeScript execution gateway (`backend/gateway/src/index.ts`) is a one-shot
@@ -111,7 +125,8 @@ docker compose --env-file .env.central -f infra/docker/docker-compose.yml up -d 
 
 Enable the optional paper stack:
 ```bash
-docker compose --env-file .env.central -f infra/docker/docker-compose.yml --profile paper up -d web backfill bot
+docker compose --env-file .env.central -f infra/docker/docker-compose.yml \
+  --profile writer --profile paper up -d web backfill bot
 ```
 
 Stop the bot without stopping the dashboard:
@@ -148,6 +163,11 @@ These directories are created automatically if missing.
 The central host uses **`.env.central`**, selected through `SOVEREIGN_CENTRAL_ENV_FILE`. Compose forces
 cloud-compute/non-live values after loading it. Local/private execution uses a separate environment and
 is not part of this deployment.
+
+Set `SOVEREIGN_DEPLOYMENT_PROFILE=central-host` on a persistent host or `all-in-one` for the laptop rehearsal.
+Human access defaults to `viewer`; trusted server-side role mappings may assign `analyst`, `operator`, or
+`owner`. Authenticated session IPs are audited without trusting forwarded headers, and SSH-loopback traffic is
+recorded as tunnel-opaque rather than as a real client address.
 
 ## Secrets
 

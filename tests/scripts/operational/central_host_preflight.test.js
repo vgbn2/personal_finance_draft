@@ -12,16 +12,23 @@ const {
   loadCentralEnvironment,
   memoryCheck,
   probeCentralHost,
+  validateAccessRoleConfiguration,
   validateCentralEnvironment,
 } = require('../../../backend/scripts/ops/central_host_preflight.js');
 
 const SAFE_ENV = {
+  SOVEREIGN_DEPLOYMENT_PROFILE: 'central-host',
   SOVEREIGN_RUNTIME_MODE: 'cloud-compute',
   LIVE_TRADING: 'false',
   SOVEREIGN_EXECUTION_AUTHORIZED: 'false',
   SOVEREIGN_API_TOKEN: 'a'.repeat(32),
   SOVEREIGN_CLIENT_TOKEN: 'b'.repeat(32),
   SOVEREIGN_WEB_BIND: '127.0.0.1',
+  SOVEREIGN_DEFAULT_USER_ROLE: 'viewer',
+  SOVEREIGN_USER_ROLE_MAP: '{}',
+  SOVEREIGN_AUTH_SESSION_TRACKING: 'true',
+  SOVEREIGN_IP_CHANGE_POLICY: 'audit',
+  SOVEREIGN_TRUST_PROXY: 'false',
   BACKFILL_INTERVAL_SECS: '1800',
 };
 
@@ -46,6 +53,22 @@ test('private bind policy accepts loopback, RFC1918, and private VPN ranges only
 
 test('central environment fails closed on live mode, public bind, short token, or execution secrets', () => {
   assert.equal(validateCentralEnvironment(SAFE_ENV).ok, true);
+  assert.equal(validateCentralEnvironment({
+    ...SAFE_ENV,
+    SOVEREIGN_DEPLOYMENT_PROFILE: 'client',
+  }).checks.deployment_profile.ok, false);
+  assert.equal(validateCentralEnvironment({
+    ...SAFE_ENV,
+    SOVEREIGN_AUTH_SESSION_TRACKING: 'false',
+  }).checks.auth_session_tracking.ok, false);
+  assert.equal(validateCentralEnvironment({
+    ...SAFE_ENV,
+    SOVEREIGN_IP_CHANGE_POLICY: 'block-forever',
+  }).checks.ip_change_policy.ok, false);
+  assert.equal(validateCentralEnvironment({
+    ...SAFE_ENV,
+    SOVEREIGN_TRUST_PROXY: 'true',
+  }).checks.untrusted_forwarded_headers.ok, false);
   assert.equal(validateCentralEnvironment({ ...SAFE_ENV, LIVE_TRADING: 'true' }).checks.live_trading_disabled.ok, false);
   assert.equal(validateCentralEnvironment({ ...SAFE_ENV, SOVEREIGN_WEB_BIND: '0.0.0.0' }).checks.private_bind.ok, false);
   assert.equal(validateCentralEnvironment({ ...SAFE_ENV, SOVEREIGN_API_TOKEN: 'short' }).checks.api_token.ok, false);
@@ -60,17 +83,48 @@ test('central environment fails closed on live mode, public bind, short token, o
   assert.doesNotMatch(JSON.stringify(secretResult), /must-not-print/);
 });
 
+test('access-role configuration accepts trusted mappings and rejects malformed or service roles', () => {
+  assert.deepEqual(validateAccessRoleConfiguration({
+    SOVEREIGN_DEFAULT_USER_ROLE: 'viewer',
+    SOVEREIGN_USER_ROLE_MAP: '{"user-1":"owner","user-2":"analyst"}',
+  }), {
+    ok: true,
+    default_role: 'viewer',
+    role_map_valid: true,
+    role_map_entries: 2,
+    invalid_entry_ids: [],
+  });
+  assert.equal(validateAccessRoleConfiguration({
+    SOVEREIGN_DEFAULT_USER_ROLE: 'service',
+    SOVEREIGN_USER_ROLE_MAP: '{}',
+  }).ok, false);
+  assert.equal(validateAccessRoleConfiguration({
+    SOVEREIGN_DEFAULT_USER_ROLE: 'viewer',
+    SOVEREIGN_USER_ROLE_MAP: '{"user-1":"service"}',
+  }).ok, false);
+  assert.equal(validateAccessRoleConfiguration({
+    SOVEREIGN_DEFAULT_USER_ROLE: 'viewer',
+    SOVEREIGN_USER_ROLE_MAP: '{broken',
+  }).role_map_valid, false);
+});
+
 test('central environment loader reads only the selected file plus explicit process overrides', () => {
   const { root, envPath } = tempHost();
   try {
     fs.writeFileSync(path.join(root, '.env'), 'POLYMARKET_PRIVATE_KEY=must-not-bleed\n');
     fs.writeFileSync(envPath, [
       'SOVEREIGN_RUNTIME_MODE=cloud-compute',
+      'SOVEREIGN_DEPLOYMENT_PROFILE=central-host',
       'LIVE_TRADING=false',
       'SOVEREIGN_EXECUTION_AUTHORIZED=false',
       `SOVEREIGN_API_TOKEN=${'b'.repeat(32)}`,
       `SOVEREIGN_CLIENT_TOKEN=${'c'.repeat(32)}`,
       'SOVEREIGN_WEB_BIND=127.0.0.1',
+      'SOVEREIGN_DEFAULT_USER_ROLE=viewer',
+      'SOVEREIGN_USER_ROLE_MAP={}',
+      'SOVEREIGN_AUTH_SESSION_TRACKING=true',
+      'SOVEREIGN_IP_CHANGE_POLICY=audit',
+      'SOVEREIGN_TRUST_PROXY=false',
       'BACKFILL_INTERVAL_SECS=1800',
       '',
     ].join('\n'), { mode: 0o600 });

@@ -14,16 +14,17 @@ This is the filtered entrypoint for repo documentation. Start with the canonical
 - [Supabase integration](./engineering/supabase_integration.md): gated persistence integration surface.
 - [Stack manifest](./engineering/stack_manifest.md): current platform stack inventory.
 - [Agentic coding playbook](./engineering/agentic_coding_playbook.md): agent workflow guidance.
-- [Quickstart](./operational/QUICKSTART.md): first-run operator guide.
-- [Bootstrap protocol](./operational/bootstrap.md): session-start flow.
-- [Contributor guide](./operational/CONTRIBUTING.md): contribution workflow and expectations.
-- [Deployment guide](./operational/DEPLOYMENT.md): deployment and release operations.
-- [Environment setup](./operational/environment_setup.md): local environment bootstrapping.
-- [CLI quick guide](./operational/cli_quick_guide.md): operator CLI reference.
-- [Testing surface](./operational/testing_surface.md): verification surface overview.
-- [Local-first setup](./operational/local_first_setup.md): current local-first runtime setup.
-- [Local-first migration](./operational/local_first_migration.md): migration path for local-first operation.
-- [Local-first trading plan](./operational/local_first_trading_setup_plan.md): staged trading enablement plan.
+- [Quickstart](./operational/guides/QUICKSTART.md): first-run operator guide.
+- [Bootstrap protocol](./operational/guides/bootstrap.md): session-start flow.
+- [Contributor guide](./operational/guides/CONTRIBUTING.md): contribution workflow and expectations.
+- [Deployment guide](./operational/guides/DEPLOYMENT.md): deployment and release operations.
+- [Role-based portable hosting](./operational/guides/role_based_hosting.md): machine profiles, user capabilities, IP/session audit, laptop rehearsal, and mini-PC migration.
+- [Environment setup](./operational/guides/environment_setup.md): local environment bootstrapping.
+- [CLI quick guide](./operational/guides/cli_quick_guide.md): operator CLI reference.
+- [Testing surface](./operational/guides/testing_surface.md): verification surface overview.
+- [Local-first setup](./operational/local_first/local_first_setup.md): current local-first runtime setup.
+- [Local-first migration](./operational/local_first/local_first_migration.md): migration path for local-first operation.
+- [Local-first trading plan](./operational/local_first/local_first_trading_setup_plan.md): staged trading enablement plan.
 - [Research overview](./research/quant_research.md): quantitative research entrypoint.
 - [Macro model](./research/macro_model.md): macro strategy and model notes.
 - [Legacy math](./research/legacy_math.md): older foundations kept for reference.
@@ -41,10 +42,10 @@ These are useful, but they should not be mistaken for the primary truth sources.
 - [Kronos pipeline](./engineering/kronos_pipeline.md)
 - [Phase 5 spec](./engineering/phase_5_spec.md)
 - [Rust mirror status](./engineering/rust_mirror_status.md)
-- [Roadmap](./operational/roadmap.md)
-- [Roadmap CLI](./operational/ROADMAP_CLI.md)
-- [Operations](./operational/operations.md)
-- [Data ingestion](./operational/data_ingestion.md)
+- [Roadmap](./operational/roadmap/roadmap.md)
+- [Roadmap CLI](./operational/roadmap/ROADMAP_CLI.md)
+- [Operations](./operational/guides/operations.md)
+- [Data ingestion](./operational/guides/data_ingestion.md)
 - [Blast-through report](./memory/BLAST_THROUGH_REPORT.md)
 - [Developer comments](./memory/DEV_COMMENTS.md)
 - [Prompt log mirror](./memory/PROMPT_LOG.md)

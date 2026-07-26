@@ -39,6 +39,7 @@ function renderCentralEnvironment(template, source, options = {}) {
     SOVEREIGN_API_TOKEN: options.apiToken || crypto.randomBytes(32).toString('hex'),
     SOVEREIGN_CLIENT_TOKEN: options.clientToken || crypto.randomBytes(32).toString('hex'),
     SOVEREIGN_WEB_BIND: options.bind || '127.0.0.1',
+    SOVEREIGN_DEPLOYMENT_PROFILE: options.profile || 'central-host',
   };
   const copiedKeys = [];
 
@@ -98,6 +99,7 @@ function parseArgs(argv) {
     else if (argument === '--source') options.sourcePath = argv[++index];
     else if (argument === '--output') options.outputPath = argv[++index];
     else if (argument === '--bind') options.bind = argv[++index];
+    else if (argument === '--profile') options.profile = argv[++index];
     else throw new Error(`unknown argument: ${argument}`);
   }
   return options;

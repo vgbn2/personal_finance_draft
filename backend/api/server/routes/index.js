@@ -5,6 +5,7 @@ module.exports = {
   '/api/data/summary': require('./data/data_summary'),
   '/api/analytics': require('./market/analytics'),
   '/api/auth/status': require('./account/auth'),
+  '/api/auth/session/reauth': require('./account/session_reauth'),
   '/api/backtest': require('./market/backtest'),
   '/api/correlation': require('./market/correlation'),
   '/api/database/status': require('./account/database'),

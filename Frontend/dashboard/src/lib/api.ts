@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { createSocketAuthProvider } from './socket_auth';
+
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export const API_ENDPOINTS = {
@@ -41,3 +43,13 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
   } catch { /* supabase not available */ }
   return headers;
 }
+
+export async function getSocketAuth(): Promise<{ token?: string }> {
+  const headers = await getAuthHeaders();
+  const authorization = headers.Authorization;
+  if (!authorization) return {};
+  const match = /^Bearer\s+(.+)$/i.exec(authorization);
+  return match?.[1] ? { token: match[1] } : {};
+}
+
+export const socketAuthProvider = createSocketAuthProvider(getSocketAuth);

@@ -7,6 +7,10 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { REPO_ROOT } = require('../../../shared/lib/runtime/paths.js');
+const { normalizeRole } = require('../../../shared/lib/auth/access_policy.js');
+const {
+  validateDeploymentProfile,
+} = require('../../../shared/lib/settings/deployment_profile.js');
 
 const MIN_API_TOKEN_LENGTH = 24;
 const DEFAULT_MIN_FREE_BYTES = 10 * 1024 ** 3;
@@ -16,6 +20,7 @@ const RECOMMENDED_INSTALLED_MEMORY_GIB = 16;
 // reports slightly less than 8 GiB through os.totalmem().
 const DEFAULT_MIN_DETECTED_MEMORY_BYTES = Math.floor(7.5 * 1024 ** 3);
 const SUPPORTED_ARCHITECTURES = ['x64'];
+const VALID_IP_CHANGE_POLICIES = ['audit', 'reauth'];
 const EXECUTION_ONLY_KEYS = [
   'SOVEREIGN_TRADE_PIN',
   'POLYMARKET_PRIVATE_KEY',
@@ -69,14 +74,70 @@ function isPrivateBind(value) {
   return octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127;
 }
 
+function validateAccessRoleConfiguration(env = process.env) {
+  const defaultRole = normalizeRole(env.SOVEREIGN_DEFAULT_USER_ROLE || 'viewer');
+  let roleMap = {};
+  let mapValid = true;
+  try {
+    const parsed = JSON.parse(env.SOVEREIGN_USER_ROLE_MAP || '{}');
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      mapValid = false;
+    } else {
+      roleMap = parsed;
+    }
+  } catch (_) {
+    mapValid = false;
+  }
+  const invalidEntries = mapValid
+    ? Object.entries(roleMap)
+      .filter(([userId, role]) => (
+        !userId
+        || !normalizeRole(role)
+        || normalizeRole(role) === 'service'
+      ))
+      .map(([userId]) => userId)
+    : [];
+  return {
+    ok: Boolean(defaultRole && defaultRole !== 'service' && mapValid && invalidEntries.length === 0),
+    default_role: defaultRole,
+    role_map_valid: mapValid,
+    role_map_entries: mapValid ? Object.keys(roleMap).length : null,
+    invalid_entry_ids: invalidEntries,
+  };
+}
+
 function validateCentralEnvironment(env = process.env) {
   const runtimeMode = String(env.SOVEREIGN_RUNTIME_MODE || '').trim();
   const liveTrading = String(env.LIVE_TRADING || '').trim().toLowerCase();
   const executionAuthorized = String(env.SOVEREIGN_EXECUTION_AUTHORIZED || '').trim().toLowerCase();
   const bind = String(env.SOVEREIGN_WEB_BIND || '127.0.0.1').trim();
   const intervalSecs = Number(env.BACKFILL_INTERVAL_SECS || 1800);
+  const sessionTracking = String(env.SOVEREIGN_AUTH_SESSION_TRACKING || 'true').trim().toLowerCase();
+  const ipChangePolicy = String(env.SOVEREIGN_IP_CHANGE_POLICY || 'audit').trim().toLowerCase();
+  const trustProxy = String(env.SOVEREIGN_TRUST_PROXY || 'false').trim().toLowerCase();
   const executionKeysPresent = EXECUTION_ONLY_KEYS.filter((key) => nonEmpty(env[key]));
   const checks = {
+    deployment_profile: validateDeploymentProfile(
+      env.SOVEREIGN_DEPLOYMENT_PROFILE || 'central-host',
+      { requireWriter: true },
+    ),
+    access_roles: validateAccessRoleConfiguration(env),
+    auth_session_tracking: {
+      ok: sessionTracking === 'true',
+      enabled: sessionTracking === 'true',
+    },
+    ip_change_policy: {
+      ok: VALID_IP_CHANGE_POLICIES.includes(ipChangePolicy),
+      configured: ipChangePolicy,
+      allowed: VALID_IP_CHANGE_POLICIES,
+    },
+    untrusted_forwarded_headers: {
+      ok: trustProxy === 'false',
+      trust_proxy: trustProxy === 'true',
+      reason: trustProxy === 'false'
+        ? 'socket_address_authoritative'
+        : 'trusted_proxy_not_qualified',
+    },
     runtime_mode: {
       ok: runtimeMode === 'cloud-compute',
       expected: 'cloud-compute',
@@ -259,6 +320,7 @@ module.exports = {
   MIN_INSTALLED_MEMORY_GIB,
   RECOMMENDED_INSTALLED_MEMORY_GIB,
   SUPPORTED_ARCHITECTURES,
+  VALID_IP_CHANGE_POLICIES,
   architectureCheck,
   diskCheck,
   isPrivateBind,
@@ -266,5 +328,6 @@ module.exports = {
   memoryCheck,
   parseEnvFile,
   probeCentralHost,
+  validateAccessRoleConfiguration,
   validateCentralEnvironment,
 };
