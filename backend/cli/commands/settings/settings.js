@@ -140,6 +140,7 @@ async function commandSettings(args, { settingsPath } = {}) {
     const me = numArg('--min-edge');      if (me !== null && !isNaN(me)) t.min_edge = me;
     const mp = numArg('--max-positions'); if (mp !== null && !isNaN(mp)) t.max_positions = Math.round(mp);
     const pi = numArg('--polling-interval'); if (pi !== null && !isNaN(pi)) t.polling_interval = Math.round(pi);
+    const bot = numArg('--bot-interval'); if (bot !== null && !isNaN(bot)) t.bot_interval_min = Math.max(1, bot);
     const bi = numArg('--backfill-interval'); if (bi !== null && !isNaN(bi)) t.backfill_interval_min = Math.max(1, Math.round(bi));
     persistSettings(settings, settingsPath);
     if (useJson) {

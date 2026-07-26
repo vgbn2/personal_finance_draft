@@ -168,7 +168,47 @@ function binPaths(tsDir, symbol, timeframe) {
 function readCoverage(tsDir, symbol, timeframe, now = Date.now()) {
   const empty = { exists: false, count: 0, lastBarMs: null, firstBarMs: null, ageMs: null, notFoundCheckedMs: null };
   const { bin, meta } = binPaths(tsDir, symbol, timeframe);
+  // An active manifest makes the segment generation part of the canonical view,
+  // even when an older .bin exists. Materialize only this opt-in path so coverage
+  // cannot claim old canonical rows while newer segment publications are hidden.
+  try {
+    const { readManifest } = require('./append_only_segments.js');
+    if (readManifest(tsDir, symbol, timeframe)) {
+      const { readTsIndex } = require('./validation.js');
+      const records = readTsIndex(tsDir, symbol, timeframe);
+      if (!records || records.length === 0) return { ...empty, exists: true };
+      const firstBarMs = Date.parse(records[0].timestamp);
+      const last = records[records.length - 1];
+      const lastBarMs = Date.parse(last.timestamp);
+      return {
+        exists: true,
+        count: records.length,
+        firstBarMs,
+        lastBarMs,
+        ageMs: Number.isFinite(lastBarMs) ? now - lastBarMs : null,
+        notFoundCheckedMs: null,
+        provider: last.provider || 'unknown',
+        derivedFrom: last.derived_from_timeframe || null,
+      };
+    }
+  } catch (_) {
+    // A corrupt active manifest is unavailable coverage, never partial health.
+    return empty;
+  }
   if (!fs.existsSync(bin)) {
+    // The opt-in append-only store has no canonical .bin until compaction. Its
+    // manifest already contains the same cheap count/head/tail coverage facts.
+    try {
+      const { segmentCoverage } = require('./append_only_segments.js');
+      const segment = segmentCoverage(tsDir, symbol, timeframe);
+      if (segment) {
+        return {
+          ...segment,
+          ageMs: segment.lastBarMs === null ? null : now - segment.lastBarMs,
+          notFoundCheckedMs: null,
+        };
+      }
+    } catch (_) { /* retain the canonical empty result if segment metadata is invalid */ }
     // No bin — check for a meta-only "not found" marker written after a 0-bar deep backfill.
     if (fs.existsSync(meta)) {
       try {
@@ -225,6 +265,18 @@ function readCoverage(tsDir, symbol, timeframe, now = Date.now()) {
 
 function readRecentTimestamps(tsDir, symbol, timeframe, limit = GRAIN_SAMPLE_SIZE) {
   const { bin } = binPaths(tsDir, symbol, timeframe);
+  try {
+    const { readManifest } = require('./append_only_segments.js');
+    if (readManifest(tsDir, symbol, timeframe)) {
+      const { readTsIndex } = require('./validation.js');
+      const records = readTsIndex(tsDir, symbol, timeframe) || [];
+      return records.slice(-Math.max(1, Math.min(4096, Math.floor(limit))))
+        .map((record) => Date.parse(record.timestamp))
+        .filter(Number.isFinite);
+    }
+  } catch (_) {
+    return [];
+  }
   let fd;
   try {
     fd = fs.openSync(bin, 'r');

@@ -83,3 +83,44 @@ test('browser auth wiring contains no privileged host token fallback', () => {
   assert.match(source, /restoreVerifiedSession/);
   assert.match(source, /Authorization.*Bearer/);
 });
+
+test('browser telemetry derives Socket.IO auth from the current Supabase session', () => {
+  const apiSource = fs.readFileSync(
+    path.join(REPO_ROOT, 'Frontend/dashboard/src/lib/api.ts'),
+    'utf8',
+  );
+  const panelSource = [
+    'Frontend/dashboard/src/components/panels/TelemetryPanel.tsx',
+    'Frontend/dashboard/src/components/panels/MarketIntelPanel.tsx',
+  ].map((relativePath) => fs.readFileSync(path.join(REPO_ROOT, relativePath), 'utf8')).join('\n');
+  const serverSource = fs.readFileSync(path.join(REPO_ROOT, 'backend/api/app.js'), 'utf8');
+
+  assert.match(apiSource, /socketAuthProvider/);
+  assert.match(apiSource, /getAuthHeaders\(\)/);
+  assert.match(panelSource, /auth:\s*socketAuthProvider/);
+  assert.match(serverSource, /io\.use\(async/);
+  assert.match(serverSource, /CAPABILITIES\.STATUS_READ/);
+  assert.doesNotMatch(panelSource, /VITE_API_TOKEN|SOVEREIGN_API_TOKEN/);
+});
+
+test('Socket.IO auth provider resolves a refreshed token for every handshake', async () => {
+  const { createSocketAuthProvider } = await import(
+    '../../../../Frontend/dashboard/src/lib/socket_auth.js'
+  );
+  let token = 'first-token';
+  const provider = createSocketAuthProvider(async () => ({ token }));
+  const resolveHandshake = () => new Promise((resolve) => provider(resolve));
+
+  assert.deepEqual(await resolveHandshake(), { token: 'first-token' });
+  token = 'refreshed-token';
+  assert.deepEqual(await resolveHandshake(), { token: 'refreshed-token' });
+});
+
+test('authenticated sidebar requests current browser auth headers', () => {
+  const sidebarSource = fs.readFileSync(
+    path.join(REPO_ROOT, 'Frontend/dashboard/src/components/layout/Sidebar.tsx'),
+    'utf8',
+  );
+  assert.match(sidebarSource, /getAuthHeaders\(\)/);
+  assert.doesNotMatch(sidebarSource, /headers:\s*DEFAULT_HEADERS/);
+});

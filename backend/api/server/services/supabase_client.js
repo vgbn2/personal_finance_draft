@@ -83,6 +83,9 @@ async function getAuthStatus(req) {
           id: data.user.id,
           email: data.user.email || null,
           role: data.user.role || null,
+          access_role: data.user.app_metadata
+            ? data.user.app_metadata.sovereign_role || null
+            : null,
         }
       : null;
   } catch (error) {

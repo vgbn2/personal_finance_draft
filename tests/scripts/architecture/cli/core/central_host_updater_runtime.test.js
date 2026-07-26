@@ -68,12 +68,17 @@ fi
 if [[ "$operation" == "build" && "\${FAKE_BUILD_FAIL}" == "true" ]]; then exit 42; fi
 exit 0
 `);
-  executable(path.join(bin, 'node'), '#!/usr/bin/env bash\nexit 0\n');
+  executable(path.join(bin, 'node'), `#!/usr/bin/env bash
+if [[ "\${1:-}" == "-e" ]]; then
+  printf '%s' "\${FAKE_DEPLOYMENT_PROFILE:-central-host}"
+fi
+exit 0
+`);
   executable(path.join(bin, 'curl'), '#!/usr/bin/env bash\nexit 99\n');
 
   return {
     root,
-    run(buildFails = false) {
+    run(buildFails = false, deploymentProfile = 'central-host') {
       fs.writeFileSync(actionLog, '');
       const result = spawnSync(path.join(dockerDir, 'update-central-host.sh'), [], {
         cwd: root,
@@ -84,6 +89,7 @@ exit 0
           FAKE_ACTION_LOG: actionLog,
           FAKE_BUILD_FAIL: String(buildFails),
           FAKE_UPDATED: String(updated),
+          FAKE_DEPLOYMENT_PROFILE: deploymentProfile,
           SOVEREIGN_CENTRAL_ENV_FILE: path.join(root, '.env.central'),
         },
       });
@@ -140,4 +146,15 @@ test('central updater preserves the old success marker after build failure and r
   assert.ok(retried.actions.some((line) => line.includes(' build web')));
   assert.ok(retried.actions.some((line) => line.includes(' up -d --force-recreate web backfill')));
   assert.equal(fs.readFileSync(marker, 'utf8').trim(), 'new-head');
+});
+
+test('central updater refuses the all-in-one rehearsal profile before starting services', (t) => {
+  const harness = makeHarness(true);
+  t.after(() => fs.rmSync(harness.root, { recursive: true, force: true }));
+
+  const { result, actions } = harness.run(false, 'all-in-one');
+
+  assert.equal(result.status, 78);
+  assert.match(result.stderr, /refusing central updater for deployment profile all-in-one/);
+  assert.equal(actions.length, 0);
 });

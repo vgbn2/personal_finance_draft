@@ -143,6 +143,9 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.match(systemPayload.components.cli.cli_path, /backend[\\\\/]cli[\\\\/]sovereign_cli\.js/);
     assert.ok(systemPayload.components.cli.usable_records >= 0);
     assert.ok(Array.isArray(systemPayload.components.quotes.providers));
+    assert.equal(systemPayload.components.deployment.effective_profile, 'developer');
+    assert.equal(systemPayload.components.deployment.canonical_writer, false);
+    assert.equal(systemPayload.components.auth.access_policy, 'capability-rbac-v1');
 
     const quotes = await fetch(`${baseUrl}/api/quotes/status`);
     assert.equal(quotes.status, 200);

@@ -49,7 +49,7 @@ async function request(baseUrl, route, headers = {}) {
   return fetch(`${baseUrl}${route}`, { headers });
 }
 
-test('client whitelist preserves session auth while strict routes require host tokens', async () => {
+test('role gate preserves viewer sessions and limits service-client capabilities', async () => {
   const baseUrl = await listen();
   try {
     assert.deepEqual(
@@ -78,18 +78,18 @@ test('client whitelist preserves session auth while strict routes require host t
       assert.equal((await missing.json()).error, 'authentication_required');
     }
     for (const route of STRICT_CLIENT_GET_ROUTES) {
-      const wrongBearer = await request(baseUrl, route, {
+      const viewerBearer = await request(baseUrl, route, {
         Authorization: 'Bearer supabase-session-shaped-token',
       });
-      assert.equal(wrongBearer.status, 401);
-      assert.equal((await wrongBearer.json()).error, 'authentication_required');
+      assert.equal(viewerBearer.status, 200);
     }
-    const strictOverrideBearer = await request(
+    const privilegedOverrideBearer = await request(
       baseUrl,
       '/api/bias?input=/tmp/session-must-not-bypass-strict-auth.json',
       { Authorization: 'Bearer supabase-session-shaped-token' },
     );
-    assert.equal(strictOverrideBearer.status, 401);
+    assert.equal(privilegedOverrideBearer.status, 403);
+    assert.equal((await privilegedOverrideBearer.json()).error, 'insufficient_capability');
 
     const clientHeader = await request(baseUrl, '/api/client/status', {
       'X-Sovereign-Token': TEST_CLIENT_TOKEN,
@@ -122,7 +122,8 @@ test('client whitelist preserves session auth while strict routes require host t
       '/api/data/summary?input=/tmp/client-must-not-read-this.json',
       { 'X-Sovereign-Token': TEST_CLIENT_TOKEN },
     );
-    assert.equal(clientPathOverride.status, 401);
+    assert.equal(clientPathOverride.status, 403);
+    assert.equal((await clientPathOverride.json()).error, 'insufficient_capability');
 
     for (const headers of [
       { 'X-Sovereign-Token': TEST_ADMIN_TOKEN },
@@ -134,15 +135,24 @@ test('client whitelist preserves session auth while strict routes require host t
 
     for (const route of [
       '/api/config',
-      '/api/kill-switch',
       '/api/backend/portfolio',
       '/api/cache/list',
     ]) {
       const clientTokenOnAdminRoute = await request(baseUrl, route, {
         'X-Sovereign-Token': TEST_CLIENT_TOKEN,
       });
-      assert.equal(clientTokenOnAdminRoute.status, 401, route);
+      assert.equal(clientTokenOnAdminRoute.status, 403, route);
+      assert.equal((await clientTokenOnAdminRoute.json()).error, 'insufficient_capability');
     }
+    const clientKillSwitchStatus = await request(baseUrl, '/api/kill-switch?command=status', {
+      'X-Sovereign-Token': TEST_CLIENT_TOKEN,
+    });
+    assert.equal(clientKillSwitchStatus.status, 200);
+    const clientKillSwitchMutation = await request(baseUrl, '/api/kill-switch?command=activate', {
+      'X-Sovereign-Token': TEST_CLIENT_TOKEN,
+    });
+    assert.equal(clientKillSwitchMutation.status, 403);
+    assert.equal((await clientKillSwitchMutation.json()).error, 'insufficient_capability');
 
     for (const route of ['/api/bot/cycle', '/api/signal/promote']) {
       const clientPost = await fetch(`${baseUrl}${route}`, {
@@ -153,7 +163,8 @@ test('client whitelist preserves session auth while strict routes require host t
         },
         body: '{}',
       });
-      assert.equal(clientPost.status, 401, route);
+      assert.equal(clientPost.status, 403, route);
+      assert.equal((await clientPost.json()).error, 'insufficient_capability');
     }
   } finally {
     await close();

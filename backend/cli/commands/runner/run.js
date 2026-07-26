@@ -2,13 +2,15 @@
 
 const { startLoop, stopLoop, getStatus, installShutdownHandlers } = require('../../../../shared/lib/runtime/run_loop.js');
 const { featureGate, loadRuntimeSettings } = require('../../../../shared/lib/settings/runtime');
+const { resolveBotInterval } = require('../../../../shared/lib/settings/interval_policy');
 const utils = require('../../lib/utils.js');
 const { hasFlag, numericOption, optionValue, printPayload } = utils;
 const { promptSelect, promptText, promptConfirm } = require('../../tui/index.js');
 
 async function runBackfillLoop(intervalMin, opts = {}) {
   const { commandMassBackfill } = require('../data/data.js');
-  const intervalMs = intervalMin * 60 * 1000;
+  const effectiveIntervalMin = Math.max(1, Number(intervalMin) || 1440);
+  const intervalMs = effectiveIntervalMin * 60 * 1000;
 
   if (opts.once) {
     console.log('[run backfill] Running one-shot backfill...');
@@ -17,7 +19,7 @@ async function runBackfillLoop(intervalMin, opts = {}) {
   }
 
   installShutdownHandlers();
-  console.log(`[run backfill] Starting loop every ${intervalMin} min. Ctrl+C to stop.`);
+  console.log(`[run backfill] Starting loop every ${effectiveIntervalMin} min. Ctrl+C to stop.`);
 
   startLoop('backfill', async ({ iteration }) => {
     console.log(`[backfill] #${iteration} — ${new Date().toISOString()}`);
@@ -29,15 +31,21 @@ async function runBackfillLoop(intervalMin, opts = {}) {
   return 0;
 }
 
+function resolvePaperBotInterval(intervalMin, settings) {
+  return resolveBotInterval({ requestedMinutes: intervalMin, settings });
+}
+
 async function runPaperBotLoop(intervalMin, opts = {}) {
-  const gate = featureGate('bot_autopilot', { surface: 'Paper bot loop' });
+  const gate = featureGate('bot_autopilot', { settings: opts.settings, surface: 'Paper bot loop' });
   if (!gate.ok) {
     printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, opts.args || []);
     return 1;
   }
+  const intervalPolicy = resolvePaperBotInterval(intervalMin, opts.settings);
+  const effectiveIntervalMin = intervalPolicy.effective_interval_min;
   const { commandPolymarket } = require('../trade/trade.js');
   const { checkAndCloseResolvedPositions } = require('../../../gateway/src/polymarket_paper.js');
-  const intervalMs = intervalMin * 60 * 1000;
+  const intervalMs = effectiveIntervalMin * 60 * 1000;
   const strategy = opts.strategy || 'low_prob_dip';
   const paperArgs = ['paper-run', '--strategy', strategy, '--json'];
 
@@ -50,16 +58,17 @@ async function runPaperBotLoop(intervalMin, opts = {}) {
   }
 
   installShutdownHandlers();
-  console.log(`[run bot paper] Starting Polymarket paper bot every ${intervalMin} min. Ctrl+C to stop.`);
+  console.log(`[run bot paper] Starting Polymarket paper bot every ${effectiveIntervalMin} min (global=${intervalPolicy.global_minimum_min} personal=${intervalPolicy.personal_interval_min} admin=${intervalPolicy.admin_minimum_min}). Ctrl+C to stop.`);
 
-  startLoop('paper_bot', async ({ iteration }) => {
+  const start = opts.startLoop || startLoop;
+  start('paper_bot', async ({ iteration }) => {
     console.log(`[paper_bot] #${iteration} — ${new Date().toISOString()}`);
     const closed = await checkAndCloseResolvedPositions();
     if (closed.closed.length > 0) console.log(`[paper_bot] Auto-closed ${closed.closed.length} resolved position(s)`);
     await commandPolymarket(paperArgs);
   }, intervalMs, { continueOnError: true });
 
-  await new Promise(() => {});
+  if (opts.waitForShutdown !== false) await new Promise(() => {});
   return 0;
 }
 
@@ -95,10 +104,11 @@ async function commandRun(args) {
     const botRest = rest.slice(1);
 
     if (botSub === 'paper') {
-      const intervalMin = numericOption(botRest, '--interval', 30);
+      const settings = loadRuntimeSettings();
+      const requestedInterval = botRest.includes('--interval') ? numericOption(botRest, '--interval', null) : null;
       const once        = hasFlag(botRest, '--once');
       const strategy    = optionValue(botRest, '--strategy', 'low_prob_dip');
-      return runPaperBotLoop(intervalMin, { once, strategy, args: botRest });
+      return runPaperBotLoop(requestedInterval, { once, strategy, settings, args: botRest });
     }
 
     if (botSub === 'live') {
@@ -114,7 +124,8 @@ async function commandRun(args) {
     const settings = loadRuntimeSettings();
     const botGate = featureGate('bot_autopilot', { settings, surface: 'Run all paper bot loop' });
 
-    const intervalBotMin = numericOption(rest, '--interval-bot', 30);
+    const requestedBotInterval = rest.includes('--interval-bot') ? numericOption(rest, '--interval-bot', null) : null;
+    const intervalBotMin = resolveBotInterval({ requestedMinutes: requestedBotInterval, settings }).effective_interval_min;
     // Cadence comes from settings (user-tunable via `settings params --backfill-interval`);
     // an explicit --interval-backfill flag overrides and also forces the loop on.
     const explicitBackfill = rest.includes('--interval-backfill');
@@ -188,14 +199,14 @@ async function commandRunnerMenu(args) {
 
   if (action === 'paper') {
     global.suppressLogs = true;
-    const interval = await promptText('Interval (minutes):', '30');
+    const interval = await promptText('Interval (minutes):', '1');
     const strategy = await promptSelect('Strategy:', [
       { label: 'low_prob_dip', value: 'low_prob_dip' },
       { label: 'mean_revert', value: 'mean_revert' },
     ]);
     const once = await promptConfirm('Run once only?');
     global.suppressLogs = false;
-    const runArgs = ['bot', 'paper', '--interval', interval || '30', '--strategy', strategy || 'low_prob_dip'];
+    const runArgs = ['bot', 'paper', '--interval', interval || '1', '--strategy', strategy || 'low_prob_dip'];
     if (once) runArgs.push('--once');
     return commandRun(runArgs);
   }
@@ -212,13 +223,13 @@ async function commandRunnerMenu(args) {
 
   if (action === 'all') {
     global.suppressLogs = true;
-    const intervalBot = await promptText('Bot interval (minutes):', '30');
+    const intervalBot = await promptText('Bot interval (minutes):', '1');
     const intervalBackfill = await promptText('Backfill interval (minutes):', '1440');
     global.suppressLogs = false;
-    return commandRun(['all', '--interval-bot', intervalBot || '30', '--interval-backfill', intervalBackfill || '1440']);
+    return commandRun(['all', '--interval-bot', intervalBot || '1', '--interval-backfill', intervalBackfill || '1440']);
   }
 
   return 0;
 }
 
-module.exports = { commandRun, commandRunnerMenu };
+module.exports = { commandRun, commandRunnerMenu, resolvePaperBotInterval, runPaperBotLoop };

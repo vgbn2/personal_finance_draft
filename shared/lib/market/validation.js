@@ -4,9 +4,9 @@ const {
   refreshFileLockSync,
   withFileLockSync,
 } = require('../runtime/file_lock.js');
+const PROVIDER_PRIORITY = require('./provider_priority.js');
 
 const OHLCV_FAMILIES = new Set(['equities', 'indices', 'commodities', 'crypto', 'fx', 'prediction_market']);
-const PROVIDER_PRIORITY = { binance: 3, alpaca: 3, yahoo: 1, twelvedata: 1, frankfurter: 1, ecb: 1 };
 const SCALAR_VALUE_FAMILIES = new Set(['pmi', 'macro', 'macro_alt', 'sentiment', 'breadth', 'prediction_market']);
 const FRESHNESS_RULES_MS = {
   equities: {
@@ -951,6 +951,17 @@ function writeTsIndex(tsDir, snapshot) {
     }
   }
 
+  // Opt-in SSD-preserving mode. The canonical .bin writer remains the default
+  // until a deployment explicitly selects segments and validates read parity.
+  if (process.env.SOVEREIGN_TS_STORAGE === 'segments') {
+    const { appendSegment } = require('./append_only_segments.js');
+    for (const [, { records, meta }] of groups) {
+      if (!meta || records.length === 0) continue;
+      appendSegment(tsDir, meta, records);
+    }
+    return;
+  }
+
   // Merge-protection for EVERY timeframe: the bin is the deepest store, so a snapshot
   // rebuilt from the (sub-daily-capped, daily-shallow) JSON partition must never truncate
   // it. mergeWriteBin merges each incoming window into the existing bin in flat heap (the
@@ -967,7 +978,7 @@ function writeTsIndex(tsDir, snapshot) {
  * Returns an array of OHLCV records (same shape as snapshot.sources entries),
  * or null if the index file doesn't exist yet.
  */
-function readTsIndex(tsDir, symbol, timeframe) {
+function readCanonicalTsIndex(tsDir, symbol, timeframe) {
   const { bin, meta: metaPath } = tsIndexPath(tsDir, symbol, timeframe);
   if (!fs.existsSync(bin) || !fs.existsSync(metaPath)) return null;
 
@@ -1005,6 +1016,20 @@ function readTsIndex(tsDir, symbol, timeframe) {
   return records;
 }
 
+function mergeCanonicalAndSegments(canonical, segments) {
+  if (!canonical) return segments;
+  if (!segments) return canonical;
+  const { mergeRecords } = require('./append_only_segments.js');
+  return mergeRecords([canonical, segments]);
+}
+
+function readTsIndex(tsDir, symbol, timeframe) {
+  const canonical = readCanonicalTsIndex(tsDir, symbol, timeframe);
+  const { readSegments } = require('./append_only_segments.js');
+  const segments = readSegments(tsDir, symbol, timeframe);
+  return mergeCanonicalAndSegments(canonical, segments);
+}
+
 /**
  * Like readTsIndex but materializes ONLY the records with timestamp >= sinceMs.
  *
@@ -1022,7 +1047,7 @@ function readTsIndex(tsDir, symbol, timeframe) {
  * Falls back to a full readTsIndex when sinceMs is not finite. Returns an array
  * (possibly empty) or null if the bin/meta is missing or invalid.
  */
-function readTsIndexSince(tsDir, symbol, timeframe, sinceMs) {
+function readCanonicalTsIndexSince(tsDir, symbol, timeframe, sinceMs) {
   if (!Number.isFinite(sinceMs)) return readTsIndex(tsDir, symbol, timeframe);
   const { bin, meta: metaPath } = tsIndexPath(tsDir, symbol, timeframe);
   if (!fs.existsSync(bin) || !fs.existsSync(metaPath)) return null;
@@ -1068,6 +1093,14 @@ function readTsIndexSince(tsDir, symbol, timeframe, sinceMs) {
     });
   }
   return records;
+}
+
+function readTsIndexSince(tsDir, symbol, timeframe, sinceMs) {
+  if (!Number.isFinite(sinceMs)) return readTsIndex(tsDir, symbol, timeframe);
+  const canonical = readCanonicalTsIndexSince(tsDir, symbol, timeframe, sinceMs);
+  const { readSegments } = require('./append_only_segments.js');
+  const segments = readSegments(tsDir, symbol, timeframe, sinceMs);
+  return mergeCanonicalAndSegments(canonical, segments);
 }
 
 module.exports = {
