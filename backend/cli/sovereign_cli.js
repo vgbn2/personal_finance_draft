@@ -7,6 +7,7 @@ const { pageText, helpText, printPayload, logger } = utils;
 
 const { commandStatus, commandCockpit } = require('./commands/operational/status.js');
 const { commandPortfolioMonitor } = require('./commands/operational/portfolio_monitor.js');
+const { commandMarket } = require('./commands/operational/market_monitor.js');
 const { commandRemote } = require('./commands/operational/remote.js');
 const { commandSetup, commandDoctor } = require('./commands/operational/setup.js');
 const { commandBackend } = require('./commands/tools/backend.js');
@@ -57,6 +58,7 @@ async function handleCommand(args) {
     'backfill-daemon':       (a) => commandBackfillDaemon(a),
     'stop-backfill-daemon':  (a) => commandStopBackfillDaemon(a),
     'portfolio-monitor':     (a) => commandPortfolioMonitor(a),
+    market:           (a) => commandMarket(a),
     'cache-clean':           (a) => commandCacheClean(a),
     'clear-api-cache':       (a) => commandClearApiCache(a),
     universe:         (a) => commandUniverse(a),

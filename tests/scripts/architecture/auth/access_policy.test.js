@@ -84,6 +84,14 @@ test('policy distinguishes public, authenticated, and unauthorized requests', ()
     viewer,
     requiredCapabilities({ method: 'POST', pathname: '/api/bot/cycle' }),
   ).reason, 'insufficient_capability');
+  assert.deepEqual(
+    requiredCapabilities({ method: 'GET', pathname: '/api/market/monitor' }),
+    [CAPABILITIES.DATA_READ],
+  );
+  assert.equal(authorize(
+    anonymous,
+    requiredCapabilities({ method: 'GET', pathname: '/api/market/monitor' }),
+  ).reason, 'authentication_required');
 });
 
 test('privileged file overrides and kill-switch mutations require elevated capabilities', () => {

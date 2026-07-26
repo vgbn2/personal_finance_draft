@@ -3,6 +3,7 @@ module.exports = {
   '/api/status': require('./status/status'),
   '/api/client/status': require('./status/client_status'),
   '/api/data/summary': require('./data/data_summary'),
+  '/api/market/monitor': require('./market/market_monitor'),
   '/api/analytics': require('./market/analytics'),
   '/api/auth/status': require('./account/auth'),
   '/api/auth/session/reauth': require('./account/session_reauth'),
