@@ -21,6 +21,7 @@ module.exports = {
   '/api/signal/promote': require('./market/signal_promote'),
   '/api/supabase/config': require('./account/supabase_config'),
   '/api/system/status': require('./system/system'),
+  '/api/system/service-health': require('./system/service_health'),
   '/api/kill-switch': require('./system/kill_switch'),
   '/api/strategies': require('./market/strategies'),
   '/api/config': require('./account/config'),

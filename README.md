@@ -29,6 +29,8 @@ node backend/api/app.js
 # Requires an authenticated data.read-capable bearer/client token.
 curl -H "X-Sovereign-Token: $SOVEREIGN_CLIENT_TOKEN" \
   "http://127.0.0.1:8787/api/market/monitor?limit=20"
+# Authenticated service heartbeat context is separate:
+# GET /api/system/service-health (data.read; no Docker socket required)
 ```
 
 Private central research host:

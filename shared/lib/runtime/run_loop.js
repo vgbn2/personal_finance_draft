@@ -2,6 +2,8 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { writeJson } = require('../market/validation.js');
+const { errorCode, writeServiceHeartbeat } = require('./service_heartbeat.js');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 
@@ -27,7 +29,15 @@ function _writeStatus(name, patch) {
   }
   const p = _statusPath();
   fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, JSON.stringify(status, null, 2), 'utf8');
+  writeJson(p, status);
+}
+
+function _heartbeat(name, patch) {
+  try {
+    writeServiceHeartbeat(name, patch);
+  } catch (_) {
+    // A telemetry failure must not stop the owned loop or change its safety policy.
+  }
 }
 
 /**
@@ -45,22 +55,28 @@ function startLoop(name, fn, intervalMs, opts = {}) {
   let clearTimer = null;
 
   _writeStatus(name, { running: true, startedAt, pid: process.pid, intervalMs, iteration: 0 });
+  _heartbeat(name, { state: 'starting', next_run_at: new Date(Date.now() + intervalMs).toISOString() });
 
   async function tick() {
     if (stopped) return;
     iteration++;
     const now = new Date().toISOString();
     _writeStatus(name, { iteration, lastRunAt: now });
+    _heartbeat(name, { state: 'running', last_attempt_at: now });
     try {
       await fn({ name, iteration, startedAt });
       _writeStatus(name, { healthyAt: new Date().toISOString() });
+      _heartbeat(name, { state: 'healthy', success: true, next_run_at: new Date(Date.now() + intervalMs).toISOString() });
     } catch (err) {
       const msg = err && err.message ? err.message : String(err);
-      _writeStatus(name, { lastError: msg, lastErrorAt: new Date().toISOString() });
+      const code = errorCode(msg) || 'service_failed';
+      _writeStatus(name, { lastError: code, lastErrorAt: new Date().toISOString() });
+      _heartbeat(name, { state: 'degraded', error_code: code, next_run_at: new Date(Date.now() + intervalMs).toISOString() });
       if (!continueOnError) {
         stopped = true;
         _loops.delete(name);
         _writeStatus(name, { running: false, crashed: true, crashedAt: new Date().toISOString() });
+        _heartbeat(name, { state: 'degraded', error_code: code });
         return;
       }
     }
@@ -79,6 +95,7 @@ function startLoop(name, fn, intervalMs, opts = {}) {
     if (clearTimer) clearTimer();
     _loops.delete(name);
     _writeStatus(name, null);
+    _heartbeat(name, { state: 'stopped', attempted: false, next_run_at: null });
   }
 
   const handle = { stop };
