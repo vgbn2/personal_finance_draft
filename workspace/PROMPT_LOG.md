@@ -2351,5 +2351,5 @@ Current config resolves 89 supported price rows, 44 unsupported price entries, a
 The symbol-database suggestion was refined into a deferred local-registry migration with identity/parity,
 dry-run, export, backup/rollback, compatibility, and no-ts-rekey gates. YAML remains canonical during Batches
 3-6. Contracts passed 101/101; aggregate passed 941 total / 937 pass / 0 fail / 4 intentional skips; clean
-archive focus passed 3/3; secrets passed 860/0; hygiene and diff checks passed. No provider, write, runtime,
+archive focus passed 3/3; secrets passed 863/0; hygiene and diff checks passed. No provider, write, runtime,
 trading, public, migration, or promotion action occurred.

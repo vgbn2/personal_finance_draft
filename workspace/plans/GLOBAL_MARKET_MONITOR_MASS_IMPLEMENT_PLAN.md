@@ -259,7 +259,7 @@ Current-config evidence:
   states remained unknown and update states idle because Batch 2 does not yet integrate heartbeat/provider
   context.
 - Focused universe/storage/backfill tests pass; contracts pass 101/101; aggregate Node passes 941 total /
-  937 pass / 0 fail / 4 intentional skips; tracked secrets pass 860/0; hygiene and diff checks pass.
+  937 pass / 0 fail / 4 intentional skips; tracked secrets pass 863/0; hygiene and diff checks pass.
 - Clean committed archive focused tests pass 3/3.
 
 Security post-review found no open P0/P1. Malformed symbols are excluded before filesystem path construction;

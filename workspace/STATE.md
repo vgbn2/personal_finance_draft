@@ -1741,7 +1741,7 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   counters, canonical record counts, honest null segment-overlap counts, and fail-closed per-row invalid state.
   A current real snapshot completed in 59 ms: 1 fresh, 51 delayed, 36 stale, 1 missing, 0 invalid.
 - Verification: focused universe/storage/backfill/rollup files pass; contracts 101/101; aggregate 941 total /
-  937 pass / 0 fail / 4 intentional skips; clean committed archive focus 3/3; secrets 860/0; hygiene, syntax,
+  937 pass / 0 fail / 4 intentional skips; clean committed archive focus 3/3; secrets 863/0; hygiene, syntax,
   and diff checks pass.
 - Security post-review found no P0/P1. New owners have no network/process/write primitives; malformed identities,
   future/corrupt records, unknown state enums, and raw update errors fail closed or remain explicitly unknown.

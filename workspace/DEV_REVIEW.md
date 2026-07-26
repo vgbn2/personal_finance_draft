@@ -1964,7 +1964,7 @@ primitive. Auth/API/UI/runtime/trading/credentials/public exposure are outside t
 Evidence: current config resolves 89 supported price rows, 44 excluded price entries, and 93 non-price
 coordinates. The current read-only snapshot completed in 59 ms with reconciled 1 fresh / 51 delayed / 36 stale /
 1 missing / 0 invalid. Contracts 101/101, aggregate 941 total / 937 pass / 0 fail / 4 intentional skips, clean
-committed archive focus 3/3, secrets 860/0, hygiene, syntax, and diff checks pass.
+committed archive focus 3/3, secrets 863/0, hygiene, syntax, and diff checks pass.
 
 Deferred design: a local symbol registry database may replace YAML only after dry-run identity preservation,
 writer/monitor parity, deterministic export, collision reporting, backup/rollback, old-artifact compatibility,

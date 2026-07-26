@@ -1231,7 +1231,7 @@ truth findings in `workspace/DEV_REVIEW.md`.
     "contracts": "101/101 pass",
     "aggregate": "941 total / 937 pass / 0 fail / 4 intentional skips",
     "clean_archive": "focused universe/latest/backfill tests 3/3 pass",
-    "secrets": "860 files / 0 violations",
+    "secrets": "863 files / 0 violations",
     "hygiene": "pass",
     "diff": "pass"
   },
