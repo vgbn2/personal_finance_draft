@@ -10,6 +10,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 export const API_ENDPOINTS = {
   STATUS: `${API_BASE_URL}/api/status`,
   SYSTEM_STATUS: `${API_BASE_URL}/api/system/status`,
+  MARKET_MONITOR: `${API_BASE_URL}/api/market/monitor`,
   SIGNAL: `${API_BASE_URL}/api/signal`,
   UNIVERSE: `${API_BASE_URL}/api/universe`,
   DATA_SUMMARY: `${API_BASE_URL}/api/data/summary`,
