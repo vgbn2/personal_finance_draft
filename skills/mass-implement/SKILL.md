@@ -27,13 +27,15 @@ When the user asks for planning, produce an objective implementation plan before
    - stale contract/test drift second
    - small hygiene fixes third
    - design-heavy stubs only when the required behavior is already clear
-5. Discuss the relevant edge cases for each batch before implementation.
-6. Split work into batches with disjoint file ownership.
-7. Use subagents only for bounded side tasks when the user allows delegation; keep the main thread on the critical path.
-8. Before edits, name the batch and the files it will touch.
-9. Implement conservatively using existing repo patterns.
-10. Verify with the narrowest commands that prove the changed behavior, then one broader gate when practical.
-11. Append a correction note to `workspace/STATE.md` when a grade-relevant fact changes.
+5. Run the Pre-Implementation Review Gate before the first code edit in each batch.
+6. Discuss the relevant edge cases for each batch before implementation.
+7. Split work into batches with disjoint file ownership.
+8. Use subagents only for bounded side tasks when the user allows delegation; keep the main thread on the critical path.
+9. Before edits, name the batch and the files it will touch.
+10. Implement conservatively using existing repo patterns.
+11. Verify with the narrowest commands that prove the changed behavior, then one broader gate when practical.
+12. Recheck the touched security boundaries after implementation.
+13. Append a correction note to `workspace/STATE.md` when a grade-relevant fact changes.
 
 ## Planning Mode
 
@@ -46,6 +48,7 @@ The output must be evidence-backed, not aspirational. For each planned batch inc
 - `source`: exact file and note that justified the batch, such as `workspace/DEV_REVIEW.md`, `workspace/STATE.md`, `README.md`, `PROJECT_RULES.md`, or a direct code/test contract
 - `expected score movement`: which grade factor should improve (`verification`, `contract truth`, `runtime safety`, `artifact hygiene`, `doc alignment`)
 - `edge cases`: the relevant boundary and failure conditions, with expected behavior and a planned test or explicit deferral
+- `security check`: the trust boundaries touched, likely abuse or exposure paths, and the planned negative test or explicit `not applicable`
 - `verification`: the command or probe that will prove the batch is complete
 
 Rank planning batches using this order:
@@ -57,6 +60,41 @@ Rank planning batches using this order:
 5. Low-cost hygiene items that remove misleading repo state
 
 If a score claim is not tied to a source, do not include it in the plan.
+
+## Pre-Implementation Review Gate
+
+Before the first code edit in every batch, briefly review the current plan against current repository truth.
+This is a required go/no-go gate, including when the plan was written in an earlier session.
+
+1. Confirm the objective, active batch, acceptance criteria, intended files, safety boundaries, and verification
+   commands still match the current code, tests, configuration, and latest workspace state.
+2. Identify stale assumptions, newly completed work, changed paths, active runtime constraints, or missing
+   dependencies. Correct the plan before implementation when any of these change the batch order or scope.
+3. Add a small number of plausible, non-overlapping edge cases found from the actual code paths. Each added case
+   must include `trigger`, `expected behavior`, `owner`, and `proof` or an explicit deferral.
+4. Run a proportionate security checkup over the exact surfaces the batch will touch. Mark irrelevant categories
+   `not applicable` rather than manufacturing findings:
+   - authentication, authorization, role/capability enforcement, and fail-closed defaults
+   - untrusted input validation, injection, path traversal, unsafe command/URL construction, and output encoding
+   - credentials, tokens, personal data, logs, error messages, file permissions, and secret persistence
+   - network binding, CORS, SSRF/redirect behavior, loopback/tunnel assumptions, and public exposure
+   - trading/write capability, deployment-profile boundaries, privileged operations, and kill-switch behavior
+   - symlink/TOCTOU races, partial writes, atomic publication, ownership, and concurrent file access
+   - dependency, generated-artifact, migration, compatibility, and rollback exposure
+5. Publish a concise pre-implementation brief containing:
+   - plan freshness and any corrections
+   - active batch and intended files
+   - added edge cases and planned proof
+   - security findings with severity, evidence, owner, and disposition
+   - explicit `GO`, `GO WITH FIXES`, or `NO-GO`
+
+Implementation is `NO-GO` while a confirmed P0/P1 security issue is unresolved; authorization or safety
+ownership is ambiguous; required credentials could be exposed; or the batch would cross an unapproved live,
+provider, public-network, destructive-data, migration, or privileged-runtime boundary. Lower-severity findings
+must be fixed in the active batch or explicitly deferred with an owner and verification gate.
+
+This gate is a scoped preflight, not a claim of a complete penetration test. Recheck the changed trust
+boundaries after implementation and report what was actually tested.
 
 ## Edge-Case Review
 
@@ -119,6 +157,7 @@ End with:
 - files changed
 - commands run and result
 - edge cases verified and any explicitly deferred cases
+- pre- and post-implementation security checks, findings, fixes, and explicit deferrals
 - remaining highest-impact gap
 
 If the run stopped in Planning Mode without edits, end with:
@@ -127,6 +166,7 @@ If the run stopped in Planning Mode without edits, end with:
 - source for each batch
 - expected grade movement
 - edge cases and their planned proof or explicit deferral
+- security check scope, findings, and planned negative proof or explicit `not applicable`
 - first verification gate to run after implementation starts
 
 Do not mark the broader objective complete unless every named requirement is verified against current state.
