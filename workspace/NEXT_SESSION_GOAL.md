@@ -1,5 +1,25 @@
 # Next Session Goal
 
+## 2026-07-27 session 105 - implement global market monitor Batch 1
+
+The deferred global monitor plan is saved in
+`workspace/plans/GLOBAL_MARKET_MONITOR_MASS_IMPLEMENT_PLAN.md`. Review it through the updated
+`skills/mass-implement/SKILL.md` edge-case protocol before implementation.
+
+1. Run read-only `git status --short`, confirm the committed checkpoint and plan files, and do not change the
+   currently running container profiles.
+2. Implement Batch 1 only: a constant-memory, verified `readLatestTsRecord()` path that reads canonical tail
+   records without loading full bins and remains fail-closed for corrupt/missing segments.
+3. Add focused fixtures for missing, empty, truncated, corrupt, concurrent-append, and valid large-bin cases.
+4. Prove the real BTCUSDT deep-index regression and bounded read/memory behavior before adding API, CLI, or UI.
+5. Keep segment mode disabled, live execution blocked, web private, and provider/data mutation outside this
+   first batch.
+
+Current closeout evidence: source checkpoint `8af72c2e`; global monitor plan stored; mass-implement canonical and
+discovery mirrors match; skill validation, hygiene, and diff checks pass. Runtime containers remain active by
+explicit prior approval: web healthy, backfill/bot/host-health/host-backup running, portfolio-monitor failing
+Alpaca 401 and restarting, Polymarket research off due missing scope file.
+
 ## 2026-07-26 session 104 mass-implement correction - commit and qualify the repaired batch
 
 The session-104 source P1s are repaired, committed, and host-capable contracts pass. The immediate gate is a

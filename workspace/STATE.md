@@ -1,5 +1,21 @@
 # Project State - Sovereign Trading Platform
 
+## Session 105 closeout - global market monitor plan (2026-07-27)
+
+- Stored the deferred global monitor mass-implement plan at
+  `workspace/plans/GLOBAL_MARKET_MONITOR_MASS_IMPLEMENT_PLAN.md`.
+- The plan is global over the configured price-bearing universe, not BTC-only. It requires a constant-memory
+  canonical tail reader, exact freshness/provider/update state separation, API/CLI/dashboard parity, service
+  heartbeats, edge-case proofs, and bounded resource tests.
+- Updated `skills/mass-implement/SKILL.md` and the ignored `.agents/skills` discovery mirror with the mandatory
+  edge-case review protocol. Both copies match; skill validation, hygiene, and diff checks pass.
+- Closeout source checkpoint before this batch: `8af72c2e feat: harden private paper runtime`. The next session
+  starts with global-monitor Batch 1 and must not alter running container profiles as part of that first batch.
+- Runtime was inspected, not changed: web healthy; backfill, paper bot, host-health, and host-backup running;
+  portfolio-monitor restarting on Alpaca 401; Polymarket research off because its scope file is absent.
+- Operational qualification remains open: stale-data recovery, fresh-clone proof, host login/SSH/MCP,
+  backup/restore, restart/rollback, one-writer, and soak. Live execution and public exposure remain blocked.
+
 <!-- BLAST-THROUGH AUDIT ANCHOR (read by the Recency-Ranked Audit Queue) -->
 last_audited_commit: e0de66de
 last_audit_date: 2026-07-24
