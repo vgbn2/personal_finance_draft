@@ -82,6 +82,7 @@ const CLIENT_ROUTE_CAPABILITIES = Object.freeze({
   '/api/bot/status': CAPABILITIES.STATUS_READ,
   '/api/client/status': CAPABILITIES.STATUS_READ,
   '/api/data/summary': CAPABILITIES.DATA_READ,
+  '/api/market/monitor': CAPABILITIES.DATA_READ,
   '/api/scorecard': CAPABILITIES.RESEARCH_READ,
   '/api/signal': CAPABILITIES.RESEARCH_READ,
   '/api/universe': CAPABILITIES.DATA_READ,
@@ -96,6 +97,7 @@ const PROTECTED_GET_CAPABILITIES = Object.freeze({
   '/api/bias': CAPABILITIES.RESEARCH_READ,
   '/api/client/status': CAPABILITIES.STATUS_READ,
   '/api/kill-switch': CAPABILITIES.STATUS_READ,
+  '/api/market/monitor': CAPABILITIES.DATA_READ,
   '/api/scorecard': CAPABILITIES.RESEARCH_READ,
 });
 

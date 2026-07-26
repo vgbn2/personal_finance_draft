@@ -684,8 +684,26 @@ function backendStatus(query = {}) {
 function backendDataSummary(query = {}) {
   const symbol = stringOrFallback(query.symbol, 'SPY');
   const timeframe = stringOrFallback(query.timeframe, '1d');
-  const input = stringOrFallback(query.input, DEFAULT_HISTORY);
   const maxBars = stringOrFallback(query.max_bars, '0');
+  const explicitInput = typeof query.input === 'string' && query.input.trim()
+    ? query.input.trim()
+    : null;
+  if (!explicitInput) {
+    return withCache(`summary:canonical:${symbol}:${timeframe}:${maxBars}`, () => runNodeCli([
+      'backend',
+      'data',
+      'summary',
+      '--symbol',
+      symbol,
+      '--timeframe',
+      timeframe,
+      '--max-bars',
+      maxBars,
+      '--json',
+    ]));
+  }
+
+  const input = explicitInput;
   return withCache(`summary:${symbol}:${timeframe}:${input}:${maxBars}`, () => {
     const args = [
     'data',
