@@ -11,6 +11,7 @@ npm install --prefix backend/gateway
 npm install --prefix backend/mcp_server
 npm install --prefix Frontend/dashboard
 node backend/cli/sovereign_cli.js status --json
+node backend/cli/sovereign_cli.js market monitor --limit 20 --json
 node backend/cli/sovereign_cli.js bias BTCUSDT
 node backend/cli/sovereign_cli.js scorecard --family crypto --top 20
 ```
@@ -25,6 +26,9 @@ Web API (port 8787):
 
 ```bash
 node backend/api/app.js
+# Requires an authenticated data.read-capable bearer/client token.
+curl -H "X-Sovereign-Token: $SOVEREIGN_CLIENT_TOKEN" \
+  "http://127.0.0.1:8787/api/market/monitor?limit=20"
 ```
 
 Private central research host:

@@ -10,6 +10,7 @@ const BLOCKED_ROUTES = [
 const ALLOWED_ROUTES = [
   '/api/system/status',
   '/api/data/summary',
+  '/api/market/monitor',
   '/api/quotes/status',
   '/api/backtest',
   '/api/correlation',

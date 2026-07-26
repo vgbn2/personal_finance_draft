@@ -14,3 +14,7 @@ Operational note:
 contracts.
 - Fallback fixtures are used when live providers or native bridges are not
 available so the dashboard still renders current local state.
+- `GET /api/market/monitor` is an authenticated `data.read` endpoint over the
+  canonical read-only snapshot owner. It accepts bounded filters plus
+  `limit`/`offset`, keeps global counters independent of the page, and performs
+  no provider request or market-data write.

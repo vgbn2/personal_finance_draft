@@ -21,7 +21,14 @@ const {
   isRichTerminal
 } = utils;
 
-const { readSnapshot, readTsIndex, validateSnapshot } = require('../../../../shared/lib/market/validation.js');
+const {
+  familyFreshnessThresholdMs,
+  readLatestTsRecord,
+  readSnapshot,
+  readTsIndex,
+  validateSnapshot,
+} = require('../../../../shared/lib/market/validation.js');
+const { readCoverage } = require('../../../../shared/lib/market/coverage.js');
 const DEFAULT_TS_INDEX = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
 
 // Child modules
@@ -276,6 +283,116 @@ function runBackendPortfolio(args = []) {
   ]);
 }
 
+function buildCanonicalDataSummary(symbol, timeframe, tsDir = DEFAULT_TS_INDEX) {
+  const displayInput = tsDir === DEFAULT_TS_INDEX ? 'storage/data/ts' : tsDir;
+  let latest;
+  try {
+    latest = readLatestTsRecord(tsDir, symbol, timeframe);
+  } catch (_) {
+    return {
+      available: true,
+      ok: false,
+      type: 'market_data_summary',
+      engine: 'sovereign_cli_frontend',
+      schema_version: 1,
+      source: 'canonical_ts_index',
+      input: displayInput,
+      error_code: 'canonical_data_invalid',
+      error: 'canonical time-series data failed integrity validation',
+    };
+  }
+
+  const coverage = readCoverage(tsDir, symbol, timeframe);
+  if (!latest) {
+    return {
+      available: true,
+      ok: false,
+      type: 'market_data_summary',
+      engine: 'sovereign_cli_frontend',
+      schema_version: 1,
+      source: 'canonical_ts_index',
+      input: displayInput,
+      error_code: 'canonical_data_missing',
+      error: 'canonical time-series data is missing',
+      summary: {
+        symbol,
+        timeframe,
+        bars: 0,
+        first_timestamp: null,
+        last_timestamp: null,
+        first_close: null,
+        last_close: null,
+        min_close: null,
+        max_close: null,
+        total_volume: null,
+        summary_scope: 'coverage_and_latest',
+      },
+      quality: {
+        rejected_records: 0,
+        usable_records: 0,
+        stale_records: 0,
+        provider_errors: 0,
+      },
+      records: [],
+    };
+  }
+
+  const record = latest.record;
+  const observedMs = Date.parse(record.timestamp);
+  const ageMs = Number.isFinite(observedMs) ? Math.max(0, Date.now() - observedMs) : null;
+  const freshnessThresholdMs = familyFreshnessThresholdMs({
+    family: record.family,
+    timeframe,
+  });
+  const freshnessState = Number.isFinite(ageMs) && Number.isFinite(freshnessThresholdMs)
+    ? ageMs <= freshnessThresholdMs / 2
+      ? 'fresh'
+      : ageMs <= freshnessThresholdMs
+        ? 'delayed'
+        : 'stale'
+    : 'invalid';
+  const firstTimestamp = Number.isFinite(coverage.firstBarMs)
+    ? new Date(coverage.firstBarMs).toISOString()
+    : null;
+  const bars = Number.isInteger(latest.recordCount)
+    ? latest.recordCount
+    : Number(coverage.count || 0);
+  return {
+    available: true,
+    ok: true,
+    type: 'market_data_summary',
+    engine: 'sovereign_cli_frontend',
+    schema_version: 1,
+    source: 'canonical_ts_index',
+    input: displayInput,
+    summary: {
+      symbol,
+      timeframe,
+      bars,
+      first_timestamp: firstTimestamp,
+      last_timestamp: record.timestamp,
+      // Range-wide close/volume statistics require materializing history.
+      // Keep the default path constant-memory and expose only verified facts.
+      first_close: null,
+      last_close: record.close,
+      min_close: null,
+      max_close: null,
+      total_volume: null,
+      summary_scope: 'coverage_and_latest',
+      latest_age_ms: ageMs,
+      freshness_threshold_ms: freshnessThresholdMs,
+      freshness_state: freshnessState,
+    },
+    quality: {
+      rejected_records: 0,
+      usable_records: bars,
+      stale_records: null,
+      provider_errors: 0,
+    },
+    records: [record],
+  };
+}
+
 async function runBackendDataSummary(args = []) {
   let symbol = optionValue(args, '--symbol', null);
 
@@ -317,6 +434,9 @@ async function runBackendDataSummary(args = []) {
   const resolved = utils.resolveSymbols([symbol || 'AAPL'], universe)[0];
 
   const userInput = optionValue(args, '--input', null);
+  if (!userInput) {
+    return buildCanonicalDataSummary(resolved, timeframe);
+  }
   let inputPath = userInput || DEFAULT_HISTORY;
   let tmpSnapshot = null;
 
@@ -713,6 +833,7 @@ module.exports = {
   runBackendStatus,
   runBackendStats,
   runBackendPortfolio,
+  buildCanonicalDataSummary,
   runBackendDataSummary,
   runBackendCorrelation,
   defaultCorrelationMethod,
