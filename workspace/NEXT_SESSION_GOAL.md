@@ -1,22 +1,21 @@
 # Next Session Goal
 
-## 2026-07-27 session 109 - implement global market monitor Batch 5
+## 2026-07-27 session 110 - Batch 5 committed; qualification remains
 
-Batch 4 dashboard display is committed at `883681fd`. The active plan remains
-`workspace/plans/GLOBAL_MARKET_MONITOR_MASS_IMPLEMENT_PLAN.md`.
+Batch 5 sanitized service-heartbeat observability is committed as the session closeout, following the deep
+blast-through audit and mass-implement plan in `workspace/plans/GLOBAL_MARKET_MONITOR_MASS_IMPLEMENT_PLAN.md`.
 
-1. Run the mass-implement preflight against current backfill, paper-bot, portfolio-monitor, host-health, and
-   backup status ownership.
-2. Implement only sanitized atomic service heartbeat records and a separate service-health API/UI section.
-3. Prove absent/stale heartbeat, restart/interrupted publication, repeated authentication failure, TTL,
-   sanitization, and no-Docker-socket behavior.
+1. Run committed-archive/fresh-install proof for the heartbeat contract and API/UI path.
+2. Keep host login, SSH/MCP, backup/restore, restart/rollback, one-writer, and soak qualification explicit.
+3. Recover the 14 policy-stale required data windows only under explicit writer/provider authorization.
 4. Keep provider polling changes, canonical-data writes, symbol-registry migration, public binding, segment
-   enablement, live execution, and operational-qualification claims outside Batch 5.
+   enablement, and live execution outside this batch.
 
-Current evidence: Batch 4 focused tests pass 4/4; host browser checks pass 10/10 at 360/768/1440; frontend
-TypeScript/build pass; contracts pass 112/112; aggregate passes 952 total / 948 pass / 0 fail / 4 intentional
-skips; secrets pass 866/0; hygiene and diff checks pass. Fresh installation and operational qualification remain
-open.
+Current evidence: host contracts pass 116/116; aggregate passes 956 total / 952 pass / 0 fail / 4 intentional
+skips; focused heartbeat/monitor tests pass 12/12; frontend production build, secret scan (867 files, 0
+violations), hygiene, and diff checks pass. Fresh installation and operational
+qualification remain open; the prior integrity probe remains `ok:false` with DCS 0.954348 and 14 policy-stale
+required windows.
 
 ## 2026-07-27 session 108 - implement global market monitor Batch 4
 

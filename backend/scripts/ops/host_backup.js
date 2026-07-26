@@ -3,6 +3,7 @@
 
 const path = require('node:path');
 const { createHostBackup } = require('../../../shared/lib/runtime/host_maintenance');
+const { writeServiceHeartbeat } = require('../../../shared/lib/runtime/service_heartbeat');
 
 function valueArg(name) {
   const index = process.argv.indexOf(name);
@@ -33,6 +34,14 @@ async function main() {
     ...(retentionDays === undefined ? {} : { retentionMaxAgeMs: retentionDays * 24 * 60 * 60 * 1000 }),
     ...(retentionMaxCount === undefined ? {} : { retentionMaxCount }),
   });
+  try {
+    writeServiceHeartbeat('host_backup', {
+      state: result.ok ? 'healthy' : 'degraded',
+      success: result.ok,
+      error_code: result.ok ? null : (result.backup_ok === false ? 'backup_failed' : 'backup_retention_failed'),
+      next_run_at: new Date(Date.now() + Number(process.env.HOST_BACKUP_INTERVAL_SECS || 86400) * 1000).toISOString(),
+    });
+  } catch (_) {}
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   process.exitCode = exitCodeForResult(result);
 }
@@ -44,6 +53,7 @@ function exitCodeForResult(result) {
 
 if (require.main === module) {
   main().catch((error) => {
+    try { writeServiceHeartbeat('host_backup', { state: 'degraded', error: error.message }); } catch (_) {}
     process.stderr.write(`${JSON.stringify({ ok: false, error: error.message, staging_path: error.stagingPath || null })}\n`);
     process.exitCode = 1;
   });

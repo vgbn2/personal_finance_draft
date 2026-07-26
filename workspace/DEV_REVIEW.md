@@ -2017,3 +2017,74 @@ reruns.
 Grade movement: monitor UI B+ / pending -> A- / authenticated, bounded, degraded-truthful, and responsive.
 Batch 5 service heartbeat observability remains open. Source is committed at `883681fd`; fresh-install,
 deployment, recovery, MCP, rollback, and soak qualification remain separate gates.
+
+## Deep Blast-Through Review - 2026-07-27 session 110 - Batches 1-4 / Batch 5 gate
+
+### Scope and evidence
+
+- Reviewed committed Global Market Monitor Batches 1-4 (`b1816b94`, `a65f907a`, `8322adfd`, `883681fd`),
+  current production callers, tests, README/plan, Compose service definitions, and runtime status owners.
+- Clean committed archive syntax checks passed for the monitor production modules.
+- Focused monitor contracts passed **5/5**: latest reader, snapshot, service, canonical summary, and dashboard
+  contract.
+- `npm run hygiene` passed. Read-only `backend integrity --json` returned `ok:false`, 92/92 cached, 14
+  policy-stale required windows, 9 cadence-plausible grain notices, and DCS 0.954348.
+- `graphify-out` is unavailable because the graphify command/module is not installed.
+
+### Confirmed findings
+
+1. **P1 - non-atomic/raw paper-loop status:** `shared/lib/runtime/run_loop.js:21-30,49-64` directly rewrites
+   `run_status.json` and stores raw exception messages. This can create malformed status during interruption and
+   leak provider/token/path text to status consumers.
+2. **P1 - raw backfill outcomes cross the API status boundary:**
+   `backend/cli/commands/data/backfill_daemon.js:72-76,577-582` stores nested outcomes, while
+   `backend/api/server/services/client_snapshot.js:146` returns `last_outcome` without a sanitized projection.
+3. **P1 - host-health and host-backup lack durable heartbeat ownership:**
+   `infra/docker/docker-compose.yml:118-165` runs stdout-only loops that exit on failure. There is no persisted
+   last-success/attempt/next-run/sanitized-error record for those services.
+
+### Dismissed or deferred findings
+
+- The Batch 1-4 monitor reader, configured universe, snapshot counters, protected API, CLI parity, dashboard
+  authentication, bounded pagination, malformed-row handling, and responsive behavior remain supported by focused
+  tests and showed no confirmed P0/P1 in this pass.
+- Full canonical checksum migration remains deferred because it would require a writer/format migration; segment
+  mode remains disabled.
+- Fresh installation, stale-data recovery, real host login/SSH/MCP, backup/restore, restart/rollback, one-writer,
+  and soak remain external qualification gates, not Batch 5 implementation targets.
+
+### Section grades
+
+| Section | Grade | Evidence / reason |
+|---|---|---|
+| `shared/lib/market` monitor path | B+ | Canonical reader, universe, snapshot, and cache/API contract are coherent and verified; service context is still absent. |
+| `backend/cli` monitor and service owners | B | Monitor CLI is bounded and truthful; persistent loop/backfill status formats are duplicated, raw-error-bearing, and not uniformly atomic. |
+| `backend/api` monitor/status surface | B+ | Authenticated read-only monitor parity is verified; client status still exposes raw backfill outcome shape. |
+| `Frontend/dashboard` monitor | A- | Authenticated, bounded, degraded-truthful, and responsive; service-health context is not yet rendered. |
+| `infra/docker` service topology | B | Private/profile boundaries and no Docker socket are clear; monitoring services have no durable heartbeat contract. |
+| `tests` monitor coverage | B+ | Prior batch contracts are strong; Batch 5 fault/restart/TTL/sanitization coverage is missing. |
+| system design critical path | C+ | Monitor display is trustworthy locally, but service/recovery/host qualification and data integrity gates remain open. |
+
+### Planned closure
+
+Implement the evidence-backed Batch 5A-5C plan in `workspace/plans/GLOBAL_MARKET_MONITOR_MASS_IMPLEMENT_PLAN.md`,
+starting with the shared atomic sanitized heartbeat store. Keep all live/provider/public/destructive/privileged
+runtime actions out of scope.
+
+## Batch 5 Mass-Implement Closure - 2026-07-27 session 110
+
+The planned closure was implemented in the working tree. `service_heartbeat.js` provides atomic bounded
+publication, TTL-aware reads, stable error-code sanitization, and preservation of the previous valid record when
+publication fails. The paper loop, backfill daemon, portfolio monitor, host-health, and host-backup owners now
+publish heartbeats. `/api/system/service-health` is protected by `data.read`, and the dashboard renders it as
+separate service context while keeping canonical instrument freshness and provider health independent.
+
+The client snapshot boundary now projects legacy nested poller outcomes to bounded fields. Added contract coverage
+proves authentication sanitization, missing/expired/malformed/healthy records, failed atomic publication, and safe
+legacy projection. No P0/P1 was introduced in the implemented scope; the three deep-audit P1s are addressed by the
+new contract and owner wiring, subject to external runtime qualification.
+
+Verification: host contracts **116/116**; aggregate **956 total / 952 pass / 0 fail / 4 intentional skips**;
+focused heartbeat/monitor **12/12**; dashboard production build pass; secret scan **867 files / 0 violations**;
+hygiene and diff checks pass. Source is committed as the session closeout. Fresh-install, host/MCP, recovery, rollback, one-writer,
+soak, and 14 policy-stale data-integrity gates remain open.

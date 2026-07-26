@@ -1,6 +1,7 @@
 # Global Market Monitor - Mass-Implement Plan
 
-Status: active; Batches 1-4 are committed through `883681fd` on 2026-07-27; Batches 5-6 remain.
+Status: active; Batches 1-4 are committed through `883681fd`; Batch 5 is committed as the 2026-07-27 session
+closeout; Batch 6 remains.
 
 ## Objective
 
@@ -353,3 +354,86 @@ Evidence:
 No provider poll, writer/data mutation, runtime/profile change, bot cycle, order, public exposure,
 symbol-database migration, segment enablement, destructive action, or promotion occurred. Fresh installation,
 service heartbeat truth, deployment, recovery, MCP, rollback, and soak qualification remain open.
+
+## Deep blast-through audit - 2026-07-27 session 110
+
+The prior Batches 1-4 were re-audited in `full` / Hard Reading Mode against the committed range
+`b1816b94..883681fd`, the current source, tests, deployment manifest, and read-only integrity output.
+
+Confirmed Batch 5 findings:
+
+1. **P1 - paper-loop status is not an atomic/sanitized heartbeat.** `shared/lib/runtime/run_loop.js:21-30`
+   rewrites `run_status.json` directly, and `:49-64` stores raw exception messages. An interrupted write can
+   leave malformed status, and authenticated status consumers can receive provider/token/path text.
+2. **P1 - backfill status crosses the monitor boundary with raw outcomes.**
+   `backend/cli/commands/data/backfill_daemon.js:72-76,577-582` publishes atomically but stores nested outcome
+   errors; `backend/api/server/services/client_snapshot.js:146` returns `last_outcome` without a sanitized
+   projection. The writer heartbeat must publish only bounded fields and stable error codes.
+3. **P1 - monitoring services have no durable heartbeat owner.** `host-health` and `host-backup` in
+   `infra/docker/docker-compose.yml:118-165` emit stdout and exit on failure, but do not persist attempt,
+   success, next-run, or sanitized error state. A missing file alone cannot distinguish never-started, interrupted,
+   or repeatedly failing service state.
+
+The prior monitor reader, configured universe, snapshot, CLI/API parity, authentication, dashboard validation,
+pagination, and viewport contracts remain green and have no confirmed P0/P1 in this pass. `backend integrity
+--json` remains read-only evidence only: 92/92 cached, 14 policy-stale required windows, DCS 0.954348, and
+`ok:false`.
+
+## Batch 5 plan gate - sanitized service heartbeat observability
+
+### Batch 5A - shared heartbeat contract and atomic store
+
+- **Objective:** create one small local-file heartbeat owner with atomic publication, schema validation, TTL
+  classification, and stable sanitized error codes.
+- **Why now:** the three P1 findings above are competing status formats and can expose torn/raw failure state.
+- **Source:** `shared/lib/runtime/run_loop.js`, `backend/cli/commands/data/backfill_daemon.js`,
+  `infra/docker/docker-compose.yml`, and the Batch 5 contract in this plan.
+- **Expected movement:** runtime safety, verification, path clarity, false-health reduction.
+- **Edge cases:** missing/invalid/expired heartbeat -> `unavailable`; interrupted temp publication -> previous
+  valid file remains readable; repeated 401/token/secret text -> stable `authentication_failed` code only;
+  concurrent writers -> unique temp files and last atomic rename wins; owner is heartbeat store, proof is focused
+  fault-injection tests.
+- **Security:** no auth or provider call is added; sanitize before persistence, reject path/service traversal,
+  expose no token, URL, PID liveness claim, stack, or raw error; prove with secret-pattern negative tests.
+- **Verification:** unit tests for atomic write/read, malformed JSON, TTL, sanitization, and concurrent publication.
+
+### Batch 5B - wire the five service owners
+
+- **Objective:** publish heartbeats for `paper_bot`, `backfill`, `portfolio_monitor`, `host_health`, and
+  `host_backup` with service-specific cadence/TTL and last-success/attempt/next-run fields.
+- **Why now:** current host-health/backup are stdout-only, while paper/backfill status is not a safe shared contract.
+- **Source:** `backend/cli/commands/runner/run.js`, `shared/lib/runtime/run_loop.js`,
+  `backend/cli/commands/data/backfill_daemon.js`, `backend/cli/commands/operational/portfolio_monitor.js`,
+  `backend/scripts/ops/host_health.js`, `backend/scripts/ops/host_backup.js`, and Compose loop commands.
+- **Expected movement:** operational observability, runtime safety, contract truth.
+- **Edge cases:** one failed cycle retains last success and marks degraded; graceful stop records stopped rather
+  than deleting state; once-mode publishes completion; service restart preserves prior valid record and updates
+  instance identity; host-health/backup command failure still publishes sanitized failure before exit.
+- **Security:** no Docker socket, credential, provider, or execution capability; only mounted storage heartbeat
+  directory is written; prove Compose has no socket and service code has no network/process expansion beyond its
+  existing owner.
+- **Verification:** focused owner tests, Compose static contract, simulated 401, interrupted write, restart, TTL,
+  and no-Docker-socket checks.
+
+### Batch 5C - separate authenticated service-health surface
+
+- **Objective:** expose a bounded `data.read` service-health payload and render it separately beneath canonical
+  instrument/provider health without changing freshness counters.
+- **Why now:** stale prices must distinguish writer/provider/service failure without falsifying the price row.
+- **Source:** `backend/api/server/routes/index.js`, new system service-health route/service, and
+  `Frontend/dashboard/src/components/panels/QuoteHealthPanel.tsx`.
+- **Expected movement:** user-visible truth, contract parity, doc alignment.
+- **Edge cases:** absent/stale/malformed files -> explicit unavailable/degraded card; mixed service states do not
+  change instrument freshness; bounded row count and fixed safe errors; unauthorized remains 401/403.
+- **Security:** retain existing bearer/capability policy; no raw heartbeat errors or private paths in API/UI;
+  prove auth, sanitization, bounded output, and React text rendering.
+- **Verification:** API contract, CLI/API if a CLI surface is added, dashboard model/UI tests at 360/768/1440,
+  and no-write/no-provider probe.
+
+### Batch 5 pre-implementation gate
+
+**GO WITH FIXES:** the three P1 defects are confirmed but are fully inside the approved Batch 5 scope. No other
+P0/P1 was found in Batches 1-4. Intended files are limited to the Batch 5A-5C owners above plus focused tests,
+Compose/docs contracts, and this plan/state record. No provider polling, canonical-data write, symbol-registry
+migration, segment enablement, public binding, live execution, Docker-socket mount, or operational-qualification
+claim is authorized. The first code edit must implement Batch 5A and prove its focused tests before wiring owners.

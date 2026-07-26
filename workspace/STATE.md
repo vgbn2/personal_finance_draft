@@ -1,5 +1,14 @@
 # Project State - Sovereign Trading Platform
 
+## Session 110 boot - global market monitor Batch 5 queued (2026-07-27)
+
+- Continuity boot revalidated `HEAD 15df68a2` and a clean working tree after committed global-monitor Batch 4.
+- The next scoped objective is Batch 5 sanitized service-heartbeat observability; keep provider polling, canonical
+  writes, public exposure, live execution, and operational-qualification claims outside that batch.
+- `graphify-out` remains unavailable because the graphify command/module is not installed.
+- Fresh-install and operational-qualification gates remain open; no code, runtime, provider, trading, public,
+  migration, or data state changed during boot.
+
 ## Session 105 closeout - global market monitor plan (2026-07-27)
 
 - Stored the deferred global monitor mass-implement plan at
@@ -1796,3 +1805,18 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   UI-and-responsive-verified, service-heartbeats-pending**. Source/tests/docs are committed at `883681fd`.
 - `graphify-out` refresh remains blocked because the local Python environment has no `graphify` module.
   Fresh-install, service-heartbeat, host, MCP, recovery, rollback, and soak gates remain open.
+
+## Mass-Implement Closure - 2026-07-27 session 110
+
+Batch 5 is implemented in the working tree after the deep Batches 1-4 blast-through. A shared atomic,
+sanitized service-heartbeat contract now covers paper-bot, backfill, portfolio-monitor, host-health, and
+host-backup; the read-only authenticated `/api/system/service-health` route and separate dashboard context are
+wired with bounded error codes. Legacy client snapshots no longer expose raw nested poller outcomes.
+
+Verification: host contracts 116/116; aggregate 956 total / 952 pass / 0 fail / 4 intentional skips; focused
+heartbeat/monitor tests 12/12; frontend production build pass; secret scan 867 files with 0 violations; hygiene
+and diff checks pass. No provider polling, writer/data mutation, runtime startup, trading, public exposure,
+migration, segment enablement, destructive action, or promotion occurred. Source is committed as the session
+closeout. Fresh
+installation, host/MCP/recovery/rollback/one-writer/soak qualification, and the 14 policy-stale integrity
+windows remain open.
