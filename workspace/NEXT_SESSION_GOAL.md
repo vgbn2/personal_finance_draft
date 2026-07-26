@@ -1,5 +1,24 @@
 # Next Session Goal
 
+## 2026-07-27 session 108 - implement global market monitor Batch 4
+
+Batch 3 CLI/API parity is committed at `8322adfd`, and focused committed-archive proof passes. The active plan remains
+`workspace/plans/GLOBAL_MARKET_MONITOR_MASS_IMPLEMENT_PLAN.md`.
+
+1. Run the mass-implement preflight against the current dashboard API/auth/layout code.
+2. Implement only Batch 4 user-facing global display: authenticated API client, snapshot counters and age,
+   sortable/filterable instrument rows, last-known/stale wording, provider health retained below instrument
+   health, 10-second refresh paused while hidden, and manual retry.
+3. Prove loading, empty, stale, malformed, unauthorized, API-error, counter-mismatch, and 360/768/1440 viewport
+   behavior without page overflow.
+4. Keep service heartbeats, provider polling, data writes, symbol-registry migration, public binding, segment
+   enablement, live execution, and operational-qualification claims outside Batch 4.
+
+Current evidence: Batch 3 contracts pass 108/108; final aggregate passes 948 total / 944 pass / 0 fail /
+4 intentional skips; tracked secrets pass 863/0; hygiene, syntax, and diff checks pass. The real default
+BTCUSDT data summary resolves 4,067,940 canonical 1m rows without mutation. Fresh installation remains open;
+the archive proof reused the checkout's installed dependency tree for dependency-bound focused files.
+
 ## 2026-07-27 session 107 - implement global market monitor Batch 3
 
 Batches 1-2 are implemented and committed through `a65f907a`. The active plan remains

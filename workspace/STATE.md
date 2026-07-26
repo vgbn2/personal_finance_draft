@@ -1750,3 +1750,30 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
 - Grade movement is limited to contract truth, path clarity, duplication reduction, runtime safety, and
   verification. API/CLI/dashboard/heartbeat and operational qualification remain open. No provider poll, data
   write, runtime/profile change, bot cycle, order, public exposure, destructive migration, or promotion occurred.
+
+## Global Market Monitor Batch 3 - 2026-07-27 session 108
+
+- Implemented one shared read-only monitor service with strict family/state/symbol filters, `limit` 1-100,
+  bounded offset, global counters independent of pagination, five-second unfiltered snapshot caching, concurrent
+  refresh deduplication, and sanitized last-known fallback after refresh failure.
+- Added `market monitor` JSON/human output plus bounded watch mode, and protected
+  `GET /api/market/monitor` with the existing `data.read` capability. CLI and API adapters return the same
+  payload; the monitor accepts no caller path, URL, provider, write, or execution option.
+- Corrected default `backend data summary` to constant-memory canonical coverage/latest output. A real BTCUSDT
+  probe reported 4,067,940 1m rows and the verified latest value instead of a shallow-cache zero. Explicit input
+  paths retain their existing privileged override contract.
+- Verified missing/malformed auth, insufficient capability policy, invalid filters/pagination, empty pages,
+  filter-varied/concurrent cache reuse, degraded last-known refresh fallback, error sanitization, bounded watch
+  work, CLI/API parity, and unchanged canonical bin/meta stats.
+- Host contracts pass **108/108**. Final host aggregate passes **948 total / 944 pass / 0 fail / 4 intentional
+  skips**. One intermediate compact aggregate run hit two unrelated dashboard timing flakes; their exact file
+  passed 7/7 immediately and the final aggregate passed. Tracked secrets pass 863/0; direct new-production-source
+  scanning, syntax, hygiene, and diff checks pass.
+- Security closeout found no open P0/P1 in Batch 3. Grade movement: monitor CLI/API **unimplemented -> B+ /
+  contract-and-auth-verified, UI-pending**; default data summary **shallow-cache-drifted -> B+ /
+  canonical-coverage-latest**. The broader system remains integrity-and-qualification-gated.
+- Batch 3 source/tests/docs are committed at `8322adfd`. The raw committed archive passes the new monitor/summary
+  tests 7/7 before dependency-bound files load; all four focused files pass using the checkout's installed root
+  dependencies. This is committed-source/archive proof, not fresh-install proof. No provider poll, data write,
+  runtime/profile change, bot cycle, order, public exposure, database migration, segment enablement, destructive
+  action, or promotion occurred.

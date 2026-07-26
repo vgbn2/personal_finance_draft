@@ -1240,3 +1240,34 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "safety": "No provider poll, data write, runtime/profile change, bot cycle, order, public exposure, destructive migration, or promotion occurred."
 }
 ```
+
+## Session Memory - 2026-07-27 session 108 global monitor Batch 3
+
+```json
+{
+  "work": "Implemented truthful CLI/API global monitor parity and corrected default canonical data summary.",
+  "source_state": "committed at 8322adfd; focused committed-archive proof passed; fresh install remains open",
+  "interfaces": {
+    "cli": "market monitor with bounded filters, pagination, and watch mode",
+    "api": "protected GET /api/market/monitor requiring data.read",
+    "summary": "constant-memory canonical coverage and latest record by default"
+  },
+  "cache": "one unfiltered snapshot for at most 5000 ms with concurrent dedupe and sanitized last-known fallback",
+  "real_probe": {
+    "symbol": "BTCUSDT",
+    "timeframe": "1m",
+    "canonical_rows": 4067940,
+    "storage_mutated": false
+  },
+  "verification": {
+    "contracts": "108/108 host pass",
+    "aggregate": "948 total / 944 pass / 0 fail / 4 intentional skips",
+    "timing_flake_audit": "intermediate chat_ui failures; focused 7/7 and final aggregate pass",
+    "secrets": "863 tracked files / 0 violations",
+    "hygiene_syntax_diff": "pass"
+  },
+  "security": "no open P0/P1; data.read auth, bounded input, sanitized errors, no path URL provider process write trading or public primitive",
+  "next": "Run the mass-implement preflight for Batch 4 dashboard display.",
+  "safety": "No provider poll, data write, runtime/profile change, bot cycle, order, public exposure, migration, segment enablement, destructive action, or promotion occurred."
+}
+```

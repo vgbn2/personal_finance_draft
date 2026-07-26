@@ -1969,3 +1969,27 @@ committed archive focus 3/3, secrets 863/0, hygiene, syntax, and diff checks pas
 Deferred design: a local symbol registry database may replace YAML only after dry-run identity preservation,
 writer/monitor parity, deterministic export, collision reporting, backup/rollback, old-artifact compatibility,
 and no-ts-index-rekey proof. This is not authorization for a migration or remote database.
+
+## Mass-Implement Review - 2026-07-27 session 108 - Global Monitor Batch 3
+
+No P0/P1 remains in Batch 3 scope. The new shared monitor service owns bounded input validation, one unfiltered
+five-second cache, concurrent refresh deduplication, paging, exact global counters, and sanitized last-known
+fallback. `market monitor` and `GET /api/market/monitor` are thin parity adapters. The API route is explicitly
+classified as `data.read`; missing or malformed credentials remain 401 and capability denial remains 403.
+
+The monitor accepts no path/URL override and contains no fetch, process-spawn, write, trading, public-bind, or
+privileged-runtime primitive. Invalid symbols/enums, unknown fields, oversized limits/offsets, zero-match pages,
+concurrent clients, refresh failure, raw secret-like error text, and canonical file non-mutation are covered.
+Default data summary now reads constant-memory canonical coverage/latest state; explicit file input remains
+behind the existing `local_file_override.read` gate.
+
+Evidence: real BTCUSDT default summary resolves 4,067,940 canonical 1m rows; host contracts 108/108; final host
+aggregate 948 total / 944 pass / 0 fail / 4 intentional skips; secrets 863/0; hygiene, syntax, and diff checks
+pass. An intermediate aggregate caught two pre-existing dashboard timing flakes; focused rerun passed 7/7 and
+the final aggregate passed.
+
+Grade movement: monitor CLI/API unimplemented -> B+ / contract-and-auth-verified, UI-pending; default summary
+shallow-cache-drifted -> B+ / canonical-coverage-latest. Batch 4 dashboard display and Batch 5 service
+heartbeats remain open. Source is committed at `8322adfd`; focused committed-archive files pass with the
+checkout's installed dependencies, while fresh installation, deployment, provider, recovery, and soak
+qualification remain open.

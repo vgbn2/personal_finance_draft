@@ -1,6 +1,6 @@
 # Global Market Monitor - Mass-Implement Plan
 
-Status: active; Batches 1-2 implemented and committed on 2026-07-27, Batches 3-6 remain.
+Status: active; Batches 1-3 are committed through `8322adfd` on 2026-07-27; Batches 4-6 remain.
 
 ## Objective
 
@@ -280,8 +280,46 @@ rollback, and old-artifact compatibility; no ts-index rekey or destructive data 
 hosting, automatic internet discovery, provider polling, and live symbol mutation are out of scope. Keep YAML as
 the source of truth until those gates are approved and verified.
 
+## Batch 3 implementation checkpoint - 2026-07-27 session 108
+
+Batch 3 is committed at `8322adfd`. One shared service now validates filters/pagination, caches
+one unfiltered snapshot for at most five seconds, deduplicates concurrent refreshes, preserves global counters
+across every page, and returns a sanitized degraded last-known snapshot when refresh fails. The CLI command
+`market monitor` and protected `GET /api/market/monitor` use the same payload adapter; bounded watch mode defaults
+to 10-second intervals and 60 iterations.
+
+The default `backend data summary` path now reports canonical ts-index coverage plus the verified latest record
+without materializing history. Explicit `--input` behavior remains available behind the existing privileged
+file-override API gate. A real BTCUSDT probe reported 4,067,940 canonical 1m rows rather than a shallow-cache
+zero, and mutated no data.
+
+Security and edge-case proof:
+
+- The API route requires `data.read`; missing/malformed credentials return 401 and insufficient capabilities
+  remain 403 through the existing access policy.
+- Unknown query fields, malformed symbols/enums, `limit` outside 1-100, and `offset` outside 0-100000 return
+  deterministic validation errors. Monitor queries accept no path or URL.
+- Filter-varied and concurrent clients reuse one global snapshot; a failed refresh is throttled for the same
+  cache window and exposes no raw error/path/token text.
+- Canonical fixture stat probes prove no bin/meta size, inode, or mtime mutation. New monitor source contains no
+  provider/network/process/write primitive.
+
+Evidence:
+
+- Host-capable contracts: 108/108 pass.
+- Host-capable aggregate: 948 total / 944 pass / 0 fail / 4 intentional skips.
+- One intermediate compact aggregate run hit two unrelated dashboard timing flakes; the exact file passed 7/7
+  immediately, and the final aggregate was green at the counts above.
+- Tracked secret scan: 863 files / 0 violations; direct new-production-source scan found no credential pattern.
+- Syntax, repository hygiene, and `git diff --check` pass.
+- The committed archive passes the new monitor/summary tests 7/7 before dependency-bound files load and passes
+  all four focused files when using the checkout's installed root dependencies. A fresh install remains a
+  separate gate.
+
+No provider poll, data write, runtime/profile change, bot cycle, order, public exposure, symbol-database
+migration, segment enablement, destructive action, or promotion occurred.
+
 ## Next-session first action
 
-Run the mass-implement preflight against Batch 3, then implement only truthful CLI/API parity over the committed
-snapshot owner. Keep dashboard, service heartbeats, provider polling, data writes, symbol-database migration,
-public exposure, and segment enablement outside that batch.
+Run the mass-implement preflight for Batch 4 user-facing dashboard work. Keep service heartbeats, provider
+polling, data writes, symbol-database migration, public exposure, and segment enablement outside Batch 4.
