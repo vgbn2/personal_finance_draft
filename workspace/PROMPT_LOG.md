@@ -2331,5 +2331,6 @@ fixtures and the contract-suite target, then committed the source/test batch as 
 
 Real BTCUSDT proof requested 294 bytes from a 195,249,704-byte bin and took 2.382 ms cold; 100 reads averaged
 0.102 ms without changing bin/meta state. Host contracts passed 96/96, host aggregate passed 936 total / 932
-pass / 0 fail / 4 intentional skips, secrets passed 860/0, and hygiene/diff checks passed. No provider poll,
-data write, runtime/profile change, bot cycle, order, public exposure, migration, or promotion occurred.
+pass / 0 fail / 4 intentional skips, clean committed-archive focused storage tests passed 2/2, secrets passed
+860/0, and hygiene/diff checks passed. No provider poll, data write, runtime/profile change, bot cycle, order,
+public exposure, migration, or promotion occurred.

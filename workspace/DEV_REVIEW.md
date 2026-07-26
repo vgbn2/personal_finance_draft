@@ -1942,7 +1942,8 @@ precedence. Auth, network, secrets, provider, trading, and public-runtime surfac
 
 Evidence: real BTCUSDT 4,067,702-row / 195,249,704-byte bin required 294 bytes and four reads; 100 repeated reads
 averaged 0.102 ms and mutated no bin/meta stat. Host contracts 96/96; host aggregate 936 total / 932 pass /
-0 fail / 4 intentional skips; secrets 860/0; hygiene and diff pass.
+0 fail / 4 intentional skips; clean committed-archive focused storage tests 2/2; secrets 860/0; hygiene and
+diff pass.
 
 Explicit deferral: canonical bins currently persist no full-file checksum. Do not hash every deep canonical bin
 on monitor refresh; design a separate writer-maintained checksum/version migration if that guarantee is later

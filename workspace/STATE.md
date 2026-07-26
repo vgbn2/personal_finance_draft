@@ -1718,8 +1718,9 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   reads and took 2.382 ms cold. One hundred repeated reads averaged 0.102 ms and did not change bin/meta size,
   inode, or mtime.
 - Verification: host contracts 96/96; host Node 936 total / 932 pass / 0 fail / 4 intentional skips; tracked
-  secrets 860/0; hygiene, skill validation, mirror parity, syntax, focused storage regressions, and diff checks
-  pass. Sandbox-only API/secret failures were `listen EPERM` / `spawnSync git EPERM`; approved host reruns pass.
+  secrets 860/0; clean committed-archive focused storage tests 2/2; hygiene, skill validation, mirror parity,
+  syntax, focused storage regressions, and diff checks pass. Sandbox-only API/secret failures were
+  `listen EPERM` / `spawnSync git EPERM`; approved host reruns pass.
 - Security closeout found no open P0/P1 in Batch 1. Authentication, network, credentials, provider, and trading
   surfaces were not touched. Canonical full-file checksum remains explicitly deferred because the canonical
   format persists no checksum; adding one requires a separate format/writer migration and would otherwise make

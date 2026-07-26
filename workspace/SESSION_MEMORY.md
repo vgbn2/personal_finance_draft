@@ -1196,6 +1196,7 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "verification": {
     "contracts": "96/96 host pass",
     "aggregate": "936 total / 932 pass / 0 fail / 4 intentional skips",
+    "clean_archive": "focused latest-reader and segment tests 2/2 pass",
     "secrets": "860 files / 0 violations",
     "hygiene": "pass",
     "diff": "pass"

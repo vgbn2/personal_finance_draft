@@ -229,6 +229,7 @@ Evidence:
 - Repeated real probe: 100 reads in 10.211 ms total, 0.102 ms average, bin/meta size, inode, and mtime unchanged.
 - Host-capable contracts: 96/96 pass.
 - Host-capable aggregate: 936 total / 932 pass / 0 fail / 4 intentional skips.
+- Clean committed `HEAD` archive: focused latest-reader and segment regressions 2/2 pass.
 - Secrets: 860 tracked files / 0 violations; hygiene, skill validation, mirror parity, and diff checks pass.
 
 No provider poll, data write, runtime/profile change, bot cycle, order, public exposure, migration, or promotion
