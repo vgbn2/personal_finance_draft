@@ -29,24 +29,20 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const {
-  FAMILY_BASE_TF, rollupTargetsAboveBase, rollupFromBase, DEFAULT_TS_DIR,
+  rollupTargetsAboveBase, rollupFromBase, DEFAULT_TS_DIR,
   commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIngest,
-  buildFiveMinAccumulatePlan, buildEquityDeepBackfillPlan,
 } = require('./data.js');
 const { isFresh } = require('../../../../shared/lib/market/coverage.js');
+const {
+  buildWriterJobUniverse,
+  PRICE_BEARING_FAMILIES,
+  FAMILY_PROVIDER,
+} = require('../../../../shared/lib/market/configured_universe.js');
 
-const ONE_M_FAMILIES = ['crypto', 'equities'];
-const YAHOO_FAMILIES = ['indices', 'commodities', 'fx'];
-const ALL_FAMILIES = [...ONE_M_FAMILIES, ...YAHOO_FAMILIES];
+const ALL_FAMILIES = [...PRICE_BEARING_FAMILIES];
 
 // Provider lane each family belongs to.
-const FAMILY_LANE = {
-  crypto: 'binance',
-  equities: 'alpaca',
-  indices: 'yahoo',
-  commodities: 'yahoo',
-  fx: 'yahoo',
-};
+const FAMILY_LANE = { ...FAMILY_PROVIDER };
 
 // Max concurrent jobs per provider lane (Yahoo rate-limits at ~429 above ~8).
 const LANE_CONCURRENCY = { binance: 3, alpaca: 3, yahoo: 5 };
@@ -162,22 +158,7 @@ const DEEP_PLAN = {
  * @returns {Array<{symbol:string, family:string, baseTf:string}>}
  */
 function buildJobUniverse(config, families = ALL_FAMILIES) {
-  const jobs = [];
-  for (const family of families) {
-    const baseTf = FAMILY_BASE_TF[family] || '5m';
-    if (family === 'crypto') {
-      for (const symbol of (config.crypto && config.crypto.symbols) || []) {
-        jobs.push({ symbol: String(symbol).toUpperCase(), family, baseTf });
-      }
-    } else if (family === 'equities') {
-      const plan = buildEquityDeepBackfillPlan(config, {});
-      for (const symbol of plan.symbols) jobs.push({ symbol: String(symbol).toUpperCase(), family, baseTf });
-    } else if (YAHOO_FAMILIES.includes(family)) {
-      const plan = buildFiveMinAccumulatePlan(config, { family });
-      for (const job of plan.jobs) jobs.push({ symbol: String(job.symbol).toUpperCase(), family, baseTf });
-    }
-  }
-  return jobs;
+  return buildWriterJobUniverse(config, families);
 }
 
 // Map a freshness gate result to the action the daemon takes.

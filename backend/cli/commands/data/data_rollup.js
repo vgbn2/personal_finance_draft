@@ -2,6 +2,9 @@
 const path = require('node:path');
 const fs = require('node:fs');
 const { writeTsIndex, readTsIndex, readTsIndexSince, mergeWriteBin, recordKey } = require('../../../../shared/lib/market/validation.js');
+const {
+  FAMILY_BASE_TIMEFRAME: FAMILY_BASE_TF,
+} = require('../../../../shared/lib/market/configured_universe.js');
 const utils = require('../../lib/utils.js');
 const { optionValue, numericOption, hasFlag, withLoadingAnimation, printPayload } = utils;
 
@@ -21,14 +24,6 @@ const FULL_TF_ORDER = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1mo'];
 // Per-family base (finest natively-fetched) grain. Crypto (Binance) and US equities
 // (Alpaca SIP) serve deep 1m; Yahoo families (indices/commodities/fx) only get ~7d
 // of 1m so they stay on a 5m base (Yahoo serves ~60d of 5m).
-const FAMILY_BASE_TF = {
-  crypto: '1m',
-  equities: '1m',
-  indices: '5m',
-  commodities: '5m',
-  fx: '5m',
-};
-
 // Coarser targets to derive from a given base grain — everything above it on the
 // full ladder (intraday + 1d + 1w + 1mo). An unknown base falls back to "from 15m up".
 function rollupTargetsAboveBase(baseTf) {
