@@ -139,6 +139,12 @@ npm approve-scripts
 - `Settings > Layout > legacy` to switch to the older prompt-based engine and back
 - Both engines have `bias` and `scorecard` in the Research section
 
+**Web dashboard**
+- `Quote Health` is the authenticated global market monitor: configured/fresh/delayed/stale/missing/update
+  counters, sortable instrument rows, last-known timestamps and age, and independent provider context
+- Monitor reads are paginated and bounded, refresh every 10 seconds only while visible, and retain explicit
+  unauthorized, stale, malformed, empty, and API-error states
+
 **ML**
 - ONNX inference runner (`shared/lib/ml/onnx_runner.js`) — lazy singletons, feature imputation from `storage/models/feature_config.yaml`
 - 2-state Gaussian HMM (`shared/lib/ml/hmm.js`) — Baum-Welch EM + Viterbi, log-space stable

@@ -32,7 +32,7 @@ Build the frontend bundle that the Node bridge serves:
 npm run build
 ```
 
-Run the production-build viewport contract at 375, 768, and 1440 pixels:
+Run the production-build viewport contract at 360, 768, and 1440 pixels:
 
 ```bash
 npm run test:responsive
@@ -48,4 +48,6 @@ allow the headless browser process to start.
 - API and Supabase configuration come from Vite environment variables such as `VITE_API_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`.
 - The dashboard build also accepts the repo-native Supabase aliases `SOVEREIGN_SUPABASE_URL` and `SOVEREIGN_SUPABASE_PUBLISHABLE_KEY` for local `.env` files.
 - Vite variables are compiled into public browser assets. Never put broker secrets, a Supabase secret key, or a privileged host token in a `VITE_*` variable; protected API calls use the signed-in user's bearer token.
+- The `Quote Health` view uses the protected global-monitor API for instrument truth, keeps provider-level
+  status as separate context, and pauses its 10-second refresh while the browser tab is hidden.
 - The signal queue records authenticated review decisions only. Order execution remains in the separately gated CLI/gateway path.
