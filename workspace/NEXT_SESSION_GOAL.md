@@ -1,5 +1,23 @@
 # Next Session Goal
 
+## 2026-07-27 session 109 - implement global market monitor Batch 5
+
+Batch 4 dashboard display is committed at `883681fd`. The active plan remains
+`workspace/plans/GLOBAL_MARKET_MONITOR_MASS_IMPLEMENT_PLAN.md`.
+
+1. Run the mass-implement preflight against current backfill, paper-bot, portfolio-monitor, host-health, and
+   backup status ownership.
+2. Implement only sanitized atomic service heartbeat records and a separate service-health API/UI section.
+3. Prove absent/stale heartbeat, restart/interrupted publication, repeated authentication failure, TTL,
+   sanitization, and no-Docker-socket behavior.
+4. Keep provider polling changes, canonical-data writes, symbol-registry migration, public binding, segment
+   enablement, live execution, and operational-qualification claims outside Batch 5.
+
+Current evidence: Batch 4 focused tests pass 4/4; host browser checks pass 10/10 at 360/768/1440; frontend
+TypeScript/build pass; contracts pass 112/112; aggregate passes 952 total / 948 pass / 0 fail / 4 intentional
+skips; secrets pass 866/0; hygiene and diff checks pass. Fresh installation and operational qualification remain
+open.
+
 ## 2026-07-27 session 108 - implement global market monitor Batch 4
 
 Batch 3 CLI/API parity is committed at `8322adfd`, and focused committed-archive proof passes. The active plan remains

@@ -1,6 +1,6 @@
 # Global Market Monitor - Mass-Implement Plan
 
-Status: active; Batches 1-3 are committed through `8322adfd` on 2026-07-27; Batches 4-6 remain.
+Status: active; Batches 1-4 are committed through `883681fd` on 2026-07-27; Batches 5-6 remain.
 
 ## Objective
 
@@ -321,5 +321,35 @@ migration, segment enablement, destructive action, or promotion occurred.
 
 ## Next-session first action
 
-Run the mass-implement preflight for Batch 4 user-facing dashboard work. Keep service heartbeats, provider
-polling, data writes, symbol-database migration, public exposure, and segment enablement outside Batch 4.
+Run the mass-implement preflight for Batch 5 service heartbeat observability. Keep provider polling changes,
+market-data writes, symbol-database migration, public exposure, and segment enablement outside Batch 5.
+
+## Batch 4 implementation checkpoint - 2026-07-27 session 109
+
+Batch 4 is committed at `883681fd`. The Quote Health view now uses current browser authentication to read the
+canonical global-monitor API, fetches all pages within a 100,000-row hard bound, rejects inconsistent pagination
+or snapshot identity changes, and validates rows plus freshness/provider/update counter reconciliation before
+rendering.
+
+The dashboard shows configured/fresh/delayed/stale/missing/provider-failure/updating counters, snapshot age,
+sortable/filterable instrument rows, explicit last-known wording, manual retry, and independent provider-level
+context beneath instrument truth. Ten-second refresh work is skipped while the document is hidden and duplicate
+in-flight requests are suppressed.
+
+Loading, empty, stale, malformed, duplicate, counter-mismatch, unauthorized, network/API failure, long labels,
+and narrow viewport states fail visibly. Malformed and duplicate rows are excluded rather than rendered; stale
+or failed refreshes preserve last-known data with a degraded banner. React text rendering is used throughout,
+raw backend error strings are not displayed, and there is no privileged browser token fallback.
+
+Evidence:
+
+- Focused dashboard model/security tests: 4/4 pass.
+- Host browser production-build checks: 10/10 pass at 360, 768, and 1440 pixels.
+- Frontend TypeScript and production build pass.
+- Host-capable contracts: 112/112 pass.
+- Host-capable aggregate: 952 total / 948 pass / 0 fail / 4 intentional skips.
+- Secret scan: 866 tracked files / 0 violations; hygiene and diff checks pass.
+
+No provider poll, writer/data mutation, runtime/profile change, bot cycle, order, public exposure,
+symbol-database migration, segment enablement, destructive action, or promotion occurred. Fresh installation,
+service heartbeat truth, deployment, recovery, MCP, rollback, and soak qualification remain open.

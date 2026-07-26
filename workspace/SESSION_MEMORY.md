@@ -1271,3 +1271,37 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "safety": "No provider poll, data write, runtime/profile change, bot cycle, order, public exposure, migration, segment enablement, destructive action, or promotion occurred."
 }
 ```
+
+## Session Memory - 2026-07-27 session 109 session-orchestrator boot
+
+```json
+{
+  "work": "Booted session-orchestrator and revalidated durable repository continuity state.",
+  "source_state": "clean at e1cccacf; Batch 4 dashboard display remains next",
+  "graphify": "unavailable: graphify command/module not installed",
+  "safety": "No code, runtime, provider, trading, public, migration, or data state changed."
+}
+```
+
+## Session Memory - 2026-07-27 session 109 global monitor Batch 4
+
+```json
+{
+  "work": "Implemented the authenticated bounded global monitor dashboard and preserved provider health as separate context.",
+  "commit": "883681fd",
+  "ui": "counters, snapshot age, sortable/filterable rows, last-known wording, manual retry, hidden-tab pause",
+  "validation": "bounded pagination, stable snapshot identity, malformed/duplicate exclusion, freshness/provider/update counter diagnostics",
+  "verification": {
+    "focused": "4/4 pass",
+    "browser": "10/10 pass at 360/768/1440",
+    "frontend": "TypeScript and production build pass",
+    "contracts": "112/112 pass",
+    "aggregate": "952 total / 948 pass / 0 fail / 4 intentional skips",
+    "secrets": "866/0",
+    "hygiene_diff": "pass"
+  },
+  "security": "no open P0/P1; current browser auth, fixed safe errors, bounded response, no privileged token fallback or side-effect primitive",
+  "next": "Run the mass-implement preflight for Batch 5 sanitized service heartbeat observability.",
+  "safety": "No provider poll, writer/data mutation, runtime/profile change, bot cycle, order, public exposure, migration, segment enablement, destructive action, or promotion occurred."
+}
+```

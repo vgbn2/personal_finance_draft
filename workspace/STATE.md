@@ -1777,3 +1777,22 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   dependencies. This is committed-source/archive proof, not fresh-install proof. No provider poll, data write,
   runtime/profile change, bot cycle, order, public exposure, database migration, segment enablement, destructive
   action, or promotion occurred.
+
+## Global Market Monitor Batch 4 - 2026-07-27 session 109
+
+- Replaced the provider-only Quote Health view with an authenticated canonical global monitor while preserving
+  provider health as independent context beneath instrument truth.
+- Added bounded full pagination, snapshot-identity consistency checks, UI-side row/counter validation,
+  duplicate/malformed-row exclusion, safe error mapping, last-known retention, local sorting/filtering,
+  manual refresh, and ten-second polling paused while hidden.
+- Proved explicit loading, unauthorized, API-error, empty, malformed, stale/last-known, counter, long-label,
+  and 360/768/1440 containment states. The table scrolls internally without document/main overflow.
+- Security closeout found no open P0/P1. Current browser auth is reused; no privileged token fallback, raw error
+  display, path/URL override, provider/write/trading primitive, public bind, migration, or credential persistence
+  was introduced.
+- Verification: focused dashboard 4/4; host browser 10/10; frontend TypeScript/build pass; host contracts
+  112/112; aggregate 952 total / 948 pass / 0 fail / 4 intentional skips; secrets 866/0; hygiene and diff pass.
+- Grade movement: global monitor **B+ / contract-and-auth-verified, UI-pending -> A- /
+  UI-and-responsive-verified, service-heartbeats-pending**. Source/tests/docs are committed at `883681fd`.
+- `graphify-out` refresh remains blocked because the local Python environment has no `graphify` module.
+  Fresh-install, service-heartbeat, host, MCP, recovery, rollback, and soak gates remain open.

@@ -1993,3 +1993,27 @@ shallow-cache-drifted -> B+ / canonical-coverage-latest. Batch 4 dashboard displ
 heartbeats remain open. Source is committed at `8322adfd`; focused committed-archive files pass with the
 checkout's installed dependencies, while fresh installation, deployment, provider, recovery, and soak
 qualification remain open.
+
+## Mass-Implement Review - 2026-07-27 session 109 - Global Monitor Batch 4
+
+No P0/P1 remains in Batch 4 scope. The dashboard uses `getAuthHeaders()` for the protected monitor endpoint,
+contains no privileged host-token fallback, and maps unauthorized/network/API/contract failures to fixed safe
+messages. React text rendering handles API-provided labels; raw backend errors are not displayed.
+
+The browser fetch helper uses API limit 100, a 100,000-row maximum, monotonic pagination, exact returned counts,
+and stable generation/policy/counter identity across pages. Malformed, duplicate, stale, empty, and
+freshness/provider/update-counter mismatch states become visible degradation. Hidden tabs skip polling and one
+in-flight request owns each refresh.
+
+Provider-level system status remains separate and cannot overwrite canonical instrument freshness. This batch
+adds no path/URL input, provider call, file/data write, command execution, trading action, public bind,
+credential persistence, migration, Docker socket, or privileged-runtime primitive.
+
+Evidence: focused model/security 4/4; host browser 10/10 at 360/768/1440; frontend TypeScript/build pass;
+contracts 112/112; aggregate 952 total / 948 pass / 0 fail / 4 intentional skips; secrets 866/0; hygiene and
+diff pass. Sandbox-only `listen EPERM` and `spawnSync git EPERM` failures passed under the exact host-capable
+reruns.
+
+Grade movement: monitor UI B+ / pending -> A- / authenticated, bounded, degraded-truthful, and responsive.
+Batch 5 service heartbeat observability remains open. Source is committed at `883681fd`; fresh-install,
+deployment, recovery, MCP, rollback, and soak qualification remain separate gates.
