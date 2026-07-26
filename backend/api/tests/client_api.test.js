@@ -59,6 +59,7 @@ test('role gate preserves viewer sessions and limits service-client capabilities
         '/api/bot/status',
         '/api/client/status',
         '/api/data/summary',
+        '/api/market/monitor',
         '/api/scorecard',
         '/api/signal',
         '/api/universe',
@@ -116,6 +117,21 @@ test('role gate preserves viewer sessions and limits service-client capabilities
       Authorization: 'Bearer supabase-session-shaped-token',
     });
     assert.notEqual(sessionDataSummary.status, 401);
+
+    const clientMarketMonitor = await request(baseUrl, '/api/market/monitor?limit=2', {
+      'X-Sovereign-Token': TEST_CLIENT_TOKEN,
+    });
+    assert.equal(clientMarketMonitor.status, 200);
+    const marketMonitorPayload = await clientMarketMonitor.json();
+    assert.equal(marketMonitorPayload.type, 'market_monitor');
+    assert.equal(marketMonitorPayload.pagination.returned, 2);
+    assert.equal(marketMonitorPayload.counts.price_bearing_total, 89);
+
+    const invalidMarketMonitor = await request(baseUrl, '/api/market/monitor?limit=101', {
+      'X-Sovereign-Token': TEST_CLIENT_TOKEN,
+    });
+    assert.equal(invalidMarketMonitor.status, 400);
+    assert.equal((await invalidMarketMonitor.json()).error_code, 'invalid_limit');
 
     const clientPathOverride = await request(
       baseUrl,
