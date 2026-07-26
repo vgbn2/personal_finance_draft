@@ -1170,3 +1170,38 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "safety": "No runtime mutation during closeout; keep web private, live execution blocked, segment mode disabled, and qualification gates open."
 }
 ```
+
+## Session Memory - 2026-07-27 session 106 global monitor Batch 1
+
+```json
+{
+  "work": "Implemented and committed the constant-memory verified latest ts-index record reader.",
+  "commit": "b1816b94",
+  "contract": "null for genuine missing/empty/dead-marker state; {record,sourceMode} for valid data; integrity exception for corrupt, unsafe, or persistently changing state",
+  "security": [
+    "unsafe timeframe traversal and canonical/manifest symlinks are rejected",
+    "metadata and active-segment identity, exact lengths, finite values, tail order, SHA-256, and provider precedence fail closed",
+    "authentication, network, credentials, provider polling, trading, and public exposure were not touched"
+  ],
+  "real_probe": {
+    "symbol": "BTCUSDT",
+    "timeframe": "1m",
+    "records": 4067702,
+    "bin_bytes": 195249704,
+    "requested_read_bytes": 294,
+    "cold_ms": 2.382,
+    "average_100_reads_ms": 0.102,
+    "files_unchanged": true
+  },
+  "verification": {
+    "contracts": "96/96 host pass",
+    "aggregate": "936 total / 932 pass / 0 fail / 4 intentional skips",
+    "secrets": "860 files / 0 violations",
+    "hygiene": "pass",
+    "diff": "pass"
+  },
+  "deferred": "Canonical bins have no persisted full-file checksum; adding one requires a separate writer/format migration. Segment mode remains disabled.",
+  "next": "Run the pre-implementation gate and implement only Batch 2 canonical universe/snapshot ownership.",
+  "safety": "No provider poll, data write, runtime/profile change, bot cycle, order, public exposure, destructive migration, or promotion occurred."
+}
+```

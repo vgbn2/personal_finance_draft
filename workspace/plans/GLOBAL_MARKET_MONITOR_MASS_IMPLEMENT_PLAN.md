@@ -1,6 +1,6 @@
 # Global Market Monitor - Mass-Implement Plan
 
-Status: deferred for next session review; planning only on 2026-07-27.
+Status: active; Batch 1 implemented and committed on 2026-07-27, Batches 2-6 remain.
 
 ## Objective
 
@@ -205,8 +205,37 @@ Use Compose static validation only until a separately approved runtime qualifica
 - Preserve all existing history and backups; no destructive migration or cleanup is part of this plan.
 - Do not infer host, recovery, backup, rollback, MCP, or soak readiness from monitor tests.
 
+## Batch 1 implementation checkpoint - 2026-07-27 session 106
+
+Batch 1 is committed at `b1816b94`. `readLatestTsRecord()` now returns `null` only for genuinely missing,
+empty, or valid dead-marker state; valid data returns one `{ record, sourceMode }`; corrupt, unsafe, or
+persistently changing state throws an explicit integrity error.
+
+Canonical reads open regular files without following symlinks, validate metadata identity and count, require an
+exact file length, decode at most two tail records, reject non-finite/non-monotonic tails, and retry boundedly
+when append/rename publication changes the header, size, or metadata. Active segments validate manifest identity,
+regular-file ownership, exact length, SHA-256, first/last range, finite values, and provider precedence while
+hashing in 64 KiB chunks. Segment mode remains disabled.
+
+Additional edge cases proved: unsafe timeframe traversal, canonical-bin and manifest symlinks, metadata identity
+collision, concurrent canonical append, mixed canonical/segment timestamp conflicts, and corrupted active
+segments. The canonical format has no persisted full-file checksum, so full canonical checksum verification is
+explicitly deferred rather than adding an O(file-size) global-refresh cost or an unapproved format migration.
+
+Evidence:
+
+- Synthetic 200,000-row canonical bin: less than 4 KiB requested by the latest-reader path.
+- Real BTCUSDT 1m: 4,067,702 records / 195,249,704 bytes; 294 requested bytes, 4 reads, 2.382 ms cold.
+- Repeated real probe: 100 reads in 10.211 ms total, 0.102 ms average, bin/meta size, inode, and mtime unchanged.
+- Host-capable contracts: 96/96 pass.
+- Host-capable aggregate: 936 total / 932 pass / 0 fail / 4 intentional skips.
+- Secrets: 860 tracked files / 0 violations; hygiene, skill validation, mirror parity, and diff checks pass.
+
+No provider poll, data write, runtime/profile change, bot cycle, order, public exposure, migration, or promotion
+occurred.
+
 ## Next-session first action
 
-Run read-only `git status --short`, confirm this plan and the mass-implement skill mirror, then implement Batch 1
-only. Do not start another provider cycle or change the running container profiles as part of the first code
-batch.
+Run the mass-implement preflight against Batch 2, then implement only the canonical configured-universe and
+snapshot owner. Reuse `readLatestTsRecord()` and existing freshness policy; keep API, CLI, dashboard, heartbeat,
+provider polling, and segment enablement outside that batch.

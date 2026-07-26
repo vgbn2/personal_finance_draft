@@ -1703,3 +1703,28 @@ Source: `49560981^1:workspace/STATE.md`. These sections were restored additively
   immutable checkpoint ID. The repository secret scan passed 846 tracked files with 0 violations immediately
   before the checkpoint. Committed-source proof does not replace fresh-clone, stale-data, host, recovery, or
   soak qualification.
+
+## Global Market Monitor Batch 1 - 2026-07-27 session 106
+
+- Implemented and committed constant-memory `readLatestTsRecord()` at `b1816b94`. It distinguishes missing
+  state from invalid state, validates canonical metadata/header/length/finite tail values, retries boundedly
+  across in-place append or atomic replacement, and preserves canonical/segment provider precedence.
+- Hardened active-segment tail reads with regular-file/no-symlink checks, manifest-entry identity, exact length,
+  streaming SHA-256 verification in 64 KiB chunks, timestamp/range/value checks, and fail-closed corruption.
+  Segment mode remains disabled and unqualified.
+- Added focused missing, empty, dead-marker, truncated, metadata-identity, non-finite, non-monotonic, unsafe
+  timeframe, symlink, concurrent-append, bounded canonical/segment memory, precedence, and corruption cases.
+- Real BTCUSDT proof: 4,067,702 1m records in a 195,249,704-byte bin; one read requested 294 bytes across four
+  reads and took 2.382 ms cold. One hundred repeated reads averaged 0.102 ms and did not change bin/meta size,
+  inode, or mtime.
+- Verification: host contracts 96/96; host Node 936 total / 932 pass / 0 fail / 4 intentional skips; tracked
+  secrets 860/0; hygiene, skill validation, mirror parity, syntax, focused storage regressions, and diff checks
+  pass. Sandbox-only API/secret failures were `listen EPERM` / `spawnSync git EPERM`; approved host reruns pass.
+- Security closeout found no open P0/P1 in Batch 1. Authentication, network, credentials, provider, and trading
+  surfaces were not touched. Canonical full-file checksum remains explicitly deferred because the canonical
+  format persists no checksum; adding one requires a separate format/writer migration and would otherwise make
+  each monitor refresh O(file size).
+- Grade movement is limited to market-reader runtime safety, contract truth, and verification. The broader
+  system remains integrity-and-qualification-gated; Batch 2 universe/snapshot ownership and all API/UI/runtime
+  work remain open. No provider poll, canonical-data write, runtime/profile change, bot cycle, order, public
+  exposure, destructive migration, or promotion occurred.

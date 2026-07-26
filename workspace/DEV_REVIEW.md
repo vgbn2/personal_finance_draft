@@ -1928,3 +1928,22 @@ and all repaired documentation paths pass. The sandbox's loopback `listen EPERM`
 not a repository test failure. No P1 from this session's source audit remains open. Remaining gaps are segment
 write-amplification/free-space/retry/thermal/soak qualification, 14 required stale data windows, current-source
 archive/fresh clone, and all external host/login/recovery/MCP/backup/rollback evidence.
+
+## Mass-Implement Review - 2026-07-27 session 106 - Global Monitor Batch 1
+
+No P0/P1 remains in the Batch 1 scope. Commit `b1816b94` adds one bounded latest-record owner with explicit
+missing-versus-invalid behavior. Canonical files are regular/no-symlink, exact-length, metadata-identity/count,
+finite-tail, monotonic-tail, and bounded-race checked. Active segment manifests/files are regular/no-symlink,
+identity-bound, exact-length, streaming-SHA-256, finite/range checked, and merged by canonical provider priority.
+
+Focused security cases cover traversal, canonical and manifest symlinks, partial/truncated publication,
+metadata collision, non-finite/non-monotonic data, concurrent append, corrupt active segments, and provider
+precedence. Auth, network, secrets, provider, trading, and public-runtime surfaces are not part of this batch.
+
+Evidence: real BTCUSDT 4,067,702-row / 195,249,704-byte bin required 294 bytes and four reads; 100 repeated reads
+averaged 0.102 ms and mutated no bin/meta stat. Host contracts 96/96; host aggregate 936 total / 932 pass /
+0 fail / 4 intentional skips; secrets 860/0; hygiene and diff pass.
+
+Explicit deferral: canonical bins currently persist no full-file checksum. Do not hash every deep canonical bin
+on monitor refresh; design a separate writer-maintained checksum/version migration if that guarantee is later
+approved. Segment mode remains disabled.
