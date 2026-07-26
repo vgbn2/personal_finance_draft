@@ -388,7 +388,7 @@ function readSegments(tsDir, symbol, timeframe, sinceMs = null) {
   return readSegmentsFromManifest(segmentPaths(tsDir, symbol, timeframe), manifest, sinceMs);
 }
 
-function readLatestSegments(tsDir, symbol, timeframe) {
+function readLatestSegmentsWithMetadata(tsDir, symbol, timeframe) {
   const manifest = readManifest(tsDir, symbol, timeframe);
   if (!manifest) return null;
   if (manifest.segments.length === 0) throw new SegmentIntegrityError('empty_active_generation');
@@ -406,7 +406,14 @@ function readLatestSegments(tsDir, symbol, timeframe) {
     const latestPriority = PROVIDER_PRIORITY[String(latest.provider || '').toLowerCase()] || 0;
     if (recordMs > latestMs || (recordMs === latestMs && recordPriority >= latestPriority)) latest = record;
   }
-  return latest;
+  // Segment ranges may overlap, so summing manifest counts would overstate the
+  // unique merged row count. Keep it explicitly unknown on this bounded path.
+  return { record: latest, recordCount: null };
+}
+
+function readLatestSegments(tsDir, symbol, timeframe) {
+  const latest = readLatestSegmentsWithMetadata(tsDir, symbol, timeframe);
+  return latest ? latest.record : null;
 }
 
 function compactSegments(tsDir, symbol, timeframe) {
@@ -459,6 +466,7 @@ module.exports = {
   compactSegments,
   mergeRecords,
   readLatestSegments,
+  readLatestSegmentsWithMetadata,
   readManifest,
   readSegments,
   segmentCoverage,

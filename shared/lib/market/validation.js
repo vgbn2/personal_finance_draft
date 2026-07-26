@@ -1197,7 +1197,7 @@ function readLatestCanonicalOnce(tsDir, symbol, timeframe) {
       || !stableHeader.equals(header)) {
       throw new TsIndexRetryError('canonical_changed_during_read');
     }
-    return record;
+    return { record, recordCount: count };
   } catch (error) {
     if (error instanceof TsIndexIntegrityError || error instanceof TsIndexRetryError) throw error;
     throw new TsIndexIntegrityError('canonical_read_failed');
@@ -1235,23 +1235,23 @@ function readLatestCanonical(tsDir, symbol, timeframe) {
 function readLatestTsRecord(tsDir, symbol, timeframe) {
   assertLatestReadRequest(tsDir, symbol, timeframe);
   const canonical = readLatestCanonical(tsDir, symbol, timeframe);
-  const { readLatestSegments } = require('./append_only_segments.js');
-  const segments = readLatestSegments(tsDir, symbol, timeframe);
+  const { readLatestSegmentsWithMetadata } = require('./append_only_segments.js');
+  const segments = readLatestSegmentsWithMetadata(tsDir, symbol, timeframe);
   if (!canonical && !segments) return null;
-  if (!segments) return { record: canonical, sourceMode: 'canonical' };
-  if (!canonical) return { record: segments, sourceMode: 'segments' };
+  if (!segments) return { ...canonical, sourceMode: 'canonical' };
+  if (!canonical) return { ...segments, sourceMode: 'segments' };
 
-  const canonicalMs = Date.parse(canonical.timestamp);
-  const segmentMs = Date.parse(segments.timestamp);
-  let record = canonical;
+  const canonicalMs = Date.parse(canonical.record.timestamp);
+  const segmentMs = Date.parse(segments.record.timestamp);
+  let record = canonical.record;
   if (segmentMs > canonicalMs) {
-    record = segments;
+    record = segments.record;
   } else if (segmentMs === canonicalMs) {
-    const canonicalPriority = PROVIDER_PRIORITY[String(canonical.provider || '').toLowerCase()] || 0;
-    const segmentPriority = PROVIDER_PRIORITY[String(segments.provider || '').toLowerCase()] || 0;
-    if (segmentPriority >= canonicalPriority) record = segments;
+    const canonicalPriority = PROVIDER_PRIORITY[String(canonical.record.provider || '').toLowerCase()] || 0;
+    const segmentPriority = PROVIDER_PRIORITY[String(segments.record.provider || '').toLowerCase()] || 0;
+    if (segmentPriority >= canonicalPriority) record = segments.record;
   }
-  return { record, sourceMode: 'merged' };
+  return { record, recordCount: null, sourceMode: 'merged' };
 }
 
 /**

@@ -118,6 +118,7 @@ test('latest canonical read is depth-independent and does not materialize the bi
   try {
     const latest = readLatestTsRecord(dir, 'BTCUSDT', '1m');
     assert.equal(latest.sourceMode, 'canonical');
+    assert.equal(latest.recordCount, count);
     assert.equal(latest.record.close, 100 + (count - 1) / 1000);
     assert.ok(requestedBytes < 4096, `expected bounded reads, requested ${requestedBytes} bytes`);
   } finally {
@@ -320,6 +321,7 @@ test('latest active-segment reads use bounded buffers while verifying the full c
     try {
       const latest = readLatestTsRecord(dir, 'BTCUSDT', '1m');
       assert.equal(latest.sourceMode, 'segments');
+      assert.equal(latest.recordCount, null, 'overlapping segment ranges have no cheap exact unique count');
       assert.equal(latest.record.timestamp, records[records.length - 1].timestamp);
       assert.ok(maxRequestedBytes <= 64 * 1024, `largest read was ${maxRequestedBytes} bytes`);
     } finally {
