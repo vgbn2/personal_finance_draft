@@ -684,6 +684,113 @@ function writePartitionedSnapshot(rootPath, snapshot) {
 const TS_MAGIC = 'SOVT';
 const TS_RECORD_BYTES = 6 * 8; // 6 float64 fields
 const TS_HEADER_BYTES = 8;     // 4 magic + 4 count
+const TS_LATEST_READ_RETRIES = 3;
+const TS_META_MAX_BYTES = 1024 * 1024;
+
+class TsIndexIntegrityError extends Error {
+  constructor(reason) {
+    super(`ts_index_integrity_error:${reason}`);
+    this.name = 'TsIndexIntegrityError';
+    this.reason = reason;
+  }
+}
+
+class TsIndexRetryError extends Error {
+  constructor(reason) {
+    super(reason);
+    this.name = 'TsIndexRetryError';
+    this.reason = reason;
+  }
+}
+
+function latestReadOpenFlags() {
+  return fs.constants.O_RDONLY
+    | (fs.constants.O_NOFOLLOW || 0)
+    | (fs.constants.O_NONBLOCK || 0);
+}
+
+function openLatestReadFile(filePath, kind) {
+  let fd;
+  try {
+    fd = fs.openSync(filePath, latestReadOpenFlags());
+  } catch (error) {
+    if (error && error.code === 'ENOENT') return null;
+    if (error && error.code === 'ELOOP') throw new TsIndexIntegrityError(`${kind}_symlink_rejected`);
+    throw new TsIndexIntegrityError(`${kind}_open_failed`);
+  }
+  try {
+    if (!fs.fstatSync(fd).isFile()) throw new TsIndexIntegrityError(`${kind}_not_regular_file`);
+    return fd;
+  } catch (error) {
+    try { fs.closeSync(fd); } catch (_) { /* best effort */ }
+    if (error instanceof TsIndexIntegrityError) throw error;
+    throw new TsIndexIntegrityError(`${kind}_stat_failed`);
+  }
+}
+
+function readExactLatest(fd, buffer, position, reason) {
+  let offset = 0;
+  while (offset < buffer.length) {
+    const bytesRead = fs.readSync(fd, buffer, offset, buffer.length - offset, position + offset);
+    if (bytesRead <= 0) throw new TsIndexRetryError(reason);
+    offset += bytesRead;
+  }
+}
+
+function readLatestMeta(fd) {
+  const stat = fs.fstatSync(fd);
+  if (stat.size <= 0 || stat.size > TS_META_MAX_BYTES) {
+    throw new TsIndexIntegrityError('invalid_metadata_size');
+  }
+  const buffer = Buffer.allocUnsafe(stat.size);
+  readExactLatest(fd, buffer, 0, 'metadata_short_read');
+  try {
+    const meta = JSON.parse(buffer.toString('utf8'));
+    if (!meta || typeof meta !== 'object' || Array.isArray(meta)) {
+      throw new Error('metadata must be an object');
+    }
+    return meta;
+  } catch (_) {
+    throw new TsIndexIntegrityError('invalid_metadata');
+  }
+}
+
+function assertLatestReadRequest(tsDir, symbol, timeframe) {
+  if (typeof tsDir !== 'string' || tsDir.length === 0
+    || typeof symbol !== 'string' || symbol.length === 0 || symbol.length > 128
+    || typeof timeframe !== 'string' || !/^[a-zA-Z0-9_]{1,32}$/.test(timeframe)) {
+    throw new TsIndexIntegrityError('invalid_read_identity');
+  }
+}
+
+function decodeLatestRecord(buffer, offset, meta) {
+  const values = [];
+  for (let index = 0; index < 6; index += 1) values.push(buffer.readDoubleLE(offset + index * 8));
+  if (!values.every(Number.isFinite)) throw new TsIndexIntegrityError('invalid_record_values');
+  const [ms, open, high, low, close, volume] = values;
+  let timestamp;
+  try {
+    timestamp = new Date(ms).toISOString();
+  } catch (_) {
+    throw new TsIndexIntegrityError('invalid_record_timestamp');
+  }
+  return {
+    family:                 meta.family,
+    provider:               meta.provider,
+    symbol:                 meta.symbol,
+    timeframe:              meta.timeframe,
+    timestamp,
+    open,
+    high,
+    low,
+    close,
+    volume,
+    coordinate_id:          meta.coordinate_id || undefined,
+    config_market:          meta.config_market || undefined,
+    config_sector:          meta.config_sector || undefined,
+    derived_from_timeframe: meta.derived_from || undefined,
+  };
+}
 
 function tsIndexPath(tsDir, symbol, timeframe) {
   const safe = symbol.replace(/[^a-zA-Z0-9_]/g, '_');
@@ -1030,6 +1137,123 @@ function readTsIndex(tsDir, symbol, timeframe) {
   return mergeCanonicalAndSegments(canonical, segments);
 }
 
+function readLatestCanonicalOnce(tsDir, symbol, timeframe) {
+  const { bin, meta: metaPath } = tsIndexPath(tsDir, symbol, timeframe);
+  let binFd;
+  let metaFd;
+  try {
+    binFd = openLatestReadFile(bin, 'canonical_bin');
+    metaFd = openLatestReadFile(metaPath, 'canonical_meta');
+    if (binFd === null && metaFd === null) return null;
+    if (metaFd === null) throw new TsIndexIntegrityError('missing_canonical_metadata');
+
+    const meta = readLatestMeta(metaFd);
+    if (meta.symbol !== symbol || meta.timeframe !== timeframe) {
+      throw new TsIndexIntegrityError('canonical_identity_mismatch');
+    }
+    if (binFd === null) {
+      if (meta.count === 0 && Number.isFinite(meta.last_checked)) return null;
+      throw new TsIndexIntegrityError('missing_canonical_bin');
+    }
+
+    const before = fs.fstatSync(binFd);
+    const header = Buffer.allocUnsafe(TS_HEADER_BYTES);
+    readExactLatest(binFd, header, 0, 'canonical_header_short_read');
+    if (header.toString('ascii', 0, 4) !== TS_MAGIC) {
+      throw new TsIndexIntegrityError('invalid_canonical_header');
+    }
+    const count = header.readUInt32LE(4);
+    if (!Number.isInteger(meta.count) || meta.count !== count) {
+      throw new TsIndexRetryError('canonical_metadata_count_mismatch');
+    }
+    const expectedBytes = TS_HEADER_BYTES + count * TS_RECORD_BYTES;
+    if (before.size !== expectedBytes) throw new TsIndexRetryError('canonical_length_mismatch');
+    if (count === 0) {
+      const after = fs.fstatSync(binFd);
+      const stableHeader = Buffer.allocUnsafe(TS_HEADER_BYTES);
+      readExactLatest(binFd, stableHeader, 0, 'canonical_header_short_read');
+      if (after.size !== before.size || after.mtimeMs !== before.mtimeMs
+        || !stableHeader.equals(header)) {
+        throw new TsIndexRetryError('canonical_changed_during_read');
+      }
+      return null;
+    }
+
+    const tailCount = Math.min(2, count);
+    const tail = Buffer.allocUnsafe(tailCount * TS_RECORD_BYTES);
+    const tailPosition = TS_HEADER_BYTES + (count - tailCount) * TS_RECORD_BYTES;
+    readExactLatest(binFd, tail, tailPosition, 'canonical_tail_short_read');
+    const latestOffset = (tailCount - 1) * TS_RECORD_BYTES;
+    const record = decodeLatestRecord(tail, latestOffset, meta);
+    const latestMs = Date.parse(record.timestamp);
+    if (tailCount === 2 && tail.readDoubleLE(0) >= latestMs) {
+      throw new TsIndexIntegrityError('non_monotonic_canonical_tail');
+    }
+
+    const after = fs.fstatSync(binFd);
+    const stableHeader = Buffer.allocUnsafe(TS_HEADER_BYTES);
+    readExactLatest(binFd, stableHeader, 0, 'canonical_header_short_read');
+    if (after.size !== before.size || after.mtimeMs !== before.mtimeMs
+      || !stableHeader.equals(header)) {
+      throw new TsIndexRetryError('canonical_changed_during_read');
+    }
+    return record;
+  } catch (error) {
+    if (error instanceof TsIndexIntegrityError || error instanceof TsIndexRetryError) throw error;
+    throw new TsIndexIntegrityError('canonical_read_failed');
+  } finally {
+    if (binFd !== null && binFd !== undefined) {
+      try { fs.closeSync(binFd); } catch (_) { /* best effort */ }
+    }
+    if (metaFd !== null && metaFd !== undefined) {
+      try { fs.closeSync(metaFd); } catch (_) { /* best effort */ }
+    }
+  }
+}
+
+function readLatestCanonical(tsDir, symbol, timeframe) {
+  let retryReason = null;
+  for (let attempt = 0; attempt < TS_LATEST_READ_RETRIES; attempt += 1) {
+    try {
+      return readLatestCanonicalOnce(tsDir, symbol, timeframe);
+    } catch (error) {
+      if (!(error instanceof TsIndexRetryError)) throw error;
+      retryReason = error.reason;
+    }
+  }
+  throw new TsIndexIntegrityError(retryReason || 'canonical_unstable');
+}
+
+/**
+ * Read one verified latest OHLCV record without materializing full history.
+ *
+ * Returns null when no canonical or active-segment record exists. Valid reads return
+ * `{ record, sourceMode }`, where sourceMode is `canonical`, `segments`, or `merged`.
+ * Corrupt, ambiguous, unsafe, or persistently changing state throws an integrity error
+ * so callers can distinguish `invalid` from genuinely `missing` data.
+ */
+function readLatestTsRecord(tsDir, symbol, timeframe) {
+  assertLatestReadRequest(tsDir, symbol, timeframe);
+  const canonical = readLatestCanonical(tsDir, symbol, timeframe);
+  const { readLatestSegments } = require('./append_only_segments.js');
+  const segments = readLatestSegments(tsDir, symbol, timeframe);
+  if (!canonical && !segments) return null;
+  if (!segments) return { record: canonical, sourceMode: 'canonical' };
+  if (!canonical) return { record: segments, sourceMode: 'segments' };
+
+  const canonicalMs = Date.parse(canonical.timestamp);
+  const segmentMs = Date.parse(segments.timestamp);
+  let record = canonical;
+  if (segmentMs > canonicalMs) {
+    record = segments;
+  } else if (segmentMs === canonicalMs) {
+    const canonicalPriority = PROVIDER_PRIORITY[String(canonical.provider || '').toLowerCase()] || 0;
+    const segmentPriority = PROVIDER_PRIORITY[String(segments.provider || '').toLowerCase()] || 0;
+    if (segmentPriority >= canonicalPriority) record = segments;
+  }
+  return { record, sourceMode: 'merged' };
+}
+
 /**
  * Like readTsIndex but materializes ONLY the records with timestamp >= sinceMs.
  *
@@ -1105,10 +1329,12 @@ function readTsIndexSince(tsDir, symbol, timeframe, sinceMs) {
 
 module.exports = {
   OHLCV_FAMILIES,
+  TsIndexIntegrityError,
   isFiniteNumber,
   isValidTimestamp,
   familyFreshnessThresholdMs,
   mergeSnapshots,
+  readLatestTsRecord,
   readSnapshot,
   readTsIndex,
   readTsIndexSince,
