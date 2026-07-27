@@ -621,11 +621,6 @@ async function promptPolymarketMarketBrowser() {
 async function commandPolymarket(args) {
   const sub = args[0] || 'portfolio';
   const submitsOrder = (sub === 'buy' || sub === 'sell') && !hasFlag(args, '--preflight');
-  const gate = featureGate('polymarket', { surface: `Polymarket ${sub}` });
-  if (!gate.ok) {
-    printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
-    return 1;
-  }
   if (submitsOrder && !hasFlag(args, '--live')) {
     printPayload({ ok: false, reason: 'Direct Polymarket orders require explicit --live authorization' }, args);
     return 1;
@@ -634,6 +629,11 @@ async function commandPolymarket(args) {
   if (hasFlag(args, '--live')) {
     liveAuthorized = await authorizePolymarketLive(args, 'Polymarket live trading');
     if (!liveAuthorized) return 1;
+  }
+  const gate = featureGate('polymarket', { surface: `Polymarket ${sub}` });
+  if (!gate.ok) {
+    printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
+    return 1;
   }
   if (sub === 'history' && args[1] === 'schedule') {
     const { runPolymarketResearchScheduler } = require('../../../scripts/data_ops/polymarket_research_scheduler.js');

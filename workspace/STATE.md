@@ -1,5 +1,66 @@
 # Project State - Sovereign Trading Platform
 
+## Session 116 - private auth, combined engine, and qualification closeout (2026-07-28)
+
+- Private-by-default API authorization is implemented. Human roles come from trusted server-side identity
+  metadata; service API and MCP consumers use distinct salted-hash service principals with explicit
+  capabilities. IP remains risk/audit metadata and never grants authority.
+- The exact-asset combined research engine now composes cached schema-2 technical evidence with
+  point-in-time macro evidence through CLI, protected API, and capability-gated MCP paths. Promotion and
+  reviewed paper-intent endpoints use same-principal, hash-chained, idempotent records and never submit to a
+  provider. Combined results remain `research_only:true` and `decision_ready:false`.
+- A restricted CPI/US02YIELD refresh fetched 86 rows with zero provider errors, but 0/86 are point-in-time
+  eligible: the adapter drops release/vintage metadata, the remote schema lacks `available_at`, and the
+  scoped ingest snapshot is not the combined reader's global snapshot. Real combined output therefore
+  remains truthfully degraded with `macro_observation_missing`.
+- Fresh-source reproducibility is closed for this working-tree batch: isolated installs/builds passed,
+  native CTest passed 30/30, environment discovery classified 138/138 names, source secrets found 0
+  violations across 895 files, and the clean-export aggregate passed **972 total / 962 pass / 0 fail /
+  10 intentional skips**.
+- Authorized bounded data recovery refreshed 14 stale VN daily equity windows (172 records, 0 provider
+  errors). Integrity is now `ok:true`, 92/92 cached, 0 policy-stale, and DCS 1.0. This proves configured
+  cache health only, not remote persistence or operational readiness.
+- Security release remains blocked: the read-only five-root advisory found 61 vulnerable package nodes
+  (24 high, 11 moderate, 26 low, 0 critical). Real Supabase/RLS, remote MCP/SSH, backup/restore,
+  restart/rollback, single-writer, and soak proof remain open; live execution and public exposure stay blocked.
+- `HEAD` remains `80df461f`; this source proof is an uncommitted working tree combined with preserved
+  pre-existing workflow changes, not a committed-release claim.
+
+## Session 115 - deep blast-through + Global Market Monitor exercise (2026-07-28)
+
+- Full Hard Reading audit and bounded feature exercise completed against `HEAD 80df461f` plus the preserved
+  dirty workflow batch. Host aggregate is **960 total / 956 pass / 0 fail / 4 intentional skips**; focused
+  monitor/API contracts are 4/4; host-capable dashboard browser checks are 10/10.
+- Monitor CLI truthfully reports `degraded:true` with 19 fresh, 52 delayed, 17 stale, 1 missing, and 0 invalid
+  rows. Read-only integrity remains `ok:false` with 14 policy-stale required windows, 9 cadence-plausible
+  notices, 0 unexplained grain, and one RNDRUSDT exception; DCS remains 0.954348.
+- Fresh-install reproducibility is still open: the nested API install reports the locked Supabase dependency
+  missing, and 93 production env names versus 78 example-file names require alias/optional classification.
+- No provider, canonical-data, runtime, trading, public, migration, destructive, or promotion action occurred.
+
+
+## Session 114 - deterministic skill workflow implemented (2026-07-27)
+
+- Canonical tracked inventory now contains nine complete skill packages with exact `.agents/skills` discovery
+  mirrors, consistent UI metadata, and manifest-backed recursive hygiene.
+- `session-orchestrator` owns boot/routing/closeout; `blast-through` is audit-only and mode-routed;
+  `feature-exerciser` diagnoses before requesting implementation; `codex` owns bounded changes; and
+  `mass-implement` owns approved broad batch state transitions.
+- Host aggregate passes 960 total / 956 pass / 0 fail / 4 intentional skips; skill validation, mirror,
+  structure, hygiene, secrets, focused CLI/API/dashboard exercises, and diff checks pass.
+- This is uncommitted working-tree proof, not fresh-clone or operational qualification. No runtime, provider,
+  canonical-data, trading, public, migration, destructive, or promotion action occurred.
+
+## Session 113 - feature exercise workflow added (2026-07-27)
+
+- Added and validated canonical `skills/feature-exerciser/SKILL.md`; `AGENTS.md` now invokes it for systematic
+  current-feature use and verification.
+- The skill requires a feature matrix, bounded/read-only exercises, evidence classification, and explicit
+  separation from host/operational qualification.
+- `.agents/skills/feature-exerciser` could not be created because the environment exposes that mirror read-only;
+  mirror synchronization remains open when writable authority is available.
+- No application code, provider poll, runtime, canonical-data, trading, public, migration, or promotion state changed.
+
 ## Session 110 boot - global market monitor Batch 5 queued (2026-07-27)
 
 - Continuity boot revalidated `HEAD 15df68a2` and a clean working tree after committed global-monitor Batch 4.

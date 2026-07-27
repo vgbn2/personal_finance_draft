@@ -83,7 +83,21 @@ export default function App() {
     );
   }
 
-  if (!session && supabase) {
+  if (!supabase) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[var(--bg-primary)] p-6">
+        <div className="max-w-xl text-center font-mono">
+          <h1 className="text-lg text-[var(--text-primary)]">Authentication configuration required</h1>
+          <p className="mt-3 text-sm text-[var(--text-muted)]">
+            Configure the Supabase URL and publishable key. Dashboard data is private and cannot be
+            loaded anonymously.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
     return <LoginPage />;
   }
 

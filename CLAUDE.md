@@ -1,52 +1,10 @@
-# Sovereign Trading Platform - Claude Code Setup
+# Sovereign Trading Platform - Claude Compatibility
 
-## MCP Servers
+The tracked `skills/` tree is canonical. `.agents/skills/` is the repo-local discovery mirror and must match recursively.
 
-**Supabase PostgreSQL** - Configured and ready
-- Project: kwrnlkvoqzmaolmwvhse
-- Use for database queries and schema management
+1. Boot and close through `skills/session-orchestrator/SKILL.md`.
+2. Route audits and reviews through `skills/blast-through/SKILL.md` with exactly one audit mode.
+3. Route approved broad fixes through `skills/mass-implement/SKILL.md`.
+4. Use `workspace/STATE.md` as the current project-direction truth.
 
-## Custom Skills — single source: `.agents/skills/`
-
-### Code Quality
-- `ponytail` - Lazy senior dev mode: YAGNI, stdlib first, minimum code that works. Levels: lite / full / ultra. Trigger: `/ponytail`
-
-### Core Development
-- `code-review` - Code review automation
-- `multi-agent-research` - Research coordination
-- `bootstrap-protocol` - Bootstrap automation
-- `session-orchestrator` - Session orchestration
-- `repo-global-protocol` - Repo-wide rules and conventions
-
-### Automation & Testing
-- `ci-cd` - CI/CD automation
-- `evidence-first-testing` - Test-driven approach
-- `verification-gates` - Quality gates
-- `mass-implement` - Batch implementation
-
-### Architecture & Design
-- `sovereign-architect` - Architecture design
-- `cpp-standards` - C++ code standards
-- `react-component` - React component generation
-- `technical-debt-ledger` - Debt tracking
-- `subagent-contracts` - Agent contracts
-
-### Documentation & Memory
-- `context-memory` - Context preservation
-- `docs-sync` - Documentation synchronization
-- `review-session` - Session review
-- `all-skills-loader` - Skill aggregation
-
-### Database & Infrastructure
-- `database-guardian` - Database safety
-- `supabase` - Supabase utilities
-- `supabase-postgres-best-practices` - PostgreSQL best practices
-- `sovereign-mcp` - MCP server management
-
-### Specialized
-- `blast-through` - Speed implementation
-
-## Architecture Plan (current)
-
-Tracked in `workspace/STATE.md` (`## Current Phase`) — that file is updated every session and is the
-real source of truth for project direction. Do not maintain a separate plan here.
+Do not rely on historical skill names that are absent from `skills/manifest.json`. Do not treat configured MCP metadata as proof of current connectivity or authorization.

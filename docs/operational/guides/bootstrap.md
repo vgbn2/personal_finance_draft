@@ -1,32 +1,30 @@
 # Session Bootstrap
 
-This file is the shared entry point for Gemini sessions, sub-agents, and other CLI-based assistants.
+This is the shared entry point for CLI assistants. The executable workflow lives in `skills/session-orchestrator/SKILL.md`.
 
-## Always Load
+## Load
 
-1. `workspace/PROMPT_LOG.md`
-2. `workspace/HANDOFF.md`
-3. `workspace/SESSION_MEMORY.md`
-4. `workspace/STATE.md`
-5. `workspace/NEXT_SESSION_GOAL.md`
-6. `graphify-out/GRAPH_REPORT.md` when the codebase changed recently
-7. `skills/codex/SKILL.md`
-8. `skills/claude/SKILL.md`
-9. `skills/gemini/SKILL.md`
+1. `workspace/BOOTSTRAP.md`
+2. `workspace/HANDOFF.md` and its current dated handoff
+3. relevant tails of `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, and `workspace/NEXT_SESSION_GOAL.md`
+4. `docs/README.md` and task-specific docs when needed
+5. current Git status, branch, and `HEAD`
+6. `graphify-out/GRAPH_REPORT.md` only when current and available
+7. `skills/session-orchestrator/SKILL.md`
 
-## Always Do
+## Route
 
-- Record the user prompt in `workspace/PROMPT_LOG.md`.
-- Restate the session objective in `workspace/HANDOFF.md`.
-- Keep unfinished work visible.
-- Prefer targeted reads over broad rereads.
-- Refresh `graphify-out` after meaningful code changes.
-- Use sub-agents for small bounded tasks.
-- Use lighter models for routine implementation and a stronger model for end-of-session review.
+- rough proposal -> `refine-suggestion`
+- current feature use/test -> `feature-exerciser`
+- audit/review -> `blast-through`
+- bounded implementation -> `codex`
+- broad approved implementation -> `mass-implement`
+- domain-specific history/replay -> the matching domain skill
 
-## Shared Working Rules
+## Rules
 
-- Do not ask the user to re-explain the session history.
-- Do not rely on memory alone for ongoing work.
-- Keep notes short, factual, and current.
-- Redact secrets and credential-bearing URLs.
+- Record prompts and closeout state only when the active mode permits writes.
+- Reuse verified reads until repository state changes.
+- Preserve unrelated changes and redact secrets.
+- Delegate only with explicit user or governing-instruction authorization.
+- Distinguish source/local proof from fresh-install, host, deployment, recovery, and soak qualification.

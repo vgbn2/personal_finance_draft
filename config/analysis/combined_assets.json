@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "policy_version": "exact-asset-v1",
+  "assets": {
+    "equity:US:AAPL": {
+      "macro_series": ["CPI", "US02YIELD"],
+      "macro_max_age_days": 120
+    },
+    "cryptoasset:GLOBAL:BTC": {
+      "macro_series": ["CPI", "US02YIELD"],
+      "macro_max_age_days": 120
+    },
+    "fx_pair:OTC:EURUSD": {
+      "macro_series": ["CPI", "US02YIELD"],
+      "macro_max_age_days": 120
+    }
+  }
+}

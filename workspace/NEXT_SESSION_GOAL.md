@@ -1,5 +1,58 @@
 # Next Session Goal
 
+## 2026-07-28 session 116 - remediate dependency highs and qualify combined evidence
+
+The auth, exact-asset combined research, reviewed paper-intent, environment manifest, fresh-source verifier,
+and current-cache recovery batches are implemented and verified in the working tree. Keep live and public
+release blocked.
+
+1. Upgrade dependency owners in isolated compatibility batches, starting with the network boundary
+   (`ws`/Socket.IO, Axios, Alpaca, and viem), then MCP HTTP, ONNX/dashboard build, web3, and deprecated
+   toolchain graphs. Regenerate each affected lockfile deterministically and rerun the clean-export verifier.
+2. Preserve FRED release/realtime/vintage and ingestion metadata, migrate and verify `available_at` in the
+   remote macro schema, and connect the combined service to one revision-aware cached macro reader. Reingest
+   CPI/US02YIELD and prove as-of revision exclusion; do not weaken stale/future/synthetic or identity gates.
+3. Calibrate the macro contribution with cost-aware out-of-sample evidence before changing
+   `decision_ready:false`; promotion remains a human-reviewed, non-provider-submitting workflow.
+4. On the intended private host, verify Supabase login/revocation/RLS, distinct service/MCP credentials,
+   remote SSH/MCP, backup/restore, restart/rollback, single-writer behavior, and soak.
+5. Do not enable live execution or public exposure until dependency remediation and every operational gate
+   above is independently evidenced.
+
+Current evidence: clean-export aggregate 972/962/0/10; native 30/30; API 25/25; environment 138/138; secrets
+895/0; integrity 92/92, zero stale, DCS 1.0. Dependency gate: 24 high, 11 moderate, 26 low, 0 critical.
+
+## 2026-07-28 session 115 - close reproducibility or qualify freshness
+
+The Global Market Monitor feature exercise and full blast-through are complete. The next bounded move is one
+of the following, with no implementation assumed:
+
+1. Prove clean archive/fresh-install reproducibility, including the nested API Supabase dependency and a reviewed
+   environment-variable inventory; or
+2. On an explicitly qualified single-writer host, recover the 14 policy-stale required windows and rerun
+   `backend integrity --json` until it is `ok:true` with zero policy-stale required windows.
+
+Keep live execution, provider polling from this checkout, canonical-data mutation, public exposure, migration,
+segment enablement, backup/restore, restart/rollback, one-writer, MCP, and soak claims gated by separate proof.
+
+## 2026-07-27 session 114 - exercise current features through the refined loop
+
+The deterministic skill workflow is implemented and verified in the working tree. Use
+`feature-exerciser` for the next user-facing feature batch.
+
+1. Inventory current CLI, API, dashboard, MCP, TUI, research, data-status, and paper-safe entrypoints from
+   current code/manifests.
+2. Select a bounded read-only/no-network batch and update `workspace/reports/FEATURE_TEST_MATRIX.md` with
+   exact result, evidence class, and limitation.
+3. Diagnose failures and ask before routing fixes to `codex` or `mass-implement`.
+4. Keep fresh-install, stale-data recovery, host login/SSH/MCP, backup/restore, restart/rollback, one-writer,
+   and soak gates explicit.
+5. Do not poll providers, mutate canonical data, change runtimes, trade, expose publicly, migrate, or promote
+   without separate authorization.
+
+Current proof: host aggregate 960/956/0/4; mirror 9/9; secrets 870/0; structure, hygiene, focused exercises,
+and diff checks pass. The workflow batch is uncommitted.
+
 ## 2026-07-27 session 110 - Batch 5 committed; qualification remains
 
 Batch 5 sanitized service-heartbeat observability is committed as the session closeout, following the deep

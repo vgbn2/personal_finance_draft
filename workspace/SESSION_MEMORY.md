@@ -1,3 +1,35 @@
+## Session Memory - 2026-07-28 session 116 - private auth and combined engine
+
+```json
+{
+  "work": "Implemented and verified private API/service/MCP authorization, exact-asset point-in-time combined research, reviewed paper-intent persistence, environment classification, fresh-source verification, and bounded data qualification.",
+  "head": "80df461f; working tree remains intentionally uncommitted and includes preserved prior workflow changes",
+  "verified": {
+    "fresh_export_node": "972 total / 962 pass / 0 fail / 10 intentional skips",
+    "host_node": "972 total / 968 pass / 0 fail / 4 intentional skips",
+    "api": "25/25",
+    "native": "30/30",
+    "environment": "138/138 discovered names classified",
+    "secrets": "895 files / 0 violations",
+    "integrity": "ok:true; 92/92 cached; 0 stale; DCS 1.0"
+  },
+  "security": {
+    "auth_required": true,
+    "public_reads": ["/health", "/api/auth/status", "/api/supabase/config"],
+    "dependency_nodes": {"high": 24, "moderate": 11, "low": 26, "critical": 0},
+    "release": "blocked",
+    "live": "blocked"
+  },
+  "remaining": [
+    "Remediate dependency owners in isolated compatibility batches and rerun clean-export verification.",
+    "Preserve FRED release/realtime/vintage and ingestion metadata, migrate available_at, connect one revision-aware cached reader, reingest CPI/US02YIELD, then rerun the real combined engine.",
+    "Calibrate macro contribution before changing decision_ready:false.",
+    "Verify Supabase/RLS, private-host service identities, remote MCP/SSH, backup/restore, restart/rollback, single-writer, and soak."
+  ],
+  "safety": "No live enablement, public exposure, bot cycle, order, provider submission, service/container/timer startup, or destructive migration occurred."
+}
+```
+
 ## Session Memory - 2026-07-22 session 88 - private central host rollout
 
 {
@@ -516,6 +548,75 @@ Source: `49560981^1:workspace/SESSION_MEMORY.md`. These sections were restored a
     "graphify": "unavailable"
   },
   "safety": "Research-only; 0 eligible, 4 degraded, 3 excluded; promotion false; schema v2 remains live/default."
+}
+```
+
+## Session Memory - 2026-07-28 session 114 closeout
+
+```json
+{
+  "work": "Closed session 114 after recording the approved skill-workflow refinement and its verification boundary.",
+  "source_state": "The workflow batch remains uncommitted at HEAD 80df461f; preserve the existing dirty worktree.",
+  "next": "Use feature-exerciser to run the planned non-live current-feature exercise; diagnose first and request approval before any repair.",
+  "safety": "No provider poll, runtime change, canonical-data write, trading, public exposure, migration, destructive action, or promotion occurred."
+}
+```
+
+## Session Memory - 2026-07-27 session 114 skill workflow refinement
+
+```json
+{
+  "work": "Implemented the approved deterministic boot, route, audit, exercise, implementation, verification, and closeout skill loop.",
+  "canonical_inventory": "skills/manifest.json with 9 complete packages; .agents/skills mirror matches recursively",
+  "routing": "session-orchestrator owns boot/closeout; blast-through audits; feature-exerciser diagnoses then asks; codex handles bounded fixes; mass-implement handles approved broad batches",
+  "verification": {
+    "skill_validation": "18 canonical and mirror validations pass",
+    "mirror": "9/9 synchronized",
+    "mirror_absent": "temporary canonical-only copy passes without ignored .agents state",
+    "structure_hygiene_diff": "pass",
+    "secrets": "870 files / 0 violations",
+    "focused_exercise": "CLI doctor ok:true; protected API plus dashboard contract 2/2 pass",
+    "aggregate": "host 960 total / 956 pass / 0 fail / 4 intentional skips"
+  },
+  "sandbox_classification": "initial aggregate child-process failures were sandbox spawnSync permission limits; host rerun passed",
+  "source_state": "working-tree implementation; uncommitted",
+  "safety": "No provider poll, runtime change, canonical-data write, trading, public exposure, migration, destructive action, or promotion occurred."
+}
+```
+
+## Session Memory - 2026-07-27 session 113 feature-exerciser skill
+
+```json
+{
+  "work": "Created and validated the canonical feature-exerciser skill for safe current-feature use and testing.",
+  "skill": "skills/feature-exerciser/SKILL.md",
+  "validation": "skill-creator quick_validate passed",
+  "guidance": "AGENTS.md now lists feature-exerciser for CLI/API/dashboard/script/fixture/smoke/contract exercise",
+  "mirror": "Creation under .agents/skills was blocked by the environment's read-only mirror",
+  "safety": "No application code, provider poll, runtime change, canonical-data write, trading, public exposure, migration, or promotion occurred."
+}
+```
+
+## Session Memory - 2026-07-27 session 111 session-orchestrator boot
+
+```json
+{
+  "work": "Booted the repository workflow and revalidated continuity at the start of session 111.",
+  "head": "80df461f",
+  "branch": "main",
+  "working_tree": "clean; 12 commits ahead of origin/main",
+  "last_batch": "session 110 Batch 5 sanitized service-heartbeat observability",
+  "open_gates": [
+    "fresh-install / clean-archive / fresh-clone proof",
+    "stale-data recovery",
+    "host login / SSH / MCP handshake",
+    "backup / restore",
+    "restart / rollback",
+    "one-writer enforcement",
+    "soak qualification"
+  ],
+  "graphify": "unavailable: graphify command/module not installed",
+  "safety": "No code, runtime, provider, trading, public, migration, or data state changed."
 }
 ```
 
@@ -1324,5 +1425,27 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "security": "no open P0/P1; current browser auth, fixed safe errors, bounded response, no privileged token fallback or side-effect primitive",
   "next": "Run the mass-implement preflight for Batch 5 sanitized service heartbeat observability.",
   "safety": "No provider poll, writer/data mutation, runtime/profile change, bot cycle, order, public exposure, migration, segment enablement, destructive action, or promotion occurred."
+}
+```
+## Session Memory - 2026-07-28 session 115 deep blast-through + feature exercise
+
+```json
+{
+  "work": "Ran full Hard Reading blast-through plus bounded Global Market Monitor feature exercise.",
+  "feature": {
+    "cli": "ok:true with explicit degraded:true; 19 fresh, 52 delayed, 17 stale, 1 missing, 0 invalid",
+    "contracts": "4/4 focused monitor/API contracts",
+    "dashboard": "10/10 host-capable browser cases at 360/375/768/1440px",
+    "doctor": "ok:true",
+    "aggregate": "960 total / 956 pass / 0 fail / 4 intentional skips"
+  },
+  "findings": [
+    "integrity remains ok:false with 14 policy-stale required windows and DCS 0.954348",
+    "backend/api nested npm ls reports locked Supabase dependency missing from current install",
+    "93 production env names versus 78 example-file names require alias/optional classification",
+    "unavailable provider adapters fail explicitly with not_implemented"
+  ],
+  "graphify": "unavailable: graphify command/module not installed",
+  "safety": "No provider poll, canonical-data write, runtime/profile change, bot cycle, order, public exposure, migration, destructive action, or promotion occurred."
 }
 ```

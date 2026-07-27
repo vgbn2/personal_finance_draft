@@ -5,21 +5,10 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { REPO_ROOT } = require('../../../shared/lib/runtime/paths.js');
+const { aliasesForCentralCopy } = require('../../../shared/lib/runtime/environment_manifest.js');
 const { parseEnvFile } = require('./central_host_preflight.js');
 
-const SOURCE_ALIASES = Object.freeze({
-  ALPACA_API_KEY: ['ALPACA_API_KEY'],
-  ALPACA_SECRET_KEY: ['ALPACA_SECRET_KEY', 'ALPACA_API_SECRET'],
-  FRED_API_KEY: ['FRED_API_KEY'],
-  FINNHUB_API_KEY: ['FINNHUB_API_KEY', 'FINHUB_API_KEY'],
-  TWELVE_DATA_API_KEY: ['TWELVE_DATA_API_KEY', 'TWELVE_API_KEY'],
-  KALSHI_API_KEY: ['KALSHI_API_KEY'],
-  GOOGLE_API_KEY: ['GOOGLE_API_KEY'],
-  GOOGLE_CSE_ID: ['GOOGLE_CSE_ID'],
-  SOVEREIGN_SUPABASE_URL: ['SOVEREIGN_SUPABASE_URL'],
-  SOVEREIGN_SUPABASE_PUBLISHABLE_KEY: ['SOVEREIGN_SUPABASE_PUBLISHABLE_KEY'],
-  SOVEREIGN_SUPABASE_SECRET_KEY: ['SOVEREIGN_SUPABASE_SECRET_KEY'],
-});
+const SOURCE_ALIASES = aliasesForCentralCopy();
 
 function firstNonEmpty(source, names) {
   for (const name of names) {

@@ -17,6 +17,7 @@ const {
 const { calculateRollingFeatureFrame } = require('../../../../shared/lib/market/indicators');
 const { compareModels } = require('../../../../shared/lib/ml/models');
 const { parseScorecardOptions } = require('../../../cli/commands/research/scorecard');
+const { buildCachedCombinedResearch } = require('../../../cli/commands/research/combined');
 const { buildRecordedAppleShadow, RECORDED_AAPL_FIXTURE_ID } = require('../../../../shared/lib/analysis/services/equity_3m_shadow');
 const { buildAllRecordedShadowCatalog, ALL_RECORDED_FIXTURE_ID, filterShadowCatalog } = require('../../../../shared/lib/analysis/services/shadow_catalog');
 const { resolveRuntimePolicy } = require('../../../../shared/lib/settings/runtime_policy');
@@ -1116,6 +1117,14 @@ async function backendScorecard(query = {}) {
   return withScorecardCache(cacheKey, () => runScorecardWorker(args));
 }
 
+async function backendCombinedResearch(query = {}) {
+  return buildCachedCombinedResearch({
+    assetId: stringOrFallback(query.asset_id, ''),
+    decisionAt: stringOrFallback(query.decision_at, new Date().toISOString()),
+    timeframes: stringOrFallback(query.tf, '1h,4h,1d'),
+  });
+}
+
 function systemStatus() {
   return withCache('system_status', () => {
     const cli = cliStatus();
@@ -1196,6 +1205,7 @@ module.exports = {
   DEFAULT_SNAPSHOT,
   backendCacheList,
   backendCorrelation,
+  backendCombinedResearch,
   backendDataSummary,
   backendPortfolio,
   backendScorecard,

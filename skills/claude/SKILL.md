@@ -1,21 +1,10 @@
 ---
 name: claude
-description: Claude umbrella skill for deep audit, blast-through review, section grading, and debt surfacing in personal_finance_draft.
+description: Compatibility router for review-heavy personal_finance_draft work. Use when a Claude-oriented workflow requests audit, code review, gap finding, cleanliness grading, architecture review, or debt surfacing; route the task through the canonical blast-through modes.
 ---
 
 # Claude
 
-Use this skill for review-heavy sessions and broad repo audits.
+Use `session-orchestrator` for session boot and closeout. Route review work to `blast-through` and select exactly one audit mode. Route approved broad fixes to `mass-implement`; do not implement during the audit.
 
-## Responsibilities
-
-- Find the strongest gaps first.
-- Grade affected sections with short reasons.
-- Surface drift, duplication, missing tests, and artifact hygiene issues.
-- Record active debt in the workspace ledgers.
-
-## Audit Rules
-
-- Include generated artifacts and ignore rules in structural audits.
-- Prefer compact evidence over broad speculation.
-- End with the next cleanup move on the critical path.
+Follow the repository evidence standard, preserve unrelated changes, and record active debt in the canonical workspace ledgers.

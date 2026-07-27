@@ -9,7 +9,7 @@ This plan comes from the current rigorous feature pass. It focuses only on surfa
      - `npm.cmd test` -> `269/269` pass locally, but tracked tests/docs reference untracked or ignored assets.
      - `backend/core/CMakeLists.txt:94` and `backend/core/src/main.cpp:7` reference `frame_backtester.{cpp,hpp}`, while `git ls-files backend/core/src/backtest/frame_backtester.cpp backend/core/src/backtest/frame_backtester.hpp` returns nothing.
      - `tests/scripts/strategy_asset_classification.test.js:7` executes untracked `scripts/classify_strategy_assets.js`.
-     - `workspace/FEATURE_TEST_MATRIX.md` and this plan cite untracked `scripts/mcp_stdio_probe.js` and `backend/api/tests/correlation_contract.test.js`.
+     - `workspace/reports/FEATURE_TEST_MATRIX.md` and this plan cite untracked `scripts/mcp_stdio_probe.js` and `backend/api/tests/correlation_contract.test.js`.
      - `tests/scripts/notebooks_contract.test.js` asserts notebooks exist, while `.gitignore` ignores `notebooks/*.ipynb` and no notebooks are tracked.
    - Impact: local runtime confidence is high, but the repository alone cannot yet reproduce the green suite or native build.
 
@@ -36,7 +36,7 @@ This plan comes from the current rigorous feature pass. It focuses only on surfa
    - Impact: contract confidence is good, but live-submit confidence still depends on explicit user approval plus a funded wallet, and some read-only market/portfolio probes remain environment-limited.
 
 4. Repo-truth test artifacts had drift.
-   - Evidence: `workspace/FEATURE_TEST_MATRIX.md` and `workspace/FEATURE_REPAIR_PLAN.md` were still on the 2026-06-08 baseline until this refresh; `docs/engineering/tui_feature_map.md` is updated but currently untracked in git.
+   - Evidence: `workspace/reports/FEATURE_TEST_MATRIX.md` and `workspace/reports/FEATURE_REPAIR_PLAN.md` were still on the 2026-06-08 baseline until this refresh; `docs/engineering/tui_feature_map.md` is updated but currently untracked in git.
    - Impact: future agents could chase retired failures or miss the current status-vs-integrity split.
 
 ## Repair Checklist

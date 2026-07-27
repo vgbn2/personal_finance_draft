@@ -81,5 +81,6 @@ const masterFixture = {
   ]
 };
 
+fs.mkdirSync(path.dirname(CACHE_PATH), { recursive: true });
 fs.writeFileSync(CACHE_PATH, JSON.stringify(masterFixture, null, 2), 'utf8');
 console.log(`[VISIBILITY] Master test fixture seeded to ${CACHE_PATH}`);

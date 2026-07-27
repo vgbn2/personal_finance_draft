@@ -39,9 +39,22 @@ function isTextLike(file) {
   return TEXT_EXTENSIONS.has(ext) || path.basename(file) === 'package.json' || path.basename(file) === 'Cargo.lock';
 }
 
-function listTrackedFiles() {
-  const output = execFileSync('git', ['ls-files'], { encoding: 'utf8' });
-  return output.split(/\r?\n/).filter(Boolean);
+function listTrackedFiles(options = {}) {
+  const cwd = options.cwd || process.cwd();
+  const sourceManifest = path.join(cwd, '.sovereign-source-files');
+  try {
+    const output = execFileSync('git', ['ls-files'], {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return output.split(/\r?\n/).filter(Boolean);
+  } catch (_) {
+    if (!fs.existsSync(sourceManifest)) {
+      throw new Error('tracked source inventory unavailable: git metadata and .sovereign-source-files are both missing');
+    }
+    return fs.readFileSync(sourceManifest, 'utf8').split(/\r?\n/).filter(Boolean);
+  }
 }
 
 function scanFile(file) {
@@ -89,3 +102,9 @@ function main() {
 if (require.main === module) {
   main();
 }
+
+module.exports = {
+  isTextLike,
+  listTrackedFiles,
+  scanFile,
+};

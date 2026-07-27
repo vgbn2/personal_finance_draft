@@ -11,6 +11,7 @@ const {
   resolveHumanRole,
   resolvePrincipal,
   resolveSocketPrincipal,
+  isLoopbackRequest,
 } = require('../server/services/access_control');
 
 function request(headers = {}) {
@@ -41,7 +42,7 @@ test('admin and client tokens become distinct service principals', async () => {
   assert.equal(client.capabilities.includes(CAPABILITIES.PAPER_OPERATE), false);
 });
 
-test('human roles come only from server role map, trusted claim, or safe default', async () => {
+test('human roles come only from server role map, app metadata, or safe default', async () => {
   const baseRequest = request({ authorization: 'Bearer user-session-token' });
   const mapped = await resolvePrincipal(baseRequest, {
     env: {
@@ -59,7 +60,7 @@ test('human roles come only from server role map, trusted claim, or safe default
     env: { SOVEREIGN_DEFAULT_USER_ROLE: 'viewer' },
     getAuthStatusFn: async () => ({
       authenticated: true,
-      user: { id: 'user-2', access_role: 'operator' },
+      user: { id: 'user-2', app_metadata: { sovereign_role: 'operator' } },
     }),
   });
   assert.equal(claimed.role, 'operator');
@@ -110,6 +111,23 @@ test('invalid credentials stay anonymous without exposing token material', async
   assert.equal(principal.id, null);
   assert.equal(principal.session_id, null);
   assert.equal(principal.source, 'invalid_credentials');
+});
+
+test('legacy owner and client tokens are loopback-only', async () => {
+  const env = {
+    SOVEREIGN_API_TOKEN: 'admin-token-value',
+    SOVEREIGN_CLIENT_TOKEN: 'client-token-value',
+  };
+  const remote = {
+    headers: { 'x-sovereign-token': env.SOVEREIGN_API_TOKEN },
+    socket: { remoteAddress: '192.0.2.40' },
+  };
+  assert.equal(isLoopbackRequest(remote), false);
+  assert.equal((await resolvePrincipal(remote, { env })).authenticated, false);
+  assert.equal(isLoopbackRequest({
+    headers: {},
+    socket: { remoteAddress: '::ffff:127.0.0.1' },
+  }), true);
 });
 
 test('socket principals use handshake auth without browser-visible host headers', async () => {

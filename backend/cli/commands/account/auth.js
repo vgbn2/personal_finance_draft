@@ -1,5 +1,13 @@
 const A = require('../../../../shared/lib/ui/ansi');
 const auth = require('../../lib/auth');
+const {
+  ALL_CAPABILITIES,
+} = require('../../../../shared/lib/auth/access_policy');
+const {
+  createServicePrincipal,
+  listServicePrincipals,
+  revokeServicePrincipal,
+} = require('../../../../shared/lib/auth/service_principals');
 
 function paint(code, text) { return A.c(code, text); }
 
@@ -162,4 +170,75 @@ async function commandAuthStatus() {
   return 0;
 }
 
-module.exports = { commandLogin, commandRegister, commandLogout, commandAuthStatus };
+function optionValue(args, name) {
+  const index = args.indexOf(name);
+  return index === -1 ? null : args[index + 1];
+}
+
+function requireLocalAdminCredential() {
+  if (String(process.env.SOVEREIGN_API_TOKEN || '').length < 24) {
+    throw new Error('service administration requires SOVEREIGN_API_TOKEN in the local protected environment');
+  }
+}
+
+function commandServiceAuth(args) {
+  requireLocalAdminCredential();
+  const action = args[0];
+  if (action === 'list') {
+    const payload = {
+      ok: true,
+      type: 'service_principal_list',
+      services: listServicePrincipals(),
+    };
+    console.log(JSON.stringify(payload, null, 2));
+    return 0;
+  }
+  if (action === 'create') {
+    const id = optionValue(args, '--id');
+    const rawCapabilities = optionValue(args, '--capabilities') || 'status.read';
+    const capabilities = rawCapabilities.split(',').map((value) => value.trim()).filter(Boolean);
+    const unknown = capabilities.filter((capability) => !ALL_CAPABILITIES.includes(capability));
+    if (unknown.length) throw new Error(`unknown capabilities: ${unknown.join(', ')}`);
+    const created = createServicePrincipal({
+      id,
+      capabilities,
+      actingUserId: optionValue(args, '--acting-user-id'),
+    });
+    console.log(JSON.stringify({
+      ok: true,
+      type: 'service_principal_created',
+      service: created.service,
+      token: created.token,
+      warning: 'Store this token now. It is shown only once and is not stored in plaintext.',
+    }, null, 2));
+    return 0;
+  }
+  if (action === 'revoke') {
+    const id = optionValue(args, '--id');
+    console.log(JSON.stringify({
+      ok: true,
+      type: 'service_principal_revoked',
+      ...revokeServicePrincipal(id),
+    }, null, 2));
+    return 0;
+  }
+  console.error('Usage: sovereign auth service create|list|revoke');
+  return 1;
+}
+
+function commandAuth(args) {
+  if (args[0] !== 'service') {
+    console.error('Usage: sovereign auth service create|list|revoke');
+    return 1;
+  }
+  return commandServiceAuth(args.slice(1));
+}
+
+module.exports = {
+  commandAuth,
+  commandAuthStatus,
+  commandLogin,
+  commandLogout,
+  commandRegister,
+  commandServiceAuth,
+};

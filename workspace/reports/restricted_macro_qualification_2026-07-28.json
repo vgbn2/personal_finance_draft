@@ -1,0 +1,206 @@
+{
+  "report_type": "restricted_macro_qualification",
+  "report_version": 1,
+  "generated_at": "2026-07-27T18:33:00.000Z",
+  "scope": {
+    "asset_id": "fx_pair:OTC:EURUSD",
+    "required_series": [
+      "CPI",
+      "US02YIELD"
+    ],
+    "history_days": 120,
+    "restricted_worker": true,
+    "raw_provider_payload_included": false
+  },
+  "safety": {
+    "orders_placed": 0,
+    "bot_cycles_run": 0,
+    "services_started": 0,
+    "containers_started": 0,
+    "timers_started": 0,
+    "public_exposure_changes": 0,
+    "destructive_migrations": 0,
+    "deleted_paths": 0,
+    "live_execution_enabled": false
+  },
+  "mapping": {
+    "asset_policy_path": "config/analysis/combined_assets.json",
+    "policy_version": "exact-asset-v1",
+    "macro_max_age_days": 120,
+    "provider": "fred",
+    "series_ids": {
+      "CPI": "CPIAUCSL",
+      "US02YIELD": "DGS2"
+    },
+    "mapping_status": "proven"
+  },
+  "credential_availability": {
+    "values_exposed": false,
+    "fred": "present",
+    "supabase": "present_but_schema_incompatible"
+  },
+  "commands": [
+    {
+      "class": "local_availability_preflight",
+      "status": "completed",
+      "result": {
+        "combined_input_path": "storage/data/cache/last_fetch.json",
+        "required_rows": 1,
+        "required_series_present": [
+          "CPI"
+        ],
+        "point_in_time_eligible": 0
+      }
+    },
+    {
+      "class": "bounded_ingest_dry_run",
+      "entrypoint": "sovereign ingest --family macro --symbol SERIES --history-days 120 --dry-run --json",
+      "series": [
+        "CPI",
+        "US02YIELD"
+      ],
+      "planned_provider_fetches_per_series": 1,
+      "status": "completed"
+    },
+    {
+      "class": "bounded_provider_ingest",
+      "entrypoint": "sovereign ingest --family macro --symbol CPI --history-days 120 --json",
+      "status": "completed",
+      "provider_errors": 0,
+      "attempt_sources": 16,
+      "remote_store_written": 0,
+      "remote_store_code": "schema_column_missing_available_at"
+    },
+    {
+      "class": "bounded_provider_ingest",
+      "entrypoint": "sovereign ingest --family macro --symbol US02YIELD --history-days 120 --json",
+      "status": "completed",
+      "provider_errors": 0,
+      "attempt_sources": 97,
+      "remote_store_written": 0,
+      "remote_store_code": "schema_column_missing_available_at"
+    },
+    {
+      "class": "real_cached_combined_exercise",
+      "entrypoint": "sovereign combined --asset-id fx_pair:OTC:EURUSD --json",
+      "status": "completed_fail_closed"
+    }
+  ],
+  "canonical_macro_partition_after": {
+    "path": "storage/data/cache/macro/backtest_history.json",
+    "required_rows": 86,
+    "series": {
+      "CPI": {
+        "rows": 5,
+        "latest_period_end": "2026-06-01T00:00:00.000Z",
+        "with_released_at": 0,
+        "with_available_at": 0,
+        "with_ingested_at": 0,
+        "point_in_time_eligible": 0
+      },
+      "US02YIELD": {
+        "rows": 81,
+        "latest_period_end": "2026-07-23T00:00:00.000Z",
+        "with_released_at": 0,
+        "with_available_at": 0,
+        "with_ingested_at": 0,
+        "point_in_time_eligible": 0
+      }
+    },
+    "point_in_time_eligible": 0
+  },
+  "point_in_time_semantics": {
+    "status": "failed_closed",
+    "required_fields": [
+      "period_end",
+      "released_at",
+      "available_at",
+      "ingested_at"
+    ],
+    "revision_fields": [
+      "vintage",
+      "revision_id"
+    ],
+    "observed_provider_adapter_fields": [
+      "series_id",
+      "timestamp",
+      "value",
+      "source"
+    ],
+    "reason_codes": [
+      "provider_adapter_drops_release_and_realtime_metadata",
+      "no_ingested_at_recorded_on_cached_provider_rows",
+      "remote_macro_schema_missing_available_at",
+      "zero_point_in_time_eligible_observations"
+    ],
+    "revision_selection_validated": false
+  },
+  "combined_result": {
+    "ok": false,
+    "type": "combined_research",
+    "asset_id": "fx_pair:OTC:EURUSD",
+    "eligible": false,
+    "decision_ready": false,
+    "research_only": true,
+    "degraded": true,
+    "reasons": [
+      "macro_observation_missing"
+    ],
+    "accepted_component_domains": [
+      "technical"
+    ],
+    "macro_component_accepted": false
+  },
+  "wiring": {
+    "combined_reader": "storage/data/cache/last_fetch.json",
+    "bounded_ingest_latest_writer": "storage/data/cache/last_fetch_scoped.json",
+    "partition_writer": "storage/data/cache/macro/backtest_history.json",
+    "status": "not_connected_for_bounded_macro_refresh",
+    "detail": "The scoped macro ingest preserves provider rows in the macro partition but the real combined command reads the global last-fetch snapshot."
+  },
+  "changed_local_paths": {
+    "confirmed": [
+      "storage/data/cache/api_responses/",
+      "storage/data/cache/last_fetch_scoped.json",
+      "storage/data/cache/macro/backtest_history.json"
+    ],
+    "merge_rewrite_namespace": "storage/data/cache/*/backtest_history.json",
+    "remote_rows_written": 0,
+    "isolated_file_count_available": false,
+    "isolated_file_count_reason": "The canonical merge rewrites existing family partitions and other authorized verification work was active in the shared workspace."
+  },
+  "residual_gates": [
+    {
+      "code": "fred_revision_metadata_adapter",
+      "blocking": true,
+      "required": "Preserve or derive reviewed release, realtime availability, ingestion, and vintage metadata without inventing timestamps."
+    },
+    {
+      "code": "macro_observations_schema_migration",
+      "blocking": true,
+      "required": "Add and verify the canonical point-in-time columns, including available_at, before remote upsert."
+    },
+    {
+      "code": "combined_macro_source_wiring",
+      "blocking": true,
+      "required": "Connect the combined reader to the canonical revision-aware macro store or partition through a reviewed cached-only path."
+    },
+    {
+      "code": "revision_reingest_and_as_of_validation",
+      "blocking": true,
+      "required": "Reingest both series and prove as-of selection excludes revisions unavailable at decision time."
+    },
+    {
+      "code": "combined_calibration",
+      "blocking": true,
+      "required": "Even after data eligibility, the current combined engine remains research-only and not decision-ready until calibration and promotion gates pass."
+    }
+  ],
+  "result": {
+    "macro_data_fetched": true,
+    "point_in_time_qualified": false,
+    "combined_engine_usable": false,
+    "fail_closed": true,
+    "live_execution_qualified": false
+  }
+}

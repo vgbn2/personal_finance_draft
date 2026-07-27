@@ -1,5 +1,77 @@
 # Prompt Log - 2026-07-24 (session 96)
 
+## 2026-07-28 session 115 deep blast-through + feature-exerciser
+
+- Prompt: `deep blast + $feature-exerciser`
+- Result: Ran full Hard Reading blast-through and selected the Global Market Monitor for bounded local
+  exercise. Runtime doctor passed, monitor CLI returned explicit degraded truth, focused monitor/API
+  contracts passed 4/4, host-capable dashboard browser checks passed 10/10, and host aggregate passed
+  960/956/0/4. Integrity remains `ok:false` with 14 policy-stale windows; nested API dependency and
+  environment-example parity remain fresh-install/documentation gates. No implementation or live/runtime
+  operation occurred.
+
+## 2026-07-28 session 115
+
+- Prompt: `$session-orchestrator`
+- Result: Booted the session-orchestrator workflow. Loaded bootstrap, the current dated handoff,
+  session memory, state, next-session goal, documentation hub, and checkout state. `HEAD` is
+  `80df461f` on `main`; the pre-existing uncommitted workflow/documentation batch remains
+  preserved untouched. `graphify-out` and the graphify command are unavailable. The active next
+  action is a bounded, non-live feature exercise through `feature-exerciser`; fresh-install and
+  operational qualification gates remain open. No code, runtime, provider, trading, public,
+  migration, or canonical-data state changed during boot.
+
+## 2026-07-28 session 114 closeout
+
+- Prompt: `endsession here`
+- Result: Closed the approved skill-workflow refinement with its verified source boundary recorded in
+  `workspace/handoff/2026-07-28.md`. The batch remains uncommitted at `80df461f`; the next action is
+  to use `feature-exerciser` for a current-feature non-live exercise. No provider, runtime,
+  canonical-data, trading, public, migration, destructive, or promotion action occurred.
+
+## 2026-07-27 session 114
+
+- Prompt: `Implement the plan.` after approving the full workflow refinement for
+  `session-orchestrator`, `blast-through`, `mass-implement`, persona routers, and `feature-exerciser`.
+- Result: Implemented one canonical skill inventory and exact `.agents/skills` discovery mirror,
+  deterministic boot/audit/exercise/implementation/closeout routing, progressive blast-through
+  references, a non-destructive mirror tool, routing/metadata contracts, and aligned agent/bootstrap docs.
+  Host verification passed 960 total / 956 pass / 0 fail / 4 intentional skips; structure, hygiene,
+  mirror, validation, secrets (870/0), focused CLI/API/dashboard exercises, and diff checks passed.
+  No provider, runtime, canonical-data, trading, public, migration, or promotion action occurred.
+
+## 2026-07-27 session 113
+
+- Prompt: `approve` for the planned current-feature exercising workflow and skill creation.
+- Result: Created and validated canonical `skills/feature-exerciser/SKILL.md` with UI metadata,
+  added its invocation guidance to `AGENTS.md`, and preserved the non-live exercise boundary.
+  The read-only `.agents/skills` mirror could not be created because this environment rejects writes
+  there; no application code or runtime state changed. A future writable sync should mirror the
+  canonical skill and validate parity.
+
+## 2026-07-27 session 112
+
+- Prompt: `$session-orchestrator`
+- Result: Boot loaded `BOOTSTRAP.md`, `HANDOFF.md`, the current dated handoff,
+  `SESSION_MEMORY.md`, `STATE.md`, `NEXT_SESSION_GOAL.md`, and the documentation hub. `HEAD` is
+  `80df461f` on `main`; source remains at the Batch 5 sanitized service-heartbeat checkpoint.
+  The present working-tree changes are pre-existing continuity/review records only, preserved
+  untouched. `graphify-out` was not refreshed because neither the artifact nor graphify tool/module
+  is available. Fresh-install and operational-qualification gates remain open. No code, runtime,
+  provider, trading, public, migration, or data state changed during this boot.
+
+## 2026-07-27 session 111
+
+- Prompt: `/session-orchestrator`
+- Result: Boot loaded `BOOTSTRAP.md`, `HANDOFF.md`, `SESSION_MEMORY.md`, `STATE.md`, and the
+  prompt-log history. `HEAD` is `80df461f` on `main`, the working tree is clean, and the
+  repository is 12 commits ahead of `origin/main`. Batch 5 sanitized service-heartbeat
+  observability was committed at the end of session 110 and is the latest shipped change;
+  fresh-install and operational-qualification gates (stale-data recovery, fresh-clone proof,
+  host login/SSH/MCP, backup/restore, restart/rollback, one-writer, soak) remain open.
+  `graphify-out` is unavailable because the graphify command/module is not installed. No
+  code, runtime, provider, trading, public, migration, or data state changed during boot.
+
 ## 2026-07-27 session 110
 
 - Prompt: `$blast-through deep for the previous batches, then plan mode then mass impleemnt, follow protocal`
@@ -2438,3 +2510,36 @@ Booted the session-orchestrator workflow. Loaded `workspace/BOOTSTRAP.md`, the c
 The working tree is clean at `15df68a2`; Batch 4 is committed and Batch 5 sanitized service-heartbeat
 observability is the next scoped objective. `graphify-out` remains unavailable because the command/module is
 not installed. No code, runtime, provider, trading, public, migration, or data state changed.
+
+## User Prompt - 2026-07-28 session 116
+
+`$session-orchestrator`; `$blast-through`; `deep blast + $feature-exerciser`; plan via mass implement; include
+a security/auth check, finalize the changes, make the engines usable; `Implement the plan.`
+
+## Work - 2026-07-28 session 116
+
+Implemented private-by-default human/service/MCP authorization, an exact-asset point-in-time combined
+research engine, immutable same-principal promotion and reviewed paper-intent workflows, a complete
+environment manifest, and a clean-export fresh-install verifier. Qualified the configured cache through a
+restricted 14-symbol VN daily refresh: 172 records, 0 provider errors, integrity 92/92 with zero stale and
+DCS 1.0. Clean-export aggregate passed 972/962/0/10; current-host aggregate passed 972/968/0/4; API 25/25,
+native 30/30, environment 138/138, and secrets 895/0.
+
+The security decision is that auth is required. The dependency release gate remains blocked after a
+read-only five-root advisory found 24 high, 11 moderate, 26 low, and 0 critical vulnerable package nodes.
+The restricted macro follow-up fetched 86 CPI/US02YIELD rows but found 0 point-in-time eligible because
+release/vintage metadata is dropped, remote `available_at` is absent, and scoped/global snapshot wiring
+differs; real combined output remains fail-closed with `macro_observation_missing`.
+No live execution, public exposure, bot/order/provider submission, destructive migration, or runtime service
+startup occurred. `HEAD` remains `80df461f`; the verified implementation is uncommitted working-tree proof.
+
+## User Prompt - 2026-07-28 session 116 closeout
+
+`tommorow i'll test some through ssh, end session here, commit`
+
+## Work - 2026-07-28 session 116 closeout
+
+Prepared the verified full working-tree batch for one local commit. SSH testing is deferred to the next session;
+it must use distinct private-host service/MCP identities and remain non-live until the documented deployment,
+dependency, macro point-in-time, backup/recovery, and soak gates are evidenced. No push, service startup,
+public exposure, order, or live enablement is part of this closeout.

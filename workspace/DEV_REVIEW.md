@@ -1,3 +1,22 @@
+### Mass-Implement Security/Engine Closeout - 2026-07-28 session 116
+
+| Priority | Area | Finding | Resolution / remaining gate |
+|---|---|---|---|
+| Closed for source | private API/service/MCP auth | Several data/research reads were public-by-default, legacy shared tokens lacked stable least-privilege identity, and MCP did not have a distinct principal. | Public reads are limited to health/auth/public Supabase config; human roles are server-trusted; API services and MCP use separate salted-hash capability principals; IP is risk metadata only. Real Supabase/RLS and remote connector proof remain external. |
+| Closed for research-only source | combined actionable composition | The prior grade was D/nonexistent because technical and macro components had no exact-asset production composition caller. | Added one exact-asset, point-in-time, fail-closed service with CLI/API/MCP parity plus immutable reviewed promotion/paper-intent records. It remains `research_only:true`, `decision_ready:false`; real EURUSD degrades because fetched rows lack PIT metadata and the cache path is disconnected. |
+| Closed | environment/fresh-source truth | Production names were not fully classified and the nested dependency/build graph lacked clean-export proof. | A 118-entry manifest classifies all 138 discovered names/aliases. Isolated five-root install/build, native 30/30, secrets 895/0, and aggregate 972/962/0/10 pass. |
+| Closed for configured cache | policy-stale data | Integrity had 14 policy-stale VN daily windows and DCS 0.954348. | Authorized bounded refresh wrote 172 records with zero provider errors; integrity is 92/92, zero stale, DCS 1.0. Remote persistence, recovery, single-writer, and soak remain unqualified. |
+| P0 engine data gate | point-in-time macro path | Bounded FRED ingest fetched 86 CPI/US02YIELD rows, but 0 carry release/availability/ingestion metadata; remote schema lacks `available_at`; scoped writer and combined global reader differ. | Preserve provider vintage/realtime metadata, migrate/verify the remote schema, connect one revision-aware cached reader, reingest, and prove as-of revision exclusion. Do not substitute observation time for availability time. |
+| P0 release gate | dependency advisories | Five-root read-only audit found 61 vulnerable package nodes: 24 high, 11 moderate, 26 low, 0 critical. | Upgrade direct owners in isolated network, MCP HTTP, runtime/dashboard, web3, and toolchain batches. No package/lockfile remediation occurred; paper-only use is conditional and live release remains blocked. |
+
+Verification: current-host aggregate **972/968/0/4**; clean-export aggregate **972/962/0/10**; API
+**25/25**; native **30/30**; environment **138/138**; clean-export secrets **895/0**; MCP/dashboard/native
+builds, structure, hygiene, and diff checks pass. `HEAD` remains `80df461f`; evidence is an uncommitted mixed
+working tree, not a release commit. No bot cycle, order, provider submission, runtime service startup, public
+exposure, destructive migration, or live enablement occurred.
+
+---
+
 ### Mass-Implement Closeout - 2026-07-24 session 101
 
 | Priority | Area | Finding | Resolution / remaining gate |
@@ -29,6 +48,35 @@ Verification: paper-ledger passed 12/12, bot-risk passed 5/5, and the host-capab
 `npm run hygiene` and `git diff --check` passed. The restricted runner's file-level live-guard failure was
 confirmed as the known child-process sandbox limitation, not a repository regression. The source batch remains
 uncommitted after `87d896de`, so these are working-tree findings rather than committed release proof.
+
+---
+
+### Blast-Through Triage - 2026-07-27 session 111
+
+Scope: post-Batch-5 (`80df461f`) audit of the sanitized service-heartbeat surface and its five status owners.
+
+| Priority | Area | File:line | Finding | Required decision / gate |
+|---|---|---|---|---|
+| Dismissed | missing capability gate | `backend/api/server/routes/system/service_health.js` | Route handler does not import `data.read` directly, which initially looked like a missing auth gate. | Confirmed false positive: gate is registered at `shared/lib/auth/access_policy.js:102` and enforced via `PROTECTED_GET_ROUTES` in `app.js:76`. Capability table is the single source of truth. |
+| Dismissed | publisher wiring | `shared/lib/runtime/service_heartbeat.js` | Initial suspicion that some status owners might still call the old non-atomic helpers. | All five owners verified wired: `backfill_daemon.js:82`, `portfolio_monitor.js:271`, `host_health.js:23,32`, `host_backup.js:38,56`, `run_loop.js:37`. `_heartbeat` wrapper at `run_loop.js:35-41` swallows publication errors so a publisher failure cannot crash the run loop. |
+| Dismissed | P0/P1 defect leakage | `shared/lib/runtime/service_heartbeat.js:108-176` | Triage pass over atomic write, sanitization, normalization, and the read aggregator. | Atomic publication uses per-process unique temp + `mode: 0o600` + `wx` flag + rename + cleanup; error_code mapping enforces canonical vocabulary; `normalizeHeartbeat` produces a bounded record regardless of input shape; `readServiceHeartbeats` clamps the schema and never leaks raw publisher errors. |
+| P3 | type safety | `Frontend/dashboard/src/components/panels/QuoteHealthPanel.tsx:82` | `serviceHealth` state is typed `useState<any>(null)`. | Cosmetic only; the rendered payload is bounded by the API contract. Replace with the heartbeat row shape when the dashboard's heartbeat type module is introduced. |
+
+Verification: `node --test tests/scripts/operational/service_heartbeat.test.js` is 4/4 (atomic sanitization,
+missing/expired/healthy/malformed states, failed atomic leaves previous readable, legacy client-status
+projection). `node --check` passes on `shared/lib/runtime/service_heartbeat.js`,
+`backend/api/server/routes/system/service_health.js`, `backend/api/server/services/service_health.js`, and
+`shared/lib/runtime/run_loop.js`. `npm run hygiene` and `git diff --check` pass. Working tree is clean at
+`80df461f` on `main`, 12 commits ahead of `origin/main`. `graphify-out` remains unavailable.
+
+Operational qualification gates remain open: DCS 0.954348 with 14 policy-stale required windows and integrity
+`ok:false`; fresh-install/clean-archive proof, host login/SSH/MCP, backup/restore, restart/rollback,
+one-writer, and soak are still external. No code, runtime, provider, trading, public, migration, or
+destructive action occurred during this triage.
+
+Next cleanup move: only recover the 14 stale required windows on a separately qualified single-writer host,
+or proceed with a fresh-clone/archive install proof, or move to a new scoped objective. Promotion, live
+execution, destructive migration, model/schema release, and public exposure all remain blocked.
 
 ---
 
@@ -2088,3 +2136,50 @@ Verification: host contracts **116/116**; aggregate **956 total / 952 pass / 0 f
 focused heartbeat/monitor **12/12**; dashboard production build pass; secret scan **867 files / 0 violations**;
 hygiene and diff checks pass. Source is committed as the session closeout. Fresh-install, host/MCP, recovery, rollback, one-writer,
 soak, and 14 policy-stale data-integrity gates remain open.
+
+## Workflow Correction - 2026-07-27 session 114
+
+The 2026-06-11 P1 requiring only three umbrella skills is superseded. Current repository ownership is one
+tracked functional inventory in `skills/manifest.json`, with `codex`, `claude`, and `gemini` retained as thin
+compatibility routers. All nine canonical packages match `.agents/skills` recursively; the mirror, skill
+contracts, structure, hygiene, and host aggregate gates pass. Future reviews should use the functional router
+instead of treating the broader skill set as fragmentation.
+### Deep Blast-Through + Feature Exercise - 2026-07-28 session 115
+
+**Modes:** full / Hard Reading Mode plus bounded feature exercise. **Anchor:** `80df461f` plus the
+pre-existing dirty workflow batch. `graphify-out` remains unavailable.
+
+#### Findings
+
+| Priority | Classification | Surface / evidence | Finding | Required gate or decision |
+|---|---|---|---|---|
+| P0 external | Failed / promotion-blocking | `node backend/cli/sovereign_cli.js backend integrity --json` | Current integrity is `ok:false`: 92/92 cached, 14 policy-stale required windows, 9 cadence-plausible grain notices, 0 unexplained grain, and 1 declared RNDRUSDT exception. DCS remains 0.954348 but does not override failed integrity. | Recover only through an explicitly qualified single-writer/provider path; then prove zero policy-stale windows and `ok:true`. Keep promotion and live execution blocked. |
+| P0 external | Unproven | clean archive + qualification gates | `git archive HEAD` contains required continuity and CLI files; host aggregate is green, but fresh-install, host login/SSH/MCP, backup/restore, restart/rollback, one-writer, and soak remain unproven. | Prove each gate from a clean committed archive and approved host; do not infer operational readiness from local tests. |
+| P2 | Incomplete local dependency evidence | `backend/api/package.json`, `backend/api/package-lock.json`, `npm --prefix backend/api ls --omit=dev --all` | API declares and locks `@supabase/supabase-js@2.106.2`, but the current nested install reports it missing. This is an installation-state gap, not a missing manifest declaration. | Reinstall/verify the nested package in a clean-clone proof; do not claim fresh-install reproducibility from the current checkout tree. |
+| P2 | Incomplete config/docs parity | 93 production env names versus 78 example-file names | Environment aliases and optional/runtime keys are not fully classified across `.env.example`, central, frontend, and provider configuration (`SUPABASE_*`, `SOVEREIGN_*`, Finnhub/TwelveData aliases, etc.). | Build a reviewed env inventory and label intentional aliases, optional keys, and required deployment inputs before fresh-clone/host setup. |
+| P3 | Intentional unavailable extension | `backend/scripts/data_ops/ingest_market_data/manifests.js` | OpenSky, Blockchair, SEC holdings, S&P PMI, FXAPI, Yahoo breadth, and Kalshi history adapters fail explicitly with `not_implemented`; no silent empty-success path was found. | Keep excluded from enabled production lanes or assign an implementation owner; no cleanup is required for this audit. |
+
+#### Feature exercise result
+
+The selected Global Market Monitor surface is locally usable and contract-verified. CLI output returned
+`ok:true` with explicit `degraded:true` and `stale_market_rows`/`missing_market_rows`; focused monitor/API
+contracts passed 4/4; host-capable dashboard exercise passed 10/10; runtime doctor passed; and the host
+aggregate passed 960/956/0/4. An initial root-level dashboard invocation timed out because the helper resolves
+`node_modules/.bin/vite` from the process cwd; the documented package invocation from `Frontend/dashboard`
+was then rerun with host loopback permission and passed. This is an execution-context limitation, not a
+confirmed product defect.
+
+#### Section grades
+
+| Section | Grade | Evidence / reason |
+|---|---|---|
+| `shared/lib/market` monitor/data path | B / policy-stale | Canonical monitor snapshot and degraded counters are coherent and tested; required freshness windows remain stale. |
+| `backend/cli` | A- | Runtime doctor, monitor CLI, and aggregate contracts pass; provider/data freshness remains external. |
+| `backend/api` | B+ | Authenticated monitor and service-health contracts pass; nested dependency install is incomplete locally. |
+| `Frontend/dashboard` | A- | Host-capable responsive and degraded-state browser checks pass; deployed service/soak remains unproven. |
+| `infra/deployment` | B | Archive and manifest contracts pass; host login, recovery, rollback, and one-writer evidence remain external. |
+| `tests` | A- | Host aggregate 960/956/0/4 and focused feature contracts pass; sandbox-only failures are classified. |
+| system design critical path | C+ | Local feature path is coherent, but integrity, fresh-clone, host, and recovery arrows remain unproven. |
+
+No implementation was performed and no provider poll, canonical-data write, runtime/profile change, bot
+cycle, order, public exposure, migration, destructive action, or promotion occurred.

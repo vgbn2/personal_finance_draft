@@ -1,0 +1,195 @@
+{
+  "report_type": "restricted_data_qualification",
+  "report_version": 1,
+  "generated_at": "2026-07-27T18:27:00.000Z",
+  "audit": {
+    "mode": "data-integrity",
+    "reading_mode": "fast",
+    "evidence_class": [
+      "local-runtime",
+      "provider-refresh"
+    ],
+    "restricted_worker": true,
+    "raw_provider_payload_included": false
+  },
+  "safety": {
+    "orders_placed": 0,
+    "bot_cycles_run": 0,
+    "services_started": 0,
+    "containers_started": 0,
+    "timers_started": 0,
+    "public_exposure_changes": 0,
+    "destructive_migrations": 0,
+    "deleted_paths": 0,
+    "live_execution_enabled": false
+  },
+  "credential_availability": {
+    "values_exposed": false,
+    "groups": {
+      "alpaca_market_data": "present",
+      "twelve_data": "present",
+      "fred": "present",
+      "alpha_vantage": "present",
+      "supabase": "missing"
+    }
+  },
+  "commands": [
+    {
+      "class": "read_only_integrity_before",
+      "entrypoint": "sovereign backend integrity --json",
+      "status": "completed"
+    },
+    {
+      "class": "bounded_provider_refresh",
+      "entrypoint": "sovereign backfill",
+      "scope": {
+        "family": "equities",
+        "symbols": [
+          "VCB",
+          "BID",
+          "CTG",
+          "TCB",
+          "FPT",
+          "CMG",
+          "VIC",
+          "VHM",
+          "VRE",
+          "VNM",
+          "MSN",
+          "HPG",
+          "FMC",
+          "GAS"
+        ],
+        "timeframe": "1d",
+        "history_days": 14,
+        "force": true
+      },
+      "status": "completed",
+      "records_received": 172,
+      "provider_errors": 0,
+      "provider_success": {
+        "yahoo": {
+          "symbols": 12,
+          "code": "ok"
+        },
+        "twelve": {
+          "symbols": 2,
+          "code": "ok"
+        }
+      },
+      "provider_failure_codes": []
+    },
+    {
+      "class": "read_only_integrity_after",
+      "entrypoint": "sovereign backend integrity --json",
+      "status": "completed"
+    },
+    {
+      "class": "strict_snapshot_validation",
+      "entrypoint": "sovereign check --strict --json",
+      "status": "completed",
+      "ok": true,
+      "records": 12,
+      "errors": 0,
+      "warnings": 0
+    }
+  ],
+  "integrity_before": {
+    "ok": false,
+    "configured": 92,
+    "cached": 92,
+    "missing": 0,
+    "stale": 14,
+    "exceptions": 1,
+    "unreachable": 0,
+    "grain_suspects": 9,
+    "grain_cadence_plausible": 9,
+    "grain_unexplained": 0,
+    "freshness_score": 0.8478260869565217,
+    "schema_score": 1,
+    "coverage_score": 1,
+    "dcs": 0.9543478260869565,
+    "blocking_symbols": [
+      "VCB",
+      "BID",
+      "CTG",
+      "TCB",
+      "FPT",
+      "CMG",
+      "VIC",
+      "VHM",
+      "VRE",
+      "VNM",
+      "MSN",
+      "HPG",
+      "FMC",
+      "GAS"
+    ]
+  },
+  "integrity_after": {
+    "ok": true,
+    "configured": 92,
+    "cached": 92,
+    "missing": 0,
+    "stale": 0,
+    "exceptions": 1,
+    "unreachable": 0,
+    "grain_suspects": 9,
+    "grain_cadence_plausible": 9,
+    "grain_unexplained": 0,
+    "freshness_score": 1,
+    "schema_score": 1,
+    "coverage_score": 1,
+    "dcs": 1,
+    "blocking_symbols": []
+  },
+  "refreshed_symbols": {
+    "count": 14,
+    "fresh": 14,
+    "providers": {
+      "yahoo": 12,
+      "twelve": 2
+    },
+    "latest_session_dates": {
+      "2026-07-24": 12,
+      "2026-07-27": 2
+    }
+  },
+  "changed_local_paths": {
+    "confirmed_target_namespaces": [
+      "storage/data/cache/api_responses/",
+      "storage/data/cache/equities/backtest_history.json",
+      "storage/data/cache/data_quality_report.json",
+      "storage/data/ts/{VCB,BID,CTG,TCB,FPT,CMG,VIC,VHM,VRE,VNM,MSN,HPG,FMC,GAS}_1d.bin",
+      "storage/data/ts/{VCB,BID,CTG,TCB,FPT,CMG,VIC,VHM,VRE,VNM,MSN,HPG,FMC,GAS}_1d.meta.json"
+    ],
+    "merge_side_effect": "The canonical backfill merge may rewrite existing partition and time-series index artifacts in addition to the target symbol files.",
+    "isolated_file_count_available": false,
+    "isolated_file_count_reason": "Other authorized verification work was concurrently writing generated storage artifacts in the shared workspace."
+  },
+  "blockers": [
+    {
+      "code": "declared_integrity_exception",
+      "scope": "RNDRUSDT",
+      "blocking_for_current_policy": false,
+      "detail": "One declared exception remains and is excluded by the configured integrity policy."
+    },
+    {
+      "code": "supabase_credentials_missing",
+      "scope": "remote persistence",
+      "blocking_for_current_policy": false,
+      "detail": "This host cannot qualify Supabase-backed remote persistence from the available environment."
+    },
+    {
+      "code": "operational_readiness_not_proven",
+      "scope": "live and always-on operations",
+      "blocking_for_current_policy": false,
+      "detail": "This bounded refresh proves current configured-cache integrity only; it does not prove live execution, service recovery, backup/restore, rollback, single-writer behavior, or soak."
+    }
+  ],
+  "result": {
+    "configured_cache_qualified": true,
+    "promotion_data_gate": "pass",
+    "live_execution_qualified": false
+  }
+}

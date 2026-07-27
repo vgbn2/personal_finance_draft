@@ -1,0 +1,4 @@
+interface:
+  display_name: "Session Orchestrator"
+  short_description: "Boot, route, and close repository sessions"
+  default_prompt: "Use $session-orchestrator to load current repository context, route this task, and preserve the verified handoff."
