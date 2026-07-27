@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { MIRROR_ROOT, compareInventory, readManifest } = require('./sync_repo_skills');
 
 const WORKSPACE_ROOT = path.resolve(__dirname, '..', '..');
 
@@ -148,63 +149,19 @@ function checkSymlinks() {
 
 // 3. Agent Skills Inventory Hygiene
 function checkAgentSkills() {
-  const findings = [];
-  const allowedLocalSkills = new Set([
-    'blast-through',
-    'claude',
-    'codex',
-    'gemini',
-    'mass-implement',
-    'polymarket-history-backfill',
-    'refine-suggestion',
-    'repo-hygiene',
-    'session-orchestrator'
-  ]);
-
-  const allowedAgentsSkills = new Set([
-    'blast-through',
-    'claude',
-    'codex',
-    'gemini',
-    'mass-implement',
-    'polymarket-history-backfill',
-    'refine-suggestion',
-    'session-orchestrator'
-  ]);
-
-  // A. Check skills/
-  const skillsDir = path.join(WORKSPACE_ROOT, 'skills');
-  if (fs.existsSync(skillsDir)) {
-    try {
-      const dirs = fs.readdirSync(skillsDir).filter(f => fs.statSync(path.join(skillsDir, f)).isDirectory());
-      for (const d of dirs) {
-        if (!allowedLocalSkills.has(d)) {
-          findings.push({
-            finding: `Stale or non-canonical skill folder: skills/${d}`,
-            surface: `skills/${d}`,
-            action: `Remove-Item -Recurse 'skills/${d}'`
-          });
-        }
-      }
-    } catch (e) {}
+  let rawFindings;
+  try {
+    rawFindings = compareInventory(readManifest(), {
+      requireMirror: fs.existsSync(MIRROR_ROOT)
+    });
+  } catch (error) {
+    rawFindings = [error instanceof Error ? error.message : String(error)];
   }
-
-  // B. Check .agents/skills/
-  const agentsSkillsDir = path.join(WORKSPACE_ROOT, '.agents', 'skills');
-  if (fs.existsSync(agentsSkillsDir)) {
-    try {
-      const dirs = fs.readdirSync(agentsSkillsDir).filter(f => fs.statSync(path.join(agentsSkillsDir, f)).isDirectory());
-      for (const d of dirs) {
-        if (!allowedAgentsSkills.has(d)) {
-          findings.push({
-            finding: `Stale or non-canonical agent skill folder: .agents/skills/${d}`,
-            surface: `.agents/skills/${d}`,
-            action: `Remove-Item -Recurse '.agents/skills/${d}'`
-          });
-        }
-      }
-    } catch (e) {}
-  }
+  const findings = rawFindings.map((finding) => ({
+    finding,
+    surface: 'skills/manifest.json and .agents/skills/',
+    action: 'Run node scripts/dev/sync_repo_skills.js --write, review any mirror extras, then rerun --check'
+  }));
 
   return {
     pass: findings.length === 0,

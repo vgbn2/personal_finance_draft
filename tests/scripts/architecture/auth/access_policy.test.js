@@ -61,6 +61,18 @@ test('policy distinguishes public, authenticated, and unauthorized requests', ()
   );
   assert.equal(publicDecision.allowed, true);
   assert.equal(publicDecision.reason, 'public');
+  assert.deepEqual(
+    requiredCapabilities({ method: 'GET', pathname: '/api/status' }),
+    [CAPABILITIES.STATUS_READ],
+  );
+  assert.equal(authorize(
+    anonymous,
+    requiredCapabilities({ method: 'GET', pathname: '/api/status' }),
+  ).reason, 'authentication_required');
+  assert.deepEqual(
+    requiredCapabilities({ method: 'GET', pathname: '/api/future-read' }),
+    [CAPABILITIES.STATUS_READ],
+  );
 
   const missing = authorize(
     anonymous,

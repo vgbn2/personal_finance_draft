@@ -5,6 +5,9 @@ const os = require('node:os');
 const path = require('node:path');
 
 const SUPABASE_SERVICE_PATH = require.resolve('../../../../backend/api/server/services/supabase_client');
+const SUPABASE_MODULE_PATH = require.resolve('@supabase/supabase-js', {
+  paths: [path.dirname(SUPABASE_SERVICE_PATH)],
+});
 const AUTH_ROUTE_PATH = require.resolve('../../../../backend/api/server/routes/account/auth');
 const DATABASE_ROUTE_PATH = require.resolve('../../../../backend/api/server/routes/account/database');
 const CONFIG_ROUTE_PATH = require.resolve('../../../../backend/api/server/routes/account/config');
@@ -15,15 +18,15 @@ function clear(modulePath) {
 }
 
 function loadRoutes(mockClient) {
-  const originalCreateClient = require.cache[require.resolve('@supabase/supabase-js')];
+  const originalCreateClient = require.cache[SUPABASE_MODULE_PATH];
   const originalService = require.cache[SUPABASE_SERVICE_PATH];
   const originalAuthRoute = require.cache[AUTH_ROUTE_PATH];
   const originalDbRoute = require.cache[DATABASE_ROUTE_PATH];
   const originalConfigRoute = require.cache[CONFIG_ROUTE_PATH];
 
-  require.cache[require.resolve('@supabase/supabase-js')] = {
-    id: require.resolve('@supabase/supabase-js'),
-    filename: require.resolve('@supabase/supabase-js'),
+  require.cache[SUPABASE_MODULE_PATH] = {
+    id: SUPABASE_MODULE_PATH,
+    filename: SUPABASE_MODULE_PATH,
     loaded: true,
     exports: {
       createClient: mockClient,
@@ -46,8 +49,8 @@ function loadRoutes(mockClient) {
     dbRoute,
     configRoute,
     restore() {
-      if (originalCreateClient) require.cache[require.resolve('@supabase/supabase-js')] = originalCreateClient;
-      else clear(require.resolve('@supabase/supabase-js'));
+      if (originalCreateClient) require.cache[SUPABASE_MODULE_PATH] = originalCreateClient;
+      else clear(SUPABASE_MODULE_PATH);
       if (originalService) require.cache[SUPABASE_SERVICE_PATH] = originalService;
       else clear(SUPABASE_SERVICE_PATH);
       if (originalAuthRoute) require.cache[AUTH_ROUTE_PATH] = originalAuthRoute;

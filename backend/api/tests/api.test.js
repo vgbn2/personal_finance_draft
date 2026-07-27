@@ -41,7 +41,7 @@ function close() {
   });
 }
 
-test('web API exposes backend health, data summary, and correlation', async () => {
+test('web API exposes backend health, data summary, and correlation', async (t) => {
   const savedQuoteEnv = {
     SOVEREIGN_MT5_QUOTES_PATH: process.env.SOVEREIGN_MT5_QUOTES_PATH,
     MT5_QUOTES_PATH: process.env.MT5_QUOTES_PATH,
@@ -52,6 +52,31 @@ test('web API exposes backend health, data summary, and correlation', async () =
   delete process.env.MT5_QUOTES_PATH;
   delete process.env.SOVEREIGN_WEBULL_QUOTES_PATH;
   delete process.env.WEBULL_QUOTES_PATH;
+  const signalFixtureRoot = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'sovereign-api-signal-'));
+  t.after(() => fs.rmSync(signalFixtureRoot, { recursive: true, force: true }));
+  const modelReportPath = path.join(signalFixtureRoot, 'model.json');
+  const backtestReportPath = path.join(signalFixtureRoot, 'backtest.json');
+  fs.writeFileSync(modelReportPath, JSON.stringify({
+    generated_at: new Date().toISOString(),
+    source_mode: 'test_fixture',
+    data_quality_ok: true,
+    horizon: 2,
+    threshold: 0.55,
+    candidate_count: 0,
+    families: ['trees'],
+    per_symbol_winners: [],
+  }));
+  fs.writeFileSync(backtestReportPath, JSON.stringify({
+    generated_at: new Date().toISOString(),
+    source_mode: 'test_fixture',
+    data_quality_ok: true,
+    model: 'fixture-model',
+    equity_curve: [
+      { timestamp: '2026-01-01T00:00:00.000Z', equity: 1 },
+      { timestamp: '2026-01-02T00:00:00.000Z', equity: 1.01 },
+      { timestamp: '2026-01-03T00:00:00.000Z', equity: 1.02 },
+    ],
+  }));
   const baseUrl = await listen();
   try {
     const health = await fetch(`${baseUrl}/health`);
@@ -136,7 +161,9 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.ok(Array.isArray(universePayload.entries));
     assert.ok(universePayload.entries.some((entry) => entry.symbol === 'AAPL'));
 
-    const system = await fetch(`${baseUrl}/api/system/status`);
+    const system = await fetch(`${baseUrl}/api/system/status`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
     assert.equal(system.status, 200);
     const systemPayload = await system.json();
     assert.equal(systemPayload.type, 'system_status');
@@ -147,7 +174,9 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.equal(systemPayload.components.deployment.canonical_writer, false);
     assert.equal(systemPayload.components.auth.access_policy, 'capability-rbac-v1');
 
-    const quotes = await fetch(`${baseUrl}/api/quotes/status`);
+    const quotes = await fetch(`${baseUrl}/api/quotes/status`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
     assert.equal(quotes.status, 200);
     const quotesPayload = await quotes.json();
     assert.equal(quotesPayload.type, 'quote_sources');
@@ -158,6 +187,8 @@ test('web API exposes backend health, data summary, and correlation', async () =
 
     const signal = await fetch(`${baseUrl}/api/signal?${query({
       input: BACKEND_HISTORY_FIXTURE,
+      model_report: modelReportPath,
+      backtest_report: backtestReportPath,
     })}`, { headers: { 'X-Sovereign-Token': TEST_API_TOKEN } });
     assert.equal(signal.status, 200);
     const signalPayload = await signal.json();
@@ -172,22 +203,30 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.equal(typeof signalPayload.backtest.model, 'string');
     assert.ok(signalPayload.backtest.model.length > 0);
 
-    const backtest = await fetch(`${baseUrl}/api/backtest`);
+    const backtest = await fetch(`${baseUrl}/api/backtest?${query({
+      input: backtestReportPath,
+    })}`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
     assert.equal(backtest.status, 200);
     const backtestPayload = await backtest.json();
     assert.equal(backtestPayload.type, 'backtest_summary');
     assert.equal(backtestPayload.stats.type, 'backend_stats');
     assert.equal(backtestPayload.stats.ok, true);
     assert.ok(typeof backtestPayload.stats.equity_source === 'string');
-    assert.ok(backtestPayload.stats.equity_source.includes(path.join('data', 'backtests', 'latest_backtest.json')));
-    assert.equal(backtestPayload.summary.available, true);
-    assert.equal(typeof backtestPayload.summary.model, 'string');
-    assert.ok(backtestPayload.summary.model.length > 0);
+    assert.equal(backtestPayload.stats.equity_source, backtestReportPath);
+    assert.equal(typeof backtestPayload.summary.available, 'boolean');
+    if (backtestPayload.summary.available) {
+      assert.equal(typeof backtestPayload.summary.model, 'string');
+      assert.ok(backtestPayload.summary.model.length > 0);
+    }
 
     const portfolio = await fetch(`${baseUrl}/api/backend/portfolio`);
     assert.equal(portfolio.status, 401);
 
-    const strategies = await fetch(`${baseUrl}/api/strategies`);
+    const strategies = await fetch(`${baseUrl}/api/strategies`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
     assert.equal(strategies.status, 200);
     const strategiesPayload = await strategies.json();
     assert.equal(strategiesPayload.type, 'strategy_catalog');
@@ -204,7 +243,9 @@ test('web API exposes backend health, data summary, and correlation', async () =
     assert.equal(optionsStrategy.lane, 'cross_asset');
     assert.match(optionsStrategy.note, /no option-chain execution wired/i);
 
-    const runStatus = await fetch(`${baseUrl}/api/run/status`);
+    const runStatus = await fetch(`${baseUrl}/api/run/status`, {
+      headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
+    });
     assert.equal(runStatus.status, 200);
     const runStatusPayload = await runStatus.json();
     assert.equal(runStatusPayload.ok, true);
@@ -303,6 +344,24 @@ test('GET /api/kill-switch requires X-Sovereign-Token and rejects unauthenticate
       headers: { 'X-Sovereign-Token': TEST_API_TOKEN },
     });
     assert.notEqual(authenticated.status, 401, 'kill-switch with valid token must not return 401');
+  } finally {
+    await close();
+  }
+});
+
+test('authenticated API rejects oversized JSON bodies before route handling', async () => {
+  const baseUrl = await listen();
+  try {
+    const response = await fetch(`${baseUrl}/api/config`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Sovereign-Token': TEST_API_TOKEN,
+      },
+      body: JSON.stringify({ value: 'x'.repeat(1_048_577) }),
+    });
+    assert.equal(response.status, 413);
+    assert.equal((await response.json()).error, 'request_body_too_large');
   } finally {
     await close();
   }

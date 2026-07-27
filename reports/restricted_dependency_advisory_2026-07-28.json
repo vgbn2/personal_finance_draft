@@ -1,0 +1,443 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-07-28T01:26:31+07:00",
+  "scope": {
+    "mode": "read_only_lockfile_advisory",
+    "package_roots_requested": 5,
+    "package_roots_audited": 5,
+    "unaudited_roots": [],
+    "lockfiles_changed": false,
+    "packages_installed_or_updated": false,
+    "raw_registry_text_persisted_in_workspace": false
+  },
+  "interpretation": {
+    "finding_unit": "vulnerable package node reported by npm audit v2",
+    "cross_root_duplicates_possible": true,
+    "total_package_nodes": 61,
+    "unique_package_identifiers": 34,
+    "unique_advisory_ids": 57,
+    "critical_findings": 0
+  },
+  "package_roots": [
+    {
+      "root": ".",
+      "status": "findings",
+      "severity_counts": {
+        "info": 0,
+        "low": 13,
+        "moderate": 6,
+        "high": 8,
+        "critical": 0,
+        "total": 27
+      },
+      "direct": [
+        "@alpacahq/alpaca-trade-api",
+        "@modelcontextprotocol/sdk",
+        "@polymarket/clob-client-v2",
+        "ethers",
+        "onnxruntime-node",
+        "viem"
+      ],
+      "transitive": [
+        "@ethersproject/abi",
+        "@ethersproject/abstract-provider",
+        "@ethersproject/abstract-signer",
+        "@ethersproject/contracts",
+        "@ethersproject/hash",
+        "@ethersproject/hdnode",
+        "@ethersproject/json-wallets",
+        "@ethersproject/providers",
+        "@ethersproject/signing-key",
+        "@ethersproject/transactions",
+        "@ethersproject/wallet",
+        "@ethersproject/wordlists",
+        "@hono/node-server",
+        "adm-zip",
+        "axios",
+        "body-parser",
+        "brace-expansion",
+        "elliptic",
+        "fast-uri",
+        "hono",
+        "ws"
+      ],
+      "advisory_ids": [
+        "1097679",
+        "1111034",
+        "1112030",
+        "1116672",
+        "1117573",
+        "1117575",
+        "1117579",
+        "1117582",
+        "1117586",
+        "1117588",
+        "1117590",
+        "1117592",
+        "1117594",
+        "1117857",
+        "1119108",
+        "1119403",
+        "1120124",
+        "1120546",
+        "1120644",
+        "1120646",
+        "1120648",
+        "1120651",
+        "1123259",
+        "1123686",
+        "1123825",
+        "1123882",
+        "1123884",
+        "1123885",
+        "1123897",
+        "1123957",
+        "1123958",
+        "1123959",
+        "1123961",
+        "1123967",
+        "1123969",
+        "1123971",
+        "1123972",
+        "1123973",
+        "1123976",
+        "1124005",
+        "1124006",
+        "1124009",
+        "1124010",
+        "1124064",
+        "1124231",
+        "1124334"
+      ]
+    },
+    {
+      "root": "backend/api",
+      "status": "findings",
+      "severity_counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 3,
+        "critical": 0,
+        "total": 3
+      },
+      "direct": [],
+      "transitive": [
+        "engine.io",
+        "socket.io-adapter",
+        "ws"
+      ],
+      "advisory_ids": [
+        "1123259"
+      ]
+    },
+    {
+      "root": "backend/gateway",
+      "status": "findings",
+      "severity_counts": {
+        "info": 0,
+        "low": 12,
+        "moderate": 3,
+        "high": 7,
+        "critical": 0,
+        "total": 22
+      },
+      "direct": [
+        "@alpacahq/alpaca-trade-api",
+        "@polymarket/clob-client-v2",
+        "ethers",
+        "viem"
+      ],
+      "transitive": [
+        "@ethersproject/abi",
+        "@ethersproject/abstract-provider",
+        "@ethersproject/abstract-signer",
+        "@ethersproject/contracts",
+        "@ethersproject/hash",
+        "@ethersproject/hdnode",
+        "@ethersproject/json-wallets",
+        "@ethersproject/providers",
+        "@ethersproject/signing-key",
+        "@ethersproject/transactions",
+        "@ethersproject/wallet",
+        "@ethersproject/wordlists",
+        "axios",
+        "brace-expansion",
+        "elliptic",
+        "form-data",
+        "js-yaml",
+        "ws"
+      ],
+      "advisory_ids": [
+        "1097679",
+        "1111034",
+        "1112030",
+        "1116672",
+        "1117573",
+        "1117575",
+        "1117579",
+        "1117582",
+        "1117586",
+        "1117588",
+        "1117590",
+        "1117592",
+        "1117594",
+        "1117857",
+        "1119108",
+        "1119403",
+        "1120124",
+        "1120546",
+        "1120644",
+        "1120646",
+        "1120648",
+        "1120651",
+        "1120743",
+        "1121860",
+        "1123259",
+        "1123825",
+        "1123897",
+        "1123911",
+        "1123958",
+        "1123972",
+        "1124334"
+      ]
+    },
+    {
+      "root": "backend/mcp_server",
+      "status": "findings",
+      "severity_counts": {
+        "info": 0,
+        "low": 1,
+        "moderate": 2,
+        "high": 2,
+        "critical": 0,
+        "total": 5
+      },
+      "direct": [
+        "@modelcontextprotocol/sdk"
+      ],
+      "transitive": [
+        "@hono/node-server",
+        "body-parser",
+        "fast-uri",
+        "hono"
+      ],
+      "advisory_ids": [
+        "1123976",
+        "1123997",
+        "1123998",
+        "1123999",
+        "1124000",
+        "1124001",
+        "1124005",
+        "1124006",
+        "1124009",
+        "1124010",
+        "1124064",
+        "1124231"
+      ]
+    },
+    {
+      "root": "Frontend/dashboard",
+      "status": "findings",
+      "severity_counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 4,
+        "critical": 0,
+        "total": 4
+      },
+      "direct": [
+        "vite"
+      ],
+      "transitive": [
+        "engine.io-client",
+        "postcss",
+        "ws"
+      ],
+      "advisory_ids": [
+        "1120784",
+        "1123259",
+        "1123525",
+        "1124288"
+      ]
+    }
+  ],
+  "supply_chain_observations": {
+    "git_dependencies": [
+      {
+        "root": ".",
+        "package": "@mathieuc/tradingview",
+        "transport": "git+https",
+        "immutable_commit_pinned": true,
+        "commit": "574a9948b2adb3396b934c612f58d2ab103a6915"
+      }
+    ],
+    "packages_with_install_scripts": [
+      {
+        "root": ".",
+        "package": "onnxruntime-node",
+        "version": "1.27.0",
+        "direct": true
+      },
+      {
+        "root": "Frontend/dashboard",
+        "package": "esbuild",
+        "version": "0.25.12",
+        "direct": false
+      },
+      {
+        "root": "Frontend/dashboard",
+        "package": "fsevents",
+        "version": "2.3.3",
+        "direct": false,
+        "platform_optional": true
+      }
+    ],
+    "deprecated_packages": [
+      {
+        "package": "@humanwhocodes/config-array",
+        "version": "0.13.0",
+        "roots": [
+          ".",
+          "backend/gateway"
+        ]
+      },
+      {
+        "package": "@humanwhocodes/object-schema",
+        "version": "2.0.3",
+        "roots": [
+          ".",
+          "backend/gateway"
+        ]
+      },
+      {
+        "package": "eslint",
+        "version": "8.57.1",
+        "roots": [
+          ".",
+          "backend/gateway"
+        ]
+      },
+      {
+        "package": "glob",
+        "version": "7.2.3",
+        "roots": [
+          ".",
+          "backend/gateway"
+        ]
+      },
+      {
+        "package": "inflight",
+        "version": "1.0.6",
+        "roots": [
+          ".",
+          "backend/gateway"
+        ]
+      },
+      {
+        "package": "nats",
+        "version": "1.4.12",
+        "roots": [
+          ".",
+          "backend/gateway"
+        ]
+      },
+      {
+        "package": "nuid",
+        "version": "1.1.6",
+        "roots": [
+          ".",
+          "backend/gateway"
+        ]
+      },
+      {
+        "package": "rimraf",
+        "version": "3.0.2",
+        "roots": [
+          ".",
+          "backend/gateway"
+        ]
+      }
+    ]
+  },
+  "recommended_remediation_batches": [
+    {
+      "priority": 1,
+      "name": "network_boundary_highs",
+      "scope": [
+        "ws",
+        "engine.io",
+        "engine.io-client",
+        "socket.io-adapter",
+        "axios",
+        "@alpacahq/alpaca-trade-api",
+        "viem"
+      ],
+      "reason": "High findings cross API, dashboard, gateway, and provider-facing code.",
+      "method": "Upgrade direct owners in isolated lockfile batches, then run API, websocket, provider-adapter, and paper-only integration tests."
+    },
+    {
+      "priority": 2,
+      "name": "mcp_http_stack",
+      "scope": [
+        "@modelcontextprotocol/sdk",
+        "@hono/node-server",
+        "hono",
+        "body-parser",
+        "fast-uri"
+      ],
+      "reason": "The MCP boundary has one direct moderate and transitive high findings.",
+      "method": "Upgrade the MCP SDK and its HTTP stack together, then rebuild TypeScript and rerun authenticated tool/resource contract tests."
+    },
+    {
+      "priority": 3,
+      "name": "runtime_and_dashboard_build",
+      "scope": [
+        "onnxruntime-node",
+        "adm-zip",
+        "vite",
+        "postcss"
+      ],
+      "reason": "Direct runtime and build-tool dependencies account for root and dashboard high findings.",
+      "method": "Upgrade in separate batches; verify native model loading, fresh install, dashboard build, responsive tests, and install-script allowlisting."
+    },
+    {
+      "priority": 4,
+      "name": "web3_major_line",
+      "scope": [
+        "ethers",
+        "@ethersproject/*",
+        "@polymarket/clob-client-v2",
+        "elliptic"
+      ],
+      "reason": "The low and moderate web3 graph is broad and likely requires coordinated API compatibility work.",
+      "method": "Treat as a compatibility migration with signing fixtures and read-only/paper Polymarket tests; do not combine with live enablement."
+    },
+    {
+      "priority": 5,
+      "name": "toolchain_and_deprecation_cleanup",
+      "scope": [
+        "eslint",
+        "glob",
+        "inflight",
+        "nats",
+        "nuid",
+        "rimraf",
+        "@humanwhocodes/*"
+      ],
+      "reason": "Deprecated packages increase maintenance and supply-chain burden even when not the immediate runtime boundary.",
+      "method": "Upgrade direct tooling and legacy messaging owners, regenerate lockfiles deterministically, and rerun the fresh-install proof."
+    }
+  ],
+  "release_gate": {
+    "security_check_passed": false,
+    "paper_only_use": "conditional",
+    "live_execution": "blocked",
+    "blocking_reasons": [
+      "High-severity package findings remain in all five package roots.",
+      "No remediation upgrades were authorized or applied in this read-only check."
+    ]
+  }
+}
