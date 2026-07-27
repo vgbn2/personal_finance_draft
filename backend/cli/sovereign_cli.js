@@ -17,12 +17,13 @@ const { commandBacktest, commandOptimize, commandEdgeDecay, commandDemo, command
 const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandClearApiCache, commandValidate, commandPrune, commandLoc, commandUniverse, commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIntradayAccumulate, commandIntradayRollup } = require('./commands/data/data.js');
 const { commandBackfillDaemon, commandStopBackfillDaemon } = require('./commands/data/backfill_daemon.js');
 const { commandTrade, buildTradeGatewayLaunch, commandMt5, commandMt5Profile, commandMt5Connect, commandMt5Bridge, commandAutoTrade, commandAddPlatform, commandAgent, commandPolymarket, commandBot } = require('./commands/trade/trade.js');
-const { commandLogin, commandRegister, commandLogout, commandAuthStatus } = require('./commands/account/auth.js');
+const { commandAuth, commandLogin, commandRegister, commandLogout, commandAuthStatus } = require('./commands/account/auth.js');
 const { commandSettings } = require('./commands/settings/settings.js');
 const { commandRunnerMenu } = require('./commands/runner/run.js');
 const { commandMl } = require('./commands/research/ml.js');
 const { commandBias } = require('./commands/research/bias.js');
 const { commandScorecard } = require('./commands/research/scorecard.js');
+const { commandCombined } = require('./commands/research/combined.js');
 const { installDoubleCtrlCExit } = require('./lib/exit_guard');
 
 installDoubleCtrlCExit();
@@ -68,6 +69,7 @@ async function handleCommand(args) {
     // --- Research (manifest: research) ---
     bias:             (a) => commandBias(a),
     scorecard:        (a) => commandScorecard(a),
+    combined:         (a) => commandCombined(a),
     bt:               (a) => commandBacktest(a),
     features:         (a) => commandIndicators(a),
     ml:               (a) => commandMl(a),
@@ -95,6 +97,7 @@ async function handleCommand(args) {
     register:         (a) => commandRegister(a),
     logout:           () =>  commandLogout(),
     'auth-status':    () =>  commandAuthStatus(),
+    auth:             (a) => commandAuth(a),
     // --- CLI-only aliases (not in TUI manifest) ---
     clean:            (a) => commandCacheClean(a),   // alias: cache-clean
     validate:         (a) => commandValidate(a),      // alias: check

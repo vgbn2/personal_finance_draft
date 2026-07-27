@@ -26,6 +26,7 @@ import {
 import {
   getMarketBias, getMarketBiasSchema,
   getScorecard, getScorecardSchema,
+  getCombinedAnalysis, getCombinedAnalysisSchema,
   getMarketSignal, getMarketSignalSchema,
 } from './tools/research';
 import { getReportResource, listReportResources } from './resources/reports';
@@ -34,6 +35,37 @@ import {
   getPolymarketPortfolio, getPolymarketPortfolioSchema,
   placePolymarketOrder, placePolymarketOrderSchema,
 } from './tools/polymarket';
+import {
+  authorizeMcpResource,
+  authorizeMcpTool,
+  resolveMcpPrincipal,
+} from './lib/access_control';
+
+function requireMcpIdentity(): void {
+  if (!resolveMcpPrincipal()) {
+    throw new McpError(ErrorCode.InvalidRequest, 'authentication_required');
+  }
+}
+
+function requireToolCapability(name: string, args: Record<string, unknown>): void {
+  const decision = authorizeMcpTool(name, args);
+  if (!decision.allowed) {
+    throw new McpError(
+      ErrorCode.InvalidRequest,
+      `${decision.reason}; required=${decision.required.join(',') || 'classified capability'}`,
+    );
+  }
+}
+
+function requireResourceCapability(): void {
+  const decision = authorizeMcpResource();
+  if (!decision.allowed) {
+    throw new McpError(
+      ErrorCode.InvalidRequest,
+      `${decision.reason}; required=${decision.required.join(',')}`,
+    );
+  }
+}
 
 const server = new Server(
   {
@@ -51,8 +83,10 @@ const server = new Server(
 /**
  * Tool Handlers
  */
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  requireMcpIdentity();
+  return {
+    tools: [
     {
       name: 'get_system_status',
       description: 'Get Sovereign system health, phase, and C++ core status',
@@ -242,6 +276,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
+      name: 'get_combined_analysis',
+      description: 'Compose exact-asset cached technical and point-in-time macro evidence. Research-only; never refreshes providers or places orders.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          asset_id: { type: 'string', description: 'Canonical exact asset id such as fx_pair:OTC:EURUSD' },
+          decision_at: { type: 'string', description: 'Optional ISO-8601 decision timestamp' },
+          timeframes: { type: 'string', description: 'Comma-separated cached technical timeframes' },
+        },
+        required: ['asset_id'],
+      },
+    },
+    {
       name: 'backfill_family',
       description: 'Write cached data for an asset family. Requires execute=true to acknowledge the write.',
       inputSchema: {
@@ -302,11 +349,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ['token_id', 'size'],
       },
     },
-  ],
-}));
+    ],
+  };
+});
 
 server.setRequestHandler(CallToolRequestSchema, async (request): Promise<any> => {
   try {
+    requireToolCapability(
+      request.params.name,
+      (request.params.arguments || {}) as Record<string, unknown>,
+    );
     switch (request.params.name) {
       case 'get_system_status':
         return getSystemStatus();
@@ -366,6 +418,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<any> =>
         const args = getMarketSignalSchema.parse(request.params.arguments);
         return getMarketSignal(args);
       }
+      case 'get_combined_analysis': {
+        const args = getCombinedAnalysisSchema.parse(request.params.arguments);
+        return getCombinedAnalysis(args);
+      }
       case 'backfill_family': {
         const args = backfillFamilySchema.parse(request.params.arguments);
         return backfillFamily(args);
@@ -399,11 +455,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<any> =>
 /**
  * Resource Handlers
  */
-server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-  resources: listReportResources(),
-}));
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  requireResourceCapability();
+  return { resources: listReportResources() };
+});
 
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  requireResourceCapability();
   const uri = request.params.uri;
   if (!uri.startsWith('sovereign://reports/')) {
     throw new McpError(ErrorCode.InvalidParams, `Unknown resource URI: ${uri}`);

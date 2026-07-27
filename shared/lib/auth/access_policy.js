@@ -58,23 +58,8 @@ const VALID_ROLES = Object.freeze(Object.keys(ROLE_CAPABILITIES));
 
 const PUBLIC_GET_ROUTES = new Set([
   '/health',
-  '/api/status',
-  '/api/data/summary',
-  '/api/analytics',
   '/api/auth/status',
-  '/api/backtest',
-  '/api/correlation',
-  '/api/backend/stats',
-  '/api/universe',
-  '/api/cache/universe',
-  '/api/indicators',
-  '/api/quotes/status',
-  '/api/signal',
   '/api/supabase/config',
-  '/api/system/status',
-  '/api/strategies',
-  '/api/sigma-band',
-  '/api/run/status',
 ]);
 
 const CLIENT_ROUTE_CAPABILITIES = Object.freeze({
@@ -90,6 +75,21 @@ const CLIENT_ROUTE_CAPABILITIES = Object.freeze({
 });
 
 const PROTECTED_GET_CAPABILITIES = Object.freeze({
+  '/api/status': CAPABILITIES.STATUS_READ,
+  '/api/data/summary': CAPABILITIES.DATA_READ,
+  '/api/analytics': CAPABILITIES.RESEARCH_READ,
+  '/api/backtest': CAPABILITIES.RESEARCH_READ,
+  '/api/correlation': CAPABILITIES.RESEARCH_READ,
+  '/api/backend/stats': CAPABILITIES.STATUS_READ,
+  '/api/universe': CAPABILITIES.DATA_READ,
+  '/api/cache/universe': CAPABILITIES.DATA_READ,
+  '/api/indicators': CAPABILITIES.RESEARCH_READ,
+  '/api/quotes/status': CAPABILITIES.DATA_READ,
+  '/api/signal': CAPABILITIES.RESEARCH_READ,
+  '/api/system/status': CAPABILITIES.STATUS_READ,
+  '/api/strategies': CAPABILITIES.RESEARCH_READ,
+  '/api/sigma-band': CAPABILITIES.RESEARCH_READ,
+  '/api/run/status': CAPABILITIES.STATUS_READ,
   '/api/backend/portfolio': CAPABILITIES.PORTFOLIO_READ,
   '/api/cache/list': CAPABILITIES.HOST_INSPECT,
   '/api/config': CAPABILITIES.USER_CONFIG_READ,
@@ -101,11 +101,14 @@ const PROTECTED_GET_CAPABILITIES = Object.freeze({
   '/api/market/monitor': CAPABILITIES.DATA_READ,
   '/api/system/service-health': CAPABILITIES.DATA_READ,
   '/api/scorecard': CAPABILITIES.RESEARCH_READ,
+  '/api/combined-analysis': CAPABILITIES.RESEARCH_READ,
 });
 
 const MUTATION_CAPABILITIES = Object.freeze({
   '/api/config': CAPABILITIES.USER_CONFIG_WRITE,
   '/api/signal/promote': CAPABILITIES.SIGNAL_PROMOTE,
+  '/api/combined-analysis/promote': CAPABILITIES.SIGNAL_PROMOTE,
+  '/api/combined-analysis/paper-cycle': CAPABILITIES.PAPER_OPERATE,
   '/api/bot/cycle': CAPABILITIES.PAPER_OPERATE,
   '/api/bot/sell': CAPABILITIES.PAPER_OPERATE,
   '/api/kill-switch': CAPABILITIES.SAFETY_CONTROL,
@@ -138,6 +141,7 @@ function buildPrincipal({
   authenticated = false,
   source = 'none',
   sessionId = null,
+  actingUserId = null,
 } = {}) {
   const normalizedRole = normalizeRole(role);
   const effectiveCapabilities = capabilities === null
@@ -151,6 +155,7 @@ function buildPrincipal({
     authenticated: authenticated === true,
     source: String(source || 'none'),
     session_id: sessionId ? String(sessionId) : null,
+    acting_user_id: actingUserId ? String(actingUserId) : null,
   });
 }
 
@@ -188,15 +193,15 @@ function requiredCapabilities({
     return [PROTECTED_GET_CAPABILITIES[route]];
   }
 
-  if (hasClientToken && CLIENT_ROUTE_CAPABILITIES[route]) {
-    return [CLIENT_ROUTE_CAPABILITIES[route]];
-  }
-
   if (PUBLIC_GET_ROUTES.has(route)) return [];
 
-  // Static assets and unknown GET routes retain the current public/404 behavior.
-  // Registered API routes are contract-tested so a new route cannot silently
-  // bypass classification.
+  // Unknown API reads fail closed. Static assets never reach this policy with
+  // an /api prefix and remain publicly reachable for the login shell.
+  if (route === '/api' || route.startsWith('/api/')) {
+    return [CAPABILITIES.STATUS_READ];
+  }
+
+  // Non-API static assets retain public behavior.
   return [];
 }
 

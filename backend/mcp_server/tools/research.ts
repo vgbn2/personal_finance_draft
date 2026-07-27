@@ -43,6 +43,27 @@ export async function getScorecard(args: z.infer<typeof getScorecardSchema>): Pr
   return invokeSovereignCli(buildScorecardArgs(args));
 }
 
+export const getCombinedAnalysisSchema = z.object({
+  asset_id: z.string().min(3).describe('Canonical exact asset id, for example fx_pair:OTC:EURUSD'),
+  decision_at: z.string().datetime().optional().describe('ISO-8601 decision timestamp; defaults to now'),
+  timeframes: z.string().optional().default('1h,4h,1d').describe('Comma-separated cached technical timeframes'),
+});
+
+export function buildCombinedAnalysisArgs(args: z.infer<typeof getCombinedAnalysisSchema>): string[] {
+  const cliArgs = [
+    'combined',
+    '--asset-id', args.asset_id,
+    '--tf', args.timeframes,
+    '--json',
+  ];
+  if (args.decision_at) cliArgs.push('--decision-at', args.decision_at);
+  return cliArgs;
+}
+
+export async function getCombinedAnalysis(args: z.infer<typeof getCombinedAnalysisSchema>): Promise<ToolResponse> {
+  return invokeSovereignCli(buildCombinedAnalysisArgs(args));
+}
+
 export const getMarketSignalSchema = z.object({
   symbol: z.string().optional().default('BTCUSDT').describe('Cached symbol to evaluate (e.g. BTCUSDT)'),
   timeframes: z.string().optional().default('1h,4h,1d').describe('Comma-separated cached timeframes'),
