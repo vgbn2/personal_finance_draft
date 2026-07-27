@@ -76,8 +76,40 @@ Protected operations declare capabilities through `shared/lib/auth/access_policy
   Supabase access token.
 - Every registered API route is covered by a policy-classification contract.
 
-Public GET routes retain their current local-first behavior. Wider-than-loopback exposure remains a separate
-security change and is not approved by the role model.
+Only `/health`, `/api/auth/status`, and `/api/supabase/config` are public GET routes. All other API reads
+require a verified human or service identity. Wider-than-loopback exposure remains a separate security change
+and is not approved by the role model.
+
+## Service and MCP identities
+
+Automation uses one-time service credentials stored as salted hashes in
+`storage/runtime/service_principals.json`. Create separate identities for separate consumers; do not reuse the
+host bootstrap token as an MCP credential:
+
+```bash
+sovereign auth service create \
+  --id mcp-research \
+  --capabilities status.read,data.read,research.read \
+  --acting-user-id <stable-user-id>
+```
+
+The command requires the protected local `SOVEREIGN_API_TOKEN` bootstrap credential and displays the new token
+once. Put that distinct value in `SOVEREIGN_MCP_SERVICE_TOKEN`. Use `sovereign auth service list` to inspect
+metadata and `sovereign auth service revoke --id mcp-research` to revoke it. The registry never stores plaintext
+tokens. A service's optional `acting_user_id` determines its user-scoped workflow ledger; caller-supplied request
+fields cannot change that scope.
+
+The combined research path is:
+
+```text
+GET /api/combined-analysis
+  -> POST /api/combined-analysis/promote      (signal.promote)
+  -> POST /api/combined-analysis/paper-cycle  (paper.operate)
+```
+
+It joins only exact canonical asset IDs, reads cached technical and point-in-time macro evidence, and records
+promotions/paper intents in a hash-chained principal-scoped log. It has no live provider-submission dependency.
+`live.execute` remains owner-only and is never implied by promotion or paper-operation capabilities.
 
 ## IP and session records
 

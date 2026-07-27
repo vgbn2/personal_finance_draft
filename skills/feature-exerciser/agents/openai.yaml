@@ -1,0 +1,4 @@
+interface:
+  display_name: "Feature Exerciser"
+  short_description: "Safely exercise and verify current repo features"
+  default_prompt: "Use $feature-exerciser to exercise current repository features and record bounded evidence."

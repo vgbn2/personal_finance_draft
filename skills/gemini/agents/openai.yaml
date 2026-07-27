@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gemini"
+  short_description: "Route CLI sessions through canonical boot"
+  default_prompt: "Use $gemini to boot this repository through $session-orchestrator and route the current task."

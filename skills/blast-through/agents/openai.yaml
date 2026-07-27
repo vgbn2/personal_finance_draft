@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blast Through"
+  short_description: "Run focused evidence-first repository audits"
+  default_prompt: "Use $blast-through to audit this repository surface and report verified findings without implementing fixes."

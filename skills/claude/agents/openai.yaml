@@ -1,0 +1,4 @@
+interface:
+  display_name: "Claude"
+  short_description: "Route review work to canonical audit modes"
+  default_prompt: "Use $claude to route this review through the appropriate $blast-through audit mode."

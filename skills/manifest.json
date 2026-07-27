@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skills": [
+    "blast-through",
+    "claude",
+    "codex",
+    "feature-exerciser",
+    "gemini",
+    "mass-implement",
+    "polymarket-history-backfill",
+    "refine-suggestion",
+    "session-orchestrator"
+  ]
+}

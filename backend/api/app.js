@@ -42,14 +42,20 @@ const WEB_PUBLIC_ROOT = path.join(REPO_ROOT, 'Frontend', 'dashboard', 'dist');
 const INDEX_PATH = path.join(WEB_PUBLIC_ROOT, 'index.html');
 const PORT = Number.parseInt(process.env.SOVEREIGN_WEB_PORT || process.env.PORT || '8787', 10);
 const HOST = process.env.SOVEREIGN_WEB_HOST || '127.0.0.1';
+const MAX_BODY_BYTES = Number.parseInt(process.env.SOVEREIGN_API_MAX_BODY_BYTES || '1048576', 10);
 
 // --- SECURITY MEASURES ---
 const CLIENT_TOKEN = process.env.SOVEREIGN_CLIENT_TOKEN || '';
+const CONFIGURED_ORIGINS = String(process.env.SOVEREIGN_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
 const ALLOWED_ORIGINS = [
   `http://${HOST}:${PORT}`, 
   `http://localhost:${PORT}`,
   'http://localhost:3000', // Dev server
-  'http://127.0.0.1:3000'
+  'http://127.0.0.1:3000',
+  ...CONFIGURED_ORIGINS,
 ];
 
 const RATE_LIMITS = new Map(); // Simple IP-based rate limiting
@@ -89,13 +95,22 @@ function isAllowedOrigin(origin, req) {
 }
 
 function setSecurityHeaders(res, origin, req) {
+  let authOrigin = '';
+  try {
+    authOrigin = process.env.SOVEREIGN_SUPABASE_URL
+      ? new URL(process.env.SOVEREIGN_SUPABASE_URL).origin
+      : '';
+  } catch (_) {
+    authOrigin = '';
+  }
+  const connectSources = ["'self'", ...(authOrigin ? [authOrigin] : [])].join(' ');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https:;");
+  res.setHeader('Content-Security-Policy', `default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ${connectSources};`);
   if (origin && isAllowedOrigin(origin, req)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
@@ -274,13 +289,28 @@ function queryObject(url) {
 }
 
 async function readBody(req) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     let raw = '';
-    req.on('data', chunk => { raw += chunk; });
+    let bytes = 0;
+    let exceeded = false;
+    req.on('data', chunk => {
+      bytes += chunk.length;
+      if (bytes > MAX_BODY_BYTES) {
+        exceeded = true;
+        return;
+      }
+      raw += chunk;
+    });
     req.on('end', () => {
+      if (exceeded) {
+        const error = new Error('request_body_too_large');
+        error.statusCode = 413;
+        reject(error);
+        return;
+      }
       try { resolve(JSON.parse(raw)); } catch { resolve({}); }
     });
-    req.on('error', () => resolve({}));
+    req.on('error', reject);
   });
 }
 
@@ -318,7 +348,7 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 404, { ok: false, error: 'not_found' });
     })
     .catch((error) => {
-      sendJson(res, 500, { ok: false, error: error.message });
+      sendJson(res, error.statusCode || 500, { ok: false, error: error.message });
     });
 });
 

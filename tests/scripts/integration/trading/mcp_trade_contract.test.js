@@ -7,6 +7,7 @@ const { placePolymarketOrder } = require('../../../../dist/mcp_server/tools/poly
 const { backfill, buildBackfillAllArgs } = require('../../../../dist/mcp_server/tools/data.js');
 const {
   buildMarketBiasArgs,
+  buildCombinedAnalysisArgs,
   buildScorecardArgs,
   buildMarketSignalDecision,
 } = require('../../../../dist/mcp_server/tools/research.js');
@@ -73,6 +74,15 @@ test('mcp scorecard is cached-only and fail-closed by default', () => {
     allow_degraded: false,
   }), [
     'scorecard', '--family', 'crypto', '--tf', '1h,4h,1d', '--min-conf', '0.55', '--top', '10', '--no-backfill', '--envelope',
+  ]);
+});
+
+test('mcp combined analysis requires an exact asset id and stays cached-only', () => {
+  assert.deepEqual(buildCombinedAnalysisArgs({
+    asset_id: 'fx_pair:OTC:EURUSD',
+    timeframes: '1h,4h,1d',
+  }), [
+    'combined', '--asset-id', 'fx_pair:OTC:EURUSD', '--tf', '1h,4h,1d', '--json',
   ]);
 });
 

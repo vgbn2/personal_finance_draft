@@ -612,14 +612,20 @@ async function runBackendCorrelation(args = [], preSelectedSymbol = null) {
   // Load universe once — reused for both symbol resolution and availability check
   const cachedUniverse = utils.get_Current_Universe_Symbols();
   const resolvedArr = [...new Set(utils.resolveSymbols(symbols, cachedUniverse))];
+  const userInput = optionValue(args, '--input', null);
 
   // Pre-filter: drop symbols with no data in the cache before hitting C++
   const cachedSet = new Set(cachedUniverse.map(u => u.symbol));
   const requestedTimeframe = optionValue(args, '--timeframe', '1d');
 
-  // Allow symbols if they are in cache OR in the formula registry
-  const available = resolvedArr.filter(s => cachedSet.has(s) || FORMULA_REGISTRY[s]);
-  const unavailable = resolvedArr.filter(s => !cachedSet.has(s) && !FORMULA_REGISTRY[s]);
+  // Explicit input files are self-contained sources and must not depend on an
+  // unrelated ignored host cache to establish symbol availability.
+  const available = userInput
+    ? resolvedArr
+    : resolvedArr.filter(s => cachedSet.has(s) || FORMULA_REGISTRY[s]);
+  const unavailable = userInput
+    ? []
+    : resolvedArr.filter(s => !cachedSet.has(s) && !FORMULA_REGISTRY[s]);
   if (unavailable.length > 0) {
     console.log(`\x1b[33m⚠ No cached data — skipped (${unavailable.length}): ${unavailable.slice(0, 8).join(', ')}${unavailable.length > 8 ? ` +${unavailable.length - 8} more` : ''}\x1b[0m`);
   }
@@ -633,7 +639,6 @@ async function runBackendCorrelation(args = [], preSelectedSymbol = null) {
 
   // Build a focused temp snapshot: only requested symbols+timeframe.
   // Reduces C++ I/O from ~186MB full archive to a few MB of relevant records.
-  const userInput = optionValue(args, '--input', null);
   let inputPath = userInput || DEFAULT_HISTORY;
   let tmpSnapshot = null;
   let lastPrices = {};

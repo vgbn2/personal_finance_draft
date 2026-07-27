@@ -8,6 +8,7 @@ const {
   normalizeRole,
 } = require('../../../../shared/lib/auth/access_policy');
 const { getAuthStatus } = require('./supabase_client');
+const { authenticateServiceToken } = require('../../../../shared/lib/auth/service_principals');
 
 const CLIENT_CAPABILITIES = Object.freeze([
   CAPABILITIES.STATUS_READ,
@@ -45,6 +46,14 @@ function tokenSessionId(token) {
   return crypto.createHash('sha256').update(String(token)).digest('hex').slice(0, 24);
 }
 
+function isLoopbackRequest(req) {
+  const address = req && req.socket ? String(req.socket.remoteAddress || '') : '';
+  if (!address) return true;
+  return address === '127.0.0.1'
+    || address === '::1'
+    || address === '::ffff:127.0.0.1';
+}
+
 function humanSessionId(userId) {
   if (!userId) return null;
   // Supabase access tokens rotate routinely. Bind network-risk history to the
@@ -73,9 +82,7 @@ function resolveHumanRole(user, env = process.env) {
   const roleMap = parseUserRoleMap(env.SOVEREIGN_USER_ROLE_MAP);
   if (user && user.id && roleMap[user.id]) return roleMap[user.id];
   const trustedClaim = user && (
-    user.access_role
-    || user.sovereign_role
-    || (user.app_metadata && user.app_metadata.sovereign_role)
+    user.app_metadata && user.app_metadata.sovereign_role
   );
   const claimedRole = normalizeRole(trustedClaim);
   if (claimedRole && claimedRole !== 'service') return claimedRole;
@@ -92,7 +99,12 @@ async function resolvePrincipal(req, {
   const tokens = requestTokens(req);
 
   for (const token of tokens) {
-    if (apiToken && constantTimeEqual(token.value, apiToken)) {
+    const service = authenticateServiceToken(token.value, { env });
+    if (service) return service;
+  }
+
+  for (const token of tokens) {
+    if (isLoopbackRequest(req) && apiToken && constantTimeEqual(token.value, apiToken)) {
       return buildPrincipal({
         id: 'host-api',
         identityType: 'service',
@@ -105,7 +117,7 @@ async function resolvePrincipal(req, {
   }
 
   for (const token of tokens) {
-    if (clientToken && constantTimeEqual(token.value, clientToken)) {
+    if (isLoopbackRequest(req) && clientToken && constantTimeEqual(token.value, clientToken)) {
       return buildPrincipal({
         id: 'remote-client',
         identityType: 'service',
@@ -164,5 +176,6 @@ module.exports = {
   resolvePrincipal,
   resolveSocketPrincipal,
   humanSessionId,
+  isLoopbackRequest,
   tokenSessionId,
 };

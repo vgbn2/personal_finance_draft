@@ -3,7 +3,9 @@
 Source of truth: `backend/cli/tui/manifest.js` + `backend/cli/sovereign_cli.js`
 Updated: 2026-06-11
 
-Current audit baseline: this map is aligned to the 2026-06-11 feature pass. Use `workspace/FEATURE_TEST_MATRIX.md` for the verification ledger and `workspace/STATE.md` for the append-only repo truth.
+Current audit baseline: this map is aligned to the 2026-06-11 feature pass. Use
+`workspace/reports/FEATURE_TEST_MATRIX.md` for the verification ledger and `workspace/STATE.md` for
+append-only repo truth. Re-run a row before treating this historical baseline as current evidence.
 
 Legend:
 - `PASS`
