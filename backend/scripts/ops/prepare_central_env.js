@@ -5,7 +5,13 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { REPO_ROOT } = require('../../../shared/lib/runtime/paths.js');
-const { aliasesForCentralCopy } = require('../../../shared/lib/runtime/environment_manifest.js');
+const {
+  EXPECTED_COMPOSE_SERVICES,
+  aliasesForCentralCopy,
+  loadEnvironmentManifest,
+  projectEnvironmentForComposeService,
+  validateComposeServiceEnvironment,
+} = require('../../../shared/lib/runtime/environment_manifest.js');
 const { parseEnvFile } = require('./central_host_preflight.js');
 
 const SOURCE_ALIASES = aliasesForCentralCopy();
@@ -45,6 +51,26 @@ function renderCentralEnvironment(template, source, options = {}) {
   return { rendered, copiedKeys };
 }
 
+function buildComposeServiceProjectionReport(environment) {
+  const manifest = loadEnvironmentManifest();
+  const services = EXPECTED_COMPOSE_SERVICES.map((serviceName) => {
+    const projected = projectEnvironmentForComposeService(environment, serviceName);
+    const validation = validateComposeServiceEnvironment(serviceName, projected);
+    return Object.freeze({
+      ...validation,
+      projected_keys: Object.freeze(Object.keys(projected).sort()),
+      fixed_override_keys: Object.freeze(
+        Object.keys(manifest.compose_services[serviceName].fixed_overrides).sort(),
+      ),
+    });
+  });
+  return Object.freeze({
+    ok: services.every((service) => service.ok),
+    type: 'compose_service_projection_preview',
+    services: Object.freeze(services),
+  });
+}
+
 function prepareCentralEnvironment(options = {}) {
   const repoRoot = path.resolve(options.repoRoot || REPO_ROOT);
   const templatePath = path.resolve(options.templatePath || path.join(repoRoot, '.env.central.example'));
@@ -68,6 +94,7 @@ function prepareCentralEnvironment(options = {}) {
     fs.rmSync(temporaryPath, { force: true });
   }
 
+  const composeContract = buildComposeServiceProjectionReport(parseEnvFile(outputPath));
   return {
     ok: true,
     type: 'central_environment_prepared',
@@ -77,6 +104,7 @@ function prepareCentralEnvironment(options = {}) {
     generated_client_token: true,
     copied_keys: copiedKeys.sort(),
     execution_credentials_copied: false,
+    compose_contract: composeContract,
   };
 }
 
@@ -106,6 +134,7 @@ if (require.main === module) {
 
 module.exports = {
   SOURCE_ALIASES,
+  buildComposeServiceProjectionReport,
   encodeEnvValue,
   prepareCentralEnvironment,
   renderCentralEnvironment,

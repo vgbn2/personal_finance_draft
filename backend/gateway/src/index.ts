@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import * as fs from 'node:fs/promises';
 import * as crypto from 'node:crypto';
 import * as path from 'node:path';
@@ -828,6 +827,7 @@ Commands:
   buy <symbol> <qty> [type] [price]    Place a buy order
   sell <symbol> <qty> [type] [price]   Place a sell order
   balance                              Show account balance
+  positions                            Show account positions
   aggregate_portfolio                  Aggregate balances across all brokers
   polymarket portfolio                 Show pUSD, open orders, and filled positions
   polymarket debug                     Show signer/funder, balance, allowance, and account diagnostics
@@ -2007,6 +2007,12 @@ async function fetchPolymarketInvestigate(args: string[]): Promise<any> {
 
 export async function main() {
   const args = process.argv.slice(2);
+  const environmentSurface = process.env.SOVEREIGN_ENVIRONMENT_SURFACE;
+  if (!['gateway_public', 'gateway_account', 'execution'].includes(String(environmentSurface || ''))) {
+    console.error('environment_surface_required');
+    process.exitCode = 1;
+    return;
+  }
   
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     printUsage();
@@ -2021,7 +2027,9 @@ export async function main() {
   const useJson = args.includes('--json');
   const adapter = isLive
     ? new AlpacaAdapter({ simulateIfMissingCredentials: false })
-    : new SimulationAdapter();
+    : environmentSurface === 'gateway_account'
+      ? new AlpacaAdapter({ simulateIfMissingCredentials: false })
+      : new SimulationAdapter();
   const gateway = new ExecutionGateway({ dryRun: !isLive, adapter });
   
   const command = args[0].toLowerCase();
@@ -2115,6 +2123,13 @@ export async function main() {
         console.log(JSON.stringify(balances));
     } else {
         console.log(`[GATEWAY] Current Portfolio Balances:`, balances);
+    }
+  } else if (command === 'positions') {
+    const positions = await adapter.getPositions();
+    if (useJson) {
+      console.log(JSON.stringify({ ok: true, positions }));
+    } else {
+      console.log(`[GATEWAY] Current Positions:`, positions);
     }
   } else if (command === 'aggregate_portfolio') {
     const isVerbose = !useJson;

@@ -21,6 +21,7 @@ test('polymarket auth-health reports not_configured when creds are absent', () =
     encoding: 'utf8',
     env: {
       ...process.env,
+      SOVEREIGN_ENVIRONMENT_SURFACE: 'gateway_account',
       POLYMARKET_PRIVATE_KEY: '',
       POLYMARKET_API_KEY: '',
       POLYMARKET_API_SECRET: '',

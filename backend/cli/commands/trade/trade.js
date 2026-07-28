@@ -344,11 +344,14 @@ async function commandTrade(args) {
   }
 
   // The PIN is consumed by the local gate and must not be exposed in child argv.
-  const launch = buildTradeGatewayLaunch(stripFlagValue(args, '--pin'));
+  const launch = buildTradeGatewayLaunch(stripFlagValue(args, '--pin'), {
+    env: hasFlag(args, '--live') ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {},
+  });
   const result = spawnSync(launch.command, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
     shell: launch.shell ?? false,
+    env: launch.env,
   });
   if (result.error) {
     console.error(`Trade gateway failed to start: ${result.error.message}`);
@@ -431,15 +434,14 @@ async function commandBot(args) {
   }
   const gatewayArgs = ['bot', sub, ...args.slice(1)];
   if (hasFlag(args, '--json')) gatewayArgs.push('--json');
-  const launch = buildTradeGatewayLaunch(gatewayArgs);
+  const launch = buildTradeGatewayLaunch(gatewayArgs, {
+    env: liveAuthorized ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {},
+  });
   const result = spawnSync(launch.command, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
     shell: launch.shell ?? false,
-    env: {
-      ...process.env,
-      ...(liveAuthorized ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {}),
-    },
+    env: launch.env,
   });
   return result.status ?? 0;
 }

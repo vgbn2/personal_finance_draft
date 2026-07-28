@@ -4,6 +4,7 @@ const DEFAULT_TEST_TARGETS = [
   'tests/scripts/**/*.test.js',
   'tests/web/**/*.test.js',
 ];
+const DEFAULT_TEST_CONCURRENCY = 2;
 
 const OPTIONS_WITH_VALUES = new Set([
   '--import',
@@ -41,8 +42,12 @@ function splitRunnerArgs(argv) {
 
 function buildArgs(argv = []) {
   const { options, targets } = splitRunnerArgs(argv);
+  const hasConcurrency = options.some(
+    (option) => option === '--test-concurrency' || option.startsWith('--test-concurrency='),
+  );
   return [
     '--test',
+    ...(!hasConcurrency ? [`--test-concurrency=${DEFAULT_TEST_CONCURRENCY}`] : []),
     ...options,
     ...(targets.length > 0 ? targets : DEFAULT_TEST_TARGETS),
   ];
@@ -64,6 +69,7 @@ function main(argv = process.argv.slice(2)) {
 if (require.main === module) process.exit(main());
 
 module.exports = {
+  DEFAULT_TEST_CONCURRENCY,
   DEFAULT_TEST_TARGETS,
   buildArgs,
   splitRunnerArgs,

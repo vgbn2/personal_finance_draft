@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  node-cli:
-    name: Node CLI tests
+  source-evidence:
+    name: Committed source evidence
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,26 +25,16 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: Install Node dependencies
-        run: npm ci
+      - name: Verify committed archive across all package roots
+        run: npm run verify:committed-archive -- --evidence-out "$RUNNER_TEMP/sovereign-source-evidence.json"
 
-      - name: Scan tracked files for secret patterns
-        run: npm run test:secrets
-
-      - name: Check active JavaScript entrypoints
-        run: |
-          node --check shared/lib/quote_router.js
-          node --check backend/scripts/data_ops/ingest_market_data.js
-          node --check backend/scripts/data_ops/ingest_market_data/index.js
-          node --check backend/cli/sovereign_cli.js
-          node --check backend/cli/tui/intersection.js
-          node --check backend/api/app.js
-
-      - name: Type-check execution gateway
-        run: node node_modules/typescript/bin/tsc -p backend/gateway/tsconfig.json --noEmit
-
-      - name: Run Node tests
-        run: npm test
+      - name: Retain source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sovereign-source-evidence
+          path: ${{ runner.temp }}/sovereign-source-evidence.json
+          if-no-files-found: error
 
   cpp-debug:
     name: C++ debug sanitizer tests
