@@ -27,7 +27,9 @@
     "test:macro": "node --test tests/scripts/data/cache/macro_history_helpers.test.js tests/scripts/architecture/data_storage/macro_ingestion_contract.test.js tests/scripts/architecture/data_storage/macro_store_contract.test.js",
     "test:secrets": "node backend/scripts/dev/secret_pattern_check.js",
     "check:env": "node scripts/dev/check_environment_manifest.js",
-    "verify:fresh-install": "bash scripts/dev/verify_fresh_install.sh",
+    "verify:source-snapshot": "node scripts/dev/verify_source_evidence.js --mode worktree_snapshot",
+    "verify:committed-archive": "node scripts/dev/verify_source_evidence.js --mode committed_archive",
+    "verify:fresh-install": "npm run verify:committed-archive --",
     "hygiene": "node scripts/dev/check_hygiene.js",
     "bundle": "node scripts/dev/make_bundle.js",
     "verify:strict": "npm run test:api && npm run test:contracts && npm run test:secrets && npm test"
@@ -59,6 +61,6 @@
     "react": "^19.2.7",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
-    "viem": "^2.52.2"
+    "viem": "^2.55.10"
   }
 }

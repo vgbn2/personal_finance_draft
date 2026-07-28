@@ -3,6 +3,74 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const { findBackendBinary, REPO_ROOT } = require('./paths');
+const { buildChildEnvironment } = require('./environment_manifest');
+
+const GATEWAY_PUBLIC_POLYMARKET_COMMANDS = new Set([
+  'events',
+  'history',
+  'markets',
+  'orderbook',
+  'paper-run',
+  'price-history',
+  'trace',
+]);
+const GATEWAY_ACCOUNT_POLYMARKET_COMMANDS = new Set([
+  'auth-health',
+  'balance',
+  'collateral-probe',
+  'debug',
+  'investigate',
+  'modes',
+  'portfolio',
+  'probe',
+  'topology',
+]);
+
+function environmentClassificationError(command) {
+  const error = new Error(`environment_surface_unclassified: ${command || 'empty'}`);
+  error.code = 'environment_surface_unclassified';
+  return error;
+}
+
+function classifyGatewayEnvironmentSurface(args = []) {
+  const normalized = args.map((value) => String(value));
+  const command = String(normalized[0] || '').toLowerCase();
+  if (!command) throw environmentClassificationError(command);
+  if (command === '--help' || command === '-h' || normalized.includes('--demo')) return 'gateway_public';
+  if (command === 'aggregate_portfolio' || command === 'positions') return 'gateway_account';
+  if (command === 'balance') return normalized.includes('--live') ? 'gateway_account' : 'gateway_public';
+  if (command === 'buy' || command === 'sell' || command === 'bot' || command === 'process') return 'execution';
+  if (command !== 'polymarket') throw environmentClassificationError(command);
+
+  const subcommand = String(normalized[1] || 'portfolio').toLowerCase();
+  if (GATEWAY_PUBLIC_POLYMARKET_COMMANDS.has(subcommand)) return 'gateway_public';
+  if (GATEWAY_ACCOUNT_POLYMARKET_COMMANDS.has(subcommand)) return 'gateway_account';
+  if (subcommand === 'buy' || subcommand === 'sell' || subcommand === 'derive-creds') return 'execution';
+  throw environmentClassificationError(`polymarket ${subcommand}`);
+}
+
+function classifyMcpCliCapability(args = []) {
+  const normalized = args.map((value) => String(value).toLowerCase());
+  const command = normalized[0] || '';
+  if (command === 'auto-trade') return 'execution';
+  if (command === 'trade') {
+    const action = normalized[1] || '';
+    if (action === 'aggregate_portfolio' || (action === 'balance' && normalized.includes('--live'))) {
+      return 'account_read';
+    }
+    if (normalized.includes('--live')) return 'execution';
+  }
+  if (command === 'bot' && normalized.includes('--live')) return 'execution';
+  if (command === 'polymarket') {
+    const subcommand = normalized[1] || 'portfolio';
+    if (subcommand === 'derive-creds') return 'execution';
+    if (subcommand === 'buy' || subcommand === 'sell') {
+      return normalized.includes('--live') ? 'execution' : 'cached_read';
+    }
+    if (GATEWAY_ACCOUNT_POLYMARKET_COMMANDS.has(subcommand)) return 'account_read';
+  }
+  return 'cached_read';
+}
 
 function backendAvailable() {
   return Boolean(findBackendBinary());
@@ -39,7 +107,9 @@ function executeSovereignCommand(command, args, options = {}) {
     encoding: 'utf8',
     shell: options.shell ?? false,
     stdio: options.stdio ?? 'pipe',
-    env: { ...process.env, ...(options.env || {}) },
+    env: options.replaceEnv === true
+      ? { ...(options.env || {}) }
+      : { ...process.env, ...(options.env || {}) },
   };
   if (options.timeout !== undefined) {
     spawnOptions.timeout = options.timeout;
@@ -89,16 +159,30 @@ function executeSovereignCommand(command, args, options = {}) {
  * @param {string[]} args Command line arguments.
  * @returns {object} Launch object with command and args.
  */
-function buildTradeGatewayLaunch(args = []) {
+function buildTradeGatewayLaunch(args = [], options = {}) {
   // Strip --pin unconditionally here (not just at the commandTrade call site)
   // so every one of this function's callers is covered for free, including
   // any future one -- a secret consumed in-process must never reach a
   // spawned subprocess's argv (visible in OS process listings).
   args = stripFlagValue(args, '--pin');
   // Suppress DEP0180 and similar Node deprecation warnings in gateway subprocesses
-  if (!process.env.NODE_OPTIONS || !process.env.NODE_OPTIONS.includes('--no-deprecation')) {
-    process.env.NODE_OPTIONS = ((process.env.NODE_OPTIONS || '') + ' --no-deprecation').trim();
-  }
+  const surface = classifyGatewayEnvironmentSurface(args);
+  const sourceEnvironment = options.environment || process.env;
+  const gatewaySourceEnvironment = { ...sourceEnvironment };
+  delete gatewaySourceEnvironment.SOVEREIGN_TRADE_PIN;
+  const nodeOptions = sourceEnvironment.NODE_OPTIONS || '';
+  const gatewayNodeOptions = nodeOptions.includes('--no-deprecation')
+    ? nodeOptions
+    : `${nodeOptions} --no-deprecation`.trim();
+  const env = buildChildEnvironment(gatewaySourceEnvironment, surface, {
+    profile: options.profile,
+    overrides: {
+      ...(options.env || {}),
+      NODE_OPTIONS: gatewayNodeOptions,
+      SOVEREIGN_SKIP_DOTENV: '1',
+      SOVEREIGN_SKIP_LOCAL_ENV: '1',
+    },
+  });
   const gatewayPath = path.join(REPO_ROOT, 'backend', 'gateway', 'src', 'index.ts');
   const gatewayBootstrapPath = path.join(REPO_ROOT, 'backend', 'cli', 'lib', 'run_trade_gateway.js');
   const tsxCandidates = [
@@ -113,21 +197,25 @@ function buildTradeGatewayLaunch(args = []) {
         command: 'powershell.exe',
         args: ['-NoProfile', '-Command', `& ${[tsxPath, gatewayPath, ...args].map(quoteForPowerShell).join(' ')}`],
         shell: false,
+        env,
+        surface,
       };
     }
-    return { command: tsxPath, args: [gatewayPath, ...args], shell: false };
+    return { command: tsxPath, args: [gatewayPath, ...args], shell: false, env, surface };
   }
   if (fs.existsSync(gatewayBootstrapPath)) {
     return {
       command: process.execPath,
       args: [gatewayBootstrapPath, ...args],
       shell: false,
+      env,
+      surface,
     };
   }
   if (process.platform === 'win32') {
-    return { command: 'cmd.exe', args: ['/c', 'npx', 'tsx', gatewayPath, ...args], shell: false };
+    return { command: 'cmd.exe', args: ['/c', 'npx', 'tsx', gatewayPath, ...args], shell: false, env, surface };
   }
-  return { command: 'npx', args: ['tsx', gatewayPath, ...args], shell: false };
+  return { command: 'npx', args: ['tsx', gatewayPath, ...args], shell: false, env, surface };
 }
 
 /**
@@ -145,12 +233,23 @@ function runBackendCommand(commandArgs, options = {}) {
  * Standard interface for gateway (TS) execution.
  */
 function runGatewayCommand(gatewayArgs, options = {}) {
-  const launch = buildTradeGatewayLaunch(gatewayArgs);
-  return executeSovereignCommand(launch.command, launch.args, { ...options, shell: launch.shell ?? false });
+  const launch = buildTradeGatewayLaunch(gatewayArgs, {
+    environment: options.environment,
+    profile: options.profile,
+    env: options.env,
+  });
+  return executeSovereignCommand(launch.command, launch.args, {
+    ...options,
+    shell: launch.shell ?? false,
+    env: launch.env,
+    replaceEnv: true,
+  });
 }
 
 module.exports = {
   backendAvailable,
+  classifyGatewayEnvironmentSurface,
+  classifyMcpCliCapability,
   spawnResultHasFatalError,
   stripFlagValue,
   buildTradeGatewayLaunch,

@@ -1,5 +1,167 @@
 # Next Session Goal
 
+## 2026-07-28 next session - rsync and private third-host proof
+
+Resume on `steamlinux`, where the source checkout currently lives. The first action is to verify that
+`192.168.4.126` is actually `vgbn-servers`; the latest tool-version output came from `steamlinux`, so it is not
+yet destination-host evidence.
+
+Approved sequence:
+
+1. From `steamlinux`, run a read-only SSH identity/tool probe against `vgbn1@192.168.4.126`.
+2. Create `~/personal_finance_draft` on the destination with mode 700.
+3. Rsync the current source and approved credentials over SSH without `--delete`; exclude `.git`,
+   `node_modules`, dashboard/native build output, and `graphify-out`.
+4. On `vgbn-servers`, set `.env` and `.env.central` to mode 600 and verify the copied source inventory.
+5. Run Compose config and build only the `web` image. Stop and diagnose on any build error.
+6. Start only `web`, retain the loopback bind, then prove `/health`, private login/RBAC/revocation, dashboard
+   loading, container restart, and mounted-state persistence.
+7. Keep writer, backfill, monitoring, research, paper, bot, order, public exposure, and live profiles stopped
+   until the web-only host proof is reviewed.
+
+The source machine tooling is confirmed: Node 24.18.0, npm 11.16.0, Docker/daemon 29.1.3, Compose 2.40.3,
+Git 2.53.0, and CMake 4.2.3. These versions have not yet been confirmed on `vgbn-servers`.
+
+## 2026-07-28 distribution qualification
+
+Before sharing the project with third parties, separately approve a distribution-hardening batch:
+
+1. Resolve the redistribution license and mark every non-publishable npm root `private`.
+2. Commit and review the exact source; require matching committed-archive CI evidence.
+3. Pin Node/npm, container base images, and CI actions; hash the ONNX runtime archive.
+4. Generate an SBOM, scan source/dependencies/image/secrets, and retain structured results.
+5. Build a minimal non-root, multi-stage OCI runtime image in CI, sign it with provenance, publish checksums,
+   and document verification by immutable digest.
+6. On a clean third amd64 Linux host, pull by digest and prove private web health, auth, persistence,
+   restart, rollback, and uninstall without enabling live execution.
+
+Do not distribute `node_modules`, `.env*`, credentials, runtime storage, or developer workspace state.
+
+## 2026-07-28 after DEP-1 partial closure and SSH review
+
+DEP-1A Socket.IO and DEP-1B viem are closed. DEP-1C Alpaca/Axios and DEP-1D Polymarket/Ethers ws are deferred
+NO-GO; do not guess the Alpaca 4.0.1 API and do not accept the proposed Polymarket client downgrade.
+
+Before calling the project usable on the SSH machine:
+
+1. Rotate the exposed FRED credential and Polymarket private key.
+2. Create an exact committed source state and transfer/fetch that exact commit to the SSH host.
+3. On the SSH host, prove Node >=20, deterministic installs for all five package roots, builds, and
+   `npm run verify:strict`.
+4. Exercise real private web login/RBAC/revocation and MCP stdio with separate service principals.
+5. Bind only to loopback and reach the service through SSH forwarding; start read-only/API/dashboard surfaces
+   first, with no writer, bot, order, provider polling, or live profile.
+6. Keep backup/restore, restart/rollback, one-writer, recovery, and soak as explicit operational gates.
+
+Current working-tree source is usable for read-only/private research and paper-safe exercise. It is not
+release-ready, public-ready, live-ready, or yet host-qualified. Current dependency evidence is 17 high,
+11 moderate, 26 low, and 0 critical; strict verification is 1,003/999/0/4 and the clean worktree snapshot
+gate is 1,003/993/0/10.
+
+## 2026-07-28 after DEP-1B closure
+
+DEP-1B viem remediation is closed with exact installed graph, targeted audit, gateway typecheck, and 51/51
+focused Polymarket/MCP/paper-safety proof. Begin DEP-1C only after mapping every current Alpaca v3 production
+call to the v4.0.1 API and confirming Node >=20 on CI and the intended SSH host.
+
+Keep DEP-1D Polymarket/Ethers ws NO-GO, reject the client downgrade, and do not mix dashboard/MCP/toolchain
+advisories into the Alpaca migration. Release/live and SSH operational qualification remain blocked.
+
+## 2026-07-28 after DEP-1A closure
+
+DEP-1A Socket.IO remediation is closed with patched locks, deterministic installs, API 25/25, and dashboard
+type/build proof. Continue only with DEP-1B viem 2.55.10 and its gateway/Polymarket compatibility gates.
+
+Do not mix DEP-1C Alpaca 4.0.1 source migration or DEP-1D Polymarket-owned ws resolution into DEP-1B. Two
+unrelated dashboard highs remain. Release/live use and SSH operational qualification remain blocked.
+
+## 2026-07-28 after DEP-1 preflight
+
+DEP-1 network-boundary dependency remediation is NO-GO and deferred before any manifest or lockfile edit.
+Explicitly authorize a restricted dependency worker to obtain current registry/advisory metadata as structured
+JSON, including exact patched targets, `no_fix_available` cases, engine/peer/install-script changes, and residual
+advisory IDs. Then rerun DEP-1 preflight before package resolution.
+
+Do not trust `npm audit --offline` in this checkout: the advisory cache is absent and it reports a false zero.
+Keep dependency release/live gates, macro PIT work, ENV-1B3-B, provider/runtime/data actions, and public exposure
+blocked. The active specification is
+`workspace/plans/DEPENDENCY_REMEDIATION_MASS_IMPLEMENT_PLAN.md`.
+
+## 2026-07-28 after ENV-1B3-A closure
+
+All approved source batches in
+`workspace/plans/ENVIRONMENT_AND_PRODUCTION_EVIDENCE_MASS_IMPLEMENT_PLAN.md` are closed for the current dirty
+working tree: TEST-1, ENV-1B2-A, and ENV-1B3-A. The schema-3 manifest now owns and fixture-tests all seven
+Compose service contracts, but Compose itself is deliberately unchanged and still shares one central
+`env_file`.
+
+No further environment implementation is approved. ENV-1B3-B is the next possible batch only after separate
+approval; it would generate restricted per-service files and rewire Compose without starting containers.
+Direct API/CLI/dashboard/script boot projection is also still unimplemented and requires a separately scoped
+inventory batch.
+
+Before release use, rotate the FRED credential and Polymarket private key exposed to the session tool transcript.
+Exact-commit/authenticated-CI evidence for TEST-1 and all deployed-host, recovery, one-writer, rollback, and soak
+gates remain open. Keep live execution and public exposure blocked.
+
+## 2026-07-28 after ENV-1B2-A closure (superseded)
+
+ENV-1B2-A is closed for working-tree source. The next bounded implementation candidate is ENV-1B3-A only:
+define and fixture-test the required/optional/forbidden key contract for all seven Compose services in the
+canonical environment manifest. Do not change Compose injection in that batch. ENV-1B3-B remains separately
+approval-gated and NO-GO until the service contract is verified and reviewed.
+
+Before release use, rotate the FRED credential and Polymarket private key exposed to the session tool transcript.
+Exact-commit/authenticated-CI evidence for TEST-1 and all deployed-host, recovery, one-writer, and soak gates
+remain open. Keep live execution and public exposure blocked.
+
+## 2026-07-28 environment and Polymarket boundary follow-up
+
+ENV-1A, ENV-1B1, and PM-1 are implemented, verified, reviewed, and closed in the current working tree.
+
+1. ENV-1B2-A gateway/MCP projected-child wiring is closed. Keep direct boot rewiring and standalone scripts
+   deferred. Implement ENV-1B3-A contract fixtures only after its preflight; keep actual Compose projection
+   NO-GO until every service has fixture-proven required and forbidden keys plus a rollback path.
+2. Keep SYNC-1 deferred until the SSH alias, fixed remote root/sentinel, selected nested repositories, and
+   external `/home/vgbn1/Documents/codeptit/bash` edit scope are explicit.
+3. Continue the separate release queue with isolated dependency-high remediation and point-in-time macro
+   metadata/schema work; do not mix either with environment/sync changes.
+4. Do not treat manifest/projection source proof as Compose, host, fresh-install, remote, recovery, one-writer,
+   or soak qualification. Keep live execution and public exposure blocked.
+
+Current evidence: environment 118 entries / 138 names and aliases; browser allowlist 3/3; host contracts 118/118;
+aggregate 979/975/0/4; Polymarket preflight/CLI 48/48; secrets 900/0; dashboard type/build and hygiene pass.
+
+## 2026-07-28 production-evidence protocol follow-up
+
+The combined implementation plan is
+`workspace/plans/ENVIRONMENT_AND_PRODUCTION_EVIDENCE_MASS_IMPLEMENT_PLAN.md`. It sequences TEST-1 evidence
+truth, ENV-1B2-A projected gateway/MCP children, and ENV-1B3-A service-key contract; actual Compose projection
+remains separately NO-GO.
+
+Before any release or production-grade testing claim, approve and implement a small evidence-protocol batch:
+
+1. Split fresh verification into explicitly labelled worktree-snapshot and committed-archive/fresh-clone modes;
+   the latter must exclude untracked files and bind output to `HEAD` plus lockfile digests.
+2. Emit a machine-readable evidence manifest with commands, exit status, test/pass/fail/skip counts, environment
+   class, source identity, and excluded claims; a missing final PASS manifest is a failed/inconclusive gate.
+3. Make CI run the committed-archive five-root install/build/API/contracts/aggregate path and retain the manifest.
+4. Keep deployed-host smoke, backup/restore, restart/rollback, one-writer, and soak as separate external levels;
+   none can be inferred from source or CI green results.
+
+Current session: host-capable `verify:strict` passed; restricted loopback API failures are sandbox-only. The
+fresh-install attempt stopped during root `npm ci` before its PASS marker, so fresh-install proof is open.
+
+The plan has been refined. If implementation is approved, start with TEST-1 only. Treat
+`scripts/dev/verify_source_evidence.js` as the canonical coordinator, retain `verify_fresh_install.sh` only as a
+compatibility wrapper, and do not claim exact-commit or CI closure from the dirty working tree. Stop for focused
+review after TEST-1 before beginning ENV-1B2-A. ENV-1B3-B remains a separate approval even if ENV-1B3-A passes.
+
+TEST-1 source implementation has now reached that review stop. Its bounded worktree evidence is green and
+records two-job execution; exact-commit and authenticated-CI evidence remain open until commit/Actions. The next
+implementation batch is ENV-1B2-A preflight only: revalidate every gateway branch and MCP capability before
+wiring projected child environments. Do not mix ENV-1B3 Compose work into that batch.
+
 ## 2026-07-28 session 116 - remediate dependency highs and qualify combined evidence
 
 The auth, exact-asset combined research, reviewed paper-intent, environment manifest, fresh-source verifier,
@@ -21,6 +183,19 @@ release blocked.
 
 Current evidence: clean-export aggregate 972/962/0/10; native 30/30; API 25/25; environment 138/138; secrets
 895/0; integrity 92/92, zero stale, DCS 1.0. Dependency gate: 24 high, 11 moderate, 26 low, 0 critical.
+
+## Deferred workstation tooling - CodePTIT remote mirror
+
+The planned defensive threat-model and remote-sync design is at
+`workspace/plans/CODEPTIT_REMOTE_SYNC_AND_PRIVATE_DEFENSE_PLAN.md`. It is not part of the Sovereign release
+queue. If approved separately, first implement only the manual, SSH-authenticated, dry-run-first local-to-remote
+sync command under `/home/vgbn1/Documents/codeptit/bash` after confirming the host alias and sync exclusions.
+Do not add a timer, reverse sync, automatic deletion, secret/runtime replication, or remote service startup.
+
+The companion environment boundary plan is at
+`workspace/plans/ENVIRONMENT_AND_REMOTE_MIRROR_BOUNDARY_PLAN.md`. Before implementing either plan, obtain a
+user-approved, redacted name-only inventory and decide developer/central/execution ownership. Preserve current
+ignored `.env*` and `storage/` contents; do not infer that a portfolio read means public credential exposure.
 
 ## 2026-07-28 session 115 - close reproducibility or qualify freshness
 

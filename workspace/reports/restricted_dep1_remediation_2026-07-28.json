@@ -1,0 +1,838 @@
+{
+  "schema_version": 1,
+  "report_id": "DEP-1",
+  "generated_at": "2026-07-28T00:00:00+07:00",
+  "scope": {
+    "repository": "/home/vgbn1/Documents/codeptit/personal_finance_draft",
+    "package_roots": [
+      ".",
+      "backend/api",
+      "backend/gateway",
+      "Frontend/dashboard"
+    ],
+    "packages": [
+      "ws",
+      "socket.io",
+      "socket.io-client",
+      "engine.io",
+      "engine.io-client",
+      "socket.io-adapter",
+      "axios",
+      "@alpacahq/alpaca-trade-api",
+      "viem"
+    ],
+    "excluded_root": {
+      "path": "backend/mcp_server",
+      "reason": "Not included in the delegated DEP-1 package-root list."
+    }
+  },
+  "collection": {
+    "registry": "npm registry metadata via npm view <package>@latest",
+    "audit": "npm audit --json at each scoped package root",
+    "installed_graph": "npm ls <target packages> --all --json at each scoped package root",
+    "network_notes": [
+      "The initial targeted audits succeeded for all four roots.",
+      "A later richer root audit succeeded after a transient EAI_AGAIN failure.",
+      "Richer repeat audits for backend/api, backend/gateway, and Frontend/dashboard were not run after the parent-directed stop; their advisory linkage is therefore represented from the successful initial audit."
+    ],
+    "no_mutation": true
+  },
+  "audit_totals": {
+    ".": {
+      "info": 0,
+      "low": 13,
+      "moderate": 6,
+      "high": 8,
+      "critical": 0,
+      "total": 27
+    },
+    "backend/api": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 3,
+      "critical": 0,
+      "total": 3
+    },
+    "backend/gateway": {
+      "info": 0,
+      "low": 12,
+      "moderate": 3,
+      "high": 7,
+      "critical": 0,
+      "total": 22
+    },
+    "Frontend/dashboard": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 4,
+      "critical": 0,
+      "total": 4
+    },
+    "scoped_sum": {
+      "info": 0,
+      "low": 25,
+      "moderate": 9,
+      "high": 22,
+      "critical": 0,
+      "total": 56
+    }
+  },
+  "registry_latest": {
+    "ws": {
+      "version": "8.21.1",
+      "engines": {
+        "node": ">=10.0.0"
+      },
+      "peerDependencies": {
+        "bufferutil": "^4.0.1",
+        "utf-8-validate": ">=5.0.2"
+      },
+      "dependencies": null,
+      "scripts_present": [
+        "lint",
+        "test",
+        "integration"
+      ]
+    },
+    "axios": {
+      "version": "1.18.1",
+      "engines": null,
+      "peerDependencies": null,
+      "dependencies": {
+        "form-data": "^4.0.5",
+        "proxy-from-env": "^2.1.0",
+        "follow-redirects": "^1.16.0",
+        "https-proxy-agent": "^5.0.1"
+      },
+      "scripts_present": [
+        "test",
+        "build",
+        "lint"
+      ]
+    },
+    "@alpacahq/alpaca-trade-api": {
+      "version": "4.0.1",
+      "engines": {
+        "node": ">=20"
+      },
+      "peerDependencies": null,
+      "dependencies": {
+        "@msgpack/msgpack": "^3.1.3",
+        "lossless-json": "^4.3.0",
+        "ws": "^8.21.0"
+      },
+      "scripts_present": [
+        "build",
+        "typecheck",
+        "test",
+        "verify:codemod",
+        "verify:package",
+        "lint"
+      ]
+    },
+    "viem": {
+      "version": "2.55.10",
+      "engines": null,
+      "peerDependencies": {
+        "typescript": ">=5.0.4"
+      },
+      "dependencies": {
+        "ox": "0.14.33",
+        "ws": "8.21.0",
+        "isows": "1.0.7",
+        "abitype": "1.2.3",
+        "@scure/bip32": "1.7.0",
+        "@scure/bip39": "1.6.0",
+        "@noble/curves": "1.9.1",
+        "@noble/hashes": "1.8.0"
+      },
+      "scripts_present": null
+    },
+    "socket.io": {
+      "version": "4.8.3",
+      "engines": {
+        "node": ">=10.2.0"
+      },
+      "peerDependencies": null,
+      "dependencies": {
+        "accepts": "~1.3.4",
+        "base64id": "~2.0.0",
+        "cors": "~2.8.5",
+        "debug": "~4.4.1",
+        "engine.io": "~6.6.0",
+        "socket.io-adapter": "~2.5.2",
+        "socket.io-parser": "~4.2.4"
+      },
+      "scripts_present": [
+        "compile",
+        "test",
+        "test:types",
+        "test:unit"
+      ]
+    },
+    "socket.io-client": {
+      "version": "4.8.3",
+      "engines": {
+        "node": ">=10.0.0"
+      },
+      "peerDependencies": null,
+      "dependencies": {
+        "@socket.io/component-emitter": "~3.1.0",
+        "debug": "~4.4.1",
+        "engine.io-client": "~6.6.1",
+        "socket.io-parser": "~4.2.4"
+      },
+      "scripts_present": [
+        "compile",
+        "test",
+        "test:node",
+        "test:browser",
+        "test:types",
+        "build"
+      ]
+    },
+    "engine.io": {
+      "version": "6.6.9",
+      "engines": {
+        "node": ">=10.2.0"
+      },
+      "peerDependencies": null,
+      "dependencies": {
+        "ws": "~8.21.0",
+        "cors": "~2.8.5",
+        "debug": "~4.4.1",
+        "cookie": "~0.7.2",
+        "accepts": "~1.3.4",
+        "base64id": "2.0.0",
+        "@types/ws": "^8.5.12",
+        "@types/cors": "^2.8.12",
+        "@types/node": ">=10.0.0",
+        "engine.io-parser": "~5.2.1"
+      },
+      "scripts_present": [
+        "test",
+        "compile",
+        "test:default",
+        "test:compat-v3"
+      ]
+    },
+    "engine.io-client": {
+      "version": "6.6.6",
+      "engines": null,
+      "peerDependencies": null,
+      "dependencies": {
+        "ws": "~8.21.0",
+        "debug": "~4.4.1",
+        "engine.io-parser": "~5.2.1",
+        "xmlhttprequest-ssl": "~2.1.1",
+        "@socket.io/component-emitter": "~3.1.0"
+      },
+      "scripts_present": [
+        "test",
+        "build",
+        "compile",
+        "test:node",
+        "test:browser"
+      ]
+    },
+    "socket.io-adapter": {
+      "version": "2.5.8",
+      "engines": null,
+      "peerDependencies": null,
+      "dependencies": {
+        "ws": "~8.21.0",
+        "debug": "~4.4.1"
+      },
+      "scripts_present": [
+        "test",
+        "compile"
+      ]
+    }
+  },
+  "advisories": {
+    "ws": [
+      {
+        "id": "GHSA-58qx-3vcg-4xpx",
+        "severity": "moderate",
+        "range": ">=8.0.0 <8.20.1"
+      },
+      {
+        "id": "GHSA-96hv-2xvq-fx4p",
+        "severity": "high",
+        "range": ">=8.0.0 <8.21.0"
+      }
+    ],
+    "axios": [
+      {
+        "id": "GHSA-wf5p-g6vw-rhxx",
+        "severity": "moderate",
+        "range": ">=0.8.1 <0.28.0"
+      },
+      {
+        "id": "GHSA-jr5f-v2jv-69x6",
+        "severity": "high",
+        "range": "<0.30.0"
+      },
+      {
+        "id": "GHSA-3p68-rc4w-qgx5",
+        "severity": "moderate",
+        "range": "<0.31.0"
+      },
+      {
+        "id": "GHSA-w9j2-pvgh-6h63",
+        "severity": "moderate",
+        "range": "<=0.31.0"
+      },
+      {
+        "id": "GHSA-pmwg-cvhr-8vh7",
+        "severity": "high",
+        "range": "<=0.31.0"
+      },
+      {
+        "id": "GHSA-xhjh-pmcv-23jw",
+        "severity": "low",
+        "range": "<=0.31.0"
+      },
+      {
+        "id": "GHSA-m7pr-hjqh-92cm",
+        "severity": "moderate",
+        "range": "<=0.31.0"
+      },
+      {
+        "id": "GHSA-5c9x-8gcm-mpgx",
+        "severity": "moderate",
+        "range": "<=0.31.0"
+      },
+      {
+        "id": "GHSA-vf2m-468p-8v99",
+        "severity": "moderate",
+        "range": "<=0.31.0"
+      },
+      {
+        "id": "GHSA-pf86-5x62-jrwf",
+        "severity": "high",
+        "range": "<=0.31.0"
+      },
+      {
+        "id": "GHSA-6chq-wfr3-2hj9",
+        "severity": "high",
+        "range": "<=0.31.0"
+      },
+      {
+        "id": "GHSA-xx6v-rp6x-q39c",
+        "severity": "moderate",
+        "range": "<=0.31.0"
+      },
+      {
+        "id": "GHSA-43fc-jf86-j433",
+        "severity": "high",
+        "range": "<=0.30.2"
+      },
+      {
+        "id": "GHSA-fvcv-3m26-pcqx",
+        "severity": "moderate",
+        "range": "<0.31.0"
+      },
+      {
+        "id": "GHSA-62hf-57xw-28j9",
+        "severity": "moderate",
+        "range": "<=0.31.0"
+      },
+      {
+        "id": "GHSA-hfxv-24rg-xrqf",
+        "severity": "high",
+        "range": "<=0.31.1"
+      },
+      {
+        "id": "GHSA-p92q-9vqr-4j8v",
+        "severity": "high",
+        "range": "<=0.31.1"
+      },
+      {
+        "id": "GHSA-j5f8-grm9-p9fc",
+        "severity": "high",
+        "range": "<=0.31.1"
+      },
+      {
+        "id": "GHSA-3g43-6gmg-66jw",
+        "severity": "high",
+        "range": ">=0.19.0 <0.31.1"
+      },
+      {
+        "id": "GHSA-898c-q2cr-xwhg",
+        "severity": "moderate",
+        "range": "<=0.31.1"
+      },
+      {
+        "id": "GHSA-pjwm-pj3p-43mv",
+        "severity": "high",
+        "range": "<=0.31.1"
+      },
+      {
+        "id": "GHSA-42h9-826w-cgv3",
+        "severity": "moderate",
+        "range": ">=1.0.0 <1.18.0"
+      },
+      {
+        "id": "GHSA-xj6q-8x83-jv6g",
+        "severity": "moderate",
+        "range": ">=1.15.2 <1.18.0"
+      },
+      {
+        "id": "GHSA-pmv8-rq9r-6j72",
+        "severity": "moderate",
+        "range": ">=1.0.0 <1.18.0"
+      },
+      {
+        "id": "GHSA-jqh4-m9w3-8hp9",
+        "severity": "moderate",
+        "range": ">=1.7.0 <1.18.0"
+      },
+      {
+        "id": "GHSA-mmx7-hfxf-jppx",
+        "severity": "moderate",
+        "range": "<0.33.0"
+      },
+      {
+        "id": "GHSA-mmx7-hfxf-jppx",
+        "severity": "moderate",
+        "range": ">=1.0.0 <1.18.0"
+      },
+      {
+        "id": "GHSA-f4gw-2p7v-4548",
+        "severity": "moderate",
+        "range": ">=1.15.0 <1.18.0"
+      },
+      {
+        "id": "GHSA-gcfj-64vw-6mp9",
+        "severity": "high",
+        "range": ">=1.15.2 <1.18.0"
+      },
+      {
+        "id": "GHSA-hcpx-6fm6-wx23",
+        "severity": "moderate",
+        "range": ">=1.15.1 <1.18.0"
+      },
+      {
+        "id": "GHSA-7q8q-rj6j-mhjq",
+        "severity": "moderate",
+        "range": ">=1.0.0 <1.18.0"
+      },
+      {
+        "id": "GHSA-7q8q-rj6j-mhjq",
+        "severity": "moderate",
+        "range": ">=0.8.0 <0.33.0"
+      },
+      {
+        "id": "GHSA-mwf2-3pr3-8698",
+        "severity": "moderate",
+        "range": ">=1.13.0 <1.18.0"
+      }
+    ]
+  },
+  "ownership_and_current_graph": {
+    ".": {
+      "manifest_owner": "package.json",
+      "lock_owner": "package-lock.json",
+      "direct": {
+        "@alpacahq/alpaca-trade-api": {
+          "manifest": "^3.1.3",
+          "installed": "3.1.3",
+          "severity": "high",
+          "audit_range": "2.0.0 - 3.1.3",
+          "fixAvailable": {
+            "name": "@alpacahq/alpaca-trade-api",
+            "version": "4.0.1",
+            "isSemVerMajor": true
+          },
+          "via": [
+            "axios"
+          ]
+        },
+        "viem": {
+          "manifest": "^2.52.2",
+          "installed": "2.53.1",
+          "severity": "high",
+          "audit_range": "<=0.0.0-wagmiv2-20230628182101 || 0.2.2 - 2.54.1",
+          "fixAvailable": true,
+          "via": [
+            "ws"
+          ]
+        }
+      },
+      "transitive": {
+        "axios": [
+          {
+            "version": "0.21.4",
+            "owner": "@alpacahq/alpaca-trade-api@3.1.3",
+            "vulnerable": true
+          },
+          {
+            "version": "1.16.1",
+            "owner": "@mathieuc/tradingview and deduped callers",
+            "vulnerable": true
+          }
+        ],
+        "ws": [
+          {
+            "version": "8.18.0",
+            "owner": "@polymarket/clob-client-v2 -> @ethersproject/providers",
+            "vulnerable": true
+          },
+          {
+            "version": "8.20.1",
+            "owner": "viem",
+            "vulnerable": true
+          },
+          {
+            "version": "7.5.11",
+            "owner": "legacy dependency paths",
+            "vulnerable_under_reported_ws_ranges": false
+          }
+        ]
+      },
+      "root_scripts_relevant_to_verification": [
+        "test",
+        "test:api",
+        "test:contracts",
+        "test:secrets",
+        "verify:fresh-install",
+        "verify:strict"
+      ]
+    },
+    "backend/api": {
+      "manifest_owner": "backend/api/package.json",
+      "lock_owner": "backend/api/package-lock.json",
+      "direct": {
+        "socket.io": {
+          "manifest": "^4.5.0",
+          "installed": "4.8.3",
+          "latest": "4.8.3",
+          "vulnerable_itself": false
+        }
+      },
+      "transitive": {
+        "engine.io": {
+          "installed": "6.6.8",
+          "severity": "high",
+          "audit_range": "0.7.8 - 0.7.9 || 6.0.0 - 6.6.8",
+          "fixAvailable": true,
+          "via": [
+            "ws"
+          ]
+        },
+        "socket.io-adapter": {
+          "installed": "2.5.7",
+          "severity": "high",
+          "audit_range": "2.5.2 - 2.5.7",
+          "fixAvailable": true,
+          "via": [
+            "ws"
+          ]
+        },
+        "ws": {
+          "installed": "8.20.1",
+          "severity": "high",
+          "audit_range": "8.0.0 - 8.20.1",
+          "fixAvailable": true,
+          "advisory_ids": [
+            "GHSA-96hv-2xvq-fx4p"
+          ]
+        }
+      },
+      "package_scripts": {
+        "start": "node app.js",
+        "dev": "nodemon app.js"
+      }
+    },
+    "backend/gateway": {
+      "manifest_owner": "backend/gateway/package.json",
+      "lock_owner": "backend/gateway/package-lock.json",
+      "direct": {
+        "@alpacahq/alpaca-trade-api": {
+          "manifest": "^3.1.3",
+          "installed": "3.1.3",
+          "severity": "high",
+          "audit_range": "2.0.0 - 3.1.3",
+          "fixAvailable": {
+            "name": "@alpacahq/alpaca-trade-api",
+            "version": "4.0.1",
+            "isSemVerMajor": true
+          },
+          "via": [
+            "axios"
+          ]
+        },
+        "axios": {
+          "manifest": "^1.18.1",
+          "installed": "1.18.1",
+          "latest": "1.18.1",
+          "vulnerable_itself": false
+        },
+        "viem": {
+          "manifest": "^2.52.2",
+          "installed": "2.52.2",
+          "severity": "high",
+          "audit_range": "<=0.0.0-wagmiv2-20230628182101 || 0.2.2 - 2.54.1",
+          "fixAvailable": true,
+          "via": [
+            "ws"
+          ]
+        }
+      },
+      "transitive": {
+        "axios": [
+          {
+            "version": "0.21.4",
+            "owner": "@alpacahq/alpaca-trade-api@3.1.3",
+            "vulnerable": true
+          }
+        ],
+        "ws": [
+          {
+            "version": "8.18.0",
+            "owner": "@polymarket/clob-client-v2 -> @ethersproject/providers",
+            "vulnerable": true
+          },
+          {
+            "version": "8.20.1",
+            "owner": "viem",
+            "vulnerable": true
+          },
+          {
+            "version": "7.5.11",
+            "owner": "legacy dependency paths",
+            "vulnerable_under_reported_ws_ranges": false
+          }
+        ]
+      },
+      "package_scripts": null
+    },
+    "Frontend/dashboard": {
+      "manifest_owner": "Frontend/dashboard/package.json",
+      "lock_owner": "Frontend/dashboard/package-lock.json",
+      "direct": {
+        "socket.io-client": {
+          "manifest": "^4.5.0",
+          "installed": "4.8.3",
+          "latest": "4.8.3",
+          "vulnerable_itself": false
+        }
+      },
+      "transitive": {
+        "engine.io-client": {
+          "installed": "6.6.5",
+          "severity": "high",
+          "audit_range": "0.7.0 || 0.7.8 - 0.7.9 || 6.0.0 - 6.6.5",
+          "fixAvailable": true,
+          "via": [
+            "ws"
+          ]
+        },
+        "ws": {
+          "installed": "8.20.1",
+          "severity": "high",
+          "audit_range": "8.0.0 - 8.20.1",
+          "fixAvailable": true,
+          "advisory_ids": [
+            "GHSA-96hv-2xvq-fx4p"
+          ]
+        }
+      },
+      "package_scripts": {
+        "dev": "vite --port=3000 --host=0.0.0.0",
+        "build": "vite build",
+        "lint": "tsc --noEmit",
+        "test:responsive": "npm run build && node --test tests/responsive_viewport.test.mjs"
+      }
+    }
+  },
+  "recommended_batches": [
+    {
+      "id": "DEP-1A",
+      "objective": "Refresh Socket.IO lock graphs to the already-compatible patched transitive releases.",
+      "status": "GO",
+      "owners": [
+        "backend/api/package-lock.json",
+        "Frontend/dashboard/package-lock.json"
+      ],
+      "manifest_changes": [],
+      "exact_targets": {
+        "backend/api": {
+          "socket.io": "4.8.3",
+          "engine.io": "6.6.9",
+          "socket.io-adapter": "2.5.8",
+          "ws": "8.21.1"
+        },
+        "Frontend/dashboard": {
+          "socket.io-client": "4.8.3",
+          "engine.io-client": "6.6.6",
+          "ws": "8.21.1"
+        }
+      },
+      "commands": [
+        "npm install --prefix backend/api --package-lock-only --ignore-scripts socket.io@4.8.3",
+        "npm install --prefix Frontend/dashboard --package-lock-only --ignore-scripts socket.io-client@4.8.3"
+      ],
+      "acceptance": [
+        "npm audit --prefix backend/api --json reports zero high vulnerabilities for engine.io, socket.io-adapter, and ws.",
+        "npm audit --prefix Frontend/dashboard --json reports zero high vulnerabilities for engine.io-client and ws.",
+        "npm ls --prefix backend/api socket.io engine.io socket.io-adapter ws --all shows the exact targets or newer non-vulnerable patch versions.",
+        "npm ls --prefix Frontend/dashboard socket.io-client engine.io-client ws --all shows the exact targets or newer non-vulnerable patch versions.",
+        "API tests, dashboard lint/build, and Socket.IO handshake behavior pass."
+      ],
+      "risk": "Low. Direct Socket.IO versions are unchanged; only lock-resolved patch releases move within declared tilde ranges."
+    },
+    {
+      "id": "DEP-1B",
+      "objective": "Upgrade viem in root and gateway so its ws graph is outside the reported vulnerable range.",
+      "status": "GO_WITH_FIXES",
+      "owners": [
+        "package.json",
+        "package-lock.json",
+        "backend/gateway/package.json",
+        "backend/gateway/package-lock.json"
+      ],
+      "exact_targets": {
+        "viem": "2.55.10",
+        "viem_ws": "8.21.0"
+      },
+      "commands": [
+        "npm install --package-lock-only --ignore-scripts viem@2.55.10",
+        "npm install --prefix backend/gateway --package-lock-only --ignore-scripts viem@2.55.10"
+      ],
+      "acceptance": [
+        "Root and gateway manifests resolve viem 2.55.10.",
+        "Root and gateway viem paths resolve ws 8.21.0 or newer.",
+        "Root and gateway audits no longer classify viem as vulnerable.",
+        "Polymarket preflight, trade contract, and gateway TypeScript checks pass."
+      ],
+      "risk": "Medium. This is a same-major viem upgrade, but wallet/client serialization and Polymarket integration callers require focused compatibility proof."
+    },
+    {
+      "id": "DEP-1C",
+      "objective": "Remove vulnerable Axios 0.x inherited through Alpaca v3 by migrating both direct Alpaca owners to v4.",
+      "status": "GO_WITH_FIXES",
+      "owners": [
+        "package.json",
+        "package-lock.json",
+        "backend/gateway/package.json",
+        "backend/gateway/package-lock.json",
+        "Alpaca production callers and focused tests"
+      ],
+      "exact_targets": {
+        "@alpacahq/alpaca-trade-api": "4.0.1",
+        "axios_direct_gateway": "1.18.1",
+        "alpaca_ws": ">=8.21.0 <9"
+      },
+      "commands": [
+        "npm install --package-lock-only --ignore-scripts @alpacahq/alpaca-trade-api@4.0.1",
+        "npm install --prefix backend/gateway --package-lock-only --ignore-scripts @alpacahq/alpaca-trade-api@4.0.1"
+      ],
+      "acceptance": [
+        "The SSH target and CI Node runtimes are proven to satisfy Node >=20.",
+        "All Alpaca imports, constructor options, request methods, streaming methods, and response assumptions are migrated against v4 rather than assumed compatible.",
+        "No @alpacahq/alpaca-trade-api-owned Axios 0.x node remains.",
+        "Gateway direct Axios remains 1.18.1 or newer.",
+        "Credential-free focused Alpaca configuration and adapter tests pass; no provider poll or order is required."
+      ],
+      "risk": "High compatibility risk. npm audit marks 4.0.1 as a semver-major fix, and the registry reports Node >=20. Do not perform a lockfile-only version bump without source migration review."
+    },
+    {
+      "id": "DEP-1D",
+      "objective": "Resolve remaining ws 8.18.0 inherited through @polymarket/clob-client-v2 -> @ethersproject/providers.",
+      "status": "NO_GO",
+      "owners": [
+        "package.json",
+        "package-lock.json",
+        "backend/gateway/package.json",
+        "backend/gateway/package-lock.json",
+        "Polymarket read/trade integration tests"
+      ],
+      "exact_targets": {
+        "ws_minimum_safe_for_high_advisory": "8.21.0",
+        "preferred_ws": "8.21.1",
+        "npm_audit_suggested_parent": {
+          "name": "@polymarket/clob-client-v2",
+          "version": "0.0.3",
+          "isSemVerMajor": true,
+          "decision": "reject"
+        }
+      },
+      "commands": [],
+      "acceptance": [
+        "A supported parent-package release or narrowly scoped override is selected with compatibility evidence.",
+        "No downgrade from @polymarket/clob-client-v2 1.0.6 to 0.0.3 is accepted.",
+        "Polymarket market-browser auth, preflight, cockpit merge, and trade/MCP contracts pass.",
+        "npm audit no longer reports the @ethersproject/providers-owned ws node."
+      ],
+      "risk": "Unresolved. npm audit proposes an unsafe parent downgrade. A targeted nested override to ws 8.21.1 may be viable but was not registry- or runtime-qualified during the bounded research window."
+    }
+  ],
+  "residual_risk": [
+    {
+      "severity": "high",
+      "owner": "@polymarket/clob-client-v2 -> @ethersproject/providers -> ws",
+      "state": "unresolved",
+      "reason": "The only npm audit fix suggestion observed is a semver-major downgrade to @polymarket/clob-client-v2 0.0.3, which must not be applied."
+    },
+    {
+      "severity": "high",
+      "owner": "@alpacahq/alpaca-trade-api",
+      "state": "migration_required",
+      "reason": "The patched target is v4.0.1, requires Node >=20, and is a semver-major API change."
+    },
+    {
+      "severity": "high",
+      "owner": "@mathieuc/tradingview -> axios",
+      "state": "lock_refresh_expected_but_unproven",
+      "reason": "Root currently resolves Axios 1.16.1 on this path. Axios 1.18.1 is current and outside the reported 1.x advisory ranges, but the git dependency's fresh lock resolution was not dry-run qualified after the parent-directed stop."
+    },
+    {
+      "severity": "medium",
+      "owner": "SSH deployment host",
+      "state": "unproven",
+      "reason": "Node runtime version, clean install, native package behavior, service startup, private binding, and authenticated SSH/API/MCP behavior remain host gates."
+    }
+  ],
+  "incomplete_fields": [
+    {
+      "field": "backend/api enriched audit via/effects objects",
+      "reason": "Parent-directed stop after the successful initial audit; transitive linkage is inferred directly from npm ls and the initial audit's target records."
+    },
+    {
+      "field": "backend/gateway enriched audit via/effects objects",
+      "reason": "Parent-directed stop after the successful initial audit; package advisory IDs and ranges were captured, but the richer repeat was not run."
+    },
+    {
+      "field": "Frontend/dashboard enriched audit via/effects objects",
+      "reason": "Parent-directed stop after the successful initial audit; transitive linkage is inferred directly from npm ls and the initial audit's target records."
+    },
+    {
+      "field": "host Node version",
+      "reason": "Not requested before the collection cutoff; Alpaca v4 requires Node >=20."
+    },
+    {
+      "field": "supported Polymarket parent fix or qualified nested override",
+      "reason": "No additional registry requests were permitted after the parent-directed stop."
+    }
+  ],
+  "ready_for_main_agent_implementation": {
+    "value": true,
+    "mode": "partial_batched",
+    "go_batches": [
+      "DEP-1A"
+    ],
+    "go_with_fixes_batches": [
+      "DEP-1B",
+      "DEP-1C"
+    ],
+    "no_go_batches": [
+      "DEP-1D"
+    ],
+    "release_gate": "blocked_until_all_high_findings_are_cleared_and_ssh_fresh-install/runtime_proof_passes",
+    "instruction": "Implement and close each batch independently. Do not treat DEP-1A or DEP-1B success as overall dependency release clearance, do not use npm audit fix --force, and do not accept the @polymarket/clob-client-v2 downgrade."
+  }
+}

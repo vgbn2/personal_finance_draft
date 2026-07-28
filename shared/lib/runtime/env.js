@@ -22,35 +22,42 @@ function parseEnvLine(line) {
   return { key, value };
 }
 
-function collectEnvPaths(envPath = ENV_PATH) {
+function collectEnvPaths(envPath = ENV_PATH, options = {}) {
+  const environment = options.environment || process.env;
+  const envLocalPath = options.envLocalPath || ENV_LOCAL_PATH;
+  const defaultEnvPath = options.defaultEnvPath || ENV_PATH;
   if (Array.isArray(envPath)) {
     return envPath.filter(Boolean);
   }
-  if (envPath && envPath !== ENV_PATH) {
+  if (envPath && envPath !== defaultEnvPath) {
     return [envPath];
   }
+  if (environment.SOVEREIGN_ENV_FILE) {
+    return [environment.SOVEREIGN_ENV_FILE];
+  }
   return [
-    process.env.SOVEREIGN_ENV_FILE,
-    ENV_LOCAL_PATH,
-    ENV_PATH,
+    envLocalPath,
+    defaultEnvPath,
   ].filter(Boolean);
 }
 
-function loadLocalEnv(envPath = ENV_PATH) {
-  if (process.env.SOVEREIGN_SKIP_DOTENV === '1' || process.env.SOVEREIGN_SKIP_LOCAL_ENV === '1') {
+function loadLocalEnv(envPath = ENV_PATH, options = {}) {
+  const environment = options.environment || process.env;
+  const fileSystem = options.fs || fs;
+  if (environment.SOVEREIGN_SKIP_DOTENV === '1' || environment.SOVEREIGN_SKIP_LOCAL_ENV === '1') {
     return {};
   }
   const loaded = {};
 
-  for (const candidatePath of collectEnvPaths(envPath)) {
-    if (!fs.existsSync(candidatePath)) continue;
-    const text = fs.readFileSync(candidatePath, 'utf8');
+  for (const candidatePath of collectEnvPaths(envPath, { ...options, environment })) {
+    if (!fileSystem.existsSync(candidatePath)) continue;
+    const text = fileSystem.readFileSync(candidatePath, 'utf8');
 
     for (const line of text.split(/\r?\n/)) {
       const entry = parseEnvLine(line);
       if (!entry) continue;
-      if (process.env[entry.key] === undefined) {
-        process.env[entry.key] = entry.value;
+      if (environment[entry.key] === undefined) {
+        environment[entry.key] = entry.value;
       }
       loaded[entry.key] = entry.value;
     }

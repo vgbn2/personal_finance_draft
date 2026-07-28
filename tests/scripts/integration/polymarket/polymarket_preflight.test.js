@@ -26,6 +26,7 @@ test('polymarket buy --preflight rejects invalid quantity before any live submit
     encoding: 'utf8',
     env: {
       ...process.env,
+      SOVEREIGN_ENVIRONMENT_SURFACE: 'execution',
       LIVE_TRADING: 'true',
     },
   });
@@ -51,6 +52,7 @@ test('polymarket gateway blocks direct live submission without CLI authorization
     encoding: 'utf8',
     env: {
       ...process.env,
+      SOVEREIGN_ENVIRONMENT_SURFACE: 'execution',
       LIVE_TRADING: 'true',
       SOVEREIGN_EXECUTION_AUTHORIZED: '',
     },
@@ -74,6 +76,7 @@ test('polymarket gateway blocks direct live bot cycles without CLI authorization
     encoding: 'utf8',
     env: {
       ...process.env,
+      SOVEREIGN_ENVIRONMENT_SURFACE: 'execution',
       LIVE_TRADING: 'true',
       SOVEREIGN_EXECUTION_AUTHORIZED: '',
     },
@@ -96,6 +99,7 @@ test('polymarket gateway rejects env-only live bot mode before cycle work', () =
     encoding: 'utf8',
     env: {
       ...process.env,
+      SOVEREIGN_ENVIRONMENT_SURFACE: 'execution',
       LIVE_TRADING: 'true',
       SOVEREIGN_EXECUTION_AUTHORIZED: '',
     },
@@ -118,6 +122,7 @@ test('polymarket CLI rejects inherited live bot mode without explicit --live', (
     encoding: 'utf8',
     env: {
       ...process.env,
+      SOVEREIGN_ENVIRONMENT_SURFACE: 'execution',
       LIVE_TRADING: 'true',
       SOVEREIGN_EXECUTION_AUTHORIZED: '',
     },
@@ -163,6 +168,7 @@ test('authorized polymarket gateway submission still requires an explicit limit 
     encoding: 'utf8',
     env: {
       ...process.env,
+      SOVEREIGN_ENVIRONMENT_SURFACE: 'execution',
       LIVE_TRADING: 'true',
       SOVEREIGN_EXECUTION_AUTHORIZED: 'true',
     },
@@ -172,4 +178,23 @@ test('authorized polymarket gateway submission still requires an explicit limit 
   const payload = JSON.parse(result.stdout.trim());
   assert.equal(payload.ok, false);
   assert.match(payload.error, /explicit price between 0 and 1/);
+});
+
+test('standalone gateway rejects an unclassified environment before command work', () => {
+  const environment = { ...process.env };
+  delete environment.SOVEREIGN_ENVIRONMENT_SURFACE;
+  const result = spawnSync(process.execPath, [
+    GATEWAY_RUNNER,
+    'polymarket',
+    'markets',
+    '--json',
+  ], {
+    cwd: path.resolve(__dirname, '..', '..', '..', '..'),
+    encoding: 'utf8',
+    env: environment,
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /environment_surface_required/);
+  assert.equal(result.stdout, '');
 });

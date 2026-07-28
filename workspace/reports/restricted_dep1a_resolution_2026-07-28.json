@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "report_id": "DEP-1A",
+  "generated_at": "2026-07-28T00:00:00+07:00",
+  "lifecycle": [
+    "proposed",
+    "preflight",
+    "GO",
+    "implemented",
+    "verified",
+    "reviewed",
+    "closed"
+  ],
+  "scope": {
+    "objective": "Refresh only the backend/api and Frontend/dashboard Socket.IO lock graphs to patched transitive releases.",
+    "allowed_mutations": [
+      "backend/api/package-lock.json",
+      "Frontend/dashboard/package-lock.json",
+      "workspace/reports/restricted_dep1a_resolution_2026-07-28.json"
+    ],
+    "forbidden_mutations": [
+      "backend/api/package.json",
+      "Frontend/dashboard/package.json",
+      "source files",
+      "runtime configuration",
+      "provider or trading state"
+    ],
+    "scripts_executed_by_npm": false
+  },
+  "preflight": {
+    "targeted_git_status": "clean",
+    "before": {
+      "backend/api": {
+        "manifest_sha256": "b2b6b00b5d5258ae297669591f33ce02655e8f60d66a26fabdaf93cd2bf01f59",
+        "lock_sha256": "24cd333bfa2ad375295c1a92cded1b76d403acbf1d4502a51adbce7c9c5685ac",
+        "versions": {
+          "socket.io": "4.8.3",
+          "engine.io": "6.6.8",
+          "socket.io-adapter": "2.5.7",
+          "ws": "8.20.1"
+        }
+      },
+      "Frontend/dashboard": {
+        "manifest_sha256": "9c5b728e1cdac0855efc3e145b8cb3f120fec39646eaecbd189a9ace5b680514",
+        "lock_sha256": "76c76a74461f1732b96a628bfa96a4b48e1275e7cad7fef38472368776f09e98",
+        "versions": {
+          "socket.io-client": "4.8.3",
+          "engine.io-client": "6.6.5",
+          "ws": "8.20.1",
+          "ws_lock_location": "node_modules/engine.io-client/node_modules/ws"
+        }
+      }
+    }
+  },
+  "commands": [
+    {
+      "command": "npm install --prefix backend/api --package-lock-only --ignore-scripts --no-save socket.io@4.8.3",
+      "exit_code": 0,
+      "result": "no_op",
+      "summary": "npm retained the stale lock graph; manifest and lock hashes remained unchanged."
+    },
+    {
+      "command": "npm update --prefix backend/api --package-lock-only --ignore-scripts --no-save engine.io socket.io-adapter ws",
+      "exit_code": 0,
+      "result": "changed_lock",
+      "summary": "Patched API transitive graph resolved; npm reported zero vulnerabilities."
+    },
+    {
+      "command": "npm update --prefix Frontend/dashboard --package-lock-only --ignore-scripts --no-save engine.io-client ws",
+      "exit_code": 0,
+      "result": "changed_lock",
+      "summary": "Patched dashboard Socket.IO transitive graph resolved; npm retained two unrelated high vulnerabilities."
+    },
+    {
+      "command": "npm audit --prefix backend/api --json",
+      "exit_code": 0,
+      "result": "verified",
+      "summary": "Zero total vulnerabilities and an empty targeted Socket.IO vulnerability set."
+    },
+    {
+      "command": "npm audit --prefix Frontend/dashboard --json",
+      "exit_code": 1,
+      "result": "verified_target_with_residual",
+      "summary": "Empty targeted Socket.IO vulnerability set; metadata reports two unrelated high vulnerabilities."
+    },
+    {
+      "command": "jq empty workspace/reports/restricted_dep1a_resolution_2026-07-28.json",
+      "exit_code": 0,
+      "result": "pending_at_write_then_completed",
+      "summary": "Structured result JSON validated after creation."
+    }
+  ],
+  "after": {
+    "backend/api": {
+      "manifest_sha256": "b2b6b00b5d5258ae297669591f33ce02655e8f60d66a26fabdaf93cd2bf01f59",
+      "manifest_unchanged": true,
+      "lock_sha256": "938ac93dd7be6f7c9b630bae6e1741faf9113ae968b7eea696fa5d6bf374fafc",
+      "lock_changed": true,
+      "versions": {
+        "socket.io": "4.8.3",
+        "engine.io": "6.6.9",
+        "socket.io-adapter": "2.5.8",
+        "ws": "8.21.1"
+      },
+      "audit": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0,
+        "targeted": {}
+      }
+    },
+    "Frontend/dashboard": {
+      "manifest_sha256": "9c5b728e1cdac0855efc3e145b8cb3f120fec39646eaecbd189a9ace5b680514",
+      "manifest_unchanged": true,
+      "lock_sha256": "58150aae23d67fcc26111350375887cc6d78f5a0e0c5974fdc6d25ceafb8c013",
+      "lock_changed": true,
+      "versions": {
+        "socket.io-client": "4.8.3",
+        "engine.io-client": "6.6.6",
+        "ws": "8.21.1",
+        "ws_lock_location": "node_modules/ws"
+      },
+      "audit": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 2,
+        "critical": 0,
+        "total": 2,
+        "targeted": {}
+      }
+    }
+  },
+  "files_changed": [
+    {
+      "path": "backend/api/package-lock.json",
+      "change": "engine.io 6.6.8 -> 6.6.9; socket.io-adapter 2.5.7 -> 2.5.8; ws 8.20.1 -> 8.21.1; matching resolved URLs, integrity hashes, and dependency ranges refreshed."
+    },
+    {
+      "path": "Frontend/dashboard/package-lock.json",
+      "change": "engine.io-client 6.6.5 -> 6.6.6; nested ws 8.20.1 replaced by root ws 8.21.1; matching resolved URLs, integrity hashes, and dependency range refreshed; npm also materialized bundled optional @tailwindcss/oxide-wasm32-wasi metadata without changing those package versions."
+    },
+    {
+      "path": "workspace/reports/restricted_dep1a_resolution_2026-07-28.json",
+      "change": "Added this structured implementation and verification record."
+    }
+  ],
+  "errors": [
+    {
+      "stage": "api_initial_refresh",
+      "classification": "stale_resolution_no_op",
+      "message": "The install-style package-lock-only command exited zero but retained engine.io 6.6.8, socket.io-adapter 2.5.7, and ws 8.20.1.",
+      "resolution": "Used a targeted npm update with the same package-lock-only, ignore-scripts, and no-save safety flags."
+    },
+    {
+      "stage": "audit_verification_initial_attempt",
+      "classification": "environment_network_transient",
+      "message": "Sandboxed audit calls failed with getaddrinfo EAI_AGAIN registry.npmjs.org.",
+      "resolution": "Repeated the exact read-only audits through the authorized registry boundary."
+    },
+    {
+      "stage": "dashboard_total_audit",
+      "classification": "pre_existing_out_of_scope_findings",
+      "message": "Two high vulnerabilities remain in the dashboard audit, but the targeted ws, socket.io-client, and engine.io-client set is empty.",
+      "resolution": "Retained as an explicit residual gate; no out-of-scope dependency was changed."
+    }
+  ],
+  "verification": {
+    "exact_version_gate": "passed",
+    "manifest_hash_gate": "passed",
+    "targeted_api_audit_gate": "passed",
+    "targeted_dashboard_audit_gate": "passed",
+    "api_total_audit_gate": "passed",
+    "dashboard_total_audit_gate": "failed_pre_existing_out_of_scope",
+    "git_diff_check": "passed",
+    "runtime_tests": {
+      "run": false,
+      "reason": "This delegated batch was lockfile-only and did not install the refreshed graph into node_modules; running application tests would exercise the pre-refresh installed tree rather than the resolved lock graph."
+    }
+  },
+  "security_check": {
+    "npm_lifecycle_scripts_disabled": true,
+    "manifest_changes": false,
+    "source_changes": false,
+    "provider_calls": false,
+    "runtime_started": false,
+    "credentials_accessed": false,
+    "trading_or_writes": false
+  },
+  "batch_state": "closed",
+  "ready_for_parent_review": true,
+  "release_effect": "DEP-1A Socket.IO advisory paths are cleared in both lockfiles. Overall release remains blocked by the two unrelated dashboard findings and the separately deferred DEP-1B, DEP-1C, DEP-1D, SSH fresh-install, and runtime qualification gates."
+}

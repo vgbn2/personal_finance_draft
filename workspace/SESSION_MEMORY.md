@@ -30,6 +30,96 @@
 }
 ```
 
+## Session Memory - 2026-07-28 ENV-1B2-A implementation
+
+```json
+{
+  "work": "Implemented and closed projected gateway and MCP child environments for working-tree source.",
+  "implemented": {
+    "projection": "frozen allowlisted child env with surface marker and forced local-env skip",
+    "gateway": "exhaustive public/account/execution classifier, six direct callers wired, positions branch added",
+    "mcp": "MCP projection with pre-spawn denial for account, live, auto-trade, and credential derivation"
+  },
+  "verification": {
+    "manifest": "120 entries, 140 names and aliases, 0 unclassified",
+    "stress": "250 repeated poisoned-parent projections pass",
+    "focused": "gateway, MCP, CLI, access-control, settings, and Polymarket sequential suites pass",
+    "broad": "MCP build, diff check, and host-capable two-worker verify:strict pass"
+  },
+  "next": "ENV-1B3-A service-key contract only; ENV-1B3-B Compose projection remains NO-GO",
+  "security": "Rotate FRED and Polymarket private key after diagnostic transcript exposure; values are not recorded here."
+}
+```
+
+## Session Memory - 2026-07-28 environment enforcement inventory
+
+```json
+{
+  "work": "Fast Reading Mode connective-tissue inventory for deferred ENV-1B2/B3",
+  "confirmed": {
+    "entrypoints": "55-command CLI plus API, MCP, dashboard child, gateway, direct scripts, and package boots",
+    "child_inheritance": "dashboard, MCP bridge, generic backend bridge, and gateway launch callers inherit or clone process.env",
+    "gateway": "still imports dotenv/config",
+    "compose": "all seven services share one central env_file projection"
+  },
+  "verification": "environment contracts 2/2; central prepare/preflight/deployment contracts 3/3; check:env 118 entries, 138 names and aliases, zero unclassified",
+  "next": "If approved, implement ENV-1B2-A only: executable surface catalog and projected child environments for gateway launches and MCP bridge. Keep direct boot rewiring, standalone scripts, and ENV-1B3 Compose changes deferred.",
+  "safety": "No environment values read, no runtime, service, container, provider, data, remote, order, public, timer, deletion, or live action."
+}
+```
+
+## Session Memory - 2026-07-28 production-grade testing truth audit
+
+```json
+{
+  "work": "Section-grade audit of source-test, fresh-install, CI, and production-qualification truthfulness",
+  "verified": "Host-capable npm run verify:strict passed; restricted API failures are loopback listen sandbox limits; hygiene and diff checks pass.",
+  "failed_or_inconclusive": "Current verify:fresh-install stopped during root npm ci and never emitted its PASS marker.",
+  "finding": "Fresh-install script includes untracked non-ignored files, so it is worktree-snapshot proof, not exact-commit fresh-clone proof. CI tests only the root package and omits five-root verification/nested builds.",
+  "next": "Approve a versioned production-evidence protocol with distinct worktree, committed archive, CI, host smoke, and recovery/soak gates before implementation.",
+  "safety": "No runtime, provider, canonical-data, order, public, deployment, or destructive action."
+}
+```
+
+## Session Memory - 2026-07-28 combined mass-implementation plan
+
+```json
+{
+  "plan": "workspace/plans/ENVIRONMENT_AND_PRODUCTION_EVIDENCE_MASS_IMPLEMENT_PLAN.md",
+  "sequence": ["TEST-1 evidence truth", "ENV-1B2-A gateway/MCP child projection", "ENV-1B3-A service-key contract", "ENV-1B3-B Compose projection only after separate approval"],
+  "excluded": ["dependency advisories", "macro schema", "SYNC-1", "real Supabase/RLS", "host/recovery/soak"],
+  "safety": "Planning only; no runtime, provider, data, service, container, remote, order, public, timer, or live action."
+}
+```
+
+## Session Memory - 2026-07-28 refined environment and evidence plan
+
+```json
+{
+  "plan": "workspace/plans/ENVIRONMENT_AND_PRODUCTION_EVIDENCE_MASS_IMPLEMENT_PLAN.md",
+  "status": "refined and proposed; implementation not started",
+  "first_batch": "TEST-1 only: canonical source-evidence coordinator, worktree_snapshot and committed_archive modes, atomic schema-v1 evidence, committed-archive CI artifact",
+  "closure_boundary": "Uncommitted worktree fixtures can close source implementation only; exact-commit and CI proof remain open until commit and authenticated CI evidence.",
+  "later_batches": "ENV-1B2-A requires exhaustive gateway classification and least-privilege MCP denial; ENV-1B3-A owns the seven-service contract in environment_manifest schema 3; ENV-1B3-B remains separately approval-gated.",
+  "verification": "git diff --check passed",
+  "safety": "Planning only; no runtime, environment value, service, provider, data, order, public, remote, dependency, migration, timer, or live action."
+}
+```
+
+## Session Memory - 2026-07-28 TEST-1 source-evidence implementation
+
+```json
+{
+  "lifecycle": "proposed -> preflight -> GO WITH FIXES -> implemented -> verified -> reviewed -> closed for source implementation",
+  "implemented": ["distinct worktree_snapshot and committed_archive acquisition", "atomic schema-v1 pass/fail/inconclusive evidence", "stale-PASS replacement before work", "five-root CI artifact", "two-job default resource policy"],
+  "verified": "focused 15/15 including the canonical two-worker runner default; bounded snapshot 26/26 steps; native 30/30; API 25/25; contracts 118/118; structure 15/15; aggregate 987/977/0/10; snapshot secrets 903/0",
+  "evidence": {"mode": "worktree_snapshot", "head": "e78e1788", "dirty": true, "lockfiles": 5, "job_limit": 2},
+  "open": ["commit implementation", "matching authenticated CI artifact", "host/recovery/soak qualification"],
+  "next": "ENV-1B2-A preflight and gateway/MCP child projection only; ENV-1B3 remains deferred",
+  "safety": "No provider poll, service/container/timer start, canonical-data write, order, public exposure, migration, or live enablement."
+}
+```
+
 ## Session Memory - 2026-07-22 session 88 - private central host rollout
 
 {
@@ -1447,5 +1537,211 @@ truth findings in `workspace/DEV_REVIEW.md`.
   ],
   "graphify": "unavailable: graphify command/module not installed",
   "safety": "No provider poll, canonical-data write, runtime/profile change, bot cycle, order, public exposure, migration, destructive action, or promotion occurred."
+}
+```
+
+## Session Memory - 2026-07-28 SSH host continuation
+
+```json
+{
+  "work": "Booted on the SSH-side CodePTIT mirror and ran only host static configuration plus a read-only MCP stdio preflight.",
+  "source_state": "clean standalone Sovereign worktree on main at e78e1788",
+  "host": {
+    "architecture": "x86_64",
+    "node": "v24.18.0",
+    "central_env": "present mode 600",
+    "compose_config": "pass"
+  },
+  "mcp": "blocked/inconclusive: host_child_stdio_unavailable; known-good child exited 0 but the SSH execution channel suppressed stdout and stderr",
+  "next": "With explicit approval, start web only and exercise Supabase login/revocation plus authenticated read-only human and distinct service/MCP principal boundaries.",
+  "safety": "No service/container/timer startup, provider poll, data write, bot cycle, order, public exposure, backup/recovery, migration, or live enablement occurred."
+}
+```
+
+## Session Memory - 2026-07-28 deferred workstation sync plan
+
+```json
+{
+  "work": "Recorded a defensive threat-model and remote CodePTIT mirror plan; implementation deferred.",
+  "plan": "workspace/plans/CODEPTIT_REMOTE_SYNC_AND_PRIVATE_DEFENSE_PLAN.md",
+  "toolkit_owner": "/home/vgbn1/Documents/codeptit/bash",
+  "default_contract": "one-way local-to-remote, SSH authenticated, remote identity preflight, dry-run first, explicit apply, no default deletion",
+  "required_user_inputs": ["SSH host alias", "local-to-remote direction confirmation", "inclusion and exclusion policy for env/runtime/data paths"],
+  "deferred": ["timer", "reverse sync", "automatic deletion", "secret/runtime replication", "remote service startup"],
+  "safety": "No script, remote connection, scheduler, runtime, provider, data, public, or trading action occurred."
+}
+```
+
+## Session Memory - 2026-07-28 environment and storage boundary refinement
+
+```json
+{
+  "work": "Refined the environment split and source-only remote mirror proposal; implementation deferred.",
+  "plan": "workspace/plans/ENVIRONMENT_AND_REMOTE_MIRROR_BOUNDARY_PLAN.md",
+  "diagnosis": "Dashboard pUSD portfolio read plus blocked live trade is a separation of read and submit authority, not proof that an env secret was displayed; public market browsing/sign-in mismatch requires diagnosis.",
+  "environment_classes": ["public", "developer", "private", "central", "execution"],
+  "remote_sync": "exclude env/key/runtime/storage/dependency/build contents; create empty remote storage layout only",
+  "first_gate": "user-approved redacted name-only inventory and developer/central/execution ownership decision",
+  "safety": "No environment, secret, storage, sync, runtime, provider, order, or public exposure state changed."
+}
+```
+
+## Session Memory - 2026-07-28 ENV-1B3-A implementation
+
+```json
+{
+  "work": "Implemented, verified, reviewed, and closed the seven-service Compose environment contract.",
+  "source_state": "dirty working tree at e78e1788; exact-commit and authenticated-CI proof remain open",
+  "contract": "environment-manifest schema 3 owns all seven service policies; preparation reports names only",
+  "verification": "focused 13/13; discovery 120 entries / 140 names and aliases / 0 unclassified; strict 1003 total / 999 pass / 0 fail / 4 skip under two-worker caps",
+  "runtime_boundary": "docker-compose.yml unchanged; shared env_file remains; ENV-1B3-B requires separate approval",
+  "remaining": "direct entrypoint projection, exact-commit/CI, deployed host, recovery, rollback, one-writer, soak",
+  "security": "Rotate the FRED credential and Polymarket private key exposed to the tool transcript before reuse."
+}
+```
+
+## Session Memory - 2026-07-28 environment batch closeout
+
+```json
+{
+  "boundary": "session ended on main at e78e1788 with the working tree intentionally dirty and uncommitted",
+  "closed": ["TEST-1 source", "ENV-1B2-A source", "ENV-1B3-A contract source"],
+  "verified": "strict 1003/999/0/4 under two-worker caps; focused ENV-1B3-A 13/13; manifest 120/140/0; diff check pass",
+  "next_requires_approval": "ENV-1B3-B actual Compose projection or broader direct-entrypoint projection",
+  "first_safety_action": "rotate exposed FRED credential and Polymarket private key before reuse",
+  "closeout_actions": "no staging, commit, service, container, provider, data, order, public, or live action"
+}
+```
+
+## Session Memory - 2026-07-28 mass-implement environment/sync preflight
+
+```json
+{
+  "work": "Refined deferred environment and remote-sync plans through mass-implement preflight plus independent dev review.",
+  "plans": [
+    "workspace/plans/ENVIRONMENT_AND_REMOTE_MIRROR_BOUNDARY_PLAN.md",
+    "workspace/plans/CODEPTIT_REMOTE_SYNC_AND_PRIVATE_DEFENSE_PLAN.md"
+  ],
+  "decisions": {
+    "ENV-1A": "GO WITH FIXES",
+    "ENV-1B": "NO-GO until ENV-1A closes",
+    "SYNC-1": "GO WITH FIXES after target/scope inputs",
+    "PM-1": "GO WITH FIXES after active preceding batch closes",
+    "remote_delete_mirror": "NO-GO",
+    "scheduler": "NO-GO/deferred"
+  },
+  "confirmed": [
+    "explicit env selection can currently fall back to adjacent catch-all files",
+    "gateway independently imports dotenv",
+    "central-host generator/preflight already excludes execution credentials",
+    "rich-terminal polymarket markets authorizes live mode before browsing"
+  ],
+  "safety": "Planning only; no source, env, secret, storage, sync, remote, runtime, provider, order, or public exposure action occurred."
+}
+```
+
+## Session Memory - 2026-07-28 environment and Polymarket implementation
+
+```json
+{
+  "work": "Reviewed edge cases, then implemented and closed ENV-1A, ENV-1B1, and PM-1.",
+  "implemented": {
+    "ENV-1A": "schema-2 environment classes, profiles, surfaces, exact browser allowlist, name-only validation",
+    "ENV-1B1": "exclusive explicit-file loading plus tested surface/profile projection primitives",
+    "PM-1": "credential-free public browser entry, last-moment Buy authorization, scoped submit grant, truthful cockpit evidence"
+  },
+  "verification": {
+    "environment": "118 canonical entries, 138 names and aliases, 0 unclassified, browser allowlist 3/3",
+    "focused": "environment/browser contracts pass; host-capable Polymarket preflight/CLI 48/48",
+    "contracts": "118/118 pass",
+    "aggregate": "979 total / 975 pass / 0 fail / 4 intentional skips",
+    "frontend": "TypeScript and production build pass",
+    "secrets": "900 files / 0 violations",
+    "hygiene_structure_diff": "pass"
+  },
+  "deferred": {
+    "ENV-1B2": "automatic per-entrypoint projection requires an exhaustive command-to-surface map",
+    "ENV-1B3": "Compose env_file replacement requires fixture-proven per-service keys",
+    "SYNC-1": "requires SSH alias, fixed remote root and sentinel, selected nested repos, and external toolkit scope"
+  },
+  "safety": "No real env value read/moved, runtime/service/container/provider/data/remote/order/public/timer/deletion/live action."
+}
+```
+
+## Session Memory - 2026-07-28 dependency partial closure and SSH verdict
+
+```json
+{
+  "work": "Closed DEP-1A Socket.IO and DEP-1B viem; deferred DEP-1C Alpaca and DEP-1D Polymarket/Ethers as NO-GO.",
+  "dependency_evidence": {
+    "before": "61 total / 24 high / 11 moderate / 26 low / 0 critical",
+    "after": "54 total / 17 high / 11 moderate / 26 low / 0 critical",
+    "closed": "Socket.IO/Engine.IO/ws lock refresh; viem 2.55.10",
+    "deferred": "Alpaca 4.0.1 API unverified; Polymarket remediation requires unsafe 1.0.6 to 0.0.3 downgrade"
+  },
+  "verification": {
+    "strict": "1003 total / 999 pass / 0 fail / 4 intentional skips",
+    "clean_worktree_snapshot": "five-root installs and builds pass; 1003 total / 993 pass / 0 fail / 10 environment-dependent skips",
+    "hygiene_diff": "pass"
+  },
+  "usability": {
+    "yes": "private read-only research and paper-safe exercise from the current source",
+    "not_yet": "intended SSH host, release, public exposure, or live execution",
+    "reason": "SSH evidence is for e78e1788, not this uncommitted batch; host auth/MCP/startup/recovery gates and 17 high advisories remain"
+  },
+  "safety": "No provider poll, service/container start, canonical-data write, credential read, bot cycle, order, public exposure, migration, destructive action, or live enablement."
+}
+```
+
+## Session Memory - 2026-07-28 third-machine distribution audit
+
+```json
+{
+  "verdict": "Clean installation is strongly evidenced; actual third-host container startup and distribution provenance remain unproven.",
+  "confirmed": [
+    "five tracked lockfiles exist and registry-resolved packages have integrity metadata",
+    "the sole Git dependency is pinned to one commit",
+    "node_modules, environment files, generated builds, and runtime data are excluded from Git/Docker contexts",
+    "Docker installs with npm ci and ignore-scripts"
+  ],
+  "open_gates": [
+    "58-entry dirty tree with 15 untracked files",
+    "no engines or packageManager pin",
+    "mutable container base and GitHub Action tags",
+    "ONNX FetchContent URL has no URL_HASH",
+    "runtime image is single-stage, runs as root, and retains build tools, source, and development dependencies",
+    "no SBOM, artifact signature, provenance attestation, or release checksum workflow",
+    "17 high advisory nodes",
+    "personal license does not permit unrestricted redistribution"
+  ],
+  "recommended_artifact": "reviewed exact commit plus CI-built, scanned, SBOM-attached, signed OCI image pulled by digest",
+  "safety": "Do not rsync or publish node_modules, env files, secrets, storage data, or generated build output."
+}
+```
+
+## Session Memory - 2026-07-28 rsync closeout
+
+```json
+{
+  "source_host": "steamlinux",
+  "intended_destination": "vgbn1@192.168.4.126, expected hostname vgbn-servers",
+  "source_tooling": "Node 24.18.0; npm 11.16.0; Docker and daemon 29.1.3; Compose 2.40.3; Git 2.53.0; CMake 4.2.3",
+  "authorization": "Private rsync may include credentials and runtime data.",
+  "transfer_boundary": "SSH transport; no --delete; exclude .git, node_modules, dashboard/native builds, and graphify-out.",
+  "first_next_action": "From steamlinux, verify destination hostname, architecture, and Docker daemon before creating or copying.",
+  "deployment_boundary": "Build and qualify web only on loopback; all writer, backfill, monitoring, research, paper, bot, order, public, and live profiles remain stopped.",
+  "session_end": "No rsync, remote write, install, build, startup, provider, data, order, or live action occurred."
+}
+```
+
+## Session Memory - 2026-07-28 exact source commit
+
+```json
+{
+  "authorization": "Commit the complete current working tree locally.",
+  "scope": "Private auth, environment projection, source evidence, Polymarket safety, dependency remediation, tests, plans, reports, and continuity records.",
+  "verified_before_commit": "strict 1003/999/0/4; clean snapshot 1003/993/0/10; diff and hygiene pass; fresh secret scan required immediately before staging",
+  "excluded_actions": "No push, rsync, remote write, image build, service/container startup, provider polling, data mutation, bot cycle, order, public exposure, or live enablement.",
+  "remaining_gates": "17 high advisories plus third-host auth/MCP/startup/persistence/restart/rollback/recovery/soak qualification."
 }
 ```

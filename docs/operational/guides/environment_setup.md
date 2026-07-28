@@ -1,74 +1,78 @@
-# Environment Checklist
+# Environment Boundaries
 
-Use this file as the short onboarding list for external keys and credentials. The repo already contains source contracts for market data, macro, sentiment, on-chain, prediction markets, and future broker access. Check the items you actually have in place.
+`config/system/environment_manifest.json` is the canonical name-only classification contract. It classifies
+every environment name and alias used by source or tracked examples without reading or reporting values.
 
-## Core Market And Macro
+Run the contract check with:
 
-- [X] `FRED_API_KEY` for macro series such as CPI, PPI, rates, unemployment, GDP, retail sales, and consumer confidence
-- [ ] `TRUFLATION_API_KEY` for alternative inflation and macro series
-- [ ] `SPGLOBAL_API_KEY` for PMI-style commercial macro data
-- [X] `ALPHA_VANTAGE_API_KEY` for an extra market data source
-- [ ] `FINNHUB_API_KEY` for broader stocks, forex, and crypto coverage
-- [ ] `TWELVE_DATA_API_KEY` for expanded time series and symbol discovery
-- [X] `POLYGON_API_KEY` for richer market, options, or breadth data
-- [X] `ALPACA_API_KEY` and `ALPACA_API_SECRET` for Alpaca market data or paper trading
-- [ ] `IBKR_API_KEY` or broker credentials for Interactive Brokers demo or paper access
+```bash
+npm run check:env
+```
 
-## Crypto
+## Classes
 
-- [X] `BINANCE_API_KEY` and `BINANCE_API_SECRET` for authenticated Binance access
-- [X] `COINBASE_API_KEY` and `COINBASE_API_SECRET` for Coinbase access
-- [ ] `BLOCKCHAIR_API_KEY` for on-chain and transaction data
+| Class | Intended ownership | Examples |
+|---|---|---|
+| `public` | Browser-safe public configuration | API URL, Supabase URL, Supabase publishable key |
+| `developer` | Non-secret local configuration | runtime mode, cache bounds, local paths |
+| `private` | Provider-read or operator-only material | data-provider credentials, account context |
+| `central` | Private host authentication and service state | API/MCP tokens, server-side Supabase secret |
+| `execution` | Local-only order-capable material and controls | wallet/L2 credentials, trade PIN, live authorization |
+| `internal` | Process/runtime plumbing | `PATH`, CI and terminal flags |
 
-## Sentiment And News
+An environment class is not an authorization grant. Provider accounts must still be provisioned with the
+narrowest upstream permissions available, and runtime/auth/risk gates remain mandatory.
 
-- [ ] `ALTERNATIVE_ME_API_KEY` for fear-and-greed and market sentiment
-- [X] `NEWSAPI_API_KEY` for news headlines and article-driven sentiment
-- [ ] `CRYPTOPANIC_API_KEY` for crypto news and sentiment
-- [X] `GOOGLE_API_KEY` and/or `GOOGLE_CSE_ID` for search-interest and custom search features
+## Entrypoint Surfaces
 
-## Prediction Markets
+The schema-3 manifest declares allowed surfaces for each entry: public client, default CLI, web, MCP, public
+gateway, credentialed account gateway, writer, operator diagnostics, execution, process-internal plumbing, and
+one contract surface for each of the seven Compose services.
 
-- [ ] `KALSHI_API_KEY` and `KALSHI_API_SECRET` for Kalshi data and trading
-- [X] `POLYMARKET_API_KEY` if you later add authenticated Polymarket access
+The browser input set is exactly:
 
-## FX, Weather, And Aviation-Adjacency
+- `VITE_API_URL`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-- [ ] `FXAPI_API_KEY` for FX market data
-- [X] `NASA_POWER_API_KEY` if your NASA POWER usage requires a key
-- [ ] `OPENSKY_USERNAME` and `OPENSKY_PASSWORD` for flight and aviation data
-- [ ] `MARINETRAFFIC_API_KEY` for cargo and shipping data
+Server-prefixed aliases are intentionally not browser fallbacks. Vite exposes build inputs to the client bundle,
+so adding a new browser variable requires a manifest and contract-test change.
 
-## Broker Or Execution Later
+## File Ownership
 
-- [ ] `BROKER_API_KEY` or broker-specific credentials for any live or demo execution path
-- [ ] `BROKER_API_SECRET` or equivalent secret for that broker
-- [ ] `BROKER_PAPER_MODE=true` or an equivalent safe-mode flag
-- [ ] `BROKER_LIVE_MODE=false` until live execution is explicitly approved
+- `.env.example` is the legacy name inventory while entrypoint projection is migrated.
+- `.env.central.example` documents the private, non-live research host.
+- `Frontend/dashboard/.env.example` contains the complete browser allowlist.
+- Real `.env`, `.env.local`, `.env.private`, `.env.central`, and future `.env.execution` files are ignored,
+  operator-owned, and must remain mode-restricted where supported.
+- Execution material must not be copied into web, MCP, default CLI, writer, or remote source-mirror inputs.
 
-## Good Practices
+Do not inventory environment values. A safe audit reports only filenames, variable names, classifications, and
+missing/forbidden names.
 
-- [ ] Put secrets in `.env`, not in committed config files
-- [ ] Redact secrets from logs, URLs, and generated JSON artifacts
-- [ ] Prefer paper or demo accounts first
-- [ ] Add only the providers you are ready to validate
-- [ ] Keep live broker keys out of the CLI unless execution is intentionally enabled
+## Compose Service Contract
 
-## Suggested First Wave
+`compose_services` is the only service-to-key policy owner. Each row records the Compose profile, command
+identity, required/optional/defaulted projected names, fixed safe overrides, mounts, and forbidden environment
+classes. All seven services forbid the execution class. Web, host health, host backup, and portfolio monitor
+receive no provider/account key in their declared projection; backfill owns the bounded provider-read set.
 
-- [X] `FRED_API_KEY`
-- [X] `ALPACA_API_KEY` and `ALPACA_API_SECRET`
-- [X] `BINANCE_API_KEY` and `BINANCE_API_SECRET`
-- [X] `COINBASE_API_KEY` and `COINBASE_API_SECRET`
-- [ ] `ALTERNATIVE_ME_API_KEY`
-- [X] `NEWSAPI_API_KEY`
-- [X] `POLYGON_API_KEY`
-- [ ] `TRUFLATION_API_KEY`
-- [ ] `FINNHUB_API_KEY`
-- [ ] `TWELVE_DATA_API_KEY`
+`node backend/scripts/ops/prepare_central_env.js` reports a name-only projection preview. A missing required name
+or any forbidden/unknown name fails its service row without printing values.
 
-## Notes
+This is contract clarity, not runtime isolation. `infra/docker/docker-compose.yml` still attaches the same central
+`env_file` to all seven services. Do not claim per-service isolation until the separately approved Compose
+projection batch replaces that shared injection and passes rendered-environment plus rollback tests.
 
-- `config/markets/data_sources.yaml` is the main source map for which providers the repo expects.
-- Some providers may offer public endpoints for limited data, but authenticated access is usually needed for reliable production use.
-- If you only want OHLCV and sample research, you can start with the free/public paths already in the CLI and add keys later.
+## Current Migration Boundary
+
+The manifest, frontend allowlist, exclusive environment loading, and gateway/MCP child projection are enforced
+as source contracts. Direct entrypoint projection and per-service Compose injection remain separate lifecycle
+batches and must be verified before the classes become a complete runtime authority boundary.
+
+Until those batches close:
+
+- keep live execution disabled;
+- keep the API private/loopback-bound;
+- do not infer process isolation from filenames alone;
+- do not rename, delete, merge, or copy real environment files automatically.

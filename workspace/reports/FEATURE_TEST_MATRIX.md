@@ -17,6 +17,13 @@ the session-dated sections below are the current rerun results.
 | Configured-cache qualification | restricted 14-symbol VN 1d refresh + integrity/strict check | authorized bounded provider refresh | pass | provider-refresh/local-runtime proof | 172 records, 0 provider errors; 92/92 cached, 0 stale, DCS 1.0; strict 12 records, 0 errors/warnings | Remote persistence, recovery, one-writer, and soak unqualified; macro remote schema is incompatible despite credentials being present. |
 | Dependency security advisory | five package roots, lockfile-only audit | restricted read-only advisory | blocked | current advisory proof | 61 vulnerable nodes: 24 high, 11 moderate, 26 low, 0 critical; no lockfile changes | Isolated owner upgrades and compatibility tests are required before release/live use. |
 
+## SSH Host Continuation - 2026-07-28
+
+| Feature | Entrypoint | Mode | Result | Evidence Class | Evidence | Limitation / Next Action |
+|:---|:---|:---|:---|:---|:---|:---|
+| Private-host static deployment contract | `docker compose --env-file .env.central -f infra/docker/docker-compose.yml config --quiet` | static/no-runtime | pass | host static configuration proof | SSH host is `x86_64`, has Node `v24.18.0`, protected `.env.central` (mode 600), and Compose config validates successfully | This does not start or prove the web service, Supabase login/RLS, SSH tunneling, recovery, one-writer, or soak. |
+| Authenticated MCP stdio/status | `node scripts/mcp_stdio_probe.js` | read-only child-process probe | blocked | host transport preflight | Probe entrypoint exists, but its known-good child exited 0 with both stdout/stderr suppressed: `host_child_stdio_unavailable` | Inconclusive by contract; rerun from a normal host terminal with observable child stdio before judging MCP server health. |
+
 ## Global Market Monitor Exercise - 2026-07-28 session 115
 
 | Feature | Entrypoint | Mode | Result | Evidence Class | Evidence | Limitation / Next Action |

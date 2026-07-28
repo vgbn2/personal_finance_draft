@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "report_id": "DEP-1B",
+  "generated_at": "2026-07-28T00:00:00+07:00",
+  "lifecycle": [
+    "proposed",
+    "preflight",
+    "GO_WITH_FIXES",
+    "implemented",
+    "verified",
+    "reviewed",
+    "closed"
+  ],
+  "scope": {
+    "objective": "Upgrade direct viem owners in the root and backend/gateway to ^2.55.10, install the graph with lifecycle scripts disabled, and clear viem-owned vulnerable ws paths.",
+    "allowed_files": [
+      "package.json",
+      "package-lock.json",
+      "backend/gateway/package.json",
+      "backend/gateway/package-lock.json",
+      "workspace/reports/restricted_dep1b_resolution_2026-07-28.json"
+    ],
+    "explicitly_not_changed": [
+      "@alpacahq/alpaca-trade-api",
+      "@polymarket/clob-client-v2",
+      "Socket.IO package roots",
+      "source files",
+      "workspace state"
+    ],
+    "application_tests_run": false
+  },
+  "before": {
+    "root": {
+      "manifest_dependency": "^2.52.2",
+      "manifest_sha256": "9786848e2a6dda7cc23a68bcf367831cb8e6b0c787ed916564f5b201ad1bcadb",
+      "lock_sha256": "fa695fbd049232ea4b20797ce2e13fb2a09d303a2a362f0edb2f7a4495aaf498",
+      "lock_direct_range": "^2.52.2",
+      "lock_viem": "2.53.1",
+      "lock_viem_owned_ws": "8.20.1",
+      "scripts_sha256": "d07c73eef009cc49d2c17a21c5797303f695f355ba22fa9f96980a249d251318",
+      "dirty_before": true,
+      "dirty_owner_note": "Root package.json already contained unrelated TEST-1 source-evidence script edits."
+    },
+    "backend/gateway": {
+      "manifest_dependency": "^2.52.2",
+      "manifest_sha256": "bd2340f3cc7f41fd7c8f9bd3788bbf3fe33169e9ef7c27c8f09f0788942829d5",
+      "lock_sha256": "e0bc8adba74e6e2fcd01e098abacb4e3987932eae9f5073c5c3e7ccaab8243fb",
+      "lock_direct_range": "^2.52.2",
+      "lock_viem": "2.52.2",
+      "lock_viem_owned_ws": "8.20.1",
+      "dirty_before": false
+    }
+  },
+  "commands": [
+    {
+      "command": "npm install --ignore-scripts --no-save viem@2.55.10",
+      "exit_code": 0,
+      "result": "installed_tree_updated_lock_not_updated",
+      "summary": "Changed 3 installed packages; audited 374 packages; reported 26 total vulnerabilities."
+    },
+    {
+      "command": "npm install --prefix backend/gateway --ignore-scripts --no-save viem@2.55.10",
+      "exit_code": 0,
+      "result": "installed_tree_updated_lock_not_updated",
+      "summary": "Changed 3 installed packages; audited 218 packages; reported 21 total vulnerabilities."
+    },
+    {
+      "command": "npm install --package-lock-only --ignore-scripts",
+      "exit_code": 0,
+      "result": "root_lock_synchronized",
+      "summary": "Synchronized root lock to the already-patched manifest with scripts disabled."
+    },
+    {
+      "command": "npm install --prefix backend/gateway --package-lock-only --ignore-scripts",
+      "exit_code": 0,
+      "result": "gateway_lock_synchronized",
+      "summary": "Synchronized gateway lock to the already-patched manifest with scripts disabled."
+    },
+    {
+      "command": "npm ls viem ws --all --json",
+      "exit_code": 0,
+      "result": "healthy"
+    },
+    {
+      "command": "npm ls --prefix backend/gateway viem ws --all --json",
+      "exit_code": 0,
+      "result": "healthy"
+    },
+    {
+      "command": "npm audit --json",
+      "npm_audit_exit_code": 1,
+      "filtered_pipeline_exit_code": 0,
+      "result": "viem_cleared_ws_residual"
+    },
+    {
+      "command": "npm audit --prefix backend/gateway --json",
+      "npm_audit_exit_code": 1,
+      "filtered_pipeline_exit_code": 0,
+      "result": "viem_cleared_ws_residual"
+    },
+    {
+      "command": "jq empty workspace/reports/restricted_dep1b_resolution_2026-07-28.json",
+      "exit_code": 0,
+      "result": "pending_at_write_then_completed"
+    },
+    {
+      "command": "git diff --check -- package.json package-lock.json backend/gateway/package.json backend/gateway/package-lock.json workspace/reports/restricted_dep1b_resolution_2026-07-28.json",
+      "exit_code": 0,
+      "result": "pending_at_write_then_completed"
+    }
+  ],
+  "after": {
+    "root": {
+      "manifest_dependency": "^2.55.10",
+      "manifest_sha256": "64f082ba8dc4f02e0453a88cd3a29266e6466dac74ca2bb1ae351bf39439f479",
+      "lock_sha256": "18e0a965eca039aaa1e4bbb452d679b8d1ed7c9f7f99724797852ee85bea9f77",
+      "lock_direct_range": "^2.55.10",
+      "lock_viem": "2.55.10",
+      "installed_viem": "2.55.10",
+      "lock_viem_owned_ws": "8.21.0",
+      "installed_viem_owned_ws": "8.21.0",
+      "scripts_sha256": "d07c73eef009cc49d2c17a21c5797303f695f355ba22fa9f96980a249d251318",
+      "scripts_preserved": true,
+      "npm_ls_exit_code": 0
+    },
+    "backend/gateway": {
+      "manifest_dependency": "^2.55.10",
+      "manifest_sha256": "60e9abf6016cb059b3e5115cf4699058937558eb242d8d5b1d990e560b66415d",
+      "lock_sha256": "8c25e6624a3409bcb7247db0afd3c0998532645d73d7ae1dd441b6f3543bd8ed",
+      "lock_direct_range": "^2.55.10",
+      "lock_viem": "2.55.10",
+      "installed_viem": "2.55.10",
+      "lock_viem_owned_ws": "8.21.0",
+      "installed_viem_owned_ws": "8.21.0",
+      "npm_ls_exit_code": 0
+    }
+  },
+  "files_changed": [
+    {
+      "path": "package.json",
+      "owned_change": "dependencies.viem ^2.52.2 -> ^2.55.10",
+      "preserved_unrelated_change": "Existing TEST-1 source-evidence scripts remain byte-identical by scripts hash."
+    },
+    {
+      "path": "package-lock.json",
+      "owned_change": "Root range ^2.55.10; viem 2.55.10; ox 0.14.33; viem-owned ws 8.21.0; matching resolved and integrity fields."
+    },
+    {
+      "path": "backend/gateway/package.json",
+      "owned_change": "dependencies.viem ^2.52.2 -> ^2.55.10"
+    },
+    {
+      "path": "backend/gateway/package-lock.json",
+      "owned_change": "Gateway range ^2.55.10; viem 2.55.10; ox 0.14.33; viem-owned ws 8.21.0; matching resolved and integrity fields."
+    },
+    {
+      "path": "workspace/reports/restricted_dep1b_resolution_2026-07-28.json",
+      "owned_change": "Added structured DEP-1B implementation and verification record."
+    }
+  ],
+  "audit": {
+    "root": {
+      "metadata": {
+        "info": 0,
+        "low": 13,
+        "moderate": 6,
+        "high": 7,
+        "critical": 0,
+        "total": 26
+      },
+      "viem": null,
+      "viem_vulnerability_cleared": true,
+      "residual_ws": {
+        "severity": "high",
+        "range": "8.0.0 - 8.20.1",
+        "nodes": [
+          "node_modules/@ethersproject/providers/node_modules/ws"
+        ],
+        "owner": "@polymarket/clob-client-v2 -> @ethersproject/providers",
+        "fixAvailable": {
+          "name": "@polymarket/clob-client-v2",
+          "version": "0.0.3",
+          "isSemVerMajor": true
+        },
+        "advisories": [
+          {
+            "id": "GHSA-58qx-3vcg-4xpx",
+            "severity": "moderate",
+            "range": ">=8.0.0 <8.20.1"
+          },
+          {
+            "id": "GHSA-96hv-2xvq-fx4p",
+            "severity": "high",
+            "range": ">=8.0.0 <8.21.0"
+          }
+        ]
+      }
+    },
+    "backend/gateway": {
+      "metadata": {
+        "info": 0,
+        "low": 12,
+        "moderate": 3,
+        "high": 6,
+        "critical": 0,
+        "total": 21
+      },
+      "viem": null,
+      "viem_vulnerability_cleared": true,
+      "residual_ws": {
+        "severity": "high",
+        "range": "8.0.0 - 8.20.1",
+        "nodes": [
+          "node_modules/@ethersproject/providers/node_modules/ws"
+        ],
+        "owner": "@polymarket/clob-client-v2 -> @ethersproject/providers",
+        "fixAvailable": {
+          "name": "@polymarket/clob-client-v2",
+          "version": "0.0.3",
+          "isSemVerMajor": true
+        },
+        "advisories": [
+          {
+            "id": "GHSA-58qx-3vcg-4xpx",
+            "severity": "moderate",
+            "range": ">=8.0.0 <8.20.1"
+          },
+          {
+            "id": "GHSA-96hv-2xvq-fx4p",
+            "severity": "high",
+            "range": ">=8.0.0 <8.21.0"
+          }
+        ]
+      }
+    },
+    "residual_classification": "DEP-1D pre-existing and out of DEP-1B scope; do not accept the npm-proposed Polymarket client downgrade."
+  },
+  "install_script_status": {
+    "root": {
+      "ignore_scripts": true,
+      "lifecycle_scripts_executed": false
+    },
+    "backend/gateway": {
+      "ignore_scripts": true,
+      "lifecycle_scripts_executed": false
+    }
+  },
+  "errors": [
+    {
+      "stage": "initial install and lock verification",
+      "classification": "no_save_lock_suppression",
+      "message": "Targeted --no-save installs updated node_modules but intentionally did not update the locks.",
+      "resolution": "Stopped progression and synchronized each lock from its already-patched manifest using package-lock-only with scripts disabled."
+    },
+    {
+      "stage": "targeted audit initial attempt",
+      "classification": "environment_network_transient",
+      "message": "Sandboxed audits failed with getaddrinfo EAI_AGAIN registry.npmjs.org.",
+      "resolution": "Repeated the exact read-only audits through the authorized registry boundary."
+    },
+    {
+      "stage": "root lock review",
+      "classification": "unrelated_lock_canonicalization",
+      "message": "npm rewrote the pinned @mathieuc/tradingview resolved URL from git+https to git+ssh.",
+      "resolution": "Restored the original pinned git+https URL; final diff contains no TradingView change."
+    },
+    {
+      "stage": "audit closeout",
+      "classification": "pre_existing_out_of_scope",
+      "message": "The Polymarket-owned @ethersproject/providers ws 8.18.0 node remains vulnerable in both roots.",
+      "resolution": "Retained as DEP-1D NO-GO; no Polymarket package or override was changed."
+    }
+  ],
+  "verification": {
+    "manifest_ranges": "passed",
+    "lock_ranges": "passed",
+    "installed_viem_exact": "passed",
+    "viem_owned_ws_minimum": "passed",
+    "npm_ls_health": "passed",
+    "viem_targeted_audit": "passed",
+    "unrelated_test1_scripts_preserved": "passed",
+    "install_scripts_disabled": "passed",
+    "application_tests": "not_run_by_instruction",
+    "jq_validation": "passed",
+    "diff_check": "passed"
+  },
+  "batch_state": "closed",
+  "ready_for_parent_review": true,
+  "release_effect": "DEP-1B clears viem-owned vulnerable ws paths in root and gateway. Overall release remains blocked by Alpaca/Axios, Polymarket-owned ws, unrelated dashboard findings, and SSH fresh-install/runtime gates."
+}

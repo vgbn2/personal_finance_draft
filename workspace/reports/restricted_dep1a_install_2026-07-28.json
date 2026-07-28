@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "report_id": "DEP-1A-install",
+  "generated_at": "2026-07-28T00:00:00+07:00",
+  "scope": {
+    "objective": "Deterministically install backend/api and Frontend/dashboard from their updated DEP-1A locks and verify the installed target graph.",
+    "package_roots": [
+      "backend/api",
+      "Frontend/dashboard"
+    ],
+    "application_tests_run": false,
+    "source_edits": false,
+    "manifest_or_lock_edits_from_install": false
+  },
+  "commands": [
+    {
+      "command": "npm ci --prefix backend/api --foreground-scripts",
+      "exit_code": 0,
+      "result": "success",
+      "output_summary": "Added 37 packages, audited 38 packages, and found 0 vulnerabilities."
+    },
+    {
+      "command": "npm ci --prefix Frontend/dashboard --foreground-scripts",
+      "exit_code": 0,
+      "result": "success",
+      "output_summary": "Added 144 packages, audited 145 packages, and reported 2 high vulnerabilities outside the DEP-1A target graph."
+    },
+    {
+      "command": "npm ls --prefix backend/api socket.io engine.io socket.io-adapter ws --all --json",
+      "exit_code": 0,
+      "result": "healthy"
+    },
+    {
+      "command": "npm ls --prefix Frontend/dashboard socket.io-client engine.io-client ws --all --json",
+      "exit_code": 0,
+      "result": "healthy"
+    },
+    {
+      "command": "jq empty workspace/reports/restricted_dep1a_install_2026-07-28.json",
+      "exit_code": 0,
+      "result": "pending_at_write_then_completed"
+    }
+  ],
+  "installed": {
+    "backend/api": {
+      "exact_versions": {
+        "socket.io": "4.8.3",
+        "engine.io": "6.6.9",
+        "socket.io-adapter": "2.5.8",
+        "ws": "8.21.1"
+      },
+      "npm_ls_exit_code": 0,
+      "npm_ls_health": "healthy",
+      "invalid_or_missing_nodes": [],
+      "vulnerability_summary_from_ci": {
+        "total": 0
+      }
+    },
+    "Frontend/dashboard": {
+      "exact_versions": {
+        "socket.io-client": "4.8.3",
+        "engine.io-client": "6.6.6",
+        "ws": "8.21.1"
+      },
+      "npm_ls_exit_code": 0,
+      "npm_ls_health": "healthy",
+      "invalid_or_missing_nodes": [],
+      "vulnerability_summary_from_ci": {
+        "high": 2,
+        "targeted_dep1a_high": 0,
+        "classification": "pre_existing_out_of_scope"
+      }
+    }
+  },
+  "tracked_state": {
+    "before": [
+      ".github/workflows/test.yml",
+      "Frontend/dashboard/package-lock.json",
+      "Frontend/dashboard/src/lib/supabase.ts",
+      "Frontend/dashboard/src/pages/LoginPage.tsx",
+      "backend/api/package-lock.json",
+      "backend/cli/commands/operational/status.js",
+      "backend/cli/commands/trade/trade.js",
+      "backend/cli/commands/trade/trade_polymarket.js",
+      "backend/gateway/src/index.ts",
+      "backend/mcp_server/lib/bridge.ts",
+      "backend/scripts/ops/prepare_central_env.js",
+      "config/system/environment_manifest.json",
+      "docs/operational/guides/environment_setup.md",
+      "docs/operational/guides/testing_surface.md",
+      "package.json",
+      "scripts/dev/check_environment_manifest.js",
+      "scripts/dev/verify_fresh_install.sh",
+      "shared/lib/mcp/agent.js",
+      "shared/lib/runtime/backend_bridge.js",
+      "shared/lib/runtime/env.js",
+      "shared/lib/runtime/environment_manifest.js",
+      "tests/run_node_tests.js",
+      "tests/scripts/architecture/cli/core/environment_manifest.test.js",
+      "tests/scripts/architecture/cli/core/fresh_install_contract.test.js",
+      "tests/scripts/architecture/cli/core/github_workflow_contract.test.js",
+      "tests/scripts/architecture/cli/core/test_runner_contract.test.js",
+      "tests/scripts/integration/polymarket/cockpit_polymarket_merge.test.js",
+      "tests/scripts/integration/polymarket/polymarket_auth_health.test.js",
+      "tests/scripts/integration/polymarket/polymarket_preflight.test.js",
+      "tests/scripts/integration/trading/mcp_trade_contract.test.js",
+      "tests/scripts/lib/backend_bridge.test.js",
+      "tests/scripts/operational/prepare_central_env.test.js",
+      "workspace/DEV_REVIEW.md",
+      "workspace/NEXT_SESSION_GOAL.md",
+      "workspace/PROMPT_LOG.md",
+      "workspace/REVIEW_LEDGER.md",
+      "workspace/SESSION_MEMORY.md",
+      "workspace/STATE.md",
+      "workspace/handoff/2026-07-28.md",
+      "workspace/reports/FEATURE_TEST_MATRIX.md"
+    ],
+    "after": [
+      ".github/workflows/test.yml",
+      "Frontend/dashboard/package-lock.json",
+      "Frontend/dashboard/src/lib/supabase.ts",
+      "Frontend/dashboard/src/pages/LoginPage.tsx",
+      "backend/api/package-lock.json",
+      "backend/cli/commands/operational/status.js",
+      "backend/cli/commands/trade/trade.js",
+      "backend/cli/commands/trade/trade_polymarket.js",
+      "backend/gateway/src/index.ts",
+      "backend/mcp_server/lib/bridge.ts",
+      "backend/scripts/ops/prepare_central_env.js",
+      "config/system/environment_manifest.json",
+      "docs/operational/guides/environment_setup.md",
+      "docs/operational/guides/testing_surface.md",
+      "package.json",
+      "scripts/dev/check_environment_manifest.js",
+      "scripts/dev/verify_fresh_install.sh",
+      "shared/lib/mcp/agent.js",
+      "shared/lib/runtime/backend_bridge.js",
+      "shared/lib/runtime/env.js",
+      "shared/lib/runtime/environment_manifest.js",
+      "tests/run_node_tests.js",
+      "tests/scripts/architecture/cli/core/environment_manifest.test.js",
+      "tests/scripts/architecture/cli/core/fresh_install_contract.test.js",
+      "tests/scripts/architecture/cli/core/github_workflow_contract.test.js",
+      "tests/scripts/architecture/cli/core/test_runner_contract.test.js",
+      "tests/scripts/integration/polymarket/cockpit_polymarket_merge.test.js",
+      "tests/scripts/integration/polymarket/polymarket_auth_health.test.js",
+      "tests/scripts/integration/polymarket/polymarket_preflight.test.js",
+      "tests/scripts/integration/trading/mcp_trade_contract.test.js",
+      "tests/scripts/lib/backend_bridge.test.js",
+      "tests/scripts/operational/prepare_central_env.test.js",
+      "workspace/DEV_REVIEW.md",
+      "workspace/NEXT_SESSION_GOAL.md",
+      "workspace/PROMPT_LOG.md",
+      "workspace/REVIEW_LEDGER.md",
+      "workspace/SESSION_MEMORY.md",
+      "workspace/STATE.md",
+      "workspace/handoff/2026-07-28.md",
+      "workspace/reports/FEATURE_TEST_MATRIX.md"
+    ],
+    "before_after_identical": true,
+    "new_tracked_changes_from_npm_ci": [],
+    "note": "The two package-lock files were already modified by DEP-1A before this installation proof; npm ci did not alter them."
+  },
+  "hashes": {
+    "before": {
+      "backend/api/package.json": "b2b6b00b5d5258ae297669591f33ce02655e8f60d66a26fabdaf93cd2bf01f59",
+      "backend/api/package-lock.json": "938ac93dd7be6f7c9b630bae6e1741faf9113ae968b7eea696fa5d6bf374fafc",
+      "Frontend/dashboard/package.json": "9c5b728e1cdac0855efc3e145b8cb3f120fec39646eaecbd189a9ace5b680514",
+      "Frontend/dashboard/package-lock.json": "58150aae23d67fcc26111350375887cc6d78f5a0e0c5974fdc6d25ceafb8c013"
+    },
+    "after": {
+      "backend/api/package.json": "b2b6b00b5d5258ae297669591f33ce02655e8f60d66a26fabdaf93cd2bf01f59",
+      "backend/api/package-lock.json": "938ac93dd7be6f7c9b630bae6e1741faf9113ae968b7eea696fa5d6bf374fafc",
+      "Frontend/dashboard/package.json": "9c5b728e1cdac0855efc3e145b8cb3f120fec39646eaecbd189a9ace5b680514",
+      "Frontend/dashboard/package-lock.json": "58150aae23d67fcc26111350375887cc6d78f5a0e0c5974fdc6d25ceafb8c013"
+    },
+    "identical": true
+  },
+  "lifecycle_and_install_scripts": {
+    "backend/api": {
+      "root_install_lifecycle_declared": false,
+      "observed_dependency_scripts": [],
+      "observation": "No lifecycle script output appeared under --foreground-scripts."
+    },
+    "Frontend/dashboard": {
+      "root_install_lifecycle_declared": false,
+      "observed_dependency_scripts": [
+        {
+          "package": "esbuild",
+          "version": "0.25.12",
+          "event": "postinstall",
+          "command": "node install.js",
+          "required_by_existing_lock": true
+        }
+      ],
+      "npm_allow_scripts_warning": "npm reported that esbuild@0.25.12 has install scripts not yet covered by allowScripts and suggested npm approve-scripts for policy review.",
+      "observation": "The postinstall header and command were visible under --foreground-scripts, and npm ci completed successfully."
+    },
+    "project_source_generated": false,
+    "tracked_files_generated": false
+  },
+  "errors": [
+    {
+      "stage": "Frontend/dashboard npm ci",
+      "classification": "long_running_completion_observation",
+      "message": "The initial tool call yielded without output after an extended wait. A bounded terminate/check request then returned the command's complete successful output.",
+      "impact": "None on the result; npm ls subsequently confirmed the exact installed graph."
+    },
+    {
+      "stage": "Frontend/dashboard npm ci",
+      "classification": "policy_warning",
+      "message": "npm emitted an allow-scripts warning for esbuild@0.25.12 postinstall.",
+      "impact": "Installation completed and npm ls is healthy; review allowScripts policy separately if the deployment host enforces explicit lifecycle approvals."
+    },
+    {
+      "stage": "Frontend/dashboard vulnerability summary",
+      "classification": "pre_existing_out_of_scope",
+      "message": "Two high vulnerabilities remain outside ws, socket.io-client, and engine.io-client.",
+      "impact": "DEP-1A installed graph is verified, but overall release remains blocked."
+    }
+  ],
+  "verification": {
+    "backend_api_npm_ci": "passed",
+    "dashboard_npm_ci": "passed",
+    "backend_api_npm_ls": "passed",
+    "dashboard_npm_ls": "passed",
+    "exact_target_versions": "passed",
+    "tracked_state_preservation": "passed",
+    "manifest_and_lock_hash_preservation": "passed",
+    "application_tests": "not_run_by_instruction",
+    "jq_validation": "passed"
+  },
+  "result": "verified",
+  "ready_for_parent_review": true,
+  "release_effect": "DEP-1A now has deterministic local install proof for both nested roots. This is not SSH-host, clean-clone service, application-test, or overall release proof."
+}

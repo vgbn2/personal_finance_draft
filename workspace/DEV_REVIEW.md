@@ -8,6 +8,7 @@
 | Closed for configured cache | policy-stale data | Integrity had 14 policy-stale VN daily windows and DCS 0.954348. | Authorized bounded refresh wrote 172 records with zero provider errors; integrity is 92/92, zero stale, DCS 1.0. Remote persistence, recovery, single-writer, and soak remain unqualified. |
 | P0 engine data gate | point-in-time macro path | Bounded FRED ingest fetched 86 CPI/US02YIELD rows, but 0 carry release/availability/ingestion metadata; remote schema lacks `available_at`; scoped writer and combined global reader differ. | Preserve provider vintage/realtime metadata, migrate/verify the remote schema, connect one revision-aware cached reader, reingest, and prove as-of revision exclusion. Do not substitute observation time for availability time. |
 | P0 release gate | dependency advisories | Five-root read-only audit found 61 vulnerable package nodes: 24 high, 11 moderate, 26 low, 0 critical. | Upgrade direct owners in isolated network, MCP HTTP, runtime/dashboard, web3, and toolchain batches. No package/lockfile remediation occurred; paper-only use is conditional and live release remains blocked. |
+| P1 release-evidence truth | fresh-install and CI verification | `scripts/dev/verify_fresh_install.sh:19-23` copies tracked **and untracked** non-ignored files, so its result is a disposable worktree snapshot rather than a clone of a specific commit. `.github/workflows/test.yml:18-47` installs/tests only the root package and does not run the five-root verifier, MCP/dashboard builds, API/contracts, or environment check. | Create a versioned production-evidence protocol with separate worktree-snapshot, committed-archive, CI, deployed-host, recovery, and soak levels. Add a committed-archive mode that excludes untracked files and emits commit/lockfile/test-count/skip evidence; make CI run that mode. The reviewer must approve the terminology and release-blocking matrix before implementation. |
 
 Verification: current-host aggregate **972/968/0/4**; clean-export aggregate **972/962/0/10**; API
 **25/25**; native **30/30**; environment **138/138**; clean-export secrets **895/0**; MCP/dashboard/native
@@ -2183,3 +2184,153 @@ confirmed product defect.
 
 No implementation was performed and no provider poll, canonical-data write, runtime/profile change, bot
 cycle, order, public exposure, migration, destructive action, or promotion occurred.
+
+## 2026-07-28 TEST-1 release-evidence implementation review
+
+The P1 source-design finding at the top of this review is cleared in the working tree, not yet at exact commit.
+The new coordinator separates `worktree_snapshot` from `committed_archive`, binds evidence to source and five
+lockfile digests, records fixed step counts and excluded claims, and replaces stale evidence with an
+`inconclusive` manifest before work starts. CI now runs the five-root committed-archive path and retains its
+manifest while preserving gateway typecheck, active-entrypoint syntax, and C++ sanitizer coverage.
+
+Review found and corrected three defects before source closure: Node spec-reporter counts were initially null,
+the old workflow named a deleted quote-router path, and interruption initially left a stale PASS artifact. The
+resource policy and the canonical Node runner now default to two jobs and record or honor explicit overrides.
+Focused contracts pass 15/15; the final bounded
+snapshot passes all 26 steps with native 30/30, API 25/25, contracts 118/118, structure 15/15, and aggregate
+987/977/0/10. Exact-commit and authenticated-CI closure remain blocked until this implementation is committed
+and the matching Actions artifact passes. Host/recovery/soak/live claims remain external.
+
+## 2026-07-28 ENV-1B2-A projected-child implementation review
+
+The gateway/MCP child boundary is closed for working-tree source. One pure projection owner freezes allowlisted
+environments; exhaustive gateway classification distinguishes public, credentialed account-read, and execution
+surfaces. All direct launch callers use the projected environment, local env-file re-expansion is blocked, and
+standalone gateway starts require an explicit surface.
+
+MCP children receive no provider, account, PIN, or execution secret. Account, live, auto-trade, and credential
+derivation capabilities fail before spawn with `environment_surface_denied`; cached/help children still execute.
+Review found and corrected indirect env loading through imported modules, the missing `positions` gateway
+branch, paper-adapter contract structure, and `derive-creds` under-classification.
+
+Focused sequential suites, 250 poisoned-parent iterations, MCP build, environment discovery, diff check, and
+host-capable two-worker `verify:strict` pass. This is not direct-entrypoint, Compose, fresh-install, deployed-host,
+recovery, one-writer, soak, or live qualification. A diagnostic leaked two local credentials to the tool
+transcript; FRED and the Polymarket private key require rotation.
+
+## 2026-07-28 ENV-1B3-A Compose contract review
+
+No open P0/P1 source defect was found in the contract-only batch. Manifest schema 3 owns all seven service rows,
+enforces exact service/surface coverage and safe fixed overrides, and rejects unknown, overlapping, incomplete,
+or execution-eligible declarations. Projection diagnostics are name-only and do not generate service files.
+
+The source-to-Compose contract proves current service identities, profiles, mounts, fixed overrides, and the
+continued shared `env_file`. Focused tests pass 13/13; adjacent deployment/runtime contracts, environment
+discovery (120/140/0), diff integrity, and final two-worker strict verification (1,003/999/0/4) pass.
+
+Grade movement: Compose environment ownership B+ -> A- for contract clarity only. Runtime isolation remains
+unimplemented because Compose was intentionally unchanged. ENV-1B3-B, direct-entrypoint projection,
+exact-commit/CI, deployed-host, recovery, rollback, one-writer, and soak gates remain open.
+
+## 2026-07-28 Blast-Through Triage - release-critical seams
+
+Mode: `triage`; reading strategy: Fast Reading Mode.
+
+| Priority | Area | Evidence | Finding | Required decision / gate |
+|---|---|---|---|---|
+| P0 release gate | five-root dependency advisory | `reports/restricted_dependency_advisory_2026-07-28.json`; current Git status has no modified lockfile | Confirmed open. The structured read-only result covers all five requested roots and records 61 vulnerable package nodes: 24 high, 11 moderate, 26 low, and 0 critical. Network-facing API, gateway, MCP, and dashboard roots all contain high findings. | Remediate direct owners in isolated compatibility batches and rerun the five-root advisory plus affected builds/contracts. Keep release/live use blocked. |
+| P0 engine data gate | point-in-time macro path | `workspace/reports/restricted_macro_qualification_2026-07-28.json:89-159`; `shared/lib/data/macro_store.js` | Confirmed open and fail-closed. CPI contributes 5 rows and US02YIELD 81, but all 86 lack release, availability, and ingestion timestamps; zero are point-in-time eligible. The combined reader and bounded writer target different snapshots, so real EURUSD returns `macro_observation_missing`. | Preserve provider revision metadata, verify the remote `available_at` migration, converge on one revision-aware cached reader, reingest, and prove as-of exclusion. Never substitute observation time for availability time. |
+| P1 release/runtime gate | source evidence and Compose isolation | `scripts/dev/verify_source_evidence.js:47-139`; `.github/workflows/test.yml:15-37`; `infra/docker/docker-compose.yml:12-173`; `workspace/DEV_REVIEW.md:2190-2202` | The TEST-1 source-design defect is dismissed: worktree and committed-archive modes now exist and CI source runs/retains the five-root evidence artifact. Exact-commit/authenticated-CI proof is still open because the implementation is uncommitted. Runtime environment isolation also remains unimplemented: all seven services still use one shared central `env_file`. | Commit only after user approval, obtain matching authenticated CI evidence, and keep ENV-1B3-B separately approval-gated. Do not infer runtime least privilege from schema-3 fixtures. |
+
+Dismissed false positive: the leading session-116 table at `workspace/DEV_REVIEW.md:11` still describes TEST-1
+as unimplemented, but the later implementation review and current source prove that design finding is closed in
+the working tree. This is reviewer-summary drift, not a source regression. The leading summary should be
+consolidated during the next approved continuity cleanup.
+
+Fresh read-only integrity evidence: `backend integrity --json` returned `ok:true`, 92 configured / 92 cached,
+zero missing, zero policy-stale required windows, nine non-blocking cadence-plausible notices, zero unexplained
+grain, and one declared RNDRUSDT exception. Freshness, schema, and coverage are each 1.0, so DCS remains 1.0.
+
+No provider poll, package install/update, lockfile change, source implementation, service/container start,
+canonical-data write, order, public exposure, migration, destructive action, or live enablement occurred.
+
+## 2026-07-28 DEP-1 mass-implement preflight
+
+Lifecycle: `proposed -> preflight -> NO-GO -> deferred`.
+
+DEP-1 targets the network-boundary high findings across root, API, gateway, and dashboard graphs. Current direct
+owners and production callers were inventoried, dirty overlap was checked, and focused compatibility gates were
+defined in `workspace/plans/DEPENDENCY_REMEDIATION_MASS_IMPLEMENT_PLAN.md`.
+
+The batch cannot safely select versions from current trusted input. The structured advisory identifies affected
+graphs but does not contain patched target versions or `fixAvailable` details. Offline registry lookups for all
+DEP-1 owners return `ENOTCACHED`; `npm audit --offline` reports a misleading zero because no advisory cache is
+available. Do not treat that zero as remediation evidence and do not guess package versions.
+
+Required reviewer/user decision: explicitly authorize a restricted dependency worker to obtain current registry
+and advisory metadata as structured JSON, followed by separately authorized package resolution. Until then,
+keep all manifests and lockfiles unchanged and retain the dependency release/live gate.
+
+No package install/update, manifest/lockfile edit, provider poll, service/container start, data write, credential
+read, bot cycle, order, public exposure, migration, destructive action, or live enablement occurred.
+
+## 2026-07-28 DEP-1A Socket.IO dependency closure
+
+Lifecycle: `proposed -> preflight -> GO -> implemented -> verified -> reviewed -> closed`.
+
+Restricted registry resolution refreshed only `backend/api/package-lock.json` and
+`Frontend/dashboard/package-lock.json`. Direct manifests are byte-identical. API resolves Socket.IO 4.8.3,
+Engine.IO 6.6.9, adapter 2.5.8, and ws 8.21.1; dashboard resolves Socket.IO client 4.8.3, Engine.IO client 6.6.6,
+and ws 8.21.1. Targeted audits are empty, deterministic installs and `npm ls` pass, host-capable API tests pass
+25/25, and dashboard TypeScript/production build passes.
+
+Review found no auth, socket-handshake, source, manifest, runtime, provider, data, or execution regression.
+Dashboard installation runs the pre-existing esbuild 0.25.12 postinstall and still reports two unrelated high
+advisories; both remain explicit gates. DEP-1 overall is not closed: viem, Alpaca/Axios, and the Polymarket-owned
+ws path remain separate DEP-1B/C/D batches.
+
+## 2026-07-28 DEP-1B viem dependency closure
+
+Lifecycle: `proposed -> preflight -> GO WITH FIXES -> implemented -> verified -> reviewed -> closed`.
+
+Root and gateway now own viem `^2.55.10`; locks and installed trees resolve viem 2.55.10 with its ws 8.21.0.
+The existing root TEST-1 scripts are byte-identical. Targeted audits contain no viem finding; the remaining
+root/gateway ws high is solely the separately deferred Polymarket/Ethers path.
+
+Gateway TypeScript passes and the host-capable focused compatibility gate passes 51/51 across Polymarket
+preflight, auth health, cockpit merging, paper ledger/risk, and MCP trade contracts. Review found no signing,
+serialization, credential, paper/live, capability, or command-boundary regression. Overall dependency release
+remains blocked by DEP-1C Alpaca/Axios, DEP-1D Polymarket/ws, two unrelated dashboard highs, and later batches.
+
+## 2026-07-28 DEP-1C/DEP-1D decision and SSH usability review
+
+DEP-1C reached `proposed -> preflight -> NO-GO -> deferred`. The eight active Alpaca v3 gateway seams are
+inventoried, and Node >=20 is present locally, in CI, and in the previously inspected SSH environment. The
+restricted worker could not inspect the exact Alpaca 4.0.1 package, however, so its exports, module format,
+constructor, method signatures, and types are not trustworthy enough for a semver-major source migration.
+No Alpaca/Axios manifest, lockfile, or source change was made.
+
+DEP-1D remains `NO-GO -> deferred`: the residual vulnerable ws path is owned by the Polymarket client through
+Ethers, and the available automated remediation would downgrade the client from 1.0.6 to 0.0.3. That unsafe
+downgrade was rejected.
+
+The combined structured five-root evidence now records 54 vulnerable nodes: 17 high, 11 moderate, 26 low,
+and 0 critical, down from 61 total / 24 high. `npm run verify:strict` passes 1,003 total / 999 pass / 0 fail /
+4 intentional skips. A clean worktree snapshot independently installs all five package roots and passes its
+build/test gate with 1,003 total / 993 pass / 0 fail / 10 environment-dependent skips.
+
+Honest usability decision:
+
+- **Usable for source-level, read-only, private research and paper-safe exercise:** yes. The current working
+  tree has strong API, dashboard, CLI, gateway, MCP contract, data-integrity, and strict-suite evidence.
+- **Usable on the intended SSH machine without another qualification pass:** no. The host previously inspected
+  was at committed `e78e1788`; it does not contain this intentionally uncommitted dependency work. Current
+  install, build, authentication, MCP stdio, restart, and recovery behavior have not been exercised there.
+- **Release-ready, public, or live-execution ready:** no. Seventeen high advisory nodes, DEP-1C/DEP-1D,
+  macro PIT ineligibility, shared Compose environment injection, credential rotation, exact-commit CI, real
+  Supabase/RLS, backup/restore, rollback, one-writer, and soak gates remain open.
+
+The safe SSH target is a private loopback/SSH-tunnel deployment limited to read-only research and paper-safe
+paths after transferring an exact committed source state, performing deterministic five-root installs, and
+rerunning the strict/auth/MCP host gates. Do not start live writers, place orders, or expose the service
+publicly from this evidence.

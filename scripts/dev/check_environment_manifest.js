@@ -9,6 +9,12 @@ const { loadEnvironmentManifest } = require('../../shared/lib/runtime/environmen
 const SKIP_DIRECTORIES = new Set(['.git', 'node_modules', 'dist', 'build', 'storage', 'workspace']);
 const SOURCE_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.ts', '.tsx']);
 const EXAMPLE_FILES = ['.env.example', '.env.central.example', 'Frontend/dashboard/.env.example'];
+const FRONTEND_ROOT = path.join(REPO_ROOT, 'Frontend', 'dashboard');
+const EXPECTED_FRONTEND_NAMES = Object.freeze([
+  'VITE_API_URL',
+  'VITE_SUPABASE_ANON_KEY',
+  'VITE_SUPABASE_URL',
+]);
 
 function walk(directory, files = []) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -48,17 +54,48 @@ function discoverExampleNames() {
   return names;
 }
 
+function discoverFrontendSourceNames() {
+  const names = new Set();
+  const pattern = /\bimport\.meta\.env\.([A-Z][A-Z0-9_]*)/g;
+  for (const filePath of walk(FRONTEND_ROOT)) {
+    const source = fs.readFileSync(filePath, 'utf8');
+    pattern.lastIndex = 0;
+    let match;
+    while ((match = pattern.exec(source)) !== null) names.add(match[1]);
+  }
+  return names;
+}
+
 function checkEnvironmentManifest() {
   const manifest = loadEnvironmentManifest();
   const discovered = new Set([...discoverSourceNames(), ...discoverExampleNames()]);
   const unclassified = [...discovered].filter((name) => !manifest.names.has(name)).sort();
+  const manifestFrontendNames = manifest.entries
+    .flatMap((entry) => entry.frontend_names)
+    .sort();
+  const frontendSourceNames = [...discoverFrontendSourceNames()].sort();
+  const frontendExampleNames = [...discoverExampleNames()]
+    .filter((name) => name.startsWith('VITE_'))
+    .sort();
+  const forbiddenFrontendNames = [...new Set([...frontendSourceNames, ...frontendExampleNames])]
+    .filter((name) => !EXPECTED_FRONTEND_NAMES.includes(name))
+    .sort();
+  const frontendContractMatches = (
+    JSON.stringify(manifestFrontendNames) === JSON.stringify(EXPECTED_FRONTEND_NAMES)
+    && JSON.stringify(frontendSourceNames) === JSON.stringify(EXPECTED_FRONTEND_NAMES)
+    && JSON.stringify(frontendExampleNames) === JSON.stringify(EXPECTED_FRONTEND_NAMES)
+  );
   return {
-    ok: unclassified.length === 0,
+    ok: unclassified.length === 0 && forbiddenFrontendNames.length === 0 && frontendContractMatches,
     type: 'environment_manifest_check',
     manifest_entries: manifest.entries.length,
     classified_names_and_aliases: manifest.names.size,
     discovered_names: discovered.size,
     unclassified,
+    frontend_names: manifestFrontendNames,
+    frontend_source_names: frontendSourceNames,
+    frontend_example_names: frontendExampleNames,
+    forbidden_frontend_names: forbiddenFrontendNames,
   };
 }
 
@@ -71,5 +108,6 @@ if (require.main === module) {
 module.exports = {
   checkEnvironmentManifest,
   discoverExampleNames,
+  discoverFrontendSourceNames,
   discoverSourceNames,
 };

@@ -1,0 +1,352 @@
+{
+  "schema_version": 1,
+  "report_id": "DEP-1C-compatibility",
+  "generated_at": "2026-07-28T00:00:00+07:00",
+  "mode": "restricted_preflight_only",
+  "verdict": "NO_GO",
+  "verdict_reason": "The published v4.0.1 package archive could not be retrieved within the bounded window, so its actual exports, constructor, methods, response types, and CommonJS/ESM behavior were not verified. A semver-major trading SDK migration must not proceed from names inferred from v3.",
+  "repo_mutation": {
+    "allowed": [
+      "workspace/reports/restricted_dep1c_compatibility_2026-07-28.json"
+    ],
+    "manifests_changed": false,
+    "locks_changed": false,
+    "source_changed": false,
+    "workspace_state_changed": false
+  },
+  "registry_evidence": {
+    "package": "@alpacahq/alpaca-trade-api",
+    "current_direct_range": "^3.1.3",
+    "current_installed": "3.1.3",
+    "candidate": "4.0.1",
+    "npm_audit_fix": {
+      "version": "4.0.1",
+      "isSemVerMajor": true
+    },
+    "engines": {
+      "node": ">=20"
+    },
+    "candidate_dependencies": {
+      "@msgpack/msgpack": "^3.1.3",
+      "lossless-json": "^4.3.0",
+      "ws": "^8.21.0"
+    },
+    "candidate_package_scripts_observed_from_registry": [
+      "build",
+      "typecheck",
+      "typecheck:examples",
+      "test",
+      "verify:codemod",
+      "verify:package",
+      "lint",
+      "lint:fix",
+      "docs:api",
+      "docs:api-site",
+      "docs:examples-site",
+      "docs:migration-site",
+      "generate",
+      "generate:offline",
+      "changeset",
+      "changeset:version",
+      "release",
+      "prepare"
+    ],
+    "preinstall_install_postinstall_verified": false,
+    "archive_fetch": {
+      "command": "npm pack @alpacahq/alpaca-trade-api@4.0.1 --pack-destination /tmp/dep1c-alpaca.T9swup",
+      "result": "aborted_after_bounded_wait",
+      "package_contents_inspected": false
+    }
+  },
+  "production_ownership": {
+    "root_manifest": {
+      "path": "package.json",
+      "line": 50,
+      "classification": "direct_dependency_without_production_import_found_in_scanned_root_backend_shared_surface",
+      "decision": "Do not remove or consolidate during DEP-1C; ownership requires a separate dependency-parity decision."
+    },
+    "gateway_manifest": {
+      "path": "backend/gateway/package.json",
+      "line": 3,
+      "classification": "active_direct_owner"
+    },
+    "active_sdk_caller": "backend/gateway/src/index.ts",
+    "non_sdk_rest_provider": {
+      "path": "shared/lib/providers/alpaca.js",
+      "classification": "independent_direct REST market-data adapter; not a v4 SDK caller and must not be rewritten in DEP-1C"
+    },
+    "credential_owner": {
+      "path": "shared/lib/brokers/alpaca_env.js",
+      "classification": "canonical environment alias and paper/live resolver used by the gateway adapter"
+    }
+  },
+  "caller_to_v4_mapping": [
+    {
+      "id": "ALPACA-V4-IMPORT",
+      "file": "backend/gateway/src/index.ts",
+      "line": 6,
+      "current_usage": "import Alpaca from '@alpacahq/alpaca-trade-api'",
+      "v4_mapping": null,
+      "classification": "unknown_removed_or_changed",
+      "required_source_edit": "Replace the ts-ignore default import with the exact published v4 export and type after inspecting v4 package exports and declaration files.",
+      "gate": "A TypeScript module-load check must prove the exact ESM and CommonJS behavior under the repository compiler/runtime.",
+      "status": "NO_GO"
+    },
+    {
+      "id": "ALPACA-V4-CONSTRUCTOR",
+      "file": "backend/gateway/src/index.ts",
+      "line": 476,
+      "current_usage": "new Alpaca({ keyId, secretKey, paper })",
+      "current_options_lines": "477-481",
+      "v4_mapping": null,
+      "classification": "unknown_changed",
+      "required_source_edit": "Bind key, secret, paper/base URL, and client construction to the verified v4 constructor/config type; do not assume v3 option names survive.",
+      "gate": "Credential-shaped dummy values must construct the client without a provider request, and paper/live endpoint selection must be visible from configuration rather than inferred.",
+      "status": "NO_GO"
+    },
+    {
+      "id": "ALPACA-V4-CREATE-ORDER",
+      "file": "backend/gateway/src/index.ts",
+      "line": 519,
+      "current_usage": "await this.alpaca.createOrder(payload)",
+      "current_request_contract": {
+        "symbol": "string; crypto normalized to BASE/USD",
+        "qty": "number",
+        "side": "buy|sell",
+        "type": "market|limit",
+        "time_in_force": "gtc|day",
+        "optional_limit_price": "number"
+      },
+      "current_response_reads": [
+        {
+          "line": 521,
+          "field": "id"
+        },
+        {
+          "line": 522,
+          "field": "status"
+        }
+      ],
+      "v4_mapping": null,
+      "classification": "unknown_changed",
+      "required_source_edit": "Translate the request to the verified v4 order request type and normalize the verified v4 order identifier/status fields into the existing BrokerAdapter result.",
+      "gate": "A fake transport must assert the exact outbound request and typed fixture response; no order endpoint may be called.",
+      "status": "NO_GO"
+    },
+    {
+      "id": "ALPACA-V4-CANCEL-ORDER",
+      "file": "backend/gateway/src/index.ts",
+      "line": 535,
+      "current_usage": "await this.alpaca.cancelOrder(orderId)",
+      "v4_mapping": null,
+      "classification": "unknown_changed",
+      "required_source_edit": "Use the verified v4 cancel method and its identifier/return contract; preserve the adapter's boolean result only after success semantics are proven.",
+      "gate": "Fake transport must prove request path, identifier placement, success status handling, and error propagation without network access.",
+      "status": "NO_GO"
+    },
+    {
+      "id": "ALPACA-V4-GET-ACCOUNT",
+      "file": "backend/gateway/src/index.ts",
+      "line": 546,
+      "current_usage": "await this.alpaca.getAccount()",
+      "current_response_reads": [
+        {
+          "line": 548,
+          "field": "cash"
+        },
+        {
+          "line": 549,
+          "field": "buying_power"
+        },
+        {
+          "line": 550,
+          "field": "equity"
+        }
+      ],
+      "v4_mapping": null,
+      "classification": "unknown_changed",
+      "required_source_edit": "Map the verified v4 account method and typed string/number fields to finite numbers while retaining zero defaults only for absent optional fields.",
+      "gate": "Typed fixtures must prove cash, buying power, equity, malformed values, and provider error behavior.",
+      "status": "NO_GO"
+    },
+    {
+      "id": "ALPACA-V4-GET-POSITIONS",
+      "file": "backend/gateway/src/index.ts",
+      "line": 565,
+      "current_usage": "await this.alpaca.getPositions()",
+      "current_response_reads": [
+        {
+          "line": 567,
+          "field": "symbol"
+        },
+        {
+          "line": 568,
+          "field": "qty"
+        },
+        {
+          "line": 569,
+          "field": "avg_entry_price"
+        },
+        {
+          "line": 570,
+          "field": "market_value"
+        },
+        {
+          "line": 571,
+          "field": "unrealized_pl"
+        }
+      ],
+      "v4_mapping": null,
+      "classification": "unknown_changed",
+      "required_source_edit": "Map the verified v4 positions method and response fields into the existing Position contract with finite-value validation.",
+      "gate": "Typed fixture arrays must prove empty, fractional, malformed, and provider-error cases.",
+      "status": "NO_GO"
+    },
+    {
+      "id": "ALPACA-V4-BRACKET-ORDER",
+      "file": "backend/gateway/src/index.ts",
+      "line": 584,
+      "current_usage": "await this.alpaca.createOrder({ order_class: 'bracket', take_profit, stop_loss, ... })",
+      "current_request_lines": "584-599",
+      "v4_mapping": null,
+      "classification": "unknown_changed",
+      "required_source_edit": "Translate nested bracket order, take-profit, and stop-loss fields to the verified v4 order type and verify crypto/equity time-in-force compatibility.",
+      "gate": "Fake transport must assert the complete nested payload and returned order fixture without submitting an order.",
+      "status": "NO_GO"
+    },
+    {
+      "id": "ALPACA-V4-LATEST-QUOTE",
+      "file": "backend/gateway/src/index.ts",
+      "line": 606,
+      "current_usage": "await this.alpaca.getLatestQuote(symbol)",
+      "current_response_reads": [
+        {
+          "line": 607,
+          "field": "AskPrice"
+        },
+        {
+          "line": 607,
+          "field": "BidPrice"
+        }
+      ],
+      "v4_mapping": null,
+      "classification": "unknown_changed",
+      "required_source_edit": "Use the verified v4 market-data quote client/method and field casing, then return only a finite positive quote.",
+      "gate": "Fake quote fixtures must cover ask, bid fallback, missing fields, zero, malformed values, and errors without provider access.",
+      "status": "NO_GO"
+    }
+  ],
+  "stream_usage": {
+    "production_sdk_stream_calls_found": [],
+    "classification": "none_in_scanned_surface",
+    "note": "No Alpaca SDK websocket/stream method was found under the scoped root/backend/gateway/shared production scan. v4 still adds @msgpack/msgpack and ws, so future stream use must be separately qualified."
+  },
+  "commonjs_esm": {
+    "current_behavior": "Gateway TypeScript uses a default ESM import suppressed by ts-ignore, consistent with an untyped or CommonJS-interoperated v3 dependency.",
+    "v4_export_behavior": "unknown",
+    "classification": "NO_GO",
+    "required_proof": [
+      "Inspect v4 package.json exports, main, module, and types fields.",
+      "Compile the exact gateway import under the repository TypeScript settings.",
+      "Run a Node >=20 module-load check for the built gateway form.",
+      "Remove ts-ignore only after the real v4 declaration contract is satisfied."
+    ]
+  },
+  "runtime_and_credentials": {
+    "node_requirement": ">=20",
+    "ssh_host_gate": "The SSH machine's Node runtime and clean install must prove Node >=20 before migration.",
+    "current_env_keys": [
+      "ALPACA_API_KEY",
+      "ALPACA_KEY",
+      "ALPACA_SECRET_KEY",
+      "ALPACA_API_SECRET",
+      "ALPACA_BASE_URL",
+      "ALPACA_URL"
+    ],
+    "current_resolved_sdk_options": [
+      "keyId",
+      "secretKey",
+      "paper"
+    ],
+    "credential_change": "unknown until the v4 constructor/config types are inspected",
+    "safety_requirement": "Do not log credential values, do not probe accounts, quotes, positions, orders, or cancel endpoints during compatibility verification."
+  },
+  "lock_impact": {
+    "expected_removed_from_alpaca_subtree": [
+      "axios 0.21.4",
+      "dotenv nested under Alpaca v3",
+      "ws 7.5.11 owned by Alpaca v3"
+    ],
+    "expected_added_or_updated_in_alpaca_subtree": [
+      "@msgpack/msgpack ^3.1.3",
+      "lossless-json ^4.3.0",
+      "ws ^8.21.0"
+    ],
+    "direct_gateway_axios": {
+      "version": "1.18.1",
+      "decision": "retain; it is independently imported by the gateway and is not removed by the Alpaca migration"
+    },
+    "verification_required": "Compare npm ls and npm audit before/after in both direct package roots and prove no Axios 0.x remains under Alpaca."
+  },
+  "install_scripts": {
+    "registry_metadata_has_prepare": "npm run build",
+    "preinstall_install_postinstall": "unknown because the package archive was not inspected",
+    "required_install_mode": "Use --ignore-scripts for lock/install preflight. If a required lifecycle step is later proven, review it explicitly before allowing it on the SSH machine.",
+    "classification": "NO_GO until package contents and packed manifest are inspected"
+  },
+  "provider_network_avoidance_test_plan": [
+    {
+      "step": 1,
+      "proof": "Inspect packed v4 exports and types in a disposable directory; no module execution."
+    },
+    {
+      "step": 2,
+      "proof": "Compile gateway import, constructor, methods, and response mappings against v4 declarations using dummy credential-shaped strings."
+    },
+    {
+      "step": 3,
+      "proof": "Inject or mock the v4 transport/client so createOrder, cancelOrder, getAccount, getPositions, bracket order, and latest quote use local fixtures only."
+    },
+    {
+      "step": 4,
+      "proof": "Retain missing-credential fail-closed behavior and prove live/account surfaces never fall back to simulated success."
+    },
+    {
+      "step": 5,
+      "proof": "Run npm ls, targeted npm audit, TypeScript compile, existing gateway contract tests, and a no-network process guard."
+    },
+    {
+      "step": 6,
+      "proof": "Defer authenticated read-only SSH account/position/quote checks to an explicitly approved host phase; never submit or cancel orders during compatibility qualification."
+    }
+  ],
+  "required_source_edits_summary": [
+    "Replace the ts-ignore default import with the verified v4 export and type.",
+    "Update constructor/config mapping if v4 option names or endpoint selection changed.",
+    "Update every order, cancel, account, positions, bracket, and quote method call to verified v4 APIs.",
+    "Update response-field normalization for verified v4 casing and scalar types.",
+    "Add a client or transport injection seam if needed to prove all methods without provider access.",
+    "Add Node >=20 to deployment/fresh-install gates before enabling the v4 package."
+  ],
+  "unknowns": [
+    "Exact v4 export name and default/named export behavior.",
+    "Exact CommonJS require behavior.",
+    "Exact constructor name and configuration fields.",
+    "Exact trading, account, positions, cancel, bracket, and quote method names.",
+    "Exact request types and response field casing/types.",
+    "Whether trading and market-data methods live on one client or separate clients.",
+    "Packed package lifecycle hooks beyond registry script metadata.",
+    "Whether v4 supplies a codemod sufficient for these project-specific response mappings."
+  ],
+  "acceptance_for_reopening": [
+    "Published v4.0.1 archive and declaration files are inspected successfully in a disposable directory.",
+    "Every matrix row receives an exact verified v4 symbol/type mapping.",
+    "SSH and CI Node runtimes are proven >=20.",
+    "A source-edit batch is separately approved.",
+    "Credential-free compile and fixture tests cover every active method and error seam.",
+    "Root and gateway audits prove the Alpaca-owned Axios/ws findings are removed.",
+    "No live provider request, order, cancel, runtime start, or credential disclosure occurs."
+  ],
+  "ready_for_implementation": false,
+  "next_state": "deferred"
+}

@@ -1,5 +1,77 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-07-28 ENV-1B3-A Compose contract closure
+
+- TEST-1, ENV-1B2-A, and ENV-1B3-A are closed for working-tree source. Schema-3 environment policy now owns
+  exact contracts for all seven Compose services and rejects unsafe, unknown, incomplete, or inconsistent rows.
+- The central-environment preparer exposes a value-free projection report; focused contract verification passes
+  13/13 and the final CPU-capped strict run passes 1,003 total / 999 pass / 0 fail / 4 intentional skips.
+- Compose remains unchanged and all seven services still share the central `env_file`. Runtime isolation
+  (ENV-1B3-B), broader direct-entrypoint projection, exact-commit/authenticated-CI proof, deployed-host,
+  recovery, rollback, one-writer, and soak qualification remain open.
+- Rotate the FRED credential and Polymarket private key exposed to the session tool transcript before reuse.
+
+## 2026-07-28 mass-implement partial closure - environment and Polymarket boundaries
+
+- ENV-1A is closed: environment-manifest schema 2 classifies 118 canonical entries / 138 names and aliases by
+  class, profile, and surface. Browser inputs are exactly the three declared `VITE_*` names; server aliases were
+  removed from dashboard source.
+- ENV-1B1 is closed: explicit `SOVEREIGN_ENV_FILE` selection is exclusive, and tested projection primitives
+  strip known forbidden names by surface/profile. This is not automatic entrypoint or Compose isolation.
+- PM-1 is closed: public interactive Polymarket browsing performs no entry-time live auth or parent authorization
+  mutation; Buy authorizes before credentialed access and submit receives only a scoped module-private grant.
+  Cockpit portfolio evidence distinguishes credentialed account reads from cached/local state.
+- Verification: host contracts 118/118; aggregate 979 total / 975 pass / 0 fail / 4 intentional skips;
+  host-capable Polymarket preflight/CLI 48/48; dashboard type/build, secrets 900/0, hygiene, structure, and diff
+  checks pass.
+- ENV-1B2 entrypoint wiring, ENV-1B3 Compose projection, and SYNC-1 remain deferred. No real environment file,
+  service, container, provider, canonical data, remote host, order, public bind, deletion, timer, or live mode
+  changed.
+- The ENV-1B2/B3 inventory now confirms 55 CLI commands plus API, MCP, dashboard-child, gateway, direct-script,
+  and package boot paths; gateway and child launchers still inherit broadly, and all seven Compose services share
+  one central `env_file`. The smallest safe next candidate is ENV-1B2-A projected child launch wiring for gateway
+  and MCP only; direct boots, standalone scripts, and ENV-1B3 remain deferred pending fixture matrices.
+- Production test truth is release-gated: host-capable strict source tests pass, but the current fresh-install
+  run stopped before PASS, the verifier includes untracked files, and CI does not execute its five-root path.
+  Treat it as worktree-snapshot evidence only until a versioned committed-archive/CI evidence protocol exists;
+  deployed host, recovery, restart/rollback, one-writer, and soak remain distinct external qualification.
+- The proposed combined source-only execution order is recorded in
+  `workspace/plans/ENVIRONMENT_AND_PRODUCTION_EVIDENCE_MASS_IMPLEMENT_PLAN.md`: TEST-1 evidence truth first,
+  ENV-1B2-A gateway/MCP projected children second, ENV-1B3-A service-key contract third, and ENV-1B3-B Compose
+  projection remains NO-GO until the prior contract is verified and separately approved.
+- The plan is now refined and implementation-ready but still unapproved/unstarted. TEST-1 has fixed
+  `worktree_snapshot` versus `committed_archive` semantics, atomic schema-v1 pass/fail evidence, and an
+  exact-commit/CI closure boundary. ENV-1B2-A requires exhaustive argument-sensitive gateway classification and
+  structured least-privilege MCP denials. ENV-1B3-A uses environment-manifest schema 3 as the sole seven-service
+  contract owner; actual per-service Compose injection remains ENV-1B3-B and requires separate approval.
+- TEST-1 source implementation is now verified, reviewed, and closed in the working tree. The coordinator emits
+  atomic schema-v1 evidence for distinct snapshot/archive modes, overwrites stale PASS before work, runs the
+  five-root/CI surface, and defaults to `job_limit:2`; the canonical Node runner also defaults to two workers.
+  Focused contracts pass 15/15; the bounded snapshot passes
+  26/26 steps with native 30/30, API 25/25, contracts 118/118, structure 15/15, and aggregate 987/977/0/10.
+  Exact-commit and authenticated-CI evidence remain open; no host/recovery/soak/live claim is implied.
+- ENV-1B2-A is now verified, reviewed, and closed for working-tree source. Gateway launches are exhaustively
+  classified as public/account/execution, receive frozen projected environments, cannot reload local env files,
+  and fail closed without a launcher-supplied surface. All six direct gateway spawns consume `launch.env`.
+  MCP children receive only the MCP projection; account/live/auto-trade/credential-derivation requests are
+  denied before spawn. Manifest discovery is 120 entries / 140 names and aliases / 0 unclassified; focused
+  sequential checks, a 250-iteration poisoned-parent stress test, MCP build, and host-capable two-worker
+  `verify:strict` pass. Direct boots and Compose are not qualified.
+- One diagnostic command printed a local FRED credential and Polymarket private key into the tool transcript.
+  Those credentials must be rotated; no value is retained in workspace documentation.
+
+## 2026-07-28 planning preflight - environment and remote mirror boundaries
+
+- Mass-implement preflight refined the deferred environment/sync plans after independent development review.
+- Existing central-host isolation is partly correct, but the default env loader can fall through from an explicit
+  file to `.env.local`/`.env`, the gateway independently loads dotenv, and service naming alone does not enforce
+  process authority. Implementation is NO-GO until a per-entrypoint capability matrix is approved.
+- The rich-terminal `polymarket markets` path is source-confirmed to request live authorization before browsing
+  and temporarily set execution authorization. The planned correction keeps browsing public and moves auth to
+  Buy/Sell only; no gate was weakened in this planning pass.
+- Remote sync Batch 1 is GO WITH FIXES after host/root/repository scope decisions. Deletion/mirror and scheduling
+  remain NO-GO. No source, environment, secret, storage, runtime, remote, provider, or order state changed.
+
 ## Session 116 - private auth, combined engine, and qualification closeout (2026-07-28)
 
 - Private-by-default API authorization is implemented. Human roles come from trusted server-side identity
@@ -1881,3 +1953,62 @@ migration, segment enablement, destructive action, or promotion occurred. Source
 closeout. Fresh
 installation, host/MCP/recovery/rollback/one-writer/soak qualification, and the 14 policy-stale integrity
 windows remain open.
+
+## DEP-1 dependency-remediation preflight - 2026-07-28
+
+- DEP-1 network-boundary remediation reached `proposed -> preflight -> NO-GO -> deferred`.
+- Current structured evidence identifies affected `ws`/Socket.IO, Axios, Alpaca, and viem graphs but does not
+  provide safe patched target versions or fix-availability metadata.
+- Local offline registry queries return `ENOTCACHED`; the offline audit's zero findings are invalid because the
+  advisory cache is absent.
+- No manifest or lockfile changed. Continue to block release/live use until a user-authorized restricted
+  dependency worker supplies structured current metadata and the isolated compatibility batch passes.
+- The decision-complete batch specification is
+  `workspace/plans/DEPENDENCY_REMEDIATION_MASS_IMPLEMENT_PLAN.md`.
+
+## DEP-1A Socket.IO closure - 2026-07-28
+
+- DEP-1A reached `proposed -> preflight -> GO -> implemented -> verified -> reviewed -> closed`.
+- API and dashboard Socket.IO lock graphs now resolve patched Engine.IO/adapter/ws versions; direct manifests
+  stayed unchanged and deterministic installs are healthy.
+- API 25/25 and dashboard TypeScript/build pass against the refreshed installed graphs.
+- Two unrelated dashboard highs plus DEP-1B viem, DEP-1C Alpaca/Axios, and DEP-1D Polymarket/ws remain.
+- Overall release/live use remains blocked. DEP-1B is the next isolated batch.
+
+## DEP-1B viem closure - 2026-07-28
+
+- DEP-1B reached `proposed -> preflight -> GO WITH FIXES -> implemented -> verified -> reviewed -> closed`.
+- Root/gateway viem is 2.55.10 with viem-owned ws 8.21.0; TEST-1 scripts were preserved.
+- Gateway TypeScript and 51 focused Polymarket/MCP/paper-safety tests pass.
+- DEP-1C Alpaca/Axios is next and requires a structured v3-to-v4 production API map before edits.
+- DEP-1D Polymarket/Ethers ws remains NO-GO; overall release/live use remains blocked.
+
+## DEP-1C/DEP-1D decision and SSH usability - 2026-07-28
+
+- DEP-1C Alpaca/Axios reached `proposed -> preflight -> NO-GO -> deferred`. Eight active gateway API seams
+  are mapped, but exact Alpaca 4.0.1 package/API inspection did not complete; no semver-major edit was guessed.
+- DEP-1D Polymarket/Ethers ws remains NO-GO because the proposed remediation is an unsafe direct-client
+  downgrade from 1.0.6 to 0.0.3.
+- Current combined five-root evidence is 54 vulnerable nodes: 17 high, 11 moderate, 26 low, 0 critical,
+  improving the original 61 total / 24 high without clearing the release gate.
+- Final working-tree verification passes 1,003 total / 999 pass / 0 fail / 4 intentional skips.
+- A clean worktree snapshot performs deterministic installs for all five package roots and passes builds plus
+  aggregate verification at 1,003 total / 993 pass / 0 fail / 10 environment-dependent skips.
+- The source is usable for private, read-only research and paper-safe exercise. It is not yet qualified on the
+  intended SSH host: that host was previously inspected at `e78e1788` and does not contain this uncommitted
+  batch; host install/auth/MCP/startup/recovery evidence remains open.
+- Public exposure, live execution, and release promotion remain blocked.
+
+## Third-machine distribution audit - 2026-07-28
+
+- Clean five-root source installation/build is proven for a disposable working-tree snapshot, but no actual
+  third-host image startup, health, auth, persistence, restart, or rollback run exists for this dirty source.
+- Registry lock entries carry integrity metadata; the sole Git dependency is commit-pinned. Dependencies and
+  secrets are excluded from source/container transfer and should be rebuilt, never rsynced.
+- Public distribution is not supply-chain qualified: Node/npm are not pinned, Docker/Actions references are
+  mutable tags, the ONNX runtime download lacks a CMake `URL_HASH`, and there is no SBOM, signature,
+  provenance attestation, or release checksum workflow.
+- The runtime image is single-stage, has no non-root `USER`, and retains build tooling, source, and development
+  dependencies. It is suitable for private rehearsal, not hardened third-party distribution.
+- The personal license does not authorize unrestricted redistribution. Resolve licensing before offering
+  public downloads.

@@ -2543,3 +2543,331 @@ Prepared the verified full working-tree batch for one local commit. SSH testing 
 it must use distinct private-host service/MCP identities and remain non-live until the documented deployment,
 dependency, macro point-in-time, backup/recovery, and soak gates are evidenced. No push, service startup,
 public exposure, order, or live enablement is part of this closeout.
+
+## User Prompt - 2026-07-28 SSH continuation
+
+`$session-orchestrator`; continue SSH session; copied a mirror of the entire CodePTIT directory to this machine.
+
+## Work - 2026-07-28 SSH continuation boot
+
+Booted from the SSH-side checkout and loaded the current bootstrap, handoff, session memory, project state,
+next-session goal, and documentation hub. This checkout is a standalone Git worktree at
+`/home/vgbn1/Documents/codeptit/personal_finance_draft`, on `main` at committed `e78e1788`
+(`feat: finalize private research security workflow`), with a clean worktree. Its parent contains the expected
+CodePTIT sibling project directories, consistent with a copied mirror, but no source-to-host file comparison was
+performed in this boot. `graphify-out` remains unavailable. No runtime, provider, data, order, public-exposure,
+migration, backup/recovery, or live-execution action occurred.
+
+## User Prompt - 2026-07-28 deferred defense and remote-sync plan
+
+Provided a grand-strategy/cybersecurity analogy and asked to leave it as a plan. Requested a future auto-sync
+script in `/home/vgbn1/Documents/codeptit/bash` that detects whether the other machine is available.
+
+## Work - 2026-07-28 deferred defense and remote-sync plan
+
+Recorded the separate workstation-tooling plan at
+`workspace/plans/CODEPTIT_REMOTE_SYNC_AND_PRIVATE_DEFENSE_PLAN.md`. It uses the analogy only for defensive
+threat modeling and defines a one-way SSH-authenticated remote mirror with dry-run default, explicit apply,
+remote identity checks, no default deletion, and no automatic secret/runtime replication. Implementation is
+deferred until the user confirms the SSH host alias and scope/exclusion policy. No script, timer, remote
+connection, service, provider action, data write, or security-boundary change occurred.
+
+## User Prompt - 2026-07-28 environment and storage boundary proposal
+
+Reported that the dashboard could show a Polymarket portfolio while live trade was blocked, and requested split
+private/public environments plus a remote mirror that ignores `storage/` contents while retaining its structure.
+
+## Work - 2026-07-28 environment and storage boundary refinement
+
+Recorded `workspace/plans/ENVIRONMENT_AND_REMOTE_MIRROR_BOUNDARY_PLAN.md`. The displayed portfolio is treated as
+a credentialed or cached read, not proof of public secret exposure; the sign-in requirement for a documented
+public market-browsing command is a separate boundary-clarity diagnosis. The plan defines public, developer,
+private, central, and execution environment classes; explicit rsync exclusions for secrets, runtime state,
+storage contents, dependencies, and build artifacts; empty remote storage-layout creation; and a redacted,
+name-only inventory before any migration. No environment, secret, storage, remote mirror, runtime, provider,
+order, or public-binding state changed.
+
+## User Prompt - 2026-07-28 mass-implement plan refinement
+
+`use mass implement workflow to refine the plan, discuss it with dev`
+
+## Work - 2026-07-28 mass-implement plan refinement
+
+Ran the mass-implement preflight and an independent read-only development review. Refined both environment and
+remote-sync plans with finding IDs, lifecycle decisions, per-entrypoint capability ownership, exact edge cases,
+Unit/CLI/Stress verification, rollback, difficulty/LOC estimates, and dirty-tree boundaries. ENV-1A and PM-1 are
+GO WITH FIXES; ENV-1B is NO-GO until ENV-1A closes; manual source sync is GO WITH FIXES after target decisions;
+deletion/mirror and scheduling are NO-GO. No application source, environment, secret, storage, remote machine,
+service, provider, order, or public-binding state changed.
+
+## User Prompt - 2026-07-28 session orchestration boot
+
+`$session-orchestrator`; `mo`
+
+## Work - 2026-07-28 session orchestration boot
+
+Loaded the repository bootstrap, current handoff, session memory, project state, next-session goal,
+documentation hub, branch, HEAD, and dirty-worktree status. The checkout remains on `main` at `e78e1788`;
+pre-existing workspace continuity, report, and plan changes were preserved. `graphify-out` is unavailable and
+no code changed, so no graph refresh was due. No runtime, provider poll, canonical-data write, service,
+container, timer, bot cycle, order, public exposure, migration, dependency change, or live enablement occurred.
+
+## User Prompt - 2026-07-28 mass-implement execution
+
+`$mass implement, but before that, do a plan review with edgecases, then execute`
+
+## Work - 2026-07-28 mass-implement execution
+
+Reviewed the environment, remote-sync, and Polymarket plans against current source and added edge cases for
+aliases, browser inputs, dual-use provider credentials, explicit-file fallthrough, process projection, Compose
+sharing, browse/cancel, last-moment order authorization, parent environment mutation, and truthful portfolio
+evidence. Implemented and closed ENV-1A, ENV-1B1, and PM-1. Split the unsafe remainder into deferred ENV-1B2
+entrypoint wiring and ENV-1B3 Compose projection; kept SYNC-1 deferred for missing SSH alias/root/sentinel/repo
+inputs and external-toolkit scope.
+
+Verification passed: environment checker; focused environment/browser contracts; host-capable Polymarket
+preflight/CLI 48/48; host contracts 118/118; aggregate 979 total / 975 pass / 0 fail / 4 intentional skips;
+dashboard TypeScript/build; secrets 900/0; hygiene, structure, and diff checks. Restricted child/API failures
+were reproduced as sandbox spawn/listen limits and passed on the authorized host-capable reruns. No real
+environment value was read or moved, and no runtime, service, provider, data, remote, order, public, timer,
+deletion, or live action occurred.
+
+## User Prompt - 2026-07-28 environment enforcement inventory
+
+`$session-orchestrator Suggested prompt: “Run the environment enforcement inventory review, including all command entrypoints and Compose services; propose the smallest safe ENV-1B2/B3 batch.”`
+
+## Work - 2026-07-28 environment enforcement inventory
+
+Completed a Fast Reading Mode connective-tissue inventory without reading environment values or starting any
+runtime. The canonical CLI dispatches 55 named commands, while API, MCP, dashboard-child, gateway, standalone
+verification/strategy scripts, and package scripts add separate boot paths. The gateway still imports
+`dotenv/config`; dashboard, MCP bridge, CLI gateway commands, and generic backend execution can clone
+`process.env`. All seven Compose services (`web`, `bot`, `backfill`, `portfolio-monitor`, `host-health`,
+`host-backup`, and `polymarket-research`) share the same central `env_file`, so Compose does not yet enforce the
+manifest's surface projections. Environment contracts passed 2/2 and central-host/deployment contracts passed
+3/3. The proposed smallest safe next implementation is ENV-1B2-A only: a name-only executable catalog plus one
+central projected-child helper, wired first to gateway launches and MCP CLI bridge with forbidden-key fixture
+coverage. Defer direct boot rewiring, standalone scripts, and all Compose changes until that seam is proven; keep
+ENV-1B3 NO-GO pending per-service required-key fixtures. No source runtime, environment, service, container,
+provider, data, remote, order, public-binding, timer, deletion, or live-mode action occurred.
+
+## User Prompt - 2026-07-28 combined mass-implementation planning
+
+`$mass-implement, combine with last session leftovers and current session, but first plan`
+
+## Work - 2026-07-28 combined mass-implementation planning
+
+Created the decision-complete source-only plan
+`workspace/plans/ENVIRONMENT_AND_PRODUCTION_EVIDENCE_MASS_IMPLEMENT_PLAN.md`. It combines the current
+production-evidence P1 with deferred ENV-1B2/B3 without mixing unrelated dependency remediation, macro schema,
+remote-sync, or host-qualification work. Order is TEST-1 committed-archive/CI evidence truth, ENV-1B2-A projected
+gateway/MCP children, ENV-1B3-A service-key contract, then separately approved ENV-1B3-B Compose projection.
+The plan contains lifecycle states, owners, acceptance criteria, security/rollback boundaries, edge cases,
+verification gates, estimates, and explicit NO-GO conditions. Planning only; no application/runtime change.
+
+## User Prompt - 2026-07-28 production-grade testing audit
+
+`$blast-through and testing, also i thinmk there should be a production grade protocal for testing? to ensure that the test arent lying`
+
+## Work - 2026-07-28 production-grade testing audit
+
+Ran a Fast Reading Mode section-grade review of test truthfulness. The restricted `verify:strict` stopped at
+three loopback-listening API files because the sandbox denied `listen`; the exact host-capable rerun passed the
+API, contracts, secrets, and aggregate source suite. Hygiene and diff-integrity checks also pass. The current
+fresh-install verifier did not reach its `[fresh-install] PASS` marker: both attempts stopped during the root
+isolated `npm ci`, so this session has no fresh-install result. More importantly, its source copy includes
+untracked non-ignored worktree files, making it worktree-snapshot proof rather than literal commit/fresh-clone
+proof. Current CI installs/tests only the root package and does not invoke the five-root verifier or the nested
+MCP/dashboard builds. Recorded a P1 release-evidence truth review item and regraded tests/CI B+/B pending a
+versioned evidence protocol. No source/runtime/provider/data/order/public/deployment action occurred.
+
+## User Prompt - 2026-07-28 refine combined plan
+
+`refine plan`
+
+## Work - 2026-07-28 refine combined plan
+
+Used `refine-suggestion` to make
+`workspace/plans/ENVIRONMENT_AND_PRODUCTION_EVIDENCE_MASS_IMPLEMENT_PLAN.md` implementation-ready without
+starting implementation. Fixed the TEST-1 coordinator, mode names, atomic pass/fail evidence schema, CI artifact
+contract, and uncommitted-versus-exact-commit closure rule. Made ENV-1B2-A command classification exhaustive,
+defined parent-environment poisoning and structured MCP denial tests, and made the existing environment manifest
+the single schema-v3 owner for all seven Compose service contracts. ENV-1B3-B remains separately approval-gated.
+`git diff --check` passed. No source runtime, environment value, service, provider, data, order, public, remote,
+dependency, migration, timer, or live action occurred.
+
+## User Prompt - 2026-07-28 mass-implement TEST-1
+
+`$mass-implement`
+
+## User Prompt - 2026-07-28 bound test CPU
+
+`can you make the tests so that it doesnt hog the cpu, at once`
+
+## Work - 2026-07-28 TEST-1 source implementation and CPU bounds
+
+Implemented, verified, and reviewed the TEST-1 source-evidence batch. Added separate snapshot/archive acquisition,
+atomic schema-v1 evidence, pre-run stale-PASS replacement, strict anti-fabrication validation, retained CI
+artifacts, and preservation of gateway/active-entrypoint/C++ checks. The default resource ceiling is two jobs
+across CMake/Make/Go/libuv/Node tests and npm sockets, with validated `--jobs 1..8` recorded in evidence.
+
+Review caught and repaired real defects before closure: null Node spec-reporter counts, a deleted quote-router CI
+path, unsupported `npm_config_jobs`, and a stale PASS left by interruption. Removed the exact 1.3 GB disposable
+tree left by the interrupted run. The canonical Node runner also defaults to two workers. Focused contracts
+passed 15/15; final bounded snapshot passed 26/26 steps with
+native 30/30, API 25/25, contracts 118/118, structure 15/15, aggregate 987/977/0/10, and snapshot secret scan
+903/0. This closes working-tree source implementation only; exact-commit and authenticated-CI proof remain open.
+
+## User Prompt - 2026-07-28 mass-implement ENV-1B2-A
+
+`$mass-implement`
+
+## Work - 2026-07-28 ENV-1B2-A projected child enforcement
+
+Implemented, verified, reviewed, and closed ENV-1B2-A for working-tree source. Added frozen child projection,
+exhaustive gateway/MCP capability classification, direct-spawn environment wiring, gateway surface enforcement,
+local-env reload suppression, structured MCP account/live denial, and the missing gateway positions branch.
+Review promoted Polymarket credential derivation to execution scope.
+
+Focused sequential suites, 250 poisoned-parent iterations, MCP build, manifest discovery 120/140/0, diff checks,
+and host-capable two-worker `verify:strict` pass. Direct boots and ENV-1B3 Compose work remain deferred. A
+diagnostic exposed the local FRED credential and Polymarket private key to the tool transcript; both require
+rotation and their values were not copied into repository records.
+
+## User Prompt - 2026-07-28 mass-implement ENV-1B3-A
+
+`$mass-implement`
+
+## Work - 2026-07-28 ENV-1B3-A Compose service contract
+
+Implemented, verified, reviewed, and closed the contract-only batch. Environment-manifest schema 3 owns exact
+required/optional/defaulted/forbidden policies for all seven Compose services; validation and preparation expose
+names only. Focused checks pass 13/13, discovery passes 120/140/0, adjacent contracts and diff checks pass, and
+CPU-capped strict verification passes 1,003/999/0/4. Compose is unchanged and runtime isolation remains
+unimplemented; ENV-1B3-B requires separate approval.
+
+## User Prompt - 2026-07-28 end session
+
+`v end current session`
+
+## Closeout - 2026-07-28 environment enforcement batches
+
+Stopped at the verified working-tree boundary on `main` at `e78e1788`. TEST-1, ENV-1B2-A, and ENV-1B3-A are
+closed for source implementation; ENV-1B3-B remains separately approval-gated. Final strict verification is
+1,003/999/0/4 under two-worker caps, focused ENV-1B3-A contracts are 13/13, manifest discovery is 120/140/0,
+and `git diff --check` passes. The dirty tree was preserved without staging or commit. Graph refresh was
+unavailable. No service/container/provider/data/order/public/live action occurred.
+
+## User Prompt - 2026-07-28 session boot
+
+`$session-orchestrator`
+
+## Work - 2026-07-28 session boot
+
+Loaded the bootstrap, current dated handoff, session memory, live state, next-session queue, documentation hub,
+and current Git identity. The checkout remains on `main` at `e78e1788` with the prior verified environment and
+source-evidence batch intentionally uncommitted. No new environment implementation is approved; ENV-1B3-B,
+dependency remediation, macro point-in-time work, remote sync, and private-host qualification remain separately
+scoped. `graphify-out` is unavailable and no code changed during boot. No test, runtime, service, provider, data,
+order, public, remote, destructive, or live action occurred.
+
+## User Prompt - 2026-07-28 blast-through triage
+
+`$blast-through`
+
+## Work - 2026-07-28 blast-through triage
+
+Ran triage / Fast Reading Mode over the three current release-critical seams. Confirmed the five-root dependency
+gate (24 high / 11 moderate / 26 low / 0 critical), confirmed the macro path remains safely fail-closed with
+0/86 PIT-eligible rows and disconnected scoped/global snapshots, and confirmed all seven Compose services still
+share the central env file. Dismissed the old TEST-1 source-design finding because archive/snapshot evidence and
+CI artifact wiring now exist in the dirty tree; exact-commit and authenticated-CI proof remain open. Fresh
+read-only integrity returned 92/92, zero stale, zero unexplained grain, and DCS 1.0. Recorded the stale leading
+DEV_REVIEW summary as continuity drift. No implementation, provider, package, runtime, data, order, public,
+destructive, migration, or live action occurred.
+
+## User Prompt - 2026-07-28 mass-implement dependencies
+
+`$mass-implement`
+
+## Work - 2026-07-28 DEP-1 dependency preflight
+
+Selected DEP-1 network-boundary remediation from the approved release queue and completed its intake, owner,
+dirty-overlap, edge-case, rollback, and verification preflight. The batch is NO-GO/deferred: trusted structured
+evidence lacks exact patched versions and fix availability, local offline registry lookups return `ENOTCACHED`,
+and offline audit falsely reports zero without advisory cache data. Recorded a decision-complete plan and the
+required restricted-worker input. No package fetch/install/update, manifest/lockfile change, production source
+edit, provider, runtime, data, order, public, destructive, migration, or live action occurred.
+
+## Work - 2026-07-28 DEP-1A Socket.IO closure
+
+After explicit authorization, restricted registry/advisory research split DEP-1 into safe sub-batches. DEP-1A
+refreshed only API/dashboard Socket.IO locks to patched Engine.IO/adapter/ws versions. Both direct manifests
+stayed byte-identical; deterministic installs and dependency trees are healthy; targeted audits are empty;
+host-capable API tests pass 25/25; dashboard TypeScript/build passes. Two unrelated dashboard highs and
+DEP-1B/C/D remain, so release/live use is still blocked.
+
+## Work - 2026-07-28 DEP-1B viem closure
+
+Upgraded root/gateway viem to 2.55.10 and its owned ws to 8.21.0 through restricted registry resolution.
+Preserved the existing TEST-1 scripts exactly and disabled lifecycle scripts. Targeted audits clear viem;
+gateway TypeScript and 51 focused Polymarket/MCP/paper-safety tests pass. The remaining root/gateway ws high is
+the deferred Polymarket/Ethers path. DEP-1C Alpaca/Axios requires an API compatibility map before edits.
+
+## User Prompt - 2026-07-28 DEP-1 authorization and SSH usability request
+
+Approved the restricted dependency batch and requested an honest assessment of whether the result is usable
+on an SSH machine.
+
+## Work - 2026-07-28 DEP-1 partial closure and usability decision
+
+Closed DEP-1A Socket.IO and DEP-1B viem. Deferred DEP-1C Alpaca/Axios because the exact 4.0.1 API package could
+not be inspected, and rejected DEP-1D's unsafe Polymarket client downgrade. Current structured evidence is
+54 vulnerable nodes / 17 high / 11 moderate / 26 low / 0 critical. Full strict verification passes
+1,003/999/0/4, and the clean five-root worktree snapshot passes at 1,003/993/0/10. Verdict: usable for private
+read-only research and paper-safe exercise in the current source tree; not yet SSH-host-qualified,
+release-ready, public-ready, or live-ready.
+
+## User Prompt - 2026-07-28 third-machine and safe distribution review
+
+Asked whether an rsynced checkout will actually deploy on a third machine and how other people can download
+the JavaScript-heavy project with all packages while minimizing malware risk.
+
+## Work - 2026-07-28 focused distribution triage
+
+Audited third-machine reproducibility, Docker/package inputs, lockfile integrity, build-time fetching, and
+release provenance without changing production source or starting a service. Clean snapshot evidence strongly
+supports five-root installation/build portability on a compatible amd64 Linux machine, but the current dirty
+tree has no matching committed CI artifact or real container startup proof. All registry-resolved lock entries
+carry integrity metadata and the one Git dependency is commit-pinned. Open distribution gates are an uncommitted
+58-entry working tree, no Node/npm package-manager pin, mutable Docker/GitHub Action tags, an unhashed ONNX
+FetchContent download, a root-running single-stage image containing build tools/source/dev dependencies,
+17 high advisory nodes, no SBOM/signature/attestation pipeline, and a personal license that does not authorize
+unrestricted redistribution. Recommended distribution target: reviewed committed
+source plus a CI-built, scanned, SBOM-attached, signed OCI image referenced by digest; never distribute
+`node_modules`, secrets, or runtime data.
+
+## User Prompt - 2026-07-28 session close
+
+Requested the next-session plan and explicitly ended the current session.
+
+## Closeout - 2026-07-28 rsync/deployment boundary
+
+Recorded the next bounded workflow: verify `vgbn-servers` identity, rsync source plus approved credentials from
+`steamlinux` over SSH without deletion, rebuild dependencies/artifacts on the destination, and qualify only the
+private web service before considering any other profile. The displayed Node/npm/Docker/Compose/Git/CMake
+versions belong to `steamlinux`, not yet to `vgbn-servers`. No rsync, remote write, package install, image
+build, container/service start, provider poll, data mutation, bot cycle, order, public exposure, or live
+enablement occurred before session end.
+
+## User Prompt - 2026-07-28 commit authorization
+
+After the session boundary was recorded, explicitly requested committing the complete current working tree.
+
+## Closeout - 2026-07-28 exact source commit
+
+Authorized one local commit containing the accumulated private-auth, environment projection, source-evidence,
+Polymarket safety, dependency remediation, review, plan, and handoff batch. Required final gates are the
+already-passing strict suite and clean worktree snapshot, plus a fresh secret scan, hygiene check, and
+`git diff --check`. No push, rsync, remote write, image build, container/service start, provider poll, data
+mutation, bot cycle, order, public exposure, or live enablement is authorized by this commit request.
