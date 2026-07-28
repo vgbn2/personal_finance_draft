@@ -7,7 +7,10 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { parseEnvFile, validateCentralEnvironment } = require('../../../backend/scripts/ops/central_host_preflight.js');
-const { prepareCentralEnvironment } = require('../../../backend/scripts/ops/prepare_central_env.js');
+const {
+  buildComposeServiceProjectionReport,
+  prepareCentralEnvironment,
+} = require('../../../backend/scripts/ops/prepare_central_env.js');
 
 test('central environment preparation copies only approved research settings and generates an isolated token', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-prepare-central-env-'));
@@ -73,7 +76,33 @@ test('central environment preparation copies only approved research settings and
   assert.equal(prepared.POLYMARKET_PRIVATE_KEY, undefined);
   assert.equal(fs.statSync(outputPath).mode & 0o777, 0o600);
   assert.equal(validateCentralEnvironment(prepared).ok, true);
+  assert.equal(result.compose_contract.ok, false);
+  assert.deepEqual(
+    result.compose_contract.services.find((service) => service.service === 'polymarket-research').missing_required_keys,
+    ['POLYMARKET_RESEARCH_SCOPE_FILE'],
+  );
   assert.doesNotMatch(JSON.stringify(result), /research-secret|must-not-copy|must-not-reuse/);
+});
+
+test('central service projection preview is name-only and closes when required inputs exist', () => {
+  const report = buildComposeServiceProjectionReport({
+    SOVEREIGN_API_TOKEN: 'api-token',
+    SOVEREIGN_CLIENT_TOKEN: 'client-token',
+    POLYMARKET_RESEARCH_SCOPE_FILE: '/app/storage/polymarket/scope.json',
+    FRED_API_KEY: 'provider-poison',
+    POLYMARKET_PRIVATE_KEY: 'execution-poison',
+    SOVEREIGN_TRADE_PIN: 'pin-poison',
+  });
+  assert.equal(report.ok, true);
+  assert.equal(report.services.length, 7);
+  assert.ok(
+    report.services.find((service) => service.service === 'backfill').projected_keys.includes('FRED_API_KEY'),
+  );
+  assert.equal(
+    report.services.find((service) => service.service === 'web').projected_keys.includes('FRED_API_KEY'),
+    false,
+  );
+  assert.doesNotMatch(JSON.stringify(report), /provider-poison|execution-poison|pin-poison/);
 });
 
 test('central environment preparation refuses an existing destination unless force is explicit', (t) => {

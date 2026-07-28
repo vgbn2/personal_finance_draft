@@ -19,6 +19,7 @@ That means:
 `npm test`
 - Runs the broad Node suite through `tests/run_node_tests.js`
 - Covers `tests/scripts/**/*.test.js` and `tests/web/**/*.test.js`
+- Defaults to two concurrent test files; an explicit `--test-concurrency=N` overrides that ceiling
 - Does not cover `backend/api/tests/`; run `npm run test:api` or `npm run verify:strict` for those
 
 `npm run test:api`
@@ -44,6 +45,30 @@ That means:
 - Runs the complete API gate, contract gate, secret scan, and broader Node suite
 - Native C++, MCP TypeScript, and frontend build/responsive gates remain separate because they have distinct toolchain requirements
 - Use this before claiming the Node/server surfaces are healthy after API, deployment, or ingestion changes
+
+`npm run verify:source-snapshot`
+- Copies tracked and non-ignored working-tree files into a disposable source root
+- Records dirty state, exact source fingerprints, five lockfile digests, fixed verification steps, and excluded claims
+- Proves only the current worktree snapshot; it is not exact-commit, CI, host, recovery, soak, or live evidence
+
+`npm run verify:committed-archive`
+- Builds its disposable source solely from `git archive HEAD`, so unstaged and untracked files cannot enter
+- Installs all five lockfile roots, builds MCP/dashboard/native code, and runs the environment, secret, API,
+  contract, structure, and aggregate Node gates
+- Writes a schema-v1 atomic evidence manifest. Use
+  `-- --evidence-out /absolute/path/evidence.json` when a retained path is required
+- Defaults to at most two concurrent build/test/install jobs. Use `-- --jobs N` with `N` from 1 through 8 only
+  when the operator explicitly accepts the additional CPU and I/O load; the selected limit is recorded
+
+`npm run verify:fresh-install`
+- Compatibility alias for `verify:committed-archive`; it never verifies the dirty worktree
+- A PASS proves the committed archive completed the declared source gates. It still does not prove an
+  authenticated CI run, deployed-host health, provider connectivity, backup/restore, restart/rollback,
+  one-writer behavior, recovery, soak, or live execution
+
+CI runs `verify:committed-archive` and retains its manifest as `sovereign-source-evidence`. A source change is
+not exact-commit/CI-closed until that change is committed and the matching authenticated Actions run uploads a
+passing manifest.
 
 `node --test tests/scripts/data/cache/cache_contract.test.js`
 - Verifies cache reuse and disable-mode freshness behavior

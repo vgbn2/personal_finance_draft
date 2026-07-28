@@ -22,6 +22,8 @@ const {
   printPayload,
 } = utils;
 
+const POLYMARKET_LIVE_AUTHORIZATION = Symbol('polymarket_live_authorization');
+
 function polymarketHistoryPayload(snapshot, args = [], options = {}) {
   const event = options.event || optionValue(args, '--event', optionValue(args, '--symbol', null));
   const historyDays = options.historyDays ?? numericOption(args, '--history-days', numericOption(args, '--days', 30));
@@ -286,12 +288,17 @@ function fetchPolymarketPriceHistorySnapshot(tokenId, interval = '1h') {
   return payload;
 }
 
-function submitPolymarketBuyOrder(tokenId, size, price, tickSize) {
+function submitPolymarketBuyOrder(tokenId, size, price, tickSize, authorization) {
+  if (authorization !== POLYMARKET_LIVE_AUTHORIZATION) {
+    throw new Error('Polymarket live authorization is required immediately before submission');
+  }
   const gatewayArgs = ['polymarket', 'buy', tokenId, String(size), ...(price !== undefined ? [String(price)] : []), '--live'];
   if (tickSize !== undefined) gatewayArgs.push('--tick-size', String(tickSize));
   gatewayArgs.push('--json');
 
-  const payload = runGatewayCommand(gatewayArgs);
+  const payload = runGatewayCommand(gatewayArgs, {
+    env: { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' },
+  });
   if (!payload.ok) {
     const lines = [payload.error || 'Polymarket buy request failed'];
     if (payload.signerAddress || payload.funderAddress || payload.signatureType !== undefined) {
@@ -329,7 +336,7 @@ async function authorizePolymarketLive(args, reason) {
       return false;
     }
     console.log(`${A.B_GREEN}[AUTH] PIN verified. Proceeding with LIVE Polymarket trading...${A.RESET}`);
-    return true;
+    return POLYMARKET_LIVE_AUTHORIZATION;
   }
 
   if (!isRichTerminal()) {
@@ -337,7 +344,9 @@ async function authorizePolymarketLive(args, reason) {
     return false;
   }
   console.warn(`${A.B_YELLOW}[WARNING] SOVEREIGN_TRADE_PIN not set. LIVE Polymarket trading proceeding without MFA gate.${A.RESET}`);
-  return promptConfirm('Confirm LIVE Polymarket trading WITHOUT a PIN set?');
+  return (await promptConfirm('Confirm LIVE Polymarket trading WITHOUT a PIN set?'))
+    ? POLYMARKET_LIVE_AUTHORIZATION
+    : false;
 }
 
 function deriveDefaultBuyPriceFromBook(snapshot) {
@@ -403,6 +412,7 @@ function fetchPolymarketEventsSnapshot(category = 'crypto', limit = 15) {
     cwd: utils.REPO_ROOT,
     encoding: 'utf8',
     shell: launch.shell ?? false,
+    env: launch.env,
   });
   if (result.error) throw new Error(`Failed to fetch Polymarket events: ${result.error.message}`);
   const payload = parseGatewayJsonOutput(result.stdout, 'polymarket events');
@@ -410,7 +420,7 @@ function fetchPolymarketEventsSnapshot(category = 'crypto', limit = 15) {
   return payload;
 }
 
-async function runPolymarketMarketActionLoop(selectedMarket, resultContext) {
+async function runPolymarketMarketActionLoop(selectedMarket, resultContext, args = [], deps = {}) {
   let firstDetailEntry = true;
   while (true) {
     if (firstDetailEntry) {
@@ -420,7 +430,10 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext) {
       const groupLabel = selectedMarket.groupItemTitle || selectedMarket.section || 'crypto';
       process.stdout.write(`\n${A.B_CYAN}${selectedMarket.question}${A.RESET}  ${A.DIM}(${groupLabel})${A.RESET}\n`);
     }
-    const action = await promptSelect('Market action:', buildPolymarketActionChoices(selectedMarket));
+    const action = await (deps.promptAction || promptSelect)(
+      'Market action:',
+      buildPolymarketActionChoices(selectedMarket),
+    );
     if (action === 'exit') return 'exit';
     if (action === 'back') return 'back';
     if (action === 'detail') {
@@ -472,6 +485,14 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext) {
         console.log('No token id available for that outcome.');
         continue;
       }
+      const liveAuthorization = await (deps.authorizeLive || authorizePolymarketLive)(
+        args,
+        'Polymarket live order',
+      );
+      if (!liveAuthorization) {
+        console.log('Live Polymarket order cancelled before credentialed account or orderbook access.');
+        continue;
+      }
       const book = fetchPolymarketOrderbookSnapshot(targetToken.token_id);
       const defaultPrice = deriveDefaultBuyPriceFromBook(book);
       pageText(renderPolymarketOrderbookDetails(selectedMarket, book), []);
@@ -483,7 +504,13 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext) {
       const portfolioSnap = (() => {
         try {
           const launch = buildTradeGatewayLaunch(['polymarket', 'portfolio', '--json']);
-          const r = spawnSync(launch.command, launch.args, { cwd: utils.REPO_ROOT, encoding: 'utf8', timeout: 10000 });
+          const r = spawnSync(launch.command, launch.args, {
+            cwd: utils.REPO_ROOT,
+            encoding: 'utf8',
+            timeout: 10000,
+            shell: launch.shell ?? false,
+            env: launch.env,
+          });
           return r.stdout ? parseGatewayJsonOutput(r.stdout, 'polymarket portfolio') : null;
         } catch { return null; }
       })();
@@ -542,14 +569,20 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext) {
         console.log('Order cancelled.');
         continue;
       }
-      const placed = submitPolymarketBuyOrder(targetToken.token_id, size, limitPrice, tickSize);
+      const placed = submitPolymarketBuyOrder(
+        targetToken.token_id,
+        size,
+        limitPrice,
+        tickSize,
+        liveAuthorization,
+      );
       console.log(JSON.stringify(placed, null, 2));
       continue;
     }
   }
 }
 
-async function promptPolymarketMarketBrowser() {
+async function promptPolymarketMarketBrowser(args = [], deps = {}) {
   while (true) {
     let category = await promptSelect('Polymarket category:', buildPolymarketCategoryChoices());
     if (category === '__cancel__') return { cancelled: true };
@@ -609,16 +642,34 @@ async function promptPolymarketMarketBrowser() {
     if (marketValue === '__back__') continue;
 
     const selectedMarket = selectedEvent.markets[Number(marketValue)];
-    const actionResult = await runPolymarketMarketActionLoop(selectedMarket, { category });
+    const actionResult = await runPolymarketMarketActionLoop(
+      selectedMarket,
+      { category },
+      args,
+      deps.marketAction || {},
+    );
     if (actionResult === 'exit') return { cancelled: false, exited: true };
   }
+}
+
+async function runPublicPolymarketMarketBrowser(args = [], deps = {}) {
+  const browse = await (deps.promptMarketBrowser || promptPolymarketMarketBrowser)(args, deps);
+  if (browse.cancelled) {
+    console.log('Polymarket market browser cancelled.');
+    return 0;
+  }
+  if (browse.empty) {
+    console.log(`No active ${browse.category} markets returned from Gamma API.`);
+    return 0;
+  }
+  return 0;
 }
 
 /**
  * Handles the 'polymarket' command.
  * Sub: portfolio, debug, modes, investigate, probe, topology, trace, markets, paper-run, derive-creds
  */
-async function commandPolymarket(args) {
+async function commandPolymarket(args, deps = {}) {
   const sub = args[0] || 'portfolio';
   const submitsOrder = (sub === 'buy' || sub === 'sell') && !hasFlag(args, '--preflight');
   if (submitsOrder && !hasFlag(args, '--live')) {
@@ -630,7 +681,7 @@ async function commandPolymarket(args) {
     liveAuthorized = await authorizePolymarketLive(args, 'Polymarket live trading');
     if (!liveAuthorized) return 1;
   }
-  const gate = featureGate('polymarket', { surface: `Polymarket ${sub}` });
+  const gate = (deps.featureGate || featureGate)('polymarket', { surface: `Polymarket ${sub}` });
   if (!gate.ok) {
     printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
     return 1;
@@ -772,39 +823,25 @@ async function commandPolymarket(args) {
     return result.ok ? 0 : 1;
   }
 
-  if (sub === 'markets' && !hasFlag(args, '--json') && args.length === 1 && isRichTerminal()) {
-    if (!(await authorizePolymarketLive(args, 'Polymarket live trading'))) return 1;
-    const previousAuthorization = process.env.SOVEREIGN_EXECUTION_AUTHORIZED;
-    process.env.SOVEREIGN_EXECUTION_AUTHORIZED = 'true';
-    let browse;
-    try {
-      browse = await promptPolymarketMarketBrowser();
-    } finally {
-      if (previousAuthorization === undefined) delete process.env.SOVEREIGN_EXECUTION_AUTHORIZED;
-      else process.env.SOVEREIGN_EXECUTION_AUTHORIZED = previousAuthorization;
-    }
-    if (browse.cancelled) {
-      console.log('Polymarket market browser cancelled.');
-      return 0;
-    }
-    if (browse.empty) {
-      console.log(`No active ${browse.category} markets returned from Gamma API.`);
-      return 0;
-    }
-    return 0;
+  if (
+    sub === 'markets'
+    && !hasFlag(args, '--json')
+    && args.length === 1
+    && (deps.isRichTerminal || isRichTerminal)()
+  ) {
+    return runPublicPolymarketMarketBrowser(args, deps);
   }
   const gatewayArgs = ['polymarket', sub, ...args.slice(1)];
   if (hasFlag(args, '--json')) gatewayArgs.push('--json');
 
-  const launch = buildTradeGatewayLaunch(gatewayArgs);
+  const launch = buildTradeGatewayLaunch(gatewayArgs, {
+    env: liveAuthorized ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {},
+  });
   const result = spawnSync(launch.command, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
     shell: launch.shell ?? false,
-    env: {
-      ...process.env,
-      ...(liveAuthorized ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {}),
-    },
+    env: launch.env,
   });
   return result.status ?? 0;
 }
@@ -837,5 +874,6 @@ module.exports = {
   fetchPolymarketEventsSnapshot,
   runPolymarketMarketActionLoop,
   promptPolymarketMarketBrowser,
+  runPublicPolymarketMarketBrowser,
   commandPolymarket,
 };

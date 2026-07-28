@@ -14,7 +14,7 @@ export default function LoginPage() {
       <div className="h-screen w-full flex items-center justify-center bg-[var(--bg-primary)]">
         <div className="text-center space-y-2">
           <p className="text-[var(--text-muted)] font-mono text-sm">Supabase not configured.</p>
-          <p className="text-[var(--text-muted)] font-mono text-xs">Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or SOVEREIGN_SUPABASE_URL and SOVEREIGN_SUPABASE_PUBLISHABLE_KEY, in your .env</p>
+          <p className="text-[var(--text-muted)] font-mono text-xs">Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the dashboard environment.</p>
         </div>
       </div>
     );

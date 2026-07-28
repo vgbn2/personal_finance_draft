@@ -124,6 +124,7 @@ function fetchPolymarketPortfolioForCockpit() {
     const launch = buildTradeGatewayLaunch(['polymarket', 'portfolio', '--json']);
     const r = spawnSync(launch.command, launch.args, {
       cwd: REPO_ROOT, encoding: 'utf8', timeout: 10000, shell: launch.shell ?? false,
+      env: launch.env,
     });
     return r.stdout ? parseGatewayJsonOutput(r.stdout, 'polymarket portfolio') : null;
   } catch {
@@ -160,14 +161,22 @@ function mergePolymarketIntoPortfolio(portfolio, polymarket) {
 function summarizePortfolioCard(portfolio) {
   const equity = portfolio && Number.isFinite(Number(portfolio.equity)) ? Number(portfolio.equity) : null;
   const exposure = portfolio && Number.isFinite(Number(portfolio.exposure)) ? Number(portfolio.exposure) : null;
+  const credentialedPolymarketRead = Boolean(
+    portfolio
+    && portfolio.polymarket
+    && portfolio.polymarket.status === 'connected',
+  );
   return {
     source: DEFAULT_PORTFOLIO,
     last_checked: portfolio && portfolio.generated_at ? portfolio.generated_at : null,
     state: equity != null ? 'ok' : 'warn',
     title: equity != null ? `equity ${equity}` : 'portfolio unavailable',
-    subtitle: exposure != null ? `exposure=${exposure}` : 'no portfolio metrics',
+    subtitle: credentialedPolymarketRead
+      ? `credentialed Polymarket account read${exposure != null ? `; exposure=${exposure}` : ''}`
+      : (exposure != null ? `exposure=${exposure}` : 'cached/local portfolio metrics only'),
     metrics: {
       equity,
+      evidence_class: credentialedPolymarketRead ? 'credentialed_account_read' : 'cached_or_local',
       exposure,
       drawdown: portfolio ? portfolio.drawdown ?? null : null,
       readiness: portfolio ? portfolio.readiness ?? null : null,
