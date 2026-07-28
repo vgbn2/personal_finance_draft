@@ -2,6 +2,10 @@ import { spawn } from 'node:child_process';
 // @ts-ignore
 import { REPO_ROOT, findNodeCli, CLI_CANDIDATES } from '../../../shared/lib/runtime/paths';
 import { ToolResponse } from './schemas';
+// @ts-ignore
+import { buildChildEnvironment } from '../../../shared/lib/runtime/environment_manifest';
+// @ts-ignore
+import { classifyMcpCliCapability } from '../../../shared/lib/runtime/backend_bridge';
 
 export function extractJsonPayload(stdout: string): any | null {
   const trimmed = String(stdout || '').trim();
@@ -62,6 +66,21 @@ export function invokeSovereignCli(
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxOutputBytes = options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
   const cliArgs = args.includes('--json') ? args : [...args, '--json'];
+  const capability = classifyMcpCliCapability(cliArgs);
+  if (capability === 'account_read' || capability === 'execution') {
+    return Promise.resolve(textResponse(JSON.stringify({
+      ok: false,
+      error: 'environment_surface_denied',
+      surface: 'mcp',
+      required_capability: capability,
+    }), true));
+  }
+  const childEnvironment = buildChildEnvironment(process.env, 'mcp', {
+    overrides: {
+      SOVEREIGN_SKIP_DOTENV: '1',
+      SOVEREIGN_SKIP_LOCAL_ENV: '1',
+    },
+  });
 
   return new Promise((resolve) => {
     let settled = false;
@@ -96,7 +115,7 @@ export function invokeSovereignCli(
     try {
       child = spawn(process.execPath, [cliPath, ...cliArgs], {
         cwd: REPO_ROOT,
-        env: { ...process.env },
+        env: childEnvironment,
         stdio: ['ignore', 'pipe', 'pipe'],
       });
     } catch (err: any) {

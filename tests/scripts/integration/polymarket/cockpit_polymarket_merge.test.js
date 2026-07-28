@@ -42,6 +42,8 @@ test('cockpit portfolio card shows Polymarket equity when connected', () => {
   assert.equal(card.payload.polymarket.name, 'Polymarket');
   assert.equal(card.payload.polymarket.status, 'connected');
   assert.equal(card.payload.polymarket.position_count, 1);
+  assert.equal(card.metrics.evidence_class, 'credentialed_account_read');
+  assert.match(card.subtitle, /credentialed Polymarket account read/);
 });
 
 test('cockpit portfolio card adds Polymarket on top of an existing base equity (additive, not a replacement)', () => {
@@ -53,6 +55,8 @@ test('cockpit portfolio card adds Polymarket on top of an existing base equity (
 test('cockpit portfolio card preserves a pre-existing base equity when Polymarket is null', () => {
   const card = summarizePortfolioCard(mergePolymarketIntoPortfolio({ mode: 'paper', equity: 500 }, null));
   assert.equal(card.metrics.equity, 500);
+  assert.equal(card.metrics.evidence_class, 'cached_or_local');
+  assert.match(card.subtitle, /cached\/local/);
 });
 
 test('mergePolymarketIntoPortfolio never sets equity to a literal null (Number(null) is 0, which would be misread as a real zero-equity portfolio)', () => {

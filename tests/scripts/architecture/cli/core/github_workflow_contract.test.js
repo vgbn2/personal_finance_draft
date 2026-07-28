@@ -53,6 +53,22 @@ test('C++ Actions workflow executes CTest from the generated root-build director
   assert.match(rootCmake, /add_subdirectory\(backend\/core\)/);
 });
 
+test('Node Actions workflow retains committed-archive evidence instead of root-only proof', () => {
+  const workflow = fs.readFileSync(TEST_WORKFLOW, 'utf8');
+  assert.match(workflow, /npm run verify:committed-archive/);
+  assert.match(workflow, /--evidence-out "\$RUNNER_TEMP\/sovereign-source-evidence\.json"/);
+  assert.match(workflow, /uses: actions\/upload-artifact@v4/);
+  assert.match(workflow, /if: always\(\)/);
+  assert.match(workflow, /if-no-files-found: error/);
+  assert.doesNotMatch(workflow, /^\s+- name: Install Node dependencies$/m);
+  assert.doesNotMatch(workflow, /^\s+- name: Run Node tests$/m);
+
+  const coordinator = read('scripts/dev/verify_source_evidence.js');
+  assert.match(coordinator, /typecheck_gateway/);
+  assert.match(coordinator, /shared\/lib\/market\/quote_router\.js/);
+  assert.match(coordinator, /backend\/api\/app\.js/);
+});
+
 test('CI dependencies use non-interactive transports', () => {
   const packageJson = read('package.json');
   const packageLock = read('package-lock.json');

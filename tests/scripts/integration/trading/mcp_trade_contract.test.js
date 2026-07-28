@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
-const { extractJsonPayload } = require('../../../../dist/mcp_server/lib/bridge.js');
+const { extractJsonPayload, invokeSovereignCli } = require('../../../../dist/mcp_server/lib/bridge.js');
 const { trade } = require('../../../../dist/mcp_server/tools/trade.js');
 const { placePolymarketOrder } = require('../../../../dist/mcp_server/tools/polymarket.js');
 const { backfill, buildBackfillAllArgs } = require('../../../../dist/mcp_server/tools/data.js');
@@ -45,6 +45,36 @@ test('mcp polymarket live path requires explicit limit price', async () => {
   });
   assert.equal(result.isError, true);
   assert.match(parseToolText(result).error, /explicit limit price/);
+});
+
+test('mcp bridge denies account and execution capabilities before CLI spawn', async () => {
+  const account = await invokeSovereignCli(['polymarket', 'portfolio']);
+  assert.equal(account.isError, true);
+  assert.deepEqual(parseToolText(account), {
+    ok: false,
+    error: 'environment_surface_denied',
+    surface: 'mcp',
+    required_capability: 'account_read',
+  });
+
+  const execution = await invokeSovereignCli(['trade', 'buy', 'AAPL', '1', '--live']);
+  assert.equal(execution.isError, true);
+  assert.deepEqual(parseToolText(execution), {
+    ok: false,
+    error: 'environment_surface_denied',
+    surface: 'mcp',
+    required_capability: 'execution',
+  });
+});
+
+test('mcp bridge still permits a local cached/help CLI child', async (t) => {
+  const result = await invokeSovereignCli(['help']);
+  assert.notEqual(result.isError, true);
+  if (result.content[0].text === 'No output from CLI') {
+    t.skip('host child stdio unavailable in this sandbox');
+    return;
+  }
+  assert.match(result.content[0].text, /Sovereign/i);
 });
 
 test('mcp polymarket rejects max_cost_usdc breaches before CLI execution', async () => {

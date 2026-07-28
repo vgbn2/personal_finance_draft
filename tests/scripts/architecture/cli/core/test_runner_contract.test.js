@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  DEFAULT_TEST_CONCURRENCY,
   DEFAULT_TEST_TARGETS,
   buildArgs,
   splitRunnerArgs,
@@ -12,6 +13,7 @@ const {
 test('default Node runner uses the canonical discovery targets', () => {
   assert.deepEqual(buildArgs(), [
     '--test',
+    `--test-concurrency=${DEFAULT_TEST_CONCURRENCY}`,
     ...DEFAULT_TEST_TARGETS,
   ]);
 });
@@ -19,6 +21,7 @@ test('default Node runner uses the canonical discovery targets', () => {
 test('runner options precede discovery targets and keep their values out of target detection', () => {
   assert.deepEqual(buildArgs(['--test-name-pattern', 'central host', '--test-reporter=dot']), [
     '--test',
+    `--test-concurrency=${DEFAULT_TEST_CONCURRENCY}`,
     '--test-name-pattern',
     'central host',
     '--test-reporter=dot',

@@ -1,6 +1,8 @@
 const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 const { ask } = require('../ai/ai_client');
+const { buildChildEnvironment } = require('../runtime/environment_manifest');
+const { classifyMcpCliCapability } = require('../runtime/backend_bridge');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const CLI_PATH = path.join(ROOT, 'backend', 'cli', 'sovereign_cli.js');
@@ -13,11 +15,30 @@ const TOOLS = {
 };
 
 function runCli(args) {
+  const capability = classifyMcpCliCapability(args);
+  if (capability === 'account_read' || capability === 'execution') {
+    return {
+      status: 1,
+      stdout: JSON.stringify({
+        ok: false,
+        error: 'environment_surface_denied',
+        surface: 'mcp',
+        required_capability: capability,
+      }),
+      stderr: '',
+      error: 'environment_surface_denied',
+    };
+  }
   const result = spawnSync(process.execPath, [CLI_PATH, ...args], {
     cwd: ROOT,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: process.env,
+    env: buildChildEnvironment(process.env, 'mcp', {
+      overrides: {
+        SOVEREIGN_SKIP_DOTENV: '1',
+        SOVEREIGN_SKIP_LOCAL_ENV: '1',
+      },
+    }),
   });
 
   return {
