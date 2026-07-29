@@ -1,0 +1,4 @@
+interface:
+  display_name: "Readable Refactor"
+  short_description: "Refactor code for clarity without changing behavior"
+  default_prompt: "Use $refactor-readability to make this code easier to understand and maintain without changing its behavior."

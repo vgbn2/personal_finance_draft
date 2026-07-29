@@ -1,1 +1,0 @@
-Keep this tree focused on executable test contracts and compact fixtures, not empty shells or generated outputs.

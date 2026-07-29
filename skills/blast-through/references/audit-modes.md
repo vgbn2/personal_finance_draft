@@ -21,6 +21,22 @@
 - Calculate `DCS = 0.3*Freshness + 0.4*Schema + 0.3*Coverage` only from current evidence.
 - Mark suspect seams degraded and block downstream promotion.
 
+## Maintainability
+
+- Read governing rules, the complete target, direct callers, tests, docs, and relevant legacy constraints.
+- Map the touched behavior to one canonical owner and its operator entrypoint.
+- Compare sibling modules for naming, error, async, validation, configuration, and dependency conventions.
+- Find duplicated policy, mixed responsibilities, generic utility dumping grounds, speculative abstractions,
+  deep control flow, misleading names, stale comments, and docs that overstate current behavior.
+- Use size only as a review signal: inspect changed functions above 60 lines, nesting deeper than three levels,
+  files above 300 lines, and especially files above 500 or 1,000 lines. Do not split cohesive legacy code
+  mechanically.
+- Trace one incident path from symptom to owner, logs/health, safe shutdown, recovery, and verification.
+- Classify each candidate as readability debt, ownership debt, behavioral defect, intentional compatibility,
+  legacy constraint, or dismissed false positive.
+- Route behavior-preserving cleanup to `refactor-readability`; route behavior changes through `codex` or
+  `mass-implement`.
+
 ## Review
 
 - Read changed/requested files, then callers and tests.

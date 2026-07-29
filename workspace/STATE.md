@@ -2012,3 +2012,101 @@ windows remain open.
   dependencies. It is suitable for private rehearsal, not hardened third-party distribution.
 - The personal license does not authorize unrestricted redistribution. Resolve licensing before offering
   public downloads.
+
+## Existing-codebase readability workflow - 2026-07-28
+
+- `blast-through` now has an explicit maintainability mode and Existing-Codebase Coherence Gate for convention
+  drift, duplicate ownership, interface readability, large responsibilities, docs truth, cross-boundary
+  consistency, and incident comprehension. AI authorship is a risk signal, not an automatic defect.
+- `mass-implement` now requires a Readable Implementation Contract: read before editing, respect working legacy
+  behavior and local conventions, preserve canonical owners, keep invariants/failures explicit, and record
+  split-or-keep decisions for touched files above 1,000 lines.
+- Added canonical `refactor-readability` for behavior-preserving cleanup. Behavioral, API, schema, auth, data,
+  provider, trading, dependency, deployment, and persistence changes remain routed elsewhere and approval-gated.
+- Canonical and `.agents` mirror inventories are synchronized at 10 packages. All skill validations,
+  structure contracts 2/2, hygiene, and diff integrity pass.
+- `PROJECT_RULES.md`, `AGENTS.md`, and all 10 skills now enforce bounded-context and evidence honesty. Agents
+  must build a task-local architecture map, disclose material unread/unverified surfaces, and distinguish every
+  evidence class instead of implying whole-system proof.
+- Every skill explicitly forbids manufacturing green tests by weakening assertions/tolerances, adding skips,
+  deleting coverage, suppressing failures, replacing intended paths with mocks, or hardcoding fixtures.
+  Legitimate test changes require canonical contract or approved behavior evidence and a reported before/after
+  expectation. The repository skill contract tests this invariant across the complete manifest.
+
+## Full Blast-Through - 2026-07-28 Hard Reading Mode
+
+- Current source/test evidence is broad and green: host strict API 25/25, contracts 118/118, secrets 911/0,
+  aggregate 1,004/1,000/0/4; native build and CTest 30/30; five installed npm trees have zero `npm ls`
+  problems; required-daily cache integrity is 92/92 with DCS 1.0.
+- New P0 FULL-1: `SOVEREIGN_MOCK=true` bypasses PIN verification and is allowed on the execution environment
+  surface. Release/live use remains blocked until wrong-PIN execution fails under every mock/test poison path.
+- New P1 FULL-2: malformed Alpaca bot state silently defaults empty, and a failed broker `positions` read becomes
+  an empty account that can erase tracked positions and reopen the entry cap.
+- The green suite has a material adversarial blind spot. Broken inputs must produce loud product failure and
+  preserved state; unexpected success or silent fallback must make the test runner red. Permanently red tests
+  are not the target.
+- System design is now C / safety-and-operations-gated; tests B+ / critical-negative-coverage-gated; backend CLI
+  C+ pending FULL-1/FULL-2. Detailed findings, grades, dismissed candidates, C++ candidates, and gates are in
+  `workspace/DEV_REVIEW.md`.
+- No production code, provider, package, credential, canonical data, runtime, container, bot, order, public,
+  migration, deployment, or live state changed during the audit.
+
+## Full recovery implementation - 2026-07-28
+
+- FULL-1 and FULL-2 are implemented and source-verified. Execution children strip `SOVEREIGN_MOCK`; PIN
+  verification has no mock shortcut; corrupt Alpaca state and unavailable/incomplete broker inventory fail
+  closed without state rewrite or entry scanning.
+- All root Node test scripts now use the dual spec/RAG reporter. Every assertion failure appends a sanitized
+  JSONL record under ignored `storage/logs/rag/test_failures.jsonl`; adversarial mutation tests prove the PIN
+  and inventory guards turn red when removed. Canonical native-build, CTest, and secret-scan command failures
+  use the same log through `tests/run_logged_command.js`.
+- Backtest and API fallback responses report degraded/native provenance. Unsupported fallback ratios are null,
+  not plausible-looking approximations.
+- Compose now consumes seven service-specific 0600 environment projections. Docker source is multi-stage and
+  non-root by contract. Five package roots are private/license-aligned and pass offline lockfile dry runs.
+- C++ rebuilt and CTest passes 30/30. Host-capable `verify:strict` passes after the final test-runner routing.
+  Hygiene, environment classification, mirror parity, focused safety tests, and diff integrity pass.
+- Clean worktree-snapshot verification is **inconclusive**, not green: the attempt stopped during root
+  `npm ci` and retained only `verification_in_progress` evidence. Authenticated CI, target-host startup,
+  image build, restart/rollback, backup/recovery, provider connectivity, soak, paper, and live proof remain open.
+- Dependency remediation remains NO-GO at 17 high / 11 moderate / 26 low because exact trusted Alpaca and
+  Polymarket upgrade mappings were unavailable locally. Docker/Actions digests and the ONNX `URL_HASH` also
+  remain unpinned rather than guessed.
+- Refactor slice: broker reconciliation ownership moved to `strategy/automation_guard.js`. `strategy.js`
+  remains 1,276 lines and `cli_executor.js` 1,235 lines; split planning remains required, but further movement
+  was deferred to avoid mixing behavior change with broad restructuring.
+- Overall source grade improves from C to **B- / release-gated**. This is suitable for private read-only
+  research and paper-safe testing, not decision-ready, release-ready, deployed, publicly exposed, or live.
+
+## Pending plan consolidation - 2026-07-29
+
+- Added `workspace/plans/CURRENT_PENDING_MASTER_PLAN.md` as the canonical status index for all 27 pre-existing
+  repository plan files.
+- The combined dependency order is M0 exact source/evidence/continuity; M1 credentials/dependencies/supply
+  chain; M2 private web-only host; M3 data/PIT; M4 strategy/replay; M5 monitoring source; M6 paper/writer/
+  recovery/soak; M7 maintainability/UX; M8 distribution and optional roadmaps.
+- Historical recovery plans remain preserved but are not active. FULL-1/FULL-2 are closed in the worktree;
+  exact `0383d47b` remains unsafe and must not be deployed.
+- M0 is the sole current action: read-only commit-boundary inventory, load-bearing untracked-edge mapping, and
+  evidence/RAG durability preflight. No implementation, commit, host write, dependency change, provider/data
+  action, bot, webhook, order, public exposure, or live action is authorized by this planning update.
+
+## M0 source-evidence implementation - 2026-07-29
+
+- Lifecycle: `proposed -> preflight -> GO WITH FIXES -> implemented -> verified -> reviewed -> deferred`.
+- Added one canonical sanitized-diagnostic owner used by source evidence, Node assertion reporting, and logged
+  command failures; the prior duplicate redactors are consolidated.
+- Source evidence is schema v2, defaults to ignored durable
+  `storage/logs/source_evidence/<mode>-latest.json`, checkpoints the active step atomically, and retains bounded
+  sanitized summaries plus stdout/stderr SHA-256 fingerprints for non-pass steps.
+- The Node wrapper runs each file in its own process while removing the redundant inner isolation layer.
+  This preserves cross-file process isolation and makes nested assertion/spawn causes available to the RAG
+  reporter.
+- The 94-entry current worktree is grouped by owner in
+  `workspace/plans/M0_WORKTREE_CHANGESET_INVENTORY.md`. Load-bearing untracked safety owners remain explicit.
+- Green: focused evidence/RAG/runner contracts 18/18 in the host-capable context; safety, structure, hygiene,
+  secrets, and diff integrity; exact host-capable broad Node discovery.
+- Restricted broad/focused runs can still return child-spawn `EPERM`; those failures now retain the real leaf
+  cause and the exact host-capable reruns pass.
+- No commit was authorized or created. Exact archive, authenticated CI, target-host, provider, recovery, soak,
+  paper, release, and live evidence remain open.

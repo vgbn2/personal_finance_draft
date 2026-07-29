@@ -1,7 +1,15 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { decideExit, canOpenPosition, resolveEntryQty, resolveExitQty, buildExitOutcome } = require('../../../shared/lib/runtime/alpaca_bot_cycle');
+const {
+  decideExit,
+  canOpenPosition,
+  resolveEntryQty,
+  resolveExitQty,
+  buildExitOutcome,
+  fetchAlpacaPositions,
+  runAlpacaExitCheck,
+} = require('../../../shared/lib/runtime/alpaca_bot_cycle');
 
 /**
  * TEST: decideExit (pure target/stop/age exit decision)
@@ -122,4 +130,46 @@ test('buildExitOutcome: a sellQty over the tracked qty clamps to the tracked qty
   const { historyEntry, remainingPosition } = buildExitOutcome(fillPosition, 'target', 110, 999, 'c', true);
   assert.equal(historyEntry.soldQty, 10);
   assert.equal(remainingPosition, null);
+});
+
+test('fetchAlpacaPositions distinguishes confirmed empty inventory from failures', () => {
+  assert.deepEqual(
+    fetchAlpacaPositions(true, { runGatewayCommand: () => ({ ok: true, positions: [] }) }),
+    { status: 'confirmed_empty', positions: [], reason: null },
+  );
+  assert.deepEqual(
+    fetchAlpacaPositions(true, { runGatewayCommand: () => ({ ok: false, error: 'broker auth failed' }) }),
+    { status: 'unavailable', positions: [], reason: 'broker auth failed' },
+  );
+  assert.equal(
+    fetchAlpacaPositions(true, { runGatewayCommand: () => ({ ok: true, positions: [], truncated: true }) }).status,
+    'incomplete',
+  );
+});
+
+test('broker inventory failure preserves tracked positions and blocks the exit cycle', async () => {
+  const originalState = {
+    version: 1,
+    config: { maxPositions: 10 },
+    positions: [{ ...fillPosition, strategyName: 'test', entryTimestamp: new Date().toISOString() }],
+    cycleHistory: [],
+    lastCycleAt: null,
+  };
+  let saved = false;
+  const stateStore = {
+    LOCK_PATH: '/tmp/alpaca-test.lock',
+    loadState: () => structuredClone(originalState),
+    saveState: () => { saved = true; },
+  };
+  const result = await runAlpacaExitCheck(['--live'], {
+    stateStore,
+    acquireLock: () => true,
+    releaseLock: () => {},
+    fetchPositions: () => ({ status: 'unavailable', positions: [], reason: 'timeout' }),
+  });
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.inventoryStatus, 'unavailable');
+  assert.equal(saved, false, 'uncertain inventory must never rewrite tracked state');
+  assert.match(result.errors[0], /timeout/);
 });

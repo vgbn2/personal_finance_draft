@@ -2334,3 +2334,269 @@ The safe SSH target is a private loopback/SSH-tunnel deployment limited to read-
 paths after transferring an exact committed source state, performing deterministic five-root installs, and
 rerunning the strict/auth/MCP host gates. Do not start live writers, place orders, or expose the service
 publicly from this evidence.
+
+## Full Blast-Through - 2026-07-28 Hard Reading Mode
+
+**Mode:** `full`. **Anchor:** committed production source `0383d47b` plus the intentionally uncommitted
+readability/truthfulness skill batch. `graphify-out` is unavailable, so this review used `rg`, direct reads,
+current manifests, active entrypoints, tests, cache evidence, and Git archive/status evidence.
+
+### Severity-ordered confirmed findings
+
+| ID | Severity | Classification | Owner / evidence | Finding | Gate that clears it |
+|---|---|---|---|---|---|
+| FULL-1 | P0 release/live safety | behavioral defect | `backend/cli/lib/auth.js:71-80`; `config/system/environment_manifest.json:329`; environment projector | `SOVEREIGN_MOCK=true` makes `verifyPin()` accept a wrong PIN, and the manifest projects that flag onto the `execution` surface. Direct probes returned `wrong_pin_normal:false`, `wrong_pin_with_sovereign_mock:true`, and an execution projection containing the mock flag. Other live gates remain, but the documented PIN defense is bypassable. | Make mock auth/PIN behavior test-process-only and impossible on `execution`; add poisoned-parent negative contracts for direct CLI, gateway, dashboard child, and MCP paths. |
+| FULL-2 | P1 capital/state safety | behavioral defect | `shared/lib/runtime/alpaca_bot_state.js:65-80`; `alpaca_bot_cycle.js:92-95,149-165,213-215`; strategy automation caller | Malformed Alpaca bot state silently becomes empty/default. A failed `positions` gateway response also becomes `[]`; the exit loop interprets every absent position as manually closed, deletes tracking, saves the empty projection, and lets the entry cap reopen. Tests do not cover corrupt state or broker-read failure preservation. | Fail closed on corrupt state and unavailable/ambiguous broker inventory; preserve tracked positions; distinguish confirmed zero holdings from read failure; add corruption/transient-failure/restart tests. |
+| FULL-3 | P1 release/security | dependency gate | current five-root installed graphs and DEP-1 evidence | Socket.IO and viem are remediated, but the latest combined structured evidence still records 54 vulnerable nodes: 17 high, 11 moderate, 26 low, 0 critical. Alpaca/Axios and Polymarket/Ethers remain NO-GO. | Resolve direct owners in isolated compatibility batches and regenerate a current five-root structured audit. |
+| FULL-4 | P1 decision/data gate | failed closed | current cached EURUSD combined command; macro qualification report | Real cached combined analysis remains ineligible with `incomplete_v2_row` and `macro_observation_missing`. Recorded CPI/US02YIELD rows are 0/86 PIT eligible, and scoped writer/global reader paths remain disconnected. | Preserve release/realtime/vintage/ingestion metadata, migrate `available_at`, converge on one revision-aware reader, reingest, prove as-of exclusion, and calibrate before decision readiness. |
+| FULL-5 | P1 distribution/supply-chain | release defect | `LICENSE`; five package manifests; CMake; Dockerfile; Actions | Root metadata says ISC while the tracked license is restrictive; four npm roots are not private. ONNX is fetched without `URL_HASH`; the mutable single-stage container retains build tools/source and runs as root; Actions use mutable major tags. | Align legal/package metadata; pin runtimes/actions/base digests; hash ONNX; build a minimal non-root image; retain scans, SBOM, signature, provenance, and checksums. |
+| FULL-6 | P2 runtime least privilege | incomplete | Compose and schema-3 environment contracts | All seven Compose services still receive one shared central `env_file`. The schema models the intended restrictions, but runtime projection is not implemented. | Separately approve ENV-1B3-B with per-service files, rollback, fixtures, and Compose config proof. |
+| FULL-7 | P2 ownership/readability | ownership debt | 74,110 production/operational LOC; 64 files >=300 lines, 26 >=500, 10 >=1,000 | Gateway, dashboard, ingestion, strategy, API executor, native CLI, and JS backtest are high-entropy owners. Indicator/stat/correlation/backtest policy and candle aggregation have duplicate JS/native/provider implementations. | Rank one behavior-frozen slice at a time, prove parity and canonical ownership, then use `refactor-readability`. |
+| FULL-8 | P2 degraded-path observability | contract debt | JS backtest/native bridge and API fallbacks | Native backtest/post-processing errors can be swallowed before a JS fallback. API fallback metadata is visible, but reduced stats report `annualized_return == cumulative_return`, `sortino=0`, and `calmar=0`, which can look authoritative. | Emit explicit degraded reasons, stop swallowing parity errors, and represent unavailable metrics as unavailable rather than numeric zero. |
+| FULL-9 | P2 artifact hygiene | stale/generated artifact | tracked `backend/core/src/ml/vc140.pdb`; eleven `dev.review.txt` source sidecars | A 36 KiB MSVC program database and scattered review sidecars live in production source. The hygiene script does not detect this legacy class. | Confirm no consumer, remove/archive recoverably, centralize durable review content, and add a binary/sidecar hygiene contract. |
+| FULL-10 | P2 operations | unproven external evidence | Git archive, CI source, host handoff | `git archive HEAD` contains committed CLI/core/state but excludes the uncommitted readability skill. Tests are green, but authenticated CI and current target-host login/auth/persistence/restart/rollback/recovery/one-writer/MCP/soak proof are absent. | Commit only after review, obtain matching CI evidence, then perform the separately approved private-host qualification against the exact revision. |
+| FULL-11 | P1 test adequacy | verification blind spot | current strict 1,004/1,000/0/4 versus FULL-1/FULL-2 | The green suite did not detect a PIN bypass or destructive bot-state fallback. Existing tests prove many positive and fail-closed contracts, but these two capital-safety seams lack adversarial production-path cases. | Add failure-oriented negative tests that pass only when hostile inputs produce a loud denial and preserve state; include guard-mutation checks where practical. |
+
+### Dismissed false positives
+
+- Restricted `verify:strict` failed only because loopback bind returned `listen EPERM`; the identical approved
+  host-capable run passed.
+- Unavailable provider lanes are typed `not_implemented` and fail visibly; they are not silent empty-success
+  production stubs.
+- Generic `run bot live` intentionally redirects to the owned `sovereign bot run --live` path.
+- The gateway's trailing no-op cleanup is cosmetic dead code, not an execution bypass.
+- Dashboard `dist` and compatibility shims are intentional outputs/legacy seams; no deletion is recommended
+  without caller/archive proof.
+
+### Node.js/JavaScript to C++ suitability
+
+| Priority | Current Node owner | Existing native overlap | Recommendation |
+|---|---|---|---|
+| Highest | `shared/lib/market/indicators.js` and private price-action helpers | native `IndicatorEngine` and CLI | Benchmark a batched feature-frame call; migrate only CPU-heavy rolling kernels after warm-up/null/provenance parity. |
+| High, largely done | `shared/lib/strategy/backtest.js` | `FrameBacktester`, `StatsEngine`, native backtest | C++ is already default when available. Fix fallback observability/parity; keep orchestration/rendering in Node. |
+| Medium-high | RSI backtest Bayesian/statistical/Monte Carlo loops | native stats/backtest/Monte Carlo | Profile the standalone strategy and move only dominant vector kernels. |
+| Medium | `shared/lib/ml/hmm.js` | native regime/spectral modules | Existing algorithms are not equivalent. Require recorded-series parity and a benchmark before a new native kernel. |
+| Medium, data-volume dependent | ts-index merge/read/rollup | native data types, no proven ts-index replacement | Strong throughput candidate, but JS already has constant-memory/OOM proof. Benchmark before accepting storage/recovery risk. |
+| Low | API stats/correlation fallbacks | existing native commands | Route to the native owner or report degraded unavailability; do not embed another C++ API implementation. |
+| Do not migrate | providers, CLI/TUI, API auth/routes, MCP, dashboard, environment policy, ledger orchestration | I/O/policy surfaces | Keep Node/TypeScript; C++ adds boundary/deployment cost without measured benefit. |
+
+### Full-mode grades and system path
+
+| Section | Grade | Current evidence |
+|---|---|---|
+| system design critical path | C / safety-and-operations gated | Strong components, but FULL-1 fails an authorization seam; real PIT composition, state convergence, host recovery, and soak remain incomplete. |
+| bootstrap/dependencies | B / advisory gated | Five installed graphs have zero `npm ls` problems; 17 high advisory nodes and release metadata/pinning remain. |
+| `backend/core` | B+ | Build and CTest 30/30 pass; ONNX hash, tracked PDB, runtime image, and deployed-native proof remain. |
+| `backend/cli` | C+ / execution fix required | Broad CLI/TUI contracts pass; mock bypass and Alpaca state loss are material. |
+| `backend/gateway` | B- / state-and-host gated | Risk/paper/live contracts are strong; bot-state fallback, monolith, dependencies, direct entrypoint, and host proof remain. |
+| `backend/api` | B+ | API 25/25 pass; fallback semantics, deployment, RLS, dependency, and soak remain open. |
+| `backend/mcp_server` | A- / host-and-advisory gated | Capability/build contracts pass; real host stdio and residual advisory proof are absent. |
+| canonical market cache | A- / required-daily scope | 92/92 cached, zero required stale/missing, nine cadence-plausible notices, zero unexplained, one declared exception. Intraday staleness is outside the required 1d policy. |
+| combined analysis/macro PIT | C / fail-closed | Exact identity contracts are coherent; real cached EURUSD has no accepted component. |
+| strategy/research/ML | B- | Broad tests pass and backtest defaults native; duplicated compute, research-only readiness, and fallback semantics remain. |
+| dashboard | A- / deployment gated | Responsive/command contracts pass; no current deployed login/restart/soak proof. |
+| config/environment | C+ / mock-classification defect | 120 entries, 140 names/aliases, 138 discovered, zero unclassified; one classified flag is unsafe on execution. |
+| infra/deployment | C+ | Private bind/contracts are coherent; shared env, root/mutable image, supply-chain gaps, and host proof remain. |
+| tests | B+ / critical-negative-coverage gated | Strict API 25/25, contracts 118/118, secrets 911/0, aggregate 1,004/1,000/0/4; native 30/30. FULL-1/FULL-2 prove material adversarial blind spots despite the green totals. |
+| docs/workspace | B+ | Current continuity diff is append-only; leading summaries and license/release descriptions need consolidation. |
+| whole-repo cleanliness | B- | Hygiene/diff pass; tracked debug artifacts, hotspots, and the intentionally dirty skill batch remain. |
+
+Mandatory path: `provider -> validated data` partial; `validated data -> canonical identity` proven in
+source/tests; `identity -> PIT analysis` failed for the real cached sample; `analysis -> decision` proven
+research-only; `decision -> paper/live policy` failed by FULL-1; native risk contracts are proven but undeployed;
+ledger is partial because paper ledger is strong while bot state diverges; monitoring is source/contract-only;
+backup/restart/rollback are unproven on the target host. Overall design grade: **C**.
+
+### Commands, limitations, and handoff
+
+- Host-capable `verify:strict`: API 25/25, contracts 118/118, secrets 911/0, aggregate
+  1,004 total / 1,000 pass / 0 fail / 4 intentional skips.
+- Native build and CTest: 30/30. Five-root `npm ls --all`: zero problems.
+- Integrity: `ok:true`, 92/92, 0 missing, 0 policy-stale required windows, 9 cadence-plausible,
+  0 unexplained, 1 exception. Required-window DCS = 1.0.
+- Hygiene, environment inventory, 10-package mirror parity, and `git diff --check`: pass.
+- Archive: 1,571 tar entries from `0383d47b`; the uncommitted readability skill is absent.
+- No provider poll, package mutation, runtime/container start, credential read, data write, bot cycle, order,
+  public exposure, migration, deletion, deployment, or live enablement occurred.
+
+This was a whole-repo inventory and critical-path audit, not a claim that all 553 production files were read
+line by line. Complete direct reads concentrated on rules, architecture, environment/PIN, bot state, native
+build/CLI, backtest bridge, API fallbacks, Compose/Docker/CI, macro evidence, and largest owners. Every provider
+implementation, dashboard component, strategy YAML, archived doc, ignored data record, real Supabase state, CI
+UI, and target host were not exhaustively inspected.
+
+Implementation handoff: route FULL-1 first to `codex` as one bounded safety fix; route FULL-2 as a separate
+bounded state-integrity fix. Rank FULL-3 through FULL-10 with `mass-implement` only after explicit batch
+approval. Keep dependency, data, Compose, distribution, host, provider, and live boundaries separate.
+
+### Failure-oriented test design required by FULL-11
+
+These tests should be red against the defective implementation and green only after the production guard is
+correct. They must not be skipped, weakened, mocked away from the intended path, or made permanently red:
+
+1. **Execution mock poisoning:** project an execution child with every test/mock flag poisoned true; submit a
+   wrong PIN to the real CLI authorization helper; require a structured denial and prove no gateway spawn.
+2. **Direct-entrypoint parity:** repeat the wrong-PIN case through CLI, dashboard child launch, and MCP command
+   classification. A missing environment projector must not turn into permission.
+3. **Corrupt bot state:** place malformed JSON at the real state-path boundary, invoke the production loader,
+   and require an explicit corruption error, unchanged bytes, zero order calls, and zero state rewrite.
+4. **Broker inventory unavailable:** start from a tracked open position, force the real gateway bridge to return
+   an account-read failure, invoke the production exit pass, and require the position to remain, the cycle to
+   fail/degrade visibly, and the entry scan to stay blocked.
+5. **Confirmed empty versus failed read:** prove only a successful, explicitly empty broker response may trigger
+   reconciliation; transport/auth/parse/non-zero-exit failures must never be treated as an empty account.
+6. **Mutation proof:** temporarily invert/remove the PIN denial and state-preservation branch in an isolated
+   disposable copy; the focused negative tests must fail. This validates that the tests actually protect the
+   guard rather than merely exercising surrounding code.
+
+Bad conditions should therefore produce bad/failed product output, while the test runner itself remains green
+because it correctly observed the failure. Unexpected success, silent defaults, or data loss must turn the test
+runner red.
+
+## Full recovery implementation review - 2026-07-28
+
+### Closed findings
+
+- **FULL-1 closed:** `SOVEREIGN_MOCK` is internal-only and deleted from execution child environments; the real
+  PIN verifier no longer accepts it. Wrong/missing PIN and poisoned-parent paths fail before execution.
+- **FULL-2 closed:** Alpaca state has typed corruption/shape errors; missing state alone receives defaults.
+  Broker positions are classified as confirmed, confirmed-empty, incomplete, or unavailable. Only confirmed
+  truth permits reconciliation, and entry scanning is blocked on uncertainty.
+- **Failure visibility closed at the Node assertion boundary:** the canonical runner attaches a spec reporter
+  plus a sanitized JSONL RAG reporter. All root Node test scripts route through it. Mutation tests delete/invert
+  the critical guards in disposable source and require the safety assertions to catch the defect. Canonical
+  native-build, CTest, and secret-scan failures are captured as sanitized command-failure records too.
+- **Degraded truth closed:** backtest responses expose requested/actual engine and degradation reason. The API
+  equity-CSV fallback leaves unavailable ratios null and lists them explicitly.
+- **Environment ownership improved:** Compose consumes atomically published, mode-0600, service-specific
+  projections instead of one shared central environment file.
+- **Artifact hygiene closed:** 14 scattered review sidecars were consolidated into
+  `docs/engineering/native_maintenance_notes.md`; the tracked `vc140.pdb` was removed. Hygiene rejects present
+  tracked `.pdb` and `dev.review.txt` artifacts.
+
+### Refactor evidence and split decision
+
+The behavior freeze for strategy automation is: exit/broker reconciliation occurs first; a blocked result
+returns before state, registry, refresh, backtest, or order work; confirmed truth then supplies position
+capacity. `automation_guard.js` now owns that invariant and has direct ordering/exception tests.
+
+`strategy.js` is still 1,276 lines and mixes registry, prop-firm TUI, automation, and strategy creation.
+`cli_executor.js` is 1,235 lines and still owns many adapter branches. Both should be split, but this batch
+kept the remaining code in place: moving either whole surface while simultaneously repairing authorization,
+state, fallback, and environment contracts would weaken behavior attribution. Next slices should extract
+strategy registry/prop-firm presentation and API command adapters one contract family at a time.
+
+### Revised grades
+
+| Section | Before | After | Remaining gate |
+|---|---|---|---|
+| system design | C | B- | PIT migration, advisories, supply-chain pins, host recovery, soak |
+| tests | B+ | A- | clean snapshot and authenticated CI evidence |
+| backend CLI | C+ | B+ | large-file ownership splits and target-host proof |
+| backend gateway/state | B- | B | monolith, advisories, and target-host proof |
+| backend API | B+ | A- | real RLS/deployment/soak proof |
+| native core | B+ | A- | ONNX hash and deployed-native proof |
+| infra/runtime contracts | C+ | B+ | actual image/Compose startup, restart, backup, recovery |
+| whole-repo cleanliness | B- | B+ | intentionally dirty broad batch and older workspace summary drift |
+
+Overall: **B- / release-gated**. Implemented/testable source is materially safer; it is not equivalent to a
+clean install, authenticated CI, deployed host, recovery-qualified service, paper-approved system, or live
+trading approval.
+
+### Verification and unresolved gates
+
+- Focused safety suite: pass, including PIN poisoning, corrupt state, broker uncertainty, automation ordering,
+  degraded provenance, and guard mutations.
+- Host-capable `verify:strict`: pass after every root Node assertion suite was routed through the RAG reporter.
+- Native: build pass and CTest 30/30.
+- Hygiene, `check:env` (122 manifest entries, 142 classified names/aliases, 140 discovered, zero unclassified),
+  10-package skill mirror parity, and `git diff --check`: pass.
+- Five-root offline `npm ci --dry-run --ignore-scripts`: pass.
+- Worktree-snapshot source evidence: **inconclusive** at root `npm ci`; retained evidence never advanced beyond
+  `verification_in_progress`, so no clean-snapshot claim is made for this final working tree.
+- Still blocked: 17 high / 11 moderate / 26 low advisory nodes; PIT metadata migration/reingestion; trusted
+  Docker/Actions/ONNX hashes; actual image and seven-service startup; target-host auth/MCP/persistence;
+  restart/rollback, backup/restore, one-writer/recovery, soak, provider, paper, and live evidence.
+
+## Blast-Through Triage - 2026-07-29 Fast Reading Mode
+
+Scope: revalidate at most three highest-risk open claims from the current `main` checkout at `0383d47b`.
+This is audit-only. It does not grade sections, implement fixes, poll providers, start services, transform data,
+deploy, run a paper cycle, or authorize live execution.
+
+### Confirmed findings
+
+| ID | Severity | Evidence state | Owner and impact | Clearing gate |
+|---|---|---|---|---|
+| BT-T1 | P1 release/safety | Proven | The current worktree closes FULL-1/FULL-2, and `npm run test:safety` passes 7/7. The only exact commit, `0383d47b`, still contains the `SOVEREIGN_MOCK` PIN bypass and silent Alpaca state/inventory fallbacks. The worktree has 83 status entries, including the untracked load-bearing `strategy/automation_guard.js` and its untracked safety tests, so neither `HEAD` nor a partial commit is a safe release artifact. | Review one coherent commit inventory, require the new owner module and adversarial tests in the same exact revision, then pass the focused safety suite and `committed_archive` source-evidence gate against that revision. Do not deploy `0383d47b`. |
+| BT-T2 | P1 verification/incident evidence | Proven | The final worktree snapshot remains inconclusive, and no retained `sovereign-source-evidence-*/evidence.json` was found in the repository or `/tmp`. The verifier defaults evidence to an ephemeral `/tmp` directory, removes source/cache, and its schema stores only step status/counts—not stderr, a log path, or a diagnostic digest. The RAG record produced by today’s sandbox failure contained only file-level `ERR_TEST_FAILURE` / `test failed`; direct execution exposed the actual `spawnSync git EPERM`. | Require an explicit durable evidence destination, retain sanitized step diagnostics or a content-addressed log reference, and prove an interrupted/root-`npm ci` run remains classifiable after process/session termination. Extend the RAG contract so a file-isolation failure retains its leaf cause without secrets. |
+| BT-T3 | P2 continuity/route ownership | Proven | Workspace chronology is append-only (STATE +65/−0, SESSION_MEMORY +97/−0, dated handoff +121/−0, NEXT_SESSION_GOAL +56/−0), but the active queue is internally contradictory. `NEXT_SESSION_GOAL.md` still directs FULL-1/FULL-2 implementation although `STATE.md` closes them, lists the private-host sequence, appends a verifier/refactor goal, and also says the roadmap is deferred while the latest handoff names MON-0 as first action. This can route a new session into completed or wrong-priority work. | Add one non-destructive dated current-priority correction that explicitly supersedes the closed safety queue and orders exact-commit/evidence closure, private-host qualification, and MON-0. Update the dated handoff pointer at closeout. |
+
+### Dismissed candidates and failure classification
+
+- FULL-1/FULL-2 are not open defects in the current worktree: direct source reads show real PIN comparison,
+  execution strips `SOVEREIGN_MOCK`, state corruption is typed, uncertain broker inventory blocks reconciliation,
+  and the focused safety suite passes 7/7. This does not repair committed `HEAD`.
+- The initial focused source-evidence result of 2/3 files was an environment limitation, not a source regression.
+  Direct execution showed `spawnSync git EPERM` in temporary fixture repositories; the exact host-capable rerun
+  passed 12/12.
+- Append-only workspace preservation is intact for the four modified continuity files checked. The defect is
+  current-priority ownership, not deleted chronology.
+
+### Commands, boundaries, and implementation handoff
+
+- `npm run test:safety`: 7 tests, 7 pass, 0 fail.
+- Restricted source-evidence/fresh-install/workflow contracts: 2 files pass, 1 file fail at sandbox
+  `spawnSync git EPERM`. Exact host-capable rerun: 12 tests, 12 pass, 0 fail.
+- `git diff --check`: pass. Worktree inventory: 83 entries; tracked diff 70 files,
+  1,595 insertions / 196 deletions; 55 modified, 15 deleted, 13 untracked.
+- No current clean-install, authenticated CI, host, image/Compose, recovery, soak, provider, paper, or live
+  claim was established.
+
+Next critical action: do not begin MON-0 or private-host deployment from `0383d47b`. First review the coherent
+working-tree commit boundary and repair durable verifier/failure evidence. Route BT-T2 as one bounded `codex`
+fix after approval; route BT-T1 commit/evidence closure and BT-T3 continuity correction through
+`session-orchestrator`. Preserve all unrelated dirty work.
+
+Context limitation: complete reads covered the governing rules, audit checklist, current/HEAD safety owners,
+direct callers, focused tests, source-evidence coordinator/schema, test runner/reporter, and current continuity
+sections. This triage did not reread every changed production file, all dependency graphs, provider adapters,
+market data, dashboard components, CI runtime, target host, or ignored runtime state.
+
+## M0 implementation review - 2026-07-29
+
+### Decision and ownership
+
+M0 reached `GO WITH FIXES -> implemented -> verified -> reviewed`; closure is deferred because no commit or
+matching CI artifact was authorized. The duplicate/stub sweep found one canonical source-evidence coordinator
+and two divergent diagnostic redactors. The redactors now share `scripts/dev/sanitized_diagnostics.js`; no
+production coordinator, honest-unavailable branch, fixture, or compatibility shim was deleted.
+
+### Implemented contract
+
+- Schema-v2 evidence defaults to a durable ignored repository path and writes source identity before steps.
+- Every step start is atomically checkpointed as `unfinished_step`; completed non-pass steps retain exit,
+  signal/error class, bounded sanitized summary, and stdout/stderr SHA-256 fingerprints.
+- Thrown runner errors are converted into validated non-pass step evidence; raw output and secrets are not
+  persisted in the manifest.
+- Node test files remain isolated in separate processes. Removing only Node's redundant inner file-isolation
+  layer exposes the real nested assertion/spawn cause to the sanitized RAG reporter.
+- Node 22 is now the documented minimum for the repository test runner.
+
+### Verification and review
+
+- Focused source-evidence, runner, RAG, and command-failure contracts: 18/18 host-capable.
+- `npm run test:safety`, `npm run test:structure`, `npm run hygiene`, `npm run test:secrets`, and
+  `git diff --check`: pass.
+- Exact host-capable `node tests/run_node_tests.js`: all discovered default files pass.
+- Restricted broad/focused failures were child-spawn `EPERM`; the new reporter retained the leaf cause, and
+  exact host-capable reruns passed.
+- Readability review kept narrow owners: evidence coordination, schema validation, sanitized diagnostics, and
+  test-file orchestration remain separate. No touched implementation owner exceeds 1,000 lines.
+
+### Remaining gates
+
+The 94-entry worktree remains intentionally uncommitted. `0383d47b` is still unsafe to deploy because it lacks
+the load-bearing safety owners and tests. Commit authorization, exact reviewed archive verification, and a
+matching authenticated CI artifact are required before M0 can close. No host, provider, dependency, PIT,
+backup/recovery, restart/rollback, one-writer, soak, paper, release, public, or live claim was established.

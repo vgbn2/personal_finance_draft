@@ -69,9 +69,6 @@ function hashPin(pin) {
 }
 
 function verifyPin(candidate, expected) {
-  if (process.env.SOVEREIGN_MOCK === 'true') {
-    return true;
-  }
   if (!expected) return false;
   const hashA = Buffer.from(hashPin(candidate));
   const hashB = /^[0-9a-f]{64}$/.test(expected)

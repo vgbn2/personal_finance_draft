@@ -13,7 +13,25 @@ This project follows the GSD methodology and the Sovereign Institutional Enginee
 7. **Phase Gating** - Do not implement Phase N+1 features until Phase N is complete.
 8. **Schema-First Transition** - Refactor brittle if/else chains and magic numbers into schema-driven manifests and YAML where practical.
 
-Anti-bullshit mandate: never hardcode values or forge JSON just to pass tests.
+## Truthfulness And Test Integrity
+
+- **Bounded Context Honesty**: The repository can exceed one agent's context. Build a task-local architecture
+  map of owners, entrypoints, callers, contracts, tests, data/state, and operational boundaries. State what was
+  not read or verified; never imply exhaustive review from a partial scan.
+- **Evidence Honesty**: Never claim a command ran, a test passed, a file was read, a host was checked, or a
+  behavior was proved without direct evidence. Distinguish source, test, clean-install, CI, host, deployment,
+  recovery, soak, paper, and live evidence.
+- **No Test Cheating**: Do not weaken assertions, widen tolerances, add skips, delete failing coverage, catch and
+  suppress failures, replace the intended path with a mock, or hardcode fixture/expected values merely to make
+  tests pass.
+- **Legitimate Test Changes**: Change a test only when current code, a canonical contract, or an explicitly
+  approved behavior change proves the expectation is stale or wrong. Update production behavior, test,
+  documentation, and evidence together when applicable, and report the before/after contract.
+- **Failure Honesty**: Reproduce and classify failures as regression, pre-existing defect, stale expectation,
+  environment limitation, blocked external proof, or not-run. A false green is worse than an explicit failure.
+
+Anti-bullshit mandate: never hardcode values, forge JSON/output, fabricate evidence, or alter a test solely to
+manufacture success.
 
 ## Sovereign Architecture Standards
 

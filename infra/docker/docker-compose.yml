@@ -9,17 +9,15 @@ x-central-runtime: &central-runtime
   LIVE_TRADING: "false"
   SOVEREIGN_EXECUTION_AUTHORIZED: "false"
 
-x-central-env-files: &central-env-files
-  - path: ${SOVEREIGN_CENTRAL_ENV_FILE:-../../.env}
-    required: true
-
 services:
   web:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile
     image: personal_finance:latest
-    env_file: *central-env-files
+    env_file:
+      - path: ${SOVEREIGN_WEB_ENV_FILE:-../../.env.services/web.env}
+        required: true
     environment:
       <<: *central-runtime
       SOVEREIGN_WEB_HOST: 0.0.0.0
@@ -45,7 +43,9 @@ services:
     depends_on:
       web:
         condition: service_healthy
-    env_file: *central-env-files
+    env_file:
+      - path: ${SOVEREIGN_BOT_ENV_FILE:-../../.env.services/bot.env}
+        required: true
     environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
@@ -66,7 +66,9 @@ services:
   backfill:
     profiles: [writer]
     image: personal_finance:latest
-    env_file: *central-env-files
+    env_file:
+      - path: ${SOVEREIGN_BACKFILL_ENV_FILE:-../../.env.services/backfill.env}
+        required: true
     environment:
       <<: *central-runtime
       # Headroom for the merge-write path: an incremental crypto/equity cycle still
@@ -98,7 +100,9 @@ services:
     depends_on:
       backfill:
         condition: service_started
-    env_file: *central-env-files
+    env_file:
+      - path: ${SOVEREIGN_PORTFOLIO_MONITOR_ENV_FILE:-../../.env.services/portfolio-monitor.env}
+        required: true
     environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
@@ -121,7 +125,9 @@ services:
     depends_on:
       backfill:
         condition: service_started
-    env_file: *central-env-files
+    env_file:
+      - path: ${SOVEREIGN_HOST_HEALTH_ENV_FILE:-../../.env.services/host-health.env}
+        required: true
     environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
@@ -141,7 +147,9 @@ services:
   host-backup:
     profiles: [monitoring]
     image: personal_finance:latest
-    env_file: *central-env-files
+    env_file:
+      - path: ${SOVEREIGN_HOST_BACKUP_ENV_FILE:-../../.env.services/host-backup.env}
+        required: true
     environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
@@ -170,7 +178,9 @@ services:
       context: ../..
       dockerfile: infra/docker/Dockerfile
     image: personal_finance:latest
-    env_file: *central-env-files
+    env_file:
+      - path: ${SOVEREIGN_POLYMARKET_RESEARCH_ENV_FILE:-../../.env.services/polymarket-research.env}
+        required: true
     environment: *central-runtime
     volumes:
       - ../../storage:/app/storage

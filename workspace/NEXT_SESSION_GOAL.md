@@ -1,5 +1,41 @@
 # Next Session Goal
 
+## Deferred roadmap — cross-market research readiness
+
+Keep [RESEARCH_DATA_STRATEGY_BACKTEST_READINESS_PLAN.md](plans/RESEARCH_DATA_STRATEGY_BACKTEST_READINESS_PLAN.md)
+in the queue after the current private host boundary: finalize OHLC and Polymarket data-readiness contracts,
+versioned strategy configurations, comparable relative backtests, and fake-money paper gates. This does not authorize
+provider polling, data mutation, paper cycles, orders, or live execution; begin with Batch 1 inventory/preflight only.
+The same plan now includes Batch 8 monitoring: Bash may supervise process/heartbeat health, while Node remains the
+authoritative owner of positions, portfolio, broker state, and P&L, projected through the existing authenticated
+service-health/dashboard/CLI path.
+Its decision-complete specification is `workspace/plans/BOT_MONITORING_MASS_IMPLEMENT_PLAN.md`: paper-only bounded
+auto-restart is allowed, all operator surfaces are in scope, and the webhook destination/type are environment-owned.
+Begin with MON-0 preflight only; no bot, container, provider, broker, or webhook action is implied.
+The plan now includes mandatory process/concurrency, clock, cycle, state-integrity, host-pressure, webhook,
+API/UI, and execution-boundary edge cases. Do not begin MON-1 until MON-0 freezes field ownership and state precedence.
+
+## 2026-07-28 full-audit safety queue
+
+Do not begin rsync, host qualification, dependency work, broad refactoring, or live-capable exercises before
+reviewing the two new source-safety findings:
+
+1. **FULL-1 first, bounded `codex` fix:** `SOVEREIGN_MOCK` must never reach an execution surface or bypass a
+   real PIN. Add adversarial production-path tests across direct CLI, gateway child, dashboard, and MCP. The
+   focused tests must be red against the current defect and green only when wrong-PIN execution is denied before
+   spawn.
+2. **FULL-2 separately:** corrupt Alpaca bot state and failed/ambiguous broker-position reads must preserve
+   tracked positions, fail loudly, and block new entries. Only a successful explicitly empty broker response may
+   reconcile holdings away.
+3. Add mutation proof for both guards where practical: removing/inverting the denial or preservation branch
+   must make the focused test runner fail.
+4. Keep the suite green by correctly observing product failure; do not keep permanently failing tests, weaken
+   assertions, skip hostile cases, or mock around the production path.
+
+After FULL-1 and FULL-2 are independently reviewed and strict/native gates pass, rerank the remaining
+FULL-3..FULL-11 backlog. The private third-host sequence remains approved in principle but should not deploy a
+known PIN-bypass/state-loss source.
+
 ## 2026-07-28 next session - rsync and private third-host proof
 
 Resume on `steamlinux`, where the source checkout currently lives. The first action is to verify that
@@ -21,6 +57,11 @@ Approved sequence:
 
 The source machine tooling is confirmed: Node 24.18.0, npm 11.16.0, Docker/daemon 29.1.3, Compose 2.40.3,
 Git 2.53.0, and CMake 4.2.3. These versions have not yet been confirmed on `vgbn-servers`.
+
+Workflow note: `refactor-readability` is now available for later behavior-preserving cleanup, and
+`blast-through maintainability` can rank verified hotspots first. Do not begin a broad readability rewrite
+before the private third-host proof; use one cohesive, behavior-frozen slice at a time. Every skill now requires
+bounded-context disclosure, evidence-class honesty, and no test manipulation merely to manufacture a pass.
 
 ## 2026-07-28 distribution qualification
 
@@ -718,3 +759,50 @@ Do not retire schema v2. The shadow readiness report rejects promotion: seven ro
 four degraded, three excluded, and ten synthetic-parity evidence ids. Next evidence work is official
 structured index breadth and BTC/ETH on-chain history, then point-in-time target returns, baseline/OOS
 comparison, turnover/cost modeling, and calibration. Deletion requires explicit approval after those gates.
+
+## 2026-07-28 full recovery next goal
+
+Diagnose the final worktree-snapshot verifier at its root `npm ci` boundary while retaining structured stderr
+and without weakening the gate. If it passes, preserve the evidence artifact. If it fails, classify package,
+cache, resource, or environment cause explicitly.
+
+After that, take one behavior-preserving ownership slice: either extract strategy registry/prop-firm
+presentation from the 1,276-line `strategy.js`, or extract one coherent adapter family from the 1,235-line
+`cli_executor.js`. Keep public payloads, authorization, fail-closed state, fallback provenance, and tests
+unchanged.
+
+Do not start dependency major upgrades, PIT migration/reingestion, Docker/Compose services, provider polling,
+target-host deployment, paper bots, orders, public exposure, or live execution without their separate
+evidence and authorization gates.
+
+## 2026-07-29 authoritative pending-plan consolidation
+
+`workspace/plans/CURRENT_PENDING_MASTER_PLAN.md` is the current plan index and execution order. It supersedes
+older next-action ordering without deleting historical sections above.
+
+Begin **M0 only**:
+
+1. inventory all 83 worktree entries into coherent owners and commit groups;
+2. map every load-bearing untracked edge;
+3. preflight the durable source-evidence/RAG diagnostic repair;
+4. issue GO/GO WITH FIXES/NO-GO before implementation or commit.
+
+FULL-1/FULL-2 are closed in the worktree and must not be reimplemented, but exact `HEAD` remains unsafe. Do not
+begin MON-0, private-host writes, dependency changes, provider/PIT work, refactoring, paper/runtime actions,
+public exposure, or live execution until M0 is reviewed and closed or explicitly deferred.
+
+## 2026-07-29 M0 source-repair completion override
+
+M0 reached `GO WITH FIXES -> implemented -> verified -> reviewed`; final closure is deferred at the
+commit/archive/CI boundary.
+
+Do not redo the durable-evidence or RAG runner repair. Next:
+
+1. review `workspace/plans/M0_WORKTREE_CHANGESET_INVENTORY.md`;
+2. obtain explicit user authorization before staging or committing;
+3. ensure the exact reviewed revision contains every load-bearing untracked owner and adversarial test;
+4. run `verify:committed-archive` against that revision and retain the schema-v2 artifact;
+5. obtain the matching authenticated CI artifact before calling M0 closed.
+
+Until then, do not deploy `0383d47b` or begin M1-M8, host writes, provider/PIT work, paper/runtime actions,
+public exposure, or live execution.

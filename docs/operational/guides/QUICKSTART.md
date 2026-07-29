@@ -11,7 +11,7 @@ Required:
 - C++20 compiler
 - CMake 3.10 or newer
 - a CMake-supported build backend such as Make, Ninja, MSBuild, or MinGW Makefiles
-- Node.js 20 or newer for CLI, ingestion, and local web/API checks
+- Node.js 22 or newer for the repository test runner, CLI, ingestion, and local web/API checks
 
 Currently not required for the local prototype:
 

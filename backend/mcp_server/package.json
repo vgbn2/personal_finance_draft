@@ -1,7 +1,9 @@
 {
   "name": "sovereign-mcp-server",
+  "private": true,
   "version": "1.0.0",
   "description": "MCP Server bridge for Sovereign CLI",
+  "license": "SEE LICENSE IN ../../LICENSE",
   "main": "../../dist/mcp_server/index.js",
   "scripts": {
     "build": "tsc",

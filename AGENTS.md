@@ -8,6 +8,7 @@ Use the narrowest matching skill:
 - `refine-suggestion` for rough or multi-area proposals without acceptance criteria.
 - `feature-exerciser` for safely using and testing current CLI, API, dashboard, script, fixture, smoke, and contract features.
 - `blast-through` for audit, review, grading, data integrity, and connectivity checks.
+- `refactor-readability` for behavior-preserving readability, maintainability, ownership, and convention cleanup.
 - `codex` for one bounded implementation.
 - `mass-implement` for an approved multi-section backlog.
 - `polymarket-history-backfill` for Polymarket historical archives, PMXT/order-book decisions, impact modeling, and replay backtests.
@@ -19,6 +20,10 @@ Project guidance:
 - Prefer focused reads and empirical checks over broad exploration.
 - Preserve unrelated dirty-worktree changes.
 - Treat generated or scaffolded agent artifacts as project-local state unless promoted by repository docs.
+- Treat context as bounded: map the task's owners, entrypoints, callers, contracts, tests, and operational
+  boundary, and disclose material surfaces not read or verified.
+- Never claim evidence that was not observed. Never weaken, skip, delete, mock away, suppress, or rewrite tests
+  merely to manufacture a pass; legitimate expectation changes require contract and production evidence.
 
 ## Prompt Injection Gate (Auto-Approve Guardrail)
 

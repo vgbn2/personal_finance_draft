@@ -100,6 +100,27 @@ test('child environment projection is immutable, frozen, and rejects forbidden o
   );
 });
 
+test('execution projection strips mock authentication even from a poisoned parent', () => {
+  const parent = {
+    PATH: '/usr/bin',
+    SOVEREIGN_DEPLOYMENT_PROFILE: 'developer',
+    SOVEREIGN_MOCK: 'true',
+  };
+  const execution = buildChildEnvironment(parent, 'execution', {
+    profile: 'developer',
+  });
+
+  assert.equal(execution.SOVEREIGN_MOCK, undefined);
+  assert.equal(execution.SOVEREIGN_ENVIRONMENT_SURFACE, 'execution');
+  assert.throws(
+    () => buildChildEnvironment(parent, 'execution', {
+      profile: 'developer',
+      overrides: { SOVEREIGN_MOCK: 'true' },
+    }),
+    /environment_override_not_allowed: SOVEREIGN_MOCK/,
+  );
+});
+
 test('environment manifest rejects schema 2, unknown surfaces, and execution profile bleed', () => {
   const base = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
   const load = (value) => loadEnvironmentManifest({

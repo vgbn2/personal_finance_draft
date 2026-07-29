@@ -1,5 +1,55 @@
 # Prompt Log - 2026-07-24 (session 96)
 
+## User Prompt - 2026-07-28 cross-market research readiness roadmap
+
+Asked to keep data readiness, strategy configurations, and relative backtesting across all configured OHLC markets
+and Polymarket betting markets on the plan for fake-money research. Added the deferred roadmap at
+`workspace/plans/RESEARCH_DATA_STRATEGY_BACKTEST_READINESS_PLAN.md` and linked it from `NEXT_SESSION_GOAL.md`.
+No provider polling, data mutation, paper cycle, order, deployment, or live action occurred.
+
+## User Follow-up - 2026-07-28 broker-connected paper deployment
+
+Asked to include unattended multi-hour testing, structured results, and broker-connected paper trading in the
+roadmap. Added Batch 7 to `workspace/plans/RESEARCH_DATA_STRATEGY_BACKTEST_READINESS_PLAN.md`, distinguishing
+Alpaca paper-endpoint qualification from Polymarket's local virtual-fill simulation. No runtime or external action
+occurred.
+
+## User Follow-up - 2026-07-28 paper bot monitoring
+
+Asked for monitoring of bot uptime, positions, portfolio state, and main-application integration, potentially via
+Bash. Added Batch 8 to the research readiness plan: Bash is limited to process/heartbeat supervision, Node remains
+the authoritative owner of trading state and portfolio semantics, and the authenticated service-health/dashboard/CLI
+projection is the canonical main integration. No runtime behavior changed.
+
+## User Decision - 2026-07-28 monitoring expansion
+
+Approved bounded paper-only automatic restart, requested Bash/CLI/API/dashboard coverage, and included webhook
+alerts with destination/type selected through environment configuration. Added the decision-complete
+`workspace/plans/BOT_MONITORING_MASS_IMPLEMENT_PLAN.md` and linked it from the cross-market roadmap and next-session
+goal. No bot, container, broker, provider, webhook, deployment, or live action occurred.
+
+## User Prompt and closeout - 2026-07-28 monitoring edge cases
+
+Requested edge-case refinement of the bot-monitoring mass-implementation plan and ended the session. Expanded the
+plan with supervisor/cycle heartbeat separation, paper-only exit restart, local audited restart-cap reset, webhook
+ordering/rate-limit behavior, and mandatory concurrency, time, state, data, host, webhook, UI, and safety edge cases.
+No monitoring implementation, test, bot, container, broker, provider, webhook, deployment, or live action occurred.
+
+## User Follow-up - 2026-07-28 duplicate and stub preflight
+
+Required `mass-implement` to scan for duplicate owners and incomplete stubs before implementing any feature or fix,
+so divergent poison code is consolidated instead of surviving beside a new implementation. Added a mandatory
+classification-and-consumer-proof preflight plus an enforced skill contract. Required compatibility shims, generated
+artifacts, fixtures, and honest unavailable features remain protected from string-only deletion. Canonical skill
+validation, 10-package mirror parity, focused repository skill contract 1/1, and diff integrity pass.
+
+## User Prompt - 2026-07-28 session-orchestrator boot
+
+Invoked `session-orchestrator` to resume from the repository's durable session state. Boot loaded the current
+bootstrap, handoff, state, next-goal, documentation hub, prompt log, and memory context. The checkout is `main`
+at `0383d47b` with a substantial pre-existing dirty worktree; all existing changes are preserved. `graphify-out`
+refresh is unavailable because the graphify command/module is not installed.
+
 ## 2026-07-28 session 115 deep blast-through + feature-exerciser
 
 - Prompt: `deep blast + $feature-exerciser`
@@ -2871,3 +2921,180 @@ Polymarket safety, dependency remediation, review, plan, and handoff batch. Requ
 already-passing strict suite and clean worktree snapshot, plus a fresh secret scan, hygiene check, and
 `git diff --check`. No push, rsync, remote write, image build, container/service start, provider poll, data
 mutation, bot cycle, order, public exposure, or live enablement is authorized by this commit request.
+
+## User Prompt - 2026-07-28 current project complexity
+
+Asked for an honest assessment of how complex the committed project currently is.
+
+## Work - 2026-07-28 focused complexity triage
+
+Measured the clean `0383d47b` source in read-only triage. It contains 1,263 tracked files; approximately
+110,293 lines across JS/MJS/TS/TSX/C++/Python/shell/PowerShell/SQL; 176 test files; 272 Markdown files with
+43,515 lines; five npm lock roots containing 940 locked package entries before cross-root deduplication;
+36 CLI command files; 36 API route files; seven Compose services; and 20 GB of local runtime data.
+
+Conclusion: medium-sized source volume with high architectural, domain, dependency, and operational complexity.
+For one maintainer it is very high complexity; for a focused small team it is manageable only with explicit
+surface ownership and continued fail-closed gates. Strong tests and source-evidence automation reduce regression
+risk but do not remove third-host, recovery, dependency, macro PIT, or live-safety complexity. No source,
+dependency, runtime, provider, data, deployment, or external state changed during this audit.
+
+## User Follow-up - 2026-07-28 production-only AI-written complexity
+
+Asked to exclude test code from the estimate and account for all source being AI-written.
+
+Production-only recount excludes tests, fixtures, examples, documentation, workspace records, notebooks, and
+archived material: 553 production/operational source files and approximately 75,296 lines. Ten production files
+are at least 1,000 lines, 26 are at least 500, and 65 are at least 300. Conclusion remains high complexity;
+AI authorship increases review/provenance and hidden-coupling risk because there is no durable original-author
+mental model. Tests are therefore safety evidence, not removable maintenance overhead. No production source or
+runtime state changed.
+
+## User Prompt - 2026-07-28 readability workflow and refactor skill
+
+Asked whether AI-authored consistency risks already exist in `blast-through`, requested explicit readable-code
+rules in `mass-implement`, and requested a dedicated skill for readability and maintainability refactors.
+
+Follow-up clarified the intended model: mirror joining a real production company, where an engineer must read a
+codebase they did not write, follow its rules, understand legacy constraints, and improve it incrementally.
+
+## Work - 2026-07-28 existing-codebase readability workflow
+
+Confirmed the old `blast-through` covered duplicate, architecture, docs, and ownership fragments but lacked one
+explicit AI-authored/existing-codebase coherence gate. Added `maintainability` audit mode and a directly
+verifiable coherence checklist. Added a mandatory Readable Implementation Contract to `mass-implement`.
+Created `refactor-readability` for behavior-preserving, read-before-edit cleanup with characterization,
+canonical-owner, local-convention, legacy-constraint, hotspot, and safety gates. Routed it through
+`session-orchestrator` and `AGENTS.md`, added it to the sorted manifest, strengthened the workflow contract,
+and synchronized the canonical/mirror inventory to 10 packages.
+
+Verification: all 10 skills pass `quick_validate.py`; structure/skill contracts pass 2/2; mirror check, hygiene,
+and diff integrity pass. No production code, provider, data, dependency, runtime, deployment, order, public, or
+live behavior changed.
+
+## User Follow-up - 2026-07-28 bounded context and test honesty
+
+Established the most important cross-skill rule: as the codebase exceeds one AI context, architecture and
+readability must preserve comprehension, and no skill may lie about evidence or cheat tests.
+
+Expanded `PROJECT_RULES.md`, `AGENTS.md`, and every canonical skill with a Truthfulness And Test Integrity
+contract. It requires a task-local architecture map, disclosure of unread/unverified surfaces, separation of
+source/test/install/CI/host/deployment/recovery/soak/paper/live evidence, and honest failure classification. It
+forbids weakened assertions, wider tolerances, skips, deleted coverage, suppressed errors, mock substitution,
+or hardcoded fixture/expected values merely to manufacture a pass. Stale tests may change only with canonical
+contract or approved behavior evidence and a reported before/after expectation.
+
+Added a repository contract test that checks all 10 skills contain these rules. Canonical/mirror parity,
+10/10 skill validation, structure contracts 2/2, hygiene, and diff integrity pass.
+
+## User Prompt - 2026-07-28 final session stop
+
+Explicitly ended the current session.
+
+## Closeout - 2026-07-28 readability and truthfulness workflow
+
+Stopped with the complete skill-workflow batch intentionally uncommitted on `main` at `0383d47b`. Canonical and
+mirror inventories contain 10 synchronized skills; all skills validate; structure contracts pass 2/2; hygiene
+and diff integrity pass. No production refactor, rsync, remote write, package operation, image build,
+service/container start, provider poll, data mutation, bot cycle, order, public exposure, or live enablement
+occurred.
+
+## User Prompt - 2026-07-28 session orchestration boot
+
+Invoked `session-orchestrator` to resume from the repository's durable session state.
+
+## User Prompt - 2026-07-28 full blast-through review
+
+Requested a Hard Reading Mode review of the entire repository covering every `blast-through` audit aspect,
+including an evidence-backed assessment of which Node.js/JavaScript surfaces are credible C++ migration
+candidates.
+
+## User Follow-up - 2026-07-28 failure-oriented tests
+
+Required tests to expose broken behavior with explicit failure output rather than sugar-coating it, then asked
+the full audit to continue.
+
+## Work - 2026-07-28 full blast-through result
+
+Completed the full audit and recorded eleven findings. The top blockers are an execution-projected mock flag
+that bypasses PIN verification and Alpaca bot-state/account-read fallbacks that can erase tracked positions.
+Specified adversarial tests where broken product behavior fails loudly and the runner turns red on unexpected
+success, silent fallback, or data loss. Ranked targeted C++ candidates; no blanket rewrite was recommended.
+No production or external state changed.
+
+## User Prompt - 2026-07-28 mass implementation and edge cases
+
+Requested a same-day implementation plan to make tests much harder to pass, improve the blast-through grade,
+and produce a maintainability refactor plan. Asked which edge cases materially affect the repository, approved
+the complete plan, and required every test failure to be logged for RAG. Clarified that the last requirement
+was a side note and asked implementation to continue.
+
+## Work - 2026-07-28 full recovery implementation
+
+Implemented FULL-1/FULL-2 fail-closed repairs, adversarial and mutation tests, sanitized JSONL failure
+reporting, fallback provenance, service-specific Compose environment projection, private/license-aligned
+package metadata, multi-stage non-root Docker source, automation inventory ownership extraction, and artifact
+hygiene. Did not guess dependency upgrades, PIT metadata, base-image/action digests, or ONNX hashes without
+trusted evidence.
+
+Verification: focused safety pass; host-capable strict pass; C++ build and CTest 30/30; environment 122/142/140
+with zero unclassified; hygiene, mirror parity, offline five-root lockfile dry runs, and diff integrity pass.
+The final worktree-snapshot verifier is inconclusive at root `npm ci`, so clean-install/CI/host/recovery/live
+claims remain explicitly blocked.
+## User Prompt - 2026-07-28 session-orchestrator boot
+
+Invoked `session-orchestrator` to resume from the repository's durable session state. Boot loaded the current
+bootstrap, handoff, state, next-goal, documentation hub, prompt log, and memory context. The checkout is `main`
+at `0383d47b` with a substantial pre-existing dirty worktree; all existing changes are preserved. `graphify-out`
+refresh is unavailable because the graphify command/module is not installed.
+
+## User Prompt - 2026-07-29 session-orchestrator boot
+
+Invoked `session-orchestrator` to restore the repository's durable state and route the next task. Boot preserves
+the substantial pre-existing dirty worktree on `main` at `0383d47b`; no implementation or runtime action is
+authorized by this prompt.
+
+## User Prompt - 2026-07-29 blast-through triage
+
+Invoked `blast-through` without a narrower audit mode or surface.
+
+## Work - 2026-07-29 blast-through triage
+
+Ran `triage` / Fast Reading Mode against the current dirty checkout. Confirmed that the working-tree safety
+repairs are green but absent from exact `HEAD`, source/RAG failure evidence is not durable or diagnostic enough,
+and the durable next-action records conflict. The safety suite passed 7/7. A restricted source-evidence contract
+failure was classified as sandbox `spawnSync git EPERM`; the exact host-capable rerun passed 12/12.
+No production fix, provider/data/runtime/deployment/paper/live action, or section grading occurred.
+
+## User Prompt - 2026-07-29 list and combine pending plans
+
+Asked for the current pending-plan list and one combined plan.
+
+## Work - 2026-07-29 pending-plan consolidation
+
+Inventoried 27 existing plan files against current state, handoff, and audit evidence. Classified historical
+and completed plans so they are not reactivated, then created
+`workspace/plans/CURRENT_PENDING_MASTER_PLAN.md` with M0-M8 dependency order, acceptance criteria,
+verification, safety boundaries, and a single M0 first action. Updated durable direction without changing
+production source or authorizing commits, host writes, dependencies, providers, data, runtime, paper, or live
+actions.
+
+## User Prompt - 2026-07-29 M0 mass implementation
+
+Invoked `mass-implement` after approving the combined pending master plan.
+
+## Work - 2026-07-29 M0 source-evidence repair
+
+Ran the mandatory duplicate/stub preflight and issued `GO WITH FIXES`. Consolidated duplicate diagnostic
+redactors, implemented schema-v2 durable source evidence with atomic active-step checkpoints and sanitized
+fingerprints, and changed the Node wrapper to preserve per-file process isolation while exposing nested failure
+causes to RAG. Recorded all 94 worktree entries by owner and commit boundary.
+
+Verification passed for 18 focused host-capable contracts, safety, structure, hygiene, secrets, diff integrity,
+and the exact host-capable broad Node discovery. Restricted child-spawn `EPERM` failures were retained as
+environment evidence. No commit, dependency/provider/data/host/runtime/paper/public/live action occurred.
+
+## User Prompt - 2026-07-29 commit and deploy
+
+Authorized committing the reviewed M0 worktree and requested deployment. Commit work may proceed. Deployment
+remains target-specific and follows committed-archive verification; no host or service target is inferred.

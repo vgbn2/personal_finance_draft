@@ -1,4 +1,0 @@
-Portfolio subtree review note:
-- Keep exposure, PnL, and sizing helpers deterministic.
-- Prefer compatibility includes over zero-byte shells.
-- New portfolio files should connect to tests and clear risk limits.

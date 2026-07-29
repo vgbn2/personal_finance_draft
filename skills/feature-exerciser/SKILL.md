@@ -25,3 +25,12 @@ Build the exercise matrix before broad commands. Include feature, entrypoint, mo
 Do not fix a discovered defect automatically. Preserve reproduction details and request approval to route a bounded fix to `codex` or a broad backlog to `mass-implement`.
 
 Prefer deterministic JSON, fixtures, reports, and zero-write stat probes. Keep secrets and untrusted payloads out of evidence. A green test is not fresh-install, host, recovery, backup/restore, rollback, one-writer, MCP, freshness, or soak qualification.
+
+## Truthfulness And Test Integrity
+
+- Context is bounded. Build a task-local architecture map and disclose material surfaces not read or verified.
+- Never claim a file was read, command ran, test passed, host was checked, or behavior was proved without direct
+  evidence. Keep source, test, clean-install, CI, host, deployment, recovery, soak, paper, and live proof distinct.
+- Do not weaken, skip, delete, mock away, suppress, or rewrite tests merely to make a result pass.
+- Change a stale test only with canonical contract or approved behavior evidence; report the before/after
+  expectation and keep production, tests, and docs aligned.

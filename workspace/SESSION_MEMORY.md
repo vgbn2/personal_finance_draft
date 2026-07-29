@@ -1745,3 +1745,127 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "remaining_gates": "17 high advisories plus third-host auth/MCP/startup/persistence/restart/rollback/recovery/soak qualification."
 }
 ```
+
+## Session Memory - 2026-07-28 readability skills
+
+```json
+{
+  "principle": "Work like an engineer joining an existing production team: read before editing, follow local rules, understand legacy constraints, and avoid clean-slate rewrites.",
+  "blast_through": "Added maintainability mode and Existing-Codebase Coherence Gate; AI authorship is a risk signal, not an automatic defect.",
+  "mass_implement": "Added mandatory Readable Implementation Contract and hotspot split-or-keep decisions.",
+  "new_skill": "refactor-readability performs behavior-preserving readability, ownership, convention, and maintainability cleanup.",
+  "routing": "Audit uncertainty to blast-through; behavior-preserving cleanup to refactor-readability; behavioral changes to codex or mass-implement.",
+  "verification": "10/10 skill validation; canonical/mirror parity 10 packages; structure contracts 2/2; hygiene and diff pass.",
+  "truth_contract": "Every skill maps bounded context, discloses unread surfaces, separates evidence classes, and forbids weakening, skipping, mocking away, suppressing, deleting, or hardcoding tests merely to pass.",
+  "legitimate_test_change": "Requires canonical contract or approved behavior evidence plus a reported before/after expectation.",
+  "boundary": "No production source, provider, data, dependency, runtime, deployment, order, public, or live behavior changed."
+}
+```
+
+## Session Memory - 2026-07-28 readability workflow stop
+
+```json
+{
+  "head": "0383d47b",
+  "worktree": "Intentionally uncommitted readability, maintainability, architecture-context, truthfulness, and test-integrity skill workflow.",
+  "verified": "10/10 skills valid; canonical/mirror parity 10 packages; structure contracts 2/2; hygiene and diff integrity pass.",
+  "next_action": "Resume with the private third-host identity probe and web-only deployment proof unless the user explicitly prioritizes committing the skill workflow.",
+  "untouched": "No production refactor, rsync, remote write, dependency operation, build, startup, provider poll, data mutation, order, public exposure, or live enablement."
+}
+```
+
+## Session Memory - 2026-07-28 full blast-through
+
+```json
+{
+  "mode": "full / Hard Reading Mode",
+  "head": "0383d47b",
+  "critical_findings": {
+    "FULL-1": "SOVEREIGN_MOCK bypasses wrong PIN and is projected onto execution",
+    "FULL-2": "corrupt Alpaca bot state or failed broker positions read can erase tracking and reopen entry capacity"
+  },
+  "test_philosophy": "Use adversarial tests where bad conditions must produce loud product failure and preserved state; the runner is green only when it observes the denial. Unexpected success, silent defaults, or data loss make the runner red.",
+  "verification": "host strict API 25/25, contracts 118/118, secrets 911/0, aggregate 1004/1000/0/4; native 30/30; npm ls five roots zero problems; integrity 92/92 and DCS 1.0",
+  "grades": "system C; tests B+; backend CLI C+; backend core B+; whole-repo cleanliness B-",
+  "cpp": "Prioritize benchmarked indicator kernels; native backtest is already default; consider targeted RSI/stat, HMM/regime, and ts-index kernels only after parity and profiling. Keep providers, auth, UI, MCP, environment policy, and ledger orchestration in Node/TypeScript.",
+  "next_action": "Approve one bounded codex fix for FULL-1 with failure-oriented negative and mutation-proof tests, then handle FULL-2 separately.",
+  "safety": "Audit-only production boundary; no provider, package, credential, data, runtime, container, bot, order, public, deployment, or live action."
+}
+```
+
+## Session Memory - 2026-07-28 full recovery implementation
+
+```json
+{
+  "head": "0383d47b",
+  "worktree": "Intentionally uncommitted full recovery plus prior readability skill workflow.",
+  "closed": [
+    "FULL-1 execution mock and PIN bypass",
+    "FULL-2 corrupt state and broker inventory uncertainty",
+    "silent native and API fallback semantics",
+    "shared Compose environment projection",
+    "tracked native review and debug artifacts"
+  ],
+  "test_policy": "Every root Node assertion suite routes through the canonical dual reporter; failures append sanitized JSONL RAG records. Mutation tests prove critical guards are not cosmetic.",
+  "verification": "Focused safety pass; host verify:strict pass; native CTest 30/30; hygiene, environment, mirror, offline lockfile dry runs, and diff integrity pass.",
+  "inconclusive": "Final worktree snapshot stopped at root npm ci with verification_in_progress evidence and proves no clean-snapshot claim.",
+  "remaining": "17 high advisories; PIT migration; trusted Docker, Actions, and ONNX hashes; image and target-host startup; auth/MCP/persistence; restart, rollback, backup, recovery, soak, provider, paper, and live evidence.",
+  "next_action": "Run a bounded clean-snapshot diagnosis with retained npm-ci stderr, then split strategy registry/prop-firm presentation or cli_executor adapter families without changing behavior.",
+  "grade": "B- overall, release-gated; private research and paper-safe testing only."
+}
+```
+
+## Session Memory - 2026-07-28 research and bot-monitoring roadmap
+
+```json
+{
+  "head": "0383d47b",
+  "plans": [
+    "workspace/plans/RESEARCH_DATA_STRATEGY_BACKTEST_READINESS_PLAN.md",
+    "workspace/plans/BOT_MONITORING_MASS_IMPLEMENT_PLAN.md"
+  ],
+  "monitoring_decisions": "Paper-only bounded auto-restart; Bash, CLI, authenticated API, and dashboard parity; environment-selected generic, Discord, or Slack webhook; Node owns portfolio and trading semantics.",
+  "edge_cases": "Split brain/PID reuse, restart and clock behavior, long versus stalled cycles, corrupt and partial state, confirmed-empty versus unavailable inventory, host pressure, webhook delivery ordering/redaction, API/UI snapshot consistency, and execution-boundary poisoning are mandatory gates.",
+  "first_action": "MON-0 preflight only: field-owner map, route/caller map, environment projection matrix, paper_monitor.v1 state precedence, and GO/NO-GO.",
+  "boundary": "Planning only; no monitoring implementation/test, bot, container, broker, provider, webhook, deployment, public exposure, paper cycle, order, or live action."
+}
+```
+
+## Session Memory - 2026-07-28 mass-implement ownership guard
+
+```json
+{
+  "rule": "Before every broad feature/fix batch, mass-implement scans the task-local architecture for duplicate owners, divergent implementations, incomplete stubs, orphan exports, stale compatibility paths, and generated copies.",
+  "classification": "Canonical owner, required compatibility shim, generated artifact, test fixture, honest unavailable feature, dead duplicate, or divergent production implementation.",
+  "decision": "Remove proven in-scope dead duplicates; consolidate competing production ownership with GO WITH FIXES or stop NO-GO. Never leave poison code beside a new owner.",
+  "safety": "No string-only deletion; prove consumers across source, aliases, compiled output, config, tests, packaging, and docs.",
+  "verification": "Canonical skill valid; mirror parity 10 packages; focused repository skill contract 1/1; diff integrity pass."
+}
+```
+
+## Session Memory - 2026-07-29 pending master plan
+
+```json
+{
+  "plan": "workspace/plans/CURRENT_PENDING_MASTER_PLAN.md",
+  "inventory": "27 prior plan files classified as current, residual, subsumed, closed historical, or parked",
+  "order": "M0 source/evidence/continuity -> M1 credential/dependency/supply chain -> M2 private web host -> M3 data/PIT -> M4 strategy/replay -> M5 monitoring -> M6 paper/recovery/soak -> M7 maintainability/UX -> M8 optional/distribution",
+  "first_action": "M0 read-only inventory of 83 worktree entries, coherent commit groups, load-bearing untracked edges, and evidence/RAG durability preflight",
+  "corrections": "Do not redo worktree-closed FULL-1/FULL-2, do not deploy unsafe HEAD 0383d47b, and do not start MON-0 before M0 closes",
+  "boundary": "Planning only; no implementation, commit, host write, dependency/provider/data/runtime/paper/live action"
+}
+```
+
+## Session Memory - 2026-07-29 M0 evidence repair
+
+```json
+{
+  "lifecycle": "M0 GO WITH FIXES -> implemented -> verified -> reviewed -> deferred at commit/archive/CI",
+  "inventory": "workspace/plans/M0_WORKTREE_CHANGESET_INVENTORY.md; 94 current status entries grouped into six owners",
+  "evidence": "schema v2 durable ignored default, atomic active-step checkpoint, sanitized summary and stdout/stderr hashes",
+  "rag": "per-file process orchestration preserves file isolation and exposes nested leaf causes; one shared redactor",
+  "verification": "focused 18/18 host-capable; safety, structure, hygiene, secrets, diff pass; broad host-capable Node discovery pass",
+  "next": "explicit commit authorization, exact reviewed archive verification, then matching authenticated CI artifact",
+  "blocked": "do not deploy 0383d47b; M1-M8, host, provider, paper, release, public, and live gates remain closed"
+}
+```

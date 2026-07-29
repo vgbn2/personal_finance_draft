@@ -5,6 +5,10 @@ closed; exact-commit/CI evidence and ENV-1B3-B approval open
 
 Date: 2026-07-28
 
+Historical specification note (2026-07-29): `CURRENT_PENDING_MASTER_PLAN.md` M0 supersedes the local temporary
+default and schema-v1 details below. Current source uses a durable ignored local manifest and schema v2. Do not
+reimplement the historical design literally.
+
 Lifecycle: `proposed -> preflight -> GO WITH FIXES -> implemented -> verified -> reviewed -> closed | deferred`
 
 ## Objective

@@ -2,6 +2,7 @@
   "name": "sovereign-web-dashboard",
   "private": true,
   "version": "0.0.0",
+  "license": "SEE LICENSE IN ../../LICENSE",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",

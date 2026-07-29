@@ -1,4 +1,0 @@
-Feeds subtree review note:
-- Keep feed adapters deterministic and local-first.
-- Prefer compatibility wrappers over new empty shims.
-- If a feed file is only a name marker, wire it to a real adapter or retire it.

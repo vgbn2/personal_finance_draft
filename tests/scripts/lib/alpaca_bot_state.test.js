@@ -69,6 +69,36 @@ test('loadState merges a partial/legacy config with current defaults', () => {
   });
 });
 
+test('loadState fails loudly on corrupt existing state without rewriting it', () => {
+  const dir = fs.mkdtempSync(require('node:path').join(require('node:os').tmpdir(), 'alpaca-state-corrupt-'));
+  const statePath = require('node:path').join(dir, 'state.json');
+  const corrupt = '{"positions":[';
+  fs.writeFileSync(statePath, corrupt, 'utf8');
+  try {
+    assert.throws(
+      () => botState.loadState({ statePath }),
+      (error) => error.code === 'alpaca_bot_state_corrupt',
+    );
+    assert.equal(fs.readFileSync(statePath, 'utf8'), corrupt);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('loadState rejects a valid JSON document with an unsafe state shape', () => {
+  const dir = fs.mkdtempSync(require('node:path').join(require('node:os').tmpdir(), 'alpaca-state-invalid-'));
+  const statePath = require('node:path').join(dir, 'state.json');
+  fs.writeFileSync(statePath, JSON.stringify({ positions: 'silently-empty-before-fix' }), 'utf8');
+  try {
+    assert.throws(
+      () => botState.loadState({ statePath }),
+      (error) => error.code === 'alpaca_bot_state_invalid',
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('acquireLock blocks a second concurrent acquire, releaseLock frees it', () => {
   withBackup(botState.LOCK_PATH, () => {
     try { fs.unlinkSync(botState.LOCK_PATH); } catch { /* already absent */ }

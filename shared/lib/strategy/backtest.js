@@ -843,6 +843,7 @@ function runBacktestJs(featureFrame, options = {}) {
     threshold,
     horizon,
     cost_bps: costBps,
+    engine: 'sovereign_js',
     fee_bps: feeBps,
     slippage_bps: slippageBps,
     metrics: {
@@ -963,13 +964,31 @@ function normalizeCppResult(cppResult, options, featureFrame) {
   return result;
 }
 
+function withEngineProvenance(result, requestedEngine, fallbackReason = null) {
+  const actualEngine = result.engine || 'sovereign_js';
+  return {
+    ...result,
+    engine: actualEngine,
+    engine_requested: requestedEngine,
+    engine_actual: actualEngine,
+    degraded: Boolean(fallbackReason),
+    fallback_reason: fallbackReason,
+  };
+}
+
 function runBacktestCppNative(featureFrame, options) {
   const bridge = require('../runtime/backend_bridge');
   const cachePath = path.join(STORAGE_DATA_DIR, 'cache');
   const symbols = [...new Set(
     (featureFrame.features || []).map((r) => r.symbol).filter(Boolean)
   )];
-  if (symbols.length === 0) return runBacktestJs(featureFrame, options);
+  if (symbols.length === 0) {
+    return withEngineProvenance(
+      runBacktestJs(featureFrame, options),
+      options.engine || 'auto',
+      'native_input_has_no_symbols',
+    );
+  }
 
   const args = [
     'backtest', '--mode', 'native',
@@ -986,8 +1005,14 @@ function runBacktestCppNative(featureFrame, options) {
   if (options.to)   args.push('--to', options.to);
 
   const result = bridge.runBackendCommand(args);
-  if (!result || !result.engine) return runBacktestJs(featureFrame, options);
-  return normalizeCppResult(result, options, featureFrame);
+  if (!result || !result.engine) {
+    return withEngineProvenance(
+      runBacktestJs(featureFrame, options),
+      options.engine || 'auto',
+      'native_result_invalid',
+    );
+  }
+  return withEngineProvenance(normalizeCppResult(result, options, featureFrame), options.engine || 'auto');
 }
 
 function runBacktestCppFrame(featureFrame, options) {
@@ -1022,7 +1047,13 @@ function runBacktestCppFrame(featureFrame, options) {
       };
     });
 
-  if (annotated.length === 0) return runBacktestJs(featureFrame, options);
+  if (annotated.length === 0) {
+    return withEngineProvenance(
+      runBacktestJs(featureFrame, options),
+      options.engine || 'js_model',
+      'native_frame_has_no_rows',
+    );
+  }
 
   const framePayload = JSON.stringify({
     threshold,
@@ -1040,8 +1071,14 @@ function runBacktestCppFrame(featureFrame, options) {
   try {
     fs.writeFileSync(tmpPath, framePayload, 'utf8');
     const result = bridge.runBackendCommand(['backtest', '--mode', 'frame', '--frame', tmpPath, '--json']);
-    if (!result || !result.engine) return runBacktestJs(featureFrame, options);
-    return normalizeCppResult(result, options, featureFrame);
+    if (!result || !result.engine) {
+      return withEngineProvenance(
+        runBacktestJs(featureFrame, options),
+        options.engine || 'js_model',
+        'native_frame_result_invalid',
+      );
+    }
+    return withEngineProvenance(normalizeCppResult(result, options, featureFrame), options.engine || 'js_model');
   } finally {
     try { fs.unlinkSync(tmpPath); } catch {}
   }
@@ -1051,6 +1088,7 @@ function runBacktest(featureFrame, options = {}) {
   // C++ is the default when the binary is available.
   // Set engine: 'js' or engine: 'js_model' (with no binary) to force JS path.
   const engine = options.engine || 'auto';
+  let fallbackReason = engine === 'js' ? null : 'native_backend_unavailable';
   if (engine !== 'js') {
     try {
       const bridge = require('../runtime/backend_bridge');
@@ -1062,9 +1100,11 @@ function runBacktest(featureFrame, options = {}) {
           return runBacktestCppFrame(featureFrame, options);
         }
       }
-    } catch {}
+    } catch (error) {
+      fallbackReason = `native_backend_error:${error.code || error.name || 'unknown'}`;
+    }
   }
-  return runBacktestJs(featureFrame, options);
+  return withEngineProvenance(runBacktestJs(featureFrame, options), engine, fallbackReason);
 }
 
 module.exports = {
@@ -1074,6 +1114,7 @@ module.exports = {
   buyHoldBenchmark,
   runBacktest,
   runBacktestJs,
+  withEngineProvenance,
   rollingWalkForward,
   splitFeatureFrame,
   quantile,
