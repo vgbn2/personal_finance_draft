@@ -1973,3 +1973,50 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "next": "explicitly decide local bot continuation; then bounded codex monitor fix plus exact-image provenance and optional-service updater contracts"
 }
 ```
+
+## Session Memory - 2026-07-30 vgbn exact-image deployment
+
+```json
+{
+  "target": "vgbn-servers at 192.168.4.135",
+  "deployed_source": "9fef3ef79682d71ba21e9eaea66bfc1fef2d0a44",
+  "image": "personal_finance:9fef3ef79682d71ba21e9eaea66bfc1fef2d0a44",
+  "image_id": "sha256:3106da1fa2e6abda1d9bd74c2ae15bf7464a96d452edcf6309ca713e07a44be5",
+  "source_tree": "de345412c2bea7e4906292b71d454a6409d4c61a",
+  "services": "web, backfill, portfolio-monitor, host-health, host-backup; all running with zero restarts",
+  "updater_fix": "9fef3ef7 snapshots rollback images before rebuilding the deployment tag",
+  "idempotence": "confirmed-state rerun no-opped without rebuild or recreation",
+  "monitor": "cycles 1093 to 1094; persistent breach publication; BTC about 31984 above 25000; Alpaca authentication unavailable",
+  "safety": "cloud-compute; LIVE_TRADING=false; SOVEREIGN_EXECUTION_AUTHORIZED=false; loopback web; bot and research absent",
+  "source_transport": "verified complete Git bundle; temporary remote and bundles removed",
+  "remaining": "host deploy key, authenticated CI, restart/rollback/recovery drill, longer soak, and risk/auth remediation"
+}
+```
+
+## Session Memory - 2026-07-30 deferred Alpaca monitor edge case
+
+```json
+{
+  "symptom": "portfolio monitor reports Alpaca Live authentication_failed",
+  "credential_evidence": "Alpaca key and secret are non-empty in .env.central and match the backfill projection; values were not exposed",
+  "projection_gap": "portfolio-monitor projection and container contain no Alpaca key, secret alias, or base URL by manifest policy",
+  "scope_gap": "aggregate_portfolio forces Alpaca Live with paper:false while the configured base URL is Alpaca Paper; monitor evaluates live rather than live_paper",
+  "conclusion": "failure does not prove invalid keys; account-read projection and paper/live scope are miswired",
+  "next": "bounded codex batch for least-privilege account-read projection, explicit scope, adversarial tests, monitor-only recreation, and two-cycle proof",
+  "boundary": "deferred by user; no source, env, credential, container, provider, threshold, order, or runtime mutation"
+}
+```
+
+## Session Memory - 2026-07-30 Alpaca monitor source closure
+
+```json
+{
+  "lifecycle": "GO WITH FIXES -> implemented -> verified -> reviewed -> deferred at commit and deployment",
+  "dcs": "1.0; 92/92 configured daily cache, zero missing, stale, or unexplained",
+  "projection": "portfolio-monitor receives Alpaca key pair and paper base URL but no trade PIN, private wallet, central, or execution class",
+  "scope": "monitor risk default both; Alpaca acquisition default paper; live, live_paper, and both are explicit",
+  "safety": "cloud-compute, LIVE_TRADING=false, execution authorization false; provider-side key permissions are not claimed read-only",
+  "verification": "focused 39 pass and 1 sandbox-only skip; host-capable aggregate Node pass; environment, TypeScript, hygiene, structure 16/16, diff pass",
+  "next": "commit all reviewed changes, run committed archive, sync exact revision to vgbn-servers, regenerate service projections, recreate only portfolio-monitor, observe two cycles"
+}
+```

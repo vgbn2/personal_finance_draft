@@ -2720,3 +2720,40 @@ logs and secret-bearing environment values were not read. The Docker evidence is
 - Deferred: commit/committed archive, actual image build, local cutover, restart observation, backup due-time
   observation, rollback drill, remote deployment, soak, provider/paper qualification, and live.
 - Review grade: **B- / source-fixed, runtime-gated**. No deployment or runtime grade increase is claimed.
+
+## Alpaca portfolio-monitor triage and implementation review - 2026-07-30
+
+### Triage findings
+
+| ID | Severity | Finding | Owner and acceptance criteria | Verification |
+|---|---|---|---|---|
+| BT-ALP-1 | P1 false-unavailable account state | The monitor service projection omitted Alpaca account keys and base URL, so its authentication result could not distinguish missing projection from invalid credentials. | `config/system/environment_manifest.json` owns service projection. Allow only the Alpaca key pair/base URL and monitor scope on `compose_portfolio_monitor`; retain cloud-compute, live false, execution false, and exclusion of trade PIN/private-wallet credentials. | Environment projection and central-env publication tests must expose names only, preserve 0600 files, and prove an attempted live policy remains blocked. |
+| BT-ALP-2 | P1 risk-scope mismatch | The gateway emitted distinct `live` and `live_paper` buckets, but the monitor always assessed `live`, hiding the configured Alpaca paper account. | `portfolio_monitor.js` owns risk scope. Support `live`, `live_paper`, and `both`; default central monitoring to `both`, reset peak equity on scope changes, and retain live BTC/Gate.io/Polymarket exposure. | Focused risk tests must prove exact bucket selection, combined counts, scope-transition drawdown reset, missing paper credentials, and invalid-scope failure. |
+| BT-ALP-3 | P1 stale contract coverage | Environment/Compose tests explicitly required the monitor to have no Alpaca account surface and did not prove paper adapter naming or a poisoned live attempt was blocked. | Update production, contracts, examples, and deployment guidance together. | Focused architecture/operational tests, environment check, TypeScript, hygiene, structure, and host-capable aggregate Node. |
+
+### Duplicate and stub preflight
+
+- Canonical owners: schema-3 environment manifest for projections; shared Alpaca portfolio-scope module for
+  adapter labels/modes; gateway aggregate command for account acquisition; portfolio monitor for risk scope.
+- Required compatibility: the legacy flat aggregate snapshot remains accepted and keeps its prior peak-equity
+  behavior.
+- Test fixtures: synthetic aggregate buckets remain explicitly test-only.
+- No generated copy, dead duplicate, incomplete stub, or competing production implementation was found in the
+  task-local source/config/test/docs map. The old no-Alpaca monitor assertion was a stale contract, not a second
+  runtime owner.
+
+### Review result
+
+- Lifecycle: `proposed -> preflight -> GO WITH FIXES -> implemented -> verified -> reviewed -> deferred`.
+- Default monitor risk scope is combined `live + live_paper`; default Alpaca acquisition scope is `paper`.
+  This preserves live exposure while preventing paper credentials from being attempted against Alpaca Live.
+- Missing paper credentials remain an explicit `Alpaca (Paper)` broker warning. Invalid scope exits nonzero.
+  Scope changes cannot inherit an incompatible peak-equity watermark.
+- Alpaca keys may carry provider-side trading authority. The application boundary is fail-closed through the
+  cloud-compute profile, live/execution false overrides, account-read command classification, and absent trade
+  PIN/private-wallet credentials; it is not claimed as broker-side read-only permission.
+- Fresh local required-daily integrity remains 92/92 cached, 0 missing/stale/unexplained, DCS 1.0.
+- Focused result: 39 pass / 0 fail / 1 sandbox-only nested-child skip. Host-capable aggregate `npm test`
+  passed. Environment check, gateway TypeScript, hygiene, structure 16/16, and diff integrity passed.
+- Deployment is deferred until an exact commit is created and synchronized to `vgbn-servers`. No provider,
+  credential value, container, threshold, paper, order, public, or live state changed during source work.

@@ -76,6 +76,8 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(web, /\.\.\/\.\.\/storage:\/app\/storage/);
   assert.match(backfill, /\.\.\/\.\.\/storage:\/app\/storage/);
   assert.match(portfolioMonitor, /profiles:\s*\[\s*monitoring\s*\]/);
+  assert.match(portfolioMonitor, /PORTFOLIO_MONITOR_SCOPE:-both/);
+  assert.match(portfolioMonitor, /PORTFOLIO_MONITOR_ALPACA_SCOPE:-paper/);
   assert.match(portfolioMonitor, /PORTFOLIO_MONITOR_INTERVAL_SECS:-60/);
   assert.match(portfolioMonitor, /portfolio-monitor/);
   assert.doesNotMatch(portfolioMonitor, /--once|while true|\|\| exit/);

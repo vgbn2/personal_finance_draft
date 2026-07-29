@@ -97,6 +97,14 @@ test('central environment preparation copies only approved research settings and
     parseEnvFile(path.join(root, '.env.services', 'backfill.env')).ALPACA_API_KEY,
     'research-key',
   );
+  const monitorEnvironment = parseEnvFile(
+    path.join(root, '.env.services', 'portfolio-monitor.env'),
+  );
+  assert.equal(monitorEnvironment.ALPACA_API_KEY, 'research-key');
+  assert.equal(monitorEnvironment.ALPACA_SECRET_KEY, 'research-secret');
+  assert.equal(monitorEnvironment.ALPACA_BASE_URL, 'https://paper-api.alpaca.markets');
+  assert.equal(monitorEnvironment.SOVEREIGN_TRADE_PIN, undefined);
+  assert.equal(monitorEnvironment.POLYMARKET_PRIVATE_KEY, undefined);
   assert.doesNotMatch(JSON.stringify(result), /research-secret|must-not-copy|must-not-reuse/);
 });
 

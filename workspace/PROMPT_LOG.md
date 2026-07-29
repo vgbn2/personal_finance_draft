@@ -3228,3 +3228,65 @@ environment contracts, and deployment docs. Focused gates and the host-capable a
 pre-closeout implementation snapshot evidence `81b7974c-9be6-42ad-97ab-e57bb60e4236` is PASS. Exact-image local rehearsal was
 deferred at the clean committed-source gate. No container, remote host, provider, threshold, paper state,
 order, public, or live mutation occurred.
+
+## User Prompt - 2026-07-30 deploy current revision to vgbn server
+
+Asked to commit the current reviewed revision into `vgbn-servers` and run its container images there.
+
+## Work - 2026-07-30 remote deployment started
+
+Routed through `session-orchestrator`. Preflight selected an exact complete Git bundle because the host's
+private GitHub fetch authentication remains unavailable. Scope is the committed `main` revision, the existing
+central-host web/backfill/health/backup service set, and explicit activation of the repaired portfolio monitor.
+Paper, research, live execution, orders, and public exposure remain stopped.
+
+## Work - 2026-07-30 remote deployment completed
+
+Published and deployed exact commit `9fef3ef7` to `vgbn-servers`. Live deployment exposed and then closed a
+rollback-ordering defect: active image references are now captured before rebuilding a deployment tag. The
+focused regression and full committed-archive gate passed. Host evidence binds five running services to one
+exact image; web is healthy, all restart counts are zero, and a confirmed-state updater rerun no-ops.
+Portfolio-monitor advanced from cycle 1093 to 1094 while continuing to report the real BTC breach and Alpaca
+authentication failure. Runtime remains cloud-compute and non-live; bot and research remain absent.
+
+## User Prompt - 2026-07-30 defer Alpaca monitor edge case
+
+Identified the missing Alpaca monitor behavior as an edge case and requested that it be left for the next
+session.
+
+## Work - 2026-07-30 Alpaca edge-case handoff
+
+Recorded the read-only diagnosis: central/backfill have matching non-empty Alpaca credentials and a paper URL,
+the monitor projection intentionally strips them, and aggregate portfolio forces a live adapter while monitor
+assessment ignores the paper bucket. Deferred a least-privilege account-read and explicit-scope fix. No source,
+environment, credential, container, provider, threshold, order, or runtime mutation was performed.
+
+## User Prompt - 2026-07-30 session boot
+
+Invoked `session-orchestrator` to restore the repository's durable state and route the next task.
+
+## Work - 2026-07-30 session boot
+
+Read the session skill, bootstrap, current handoff, relevant durable memory/state/next-goal context,
+documentation hub, and checkout identity. Preserved the five pre-existing modified continuity files plus
+today's untracked dated handoff. `graphify-out` is unavailable and no source-code change is present, so no
+graph refresh, functional implementation, provider/runtime action, or test run occurred. Routed the first
+implementation candidate to a bounded `codex` batch for least-privilege Alpaca account-read projection and
+explicit paper/live portfolio-monitor scope; execution awaits a substantive user request.
+
+## User Prompt - 2026-07-30 blast-through and mass-implement
+
+Invoked `blast-through` and `mass-implement` to audit and close the current repository gap.
+
+## Work - 2026-07-30 Alpaca monitor source implementation
+
+Ran triage audit mode with Fast Reading Mode, refreshed DCS at 1.0, and confirmed the account-projection,
+risk-scope, and stale-contract findings. Completed the duplicate/stub preflight with GO WITH FIXES, then
+implemented a shared Alpaca account-scope owner, explicit combined/live/live-paper risk selection, bounded
+monitor projection, Compose/examples/docs alignment, and adversarial tests. Focused, environment, TypeScript,
+hygiene, structure, diff, and host-capable aggregate Node gates pass. No provider or runtime action ran.
+
+## User Prompt - 2026-07-30 commit and synchronize remaining fixes
+
+After the fixes, requested committing all remaining repository changes and synchronizing them to the server
+machine, then continuing verification.

@@ -2195,3 +2195,41 @@ windows remain open.
   old `personal_finance:latest` image. The monitor was still restarting at final read-only inspection.
 - No container, remote host, provider, threshold, paper ledger, order, public binding, or live flag was
   mutated. System design moves to **B- / source-fixed, runtime-gated**; deployment/recovery/soak remain open.
+
+## Vgbn exact-image deployment - 2026-07-30
+
+- `vgbn-servers` is deployed from exact commit `9fef3ef79682d71ba21e9eaea66bfc1fef2d0a44`; the host HEAD,
+  deployed marker, image revision label, source-tree label, deployment manifest, and five active services agree.
+- `web`, `backfill`, `portfolio-monitor`, `host-health`, and `host-backup` are running on one image with zero
+  restarts. Web is healthy; a confirmed-state updater rerun no-ops.
+- Commit `9fef3ef7` closes the observed rollback ordering defect by snapshotting active image references before
+  rebuilding a deployment tag.
+- Portfolio monitoring is operational but reports a real critical BTC notional breach and unavailable Alpaca
+  authentication. Do not classify this as healthy risk state or weaken the threshold.
+- Runtime remains private cloud-compute with live and execution authorization false. Paper, research, orders,
+  public exposure, authenticated CI, deploy-key automation, recovery, rollback drill, and soak remain open.
+
+## Deferred Alpaca monitor edge case - 2026-07-30
+
+- Alpaca credentials are present in the central environment and backfill projection but absent from the
+  portfolio-monitor projection by current manifest policy.
+- The aggregate gateway forces an Alpaca Live adapter while the host is configured for Alpaca Paper, and the
+  monitor evaluates only the live portfolio bucket.
+- Treat the displayed Alpaca `authentication_failed` as an account-read projection/scope defect, not proof of
+  invalid API credentials. The user deferred the fix to the next session.
+
+## Alpaca monitor account-read/scope source closure - 2026-07-30
+
+- The deferred monitor defect is closed in source. The portfolio-monitor projection now receives only the
+  Alpaca key pair/base URL plus explicit monitor scopes; trade PIN, private-wallet, central, and execution
+  surfaces remain excluded, with cloud-compute/live-false/execution-false fixed.
+- The gateway has one shared Alpaca account-scope owner. Central monitoring defaults to paper-only Alpaca
+  acquisition while the risk monitor defaults to combined live plus live-paper assessment, preserving the
+  existing BTC/Gate.io/Polymarket exposure boundary.
+- Scope changes reset incompatible peak-equity state, missing paper credentials remain an explicit broker
+  warning, and invalid scope fails closed. Legacy flat snapshots remain compatible.
+- Fresh required-daily integrity remains 92/92 cached with 0 missing/stale/unexplained and DCS 1.0.
+- Focused contracts pass 39/39 with one sandbox-only nested-child skip; the exact host-capable aggregate Node
+  suite, environment classification, gateway TypeScript, hygiene, structure 16/16, and diff integrity pass.
+- This is working-tree source/test proof. Commit, committed-archive evidence, host synchronization, monitor-only
+  recreation, two-cycle runtime observation, and exact deployed-image proof remain pending.

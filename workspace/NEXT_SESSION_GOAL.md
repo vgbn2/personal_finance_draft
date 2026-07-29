@@ -896,3 +896,51 @@ Next:
 Until commit authorization and the clean exact-source gate exist, do not build/recreate containers. Keep
 `LIVE_TRADING=false`, execution authorization false, BTC thresholds unchanged, and remote/provider/public/live
 boundaries closed.
+
+## 2026-07-30 vgbn deployment override
+
+The exact-image deployment is complete at `9fef3ef79682d71ba21e9eaea66bfc1fef2d0a44`. Do not rebuild or
+redeploy it merely to re-prove current state.
+
+Next:
+
+1. install a read-only GitHub deploy key and prove non-interactive `git fetch origin main`;
+2. observe matching authenticated CI for `9fef3ef7`;
+3. plan and execute an explicit restart/rollback/recovery drill using the recorded deployment manifest;
+4. run a longer five-service soak and retain monitor/health/backup cycle evidence;
+5. resolve the BTC notional breach and Alpaca authentication through an approved risk/credential decision,
+   never by weakening thresholds or fabricating health.
+
+Keep paper, research, orders, public exposure, and live execution stopped unless separately authorized.
+
+## 2026-07-30 deferred Alpaca monitor edge case
+
+First next-session implementation candidate:
+
+1. route one bounded batch through `codex`;
+2. define a least-privilege Alpaca account-read environment surface for `portfolio-monitor` without granting
+   execution credentials or capabilities;
+3. make monitor scope explicit: paper-only, live-only, or both, and ensure the selected bucket is the one risk
+   assessment evaluates;
+4. add regressions proving paper keys are not mislabeled as `Alpaca (Live)`, missing projections fail clearly,
+   and execution remains impossible;
+5. regenerate the owner-only monitor projection, recreate only `portfolio-monitor`, then observe at least two
+   cycles without exposing keys or weakening the BTC threshold.
+
+Do not assume the existing credentials are invalid: host evidence showed they are present in `.env.central`
+and the backfill projection but intentionally absent from the monitor projection.
+
+## 2026-07-30 Alpaca monitor source implementation override
+
+Do not reimplement monitor account scope or environment projection. The source batch is reviewed and green.
+The authorized next actions are:
+
+1. commit all remaining reviewed repository changes;
+2. run committed-archive evidence for the exact revision;
+3. synchronize that revision to `vgbn-servers`;
+4. regenerate owner-only service projections without printing values;
+5. rebuild/recreate only the already-active `portfolio-monitor`;
+6. observe at least two cycles and prove the paper account is labeled `Alpaca (Paper)`, the BTC threshold is
+   unchanged, restart count is stable, and live/execution flags remain false.
+
+Keep paper bot, research, orders, public exposure, threshold changes, and live execution out of scope.

@@ -19,6 +19,9 @@ const {
   checkEnvironmentManifest,
   discoverFrontendSourceNames,
 } = require('../../../../../scripts/dev/check_environment_manifest');
+const {
+  resolveRuntimePolicy,
+} = require('../../../../../shared/lib/settings/runtime_policy');
 
 const FRONTEND_NAMES = [
   'VITE_API_URL',
@@ -185,7 +188,27 @@ test('compose service contract covers exactly seven isolated service surfaces', 
 
   assert.equal(projectEnvironmentForComposeService(allEnvironment, 'web').FRED_API_KEY, undefined);
   assert.equal(projectEnvironmentForComposeService(allEnvironment, 'host-health').ALPACA_API_KEY, undefined);
-  assert.equal(projectEnvironmentForComposeService(allEnvironment, 'portfolio-monitor').ALPACA_API_KEY, undefined);
+  const monitorEnvironment = projectEnvironmentForComposeService(allEnvironment, 'portfolio-monitor');
+  assert.equal(monitorEnvironment.ALPACA_API_KEY, 'ALPACA_API_KEY-value');
+  assert.equal(monitorEnvironment.ALPACA_SECRET_KEY, 'ALPACA_SECRET_KEY-value');
+  assert.equal(monitorEnvironment.ALPACA_BASE_URL, 'ALPACA_BASE_URL-value');
+  assert.equal(monitorEnvironment.SOVEREIGN_TRADE_PIN, undefined);
+  assert.equal(monitorEnvironment.POLYMARKET_PRIVATE_KEY, undefined);
+  const monitorRuntime = {
+    ...monitorEnvironment,
+    ...manifest.compose_services['portfolio-monitor'].fixed_overrides,
+  };
+  const poisonedExecutionAttempt = resolveRuntimePolicy({
+    env: monitorRuntime,
+    args: ['buy', 'AAPL', '1', '--live'],
+    broker: 'alpaca',
+  });
+  assert.equal(poisonedExecutionAttempt.can_execute, false);
+  assert.ok(
+    poisonedExecutionAttempt.blocking_reasons.includes(
+      'profile_cloud-compute_is_permanently_non_executing',
+    ),
+  );
   assert.equal(projectEnvironmentForComposeService(allEnvironment, 'backfill').FRED_API_KEY, 'FRED_API_KEY-value');
 });
 

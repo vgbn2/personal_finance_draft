@@ -10,13 +10,19 @@ const {
 } = require('../../../backend/gateway/src/polymarket_portfolio.js');
 
 const {
+  DEFAULT_ALPACA_SCOPE,
+  DEFAULT_PORTFOLIO_SCOPE,
   DEFAULT_THRESHOLDS,
+  normalizePortfolioScope,
   loadRiskThresholds,
   buildRiskAssessment,
   runPortfolioMonitorCycle,
   runPortfolioMonitorLoop,
   portfolioMonitorExitCode,
 } = require('../../../backend/cli/commands/operational/portfolio_monitor.js');
+const {
+  buildAlpacaPortfolioAdapterSpecs,
+} = require('../../../shared/lib/brokers/alpaca_portfolio_scope.js');
 
 function snapshot(overrides = {}) {
   return {
@@ -91,12 +97,13 @@ function productionSnapshot(overrides = {}) {
   };
 }
 
-test('production aggregate envelope assesses the real-funds live bucket only', () => {
+test('explicit live scope assesses the real-funds bucket only', () => {
   const result = buildRiskAssessment(
     productionSnapshot(),
     { peak_equity: 95000 },
     DEFAULT_THRESHOLDS,
     Date.parse('2026-07-10T00:00:00Z'),
+    'live',
   );
 
   assert.equal(result.ok, true);
@@ -107,6 +114,101 @@ test('production aggregate envelope assesses the real-funds live bucket only', (
   assert.equal(result.gross_exposure, 40050);
   assert.equal(result.position_count, 3);
   assert.deepEqual(result.connected_brokers, ['Alpaca (Live)', 'Gate.io', 'Polymarket']);
+});
+
+test('default both scope combines live and broker-paper exposure without relabeling brokers', () => {
+  const result = buildRiskAssessment(
+    productionSnapshot(),
+    {},
+    {
+      max_position_notional: 1000000,
+      max_gross_exposure: 2000000,
+      max_net_exposure: 2000000,
+      max_drawdown: 0.10,
+    },
+    Date.parse('2026-07-10T00:00:00Z'),
+  );
+
+  assert.equal(DEFAULT_PORTFOLIO_SCOPE, 'both');
+  assert.equal(result.ok, true);
+  assert.equal(result.portfolio_scope, 'both');
+  assert.equal(result.equity, 1000150);
+  assert.equal(result.cash, 860100);
+  assert.equal(result.gross_exposure, 340050);
+  assert.equal(result.position_count, 4);
+  assert.deepEqual(
+    result.connected_brokers,
+    ['Alpaca (Live)', 'Gate.io', 'Polymarket', 'Alpaca (Paper)'],
+  );
+});
+
+test('live-paper scope selects Alpaca Paper and resets an incompatible prior peak', () => {
+  const result = buildRiskAssessment(
+    productionSnapshot(),
+    { portfolio_scope: 'live', peak_equity: 2000000 },
+    {
+      max_position_notional: 1000000,
+      max_gross_exposure: 2000000,
+      max_net_exposure: 2000000,
+      max_drawdown: 0.10,
+    },
+    Date.parse('2026-07-10T00:00:00Z'),
+    'live-paper',
+  );
+
+  assert.equal(normalizePortfolioScope('live-paper'), 'live_paper');
+  assert.equal(result.portfolio_scope, 'live_paper');
+  assert.equal(result.equity, 900000);
+  assert.equal(result.peak_equity, 900000);
+  assert.equal(result.drawdown, 0);
+  assert.deepEqual(result.connected_brokers, ['Alpaca (Paper)']);
+});
+
+test('Alpaca account scope never labels the paper adapter as live', () => {
+  assert.equal(DEFAULT_ALPACA_SCOPE, 'paper');
+  assert.deepEqual(buildAlpacaPortfolioAdapterSpecs('paper'), {
+    scope: 'paper',
+    live: [],
+    live_paper: [{ name: 'Alpaca (Paper)', paper: true }],
+  });
+  assert.deepEqual(buildAlpacaPortfolioAdapterSpecs('live'), {
+    scope: 'live',
+    live: [{ name: 'Alpaca (Live)', paper: false }],
+    live_paper: [],
+  });
+  assert.throws(
+    () => buildAlpacaPortfolioAdapterSpecs('unknown'),
+    /invalid_alpaca_portfolio_scope/,
+  );
+});
+
+test('missing paper-account credentials remain explicit while live exposure is preserved', () => {
+  const payload = productionSnapshot();
+  payload.live_paper = buildAggregatedPortfolioSnapshot([
+    {
+      name: 'Alpaca (Paper)',
+      ok: false,
+      error: 'Alpaca credentials are not configured',
+    },
+  ], null);
+  const result = buildRiskAssessment(
+    payload,
+    {},
+    {
+      max_position_notional: 1000000,
+      max_gross_exposure: 2000000,
+      max_net_exposure: 2000000,
+      max_drawdown: 0.10,
+    },
+  );
+
+  assert.equal(result.portfolio_scope, 'both');
+  assert.equal(result.position_count, 3);
+  assert.deepEqual(result.connected_brokers, ['Alpaca (Live)', 'Gate.io', 'Polymarket']);
+  assert.deepEqual(
+    result.breaches.map(({ code, broker }) => ({ code, broker })),
+    [{ code: 'broker_unavailable', broker: 'Alpaca (Paper)' }],
+  );
 });
 
 test('legacy flat snapshot remains supported and advances persisted peak equity', () => {
@@ -168,6 +270,20 @@ test('incomplete production envelope fails closed instead of reporting zero expo
   assert.equal(result.ok, false);
   assert.equal(result.status, 'error');
   assert.equal(result.error, 'invalid_aggregate_portfolio_schema');
+  assert.deepEqual(result.breaches, [{ code: 'portfolio_unavailable', severity: 'critical' }]);
+});
+
+test('invalid configured portfolio scope fails closed', () => {
+  const result = buildRiskAssessment(
+    productionSnapshot(),
+    {},
+    DEFAULT_THRESHOLDS,
+    Date.parse('2026-07-10T00:00:00Z'),
+    'paper',
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error, 'invalid_portfolio_monitor_scope');
   assert.deepEqual(result.breaches, [{ code: 'portfolio_unavailable', severity: 'critical' }]);
 });
 

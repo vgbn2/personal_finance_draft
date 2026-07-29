@@ -183,7 +183,18 @@ docker compose --env-file .env.central -f infra/docker/docker-compose.yml --prof
 ```
 
 `portfolio-monitor` polls the aggregated portfolio snapshot from the local gateway and writes a
-status file for unattended risk checks. `host-health` probes canonical-data freshness, disk capacity,
+status file for unattended risk checks. Its central-host default is `PORTFOLIO_MONITOR_SCOPE=both`,
+which assesses the combined real-funds and Alpaca broker-paper buckets so paper-account visibility
+does not hide Gate.io or Polymarket exposure. Set the scope to `live` or `live_paper` only when that
+narrower risk boundary is intentional. `PORTFOLIO_MONITOR_ALPACA_SCOPE=paper` prevents the central
+monitor from attempting an Alpaca live-account connection with paper credentials. The monitor
+projection receives only the Alpaca account keys/base URL needed by that read path; cloud-compute,
+`LIVE_TRADING=false`, and execution authorization false remain fixed, and no trade PIN or private
+wallet credential is projected. Alpaca account keys may still carry provider-side trading authority,
+so operators should use paper-account or provider-restricted credentials rather than treating the
+container boundary as broker-side permission scoping.
+
+`host-health` probes canonical-data freshness, disk capacity,
 and other state visible inside its own container. It does not infer another container's health from
 host PID files. `host-backup` creates timestamped, hash-backed snapshots of repo-local state, excludes
 disposable provider caches, and prunes snapshots after 30 days or beyond the newest 14 by default.
