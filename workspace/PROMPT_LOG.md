@@ -3105,3 +3105,21 @@ Committed the atomic reviewed batch. The initial committed-archive run exposed a
 gitlink-directory fingerprint repair; the amended source commit is `8275a9acfc60dad36a15a24f5e8cde512307b6f8`.
 Committed-archive evidence then passed all declared gates. Deployment did not start because no target/profile
 was named and authenticated CI is not yet proven.
+
+## User Follow-up - 2026-07-29 private central host deployment
+
+Selected the private `central-host` profile on `vgbn-server`; the current machine identity resolved to
+`vgbn-servers` at `192.168.4.135`.
+
+## Work - 2026-07-29 private central host deployment
+
+Pushed the reviewed fast-forward to `origin/main`, preserved the server's distinct dirty pre-deploy worktree
+as `stash@{0}`, and used complete Git bundles because the host lacks a GitHub deploy key. Generated a distinct
+host-local client token and owner-only per-service environment projections. The fail-closed updater exposed
+and stopped on two image defects; focused fixes landed in `15ef2840` and `89771802`.
+
+The canonical updater completed at `897718024b0d93fe44ee5920ef9157756499ca75`. Exact deployed marker and HEAD
+match, the checkout is clean, `web` is healthy on `127.0.0.1:8787`, `backfill` is running with zero restarts,
+both containers run as `node`, and cloud-compute/non-live/non-execution overrides are present. No bot, paper,
+research, monitoring, public bind, order, or live execution was started. Automatic pulls and the systemd timer
+remain unconfigured until the host receives read-only GitHub access.

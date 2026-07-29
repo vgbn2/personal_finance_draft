@@ -2124,3 +2124,19 @@ windows remain open.
   secrets 905/0, API/contracts/structure, and aggregate Node gates.
 - This is committed-source proof, not authenticated CI, deployment, host health, recovery, soak, paper, or live
   proof. Deployment remains paused until a target/profile is named and its separate gates are authorized.
+
+## Private central host deployment - 2026-07-29
+
+- `vgbn-servers` (`192.168.4.135`) now runs the private `central-host` profile from exact source
+  `897718024b0d93fe44ee5920ef9157756499ca75`.
+- Host HEAD equals the updater success marker and the checkout is clean. `web` is healthy on loopback and the
+  sole `backfill` writer is running; both containers have zero restarts and run as non-root user `node`.
+- Runtime inspection confirms `SOVEREIGN_RUNTIME_MODE=cloud-compute`, `LIVE_TRADING=false`, and
+  `SOVEREIGN_EXECUTION_AUTHORIZED=false`. No bot, paper, monitoring, research, public, order, or live profile
+  is running.
+- The host's older dirty source was preserved in `stash@{0}` before fast-forwarding. Manual complete Git
+  bundles were required because the host lacks GitHub deploy-key authentication.
+- Two target-build defects were repaired and published: `15ef2840` removes nonexistent/ignored image copy
+  inputs; `89771802` includes the tracked CLI backfill compatibility module.
+- This is initial deployed-host health and one-writer startup proof. Authenticated CI, deploy-key/timer
+  automation, freshness/DCS, restart/rollback/recovery, and soak remain separate open gates.

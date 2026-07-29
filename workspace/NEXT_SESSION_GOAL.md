@@ -821,3 +821,20 @@ Next:
 
 No generic Compose start, public bind, provider polling, writer, bot, paper cycle, order, or live action is
 authorized by the word "deploy" without a named target/profile.
+
+## 2026-07-29 private central host deployed
+
+Do not repeat first deployment or the Docker runtime fixes. `vgbn-servers` at `192.168.4.135` is running the
+private `central-host` web plus sole-writer stack from `89771802`; live execution remains forced off.
+
+Next operational actions, in order:
+
+1. install a read-only GitHub deploy key for the host and prove non-interactive `git fetch origin main`;
+2. observe matching authenticated CI before release claims;
+3. qualify post-start data freshness/DCS without adding a second writer;
+4. prove controlled restart, persisted storage, rollback/recovery, and soak;
+5. only then decide whether to install the five-minute updater timer.
+
+The pre-deploy server worktree remains recoverable as `stash@{0}`. Do not drop or apply it without a separate
+review. Keep bot, paper, monitoring, research, public exposure, orders, and live execution stopped unless
+separately authorized.

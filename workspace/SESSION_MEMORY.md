@@ -1885,3 +1885,20 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "blocked": "do not deploy 0383d47b; M1-M8, host, provider, paper, release, public, and live gates remain closed"
 }
 ```
+
+## Session Memory - 2026-07-29 private central host deployment
+
+```json
+{
+  "target": "vgbn-servers at 192.168.4.135",
+  "profile": "central-host",
+  "deployed_source": "897718024b0d93fe44ee5920ef9157756499ca75",
+  "source_transport": "pushed origin/main; manual complete Git bundle because host GitHub public-key authentication is absent",
+  "preserved_remote_work": "stash@{0}: pre-deploy server snapshot 2026-07-29 e78e1788",
+  "host_config": "owner-only .env.central, distinct API/client tokens, seven owner-only service projections, loopback web bind",
+  "deployment_repairs": "15ef2840 removes absent native/workspace image copies; 89771802 includes the tracked backfill compatibility module",
+  "host_proof": "HEAD equals deployed marker; clean checkout; web healthy; backfill running; zero restarts; node user; cloud-compute and live/execution false",
+  "not_started": "bot, paper, monitoring, research, public exposure, orders, live execution",
+  "remaining": "host deploy key, authenticated CI observation, optional timer, DCS/freshness, restart/rollback/recovery, and soak"
+}
+```
