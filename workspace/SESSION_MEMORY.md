@@ -30,6 +30,25 @@
 }
 ```
 
+## Session Memory - 2026-07-30 differentiated Alpaca credentials
+
+```json
+{
+  "source_commit": "65df1d1d9e3bfd6a30fcebab0fad5eda420523ac",
+  "source_tree": "0cd1ab64cb2e927e97d1a985dabe504d713835b2",
+  "contract": "ALPACA_PAPER_* and ALPACA_LIVE_* are first-class; generic names are scope-matched compatibility only",
+  "committed_archive": "pass; 22408daa-dd36-492b-aec8-73c2224e97e6; 1274 files",
+  "monitor_image": "personal_finance:65df1d1d9e3bfd6a30fcebab0fad5eda420523ac; sha256:3667f6ce732e26aaad9492d70a9b0ea16ddd8d62813e59564dd1c99609bd3e2b",
+  "server_projection": "Paper keys and Paper base only; no Live or legacy Alpaca names; owner-only",
+  "runtime": "portfolio-monitor running without restart; cloud-compute; live false; execution false",
+  "observed_status": "cycles 1166 through 1171 published; Gate.io connected; Alpaca Paper authentication_failed; BTC above unchanged 25000 limit",
+  "evidence_boundary": "environment naming, scope, endpoint, and projection work; provider credential acceptance does not",
+  "audit_skill": "blast-through API Authentication Gate separates projection from provider acceptance and requires structured redacted evidence",
+  "mixed_revision": "monitor 65df1d1d; other four services and global marker 9fef3ef7",
+  "cleanup": "local credential transfer file, local and remote bundles, and remote old projection backup securely removed"
+}
+```
+
 ## 2026-07-29 runtime-integrity implementation boundary
 
 ```json

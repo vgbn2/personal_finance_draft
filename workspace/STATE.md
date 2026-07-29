@@ -2250,3 +2250,19 @@ windows remain open.
 - This is a mixed-revision, service-scoped deployment by design: the monitor uses exact `b5f35e8b`; web,
   backfill, host-health, and host-backup remain on exact `9fef3ef7`. The global deployed-head marker and
   deployment manifest remain at the prior coherent five-service revision.
+
+## Differentiated Alpaca credential contract and monitor cutover - 2026-07-30
+
+- Alpaca credentials now have first-class `ALPACA_PAPER_*` and `ALPACA_LIVE_*` names. Legacy generic names
+  remain a scope-matched compatibility fallback; examples, manifest policy, runtime resolution, deployment
+  guidance, and tests agree.
+- The central-host monitor receives only the Paper credential set. Live Alpaca credentials are execution-class
+  and excluded from central-host and monitor projections; live and execution authorization remain false.
+- Source commit `65df1d1d9e3bfd6a30fcebab0fad5eda420523ac` is published and its exact committed archive passed.
+  `vgbn-servers` runs only `portfolio-monitor` on that exact image; the other four services and coherent global
+  deployment marker remain on `9fef3ef7`.
+- Repeated post-cutover status publications preserve the BTC 25,000 notional breach and report
+  `Alpaca (Paper)` as `authentication_failed`. Correct scoped names, Paper endpoint, projection, and non-live
+  runtime are proved; provider credential acceptance remains unproved and currently rejected.
+- The canonical `blast-through` skill now includes an API Authentication Gate that separates configuration
+  proof from provider acceptance and requires redacted, structured evidence for any provider result.

@@ -3301,3 +3301,21 @@ container IDs remained unchanged. The monitor now reports combined scope and `Al
 restarts while preserving the real BTC breach and non-live safety flags. Matching credential fingerprints and
 the paper endpoint prove the remaining Alpaca authentication failure is outside the repaired projection/scope
 path; no value, order, public bind, threshold change, paper bot, research, or live execution was introduced.
+
+## User Prompt - 2026-07-30 differentiate Alpaca credentials and end session
+
+Requested restoring explicit environment entries, renaming Alpaca variables so Paper and Live credentials are
+unmistakable, confirming the environment works, synchronizing the fix to the owned server, committing all
+remaining work, adding API-authentication checking to `blast-through`, and ending the session.
+
+## Work - 2026-07-30 differentiated credential implementation and closeout
+
+Implemented scoped `ALPACA_PAPER_*` and `ALPACA_LIVE_*` resolution with scope-safe legacy compatibility,
+updated examples, manifest policy, callers, documentation, and adversarial tests, and normalized the local
+owner-only central environment without exposing values. All source gates and the full host-capable test suite
+passed; exact commit `65df1d1d` was published and verified. Synchronized it by verified Git bundle, installed
+only Paper credentials in the server central environment and monitor projection, built the exact labeled
+image, and recreated only `portfolio-monitor`. Repeated structured cycles show stable publication and no
+restart, but Alpaca Paper still returns `authentication_failed`; this is now a credential-validity gate.
+Added and validated a canonical `blast-through` API Authentication Gate, synchronized its discovery mirror,
+and securely removed temporary credential and bundle artifacts. Session ended at this boundary.

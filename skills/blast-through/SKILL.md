@@ -1,6 +1,6 @@
 ---
 name: blast-through
-description: Run evidence-first repository audits, code reviews, section grading, connectivity sweeps, data-integrity reviews, maintainability/readability assessments, and full system assessments in personal_finance_draft. Use for broad or focused review, gap finding, dependency/path/string wiring, stub or orphan detection, AI-authored consistency drift, data trust, architecture completeness, or repository cleanliness grading; do not use it to implement fixes.
+description: Run evidence-first repository audits, code reviews, section grading, connectivity sweeps, API authentication checks, data-integrity reviews, maintainability/readability assessments, and full system assessments in personal_finance_draft. Use for broad or focused review, gap finding, dependency/path/string wiring, credential projection and provider-auth diagnosis, stub or orphan detection, AI-authored consistency drift, data trust, architecture completeness, or repository cleanliness grading; do not use it to implement fixes.
 ---
 
 # Blast Through
@@ -29,6 +29,10 @@ State one audit mode and either Hard Reading Mode (first/stale pass) or Fast Rea
 5. Classify evidence as proven, partial, unproven, or failed.
 6. Record confirmed debt with impact, owner, evidence, and the gate that clears it.
 7. Stop after the audit. Produce a structured implementation handoff only when fixes are desired.
+
+When API authentication is in scope, use the API Authentication Gate in
+[audit-modes.md](references/audit-modes.md). Treat credential presence, matching fingerprints, environment
+projection, endpoint selection, and provider acceptance as separate evidence layers.
 
 ## Existing-Codebase Coherence Gate
 

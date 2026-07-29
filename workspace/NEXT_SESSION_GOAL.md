@@ -964,3 +964,18 @@ Next:
 The current server is intentionally mixed revision: only `portfolio-monitor` uses `b5f35e8b`; the other four
 active services and the global deployment marker remain at `9fef3ef7`. Keep paper bot, research, orders,
 public exposure, and live execution stopped.
+
+## 2026-07-30 differentiated credential deployment complete
+
+Do not rename or reimplement the Alpaca environment contract. Commit `65df1d1d` is published and the server
+monitor uses scoped Paper variables and the Paper endpoint with live/execution disabled. `blast-through` now
+requires separate configuration and provider-acceptance evidence for API authentication.
+
+First next action: resolve provider-side Alpaca Paper credential acceptance in the Alpaca dashboard/account,
+then run a `blast-through` authentication audit against structured monitor status without printing values. A
+successful result must replace `authentication_failed` with an `Alpaca (Paper)` connection while preserving
+the BTC 25,000 threshold.
+
+The server is intentionally mixed revision: `portfolio-monitor` is exact `65df1d1d`; web, backfill,
+host-health, host-backup, and the coherent global marker remain `9fef3ef7`. Do not claim a five-service rollout
+or enable paper bot, research, orders, public exposure, or live execution.

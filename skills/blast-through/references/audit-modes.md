@@ -43,6 +43,27 @@
 - Report findings first in severity order with file:line, impact, and missing verification.
 - Do not lead with a broad summary or section grades.
 
+## API Authentication Gate
+
+Apply this gate whenever an audit claims an API credential works or diagnoses an authentication failure:
+
+1. Identify the canonical credential names, compatibility aliases, secret class, owner, runtime consumer, and
+   intended account scope such as paper versus live. Never print secret values.
+2. Prove configuration layers separately: non-empty presence, value fingerprint equality where needed,
+   endpoint class, service projection, and the exact runtime path consuming the variables.
+3. Treat source checks, mocks, fingerprints, and successful projection as configuration proof only. They do
+   not prove provider acceptance.
+4. Prefer an existing structured runtime status artifact for provider evidence. Record provider, account
+   scope, endpoint class, timestamp, result, and normalized error code without copying headers, tokens, or raw
+   response bodies.
+5. A fresh provider probe is external polling. Run it only with explicit user authorization and the
+   `AGENTS.md` restricted-delegation boundary. Use the least-privileged read-only identity endpoint, forbid
+   orders and mutations, and accept only structured redacted JSON back into the main audit.
+6. Classify the result as `accepted`, `rejected`, `unavailable`, `rate_limited`, or `inconclusive`. Do not call
+   a credential invalid when transport, rate-limit, endpoint-scope, clock, account-state, or permission
+   evidence remains unresolved.
+7. Report the strongest proved layer and the first unproved layer. Keep Paper and Live results distinct.
+
 ## Full
 
 - Check workspace archive chronology and clean committed/archive truth.
