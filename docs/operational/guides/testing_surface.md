@@ -19,7 +19,9 @@ That means:
 `npm test`
 - Runs the broad Node suite through `tests/run_node_tests.js`
 - Covers `tests/scripts/**/*.test.js` and `tests/web/**/*.test.js`
-- Defaults to two concurrent test files; an explicit `--test-concurrency=N` overrides that ceiling
+- Defaults to two concurrent test-file processes; an explicit `--test-concurrency=N` overrides that ceiling
+- Runs each file in its own process and removes Node's redundant inner file-isolation layer so assertion and
+  spawn errors reach the sanitized RAG failure record instead of collapsing to a generic `test failed`
 - Does not cover `backend/api/tests/`; run `npm run test:api` or `npm run verify:strict` for those
 
 `npm run test:api`
@@ -49,14 +51,19 @@ That means:
 `npm run verify:source-snapshot`
 - Copies tracked and non-ignored working-tree files into a disposable source root
 - Records dirty state, exact source fingerprints, five lockfile digests, fixed verification steps, and excluded claims
+- Atomically checkpoints the active step before execution. An interrupted process therefore leaves durable
+  inconclusive evidence instead of a stale PASS
 - Proves only the current worktree snapshot; it is not exact-commit, CI, host, recovery, soak, or live evidence
 
 `npm run verify:committed-archive`
 - Builds its disposable source solely from `git archive HEAD`, so unstaged and untracked files cannot enter
 - Installs all five lockfile roots, builds MCP/dashboard/native code, and runs the environment, secret, API,
   contract, structure, and aggregate Node gates
-- Writes a schema-v1 atomic evidence manifest. Use
-  `-- --evidence-out /absolute/path/evidence.json` when a retained path is required
+- Writes a schema-v2 atomic evidence manifest. Failed steps retain a bounded sanitized summary plus stdout/stderr
+  SHA-256 fingerprints; raw command output is not copied into the manifest
+- Local runs default to the ignored durable path
+  `storage/logs/source_evidence/<mode>-latest.json`. Use
+  `-- --evidence-out /absolute/path/evidence.json` to select another retained destination
 - Defaults to at most two concurrent build/test/install jobs. Use `-- --jobs N` with `N` from 1 through 8 only
   when the operator explicitly accepts the additional CPU and I/O load; the selected limit is recorded
 

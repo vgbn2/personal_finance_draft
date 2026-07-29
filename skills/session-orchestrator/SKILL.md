@@ -24,6 +24,7 @@ Select the narrowest matching functional skill:
 - rough or preference-based proposal -> `refine-suggestion`
 - use or test current features -> `feature-exerciser`
 - audit, review, grading, gaps, or connectivity -> `blast-through`
+- behavior-preserving readability or maintainability refactor -> `refactor-readability`
 - one focused implementation -> `codex`
 - broad approved backlog or multi-section fixes -> `mass-implement`
 - Polymarket historical archive or replay -> `polymarket-history-backfill`
@@ -43,3 +44,12 @@ Use subagents only when the user or an applicable repository instruction explici
 7. Report commands run, pass/fail/blocked evidence, untouched safety boundaries, and the first next action.
 
 Do not describe source proof as fresh-install, host, deployment, recovery, or soak qualification.
+
+## Truthfulness And Test Integrity
+
+- Context is bounded. Build a task-local architecture map and disclose material surfaces not read or verified.
+- Never claim a file was read, command ran, test passed, host was checked, or behavior was proved without direct
+  evidence. Keep source, test, clean-install, CI, host, deployment, recovery, soak, paper, and live proof distinct.
+- Do not weaken, skip, delete, mock away, suppress, or rewrite tests merely to make a result pass.
+- Change a stale test only with canonical contract or approved behavior evidence; report the before/after
+  expectation and keep production, tests, and docs aligned.

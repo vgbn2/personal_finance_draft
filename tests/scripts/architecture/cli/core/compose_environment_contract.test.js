@@ -24,7 +24,7 @@ function composeService(source, name) {
   return match[0];
 }
 
-test('schema-3 service rows match all seven current Compose identities without changing injection', () => {
+test('schema-3 service rows match all seven isolated Compose environment files', () => {
   const manifest = loadEnvironmentManifest();
   const compose = fs.readFileSync(COMPOSE_PATH, 'utf8');
   const dockerfile = fs.readFileSync(DOCKERFILE_PATH, 'utf8');
@@ -39,12 +39,13 @@ test('schema-3 service rows match all seven current Compose identities without c
   };
 
   assert.deepEqual(Object.keys(manifest.compose_services).sort(), [...EXPECTED_COMPOSE_SERVICES]);
-  assert.equal((compose.match(/env_file:\s*\*central-env-files/g) || []).length, 7);
-  assert.match(compose, /x-central-env-files:\s*&central-env-files/);
+  assert.equal((compose.match(/\.env\.services\/[a-z-]+\.env/g) || []).length, 7);
+  assert.doesNotMatch(compose, /central-env-files|SOVEREIGN_CENTRAL_ENV_FILE/);
 
   for (const serviceName of EXPECTED_COMPOSE_SERVICES) {
     const row = manifest.compose_services[serviceName];
     const source = composeService(compose, serviceName);
+    assert.ok(source.includes(`.env.services/${serviceName}.env`), serviceName);
     if (row.compose_profile === null) {
       assert.doesNotMatch(source, /^\s+profiles:/m, serviceName);
       assert.match(dockerfile, new RegExp(commandFragments[serviceName].replace(/\//g, '\\/')));
