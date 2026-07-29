@@ -2233,3 +2233,20 @@ windows remain open.
   suite, environment classification, gateway TypeScript, hygiene, structure 16/16, and diff integrity pass.
 - This is working-tree source/test proof. Commit, committed-archive evidence, host synchronization, monitor-only
   recreation, two-cycle runtime observation, and exact deployed-image proof remain pending.
+
+## Alpaca monitor exact service deployment - 2026-07-30
+
+- Source and continuity are committed as `b5f35e8b8c7a7e5a8ff68f4c68aabe05287e32a9`; `origin/main` is
+  published and the exact committed-archive verifier passed with evidence id
+  `f0fdadf7-1a5b-43e4-8c37-2ed09b26ab9f` and tree `a5ceced30ca535151d6a3fc0b1ba8839d9a6f03e`.
+- `vgbn-servers` received the exact revision through a verified complete Git bundle. A provenance-labeled exact
+  image was built and only `portfolio-monitor` was recreated; the other four active container IDs did not
+  change.
+- The monitor projection is owner-only and contains the matching Alpaca key pair/paper base but no trade PIN
+  or wallet. Runtime remains cloud-compute with live and execution authorization false.
+- Runtime status now truthfully selects combined risk scope and names `Alpaca (Paper)`. The unchanged BTC
+  25,000 notional limit remains breached. Alpaca Paper still rejects the matching configured credentials, so
+  provider credential validity remains open.
+- This is a mixed-revision, service-scoped deployment by design: the monitor uses exact `b5f35e8b`; web,
+  backfill, host-health, and host-backup remain on exact `9fef3ef7`. The global deployed-head marker and
+  deployment manifest remain at the prior coherent five-service revision.

@@ -944,3 +944,23 @@ The authorized next actions are:
    unchanged, restart count is stable, and live/execution flags remain false.
 
 Keep paper bot, research, orders, public exposure, threshold changes, and live execution out of scope.
+
+## 2026-07-30 Alpaca monitor service deployment complete
+
+Do not reimplement or blindly redeploy the projection/scope repair. Commit `b5f35e8b` is published, its exact
+committed archive passed, and the monitor-only server cutover is complete.
+
+Next:
+
+1. rotate or reissue a valid Alpaca Paper credential pair with the minimum provider-side account-read
+   permissions available, then recheck the structured monitor status without printing values;
+2. preserve the unchanged BTC 25,000 limit and resolve the real exposure breach through an explicit risk
+   decision;
+3. install a read-only GitHub deploy key and observe authenticated CI;
+4. decide whether to roll the other four services to `b5f35e8b` in an authorized maintenance window, then
+   regenerate a coherent global deployment manifest;
+5. complete restart/rollback/recovery and longer soak qualification.
+
+The current server is intentionally mixed revision: only `portfolio-monitor` uses `b5f35e8b`; the other four
+active services and the global deployment marker remain at `9fef3ef7`. Keep paper bot, research, orders,
+public exposure, and live execution stopped.

@@ -2020,3 +2020,21 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "next": "commit all reviewed changes, run committed archive, sync exact revision to vgbn-servers, regenerate service projections, recreate only portfolio-monitor, observe two cycles"
 }
 ```
+
+## Session Memory - 2026-07-30 Alpaca monitor service deployment
+
+```json
+{
+  "source_commit": "b5f35e8b8c7a7e5a8ff68f4c68aabe05287e32a9",
+  "source_tree": "a5ceced30ca535151d6a3fc0b1ba8839d9a6f03e",
+  "committed_archive": "pass; f0fdadf7-1a5b-43e4-8c37-2ed09b26ab9f; 1273 files",
+  "transport": "origin/main published; complete Git bundle verified locally and on vgbn-servers",
+  "monitor_image": "personal_finance:b5f35e8b8c7a7e5a8ff68f4c68aabe05287e32a9; sha256:3d306fb405b54e2365617a7fbe536b7044361552fc2b7e03372fb36c01ce78fa",
+  "cutover": "only portfolio-monitor recreated; web, backfill, host-health, and host-backup IDs unchanged on 9fef3ef7",
+  "runtime": "combined risk scope; Alpaca Paper acquisition; zero restarts; cloud-compute; live false; execution false; no PIN or wallet",
+  "risk": "BTC max-position breach remains against unchanged 25000 limit",
+  "alpaca": "Paper label is correct; matching central/backfill/monitor credential fingerprints and paper base; provider still reports authentication_failed",
+  "evidence_boundary": "service-scoped mixed revision; global deployed marker and five-service manifest remain coherent at 9fef3ef7",
+  "remaining": "rotate or reissue valid Alpaca Paper account-read credentials; deploy-key and authenticated CI; recovery and longer soak"
+}
+```

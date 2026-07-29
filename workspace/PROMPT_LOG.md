@@ -3290,3 +3290,14 @@ hygiene, structure, diff, and host-capable aggregate Node gates pass. No provide
 
 After the fixes, requested committing all remaining repository changes and synchronizing them to the server
 machine, then continuing verification.
+
+## Work - 2026-07-30 commit, archive, and monitor-only deployment
+
+Committed all reviewed remaining changes as `b5f35e8b`, published `origin/main`, and passed exact
+committed-archive evidence `f0fdadf7-1a5b-43e4-8c37-2ed09b26ab9f`. Transferred an on-host-verified complete
+Git bundle to `vgbn-servers`, fast-forwarded its clean checkout, built the exact labeled image, atomically
+replaced only the owner-only monitor projection, and recreated only `portfolio-monitor`. The other four active
+container IDs remained unchanged. The monitor now reports combined scope and `Alpaca (Paper)` with zero
+restarts while preserving the real BTC breach and non-live safety flags. Matching credential fingerprints and
+the paper endpoint prove the remaining Alpaca authentication failure is outside the repaired projection/scope
+path; no value, order, public bind, threshold change, paper bot, research, or live execution was introduced.
