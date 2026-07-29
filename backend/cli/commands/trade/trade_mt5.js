@@ -183,15 +183,16 @@ async function commandAddPlatform(args) {
       { label: 'Live trading (real money)', value: 'live' },
     ]);
     const envPath = path.join(utils.REPO_ROOT, '.env');
+    const prefix = mode === 'paper' ? 'ALPACA_PAPER' : 'ALPACA_LIVE';
     const baseUrl = mode === 'paper'
       ? 'https://paper-api.alpaca.markets'
       : 'https://api.alpaca.markets';
     const block = [
       '',
-      '# Alpaca broker',
-      `ALPACA_API_KEY=${key}`,
-      `ALPACA_SECRET_KEY=${secret}`,
-      `ALPACA_BASE_URL=${baseUrl}`,
+      `# Alpaca ${mode} broker`,
+      `${prefix}_API_KEY=${key}`,
+      `${prefix}_SECRET_KEY=${secret}`,
+      `${prefix}_BASE_URL=${baseUrl}`,
       '',
     ].join('\n');
     fs.appendFileSync(envPath, block, 'utf8');

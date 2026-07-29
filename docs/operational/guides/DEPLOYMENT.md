@@ -157,6 +157,13 @@ PINs and Polymarket private/L2 credentials in `.env.central`; keep live broker c
 reviewed local/private runner. The paper bot is also opt-in under the `paper` profile and is never started by
 the central updater.
 
+Alpaca credentials use explicit account scopes. Central hosts accept only
+`ALPACA_PAPER_API_KEY`, `ALPACA_PAPER_SECRET_KEY`, and
+`ALPACA_PAPER_BASE_URL=https://paper-api.alpaca.markets`. Live runners use the corresponding
+`ALPACA_LIVE_*` names. The legacy generic `ALPACA_API_KEY`, `ALPACA_SECRET_KEY`, and
+`ALPACA_BASE_URL` names remain a compatibility fallback only when their URL agrees with the requested
+Paper/Live scope.
+
 Start with 2 shared vCPU, 8 GB RAM, and enough SSD space for at least twice the current
 `storage/` footprint. The backfill container is configured with a 6 GB V8 heap ceiling,
 so a 4 GB host is not a reliable choice for the full crypto/equity universe. A reduced
@@ -188,7 +195,8 @@ which assesses the combined real-funds and Alpaca broker-paper buckets so paper-
 does not hide Gate.io or Polymarket exposure. Set the scope to `live` or `live_paper` only when that
 narrower risk boundary is intentional. `PORTFOLIO_MONITOR_ALPACA_SCOPE=paper` prevents the central
 monitor from attempting an Alpaca live-account connection with paper credentials. The monitor
-projection receives only the Alpaca account keys/base URL needed by that read path; cloud-compute,
+projection receives only the `ALPACA_PAPER_*` account keys/base URL needed by that read path; live
+credentials are execution-class inputs and cannot enter the central-host projection. Cloud-compute,
 `LIVE_TRADING=false`, and execution authorization false remain fixed, and no trade PIN or private
 wallet credential is projected. Alpaca account keys may still carry provider-side trading authority,
 so operators should use paper-account or provider-restricted credentials rather than treating the

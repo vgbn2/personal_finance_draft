@@ -83,13 +83,18 @@ test('service rows isolate provider authority except the bounded Alpaca monitor 
   }
   assert.deepEqual(
     services['portfolio-monitor'].optional_keys,
-    ['ALPACA_API_KEY', 'ALPACA_SECRET_KEY'],
+    [
+      'ALPACA_API_KEY',
+      'ALPACA_PAPER_API_KEY',
+      'ALPACA_PAPER_SECRET_KEY',
+      'ALPACA_SECRET_KEY',
+    ],
   );
-  assert.ok(services['portfolio-monitor'].defaulted_keys.includes('ALPACA_BASE_URL'));
+  assert.ok(services['portfolio-monitor'].defaulted_keys.includes('ALPACA_PAPER_BASE_URL'));
   assert.ok(services['portfolio-monitor'].defaulted_keys.includes('PORTFOLIO_MONITOR_SCOPE'));
   assert.ok(services['portfolio-monitor'].defaulted_keys.includes('PORTFOLIO_MONITOR_ALPACA_SCOPE'));
   assert.ok(services['portfolio-monitor'].forbidden_environment_classes.includes('execution'));
   assert.ok(services.backfill.optional_keys.includes('FRED_API_KEY'));
-  assert.ok(services.backfill.optional_keys.includes('ALPACA_API_KEY'));
+  assert.ok(services.backfill.optional_keys.includes('ALPACA_PAPER_API_KEY'));
   assert.deepEqual(services['polymarket-research'].required_keys, ['POLYMARKET_RESEARCH_SCOPE_FILE']);
 });

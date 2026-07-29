@@ -52,8 +52,8 @@
       "compose_profile": "writer",
       "command_identity": "node backend/cli/sovereign_cli.js backfill-daemon",
       "required_keys": [],
-      "optional_keys": ["ALPACA_API_KEY", "ALPACA_SECRET_KEY", "FINNHUB_API_KEY", "FRED_API_KEY", "GOOGLE_API_KEY", "GOOGLE_CSE_ID", "KALSHI_API_KEY", "TWELVE_DATA_API_KEY"],
-      "defaulted_keys": ["ALPACA_BASE_URL", "ALPACA_DATA_FEED", "BACKFILL_INTERVAL_SECS", "SOVEREIGN_TS_STORAGE", "SOVEREIGN_TS_WRITE_LOCK_STALE_MS", "SOVEREIGN_TS_WRITE_LOCK_TIMEOUT_MS"],
+      "optional_keys": ["ALPACA_API_KEY", "ALPACA_PAPER_API_KEY", "ALPACA_PAPER_SECRET_KEY", "ALPACA_SECRET_KEY", "FINNHUB_API_KEY", "FRED_API_KEY", "GOOGLE_API_KEY", "GOOGLE_CSE_ID", "KALSHI_API_KEY", "TWELVE_DATA_API_KEY"],
+      "defaulted_keys": ["ALPACA_BASE_URL", "ALPACA_DATA_FEED", "ALPACA_PAPER_BASE_URL", "BACKFILL_INTERVAL_SECS", "SOVEREIGN_TS_STORAGE", "SOVEREIGN_TS_WRITE_LOCK_STALE_MS", "SOVEREIGN_TS_WRITE_LOCK_TIMEOUT_MS"],
       "fixed_overrides": {"LIVE_TRADING": "false", "NODE_OPTIONS": "--max-old-space-size=6144", "SOVEREIGN_DEPLOYMENT_PROFILE": "central-host", "SOVEREIGN_EXECUTION_AUTHORIZED": "false", "SOVEREIGN_RUNTIME_MODE": "cloud-compute"},
       "mounts": ["../../storage:/app/storage"],
       "forbidden_environment_classes": ["central", "execution"]
@@ -64,8 +64,8 @@
       "compose_profile": "monitoring",
       "command_identity": "node backend/cli/sovereign_cli.js portfolio-monitor --json",
       "required_keys": [],
-      "optional_keys": ["ALPACA_API_KEY", "ALPACA_SECRET_KEY"],
-      "defaulted_keys": ["ALPACA_BASE_URL", "PORTFOLIO_MONITOR_ALPACA_SCOPE", "PORTFOLIO_MONITOR_INTERVAL_SECS", "PORTFOLIO_MONITOR_SCOPE", "PORTFOLIO_MONITOR_TIMEOUT_MS"],
+      "optional_keys": ["ALPACA_API_KEY", "ALPACA_PAPER_API_KEY", "ALPACA_PAPER_SECRET_KEY", "ALPACA_SECRET_KEY"],
+      "defaulted_keys": ["ALPACA_BASE_URL", "ALPACA_PAPER_BASE_URL", "PORTFOLIO_MONITOR_ALPACA_SCOPE", "PORTFOLIO_MONITOR_INTERVAL_SECS", "PORTFOLIO_MONITOR_SCOPE", "PORTFOLIO_MONITOR_TIMEOUT_MS"],
       "fixed_overrides": {"LIVE_TRADING": "false", "SOVEREIGN_DEPLOYMENT_PROFILE": "central-host", "SOVEREIGN_EXECUTION_AUTHORIZED": "false", "SOVEREIGN_RUNTIME_MODE": "cloud-compute"},
       "mounts": ["../../storage:/app/storage"],
       "forbidden_environment_classes": ["central", "execution"]
@@ -118,6 +118,20 @@
       "members": [
         {"name": "ALPACA_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
         {"name": "ALPACA_SECRET_KEY", "aliases": ["ALPACA_API_SECRET"], "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
+        {"name": "ALPACA_PAPER_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
+        {"name": "ALPACA_PAPER_SECRET_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
+        {
+          "name": "ALPACA_LIVE_API_KEY",
+          "environment_class": "execution",
+          "profiles": ["developer", "all-in-one"],
+          "allowed_surfaces": ["gateway_account", "execution"]
+        },
+        {
+          "name": "ALPACA_LIVE_SECRET_KEY",
+          "environment_class": "execution",
+          "profiles": ["developer", "all-in-one"],
+          "allowed_surfaces": ["gateway_account", "execution"]
+        },
         {"name": "FRED_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill"]},
         {"name": "FINNHUB_API_KEY", "aliases": ["FINHUB_API_KEY", "FINHUB_SECRET_KEY", "FINNHUB_TOKEN"], "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill"]},
         {"name": "TWELVE_DATA_API_KEY", "aliases": ["TWELVE_API_KEY", "TWELVEDATA_API_KEY"], "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill"]},
@@ -225,6 +239,14 @@
         {"name": "ALPACA_ADJUSTMENT", "default": "raw"},
         {"name": "ALPACA_DATA_FEED", "default": "iex", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
         {"name": "ALPACA_BASE_URL", "default": "https://paper-api.alpaca.markets", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
+        {
+          "name": "ALPACA_LIVE_BASE_URL",
+          "default": "https://api.alpaca.markets",
+          "environment_class": "execution",
+          "profiles": ["developer", "all-in-one"],
+          "allowed_surfaces": ["gateway_account", "execution"]
+        },
+        {"name": "ALPACA_PAPER_BASE_URL", "default": "https://paper-api.alpaca.markets", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
         {"name": "BACKFILL_INTERVAL_SECS", "default": "1800", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
         {
           "name": "CURRENT_PORTFOLIO_DRAWDOWN",
