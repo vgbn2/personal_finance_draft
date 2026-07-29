@@ -53,14 +53,22 @@ function withAlpacaEnv(run) {
     ALPACA_API_KEY: process.env.ALPACA_API_KEY,
     ALPACA_API_SECRET: process.env.ALPACA_API_SECRET,
     ALPACA_SECRET_KEY: process.env.ALPACA_SECRET_KEY,
+    ALPACA_PAPER_API_KEY: process.env.ALPACA_PAPER_API_KEY,
+    ALPACA_PAPER_SECRET_KEY: process.env.ALPACA_PAPER_SECRET_KEY,
+    ALPACA_PAPER_BASE_URL: process.env.ALPACA_PAPER_BASE_URL,
     ALPACA_DATA_FEED: process.env.ALPACA_DATA_FEED,
     ALPACA_ADJUSTMENT: process.env.ALPACA_ADJUSTMENT,
+    SOVEREIGN_SKIP_DOTENV: process.env.SOVEREIGN_SKIP_DOTENV,
   };
   process.env.ALPACA_API_KEY = 'test-key';
   process.env.ALPACA_API_SECRET = 'test-secret';
   delete process.env.ALPACA_SECRET_KEY;
+  delete process.env.ALPACA_PAPER_API_KEY;
+  delete process.env.ALPACA_PAPER_SECRET_KEY;
+  delete process.env.ALPACA_PAPER_BASE_URL;
   delete process.env.ALPACA_DATA_FEED;
   delete process.env.ALPACA_ADJUSTMENT;
+  process.env.SOVEREIGN_SKIP_DOTENV = '1';
   return Promise.resolve()
     .then(run)
     .finally(() => {
@@ -119,12 +127,20 @@ test('fetchAlpacaBaseCandles accepts documented ALPACA_SECRET_KEY alias', async 
     ALPACA_API_KEY: process.env.ALPACA_API_KEY,
     ALPACA_API_SECRET: process.env.ALPACA_API_SECRET,
     ALPACA_SECRET_KEY: process.env.ALPACA_SECRET_KEY,
+    ALPACA_PAPER_API_KEY: process.env.ALPACA_PAPER_API_KEY,
+    ALPACA_PAPER_SECRET_KEY: process.env.ALPACA_PAPER_SECRET_KEY,
+    ALPACA_PAPER_BASE_URL: process.env.ALPACA_PAPER_BASE_URL,
     ALPACA_DATA_FEED: process.env.ALPACA_DATA_FEED,
+    SOVEREIGN_SKIP_DOTENV: process.env.SOVEREIGN_SKIP_DOTENV,
   };
   process.env.ALPACA_API_KEY = 'doc-key';
   process.env.ALPACA_SECRET_KEY = 'doc-secret';
   delete process.env.ALPACA_API_SECRET;
+  delete process.env.ALPACA_PAPER_API_KEY;
+  delete process.env.ALPACA_PAPER_SECRET_KEY;
+  delete process.env.ALPACA_PAPER_BASE_URL;
   delete process.env.ALPACA_DATA_FEED;
+  process.env.SOVEREIGN_SKIP_DOTENV = '1';
 
   try {
     const calls = [];

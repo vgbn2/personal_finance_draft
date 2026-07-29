@@ -51,8 +51,10 @@ cp .env.central.example .env.central
 chmod 600 .env.central
 nano .env.central
 # Required: distinct random SOVEREIGN_API_TOKEN and SOVEREIGN_CLIENT_TOKEN values,
-# plus only the provider keys used for polling.
+# plus only the provider keys used for polling. Alpaca uses ALPACA_PAPER_API_KEY,
+# ALPACA_PAPER_SECRET_KEY, and ALPACA_PAPER_BASE_URL on this host.
 # Forbidden here: SOVEREIGN_TRADE_PIN and Polymarket private/L2 execution credentials.
+# ALPACA_LIVE_* credentials are also forbidden from the central-host projection.
 
 # 3. Preflight, fast-forward, build, and start only web + backfill.
 SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.sh

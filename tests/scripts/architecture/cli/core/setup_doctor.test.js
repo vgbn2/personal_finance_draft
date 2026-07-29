@@ -25,6 +25,12 @@ function stripSecretEnv(source) {
     'ALPACA_API_SECRET',
     'ALPACA_SECRET_KEY',
     'ALPACA_BASE_URL',
+    'ALPACA_LIVE_API_KEY',
+    'ALPACA_LIVE_SECRET_KEY',
+    'ALPACA_LIVE_BASE_URL',
+    'ALPACA_PAPER_API_KEY',
+    'ALPACA_PAPER_SECRET_KEY',
+    'ALPACA_PAPER_BASE_URL',
     'GATEIO_API_KEY',
     'GATEIO_API_SECRET',
     'GATEIO_API_PASSPHRASE',
@@ -95,8 +101,8 @@ test('doctor reports missing broker fields when no local dotenv is loaded', () =
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.ok, false);
   assert.equal(payload.brokers[0].broker, 'alpaca');
-  assert.match(JSON.stringify(payload), /ALPACA_API_KEY/);
-  assert.match(JSON.stringify(payload), /ALPACA_SECRET_KEY/);
+  assert.match(JSON.stringify(payload), /ALPACA_PAPER_API_KEY/);
+  assert.match(JSON.stringify(payload), /ALPACA_PAPER_SECRET_KEY/);
 });
 
 test('setup writes broker secrets to a caller-specified local env file without printing them', () => {
@@ -109,9 +115,9 @@ test('setup writes broker secrets to a caller-specified local env file without p
       envPath,
       '--json',
       '--set',
-      'ALPACA_API_KEY=alpaca_key_123456789',
+      'ALPACA_PAPER_API_KEY=alpaca_key_123456789',
       '--set',
-      'ALPACA_SECRET_KEY=alpaca_secret_987654321',
+      'ALPACA_PAPER_SECRET_KEY=alpaca_secret_987654321',
     ], { SOVEREIGN_SKIP_DOTENV: '1' });
 
     assert.equal(result.status, 0);
@@ -120,8 +126,9 @@ test('setup writes broker secrets to a caller-specified local env file without p
     assert.doesNotMatch(result.stdout, /alpaca_secret_987654321/);
     assert.equal(fs.existsSync(envPath), true);
     const contents = fs.readFileSync(envPath, 'utf8');
-    assert.match(contents, /ALPACA_API_KEY=alpaca_key_123456789/);
-    assert.match(contents, /ALPACA_SECRET_KEY=alpaca_secret_987654321/);
+    assert.match(contents, /ALPACA_PAPER_API_KEY=alpaca_key_123456789/);
+    assert.match(contents, /ALPACA_PAPER_SECRET_KEY=alpaca_secret_987654321/);
+    assert.match(contents, /ALPACA_PAPER_BASE_URL=https:\/\/paper-api\.alpaca\.markets/);
   } finally {
     if (fs.existsSync(envPath)) fs.unlinkSync(envPath);
   }
