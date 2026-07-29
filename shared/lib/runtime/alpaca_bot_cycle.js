@@ -89,10 +89,36 @@ function buildExitOutcome(position, exitReason, currentPrice, sellQty, cycleId, 
   return { historyEntry, remainingPosition };
 }
 
-function fetchAlpacaPositions(live) {
-  const payload = runGatewayCommand(['positions', ...(live ? ['--live'] : []), '--json']);
-  if (!payload.ok) return [];
-  return Array.isArray(payload.positions) ? payload.positions : [];
+function fetchAlpacaPositions(live, options = {}) {
+  const runGateway = options.runGatewayCommand || runGatewayCommand;
+  let payload;
+  try {
+    payload = runGateway(['positions', ...(live ? ['--live'] : []), '--json']);
+  } catch (error) {
+    return { status: 'unavailable', positions: [], reason: error.message };
+  }
+  if (!payload || payload.ok !== true) {
+    return {
+      status: 'unavailable',
+      positions: [],
+      reason: payload?.error || payload?.reason || 'alpaca_positions_unavailable',
+    };
+  }
+  if (!Array.isArray(payload.positions)) {
+    return { status: 'unavailable', positions: [], reason: 'alpaca_positions_invalid_payload' };
+  }
+  if (
+    payload.complete === false
+    || payload.truncated === true
+    || payload.pagination?.complete === false
+  ) {
+    return { status: 'incomplete', positions: payload.positions, reason: 'alpaca_positions_incomplete' };
+  }
+  return {
+    status: payload.positions.length === 0 ? 'confirmed_empty' : 'confirmed',
+    positions: payload.positions,
+    reason: null,
+  };
 }
 
 /**
@@ -101,9 +127,10 @@ function fetchAlpacaPositions(live) {
  * fill price (handles partial fills / pre-existing manual holdings) instead of
  * trusting the requested signal price.
  */
-function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true }) {
+function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true }, options = {}) {
   const state = botState.loadState();
-  const brokerPositions = fetchAlpacaPositions(live);
+  const inventory = fetchAlpacaPositions(live, options);
+  const brokerPositions = inventory.positions;
   const brokerPos = brokerPositions.find((p) => p.symbol === symbol);
   const fillPrice = brokerPos ? Number(brokerPos.averagePrice) : Number(requestedPrice);
   const filledQty = resolveEntryQty(brokerPos, qty);
@@ -124,6 +151,7 @@ function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true 
     stopPrice: fillPrice * (1 - stopLossPct),
     targetPrice: fillPrice * (1 + takeProfitPct),
     maxHoldingDays,
+    brokerReconciliation: inventory.status === 'confirmed' ? 'confirmed' : 'pending',
   };
 
   state.positions.push(position);
@@ -137,20 +165,38 @@ function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true 
  * in strategy.js's runAutomationPass, mirroring the Polymarket cycle's
  * review-then-buy ordering.
  */
-async function runAlpacaExitCheck(args = []) {
+async function runAlpacaExitCheck(args = [], options = {}) {
   const isLive = args.includes('--live');
-  const result = { cycleId: `acycle_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`, sellsExecuted: 0, errors: [] };
+  const stateStore = options.stateStore || botState;
+  const acquire = options.acquireLock || acquireLock;
+  const release = options.releaseLock || releaseLock;
+  const fetchPositions = options.fetchPositions || fetchAlpacaPositions;
+  const result = {
+    cycleId: `acycle_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
+    sellsExecuted: 0,
+    errors: [],
+    blocked: false,
+    inventoryStatus: null,
+  };
 
-  if (!acquireLock(botState.LOCK_PATH)) {
+  if (!acquire(stateStore.LOCK_PATH)) {
     result.errors.push('Alpaca bot cycle already in progress (lock held) -- skipping exit check.');
+    result.blocked = true;
     return result;
   }
 
   try {
-    const state = botState.loadState();
+    const state = stateStore.loadState();
     if (state.positions.length === 0) return result;
 
-    const brokerPositions = fetchAlpacaPositions(isLive);
+    const inventory = fetchPositions(isLive);
+    result.inventoryStatus = inventory.status;
+    if (!['confirmed', 'confirmed_empty'].includes(inventory.status)) {
+      result.blocked = true;
+      result.errors.push(`Alpaca broker inventory ${inventory.status}: ${inventory.reason || 'unknown reason'}`);
+      return result;
+    }
+    const brokerPositions = inventory.positions;
     const brokerBySymbol = new Map(brokerPositions.map((p) => [p.symbol, p]));
     // Broker shares still sellable per symbol, decremented as we exit -- so two
     // bot positions stacked on one symbol can't together oversell the holding.
@@ -212,10 +258,10 @@ async function runAlpacaExitCheck(args = []) {
 
     state.positions = remaining;
     state.lastCycleAt = new Date().toISOString();
-    botState.saveState(state);
+    stateStore.saveState(state);
     return result;
   } finally {
-    releaseLock(botState.LOCK_PATH);
+    release(stateStore.LOCK_PATH);
   }
 }
 

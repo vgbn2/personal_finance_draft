@@ -1,4 +1,0 @@
-Position sizing subtree review note:
-- Keep sizing helpers pure and bounded.
-- Use the existing `sizePosition`, `kellyFraction`, and `sharpeScaledFraction` helpers before adding new logic.
-- New sizing behavior should be covered by direct numeric tests.

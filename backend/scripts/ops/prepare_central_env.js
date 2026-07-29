@@ -29,6 +29,13 @@ function encodeEnvValue(value) {
   return JSON.stringify(value);
 }
 
+function renderEnvironmentFile(environment) {
+  return `${Object.keys(environment)
+    .sort()
+    .map((key) => `${key}=${encodeEnvValue(String(environment[key]))}`)
+    .join('\n')}\n`;
+}
+
 function renderCentralEnvironment(template, source, options = {}) {
   const replacements = {
     SOVEREIGN_API_TOKEN: options.apiToken || crypto.randomBytes(32).toString('hex'),
@@ -71,11 +78,69 @@ function buildComposeServiceProjectionReport(environment) {
   });
 }
 
+function publishComposeServiceEnvironments(environment, outputDirectory, options = {}) {
+  const directory = path.resolve(outputDirectory);
+  const temporaryDirectory = `${directory}.tmp.${process.pid}`;
+  const backupDirectory = `${directory}.previous`;
+  const manifest = loadEnvironmentManifest();
+  const report = buildComposeServiceProjectionReport(environment);
+  if (!report.ok) {
+    const missing = report.services
+      .filter((service) => !service.ok)
+      .map((service) => `${service.service}:${service.missing_required_keys.join(',') || 'invalid'}`)
+      .join(';');
+    throw new Error(`compose_service_projection_invalid: ${missing}`);
+  }
+  if (fs.existsSync(directory) && !options.force) {
+    throw new Error(`refusing to overwrite existing service environment directory: ${directory}`);
+  }
+  if (fs.existsSync(directory) && fs.existsSync(backupDirectory)) {
+    throw new Error(`service environment rollback directory already exists: ${backupDirectory}`);
+  }
+
+  let movedExisting = false;
+  try {
+    fs.mkdirSync(temporaryDirectory, { recursive: false, mode: 0o700 });
+    for (const serviceName of EXPECTED_COMPOSE_SERVICES) {
+      const projected = projectEnvironmentForComposeService(environment, serviceName);
+      const filePath = path.join(temporaryDirectory, `${serviceName}.env`);
+      fs.writeFileSync(filePath, renderEnvironmentFile(projected), { mode: 0o600, flag: 'wx' });
+      fs.chmodSync(filePath, 0o600);
+    }
+    if (fs.existsSync(directory)) {
+      fs.renameSync(directory, backupDirectory);
+      movedExisting = true;
+    }
+    fs.renameSync(temporaryDirectory, directory);
+    return {
+      ok: true,
+      type: 'compose_service_environments_published',
+      output_directory: directory,
+      rollback_directory: movedExisting ? backupDirectory : null,
+      services: report.services.map((service) => ({
+        service: service.service,
+        file: `${service.service}.env`,
+        mode: '600',
+        projected_keys: service.projected_keys,
+      })),
+    };
+  } catch (error) {
+    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+    if (movedExisting && !fs.existsSync(directory) && fs.existsSync(backupDirectory)) {
+      fs.renameSync(backupDirectory, directory);
+    }
+    throw error;
+  }
+}
+
 function prepareCentralEnvironment(options = {}) {
   const repoRoot = path.resolve(options.repoRoot || REPO_ROOT);
   const templatePath = path.resolve(options.templatePath || path.join(repoRoot, '.env.central.example'));
   const sourcePath = path.resolve(options.sourcePath || path.join(repoRoot, '.env'));
   const outputPath = path.resolve(options.outputPath || path.join(repoRoot, '.env.central'));
+  const serviceEnvDirectory = path.resolve(
+    options.serviceEnvDirectory || path.join(repoRoot, '.env.services'),
+  );
   if (!fs.existsSync(templatePath)) throw new Error(`missing central environment template: ${templatePath}`);
   if (!fs.existsSync(sourcePath)) throw new Error(`missing source environment: ${sourcePath}`);
   if (fs.existsSync(outputPath) && !options.force) {
@@ -85,16 +150,29 @@ function prepareCentralEnvironment(options = {}) {
   const template = fs.readFileSync(templatePath, 'utf8');
   const source = parseEnvFile(sourcePath);
   const { rendered, copiedKeys } = renderCentralEnvironment(template, source, options);
+  const scopeFile = firstNonEmpty(source, ['POLYMARKET_RESEARCH_SCOPE_FILE']);
+  const finalRendered = scopeFile
+    ? rendered.replace(
+      /^POLYMARKET_RESEARCH_SCOPE_FILE=.*$/m,
+      `POLYMARKET_RESEARCH_SCOPE_FILE=${encodeEnvValue(scopeFile)}`,
+    )
+    : rendered;
   const temporaryPath = `${outputPath}.tmp.${process.pid}`;
   try {
-    fs.writeFileSync(temporaryPath, rendered, { mode: 0o600, flag: 'wx' });
+    fs.writeFileSync(temporaryPath, finalRendered, { mode: 0o600, flag: 'wx' });
     fs.chmodSync(temporaryPath, 0o600);
     fs.renameSync(temporaryPath, outputPath);
   } finally {
     fs.rmSync(temporaryPath, { force: true });
   }
 
-  const composeContract = buildComposeServiceProjectionReport(parseEnvFile(outputPath));
+  const preparedEnvironment = parseEnvFile(outputPath);
+  const composeContract = buildComposeServiceProjectionReport(preparedEnvironment);
+  const serviceEnvironments = publishComposeServiceEnvironments(
+    preparedEnvironment,
+    serviceEnvDirectory,
+    { force: options.force },
+  );
   return {
     ok: true,
     type: 'central_environment_prepared',
@@ -105,6 +183,7 @@ function prepareCentralEnvironment(options = {}) {
     copied_keys: copiedKeys.sort(),
     execution_credentials_copied: false,
     compose_contract: composeContract,
+    service_environments: serviceEnvironments,
   };
 }
 
@@ -117,6 +196,7 @@ function parseArgs(argv) {
     else if (argument === '--output') options.outputPath = argv[++index];
     else if (argument === '--bind') options.bind = argv[++index];
     else if (argument === '--profile') options.profile = argv[++index];
+    else if (argument === '--service-env-dir') options.serviceEnvDirectory = argv[++index];
     else throw new Error(`unknown argument: ${argument}`);
   }
   return options;
@@ -136,6 +216,8 @@ module.exports = {
   SOURCE_ALIASES,
   buildComposeServiceProjectionReport,
   encodeEnvValue,
+  publishComposeServiceEnvironments,
   prepareCentralEnvironment,
+  renderEnvironmentFile,
   renderCentralEnvironment,
 };

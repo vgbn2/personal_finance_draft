@@ -326,16 +326,34 @@
           "allowed_surfaces": ["execution"]
         },
         {"name": "SOVEREIGN_MCP_CONFIG_PATH", "environment_class": "central", "allowed_surfaces": ["mcp", "operator"]},
-        {"name": "SOVEREIGN_MOCK", "default": "false"},
+        {
+          "name": "SOVEREIGN_MOCK",
+          "default": "false",
+          "environment_class": "internal",
+          "profiles": ["developer"],
+          "allowed_surfaces": ["default_cli"]
+        },
         {"name": "SOVEREIGN_MODE"},
         {"name": "SOVEREIGN_NONINTERACTIVE", "default": "false"},
         {"name": "SOVEREIGN_RUN_STATUS_PATH"},
         {"name": "SOVEREIGN_RUNTIME_MODE"},
+        {
+          "name": "SOVEREIGN_SOURCE_REVISION",
+          "environment_class": "internal",
+          "profiles": ["developer"],
+          "allowed_surfaces": ["default_cli"]
+        },
         {"name": "SOVEREIGN_SERVICE_PRINCIPALS_PATH", "environment_class": "central", "allowed_surfaces": ["web", "mcp", "operator", "compose_web"]},
         {"name": "SOVEREIGN_SIGNAL_REPORT_MAX_AGE_MS", "default": "86400000"},
         {"name": "SOVEREIGN_SKIP_DOTENV", "default": "false"},
         {"name": "SOVEREIGN_SKIP_LOCAL_ENV", "default": "false"},
         {"name": "SOVEREIGN_TEST_OUTPUT_DIR"},
+        {
+          "name": "SOVEREIGN_TEST_FAILURE_LOG",
+          "environment_class": "internal",
+          "profiles": ["developer"],
+          "allowed_surfaces": ["default_cli"]
+        },
         {"name": "SOVEREIGN_TRUST_PROXY", "default": "false", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_web"]},
         {"name": "SOVEREIGN_TS_STORAGE", "default": "bin", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
         {"name": "SOVEREIGN_TS_WRITE_LOCK_STALE_MS", "default": "300000", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},

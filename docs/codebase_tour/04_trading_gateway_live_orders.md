@@ -71,10 +71,10 @@ logic, so this file is it:
   2026-06-25: when `resolveExitQty` clamps a sell below the tracked qty, this computes realized P&L from
   what was *actually sold*, not the original tracked qty, and returns the unsold remainder as a
   still-tracked position instead of dropping it.
-- `runAlpacaExitCheck(args)` (:140) — the review loop: acquires a PID-staleness lock, checks every
+- `runAlpacaExitCheck(args)` — the review loop: acquires a PID-staleness lock, checks every
   tracked position against the broker snapshot, fires real sells in `--live`, and is always run *before*
-  the entry loop in `strategy.js`'s `runAutomationPass` (module 03) — review-then-buy, same ordering
-  Polymarket's bot uses.
+  the entry loop through `strategy/automation_guard.js` (module 03) — review-then-buy, same ordering
+  Polymarket's bot uses. Broker failure blocks before local state or strategy signals are read.
 
 ## Labs
 

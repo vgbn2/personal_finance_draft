@@ -1,9 +1,8 @@
-# bookworm ships GCC 12 — required for std::from_chars(double) used by the C++ core.
-# bullseye's GCC 10 only supports integer from_chars and fails the core build.
-FROM node:22-bookworm
+# Keep this root compatibility copy byte-identical to infra/docker/Dockerfile.
 
-# Build tools for C++ core and native Node modules
-RUN apt-get update && apt-get install -y \
+FROM node:22-bookworm AS build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     git \
@@ -12,48 +11,57 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# --- Layer 1: root dependencies (cached unless package.json changes) ---
 COPY package*.json ./
 RUN npm ci --ignore-scripts
 
-# --- Layer 1b: backend/api deps (web service requires its direct socket.io
-# and Supabase SDK dependencies; it is a standalone sub-package, not hoisted) ---
 COPY backend/api/package*.json ./backend/api/
 RUN cd backend/api && npm ci --ignore-scripts --omit=dev
 
-# --- Layer 1c: backend/gateway deps (gateway service runs gateway/src/index.ts
-# via ts-node — needs its own alpaca/polymarket/supabase/ethers packages) ---
 COPY backend/gateway/package*.json ./backend/gateway/
 RUN cd backend/gateway && npm ci --ignore-scripts --omit=dev
 
-# --- Layer 2: Frontend build (cached unless Frontend/ changes) ---
 COPY Frontend/dashboard/package*.json ./Frontend/dashboard/
 RUN cd Frontend/dashboard && npm ci --ignore-scripts
 
 COPY Frontend/ ./Frontend/
 RUN cd Frontend/dashboard && npm run build
 
-# --- Layer 3: Full source copy ---
 COPY . .
 
-# --- Layer 4: C++ core build ---
-# Build only the production binary (skip test targets — they don't belong in a
-# runtime image and pull in test-only code). Make is a single-config generator,
-# so the binary lands at backend/core/build/sovereign_wealth (no Release/ subdir).
-RUN mkdir -p backend/core/build \
-    && cd backend/core/build \
-    && cmake .. -DCMAKE_BUILD_TYPE=Release -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON \
-    && make -j$(nproc) sovereign_wealth
+RUN cmake -S backend/core -B backend/core/build \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON \
+    && cmake --build backend/core/build --parallel --target sovereign_wealth
 
-# --- Runtime ---
-EXPOSE 8787
+FROM node:22-bookworm-slim AS runtime
 
 ENV NODE_ENV=production \
     SOVEREIGN_WEB_HOST=0.0.0.0 \
     SOVEREIGN_WEB_PORT=8787 \
-    # Make's single-config layout differs from MSVC's build/Release/; point the
-    # Node binary discovery (shared/lib/paths.js) straight at the built binary.
     SOVEREIGN_BACKEND_BIN=/app/backend/core/build/sovereign_wealth
+
+WORKDIR /app
+
+COPY --from=build --chown=node:node /app/package.json /app/package-lock.json ./
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/backend/api ./backend/api
+COPY --from=build --chown=node:node /app/backend/cli ./backend/cli
+COPY --from=build --chown=node:node /app/backend/gateway ./backend/gateway
+COPY --from=build --chown=node:node /app/backend/mcp_server ./backend/mcp_server
+COPY --from=build --chown=node:node /app/backend/scripts ./backend/scripts
+COPY --from=build --chown=node:node /app/backend/core/build ./backend/core/build
+COPY --from=build --chown=node:node /app/Frontend/dashboard/dist ./Frontend/dashboard/dist
+COPY --from=build --chown=node:node /app/shared ./shared
+COPY --from=build --chown=node:node /app/config ./config
+COPY --from=build --chown=node:node /app/native ./native
+COPY --from=build --chown=node:node /app/workspace/STATE.md ./workspace/STATE.md
+
+RUN mkdir -p storage/data storage/logs storage/runtime \
+    && chown -R node:node storage
+
+USER node
+
+EXPOSE 8787
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD node -e "fetch('http://127.0.0.1:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

@@ -240,14 +240,17 @@ function localStatsFromEquityCsv(equityCsv) {
     engine: 'sovereign_web_api',
     schema_version: 1,
     source: 'local_equity_curve',
+    degraded: true,
+    metric_basis: 'unannualized_local_equity_curve',
+    unavailable_metrics: ['annualized_return', 'sortino', 'calmar'],
     observations: values.length,
     cumulative_return: Number(cumulativeReturn.toFixed(8)),
-    annualized_return: Number(cumulativeReturn.toFixed(8)),
+    annualized_return: null,
     volatility: Number(volatility.toFixed(8)),
     sharpe: volatility > 0 ? Number((average / volatility).toFixed(8)) : 0,
-    sortino: 0,
+    sortino: null,
     max_drawdown: Number(maxDrawdownFromEquity(values).toFixed(8)),
-    calmar: 0,
+    calmar: null,
   };
 }
 
@@ -1220,6 +1223,7 @@ module.exports = {
   cliStatus,
   locateBackendBinary,
   locateNodeCli,
+  localStatsFromEquityCsv,
   quoteSources,
   runBackend,
   runNodeCli,

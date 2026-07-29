@@ -736,6 +736,10 @@ async function commandPropFirmProfiles(args) {
 
 
 const EXECUTION_MEMORY = require('../../../../shared/lib/runtime/execution_memory.js');
+const {
+  canOpenPosition,
+  reconcileAutomationInventory,
+} = require('./automation_guard.js');
 
 async function runAutomationPass(args, strategiesOverride = null) {
     const settings = loadRuntimeSettings();
@@ -746,20 +750,22 @@ async function runAutomationPass(args, strategiesOverride = null) {
 
     // Review existing tracked positions for a target/stop/age exit BEFORE
     // looking for new entries -- same ordering as the Polymarket bot cycle.
-    const { runAlpacaExitCheck, canOpenPosition } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
-    const exitResult = await runAlpacaExitCheck(args).catch((err) => ({ errors: [err.message] }));
+    const inventory = await reconcileAutomationInventory(args);
+    const { exitResult } = inventory;
     if (exitResult.sellsExecuted) {
         console.log(`[\x1b[1;33mEXIT\x1b[0m] Closed ${exitResult.sellsExecuted} position(s) on target/stop/age.`);
     }
     (exitResult.errors || []).forEach((e) => console.warn(`[AUTOMATION] Exit check: ${e}`));
+    if (inventory.blocked) {
+        console.warn('[AUTOMATION] Entry scan blocked because position or broker inventory truth is unavailable.');
+        return { ok: false, blocked: true, reason: inventory.reason };
+    }
 
     // Read the post-exit position count + configured cap so new live entries
     // below respect config.maxPositions (the auto-trade status view already
     // implies this cap; it was previously never enforced on the entry path).
-    const { loadState: loadAlpacaBotState } = require('../../../../shared/lib/runtime/alpaca_bot_state.js');
-    const alpacaBotSnapshot = loadAlpacaBotState();
-    let openPositionCount = alpacaBotSnapshot.positions.length;
-    const maxOpenPositions = alpacaBotSnapshot.config.maxPositions;
+    let openPositionCount = inventory.openPositionCount;
+    const maxOpenPositions = inventory.maxOpenPositions;
 
     let targetStrategies;
     if (strategiesOverride) {

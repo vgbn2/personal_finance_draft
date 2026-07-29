@@ -1,7 +1,9 @@
 {
   "name": "sovereign-web",
+  "private": true,
   "version": "1.0.0",
   "description": "Sovereign Intelligence Suite Dashboard",
+  "license": "SEE LICENSE IN ../../LICENSE",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",

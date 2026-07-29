@@ -62,32 +62,75 @@ const DEFAULT_STATE = {
   lastCycleAt: null,
 };
 
-function loadState() {
-  if (fs.existsSync(STATE_PATH)) {
+class AlpacaBotStateError extends Error {
+  constructor(code, statePath, cause = null) {
+    super(`${code}: ${statePath}`);
+    this.name = 'AlpacaBotStateError';
+    this.code = code;
+    this.statePath = statePath;
+    if (cause) this.cause = cause;
+  }
+}
+
+function assertStateShape(raw, statePath) {
+  const invalid = (
+    !raw
+    || typeof raw !== 'object'
+    || Array.isArray(raw)
+    || (raw.version !== undefined && raw.version !== 1)
+    || (raw.config !== undefined && (
+      !raw.config
+      || typeof raw.config !== 'object'
+      || Array.isArray(raw.config)
+    ))
+    || (raw.positions !== undefined && !Array.isArray(raw.positions))
+    || (raw.cycleHistory !== undefined && !Array.isArray(raw.cycleHistory))
+    || (Array.isArray(raw.positions) && raw.positions.some((position) => (
+      !position
+      || typeof position !== 'object'
+      || !String(position.positionId || '').trim()
+      || !String(position.symbol || '').trim()
+      || !Number.isFinite(Number(position.qty))
+      || Number(position.qty) <= 0
+    )))
+  );
+  if (invalid) throw new AlpacaBotStateError('alpaca_bot_state_invalid', statePath);
+}
+
+function loadState(options = {}) {
+  const statePath = options.statePath || STATE_PATH;
+  const fileSystem = options.fs || fs;
+  if (fileSystem.existsSync(statePath)) {
+    let raw;
     try {
-      const raw = JSON.parse(fs.readFileSync(STATE_PATH, 'utf8'));
-      return {
-        ...DEFAULT_STATE,
-        ...raw,
-        config: { ...DEFAULT_CONFIG, ...(raw.config || {}) },
-        positions: Array.isArray(raw.positions) ? raw.positions : [],
-        cycleHistory: Array.isArray(raw.cycleHistory) ? raw.cycleHistory : [],
-      };
-    } catch {
-      // fall through to default
+      raw = JSON.parse(fileSystem.readFileSync(statePath, 'utf8'));
+    } catch (error) {
+      throw new AlpacaBotStateError('alpaca_bot_state_corrupt', statePath, error);
     }
+    assertStateShape(raw, statePath);
+    return {
+      ...DEFAULT_STATE,
+      ...raw,
+      config: { ...DEFAULT_CONFIG, ...(raw.config || {}) },
+      positions: raw.positions || [],
+      cycleHistory: raw.cycleHistory || [],
+    };
   }
   return { ...DEFAULT_STATE, config: { ...DEFAULT_CONFIG }, positions: [], cycleHistory: [] };
 }
 
-function saveState(state) {
-  writeJson(STATE_PATH, state);
+function saveState(state, options = {}) {
+  const statePath = options.statePath || STATE_PATH;
+  assertStateShape(state, statePath);
+  writeJson(statePath, state);
 }
 
 module.exports = {
+  AlpacaBotStateError,
   STATE_PATH,
   LOCK_PATH,
   DEFAULT_CONFIG,
+  assertStateShape,
   loadState,
   saveState,
 };
