@@ -117,6 +117,8 @@ services:
       - -c
       - |
         exec node backend/cli/sovereign_cli.js portfolio-monitor --json \
+          --scope "$${PORTFOLIO_MONITOR_SCOPE:-both}" \
+          --alpaca-scope "$${PORTFOLIO_MONITOR_ALPACA_SCOPE:-paper}" \
           --interval-secs "$${PORTFOLIO_MONITOR_INTERVAL_SECS:-60}" \
           --timeout-ms "$${PORTFOLIO_MONITOR_TIMEOUT_MS:-45000}"
 

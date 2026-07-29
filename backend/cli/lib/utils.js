@@ -83,7 +83,7 @@ const HELP_TOPICS = {
     '  strategy run_automated [--interval 15] [--live]',
     '  ingest [--full]',
     '  backfill [--timeframe 1d] [--days 365] [--symbol S] [--include-prediction] [--20-years]',
-    '  portfolio-monitor [--once] [--interval-secs 60] [--json]',
+    '  portfolio-monitor [--once] [--scope both|live|live_paper] [--alpaca-scope paper|live|both] [--interval-secs 60] [--json]',
     '  market monitor [--family F] [--freshness STATE] [--limit 50] [--offset 0] [--json]',
     '  market monitor --watch [--interval-secs 10] [--iterations 60] [--json]',
     '  check | validate [--input path] [--strict]',

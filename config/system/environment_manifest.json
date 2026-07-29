@@ -64,11 +64,11 @@
       "compose_profile": "monitoring",
       "command_identity": "node backend/cli/sovereign_cli.js portfolio-monitor --json",
       "required_keys": [],
-      "optional_keys": [],
-      "defaulted_keys": ["PORTFOLIO_MONITOR_INTERVAL_SECS", "PORTFOLIO_MONITOR_TIMEOUT_MS"],
+      "optional_keys": ["ALPACA_API_KEY", "ALPACA_SECRET_KEY"],
+      "defaulted_keys": ["ALPACA_BASE_URL", "PORTFOLIO_MONITOR_ALPACA_SCOPE", "PORTFOLIO_MONITOR_INTERVAL_SECS", "PORTFOLIO_MONITOR_SCOPE", "PORTFOLIO_MONITOR_TIMEOUT_MS"],
       "fixed_overrides": {"LIVE_TRADING": "false", "SOVEREIGN_DEPLOYMENT_PROFILE": "central-host", "SOVEREIGN_EXECUTION_AUTHORIZED": "false", "SOVEREIGN_RUNTIME_MODE": "cloud-compute"},
       "mounts": ["../../storage:/app/storage"],
-      "forbidden_environment_classes": ["private", "central", "execution"]
+      "forbidden_environment_classes": ["central", "execution"]
     },
     "host-health": {
       "surface": "compose_host_health",
@@ -116,8 +116,8 @@
       "profiles": ["developer", "central-host", "all-in-one"],
       "allowed_surfaces": ["default_cli", "writer", "operator", "execution"],
       "members": [
-        {"name": "ALPACA_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill"]},
-        {"name": "ALPACA_SECRET_KEY", "aliases": ["ALPACA_API_SECRET"], "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill"]},
+        {"name": "ALPACA_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
+        {"name": "ALPACA_SECRET_KEY", "aliases": ["ALPACA_API_SECRET"], "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
         {"name": "FRED_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill"]},
         {"name": "FINNHUB_API_KEY", "aliases": ["FINHUB_API_KEY", "FINHUB_SECRET_KEY", "FINNHUB_TOKEN"], "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill"]},
         {"name": "TWELVE_DATA_API_KEY", "aliases": ["TWELVE_API_KEY", "TWELVEDATA_API_KEY"], "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill"]},
@@ -224,7 +224,7 @@
       "members": [
         {"name": "ALPACA_ADJUSTMENT", "default": "raw"},
         {"name": "ALPACA_DATA_FEED", "default": "iex", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
-        {"name": "ALPACA_BASE_URL", "default": "https://paper-api.alpaca.markets", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
+        {"name": "ALPACA_BASE_URL", "default": "https://paper-api.alpaca.markets", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
         {"name": "BACKFILL_INTERVAL_SECS", "default": "1800", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
         {
           "name": "CURRENT_PORTFOLIO_DRAWDOWN",
@@ -291,7 +291,9 @@
           "environment_class": "private",
           "allowed_surfaces": ["gateway_account", "operator", "execution"]
         },
+        {"name": "PORTFOLIO_MONITOR_ALPACA_SCOPE", "default": "paper", "allowed_surfaces": ["default_cli", "operator", "compose_portfolio_monitor"]},
         {"name": "PORTFOLIO_MONITOR_INTERVAL_SECS", "default": "60", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_portfolio_monitor"]},
+        {"name": "PORTFOLIO_MONITOR_SCOPE", "default": "both", "allowed_surfaces": ["default_cli", "operator", "compose_portfolio_monitor"]},
         {"name": "PORTFOLIO_MONITOR_TIMEOUT_MS", "default": "45000", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_portfolio_monitor"]},
         {"name": "PROXY_ADDRESS"},
         {"name": "SOVEREIGN_ALLOWED_ORIGINS", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_web"]},

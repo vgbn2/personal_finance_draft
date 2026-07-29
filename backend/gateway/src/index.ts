@@ -44,6 +44,8 @@ const { runPolymarketOrderbookLiteBackfill } = require('../../cli/commands/trade
 // @ts-ignore
 const { resolveAlpacaSettings, resolveGateIoSettings } = require('../../../shared/lib/brokers/index.js');
 // @ts-ignore
+const { buildAlpacaPortfolioAdapterSpecs } = require('../../../shared/lib/brokers/alpaca_portfolio_scope.js');
+// @ts-ignore
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
@@ -2136,15 +2138,30 @@ export async function main() {
     if (isVerbose) console.log('[GATEWAY] Aggregating portfolios — live / live-paper / paper...');
 
     try {
+      const alpacaScope = buildAlpacaPortfolioAdapterSpecs(
+        parseOptionValue(args, '--alpaca-scope') || 'both',
+      );
       // "live": real-money broker connections (and the live Polymarket account).
       const liveAdapters = [
-        { name: 'Alpaca (Live)', adapter: new AlpacaAdapter({ paper: false, simulateIfMissingCredentials: false }) },
+        ...alpacaScope.live.map((entry: { name: string; paper: boolean }) => ({
+          name: entry.name,
+          adapter: new AlpacaAdapter({
+            paper: entry.paper,
+            simulateIfMissingCredentials: false,
+          }),
+        })),
         { name: 'Gate.io', adapter: new GateIoAdapter({ simulateIfMissingCredentials: false }) },
       ];
       // "live-paper": broker-hosted simulated accounts (Alpaca's own paper-trading API).
-      const livePaperAdapters = [
-        { name: 'Alpaca (Paper)', adapter: new AlpacaAdapter({ paper: true, simulateIfMissingCredentials: false }) },
-      ];
+      const livePaperAdapters = alpacaScope.live_paper.map(
+        (entry: { name: string; paper: boolean }) => ({
+          name: entry.name,
+          adapter: new AlpacaAdapter({
+            paper: entry.paper,
+            simulateIfMissingCredentials: false,
+          }),
+        }),
+      );
 
       const fetchAdapterResults = (adapters: { name: string; adapter: BrokerAdapter }[]) => Promise.all(adapters.map(async (entry) => {
         try {
