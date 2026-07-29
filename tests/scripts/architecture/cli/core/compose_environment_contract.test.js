@@ -13,6 +13,7 @@ const {
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const COMPOSE_PATH = path.join(REPO_ROOT, 'infra', 'docker', 'docker-compose.yml');
 const DOCKERFILE_PATH = path.join(REPO_ROOT, 'infra', 'docker', 'Dockerfile');
+const ROOT_DOCKERFILE_PATH = path.join(REPO_ROOT, 'Dockerfile');
 
 function composeService(source, name) {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -28,11 +29,12 @@ test('schema-3 service rows match all seven isolated Compose environment files',
   const manifest = loadEnvironmentManifest();
   const compose = fs.readFileSync(COMPOSE_PATH, 'utf8');
   const dockerfile = fs.readFileSync(DOCKERFILE_PATH, 'utf8');
+  const rootDockerfile = fs.readFileSync(ROOT_DOCKERFILE_PATH, 'utf8');
   const commandFragments = {
     web: 'backend/api/app.js',
     bot: 'run bot paper --strategy low_prob_dip',
     backfill: 'backfill-daemon --interval-secs',
-    'portfolio-monitor': 'portfolio-monitor --once --json',
+    'portfolio-monitor': 'portfolio-monitor',
     'host-health': 'backend/scripts/ops/host_health.js',
     'host-backup': 'backend/scripts/ops/host_backup.js',
     'polymarket-research': 'polymarket history schedule',
@@ -41,6 +43,13 @@ test('schema-3 service rows match all seven isolated Compose environment files',
   assert.deepEqual(Object.keys(manifest.compose_services).sort(), [...EXPECTED_COMPOSE_SERVICES]);
   assert.equal((compose.match(/\.env\.services\/[a-z-]+\.env/g) || []).length, 7);
   assert.doesNotMatch(compose, /central-env-files|SOVEREIGN_CENTRAL_ENV_FILE/);
+  assert.equal(rootDockerfile, dockerfile);
+  assert.equal((compose.match(/\$\{SOVEREIGN_IMAGE_REF:-personal_finance:latest\}/g) || []).length, 7);
+  assert.match(dockerfile, /org\.opencontainers\.image\.revision/);
+  assert.match(dockerfile, /io\.sovereign\.source-tree/);
+  assert.match(dockerfile, /io\.sovereign\.build-contract="1"/);
+  assert.match(composeService(compose, 'web'), /SOVEREIGN_SOURCE_REVISION:\s*\$\{SOVEREIGN_SOURCE_REVISION:-unverified\}/);
+  assert.match(composeService(compose, 'web'), /SOVEREIGN_SOURCE_TREE:\s*\$\{SOVEREIGN_SOURCE_TREE:-unverified\}/);
 
   for (const serviceName of EXPECTED_COMPOSE_SERVICES) {
     const row = manifest.compose_services[serviceName];

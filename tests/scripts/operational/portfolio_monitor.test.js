@@ -14,6 +14,7 @@ const {
   loadRiskThresholds,
   buildRiskAssessment,
   runPortfolioMonitorCycle,
+  runPortfolioMonitorLoop,
   portfolioMonitorExitCode,
 } = require('../../../backend/cli/commands/operational/portfolio_monitor.js');
 
@@ -208,4 +209,50 @@ test('risk thresholds load YAML and allow positive environment overrides', () =>
     max_net_exposure: 333,
     max_drawdown: 0.08,
   });
+});
+
+test('persistent loop publishes repeated breaches without treating them as process failures', async () => {
+  const publications = [];
+  const waits = [];
+  const result = await runPortfolioMonitorLoop({
+    once: false,
+    intervalSecs: 5,
+    initialStatus: { cycle: 40 },
+    thresholds: {
+      ...DEFAULT_THRESHOLDS,
+      max_position_notional: 10000,
+    },
+    fetchPortfolio: async () => legacySnapshot(),
+    publishStatus: (payload, metadata) => publications.push({ payload, metadata }),
+    sleep: async (milliseconds) => waits.push(milliseconds),
+    nowMs: () => Date.parse('2026-07-29T00:00:00.000Z'),
+    maxCycles: 2,
+  });
+
+  assert.equal(result.cycle, 42);
+  assert.equal(result.assessment.status, 'breach');
+  assert.deepEqual(waits, [5000]);
+  assert.equal(publications.filter(({ metadata }) => metadata.attempted).length, 2);
+  assert.equal(publications.filter(({ payload }) => payload.status === 'polling').length, 2);
+  assert.ok(publications.every(({ payload }) => payload.status !== 'stopped'));
+});
+
+test('successful cycle clears a stale transport error from loop state', async () => {
+  const result = await runPortfolioMonitorLoop({
+    once: true,
+    intervalSecs: 5,
+    initialStatus: {
+      cycle: 8,
+      error: 'ETIMEDOUT raw upstream response',
+      error_code: 'upstream_timeout_or_rate_limited',
+    },
+    thresholds: DEFAULT_THRESHOLDS,
+    fetchPortfolio: async () => legacySnapshot(),
+    nowMs: () => Date.parse('2026-07-29T00:00:00.000Z'),
+  });
+
+  assert.equal(result.assessment.status, 'healthy');
+  assert.equal(Object.hasOwn(result.status, 'error'), false);
+  assert.equal(Object.hasOwn(result.status, 'error_code'), false);
+  assert.equal(JSON.stringify(result.status).includes('ETIMEDOUT'), false);
 });

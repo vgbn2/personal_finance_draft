@@ -101,17 +101,20 @@ start continuous provider polling. The eventual host remains an explicit operato
 
 The updater refuses a dirty, divergent, wrong-branch, or locally-ahead checkout, takes an exclusive deployment
 lock, fast-forwards from `origin/main`, requires `HEAD` to equal the fetched remote branch, runs
-`central_host_preflight.js`, validates Compose, builds the image, recreates only `web` and `backfill`, and
-waits for the web container's internal healthcheck plus a running backfill container. A developer machine updates code by
+`central_host_preflight.js`, validates Compose, and builds an image labeled with the exact commit and source
+tree. It always recreates `web` and `backfill` and also recreates only optional services that were already
+running or restarting before the cutover. A previously inactive profile remains inactive. Active
+`polymarket-research` blocks automatic cutover because recreating it can trigger provider polling. A developer machine updates code by
 pushing a reviewed commit; the central machine performs this serialized update. It does not mount a second
 copy of `storage/` and it does not accept client-side data writes.
 
 After the first successful manual deployment, `infra/systemd/install-central-updater.sh` can install the
 tracked five-minute host-side pull timer. The timer invokes the same fail-closed updater as the deployment
 user and no-ops only when the fetched branch matches its last-success marker, the web health endpoint passes,
-and the backfill container is running. This is deployment readiness, not proof that market data is fresh.
-Failed builds and health checks are retried on the next cycle; there is no automatic rollback after Compose
-has recreated services. This keeps GitHub
+the active service set matches its evidence manifest, and every service uses the recorded image ID. This is
+deployment readiness, not proof that market data is fresh. Build/provenance failures occur before cutover.
+Post-cutover verification failures restore the captured service set from per-service rollback image tags and
+leave both success markers unchanged. This keeps GitHub
 credentials scoped to read-only source retrieval on the host and keeps all runtime/provider secrets off
 GitHub-hosted runners. See `infra/docker/DEPLOY.md` for the install and journal commands.
 
@@ -185,10 +188,10 @@ and other state visible inside its own container. It does not infer another cont
 host PID files. `host-backup` creates timestamped, hash-backed snapshots of repo-local state, excludes
 disposable provider caches, and prunes snapshots after 30 days or beyond the newest 14 by default.
 Configure those bounds with `HOST_BACKUP_RETENTION_DAYS` and `HOST_BACKUP_MAX_COUNT`.
-The monitor, health, and backup loops exit nonzero on failed checks, critical risk breaches, or failed
-retention so Compose exposes and restarts the failure rather than sleeping in a healthy-looking loop.
-A retention-only failure is throttled for the configured backup interval before restart because the
-new snapshot is already valid; this prevents a persistent prune error from rapidly creating duplicates.
+Node owns the monitor, health, and backup intervals. Breaches and degraded checks remain visible in status
+and heartbeat files without terminating otherwise healthy containers. Direct one-shot commands retain
+nonzero failure exits for operator and CI use. Backup watch mode preserves `next_run_at` across recreation
+and falls back to the newest verified completed-backup manifest, preventing an immediate duplicate backup.
 
 `polymarket-research` requires a local `POLYMARKET_RESEARCH_SCOPE_FILE` JSON file that names the
 active markets and token ids to watch. The scheduler is bounded by archive-size and per-token

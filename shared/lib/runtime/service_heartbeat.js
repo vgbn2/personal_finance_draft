@@ -98,7 +98,9 @@ function writeServiceHeartbeat(service, patch = {}, options = {}) {
     last_success_at: successful
       ? (isoOrNull(patch.last_success_at) || new Date(nowMs).toISOString())
       : isoOrNull(previous.last_success_at),
-    next_run_at: isoOrNull(patch.next_run_at || previous.next_run_at),
+    next_run_at: Object.hasOwn(patch, 'next_run_at')
+      ? isoOrNull(patch.next_run_at)
+      : isoOrNull(previous.next_run_at),
     attempt_count: finiteNonNegative(patch.attempt_count, finiteNonNegative(previous.attempt_count)) + (patch.attempted === false ? 0 : 1),
     success_count: finiteNonNegative(patch.success_count, finiteNonNegative(previous.success_count)) + (successful ? 1 : 0),
     ttl_ms: finiteNonNegative(patch.ttl_ms, SERVICE_TTLS_MS[name] || 15 * 60 * 1000),
@@ -162,6 +164,14 @@ function readServiceHeartbeats(options = {}) {
   };
 }
 
+function readServiceHeartbeat(service, options = {}) {
+  const result = readServiceHeartbeats({
+    ...options,
+    services: [safeServiceName(service)],
+  });
+  return result.services[0];
+}
+
 module.exports = {
   HEARTBEAT_DIR,
   HEARTBEAT_SCHEMA_VERSION,
@@ -170,6 +180,7 @@ module.exports = {
   STATES,
   errorCode,
   heartbeatPath,
+  readServiceHeartbeat,
   readServiceHeartbeats,
   safeServiceName,
   writeServiceHeartbeat,

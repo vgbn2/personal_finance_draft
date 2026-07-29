@@ -1,5 +1,8 @@
 # Keep this root compatibility copy byte-identical to infra/docker/Dockerfile.
 
+ARG SOVEREIGN_SOURCE_REVISION=unverified
+ARG SOVEREIGN_SOURCE_TREE=unverified
+
 FROM node:22-bookworm AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -34,6 +37,13 @@ RUN cmake -S backend/core -B backend/core/build \
     && cmake --build backend/core/build --parallel --target sovereign_wealth
 
 FROM node:22-bookworm-slim AS runtime
+
+ARG SOVEREIGN_SOURCE_REVISION
+ARG SOVEREIGN_SOURCE_TREE
+
+LABEL org.opencontainers.image.revision="${SOVEREIGN_SOURCE_REVISION}" \
+      io.sovereign.source-tree="${SOVEREIGN_SOURCE_TREE}" \
+      io.sovereign.build-contract="1"
 
 ENV NODE_ENV=production \
     SOVEREIGN_WEB_HOST=0.0.0.0 \

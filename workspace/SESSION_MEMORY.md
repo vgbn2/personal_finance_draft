@@ -30,6 +30,20 @@
 }
 ```
 
+## 2026-07-29 runtime-integrity implementation boundary
+
+```json
+{
+  "lifecycle": "GO WITH FIXES -> implemented -> verified -> reviewed -> deferred",
+  "source": "persistent monitor/health/backup ownership, restart-safe backup scheduling, exact image provenance, active-set updater reconciliation and rollback implemented",
+  "verification": "focused operational and updater paths pass; host-capable npm test pass; pre-closeout implementation snapshot evidence 81b7974c-9be6-42ad-97ab-e57bb60e4236 PASS",
+  "evidence_limit": "dirty worktree source proof only; no committed archive, image build, container cutover, recovery drill, remote host, soak, provider, paper, or live qualification",
+  "runtime": "steamlinux remains on personal_finance:latest; portfolio-monitor still restarting; no container mutation performed",
+  "safety": "LIVE_TRADING and execution authorization unchanged; no threshold, credential, ledger, order, research, public, or live mutation",
+  "next": "review the source batch, explicitly authorize commit if desired, create required service env projections, then run the exact-image local cutover rehearsal with pre/post evidence"
+}
+```
+
 ## Session Memory - 2026-07-29 M0 commit and archive evidence
 
 ```json
@@ -1900,5 +1914,62 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "host_proof": "HEAD equals deployed marker; clean checkout; web healthy; backfill running; zero restarts; node user; cloud-compute and live/execution false",
   "not_started": "bot, paper, monitoring, research, public exposure, orders, live execution",
   "remaining": "host deploy key, authenticated CI observation, optional timer, DCS/freshness, restart/rollback/recovery, and soak"
+}
+```
+
+## Session Memory - 2026-07-29 monitoring deployment
+
+```json
+{
+  "running_extras": "host-health and host-backup under the monitoring Compose profile",
+  "host_health": "first check green for canonical-data freshness, disk, and backfill runner",
+  "backup": "new 2155-file 4608604600-byte host backup completed; scheduled container running",
+  "portfolio_monitor": "stopped after fail-closed max_position_notional breach and Alpaca authentication failure caused seven restarts",
+  "research": "not started because storage/polymarket/scope.json is absent",
+  "paper_live": "paper bot, orders, public exposure, and live execution remain stopped"
+}
+```
+
+## Session Memory - 2026-07-29 activation preflight
+
+```json
+{
+  "requested": "portfolio-monitor, polymarket-research, paper bot, and live execution",
+  "result": "no additional service started",
+  "portfolio_monitor_blocker": "critical BTC notional threshold breach plus Alpaca authentication failure",
+  "research_blocker": "required storage/polymarket/scope.json absent",
+  "paper_blocker": "external provider polling requires explicitly authorized restricted delegation",
+  "live_blocker": "central-host Compose forces LIVE_TRADING=false and SOVEREIGN_EXECUTION_AUTHORIZED=false and defines no live service"
+}
+```
+
+## Session Memory - 2026-07-29 activation paths and Bash installer
+
+```json
+{
+  "portfolio_monitor_fix": "replace Compose outer --once/restart loop with the CLI-owned persistent monitor loop; preserve breach status and nonzero one-shot semantics",
+  "research_scope_contract": "scope requires explicit token_ids plus matching active markets and token records; do not invent IDs",
+  "paper_preflight": "server settings already enable bot_autopilot and polymarket; external polling still requires explicitly authorized restricted delegation",
+  "bash_server": "independent master repo with no remote; do not git fetch origin until history strategy is chosen",
+  "bash_repair": "copied only tools/install-system.sh, verified SHA-256 91fa8f2b0063a85ef7389d7b98412077a254b15684d24170f820a157a3162131, created six user links",
+  "preserved": "workstation Bash checkout remains substantially dirty; finance continuity edits remain uncommitted"
+}
+```
+
+## Session Memory - 2026-07-29 deep local current-run audit
+
+```json
+{
+  "observed_host": "steamlinux, not vgbn-servers",
+  "checkout": "89428649beaa80657741e581206cea400155f18a",
+  "source_evidence": "schema-v2 committed_archive PASS for exact 89428649",
+  "runtime_image": "sha256:264732634d3d9f810adb4540d87e4fa4355f998851504c87469411ffd89104c8, created 2026-07-27, no revision label",
+  "runtime_lineage": "monitor source matches 916c2964; embedded Compose matches e78e1788/0383d47b; not an exact current image",
+  "portfolio_monitor": "restart count 170 to 179, exit 1, cycle 1930 to 1943, BTC about 32k above 25k limit, Gate.io connected, Alpaca live 401, stale ETIMEDOUT retained",
+  "paper_bot": "running healthy, iteration 158 to 162, zero restarts, cloud-compute with LIVE_TRADING=false and execution authorization false",
+  "data": "local required-daily integrity 92/92, zero missing/stale/unexplained, DCS 1.0",
+  "source_gates": "hygiene pass; structure 16/16; diff check pass",
+  "boundary": "read-only audit; no container, source, test, provider config, threshold, paper state, order, public, or live mutation",
+  "next": "explicitly decide local bot continuation; then bounded codex monitor fix plus exact-image provenance and optional-service updater contracts"
 }
 ```

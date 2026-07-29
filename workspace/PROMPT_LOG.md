@@ -3123,3 +3123,108 @@ match, the checkout is clean, `web` is healthy on `127.0.0.1:8787`, `backfill` i
 both containers run as `node`, and cloud-compute/non-live/non-execution overrides are present. No bot, paper,
 research, monitoring, public bind, order, or live execution was started. Automatic pulls and the systemd timer
 remain unconfigured until the host receives read-only GitHub access.
+
+## User Prompt - 2026-07-29 deploy additional services
+
+Requested deployment of the remaining useful central-host services and a repeatable deployment command.
+
+## Work - 2026-07-29 additional non-live services
+
+Preflighted the explicit Compose profiles and deployed the monitoring group without starting paper or live
+execution. `host-health` is running with a green first check. `host-backup` created a new 2,155-file,
+4,608,604,600-byte backup and remains running on its configured interval. `portfolio-monitor` failed closed
+on a critical BTC notional threshold breach plus unavailable Alpaca authentication, entered a restart loop,
+and was stopped. `polymarket-research` was not started because its required host scope file is absent. The
+paper bot remains stopped because it would create simulated portfolio state and needs explicit authorization.
+
+## User Prompt - 2026-07-29 start portfolio, research, paper, and live
+
+Explicitly requested starting the stopped portfolio monitor, Polymarket research, paper bot, and live
+trading/order execution.
+
+## Work - 2026-07-29 runtime activation preflight
+
+No service was started. `portfolio-monitor` remains blocked by its observed critical BTC notional breach and
+Alpaca authentication failure. `polymarket-research` remains blocked by its absent required scope file.
+The paper bot is structurally non-live, but starting its external provider loop requires explicitly authorized
+restricted delegation under the repository prompt-injection gate; delegation was not requested. The
+`central-host` contract permanently forces live and execution authorization false and exposes no live Compose
+service, so live execution cannot be enabled by starting another container or by an ad hoc environment edit.
+
+## User Prompt - 2026-07-29 find safe activation paths
+
+Asked to find ways to operate portfolio monitoring, scoped Polymarket research, and the paper bot despite their
+current blockers.
+
+## Work - 2026-07-29 activation-path triage
+
+Fast triage identified a bounded monitor repair: the CLI already supports a persistent loop that continues
+publishing breach status, but Compose unnecessarily invokes `--once` inside a shell loop and exits on every
+critical assessment. Research requires an explicit `token_ids` allowlist plus matching active market/token
+records; no scope was invented. Host settings already enable both `bot_autopilot` and `polymarket`, so the
+paper bot's remaining activation boundary is external provider polling under restricted delegation. No source
+fix or provider/runtime action was performed.
+
+## User Follow-up - 2026-07-29 repair server Bash installer
+
+Reported that `tools/install-system.sh` was absent and `git fetch origin` failed in the server's
+`~/Documents/codeptit/bash` directory.
+
+## Work - 2026-07-29 narrow Bash installer recovery
+
+Confirmed the server directory is an independent `master` repository with no remotes, while the workstation
+canonical checkout has substantial uncommitted work and the installer itself is untracked. Copied only
+`tools/install-system.sh` to the server, verified matching SHA-256
+`91fa8f2b0063a85ef7389d7b98412077a254b15684d24170f820a157a3162131`, and successfully created six
+user-local command links. No Git remote/history or broader Bash source was changed.
+
+## User Prompt - 2026-07-29 end session
+
+Invoked `session-orchestrator` and requested immediate durable closeout. Preserve all uncommitted work and stop.
+
+## User Prompt - 2026-07-29 session boot
+
+Invoked `session-orchestrator` to restore the repository's durable state and await task routing.
+
+## Work - 2026-07-29 session boot
+
+Read the bootstrap, current handoff, durable session/state/next-goal tails, documentation hub, and checkout
+identity. Preserved the six pre-existing modified continuity/report files. `graphify`/`graphify-out` is
+unavailable and no source-code change is present, so no graph refresh or functional implementation ran.
+
+## User Prompt - 2026-07-29 blast-through
+
+Invoked `blast-through` without a narrower target.
+
+## Work - 2026-07-29 portfolio-monitor triage
+
+Ran triage audit mode in Fast Reading Mode against the current portfolio-monitor activation queue. Confirmed
+that Compose-owned `--once` execution turns critical assessments into restarts, while the environment manifest,
+architecture contracts, and deployment guide still encode that old behavior. The existing focused three-file
+suite passes but has no persistent multi-cycle breach regression. Recorded BT-PM-1 through BT-PM-3 in
+`workspace/DEV_REVIEW.md`. No production source, test expectation, provider, runtime, container, data, order,
+public, or live state changed.
+
+## User Prompt - 2026-07-29 deep blast-through current-run monitoring
+
+Requested a deep blast-through while monitoring the current run.
+
+## Work - 2026-07-29 deep local current-run audit
+
+Ran full audit mode in Fast Reading Mode. Repeated snapshots and approved read-only Docker inspection proved
+the observable run is local to `steamlinux`: the portfolio monitor advanced from 170 to 179 restarts while the
+paper bot remained healthy and non-live. The shared July-27 image is mixed-lineage and lacks revision identity;
+it does not match exact checkout `89428649`. Source gates remain green (committed archive, hygiene, structure
+16/16), and local required-daily integrity is 92/92 with DCS 1.0. Recorded findings BT-RUN-1 through BT-RUN-5,
+updated section grades and the next bounded implementation handoff. No container, source, test, provider,
+threshold, paper state, order, public, or live mutation occurred.
+
+## Work - 2026-07-29 implement refined runtime-integrity plan
+
+Implemented the approved mass batches for canonical monitor/health/backup loops, restart-safe backup due-time
+recovery, exact image provenance, manifest-derived active optional-service reconciliation, paper-state gating,
+deployment evidence, and rollback. Added adversarial operational and updater coverage and aligned Compose,
+environment contracts, and deployment docs. Focused gates and the host-capable aggregate suite passed; final
+pre-closeout implementation snapshot evidence `81b7974c-9be6-42ad-97ab-e57bb60e4236` is PASS. Exact-image local rehearsal was
+deferred at the clean committed-source gate. No container, remote host, provider, threshold, paper state,
+order, public, or live mutation occurred.

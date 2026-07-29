@@ -2611,3 +2611,112 @@ retains commit identity. Focused contracts pass 10/10.
 Committed-archive evidence `4346d24e-a72e-4ab5-b75b-1fb9be8a6ebe` is PASS for tree `b17485e...`, with all
 five lockfile roots, builds, native 30/30, environment, secrets 905/0, API/contracts/structure, and aggregate
 Node gates. Authenticated CI and target deployment remain separate and unproven.
+
+## Portfolio-monitor activation triage - 2026-07-29
+
+### Confirmed findings
+
+| ID | Severity | Finding | Owner and evidence | Required decision / acceptance criteria | Verification gate |
+|---|---|---|---|---|---|
+| BT-PM-1 | P1 | A valid critical assessment terminates the Compose-owned one-shot loop, so `restart: unless-stopped` turns persistent risk visibility into a restart storm. | `infra/docker/docker-compose.yml:109,117-120`; the CLI already owns the persistent cycle at `backend/cli/commands/operational/portfolio_monitor.js:239-307`. | Route to `codex`. Compose must invoke the CLI-owned persistent loop; a breach must remain published as degraded/critical without terminating the service, while explicit `--once` retains its nonzero exit contract. Preserve SIGINT/SIGTERM stopped-state publication and all risk thresholds. | Focused Compose contract plus a persistent-loop breach regression; then deploy only the monitor service and prove stable restart count plus repeated breach/status publication. |
+| BT-PM-2 | P1 | The old one-shot/restart behavior is duplicated as a declared service identity and a documentation promise. A one-line Compose edit would leave config, contracts, and operator guidance contradictory. | `config/system/environment_manifest.json:61-71`; `tests/scripts/architecture/cli/core/compose_environment_contract.test.js:27-55`; `tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js:78-81`; `docs/operational/guides/DEPLOYMENT.md:182-191`. | Change the canonical service contract from Compose-owned one-shot retries to CLI-owned persistent monitoring, and report the before/after expectation. Keep one-shot failure semantics for direct operator checks. | Environment/deployment contract suites must assert the new persistent command identity and docs must distinguish persistent status publication from one-shot exit behavior. |
+| BT-PM-3 | P1 test gap | Current tests prove risk calculations and one-shot exit mapping, but do not exercise `commandPortfolioMonitor` through multiple cycles or prove that a breach survives into a later cycle without process exit. | `tests/scripts/operational/portfolio_monitor.test.js:93-188`; `backend/cli/commands/operational/portfolio_monitor.js:288-307`. | Add bounded dependency injection or another production-path harness for fetch/sleep/status publication. Require at least two cycles: first critical, second healthy or critical, with no exit between them and correct persisted heartbeat/status transitions. Do not mock away `commandPortfolioMonitor`. | The new regression must fail against the current Compose ownership/old command contract and pass only after the persistent service path is wired. |
+
+### Dismissed candidates and boundaries
+
+- The BTC `max_position_notional` breach is not a false positive established by this source triage. Do not
+  weaken or raise the threshold merely to keep the service running.
+- Broker authentication absence is not repaired by changing the loop. The service environment deliberately
+  excludes provider/account credentials; any future account-read authority change requires a separate
+  least-privilege review.
+- The focused three-file suite passes, but it proves the current one-shot service contract rather than the
+  desired persistent-on-breach behavior: 3 files pass, 0 fail.
+
+Context was bounded to the monitor CLI, Compose service, environment manifest, deployment guide, focused
+operational tests, and two architecture contracts. No host was queried, no container was started, and research,
+paper, provider, data, order, public, and live surfaces were not exercised.
+
+## Deep current-run audit - 2026-07-29 Fast Reading Mode
+
+### Severity-ordered findings
+
+| ID | Severity | Evidence class | Finding | Owner / acceptance criteria | Verification gate |
+|---|---|---|---|---|---|
+| BT-RUN-1 | P1 | proven local deployed-runtime failure | The active `steamlinux` containers share image `sha256:264732...`, created 2026-07-27, while the checkout is `89428649`. Image monitor source matches old commit `916c2964`; its embedded Compose file matches the later `e78e1788/0383d47b` state. The image is therefore mixed-lineage and not an exact build of current committed source. It has no source-revision label. | `infra/docker/Dockerfile`, Compose build/recreate flow, and image provenance. Build only from a clean exact commit, label the revision/tree, publish or retain an immutable digest, recreate the selected services, and prove container file hashes or revision labels match. Do not infer remote `vgbn-servers` state from this local runtime. | Clean committed-archive PASS; deterministic image build; revision/digest assertion; recreated-container image IDs; source/runtime hash parity. |
+| BT-RUN-2 | P1 | proven local runtime failure | `docker-portfolio-monitor-1` remained in `restarting` with exit 1. Restart count advanced 170 to 179 during observation. Each one-shot cycle records the valid BTC breach and then exits, leaving zero steady monitor PIDs between restarts. | BT-PM-1 through BT-PM-3. Route one bounded fix to `codex`: use the CLI-owned persistent loop, preserve one-shot nonzero semantics, risk thresholds, degraded publication, and signal handling. | Multi-cycle breach regression; focused contracts; exact-image rebuild; recreated monitor with stable restart count and at least two consecutive published cycles. |
+| BT-RUN-3 | P1 | proven local observability failure | The current status artifact combines fresh portfolio metrics with stale top-level `error: spawnSync /usr/local/bin/node ETIMEDOUT` and raw broker 401 text. The current checkout contains later error sanitization/clearing code, but the running image predates it. Operators cannot distinguish current breach truth from stale transport state in this runtime. | Status schema and service heartbeat owner. A successful structured assessment must clear prior transport errors; persisted/API fields must remain sanitized while raw CLI semantics stay available only at the immediate command boundary. | Failure-then-success status regression against the production command; image/source parity; two runtime cycles proving stale error removal. |
+| BT-RUN-4 | P1 | proven source operational gap | `update-central-host.sh` rebuilds and force-recreates only `web` and `backfill`, then writes the deployed-head marker. Already-running optional services can remain on older images while checkout/marker claims advance. | `infra/docker/update-central-host.sh:79-105`. Either detect and recreate only currently running opt-in services safely, or record per-service image revision/digest and make the deployment marker explicitly web/backfill-scoped. Never silently start inactive profiles. | Updater contract with active/inactive optional-service fixtures; per-service revision evidence; rollback test. |
+| BT-RUN-5 | P2 | proven local runtime / continuity drift | The local paper bot is running even though the prior closeout said paper was stopped. It remained healthy from iteration 158 to 162, with `LIVE_TRADING=false` and `SOVEREIGN_EXECUTION_AUTHORIZED=false`; the paper projection advanced while the ledger event count stayed at six. This is non-live, but current operator state was not durably represented. | Session/runtime ownership. Record host identity and active profiles separately for `steamlinux` and `vgbn-servers`; do not treat one host's state as the other. Decide explicitly whether the local paper bot should continue before any mutation or stop action. | Read-only container/profile inventory, safety-flag check, paper state/ledger parity, and explicit user decision. |
+
+### Connectivity matrix
+
+| Surface | Classification | Evidence |
+|---|---|---|
+| CLI monitor loop | intentional but incompletely verified | `commandPortfolioMonitor` owns persistent cycling; pure risk and one-shot exit tests pass, but no bounded multi-cycle command regression exists. |
+| Compose monitor loop | dangerous | Duplicates scheduling with `--once`, exits on every valid critical assessment, and directly caused the observed restart storm. |
+| Environment manifest and architecture contracts | stale | Still identify the service as `portfolio-monitor --once --json` and assert `|| exit`. |
+| Deployment guide | stale | Promises monitor failures will exit/restart; that conflicts with the newly selected persistent degraded-status contract. |
+| Image provenance | incomplete | Mutable `personal_finance:latest`; no revision label; current running image is mixed-lineage. |
+| Central updater | incomplete | Exact checkout marker covers web/backfill readiness but not active optional-profile image parity. |
+| Paper runner | intentional non-live | Runtime command is `run bot paper`; forced cloud-compute/non-live/non-execution flags were directly observed. |
+
+### Grades and system-design evidence
+
+| Reviewed section | Grade | Reason |
+|---|---|---|
+| Portfolio-monitor CLI source | B | Fail-closed schema/risk behavior and persistent loop exist, but command-level multi-cycle verification and clean status transitions are missing. |
+| Compose and runtime image ownership | D | The current monitor is restart-looping from a mixed-lineage image with no exact revision identity. |
+| Monitor/deployment contracts and tests | B- | Strong structural coverage exists, but it locks in the defective one-shot ownership and misses optional-service version drift. |
+| Local required-daily data integrity | A- | Current configured policy reports 92/92 cached, zero missing/stale/unexplained, nine cadence-plausible suspects, and one declared RNDR exception. DCS is 1.0 for this local required-daily policy only. |
+| Paper runtime safety | B / runtime-only | Bot is healthy and forced non-live/non-execution, but provider-backed operation, ledger/projection parity, recovery, and soak were not requalified. |
+| Cross-cutting system design | C / monitoring-and-provenance-failed | Core source gates are green, but the mandatory path fails at deployed monitoring truth and runtime provenance. Remote host, recovery, rollback, and soak remain separate. |
+
+System-design lenses: context/host identity partial; ownership failed at Compose versus CLI scheduling;
+contracts failed at manifest/tests/docs parity; local required-daily lineage proven; state/replay partial;
+non-live safety proven for the local bot flags; reliability failed for the monitor; observability failed for
+stale error/runtime identity; performance/cost partial; evolution/rollback partial.
+
+### Commands, counts, and boundaries
+
+- Repeated file/process snapshots; local Docker `ps`, state/restart counters, selected non-secret safety flags,
+  source hashes, image metadata, status artifacts, and paper run-status inspection.
+- Monitor restart count: 170 -> 179; status cycle: 1930 -> 1943; current BTC notional about 32,041 versus
+  25,000 limit; Gate.io connected; Alpaca live returned 401.
+- Paper bot: iteration 158 -> 162; restart count 0; current run status healthy. Paper ledger remained six
+  events while the protected projection and run-status timestamps advanced.
+- `backend integrity --json`: 92 configured/cached, 0 missing, 0 stale, 0 unexplained, 9 cadence-plausible,
+  1 declared exception; local required-daily DCS 1.0.
+- `npm run hygiene`: pass. `npm run test:structure`: 16/16 pass. `git diff --check`: pass.
+- Current committed-archive evidence is schema-v2 PASS for exact `89428649`; it is source proof, not proof of
+  the observed July-27 image or the remote central host.
+
+No container was started, stopped, restarted, recreated, or modified. No source/test contract, credential,
+provider configuration, risk threshold, paper state, order, public bind, or live flag was changed. Raw provider
+logs and secret-bearing environment values were not read. The Docker evidence is from local host `steamlinux`;
+`vgbn-servers` was not queried.
+
+## Runtime integrity implementation review - 2026-07-29
+
+### Closed in source
+
+- **RUN-1/RUN-5:** persistent monitor loop is canonical; direct `--once` remains nonzero on breach; repeated
+  breaches no longer imply process death; recovered cycles clear stale/raw persisted errors.
+- **RUN-4/RUN-6:** host health and backup use explicit Node watch modes. Backup scheduling survives recreation
+  without an avoidable immediate snapshot; Compose health no longer relies on cross-container PIDs.
+- **RUN-2/RUN-3:** commit/tree image labels, exact image references, manifest-derived active-set reconciliation,
+  paper-state gating, provider-research refusal, atomic evidence, and per-service rollback are implemented.
+- Updater negative coverage includes dirty/unknown profiles through existing contracts plus no-op parity,
+  build failure, label mismatch, active optional services, research refusal, post-cutover failure, paper-state
+  mutation, evidence publication failure, and rollback.
+
+### Evidence and remaining gates
+
+- PASS: focused nine-file operational/architecture set; updater harness 11/11; environment manifest; hygiene;
+  structure 16/16; deployment contract; secrets 906/0; host-capable aggregate Node; pre-closeout implementation
+  snapshot evidence `81b7974c-9be6-42ad-97ab-e57bb60e4236`.
+- The first restricted aggregate attempt produced child-process/PTY `EPERM` failures and was not counted.
+  The exact host-capable rerun passed.
+- Direct Compose rendering was blocked by absent `.env.services/web.env`; no environment file was fabricated.
+- Deferred: commit/committed archive, actual image build, local cutover, restart observation, backup due-time
+  observation, rollback drill, remote deployment, soak, provider/paper qualification, and live.
+- Review grade: **B- / source-fixed, runtime-gated**. No deployment or runtime grade increase is claimed.

@@ -70,16 +70,17 @@ SOVEREIGN_CENTRAL_ENV_FILE="$PWD/.env.central" infra/docker/update-central-host.
 
 The updater refuses dirty, wrong-branch, divergent, or locally-ahead Git state; uses `git merge --ff-only`;
 requires `HEAD` to equal the fetched remote branch; serializes deployments with `flock`; validates
-Docker/Compose/disk/private-bind/secret policy; recreates only `web` and `backfill`; and verifies the web
-container's internal healthcheck plus a running backfill container before succeeding.
+Docker/Compose/disk/private-bind/secret policy; builds one commit-and-tree-labeled image; recreates `web`,
+`backfill`, and only optional services that were already active; and verifies every resulting container
+against the same image ID before succeeding. It refuses automatic cutover while `polymarket-research` is
+active because recreation can trigger provider polling.
 The preflight also rejects non-x64 hosts and detected memory below the 8GB-class floor before any image
 replacement. Linux may report slightly less than the installed module capacity, so the detected-byte threshold
 allows normal kernel reservation while still rejecting 4GB-class machines.
-If the fetched branch matches the last successfully deployed commit, the web health endpoint passes, and the
-backfill container is running, it exits
-without rebuilding or restarting. The success marker lives under `.git/`, so a failed build or health check is
-retried on the next timer cycle even though Git already fast-forwarded. Set `SOVEREIGN_DEPLOY_FORCE=true` for
-an intentional rebuild after an environment-only change.
+It exits without rebuilding only when the commit marker, deployment evidence manifest, active service set,
+image ID, provenance labels, web health, and paper safety overrides all agree. Both success records live
+under `.git/`, so a failed build or verification is retried even though Git already fast-forwarded. Set
+`SOVEREIGN_DEPLOY_FORCE=true` for an intentional rebuild after an environment-only change.
 
 ## Automatic host-side updates
 
@@ -99,9 +100,9 @@ git fetch origin main
 
 The developer machine then only pushes reviewed commits to `main`. The central host fetches and fast-forwards
 itself; GitHub-hosted runners never receive the host environment or provider credentials. Git/preflight/build
-failures occur before service replacement. A failure after Compose recreation can leave the new containers
-unhealthy; there is no automatic rollback. Persisted `storage/` remains mounted, the success marker stays old,
-and the timer retries the same commit while the failure remains visible in the systemd journal.
+failures occur before service replacement. A failure after Compose recreation restores each captured active
+service from its pre-cutover image tag. If that rollback cannot be verified, both success records stay old
+and the journal reports the manual-recovery boundary. Persisted `storage/` remains mounted throughout.
 Protect `main` and require the automatic Test and Build checks before merge; the host timer does not query
 GitHub check status itself.
 

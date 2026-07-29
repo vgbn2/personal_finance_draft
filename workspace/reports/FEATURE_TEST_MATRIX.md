@@ -5,6 +5,15 @@ Run window: 2026-06-11, Asia/Saigon
 This is the active feature-evidence ledger. The dated 2026-06-11 rows remain historical baseline evidence;
 the session-dated sections below are the current rerun results.
 
+## Central Host Runtime Activation Preflight - 2026-07-29
+
+| Feature | Entrypoint | Mode | Result | Evidence Class | Evidence | Limitation / Next Action |
+|:---|:---|:---|:---|:---|:---|:---|
+| Portfolio monitor | Compose `monitoring` profile | deployed read-only monitor | blocked | deployed-host runtime proof | Exited fail-closed after seven restarts; BTC notional 32,053.9 exceeds 25,000 threshold and Alpaca authentication is unavailable | Resolve the exposure-policy decision and Alpaca service authentication; do not weaken the threshold merely to keep the container alive. |
+| Polymarket research | Compose `research` profile | scoped provider/archive loop | blocked | deployed-host preflight | Required `storage/polymarket/scope.json` is absent | User must supply the intended bounded market/token scope; provider polling requires restricted delegation under repository policy. |
+| Paper bot | Compose `paper` profile | private-paper provider loop | blocked | source + deployed-host preflight | Compose command is paper-only and central overrides remain non-live; historical paper ledger paths exist | External provider polling requires explicitly authorized restricted delegation; no provider call or paper-state mutation ran. |
+| Live execution | central-host Compose/runtime policy | real-money execution | blocked | source + deployed-host policy proof | Central Compose and `.env.central` force `LIVE_TRADING=false` and `SOVEREIGN_EXECUTION_AUTHORIZED=false`; no live service exists | A separate reviewed execution deployment is required; central-host safety overrides must not be weakened ad hoc. |
+
 ## Auth And Combined Engine Finalization - 2026-07-28 session 116
 
 | Feature | Entrypoint | Mode | Result | Evidence Class | Evidence | Limitation / Next Action |

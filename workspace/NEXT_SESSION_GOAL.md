@@ -838,3 +838,61 @@ Next operational actions, in order:
 The pre-deploy server worktree remains recoverable as `stash@{0}`. Do not drop or apply it without a separate
 review. Keep bot, paper, monitoring, research, public exposure, orders, and live execution stopped unless
 separately authorized.
+
+## 2026-07-29 closeout override - finish bounded service activation
+
+Preserve the five uncommitted finance continuity/report files from this session. First next action:
+
+1. route the portfolio-monitor Compose ownership defect to `codex`;
+2. remove the Compose-owned `--once`/restart loop in favor of the CLI's persistent loop while preserving
+   nonzero one-shot exit semantics and critical/degraded status publication;
+3. add a focused Compose contract plus persistent-loop breach regression and run the operational monitor tests;
+4. obtain explicit bounded Polymarket market/token IDs before creating `storage/polymarket/scope.json`;
+5. obtain explicit restricted-delegation authorization before any research or paper provider poll;
+6. keep central-host live/execution overrides false.
+
+Separately, decide how to reconcile the Bash toolkit before adding a server `origin`: the workstation
+`/home/vgbn1/Documents/codeptit/bash` checkout contains substantial uncommitted work, while the server is an
+independent `master` repository. The installer and six links are already repaired; do not broad-rsync or
+rewrite either Git history without review.
+
+## 2026-07-29 deep current-run override - restore runtime identity and monitor stability
+
+First obtain an explicit user decision on whether the healthy local `steamlinux` paper bot should continue.
+Do not stop, recreate, or otherwise mutate it implicitly.
+
+Then route one bounded `codex` batch:
+
+1. replace Compose-owned monitor one-shot retries with the CLI persistent loop while preserving direct
+   `--once` exit semantics, risk thresholds, degraded publication, and signal handling;
+2. add a multi-cycle breach/status regression, clear stale transport errors after successful assessments,
+   and align the environment manifest, architecture contracts, and deployment guide;
+3. add exact source revision/tree identity to built images;
+4. make the updater either safely recreate only already-running optional services or publish per-service
+   revision/digest evidence and explicitly scope the deployed-head marker to web/backfill;
+5. build from a clean exact commit, recreate only explicitly approved services, and prove source/image parity,
+   stable monitor restart count, and repeated breach publication.
+
+Keep live/execution false. Do not weaken the BTC threshold, invent provider credentials, start research, create
+orders, or infer `vgbn-servers` state from the local `steamlinux` audit.
+
+## 2026-07-29 runtime-integrity implementation override
+
+The source batch is implemented and worktree-verified. Do not reimplement the monitor, health, backup,
+provenance, or updater contracts.
+
+Next:
+
+1. review the production/test diff and obtain explicit authorization before staging or committing;
+2. commit the coherent source/test/docs/continuity batch, then run `verify:committed-archive`;
+3. create or validate the required owner-only `.env.services/*` projections without exposing values;
+4. capture local paper ledger/projection hashes, backup due time, active set, image IDs, restart counts, and
+   safety flags;
+5. build the exact commit-labeled image and rehearse only on local `steamlinux`, recreating the captured active
+   set while research remains stopped;
+6. observe monitor and host-health for at least two cycles, prove backup did not run early, prove paper parity,
+   and retain rollback evidence.
+
+Until commit authorization and the clean exact-source gate exist, do not build/recreate containers. Keep
+`LIVE_TRADING=false`, execution authorization false, BTC thresholds unchanged, and remote/provider/public/live
+boundaries closed.

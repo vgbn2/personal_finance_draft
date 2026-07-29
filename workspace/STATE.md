@@ -2140,3 +2140,58 @@ windows remain open.
   inputs; `89771802` includes the tracked CLI backfill compatibility module.
 - This is initial deployed-host health and one-writer startup proof. Authenticated CI, deploy-key/timer
   automation, freshness/DCS, restart/rollback/recovery, and soak remain separate open gates.
+
+## Additional central-host monitoring - 2026-07-29
+
+- `host-health` and `host-backup` now run under the non-live `monitoring` profile. The first health check
+  passed, and a new 2,155-file host backup completed.
+- `portfolio-monitor` remains stopped after failing closed on a BTC notional threshold breach and unavailable
+  Alpaca authentication. `polymarket-research` remains stopped because its required scope file is absent.
+- Paper, orders, public exposure, and live execution remain disabled.
+
+## Service activation triage - 2026-07-29
+
+- The portfolio monitor restart loop is a Compose ownership defect, not a reason to weaken risk thresholds:
+  Compose invokes `--once` and exits on a valid breach even though the CLI owns a persistent monitoring loop.
+- Research needs a real explicit token allowlist and matching active market records. Server feature flags
+  already enable Polymarket and bot autopilot, but no provider-backed research or paper cycle ran.
+
+## Deep local current-run audit - 2026-07-29
+
+- This audit observed `steamlinux`, not `vgbn-servers`. Local Docker uses image `sha256:264732...`, created
+  2026-07-27, while checkout/source evidence is exact `89428649`.
+- The image is mixed-lineage: monitor source matches `916c2964`, embedded Compose matches
+  `e78e1788/0383d47b`, and no source-revision label exists.
+- `docker-portfolio-monitor-1` remained restart-looping; restart count advanced 170 to 179 while status cycles
+  advanced 1930 to 1943. BTC notional remained around 32k versus the 25k limit; Gate.io was connected and
+  Alpaca live returned 401. The old image also persisted a stale raw ETIMEDOUT error beside fresh metrics.
+- The local paper bot is running and healthy under cloud-compute with live/execution false. Iteration advanced
+  158 to 162; no live flag, order, or public exposure was enabled by this audit.
+- Current source gates remain green: schema-v2 committed archive PASS for `89428649`, hygiene pass, structure
+  16/16, and local required-daily integrity 92/92 with DCS 1.0. These do not prove the stale running image or
+  remote host.
+- System design is C / monitoring-and-runtime-provenance-failed. Do not mutate current containers until the
+  user decides whether the local paper bot should continue and authorizes a bounded monitor/image repair.
+
+## Runtime integrity mass implementation - 2026-07-29
+
+- Lifecycle: `proposed -> preflight -> GO WITH FIXES -> implemented -> verified -> reviewed -> deferred`.
+- Node now owns persistent portfolio-monitor, host-health, and host-backup loops. Direct one-shot behavior is
+  preserved; breaches, degraded health, backup failures, and retention failures publish state without causing
+  Compose restart storms. Compose host health explicitly disables cross-container PID inference.
+- Backup watch mode preserves a valid `next_run_at`, falls back only to a matching completed manifest, and
+  refuses to guess when schedule evidence is unreadable.
+- Images now carry exact source revision/tree/build-contract labels. The central updater derives service
+  profiles from the environment manifest, reconciles only the prior active set, refuses active research,
+  stages paper-bot resume after ledger/projection parity, writes owner-only deployment evidence, and rolls
+  back per-service images on verification/publication failure.
+- Focused operational/architecture verification passed, as did environment, hygiene, structure 16/16,
+  deployment, secrets 906/0, host-capable aggregate Node, native 30/30, API, and dashboard/typecheck gates.
+- Pre-closeout schema-v2 worktree evidence `81b7974c-9be6-42ad-97ab-e57bb60e4236` is PASS for the dirty
+  1,271-file implementation snapshot with content hash `0cedbbe3c7be...`. Append-only continuity records were
+  added afterward, so this is implementation source proof rather than an exact final-worktree fingerprint.
+- Exact-image rehearsal is deferred: no commit was authorized, the checkout remains dirty, required local
+  service env files are absent for direct Compose rendering, and the running local containers remain on the
+  old `personal_finance:latest` image. The monitor was still restarting at final read-only inspection.
+- No container, remote host, provider, threshold, paper ledger, order, public binding, or live flag was
+  mutated. System design moves to **B- / source-fixed, runtime-gated**; deployment/recovery/soak remain open.
