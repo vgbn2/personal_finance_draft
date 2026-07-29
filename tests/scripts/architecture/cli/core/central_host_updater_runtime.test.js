@@ -268,7 +268,16 @@ test('central updater builds one qualified image and reconciles required service
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /central host update complete/);
-  assert.ok(actions.some((line) => line.includes(' build web')));
+  const buildIndex = actions.findIndex((line) => line.includes(' build web'));
+  const rollbackTagIndexes = actions
+    .map((line, index) => (line.startsWith('image tag ') ? index : -1))
+    .filter((index) => index >= 0);
+  assert.ok(buildIndex >= 0);
+  assert.equal(rollbackTagIndexes.length, 2);
+  assert.ok(
+    rollbackTagIndexes.every((index) => index < buildIndex),
+    'running images must be tagged for rollback before rebuilding the deployment tag',
+  );
   assert.ok(actions.some((line) => line.includes('up -d --no-build --force-recreate web backfill')));
   assert.equal(
     fs.readFileSync(path.join(harness.root, '.git', 'sovereign-central-deployed-head'), 'utf8').trim(),
