@@ -35,9 +35,9 @@ test('central environment preparation copies only approved research settings and
     'SOVEREIGN_IP_CHANGE_POLICY=audit',
     'SOVEREIGN_TRUST_PROXY=false',
     'BACKFILL_INTERVAL_SECS=1800',
-    'ALPACA_API_KEY=',
-    'ALPACA_SECRET_KEY=',
-    'ALPACA_BASE_URL=https://paper-api.alpaca.markets',
+    'ALPACA_PAPER_API_KEY=',
+    'ALPACA_PAPER_SECRET_KEY=',
+    'ALPACA_PAPER_BASE_URL=https://paper-api.alpaca.markets',
     'FINNHUB_API_KEY=',
     'TWELVE_DATA_API_KEY=',
     'POLYMARKET_RESEARCH_SCOPE_FILE=',
@@ -45,9 +45,11 @@ test('central environment preparation copies only approved research settings and
     '',
   ].join('\n'));
   fs.writeFileSync(sourcePath, [
-    'ALPACA_API_KEY=research-key',
-    'ALPACA_API_SECRET=research-secret',
-    'ALPACA_URL=https://live-api.example.invalid',
+    'ALPACA_PAPER_API_KEY=research-key',
+    'ALPACA_PAPER_SECRET_KEY=research-secret',
+    'ALPACA_PAPER_BASE_URL=https://paper-api.alpaca.markets',
+    'ALPACA_LIVE_API_KEY=must-not-copy-live',
+    'ALPACA_LIVE_SECRET_KEY=must-not-copy-live',
     'FINHUB_API_KEY=finnhub-alias',
     'TWELVE_API_KEY=twelve-alias',
     'SOVEREIGN_SUPABASE_SECRET_KEY="value with spaces"',
@@ -62,14 +64,16 @@ test('central environment preparation copies only approved research settings and
   const prepared = parseEnvFile(outputPath);
   assert.equal(result.execution_credentials_copied, false);
   assert.deepEqual(result.copied_keys, [
-    'ALPACA_API_KEY',
-    'ALPACA_SECRET_KEY',
+    'ALPACA_PAPER_API_KEY',
+    'ALPACA_PAPER_SECRET_KEY',
     'FINNHUB_API_KEY',
     'SOVEREIGN_SUPABASE_SECRET_KEY',
     'TWELVE_DATA_API_KEY',
   ]);
-  assert.equal(prepared.ALPACA_SECRET_KEY, 'research-secret');
-  assert.equal(prepared.ALPACA_BASE_URL, 'https://paper-api.alpaca.markets');
+  assert.equal(prepared.ALPACA_PAPER_SECRET_KEY, 'research-secret');
+  assert.equal(prepared.ALPACA_PAPER_BASE_URL, 'https://paper-api.alpaca.markets');
+  assert.equal(prepared.ALPACA_LIVE_API_KEY, undefined);
+  assert.equal(prepared.ALPACA_LIVE_SECRET_KEY, undefined);
   assert.equal(prepared.FINNHUB_API_KEY, 'finnhub-alias');
   assert.equal(prepared.TWELVE_DATA_API_KEY, 'twelve-alias');
   assert.equal(prepared.SOVEREIGN_API_TOKEN.length, 64);
@@ -90,19 +94,21 @@ test('central environment preparation copies only approved research settings and
     assert.equal(validateComposeServiceEnvironment(service.service, projected).ok, true);
   }
   assert.equal(
-    parseEnvFile(path.join(root, '.env.services', 'web.env')).ALPACA_API_KEY,
+    parseEnvFile(path.join(root, '.env.services', 'web.env')).ALPACA_PAPER_API_KEY,
     undefined,
   );
   assert.equal(
-    parseEnvFile(path.join(root, '.env.services', 'backfill.env')).ALPACA_API_KEY,
+    parseEnvFile(path.join(root, '.env.services', 'backfill.env')).ALPACA_PAPER_API_KEY,
     'research-key',
   );
   const monitorEnvironment = parseEnvFile(
     path.join(root, '.env.services', 'portfolio-monitor.env'),
   );
-  assert.equal(monitorEnvironment.ALPACA_API_KEY, 'research-key');
-  assert.equal(monitorEnvironment.ALPACA_SECRET_KEY, 'research-secret');
-  assert.equal(monitorEnvironment.ALPACA_BASE_URL, 'https://paper-api.alpaca.markets');
+  assert.equal(monitorEnvironment.ALPACA_PAPER_API_KEY, 'research-key');
+  assert.equal(monitorEnvironment.ALPACA_PAPER_SECRET_KEY, 'research-secret');
+  assert.equal(monitorEnvironment.ALPACA_PAPER_BASE_URL, 'https://paper-api.alpaca.markets');
+  assert.equal(monitorEnvironment.ALPACA_LIVE_API_KEY, undefined);
+  assert.equal(monitorEnvironment.ALPACA_LIVE_SECRET_KEY, undefined);
   assert.equal(monitorEnvironment.SOVEREIGN_TRADE_PIN, undefined);
   assert.equal(monitorEnvironment.POLYMARKET_PRIVATE_KEY, undefined);
   assert.doesNotMatch(JSON.stringify(result), /research-secret|must-not-copy|must-not-reuse/);

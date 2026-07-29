@@ -2,7 +2,7 @@ const { fetchJson } = require('./common');
 const { resolveAlpacaSettings } = require('../brokers/alpaca_env');
 
 // Alpaca API configuration
-// Expects ALPACA_API_KEY plus ALPACA_SECRET_KEY or ALPACA_API_SECRET.
+// Prefers the explicit Alpaca Paper credential set; legacy generic names remain a compatibility fallback.
 const BASE_URL = 'https://data.alpaca.markets/v2';
 const DEFAULT_LIMIT = 1000;
 const DEFAULT_PAGINATED_LIMIT = 10000;
@@ -50,7 +50,10 @@ async function fetchAlpacaBaseCandles(symbol, limitOrTimeframe = DEFAULT_LIMIT, 
   const { keyId: apiKey, secretKey: apiSecret } = resolveAlpacaSettings(process.env);
   
   if (!apiKey || !apiSecret) {
-    throw new Error("Alpaca API credentials (ALPACA_API_KEY, ALPACA_SECRET_KEY or ALPACA_API_SECRET) missing");
+    throw new Error(
+      'Alpaca Paper API credentials '
+      + '(ALPACA_PAPER_API_KEY and ALPACA_PAPER_SECRET_KEY) missing',
+    );
   }
 
   const args = normalizeAlpacaArgs(symbol, limitOrTimeframe, timeframeOrLimit, startTs, endTs);

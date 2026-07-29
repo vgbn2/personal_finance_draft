@@ -64,6 +64,10 @@ test('environment manifest classifies source and example names without exposing 
     'ALPACA_SECRET_KEY',
     'ALPACA_API_SECRET',
   ]);
+  assert.deepEqual(aliasesForCentralCopy().ALPACA_PAPER_API_KEY, [
+    'ALPACA_PAPER_API_KEY',
+  ]);
+  assert.equal(aliasesForCentralCopy().ALPACA_LIVE_API_KEY, undefined);
 });
 
 test('child environment projection is immutable, frozen, and rejects forbidden overrides', () => {
@@ -189,9 +193,12 @@ test('compose service contract covers exactly seven isolated service surfaces', 
   assert.equal(projectEnvironmentForComposeService(allEnvironment, 'web').FRED_API_KEY, undefined);
   assert.equal(projectEnvironmentForComposeService(allEnvironment, 'host-health').ALPACA_API_KEY, undefined);
   const monitorEnvironment = projectEnvironmentForComposeService(allEnvironment, 'portfolio-monitor');
-  assert.equal(monitorEnvironment.ALPACA_API_KEY, 'ALPACA_API_KEY-value');
-  assert.equal(monitorEnvironment.ALPACA_SECRET_KEY, 'ALPACA_SECRET_KEY-value');
-  assert.equal(monitorEnvironment.ALPACA_BASE_URL, 'ALPACA_BASE_URL-value');
+  assert.equal(monitorEnvironment.ALPACA_PAPER_API_KEY, 'ALPACA_PAPER_API_KEY-value');
+  assert.equal(monitorEnvironment.ALPACA_PAPER_SECRET_KEY, 'ALPACA_PAPER_SECRET_KEY-value');
+  assert.equal(monitorEnvironment.ALPACA_PAPER_BASE_URL, 'ALPACA_PAPER_BASE_URL-value');
+  assert.equal(monitorEnvironment.ALPACA_LIVE_API_KEY, undefined);
+  assert.equal(monitorEnvironment.ALPACA_LIVE_SECRET_KEY, undefined);
+  assert.equal(monitorEnvironment.ALPACA_LIVE_BASE_URL, undefined);
   assert.equal(monitorEnvironment.SOVEREIGN_TRADE_PIN, undefined);
   assert.equal(monitorEnvironment.POLYMARKET_PRIVATE_KEY, undefined);
   const monitorRuntime = {
