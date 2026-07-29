@@ -236,6 +236,65 @@ function portfolioMonitorExitCode(assessment) {
   return assessment && assessment.ok ? 0 : 1;
 }
 
+function sanitizedStatusPatch(patch) {
+  const result = { ...patch };
+  if (Object.hasOwn(result, 'error')) {
+    result.error = result.error ? errorCode(result.error) : null;
+  }
+  return result;
+}
+
+async function runPortfolioMonitorLoop(options = {}) {
+  const once = options.once === true;
+  const intervalSecs = options.intervalSecs;
+  const nowMs = options.nowMs || (() => Date.now());
+  const wait = options.sleep || sleep;
+  const fetchPortfolio = options.fetchPortfolio;
+  const publishStatus = options.publishStatus || (() => {});
+  const onCycle = options.onCycle || (() => {});
+  const maxCycles = Number.isInteger(options.maxCycles) && options.maxCycles > 0
+    ? options.maxCycles
+    : null;
+  let status = { ...(options.initialStatus || {}) };
+  let cycle = finiteNumber(status.cycle);
+  let cyclesRun = 0;
+  let assessment = null;
+
+  /* eslint-disable no-await-in-loop */
+  for (;;) {
+    cycle += 1;
+    cyclesRun += 1;
+    publishStatus({ status: 'polling', cycle }, { attempted: false });
+    assessment = await runPortfolioMonitorCycle({
+      previousStatus: status,
+      thresholds: options.thresholds,
+      fetchPortfolio,
+      now: nowMs(),
+    });
+    const nextRunAt = once
+      ? null
+      : new Date(nowMs() + intervalSecs * 1000).toISOString();
+    const currentStatus = {
+      ...assessment,
+      cycle,
+      next_run_at: nextRunAt,
+    };
+    status = { ...status, ...currentStatus };
+    if (!assessment.error) {
+      delete status.error;
+      delete status.error_code;
+    }
+    delete status.stopped_signal;
+    publishStatus(currentStatus, { attempted: true, clearTransient: true });
+    onCycle({ cycle, ...assessment });
+    if (once || (maxCycles !== null && cyclesRun >= maxCycles)) break;
+    await wait(intervalSecs * 1000);
+  }
+  /* eslint-enable no-await-in-loop */
+
+  return { assessment, cycle, status };
+}
+
 async function commandPortfolioMonitor(args) {
   const once = hasFlag(args, '--once');
   const intervalSecs = Math.max(5, numericOption(
@@ -251,13 +310,14 @@ async function commandPortfolioMonitor(args) {
   const statusPath = optionValue(args, '--status-path', PORTFOLIO_MONITOR_STATUS_PATH);
   const thresholds = loadRiskThresholds(optionValue(args, '--risk-config', DEFAULT_RISK_CONFIG_PATH));
   let status = readPreviousStatus(statusPath);
-  let cycle = finiteNumber(status.cycle);
 
-  const writeStatus = (patch) => {
-    const persistedPatch = {
-      ...patch,
-      error: patch.error ? errorCode(patch.error) : patch.error,
-    };
+  const publishStatus = (patch, publication = {}) => {
+    const persistedPatch = sanitizedStatusPatch(patch);
+    if (publication.clearTransient) {
+      delete status.error;
+      delete status.error_code;
+      delete status.stopped_signal;
+    }
     status = {
       ...status,
       ...persistedPatch,
@@ -271,6 +331,7 @@ async function commandPortfolioMonitor(args) {
       writeServiceHeartbeat('portfolio_monitor', {
         state: persistedPatch.status === 'stopped' ? 'stopped' : (persistedPatch.status === 'polling' ? 'running' : (success ? 'healthy' : 'degraded')),
         success,
+        attempted: publication.attempted,
         error_code: persistedPatch.error_code || persistedPatch.error || null,
         next_run_at: persistedPatch.next_run_at || null,
       });
@@ -279,32 +340,26 @@ async function commandPortfolioMonitor(args) {
     }
   };
   const stop = (signal) => {
-    try { writeStatus({ status: 'stopped', stopped_signal: signal }); } catch (_) {}
+    try { publishStatus({ status: 'stopped', stopped_signal: signal }, { attempted: false }); } catch (_) {}
     process.exit(0);
   };
   process.once('SIGINT', () => stop('SIGINT'));
   process.once('SIGTERM', () => stop('SIGTERM'));
 
-  let assessment;
-  /* eslint-disable no-await-in-loop */
-  for (;;) {
-    cycle += 1;
-    writeStatus({ status: 'polling', cycle });
-    assessment = await runPortfolioMonitorCycle({
-      previousStatus: status,
-      thresholds,
-      fetchPortfolio: () => runGatewayCommand(['aggregate_portfolio', '--json'], { timeout: timeoutMs }),
-    });
-    writeStatus({ ...assessment, cycle });
-    if (!once) console.log(JSON.stringify({ type: 'portfolio_monitor_cycle', cycle, ...assessment }));
-    if (once) break;
-    writeStatus({ next_run_at: new Date(Date.now() + intervalSecs * 1000).toISOString() });
-    await sleep(intervalSecs * 1000);
-  }
-  /* eslint-enable no-await-in-loop */
+  const result = await runPortfolioMonitorLoop({
+    once,
+    intervalSecs,
+    thresholds,
+    initialStatus: status,
+    fetchPortfolio: () => runGatewayCommand(['aggregate_portfolio', '--json'], { timeout: timeoutMs }),
+    publishStatus,
+    onCycle: (assessment) => {
+      if (!once) console.log(JSON.stringify({ type: 'portfolio_monitor_cycle', ...assessment }));
+    },
+  });
 
-  if (once) printPayload({ type: 'portfolio_monitor', cycle, ...assessment }, args);
-  return portfolioMonitorExitCode(assessment);
+  if (once) printPayload({ type: 'portfolio_monitor', cycle: result.cycle, ...result.assessment }, args);
+  return portfolioMonitorExitCode(result.assessment);
 }
 
 module.exports = {
@@ -315,6 +370,8 @@ module.exports = {
   normalizePortfolioSnapshot,
   buildRiskAssessment,
   runPortfolioMonitorCycle,
+  runPortfolioMonitorLoop,
+  sanitizedStatusPatch,
   portfolioMonitorExitCode,
   commandPortfolioMonitor,
 };

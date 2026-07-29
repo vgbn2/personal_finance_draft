@@ -77,21 +77,25 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(backfill, /\.\.\/\.\.\/storage:\/app\/storage/);
   assert.match(portfolioMonitor, /profiles:\s*\[\s*monitoring\s*\]/);
   assert.match(portfolioMonitor, /PORTFOLIO_MONITOR_INTERVAL_SECS:-60/);
-  assert.match(portfolioMonitor, /portfolio-monitor[^\n]+\|\| exit \$\$\?/);
+  assert.match(portfolioMonitor, /portfolio-monitor/);
+  assert.doesNotMatch(portfolioMonitor, /--once|while true|\|\| exit/);
   assert.match(portfolioMonitor, /healthcheck:\s*\n\s+disable:\s*true/);
   assert.doesNotMatch(bot, /PORTFOLIO_MONITOR_/);
 
   assert.match(hostHealth, /HOST_HEALTH_INTERVAL_SECS:-300/);
-  assert.match(hostHealth, /host_health\.js[^\n]+\|\| exit \$\$\?/);
+  assert.match(hostHealth, /host_health\.js/);
+  assert.match(hostHealth, /--watch/);
+  assert.match(hostHealth, /--no-runner/);
+  assert.doesNotMatch(hostHealth, /while true|\|\| exit/);
   assert.match(hostHealth, /healthcheck:\s*\n\s+disable:\s*true/);
   assert.doesNotMatch(hostHealth, /HOST_BACKUP_|RUNNER_MAX_AGE|runner-max-age/);
 
   assert.match(hostBackup, /HOST_BACKUP_INTERVAL_SECS:-86400/);
   assert.match(hostBackup, /HOST_BACKUP_RETENTION_DAYS:-30/);
-  assert.match(hostBackup, /--destination "\$\$\{HOST_BACKUP_ROOT:-\/app\/storage\/backups\/host\}"/);
-  assert.match(hostBackup, /STATUS=\$\$\?/);
-  assert.match(hostBackup, /"\$\$STATUS" -eq 3/);
-  assert.match(hostBackup, /sleep \$\$INTERVAL\s+exit \$\$STATUS/);
+  assert.match(hostBackup, /--destination/);
+  assert.match(hostBackup, /\$\{HOST_BACKUP_ROOT:-\/app\/storage\/backups\/host\}/);
+  assert.match(hostBackup, /--watch/);
+  assert.doesNotMatch(hostBackup, /while true|STATUS=\$\$|\|\| exit/);
   assert.match(hostBackup, /healthcheck:\s*\n\s+disable:\s*true/);
 
   assert.match(polymarketResearch, /profiles:\s*\[\s*research\s*\]/);
@@ -167,17 +171,21 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(centralUpdater, /SOVEREIGN_NODE_BIN/);
   assert.match(centralUpdater, /docker compose --env-file/);
   assert.match(centralUpdater, /deployed_head_file=/);
-  assert.match(centralUpdater, /"\$\{deployed_head\}" == "\$\(git rev-parse HEAD\)"/);
+  assert.match(centralUpdater, /SOVEREIGN_SOURCE_REVISION="\$\(git rev-parse HEAD\)"/);
+  assert.match(centralUpdater, /sovereign-central-deployment\.json/);
+  assert.match(centralUpdater, /image_is_qualified/);
   assert.match(centralUpdater, /mv "\$\{deployed_head_tmp\}" "\$\{deployed_head_file\}"/);
-  assert.match(centralUpdater, /stack_is_deployment_ready/);
+  assert.match(centralUpdater, /capture_verified_services/);
   assert.match(centralUpdater, /SOVEREIGN_DEPLOY_FORCE/);
-  assert.match(centralUpdater, /up -d --force-recreate web backfill/);
+  assert.match(centralUpdater, /up -d --no-build --force-recreate web backfill/);
   assert.match(centralUpdater, /deployment_profile.*central-host/);
   assert.match(centralUpdater, /--profile writer/);
-  assert.doesNotMatch(centralUpdater, /up -d[^\n]*\bbot\b/);
-  assert.match(centralUpdater, /ps --status running --services backfill/);
+  assert.match(centralUpdater, /service_is_active_in bot/);
+  assert.match(centralUpdater, /LIVE_TRADING=false/);
+  assert.match(centralUpdater, /polymarket-research.*maintenance window/);
   assert.match(centralUpdater, /docker inspect --format/);
-  assert.match(centralUpdater, /web_health.*healthy/);
+  assert.match(centralUpdater, /State\.Health.*healthy/);
+  assert.match(centralUpdater, /rollback_cutover/);
   assert.doesNotMatch(centralUpdater, /127\.0\.0\.1:8787\/health/);
 
   assert.match(centralUpdaterInstaller, /systemctl enable --now sovereign-central-update\.timer/);
