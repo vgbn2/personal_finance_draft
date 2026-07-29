@@ -183,8 +183,20 @@ paper_state_fingerprint() {
   local ledger="${paper_storage_dir}/events.jsonl"
   local projection="${paper_storage_dir}/portfolio.v1.json"
   if [[ ! -r "${ledger}" || ! -r "${projection}" ]]; then
-    echo "active paper bot requires readable ledger and projection evidence" >&2
-    return 1
+    local bot_container_id copy_dir
+    bot_container_id="$(container_id_for_service bot)"
+    if [[ -z "${bot_container_id}" ]]; then
+      echo "active paper bot requires readable ledger and projection evidence" >&2
+      return 1
+    fi
+    copy_dir="$(mktemp -d "${temporary_dir}/paper-state.XXXXXX")"
+    ledger="${copy_dir}/events.jsonl"
+    projection="${copy_dir}/portfolio.v1.json"
+    if ! docker cp "${bot_container_id}:/app/storage/data/paper_trading/events.jsonl" "${ledger}" >/dev/null \
+      || ! docker cp "${bot_container_id}:/app/storage/data/paper_trading/portfolio.v1.json" "${projection}" >/dev/null; then
+      echo "active paper bot requires readable ledger and projection evidence" >&2
+      return 1
+    fi
   fi
   printf 'ledger_lines=%s ledger_sha256=%s projection_sha256=%s' \
     "$(wc -l < "${ledger}")" \
@@ -233,11 +245,6 @@ if service_is_active_in polymarket-research "${pre_active_file}"; then
 fi
 
 paper_state_before=""
-if service_is_active_in bot "${pre_active_file}"; then
-  if ! paper_state_before="$(paper_state_fingerprint)"; then
-    exit 79
-  fi
-fi
 
 docker compose --env-file "${central_env_file}" -f "${compose_file}" build web
 if ! image_is_qualified; then
@@ -287,6 +294,9 @@ rollback_cutover() {
 }
 
 if service_is_active_in bot "${pre_active_file}"; then
+  if ! paper_state_before="$(paper_state_fingerprint)"; then
+    exit 79
+  fi
   if ! compose_for_service bot stop bot; then
     rollback_cutover || true
     exit 1

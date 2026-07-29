@@ -123,6 +123,16 @@ if [[ "$1" == "ps" ]]; then
   done
   exit 0
 fi
+if [[ "$1" == "cp" ]]; then
+  source_path="$2"
+  destination="$3"
+  case "\${source_path##*/}" in
+    events.jsonl) printf '{"sequence":1}\\n' > "\${destination}";;
+    portfolio.v1.json) printf '{"cash":100}\\n' > "\${destination}";;
+    *) exit 2;;
+  esac
+  exit 0
+fi
 if [[ "$1" == "inspect" ]]; then
   format="$3"
   target="\${!#}"
@@ -164,6 +174,9 @@ for argument in "$@"; do
 done
 if [[ "\${operation}" == "build" ]]; then
   [[ "\${FAKE_BUILD_FAIL:-false}" == "true" ]] && exit 42
+  if [[ "\${FAKE_MUTATE_PAPER_DURING_BUILD:-false}" == "true" ]]; then
+    printf '{"sequence":2}\\n' >> "\${SOVEREIGN_PAPER_STORAGE_DIR}/events.jsonl"
+  fi
   touch "\${FAKE_BUILD_MARKER}"
   exit 0
 fi
@@ -197,6 +210,12 @@ exit 0
       fs.writeFileSync(actionLog, '');
       const buildMarker = path.join(root, 'built-image');
       if (fs.existsSync(buildMarker)) fs.unlinkSync(buildMarker);
+      if (runOptions.unreadablePaper === true && services.includes('bot')) {
+        fs.chmodSync(
+          path.join(root, 'storage', 'data', 'paper_trading', 'portfolio.v1.json'),
+          0o000,
+        );
+      }
       const result = spawnSync(path.join(dockerDir, 'update-central-host.sh'), [], {
         cwd: root,
         encoding: 'utf8',
@@ -209,6 +228,7 @@ exit 0
           FAKE_UP_FAIL: String(runOptions.upFails === true),
           FAKE_VERIFY_FAIL: String(runOptions.verifyFails === true),
           FAKE_MUTATE_PAPER: String(runOptions.mutatePaper === true),
+          FAKE_MUTATE_PAPER_DURING_BUILD: String(runOptions.mutatePaperDuringBuild === true),
           FAKE_UPDATED: String(updated),
           FAKE_SERVICES: services.join(','),
           FAKE_RUNTIME_STATE: runtimeState,
@@ -275,6 +295,30 @@ test('central updater recreates only optional services that were previously acti
   assert.doesNotMatch(cutover, /\bhost-backup\b|\bpolymarket-research\b/);
   const botCutover = actions.find((line) => line.includes('--profile paper up -d --no-build --force-recreate bot'));
   assert.ok(botCutover, 'paper bot should be recreated only after non-bot verification');
+});
+
+test('central updater snapshots active paper state after the image build', (t) => {
+  const harness = makeHarness({ updated: true, services: ['web', 'backfill', 'bot'] });
+  t.after(() => fs.rmSync(harness.root, { recursive: true, force: true }));
+  const { result, actions } = harness.run({ mutatePaperDuringBuild: true });
+
+  assert.equal(result.status, 0, result.stderr);
+  const buildIndex = actions.findIndex((line) => line.includes(' build web'));
+  const stopIndex = actions.findIndex((line) => line.includes('--profile paper stop bot'));
+  assert.ok(buildIndex >= 0);
+  assert.ok(stopIndex > buildIndex, 'paper bot must remain active until the image is qualified');
+});
+
+test('central updater fingerprints legacy root-owned paper state through the bot container', (t) => {
+  const harness = makeHarness({ updated: true, services: ['web', 'backfill', 'bot'] });
+  t.after(() => fs.rmSync(harness.root, { recursive: true, force: true }));
+  const { result, actions } = harness.run({ unreadablePaper: true });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(actions.some((line) => (
+    line.startsWith('cp bot-id:')
+      && line.includes('portfolio.v1.json')
+  )));
 });
 
 test('central updater preserves the old success marker after build failure', (t) => {
