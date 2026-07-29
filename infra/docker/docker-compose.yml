@@ -14,7 +14,10 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile
-    image: personal_finance:latest
+      args:
+        SOVEREIGN_SOURCE_REVISION: ${SOVEREIGN_SOURCE_REVISION:-unverified}
+        SOVEREIGN_SOURCE_TREE: ${SOVEREIGN_SOURCE_TREE:-unverified}
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
       - path: ${SOVEREIGN_WEB_ENV_FILE:-../../.env.services/web.env}
         required: true
@@ -39,7 +42,7 @@ services:
 
   bot:
     profiles: [paper]
-    image: personal_finance:latest
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
       web:
         condition: service_healthy
@@ -65,7 +68,7 @@ services:
 
   backfill:
     profiles: [writer]
-    image: personal_finance:latest
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
       - path: ${SOVEREIGN_BACKFILL_ENV_FILE:-../../.env.services/backfill.env}
         required: true
@@ -96,7 +99,7 @@ services:
 
   portfolio-monitor:
     profiles: [monitoring]
-    image: personal_finance:latest
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
       backfill:
         condition: service_started
@@ -113,15 +116,13 @@ services:
       - /bin/sh
       - -c
       - |
-        INTERVAL=$${PORTFOLIO_MONITOR_INTERVAL_SECS:-60}
-        while true; do
-          node backend/cli/sovereign_cli.js portfolio-monitor --once --json --interval-secs $${PORTFOLIO_MONITOR_INTERVAL_SECS:-60} --timeout-ms $${PORTFOLIO_MONITOR_TIMEOUT_MS:-45000} || exit $$?
-          sleep $$INTERVAL
-        done
+        exec node backend/cli/sovereign_cli.js portfolio-monitor --json \
+          --interval-secs "$${PORTFOLIO_MONITOR_INTERVAL_SECS:-60}" \
+          --timeout-ms "$${PORTFOLIO_MONITOR_TIMEOUT_MS:-45000}"
 
   host-health:
     profiles: [monitoring]
-    image: personal_finance:latest
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
       backfill:
         condition: service_started
@@ -138,15 +139,16 @@ services:
       - /bin/sh
       - -c
       - |
-        INTERVAL=$${HOST_HEALTH_INTERVAL_SECS:-300}
-        while true; do
-          node backend/scripts/ops/host_health.js --ts-max-age-min $${HOST_HEALTH_TS_MAX_AGE_MIN:-120} --min-free-gb $${HOST_HEALTH_MIN_FREE_GB:-10} --min-free-percent $${HOST_HEALTH_MIN_FREE_PERCENT:-10} || exit $$?
-          sleep $$INTERVAL
-        done
+        exec node backend/scripts/ops/host_health.js --watch \
+          --no-runner \
+          --interval-secs "$${HOST_HEALTH_INTERVAL_SECS:-300}" \
+          --ts-max-age-min "$${HOST_HEALTH_TS_MAX_AGE_MIN:-120}" \
+          --min-free-gb "$${HOST_HEALTH_MIN_FREE_GB:-10}" \
+          --min-free-percent "$${HOST_HEALTH_MIN_FREE_PERCENT:-10}"
 
   host-backup:
     profiles: [monitoring]
-    image: personal_finance:latest
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
       - path: ${SOVEREIGN_HOST_BACKUP_ENV_FILE:-../../.env.services/host-backup.env}
         required: true
@@ -160,24 +162,21 @@ services:
       - /bin/sh
       - -c
       - |
-        INTERVAL=$${HOST_BACKUP_INTERVAL_SECS:-86400}
-        while true; do
-          node backend/scripts/ops/host_backup.js --destination "$${HOST_BACKUP_ROOT:-/app/storage/backups/host}" --retention-days $${HOST_BACKUP_RETENTION_DAYS:-30} --max-count $${HOST_BACKUP_MAX_COUNT:-14}
-          STATUS=$$?
-          if [ "$$STATUS" -eq 3 ]; then
-            sleep $$INTERVAL
-            exit $$STATUS
-          fi
-          if [ "$$STATUS" -ne 0 ]; then exit $$STATUS; fi
-          sleep $$INTERVAL
-        done
+        exec node backend/scripts/ops/host_backup.js --watch \
+          --interval-secs "$${HOST_BACKUP_INTERVAL_SECS:-86400}" \
+          --destination "$${HOST_BACKUP_ROOT:-/app/storage/backups/host}" \
+          --retention-days "$${HOST_BACKUP_RETENTION_DAYS:-30}" \
+          --max-count "$${HOST_BACKUP_MAX_COUNT:-14}"
 
   polymarket-research:
     profiles: [research]
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile
-    image: personal_finance:latest
+      args:
+        SOVEREIGN_SOURCE_REVISION: ${SOVEREIGN_SOURCE_REVISION:-unverified}
+        SOVEREIGN_SOURCE_TREE: ${SOVEREIGN_SOURCE_TREE:-unverified}
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
       - path: ${SOVEREIGN_POLYMARKET_RESEARCH_ENV_FILE:-../../.env.services/polymarket-research.env}
         required: true

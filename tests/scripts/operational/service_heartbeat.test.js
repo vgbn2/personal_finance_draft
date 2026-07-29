@@ -8,6 +8,7 @@ const path = require('node:path');
 
 const {
   heartbeatPath,
+  readServiceHeartbeat,
   readServiceHeartbeats,
   writeServiceHeartbeat,
 } = require('../../../shared/lib/runtime/service_heartbeat');
@@ -30,6 +31,27 @@ test('heartbeat publication is atomic, bounded, and sanitizes authentication fai
     assert.equal(persisted.error_code, 'authentication_failed');
     assert.equal(Object.hasOwn(persisted, 'error'), false);
     assert.doesNotMatch(JSON.stringify(persisted), /secret-value|bearer/i);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('single heartbeat reader preserves a valid due time on an expired record', () => {
+  const directory = tempDir();
+  try {
+    const writtenAt = Date.parse('2026-07-27T12:00:00.000Z');
+    writeServiceHeartbeat('host_backup', {
+      state: 'healthy',
+      success: true,
+      next_run_at: '2026-07-28T12:00:00.000Z',
+    }, { directory, nowMs: writtenAt });
+    const result = readServiceHeartbeat('host_backup', {
+      directory,
+      nowMs: writtenAt + 3 * 24 * 60 * 60 * 1000,
+    });
+
+    assert.equal(result.reason, 'heartbeat_expired');
+    assert.equal(result.next_run_at, '2026-07-28T12:00:00.000Z');
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
@@ -62,6 +84,29 @@ test('failed atomic publication leaves the previous heartbeat readable', () => {
     assert.throws(() => writeServiceHeartbeat('host_health', { state: 'degraded', error: '401 token=secret' }, { directory, nowMs: nowMs + 1, fsImpl: failingFs }), /simulated interruption/);
     const persisted = JSON.parse(fs.readFileSync(heartbeatPath('host_health', directory), 'utf8'));
     assert.equal(persisted.state, 'healthy');
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('heartbeat publication can explicitly clear a scheduled next run without counting an attempt', () => {
+  const directory = tempDir();
+  try {
+    const nowMs = Date.parse('2026-07-27T12:00:00.000Z');
+    writeServiceHeartbeat('host_health', {
+      state: 'healthy',
+      success: true,
+      next_run_at: '2026-07-27T12:05:00.000Z',
+    }, { directory, nowMs });
+    const stopped = writeServiceHeartbeat('host_health', {
+      state: 'stopped',
+      attempted: false,
+      next_run_at: null,
+    }, { directory, nowMs: nowMs + 1000 });
+
+    assert.equal(stopped.next_run_at, null);
+    assert.equal(stopped.attempt_count, 1);
+    assert.equal(stopped.success_count, 1);
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
