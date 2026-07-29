@@ -83,8 +83,10 @@ done < "${service_rows_file}"
 compose_for_service() {
   local service="$1"
   shift
-  local command=(docker compose --env-file "${central_env_file}" -f "${compose_file}")
-  if [[ -n "${service_profile[${service}]:-}" ]]; then
+  local command=(
+    docker compose --env-file "${central_env_file}" -f "${compose_file}" --profile writer
+  )
+  if [[ -n "${service_profile[${service}]:-}" && "${service_profile[${service}]}" != "writer" ]]; then
     command+=(--profile "${service_profile[${service}]}")
   fi
   "${command[@]}" "$@"
@@ -279,7 +281,7 @@ rollback_cutover() {
       rollback_status=1
       continue
     fi
-    SOVEREIGN_IMAGE_REF="${rollback_ref}" compose_for_service "${service}" up -d --no-build --force-recreate "${service}" \
+    SOVEREIGN_IMAGE_REF="${rollback_ref}" compose_for_service "${service}" up -d --no-deps --no-build --force-recreate "${service}" \
       || rollback_status=1
   done
   if [[ "${evidence_written}" == "true" ]]; then
@@ -348,7 +350,7 @@ if service_is_active_in bot "${pre_active_file}"; then
     exit 1
   fi
   if ! SOVEREIGN_IMAGE_REF="${image_repository}:${SOVEREIGN_SOURCE_REVISION}" \
-    compose_for_service bot up -d --no-build --force-recreate bot; then
+    compose_for_service bot up -d --no-deps --no-build --force-recreate bot; then
     rollback_cutover || true
     exit 1
   fi
