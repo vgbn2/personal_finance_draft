@@ -64,14 +64,14 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(compose, /SOVEREIGN_RUNTIME_MODE:\s*cloud-compute/);
   assert.match(compose, /LIVE_TRADING:\s*"false"/);
   assert.match(compose, /SOVEREIGN_EXECUTION_AUTHORIZED:\s*"false"/);
-  assert.match(compose, /path:\s*\$\{SOVEREIGN_CENTRAL_ENV_FILE:-\.\.\/\.\.\/\.env\}/);
+  assert.doesNotMatch(compose, /SOVEREIGN_CENTRAL_ENV_FILE|central-env-files/);
   assert.match(web, /\$\{SOVEREIGN_WEB_BIND:-127\.0\.0\.1\}:8787:8787/);
-  assert.match(web, /env_file:\s*\*central-env-files/);
+  assert.match(web, /\.env\.services\/web\.env/);
   assert.match(web, /<<:\s*\*central-runtime/);
   assert.match(bot, /profiles:\s*\[\s*paper\s*\]/);
   assert.match(backfill, /profiles:\s*\[\s*writer\s*\]/);
   assert.match(bot, /environment:\s*\*central-runtime/);
-  assert.match(backfill, /env_file:\s*\*central-env-files/);
+  assert.match(backfill, /\.env\.services\/backfill\.env/);
   assert.match(backfill, /<<:\s*\*central-runtime/);
   assert.match(web, /\.\.\/\.\.\/storage:\/app\/storage/);
   assert.match(backfill, /\.\.\/\.\.\/storage:\/app\/storage/);

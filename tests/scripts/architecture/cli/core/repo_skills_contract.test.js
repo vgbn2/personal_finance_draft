@@ -45,16 +45,37 @@ test('every public skill has valid package metadata', () => {
   }
 });
 
+test('every skill enforces bounded-context truthfulness and test integrity', () => {
+  for (const skill of MANIFEST.skills) {
+    const body = read(`skills/${skill}/SKILL.md`);
+    assert.match(body, /## Truthfulness And Test Integrity/, `${skill} should load the shared truth contract`);
+    assert.match(body, /Context is bounded/, `${skill} should disclose bounded context`);
+    assert.match(body, /Never claim a file was read/, `${skill} should forbid fabricated evidence`);
+    assert.match(
+      body,
+      /Do not weaken, skip, delete, mock away, suppress, or rewrite tests merely to make a result pass/,
+      `${skill} should forbid test cheating`,
+    );
+    assert.match(body, /Change a stale test only with canonical contract or approved behavior evidence/);
+  }
+
+  const rules = read('PROJECT_RULES.md');
+  assert.match(rules, /## Truthfulness And Test Integrity/);
+  assert.match(rules, /A false green is worse than an explicit failure/);
+});
+
 test('workflow routing is deterministic and non-live by default', () => {
   const orchestrator = read('skills/session-orchestrator/SKILL.md');
   const exerciser = read('skills/feature-exerciser/SKILL.md');
   const blast = read('skills/blast-through/SKILL.md');
   const mass = read('skills/mass-implement/SKILL.md');
+  const refactor = read('skills/refactor-readability/SKILL.md');
 
   for (const route of [
     'refine-suggestion',
     'feature-exerciser',
     'blast-through',
+    'refactor-readability',
     'codex',
     'mass-implement',
     'polymarket-history-backfill',
@@ -64,7 +85,14 @@ test('workflow routing is deterministic and non-live by default', () => {
   assert.match(exerciser, /Do not fix a discovered defect automatically/);
   assert.match(blast, /Audit only/);
   assert.match(blast, /DCS below `0\.95` blocks promotion, not diagnosis/);
+  assert.match(blast, /Existing-Codebase Coherence Gate/);
   assert.match(mass, /proposed -> preflight -> GO \| GO WITH FIXES \| NO-GO/);
+  assert.match(mass, /Readable Implementation Contract/);
+  assert.match(mass, /## Duplicate And Stub Preflight/);
+  assert.match(mass, /do not leave poison code beside the\s+new implementation/i);
+  assert.match(mass, /Do not delete from string search alone/);
+  assert.match(refactor, /behavior-preserving/i);
+  assert.match(refactor, /Do not change public APIs/);
   assert.match(orchestrator, /In Plan Mode or another read-only mode, defer the entry/);
 });
 

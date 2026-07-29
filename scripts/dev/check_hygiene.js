@@ -19,6 +19,27 @@ function runGit(args) {
 // 1. Git Status & Ignored Noise Check
 function checkGitNoise() {
   const findings = [];
+
+  const forbiddenTrackedArtifacts = runGit(['ls-files', '*.pdb', '*dev.review.txt']);
+  if (forbiddenTrackedArtifacts.status !== 0) {
+    findings.push({
+      finding: `Unable to inspect tracked review/debug artifacts: ${forbiddenTrackedArtifacts.stderr.trim() || `git exit ${forbiddenTrackedArtifacts.status}`}`,
+      surface: 'tracked files',
+      action: 'Repair the git tracked-file scan before trusting hygiene'
+    });
+  } else {
+    const trackedArtifacts = forbiddenTrackedArtifacts.stdout
+      .trim()
+      .split(/\r?\n/)
+      .filter((relativePath) => relativePath && fs.existsSync(path.join(WORKSPACE_ROOT, relativePath)));
+    if (trackedArtifacts.length > 0) {
+      findings.push({
+        finding: `Tracked review/debug artifact(s): ${trackedArtifacts.join(', ')}`,
+        surface: 'tracked files',
+        action: 'Move durable review guidance into docs/ and remove generated compiler databases'
+      });
+    }
+  }
   
   // A. Check if latest_backtest.json or strategy_grade_index.json are tracked
   const checkTracked = runGit(['ls-files', 'storage/data/backtests/latest_backtest.json', 'storage/data/strategy_grade_index.json']);

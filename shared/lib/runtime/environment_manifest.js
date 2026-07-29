@@ -46,6 +46,9 @@ const REQUIRED_SAFE_COMPOSE_OVERRIDES = Object.freeze({
   SOVEREIGN_EXECUTION_AUTHORIZED: 'false',
   SOVEREIGN_RUNTIME_MODE: 'cloud-compute',
 });
+const EXECUTION_DENYLIST = Object.freeze([
+  'SOVEREIGN_MOCK',
+]);
 
 function uniqueStringList(value, label, options = {}) {
   if (!Array.isArray(value) || (!options.allowEmpty && value.length === 0)) {
@@ -333,6 +336,13 @@ function buildChildEnvironment(environment, surface, options = {}) {
     else projected[name] = String(value);
   }
 
+  // Execution authorization must never depend on test conveniences. Keep this
+  // denylist independent of manifest configuration so a future metadata change
+  // cannot project a mock-auth bypass into an order-capable child.
+  if (surface === 'execution') {
+    for (const name of EXECUTION_DENYLIST) delete projected[name];
+  }
+
   projected.SOVEREIGN_ENVIRONMENT_SURFACE = surface;
   return Object.freeze(projected);
 }
@@ -388,6 +398,7 @@ function projectEnvironmentForComposeService(environment, serviceName, options =
 
 module.exports = {
   CHILD_RUNTIME_PASSTHROUGH,
+  EXECUTION_DENYLIST,
   EXPECTED_COMPOSE_SERVICES,
   MANIFEST_PATH,
   aliasesForCentralCopy,

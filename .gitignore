@@ -118,6 +118,7 @@ storage/backups/
 storage/data/
 storage/db/
 storage/exports/
+storage/logs/
 storage/runtime/auth_sessions.json
 backend/scripts/data/cache/
 

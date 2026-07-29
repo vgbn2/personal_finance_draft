@@ -26,8 +26,9 @@ commandBacktest(args)                                  backend/cli/commands/rese
   -> buildTrustAssessment() + upsertStrategyGradeRecord()  research_render.js, shared/lib/strategy/registry.js:18
 ```
 
-The engine choice (C++ vs JS) is automatic — native when the binary's available, JS fallback otherwise.
-Either way you get the same trade-list + equity-curve + metrics shape back.
+The engine choice (C++ vs JS) is automatic — native when the binary is available, JS fallback
+otherwise. Every result now reports `engine_requested`, `engine_actual`, `degraded`, and
+`degraded_reason`; callers must not mistake a fallback for native execution.
 
 ## The ONNX inference path specifically
 
@@ -38,22 +39,23 @@ module 01's Lab 4 is the way to check.
 
 ## Backtest → live automation, stage by stage
 
-`strategy.js:735` `runAutomationPass()`:
+`strategy.js` `runAutomationPass()`:
 
-1. **Exit check first** (:745-749) — `runAlpacaExitCheck()` closes target/stop/age-triggered positions
-   *before* looking for new entries (module 04 covers this function in depth).
-2. **Position-capacity load** (:754-757) — reads `openPositionCount` vs `maxOpenPositions`.
-3. **Strategy selection** (:759-770), **data refresh** (:774-795, batched by timeframe).
-4. **Per-strategy signal generation** (:813-831) — runs a real backtest, takes the latest trade as the
+1. **Inventory reconciliation first** — `automation_guard.js` runs `runAlpacaExitCheck()` and only
+   reads local position capacity after broker truth is confirmed. A blocked or failed check returns
+   before strategy discovery or entry scanning.
+2. **Position-capacity load** — reads `openPositionCount` vs `maxOpenPositions` from validated state.
+3. **Strategy selection** and **data refresh**, batched by timeframe.
+4. **Per-strategy signal generation** — runs a real backtest, takes the latest trade as the
    candidate signal.
-5. **Signal freshness gate** (:846-864) — rejects a signal older than 1.5× its own bar duration. This is
+5. **Signal freshness gate** — rejects a signal older than 1.5× its own bar duration. This is
    the guard against a cron running late and acting on a stale bar.
-6. **Trust gate** (:866-872, thresholds at :328-349) — requires `verdict === 'researchable'`,
+6. **Trust gate** — requires `verdict === 'researchable'`,
    `score >= minTrustScore` (default 70), and **positive out-of-sample alpha vs buy-and-hold**. Dry-run
    bypasses this; live does not.
-7. **Position sizing** (:875-886) — equity × risk_weight, capped by a fixed `position_size` setting if
+7. **Position sizing** — equity × risk_weight, capped by a fixed `position_size` setting if
    configured.
-8. **Live execution** (:895-912) — only here does a real order get sent, via `commandTrade()` (module 04).
+8. **Live execution** — only here does a real order get sent, via `commandTrade()` (module 04).
 
 ## A constraint worth knowing before you trust a backtest result
 

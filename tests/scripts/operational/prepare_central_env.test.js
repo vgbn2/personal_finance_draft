@@ -11,6 +11,9 @@ const {
   buildComposeServiceProjectionReport,
   prepareCentralEnvironment,
 } = require('../../../backend/scripts/ops/prepare_central_env.js');
+const {
+  validateComposeServiceEnvironment,
+} = require('../../../shared/lib/runtime/environment_manifest.js');
 
 test('central environment preparation copies only approved research settings and generates an isolated token', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-prepare-central-env-'));
@@ -37,6 +40,7 @@ test('central environment preparation copies only approved research settings and
     'ALPACA_BASE_URL=https://paper-api.alpaca.markets',
     'FINNHUB_API_KEY=',
     'TWELVE_DATA_API_KEY=',
+    'POLYMARKET_RESEARCH_SCOPE_FILE=',
     'SOVEREIGN_SUPABASE_SECRET_KEY=',
     '',
   ].join('\n'));
@@ -47,6 +51,7 @@ test('central environment preparation copies only approved research settings and
     'FINHUB_API_KEY=finnhub-alias',
     'TWELVE_API_KEY=twelve-alias',
     'SOVEREIGN_SUPABASE_SECRET_KEY="value with spaces"',
+    'POLYMARKET_RESEARCH_SCOPE_FILE=/app/storage/polymarket/scope.json',
     'SOVEREIGN_API_TOKEN=must-not-reuse',
     'SOVEREIGN_TRADE_PIN=must-not-copy',
     'POLYMARKET_PRIVATE_KEY=must-not-copy',
@@ -76,10 +81,21 @@ test('central environment preparation copies only approved research settings and
   assert.equal(prepared.POLYMARKET_PRIVATE_KEY, undefined);
   assert.equal(fs.statSync(outputPath).mode & 0o777, 0o600);
   assert.equal(validateCentralEnvironment(prepared).ok, true);
-  assert.equal(result.compose_contract.ok, false);
-  assert.deepEqual(
-    result.compose_contract.services.find((service) => service.service === 'polymarket-research').missing_required_keys,
-    ['POLYMARKET_RESEARCH_SCOPE_FILE'],
+  assert.equal(result.compose_contract.ok, true);
+  assert.equal(result.service_environments.services.length, 7);
+  for (const service of result.service_environments.services) {
+    const serviceFile = path.join(root, '.env.services', service.file);
+    assert.equal(fs.statSync(serviceFile).mode & 0o777, 0o600);
+    const projected = parseEnvFile(serviceFile);
+    assert.equal(validateComposeServiceEnvironment(service.service, projected).ok, true);
+  }
+  assert.equal(
+    parseEnvFile(path.join(root, '.env.services', 'web.env')).ALPACA_API_KEY,
+    undefined,
+  );
+  assert.equal(
+    parseEnvFile(path.join(root, '.env.services', 'backfill.env')).ALPACA_API_KEY,
+    'research-key',
   );
   assert.doesNotMatch(JSON.stringify(result), /research-secret|must-not-copy|must-not-reuse/);
 });
@@ -125,9 +141,10 @@ test('central environment preparation can render the explicit all-in-one rehears
     'SOVEREIGN_DEPLOYMENT_PROFILE=central-host',
     'SOVEREIGN_API_TOKEN=',
     'SOVEREIGN_CLIENT_TOKEN=',
+    'POLYMARKET_RESEARCH_SCOPE_FILE=',
     '',
   ].join('\n'));
-  fs.writeFileSync(sourcePath, '');
+  fs.writeFileSync(sourcePath, 'POLYMARKET_RESEARCH_SCOPE_FILE=/app/storage/polymarket/scope.json\n');
   prepareCentralEnvironment({
     repoRoot: root,
     templatePath,

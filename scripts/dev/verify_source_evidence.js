@@ -12,9 +12,14 @@ const {
   PACKAGE_ROOTS,
   validateEvidence: validateEvidenceSchema,
 } = require('./source_evidence_schema');
+const {
+  diagnosticEvidence,
+  sanitizedText,
+} = require('./sanitized_diagnostics');
 
 const DEFAULT_JOB_LIMIT = 2;
 const MAX_JOB_LIMIT = 8;
+const DEFAULT_EVIDENCE_DIRECTORY = path.join('storage', 'logs', 'source_evidence');
 
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
@@ -83,7 +88,17 @@ function contentFingerprint(root, relativePaths) {
     const stat = fs.lstatSync(source);
     hash.update(relativePath);
     hash.update('\0');
-    hash.update(stat.isSymbolicLink() ? fs.readlinkSync(source) : fs.readFileSync(source));
+    if (stat.isSymbolicLink()) {
+      hash.update(fs.readlinkSync(source));
+    } else if (stat.isFile()) {
+      hash.update(fs.readFileSync(source));
+    } else if (stat.isDirectory()) {
+      // Git archives materialize a gitlink as an empty directory. The parent tree hash
+      // records the referenced commit; this marker keeps the content fingerprint total.
+      hash.update('<gitlink-directory>');
+    } else {
+      throw new Error(`unsupported source entry type: ${relativePath}`);
+    }
     hash.update('\0');
   }
   return hash.digest('hex');
@@ -233,6 +248,8 @@ function executeSteps({
   jobs = DEFAULT_JOB_LIMIT,
   commandRunner = run,
   output = process.stdout,
+  onStepStart = () => {},
+  onStepComplete = () => {},
 }) {
   const evidence = [];
   const childEnvironment = {
@@ -246,6 +263,7 @@ function executeSteps({
   };
   let failure = null;
   for (const definition of fixedSteps(sourceRoot, jobs)) {
+    onStepStart(definition.label, [...evidence]);
     const started = process.hrtime.bigint();
     output.write(`[source-evidence] ${definition.label}\n`);
     const result = commandRunner(definition.command, definition.args, {
@@ -257,7 +275,7 @@ function executeSteps({
     if (result.stderr) output.write(result.stderr);
     const durationMs = Number(process.hrtime.bigint() - started) / 1e6;
     const passed = !result.error && !result.signal && result.status === 0;
-    evidence.push({
+    const stepEvidence = {
       label: definition.label,
       exit_code: !result.error && Number.isInteger(result.status) ? result.status : null,
       signal: result.signal || null,
@@ -265,7 +283,10 @@ function executeSteps({
       duration_ms: Math.round(durationMs),
       status: passed ? 'pass' : (result.signal ? 'inconclusive' : 'fail'),
       counts: parseCounts(combinedOutput),
-    });
+      diagnostic: passed ? null : diagnosticEvidence(result),
+    };
+    evidence.push(stepEvidence);
+    onStepComplete(stepEvidence, [...evidence]);
     if (!passed) {
       failure = result.signal
         ? { status: 'inconclusive', reason: `step terminated by signal: ${definition.label}` }
@@ -320,7 +341,7 @@ function parseArgs(argv) {
 
 function baseEvidence(mode, startedAt, jobs) {
   return {
-    schema_version: 1,
+    schema_version: 2,
     evidence_id: crypto.randomUUID(),
     status: 'inconclusive',
     mode,
@@ -336,11 +357,16 @@ function baseEvidence(mode, startedAt, jobs) {
       environment_class: process.env.CI ? 'ci' : 'local',
       job_limit: jobs,
     },
+    active_step: null,
     steps: [],
     proven_claims: [],
     excluded_claims: [...EXCLUDED_CLAIMS],
     failure_reason: null,
   };
+}
+
+function defaultEvidencePath(repoRoot, mode) {
+  return path.join(repoRoot, DEFAULT_EVIDENCE_DIRECTORY, `${mode}-latest.json`);
 }
 
 function npmVersion() {
@@ -362,8 +388,7 @@ function runVerification({
   const sourceRoot = path.join(runRoot, 'source');
   const cacheRoot = path.join(runRoot, 'npm-cache');
   const archivePath = path.join(runRoot, 'source.tar');
-  const evidencePath = evidenceOut || path.join(runRoot, 'evidence.json');
-  const preserveRunRoot = !evidenceOut;
+  const evidencePath = evidenceOut || defaultEvidencePath(repoRoot, mode);
   const evidence = baseEvidence(mode, startedAt, jobs);
   evidence.runtime.npm = npmVersion();
 
@@ -372,8 +397,34 @@ function runVerification({
     writeEvidenceAtomic(evidencePath, evidence);
     evidence.source = acquireSourceFn({ repoRoot, sourceRoot, mode, archivePath });
     evidence.lockfiles = lockfileEvidence(sourceRoot);
-    const execution = executeSteps({ sourceRoot, cacheRoot, jobs, commandRunner, output });
+    writeEvidenceAtomic(evidencePath, evidence);
+    const execution = executeSteps({
+      sourceRoot,
+      cacheRoot,
+      jobs,
+      commandRunner,
+      output,
+      onStepStart(label, completedSteps) {
+        evidence.active_step = {
+          label,
+          state: 'running',
+          failure_class: 'unfinished_step',
+        };
+        evidence.steps = completedSteps;
+        evidence.failure_reason = `verification_in_progress: ${label}`;
+        evidence.ended_at = new Date().toISOString();
+        writeEvidenceAtomic(evidencePath, evidence);
+      },
+      onStepComplete(_step, completedSteps) {
+        evidence.active_step = null;
+        evidence.steps = completedSteps;
+        evidence.failure_reason = 'step_result_pending';
+        evidence.ended_at = new Date().toISOString();
+        writeEvidenceAtomic(evidencePath, evidence);
+      },
+    });
     evidence.steps = execution.steps;
+    evidence.active_step = null;
     evidence.status = execution.failure ? execution.failure.status : 'pass';
     evidence.failure_reason = execution.failure?.reason || null;
     if (!execution.failure) {
@@ -386,15 +437,28 @@ function runVerification({
       ];
     }
   } catch (error) {
+    if (evidence.active_step) {
+      evidence.steps.push({
+        label: evidence.active_step.label,
+        exit_code: null,
+        signal: null,
+        error_code: error.code || null,
+        duration_ms: null,
+        status: 'fail',
+        counts: { tests: null, pass: null, fail: null, skip: null },
+        diagnostic: diagnosticEvidence({ error }),
+      });
+      evidence.active_step = null;
+    }
     evidence.status = 'fail';
-    evidence.failure_reason = error.message;
+    evidence.failure_reason = sanitizedText(error.message);
   } finally {
     evidence.ended_at = new Date().toISOString();
     writeEvidenceAtomic(evidencePath, evidence);
     fs.rmSync(sourceRoot, { recursive: true, force: true });
     fs.rmSync(cacheRoot, { recursive: true, force: true });
     fs.rmSync(archivePath, { force: true });
-    if (!preserveRunRoot) fs.rmSync(runRoot, { recursive: true, force: true });
+    fs.rmSync(runRoot, { recursive: true, force: true });
   }
 
   output.write(`[source-evidence] evidence: ${evidencePath}\n`);
@@ -427,6 +491,7 @@ module.exports = {
   PACKAGE_ROOTS,
   acquireSource,
   contentFingerprint,
+  defaultEvidencePath,
   executeSteps,
   fixedSteps,
   lockfileEvidence,
