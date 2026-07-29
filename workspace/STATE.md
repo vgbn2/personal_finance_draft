@@ -2110,3 +2110,17 @@ windows remain open.
   cause and the exact host-capable reruns pass.
 - No commit was authorized or created. Exact archive, authenticated CI, target-host, provider, recovery, soak,
   paper, release, and live evidence remain open.
+
+## M0 exact-source closure update - 2026-07-29
+
+- User authorized the reviewed commit. The atomic safety/evidence/workflow batch was committed as
+  `8275a9acfc60dad36a15a24f5e8cde512307b6f8`.
+- The first host-capable committed-archive attempt exposed a real gitlink fingerprint defect: the tracked
+  `backend/polymarket-cli` gitlink was materialized as a directory and read as a file. The focused fix records
+  a deterministic gitlink-directory marker while the parent Git tree retains the referenced commit identity.
+- Focused source-evidence contracts pass 10/10 after the repair.
+- Schema-v2 evidence `4346d24e-a72e-4ab5-b75b-1fb9be8a6ebe` is PASS for exact commit `8275a9ac...`, tree
+  `b17485e...`, 1,268 archived entries, all five lockfiles, declared builds, native 30/30, environment,
+  secrets 905/0, API/contracts/structure, and aggregate Node gates.
+- This is committed-source proof, not authenticated CI, deployment, host health, recovery, soak, paper, or live
+  proof. Deployment remains paused until a target/profile is named and its separate gates are authorized.

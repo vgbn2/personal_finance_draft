@@ -3098,3 +3098,10 @@ environment evidence. No commit, dependency/provider/data/host/runtime/paper/pub
 
 Authorized committing the reviewed M0 worktree and requested deployment. Commit work may proceed. Deployment
 remains target-specific and follows committed-archive verification; no host or service target is inferred.
+
+## Work - 2026-07-29 commit and archive verification
+
+Committed the atomic reviewed batch. The initial committed-archive run exposed and then contract-tested a
+gitlink-directory fingerprint repair; the amended source commit is `8275a9acfc60dad36a15a24f5e8cde512307b6f8`.
+Committed-archive evidence then passed all declared gates. Deployment did not start because no target/profile
+was named and authenticated CI is not yet proven.

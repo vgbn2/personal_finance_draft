@@ -2600,3 +2600,14 @@ The 94-entry worktree remains intentionally uncommitted. `0383d47b` is still uns
 the load-bearing safety owners and tests. Commit authorization, exact reviewed archive verification, and a
 matching authenticated CI artifact are required before M0 can close. No host, provider, dependency, PIT,
 backup/recovery, restart/rollback, one-writer, soak, paper, release, public, or live claim was established.
+
+## M0 exact-archive correction - 2026-07-29
+
+The uncommitted boundary above is superseded. The atomic batch is committed as `8275a9ac...`. A real
+committed-archive regression involving the tracked `backend/polymarket-cli` gitlink was repaired without
+including submodule working-tree contents: directory entries receive a deterministic marker while the Git tree
+retains commit identity. Focused contracts pass 10/10.
+
+Committed-archive evidence `4346d24e-a72e-4ab5-b75b-1fb9be8a6ebe` is PASS for tree `b17485e...`, with all
+five lockfile roots, builds, native 30/30, environment, secrets 905/0, API/contracts/structure, and aggregate
+Node gates. Authenticated CI and target deployment remain separate and unproven.

@@ -169,10 +169,9 @@ Observed green in this worktree:
 The restricted broad run was non-PASS because nested child spawns returned `EPERM`; the exact host-capable rerun
 passed. This is environment evidence, not a test rewrite or suppression.
 
-Still open:
+Source-boundary update:
 
-- no commit was authorized or created;
-- `git archive <reviewed revision>` cannot yet contain the untracked owners;
-- committed-archive verification of that future revision has not run;
-- no authenticated CI artifact exists for that future revision;
+- the complete boundary was committed at `8275a9acfc60dad36a15a24f5e8cde512307b6f8`;
+- committed-archive evidence `4346d24e-a72e-4ab5-b75b-1fb9be8a6ebe` is PASS;
+- no authenticated CI artifact exists for the exact reviewed lineage;
 - host, provider, backup/recovery, restart/rollback, one-writer, soak, paper, and live gates remain unproven.

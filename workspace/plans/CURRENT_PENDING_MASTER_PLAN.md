@@ -1,7 +1,7 @@
 # Current Pending Master Plan
 
 Date: 2026-07-29
-Status: canonical planning index; M0 source repair implemented and verified, release closure deferred
+Status: canonical planning index; M0 committed archive passed, authenticated CI and deployment remain
 Anchor: `main` at `0383d47b` plus the current intentionally dirty worktree
 
 ## Objective
@@ -85,7 +85,7 @@ the same behavior into another plan.
 
 ### M0 - Exact Source, Evidence, And Continuity Closure
 
-Status: source repair implemented and verified; commit/archive/CI closure remains blocking.
+Status: exact source and committed archive passed at `8275a9ac`; authenticated CI remains blocking.
 
 Objective: produce one reviewed exact revision that contains the complete safety/evidence/workflow batch and emits
 durable, diagnostic source evidence.

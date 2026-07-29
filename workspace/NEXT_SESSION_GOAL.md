@@ -806,3 +806,18 @@ Do not redo the durable-evidence or RAG runner repair. Next:
 
 Until then, do not deploy `0383d47b` or begin M1-M8, host writes, provider/PIT work, paper/runtime actions,
 public exposure, or live execution.
+
+## 2026-07-29 exact-source gate passed
+
+The atomic batch is committed at `8275a9acfc60dad36a15a24f5e8cde512307b6f8`, and its schema-v2
+committed-archive evidence is PASS. Do not repeat the gitlink fingerprint repair or source-install gate.
+
+Next:
+
+1. identify the requested deployment target and approved profile;
+2. push the final reviewed revision only if remote publication is authorized;
+3. require matching authenticated CI before release/deployment claims;
+4. run only the target-specific private-host qualification sequence.
+
+No generic Compose start, public bind, provider polling, writer, bot, paper cycle, order, or live action is
+authorized by the word "deploy" without a named target/profile.

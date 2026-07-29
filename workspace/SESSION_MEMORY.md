@@ -30,6 +30,22 @@
 }
 ```
 
+## Session Memory - 2026-07-29 M0 commit and archive evidence
+
+```json
+{
+  "source_commit": "8275a9acfc60dad36a15a24f5e8cde512307b6f8",
+  "archive_evidence_id": "4346d24e-a72e-4ab5-b75b-1fb9be8a6ebe",
+  "archive_status": "pass",
+  "archive_tree": "b17485e110cc4428cb7ea63eeac1b5e34b0b0b23",
+  "archive_file_count": 1268,
+  "proof": "five lockfile installs, builds, native 30/30, environment, secrets 905/0, API/contracts/structure, aggregate Node",
+  "repair": "gitlink directories receive a deterministic fingerprint marker; parent tree records the submodule commit",
+  "remaining": "authenticated CI and named target/profile deployment qualification",
+  "boundary": "no push, service start, host mutation, provider poll, paper cycle, public exposure, order, or live action"
+}
+```
+
 ## Session Memory - 2026-07-28 ENV-1B2-A implementation
 
 ```json
