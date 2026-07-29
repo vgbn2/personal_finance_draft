@@ -16,4 +16,6 @@ test('canonical and compatibility Dockerfiles use a non-root build-separated run
   assert.match(canonical, /^USER node$/m);
   assert.doesNotMatch(canonical.split('FROM node:22-bookworm-slim AS runtime')[1], /apt-get|build-essential/);
   assert.match(canonical, /COPY --from=build --chown=node:node/);
+  assert.doesNotMatch(canonical, /\/app\/native\b/);
+  assert.doesNotMatch(canonical, /\/app\/workspace\/STATE\.md\b/);
 });
