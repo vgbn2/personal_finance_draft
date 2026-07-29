@@ -248,19 +248,19 @@ fi
 
 paper_state_before=""
 
-docker compose --env-file "${central_env_file}" -f "${compose_file}" build web
-if ! image_is_qualified; then
-  echo "refusing cutover because the built image lacks exact source provenance" >&2
-  exit 76
-fi
-new_image_id="$(qualified_image_id)"
-
 : > "${pre_images_file}"
 while IFS=$'\t' read -r service state container_id image_id; do
   rollback_ref="${image_repository}:rollback-${service}"
   docker image tag "${image_id}" "${rollback_ref}"
   printf '%s\t%s\t%s\t%s\t%s\n' "${service}" "${state}" "${container_id}" "${image_id}" "${rollback_ref}" >> "${pre_images_file}"
 done < "${pre_active_file}"
+
+docker compose --env-file "${central_env_file}" -f "${compose_file}" build web
+if ! image_is_qualified; then
+  echo "refusing cutover because the built image lacks exact source provenance" >&2
+  exit 76
+fi
+new_image_id="$(qualified_image_id)"
 
 rollback_cutover() {
   local rollback_status=0
