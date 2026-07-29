@@ -53,8 +53,6 @@ COPY --from=build --chown=node:node /app/backend/core/build ./backend/core/build
 COPY --from=build --chown=node:node /app/Frontend/dashboard/dist ./Frontend/dashboard/dist
 COPY --from=build --chown=node:node /app/shared ./shared
 COPY --from=build --chown=node:node /app/config ./config
-COPY --from=build --chown=node:node /app/native ./native
-COPY --from=build --chown=node:node /app/workspace/STATE.md ./workspace/STATE.md
 
 RUN mkdir -p storage/data storage/logs storage/runtime \
     && chown -R node:node storage
