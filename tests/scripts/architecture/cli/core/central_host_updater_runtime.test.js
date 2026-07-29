@@ -293,7 +293,9 @@ test('central updater recreates only optional services that were previously acti
   assert.match(cutover, /\bportfolio-monitor\b/);
   assert.match(cutover, /\bhost-health\b/);
   assert.doesNotMatch(cutover, /\bhost-backup\b|\bpolymarket-research\b/);
-  const botCutover = actions.find((line) => line.includes('--profile paper up -d --no-build --force-recreate bot'));
+  const monitorStop = actions.find((line) => line.includes(' stop portfolio-monitor'));
+  assert.match(monitorStop, /--profile writer --profile monitoring/);
+  const botCutover = actions.find((line) => line.includes('up -d --no-deps --no-build --force-recreate bot'));
   assert.ok(botCutover, 'paper bot should be recreated only after non-bot verification');
 });
 
@@ -354,9 +356,12 @@ test('central updater restores the previous image after post-cutover verificatio
   assert.match(failed.result.stderr, /restoring the captured active service set/);
   assert.equal(fs.readFileSync(marker, 'utf8').trim(), 'old-head');
   assert.equal(fs.readFileSync(harness.runtimeState, 'utf8').trim(), 'old');
-  assert.ok(failed.actions.some((line) => line.includes('--profile paper stop bot')));
-  assert.ok(failed.actions.some((line) => line.includes('--profile monitoring stop portfolio-monitor')));
+  assert.ok(failed.actions.some((line) => line.includes('--profile writer --profile paper stop bot')));
+  assert.ok(failed.actions.some((line) => line.includes('--profile writer --profile monitoring stop portfolio-monitor')));
   assert.ok(failed.actions.some((line) => line.includes('rollback-bot')));
+  assert.ok(failed.actions.some((line) => (
+    line.includes('up -d --no-deps --no-build --force-recreate bot')
+  )));
 });
 
 test('central updater leaves the bot stopped when paper state changes during resume', (t) => {
