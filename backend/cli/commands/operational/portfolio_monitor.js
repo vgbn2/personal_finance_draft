@@ -8,6 +8,9 @@ const { parseYamlRecursive } = require('../../../../shared/lib/runtime/config_lo
 const { writeJson } = require('../../../../shared/lib/market/validation.js');
 const { REPO_ROOT, STORAGE_DATA_DIR } = require('../../../../shared/lib/runtime/paths.js');
 const { errorCode, writeServiceHeartbeat } = require('../../../../shared/lib/runtime/service_heartbeat.js');
+const {
+  normalizeAlpacaPortfolioScope,
+} = require('../../../../shared/lib/brokers/alpaca_portfolio_scope.js');
 
 const PORTFOLIO_MONITOR_STATUS_PATH = path.join(
   STORAGE_DATA_DIR,
@@ -15,6 +18,9 @@ const PORTFOLIO_MONITOR_STATUS_PATH = path.join(
   'portfolio_monitor_status.json',
 );
 const DEFAULT_RISK_CONFIG_PATH = path.join(REPO_ROOT, 'config', 'trading', 'risk_management.yaml');
+const DEFAULT_PORTFOLIO_SCOPE = 'both';
+const DEFAULT_ALPACA_SCOPE = 'paper';
+const PORTFOLIO_SCOPES = Object.freeze(['live', 'live_paper', 'both']);
 
 const DEFAULT_THRESHOLDS = Object.freeze({
   max_position_notional: 25000,
@@ -99,7 +105,24 @@ function isInternalPaperBucket(value) {
     && Array.isArray(value.positions);
 }
 
-function normalizePortfolioSnapshot(payload) {
+function normalizePortfolioScope(value, fallback = null) {
+  const normalized = String(value ?? '').trim().toLowerCase().replace(/-/g, '_');
+  if (PORTFOLIO_SCOPES.includes(normalized)) return normalized;
+  return fallback;
+}
+
+function combineAggregateBuckets(live, livePaper) {
+  return {
+    total_equity: finiteNumber(live.total_equity) + finiteNumber(livePaper.total_equity),
+    total_usd: finiteNumber(live.total_usd) + finiteNumber(livePaper.total_usd),
+    positions: [...live.positions, ...livePaper.positions],
+    brokers: [...live.brokers, ...livePaper.brokers],
+  };
+}
+
+function normalizePortfolioSnapshot(payload, requestedScope = DEFAULT_PORTFOLIO_SCOPE) {
+  const scope = normalizePortfolioScope(requestedScope);
+  if (!scope) return { ok: false, error: 'invalid_portfolio_monitor_scope' };
   if (!isObject(payload)) {
     return { ok: false, error: 'portfolio_snapshot_unavailable' };
   }
@@ -116,7 +139,12 @@ function normalizePortfolioSnapshot(payload) {
       || !isInternalPaperBucket(payload.paper)) {
       return { ok: false, error: 'invalid_aggregate_portfolio_schema' };
     }
-    return { ok: true, scope: 'live', snapshot: payload.live };
+    const snapshot = scope === 'live'
+      ? payload.live
+      : (scope === 'live_paper'
+        ? payload.live_paper
+        : combineAggregateBuckets(payload.live, payload.live_paper));
+    return { ok: true, scope, snapshot };
   }
 
   if (isAggregateBucket(payload)) {
@@ -125,8 +153,14 @@ function normalizePortfolioSnapshot(payload) {
   return { ok: false, error: 'invalid_aggregate_portfolio_schema' };
 }
 
-function buildRiskAssessment(payload, previousStatus = {}, thresholds = DEFAULT_THRESHOLDS, now = Date.now()) {
-  const normalized = normalizePortfolioSnapshot(payload);
+function buildRiskAssessment(
+  payload,
+  previousStatus = {},
+  thresholds = DEFAULT_THRESHOLDS,
+  now = Date.now(),
+  portfolioScope = DEFAULT_PORTFOLIO_SCOPE,
+) {
+  const normalized = normalizePortfolioSnapshot(payload, portfolioScope);
   if (!normalized.ok) {
     return {
       ok: false,
@@ -145,7 +179,10 @@ function buildRiskAssessment(payload, previousStatus = {}, thresholds = DEFAULT_
   const values = positions.map((position) => positionMarketValue(position));
   const grossExposure = values.reduce((sum, value) => sum + Math.abs(value), 0);
   const netExposure = values.reduce((sum, value) => sum + value, 0);
-  const previousPeak = finiteNumber(previousStatus.peak_equity);
+  const previousPeak = previousStatus.portfolio_scope
+    && previousStatus.portfolio_scope !== normalized.scope
+    ? 0
+    : finiteNumber(previousStatus.peak_equity);
   const peakEquity = Math.max(previousPeak, equity);
   const drawdown = peakEquity > 0 ? Math.max(0, (peakEquity - equity) / peakEquity) : 0;
   const breaches = [];
@@ -222,9 +259,21 @@ async function runPortfolioMonitorCycle(options = {}) {
   const now = options.now || Date.now();
   try {
     const snapshot = await options.fetchPortfolio();
-    return buildRiskAssessment(snapshot, previousStatus, thresholds, now);
+    return buildRiskAssessment(
+      snapshot,
+      previousStatus,
+      thresholds,
+      now,
+      options.portfolioScope,
+    );
   } catch (error) {
-    return buildRiskAssessment({ ok: false, error: error.message }, previousStatus, thresholds, now);
+    return buildRiskAssessment(
+      { ok: false, error: error.message },
+      previousStatus,
+      thresholds,
+      now,
+      options.portfolioScope,
+    );
   }
 }
 
@@ -270,6 +319,7 @@ async function runPortfolioMonitorLoop(options = {}) {
       thresholds: options.thresholds,
       fetchPortfolio,
       now: nowMs(),
+      portfolioScope: options.portfolioScope,
     });
     const nextRunAt = once
       ? null
@@ -307,6 +357,26 @@ async function commandPortfolioMonitor(args) {
     '--timeout-ms',
     finiteNumber(process.env.PORTFOLIO_MONITOR_TIMEOUT_MS, 45000),
   ));
+  const portfolioScope = normalizePortfolioScope(optionValue(
+    args,
+    '--scope',
+    process.env.PORTFOLIO_MONITOR_SCOPE || DEFAULT_PORTFOLIO_SCOPE,
+  ));
+  const alpacaScope = normalizeAlpacaPortfolioScope(optionValue(
+    args,
+    '--alpaca-scope',
+    process.env.PORTFOLIO_MONITOR_ALPACA_SCOPE || DEFAULT_ALPACA_SCOPE,
+  ));
+  if (!portfolioScope || !alpacaScope) {
+    printPayload({
+      ok: false,
+      type: 'portfolio_monitor',
+      error: !portfolioScope
+        ? 'invalid_portfolio_monitor_scope'
+        : 'invalid_alpaca_portfolio_scope',
+    }, args);
+    return 1;
+  }
   const statusPath = optionValue(args, '--status-path', PORTFOLIO_MONITOR_STATUS_PATH);
   const thresholds = loadRiskThresholds(optionValue(args, '--risk-config', DEFAULT_RISK_CONFIG_PATH));
   let status = readPreviousStatus(statusPath);
@@ -350,8 +420,14 @@ async function commandPortfolioMonitor(args) {
     once,
     intervalSecs,
     thresholds,
+    portfolioScope,
     initialStatus: status,
-    fetchPortfolio: () => runGatewayCommand(['aggregate_portfolio', '--json'], { timeout: timeoutMs }),
+    fetchPortfolio: () => runGatewayCommand([
+      'aggregate_portfolio',
+      '--json',
+      '--alpaca-scope',
+      alpacaScope,
+    ], { timeout: timeoutMs }),
     publishStatus,
     onCycle: (assessment) => {
       if (!once) console.log(JSON.stringify({ type: 'portfolio_monitor_cycle', ...assessment }));
@@ -366,7 +442,12 @@ module.exports = {
   PORTFOLIO_MONITOR_STATUS_PATH,
   DEFAULT_RISK_CONFIG_PATH,
   DEFAULT_THRESHOLDS,
+  DEFAULT_PORTFOLIO_SCOPE,
+  DEFAULT_ALPACA_SCOPE,
+  PORTFOLIO_SCOPES,
   loadRiskThresholds,
+  normalizePortfolioScope,
+  combineAggregateBuckets,
   normalizePortfolioSnapshot,
   buildRiskAssessment,
   runPortfolioMonitorCycle,

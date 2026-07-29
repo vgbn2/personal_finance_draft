@@ -71,9 +71,9 @@ test('schema-3 service rows match all seven isolated Compose environment files',
   assert.match(composeService(compose, 'web'), /SOVEREIGN_WEB_HOST:\s*0\.0\.0\.0/);
 });
 
-test('service rows keep provider and account authority out of non-writer services', () => {
+test('service rows isolate provider authority except the bounded Alpaca monitor read path', () => {
   const services = loadEnvironmentManifest().compose_services;
-  for (const serviceName of ['web', 'host-health', 'host-backup', 'portfolio-monitor']) {
+  for (const serviceName of ['web', 'host-health', 'host-backup']) {
     const keys = [
       ...services[serviceName].required_keys,
       ...services[serviceName].optional_keys,
@@ -81,6 +81,14 @@ test('service rows keep provider and account authority out of non-writer service
     ];
     assert.equal(keys.some((name) => /^(?:ALPACA|FRED|FINNHUB|POLYMARKET)_/.test(name)), false, serviceName);
   }
+  assert.deepEqual(
+    services['portfolio-monitor'].optional_keys,
+    ['ALPACA_API_KEY', 'ALPACA_SECRET_KEY'],
+  );
+  assert.ok(services['portfolio-monitor'].defaulted_keys.includes('ALPACA_BASE_URL'));
+  assert.ok(services['portfolio-monitor'].defaulted_keys.includes('PORTFOLIO_MONITOR_SCOPE'));
+  assert.ok(services['portfolio-monitor'].defaulted_keys.includes('PORTFOLIO_MONITOR_ALPACA_SCOPE'));
+  assert.ok(services['portfolio-monitor'].forbidden_environment_classes.includes('execution'));
   assert.ok(services.backfill.optional_keys.includes('FRED_API_KEY'));
   assert.ok(services.backfill.optional_keys.includes('ALPACA_API_KEY'));
   assert.deepEqual(services['polymarket-research'].required_keys, ['POLYMARKET_RESEARCH_SCOPE_FILE']);
