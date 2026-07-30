@@ -167,6 +167,8 @@ function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true 
  */
 async function runAlpacaExitCheck(args = [], options = {}) {
   const isLive = args.includes('--live');
+  const providerPaper = args.includes('--paper-provider');
+  const executionEnabled = isLive || providerPaper;
   const stateStore = options.stateStore || botState;
   const acquire = options.acquireLock || acquireLock;
   const release = options.releaseLock || releaseLock;
@@ -231,10 +233,10 @@ async function runAlpacaExitCheck(args = [], options = {}) {
         continue;
       }
 
-      if (isLive) {
+      if (executionEnabled) {
         try {
           const { commandTrade } = require('../../../backend/cli/commands/trade/trade.js');
-          const sellArgs = ['sell', position.symbol, String(sellQty), 'market', '--live'];
+          const sellArgs = ['sell', position.symbol, String(sellQty), 'market', ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(options.paperMaxNotional || 25)] : ['--live']), '--strategy', position.strategyName || 'alpaca_paper'];
           if (process.env.SOVEREIGN_TRADE_PIN) sellArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
           const exitCode = await commandTrade(sellArgs);
           if (exitCode !== 0) {
@@ -250,7 +252,7 @@ async function runAlpacaExitCheck(args = [], options = {}) {
         }
       }
 
-      const { historyEntry, remainingPosition } = buildExitOutcome(position, exitReason, currentPrice, sellQty, result.cycleId, isLive);
+      const { historyEntry, remainingPosition } = buildExitOutcome(position, exitReason, currentPrice, sellQty, result.cycleId, executionEnabled);
       state.cycleHistory = [historyEntry, ...state.cycleHistory].slice(0, 50);
       if (remainingPosition) remaining.push(remainingPosition);
       result.sellsExecuted++;

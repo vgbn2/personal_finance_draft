@@ -760,6 +760,9 @@ const {
 async function runAutomationPass(args, strategiesOverride = null) {
     const settings = loadRuntimeSettings();
     const isLive = hasFlag(args, '--live');
+    const providerPaper = hasFlag(args, '--paper-provider');
+    if (isLive && providerPaper) throw new Error('--paper-provider cannot be combined with --live');
+    const executionEnabled = isLive || providerPaper;
     const refreshDays = numericOption(args, '--refresh-days', 2);
     const minTrustScore = numericOption(args, '--min-trust-score', 70);
     const refreshGroups = new Map();
@@ -918,19 +921,22 @@ async function runAutomationPass(args, strategiesOverride = null) {
 
             console.log(`[\x1b[1;32mSIGNAL\x1b[0m] Strategy ${strategy.name} trigger: ${tradeType.toUpperCase()} ${lastTrade.symbol} @ ${currentPrice} | Qty: ${qty} ($${(qty * currentPrice).toFixed(2)})`);
 
-            if (isLive && !canOpenPosition(openPositionCount, maxOpenPositions)) {
-                console.log(`[AUTOMATION] Max open positions (${maxOpenPositions}) reached — skipping live entry for ${lastTrade.symbol}.`);
+            if (executionEnabled && !canOpenPosition(openPositionCount, maxOpenPositions)) {
+                console.log(`[AUTOMATION] Max open positions (${maxOpenPositions}) reached — skipping entry for ${lastTrade.symbol}.`);
                 continue;
             }
 
-            if (isLive) {
-                console.log(`[\x1b[1;31mEXECUTE\x1b[0m] Sending LIVE order for ${lastTrade.symbol} (Qty: ${qty})...`);
+            if (executionEnabled) {
+                const mode = providerPaper ? 'PAPER-ALPACA' : 'LIVE';
+                console.log(`[\x1b[1;33m${mode}\x1b[0m] Sending order for ${lastTrade.symbol} (Qty: ${qty})...`);
                 const tradeArgs = [
                     tradeType,
                     lastTrade.symbol,
                     String(qty),
                     'market',
-                    '--live'
+                    ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(numericOption(args, '--paper-max-notional', 25))] : ['--live']),
+                    '--strategy',
+                    strategy.name,
                 ];
                 if (process.env.SOVEREIGN_TRADE_PIN) {
                     tradeArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
@@ -938,7 +944,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 const tradeExitCode = await commandTrade(tradeArgs);
                 if (tradeExitCode === 0 && tradeType === 'buy') {
                     const { recordAlpacaEntry } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
-                    recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: true });
+                    recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: isLive });
                     openPositionCount++;
                 }
             }
@@ -953,7 +959,8 @@ async function runAutomationPass(args, strategiesOverride = null) {
 
 async function runAutomatedStrategies(args) {
     const settings = loadRuntimeSettings();
-    const gate = featureGate('ai_agent_trading', { settings, surface: 'Strategy automation' });
+    const providerPaper = hasFlag(args, '--paper-provider');
+    const gate = featureGate(providerPaper ? 'bot_autopilot' : 'ai_agent_trading', { settings, surface: 'Strategy automation' });
     if (!gate.ok) {
         printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
         return 1;
@@ -964,7 +971,7 @@ async function runAutomatedStrategies(args) {
     const maxPasses = numericOption(args, '--passes', 0); // 0 = run indefinitely
     const passLabel = maxPasses === 0 ? '∞' : String(maxPasses);
 
-    console.log(`[\x1b[1;35mAUTO\x1b[0m] Starting Strategy Automation Loop (Interval: ${intervalMinutes} min, Max Passes: ${passLabel})`);
+    console.log(`[\x1b[1;35mAUTO\x1b[0m] Starting ${providerPaper ? 'Alpaca Paper' : 'Strategy'} Automation Loop (Interval: ${intervalMinutes} min, Max Passes: ${passLabel})`);
     console.log('Press Ctrl+C to stop.');
 
     return new Promise((resolve) => {
