@@ -117,6 +117,14 @@ async function commandRun(args) {
     const botSub  = rest[0] || 'paper';
     const botRest = rest.slice(1);
 
+    if (botSub === 'alpaca-paper') {
+      const { runAutomatedStrategies } = require('../strategy/strategy.js');
+      const interval = numericOption(botRest, '--interval', 15);
+      const strategyArgs = ['--interval', String(interval), '--paper-provider', '--passes', String(numericOption(botRest, '--passes', 0)), '--min-trust-score', String(numericOption(botRest, '--min-trust-score', 70))];
+      if (botRest.includes('--paper-max-notional')) strategyArgs.push('--paper-max-notional', String(numericOption(botRest, '--paper-max-notional', 25)));
+      return runAutomatedStrategies(strategyArgs);
+    }
+
     if (botSub === 'paper') {
       const settings = loadRuntimeSettings();
       const requestedInterval = botRest.includes('--interval') ? numericOption(botRest, '--interval', null) : null;
