@@ -118,8 +118,8 @@
       "members": [
         {"name": "ALPACA_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
         {"name": "ALPACA_SECRET_KEY", "aliases": ["ALPACA_API_SECRET"], "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
-        {"name": "ALPACA_PAPER_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
-        {"name": "ALPACA_PAPER_SECRET_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
+        {"name": "ALPACA_PAPER_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
+        {"name": "ALPACA_PAPER_SECRET_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
         {
           "name": "ALPACA_LIVE_API_KEY",
           "environment_class": "execution",
