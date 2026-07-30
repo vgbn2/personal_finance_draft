@@ -32,6 +32,7 @@ const {
   resolvePropFirmProfile,
 } = require('../../../../shared/lib/profiles/prop_firms.js');
 const { featureGate, loadRuntimeSettings } = require('../../../../shared/lib/settings/runtime');
+const { normalizeSizingIntent } = require('../../../../shared/lib/trading/position_sizing.js');
 
 const utils = require('../../lib/utils.js');
 const { usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption, get_Current_Universe_Symbols } = utils;
@@ -351,6 +352,21 @@ function buildAutomationTrustDecision(report, minTrustScore, isLive) {
     reason: reasons.length ? reasons.join(', ') : null,
     trust,
   };
+}
+
+function buildStrategySizingDecision({ symbol, allocationUsd, referencePrice }) {
+    return normalizeSizingIntent({
+        intent: { mode: 'notional', value: allocationUsd, currency: 'USD' },
+        instrument: {
+            instrumentId: symbol,
+            assetClass: 'equity_or_crypto_unqualified',
+            quoteCurrency: 'USD',
+            quantityStep: 1,
+            contractMultiplier: 1,
+            metadataSource: 'legacy_strategy_whole_unit_contract',
+        },
+        referencePrice,
+    });
 }
 
 function syncStrategyRegistry(options = {}) {
@@ -883,17 +899,22 @@ async function runAutomationPass(args, strategiesOverride = null) {
 
            
             const riskWeight = strategy.risk?.risk_weight || 0.1;
-            const currentPrice = signalPrice || 1;
+            const currentPrice = Number(signalPrice);
             const fixedPositionSize = Number(settings.trading?.position_size);
             const allocationUsd = Number.isFinite(fixedPositionSize) && fixedPositionSize > 0
                 ? Math.min(totalEquity * riskWeight, fixedPositionSize)
                 : totalEquity * riskWeight;
-            const qty = Math.floor(allocationUsd / currentPrice);
+            const sizing = buildStrategySizingDecision({
+                symbol: lastTrade.symbol,
+                allocationUsd,
+                referencePrice: currentPrice,
+            });
 
-            if (qty <= 0) {
-                console.warn(`[AUTOMATION] Calculated quantity for ${lastTrade.symbol} is 0 (Equity: ${totalEquity}, Weight: ${riskWeight}, Price: ${currentPrice}). Skipping.`);
+            if (!sizing.ok) {
+                console.warn(`[AUTOMATION] Sizing rejected for ${lastTrade.symbol}: ${sizing.code} (${sizing.reason}). Skipping.`);
                 continue;
             }
+            const qty = sizing.quantity;
 
             console.log(`[\x1b[1;32mSIGNAL\x1b[0m] Strategy ${strategy.name} trigger: ${tradeType.toUpperCase()} ${lastTrade.symbol} @ ${currentPrice} | Qty: ${qty} ($${(qty * currentPrice).toFixed(2)})`);
 
@@ -1272,5 +1293,5 @@ async function commandPropFirmMenu(args) {
 }
 
 module.exports = {
-  slugifyStrategyName, get_Current_Universe_Symbols, buildStrategyPlan, getStrategyRegistryPath, getStrategyDirectory, readStrategyRegistry, listStrategyFiles, strategySectionPresent, inspectStrategyFile, syncStrategyRegistry, strategyRegistryReport, registeredStrategyOptions, writeStrategyRegistry, interactiveStrategyWizard, commandPropFirmProfiles, commandStrategy, commandStrategyMenu, commandPropFirmMenu, runAutomatedStrategies, buildAutomationTrustDecision
+  slugifyStrategyName, get_Current_Universe_Symbols, buildStrategyPlan, getStrategyRegistryPath, getStrategyDirectory, readStrategyRegistry, listStrategyFiles, strategySectionPresent, inspectStrategyFile, syncStrategyRegistry, strategyRegistryReport, registeredStrategyOptions, writeStrategyRegistry, interactiveStrategyWizard, commandPropFirmProfiles, commandStrategy, commandStrategyMenu, commandPropFirmMenu, runAutomatedStrategies, buildAutomationTrustDecision, buildStrategySizingDecision
 };

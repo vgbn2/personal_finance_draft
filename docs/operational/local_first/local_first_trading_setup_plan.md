@@ -244,9 +244,14 @@ npm install
 npm link
 sovereign setup polymarket
 sovereign doctor polymarket
-sovereign polymarket paper-run --strategy low_prob_dip --virtual-balance 100 --dry-run
+sovereign polymarket paper-run --strategy low_prob_dip --virtual-balance 100 --sizing-mode notional --size 1 --max-position-usd 1 --json
 sovereign trade process proposed_orders.json --live
 ```
+
+The paper command above writes only to the internal append-only virtual ledger. Use `--sizing-mode units` when
+`--size` is a share count, or `--sizing-mode risk_budget --size <virtual USD> --stop-price <price>` for
+stop-based risk sizing. Paper sizing never grants live authorization and does not make Alpaca Paper, MT5, or a
+live Polymarket account ready.
 
 If the user wants their own server:
 

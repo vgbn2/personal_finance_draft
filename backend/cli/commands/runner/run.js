@@ -35,6 +35,20 @@ function resolvePaperBotInterval(intervalMin, settings) {
   return resolveBotInterval({ requestedMinutes: intervalMin, settings });
 }
 
+function buildPaperRunArgs(options = {}) {
+  const args = ['paper-run', '--strategy', options.strategy || 'low_prob_dip', '--json'];
+  const mappings = [
+    ['--sizing-mode', options.sizingMode],
+    ['--size', options.size],
+    ['--stop-price', options.stopPrice],
+    ['--max-position-usd', options.maxPositionUsd],
+  ];
+  for (const [flag, value] of mappings) {
+    if (value !== undefined && value !== null && value !== '') args.push(flag, String(value));
+  }
+  return args;
+}
+
 async function runPaperBotLoop(intervalMin, opts = {}) {
   const gate = featureGate('bot_autopilot', { settings: opts.settings, surface: 'Paper bot loop' });
   if (!gate.ok) {
@@ -47,7 +61,7 @@ async function runPaperBotLoop(intervalMin, opts = {}) {
   const { checkAndCloseResolvedPositions } = require('../../../gateway/src/polymarket_paper.js');
   const intervalMs = effectiveIntervalMin * 60 * 1000;
   const strategy = opts.strategy || 'low_prob_dip';
-  const paperArgs = ['paper-run', '--strategy', strategy, '--json'];
+  const paperArgs = buildPaperRunArgs({ ...opts, strategy });
 
   if (opts.once) {
     console.log('[run bot paper] Running one-shot paper cycle...');
@@ -108,7 +122,16 @@ async function commandRun(args) {
       const requestedInterval = botRest.includes('--interval') ? numericOption(botRest, '--interval', null) : null;
       const once        = hasFlag(botRest, '--once');
       const strategy    = optionValue(botRest, '--strategy', 'low_prob_dip');
-      return runPaperBotLoop(requestedInterval, { once, strategy, settings, args: botRest });
+      return runPaperBotLoop(requestedInterval, {
+        once,
+        strategy,
+        settings,
+        args: botRest,
+        sizingMode: optionValue(botRest, '--sizing-mode', null),
+        size: optionValue(botRest, '--size', null),
+        stopPrice: optionValue(botRest, '--stop-price', null),
+        maxPositionUsd: optionValue(botRest, '--max-position-usd', null),
+      });
     }
 
     if (botSub === 'live') {
@@ -140,9 +163,16 @@ async function commandRun(args) {
     console.log(`[run all] ${botGate.ok ? `paper_bot every ${intervalBotMin} min` : 'paper_bot disabled'}` + (autoBackfill ? `, backfill every ${intervalBackfillMin} min` : ', backfill disabled'));
 
     if (botGate.ok) {
+      const paperArgs = buildPaperRunArgs({
+        strategy: optionValue(rest, '--strategy', 'low_prob_dip'),
+        sizingMode: optionValue(rest, '--sizing-mode', null),
+        size: optionValue(rest, '--size', null),
+        stopPrice: optionValue(rest, '--stop-price', null),
+        maxPositionUsd: optionValue(rest, '--max-position-usd', null),
+      });
       startLoop('paper_bot', async ({ iteration }) => {
         console.log(`[paper_bot] #${iteration} — ${new Date().toISOString()}`);
-        await commandPolymarket(['paper-run', '--strategy', 'low_prob_dip', '--json']);
+        await commandPolymarket(paperArgs);
       }, intervalBotMin * 60 * 1000, { continueOnError: true });
     } else {
       console.log(`[run all] ${botGate.reason}. ${botGate.hint}`);
@@ -232,4 +262,4 @@ async function commandRunnerMenu(args) {
   return 0;
 }
 
-module.exports = { commandRun, commandRunnerMenu, resolvePaperBotInterval, runPaperBotLoop };
+module.exports = { buildPaperRunArgs, commandRun, commandRunnerMenu, resolvePaperBotInterval, runPaperBotLoop };

@@ -846,6 +846,8 @@ Commands:
   polymarket price-history --token <id> [--interval 1h] [--fidelity N]
                                        Show public price history for one token id
   polymarket paper-run                 Run paper-trading cycle without submitting CLOB orders
+                                       Sizing: --sizing-mode notional|units|risk_budget --size <value>
+                                       Risk sizing also requires --stop-price <0..1>
   polymarket buy <token> <qty> [price] Submit a live buy order for one token id
   polymarket sell <token> <qty> [price] Submit a live sell order for one token id
                                        Add --preflight to sign and validate without posting
@@ -2482,9 +2484,22 @@ export async function main() {
       const maxSpreadRaw = parseOptionValue(subArgs, '--max-spread');
       const maxEntryRaw = parseOptionValue(subArgs, '--max-entry-price');
       const minLiquidityRaw = parseOptionValue(subArgs, '--min-liquidity');
+      const sizingModeRaw = parseOptionValue(subArgs, '--sizing-mode');
+      const sizingValueRaw = parseOptionValue(subArgs, '--size');
+      const stopPriceRaw = parseOptionValue(subArgs, '--stop-price');
       const limit = Math.max(1, Number.parseInt(limitRaw || '25', 10) || 25);
       try {
         const markets = await fetchPolymarketGammaMarkets(limit, { category });
+        const sizingIntent = sizingModeRaw !== undefined || sizingValueRaw !== undefined || stopPriceRaw !== undefined
+          ? {
+              mode: sizingModeRaw || 'notional',
+              value: sizingValueRaw !== undefined
+                ? Number(sizingValueRaw)
+                : (maxPositionRaw !== undefined ? Number(maxPositionRaw) : 1),
+              currency: 'USD',
+              ...(stopPriceRaw !== undefined ? { stopPrice: Number(stopPriceRaw) } : {}),
+            }
+          : undefined;
         const result = await runPolymarketPaperRun({
           strategy,
           markets: markets.data,
@@ -2494,13 +2509,19 @@ export async function main() {
           maxSpread: maxSpreadRaw !== undefined ? Number(maxSpreadRaw) : 0.08,
           maxEntryPrice: maxEntryRaw !== undefined ? Number(maxEntryRaw) : 0.15,
           minLiquidity: minLiquidityRaw !== undefined ? Number(minLiquidityRaw) : 0,
+          sizingIntent,
           fetchOrderBook: fetchPolymarketOrderBook,
         });
         const payload = { ...result, source: markets.source, category };
         if (useJson) {
           console.log(JSON.stringify(payload));
+          if (!payload.ok) process.exitCode = 1;
+        } else if (!payload.ok) {
+          console.error(`${ansi.red}paper-run failed: ${payload.error}${ansi.reset}`);
+          process.exitCode = 1;
         } else {
           console.log(`${ansi.boldCyan}Polymarket Paper Run${ansi.reset} strategy=${strategy}`);
+          console.log(`  sizing=${payload.sizing_intent.mode}:${payload.sizing_intent.value} max_position_usd=${maxPositionRaw !== undefined ? Number(maxPositionRaw) : 1}`);
           console.log(`  scanned=${payload.markets_scanned} fills=${payload.fills.length} skipped=${payload.skipped.length}`);
           console.log(`  balance=$${payload.summary.virtual_balance} open=${payload.summary.open_positions} equity_at_cost=$${payload.summary.equity_marked_at_cost}`);
           payload.fills.slice(0, 5).forEach((fill: any) => console.log(`    buy ${fill.shares} ${fill.outcome} @ ${fill.price}  ${String(fill.market || '').slice(0, 72)}`));
