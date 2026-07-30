@@ -96,6 +96,41 @@ test('workflow routing is deterministic and non-live by default', () => {
   assert.match(orchestrator, /In Plan Mode or another read-only mode, defer the entry/);
 });
 
+test('blast-through attributes low grades and defects to a proved fault domain and causal owner', () => {
+  const blast = read('skills/blast-through/SKILL.md');
+  const modes = read('skills/blast-through/references/audit-modes.md');
+
+  assert.match(blast, /## Fault-Domain And Stub-Causality Gate/);
+  assert.match(blast, /every confirmed finding and every reviewed section graded below A/);
+  for (const faultDomain of [
+    'our_source',
+    'our_host_or_deployment',
+    'operator_config_or_credentials',
+    'external_provider',
+    'environment_or_sandbox',
+    'shared_or_mixed',
+    'unresolved',
+  ]) {
+    assert.match(blast, new RegExp(`\\b${faultDomain}\\b`));
+  }
+  for (const stubClass of [
+    'production_stub',
+    'test_stub_only',
+    'silent_fallback',
+    'compatibility_shim',
+    'adapter_not_stub',
+    'none',
+    'unresolved',
+  ]) {
+    assert.match(blast, new RegExp(`\\b${stubClass}\\b`));
+  }
+  assert.match(blast, /Do not infer provider fault from a normalized 401 alone/);
+  assert.match(blast, /Report `stub_involvement: none` when no stub participates/);
+  assert.match(modes, /## Fault Attribution Matrix/);
+  assert.match(modes, /Trace `entrypoint -> caller -> canonical owner -> config projection -> owned runtime -> external dependency ->/);
+  assert.match(modes, /Attribute a rejected credential to `operator_config_or_credentials` only when/);
+});
+
 test('agent and CLI compatibility docs point at the canonical workflow', () => {
   const agents = read('AGENTS.md');
   const bootstrap = read('docs/operational/guides/bootstrap.md');

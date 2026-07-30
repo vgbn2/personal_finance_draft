@@ -22,7 +22,9 @@ function stripAnsi(input) {
 // from an earlier frame stays in the raw buffer forever otherwise).
 function lastFrame(raw) {
   const idx = raw.lastIndexOf(SYNC_FRAME_START);
-  return idx === -1 ? raw : raw.slice(idx);
+  if (idx === -1) return raw;
+  const sliced = raw.slice(idx);
+  return stripAnsi(sliced).trim() ? sliced : raw;
 }
 
 // Ink's App component pulls input via the readable-stream `.read()`/'readable'

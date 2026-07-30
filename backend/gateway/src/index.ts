@@ -2064,10 +2064,10 @@ export async function main() {
   });
   const isLive = runtimePolicy.can_execute;
   const useJson = args.includes('--json');
-  const adapter = providerPaper
-    ? new AlpacaAdapter({ paper: true, simulateIfMissingCredentials: false })
-    : isLive
+  const adapter = isLive
     ? new AlpacaAdapter({ simulateIfMissingCredentials: false })
+    : providerPaper
+    ? new AlpacaAdapter({ paper: true, simulateIfMissingCredentials: false })
     : environmentSurface === 'gateway_account'
       ? new AlpacaAdapter({ simulateIfMissingCredentials: false })
       : new SimulationAdapter();
