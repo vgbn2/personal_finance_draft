@@ -732,7 +732,9 @@ class ExecutionGateway {
 
     let riskContext: RiskContext;
     try {
-      riskContext = await buildRiskContext(order, this.adapter, this.dryRun);
+      // Provider-paper execution is non-live and must not require live-only
+      // drawdown state, while still running the native risk-engine check.
+      riskContext = await buildRiskContext(order, this.adapter, this.dryRun || Boolean(order.providerPaper));
     } catch (error: any) {
       console.error(`[RISK] Rejection: ${error.message}`);
       return false;
