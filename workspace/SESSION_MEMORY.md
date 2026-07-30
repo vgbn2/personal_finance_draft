@@ -1,3 +1,19 @@
+## Session Memory - 2026-07-30 skill sync and repository professionalism check
+
+```json
+{
+  "work": "Synchronized canonical skills inventory with .agents/skills/ discovery mirrors; staged removal of invalid unmapped gitlink backend/polymarket-cli; verified git submodule status exits 0; executed hygiene audit, test:structure, and full test suite with 100% pass",
+  "verified": {
+    "skill_parity": "10 packages in skills/ matched to .agents/skills/",
+    "submodule_status": "ok (exit code 0; unneeded backend/polymarket-cli gitlink removed from index)",
+    "hygiene": "100% pass across all 6 categories",
+    "test_structure": "100% pass (17/17)",
+    "test_suite": "100% pass across all Node test suites"
+  },
+  "safety": "No live trading, credential exposure, or unreviewed git commit occurred"
+}
+```
+
 ## Session Memory - 2026-07-28 session 116 - private auth and combined engine
 
 ```json
@@ -27,6 +43,56 @@
     "Verify Supabase/RLS, private-host service identities, remote MCP/SSH, backup/restore, restart/rollback, single-writer, and soak."
   ],
   "safety": "No live enablement, public exposure, bot cycle, order, provider submission, service/container/timer startup, or destructive migration occurred."
+}
+```
+
+## Session Memory - 2026-07-30 recurring Alpaca Paper strategy
+
+```json
+{
+  "release": "c868fc3b",
+  "runner": "run bot alpaca-paper",
+  "strategies": "13 enabled registered strategies",
+  "cadence_min": 15,
+  "order_cap_usd": 25,
+  "first_pass": "completed without errors or order signals",
+  "live_safety": "LIVE_TRADING=false; SOVEREIGN_EXECUTION_AUTHORIZED=false",
+  "runtime_boundary": "detached process inside bot container; not independently Compose-managed",
+  "next": "promote Alpaca Paper loop to an independently managed Compose service with restart/stop/rollback evidence before calling it persistent"
+}
+```
+
+## Session Memory - 2026-07-30 Alpaca Paper execution
+
+```json
+{
+  "release": "ea6d76bd",
+  "feature": "bounded --paper-provider Alpaca route",
+  "order": "707e8077-971e-4b20-85b3-0911e2726d31",
+  "probe": "AAPL buy 0.01 market, $0.25 notional, strategy scalp_probe, accepted",
+  "cadence": "one-shot only; no recurring Alpaca strategy loop",
+  "safety": "LIVE_TRADING=false; SOVEREIGN_EXECUTION_AUTHORIZED=false; $25 default per-order cap",
+  "monitor": "Alpaca Paper connected; existing BTC max-position-notional breach remains",
+  "next": "If recurring Alpaca strategies are desired, define an explicit schedule and multi-order paper qualification before starting a loop"
+}
+```
+
+## Session Memory - 2026-07-30 canonical paper sizing
+
+```json
+{
+  "lifecycle": "GO WITH FIXES -> implemented -> verified -> reviewed -> closed",
+  "canonical_owner": "shared/lib/trading/position_sizing.js",
+  "paper_owner": "backend/gateway/src/paper_ledger.js with orchestration in polymarket_paper.js",
+  "strategy_fix": "removed signalPrice || 1; invalid reference prices fail closed",
+  "paper_modes": "notional, units, risk_budget",
+  "paper_rejections": "contracts and lots; malformed intent; invalid or wrong-direction stop; below step/minimum; exhausted cash",
+  "ledger_evidence": "intent, reference price, raw and normalized quantity, step, multiplier, metadata source, rounding, caps, projected and residual notional",
+  "runner": "paper-run and persistent paper bot forward sizing flags without --live",
+  "verification": "focused 29/29; gateway TypeScript; host-capable full Node; environment; hygiene; structure 17/17; diff pass",
+  "grade": "internal Polymarket paper sizing A- source/test; overall cross-asset sizing C",
+  "deferred": "external CLI restricted review, provider-paper exercise, qualified broker metadata, live gateway sizing, MT5 order execution, deploy/recovery/soak",
+  "boundary": "no provider request, credential, install, order, live action, container, deployment, or persistent production paper cycle"
 }
 ```
 
@@ -2055,5 +2121,70 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "alpaca": "Paper label is correct; matching central/backfill/monitor credential fingerprints and paper base; provider still reports authentication_failed",
   "evidence_boundary": "service-scoped mixed revision; global deployed marker and five-service manifest remain coherent at 9fef3ef7",
   "remaining": "rotate or reissue valid Alpaca Paper account-read credentials; deploy-key and authenticated CI; recovery and longer soak"
+}
+```
+
+## Session Memory - 2026-07-30 Alpaca and monitor follow-up
+
+```json
+{
+  "inspection": "read-only SSH against vgbn-servers",
+  "monitor_image": "personal_finance:65df1d1d9e3bfd6a30fcebab0fad5eda420523ac",
+  "runtime": "running with zero restarts; sampled cycles advanced through 1463 at one-minute cadence",
+  "risk": "BTC notional 32015.85 exceeds unchanged 25000 threshold",
+  "brokers": "Gate.io connected; Alpaca (Paper) authentication_failed",
+  "alpaca_gate": "presence, projection, paper endpoint, runtime consumption proved; provider credential acceptance rejected",
+  "alpaca_next": "validate or regenerate the Paper key pair in the Alpaca Paper account, update only owner-only Paper values, recreate only portfolio-monitor, then inspect sanitized cycles",
+  "heartbeat_defect": "P2: heartbeat_at and attempt_count advance while last_attempt_at stays stale because the shared writer preserves the prior timestamp and portfolio-monitor supplies no explicit attempt time",
+  "host_inventory": "Ubuntu 26.04, Linux 7.0, 15.0 GiB RAM, Docker 29.1.3, Compose 2.40.3, no detected management UI",
+  "homelab_recommendation": "Cockpit first for host management; do not let a container GUI bypass the canonical updater or exact-image provenance",
+  "boundary": "no provider request, credential, container, threshold, source behavior, paper, order, public, or live mutation"
+}
+```
+
+## Session Memory - 2026-07-30 blast-through attribution hardening
+
+```json
+{
+  "skill_contract": "every confirmed finding and every reviewed grade below A requires failing boundary, fault domain, repair owner, causal mechanism, stub involvement, confidence, alternatives, and discriminating check",
+  "fault_domains": "our_source, our_host_or_deployment, operator_config_or_credentials, external_provider, environment_or_sandbox, shared_or_mixed, unresolved",
+  "stub_classes": "production_stub, test_stub_only, silent_fallback, compatibility_shim, adapter_not_stub, none, unresolved",
+  "auth_rule": "a normalized 401 alone cannot prove provider fault; close presence, projection, endpoint, runtime-consumption, and acceptance layers separately",
+  "alpaca_attribution": "real official-SDK adapter with simulation disabled; no production stub; first failed layer is provider acceptance of operator-controlled Paper credential/account state, exact mechanism still unproved",
+  "heartbeat_attribution": "our_source; shared writer preserves prior last_attempt_at and portfolio caller supplies no explicit attempt timestamp; stub involvement none",
+  "verification": "skill validator pass; 10-package mirror check pass; focused repository skill contract pass; diff check pass"
+}
+```
+
+## Session Memory - 2026-07-30 Alpaca and heartbeat fix plan
+
+```json
+{
+  "plan": "workspace/plans/ALPACA_PAPER_AUTH_AND_HEARTBEAT_FIX_PLAN.md",
+  "decision": "GO WITH DIAGNOSTIC GATES",
+  "user_fact": "the currently rejected Alpaca Paper keys were generated recently",
+  "first_rule": "do not rotate the keys again before comparing raw Paper account acceptance with the existing SDK path",
+  "diagnostic": "same projected Paper environment; raw GET /v2/account versus SDK getAccount; structured redacted outcomes only",
+  "branching": "raw accepted plus SDK rejected means our_source; both rejected means operator credential/account or provider state; both unavailable means host transport or provider availability; both accepted means stale runtime/status",
+  "heartbeat": "independent bounded repair for attempted:false preservation and attempted:true last_attempt_at advancement",
+  "dependency_boundary": "Alpaca SDK v3-to-v4 upgrade remains NO-GO without exact package/API mapping",
+  "runtime_boundary": "no provider probe, implementation, credential, container, threshold, paper, order, public, or live action was authorized"
+}
+```
+
+## Session Memory - 2026-07-30 cross-asset sizing research
+
+```json
+{
+  "report": "workspace/research/POSITION_SIZING_CONTRACT_DOLLAR_LOT_RESEARCH.md",
+  "decision": "GO WITH FIXES for a canonical sizing layer; NO-GO for MT5 execution or cross-broker parity claims",
+  "grade": "D+ cross-asset sizing",
+  "p1_price": "strategy automation uses signalPrice || 1, so missing or invalid prices can create quantity from a fabricated one-dollar price",
+  "p1_contract_lot": "execution has no contract multiplier, units-per-lot, quantity step, point value, margin currency, or FX conversion; MT5 order path is a production-source scaffold",
+  "p2_dollar": "amount:USD and strategy allocation use Math.floor, blocking fractional instruments and erasing intent/conversion evidence",
+  "p2_polymarket": "guided CLI enforces orderbook minimum but direct shared core checks only positive quantity",
+  "target_architecture": "SizingIntent -> qualified instrument contract -> price snapshot -> risk and buying-power caps -> step-aware normalized quantity -> broker order",
+  "cli_decision": "Alpaca CLI and Polymarket CLI are optional diagnostic/reference candidates, not required runtime dependencies; upstream review remains gated",
+  "boundary": "source research and documentation only; no external fetch, install, provider request, credential use, order, or runtime mutation"
 }
 ```

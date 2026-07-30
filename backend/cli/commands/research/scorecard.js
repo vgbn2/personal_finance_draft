@@ -557,9 +557,9 @@ async function commandScorecard(args) {
   return 0;
 }
 
-function renderShadowCatalog(result, { width = process.stdout.columns || 100 } = {}) {
+function renderShadowCatalog(result, { width = process.stdout.columns || 100, colorize = canColorize() } = {}) {
   width = Math.max(60, width);
-  const colorize = canColorize();
+
   const summary = summarizeShadowRows(result.rows);
   const showDetails = result.rows.length === 1;
   const rowLabel = result.rows.length === 1 ? 'row' : 'rows';

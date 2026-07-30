@@ -1,6 +1,6 @@
 ---
 name: blast-through
-description: Run evidence-first repository audits, code reviews, section grading, connectivity sweeps, API authentication checks, data-integrity reviews, maintainability/readability assessments, and full system assessments in personal_finance_draft. Use for broad or focused review, gap finding, dependency/path/string wiring, credential projection and provider-auth diagnosis, stub or orphan detection, AI-authored consistency drift, data trust, architecture completeness, or repository cleanliness grading; do not use it to implement fixes.
+description: Run evidence-first repository audits, code reviews, section grading, connectivity sweeps, API authentication checks, fault-domain and stub-causality diagnosis, data-integrity reviews, maintainability/readability assessments, and full system assessments in personal_finance_draft. Use for broad or focused review, gap finding, dependency/path/string wiring, credential projection and provider-auth diagnosis, source-versus-host-versus-provider attribution, stub or orphan detection, AI-authored consistency drift, data trust, architecture completeness, or repository cleanliness grading; do not use it to implement fixes.
 ---
 
 # Blast Through
@@ -27,12 +27,38 @@ State one audit mode and either Hard Reading Mode (first/stale pass) or Fast Rea
 3. Separate production, tests, docs, and scratch. Treat tests as evidence, not architecture ownership.
 4. Verify every high-signal candidate directly before reporting it.
 5. Classify evidence as proven, partial, unproven, or failed.
-6. Record confirmed debt with impact, owner, evidence, and the gate that clears it.
+6. Record confirmed debt with impact, repair owner, fault domain, causal mechanism, stub involvement, evidence,
+   and the gate that clears it.
 7. Stop after the audit. Produce a structured implementation handoff only when fixes are desired.
 
 When API authentication is in scope, use the API Authentication Gate in
 [audit-modes.md](references/audit-modes.md). Treat credential presence, matching fingerprints, environment
 projection, endpoint selection, and provider acceptance as separate evidence layers.
+
+## Fault-Domain And Stub-Causality Gate
+
+For every confirmed finding and every reviewed section graded below A, report:
+
+- `failing_boundary`: the first directly proved broken boundary in the caller-to-output path;
+- `fault_domain`: one of `our_source`, `our_host_or_deployment`, `operator_config_or_credentials`,
+  `external_provider`, `environment_or_sandbox`, `shared_or_mixed`, or `unresolved`;
+- `repair_owner`: the exact module, service, deployment surface, operator workflow, or provider boundary that
+  can clear the defect;
+- `causal_mechanism`: the proved cause, or a labeled candidate when root cause is not yet proved;
+- `stub_involvement`: one of `production_stub`, `test_stub_only`, `silent_fallback`, `compatibility_shim`,
+  `adapter_not_stub`, `none`, or `unresolved`;
+- `confidence`, evidence supporting the attribution, evidence against plausible alternatives, and the first
+  discriminating check when anything remains unresolved.
+
+Trace across our source, projected configuration, deployed runtime, operator-controlled account state, and
+external provider separately. Do not call an external API failure “server-side” without saying whether that
+means the owned host or the upstream provider. Do not infer provider fault from a normalized 401 alone; apply
+the API Authentication Gate. Do not call a real adapter, compatibility shim, fixture, or test double a
+production stub. Report `stub_involvement: none` when no stub participates instead of inventing one.
+
+Use `shared_or_mixed` only when multiple proved causes are necessary. Use `unresolved` when evidence cannot
+distinguish domains, and name the exact check that would resolve it. Attribution identifies the repair owner
+and failing boundary; it is not a blame judgment.
 
 ## Existing-Codebase Coherence Gate
 
@@ -72,7 +98,9 @@ Report:
 3. mode-specific matrix or grades;
 4. commands, inputs, counts, outputs, and limitations;
 5. the next critical action;
-6. an implementation handoff containing finding ID, evidence, severity, acceptance criteria, safety boundary, owner, and verification gate.
+6. an implementation handoff containing finding ID, evidence, severity, failing boundary, fault domain,
+   repair owner, causal mechanism, stub involvement, acceptance criteria, safety boundary, and verification
+   gate.
 
 ## Truthfulness And Test Integrity
 

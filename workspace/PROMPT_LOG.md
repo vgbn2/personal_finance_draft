@@ -1,4 +1,8 @@
-# Prompt Log - 2026-07-24 (session 96)
+# Prompt Log - 2026-07-30
+
+## User Prompt - 2026-07-30 session-orchestrator boot
+
+Invoked `session-orchestrator` to boot and resume session state. Loaded `BOOTSTRAP.md`, `HANDOFF.md` (pointer -> `workspace/handoff/2026-07-30.md`), `SESSION_MEMORY.md`, `STATE.md`, `NEXT_SESSION_GOAL.md`, and inspected git status/HEAD (`main` at `c868fc3b`). `graphify` tool is unavailable.
 
 ## User Prompt - 2026-07-28 cross-market research readiness roadmap
 
@@ -3319,3 +3323,132 @@ image, and recreated only `portfolio-monitor`. Repeated structured cycles show s
 restart, but Alpaca Paper still returns `authentication_failed`; this is now a credential-validity gate.
 Added and validated a canonical `blast-through` API Authentication Gate, synchronized its discovery mirror,
 and securely removed temporary credential and bundle artifacts. Session ended at this boundary.
+
+## User Prompt - 2026-07-30 boot, Alpaca diagnosis, monitor logs, and homelab management
+
+Invoked `session-orchestrator`, asked how to fix the Alpaca problem, requested a current monitor-log check,
+and requested a homelab management application recommendation.
+
+## Work - 2026-07-30 boot and diagnostic routing started
+
+Booted durable repository context and routed the Alpaca and monitor review through `blast-through` triage
+mode with Fast Reading Mode. The task is read-only: inspect current structured status and logs, separate
+credential presence/projection/endpoint/runtime consumption/provider acceptance, preserve the BTC threshold,
+and keep paper, orders, public exposure, and live execution disabled.
+
+## Work - 2026-07-30 Alpaca and monitor diagnostic completed
+
+Read-only SSH inspection found the exact `65df1d1d` portfolio-monitor image running with zero restarts and
+advancing once per minute through cycle 1463. The status remains a real breach: BTC notional 32,015.85 exceeds
+the unchanged 25,000 limit; Gate.io is connected; Alpaca is correctly selected as Paper but provider
+acceptance remains `authentication_failed`. Presence, projection, Paper endpoint, and runtime consumption were
+already proved; the next fix is to validate or regenerate the Paper key pair in the Alpaca Paper account,
+then atomically replace only the owner-only Paper values and recreate only the monitor. A separate P2
+observability defect was confirmed: the heartbeat refreshes but preserves a stale `last_attempt_at` while its
+attempt count advances. The host is Ubuntu 26.04 with 15 GiB RAM and Docker/Compose; no homelab management UI
+is installed. Recommended Cockpit for host management, with any container GUI kept subordinate to the
+repository updater and exact-image deployment contract. No provider call, credential, container, threshold,
+source behavior, paper, order, public, or live state was changed.
+
+## User Prompt - 2026-07-30 attribute defects and stub causality in blast-through
+
+Requested that low grades and confirmed defects identify which boundary failed, whether responsibility lies
+in project source, the owned server, operator configuration, or an upstream provider, and which stub caused
+the fault when a stub is actually involved.
+
+## Work - 2026-07-30 blast-through fault-attribution contract
+
+Updated the canonical `blast-through` skill and discovery mirror. Every confirmed finding and every reviewed
+grade below A now requires the failing boundary, fault domain, repair owner, causal mechanism, stub
+classification, confidence, competing alternatives, and discriminating check. The contract distinguishes the
+owned host from external providers, forbids inferring provider fault from a normalized 401, and requires
+`none` or `adapter_not_stub` instead of inventing a production stub. Added a repository contract regression,
+refreshed the skill interface metadata, validated the skill, proved all 10 skill packages synchronized, and
+passed the focused skill architecture test. No production monitor, provider, credential, container, threshold,
+paper, order, public, or live state changed.
+
+## User Prompt - 2026-07-30 plan Alpaca and heartbeat fixes
+
+Clarified that the Alpaca keys were generated recently and requested a plan for the confirmed and unresolved
+monitor defects.
+
+## Work - 2026-07-30 Alpaca authentication and heartbeat fix plan
+
+Created `workspace/plans/ALPACA_PAPER_AUTH_AND_HEARTBEAT_FIX_PLAN.md` with a GO WITH DIAGNOSTIC GATES decision.
+The plan does not rotate the fresh keys first. It freezes the current runtime, validates redacted value shape
+and projection, implements a source-tested Paper-only diagnostic, then compares raw `/v2/account` acceptance
+against the current SDK `getAccount()` path using the same monitor environment. Result branches separately
+route host/projection, SDK-source, operator credential/account, transport, and provider-state faults. A
+separate bounded batch repairs heartbeat attempt-time semantics. Provider probing, source implementation,
+credential changes, container recreation, and deployment remain unauthorized by this planning turn.
+
+## User Prompt - 2026-07-30 research contract, dollar, and lot sizing
+
+Requested research on contract sizing, dollar sizing, and lot sizing, and supplied the official Alpaca CLI and
+Polymarket CLI GitHub repositories for consideration.
+
+## Work - 2026-07-30 sizing research and fix plan
+
+Audited the current gateway, strategy automation, native position sizer, asset metadata, Alpaca, Polymarket,
+MT5, MCP, tests, and documentation under `blast-through` connective-tissue mode. Added
+`workspace/research/POSITION_SIZING_CONTRACT_DOLLAR_LOT_RESEARCH.md`. The audit found an unsafe strategy `$1`
+price fallback, universal whole-unit flooring for dollar sizing, erased sizing intent, no executable
+contract/lot metadata contract, inconsistent Polymarket minimum-size enforcement, and an MT5 order/lot
+production stub. Ranked a fail-closed price repair first, followed by one typed sizing normalizer, qualified
+instrument metadata, broker-specific contracts, and documentation/qualification. Neither external CLI is a
+required runtime dependency; both remain optional diagnostic tools pending restricted upstream review. No
+provider request, installation, order, credential, runtime, or production source change occurred.
+
+## User Prompt - 2026-07-30 learn from broker CLIs and mass-implement paper sizing
+
+Requested learning from the supplied Alpaca and Polymarket CLI projects and mass implementation of a functional
+paper engine.
+
+## Work - 2026-07-30 canonical paper sizing mass implementation
+
+Used `mass-implement` with a GO WITH FIXES preflight. Added one canonical broker-neutral sizing normalizer at
+`shared/lib/trading/position_sizing.js`, removed the strategy automation `$1` price fallback, and integrated
+notional, unit, and stop-risk sizing into the existing append-only internal Polymarket paper ledger. Paper
+orders now round down to a declared quantity step, enforce orderbook minimum size when available, cap against
+virtual cash and maximum-position USD, reject unsafe stop direction, and persist the complete sizing decision.
+Direct and persistent paper-runner CLI flags expose the same policy without live authorization. Contract and
+lot math is unit-tested but intentionally rejected by Polymarket paper; MT5/live integration remains deferred.
+Focused sizing/strategy/paper/runner tests pass, gateway TypeScript passes, and the full host-capable Node suite,
+environment manifest, hygiene, and structure gates pass. Raw external CLI source review and installation did
+not run because restricted delegation was not authorized. No provider request, credential, order, live flag,
+container, deployment, or persistent production paper cycle ran.
+
+## Work - 2026-07-30 exact paper deployment and qualification
+
+Committed the focused sizing release as `7d3ec339`, published it, transferred a verified complete Git bundle
+because the host GitHub key is unavailable, and fast-forwarded `vgbn-servers` to the exact revision. The
+canonical updater built and recreated the active central services with one exact labeled image. A one-shot
+paper qualification scanned 25 markets and preserved the append-only ledger with no fill because the existing
+five-position cap was full. The persistent paper bot is active on the exact image with a `$1` notional policy,
+zero restarts, `LIVE_TRADING=false`, and execution authorization false. Monitor logs still report the BTC
+notional breach and Alpaca Paper `authentication_failed`; no threshold, order, live, or public action occurred.
+An initial manual profile start selected `personal_finance:latest`; it was corrected immediately and lineage
+was reverified.
+
+## User Prompt - 2026-07-30 enable Alpaca Paper order execution and close session
+
+Implemented and deployed a separate `--paper-provider` Alpaca route. It rejects `--live`, caps each order at
+`$25` by default, carries a strategy label, and keeps the native risk check while treating provider-paper as
+non-live for drawdown-state purposes. A one-shot fractional AAPL probe (`0.01`, `$0.25`, `scalp_probe`) was
+accepted by Alpaca Paper as order `707e8077-971e-4b20-85b3-0911e2726d31`. No recurring Alpaca strategy loop was
+started. The existing Polymarket paper bot remains the separate persistent one-minute loop. Host flags remain
+`LIVE_TRADING=false` and `SOVEREIGN_EXECUTION_AUTHORIZED=false`; session closed at user request.
+
+## User Prompt - 2026-07-30 enable recurring Alpaca Paper strategy and close session
+
+Extended the existing strategy automation owner with explicit `--paper-provider` execution and added
+`run bot alpaca-paper`. Deployed commit `c868fc3b`. Started a detached Alpaca Paper loop on `vgbn-servers`
+with the 13 enabled registered strategies, 15-minute cadence, and `$25` per-order cap. The first one-pass
+validation completed across all 13 strategies with no errors and no order signal. Live flags remained false.
+The loop is not independently Compose-managed and will stop if the bot container is recreated; this is the
+first next-session hardening task. Session closed at user request.
+
+## User Prompt - 2026-07-30 sync skills from codex and repository audit
+
+Synchronized canonical packages in `skills/` (10 packages) to discovery mirrors in `.agents/skills/` using `sync_repo_skills.js`. Identified and removed an unneeded, invalid gitlink entry (`backend/polymarket-cli` mode 160000) that lacked a `.gitmodules` mapping and was breaking `git submodule status`. Verified `git submodule status` returns cleanly with code 0. Executed `npm run hygiene` (100% pass across all 6 categories), `npm run test:structure` (100% pass), and full `npm test` suite (100% pass). Verified `README.md` layout, installation commands, and multi-root package structure. Session closed via session-orchestrator.
+

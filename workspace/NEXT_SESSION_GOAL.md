@@ -1,5 +1,15 @@
 # Next Session Goal
 
+## Immediate boundary after skill sync and repo audit
+
+The repository skills have been synchronized across canonical `skills/` and discovery mirrors `.agents/skills/`. The unneeded/broken gitlink `backend/polymarket-cli` was removed from the Git index, restoring `git submodule status` to exit code 0. All hygiene checks, structure contracts, and Node test suites pass 100%.
+
+The next implementation steps for future sessions:
+1. Review staged git changes (`git status`) and commit:
+   `git commit -m "fix(repo): sync agent skills, remove unneeded polymarket-cli gitlink, and fix TUI test harness flakes"`
+2. Convert the detached 15-minute Alpaca Paper loop into an independently Compose-managed service and verify restart, stop, rollback, and duplicate-loop prevention.
+
+
 ## Deferred roadmap — cross-market research readiness
 
 Keep [RESEARCH_DATA_STRATEGY_BACKTEST_READINESS_PLAN.md](plans/RESEARCH_DATA_STRATEGY_BACKTEST_READINESS_PLAN.md)
@@ -979,3 +989,72 @@ the BTC 25,000 threshold.
 The server is intentionally mixed revision: `portfolio-monitor` is exact `65df1d1d`; web, backfill,
 host-health, host-backup, and the coherent global marker remain `9fef3ef7`. Do not claim a five-service rollout
 or enable paper bot, research, orders, public exposure, or live execution.
+
+## 2026-07-30 Alpaca and heartbeat diagnostic override
+
+The monitor remains stable and the projection/scope repair is still complete. First next action:
+
+1. validate or regenerate the credential pair from the Alpaca **Paper** account, not the Live account;
+2. replace only `ALPACA_PAPER_API_KEY` and `ALPACA_PAPER_SECRET_KEY` in the owner-only central environment;
+3. regenerate only the monitor projection and recreate only `portfolio-monitor`;
+4. require sanitized structured evidence that `Alpaca (Paper)` becomes connected while the BTC 25,000
+   threshold, combined risk scope, and live/execution false controls remain unchanged;
+5. separately route the stale heartbeat `last_attempt_at` defect through one bounded `codex` fix with a
+   multi-cycle timestamp regression.
+
+Do not use the unauthenticated endpoint reachability check as proof that Alpaca accepts the key pair. Do not
+weaken the BTC threshold, expose credential values, or enable paper, orders, public access, or live execution.
+
+All future `blast-through` follow-ups must use the new fault-domain and stub-causality matrix. For the current
+Alpaca failure, do not claim an upstream-provider defect or a production stub: the official SDK adapter is
+real and simulation is disabled. Treat operator credential/account state as the current repair domain while
+leaving the exact causal mechanism unproved until a regenerated Paper key is tested.
+
+## 2026-07-30 fresh-key diagnostic plan override
+
+The user states the rejected Alpaca Paper keys were generated recently. Follow
+`workspace/plans/ALPACA_PAPER_AUTH_AND_HEARTBEAT_FIX_PLAN.md`; do not rotate them first.
+
+First implementation action:
+
+1. route ALP-A0 and source-only ALP-A1 through one bounded `codex` batch;
+2. implement and locally test structured redacted raw-versus-SDK Paper authentication diagnostics without
+   contacting Alpaca;
+3. obtain explicit provider-polling/restricted-delegation authorization before one real Paper `/v2/account`
+   comparison;
+4. select exactly one ALP-A2 repair branch from the observed result;
+5. run HB-A1 independently for heartbeat attempt-time correctness.
+
+Keep the SDK major upgrade, external broker CLIs, credential rotation, provider probing, deployment, container
+recreation, threshold changes, paper bot, orders, public access, and live execution out of scope until their
+specific gate is authorized.
+
+## Sizing follow-up
+
+If the user authorizes implementation, start with Batch 0 from
+`workspace/research/POSITION_SIZING_CONTRACT_DOLLAR_LOT_RESEARCH.md`: remove the strategy automation `$1`
+price fallback and prove invalid prices dispatch no order. Then use `mass-implement` only if the user approves
+the broader typed sizing contract backlog. Keep MT5 execution disabled until its order bridge and
+provider-qualified lot metadata exist. Upstream Alpaca/Polymarket CLI research requires explicit restricted
+delegation; do not install either as a runtime dependency by default.
+
+## Paper sizing implementation follow-up
+
+The canonical internal paper-sizing batch is source/test complete. Next:
+
+1. The exact paper-sizing release is deployed on `vgbn-servers` at `7d3ec339`; one-shot and persistent paper
+   cycles are proven with a `$1` notional cap and no fills because the existing five-position cap is full.
+2. run restart/restore/one-writer/soak qualification before calling the paper runner fully qualified;
+3. if the user explicitly authorizes restricted delegation, inspect the supplied Alpaca and Polymarket CLI
+   sources and compare their current order/asset metadata contracts with the local normalizer;
+4. only then consider Alpaca broker-paper normalization. Keep MT5 lot execution and all live paths deferred
+   until provider-qualified metadata and a real order bridge exist.
+
+## 2026-07-30 deployment follow-up
+
+The central host runs all six active services, including the paper bot, on exact image `7d3ec339`; live and
+execution authorization are false. Monitor logs still show the BTC notional breach and Alpaca Paper
+`authentication_failed`; source projection/scope is repaired, so the remaining Alpaca gate is provider
+credential acceptance. A manual profile start briefly selected `personal_finance:latest`; it was immediately
+replaced with the exact tag and verified. Keep future paper activation pinned through `SOVEREIGN_IMAGE_REF`
+or the canonical updater.

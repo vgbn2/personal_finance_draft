@@ -2266,3 +2266,113 @@ windows remain open.
   runtime are proved; provider credential acceptance remains unproved and currently rejected.
 - The canonical `blast-through` skill now includes an API Authentication Gate that separates configuration
   proof from provider acceptance and requires redacted, structured evidence for any provider result.
+
+## Alpaca and monitor read-only follow-up - 2026-07-30
+
+- Fresh server evidence shows the exact `65df1d1d` monitor remains running with zero restarts and advances at
+  the one-minute cadence. Cycle 1463 still reports BTC 32,015.85 versus the unchanged 25,000 limit, Gate.io
+  connected, and `Alpaca (Paper)` authentication rejected.
+- Provider credential acceptance remains the only open Alpaca authentication layer. Do not rework the
+  already-proved Paper names, endpoint, projection, scope, or runtime consumption without contradictory
+  evidence.
+- P2 observability debt: the portfolio service heartbeat advances `heartbeat_at` and `attempt_count` but
+  retains a stale `last_attempt_at`. The shared heartbeat writer and portfolio publication caller do not
+  currently advance that field on each attempted cycle.
+- No provider request, credential, container, threshold, source behavior, paper, order, public, or live state
+  changed during the inspection.
+
+## Blast-through fault attribution hardening - 2026-07-30
+
+- Audit findings and every reviewed grade below A now require evidence-backed fault-domain, repair-owner,
+  causal-mechanism, and stub-involvement attribution.
+- The audit must distinguish project source, owned host/deployment, operator configuration/credentials,
+  external provider, environment/sandbox, mixed, and unresolved domains. It must identify a real adapter,
+  compatibility shim, silent fallback, test-only stub, production stub, no stub, or unresolved involvement.
+- Authentication failures cannot be assigned to an upstream provider from a normalized 401. Presence,
+  projection, endpoint, runtime consumption, and provider acceptance remain separate proof layers.
+- Canonical and discovery skill packages are synchronized; the validator and focused repository skill contract
+  pass. This changes audit/reporting behavior only, not production runtime.
+
+## Alpaca authentication and heartbeat fix plan - 2026-07-30
+
+- The user clarified that the rejected Paper credentials are recently generated, so rotation is no longer the
+  first diagnostic step.
+- `workspace/plans/ALPACA_PAPER_AUTH_AND_HEARTBEAT_FIX_PLAN.md` is the canonical GO WITH DIAGNOSTIC GATES plan.
+- The decisive authentication check is a structured Paper-only comparison of raw `/v2/account` access and the
+  current SDK `getAccount()` path using the same projected environment. It requires separate explicit provider
+  polling authorization after the diagnostic is implemented and locally tested.
+- Heartbeat timestamp repair is independent and can close without Alpaca provider evidence.
+- No production/runtime behavior changed in this planning turn.
+
+## Position sizing research boundary - 2026-07-30
+
+- Current cross-asset sizing is graded **D+**. See
+  `workspace/research/POSITION_SIZING_CONTRACT_DOLLAR_LOT_RESEARCH.md`.
+- P1 source defects are the strategy automation `$1` missing-price fallback and the absence of an executable
+  contract/lot metadata contract. MT5 remains non-executable for sizing/order purposes.
+- Dollar sizing is implemented as universal whole-unit flooring and loses intent/conversion provenance.
+- Guided Polymarket orders enforce minimum shares, but direct shared order validation does not share that
+  contract.
+- The next safe implementation starts by failing closed on invalid strategy prices, then introduces one typed,
+  step-aware sizing normalizer before any new broker/CLI integration.
+- The supplied external CLIs are optional qualification tools, not required runtime dependencies. No install or
+  external source review ran in this planning-only pass.
+
+## Canonical internal paper sizing - 2026-07-30
+
+- Mass implementation is closed at source/test scope. `shared/lib/trading/position_sizing.js` is the canonical
+  broker-neutral normalizer; no second paper engine was introduced.
+- Strategy automation no longer fabricates a `$1` price. Invalid reference prices fail closed.
+- Internal Polymarket paper supports notional, unit, and stop-risk sizing with step/minimum enforcement,
+  virtual-cash/position caps, stop-direction checks, and full append-only ledger evidence.
+- Direct and persistent paper CLI surfaces share `--sizing-mode`, `--size`, `--stop-price`, and
+  `--max-position-usd`; paper runner construction contains no live flag.
+- Focused 29/29, gateway TypeScript, host-capable full Node, environment, hygiene, structure 17/17, and diff
+  integrity pass.
+- Internal paper sizing is A- at source/test scope; overall cross-asset sizing is C. Provider-paper exercise,
+  provider-qualified metadata, external CLI review, MT5 execution, deployment/recovery, and soak remain open.
+- No provider request, external install, credential, order, live action, container, deployment, or persistent
+  production paper cycle ran.
+
+## Exact paper deployment - 2026-07-30
+
+- Release `7d3ec339` is published and deployed on `vgbn-servers` through a verified complete bundle; host HEAD
+  and deployed marker match.
+- `web`, `backfill`, `portfolio-monitor`, `host-health`, `host-backup`, and `bot` run the exact image revision
+  with build contract 1 and zero restarts at observation.
+- The paper bot is persistent and dry-run only. One-shot and persistent cycles scan 25 markets, preserve ledger
+  sequence 6, and produce no fill because five concurrent positions already exist; sizing intent is
+  `notional:1`.
+- Safety is `cloud-compute`, `LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`, profile
+  `central-host`. Monitor remains in truthful BTC breach and warns that Alpaca Paper authentication is rejected.
+- A manual profile start initially selected `personal_finance:latest`; it was immediately recreated with the
+  exact release tag and labels verified.
+
+## Alpaca Paper provider execution - 2026-07-30
+
+- Added and deployed `--paper-provider` as an explicitly non-live Alpaca route; it cannot be combined with
+  `--live`, defaults to a `$25` order notional cap, persists strategy labels, and still invokes the native risk
+  engine.
+- One-shot qualification succeeded: AAPL buy `0.01` market, `$0.25` notional, strategy `scalp_probe`, Alpaca
+  Paper order `707e8077-971e-4b20-85b3-0911e2726d31`, status `accepted`.
+- This is not a recurring Alpaca strategy. The separate internal Polymarket paper bot remains on its existing
+  one-minute cadence. Live flags remain false; monitor continues to report Alpaca Paper connected and the
+  pre-existing BTC max-position breach.
+
+## Recurring Alpaca Paper strategy - 2026-07-30
+
+- Added `run bot alpaca-paper` and explicit `--paper-provider` execution to the existing strategy automation
+  owner; no second signal engine was introduced.
+- Deployed `c868fc3b` and started a detached 15-minute loop using 13 enabled registered strategies with a `$25`
+  per-order cap. First validation pass completed with no errors or order signals.
+- The detached loop is not independently Compose-managed; container recreation stops it. Do not claim restart,
+  recovery, or persistent qualification until an independent service and those gates are verified.
+- Live safety remains `LIVE_TRADING=false` and `SOVEREIGN_EXECUTION_AUTHORIZED=false`.
+
+## Skill sync and repository professionalism audit - 2026-07-30
+
+- Synchronized canonical repository skill packages in `skills/` (10 packages) to `.agents/skills/` mirrors using `sync_repo_skills.js`.
+- Identified and removed an unneeded, invalid gitlink entry (`backend/polymarket-cli` mode 160000) that lacked a `.gitmodules` mapping and was causing `git submodule status` to fail. Verified `git submodule status` now exits cleanly with return code `0`.
+- Ran full repository audits: `npm run hygiene` (100% pass), `npm run test:structure` (100% pass), and full `npm test` (100% pass).
+- Reviewed `README.md` for clarity, installation accuracy, multi-package root structure, and professional presentation.
+
