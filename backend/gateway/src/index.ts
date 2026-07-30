@@ -91,6 +91,8 @@ interface TradeOrder {
   status: OrderStatus;
   timestamp: Date;
   error?: string;
+  strategy?: string;
+  providerPaper?: boolean;
 }
 
 
@@ -703,12 +705,16 @@ class ExecutionGateway {
   private adapter: BrokerAdapter;
   private riskEngine: RiskEngineBridge;
   private persistence: any; // PersistenceBridge (CommonJS require — value, not a type)
+  private paperMaxNotional: number | null;
 
-  constructor(options: { dryRun?: boolean; adapter?: BrokerAdapter } = {}) {
+  constructor(options: { dryRun?: boolean; adapter?: BrokerAdapter; paperMaxNotional?: number } = {}) {
     this.dryRun = options.dryRun ?? true;
     this.adapter = options.adapter || new AlpacaAdapter();
     this.riskEngine = new RiskEngineBridge();
     this.persistence = new PersistenceBridge();
+    this.paperMaxNotional = Number.isFinite(options.paperMaxNotional) && Number(options.paperMaxNotional) > 0
+      ? Number(options.paperMaxNotional)
+      : null;
   }
 
   async validateOrder(order: TradeOrder): Promise<boolean> {
@@ -730,6 +736,14 @@ class ExecutionGateway {
     } catch (error: any) {
       console.error(`[RISK] Rejection: ${error.message}`);
       return false;
+    }
+
+    if (order.providerPaper && this.paperMaxNotional !== null) {
+      const notional = riskContext.referencePrice * order.quantity;
+      if (!Number.isFinite(notional) || notional > this.paperMaxNotional) {
+        console.error(`[RISK] Rejection: Paper Alpaca notional ${notional} exceeds cap ${this.paperMaxNotional}`);
+        return false;
+      }
     }
 
     // Advanced risk engine validation (C++ Bridge)
@@ -757,16 +771,26 @@ class ExecutionGateway {
     } else {
       try {
         const result = await this.adapter.placeOrder(order);
-        console.log(`[LIVE] Order placed successfully: ${result.orderId} (Status: ${result.status})`);
+        const label = order.providerPaper ? 'PAPER-ALPACA' : 'LIVE';
+        console.log(`[${label}] Order placed successfully: ${result.orderId} (Status: ${result.status})`);
         order.status = result.status === 'filled' ? OrderStatus.FILLED : OrderStatus.SUBMITTED;
 
-        await this.persistence.logOrder(order, 'alpaca', { order_id: result.orderId }, result);
+        await this.persistence.logOrder(order, order.providerPaper ? 'alpaca_paper' : 'alpaca', {
+          order_id: result.orderId,
+          strategy: order.strategy || null,
+          paper: Boolean(order.providerPaper),
+        }, result);
 
       } catch (error: any) {
-        console.error(`[LIVE] Execution failed: ${error}`);
+        const label = order.providerPaper ? 'PAPER-ALPACA' : 'LIVE';
+        console.error(`[${label}] Execution failed: ${error}`);
         order.status = OrderStatus.FAILED;
         order.error = error.message ?? String(error);
-        await this.persistence.logOrder(order, 'alpaca', { error: error.message });
+        await this.persistence.logOrder(order, order.providerPaper ? 'alpaca_paper' : 'alpaca', {
+          error: error.message,
+          strategy: order.strategy || null,
+          paper: Boolean(order.providerPaper),
+        });
       }
     }
   }
@@ -857,6 +881,9 @@ Commands:
 
 Options:
   --live                               Run in LIVE mode (default is dry-run)
+  --paper-provider                     Submit to Alpaca Paper only; cannot be combined with --live
+  --paper-max-notional <usd>           Cap each Alpaca Paper order (default: $25)
+  --strategy <name>                    Strategy label persisted with the order
   --json                               Output as JSON
   --demo                               Run the demo sequence
 
@@ -2023,18 +2050,31 @@ export async function main() {
     return;
   }
 
+  const providerPaper = args.includes('--paper-provider');
+  if (providerPaper && args.includes('--live')) {
+    console.error('paper-provider cannot be combined with --live');
+    process.exitCode = 1;
+    return;
+  }
   const runtimePolicy = resolveRuntimePolicy({
     args,
     broker: args[0]?.toLowerCase() === 'polymarket' ? 'polymarket' : 'alpaca',
   });
   const isLive = runtimePolicy.can_execute;
   const useJson = args.includes('--json');
-  const adapter = isLive
+  const adapter = providerPaper
+    ? new AlpacaAdapter({ paper: true, simulateIfMissingCredentials: false })
+    : isLive
     ? new AlpacaAdapter({ simulateIfMissingCredentials: false })
     : environmentSurface === 'gateway_account'
       ? new AlpacaAdapter({ simulateIfMissingCredentials: false })
       : new SimulationAdapter();
-  const gateway = new ExecutionGateway({ dryRun: !isLive, adapter });
+  const paperMaxNotional = parseOptionValue(args, '--paper-max-notional');
+  const gateway = new ExecutionGateway({
+    dryRun: providerPaper ? false : !isLive,
+    adapter,
+    paperMaxNotional: providerPaper ? Number(paperMaxNotional || '25') : undefined,
+  });
   
   const command = args[0].toLowerCase();
 
@@ -2103,7 +2143,9 @@ export async function main() {
       type,
       price,
       status: OrderStatus.PROPOSED,
-      timestamp: new Date()
+      timestamp: new Date(),
+      strategy: parseOptionValue(args, '--strategy') || undefined,
+      providerPaper,
     };
 
     await gateway.execute(order);
