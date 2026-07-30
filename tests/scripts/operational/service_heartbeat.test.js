@@ -136,3 +136,37 @@ test('legacy client status projects old raw backfill outcomes to safe fields', (
   });
   assert.doesNotMatch(JSON.stringify(result), /secret-value/);
 });
+
+test('last_attempt_at advances on completed attempts and preserves timestamp when attempted is false', () => {
+  const directory = tempDir();
+  try {
+    const t0 = Date.parse('2026-07-30T10:00:00.000Z');
+    const first = writeServiceHeartbeat('portfolio_monitor', {
+      state: 'healthy',
+      success: true,
+      attempted: true,
+    }, { directory, nowMs: t0 });
+    assert.equal(first.last_attempt_at, '2026-07-30T10:00:00.000Z');
+    assert.equal(first.attempt_count, 1);
+
+    const t1 = t0 + 60_000;
+    const second = writeServiceHeartbeat('portfolio_monitor', {
+      state: 'degraded',
+      error_code: 'authentication_failed',
+      attempted: true,
+    }, { directory, nowMs: t1 });
+    assert.equal(second.last_attempt_at, '2026-07-30T10:01:00.000Z');
+    assert.equal(second.attempt_count, 2);
+
+    const t2 = t1 + 30_000;
+    const stopped = writeServiceHeartbeat('portfolio_monitor', {
+      state: 'stopped',
+      attempted: false,
+    }, { directory, nowMs: t2 });
+    assert.equal(stopped.last_attempt_at, '2026-07-30T10:01:00.000Z');
+    assert.equal(stopped.attempt_count, 2);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
