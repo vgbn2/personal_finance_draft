@@ -4,6 +4,7 @@ const path = require('node:path');
 
 const { GAMMA_BASE, inferWinner } = require('../../../shared/lib/market/polymarket_history');
 const { resolveRuntimePolicy } = require('../../../shared/lib/settings/runtime_policy');
+const { SIZING_MODES, normalizeSizingIntent } = require('../../../shared/lib/trading/position_sizing.js');
 const { classifyPolymarketGatewayError } = require('./polymarket_errors.js');
 const {
   appendLedgerEvents,
@@ -209,6 +210,21 @@ function yesTokenForMarket(market) {
   return tokens.find((token) => String(token.outcome || '').toLowerCase() === 'yes') || tokens[0] || null;
 }
 
+function polymarketPaperSizingContract(tokenId, market, orderbook, options = {}) {
+  const book = orderbook && (orderbook.book || orderbook);
+  const minQuantity = toNumber(book && book.min_order_size, 0);
+  return {
+    instrumentId: tokenId,
+    assetClass: 'prediction_share',
+    quoteCurrency: 'USD',
+    quantityStep: toNumber(options.quantityStep, 0.000001),
+    minQuantity: minQuantity > 0 ? minQuantity : undefined,
+    contractMultiplier: 1,
+    metadataSource: minQuantity > 0 ? 'polymarket_orderbook' : 'internal_paper_default',
+    observedAt: market.data_as_of || market.updated_at || options.now || null,
+  };
+}
+
 function summarizePortfolio(portfolio) {
   const openCost = portfolio.positions.reduce((sum, position) => {
     return sum + (toNumber(position.shares) * toNumber(position.avg_price));
@@ -235,6 +251,31 @@ async function runPolymarketPaperRun(options = {}) {
   const fetchOrderBook = options.fetchOrderBook;
   if (typeof fetchOrderBook !== 'function') {
     return { ok: false, error: 'fetchOrderBook function is required' };
+  }
+  if (virtualBalance <= 0 || maxPositionUsd <= 0) {
+    return { ok: false, error: 'virtual balance and max position USD must be positive' };
+  }
+  const sizingIntent = options.sizingIntent || {
+    mode: 'notional',
+    value: maxPositionUsd,
+    currency: 'USD',
+  };
+  const sizingMode = String(sizingIntent.mode || '').trim().toLowerCase();
+  if (!SIZING_MODES.includes(sizingMode) || !Number.isFinite(Number(sizingIntent.value)) || Number(sizingIntent.value) <= 0) {
+    return { ok: false, error: 'paper sizing mode and value must form a supported positive sizing intent' };
+  }
+  if (['contracts', 'lots'].includes(sizingMode)) {
+    return { ok: false, error: `Polymarket paper engine does not support ${sizingMode} sizing` };
+  }
+  if (
+    sizingMode === 'risk_budget'
+    && (
+      !Number.isFinite(Number(sizingIntent.stopPrice))
+      || Number(sizingIntent.stopPrice) < 0
+      || Number(sizingIntent.stopPrice) >= 1
+    )
+  ) {
+    return { ok: false, error: 'Polymarket paper risk sizing requires a stop price from 0 inclusive to 1 exclusive' };
   }
 
   const now = options.now || new Date().toISOString();
@@ -309,13 +350,38 @@ async function runPolymarketPaperRun(options = {}) {
       skipped.push({ reason: 'price above strategy threshold', token_id: tokenId, price: Number(price.midprice.toFixed(6)) });
       continue;
     }
+    if (sizingMode === 'risk_budget' && Number(sizingIntent.stopPrice) >= price.midprice) {
+      skipped.push({
+        reason: 'paper buy stop price must be below the reference price',
+        sizing_code: 'invalid_stop_direction',
+        token_id: tokenId,
+      });
+      continue;
+    }
 
-    const spend = Math.min(maxPositionUsd, toNumber(portfolio.virtual_balance, 0));
-    if (spend <= 0) {
+    const availableNotional = Math.min(maxPositionUsd, toNumber(portfolio.virtual_balance, 0));
+    if (availableNotional <= 0) {
       skipped.push({ reason: 'virtual balance exhausted', token_id: tokenId });
       break;
     }
-    const shares = spend / price.midprice;
+    const sizing = normalizeSizingIntent({
+      intent: sizingIntent,
+      instrument: polymarketPaperSizingContract(tokenId, market, orderbook, {
+        quantityStep: options.quantityStep,
+        now,
+      }),
+      referencePrice: price.midprice,
+      availableNotional,
+    });
+    if (!sizing.ok) {
+      skipped.push({
+        reason: sizing.reason,
+        sizing_code: sizing.code,
+        token_id: tokenId,
+      });
+      continue;
+    }
+    const spend = sizing.projected_notional;
     const position = {
       position_id: crypto
         .createHash('sha256')
@@ -326,7 +392,7 @@ async function runPolymarketPaperRun(options = {}) {
       market_id: market.id || market.condition_id || null,
       question: market.question || null,
       outcome: token.outcome || 'Yes',
-      shares: Number(shares.toFixed(6)),
+      shares: sizing.quantity,
       avg_price: Number(price.midprice.toFixed(6)),
       opened_at: now,
       strategy,
@@ -345,6 +411,8 @@ async function runPolymarketPaperRun(options = {}) {
       reason: strategy,
       market: position.question,
       virtual: true,
+      sizing_mode: sizing.requested_intent.mode,
+      projected_notional: spend,
     };
     proposedEvents.push({
       event_type: 'paper_fill',
@@ -363,9 +431,16 @@ async function runPolymarketPaperRun(options = {}) {
         max_position_usd: maxPositionUsd,
         max_entry_price: maxEntryPrice,
         max_spread: maxSpread,
+        sizing,
       },
       policy_fingerprint: policy.policy_fingerprint,
-      risk_decision: { approved: true, mode: 'paper', max_position_usd: maxPositionUsd },
+      risk_decision: {
+        approved: true,
+        mode: 'paper',
+        max_position_usd: maxPositionUsd,
+        projected_notional: spend,
+        binding_caps: sizing.binding_caps,
+      },
       paper_fill: fill,
       position,
       position_effect: 'open',
@@ -385,6 +460,7 @@ async function runPolymarketPaperRun(options = {}) {
     ok: true,
     dry_run: true,
     strategy,
+    sizing_intent: sizingIntent,
     storage_dir: storageDir,
     markets_scanned: markets.length,
     fills,
@@ -492,6 +568,7 @@ module.exports = {
   loadPortfolio,
   migrateLegacyPaperState,
   runPolymarketPaperRun,
+  polymarketPaperSizingContract,
   summarizePortfolio,
   yesTokenForMarket,
 };

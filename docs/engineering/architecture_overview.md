@@ -43,6 +43,12 @@ checksum validation, and fail-closed truncated-tail handling. Legacy `fills.json
 migrated only when every imported fill is provably virtual and reconciles exactly; originals are copied to a
 read-only archive. Ambiguous or live-looking records are preserved and refused.
 
+Paper position normalization is owned by `shared/lib/trading/position_sizing.js`. The Polymarket paper runner
+accepts notional, unit, and stop-risk intent, resolves it against an explicit prediction-share contract, rounds
+down to the quantity step, enforces orderbook minimum size when available, caps exposure by virtual cash and the
+configured position limit, and stores the complete normalization decision in each paper-fill event. Contract and
+lot formulas are available for qualified future integrations, but Polymarket rejects those sizing modes.
+
 The older non-live `bot cycle` still persists a separate `bot_state.json` projection. It no longer initializes a
 credentialed CLOB client in paper mode, but convergence of that state into the canonical event ledger remains an
 explicit release blocker.
@@ -58,6 +64,7 @@ explicit release blocker.
 | Access policy | `shared/lib/auth/access_policy.js` | Deny-by-default roles, capabilities, and route requirements |
 | Deployment profiles | `shared/lib/settings/deployment_profile.js` | Portable all-in-one, central-host, developer, and client machine roles |
 | Paper ledger | `backend/gateway/src/paper_ledger.js` | Internal Polymarket paper event authority and portfolio replay |
+| Position sizing | `shared/lib/trading/position_sizing.js` | Broker-neutral sizing intent normalization and step-aware exposure projection |
 | Private API/dashboard | `backend/api`, `Frontend/dashboard` | Thin authenticated views and command adapters |
 | MCP | `backend/mcp_server` | CLI-backed tools; operational only after a real host stdio handshake |
 | Configuration | `config` | Data, strategy, feature, risk, and deployment settings |
