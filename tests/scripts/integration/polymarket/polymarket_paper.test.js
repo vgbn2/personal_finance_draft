@@ -101,6 +101,132 @@ test('paper run logs virtual fill, persists portfolio, and dedupes held token', 
   assert.equal(second.skipped[0].reason, 'already holding token');
 });
 
+test('paper run supports explicit unit sizing and persists normalization evidence', async () => {
+  const storageDir = tempStorageDir();
+  const result = await runPolymarketPaperRun({
+    storageDir,
+    markets: [market],
+    fetchOrderBook: async () => ({
+      ok: true,
+      book: {
+        bids: [{ price: '0.10', size: '50' }],
+        asks: [{ price: '0.12', size: '50' }],
+        min_order_size: '5',
+      },
+    }),
+    virtualBalance: 100,
+    maxPositionUsd: 10,
+    sizingIntent: { mode: 'units', value: 5 },
+    now: '2026-06-06T00:00:00.000Z',
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.fills.length, 1);
+  assert.equal(result.fills[0].shares, 5);
+  assert.equal(result.fills[0].projected_notional, 0.55);
+  assert.deepEqual(result.sizing_intent, { mode: 'units', value: 5 });
+
+  const fillEvent = readLedger(storageDir).events[1];
+  assert.equal(fillEvent.order_intent.sizing.requested_intent.mode, 'units');
+  assert.equal(fillEvent.order_intent.sizing.quantity, 5);
+  assert.equal(fillEvent.order_intent.sizing.instrument.metadata_source, 'polymarket_orderbook');
+  assert.equal(fillEvent.risk_decision.projected_notional, 0.55);
+});
+
+test('paper run enforces orderbook minimum size before writing a fill', async () => {
+  const storageDir = tempStorageDir();
+  const result = await runPolymarketPaperRun({
+    storageDir,
+    markets: [market],
+    fetchOrderBook: async () => ({
+      ok: true,
+      book: {
+        bids: [{ price: '0.10', size: '50' }],
+        asks: [{ price: '0.12', size: '50' }],
+        min_order_size: '10',
+      },
+    }),
+    virtualBalance: 100,
+    maxPositionUsd: 1,
+    sizingIntent: { mode: 'notional', value: 1, currency: 'USD' },
+    now: '2026-06-06T00:00:00.000Z',
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.fills.length, 0);
+  assert.equal(result.skipped[0].sizing_code, 'below_minimum_quantity');
+  assert.equal(readLedger(storageDir).events.length, 1);
+});
+
+test('paper run supports stop-risk sizing and caps it by paper buying power', async () => {
+  const storageDir = tempStorageDir();
+  const result = await runPolymarketPaperRun({
+    storageDir,
+    markets: [market],
+    fetchOrderBook: async () => ({
+      ok: true,
+      book: {
+        bids: [{ price: '0.10', size: '100' }],
+        asks: [{ price: '0.12', size: '100' }],
+      },
+    }),
+    virtualBalance: 100,
+    maxPositionUsd: 2,
+    sizingIntent: { mode: 'risk_budget', value: 1, currency: 'USD', stopPrice: 0.10 },
+    now: '2026-06-06T00:00:00.000Z',
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.fills.length, 1);
+  assert.equal(result.fills[0].projected_notional, 1.99999998);
+  const sizing = readLedger(storageDir).events[1].order_intent.sizing;
+  assert.equal(sizing.requested_intent.mode, 'risk_budget');
+  assert.deepEqual(sizing.binding_caps, ['available_notional']);
+  assert.equal(sizing.rounding, 'down_to_quantity_step');
+});
+
+test('paper run rejects unsupported or malformed sizing before ledger mutation', async () => {
+  for (const sizingIntent of [
+    { mode: 'lots', value: 1 },
+    { mode: 'notional', value: 0 },
+    { mode: 'unknown', value: 1 },
+    { mode: 'risk_budget', value: 1, stopPrice: 1 },
+  ]) {
+    const storageDir = tempStorageDir();
+    const result = await runPolymarketPaperRun({
+      storageDir,
+      markets: [market],
+      fetchOrderBook: async () => {
+        throw new Error('must not fetch for an invalid sizing contract');
+      },
+      sizingIntent,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.error, /sizing|does not support/);
+    assert.equal(fs.existsSync(ledgerPaths(storageDir).ledger), false);
+  }
+});
+
+test('paper buy risk sizing rejects a stop at or above the reference price', async () => {
+  const storageDir = tempStorageDir();
+  const result = await runPolymarketPaperRun({
+    storageDir,
+    markets: [market],
+    fetchOrderBook: async () => ({
+      ok: true,
+      book: {
+        bids: [{ price: '0.10', size: '50' }],
+        asks: [{ price: '0.12', size: '50' }],
+      },
+    }),
+    sizingIntent: { mode: 'risk_budget', value: 1, stopPrice: 0.12 },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.fills.length, 0);
+  assert.equal(result.skipped[0].sizing_code, 'invalid_stop_direction');
+  assert.equal(readLedger(storageDir).events.length, 1);
+});
+
 test('paper run skips markets whose orderbook fetch throws', async () => {
   const storageDir = tempStorageDir();
   const throwMarket = {
