@@ -1,4 +1,4 @@
 interface:
   display_name: "Blast Through"
-  short_description: "Run focused evidence-first repository audits"
-  default_prompt: "Use $blast-through to audit this repository surface and report verified findings without implementing fixes."
+  short_description: "Audit defects with evidence and owner attribution"
+  default_prompt: "Use $blast-through to audit this repository surface, attribute each defect to its proved fault domain and causal owner, identify any stub involvement, and report verified findings without implementing fixes."

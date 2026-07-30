@@ -30,6 +30,13 @@ async function waitUntilNotRunning(stdout, timeoutMs = 3000) {
   }
 }
 
+async function waitUntilVisible(stdout, pattern = /Operational/, timeoutMs = 3000) {
+  const deadline = Date.now() + timeoutMs;
+  while (!pattern.test(stdout.snapshot()) && Date.now() < deadline) {
+    await delay(50);
+  }
+}
+
 test('chat: deterministic phrase runs immediately, no LLM call needed', async (t) => {
   mockState.askImpl = async () => { throw new Error('LLM should not be called for a deterministic match'); };
 
@@ -45,6 +52,7 @@ test('chat: deterministic phrase runs immediately, no LLM call needed', async (t
   const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
+  await waitUntilVisible(stdout);
 
   assert.match(stdout.snapshot(), /Operational/, 'the grid is visible on boot');
   assert.match(stdout.snapshot(), /› /, 'the chat input bar is focused by default on boot');
