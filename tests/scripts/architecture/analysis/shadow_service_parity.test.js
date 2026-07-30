@@ -50,7 +50,7 @@ test('terminal research screener and asset workbench stay compact and expose evi
   const rankedCrypto = await buildScorecard(['--schema', '3', '--fixture', 'all-recorded', '--family', 'crypto']);
   assert.deepEqual(rankedCrypto.rows.map((row) => row.asset_descriptor.symbol), ['AAVE', 'BTC', 'ETH']);
   assert.deepEqual(rankedCrypto.rows.map((row) => row.decision_state), ['degraded', 'excluded', 'excluded']);
-  const catalogOutput = renderShadowCatalog(rankedCrypto, { width: 80 });
+  const catalogOutput = renderShadowCatalog(rankedCrypto, { width: 80, colorize: false });
   assert.ok(catalogOutput.includes('Summary  3 rows  ·  0 eligible  ·  1 degraded  ·  2 excluded'));
   assert.ok(catalogOutput.includes('Use --symbol <asset>'));
   assert.ok(!catalogOutput.includes('  factors'));
@@ -61,7 +61,7 @@ test('terminal research screener and asset workbench stay compact and expose evi
   assert.equal(workbench.rows.length, 1);
   assert.equal(workbench.rows[0].asset_descriptor.family, 'commodity');
   for (const width of [80, 100, 120]) {
-    const output = renderShadowCatalog(workbench, { width });
+    const output = renderShadowCatalog(workbench, { width, colorize: false });
     assert.ok(output.includes('NOT DECISION-READY'));
     assert.ok(output.includes('factors'));
     assert.ok(output.includes('evidence'));
@@ -73,7 +73,7 @@ test('terminal research screener and asset workbench stay compact and expose evi
 test('terminal research catalog explains empty filters without rendering a table', async () => {
   const empty = await buildScorecard(['--schema', '3', '--fixture', 'all-recorded', '--state', 'eligible']);
   assert.equal(empty.rows.length, 0);
-  const output = renderShadowCatalog(empty, { width: 80 });
+  const output = renderShadowCatalog(empty, { width: 80, colorize: false });
   assert.ok(output.includes('Summary  0 rows  ·  0 eligible  ·  0 degraded  ·  0 excluded'));
   assert.ok(output.includes('No rows match the current research filters.'));
   assert.ok(!output.includes('ASSET'));
