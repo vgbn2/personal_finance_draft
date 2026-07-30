@@ -86,7 +86,11 @@ function writeServiceHeartbeat(service, patch = {}, options = {}) {
   const fsImpl = options.fsImpl || fs;
   const previous = readExisting(name, directory, fsImpl);
   const state = STATES.includes(patch.state) ? patch.state : (previous.state || 'running');
-  const attemptedAt = isoOrNull(patch.last_attempt_at || previous.last_attempt_at) || new Date(nowMs).toISOString();
+  const attemptedAt = Object.hasOwn(patch, 'last_attempt_at') && patch.last_attempt_at != null
+    ? (isoOrNull(patch.last_attempt_at) || new Date(nowMs).toISOString())
+    : (patch.attempted === false
+        ? (isoOrNull(previous.last_attempt_at) || new Date(nowMs).toISOString())
+        : new Date(nowMs).toISOString());
   const successful = patch.success === true || patch.last_success_at != null;
   const payload = {
     schema_version: HEARTBEAT_SCHEMA_VERSION,
