@@ -25,7 +25,7 @@ function composeService(source, name) {
   return match[0];
 }
 
-test('schema-3 service rows match all seven isolated Compose environment files', () => {
+test('schema-3 service rows match all eight isolated Compose environment files', () => {
   const manifest = loadEnvironmentManifest();
   const compose = fs.readFileSync(COMPOSE_PATH, 'utf8');
   const dockerfile = fs.readFileSync(DOCKERFILE_PATH, 'utf8');
@@ -33,6 +33,7 @@ test('schema-3 service rows match all seven isolated Compose environment files',
   const commandFragments = {
     web: 'backend/api/app.js',
     bot: 'run bot paper --strategy low_prob_dip',
+    'bot-alpaca-paper': 'run bot alpaca-paper',
     backfill: 'backfill-daemon --interval-secs',
     'portfolio-monitor': 'portfolio-monitor',
     'host-health': 'backend/scripts/ops/host_health.js',
@@ -41,10 +42,10 @@ test('schema-3 service rows match all seven isolated Compose environment files',
   };
 
   assert.deepEqual(Object.keys(manifest.compose_services).sort(), [...EXPECTED_COMPOSE_SERVICES]);
-  assert.equal((compose.match(/\.env\.services\/[a-z-]+\.env/g) || []).length, 7);
+  assert.equal((compose.match(/\.env\.services\/[a-z-]+\.env/g) || []).length, 8);
   assert.doesNotMatch(compose, /central-env-files|SOVEREIGN_CENTRAL_ENV_FILE/);
   assert.equal(rootDockerfile, dockerfile);
-  assert.equal((compose.match(/\$\{SOVEREIGN_IMAGE_REF:-personal_finance:latest\}/g) || []).length, 7);
+  assert.equal((compose.match(/\$\{SOVEREIGN_IMAGE_REF:-personal_finance:latest\}/g) || []).length, 8);
   assert.match(dockerfile, /org\.opencontainers\.image\.revision/);
   assert.match(dockerfile, /io\.sovereign\.source-tree/);
   assert.match(dockerfile, /io\.sovereign\.build-contract="1"/);
