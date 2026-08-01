@@ -66,6 +66,36 @@ services:
       - |
         node backend/cli/sovereign_cli.js run bot paper --strategy low_prob_dip
 
+  bot-alpaca-paper:
+    profiles: [paper-alpaca]
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
+    depends_on:
+      web:
+        condition: service_healthy
+    env_file:
+      - path: ${SOVEREIGN_BOT_ALPACA_PAPER_ENV_FILE:-../../.env.services/bot-alpaca-paper.env}
+        required: true
+    environment: *central-runtime
+    volumes:
+      - ../../storage:/app/storage
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    # Alpaca Paper automation loop: scans registered strategies against Alpaca Paper
+    # at a configurable interval (default 15 minutes). The CLI owns the loop; this
+    # service wraps it with restart and duplicate-loop detection.
+    command:
+      - /bin/sh
+      - -c
+      - |
+        INTERVAL=$${ALPACA_PAPER_INTERVAL_MIN:-15}
+        TRUST=$${ALPACA_PAPER_MIN_TRUST_SCORE:-70}
+        NOTIONAL=$${ALPACA_PAPER_MAX_NOTIONAL:-25}
+        exec node backend/cli/sovereign_cli.js run bot alpaca-paper \
+          --interval "$$INTERVAL" \
+          --min-trust-score "$$TRUST" \
+          --paper-max-notional "$$NOTIONAL"
+
   backfill:
     profiles: [writer]
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
