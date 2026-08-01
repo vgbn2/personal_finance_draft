@@ -1,13 +1,15 @@
 # Next Session Goal
 
-## Immediate boundary after skill sync and repo audit
+## Immediate boundary after the Alpaca Paper Compose merge
 
-The repository skills have been synchronized across canonical `skills/` and discovery mirrors `.agents/skills/`. The unneeded/broken gitlink `backend/polymarket-cli` was removed from the Git index, restoring `git submodule status` to exit code 0. All hygiene checks, structure contracts, and Node test suites pass 100%.
+The Compose-managed Alpaca Paper strategy loop is merged and committed on local `main` through `3a877a52` (`9d0a8e30` implementation merge). Source and static Compose exercise are green, but runtime activation is intentionally unqualified and inactive.
 
-The next implementation steps for future sessions:
-1. Review staged git changes (`git status`) and commit:
-   `git commit -m "fix(repo): sync agent skills, remove unneeded polymarket-cli gitlink, and fix TUI test harness flakes"`
-2. Convert the detached 15-minute Alpaca Paper loop into an independently Compose-managed service and verify restart, stop, rollback, and duplicate-loop prevention.
+Next actions:
+1. Do not start the service by default. `bot_autopilot` is disabled and no Alpaca Paper process/container is running.
+2. If explicitly authorized, preflight and generate the isolated `.env.services/bot-alpaca-paper.env`, enable only `bot_autopilot`, and start only Compose service `bot-alpaca-paper` under profile `paper-alpaca`.
+3. Verify the first bounded Paper cycle, canonical heartbeat/status, graceful SIGTERM stop, Compose restart, rollback, and absence of any old detached duplicate process. Preserve the $25 Paper notional cap and all fixed non-live overrides.
+4. Keep provider polling, Paper orders, host deployment, push, and operational qualification distinct from the completed source/static proof.
+5. The separate `worktree-alpaca-paper-compose` worktree/branch remains and may be removed only after an explicit cleanup request.
 
 
 ## Deferred roadmap — cross-market research readiness

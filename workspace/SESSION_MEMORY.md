@@ -1,3 +1,20 @@
+## Session Memory - 2026-08-01 Compose-managed Alpaca Paper loop
+
+```json
+{
+  "feature_commit": "aa84ef56",
+  "merge_commit": "9d0a8e30",
+  "exercise_commit": "3a877a52",
+  "branch": "main",
+  "verification": "focused merged source 43/43; feature exercise 28/28; Compose/manifest/syntax/secrets/hygiene pass",
+  "runtime": "inactive on steamlinux; no process or bot-alpaca-paper container",
+  "gate": "bot_autopilot disabled",
+  "remote": "nothing pushed",
+  "worktree": "worktree-alpaca-paper-compose remains at aa84ef56",
+  "safety": "No provider poll, Paper order, live order, runtime activation, or execution-authority change occurred"
+}
+```
+
 ## Session Memory - 2026-07-30 mass implementation closeout
 
 ```json

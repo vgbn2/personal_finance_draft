@@ -1,5 +1,9 @@
 # Prompt Log - 2026-07-30
 
+## User Prompt and closeout - 2026-08-01 Alpaca Paper Compose service
+
+Requested continuation of the Compose-managed Alpaca Paper loop, asked whether it was running and isolated in a separate worktree, then directed merging and `feature-exerciser` activation before ending the session. Implemented and committed the feature, merged it into local `main`, ran bounded no-provider exercises, and recorded evidence. Runtime remains inactive, `bot_autopilot` disabled, nothing pushed, and no provider or order action occurred.
+
 ## User Prompt - 2026-07-30 session-orchestrator boot
 
 Invoked `session-orchestrator` to boot and resume session state. Loaded `BOOTSTRAP.md`, `HANDOFF.md` (pointer -> `workspace/handoff/2026-07-30.md`), `SESSION_MEMORY.md`, `STATE.md`, `NEXT_SESSION_GOAL.md`, and inspected git status/HEAD (`main` at `c868fc3b`). `graphify` tool is unavailable.
