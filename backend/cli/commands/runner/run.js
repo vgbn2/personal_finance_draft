@@ -86,6 +86,58 @@ async function runPaperBotLoop(intervalMin, opts = {}) {
   return 0;
 }
 
+async function runAlpacaPaperLoop(intervalMin, opts = {}) {
+  const runStrategies = opts.runAutomatedStrategies
+    || require('../strategy/strategy.js').runAutomatedStrategies;
+  const settings = opts.settings || loadRuntimeSettings();
+
+  const gate = featureGate('bot_autopilot', {
+    settings,
+    surface: 'Alpaca Paper bot loop'
+  });
+  if (!gate.ok) {
+    printPayload({
+      ok: false,
+      type: 'feature_gate',
+      feature_flag: gate.flag,
+      reason: gate.reason,
+      hint: gate.hint
+    }, opts.args || []);
+    return 1;
+  }
+
+  const effectiveIntervalMin = Math.max(1, Number(intervalMin) || 15);
+  const intervalMs = effectiveIntervalMin * 60 * 1000;
+  const strategyArgs = [
+    '--once',
+    '--paper-provider',
+    '--passes', '0',
+    '--min-trust-score', String(opts.minTrustScore || 70)
+  ];
+
+  if (opts.paperMaxNotional) {
+    strategyArgs.push('--paper-max-notional', String(opts.paperMaxNotional));
+  }
+
+  if (opts.once) {
+    console.log('[run bot alpaca-paper] Running one-shot automation pass...');
+    await runStrategies(strategyArgs);
+    return 0;
+  }
+
+  installShutdownHandlers();
+  console.log(`[run bot alpaca-paper] Starting Alpaca Paper automation loop every ${effectiveIntervalMin} min. Ctrl+C to stop.`);
+
+  const start = opts.startLoop || startLoop;
+  start('alpaca_paper_bot', async ({ iteration }) => {
+    console.log(`[alpaca_paper_bot] #${iteration} — ${new Date().toISOString()}`);
+    await runStrategies(strategyArgs);
+  }, intervalMs, { continueOnError: true });
+
+  if (opts.waitForShutdown !== false) await new Promise(() => {});
+  return 0;
+}
+
 async function commandRun(args) {
   const sub = args[0] || 'status';
   const rest = args.slice(1);
@@ -117,6 +169,24 @@ async function commandRun(args) {
     const botSub  = rest[0] || 'paper';
     const botRest = rest.slice(1);
 
+    if (botSub === 'alpaca-paper') {
+      const settings = loadRuntimeSettings();
+      const interval = numericOption(botRest, '--interval', 15);
+      const once = hasFlag(botRest, '--once');
+      const minTrustScore = numericOption(botRest, '--min-trust-score', 70);
+      const paperMaxNotional = botRest.includes('--paper-max-notional')
+        ? numericOption(botRest, '--paper-max-notional', 25)
+        : null;
+
+      return runAlpacaPaperLoop(interval, {
+        once,
+        minTrustScore,
+        paperMaxNotional,
+        args: botRest,
+        settings,
+      });
+    }
+
     if (botSub === 'paper') {
       const settings = loadRuntimeSettings();
       const requestedInterval = botRest.includes('--interval') ? numericOption(botRest, '--interval', null) : null;
@@ -139,7 +209,7 @@ async function commandRun(args) {
       return 1;
     }
 
-    console.error(`[run bot] Unknown subcommand '${botSub}'. Use: paper | live`);
+    console.error(`[run bot] Unknown subcommand '${botSub}'. Use: paper | alpaca-paper | live`);
     return 1;
   }
 
@@ -262,4 +332,4 @@ async function commandRunnerMenu(args) {
   return 0;
 }
 
-module.exports = { buildPaperRunArgs, commandRun, commandRunnerMenu, resolvePaperBotInterval, runPaperBotLoop };
+module.exports = { buildPaperRunArgs, commandRun, commandRunnerMenu, resolvePaperBotInterval, runAlpacaPaperLoop, runPaperBotLoop };
