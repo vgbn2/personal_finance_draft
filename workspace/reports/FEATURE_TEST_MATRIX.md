@@ -5,6 +5,16 @@ Run window: 2026-06-11, Asia/Saigon
 This is the active feature-evidence ledger. The dated 2026-06-11 rows remain historical baseline evidence;
 the session-dated sections below are the current rerun results.
 
+## Compose-Managed Alpaca Paper Loop - 2026-08-01
+
+| Feature | Entrypoint | Mode | Result | Evidence Class | Evidence | Limitation / Next Action |
+|:---|:---|:---|:---|:---|:---|:---|
+| Main-branch integration | Git `main` commit `9d0a8e30` | committed merge | pass | committed-source proof | Feature branch `aa84ef56` merged into current main with conflicts resolved in favor of current paper-order support plus the canonical loop wrapper | Commit is local and was not pushed; clean-install/CI proof was not run. |
+| Canonical Alpaca Paper runner | `sovereign run bot alpaca-paper` / `runAlpacaPaperLoop()` | fixture/contract, no provider | pass | source contract proof | Focused runner, loop registry, Compose, manifest, and central-env bundle passed 28/28; loop name is `alpaca_paper_bot`, duplicate registration rejects, shutdown handlers are installed, and each tick invokes one `--paper-provider --once` pass | Fixture tests do not prove broker authentication, provider submission, restart recovery, or soak. |
+| Compose service contract | Compose profile `paper-alpaca`, service `bot-alpaca-paper` | static render, no container start | pass | local static-configuration proof | Compose renders the dedicated command, default 15-minute cadence, trust/notional controls, `LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`, isolated Paper credential projection, disabled HTTP healthcheck, and `restart: unless-stopped` | No image was built, container started, detached process stopped, or service restarted. |
+| Disabled-gate failure state | `run bot alpaca-paper --once --json` | local no-network preflight | blocked safely | local-runtime policy proof | Current settings report `bot_autopilot:false`; focused contract proves execution is not reached when disabled | Direct CLI probe was denied by the session permission classifier, so the real command was not executed. Enablement changes runtime settings and requires explicit user approval. |
+| Runtime activation | `docker compose --profile paper-alpaca up -d bot-alpaca-paper` | persistent Paper service | not-run | operational evidence absent | Process and Compose checks show no Alpaca Paper runner/container on `steamlinux` | Starting it would poll providers and may place Alpaca Paper orders; explicit approval and valid generated `.env.services/bot-alpaca-paper.env` are required. |
+
 ## Central Host Runtime Activation Preflight - 2026-07-29
 
 | Feature | Entrypoint | Mode | Result | Evidence Class | Evidence | Limitation / Next Action |
