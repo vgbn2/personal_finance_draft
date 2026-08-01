@@ -960,11 +960,25 @@ async function runAutomationPass(args, strategiesOverride = null) {
 async function runAutomatedStrategies(args) {
     const settings = loadRuntimeSettings();
     const providerPaper = hasFlag(args, '--paper-provider');
-    const gate = featureGate(providerPaper ? 'bot_autopilot' : 'ai_agent_trading', { settings, surface: 'Strategy automation' });
+    const once = hasFlag(args, '--once');
+
+    const gate = featureGate(providerPaper ? 'bot_autopilot' : 'ai_agent_trading', {
+        settings,
+        surface: 'Strategy automation'
+    });
     if (!gate.ok) {
         printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
         return 1;
     }
+
+    // One-shot mode: run single pass and exit
+    if (once) {
+        console.log('[AUTOMATION] Running one-shot automation pass...');
+        await runAutomationPass(args);
+        return 0;
+    }
+
+    // Persistent loop mode for direct CLI invocation
     const intervalMinutes = numericOption(args, '--interval', settings.trading.polling_interval || 15);
     const intervalMs = intervalMinutes * 60 * 1000;
     let passes = 0;

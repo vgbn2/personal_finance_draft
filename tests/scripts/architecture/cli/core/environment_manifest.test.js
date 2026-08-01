@@ -168,7 +168,7 @@ test('environment manifest rejects schema 2, unknown surfaces, and execution pro
   );
 });
 
-test('compose service contract covers exactly seven isolated service surfaces', () => {
+test('compose service contract covers exactly eight isolated service surfaces', () => {
   const manifest = loadEnvironmentManifest();
   assert.deepEqual(Object.keys(manifest.compose_services).sort(), [...EXPECTED_COMPOSE_SERVICES]);
   const allEnvironment = Object.fromEntries(manifest.entries.map((entry) => [entry.name, `${entry.name}-value`]));
