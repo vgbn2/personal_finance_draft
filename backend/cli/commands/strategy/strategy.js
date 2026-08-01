@@ -953,18 +953,33 @@ async function runAutomationPass(args, strategiesOverride = null) {
 
 async function runAutomatedStrategies(args) {
     const settings = loadRuntimeSettings();
-    const gate = featureGate('ai_agent_trading', { settings, surface: 'Strategy automation' });
+    const providerPaper = hasFlag(args, '--paper-provider');
+    const once = hasFlag(args, '--once');
+
+    const gate = featureGate(providerPaper ? 'bot_autopilot' : 'ai_agent_trading', {
+        settings,
+        surface: 'Strategy automation'
+    });
     if (!gate.ok) {
         printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, args);
         return 1;
     }
+
+    // One-shot mode: run single pass and exit
+    if (once) {
+        console.log('[AUTOMATION] Running one-shot automation pass...');
+        await runAutomationPass(args);
+        return 0;
+    }
+
+    // Persistent loop mode for direct CLI invocation
     const intervalMinutes = numericOption(args, '--interval', settings.trading.polling_interval || 15);
     const intervalMs = intervalMinutes * 60 * 1000;
     let passes = 0;
     const maxPasses = numericOption(args, '--passes', 0); // 0 = run indefinitely
     const passLabel = maxPasses === 0 ? '∞' : String(maxPasses);
 
-    console.log(`[\x1b[1;35mAUTO\x1b[0m] Starting Strategy Automation Loop (Interval: ${intervalMinutes} min, Max Passes: ${passLabel})`);
+    console.log(`[\x1b[1;35mAUTO\x1b[0m] Starting ${providerPaper ? 'Alpaca Paper' : 'Strategy'} Automation Loop (Interval: ${intervalMinutes} min, Max Passes: ${passLabel})`);
     console.log('Press Ctrl+C to stop.');
 
     return new Promise((resolve) => {

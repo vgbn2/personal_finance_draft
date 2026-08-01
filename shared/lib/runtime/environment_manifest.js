@@ -34,6 +34,7 @@ const CHILD_RUNTIME_PASSTHROUGH = Object.freeze([
 const EXPECTED_COMPOSE_SERVICES = Object.freeze([
   'backfill',
   'bot',
+  'bot-alpaca-paper',
   'host-backup',
   'host-health',
   'polymarket-research',
