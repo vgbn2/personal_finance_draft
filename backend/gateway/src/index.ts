@@ -2842,10 +2842,6 @@ export async function main() {
     console.error(`Unknown command: ${command}`);
     printUsage();
   }
-
-  try {
-    // No-op cleanup
-  } catch (e) {}
 }
 
 if (require.main === module) {
