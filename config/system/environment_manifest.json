@@ -15,6 +15,7 @@
     "process_internal",
     "compose_web",
     "compose_paper_bot",
+    "compose_bot_alpaca_paper",
     "compose_backfill",
     "compose_portfolio_monitor",
     "compose_host_health",
@@ -45,6 +46,18 @@
       "fixed_overrides": {"LIVE_TRADING": "false", "SOVEREIGN_DEPLOYMENT_PROFILE": "central-host", "SOVEREIGN_EXECUTION_AUTHORIZED": "false", "SOVEREIGN_RUNTIME_MODE": "cloud-compute"},
       "mounts": ["../../storage:/app/storage"],
       "forbidden_environment_classes": ["private", "central", "execution"]
+    },
+    "bot-alpaca-paper": {
+      "surface": "compose_bot_alpaca_paper",
+      "profile": "central-host",
+      "compose_profile": "paper-alpaca",
+      "command_identity": "node backend/cli/sovereign_cli.js run bot alpaca-paper",
+      "required_keys": ["ALPACA_PAPER_API_KEY", "ALPACA_PAPER_SECRET_KEY"],
+      "optional_keys": ["SOVEREIGN_USER_SETTINGS_PATH"],
+      "defaulted_keys": ["ALPACA_PAPER_BASE_URL", "ALPACA_PAPER_INTERVAL_MIN", "ALPACA_PAPER_MAX_NOTIONAL", "ALPACA_PAPER_MIN_TRUST_SCORE"],
+      "fixed_overrides": {"LIVE_TRADING": "false", "SOVEREIGN_DEPLOYMENT_PROFILE": "central-host", "SOVEREIGN_EXECUTION_AUTHORIZED": "false", "SOVEREIGN_RUNTIME_MODE": "cloud-compute"},
+      "mounts": ["../../storage:/app/storage"],
+      "forbidden_environment_classes": ["central", "execution"]
     },
     "backfill": {
       "surface": "compose_backfill",
@@ -118,8 +131,8 @@
       "members": [
         {"name": "ALPACA_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
         {"name": "ALPACA_SECRET_KEY", "aliases": ["ALPACA_API_SECRET"], "central_copy": true, "allowed_surfaces": ["default_cli", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
-        {"name": "ALPACA_PAPER_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
-        {"name": "ALPACA_PAPER_SECRET_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
+        {"name": "ALPACA_PAPER_API_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor", "compose_bot_alpaca_paper"]},
+        {"name": "ALPACA_PAPER_SECRET_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor", "compose_bot_alpaca_paper"]},
         {
           "name": "ALPACA_LIVE_API_KEY",
           "environment_class": "execution",
@@ -246,7 +259,10 @@
           "profiles": ["developer", "all-in-one"],
           "allowed_surfaces": ["gateway_account", "execution"]
         },
-        {"name": "ALPACA_PAPER_BASE_URL", "default": "https://paper-api.alpaca.markets", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor"]},
+        {"name": "ALPACA_PAPER_BASE_URL", "default": "https://paper-api.alpaca.markets", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor", "compose_bot_alpaca_paper"]},
+        {"name": "ALPACA_PAPER_INTERVAL_MIN", "default": "15", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
+        {"name": "ALPACA_PAPER_MAX_NOTIONAL", "default": "25", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
+        {"name": "ALPACA_PAPER_MIN_TRUST_SCORE", "default": "70", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
         {"name": "BACKFILL_INTERVAL_SECS", "default": "1800", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
         {
           "name": "CURRENT_PORTFOLIO_DRAWDOWN",
@@ -382,7 +398,7 @@
         {"name": "SOVEREIGN_TS_STORAGE", "default": "bin", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
         {"name": "SOVEREIGN_TS_WRITE_LOCK_STALE_MS", "default": "300000", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
         {"name": "SOVEREIGN_TS_WRITE_LOCK_TIMEOUT_MS", "default": "30000", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
-        {"name": "SOVEREIGN_USER_SETTINGS_PATH", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_paper_bot"]},
+        {"name": "SOVEREIGN_USER_SETTINGS_PATH", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_paper_bot", "compose_bot_alpaca_paper"]},
         {"name": "SOVEREIGN_USER_ROLE_MAP", "default": "{}", "environment_class": "central", "allowed_surfaces": ["web", "operator", "compose_web"]},
         {"name": "SOVEREIGN_WEB_BIND", "default": "127.0.0.1"},
         {"name": "SOVEREIGN_WEB_HOST", "default": "127.0.0.1"},

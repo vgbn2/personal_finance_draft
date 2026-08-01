@@ -86,7 +86,7 @@ test('central environment preparation copies only approved research settings and
   assert.equal(fs.statSync(outputPath).mode & 0o777, 0o600);
   assert.equal(validateCentralEnvironment(prepared).ok, true);
   assert.equal(result.compose_contract.ok, true);
-  assert.equal(result.service_environments.services.length, 7);
+  assert.equal(result.service_environments.services.length, 8);
   for (const service of result.service_environments.services) {
     const serviceFile = path.join(root, '.env.services', service.file);
     assert.equal(fs.statSync(serviceFile).mode & 0o777, 0o600);
@@ -118,13 +118,15 @@ test('central service projection preview is name-only and closes when required i
   const report = buildComposeServiceProjectionReport({
     SOVEREIGN_API_TOKEN: 'api-token',
     SOVEREIGN_CLIENT_TOKEN: 'client-token',
+    ALPACA_PAPER_API_KEY: 'paper-key',
+    ALPACA_PAPER_SECRET_KEY: 'paper-secret',
     POLYMARKET_RESEARCH_SCOPE_FILE: '/app/storage/polymarket/scope.json',
     FRED_API_KEY: 'provider-poison',
     POLYMARKET_PRIVATE_KEY: 'execution-poison',
     SOVEREIGN_TRADE_PIN: 'pin-poison',
   });
   assert.equal(report.ok, true);
-  assert.equal(report.services.length, 7);
+  assert.equal(report.services.length, 8);
   assert.ok(
     report.services.find((service) => service.service === 'backfill').projected_keys.includes('FRED_API_KEY'),
   );
@@ -155,10 +157,17 @@ test('central environment preparation can render the explicit all-in-one rehears
     'SOVEREIGN_DEPLOYMENT_PROFILE=central-host',
     'SOVEREIGN_API_TOKEN=',
     'SOVEREIGN_CLIENT_TOKEN=',
+    'ALPACA_PAPER_API_KEY=',
+    'ALPACA_PAPER_SECRET_KEY=',
     'POLYMARKET_RESEARCH_SCOPE_FILE=',
     '',
   ].join('\n'));
-  fs.writeFileSync(sourcePath, 'POLYMARKET_RESEARCH_SCOPE_FILE=/app/storage/polymarket/scope.json\n');
+  fs.writeFileSync(sourcePath, [
+    'ALPACA_PAPER_API_KEY=paper-key',
+    'ALPACA_PAPER_SECRET_KEY=paper-secret',
+    'POLYMARKET_RESEARCH_SCOPE_FILE=/app/storage/polymarket/scope.json',
+    '',
+  ].join('\n'));
   prepareCentralEnvironment({
     repoRoot: root,
     templatePath,
