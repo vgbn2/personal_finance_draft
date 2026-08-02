@@ -49,6 +49,19 @@ function buildPaperRunArgs(options = {}) {
   return args;
 }
 
+function buildAlpacaPaperStrategyArgs(options = {}) {
+  const args = [
+    '--once',
+    '--paper-provider',
+    '--passes', '0',
+    '--min-trust-score', String(options.minTrustScore || 70),
+  ];
+  if (options.paperMaxNotional) {
+    args.push('--paper-max-notional', String(options.paperMaxNotional));
+  }
+  return args;
+}
+
 async function runPaperBotLoop(intervalMin, opts = {}) {
   const gate = featureGate('bot_autopilot', { settings: opts.settings, surface: 'Paper bot loop' });
   if (!gate.ok) {
@@ -108,16 +121,7 @@ async function runAlpacaPaperLoop(intervalMin, opts = {}) {
 
   const effectiveIntervalMin = Math.max(1, Number(intervalMin) || 15);
   const intervalMs = effectiveIntervalMin * 60 * 1000;
-  const strategyArgs = [
-    '--once',
-    '--paper-provider',
-    '--passes', '0',
-    '--min-trust-score', String(opts.minTrustScore || 70)
-  ];
-
-  if (opts.paperMaxNotional) {
-    strategyArgs.push('--paper-max-notional', String(opts.paperMaxNotional));
-  }
+  const strategyArgs = buildAlpacaPaperStrategyArgs(opts);
 
   if (opts.once) {
     console.log('[run bot alpaca-paper] Running one-shot automation pass...');
@@ -136,6 +140,57 @@ async function runAlpacaPaperLoop(intervalMin, opts = {}) {
 
   if (opts.waitForShutdown !== false) await new Promise(() => {});
   return 0;
+}
+
+async function commandRunBot(args) {
+  const botSub = args[0] || 'paper';
+  const botArgs = args.slice(1);
+
+  if (botSub === 'alpaca-paper') {
+    const settings = loadRuntimeSettings();
+    const interval = numericOption(botArgs, '--interval', 15);
+    const once = hasFlag(botArgs, '--once');
+    const minTrustScore = numericOption(botArgs, '--min-trust-score', 70);
+    const paperMaxNotional = botArgs.includes('--paper-max-notional')
+      ? numericOption(botArgs, '--paper-max-notional', 25)
+      : null;
+
+    return runAlpacaPaperLoop(interval, {
+      once,
+      minTrustScore,
+      paperMaxNotional,
+      args: botArgs,
+      settings,
+    });
+  }
+
+  if (botSub === 'paper') {
+    const settings = loadRuntimeSettings();
+    const requestedInterval = botArgs.includes('--interval')
+      ? numericOption(botArgs, '--interval', null)
+      : null;
+    const once = hasFlag(botArgs, '--once');
+    const strategy = optionValue(botArgs, '--strategy', 'low_prob_dip');
+
+    return runPaperBotLoop(requestedInterval, {
+      once,
+      strategy,
+      settings,
+      args: botArgs,
+      sizingMode: optionValue(botArgs, '--sizing-mode', null),
+      size: optionValue(botArgs, '--size', null),
+      stopPrice: optionValue(botArgs, '--stop-price', null),
+      maxPositionUsd: optionValue(botArgs, '--max-position-usd', null),
+    });
+  }
+
+  if (botSub === 'live') {
+    console.error('[run bot live] Not implemented here — use: sovereign bot run --live');
+    return 1;
+  }
+
+  console.error(`[run bot] Unknown subcommand '${botSub}'. Use: paper | alpaca-paper | live`);
+  return 1;
 }
 
 async function commandRun(args) {
@@ -165,53 +220,7 @@ async function commandRun(args) {
     return runBackfillLoop(intervalMin, { once });
   }
 
-  if (sub === 'bot') {
-    const botSub  = rest[0] || 'paper';
-    const botRest = rest.slice(1);
-
-    if (botSub === 'alpaca-paper') {
-      const settings = loadRuntimeSettings();
-      const interval = numericOption(botRest, '--interval', 15);
-      const once = hasFlag(botRest, '--once');
-      const minTrustScore = numericOption(botRest, '--min-trust-score', 70);
-      const paperMaxNotional = botRest.includes('--paper-max-notional')
-        ? numericOption(botRest, '--paper-max-notional', 25)
-        : null;
-
-      return runAlpacaPaperLoop(interval, {
-        once,
-        minTrustScore,
-        paperMaxNotional,
-        args: botRest,
-        settings,
-      });
-    }
-
-    if (botSub === 'paper') {
-      const settings = loadRuntimeSettings();
-      const requestedInterval = botRest.includes('--interval') ? numericOption(botRest, '--interval', null) : null;
-      const once        = hasFlag(botRest, '--once');
-      const strategy    = optionValue(botRest, '--strategy', 'low_prob_dip');
-      return runPaperBotLoop(requestedInterval, {
-        once,
-        strategy,
-        settings,
-        args: botRest,
-        sizingMode: optionValue(botRest, '--sizing-mode', null),
-        size: optionValue(botRest, '--size', null),
-        stopPrice: optionValue(botRest, '--stop-price', null),
-        maxPositionUsd: optionValue(botRest, '--max-position-usd', null),
-      });
-    }
-
-    if (botSub === 'live') {
-      console.error('[run bot live] Not implemented here — use: sovereign bot run --live');
-      return 1;
-    }
-
-    console.error(`[run bot] Unknown subcommand '${botSub}'. Use: paper | alpaca-paper | live`);
-    return 1;
-  }
+  if (sub === 'bot') return commandRunBot(rest);
 
   if (sub === 'all') {
     const settings = loadRuntimeSettings();
