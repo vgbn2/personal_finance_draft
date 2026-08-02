@@ -56,6 +56,7 @@ test('signal status expires old model reports and prevents active-signal claims'
     assert.equal(fresh.source_report.fresh, true);
     assert.equal(fresh.active_signals, 1);
     assert.equal(fresh.signals[0].expired, false);
+    assert.equal(fresh.signals[0].reason, 'candidate_above_threshold_not_promoted');
 
     assert.equal(stale.source_report.fresh, false);
     assert.equal(stale.source_report.age_ms, 25 * 60 * 60 * 1000);
@@ -71,6 +72,51 @@ test('signal status expires old model reports and prevents active-signal claims'
       stale_active: stale.active_signals,
       stale_age_h: stale.source_report.age_ms / (60 * 60 * 1000),
     }));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('signal reason precedence remains freshness, readiness, quality, then threshold review', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'signal-reasons-'));
+  try {
+    const backtestPath = path.join(dir, 'backtest.json');
+    const modelPath = path.join(dir, 'model.json');
+    const report = modelReport(new Date(NOW).toISOString());
+    const candidate = report.per_symbol_winners[0].candidates[0];
+    fs.writeFileSync(backtestPath, JSON.stringify({
+      generated_at: new Date(NOW).toISOString(),
+      data_quality_ok: false,
+    }));
+
+    candidate.decision_ready = false;
+    fs.writeFileSync(modelPath, JSON.stringify(report));
+    const notReady = signalStatus({ model_report: modelPath, backtest_report: backtestPath }, {
+      now: NOW,
+      reportMaxAgeMs: DAY_MS,
+    });
+    assert.equal(notReady.signals[0].reason, 'model_not_decision_ready');
+
+    candidate.decision_ready = true;
+    fs.writeFileSync(modelPath, JSON.stringify(report));
+    const badQuality = signalStatus({ model_report: modelPath, backtest_report: backtestPath }, {
+      now: NOW + 1,
+      reportMaxAgeMs: DAY_MS,
+    });
+    assert.equal(badQuality.signals[0].reason, 'data_quality_not_approved');
+
+    fs.writeFileSync(backtestPath, JSON.stringify({
+      generated_at: new Date(NOW).toISOString(),
+      data_quality_ok: true,
+    }));
+    candidate.expectancy = -0.01;
+    fs.writeFileSync(modelPath, JSON.stringify(report));
+    const belowThreshold = signalStatus({ model_report: modelPath, backtest_report: backtestPath }, {
+      now: NOW + 2,
+      reportMaxAgeMs: DAY_MS,
+    });
+    assert.equal(belowThreshold.signals[0].reason, 'candidate_for_review_not_promoted');
+    assert.equal(belowThreshold.signals[0].active, false);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
