@@ -99,6 +99,320 @@ function signalMeanRevert(series) {
   return null;
 }
 
+const FALLBACK_CAPTURE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+function createBacktestTotals() {
+  return {
+    totalPnl: 0,
+    grossPnl: 0,
+    totalExecutionCost: 0,
+    wins: 0,
+    trades: 0,
+    gammaFallbacks: 0,
+    gammaSkipped: 0,
+    fallbackOnlyCount: 0,
+    archivePriceHits: 0,
+    repairedMissing: 0,
+    equity: 0,
+    peakEquity: 0,
+    maxDrawdown: 0,
+    totalHoldHours: 0,
+    holdCount: 0,
+    orderbookLiteCaptured: 0,
+    orderbookLiteFailures: 0,
+  };
+}
+
+async function loadBacktestMarkets(opts, options, loaders) {
+  if (options.fromArchive && opts._fetchMarkets === undefined) {
+    const archived = loaders.loadMarkets({ root: options.archiveRoot });
+    if (archived.length > 0) {
+      return {
+        marketsResult: { ok: true, source: 'archive', data: archived },
+        archiveCoverage: loaders.summarizeArchive(options.archiveRoot),
+      };
+    }
+  }
+
+  const marketsResult = await loaders.fetchMarkets({
+    daysBack: options.daysBack,
+    limit: options.maxMarkets + 10,
+    noCache: options.noCache,
+  });
+  return { marketsResult, archiveCoverage: null };
+}
+
+async function loadMarketHistory(tokenId, marketSource, options, loaders, totals) {
+  let rawHistory = [];
+  let historySource = marketSource || 'api';
+
+  if (marketSource === 'archive') {
+    rawHistory = loaders.loadPrices(tokenId, { root: options.archiveRoot });
+    if (rawHistory.length > 0) totals.archivePriceHits += 1;
+    if (rawHistory.length === 0 && options.repairMissing) {
+      const repaired = await loaders.fetchHistory(tokenId, options.interval, options.noCache);
+      if (!repaired.ok) return null;
+      rawHistory = repaired.data;
+      historySource = repaired.source || 'repair';
+      totals.repairedMissing += 1;
+    }
+  } else {
+    const historyResult = await loaders.fetchHistory(tokenId, options.interval, options.noCache);
+    if (!historyResult.ok) return null;
+    rawHistory = historyResult.data;
+    historySource = historyResult.source || 'api';
+  }
+
+  return { series: buildPriceSeries(rawHistory), historySource };
+}
+
+function applyGammaFallback(market, marketHistory, totals) {
+  if (marketHistory.series.length > 0) return { ...marketHistory, skipMarket: false };
+
+  const finalPrice = gammaFinalPrice(market);
+  if (finalPrice === null) return { ...marketHistory, skipMarket: false };
+  if (finalPrice <= 0.01 || finalPrice >= 0.99) {
+    totals.gammaSkipped += 1;
+    return { ...marketHistory, skipMarket: true };
+  }
+
+  const timestamp = market.end_date || market.endDate || new Date().toISOString();
+  totals.gammaFallbacks += 1;
+  totals.fallbackOnlyCount += 1;
+  return {
+    series: [{ timestamp, price: finalPrice }],
+    historySource: 'gamma_outcome_price_fallback',
+    skipMarket: false,
+  };
+}
+
+function fallbackCaptureWindow(market) {
+  const endRaw = market.end_date || market.endDate || market.close_time || null;
+  const createdRaw = market.created_at || market.createdAt || market.start_date || market.startDate || null;
+  const endSince = endRaw ? new Date(endRaw).getTime() : NaN;
+  const createdSince = createdRaw ? new Date(createdRaw).getTime() : NaN;
+  const openSince = Number.isFinite(createdSince)
+    ? createdSince
+    : (Number.isFinite(endSince) ? Math.max(0, endSince - FALLBACK_CAPTURE_WINDOW_MS) : NaN);
+  return { openSince, endSince };
+}
+
+async function captureOrderbookSnapshot(market, tokenId, request, options) {
+  const captured = await options.capture(market, tokenId, {
+    root: options.archiveRoot,
+    ...request,
+    apiKey: options.pmxtApiKey,
+    baseUrl: options.pmxtBaseUrl,
+  });
+  await sleep(options.throttleMs);
+
+  const rows = captured.ok && Array.isArray(captured.rows) ? captured.rows : [];
+  return {
+    captured: rows.length,
+    failures: rows.length > 0 ? 0 : 1,
+    first: rows[0] || null,
+  };
+}
+
+function recordCaptureTotals(totals, captureResult) {
+  totals.orderbookLiteCaptured += captureResult.captured;
+  totals.orderbookLiteFailures += captureResult.failures;
+}
+
+async function captureFallbackOrderbooks(market, tokenId, options, totals) {
+  const { openSince, endSince } = fallbackCaptureWindow(market);
+  if (Number.isFinite(openSince)) {
+    const openBook = await captureOrderbookSnapshot(market, tokenId, {
+      role: 'open',
+      since: openSince,
+      until: Number.isFinite(endSince) ? endSince : undefined,
+    }, options);
+    recordCaptureTotals(totals, openBook);
+  }
+
+  if (Number.isFinite(endSince)) {
+    const closeBook = await captureOrderbookSnapshot(market, tokenId, {
+      role: 'close',
+      since: Math.max(0, endSince - FALLBACK_CAPTURE_WINDOW_MS),
+      until: endSince,
+    }, options);
+    recordCaptureTotals(totals, closeBook);
+  }
+}
+
+async function captureTradeOrderbooks(market, tokenId, entry, options, totals) {
+  const entrySince = new Date(entry.timestamp).getTime();
+  const entryBook = await captureOrderbookSnapshot(market, tokenId, {
+    role: 'entry',
+    since: Number.isFinite(entrySince) ? entrySince : undefined,
+  }, options);
+  recordCaptureTotals(totals, entryBook);
+
+  const endRaw = market.end_date || market.endDate || market.close_time;
+  const exitSince = endRaw ? new Date(endRaw).getTime() : null;
+  let exitBook = null;
+  if (Number.isFinite(exitSince)) {
+    exitBook = await captureOrderbookSnapshot(market, tokenId, {
+      role: 'exit',
+      since: exitSince,
+    }, options);
+    recordCaptureTotals(totals, exitBook);
+  }
+
+  return {
+    entry: entryBook.first,
+    exit: exitBook ? exitBook.first : null,
+  };
+}
+
+function selectStrategyEntry(series, strategy, entryThreshold) {
+  if (strategy === 'low_prob_dip') return signalLowProbDip(series, { entryThreshold });
+  if (strategy === 'mean_revert') return signalMeanRevert(series);
+  return { error: `Unknown strategy '${strategy}'. Use: low_prob_dip | mean_revert` };
+}
+
+function evaluateTrade(market, tokenId, marketHistory, entry, orderbooks, options) {
+  const { yesWon, resolutionPrice } = resolveOutcome(market);
+  const entryOrderbook = orderbooks.entry;
+  const executionCost = estimatePolymarketExecutionCost({
+    fee: options.fee,
+    half_spread_estimate: entryOrderbook && Number.isFinite(Number(entryOrderbook.spread))
+      ? Number(entryOrderbook.spread) / 2
+      : options.halfSpreadEstimate,
+    Y: options.impactY,
+    rolling_volatility: rollingVolatilityAtEntry(marketHistory.series, entry, options.interval),
+    order_notional: options.orderNotional,
+    rolling_market_volume: entryOrderbook && Number.isFinite(Number(entryOrderbook.depth_5pct))
+      ? Number(entryOrderbook.depth_5pct)
+      : volumeForCostModel(market, options.rollingMarketVolume),
+  });
+  const grossPnl = resolutionPrice - entry.price;
+  const pnl = grossPnl - executionCost.total_cost;
+  const hold = holdHours(entry.timestamp, market);
+
+  return {
+    grossPnl,
+    executionCost: executionCost.total_cost,
+    pnl,
+    hold,
+    result: {
+      market: (market.question || market.title || market.id || '').slice(0, 100),
+      marketId: market.market_id || market.id || null,
+      tokenId,
+      strategy: options.strategy,
+      entryPrice: Math.round(entry.price * 10000) / 10000,
+      entryTimestamp: entry.timestamp,
+      resolutionPrice,
+      yesWon,
+      grossPnl: round4(grossPnl),
+      executionCost: round4(executionCost.total_cost),
+      pnl: round4(pnl),
+      gammaFallback: marketHistory.series.length === 1,
+      fallbackOnly: marketHistory.historySource === 'gamma_outcome_price_fallback',
+      historySource: marketHistory.historySource,
+      holdHours: hold,
+      orderbookLite: entryOrderbook ? { entry: entryOrderbook, exit: orderbooks.exit } : null,
+    },
+  };
+}
+
+function recordTrade(totals, trade) {
+  totals.trades += 1;
+  totals.grossPnl += trade.grossPnl;
+  totals.totalExecutionCost += trade.executionCost;
+  totals.totalPnl += trade.pnl;
+  if (trade.pnl > 0) totals.wins += 1;
+  totals.equity += trade.pnl;
+  totals.peakEquity = Math.max(totals.peakEquity, totals.equity);
+  totals.maxDrawdown = Math.max(totals.maxDrawdown, totals.peakEquity - totals.equity);
+  if (Number.isFinite(trade.hold)) {
+    totals.totalHoldHours += trade.hold;
+    totals.holdCount += 1;
+  }
+}
+
+function buildBacktestReport(options, marketsResult, archiveCoverage, markets, totals, results) {
+  return {
+    ok: true,
+    strategy: options.strategy,
+    tagId: options.tagId,
+    daysBack: options.daysBack,
+    interval: options.interval,
+    source: marketsResult.source || 'api',
+    archiveRoot: options.archiveRoot || null,
+    archiveCoverage,
+    marketsScanned: markets.length,
+    archivePriceHits: totals.archivePriceHits,
+    repairedMissing: totals.repairedMissing,
+    costModel: {
+      fee: options.fee,
+      half_spread_estimate: options.halfSpreadEstimate,
+      impact_y: options.impactY,
+      order_notional: options.orderNotional,
+      rolling_market_volume: options.rollingMarketVolume ?? null,
+    },
+    gammaFallbacks: totals.gammaFallbacks,
+    fallbackOnlyCount: totals.fallbackOnlyCount,
+    gammaSkipped: totals.gammaSkipped,
+    orderbookLiteCaptured: totals.orderbookLiteCaptured,
+    orderbookLiteFailures: totals.orderbookLiteFailures,
+    trades: totals.trades,
+    wins: totals.wins,
+    losses: totals.trades - totals.wins,
+    winRate: totals.trades > 0 ? Math.round((totals.wins / totals.trades) * 10000) / 100 : 0,
+    grossPnl: round4(totals.grossPnl),
+    totalExecutionCost: round4(totals.totalExecutionCost),
+    totalPnl: round4(totals.totalPnl),
+    avgPnlPerTrade: totals.trades > 0 ? round4(totals.totalPnl / totals.trades) : 0,
+    evPerTrade: totals.trades > 0 ? round4(totals.totalPnl / totals.trades) : 0,
+    avgCostPerTrade: totals.trades > 0 ? round4(totals.totalExecutionCost / totals.trades) : 0,
+    maxDrawdown: round4(totals.maxDrawdown),
+    avgHoldTimeHours: totals.holdCount > 0
+      ? Math.round((totals.totalHoldHours / totals.holdCount) * 100) / 100
+      : null,
+    results,
+  };
+}
+
+function resolveBacktestConfiguration(opts) {
+  const valueOrDefault = (name, fallback) => (
+    opts[name] === undefined ? fallback : opts[name]
+  );
+  const options = {
+    tagId: valueOrDefault('tagId', 21),
+    daysBack: valueOrDefault('daysBack', 365),
+    strategy: valueOrDefault('strategy', 'low_prob_dip'),
+    maxMarkets: valueOrDefault('maxMarkets', 20),
+    entryThreshold: valueOrDefault('entryThreshold', 0.15),
+    interval: valueOrDefault('interval', '1d'),
+    archiveRoot: opts.archiveRoot,
+    fromArchive: valueOrDefault('fromArchive', true),
+    repairMissing: valueOrDefault('repairMissing', false),
+    fee: valueOrDefault('fee', 0),
+    halfSpreadEstimate: valueOrDefault('halfSpreadEstimate', 0.01),
+    impactY: valueOrDefault('impactY', 1),
+    orderNotional: valueOrDefault('orderNotional', 10),
+    rollingMarketVolume: opts.rollingMarketVolume,
+    noCache: valueOrDefault('noCache', false),
+  };
+  const loaders = {
+    fetchMarkets: valueOrDefault('_fetchMarkets', fetchResolvedGammaMarkets),
+    fetchHistory: valueOrDefault('_fetchHistory', fetchClobPriceHistory),
+    loadMarkets: valueOrDefault('_loadMarkets', loadArchivedMarketIndex),
+    loadPrices: valueOrDefault('_loadPrices', loadArchivedPriceSeries),
+    summarizeArchive: valueOrDefault('_summarizeArchive', summarizeArchiveCoverage),
+  };
+  const capture = {
+    enabled: valueOrDefault('captureOrderbookLite', false),
+    capture: valueOrDefault('_captureOrderbookLite', capturePolymarketOrderbookLite),
+    archiveRoot: options.archiveRoot,
+    pmxtApiKey: valueOrDefault('pmxtApiKey', process.env.PMXT_API_KEY || ''),
+    pmxtBaseUrl: valueOrDefault('pmxtBaseUrl', process.env.PMXT_BASE_URL || 'https://api.pmxt.dev'),
+    throttleMs: valueOrDefault('captureThrottleMs', 0),
+  };
+  return { options, loaders, capture };
+}
+
 /**
  * Run a Polymarket backtest against resolved markets.
  *
@@ -110,400 +424,58 @@ function signalMeanRevert(series) {
  *   opts._fetchHistory  — replaces fetchClobPriceHistory
  */
 async function runPolymarketBacktest(opts = {}) {
-  const {
-    tagId        = 21,
-    daysBack     = 365,
-    strategy     = 'low_prob_dip',
-    maxMarkets   = 20,
-    entryThreshold = 0.15,
-    interval      = '1d',
-    archiveRoot   = undefined,
-    fromArchive   = true,
-    repairMissing = false,
-    fee           = 0,
-    halfSpreadEstimate = 0.01,
-    impactY       = 1,
-    orderNotional = 10,
-    rollingMarketVolume = undefined,
-    captureOrderbookLite = false,
-    captureThrottleMs = 0,
-    pmxtApiKey = process.env.PMXT_API_KEY || '',
-    pmxtBaseUrl = process.env.PMXT_BASE_URL || 'https://api.pmxt.dev',
-    noCache      = false,
-    _fetchMarkets = fetchResolvedGammaMarkets,
-    _fetchHistory = fetchClobPriceHistory,
-    _captureOrderbookLite = capturePolymarketOrderbookLite,
-    _loadMarkets = loadArchivedMarketIndex,
-    _loadPrices = loadArchivedPriceSeries,
-    _summarizeArchive = summarizeArchiveCoverage,
-  } = opts;
-
-  let marketsResult = null;
-  let archiveCoverage = null;
-  if (fromArchive && opts._fetchMarkets === undefined) {
-    const archived = _loadMarkets({ root: archiveRoot });
-    if (archived.length > 0) {
-      marketsResult = { ok: true, source: 'archive', data: archived };
-      archiveCoverage = _summarizeArchive(archiveRoot);
-    }
-  }
-
-  if (!marketsResult) {
-    marketsResult = await _fetchMarkets({
-      daysBack, limit: maxMarkets + 10, noCache,
-    });
-  }
+  const { options, loaders, capture } = resolveBacktestConfiguration(opts);
+  const { marketsResult, archiveCoverage } = await loadBacktestMarkets(opts, options, loaders);
   if (!marketsResult.ok) return { ok: false, error: marketsResult.error };
 
-  const markets = marketsResult.data.slice(0, maxMarkets);
+  const markets = marketsResult.data.slice(0, options.maxMarkets);
   const results = [];
-  let totalPnl = 0;
-  let grossPnl = 0;
-  let totalExecutionCost = 0;
-  let wins = 0;
-  let trades = 0;
-  let gammaFallbacks = 0;
-  let gammaSkipped = 0;
-  let fallbackOnlyCount = 0;
-  let archivePriceHits = 0;
-  let repairedMissing = 0;
-  let equity = 0;
-  let peakEquity = 0;
-  let maxDrawdown = 0;
-  let totalHoldHours = 0;
-  let holdCount = 0;
-  let orderbookLiteCaptured = 0;
-  let orderbookLiteFailures = 0;
+  const totals = createBacktestTotals();
 
   for (const market of markets) {
     const tokenId = yesTokenId(market);
     if (!tokenId) continue;
 
-    let rawHistory = [];
-    let historySource = marketsResult.source || 'api';
-    if (marketsResult.source === 'archive') {
-      rawHistory = _loadPrices(tokenId, { root: archiveRoot });
-      if (rawHistory.length > 0) archivePriceHits++;
-      if (rawHistory.length === 0 && repairMissing) {
-        const repaired = await _fetchHistory(tokenId, interval, noCache);
-        if (!repaired.ok) continue;
-        rawHistory = repaired.data;
-        historySource = repaired.source || 'repair';
-        repairedMissing++;
-      }
-    } else {
-      const histResult = await _fetchHistory(tokenId, interval, noCache);
-      if (!histResult.ok) continue;
-      rawHistory = histResult.data;
-      historySource = histResult.source || 'api';
-    }
+    const loadedHistory = await loadMarketHistory(
+      tokenId,
+      marketsResult.source,
+      options,
+      loaders,
+      totals,
+    );
+    if (!loadedHistory) continue;
 
-    let series = buildPriceSeries(rawHistory);
-
-    // Gamma fallback: CLOB returns 0 points for resolved tokens — use outcomePrices
-    if (series.length === 0) {
-      const fp = gammaFinalPrice(market);
-      if (fp !== null) {
-        // Skip markets where Gamma price is at resolution boundary — no pre-entry signal
-        if (fp <= 0.01 || fp >= 0.99) {
-          gammaSkipped++;
-          if (captureOrderbookLite) {
-            const endRaw = market.end_date || market.endDate || market.close_time || null;
-            const createdRaw = market.created_at || market.createdAt || market.start_date || market.startDate || null;
-            const endSince = endRaw ? new Date(endRaw).getTime() : NaN;
-            const createdSince = createdRaw ? new Date(createdRaw).getTime() : NaN;
-            const fallbackSince = Number.isFinite(createdSince)
-              ? createdSince
-              : (Number.isFinite(endSince) ? Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000)) : NaN);
-            const fallbackUntil = Number.isFinite(endSince) ? endSince : undefined;
-
-            if (Number.isFinite(fallbackSince)) {
-              const openBook = await _captureOrderbookLite(market, tokenId, {
-                root: archiveRoot,
-                role: 'open',
-                since: fallbackSince,
-                until: Number.isFinite(fallbackUntil) ? fallbackUntil : undefined,
-                apiKey: pmxtApiKey,
-                baseUrl: pmxtBaseUrl,
-              });
-              if (openBook.ok && Array.isArray(openBook.rows) && openBook.rows.length > 0) {
-                orderbookLiteCaptured += openBook.rows.length;
-              } else {
-                orderbookLiteFailures++;
-              }
-              await sleep(captureThrottleMs);
-            }
-
-            if (Number.isFinite(endSince)) {
-              const closeWindowStart = Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000));
-              const closeBook = await _captureOrderbookLite(market, tokenId, {
-                root: archiveRoot,
-                role: 'close',
-                since: closeWindowStart,
-                until: endSince,
-                apiKey: pmxtApiKey,
-                baseUrl: pmxtBaseUrl,
-              });
-              if (closeBook.ok && Array.isArray(closeBook.rows) && closeBook.rows.length > 0) {
-                orderbookLiteCaptured += closeBook.rows.length;
-              } else {
-                orderbookLiteFailures++;
-              }
-              await sleep(captureThrottleMs);
-            }
-          }
-          continue;
-        }
-        const ts = market.end_date || market.endDate || new Date().toISOString();
-        series = [{ timestamp: ts, price: fp }];
-        gammaFallbacks++;
-        fallbackOnlyCount++;
-        historySource = 'gamma_outcome_price_fallback';
-      }
-    }
-
-    if (series.length === 0) {
-      if (captureOrderbookLite) {
-        const endRaw = market.end_date || market.endDate || market.close_time || null;
-        const createdRaw = market.created_at || market.createdAt || market.start_date || market.startDate || null;
-        const endSince = endRaw ? new Date(endRaw).getTime() : NaN;
-        const createdSince = createdRaw ? new Date(createdRaw).getTime() : NaN;
-        const fallbackSince = Number.isFinite(createdSince)
-          ? createdSince
-          : (Number.isFinite(endSince) ? Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000)) : NaN);
-        const fallbackUntil = Number.isFinite(endSince) ? endSince : undefined;
-
-        if (Number.isFinite(fallbackSince)) {
-          const openBook = await _captureOrderbookLite(market, tokenId, {
-            root: archiveRoot,
-            role: 'open',
-            since: fallbackSince,
-            until: Number.isFinite(fallbackUntil) ? fallbackUntil : undefined,
-            apiKey: pmxtApiKey,
-            baseUrl: pmxtBaseUrl,
-          });
-          if (openBook.ok && Array.isArray(openBook.rows) && openBook.rows.length > 0) {
-            orderbookLiteCaptured += openBook.rows.length;
-          } else {
-            orderbookLiteFailures++;
-          }
-          await sleep(captureThrottleMs);
-        }
-
-        if (Number.isFinite(endSince)) {
-          const closeWindowStart = Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000));
-          const closeBook = await _captureOrderbookLite(market, tokenId, {
-            root: archiveRoot,
-            role: 'close',
-            since: closeWindowStart,
-            until: endSince,
-            apiKey: pmxtApiKey,
-            baseUrl: pmxtBaseUrl,
-          });
-          if (closeBook.ok && Array.isArray(closeBook.rows) && closeBook.rows.length > 0) {
-            orderbookLiteCaptured += closeBook.rows.length;
-          } else {
-            orderbookLiteFailures++;
-          }
-          await sleep(captureThrottleMs);
-        }
+    const marketHistory = applyGammaFallback(market, loadedHistory, totals);
+    if (marketHistory.skipMarket || marketHistory.series.length === 0) {
+      if (capture.enabled) {
+        await captureFallbackOrderbooks(market, tokenId, capture, totals);
       }
       continue;
     }
 
-    const { yesWon, resolutionPrice } = resolveOutcome(market);
-
-    let entry = null;
-    if (strategy === 'low_prob_dip') {
-      entry = signalLowProbDip(series, { entryThreshold });
-    } else if (strategy === 'mean_revert') {
-      entry = signalMeanRevert(series);
-    } else {
-      return { ok: false, error: `Unknown strategy '${strategy}'. Use: low_prob_dip | mean_revert` };
-    }
+    const entry = selectStrategyEntry(
+      marketHistory.series,
+      options.strategy,
+      options.entryThreshold,
+    );
+    if (entry && entry.error) return { ok: false, error: entry.error };
 
     if (!entry) {
-      if (captureOrderbookLite) {
-        // When used as a historical downloader, preserve a fallback close-window
-        // snapshot even if the strategy never fires. This keeps the archive useful
-        // on sparse or low-signal markets instead of skipping them entirely.
-        const endRaw = market.end_date || market.endDate || market.close_time || null;
-        const createdRaw = market.created_at || market.createdAt || market.start_date || market.startDate || null;
-        const endSince = endRaw ? new Date(endRaw).getTime() : NaN;
-        const createdSince = createdRaw ? new Date(createdRaw).getTime() : NaN;
-        const fallbackSince = Number.isFinite(createdSince)
-          ? createdSince
-          : (Number.isFinite(endSince) ? Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000)) : NaN);
-        const fallbackUntil = Number.isFinite(endSince) ? endSince : undefined;
-
-        if (Number.isFinite(fallbackSince)) {
-          const openBook = await _captureOrderbookLite(market, tokenId, {
-            root: archiveRoot,
-            role: 'open',
-            since: fallbackSince,
-            until: Number.isFinite(fallbackUntil) ? fallbackUntil : undefined,
-            apiKey: pmxtApiKey,
-            baseUrl: pmxtBaseUrl,
-          });
-          if (openBook.ok && Array.isArray(openBook.rows) && openBook.rows.length > 0) {
-            orderbookLiteCaptured += openBook.rows.length;
-          } else {
-            orderbookLiteFailures++;
-          }
-          await sleep(captureThrottleMs);
-        }
-
-        if (Number.isFinite(endSince)) {
-          const closeWindowStart = Math.max(0, endSince - (7 * 24 * 60 * 60 * 1000));
-          const closeBook = await _captureOrderbookLite(market, tokenId, {
-            root: archiveRoot,
-            role: 'close',
-            since: closeWindowStart,
-            until: endSince,
-            apiKey: pmxtApiKey,
-            baseUrl: pmxtBaseUrl,
-          });
-          if (closeBook.ok && Array.isArray(closeBook.rows) && closeBook.rows.length > 0) {
-            orderbookLiteCaptured += closeBook.rows.length;
-          } else {
-            orderbookLiteFailures++;
-          }
-          await sleep(captureThrottleMs);
-        }
+      if (capture.enabled) {
+        await captureFallbackOrderbooks(market, tokenId, capture, totals);
       }
       continue;
     }
 
-    let entryOrderbookLite = null;
-    let exitOrderbookLite = null;
-    if (captureOrderbookLite) {
-      const entrySince = new Date(entry.timestamp).getTime();
-      const exitSince = market.end_date || market.endDate || market.close_time
-        ? new Date(market.end_date || market.endDate || market.close_time).getTime()
-        : null;
-
-      const entryBook = await _captureOrderbookLite(market, tokenId, {
-        root: archiveRoot,
-        role: 'entry',
-        since: Number.isFinite(entrySince) ? entrySince : undefined,
-        apiKey: pmxtApiKey,
-        baseUrl: pmxtBaseUrl,
-      });
-      if (entryBook.ok && Array.isArray(entryBook.rows) && entryBook.rows.length > 0) {
-        entryOrderbookLite = entryBook.rows[0];
-        orderbookLiteCaptured += entryBook.rows.length;
-      } else {
-        orderbookLiteFailures++;
-      }
-      await sleep(captureThrottleMs);
-
-      if (Number.isFinite(exitSince)) {
-        const exitBook = await _captureOrderbookLite(market, tokenId, {
-          root: archiveRoot,
-          role: 'exit',
-          since: exitSince,
-          apiKey: pmxtApiKey,
-          baseUrl: pmxtBaseUrl,
-        });
-        if (exitBook.ok && Array.isArray(exitBook.rows) && exitBook.rows.length > 0) {
-          exitOrderbookLite = exitBook.rows[0];
-          orderbookLiteCaptured += exitBook.rows.length;
-        } else {
-          orderbookLiteFailures++;
-        }
-        await sleep(captureThrottleMs);
-      }
-    }
-
-    trades++;
-    const executionCost = estimatePolymarketExecutionCost({
-      fee,
-      half_spread_estimate: entryOrderbookLite && Number.isFinite(Number(entryOrderbookLite.spread))
-        ? Number(entryOrderbookLite.spread) / 2
-        : halfSpreadEstimate,
-      Y: impactY,
-      rolling_volatility: rollingVolatilityAtEntry(series, entry, interval),
-      order_notional: orderNotional,
-      rolling_market_volume: entryOrderbookLite && Number.isFinite(Number(entryOrderbookLite.depth_5pct))
-        ? Number(entryOrderbookLite.depth_5pct)
-        : volumeForCostModel(market, rollingMarketVolume),
-    });
-    const tradeGrossPnl = resolutionPrice - entry.price;
-    const pnl = tradeGrossPnl - executionCost.total_cost;
-    grossPnl += tradeGrossPnl;
-    totalExecutionCost += executionCost.total_cost;
-    totalPnl += pnl;
-    if (pnl > 0) wins++;
-    equity += pnl;
-    peakEquity = Math.max(peakEquity, equity);
-    maxDrawdown = Math.max(maxDrawdown, peakEquity - equity);
-    const hold = holdHours(entry.timestamp, market);
-    if (Number.isFinite(hold)) {
-      totalHoldHours += hold;
-      holdCount++;
-    }
-
-    results.push({
-      market:          (market.question || market.title || market.id || '').slice(0, 100),
-      marketId:        market.market_id || market.id || null,
-      tokenId,
-      strategy,
-      entryPrice:      Math.round(entry.price * 10000) / 10000,
-      entryTimestamp:  entry.timestamp,
-      resolutionPrice,
-      yesWon,
-      grossPnl:        round4(tradeGrossPnl),
-      executionCost:   round4(executionCost.total_cost),
-      pnl:             round4(pnl),
-      gammaFallback:   series.length === 1,
-      fallbackOnly:    historySource === 'gamma_outcome_price_fallback',
-      historySource,
-      holdHours:       hold,
-      orderbookLite:   entryOrderbookLite ? {
-        entry: entryOrderbookLite,
-        exit: exitOrderbookLite,
-      } : null,
-    });
+    const orderbooks = capture.enabled
+      ? await captureTradeOrderbooks(market, tokenId, entry, capture, totals)
+      : { entry: null, exit: null };
+    const trade = evaluateTrade(market, tokenId, marketHistory, entry, orderbooks, options);
+    recordTrade(totals, trade);
+    results.push(trade.result);
   }
 
-  return {
-    ok:              true,
-    strategy,
-    tagId,
-    daysBack,
-    interval,
-    source:          marketsResult.source || 'api',
-    archiveRoot:     archiveRoot || null,
-    archiveCoverage,
-    marketsScanned:  markets.length,
-    archivePriceHits,
-    repairedMissing,
-    costModel: {
-      fee,
-      half_spread_estimate: halfSpreadEstimate,
-      impact_y: impactY,
-      order_notional: orderNotional,
-      rolling_market_volume: rollingMarketVolume ?? null,
-    },
-    gammaFallbacks,
-    fallbackOnlyCount,
-    gammaSkipped,
-    orderbookLiteCaptured,
-    orderbookLiteFailures,
-    trades,
-    wins,
-    losses:          trades - wins,
-    winRate:         trades > 0 ? Math.round((wins / trades) * 10000) / 100 : 0,
-    grossPnl:        round4(grossPnl),
-    totalExecutionCost: round4(totalExecutionCost),
-    totalPnl:        round4(totalPnl),
-    avgPnlPerTrade:  trades > 0 ? round4(totalPnl / trades) : 0,
-    evPerTrade:      trades > 0 ? round4(totalPnl / trades) : 0,
-    avgCostPerTrade: trades > 0 ? round4(totalExecutionCost / trades) : 0,
-    maxDrawdown:     round4(maxDrawdown),
-    avgHoldTimeHours: holdCount > 0 ? Math.round((totalHoldHours / holdCount) * 100) / 100 : null,
-    results,
-  };
+  return buildBacktestReport(options, marketsResult, archiveCoverage, markets, totals, results);
 }
 
 async function runPolymarketOrderbookLiteBackfill(opts = {}) {
