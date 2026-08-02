@@ -951,138 +951,172 @@ function quoteSources() {
   return withCache('quote_sources', () => runNodeCli(['quotes', 'status', '--json']));
 }
 
-function signalStatus(query = {}, runtime = {}) {
+function resolveSignalRequest(query, runtime) {
   const now = runtime.now ?? Date.now();
   const reportMaxAgeMs = runtime.reportMaxAgeMs || SIGNAL_REPORT_MAX_AGE_MS;
   const modelPath = stringOrFallback(query.model_report, DEFAULT_MODEL_REPORT);
   const backtestPath = stringOrFallback(query.backtest_report, DEFAULT_BACKTEST_REPORT);
-  const threshold = finiteNumber(query.threshold, null) ?? finiteNumber(readJsonFile(modelPath)?.threshold, 0.55);
-
+  const thresholdReport = readJsonFile(modelPath);
+  const threshold = finiteNumber(query.threshold, null)
+    ?? finiteNumber(thresholdReport?.threshold, 0.55);
   const runtimeCacheSuffix = runtime.now === undefined ? '' : `:${now}:${reportMaxAgeMs}`;
-  return withCache(`signal:${modelPath}:${backtestPath}:${threshold}:${query.input || 'latest'}${runtimeCacheSuffix}`, () => {
-    let modelReport = readJsonFile(modelPath);
-    if (
-      query.input
-      && modelReport
-      && (!Array.isArray(modelReport.per_symbol_winners) || modelReport.per_symbol_winners.length === 0)
-    ) {
-      const records = loadHistoryRecords(stringOrFallback(query.input, ''));
-      if (records.length) {
-        const featureFrame = calculateRollingFeatureFrame(records, 2);
-        const featureCounts = new Map();
-        for (const feature of featureFrame.features || []) {
-          featureCounts.set(feature.key, (featureCounts.get(feature.key) || 0) + 1);
-        }
-        const maxFeatureRows = Math.max(0, ...featureCounts.values());
-        const requestHorizon = Math.max(1, Math.min(finiteNumber(modelReport.horizon, 5), maxFeatureRows - 1));
-        modelReport = {
-          ...modelReport,
-          source_mode: 'request_input',
-          input: query.input,
-          data_quality_ok: true,
-          generated_at: new Date(now).toISOString(),
-          ...compareModels(featureFrame, {
-            horizon: requestHorizon,
-            threshold,
-          }),
-        };
-      }
-    }
-    const backtestReport = readJsonFile(backtestPath);
-    const reportGeneratedMs = Date.parse(modelReport?.generated_at || '');
-    const reportAgeMs = Number.isFinite(reportGeneratedMs) ? Math.max(0, now - reportGeneratedMs) : null;
-    const reportFresh = Number.isFinite(reportAgeMs) && reportAgeMs <= reportMaxAgeMs;
-    const reportValidUntil = Number.isFinite(reportGeneratedMs)
-      ? new Date(reportGeneratedMs + reportMaxAgeMs).toISOString()
-      : null;
-    const perSymbol = Array.isArray(modelReport?.per_symbol_winners) ? modelReport.per_symbol_winners : [];
-    const signals = perSymbol
-      .map((entry, index) => {
-        const candidate = selectedCandidate(entry);
-        if (!candidate) {
-          return null;
-        }
-        const expectedValue = finiteNumber(candidate.expectancy, 0);
-        const totalReturn = finiteNumber(candidate.total_return, 0);
-        const confidence = confidenceFromCandidate(candidate);
-        const decisionReady = candidate.trained === true && candidate.decision_ready === true;
-        const qualityApproved = modelReport?.data_quality_ok === true && backtestReport?.data_quality_ok === true;
-        const active = reportFresh && decisionReady && qualityApproved && confidence >= threshold && expectedValue > 0;
-        return {
-          signal_id: `${String(candidate.symbol || entry.symbol || 'asset').toLowerCase()}-${String(candidate.model || 'model').toLowerCase()}-${index}`,
-          symbol: String(candidate.symbol || entry.symbol || '').toUpperCase(),
-          model: candidate.model || entry.winner || null,
-          family: candidate.family || null,
-          implementation_status: candidate.status || null,
-          trained: candidate.trained === true,
-          decision_ready: decisionReady,
-          direction: directionFromReturn(expectedValue || totalReturn),
-          confidence,
-          threshold,
-          active,
-          expired: !reportFresh,
-          promoted: false,
-          expected_value: expectedValue,
-          hit_rate: finiteNumber(candidate.hit_rate, 0),
-          trades: finiteNumber(candidate.trades, 0),
-          total_return: totalReturn,
-          sharpe_like: finiteNumber(candidate.sharpe_like, 0),
-          source: 'model_comparison',
-          as_of: modelReport?.generated_at || backtestReport?.generated_at || null,
-          valid_until: reportValidUntil,
-          reason: !reportFresh
-            ? 'source_report_expired'
-            : !decisionReady
-              ? 'model_not_decision_ready'
-              : !qualityApproved
-                ? 'data_quality_not_approved'
-            : active
-              ? 'candidate_above_threshold_not_promoted'
-              : 'candidate_for_review_not_promoted',
-        };
-      })
-      .filter(Boolean)
-      .sort((left, right) => right.confidence - left.confidence || left.symbol.localeCompare(right.symbol));
+  const cacheKey = `signal:${modelPath}:${backtestPath}:${threshold}:${query.input || 'latest'}${runtimeCacheSuffix}`;
+  return { now, reportMaxAgeMs, modelPath, backtestPath, threshold, cacheKey };
+}
 
-    return {
-      ok: Boolean(modelReport && perSymbol.length),
-      type: 'signal_status',
-      schema_version: 2,
-      source: 'model_comparison',
-      generated_at: modelReport?.generated_at || null,
-      source_mode: modelReport?.source_mode || null,
-      threshold,
-      active_signals: signals.filter((signal) => signal.active).length,
-      candidate_signals: signals.length,
-      promoted_signals: signals.filter((signal) => signal.promoted).length,
-      source_report: {
-        fresh: reportFresh,
-        age_ms: reportAgeMs,
-        max_age_ms: reportMaxAgeMs,
-        valid_until: reportValidUntil,
-      },
-      signals,
-      model: {
-        available: Boolean(modelReport),
-        winner: modelReport?.winner || null,
-        candidate_count: Math.max(finiteNumber(modelReport?.candidate_count, 0), signals.length),
-        feature_count: finiteNumber(modelReport?.feature_count, 0),
-        families: Array.isArray(modelReport?.families) ? modelReport.families : [],
-        data_quality_ok: modelReport?.data_quality_ok === true,
-        trained_candidate_count: finiteNumber(modelReport?.trained_candidate_count, 0),
-        decision_ready: modelReport?.decision_ready === true,
-        decision_warning: modelReport?.decision_warning || null,
-      },
-      backtest: backtestSummary(backtestReport),
-      quality: {
-        data_quality_ok: modelReport?.data_quality_ok === true && backtestReport?.data_quality_ok === true,
-        model_report_available: Boolean(modelReport),
-        backtest_report_available: Boolean(backtestReport),
-        report_fresh: reportFresh,
-        decision_ready_candidates: signals.filter((signal) => signal.decision_ready).length,
-        promotion_required: true,
-      },
+function regenerateSignalModelReport(query, request, modelReport) {
+  if (!query.input || !modelReport
+      || (Array.isArray(modelReport.per_symbol_winners) && modelReport.per_symbol_winners.length > 0)) {
+    return modelReport;
+  }
+
+  const records = loadHistoryRecords(stringOrFallback(query.input, ''));
+  if (records.length === 0) return modelReport;
+  const featureFrame = calculateRollingFeatureFrame(records, 2);
+  const featureCounts = new Map();
+  for (const feature of featureFrame.features || []) {
+    featureCounts.set(feature.key, (featureCounts.get(feature.key) || 0) + 1);
+  }
+  const maxFeatureRows = Math.max(0, ...featureCounts.values());
+  const requestHorizon = Math.max(
+    1,
+    Math.min(finiteNumber(modelReport.horizon, 5), maxFeatureRows - 1),
+  );
+  return {
+    ...modelReport,
+    source_mode: 'request_input',
+    input: query.input,
+    data_quality_ok: true,
+    generated_at: new Date(request.now).toISOString(),
+    ...compareModels(featureFrame, {
+      horizon: requestHorizon,
+      threshold: request.threshold,
+    }),
+  };
+}
+
+function signalReportFreshness(modelReport, request) {
+  const generatedMs = Date.parse(modelReport?.generated_at || '');
+  const ageMs = Number.isFinite(generatedMs) ? Math.max(0, request.now - generatedMs) : null;
+  return {
+    fresh: Number.isFinite(ageMs) && ageMs <= request.reportMaxAgeMs,
+    ageMs,
+    validUntil: Number.isFinite(generatedMs)
+      ? new Date(generatedMs + request.reportMaxAgeMs).toISOString()
+      : null,
+  };
+}
+
+function signalReason(fresh, decisionReady, qualityApproved, active) {
+  if (!fresh) return 'source_report_expired';
+  if (!decisionReady) return 'model_not_decision_ready';
+  if (!qualityApproved) return 'data_quality_not_approved';
+  return active ? 'candidate_above_threshold_not_promoted' : 'candidate_for_review_not_promoted';
+}
+
+function projectSignalCandidate(entry, index, reports, request, freshness) {
+  const candidate = selectedCandidate(entry);
+  if (!candidate) return null;
+  const expectedValue = finiteNumber(candidate.expectancy, 0);
+  const totalReturn = finiteNumber(candidate.total_return, 0);
+  const confidence = confidenceFromCandidate(candidate);
+  const decisionReady = candidate.trained === true && candidate.decision_ready === true;
+  const qualityApproved = reports.model?.data_quality_ok === true
+    && reports.backtest?.data_quality_ok === true;
+  const active = freshness.fresh && decisionReady && qualityApproved
+    && confidence >= request.threshold && expectedValue > 0;
+
+  return {
+    signal_id: `${String(candidate.symbol || entry.symbol || 'asset').toLowerCase()}-${String(candidate.model || 'model').toLowerCase()}-${index}`,
+    symbol: String(candidate.symbol || entry.symbol || '').toUpperCase(),
+    model: candidate.model || entry.winner || null,
+    family: candidate.family || null,
+    implementation_status: candidate.status || null,
+    trained: candidate.trained === true,
+    decision_ready: decisionReady,
+    direction: directionFromReturn(expectedValue || totalReturn),
+    confidence,
+    threshold: request.threshold,
+    active,
+    expired: !freshness.fresh,
+    promoted: false,
+    expected_value: expectedValue,
+    hit_rate: finiteNumber(candidate.hit_rate, 0),
+    trades: finiteNumber(candidate.trades, 0),
+    total_return: totalReturn,
+    sharpe_like: finiteNumber(candidate.sharpe_like, 0),
+    source: 'model_comparison',
+    as_of: reports.model?.generated_at || reports.backtest?.generated_at || null,
+    valid_until: freshness.validUntil,
+    reason: signalReason(freshness.fresh, decisionReady, qualityApproved, active),
+  };
+}
+
+function projectSignalCandidates(perSymbol, reports, request, freshness) {
+  return perSymbol
+    .map((entry, index) => projectSignalCandidate(entry, index, reports, request, freshness))
+    .filter(Boolean)
+    .sort((left, right) => (
+      right.confidence - left.confidence || left.symbol.localeCompare(right.symbol)
+    ));
+}
+
+function buildSignalStatusResponse(reports, perSymbol, signals, request, freshness) {
+  return {
+    ok: Boolean(reports.model && perSymbol.length),
+    type: 'signal_status',
+    schema_version: 2,
+    source: 'model_comparison',
+    generated_at: reports.model?.generated_at || null,
+    source_mode: reports.model?.source_mode || null,
+    threshold: request.threshold,
+    active_signals: signals.filter((signal) => signal.active).length,
+    candidate_signals: signals.length,
+    promoted_signals: signals.filter((signal) => signal.promoted).length,
+    source_report: {
+      fresh: freshness.fresh,
+      age_ms: freshness.ageMs,
+      max_age_ms: request.reportMaxAgeMs,
+      valid_until: freshness.validUntil,
+    },
+    signals,
+    model: {
+      available: Boolean(reports.model),
+      winner: reports.model?.winner || null,
+      candidate_count: Math.max(finiteNumber(reports.model?.candidate_count, 0), signals.length),
+      feature_count: finiteNumber(reports.model?.feature_count, 0),
+      families: Array.isArray(reports.model?.families) ? reports.model.families : [],
+      data_quality_ok: reports.model?.data_quality_ok === true,
+      trained_candidate_count: finiteNumber(reports.model?.trained_candidate_count, 0),
+      decision_ready: reports.model?.decision_ready === true,
+      decision_warning: reports.model?.decision_warning || null,
+    },
+    backtest: backtestSummary(reports.backtest),
+    quality: {
+      data_quality_ok: reports.model?.data_quality_ok === true
+        && reports.backtest?.data_quality_ok === true,
+      model_report_available: Boolean(reports.model),
+      backtest_report_available: Boolean(reports.backtest),
+      report_fresh: freshness.fresh,
+      decision_ready_candidates: signals.filter((signal) => signal.decision_ready).length,
+      promotion_required: true,
+    },
+  };
+}
+
+function signalStatus(query = {}, runtime = {}) {
+  const request = resolveSignalRequest(query, runtime);
+  return withCache(request.cacheKey, () => {
+    const reports = {
+      model: regenerateSignalModelReport(query, request, readJsonFile(request.modelPath)),
+      backtest: readJsonFile(request.backtestPath),
     };
+    const freshness = signalReportFreshness(reports.model, request);
+    const perSymbol = Array.isArray(reports.model?.per_symbol_winners)
+      ? reports.model.per_symbol_winners
+      : [];
+    const signals = projectSignalCandidates(perSymbol, reports, request, freshness);
+    return buildSignalStatusResponse(reports, perSymbol, signals, request, freshness);
   });
 }
 
