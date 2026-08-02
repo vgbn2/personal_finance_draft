@@ -341,3 +341,66 @@ test('runPolymarketOrderbookLiteBackfill captures fallback windows without price
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('fallback capture preserves open-close windows and failure counters', async () => {
+  const calls = [];
+  const result = await runPolymarketBacktest({
+    captureOrderbookLite: true,
+    _fetchMarkets: async () => ({
+      ok: true,
+      source: 'fixture',
+      data: [{
+        id: 'mkt-boundary',
+        createdAt: '2025-01-01T00:00:00.000Z',
+        endDate: '2025-01-10T00:00:00.000Z',
+        tokens: [{ outcome: 'Yes', token_id: 'tok-boundary' }],
+        outcomePrices: '["1","0"]',
+      }],
+    }),
+    _fetchHistory: async () => ({ ok: true, source: 'fixture', data: [] }),
+    _captureOrderbookLite: async (market, tokenId, options) => {
+      calls.push({ market, tokenId, options });
+      if (options.role === 'close') return { ok: false, rows: [] };
+      return { ok: true, rows: [{ role: options.role }, { role: options.role }] };
+    },
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.gammaSkipped, 1);
+  assert.equal(result.trades, 0);
+  assert.equal(result.orderbookLiteCaptured, 2);
+  assert.equal(result.orderbookLiteFailures, 1);
+  assert.deepEqual(calls.map((call) => call.options.role), ['open', 'close']);
+  assert.equal(calls[0].options.since, Date.parse('2025-01-01T00:00:00.000Z'));
+  assert.equal(calls[0].options.until, Date.parse('2025-01-10T00:00:00.000Z'));
+  assert.equal(calls[1].options.since, Date.parse('2025-01-03T00:00:00.000Z'));
+  assert.equal(calls[1].options.until, Date.parse('2025-01-10T00:00:00.000Z'));
+});
+
+test('failed archive repair skips fallback capture and leaves repair counters unchanged', async () => {
+  let captureCalls = 0;
+  const result = await runPolymarketBacktest({
+    repairMissing: true,
+    captureOrderbookLite: true,
+    _loadMarkets: () => [{
+      id: 'mkt-repair-failed',
+      createdAt: '2025-01-01T00:00:00.000Z',
+      endDate: '2025-01-10T00:00:00.000Z',
+      tokens: [{ outcome: 'Yes', token_id: 'tok-repair-failed' }],
+    }],
+    _loadPrices: () => [],
+    _summarizeArchive: () => ({ price_files: 0 }),
+    _fetchHistory: async () => ({ ok: false, error: 'fixture repair failure' }),
+    _captureOrderbookLite: async () => {
+      captureCalls += 1;
+      return { ok: true, rows: [{ role: 'unexpected' }] };
+    },
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.source, 'archive');
+  assert.equal(result.repairedMissing, 0);
+  assert.equal(result.orderbookLiteCaptured, 0);
+  assert.equal(result.orderbookLiteFailures, 0);
+  assert.equal(captureCalls, 0);
+});
