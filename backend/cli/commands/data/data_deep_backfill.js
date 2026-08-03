@@ -52,6 +52,269 @@ function estimateEquity5mApiCalls(symbolCount, days) {
   return symbolCount * Math.ceil(days / maxDaysPerChunk);
 }
 
+function elapsedSeconds(startedAt) {
+  return Number(((Date.now() - startedAt) / 1000).toFixed(1));
+}
+
+function applyDeepBackfillRollup(entry, symbol, baseTimeframe, targets, skipRollup) {
+  if (!entry.ok || skipRollup) return;
+  try {
+    const rollup = rollupFromBase(DEFAULT_TS_DIR, symbol, baseTimeframe, targets);
+    if (rollup.ok) entry.rolled_up = rollup.derived;
+  } catch (error) {
+    entry.rollup_error = error.message;
+  }
+}
+
+function rollupProgressNote(entry, targets) {
+  if (!entry.rolled_up) return '';
+  return ` + rollup ${targets.map((target) => `${target}:${entry.rolled_up[target]}`).join(' ')}`;
+}
+
+async function waitBetweenSymbols(delayMs, index, symbolCount) {
+  if (delayMs > 0 && index < symbolCount - 1) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+}
+
+async function backfillCryptoSymbol(symbol, options, ingestMarketData) {
+  const startedAt = Date.now();
+  try {
+    const snapshot = await ingestMarketData({
+      family: 'crypto',
+      symbol,
+      timeframe: options.baseTimeframe,
+      historyDays: options.days,
+      provider: 'binance',
+      force: true,
+      returnAttemptSnapshot: true,
+    });
+    const bars = (snapshot.sources || []).filter((record) => (
+      record.timeframe === options.baseTimeframe && record.symbol === symbol
+    ));
+    const errors = snapshot.errors || [];
+    const entry = {
+      symbol,
+      ok: bars.length > 0,
+      base_timeframe: options.baseTimeframe,
+      bars: bars.length,
+      elapsed_s: elapsedSeconds(startedAt),
+      errors: errors.length,
+    };
+    if (!entry.ok) {
+      entry.error = errors.map((error) => error.message).filter(Boolean).slice(0, 3).join(' | ')
+        || `no ${options.baseTimeframe} bars returned (delisted or not listed on Binance)`;
+      entry.marker_written = writeDeadSymbolMarker(
+        DEFAULT_TS_DIR,
+        symbol,
+        options.baseTimeframe,
+        'crypto',
+        'binance',
+      );
+    }
+    applyDeepBackfillRollup(
+      entry,
+      symbol,
+      options.baseTimeframe,
+      options.rollupTargets,
+      options.skipRollup,
+    );
+    return { entry, errors, thrown: false };
+  } catch (error) {
+    return {
+      entry: {
+        symbol,
+        ok: false,
+        base_timeframe: options.baseTimeframe,
+        bars: 0,
+        elapsed_s: elapsedSeconds(startedAt),
+        error: error.message,
+      },
+      errors: [{
+        symbol,
+        timeframe: options.baseTimeframe,
+        family: 'crypto',
+        message: error.message,
+      }],
+      thrown: true,
+    };
+  }
+}
+
+function renderCryptoProgressStart(progress, symbol, options) {
+  if (global.suppressLogs) return;
+  if (process.stdout.isTTY) {
+    process.stdout.write(`\r\x1b[K${progress} ${symbol} ${options.baseTimeframe} ...`);
+  } else {
+    console.log(`${progress} Backfilling ${symbol} ${options.baseTimeframe} (${options.days} days)`);
+  }
+}
+
+function renderCryptoProgressResult(progress, result, options) {
+  if (global.suppressLogs) return;
+  const { entry } = result;
+  if (process.stdout.isTTY) {
+    const color = entry.ok ? '\x1b[32m' : '\x1b[31m';
+    const detail = result.thrown
+      ? `FAILED (${entry.error})`
+      : `${entry.bars} bars (${entry.elapsed_s.toFixed(1)}s)`;
+    process.stdout.write(`\r\x1b[K${progress} ${color}${entry.symbol}\x1b[0m ${options.baseTimeframe}: ${detail}\n`);
+    return;
+  }
+  if (result.thrown) {
+    console.error(`${progress} ${entry.symbol} FAILED: ${entry.error}`);
+    return;
+  }
+  const rollup = rollupProgressNote(entry, options.rollupTargets);
+  console.log(`${progress} ${entry.symbol} ${options.baseTimeframe}: ${entry.bars} bars (${entry.elapsed_s.toFixed(1)}s)${rollup}${entry.ok ? '' : ` FAILED: ${entry.error}`}`);
+}
+
+async function backfillEquitySymbol(symbol, options, ingestMarketData) {
+  const startedAt = Date.now();
+  try {
+    const snapshot = await ingestMarketData({
+      family: 'equities',
+      symbol,
+      timeframe: options.baseTimeframe,
+      historyDays: options.days,
+      provider: options.provider,
+      force: true,
+      chunkDelayMs: options.chunkDelayMs,
+      returnAttemptSnapshot: true,
+    });
+    const bars = (snapshot.sources || []).filter((record) => (
+      record.timeframe === options.baseTimeframe && record.symbol === symbol
+    ));
+    const errors = snapshot.errors || [];
+    const entry = {
+      symbol,
+      ok: bars.length > 0 || errors.length === 0,
+      base_timeframe: options.baseTimeframe,
+      bars: bars.length,
+      elapsed_s: elapsedSeconds(startedAt),
+      errors: errors.length,
+    };
+    if (!entry.ok) {
+      entry.error = errors.map((error) => error.message).filter(Boolean).slice(0, 3).join(' | ')
+        || `no native Alpaca ${options.baseTimeframe} bars ingested`;
+    }
+    applyDeepBackfillRollup(
+      entry,
+      symbol,
+      options.baseTimeframe,
+      options.rollupTargets,
+      options.skipRollup,
+    );
+    return { entry, errors, thrown: false };
+  } catch (error) {
+    return {
+      entry: {
+        symbol,
+        ok: false,
+        base_timeframe: options.baseTimeframe,
+        bars: 0,
+        elapsed_s: elapsedSeconds(startedAt),
+        error: error.message,
+      },
+      errors: [{
+        symbol,
+        timeframe: options.baseTimeframe,
+        family: 'equities',
+        provider: options.provider,
+        message: error.message,
+      }],
+      thrown: true,
+    };
+  }
+}
+
+function renderEquityProgressStart(progress, symbol, options) {
+  if (global.suppressLogs) return;
+  if (process.stdout.isTTY) {
+    process.stdout.write(`\r\x1b[K${progress} ${symbol} Alpaca ${options.baseTimeframe} ...`);
+  } else {
+    console.log(`${progress} Backfilling ${symbol} Alpaca ${options.baseTimeframe} (${options.days} days)`);
+  }
+}
+
+function renderEquityProgressResult(progress, result, options) {
+  if (global.suppressLogs) return;
+  const { entry } = result;
+  if (process.stdout.isTTY) {
+    const color = entry.ok ? '\x1b[32m' : '\x1b[31m';
+    const detail = result.thrown
+      ? `FAILED (${entry.error})`
+      : `${entry.bars} bars (${entry.elapsed_s.toFixed(1)}s)`;
+    process.stdout.write(`\r\x1b[K${progress} ${color}${entry.symbol}\x1b[0m Alpaca ${options.baseTimeframe}: ${detail}\n`);
+    return;
+  }
+  if (result.thrown) {
+    console.error(`${progress} ${entry.symbol} FAILED: ${entry.error}`);
+    return;
+  }
+  const rollup = rollupProgressNote(entry, options.rollupTargets);
+  console.log(`${progress} ${entry.symbol} Alpaca ${options.baseTimeframe}: ${entry.bars} bars (${entry.elapsed_s.toFixed(1)}s)${rollup}${entry.ok ? '' : ` FAILED: ${entry.error}`}`);
+}
+
+function deepBackfillErrorMessages(errors) {
+  return [...new Set(errors.map((error) => error.message).filter(Boolean))].slice(0, 24);
+}
+
+function buildCryptoBackfillSummary(options, results, symbolResults, errors) {
+  return {
+    ok: results.errors === 0,
+    symbols: options.symbols.length,
+    successful: results.ok,
+    errors: results.errors,
+    total_base_bars: symbolResults.reduce((total, result) => total + (result.bars || 0), 0),
+    timeframe: options.baseTimeframe,
+    days: options.days,
+    delay_ms: options.delayMs,
+    symbol_results: symbolResults,
+    error_messages: deepBackfillErrorMessages(errors),
+    output: DEFAULT_HISTORY,
+  };
+}
+
+function buildEquityBackfillSummary(options, results, symbolResults, errors) {
+  return {
+    ok: results.errors === 0,
+    provider: options.provider,
+    symbols: options.symbols.length,
+    skipped: options.skippedSymbols.length,
+    skipped_symbols: options.skippedSymbols,
+    successful: results.ok,
+    errors: results.errors,
+    total_base_bars: symbolResults.reduce((total, result) => total + (result.bars || 0), 0),
+    timeframe: options.baseTimeframe,
+    days: options.days,
+    delay_ms: options.delayMs,
+    chunk_delay_ms: options.chunkDelayMs,
+    symbol_results: symbolResults,
+    error_messages: deepBackfillErrorMessages(errors),
+    output: DEFAULT_HISTORY,
+  };
+}
+
+function buildEquityDryRun(plan, options) {
+  return {
+    ok: true,
+    dry_run: true,
+    provider: plan.provider,
+    symbols: plan.symbols.length,
+    symbol_list: plan.symbols,
+    skipped: plan.skipped_symbols.length,
+    skipped_symbols: plan.skipped_symbols,
+    timeframe: options.baseTimeframe,
+    days: options.days,
+    delay_ms: options.delayMs,
+    chunk_delay_ms: options.chunkDelayMs,
+    estimated_api_calls: estimateEquity5mApiCalls(plan.symbols.length, options.days),
+    auto_rollup: options.skipRollup ? false : options.rollupTargets,
+    message: `Would sequentially backfill native ${options.baseTimeframe} Alpaca data for ${plan.symbols.length} US equity symbols over ${options.days} days${options.skipRollup ? '' : `, then auto-derive ${options.rollupTargets.join('/')} locally`}. Re-run without --dry-run to execute.`,
+  };
+}
+
 /**
  * Handles the 'crypto-deep-backfill' command.
  *
@@ -111,85 +374,28 @@ async function commandCryptoDeepBackfill(args) {
   const results = { ok: 0, errors: 0 };
   const allErrors = [];
   const symbolResults = [];
+  const runOptions = {
+    symbols,
+    days,
+    delayMs,
+    baseTimeframe: baseTf,
+    skipRollup,
+    rollupTargets,
+  };
 
   if (!global.suppressLogs) console.log(`[CRYPTO-DEEP-BACKFILL] Starting sequential ${baseTf} backfill: ${symbols.length} symbols, ${days} days, delay=${delayMs}ms`);
 
   for (let i = 0; i < symbols.length; i++) {
     const symbol = symbols[i];
     const progress = `[${i + 1}/${symbols.length}]`;
-    if (!global.suppressLogs) {
-      if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} ${symbol} ${baseTf} ...`);
-      } else {
-        console.log(`${progress} Backfilling ${symbol} ${baseTf} (${days} days)`);
-      }
-    }
-
-    const start = Date.now();
-    try {
-      const snapshot = await ingestMarketData({
-        family: 'crypto',
-        symbol,
-        timeframe: baseTf,
-        historyDays: days,
-        provider: 'binance', // pin: TwelveData earlier in the chain caps at 5,000 bars
-        force: true, // deep backfill always re-fetches; freshness short-circuits don't apply
-        // Per-run snapshot only. The merged history can exceed 100k records
-        // (spreading it overflows the call stack), and ingestMarketData already
-        // persists scoped JSON + partitioned history + ts-index itself.
-        returnAttemptSnapshot: true,
-      });
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      const baseBars = (snapshot.sources || []).filter(r => r.timeframe === baseTf && r.symbol === symbol);
-      const snapErrors = snapshot.errors || [];
-      for (const e of snapErrors) allErrors.push(e);
-      // Deep backfill: 0 bars means delisted/never-listed — treat as failure.
-      const symbolOk = baseBars.length > 0;
-      if (symbolOk) results.ok++; else results.errors++;
-      const entry = { symbol, ok: symbolOk, base_timeframe: baseTf, bars: baseBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
-      if (!symbolOk) {
-        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || `no ${baseTf} bars returned (delisted or not listed on Binance)`;
-        // Mark the symbol as "not found" so the daemon skips it for 7 days (see writeDeadSymbolMarker).
-        entry.marker_written = writeDeadSymbolMarker(DEFAULT_TS_DIR, symbol, baseTf, 'crypto', 'binance');
-      }
-      // Auto-derive coarser intraday bins from the just-written deep base bin (lossless,
-      // local, no extra network). Off with --no-rollup.
-      if (symbolOk && !skipRollup) {
-        try {
-          const roll = rollupFromBase(DEFAULT_TS_DIR, symbol, baseTf, rollupTargets);
-          if (roll.ok) entry.rolled_up = roll.derived;
-        } catch (rollErr) {
-          entry.rollup_error = rollErr.message;
-        }
-      }
-      symbolResults.push(entry);
-      if (!global.suppressLogs) {
-        if (process.stdout.isTTY) {
-          const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
-          process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m ${baseTf}: ${baseBars.length} bars (${elapsed}s)\n`);
-        } else {
-          const rollNote = entry.rolled_up ? ` + rollup ${rollupTargets.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
-          console.log(`${progress} ${symbol} ${baseTf}: ${baseBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
-        }
-      }
-    } catch (err) {
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      allErrors.push({ symbol, timeframe: baseTf, family: 'crypto', message: err.message });
-      results.errors++;
-      symbolResults.push({ symbol, ok: false, base_timeframe: baseTf, bars: 0, elapsed_s: Number(elapsed), error: err.message });
-      if (!global.suppressLogs) {
-        if (process.stdout.isTTY) {
-          process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m ${baseTf}: FAILED (${err.message})\n`);
-        } else {
-          console.error(`${progress} ${symbol} FAILED: ${err.message}`);
-        }
-      }
-    }
-
-    // Inter-symbol delay to avoid Binance rate-limit pressure
-    if (delayMs > 0 && i < symbols.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
+    renderCryptoProgressStart(progress, symbol, runOptions);
+    const result = await backfillCryptoSymbol(symbol, runOptions, ingestMarketData);
+    symbolResults.push(result.entry);
+    allErrors.push(...result.errors);
+    if (result.entry.ok) results.ok += 1;
+    else results.errors += 1;
+    renderCryptoProgressResult(progress, result, runOptions);
+    await waitBetweenSymbols(delayMs, i, symbols.length);
   }
 
   if (!global.suppressLogs && process.stdout.isTTY) process.stdout.write('\n');
@@ -198,19 +404,7 @@ async function commandCryptoDeepBackfill(args) {
   // snapshot, the partitioned JSON history, and the binary ts-index per symbol.
 
   if (!global.suppressLogs) {
-    printPayload({
-      ok: results.errors === 0,
-      symbols: symbols.length,
-      successful: results.ok,
-      errors: results.errors,
-      total_base_bars: symbolResults.reduce((n, r) => n + (r.bars || 0), 0),
-      timeframe: baseTf,
-      days,
-      delay_ms: delayMs,
-      symbol_results: symbolResults,
-      error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
-      output: DEFAULT_HISTORY,
-    }, args);
+    printPayload(buildCryptoBackfillSummary(runOptions, results, symbolResults, allErrors), args);
   }
   return results.errors === 0 ? 0 : 1;
 }
@@ -261,28 +455,31 @@ async function commandEquityDeepBackfill(args) {
   }
 
   if (dryRun) {
-    printPayload({
-      ok: true,
-      dry_run: true,
-      provider: plan.provider,
-      symbols: plan.symbols.length,
-      symbol_list: plan.symbols,
-      skipped: plan.skipped_symbols.length,
-      skipped_symbols: plan.skipped_symbols,
-      timeframe: baseTf,
+    printPayload(buildEquityDryRun(plan, {
+      baseTimeframe: baseTf,
       days,
-      delay_ms: delayMs,
-      chunk_delay_ms: chunkDelayMs,
-      estimated_api_calls: estimateEquity5mApiCalls(plan.symbols.length, days),
-      auto_rollup: skipRollup ? false : rollupTargets,
-      message: `Would sequentially backfill native ${baseTf} Alpaca data for ${plan.symbols.length} US equity symbols over ${days} days${skipRollup ? '' : `, then auto-derive ${rollupTargets.join('/')} locally`}. Re-run without --dry-run to execute.`,
-    }, args);
+      delayMs,
+      chunkDelayMs,
+      skipRollup,
+      rollupTargets,
+    }), args);
     return 0;
   }
 
   const results = { ok: 0, errors: 0 };
   const allErrors = [];
   const symbolResults = [];
+  const runOptions = {
+    provider: plan.provider,
+    symbols: plan.symbols,
+    skippedSymbols: plan.skipped_symbols,
+    days,
+    delayMs,
+    chunkDelayMs,
+    baseTimeframe: baseTf,
+    skipRollup,
+    rollupTargets,
+  };
 
   if (!global.suppressLogs) {
     console.log(`[EQUITY-DEEP-BACKFILL] Starting sequential Alpaca ${baseTf} backfill: ${plan.symbols.length} symbols, ${days} days, delay=${delayMs}ms, chunk-delay=${chunkDelayMs}ms`);
@@ -294,97 +491,20 @@ async function commandEquityDeepBackfill(args) {
   for (let i = 0; i < plan.symbols.length; i++) {
     const symbol = plan.symbols[i];
     const progress = `[${i + 1}/${plan.symbols.length}]`;
-    if (!global.suppressLogs) {
-      if (process.stdout.isTTY) {
-        process.stdout.write(`\r\x1b[K${progress} ${symbol} Alpaca ${baseTf} ...`);
-      } else {
-        console.log(`${progress} Backfilling ${symbol} Alpaca ${baseTf} (${days} days)`);
-      }
-    }
-
-    const start = Date.now();
-    try {
-      const snapshot = await ingestMarketData({
-        family: 'equities',
-        symbol,
-        timeframe: baseTf,
-        historyDays: days,
-        provider: plan.provider,
-        force: true,
-        chunkDelayMs,
-        returnAttemptSnapshot: true,
-      });
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      const baseBars = (snapshot.sources || []).filter(r => r.timeframe === baseTf && r.symbol === symbol);
-      const snapErrors = snapshot.errors || [];
-      for (const e of snapErrors) allErrors.push(e);
-
-      const symbolOk = baseBars.length > 0 || snapErrors.length === 0;
-      if (symbolOk) results.ok++; else results.errors++;
-      const entry = { symbol, ok: symbolOk, base_timeframe: baseTf, bars: baseBars.length, elapsed_s: Number(elapsed), errors: snapErrors.length };
-      if (!symbolOk) {
-        entry.error = snapErrors.map(e => e.message).filter(Boolean).slice(0, 3).join(' | ') || `no native Alpaca ${baseTf} bars ingested`;
-      }
-      // Auto-derive coarser intraday bins from the just-written deep base bin (lossless,
-      // local, no extra network). Off with --no-rollup.
-      if (symbolOk && !skipRollup) {
-        try {
-          const roll = rollupFromBase(DEFAULT_TS_DIR, symbol, baseTf, rollupTargets);
-          if (roll.ok) entry.rolled_up = roll.derived;
-        } catch (rollErr) {
-          entry.rollup_error = rollErr.message;
-        }
-      }
-      symbolResults.push(entry);
-
-      if (!global.suppressLogs) {
-        if (process.stdout.isTTY) {
-          const color = symbolOk ? '\x1b[32m' : '\x1b[31m';
-          process.stdout.write(`\r\x1b[K${progress} ${color}${symbol}\x1b[0m Alpaca ${baseTf}: ${baseBars.length} bars (${elapsed}s)\n`);
-        } else {
-          const rollNote = entry.rolled_up ? ` + rollup ${rollupTargets.map(t => `${t}:${entry.rolled_up[t]}`).join(' ')}` : '';
-          console.log(`${progress} ${symbol} Alpaca ${baseTf}: ${baseBars.length} bars (${elapsed}s)${rollNote}${symbolOk ? '' : ` FAILED: ${entry.error}`}`);
-        }
-      }
-    } catch (err) {
-      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      allErrors.push({ symbol, timeframe: baseTf, family: 'equities', provider: plan.provider, message: err.message });
-      results.errors++;
-      symbolResults.push({ symbol, ok: false, base_timeframe: baseTf, bars: 0, elapsed_s: Number(elapsed), error: err.message });
-      if (!global.suppressLogs) {
-        if (process.stdout.isTTY) {
-          process.stdout.write(`\r\x1b[K${progress} \x1b[31m${symbol}\x1b[0m Alpaca ${baseTf}: FAILED (${err.message})\n`);
-        } else {
-          console.error(`${progress} ${symbol} FAILED: ${err.message}`);
-        }
-      }
-    }
-
-    if (delayMs > 0 && i < plan.symbols.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
+    renderEquityProgressStart(progress, symbol, runOptions);
+    const result = await backfillEquitySymbol(symbol, runOptions, ingestMarketData);
+    symbolResults.push(result.entry);
+    allErrors.push(...result.errors);
+    if (result.entry.ok) results.ok += 1;
+    else results.errors += 1;
+    renderEquityProgressResult(progress, result, runOptions);
+    await waitBetweenSymbols(delayMs, i, plan.symbols.length);
   }
 
   if (!global.suppressLogs && process.stdout.isTTY) process.stdout.write('\n');
 
   if (!global.suppressLogs) {
-    printPayload({
-      ok: results.errors === 0,
-      provider: plan.provider,
-      symbols: plan.symbols.length,
-      skipped: plan.skipped_symbols.length,
-      skipped_symbols: plan.skipped_symbols,
-      successful: results.ok,
-      errors: results.errors,
-      total_base_bars: symbolResults.reduce((n, r) => n + (r.bars || 0), 0),
-      timeframe: baseTf,
-      days,
-      delay_ms: delayMs,
-      chunk_delay_ms: chunkDelayMs,
-      symbol_results: symbolResults,
-      error_messages: [...new Set(allErrors.map(e => e.message).filter(Boolean))].slice(0, 24),
-      output: DEFAULT_HISTORY,
-    }, args);
+    printPayload(buildEquityBackfillSummary(runOptions, results, symbolResults, allErrors), args);
   }
   return results.errors === 0 ? 0 : 1;
 }
