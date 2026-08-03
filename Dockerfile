@@ -26,10 +26,8 @@ RUN cd backend/gateway && npm ci --ignore-scripts --omit=dev
 COPY Frontend/dashboard/package*.json ./Frontend/dashboard/
 RUN cd Frontend/dashboard && npm ci --ignore-scripts
 
-COPY Frontend/ ./Frontend/
-RUN cd Frontend/dashboard && npm run build
-
 COPY . .
+RUN cd Frontend/dashboard && npm run build
 
 RUN cmake -S backend/core -B backend/core/build \
       -DCMAKE_BUILD_TYPE=Release \
