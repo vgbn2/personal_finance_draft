@@ -1,3 +1,19 @@
+## Session Memory - 2026-08-03 Remote Host Deployment (hpdesk)
+
+```json
+{
+  "remote_host": "vgbn-server@hpdesk",
+  "sync_scope": "entire repository including .env configuration",
+  "docker_stack": "all-in-one profile with web, backfill, bot, portfolio-monitor, polymarket-research, host-health, host-backup",
+  "findings": [
+    "Frontend Supabase env resolution updated in Frontend/dashboard/src/lib/supabase.ts to accept SOVEREIGN_SUPABASE_URL and SOVEREIGN_SUPABASE_PUBLISHABLE_KEY.",
+    "Dockerfile build ordering updated so COPY . . occurs prior to npm run build for dashboard asset generation.",
+    "polymarket-research service requires POLYMARKET_RESEARCH_SCOPE_FILE defined in .env for prepare-central-env validation.",
+    "Host volume permission issue (EACCES) resolved on hpdesk storage/ directory via chmod/chown."
+  ]
+}
+```
+
 ## Session Memory - 2026-08-01 Compose-managed Alpaca Paper loop
 
 ```json
@@ -12,6 +28,37 @@
   "remote": "nothing pushed",
   "worktree": "worktree-alpaca-paper-compose remains at aa84ef56",
   "safety": "No provider poll, Paper order, live order, runtime activation, or execution-authority change occurred"
+}
+```
+
+## Session Memory - 2026-08-02 backend-wide readability partial implementation
+
+```json
+{
+  "commits": ["f2eaed0e", "31d36af8", "680056f7", "f44bc30d", "469968c4"],
+  "closed_batches": ["runner", "polymarket replay", "integrity", "correlation snapshot", "signal projection"],
+  "uncommitted_batch": "backend/cli/commands/data/data_deep_backfill.js",
+  "uncommitted_verification": "crypto/equity fixtures 27/27; syntax, complexity-depth-size screen, hygiene, structure pass",
+  "blocker": "mandatory Git commit rejected because approval usage limit was exhausted",
+  "next_action": "commit only data_deep_backfill.js, then preflight daemon outcome/status publication",
+  "remaining": "Batch 5 daemon, Batches 6-12, readability reference document, aggregate/host-capable gates",
+  "boundary": "no provider poll, canonical data write, daemon/service start, Paper/live order, deployment, public exposure, or credential change"
+}
+```
+
+## Session Memory - 2026-08-02 runner maintainability refactor
+
+```json
+{
+  "audit": "blast-through maintainability Hard Reading Mode",
+  "finding": "BT-MNT-1 P2 readability debt in runner bot dispatch",
+  "refactor": "commandRunBot owns bot parsing; buildAlpacaPaperStrategyArgs owns fixed Paper-only argv",
+  "behavior": "unchanged CLI tokens, gates, loop names, cadence, logs, settlement, and return codes",
+  "verification": "syntax; focused 5/5; hygiene; structure 17/17; diff check",
+  "broad_gate": "restricted npm test exit 1 from spawnSync EPERM, PTY timeouts, and retained nested-worktree manifest scan; clean HEAD archive manifest test passes",
+  "graph": "restricted update failed; approved host-capable refresh succeeded with 8770 nodes, 13956 edges, and 659 communities",
+  "expanded_queue": "separate batches for ingestMarketData, commandBacktest, backfillPolymarketArchive, and backfill daemon; Polymarket archive first",
+  "boundary": "uncommitted; .gitignore untouched; no provider, Paper order, runtime, host, container, credential, threshold, public, or live mutation"
 }
 ```
 

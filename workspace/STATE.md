@@ -2376,3 +2376,32 @@ windows remain open.
 - Ran full repository audits: `npm run hygiene` (100% pass), `npm run test:structure` (100% pass), and full `npm test` (100% pass).
 - Reviewed `README.md` for clarity, installation accuracy, multi-package root structure, and professional presentation.
 
+## Runner maintainability refactor - 2026-08-02
+
+- `blast-through` maintainability / Hard Reading Mode confirmed one P2 readability finding in
+  `backend/cli/commands/runner/run.js`: top-level `commandRun` also owned bot-specific argument parsing.
+- `refactor-readability` extracted that responsibility to `commandRunBot` and isolated construction of the
+  fixed Alpaca Paper strategy argv. Public CLI behavior, runtime policy, and Paper/live boundaries are unchanged.
+- Focused runner/loop/Compose/preparer verification passes 5/5; syntax, hygiene, structure 17/17, and diff
+  integrity pass. The broad restricted-sandbox suite remains non-green because of child-process/PTY limits and
+  the retained nested-worktree environment scan; clean-archive manifest evidence passes.
+- Refactor and continuity edits remain uncommitted. Runtime activation remains separately approval-gated.
+- Expanded maintainability screening found four separate large-function owners requiring staged cleanup:
+  `ingestMarketData` (310 lines / complexity 121 / depth 7), `commandBacktest` (245 / 89),
+  `backfillPolymarketArchive` (214 / 53 / depth 8), and backfill daemon cycle/job/CLI ownership. Treat each as
+  its own behavior-frozen batch; Polymarket archive is the safest next candidate because fixture coverage is green.
+- Host-capable `graphify update .` succeeded after the restricted attempt failed: 8,770 nodes, 13,956 edges,
+  659 communities. Optional SQL/Terraform parser coverage remains absent.
+
+## Backend-wide non-src readability implementation - 2026-08-02 partial
+
+- Closed and committed the runner, Polymarket replay, integrity, correlation snapshot, and API signal
+  projection readability batches as `f2eaed0e`, `31d36af8`, `680056f7`, `f44bc30d`, and `469968c4`.
+- Focused behavior contracts remained green. The replay coordinator fell from 368 lines to 47; focused snapshot
+  from 244 to 47; `signalStatus` to 12. Integrity output retained the observed 92/92 coverage, 14 stale, one
+  exception, nine cadence-plausible grain flags, and 75 vintage anomalies.
+- Deep-backfill crypto/equity restructuring is implemented and passes 27/27 fixture tests plus syntax, hotspot,
+  hygiene, and structure gates. It remains uncommitted because Git escalation was rejected after the approval
+  usage limit was exhausted. Repository policy requires this 500+ line edit to be committed before progression.
+- Batches 5 daemon through 12 and `docs/engineering/readability_refactoring_reference.md` remain unimplemented.
+  No runtime/provider/data/trading/host boundary was crossed.

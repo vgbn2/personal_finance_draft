@@ -1,15 +1,20 @@
 # Next Session Goal
 
-## Immediate boundary after the Alpaca Paper Compose merge
+## Immediate boundary after the runner readability refactor
 
-The Compose-managed Alpaca Paper strategy loop is merged and committed on local `main` through `3a877a52` (`9d0a8e30` implementation merge). Source and static Compose exercise are green, but runtime activation is intentionally unqualified and inactive.
+The Compose-managed Alpaca Paper strategy loop remains merged and inactive. A bounded behavior-preserving
+runner-dispatch refactor is now source/focused-test verified but uncommitted; the unrelated `.gitignore` edit
+must remain separate.
 
 Next actions:
-1. Do not start the service by default. `bot_autopilot` is disabled and no Alpaca Paper process/container is running.
-2. If explicitly authorized, preflight and generate the isolated `.env.services/bot-alpaca-paper.env`, enable only `bot_autopilot`, and start only Compose service `bot-alpaca-paper` under profile `paper-alpaca`.
-3. Verify the first bounded Paper cycle, canonical heartbeat/status, graceful SIGTERM stop, Compose restart, rollback, and absence of any old detached duplicate process. Preserve the $25 Paper notional cap and all fixed non-live overrides.
-4. Keep provider polling, Paper orders, host deployment, push, and operational qualification distinct from the completed source/static proof.
-5. The separate `worktree-alpaca-paper-compose` worktree/branch remains and may be removed only after an explicit cleanup request.
+1. Review and commit `backend/cli/commands/runner/run.js` plus the session continuity records without staging `.gitignore`.
+2. Optionally rerun `npm test` in a host-capable environment; the restricted run exited 1 on child-process/PTY limits and the retained nested-worktree manifest scan, while focused runner evidence is green.
+3. Do not start the service by default. `bot_autopilot` remains disabled and runtime activation is unqualified.
+4. If explicitly authorized, preflight the isolated environment and start only `bot-alpaca-paper`; separately prove first cycle, heartbeat, graceful stop, restart, rollback, and no duplicate detached process.
+5. Keep provider polling, Paper orders, host deployment, push, and operational qualification distinct from source/static proof. The separate worktree/branch remains cleanup-gated.
+6. After sealing the runner changeset, preflight a separate `backfillPolymarketArchive` readability batch. Keep
+   `ingestMarketData`, `commandBacktest`, and backfill-daemon decomposition as later independent batches; do not
+   combine these large persistence/data/execution owners in one refactor.
 
 
 ## Deferred roadmap — cross-market research readiness
@@ -26,6 +31,18 @@ auto-restart is allowed, all operator surfaces are in scope, and the webhook des
 Begin with MON-0 preflight only; no bot, container, provider, broker, or webhook action is implied.
 The plan now includes mandatory process/concurrency, clock, cycle, state-integrity, host-pressure, webhook,
 API/UI, and execution-boundary edge cases. Do not begin MON-1 until MON-0 freezes field ownership and state precedence.
+
+## 2026-08-02 readability implementation override
+
+Five plan batches are committed through `469968c4`. Do not redo them. The immediate action is to review and
+commit only `backend/cli/commands/data/data_deep_backfill.js`; it passes 27/27 focused fixtures plus syntax,
+hotspot, hygiene, and structure gates, but the prior commit attempt was blocked by the exhausted Git approval
+limit. Keep `.gitignore` and continuity files out of that source commit.
+
+After that commit, continue the approved readability plan at Batch 5 daemon outcome/status publication, then
+Batches 6-12 in order. The reference document is still missing. Preserve the non-live boundary: no provider
+polling, canonical data writes, daemon/service startup, Paper/live orders, deployment, public exposure, or
+credential changes.
 
 ## 2026-07-28 full-audit safety queue
 

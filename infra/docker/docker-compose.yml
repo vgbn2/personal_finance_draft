@@ -2,6 +2,13 @@
 # explicitly enables the writer profile; paper, monitoring, and research loops
 # require their own profiles. Keep SOVEREIGN_WEB_BIND private.
 
+x-common-build: &common-build
+  context: ../..
+  dockerfile: infra/docker/Dockerfile
+  args:
+    SOVEREIGN_SOURCE_REVISION: ${SOVEREIGN_SOURCE_REVISION:-unverified}
+    SOVEREIGN_SOURCE_TREE: ${SOVEREIGN_SOURCE_TREE:-unverified}
+
 x-central-runtime: &central-runtime
   NODE_ENV: production
   SOVEREIGN_DEPLOYMENT_PROFILE: ${SOVEREIGN_DEPLOYMENT_PROFILE:-central-host}
@@ -11,12 +18,7 @@ x-central-runtime: &central-runtime
 
 services:
   web:
-    build:
-      context: ../..
-      dockerfile: infra/docker/Dockerfile
-      args:
-        SOVEREIGN_SOURCE_REVISION: ${SOVEREIGN_SOURCE_REVISION:-unverified}
-        SOVEREIGN_SOURCE_TREE: ${SOVEREIGN_SOURCE_TREE:-unverified}
+    build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
       - path: ${SOVEREIGN_WEB_ENV_FILE:-../../.env.services/web.env}
@@ -42,6 +44,7 @@ services:
 
   bot:
     profiles: [paper]
+    build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
       web:
@@ -68,6 +71,7 @@ services:
 
   bot-alpaca-paper:
     profiles: [paper-alpaca]
+    build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
       web:
@@ -98,6 +102,7 @@ services:
 
   backfill:
     profiles: [writer]
+    build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
       - path: ${SOVEREIGN_BACKFILL_ENV_FILE:-../../.env.services/backfill.env}
@@ -129,6 +134,7 @@ services:
 
   portfolio-monitor:
     profiles: [monitoring]
+    build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
       backfill:
@@ -154,6 +160,7 @@ services:
 
   host-health:
     profiles: [monitoring]
+    build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
       backfill:
@@ -180,6 +187,7 @@ services:
 
   host-backup:
     profiles: [monitoring]
+    build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
       - path: ${SOVEREIGN_HOST_BACKUP_ENV_FILE:-../../.env.services/host-backup.env}

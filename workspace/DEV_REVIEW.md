@@ -2757,3 +2757,54 @@ logs and secret-bearing environment values were not read. The Docker evidence is
   passed. Environment check, gateway TypeScript, hygiene, structure 16/16, and diff integrity passed.
 - Deployment is deferred until an exact commit is created and synchronized to `vgbn-servers`. No provider,
   credential value, container, threshold, paper, order, public, or live state changed during source work.
+
+## Runner maintainability audit and refactor - 2026-08-02 Hard Reading Mode
+
+### Confirmed finding and implementation handoff
+
+| ID | Severity | Classification | Attribution | Evidence and acceptance | Result |
+|---|---|---|---|---|---|
+| BT-MNT-1 | P2 | readability debt | `failing_boundary`: runner dispatch comprehension; `fault_domain`: `our_source`; `repair_owner`: `backend/cli/commands/runner/run.js`; `causal_mechanism`: bot-specific option parsing accumulated inside top-level `commandRun`; `stub_involvement`: `none`; confidence: high | Direct read of the complete 335-line target, CLI caller, canonical loop owner, focused tests, Compose command, and recent feature diff. Preserve exact arguments, feature gates, loop names, cadence, logs, settlement behavior, and return codes. | Closed in working-tree source by `commandRunBot` plus `buildAlpacaPaperStrategyArgs`; uncommitted. |
+
+### Dismissed false positives and deferred surfaces
+
+- The similar Polymarket and Alpaca loop skeletons are not a safe generic-loop candidate: Polymarket owns
+  shared interval-policy resolution and resolved-position settlement, while Alpaca owns fixed Paper strategy
+  arguments. Keeping those domain flows separate is intentional, not confirmed duplication debt.
+- The 1,318-line strategy command is a valid size signal but was not selected or edited. This pass did not map
+  all of its research, registry, prop-firm, backtest, and execution responsibilities deeply enough to authorize
+  a split.
+- No production stub, compatibility shim, provider adapter, environment projection, or runtime service caused
+  BT-MNT-1. The issue was local source organization only.
+
+### Verification and limits
+
+- PASS: syntax; focused runner/run-loop/Compose/preparer bundle 5/5; hygiene; structure 17/17; diff check.
+- PASS: environment-manifest test in a clean `HEAD` archive.
+- FAILED/ENVIRONMENT: broad restricted `npm test` exited 1 with child-process `spawnSync ... EPERM`, PTY
+  automation timeouts, and the retained `.claude/worktrees/alpaca-paper-compose` manifest scan. No test was
+  weakened or skipped to hide these failures.
+- BLOCKED/ENVIRONMENT: `graphify update .` failed with `Operation not permitted`; direct reads and `rg` were used.
+- Not verified: host-capable aggregate, committed archive containing the refactor, CI, host runtime, deployment,
+  restart, rollback, recovery, soak, provider acceptance, Paper execution, or live execution.
+
+### Expanded large-function and nesting queue
+
+| ID | Priority | Owner | Direct evidence | Attribution and first safe seam |
+|---|---|---|---|---|
+| BT-MNT-2 | P1 maintainability | `backend/scripts/data_ops/ingest_market_data/index.js::ingestMarketData` | 1,454-line file; function 310 lines, complexity 121, nesting depth 7. Direct read shows one function owns availability/dry-run, tag and cache maps, provider smoke, standard-family sync, options sync, dedupe/quality, macro persistence, JSON history, and ts-index writes. | `failing_boundary`: incident comprehension and change isolation across provider-to-persistence flow; `fault_domain`: `our_source`; `repair_owner`: ingest orchestration owner; `causal_mechanism`: sequential feature growth inside one coordinator; `stub_involvement`: `none`; confidence high. First freeze provider order, skip/freshness, append/merge, and persistence parity; then extract standard-family acquisition and finalization without changing one-writer/data semantics. File >1,000 decision: split orchestration from family acquisition, keep persistence canonical. |
+| BT-MNT-3 | P1 maintainability | `backend/cli/commands/research/research.js::commandBacktest` | 1,020-line file; function 245 lines, complexity 89. Direct read shows parsing, interactive strategy/symbol selection, source acquisition, quality failure rendering, feature computation, three backtests, walk-forward, metrics, grading persistence, and output rendering in one path. | `failing_boundary`: research-run comprehension and report-change isolation; `fault_domain`: `our_source`; `repair_owner`: research backtest coordinator; `causal_mechanism`: request, execution, report, persistence, and presentation accumulated together; `stub_involvement`: `none`; confidence high. First extract request resolution and a pure report builder through existing `research_sources` and `research_render` owners. Child-spawn contracts are sandbox-blocked, so require host-capable characterization before editing. File >1,000 decision: split request/execution/report helpers, retain one command entrypoint. |
+| BT-MNT-4 | P2 maintainability / safest next | `shared/lib/market/polymarket_history.js::backfillPolymarketArchive` | 966-line file; function 214 lines, complexity 53, nesting depth 8. Direct read shows catalog pagination, index merge, skip-existing token reads, feature regeneration, rate pacing, fetch/write, counters, run history, manifest compatibility, and result assembly. Fixture archive suite passed in the current sandbox. | `failing_boundary`: token/archive recovery comprehension; `fault_domain`: `our_source`; `repair_owner`: Polymarket archive module; `causal_mechanism`: nested skip/fetch/feature branches plus index/manifest ownership in one function; `stub_involvement`: `test_stub_only` for injected fixture fetchers, not a production cause; confidence high. Extract pure index merge and manifest construction first, then one token archival helper; preserve v1 mirrors, skip-existing counts, delay semantics, and append-only run history. |
+| BT-MNT-5 | P2 maintainability | `backend/cli/commands/data/backfill_daemon.js` cycle/job/CLI | 648-line file; `runBackfillCycle` 112 lines, nested `processJob` 79 lines / complexity 40 / depth 4, `commandBackfillDaemon` 116 lines / complexity 21. Direct read shows duplicated rollup-failure accounting and CLI-owned signal/status/cycle transitions. Fixture daemon suite passed. | `failing_boundary`: job outcome and daemon lifecycle comprehension; `fault_domain`: `our_source`; `repair_owner`: backfill daemon; `causal_mechanism`: fetch, rollup, summary mutation, logging, callbacks, signals, heartbeat, and sleep transitions are interleaved; `stub_involvement`: `test_stub_only` for injected executor/rollup, not a production cause; confidence high. Extract one rollup-result recorder and one cycle-status publisher before separating CLI option parsing. Preserve lane caps, pacing, one-writer profile gate, and signal behavior. |
+
+### Cautious defer and screened-only candidates
+
+- `backend/cli/tui/engine/engine.js` is large and its prompt callbacks score high (191/156 lines; callback
+  complexity 60/45), but they are cohesive terminal state machines with byte-identical rendering contracts.
+  `stub_involvement: none`; first improve host-capable PTY characterization, then consider a pure key-transition
+  reducer. Do not mechanically split handlers while the restricted PTY suite times out.
+- Metrics also flagged `research_render.js`, `backend_correlation.js`, `trade_polymarket.js`, `data.js`,
+  `strategy.js`, `polymarket_paper.js`, `validation.js`, and `backtest.js`. These remain screened candidates,
+  not confirmed refactor findings, because this pass did not completely map each owner, callers, and tests.
+- Current `run.js` improved to one remaining size warning only: `commandRun` is 72 nonblank/noncomment lines;
+  it has no complexity-over-20 or nesting-over-3 warning after BT-MNT-1.

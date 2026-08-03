@@ -1,5 +1,21 @@
 # Prompt Log - 2026-07-30
 
+## User Prompt - 2026-08-02 session-orchestrator boot
+
+Invoked `session-orchestrator` to restore repository continuity. Loaded the bootstrap, current dated handoff,
+relevant session memory and state, immediate next-session goal, documentation hub, branch, HEAD, and working-tree
+status. No runtime, provider, paper-order, host, container, or source action was authorized by this boot.
+
+## User Prompt - 2026-08-02 blast-through and refactor-readability
+
+Invoked `blast-through` and `refactor-readability` without a narrower target. Ran a maintainability audit of the
+current runner/Alpaca Paper ownership, selected one bounded behavior-preserving dispatch cleanup, implemented it
+in `backend/cli/commands/runner/run.js`, and verified the focused source/test boundary. Runtime activation and
+all provider, order, host, container, credential, threshold, public, and live actions remained out of scope.
+The user then requested a broader check for large files with nested conditionals. Screened 17 production files,
+directly verified five high-signal owners, and recorded a ranked separate-batch refactor queue without mixing
+large-file edits into the uncommitted runner changeset.
+
 ## User Prompt and closeout - 2026-08-01 Alpaca Paper Compose service
 
 Requested continuation of the Compose-managed Alpaca Paper loop, asked whether it was running and isolated in a separate worktree, then directed merging and `feature-exerciser` activation before ending the session. Implemented and committed the feature, merged it into local `main`, ran bounded no-provider exercises, and recorded evidence. Runtime remains inactive, `bot_autopilot` disabled, nothing pushed, and no provider or order action occurred.
@@ -3456,3 +3472,11 @@ first next-session hardening task. Session closed at user request.
 
 Synchronized canonical packages in `skills/` (10 packages) to discovery mirrors in `.agents/skills/` using `sync_repo_skills.js`. Identified and removed an unneeded, invalid gitlink entry (`backend/polymarket-cli` mode 160000) that lacked a `.gitmodules` mapping and was breaking `git submodule status`. Verified `git submodule status` returns cleanly with code 0. Executed `npm run hygiene` (100% pass across all 6 categories), `npm run test:structure` (100% pass), and full `npm test` suite (100% pass). Verified `README.md` layout, installation commands, and multi-root package structure. Session closed via session-orchestrator.
 
+## User Prompt - 2026-08-02 backend-wide non-src readability implementation
+
+Requested implementation of the approved backend-wide readability plan, excluding every `src` segment.
+Closed five isolated source batches: runner dispatch (`f2eaed0e`), Polymarket replay (`31d36af8`), integrity
+(`680056f7`), correlation snapshot (`f44bc30d`), and API signal projection (`469968c4`). Implemented and
+verified the deep-backfill half of Batch 5, but its mandatory commit was rejected because the environment's
+Git escalation approval/usage limit was exhausted. Stopped before daemon or later batches; no provider, data,
+service, Paper, order, deployment, public, or live action ran.
