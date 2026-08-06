@@ -69,8 +69,9 @@ test('setUserConfig wraps database network errors cleanly', async () => {
   );
 });
 
-test('getAuthStatus returns non-configured status when env is missing', async () => {
+test('getAuthStatus handles unauthenticated request cleanly', async () => {
   const status = await getAuthStatus({});
-  assert.equal(status.ok, false);
-  assert.equal(status.error, 'supabase_not_configured');
+  assert.equal(status.type, 'auth_status');
+  assert.equal(status.authenticated, false);
+  assert.equal(status.user, null);
 });
