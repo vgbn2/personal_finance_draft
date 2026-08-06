@@ -1,5 +1,24 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-06 Database & Session Binding Mass Implementation & Health Check
+
+- `DB-AUTH-REMEDIATION-1` & `SERVICE-PRINCIPALS-PERMS-1` completed & verified: `getUserConfig` / `setUserConfig` validate input parameters and map Supabase errors through `classifySupabaseError`. POSIX permission checks enforce `mode & 0o077` security warnings on service principal JSON stores.
+- Database & User Session concepts documented: tabular structure, primary/foreign keys, indexing, RLS policy enforcement (`(select auth.uid())`), JWT token validation via `getAuthStatus()` / `getDatabaseStatus()`.
+- Repository health check verified: unit test suites `backend/api/tests/supabase_client.test.js` and `backend/api/tests/service_principals_perms.test.js` added and validated.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-06 mass-implement closure - Service principal permission checks
+
+- `SERVICE-PRINCIPALS-PERMS-1` is closed: Added defensive security permission check (`mode & 0o077`) in `readRegistry()` (`shared/lib/auth/service_principals.js`) to log security warnings when service principal files have overly broad file permissions on non-Windows environments.
+- Created `backend/api/tests/service_principals_perms.test.js` to verify permission checking.
+- No subagents spawned per explicit instruction. All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-06 mass-implement closure - Supabase database error handling & test verification
+
+- `DB-AUTH-REMEDIATION-1` is closed: `getUserConfig` and `setUserConfig` in `backend/api/server/services/supabase_client.js` now validate input arguments and wrap database query errors with `classifySupabaseError` to prevent raw error leaks.
+- Unit tests added at `backend/api/tests/supabase_client.test.js` verifying classified error handling on missing/invalid client parameters and simulated network failures.
+- No subagents spawned per explicit instruction. All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-06 session orchestrator, deep blast-through audit & last session plan closure
 
 - Deep blast-through audit completed: verified null root fallback in `shared/lib/market/polymarket_history.js`, `PMXT_API_KEY` diagnostic warning log in `capturePolymarketOrderbookLite`, `service_heartbeat.js` atomic file write permissions (`0o600`), and `backfill_daemon.js` V8 heap limits.

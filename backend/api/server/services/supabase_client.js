@@ -162,24 +162,44 @@ async function getDatabaseStatus(req) {
 }
 
 async function getUserConfig(supabaseClient, userId) {
-  const { data, error } = await supabaseClient
-    .from('user_config')
-    .select('config_key, config_value')
-    .eq('user_id', userId);
-  if (error) throw error;
-  const config = {};
-  for (const row of data || []) config[row.config_key] = row.config_value;
-  return config;
+  if (!supabaseClient || !userId) throw new Error('invalid_supabase_client_or_user_id');
+  try {
+    const { data, error } = await supabaseClient
+      .from('user_config')
+      .select('config_key, config_value')
+      .eq('user_id', userId);
+    if (error) {
+      throw new Error(classifySupabaseError(error, 'read user configuration'));
+    }
+    const config = {};
+    for (const row of data || []) config[row.config_key] = row.config_value;
+    return config;
+  } catch (error) {
+    if (error && error.message && error.message.includes('Unable to read user configuration')) {
+      throw error;
+    }
+    throw new Error(classifySupabaseError(error, 'read user configuration'));
+  }
 }
 
 async function setUserConfig(supabaseClient, userId, key, value) {
-  const { error } = await supabaseClient
-    .from('user_config')
-    .upsert(
-      { user_id: userId, config_key: key, config_value: value, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id,config_key' }
-    );
-  if (error) throw error;
+  if (!supabaseClient || !userId || !key) throw new Error('invalid_supabase_client_or_params');
+  try {
+    const { error } = await supabaseClient
+      .from('user_config')
+      .upsert(
+        { user_id: userId, config_key: key, config_value: value, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id,config_key' }
+      );
+    if (error) {
+      throw new Error(classifySupabaseError(error, 'write user configuration'));
+    }
+  } catch (error) {
+    if (error && error.message && error.message.includes('Unable to write user configuration')) {
+      throw error;
+    }
+    throw new Error(classifySupabaseError(error, 'write user configuration'));
+  }
 }
 
 module.exports = {
