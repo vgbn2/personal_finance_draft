@@ -48,7 +48,14 @@ function normalizeService(value) {
 function readRegistry(options = {}) {
   const filePath = path.resolve(options.path || registryPath(options.env));
   const readFileSync = options.readFileSync || fs.readFileSync;
+  const statSync = options.statSync || fs.statSync;
   try {
+    if (process.platform !== 'win32' && fs.existsSync(filePath)) {
+      const stats = statSync(filePath);
+      if (stats.mode && (stats.mode & 0o077) !== 0) {
+        console.warn(`[SECURITY] Service principal registry ${filePath} has broad permissions (${(stats.mode & 0o777).toString(8)}). Expected 600.`);
+      }
+    }
     const parsed = JSON.parse(readFileSync(filePath, 'utf8'));
     if (!parsed || parsed.schema_version !== SCHEMA_VERSION || !Array.isArray(parsed.services)) {
       throw new Error('unsupported_service_principal_registry');
