@@ -463,13 +463,17 @@ async function capturePolymarketOrderbookLite(market, tokenId, opts = {}) {
     || (rawTokenIds.length > 1 && String(rawTokenIds[1]) === String(tokenId) ? 'no' : null)
     || (tokenOutcome === 'yes' || tokenOutcome === 'no' ? tokenOutcome : null)
     || tokenId;
+  const effectiveApiKey = apiKey || process.env.PMXT_API_KEY || '';
+  if (!effectiveApiKey && !opts.quiet) {
+    console.warn('[PMXT] Warning: PMXT_API_KEY is not configured; orderbook-lite snapshot request may fail or be rate-limited.');
+  }
   const result = await fetchPmxtOrderBookHistory({
     outcomeId,
     outcome,
     since,
     until,
     limit,
-    apiKey,
+    apiKey: effectiveApiKey,
     baseUrl,
     fetcher,
   });
