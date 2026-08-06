@@ -261,6 +261,7 @@
         },
         {"name": "ALPACA_PAPER_BASE_URL", "default": "https://paper-api.alpaca.markets", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor", "compose_bot_alpaca_paper"]},
         {"name": "ALPACA_PAPER_INTERVAL_MIN", "default": "15", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
+        {"name": "SOVEREIGN_PROVIDER_PAPER_MONITOR_INTERVAL_MS", "default": "15000", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution"]},
         {"name": "ALPACA_PAPER_MAX_NOTIONAL", "default": "25", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
         {"name": "ALPACA_PAPER_MIN_TRUST_SCORE", "default": "70", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
         {"name": "BACKFILL_INTERVAL_SECS", "default": "1800", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},

@@ -6,7 +6,7 @@ const path = require('node:path');
 const { REPO_ROOT } = require('../../shared/lib/runtime/paths');
 const { loadEnvironmentManifest } = require('../../shared/lib/runtime/environment_manifest');
 
-const SKIP_DIRECTORIES = new Set(['.git', 'node_modules', 'dist', 'build', 'storage', 'workspace']);
+const SKIP_DIRECTORIES = new Set(['.git', '.claude', 'node_modules', 'dist', 'build', 'storage', 'workspace']);
 const SOURCE_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.ts', '.tsx']);
 const EXAMPLE_FILES = ['.env.example', '.env.central.example', 'Frontend/dashboard/.env.example'];
 const FRONTEND_ROOT = path.join(REPO_ROOT, 'Frontend', 'dashboard');
