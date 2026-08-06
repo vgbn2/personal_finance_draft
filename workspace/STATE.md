@@ -1,5 +1,19 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-06 session orchestrator, deep blast-through audit & last session plan closure
+
+- Deep blast-through audit completed: verified null root fallback in `shared/lib/market/polymarket_history.js`, `PMXT_API_KEY` diagnostic warning log in `capturePolymarketOrderbookLite`, `service_heartbeat.js` atomic file write permissions (`0o600`), and `backfill_daemon.js` V8 heap limits.
+- Remediation plan created at `workspace/plans/BLAST_THROUGH_FIXES_PLAN.md` with ranked findings (`BT-FIX-1` through `BT-FIX-4`).
+- Last session plan items verified & implemented: `archivePaths()` explicit `null` fallback and `capturePolymarketOrderbookLite` warning active in `shared/lib/market/polymarket_history.js`.
+- No subagents spawned per explicit user instruction. All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-05 mass-implement closure - Polymarket data, backtesting agents & polling restoration
+
+- `POLY-HIST-1` is closed: `archivePaths()` and `loadArchivedMarketIndex()` in `shared/lib/market/polymarket_history.js` handle explicit `null` root parameters without throwing `TypeError`. `capturePolymarketOrderbookLite` emits a clear diagnostic warning when `PMXT_API_KEY` is not set. Gamma API pagination is verified over 100-row page ceilings.
+- `POLY-AGENT-1` is closed: `shared/lib/trading/paper_ledger.js` event-sourcing engine verified canonical; position sizing modes (`notional`, `risk_budget`) enforce valid input parameters and reject invalid derivative sizing (`contracts`, `lots`). Low-liquidity rejections log position diagnostic codes without corrupting ledger state.
+- `STUB-SWEEP-1` is closed: 8 root shims in `shared/lib/` (`paths.js`, `ansi.js`, `indicators.js`, `backtest.js`, etc.) classified as required `#shared/*` & `dist/` forwarders. `shared/lib/ml/models.js` candidate entries verified with explicit `status: 'handcrafted_heuristic'` metadata.
+- `POLL-RESTORE-1` is closed: `NODE_OPTIONS: --max-old-space-size=6144` verified in `infra/docker/docker-compose.yml` for `backfill` daemon heap headroom. Recurring 15m cron job `f416d982` cancelled per user request.
+
 ## 2026-07-28 ENV-1B3-A Compose contract closure
 
 - TEST-1, ENV-1B2-A, and ENV-1B3-A are closed for working-tree source. Schema-3 environment policy now owns

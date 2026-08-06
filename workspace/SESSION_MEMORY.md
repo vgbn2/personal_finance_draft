@@ -1,3 +1,39 @@
+## Session Memory - 2026-08-06 Session Orchestrator, Deep Blast-Through & Remediation Plan
+
+```json
+{
+  "batches_completed": [
+    "SESSION-BOOT-1",
+    "BLAST-AUDIT-1",
+    "BLAST-PLAN-1",
+    "LAST-PLAN-IMPL-1"
+  ],
+  "polymarket_history": "null archive root fallback verified; PMXT_API_KEY diagnostic warning active",
+  "audit_plan": "workspace/plans/BLAST_THROUGH_FIXES_PLAN.md created with ranked fixes",
+  "last_session_plan": "Polymarket history null fallback & orderbook-lite PMXT warning verified; backfill daemon 6GB heap headroom intact",
+  "subagent_policy": "no subagents spawned per explicit mid-turn user instruction",
+  "safety": "LIVE_TRADING=false; SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
+## Session Memory - 2026-08-05 Polymarket & 1m Polling Diagnostic Mass-Implement
+
+```json
+{
+  "batches_completed": [
+    "POLY-HIST-1",
+    "POLY-AGENT-1",
+    "STUB-SWEEP-1",
+    "POLL-RESTORE-1"
+  ],
+  "polymarket_history": "archivePaths null fallback handled; PMXT_API_KEY diagnostic warning logged",
+  "polymarket_agents": "event-sourced paper_ledger.js verified canonical; FOK rejections handled cleanly",
+  "stub_sweep": "8 root shims verified as required #shared/* & dist/ forwarders; heuristic ML tagged",
+  "polling_restore": "NODE_OPTIONS 6144MB V8 heap configured for backfill daemon; cron loop cancelled per user request",
+  "safety": "LIVE_TRADING=false; no live orders or credential changes"
+}
+```
+
 ## Session Memory - 2026-08-03 Remote Host Deployment (hpdesk)
 
 ```json

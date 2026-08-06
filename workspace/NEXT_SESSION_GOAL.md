@@ -1,5 +1,38 @@
 # Next Session Goal
 
+## 2026-08-06 Next Session Focus — User Data, Session Binding & Database Fundamentals
+
+The user requested to focus the next session on:
+1. **User Data & Session Binding**: First-party Supabase authentication, JWT/session bearer tokens, and row-level security (`(select auth.uid())`).
+2. **Database Queries & Concepts Explanation**: Detailed, beginner-friendly explanation of database concepts (relational tables, primary/foreign keys, SQL queries, indexing, RLS, point-in-time observations).
+3. **Mass Implementation Continuation**: Continue mass implementation of database integration and user data persistence contracts through `skills/mass-implement/SKILL.md`.
+
+Immediate next actions:
+- Prepare database fundamentals explanation (tables, schemas, SQL, indexing, transactions, Supabase RLS).
+- Audit Supabase integration endpoints (`/api/auth/status`, `/api/database/status`, `supabase/migrations/`).
+- Continue mass implementation for user session binding and database query validation.
+- Maintain strict safety boundaries (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-06 Audit, Remediation Plan & Session Closeout Next Actions
+
+The deep blast-through audit, remediation plan creation (`workspace/plans/BLAST_THROUGH_FIXES_PLAN.md`), and implementation of last session plan are complete and recorded in `workspace/handoff/2026-08-06.md`.
+
+Next actions:
+1. Review uncommitted changes (`git diff`) and commit approved changes (`shared/lib/market/polymarket_history.js`, `workspace/plans/BLAST_THROUGH_FIXES_PLAN.md`, workspace state files).
+2. Run an incremental backfill pass (`node backend/cli/sovereign_cli.js backfill-daemon --once`) when host data refresh is desired.
+3. Optionally start background services (`docker compose -f infra/docker/docker-compose.yml --profile writer --profile monitoring up -d`) if container execution is explicitly requested.
+4. Keep provider polling, paper/live trading, and container execution strictly non-live unless explicitly authorized.
+
+## 2026-08-05 Mass-Implement Closeout & Next Actions
+
+The diagnostic and mass-implement pass for Polymarket historical data, paper ledgers, stub sweeps, and 1m polling limits is complete and recorded in `workspace/handoff/2026-08-05.md`.
+
+Next actions:
+1. Optionally restart the Docker background stack on host (`docker compose -f infra/docker/docker-compose.yml --profile writer --profile monitoring up -d`).
+2. Run an incremental backfill pass (`node backend/cli/sovereign_cli.js backfill-daemon --once`) to refresh stale sub-daily market data.
+3. Review uncommitted changes (`git diff`) and commit approved changes (`shared/lib/market/polymarket_history.js`, workspace state files).
+4. Keep provider polling, paper/live trading, and container execution strictly non-live unless explicitly authorized.
+
 ## Immediate boundary after the runner readability refactor
 
 The Compose-managed Alpaca Paper strategy loop remains merged and inactive. A bounded behavior-preserving
