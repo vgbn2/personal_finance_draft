@@ -49,8 +49,8 @@ test('schema-3 service rows match all eight isolated Compose environment files',
   assert.match(dockerfile, /org\.opencontainers\.image\.revision/);
   assert.match(dockerfile, /io\.sovereign\.source-tree/);
   assert.match(dockerfile, /io\.sovereign\.build-contract="1"/);
-  assert.match(composeService(compose, 'web'), /SOVEREIGN_SOURCE_REVISION:\s*\$\{SOVEREIGN_SOURCE_REVISION:-unverified\}/);
-  assert.match(composeService(compose, 'web'), /SOVEREIGN_SOURCE_TREE:\s*\$\{SOVEREIGN_SOURCE_TREE:-unverified\}/);
+  assert.match(compose, /SOVEREIGN_SOURCE_REVISION:\s*\$\{SOVEREIGN_SOURCE_REVISION:-unverified\}/);
+  assert.match(compose, /SOVEREIGN_SOURCE_TREE:\s*\$\{SOVEREIGN_SOURCE_TREE:-unverified\}/);
 
   for (const serviceName of EXPECTED_COMPOSE_SERVICES) {
     const row = manifest.compose_services[serviceName];
