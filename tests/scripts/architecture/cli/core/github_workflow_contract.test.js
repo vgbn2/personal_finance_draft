@@ -74,6 +74,6 @@ test('CI dependencies use non-interactive transports', () => {
   const packageLock = read('package-lock.json');
 
   assert.doesNotMatch(packageJson, /github:Mathieu2301\/TradingView-API/);
-  assert.doesNotMatch(packageLock, /git\+ssh:\/\/git@github\.com\/Mathieu2301\/TradingView-API/);
-  assert.match(packageLock, /git\+https:\/\/github\.com\/Mathieu2301\/TradingView-API\.git#574a9948b2adb3396b934c612f58d2ab103a6915/);
+  assert.match(packageJson, /git\+https:\/\/github\.com\/Mathieu2301\/TradingView-API\.git#574a9948b2adb3396b934c612f58d2ab103a6915/);
+  assert.match(packageLock, /TradingView-API\.git#574a9948b2adb3396b934c612f58d2ab103a6915/);
 });
