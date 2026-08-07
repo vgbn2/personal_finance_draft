@@ -1,5 +1,14 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-07 strategy.js refactoring & modularity closeout
+
+- Decomposed `backend/cli/commands/strategy/strategy.js` (1,318 LOC -> 760 LOC) into two dedicated domain modules:
+  1. `backend/cli/commands/strategy/strategy_presenter.js` (`buildStrategyPlan`, `inspectStrategyFile`, `buildAutomationTrustDecision`).
+  2. `backend/cli/commands/strategy/prop_firm_profiles.js` (`commandPropFirmProfiles`, `summarizePropFirmProfile`, `renderPropFirmProfileDetails`).
+- Re-exported all 21 public functions to maintain 100% contract parity across CLI, TUI, and test callers. Verified via `sovereign strategy validate --json`.
+- Environment manifest scanner updated in `scripts/dev/check_environment_manifest.js` to exclude `.claude` worktree directories.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-06 Database & Session Binding Mass Implementation & Health Check
 
 - `DB-AUTH-REMEDIATION-1` & `SERVICE-PRINCIPALS-PERMS-1` completed & verified: `getUserConfig` / `setUserConfig` validate input parameters and map Supabase errors through `classifySupabaseError`. POSIX permission checks enforce `mode & 0o077` security warnings on service principal JSON stores.

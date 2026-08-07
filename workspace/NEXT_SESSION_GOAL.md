@@ -1,5 +1,17 @@
 # Next Session Goal
 
+## 2026-08-07 Next Session Focus — Device Push Synchronization & PIT Macro Integration
+
+Next session focus:
+1. **Device Synchronization**: Push local `main` commits (`b5150f3c`, `e2dcef28`, `1c1a2c9f`) to `origin/main` when network connectivity is established (`git push origin main`).
+2. **Point-in-Time Macro Integration**: Continue Macro PIT dataset metadata integration (`available_at` publication timestamps) in `shared/lib/market/macro_history_helpers.js` and `backend/cli/commands/research/combined.js`.
+3. **Safety Boundary**: Maintain strict non-live boundaries (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+Immediate next actions:
+- Perform network readiness check for remote push (`git push origin main`).
+- Audit `macro_history_helpers.js` for release date availability fields.
+- Rerun standard test suites (`npm test`).
+
 ## 2026-08-06 Next Session Focus — User Data, Session Binding & Database Fundamentals
 
 The user requested to focus the next session on:
