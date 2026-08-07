@@ -3,9 +3,11 @@ const assert = require('node:assert/strict');
 const childProcess = require('node:child_process');
 
 const executorPath = require.resolve('../../../../backend/api/server/services/cli_executor');
+const cachePath = require.resolve('../../../../backend/api/server/services/cli_executor_cache');
 
 function clearExecutor() {
   delete require.cache[executorPath];
+  delete require.cache[cachePath];
 }
 
 function withSpawnSyncResult(result, run) {
