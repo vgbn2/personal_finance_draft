@@ -133,7 +133,6 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
-    healthcheck:
     # grain (1m crypto/equities, 5m Yahoo families) and rolled up to coarser TFs. It is
     # cache-aware (skips fresh symbols) and runs no HTTP server, so disable the image's
     # :8787 healthcheck to avoid a false "unhealthy".
