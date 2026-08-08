@@ -180,6 +180,24 @@ It reports CPU/load/frequency, RAM and swap, temperatures, NVIDIA and available 
 disk usage, busiest processes, and matching hosting/development applications. `--containers` adds bounded
 Docker statistics. It neither installs a service nor writes a report; stop the live view with `Ctrl+C`.
 
+### Simulated Hardware Profile Benchmarking & Container Limits
+
+To simulate low-power production execution environments (e.g. 1 CPU / 512MB VPS or 2 CPU / 1GB mini-PCs) on high-spec developer laptops or CI runners before purchasing hardware, run benchmarks under simulated hardware profiles:
+
+```bash
+# 1-Core 512MB Cloud VPS Simulation Profile
+npm run bench:sim
+
+# 2-Core 1024MB Mini-PC Simulation Profile
+npm run bench:mini-pc
+```
+
+`SOVEREIGN_BENCH_PROFILE` configures libuv threadpools (`UV_THREADPOOL_SIZE`), OpenMP thread limits (`OMP_NUM_THREADS`), V8 memory heap caps, and nanosecond CPU frequency delay simulation (`artificialDelayUs`).
+
+Production containers in `infra/docker/docker-compose.yml` declare explicit resource constraints:
+- `web`: `cpus: '1.0'`, `memory: 512M`
+- `backfill`: `cpus: '2.0'`, `memory: 1024M`
+
 Backfill polling is globally paced in addition to the provider-lane concurrency caps. The foreground daemon
 accepts `--poll-gap-ms`, `--warmup-jobs`, `--warmup-gap-ms`, and `--poll-jitter-ms`; it also increases the
 spacing when observed host load or process memory pressure is high. These controls smooth poll starts but do

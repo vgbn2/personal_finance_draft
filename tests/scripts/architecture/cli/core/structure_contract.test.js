@@ -214,3 +214,11 @@ test('repository hygiene checks pass', () => {
   });
   assert.equal(result.status, 0, `Hygiene checks failed:\n${result.stdout}`);
 });
+
+test('test integrity anti-cheating audit scanner passes', () => {
+  const result = spawnSync('node', [path.join(REPO_ROOT, 'scripts', 'dev', 'audit_test_integrity.js')], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, `Test integrity scanner failed:\n${result.stdout}\n${result.stderr}`);
+});

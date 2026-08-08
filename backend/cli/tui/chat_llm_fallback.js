@@ -17,8 +17,12 @@ const { defaultFlagValues } = require('./dashboard_exec.js');
 const { matchUniverse, matchSelOption } = require('./chat_parser.js');
 
 function optionsSummary(meta) {
-  if (meta.t !== 'sel' || !Array.isArray(meta.opts) || meta.opts.length > 8) return meta.t;
-  const values = meta.opts.map((o) => (o && typeof o === 'object') ? o.value : o);
+  let opts = meta.opts || meta.options;
+  if (typeof opts === 'function') {
+    try { opts = opts(); } catch (e) { opts = []; }
+  }
+  if (meta.t !== 'sel' || !Array.isArray(opts) || opts.length > 8) return meta.t;
+  const values = opts.map((o) => (o && typeof o === 'object') ? o.value : o);
   return `one of: ${values.join('|')}`;
 }
 

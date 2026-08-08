@@ -36,11 +36,20 @@ function tokenCacheKey(token) {
   return token ? crypto.createHash('sha256').update(token).digest('hex').slice(0, 24) : 'anonymous';
 }
 
+const clientPool = new Map();
+const MAX_POOLED_CLIENTS = 100;
+
 function createSovereignSupabaseClient(req) {
   if (!isConfigured()) return null;
   const token = getBearerToken(req);
+  const key = tokenCacheKey(token);
+
+  if (clientPool.has(key)) {
+    return clientPool.get(key);
+  }
+
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  return createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  const client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -48,52 +57,67 @@ function createSovereignSupabaseClient(req) {
     },
     global: { headers },
   });
+
+  if (clientPool.size >= MAX_POOLED_CLIENTS) {
+    const oldestKey = clientPool.keys().next().value;
+    clientPool.delete(oldestKey);
+  }
+  clientPool.set(key, client);
+  return client;
+}
+
+function clearClientPool() {
+  clientPool.clear();
 }
 
 async function getAuthStatus(req) {
   const token = getBearerToken(req);
-  const status = {
-    ok: true,
-    type: 'auth_status',
-    configured: isConfigured(),
-    authenticated: false,
-    user: null,
-    cache_enabled: isCacheEnabled(),
-  };
+  const cacheKey = `auth_status:${tokenCacheKey(token)}`;
 
-  if (!status.configured) {
-    status.ok = false;
-    status.error = 'supabase_not_configured';
-    return status;
-  }
-  if (!token) return status;
+  return cached(cacheKey, 5000, async () => {
+    const status = {
+      ok: true,
+      type: 'auth_status',
+      configured: isConfigured(),
+      authenticated: false,
+      user: null,
+      cache_enabled: isCacheEnabled(),
+    };
 
-  const supabase = createSovereignSupabaseClient(req);
-  try {
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error) {
+    if (!status.configured) {
+      status.ok = false;
+      status.error = 'supabase_not_configured';
+      return status;
+    }
+    if (!token) return status;
+
+    const supabase = createSovereignSupabaseClient(req);
+    try {
+      const { data, error } = await supabase.auth.getUser(token);
+      if (error) {
+        status.ok = false;
+        status.error = classifySupabaseError(error, 'reach the Supabase auth service');
+        return status;
+      }
+
+      status.authenticated = Boolean(data.user);
+      status.user = data.user
+        ? {
+            id: data.user.id,
+            email: data.user.email || null,
+            role: data.user.role || null,
+            access_role: data.user.app_metadata
+              ? data.user.app_metadata.sovereign_role || null
+              : null,
+          }
+        : null;
+    } catch (error) {
       status.ok = false;
       status.error = classifySupabaseError(error, 'reach the Supabase auth service');
       return status;
     }
-
-    status.authenticated = Boolean(data.user);
-    status.user = data.user
-      ? {
-          id: data.user.id,
-          email: data.user.email || null,
-          role: data.user.role || null,
-          access_role: data.user.app_metadata
-            ? data.user.app_metadata.sovereign_role || null
-            : null,
-        }
-      : null;
-  } catch (error) {
-    status.ok = false;
-    status.error = classifySupabaseError(error, 'reach the Supabase auth service');
     return status;
-  }
-  return status;
+  });
 }
 
 async function getDatabaseStatus(req) {
@@ -205,6 +229,7 @@ async function setUserConfig(supabaseClient, userId, key, value) {
 module.exports = {
   EXPECTED_TABLES,
   createSovereignSupabaseClient,
+  clearClientPool,
   getAuthStatus,
   getDatabaseStatus,
   getUserConfig,

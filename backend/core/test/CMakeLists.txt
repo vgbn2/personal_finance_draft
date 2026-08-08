@@ -36,4 +36,6 @@ set(SOVEREIGN_CPP_CORE_TEST_TARGETS
     regime_strategy_test
     feature_pipeline_test
     portfolio_risk_test
+    binary_ts_reader_test
+    grid_optimizer_test
 )
