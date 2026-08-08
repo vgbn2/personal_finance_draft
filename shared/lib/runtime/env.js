@@ -66,6 +66,13 @@ function loadLocalEnv(envPath = ENV_PATH, options = {}) {
   return loaded;
 }
 
+const {
+  exportMaskedEnv,
+  sanitizeEnv,
+  validateEnv,
+  verifyCredential,
+} = require('./env_pipeline');
+
 loadLocalEnv();
 
 module.exports = {
@@ -73,4 +80,8 @@ module.exports = {
   ENV_LOCAL_PATH,
   collectEnvPaths,
   loadLocalEnv,
+  exportMaskedEnv,
+  sanitizeEnv,
+  validateEnv,
+  verifyCredential,
 };

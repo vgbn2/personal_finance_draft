@@ -286,6 +286,36 @@ class AuthSessionRegistry {
       risk: { level: 'none', reason: 'reauth_approved', changed: true },
     };
   }
+
+  getActiveSessions(principalId) {
+    this.load();
+    if (!principalId) return [];
+    return Object.entries(this.sessions)
+      .filter(([, entry]) => entry && entry.principal_id === String(principalId))
+      .map(([sessionId, entry]) => ({ session_id: sessionId, ...entry }));
+  }
+
+  revokeSession(sessionId) {
+    this.load();
+    if (!sessionId || !this.sessions[sessionId]) return false;
+    delete this.sessions[sessionId];
+    this.persist(this.now());
+    return true;
+  }
+
+  revokeAllSessionsForPrincipal(principalId) {
+    this.load();
+    if (!principalId) return 0;
+    let count = 0;
+    for (const [sid, entry] of Object.entries(this.sessions)) {
+      if (entry && entry.principal_id === String(principalId)) {
+        delete this.sessions[sid];
+        count++;
+      }
+    }
+    if (count > 0) this.persist(this.now());
+    return count;
+  }
 }
 
 const authSessionRegistry = new AuthSessionRegistry();

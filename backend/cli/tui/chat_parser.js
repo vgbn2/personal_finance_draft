@@ -118,7 +118,11 @@ function matchUniverse(token, universe) {
 
 function matchSelOption(token, meta) {
   const needle = String(token || '').toLowerCase();
-  const opts = meta.opts || [];
+  let rawOpts = meta.opts || meta.options;
+  if (typeof rawOpts === 'function') {
+    try { rawOpts = rawOpts(); } catch (e) { rawOpts = []; }
+  }
+  const opts = Array.isArray(rawOpts) ? rawOpts : [];
   const exact = opts.find((opt) => String(optionValue(opt)).toLowerCase() === needle);
   if (exact) return optionValue(exact);
   const partial = opts.find((opt) => String(optionValue(opt)).toLowerCase().includes(needle));

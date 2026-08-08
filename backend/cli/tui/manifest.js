@@ -2,19 +2,40 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { VALID_FLAGS } = require('../../../shared/lib/settings/user_settings');
 
-// Read wallet address for display — no ethers needed, address stored in env directly
-const _pmWallet = (() => {
+const CACHE_TTL_MS = 5000;
+let _walletCache = null;
+let _walletCacheTime = 0;
+let _assetMappingCache = null;
+let _assetMappingCacheTime = 0;
+let _universeCache = null;
+let _universeCacheTime = 0;
+let _strategiesCache = null;
+let _strategiesCacheTime = 0;
+
+// Lazy reader for wallet address display — cached for CACHE_TTL_MS
+function getPmWalletAddress() {
+  const now = Date.now();
+  if (_walletCache !== null && (now - _walletCacheTime) < CACHE_TTL_MS) {
+    return _walletCache;
+  }
   try {
     const envPath = path.resolve(__dirname, '../../../.env');
-    const raw = fs.readFileSync(envPath, 'utf8');
-    const match = raw.match(/^POLYMARKET_WALLET_ADDRESS\s*=\s*(.+)$/m);
-    if (match) {
-      const addr = match[1].trim();
-      return addr.slice(0, 8) + '…' + addr.slice(-4);
+    if (fs.existsSync(envPath)) {
+      const raw = fs.readFileSync(envPath, 'utf8');
+      const match = raw.match(/^POLYMARKET_WALLET_ADDRESS\s*=\s*(.+)$/m);
+      if (match) {
+        const addr = match[1].trim();
+        _walletCache = addr.slice(0, 8) + '…' + addr.slice(-4);
+        _walletCacheTime = now;
+        return _walletCache;
+      }
     }
   } catch {}
+  _walletCache = null;
+  _walletCacheTime = now;
   return null;
-})();
+}
+
 const TIMEZONE_OPTIONS = [
   { label: '(UTC+0)   UTC',                   value: 'UTC' },
   { label: '(UTC+0)   Europe/London',          value: 'Europe/London' },
@@ -28,14 +49,32 @@ const TIMEZONE_OPTIONS = [
   { label: '(UTC−8)   America/Los_Angeles',    value: 'America/Los_Angeles' },
 ];
 
-const { mapping } = require('../../../config/asset_mapping.json');
+function getAssetMapping() {
+  const now = Date.now();
+  if (_assetMappingCache !== null && (now - _assetMappingCacheTime) < CACHE_TTL_MS) {
+    return _assetMappingCache;
+  }
+  try {
+    const assetMappingPath = path.join(__dirname, '../../../config/asset_mapping.json');
+    if (fs.existsSync(assetMappingPath)) {
+      const parsed = JSON.parse(fs.readFileSync(assetMappingPath, 'utf8'));
+      _assetMappingCache = parsed.mapping || {};
+      _assetMappingCacheTime = now;
+      return _assetMappingCache;
+    }
+  } catch {}
+  _assetMappingCache = {};
+  _assetMappingCacheTime = now;
+  return {};
+}
 
 /**
  * UTILS
  */
 function getCategoryForSymbol(symbol) {
+  const mapping = getAssetMapping();
   for (const [category, symbols] of Object.entries(mapping)) {
-    if (symbols.some(s => symbol.includes(s))) {
+    if (Array.isArray(symbols) && symbols.some(s => symbol.includes(s))) {
       return category;
     }
   }
@@ -43,15 +82,17 @@ function getCategoryForSymbol(symbol) {
 }
 
 function getCachedUniverse() {
+  const now = Date.now();
+  if (_universeCache !== null && (now - _universeCacheTime) < CACHE_TTL_MS) {
+    return _universeCache;
+  }
   const cachePath = path.join(__dirname, '../../../storage/data/cache/backtest_history.json');
-  
- 
+
   const configSymbols = [];
   try {
       const configPath = path.join(__dirname, '../../../config/markets/data_sources.yaml');
       if (fs.existsSync(configPath)) {
           const content = fs.readFileSync(configPath, 'utf8');
-          // Simple regex parsing to avoid async dependency in manifest
           const sections = ['equities', 'indices', 'commodities', 'fx', 'crypto'];
           for (const s of sections) {
               const match = content.match(new RegExp(`${s}:[\\s\\S]+?symbols:\\s*\\[(.*?)\\]`));
@@ -66,10 +107,12 @@ function getCachedUniverse() {
   } catch (e) {}
 
   if (!fs.existsSync(cachePath)) {
-      return { 
-          symbols: configSymbols.length > 0 ? configSymbols : [{ label: 'AAPL', value: 'AAPL', category: 'Equities' }], 
-          timeframes: ['1mo','1wk','1d', '1h', '5m','1m'] 
+      _universeCache = {
+          symbols: configSymbols.length > 0 ? configSymbols : [{ label: 'AAPL', value: 'AAPL', category: 'Equities' }],
+          timeframes: ['1mo','1wk','1d', '1h', '5m','1m']
       };
+      _universeCacheTime = now;
+      return _universeCache;
   }
 
   try {
@@ -83,20 +126,23 @@ function getCachedUniverse() {
       }
       if (s.timeframe) tfs.add(s.timeframe);
     });
-    
-    // Group by category then sort by symbol name
+
     const groupedSymbols = Array.from(symbolsMap.values()).sort((a, b) => {
       if (a.category < b.category) return -1;
       if (a.category > b.category) return 1;
       return a.label.localeCompare(b.label);
     });
-    
-    return {
+
+    _universeCache = {
       symbols: groupedSymbols,
       timeframes: Array.from(tfs).sort()
     };
+    _universeCacheTime = now;
+    return _universeCache;
   } catch (e) {
-    return { symbols: [{ label: 'AAPL', value: 'AAPL', category: 'Equities' }, { label: 'BTCUSDT', value: 'BTCUSDT', category: 'Crypto' }], timeframes: ['1d'] };
+    _universeCache = { symbols: [{ label: 'AAPL', value: 'AAPL', category: 'Equities' }, { label: 'BTCUSDT', value: 'BTCUSDT', category: 'Crypto' }], timeframes: ['1d'] };
+    _universeCacheTime = now;
+    return _universeCache;
   }
 }
 
@@ -109,12 +155,20 @@ function getCachedTimeframes() {
 }
 
 function getRegisteredStrategies() {
-    try {
-        const { registeredStrategyOptions } = require('../commands/strategy/strategy');
-        return registeredStrategyOptions();
-    } catch (e) {
-        return [{ label: 'Mean Reversion', value: 'config/strategies/mean_reversion.yaml' }];
-    }
+  const now = Date.now();
+  if (_strategiesCache !== null && (now - _strategiesCacheTime) < CACHE_TTL_MS) {
+    return _strategiesCache;
+  }
+  try {
+      const { registeredStrategyOptions } = require('../commands/strategy/strategy');
+      _strategiesCache = registeredStrategyOptions();
+      _strategiesCacheTime = now;
+      return _strategiesCache;
+  } catch (e) {
+      _strategiesCache = [{ label: 'Mean Reversion', value: 'config/strategies/mean_reversion.yaml' }];
+      _strategiesCacheTime = now;
+      return _strategiesCache;
+  }
 }
 
 /**
@@ -291,7 +345,7 @@ const COMMAND_MANIFEST = {
       { id: 'run',        label: 'Persistent Runners', args: [] },
     ],
     polymarket: [
-      { id: 'portfolio',     prefix: ['polymarket'], label: `Portfolio${_pmWallet ? '  ·  ' + _pmWallet : ''}` },
+      { id: 'portfolio',     prefix: ['polymarket'], get label() { const addr = getPmWalletAddress(); return `Portfolio${addr ? '  ·  ' + addr : ''}`; } },
       { id: 'markets',       prefix: ['polymarket'], label: 'Browse Active Markets' },
       { id: 'history',       prefix: ['polymarket'], label: 'Historical Price Data', loading: true, flags: {
         '--event': { type: 'text', default: 'fed_rate_cut_prob', label: 'Prediction event key' },
@@ -333,5 +387,6 @@ module.exports = {
   getCachedSymbols,
   getCachedTimeframes,
   getCachedUniverse,
-  getRegisteredStrategies
+  getRegisteredStrategies,
+  getPmWalletAddress,
 };

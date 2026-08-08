@@ -35,6 +35,14 @@ services:
       - ../../storage:/app/storage
       - ../../workspace:/app/workspace
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
@@ -117,7 +125,15 @@ services:
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
-    # Passive market-data poller: keeps every configured symbol backfilled at its base
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
     # grain (1m crypto/equities, 5m Yahoo families) and rolled up to coarser TFs. It is
     # cache-aware (skips fresh symbols) and runs no HTTP server, so disable the image's
     # :8787 healthcheck to avoid a false "unhealthy".
