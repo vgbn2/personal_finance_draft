@@ -298,6 +298,7 @@
         {"name": "MT5_TERMINAL_ID"},
         {"name": "OLLAMA_BASE_URL", "default": "http://localhost:11434"},
         {"name": "OLLAMA_MODEL"},
+        {"name": "OMP_NUM_THREADS", "default": "1", "allowed_surfaces": ["default_cli", "web", "mcp", "writer", "operator", "execution"]},
         {
           "name": "ORDERS_FILE",
           "environment_class": "execution",
@@ -342,6 +343,7 @@
         {"name": "SOVEREIGN_AUTH_SESSION_REGISTRY", "environment_class": "central", "allowed_surfaces": ["web", "operator", "compose_web"]},
         {"name": "SOVEREIGN_AUTH_SESSION_TRACKING", "default": "true", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_web"]},
         {"name": "SOVEREIGN_AUTH_SESSION_TTL_DAYS", "default": "30", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_web"]},
+        {"name": "SOVEREIGN_BENCH_PROFILE", "default": "unconstrained", "allowed_surfaces": ["default_cli", "web", "mcp", "writer", "operator", "execution"]},
         {"name": "SOVEREIGN_CACHE_MAX_ENTRIES"},
         {"name": "SOVEREIGN_CACHE_TTL_MS"},
         {"name": "SOVEREIGN_DEPLOYMENT_PROFILE", "default": "developer"},
@@ -403,7 +405,8 @@
         {"name": "SOVEREIGN_USER_ROLE_MAP", "default": "{}", "environment_class": "central", "allowed_surfaces": ["web", "operator", "compose_web"]},
         {"name": "SOVEREIGN_WEB_BIND", "default": "127.0.0.1"},
         {"name": "SOVEREIGN_WEB_HOST", "default": "127.0.0.1"},
-        {"name": "SOVEREIGN_WEB_PORT", "aliases": ["PORT"], "default": "8787"}
+        {"name": "SOVEREIGN_WEB_PORT", "aliases": ["PORT"], "default": "8787"},
+        {"name": "UV_THREADPOOL_SIZE", "default": "4", "allowed_surfaces": ["default_cli", "web", "mcp", "writer", "operator", "execution"]}
       ]
     },
     {

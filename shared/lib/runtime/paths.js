@@ -9,6 +9,7 @@ const { parseYamlRecursive } = require('./config_loader');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const STORAGE_DATA_DIR = path.join(REPO_ROOT, 'storage', 'data');
+const STORAGE_TS_DIR = path.join(STORAGE_DATA_DIR, 'ts');
 const API_CACHE_DIR = path.join(STORAGE_DATA_DIR, 'cache', 'api_responses');
 
 function backendBinaryName(platform = process.platform) {
@@ -119,13 +120,13 @@ const DEFAULT_MODEL_REPORT  = path.join(STORAGE_DATA_DIR, 'models', 'latest_mode
 const DEFAULT_BACKTEST      = path.join(STORAGE_DATA_DIR, 'backtests', 'latest_backtest.json');
 const DEFAULT_STATE_PATH    = path.join(REPO_ROOT, 'workspace', 'STATE.md');
 const DEFAULT_USER_SETTINGS = path.join(STORAGE_DATA_DIR, 'user_settings.json');
-const STORAGE_TS_DIR        = path.join(STORAGE_DATA_DIR, 'ts');
 const DEFAULT_PORTFOLIO     = path.join(STORAGE_DATA_DIR, 'portfolio.json');
 const DEFAULT_INDICATOR_OPTIMIZATION = path.join(STORAGE_DATA_DIR, 'models', 'latest_indicator_optimization.json');
 
 module.exports = {
     REPO_ROOT,
     STORAGE_DATA_DIR,
+    STORAGE_TS_DIR,
     API_CACHE_DIR,
     DEFAULT_SNAPSHOT,
     DEFAULT_QUALITY_REPORT,
@@ -134,7 +135,6 @@ module.exports = {
     DEFAULT_BACKTEST,
     DEFAULT_STATE_PATH,
     DEFAULT_USER_SETTINGS,
-    STORAGE_TS_DIR,
     DEFAULT_PORTFOLIO,
     DEFAULT_INDICATOR_OPTIMIZATION,
     backendBinaryName,

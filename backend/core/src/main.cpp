@@ -5,6 +5,8 @@
 #include "portfolio/portfolio_state.hpp"
 #include "risk/pre_trade_risk.hpp"
 #include "backtest/frame_backtester.hpp"
+#include "backtest/grid_optimizer.hpp"
+#include "data/binary_ts_reader.hpp"
 #include "ml/onnx_model.hpp"
 
 #include <algorithm>
@@ -994,6 +996,87 @@ int printMl(const std::vector<std::string>& args) {
     return rc;
 }
 
+int printOptimize(const std::vector<std::string>& args) {
+    const std::string symbols_arg = optionValue(args, "--symbols", "AAPL");
+    const std::string timeframe = optionValue(args, "--timeframe", "1d");
+    const std::string ts_dir_arg = optionValue(args, "--ts-dir", "storage/data/ts");
+    const std::filesystem::path ts_dir(ts_dir_arg);
+
+    std::vector<std::string> symbols;
+    std::stringstream ss(symbols_arg);
+    std::string token;
+    while (std::getline(ss, token, ',')) {
+        if (!token.empty()) {
+            symbols.push_back(token);
+        }
+    }
+
+    sovereign::GridOptimizationOptions opts;
+    {
+        double d = 0.0; std::string v;
+        v = optionValue(args, "--train-ratio"); if (!v.empty() && parseDoubleStrict(v, d)) opts.train_ratio = d;
+        v = optionValue(args, "--cost-bps"); if (!v.empty() && parseDoubleStrict(v, d)) opts.cost_bps = d;
+        opts.top_k = parseSizeOption(args, "--top-k", 10U);
+        opts.max_bars = parseSizeOption(args, "--max-bars", 0U);
+    }
+
+    std::cout << "{\n"
+              << "  \"type\": \"grid_optimization_result\",\n"
+              << "  \"engine\": \"sovereign_cpp_core\",\n"
+              << "  \"schema_version\": 1,\n";
+
+    if (symbols.empty()) {
+        std::cout << "  \"ok\": false,\n  \"error\": \"no_symbols_specified\"\n}\n";
+        return 1;
+    }
+
+    const std::string target_symbol = symbols[0];
+    const auto res = sovereign::GridOptimizer::optimizeFromBinary(ts_dir, target_symbol, timeframe, opts);
+
+    if (!res.ok) {
+        std::cout << "  \"ok\": false,\n"
+                  << "  \"error\": \"" << jsonEscape(res.error) << "\",\n"
+                  << "  \"symbol\": \"" << jsonEscape(target_symbol) << "\"\n}\n";
+        return 1;
+    }
+
+    std::cout << "  \"ok\": true,\n"
+              << "  \"symbol\": \"" << jsonEscape(res.symbol) << "\",\n"
+              << "  \"timeframe\": \"" << jsonEscape(res.timeframe) << "\",\n"
+              << "  \"total_bars\": " << res.total_bars << ",\n"
+              << "  \"train_bars\": " << res.train_bars << ",\n"
+              << "  \"test_bars\": " << res.test_bars << ",\n"
+              << "  \"tested\": " << res.grid_combinations_tested << ",\n"
+              << "  \"winner\": {\n"
+              << "    \"params\": {\n"
+              << "      \"rsi\": " << res.winner.params.rsi_period << ",\n"
+              << "      \"atr\": " << res.winner.params.atr_period << ",\n"
+              << "      \"bollinger\": " << res.winner.params.bollinger_period << ",\n"
+              << "      \"volatility\": " << res.winner.params.volatility_period << ",\n"
+              << "      \"threshold\": " << res.winner.params.threshold << ",\n"
+              << "      \"holding_period\": " << res.winner.params.holding_period << "\n"
+              << "    },\n"
+              << "    \"score\": " << res.winner.fitness_score << ",\n"
+              << "    \"train\": {\n"
+              << "      \"net_return\": " << res.winner.train_result.summary.net_return << ",\n"
+              << "      \"max_drawdown\": " << res.winner.train_result.summary.max_drawdown << ",\n"
+              << "      \"sharpe\": " << res.winner.train_result.summary.sharpe << ",\n"
+              << "      \"win_rate\": " << res.winner.train_result.summary.win_rate << ",\n"
+              << "      \"expectancy\": " << res.winner.train_result.summary.expectancy << "\n"
+              << "    },\n"
+              << "    \"test\": {\n"
+              << "      \"net_return\": " << res.winner.test_result.summary.net_return << ",\n"
+              << "      \"max_drawdown\": " << res.winner.test_result.summary.max_drawdown << ",\n"
+              << "      \"sharpe\": " << res.winner.test_result.summary.sharpe << ",\n"
+              << "      \"expectancy\": " << res.winner.test_result.summary.expectancy << ",\n"
+              << "      \"overfit_warning\": " << (res.winner.overfit_warning ? "true" : "false") << "\n"
+              << "    }\n"
+              << "  }\n"
+              << "}\n";
+
+    return 0;
+}
+
 void printUsage() {
     std::cout
         << "Sovereign C++ Core\n"
@@ -1036,6 +1119,9 @@ int main(int argc, char** argv) {
     }
     if (args[0] == "stats") {
         return printStats(args);
+    }
+    if (args[0] == "optimize") {
+        return printOptimize(args);
     }
     if (args[0] == "kill-switch") {
         const auto lockPath = std::filesystem::path("storage/data/cache/kill_switch.lock");

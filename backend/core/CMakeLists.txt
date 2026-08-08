@@ -83,6 +83,8 @@ endfunction()
 
 # Core Library Sources
 set(CORE_SOURCES
+    src/data/binary_ts_reader.cpp
+    src/backtest/grid_optimizer.cpp
     src/correlation/correlation_engine.cpp
     src/data/data_snapshot.cpp
     src/data/data_validator.cpp
@@ -202,6 +204,8 @@ add_sovereign_test(regime_test test/regime_test.cpp)
 add_sovereign_test(regime_strategy_test test/regime_strategy_test.cpp)
 add_sovereign_test(feature_pipeline_test test/feature_pipeline_test.cpp)
 add_sovereign_test(portfolio_risk_test test/portfolio_risk_test.cpp)
+add_sovereign_test(binary_ts_reader_test test/binary_ts_reader_test.cpp)
+add_sovereign_test(grid_optimizer_test test/grid_optimizer_test.cpp)
 
 # Specialized Test Configuration
 target_compile_definitions(kronos_integration_test PRIVATE

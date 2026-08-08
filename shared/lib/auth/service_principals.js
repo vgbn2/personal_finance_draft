@@ -93,6 +93,11 @@ function authenticateServiceToken(token, options = {}) {
     if (!service.active) continue;
     const digest = tokenDigest(candidate, service.salt);
     if (!constantTimeHexEqual(digest, service.token_hash)) continue;
+    const entropy = crypto.randomBytes(8).toString('hex');
+    const sessionId = crypto.createHash('sha256')
+      .update(`service:${service.id}:${digest}:${entropy}`)
+      .digest('hex')
+      .slice(0, 24);
     return buildPrincipal({
       id: service.id,
       identityType: 'service',
@@ -100,7 +105,7 @@ function authenticateServiceToken(token, options = {}) {
       capabilities: service.capabilities,
       authenticated: true,
       source: 'service_registry',
-      sessionId: crypto.createHash('sha256').update(`service:${service.id}`).digest('hex').slice(0, 24),
+      sessionId,
       actingUserId: service.acting_user_id,
     });
   }
