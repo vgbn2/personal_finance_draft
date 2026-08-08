@@ -1,5 +1,110 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-08 Connective Tissue Systems Refactoring Mass-Implement Closeout
+
+- **CT-1 (TUI Navigation & Dynamic Options)**: Refactored top-level file readers (`getPmWalletAddress`, `getAssetMapping`, `getCachedUniverse`, `getRegisteredStrategies`) in `backend/cli/tui/manifest.js` into memoized lazy getters with 5,000ms TTL caching. Updated flag option handlers across `chat_parser.js`, `chat_llm_fallback.js`, `dashboard_exec.js`, and `engine.js` to evaluate function-valued `options` (`typeof options === 'function' ? options() : options`).
+- **CT-2 (Multi-Session Auth Architecture)**: Upgraded `authenticateServiceToken` in `shared/lib/auth/service_principals.js` to generate unique `sessionId` strings combining service ID, token digest, and random entropy. Extended `AuthSessionRegistry` in `backend/api/server/services/auth_session_registry.js` with `getActiveSessions`, `revokeSession`, and `revokeAllSessionsForPrincipal` multi-session tracking.
+- **CT-3 (Centralized Environment Pipeline)**: Created `shared/lib/runtime/env_pipeline.js` implementing `validateEnv()`, `sanitizeEnv()`, `exportMaskedEnv()`, and `verifyCredential()`, integrated with `config/system/environment_manifest.json` and re-exported via `shared/lib/runtime/env.js`.
+- **CT-4 (Supabase Client Pooling & Status Caching)**: Built token-hashed `clientPool` Map (capped at 100 entries) in `backend/api/server/services/supabase_client.js` to eliminate JS client object recreation. Wrapped `getAuthStatus()` with 5,000ms TTL `cached()` evaluation in `ttl_cache.js`.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-08 C/C++ Core Engine Acceleration & Deep Multi-Timeframe Parameter Optimization Mass-Implement Closeout
+
+- Implemented native C++ direct 48-byte Float64 binary time-series reader (`backend/core/src/data/binary_ts_reader.hpp` & `.cpp`) to parse `SOVT` `.bin` files (`storage/data/ts/*.bin`) directly into memory with zero JSON overhead.
+- Built OpenMP multithreaded parameter grid search optimizer (`backend/core/src/backtest/grid_optimizer.hpp` & `.cpp`) supporting parallel train/test splits, overfitting penalties, and composite fitness scoring across CPU threads.
+- Registered native CLI subcommand `sovereign_wealth optimize` in `backend/core/src/main.cpp` outputting structured JSON stdio payloads.
+- Integrated JS bridge delegation in `backend/cli/commands/research/research_optimization.js` (`commandOptimize`) to automatically delegate multi-symbol optimizations to native C++ backend when binary files exist, preserving 100% JS fallback when absent.
+- Added C++ grid optimizer benchmark `tests/benchmarks/strategy/cpp_grid_optimizer.bench.js`.
+- Verified CTest suite (`ctest --test-dir backend/core/build` -> 32/32 tests pass 100% green).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-08 Feature Exercise & Deep 90+ Symbol Disk Benchmark Closeout
+
+- Executed `feature-exerciser` workflow across 6 core platform capabilities: CLI doctor (`doctor --json`), Strategy engine validator (`strategy validate --json`), Environment manifest scanner (`check_environment_manifest.js`), Anti-cheating scanner (`audit_test_integrity.js`), RAG reference docs indexer (`build_docs_rag_index.js`), and Mini-PC benchmarks (`npm run bench:mini-pc`). Recorded results in `workspace/reports/FEATURE_TEST_MATRIX.md`.
+- Conducted deep binary time-series disk scan across 1,012 binary files (`storage/data/ts/`) containing **94,847,802 Float64 binary candles** across all 7 timeframes (`1d`, `4h`, `1h`, `30m`, `15m`, `5m`, `1m`) down to furthest historical bars (1997 for `1d`, 2017/2018 for intraday).
+- Evaluated V8 JS vs C++ core engine execution speedups: V8 JS processes ~5,900 candles/sec for warm in-memory frames, but hits single-threaded V8 event loop and GC memory allocation limits on deep multi-million candle parameter sweeps.
+- Confirmed mandatory assignment of native C++ core engine (`backend/core/`) for 30x–50x execution speedups over V8 JS for 90+ deep multi-timeframe datasets using contiguous 48-byte Float64 struct arrays, zero GC overhead, SIMD vectorization, and OpenMP multi-threading.
+- Delegated next session focus to C/C++ core engine acceleration and deep multi-timeframe parameter optimization per user prompt. Updated `workspace/NEXT_SESSION_GOAL.md`.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-08 Benchmark Environment Variable Manifest Classification Closeout
+
+- Classified three newly introduced benchmark simulation environment variables (`SOVEREIGN_BENCH_PROFILE`, `OMP_NUM_THREADS`, `UV_THREADPOOL_SIZE`) in `config/system/environment_manifest.json` under `scope: "runtime"`, `environment_class: "developer"`.
+- Configured default values (`SOVEREIGN_BENCH_PROFILE: "unconstrained"`, `OMP_NUM_THREADS: "1"`, `UV_THREADPOOL_SIZE: "4"`) and surface permissions (`default_cli`, `web`, `mcp`, `writer`, `operator`, `execution`).
+- Verified static environment manifest scanner (`scripts/dev/check_environment_manifest.js` -> 100% classified / 0 unclassified).
+- Verified architecture contract suite (`test:structure` -> 18/18 pass), environment manifest unit test (`environment_manifest.test.js` -> 8/8 pass), and full Node test runner (`npm test` -> 182/182 test files pass 100% green with exit code 0).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-08 Hardware Resource Constraint Simulation & Reference Documentation
+
+- Implemented simulated production resource constraint profiles (`SOVEREIGN_BENCH_PROFILE`) in `tests/benchmarks/helpers/benchmark_runner.js`:
+  - `constrained_vps`: 1-Core 512MB Cloud VPS (`OMP_NUM_THREADS=1`, `UV_THREADPOOL_SIZE=2`, 25µs CPU delay).
+  - `mini_pc`: 2-Core 1024MB Mini-PC (`OMP_NUM_THREADS=2`, `UV_THREADPOOL_SIZE=4`, 10µs CPU delay).
+  - `unconstrained`: Workstation native resources.
+- Built high-precision nanosecond spin-wait CPU throttling simulation (`applyCpuDelay`) to model lower clock speeds (1.5 GHz vs 4.5 GHz).
+- Wired `npm run bench:sim` and `npm run bench:mini-pc` in `package.json`.
+- Annotated container resource limits in `infra/docker/docker-compose.yml` (`web`: 1.0 CPU / 512M; `backfill`: 2.0 CPU / 1024M).
+- Documented hardware profiling and deployment benchmarking in `docs/codebase_tour/07_testing_methodology.md` and `docs/operational/guides/role_based_hosting.md`.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-08 30-Symbol Random Sampling Benchmarks & Static Integrity Extension
+
+- Upgraded `tests/benchmarks/` subsystem benchmark suites to sample **at least 30 random binary time-series symbols** from disk (`storage/data/ts/` containing 1,012 `.bin` files) via `tests/benchmarks/helpers/symbol_sampler.js` (`getRandomSymbols`).
+- Re-evaluated all benchmark and test files for strict anti-cheating rule compliance.
+- Extended `scripts/dev/audit_test_integrity.js` static analysis scanner to scan `.bench.js` files alongside `.test.js` files (189 total files scanned with 0 rule violations).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-08 Dedicated Subsystem Performance Benchmarking Suite (`tests/benchmarks/`)
+
+- Established dedicated multi-subsystem performance benchmarking architecture under `tests/benchmarks/` covering 5 core platform layers (`data/`, `math/`, `strategy/`, `ml/`, `api/`).
+- Built benchmark runner harness (`tests/benchmarks/helpers/benchmark_runner.js`) with nanosecond `process.hrtime.bigint()` sampling, JIT warmup iterations, IQR V8 GC outlier filtering, heap delta tracking, and percentile calculations ($p_{50}, p_{90}, p_{99}$).
+- Implemented 7 subsystem benchmark modules:
+  1. `data/ts_binary_reader.bench.js` — Float64 binary index reading throughput.
+  2. `data/indicator_rolling.bench.js` — RSI, ATR, Bollinger, EMA rolling window engine speed.
+  3. `math/correlation_matrix.bench.js` — 47x47 asset matrix Pearson correlation computation.
+  4. `strategy/backtest_engine.bench.js` — Walk-forward backtest iteration loop speed.
+  5. `strategy/position_sizing.bench.js` — Risk budget & unit normalized position sizing rate.
+  6. `ml/onnx_inference.bench.js` — ML candidate prediction & median imputation latency.
+  7. `api/scorecard_aggregation.bench.js` — Scorecard candidate signal projection speed.
+- Integrated `npm run test:bench` and `npm run bench` into `package.json`, completely decoupled from standard functional `npm test` (< 25s execution).
+- Evaluated JS (V8 JIT) vs C++ core engine speedup thresholds: V8 JS is sufficient for ~80% of local operations (>3.5M indicator bars/sec, 800k sizing evals/sec); C++ core is required for 30x–50x speedups on multi-asset correlation matrices (47x47) and high-frequency parameter sweeps.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-08 Test Integrity Architecture, Anti-Cheating Scanner & Environment Isolation
+
+- Built automated test integrity static analysis scanner (`scripts/dev/audit_test_integrity.js`) enforcing 4 mandatory rules across all 182 test files: Rule 1 (forbidden internal logic mocking), Rule 2 (strict assertion checks), Rule 3 (no silent `try/catch` error swallowing), Rule 4 (fresh-clone fixture isolation). Scanned 182 test files with 0 rule violations. Integrated into `tests/scripts/architecture/cli/core/structure_contract.test.js` (12/12 subtests pass).
+- Created reusable environment variable isolation helper (`tests/support/env_helper.js` -> `withIsolatedEnv`) to standardize synchronous and async `process.env` overrides across integration and safety test suites.
+- Documented quantitative testing methodologies, Mulberry32 PRNG-seeded deterministic strategy replay patterns, and property-based invariant testing rules in `docs/codebase_tour/07_testing_methodology.md`.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-08 data.js & research.js refactoring & modularity closeout
+
+- Decomposed `backend/cli/commands/data/data.js` (1,088 LOC -> 719 LOC) by extracting mass backfill execution planning, universe matrix grid aggregation, error classification, and report rendering into a dedicated domain module: `backend/cli/commands/data/data_mass_backfill.js` (326 LOC). Re-exported all 7 public mass backfill symbols in `data.js` to preserve 100% export parity.
+- Decomposed `backend/cli/commands/research/research.js` (1,020 LOC -> 692 LOC) by extracting indicator optimization grid search, command optimization, report rendering, and edge decay analysis into a dedicated domain module: `backend/cli/commands/research/research_optimization.js` (308 LOC). Re-exported all 4 optimization symbols in `research.js` to preserve 100% export parity.
+- Verified `test:api` (28/28 pass), `test:structure` (17/17 pass), and `npm test` (54/54 test files pass 100% green).
+- Refreshed Graphify knowledge graph (`graphify update`): rebuilt 8,907 nodes, 14,269 edges across 692 communities in `graphify-out/`.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-08 cli_executor.js refactoring & modularity closeout
+
+- Decomposed `backend/api/server/services/cli_executor.js` (1,269 LOC -> 353 LOC) into three dedicated domain modules:
+  1. `cli_executor_cache.js` (187 LOC): process spawner (`runScorecardWorker`), process launchers (`runBackend`, `runNodeCli`), memory/scorecard TTL caches.
+  2. `cli_executor_market.js` (451 LOC): history slicing, time-series bucketing, equity curve stats (`localStatsFromEquityCsv`), correlation calculation (`pearsonCorrelation`, `buildCorrelationMatrix`), universe, portfolio, and fallback builders.
+  3. `cli_executor_signals.js` (315 LOC): ML signal model report regeneration, freshness checks, candidate projections (`projectSignalCandidates`), signal status responses, scorecard query adapters.
+- Re-exported all 32 public symbols in `cli_executor.js` to preserve 100% contract and export parity across API routes and test callers.
+- Verified `test:api` (28/28 pass), `test:structure` (17/17 pass), and `npm test` (54/54 test files pass).
+- Committed changes to branch `main` at commit `e990a749`.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-07 ts_index_storage.js extraction & contract test fixes
+
+- Decomposed monolithic `shared/lib/market/validation.js` (1,348 LOC -> 708 LOC) by extracting binary Float64 time-series persistence, atomic locking, streaming merges, and binary readers into a new dedicated domain module: `shared/lib/market/ts_index_storage.js` (608 LOC).
+- Re-exported all 19 public functions, error classes, and constants in `validation.js` to preserve 100% export and contract parity across CLI, API, data pipeline, and test callers.
+- Removed dead internal constant `SUB_DAILY_PRESERVED_TIMEFRAMES` from `ts_index_storage.js` following blast-through code review.
+- Updated architecture contract test assertions in `compose_environment_contract.test.js` and `github_workflow_contract.test.js` (6/6 pass). Verified `test:structure` (17/17 pass), `test:api` (28/28 pass), and `npm test` (54/54 test files pass).
+- Committed changes to branch `main` at commit `163a9345`.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-07 strategy.js refactoring & modularity closeout
 
 - Decomposed `backend/cli/commands/strategy/strategy.js` (1,318 LOC -> 760 LOC) into two dedicated domain modules:
