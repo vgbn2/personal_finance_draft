@@ -50,14 +50,14 @@ test('fitHmm: returns null for series shorter than 20 bars', () => {
 test('fitHmm: returns a valid regime label for a long enough series', () => {
   const returns = syntheticReturns(200, 0.0005, 0.02);
   const result = fitHmm(returns);
-  assert.ok(result !== null, 'expected non-null result');
+  assert.notEqual(result, null, 'expected non-null result');
   assert.ok(['trending', 'choppy'].includes(result.label), `unexpected label: ${result.label}`);
 });
 
 test('fitHmm: trendingProb + choppyProb ≈ 1', () => {
   const returns = syntheticReturns(150, 0.001, 0.015);
   const result = fitHmm(returns);
-  assert.ok(result !== null);
+  assert.notEqual(result, null);
   const sum = result.trendingProb + result.choppyProb;
   assert.ok(Math.abs(sum - 1) < 0.01, `probs don't sum to 1: ${sum}`);
 });
@@ -67,7 +67,7 @@ test('fitHmm: detects trending regime on a low-noise directional series', () => 
   const n = 100;
   const returns = Array.from({ length: n }, (_, i) => 0.005 + (i % 3 === 0 ? -0.001 : 0));
   const result = fitHmm(returns);
-  assert.ok(result !== null);
+  assert.notEqual(result, null);
   // At minimum it should converge and return a valid label
   assert.ok(['trending', 'choppy'].includes(result.label));
 });
@@ -75,6 +75,6 @@ test('fitHmm: detects trending regime on a low-noise directional series', () => 
 test('fitHmm: recentBars field reflects maxBars cap', () => {
   const returns = syntheticReturns(600, 0, 0.01);
   const result = fitHmm(returns, { maxBars: 300 });
-  assert.ok(result !== null);
+  assert.notEqual(result, null);
   assert.equal(result.recentBars, 300);
 });

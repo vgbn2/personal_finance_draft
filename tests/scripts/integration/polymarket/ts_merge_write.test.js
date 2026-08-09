@@ -365,7 +365,7 @@ test('ORIGINAL merge OOMs under the same cap (proves the regression was real)', 
   fs.rmSync(baseDir, { recursive: true, force: true });
   const oomSig = /heap out of memory|Allocation failed|Ineffective mark-compacts|Reached heap limit/i;
   assert.ok(!/CHILD_OK/.test(r.stdout || ''), 'original merge should NOT complete under the cap');
-  assert.ok(r.status !== 0, `original merge child should exit non-zero (got ${r.status})`);
+  assert.notEqual(r.status, 0, `original merge child should exit non-zero (got ${r.status})`);
   assert.ok(oomSig.test(r.stderr || ''), `original merge child should report an OOM (stderr tail: ${(r.stderr || '').slice(-200)})`);
   console.log(JSON.stringify({ type: 'ts_merge_write', case: 'original_ooms', deep: OOM_DEEP, heap_cap_mb: OOM_HEAP_MB, status: r.status }));
 });

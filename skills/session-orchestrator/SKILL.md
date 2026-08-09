@@ -24,6 +24,7 @@ Select the narrowest matching functional skill:
 - rough or preference-based proposal -> `refine-suggestion`
 - use or test current features -> `feature-exerciser`
 - audit, review, grading, gaps, or connectivity -> `blast-through`
+- multi-session knowledge recovery, fragmented ownership, Code Atlas work, or staged modular convergence -> `codebase-untangler`
 - behavior-preserving readability or maintainability refactor -> `refactor-readability`
 - one focused implementation -> `codex`
 - broad approved backlog or multi-section fixes -> `mass-implement`

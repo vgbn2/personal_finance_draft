@@ -83,7 +83,7 @@ test('polymarket paper-run dry-run returns ok with summary', { skip: !LIVE }, ()
   const payload = JSON.parse(lines[0]);
   assert.equal(payload.ok, true);
   assert.ok('summary' in payload);
-  assert.ok(typeof payload.summary.virtual_balance === 'number');
+  assert.equal(typeof payload.summary.virtual_balance, 'number');
 });
 
 // ---------------------------------------------------------------------------
@@ -117,7 +117,7 @@ test('backend integrity returns a structured response', { skip: !LIVE }, () => {
   assert.ok(lines.length > 0, 'expected JSON output');
   const payload = JSON.parse(lines[0]);
   assert.equal(typeof payload.ok, 'boolean');
-  assert.ok(typeof payload.total_cached === 'number');
+  assert.equal(typeof payload.total_cached, 'number');
 });
 
 // ---------------------------------------------------------------------------

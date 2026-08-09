@@ -6,6 +6,8 @@
 #include "risk/pre_trade_risk.hpp"
 #include "backtest/frame_backtester.hpp"
 #include "backtest/grid_optimizer.hpp"
+#include "backtest/global_sweep_optimizer.hpp"
+#include "strategies/strategy_sweep_evaluator.hpp"
 #include "data/binary_ts_reader.hpp"
 #include "ml/onnx_model.hpp"
 
@@ -166,6 +168,19 @@ std::size_t parseSizeOption(const std::vector<std::string>& args, const std::str
         return parsed == raw.size() ? value : fallback;
     } catch (const std::exception&) {
         return fallback;
+    }
+}
+
+bool parsePositiveSizeStrict(const std::string& raw, std::size_t& value) {
+    if (raw.empty()) return false;
+    try {
+        std::size_t parsed = 0;
+        const auto candidate = static_cast<std::size_t>(std::stoull(raw, &parsed));
+        if (parsed != raw.size() || candidate == 0U) return false;
+        value = candidate;
+        return true;
+    } catch (const std::exception&) {
+        return false;
     }
 }
 
@@ -1077,6 +1092,246 @@ int printOptimize(const std::vector<std::string>& args) {
     return 0;
 }
 
+bool parseSweepDatasets(
+    const std::string& raw,
+    std::vector<sovereign::backtest::SweepDatasetRequest>& datasets,
+    std::string& error) {
+    if (raw.empty()) {
+        error = "validated --datasets is required";
+        return false;
+    }
+    std::istringstream stream(raw);
+    std::string item;
+    while (std::getline(stream, item, ',')) {
+        const auto colon = item.find(':');
+        const auto at = item.rfind('@');
+        const auto hash = item.rfind('#');
+        if (colon == std::string::npos
+            || at == std::string::npos
+            || hash == std::string::npos
+            || colon == 0U
+            || at <= colon + 1U
+            || hash <= at + 1U
+            || hash + 65U != item.size()) {
+            error = "datasets must use FAMILY:SYMBOL@TIMEFRAME#SHA256";
+            return false;
+        }
+        std::string fingerprint = item.substr(hash + 1U);
+        if (!std::all_of(fingerprint.begin(), fingerprint.end(), [](unsigned char value) {
+                return std::isxdigit(value) != 0;
+            })) {
+            error = "dataset fingerprint must be 64 hexadecimal characters";
+            return false;
+        }
+        std::transform(fingerprint.begin(), fingerprint.end(), fingerprint.begin(), [](unsigned char value) {
+            return static_cast<char>(std::tolower(value));
+        });
+        datasets.push_back({
+            item.substr(0U, colon),
+            item.substr(colon + 1U, at - colon - 1U),
+            item.substr(at + 1U, hash - at - 1U),
+            fingerprint,
+        });
+    }
+    if (datasets.empty()) {
+        error = "at least one validated dataset is required";
+        return false;
+    }
+    return true;
+}
+
+bool parseSweepEvaluators(
+    const std::string& raw,
+    std::vector<sovereign::strategies::StrategyArchetype>& archetypes,
+    std::string& error) {
+    if (raw.empty()) {
+        error = "validated --evaluators is required";
+        return false;
+    }
+    const std::unordered_map<std::string, sovereign::strategies::StrategyArchetype> supported = {
+        {"MomentumTrend", sovereign::strategies::StrategyArchetype::MomentumTrend},
+        {"MeanReversion", sovereign::strategies::StrategyArchetype::MeanReversion},
+        {"BreakoutVolatility", sovereign::strategies::StrategyArchetype::BreakoutVolatility},
+        {"HybridRegime", sovereign::strategies::StrategyArchetype::HybridRegime},
+    };
+    std::istringstream stream(raw);
+    std::string item;
+    while (std::getline(stream, item, ',')) {
+        const auto found = supported.find(item);
+        if (found == supported.end()) {
+            error = "unknown or unsupported evaluator: " + item;
+            return false;
+        }
+        archetypes.push_back(found->second);
+    }
+    return !archetypes.empty();
+}
+
+int printSweep(const std::vector<std::string>& args) {
+    const std::filesystem::path ts_dir(optionValue(args, "--ts-dir", "storage/data/ts"));
+    const std::string top_k_raw = optionValue(args, "--top-k");
+    const std::string max_bars_raw = optionValue(args, "--max-bars");
+    std::size_t top_k = 20U;
+    std::size_t max_bars = 50000U;
+
+    sovereign::backtest::GlobalSweepOptions opts;
+    opts.top_k = top_k;
+    opts.max_bars = max_bars;
+    opts.archetypes.clear();
+    std::vector<sovereign::backtest::SweepDatasetRequest> datasets;
+    std::string contract_error;
+    if ((!top_k_raw.empty() && !parsePositiveSizeStrict(top_k_raw, top_k))
+        || (!max_bars_raw.empty() && !parsePositiveSizeStrict(max_bars_raw, max_bars))) {
+        contract_error = "--top-k and --max-bars must be positive integers";
+    }
+
+    double cost = 5.0;
+    const std::string cost_raw = optionValue(args, "--cost-bps");
+    if (contract_error.empty()
+        && !cost_raw.empty()
+        && (!parseDoubleStrict(cost_raw, cost) || !std::isfinite(cost) || cost < 0.0)) {
+        contract_error = "--cost-bps must be a finite non-negative number";
+    }
+
+    double ratio = 0.70;
+    const std::string ratio_raw = optionValue(args, "--train-ratio");
+    if (contract_error.empty()
+        && !ratio_raw.empty()
+        && (!parseDoubleStrict(ratio_raw, ratio) || !std::isfinite(ratio) || ratio < 0.40 || ratio > 0.75)) {
+        contract_error = "--train-ratio must be a finite number between 0.40 and 0.75";
+    }
+
+    if (contract_error.empty()
+        && (!parseSweepDatasets(optionValue(args, "--datasets"), datasets, contract_error)
+            || !parseSweepEvaluators(optionValue(args, "--evaluators"), opts.archetypes, contract_error))) {
+        // The parser sets contract_error.
+    }
+    if (!contract_error.empty()) {
+        std::cout << "{\"type\":\"global_sweep_result\",\"schema_version\":2,\"research_only\":true,"
+                  << "\"promotion_eligible\":false,\"ok\":false,\"error\":\""
+                  << jsonEscape(contract_error) << "\"}\n";
+        return 1;
+    }
+
+    opts.top_k = top_k;
+    opts.max_bars = max_bars;
+    opts.cost_bps = cost;
+    opts.train_ratio = ratio;
+
+    const auto res = sovereign::backtest::GlobalSweepOptimizer::runValidatedSweep(ts_dir, datasets, opts);
+
+    if (!res.ok) {
+        std::cout << "{\n"
+                  << "  \"type\": \"global_sweep_result\",\n"
+                  << "  \"engine\": \"sovereign_cpp_core\",\n"
+                  << "  \"schema_version\": 2,\n"
+                  << "  \"research_only\": true,\n"
+                  << "  \"promotion_eligible\": false,\n"
+                  << "  \"ok\": false,\n"
+                  << "  \"error\": \"" << jsonEscape(res.error) << "\"\n"
+                  << "}\n";
+        return 1;
+    }
+
+    std::cout << "{\n"
+              << "  \"type\": \"global_sweep_result\",\n"
+              << "  \"engine\": \"sovereign_cpp_core\",\n"
+              << "  \"schema_version\": 2,\n"
+              << "  \"research_only\": true,\n"
+              << "  \"promotion_eligible\": false,\n"
+              << "  \"ok\": true,\n"
+              << "  \"selection_protocol\": \"train_validation_then_single_untouched_holdout\",\n"
+              << "  \"fitness_source\": \"validation_metrics\",\n"
+              << "  \"holdout_influences_selection\": false,\n"
+              << "  \"total_datasets\": " << res.total_datasets << ",\n"
+              << "  \"total_pass1_evaluations\": " << res.total_pass1_evaluations << ",\n"
+              << "  \"total_pass2_evaluations\": " << res.total_pass2_evaluations << ",\n"
+              << "  \"total_combinations_evaluated\": " << (res.total_pass1_evaluations + res.total_pass2_evaluations) << ",\n"
+              << "  \"leader_board\": [\n";
+
+    for (std::size_t i = 0; i < res.leader_board.size(); ++i) {
+        const auto& t = res.leader_board[i];
+        if (i > 0) std::cout << ",\n";
+        std::cout << "    {\n"
+                  << "      \"rank\": " << (i + 1) << ",\n"
+                  << "      \"symbol\": \"" << jsonEscape(t.symbol) << "\",\n"
+                  << "      \"timeframe\": \"" << jsonEscape(t.timeframe) << "\",\n"
+                  << "      \"strategy\": \"" << jsonEscape(sovereign::strategies::archetypeToString(t.params.archetype)) << "\",\n"
+                  << "      \"fitness_score\": " << t.fitness_score << ",\n"
+                  << "      \"overfit_grade\": \"" << jsonEscape(t.overfit_grade) << "\",\n"
+                  << "      \"oos_retention_ratio\": " << t.oos_retention_ratio << ",\n"
+                  << "      \"overfit_warning\": " << (t.overfit_warning ? "true" : "false") << ",\n"
+                  << "      \"params\": {\n"
+                  << "        \"rsi_period\": " << t.params.rsi_period << ",\n"
+                  << "        \"atr_period\": " << t.params.atr_period << ",\n"
+                  << "        \"bollinger_period\": " << t.params.bollinger_period << ",\n"
+                  << "        \"volatility_period\": " << t.params.volatility_period << ",\n"
+                  << "        \"threshold\": " << t.params.threshold << ",\n"
+                  << "        \"holding_period\": " << t.params.holding_period << "\n"
+                  << "      },\n"
+                  << "      \"train_metrics\": {\n"
+                  << "        \"trades\": " << t.train_result.summary.trades << ",\n"
+                  << "        \"net_return\": " << t.train_result.summary.net_return << ",\n"
+                  << "        \"max_drawdown\": " << t.train_result.summary.max_drawdown << ",\n"
+                  << "        \"sharpe\": " << t.train_result.summary.sharpe << ",\n"
+                  << "        \"expectancy\": " << t.train_result.summary.expectancy << ",\n"
+                  << "        \"win_rate\": " << t.train_result.summary.win_rate << "\n"
+                  << "      },\n"
+                  << "      \"validation_metrics\": {\n"
+                  << "        \"trades\": " << t.validation_result.summary.trades << ",\n"
+                  << "        \"net_return\": " << t.validation_result.summary.net_return << ",\n"
+                  << "        \"max_drawdown\": " << t.validation_result.summary.max_drawdown << ",\n"
+                  << "        \"sharpe\": " << t.validation_result.summary.sharpe << ",\n"
+                  << "        \"expectancy\": " << t.validation_result.summary.expectancy << ",\n"
+                  << "        \"win_rate\": " << t.validation_result.summary.win_rate << "\n"
+                  << "      },\n"
+                  << "      \"holdout_metrics\": {\n"
+                  << "        \"trades\": " << t.test_result.summary.trades << ",\n"
+                  << "        \"net_return\": " << t.test_result.summary.net_return << ",\n"
+                  << "        \"max_drawdown\": " << t.test_result.summary.max_drawdown << ",\n"
+                  << "        \"sharpe\": " << t.test_result.summary.sharpe << ",\n"
+                  << "        \"expectancy\": " << t.test_result.summary.expectancy << ",\n"
+                  << "        \"win_rate\": " << t.test_result.summary.win_rate << "\n"
+                  << "      },\n"
+                  << "      \"test_metrics\": {\n"
+                  << "        \"compatibility_alias_for\": \"holdout_metrics\",\n"
+                  << "        \"net_return\": " << t.test_result.summary.net_return << ",\n"
+                  << "        \"max_drawdown\": " << t.test_result.summary.max_drawdown << ",\n"
+                  << "        \"sharpe\": " << t.test_result.summary.sharpe << ",\n"
+                  << "        \"expectancy\": " << t.test_result.summary.expectancy << ",\n"
+                  << "        \"win_rate\": " << t.test_result.summary.win_rate << "\n"
+                  << "      }\n"
+                  << "    }";
+    }
+    std::cout << "\n  ],\n"
+              << "  \"strategy_champions\": [\n";
+
+    for (std::size_t i = 0; i < res.strategy_champions.size(); ++i) {
+        const auto& t = res.strategy_champions[i];
+        if (i > 0) std::cout << ",\n";
+        std::cout << "    {\n"
+                  << "      \"strategy\": \"" << jsonEscape(sovereign::strategies::archetypeToString(t.params.archetype)) << "\",\n"
+                  << "      \"best_symbol\": \"" << jsonEscape(t.symbol) << "\",\n"
+                  << "      \"best_timeframe\": \"" << jsonEscape(t.timeframe) << "\",\n"
+                  << "      \"fitness_score\": " << t.fitness_score << ",\n"
+                  << "      \"overfit_grade\": \"" << jsonEscape(t.overfit_grade) << "\",\n"
+                  << "      \"oos_retention_ratio\": " << t.oos_retention_ratio << ",\n"
+                  << "      \"params\": {\n"
+                  << "        \"rsi_period\": " << t.params.rsi_period << ",\n"
+                  << "        \"atr_period\": " << t.params.atr_period << ",\n"
+                  << "        \"bollinger_period\": " << t.params.bollinger_period << ",\n"
+                  << "        \"volatility_period\": " << t.params.volatility_period << ",\n"
+                  << "        \"threshold\": " << t.params.threshold << ",\n"
+                  << "        \"holding_period\": " << t.params.holding_period << "\n"
+                  << "      }\n"
+                  << "    }";
+    }
+    std::cout << "\n  ]\n"
+              << "}\n";
+
+    return 0;
+}
+
 void printUsage() {
     std::cout
         << "Sovereign C++ Core\n"
@@ -1090,7 +1345,8 @@ void printUsage() {
         << "  indicators --symbol AAPL --timeframe 1d --json\n"
         << "  risk check --notional 1000 --equity 5000 --drawdown 0.05\n"
         << "  ml compare --frame storage/data/ml/feature_frame.csv --json\n"
-        << "  ml predict --model xgboost_v1 --frame PATH [--limit N]\n";
+        << "  ml predict --model xgboost_v1 --frame PATH [--limit N]\n"
+        << "  sweep --datasets FAMILY:SYMBOL@TIMEFRAME#SHA256 --evaluators ARCHETYPE [--top-k N]\n";
 }
 
 } // namespace
@@ -1122,6 +1378,9 @@ int main(int argc, char** argv) {
     }
     if (args[0] == "optimize") {
         return printOptimize(args);
+    }
+    if (args[0] == "sweep") {
+        return printSweep(args);
     }
     if (args[0] == "kill-switch") {
         const auto lockPath = std::filesystem::path("storage/data/cache/kill_switch.lock");

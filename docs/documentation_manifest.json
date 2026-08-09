@@ -1,0 +1,251 @@
+{
+  "schema_version": "sovereign.documentation_manifest/v1",
+  "default_corpus": "canonical",
+  "section_roots": [
+    "docs/archive",
+    "docs/atlas",
+    "docs/codebase_tour",
+    "docs/design",
+    "docs/engineering",
+    "docs/guide",
+    "docs/memory",
+    "docs/modules",
+    "docs/operational",
+    "docs/research"
+  ],
+  "atlas": {
+    "record_roots": {
+      "algorithm": "docs/atlas/algorithms",
+      "structure": "docs/atlas/structures",
+      "protocol": "docs/atlas/protocols",
+      "topology": "docs/atlas/topology"
+    },
+    "id_pattern": "^atlas\\.(algorithm|structure|protocol|topology)\\.[a-z0-9-]+(?:\\.[a-z0-9-]+)+$",
+    "working_tree_revision": "working-tree"
+  },
+  "status_definitions": {
+    "canonical": "Current source-centered documentation for normal developer and operator use.",
+    "supporting": "Useful context that does not own the canonical contract.",
+    "needs_refresh": "Retained and discoverable, but known to contain stale or incomplete claims.",
+    "historical": "Dated evidence or superseded material; never current truth without source revalidation."
+  },
+  "documents": [
+    {
+      "path": "README.md",
+      "type": "orientation",
+      "audience": ["operator", "contributor", "researcher", "api-developer", "deployment-maintainer"],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": ["backend/cli/sovereign_cli.js", "backend/api/app.js", "backend/core/CMakeLists.txt", "docs/README.md"],
+      "review_triggers": ["public-entrypoint", "safety-boundary", "installation", "documentation-map"]
+    },
+    {
+      "path": "docs/README.md",
+      "type": "orientation",
+      "audience": ["all-developers", "operators"],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": ["docs/documentation_manifest.json"],
+      "review_triggers": ["document-added", "document-status", "information-architecture"]
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "type": "orientation",
+      "audience": ["contributors", "maintainers"],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": ["docs/engineering/architecture_overview.md", "docs/engineering/codebase_org.md", "docs/modules/TEMPLATE.md"],
+      "review_triggers": ["top-level-domain", "architecture-entrypoint", "module-catalog"]
+    },
+    {
+      "path": "docs/engineering/architecture_overview.md",
+      "type": "explanation",
+      "audience": ["contributors", "security-reviewers", "operators"],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": ["shared/lib/settings/runtime_policy.js", "backend/gateway/src/paper_ledger.js", "shared/lib/trading/position_sizing.js"],
+      "review_triggers": ["runtime-policy", "paper-ledger", "execution-boundary", "deployment-topology"]
+    },
+    {
+      "path": "docs/engineering/documentation_standard.md",
+      "type": "reference",
+      "audience": ["contributors", "reviewers"],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": ["docs/documentation_manifest.json", "docs/modules/TEMPLATE.md"],
+      "review_triggers": ["documentation-workflow", "corpus-policy", "review-standard"]
+    },
+    {
+      "path": "docs/modules/TEMPLATE.md",
+      "type": "reference",
+      "audience": ["module-maintainers", "reviewers"],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": ["docs/engineering/documentation_standard.md"],
+      "review_triggers": ["module-documentation-contract"]
+    },
+    {
+      "path": "docs/modules/documentation-retrieval.md",
+      "type": "module",
+      "audience": ["contributors", "documentation-maintainers"],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": ["shared/lib/ai/docs_rag_indexer.js", "scripts/dev/audit_documentation.js"],
+      "test_paths": ["tests/scripts/tools/docs_rag.test.js", "tests/scripts/architecture/cli/core/documentation_contract.test.js"],
+      "atlas_ids": [
+        "atlas.algorithm.documentation.tfidf-ranking",
+        "atlas.structure.documentation.rag-index-payload",
+        "atlas.protocol.documentation.corpus-selection",
+        "atlas.topology.documentation.retrieval-flow"
+      ],
+      "review_triggers": ["documentation-corpus", "index-format", "documentation-boundary"]
+    },
+    {
+      "path": "docs/atlas/algorithms/documentation/tfidf-ranking.md",
+      "id": "atlas.algorithm.documentation.tfidf-ranking",
+      "type": "atlas",
+      "kind": "algorithm",
+      "audience": ["contributors", "documentation-maintainers"],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": ["shared/lib/ai/docs_rag_indexer.js"],
+      "test_paths": ["tests/scripts/tools/docs_rag.test.js"],
+      "review_triggers": ["tokenization", "ranking-formula", "chunking"]
+    },
+    {
+      "path": "docs/atlas/structures/documentation/rag-index-payload.md",
+      "id": "atlas.structure.documentation.rag-index-payload",
+      "type": "atlas",
+      "kind": "structure",
+      "audience": ["contributors", "documentation-maintainers"],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": ["shared/lib/ai/docs_rag_indexer.js"],
+      "test_paths": ["tests/scripts/tools/docs_rag.test.js"],
+      "review_triggers": ["cache-schema", "corpus-identity"]
+    },
+    {
+      "path": "docs/atlas/protocols/documentation/corpus-selection.md",
+      "id": "atlas.protocol.documentation.corpus-selection",
+      "type": "atlas",
+      "kind": "protocol",
+      "audience": ["contributors", "documentation-maintainers"],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": ["shared/lib/ai/docs_rag_indexer.js", "docs/documentation_manifest.json"],
+      "test_paths": ["tests/scripts/tools/docs_rag.test.js", "tests/scripts/architecture/cli/core/documentation_contract.test.js"],
+      "review_triggers": ["documentation-manifest", "corpus-policy", "workspace-boundary"]
+    },
+    {
+      "path": "docs/atlas/topology/documentation/retrieval-flow.md",
+      "id": "atlas.topology.documentation.retrieval-flow",
+      "type": "atlas",
+      "kind": "topology",
+      "audience": ["contributors", "documentation-maintainers"],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": ["scripts/dev/build_docs_rag_index.js", "shared/lib/ai/docs_rag_indexer.js"],
+      "test_paths": ["tests/scripts/tools/docs_rag.test.js"],
+      "review_triggers": ["retrieval-entrypoint", "corpus-resolution", "index-storage"]
+    },
+    {
+      "path": "docs/operational/guides/QUICKSTART.md",
+      "type": "how-to",
+      "audience": ["operators", "new-contributors"],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": ["package.json", "backend/cli/sovereign_cli.js", "backend/api/app.js"],
+      "review_triggers": ["installation", "build-command", "runtime-entrypoint"]
+    },
+    {
+      "path": "docs/operational/guides/DEPLOYMENT.md",
+      "type": "how-to",
+      "audience": ["deployment-maintainers"],
+      "owner": "deployment",
+      "status": "canonical",
+      "source_paths": ["infra/docker/docker-compose.yml", "infra/docker/update-central-host.sh"],
+      "review_triggers": ["compose-service", "deployment-profile", "update-procedure", "rollback"]
+    },
+    {
+      "path": "docs/operational/guides/role_based_hosting.md",
+      "type": "how-to",
+      "audience": ["deployment-maintainers", "security-reviewers"],
+      "owner": "deployment",
+      "status": "canonical",
+      "source_paths": ["shared/lib/settings/deployment_profile.js", "config/system/environment_manifest.json"],
+      "review_triggers": ["deployment-profile", "environment-projection", "host-role"]
+    },
+    {
+      "path": "docs/operational/guides/testing_surface.md",
+      "type": "reference",
+      "audience": ["contributors", "reviewers"],
+      "owner": "verification",
+      "status": "canonical",
+      "source_paths": ["package.json", "tests/run_node_tests.js", "scripts/dev/verify_source_evidence.js"],
+      "review_triggers": ["test-script", "evidence-mode", "ci-gate"]
+    },
+    {
+      "path": "docs/engineering/web_api.md",
+      "type": "reference",
+      "audience": ["api-developers", "frontend-developers"],
+      "owner": "api",
+      "status": "needs_refresh",
+      "source_paths": ["backend/api/server/routes/index.js", "backend/api/server/services/access_control.js", "Frontend/dashboard/src/lib/api.ts"],
+      "review_triggers": ["route-registry", "route-authorization", "frontend-api-contract"]
+    },
+    {
+      "path": "docs/engineering/codebase_org.md",
+      "type": "reference",
+      "audience": ["contributors", "maintainers"],
+      "owner": "architecture",
+      "status": "needs_refresh",
+      "source_paths": ["backend", "shared", "Frontend", "config", "infra", "scripts"],
+      "review_triggers": ["directory-layout", "canonical-owner", "compatibility-path"]
+    },
+    {
+      "path": "docs/engineering/product_spec.md",
+      "type": "explanation",
+      "audience": ["product-maintainers", "contributors"],
+      "owner": "product",
+      "status": "needs_refresh",
+      "source_paths": ["backend", "shared", "Frontend", "infra"],
+      "review_triggers": ["capability-status", "product-boundary", "roadmap"]
+    },
+    {
+      "path": "docs/engineering/technical_spec.md",
+      "type": "reference",
+      "audience": ["contributors"],
+      "owner": "architecture",
+      "status": "needs_refresh",
+      "source_paths": ["backend/core", "backend/cli", "shared/lib"],
+      "review_triggers": ["public-api", "module-owner", "build-target"]
+    },
+    {
+      "path": "docs/engineering/capability_manifest.md",
+      "type": "reference",
+      "audience": ["contributors", "product-maintainers"],
+      "owner": "product",
+      "status": "needs_refresh",
+      "source_paths": ["backend", "shared", "config", "storage"],
+      "review_triggers": ["capability-status", "source-path", "data-root"]
+    },
+    {
+      "path": "docs/codebase_tour/00_START_HERE.md",
+      "type": "tutorial",
+      "audience": ["new-contributors"],
+      "owner": "developer-education",
+      "status": "supporting",
+      "source_paths": ["docs/codebase_tour", "docs/engineering/codebase_org.md"],
+      "review_triggers": ["tutorial-module", "entrypoint", "lab-command"]
+    }
+  ],
+  "historical_corpus": {
+    "description": "Evidence to scrape and source-verify before promotion; excluded from normal canonical lookup.",
+    "roots": [
+      "workspace",
+      "docs/memory",
+      "docs/archive",
+      "graphify-out"
+    ]
+  }
+}

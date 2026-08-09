@@ -38,4 +38,5 @@ set(SOVEREIGN_CPP_CORE_TEST_TARGETS
     portfolio_risk_test
     binary_ts_reader_test
     grid_optimizer_test
+    global_sweep_optimizer_test
 )
