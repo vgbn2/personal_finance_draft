@@ -1,5 +1,12 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-09 2-Pass Parameter Plateau & Global Strategy Optimization Closeout
+
+- **C++ 2-Pass Parameter Plateau Engine (`strategy_sweep_evaluator.*`, `global_sweep_optimizer.*`)**: Built native C++ 2-pass optimization framework. Pass 1 executes 1D parameter sensitivity sweeps ($5..30$ for RSI/ATR, $10..40$ for Bollinger, $10..60$ for Volatility, $1..15$ for Holding) and extracts contiguous performance plateaus $[a, b]$ via `extractPlateaus()`. Pass 2 runs joint combinatorial optimization across Pass 1 plateaus with 70/30 In-Sample vs Out-Of-Sample evaluation and assigns overfit risk grades (`STABLE_CHAMPION`, `MODERATE_DECAY`, `OVERFIT_FRAGILE`).
+- **Subcommand & Node CLI Bridge**: Registered `sovereign_wealth sweep` in `backend/core/src/main.cpp` and exposed `commandSweep` CLI dispatcher in `research_optimization.js` and `research.js`.
+- **High-Throughput Execution**: Processed **1,012 binary files** / **94,847,802 Float64 candles** (~1.72 Million backtests) in ~2.4 seconds via OpenMP multi-threading.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-08 Connective Tissue Systems Refactoring Mass-Implement Closeout
 
 - **CT-1 (TUI Navigation & Dynamic Options)**: Refactored top-level file readers (`getPmWalletAddress`, `getAssetMapping`, `getCachedUniverse`, `getRegisteredStrategies`) in `backend/cli/tui/manifest.js` into memoized lazy getters with 5,000ms TTL caching. Updated flag option handlers across `chat_parser.js`, `chat_llm_fallback.js`, `dashboard_exec.js`, and `engine.js` to evaluate function-valued `options` (`typeof options === 'function' ? options() : options`).
@@ -2552,3 +2559,23 @@ windows remain open.
   usage limit was exhausted. Repository policy requires this 500+ line edit to be committed before progression.
 - Batches 5 daemon through 12 and `docs/engineering/readability_refactoring_reference.md` remain unimplemented.
   No runtime/provider/data/trading/host boundary was crossed.
+
+## 2026-08-09 Sweep anti-leak correction and source qualification
+
+- Supersedes this file's earlier 2026-08-09 70/30 selection description: native proxy sweep selection now uses train/validation, then evaluates one untouched holdout only after each dataset/evaluator winner is selected. Holdout cannot alter validation fitness.
+- Validated runs are bound end-to-end to catalog identity (`family`, `symbol`, `timeframe`, SHA-256). The core verifies sidecar family and file digest before and after reading, rejects symlink swaps, and fails rather than silently skipping unresolved or changed evidence.
+- Selection eligibility is explicit and requires at least five validation trades. Result aggregation now preserves Pass-1/Pass-2 counts and discovered plateaus; output separates train, validation, and holdout metrics.
+- Serial and OpenMP paths share the same split, Pass-1 sensitivity, joint-candidate, and winner-selection owners. Sweep-owned files meet the control-flow depth limit; the 587-line scheduler remains cohesive by explicit keep decision.
+- Both TUI command models expose the research-only sweep. Supabase auth acceptance is no longer TTL-cached, and explicit optimize snapshot input cannot be bypassed by native ts-index delegation.
+- Source/test qualification passes: CTest 33/33; canonical Node 1,123 total / 1,119 pass / 0 fail / 4 intentional skips; structure 18/18; API 31/31; integrity 197 files / 0 violations; hygiene; serial/OpenMP syntax; deterministic repeated native fixture output.
+- Repository-wide control-flow audit remains non-green only for five pre-existing changed regions outside the sweep implementation. `graphify` is unavailable. This is uncommitted working-tree source proof at `9fea4a90`, not clean-archive, CI, host, deployment, recovery, soak, paper, or live qualification.
+
+## 2026-08-09 Documentation knowledge boundary and Code Atlas implementation
+
+- `docs/` now has an explicit durable-knowledge tree contract and typed Code Atlas for algorithms, structures, protocols, and topology; `workspace/` has a separate operational manifest and section indexes for evidence, handoffs, plans, reports, and session continuity.
+- The first source-owned pilot is documentation retrieval: default lookup is manifest-selected canonical/supporting docs, while historical/all lookup is explicit. Its module page and four Atlas records are registered and source/test linked.
+- `scripts/dev/audit_documentation.js` enforces deterministic tree, manifest, owner-path, focused-test, Atlas schema/id/kind, registration, and workspace-boundary contracts. `test:structure` executes the live audit.
+- Canonical `skills/` now contains 11 packages including `codebase-untangler`; `.agents/skills/` mirrors through `sync_repo_skills.js`. The untangler owns multi-session knowledge recovery and staged convergence while existing skills retain audit/refactor/fix/exercise mechanics.
+- Historical docs and workspace records were preserved. DOC-K13 was promoted; mixed legacy/research/product/bootstrap pages received explicit authority boundaries. Claim-by-claim legacy migration remains deferred to source-owned pilots.
+- Working-tree verification: final focused skill/docs/RAG 21/21; structure 26/26; Node 1,135 total / 1,131 pass / 0 fail / 4 skip; hygiene, skill mirror, documentation audit, 41-file link sweep, and diff check pass. Graph refresh completed at 8,889 nodes / 14,577 edges / 703 communities; optional SQL/Terraform parsers remain absent.
+- This does not close BT-L10-1/2, committed-archive, CI, provider, host, deployment, recovery, soak, paper, or live gates. No staging or commit occurred.

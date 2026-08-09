@@ -5,6 +5,9 @@ const path = require('node:path');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const INDEX_CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'docs_rag_index.json');
+const DOCUMENTATION_MANIFEST_PATH = path.join('docs', 'documentation_manifest.json');
+const INDEX_VERSION = 'sovereign.docs_rag/v2';
+const CORPUS_MODES = new Set(['canonical', 'historical', 'all']);
 
 const STOPWORDS = new Set([
   'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'aren\'t', 'as', 'at',
@@ -110,13 +113,43 @@ function scanMarkdownFiles(dirs = ['docs', 'workspace'], repoRoot = REPO_ROOT) {
     }
   }
   dirs.forEach(walk);
-  return filePaths;
+  return filePaths.sort();
+}
+
+function readDocumentationManifest(repoRoot = REPO_ROOT) {
+  const manifestPath = path.join(repoRoot, DOCUMENTATION_MANIFEST_PATH);
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  if (manifest.schema_version !== 'sovereign.documentation_manifest/v1' || !Array.isArray(manifest.documents)) {
+    throw new Error('docs/documentation_manifest.json has an unsupported schema');
+  }
+  return manifest;
+}
+
+function resolveCorpusFiles(corpus, repoRoot = REPO_ROOT) {
+  if (!CORPUS_MODES.has(corpus)) {
+    throw new Error(`Unsupported documentation corpus: ${corpus}`);
+  }
+  const manifest = readDocumentationManifest(repoRoot);
+  const canonical = manifest.documents
+    .filter((document) => ['canonical', 'supporting'].includes(document.status))
+    .map((document) => path.join(repoRoot, document.path))
+    .filter((filePath) => filePath.endsWith('.md') && fs.existsSync(filePath));
+  const historical = scanMarkdownFiles(manifest.historical_corpus?.roots || [], repoRoot);
+  const files = corpus === 'canonical'
+    ? canonical
+    : corpus === 'historical'
+      ? historical
+      : [...canonical, ...historical];
+  return [...new Set(files)].sort();
 }
 
 function buildDocsIndex(opts = {}) {
   const repoRoot = opts.repoRoot || REPO_ROOT;
-  const dirs = opts.dirs || ['docs', 'workspace'];
-  const filePaths = scanMarkdownFiles(dirs, repoRoot);
+  const manifest = opts.dirs ? null : readDocumentationManifest(repoRoot);
+  const corpus = opts.dirs ? 'explicit' : (opts.corpus || manifest.default_corpus || 'canonical');
+  const filePaths = opts.dirs
+    ? scanMarkdownFiles(opts.dirs, repoRoot)
+    : resolveCorpusFiles(corpus, repoRoot);
 
   const chunks = [];
   filePaths.forEach((filePath) => {
@@ -143,7 +176,9 @@ function buildDocsIndex(opts = {}) {
   });
 
   const indexPayload = {
-    version: 'sovereign.docs_rag/v1',
+    version: INDEX_VERSION,
+    corpus,
+    input_roots: opts.dirs ? [...opts.dirs].sort() : [],
     created_at: new Date().toISOString(),
     total_docs: N,
     file_count: filePaths.length,
@@ -170,10 +205,14 @@ function buildDocsIndex(opts = {}) {
 
 function loadOrBuildIndex(opts = {}) {
   const indexPath = opts.indexPath || INDEX_CACHE_PATH;
+  const requestedCorpus = opts.dirs ? 'explicit' : (opts.corpus || readDocumentationManifest(opts.repoRoot || REPO_ROOT).default_corpus || 'canonical');
+  const requestedRoots = opts.dirs ? [...opts.dirs].sort() : [];
   if (!opts.forceRebuild) {
     try {
       const data = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
-      if (data && data.version === 'sovereign.docs_rag/v1' && Array.isArray(data.chunks)) {
+      const cachedRoots = Array.isArray(data?.input_roots) ? data.input_roots : [];
+      const rootsMatch = JSON.stringify(cachedRoots) === JSON.stringify(requestedRoots);
+      if (data && data.version === INDEX_VERSION && data.corpus === requestedCorpus && rootsMatch && Array.isArray(data.chunks)) {
         return data;
       }
     } catch {}
@@ -233,8 +272,12 @@ module.exports = {
   tokenize,
   chunkMarkdownFile,
   scanMarkdownFiles,
+  readDocumentationManifest,
+  resolveCorpusFiles,
   buildDocsIndex,
   loadOrBuildIndex,
   searchDocs,
+  DOCUMENTATION_MANIFEST_PATH,
   INDEX_CACHE_PATH,
+  INDEX_VERSION,
 };

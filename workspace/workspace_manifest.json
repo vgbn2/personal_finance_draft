@@ -1,0 +1,34 @@
+{
+  "schema_version": "sovereign.workspace_manifest/v1",
+  "entrypoint": "workspace/BOOTSTRAP.md",
+  "purpose": "Operational session continuity, active evidence, handoffs, blockers, and migration lifecycle state.",
+  "section_roots": [
+    "workspace/archive",
+    "workspace/artifacts",
+    "workspace/checklists",
+    "workspace/dev_reviews",
+    "workspace/handoff",
+    "workspace/history",
+    "workspace/plans",
+    "workspace/reports",
+    "workspace/research",
+    "workspace/session_memory"
+  ],
+  "allowed_content": [
+    "current anchor and scope",
+    "status, owner, blocker, and next action",
+    "commands and evidence classification",
+    "pending facts awaiting source verification",
+    "migration lifecycle and retirement conditions",
+    "links to canonical docs, source, tests, issues, or commits"
+  ],
+  "forbidden_canonical_kinds": [
+    "algorithm",
+    "architecture",
+    "module",
+    "protocol",
+    "structure",
+    "topology"
+  ],
+  "promotion_ledger": "workspace/reports/DOCUMENTATION_KNOWLEDGE_INVENTORY.md"
+}

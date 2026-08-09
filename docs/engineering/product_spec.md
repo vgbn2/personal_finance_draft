@@ -1,6 +1,6 @@
 # Project Specification
 
-This project follows the specification defined in [docs/spec.md](docs/spec.md).
+> **Needs source refresh:** this short phase stub does not own the current product or implementation contract. Use the [documentation hub](../README.md), [architecture entrypoint](../ARCHITECTURE.md), and source-owned module pages while this content is reconciled.
 
 ## Core Mission
 Sovereign is a C++-centered trading platform for market analysis, asset data ingestion, CNN-assisted signal generation, portfolio monitoring, and controlled trade execution.

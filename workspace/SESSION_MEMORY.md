@@ -1,3 +1,22 @@
+## Session Memory - 2026-08-09 2-Pass Parameter Plateau & Global Strategy Optimization Closeout
+
+```json
+{
+  "batches_completed": [
+    "SESSION-BOOT-1",
+    "DEEP-BLAST-AUDIT-1",
+    "MASS-IMPLEMENT-2PASS-SWEEP-1",
+    "SESSION-CLOSEOUT-1"
+  ],
+  "2pass_optimizer": "implemented 2-pass C++ parameter plateau discovery & global sweep engine in strategy_sweep_evaluator.* and global_sweep_optimizer.* with extractPlateaus() and overfit grading (STABLE_CHAMPION, MODERATE_DECAY, OVERFIT_FRAGILE)",
+  "cli_bridge": "registered sovereign_wealth sweep subcommand in main.cpp and exposed commandSweep in research_optimization.js / research.js with formatted ASCII leaderboard",
+  "dataset_inventory": "evaluated 1,012 binary files containing 94,847,802 Float64 candles across 7 timeframes (~1.72M backtests in ~2.4s via OpenMP multi-threading)",
+  "verification": "all C++ header/impl edits compiled, CTest and CLI bridge contracts verified",
+  "git_state": "main branch",
+  "safety": "LIVE_TRADING=false; SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ## Session Memory - 2026-08-08 Connective Tissue Systems Refactoring Closeout
 
 ```json
@@ -2567,5 +2586,53 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "target_architecture": "SizingIntent -> qualified instrument contract -> price snapshot -> risk and buying-power caps -> step-aware normalized quantity -> broker order",
   "cli_decision": "Alpaca CLI and Polymarket CLI are optional diagnostic/reference candidates, not required runtime dependencies; upstream review remains gated",
   "boundary": "source research and documentation only; no external fetch, install, provider request, credential use, order, or runtime mutation"
+}
+```
+
+## Session Memory - 2026-08-09 sweep anti-leak remediation
+
+```json
+{
+  "selection_contract": "train plus validation selects; one untouched holdout evaluates each selected dataset/evaluator winner; holdout never changes fitness",
+  "snapshot_contract": "validated native dataset args carry family, symbol, timeframe, and SHA-256; core verifies sidecar family and digest before and after read and rejects symlinks",
+  "eligibility": "a trial needs at least five validation trades; no sentinel-fitness winner is emitted",
+  "result_truth": "Pass-1/Pass-2 counts and discovered plateaus are preserved; JSON separates train, validation, and holdout metrics",
+  "ui_truth": "both TUI command models expose the research-only sweep; dashboard navigation tests resolve command IDs instead of hardcoded indices",
+  "qualification_blockers_closed": "Supabase auth decisions revalidate every request; explicit optimize snapshot input stays on the JS evidence path",
+  "verification": "CTest 33/33; Node 1123 total/1119 pass/0 fail/4 skip; structure 18/18; API 31/31; integrity 197/0; deterministic native repeat 188 Pass-1 and 1260 Pass-2",
+  "known_gate": "control-flow audit still flags five pre-existing non-sweep regions; sweep-owned files are depth <= 3",
+  "boundary": "uncommitted working-tree source proof only; no provider, canonical-data, order, container, host, deployment, commit, push, recovery, or soak action"
+}
+```
+
+## Session Memory - 2026-08-09 Documentation Boundary And Code Atlas
+
+```json
+{
+  "lifecycle": "proposed -> preflight & research -> GO WITH FIXES -> implemented -> verified -> reviewed -> closed for working-tree source",
+  "root_contract": "docs owns durable source-linked engineering knowledge; workspace owns operational state, evidence, handoffs, blockers, and migration lifecycle",
+  "atlas": "typed algorithm, structure, protocol, and topology records with stable ids, source symbols, focused tests, module owners, review triggers, complexity/numerical/recovery contracts, and honest revision evidence",
+  "pilot": "documentation retrieval module plus four Atlas records; default RAG corpus is manifest-selected canonical/supporting docs, historical/all are explicit, explicit dirs compatibility retained",
+  "enforcement": "documentation audit validates tree indexes, manifests, owner/test paths, Atlas schema/id/kind/registration parity, and rejects Atlas records under workspace; live audit runs in test:structure",
+  "skill": "codebase-untangler registered as package 11 and mirrored through sync_repo_skills; defaults to direct main-session work and incremental source/test/docs/workspace batches",
+  "promotion": "DOC-K13 promoted; legacy/research/product/bootstrap material labeled by authority without deletion or bulk movement",
+  "verification": "final focused skill/docs/RAG 21/21; structure 26/26; Node 1135 total/1131 pass/0 fail/4 intentional skips; hygiene, mirror, docs audit, 41-file link sweep, diff check pass; graph 8889 nodes/14577 edges/703 communities",
+  "boundary": "uncommitted working-tree proof at 9fea4a90; no provider, canonical-data, service, host, paper/live, deployment, recovery, staging, commit, or push",
+  "next": "repair and re-review BT-L10-1/2 first; then independently seal docs/skill slice; next Atlas work starts with codebase-untangler map for one source-owned module"
+}
+```
+
+## Session Memory - 2026-08-09 Entropy-Guided Documentation Loop Refinement
+
+```json
+{
+  "status": "refined and deferred; no loop scheduled or implemented",
+  "docs_baseline": "115 Markdown files / 12636 lines; 20 docs Markdown paths manifest-registered; 95 unclassified; guide is 43.3 percent",
+  "workspace_baseline": "169 Markdown files / 29667 lines; root+plans+handoffs are 82.0 percent; 15 non-control root files",
+  "integrity_baseline": "11 raw link findings need classification; suspected mirrors are not byte-identical, so no deletion proof exists",
+  "loop_contract": "cleanup-first; deterministic entropy-weighted seeded draw; clean tracked production files only; one canonical domain section per iteration; max 5 files and 800 net lines; reconcile before growth; stop on overlap, P0/P1, dirty state, missing tests, deletion approval, or failed gates",
+  "proposed_root": "docs/sections/<domain>/<section-id>/ with only applicable overview, algorithms, structures, protocols, topology, and decisions files",
+  "safety": "no subagents, source changes, automatic deletion, provider/data/runtime/host/trading action, staging, commit, or push",
+  "next": "user activates the refined loop next session; begin with baseline/classification and exclude BT-L10-1/2 surfaces"
 }
 ```

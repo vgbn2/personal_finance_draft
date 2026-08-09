@@ -8,11 +8,14 @@ test('dashboard App: research scorecard launches the canonical all-recorded v3 c
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App, M } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
   const runCalls = [];
-  const instance = render(h(App, { initialCatI: 3, initialCmdI: 6, onRun: (argv) => runCalls.push(argv) }), {
+  const research = M.find((category) => category.label === 'Research');
+  const scorecardIndex = research.cmds.findIndex((command) => command.id === 'scorecard');
+  assert.notEqual(scorecardIndex, -1, 'scorecard remains registered in the research menu');
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: scorecardIndex, onRun: (argv) => runCalls.push(argv) }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());

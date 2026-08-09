@@ -2808,3 +2808,50 @@ logs and secret-bearing environment values were not read. The Docker evidence is
   not confirmed refactor findings, because this pass did not completely map each owner, callers, and tests.
 - Current `run.js` improved to one remaining size warning only: `commandRun` is 72 nonblank/noncomment lines;
   it has no complexity-over-20 or nesting-over-3 warning after BT-MNT-1.
+
+## Last-ten-session accumulated batch review - 2026-08-09 Hard Reading Mode
+
+**Audit mode:** `review`. **Anchor:** `main` at `9fea4a90` plus 32 modified and 15 untracked files.
+The reviewed chronology is the ten newest `workspace/SESSION_MEMORY.md` entries, from the data/research
+modularity work through the 2-pass sweep and anti-leak correction. Review covered the current sweep/catalog,
+native reader/split/evaluator/scheduler, CLI/UI registration, Supabase authorization correction, audit tooling,
+modified tests, continuity claims, and the relevant committed `47ee7e3b` baseline.
+
+### Severity-ordered confirmed findings
+
+| ID | Severity | Finding | Attribution | Acceptance and verification gate |
+|---|---|---|---|---|
+| BT-L10-1 | P1 / commit blocker | The cross-dataset leaderboard is not comparable when eligible files contain different bar counts. Validation fitness is cumulative `net_return - max_drawdown + expectancy*10`, while `--max-bars` is only a cap and catalog eligibility permits unequal histories. A direct two-file reproduction with the same generated trend shape ranked 480 bars above 240 bars (`0.299461` vs `0.174904`; validation returns `0.115796` vs `0.0594686`). This can answer “best symbol/timeframe” with “longest validation sample.” | `failing_boundary`: validation-selected cross-dataset ranking; `fault_domain`: `our_source`; `repair_owner`: `backend/core/src/strategies/strategy_sweep_evaluator.cpp` fitness contract plus `global_sweep_optimizer.cpp` dataset comparison policy; `causal_mechanism`: cumulative return is compared across unequal scored windows without a common horizon or duration normalization; `stub_involvement`: `test_stub_only` for the synthetic reproducer, none in production; confidence high. Alternatives checked: holdout leakage is fixed and Sharpe annualization is not used in selection. | Define one comparable objective: enforce an identical scored-bar horizon across every compared dataset, or use a duration/sample-normalized fitness with explicit units. Add unequal-history fixtures that preserve the same per-bar process and prove no length advantage; retain validation-only selection and untouched holdout. Re-run focused sweep contracts, deterministic serial/OpenMP comparison, CTest, full Node, and source evidence. |
+| BT-L10-2 | P1 / commit blocker | The test-integrity scanner no longer durably enforces its stated internal-mocking and C++ Release-assertion rules. `changedCppTestFiles()` scans only dirty C++ tests, so after commit/clean checkout it scans zero C++ tests. The AST rewrite also dropped the prior `require.cache` detection: direct probes for `require.cache[require.resolve('./validation.js')] = ...` and `Module._load` backtest substitution returned zero violations, while the committed scanner explicitly matched `require.cache`. The repository contains real cache/load substitution sites, so a 197-file/0-violation report is not proof that those classes are absent. | `failing_boundary`: durable anti-cheating gate from committed source to CI result; `fault_domain`: `our_source`; `repair_owner`: `scripts/dev/audit_test_integrity.js` and its architecture contract tests; `causal_mechanism`: C++ scope is derived from `git status`, and AST mock detection recognizes only `t.mock`, `sinon.stub`, and `jest.spyOn`; `stub_involvement`: `test_stub_only`; confidence high. Alternatives checked: focused scanner self-tests pass, but they do not exercise clean-tree C++ discovery or cache/load substitutions. | Scan all registered/tracked `backend/core/test/*_test.cpp` files independently of dirty state. Restore AST-aware detection for `require.cache`, `Module._load`, and supported loader-substitution patterns with explicit narrow ignore markers for intentional boundary fakes. Add clean-tree scope and bypass regression tests. Require the scanner to fail closed when Git/CMake discovery fails. Re-run structure, integrity, CTest Release, full Node, and committed-archive proof. |
+
+### Dismissed or contained candidates
+
+- Native snapshot identity, family binding, before/after SHA-256 checks, symlink rejection, explicit-input JS
+  preservation, validation/holdout separation, selection eligibility, counters, deterministic ordering, UI reachability,
+  and per-request Supabase auth revalidation were directly checked and passed their focused contracts.
+- Timeframe-only Sharpe annualization overstates absolute intraday/equity metrics because schedule basis is dropped
+  before native evaluation. It does not currently drive validation fitness, and like-scaled validation/holdout Sharpe
+  cancels in the retention ratio, so this is contained reporting debt rather than this pass's commit blocker.
+- `validateResearchRunSpec` accepts empty coordinate/fingerprint/native-archetype fields when IDs are non-empty.
+  The production catalog path supplies those fields and the native parser verifies its own protocol, so this remains
+  contract-hardening debt rather than a reproduced production failure.
+- The control-flow audit still exits 1 for five pre-existing changed regions; every new sweep-owned module remains
+  at depth 3 or lower. This known aggregate gate is non-blocking only after the two P1 findings above are repaired.
+
+### Commands, evidence, and limits
+
+- PASS: focused sweep/catalog/capability/auth/audit/dashboard/UI contracts, 59/59.
+- PASS: native build and CTest Release, 33/33.
+- PASS: `npm run hygiene`, `npm run test:structure` (12/12), `npm run test:api`, canonical `npm test`
+  (exit 0; file-oriented runner reported zero failures), `npm run verify:source-snapshot`, and `git diff --check`.
+- PASS with limitation: test-integrity command reported 197 files / 0 violations; BT-L10-2 proves that count omits
+  clean-tree C++ scope and loader/cache substitution classes.
+- FAIL/known: control-flow audit reports five non-sweep/pre-existing changed regions above depth 3.
+- `graphify update .` is now available and refreshed 8,792 nodes / 14,464 edges / 673 communities. SQL and
+  Terraform parsers remain unavailable.
+- No provider poll, canonical-data write, paper/live order, runtime/container/host/deployment action, stage, commit,
+  or push occurred. This is working-tree source/test evidence, not committed archive, CI, host, recovery, or soak.
+
+**Commit-readiness verdict:** NO-GO. Do not label or commit the accumulated batch as reviewed until BT-L10-1 and
+BT-L10-2 are fixed and re-reviewed. Route these bounded fixes through `codex`; return to `blast-through` review,
+then stage only the exact reviewed paths and create committed-archive evidence.

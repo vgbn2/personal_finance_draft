@@ -49,3 +49,14 @@ CURRENT code. Start at `docs/codebase_tour/00_START_HERE.md`.
   silent no-op — a repeated historical bug class.
 - `workspace/STATE.md`'s `## Current Phase` is the live source of truth for project direction, not any
   static doc.
+
+## 2026-08-09 correction — workspace is operations, docs is engineering knowledge
+
+The dated corrections and standing facts above are preserved as historical boot evidence. Do not extend this file
+with new module explanations, algorithms, equations, structures, protocols, or code topology.
+
+- Use `workspace/workspace_manifest.json` for the operational tree contract.
+- Use `docs/README.md` and `docs/documentation_manifest.json` for durable engineering knowledge.
+- Use `docs/modules/` for current capability ownership and `docs/atlas/` for deep mechanisms.
+- Mine workspace facts through `workspace/reports/DOCUMENTATION_KNOWLEDGE_INVENTORY.md`; verify them against
+  source and tests before promotion, then link the canonical docs instead of copying the explanation here.

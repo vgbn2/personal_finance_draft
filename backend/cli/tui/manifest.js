@@ -268,6 +268,11 @@ const COMMAND_MANIFEST = {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
       }},
+      { id: 'sweep', label: 'Global Proxy Sweep (Validation + Holdout)', loading: true, flags: {
+        '--symbols': { type: 'text', default: 'all', label: 'Symbols (comma-separated or all)' },
+        '--timeframes': { type: 'text', default: 'all', label: 'Timeframes (comma-separated or all)' },
+        '--top-k': { type: 'text', default: '20', label: 'Top-K Leaders' }
+      }},
       { id: 'edge-decay', label: 'Edge Decay (Rolling window alpha check)', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
