@@ -127,6 +127,7 @@ test('legacy and dashboard manifests stay aligned on shared command ids and core
     'backend universe',
     'bt',
     'optimize',
+    'sweep',
     'scorecard',
     'settings favorites',
   ];

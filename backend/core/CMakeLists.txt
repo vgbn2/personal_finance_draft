@@ -136,6 +136,8 @@ set(CORE_SOURCES
     src/strategies/options_trading.cpp
     src/strategies/spot_futures_arb.cpp
     src/strategies/spot_only.cpp
+    src/strategies/strategy_sweep_evaluator.cpp
+    src/backtest/global_sweep_optimizer.cpp
 )
 
 add_library(sovereign_core STATIC ${CORE_SOURCES})
@@ -206,6 +208,7 @@ add_sovereign_test(feature_pipeline_test test/feature_pipeline_test.cpp)
 add_sovereign_test(portfolio_risk_test test/portfolio_risk_test.cpp)
 add_sovereign_test(binary_ts_reader_test test/binary_ts_reader_test.cpp)
 add_sovereign_test(grid_optimizer_test test/grid_optimizer_test.cpp)
+add_sovereign_test(global_sweep_optimizer_test test/global_sweep_optimizer_test.cpp)
 
 # Specialized Test Configuration
 target_compile_definitions(kronos_integration_test PRIVATE

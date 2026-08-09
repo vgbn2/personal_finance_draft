@@ -264,7 +264,7 @@ test('fetchCryptoSnapshot routes 5m to native Binance fetch (not 1d aggregation)
     for (const r of fiveMRecords) {
       assert.strictEqual(r.timeframe, '5m', 'all 5m records should have timeframe=5m');
       assert.ok(r.timestamp, 'each 5m record should have a timestamp');
-      assert.ok(typeof r.open === 'number', 'open should be a number');
+      assert.equal(typeof r.open, 'number', 'open should be a number');
     }
 
     // Verify Binance was called with '5m' interval (not '1d')

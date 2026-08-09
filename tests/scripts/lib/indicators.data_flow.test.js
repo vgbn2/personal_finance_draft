@@ -22,7 +22,7 @@ test('feature generator handles real market noise from Binance fixture', () => {
   const latest = frame.features[frame.features.length - 1];
   
   // Verify real-world volatility produces non-null results
-  assert.ok(latest.rsi !== null, 'RSI should be calculated from real noise');
+  assert.notEqual(latest.rsi, null, 'RSI should be calculated from real noise');
   assert.ok(latest.volatility > 0, 'Volatility should be positive in real market');
   assert.strictEqual(latest.symbol, 'BTCUSDT');
   

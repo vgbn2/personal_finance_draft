@@ -87,7 +87,7 @@ test('rsiSeries: monotonically falling closes drive RSI to 0 once warmed up', ()
   const closes = Array.from({ length: 20 }, (_, i) => 100 - i); // strictly decreasing
   const series = rsiSeries(closes, 14);
   assert.equal(series[12], null, 'still warming up before period bars of deltas exist');
-  assert.ok(series[19] !== null, 'should be live by index 19');
+  assert.notEqual(series[19], null, 'should be live by index 19');
   assert.ok(Math.abs(series[19] - 0) < 1e-9, `expected RSI ~0 for an all-loss series, got ${series[19]}`);
 });
 
@@ -120,7 +120,7 @@ test('atrSeries: index-0 special case is high-low only (no prior close to compar
   // by checking the series is still warming up at index 0 and live by index 1.
   const series = atrSeries(bars, 2);
   assert.equal(series[0], null);
-  assert.ok(series[1] !== null);
+  assert.notEqual(series[1], null);
   assert.ok(Number.isFinite(tr0) && tr0 === 10);
 });
 
