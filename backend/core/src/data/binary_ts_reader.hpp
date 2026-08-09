@@ -48,6 +48,18 @@ public:
 
     static bool readHeader(const std::filesystem::path& path, RawTsHeader& out_header, std::string& out_error);
 
+    static bool sha256File(
+        const std::filesystem::path& path,
+        std::string& out_digest,
+        std::string& out_error);
+
+    static bool readSidecarFamily(
+        const std::filesystem::path& ts_dir,
+        const std::string& symbol,
+        const std::string& timeframe,
+        std::string& out_family,
+        std::string& out_error);
+
     static BinaryTsReaderResult readBinaryFile(
         const std::filesystem::path& path,
         const std::string& symbol,

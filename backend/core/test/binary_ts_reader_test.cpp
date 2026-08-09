@@ -59,6 +59,40 @@ int main() {
     }
     std::cout << "  ✔ readBinaryFile parsed " << res.bars.size() << " bars successfully" << std::endl;
 
+    const auto abc_path = temp_dir / "abc.bin";
+    {
+        std::ofstream out(abc_path, std::ios::binary);
+        out << "abc";
+    }
+    std::string digest;
+    if (!sovereign::BinaryTsReader::sha256File(abc_path, digest, err)
+        || digest != "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad") {
+        std::cerr << "FAILED: sha256File returned " << digest << " (" << err << ")" << std::endl;
+        return 1;
+    }
+    std::cout << "  ✔ sha256File matches the SHA-256 reference vector" << std::endl;
+
+    const auto abc_link = temp_dir / "abc-link.bin";
+    std::filesystem::create_symlink(abc_path, abc_link);
+    if (sovereign::BinaryTsReader::sha256File(abc_link, digest, err)
+        || err != "dataset_not_regular_file") {
+        std::cerr << "FAILED: sha256File followed a symlink" << std::endl;
+        return 1;
+    }
+    std::cout << "  ✔ sha256File rejects symlink snapshot swaps" << std::endl;
+
+    {
+        std::ofstream out(temp_dir / "TEST_1d.meta.json");
+        out << R"({"family":"equities","symbol":"TEST","timeframe":"1d"})";
+    }
+    std::string family;
+    if (!sovereign::BinaryTsReader::readSidecarFamily(temp_dir, "TEST", "1d", family, err)
+        || family != "equities") {
+        std::cerr << "FAILED: readSidecarFamily returned " << family << " (" << err << ")" << std::endl;
+        return 1;
+    }
+    std::cout << "  ✔ readSidecarFamily binds the dataset family" << std::endl;
+
     std::filesystem::remove_all(temp_dir);
     std::cout << "✔ binary_ts_reader_test passed cleanly!" << std::endl;
     return 0;

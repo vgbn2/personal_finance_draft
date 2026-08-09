@@ -175,9 +175,11 @@ async function commandOptimize(args, helpers = {}) {
   const safeSymbol = targetSymbol.replace(/[^a-zA-Z0-9_]/g, '_');
   const targetTf = timeframe || '1d';
   const binaryFile = path.join(STORAGE_TS_DIR, `${safeSymbol}_${targetTf}.bin`);
+  const explicitInput = optionValue(args, '--input', null);
 
-  // Delegate large multi-symbol/binary TS grid optimizations to native C++ backend when available
-  if (findBackendBinary() && require('node:fs').existsSync(binaryFile)) {
+  // Native optimization owns binary ts-index input only. An explicit snapshot
+  // must remain on the JS path so caller-selected evidence is never bypassed.
+  if (!explicitInput && findBackendBinary() && require('node:fs').existsSync(binaryFile)) {
     try {
       const cppResult = runBackend([
         'optimize',
@@ -457,9 +459,12 @@ async function commandEdgeDecay(args, helpers = {}) {
   return 0;
 }
 
+const { commandSweep } = require('./research_sweep.js');
+
 module.exports = {
   buildOptimizationGrid,
   renderOptimize,
   commandOptimize,
   commandEdgeDecay,
+  commandSweep,
 };

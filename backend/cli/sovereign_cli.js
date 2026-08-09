@@ -13,7 +13,7 @@ const { commandSetup, commandDoctor } = require('./commands/operational/setup.js
 const { commandBackend } = require('./commands/tools/backend.js');
 const { commandQuotes } = require('./commands/quotes/quotes.js');
 const { commandStrategyMenu, commandPropFirmMenu } = require('./commands/strategy/strategy.js');
-const { commandBacktest, commandOptimize, commandEdgeDecay, commandDemo, commandIndicators, commandModelCompare } = require('./commands/research/research.js');
+const { commandBacktest, commandOptimize, commandEdgeDecay, commandSweep, commandDemo, commandIndicators, commandModelCompare } = require('./commands/research/research.js');
 const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandClearApiCache, commandValidate, commandPrune, commandLoc, commandUniverse, commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIntradayAccumulate, commandIntradayRollup } = require('./commands/data/data.js');
 const { commandBackfillDaemon, commandStopBackfillDaemon } = require('./commands/data/backfill_daemon.js');
 const { commandTrade, buildTradeGatewayLaunch, commandMt5, commandMt5Profile, commandMt5Connect, commandMt5Bridge, commandAutoTrade, commandAddPlatform, commandAgent, commandPolymarket, commandBot } = require('./commands/trade/trade.js');
@@ -75,6 +75,7 @@ async function handleCommand(args) {
     ml:               (a) => commandMl(a),
     models:           (a) => commandModelCompare(a),
     optimize:         (a) => commandOptimize(a),
+    sweep:            (a) => commandSweep(a),
     'edge-decay':     (a) => commandEdgeDecay(a),
     // --- Strategy (manifest: trade — sub-menu under Execution & Trading) ---
     strategy:         (a) => commandStrategyMenu(a),

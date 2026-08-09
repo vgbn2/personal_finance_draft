@@ -1,5 +1,7 @@
 # Legacy Wealth Math
 
+> **Historical — non-authoritative:** this is a legacy personal-finance porting inventory, not the current trading platform's mathematical or implementation contract. Verify every formula, path, and owner against current source before reuse. Current implemented algorithms belong in `docs/atlas/algorithms/`; validated theory belongs in `docs/research/`.
+
 This document identifies the wealth math that already exists in the legacy HTML dashboard and explains how it should be ported into the C++ core.
 
 The goal is not to redesign these formulas from scratch. The goal is to extract, name, test, and stabilize the behavior that already works in the dashboard.

@@ -72,52 +72,48 @@ function clearClientPool() {
 
 async function getAuthStatus(req) {
   const token = getBearerToken(req);
-  const cacheKey = `auth_status:${tokenCacheKey(token)}`;
+  const status = {
+    ok: true,
+    type: 'auth_status',
+    configured: isConfigured(),
+    authenticated: false,
+    user: null,
+    cache_enabled: isCacheEnabled(),
+  };
 
-  return cached(cacheKey, 5000, async () => {
-    const status = {
-      ok: true,
-      type: 'auth_status',
-      configured: isConfigured(),
-      authenticated: false,
-      user: null,
-      cache_enabled: isCacheEnabled(),
-    };
+  if (!status.configured) {
+    status.ok = false;
+    status.error = 'supabase_not_configured';
+    return status;
+  }
+  if (!token) return status;
 
-    if (!status.configured) {
-      status.ok = false;
-      status.error = 'supabase_not_configured';
-      return status;
-    }
-    if (!token) return status;
-
-    const supabase = createSovereignSupabaseClient(req);
-    try {
-      const { data, error } = await supabase.auth.getUser(token);
-      if (error) {
-        status.ok = false;
-        status.error = classifySupabaseError(error, 'reach the Supabase auth service');
-        return status;
-      }
-
-      status.authenticated = Boolean(data.user);
-      status.user = data.user
-        ? {
-            id: data.user.id,
-            email: data.user.email || null,
-            role: data.user.role || null,
-            access_role: data.user.app_metadata
-              ? data.user.app_metadata.sovereign_role || null
-              : null,
-          }
-        : null;
-    } catch (error) {
+  const supabase = createSovereignSupabaseClient(req);
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error) {
       status.ok = false;
       status.error = classifySupabaseError(error, 'reach the Supabase auth service');
       return status;
     }
+
+    status.authenticated = Boolean(data.user);
+    status.user = data.user
+      ? {
+          id: data.user.id,
+          email: data.user.email || null,
+          role: data.user.role || null,
+          access_role: data.user.app_metadata
+            ? data.user.app_metadata.sovereign_role || null
+            : null,
+        }
+      : null;
+  } catch (error) {
+    status.ok = false;
+    status.error = classifySupabaseError(error, 'reach the Supabase auth service');
     return status;
-  });
+  }
+  return status;
 }
 
 async function getDatabaseStatus(req) {

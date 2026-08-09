@@ -1,5 +1,7 @@
 # Quant Research Roadmap
 
+> **Research policy, not implementation reference:** this page defines methodology and promotion expectations. Source-owned algorithms, numerical assumptions, data structures, and protocols belong in the Code Atlas; active experiments and blockers belong in `workspace/research/` or `workspace/reports/`.
+
 This document defines the research process for Sovereign Markets. The repo now has local backtesting, data-quality checks, feature construction, and model-comparison seams, but the promotion pipeline is still a local research workflow rather than a live production system.
 
 ## Scope Boundary

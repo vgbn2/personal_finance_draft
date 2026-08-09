@@ -1,42 +1,59 @@
-# Sovereign Trading Platform - Architecture (Domain-Based)
+# Sovereign Architecture
 
-> Canonical folder and file ownership map: [engineering/codebase_org.md](engineering/codebase_org.md). This page is the short domain overview; do not duplicate detailed path ownership here.
+Sovereign is a local-first trading research and controlled-execution platform. This page is the short architecture entrypoint; it does not duplicate module contracts or operator runbooks.
 
-## Domain Architecture
+## System Shape
 
-### 1. `backend/` (Core Logic & Services)
-- `core/`: High-performance C++ trade engine, indicators, data inspection, and ML inference boundary.
-- `api/`: Local Node API bridge and dashboard server.
-- `gateway/`: Execution gateway and risk bridge.
-- `cli/`: Sovereign CLI/TUI interface.
-  - `tui/`: Interactive terminal engine and command manifest.
-- `scripts/`: Backend-specific operational logic.
-  - `dev/`: development probes, fixture refresh, and toolchain checks.
+```text
+external providers
+       |
+       v
+providers / ingestion -> validation -> binary ts-index + metadata
+                                      |
+                       +--------------+---------------+
+                       |                              |
+                 Node CLI / API                 C++ analytics / risk
+                       |                              |
+                       +---------- research ----------+
+                                      |
+                         runtime policy + authorization
+                                      |
+                       paper or gated broker execution
+```
 
-### 2. `Frontend/` (Presentation Layer)
-- `dashboard/src/`: active React/Vite dashboard source.
-- `dashboard/dist/`: generated build artifact served by `backend/api/app.js`.
+## Active Domains
 
-### 3. `shared/` (Common Logic)
-- `lib/`: Common JS libraries used by CLI, API, scripts, and MCP surfaces.
-- `lib/providers/`: canonical provider/history fetcher layer.
+| Domain | Canonical source owner | Responsibility |
+|---|---|---|
+| CLI and terminal UI | `backend/cli/` | command dispatch, Ink dashboard, legacy TUI, operator presentation |
+| Private API and web bridge | `backend/api/` | authenticated routes, capability checks, dashboard serving |
+| Execution gateway | `backend/gateway/` | broker adapters, execution boundary, internal paper ledger |
+| Native core | `backend/core/` | C++ analytics, data inspection, backtesting, and risk contracts |
+| Shared platform | `shared/lib/` | market, strategy, runtime, auth, data, broker, settings, and UI owners |
+| Frontend | `Frontend/dashboard/src/` | React dashboard source; `dist/` is generated output |
+| Configuration | `config/` | markets, strategies, risk, environment, and deployment policy |
+| Runtime data | `storage/data/` | local cache, time series, models, journals, and evidence artifacts |
+| Infrastructure | `infra/` | Compose, host preparation, update, backup, and deployment tooling |
+| Verification | `tests/`, `backend/api/tests/`, `backend/core/test/` | contract, regression, API, UI, and native tests |
 
-### 4. `infra/` (System Infrastructure)
-- Deployment descriptors and infrastructure manifests.
+## Canonical Reading Order
 
-### 5. `storage/` (Persistence Layer)
-- `data/`: canonical local runtime cache and time-series data plane.
-- `data/models/`: model comparison and strategy-grade artifacts.
+1. [Architecture overview](engineering/architecture_overview.md) — current runtime policy, paper ledger, execution, and deployment model.
+2. [Documentation hub](README.md) — audience and task navigation.
+3. [Documentation manifest](documentation_manifest.json) — which pages are canonical, supporting, stale, or historical.
+4. [Module catalog](modules/README.md) and [Code Atlas](atlas/README.md) — capability ownership and deep source-linked mechanisms.
+5. [Codebase organization](engineering/codebase_org.md) — retained map currently marked `needs_refresh`.
 
-### 6. `tests/` (Verification Layer)
-- `scripts/`: Node.js contract and regression tests.
-- `cpp_core/`: native C++ unit tests.
-- `web/`: UI/Frontend smoke tests.
-- `fixtures/`: Test data and snapshots.
+## Architecture Rules
 
-## Truth Map
-- **Current status anchor:** `workspace/STATE.md`.
-- **Folder ownership map:** `docs/engineering/codebase_org.md`.
-- **Source of Truth:** local validated cache now; Supabase remains gated/planned for persistence surfaces.
-- **Execution Engine:** C++ (Local Native).
-- **Control Interface:** CLI/TUI (Local JS).
+- A domain rule has one canonical source owner; compatibility shims must remain visibly secondary.
+- UI, API, CLI, MCP, and generated artifacts do not own trading, research, data-integrity, or authorization policy.
+- Research-only output cannot promote or authorize execution.
+- Deployment profiles control which services a machine may run; they do not grant user capabilities.
+- Internal paper simulation, broker-hosted paper accounts, and live execution are distinct systems and evidence scopes.
+- Data provenance, point-in-time rules, one-writer behavior, and recovery ownership are part of the architecture—not implementation trivia.
+- Historical logs and graph output are evidence to mine; promoted architecture claims must be verified against current source.
+
+## Evidence Boundary
+
+Architecture documentation describes source ownership and intended contracts. It does not by itself prove provider acceptance, an owned-host deployment, restart, rollback, recovery, soak, paper behavior, or live execution. See [Testing surfaces](operational/guides/testing_surface.md) and the owning runbook for those evidence layers.

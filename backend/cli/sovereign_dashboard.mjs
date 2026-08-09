@@ -226,6 +226,13 @@ const M = [
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
         },
       },
+      { id: 'sweep', label: 'sweep', desc: 'Research-only proxy sweep: validation selection + untouched holdout',
+        flags: {
+          '--symbols':    { t:'txt', lbl:'Symbols comma-sep or all', def:'all', pickSymbol:'multi' },
+          '--timeframes': { t:'txt', lbl:'Timeframes comma-sep or all', def:'all' },
+          '--top-k':      { t:'txt', lbl:'Leaderboard rows', def:'20' },
+        },
+      },
       { id: 'edge-decay', label: 'edge-decay', desc: 'Rolling window alpha decay check',
         flags: {
           '--strategy':  { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'' },
