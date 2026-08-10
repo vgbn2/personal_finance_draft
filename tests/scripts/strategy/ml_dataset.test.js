@@ -215,6 +215,7 @@ test('commandFeaturesDump parses --max-bars-per-symbol and uses safe defaults', 
   const realDataset = require(datasetPath);
   const Module = require('node:module');
   const orig = Module._load;
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function(request, parent, isMain) {
     const resolved = (() => { try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; } })();
     if (resolved && path.normalize(resolved) === path.normalize(datasetPath)) {

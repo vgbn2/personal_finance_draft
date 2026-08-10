@@ -1244,6 +1244,7 @@ int printSweep(const std::vector<std::string>& args) {
               << "  \"fitness_source\": \"validation_metrics\",\n"
               << "  \"holdout_influences_selection\": false,\n"
               << "  \"total_datasets\": " << res.total_datasets << ",\n"
+              << "  \"effective_bars\": " << res.effective_bars << ",\n"
               << "  \"total_pass1_evaluations\": " << res.total_pass1_evaluations << ",\n"
               << "  \"total_pass2_evaluations\": " << res.total_pass2_evaluations << ",\n"
               << "  \"total_combinations_evaluated\": " << (res.total_pass1_evaluations + res.total_pass2_evaluations) << ",\n"

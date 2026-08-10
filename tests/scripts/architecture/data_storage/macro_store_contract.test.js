@@ -11,6 +11,7 @@ function withStubbedSupabaseClient(run) {
   const originalHelper = require.cache[helperPath];
 
   const calls = [];
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   require.cache[supabaseJsPath] = {
     id: supabaseJsPath,
     filename: supabaseJsPath,

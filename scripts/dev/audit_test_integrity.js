@@ -47,21 +47,103 @@ function listJsTestFiles() {
   );
 }
 
-function changedCppTestFiles() {
-  const result = spawnSync('git', [
-    'status',
-    '--porcelain=v1',
-    '--untracked-files=all',
+function listCppTestFiles() {
+  const tracked = spawnSync('git', [
+    'ls-files',
     '--',
     'backend/core/test',
   ], { cwd: REPO_ROOT, encoding: 'utf8' });
-  if (result.status !== 0) return [];
-  return result.stdout
+  if (tracked.status !== 0) {
+    throw new Error(`native test discovery failed: ${tracked.error?.message || tracked.stderr || 'git ls-files failed'}`);
+  }
+
+  const cppFiles = tracked.stdout
     .split(/\r?\n/)
-    .map((line) => line.slice(3).trim())
     .filter((relativePath) => relativePath.endsWith('_test.cpp'))
     .map((relativePath) => path.join(REPO_ROOT, relativePath))
-    .filter((filePath) => fs.existsSync(filePath));
+    .sort();
+  if (cppFiles.length === 0) throw new Error('native test discovery found no tracked C++ tests');
+
+  const rootCmake = path.join(REPO_ROOT, 'backend', 'core', 'CMakeLists.txt');
+  let cmake;
+  try {
+    cmake = fs.readFileSync(rootCmake, 'utf8');
+  } catch (error) {
+    throw new Error(`native test registration discovery failed: ${error.message}`);
+  }
+  const registrations = [...cmake.matchAll(/add_sovereign_test\(([^\s]+)\s+(test\/[^\s)]+_test\.cpp)\)/g)];
+  const registered = new Set(registrations
+    .map((match) => path.resolve(path.dirname(rootCmake), match[2])));
+  const unregistered = cppFiles.filter((filePath) => !registered.has(filePath));
+  if (unregistered.length > 0) {
+    throw new Error(`native test registration mismatch: ${unregistered.map((filePath) => path.relative(REPO_ROOT, filePath)).join(', ')}`);
+  }
+
+  const mirrorPath = path.join(REPO_ROOT, 'backend', 'core', 'test', 'CMakeLists.txt');
+  let mirror;
+  try {
+    mirror = fs.readFileSync(mirrorPath, 'utf8');
+  } catch (error) {
+    throw new Error(`native test mirror discovery failed: ${error.message}`);
+  }
+  const mirroredTargets = new Set([...mirror.matchAll(/^\s+([a-z0-9_]+_test)\s*$/gmi)]
+    .map((match) => match[1]));
+  const rootTargets = registrations.map((match) => match[1]);
+  const missingMirrorTargets = rootTargets.filter((target) => !mirroredTargets.has(target));
+  const extraMirrorTargets = [...mirroredTargets].filter((target) => !rootTargets.includes(target));
+  if (missingMirrorTargets.length > 0 || extraMirrorTargets.length > 0) {
+    throw new Error(`native test target mirror mismatch: missing=${missingMirrorTargets.join(',') || 'none'} extra=${extraMirrorTargets.join(',') || 'none'}`);
+  }
+  return cppFiles;
+}
+
+function changedCppTestFiles() {
+  return listCppTestFiles();
+}
+
+function loaderIgnoreReason(text) {
+  const match = text.match(/audit-ignore-loader:[ \t]*([^\r\n*][^\r\n*]*)/);
+  return match && match[1].trim() ? match[1].trim() : null;
+}
+
+function isRequireCacheAccess(expression) {
+  return ts.isElementAccessExpression(expression)
+    && ts.isPropertyAccessExpression(expression.expression)
+    && ts.isIdentifier(expression.expression.expression)
+    && expression.expression.expression.text === 'require'
+    && expression.expression.name.text === 'cache';
+}
+
+function isModuleLoadAccess(expression) {
+  return ts.isPropertyAccessExpression(expression)
+    && ts.isIdentifier(expression.expression)
+    && expression.expression.text === 'Module'
+    && expression.name.text === '_load';
+}
+
+function isLoaderFake(value) {
+  return ts.isObjectLiteralExpression(value)
+    || ts.isFunctionExpression(value)
+    || ts.isArrowFunction(value);
+}
+
+function inspectLoaderReplacement(node, text, add) {
+  if (!ts.isBinaryExpression(node) || node.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return;
+  const target = isRequireCacheAccess(node.left) ? 'require.cache' : (isModuleLoadAccess(node.left) ? 'Module._load' : null);
+  if (!target || !isLoaderFake(node.right)) return;
+  if (loaderIgnoreReason(text)) return;
+  add(
+    'RULE_1_LOADER_REPLACEMENT',
+    node,
+    `${target} replaces a loaded module; use a focused production-path fixture or an audit-ignore-loader reason`,
+  );
+}
+
+function inspectMalformedLoaderIgnore(node, text, add) {
+  if (!ts.isBinaryExpression(node) || node.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return;
+  if (!isRequireCacheAccess(node.left) && !isModuleLoadAccess(node.left)) return;
+  if (!text.includes('audit-ignore-loader:') || loaderIgnoreReason(text)) return;
+  add('RULE_1_LOADER_IGNORE', node, 'audit-ignore-loader requires a non-empty reason');
 }
 
 function lineNumber(sourceFile, node) {
@@ -189,13 +271,15 @@ function auditJsSource(content, fileName = 'inline.test.js') {
   });
 
   function visit(node) {
+    const text = sourceFile.getFullText().slice(node.getFullStart(), node.getEnd());
     if (ts.isCallExpression(node)) {
       const name = callName(node.expression);
-      const text = node.getText(sourceFile);
       inspectMockCall(node, name, text, add);
       inspectStrictAssertion(node, add);
       inspectCacheRead(node, name, text, add);
     }
+    inspectLoaderReplacement(node, text, add);
+    inspectMalformedLoaderIgnore(node, text, add);
     inspectSilentCatch(node, add);
     ts.forEachChild(node, visit);
   }
@@ -240,7 +324,7 @@ function auditFile(filePath) {
 
 function collectAuditResults() {
   const jsFiles = listJsTestFiles();
-  const cppFiles = changedCppTestFiles();
+  const cppFiles = listCppTestFiles();
   const results = [...jsFiles, ...cppFiles]
     .map(auditFile)
     .filter((audit) => audit.violations.length > 0);
@@ -253,15 +337,21 @@ function collectAuditResults() {
 }
 
 function runAudit() {
-  const report = collectAuditResults();
+  let report;
+  try {
+    report = collectAuditResults();
+  } catch (error) {
+    console.error(`✘ Test integrity discovery failed: ${error.message}`);
+    return 1;
+  }
   console.log(
     `[TEST INTEGRITY AUDIT] Scanned ${report.jsFiles.length} JS test/benchmark files `
-      + `and ${report.cppFiles.length} changed C++ test files...`,
+      + `and ${report.cppFiles.length} registered C++ test files...`,
   );
 
   if (report.totalViolations === 0) {
     console.log(
-      `✔ Test integrity passed: 4 JS rules plus Release-safe assertions in changed C++ tests `
+      `✔ Test integrity passed: 4 JS rules plus Release-safe assertions in registered C++ tests `
         + `(${report.jsFiles.length + report.cppFiles.length} files, 0 violations).`,
     );
     return 0;
@@ -292,6 +382,7 @@ module.exports = {
   changedCppTestFiles,
   collectAuditResults,
   equalityWrappedInBooleanAssertion,
+  listCppTestFiles,
   listJsTestFiles,
   runAudit,
   stripCppCommentsAndStrings,

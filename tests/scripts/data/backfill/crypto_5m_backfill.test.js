@@ -39,6 +39,7 @@ function freshRequire(filePath, stubs = {}) {
   for (const k of Object.keys(stubs)) delete require.cache[k];
 
   const orig = Module._load;
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function(request, parent, isMain) {
     const resolved = (() => {
       try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; }
@@ -240,6 +241,7 @@ test('fetchCryptoSnapshot routes 5m to native Binance fetch (not 1d aggregation)
     purgeIngestModuleCache();
     const stubs = { [providersPath]: stubbedProviders };
     const orig = Module._load;
+    // audit-ignore-loader: controlled dependency fixture restored by this test scope
     Module._load = function(request, parent, isMain) {
       const resolved = (() => { try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; } })();
       if (resolved && stubs[resolved]) return stubs[resolved];
@@ -318,6 +320,7 @@ test('fetchCryptoSnapshot still produces 1d aggregated records alongside native 
     purgeIngestModuleCache();
     const stubs = { [providersPath]: stubbedProviders };
     const orig = Module._load;
+    // audit-ignore-loader: controlled dependency fixture restored by this test scope
     Module._load = function(request, parent, isMain) {
       const resolved = (() => { try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; } })();
       if (resolved && stubs[resolved]) return stubs[resolved];
@@ -363,6 +366,7 @@ test('fetchCryptoSnapshot falls back to 1d aggregation when provider is coingeck
     purgeIngestModuleCache();
   const stubs = { [providersPath]: stubbedProviders };
   const orig = Module._load;
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function(request, parent, isMain) {
     const resolved = (() => { try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; } })();
     if (resolved && stubs[resolved]) return stubs[resolved];
@@ -556,6 +560,7 @@ async function runDeepBackfillWithStubs(cmdArgs, fakeConfig, snapshotFactory = n
 
   // Keep stubs active for the entire async execution (not just module load)
   const orig = Module._load;
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function(request, parent, isMain) {
     const resolved = (() => { try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; } })();
     if (resolved && stubs[resolved]) return stubs[resolved];
@@ -698,6 +703,7 @@ test('fetchCryptoSnapshot routes 5m to native Coinbase fetch when provider is co
     purgeIngestModuleCache();
     const stubs = { [providersPath]: stubbedProviders };
     const orig = Module._load;
+    // audit-ignore-loader: controlled dependency fixture restored by this test scope
     Module._load = function(request, parent, isMain) {
       const resolved = (() => { try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; } })();
       if (resolved && stubs[resolved]) return stubs[resolved];

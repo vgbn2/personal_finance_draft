@@ -32,6 +32,8 @@ async function withIngestStub(stub, run) {
   const originalLoad = Module._load;
   delete require.cache[RESEARCH_SOURCES_PATH];
 
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
+
   Module._load = function(request, parent, isMain) {
     const resolved = Module._resolveFilename(request, parent, isMain);
     if (resolved === INGEST_PATH) return stub;
