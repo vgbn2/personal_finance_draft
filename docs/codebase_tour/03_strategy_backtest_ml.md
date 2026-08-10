@@ -14,21 +14,22 @@ parsed schema has `universe`, `signals`, `data`, `features`, `indicators`, and a
 
 ## One backtest, traced
 
+The canonical ownership and failure contract is [Backtest Execution](../sections/research/backtest-execution/README.md). This tutorial keeps only the guided trace:
+
 ```
-commandBacktest(args)                                  backend/cli/commands/research/research.js:400
-  -> inspectStrategyFile()                              strategy.js:261
-  -> loadUsableSources() / loadHistoricalSources()       research_sources.js
-  -> calculateRollingFeatureFrame()                      shared/lib/market/indicators.js:13
-  -> splitFeatureFrame()                                 research.js:20  (train/test split)
-  -> runBacktest(split, options)                          research.js:549-557
-       -> runBacktestCppNative() OR runBacktestJs()       backend/cli/commands/strategy/backtest.js:1050-1068
-            JS path: resolveModel(name).predict(feature)   shared/lib/ml/models.js:365, :84-88
-  -> buildTrustAssessment() + upsertStrategyGradeRecord()  research_render.js, shared/lib/strategy/registry.js:18
+commandBacktest(args)                                  backend/cli/commands/research/research.js
+  -> resolveStrategyBacktestDefaults()                  research.js
+  -> loadUsableSources() / loadHistoricalSources()      research_sources.js
+  -> calculateRollingFeatureFrame()                     shared/lib/market/indicators.js
+  -> splitFeatureFrame()                                shared/lib/strategy/backtest.js
+  -> runBacktest(train, test, and full frame)            shared/lib/strategy/backtest.js
+       -> native mode, native frame mode, or JS fallback
+  -> buildTrustAssessment() + upsertStrategyGradeRecord() research_render.js, shared/lib/strategy/registry.js
 ```
 
-The engine choice (C++ vs JS) is automatic — native when the binary is available, JS fallback
-otherwise. Every result now reports `engine_requested`, `engine_actual`, `degraded`, and
-`degraded_reason`; callers must not mistake a fallback for native execution.
+The engine choice is automatic unless the caller requests JavaScript explicitly. Results expose
+`engine_requested`, `engine_actual`, `degraded`, and `fallback_reason`; callers must not mistake a
+fallback for native execution.
 
 ## The ONNX inference path specifically
 

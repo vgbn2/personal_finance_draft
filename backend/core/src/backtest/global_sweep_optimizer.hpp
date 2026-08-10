@@ -53,6 +53,7 @@ struct GlobalSweepResult {
     bool ok = false;
     std::string error;
     std::size_t total_datasets = 0;
+    std::size_t effective_bars = 0;
     std::size_t total_pass1_evaluations = 0;
     std::size_t total_pass2_evaluations = 0;
     std::vector<SymbolPlateaus> discovered_plateaus;

@@ -44,7 +44,7 @@ You should already understand:
 
 For folder ownership, the main path map is:
 
-- [docs/engineering/codebase_org.md](C:/Users/Lenovo/Desktop/VGBN/.vscode/CODEPTIT/personal_finance_draft/docs/engineering/codebase_org.md)
+- [Codebase organization](../../engineering/codebase_org.md)
 
 This chapter is a learning-oriented overview. The path map remains the canonical placement source.
 

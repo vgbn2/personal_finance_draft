@@ -174,6 +174,7 @@ test('native sweep schema distinguishes validation selection from untouched hold
   assert.equal(payload.selection_protocol, 'train_validation_then_single_untouched_holdout');
   assert.equal(payload.fitness_source, 'validation_metrics');
   assert.equal(payload.holdout_influences_selection, false);
+  assert.equal(payload.effective_bars, 240);
   assert.equal(payload.total_pass1_evaluations > 0, true);
   assert.equal(payload.total_pass2_evaluations > 0, true);
   assert.equal(payload.total_combinations_evaluated,

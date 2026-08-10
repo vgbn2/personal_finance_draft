@@ -51,7 +51,8 @@ lot formulas are available for qualified future integrations, but Polymarket rej
 
 The older non-live `bot cycle` still persists a separate `bot_state.json` projection. It no longer initializes a
 credentialed CLOB client in paper mode, but convergence of that state into the canonical event ledger remains an
-explicit release blocker.
+explicit release blocker. See [Polymarket Bot Cycle](../sections/execution/polymarket-bot-cycle/README.md) for the
+current source boundary and open safety findings.
 
 ## Components
 

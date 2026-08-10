@@ -7,6 +7,10 @@ const path = require('node:path');
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const DOCUMENTATION_MANIFEST = 'docs/documentation_manifest.json';
 const WORKSPACE_MANIFEST = 'workspace/workspace_manifest.json';
+const ACTIVE_LINK_ROOTS = ['docs'];
+const ACTIVE_LINK_PAGES = ['workspace/README.md'];
+const HISTORICAL_LINK_ROOTS = ['docs/archive', 'docs/memory', 'workspace'];
+const MARKDOWN_LINK_PATTERN = /(?<!!)\[[^\]]*\]\(([^)]+)\)/g;
 const RECORD_HEADINGS = {
   algorithm: [
     'Purpose And Ownership',
@@ -83,6 +87,62 @@ function walkFiles(root, relativeRoot, predicate = () => true) {
 
   walk(absoluteRoot);
   return files.sort();
+}
+
+function isHistoricalLinkPath(recordPath) {
+  return HISTORICAL_LINK_ROOTS.some((root) => recordPath === root || recordPath.startsWith(`${root}/`));
+}
+
+function activeMarkdownFiles(root) {
+  const files = ACTIVE_LINK_ROOTS.flatMap((linkRoot) => (
+    walkFiles(root, linkRoot, (filePath) => filePath.endsWith('.md'))
+  ));
+  for (const page of ACTIVE_LINK_PAGES) {
+    const absolutePath = path.join(root, page);
+    if (fs.existsSync(absolutePath)) files.push(absolutePath);
+  }
+  const activePages = new Set(ACTIVE_LINK_PAGES);
+  return files
+    .filter((absolutePath) => {
+      const recordPath = relative(root, absolutePath);
+      return activePages.has(recordPath) || !isHistoricalLinkPath(recordPath);
+    })
+    .sort((left, right) => relative(root, left).localeCompare(relative(root, right)));
+}
+
+function localMarkdownTarget(rawTarget) {
+  const target = String(rawTarget || '').trim();
+  if (!target || target.startsWith('#')) return { kind: 'skip' };
+  if (/^(https?:|mailto:)/i.test(target)) return { kind: 'skip' };
+  if (/^file:/i.test(target)) return { kind: 'file-uri', target };
+  const pathTarget = target.split('#', 1)[0].split(/\s+/, 1)[0].replace(/^<|>$/g, '');
+  if (!pathTarget) return { kind: 'skip' };
+  if (path.isAbsolute(pathTarget) || /^[a-zA-Z]:[\\/]/.test(pathTarget)) {
+    return { kind: 'absolute', target };
+  }
+  return { kind: 'local', target: pathTarget };
+}
+
+function validateActiveMarkdownLinks(root, findings) {
+  for (const absolutePath of activeMarkdownFiles(root)) {
+    const recordPath = relative(root, absolutePath);
+    const content = fs.readFileSync(absolutePath, 'utf8');
+    for (const match of content.matchAll(MARKDOWN_LINK_PATTERN)) {
+      const link = localMarkdownTarget(match[1]);
+      if (link.kind === 'skip') continue;
+      const line = content.slice(0, match.index).split(/\r?\n/).length;
+      if (link.kind === 'file-uri' || link.kind === 'absolute') {
+        findings.push(finding('DOC-LINK-ABSOLUTE', recordPath, `active documentation link must be repository-relative: ${link.target}`));
+        continue;
+      }
+      const resolved = path.resolve(path.dirname(absolutePath), link.target);
+      if (!resolved.startsWith(`${root}${path.sep}`) && resolved !== root) {
+        findings.push(finding('DOC-LINK-OUTSIDE', recordPath, `active documentation link escapes repository: ${link.target}`));
+      } else if (!fs.existsSync(resolved)) {
+        findings.push(finding('DOC-LINK-MISSING', recordPath, `active documentation link target does not exist: ${link.target}`));
+      }
+    }
+  }
 }
 
 function parseAtlasFrontmatter(content) {
@@ -305,6 +365,7 @@ function auditDocumentation(options = {}) {
 
   validateDocumentationManifest(root, manifest, findings);
   validateWorkspace(root, workspaceManifest, findings);
+  validateActiveMarkdownLinks(root, findings);
 
   const ids = new Map();
   const registeredRecords = new Map(

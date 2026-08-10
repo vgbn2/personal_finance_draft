@@ -130,6 +130,11 @@ BinaryTsReaderResult loadTargetBars(
     return read_result;
 }
 
+struct LoadedDataset {
+    TargetFileSpec file_spec;
+    std::vector<OhlcvBar> bars;
+};
+
 struct SelectionSlices {
     std::span<const OhlcvBar> train;
     std::span<const OhlcvBar> validation;
@@ -404,7 +409,39 @@ GlobalSweepResult GlobalSweepOptimizer::runSweep(
         return result;
     }
 
-    result.total_datasets = target_files.size();
+    std::vector<LoadedDataset> loaded_datasets;
+    loaded_datasets.reserve(target_files.size());
+    for (const auto& file_spec : target_files) {
+        std::string dataset_error;
+        auto read_res = loadTargetBars(ts_dir, file_spec, options, dataset_error);
+        if (!dataset_error.empty()) {
+            result.error = dataset_error;
+            return result;
+        }
+        if (read_res.bars.size() < 30U) {
+            result.error = "dataset_insufficient_bars:" + file_spec.symbol + "@" + file_spec.timeframe;
+            return result;
+        }
+        loaded_datasets.push_back({file_spec, std::move(read_res.bars)});
+    }
+
+    const auto shortest = std::min_element(
+        loaded_datasets.begin(),
+        loaded_datasets.end(),
+        [](const auto& left, const auto& right) { return left.bars.size() < right.bars.size(); });
+    result.effective_bars = shortest->bars.size();
+    for (auto& dataset : loaded_datasets) {
+        if (dataset.bars.size() > result.effective_bars) {
+            dataset.bars.erase(
+                dataset.bars.begin(),
+                dataset.bars.end() - static_cast<std::ptrdiff_t>(result.effective_bars));
+        }
+        if (!prepareSelectionSlices(dataset.bars, options).ok) {
+            result.error = "dataset_split_invalid:" + dataset.file_spec.symbol + "@" + dataset.file_spec.timeframe;
+            return result;
+        }
+    }
+    result.total_datasets = loaded_datasets.size();
 
     std::vector<strategies::SweepTrialResult> thread_trials;
     std::vector<SymbolPlateaus> thread_discovered_plateaus;
@@ -421,23 +458,10 @@ GlobalSweepResult GlobalSweepOptimizer::runSweep(
         std::size_t local_p2 = 0;
 
         #pragma omp for schedule(dynamic)
-        for (std::size_t i = 0; i < target_files.size(); ++i) {
-            const auto& file_spec = target_files[i];
-            std::string dataset_error;
-            const auto read_res = loadTargetBars(ts_dir, file_spec, options, dataset_error);
-            if (!dataset_error.empty()) {
-                #pragma omp critical
-                dataset_errors.push_back(dataset_error);
-                continue;
-            }
-            if (read_res.bars.size() < 30U) {
-                #pragma omp critical
-                dataset_errors.push_back(
-                    "dataset_insufficient_bars:" + file_spec.symbol + "@" + file_spec.timeframe);
-                continue;
-            }
-
-            const auto slices = prepareSelectionSlices(read_res.bars, options);
+        for (std::size_t i = 0; i < loaded_datasets.size(); ++i) {
+            const auto& dataset = loaded_datasets[i];
+            const auto& file_spec = dataset.file_spec;
+            const auto slices = prepareSelectionSlices(dataset.bars, options);
             if (!slices.ok) {
                 #pragma omp critical
                 dataset_errors.push_back(
@@ -483,20 +507,9 @@ GlobalSweepResult GlobalSweepOptimizer::runSweep(
         }
     }
 #else
-    for (std::size_t i = 0; i < target_files.size(); ++i) {
-        const auto& file_spec = target_files[i];
-        std::string dataset_error;
-        const auto read_res = loadTargetBars(ts_dir, file_spec, options, dataset_error);
-        if (!dataset_error.empty()) {
-            result.error = dataset_error;
-            return result;
-        }
-        if (read_res.bars.size() < 30U) {
-            result.error = "dataset_insufficient_bars:" + file_spec.symbol + "@" + file_spec.timeframe;
-            return result;
-        }
-
-        const auto slices = prepareSelectionSlices(read_res.bars, options);
+    for (const auto& dataset : loaded_datasets) {
+        const auto& file_spec = dataset.file_spec;
+        const auto slices = prepareSelectionSlices(dataset.bars, options);
         if (!slices.ok) {
             result.error = "dataset_split_invalid:" + file_spec.symbol + "@" + file_spec.timeframe;
             return result;
