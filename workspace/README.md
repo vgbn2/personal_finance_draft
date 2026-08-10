@@ -10,11 +10,11 @@ This directory is the repo's append-only working state. Keep durable decisions h
 - [PROMPT_LOG.md](./PROMPT_LOG.md): prompt/session request log.
 - [DEV_REVIEW.md](./DEV_REVIEW.md): active manual review queue.
 - [DEV_COMMENTS.md](./DEV_COMMENTS.md): developer-facing notes and comments.
-- [STRUCTURAL_AUDIT_REPORT.md](./STRUCTURAL_AUDIT_REPORT.md): structural audit summary and grade notes.
+- [Structural audit report](reports/STRUCTURAL_AUDIT_REPORT.md): structural audit summary and grade notes.
 - [BLAST_THROUGH_REPORT.md](./BLAST_THROUGH_REPORT.md): audit summary for broad repo passes.
-- [FEATURE_TEST_MATRIX.md](./FEATURE_TEST_MATRIX.md): current feature audit matrix.
-- [FEATURE_REPAIR_PLAN.md](./FEATURE_REPAIR_PLAN.md): current repair plan for findings.
-- [CROSS_PROJECT_LEARNINGS.md](./CROSS_PROJECT_LEARNINGS.md): durable cross-project lessons.
+- [Feature test matrix](reports/FEATURE_TEST_MATRIX.md): current feature audit matrix.
+- [Feature repair plan](reports/FEATURE_REPAIR_PLAN.md): current repair plan for findings.
+- [Cross-project learnings](history/CROSS_PROJECT_LEARNINGS.md): retained historical lessons; verify any claim before promotion.
 - [archive/README.md](./archive/README.md): archived snapshots and superseded session artifacts.
 
 ## Working Plans
@@ -22,9 +22,9 @@ This directory is the repo's append-only working state. Keep durable decisions h
 These are useful task-planning surfaces, but they are not the canonical truth by themselves.
 
 - [NEXT_SESSION_GOAL.md](./NEXT_SESSION_GOAL.md)
-- [POLYMARKET_BOT_PLAN.md](./POLYMARKET_BOT_PLAN.md)
-- [ML_SECTION_PLAN.md](./ML_SECTION_PLAN.md)
-- [PHASE_8_TEST_REPORT.md](./PHASE_8_TEST_REPORT.md)
+- [Polymarket bot plan](plans/POLYMARKET_BOT_PLAN.md)
+- [ML section plan](plans/ML_SECTION_PLAN.md)
+- [Phase 8 test report](reports/PHASE_8_TEST_REPORT.md)
 
 ## Historical Snapshots
 
@@ -33,7 +33,6 @@ These are snapshots that may still contain useful evidence, but they should be t
 - [archive/BLAST_THROUGH_SESSION_53.md](./archive/BLAST_THROUGH_SESSION_53.md)
 - [archive/BLAST_THROUGH_SESSION_76.md](./archive/BLAST_THROUGH_SESSION_76.md)
 - [archive/FEATURE_TEST_MATRIX_2026_06_04.md](./archive/FEATURE_TEST_MATRIX_2026_06_04.md)
-- [SESSION_REPORT_2026-05-19.md](./SESSION_REPORT_2026-05-19.md)
 
 ## Redundant Or Superseded
 

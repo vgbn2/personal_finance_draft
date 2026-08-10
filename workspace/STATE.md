@@ -2579,3 +2579,11 @@ windows remain open.
 - Historical docs and workspace records were preserved. DOC-K13 was promoted; mixed legacy/research/product/bootstrap pages received explicit authority boundaries. Claim-by-claim legacy migration remains deferred to source-owned pilots.
 - Working-tree verification: final focused skill/docs/RAG 21/21; structure 26/26; Node 1,135 total / 1,131 pass / 0 fail / 4 skip; hygiene, skill mirror, documentation audit, 41-file link sweep, and diff check pass. Graph refresh completed at 8,889 nodes / 14,577 edges / 703 communities; optional SQL/Terraform parsers remain absent.
 - This does not close BT-L10-1/2, committed-archive, CI, provider, host, deployment, recovery, soak, paper, or live gates. No staging or commit occurred.
+
+## 2026-08-10 Documentation Integrity and P1 Commit-Blocker Closure
+
+- BT-L10-1 is closed for source/test scope: global native sweep preloads all selected binary datasets and uses one shortest common tail (`effective_bars`) before the existing train/validation/untouched-holdout split. The validation fitness formula remains selection-only; unequal-history fixture coverage proves older extra history alone cannot raise fitness.
+- BT-L10-2 is closed for source/test and indexed clean-archive scope: the test-integrity scanner audits all 33 tracked and dual-CMake-registered native tests, fails closed on Git/CMake/mirror disagreement, detects loader/cache replacement, and preserves only action-scoped reasoned fixture boundaries. Seven native tests now use non-elidable `CHECK` assertions.
+- Active documentation navigation is now audited for missing and absolute local links; historical `file://` evidence remains outside the active corpus.
+- Verification: docs 9/9; focused fixture/scanner suite 99/99; integrity 229 files/0 violations; structure 28/28; CTest 33/33; canonical Node suite exit 0; indexed clean-archive scanner 229/0; graph 8,916 nodes / 14,635 edges / 694 communities.
+- No provider, canonical-data, runtime, paper/live, deployment, CI, host, recovery, rollback, or soak qualification occurred.

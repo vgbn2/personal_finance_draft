@@ -2636,3 +2636,17 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "next": "user activates the refined loop next session; begin with baseline/classification and exclude BT-L10-1/2 surfaces"
 }
 ```
+
+## Session Memory - 2026-08-10 Documentation Integrity and P1 Blocker Closure
+
+```json
+{
+  "batches_closed": ["DOC-LINK-1", "DOC-LINK-2", "DOC-GATE-1", "BT-L10-1", "BT-L10-2"],
+  "sweep_comparability": "global native sweep preloads selected datasets and scores a common shortest tail, published as effective_bars; validation selection and single untouched holdout remain separate",
+  "test_integrity": "scanner audits 196 JS test/benchmark files and 33 tracked dual-CMake-registered C++ tests, fails closed on discovery/mirror mismatch, detects cache/Module._load replacement, and accepts only action-scoped reasoned fixture exceptions",
+  "release_assertions": "converted 69 bare C++ assert calls across seven registered tests to non-elidable CHECK failures",
+  "documentation": "active-link audit now catches missing/absolute local navigation while excluding historical file URI evidence",
+  "verification": "documentation 9/9; focused fixtures/scanner 99/99; integrity 229/0; structure 28/28; CTest 33/33; canonical Node suite exit 0; indexed clean archive integrity 229/0; graph 8916 nodes/14635 edges/694 communities",
+  "boundary": "source/test and indexed clean-archive evidence only; no provider, data, runtime, order, deployment, host, recovery, or soak action"
+}
+```

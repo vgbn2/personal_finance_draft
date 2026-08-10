@@ -37,3 +37,11 @@
 
 Immediate next action:
 - User activates the refined cleanup-first documentation loop; execute Batch 0 baseline/classification only, then present the pilot candidate and GO/NO-GO boundary before writing a new section.
+
+
+## 2026-08-10 Post-closure follow-up
+
+1. Confirm the requested checkpoint commit and push are visible on the intended remote branch.
+2. Treat BT-L10-1 and BT-L10-2 as closed for source/test and indexed clean-archive evidence; do not imply CI, provider, host, deployment, recovery, or soak qualification.
+3. Resume the refined cleanup-first documentation loop only after the committed checkpoint is confirmed; Batch 0 baseline/classification is complete, and the existing `docs/sections/` batch is now part of the sealed worktree rather than a fresh pilot candidate.
+4. Keep current runtime, provider, data-write, paper/live, deployment, and credential boundaries unchanged.
