@@ -7,6 +7,8 @@ in sessions 55-58 — known gap, not yet refreshed). This module covers the *mec
 
 ## The boot decision: dashboard vs legacy engine
 
+The canonical modern-dashboard contract is [Terminal Dashboard](../sections/interface/terminal-dashboard/README.md). This tutorial focuses on tracing both engines and their historical traps.
+
 `backend/cli/sovereign_cli.js`. Non-TTY (CI, pipes) always gets the legacy menu. Otherwise,
 `loadSettings().layout === 'legacy'` (or `LEGACY_TUI=1` env) spawns the old `runInteractiveMenu()`
 engine; anything else spawns `sovereign_dashboard.mjs` as a child process. The boot loop only relaunches
@@ -54,10 +56,10 @@ LLM-output-to-execution path.
 
 `tests/scripts/tui/dashboard/_harness.js` fakes a TTY: a `PassThrough` stream stubbed with `isTTY:true`
 and a no-op `setRawMode()` for stdin, and a buffering `Writable` for stdout whose `snapshot()` strips
-ANSI and extracts just the latest frame. This is how `sovereign_dashboard.test.js` drives a real Ink
-component and asserts on rendered output without a real conhost/pty — and also why some fixes in this
-repo (anything genuinely about Windows conhost rendering quirks) still need a human at a real terminal
-to confirm, since the fake TTY can't reproduce terminal-specific rendering bugs.
+ANSI and extracts just the latest frame. The dashboard suites drive the real Ink component across
+responsive layouts, grapheme-aware editing, chat confirmation, PIN routing, output scrolling, and
+child cancellation. The fake TTY cannot reproduce every terminal-emulator or operating-system console
+quirk, so source/test proof remains distinct from real-terminal qualification.
 
 ## Labs
 

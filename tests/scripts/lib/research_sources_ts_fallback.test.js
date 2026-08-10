@@ -43,6 +43,7 @@ test('loadUsableSources falls back to ts-index when family is known', () => {
   const tsDir = makeFakeTsDir(['BTCUSDT', 'ETHUSDT']);
 
   const origLoad = Module._load.bind(Module);
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function (request, parent, isMain) {
     if (request.endsWith('paths.js')) {
       return { ...origLoad(request, parent, isMain), STORAGE_TS_DIR: tsDir };
@@ -86,6 +87,7 @@ test('loadUsableSources respects explicit --input and skips ts-index fallback', 
   }));
 
   const origLoad = Module._load.bind(Module);
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function (request, parent, isMain) {
     if (request.endsWith('paths.js')) {
       return { ...origLoad(request, parent, isMain), STORAGE_TS_DIR: tsDir };
@@ -117,6 +119,7 @@ test('loadUsableSources does not fall back when family is not specified', () => 
 
   const origLoad = Module._load.bind(Module);
   let tsIndexCalled = false;
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function (request, parent, isMain) {
     if (request.endsWith('paths.js')) {
       return { ...origLoad(request, parent, isMain), STORAGE_TS_DIR: tsDir };

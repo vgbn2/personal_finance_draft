@@ -13,6 +13,7 @@ const { makeFakeStdin, makeFakeStdout, keys, send } = require('./_harness');
 // behavior (LLM unavailable vs a canned resolution) without re-mocking.
 const aiClientPath = require.resolve('../../../../shared/lib/ai/ai_client.js');
 const mockState = { askImpl: async () => null };
+// audit-ignore-loader: controlled dependency fixture restored by this test scope
 require.cache[aiClientPath] = {
   id: aiClientPath,
   filename: aiClientPath,

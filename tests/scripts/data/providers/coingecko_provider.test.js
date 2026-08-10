@@ -10,6 +10,8 @@ function withStubbedCoinGecko(fetchJsonImpl, run) {
   const originalCommon = require.cache[commonPath];
   const originalCoingecko = require.cache[coingeckoPath];
 
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
+
   require.cache[commonPath] = {
     id: commonPath,
     filename: commonPath,

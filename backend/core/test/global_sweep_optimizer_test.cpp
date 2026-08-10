@@ -1,7 +1,10 @@
 #include "backtest/global_sweep_optimizer.hpp"
+#include "data/binary_ts_reader.hpp"
 #include "research/walk_forward_split.hpp"
 #include "strategies/strategy_sweep_evaluator.hpp"
 
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -39,6 +42,33 @@ std::vector<sovereign::OhlcvBar> trendingBars(std::size_t count) {
         });
     }
     return bars;
+}
+
+void writeBinaryFixture(
+    const std::filesystem::path& root,
+    const std::string& symbol,
+    std::size_t prefix_bars,
+    std::size_t trailing_bars) {
+    std::ofstream file(root / (symbol + "_1d.bin"), std::ios::binary);
+    const sovereign::RawTsHeader header{'S', 'O', 'V', 'T',
+        static_cast<std::uint32_t>(prefix_bars + trailing_bars)};
+    file.write(reinterpret_cast<const char*>(&header), sizeof(header));
+    for (std::size_t i = 0; i < prefix_bars + trailing_bars; ++i) {
+        const std::size_t trailing_index = i < prefix_bars ? 0U : i - prefix_bars;
+        const double close = i < prefix_bars
+            ? 50.0 + static_cast<double>(i) * 0.1
+            : 100.0 + static_cast<double>(trailing_index) * 0.4
+                + (trailing_index % 7U == 0U ? -0.2 : 0.1);
+        const sovereign::RawTsRecord record{
+            static_cast<double>(i) * 86400000.0,
+            close - 0.1,
+            close + 0.3,
+            close - 0.3,
+            close,
+            1000.0 + static_cast<double>(i),
+        };
+        file.write(reinterpret_cast<const char*>(&record), sizeof(record));
+    }
 }
 
 } // namespace
@@ -109,6 +139,31 @@ int main() {
     check(
         trial.overfit_grade.rfind("HOLDOUT_", 0U) == 0U,
         "selected trial receives an explicit holdout grade");
+
+    const auto fixture_dir = std::filesystem::temp_directory_path() / "sovereign_global_sweep_horizon_test";
+    std::filesystem::remove_all(fixture_dir);
+    std::filesystem::create_directories(fixture_dir);
+    writeBinaryFixture(fixture_dir, "SHORT", 0U, 180U);
+    writeBinaryFixture(fixture_dir, "LONG", 180U, 180U);
+
+    auto horizon_options = options;
+    horizon_options.top_k = 2U;
+    const auto equal_horizon = sovereign::backtest::GlobalSweepOptimizer::runSweep(
+        fixture_dir,
+        {"SHORT", "LONG"},
+        {"1d"},
+        horizon_options);
+    check(equal_horizon.ok, "equal-horizon sweep accepts unequal source histories");
+    check(equal_horizon.effective_bars == 180U, "sweep uses the shortest selected dataset as the effective horizon");
+    check(
+        equal_horizon.leader_board.size() == 2U,
+        "equal-horizon sweep retains both selected datasets instead of silently pruning history");
+    if (equal_horizon.leader_board.size() == 2U) {
+        check(
+            equal_horizon.leader_board[0].fitness_score == equal_horizon.leader_board[1].fitness_score,
+            "identical trailing histories receive identical validation fitness regardless of older prefix length");
+    }
+    std::filesystem::remove_all(fixture_dir);
 
     if (failures != 0) {
         std::cerr << "[FAIL] global_sweep_optimizer_test recorded " << failures << " failure(s).\n";

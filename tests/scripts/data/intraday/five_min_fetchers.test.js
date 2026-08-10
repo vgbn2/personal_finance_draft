@@ -30,6 +30,7 @@ function freshRequire(filePath, stubs = {}) {
   for (const k of Object.keys(stubs)) delete require.cache[k];
 
   const orig = Module._load;
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function(request, parent, isMain) {
     const resolved = (() => {
       try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; }
@@ -84,6 +85,7 @@ function loadIngestWithYahooStub(captured) {
   for (const k of Object.keys(stubs)) delete require.cache[k];
 
   const orig = Module._load;
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function(request, parent, isMain) {
     const resolved = (() => {
       try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; }

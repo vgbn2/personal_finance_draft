@@ -11,7 +11,8 @@
     "docs/memory",
     "docs/modules",
     "docs/operational",
-    "docs/research"
+    "docs/research",
+    "docs/sections"
   ],
   "atlas": {
     "record_roots": {
@@ -74,6 +75,66 @@
       "status": "canonical",
       "source_paths": ["docs/documentation_manifest.json", "docs/modules/TEMPLATE.md"],
       "review_triggers": ["documentation-workflow", "corpus-policy", "review-standard"]
+    },
+    {
+      "path": "docs/sections/data/polymarket-history-archive/README.md",
+      "type": "reference",
+      "audience": ["research-maintainers", "data-maintainers"],
+      "owner": "data",
+      "status": "needs_refresh",
+      "source_paths": ["shared/lib/market/polymarket_history.js", "shared/lib/market/polymarket_features.js"],
+      "test_paths": ["tests/scripts/integration/polymarket/polymarket_history_archive.test.js", "tests/scripts/strategy/polymarket_backtest.test.js", "tests/scripts/integration/polymarket/polymarket_orderbook_lite.test.js"],
+      "review_triggers": ["archive-schema", "archive-reader", "archive-backfill", "price-normalization", "orderbook-capture", "provider-cache"]
+    },
+    {
+      "path": "docs/sections/execution/polymarket-bot-cycle/README.md",
+      "type": "reference",
+      "audience": ["execution-maintainers", "security-reviewers"],
+      "owner": "execution",
+      "status": "needs_refresh",
+      "source_paths": ["backend/gateway/src/cycle.ts", "backend/gateway/src/bot_state.ts", "backend/gateway/src/paper_ledger.js", "shared/lib/settings/runtime_policy.js"],
+      "test_paths": ["tests/scripts/integration/polymarket/polymarket_bot_risk.test.js", "tests/scripts/integration/polymarket/polymarket_preflight.test.js", "tests/scripts/architecture/settings/settings_runtime_contract.test.js", "tests/scripts/architecture/auth/access_policy.test.js"],
+      "review_triggers": ["bot-live-mode", "bot-order-authorization", "bot-state", "paper-ledger", "fok-order", "external-api"]
+    },
+    {
+      "path": "docs/sections/interface/terminal-dashboard/README.md",
+      "type": "reference",
+      "audience": ["cli-maintainers", "terminal-ui-maintainers"],
+      "owner": "interface",
+      "status": "canonical",
+      "source_paths": ["backend/cli/sovereign_dashboard.mjs", "backend/cli/tui/dashboard_exec.js", "backend/cli/tui/dashboard_layout.js", "backend/cli/tui/command_input.mjs", "backend/cli/tui/chat_parser.js"],
+      "test_paths": ["tests/scripts/tui/dashboard/command_input.test.js", "tests/scripts/tui/dashboard/sovereign_dashboard.test.js", "tests/scripts/tui/dashboard/chat_ui.test.js", "tests/scripts/tui/dashboard/dashboard_command_safety.test.js"],
+      "review_triggers": ["dashboard-manifest", "viewport-policy", "command-input", "command-execution", "live-pin-gate"]
+    },
+    {
+      "path": "docs/sections/research/rsi-reversal-analysis/README.md",
+      "type": "reference",
+      "audience": ["quantitative-researchers", "strategy-maintainers"],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": ["shared/lib/strategy/rsi_backtest.js"],
+      "test_paths": ["tests/scripts/strategy/rsi_backtest_primitives.test.js", "tests/scripts/strategy/rsi_backtest_analyze.test.js"],
+      "review_triggers": ["rsi-smoothing", "atr-normalization", "signal-event", "bayesian-posterior", "oos-filter", "actionable-schema"]
+    },
+    {
+      "path": "docs/sections/research/correlation-analysis/README.md",
+      "type": "reference",
+      "audience": ["quantitative-researchers", "backend-maintainers"],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": ["backend/cli/commands/tools/backend_correlation.js", "shared/lib/market/validation.js"],
+      "test_paths": ["tests/scripts/integration/engine/backend_correlation_preflight.test.js", "tests/scripts/tui/cli_commands/sovereign_cli_human_surfaces.test.js"],
+      "review_triggers": ["correlation-cli", "source-selection", "formula-registry", "alignment-policy", "native-correlation-contract"]
+    },
+    {
+      "path": "docs/sections/research/backtest-execution/README.md",
+      "type": "reference",
+      "audience": ["quantitative-researchers", "research-maintainers"],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": ["backend/cli/commands/research/research.js", "shared/lib/strategy/backtest.js", "shared/lib/runtime/backend_bridge.js"],
+      "test_paths": ["tests/scripts/architecture/strategy_contracts/strategy_backtest_contract.test.js", "tests/scripts/safety/degraded_fallback.test.js", "tests/scripts/architecture/prop_firms_contract.test.js"],
+      "review_triggers": ["backtest-cli", "feature-frame-split", "engine-dispatch", "metric-schema", "degraded-mode"]
     },
     {
       "path": "docs/modules/TEMPLATE.md",

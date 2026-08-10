@@ -28,6 +28,7 @@ async function runAccumulateWithStubs(cmdArgs, fakeConfig, snapshotFactory = nul
   const stubs = { [ingestPath]: ingestStub, [utilsPath]: utilsStub };
 
   const orig = Module._load;
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function (request, parent, isMain) {
     const resolved = (() => { try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; } })();
     if (resolved && stubs[resolved]) return stubs[resolved];

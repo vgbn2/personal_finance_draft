@@ -168,6 +168,28 @@ test('documentation audit accepts a complete separated-tree fixture', (t) => {
   assert.deepEqual(auditDocumentation({ root }), []);
 });
 
+test('documentation audit validates active local Markdown links but preserves historical file URI evidence', (t) => {
+  const root = fixture();
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  write(root, 'docs/guide/active.md', '[module](../modules/docs-retrieval.md)\n');
+  write(root, 'workspace/history/evidence.md', '[old host](file:///C:/legacy/source.js)\n');
+
+  assert.deepEqual(auditDocumentation({ root }), []);
+});
+
+test('documentation audit rejects missing and absolute active Markdown links', (t) => {
+  const root = fixture();
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  write(root, 'docs/guide/bad.md', [
+    '[missing](../modules/missing.md)',
+    '[machine](C:/Users/legacy/docs.md)',
+  ].join('\n'));
+
+  const findings = auditDocumentation({ root });
+  assert.ok(findings.some((item) => item.rule === 'DOC-LINK-MISSING'));
+  assert.ok(findings.some((item) => item.rule === 'DOC-LINK-ABSOLUTE'));
+});
+
 test('documentation audit rejects duplicate ids and broken current owners', (t) => {
   const root = fixture();
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));

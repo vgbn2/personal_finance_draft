@@ -71,7 +71,7 @@ test('safety guard blocks live trading under poisoned credentials', () => {
 
 ## Deterministic Strategy Replay via Seeded PRNG (Mulberry32 Pattern)
 
-When testing quantitative strategy logic (e.g. RSI crossovers, ATR risk sizing, Bayesian outcome summaries), tests must avoid volatile external data by generating reproducible OHLCV bars using a seeded Mulberry32 Pseudo-Random Number Generator (`tests/scripts/strategy/rsi_backtest_analyze.test.js`):
+When testing quantitative strategy logic (e.g. RSI crossovers, ATR risk sizing, Bayesian outcome summaries), tests must avoid volatile external data by generating reproducible OHLCV bars using a seeded Mulberry32 Pseudo-Random Number Generator (`tests/scripts/strategy/rsi_backtest_analyze.test.js`). The current analysis contract is [RSI Reversal Analysis](../sections/research/rsi-reversal-analysis/README.md):
 
 ```javascript
 function mulberry32(seed) {

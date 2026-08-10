@@ -1,6 +1,8 @@
 #include "../src/regime/regime_detector.hpp"
-#include <cassert>
+#include <cstdlib>
 #include <iostream>
+
+#define CHECK(condition) do { if (!(condition)) { std::cerr << "CHECK failed: " #condition << "\n"; std::exit(1); } } while (false)
 #include <vector>
 
 int main() {
@@ -9,19 +11,19 @@ int main() {
     // Test: Insufficient data
     std::vector<double> prices(10, 100.0);
     detector->update(prices, {});
-    assert(detector->get_current_state().current_regime == sovereign::MarketRegime::UNDEFINED);
+    CHECK(detector->get_current_state().current_regime == sovereign::MarketRegime::UNDEFINED);
 
     // Test: Bullish
     prices.assign(20, 100.0);
     prices.back() = 110.0;
     detector->update(prices, {});
-    assert(detector->get_current_state().current_regime == sovereign::MarketRegime::BULLISH_TREND);
+    CHECK(detector->get_current_state().current_regime == sovereign::MarketRegime::BULLISH_TREND);
 
     // Test: Bearish
     prices.assign(20, 100.0);
     prices.back() = 90.0;
     detector->update(prices, {});
-    assert(detector->get_current_state().current_regime == sovereign::MarketRegime::BEARISH_TREND);
+    CHECK(detector->get_current_state().current_regime == sovereign::MarketRegime::BEARISH_TREND);
 
     std::cout << "Regime detector tests passed!" << std::endl;
     return 0;
