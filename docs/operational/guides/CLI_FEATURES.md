@@ -3,12 +3,16 @@
 This document outlines the advanced CLI features available in the Sovereign Trading Platform.
 
 ## Correlation Matrix Tool
-The correlation tool allows you to perform multi-asset analysis to identify diversification opportunities.
 
-### Interactive Selection
-- **Multi-Symbol Search**: When running `backend correlation`, you can now use an interactive TUI to search and select multiple symbols.
-- **Minimum Threshold**: The tool requires at least 2 symbols to generate a correlation matrix.
-- **Output**: Generates a formatted table of Pearson correlation coefficients.
+`backend correlation` calculates a local matrix over selected symbols and a timeframe. The canonical source and preflight contract is [Correlation Analysis](../../sections/research/correlation-analysis/README.md).
+
+- **Multi-symbol selection:** in a rich terminal, the command can open the asset picker; otherwise pass `--symbols AAPL,MSFT,SPY`.
+- **Minimum coverage:** at least two symbols need 30 or more dates and a non-empty shared calendar-date intersection.
+- **No-overlap response:** the command returns a coverage table and `no_common_correlation_dates` rather than silently using unrelated or stale fallback data.
+- **Conservative repair:** pass `--drop-non-overlap` only when intentionally accepting removal of blockers; otherwise remove symbols or choose a broader timeframe.
+- **Methods:** `auto`, `pearson-returns`, `fx-returns`, and `pearson-levels` remain available. Automatic FX returns apply only to all-FX selections.
+
+The command reads local storage and creates a temporary focused snapshot for the native backend. It does not refresh providers or repair canonical cache data.
 
 ### Strategy Management
 - **Interactive Menu**: Run `strategy interactive` to manage and toggle strategy statuses.

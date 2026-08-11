@@ -194,10 +194,51 @@ const {
 
 
 const EXECUTION_MEMORY = require('../../../../shared/lib/runtime/execution_memory.js');
+const alpacaBotState = require('../../../../shared/lib/runtime/alpaca_bot_state.js');
+const { acquireLock, releaseLock } = require('../../../../shared/lib/runtime/process_lock.js');
+const { parseAllowedTimeframes, decideEntryBudget } = require('../../../../shared/lib/runtime/alpaca_intraday_policy.js');
 const {
   canOpenPosition,
   reconcileAutomationInventory,
 } = require('./automation_guard.js');
+
+function reserveAlpacaPaperEntry({ signalId, requestedNotional, perOrderMaxNotional, dailyMaxNotional }) {
+    if (!acquireLock(alpacaBotState.LOCK_PATH)) {
+        return { ok: false, reason: 'alpaca_paper_cycle_lock_held' };
+    }
+    try {
+        const state = alpacaBotState.loadState();
+        const budget = decideEntryBudget({
+            requestedNotional,
+            perOrderMaxNotional,
+            dailyMaxNotional,
+            entryIntents: state.entryIntents,
+        });
+        if (!budget.ok) return budget;
+        const reservation = alpacaBotState.reserveEntryIntent(state, {
+            signalId,
+            utcDay: budget.utcDay,
+            reservedNotional: budget.approvedNotional,
+        });
+        if (!reservation.ok) return reservation;
+        alpacaBotState.saveState(state);
+        return { ...budget, reservation: reservation.intent };
+    } finally {
+        releaseLock(alpacaBotState.LOCK_PATH);
+    }
+}
+
+function updateAlpacaPaperEntryIntent(signalId, status) {
+    if (!acquireLock(alpacaBotState.LOCK_PATH)) return false;
+    try {
+        const state = alpacaBotState.loadState();
+        alpacaBotState.setEntryIntentStatus(state, signalId, status);
+        alpacaBotState.saveState(state);
+        return true;
+    } finally {
+        releaseLock(alpacaBotState.LOCK_PATH);
+    }
+}
 
 async function runAutomationPass(args, strategiesOverride = null) {
     const settings = loadRuntimeSettings();
@@ -234,6 +275,15 @@ async function runAutomationPass(args, strategiesOverride = null) {
     } else {
         const files = readStrategyRegistry();
         targetStrategies = files.map(inspectStrategyFile).filter(s => s.enabled);
+    }
+
+    const allowedTimeframes = providerPaper
+        ? parseAllowedTimeframes(optionValue(args, '--allowed-timeframes', '5m,15m'))
+        : null;
+    if (allowedTimeframes) {
+        const excluded = targetStrategies.filter((strategy) => !allowedTimeframes.includes(resolveStrategyTimeframe(strategy, args)));
+        excluded.forEach((strategy) => console.log(`[AUTOMATION] ${strategy.name} skipped: timeframe_not_allowed (${resolveStrategyTimeframe(strategy, args)}).`));
+        targetStrategies = targetStrategies.filter((strategy) => allowedTimeframes.includes(resolveStrategyTimeframe(strategy, args)));
     }
 
     if (targetStrategies.length === 0) {
@@ -359,11 +409,35 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 console.warn(`[AUTOMATION] Sizing rejected for ${lastTrade.symbol}: ${sizing.code} (${sizing.reason}). Skipping.`);
                 continue;
             }
-            const qty = sizing.quantity;
+            let qty = sizing.quantity;
+            const perOrderMaxNotional = numericOption(args, '--paper-max-notional', 25);
+            const dailyMaxNotional = numericOption(args, '--paper-daily-max-notional', 250);
+            let reservation = null;
+
+            if (providerPaper) {
+                const budget = reserveAlpacaPaperEntry({
+                    signalId,
+                    requestedNotional: qty * currentPrice,
+                    perOrderMaxNotional,
+                    dailyMaxNotional,
+                });
+                if (!budget.ok) {
+                    console.log(`[AUTOMATION] Paper entry skipped for ${lastTrade.symbol}: ${budget.reason || 'alpaca_paper_budget_rejected'}.`);
+                    continue;
+                }
+                qty = Math.floor(budget.approvedNotional / currentPrice);
+                if (qty <= 0) {
+                    updateAlpacaPaperEntryIntent(signalId, 'released');
+                    console.log(`[AUTOMATION] Paper entry skipped for ${lastTrade.symbol}: alpaca_paper_notional_below_one_share.`);
+                    continue;
+                }
+                reservation = budget.reservation;
+            }
 
             console.log(`[\x1b[1;32mSIGNAL\x1b[0m] Strategy ${strategy.name} trigger: ${tradeType.toUpperCase()} ${lastTrade.symbol} @ ${currentPrice} | Qty: ${qty} ($${(qty * currentPrice).toFixed(2)})`);
 
             if (executionEnabled && !canOpenPosition(openPositionCount, maxOpenPositions)) {
+                if (reservation) updateAlpacaPaperEntryIntent(signalId, 'released');
                 console.log(`[AUTOMATION] Max open positions (${maxOpenPositions}) reached — skipping entry for ${lastTrade.symbol}.`);
                 continue;
             }
@@ -376,21 +450,30 @@ async function runAutomationPass(args, strategiesOverride = null) {
                     lastTrade.symbol,
                     String(qty),
                     'market',
-                    ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(numericOption(args, '--paper-max-notional', 25))] : ['--live']),
+                    ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(perOrderMaxNotional)] : ['--live']),
                     '--strategy',
                     strategy.name,
                 ];
-                if (process.env.SOVEREIGN_TRADE_PIN) {
-                    tradeArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
-                }
+                if (process.env.SOVEREIGN_TRADE_PIN) tradeArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
                 const tradeExitCode = await commandTrade(tradeArgs);
-                if (tradeExitCode === 0 && tradeType === 'buy') {
-                    const { recordAlpacaEntry } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
-                    recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: isLive });
-                    openPositionCount++;
+                if (tradeExitCode !== 0) {
+                    if (reservation) updateAlpacaPaperEntryIntent(signalId, 'released');
+                    continue;
                 }
-            }
- else {
+                if (reservation) updateAlpacaPaperEntryIntent(signalId, 'submitted');
+                if (providerPaper && tradeType === 'buy') {
+                    const { fetchAlpacaPositions, recordAlpacaEntry } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
+                    const brokerInventory = fetchAlpacaPositions(false);
+                    const brokerPosition = brokerInventory.positions.find((position) => position.symbol === lastTrade.symbol);
+                    if (brokerInventory.status === 'confirmed' && brokerPosition) {
+                        recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: false });
+                        if (reservation) updateAlpacaPaperEntryIntent(signalId, 'confirmed');
+                        openPositionCount++;
+                    } else {
+                        console.warn(`[AUTOMATION] Paper order submitted for ${lastTrade.symbol}; position confirmation is pending broker reconciliation.`);
+                    }
+                }
+            } else {
                 console.log(`[\x1b[1;32mDRY-RUN\x1b[0m] Order simulated for ${lastTrade.symbol} | Calculated Qty: ${qty}.`);
             }
 

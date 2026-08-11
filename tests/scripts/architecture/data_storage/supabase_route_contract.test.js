@@ -24,6 +24,8 @@ function loadRoutes(mockClient) {
   const originalDbRoute = require.cache[DATABASE_ROUTE_PATH];
   const originalConfigRoute = require.cache[CONFIG_ROUTE_PATH];
 
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
+
   require.cache[SUPABASE_MODULE_PATH] = {
     id: SUPABASE_MODULE_PATH,
     filename: SUPABASE_MODULE_PATH,

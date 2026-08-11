@@ -30,7 +30,7 @@ test('signalLowProbDip fires when first price is below threshold', () => {
     { timestamp: '2025-01-03T00:00:00.000Z', price: 0.20 },
   ];
   const entry = signalLowProbDip(series, { entryThreshold: 0.15 });
-  assert.ok(entry !== null);
+  assert.notEqual(entry, null);
   assert.ok(entry.price <= 0.15);
   assert.equal(entry.timestamp, '2025-01-01T00:00:00.000Z');
 });
@@ -74,7 +74,7 @@ test('signalMeanRevert fires when a price dips below MA - std', () => {
     price,
   }));
   const entry = signalMeanRevert(series);
-  assert.ok(entry !== null, 'Expected a dip entry');
+  assert.notEqual(entry, null, 'Expected a dip entry');
   assert.ok(entry.price <= 0.12, 'Entry price should be at the dip');
 });
 
@@ -91,7 +91,7 @@ test('signalMeanRevert only uses prices available at each decision point', () =>
   ));
   const entry = signalMeanRevert(series);
   const changed = signalMeanRevert(mutated);
-  assert.ok(entry !== null);
+  assert.notEqual(entry, null);
   assert.deepEqual(entry, changed, 'future-only changes must not affect the entry point');
 });
 
@@ -108,7 +108,7 @@ test('buildPriceSeries converts raw CLOB points and filters invalid prices', () 
   assert.equal(series.length, 3);
   assert.equal(series[0].price, 0.10);  // sorted ascending
   assert.equal(series[1].price, 0.15);
-  assert.ok(typeof series[0].timestamp === 'string');
+  assert.equal(typeof series[0].timestamp, 'string');
 });
 
 // --- inferWinner unit tests ---
@@ -193,7 +193,7 @@ test('runPolymarketBacktest produces correct P&L report with fixture data', asyn
   assert.ok(result.totalPnl > 0, 'Net P&L should be positive (mkt-001 big win, mkt-002 small loss)');
   assert.equal(typeof result.winRate, 'number');
   assert.equal(result.results.length, 2);
-  assert.ok(result.results[0].pnl !== undefined);
+  assert.notEqual(result.results[0].pnl, undefined);
   assert.ok(result.totalExecutionCost > 0, 'default execution-cost model should be visible');
   assert.ok(result.grossPnl > result.totalPnl, 'net P&L should subtract execution costs');
 });
@@ -299,7 +299,7 @@ test('runPolymarketBacktest uses Gamma outcomePrices fallback when CLOB is empty
   assert.equal(result.gammaFallbacks, 1, 'Should record Gamma fallback');
   assert.equal(result.trades, 1, 'outcomePrices[0]=0.08 < threshold 0.15 should trigger entry');
   assert.equal(result.wins, 0, 'YES lost — bestAsk=0 → resolutionPrice=0.0 → pnl < 0');
-  assert.ok(result.results[0].gammaFallback === true);
+  assert.equal(result.results[0].gammaFallback, true);
 });
 
 test('runPolymarketBacktest returns error for unknown strategy', async () => {

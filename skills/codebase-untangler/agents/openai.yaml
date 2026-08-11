@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codebase Untangler"
+  short_description: "Recover knowledge and converge fragmented ownership"
+  default_prompt: "Use $codebase-untangler to map this subsystem, recover source-verified engineering knowledge, and select one safe incremental seam."
