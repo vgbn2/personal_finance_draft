@@ -100,13 +100,17 @@ services:
       - /bin/sh
       - -c
       - |
-        INTERVAL=$${ALPACA_PAPER_INTERVAL_MIN:-15}
+        INTERVAL=$${ALPACA_PAPER_INTERVAL_MIN:-5}
         TRUST=$${ALPACA_PAPER_MIN_TRUST_SCORE:-70}
-        NOTIONAL=$${ALPACA_PAPER_MAX_NOTIONAL:-25}
+        NOTIONAL=$${ALPACA_PAPER_MAX_NOTIONAL:-50}
+        DAILY_NOTIONAL=$${ALPACA_PAPER_DAILY_MAX_NOTIONAL:-1000}
+        TIMEFRAMES=$${ALPACA_PAPER_ALLOWED_TIMEFRAMES:-5m,15m}
         exec node backend/cli/sovereign_cli.js run bot alpaca-paper \
           --interval "$$INTERVAL" \
           --min-trust-score "$$TRUST" \
-          --paper-max-notional "$$NOTIONAL"
+          --paper-max-notional "$$NOTIONAL" \
+          --paper-daily-max-notional "$$DAILY_NOTIONAL" \
+          --allowed-timeframes "$$TIMEFRAMES"
 
   backfill:
     profiles: [writer]
