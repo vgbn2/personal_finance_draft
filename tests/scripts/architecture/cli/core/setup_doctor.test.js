@@ -94,6 +94,24 @@ test('doctor output redacts secret values in json mode', () => {
   assert.doesNotMatch(result.stdout, /server_secret_987654321/);
 });
 
+test('doctor alpaca paper-auth --no-network emits only redacted, non-attempted diagnostics', () => {
+  const result = runCli(
+    ['doctor', 'alpaca', '--paper-auth', '--no-network', '--json'],
+    {
+      ALPACA_PAPER_API_KEY: 'paper-key-not-for-output',
+      ALPACA_PAPER_SECRET_KEY: 'paper-secret-not-for-output',
+      ALPACA_PAPER_BASE_URL: 'https://paper-api.alpaca.markets',
+    }
+  );
+
+  assert.equal(result.status, 1);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.scope, 'paper');
+  assert.equal(payload.endpoint_class, 'alpaca_paper');
+  assert.deepEqual(payload.paths.map((path) => path.outcome), ['not_attempted', 'not_attempted']);
+  assert.doesNotMatch(result.stdout, /paper-key-not-for-output|paper-secret-not-for-output/);
+});
+
 test('doctor reports missing broker fields when no local dotenv is loaded', () => {
   const result = runCli(['doctor', 'alpaca', '--json', '--no-network'], stripSecretEnv(process.env));
 

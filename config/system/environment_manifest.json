@@ -54,7 +54,7 @@
       "command_identity": "node backend/cli/sovereign_cli.js run bot alpaca-paper",
       "required_keys": ["ALPACA_PAPER_API_KEY", "ALPACA_PAPER_SECRET_KEY"],
       "optional_keys": ["SOVEREIGN_USER_SETTINGS_PATH"],
-      "defaulted_keys": ["ALPACA_PAPER_BASE_URL", "ALPACA_PAPER_INTERVAL_MIN", "ALPACA_PAPER_MAX_NOTIONAL", "ALPACA_PAPER_MIN_TRUST_SCORE"],
+      "defaulted_keys": ["ALPACA_PAPER_BASE_URL", "ALPACA_PAPER_INTERVAL_MIN", "ALPACA_PAPER_MAX_NOTIONAL", "ALPACA_PAPER_DAILY_MAX_NOTIONAL", "ALPACA_PAPER_ALLOWED_TIMEFRAMES", "ALPACA_PAPER_MIN_TRUST_SCORE"],
       "fixed_overrides": {"LIVE_TRADING": "false", "SOVEREIGN_DEPLOYMENT_PROFILE": "central-host", "SOVEREIGN_EXECUTION_AUTHORIZED": "false", "SOVEREIGN_RUNTIME_MODE": "cloud-compute"},
       "mounts": ["../../storage:/app/storage"],
       "forbidden_environment_classes": ["central", "execution"]
@@ -260,9 +260,11 @@
           "allowed_surfaces": ["gateway_account", "execution"]
         },
         {"name": "ALPACA_PAPER_BASE_URL", "default": "https://paper-api.alpaca.markets", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill", "compose_portfolio_monitor", "compose_bot_alpaca_paper"]},
-        {"name": "ALPACA_PAPER_INTERVAL_MIN", "default": "15", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
+        {"name": "ALPACA_PAPER_INTERVAL_MIN", "default": "5", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
         {"name": "SOVEREIGN_PROVIDER_PAPER_MONITOR_INTERVAL_MS", "default": "15000", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution"]},
-        {"name": "ALPACA_PAPER_MAX_NOTIONAL", "default": "25", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
+        {"name": "ALPACA_PAPER_MAX_NOTIONAL", "default": "50", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
+        {"name": "ALPACA_PAPER_DAILY_MAX_NOTIONAL", "default": "1000", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
+        {"name": "ALPACA_PAPER_ALLOWED_TIMEFRAMES", "default": "5m,15m", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
         {"name": "ALPACA_PAPER_MIN_TRUST_SCORE", "default": "70", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
         {"name": "BACKFILL_INTERVAL_SECS", "default": "1800", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
         {

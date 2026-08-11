@@ -69,6 +69,8 @@ test('alpaca-paper forwards bounded automation arguments', async () => {
     once: true,
     minTrustScore: 80,
     paperMaxNotional: 30,
+    paperDailyMaxNotional: 100,
+    allowedTimeframes: '5m,15m',
     runAutomatedStrategies: async (args) => { capturedArgs = args; },
   });
 
@@ -78,6 +80,8 @@ test('alpaca-paper forwards bounded automation arguments', async () => {
     '--passes', '0',
     '--min-trust-score', '80',
     '--paper-max-notional', '30',
+    '--paper-daily-max-notional', '100',
+    '--allowed-timeframes', '5m,15m',
   ]);
   assert.equal(capturedArgs.includes('--live'), false);
 });
