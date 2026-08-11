@@ -69,6 +69,24 @@ test('loadState merges a partial/legacy config with current defaults', () => {
   });
 });
 
+test('entry intents reserve once, transition durably, and reject duplicate signals', () => {
+  const state = botState.loadState({ fs: { existsSync: () => false } });
+  const reservation = botState.reserveEntryIntent(state, {
+    signalId: 'five-minute-signal',
+    utcDay: '2026-08-11',
+    reservedNotional: 50,
+  });
+  assert.equal(reservation.ok, true);
+  assert.equal(reservation.intent.status, 'reserved');
+  assert.equal(botState.reserveEntryIntent(state, {
+    signalId: 'five-minute-signal',
+    utcDay: '2026-08-11',
+    reservedNotional: 50,
+  }).ok, false);
+  assert.equal(botState.setEntryIntentStatus(state, 'five-minute-signal', 'submitted').status, 'submitted');
+  assert.equal(state.entryIntents.length, 1);
+});
+
 test('loadState fails loudly on corrupt existing state without rewriting it', () => {
   const dir = fs.mkdtempSync(require('node:path').join(require('node:os').tmpdir(), 'alpaca-state-corrupt-'));
   const statePath = require('node:path').join(dir, 'state.json');
