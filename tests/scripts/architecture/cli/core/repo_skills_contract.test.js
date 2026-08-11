@@ -96,6 +96,27 @@ test('workflow routing is deterministic and non-live by default', () => {
   assert.match(orchestrator, /In Plan Mode or another read-only mode, defer the entry/);
 });
 
+test('codebase untangler preserves incremental ownership and knowledge boundaries', () => {
+  const untangler = read('skills/codebase-untangler/SKILL.md');
+  const orchestrator = read('skills/session-orchestrator/SKILL.md');
+  const claude = read('CLAUDE.md');
+
+  assert.match(orchestrator, /`codebase-untangler`/);
+  assert.match(claude, /skills\/codebase-untangler\/SKILL\.md/);
+  assert.match(untangler, /candidate -> mapped -> characterized -> planned -> approved -> implementing -> verified -> reviewed -> migrated -> retired/);
+  assert.match(untangler, /Freeze Behavior Before Movement/);
+  assert.match(untangler, /Compatibility deletion without complete consumer proof is `NO-GO`/);
+  assert.match(untangler, /`docs\/` owns durable, source-linked engineering knowledge/);
+  assert.match(untangler, /`workspace\/` owns operational state/);
+  assert.match(untangler, /docs\/atlas\/algorithms/);
+  assert.match(untangler, /docs\/atlas\/structures/);
+  assert.match(untangler, /docs\/atlas\/protocols/);
+  assert.match(untangler, /docs\/atlas\/topology/);
+  assert.match(untangler, /Work directly in the main session unless the user explicitly authorizes delegation later/);
+  assert.match(untangler, /Never use a clean-slate rewrite/);
+  assert.match(untangler, /Do not delete from string search alone/);
+});
+
 test('blast-through attributes low grades and defects to a proved fault domain and causal owner', () => {
   const blast = read('skills/blast-through/SKILL.md');
   const modes = read('skills/blast-through/references/audit-modes.md');

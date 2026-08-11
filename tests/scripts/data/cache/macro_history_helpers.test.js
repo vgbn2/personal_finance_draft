@@ -8,6 +8,8 @@ function withStubbedCommon(fetchJsonImpl, run) {
   const originalCommon = require.cache[commonPath];
   const originalMacro = require.cache[macroPath];
 
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
+
   require.cache[commonPath] = {
     id: commonPath,
     filename: commonPath,

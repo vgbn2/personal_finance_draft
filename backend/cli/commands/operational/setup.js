@@ -8,6 +8,7 @@ const { promptSelect, promptText } = require('../../tui');
 const { promptPassword } = require('../../lib/auth.js');
 const { listBrokers, getBrokerSpec, buildBrokerReport } = require('../../../../shared/lib/brokers');
 const { upsertEnvFile, getEnvValue } = require('../../../../shared/lib/brokers/common');
+const { redactedSettings, runAlpacaPaperAuthDiagnostic } = require('../../../../shared/lib/brokers/alpaca_paper_auth_diagnostic.js');
 
 function scanTrackedFilesForSecrets(values) {
   const candidates = Object.entries(values || {})
@@ -217,6 +218,27 @@ async function commandSetup(args) {
 }
 
 async function commandDoctor(args) {
+  if (args[0] === 'alpaca' && hasFlag(args, '--paper-auth')) {
+    const configured = redactedSettings(process.env).report;
+    const payload = hasFlag(args, '--no-network')
+      ? {
+        ok: false,
+        type: 'alpaca_paper_auth_diagnostic',
+        ...configured,
+        paths: ['raw_http', 'sdk'].map((path_kind) => ({
+          ...configured,
+          path_kind,
+          outcome: 'not_attempted',
+          http_status: null,
+          error_code: 'network_probe_disabled',
+          latency_ms: 0,
+        })),
+      }
+      : await runAlpacaPaperAuthDiagnostic();
+    printPayload(payload, args);
+    return payload.ok ? 0 : 1;
+  }
+
   const section = args[0] && ['runtime', 'data'].includes(args[0]) ? args[0] : null;
   if (section === 'runtime') {
     const payload = {

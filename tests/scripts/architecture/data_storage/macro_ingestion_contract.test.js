@@ -26,6 +26,8 @@ function withStubbedIngestEnvironment(stubs, run) {
 
   const realProviders = require(providersPath);
 
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
+
   require.cache[providersPath] = {
     id: providersPath,
     filename: providersPath,
@@ -35,6 +37,8 @@ function withStubbedIngestEnvironment(stubs, run) {
       ...stubs.providers,
     },
   };
+
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
 
   require.cache[marketValidationPath] = {
     id: marketValidationPath,
@@ -56,6 +60,8 @@ function withStubbedIngestEnvironment(stubs, run) {
     },
   };
 
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
+
   require.cache[supabasePath] = {
     id: supabasePath,
     filename: supabasePath,
@@ -70,6 +76,8 @@ function withStubbedIngestEnvironment(stubs, run) {
       }),
     },
   };
+
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
 
   require.cache[macroStorePath] = {
     id: macroStorePath,

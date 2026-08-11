@@ -25,6 +25,8 @@ async function withModuleStubs(stubs, run) {
     delete require.cache[filePath];
   }
 
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
+
   Module._load = function(request, parent, isMain) {
     const resolved = Module._resolveFilename(request, parent, isMain);
     if (Object.prototype.hasOwnProperty.call(stubs, resolved)) {

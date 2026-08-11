@@ -10,7 +10,7 @@ test('shadow readiness reports distributions and refuses unsupported promotion',
   assert.equal(report.ok, true);
   assert.equal(report.promotion_approved, false);
   assert.deepEqual(report.sample, { rows: 7, eligible: 0, degraded: 4, excluded: 3 });
-  assert.ok(report.coverage.count === 7);
+  assert.equal(report.coverage.count, 7);
   assert.ok(report.factor_distributions.technical.count >= 6);
   assert.ok(report.evidence.synthetic_parity > 0);
   assert.equal(report.missing_data_sensitivity.silent_weight_renormalization, false);

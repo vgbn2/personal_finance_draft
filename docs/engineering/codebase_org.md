@@ -164,7 +164,7 @@ Use them as evidence or outputs only. If any generated/cache root is tracked or 
 - `shared/lib/ai/ai_client.js`: canonical local AI client helper.
 - `shared/lib/mcp_gate.js` and `shared/lib/mcp_agent.js`: legacy shims over `shared/lib/mcp/`.
 - `shared/lib/paths.js`, `shared/lib/env.js`, `shared/lib/config_loader.js`, `shared/lib/run_loop.js`, and `shared/lib/backend_bridge.js`: legacy shims over `shared/lib/runtime/`.
-- `shared/lib/market_validation.js`, `shared/lib/quote_router.js`, and `shared/lib/polymarket_history.js`: legacy shims over `shared/lib/market/`.
+- `shared/lib/market_validation.js`, `shared/lib/quote_router.js`, and `shared/lib/polymarket_history.js`: legacy shims over `shared/lib/market/`. The current local archive and explicit provider/write boundary is documented in [Polymarket History Archive](../sections/data/polymarket-history-archive/README.md).
 - `shared/lib/indicators/price_action.js`: legacy shim over `shared/lib/market/price_action.js`.
 - `shared/lib/broker_capabilities.js`: legacy shim over `shared/lib/brokers/capabilities.js`.
 - `shared/lib/supabase_admin.js` and `shared/lib/supabase_errors.js`: legacy shims over `shared/lib/supabase/`.

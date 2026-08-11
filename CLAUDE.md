@@ -5,6 +5,7 @@ The tracked `skills/` tree is canonical. `.agents/skills/` is the repo-local dis
 1. Boot and close through `skills/session-orchestrator/SKILL.md`.
 2. Route audits and reviews through `skills/blast-through/SKILL.md` with exactly one audit mode.
 3. Route approved broad fixes through `skills/mass-implement/SKILL.md`.
-4. Use `workspace/STATE.md` as the current project-direction truth.
+4. Route multi-session knowledge recovery, Code Atlas work, fragmented ownership, and staged modular convergence through `skills/codebase-untangler/SKILL.md`.
+5. Use `workspace/STATE.md` as the current project-direction truth.
 
 Do not rely on historical skill names that are absent from `skills/manifest.json`. Do not treat configured MCP metadata as proof of current connectivity or authorization.

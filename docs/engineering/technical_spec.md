@@ -1,4 +1,6 @@
-# Product Specification
+# Product And Phase Specification
+
+> **Needs source refresh:** this page mixes product direction, phase history, implemented surfaces, and roadmap claims. It is retained for compatibility while subjects are migrated to current module, Atlas, architecture-decision, research, or roadmap owners. Do not use it as the current implementation contract.
 
 This file explains the product direction and phase boundaries. It is not a claim that all described systems already exist.
 

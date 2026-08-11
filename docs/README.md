@@ -1,77 +1,115 @@
-# Sovereign Documentation Hub
+# Sovereign Documentation
 
-This is the filtered entrypoint for repo documentation. Start with the canonical files below, then move to the supporting or archived material only when you need the extra detail.
+This hub routes readers to source-centered documentation by purpose and audience. The machine-readable [`documentation_manifest.json`](documentation_manifest.json) classifies each registered page as `canonical`, `supporting`, `needs_refresh`, or `historical`.
 
-## Canonical
+Historical logs, handoffs, plans, reviews, and graph reports are deliberately retained and scraped for durable engineering knowledge. They are a secondary evidence corpus—not the default answer to “how does this module work now?” Promoted facts must be verified against current source first.
 
-- [Architecture entrypoint](./ARCHITECTURE.md): short overview that points to the real ownership map.
-- [Codebase organization map](./engineering/codebase_org.md): canonical folder and file ownership.
-- [Architecture overview](./engineering/architecture_overview.md): high-level system and data-flow view.
-- [Product specification](./engineering/product_spec.md): product scope and behavior boundaries.
-- [Technical spec](./engineering/technical_spec.md): implementation-facing contract.
-- [Engineering standards](./engineering/engineering_standards.md): repo-wide engineering rules.
-- [Web API spec](./engineering/web_api.md): local API and dashboard contract.
-- [Supabase integration](./engineering/supabase_integration.md): gated persistence integration surface.
-- [Stack manifest](./engineering/stack_manifest.md): current platform stack inventory.
-- [Agentic coding playbook](./engineering/agentic_coding_playbook.md): agent workflow guidance.
-- [Quickstart](./operational/guides/QUICKSTART.md): first-run operator guide.
-- [Bootstrap protocol](./operational/guides/bootstrap.md): session-start flow.
-- [Contributor guide](./operational/guides/CONTRIBUTING.md): contribution workflow and expectations.
-- [Deployment guide](./operational/guides/DEPLOYMENT.md): deployment and release operations.
-- [Role-based portable hosting](./operational/guides/role_based_hosting.md): machine profiles, user capabilities, IP/session audit, laptop rehearsal, and mini-PC migration.
-- [Environment setup](./operational/guides/environment_setup.md): local environment bootstrapping.
-- [CLI quick guide](./operational/guides/cli_quick_guide.md): operator CLI reference.
-- [Testing surface](./operational/guides/testing_surface.md): verification surface overview.
-- [Local-first setup](./operational/local_first/local_first_setup.md): current local-first runtime setup.
-- [Local-first migration](./operational/local_first/local_first_migration.md): migration path for local-first operation.
-- [Local-first trading plan](./operational/local_first/local_first_trading_setup_plan.md): staged trading enablement plan.
-- [Research overview](./research/quant_research.md): quantitative research entrypoint.
-- [Macro model](./research/macro_model.md): macro strategy and model notes.
-- [Legacy math](./research/legacy_math.md): older foundations kept for reference.
-- [Frontend design spec](./design/frontend_design_spec.md): UI/UX design rules.
-- [Frontend prompt](./design/frontend_prompt.md): prompt/reference material for the frontend workflow.
+## Start Here
 
-## Supporting
+1. [Project README](../README.md) — purpose, safety boundary, first commands, and audience routes.
+2. [Architecture entrypoint](ARCHITECTURE.md) — short system map and canonical owners.
+3. [Architecture overview](engineering/architecture_overview.md) — runtime policy, paper ledger, execution, and deployment model.
+4. [Codebase tour](codebase_tour/00_START_HERE.md) — guided traces and labs against real source; supporting material that may need path refresh.
+5. [Documentation standard](engineering/documentation_standard.md) — how to write and review docs in this repository.
 
-These are useful, but they should not be mistaken for the primary truth sources.
+## By Audience
 
-- [Architectural debt](./engineering/architectural_debt.md)
-- [Blast-through checklist](./engineering/blast_through_checklist.md)
-- [Dev review queue](./engineering/dev_review_queue.md)
-- [Capability manifest](./engineering/capability_manifest.md)
-- [Kronos pipeline](./engineering/kronos_pipeline.md)
-- [Phase 5 spec](./engineering/phase_5_spec.md)
-- [Rust mirror status](./engineering/rust_mirror_status.md)
-- [Roadmap](./operational/roadmap/roadmap.md)
-- [Roadmap CLI](./operational/roadmap/ROADMAP_CLI.md)
-- [Operations](./operational/guides/operations.md)
-- [Data ingestion](./operational/guides/data_ingestion.md)
-- [Blast-through report](./memory/BLAST_THROUGH_REPORT.md)
-- [Developer comments](./memory/DEV_COMMENTS.md)
-- [Prompt log mirror](./memory/PROMPT_LOG.md)
-- [Session memory mirror](./memory/SESSION_MEMORY.md)
-- [Session report archive](./memory/SESSION_REPORT_2026-05-19.md)
+| Audience | First document | Continue with |
+|---|---|---|
+| Operator | [Quickstart](operational/guides/QUICKSTART.md) | [CLI guide](operational/guides/cli_quick_guide.md), [operations](operational/guides/operations.md) |
+| Contributor | [Contributing](operational/guides/CONTRIBUTING.md) | [architecture](engineering/architecture_overview.md), [testing](operational/guides/testing_surface.md) |
+| Quantitative researcher | [Research overview](research/quant_research.md) | [macro model](research/macro_model.md), [codebase tour](codebase_tour/00_START_HERE.md) |
+| API/frontend developer | [Web/API reference](engineering/web_api.md) | [frontend design](design/frontend_design_spec.md) |
+| Deployment maintainer | [Role-based hosting](operational/guides/role_based_hosting.md) | [deployment](operational/guides/DEPLOYMENT.md), [local-first setup](operational/local_first/local_first_setup.md) |
+| Module maintainer | [Module catalog](modules/README.md) | [Code Atlas](atlas/README.md), [documentation standard](engineering/documentation_standard.md) |
 
-## Archive And Mirrors
+## Documentation Types
 
-- `docs/archive/*`: legacy UI and old CLI artifacts; keep for history, not as active architecture truth.
-- `docs/memory/*`: mirrors of workspace truth files. Prefer the workspace files when making decisions.
-- `docs/ARCHITECTURE.md`: thin entrypoint only. It should stay short and defer to `docs/engineering/codebase_org.md`.
-- `docs/engineering/architecture_overview.md` and `docs/engineering/codebase_org.md` are intentionally split between overview and ownership. Do not duplicate detailed path ownership in both.
+The repository follows the [documentation standard](engineering/documentation_standard.md): keep learning, task, reference, explanation, and historical evidence distinct.
 
-## Redundant Or Superseded
+### Tutorials
 
-These are present for history or transition tracking, but should not be treated as current canonical truth.
+Guided learning with real source traces and bounded labs:
 
-- `docs/archive/legacy_ui/*`
-- `docs/archive/sovereign_cli.og.js`
-- `docs/memory/*` as duplicates of workspace append-only state
+- [Codebase tour: start here](codebase_tour/00_START_HERE.md)
+- [C++ core](codebase_tour/01_cpp_core_engine.md)
+- [Data ingestion and storage](codebase_tour/02_data_ingestion_pipeline.md)
+- [Strategy, backtest, and ML](codebase_tour/03_strategy_backtest_ml.md)
+- [Trading gateway](codebase_tour/04_trading_gateway_live_orders.md)
+- [CLI and TUI](codebase_tour/05_tui_cli_dashboard.md)
+- [Web dashboard and API](codebase_tour/06_web_dashboard_api.md)
+- [Testing methodology](codebase_tour/07_testing_methodology.md)
 
-## Reading Order
+These pages are supporting tutorials, not contract owners. Verify paths, symbols, and commands against current source before editing a safety-critical path.
 
-1. `docs/ARCHITECTURE.md`
-2. `docs/engineering/codebase_org.md`
-3. `docs/engineering/architecture_overview.md`
-4. The specific operational, research, or design file you need
+### How-To Guides And Runbooks
 
-If a doc is not listed above, it is likely transitional, supporting, or archival.
+- [Quickstart](operational/guides/QUICKSTART.md)
+- [Environment setup](operational/guides/environment_setup.md)
+- [CLI guide](operational/guides/cli_quick_guide.md)
+- [Operations](operational/guides/operations.md)
+- [Data ingestion](operational/guides/data_ingestion.md)
+- [Deployment](operational/guides/DEPLOYMENT.md)
+- [Role-based hosting](operational/guides/role_based_hosting.md)
+- [Local-first setup](operational/local_first/local_first_setup.md)
+- [Local-first migration](operational/local_first/local_first_migration.md)
+
+Read each command's side-effect label before running provider, data-write, container, host, paper, or live actions.
+
+### Reference
+
+- [Documentation manifest](documentation_manifest.json) — corpus status and source/review ownership.
+- [Documentation standard](engineering/documentation_standard.md) — writing and review contract.
+- [Module catalog](modules/README.md) and [module template](modules/TEMPLATE.md) — cross-file ownership contracts.
+- [Code Atlas](atlas/README.md) — source-linked algorithms, structures, protocols, and topology.
+- [Testing surfaces](operational/guides/testing_surface.md) — test and evidence commands.
+- [Codebase organization](engineering/codebase_org.md) — **needs refresh**; useful as a map, not final current truth.
+- [Web/API reference](engineering/web_api.md) — **needs refresh** against the active route registry.
+- [Capability manifest](engineering/capability_manifest.md) — **needs refresh**; contains obsolete paths/data-store claims.
+- [Stack manifest](engineering/stack_manifest.md)
+- [Supabase integration](engineering/supabase_integration.md)
+
+### Explanation
+
+- [Architecture overview](engineering/architecture_overview.md)
+- [Product specification](engineering/product_spec.md) — **needs refresh** to separate implemented, gated, and roadmap capabilities.
+- [Technical specification](engineering/technical_spec.md) — **needs refresh** for current paths and public owners.
+- [Engineering standards](engineering/engineering_standards.md)
+- [Research overview](research/quant_research.md)
+- [Macro model](research/macro_model.md)
+- [Frontend design](design/frontend_design_spec.md)
+
+### Historical Evidence
+
+Use history to answer “what happened?” or to mine a durable decision—not as the current module contract.
+
+- `workspace/STATE.md` — project-direction and dated status history.
+- `workspace/handoff/` and `workspace/SESSION_MEMORY.md` — continuity and operational discoveries.
+- `workspace/DEV_REVIEW.md` — review findings and acceptance criteria.
+- `workspace/plans/` and `workspace/research/` — planned and research evidence.
+- `docs/memory/` and `docs/archive/` — mirrors and superseded material.
+- `graphify-out/` — generated structural evidence, not authoritative ownership by itself.
+- [Documentation knowledge inventory](../workspace/reports/DOCUMENTATION_KNOWLEDGE_INVENTORY.md) — candidates being source-verified and promoted.
+
+## Status Rules
+
+- **Canonical:** normal current documentation for the declared contract.
+- **Supporting:** useful teaching or context; source remains authoritative.
+- **Needs refresh:** retained and linked, but known to contain stale or incomplete claims.
+- **Historical:** true for a dated revision or session; never promoted without source revalidation.
+
+When two documents disagree, do not resolve the conflict by recency alone. Read the owning source/config/test surface, update the canonical page, and record the historical source in the promotion ledger when it contains a durable lesson.
+
+## Contributing Documentation
+
+Before writing:
+
+1. identify the reader and documentation type;
+2. find the canonical source owner and existing page;
+3. scrape relevant historical evidence;
+4. verify the fact against current source;
+5. update the smallest owning page;
+6. run available documentation, structure, link/path, and focused behavior gates;
+7. disclose which provider, host, deployment, recovery, paper, or live checks were not run.
+
+See [Documentation Standard](engineering/documentation_standard.md) for the full contract.

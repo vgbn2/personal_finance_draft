@@ -47,6 +47,7 @@ async function runAccumulateWithStubs(cmdArgs, fakeConfig, snapshotFactory = nul
   const stubs = { [ingestPath]: ingestStub, [utilsPath]: utilsStub };
 
   const orig = Module._load;
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
   Module._load = function (request, parent, isMain) {
     const resolved = (() => {
       try { return Module._resolveFilename(request, parent, isMain); } catch (_) { return null; }
@@ -167,7 +168,7 @@ test('commandIntradayAccumulate dry-run exits 0 and reports plan without fetchin
   assert.strictEqual(out.provider, 'yahoo');
   assert.strictEqual(out.timeframe, '1h');
   assert.ok(out.jobs >= 6, 'Should have at least 6 jobs in plan');
-  assert.ok(typeof out.message === 'string', 'Must include a message string');
+  assert.equal(typeof out.message, 'string', 'Must include a message string');
 });
 
 test('commandIntradayAccumulate dry-run for 30m reports 60-day cap', async () => {

@@ -52,6 +52,7 @@ const {
   renderOptimize,
   commandOptimize: rawCommandOptimize,
   commandEdgeDecay: rawCommandEdgeDecay,
+  commandSweep: rawCommandSweep,
 } = require('./research_optimization.js');
 
 const researchConfig = loadResearchConfig();
@@ -687,5 +688,6 @@ module.exports = {
   commandBacktest,
   commandOptimize,
   commandEdgeDecay,
+  commandSweep: rawCommandSweep,
   commandDemo
 };

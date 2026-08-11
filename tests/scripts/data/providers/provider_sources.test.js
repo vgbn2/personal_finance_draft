@@ -10,6 +10,8 @@ function withStubbedCommon(fetchJsonImpl, run) {
   const originalFinnhub = require.cache[finnhubPath];
   const originalTwelve = require.cache[twelvePath];
 
+  // audit-ignore-loader: controlled dependency fixture restored by this test scope
+
   require.cache[commonPath] = {
     id: commonPath,
     filename: commonPath,
