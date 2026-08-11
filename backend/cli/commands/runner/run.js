@@ -59,6 +59,12 @@ function buildAlpacaPaperStrategyArgs(options = {}) {
   if (options.paperMaxNotional) {
     args.push('--paper-max-notional', String(options.paperMaxNotional));
   }
+  if (options.paperDailyMaxNotional) {
+    args.push('--paper-daily-max-notional', String(options.paperDailyMaxNotional));
+  }
+  if (options.allowedTimeframes) {
+    args.push('--allowed-timeframes', String(options.allowedTimeframes));
+  }
   return args;
 }
 
@@ -159,6 +165,10 @@ async function commandRunBot(args) {
       once,
       minTrustScore,
       paperMaxNotional,
+      paperDailyMaxNotional: botArgs.includes('--paper-daily-max-notional')
+        ? numericOption(botArgs, '--paper-daily-max-notional', 1000)
+        : null,
+      allowedTimeframes: optionValue(botArgs, '--allowed-timeframes', null),
       args: botArgs,
       settings,
     });

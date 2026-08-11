@@ -40,6 +40,7 @@ const { STORAGE_DATA_DIR } = require('./paths');
  * @property {AlpacaBotConfig} config
  * @property {AlpacaBotPosition[]} positions
  * @property {AlpacaCycleResult[]} cycleHistory
+ * @property {{signalId:string, utcDay:string, reservedNotional:number, status:'reserved'|'submitted'|'confirmed'|'released'}[]} entryIntents
  * @property {string|null} lastCycleAt
  */
 
@@ -54,13 +55,28 @@ const DEFAULT_CONFIG = {
   maxPositions: 10,
 };
 
+const MAX_ENTRY_INTENTS = 500;
+const ENTRY_INTENT_RETENTION_DAYS = 14;
+
 const DEFAULT_STATE = {
   version: 1,
   config: DEFAULT_CONFIG,
   positions: [],
   cycleHistory: [],
+  entryIntents: [],
   lastCycleAt: null,
 };
+
+function normalizeEntryIntents(raw, now = Date.now()) {
+  const oldest = now - (ENTRY_INTENT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  return (Array.isArray(raw) ? raw : [])
+    .filter((intent) => intent && typeof intent === 'object' && typeof intent.signalId === 'string'
+      && /^\d{4}-\d{2}-\d{2}$/.test(String(intent.utcDay || ''))
+      && Number.isFinite(Number(intent.reservedNotional)) && Number(intent.reservedNotional) > 0
+      && ['reserved', 'submitted', 'confirmed', 'released'].includes(intent.status)
+      && Number.isFinite(Date.parse(intent.createdAt)) && Date.parse(intent.createdAt) >= oldest)
+    .slice(-MAX_ENTRY_INTENTS);
+}
 
 class AlpacaBotStateError extends Error {
   constructor(code, statePath, cause = null) {
@@ -85,6 +101,16 @@ function assertStateShape(raw, statePath) {
     ))
     || (raw.positions !== undefined && !Array.isArray(raw.positions))
     || (raw.cycleHistory !== undefined && !Array.isArray(raw.cycleHistory))
+    || (raw.entryIntents !== undefined && !Array.isArray(raw.entryIntents))
+    || (Array.isArray(raw.entryIntents) && raw.entryIntents.some((intent) => (
+      !intent
+      || typeof intent !== 'object'
+      || !String(intent.signalId || '').trim()
+      || !/^\d{4}-\d{2}-\d{2}$/.test(String(intent.utcDay || ''))
+      || !Number.isFinite(Number(intent.reservedNotional))
+      || Number(intent.reservedNotional) <= 0
+      || !['reserved', 'submitted', 'confirmed', 'released'].includes(intent.status)
+    )))
     || (Array.isArray(raw.positions) && raw.positions.some((position) => (
       !position
       || typeof position !== 'object'
@@ -114,9 +140,40 @@ function loadState(options = {}) {
       config: { ...DEFAULT_CONFIG, ...(raw.config || {}) },
       positions: raw.positions || [],
       cycleHistory: raw.cycleHistory || [],
+      entryIntents: normalizeEntryIntents(raw.entryIntents),
     };
   }
-  return { ...DEFAULT_STATE, config: { ...DEFAULT_CONFIG }, positions: [], cycleHistory: [] };
+  return {
+    ...DEFAULT_STATE,
+    config: { ...DEFAULT_CONFIG },
+    positions: [],
+    cycleHistory: [],
+    entryIntents: [],
+  };
+}
+
+function reserveEntryIntent(state, intent) {
+  const existing = state.entryIntents.find((entry) => entry.signalId === intent.signalId && entry.status !== 'released');
+  if (existing) return { ok: false, reason: 'alpaca_paper_signal_already_reserved', intent: existing };
+  const createdAt = new Date().toISOString();
+  const entry = {
+    signalId: String(intent.signalId),
+    utcDay: String(intent.utcDay),
+    reservedNotional: Number(intent.reservedNotional),
+    status: 'reserved',
+    createdAt,
+  };
+  state.entryIntents = normalizeEntryIntents([...state.entryIntents, entry]);
+  return { ok: true, intent: entry };
+}
+
+function setEntryIntentStatus(state, signalId, status) {
+  const entry = state.entryIntents.find((item) => item.signalId === signalId);
+  if (!entry) throw new AlpacaBotStateError('alpaca_bot_entry_intent_missing', STATE_PATH);
+  entry.status = status;
+  entry.updatedAt = new Date().toISOString();
+  state.entryIntents = normalizeEntryIntents(state.entryIntents);
+  return entry;
 }
 
 function saveState(state, options = {}) {
@@ -130,7 +187,11 @@ module.exports = {
   STATE_PATH,
   LOCK_PATH,
   DEFAULT_CONFIG,
+  MAX_ENTRY_INTENTS,
   assertStateShape,
+  normalizeEntryIntents,
+  reserveEntryIntent,
+  setEntryIntentStatus,
   loadState,
   saveState,
 };
