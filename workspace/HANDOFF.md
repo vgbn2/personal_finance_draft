@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026-08-09.md`** (last update: 2026-08-09 anti-leak sweep remediation and qualification)
+- Latest/current handoff: **`workspace/handoff/2026-08-13.md`** (last update: repository-wide refactor-readability conditional policy)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.

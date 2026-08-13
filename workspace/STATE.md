@@ -1,5 +1,14 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-11 Bounded Alpaca Paper Controls and Authentication Diagnostic
+
+- Committed/published `2e036889` on `checkpoint/2026-08-09-current-state`: Paper-only intraday control source now enforces declared 5m/15m strategy scope, `$50` per-entry cap, `$1,000` UTC-day new-entry cap, and lock-protected bounded entry intents. The `bot-alpaca-paper` Compose service retains `LIVE_TRADING=false` and `SOVEREIGN_EXECUTION_AUTHORIZED=false`.
+- Added `doctor alpaca --paper-auth`, a redacted raw Paper `/v2/account` versus official SDK `getAccount()` diagnostic. It is source-tested and only performs provider reads when explicitly invoked without `--no-network`; it never reports credentials, account IDs, balances, raw bodies, or headers.
+- Source/test evidence: Paper policy/state/cycle/runner 34/34; diagnostic/security/scope 13/13; structure 28/28; integrity 231 files/0 violations; environment manifest 159 classified names/aliases and 0 unclassified; hygiene/diff pass; canonical Node suite exit 0.
+- Two explicitly authorized one-off AAPL Paper buy attempts up to `$25` failed before order creation because hpdesk Paper quote access returned HTTP 401. No order, fill, or position resulted. This does not yet attribute the fault because hpdesk still runs source older than the diagnostic.
+- Host deployment is blocked: published branch is `origin/checkpoint/2026-08-09-current-state` at `2e036889`, but the subsequent read-only SSH readiness inspection timed out before a remote command executed. No rsync, image build, cutover, provider diagnostic, or runtime mutation occurred.
+- Recurring intraday activation remains blocked: all registered strategies resolve to `1d` because none declares `timeframe`; an approved 5m/15m strategy with dedicated evidence is required.
+
 ## 2026-08-09 2-Pass Parameter Plateau & Global Strategy Optimization Closeout
 
 - **C++ 2-Pass Parameter Plateau Engine (`strategy_sweep_evaluator.*`, `global_sweep_optimizer.*`)**: Built native C++ 2-pass optimization framework. Pass 1 executes 1D parameter sensitivity sweeps ($5..30$ for RSI/ATR, $10..40$ for Bollinger, $10..60$ for Volatility, $1..15$ for Holding) and extracts contiguous performance plateaus $[a, b]$ via `extractPlateaus()`. Pass 2 runs joint combinatorial optimization across Pass 1 plateaus with 70/30 In-Sample vs Out-Of-Sample evaluation and assigns overfit risk grades (`STABLE_CHAMPION`, `MODERATE_DECAY`, `OVERFIT_FRAGILE`).

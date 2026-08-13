@@ -121,3 +121,114 @@ Received user invocation: `/session-orchestrator`.
 - Verified a clean worktree on `checkpoint/2026-08-09-current-state` at `e6dfe2e89e912adf70bec88515569e9415b1b04c`.
 - Confirmed `graphify` is available; no code changed, so no graph refresh was needed.
 - Current evidence boundary remains source/test and indexed clean-archive only; CI, provider, host, deployment, recovery, rollback, and soak qualification are not inferred.
+
+## User Prompt & Alpaca Paper Diagnostic / Checkpoint Deployment - 2026-08-11
+
+Received user requests to implement bounded Alpaca Paper intraday controls, raise the daily Paper-entry cap to $1,000, diagnose the hpdesk Paper HTTP 401, and use the authorized exact-image deployment path instead of rsync.
+- Paused the prior hpdesk Docker/local-state monitor by cancelling both session-only schedule jobs; no host service was changed.
+- Implemented and committed `2e036889` on `checkpoint/2026-08-09-current-state`: explicit 5m/15m Paper strategy filtering; $50/order and $1,000/UTC-day entry controls; bounded durable entry intents; Paper-only Compose/manifest wiring; and a redacted raw-HTTP-versus-SDK Paper account diagnostic at `doctor alpaca --paper-auth`.
+- Source verification passed: focused diagnostic/security/scope 13/13; focused Paper policy/state/cycle/runner 34/34; structure 28/28; test integrity 231 files/0 violations; environment manifest 159 classified names/aliases and 0 unclassified; hygiene and diff checks; canonical Node suite exit 0.
+- The deliberate no-network diagnostic emits only `not_attempted` records. A one-off AAPL Paper order attempt and retry both failed before order creation because quote access returned HTTP 401; no broker order, fill, or position was created.
+- Pushed exact commit `2e036889f5a7e0f95ef53ee8248518d15a7f57a4` to `origin/checkpoint/2026-08-09-current-state`.
+- hpdesk exact-deployment readiness inspection timed out at SSH connection setup before executing any remote command. No rsync, image build, deployment, provider diagnostic, order, or service mutation occurred. Next gate: restore SSH reachability, inspect exact host branch/worktree/Compose state, then run the redacted Paper diagnostic from the deployed exact image.
+- The recurring intraday bot remains deployment-blocked because every registered strategy currently resolves to `1d`; no approved 5m/15m strategy contract exists.
+
+## User Prompt & hpdesk Guarded Rsync - 2026-08-11
+
+Received explicit user authorization: "Rsync to hpdesk".
+- Restored SSH reachability and inspected hpdesk: clean `main` checkout at `9fea4a90`; direct host `git fetch` of the published checkpoint failed because its GitHub SSH key lacks authorization.
+- Performed user-authorized guarded source rsync to `/home/vgbn-server/Documents/codeptit/personal_finance_draft/`, explicitly preserving `.git`, all `.env*` files, `storage/`, `workspace/`, dependencies, build outputs, generated graphs, and runtime data. No container, provider request, order, credential, or service configuration changed.
+- Verified byte equality for `alpaca_paper_auth_diagnostic.js`, `alpaca_intraday_policy.js`, `setup.js`, and `docker-compose.yml` between local and hpdesk.
+- Important boundary: because hpdesk Git HEAD remains `9fea4a90`, the rsync source is a mixed working-tree snapshot (79 modified / 33 untracked paths relative to the host index), not an exact committed/image provenance deployment. The running `docker-bot-alpaca-paper-1` remains unchanged (`personal_finance:latest`, up 18 hours); no diagnostic executed from it and no restart was attempted.
+- Next: install/authorize a deploy key so hpdesk can fast-forward to `2e036889`, or explicitly approve a non-provenance snapshot service recreation. Prefer the exact Git/image path; no recurring intraday activation until a declared 5m/15m strategy exists.
+
+## User Prompt & hpdesk Local Snapshot Commit - 2026-08-11
+
+Received host-local Git identity: `vgbn2 <ducanhbin05@gmail.com>`.
+- Verified the rsynced hpdesk candidate set exactly matches the 135 non-workspace paths changed between host base `9fea4a90` and published checkpoint `2e036889`; `git diff --check` was clean. The excluded host surfaces (`.env*`, storage, workspace, dependencies, builds, generated output) were absent.
+- Configured Git author identity locally in the hpdesk repository only; created branch `checkpoint/2026-08-11-hpdesk-rsync`; committed the verified snapshot as `3c3ca65a85bf0c62473f224968dcb0ffee1e7192` (`135 files, 7,765 insertions, 526 deletions`). No push was attempted because host GitHub deploy authorization remains unavailable.
+- The running Alpaca Paper bot stayed unchanged (`personal_finance:latest`, up 19 hours). No image build, service recreation, provider read, Paper order, or credential/runtime mutation occurred.
+- This is host-local rsync-snapshot source evidence, not proof of published commit ancestry, exact image deployment, provider authentication, recovery, or soak. Next: provision restricted host GitHub access and reconcile to published `2e036889` before any service-scoped cutover or Paper diagnostic.
+
+## User Prompt & Session Close - 2026-08-11
+
+Received user request: "session end".
+- Local published checkpoint remains `2e036889` on `checkpoint/2026-08-09-current-state`; hpdesk host-local rsync snapshot remains clean at `3c3ca65a` on `checkpoint/2026-08-11-hpdesk-rsync`.
+- hpdesk deploy-key authentication was subsequently confirmed by the user; its local snapshot and published checkpoint differ only in intentionally preserved `workspace/` records. No exact-image cutover, provider diagnostic, Paper order retry, or container change followed.
+- Updated the next-session goal to reconcile hpdesk Git provenance, then run exactly one redacted Paper raw-versus-SDK diagnostic. Keep recurring intraday activation blocked until a declared and validated 5m/15m strategy exists.
+- Preserved three local continuity records as uncommitted closeout state. No provider, data, runtime, Paper/live, deployment, recovery, rollback, or soak qualification occurred during closeout.
+
+## User Prompt & Skill Policy Update - 2026-08-13
+
+Received user request: "update the refactor_readablitiy skill, to aim for generality check for if else statement, either nested or just spamming ifelse for each case, unless absolutey not being able to do anything else, or cover edgecases->uses if else statements, dont make it like if(1), if(2), if(3)etc, update this for all repos inside codeptit".
+- Updated all four discovered `refactor-readability` skill copies across `personal_finance_draft` and `diabetic` with an enforceable generalized-case-dispatch policy, preserving explicit validation, safety, ordered-guard, divergent-workflow, and edge-case conditionals.
+- Verified policy markers in all four files, byte-identical canonical/discovery pairs, and clean `git diff --check` gates. The recursive inventory had one unrelated denied directory (`tools/n8n/data/postgres`) but reported no other skill copies.
+- No source/runtime/provider/data/trading/host/deployment behavior changed. No staging, commit, or push occurred.
+
+## User Prompt & Implementation - 2026-08-13 (Configured All-Timeframe Backfill Container)
+
+Received user request: "update the backfill container to backfill all TFs"; user selected every configured timeframe for enabled price-bearing families, local repair rather than native provider fetch per derived timeframe, and a temporary opt-in deep bootstrap control.
+- Updated the writer job contract and daemon so local rollups target only parseable configured timeframes coarser than each family’s native base. Base acquisition/deep plan, provider lanes, memory caps, freshness behavior, and `rollupFromBase` provenance remain unchanged.
+- Added conditional `BACKFILL_DEEP_ALL=true` Compose behavior for a bounded full-history bootstrap; local backfill env defaults it to false and the environment manifest registers it only for operator/compose-backfill usage.
+- Added focused contracts for configured target filtering, family-specific limits, invalid/finer target exclusion, local fresh-base repair without provider I/O, and unconfigured-target non-creation.
+- Verification passed: backfill daemon 19/19; environment manifest JSON parse; writer Compose config render without start; and diff check. No container/service started, provider contacted, or canonical data written; no staging, commit, or push occurred.
+
+## User Prompt & Session End - 2026-08-13
+
+Received user request: "end session".
+- Preserved the unstaged working tree. Final `git diff --check` passed.
+- The configured all-timeframe backfill source/test evidence remains 19/19 focused tests, manifest JSON parse, and writer-profile Compose render without service start.
+- No container, provider, data-write, trading, host, deployment, commit, or push action occurred during closeout.
+
+## User Prompt & Session Boot - 2026-08-13
+
+Received user invocation: `/session-orchestrator`.
+- Restored continuity through `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, current `workspace/handoff/2026-08-13.md`, relevant operational state and goal files, session-memory tail, and `docs/README.md`.
+- Verified branch `checkpoint/2026-08-09-current-state` at `2e036889f5a7e0f95ef53ee8248518d15a7f57a4` with the pre-existing configured-backfill and continuity worktree changes still unstaged; preserved them.
+- Confirmed `graphify` is available at `/home/vgbn1/.local/bin/graphify`; no source changed during boot, so graph artifacts were not refreshed.
+- Current immediate action remains hpdesk Git-provenance reconciliation before any exact-image cutover or the one bounded redacted Paper-auth diagnostic. Recurring intraday activation remains blocked pending an approved 5m/15m strategy contract.
+- No provider, canonical-data, runtime, container, host, Paper/live trading, deployment, staging, commit, or push action occurred during boot.
+
+## User Prompt & Audit/Refactor - 2026-08-13
+
+Received user request: "do a blast through and refactor readbility".
+- Routed the review through `blast-through` in exactly one audit mode: maintainability / Hard Reading Mode. Audited the current all-timeframe backfill change, canonical writer owners, focused test contract, Compose projection, and direct ownership/call-site results.
+- Confirmed and refactored one behavior-preserving debt item in `runBackfillCycle`: duplicated rollup success/failure summary, log, and completion-callback handling. A local `applyRollup()` now owns that path; JSDoc now declares the optional configured `timeframes` job property.
+- Dismissed compact ordered freshness guards, provider-specific deep-plan entries, and the Compose deep-bootstrap safety guard as intentional explicit control flow rather than generalizable case-dispatch debt.
+- Verification passed: focused daemon test 19/19, environment manifest JSON parse, writer Compose configuration render without start, and diff check. No provider, canonical-data, runtime, container, host, Paper/live trading, deployment, staging, commit, or push action occurred.
+
+## User Prompt & Mass Implementation - 2026-08-13 (Configured-Universe Readability)
+
+Received repeated `/mass-implement` invocations approving `MI-EQUITY-UNIVERSE-READABILITY-1`.
+- Consolidated the duplicate equity configuration walk in `shared/lib/market/configured_universe.js` into private traversal/parser ownership. `resolveConfiguredMarketUniverse()` now consumes valid entries and malformed raw symbols from one pass while the exported `equityUniverseEntries()` compatibility contract remains unchanged.
+- Added focused coverage for raw malformed flat/grid value ordering and sorted USA/VN market conflict exclusion. Preserved malformed-shape guards, instrument/exclusion/count ordering, provider eligibility, configuration names, and all public behavior.
+- Focused verification passed after user authorized the test commands: market monitor/configured universe 6/6, backfill daemon 19/19, equity 5m backfill 10/10, and `git diff --check`.
+- No provider, canonical-data, runtime, container, host, Paper/live trading, deployment, staging, commit, or push action occurred.
+
+## User Prompt & Security Product Refinement - 2026-08-13
+
+Received user direction to make the next session about security, remote dashboard access, optional later Cloudflare protection, and local-versus-hpdesk-connected downloadable packages; user then requested the decision be challenged through `refine-suggestion` and explored security holes.
+- Recorded agreed boundary: free verified accounts receive only signed-in sanitized 24-hour delayed hpdesk market/universe/freshness and aggregate research artifacts; local all-in-one users keep providers, credentials, and optional bots local; remote-user credential/bot tenancy is deferred as unsafe under current singleton state.
+- Identified and prioritized P1 strategy readiness: missing/stale/insufficient/suspect/forbidden-derived timeframe cache must fail closed rather than producing zero-trade success or stale evaluation. hpdesk repair is manual owner-only.
+- Selected immutable signed/hashed artifact-only publishing, verified-email/CAPTCHA/rate-limit signup defense, self-service deletion, Linux/Windows package direction, separate local Paper preflight wizard, and Cloudflare only after source hardening/staging review/explicit deployment authorization.
+- No source, provider, canonical-data, runtime, container, host, Cloudflare, public exposure, credential, Paper/live trading, deployment, staging, commit, or push action occurred.
+
+## User Prompt & Session End - 2026-08-13
+
+Received user request: "end current sesion".
+- Recorded the next-session security/product goal, detailed roadmap, and design-only boundary in the current handoff, session memory, prompt log, and next-session goal.
+- Preserved the existing unstaged worktree; no runtime, provider, data-write, host, Cloudflare, public exposure, credential, Paper/live, deployment, commit, or push action occurred during closeout.
+
+## User Prompt & Mass Implementation - 2026-08-13 (Authentication/MCP Baseline)
+
+Received user request for a deeper full security blast-through with authentication as session focus, followed by `/mass-implement` approval of the refined Batch A plan.
+- Implemented and closed `SEC-AUTH-MCP-BASELINE-1`: missing/malformed socket origins fail closed for legacy API/client tokens; MCP classification is default-deny and capability-neutral; configured MCP gate token validation is constant-time; header-only MCP requests are rejected in configured-token mode; and portfolio access was removed from MCP reads.
+- Added/registered direct MCP policy and integration contracts. The first structure gate found the new API test missing from `test:api`; registered it and reran all gates without weakening tests.
+- Verified access control 8/8, MCP policy 4/4, client API 3/3, structure 28/28, canonical API suite, integrity 231/0, hygiene, secrets 986/0, and diff check.
+- No host, provider, canonical-data, database migration, Cloudflare/public exposure, credential rotation, Paper/live trading, container, deployment, staging, commit, or push action occurred. Next unstarted security batch is POSIX remote client token-file permission refusal.
+
+## User Prompt & Verification Retry - 2026-08-13
+
+Received repeated approvals to run the previously safety-classifier-blocked verification commands.
+- The harness eventually permitted focused and broad verification. All reported Batch A gates passed after correcting the batch-introduced canonical `test:api` registration omission.
+- No external/runtime boundary was exercised during retries.

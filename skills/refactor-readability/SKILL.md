@@ -29,7 +29,8 @@ permissions, data, dependencies, public interfaces, or runtime policy, route it 
 2. Describe current responsibilities, invariants, side effects, failure paths, and intentional legacy behavior
    in plain language.
 3. Identify verified friction: inconsistent conventions, duplicate ownership, mixed responsibilities, deep
-   nesting, misleading names, long functions, stale comments, or unnecessary indirection.
+   nesting, repetitive or nested `if/else if` case dispatch, misleading names, long functions, stale comments,
+   or unnecessary indirection.
 4. Freeze observable behavior with existing tests or add a focused characterization test when evidence is weak.
 5. Refactor one cohesive slice through existing canonical owners and local style.
 6. Reread the diff as a narrative; remove generated-looking repetition, needless wrappers, and comments that
@@ -42,6 +43,13 @@ permissions, data, dependencies, public interfaces, or runtime policy, route it 
 - Keep one canonical owner for each domain rule.
 - Use names that express financial or operational intent.
 - Make high-level control flow readable top-down; prefer guard clauses over deep nesting.
+- When branches only enumerate cases, prefer the simplest locally readable general representation—such as a
+  lookup/dispatch table, strategy, declarative rule set, polymorphic owner, or language-native match—over
+  `if (case1)`, `else if (case2)`, `else if (case3)` chains.
+- Do not force abstraction: retain explicit conditionals for short bounded decisions, ordered or coupled guards,
+  validation, authorization or safety gates, genuinely divergent workflows, and edge-case handling. A retained
+  lengthy or nested case-dispatch chain must document or report why generalization would reduce correctness or
+  readability.
 - Keep mutation, I/O, credentials, trading capability, and error states explicit.
 - Extract cohesive concepts, not arbitrary line ranges.
 - Avoid generic utility dumping grounds and speculative abstractions.

@@ -36,7 +36,32 @@
    - CI, committed archive, provider, host, deployment, recovery, soak, paper, and live qualification remain open.
 
 Immediate next action:
-- User activates the refined cleanup-first documentation loop; execute Batch 0 baseline/classification only, then present the pilot candidate and GO/NO-GO boundary before writing a new section.
+- Restore exact hpdesk Git provenance before any Paper service cutover: hpdesk now has deploy-key read access and a clean host-local rsync-snapshot checkpoint `3c3ca65a`, while published source is `origin/checkpoint/2026-08-09-current-state` at `2e036889`. Reconcile the two histories without overwriting `.env*`, `storage/`, or `workspace/`; then use the exact-image/rollback path and run one redacted `doctor alpaca --paper-auth` provider read to attribute the Paper HTTP 401.
+- Do not start the recurring intraday bot: every registered strategy still resolves to `1d`; require an approved, source/backtest-supported 5m/15m strategy contract first.
+- The documentation loop remains deferred until the host/Paper diagnostic boundary is resolved or explicitly reprioritized.
+
+## 2026-08-11 Session Closeout — hpdesk snapshot and Paper-auth recovery
+
+1. Local reviewed source/test checkpoint `2e036889` is published to `origin/checkpoint/2026-08-09-current-state`. Its diagnostics and bounded Paper controls pass local focused/structure/integrity/hygiene/manifest/canonical Node gates.
+2. hpdesk has a clean local branch `checkpoint/2026-08-11-hpdesk-rsync` at `3c3ca65a`; its 135 transferred non-workspace paths match the published checkpoint’s source/config/test scope, including the Paper diagnostic and intraday policy SHA-256 hashes. It is host-local rsync-snapshot evidence—not exact published ancestry or an image deployment.
+3. hpdesk now authenticates read-only to GitHub using its dedicated deploy key. Next session must fetch/compare/reconcile the published checkpoint deliberately; do not reset host `main`, overwrite owner-only env/runtime state, or use broad rsync again.
+4. The running `docker-bot-alpaca-paper-1` remains unchanged on `personal_finance:latest`; no image build, restart, Paper provider diagnostic, or new order followed snapshot commit. The two earlier authorized AAPL `$25` Paper attempts failed before order creation on a quote HTTP 401.
+5. After exact provenance is re-established, run exactly one Paper-only redacted raw `/v2/account` vs SDK `getAccount()` diagnostic. Branch on result: dual rejection -> account/credential/provider handoff; raw accept/SDK reject -> source fix; outage/rate limit -> availability classification. Only retry the explicitly authorized AAPL order after an accepted Paper preflight.
+
+## 2026-08-13 Next Session Goal — Security and remote product foundations
+
+1. Start with `blast-through` in exactly one security/connective-tissue mode over the strategy data-readiness path and the artifact-only delayed public data boundary. Produce confirmed findings and a decision-complete B1 implementation plan before edits.
+2. Treat B1 as P1: strategy catalog, CLI, API, dashboard, backtest, automation, promotion, Paper, and execution must fail closed when declared cached timeframes are missing, stale, insufficient, grain-suspect, or forbidden-derived. Distinguish data-unavailable rejection from a valid zero-trade result. hpdesk repair remains a manual owner-only action followed by readiness recheck.
+3. Remote product boundary is fixed for initial work: free verified viewers get sanitized 24-hour delayed market/universe/freshness and aggregate-research artifacts only; no public live hpdesk queries, provider calls, compute, bot/account/portfolio/host access, credentials, or execution. Publication is blocked pending provider redistribution-rights review.
+4. Artifact model is fixed: restricted non-execution hpdesk publisher; immutable schema-allowlisted signed/hashed artifact; atomic publish, expiry/retention, rollback, kill switch, and fail-closed unavailable state. Public routes must never fall through to live data.
+5. Local all-in-one Linux/Windows package keeps every user’s providers, credentials, and bots local. Paper activation is a separate local wizard with owner-only storage, redacted read-only Paper account preflight, no-live default, and final explicit confirmation.
+6. Cloudflare is deferred until source/API hardening, provider rights review, and staging proof; tunnel only to private origin and do not modify localhost behavior. Multi-tenant remote credentials/bots are separately deferred; current host global env and singleton state are not suitable.
+
+Authoritative detailed plan: `/home/vgbn1/.claude/plans/dazzling-giggling-moler.md`.
+
+Immediate closeout boundary:
+- No CI, exact-image deployment, provider recovery, Paper fill, live execution, restart/rollback, or soak qualification has been achieved.
+- Local continuity records are uncommitted session closeout files and intentionally remain separate from published functional source.
 
 
 ## 2026-08-10 Post-closure follow-up

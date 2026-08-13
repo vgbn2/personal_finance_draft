@@ -1,4 +1,59 @@
-## Session Memory - 2026-08-09 2-Pass Parameter Plateau & Global Strategy Optimization Closeout
+### Session Memory - 2026-08-13 Authentication and MCP Baseline
+
+```json
+{
+  "batch": "SEC-AUTH-MCP-BASELINE-1",
+  "lifecycle": "closed",
+  "scope": "legacy loopback token trust and HTTP MCP route classification only",
+  "security_changes": "missing/malformed request origins no longer receive loopback token trust; MCP routes are default-deny; MCP gate token is constant-time validated; headers never establish authority",
+  "tests": "access control 8/8; MCP policy 4/4; client API 3/3; structure 28/28; canonical API, integrity 231/0, hygiene, secret scan 986/0, diff check pass",
+  "next": "Batch B: direct remote CLI POSIX client-token file permission refusal",
+  "boundaries": "no host/provider/database migration/Cloudflare/public exposure/credential rotation/trading/container/deployment/commit/push action"
+}
+```
+
+## Session Memory - 2026-08-13 Security and Remote Product Roadmap
+
+```json
+{
+  "next_session_focus": "security review and design-ready B1 strategy data-readiness plus B2 artifact-only public data boundary",
+  "remote_product": "free verified accounts receive signed-in sanitized 24-hour delayed hpdesk market/universe/freshness and aggregate-research artifact only",
+  "local_product": "Linux/Windows all-in-one package keeps user providers, credentials, and optional bots locally; Paper activation is separate preflighted wizard",
+  "remote_security": "Cloudflare deferred until source/staging proof; private tunnel origin only; no localhost effect",
+  "critical_gap": "missing or stale strategy timeframe cache must fail closed instead of yielding zero-trade success or stale evaluation",
+  "deferred": "multi-tenant remote credentials/bots are unsafe under current global env/singleton state architecture",
+  "boundaries": "planning only; no source, provider, runtime, host, Cloudflare, public exposure, credential, order, commit, or push action"
+}
+```
+
+## Session Memory - 2026-08-13 Configured-Universe Parser Consolidation
+
+```json
+{
+  "batch": "MI-EQUITY-UNIVERSE-READABILITY-1",
+  "lifecycle": "closed",
+  "owner": "shared/lib/market/configured_universe.js",
+  "change": "single private equity configuration traversal/parser now supplies valid entries and invalid raw symbols together",
+  "compatibility": "equityUniverseEntries export/shape, exclusion ordering, conflict sorting, malformed-shape guards, and writer/monitor consumers preserved",
+  "verification": "market monitor 6/6, backfill daemon 19/19, equity 5m backfill 10/10, diff check pass",
+  "boundaries": "source/test only; no provider, data, runtime, container, trading, host, deployment, staging, commit, or push action"
+}
+```
+
+## Session Memory - 2026-08-13 Backfill Readability Audit and Refactor
+
+```json
+{
+  "batches_completed": ["BLAST-MAINTAINABILITY-1", "REFACTOR-READABILITY-BACKFILL-1"],
+  "scope": "current configured-all-timeframe backfill change and immediate canonical owners",
+  "finding": "runBackfillCycle duplicated rollup result accounting, error emission, and completion signaling across fresh repair and post-fetch derivation",
+  "repair": "local applyRollup() canonicalizes the shared internal outcome path; job JSDoc now documents optional configured timeframes",
+  "verification": "backfill daemon 19/19; manifest parse; writer Compose config; diff check all pass",
+  "boundaries": "no provider, container, data-write, trading, host, deployment, staging, commit, or push action"
+}
+```
+
+# Session Memory - 2026-08-09 2-Pass Parameter Plateau & Global Strategy Optimization Closeout
 
 ```json
 {
@@ -2648,5 +2703,30 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "documentation": "active-link audit now catches missing/absolute local navigation while excluding historical file URI evidence",
   "verification": "documentation 9/9; focused fixtures/scanner 99/99; integrity 229/0; structure 28/28; CTest 33/33; canonical Node suite exit 0; indexed clean archive integrity 229/0; graph 8916 nodes/14635 edges/694 communities",
   "boundary": "source/test and indexed clean-archive evidence only; no provider, data, runtime, order, deployment, host, recovery, or soak action"
+}
+```
+
+## Session Memory - 2026-08-13 refactor-readability conditional policy
+
+```json
+{
+  "policy": "For case-selection branches, prefer the simplest locally readable generalized representation (lookup/dispatch table, strategy, declarative rule set, polymorphic owner, or native match) over repetitive or nested if/else-if enumeration.",
+  "exceptions": "Do not force abstraction for short bounded decisions, ordered or coupled guards, validation, authorization/safety gates, genuinely divergent workflows, or edge-case handling; retained lengthy/nested case-dispatch chains require a documented or reported reason.",
+  "scope": "Verified copies are personal_finance_draft skills/refactor-readability plus .agents mirror and diabetic .agents plus .agent discovery copies; both pairs were byte-identical after update.",
+  "inventory_caveat": "Recursive codeptit search emitted an unrelated permission denial under tools/n8n/data/postgres, but returned no other refactor-readability skill paths.",
+  "verification": "All four copies contain the required policy markers; personal_finance_draft and diabetic git diff --check passed.",
+  "boundary": "Documentation-only skill policy; no product behavior, provider, data, runtime, trading, host, deployment, staging, commit, or push action."
+}
+```
+
+## Session Memory - 2026-08-13 configured all-timeframe backfill
+
+```json
+{
+  "writer_contract": "Each price-bearing backfill job carries its family-configured timeframes. The daemon locally derives only parseable configured targets strictly coarser than the authoritative native base; it does not synthesize unsupported finer bars or widen into canonical-but-unconfigured targets.",
+  "acquisition_boundary": "Native base/deep acquisition remains DEEP_PLAN-driven and provider-lane/memory-capped. Fresh-base derived-target repair is local through rollupFromBase with existing provenance and bounded incremental windows; it does not make provider calls.",
+  "bootstrap_control": "BACKFILL_DEEP_ALL defaults false. In the Compose writer command, true conditionally appends --deep-all for an explicitly bounded historical bootstrap; restore false afterward because it otherwise repeats multi-year provider reads every cycle.",
+  "verification": "Focused backfill daemon suite 19/19; environment manifest JSON parse; docker compose writer-profile config --quiet; git diff --check.",
+  "boundary": "Source/test and no-start Compose evidence only. No container/service operation, provider request, canonical-data write, host/deployment action, staging, commit, or push."
 }
 ```
