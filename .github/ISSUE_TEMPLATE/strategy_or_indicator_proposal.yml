@@ -1,0 +1,40 @@
+name: Strategy or indicator proposal
+description: Propose a research-scoped strategy or indicator change.
+title: "[Research]: "
+labels:
+  - research
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Research proposals do not authorize paper or live execution. Do not include credentials, account data, private host details, or active execution information.
+  - type: textarea
+    id: thesis
+    attributes:
+      label: Research thesis
+      description: State the hypothesis, market scope, assumptions, and intended decision use.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and evaluation plan
+      description: Identify data provenance, timeframes, validation/holdout approach, metrics, risks, and failure criteria.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Affected contracts and boundaries
+      description: Identify strategy config, CLI/API/dashboard, backtest, promotion, Paper, or execution surfaces. State which are explicitly out of scope.
+    validations:
+      required: true
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I understand that research results are not execution authorization.
+          required: true
+        - label: I will not use this public issue to disclose security-sensitive or provider-account information.
+          required: true
