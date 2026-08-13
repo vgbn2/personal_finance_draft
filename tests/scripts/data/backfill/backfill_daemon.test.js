@@ -15,7 +15,7 @@ const { rollupFromBase, rollupTargetsAboveBase } = require('../../../../backend/
 const { spawn } = require('node:child_process');
 const {
   runBackfillCycle, decideAction, buildJobUniverse,
-  groupIntoLanes, utcDayFloor, makeRealRollup, createPollPacer, DEEP_PLAN, DEFAULT_DEEP_DAYS,
+  groupIntoLanes, utcDayFloor, makeRealRollup, configuredRollupTargets, createPollPacer, DEEP_PLAN, DEFAULT_DEEP_DAYS,
   commandBackfillDaemon, commandStopBackfillDaemon, DAEMON_STATUS_PATH,
 } = require('../../../../backend/cli/commands/data/backfill_daemon.js');
 
@@ -386,17 +386,73 @@ test('deep job runs the full multi-TF plan; incremental tops only the finest gra
   console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'force_deep', deep: summary.deep }));
 });
 
-test('buildJobUniverse assigns the right base grain per family', () => {
+test('buildJobUniverse assigns base grains and carries configured timeframe intent', () => {
   const config = {
-    crypto: { symbols: ['BTCUSDT', 'ETHUSDT'] },
-    indices: { symbols: ['SPX'] },
+    crypto: { symbols: ['BTCUSDT', 'ETHUSDT'], timeframes: ['5m', '15m', '1h', '1d', '1w', '1mo'] },
+    indices: { symbols: ['SPX'], timeframes: ['5m', '15m', '1h', '1d', '1w', '1mo'] },
   };
   const jobs = buildJobUniverse(config, ['crypto', 'indices']);
   const btc = jobs.find((j) => j.symbol === 'BTCUSDT');
   assert.equal(btc.baseTf, '1m', 'crypto base = 1m');
+  assert.deepEqual(btc.timeframes, config.crypto.timeframes);
   const spx = jobs.find((j) => j.symbol === 'SPX');
-  if (spx) assert.equal(spx.baseTf, '5m', 'indices base = 5m');
+  assert.equal(spx.baseTf, '5m', 'indices base = 5m');
+  assert.deepEqual(spx.timeframes, config.indices.timeframes);
   console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'universe', jobs: jobs.length, crypto_base: btc.baseTf }));
+});
+
+test('configuredRollupTargets keeps only configured parseable targets above the native base', () => {
+  assert.deepEqual(
+    configuredRollupTargets({ baseTf: '1m', timeframes: ['tick', '1m', '5m', '15m', '1d', '1w', '1mo', 'bogus'] }),
+    ['5m', '15m', '1d', '1w', '1mo'],
+    'crypto ignores tick/base/invalid entries and preserves configured coarser targets',
+  );
+  assert.deepEqual(
+    configuredRollupTargets({ baseTf: '1m', timeframes: ['5m', '15m', '30m', '1h', '4h', '1d'] }),
+    ['5m', '15m', '30m', '1h', '4h', '1d'],
+    'equities stop at their configured daily target',
+  );
+  assert.deepEqual(
+    configuredRollupTargets({ baseTf: '5m', timeframes: ['1d', '1w', '1mo'] }),
+    ['1d', '1w', '1mo'],
+    'FX derives only its configured daily-and-above targets',
+  );
+});
+
+test('configured local rollup repairs only declared targets without provider I/O', async () => {
+  const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'daemon-configured-targets-'));
+  const job = {
+    symbol: 'BTCUSDT', family: 'crypto', baseTf: '1m',
+    timeframes: ['5m', '15m', '1h', '1d'],
+  };
+  const calls = [];
+  const fetch = async (target) => {
+    calls.push(target.symbol);
+    const start = Date.now() - 179 * 60 * 1000;
+    writeTsIndex(tsDir, { sources: Array.from({ length: 180 }, (_, index) => ({
+      symbol: target.symbol, family: target.family, provider: 'binance', timeframe: target.baseTf,
+      timestamp: new Date(start + index * 60 * 1000).toISOString(),
+      open: 100 + index, high: 101 + index, low: 99 + index, close: 100 + index, volume: 1,
+    })) });
+    return { ok: true };
+  };
+  const rollup = makeRealRollup(tsDir);
+  try {
+    const now = Date.now();
+    await runBackfillCycle({ tsDir, jobs: [job], now, execute: fetch, rollup, cycle: 1 });
+    const oneWeek = path.join(tsDir, 'BTCUSDT_1w.bin');
+    assert.equal(fs.existsSync(oneWeek), false, 'unconfigured weekly target is never written');
+    fs.rmSync(path.join(tsDir, 'BTCUSDT_1h.bin'));
+    fs.rmSync(path.join(tsDir, 'BTCUSDT_1h.meta.json'));
+    const callsAfterCold = calls.length;
+    const summary = await runBackfillCycle({ tsDir, jobs: [job], now: now + 60 * 1000, execute: fetch, rollup, cycle: 2 });
+    assert.equal(summary.skipped, 1, 'fresh base avoided provider polling');
+    assert.equal(calls.length, callsAfterCold, 'repair is local only');
+    assert.ok(readTsIndex(tsDir, 'BTCUSDT', '1h'), 'missing configured target is restored');
+    assert.equal(fs.existsSync(oneWeek), false, 'repair does not widen to unconfigured targets');
+  } finally {
+    fs.rmSync(tsDir, { recursive: true, force: true });
+  }
 });
 
 test('commandStopBackfillDaemon reports the right reason for a missing/malformed/dead-PID status file', async () => {

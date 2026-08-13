@@ -20,7 +20,12 @@ const {
   backendStatus,
 } = require('./server/services/cli_executor');
 const ROUTES = require('./server/routes');
-const { isMcpRequest, isMcpAllowed, redactDeep } = require('../../shared/lib/mcp/gate');
+const {
+  hasValidMcpGateToken,
+  isMcpRequest,
+  isMcpAllowed,
+  redactDeep,
+} = require('../../shared/lib/mcp/gate');
 const {
   CLIENT_ROUTE_CAPABILITIES,
   CAPABILITIES,
@@ -156,9 +161,18 @@ async function checkSecurity(req, res) {
     return false;
   }
 
-  // MCP agent gate — block sensitive routes before token check
+  // MCP headers opt a request into stricter route policy. When an MCP gate token is
+  // configured, header-detected requests must also prove that token; headers alone
+  // are never an authority signal.
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
-  if (isMcpRequest(req) && !isMcpAllowed(pathname)) {
+  const mcpRequest = isMcpRequest(req);
+  if (mcpRequest && process.env.MCP_GATE_TOKEN && !hasValidMcpGateToken(req)) {
+    console.warn(`[MCP-GATE] Rejected unverified agent request to: ${pathname}`);
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'MCP agent authentication required' }));
+    return false;
+  }
+  if (mcpRequest && !isMcpAllowed(pathname)) {
     console.warn(`[MCP-GATE] Blocked agent access to: ${pathname}`);
     res.writeHead(403, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'MCP agent access not permitted for this route' }));

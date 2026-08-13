@@ -3,9 +3,9 @@
  * backfill_daemon.js -- passive background market-data poller.
  *
  * Wired as `sovereign backfill-daemon`. Once running (e.g. the Docker `backfill`
- * service), it keeps every configured symbol backfilled at its base grain and rolled
- * up to all coarser intraday timeframes, printing a per-symbol decision line and a
- * per-cycle JSON summary for easy debugging.
+ * service), it keeps every configured symbol backfilled at its base grain and rolls
+ * it up to the family-configured coarser timeframes, printing a per-symbol decision
+ * line and a per-cycle JSON summary for easy debugging.
  *
  * Cache-aware: before polling a provider it checks what's already stored (bar count +
  * last-bar age) and only fetches symbols whose base bin is MISSING (deep backfill) or
@@ -32,6 +32,7 @@ const {
   rollupTargetsAboveBase, rollupFromBase, DEFAULT_TS_DIR,
   commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIngest,
 } = require('./data.js');
+const { parseTimeframeMs } = require('../../../scripts/data_ops/ingest_market_data/constants.js');
 const { isFresh } = require('../../../../shared/lib/market/coverage.js');
 const {
   buildWriterJobUniverse,
@@ -170,6 +171,19 @@ function buildJobUniverse(config, families = ALL_FAMILIES) {
   return buildWriterJobUniverse(config, families);
 }
 
+function configuredRollupTargets(job) {
+  const baseMs = parseTimeframeMs(job.baseTf);
+  const configured = Array.isArray(job.timeframes) && job.timeframes.length > 0
+    ? job.timeframes
+    : rollupTargetsAboveBase(job.baseTf);
+  return [...new Set(configured)]
+    .filter((timeframe) => {
+      const timeframeMs = parseTimeframeMs(timeframe);
+      return timeframeMs !== null && baseMs !== null && timeframeMs > baseMs;
+    })
+    .sort((left, right) => parseTimeframeMs(left) - parseTimeframeMs(right));
+}
+
 // Map a freshness gate result to the action the daemon takes.
 function decideAction(gate) {
   if (gate.reason === 'missing' || gate.reason === 'empty') return 'deep';
@@ -289,7 +303,7 @@ function groupIntoLanes(jobs, concurrencyOverride) {
  *
  * @param {object} o
  * @param {string} o.tsDir
- * @param {Array<{symbol,family,baseTf}>} o.jobs
+ * @param {Array<{symbol,family,baseTf,timeframes?:string[]}>} o.jobs
  * @param {number} [o.now]
  * @param {(job, mode, days) => Promise<{ok:boolean, error?:string}>} o.execute
  * @param {(job) => {ok:boolean, derived?:object, error?:string}} o.rollup
@@ -315,8 +329,26 @@ async function runBackfillCycle(o) {
     resourceProbe: o.resourceProbe,
   });
 
-  const summary = { cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0, rolled_up: 0, rollup_errors: 0, errors: 0, failures: [] };
+  const summary = { cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0, rolled_up: 0, derived_targets: 0, rollup_errors: 0, errors: 0, failures: [] };
   const start = Date.now();
+
+  // Keep both fresh-base repair and post-fetch derivation on one visible outcome path.
+  function applyRollup(job, action, roll, label) {
+    if (!roll || !roll.ok) {
+      const error = (roll && roll.error) || 'rollup failed';
+      summary.errors += 1;
+      summary.rollup_errors += 1;
+      summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error });
+      log(`[BACKFILL] ${job.symbol}  rollup failed: ${error}`);
+      if (o.onJobDone) o.onJobDone(job, 'rollup_failed');
+      return false;
+    }
+    summary.rolled_up += 1;
+    const derivedTargetCount = Object.keys(roll.derived || {}).length;
+    summary.derived_targets += derivedTargetCount;
+    if (derivedTargetCount > 0) log(`[BACKFILL] ${job.symbol}  +${derivedTargetCount} configured TF${label}`);
+    return true;
+  }
 
   // Process a single job — shared by both sequential and parallel paths.
   async function processJob(job) {
@@ -332,26 +364,9 @@ async function runBackfillCycle(o) {
       // A fresh base bin can coexist with missing/stale derived bins after an interrupted
       // rollup. Repair them locally without issuing another provider request.
       try {
-        const roll = o.rollup(job, 'refresh');
-        if (!roll || !roll.ok) {
-          const error = (roll && roll.error) || 'rollup failed';
-          summary.errors += 1;
-          summary.rollup_errors += 1;
-          summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error });
-          log(`[BACKFILL] ${job.symbol}  rollup failed: ${error}`);
-          if (o.onJobDone) o.onJobDone(job, 'rollup_failed');
-          return;
-        }
-        summary.rolled_up += 1;
-        const n = Object.keys(roll.derived || {}).length;
-        if (n > 0) log(`[BACKFILL] ${job.symbol}  +${n}TF refresh`);
+        if (!applyRollup(job, action, o.rollup(job, 'refresh'), ' refresh')) return;
       } catch (error) {
-        summary.errors += 1;
-        summary.rollup_errors += 1;
-        summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error: error.message });
-        log(`[BACKFILL] ${job.symbol}  rollup failed: ${error.message}`);
-        if (o.onJobDone) o.onJobDone(job, 'rollup_failed');
-        return;
+        if (!applyRollup(job, action, { ok: false, error: error.message }, ' refresh')) return;
       }
       if (gate.reason === 'not_found') log(`[BACKFILL] ${job.symbol}  ✗ no data on provider (skip 7d)`);
       if (o.onJobDone) o.onJobDone(job, 'skipped');
@@ -386,27 +401,9 @@ async function runBackfillCycle(o) {
     // top-up only the recent window needs re-deriving, so the action is passed
     // through — the real rollup uses it to read just the tail of the base bin.
     try {
-      const roll = o.rollup(job, action);
-      if (roll && roll.ok) {
-        summary.rolled_up += 1;
-        const n = Object.keys(roll.derived || {}).length;
-        if (n > 0) log(`[BACKFILL] ${job.symbol}  +${n}TF`);
-      } else {
-        const error = (roll && roll.error) || 'rollup failed';
-        summary.errors += 1;
-        summary.rollup_errors += 1;
-        summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error });
-        log(`[BACKFILL] ${job.symbol}  rollup failed: ${error}`);
-        if (o.onJobDone) o.onJobDone(job, 'rollup_failed');
-        return;
-      }
-    } catch (err) {
-      summary.errors += 1;
-      summary.rollup_errors += 1;
-      summary.failures.push({ symbol: job.symbol, family: job.family, action, stage: 'rollup', error: err.message });
-      log(`[BACKFILL] ${job.symbol}  rollup failed: ${err.message}`);
-      if (o.onJobDone) o.onJobDone(job, 'rollup_failed');
-      return;
+      if (!applyRollup(job, action, o.rollup(job, action), '')) return;
+    } catch (error) {
+      if (!applyRollup(job, action, { ok: false, error: error.message }, '')) return;
     }
     if (o.onJobDone) o.onJobDone(job, 'ok');
   }
@@ -485,7 +482,10 @@ function makeRealExecutor() {
 // full-bin read. Deep (first-fill) jobs still re-derive the whole freshly-written bin.
 function makeRealRollup(tsDir, incrementalDays = INCREMENTAL_DAYS) {
   return (job, action) => {
-    const targets = rollupTargetsAboveBase(job.baseTf);
+    const targets = configuredRollupTargets(job);
+    if (targets.length === 0) {
+      return { ok: true, source_bars: 0, base_timeframe: job.baseTf, derived: {} };
+    }
     const opts = action === 'deep'
       ? {}
       : { sinceMs: utcDayFloor(Date.now() - (incrementalDays + 1) * DAY_MS) };
@@ -635,6 +635,7 @@ module.exports = {
   decideAction,
   makeRealExecutor,
   makeRealRollup,
+  configuredRollupTargets,
   DEEP_PLAN,
   ALL_FAMILIES,
   DEFAULT_DEEP_DAYS,
