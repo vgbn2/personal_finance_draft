@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a reproducible, non-sensitive defect.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report vulnerabilities, credentials, account data, private hosts, or active execution details here. See SECURITY.md for confidential-reporting status and instructions.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the observed behavior and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Safe reproduction
+      description: Provide minimal steps, inputs, and commands. Do not include secrets or mutate a provider, account, host, or canonical data.
+      placeholder: |
+        1. Run ...
+        2. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include relevant logs with sensitive values redacted, affected commit/version, and test outcome.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety classification
+      options:
+        - label: This report contains no credentials, account identifiers, private host details, or active execution information.
+          required: true
+        - label: This report does not require a provider mutation, order, host change, or canonical-data write to reproduce.
+          required: true

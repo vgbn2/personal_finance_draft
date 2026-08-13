@@ -232,3 +232,11 @@ Received user request for a deeper full security blast-through with authenticati
 Received repeated approvals to run the previously safety-classifier-blocked verification commands.
 - The harness eventually permitted focused and broad verification. All reported Batch A gates passed after correcting the batch-introduced canonical `test:api` registration omission.
 - No external/runtime boundary was exercised during retries.
+
+## User Prompt & Maintainer-Ready Collaboration Rollout - 2026-08-13
+
+Received user request to make the repository ready for other maintainers, with full source collaboration but controlled operational authority.
+- Added the root contributor workflow, governance, maintainer roster, security policy, conduct policy, CODEOWNERS bootstrap map, pull-request template, and structured issue forms. Updated README and the detailed contributor guide to link the new collaboration surface.
+- Preserved full source collaboration through pull requests while keeping credentials, providers, hosts, deployment, CI/branch administration, and Paper/live execution core-maintainer-controlled. The roster and CODEOWNERS use deliberately non-enforcing placeholders pending verified GitHub handles.
+- Verified `npm run test:structure` (28/28), `node scripts/dev/audit_test_integrity.js` (231 files/0 violations), `npm run hygiene`, GitHub issue/workflow YAML parsing, `git diff --check`, and no workflow modifications. No provider, canonical-data, runtime, container, host, credential, Paper/live trading, deployment, GitHub settings mutation, commit, or push action occurred.
+- Required administrator follow-up: replace placeholder identities and issue-template URLs; enable private vulnerability reporting; then configure protected-branch, required-review/CODEOWNERS, status-check, force-push/deletion, and merge controls as documented in `GOVERNANCE.md`.

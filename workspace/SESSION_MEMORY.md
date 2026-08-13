@@ -2730,3 +2730,16 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "boundary": "Source/test and no-start Compose evidence only. No container/service operation, provider request, canonical-data write, host/deployment action, staging, commit, or push."
 }
 ```
+
+## Session Memory - 2026-08-13 maintainer-ready collaboration rollout
+
+```json
+{
+  "operating_model": "Collaborators receive full source access through focused pull requests; operational authority stays core-maintainer-controlled for secrets, providers, private hosts, deployments, CI/branch administration, canonical-data writes, and Paper/live execution.",
+  "artifacts": ["CONTRIBUTING.md", "GOVERNANCE.md", "MAINTAINERS.md", "SECURITY.md", "CODE_OF_CONDUCT.md", ".github/CODEOWNERS", ".github/PULL_REQUEST_TEMPLATE.md", ".github/ISSUE_TEMPLATE/"],
+  "bootstrap_safety": "CODEOWNERS and maintainer identities intentionally use non-enforcing placeholders. Replace every placeholder with verified GitHub users/teams before enabling required CODEOWNERS review or granting repository roles.",
+  "security_channel": "SECURITY.md points to GitHub private vulnerability reporting only as an intended channel; a repository administrator must enable it before it is advertised as active. Issue-template links retain explicit OWNER/REPOSITORY placeholders for the same reason.",
+  "verification": "structure 28/28; integrity 231 files/0 violations; hygiene pass; GitHub issue/workflow YAML parse pass; diff check pass; build/test/deploy workflow bodies unchanged.",
+  "boundary": "Documentation and GitHub-intake source changes only. No provider, data, runtime, container, host, credential, trading, deployment, GitHub settings, commit, or push action."
+}
+```

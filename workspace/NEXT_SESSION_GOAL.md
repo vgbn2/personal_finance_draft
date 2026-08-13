@@ -63,6 +63,16 @@ Immediate closeout boundary:
 - No CI, exact-image deployment, provider recovery, Paper fill, live execution, restart/rollback, or soak qualification has been achieved.
 - Local continuity records are uncommitted session closeout files and intentionally remain separate from published functional source.
 
+## 2026-08-13 Maintainer onboarding follow-up
+
+1. Replace the deliberate `@..._HANDLE` placeholders in `MAINTAINERS.md` and `.github/CODEOWNERS` with verified GitHub users or teams; replace the `OWNER/REPOSITORY` issue-template URLs.
+2. A repository administrator must enable GitHub private vulnerability reporting before treating `SECURITY.md` as an active confidential-reporting channel.
+3. After real owners exist, configure protected `main`, PRs, at least one approval, sensitive-path CODEOWNERS review, the existing required checks, force-push/deletion protection, and a merge policy as documented in `GOVERNANCE.md`. Do not enable CODEOWNERS enforcement while placeholders remain.
+4. This onboarding work does not grant provider credentials, host access, deployment control, CI administration, canonical-data write authority, or Paper/live execution authorization. Those remain separate core-maintainer and operator-controlled boundaries.
+
+Immediate next action:
+- Supply the initial GitHub handles and repository owner/name, then perform the administrator-only GitHub settings steps above. Until then, the new governance documents and templates are ready for source collaboration but the placeholder ownership/security links are intentionally non-operational.
+
 
 ## 2026-08-10 Post-closure follow-up
 
