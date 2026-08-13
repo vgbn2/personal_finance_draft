@@ -1,0 +1,31 @@
+# Bootstrap ownership map for a controlled-maintainer repository.
+#
+# IMPORTANT: These are intentionally non-functional placeholders. Replace EVERY
+# placeholder with a real GitHub user or team, validate access, and only then
+# enable required CODEOWNERS review in repository settings.
+
+# Default review owner
+* @PRIMARY_OWNER_HANDLE
+
+# Domain ownership
+/backend/core/ @PRIMARY_OWNER_HANDLE @CPP_MAINTAINER_HANDLE
+/backend/cli/ @PRIMARY_OWNER_HANDLE @APPLICATION_MAINTAINER_HANDLE
+/backend/api/ @PRIMARY_OWNER_HANDLE @APPLICATION_MAINTAINER_HANDLE
+/Frontend/dashboard/ @PRIMARY_OWNER_HANDLE @APPLICATION_MAINTAINER_HANDLE
+/docs/ @PRIMARY_OWNER_HANDLE @DOCUMENTATION_MAINTAINER_HANDLE
+
+# Core-maintainer-only boundaries
+/backend/gateway/ @PRIMARY_OWNER_HANDLE
+/shared/lib/auth/ @PRIMARY_OWNER_HANDLE
+/shared/lib/runtime/ @PRIMARY_OWNER_HANDLE
+/shared/lib/market/ @PRIMARY_OWNER_HANDLE
+/config/ @PRIMARY_OWNER_HANDLE
+/infra/ @PRIMARY_OWNER_HANDLE
+/.github/ @PRIMARY_OWNER_HANDLE
+/PROJECT_RULES.md @PRIMARY_OWNER_HANDLE
+/LICENSE @PRIMARY_OWNER_HANDLE
+/CONTRIBUTING.md @PRIMARY_OWNER_HANDLE
+/GOVERNANCE.md @PRIMARY_OWNER_HANDLE
+/MAINTAINERS.md @PRIMARY_OWNER_HANDLE
+/SECURITY.md @PRIMARY_OWNER_HANDLE
+/CODE_OF_CONDUCT.md @PRIMARY_OWNER_HANDLE
