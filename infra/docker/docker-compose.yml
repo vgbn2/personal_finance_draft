@@ -137,19 +137,25 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
-    # grain (1m crypto/equities, 5m Yahoo families) and rolled up to coarser TFs. It is
-    # cache-aware (skips fresh symbols) and runs no HTTP server, so disable the image's
+    # grain (1m crypto/equities, 5m Yahoo families), then locally derives only each
+    # family's configured coarser TFs. It is cache-aware (skips fresh symbols) and runs no HTTP server, so disable the image's
     # :8787 healthcheck to avoid a false "unhealthy".
     healthcheck:
       disable: true
     # The daemon loops internally every BACKFILL_INTERVAL_SECS (default 1800s); the
     # restart policy covers crashes. Set BACKFILL_INTERVAL_SECS in .env to override.
+    # Set BACKFILL_DEEP_ALL=true only for a bounded historical bootstrap, then remove it:
+    # leaving it set repeats multi-year provider reads on every cycle.
     command:
       - /bin/sh
       - -c
       - |
         INTERVAL=$${BACKFILL_INTERVAL_SECS:-1800}
-        node backend/cli/sovereign_cli.js backfill-daemon --interval-secs $$INTERVAL
+        DEEP_ALL_ARGS=""
+        if [ "$${BACKFILL_DEEP_ALL:-false}" = "true" ]; then
+          DEEP_ALL_ARGS="--deep-all"
+        fi
+        exec node backend/cli/sovereign_cli.js backfill-daemon --interval-secs "$$INTERVAL" $$DEEP_ALL_ARGS
 
   portfolio-monitor:
     profiles: [monitoring]

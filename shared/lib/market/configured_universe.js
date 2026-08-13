@@ -70,49 +70,47 @@ function normalizeSymbol(value) {
   return SAFE_SYMBOL.test(symbol) ? symbol : null;
 }
 
-function equityUniverseEntries(section = {}) {
-  const entries = new Map();
-  const add = (rawSymbol, market = null) => {
-    const symbol = normalizeSymbol(rawSymbol);
-    if (!symbol) return;
-    if (!entries.has(symbol)) entries.set(symbol, { symbol, markets: new Set() });
-    if (market) entries.get(symbol).markets.add(String(market).trim().toUpperCase());
-  };
-
-  for (const symbol of normalizedList(section.symbols)) add(symbol);
+function visitEquitySymbols(section = {}, visitor) {
+  for (const rawSymbol of normalizedList(section.symbols)) visitor(rawSymbol, null);
   const grid = section.universe_matrix?.grid;
-  if (grid && typeof grid === 'object' && !Array.isArray(grid)) {
-    for (const [market, sectors] of Object.entries(grid)) {
-      if (!sectors || typeof sectors !== 'object' || Array.isArray(sectors)) continue;
-      for (const symbols of Object.values(sectors)) {
-        for (const symbol of normalizedList(symbols)) add(symbol, market);
-      }
+  if (!grid || typeof grid !== 'object' || Array.isArray(grid)) return;
+  for (const [market, sectors] of Object.entries(grid)) {
+    if (!sectors || typeof sectors !== 'object' || Array.isArray(sectors)) continue;
+    for (const symbols of Object.values(sectors)) {
+      for (const rawSymbol of normalizedList(symbols)) visitor(rawSymbol, market);
     }
   }
+}
 
-  return [...entries.values()].map(({ symbol, markets }) => ({
-    symbol,
-    market: markets.size === 1 ? [...markets][0] : null,
-    market_conflict: markets.size > 1 ? [...markets].sort() : null,
-  }));
+function parseEquitySection(section = {}) {
+  const entries = new Map();
+  const invalidSymbols = new Set();
+  visitEquitySymbols(section, (rawSymbol, market) => {
+    const symbol = normalizeSymbol(rawSymbol);
+    if (!symbol) {
+      invalidSymbols.add(String(rawSymbol));
+      return;
+    }
+    if (!entries.has(symbol)) entries.set(symbol, { symbol, markets: new Set() });
+    if (market) entries.get(symbol).markets.add(String(market).trim().toUpperCase());
+  });
+
+  return {
+    entries: [...entries.values()].map(({ symbol, markets }) => ({
+      symbol,
+      market: markets.size === 1 ? [...markets][0] : null,
+      market_conflict: markets.size > 1 ? [...markets].sort() : null,
+    })),
+    invalidSymbols: [...invalidSymbols],
+  };
+}
+
+function equityUniverseEntries(section = {}) {
+  return parseEquitySection(section).entries;
 }
 
 function invalidEquitySymbols(section = {}) {
-  const invalid = new Set();
-  const inspect = (value) => {
-    if (!normalizeSymbol(value)) invalid.add(String(value));
-  };
-  for (const symbol of normalizedList(section.symbols)) inspect(symbol);
-  const grid = section.universe_matrix?.grid;
-  if (grid && typeof grid === 'object' && !Array.isArray(grid)) {
-    for (const sectors of Object.values(grid)) {
-      if (!sectors || typeof sectors !== 'object' || Array.isArray(sectors)) continue;
-      for (const symbols of Object.values(sectors)) {
-        for (const symbol of normalizedList(symbols)) inspect(symbol);
-      }
-    }
-  }
-  return [...invalid];
+  return parseEquitySection(section).invalidSymbols;
 }
 
 function alpacaEquity5mSkipReason(entry) {
@@ -180,7 +178,8 @@ function resolveConfiguredMarketUniverse(config = {}) {
     const section = config[family];
     if (!section || section.enabled === false) continue;
     if (family === 'equities') {
-      for (const symbol of invalidEquitySymbols(section)) {
+      const { entries, invalidSymbols } = parseEquitySection(section);
+      for (const symbol of invalidSymbols) {
         exclusions.push({
           family,
           symbol,
@@ -188,7 +187,7 @@ function resolveConfiguredMarketUniverse(config = {}) {
           reason: 'unsafe_or_malformed_symbol',
         });
       }
-      for (const entry of equityUniverseEntries(section)) {
+      for (const entry of entries) {
         const reason = alpacaEquity5mSkipReason(entry);
         if (reason) {
           exclusions.push({
@@ -269,6 +268,12 @@ function resolveConfiguredMarketUniverse(config = {}) {
   };
 }
 
+function configuredTimeframes(section = {}) {
+  return [...new Set(normalizedList(section.timeframes)
+    .map((timeframe) => String(timeframe).trim())
+    .filter(Boolean))];
+}
+
 function buildWriterJobUniverse(config, families = PRICE_BEARING_FAMILIES) {
   const allowed = new Set(normalizedList(families).map((family) => String(family).toLowerCase()));
   return resolveConfiguredMarketUniverse(config).instruments
@@ -277,6 +282,7 @@ function buildWriterJobUniverse(config, families = PRICE_BEARING_FAMILIES) {
       symbol: instrument.symbol,
       family: instrument.family,
       baseTf: instrument.base_timeframe,
+      timeframes: configuredTimeframes(config[instrument.family]),
     }));
 }
 

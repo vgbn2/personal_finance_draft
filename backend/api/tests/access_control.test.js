@@ -14,8 +14,8 @@ const {
   isLoopbackRequest,
 } = require('../server/services/access_control');
 
-function request(headers = {}) {
-  return { headers };
+function request(headers = {}, remoteAddress = '127.0.0.1') {
+  return { headers, socket: { remoteAddress } };
 }
 
 test('admin and client tokens become distinct service principals', async () => {
@@ -118,16 +118,28 @@ test('legacy owner and client tokens are loopback-only', async () => {
     SOVEREIGN_API_TOKEN: 'admin-token-value',
     SOVEREIGN_CLIENT_TOKEN: 'client-token-value',
   };
-  const remote = {
-    headers: { 'x-sovereign-token': env.SOVEREIGN_API_TOKEN },
-    socket: { remoteAddress: '192.0.2.40' },
-  };
+  const remote = request({ 'x-sovereign-token': env.SOVEREIGN_API_TOKEN }, '192.0.2.40');
   assert.equal(isLoopbackRequest(remote), false);
   assert.equal((await resolvePrincipal(remote, { env })).authenticated, false);
-  assert.equal(isLoopbackRequest({
-    headers: {},
-    socket: { remoteAddress: '::ffff:127.0.0.1' },
-  }), true);
+  assert.equal(isLoopbackRequest(request({}, '::ffff:127.0.0.1')), true);
+});
+
+test('missing or malformed request origins never receive loopback token trust', async () => {
+  const env = {
+    SOVEREIGN_API_TOKEN: 'admin-token-value',
+    SOVEREIGN_CLIENT_TOKEN: 'client-token-value',
+  };
+  for (const candidate of [
+    { headers: { 'x-sovereign-token': env.SOVEREIGN_API_TOKEN } },
+    request({ 'x-sovereign-token': env.SOVEREIGN_API_TOKEN }, ''),
+    request({ 'x-sovereign-token': env.SOVEREIGN_API_TOKEN }, 'not-an-ip'),
+    request({ 'x-sovereign-token': env.SOVEREIGN_API_TOKEN }, '198.51.100.10'),
+  ]) {
+    assert.equal(isLoopbackRequest(candidate), false);
+    assert.equal((await resolvePrincipal(candidate, { env })).authenticated, false);
+  }
+  assert.equal(isLoopbackRequest(request({}, '127.0.0.1')), true);
+  assert.equal(isLoopbackRequest(request({}, '::1')), true);
 });
 
 test('socket principals use handshake auth without browser-visible host headers', async () => {

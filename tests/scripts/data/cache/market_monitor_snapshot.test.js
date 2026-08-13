@@ -72,6 +72,37 @@ test('configured universe deduplicates exact identities and reports unsupported/
   assert.ok(universe.exclusions.some((item) => item.reason === 'missing_provider_symbol_mapping'));
 });
 
+test('configured equity parsing preserves invalid ordering and market conflicts', () => {
+  const universe = resolveConfiguredMarketUniverse({
+    equities: {
+      enabled: true,
+      symbols: ['aapl', '../flat-invalid', 'AAPL'],
+      universe_matrix: {
+        grid: {
+          USA: { technology: ['AAPL', '../grid-invalid'] },
+          VN: { technology: ['AAPL'] },
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(universe.instruments, []);
+  assert.deepEqual(
+    universe.exclusions.map(({ symbol, reason, detail }) => ({ symbol, reason, detail })),
+    [
+      { symbol: '../flat-invalid', reason: 'unsafe_or_malformed_symbol', detail: undefined },
+      { symbol: '../grid-invalid', reason: 'unsafe_or_malformed_symbol', detail: undefined },
+      {
+        symbol: 'AAPL',
+        reason: 'ambiguous_market_configuration',
+        detail: 'symbol is assigned to multiple markets: USA,VN',
+      },
+    ],
+  );
+  assert.equal(universe.counts.configured_price_bearing_total, 3);
+  assert.equal(universe.counts.excluded_price_bearing_total, 3);
+});
+
 test('backfill writer and monitor resolve the same supported configured universe', () => {
   const config = {
     crypto: { enabled: true, symbols: ['BTCUSDT', 'ETHUSDT'] },
