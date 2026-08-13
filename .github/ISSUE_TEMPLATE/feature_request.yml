@@ -1,0 +1,36 @@
+name: Feature request
+description: Propose a bounded capability or improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or user need
+      description: Explain the specific need and who is affected.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful scope, expected interfaces, and alternatives considered.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Scope and safety boundaries
+      description: Identify impacted modules and whether this involves providers, credentials, execution, data writes, hosts, deployment, CI, or a phase change.
+    validations:
+      required: true
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I checked the current project direction in workspace/STATE.md.
+          required: true
+        - label: This proposal does not expose credentials, account data, private hosts, or active execution details.
+          required: true

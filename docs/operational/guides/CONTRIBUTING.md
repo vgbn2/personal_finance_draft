@@ -2,6 +2,8 @@
 
 This project is meant for several contributors. Keep changes understandable, bounded, and aligned with the active phase.
 
+The repository-level [contribution entrypoint](../../../CONTRIBUTING.md) defines the pull-request workflow, contribution attestation, protected operational boundaries, and links to [governance](../../../GOVERNANCE.md), the [maintainer roster](../../../MAINTAINERS.md), and the [security policy](../../../SECURITY.md). This guide remains the detailed engineering and evidence standard.
+
 ## Before Coding
 
 Read:
