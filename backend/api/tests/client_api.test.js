@@ -188,6 +188,42 @@ test('role gate preserves viewer sessions and limits service-client capabilities
   }
 });
 
+test('configured MCP gate rejects spoofed headers and preserves normal API authorization', async () => {
+  const priorGateToken = process.env.MCP_GATE_TOKEN;
+  process.env.MCP_GATE_TOKEN = 'test-mcp-gate-token';
+  const baseUrl = await listen();
+  try {
+    const spoofed = await request(baseUrl, '/api/data/summary', {
+      'X-Mcp-Agent': '1',
+    });
+    assert.equal(spoofed.status, 403);
+    assert.equal((await spoofed.json()).error, 'MCP agent authentication required');
+
+    const tokenOnly = await request(baseUrl, '/api/data/summary', {
+      'X-Mcp-Token': 'test-mcp-gate-token',
+    });
+    assert.equal(tokenOnly.status, 401);
+    assert.equal((await tokenOnly.json()).error, 'authentication_required');
+
+    const authenticatedRead = await request(baseUrl, '/api/data/summary', {
+      'X-Mcp-Token': 'test-mcp-gate-token',
+      'X-Sovereign-Token': TEST_CLIENT_TOKEN,
+    });
+    assert.notEqual(authenticatedRead.status, 401);
+
+    const blockedRoute = await request(baseUrl, '/api/config', {
+      'X-Mcp-Token': 'test-mcp-gate-token',
+      'X-Sovereign-Token': TEST_ADMIN_TOKEN,
+    });
+    assert.equal(blockedRoute.status, 403);
+    assert.equal((await blockedRoute.json()).error, 'MCP agent access not permitted for this route');
+  } finally {
+    if (priorGateToken === undefined) delete process.env.MCP_GATE_TOKEN;
+    else process.env.MCP_GATE_TOKEN = priorGateToken;
+    await close();
+  }
+});
+
 test('client snapshot builders use cached readers and no side-effect primitives', async () => {
   const now = Date.parse('2026-07-24T00:00:00.000Z');
   const source = fs.readFileSync(
