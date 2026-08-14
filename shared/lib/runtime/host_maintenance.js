@@ -160,15 +160,43 @@ function validateBackupTopology(backupRoot, sources) {
   }
 }
 
+function isTransientFile(name) {
+  return name.endsWith('.tmp') || name.endsWith('.lock') || name.startsWith('.tmp');
+}
+
+function pruneOrphanedTempFiles(tsDir, maxAgeMs = 60 * 60 * 1000, now = Date.now()) {
+  if (!fs.existsSync(tsDir)) return 0;
+  let deleted = 0;
+  try {
+    for (const entry of fs.readdirSync(tsDir, { withFileTypes: true })) {
+      if (entry.isFile() && isTransientFile(entry.name)) {
+        const fullPath = path.join(tsDir, entry.name);
+        try {
+          const stat = fs.statSync(fullPath);
+          if (now - stat.mtimeMs > maxAgeMs) {
+            fs.unlinkSync(fullPath);
+            deleted += 1;
+          }
+        } catch (_) {}
+      }
+    }
+  } catch (_) {}
+  return deleted;
+}
+
 function listFiles(sourcePath) {
   if (!fs.existsSync(sourcePath)) return [];
   const stat = fs.lstatSync(sourcePath);
   if (stat.isSymbolicLink()) throw new Error(`Refusing symlink backup source: ${sourcePath}`);
-  if (stat.isFile()) return [sourcePath];
+  if (stat.isFile()) {
+    if (isTransientFile(path.basename(sourcePath))) return [];
+    return [sourcePath];
+  }
   if (!stat.isDirectory()) return [];
 
   const files = [];
   for (const entry of fs.readdirSync(sourcePath, { withFileTypes: true })) {
+    if (isTransientFile(entry.name)) continue;
     const child = path.join(sourcePath, entry.name);
     if (entry.isSymbolicLink()) throw new Error(`Refusing symlink in backup source: ${child}`);
     if (entry.isDirectory()) files.push(...listFiles(child));
@@ -266,6 +294,7 @@ async function createHostBackup(options = {}) {
   const repoRoot = path.resolve(options.repoRoot || REPO_ROOT);
   const backupRoot = path.resolve(options.backupRoot || DEFAULT_BACKUP_ROOT);
   validateRetentionPolicy(options.retentionMaxAgeMs, options.retentionMaxCount);
+  pruneOrphanedTempFiles(path.join(repoRoot, 'storage', 'data', 'ts'), options.tempMaxAgeMs, options.now);
   const timestamp = options.timestamp || new Date().toISOString().replace(/[:.]/g, '-');
   const finalDir = path.join(backupRoot, timestamp);
   const stagingDir = `${finalDir}.${process.pid}.tmp`;
@@ -333,5 +362,7 @@ module.exports = {
   probeHost,
   completedBackups,
   pruneHostBackups,
+  pruneOrphanedTempFiles,
+  isTransientFile,
   createHostBackup,
 };
