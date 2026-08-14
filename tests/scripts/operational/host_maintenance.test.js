@@ -14,6 +14,8 @@ const {
   probeRunner,
   probeHost,
   createHostBackup,
+  pruneOrphanedTempFiles,
+  isTransientFile,
 } = require('../../../shared/lib/runtime/host_maintenance');
 
 function tempDir() {
@@ -392,6 +394,46 @@ test('createHostBackup rejects an invalid retention policy before publishing', a
       retentionMaxCount: 0,
     }), /positive integer/);
     assert.equal(fs.existsSync(path.join(backupRoot, 'not-published')), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('createHostBackup ignores transient .tmp/.lock files and prunes orphaned temp files', async () => {
+  const root = tempDir();
+  try {
+    const tsDir = path.join(root, 'storage', 'data', 'ts');
+    const backupRoot = path.join(root, 'backups');
+    fs.mkdirSync(tsDir, { recursive: true });
+
+    // Canonical file
+    fs.writeFileSync(path.join(tsDir, 'BTCUSDT_1m.bin'), 'canonical');
+    // Stale temp file
+    const staleTmp = path.join(tsDir, 'BTCUSDT_1m.bin.12345.tmp');
+    fs.writeFileSync(staleTmp, 'stale-temp');
+    const now = Date.now();
+    fs.utimesSync(staleTmp, new Date(now - 2 * 3600 * 1000), new Date(now - 2 * 3600 * 1000));
+    // Lock file
+    fs.writeFileSync(path.join(tsDir, '.write.lock'), 'locked');
+
+    assert.equal(isTransientFile('BTCUSDT_1m.bin.12345.tmp'), true);
+    assert.equal(isTransientFile('.write.lock'), true);
+    assert.equal(isTransientFile('BTCUSDT_1m.bin'), false);
+
+    const result = await createHostBackup({
+      repoRoot: root,
+      backupRoot,
+      sources: [tsDir],
+      timestamp: 'clean-backup',
+      now,
+    });
+
+    assert.equal(result.file_count, 1);
+    assert.equal(fs.existsSync(path.join(result.backup_path, 'storage', 'data', 'ts', 'BTCUSDT_1m.bin')), true);
+    assert.equal(fs.existsSync(path.join(result.backup_path, 'storage', 'data', 'ts', 'BTCUSDT_1m.bin.12345.tmp')), false);
+    assert.equal(fs.existsSync(path.join(result.backup_path, 'storage', 'data', 'ts', '.write.lock')), false);
+    // Verified that stale temp was pruned from source
+    assert.equal(fs.existsSync(staleTmp), false);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
