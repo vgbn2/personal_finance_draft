@@ -16,7 +16,23 @@ const SCORECARD_CACHE = new Map();
 const SCORECARD_CACHE_TTL_MS = 30000;
 const SCORECARD_CACHE_MAX_ENTRIES = 32;
 
-function withCache(key, producer) {
+function stableKey(key) {
+  if (typeof key === 'string') return key;
+  if (key && typeof key === 'object') {
+    try {
+      const keys = Object.keys(key).sort();
+      const obj = {};
+      for (const k of keys) obj[k] = key[k];
+      return JSON.stringify(obj);
+    } catch (_err) {
+      return String(key);
+    }
+  }
+  return String(key);
+}
+
+function withCache(rawKey, producer) {
+  const key = stableKey(rawKey);
   const now = Date.now();
   if (MEMORY_CACHE.has(key)) {
     const { timestamp, payload } = MEMORY_CACHE.get(key);
@@ -29,7 +45,8 @@ function withCache(key, producer) {
   return payload;
 }
 
-async function withScorecardCache(key, producer) {
+async function withScorecardCache(rawKey, producer) {
+  const key = stableKey(rawKey);
   const now = Date.now();
   const cached = SCORECARD_CACHE.get(key);
   if (cached && now - cached.timestamp < SCORECARD_CACHE_TTL_MS) {

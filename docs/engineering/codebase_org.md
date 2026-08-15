@@ -35,26 +35,34 @@ Frontend/dashboard built UI served by backend/api
 
 Dependency direction should stay simple: UI and CLI call backend/shared surfaces; shared provider modules perform I/O; core math and intelligence modules should not depend on UI code.
 
-## Canonical Top-Level Layout
+## Canonical Top-Level Layout & Domain Structure Maps
 
-| Path | Status | Owner | Purpose | Cleanliness |
-|------|--------|-------|---------|-------------|
-| `backend/` | Active | Backend/platform | API bridge, CLI/TUI, C++ core, execution gateway, MCP server, backend scripts. | B |
-| `Frontend/` | Active with generated bulk | Frontend/dashboard | React/Vite dashboard source and built dashboard artifact. | C |
-| `shared/` | Active | Shared platform | Provider, backfill, settings, market, strategy, prop-firm, MCP, and utility libraries used across CLI/API/scripts. | B |
-| `config/` | Active | Product/runtime config | Markets, strategies, system, and trading YAML/JSON configuration. | B |
-| `storage/` | Active data plane | Data/runtime | Canonical local cache, TS index, model reports, and runtime data artifacts. | C |
-| `tests/` | Active with legacy pockets | Verification | Node, web, C++, fixture, and contract tests. | C |
-| `docs/` | Active docs with archive | Documentation | Contributor docs, engineering docs, research docs, design notes, and archives. | B- |
-| `workspace/` | Active state/audit | Session truth | Append-only state, handoff, audit reports, and active review/debt queues. | B |
-| `infra/` | Active/gated | Deployment | Deployment manifests and infrastructure descriptors. | B |
-| `backend/core/` via `build/` | Source active, build generated | C++ core | CMake-built native inspection and compute surface. | B source / generated build |
-| `scripts/` | Thin helper/root compatibility | Tooling | Root helper scripts only; active backend logic belongs under `backend/scripts`. | C |
-| `data/` | Compatibility/legacy data root | Data compatibility | Historical or compatibility cache paths; prefer `storage/data` for current runtime. | C- |
-| `models/` | Planned/placeholder | ML artifacts | Reserved for model artifacts; current reports and cache outputs mostly live under `storage/data/models`. | C |
-| `supabase/` | Gated integration | Persistence/integration | Supabase migrations/config for planned or gated persistence. | B- |
-| `notebooks/` | Research/support | Research | Exploratory notebooks and evidence notes. | C |
-| `tools/` | Support | Tooling | Small support tools. | B- |
+Detailed domain structure guides and subsystem entrypoints are maintained in dedicated section READMEs:
+- **`backend/`**: Detailed map at [`docs/sections/backend/README.md`](../sections/backend/README.md)
+- **`shared/`**: Detailed map at [`docs/sections/shared/README.md`](../sections/shared/README.md)
+- **`Frontend/`**: Detailed map at [`docs/sections/frontend/README.md`](../sections/frontend/README.md)
+- **`config/`**: Detailed map at [`docs/sections/config/README.md`](../sections/config/README.md)
+- **`storage/`**: Detailed map at [`docs/sections/storage/README.md`](../sections/storage/README.md)
+- **`tests/`**: Detailed map at [`docs/sections/tests/README.md`](../sections/tests/README.md)
+
+| Path | Status | Owner | Purpose | Cleanliness | Domain Guide |
+|------|--------|-------|---------|-------------|--------------|
+| `backend/` | Active | Backend/platform | API bridge, CLI/TUI, C++ core, execution gateway, MCP server, backend scripts. | B | [`docs/sections/backend/`](../sections/backend/README.md) |
+| `Frontend/` | Active with generated bulk | Frontend/dashboard | React/Vite dashboard source and built dashboard artifact. | C | [`docs/sections/frontend/`](../sections/frontend/README.md) |
+| `shared/` | Active | Shared platform | Provider, backfill, settings, market, strategy, prop-firm, MCP, and utility libraries used across CLI/API/scripts. | B | [`docs/sections/shared/`](../sections/shared/README.md) |
+| `config/` | Active | Product/runtime config | Markets, strategies, system, and trading YAML/JSON configuration. | B | [`docs/sections/config/`](../sections/config/README.md) |
+| `storage/` | Active data plane | Data/runtime | Canonical local cache, TS index, model reports, and runtime data artifacts. | C | [`docs/sections/storage/`](../sections/storage/README.md) |
+| `tests/` | Active with legacy pockets | Verification | Node, web, C++, fixture, and contract tests. | C | [`docs/sections/tests/`](../sections/tests/README.md) |
+| `docs/` | Active docs with archive | Documentation | Contributor docs, engineering docs, research docs, design notes, and archives. | B- | [`docs/README.md`](../README.md) |
+| `workspace/` | Active state/audit | Session truth | Append-only state, handoff, audit reports, and active review/debt queues. | B | — |
+| `infra/` | Active/gated | Deployment | Deployment manifests and infrastructure descriptors. | B | — |
+| `backend/core/` via `build/` | Source active, build generated | C++ core | CMake-built native inspection and compute surface. | B source / generated build | — |
+| `scripts/` | Thin helper/root compatibility | Tooling | Root helper scripts only; active backend logic belongs under `backend/scripts`. | C | — |
+| `data/` | Compatibility/legacy data root | Data compatibility | Historical or compatibility cache paths; prefer `storage/data` for current runtime. | C- | — |
+| `models/` | Planned/placeholder | ML artifacts | Reserved for model artifacts; current reports and cache outputs mostly live under `storage/data/models`. | C | — |
+| `supabase/` | Gated integration | Persistence/integration | Supabase migrations/config for planned or gated persistence. | B- | — |
+| `notebooks/` | Research/support | Research | Exploratory notebooks and evidence notes. | C | — |
+| `tools/` | Support | Tooling | Small support tools. | B- | — |
 
 Generated or local-only roots: `node_modules/`, `build/`, `dist/`, `Frontend/dashboard/dist/`, `Frontend/dashboard/node_modules/`, `graphify-out/`, and runtime cache folders under `storage/data/`. These should be excluded from architecture conclusions except when auditing artifact hygiene.
 

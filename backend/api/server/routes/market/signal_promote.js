@@ -3,6 +3,12 @@ const {
   createSovereignSupabaseClient,
   getAuthStatus,
 } = require('../../services/supabase_client');
+const {
+  appendWorkflowEvent,
+  digest,
+  workflowScope,
+} = require('../../../../../shared/lib/analysis/promotion_store');
+const { isValidSignalId } = require('../../services/input_validator');
 
 module.exports = {
   path: '/api/signal/promote',
@@ -23,9 +29,7 @@ module.exports = {
       return { ok: false, error: 'Missing or invalid signalIds' };
     }
 
-    const invalidIds = signalIds.filter((id) => (
-      typeof id !== 'string' || id.length === 0 || id.length >= 128 || !/^[a-zA-Z0-9_-]+$/.test(id)
-    ));
+    const invalidIds = signalIds.filter((id) => !isValidSignalId(id));
     if (invalidIds.length > 0) {
       return { ok: false, error: 'invalid_signal_ids', rejected_signal_ids: invalidIds };
     }
@@ -49,14 +53,44 @@ module.exports = {
       return { ok: false, error: 'auth_required' };
     }
 
+    const principal = req.sovereignPrincipal;
+    const scopeId = workflowScope(principal) || auth.user.id;
+
+    // Cryptographic hash-chained workflow event logging
+    const sortedIds = [...requestedIds].sort();
+    const idsHash = digest(sortedIds);
+    const idempotencyKey = String(query.idempotency_key || `promote:signal:${idsHash}`);
+    let stored;
+    try {
+      stored = appendWorkflowEvent({
+        scopeId,
+        eventType: 'signal_promoted',
+        idempotencyKey,
+        actor: {
+          principal_id: principal?.id || auth.user.id,
+          identity_type: principal?.identity_type || 'user',
+          acting_user_id: principal?.acting_user_id || auth.user.id,
+        },
+        payload: {
+          signal_ids: sortedIds,
+          promoted_at: new Date().toISOString(),
+          source: 'dashboard',
+          research_only: true,
+          live_authorized: false,
+        },
+      });
+    } catch (err) {
+      console.warn('[BACKEND] Workflow promotion event failed:', err.message);
+    }
+
     const supabase = createSovereignSupabaseClient(req);
     if (!supabase) {
       return { ok: false, error: 'Supabase not configured' };
     }
 
     try {
-      // Log the promotion as an audit event
-      const { data, error } = await supabase
+      // Log the promotion as an audit event in Supabase
+      const { error } = await supabase
         .from('audit_events')
         .insert({
           event_type: 'SIGNAL_PROMOTION',
@@ -65,7 +99,8 @@ module.exports = {
           metadata: {
             signal_ids: requestedIds,
             source: 'dashboard',
-            promoted_at: new Date().toISOString()
+            promoted_at: new Date().toISOString(),
+            checksum: stored?.event?.checksum || null,
           }
         });
 
@@ -80,11 +115,13 @@ module.exports = {
         });
       }
 
-      return { 
-        ok: true, 
+      return {
+        ok: true,
         message: `${requestedIds.length} signal review decisions recorded; no order was executed`,
         promoted_count: requestedIds.length,
         execution_started: false,
+        promotion_id: stored?.event?.event_id || null,
+        duplicate: stored?.duplicate || false,
       };
     } catch (err) {
       console.error('[BACKEND] Promotion persistence failed:', err.message);

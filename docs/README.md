@@ -60,10 +60,11 @@ Read each command's side-effect label before running provider, data-write, conta
 
 - [Documentation manifest](documentation_manifest.json) — corpus status and source/review ownership.
 - [Documentation standard](engineering/documentation_standard.md) — writing and review contract.
+- [Codebase organization](engineering/codebase_org.md) — canonical folder and ownership map.
+- [Domain Structure Guides](sections/) — dedicated subsystem maps for [backend](sections/backend/README.md), [shared](sections/shared/README.md), [frontend](sections/frontend/README.md), [config](sections/config/README.md), [storage](sections/storage/README.md), and [tests](sections/tests/README.md).
 - [Module catalog](modules/README.md) and [module template](modules/TEMPLATE.md) — cross-file ownership contracts.
 - [Code Atlas](atlas/README.md) — source-linked algorithms, structures, protocols, and topology.
 - [Testing surfaces](operational/guides/testing_surface.md) — test and evidence commands.
-- [Codebase organization](engineering/codebase_org.md) — **needs refresh**; useful as a map, not final current truth.
 - [Web/API reference](engineering/web_api.md) — **needs refresh** against the active route registry.
 - [Capability manifest](engineering/capability_manifest.md) — **needs refresh**; contains obsolete paths/data-store claims.
 - [Stack manifest](engineering/stack_manifest.md)
