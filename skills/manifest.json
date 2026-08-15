@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "skills": [
+    "bayesian-troubleshooter",
     "blast-through",
     "claude",
     "codebase-untangler",

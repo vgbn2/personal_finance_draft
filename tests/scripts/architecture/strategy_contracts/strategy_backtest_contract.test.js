@@ -322,6 +322,21 @@ test('strategy files expose indicator presets and optimize respects disabled ind
   assert.equal(new Set(grid.map((row) => row.rsi)).size, 3);
 });
 
+test('B1 Data Readiness: checkStrategyDataReadiness and runBacktest fail closed on empty/missing feature frames', () => {
+  const { checkStrategyDataReadiness, checkTimeframeReadiness } = require('../../../../backend/api/server/services/data_readiness');
+  const { runBacktest } = require('../../../../shared/lib/strategy/backtest');
+
+  const readiness = checkStrategyDataReadiness({ symbols: ['NONEXISTENT_XYZ'], timeframe: '1d' });
+  assert.equal(readiness.ok, false);
+  assert.equal(readiness.status, 503);
+  assert.equal(readiness.error_code, 'data_unavailable');
+
+  const emptyFrameResult = runBacktest({ features: [] });
+  assert.equal(emptyFrameResult.ok, false);
+  assert.equal(emptyFrameResult.status, 503);
+  assert.equal(emptyFrameResult.error_code, 'data_unavailable');
+});
+
 test('strategy generation and inspection preserve timeframe metadata', () => {
   const payload = buildStrategyPlan('automation_timeframe_check', {
     kind: 'ml',
