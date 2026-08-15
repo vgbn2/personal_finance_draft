@@ -463,53 +463,38 @@ function calculateRollingFeatureFrame(sources, minimumBars = 2, periods = {}) {
   const features = [];
   const skipped = [];
 
-  const manifest = getIndicatorManifest();
-
   for (const [key, bars] of groups.entries()) {
     if (bars.length < minimumBars) {
       skipped.push({ key, reason: 'insufficient_history', bars: bars.length });
       continue;
     }
 
-    if (!manifest) {
-      // High-performance O(N) linear series calculation for standard indicators
-      const closes = bars.map((b) => b.close);
-      const retFast = returnsSeries(closes, mergedPeriods.returnFast);
-      const retSlow = returnsSeries(closes, mergedPeriods.returnSlow);
-      const volSeries = rollingVolatilitySeries(closes, mergedPeriods.volatility);
-      const rsiArr = rsiSeries(closes, mergedPeriods.rsi);
-      const macdObj = macdSeries(closes);
-      const atrArr = atrSeries(bars, mergedPeriods.atr);
-      const bands = bollingerBandsSeries(closes, mergedPeriods.bollinger);
+    const closes = bars.map((b) => b.close);
+    const retFast = returnsSeries(closes, mergedPeriods.returnFast);
+    const retSlow = returnsSeries(closes, mergedPeriods.returnSlow);
+    const volSeries = rollingVolatilitySeries(closes, mergedPeriods.volatility);
+    const rsiArr = rsiSeries(closes, mergedPeriods.rsi);
+    const macdObj = macdSeries(closes);
+    const atrArr = atrSeries(bars, mergedPeriods.atr);
+    const bands = bollingerBandsSeries(closes, mergedPeriods.bollinger);
 
-      for (let end = minimumBars; end <= bars.length; end += 1) {
-        const idx = end - 1;
-        const lastBar = bars[idx];
-        features.push({
-          key,
-          symbol: lastBar.symbol,
-          family: lastBar.family,
-          provider: lastBar.provider || null,
-          timeframe: lastBar.timeframe,
-          as_of: lastBar.timestamp,
-          bars: end,
-          close: closes[idx],
-          return_fast: retFast[idx] ?? null,
-          return_slow: retSlow[idx] ?? null,
-          volatility: volSeries[idx] ?? null,
-          rsi: rsiArr[idx] ?? null,
-          macd: macdObj ? macdObj.macd[idx] ?? null : null,
-          atr: atrArr[idx] ?? null,
-          bollinger_upper: bands ? bands.upper[idx] ?? null : null,
-          bollinger_middle: bands ? bands.middle[idx] ?? null : null,
-          bollinger_lower: bands ? bands.lower[idx] ?? null : null,
-        });
-      }
-    } else {
-      for (let end = minimumBars; end <= bars.length; end += 1) {
-        const window = bars.slice(0, end);
-        features.push(featureFromWindow(key, window, mergedPeriods));
-      }
+    for (let end = minimumBars; end <= bars.length; end += 1) {
+      const idx = end - 1;
+      const lastBar = bars[idx];
+      const window = bars.slice(0, end);
+      const baseFeature = featureFromWindow(key, window, mergedPeriods);
+      features.push({
+        ...baseFeature,
+        return_fast: retFast[idx] ?? baseFeature.return_fast ?? null,
+        return_slow: retSlow[idx] ?? baseFeature.return_slow ?? null,
+        volatility: volSeries[idx] ?? baseFeature.volatility ?? null,
+        rsi: rsiArr[idx] ?? baseFeature.rsi ?? null,
+        macd: macdObj ? macdObj.macd[idx] ?? baseFeature.macd ?? null : baseFeature.macd ?? null,
+        atr: atrArr[idx] ?? baseFeature.atr ?? null,
+        bollinger_upper: bands ? bands.upper[idx] ?? baseFeature.bollinger_upper ?? null : baseFeature.bollinger_upper ?? null,
+        bollinger_middle: bands ? bands.middle[idx] ?? baseFeature.bollinger_middle ?? null : baseFeature.bollinger_middle ?? null,
+        bollinger_lower: bands ? bands.lower[idx] ?? baseFeature.bollinger_lower ?? null : baseFeature.bollinger_lower ?? null,
+      });
     }
   }
 
