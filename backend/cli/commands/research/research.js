@@ -510,7 +510,8 @@ async function commandBacktest(args) {
     return 1;
   }
   const bridge = require('../../../../shared/lib/runtime/backend_bridge');
-  const useDirectCppNative = !sampleMode && bridge.backendAvailable() && selectedSymbols.length > 0;
+  const isSubDaily = timeframe && timeframe !== '1d';
+  const useDirectCppNative = !sampleMode && !isSubDaily && bridge.backendAvailable() && selectedSymbols.length > 0;
 
   let featureFrame;
   if (!useDirectCppNative) {
