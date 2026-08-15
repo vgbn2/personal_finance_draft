@@ -1,4 +1,5 @@
 #include "data_snapshot.hpp"
+#include "binary_ts_reader.hpp"
 #include "data_validator.hpp"
 
 #include <algorithm>
@@ -256,6 +257,17 @@ MarketDataSnapshot loadMarketDataSnapshot(
     MarketDataSnapshot snapshot;
     snapshot.summary.symbol = symbol;
     snapshot.summary.timeframe = timeframe;
+
+    // Try binary TS index first (input_path or storage/data/ts fallback)
+    auto ts_res = BinaryTsReader::loadSymbolBinary(input_path, symbol, timeframe, max_bars);
+    if (!ts_res.ok || ts_res.bars.empty()) {
+        ts_res = BinaryTsReader::loadSymbolBinary("storage/data/ts", symbol, timeframe, max_bars);
+    }
+    if (ts_res.ok && !ts_res.bars.empty()) {
+        snapshot.bars = std::move(ts_res.bars);
+        snapshot.quality.ok = true;
+        return snapshot;
+    }
 
     const auto files = resolveInputFiles(input_path);
     if (files.empty()) {
