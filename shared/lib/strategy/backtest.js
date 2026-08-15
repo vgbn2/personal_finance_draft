@@ -1085,19 +1085,25 @@ function runBacktestCppFrame(featureFrame, options) {
 }
 
 function runBacktest(featureFrame, options = {}) {
-  // C++ is the default when the binary is available.
-  // Set engine: 'js' or engine: 'js_model' (with no binary) to force JS path.
+  // C++ core is the default engine when the binary is available.
+  // Set engine: 'js' to force JS path.
   const engine = options.engine || 'auto';
   let fallbackReason = engine === 'js' ? null : 'native_backend_unavailable';
   if (engine !== 'js') {
     try {
       const bridge = require('../runtime/backend_bridge');
       if (bridge.backendAvailable()) {
-        if (engine === 'cpp_native' || engine === 'auto') {
+        if (engine === 'cpp_native') {
           return runBacktestCppNative(featureFrame, options);
         }
-        if (engine === 'js_model') {
-          return runBacktestCppFrame(featureFrame, options);
+        if (engine === 'cpp_frame' || engine === 'auto' || engine === 'js_model') {
+          if (featureFrame && Array.isArray(featureFrame.features) && featureFrame.features.length > 0) {
+            return runBacktestCppFrame(featureFrame, options);
+          }
+          if (engine === 'cpp_frame') {
+            return runBacktestCppFrame(featureFrame, options);
+          }
+          return runBacktestCppNative(featureFrame, options);
         }
       }
     } catch (error) {
