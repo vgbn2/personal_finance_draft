@@ -1,5 +1,0 @@
-## Container ML — ONNX runtime flag — IN PROGRESS, blocked on Docker daemon (session 8)
-- `infra/docker/Dockerfile:46` was missing `-DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON` (flag exists in `backend/core/CMakeLists.txt:9`, default OFF) — container ML silently ran `deterministic_baseline` instead of the real trained models proven in Phase 3.
-- Edit made (`cmake .. -DCMAKE_BUILD_TYPE=Release -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON`) but **left uncommitted** — verification blocked by a wedged Docker Desktop daemon (zombie `com.docker.build` process, idle ~22h, predates this session; every `docker` CLI call hangs). User deferred the Docker Desktop restart needed to clear it. See `workspace/handoff/2026-06-08.md` session 8 for the full trace and exact resume steps (rebuild → `ml compare --json` → confirm `onnx_runtime` backend → commit).
-- Also surfaced a latent gap: `storage/models/*.onnx` are gitignored (`.gitignore:64`), so a genuine fresh-clone-to-remote-node deploy would silently fall back to baseline — flagged for a future user decision (commit the ~1MB binaries vs. add a model-sync step to `DEPLOY.md`'s flow), not silently fixed.
-

@@ -1,6 +1,17 @@
 # Next Session Goal
 
-## 2026-08-09 Activate the cleanup-first documentation loop
+## 2026-08-15 Codebase, Test, and Docs Management for Junk Minimization
+
+1. **Codebase, Test, & Docs Tidiness Sweep**:
+   - Focus next session entirely on codebase maintenance, test organization, and documentation tidiness to minimize junk accumulation across CLI agents.
+   - Enforce date-partitioned log rotation (`workspace/handoff/YYYY/MM/`) and clean domain section documentation (`docs/sections/<domain>/`).
+   - Run automated contract gates (`npm run test:structure`, `node scripts/dev/audit_documentation.js`, `node scripts/dev/check_hygiene.js`).
+   - Rebuild AST knowledge graph (`/home/vgbn1/.local/bin/graphify update .`).
+
+Immediate next action:
+- Begin session with `session-orchestrator` boot, review active tests/docs contracts, and execute codebase maintenance & junk minimization.
+
+## 2026-08-15 Session Closeout — Deep Codebase Junk & Mirror Cleanup
 
 1. **User activates the refined loop**:
    - Start with the baseline/classification batch; do not begin by generating random pages.
@@ -72,6 +83,54 @@ Immediate closeout boundary:
 
 Immediate next action:
 - Supply the initial GitHub handles and repository owner/name, then perform the administrator-only GitHub settings steps above. Until then, the new governance documents and templates are ready for source collaboration but the placeholder ownership/security links are intentionally non-operational.
+
+## 2026-08-15 Session Closeout — Deep Codebase Junk & Mirror Cleanup
+
+1. Executed 2-batch cleanup rollout (`CODEBASE-JUNK-CLEANUP-1`): removed `get_top_dirs.py`, empty `docss/` folder, legacy `docs/archive/sovereign_cli.og.js`, 5 duplicate `docs/memory/` historical mirrors, and 35 un-indexed `workspace/session_memory/session_*.md` files.
+2. Verified with `node scripts/dev/audit_documentation.js` (0 findings), `npm run test:structure` (28/28 subtests passing), and `/home/vgbn1/.local/bin/graphify update .` (8,998 nodes).
+
+Immediate next action:
+- Continue with B2 artifact-only public data boundary implementation for remote deployment.
+
+## 2026-08-15 Session Closeout — Clean Workspace Protocol & Deep Cleanup
+
+1. Completed 3-batch rollout (`CLEAN-WORKSPACE-PROTOCOL-1`): refined skills (`session-orchestrator`, `mass-implement`, `refactor-readability`, `codebase-untangler`), enhanced hygiene scanner (`check_hygiene.js`), and executed deep cleanup sweep.
+2. Verified with `node scripts/dev/audit_documentation.js` (0 findings), `npm run test:structure` (28/28 subtests passing), and `/home/vgbn1/.local/bin/graphify update .` (9,068 nodes).
+
+Immediate next action:
+- Continue with B2 artifact-only public data boundary implementation for remote deployment.
+
+## 2026-08-15 Session Closeout — Domain Structure Maps
+
+1. Created 6 dedicated domain-specific structural README maps under `docs/sections/`: `backend/README.md`, `shared/README.md`, `frontend/README.md`, `config/README.md`, `storage/README.md`, and `tests/README.md`.
+2. Registered all 6 new domain sections in `docs/documentation_manifest.json` under `section_roots` and `documents`.
+3. Linked domain guides directly from `docs/engineering/codebase_org.md`, `docs/ARCHITECTURE.md`, and `docs/README.md`.
+4. Verified with `node scripts/dev/audit_documentation.js` (0 findings) and `npm run test:structure` (28/28 subtests passing). Rebuilt knowledge graph with `/home/vgbn1/.local/bin/graphify update .`.
+
+Immediate next action:
+- Continue with B2 artifact-only public data boundary implementation for remote deployment.
+
+## 2026-08-15 Session Closeout — Market Routes Hardening & hpdesk Sync
+
+1. Implemented `input_validator.js` and `data_readiness.js` to enforce fail-closed status responses across market routes (HTTP 503 for missing snapshot data, HTTP 422 for insufficient bars, and HTTP 400 for path traversal / invalid parameters).
+2. Refactored `signal_promote.js` to log SHA-256 hash-chained workflow events (`events.jsonl`) via `promotion_store.js` alongside Supabase audit logs.
+3. Updated `cli_executor_cache.js` with deterministic object key sorting (`stableKey`) for TTL cache isolation.
+4. Added test suites `market_routes_contract.test.js` and `promotion_audit_chain.test.js` to `package.json` (`test:api`). Verified 45/45 Node tests, hygiene, and structure contracts.
+5. Synced source changes one-way to `hpdesk` via guarded rsync and verified SHA-256 hash parity across all updated files.
+6. Configured host backup destination guidance to mount external HDD (`/mnt/sda1/backups`) per `hdd_tiering_storage_guide.md`.
+
+Immediate next action:
+- Continue with B2 artifact-only public data boundary implementation for remote deployment.
+
+## 2026-08-13 hpdesk source-overlay boundary
+
+1. The current local source (`0f070b64`, matching `origin/main` at transfer) was copied one way to hpdesk through guarded rsync. hpdesk `workspace/`, `storage/`, `.env*`, `.git`, dependencies, generated/build artifacts, and logs were excluded and must remain host-owned.
+2. hpdesk keeps `checkpoint/2026-08-13-hpdesk-source-sync` at `e62818d` as its Git HEAD and has expected uncommitted source overlay differences. This is not a clean exact-`origin/main` checkout, source provenance for an image, or deployment qualification.
+3. Do not run `update-central-host.sh`, `git reset`/`git clean`, image builds, service restarts, provider diagnostics, data jobs, or bot activation from this mixed tree. Exact Git provenance would overwrite tracked hpdesk workspace files and needs a separately approved host-state reconciliation design.
+4. No hpdesk content may be copied back to local as part of this direction. Any host-local snapshot/commit, deployment, or provider diagnostic needs separate explicit authorization and its own preflight.
+
+Immediate next action:
+- If exact hpdesk Git provenance is required, design a tracked-workspace preservation/reconciliation procedure first; otherwise keep the current source overlay as source-only evidence and continue local source work.
 
 
 ## 2026-08-10 Post-closure follow-up

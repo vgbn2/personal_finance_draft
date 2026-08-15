@@ -1,12 +1,14 @@
 # Prompt Log - 2026-08-09
 
-## User Prompt & Session Boot - 2026-08-09 (Session Orchestrator Boot)
+## User Prompt & Session Boot - 2026-08-15 (Session Orchestrator Boot)
 
 Received user invocation: `/session-orchestrator`.
-- Executed session continuity boot sequence: read `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/handoff/2026-08-07.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `workspace/NEXT_SESSION_GOAL.md`, and `docs/README.md`.
-- Inspected git status (branch `main` at commit `9fea4a90` - `fix(infra): remove duplicate healthcheck key in docker-compose.yml`).
-- Confirmed next session goal from `workspace/NEXT_SESSION_GOAL.md`: Heavy Code Review & End-to-End System Integrity Audit.
-- Verified working tree state (clean) and safety boundaries (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+- Executed session continuity boot sequence: read `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/handoff/2026/08/2026-08-13.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `workspace/NEXT_SESSION_GOAL.md`, and `docs/README.md`.
+- Inspected git status: active branch `checkpoint/2026-08-09-current-state` at HEAD `0f070b64`.
+- Verified automated contract gates: `npm run test:structure` (pass 7/7, 9/9, 12/12), `node scripts/dev/audit_documentation.js` (0 findings), `node scripts/dev/check_hygiene.js` (0 issues).
+- Updated AST knowledge graph via `/home/vgbn1/.local/bin/graphify update .` (8,658 nodes, 14,516 edges, 627 communities).
+- Confirmed safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 
 ## User Prompt & Implementation - 2026-08-09 (2-Pass Parameter Plateau Sweep Implementation)
 
@@ -122,6 +124,16 @@ Received user invocation: `/session-orchestrator`.
 - Confirmed `graphify` is available; no code changed, so no graph refresh was needed.
 - Current evidence boundary remains source/test and indexed clean-archive only; CI, provider, host, deployment, recovery, rollback, and soak qualification are not inferred.
 
+## User Prompt & Session Boot - 2026-08-15
+
+Received user invocation: `session-orchestrator`.
+- Executed session continuity boot sequence: read `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/handoff/2026-08-13.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `workspace/NEXT_SESSION_GOAL.md`, and `docs/README.md`.
+- Inspected git status (branch `checkpoint/2026-08-09-current-state` at commit `0f070b64`).
+- Confirmed next session goal from `workspace/NEXT_SESSION_GOAL.md`: Continue with B2 artifact-only public data boundary implementation for remote deployment.
+- Checked graphify availability (`/home/vgbn1/.local/bin/graphify` available).
+- Preserved existing working tree changes across market route validation, readiness checks, and promotion audit chain.
+
+
 ## User Prompt & Alpaca Paper Diagnostic / Checkpoint Deployment - 2026-08-11
 
 Received user requests to implement bounded Alpaca Paper intraday controls, raise the daily Paper-entry cap to $1,000, diagnose the hpdesk Paper HTTP 401, and use the authorized exact-image deployment path instead of rsync.
@@ -132,6 +144,26 @@ Received user requests to implement bounded Alpaca Paper intraday controls, rais
 - Pushed exact commit `2e036889f5a7e0f95ef53ee8248518d15a7f57a4` to `origin/checkpoint/2026-08-09-current-state`.
 - hpdesk exact-deployment readiness inspection timed out at SSH connection setup before executing any remote command. No rsync, image build, deployment, provider diagnostic, order, or service mutation occurred. Next gate: restore SSH reachability, inspect exact host branch/worktree/Compose state, then run the redacted Paper diagnostic from the deployed exact image.
 - The recurring intraday bot remains deployment-blocked because every registered strategy currently resolves to `1d`; no approved 5m/15m strategy contract exists.
+
+## User Prompt & Deep Cleanup / Clean Workspace Protocol - 2026-08-15
+
+Received user request: "do a deep dive into this problem, and figure an algorithm/skills so that agents follows it, refine current existing skills also, use mass implement planning, and refactor/readanillity".
+- Executed 3-batch rollout (`CLEAN-WORKSPACE-PROTOCOL-1`):
+  1. Refined `skills/session-orchestrator/SKILL.md` (PWD validation & closeout sweep), `skills/mass-implement/SKILL.md` (Mandatory User Input & Approval Gate), `skills/refactor-readability/SKILL.md` (Clean Layout Contract), and `skills/codebase-untangler/SKILL.md` (Anti-Path-Slippage Algorithm). Synced all 11 skills to `.agents/skills/`.
+  2. Enhanced `scripts/dev/check_hygiene.js` with automated checks for nested path slippage (`workspace/home/`, `docs/docs/`), temporary scratch artifacts (`*.tmp.js`, `*.scratch.md`), and test integrity.
+  3. Conducted deep codebase cleanup sweep and verified zero findings on `node scripts/dev/audit_documentation.js`, 28/28 passing on `npm run test:structure`, and 9,068 nodes synced on `/home/vgbn1/.local/bin/graphify update .`.
+- Preserved safety boundaries (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## User Prompt & Deep Codebase Junk & Mirror Cleanup - 2026-08-15
+
+Received user request: "check for more files similar to /home/vgbn1/Documents/codeptit/personal_finance_draft/workspace in these dir /home/vgbn1/Documents/codeptit/personal_finance_draft/docs ... basically find jubk file ,read through it and draft a plan to clean both".
+- Executed 2-batch cleanup rollout (`CODEBASE-JUNK-CLEANUP-1`):
+  1. Removed `get_top_dirs.py`, empty mistake directory `docss/`, and legacy 80KB CLI archive `docs/archive/sovereign_cli.og.js`.
+  2. Removed 5 duplicate historical memory mirrors under `docs/memory/` and 35 un-indexed individual session files under `workspace/session_memory/session_*.md`.
+- Verified with `node scripts/dev/audit_documentation.js` (0 findings), `npm run test:structure` (28/28 passing green), and `/home/vgbn1/.local/bin/graphify update .` (8,998 nodes).
+- Preserved safety boundaries (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+
 
 ## User Prompt & hpdesk Guarded Rsync - 2026-08-11
 
@@ -240,3 +272,22 @@ Received user request to make the repository ready for other maintainers, with f
 - Preserved full source collaboration through pull requests while keeping credentials, providers, hosts, deployment, CI/branch administration, and Paper/live execution core-maintainer-controlled. The roster and CODEOWNERS use deliberately non-enforcing placeholders pending verified GitHub handles.
 - Verified `npm run test:structure` (28/28), `node scripts/dev/audit_test_integrity.js` (231 files/0 violations), `npm run hygiene`, GitHub issue/workflow YAML parsing, `git diff --check`, and no workflow modifications. No provider, canonical-data, runtime, container, host, credential, Paper/live trading, deployment, GitHub settings mutation, commit, or push action occurred.
 - Required administrator follow-up: replace placeholder identities and issue-template URLs; enable private vulnerability reporting; then configure protected-branch, required-review/CODEOWNERS, status-check, force-push/deletion, and merge controls as documented in `GOVERNANCE.md`.
+
+## User Prompt & Market Routes Hardening & hpdesk Sync - 2026-08-15
+
+Received user request: Hardened backend market routes and configured HDD backup destination, then pushed changes to `hpdesk`.
+- Implemented `input_validator.js` with regex validation for symbols, timeframes, signal IDs, promotion IDs, and `isPathWithinAllowedRoots` for path traversal shielding.
+- Implemented `data_readiness.js` providing `checkSnapshotReadiness` and `checkDataSeriesSufficiency` for explicit HTTP status code mapping (503 for missing/corrupted snapshots, 422 for insufficient historical bars).
+- Refactored `sigma_band.js` status mapping and `signal_promote.js` to log SHA-256 cryptographic hash-chained promotion audit events (`signal_promoted`) to `events.jsonl` using `promotion_store.js`.
+- Stabilized TTL cache key generation in `cli_executor_cache.js` with canonical object key sorting (`stableKey`).
+- Added test suites `market_routes_contract.test.js` and `promotion_audit_chain.test.js`, updating `package.json` (`test:api`). Verified 45/45 Node API tests and structure contracts (`test:structure`).
+- Advised on configuring host backup on HDD (`/mnt/sda1/backups`) by modifying `HOST_BACKUP_ROOT` in `.env.services/host-backup.env` and Docker Compose volume mounts according to `hdd_tiering_storage_guide.md`.
+- Executed guarded one-way rsync sync to `hpdesk` and verified SHA-256 hash match for all updated files. Host-local `workspace/`, `storage/`, and `.env*` files remained protected and untouched.
+
+## User Prompt & One-Way hpdesk Source Reconciliation - 2026-08-13
+
+Received user direction: reconcile from this workstation to hpdesk only, preserving hpdesk-specific `workspace/` state and never copying hpdesk content back locally.
+- Preflight verified clean local `0f070b64` equals `origin/main`; hpdesk was reachable on `checkpoint/2026-08-13-hpdesk-source-sync` at `e62818d`, with a clean worktree before transfer, `workspace/` and `storage/` present, and six `.env*` files present.
+- Ran guarded local-to-hpdesk rsync after an itemized dry-run. Excluded `.git`, `.env*`/secret patterns, `storage/`, `data/`, `workspace/`, dependencies, build/dist/graph/tool artifacts, and logs. Both dry-run and applied transfer reported zero deletions and zero protected-path mentions.
+- Verified SHA-256 equality across governance, GitHub intake, API access-control, Compose, and environment-manifest source files. hpdesk Git status now contains only expected source overlay differences; protected metadata/count remained unchanged. No Git checkout/reset/clean, Docker/Compose, updater, provider, data, credential, Paper/live, deployment, commit, or push action ran.
+- Container observation only: existing `docker-polymarket-research-1` remained restarting; no service was controlled by this session. The source overlay is not exact Git provenance, exact-image/deployment, provider, Paper, or live qualification.

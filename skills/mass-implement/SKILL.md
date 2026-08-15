@@ -50,20 +50,28 @@ Use exactly:
 
 Do not begin the next batch until the current batch is verified, reviewed, and closed or explicitly deferred.
 
+## Mandatory User Input & Approval Gate
+
+During the planning and preflight phase (`proposed -> preflight`):
+- **Proactive Questioning**: Always present clear architectural choices, scope boundaries, trade-offs, and implementation options to the user before finalizing a batch plan.
+- **Explicit Confirmation**: Ask for user input and explicit confirmation whenever there are multiple valid approaches, structural changes, user-preference options, or boundary decisions.
+- **No Unilateral Assumptions**: Never assume user preference or proceed with major structural, architectural, or design decisions without asking the user.
+
 ## Workflow
 
 1. Load `PROJECT_RULES.md`, current state/handoff/review evidence, and the nearest behavioral docs.
 2. Rank production-contract mismatches, data-loss/resource risks, false health, deployment traps, then hygiene.
 3. Revalidate the active batch against current code, dirty-tree ownership, acceptance criteria, and verification.
 4. Complete the Duplicate And Stub Preflight and resolve competing production ownership before adding code.
-5. Add only non-overlapping edge cases that affect correctness, safety, preservation, resource use, or user-visible truth.
-6. Check applicable trust boundaries: auth, input/path/command safety, secrets/logs, network exposure, trading/write capability, concurrency/atomicity, dependencies, migration, and rollback.
-7. Publish a concise preflight with intended files, duplicate/stub classifications, edge cases, security findings, and GO status.
-8. Implement conservatively through existing owners.
-9. Run focused proof, then one broader practical gate.
-10. Recheck changed trust boundaries and classify every failure as regression, pre-existing defect, environment limitation, or stale expectation.
-11. Apply the Readable Implementation Contract and remove batch-introduced duplication or narrative drift.
-12. Update grade-relevant state and close the batch with evidence.
+5. Apply the Mandatory User Input & Approval Gate: present implementation options, trade-offs, and design choices to the user for input and explicit sign-off before proceeding.
+6. Add only non-overlapping edge cases that affect correctness, safety, preservation, resource use, or user-visible truth.
+7. Check applicable trust boundaries: auth, input/path/command safety, secrets/logs, network exposure, trading/write capability, concurrency/atomicity, dependencies, migration, and rollback.
+8. Publish a concise preflight with intended files, duplicate/stub classifications, edge cases, security findings, user confirmations, and GO status.
+9. Implement conservatively through existing owners.
+10. Run focused proof, then one broader practical gate.
+11. Recheck changed trust boundaries and classify every failure as regression, pre-existing defect, environment limitation, or stale expectation.
+12. Apply the Readable Implementation Contract and remove batch-introduced duplication or narrative drift.
+13. Update grade-relevant state and close the batch with evidence.
 
 Use subagents only when the user explicitly allows delegation. Keep file ownership disjoint when delegation is authorized.
 

@@ -1,3 +1,55 @@
+### Session Memory - 2026-08-15 Full Codebase Management & Maintenance Sweep
+
+```json
+{
+  "batch": "FULL-MAINTENANCE-SWEEP-1",
+  "lifecycle": "closed",
+  "scope": "workspace handoff log rotation, docs sections verification, automated contract audits, and graphify AST knowledge graph update",
+  "changes": "created date-partitioned handoff workspace/handoff/2026/08/2026-08-15.md, updated HANDOFF.md pointer, verified 6 domain section guides, updated graphify AST graph to 8,661 nodes across 639 communities",
+  "verification": "graphify update . (8,661 nodes, 14,518 edges); structure & hygiene contract compliance verified",
+  "boundaries": "no runtime, provider, data-write, paper/live trading, container, host, or deployment action"
+}
+```
+
+### Session Memory - 2026-08-15 Deep Codebase Junk & Mirror Cleanup
+
+```json
+{
+  "batch": "CODEBASE-JUNK-CLEANUP-1",
+  "lifecycle": "closed",
+  "scope": "removal of obsolete root scripts, empty docss/ folder, docs/archive/sovereign_cli.og.js, duplicate docs/memory/ historical mirrors, and workspace/session_memory/ individual session files",
+  "changes": "removed get_top_dirs.py, empty docss/, docs/archive/sovereign_cli.og.js, 5 docs/memory/ duplicate mirrors, and 35 un-indexed workspace/session_memory/session_*.md files",
+  "verification": "node scripts/dev/audit_documentation.js (0 findings); npm run test:structure (28/28 pass); graphify update . (8,998 nodes)",
+  "boundaries": "no runtime, provider, data-write, paper/live trading, container, host, or deployment action"
+}
+```
+
+### Session Memory - 2026-08-15 Clean Workspace Protocol & Codebase Deep Cleanup
+
+```json
+{
+  "batch": "CLEAN-WORKSPACE-PROTOCOL-1",
+  "lifecycle": "closed",
+  "scope": "agent anti-drift algorithm, PWD validation, mandatory user input gate, hygiene scanner path slippage check, and codebase cleanup",
+  "changes": "updated session-orchestrator, mass-implement, refactor-readability, codebase-untangler in skills/ and .agents/skills/; enhanced scripts/dev/check_hygiene.js for nested path slippage and scratch artifacts",
+  "verification": "node scripts/dev/audit_documentation.js (0 findings); npm run test:structure (28/28 pass); graphify update . (9,068 nodes)",
+  "boundaries": "no runtime, provider, data-write, paper/live trading, container, host, or deployment action"
+}
+```
+
+### Session Memory - 2026-08-15 Full Domain Structural Documentation Maps
+
+```json
+{
+  "batch": "DOC-DOMAIN-STRUCTURAL-MAPS-1",
+  "lifecycle": "closed",
+  "scope": "domain structural README creation across backend, shared, frontend, config, storage, tests",
+  "changes": "created 6 domain READMEs under docs/sections/; registered in docs/documentation_manifest.json; updated codebase_org.md, ARCHITECTURE.md, and docs/README.md",
+  "verification": "node scripts/dev/audit_documentation.js (0 findings); npm run test:structure (28/28 pass); graphify update . synced",
+  "boundaries": "no runtime, provider, data-write, paper/live trading, container, host, or deployment action"
+}
+```
+
 ### Session Memory - 2026-08-13 Authentication and MCP Baseline
 
 ```json
@@ -2741,5 +2793,35 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "security_channel": "SECURITY.md points to GitHub private vulnerability reporting only as an intended channel; a repository administrator must enable it before it is advertised as active. Issue-template links retain explicit OWNER/REPOSITORY placeholders for the same reason.",
   "verification": "structure 28/28; integrity 231 files/0 violations; hygiene pass; GitHub issue/workflow YAML parse pass; diff check pass; build/test/deploy workflow bodies unchanged.",
   "boundary": "Documentation and GitHub-intake source changes only. No provider, data, runtime, container, host, credential, trading, deployment, GitHub settings, commit, or push action."
+}
+```
+
+## Session Memory - 2026-08-15 Market Routes Hardening & Cryptographic Audit Logging
+
+```json
+{
+  "batch": "MARKET-ROUTES-HARDENING-1",
+  "lifecycle": "closed",
+  "data_readiness": "created data_readiness.js providing snapshot freshness and bar sufficiency check; mapped missing snapshot to HTTP 503 and insufficient bar window to HTTP 422",
+  "input_validation": "created input_validator.js enforcing regex for symbols, timeframes, signal IDs, and path traversal containment via isPathWithinAllowedRoots",
+  "promotion_audit": "refactored signal_promote.js to emit SHA-256 hash-chained workflow events (events.jsonl) alongside Supabase audit logs",
+  "cache_stabilization": "updated cli_executor_cache.js to use stableKey canonical sorting for TTL cache keys",
+  "verification": "node --test backend/api/tests/*.test.js 45/45 pass, test:structure pass, hygiene pass, hpdesk one-way rsync SHA-256 hash verified",
+  "boundaries": "source and test only; host backup configured to HDD /mnt/sda1/backups; no live trading or execution authorization"
+}
+```
+
+## Session Memory - 2026-08-13 one-way hpdesk source overlay
+
+```json
+{
+  "direction": "Local current main/source -> hpdesk only; do not import or rsync hpdesk files back into the local repository.",
+  "source": "local clean 0f070b64e0afe5b14f17880c627033af57a64031 equals origin/main at transfer time",
+  "hpdesk_baseline": "checkpoint/2026-08-13-hpdesk-source-sync at e62818d22d4d6c4cd74810e56cc36e3ddc5b7f79, clean before overlay",
+  "protected": [".git", ".env* and secret patterns", "storage", "data", "workspace", "dependencies", "build/dist/graph/tool artifacts", "logs"],
+  "verification": "guarded rsync dry-run and transfer each report 0 deletions/0 protected-path mentions; selected critical source SHA-256 values match; workspace/storage metadata and six environment-file count unchanged",
+  "provenance": "hpdesk has expected source overlay differences against its retained branch; this is source-snapshot evidence, not exact Git ancestry, exact image/deployment, provider, Paper, or live qualification",
+  "host_observation": "No service was controlled. docker-polymarket-research-1 was already restarting at baseline and remained restarting after the copy.",
+  "prohibition": "Do not run updater, Git reset/clean, image build, restart, provider diagnostic, data job, or bot activation from this mixed hpdesk tree without separately approved provenance/host-state reconciliation."
 }
 ```

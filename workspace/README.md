@@ -9,9 +9,9 @@ This directory is the repo's append-only working state. Keep durable decisions h
 - [SESSION_MEMORY.md](./SESSION_MEMORY.md): append-only session memory and current findings.
 - [PROMPT_LOG.md](./PROMPT_LOG.md): prompt/session request log.
 - [DEV_REVIEW.md](./DEV_REVIEW.md): active manual review queue.
-- [DEV_COMMENTS.md](./DEV_COMMENTS.md): developer-facing notes and comments.
+- [DEV_COMMENTS.md](history/DEV_COMMENTS.md): developer-facing notes and comments.
 - [Structural audit report](reports/STRUCTURAL_AUDIT_REPORT.md): structural audit summary and grade notes.
-- [BLAST_THROUGH_REPORT.md](./BLAST_THROUGH_REPORT.md): audit summary for broad repo passes.
+- [BLAST_THROUGH_REPORT.md](reports/BLAST_THROUGH_REPORT.md): audit summary for broad repo passes.
 - [Feature test matrix](reports/FEATURE_TEST_MATRIX.md): current feature audit matrix.
 - [Feature repair plan](reports/FEATURE_REPAIR_PLAN.md): current repair plan for findings.
 - [Cross-project learnings](history/CROSS_PROJECT_LEARNINGS.md): retained historical lessons; verify any claim before promotion.

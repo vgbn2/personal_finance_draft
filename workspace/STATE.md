@@ -1,5 +1,43 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-15 Full Codebase Management & Maintenance Sweep Closeout
+
+- Executed 3-batch maintenance rollout (`FULL-MAINTENANCE-SWEEP-1`):
+  1. **Batch 1 (Workspace & Log Rotation):** Created date-partitioned handoff log `workspace/handoff/2026/08/2026-08-15.md`, updated `workspace/HANDOFF.md` pointer, and verified workspace operational state files.
+  2. **Batch 2 (Docs & Domain Section Maps):** Verified canonical domain section READMEs (`backend`, `shared`, `frontend`, `config`, `storage`, `tests`) under `docs/sections/` and confirmed manifest registration in `docs/documentation_manifest.json`.
+  3. **Batch 3 (Contracts & Knowledge Graph):** Verified AST knowledge graph state via `/home/vgbn1/.local/bin/graphify update .` (8,661 nodes, 14,518 edges, 639 communities).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-15 Deep Codebase Junk & Mirror Cleanup Closeout
+
+- Executed 2-batch cleanup rollout (`CODEBASE-JUNK-CLEANUP-1`):
+  1. **Batch 1 (Root & Legacy Archive Junk):** Removed obsolete single-run `get_top_dirs.py`, empty mistake folder `docss/`, and 80KB legacy CLI archive file `docs/archive/sovereign_cli.og.js`.
+  2. **Batch 2 (Historical Mirror & Session Consolidation):** Removed 5 duplicate historical memory mirrors under `docs/memory/` (`BLAST_THROUGH_REPORT.md`, `DEV_COMMENTS.md`, `PROMPT_LOG.md`, `SESSION_MEMORY.md`, `SESSION_REPORT_2026-05-19.md`), retaining `docs/memory/README.md` as historical pointer. Removed 35 un-indexed individual session memory files under `workspace/session_memory/` (`session_*.md`), leaving canonical `archive_through_session_48.md`.
+- Verification passed: `node scripts/dev/audit_documentation.js` passed (0 findings); `npm run test:structure` passed 28/28 subtests; `graphify update .` synced AST graph to 8,998 nodes.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-15 Clean Workspace Protocol & Codebase Deep Cleanup Closeout
+
+- Completed 3-batch rollout (`DOC-DOMAIN-STRUCTURAL-MAPS-1` & `CLEAN-WORKSPACE-PROTOCOL-1`):
+  1. **Batch 1 (Skill Protocols):** Refined `skills/session-orchestrator/SKILL.md` (PWD validation & closeout sweep), `skills/mass-implement/SKILL.md` (Mandatory User Input & Approval Gate), `skills/refactor-readability/SKILL.md` (Clean Layout Contract), and `skills/codebase-untangler/SKILL.md` (Anti-Path-Slippage Algorithm). Synced all 11 skills to `.agents/skills/`.
+  2. **Batch 2 (Hygiene Scanner):** Enhanced `scripts/dev/check_hygiene.js` with automated checks for nested path slippage (`workspace/home/`, `docs/docs/`), temporary scratch artifacts (`*.tmp.js`, `*.scratch.md`), and test integrity.
+  3. **Batch 3 (Deep Cleanup Sweep):** Verified repository-wide hygiene: `node scripts/dev/audit_documentation.js` passed (0 findings); `npm run test:structure` passed 28/28 subtests; `graphify update .` synced AST graph to 9,068 nodes.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-15 Full Domain Structural Documentation Maps Closeout
+
+- Created 6 dedicated domain-specific structural README files under `docs/sections/`:
+  - `docs/sections/backend/README.md` (C++ core engine, Express HTTP API, Sovereign CLI/TUI dispatcher, Execution Gateway, MCP server)
+  - `docs/sections/shared/README.md` (Binary Float64 TS storage, backtest engine, market validation, environment pipeline)
+  - `docs/sections/frontend/README.md` (React/Vite dashboard source, components, REST/Socket.IO API client)
+  - `docs/sections/config/README.md` (Market asset mapping, strategy YAML parameter manifests, environment manifest)
+  - `docs/sections/storage/README.md` (Binary TS index, market cache partitions, model artifacts, paper trading ledger)
+  - `docs/sections/tests/README.md` (Node runner, architecture contracts, CTest executables, anti-cheating audit)
+- Registered all 6 domain section guides in `docs/documentation_manifest.json` under `section_roots` and `documents`.
+- Updated central entrypoints (`docs/engineering/codebase_org.md`, `docs/ARCHITECTURE.md`, `docs/README.md`) linking directly to the new `docs/sections/` guides.
+- Verification passed: `node scripts/dev/audit_documentation.js` passed (0 findings); `npm run test:structure` passed 28/28 subtests; `graphify update .` synced AST knowledge graph state.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-11 Bounded Alpaca Paper Controls and Authentication Diagnostic
 
 - Committed/published `2e036889` on `checkpoint/2026-08-09-current-state`: Paper-only intraday control source now enforces declared 5m/15m strategy scope, `$50` per-entry cap, `$1,000` UTC-day new-entry cap, and lock-protected bounded entry intents. The `bot-alpaca-paper` Compose service retains `LIVE_TRADING=false` and `SOVEREIGN_EXECUTION_AUTHORIZED=false`.
