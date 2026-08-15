@@ -237,7 +237,7 @@ FrameBacktestResult FrameBacktester::runFromAnnotated(
     for (const auto& sym : symbol_order) {
         const auto& sym_rows = groups[sym];
         const int n = static_cast<int>(sym_rows.size());
-        for (int i = 0; i + horizon < n; i += horizon) {
+        for (int i = 0; i + horizon < n; ++i) {
             const auto& entry = *sym_rows[static_cast<std::size_t>(i)];
             const auto& exit  = *sym_rows[static_cast<std::size_t>(i + horizon)];
 
@@ -269,6 +269,7 @@ FrameBacktestResult FrameBacktester::runFromAnnotated(
                 static_cast<std::size_t>(horizon),
             });
             fr.base.equity_curve.points.push_back({exit.as_of, equity});
+            i += (horizon - 1);
         }
     }
 
