@@ -950,8 +950,8 @@ function normalizeCppResult(cppResult, options, featureFrame) {
     },
     benchmarks: { buy_hold_equal_weight: null },
     equity_curve: cppResult.equity_curve || [],
-    trade_logs: cppResult.trades || [],
-    trades: cppResult.trades || [],
+    trade_logs: Array.isArray(cppResult.trades) ? cppResult.trades : [],
+    trades: m.trades || (Array.isArray(cppResult.trades) ? cppResult.trades.length : 0),
     skipped: featureFrame ? (featureFrame.skipped || []) : [],
   };
 
