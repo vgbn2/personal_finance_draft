@@ -54,7 +54,7 @@ function checkGitNoise() {
     }
   }
 
-  // B. Check for untracked large archives (*.zip, *.bundle, *.tar.gz, etc.)
+  // B. Check for untracked large archives (*.zip, *.bundle, *.tar.gz, etc.) and nested path slippage
   const checkUntracked = runGit(['ls-files', '--others', '--exclude-standard', '.']);
   if (checkUntracked.status === 0) {
     const untrackedFiles = checkUntracked.stdout.trim().split(/\r?\n/).filter(Boolean);
@@ -64,6 +64,26 @@ function checkGitNoise() {
         finding: `Untracked large archive(s) found: ${archives.join(', ')}`,
         surface: 'Project Root',
         action: `Remove-Item ${archives.map(a => `'${a}'`).join(', ')}`
+      });
+    }
+
+    // Check for nested path slippage (e.g. workspace/home/, docs/docs/, skills/skills/)
+    const pathSlippage = untrackedFiles.filter(f => f.match(/^(workspace\/home\/|workspace\/Documents\/|docs\/docs\/|skills\/skills\/)/i));
+    if (pathSlippage.length > 0) {
+      findings.push({
+        finding: `Nested path slippage artifact(s) found: ${pathSlippage.join(', ')}`,
+        surface: 'Path Structure',
+        action: `Remove-Item -Recurse ${pathSlippage.map(p => `'${p}'`).join(', ')}`
+      });
+    }
+
+    // Check for temporary scratch files (e.g. *.tmp.js, *.scratch.md)
+    const scratchFiles = untrackedFiles.filter(f => f.match(/\.(tmp\.js|scratch\.md|scratch\.js)$/i));
+    if (scratchFiles.length > 0) {
+      findings.push({
+        finding: `Untracked temporary scratch artifact(s): ${scratchFiles.join(', ')}`,
+        surface: 'Scratch Artifacts',
+        action: `Remove-Item ${scratchFiles.map(s => `'${s}'`).join(', ')}`
       });
     }
   }

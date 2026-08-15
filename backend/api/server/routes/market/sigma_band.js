@@ -114,7 +114,14 @@ function computeSigmaBand(query = {}, { snapshotPath = DEFAULT_SNAPSHOT } = {}) 
 
 module.exports = {
   path: '/api/sigma-band',
-  status: (payload) => (payload && payload.ok ? 200 : 422),
+  status: (payload) => {
+    if (!payload || !payload.ok) {
+      if (payload?.error === 'snapshot_not_found') return 503;
+      if (payload?.error === 'insufficient_bars') return 422;
+      return 503;
+    }
+    return 200;
+  },
   handle: (query = {}) => computeSigmaBand(query),
   computeSigmaBand,
 };
