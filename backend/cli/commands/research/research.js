@@ -509,10 +509,17 @@ async function commandBacktest(args) {
     }
     return 1;
   }
+  const bridge = require('../../../../shared/lib/runtime/backend_bridge');
+  const useDirectCppNative = !sampleMode && bridge.backendAvailable() && selectedSymbols.length > 0;
+
   let featureFrame;
-  await withLoadingAnimation('Computing indicators', async () => {
-    featureFrame = filterFeatureFrameBySymbols(calculateRollingFeatureFrame(snapshot.sources, 2, periodOptionsFromArgs(args)), selectedSymbols);
-  }, args);
+  if (!useDirectCppNative) {
+    await withLoadingAnimation('Computing indicators', async () => {
+      featureFrame = filterFeatureFrameBySymbols(calculateRollingFeatureFrame(snapshot.sources, 2, periodOptionsFromArgs(args)), selectedSymbols);
+    }, args);
+  } else {
+    featureFrame = { features: selectedSymbols.map(s => ({ symbol: s })) };
+  }
   const qualityError = backtestDataQualityError(quality, args);
   if (qualityError) {
     if (hasFlag(args, '--json')) {
