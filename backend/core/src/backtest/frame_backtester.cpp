@@ -84,42 +84,6 @@ bool jsonDbl(std::string_view obj, std::string_view key, double& out) {
     } catch (...) { return false; }
 }
 
-// Extract top-level JSON objects inside a named array key
-std::vector<std::string_view> jsonObjects(std::string_view content, std::string_view array_key) {
-    std::vector<std::string_view> result;
-    std::string search = "\"";
-    search += array_key;
-    search += "\"";
-    const auto pos = content.find(search);
-    if (pos == std::string_view::npos) return result;
-    const auto bracket = content.find('[', pos);
-    if (bracket == std::string_view::npos) return result;
-
-    bool in_str = false, esc = false;
-    int depth = 0;
-    std::size_t obj_start = std::string_view::npos;
-    for (std::size_t i = bracket + 1; i < content.size(); ++i) {
-        const char ch = content[i];
-        if (esc) { esc = false; continue; }
-        if (ch == '\\' && in_str) { esc = true; continue; }
-        if (ch == '"') { in_str = !in_str; continue; }
-        if (in_str) continue;
-        if (ch == '{') {
-            if (depth == 0) obj_start = i;
-            ++depth;
-        } else if (ch == '}') {
-            --depth;
-            if (depth == 0 && obj_start != std::string_view::npos) {
-                result.push_back(content.substr(obj_start, i - obj_start + 1));
-                obj_start = std::string_view::npos;
-            }
-        } else if (ch == ']' && depth == 0) {
-            break;
-        }
-    }
-    return result;
-}
-
 // Max drawdown on an equity curve passed as vector of equity values
 double maxDrawdown(const std::vector<EquityPoint>& points) {
     double peak = 1.0, dd = 0.0;
@@ -128,6 +92,77 @@ double maxDrawdown(const std::vector<EquityPoint>& points) {
         if (peak > 0.0) dd = std::max(dd, (peak - pt.equity) / peak);
     }
     return dd;
+}
+
+std::vector<AnnotatedRow> parseFeaturesFast(std::string_view content) {
+    std::vector<AnnotatedRow> rows;
+    const auto pos = content.find("\"features\"");
+    if (pos == std::string_view::npos) return rows;
+    const auto bracket = content.find('[', pos);
+    if (bracket == std::string_view::npos) return rows;
+
+    std::size_t i = bracket + 1;
+    const std::size_t n = content.size();
+    rows.reserve(4096);
+
+    while (i < n) {
+        while (i < n && (content[i] == ' ' || content[i] == '\t' || content[i] == '\r' || content[i] == '\n' || content[i] == ',')) ++i;
+        if (i >= n || content[i] == ']') break;
+
+        if (content[i] == '{') {
+            ++i;
+            AnnotatedRow row;
+            while (i < n && content[i] != '}') {
+                while (i < n && (content[i] == ' ' || content[i] == '\t' || content[i] == '\r' || content[i] == '\n' || content[i] == ',')) ++i;
+                if (i >= n || content[i] == '}') break;
+
+                if (content[i] == '"') {
+                    ++i;
+                    const std::size_t k_start = i;
+                    while (i < n && content[i] != '"') ++i;
+                    std::string_view key = content.substr(k_start, i - k_start);
+                    if (i < n) ++i;
+
+                    while (i < n && (content[i] == ':' || content[i] == ' ' || content[i] == '\t' || content[i] == '\r' || content[i] == '\n')) ++i;
+
+                    if (i < n && content[i] == '"') {
+                        ++i;
+                        const std::size_t v_start = i;
+                        while (i < n && content[i] != '"') {
+                            if (content[i] == '\\' && i + 1 < n) i += 2;
+                            else ++i;
+                        }
+                        std::string val(content.substr(v_start, i - v_start));
+                        if (i < n) ++i;
+
+                        if (key == "symbol") row.symbol = std::move(val);
+                        else if (key == "timeframe") row.timeframe = std::move(val);
+                        else if (key == "as_of") row.as_of = std::move(val);
+                        else if (key == "predicted_direction") row.predicted_direction = std::move(val);
+                    } else {
+                        const std::size_t v_start = i;
+                        while (i < n && content[i] != ',' && content[i] != '}' && content[i] != ' ' && content[i] != '\t' && content[i] != '\r' && content[i] != '\n') ++i;
+                        std::string_view val_sv = content.substr(v_start, i - v_start);
+                        double val_dbl = 0.0;
+                        const auto [ptr, ec] = std::from_chars(val_sv.data(), val_sv.data() + val_sv.size(), val_dbl);
+                        if (ec == std::errc()) {
+                            if (key == "close") row.close = val_dbl;
+                            else if (key == "predicted_confidence") row.predicted_confidence = val_dbl;
+                        }
+                    }
+                } else {
+                    ++i;
+                }
+            }
+            if (i < n && content[i] == '}') ++i;
+            if (!row.symbol.empty() && row.close > 0.0) {
+                rows.push_back(std::move(row));
+            }
+        } else {
+            ++i;
+        }
+    }
+    return rows;
 }
 
 } // anonymous namespace
@@ -293,7 +328,116 @@ FrameBacktestResult FrameBacktester::runFromAnnotated(
 
     const uint64_t seed = static_cast<uint64_t>(trade_returns.size()) * 6364136223846793005ULL;
     fr.monte_carlo = runMonteCarlo(trade_returns, frame_cfg.monte_carlo_runs, frame_cfg.tail_alpha, seed);
+    if (frame_cfg.walk_forward_folds > 0) {
+        fr.walk_forward = runWalkForward(rows, frame_cfg);
+    }
     return fr;
+}
+
+// ── Native rolling walk-forward evaluation ───────────────────────────────────
+WalkForwardResult FrameBacktester::runWalkForward(
+    const std::vector<AnnotatedRow>& rows,
+    const FrameBacktestConfig& frame_cfg)
+{
+    WalkForwardResult wf;
+    wf.folds_requested = std::clamp(frame_cfg.walk_forward_folds, 2, 10);
+    if (rows.empty()) {
+        wf.reason = "insufficient bars for rolling walk-forward";
+        return wf;
+    }
+
+    std::vector<AnnotatedRow> sorted_rows = rows;
+    std::stable_sort(sorted_rows.begin(), sorted_rows.end(), [](const AnnotatedRow& a, const AnnotatedRow& b) {
+        return a.as_of < b.as_of;
+    });
+
+    const std::size_t n = sorted_rows.size();
+    const std::size_t chunkSize = n / (static_cast<std::size_t>(wf.folds_requested) + 1);
+    if (chunkSize < 2) {
+        wf.reason = "insufficient bars for rolling walk-forward";
+        return wf;
+    }
+
+    FrameBacktestConfig fold_cfg = frame_cfg;
+    fold_cfg.monte_carlo_runs = 0;
+    fold_cfg.walk_forward_folds = 0;
+
+    std::vector<double> oos_returns;
+    std::vector<double> oos_trades;
+    std::vector<double> oos_sharpes;
+    std::vector<double> oos_drawdowns;
+
+    for (int fold = 0; fold < wf.folds_requested; ++fold) {
+        const std::size_t trainEnd = chunkSize * static_cast<std::size_t>(fold + 1);
+        const std::size_t testStart = trainEnd;
+        const std::size_t testEnd = std::min(n, chunkSize * static_cast<std::size_t>(fold + 2));
+        if (testStart >= n || testEnd <= testStart) break;
+
+        std::vector<AnnotatedRow> trainRows(sorted_rows.begin(), sorted_rows.begin() + static_cast<std::ptrdiff_t>(trainEnd));
+        std::vector<AnnotatedRow> testRows(sorted_rows.begin() + static_cast<std::ptrdiff_t>(testStart), sorted_rows.begin() + static_cast<std::ptrdiff_t>(testEnd));
+
+        const auto trainRes = runFromAnnotated(trainRows, fold_cfg);
+        const auto testRes = runFromAnnotated(testRows, fold_cfg);
+
+        WalkForwardFoldResult f;
+        f.fold = fold + 1;
+        f.train_bars = trainRows.size();
+        f.test_bars = testRows.size();
+        f.train_start = trainRows.empty() ? "" : trainRows.front().as_of;
+        f.train_end = trainRows.empty() ? "" : trainRows.back().as_of;
+        f.test_start = testRows.empty() ? "" : testRows.front().as_of;
+        f.test_end = testRows.empty() ? "" : testRows.back().as_of;
+
+        f.in_sample = {
+            trainRes.base.summary.trades,
+            trainRes.base.summary.net_return,
+            trainRes.base.summary.sharpe,
+            trainRes.base.summary.max_drawdown,
+            trainRes.base.summary.win_rate
+        };
+        f.out_of_sample = {
+            testRes.base.summary.trades,
+            testRes.base.summary.net_return,
+            testRes.base.summary.sharpe,
+            testRes.base.summary.max_drawdown,
+            testRes.base.summary.win_rate
+        };
+
+        oos_returns.push_back(testRes.base.summary.net_return);
+        oos_trades.push_back(static_cast<double>(testRes.base.summary.trades));
+        oos_sharpes.push_back(testRes.base.summary.sharpe);
+        oos_drawdowns.push_back(testRes.base.summary.max_drawdown);
+
+        wf.folds.push_back(std::move(f));
+    }
+
+    if (wf.folds.empty()) {
+        wf.reason = "no folds completed";
+        return wf;
+    }
+
+    wf.ok = true;
+    wf.folds_run = static_cast<int>(wf.folds.size());
+
+    double sum_ret = 0.0, sum_tr = 0.0, sum_sh = 0.0, sum_dd = 0.0;
+    int pos_folds = 0;
+    for (std::size_t i = 0; i < oos_returns.size(); ++i) {
+        sum_ret += oos_returns[i];
+        sum_tr  += oos_trades[i];
+        sum_sh  += oos_sharpes[i];
+        sum_dd  += oos_drawdowns[i];
+        if (oos_returns[i] > 0.0) pos_folds++;
+    }
+
+    const double nf = static_cast<double>(wf.folds_run);
+    wf.aggregate.mean_oos_return    = sum_ret / nf;
+    wf.aggregate.mean_oos_trades    = sum_tr  / nf;
+    wf.aggregate.mean_oos_sharpe    = sum_sh  / nf;
+    wf.aggregate.mean_oos_drawdown  = sum_dd  / nf;
+    wf.aggregate.positive_oos_folds = pos_folds;
+    wf.aggregate.positive_oos_rate  = pos_folds / nf;
+
+    return wf;
 }
 
 // ── Annotated frame file parser ───────────────────────────────────────────────
@@ -312,27 +456,13 @@ std::vector<AnnotatedRow> FrameBacktester::parseFrameFile(
     { double d = 0.0; if (jsonDbl(sv, "horizon", d))             out_cfg.horizon          = static_cast<int>(d); }
     { double d = 0.0; if (jsonDbl(sv, "cost_bps", d))            out_cfg.cost_bps         = d; }
     { double d = 0.0; if (jsonDbl(sv, "monte_carlo_runs", d))    out_cfg.monte_carlo_runs = static_cast<int>(d); }
+    { double d = 0.0; if (jsonDbl(sv, "walk_forward_folds", d))  out_cfg.walk_forward_folds = static_cast<int>(d); }
     { double d = 0.0; if (jsonDbl(sv, "tail_alpha", d))          out_cfg.tail_alpha       = d; }
     jsonStr(sv, "timeframe", out_cfg.timeframe);
     jsonStr(sv, "from",      out_cfg.from_date);
     jsonStr(sv, "to",        out_cfg.to_date);
 
-    const auto feature_objects = jsonObjects(sv, "features");
-    std::vector<AnnotatedRow> rows;
-    rows.reserve(feature_objects.size());
-
-    for (auto obj : feature_objects) {
-        AnnotatedRow row;
-        jsonStr(obj, "symbol",                row.symbol);
-        jsonStr(obj, "timeframe",             row.timeframe);
-        jsonStr(obj, "as_of",                 row.as_of);
-        jsonDbl(obj, "close",                 row.close);
-        jsonStr(obj, "predicted_direction",   row.predicted_direction);
-        jsonDbl(obj, "predicted_confidence",  row.predicted_confidence);
-        if (!row.symbol.empty() && row.close > 0.0)
-            rows.push_back(std::move(row));
-    }
-    return rows;
+    return parseFeaturesFast(sv);
 }
 
 } // namespace sovereign

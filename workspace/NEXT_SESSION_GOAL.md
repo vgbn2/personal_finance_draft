@@ -1,17 +1,18 @@
 # Next Session Goal
 
-## 2026-08-15 Native C++ Stress Testing Migration & hpdesk Paper Recovery
+## 2026-08-15 Backtest Strategy Logic Fix, Repository Audit & Refactor Potential Sweep
 
-1. **Native C++ Monte Carlo & Walk-Forward Migration**:
-   - Migrate the 200-run Monte Carlo stress testing (`monteCarloStress`) and 3-fold Walk-Forward optimization directly into the native C++ core engine (`backend/core/src/backtest/`).
-   - Eliminate Node.js V8 JSON serialization and temporary disk IPC overhead to achieve sub-second full-suite CLI backtests (< 200ms vs current 60s-150s).
+1. **Backtest Signal & Position Logic Remediation**:
+   - Audit and fix backtest position sizing and signal evaluation logic across C++ native and JS frame engines.
+   - Replace uncapped exponential compounding with configurable risk-budgeting ($1\text{--}2\%$ equity risk per trade, stop loss, fixed lot sizing).
+   - Ensure ML frame models (`--mode frame`) properly annotate candle features and compute model-specific predictions.
 
-2. **hpdesk Paper-Auth & Provenance Reconciliation**:
-   - Reconcile exact Git provenance on `vgbn-server@hpdesk` without overwriting host-local `.env` or storage directories.
-   - Run a redacted Paper-only `doctor alpaca --paper-auth` diagnostic on `hpdesk` to root-cause Paper quote HTTP 401 errors.
+2. **Repository Audit & Refactor Potential Sweep**:
+   - Execute `blast-through` audit pass to identify redundant code paths, dead wrappers, and refactor opportunities.
+   - Enforce clean separation between native OHLCV trend evaluation and ML frame-annotated backtesting.
 
 Immediate next action:
-- Begin session with `session-orchestrator` boot, review C++ backtest engine structure (`backend/core/src/backtest/`), and implement native C++ Monte Carlo stress testing.
+- Begin session with `session-orchestrator` boot and execute `blast-through` audit over backtest signal and position sizing logic.
 
 ## 2026-08-15 Codebase, Test, and Docs Management for Junk Minimization
 

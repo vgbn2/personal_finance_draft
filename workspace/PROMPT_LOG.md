@@ -1,5 +1,18 @@
 # Prompt Log - 2026-08-09
 
+## User Prompt & Implementation - 2026-08-15 (Native C++ Stress Testing & Walk-Forward Optimization)
+
+Received user goal: Native C++ Stress Testing Migration & Walk-Forward Optimization.
+- Implemented `WalkForwardResult`, `WalkForwardFoldResult`, `WalkForwardFoldMetrics`, and `WalkForwardAggregate` in `backend/core/src/backtest/frame_backtester.hpp` and `frame_backtester.cpp`.
+- Implemented native C++ rolling walk-forward evaluation (`FrameBacktester::runWalkForward`), running multi-fold backtests directly in C++ memory without process spawn IPC overhead.
+- Added `--walk-forward-folds` flag parsing in `main.cpp` and `parseFeaturesFast` single-pass linear JSON parser in `frame_backtester.cpp`.
+- Fixed bug in JS `monteCarloStress` (`shared/lib/strategy/backtest.js`) where `options.runs || 200` defaulted `0` to `200`, forcing 200 Monte Carlo runs on every fold.
+- Disabled redundant Monte Carlo runs (`monteCarloRuns: 0`) across intermediate walk-forward folds, in-sample, out-of-sample, and optimization grid search loops.
+- Updated `commandBacktest` in `backend/cli/commands/research/research.js` to pass `walkForwardFolds: 3` to C++, executing full backtest, Monte Carlo stress test, and 3-fold Walk-Forward in a single native pass.
+- Verified daily strategy backtest CLI runtime reduced from 8,329 ms to **127 ms** (< 200 ms target achieved).
+- Verification passed: `npm run test:structure` (28/28 pass 100% green); `ctest` (33/33 pass); `check_hygiene.js` (0 findings).
+- Confirmed safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## User Prompt & Diagnostic - 2026-08-15 (Bayesian Troubleshooter Skill & Sub-Daily 1h Backtest Resolution)
 
 Received user request: "create a troubleshooting skill whenever there's an output problem... use that skill to identify our current problem, which is 0 trades".

@@ -1,5 +1,16 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-15 Native C++ Stress Testing & Walk-Forward Optimization Closeout
+
+- Implemented native C++ rolling walk-forward optimization engine (`FrameBacktester::runWalkForward`) in `backend/core/src/backtest/frame_backtester.hpp` and `frame_backtester.cpp`.
+- Extended C++ CLI backtester (`sovereign_wealth backtest`) in `main.cpp` with `--walk-forward-folds` support and single-pass linear JSON parser (`parseFeaturesFast`).
+- Fixed bug in JS `monteCarloStress` (`shared/lib/strategy/backtest.js`) where `options.runs || 200` defaulted `0` to `200`, forcing 200 Monte Carlo runs on every fold.
+- Disabled redundant Monte Carlo runs (`monteCarloRuns: 0`) across intermediate walk-forward folds, in-sample, out-of-sample, and optimization grid search loops.
+- Updated `commandBacktest` in `backend/cli/commands/research/research.js` to pass `walkForwardFolds: 3` to C++, executing full backtest, Monte Carlo stress test, and 3-fold Walk-Forward in a single native pass.
+- Full daily CLI strategy backtest runtime reduced from 8,329 ms to **127 ms** (< 200 ms target).
+- Verification passed: `npm run test:structure` (28/28 pass 100% green); `ctest` (33/33 pass); `check_hygiene.js` (0 findings).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-15 Bayesian Troubleshooter Skill & Sub-Daily Backtest Resolution Closeout
 
 - Created Universal **`bayesian-troubleshooter`** skill package (`skills/bayesian-troubleshooter/SKILL.md` & `agents/openai.yaml`, registered in `skills/manifest.json`, mirrored to `.agents/skills/`, registered in `workspace/AGENTS.md`).

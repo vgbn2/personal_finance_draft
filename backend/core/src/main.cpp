@@ -711,7 +711,49 @@ void printBacktestResult(const sovereign::FrameBacktestResult& fr) {
             << ",\"net_return\":" << t.net_return
             << ",\"confidence\":" << t.confidence << "}";
     }
-    std::cout << "\n  ]\n}\n";
+    std::cout << "\n  ]";
+
+    if (fr.walk_forward.ok) {
+        const auto& wf = fr.walk_forward;
+        std::cout << ",\n  \"walk_forward\": {\n"
+            << "    \"ok\": true,\n"
+            << "    \"folds_run\": " << wf.folds_run << ",\n"
+            << "    \"folds_requested\": " << wf.folds_requested << ",\n"
+            << "    \"aggregate\": {\n"
+            << "      \"mean_oos_return\": " << wf.aggregate.mean_oos_return << ",\n"
+            << "      \"mean_oos_trades\": " << wf.aggregate.mean_oos_trades << ",\n"
+            << "      \"mean_oos_sharpe\": " << wf.aggregate.mean_oos_sharpe << ",\n"
+            << "      \"mean_oos_drawdown\": " << wf.aggregate.mean_oos_drawdown << ",\n"
+            << "      \"positive_oos_folds\": " << wf.aggregate.positive_oos_folds << ",\n"
+            << "      \"positive_oos_rate\": " << wf.aggregate.positive_oos_rate << "\n"
+            << "    },\n"
+            << "    \"folds\": [\n";
+        for (std::size_t i = 0; i < wf.folds.size(); ++i) {
+            const auto& f = wf.folds[i];
+            if (i > 0) std::cout << ",\n";
+            std::cout << "      {\n"
+                << "        \"fold\": " << f.fold << ",\n"
+                << "        \"train_bars\": " << f.train_bars << ",\n"
+                << "        \"test_bars\": " << f.test_bars << ",\n"
+                << "        \"train_start\": \"" << jsonEscape(f.train_start) << "\",\n"
+                << "        \"train_end\": \"" << jsonEscape(f.train_end) << "\",\n"
+                << "        \"test_start\": \"" << jsonEscape(f.test_start) << "\",\n"
+                << "        \"test_end\": \"" << jsonEscape(f.test_end) << "\",\n"
+                << "        \"in_sample\": {\"trades\":" << f.in_sample.trades
+                << ",\"net_return\":" << f.in_sample.net_return
+                << ",\"sharpe_ratio\":" << f.in_sample.sharpe_ratio
+                << ",\"max_drawdown\":" << f.in_sample.max_drawdown
+                << ",\"win_rate\":" << f.in_sample.win_rate << "},\n"
+                << "        \"out_of_sample\": {\"trades\":" << f.out_of_sample.trades
+                << ",\"net_return\":" << f.out_of_sample.net_return
+                << ",\"sharpe_ratio\":" << f.out_of_sample.sharpe_ratio
+                << ",\"max_drawdown\":" << f.out_of_sample.max_drawdown
+                << ",\"win_rate\":" << f.out_of_sample.win_rate << "}\n"
+                << "      }";
+        }
+        std::cout << "\n    ]\n  }";
+    }
+    std::cout << "\n}\n";
 }
 
 int printBacktest(const std::vector<std::string>& args) {
@@ -732,7 +774,8 @@ int printBacktest(const std::vector<std::string>& args) {
           v = optionValue(args, "--threshold");        if (!v.empty() && parseDoubleStrict(v, d)) cfg.threshold = d;
           v = optionValue(args, "--horizon");          if (!v.empty() && parseDoubleStrict(v, d)) cfg.horizon = static_cast<int>(d);
           v = optionValue(args, "--cost-bps");         if (!v.empty() && parseDoubleStrict(v, d)) cfg.cost_bps = d;
-          v = optionValue(args, "--monte-carlo-runs"); if (!v.empty() && parseDoubleStrict(v, d)) cfg.monte_carlo_runs = static_cast<int>(d);
+          v = optionValue(args, "--monte-carlo-runs");    if (!v.empty() && parseDoubleStrict(v, d)) cfg.monte_carlo_runs = static_cast<int>(d);
+          v = optionValue(args, "--walk-forward-folds");  if (!v.empty() && parseDoubleStrict(v, d)) cfg.walk_forward_folds = static_cast<int>(d);
           v = optionValue(args, "--timeframe");        if (!v.empty()) cfg.timeframe = v;
           v = optionValue(args, "--from");             if (!v.empty()) cfg.from_date = v;
           v = optionValue(args, "--to");               if (!v.empty()) cfg.to_date = v;

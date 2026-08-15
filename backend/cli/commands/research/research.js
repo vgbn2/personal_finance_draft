@@ -510,8 +510,7 @@ async function commandBacktest(args) {
     return 1;
   }
   const bridge = require('../../../../shared/lib/runtime/backend_bridge');
-  const isSubDaily = timeframe && timeframe !== '1d';
-  const useDirectCppNative = !sampleMode && !isSubDaily && bridge.backendAvailable() && selectedSymbols.length > 0;
+  const useDirectCppNative = !sampleMode && bridge.backendAvailable() && selectedSymbols.length > 0;
 
   let featureFrame;
   if (!useDirectCppNative) {
@@ -519,7 +518,7 @@ async function commandBacktest(args) {
       featureFrame = filterFeatureFrameBySymbols(calculateRollingFeatureFrame(snapshot.sources, 2, periodOptionsFromArgs(args)), selectedSymbols);
     }, args);
   } else {
-    featureFrame = { features: selectedSymbols.map(s => ({ symbol: s })) };
+    featureFrame = { features: selectedSymbols.map(s => ({ symbol: s, timeframe: timeframe || '1d' })) };
   }
   const qualityError = backtestDataQualityError(quality, args);
   if (qualityError) {
@@ -532,8 +531,18 @@ async function commandBacktest(args) {
   }
   const filteredFrame = filterFeatureFrame(featureFrame, { timeframe, from, to });
   const split = splitFeatureFrame(filteredFrame, trainRatio);
-  const dataRange = featureFrameDateRange(filteredFrame);
-  const oosRange = featureFrameDateRange(split.test);
+  let dataRange = featureFrameDateRange(filteredFrame);
+  let oosRange = featureFrameDateRange(split.test);
+
+  if (useDirectCppNative && (!dataRange.start || !dataRange.end)) {
+    const allDates = (snapshot.sources || []).map((s) => s.timestamp).filter(Boolean).sort();
+    if (allDates.length > 0) {
+      dataRange = { start: allDates[0], end: allDates[allDates.length - 1] };
+      const splitIdx = Math.floor(allDates.length * trainRatio);
+      oosRange = { start: allDates[splitIdx] || allDates[0], end: allDates[allDates.length - 1] };
+    }
+  }
+
   const selectedPropFirm = resolvePropFirmProfileFromArgs(args);
   const selectedPropFirmRef = optionValue(args, '--prop-firm', optionValue(args, '--prop-firm-profile', null));
   const backtestOptions = {
@@ -556,14 +565,23 @@ async function commandBacktest(args) {
   let fullBacktest;
   let wfResult;
   await withLoadingAnimation('Running backtest', async () => {
-    inSample = runBacktest(split.train, backtestOptions);
-    outOfSample = runBacktest(split.test, backtestOptions);
-    fullBacktest = runBacktest(featureFrame, { ...backtestOptions, timeframe, from, to });
+    if (useDirectCppNative) {
+      inSample = runBacktest(featureFrame, { ...backtestOptions, to: oosRange.start, monteCarloRuns: 0 });
+      outOfSample = runBacktest(featureFrame, { ...backtestOptions, from: oosRange.start, monteCarloRuns: 0 });
+    } else {
+      inSample = runBacktest(split.train, { ...backtestOptions, monteCarloRuns: 0 });
+      outOfSample = runBacktest(split.test, { ...backtestOptions, monteCarloRuns: 0 });
+    }
+    fullBacktest = runBacktest(featureFrame, { ...backtestOptions, timeframe, from, to, walkForwardFolds: sampleMode ? 0 : 3 });
     if (!sampleMode) {
-      wfResult = rollingWalkForward(filteredFrame, runBacktest, {
-        folds: 3,
-        backtestOptions,
-      });
+      if (fullBacktest && fullBacktest.walk_forward && fullBacktest.walk_forward.ok) {
+        wfResult = fullBacktest.walk_forward;
+      } else {
+        wfResult = rollingWalkForward(filteredFrame, runBacktest, {
+          folds: 3,
+          backtestOptions,
+        });
+      }
     }
   }, args);
   const annualized = annualizedReturn(fullBacktest.metrics.net_return, dataRange.start, dataRange.end);

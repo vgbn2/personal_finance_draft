@@ -1,3 +1,16 @@
+### Session Memory - 2026-08-15 Native C++ Stress Testing & Walk-Forward Optimization
+
+```json
+{
+  "batch": ["CPP-WALK-FORWARD-MONTE-CARLO-1"],
+  "lifecycle": "closed",
+  "scope": "Native C++ Walk-Forward & Monte Carlo optimization and multi-fold IPC overhead elimination",
+  "changes": "added WalkForwardResult / runWalkForward / parseFeaturesFast in frame_backtester.hpp and frame_backtester.cpp; added --walk-forward-folds to main.cpp; updated monteCarloStress and rollingWalkForward in backtest.js; updated commandBacktest in research.js and research_optimization.js to skip redundant fold Monte Carlo and pass native walkForwardFolds",
+  "verification": "full backtest CLI runtime reduced from 8,329ms to 127ms (< 200ms target); test:structure 28/28 pass; ctest 33/33 pass; hygiene 0 findings",
+  "boundaries": "no live trading, no provider credential reading; LIVE_TRADING=false"
+}
+```
+
 ### Session Memory - 2026-08-15 C++ Core Stress Testing Performance Analysis & Next Session Goal
 
 ```json

@@ -239,7 +239,7 @@ async function commandOptimize(args, helpers = {}) {
         feeBps,
         slippageBps,
         tailAlpha,
-        monteCarloRuns,
+        monteCarloRuns: 0,
         propFirm: 'none',
         propFirmProfile: null,
         engine: 'js', // grid loop: stay on JS to avoid one C++ spawn per combination
