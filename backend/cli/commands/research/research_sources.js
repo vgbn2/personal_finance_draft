@@ -20,18 +20,29 @@ const { STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths.js');
 
 const MIN_BACKTEST_BARS = 50;
 
-function loadSourcesFromTsIndex(family, days = 400) {
+function loadSourcesFromTsIndex(family, days = 400, timeframe = '1d') {
   if (!STORAGE_TS_DIR || !fs.existsSync(STORAGE_TS_DIR)) return [];
   const sinceMs = Date.now() - days * 24 * 60 * 60 * 1000;
   const sources = [];
   let files;
   try { files = fs.readdirSync(STORAGE_TS_DIR); } catch (_) { return []; }
+  const suffix = `_${timeframe}.meta.json`;
+  const fallbackSuffix = '_1d.meta.json';
+
+  let targetSuffix = suffix;
+  let hasTargetFiles = files.some((f) => f.endsWith(suffix));
+  if (!hasTargetFiles && timeframe !== '1d') {
+    targetSuffix = fallbackSuffix;
+  }
+
+  const activeTf = targetSuffix === suffix ? timeframe : '1d';
+
   for (const file of files) {
-    if (!file.endsWith('_1d.meta.json')) continue;
+    if (!file.endsWith(targetSuffix)) continue;
     try {
       const meta = JSON.parse(fs.readFileSync(path.join(STORAGE_TS_DIR, file), 'utf8'));
       if (meta.family !== family) continue;
-      sources.push(...readTsIndexSince(STORAGE_TS_DIR, meta.symbol, '1d', sinceMs));
+      sources.push(...readTsIndexSince(STORAGE_TS_DIR, meta.symbol, activeTf, sinceMs));
     } catch (_) { /* Skip unreadable bins. */ }
   }
   return sources;
@@ -62,9 +73,10 @@ function _historicalWindowFromArgs(args, fallbackDays) {
 function loadUsableSources(args, options = {}) {
   const input = optionValue(args, '--input', DEFAULT_SNAPSHOT);
   const family = options.family || null;
+  const timeframe = options.timeframe || optionValue(args, '--timeframe', '1d');
 
   if (input === DEFAULT_SNAPSHOT && family) {
-    const tsBars = loadSourcesFromTsIndex(family);
+    const tsBars = loadSourcesFromTsIndex(family, 400, timeframe);
     if (tsBars.length >= MIN_BACKTEST_BARS) {
       const tsSnapshot = { mode: 'ts_index', sources: tsBars, errors: [] };
       const { report, usableSources } = validateSnapshot(tsSnapshot);

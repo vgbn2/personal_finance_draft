@@ -950,8 +950,8 @@ function normalizeCppResult(cppResult, options, featureFrame) {
     },
     benchmarks: { buy_hold_equal_weight: null },
     equity_curve: cppResult.equity_curve || [],
-    trade_logs: Array.isArray(cppResult.trades) ? cppResult.trades : [],
-    trades: m.trades || (Array.isArray(cppResult.trades) ? cppResult.trades.length : 0),
+    trade_logs: Array.isArray(cppResult.trades) ? cppResult.trades : (Array.isArray(cppResult.trade_logs) ? cppResult.trade_logs : []),
+    trades: m.trades != null ? m.trades : (Array.isArray(cppResult.trades) ? cppResult.trades.length : 0),
     skipped: featureFrame ? (featureFrame.skipped || []) : [],
   };
 
@@ -1085,6 +1085,18 @@ function runBacktestCppFrame(featureFrame, options) {
 }
 
 function runBacktest(featureFrame, options = {}) {
+  // Fail closed if feature frame has no features or is invalid
+  if (!featureFrame || !Array.isArray(featureFrame.features) || featureFrame.features.length === 0) {
+    return {
+      ok: false,
+      error_code: 'data_unavailable',
+      status: 503,
+      message: 'Feature frame has no valid data series for evaluation',
+      trades: [],
+      metrics: { net_return: 0, trades: 0 },
+    };
+  }
+
   // C++ core is the default engine when the binary is available.
   // Set engine: 'js' to force JS path.
   const engine = options.engine || 'auto';
@@ -1093,10 +1105,12 @@ function runBacktest(featureFrame, options = {}) {
     try {
       const bridge = require('../runtime/backend_bridge');
       if (bridge.backendAvailable()) {
-        if (engine === 'cpp_native') {
+        const tf = options.timeframe || '1d';
+        const isSubDaily = tf !== '1d';
+        if (engine === 'cpp_native' && !isSubDaily) {
           return runBacktestCppNative(featureFrame, options);
         }
-        if (engine === 'cpp_frame' || engine === 'auto' || engine === 'js_model') {
+        if (engine === 'cpp_frame' || engine === 'auto' || engine === 'js_model' || isSubDaily) {
           if (featureFrame && Array.isArray(featureFrame.features) && featureFrame.features.length > 0) {
             return runBacktestCppFrame(featureFrame, options);
           }
