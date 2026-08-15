@@ -1,5 +1,18 @@
 # Next Session Goal
 
+## 2026-08-15 Native C++ Stress Testing Migration & hpdesk Paper Recovery
+
+1. **Native C++ Monte Carlo & Walk-Forward Migration**:
+   - Migrate the 200-run Monte Carlo stress testing (`monteCarloStress`) and 3-fold Walk-Forward optimization directly into the native C++ core engine (`backend/core/src/backtest/`).
+   - Eliminate Node.js V8 JSON serialization and temporary disk IPC overhead to achieve sub-second full-suite CLI backtests (< 200ms vs current 60s-150s).
+
+2. **hpdesk Paper-Auth & Provenance Reconciliation**:
+   - Reconcile exact Git provenance on `vgbn-server@hpdesk` without overwriting host-local `.env` or storage directories.
+   - Run a redacted Paper-only `doctor alpaca --paper-auth` diagnostic on `hpdesk` to root-cause Paper quote HTTP 401 errors.
+
+Immediate next action:
+- Begin session with `session-orchestrator` boot, review C++ backtest engine structure (`backend/core/src/backtest/`), and implement native C++ Monte Carlo stress testing.
+
 ## 2026-08-15 Codebase, Test, and Docs Management for Junk Minimization
 
 1. **Codebase, Test, & Docs Tidiness Sweep**:

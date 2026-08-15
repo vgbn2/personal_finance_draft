@@ -1,3 +1,14 @@
+### Session Memory - 2026-08-15 C++ Core Stress Testing Performance Analysis & Next Session Goal
+
+```json
+{
+  "analysis": "C++ direct native execution takes 8ms for 20,000 bars; full CLI pipeline takes 60s-152s due to V8 JSON serialization and multi-fold IPC overhead (In-Sample + OOS + 3-Fold Walk-Forward + 200-Run Monte Carlo)",
+  "recommendation": "Migrate Monte Carlo stress testing and Walk-Forward folds directly into native C++ engine (backend/core/src/backtest/) to achieve sub-second full-suite CLI backtests (< 200ms)",
+  "next_session_goal": "Implement native C++ Monte Carlo stress testing and Walk-Forward optimization, and reconcile hpdesk Paper authentication",
+  "boundaries": "no live trading, no provider credential reading; LIVE_TRADING=false"
+}
+```
+
 ### Session Memory - 2026-08-15 Bayesian Troubleshooter Skill & Sub-Daily Backtest Resolution
 
 ```json
