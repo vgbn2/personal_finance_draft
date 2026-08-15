@@ -3,7 +3,7 @@ const os = require('node:os');
 const path = require('node:path');
 const A = require('../ui/ansi');
 const { modelCandidates, resolveModel } = require('../ml/models');
-const { STORAGE_DATA_DIR } = require('../runtime/paths');
+const { STORAGE_DATA_DIR, STORAGE_TS_DIR } = require('../runtime/paths');
 const {
   ACCOUNT_TYPE_DEFAULTS,
   flattenRules,
@@ -322,6 +322,9 @@ function historicalTailRisk(returns, alpha = 0.05) {
 }
 
 function monteCarloStress(returns, options = {}) {
+  if (options.runs !== undefined && options.runs !== null && Number(options.runs) <= 0) {
+    return null;
+  }
   const finiteReturns = returns.filter((value) => Number.isFinite(value));
   if (!finiteReturns.length) return null;
   const runs = Math.max(100, Math.floor(options.runs || 200));
@@ -609,7 +612,10 @@ function splitFeatureFrame(featureFrame, trainRatio = 0.7) {
 
 function rollingWalkForward(featureFrame, runBacktestFn, options = {}) {
   const folds = Math.max(2, Math.min(10, Math.floor(options.folds ?? 3)));
-  const backtestOptions = options.backtestOptions || {};
+  const backtestOptions = {
+    ...(options.backtestOptions || {}),
+    monteCarloRuns: 0,
+  };
   const compactMetrics = (metrics = {}) => ({
     trades: metrics.trades,
     net_return: metrics.net_return,
@@ -949,6 +955,7 @@ function normalizeCppResult(cppResult, options, featureFrame) {
       } : null,
     },
     benchmarks: { buy_hold_equal_weight: null },
+    walk_forward: cppResult.walk_forward || null,
     equity_curve: cppResult.equity_curve || [],
     trade_logs: Array.isArray(cppResult.trades) ? cppResult.trades : (Array.isArray(cppResult.trade_logs) ? cppResult.trade_logs : []),
     trades: m.trades != null ? m.trades : (Array.isArray(cppResult.trades) ? cppResult.trades.length : 0),
@@ -978,7 +985,7 @@ function withEngineProvenance(result, requestedEngine, fallbackReason = null) {
 
 function runBacktestCppNative(featureFrame, options) {
   const bridge = require('../runtime/backend_bridge');
-  const cachePath = path.join(STORAGE_DATA_DIR, 'cache');
+  const cachePath = STORAGE_TS_DIR || path.join(STORAGE_DATA_DIR, 'cache');
   const symbols = [...new Set(
     (featureFrame.features || []).map((r) => r.symbol).filter(Boolean)
   )];
@@ -998,9 +1005,10 @@ function runBacktestCppNative(featureFrame, options) {
     '--threshold', String(options.threshold || 0.55),
     '--horizon', String(options.horizon || 5),
     '--cost-bps', String(options.costBps || 5),
-    '--monte-carlo-runs', String(options.monteCarloRuns || 200),
+    '--monte-carlo-runs', String(options.monteCarloRuns != null ? options.monteCarloRuns : 200),
     '--json',
   ];
+  if (options.walkForwardFolds) args.push('--walk-forward-folds', String(options.walkForwardFolds));
   if (options.from) args.push('--from', options.from);
   if (options.to)   args.push('--to', options.to);
 
@@ -1059,7 +1067,8 @@ function runBacktestCppFrame(featureFrame, options) {
     threshold,
     horizon,
     cost_bps: costBps,
-    monte_carlo_runs: options.monteCarloRuns || 200,
+    monte_carlo_runs: options.monteCarloRuns != null ? options.monteCarloRuns : 200,
+    walk_forward_folds: options.walkForwardFolds || 0,
     tail_alpha: options.tailAlpha || 0.05,
     timeframe: timeframe || '',
     from: from || null,
@@ -1107,8 +1116,11 @@ function runBacktest(featureFrame, options = {}) {
       if (bridge.backendAvailable()) {
         const tf = options.timeframe || '1d';
         const isSubDaily = tf !== '1d';
-        if (engine === 'cpp_native' && !isSubDaily) {
-          return runBacktestCppNative(featureFrame, options);
+        if (engine === 'cpp_native' || engine === 'auto') {
+          const firstRow = featureFrame && Array.isArray(featureFrame.features) ? featureFrame.features[0] : null;
+          if (!firstRow || typeof firstRow.close !== 'number') {
+            return runBacktestCppNative(featureFrame, options);
+          }
         }
         if (engine === 'cpp_frame' || engine === 'auto' || engine === 'js_model' || isSubDaily) {
           if (featureFrame && Array.isArray(featureFrame.features) && featureFrame.features.length > 0) {
