@@ -44,6 +44,14 @@ Require:
 
 Default authorization excludes deletion, behavior/API/schema/data/auth/provider/execution/deployment changes, and subagents. Work directly in the main session unless the user explicitly authorizes delegation later.
 
+## Clean Workspace & Anti-Path-Slippage Algorithm
+
+When untangling codebase layout and migrating files:
+1. **Validate Root Path Context**: Always execute commands and write files relative to `REPO_ROOT`. Never generate nested shadow paths (e.g. `workspace/home/`, `docs/docs/`, `skills/skills/`).
+2. **Consolidate Divergent Owners**: Move legacy shims and temporary code into canonical domain owners (e.g. `docs/sections/`, `shared/lib/`).
+3. **No Unilateral Deletions**: Prove zero active callers across source, aliases, tests, and configuration before removing compatibility files.
+4. **Mandatory Post-Untangle Sweep**: Run `node scripts/dev/check_hygiene.js` and `npm run test:structure` to ensure zero path drift or orphan files remain.
+
 ## Build The Task-Local Map
 
 Read current source, direct callers, public entrypoints, tests, config, data/state formats, generated outputs, relevant docs, workspace evidence, and history. Trace:

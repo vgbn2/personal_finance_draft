@@ -298,6 +298,60 @@
       "status": "supporting",
       "source_paths": ["docs/codebase_tour", "docs/engineering/codebase_org.md"],
       "review_triggers": ["tutorial-module", "entrypoint", "lab-command"]
+    },
+    {
+      "path": "docs/sections/backend/README.md",
+      "type": "reference",
+      "audience": ["backend-maintainers", "contributors"],
+      "owner": "backend",
+      "status": "canonical",
+      "source_paths": ["backend/api/app.js", "backend/cli/sovereign_cli.js", "backend/core/CMakeLists.txt", "backend/gateway/src/cycle.ts"],
+      "review_triggers": ["backend-architecture", "route-registry", "cli-command-registry"]
+    },
+    {
+      "path": "docs/sections/shared/README.md",
+      "type": "reference",
+      "audience": ["all-developers", "contributors"],
+      "owner": "shared",
+      "status": "canonical",
+      "source_paths": ["shared/lib/market/ts_index_storage.js", "shared/lib/strategy/backtest.js", "shared/lib/runtime/env_pipeline.js"],
+      "review_triggers": ["shared-library", "market-storage", "runtime-policy"]
+    },
+    {
+      "path": "docs/sections/frontend/README.md",
+      "type": "reference",
+      "audience": ["frontend-developers", "contributors"],
+      "owner": "frontend",
+      "status": "canonical",
+      "source_paths": ["Frontend/dashboard/src/App.tsx", "Frontend/dashboard/src/lib/api.ts"],
+      "review_triggers": ["frontend-dashboard", "ui-component", "api-client"]
+    },
+    {
+      "path": "docs/sections/config/README.md",
+      "type": "reference",
+      "audience": ["operators", "contributors"],
+      "owner": "config",
+      "status": "canonical",
+      "source_paths": ["config/asset_mapping.json", "config/system/environment_manifest.json"],
+      "review_triggers": ["market-universe-config", "environment-manifest"]
+    },
+    {
+      "path": "docs/sections/storage/README.md",
+      "type": "reference",
+      "audience": ["data-maintainers", "contributors"],
+      "owner": "storage",
+      "status": "canonical",
+      "source_paths": ["storage/data/ts", "storage/data/cache", "storage/data/paper_trading"],
+      "review_triggers": ["ts-binary-index", "data-cache-partition", "paper-ledger-store"]
+    },
+    {
+      "path": "docs/sections/tests/README.md",
+      "type": "reference",
+      "audience": ["verification-maintainers", "contributors"],
+      "owner": "verification",
+      "status": "canonical",
+      "source_paths": ["tests/run_node_tests.js", "tests/scripts/architecture/cli/core/structure_contract.test.js"],
+      "review_triggers": ["test-suite-runner", "architecture-contract"]
     }
   ],
   "historical_corpus": {

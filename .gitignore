@@ -71,6 +71,14 @@ graphify-out/
 .windsurf/
 .zencoder/
 .skills/
+
+# Local Scratch & Temporary Markdown Files
+*.tmp.md
+*.scratch.md
+*.local.md
+workspace/scratch/
+workspace/tmp/
+
 # Diagnostic Noise
 repo_tree.txt
 strucure_report.txt
