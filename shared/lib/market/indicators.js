@@ -67,6 +67,17 @@ function returns(closes, period) {
   return closes[closes.length - 1] / closes[closes.length - 1 - period] - 1;
 }
 
+function returnsSeries(closes, period) {
+  const result = new Array(closes.length).fill(null);
+  for (let i = period; i < closes.length; i++) {
+    const prev = closes[i - period];
+    if (prev !== 0) {
+      result[i] = closes[i] / prev - 1;
+    }
+  }
+  return result;
+}
+
 function rollingVolatility(closes, period) {
   if (closes.length <= period) return null;
   const rets = [];
@@ -76,6 +87,18 @@ function rollingVolatility(closes, period) {
   return stddev(rets);
 }
 
+function rollingVolatilitySeries(closes, period) {
+  const result = new Array(closes.length).fill(null);
+  const rets = new Array(closes.length).fill(0);
+  for (let i = 1; i < closes.length; i++) {
+    rets[i] = closes[i - 1] !== 0 ? closes[i] / closes[i - 1] - 1 : 0;
+  }
+  for (let i = period; i < closes.length; i++) {
+    const win = rets.slice(i - period + 1, i + 1);
+    result[i] = stddev(win);
+  }
+  return result;
+}
 
 function rsi(closes, period = 14) {
   if (closes.length <= period) return null;
@@ -89,6 +112,89 @@ function rsi(closes, period = 14) {
   if (losses === 0) return 100;
   const rs = gains / losses;
   return 100 - 100 / (1 + rs);
+}
+
+function rsiSeries(closes, period = 14) {
+  const result = new Array(closes.length).fill(null);
+  if (closes.length <= period) return result;
+  for (let i = period; i < closes.length; i++) {
+    let gains = 0;
+    let losses = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      const change = closes[j] - closes[j - 1];
+      if (change >= 0) gains += change;
+      else losses -= change;
+    }
+    if (losses === 0) {
+      result[i] = 100;
+    } else {
+      const rs = gains / losses;
+      result[i] = 100 - 100 / (1 + rs);
+    }
+  }
+  return result;
+}
+
+function macdSeries(closes) {
+  if (closes.length < 26) return null;
+  const fast = emaSeries(closes, 12);
+  const slow = emaSeries(closes, 26);
+  const macdLine = new Array(closes.length).fill(null);
+  for (let i = 0; i < closes.length; i++) {
+    if (fast[i] !== null && slow[i] !== null) {
+      macdLine[i] = fast[i] - slow[i];
+    }
+  }
+  return { macd: macdLine };
+}
+
+function emaSeries(values, period) {
+  const result = new Array(values.length).fill(null);
+  if (values.length < period) return result;
+  const multiplier = 2 / (period + 1);
+  let current = mean(values.slice(0, period));
+  result[period - 1] = current;
+  for (let i = period; i < values.length; i++) {
+    current = values[i] * multiplier + current * (1 - multiplier);
+    result[i] = current;
+  }
+  return result;
+}
+
+function atrSeries(bars, period = 14) {
+  const result = new Array(bars.length).fill(null);
+  if (bars.length <= period) return result;
+  const tr = new Array(bars.length).fill(0);
+  for (let i = 1; i < bars.length; i++) {
+    const prevClose = bars[i - 1].close;
+    tr[i] = Math.max(
+      bars[i].high - bars[i].low,
+      Math.abs(bars[i].high - prevClose),
+      Math.abs(bars[i].low - prevClose)
+    );
+  }
+  for (let i = period; i < bars.length; i++) {
+    result[i] = mean(tr.slice(i - period + 1, i + 1));
+  }
+  return result;
+}
+
+function bollingerBandsSeries(closes, period = 20) {
+  if (closes.length < period) return null;
+  const upper = new Array(closes.length).fill(null);
+  const middle = new Array(closes.length).fill(null);
+  const lower = new Array(closes.length).fill(null);
+  for (let i = period - 1; i < closes.length; i++) {
+    const win = closes.slice(i - period + 1, i + 1);
+    const m = mean(win);
+    const sd = stddev(win);
+    if (sd !== null) {
+      middle[i] = m;
+      upper[i] = m + 2 * sd;
+      lower[i] = m - 2 * sd;
+    }
+  }
+  return { upper, middle, lower };
 }
 
 function ema(values, period) {
@@ -357,14 +463,53 @@ function calculateRollingFeatureFrame(sources, minimumBars = 2, periods = {}) {
   const features = [];
   const skipped = [];
 
+  const manifest = getIndicatorManifest();
+
   for (const [key, bars] of groups.entries()) {
     if (bars.length < minimumBars) {
       skipped.push({ key, reason: 'insufficient_history', bars: bars.length });
       continue;
     }
-    for (let end = minimumBars; end <= bars.length; end += 1) {
-      const window = bars.slice(0, end);
-      features.push(featureFromWindow(key, window, mergedPeriods));
+
+    if (!manifest) {
+      // High-performance O(N) linear series calculation for standard indicators
+      const closes = bars.map((b) => b.close);
+      const retFast = returnsSeries(closes, mergedPeriods.returnFast);
+      const retSlow = returnsSeries(closes, mergedPeriods.returnSlow);
+      const volSeries = rollingVolatilitySeries(closes, mergedPeriods.volatility);
+      const rsiArr = rsiSeries(closes, mergedPeriods.rsi);
+      const macdObj = macdSeries(closes);
+      const atrArr = atrSeries(bars, mergedPeriods.atr);
+      const bands = bollingerBandsSeries(closes, mergedPeriods.bollinger);
+
+      for (let end = minimumBars; end <= bars.length; end += 1) {
+        const idx = end - 1;
+        const lastBar = bars[idx];
+        features.push({
+          key,
+          symbol: lastBar.symbol,
+          family: lastBar.family,
+          provider: lastBar.provider || null,
+          timeframe: lastBar.timeframe,
+          as_of: lastBar.timestamp,
+          bars: end,
+          close: closes[idx],
+          return_fast: retFast[idx] ?? null,
+          return_slow: retSlow[idx] ?? null,
+          volatility: volSeries[idx] ?? null,
+          rsi: rsiArr[idx] ?? null,
+          macd: macdObj ? macdObj.macd[idx] ?? null : null,
+          atr: atrArr[idx] ?? null,
+          bollinger_upper: bands ? bands.upper[idx] ?? null : null,
+          bollinger_middle: bands ? bands.middle[idx] ?? null : null,
+          bollinger_lower: bands ? bands.lower[idx] ?? null : null,
+        });
+      }
+    } else {
+      for (let end = minimumBars; end <= bars.length; end += 1) {
+        const window = bars.slice(0, end);
+        features.push(featureFromWindow(key, window, mergedPeriods));
+      }
     }
   }
 
