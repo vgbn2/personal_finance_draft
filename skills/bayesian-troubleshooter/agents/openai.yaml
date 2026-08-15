@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bayesian Troubleshooter"
+  short_description: "Isolate root cause via Bayesian binary probes"
+  default_prompt: "Use $bayesian-troubleshooter to diagnose this output issue..."

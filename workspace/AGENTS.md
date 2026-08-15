@@ -8,6 +8,7 @@ Use the narrowest matching skill:
 - `refine-suggestion` for rough or multi-area proposals without acceptance criteria.
 - `feature-exerciser` for safely using and testing current CLI, API, dashboard, script, fixture, smoke, and contract features.
 - `blast-through` for audit, review, grading, data integrity, and connectivity checks.
+- `bayesian-troubleshooter` for hierarchical Bayesian fault isolation, hypothesis-driven What-If risk prediction, and A/B differential divergence tracing.
 - `codebase-untangler` for multi-session knowledge recovery, Code Atlas maintenance, fragmented ownership, and staged modular convergence.
 - `refactor-readability` for behavior-preserving readability, maintainability, ownership, and convention cleanup.
 - `codex` for one bounded implementation.

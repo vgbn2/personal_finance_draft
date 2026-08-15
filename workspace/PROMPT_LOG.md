@@ -1,5 +1,27 @@
 # Prompt Log - 2026-08-09
 
+## User Prompt & Diagnostic - 2026-08-15 (Bayesian Troubleshooter Skill & Sub-Daily 1h Backtest Resolution)
+
+Received user request: "create a troubleshooting skill whenever there's an output problem... use that skill to identify our current problem, which is 0 trades".
+- Created Universal `bayesian-troubleshooter` skill package (`skills/bayesian-troubleshooter/SKILL.md` & `agents/openai.yaml`, registered in `skills/manifest.json`, mirrored to `.agents/skills/`, registered in `workspace/AGENTS.md`).
+- Applied Bayesian binary probing to isolate sub-daily 1h zero-trade backtest execution defect:
+  1. Updated `loadSourcesFromTsIndex` in `backend/cli/commands/research/research_sources.js` to resolve `${timeframe}.meta.json` files from `storage/data/ts/`, loading 19,997 real 1h hourly candles.
+  2. Updated `commandBacktest` in `backend/cli/commands/research/research.js` so `useDirectCppNative` is set to `false` on sub-daily timeframes, forcing `calculateRollingFeatureFrame` to compute features over all 19,997 1h bars before passing annotated feature rows to the C++ frame engine (`cpp_frame`).
+  3. Updated `normalizeCppResult` in `shared/lib/strategy/backtest.js` to preserve scalar `metrics.trades` counts.
+- Verified live 1h crypto strategy backtest (`bt --strategy crypto_breadth_momentum.yaml --timeframe 1h --days 2000` -> **1,781 trades executed**, 19,997 hourly candles processed in **10.8s**).
+- Verification passed: `npm run test:structure` (28/28 pass 100% green); `test:api` (100% pass); `ctest` (33/33 pass); `check_hygiene.js` (0 findings).
+- Confirmed safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## User Prompt & Implementation - 2026-08-15 (Mass Implement B2 Public Data Boundary & B1 Data Readiness)
+
+Received user invocation: `/mass-implement`.
+- Formulated and ExitPlanMode-approved 2-batch implementation plan in `curious-hugging-rocket.md`.
+- Implemented Batch 1 (B2 Public Data Boundary): Created `public_artifact_publisher.js` generating 24-hour delayed signed static JSON artifacts stored in `storage/data/artifacts/public/`. Registered public endpoints `/api/public/market-summary`, `/api/public/freshness`, and `/api/public/research-summary` with zero bearer token requirement and zero live broker access. Added `public_routes_contract.test.js`.
+- Implemented Batch 2 (B1 Data Readiness Hardening): Extended `data_readiness.js` with `checkTimeframeReadiness` and `checkStrategyDataReadiness`. Updated `runBacktest()` in `shared/lib/strategy/backtest.js` to fail closed (`HTTP 503 / data_unavailable`) when dataset series is missing or unverified.
+- Verified sample mode CLI backtest (`bt --sample` -> 30 trades, 67 ms runtime, Sharpe 4.09) and real historical strategy backtest (`bt --strategy trend_following.yaml`).
+- 100% green verification pass across structure contracts (`npm run test:structure` 28/28 pass), API contracts (`npm run test:api`), CTest C++ executables (33/33 pass), and full Node test suite (`npm test`).
+- Confirmed safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## User Prompt & Session Boot - 2026-08-15 (Session Orchestrator Boot)
 
 Received user invocation: `/session-orchestrator`.

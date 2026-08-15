@@ -1,3 +1,42 @@
+### Session Memory - 2026-08-15 Bayesian Troubleshooter Skill & Sub-Daily Backtest Resolution
+
+```json
+{
+  "batch": ["BAYESIAN-TROUBLESHOOTER-SKILL-1", "MI-TIMEFRAME-RESOLUTION-1"],
+  "lifecycle": "closed",
+  "scope": "universal bayesian troubleshooter skill package creation and root-cause resolution of sub-daily 1h zero-trade backtest execution defect",
+  "changes": "created skills/bayesian-troubleshooter/SKILL.md, openai.yaml, updated skills/manifest.json, workspace/AGENTS.md, synced mirror; updated research_sources.js loadSourcesFromTsIndex for requested timeframe resolution, research.js useDirectCppNative sub-daily routing, backtest.js normalizeCppResult metrics.trades mapping",
+  "verification": "bt --strategy crypto_breadth_momentum.yaml --timeframe 1h --days 2000 (1,781 trades executed across 19,997 1h bars in 10.8s); test:structure 28/28 pass; ctest 33/33 pass; hygiene 0 findings",
+  "boundaries": "no live trading, no provider credential reading, zero state mutation; LIVE_TRADING=false"
+}
+```
+
+### Session Memory - 2026-08-15 Mass Implement B2 Public Boundary & B1 Data Readiness Hardening
+
+```json
+{
+  "batch": ["MI-B2-PUBLIC-DATA-1", "MI-B1-DATA-READINESS-1"],
+  "lifecycle": "closed",
+  "scope": "public artifact-only data boundary service and fail-closed timeframe data readiness checks for strategy evaluation",
+  "changes": "created public_artifact_publisher.js, 3 public route handlers under /api/public/*, public_routes_contract.test.js; extended data_readiness.js with checkTimeframeReadiness and checkStrategyDataReadiness; updated runBacktest() with fail-closed series guard",
+  "verification": "test:structure 28/28 pass; test:api 100% pass; ctest 33/33 pass; npm test 100% pass; bt --sample 30 trades/60ms; hygiene 0 findings",
+  "boundaries": "public endpoints serve static artifacts only; zero bearer token required; zero access to live broker APIs or credentials; LIVE_TRADING=false"
+}
+```
+
+### Session Memory - 2026-08-15 Documentation Contract & Link Alignment
+
+```json
+{
+  "batch": "DOC-LINK-ALIGNMENT-1",
+  "lifecycle": "closed",
+  "scope": "repaired broken active documentation link references in docs/operational/guides/CONTRIBUTING.md pointing to workspace/ root markdown files",
+  "changes": "updated CONTRIBUTING.md links to point at workspace/CONTRIBUTING.md, workspace/GOVERNANCE.md, workspace/MAINTAINERS.md, workspace/SECURITY.md",
+  "verification": "npm run test:structure (28/28 pass 100% green); ctest (33/33 pass); npm test (100% green); hygiene audit (0 findings)",
+  "boundaries": "no runtime, provider, data-write, paper/live trading, container, host, or deployment action"
+}
+```
+
 ### Session Memory - 2026-08-15 Full Codebase Management & Maintenance Sweep
 
 ```json

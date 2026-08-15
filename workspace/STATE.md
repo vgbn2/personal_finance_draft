@@ -1,5 +1,29 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-15 Bayesian Troubleshooter Skill & Sub-Daily Backtest Resolution Closeout
+
+- Created Universal **`bayesian-troubleshooter`** skill package (`skills/bayesian-troubleshooter/SKILL.md` & `agents/openai.yaml`, registered in `skills/manifest.json`, mirrored to `.agents/skills/`, registered in `workspace/AGENTS.md`).
+- Root-caused and resolved sub-daily 1h zero-trade backtest execution defect using Bayesian binary probing:
+  1. Updated `loadSourcesFromTsIndex` in `backend/cli/commands/research/research_sources.js` to resolve `${timeframe}.meta.json` files from `storage/data/ts/`, loading 19,997 real 1h hourly bars.
+  2. Updated `commandBacktest` in `backend/cli/commands/research/research.js` so `useDirectCppNative` is set to `false` on sub-daily timeframes, forcing `calculateRollingFeatureFrame` to compute features over all 19,997 1h bars before passing annotated feature rows to the C++ frame engine (`cpp_frame`).
+  3. Updated `normalizeCppResult` in `shared/lib/strategy/backtest.js` to preserve scalar `metrics.trades` counts.
+- Verified live 1h crypto strategy backtest (`bt --strategy crypto_breadth_momentum.yaml --timeframe 1h --days 2000` -> **1,781 trades executed**, 19,997 hourly candles processed in **10.8s**).
+- Verification passed: `npm run test:structure` (28/28 pass 100% green); `test:api` (100% pass); `ctest` (33/33 pass); `check_hygiene.js` (0 findings).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-15 Mass Implement B2 Public Boundary & B1 Data Readiness Hardening Closeout
+
+- Implemented **Batch 1 (MI-B2-PUBLIC-DATA-1)**: Created `public_artifact_publisher.js` generating 24-hour delayed signed static JSON artifacts (`public_market_summary.json`, `public_freshness_status.json`, `public_research_summary.json`) stored in `storage/data/artifacts/public/`. Registered public endpoints `/api/public/market-summary`, `/api/public/freshness`, and `/api/public/research-summary` with zero bearer token requirement and zero live broker access. Added `public_routes_contract.test.js`.
+- Implemented **Batch 2 (MI-B1-DATA-READINESS-1)**: Extended `data_readiness.js` with `checkTimeframeReadiness` and `checkStrategyDataReadiness`. Updated `runBacktest()` in `shared/lib/strategy/backtest.js` to fail closed (`HTTP 503 / data_unavailable`) when dataset series is missing or unverified.
+- Verification passed: `npm run test:structure` (28/28 pass 100% green); `test:api` (100% pass); `ctest` (33/33 pass); `npm test` (100% green); `bt --sample` (30 trades executed in 67 ms); `check_hygiene.js` (0 findings).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-15 Documentation Contract & Link Alignment Closeout
+
+- Repaired active relative documentation link references in `docs/operational/guides/CONTRIBUTING.md` pointing to workspace-relocated governance and community files (`workspace/CONTRIBUTING.md`, `workspace/GOVERNANCE.md`, `workspace/MAINTAINERS.md`, `workspace/SECURITY.md`).
+- Verification passed: `npm run test:structure` (28/28 subtests pass 100% green); `ctest` (33/33 pass); `npm test` (100% green); `check_hygiene.js` (0 findings).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-15 Full Codebase Management & Maintenance Sweep Closeout
 
 - Executed 3-batch maintenance rollout (`FULL-MAINTENANCE-SWEEP-1`):

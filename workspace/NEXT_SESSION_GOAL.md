@@ -100,6 +100,16 @@ Immediate next action:
 Immediate next action:
 - Continue with B2 artifact-only public data boundary implementation for remote deployment.
 
+## 2026-08-15 Session Closeout — Mass Implement B2 Public Boundary & B1 Data Readiness
+
+1. Executed 2-batch implementation rollout (`MI-B2-PUBLIC-DATA-1` & `MI-B1-DATA-READINESS-1`):
+   - Created static 24h delayed artifact publisher (`public_artifact_publisher.js`) and 3 public endpoints under `/api/public/*`.
+   - Extended `data_readiness.js` with timeframe & strategy readiness checks and updated `runBacktest()` in `shared/lib/strategy/backtest.js` to fail closed on missing/unverified data series.
+2. Verified with `npm run test:structure` (28/28 pass 100%), `test:api` (100%), `ctest` (33/33 pass 100%), `npm test` (100%), and `node scripts/dev/check_hygiene.js` (0 findings).
+
+Immediate next action:
+- Reconcile hpdesk Git provenance and run Paper-only `doctor alpaca --paper-auth` diagnostic to root-cause Paper HTTP 401 quote errors.
+
 ## 2026-08-15 Session Closeout — Domain Structure Maps
 
 1. Created 6 dedicated domain-specific structural README maps under `docs/sections/`: `backend/README.md`, `shared/README.md`, `frontend/README.md`, `config/README.md`, `storage/README.md`, and `tests/README.md`.
