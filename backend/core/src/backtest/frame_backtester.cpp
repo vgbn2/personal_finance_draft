@@ -1,16 +1,26 @@
 #include "frame_backtester.hpp"
+#include <span>
 
+#include "../data/data_snapshot.hpp"
 #include "../stats/stats_engine.hpp"
 #include "../utils/constants.hpp"
 
 #include <algorithm>
 #include <charconv>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <map>
 #include <numeric>
 #include <sstream>
 #include <string_view>
+#include <thread>
+#include <unordered_map>
+#include <unordered_set>
+
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
 
 namespace sovereign {
 
@@ -285,8 +295,10 @@ FrameBacktestResult FrameBacktester::runFromAnnotated(
             const double gross_ret  = exit.close / entry.close - 1.0;
             const double net_ret    = adj_exit / adj_entry - 1.0;
 
-            equity *= (1.0 + net_ret);
-            trade_returns.push_back(net_ret);
+            const double pos_size   = std::clamp(frame_cfg.position_size_pct, 0.01, 1.0);
+            const double trade_pnl  = pos_size * net_ret;
+            equity *= (1.0 + trade_pnl);
+            trade_returns.push_back(trade_pnl);
 
             if (net_ret > 0.0) ++fr.base.summary.winners;
             else if (net_ret < 0.0) ++fr.base.summary.losers;
@@ -463,6 +475,112 @@ std::vector<AnnotatedRow> FrameBacktester::parseFrameFile(
     jsonStr(sv, "to",        out_cfg.to_date);
 
     return parseFeaturesFast(sv);
+}
+
+// ── OpenMP Multi-Threaded Mass Backtest Engine ──────────────────────────────
+std::vector<MassBtJobResult> FrameBacktester::runMassBt(
+    const std::vector<MassBtJobSpec>& jobs,
+    const FrameBacktestConfig& cfg,
+    const std::string& input_dir)
+{
+    const std::size_t total_jobs = jobs.size();
+    std::vector<MassBtJobResult> results(total_jobs);
+
+    if (total_jobs == 0) return results;
+
+#if defined(_OPENMP)
+    int hw_threads = static_cast<int>(std::thread::hardware_concurrency());
+    int target_threads = std::max(1, std::min(hw_threads > 2 ? hw_threads - 1 : 1, 8));
+    const char* env_omp = std::getenv("OMP_NUM_THREADS");
+    if (env_omp && std::atoi(env_omp) > 0) target_threads = std::atoi(env_omp);
+    omp_set_num_threads(target_threads);
+#endif
+
+    const std::filesystem::path input_path(input_dir);
+
+    // Pre-load all unique symbol-timeframe binary snapshots in parallel
+    std::vector<std::pair<std::string, std::string>> unique_keys;
+    std::unordered_set<std::string> seen_keys;
+    for (const auto& job : jobs) {
+        for (const auto& sym : job.symbols) {
+            if (!sym.empty()) {
+                const std::string key = sym + "@" + job.timeframe;
+                if (seen_keys.find(key) == seen_keys.end()) {
+                    seen_keys.insert(key);
+                    unique_keys.push_back({sym, job.timeframe});
+                }
+            }
+        }
+    }
+
+    std::vector<MarketDataSnapshot> snapshots(unique_keys.size());
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(dynamic, 1)
+#endif
+    for (std::int64_t i = 0; i < static_cast<std::int64_t>(unique_keys.size()); ++i) {
+        const auto idx = static_cast<std::size_t>(i);
+        snapshots[idx] = loadMarketDataSnapshot(input_path, unique_keys[idx].first, unique_keys[idx].second, cfg.max_bars);
+    }
+
+    std::unordered_map<std::string, const MarketDataSnapshot*> snapshot_map;
+    for (std::size_t i = 0; i < unique_keys.size(); ++i) {
+        const std::string key = unique_keys[i].first + "@" + unique_keys[i].second;
+        snapshot_map[key] = &snapshots[i];
+    }
+
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(dynamic, 1)
+#endif
+    for (std::int64_t i = 0; i < static_cast<std::int64_t>(total_jobs); ++i) {
+        const auto& job = jobs[static_cast<std::size_t>(i)];
+        MassBtJobResult res;
+        res.strategy_name = job.strategy_name;
+        res.timeframe = job.timeframe;
+
+        BacktestConfig bt_cfg;
+        bt_cfg.entry_threshold = job.threshold;
+        bt_cfg.holding_period = job.horizon;
+        bt_cfg.fee_bps = job.cost_bps * 0.5;
+        bt_cfg.slippage_bps = job.cost_bps * 0.5;
+        bt_cfg.position_size_pct = job.position_size_pct > 0.0 ? job.position_size_pct : cfg.position_size_pct;
+
+        double equity = 1.0;
+        std::vector<double> returns;
+        std::vector<EquityPoint> equity_points;
+        equity_points.push_back(EquityPoint{"start", 1.0});
+        std::size_t total_trades = 0;
+        std::size_t winners = 0;
+
+        for (const auto& sym : job.symbols) {
+            const std::string key = sym + "@" + job.timeframe;
+            const auto it = snapshot_map.find(key);
+            if (it == snapshot_map.end() || !it->second || it->second->bars.empty()) continue;
+            const auto& snap = *(it->second);
+            const auto b_res = Backtester::run(snap.bars, bt_cfg);
+            const double pos_size = std::clamp(bt_cfg.position_size_pct, 0.01, 1.0);
+            for (const auto& t : b_res.trades) {
+                const double trade_pnl = pos_size * t.net_return;
+                equity *= (1.0 + trade_pnl);
+                returns.push_back(trade_pnl);
+                equity_points.push_back(EquityPoint{t.exit_time, equity});
+                if (t.net_return > 0.0) ++winners;
+                ++total_trades;
+            }
+        }
+
+        res.trades = total_trades;
+        res.net_return = equity - 1.0;
+        res.win_rate = total_trades > 0 ? static_cast<double>(winners) / static_cast<double>(total_trades) : 0.0;
+        res.max_drawdown = maxDrawdown(equity_points);
+        if (!returns.empty()) {
+            const auto stats = StatsEngine::summarize(returns, constants::DEFAULT_RISK_FREE_RATE, constants::TRADING_DAYS_PER_YEAR);
+            res.sharpe_ratio = stats.sharpe;
+        }
+        res.ok = total_trades > 0;
+        results[static_cast<std::size_t>(i)] = std::move(res);
+    }
+
+    return results;
 }
 
 } // namespace sovereign

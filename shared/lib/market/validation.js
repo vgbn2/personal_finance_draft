@@ -426,7 +426,7 @@ function validateSourceRecord(record, report, index, seen) {
 }
 
 function isHistoricalMode(mode) {
-  return ['provider_history', 'backtest_history', 'sample'].includes(mode);
+  return ['provider_history', 'backtest_history', 'ts_index', 'merged_history', 'sample'].includes(mode);
 }
 
 function formatDecimal(value) {

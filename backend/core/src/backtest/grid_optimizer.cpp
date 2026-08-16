@@ -1,4 +1,5 @@
 #include "grid_optimizer.hpp"
+#include <span>
 #include "data/binary_ts_reader.hpp"
 
 #include <algorithm>

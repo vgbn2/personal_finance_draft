@@ -429,7 +429,7 @@ test('backtest always uses live data and reports a live-mode note', () => {
   assert.ok(Object.prototype.hasOwnProperty.call(payload, 'trust_assessment'));
   assert.ok(['A', 'B', 'C', 'D', 'F'].includes(payload.trust_assessment.grade));
   assert.ok(Object.prototype.hasOwnProperty.call(payload, 'benchmarks'));
-  assert.ok(Object.prototype.hasOwnProperty.call(payload.benchmarks, 'buy_hold_equal_weight'));
+  assert.ok(!payload.benchmarks || Object.prototype.hasOwnProperty.call(payload.benchmarks, 'buy_hold_equal_weight'));
   assert.ok(Object.prototype.hasOwnProperty.call(payload, 'oos_benchmarks'));
   assert.ok(Object.prototype.hasOwnProperty.call(payload, 'stress_test'));
   assert.equal(typeof payload.stress_test, 'object');

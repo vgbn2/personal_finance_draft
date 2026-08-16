@@ -264,6 +264,12 @@ const COMMAND_MANIFEST = {
         '--days': { type: 'text', default: '730', label: 'History window (days)' },
         '--allow-degraded': { type: 'confirm', label: 'Allow degraded data?', default: false }
       }},
+      { id: 'mass-bt', label: 'Mass Backtest Matrix (All Strategies x All TFs)', loading: true, flags: {
+        '--timeframes': { type: 'text', default: '5m,15m,30m,1h,4h,1d', label: 'Timeframes filter' },
+        '--position-size-pct': { type: 'text', default: '0.1', label: 'Position allocation (0.01 - 1.0)' },
+        '--days': { type: 'text', default: '0', label: 'History window (days, 0 = max)' },
+        '--allow-degraded': { type: 'confirm', label: 'Allow degraded data?', default: true }
+      }},
       { id: 'optimize', label: 'Optimize Indicators', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }

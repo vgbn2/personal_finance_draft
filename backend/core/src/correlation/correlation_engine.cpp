@@ -1,4 +1,5 @@
 #include "correlation_engine.hpp"
+#include <span>
 
 #include <algorithm>
 #include <cmath>
