@@ -1,4 +1,5 @@
 #include "label_builder.hpp"
+#include <span>
 #include "lookahead_guard.hpp"
 
 #include <cmath>

@@ -1,4 +1,5 @@
 #include "global_sweep_optimizer.hpp"
+#include <span>
 #include "data/binary_ts_reader.hpp"
 #include "research/walk_forward_split.hpp"
 

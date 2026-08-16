@@ -1,15 +1,14 @@
 #pragma once
 
-#include "../data/ohlcv_bar.hpp"
-#include "equity_curve.hpp"
-#include "trade.hpp"
-
-#include "../utils/constants.hpp"
-
 #include <cstddef>
 #include <span>
 #include <string>
 #include <vector>
+
+#include "../data/ohlcv_bar.hpp"
+#include "../utils/constants.hpp"
+#include "equity_curve.hpp"
+#include "trade.hpp"
 
 namespace sovereign {
 
@@ -37,6 +36,10 @@ struct BacktestConfig {
     double weight_momentum = 0.45;
     double weight_strength = 0.35;
     double weight_bias = 0.20;
+
+    // Risk & Position Sizing
+    double position_size_pct = 1.0; // Default 1.0 (100% allocation per trade), configurable 0.01 - 1.0
+    double max_capital_allocation = 1.0;
 };
 
 struct BacktestSummary {

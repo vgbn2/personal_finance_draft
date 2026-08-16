@@ -776,6 +776,7 @@ int printBacktest(const std::vector<std::string>& args) {
           v = optionValue(args, "--cost-bps");         if (!v.empty() && parseDoubleStrict(v, d)) cfg.cost_bps = d;
           v = optionValue(args, "--monte-carlo-runs");    if (!v.empty() && parseDoubleStrict(v, d)) cfg.monte_carlo_runs = static_cast<int>(d);
           v = optionValue(args, "--walk-forward-folds");  if (!v.empty() && parseDoubleStrict(v, d)) cfg.walk_forward_folds = static_cast<int>(d);
+          v = optionValue(args, "--position-size-pct");   if (!v.empty() && parseDoubleStrict(v, d)) cfg.position_size_pct = d;
           v = optionValue(args, "--timeframe");        if (!v.empty()) cfg.timeframe = v;
           v = optionValue(args, "--from");             if (!v.empty()) cfg.from_date = v;
           v = optionValue(args, "--to");               if (!v.empty()) cfg.to_date = v;
@@ -808,6 +809,7 @@ int printBacktest(const std::vector<std::string>& args) {
       v = optionValue(args, "--threshold");        if (!v.empty() && parseDoubleStrict(v, d)) bt_cfg.entry_threshold = d;
       v = optionValue(args, "--horizon");          if (!v.empty() && parseDoubleStrict(v, d)) bt_cfg.holding_period = static_cast<std::size_t>(d);
       v = optionValue(args, "--cost-bps");         if (!v.empty() && parseDoubleStrict(v, d)) { bt_cfg.fee_bps = d * 0.5; bt_cfg.slippage_bps = d * 0.5; }
+      v = optionValue(args, "--position-size-pct"); if (!v.empty() && parseDoubleStrict(v, d)) { bt_cfg.position_size_pct = d; fr_cfg.position_size_pct = d; }
       v = optionValue(args, "--monte-carlo-runs"); if (!v.empty() && parseDoubleStrict(v, d)) fr_cfg.monte_carlo_runs = static_cast<int>(d);
     }
 
@@ -829,9 +831,11 @@ int printBacktest(const std::vector<std::string>& args) {
         const auto snap = sovereign::loadMarketDataSnapshot(input, sym, timeframe, max_bars);
         if (snap.bars.empty()) continue; // quality.ok may be false for minor issues; trust Backtester::run's own validation
         const auto res = sovereign::Backtester::run(snap.bars, bt_cfg);
+        const double pos_size = std::clamp(bt_cfg.position_size_pct, 0.01, 1.0);
         for (const auto& t : res.trades) {
-            equity *= (1.0 + t.net_return);
-            all_returns.push_back(t.net_return);
+            const double trade_pnl = pos_size * t.net_return;
+            equity *= (1.0 + trade_pnl);
+            all_returns.push_back(trade_pnl);
             aggregate.base.trades.push_back(t);
             aggregate.base.equity_curve.points.push_back({t.exit_time, equity});
             if (t.net_return > 0.0) ++aggregate.base.summary.winners;
@@ -1376,6 +1380,100 @@ int printSweep(const std::vector<std::string>& args) {
     return 0;
 }
 
+int printMassBt(const std::vector<std::string>& args) {
+    const std::filesystem::path input(optionValue(args, "--input", "storage/data/ts"));
+    double pos_size_pct = 0.1;
+    const std::string pos_str = optionValue(args, "--position-size-pct");
+    if (!pos_str.empty()) {
+        parseDoubleStrict(pos_str, pos_size_pct);
+    }
+
+    std::vector<std::string> timeframes = {"5m", "15m", "30m", "1h", "4h", "1d"};
+    const std::string tf_str = optionValue(args, "--timeframes");
+    if (!tf_str.empty()) {
+        timeframes.clear();
+        std::istringstream ss(tf_str);
+        std::string t;
+        while (std::getline(ss, t, ',')) {
+            if (!t.empty()) timeframes.push_back(t);
+        }
+    }
+
+    struct TempSpec {
+        std::string name;
+        std::vector<std::string> symbols;
+        double threshold;
+        std::size_t horizon;
+    };
+
+    std::vector<TempSpec> strategy_specs = {
+        {"ai_sector_momentum", {"FETUSDT", "TAOUSDT"}, 0.72, 7},
+        {"commodity_macro_hedge", {"XAUUSD", "XAGUSD", "USOIL"}, 0.52, 10},
+        {"crypto_breadth_momentum", {"BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"}, 0.61, 3},
+        {"crypto_layer1_momentum", {"BTCUSDT", "ETHUSDT", "SOLUSDT", "AVAXUSDT", "NEARUSDT"}, 0.60, 3},
+        {"defensive_rotation", {"SPY", "QQQ", "BTCUSDT", "XAUUSD"}, 0.62, 4},
+        {"defi_ecosystem_momentum", {"AAVEUSDT", "LINKUSDT"}, 0.73, 6},
+        {"forex_trend_breakout", {"EURUSD", "USDJPY", "GBPUSD"}, 0.52, 7},
+        {"global_equity_rotation", {"SPY", "QQQ", "XAUUSD", "BTCUSDT"}, 0.52, 10},
+        {"mean_reversion", {"BTCUSDT", "SPY"}, 0.65, 5},
+        {"ml_multi_asset", {"BTCUSDT", "ETHUSDT", "SPY", "QQQ", "XAUUSD", "USOIL"}, 0.52, 10},
+        {"tech_alpha_xgboost", {"AAPL", "MSFT", "NVDA", "AMD", "SMCI"}, 0.65, 5},
+        {"trend_following", {"SPY", "QQQ"}, 0.65, 5},
+        {"vietnam_equity_growth", {"VCB", "FPT", "HPG"}, 0.72, 7},
+        {"volume_profile", {"SPY", "QQQ"}, 0.65, 5}
+    };
+
+    std::vector<sovereign::MassBtJobSpec> jobs;
+    jobs.reserve(strategy_specs.size() * timeframes.size());
+
+    for (const auto& strat : strategy_specs) {
+        for (const auto& tf : timeframes) {
+            sovereign::MassBtJobSpec job;
+            job.strategy_name = strat.name;
+            job.timeframe = tf;
+            job.symbols = strat.symbols;
+            job.threshold = strat.threshold;
+            job.horizon = strat.horizon;
+            job.cost_bps = 5.0;
+            job.position_size_pct = pos_size_pct;
+            jobs.push_back(job);
+        }
+    }
+
+    sovereign::FrameBacktestConfig cfg;
+    cfg.position_size_pct = pos_size_pct;
+    cfg.max_bars = parseSizeOption(args, "--max-bars", 0U);
+
+    const auto results = sovereign::FrameBacktester::runMassBt(jobs, cfg, input.string());
+
+    std::cout << "{\n"
+              << "  \"type\": \"mass_bt_matrix\",\n"
+              << "  \"engine\": \"sovereign_cpp_core\",\n"
+              << "  \"schema_version\": 1,\n"
+              << "  \"ok\": true,\n"
+              << "  \"position_size_pct\": " << pos_size_pct << ",\n"
+              << "  \"total_jobs\": " << results.size() << ",\n"
+              << "  \"results\": [\n";
+
+    for (std::size_t i = 0; i < results.size(); ++i) {
+        const auto& r = results[i];
+        if (i > 0) std::cout << ",\n";
+        std::cout << "    {\n"
+                  << "      \"strategy\": \"" << jsonEscape(r.strategy_name) << "\",\n"
+                  << "      \"timeframe\": \"" << jsonEscape(r.timeframe) << "\",\n"
+                  << "      \"trades\": " << r.trades << ",\n"
+                  << "      \"net_return\": " << r.net_return << ",\n"
+                  << "      \"win_rate\": " << r.win_rate << ",\n"
+                  << "      \"max_drawdown\": " << r.max_drawdown << ",\n"
+                  << "      \"sharpe_ratio\": " << r.sharpe_ratio << ",\n"
+                  << "      \"ok\": " << (r.ok ? "true" : "false") << "\n"
+                  << "    }";
+    }
+    std::cout << "\n  ]\n}\n";
+
+    return 0;
+}
+
 void printUsage() {
     std::cout
         << "Sovereign C++ Core\n"
@@ -1422,6 +1520,9 @@ int main(int argc, char** argv) {
     }
     if (args[0] == "optimize") {
         return printOptimize(args);
+    }
+    if (args[0] == "mass-bt" || args[0] == "massbt") {
+        return printMassBt(args);
     }
     if (args[0] == "sweep") {
         return printSweep(args);

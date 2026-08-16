@@ -1,13 +1,16 @@
-#include "backtester.hpp"
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <limits>
+#include <span>
+#include <string>
+#include <vector>
 
+#include "backtester.hpp"
 #include "../indicators/indicator_engine.hpp"
 #include "../risk/cost_model.hpp"
 #include "../stats/stats_engine.hpp"
 #include "../utils/constants.hpp"
-
-#include <algorithm>
-#include <cmath>
-#include <limits>
 
 namespace sovereign {
 
@@ -73,7 +76,7 @@ bool barsAreUsable(std::span<const OhlcvBar> bars) {
     return true;
 }
 
-} 
+} // namespace
 
 BacktestResult Backtester::run(std::span<const OhlcvBar> bars, const BacktestConfig& config) {
     BacktestResult result;
@@ -144,8 +147,11 @@ BacktestResult Backtester::run(std::span<const OhlcvBar> bars, const BacktestCon
         const double gross_return = exit_bar.close / close - 1.0;
         const double net_return = adjusted_exit / adjusted_entry - 1.0;
 
-        equity *= 1.0 + net_return;
-        trade_returns.push_back(net_return);
+        const double pos_size = std::clamp(config.position_size_pct, 0.01, 1.0);
+        const double trade_pnl = pos_size * net_return;
+
+        equity *= 1.0 + trade_pnl;
+        trade_returns.push_back(trade_pnl);
 
         result.trades.push_back(Trade{
             row.bar.asset_id,

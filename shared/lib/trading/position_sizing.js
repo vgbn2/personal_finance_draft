@@ -96,10 +96,10 @@ function normalizeSizingIntent({
     rawQuantity = requestedValue / (price * exposureMultiplier);
   } else if (mode === 'risk_budget') {
     const stopPrice = finiteNonNegative(requestedIntent.stopPrice);
-    if (stopPrice === null || stopPrice === price) {
+    if (stopPrice === null || Math.abs(price - stopPrice) < 1e-8) {
       return reject(
         'invalid_stop_price',
-        'risk-budget sizing requires a non-negative stop price different from the reference price',
+        'risk-budget sizing requires a valid stop price with sufficient distance from the reference price',
         requestedIntent,
       );
     }

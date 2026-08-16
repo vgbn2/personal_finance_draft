@@ -1,4 +1,5 @@
 #include "indicator_engine.hpp"
+#include <span>
 
 #include "kalman_filter.hpp"
 #include "macd.hpp"
