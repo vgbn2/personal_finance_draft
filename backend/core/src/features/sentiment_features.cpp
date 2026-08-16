@@ -1,4 +1,5 @@
 #include "sentiment_features.hpp"
+#include <span>
 
 #include <algorithm>
 #include <cmath>

@@ -1,3 +1,57 @@
+### Session Memory - 2026-08-16 VS Code C++ IntelliSense Diagnostic Resolution
+
+```json
+{
+  "batch": ["VSCODE-INTELLISENSE-COMPILE-COMMANDS-1"],
+  "lifecycle": "closed",
+  "scope": "VS Code C++ extension IntelliSense std::span warning diagnostic in backtester.cpp resolved via compileCommands configuration",
+  "changes": "added compileCommands in .vscode/c_cpp_properties.json and .vscode/settings.json pointing to ${workspaceFolder}/backend/core/build/compile_commands.json; enabled CMAKE_EXPORT_COMPILE_COMMANDS in backend/core/CMakeLists.txt",
+  "verification": "GCC 15 CMake build and ctest 33/33 pass 100% green; npm run test:structure 28/28 pass; hygiene 0 findings",
+  "next_session_focus": "b2 public artifact delayed 24h data boundary deployment and hpdesk paper authentication diagnostic",
+  "boundaries": "no live trading, no provider credential reading; LIVE_TRADING=false"
+}
+```
+
+### Session Memory - 2026-08-16 VS Code C++ IntelliSense Diagnostic Carryover
+
+```json
+{
+  "batch": ["VSCODE-INTELLISENSE-CPLUSPLUS-DIAGNOSTIC-1"],
+  "lifecycle": "open_carryover",
+  "scope": "VS Code C++ extension IntelliSense std::span warning diagnostic in backtester.cpp delegated to next session",
+  "changes": "created .vscode/c_cpp_properties.json and settings.json with C++20 and GCC 15 include paths; exported compile_commands.json; added explicit span headers to C++ files",
+  "verification": "GCC 15 CMake build and ctest 33/33 pass 100% green; npm run test:structure 28/28 pass; hygiene 0 findings",
+  "next_session_focus": "investigate VS Code C/C++ extension server-side cache and IntelliSense engine configuration to resolve editor warning marker",
+  "boundaries": "no live trading, no provider credential reading; LIVE_TRADING=false"
+}
+```
+
+### Session Memory - 2026-08-16 `mass-bt` Multi-Strategy Multi-Timeframe Matrix Command
+
+```json
+{
+  "batch": ["MASS-BT-MATRIX-COMMAND-1"],
+  "lifecycle": "closed",
+  "scope": "Multi-strategy multi-timeframe batch backtesting matrix command with Excel-like spreadsheet grid terminal rendering",
+  "changes": "created research_mass_bt.js; re-exported commandMassBt in research.js; registered mass-bt, massbt, bt-matrix in sovereign_cli.js dispatcher and tui/manifest.js research menu; created mass_bt_contract.test.js unit test file; verified 100% dynamic strategy scalability for any new config/strategies/*.yaml file",
+  "verification": "mass_bt_contract.test.js 3/3 pass; test:structure 28/28 pass; ctest 33/33 pass; npm test 100% pass; hygiene 0 findings; graphify-out 8,805 nodes",
+  "boundaries": "no live trading, no provider credential reading; LIVE_TRADING=false"
+}
+```
+
+### Session Memory - 2026-08-15 Backtest Position Sizing & Deep Signal Logic Remediation
+
+```json
+{
+  "batch": ["BACKTEST-POSITION-SIZING-REMEDIATION-1"],
+  "lifecycle": "closed",
+  "scope": "Backtest position sizing and signal evaluation logic remediation across C++ native and JS frame engines",
+  "changes": "added position_size_pct and max_capital_allocation to BacktestConfig and FrameBacktestConfig in backtester.hpp/cpp and frame_backtester.hpp/cpp; updated position_sizing.js risk_budget epsilon validation; updated research.js useDirectCppNative sub-daily/frame routing; registered public API routes in access_policy.js; updated test contracts in degraded_fallback.test.js, strategy_backtest_contract.test.js, sovereign_cli_human_surfaces.test.js",
+  "verification": "test:structure 28/28 pass; ctest 33/33 pass; npm test 100% pass; hygiene 0 findings; graphify-out 8,789 nodes",
+  "boundaries": "no live trading, no provider credential reading; LIVE_TRADING=false"
+}
+```
+
 ### Session Memory - 2026-08-15 Native C++ Stress Testing & Walk-Forward Optimization
 
 ```json

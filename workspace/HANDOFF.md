@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026/08/2026-08-15.md`** (last update: Session boot & documentation link contract verification)
+- Latest/current handoff: **`workspace/handoff/2026/08/2026-08-16.md`** (last update: Mass backtest matrix command implementation)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY>/<MM>/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.
@@ -18,6 +18,9 @@ boot) never has to read tens of thousands of tokens of accumulated history.
   2026-05-31 to 2026-06-07) are archived in `workspace/STATE_ARCHIVE.md`.
 
 ## Open carryovers (keep this list current)
+
+- **SESSION 128 (2026-08-16) — `mass-bt` multi-strategy backtest matrix & VS Code IntelliSense resolution.**
+  Full trail: `workspace/handoff/2026/08/2026-08-16.md`. Landed `mass-bt` multi-strategy multi-timeframe batch backtesting command (`research_mass_bt.js`), C++ OpenMP mass-bt engine, Excel-like terminal matrix renderer, unit tests (3/3 pass), structure contracts (28/28 pass), and CTest suite (33/33 pass). Resolved VS Code C++ IntelliSense `compileCommands` configuration in `.vscode/c_cpp_properties.json` and `.vscode/settings.json`. Suite 100% green.
 
 - **SESSION 39 (2026-06-19) — first real GitHub backup of this repo (subtree-split push), FW2 fully
   done.** Full trail: `workspace/handoff/2026-06-19.md`. Discovered this directory's actual git root is

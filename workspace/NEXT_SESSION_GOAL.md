@@ -1,5 +1,39 @@
 # Next Session Goal
 
+## 2026-08-16 Session Closeout — VS Code C++ IntelliSense Resolution & `mass-bt` Closeout
+
+1. **Session Closeout & Verification Complete**:
+   - Resolved VS Code IntelliSense `std::span` diagnostic by configuring `compileCommands` in `.vscode/c_cpp_properties.json` and `.vscode/settings.json` pointing to `${workspaceFolder}/backend/core/build/compile_commands.json` and enabling `CMAKE_EXPORT_COMPILE_COMMANDS ON` in `backend/core/CMakeLists.txt`.
+   - Verified 100% clean test execution across structure contracts (`npm run test:structure` 28/28 pass), CTest executables (33/33 pass), full Node runner, and hygiene audit (`check_hygiene.js` 0 findings).
+
+Immediate next action:
+- Begin next session with B2 artifact-only public data boundary deployment and Paper-auth hpdesk diagnostic.
+
+## 2026-08-16 `mass-bt` Multi-Strategy Multi-Timeframe Matrix Command Closeout
+
+1. Executed implementation rollout (`MASS-BT-MATRIX-COMMAND-1`):
+   - Created dedicated domain module `backend/cli/commands/research/research_mass_bt.js` supporting batch backtesting across all 14 registered strategy YAML configurations and active timeframes (`5m`, `15m`, `30m`, `1h`, `4h`, `1d`).
+   - Implemented Excel-like spreadsheet grid terminal renderer (`renderMassBtMatrix`) with ANSI column separators, header row, and highlighted `BEST TF` per strategy.
+   - Registered CLI top-level aliases (`mass-bt`, `massbt`, `bt-matrix`) in `sovereign_cli.js` dispatcher and TUI `manifest.js` research menu.
+   - Added unit test contract `tests/scripts/tui/cli_commands/mass_bt_contract.test.js` (3/3 pass).
+2. Verified 100% dynamic strategy scalability: any new strategy YAML added to `config/strategies/*.yaml` is automatically discovered and evaluated without modifying code logic.
+3. Verified with `npm run test:structure` (28/28 pass 100%), `ctest` (33/33 pass 100%), `npm test` (100% green), and `node scripts/dev/check_hygiene.js` (0 findings). Graphify AST knowledge graph refreshed (`8,805` nodes, `14,741` edges across `636` communities).
+
+Immediate next action:
+- Continue with B2 artifact-only public data boundary deployment and Paper-auth hpdesk diagnostic.
+
+## 2026-08-15 Backtest Position Sizing & Deep Signal Logic Remediation Closeout
+
+1. Executed 2-batch remediation rollout (`BACKTEST-POSITION-SIZING-REMEDIATION-1`):
+   - Added configurable `position_size_pct` and `max_capital_allocation` to C++ `BacktestConfig` and `FrameBacktestConfig` in `backtester.hpp`/`cpp` and `frame_backtester.hpp`/`cpp`.
+   - Updated `position_sizing.js` `risk_budget` mode with floating-point epsilon stop-loss validation (`Math.abs(price - stopPrice) >= 1e-8`).
+   - Updated `commandBacktest` in `research.js` to ensure model-annotated or sub-daily frame backtests compute rolling feature frames before passing predictions to `runFromAnnotated`.
+   - Registered public API routes in `access_policy.js` and updated test assertions across `degraded_fallback.test.js`, `strategy_backtest_contract.test.js`, and `sovereign_cli_human_surfaces.test.js`.
+2. Verified with `npm run test:structure` (28/28 pass 100%), `ctest` (33/33 pass 100%), `npm test` (100% green), and `node scripts/dev/check_hygiene.js` (0 findings). Graphify AST knowledge graph refreshed (`8,789` nodes, `14,709` edges across `630` communities).
+
+Immediate next action:
+- Continue with B2 artifact-only public data boundary deployment and Paper-auth hpdesk diagnostic.
+
 ## 2026-08-15 Backtest Strategy Logic Fix, Repository Audit & Refactor Potential Sweep
 
 1. **Backtest Signal & Position Logic Remediation**:

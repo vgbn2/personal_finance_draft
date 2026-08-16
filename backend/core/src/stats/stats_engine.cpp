@@ -1,4 +1,5 @@
 #include "stats_engine.hpp"
+#include <span>
 
 #include "calmar.hpp"
 #include "sharpe.hpp"

@@ -1,4 +1,5 @@
 #include "drawdown_guard.hpp"
+#include <span>
 
 #include "../stats/drawdown.hpp"
 #include <vector>

@@ -1,10 +1,11 @@
 #pragma once
 
-#include "backtester.hpp"
-
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
+
+#include "backtester.hpp"
 
 namespace sovereign {
 
@@ -65,6 +66,8 @@ struct FrameBacktestConfig {
     int monte_carlo_runs = 200;
     double tail_alpha = 0.05;
     int walk_forward_folds = 0;
+    double position_size_pct = 1.0;
+    std::size_t max_bars = 0;
     std::string timeframe;
     std::string from_date;
     std::string to_date;
@@ -85,6 +88,27 @@ struct FrameBacktestResult {
     WalkForwardResult walk_forward;
     std::string mode;
     std::string engine = "sovereign_cpp_core";
+};
+
+struct MassBtJobSpec {
+    std::string strategy_name;
+    std::string timeframe;
+    std::vector<std::string> symbols;
+    double threshold = 0.55;
+    std::size_t horizon = 5;
+    double cost_bps = 5.0;
+    double position_size_pct = 0.1;
+};
+
+struct MassBtJobResult {
+    std::string strategy_name;
+    std::string timeframe;
+    std::size_t trades = 0;
+    double net_return = 0.0;
+    double win_rate = 0.0;
+    double max_drawdown = 0.0;
+    double sharpe_ratio = 0.0;
+    bool ok = false;
 };
 
 class FrameBacktester {
@@ -116,6 +140,12 @@ public:
     static WalkForwardResult runWalkForward(
         const std::vector<AnnotatedRow>& rows,
         const FrameBacktestConfig& frame_cfg);
+
+    // OpenMP multi-threaded mass backtest matrix evaluation across strategies and timeframes
+    static std::vector<MassBtJobResult> runMassBt(
+        const std::vector<MassBtJobSpec>& jobs,
+        const FrameBacktestConfig& cfg,
+        const std::string& input_dir);
 };
 
 } // namespace sovereign

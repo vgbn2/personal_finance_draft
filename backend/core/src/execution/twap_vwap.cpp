@@ -1,4 +1,5 @@
 #include "twap_vwap.hpp"
+#include <span>
 
 #include <algorithm>
 #include <numeric>

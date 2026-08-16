@@ -477,6 +477,7 @@ async function commandBacktest(args) {
   const trainRatio = numericOption(args, '--train-ratio', defaults.train_ratio || 0.7);
   const tailAlpha = numericOption(args, '--tail-alpha', defaults.tail_alpha || 0.05);
   const monteCarloRuns = numericOption(args, '--monte-carlo-runs', defaults.monte_carlo_runs || 200);
+  const positionSizePct = numericOption(args, '--position-size-pct', strategyMeta?.risk?.position_size_pct || defaults.position_size_pct || 1.0);
   const selectedSymbols = symbolsFromArgs(args);
   const sampleMode = hasFlag(args, '--sample');
   const snapshotFamily = inferSnapshotFamily(args, strategyMeta);
@@ -510,7 +511,8 @@ async function commandBacktest(args) {
     return 1;
   }
   const bridge = require('../../../../shared/lib/runtime/backend_bridge');
-  const useDirectCppNative = !sampleMode && bridge.backendAvailable() && selectedSymbols.length > 0;
+  const isSubDailyTimeframe = timeframe && timeframe !== '1d';
+  const useDirectCppNative = !sampleMode && bridge.backendAvailable() && selectedSymbols.length > 0 && !isSubDailyTimeframe;
 
   let featureFrame;
   if (!useDirectCppNative) {
@@ -555,6 +557,7 @@ async function commandBacktest(args) {
     slippageBps,
     tailAlpha,
     monteCarloRuns,
+    positionSizePct,
     propFirm: selectedPropFirmRef,
     propFirmProfile: selectedPropFirm,
     engine: sampleMode ? 'js' : (strategyMeta?.engine || 'auto'),
@@ -715,5 +718,9 @@ module.exports = {
   commandOptimize,
   commandEdgeDecay,
   commandSweep: rawCommandSweep,
-  commandDemo
+  commandDemo,
+  commandMassBt: require('./research_mass_bt.js').commandMassBt,
+  inferSnapshotFamily,
+  filterFeatureFrameBySymbols,
+  periodOptionsFromArgs,
 };

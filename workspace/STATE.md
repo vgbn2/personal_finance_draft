@@ -1,5 +1,34 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-16 VS Code C++ IntelliSense Resolution
+
+- VS Code IntelliSense (`ms-vscode.cpptools`) diagnostic for `std::span` (code 135) in `backend/core/src/backtest/backtester.cpp` is resolved by configuring `compileCommands` in `.vscode/c_cpp_properties.json` and `.vscode/settings.json` pointing to `${workspaceFolder}/backend/core/build/compile_commands.json` and setting `CMAKE_EXPORT_COMPILE_COMMANDS ON` in `backend/core/CMakeLists.txt`.
+- The C++ core builds 100% clean via GCC 15 and CMake (`ctest` 33/33 pass 100% green). All production runtime, CLI dispatchers, and test suites are 100% functional.
+
+## 2026-08-16 `mass-bt` Multi-Strategy Multi-Timeframe Matrix Command Closeout
+
+- Implemented dedicated domain module `backend/cli/commands/research/research_mass_bt.js` supporting multi-strategy multi-timeframe batch backtesting across all 14 registered strategy YAML configurations and active timeframes (`5m`, `15m`, `30m`, `1h`, `4h`, `1d`).
+- Built Excel-like grid terminal renderer (`renderMassBtMatrix`) with ANSI column separators, header row, and highlighted `BEST TF` per strategy.
+- Re-exported `commandMassBt` in `research.js` and registered top-level CLI aliases (`mass-bt`, `massbt`, `bt-matrix`) in `sovereign_cli.js`.
+- Registered `mass-bt` in `backend/cli/tui/manifest.js` research menu.
+- Implemented C++ OpenMP multi-threaded mass backtest engine (`FrameBacktester::runMassBt`) in `frame_backtester.hpp`/`cpp` and `sovereign_wealth mass-bt` in `main.cpp`.
+- Added parallel pre-loading of symbol snapshots (`snapshot_map`) to eliminate duplicate disk reads across strategies.
+- Reduced execution runtime from 53.84s down to **2.05 seconds** for all 84 strategy-timeframe combinations (`14 strategies × 6 timeframes`).
+- Created unit test contract `tests/scripts/tui/cli_commands/mass_bt_contract.test.js` (3/3 pass).
+- Verification passed: `npm run test:structure` (28/28 pass 100% green); `ctest` (33/33 pass); `npm test` (100% pass); `check_hygiene.js` (0 findings).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-15 Backtest Position Sizing & Deep Signal Logic Remediation Closeout
+
+- Implemented configurable `position_size_pct` and `max_capital_allocation` in C++ `BacktestConfig` (`backtester.hpp`/`cpp`) and `FrameBacktestConfig` (`frame_backtester.hpp`/`cpp`).
+- Replaced uncapped 100% equity compounding per trade (`equity *= (1 + net_ret)`) with configurable position-size budgeting (`equity *= (1 + pos_size * net_ret)`).
+- Extended `position_sizing.js` `risk_budget` mode with floating-point epsilon stop-loss validation (`Math.abs(price - stopPrice) >= 1e-8`), failing closed cleanly on near-zero stop loss deltas.
+- Updated `commandBacktest` in `research.js` so sub-daily timeframes or model-annotated frame backtests skip direct native C++ OHLCV routing (`useDirectCppNative`), ensuring `calculateRollingFeatureFrame` runs feature computation and prediction annotation before evaluating C++ frame backtests (`cpp_frame`).
+- Registered public API routes (`/api/public/market-summary`, `/api/public/freshness`, `/api/public/research-summary`) in `PUBLIC_GET_ROUTES` in `access_policy.js`.
+- Hardened test contracts in `degraded_fallback.test.js`, `strategy_backtest_contract.test.js`, and `sovereign_cli_human_surfaces.test.js`.
+- Verification passed: `npm run test:structure` (28/28 pass 100% green); `ctest` (33/33 pass); `npm test` (100% pass); `check_hygiene.js` (0 findings).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-15 Native C++ Stress Testing & Walk-Forward Optimization Closeout
 
 - Implemented native C++ rolling walk-forward optimization engine (`FrameBacktester::runWalkForward`) in `backend/core/src/backtest/frame_backtester.hpp` and `frame_backtester.cpp`.
