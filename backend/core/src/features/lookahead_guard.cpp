@@ -1,4 +1,5 @@
 #include "lookahead_guard.hpp"
+#include <span>
 
 #include <cmath>
 #include <string>

@@ -14,6 +14,7 @@ const { commandBackend } = require('./commands/tools/backend.js');
 const { commandQuotes } = require('./commands/quotes/quotes.js');
 const { commandStrategyMenu, commandPropFirmMenu } = require('./commands/strategy/strategy.js');
 const { commandBacktest, commandOptimize, commandEdgeDecay, commandSweep, commandDemo, commandIndicators, commandModelCompare } = require('./commands/research/research.js');
+const { commandMassBt } = require('./commands/research/research_mass_bt.js');
 const { commandWatch, commandIngest, commandBackfill, commandMassBackfill, commandCacheClean, commandClearApiCache, commandValidate, commandPrune, commandLoc, commandUniverse, commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIntradayAccumulate, commandIntradayRollup } = require('./commands/data/data.js');
 const { commandBackfillDaemon, commandStopBackfillDaemon } = require('./commands/data/backfill_daemon.js');
 const { commandTrade, buildTradeGatewayLaunch, commandMt5, commandMt5Profile, commandMt5Connect, commandMt5Bridge, commandAutoTrade, commandAddPlatform, commandAgent, commandPolymarket, commandBot } = require('./commands/trade/trade.js');
@@ -71,6 +72,9 @@ async function handleCommand(args) {
     scorecard:        (a) => commandScorecard(a),
     combined:         (a) => commandCombined(a),
     bt:               (a) => commandBacktest(a),
+    'mass-bt':        (a) => commandMassBt(a),
+    massbt:           (a) => commandMassBt(a),
+    'bt-matrix':      (a) => commandMassBt(a),
     features:         (a) => commandIndicators(a),
     ml:               (a) => commandMl(a),
     models:           (a) => commandModelCompare(a),

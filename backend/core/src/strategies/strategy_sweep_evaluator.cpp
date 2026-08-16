@@ -1,4 +1,5 @@
 #include "strategy_sweep_evaluator.hpp"
+#include <span>
 #include "indicators/indicator_engine.hpp"
 #include "stats/stats_engine.hpp"
 

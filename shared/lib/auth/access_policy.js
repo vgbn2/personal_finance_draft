@@ -60,6 +60,9 @@ const PUBLIC_GET_ROUTES = new Set([
   '/health',
   '/api/auth/status',
   '/api/supabase/config',
+  '/api/public/market-summary',
+  '/api/public/freshness',
+  '/api/public/research-summary',
 ]);
 
 const CLIENT_ROUTE_CAPABILITIES = Object.freeze({

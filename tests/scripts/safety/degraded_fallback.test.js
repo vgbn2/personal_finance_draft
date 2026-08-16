@@ -31,7 +31,8 @@ test('engine provenance marks JS fallback as degraded with a machine-readable re
 });
 
 test('an explicitly requested JS backtest is not mislabeled as degraded fallback', () => {
-  const result = runBacktest({ features: [], skipped: [] }, { engine: 'js' });
+  const sampleFeature = { key: 'AAPL:1d:2026-01-01', symbol: 'AAPL', timeframe: '1d', as_of: '2026-01-01T00:00:00Z', close: 150 };
+  const result = runBacktest({ features: [sampleFeature], skipped: [] }, { engine: 'js' });
   assert.equal(result.engine_requested, 'js');
   assert.equal(result.engine_actual, 'sovereign_js');
   assert.equal(result.degraded, false);
