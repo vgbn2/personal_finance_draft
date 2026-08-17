@@ -1473,11 +1473,6 @@ int printMassBt(const std::vector<std::string>& args) {
                 }
             }
 
-            // If strategy has no disk-available symbols, add standard defaults
-            if (spec.symbols.empty()) {
-                spec.symbols = {"BTCUSDT", "ETHUSDT", "SOLUSDT", "AAPL", "MSFT", "SPY", "QQQ", "XAUUSD"};
-            }
-
             if (!spec.name.empty()) {
                 strategy_specs.push_back(spec);
             }
@@ -1485,24 +1480,16 @@ int printMassBt(const std::vector<std::string>& args) {
         }
     }
 
-    // Fallback defaults if --specs-json was not provided
     if (strategy_specs.empty()) {
-        strategy_specs = {
-            {"ai_sector_momentum", {"BTCUSDT", "ETHUSDT", "SOLUSDT"}, 0.55, 5},
-            {"commodity_macro_hedge", {"XAUUSD", "CORN", "BNO", "CPER"}, 0.52, 5},
-            {"crypto_breadth_momentum", {"BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "ADAUSDT"}, 0.55, 3},
-            {"crypto_layer1_momentum", {"BTCUSDT", "ETHUSDT", "SOLUSDT", "AVAXUSDT", "ADAUSDT"}, 0.55, 3},
-            {"defensive_rotation", {"SPY", "QQQ", "BTCUSDT", "XAUUSD"}, 0.52, 4},
-            {"defi_ecosystem_momentum", {"AAVEUSDT", "BTCUSDT", "ETHUSDT"}, 0.55, 5},
-            {"forex_trend_breakout", {"EURUSD", "USDJPY", "GBPUSD", "AUDUSD"}, 0.50, 5},
-            {"global_equity_rotation", {"SPY", "QQQ", "XAUUSD", "BTCUSDT"}, 0.52, 5},
-            {"mean_reversion", {"BTCUSDT", "SPY", "AAPL", "MSFT"}, 0.52, 5},
-            {"ml_multi_asset", {"BTCUSDT", "ETHUSDT", "SPY", "QQQ", "XAUUSD", "AAPL"}, 0.52, 5},
-            {"tech_alpha_xgboost", {"AAPL", "MSFT", "NVDA", "AMD", "ADBE"}, 0.55, 5},
-            {"trend_following", {"SPY", "QQQ", "AAPL", "MSFT", "BTCUSDT"}, 0.52, 5},
-            {"vietnam_equity_growth", {"SPY", "QQQ", "AAPL"}, 0.52, 5},
-            {"volume_profile", {"SPY", "QQQ", "AAPL", "MSFT", "BTCUSDT"}, 0.52, 5}
-        };
+        std::cout << "{\n"
+                  << "  \"type\": \"mass_bt_matrix\",\n"
+                  << "  \"engine\": \"sovereign_cpp_core\",\n"
+                  << "  \"schema_version\": 1,\n"
+                  << "  \"ok\": false,\n"
+                  << "  \"error\": \"no_strategy_specs_provided\",\n"
+                  << "  \"results\": []\n"
+                  << "}\n";
+        return 1;
     }
 
     std::vector<sovereign::MassBtJobSpec> jobs;
