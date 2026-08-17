@@ -1,3 +1,16 @@
+### Session Memory - 2026-08-17 Dynamic Strategy Bridge & Anti-Hardcoding Rule Refinement
+
+```json
+{
+  "batch": ["DYNAMIC-STRATEGY-BRIDGE-1", "ANTI-HARDCODING-SKILL-RULE-1"],
+  "lifecycle": "closed",
+  "scope": "Elimination of hardcoded C++ strategy_specs in main.cpp, dynamic specs JSON bridge from Node CLI to C++ engine, binary TS reader price sanitization, and anti-hardcoding rule update to refactor-readability skill",
+  "changes": "updated research_mass_bt.js with --specs-json argument passing dynamic strategy YAML specs; updated main.cpp printMassBt with specs JSON parser and fallback handling; sanitized high/low price ordering in binary_ts_reader.cpp; updated skills/refactor-readability/SKILL.md and mirror .agents/skills/refactor-readability/SKILL.md with anti-hardcoding guidelines",
+  "verification": "ctest 33/33 pass; test:structure 28/28 pass; hygiene 0 findings; local mass-bt matrix returns populated (% returns); hpdesk rsync & remote mass-bt verified (2.33s runtime)",
+  "boundaries": "no live trading, no credential exposure; LIVE_TRADING=false"
+}
+```
+
 ### Session Memory - 2026-08-17 One-Way Guarded hpdesk Source Sync
 
 ```json

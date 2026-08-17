@@ -1,5 +1,16 @@
 # Prompt Log - 2026-08-09
 
+## Session Implementation — Dynamic Strategy Bridge & Anti-Hardcoding Rule Refinement - 2026-08-17
+Received user prompt: "planb further, using refactor readbility to search for hardcored, fragile sections,add that to the skill".
+- Formulated and ExitPlanMode-approved implementation plan in `/home/vgbn1/.claude/plans/deeper-blast-of-diagnosis-compiled-charm.md`.
+- Staged and committed working-tree preflight changes in commit `40a53937` (`feat(api,polymarket): harden public artifact publisher path traversal and add polymarket scope fallback`).
+- Implemented dynamic strategy specs JSON bridge in `backend/cli/commands/research/research_mass_bt.js` passing `--specs-json` from strategy YAML inspect to C++ engine.
+- Implemented `--specs-json` parser and sanitized price ordering (`r.high = std::max({r.open, r.close, r.high})`, `r.low = std::min({r.open, r.close, r.low})`) in `backend/core/src/main.cpp` and `binary_ts_reader.cpp`.
+- Updated `skills/refactor-readability/SKILL.md` and discovery mirror `.agents/skills/refactor-readability/SKILL.md` with explicit anti-hardcoding guidelines mandating dynamic configuration resolution over static arrays.
+- Committed post-fix changes in commit `2a9d58c4` (`fix(research,skills): bridge dynamic strategy specs to C++ mass-bt engine and add anti-hardcoding rule to refactor-readability skill`).
+- Executed guarded one-way `rsync` to `vgbn-server@100.122.7.7` (`hpdesk`), updated the C++ executable, and verified remote `mass-bt` execution (0.65s, non-N/A returns).
+- Verified 100% green pass locally across `ctest` (33/33 pass), `npm run test:structure` (28/28 pass), and `node scripts/dev/check_hygiene.js` (0 findings).
+
 ## User Prompt & One-Way hpdesk Source Sync - 2026-08-17
 Received user request: "can you push changes from last session to hp desk".
 - Preflight verified local main HEAD `396882d4` and SSH reachability to `vgbn-server@100.122.7.7` (`hpdesk`).
