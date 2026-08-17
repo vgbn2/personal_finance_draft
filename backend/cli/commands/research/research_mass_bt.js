@@ -107,12 +107,21 @@ async function commandMassBt(args) {
 
   if (bridge.backendAvailable() && !hasFlag(args, '--sample')) {
     let cppRes;
+    const metaList = files.map(inspectStrategyFile).filter(m => m && m.ok);
+    const specsPayload = metaList.map(m => ({
+      name: m.name,
+      symbols: m.universe || [],
+      threshold: m.signalThreshold || 0.65,
+      horizon: m.maxHoldingDays || 5,
+    }));
+
     await withLoadingAnimation('Evaluating strategy matrix across timeframes (C++ OpenMP)', async () => {
       const cppArgs = [
         'mass-bt',
         '--input', STORAGE_TS_DIR,
         '--position-size-pct', String(positionSizePct),
         '--timeframes', timeframes.join(','),
+        '--specs-json', JSON.stringify(specsPayload),
         ...(maxBars > 0 ? ['--max-bars', String(maxBars)] : []),
       ];
       cppRes = bridge.runBackendCommand(cppArgs);

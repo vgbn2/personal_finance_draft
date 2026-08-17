@@ -342,8 +342,8 @@ BinaryTsReaderResult BinaryTsReader::readBinaryFile(
             continue;
         }
         if (!std::isfinite(r.open) || r.open <= 0.0) r.open = r.close;
-        if (!std::isfinite(r.high) || r.high < r.close) r.high = std::max(r.open, r.close);
-        if (!std::isfinite(r.low) || r.low <= 0.0 || r.low > r.close) r.low = std::min(r.open, r.close);
+        r.high = std::max({r.open, r.close, r.high});
+        r.low = std::min({r.open, r.close, r.low});
         if (!std::isfinite(r.volume) || r.volume < 0.0) r.volume = 0.0;
 
         if (valid_count != i) {
