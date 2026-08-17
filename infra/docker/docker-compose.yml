@@ -220,6 +220,7 @@ services:
     environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
+      - /mnt/sda1/backups:/mnt/sda1/backups
     restart: unless-stopped
     healthcheck:
       disable: true
