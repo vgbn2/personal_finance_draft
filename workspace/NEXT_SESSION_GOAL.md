@@ -1,5 +1,17 @@
 # Next Session Goal
 
+## 2026-08-17 Session Closeout — Dynamic Strategy Bridge, Anti-Hardcoding Skill & HDD Offloading
+
+1. **Session Closeout & Verification Complete**:
+   - Implemented dynamic strategy specs JSON bridge between Node CLI (`research_mass_bt.js`) and C++ engine (`main.cpp`), completely eliminating static hardcoded strategy vectors.
+   - Fixed binary TS reader price ordering sanitization in `binary_ts_reader.cpp` (`r.high = std::max({r.open, r.close, r.high})`, `r.low = std::min({r.open, r.close, r.low})`), resolving zero-bar rejections.
+   - Enhanced `skills/refactor-readability/SKILL.md` and discovery mirror `.agents/skills/refactor-readability/SKILL.md` with explicit anti-hardcoding guidelines.
+   - Offloaded `docker-host-backup-1` volume mounts to external HDD (`/mnt/sda1/backups`) in `docker-compose.yml` and `.env.services/host-backup.env`.
+   - Verified 100% clean test execution across structure contracts (`npm run test:structure` 28/28 pass), CTest executables (33/33 pass), hygiene audit (`check_hygiene.js` 0 findings), and local/hpdesk remote `mass-bt` execution (0.65s, non-N/A returns).
+
+Immediate next action:
+- Update Alpaca Paper API keys (`ALPACA_PAPER_API_KEY`, `ALPACA_PAPER_SECRET_KEY`) and `PMXT_API_KEY` in `.env` on `hpdesk` to clear external provider authentication (401) and rate-limit (429) warnings.
+
 ## 2026-08-16 Session Closeout — B2 Public Data Boundary Security Hardening & Alpaca Paper Auth Diagnostic
 
 1. **Session Closeout & Verification Complete**:

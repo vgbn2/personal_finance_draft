@@ -1,5 +1,15 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-17 Dynamic Strategy Bridge & Anti-Hardcoding Skill Closeout
+
+- Dynamic strategy specs JSON bridge implemented between Node CLI (`research_mass_bt.js`) and C++ engine (`main.cpp`). Removed static hardcoded strategy vector from C++ `printMassBt`.
+- Fixed OHLC price ordering sanitization in `binary_ts_reader.cpp` (`r.high = std::max({r.open, r.close, r.high})`, `r.low = std::min({r.open, r.close, r.low})`), eliminating zero-bar data rejections.
+- Updated `skills/refactor-readability/SKILL.md` and `.agents/skills/refactor-readability/SKILL.md` with explicit anti-hardcoding guidelines forbidding static hardcoded domain arrays in C++/JS runners.
+- Offloaded `docker-host-backup-1` volume mounts to external HDD (`/mnt/sda1/backups`) in `docker-compose.yml` and `.env.services/host-backup.env`.
+- Populated `storage/polymarket/scope.json` with active tradeable tokens and set 600s research polling interval.
+- Verified 100% clean test execution: `ctest` (33/33 pass), `npm run test:structure` (28/28 pass), `check_hygiene.js` (0 findings), local & hpdesk remote `mass-bt` execution (0.65s, non-N/A returns).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-16 B2 Public Data Boundary Hardening & Alpaca Paper Auth Diagnostic Closeout
 
 - Hardened `readPublicArtifact(artifactName)` in `backend/api/server/services/public_artifact_publisher.js` with `ALLOWED_ARTIFACTS` allowlist validation (`['public_market_summary', 'public_freshness_status', 'public_research_summary']`) and regex sanitization (`/^[a-zA-Z0-9_-]+$/`), preventing path traversal attack vectors (e.g. `../../../.env`) and forcing immediate fail-closed HTTP 503 `artifact_unavailable` responses.
