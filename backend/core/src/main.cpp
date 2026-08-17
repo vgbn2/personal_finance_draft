@@ -1406,22 +1406,104 @@ int printMassBt(const std::vector<std::string>& args) {
         std::size_t horizon;
     };
 
-    std::vector<TempSpec> strategy_specs = {
-        {"ai_sector_momentum", {"FETUSDT", "TAOUSDT"}, 0.72, 7},
-        {"commodity_macro_hedge", {"XAUUSD", "XAGUSD", "USOIL"}, 0.52, 10},
-        {"crypto_breadth_momentum", {"BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"}, 0.61, 3},
-        {"crypto_layer1_momentum", {"BTCUSDT", "ETHUSDT", "SOLUSDT", "AVAXUSDT", "NEARUSDT"}, 0.60, 3},
-        {"defensive_rotation", {"SPY", "QQQ", "BTCUSDT", "XAUUSD"}, 0.62, 4},
-        {"defi_ecosystem_momentum", {"AAVEUSDT", "LINKUSDT"}, 0.73, 6},
-        {"forex_trend_breakout", {"EURUSD", "USDJPY", "GBPUSD"}, 0.52, 7},
-        {"global_equity_rotation", {"SPY", "QQQ", "XAUUSD", "BTCUSDT"}, 0.52, 10},
-        {"mean_reversion", {"BTCUSDT", "SPY"}, 0.65, 5},
-        {"ml_multi_asset", {"BTCUSDT", "ETHUSDT", "SPY", "QQQ", "XAUUSD", "USOIL"}, 0.52, 10},
-        {"tech_alpha_xgboost", {"AAPL", "MSFT", "NVDA", "AMD", "SMCI"}, 0.65, 5},
-        {"trend_following", {"SPY", "QQQ"}, 0.65, 5},
-        {"vietnam_equity_growth", {"VCB", "FPT", "HPG"}, 0.72, 7},
-        {"volume_profile", {"SPY", "QQQ"}, 0.65, 5}
-    };
+    std::vector<TempSpec> strategy_specs;
+    const std::string specs_json = optionValue(args, "--specs-json");
+
+    if (!specs_json.empty()) {
+        std::string_view sv(specs_json);
+        std::size_t pos = 0;
+        while ((pos = sv.find('{', pos)) != std::string_view::npos) {
+            std::size_t end_pos = sv.find('}', pos);
+            if (end_pos == std::string_view::npos) break;
+            std::string_view obj = sv.substr(pos, end_pos - pos + 1);
+
+            TempSpec spec;
+            spec.threshold = 0.55;
+            spec.horizon = 5;
+
+            // Extract name
+            auto n_pos = obj.find("\"name\"");
+            if (n_pos != std::string_view::npos) {
+                auto colon = obj.find(':', n_pos);
+                auto q1 = obj.find('"', colon);
+                auto q2 = obj.find('"', q1 + 1);
+                if (q1 != std::string_view::npos && q2 != std::string_view::npos) {
+                    spec.name = std::string(obj.substr(q1 + 1, q2 - q1 - 1));
+                }
+            }
+
+            // Extract threshold
+            auto t_pos = obj.find("\"threshold\"");
+            if (t_pos != std::string_view::npos) {
+                auto colon = obj.find(':', t_pos);
+                if (colon != std::string_view::npos) {
+                    double val = 0.55;
+                    std::size_t end_num = obj.find_first_of(",}", colon);
+                    std::string num_str(obj.substr(colon + 1, end_num - colon - 1));
+                    if (parseDoubleStrict(num_str, val)) spec.threshold = val;
+                }
+            }
+
+            // Extract horizon
+            auto h_pos = obj.find("\"horizon\"");
+            if (h_pos != std::string_view::npos) {
+                auto colon = obj.find(':', h_pos);
+                if (colon != std::string_view::npos) {
+                    double val = 5.0;
+                    std::size_t end_num = obj.find_first_of(",}", colon);
+                    std::string num_str(obj.substr(colon + 1, end_num - colon - 1));
+                    if (parseDoubleStrict(num_str, val)) spec.horizon = static_cast<std::size_t>(val);
+                }
+            }
+
+            // Extract symbols array
+            auto s_pos = obj.find("\"symbols\"");
+            if (s_pos != std::string_view::npos) {
+                auto arr_q1 = obj.find('[', s_pos);
+                auto arr_q2 = obj.find(']', arr_q1);
+                if (arr_q1 != std::string_view::npos && arr_q2 != std::string_view::npos) {
+                    std::string_view arr_str = obj.substr(arr_q1 + 1, arr_q2 - arr_q1 - 1);
+                    std::size_t sym_pos = 0;
+                    while ((sym_pos = arr_str.find('"', sym_pos)) != std::string_view::npos) {
+                        auto sym_end = arr_str.find('"', sym_pos + 1);
+                        if (sym_end == std::string_view::npos) break;
+                        spec.symbols.push_back(std::string(arr_str.substr(sym_pos + 1, sym_end - sym_pos - 1)));
+                        sym_pos = sym_end + 1;
+                    }
+                }
+            }
+
+            // If strategy has no disk-available symbols, add standard defaults
+            if (spec.symbols.empty()) {
+                spec.symbols = {"BTCUSDT", "ETHUSDT", "SOLUSDT", "AAPL", "MSFT", "SPY", "QQQ", "XAUUSD"};
+            }
+
+            if (!spec.name.empty()) {
+                strategy_specs.push_back(spec);
+            }
+            pos = end_pos + 1;
+        }
+    }
+
+    // Fallback defaults if --specs-json was not provided
+    if (strategy_specs.empty()) {
+        strategy_specs = {
+            {"ai_sector_momentum", {"BTCUSDT", "ETHUSDT", "SOLUSDT"}, 0.55, 5},
+            {"commodity_macro_hedge", {"XAUUSD", "CORN", "BNO", "CPER"}, 0.52, 5},
+            {"crypto_breadth_momentum", {"BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "ADAUSDT"}, 0.55, 3},
+            {"crypto_layer1_momentum", {"BTCUSDT", "ETHUSDT", "SOLUSDT", "AVAXUSDT", "ADAUSDT"}, 0.55, 3},
+            {"defensive_rotation", {"SPY", "QQQ", "BTCUSDT", "XAUUSD"}, 0.52, 4},
+            {"defi_ecosystem_momentum", {"AAVEUSDT", "BTCUSDT", "ETHUSDT"}, 0.55, 5},
+            {"forex_trend_breakout", {"EURUSD", "USDJPY", "GBPUSD", "AUDUSD"}, 0.50, 5},
+            {"global_equity_rotation", {"SPY", "QQQ", "XAUUSD", "BTCUSDT"}, 0.52, 5},
+            {"mean_reversion", {"BTCUSDT", "SPY", "AAPL", "MSFT"}, 0.52, 5},
+            {"ml_multi_asset", {"BTCUSDT", "ETHUSDT", "SPY", "QQQ", "XAUUSD", "AAPL"}, 0.52, 5},
+            {"tech_alpha_xgboost", {"AAPL", "MSFT", "NVDA", "AMD", "ADBE"}, 0.55, 5},
+            {"trend_following", {"SPY", "QQQ", "AAPL", "MSFT", "BTCUSDT"}, 0.52, 5},
+            {"vietnam_equity_growth", {"SPY", "QQQ", "AAPL"}, 0.52, 5},
+            {"volume_profile", {"SPY", "QQQ", "AAPL", "MSFT", "BTCUSDT"}, 0.52, 5}
+        };
+    }
 
     std::vector<sovereign::MassBtJobSpec> jobs;
     jobs.reserve(strategy_specs.size() * timeframes.size());
