@@ -52,6 +52,7 @@ permissions, data, dependencies, public interfaces, or runtime policy, route it 
   readability.
 - Keep mutation, I/O, credentials, trading capability, and error states explicit.
 - Extract cohesive concepts, not arbitrary line ranges.
+- Avoid static hardcoded domain arrays, fixed symbol lists, or magic thresholds in C++/JS runners; drive strategy and domain parameters dynamically from configuration manifests, JSON specs, or storage indexes.
 - Avoid generic utility dumping grounds and speculative abstractions.
 - Comments explain why, invariants, units, compatibility, or non-obvious safety decisions.
 - Update nearby docs when ownership moves; do not rewrite unrelated history.
