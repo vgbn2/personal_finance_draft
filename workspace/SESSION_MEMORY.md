@@ -1,3 +1,29 @@
+### Session Memory - 2026-08-17 One-Way Guarded hpdesk Source Sync
+
+```json
+{
+  "batch": ["HPDESK-ONE-WAY-SOURCE-SYNC-1"],
+  "lifecycle": "closed",
+  "scope": "Guarded one-way source sync of recent session implementation changes from local main workstation to hpdesk",
+  "changes": "rsynced updated source files to hpdesk (100.122.7.7) at /home/vgbn-server/Documents/codeptit/personal_finance_draft/; excluded .git, .env*, .claude/, storage/, workspace/, node_modules/, core build, graphify-out, and logs",
+  "verification": "SHA-256 hash match verified across local and remote for research_mass_bt.js, public_artifact_publisher.js, and frame_backtester.cpp",
+  "boundaries": "one-way push only; zero remote file import back to local; protected host workspace and storage files untouched; LIVE_TRADING=false"
+}
+```
+
+### Session Memory - 2026-08-16 B2 Public Data Boundary Hardening & Alpaca Paper Auth Diagnostic
+
+```json
+{
+  "batch": ["B2-PUBLIC-DATA-BOUNDARY-HARDENING-1", "ALPACA-PAPER-AUTH-DIAGNOSTIC-1"],
+  "lifecycle": "closed",
+  "scope": "Path traversal security hardening for public artifact publisher and execution of redacted Alpaca Paper authentication diagnostic probe",
+  "changes": "added ALLOWED_ARTIFACTS allowlist validation and regex sanitization in public_artifact_publisher.js; updated public_routes_contract.test.js with path traversal denial tests; ran offline and network doctor alpaca --paper-auth probes attributing HTTP 401 error to invalid paper credentials; documented hpdesk recovery protocol",
+  "verification": "public_routes_contract.test.js 4/4 pass; test:structure 28/28 pass; hygiene 0 findings; graphify update 8,841 nodes synced",
+  "boundaries": "no live trading, no provider credential writing; LIVE_TRADING=false"
+}
+```
+
 ### Session Memory - 2026-08-16 VS Code C++ IntelliSense Diagnostic Resolution
 
 ```json

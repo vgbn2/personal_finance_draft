@@ -1,5 +1,14 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-16 B2 Public Data Boundary Hardening & Alpaca Paper Auth Diagnostic Closeout
+
+- Hardened `readPublicArtifact(artifactName)` in `backend/api/server/services/public_artifact_publisher.js` with `ALLOWED_ARTIFACTS` allowlist validation (`['public_market_summary', 'public_freshness_status', 'public_research_summary']`) and regex sanitization (`/^[a-zA-Z0-9_-]+$/`), preventing path traversal attack vectors (e.g. `../../../.env`) and forcing immediate fail-closed HTTP 503 `artifact_unavailable` responses.
+- Added security unit contract test assertions in `backend/api/tests/public_routes_contract.test.js` validating path traversal denial.
+- Executed offline redacted diagnostic (`doctor alpaca --paper-auth --no-network --json`) verifying `outcome: "not_configured"` / `error_code: "network_probe_disabled"` and zero credential leakage.
+- Executed live network read probe (`doctor alpaca --paper-auth --json`) attributing HTTP 401 quote/account failure to `ALPACA_PAPER_API_KEY` / `ALPACA_PAPER_SECRET_KEY` rejected by Alpaca Paper API (`raw_http` outcome `rejected`, `http_status` 401, `error_code` `authentication_rejected`).
+- Verified 100% clean test execution: `node --test backend/api/tests/public_routes_contract.test.js` (4/4 pass); `npm run test:structure` (28/28 pass 100% green); `node scripts/dev/check_hygiene.js` (0 findings); `/home/vgbn1/.local/bin/graphify update .` (`8,841` nodes synced).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-16 VS Code C++ IntelliSense Resolution
 
 - VS Code IntelliSense (`ms-vscode.cpptools`) diagnostic for `std::span` (code 135) in `backend/core/src/backtest/backtester.cpp` is resolved by configuring `compileCommands` in `.vscode/c_cpp_properties.json` and `.vscode/settings.json` pointing to `${workspaceFolder}/backend/core/build/compile_commands.json` and setting `CMAKE_EXPORT_COMPILE_COMMANDS ON` in `backend/core/CMakeLists.txt`.

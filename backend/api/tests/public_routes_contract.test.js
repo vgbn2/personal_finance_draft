@@ -57,3 +57,15 @@ test('B2 Public Artifact Publisher: fails closed on missing artifact', () => {
   assert.equal(missing.status_code, 503);
   assert.equal(missing.error_code, 'artifact_unavailable');
 });
+
+test('B2 Public Artifact Publisher: rejects path traversal and unallowed names', () => {
+  const traversal = readPublicArtifact('../../../.env');
+  assert.equal(traversal.ok, false);
+  assert.equal(traversal.status_code, 503);
+  assert.equal(traversal.error_code, 'artifact_unavailable');
+
+  const invalidChars = readPublicArtifact('public_market_summary;DROP TABLE');
+  assert.equal(invalidChars.ok, false);
+  assert.equal(invalidChars.status_code, 503);
+  assert.equal(invalidChars.error_code, 'artifact_unavailable');
+});

@@ -1,5 +1,25 @@
 # Prompt Log - 2026-08-09
 
+## User Prompt & One-Way hpdesk Source Sync - 2026-08-17
+Received user request: "can you push changes from last session to hp desk".
+- Preflight verified local main HEAD `396882d4` and SSH reachability to `vgbn-server@100.122.7.7` (`hpdesk`).
+- Executed guarded one-way rsync sync of local main source files to `/home/vgbn-server/Documents/codeptit/personal_finance_draft/` on `hpdesk`.
+- Excluded `.git`, `.env*`, `.claude/`, `storage/`, `data/`, `workspace/`, `node_modules/`, `backend/gateway/node_modules/`, `backend/core/build/`, `graphify-out/`, `*.log`, and `tmp/`.
+- Verified SHA-256 hash match between local and remote for updated files (`research_mass_bt.js`, `public_artifact_publisher.js`, `frame_backtester.cpp`).
+- Preserved host-local `workspace/`, `storage/`, and `.env*` files untouched.
+
+## Session Orchestration & Boot - 2026-08-17
+Received session-orchestrator boot request. Executed workspace bootstrap, handoff pointer resolution (`workspace/handoff/2026/08/2026-08-16.md`), state and session memory verification, docs/README inspection, and git status check on branch `main` at HEAD `396882d4`.
+
+## Session Implementation — B2 Public Data Boundary Hardening & Alpaca Paper Auth Diagnostic - 2026-08-16
+Received user prompt: "deep plan for what is needede this session" / "refine plan, edgecase, security, potential hacks,".
+- Formulated and ExitPlanMode-approved implementation plan in `/home/vgbn1/.claude/plans/crispy-coalescing-scroll.md`.
+- Hardened `readPublicArtifact(artifactName)` in `backend/api/server/services/public_artifact_publisher.js` with `ALLOWED_ARTIFACTS` allowlist validation (`['public_market_summary', 'public_freshness_status', 'public_research_summary']`) and regex sanitization (`/^[a-zA-Z0-9_-]+$/`), shielding `/api/public/*` routes against path traversal attack vectors (`../../../.env`).
+- Added contract unit tests in `backend/api/tests/public_routes_contract.test.js` (4/4 pass).
+- Executed offline (`doctor alpaca --paper-auth --no-network --json`) and live network (`doctor alpaca --paper-auth --json`) probes, attributing Paper quote HTTP 401 errors to rejected API keys, and documented hpdesk recovery protocol.
+- Executed session closeout documentation sweep across `workspace/handoff/2026/08/2026-08-16.md`, `workspace/HANDOFF.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `workspace/NEXT_SESSION_GOAL.md`, and `workspace/PROMPT_LOG.md`.
+- Verified 100% green pass across `node scripts/dev/check_hygiene.js` (0 findings), `npm run test:structure` (28/28 pass), `node --test backend/api/tests/public_routes_contract.test.js` (4/4 pass), and `/home/vgbn1/.local/bin/graphify update .` AST knowledge graph refresh (`8,841` nodes synced).
+
 ## Session Closeout & VS Code IntelliSense Resolution - 2026-08-16
 Received user prompt: "deeper blast and then switch to plan mode to finish this sessiont tasks".
 - Conducted deeper blast-through code review of `mass-bt` multi-strategy backtest matrix engine across JS and C++ surfaces (0 defects found, 100% green verification).

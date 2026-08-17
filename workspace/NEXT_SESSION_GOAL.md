@@ -1,5 +1,16 @@
 # Next Session Goal
 
+## 2026-08-16 Session Closeout — B2 Public Data Boundary Security Hardening & Alpaca Paper Auth Diagnostic
+
+1. **Session Closeout & Verification Complete**:
+   - Hardened `readPublicArtifact(artifactName)` in `backend/api/server/services/public_artifact_publisher.js` with `ALLOWED_ARTIFACTS` allowlist validation (`['public_market_summary', 'public_freshness_status', 'public_research_summary']`) and regex sanitization (`/^[a-zA-Z0-9_-]+$/`), shielding `/api/public/*` routes against path traversal attack vectors (`../../../.env`).
+   - Added contract unit tests in `backend/api/tests/public_routes_contract.test.js` (4/4 pass).
+   - Executed offline and live network `doctor alpaca --paper-auth` probes, attributing Paper quote HTTP 401 errors to rejected API keys, and documented hpdesk recovery protocol.
+   - Verified 100% clean test execution across structure contracts (`npm run test:structure` 28/28 pass), public routes contract (4/4 pass), hygiene audit (`check_hygiene.js` 0 findings), and AST knowledge graph update (`graphify update .` 8,841 nodes synced).
+
+Immediate next action:
+- Begin next session by updating Alpaca Paper API keys on hpdesk and conducting a review pass over quantitative strategy parameter ranges.
+
 ## 2026-08-16 Session Closeout — VS Code C++ IntelliSense Resolution & `mass-bt` Closeout
 
 1. **Session Closeout & Verification Complete**:
