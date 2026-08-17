@@ -15,6 +15,12 @@ const ARTIFACTS_DIR = path.join(STORAGE_DATA_DIR, 'artifacts', 'public');
 const DELAY_MS = 24 * 60 * 60 * 1000; // 24 Hours
 const ARTIFACT_EXPIRY_MS = 48 * 60 * 60 * 1000; // 48 Hours
 
+const ALLOWED_ARTIFACTS = new Set([
+  'public_market_summary',
+  'public_freshness_status',
+  'public_research_summary',
+]);
+
 /**
  * Ensures the public artifact storage directory exists.
  */
@@ -117,6 +123,15 @@ function generatePublicMarketArtifacts() {
  * @returns {object} Artifact data payload or fail-closed response
  */
 function readPublicArtifact(artifactName) {
+  if (!artifactName || typeof artifactName !== 'string' || !ALLOWED_ARTIFACTS.has(artifactName) || !/^[a-zA-Z0-9_-]+$/.test(artifactName)) {
+    return {
+      ok: false,
+      error_code: 'artifact_unavailable',
+      error: `Public artifact ${artifactName} is invalid or forbidden.`,
+      status_code: 503,
+    };
+  }
+
   const filePath = path.join(ARTIFACTS_DIR, `${artifactName}.json`);
 
   if (!fs.existsSync(filePath)) {
@@ -168,6 +183,7 @@ function readPublicArtifact(artifactName) {
 module.exports = {
   generatePublicMarketArtifacts,
   readPublicArtifact,
+  ALLOWED_ARTIFACTS,
   ARTIFACTS_DIR,
   DELAY_MS,
 };

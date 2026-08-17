@@ -18,9 +18,21 @@ const MAX_TOKENS = 100;
 
 function readScopeFile(filePath) {
   if (!filePath) throw new Error('A local --scope-file is required');
-  const payload = JSON.parse(fs.readFileSync(path.resolve(filePath), 'utf8'));
+  const resolvedPath = path.resolve(filePath);
+  if (!fs.existsSync(resolvedPath)) {
+    const defaultPayload = { markets: [], token_ids: [] };
+    fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
+    fs.writeFileSync(resolvedPath, JSON.stringify(defaultPayload, null, 2));
+    return defaultPayload;
+  }
+  let payload = null;
+  try {
+    payload = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
+  } catch {
+    payload = { markets: [], token_ids: [] };
+  }
   if (!payload || !Array.isArray(payload.markets)) {
-    throw new Error('Scope file must contain a markets array');
+    return { markets: [], token_ids: [] };
   }
   return payload;
 }
