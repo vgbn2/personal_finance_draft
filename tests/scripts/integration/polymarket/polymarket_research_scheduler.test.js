@@ -223,3 +223,26 @@ test('pruner caps valid recent rows per token', () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('scheduler initializes default empty scope when scope file is missing', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pm-missing-scope-'));
+  const scopeFile = path.join(root, 'nested', 'scope.json');
+  try {
+    await assert.rejects(
+      runPolymarketResearchScheduler({
+        scopeFile,
+        nowMs: NOW,
+        once: true,
+      }, {
+        fetchHistory: async () => ({ ok: true, data: [] }),
+        captureOrderbook: async () => ({ ok: true, rows: [] }),
+      }),
+      /Scope must explicitly list token_ids/,
+    );
+    assert.equal(fs.existsSync(scopeFile), true);
+    const content = JSON.parse(fs.readFileSync(scopeFile, 'utf8'));
+    assert.deepEqual(content, { markets: [], token_ids: [] });
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
