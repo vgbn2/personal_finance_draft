@@ -1,5 +1,37 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-18 Session 137 Polymarket Orderbook Depth Preflight, Auth Email Validation, TUI Parity & Skill Suite Enhancement Closeout
+
+- Re-ordered Polymarket orderbook snapshot retrieval and depth validation (`hasPolymarketOrderbookDepth`) in `backend/cli/commands/trade/trade_polymarket.js` to execute *before* requesting live authorization or Trade PIN entry (`authorizePolymarketLive`). Illiquid/zero-depth markets now fail fast without forcing unnecessary PIN prompts.
+- Exported `validateEmail(email)` helper (RFC 5322 regex) in `backend/cli/lib/auth.js` and enforced local client-side validation in `commandLogin` and `commandRegister` (`backend/cli/commands/account/auth.js`) prior to Supabase network calls.
+- Added `mass-bt` (Mass Backtest Matrix) entry to `Research & Backtesting` category in `sovereign_dashboard.mjs` matching flags in `tui/manifest.js`.
+- Added 8th audit mode `security` and mandatory Security Audit Intake Protocol (interactive prompt interviewing user on authorization context, threat model, scope, and credentials) to `skills/blast-through/SKILL.md` and mirror `.agents/skills/blast-through/SKILL.md`.
+- Added **Phase 0: Interactive Symptom Discovery & User Intake** to `skills/bayesian-troubleshooter/SKILL.md` and mirror `.agents/skills/bayesian-troubleshooter/SKILL.md`, requiring diagnostic symptom interviews before hypothesis formulation.
+- Verified 100% clean test execution: `npm run test:structure` (28/28 subtests pass), `node scripts/dev/check_hygiene.js` (0 findings), `mass-bt` contract tests (3/3 pass).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-18 Session 136 Polymarket Pager Fix, Fail-Closed API Resilience & TUI Correlation Discovery Closeout
+
+- Root-caused and fixed interactive terminal pager freeze in `polymarket markets` where `pageText` spawned `less -R` in an interactive loop (`runPolymarketMarketActionLoop`), trapping `stdin` at `(END)` until `q` was pressed.
+- Replaced `pageText` with direct `console.log` for in-loop interactive renders (`renderPolymarketMarketDetails`, `renderPolymarketOrderbookDetails`, `renderPolymarketPriceHistoryDetails`), preserving terminal selection prompt flow without external pager invocation.
+- Hardened `fetchPolymarketEventsSnapshot`, `fetchPolymarketOrderbookSnapshot`, and `fetchPolymarketPriceHistorySnapshot` in `backend/cli/commands/trade/trade_polymarket.js` with fail-closed `try/catch` error handling and 15-second timeouts to handle API network anomalies gracefully.
+- Registered native C++ `correlation` command entry under `commands.research` category in `backend/cli/tui/manifest.js` (in addition to `backend`), enabling quantitative researchers to run Pearson correlation matrix calculations directly from the Research TUI menu.
+- Standardized `prediction_market` family filter across TUI command selectors (`scorecard`, `watch`, `ingest`).
+- Verified 100% green test execution: `npm run test:structure` (28/28 subtests pass), `ctest` (33/33 pass), `check_hygiene.js` (0 findings), and `mass-bt` execution (96 strategy-TF pairs evaluated in 2.63s).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
+## 2026-08-18 Session 135 Deep Runtime Audit, DCA Test Strategy & hpdesk Sync Closeout
+
+- Executed deep blast-through runtime audit across local and `hpdesk` Docker clusters. Local test suites (28/28 structure contract, 33/33 C++ ctests, 0 hygiene findings) and local Docker services (`bot-alpaca-paper` active scanner, $100k equity, 9,550 bars loaded) are 100% green.
+- Updated `skills/bayesian-troubleshooter/SKILL.md` and `.agents/skills/bayesian-troubleshooter/SKILL.md` with documentation-first web search protocol for external API/provider contract anomalies.
+- Root-caused `polymarket-research` log error (`PMXT 400: Bad Request`) on `hpdesk` to missing/unauthenticated `PMXT_API_KEY` parameter pass in `fetchPmxtOrderBookHistory` when querying `https://api.pmxt.dev/api/polymarket/fetchOrderBook`.
+- Created micro-notional Polymarket prediction market DCA test strategy (`config/strategies/polymarket_dca_test.yaml`) and registered it alongside `paper_dca_test.yaml` in `config/trading/strategies.yaml`.
+- Committed changes in commit `0f86c096` (`feat(strategies,skills): register polymarket_dca_test strategy and add web doc search to bayesian-troubleshooter`) and pushed to `origin/main`.
+- Reset `hpdesk` `main` branch to `origin/main` (`0f86c096`) and executed guarded one-way `rsync` sync.
+- Verified SHA-256 hash match between local workstation and `hpdesk` across all synced files, and verified 100% green remote structure tests (28/28 pass) and remote hygiene audit (0 findings).
+- Roadmap for upcoming sessions established: focus on User Experience, TUI/CLI consistency, mapping heavy computation (backtest/research/correlation) to native C/C++ engine, and auditing family flag & feature domain classifications (e.g. correlation domain placement).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-18 Git Commit, Push & Guarded One-Way hpdesk Sync Closeout
 
 - Committed session 133/134 changes and pushed local `main` branch to GitHub `origin/main` (commit `74bc601f`).

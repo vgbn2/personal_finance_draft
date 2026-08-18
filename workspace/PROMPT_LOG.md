@@ -1,5 +1,20 @@
 # Prompt Log - 2026-08-09
 
+## Session Boot - 2026-08-18 (Session 136)
+Received user prompt: "/clear", "session-orchestrator".
+- Executed session-orchestrator boot protocol: read BOOTSTRAP.md, HANDOFF.md, current dated handoff (2026-08-16.md), SESSION_MEMORY.md, STATE.md, NEXT_SESSION_GOAL.md, and docs/README.md.
+- Inspected git status (`git status --short`).
+- Routing to next session goal: User Experience, Native C++ Engine Mapping & Family Flag Audit.
+
+## Session Closeout — Deep Runtime Audit, DCA Test Strategy & hpdesk Sync - 2026-08-18 (Session 135)
+Received user prompts: "deep blast through, run time testing, api health,docker,bot heatlh and more, check for hp desk also", "deeper blast, add to bayesian trouble shooting to include web searches...", "Active Jun 12, 2026... this is pxmt api, still has it, and i want to check if the bots running, polymarket and alpaca bot should have sth like a dca strategy...".
+- Executed deep blast-through runtime audit across local and `hpdesk` Docker clusters.
+- Updated `skills/bayesian-troubleshooter/SKILL.md` and mirror with documentation-first web search guidelines for external API/provider contract anomalies.
+- Root-caused `polymarket-research` log error (`PMXT 400: Bad Request`) on `hpdesk` to missing/unauthenticated `PMXT_API_KEY` parameter pass in `fetchPmxtOrderBookHistory`.
+- Created `config/strategies/polymarket_dca_test.yaml` (micro-notional DCA test strategy for Polymarket prediction tokens) and registered it in `config/trading/strategies.yaml`.
+- Committed changes in commit `0f86c096` (`feat(strategies,skills): register polymarket_dca_test strategy and add web doc search to bayesian-troubleshooter`), pushed to `origin/main`, reset `hpdesk` `main` branch to `0f86c096`, and executed guarded one-way `rsync` sync.
+- Verified SHA-256 hash match between local workstation and `hpdesk` across all synced files, and verified 100% green remote structure tests (28/28 pass) and remote hygiene audit (0 findings).
+
 ## Session Boot - 2026-08-18 (Session 135)
 Received user prompt: "/session-orchestrator".
 - Executed session-orchestrator boot protocol: read BOOTSTRAP.md, HANDOFF.md, current dated handoff (2026-08-16.md), SESSION_MEMORY.md, STATE.md, and NEXT_SESSION_GOAL.md.
@@ -407,3 +422,12 @@ Received user direction: reconcile from this workstation to hpdesk only, preserv
 - Ran guarded local-to-hpdesk rsync after an itemized dry-run. Excluded `.git`, `.env*`/secret patterns, `storage/`, `data/`, `workspace/`, dependencies, build/dist/graph/tool artifacts, and logs. Both dry-run and applied transfer reported zero deletions and zero protected-path mentions.
 - Verified SHA-256 equality across governance, GitHub intake, API access-control, Compose, and environment-manifest source files. hpdesk Git status now contains only expected source overlay differences; protected metadata/count remained unchanged. No Git checkout/reset/clean, Docker/Compose, updater, provider, data, credential, Paper/live, deployment, commit, or push action ran.
 - Container observation only: existing `docker-polymarket-research-1` remained restarting; no service was controlled by this session. The source overlay is not exact Git provenance, exact-image/deployment, provider, Paper, or live qualification.
+
+## User Prompt & Session Boot - 2026-08-18 (Session 137)
+
+Received user invocation: `session-orchestrator`.
+- Booted session orchestrator: read `workspace/BOOTSTRAP.md`, `workspace/HANDOFF.md`, `workspace/handoff/2026/08/2026-08-16.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `workspace/NEXT_SESSION_GOAL.md`, and `docs/README.md`.
+- Inspected git status (branch `main` at commit `0f86c096`). Verified uncommitted changes in `trade_polymarket.js`, `manifest.js`, `NEXT_SESSION_GOAL.md`, `PROMPT_LOG.md`, `SESSION_MEMORY.md`, `STATE.md`, and `2026-08-16.md`.
+- Verified `/home/vgbn1/.local/bin/graphify` availability.
+- Loaded next session goal: Polymarket Live Order Depth Preflight Check, Ink TUI Dashboard vs Legacy Layout Parity Audit, Authentication & Security Hardening, Git Commit, Push & hpdesk Sync.
+

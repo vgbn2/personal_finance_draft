@@ -1,3 +1,42 @@
+### Session Memory - 2026-08-18 Session 137 — Polymarket Orderbook Depth Preflight, Auth Email Validation, TUI Parity & Skill Suite Enhancement
+
+```json
+{
+  "batch": ["POLYMARKET-DEPTH-PREFLIGHT-1", "CLI-AUTH-EMAIL-VALIDATION-1", "TUI-DASHBOARD-MASS-BT-PARITY-1", "BLAST-THROUGH-SECURITY-MODE-1", "BAYESIAN-TROUBLESHOOTER-SYMPTOM-INTERVIEW-1"],
+  "lifecycle": "closed",
+  "scope": "Re-ordered Polymarket orderbook snapshot retrieval and depth validation before live PIN prompt, added validateEmail RFC 5322 helper and enforced in CLI login/register commands, added mass-bt to Ink TUI dashboard menu, added security audit mode and intake questionnaire to blast-through, and added Phase 0 Interactive Symptom Interview to bayesian-troubleshooter",
+  "changes": "updated backend/cli/commands/trade/trade_polymarket.js re-ordering depth check; updated backend/cli/lib/auth.js and backend/cli/commands/account/auth.js adding validateEmail; updated backend/cli/sovereign_dashboard.mjs adding mass-bt to Research menu; updated skills/blast-through/SKILL.md and mirror with security mode; updated skills/bayesian-troubleshooter/SKILL.md and mirror with Phase 0 symptom interview",
+  "verification": "npm run test:structure (28/28 pass 100% green); check_hygiene.js (0 findings); mass_bt_contract.test.js (3/3 pass); validateEmail unit test (pass)",
+  "boundaries": "no live trading, zero broker credential writing; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
+### Session Memory - 2026-08-18 Session 136 — Polymarket Browser Pager Fix, Fail-Closed API Resilience & TUI Correlation Discovery
+
+```json
+{
+  "batch": ["POLYMARKET-PAGER-FIX-1", "FAIL-CLOSED-API-RESILIENCE-1", "TUI-CORRELATION-DISCOVERY-1"],
+  "lifecycle": "closed",
+  "scope": "Fixed interactive terminal pager freeze in Polymarket market browser, added fail-closed API error handling with timeouts, registered Pearson correlation under TUI Research category, and standardized family flag selectors",
+  "changes": "updated backend/cli/commands/trade/trade_polymarket.js replacing pageText with console.log in interactive loop and wrapping API snapshot calls in try/catch with 15s timeout; updated backend/cli/tui/manifest.js adding correlation to research category and prediction_market to family filters",
+  "verification": "npm run test:structure (28/28 pass 100% green); ctest (33/33 pass); check_hygiene.js (0 findings); mass-bt execution (2.63s across 96 strategy-TF pairs)",
+  "boundaries": "no live trading, zero broker credential writing; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
+### Session Memory - 2026-08-18 Session 135 — Deep Runtime Testing, PMXT & Alpaca Bot Audit, DCA Test Strategy & hpdesk Sync
+
+```json
+{
+  "batch": ["DEEP-RUNTIME-AUDIT-1", "BAYESIAN-WEB-SEARCH-SKILL-1", "POLYMARKET-DCA-STRATEGY-1"],
+  "lifecycle": "closed",
+  "scope": "Executed deep blast-through runtime audit across local and hpdesk Docker clusters, updated bayesian-troubleshooter skill with documentation-first web search guidelines, registered polymarket_dca_test.yaml strategy, and executed guarded one-way rsync sync to hpdesk",
+  "changes": "updated skills/bayesian-troubleshooter/SKILL.md and mirror; created config/strategies/polymarket_dca_test.yaml; registered in config/trading/strategies.yaml; committed and pushed to origin/main (0f86c096); rsynced source files to hpdesk (100.122.7.7)",
+  "verification": "npm run test:structure (28/28 pass 100% green); check_hygiene.js (0 findings); ctest (33/33 pass); hpdesk structure contract pass (28/28 pass); hpdesk hygiene (0 findings); SHA-256 hash match verified across local and hpdesk",
+  "boundaries": "one-way push only; zero remote file import back to local; protected host workspace and storage files untouched; LIVE_TRADING=false"
+}
+```
+
 ### Session Memory - 2026-08-18 Session 134 — Git Commit, Push & Guarded One-Way hpdesk Sync
 
 ```json

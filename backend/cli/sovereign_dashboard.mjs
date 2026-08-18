@@ -219,6 +219,14 @@ const M = [
           '--allow-degraded': { t:'yn',  lbl:'Allow degraded data quality?', def:false },
         },
       },
+      { id: 'mass-bt', label: 'mass-bt', desc: 'Mass Backtest Matrix (All Strategies x All TFs)',
+        flags: {
+          '--timeframes':        { t:'txt', lbl:'Timeframes filter', def:'5m,15m,30m,1h,4h,1d' },
+          '--position-size-pct': { t:'txt', lbl:'Position allocation (0.01 - 1.0)', def:'0.1' },
+          '--days':              { t:'txt', lbl:'History window (days, 0 = max)', def:'0' },
+          '--allow-degraded':    { t:'yn',  lbl:'Allow degraded data?', def:true },
+        },
+      },
       { id: 'optimize', label: 'optimize', desc: 'Indicator period grid',
         flags: {
           '--strategy':  { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'' },

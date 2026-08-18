@@ -406,25 +406,30 @@ function normalizeLimitPriceInput(raw, defaultPrice, tickSize = 0.01) {
 }
 
 function fetchPolymarketEventsSnapshot(category = 'crypto', limit = 15) {
-  const gatewayArgs = ['polymarket', 'events', String(limit), '--category', category, '--json'];
-  const launch = buildTradeGatewayLaunch(gatewayArgs);
-  const result = spawnSync(launch.command, launch.args, {
-    cwd: utils.REPO_ROOT,
-    encoding: 'utf8',
-    shell: launch.shell ?? false,
-    env: launch.env,
-  });
-  if (result.error) throw new Error(`Failed to fetch Polymarket events: ${result.error.message}`);
-  const payload = parseGatewayJsonOutput(result.stdout, 'polymarket events');
-  if (!payload || payload.ok === false) throw new Error(payload && payload.error ? payload.error : 'Polymarket events request failed');
-  return payload;
+  try {
+    const gatewayArgs = ['polymarket', 'events', String(limit), '--category', category, '--json'];
+    const launch = buildTradeGatewayLaunch(gatewayArgs);
+    const result = spawnSync(launch.command, launch.args, {
+      cwd: utils.REPO_ROOT,
+      encoding: 'utf8',
+      shell: launch.shell ?? false,
+      env: launch.env,
+      timeout: 15000,
+    });
+    if (result.error) return { ok: false, error: `Failed to fetch Polymarket events: ${result.error.message}`, data: [] };
+    const payload = parseGatewayJsonOutput(result.stdout, 'polymarket events');
+    if (!payload || payload.ok === false) return { ok: false, error: payload && payload.error ? payload.error : 'Polymarket events request failed', data: [] };
+    return payload;
+  } catch (err) {
+    return { ok: false, error: err.message, data: [] };
+  }
 }
 
 async function runPolymarketMarketActionLoop(selectedMarket, resultContext, args = [], deps = {}) {
   let firstDetailEntry = true;
   while (true) {
     if (firstDetailEntry) {
-      pageText(renderPolymarketMarketDetails(resultContext, selectedMarket), []);
+      console.log('\n' + renderPolymarketMarketDetails(resultContext, selectedMarket));
       firstDetailEntry = false;
     } else {
       const groupLabel = selectedMarket.groupItemTitle || selectedMarket.section || 'crypto';
@@ -437,7 +442,7 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext, args
     if (action === 'exit') return 'exit';
     if (action === 'back') return 'back';
     if (action === 'detail') {
-      pageText(renderPolymarketMarketDetails(resultContext, selectedMarket), []);
+      console.log('\n' + renderPolymarketMarketDetails(resultContext, selectedMarket));
       continue;
     }
     if (action === 'orderbook') {
@@ -450,8 +455,12 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext, args
         ? tokenChoices[0].value
         : await promptSelect('Token:', [...tokenChoices, { label: 'Cancel', value: '__cancel__' }]);
       if (tokenId === '__cancel__') continue;
-      const snapshot = fetchPolymarketOrderbookSnapshot(tokenId);
-      pageText(renderPolymarketOrderbookDetails(selectedMarket, snapshot), []);
+      try {
+        const snapshot = fetchPolymarketOrderbookSnapshot(tokenId);
+        console.log('\n' + renderPolymarketOrderbookDetails(selectedMarket, snapshot));
+      } catch (err) {
+        console.log(`\n  ${A.YELLOW}Unable to fetch orderbook for token ${tokenId}: ${err.message}${A.RESET}`);
+      }
       continue;
     }
     if (action === 'price_history') {
@@ -471,8 +480,12 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext, args
         { label: '1w', value: '1w' },
         { label: 'max', value: 'max' },
       ]);
-      const snapshot = fetchPolymarketPriceHistorySnapshot(tokenId, interval);
-      pageText(renderPolymarketPriceHistoryDetails(selectedMarket, snapshot), []);
+      try {
+        const snapshot = fetchPolymarketPriceHistorySnapshot(tokenId, interval);
+        console.log('\n' + renderPolymarketPriceHistoryDetails(selectedMarket, snapshot));
+      } catch (err) {
+        console.log(`\n  ${A.YELLOW}Unable to fetch price history for token ${tokenId}: ${err.message}${A.RESET}`);
+      }
       continue;
     }
     if (action === 'buy_yes' || action === 'buy_no' || action === 'buy_first') {
@@ -485,6 +498,17 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext, args
         console.log('No token id available for that outcome.');
         continue;
       }
+      let book;
+      try {
+        book = fetchPolymarketOrderbookSnapshot(targetToken.token_id);
+      } catch (err) {
+        console.log(`  ${A.YELLOW}Orderbook snapshot failed: ${err.message}${A.RESET}`);
+        continue;
+      }
+      if (!hasPolymarketOrderbookDepth(book)) {
+        console.log(`  ${A.YELLOW}No live CLOB depth is available for this token. Re-fetch markets/orderbook before placing a live order.${A.RESET}`);
+        continue;
+      }
       const liveAuthorization = await (deps.authorizeLive || authorizePolymarketLive)(
         args,
         'Polymarket live order',
@@ -493,13 +517,8 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext, args
         console.log('Live Polymarket order cancelled before credentialed account or orderbook access.');
         continue;
       }
-      const book = fetchPolymarketOrderbookSnapshot(targetToken.token_id);
       const defaultPrice = deriveDefaultBuyPriceFromBook(book);
-      pageText(renderPolymarketOrderbookDetails(selectedMarket, book), []);
-      if (!hasPolymarketOrderbookDepth(book)) {
-        console.log(`  ${A.YELLOW}No live CLOB depth is available for this token. Re-fetch markets/orderbook before placing a live order.${A.RESET}`);
-        continue;
-      }
+      console.log('\n' + renderPolymarketOrderbookDetails(selectedMarket, book));
 
       const portfolioSnap = (() => {
         try {

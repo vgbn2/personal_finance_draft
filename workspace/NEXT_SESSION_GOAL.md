@@ -1,5 +1,61 @@
 # Next Session Goal
 
+## 2026-08-18 Session 137 Closeout — Polymarket Orderbook Depth Preflight, Auth Email Validation, TUI Parity & Skill Suite Enhancement
+
+**Immediate next action for Next Session:**
+1. **Git Commit, Push & hpdesk Source Sync**: Commit session 136/137 changes (`trade_polymarket.js`, `auth.js`, `sovereign_dashboard.mjs`, `skills/blast-through/`, `skills/bayesian-troubleshooter/`, workspace state updates), push to `origin/main`, and execute guarded one-way `rsync` sync to `hpdesk` (`vgbn-server@100.122.7.7`). Re-verify SHA-256 hash match on `hpdesk` and execute remote structure contract suite (`npm run test:structure`) and hygiene audit.
+2. **Execute Interactive Security Audit**: Run `/blast-through` in `security` mode to execute the newly added Security Audit Intake Protocol, interviewing the user on authorization context, threat model, and scope boundaries before scanning API access policies and path traversal boundaries.
+3. **Continuous Runtime Monitoring**: Monitor long-running CI jobs and paper trading ledger updates across trading windows on `hpdesk`.
+
+**Standing deferred:**
+- Replace `.github/CODEOWNERS` and `MAINTAINERS.md` placeholder handles with real GitHub usernames.
+- Monitor long-running CI jobs and paper trading ledger updates across trading windows.
+
+1. **Session Closeout & Verification Complete**:
+   - Re-ordered Polymarket orderbook snapshot retrieval and depth validation (`hasPolymarketOrderbookDepth`) in `trade_polymarket.js` to execute *before* requesting live PIN authorization (`authorizePolymarketLive`).
+   - Exported `validateEmail(email)` helper (RFC 5322 regex) in `backend/cli/lib/auth.js` and enforced local client-side validation in `commandLogin` and `commandRegister` (`auth.js`) prior to Supabase network calls.
+   - Added `mass-bt` (Mass Backtest Matrix) entry to `Research & Backtesting` category in `sovereign_dashboard.mjs` matching flags in `tui/manifest.js`.
+   - Added 8th audit mode `security` and mandatory Security Audit Intake Protocol to `skills/blast-through/SKILL.md` and mirror `.agents/skills/blast-through/SKILL.md`.
+   - Added **Phase 0: Interactive Symptom Discovery & User Intake** to `skills/bayesian-troubleshooter/SKILL.md` and mirror `.agents/skills/bayesian-troubleshooter/SKILL.md`.
+   - Verified 100% green test execution: `npm run test:structure` (28/28 subtests pass), `check_hygiene.js` (0 findings), `mass_bt_contract.test.js` (3/3 pass), `validateEmail` unit test (pass).
+
+## 2026-08-18 Session 136 Closeout — Polymarket Browser Pager Fix, Fail-Closed API Resilience & TUI Correlation Discovery
+
+**Immediate next action for Next Session:**
+1. **Polymarket Live Order Depth Preflight Check**: Move orderbook depth pre-check (`hasPolymarketOrderbookDepth`) *before* prompting for Trade PIN / live authorization (`authorizePolymarketLive`), preventing unnecessary PIN prompts on illiquid or empty orderbook markets.
+2. **Ink TUI Dashboard vs Legacy Layout Parity Audit**: Compare `sovereign_dashboard.mjs` (Ink TUI) with `tui/manifest.js` and legacy menu model `M` to identify missing commands, views, or keyboard actions (e.g. missing legacy views in Ink dashboard).
+3. **Authentication & Security Hardening**: Audit and fix `auth.js` / Supabase auth flow to strictly validate email formatting, enforce strong password verification, reject arbitrary placeholder email/password inputs, and perform comprehensive security audit across all auth & API endpoints.
+4. **Git Commit, Push & hpdesk Sync**: Commit session 136 changes (`trade_polymarket.js`, `manifest.js`, workspace state updates), push to `origin/main`, and sync one-way to `hpdesk` (`vgbn-server@100.122.7.7`). Re-verify SHA-256 hash match on `hpdesk` and execute remote structure contract suite (`npm run test:structure`) and hygiene audit.
+
+**Standing deferred:**
+- Replace `.github/CODEOWNERS` and `MAINTAINERS.md` placeholder handles with real GitHub usernames.
+- Monitor long-running CI jobs and paper trading ledger updates across trading windows.
+
+1. **Session Closeout & Verification Complete**:
+   - Fixed interactive terminal pager freeze in `polymarket markets` where `pageText` spawned `less -R` in an interactive loop (`runPolymarketMarketActionLoop`), trapping `stdin` at `(END)` until `q` was pressed.
+   - Replaced `pageText` with direct `console.log` for in-loop interactive renders (`renderPolymarketMarketDetails`, `renderPolymarketOrderbookDetails`, `renderPolymarketPriceHistoryDetails`), preserving terminal selection prompt flow without external pager invocation.
+   - Hardened `fetchPolymarketEventsSnapshot`, `fetchPolymarketOrderbookSnapshot`, and `fetchPolymarketPriceHistorySnapshot` in `backend/cli/commands/trade/trade_polymarket.js` with fail-closed `try/catch` error handling and 15-second timeouts to handle API network anomalies gracefully.
+   - Registered native C++ `correlation` command entry under `commands.research` category in `backend/cli/tui/manifest.js` (in addition to `backend`), enabling quantitative researchers to run Pearson correlation matrix calculations directly from the Research TUI menu.
+   - Standardized `prediction_market` family filter across TUI command selectors (`scorecard`, `watch`, `ingest`).
+   - Verified 100% green test execution: `npm run test:structure` (28/28 subtests pass), `ctest` (33/33 pass), `check_hygiene.js` (0 findings), and `mass-bt` execution (96 strategy-TF pairs evaluated in 2.63s).
+
+## 2026-08-18 Session 135 Closeout — User Experience, Native C++ Engine Mapping & Family Flag Audit
+
+**Immediate next action:** Begin UX & Engine Mapping Refactor Pass:
+1. **Engine to TUI/CLI Mapping**: Map heavy computation workloads (backtesting, mass matrix sweep, signal research, correlation matrices) directly to the native C/C++ core engine (`backend/core`), ensuring high-throughput execution with clean rendering in the Ink/TUI interface (`sovereign_dashboard.mjs` and `manifest.js`).
+2. **Family Flag & Feature Classification Audit**: Re-verify domain ownership for cross-cutting features (e.g., determine canonical domain home for Correlation Analysis — whether it belongs under `backend` or `research`) and enforce strict consistency across family flags (`equities`, `crypto`, `indices`, `commodities`, `fx`, `single_asset`, `prediction`).
+
+**Standing deferred:**
+- Replace `.github/CODEOWNERS` and `MAINTAINERS.md` placeholder handles with real GitHub usernames.
+- Monitor long-running CI jobs and paper trading ledger updates across trading windows.
+
+1. **Session Closeout & Verification Complete**:
+   - Executed deep blast-through runtime audit across local and `hpdesk` Docker clusters. Local test suites (28/28 structure contract, 33/33 C++ ctests, 0 hygiene findings) and local Docker services (`bot-alpaca-paper` active scanner, $100k equity, 9,550 bars loaded) are 100% green.
+   - Updated `skills/bayesian-troubleshooter/SKILL.md` and `.agents/skills/bayesian-troubleshooter/SKILL.md` with documentation-first web search guidelines for external API/provider contract anomalies.
+   - Created `config/strategies/polymarket_dca_test.yaml` (micro-notional DCA test strategy for Polymarket prediction tokens) and registered it in `config/trading/strategies.yaml`.
+   - Committed changes in commit `0f86c096` (`feat(strategies,skills): register polymarket_dca_test strategy and add web doc search to bayesian-troubleshooter`), pushed to `origin/main`, reset `hpdesk` `main` branch to `0f86c096`, and executed guarded one-way `rsync` sync.
+   - Verified SHA-256 hash match between local workstation and `hpdesk` across all synced files, and verified 100% green remote structure tests (28/28 pass) and remote hygiene audit (0 findings).
+
 ## 2026-08-18 Session 134 Closeout — Git Commit, Push & Guarded hpdesk Sync
 
 **Immediate next action:** Set up continuous runtime monitoring loop for the paper bot scanner and paper trading ledger verification (unblocked: all 8 Docker containers Up on hpdesk, `polymarket-research` hardened, paper_dca_test live).
