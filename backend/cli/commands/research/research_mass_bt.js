@@ -105,7 +105,9 @@ async function commandMassBt(args) {
   const matrix = [];
   let totalEvaluated = 0;
 
-  if (bridge.backendAvailable() && !hasFlag(args, '--sample')) {
+  const engineInfo = bridge.resolveEngineExecution('mass-bt', { silent: hasFlag(args, '--json') });
+
+  if (engineInfo.useNative && !hasFlag(args, '--sample')) {
     let cppRes;
     const metaList = files.map(inspectStrategyFile).filter(m => m && m.ok);
     const specsPayload = metaList.map(m => ({
@@ -272,7 +274,7 @@ async function commandMassBt(args) {
   const runtimeMs = Date.now() - startedAt;
   const payload = {
     type: 'mass_bt_matrix',
-    engine: 'sovereign_cpp_core',
+    engine: engineInfo.useNative ? 'sovereign_cpp_core' : 'js_fallback',
     position_size_pct: positionSizePct,
     timeframes,
     total_evaluated: totalEvaluated,

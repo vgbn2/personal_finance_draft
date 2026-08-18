@@ -110,6 +110,12 @@ const M = [
           '--dry-run': { t:'yn', lbl:'Preview only? (no deletion)', def:true, warn:true },
         },
       },
+      { id: 'kill-switch', label: 'kill-switch', desc: 'Safety kill switch (engage, disengage, status)',
+        flags: {
+          '--action': { t:'sel', opts:['status','engage','disengage'], lbl:'Action', def:'status' },
+          '--reason': { t:'txt', lbl:'Reason', def:'manual_tui_trigger' },
+        },
+      },
     ],
   },
   {
@@ -180,6 +186,14 @@ const M = [
         },
       },
       { id: 'backend universe', label: 'universe', desc: 'Cached symbol inventory (all families)', flags: {} },
+      { id: 'risk', label: 'risk check', desc: 'Pre-trade risk limit check (C++ core)',
+        flags: {
+          '--notional':     { t:'txt', lbl:'Order Notional ($)', def:'100' },
+          '--equity':       { t:'txt', lbl:'Account Equity ($)', def:'10000' },
+          '--drawdown':     { t:'txt', lbl:'Current Drawdown (0.02 = 2%)', def:'0.02' },
+          '--max-drawdown': { t:'txt', lbl:'Max Allowed Drawdown (0.15 = 15%)', def:'0.15' },
+        },
+      },
       // Appended after 'backend universe' deliberately, not next to 'backend
       // visualize' above -- sovereign_dashboard.test.js hardcodes initialCmdI:4
       // for 'backend universe' (its real, fast, deterministically-long output
@@ -208,6 +222,16 @@ const M = [
       { id: 'models', label: 'models', desc: 'Model comparison & quality gate',
         flags: {
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
+        },
+      },
+      { id: 'ml-predict', label: 'ml-predict', desc: 'ML ONNX Model Batch Inference (C++ core)',
+        flags: {
+          '--input': { t:'txt', lbl:'Feature frame CSV path (blank = default)', def:'' },
+        },
+      },
+      { id: 'ml-compare', label: 'ml-compare', desc: 'ML Model Parity & Accuracy Compare',
+        flags: {
+          '--input': { t:'txt', lbl:'Feature frame CSV path (blank = default)', def:'' },
         },
       },
       { id: 'bt', label: 'bt', desc: 'Backtest trust gate, prop-firm fit',
