@@ -1,5 +1,5 @@
 ---
-id: atlas.protocol.broker.alpaca_paper_auth
+id: atlas.protocol.broker.alpaca-paper-auth
 kind: protocol
 title: Alpaca Paper API Authentication — Diagnostic Protocol & Known Failure Modes
 status: current
