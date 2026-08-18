@@ -21,6 +21,8 @@ services:
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
+      - path: '../../.env'
+        required: false
       - path: ${SOVEREIGN_WEB_ENV_FILE:-../../.env.services/web.env}
         required: true
     environment:
@@ -58,6 +60,8 @@ services:
       web:
         condition: service_healthy
     env_file:
+      - path: '../../.env'
+        required: false
       - path: ${SOVEREIGN_BOT_ENV_FILE:-../../.env.services/bot.env}
         required: true
     environment: *central-runtime
@@ -78,13 +82,14 @@ services:
         node backend/cli/sovereign_cli.js run bot paper --strategy low_prob_dip
 
   bot-alpaca-paper:
-    profiles: [paper-alpaca]
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
       web:
         condition: service_healthy
     env_file:
+      - path: '../../.env'
+        required: false
       - path: ${SOVEREIGN_BOT_ALPACA_PAPER_ENV_FILE:-../../.env.services/bot-alpaca-paper.env}
         required: true
     environment: *central-runtime
@@ -117,6 +122,8 @@ services:
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
+      - path: '../../.env'
+        required: false
       - path: ${SOVEREIGN_BACKFILL_ENV_FILE:-../../.env.services/backfill.env}
         required: true
     environment:
@@ -165,6 +172,8 @@ services:
       backfill:
         condition: service_started
     env_file:
+      - path: '../../.env'
+        required: false
       - path: ${SOVEREIGN_PORTFOLIO_MONITOR_ENV_FILE:-../../.env.services/portfolio-monitor.env}
         required: true
     environment: *central-runtime
@@ -191,6 +200,8 @@ services:
       backfill:
         condition: service_started
     env_file:
+      - path: '../../.env'
+        required: false
       - path: ${SOVEREIGN_HOST_HEALTH_ENV_FILE:-../../.env.services/host-health.env}
         required: true
     environment: *central-runtime
@@ -215,6 +226,8 @@ services:
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
+      - path: '../../.env'
+        required: false
       - path: ${SOVEREIGN_HOST_BACKUP_ENV_FILE:-../../.env.services/host-backup.env}
         required: true
     environment: *central-runtime
@@ -244,6 +257,8 @@ services:
         SOVEREIGN_SOURCE_TREE: ${SOVEREIGN_SOURCE_TREE:-unverified}
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
+      - path: '../../.env'
+        required: false
       - path: ${SOVEREIGN_POLYMARKET_RESEARCH_ENV_FILE:-../../.env.services/polymarket-research.env}
         required: true
     environment: *central-runtime

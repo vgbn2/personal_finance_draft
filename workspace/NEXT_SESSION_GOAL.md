@@ -1,5 +1,26 @@
 # Next Session Goal
 
+## 2026-08-18 Session 133 Closeout — Alpaca Paper Auth Fix & RAG Record
+
+**Immediate next action:** Set up continuous runtime monitoring loop for the paper bot scanner and paper trading ledger verification (carried from session 132; now unblocked — auth is confirmed working, `paper_dca_test` is live in the loop).
+
+**Standing deferred:**
+- Replace `.github/CODEOWNERS` and `MAINTAINERS.md` placeholder handles with real GitHub usernames.
+- Restore exact hpdesk Git provenance before any Paper service cutover; reconcile two histories.
+
+
+
+1. **Session Closeout & Verification Complete**:
+   - Created micro-notional `paper_dca_test.yaml` strategy manifest with `0.20` entry threshold and $5 USD max per-trade notional cap.
+   - Executed deep 28-year / 3,000-day native C++ core backtest (`2,310 trades`, `55.76% win rate`, `+21.53% annualized return`, `Sharpe 1.28`, `Sortino 1.90`, `0.00% Monte Carlo loss probability`).
+   - Hardened multi-fault-domain Docker Compose environment resolution by chaining optional root `../../.env` fallback across all 8 services in `infra/docker/docker-compose.yml`.
+   - Enabled `bot-alpaca-paper` service to run by default alongside `web` container on `docker compose up -d`.
+   - De-duplicated `metaList` parsing in `research_mass_bt.js` and tightened C++ `.meta.json` sidecar memory ceiling to 64KB in `binary_ts_reader.cpp`.
+   - Verified 100% clean test execution across structure contracts (`npm run test:structure` 28/28 pass), CTest executables (33/33 pass), hygiene audit (`check_hygiene.js` 0 findings), and Docker Compose config validation.
+
+Immediate next action:
+- Set up a continuous runtime monitoring loop for the paper bot scanner and paper trading ledger verification in the next session.
+
 ## 2026-08-17 Session Closeout — Dynamic Strategy Bridge, Anti-Hardcoding Skill & HDD Offloading
 
 1. **Session Closeout & Verification Complete**:

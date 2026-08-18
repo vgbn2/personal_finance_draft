@@ -129,7 +129,6 @@ async function commandMassBt(args) {
 
     if (cppRes && cppRes.ok && Array.isArray(cppRes.results)) {
       const byStrategy = new Map();
-      const metaList = files.map(inspectStrategyFile);
 
       for (const r of cppRes.results) {
         if (!byStrategy.has(r.strategy)) {
@@ -163,7 +162,9 @@ async function commandMassBt(args) {
       }
 
       for (const sObj of byStrategy.values()) {
-        if (!sObj.best_tf && timeframes.length > 0) {
+        if (sObj.best_return === -Infinity) {
+          sObj.best_tf = 'N/A';
+        } else if (!sObj.best_tf && timeframes.length > 0) {
           sObj.best_tf = timeframes[timeframes.length - 1];
         }
         matrix.push(sObj);
@@ -258,7 +259,9 @@ async function commandMassBt(args) {
         }
       }
 
-      if (!strategyResult.best_tf && timeframes.length > 0) {
+      if (strategyResult.best_return === -Infinity) {
+        strategyResult.best_tf = 'N/A';
+      } else if (!strategyResult.best_tf && timeframes.length > 0) {
         strategyResult.best_tf = timeframes[timeframes.length - 1];
       }
 

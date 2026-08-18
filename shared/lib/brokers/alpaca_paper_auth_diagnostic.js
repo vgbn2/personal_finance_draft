@@ -95,9 +95,9 @@ async function runAlpacaPaperAuthDiagnostic(options = {}) {
     }
   });
   const sdkAccount = options.sdkAccount || (async () => {
-    const Alpaca = require('@alpacahq/alpaca-trade-api');
-    const client = new Alpaca({ keyId: settings.keyId, secretKey: settings.secretKey, paper: true });
-    await client.getAccount();
+    const { Alpaca } = require('@alpacahq/alpaca-trade-api');
+    const client = new Alpaca({ keyId: settings.keyId, secret: settings.secretKey, paper: true });
+    await client.trading.account.getAccount();
   });
 
   const paths = await Promise.all([

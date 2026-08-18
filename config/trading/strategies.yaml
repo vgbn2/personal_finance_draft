@@ -51,3 +51,4 @@ registry:
     - "config/strategies/trend_following.yaml"
     - "config/strategies/vietnam_equity_growth.yaml"
     - "config/strategies/volume_profile.yaml"
+    - "config/strategies/paper_dca_test.yaml"

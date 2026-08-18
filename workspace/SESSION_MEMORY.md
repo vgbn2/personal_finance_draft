@@ -1,3 +1,16 @@
+### Session Memory - 2026-08-18 Paper DCA Strategy, C++ Deep Backtesting & Multi-Fault-Domain Alignment
+
+```json
+{
+  "batch": ["PAPER-DCA-STRATEGY-1", "CPP-DEEP-BACKTEST-3000D-1", "MULTI-FAULT-DOMAIN-ENV-1"],
+  "lifecycle": "closed",
+  "scope": "Creation of paper_dca_test.yaml strategy, micro-notional paper sizing limits ($5 max per trade), 28-year C++ core deep backtest execution (2,310 trades, 55.76% win rate, Sharpe 1.28, Sortino 1.90), optional root .env fallback chaining across all Docker services, and mass-bt cleanup",
+  "changes": "created config/strategies/paper_dca_test.yaml; updated .env.services/bot-alpaca-paper.env with $5 max notional; updated infra/docker/docker-compose.yml chaining optional ../../.env fallback to all 8 services and enabling bot-alpaca-paper by default; updated research_mass_bt.js and binary_ts_reader.cpp",
+  "verification": "ctest 33/33 pass; test:structure 28/28 pass; hygiene 0 findings; docker compose config -q clean; 28-year C++ backtest verified",
+  "boundaries": "no live trading, zero broker credential exposure; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-08-17 Dynamic Strategy Bridge & Anti-Hardcoding Rule Refinement
 
 ```json
@@ -2979,5 +2992,23 @@ truth findings in `workspace/DEV_REVIEW.md`.
   "provenance": "hpdesk has expected source overlay differences against its retained branch; this is source-snapshot evidence, not exact Git ancestry, exact image/deployment, provider, Paper, or live qualification",
   "host_observation": "No service was controlled. docker-polymarket-research-1 was already restarting at baseline and remained restarting after the copy.",
   "prohibition": "Do not run updater, Git reset/clean, image build, restart, provider diagnostic, data job, or bot activation from this mixed hpdesk tree without separately approved provenance/host-state reconciliation."
+}
+```
+
+### Session Memory - 2026-08-18 Alpaca Paper Auth 401 — Bayesian Diagnosis & Fix (Session 133)
+```json
+{
+  "incident": "alpaca-paper-auth-401-session-133",
+  "hypotheses_tested": 8,
+  "root_cause": "ALPACA_PAPER_API_KEY in .env (PKWGTZBL***) was revoked at Alpaca provider; .env.central key (PKIWLE***) was valid",
+  "env_bugs_fixed": ["ALPACA_PAPER_URL -> ALPACA_PAPER_BASE_URL (drop /v2)", "ALPACA_LIVE_URL -> ALPACA_LIVE_BASE_URL", "ALPACA_LIVE_SCERET_KEY -> ALPACA_LIVE_SECRET_KEY"],
+  "sdk_bugs_fixed": ["require -> destructured {Alpaca}", "secretKey param -> secret", "client.getAccount() -> client.trading.account.getAccount()"],
+  "strategy_fixes": ["paper_dca_test.yaml registered in strategies.yaml", "family: single_asset", "timeframe: 5m (was 1d, filtered by allowed-timeframes)"],
+  "rag_record": "storage/logs/rag/test_failures.jsonl -> incident_id: alpaca-paper-auth-401-session-133",
+  "atlas_record": "docs/atlas/protocols/alpaca_paper_auth.md — full runbook with Bayesian steps and SDK version contract",
+  "final_outcome": "ok:true; raw_http:200; sdk:200; container scanning paper_dca_test; $100000 equity confirmed",
+  "verification": "curl 200; diagnostic ok:true; test:structure 28/28; image rebuilt; container logs clean",
+  "caution": "Two .env files hold different paper account keys — never assume they match; always raw-curl both when diagnosing 401. config/ not bind-mounted in container — rebuild image after any config change.",
+  "boundary": "source/test/provider-read evidence only; no live trading, order execution, deployment, or host action"
 }
 ```

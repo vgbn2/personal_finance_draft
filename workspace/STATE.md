@@ -1,5 +1,15 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-18 Paper DCA Strategy, C++ Deep Backtest & Multi-Fault-Domain Alignment Closeout
+
+- Implemented micro-notional Paper DCA test strategy (`paper_dca_test.yaml`) targeting AAPL and SPY with `0.20` entry signal threshold.
+- Configured micro-order sizing in `.env.services/bot-alpaca-paper.env` (`ALPACA_PAPER_MAX_NOTIONAL=5`, `ALPACA_PAPER_DAILY_MAX_NOTIONAL=50`).
+- Executed 28-year / 3,000-day native C++ strategy backtest across 44,582 records (`sovereign_wealth bt --strategy paper_dca_test.yaml --days 3000`), achieving **2,310 trades**, **55.76% win rate**, **+21.53% annualized return**, **+0.32% expected value / trade**, **Sharpe 1.28**, **Sortino 1.90**, and **0.00% Monte Carlo loss probability**.
+- Hardened multi-fault-domain Docker Compose environment resolution: updated all 8 services in `infra/docker/docker-compose.yml` to chain optional root `../../.env` fallback before service-specific env files.
+- Enabled `bot-alpaca-paper` service to run by default alongside `web` container on `docker compose up -d`.
+- Verified 100% clean test execution: `ctest` (33/33 pass), `npm run test:structure` (28/28 pass), `check_hygiene.js` (0 findings), Docker Compose syntax validation clean.
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-17 Dynamic Strategy Bridge & Anti-Hardcoding Skill Closeout
 
 - Dynamic strategy specs JSON bridge implemented between Node CLI (`research_mass_bt.js`) and C++ engine (`main.cpp`). Removed static hardcoded strategy vector from C++ `printMassBt`.

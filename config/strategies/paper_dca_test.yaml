@@ -1,0 +1,45 @@
+engine: auto
+name: paper_dca_test
+kind: momentum
+family: single_asset
+lane: single_asset
+role: strategy
+timeframe: 5m
+status: draft
+enabled: true
+model: cnn_window_v0
+sections:
+  hypothesis: "Micro-notional Dollar Cost Averaging paper test strategy."
+  universe:
+    - AAPL
+    - SPY
+  signals:
+    entry: "Signal > 0.20"
+    exit: "Hold 1 day"
+  data:
+    required_sources:
+      - price_volume
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - rsi
+  indicators:
+    return_fast: true
+    return_slow: true
+    rsi: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    rsi: 14
+  risk:
+    signal_threshold: 0.20
+    max_holding_days: 1
+    risk_weight: 0.05
+    cost_bps: 5
+    fail_closed: true
+  promotion:
+    require_backtest: false
+    require_walk_forward: false
+  notes: []

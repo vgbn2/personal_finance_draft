@@ -1,5 +1,18 @@
 # Prompt Log - 2026-08-09
 
+## Session Closeout — Alpaca Paper Auth Fix, Strategy Registration & RAG Record - 2026-08-18 (Session 133)
+Received user prompts: "check on the api key and paper bot runtime on alpaca portfolio", "register the strategy, plan to run it to test the paper api, ensure it reads the correct env file", "i have updated the env, and whether this change breaks", "want you to check on the api key... bayesian troubleshooting", "all", "recorded the error, how it was fix into a rag component of this repo, then end session".
+- Registered `paper_dca_test.yaml`, fixed env var names, swapped dead key for working `.env.central` pair, fixed SDK three-bug chain in diagnostic, rebuilt image, wrote RAG JSONL incident + Atlas protocol record.
+
+
+Received user prompts: "howw is it running now, i want to create a test paper dca where every interval it buys a erry small size", "entry threshold lower, to 20", "lets create a backtest for it, i want to see how it performed in the past", "run the backtest as long as possible, for 2000 days or at maximum, and irun it via c++ engine", "now end sesion, next session there will be a loop that monitors the runtime,".
+- Formulated and ExitPlanMode-approved implementation plan for micro-notional paper DCA strategy.
+- Created `config/strategies/paper_dca_test.yaml` with entry signal threshold `0.20` targeting `AAPL` and `SPY`.
+- Configured micro-order sizing in `.env.services/bot-alpaca-paper.env` (`ALPACA_PAPER_MAX_NOTIONAL=5`, `ALPACA_PAPER_DAILY_MAX_NOTIONAL=50`).
+- Executed native C++ core deep backtest (`sovereign_wealth bt --strategy paper_dca_test.yaml --days 3000`) over 28-year history (1998 to 2026 / 44,582 records).
+- Verified performance: **2,310 trades**, **55.76% win rate**, **+21.53% annualized return**, **+0.32% expected value / trade**, **Sharpe 1.28**, **Sortino 1.90**, and **0.00% Monte Carlo loss probability**.
+- Executed session closeout sweep across `workspace/handoff/2026/08/2026-08-16.md`, `workspace/SESSION_MEMORY.md`, `workspace/STATE.md`, `workspace/NEXT_SESSION_GOAL.md`, and `workspace/PROMPT_LOG.md`.
+
 ## Session Implementation — Dynamic Strategy Bridge & Anti-Hardcoding Rule Refinement - 2026-08-17
 Received user prompt: "planb further, using refactor readbility to search for hardcored, fragile sections,add that to the skill".
 - Formulated and ExitPlanMode-approved implementation plan in `/home/vgbn1/.claude/plans/deeper-blast-of-diagnosis-compiled-charm.md`.
