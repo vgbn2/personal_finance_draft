@@ -52,3 +52,4 @@ registry:
     - "config/strategies/vietnam_equity_growth.yaml"
     - "config/strategies/volume_profile.yaml"
     - "config/strategies/paper_dca_test.yaml"
+    - "config/strategies/polymarket_dca_test.yaml"
