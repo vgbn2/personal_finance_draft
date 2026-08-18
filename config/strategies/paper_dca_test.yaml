@@ -1,7 +1,7 @@
 engine: auto
 name: paper_dca_test
 kind: momentum
-family: single_asset
+family: equities
 lane: single_asset
 role: strategy
 timeframe: 5m

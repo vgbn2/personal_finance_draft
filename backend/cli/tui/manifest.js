@@ -199,6 +199,10 @@ const COMMAND_MANIFEST = {
       { id: 'cache-clean', label: 'Cache Clean', flags: {
         '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
       }},
+      { id: 'kill-switch', label: 'Safety Kill Switch', flags: {
+        '--action': { type: 'select', options: ['status', 'engage', 'disengage'], label: 'Action', default: 'status' },
+        '--reason': { type: 'text', default: 'manual_tui_trigger', label: 'Reason' }
+      }},
     ],
     data: [
       { id: 'integrity',   prefix: ['backend'], label: 'Integrity', args: [], flags: {
@@ -227,6 +231,20 @@ const COMMAND_MANIFEST = {
         '--symbols':    { type: 'text', default: '', label: 'Symbol filter, comma-separated (blank = all)' },
         '--timeframes': { type: 'text', default: '15m,30m,1h,4h', label: 'Target timeframes to derive' }
       }},
+      { id: 'crypto-deep-backfill', label: 'Crypto Deep Backfill (Binance 1m)', loading: true, flags: {
+        '--days':   { type: 'text', default: '1825', label: 'History depth (days)' },
+        '--symbol': { type: 'text', default: '', label: 'Single symbol override (optional)' }
+      }},
+      { id: 'equity-deep-backfill', label: 'Equity Deep Backfill (Alpaca SIP 5m)', loading: true, flags: {
+        '--days':   { type: 'text', default: '1825', label: 'History depth (days)' },
+        '--symbol': { type: 'text', default: '', label: 'Single symbol override (optional)' }
+      }},
+      { id: 'five-min-accumulate', label: 'Five Min Accumulate (Yahoo 5m)', loading: true, flags: {
+        '--family': { type: 'select', options: ['indices', 'commodities', 'fx'], label: 'Family', default: 'indices' }
+      }},
+      { id: 'intraday-accumulate', label: 'Intraday Accumulate (Yahoo 15m/30m/1h/4h)', loading: true, flags: {
+        '--family': { type: 'select', options: ['indices', 'commodities', 'fx'], label: 'Family', default: 'indices' }
+      }},
       { id: 'clear-api-cache', label: 'Clear API Cache', flags: {
         '--dry-run':   { type: 'confirm', label: 'Preview only (no deletion)?', default: true },
         '--ts':        { type: 'confirm', label: 'Also delete ts/ candle bins?', default: false },
@@ -237,6 +255,12 @@ const COMMAND_MANIFEST = {
     backend: [
       { id: 'status', prefix: ['backend'], label: 'Backend Status', args: [] },
       { id: 'stats', prefix: ['backend'], label: 'Backend Stats', args: [] },
+      { id: 'risk', prefix: ['backend'], label: 'Pre-Trade Risk Check', flags: {
+        '--notional': { type: 'text', default: '100', label: 'Order Notional ($)' },
+        '--equity': { type: 'text', default: '10000', label: 'Account Equity ($)' },
+        '--drawdown': { type: 'text', default: '0.02', label: 'Current Drawdown (0.02 = 2%)' },
+        '--max-drawdown': { type: 'text', default: '0.15', label: 'Max Allowed Drawdown (0.15 = 15%)' }
+      }},
       { id: 'correlation', prefix: ['backend'], label: 'Pearson Correlation', loading: true, flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--max-bars': { type: 'text', default: '252', label: 'Lookback Period (Bars)' },
@@ -257,6 +281,12 @@ const COMMAND_MANIFEST = {
       }},
       { id: 'models', label: 'Models Compare (quality gate)', flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
+      }},
+      { id: 'ml-predict', label: 'ML ONNX Model Inference (C++ engine)', loading: true, flags: {
+        '--input': { type: 'text', default: '', label: 'Feature frame CSV path (blank = default)' }
+      }},
+      { id: 'ml-compare', label: 'ML Model Accuracy Comparison', loading: true, flags: {
+        '--input': { type: 'text', default: '', label: 'Feature frame CSV path (blank = default)' }
       }},
       { id: 'bt', label: 'Backtest (Prop-firm fit)', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },

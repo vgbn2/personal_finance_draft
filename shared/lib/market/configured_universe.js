@@ -13,6 +13,16 @@ const PRICE_BEARING_FAMILIES = Object.freeze([
   'commodities',
   'fx',
 ]);
+
+const CANONICAL_MARKET_FAMILIES = Object.freeze([
+  'crypto',
+  'equities',
+  'indices',
+  'commodities',
+  'fx',
+  'macro',
+  'prediction_market',
+]);
 const FAMILY_BASE_TIMEFRAME = Object.freeze({
   crypto: '1m',
   equities: '1m',
@@ -288,6 +298,7 @@ function buildWriterJobUniverse(config, families = PRICE_BEARING_FAMILIES) {
 
 module.exports = {
   PRICE_BEARING_FAMILIES,
+  CANONICAL_MARKET_FAMILIES,
   FAMILY_BASE_TIMEFRAME,
   FAMILY_PROVIDER,
   resolveConfiguredMarketUniverse,
