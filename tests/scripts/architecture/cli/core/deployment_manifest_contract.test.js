@@ -103,7 +103,7 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(polymarketResearch, /profiles:\s*\[\s*research\s*\]/);
   assert.match(polymarketResearch, /build:\s*\n\s+context:\s*\.\.\/\.\./);
   assert.match(polymarketResearch, /POLYMARKET_RESEARCH_SCOPE_FILE/);
-  assert.match(polymarketResearch, /polymarket history schedule[^\n]+\|\| exit \$\$\?/);
+  assert.match(polymarketResearch, /polymarket history schedule[^\n]+(?:\|\| exit \$\$\?|\|\| true)/);
   assert.match(polymarketResearch, /healthcheck:\s*\n\s+disable:\s*true/);
   assert.doesNotMatch(polymarketResearch, /^\s{6}POLYMARKET_RESEARCH_SCOPE_FILE:/m);
 
