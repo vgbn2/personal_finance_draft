@@ -1,3 +1,16 @@
+### Session Memory - 2026-08-18 Session 138 — Native C++ Engine Mapping, TUI/CLI UX Parity, Family Scoping & hpdesk Sync
+
+```json
+{
+  "batch": ["NATIVE-CPP-ENGINE-MAPPING-1", "CLI-WRAPPERS-KILLSWITCH-RISK-ML-1", "TUI-CLI-UX-PARITY-1", "FAMILY-SCOPING-STRATEGY-TAXONOMY-1", "HPDESK-REMOTE-SYNC-3"],
+  "lifecycle": "closed",
+  "scope": "Added native C++ CLI command wrappers (kill-switch, risk check, ml-predict/ml-compare), implemented resolveEngineExecution with SOVEREIGN_DISABLE_CPP diagnostic telemetry, achieved 100% TUI/CLI manifest and dashboard parity, exported CANONICAL_MARKET_FAMILIES and expanded VALID_FAMILIES in data_accumulate.js, corrected paper_dca_test.yaml strategy taxonomy metadata (family: equities), and executed guarded one-way rsync sync to hpdesk",
+  "changes": "created backend/cli/commands/tools/kill_switch.js, risk.js, backend/cli/commands/research/ml_predict.js; updated backend_bridge.js, sovereign_cli.js, sovereign_dashboard.mjs, manifest.js, data_accumulate.js, configured_universe.js, paper_dca_test.yaml, strategy_presenter.js, research_mass_bt.js",
+  "verification": "npm run test:structure (28/28 pass 100% green); check_hygiene.js (0 findings); mass_bt_contract.test.js (3/3 pass); ctest (33/33 pass); hpdesk remote structure contracts (28/28 pass) and remote hygiene (0 findings)",
+  "boundaries": "no live trading, zero broker credential writing; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-08-18 Session 137 — Polymarket Orderbook Depth Preflight, Auth Email Validation, TUI Parity & Skill Suite Enhancement
 
 ```json

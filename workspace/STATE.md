@@ -1,5 +1,16 @@
 # Project State - Sovereign Trading Platform
 
+## 2026-08-18 Session 138 Native C++ Engine Mapping, TUI/CLI UX Parity, Family Scoping & hpdesk Sync Closeout
+
+- Implemented native C++ CLI command handlers in `backend/cli/commands/`: `kill-switch` (`kill_switch.js`), `risk check` (`risk.js`), and `ml-predict`/`ml-compare` (`ml_predict.js`), wrapping previously unexposed C++ engine capabilities in `backend/core/src/main.cpp`.
+- Created `resolveEngineExecution(commandName, options)` helper in `shared/lib/runtime/backend_bridge.js` with support for `SOVEREIGN_DISABLE_CPP` environment overrides and `[ENGINE FALLBACK]` diagnostic warning logs.
+- Achieved 100% command and flag option parity across `sovereign_cli.js`, `backend/cli/tui/manifest.js`, and `sovereign_dashboard.mjs` (Ink React TUI). Added missing native C++ tools and data accumulation commands to dashboard menus.
+- Exported `CANONICAL_MARKET_FAMILIES` in `shared/lib/market/configured_universe.js` and expanded `VALID_FAMILIES` in `backend/cli/commands/data/data_accumulate.js` to allow `crypto`, `equities`, `macro`, and `prediction_market`.
+- Corrected strategy metadata taxonomy drift in `config/strategies/paper_dca_test.yaml` (`family: equities`, `lane: single_asset`) and enforced taxonomy validation in `inspectStrategyFile()` (`strategy_presenter.js`).
+- Committed changes in commit `191a914b` (`feat(cli,engine): add native C++ command wrappers, TUI parity, and canonical family definitions`), pushed to `origin/main`, reset `hpdesk` `main` branch to `191a914b`, and executed guarded one-way `rsync` sync.
+- Verified 100% clean test execution locally and remotely on `hpdesk`: `npm run test:structure` (28/28 subtests pass), `node scripts/dev/check_hygiene.js` (0 findings), `mass_bt_contract.test.js` (3/3 pass), `ctest` (33/33 pass).
+- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
+
 ## 2026-08-18 Session 137 Polymarket Orderbook Depth Preflight, Auth Email Validation, TUI Parity & Skill Suite Enhancement Closeout
 
 - Re-ordered Polymarket orderbook snapshot retrieval and depth validation (`hasPolymarketOrderbookDepth`) in `backend/cli/commands/trade/trade_polymarket.js` to execute *before* requesting live authorization or Trade PIN entry (`authorizePolymarketLive`). Illiquid/zero-depth markets now fail fast without forcing unnecessary PIN prompts.
