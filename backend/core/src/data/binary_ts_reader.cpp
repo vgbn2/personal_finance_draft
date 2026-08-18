@@ -252,7 +252,7 @@ bool BinaryTsReader::readSidecarFamily(
         return false;
     }
     const auto bytes = std::filesystem::file_size(sidecar, ec);
-    if (ec || bytes == 0U || bytes > 1024U * 1024U) {
+    if (ec || bytes == 0U || bytes > 64U * 1024U) {
         out_error = "dataset_sidecar_invalid_size";
         return false;
     }
