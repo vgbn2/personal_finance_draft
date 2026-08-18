@@ -293,13 +293,19 @@ const COMMAND_MANIFEST = {
         '--fixture': { type: 'select', options: ['', 'aapl-recorded', 'all-recorded'], label: 'Schema 3 fixture', default: '' },
         '--symbol': { type: 'text', default: '', label: 'Schema 3 workbench symbol' },
         '--state': { type: 'select', options: ['', 'eligible', 'degraded', 'excluded'], label: 'Schema 3 decision state', default: '' },
-        '--family': { type: 'select', options: ['', 'crypto', 'equities', 'fx', 'indices', 'commodities'], label: 'Family filter (blank = all)' },
+        '--family': { type: 'select', options: ['', 'crypto', 'equities', 'fx', 'indices', 'commodities', 'prediction_market'], label: 'Family filter (blank = all)' },
         '--tf': { type: 'text', default: '1h,4h,1d', label: 'Timeframes (comma-sep)' },
         '--direction': { type: 'select', options: ['', 'long', 'short', 'neutral'], label: 'Direction filter (blank = all)' },
         '--min-conf': { type: 'text', default: '0.3', label: 'Min confidence (0-1)' },
         '--top': { type: 'text', default: '50', label: 'Max rows' },
         '--allow-degraded': { type: 'confirm', label: 'Allow partial coverage?', default: false },
         '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: true }
+      }},
+      { id: 'correlation', prefix: ['backend'], label: 'Pearson Correlation (Native C++)', loading: true, flags: {
+        '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
+        '--max-bars': { type: 'text', default: '252', label: 'Lookback Period (Bars)' },
+        '--method': { type: 'select', options: ['auto', 'pearson-returns', 'fx-returns', 'pearson-levels'], label: 'Correlation Method', default: 'auto' },
+        '--drop-non-overlap': { type: 'confirm', label: 'Drop non-overlapping symbols automatically?', default: false }
       }}
     ],
     settings: [

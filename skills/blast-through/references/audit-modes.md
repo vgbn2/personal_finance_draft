@@ -47,6 +47,14 @@
   missing verification.
 - Do not lead with a broad summary or section grades.
 
+## Security
+
+- Execute Security Audit Intake Protocol: prompt user for target authorization context, scope boundaries, live secret presence, and threat model priorities.
+- Verify zero unredacted API keys, JWT secrets, or private credentials in source files, logs, or test fixtures.
+- Audit authentication policy gates (`access_policy.js`), bearer token validation, and public API boundaries (`/api/public/*`).
+- Audit input sanitization and path traversal defenses in file readers/publishers (`input_validator.js`, `public_artifact_publisher.js`).
+- Verify Trade PIN enforcement (`authorizePolymarketLive`) and execution authority flags (`LIVE_TRADING=false`).
+
 ## Fault Attribution Matrix
 
 Apply this matrix to every confirmed finding in any audit mode and to every grade-limiting finding below A:

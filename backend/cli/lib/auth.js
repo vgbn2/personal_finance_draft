@@ -77,6 +77,14 @@ function verifyPin(candidate, expected) {
   return crypto.timingSafeEqual(hashA, hashB);
 }
 
+// ─── Email format validation ──────────────────────────────────────────────────
+
+function validateEmail(email) {
+  if (typeof email !== 'string') return false;
+  const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return EMAIL_REGEX.test(email.trim());
+}
+
 // ─── Password strength ────────────────────────────────────────────────────────
 
 const STRENGTH_LEVELS = [
@@ -415,6 +423,7 @@ module.exports = {
   loginWithCredentials,
   registerWithCredentials,
   getAuthenticatedUser,
+  validateEmail,
   evaluatePassword,
   renderStrengthBar,
   promptPassword,

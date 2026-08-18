@@ -14,38 +14,55 @@ When an output anomaly or system defect occurs, avoid brute-force trial and erro
 ```
 [System Anomaly / Output Failure / Unexpected Zero Result]
        │
-       ├── 0. Fault Domain Classification
+       ├── 0. Interactive Symptom Discovery & User Intake (Mandatory First Step)
+       │      ├── Interview user for exact symptoms, reproduction commands, and error codes
+       │      ├── Collect timing, environment context, and recent commit/config changes
+       │      └── Formulate initial hypothesis prior to probe execution
+       │
+       ├── 1. Fault Domain Classification
        │      ├── external_provider (API 401/429/400, remote schema mismatch, network outage)
        │      ├── environment_or_sandbox (OS perms, missing binary, node/compiler version)
        │      ├── operator_config_or_credentials (YAML overrides, missing env vars, flag conflicts)
        │      └── our_source (Logic defect, silent fallbacks, type drift, unhandled edge cases)
        │
-       ├── 1. Multi-Repo, Web-Doc & Cross-Boundary Preflight
+       ├── 2. Multi-Repo, Web-Doc & Cross-Boundary Preflight
        │      ├── Inspect root paths, submodules, client/server interfaces, shared schemas
        │      ├── Execute targeted web documentation searches for dense API/framework technical specs when encountering external provider or library errors
        │      └── Map dependencies before executing diagnostic probes
        │
-       ├── 2. Hypothesis-Driven "What-If" Trial & Error (With Mutation Shielding)
+       ├── 3. Hypothesis-Driven "What-If" Trial & Error (With Mutation Shielding)
        │      ├── Formulate explicit hypothesis: "If I run Option X, I expect Result Y"
        │      ├── Screen for hidden bugs: "Will this cause side-effects, cache corruption, or silent fallbacks?"
        │      └── Execute probe with mutation shielding (--dry-run, sample mode, or isolated $CLAUDE_JOB_DIR/tmp)
        │
-       ├── 3. Optimal Binary Probing (Maximum Entropy Reduction)
+       ├── 4. Optimal Binary Probing (Maximum Entropy Reduction)
        │      ├── Probe A: Sample/Fixture Mode vs Real Data (Isolates math/rendering from disk cache)
        │      ├── Probe B: Engine Bifurcation (JS vs C++/Python implementation drift)
        │      └── Probe C: Config Overrides vs CLI Flags (Discovers hidden precedence rules)
        │
-       ├── 4. A/B Differential Divergence Tracing
+       ├── 5. A/B Differential Divergence Tracing
        │      └── Compare intermediate outputs (Config -> Dataset -> Model -> Signal -> Output)
        │          between Known-Good (Reference) and Target (Anomaly) executions
        │
-       └── 5. Hierarchical Line-Level Drill Down
+       └── 6. Hierarchical Line-Level Drill Down
               ├── Level 1: Feature / Flag / Config Precedence
               ├── Level 2: Model / Predictor Output Distributions
               ├── Level 3: Module / File Interface Contracts
               ├── Level 4: Function / Control Flow Branching
               └── Level 5: Line & Causal Mechanism Attribution
 ```
+
+---
+
+## 0. Interactive Symptom Discovery & User Intake Protocol
+
+Before formulating hypotheses or executing diagnostic commands/probes, the agent MUST ask the user structured clarifying questions (via `AskUserQuestion` or interactive prompt) to establish complete symptom context:
+
+1. **Exact Symptom Description**: What specific error message, unexpected output, or zero-result behavior are you observing?
+2. **Reproduction Command**: What exact CLI command, API request, UI action, or function call triggered the anomaly?
+3. **Timing & Recency**: Did this issue start after a recent commit, environment update, dependency change, or configuration edit?
+4. **Environment Context**: Is this happening on the local workstation, a Docker container, or the remote host (`hpdesk`)?
+5. **Expected vs Actual Behavior**: What was the expected output, and how does the current output differ?
 
 ---
 

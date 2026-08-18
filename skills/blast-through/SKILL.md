@@ -16,9 +16,19 @@ fixes to `codex`, or broad approved fixes to `mass-implement`.
 - `data-integrity`: source-to-output lineage, freshness, schema, provenance, replay, and DCS.
 - `maintainability`: ownership clarity, readability, duplication, convention drift, and incident comprehension.
 - `review`: findings-first code review of changed or requested files.
+- `security`: interactive threat modeling, vulnerability auditing, secret scanning, API auth policy verification, and input sanitization review.
 - `full`: archive, connectivity, grades, data trust, and system completeness; use only when explicitly requested.
 
 State one audit mode and either Hard Reading Mode (first/stale pass) or Fast Reading Mode (current follow-up). Do not mix modes silently. Read [audit-modes.md](references/audit-modes.md) for the selected checklist.
+
+## Security Audit Intake Protocol (For `security` mode)
+
+When invoking `blast-through` in `security` mode, the agent MUST first ask the user structured diagnostic intake questions (via `AskUserQuestion` or interactive prompt) before running security probes or static code analysis:
+
+1. **Target Authorization & Context**: Is this security test for local development, CTF exercise, defensive audit, or pentesting engagement?
+2. **Scope Boundaries**: Which specific surfaces are in scope (API authentication, B2 public artifacts, Supabase RLS, trade execution PIN, path traversal, environment variables)?
+3. **Environment & Live Secrets**: Are live broker credentials or active remote hosts (e.g. `hpdesk`) involved, or is this restricted to offline mock/test fixtures?
+4. **Threat Model Priority**: Which vulnerability class should be prioritized (e.g., credential leakage, unauthorized trade execution, API route bypass, path traversal)?
 
 ## Core Workflow
 
