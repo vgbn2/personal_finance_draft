@@ -210,6 +210,18 @@
       "review_triggers": ["retrieval-entrypoint", "corpus-resolution", "index-storage"]
     },
     {
+      "path": "docs/atlas/protocols/alpaca_paper_auth.md",
+      "id": "atlas.protocol.broker.alpaca-paper-auth",
+      "type": "atlas",
+      "kind": "protocol",
+      "audience": ["operators", "contributors", "api-developers"],
+      "owner": "broker",
+      "status": "canonical",
+      "source_paths": ["shared/lib/brokers/alpaca_paper_auth_diagnostic.js", "shared/lib/brokers/alpaca_env.js"],
+      "test_paths": ["tests/scripts/lib/alpaca_paper_auth_diagnostic.test.js", "tests/scripts/integration/trading/alpaca_env_scope.test.js"],
+      "review_triggers": ["alpaca-sdk-major-version-bump", "env-var-name-change", "protocol-contract-change"]
+    },
+    {
       "path": "docs/operational/guides/QUICKSTART.md",
       "type": "how-to",
       "audience": ["operators", "new-contributors"],

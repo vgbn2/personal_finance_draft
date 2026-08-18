@@ -39,17 +39,17 @@ test('active domain-layout entrypoints exist', () => {
 
 test('generated and local-only paths are ignored', () => {
   const ignoredPaths = [
-    'node_modules',
-    'backend/api/node_modules',
-    'backend/gateway/node_modules',
-    'Frontend/dashboard/node_modules',
-    'Frontend/dashboard/dist',
-    'storage/data/cache',
-    'storage/data/ml',
-    'storage/data/paper_trading',
-    'storage/data/polymarket_history',
-    'storage/data/ts',
-    '__pycache__',
+    'node_modules/',
+    'backend/api/node_modules/',
+    'backend/gateway/node_modules/',
+    'Frontend/dashboard/node_modules/',
+    'Frontend/dashboard/dist/',
+    'storage/data/cache/',
+    'storage/data/ml/',
+    'storage/data/paper_trading/',
+    'storage/data/polymarket_history/',
+    'storage/data/ts/',
+    '__pycache__/',
     '.mcp.json',
   ];
 
