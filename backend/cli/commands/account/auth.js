@@ -50,6 +50,11 @@ async function commandLogin(args) {
     return 1;
   }
 
+  if (!auth.validateEmail(email)) {
+    console.error(`${paint(A.RED, '✖')} Invalid email format.`);
+    return 1;
+  }
+
   process.stdout.write(A.muted('  Authenticating...'));
   try {
     const session = await auth.loginWithCredentials(email, password);
@@ -93,6 +98,10 @@ async function commandRegister(args) {
   try {
     if (!email) email = await auth.promptLine('Email');
     if (!email) { console.error(paint(A.RED, 'Email is required.')); return 1; }
+    if (!auth.validateEmail(email)) {
+      console.error(`${paint(A.RED, '✖')} Invalid email format.`);
+      return 1;
+    }
 
     let attempts = 0;
     while (attempts < 3) {
