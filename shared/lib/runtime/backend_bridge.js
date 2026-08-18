@@ -73,7 +73,24 @@ function classifyMcpCliCapability(args = []) {
 }
 
 function backendAvailable() {
+  if (process.env.SOVEREIGN_DISABLE_CPP === '1' || process.env.SOVEREIGN_DISABLE_CPP === 'true') {
+    return false;
+  }
   return Boolean(findBackendBinary());
+}
+
+function resolveEngineExecution(commandName, options = {}) {
+  const isAvailable = backendAvailable();
+  if (!isAvailable) {
+    if (!options.silent) {
+      const reason = (process.env.SOVEREIGN_DISABLE_CPP === '1' || process.env.SOVEREIGN_DISABLE_CPP === 'true')
+        ? 'disabled via SOVEREIGN_DISABLE_CPP'
+        : 'binary missing';
+      console.warn(`[ENGINE FALLBACK] Native C++ core engine ${reason} for '${commandName}'. Falling back to JavaScript engine.`);
+    }
+    return { engine: 'js_fallback', useNative: false, binaryPath: null };
+  }
+  return { engine: 'native_cpp', useNative: true, binaryPath: findBackendBinary() };
 }
 
 function spawnResultHasFatalError(result) {
@@ -248,6 +265,7 @@ function runGatewayCommand(gatewayArgs, options = {}) {
 
 module.exports = {
   backendAvailable,
+  resolveEngineExecution,
   classifyGatewayEnvironmentSurface,
   classifyMcpCliCapability,
   spawnResultHasFatalError,
