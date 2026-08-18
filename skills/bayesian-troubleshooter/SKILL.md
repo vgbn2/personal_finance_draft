@@ -15,13 +15,14 @@ When an output anomaly or system defect occurs, avoid brute-force trial and erro
 [System Anomaly / Output Failure / Unexpected Zero Result]
        │
        ├── 0. Fault Domain Classification
-       │      ├── external_provider (API 401/429, remote schema mismatch, network outage)
+       │      ├── external_provider (API 401/429/400, remote schema mismatch, network outage)
        │      ├── environment_or_sandbox (OS perms, missing binary, node/compiler version)
        │      ├── operator_config_or_credentials (YAML overrides, missing env vars, flag conflicts)
        │      └── our_source (Logic defect, silent fallbacks, type drift, unhandled edge cases)
        │
-       ├── 1. Multi-Repo & Cross-Boundary Preflight
+       ├── 1. Multi-Repo, Web-Doc & Cross-Boundary Preflight
        │      ├── Inspect root paths, submodules, client/server interfaces, shared schemas
+       │      ├── Execute targeted web documentation searches for dense API/framework technical specs when encountering external provider or library errors
        │      └── Map dependencies before executing diagnostic probes
        │
        ├── 2. Hypothesis-Driven "What-If" Trial & Error (With Mutation Shielding)
@@ -48,7 +49,11 @@ When an output anomaly or system defect occurs, avoid brute-force trial and erro
 
 ---
 
-## 1. Fault Domain Classification Matrix
+## 1. Fault Domain Classification Matrix & Web Documentation Protocol
+
+When external provider or framework anomalies occur (e.g., HTTP 400 Bad Request, 401 Unauthorized, rate limits, schema drift):
+- **Documentation-First Web Search**: Execute targeted search queries focusing on official technical documentation first (e.g., `"polymarket clob api orderbook"`, `"alpaca paper v2 api authentication"`). Official documentation provides the highest density of authoritative contract specifications, parameter constraints, and required headers.
+- **Key Terms**: Extract specific endpoint URLs, status codes, and error payloads for exact query string formulation.
 
 Trace every candidate defect to exactly one fault domain before attempting line-level attribution:
 
