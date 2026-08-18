@@ -277,6 +277,6 @@ services:
         fi
         INTERVAL=$${POLYMARKET_RESEARCH_INTERVAL_SECS:-300}
         while true; do
-          node backend/cli/sovereign_cli.js polymarket history schedule --scope-file "$${POLYMARKET_RESEARCH_SCOPE_FILE}" --execute --once --json --poll-seconds $${POLYMARKET_RESEARCH_INTERVAL_SECS:-300} --max-tokens $${POLYMARKET_RESEARCH_MAX_TOKENS:-20} --retention-days $${POLYMARKET_RESEARCH_RETENTION_DAYS:-30} --max-rows-per-token $${POLYMARKET_RESEARCH_MAX_ROWS_PER_TOKEN:-5000} --max-archive-bytes $${POLYMARKET_RESEARCH_MAX_ARCHIVE_BYTES:-5368709120} || exit $$?
+          node backend/cli/sovereign_cli.js polymarket history schedule --scope-file "$${POLYMARKET_RESEARCH_SCOPE_FILE}" --execute --once --json --poll-seconds $${POLYMARKET_RESEARCH_INTERVAL_SECS:-300} --max-tokens $${POLYMARKET_RESEARCH_MAX_TOKENS:-20} --retention-days $${POLYMARKET_RESEARCH_RETENTION_DAYS:-30} --max-rows-per-token $${POLYMARKET_RESEARCH_MAX_ROWS_PER_TOKEN:-5000} --max-archive-bytes $${POLYMARKET_RESEARCH_MAX_ARCHIVE_BYTES:-5368709120} || true
           sleep $$INTERVAL
         done

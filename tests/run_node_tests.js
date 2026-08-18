@@ -69,13 +69,21 @@ function runnerConcurrency(options) {
   return DEFAULT_TEST_CONCURRENCY;
 }
 
+let supportsTestIsolationNone;
+function checkSupportsTestIsolationNone() {
+  if (supportsTestIsolationNone !== undefined) return supportsTestIsolationNone;
+  const res = spawnSync(process.execPath, ['--test-isolation=none', '-e', ''], { stdio: 'ignore' });
+  supportsTestIsolationNone = res.status === 0;
+  return supportsTestIsolationNone;
+}
+
 function buildFileArgs(options, target) {
   const hasReporter = options.some(
     (option) => option === '--test-reporter' || option.startsWith('--test-reporter='),
   );
   return [
     '--test',
-    '--test-isolation=none',
+    ...(checkSupportsTestIsolationNone() ? ['--test-isolation=none'] : []),
     ...(!hasReporter ? [
       '--test-reporter=spec',
       '--test-reporter-destination=stdout',
