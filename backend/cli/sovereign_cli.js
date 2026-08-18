@@ -25,6 +25,9 @@ const { commandMl } = require('./commands/research/ml.js');
 const { commandBias } = require('./commands/research/bias.js');
 const { commandScorecard } = require('./commands/research/scorecard.js');
 const { commandCombined } = require('./commands/research/combined.js');
+const { commandKillSwitch } = require('./commands/tools/kill_switch.js');
+const { commandRiskCheck } = require('./commands/tools/risk.js');
+const { commandMlPredict } = require('./commands/research/ml_predict.js');
 const { installDoubleCtrlCExit } = require('./lib/exit_guard');
 
 installDoubleCtrlCExit();
@@ -67,6 +70,9 @@ async function handleCommand(args) {
     check:            (a) => commandValidate(a),
     // --- Backend (manifest: backend) ---
     backend:          (a) => commandBackend(a),
+    'kill-switch':    (a) => commandKillSwitch(a),
+    risk:             (a) => commandRiskCheck(a),
+    'risk-check':     (a) => commandRiskCheck(a),
     // --- Research (manifest: research) ---
     bias:             (a) => commandBias(a),
     scorecard:        (a) => commandScorecard(a),
@@ -77,6 +83,8 @@ async function handleCommand(args) {
     'bt-matrix':      (a) => commandMassBt(a),
     features:         (a) => commandIndicators(a),
     ml:               (a) => commandMl(a),
+    'ml-predict':     (a) => commandMlPredict(a),
+    'ml-compare':     (a) => commandMlPredict(a),
     models:           (a) => commandModelCompare(a),
     optimize:         (a) => commandOptimize(a),
     sweep:            (a) => commandSweep(a),

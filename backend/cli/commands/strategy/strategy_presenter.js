@@ -195,6 +195,9 @@ function inspectStrategyFile(filePath, options = {}) {
   for (const sec of requiredSections) {
     if (!strategySectionPresent(text, sec)) issues.push(`missing_section_${sec}`);
   }
+  if (yaml.family === 'single_asset' || yaml.family === 'cross_asset') {
+    issues.push(`invalid_family_taxonomy:${yaml.family}_is_a_lane_not_a_family`);
+  }
   const taxonomy = inferStrategyTaxonomy({ ...yaml, path: filePath });
   const gradeRecord = decorateStrategyRecord({
     path: filePath,
