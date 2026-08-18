@@ -353,7 +353,7 @@
       "audience": ["data-maintainers", "contributors"],
       "owner": "storage",
       "status": "canonical",
-      "source_paths": ["storage/data/ts", "storage/data/cache", "storage/data/paper_trading"],
+      "source_paths": ["shared/lib/market/ts_index_storage.js", "shared/lib/market/validation.js", "shared/lib/market/polymarket_history.js"],
       "review_triggers": ["ts-binary-index", "data-cache-partition", "paper-ledger-store"]
     },
     {
