@@ -352,6 +352,7 @@
         {"name": "SOVEREIGN_DEPLOYMENT_PROFILE", "default": "developer"},
         {"name": "SOVEREIGN_DEFAULT_USER_ROLE", "default": "viewer", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_web"]},
         {"name": "SOVEREIGN_DISABLE_CACHE", "default": "false"},
+        {"name": "SOVEREIGN_DISABLE_CPP", "default": "false"},
         {"name": "SOVEREIGN_DISABLE_MT5_AUTO_PATH", "default": "false"},
         {"name": "SOVEREIGN_ENV_FILE", "environment_class": "private", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution"]},
         {
