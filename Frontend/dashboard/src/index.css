@@ -1,35 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-heading: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* QuantLab Pro colors mapped to existing semantic slots */
-  --color-brand-cyan: #0284c7;
-  --color-brand-green: #16a34a;
-  --color-brand-red: #dc2626;
-  --color-brand-amber: #d97706;
-  --color-brand-violet: #7c3aed;
-  --color-brand-pink: #db2777;
+  --color-brand-cyan: #06b6d4;
+  --color-brand-green: #10b981;
+  --color-brand-red: #f43f5e;
+  --color-brand-amber: #f59e0b;
+  --color-brand-violet: #6366f1;
+  --color-brand-pink: #ec4899;
 }
 
 @layer base {
   :root {
-    /* Surfaces */
-    --bg-primary: #f9fafb;
-    --bg-secondary: #ffffff;
-    --bg-tertiary: #f3f4f6;
-    
-    /* Borders */
-    --border-subtle: #e2e5ea;
-    --border-focus: #d1d5db;
-    
+    /* High-density Dark Cyber-Fintech surfaces */
+    --bg-primary: #0b0f17;
+    --bg-secondary: #121824;
+    --bg-tertiary: #182030;
+
+    /* Crisp borders */
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-focus: rgba(255, 255, 255, 0.2);
+
     /* Typography */
-    --text-main: #1a1d23;
-    --text-muted: #6b7280;
-    --text-faint: #9ca3af;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
   }
 
   body {
@@ -43,7 +42,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    letter-spacing: -0.05em;
+    letter-spacing: -0.03em;
   }
 }
 
