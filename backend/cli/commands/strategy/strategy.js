@@ -310,7 +310,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
             const list = [...symbols];
             if (list.length === 0) continue;
             console.log(`[AUTOMATION] Refreshing ${list.length} symbols for ${timeframe}...`);
-            await commandBackfill(['--symbol', list.join(','), '--days', String(refreshDays), '--timeframe', timeframe, '--json']);
+            await commandBackfill(['--symbol', list.join(','), '--days', String(refreshDays), '--timeframe', timeframe]);
         }
     } finally {
         global.suppressLogs = false;
@@ -385,10 +385,10 @@ async function runAutomationPass(args, strategiesOverride = null) {
             }
 
             const trustDecision = buildAutomationTrustDecision(report, minTrustScore, isLive);
+            const trust = trustDecision.trust || {};
+            console.log(`[AUTOMATION] ${strategy.name} signal evaluated: symbol=${lastTrade.symbol} | trust_score=${trust.score ?? 'n/a'}/100 (min=${minTrustScore}) grade=${trust.grade || 'n/a'} verdict=${trust.verdict || 'n/a'}`);
             if (!trustDecision.allowed) {
-                const trust = trustDecision.trust || {};
                 console.log(`[AUTOMATION] Live execution gated for ${strategy.name}: ${trustDecision.reason}.`);
-                console.log(`[AUTOMATION] Trust gate: ${trust.grade || 'n/a'} / ${trust.score ?? 'n/a'} | verdict=${trust.verdict || 'n/a'}`);
                 continue;
             }
 

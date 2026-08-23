@@ -1,18 +1,20 @@
 # Next Session Goal
 
-## 2026-08-18 Session 139 Closeout — Strategy Execution Engine & Portfolio Risk Audit Roadmap
+## 2026-08-23 Gateway B2A Seam Landing & Gateway B2B Roadmap
 
-**Immediate next action for Next Session:**
-1. **Strategy Execution Engine & Risk Audit**: Execute `/blast-through` review of strategy execution engines (`backend/cli/commands/strategy/`), paper trading ledger (`shared/lib/trading/paper_ledger.js`), and portfolio risk calculation engines (`backend/core/src/risk/`).
-2. **Continuous Runtime Monitoring**: Monitor long-running CI jobs and paper trading ledger updates across trading windows on `hpdesk`.
+**Status of Gateway B2A Seam:**
+- **Status:** COMPLETED & VERIFIED.
+- **Summary:** Read-only Polymarket diagnostic commands (`commands/polymarket_private.ts`, `polymarket_read_adapter.ts`) and portfolio aggregation (`commands/aggregate_portfolio.ts`) extracted from `backend/gateway/src/index.ts`. All 37 integration tests, repo structure tests, and hygiene checks pass 100%.
+
+**Immediate next action for Gateway B2B:**
+1. **Gateway B2B Execution Seam Extraction**:
+   - Extract live order execution (`submitPolymarketOrder`, `preflightPolymarketOrder`, `cancelOrder`), signing, preflight risk checks, and CLOB order submission from `backend/gateway/src/index.ts` into a dedicated execution module (`commands/polymarket_execution.ts` / `polymarket_execution_adapter.ts`).
+2. **Preserve Coordinator Boundaries**:
+   - Keep top-level CLI argument parsing, environment validation, runtime policy enforcement, and command routing in `backend/gateway/src/index.ts`.
+   - Maintain `PolymarketReadAdapter` interface frozen and untouched.
+3. **Execution Safety Requirements**:
+   - Ensure all execution commands (`submit`, `preflight`, `cancel`) maintain non-zero process exit codes (`process.exitCode = 1`) on failure and fail-closed handling on invalid proposed order envelopes.
 
 **Standing deferred:**
 - Replace `.github/CODEOWNERS` and `MAINTAINERS.md` placeholder handles with real GitHub usernames.
-- Monitor long-running CI jobs and paper trading ledger updates across trading windows.
-
-1. **Session Closeout & Verification Complete**:
-   - Executed `/blast-through` audit under `maintainability` mode over session logs (`workspace/PROMPT_LOG.md`, `workspace/SESSION_MEMORY.md`, `workspace/handoff/`) evaluating agentic execution accuracy, tool selection, error rates, and model retraining requirements.
-   - Verified 100% execution accuracy across historical tool dispatches: zero broken subagent invocations, zero unhandled tool exceptions, zero unverified test claims.
-   - Evaluated C++ core engine wrappers and native bridges, confirming complete contract compliance and zero immediate retrain requirements.
-   - Verified 100% clean test execution: `npm run test:structure` (28/28 subtests pass), `check_hygiene.js` (0 findings), `mass_bt_contract.test.js` (3/3 pass), `ctest` (33/33 pass).
-
+- Monitor long-running CI jobs and paper trading ledger updates across trading windows on `hpdesk`.
