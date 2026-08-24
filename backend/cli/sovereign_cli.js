@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+require('../../shared/lib/runtime/ts_register');
 require('#shared/runtime/env');
 global.suppressLogs = false;
 const utils = require('./lib/utils.js');
