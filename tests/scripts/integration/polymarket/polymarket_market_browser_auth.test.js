@@ -49,6 +49,7 @@ test('selecting Buy invokes live authorization before credentialed account or or
     [],
     {
       promptAction: async () => actions.shift(),
+      fetchOrderbook: () => ({ book: { bids: [{ price: '0.5', size: '10' }], asks: [{ price: '0.51', size: '10' }] } }),
       authorizeLive: async () => {
         authorizationCalls += 1;
         return false;
