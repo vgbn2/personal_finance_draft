@@ -500,7 +500,7 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext, args
       }
       let book;
       try {
-        book = fetchPolymarketOrderbookSnapshot(targetToken.token_id);
+        book = (deps.fetchOrderbook || fetchPolymarketOrderbookSnapshot)(targetToken.token_id);
       } catch (err) {
         console.log(`  ${A.YELLOW}Orderbook snapshot failed: ${err.message}${A.RESET}`);
         continue;
