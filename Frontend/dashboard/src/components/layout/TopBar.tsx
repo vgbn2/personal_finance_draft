@@ -52,6 +52,7 @@ const TABS: { id: TabId; label: string; number: string; icon: React.ReactNode }[
   { id: 'sigma_band', label: 'Sigma Band', number: '08', icon: <TrendingUp className="w-4 h-4" /> },
   { id: 'bot',        label: 'Edge Bot',   number: '09', icon: <Bot className="w-4 h-4" /> },
   { id: 'settings',   label: 'Settings',   number: '10', icon: <Settings className="w-4 h-4" /> },
+  { id: 'infra',      label: 'Infra',      number: '11', icon: <Server className="w-4 h-4" /> },
 ];
 
 export function TopBar({ activeTab, onTabChange, session, onLogout, sidebarOpen, onSidebarToggle }: TopBarProps) {
