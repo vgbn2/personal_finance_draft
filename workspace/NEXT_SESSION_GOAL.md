@@ -1,17 +1,10 @@
 # Next Session Goal
 
-## 2026-08-24 Gateway B2C Account & Diagnostic Seam Landing & Coordinator Refactoring Roadmap
+Initiate Web Dashboard redesign phase aligned with audited 8-category taxonomy.
 
-**Status of Gateway B2C Account & Diagnostic Seam:**
-- **Status:** COMPLETED & VERIFIED.
-- **Summary:** Extracted all account diagnostic functions (`fetchPolymarketPortfolio`, `fetchPolymarketDebug`, `fetchPolymarketAuthHealth`, `fetchPolymarketModes`, `fetchPolymarketCollateralProbe`, `fetchPolymarketInvestigate`, `fetchPolymarketProbe`, `fetchPolymarketTopology`, `fetchPolymarketTrace`, `fetchPolymarketOrderBook`, `fetchPolymarketPriceHistory`, `derivePolymarketApiCreds`), snapshot rendering functions, formatting helpers, and interfaces from `backend/gateway/src/index.ts` into `backend/gateway/src/polymarket_account_adapter.ts`.
-
-**Immediate next action:**
-1. **Gateway CLI Coordinator Finalization**:
-   - Finalize `backend/gateway/src/index.ts` to operate purely as an entrypoint coordinator handling environment surface checking, argument routing, runtime policy enforcement, and module dispatching.
-2. **Safety & Exit Code Verification**:
-   - Verify non-zero exit code enforcement (`process.exitCode = 1`) across all CLI subcommands when encountering errors or unconfigured credentials.
-
-**Standing deferred:**
-- Replace `.github/CODEOWNERS` and `MAINTAINERS.md` placeholder handles with real GitHub usernames.
-- Monitor long-running CI jobs and paper trading ledger updates across trading windows on `hpdesk`.
+## Primary Focus Areas
+1. **Web Dashboard Redesign Phase**:
+   - Begin frontend Web UI component redesign based on the audited 8-category taxonomy mapping (`overview`, `signals`, `market_intel`, `backtest`, `quote_health`, `audit_log`, `telemetry`, `sigma_band`, `bot`, `settings`).
+   - Wire backend gateway API endpoints to the updated frontend components.
+2. **Post-Commit Verification**:
+   - Verify branch push and sync with remote repository (`origin/worktree-gateway-b2a-review`).

@@ -1,3 +1,3 @@
 'use strict';
 require('../../../shared/lib/runtime/ts_register');
-module.exports = require('./polymarket/paper_ledger');
+module.exports = require('./polymarket/markets');

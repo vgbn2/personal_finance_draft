@@ -1,3 +1,16 @@
+### Session Memory - 2026-08-24 — Gateway TS Bridge & CJS Migration Verification
+
+```json
+{
+  "batch": ["GATEWAY-TS-BRIDGE-1"],
+  "lifecycle": "closed",
+  "scope": "Implemented lightweight CommonJS TypeScript runtime loader hook (shared/lib/runtime/ts_register.js) and CJS module bridges (polymarket.js, polymarket_markets.js, polymarket_paper.js, paper_ledger.js) for backend/gateway/src/polymarket/. Scoped toFiniteNumber locally in positions.ts and markets.ts to resolve TS2308 duplicate export collisions. Completed paper_ledger.ts method implementations and verified 8-category taxonomy mapping and 5s TTL cache readiness across TUI and API.",
+  "changes": "created shared/lib/runtime/ts_register.js, backend/gateway/src/polymarket.js, polymarket_markets.js, polymarket_paper.js; updated backend/gateway/src/paper_ledger.js, polymarket/markets.ts, polymarket/paper_ledger.ts, polymarket/positions.ts, backend/cli/sovereign_cli.js, workspace/STATE.md, workspace/NEXT_SESSION_GOAL.md, workspace/SESSION_MEMORY.md",
+  "verification": "node scripts/dev/check_hygiene.js (PASS); npm run test:structure (PASS, 28/28 subtests); polymarket integration test runner (PASS, 20/20 tests); polymarket_paper.test.js (PASS, 19/19 subtests); polymarket_position_lifecycle.test.js (PASS, 5/5 subtests)",
+  "boundaries": "no live trading execution; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-08-24 — Gateway B2C Account & Diagnostic Seam Extraction
 
 ```json
