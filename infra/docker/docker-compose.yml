@@ -16,8 +16,15 @@ x-central-runtime: &central-runtime
   LIVE_TRADING: "false"
   SOVEREIGN_EXECUTION_AUTHORIZED: "false"
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   web:
+    logging: *default-logging
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     env_file:
@@ -53,6 +60,7 @@ services:
       start_period: 20s
 
   bot:
+    logging: *default-logging
     profiles: [paper]
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
@@ -82,6 +90,7 @@ services:
         node backend/cli/sovereign_cli.js run bot paper --strategy low_prob_dip
 
   bot-alpaca-paper:
+    logging: *default-logging
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
@@ -118,6 +127,7 @@ services:
           --allowed-timeframes "$$TIMEFRAMES"
 
   backfill:
+    logging: *default-logging
     profiles: [writer]
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
@@ -165,6 +175,7 @@ services:
         exec node backend/cli/sovereign_cli.js backfill-daemon --interval-secs "$$INTERVAL" $$DEEP_ALL_ARGS
 
   portfolio-monitor:
+    logging: *default-logging
     profiles: [monitoring]
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
@@ -193,6 +204,7 @@ services:
           --timeout-ms "$${PORTFOLIO_MONITOR_TIMEOUT_MS:-45000}"
 
   host-health:
+    logging: *default-logging
     profiles: [monitoring]
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
@@ -222,6 +234,7 @@ services:
           --min-free-percent "$${HOST_HEALTH_MIN_FREE_PERCENT:-10}"
 
   host-backup:
+    logging: *default-logging
     profiles: [monitoring]
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
@@ -248,6 +261,7 @@ services:
           --max-count "$${HOST_BACKUP_MAX_COUNT:-14}"
 
   polymarket-research:
+    logging: *default-logging
     profiles: [research]
     build:
       context: ../..
