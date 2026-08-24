@@ -3,8 +3,13 @@ const { buildBrokerReport, getEnvValue } = require('./common');
 function resolveSignatureType(env) {
   const explicit = String(env.POLYMARKET_SIGNATURE_TYPE || '').trim();
   if (explicit !== '' && Number.isFinite(Number(explicit))) return Number(explicit);
+  const funderAddress = resolveWalletAddress(env);
+  const proxyAddress = String(env.PROXY_ADDRESS || '').trim();
+  if (proxyAddress && funderAddress && String(funderAddress).toLowerCase() === proxyAddress.toLowerCase()) {
+    return 1;
+  }
   if (String(env.POLYMARKET_FUNDER_ADDRESS || env.DEPOSIT_ADDRESS || env.POLYMARKET_WALLET_ADDRESS || env.POLYMARKET_WAllET_ADDRESS || '').trim()) return 2;
-  if (String(env.PROXY_ADDRESS || '').trim()) return 1;
+  if (proxyAddress) return 1;
   return 0;
 }
 
@@ -68,12 +73,12 @@ function resolvePolymarketClientSettings(env = process.env, options = {}) {
   const signatureType = options.signatureType ?? (() => {
     const explicit = String(env.POLYMARKET_SIGNATURE_TYPE || '').trim();
     if (explicit !== '' && Number.isFinite(Number(explicit))) return Number(explicit);
+    if (String(env.PROXY_ADDRESS || '').trim() && funderAddress && String(funderAddress).toLowerCase() === String(env.PROXY_ADDRESS).toLowerCase()) {
+      return 1;
+    }
     const depositAddress = String(env.POLYMARKET_FUNDER_ADDRESS || env.DEPOSIT_ADDRESS || env.POLYMARKET_WALLET_ADDRESS || env.POLYMARKET_WAllET_ADDRESS || '').trim();
     if (depositAddress && funderAddress && String(funderAddress).toLowerCase() === depositAddress.toLowerCase()) {
       return 2;
-    }
-    if (String(env.PROXY_ADDRESS || '').trim() && funderAddress && String(funderAddress).toLowerCase() === String(env.PROXY_ADDRESS).toLowerCase()) {
-      return 1;
     }
     if (funderAddress) return 2;
     return 0;

@@ -1,15 +1,14 @@
 import { createClobClient, polymarketGet } from './clob_factory';
 import { type BotExecutionOptions, type BotOrderIntent } from './cycle';
-// @ts-ignore
-const { validateProposedOrdersPayload } = require('./proposed_orders.js');
-// @ts-ignore
-const { classifyPolymarketGatewayError } = require('./polymarket_errors.js');
+import {
+  classifyPolymarketGatewayError,
+  fetchPolymarketGammaMarkets as fetchPolymarketOrderBook, // fallback naming/export
+  validateProposedOrdersPayload,
+} from './polymarket';
 // @ts-ignore
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
-// @ts-ignore
-const { fetchPolymarketOrderBook } = require('./polymarket_markets.js');
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
@@ -134,8 +133,8 @@ export class PolymarketAdapter implements BrokerAdapter {
         tickSize = String(await client.getTickSize(order.instrumentId));
       }
       if (!VALID_POLYMARKET_TICK_SIZES.has(tickSize)) {
-        const publicBook = await fetchPolymarketOrderBook(order.instrumentId);
-        const fallbackTickSize = String(publicBook?.book?.tick_size ?? '');
+        const publicBook = await fetchOrderBook(order.instrumentId as any);
+        const fallbackTickSize = String((publicBook as any)?.book?.tick_size ?? '');
         if (VALID_POLYMARKET_TICK_SIZES.has(fallbackTickSize)) {
           tickSize = fallbackTickSize;
         }
@@ -248,9 +247,9 @@ export class PolymarketAdapter implements BrokerAdapter {
   }
 
   async getQuote(symbol: string): Promise<number> {
-    const book = await fetchPolymarketOrderBook(symbol);
-    const bids = Array.isArray(book?.book?.bids) ? book.book.bids : [];
-    const asks = Array.isArray(book?.book?.asks) ? book.book.asks : [];
+    const book = await fetchOrderBook(symbol as any);
+    const bids = Array.isArray((book as any)?.book?.bids) ? (book as any).book.bids : [];
+    const asks = Array.isArray((book as any)?.book?.asks) ? (book as any).book.asks : [];
 
     let bestBid = 0;
     let bestAsk = 0;

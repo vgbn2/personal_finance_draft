@@ -1,15 +1,25 @@
-function toNumber(value) {
+import { isMarkedActivePolymarketPosition, partitionPolymarketPositions } from './positions';
+
+function toNumber(value: any): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-const {
-  isMarkedActivePolymarketPosition,
-  partitionPolymarketPositions,
-} = require('./polymarket_positions.js');
+export interface AggregatedPortfolioSnapshot {
+  total_usd: number;
+  total_equity: number;
+  total_unrealized_pl: number;
+  cost_basis_unavailable_positions: number;
+  valuation_unavailable_positions: number;
+  brokers: any[];
+  positions: any[];
+  prediction_markets: {
+    polymarket: any;
+  };
+}
 
-function buildAggregatedPortfolioSnapshot(results, polymarket) {
-  const aggregated = {
+export function buildAggregatedPortfolioSnapshot(results: any[], polymarket: any): AggregatedPortfolioSnapshot {
+  const aggregated: AggregatedPortfolioSnapshot = {
     total_usd: 0,
     total_equity: 0,
     total_unrealized_pl: 0,
@@ -20,7 +30,7 @@ function buildAggregatedPortfolioSnapshot(results, polymarket) {
     prediction_markets: { polymarket },
   };
 
-  const addPositions = (positions) => {
+  const addPositions = (positions: any[]) => {
     for (const position of positions || []) {
       aggregated.positions.push(position);
       if (position && position.cost_basis_unavailable) {
@@ -41,7 +51,7 @@ function buildAggregatedPortfolioSnapshot(results, polymarket) {
         status: 'connected',
         balance: res.balance,
         position_count: positions.length,
-        cost_basis_unavailable_count: positions.filter((position) => position && position.cost_basis_unavailable).length,
+        cost_basis_unavailable_count: positions.filter((position: any) => position && position.cost_basis_unavailable).length,
       });
       addPositions(positions);
     } else if (res) {
@@ -85,5 +95,3 @@ function buildAggregatedPortfolioSnapshot(results, polymarket) {
 
   return aggregated;
 }
-
-module.exports = { buildAggregatedPortfolioSnapshot };

@@ -1,4 +1,20 @@
-function normalizePolymarketApiCreds(raw) {
+export interface PolymarketApiCreds {
+  key: string;
+  secret: string;
+  passphrase: string;
+}
+
+export interface CredShapeSummary {
+  kind?: string;
+  key?: string;
+  secret?: string;
+  passphrase?: string;
+  apiKey?: string;
+  apiKeys?: string;
+  error?: string;
+}
+
+export function normalizePolymarketApiCreds(raw: any): PolymarketApiCreds | null {
   if (!raw || typeof raw !== 'object') return null;
   if (raw.key && raw.secret && raw.passphrase) {
     return {
@@ -20,7 +36,7 @@ function normalizePolymarketApiCreds(raw) {
   return null;
 }
 
-function summarizePolymarketApiCredShape(raw) {
+export function summarizePolymarketApiCredShape(raw: any): CredShapeSummary {
   if (!raw || typeof raw !== 'object') return { kind: typeof raw };
   return {
     key: typeof raw.key,
@@ -31,8 +47,3 @@ function summarizePolymarketApiCredShape(raw) {
     error: typeof raw.error,
   };
 }
-
-module.exports = {
-  normalizePolymarketApiCreds,
-  summarizePolymarketApiCredShape,
-};

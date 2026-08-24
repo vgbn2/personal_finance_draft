@@ -1,7 +1,18 @@
 # Project State - Sovereign Trading Platform
 
 ## Current Phase
-Gateway B2C Account & Diagnostic Seam Extraction & Refactoring
+Gateway Modularization & RISC-to-CISC Architecture Refactoring
+
+## 2026-08-24 Gateway Modularization & Architecture Refactoring (Batch 1)
+
+- Removed duplicate `createExecutionGatewayAdapter` declaration from `backend/gateway/src/index.ts`.
+- Extracted `BrokerAdapter` implementations (`SimulationAdapter`, `GateIoAdapter`, `AlpacaAdapter`, `PolymarketAdapter`) into `backend/gateway/src/adapters/`.
+- Extracted `ExecutionGateway` & `RiskEngineBridge` into `backend/gateway/src/core/`.
+- Converted legacy CJS modules (`paper_ledger.js`) to typed TypeScript ES modules under `backend/gateway/src/polymarket/`.
+- Created command handlers in `backend/gateway/src/commands/` for `trade`, `account`, `polymarket`, `bot`, and `process`.
+- Formulated full RISC-to-CISC migration roadmap covering Web Dashboard & TUI 8-category parity, ≤5 subflags per command, and backend-first cache/DB API readiness.
+- Executed verification matrix: `node scripts/dev/check_hygiene.js` (PASS, 0 findings), `npm run test:structure` (PASS, 28/28 subtests pass), `npm test -- tests/scripts/lib/polymarket_execution.test.js` (PASS, 2/2 pass).
+- Safety boundaries maintained: `LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`.
 
 ## 2026-08-24 Gateway B2C Account & Diagnostic Seam Extraction
 
@@ -16,13 +27,4 @@ Gateway B2C Account & Diagnostic Seam Extraction & Refactoring
 - Executed all 140 integration tests across the polymarket test suite with 100% pass rate.
 - Verified repo structure (`npm run test:structure` 28/28 subtests pass) and repo hygiene (`node scripts/dev/check_hygiene.js` 0 findings).
 - Committed changes (`d4334f84` and `44303ad7`) and pushed `worktree-gateway-b2a-review` branch to `origin`.
-- All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).
-
-## 2026-08-23 Gateway B2A Seam Review & Landing Closeout
-
-- Reviewed and verified uncommitted Gateway B2A seam refactoring isolating read-only diagnostics (`commands/polymarket_private.ts`, `polymarket_read_adapter.ts`) and portfolio aggregation (`commands/aggregate_portfolio.ts`) from execution coordinator (`backend/gateway/src/index.ts`).
-- `backend/gateway/src/index.ts` complexity reduced from 805 lines / 118 control nodes down to 427 lines / 68 control nodes (62 `if` statements, maximum control nesting depth capped at 5).
-- Executed and verified 37-test Gateway B2A integration matrix (100% pass across `gateway_aggregate_command.test.js`, `polymarket_private_commands.test.js`, `gateway_command_exit.test.js`, `proposed_orders.test.js`).
-- Executed repository structure tests (`npm run test:structure` 28/28 subtests pass), repository hygiene check (`0` findings), function control mapping, and `git diff --check`.
-- Staged only Gateway B2A seam files while preserving unrelated working directory modifications.
 - All safety boundaries maintained (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).

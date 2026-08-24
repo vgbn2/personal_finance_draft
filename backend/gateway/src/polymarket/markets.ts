@@ -1,9 +1,9 @@
-function toFiniteNumber(value, fallback = 0) {
+export function toFiniteNumber(value: any, fallback = 0): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function parseJsonArray(value) {
+export function parseJsonArray(value: any): any[] {
   if (Array.isArray(value)) return value;
   if (typeof value !== 'string') return [];
   try {
@@ -14,7 +14,7 @@ function parseJsonArray(value) {
   }
 }
 
-function polymarketMarketSection(market = {}, tags = [], categories = []) {
+export function polymarketMarketSection(market: any = {}, tags: any[] = [], categories: any[] = []): string {
   const generic = new Set(['crypto', 'cryptocurrency', 'cryptocurrencies', 'markets']);
   const category = categories
     .map((item) => item && (item.label || item.slug))
@@ -38,7 +38,27 @@ function polymarketMarketSection(market = {}, tags = [], categories = []) {
   return 'Crypto';
 }
 
-function normalizePolymarketGammaMarket(market = {}) {
+export interface PolymarketToken {
+  token_id: string;
+  outcome: string;
+}
+
+export interface NormalizedGammaMarket {
+  id?: string;
+  condition_id?: string;
+  slug?: string;
+  question: string;
+  groupItemTitle?: string;
+  active: boolean;
+  closed: boolean;
+  category: string;
+  section: string;
+  volume: number;
+  liquidity: number;
+  tokens: PolymarketToken[];
+}
+
+export function normalizePolymarketGammaMarket(market: any = {}): NormalizedGammaMarket {
   const outcomes = parseJsonArray(market.outcomes).map(String);
   const tokenIds = parseJsonArray(market.clobTokenIds ?? market.clob_token_ids).map(String);
   const tags = Array.isArray(market.tags) ? market.tags : [];
@@ -63,24 +83,31 @@ function normalizePolymarketGammaMarket(market = {}) {
   };
 }
 
-function looksLikeCryptoMarket(market = {}) {
+export function looksLikeCryptoMarket(market: any = {}): boolean {
   const text = [
     market.category,
     market.subcategory,
     market.question,
     market.slug,
-    ...(Array.isArray(market.tags) ? market.tags.map((tag) => `${tag && tag.label || ''} ${tag && tag.slug || ''}`) : []),
-    ...(Array.isArray(market.categories) ? market.categories.map((category) => `${category && category.label || ''} ${category && category.slug || ''}`) : []),
+    ...(Array.isArray(market.tags) ? market.tags.map((tag: any) => `${(tag && tag.label) || ''} ${(tag && tag.slug) || ''}`) : []),
+    ...(Array.isArray(market.categories) ? market.categories.map((category: any) => `${(category && category.label) || ''} ${(category && category.slug) || ''}`) : []),
   ].join(' ').toLowerCase();
   return /\b(crypto|bitcoin|btc|ethereum|eth|solana|sol\b|xrp|dogecoin|doge|shib|pepe|defi|stablecoin|binance|coinbase)\b/.test(text);
 }
 
-function groupPolymarketMarketsBySection(markets = []) {
-  const groups = new Map();
+export interface MarketSectionGroup {
+  section: string;
+  count: number;
+  volume: number;
+  data: NormalizedGammaMarket[];
+}
+
+export function groupPolymarketMarketsBySection(markets: NormalizedGammaMarket[] = []): MarketSectionGroup[] {
+  const groups = new Map<string, NormalizedGammaMarket[]>();
   for (const market of markets) {
     const section = market.section || 'Crypto';
     if (!groups.has(section)) groups.set(section, []);
-    groups.get(section).push(market);
+    groups.get(section)!.push(market);
   }
   return Array.from(groups.entries())
     .map(([section, data]) => ({
@@ -92,16 +119,21 @@ function groupPolymarketMarketsBySection(markets = []) {
     .sort((a, b) => b.volume - a.volume || a.section.localeCompare(b.section));
 }
 
-async function fetchPolymarketTagId(slug) {
+export async function fetchPolymarketTagId(slug: string): Promise<string | null> {
   const res = await fetch(`https://gamma-api.polymarket.com/tags/slug/${encodeURIComponent(slug)}`, {
     headers: { accept: 'application/json', 'user-agent': 'sovereign-gateway/1.0' },
   });
   if (!res.ok) return null;
-  const body = await res.json();
+  const body: any = await res.json();
   return body && body.id ? String(body.id) : null;
 }
 
-async function fetchPolymarketGammaMarkets(limit = 10, options = {}) {
+export async function fetchPolymarketGammaMarkets(limit = 10, options: { category?: string } = {}): Promise<{
+  source: string;
+  count: number;
+  data: NormalizedGammaMarket[];
+  sections: MarketSectionGroup[];
+}> {
   const category = options.category || 'crypto';
   const url = new URL('https://gamma-api.polymarket.com/markets');
   url.searchParams.set('limit', String(Math.max(1, limit * 4)));
@@ -121,26 +153,34 @@ async function fetchPolymarketGammaMarkets(limit = 10, options = {}) {
     headers: { accept: 'application/json', 'user-agent': 'sovereign-gateway/1.0' },
   });
   if (!res.ok) throw new Error(`Gamma markets returned HTTP ${res.status}`);
-  const body = await res.json();
+  const body: any = await res.json();
   const rawMarkets = Array.isArray(body) ? body : (Array.isArray(body && body.markets) ? body.markets : []);
   const normalizedCategory = String(category || 'crypto').trim().toLowerCase();
   const filtered = normalizedCategory === 'crypto'
     ? rawMarkets.filter(looksLikeCryptoMarket)
     : rawMarkets;
-  const data = filtered.map(normalizePolymarketGammaMarket).filter((market) => market.question).slice(0, limit);
+  const data = filtered.map(normalizePolymarketGammaMarket).filter((market: any) => market.question).slice(0, limit);
   return { source: url.toString(), count: data.length, data, sections: groupPolymarketMarketsBySection(data) };
 }
 
-function looksLikeCryptoEvent(event = {}) {
+export function looksLikeCryptoEvent(event: any = {}): boolean {
   const text = [
     event.title,
     event.slug,
-    ...(Array.isArray(event.tags) ? event.tags.map((tag) => `${tag && tag.label || ''} ${tag && tag.slug || ''}`) : []),
+    ...(Array.isArray(event.tags) ? event.tags.map((tag: any) => `${(tag && tag.label) || ''} ${(tag && tag.slug) || ''}`) : []),
   ].join(' ').toLowerCase();
   return /\b(crypto|bitcoin|btc|ethereum|eth|solana|sol\b|xrp|dogecoin|doge|shib|pepe|defi|stablecoin|binance|coinbase)\b/.test(text);
 }
 
-function normalizePolymarketGammaEvent(event = {}) {
+export interface NormalizedGammaEvent {
+  id?: string;
+  title: string;
+  slug?: string;
+  volume: number;
+  markets: NormalizedGammaMarket[];
+}
+
+export function normalizePolymarketGammaEvent(event: any = {}): NormalizedGammaEvent {
   return {
     id: event.id ? String(event.id) : undefined,
     title: String(event.title || event.slug || ''),
@@ -152,7 +192,11 @@ function normalizePolymarketGammaEvent(event = {}) {
   };
 }
 
-async function fetchPolymarketGammaEvents(limit = 10, options = {}) {
+export async function fetchPolymarketGammaEvents(limit = 10, options: { category?: string } = {}): Promise<{
+  source: string;
+  count: number;
+  data: NormalizedGammaEvent[];
+}> {
   const category = options.category || 'crypto';
   const url = new URL('https://gamma-api.polymarket.com/events');
   url.searchParams.set('limit', String(Math.max(1, limit * 4)));
@@ -171,7 +215,7 @@ async function fetchPolymarketGammaEvents(limit = 10, options = {}) {
     headers: { accept: 'application/json', 'user-agent': 'sovereign-gateway/1.0' },
   });
   if (!res.ok) throw new Error(`Gamma events returned HTTP ${res.status}`);
-  const body = await res.json();
+  const body: any = await res.json();
   const rawEvents = Array.isArray(body) ? body : (Array.isArray(body && body.events) ? body.events : []);
   const normalizedCategory = String(category || 'crypto').trim().toLowerCase();
   const filtered = normalizedCategory === 'crypto'
@@ -179,16 +223,7 @@ async function fetchPolymarketGammaEvents(limit = 10, options = {}) {
     : rawEvents;
   const data = filtered
     .map(normalizePolymarketGammaEvent)
-    .filter((ev) => ev.markets.length > 0)
+    .filter((ev: any) => ev.markets.length > 0)
     .slice(0, limit);
   return { source: url.toString(), count: data.length, data };
 }
-
-module.exports = {
-  fetchPolymarketGammaMarkets,
-  fetchPolymarketGammaEvents,
-  groupPolymarketMarketsBySection,
-  looksLikeCryptoMarket,
-  normalizePolymarketGammaMarket,
-  normalizePolymarketGammaEvent,
-};

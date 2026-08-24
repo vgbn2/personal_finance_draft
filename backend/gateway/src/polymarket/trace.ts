@@ -1,7 +1,7 @@
-const fs = require('node:fs');
+import * as fs from 'node:fs';
 
-function csvSplit(line) {
-  const cells = [];
+export function csvSplit(line: string): string[] {
+  const cells: string[] = [];
   let current = '';
   let inQuotes = false;
   for (let i = 0; i < line.length; i += 1) {
@@ -26,7 +26,7 @@ function csvSplit(line) {
   return cells;
 }
 
-function parseCsvTable(text) {
+export function parseCsvTable(text: string): Array<Record<string, string>> {
   const lines = String(text || '')
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
@@ -35,7 +35,7 @@ function parseCsvTable(text) {
   const headers = csvSplit(lines[0]).map((cell) => cell.trim());
   return lines.slice(1).map((line) => {
     const cells = csvSplit(line);
-    const row = {};
+    const row: Record<string, string> = {};
     headers.forEach((header, index) => {
       row[header] = (cells[index] || '').trim();
     });
@@ -43,18 +43,28 @@ function parseCsvTable(text) {
   });
 }
 
-function normalizeAddress(value) {
+function normalizeAddress(value: any): string {
   const trimmed = String(value || '').trim();
   if (!trimmed) return '';
   return trimmed.toLowerCase();
 }
 
-function summarizeTraceRows(rows, rootAddress) {
+export interface TraceSummary {
+  rootAddress: string;
+  rowCount: number;
+  inflowCount: number;
+  outflowCount: number;
+  upstream: any[];
+  downstream: any[];
+  recommendedProbeAddresses: string[];
+}
+
+export function summarizeTraceRows(rows: Array<Record<string, string>>, rootAddress: string): TraceSummary {
   const root = normalizeAddress(rootAddress);
-  const inflows = [];
-  const outflows = [];
-  const downstreamMap = new Map();
-  const upstreamMap = new Map();
+  const inflows: any[] = [];
+  const outflows: any[] = [];
+  const downstreamMap = new Map<string, any>();
+  const upstreamMap = new Map<string, any>();
 
   for (const row of rows) {
     const from = normalizeAddress(row.From);
@@ -128,15 +138,8 @@ function summarizeTraceRows(rows, rootAddress) {
   };
 }
 
-function traceCsvFile(csvPath, rootAddress) {
+export function traceCsvFile(csvPath: string, rootAddress: string): TraceSummary {
   const text = fs.readFileSync(csvPath, 'utf8');
   const rows = parseCsvTable(text);
   return summarizeTraceRows(rows, rootAddress);
 }
-
-module.exports = {
-  csvSplit,
-  parseCsvTable,
-  summarizeTraceRows,
-  traceCsvFile,
-};

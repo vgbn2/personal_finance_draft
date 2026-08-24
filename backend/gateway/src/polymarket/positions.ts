@@ -1,11 +1,9 @@
-'use strict';
-
-function toFiniteNumber(value, fallback = 0) {
+export function toFiniteNumber(value: any, fallback = 0): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function parseArray(value) {
+export function parseArray(value: any): any[] {
   if (Array.isArray(value)) return value;
   try {
     const parsed = JSON.parse(value || '[]');
@@ -15,7 +13,7 @@ function parseArray(value) {
   }
 }
 
-function normalizePolymarketSide(side) {
+export function normalizePolymarketSide(side: any): 'buy' | 'sell' | null {
   if (typeof side === 'string') {
     const upper = side.toUpperCase();
     if (upper === 'BUY') return 'buy';
@@ -26,8 +24,24 @@ function normalizePolymarketSide(side) {
   return null;
 }
 
-function aggregatePolymarketFilledPositions(trades = []) {
-  const buckets = new Map();
+export interface PolymarketPosition {
+  assetId: string;
+  symbol: string;
+  quantity: number;
+  averagePrice: number;
+  marketValue: number;
+  unrealizedPl: number;
+  lifecycle: 'active' | 'ended' | 'unknown';
+  valuationStatus: 'live_quote' | 'unavailable';
+  question?: string;
+  outcome?: string;
+  historyStatus?: string;
+  currentPrice?: number | null;
+  resolutionPrice?: number | null;
+}
+
+export function aggregatePolymarketFilledPositions(trades: any[] = []): PolymarketPosition[] {
+  const buckets = new Map<string, { assetId: string; symbol: string; quantity: number; costBasis: number }>();
   const sortedTrades = [...trades].sort((a, b) => {
     const ta = Date.parse(String(a.match_time || a.last_update || ''));
     const tb = Date.parse(String(b.match_time || b.last_update || ''));
@@ -39,7 +53,6 @@ function aggregatePolymarketFilledPositions(trades = []) {
     const side = normalizePolymarketSide(trade.side);
     if (!assetId || !side) continue;
 
-    // CLOB /trades reports one share as 10 raw size units.
     const size = toFiniteNumber(trade.size) / 10;
     const price = toFiniteNumber(trade.price);
     if (size <= 0 || price < 0) continue;
@@ -74,20 +87,29 @@ function aggregatePolymarketFilledPositions(trades = []) {
       averagePrice: bucket.costBasis / bucket.quantity,
       marketValue: 0,
       unrealizedPl: 0,
-      lifecycle: 'unknown',
-      valuationStatus: 'unavailable',
+      lifecycle: 'unknown' as const,
+      valuationStatus: 'unavailable' as const,
     }))
     .sort((a, b) => a.symbol.localeCompare(b.symbol));
 }
 
-function lifecycleForMarket(market = {}) {
+export function lifecycleForMarket(market: any = {}): 'active' | 'ended' | 'unknown' {
   if (market.closed === true || market.active === false) return 'ended';
   if (market.active === true && market.closed !== true) return 'active';
   return 'unknown';
 }
 
-function buildPolymarketTokenMetadata(markets = []) {
-  const byToken = new Map();
+export interface TokenMetadata {
+  tokenId: string;
+  question: string;
+  outcome: string;
+  lifecycle: 'active' | 'ended' | 'unknown';
+  closed: boolean;
+  resolutionPrice: number | null;
+}
+
+export function buildPolymarketTokenMetadata(markets: any[] = []): Map<string, TokenMetadata> {
+  const byToken = new Map<string, TokenMetadata>();
   for (const market of markets) {
     const tokenIds = parseArray(market.clobTokenIds ?? market.clob_token_ids).map(String);
     const outcomes = parseArray(market.outcomes).map(String);
@@ -112,7 +134,7 @@ function buildPolymarketTokenMetadata(markets = []) {
   return byToken;
 }
 
-function mergeTokenMetadata(target, source) {
+export function mergeTokenMetadata(target: Map<string, TokenMetadata>, source: Map<string, TokenMetadata>): Map<string, TokenMetadata> {
   for (const [tokenId, metadata] of source || []) {
     const current = target.get(tokenId);
     if (!current || current.lifecycle === 'unknown') target.set(tokenId, metadata);
@@ -120,7 +142,7 @@ function mergeTokenMetadata(target, source) {
   return target;
 }
 
-function projectPolymarketPosition(position, metadata, currentPrice) {
+export function projectPolymarketPosition(position: any, metadata?: TokenMetadata, currentPrice?: number): PolymarketPosition {
   const historyComplete = !position?.historyStatus || position.historyStatus === 'complete';
   const lifecycle = historyComplete ? metadata?.lifecycle || 'unknown' : 'unknown';
   const price = toFiniteNumber(currentPrice);
@@ -145,19 +167,19 @@ function projectPolymarketPosition(position, metadata, currentPrice) {
   };
 }
 
-function markPolymarketHistoryIncomplete(positions = [], reason = 'trade_history_truncated') {
+export function markPolymarketHistoryIncomplete(positions: any[] = [], reason = 'trade_history_truncated'): PolymarketPosition[] {
   return positions.map((position) => ({
     ...position,
-    lifecycle: 'unknown',
+    lifecycle: 'unknown' as const,
     historyStatus: reason,
     currentPrice: null,
     marketValue: 0,
     unrealizedPl: 0,
-    valuationStatus: 'unavailable',
+    valuationStatus: 'unavailable' as const,
   }));
 }
 
-function partitionPolymarketPositions(positions = []) {
+export function partitionPolymarketPositions(positions: any[] = []) {
   return {
     active: positions.filter((position) => position?.lifecycle === 'active'),
     ended: positions.filter((position) => position?.lifecycle === 'ended'),
@@ -165,20 +187,8 @@ function partitionPolymarketPositions(positions = []) {
   };
 }
 
-function isMarkedActivePolymarketPosition(position) {
+export function isMarkedActivePolymarketPosition(position: any): boolean {
   return position?.lifecycle === 'active'
     && position?.valuationStatus === 'live_quote'
     && Number.isFinite(Number(position.marketValue));
 }
-
-module.exports = {
-  aggregatePolymarketFilledPositions,
-  buildPolymarketTokenMetadata,
-  isMarkedActivePolymarketPosition,
-  lifecycleForMarket,
-  markPolymarketHistoryIncomplete,
-  mergeTokenMetadata,
-  normalizePolymarketSide,
-  partitionPolymarketPositions,
-  projectPolymarketPosition,
-};
