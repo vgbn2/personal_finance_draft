@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const {
   buildAggregatedPortfolioSnapshot,
-} = require('../../../backend/gateway/src/polymarket_portfolio.js');
+} = require('../../../backend/gateway/src/polymarket');
 
 const {
   DEFAULT_ALPACA_SCOPE,

@@ -1,10 +1,23 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
+require('ts-node').register({
+  transpileOnly: true,
+  skipProject: true,
+  experimentalResolver: true,
+  compilerOptions: {
+    module: 'CommonJS',
+    moduleResolution: 'node',
+    target: 'ES2020',
+    esModuleInterop: true,
+    ignoreDeprecations: '6.0',
+  },
+});
+
 const {
   normalizePolymarketApiCreds,
   summarizePolymarketApiCredShape,
-} = require('../../../../backend/gateway/src/polymarket_creds.js');
+} = require('../../../../backend/gateway/src/polymarket/index.ts');
 
 test('normalizePolymarketApiCreds accepts direct key/secret/passphrase shape', () => {
   assert.deepEqual(

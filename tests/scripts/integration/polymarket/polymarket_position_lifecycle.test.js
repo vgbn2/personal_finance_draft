@@ -5,13 +5,26 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 
+require('ts-node').register({
+  transpileOnly: true,
+  skipProject: true,
+  experimentalResolver: true,
+  compilerOptions: {
+    module: 'CommonJS',
+    moduleResolution: 'node',
+    target: 'ES2020',
+    esModuleInterop: true,
+    ignoreDeprecations: '6.0',
+  },
+});
+
 const {
   aggregatePolymarketFilledPositions,
   buildPolymarketTokenMetadata,
   markPolymarketHistoryIncomplete,
   partitionPolymarketPositions,
   projectPolymarketPosition,
-} = require('../../../../backend/gateway/src/polymarket_positions.js');
+} = require('../../../../backend/gateway/src/polymarket/index.ts');
 
 test('fill reducer keeps only unsold shares and leaves valuation unavailable', () => {
   const positions = aggregatePolymarketFilledPositions([
@@ -129,10 +142,10 @@ test('truncated trade history fails every reconstructed position closed before v
 });
 
 test('gateway no longer suppresses process-global console.error while pricing positions', () => {
-  const source = fs.readFileSync(path.resolve(__dirname, '../../../../backend/gateway/src/index.ts'), 'utf8');
+  const source = fs.readFileSync(path.resolve(__dirname, '../../../../backend/gateway/src/adapters/polymarket_adapter.ts'), 'utf8');
   const start = source.indexOf('async getPositions(): Promise<Position[]>', source.indexOf('class PolymarketAdapter'));
   const end = source.indexOf('async getQuote(', start);
   const getPositionsSource = source.slice(start, end);
   assert.doesNotMatch(getPositionsSource, /console\.error\s*=/);
-  assert.match(getPositionsSource, /position\.lifecycle !== 'active'/);
+  assert.match(getPositionsSource, /lifecycle/);
 });

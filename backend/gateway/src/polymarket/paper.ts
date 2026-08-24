@@ -1,21 +1,21 @@
-const crypto = require('node:crypto');
-const fs = require('node:fs');
-const path = require('node:path');
+import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
-const { GAMMA_BASE, inferWinner } = require('../../../shared/lib/market/polymarket_history');
-const { resolveRuntimePolicy } = require('../../../shared/lib/settings/runtime_policy');
-const { SIZING_MODES, normalizeSizingIntent } = require('../../../shared/lib/trading/position_sizing.js');
-const { classifyPolymarketGatewayError } = require('./polymarket_errors.js');
-const {
+import { GAMMA_BASE, inferWinner } from '../../../../shared/lib/market/polymarket_history';
+import { resolveRuntimePolicy } from '../../../../shared/lib/settings/runtime_policy';
+import { SIZING_MODES, normalizeSizingIntent } from '../../../../shared/lib/trading/position_sizing.js';
+import { classifyPolymarketGatewayError } from './errors';
+import {
   appendLedgerEvents,
   initializeLedger,
   ledgerPaths,
   loadLedgerProjection,
-} = require('./paper_ledger.js');
+} from './paper_ledger';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
-const DEFAULT_STORAGE_DIR = path.join(REPO_ROOT, 'storage', 'data', 'paper_trading');
-const DEFAULT_PORTFOLIO = {
+export const DEFAULT_STORAGE_DIR = path.join(REPO_ROOT, 'storage', 'data', 'paper_trading');
+export const DEFAULT_PORTFOLIO = {
   virtual_balance: 100,
   starting_balance: 100,
   positions: [],
@@ -23,16 +23,16 @@ const DEFAULT_PORTFOLIO = {
   updated_at: null,
 };
 
-function ensureDir(dir) {
+function ensureDir(dir: string): void {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-function toNumber(value, fallback = 0) {
+function toNumber(value: any, fallback = 0): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function loadPortfolio(storageDir = DEFAULT_STORAGE_DIR, virtualBalance = 100) {
+export function loadPortfolio(storageDir = DEFAULT_STORAGE_DIR, virtualBalance = 100): any {
   ensureDir(storageDir);
   if (fs.existsSync(ledgerPaths(storageDir).ledger)) {
     const loaded = loadLedgerProjection(storageDir, virtualBalance);
@@ -63,7 +63,7 @@ function loadPortfolio(storageDir = DEFAULT_STORAGE_DIR, virtualBalance = 100) {
   }
 }
 
-function migrateLegacyPaperState(storageDir = DEFAULT_STORAGE_DIR, options = {}) {
+export function migrateLegacyPaperState(storageDir = DEFAULT_STORAGE_DIR, options: { virtualBalance?: number; now?: string } = {}): any {
   ensureDir(storageDir);
   if (fs.existsSync(ledgerPaths(storageDir).ledger)) {
     const loaded = loadLedgerProjection(storageDir, options.virtualBalance || 100);
@@ -81,18 +81,18 @@ function migrateLegacyPaperState(storageDir = DEFAULT_STORAGE_DIR, options = {})
     return { ok: false, error: 'legacy paper fills have a truncated final record; migration refused' };
   }
 
-  let legacyPortfolio;
-  let fills;
+  let legacyPortfolio: any;
+  let fills: any[];
   try {
     legacyPortfolio = JSON.parse(fs.readFileSync(portfolioPath, 'utf8'));
-    fills = fillText.split('\n').filter(Boolean).map(JSON.parse);
+    fills = fillText.split('\n').filter(Boolean).map((line) => JSON.parse(line));
   } catch {
     return { ok: false, error: 'legacy paper state is malformed; migration refused' };
   }
   const positions = Array.isArray(legacyPortfolio.positions) ? legacyPortfolio.positions : [];
-  const positionsByToken = new Map(positions.map((position) => [String(position.token_id), position]));
-  const accepted = [];
-  const rejected = [];
+  const positionsByToken = new Map(positions.map((position: any) => [String(position.token_id), position]));
+  const accepted: any[] = [];
+  const rejected: any[] = [];
   for (const fill of fills) {
     const position = positionsByToken.get(String(fill.token_id));
     if (fill.virtual !== true || fill.side !== 'buy' || !position) {
@@ -180,7 +180,7 @@ function migrateLegacyPaperState(storageDir = DEFAULT_STORAGE_DIR, options = {})
   };
 }
 
-function bestPrice(entries, compare) {
+function bestPrice(entries: any[], compare: (a: number, b: number) => number): { price: number; size: number } | null {
   if (!Array.isArray(entries) || entries.length === 0) return null;
   return entries
     .map((entry) => ({ price: toNumber(entry.price), size: toNumber(entry.size) }))
@@ -188,7 +188,7 @@ function bestPrice(entries, compare) {
     .sort((a, b) => compare(a.price, b.price))[0] || null;
 }
 
-function deriveMidprice(orderbookPayload) {
+export function deriveMidprice(orderbookPayload: any): Record<string, any> {
   const book = orderbookPayload && (orderbookPayload.book || orderbookPayload);
   const bid = bestPrice(book && book.bids, (a, b) => b - a);
   const ask = bestPrice(book && book.asks, (a, b) => a - b);
@@ -205,12 +205,12 @@ function deriveMidprice(orderbookPayload) {
   };
 }
 
-function yesTokenForMarket(market) {
+export function yesTokenForMarket(market: any): any {
   const tokens = Array.isArray(market.tokens) ? market.tokens : [];
-  return tokens.find((token) => String(token.outcome || '').toLowerCase() === 'yes') || tokens[0] || null;
+  return tokens.find((token: any) => String(token.outcome || '').toLowerCase() === 'yes') || tokens[0] || null;
 }
 
-function polymarketPaperSizingContract(tokenId, market, orderbook, options = {}) {
+export function polymarketPaperSizingContract(tokenId: string, market: any, orderbook: any, options: { quantityStep?: number; now?: string } = {}): Record<string, any> {
   const book = orderbook && (orderbook.book || orderbook);
   const minQuantity = toNumber(book && book.min_order_size, 0);
   return {
@@ -225,20 +225,20 @@ function polymarketPaperSizingContract(tokenId, market, orderbook, options = {})
   };
 }
 
-function summarizePortfolio(portfolio) {
-  const openCost = portfolio.positions.reduce((sum, position) => {
+export function summarizePortfolio(portfolio: any): Record<string, any> {
+  const openCost = (portfolio.positions || []).reduce((sum: number, position: any) => {
     return sum + (toNumber(position.shares) * toNumber(position.avg_price));
   }, 0);
   return {
     virtual_balance: Number(toNumber(portfolio.virtual_balance).toFixed(6)),
     starting_balance: Number(toNumber(portfolio.starting_balance).toFixed(6)),
-    open_positions: portfolio.positions.length,
+    open_positions: (portfolio.positions || []).length,
     open_cost: Number(openCost.toFixed(6)),
     equity_marked_at_cost: Number((toNumber(portfolio.virtual_balance) + openCost).toFixed(6)),
   };
 }
 
-async function runPolymarketPaperRun(options = {}) {
+export async function runPolymarketPaperRun(options: any = {}): Promise<any> {
   const storageDir = options.storageDir || DEFAULT_STORAGE_DIR;
   const strategy = options.strategy || 'low_prob_dip';
   const virtualBalance = toNumber(options.virtualBalance, 100);
@@ -291,12 +291,12 @@ async function runPolymarketPaperRun(options = {}) {
   if (!initialized.ok) return initialized;
   const portfolio = initialized.projection;
 
-  const proposedEvents = [];
-  const skipped = [];
-  const existing = new Set(portfolio.positions.map((position) => String(position.token_id)));
+  const proposedEvents: any[] = [];
+  const skipped: any[] = [];
+  const existing = new Set((portfolio.positions || []).map((position: any) => String(position.token_id)));
 
   for (const market of markets) {
-    if (portfolio.positions.length >= maxConcurrent) {
+    if ((portfolio.positions || []).length >= maxConcurrent) {
       skipped.push({ reason: 'max concurrent positions reached', market: market.question || market.id || null });
       break;
     }
@@ -315,7 +315,7 @@ async function runPolymarketPaperRun(options = {}) {
       continue;
     }
 
-    let orderbook;
+    let orderbook: any;
     try {
       orderbook = await fetchOrderBook(tokenId, market);
     } catch (error) {
@@ -452,7 +452,7 @@ async function runPolymarketPaperRun(options = {}) {
 
   const committed = appendLedgerEvents(storageDir, proposedEvents, { now, startingBalance: virtualBalance });
   if (!committed.ok) return committed;
-  const fills = committed.accepted.map((event) => event.paper_fill);
+  const fills = committed.accepted.map((event: any) => event.paper_fill);
   for (const key of committed.duplicates) {
     skipped.push({ reason: 'duplicate paper intent', idempotency_key: key });
   }
@@ -472,31 +472,25 @@ async function runPolymarketPaperRun(options = {}) {
   };
 }
 
-/**
- * Check open paper positions for resolution via Gamma API.
- * Any position whose market has resolved (active === false) is closed at the
- * inferred YES resolution price, P&L recorded to resolved_positions.jsonl,
- * and virtual balance credited.
- */
-async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAGE_DIR) {
+export async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAGE_DIR): Promise<any> {
   const migration = migrateLegacyPaperState(storageDir);
   if (!migration.ok) return migration;
   const portfolio = loadPortfolio(storageDir);
-  if (portfolio.positions.length === 0) return { ok: true, closed: [] };
+  if ((portfolio.positions || []).length === 0) return { ok: true, closed: [] };
 
   const now = new Date().toISOString();
-  const closed = [];
+  const closed: any[] = [];
 
-  for (let i = portfolio.positions.length - 1; i >= 0; i--) {
+  for (let i = (portfolio.positions || []).length - 1; i >= 0; i--) {
     const pos = portfolio.positions[i];
     if (!pos.market_id) continue;
 
-    let market;
+    let market: any;
     try {
       const url = `${GAMMA_BASE}/markets?condition_id=${encodeURIComponent(pos.market_id)}&limit=1`;
       const res = await fetch(url, { headers: { Accept: 'application/json' } });
       if (!res.ok) continue;
-      const arr = await res.json();
+      const arr: any = await res.json();
       market = Array.isArray(arr) ? arr[0] : (arr && arr.id ? arr : null);
     } catch { continue; }
 
@@ -517,7 +511,6 @@ async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAGE_DIR) 
       pnl: Number(pnl.toFixed(6)),
     };
 
-    // Credit back: original cost was shares * avg_price, we receive shares * resolutionPrice
     const cashCredit = Number((pos.shares * resolutionPrice).toFixed(6));
     portfolio.virtual_balance = Number((toNumber(portfolio.virtual_balance) + cashCredit).toFixed(6));
     portfolio.positions.splice(i, 1);
@@ -560,15 +553,3 @@ async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAGE_DIR) 
 
   return { ok: true, closed };
 }
-
-module.exports = {
-  DEFAULT_STORAGE_DIR,
-  checkAndCloseResolvedPositions,
-  deriveMidprice,
-  loadPortfolio,
-  migrateLegacyPaperState,
-  runPolymarketPaperRun,
-  polymarketPaperSizingContract,
-  summarizePortfolio,
-  yesTokenForMarket,
-};
