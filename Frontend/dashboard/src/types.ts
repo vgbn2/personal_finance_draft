@@ -1,4 +1,4 @@
-export type TabId = 'overview' | 'signals' | 'market_intel' | 'backtest' | 'quote_health' | 'audit_log' | 'telemetry' | 'sigma_band' | 'settings' | 'bot';
+export type TabId = 'overview' | 'signals' | 'market_intel' | 'backtest' | 'quote_health' | 'audit_log' | 'telemetry' | 'sigma_band' | 'settings' | 'bot' | 'infra';
 
 export type LayoutDensity = 'compact' | 'comfortable';
 export type LayoutPreset = 'compact' | 'default' | 'research';

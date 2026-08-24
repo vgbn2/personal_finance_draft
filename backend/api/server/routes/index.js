@@ -35,6 +35,7 @@ module.exports = {
   '/api/run/status':  require('./status/run_status'),
   '/api/bot/cycle':   require('./bot/bot_cycle'),
   '/api/bot/sell':    require('./bot/bot_sell'),
+  '/api/system/infra': require('./system/infra'),
   '/api/public/market-summary': require('./public/public_market_summary'),
   '/api/public/freshness': require('./public/public_freshness'),
   '/api/public/research-summary': require('./public/public_research_summary'),

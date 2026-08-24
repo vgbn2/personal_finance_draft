@@ -49,3 +49,8 @@
   "boundaries": "no live execution, selective git staging targeting only B2A seam files, preserving unrelated working directory modifications; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
 }
 ```
+
+## 2026-08-25
+
+- **hpdesk rsync:** Tailscale SSH blocks user `vgbn`. Always use `root@hpdesk`, destination `/home/vgbn-server/Documents/codeptit/personal_finance_draft/`.
+- **skills mirror drift** (`check_hygiene.js` / `test:structure` FAIL): run `node scripts/dev/sync_repo_skills.js --write` to fix at next session start.
