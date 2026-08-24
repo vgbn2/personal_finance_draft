@@ -41,14 +41,27 @@ export function AuditLogPanel() {
     fetchEvents();
 
     if (supabase) {
-      const channel = supabase.channel('audit_log_changes')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_events' }, payload => {
-          setEvents(prev => [payload.new as AuditEvent, ...prev].slice(0, 100));
-        })
-        .subscribe();
-      
+      let channel: any = null;
+      try {
+        channel = supabase.channel('audit_log_changes')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_events' }, payload => {
+            setEvents(prev => [payload.new as AuditEvent, ...prev].slice(0, 100));
+          })
+          .subscribe((status, err) => {
+            if (status === 'CHANNEL_ERROR' || err) {
+              console.warn('Audit log realtime subscription warning:', err || status);
+            }
+          });
+      } catch (err) {
+        console.warn('Failed to subscribe to audit log changes:', err);
+      }
+
       return () => {
-        supabase.removeChannel(channel);
+        if (channel && supabase) {
+          try {
+            supabase.removeChannel(channel);
+          } catch (_) {}
+        }
       };
     }
   }, []);

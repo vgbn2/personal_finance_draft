@@ -102,14 +102,19 @@ function isAllowedOrigin(origin, req) {
 
 function setSecurityHeaders(res, origin, req) {
   let authOrigin = '';
+  let wsOrigin = '';
   try {
-    authOrigin = process.env.SOVEREIGN_SUPABASE_URL
-      ? new URL(process.env.SOVEREIGN_SUPABASE_URL).origin
-      : '';
+    const rawUrl = process.env.SOVEREIGN_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+    if (rawUrl) {
+      const parsed = new URL(rawUrl);
+      authOrigin = parsed.origin;
+      wsOrigin = parsed.origin.replace(/^http/, 'ws');
+    }
   } catch (_) {
     authOrigin = '';
+    wsOrigin = '';
   }
-  const connectSources = ["'self'", ...(authOrigin ? [authOrigin] : [])].join(' ');
+  const connectSources = ["'self'", 'ws:', 'wss:', ...(authOrigin ? [authOrigin, wsOrigin] : [])].filter(Boolean).join(' ');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'no-referrer');
@@ -368,55 +373,63 @@ const server = http.createServer(async (req, res) => {
     });
 });
 
-const { Server } = require('socket.io');
+let io = {
+  emit: () => {},
+  use: () => {},
+  on: () => {},
+};
 
-const io = new Server(server, {
-  cors: {
-    origin: true,
-    methods: ['GET', 'POST']
-  },
-  allowRequest: (req, callback) => callback(null, isAllowedOrigin(req.headers.origin, req)),
-});
+try {
+  const { Server } = require('socket.io');
 
-io.use(async (socket, next) => {
-  try {
-    const principal = await resolveSocketPrincipal(socket);
-    const decision = authorize(principal, [CAPABILITIES.STATUS_READ]);
-    if (!decision.allowed) {
-      const error = new Error(decision.reason);
-      error.data = {
-        code: decision.reason,
-        required_capabilities: decision.required,
-      };
-      next(error);
-      return;
-    }
-    const network = requestNetworkContext(socket.request);
-    const sessionDecision = authSessionRegistry.record(principal, network);
-    if (!sessionDecision.allowed) {
-      const error = new Error('ip_reauthentication_required');
-      error.data = { code: 'ip_reauthentication_required' };
-      next(error);
-      return;
-    }
-    socket.data.sovereignPrincipal = principal;
-    socket.data.sovereignNetwork = network;
-    next();
-  } catch (_) {
-    const error = new Error('authentication_required');
-    error.data = { code: 'authentication_required' };
-    next(error);
-  }
-});
-
-io.on('connection', (socket) => {
-  console.log(`[TELEMETRY] Client connected: ${socket.id}`);
-  socket.emit('status', { msg: 'Connected to Sovereign Telemetry', timestamp: new Date().toISOString() });
-  
-  socket.on('disconnect', () => {
-    console.log(`[TELEMETRY] Client disconnected: ${socket.id}`);
+  io = new Server(server, {
+    cors: {
+      origin: true,
+      methods: ['GET', 'POST']
+    },
+    allowRequest: (req, callback) => callback(null, isAllowedOrigin(req.headers.origin, req)),
   });
-});
+
+  io.use(async (socket, next) => {
+    try {
+      const principal = await resolveSocketPrincipal(socket);
+      const decision = authorize(principal, [CAPABILITIES.STATUS_READ]);
+      if (!decision.allowed) {
+        const error = new Error(decision.reason);
+        error.data = {
+          code: decision.reason,
+          required_capabilities: decision.required,
+        };
+        next(error);
+        return;
+      }
+      const network = requestNetworkContext(socket.request);
+      const sessionDecision = authSessionRegistry.record(principal, network);
+      if (!sessionDecision.allowed) {
+        const error = new Error('ip_reauthentication_required');
+        error.data = { code: 'ip_reauthentication_required' };
+        next(error);
+        return;
+      }
+      socket.data.sovereignPrincipal = principal;
+      socket.data.sovereignNetwork = network;
+      next();
+    } catch (_) {
+      const error = new Error('authentication_required');
+      error.data = { code: 'authentication_required' };
+      next(error);
+    }
+  });
+
+  io.on('connection', (socket) => {
+    console.log(`[TELEMETRY] Client connected: ${socket.id}`);
+    socket.emit('status', { msg: 'Connected to Sovereign Telemetry', timestamp: new Date().toISOString() });
+
+    socket.on('disconnect', () => {
+      console.log(`[TELEMETRY] Client disconnected: ${socket.id}`);
+    });
+  });
+} catch (_) {}
 
 // Watch snapshot for real-time market data streaming
 const { DEFAULT_SNAPSHOT } = require('./server/services/cli_executor');

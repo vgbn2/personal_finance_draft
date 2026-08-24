@@ -35,21 +35,32 @@ export async function getSessionToken(): Promise<string | null> {
 export function subscribeToOrders(callback: (payload: any) => void) {
   if (!supabase) return () => {};
 
-  const channel = supabase
-    .channel('order-updates')
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'orders' },
-      (payload) => callback(payload)
-    )
-    .on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'orders' },
-      (payload) => callback(payload)
-    )
-    .subscribe();
+  try {
+    const channel = supabase
+      .channel('order-updates')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => callback(payload)
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        (payload) => callback(payload)
+      )
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || err) {
+          console.warn('Realtime subscription warning:', err || status);
+        }
+      });
 
-  return () => {
-    supabase.removeChannel(channel);
-  };
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch (_) {}
+    };
+  } catch (err) {
+    console.warn('Failed to subscribe to order updates:', err);
+    return () => {};
+  }
 }
