@@ -1,5 +1,13 @@
 # Project State - Sovereign Trading Platform
 
+## Current Phase
+Gateway B2C Account & Diagnostic Seam Extraction & Refactoring
+
+## 2026-08-24 Gateway B2C Account & Diagnostic Seam Extraction
+
+- Extracted account diagnostic snapshots (`polymarket portfolio`, `polymarket debug`, `polymarket collateral-probe`, `polymarket modes`, `polymarket investigate`, `polymarket topology`, `polymarket probe`, `polymarket auth-health`, `derive-creds`, `trace`, `markets`, `orderbook`, `price-history`) from `backend/gateway/src/index.ts` into dedicated `backend/gateway/src/polymarket_account_adapter.ts`.
+- `backend/gateway/src/index.ts` now delegates account and diagnostic probes to `polymarket_account_adapter.ts` while maintaining non-zero exit codes on failure and fail-closed runtime policy checks.
+
 ## 2026-08-24 Gateway B2B Execution Seam Extraction & Verification Closeout
 
 - Extracted live Polymarket order execution (`submitPolymarketOrder`, `preflightPolymarketOrder`, order signing, `PolymarketAdapter` execution methods, `buildPolymarketBotExecutionOptions`, and `processProposedOrdersFile`) from `backend/gateway/src/index.ts` into dedicated `backend/gateway/src/polymarket_execution.ts`.

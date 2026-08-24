@@ -1,18 +1,16 @@
 # Next Session Goal
 
-## 2026-08-24 Gateway B2B Execution Seam Landing & Gateway B2C Roadmap
+## 2026-08-24 Gateway B2C Account & Diagnostic Seam Landing & Coordinator Refactoring Roadmap
 
-**Status of Gateway B2B Execution Seam:**
+**Status of Gateway B2C Account & Diagnostic Seam:**
 - **Status:** COMPLETED & VERIFIED.
-- **Summary:** Extracted order submission, preflight validation (`submitPolymarketOrder`, `preflightPolymarketOrder`), order signing, risk engine checks (`ExecutionGateway.validateOrder`), and proposed order processing from `backend/gateway/src/index.ts` into a dedicated `backend/gateway/src/polymarket_execution.ts` module. All integration tests pass 100% and hygiene checks pass.
+- **Summary:** Extracted all account diagnostic functions (`fetchPolymarketPortfolio`, `fetchPolymarketDebug`, `fetchPolymarketAuthHealth`, `fetchPolymarketModes`, `fetchPolymarketCollateralProbe`, `fetchPolymarketInvestigate`, `fetchPolymarketProbe`, `fetchPolymarketTopology`, `fetchPolymarketTrace`, `fetchPolymarketOrderBook`, `fetchPolymarketPriceHistory`, `derivePolymarketApiCreds`), snapshot rendering functions, formatting helpers, and interfaces from `backend/gateway/src/index.ts` into `backend/gateway/src/polymarket_account_adapter.ts`.
 
-**Immediate next action for Gateway B2C:**
-1. **Gateway B2C Account & Diagnostic Seam Extraction**:
-   - Extract account diagnostic snapshots (`polymarket portfolio`, `polymarket debug`, `polymarket collateral-probe`, `polymarket modes`, `polymarket investigate`, `polymarket topology`, `polymarket probe`, `polymarket auth-health`) from `backend/gateway/src/index.ts` into a dedicated account diagnostic module (`polymarket_account_adapter.ts`).
-2. **Coordinator Finalization**:
-   - Finalize `backend/gateway/src/index.ts` as a pure CLI coordinator handling environment surface checks, argument parsing, runtime policy enforcement, and dispatching to read (`polymarket_read_adapter`), execution (`polymarket_execution`), and account (`polymarket_account_adapter`) modules.
-3. **Execution Safety Requirements**:
-   - Ensure all diagnostic and execution commands maintain non-zero process exit codes (`process.exitCode = 1`) on failure and fail-closed handling on unconfigured or unauthorized requests.
+**Immediate next action:**
+1. **Gateway CLI Coordinator Finalization**:
+   - Finalize `backend/gateway/src/index.ts` to operate purely as an entrypoint coordinator handling environment surface checking, argument routing, runtime policy enforcement, and module dispatching.
+2. **Safety & Exit Code Verification**:
+   - Verify non-zero exit code enforcement (`process.exitCode = 1`) across all CLI subcommands when encountering errors or unconfigured credentials.
 
 **Standing deferred:**
 - Replace `.github/CODEOWNERS` and `MAINTAINERS.md` placeholder handles with real GitHub usernames.

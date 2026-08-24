@@ -1,3 +1,16 @@
+### Session Memory - 2026-08-24 — Gateway B2C Account & Diagnostic Seam Extraction
+
+```json
+{
+  "batch": ["GATEWAY-B2C-ACCOUNT-ADAPTER-1"],
+  "lifecycle": "closed",
+  "scope": "Extracted account diagnostic snapshots, rendering helper functions, types, and account diagnostic probes from backend/gateway/src/index.ts into dedicated backend/gateway/src/polymarket_account_adapter.ts module. Refactored backend/gateway/src/index.ts to import account adapter functions while maintaining CLI coordinator structure, exit code rules, and safety boundaries.",
+  "changes": "created backend/gateway/src/polymarket_account_adapter.ts; updated backend/gateway/src/index.ts, workspace/STATE.md, workspace/NEXT_SESSION_GOAL.md, workspace/SESSION_MEMORY.md",
+  "verification": "node scripts/dev/check_hygiene.js (PASS, 0 findings); npm run test:structure (PASS, 28/28 subtests pass); npm test -- tests/scripts/lib/polymarket_execution.test.js (2/2 pass)",
+  "boundaries": "no live execution; process.exitCode = 1 maintained on failure; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-08-24 — Gateway B2B Execution Seam Extraction & Verification
 
 ```json
