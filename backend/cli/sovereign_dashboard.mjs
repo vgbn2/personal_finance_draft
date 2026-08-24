@@ -97,7 +97,7 @@ const M = [
     cmds: [
       { id: 'status',      label: 'status',      desc: 'System health snapshot',           flags: {} },
       { id: 'cockpit',     label: 'cockpit',      desc: 'Terminal dashboard', flags: {} },
-      { id: 'watch',       label: 'watch',        desc: 'Live data feed, polls every N min',// took long to boot,require a press of the esc key to reveal,ruin the interface in here, can this be replace by charting? references for charting  C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\terminus,C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\_resources\lightweight-charts dev suggest -- RESOLVED: raw cursor-control output piped into the dashboard panel is now TTY-guarded (no more garbled output); added an optional --symbol live-chart mode reusing renderPriceChart() and narrowing ingest to just that symbol (much faster boot than the whole-family fetch). terminus/lightweight-charts had no reusable Node-TUI pattern. Pending user confirmation.
+      { id: 'watch',       label: 'watch',        desc: 'Live data feed, polls every N min',
         flags: {
           '--family':    { t:'sel', opts:['all','crypto','fx','equities','indices','commodities'], lbl:'Data family', def:'all' },
           '--interval':  { t:'txt', lbl:'Poll interval (minutes)', def:'15' },
@@ -110,10 +110,53 @@ const M = [
           '--dry-run': { t:'yn', lbl:'Preview only? (no deletion)', def:true, warn:true },
         },
       },
+      { id: 'restart',     label: 'restart',     desc: 'Trigger Gateway /api/restart',
+        flags: {
+          '--service': { t:'txt', lbl:'Target service', def:'all' },
+          '--force':   { t:'yn',  lbl:'Force immediate restart?', def:false },
+        },
+      },
       { id: 'kill-switch', label: 'kill-switch', desc: 'Safety kill switch (engage, disengage, status)',
         flags: {
           '--action': { t:'sel', opts:['status','engage','disengage'], lbl:'Action', def:'status' },
           '--reason': { t:'txt', lbl:'Reason', def:'manual_tui_trigger' },
+        },
+      },
+    ],
+  },
+  {
+    label: 'Account', full: 'ACCOUNT & AUTH (SUPABASE)',
+    cmds: [
+      { id: 'auth-status', label: 'auth-status', desc: 'Verify session & JWT claims', flags: {} },
+      { id: 'login',       label: 'login',       desc: 'Authenticate platform user',
+        flags: {
+          '--email':    { t:'txt', lbl:'Email address', def:'' },
+          '--password': { t:'txt', lbl:'Password (prompted if omitted)', def:'' },
+        },
+      },
+      { id: 'register',    label: 'register',    desc: 'Provision platform identity',
+        flags: {
+          '--email':    { t:'txt', lbl:'Email address', def:'' },
+          '--password': { t:'txt', lbl:'Password (prompted if omitted)', def:'' },
+        },
+      },
+      { id: 'logout',      label: 'logout',      desc: 'Revoke active session', flags: {} },
+      { id: 'balance',     label: 'balance',     desc: 'Aggregate cash & collateral',
+        flags: {
+          '--currency': { t:'txt', lbl:'Currency', def:'USD' },
+        },
+      },
+      { id: 'positions',   label: 'positions',   desc: 'Multi-broker position inspection',
+        flags: {
+          '--symbol':   { t:'txt', lbl:'Symbol filter', def:'', pickSymbol:'single' },
+          '--venue':    { t:'sel', opts:['all','paper','live','polymarket'], lbl:'Venue', def:'all' },
+        },
+      },
+      { id: 'orders',      label: 'orders',      desc: 'Order lifecycle audit trail',
+        flags: {
+          '--symbol':   { t:'txt', lbl:'Symbol filter', def:'', pickSymbol:'single' },
+          '--status':   { t:'sel', opts:['all','open','filled','cancelled'], lbl:'Status', def:'all' },
+          '--limit':    { t:'txt', lbl:'Limit', def:'20' },
         },
       },
     ],
@@ -126,7 +169,7 @@ const M = [
           '--audit-vintages': { t:'yn', lbl:'Only show vintage anomalies?', def:false },
         },
       },
-      { id: 'ingest', label: 'ingest', desc: 'Fetch latest market data',//load too long,require a press of the esc key to reveal, is this redundant?, dev question, 
+      { id: 'ingest', label: 'ingest', desc: 'Fetch latest market data',
         flags: {
           '--family':       { t:'sel', opts:['all','crypto','fx','equities','indices','commodities','macro','prediction_market'], lbl:'Data family', def:'all' },
           '--symbol':       { t:'txt', lbl:'Symbol filter (optional)', def:'', pickSymbol:'single' },
@@ -145,7 +188,7 @@ const M = [
         },
       },
       { id: 'stop-backfill-daemon', label: 'stop-backfill-daemon', desc: 'Stop the background backfill daemon', flags: {} },
-      { id: 'intraday-rollup', label: 'intraday-rollup', desc: 'Derive coarser bins from 1m/5m base',//same backgroud action like backfill-daemon, dev suggest -- RESOLVED: confirmed backfill_daemon.js calls rollupFromBase every cycle; this command stays as the manual/recovery path, not a duplicate. Desc updated 2026-06-22, pending user confirmation.
+      { id: 'intraday-rollup', label: 'intraday-rollup', desc: 'Derive coarser bins from 1m/5m base',
         flags: {
           '--family':     { t:'sel', opts:['all','crypto','equities'], lbl:'Family', def:'all' },
           '--symbols':    { t:'txt', lbl:'Symbol filter comma-sep (blank = all)', def:'' },
@@ -163,10 +206,8 @@ const M = [
     ],
   },
   {
-    label: 'Backend', full: 'BACKEND TOOLS (C++)',
+    label: 'Analytics', full: 'ANALYTICS (MATH & C++ ENGINES)',
     cmds: [
-      { id: 'backend status',      label: 'status',      desc: 'C++ backend health check', flags: {} },//is this redundant?, dev question -- RESOLVED: not redundant, status.js documents it as a separate complementary command to top-level `status` (different layer: C++ backend vs overall system). Pending user confirmation.
-      { id: 'backend stats',       label: 'stats',       desc: 'Equity-curve stats from a CSV/backtest file', flags: {} },//is this redundant?, dev question -- RESOLVED: `bt` already prints Sharpe/vol/cum-return for its own run, so this is redundant for that common case; its real value is computing stats on an arbitrary external --equity curve, which `bt` can't do. Desc updated 2026-06-22, pending user confirmation.
       { id: 'backend correlation', label: 'correlation', desc: 'Correlation matrix → heatmap',
         flags: {
           '--symbols':          { t:'txt', lbl:'Symbols comma-sep, min 2 (blank = default equities)', def:'', pickSymbol:'multi' },
@@ -176,7 +217,7 @@ const M = [
           '--drop-non-overlap': { t:'yn',  lbl:'Drop non-overlapping symbols auto?', def:false },
         },
       },
-      { id: 'backend visualize', label: 'visualize', desc: 'Sigma band live view',//force ingest if lacking in bars, dev suggest -- RESOLVED: backend_visualize.js now runs one ingestMarketData() retry on insufficient bars before erroring. Pending user confirmation.
+      { id: 'backend visualize', label: 'visualize', desc: 'Sigma band live view',
         flags: {
           '--symbol':    { t:'txt', lbl:'Symbol to visualize (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m'], lbl:'Timeframe', def:'1d' },
@@ -185,7 +226,6 @@ const M = [
           '--no-poll':   { t:'yn',  lbl:'One-shot (no live poll)?', def:false },
         },
       },
-      { id: 'backend universe', label: 'universe', desc: 'Cached symbol inventory (all families)', flags: {} },
       { id: 'risk', label: 'risk check', desc: 'Pre-trade risk limit check (C++ core)',
         flags: {
           '--notional':     { t:'txt', lbl:'Order Notional ($)', def:'100' },
@@ -194,12 +234,8 @@ const M = [
           '--max-drawdown': { t:'txt', lbl:'Max Allowed Drawdown (0.15 = 15%)', def:'0.15' },
         },
       },
-      // Appended after 'backend universe' deliberately, not next to 'backend
-      // visualize' above -- sovereign_dashboard.test.js hardcodes initialCmdI:4
-      // for 'backend universe' (its real, fast, deterministically-long output
-      // is used to test panel scrolling); inserting earlier in this list would
-      // have silently shifted that index and broken an unrelated test.
-      { id: 'backend chart', label: 'chart', desc: 'OHLCV price chart',// type-to-edit + width auto-clamp fixed 2026-06-22. Candlestick/SMA/volume upgrade DONE 2026-06-22 (s55): --style candle renders OHLC body+wick, --sma/--volume add the overlay + subplot, all via renderCandlestickChart() (visualizations.js).
+      { id: 'backend universe', label: 'universe', desc: 'Cached symbol inventory (all families)', flags: {} },
+      { id: 'backend chart', label: 'chart', desc: 'OHLCV price chart',
         flags: {
           '--symbol':    { t:'txt', lbl:'Symbol to chart (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
@@ -221,7 +257,7 @@ const M = [
       },
       { id: 'bt', label: 'bt', desc: 'Backtest trust gate, prop-firm fit',
         flags: {
-          '--strategy':       { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'', pickStrategy:'single' },//i want to be able to choose strategies like choosing sym,bols, dev review -- RESOLVED: added pickStrategy:'single', reuses the same symbol-picker overlay (STRATEGY_UNIVERSE). Pending user confirmation.
+          '--strategy':       { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'', pickStrategy:'single' },
           '--symbol':         { t:'txt', lbl:'Symbols comma-sep (blank = strategy universe)', def:'', pickSymbol:'multi' },
           '--timeframe':      { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
           '--days':           { t:'txt', lbl:'History window (days)', def:'730' },
@@ -239,7 +275,7 @@ const M = [
       { id: 'optimize', label: 'optimize', desc: 'Indicator period grid',
         flags: {
           '--strategy':  { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'' },
-          '--symbol':    { t:'txt', lbl:'Symbols comma-sep (blank = strategy universe)', def:'', pickSymbol:'multi' },
+          '--symbol':    { t:'txt', lbl:'Symbols comma-sep (blank = strategy universe)', def:'', pickStrategy:'multi' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
         },
       },
@@ -308,20 +344,27 @@ const M = [
   {
     label: 'Trade', full: 'EXECUTION & TRADING',
     cmds: [
-      { id: 'alpaca',       label: 'alpaca',       desc: 'Alpaca REST broker (US equities & crypto)',
+      { id: 'execute', label: 'execute', desc: 'Execute macro order across venues',
         flags: {
-          '--action':     { t:'sel', opts:['balance','aggregate_portfolio','favorites','buy','sell'], lbl:'Action', def:'balance' },
-          '--symbol':     { t:'txt', lbl:'Symbol (buy/sell)', def:'', pickSymbol:'single' },
-          '--qty':        { t:'txt', lbl:'Quantity (buy/sell)', def:'1' },
-          '--order-type': { t:'sel', opts:['market','limit'], lbl:'Order type (buy/sell)', def:'market' },
-          '--price':      { t:'txt', lbl:'Limit price (order-type=limit)', def:'' },
-          '--pin':        { t:'txt', lbl:'Trade PIN (if SOVEREIGN_TRADE_PIN is set)', def:'' },
-          '--live':       { t:'yn',  lbl:'⚠ EXECUTE LIVE TRADE?', def:false, warn:true },
+          '--venue':  { t:'sel', opts:['paper','live','polymarket'], lbl:'Venue', def:'paper' },
+          '--symbol': { t:'txt', lbl:'Symbol', def:'', pickSymbol:'single' },
+          '--side':   { t:'sel', opts:['buy','sell'], lbl:'Side', def:'buy' },
+          '--amount': { t:'txt', lbl:'Amount', def:'100' },
+          '--price':  { t:'txt', lbl:'Price (limit)', def:'' },
         },
       },
-      { id: 'mt5',          label: 'mt5',          desc: 'MT5 / EA terminal (forex, CFDs, futures)', flags: {} },
-      { id: 'add-platform', label: 'add-platform', desc: '+ Add broker / trading platform wizard', flags: {} },
-      { id: 'trade favorites', label: 'favorites',    desc: 'View / manage favourite symbols', flags: {} },
+      { id: 'cancel', label: 'cancel', desc: 'Cancel open order(s)',
+        flags: {
+          '--order-id': { t:'txt', lbl:'Order ID', def:'' },
+          '--all':      { t:'yn',  lbl:'Cancel all open orders?', def:false },
+        },
+      },
+      { id: 'close', label: 'close', desc: 'Position liquidation',
+        flags: {
+          '--symbol': { t:'txt', lbl:'Symbol', def:'', pickSymbol:'single' },
+          '--ratio':  { t:'txt', lbl:'Ratio (1.0 = 100%)', def:'1.0' },
+        },
+      },
       { id: 'auto-trade',   label: 'auto-trade',   desc: 'Automated strategy execution loop',
         flags: {
           '--interval': { t:'txt', lbl:'Interval (minutes)', def:'15' },
@@ -333,13 +376,7 @@ const M = [
           '--live': { t:'yn', lbl:'Query LIVE account (vs paper)?', def:false },
         },
       },
-      { id: 'agent',      label: 'agent',      desc: 'AI agent task runner (local Ollama)',
-        flags: {
-          '--query': { t:'txt', lbl:'Task for the agent', def:'' },
-        },
-      },
       { id: 'strategy',   label: 'strategy',   desc: 'Strategy management', flags: {} },
-      { id: 'prop-firms', label: 'prop-firms', desc: 'Prop firm profile management', flags: {} },
       { id: 'run',        label: 'run',        desc: 'Persistent runners (paper bot, backfill loop)', flags: {} },
     ],
   },
@@ -355,93 +392,17 @@ const M = [
           '--timeframe':    { t:'sel', opts:['1d','1h','15m'], lbl:'Timeframe', def:'1h' },
         },
       },
-      { id: 'polymarket backtest', label: 'bt', desc: 'Backtest',
+      { id: 'polymarket debug', label: 'debug', desc: 'Diagnostic probe',
         flags: {
-          '--strategy':        { t:'sel', opts:['low_prob_dip','mean_revert'], lbl:'Strategy', def:'low_prob_dip' },
-          '--tag-id':          { t:'txt', lbl:'Gamma tag ID (21 = crypto 2023+)', def:'21' },
-          '--days':            { t:'txt', lbl:'Days back to scan', def:'365' },
-          '--max-markets':     { t:'txt', lbl:'Max markets to test', def:'20' },
-          '--entry-threshold': { t:'txt', lbl:'Max entry price (low_prob_dip)', def:'0.15' },
+          '--raw': { t:'yn', lbl:'Raw JSON output?', def:false },
         },
       },
-      { id: 'polymarket derive-creds', label: 'derive-creds', desc: 'Derive L2 API credentials from wallet', flags: {} },
-      {
-        id: 'bot',
-        label: 'bot',
-        desc: 'Bot control panel',
-        subcmds: [
-          { id: 'health',  label: 'Health Check', desc: 'Check credentials, API, and balance', cmdStr: 'bot health' },
-          { id: 'status',  label: 'Status',             desc: 'Show bot run status', cmdStr: 'bot status' },
-          { id: 'cycle',   label: 'Run Cycle (dry-run)', desc: 'Run a single dry-run iteration', cmdStr: 'bot cycle' },
-          { id: 'run',     label: 'Start Loop',         desc: 'Start continuous trading loop', cmdStr: 'bot run' },
-          { id: 'enable',  label: 'Enable Bot',         desc: 'Enable the bot in config', cmdStr: 'bot config --key enabled --value true' },
-          { id: 'disable', label: 'Disable Bot',        desc: 'Disable the bot in config', cmdStr: 'bot config --key enabled --value false' },
-          { id: 'config',  label: 'Config', desc: 'Edit bot parameters', cmdStr: 'bot config' },
-          { id: 'back',    label: 'Back',               desc: 'Return to command list', cmdStr: '' }
-        ]
-      },
-    ],
-  },
-  {
-    label: 'Settings', full: 'SETTINGS & PREFERENCES',
-    cmds: [
-      { id: 'settings show',      label: 'Show',      desc: 'Show current config', flags: {} },
-      { id: 'settings favorites', label: 'Favorites', desc: 'Manage favourite symbols',
+      { id: 'polymarket auth-health', label: 'auth-health', desc: 'API key & signature verifier', flags: {} },
+      { id: 'polymarket paper', label: 'paper', desc: 'Simulated CLOB paper engine',
         flags: {
-          '--symbols': { t:'txt', lbl:'Comma-sep symbol list', def:'' },
+          '--virtual-balance': { t:'txt', lbl:'Virtual Balance ($)', def:'1000' },
         },
       },
-      { id: 'settings timezone', label: 'Timezone', desc: 'Set display timezone',
-        flags: {
-          '--value': { t:'sel', opts:['UTC','Europe/London','Asia/Ho_Chi_Minh','Asia/Singapore','Asia/Tokyo','America/New_York','America/Los_Angeles'], lbl:'Timezone', def:'UTC' },
-        },
-      },
-      { id: 'settings layout', label: 'Layout', desc: 'Set layout preset',
-        flags: {
-          '--preset': { t:'sel', opts:['default','compact','research','legacy'], lbl:'Layout preset ("legacy" exits this dashboard to the old prompt-based menu)', def:'default' },
-        },
-      },
-      { id: 'settings params', label: 'Params', desc: 'Default trading parameters',
-        flags: {
-          '--position-size':    { t:'txt', lbl:'Position size (USDC)', def:'100' },
-          '--stop-loss':        { t:'txt', lbl:'Stop loss %', def:'0.05' },
-          '--take-profit':      { t:'txt', lbl:'Take profit %', def:'0.10' },
-          '--min-edge':         { t:'txt', lbl:'Min edge threshold', def:'0.05' },
-          '--max-positions':    { t:'txt', lbl:'Max open positions', def:'10' },
-          '--polling-interval': { t:'txt', lbl:'Polling interval (seconds)', def:'60' },
-        },
-      },
-      { id: 'settings flags', label: 'Flags', desc: 'Toggle features',
-        flags: {
-          '--flag':  { t:'sel', opts:['polymarket','bot_autopilot','ai_agent_trading','multi_agent_research','onchain_data','auto_backfill'], lbl:'Feature flag', def:'' },
-          '--value': { t:'sel', opts:['true','false'], lbl:'Enable?', def:'false' },
-        },
-      },
-      { id: 'settings alerts', label: 'Alerts', desc: 'Alert preferences',
-        flags: {
-          '--email': { t:'yn', lbl:'Email alerts?', def:true },
-          '--push':  { t:'yn', lbl:'Push alerts?',  def:false },
-        },
-      },
-      { id: 'settings reset', label: 'Reset', desc: 'Reset all to defaults', flags: {} },
-    ],
-  },
-  {
-    label: 'Account', full: 'ACCOUNT & AUTH (SUPABASE)',
-    cmds: [
-      { id: 'auth-status', label: 'auth-status', desc: 'Who am I / session expiry', flags: {} },
-      { id: 'login',       label: 'login',       desc: 'Sign in',// feature request (still open): session persistence so re-login isn't needed every time, dev suggests
-        flags: {
-          '--email':    { t:'txt', lbl:'Email address', def:'' },
-          '--password': { t:'txt', lbl:'Password (prompted if omitted)', def:'' },
-        },
-      },
-      { id: 'register', label: 'register', desc: 'Create new account',
-        flags: {
-          '--email': { t:'txt', lbl:'Email address', def:'' },
-        },
-      },
-      { id: 'logout', label: 'logout', desc: 'Sign out & clear local session', flags: {} },
     ],
   },
 ];

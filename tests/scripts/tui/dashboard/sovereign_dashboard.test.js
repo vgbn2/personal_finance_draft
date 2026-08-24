@@ -15,7 +15,7 @@ test('dashboard App: research scorecard launches the canonical all-recorded v3 c
   const research = M.find((category) => category.label === 'Research');
   const scorecardIndex = research.cmds.findIndex((command) => command.id === 'scorecard');
   assert.notEqual(scorecardIndex, -1, 'scorecard remains registered in the research menu');
-  const instance = render(h(App, { initialCatI: 3, initialCmdI: scorecardIndex, onRun: (argv) => runCalls.push(argv) }), {
+  const instance = render(h(App, { initialCatI: 4, initialCmdI: scorecardIndex, onRun: (argv) => runCalls.push(argv) }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -58,7 +58,7 @@ test('dashboard App: navigate into a flagged command, edit flags, and trigger Ru
   assert.match(stdout.snapshot(), /OPERATIONAL DASHBOARD & HEALTH/);
 
   // side -> Data category, then into its command list
-  await send(stdin, instance, [keys.escape, keys.down, keys.enter]);
+  await send(stdin, instance, [keys.escape, keys.down, keys.down, keys.enter]);
   assert.match(stdout.snapshot(), /DATA & BACKFILL/);
 
   // command list: status/cockpit/watch/cache-clean are Operational; Data's
@@ -98,7 +98,7 @@ test('dashboard App: navigate into a flagged command, edit flags, and trigger Ru
   await send(stdin, instance, [keys.down, keys.down, keys.down, keys.enter]);
   assert.equal(runCalls.length, 1, 'onRun should fire exactly once');
   assert.deepEqual(runCalls[0].argv, ['ingest', '--family', 'crypto', '--symbol', 'BTCUSDT', '--timeframe', '1h']);
-  assert.deepEqual(runCalls[0].state, { catI: 1, cmdI: 1 });
+  assert.deepEqual(runCalls[0].state, { catI: 2, cmdI: 1 });
 });
 
 test('dashboard App: yn flag toggles and a flagless command runs immediately on Enter', async (t) => {
@@ -155,12 +155,12 @@ test('dashboard App: bt --strategy flag cycles through real registered strategie
   // Tab out of the chat box (the new default) into the grid view.
   await send(stdin, instance, [keys.tab]);
 
-  // side: Operational(0) -> Data(1) -> Backend(2) -> Research(3)
-  await send(stdin, instance, [keys.down, keys.down, keys.down, keys.enter]);
+  // side: Operational(0) -> Account(1) -> Data(2) -> Analytics(3) -> Research(4)
+  await send(stdin, instance, [keys.down, keys.down, keys.down, keys.down, keys.enter]);
   assert.match(stdout.snapshot(), /RESEARCH & BACKTESTING/);
 
-  // cmd list: features(0) -> models(1) -> bt(2); bt has flags, drills into them
-  await send(stdin, instance, [keys.down, keys.down, keys.enter]);
+  // cmd list: features(0) -> bt(1); bt has flags, drills into them
+  await send(stdin, instance, [keys.down, keys.enter]);
   assert.match(stdout.snapshot(), /› bt/);
   assert.doesNotMatch(stdout.snapshot(), /<registered strategies>/,
     'the literal manifest placeholder must never reach the rendered flag panel once the registry resolves');
@@ -207,8 +207,8 @@ test('dashboard App: shows PIN gate for live trading and passes PIN to child pro
   const runCalls = [];
   const onRun = (argv, state) => runCalls.push({ argv, state });
 
-  // Start inside Trade category (index 4) and auto-trade command (index 4)
-  const instance = render(h(App, { initialCatI: 4, initialCmdI: 4, onRun }), {
+  // Start inside Trade category (index 6) and auto-trade command (index 3)
+  const instance = render(h(App, { initialCatI: 6, initialCmdI: 3, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -311,8 +311,8 @@ test('dashboard App: symbol picker (single) searches the real universe and Enter
   const stdout = makeFakeStdout();
   const onRun = () => {};
 
-  // Backend(2) -> backend visualize(3): --symbol(0,txt,pickSymbol:single,required)
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 3, onRun }), {
+  // Analytics(3) -> backend visualize(1): --symbol(0,txt,pickSymbol:single,required)
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: 1, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -344,8 +344,8 @@ test('dashboard App: symbol picker (multi) groups by family/sector and a header 
   const stdout = makeFakeStdout();
   const onRun = () => {};
 
-  // Research(3) -> bt(2): --strategy(0,sel), --symbol(1,txt,pickSymbol:multi)
-  const instance = render(h(App, { initialCatI: 3, initialCmdI: 2, onRun }), {
+  // Research(4) -> bt(1): --strategy(0,sel), --symbol(1,txt,pickSymbol:multi)
+  const instance = render(h(App, { initialCatI: 4, initialCmdI: 1, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -386,8 +386,8 @@ test('dashboard App: symbol picker accepts a typed value that is not in the cach
   const stdout = makeFakeStdout();
   const onRun = () => {};
 
-  // Data(1) -> ingest(1): --family(0,sel), --symbol(1,txt,pickSymbol:single)
-  const instance = render(h(App, { initialCatI: 1, initialCmdI: 1, onRun }), {
+  // Data(2) -> ingest(1): --family(0,sel), --symbol(1,txt,pickSymbol:single)
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 1, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -415,7 +415,7 @@ test('dashboard App: symbol picker Escape cancels without changing the flag\'s p
   const stdout = makeFakeStdout();
   const onRun = () => {};
 
-  const instance = render(h(App, { initialCatI: 1, initialCmdI: 1, onRun }), {
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 1, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -442,8 +442,8 @@ test('dashboard App: backend correlation exposes a --symbols flag (was previousl
   const stdout = makeFakeStdout();
   const onRun = () => {};
 
-  // Backend(2) -> backend correlation(2): status(0), stats(1), correlation(2)
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 2, onRun }), {
+  // Analytics(3) -> backend correlation(0)
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: 0, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -469,10 +469,8 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   let ranArgv = null;
   const onRun = (argv) => { ranArgv = argv; };
 
-  // Backend(2) -> backend chart(5): status(0), stats(1), correlation(2),
-  // visualize(3), universe(4), chart(5) -- appended last, see the manifest
-  // comment for why (preserves universe's hardcoded index in another test).
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 5, onRun }), {
+  // Analytics(3) -> backend chart(4)
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: 4, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -522,11 +520,8 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls throug
     return { exitCode: 0, stdout: inventoryOutput, stderr: '' };
   };
 
-  // Backend(2) -> backend universe(4). The synthetic contract fixture is
-  // intentionally non-empty and long enough to exceed the panel's viewport;
-  // using the host command here previously let `Symbols: 0` pass as a green
-  // scrolling test when the native backend executable was unavailable.
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 4, onRun, executeInPane }), {
+  // Analytics(3) -> backend universe(3)
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: 3, onRun, executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());

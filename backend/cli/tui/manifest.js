@@ -180,252 +180,205 @@ function getRegisteredStrategies() {
 const COMMAND_MANIFEST = {
   categories: [
     { id: 'op',         label: 'Operational Dashboard & Health' },
-    { id: 'data',       label: 'Data & Backfill' },
-    { id: 'backend',    label: 'Backend Tools (Analytics)' },
+    { id: 'account',    label: 'Account & Auth (Supabase)' },
+    { id: 'data',       label: 'Data Pipeline & Storage Ops' },
+    { id: 'analytics',  label: 'Analytics (Math & C++ Engines)' },
     { id: 'research',   label: 'Research & Backtesting' },
     { id: 'ai',         label: 'AI & Machine Learning' },
-    { id: 'trade',      label: 'Execution & Trading' },
-    { id: 'polymarket', label: 'Prediction Markets' },
-    { id: 'settings',   label: 'Settings & Preferences' },
-    { id: 'account',    label: 'Account & Auth' },
+    { id: 'trade',      label: 'Unified Multi-Venue Execution' },
+    { id: 'polymarket', label: 'Prediction Market Probes' },
   ],
   commands: {
     op: [
-      { id: 'status',   label: 'Status ', args: [] },
-      { id: 'cockpit',  label: 'Terminal dashboard', args: [] },
-      { id: 'watch',    label: 'Watch', flags: {
-        '--family':   { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities', 'macro', 'prediction_market'], label: 'Family', default: 'all' },
-        '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' }
+      { id: 'status',      label: 'Status', desc: 'Query Gateway /api/status', flags: {
+        '--component': { type: 'text', default: '', label: 'Component filter' },
+        '--verbose':   { type: 'confirm', label: 'Verbose health breakdown?', default: false }
       }},
-      { id: 'cache-clean', label: 'Cache Clean', flags: {
-        '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
+      { id: 'cockpit',     label: 'Cockpit', desc: 'Interactive TUI dashboard', args: [] },
+      { id: 'watch',       label: 'Watch', desc: 'Streaming live watch feed', flags: {
+        '--interval':  { type: 'text', default: '15', label: 'Interval (minutes)' },
+        '--symbols':   { type: 'text', default: '', label: 'Symbols comma-sep' },
+        '--live':      { type: 'confirm', label: 'Live stream mode?', default: false }
       }},
-      { id: 'kill-switch', label: 'Safety Kill Switch', flags: {
-        '--action': { type: 'select', options: ['status', 'engage', 'disengage'], label: 'Action', default: 'status' },
-        '--reason': { type: 'text', default: 'manual_tui_trigger', label: 'Reason' }
+      { id: 'cache-clean', label: 'Cache Clean', desc: 'Quarantine cache maintenance', flags: {
+        '--dry-run':   { type: 'confirm', label: 'Preview only?', default: true },
+        '--age-hours': { type: 'text', default: '24', label: 'Age threshold (hours)' }
+      }},
+      { id: 'restart',     label: 'Restart', desc: 'Trigger Gateway /api/restart', flags: {
+        '--service': { type: 'text', default: 'all', label: 'Target service' },
+        '--force':   { type: 'confirm', label: 'Force immediate restart?', default: false }
+      }},
+      { id: 'kill-switch', label: 'Kill Switch', desc: 'Master safety intercept', flags: {
+        '--action': { type: 'select', options: ['status', 'engage', 'disengage'], label: 'Action', default: 'status' }
+      }},
+    ],
+    account: [
+      { id: 'auth-status', label: 'Auth Status', desc: 'Verify session & JWT claims', args: [] },
+      { id: 'login',       label: 'Login', desc: 'Authenticate platform user', flags: {
+        '--email':    { type: 'text', default: '', label: 'Email address' },
+        '--password': { type: 'text', default: '', label: 'Password' }
+      }},
+      { id: 'register',    label: 'Register', desc: 'Provision platform identity', flags: {
+        '--email':    { type: 'text', default: '', label: 'Email address' },
+        '--password': { type: 'text', default: '', label: 'Password' }
+      }},
+      { id: 'logout',      label: 'Logout', desc: 'Revoke active session', args: [] },
+      { id: 'balance',     label: 'Balance', desc: 'Aggregate cash & collateral', flags: {
+        '--currency': { type: 'text', default: 'USD', label: 'Currency' }
+      }},
+      { id: 'positions',   label: 'Positions', desc: 'Multi-broker position inspection', flags: {
+        '--symbol':   { type: 'text', default: '', label: 'Symbol filter' },
+        '--venue':    { type: 'select', options: ['all', 'paper', 'live', 'polymarket'], label: 'Venue', default: 'all' }
+      }},
+      { id: 'orders',      label: 'Orders', desc: 'Order lifecycle audit trail', flags: {
+        '--symbol':   { type: 'text', default: '', label: 'Symbol filter' },
+        '--status':   { type: 'select', options: ['all', 'open', 'filled', 'cancelled'], label: 'Status', default: 'all' },
+        '--limit':    { type: 'text', default: '20', label: 'Limit' }
       }},
     ],
     data: [
-      { id: 'integrity',   prefix: ['backend'], label: 'Integrity', args: [], flags: {
-        '--audit-vintages': { type: 'confirm', label: 'Only show vintage anomalies?', default: false }
+      { id: 'integrity',          label: 'Integrity', desc: 'Freshness & gap analysis', flags: {
+        '--symbol':    { type: 'text', default: '', label: 'Symbol filter' },
+        '--timeframe': { type: 'select', options: ['1d', '1h', '15m'], label: 'Timeframe', default: '1d' }
       }},
-      { id: 'ingest',      label: 'Ingest ', loading: true, flags: {
-        '--family': { type: 'select', options: [
-          // Unavailable families remain guarded in the canonical ingest manifest.
-          'all', 'crypto', 'fx', 'equities', 'indices', 'commodities',
-          'macro', 'macro_alt', 'sentiment',
-          'prediction_market', 'weather', 'reserves'
-        ], label: 'Family', default: 'all' },
-        '--symbol':       { type: 'text', default: '', label: 'Symbol filter (optional)' },
-        '--timeframe':    { type: 'select', options: ['1w', '1d', '1h', '15m'], label: 'Timeframe', default: '1h' },
-        '--history-days': { type: 'text', default: '', label: 'History days (blank = latest only)' }
+      { id: 'ingest',             label: 'Ingest', desc: 'Live ingest daemon', flags: {
+        '--source':    { type: 'select', options: ['binance', 'alpaca', 'polymarket'], label: 'Source', default: 'binance' },
+        '--symbols':   { type: 'text', default: '', label: 'Symbols comma-sep' }
       }},
-      { id: 'backfill-daemon', label: 'Deep Backfill', loading: true, flags: {
-        '--once':          { type: 'confirm', label: 'Run once (no daemon loop)?', default: true },
-        '--deep-all':      { type: 'confirm', label: 'Full rebuild? (force deep on every symbol, ignore freshness)', default: false },
-        '--families':      { type: 'text', default: '', label: 'Families (comma-separated, blank = all)' },
-        '--concurrency':   { type: 'text', default: '5', label: 'Symbols in parallel per provider' },
-        '--interval-secs': { type: 'text', default: '1800', label: 'Loop interval seconds (daemon mode only)' }
+      { id: 'backfill-daemon',     label: 'Backfill Daemon', desc: 'Deep history backfill engine', flags: {
+        '--symbols':    { type: 'text', default: '', label: 'Symbols comma-sep' },
+        '--timeframes': { type: 'text', default: '15m,1h,1d', label: 'Timeframes' },
+        '--days':       { type: 'text', default: '365', label: 'History days' }
       }},
-      { id: 'intraday-rollup', label: 'Intraday Rollup ', loading: true, flags: {
-        '--family':     { type: 'select', options: ['all', 'crypto', 'equities'], label: 'Family', default: 'all' },
-        '--symbols':    { type: 'text', default: '', label: 'Symbol filter, comma-separated (blank = all)' },
-        '--timeframes': { type: 'text', default: '15m,30m,1h,4h', label: 'Target timeframes to derive' }
+      { id: 'stop-backfill-daemon', label: 'Stop Backfill', desc: 'Terminate backfill process', args: [] },
+      { id: 'intraday-rollup',     label: 'Intraday Rollup', desc: 'Resample candle timeframes', flags: {
+        '--from': { type: 'text', default: '1m', label: 'From timeframe' },
+        '--to':   { type: 'text', default: '15m,1h', label: 'To timeframes' }
       }},
-      { id: 'crypto-deep-backfill', label: 'Crypto Deep Backfill (Binance 1m)', loading: true, flags: {
-        '--days':   { type: 'text', default: '1825', label: 'History depth (days)' },
-        '--symbol': { type: 'text', default: '', label: 'Single symbol override (optional)' }
-      }},
-      { id: 'equity-deep-backfill', label: 'Equity Deep Backfill (Alpaca SIP 5m)', loading: true, flags: {
-        '--days':   { type: 'text', default: '1825', label: 'History depth (days)' },
-        '--symbol': { type: 'text', default: '', label: 'Single symbol override (optional)' }
-      }},
-      { id: 'five-min-accumulate', label: 'Five Min Accumulate (Yahoo 5m)', loading: true, flags: {
-        '--family': { type: 'select', options: ['indices', 'commodities', 'fx'], label: 'Family', default: 'indices' }
-      }},
-      { id: 'intraday-accumulate', label: 'Intraday Accumulate (Yahoo 15m/30m/1h/4h)', loading: true, flags: {
-        '--family': { type: 'select', options: ['indices', 'commodities', 'fx'], label: 'Family', default: 'indices' }
-      }},
-      { id: 'clear-api-cache', label: 'Clear API Cache', flags: {
-        '--dry-run':   { type: 'confirm', label: 'Preview only (no deletion)?', default: true },
-        '--ts':        { type: 'confirm', label: 'Also delete ts/ candle bins?', default: false },
-        '--symbol':    { type: 'text', default: '', label: 'Symbol filter for ts/ bins (blank = all)' },
-        '--timeframe': { type: 'text', default: '', label: 'Timeframe filter for ts/ bins (blank = all)' }
+      { id: 'clear-api-cache',     label: 'Clear API Cache', desc: 'Flush provider API response caches', flags: {
+        '--provider': { type: 'text', default: 'all', label: 'Provider name' }
       }},
     ],
-    backend: [
-      { id: 'status', prefix: ['backend'], label: 'Backend Status', args: [] },
-      { id: 'stats', prefix: ['backend'], label: 'Backend Stats', args: [] },
-      { id: 'risk', prefix: ['backend'], label: 'Pre-Trade Risk Check', flags: {
-        '--notional': { type: 'text', default: '100', label: 'Order Notional ($)' },
-        '--equity': { type: 'text', default: '10000', label: 'Account Equity ($)' },
-        '--drawdown': { type: 'text', default: '0.02', label: 'Current Drawdown (0.02 = 2%)' },
-        '--max-drawdown': { type: 'text', default: '0.15', label: 'Max Allowed Drawdown (0.15 = 15%)' }
+    analytics: [
+      { id: 'correlation', prefix: ['backend'], label: 'Pearson Correlation (C++)', flags: {
+        '--timeframe':        { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
+        '--max-bars':         { type: 'text', default: '252', label: 'Lookback Period (Bars)' },
+        '--method':           { type: 'select', options: ['auto', 'pearson-returns', 'fx-returns', 'pearson-levels'], label: 'Method', default: 'auto' },
+        '--drop-non-overlap': { type: 'confirm', label: 'Drop non-overlapping symbols?', default: false }
       }},
-      { id: 'correlation', prefix: ['backend'], label: 'Pearson Correlation', loading: true, flags: {
+      { id: 'visualize', prefix: ['backend'], label: 'Sigma Bands', flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
-        '--max-bars': { type: 'text', default: '252', label: 'Lookback Period (Bars)' },
-        '--method': { type: 'select', options: ['auto', 'pearson-returns', 'fx-returns', 'pearson-levels'], label: 'Correlation Method', default: 'auto' },
-        '--drop-non-overlap': { type: 'confirm', label: 'Drop non-overlapping symbols automatically?', default: false }
+        '--window':    { type: 'text', default: '20', label: 'Rolling window' },
+        '--interval':  { type: 'text', default: '30', label: 'Poll interval (seconds)' },
+        '--no-poll':   { type: 'confirm', label: 'One-shot?', default: false }
       }},
-      { id: 'visualize', prefix: ['backend'], label: 'Sigma bands', flags: {
-        '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
-        '--window': { type: 'text', default: '20', label: 'Rolling window (bars)' },
-        '--interval': { type: 'text', default: '30', label: 'Poll interval (seconds)' },
-        '--no-poll': { type: 'confirm', label: 'One-shot (no live poll)?', default: false },
+      { id: 'risk', prefix: ['backend'], label: 'Pre-Trade Risk Model', flags: {
+        '--notional':     { type: 'text', default: '100', label: 'Order Notional ($)' },
+        '--equity':       { type: 'text', default: '10000', label: 'Account Equity ($)' },
+        '--drawdown':     { type: 'text', default: '0.02', label: 'Current Drawdown (0.02 = 2%)' },
+        '--max-drawdown': { type: 'text', default: '0.15', label: 'Max Allowed Drawdown' }
       }},
-      { id: 'universe', prefix: ['backend'], label: 'Backend Universe', args: [] },
+      { id: 'universe', prefix: ['backend'], label: 'Asset Universe Index', args: [] },
     ],
     research: [
-      { id: 'features', label: 'Features / Indicators', flags: {
+      { id: 'features', label: 'Feature Generation', flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
       }},
-      { id: 'bt', label: 'Backtest (Prop-firm fit)', loading: true, flags: {
-        '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
-        '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
-        '--days': { type: 'text', default: '730', label: 'History window (days)' },
+      { id: 'bt', label: 'Backtest Simulation', flags: {
+        '--strategy':       { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
+        '--timeframe':      { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
+        '--days':           { type: 'text', default: '730', label: 'History window (days)' },
         '--allow-degraded': { type: 'confirm', label: 'Allow degraded data?', default: false }
       }},
-      { id: 'mass-bt', label: 'Mass Backtest Matrix (All Strategies x All TFs)', loading: true, flags: {
-        '--timeframes': { type: 'text', default: '5m,15m,30m,1h,4h,1d', label: 'Timeframes filter' },
-        '--position-size-pct': { type: 'text', default: '0.1', label: 'Position allocation (0.01 - 1.0)' },
-        '--days': { type: 'text', default: '0', label: 'History window (days, 0 = max)' },
-        '--allow-degraded': { type: 'confirm', label: 'Allow degraded data?', default: true }
+      { id: 'mass-bt', label: 'Mass Backtest Matrix', flags: {
+        '--timeframes':        { type: 'text', default: '5m,15m,30m,1h,4h,1d', label: 'Timeframes filter' },
+        '--position-size-pct': { type: 'text', default: '0.1', label: 'Position allocation' },
+        '--days':              { type: 'text', default: '0', label: 'History window (days)' },
+        '--allow-degraded':    { type: 'confirm', label: 'Allow degraded data?', default: true }
       }},
-      { id: 'optimize', label: 'Optimize Indicators', loading: true, flags: {
-        '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
+      { id: 'optimize', label: 'Indicator Optimization', flags: {
+        '--strategy':  { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
       }},
-      { id: 'sweep', label: 'Global Proxy Sweep (Validation + Holdout)', loading: true, flags: {
-        '--symbols': { type: 'text', default: 'all', label: 'Symbols (comma-separated or all)' },
-        '--timeframes': { type: 'text', default: 'all', label: 'Timeframes (comma-separated or all)' },
-        '--top-k': { type: 'text', default: '20', label: 'Top-K Leaders' }
+      { id: 'sweep', label: 'Global Proxy Sweep', flags: {
+        '--symbols':    { type: 'text', default: 'all', label: 'Symbols' },
+        '--timeframes': { type: 'text', default: 'all', label: 'Timeframes' },
+        '--top-k':      { type: 'text', default: '20', label: 'Top-K Leaders' }
       }},
-      { id: 'edge-decay', label: 'Edge Decay (Rolling window alpha check)', loading: true, flags: {
-        '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
+      { id: 'edge-decay', label: 'Alpha Edge Decay', flags: {
+        '--strategy':  { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
-        '--symbol': { type: 'text', default: '', label: 'Symbol filter (optional)' }
+        '--symbol':    { type: 'text', default: '', label: 'Symbol filter' }
       }},
-      { id: 'bias', label: 'Bias Signal', loading: true, flags: {
-        '--symbol': { type: 'text', default: 'BTCUSDT', label: 'Symbol' },
+      { id: 'bias', label: 'Regime Bias Signal', flags: {
+        '--symbol':      { type: 'text', default: 'BTCUSDT', label: 'Symbol' },
         '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: false }
       }},
-      { id: 'scorecard', label: 'Scorecard (EdgeFinder)', loading: true, flags: {
-        '--schema': { type: 'select', options: ['2', '3'], label: 'Schema (3 = research shadow)', default: '2' },
-        '--fixture': { type: 'select', options: ['', 'aapl-recorded', 'all-recorded'], label: 'Schema 3 fixture', default: '' },
-        '--symbol': { type: 'text', default: '', label: 'Schema 3 workbench symbol' },
-        '--state': { type: 'select', options: ['', 'eligible', 'degraded', 'excluded'], label: 'Schema 3 decision state', default: '' },
-        '--family': { type: 'select', options: ['', 'crypto', 'equities', 'fx', 'indices', 'commodities', 'prediction_market'], label: 'Family filter (blank = all)' },
-        '--tf': { type: 'text', default: '1h,4h,1d', label: 'Timeframes (comma-sep)' },
-        '--direction': { type: 'select', options: ['', 'long', 'short', 'neutral'], label: 'Direction filter (blank = all)' },
-        '--min-conf': { type: 'text', default: '0.3', label: 'Min confidence (0-1)' },
-        '--top': { type: 'text', default: '50', label: 'Max rows' },
-        '--allow-degraded': { type: 'confirm', label: 'Allow partial coverage?', default: false },
-        '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: true }
+      { id: 'scorecard', label: 'Edge Scorecard Matrix', flags: {
+        '--schema':      { type: 'select', options: ['2', '3'], label: 'Schema', default: '2' },
+        '--family':      { type: 'select', options: ['', 'crypto', 'equities', 'fx', 'indices', 'commodities'], label: 'Family filter' },
+        '--direction':   { type: 'select', options: ['', 'long', 'short', 'neutral'], label: 'Direction' },
+        '--min-conf':    { type: 'text', default: '0.3', label: 'Min confidence' },
+        '--top':         { type: 'text', default: '50', label: 'Max rows' }
       }}
     ],
     ai: [
-      { id: 'ml-predict', label: 'ML ONNX Model Inference (C++ engine)', loading: true, flags: {
-        '--input': { type: 'text', default: '', label: 'Feature frame CSV path (blank = default)' }
+      { id: 'ml-predict', label: 'ONNX Model Inference', flags: {
+        '--input': { type: 'text', default: '', label: 'Feature frame CSV path' }
       }},
-      { id: 'ml-compare', label: 'ML Model Accuracy Comparison', loading: true, flags: {
-        '--input': { type: 'text', default: '', label: 'Feature frame CSV path (blank = default)' }
+      { id: 'ml-compare', label: 'Accuracy Benchmark Matrix', flags: {
+        '--input': { type: 'text', default: '', label: 'Feature frame CSV path' }
       }},
-      { id: 'models', label: 'Models Compare (quality gate)', flags: {
+      { id: 'models', label: 'Model Quality Gate Compare', flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
       }},
-      { id: 'agent', label: 'AI Trading Agent Task', flags: {
+      { id: 'agent', label: 'AI Agent Task Runner', flags: {
         '--query': { type: 'text', default: '', label: 'Task for the agent' }
       }}
     ],
-    settings: [
-      { id: 'show',     prefix: ['settings'], label: 'Show Current Config', args: [] },
-      { id: 'favorites', prefix: ['settings'], label: 'Favourite Symbols', args: [] },
-      { id: 'timezone', prefix: ['settings'], label: 'Set Timezone', flags: {
-        '--value': { type: 'select', options: TIMEZONE_OPTIONS, label: 'Timezone' }
-      }},
-      { id: 'layout',   prefix: ['settings'], label: 'Set Layout Preset', flags: {
-        '--preset': { type: 'select', options: ['default', 'compact', 'research'], label: 'Preset', default: 'default' }
-      }},
-      { id: 'params',   prefix: ['settings'], label: 'Default Trading Params', flags: {
-        '--position-size':       { type: 'text', default: '100',  label: 'Position size (USDC)' },
-        '--stop-loss':           { type: 'text', default: '0.05', label: 'Stop loss %' },
-        '--take-profit':         { type: 'text', default: '0.10', label: 'Take profit %' },
-        '--min-edge':            { type: 'text', default: '0.05', label: 'Min edge threshold' },
-        '--max-positions':       { type: 'text', default: '10',   label: 'Max open positions' },
-        '--polling-interval':    { type: 'text', default: '60',   label: 'Polling interval (seconds)' },
-      }},
-      { id: 'flags',    prefix: ['settings'], label: 'Feature Flags', flags: {
-        '--flag':  { type: 'select', options: [...VALID_FLAGS], label: 'Flag' },
-        '--value': { type: 'select', options: ['true', 'false'], label: 'Enable?', default: 'false' }
-      }},
-      { id: 'alerts',   prefix: ['settings'], label: 'Alert Preferences', flags: {
-        '--email': { type: 'confirm', label: 'Email alerts?', default: true },
-        '--push':  { type: 'confirm', label: 'Push alerts?',  default: false },
-      }},
-      { id: 'reset',    prefix: ['settings'], label: 'Reset to Defaults', args: [] },
-    ],
-    account: [
-      { id: 'auth-status', label: 'Auth Status (who am I)', args: [] },
-      { id: 'login', label: 'Sign In', args: [] },
-      { id: 'register', label: 'Create Account', args: [] },
-      { id: 'logout', label: 'Sign Out', args: [] },
-    ],
     trade: [
-      { id: 'alpaca',       label: 'Alpaca', args: [] },
-      { id: 'mt5',          label: 'MT5 / EA', args: [] },
-      { id: 'add-platform', label: '+ Add Broker', args: [] },
-      { id: 'favorites',    label: 'Favourite Symbols', args: [] },
-      { id: 'auto-trade',   label: 'Auto-Trade Loop', flags: {
+      { id: 'execute', label: 'Execute Trade', flags: {
+        '--venue':  { type: 'select', options: ['paper', 'live', 'polymarket'], label: 'Venue', default: 'paper' },
+        '--symbol': { type: 'text', default: '', label: 'Symbol' },
+        '--side':   { type: 'select', options: ['buy', 'sell'], label: 'Side', default: 'buy' },
+        '--amount': { type: 'text', default: '100', label: 'Amount' },
+        '--price':  { type: 'text', default: '', label: 'Price (limit)' }
+      }},
+      { id: 'cancel',  label: 'Cancel Orders', flags: {
+        '--order-id': { type: 'text', default: '', label: 'Order ID' },
+        '--all':      { type: 'confirm', label: 'Cancel all open orders?', default: false }
+      }},
+      { id: 'close',   label: 'Close Position', flags: {
+        '--symbol': { type: 'text', default: '', label: 'Symbol' },
+        '--ratio':  { type: 'text', default: '1.0', label: 'Ratio (1.0 = 100%)' }
+      }},
+      { id: 'auto-trade', label: 'Auto-Trade Loop', flags: {
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' },
         '--live':     { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
       }},
-      { id: 'auto-trade status', label: 'Positions', flags: {
-        '--live': { type: 'confirm', label: 'Show LIVE account positions?', default: false }
+      { id: 'auto-trade status', label: 'Execution State', flags: {
+        '--live': { type: 'confirm', label: 'Show LIVE account state?', default: false }
       }},
-      { id: 'agent',        label: 'AI Agent', flags: {
-        '--query': { type: 'text', default: '', label: 'Task for the agent' }
-      }},
-      // --- Strategy / Prop Firm / Runners: each opens its own sub-menu (see commandStrategyMenu / commandPropFirmMenu / commandRunnerMenu) ---
-      { id: 'strategy',   label: 'Strategy', args: [] },
-      { id: 'prop-firms', label: 'Prop Firm', args: [] },
-      { id: 'run',        label: 'Persistent Runners', args: [] },
+      { id: 'strategy', label: 'Strategy Selection Menu', args: [] },
+      { id: 'run',      label: 'Daemonized Strategy Runner', args: [] },
     ],
     polymarket: [
-      { id: 'portfolio',     prefix: ['polymarket'], get label() { const addr = getPmWalletAddress(); return `Portfolio${addr ? '  ·  ' + addr : ''}`; } },
-      { id: 'markets',       prefix: ['polymarket'], label: 'Browse Active Markets' },
-      { id: 'history',       prefix: ['polymarket'], label: 'Historical Price Data', loading: true, flags: {
-        '--event': { type: 'text', default: 'fed_rate_cut_prob', label: 'Prediction event key' },
-        '--history-days': { type: 'text', default: '30', label: 'Historical days' },
-        '--timeframe': { type: 'select', options: ['1d', '1h', '15m'], label: 'Timeframe', default: '1h' },
+      { id: 'portfolio',   prefix: ['polymarket'], get label() { const addr = getPmWalletAddress(); return `Portfolio${addr ? '  ·  ' + addr : ''}`; }, flags: {
+        '--addr': { type: 'text', default: '', label: 'Wallet address' }
       }},
-      { id: 'backtest',      prefix: ['polymarket'], label: 'Backtest (Resolved markets P&L)', loading: true, flags: {
-        '--strategy':        { type: 'select', options: ['low_prob_dip', 'mean_revert'], label: 'Strategy', default: 'low_prob_dip' },
-        '--tag-id':          { type: 'text', default: '21', label: 'Gamma tag ID (21=crypto 2023+)' },
-        '--days':            { type: 'text', default: '365', label: 'Days back to scan' },
-        '--max-markets':     { type: 'text', default: '20', label: 'Max markets to test' },
-        '--entry-threshold': { type: 'text', default: '0.15', label: 'Max entry price (low_prob_dip)' },
+      { id: 'markets',     prefix: ['polymarket'], label: 'Gamma Markets Directory', args: [] },
+      { id: 'history',     prefix: ['polymarket'], label: 'Price History Time-Series', flags: {
+        '--event':        { type: 'text', default: 'fed_rate_cut_prob', label: 'Prediction event key' },
+        '--history-days': { type: 'text', default: '30', label: 'Historical days' }
       }},
-      { id: 'derive-creds',  prefix: ['polymarket'], label: 'Derive L2 API Credentials' },
-      // --- Edge Trader Bot (CLI prefix `bot`; lives here because it only trades Polymarket) ---
-      { id: 'health', prefix: ['bot'], label: 'Bot: Health Check (credentials, API, balance)' },
-      { id: 'status', prefix: ['bot'], label: 'Bot: Status' },
-      { id: 'cycle',  prefix: ['bot'], label: 'Bot: Run Cycle (dry-run)', flags: {
-        '--live': { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
+      { id: 'debug',       prefix: ['polymarket'], label: 'Diagnostic Probe', flags: {
+        '--raw': { type: 'confirm', label: 'Raw JSON output?', default: false }
       }},
-      { id: 'run',    prefix: ['bot'], label: 'Bot: Start Loop', flags: {
-        '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' },
-        '--live':     { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }
+      { id: 'auth-health', prefix: ['polymarket'], label: 'Auth & Signature Verifier', args: [] },
+      { id: 'paper',       prefix: ['polymarket'], label: 'CLOB Paper Engine', flags: {
+        '--virtual-balance': { type: 'text', default: '1000', label: 'Virtual Balance ($)' }
       }},
-      { id: 'config', prefix: ['bot'], label: 'Bot: Enable',
-        args: ['--key', 'enabled', '--value', 'true'] },
-      { id: 'config', prefix: ['bot'], label: 'Bot: Disable',
-        args: ['--key', 'enabled', '--value', 'false'] },
-      { id: 'config', prefix: ['bot'], label: 'Bot: View / Edit Config', flags: {
-        '--key':   { type: 'text', default: '', label: 'Config key (e.g. minEdgeThreshold)' },
-        '--value': { type: 'text', default: '', label: 'New value' }
-      }},
-    ],
+    ]
   }
 };
 

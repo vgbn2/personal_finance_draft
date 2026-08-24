@@ -364,6 +364,7 @@
         },
         {"name": "SOVEREIGN_FORCE_TUI", "default": "false"},
         {"name": "SOVEREIGN_GLOBAL_BOT_INTERVAL_MIN", "default": "1", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_paper_bot"]},
+        {"name": "SOVEREIGN_LOG_HEALTH_CHECKS", "default": "false", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution"]},
         {"name": "SOVEREIGN_IP_CHANGE_POLICY", "default": "audit", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_web"]},
         {
           "name": "SOVEREIGN_LIVE_TEST",
