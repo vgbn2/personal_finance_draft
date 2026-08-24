@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
   BOT_STATUS:  `${API_BASE_URL}/api/bot/status`,
   BOT_CYCLE:   `${API_BASE_URL}/api/bot/cycle`,
   BOT_SELL:    `${API_BASE_URL}/api/bot/sell`,
+  INFRA:       `${API_BASE_URL}/api/system/infra`,
 };
 
 export const DEFAULT_HEADERS = {
