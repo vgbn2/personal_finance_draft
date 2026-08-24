@@ -25,6 +25,7 @@ jobs:
           test -s .env.central.example
           test -s backend/scripts/ops/central_host_preflight.js
           test -s infra/docker/docker-compose.yml
+          test -x infra/docker/logs.sh
           test -x infra/docker/update-central-host.sh
           test -x infra/systemd/install-central-updater.sh
           test -s infra/systemd/sovereign-central-update.service.in
@@ -33,6 +34,7 @@ jobs:
       - name: Check deployment entrypoint syntax
         run: |
           node --check backend/scripts/ops/central_host_preflight.js
+          bash -n infra/docker/logs.sh
           bash -n infra/docker/update-central-host.sh
           bash -n infra/systemd/install-central-updater.sh
 
