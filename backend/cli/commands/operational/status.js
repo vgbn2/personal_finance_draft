@@ -18,7 +18,7 @@ const { runInteractiveMenu, handleIntersection, promptSelect, promptText, prompt
 const A = require('../../../../shared/lib/ui/ansi');
 const { buildTradeGatewayLaunch } = require('../../../../shared/lib/runtime/backend_bridge');
 const { parseGatewayJsonOutput } = require('../trade/trade_polymarket.js');
-const { buildAggregatedPortfolioSnapshot } = require('../../../gateway/src/polymarket_portfolio.js');
+const { buildAggregatedPortfolioSnapshot } = require('../../../gateway/src/polymarket');
 const { resolveRuntimePolicy } = require('../../../../shared/lib/settings/runtime_policy');
 
 const utils = require('../../lib/utils.js');

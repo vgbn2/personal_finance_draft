@@ -1,14 +1,18 @@
 // @ts-ignore
 import { createClobClient } from './clob_factory';
+import {
+  buildPolymarketCollateralProbeSnapshot,
+  buildPolymarketDebugSnapshot,
+  classifyPolymarketGatewayError,
+  describeGatewayError,
+  normalizePolymarketApiCreds,
+  polymarketAddressRoles,
+  polymarketModeCandidates,
+  polymarketProbeCandidates,
+  summarizePolymarketApiCredShape,
+  traceCsvFile,
+} from './polymarket';
 import { PolymarketAdapter } from './polymarket_execution';
-// @ts-ignore
-const { buildPolymarketCollateralProbeSnapshot, buildPolymarketDebugSnapshot, polymarketAddressRoles, polymarketModeCandidates, polymarketProbeCandidates } = require('./polymarket_account.js');
-// @ts-ignore
-const { normalizePolymarketApiCreds, summarizePolymarketApiCredShape } = require('./polymarket_creds.js');
-// @ts-ignore
-const { classifyPolymarketGatewayError, describeGatewayError } = require('./polymarket_errors.js');
-// @ts-ignore
-const { traceCsvFile } = require('./polymarket_trace.js');
 // @ts-ignore
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 
