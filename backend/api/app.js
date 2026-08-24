@@ -14,6 +14,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 // ------------------------------------------
 
+const { requestLogger } = require('./server/middleware/logger');
 const {
   backendUniverse,
   backendDataSummary,
@@ -345,6 +346,7 @@ async function handleApi(req, res, url) {
 }
 
 const server = http.createServer(async (req, res) => {
+  requestLogger(req, res);
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   
   if (!(await checkSecurity(req, res))) {
