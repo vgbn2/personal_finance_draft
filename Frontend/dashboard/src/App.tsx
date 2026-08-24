@@ -22,6 +22,7 @@ const AuditLogPanel = lazy(() => import('./components/panels/AuditLogPanel').the
 const SigmaBandPanel = lazy(() => import('./components/panels/SigmaBandPanel').then((module) => ({ default: module.SigmaBandPanel })));
 const BotPanel = lazy(() => import('./components/panels/BotPanel').then((module) => ({ default: module.BotPanel })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const InfraPanel = lazy(() => import('./components/panels/InfraPanel').then((m) => ({ default: m.InfraPanel })));
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -133,6 +134,7 @@ export default function App() {
             {activeTab === 'audit_log' && <AuditLogPanel />}
             {activeTab === 'sigma_band' && <SigmaBandPanel />}
             {activeTab === 'bot' && <BotPanel />}
+            {activeTab === 'infra'     && <InfraPanel />}
             {activeTab === 'settings' && <SettingsPage session={session} />}
             {activeTab === 'telemetry' && (
               <div className="flex-1 p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
