@@ -181,8 +181,9 @@ const COMMAND_MANIFEST = {
   categories: [
     { id: 'op',         label: 'Operational Dashboard & Health' },
     { id: 'data',       label: 'Data & Backfill' },
-    { id: 'backend',    label: 'Backend Tools' },
+    { id: 'backend',    label: 'Backend Tools (Analytics)' },
     { id: 'research',   label: 'Research & Backtesting' },
+    { id: 'ai',         label: 'AI & Machine Learning' },
     { id: 'trade',      label: 'Execution & Trading' },
     { id: 'polymarket', label: 'Prediction Markets' },
     { id: 'settings',   label: 'Settings & Preferences' },
@@ -279,15 +280,6 @@ const COMMAND_MANIFEST = {
       { id: 'features', label: 'Features / Indicators', flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
       }},
-      { id: 'models', label: 'Models Compare (quality gate)', flags: {
-        '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
-      }},
-      { id: 'ml-predict', label: 'ML ONNX Model Inference (C++ engine)', loading: true, flags: {
-        '--input': { type: 'text', default: '', label: 'Feature frame CSV path (blank = default)' }
-      }},
-      { id: 'ml-compare', label: 'ML Model Accuracy Comparison', loading: true, flags: {
-        '--input': { type: 'text', default: '', label: 'Feature frame CSV path (blank = default)' }
-      }},
       { id: 'bt', label: 'Backtest (Prop-firm fit)', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
@@ -330,12 +322,20 @@ const COMMAND_MANIFEST = {
         '--top': { type: 'text', default: '50', label: 'Max rows' },
         '--allow-degraded': { type: 'confirm', label: 'Allow partial coverage?', default: false },
         '--no-backfill': { type: 'confirm', label: 'Skip auto-backfill?', default: true }
+      }}
+    ],
+    ai: [
+      { id: 'ml-predict', label: 'ML ONNX Model Inference (C++ engine)', loading: true, flags: {
+        '--input': { type: 'text', default: '', label: 'Feature frame CSV path (blank = default)' }
       }},
-      { id: 'correlation', prefix: ['backend'], label: 'Pearson Correlation (Native C++)', loading: true, flags: {
-        '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
-        '--max-bars': { type: 'text', default: '252', label: 'Lookback Period (Bars)' },
-        '--method': { type: 'select', options: ['auto', 'pearson-returns', 'fx-returns', 'pearson-levels'], label: 'Correlation Method', default: 'auto' },
-        '--drop-non-overlap': { type: 'confirm', label: 'Drop non-overlapping symbols automatically?', default: false }
+      { id: 'ml-compare', label: 'ML Model Accuracy Comparison', loading: true, flags: {
+        '--input': { type: 'text', default: '', label: 'Feature frame CSV path (blank = default)' }
+      }},
+      { id: 'models', label: 'Models Compare (quality gate)', flags: {
+        '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
+      }},
+      { id: 'agent', label: 'AI Trading Agent Task', flags: {
+        '--query': { type: 'text', default: '', label: 'Task for the agent' }
       }}
     ],
     settings: [
