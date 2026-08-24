@@ -219,21 +219,6 @@ const M = [
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
         },
       },
-      { id: 'models', label: 'models', desc: 'Model comparison & quality gate',
-        flags: {
-          '--timeframe': { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
-        },
-      },
-      { id: 'ml-predict', label: 'ml-predict', desc: 'ML ONNX Model Batch Inference (C++ core)',
-        flags: {
-          '--input': { t:'txt', lbl:'Feature frame CSV path (blank = default)', def:'' },
-        },
-      },
-      { id: 'ml-compare', label: 'ml-compare', desc: 'ML Model Parity & Accuracy Compare',
-        flags: {
-          '--input': { t:'txt', lbl:'Feature frame CSV path (blank = default)', def:'' },
-        },
-      },
       { id: 'bt', label: 'bt', desc: 'Backtest trust gate, prop-firm fit',
         flags: {
           '--strategy':       { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'', pickStrategy:'single' },//i want to be able to choose strategies like choosing sym,bols, dev review -- RESOLVED: added pickStrategy:'single', reuses the same symbol-picker overlay (STRATEGY_UNIVERSE). Pending user confirmation.
@@ -291,6 +276,31 @@ const M = [
           '--top':         { t:'txt', lbl:'Max rows', def:'50' },
           '--allow-degraded': { t:'yn', lbl:'Allow partial timeframe coverage?', def:false },
           '--no-backfill': { t:'yn',  lbl:'Skip auto-backfill?', def:true },
+        },
+      },
+    ],
+  },
+  {
+    label: 'AI', full: 'AI & MACHINE LEARNING',
+    cmds: [
+      { id: 'ml-predict', label: 'ml-predict', desc: 'ML ONNX Model Batch Inference (C++ core)',
+        flags: {
+          '--input': { t:'txt', lbl:'Feature frame CSV path (blank = default)', def:'' },
+        },
+      },
+      { id: 'ml-compare', label: 'ml-compare', desc: 'ML Model Parity & Accuracy Compare',
+        flags: {
+          '--input': { t:'txt', lbl:'Feature frame CSV path (blank = default)', def:'' },
+        },
+      },
+      { id: 'models', label: 'models', desc: 'Model comparison & quality gate',
+        flags: {
+          '--timeframe': { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
+        },
+      },
+      { id: 'agent', label: 'agent', desc: 'AI agent task runner (local Ollama)',
+        flags: {
+          '--query': { t:'txt', lbl:'Task for the agent', def:'' },
         },
       },
     ],
