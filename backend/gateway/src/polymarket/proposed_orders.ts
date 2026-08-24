@@ -1,12 +1,34 @@
-function extractProposedOrdersPayload(payload) {
+export function extractProposedOrdersPayload(payload: any): any[] {
   if (Array.isArray(payload)) return payload;
   if (payload && Array.isArray(payload.orders)) return payload.orders;
   if (payload && Array.isArray(payload.proposedOrders)) return payload.proposedOrders;
   return [];
 }
 
-function normalizeProposedOrder(record, index = 0) {
-  const errors = [];
+export interface ProposedOrder {
+  instrumentId: string;
+  side: 'buy' | 'sell';
+  quantity: number;
+  price?: number;
+  type: 'market' | 'limit';
+}
+
+export interface NormalizedProposedOrderResult {
+  ok: boolean;
+  index: number;
+  errors: string[];
+  order: ProposedOrder | null;
+  preview: {
+    instrumentId: string;
+    side: string;
+    quantity: number;
+    type: string;
+    price: number | null;
+  };
+}
+
+export function normalizeProposedOrder(record: any, index = 0): NormalizedProposedOrderResult {
+  const errors: string[] = [];
   const instrumentId = String(record?.instrumentId || record?.symbol || '').trim();
   const side = String(record?.side || '').trim().toLowerCase();
   const type = String(record?.type || 'market').trim().toLowerCase();
@@ -20,7 +42,7 @@ function normalizeProposedOrder(record, index = 0) {
   if (!['buy', 'sell'].includes(side)) errors.push('side must be buy or sell');
   if (!Number.isFinite(quantity) || quantity <= 0) errors.push('quantity must be positive');
   if (!['market', 'limit'].includes(type)) errors.push('type must be market or limit');
-  if (type === 'limit' && (!Number.isFinite(price) || price <= 0)) errors.push('limit orders require a positive price');
+  if (type === 'limit' && (!Number.isFinite(price) || price! <= 0)) errors.push('limit orders require a positive price');
 
   return {
     ok: errors.length === 0,
@@ -29,10 +51,10 @@ function normalizeProposedOrder(record, index = 0) {
     order: errors.length === 0
       ? {
           instrumentId,
-          side,
+          side: side as 'buy' | 'sell',
           quantity,
           price,
-          type,
+          type: type as 'market' | 'limit',
         }
       : null,
     preview: {
@@ -45,10 +67,24 @@ function normalizeProposedOrder(record, index = 0) {
   };
 }
 
-function validateProposedOrdersPayload(payload) {
+export interface ValidateProposedOrdersResult {
+  ok: boolean;
+  total: number;
+  orders: ProposedOrder[];
+  errors: Array<{ index: number; errors: string[]; preview: any }>;
+  preview: Array<{
+    instrumentId: string;
+    side: string;
+    quantity: number;
+    type: string;
+    price: number | null;
+  }>;
+}
+
+export function validateProposedOrdersPayload(payload: any): ValidateProposedOrdersResult {
   const rawOrders = extractProposedOrdersPayload(payload);
-  const normalized = [];
-  const errors = [];
+  const normalized: ProposedOrder[] = [];
+  const errors: Array<{ index: number; errors: string[]; preview: any }> = [];
 
   rawOrders.forEach((record, index) => {
     const result = normalizeProposedOrder(record, index);
@@ -73,9 +109,3 @@ function validateProposedOrdersPayload(payload) {
     })),
   };
 }
-
-module.exports = {
-  extractProposedOrdersPayload,
-  normalizeProposedOrder,
-  validateProposedOrdersPayload,
-};

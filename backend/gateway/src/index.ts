@@ -47,31 +47,34 @@ import {
   type PolymarketModeProbeResult,
   type PolymarketAuthStage,
 } from './polymarket_account_adapter';
-// @ts-ignore
-const { buildAggregatedPortfolioSnapshot } = require('./polymarket_portfolio.js');
-// @ts-ignore
-const {
+import {
   aggregatePolymarketFilledPositions,
+  buildAggregatedPortfolioSnapshot,
+  buildPolymarketCollateralProbeSnapshot,
+  buildPolymarketDebugSnapshot,
   buildPolymarketTokenMetadata,
+  buildTradePagination,
+  classifyPolymarketGatewayError,
+  describeGatewayError,
+  fetchPolymarketGammaEvents,
+  fetchPolymarketGammaMarkets,
+  getConfiguredSignatureType,
+  getConfiguredWalletAddress,
+  loadPortfolio as loadInternalPaperPortfolio,
   markPolymarketHistoryIncomplete,
   mergeTokenMetadata,
+  normalizePolymarketApiCreds,
   partitionPolymarketPositions,
+  polymarketAddressRoles,
+  polymarketModeCandidates,
+  polymarketProbeCandidates,
   projectPolymarketPosition,
-} = require('./polymarket_positions.js');
-// @ts-ignore
-const { fetchPolymarketGammaMarkets, fetchPolymarketGammaEvents } = require('./polymarket_markets.js');
-// @ts-ignore
-const { buildPolymarketCollateralProbeSnapshot, buildPolymarketDebugSnapshot, buildTradePagination, getConfiguredSignatureType, getConfiguredWalletAddress, polymarketAddressRoles, polymarketModeCandidates, polymarketProbeCandidates } = require('./polymarket_account.js');
-// @ts-ignore
-const { validateProposedOrdersPayload } = require('./proposed_orders.js');
-// @ts-ignore
-const { traceCsvFile } = require('./polymarket_trace.js');
-// @ts-ignore
-const { normalizePolymarketApiCreds, summarizePolymarketApiCredShape } = require('./polymarket_creds.js');
-// @ts-ignore
-const { classifyPolymarketGatewayError, describeGatewayError } = require('./polymarket_errors.js');
-// @ts-ignore
-const { runPolymarketPaperRun, loadPortfolio: loadInternalPaperPortfolio, summarizePortfolio: summarizeInternalPaperPortfolio } = require('./polymarket_paper.js');
+  runPolymarketPaperRun,
+  summarizePolymarketApiCredShape,
+  summarizePortfolio as summarizeInternalPaperPortfolio,
+  traceCsvFile,
+  validateProposedOrdersPayload,
+} from './polymarket';
 // @ts-ignore
 const { runPolymarketOrderbookLiteBackfill } = require('../../cli/commands/trade/polymarket_backtest.js');
 // @ts-ignore
@@ -1216,10 +1219,6 @@ class PolymarketAdapter implements BrokerAdapter {
       return 0;
     }
   }
-}
-
-function createExecutionGatewayAdapter(adapter: PolymarketAdapter) {
-  return new ExecutionGateway({ dryRun: false, adapter });
 }
 
 function createExecutionGatewayAdapter(adapter: PolymarketAdapter) {

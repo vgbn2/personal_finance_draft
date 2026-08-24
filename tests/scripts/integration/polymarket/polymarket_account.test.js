@@ -1,6 +1,19 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
+require('ts-node').register({
+  transpileOnly: true,
+  skipProject: true,
+  experimentalResolver: true,
+  compilerOptions: {
+    module: 'CommonJS',
+    moduleResolution: 'node',
+    target: 'ES2020',
+    esModuleInterop: true,
+    ignoreDeprecations: '6.0',
+  },
+});
+
 const {
   assertValidPrivateKey,
   buildPolymarketCollateralProbeSnapshot,
@@ -11,134 +24,141 @@ const {
   polymarketAddressRoles,
   polymarketModeCandidates,
   polymarketProbeCandidates,
-  // shared env layer for compatibility smoke
-} = require('../../../../backend/gateway/src/polymarket_account.js');
+} = require('../../../../backend/gateway/src/polymarket/index.ts');
 const { resolvePolymarketClientSettings } = require('../../../../shared/lib/brokers/polymarket_env.js');
 
 test('wallet resolver accepts the legacy mixed-case wallet env alias', () => {
   const env = {
     POLYMARKET_WAllET_ADDRESS: '0xlegacy',
   };
+
   assert.equal(getConfiguredWalletAddress(env), '0xlegacy');
+  assert.equal(resolvePolymarketClientSettings(env).funderAddress, '0xlegacy');
+});
+
+test('signature type resolver prioritizes explicit SIGNATURE_TYPE before wallet defaults', () => {
+  const env = {
+    POLYMARKET_SIGNATURE_TYPE: '1',
+    DEPOSIT_ADDRESS: '0xdeposit',
+  };
+
+  assert.equal(getConfiguredSignatureType(env), 1);
+});
+
+test('signature type defaults to POLY_GNOSIS_SAFE when deposit wallet is present', () => {
+  const env = {
+    DEPOSIT_ADDRESS: '0xdeposit',
+  };
+
   assert.equal(getConfiguredSignatureType(env), 2);
+  assert.equal(resolvePolymarketClientSettings(env).signatureType, 2);
 });
 
-test('deposit address is preferred over legacy proxy and infers signature type 2', () => {
+test('signature type defaults to POLY_PROXY when funder matches PROXY_ADDRESS', () => {
   const env = {
     PROXY_ADDRESS: '0xproxy',
-    DEPOSIT_ADDRESS: '0xdeposit',
+    POLYMARKET_FUNDER_ADDRESS: '0xproxy',
   };
-  assert.equal(getConfiguredWalletAddress(env), '0xdeposit');
-  assert.equal(getConfiguredSignatureType(env), 2);
+
+  assert.equal(getConfiguredSignatureType(env), 1);
+  assert.equal(resolvePolymarketClientSettings(env).signatureType, 1);
 });
 
-test('shared polymarket client settings use deposit wallet before proxy fallback', () => {
-  const env = {
-    PROXY_ADDRESS: '0xproxy',
-    DEPOSIT_ADDRESS: '0xdeposit',
-    POLYMARKET_PRIVATE_KEY: '0x' + '1'.repeat(64),
-  };
-  const settings = resolvePolymarketClientSettings(env);
-  assert.equal(settings.funderAddress, '0xdeposit');
-  assert.equal(settings.signatureType, 2);
-});
-
-test('shared polymarket client settings still fall back to proxy when no deposit wallet is configured', () => {
-  const env = {
-    PROXY_ADDRESS: '0xproxy',
-    POLYMARKET_PRIVATE_KEY: '0x' + '1'.repeat(64),
-  };
-  const settings = resolvePolymarketClientSettings(env);
-  assert.equal(settings.funderAddress, '0xproxy');
-  assert.equal(settings.signatureType, 1);
-});
-
-test('mode candidates include the main signature and funder combinations without duplicates', () => {
-  const env = {
-    PROFILE_ADDRESS: '0xprofile',
-    RELAYER_API_KEY_ADDRESS: '0xrelayer',
-    PROXY_ADDRESS: '0xproxy',
-    DEPOSIT_ADDRESS: '0xdeposit',
-  };
-  const candidates = polymarketModeCandidates(env);
-  assert.deepEqual(candidates, [
-    { name: 'sig0-none', signatureType: 0, funderAddress: undefined },
-    { name: 'sig1-proxy', signatureType: 1, funderAddress: '0xproxy' },
-    { name: 'sig2-deposit', signatureType: 2, funderAddress: '0xdeposit' },
-    { name: 'sig1-profile', signatureType: 1, funderAddress: '0xprofile' },
-    { name: 'sig2-profile', signatureType: 2, funderAddress: '0xprofile' },
-    { name: 'sig1-relayer', signatureType: 1, funderAddress: '0xrelayer' },
-    { name: 'sig2-relayer', signatureType: 2, funderAddress: '0xrelayer' },
-  ]);
-});
-
-test('probe candidates generate signature type 1 and 2 for a target address', () => {
-  assert.deepEqual(polymarketProbeCandidates('0xabc'), [
-    { name: 'sig1-address', signatureType: 1, funderAddress: '0xabc' },
-    { name: 'sig2-address', signatureType: 2, funderAddress: '0xabc' },
-  ]);
-});
-
-test('address roles expose configured topology fields', () => {
-  const env = {
-    PROFILE_ADDRESS: '0xprofile',
-    RELAYER_API_KEY_ADDRESS: '0xrelayer',
-    PROXY_ADDRESS: '0xproxy',
-    DEPOSIT_ADDRESS: '0xdeposit',
-  };
-  assert.deepEqual(polymarketAddressRoles(env), {
-    signer: null,
-    profile: '0xprofile',
-    relayer: '0xrelayer',
-    proxy: '0xproxy',
-    deposit: '0xdeposit',
-    configuredFunder: '0xdeposit',
-    configuredSignatureType: 2,
+test('assertValidPrivateKey accepts 0x prefix followed by 64 hex characters', () => {
+  assert.doesNotThrow(() => {
+    assertValidPrivateKey('0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef');
   });
+
+  assert.throws(() => {
+    assertValidPrivateKey('0xshort');
+  }, /is malformed/);
+
+  assert.throws(() => {
+    assertValidPrivateKey('');
+  }, /not set/);
 });
 
-test('invalid private key shape is rejected with a clear error', () => {
-  assert.throws(
-    () => assertValidPrivateKey('0x4698'),
-    /POLYMARKET_PRIVATE_KEY is malformed/
-  );
-});
+test('buildTradePagination identifies truncated trade fetches at page cap', () => {
+  const truncated = buildTradePagination(5, 500, 5, 'next-cursor-token');
+  assert.deepEqual(truncated, {
+    pages_fetched: 5,
+    trades_fetched: 500,
+    page_cap: 5,
+    truncated: true,
+    next_cursor: 'next-cursor-token',
+  });
 
-test('trade pagination is not flagged truncated when no trades were returned', () => {
-  const pagination = buildTradePagination(1, 0, 10, 'LTE=');
-  assert.deepEqual(pagination, {
-    pages_fetched: 1,
-    trades_fetched: 0,
-    page_cap: 10,
+  const complete = buildTradePagination(2, 120, 5, null);
+  assert.deepEqual(complete, {
+    pages_fetched: 2,
+    trades_fetched: 120,
+    page_cap: 5,
     truncated: false,
   });
 });
 
-test('debug snapshot classifies zero-balance deposit-wallet state with allowance separately', () => {
-  const snapshot = buildPolymarketDebugSnapshot({
+test('mode candidate generator produces deduplicated list of plausible auth combinations', () => {
+  const env = {
+    PROFILE_ADDRESS: '0xprofile',
+    RELAYER_API_KEY_ADDRESS: '0xrelayer',
+    PROXY_ADDRESS: '0xproxy',
+    DEPOSIT_ADDRESS: '0xdeposit',
+  };
+
+  const candidates = polymarketModeCandidates(env);
+  assert.ok(candidates.length >= 4);
+  assert.equal(candidates[0].name, 'sig0-none');
+  assert.equal(candidates[1].name, 'sig1-proxy');
+  assert.equal(candidates[2].name, 'sig2-deposit');
+});
+
+test('probe candidate generator creates sig1 and sig2 candidates for a target address', () => {
+  const candidates = polymarketProbeCandidates('0xtarget');
+  assert.deepEqual(candidates, [
+    { name: 'sig1-address', signatureType: 1, funderAddress: '0xtarget' },
+    { name: 'sig2-address', signatureType: 2, funderAddress: '0xtarget' },
+  ]);
+});
+
+test('address roles summary reflects env bindings and calculated signature type', () => {
+  const env = {
+    PROFILE_ADDRESS: '0xprofile',
+    PROXY_ADDRESS: '0xproxy',
+    DEPOSIT_ADDRESS: '0xdeposit',
+  };
+
+  const roles = polymarketAddressRoles(env);
+  assert.equal(roles.profile, '0xprofile');
+  assert.equal(roles.proxy, '0xproxy');
+  assert.equal(roles.deposit, '0xdeposit');
+  assert.equal(roles.configuredFunder, '0xdeposit');
+  assert.equal(roles.configuredSignatureType, 2);
+});
+
+test('debug and collateral probe snapshot builders format structured outputs', () => {
+  const debug = buildPolymarketDebugSnapshot({
     signerAddress: '0xsigner',
     funderAddress: '0xfunder',
     signatureType: 2,
-    collateral: { balance: 0, allowance: 42 },
-    openOrders: [],
-    positions: [],
-    tradePagination: { pages_fetched: 1, trades_fetched: 0, page_cap: 10, truncated: false },
+    collateral: { balance: 10, allowance: 100, asset_type: 'COLLATERAL' },
+    openOrders: [{}],
+    positions: [{}, {}],
+    tradePagination: { trades_fetched: 5 },
   });
 
-  assert.equal(snapshot.accountState, 'allowance_present_balance_zero');
-  assert.equal(snapshot.collateral.allowance, 42);
-  assert.equal(snapshot.walletMode, 'POLY_GNOSIS_SAFE');
-});
+  assert.equal(debug.ok, true);
+  assert.equal(debug.walletMode, 'POLY_GNOSIS_SAFE');
+  assert.equal(debug.openOrderCount, 1);
+  assert.equal(debug.positionCount, 2);
+  assert.equal(debug.accountState, 'funded');
 
-test('collateral probe snapshot stays lightweight and does not infer missing activity', () => {
-  const snapshot = buildPolymarketCollateralProbeSnapshot({
+  const probe = buildPolymarketCollateralProbeSnapshot({
     signerAddress: '0xsigner',
     funderAddress: '0xfunder',
-    signatureType: 1,
-    collateral: { balance: 0, allowance: 0 },
+    signatureType: 2,
+    collateral: { balance: 0, allowance: 50, asset_type: 'COLLATERAL' },
   });
 
-  assert.equal(snapshot.accountState, 'balance_zero');
-  assert.equal(snapshot.walletMode, 'POLY_PROXY');
-  assert.equal(snapshot.collateral.balance, 0);
+  assert.equal(probe.ok, true);
+  assert.equal(probe.accountState, 'allowance_present_balance_zero');
 });

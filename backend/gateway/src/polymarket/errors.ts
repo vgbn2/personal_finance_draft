@@ -19,9 +19,9 @@ const SENSITIVE_HEADER_KEYS = new Set([
   'l2-passphrase',
 ]);
 
-function redactHeaderMap(headers) {
+export function redactHeaderMap(headers: Record<string, any> | null | undefined): Record<string, any> {
   const input = headers && typeof headers === 'object' ? headers : {};
-  const output = {};
+  const output: Record<string, any> = {};
   for (const [key, value] of Object.entries(input)) {
     const normalized = String(key || '').toLowerCase();
     output[key] = SENSITIVE_HEADER_KEYS.has(normalized) ? '[redacted]' : value;
@@ -29,7 +29,7 @@ function redactHeaderMap(headers) {
   return output;
 }
 
-function sanitizeAxiosConfig(config) {
+export function sanitizeAxiosConfig(config: any): Record<string, any> | undefined {
   if (!config || typeof config !== 'object') return undefined;
   return {
     url: config.url,
@@ -40,13 +40,13 @@ function sanitizeAxiosConfig(config) {
   };
 }
 
-function sanitizeGatewayError(error) {
+export function sanitizeGatewayError(error: any): Record<string, any> {
   if (!error || typeof error !== 'object') {
     return { message: 'Unknown error' };
   }
 
   const responseData = error.response && error.response.data;
-  const sanitized = {
+  const sanitized: Record<string, any> = {
     message: typeof error.message === 'string' && error.message.trim() ? error.message.trim() : '',
     name: error.name,
     code: error.code,
@@ -76,7 +76,7 @@ function sanitizeGatewayError(error) {
   return sanitized;
 }
 
-function describeGatewayError(error) {
+export function describeGatewayError(error: any): string {
   if (!error) return 'Unknown error';
   const responseData = error.response && error.response.data;
   if (typeof responseData === 'string' && responseData.trim()) return responseData.trim();
@@ -92,7 +92,7 @@ function describeGatewayError(error) {
   }
 }
 
-function gatewayErrorMessage(error) {
+export function gatewayErrorMessage(error: any): string {
   if (!error) return 'Unknown error';
   if (typeof error === 'string') return error.trim() || 'Unknown error';
   const responseData = error.response && error.response.data;
@@ -105,7 +105,13 @@ function gatewayErrorMessage(error) {
   return describeGatewayError(error);
 }
 
-function classifyPolymarketGatewayError(error) {
+export interface ClassifiedError {
+  error: string;
+  error_category?: string;
+  suggestion?: string;
+}
+
+export function classifyPolymarketGatewayError(error: any): ClassifiedError {
   const message = gatewayErrorMessage(error);
   const inheritedCategory = error && typeof error === 'object' && typeof error.error_category === 'string'
     ? error.error_category
@@ -135,7 +141,6 @@ function classifyPolymarketGatewayError(error) {
       error_category = 'invalid_token';
       suggestion = 'The token ID may belong to a resolved or delisted market. Re-fetch markets and pick an active one.';
     } else if (error && typeof error === 'object' && error.response && error.response.status === 400) {
-      // CLOB HTTP-400 business rejection not otherwise classified (e.g. invalid order version)
       const responseData = error.response.data;
       const serverMsg = (typeof responseData === 'object' && responseData !== null)
         ? (responseData.error || responseData.message || '')
@@ -147,8 +152,6 @@ function classifyPolymarketGatewayError(error) {
     }
   }
 
-  // Re-classify: CLOB 400 errors carrying a non-auth "error" string that slipped through
-  // the token/market branch (e.g. "invalid order version") must not appear as invalid_token.
   if (error_category === 'invalid_token') {
     const responseData = error && typeof error === 'object' && error.response && error.response.data;
     const serverMsg = responseData && typeof responseData === 'object'
@@ -161,7 +164,6 @@ function classifyPolymarketGatewayError(error) {
     }
   }
 
-  // Specifically re-map "invalid order version" regardless of how it arrives
   if (error_category !== 'clob_rejected' && /invalid order version/i.test(message)) {
     error_category = 'clob_rejected';
     suggestion = 'The CLOB rejected the order version. Ensure you are using the latest @polymarket/clob-client-v2 and retry.';
@@ -173,12 +175,3 @@ function classifyPolymarketGatewayError(error) {
     ...(suggestion ? { suggestion } : {}),
   };
 }
-
-module.exports = {
-  classifyPolymarketGatewayError,
-  describeGatewayError,
-  gatewayErrorMessage,
-  redactHeaderMap,
-  sanitizeAxiosConfig,
-  sanitizeGatewayError,
-};
