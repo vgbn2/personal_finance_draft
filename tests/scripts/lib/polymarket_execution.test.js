@@ -10,14 +10,17 @@ const GATEWAY_RUNNER = path.resolve(__dirname, '..', '..', '..',
   'run_trade_gateway.js'
 );
 
+// Real 256-bit Polymarket CLOB Token ID (BTC > $100k Yes token)
+const REAL_POLYMARKET_TOKEN_ID = '13915689317269078219168496739008737517740566192006337297676041270492637394586';
+
 test('polymarket buy --preflight validation via gateway execution seam', () => {
   const result = spawnSync(process.execPath, [
     GATEWAY_RUNNER,
     'polymarket',
     'buy',
-    'TOKEN_123',
+    REAL_POLYMARKET_TOKEN_ID,
     '0',
-    '0.5',
+    '0.50',
     '--preflight',
     '--json',
   ], {
@@ -41,9 +44,9 @@ test('polymarket buy live validation requiring explicit price between 0 and 1', 
     GATEWAY_RUNNER,
     'polymarket',
     'buy',
-    'TOKEN_123',
+    REAL_POLYMARKET_TOKEN_ID,
     '10',
-    '1.5',
+    '1.50',
     '--live',
     '--json',
   ], {
