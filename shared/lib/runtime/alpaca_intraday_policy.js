@@ -1,11 +1,12 @@
 'use strict';
 
-const DEFAULT_ALLOWED_TIMEFRAMES = Object.freeze(['5m', '15m']);
+const ALL_SUPPORTED_TIMEFRAMES = Object.freeze(['1m', '5m', '15m', '1h', '1d']);
+const DEFAULT_ALLOWED_TIMEFRAMES = ALL_SUPPORTED_TIMEFRAMES;
 
 function parseAllowedTimeframes(value = DEFAULT_ALLOWED_TIMEFRAMES) {
   const values = Array.isArray(value) ? value : String(value).split(',');
   const normalized = [...new Set(values.map((item) => String(item).trim()).filter(Boolean))];
-  if (normalized.length === 0 || normalized.some((item) => !DEFAULT_ALLOWED_TIMEFRAMES.includes(item))) {
+  if (normalized.length === 0 || normalized.some((item) => !ALL_SUPPORTED_TIMEFRAMES.includes(item))) {
     throw new Error('alpaca_paper_allowed_timeframes_invalid');
   }
   return normalized;
@@ -49,4 +50,4 @@ function decideEntryBudget({ requestedNotional, perOrderMaxNotional, dailyMaxNot
   };
 }
 
-module.exports = { DEFAULT_ALLOWED_TIMEFRAMES, parseAllowedTimeframes, positiveLimit, utcDay, usedEntryNotional, decideEntryBudget };
+module.exports = { ALL_SUPPORTED_TIMEFRAMES, DEFAULT_ALLOWED_TIMEFRAMES, parseAllowedTimeframes, positiveLimit, utcDay, usedEntryNotional, decideEntryBudget };

@@ -8,9 +8,10 @@ const {
   utcDay,
 } = require('../../../shared/lib/runtime/alpaca_intraday_policy.js');
 
-test('Alpaca Paper intraday policy permits only explicit 5m and 15m timeframes', () => {
+test('Alpaca Paper intraday policy permits supported timeframes (1m, 5m, 15m, 1h, 1d)', () => {
   assert.deepEqual(parseAllowedTimeframes('5m,15m,5m'), ['5m', '15m']);
-  assert.throws(() => parseAllowedTimeframes('5m,1h'), /allowed_timeframes_invalid/);
+  assert.deepEqual(parseAllowedTimeframes('1m,5m,15m,1h,1d'), ['1m', '5m', '15m', '1h', '1d']);
+  assert.throws(() => parseAllowedTimeframes('5m,2h'), /allowed_timeframes_invalid/);
   assert.throws(() => parseAllowedTimeframes(''), /allowed_timeframes_invalid/);
 });
 
