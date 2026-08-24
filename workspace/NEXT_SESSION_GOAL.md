@@ -1,19 +1,18 @@
 # Next Session Goal
 
-## 2026-08-23 Gateway B2A Seam Landing & Gateway B2B Roadmap
+## 2026-08-24 Gateway B2B Execution Seam Landing & Gateway B2C Roadmap
 
-**Status of Gateway B2A Seam:**
+**Status of Gateway B2B Execution Seam:**
 - **Status:** COMPLETED & VERIFIED.
-- **Summary:** Read-only Polymarket diagnostic commands (`commands/polymarket_private.ts`, `polymarket_read_adapter.ts`) and portfolio aggregation (`commands/aggregate_portfolio.ts`) extracted from `backend/gateway/src/index.ts`. All 37 integration tests, repo structure tests, and hygiene checks pass 100%.
+- **Summary:** Extracted order submission, preflight validation (`submitPolymarketOrder`, `preflightPolymarketOrder`), order signing, risk engine checks (`ExecutionGateway.validateOrder`), and proposed order processing from `backend/gateway/src/index.ts` into a dedicated `backend/gateway/src/polymarket_execution.ts` module. All integration tests pass 100% and hygiene checks pass.
 
-**Immediate next action for Gateway B2B:**
-1. **Gateway B2B Execution Seam Extraction**:
-   - Extract live order execution (`submitPolymarketOrder`, `preflightPolymarketOrder`, `cancelOrder`), signing, preflight risk checks, and CLOB order submission from `backend/gateway/src/index.ts` into a dedicated execution module (`commands/polymarket_execution.ts` / `polymarket_execution_adapter.ts`).
-2. **Preserve Coordinator Boundaries**:
-   - Keep top-level CLI argument parsing, environment validation, runtime policy enforcement, and command routing in `backend/gateway/src/index.ts`.
-   - Maintain `PolymarketReadAdapter` interface frozen and untouched.
+**Immediate next action for Gateway B2C:**
+1. **Gateway B2C Account & Diagnostic Seam Extraction**:
+   - Extract account diagnostic snapshots (`polymarket portfolio`, `polymarket debug`, `polymarket collateral-probe`, `polymarket modes`, `polymarket investigate`, `polymarket topology`, `polymarket probe`, `polymarket auth-health`) from `backend/gateway/src/index.ts` into a dedicated account diagnostic module (`polymarket_account_adapter.ts`).
+2. **Coordinator Finalization**:
+   - Finalize `backend/gateway/src/index.ts` as a pure CLI coordinator handling environment surface checks, argument parsing, runtime policy enforcement, and dispatching to read (`polymarket_read_adapter`), execution (`polymarket_execution`), and account (`polymarket_account_adapter`) modules.
 3. **Execution Safety Requirements**:
-   - Ensure all execution commands (`submit`, `preflight`, `cancel`) maintain non-zero process exit codes (`process.exitCode = 1`) on failure and fail-closed handling on invalid proposed order envelopes.
+   - Ensure all diagnostic and execution commands maintain non-zero process exit codes (`process.exitCode = 1`) on failure and fail-closed handling on unconfigured or unauthorized requests.
 
 **Standing deferred:**
 - Replace `.github/CODEOWNERS` and `MAINTAINERS.md` placeholder handles with real GitHub usernames.
