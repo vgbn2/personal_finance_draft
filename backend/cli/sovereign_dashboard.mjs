@@ -152,6 +152,28 @@ const M = [
           '--timeframes': { t:'txt', lbl:'Target timeframes to derive', def:'15m,30m,1h,4h' },
         },
       },
+      { id: 'crypto-deep-backfill', label: 'crypto-deep-backfill', desc: 'Crypto Deep Backfill (Binance 1m)',
+        flags: {
+          '--days':   { t:'txt', lbl:'History depth (days)', def:'1825' },
+          '--symbol': { t:'txt', lbl:'Single symbol override (optional)', def:'' },
+        },
+      },
+      { id: 'equity-deep-backfill', label: 'equity-deep-backfill', desc: 'Equity Deep Backfill (Alpaca SIP 5m)',
+        flags: {
+          '--days':   { t:'txt', lbl:'History depth (days)', def:'1825' },
+          '--symbol': { t:'txt', lbl:'Single symbol override (optional)', def:'' },
+        },
+      },
+      { id: 'five-min-accumulate', label: 'five-min-accumulate', desc: 'Five Min Accumulate (Yahoo 5m)',
+        flags: {
+          '--family': { t:'sel', opts:['indices','commodities','fx'], lbl:'Family', def:'indices' },
+        },
+      },
+      { id: 'intraday-accumulate', label: 'intraday-accumulate', desc: 'Intraday Accumulate (Yahoo 15m/30m/1h/4h)',
+        flags: {
+          '--family': { t:'sel', opts:['indices','commodities','fx'], lbl:'Family', def:'indices' },
+        },
+      },
       { id: 'clear-api-cache', label: 'clear-api-cache', desc: 'Delete provider API response cache',
         flags: {
           '--dry-run':   { t:'yn',  lbl:'Preview only (no deletion)?', def:true, warn:true },
@@ -186,7 +208,7 @@ const M = [
         },
       },
       { id: 'backend universe', label: 'universe', desc: 'Cached symbol inventory (all families)', flags: {} },
-      { id: 'risk', label: 'risk check', desc: 'Pre-trade risk limit check (C++ core)',
+      { id: 'backend risk', label: 'risk check', desc: 'Pre-trade risk limit check (C++ core)',
         flags: {
           '--notional':     { t:'txt', lbl:'Order Notional ($)', def:'100' },
           '--equity':       { t:'txt', lbl:'Account Equity ($)', def:'10000' },

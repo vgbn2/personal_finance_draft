@@ -91,6 +91,7 @@ services:
 
   bot-alpaca-paper:
     logging: *default-logging
+    profiles: [paper-alpaca]
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:

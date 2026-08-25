@@ -154,15 +154,18 @@ async function resolvePrincipal(req, {
 }
 
 async function resolveSocketPrincipal(socket, options = {}) {
-  const token = socket
-    && socket.handshake
+  if (!socket) {
+    console.warn('[SECURITY] resolveSocketPrincipal called with null/undefined socket');
+    return buildPrincipal({ source: 'none' });
+  }
+  const token = socket.handshake
     && socket.handshake.auth
     && typeof socket.handshake.auth.token === 'string'
     ? socket.handshake.auth.token
     : '';
   const request = {
     headers: token ? { authorization: `Bearer ${token}` } : {},
-    socket: socket && socket.request ? socket.request.socket : null,
+    socket: socket.request ? socket.request.socket : null,
   };
   return resolvePrincipal(request, options);
 }
