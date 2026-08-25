@@ -7,6 +7,7 @@ const SYMBOL_REGEX = /^[A-Z0-9_.-]{1,20}$/i;
 const TIMEFRAME_REGEX = /^(1m|3m|5m|15m|30m|1h|2h|4h|6h|8h|12h|1d|1w|1M)$/;
 const SIGNAL_ID_REGEX = /^[a-zA-Z0-9_-]{1,128}$/;
 const PROMOTION_ID_REGEX = /^[a-zA-Z0-9:_.-]{1,160}$/;
+const POSITION_ID_REGEX = /^[a-zA-Z0-9_-]{1,128}$/;
 
 function isValidSymbol(symbol) {
   if (typeof symbol !== 'string') return false;
@@ -26,6 +27,11 @@ function isValidSignalId(id) {
 function isValidPromotionId(id) {
   if (typeof id !== 'string') return false;
   return PROMOTION_ID_REGEX.test(id.trim());
+}
+
+function isValidPositionId(id) {
+  if (typeof id !== 'string') return false;
+  return POSITION_ID_REGEX.test(id.trim());
 }
 
 function isPathWithinAllowedRoots(targetPath, allowedRoots = [REPO_ROOT, STORAGE_DATA_DIR]) {
@@ -51,10 +57,12 @@ module.exports = {
   TIMEFRAME_REGEX,
   SIGNAL_ID_REGEX,
   PROMOTION_ID_REGEX,
+  POSITION_ID_REGEX,
   isValidSymbol,
   isValidTimeframe,
   isValidSignalId,
   isValidPromotionId,
+  isValidPositionId,
   isPathWithinAllowedRoots,
   sanitizeSymbol,
 };

@@ -90,8 +90,21 @@ function checkGitNoise() {
 
   // C. Verify build directories are ignored
   const buildDirs = ['backend/core/build/', 'build/', 'dist/', 'node_modules/'];
+  const gitignoreContent = fs.existsSync(path.join(WORKSPACE_ROOT, '.gitignore'))
+    ? fs.readFileSync(path.join(WORKSPACE_ROOT, '.gitignore'), 'utf8')
+    : '';
   for (const dir of buildDirs) {
     const checkIgnore = runGit(['check-ignore', '--no-index', dir]);
+    if (checkIgnore.status === 128 && checkIgnore.stderr.includes('beyond a symbolic link')) {
+      if (!gitignoreContent.includes(dir)) {
+        findings.push({
+          finding: `Directory is not gitignored: ${dir}`,
+          surface: '.gitignore',
+          action: `echo "${dir}" >> .gitignore`
+        });
+      }
+      continue;
+    }
     if (checkIgnore.status !== 0) {
       findings.push({
         finding: `Directory is not gitignored: ${dir}`,

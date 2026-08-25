@@ -55,6 +55,8 @@ const {
   localBackendFallback,
 } = require('./cli_executor_market');
 
+const { isValidPositionId, sanitizeSymbol } = require('./input_validator');
+
 const {
   DEFAULT_BACKTEST_REPORT,
   SIGNAL_REPORT_MAX_AGE_MS,
@@ -425,6 +427,7 @@ function botCycle(query = {}) {
 function botSell(query = {}) {
   const positionId = String(query.position_id || '');
   if (!positionId) return { ok: false, error: 'position_id required' };
+  if (!isValidPositionId(positionId)) return { ok: false, error: 'invalid_position_id' };
   return runNodeCli(['bot', 'sell', '--position-id', positionId, '--json']);
 }
 
