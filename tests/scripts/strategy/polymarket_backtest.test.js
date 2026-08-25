@@ -15,7 +15,7 @@ const {
   inferWinner,
   gammaFinalPrice,
   writePolymarketArchiveChunk,
-} = require('../../../shared/lib/polymarket_history.js');
+} = require('../../../shared/lib/market/polymarket_history');
 
 function tempArchive() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'polybt-'));

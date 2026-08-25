@@ -8,7 +8,7 @@ const path = require('node:path');
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-run-loop-'));
 process.env.SOVEREIGN_RUN_STATUS_PATH = path.join(tmpDir, 'run_status.json');
 
-const { startLoop, stopLoop, getStatus, isRunning } = require('../../../../shared/lib/run_loop.js');
+const { startLoop, stopLoop, getStatus, isRunning } = require('../../../../shared/lib/runtime/run_loop');
 
 test('startLoop runs fn immediately and tracks iteration count', async () => {
   const calls = [];
