@@ -88,7 +88,7 @@ function loadUsableSources(args, options = {}) {
   const family = options.family || null;
   const timeframe = options.timeframe || optionValue(args, '--timeframe', '1d');
 
-  if (input === DEFAULT_SNAPSHOT) {
+  if (input === DEFAULT_SNAPSHOT && family) {
     const days = numericOption(args, '--days', 2000);
     const symbols = options.symbols || symbolsFromArgs(args);
     const tsBars = loadSourcesFromTsIndex(family, days, timeframe, symbols);

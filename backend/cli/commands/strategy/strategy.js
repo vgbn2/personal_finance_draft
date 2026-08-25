@@ -345,12 +345,15 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 '--model', strategy.model,
                 '--timeframe', strategyTimeframe,
                 '--threshold', String(strategy.risk?.signal_threshold || 0.65),
+                '--signal-only',
                 '--json',
                 ...universeArgs
             ]);
         } finally {
             global.suppressLogs = false;
         }
+        // Yield event loop between strategy signal passes to prevent CPU starvation
+        await new Promise((resolve) => setTimeout(resolve, 50));
 
         if (report && report.trades && report.trades.length > 0) {
             const lastTrade = report.trades[report.trades.length - 1];

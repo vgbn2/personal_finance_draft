@@ -443,7 +443,8 @@
         {"name": "NO_COLOR"},
         {"name": "PATH"},
         {"name": "SOVEREIGN_ENVIRONMENT_SURFACE"},
-        {"name": "SOVEREIGN_DEBUG"}
+        {"name": "SOVEREIGN_DEBUG"},
+        {"name": "SOVEREIGN_LOG_HEALTH_CHECKS"}
       ]
     }
   ]

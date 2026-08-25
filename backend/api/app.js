@@ -136,7 +136,8 @@ async function checkSecurity(req, res) {
   }
 
   // Rate Limiting
-  const ip = req.socket.remoteAddress;
+  const network = requestNetworkContext(req);
+  const ip = network.source_ip || (req.socket && req.socket.remoteAddress) || '127.0.0.1';
   const now = Date.now();
   const userData = RATE_LIMITS.get(ip) || { count: 0, start: now };
   if (now - userData.start > LIMIT_WINDOW_MS) {
@@ -194,7 +195,6 @@ async function checkSecurity(req, res) {
   });
   const principal = await resolvePrincipal(req);
   const decision = authorize(principal, required);
-  const network = requestNetworkContext(req);
   const sessionDecision = req.method === 'POST' && pathname === '/api/auth/session/reauth'
     ? authSessionRegistry.approvePending(principal, network)
     : authSessionRegistry.record(principal, network);
@@ -364,7 +364,9 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 404, { ok: false, error: 'not_found' });
     })
     .catch((error) => {
-      sendJson(res, error.statusCode || 500, { ok: false, error: error.message });
+      const statusCode = error.statusCode || 500;
+      const message = statusCode >= 500 ? 'internal_server_error' : error.message;
+      sendJson(res, statusCode, { ok: false, error: message });
     });
 });
 
@@ -372,7 +374,14 @@ const { Server } = require('socket.io');
 
 const io = new Server(server, {
   cors: {
-    origin: true,
+    origin: (origin, callback) => {
+      // Validate origin against allowed origins policy
+      if (isAllowedOrigin(origin, { headers: { host: `${HOST}:${PORT}` } })) {
+        callback(null, true);
+      } else {
+        callback(new Error('Origin not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'POST']
   },
   allowRequest: (req, callback) => callback(null, isAllowedOrigin(req.headers.origin, req)),
