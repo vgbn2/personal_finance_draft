@@ -863,7 +863,7 @@ Run a dedicated hygiene cleanup for tracked generated artifacts, then a docs/tes
 
 ### Verification
 - `node --check shared/lib/mcp_gate.js shared/lib/mcp_agent.js shared/lib/ai_client.js backend/api/app.js` → ALL OK
-- `node -e "require('./shared/lib/mcp_gate')"` gate smoke test: allowed routes return true, blocked routes return false
+- `node -e "require('./shared/lib/mcp/gate')"` gate smoke test: allowed routes return true, blocked routes return false
 
 ### Remaining
 - `MCP_GATE_TOKEN` must be set in `.env` and matched in `.mcp.json` for Claude Code MCP gate to activate

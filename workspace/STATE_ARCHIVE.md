@@ -310,7 +310,7 @@
   matches web/bot (`personal_finance:latest`).
 - **FINDING A (uncommitted caller migration — debt, NOT a defect):** 22 tracked files carry uncommitted
   1–2 line require-path swaps off root shims onto canonical category paths (`../env`→`../runtime/env`,
-  `#shared/env`→`#shared/runtime/env`, `../../shared/lib/env`→`.../runtime/env`, quote_router/validation/
+  `#shared/env`→`#shared/runtime/env`, `../../shared/lib/runtime/env`→`.../runtime/env`, quote_router/validation/
   registry/mt5_profiles/etc.). 32 ins / 32 del, pure path swaps. Empirically SAFE: all 12 changed prod
   modules load with no MODULE_NOT_FOUND; the 7 changed test files pass 53/53. This is the
   "migrate direct callers, keep the shim" hygiene work from session 29 sitting unstaged. Action: commit

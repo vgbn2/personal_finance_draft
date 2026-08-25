@@ -536,7 +536,7 @@ P3 equity session guard, P4 ML 5m cap, config alias. DCS 0.97. Suite baseline 43
      `#shared/ansi`/`#shared/ai_client`/`#shared/indicators`/`#shared/backtest` all resolve to the root
      shims (used by `trade.js`, `setup.js`, `module_loading.test.js`).
   3. **Compiled build artifacts** — gitignored `dist/mcp_server/lib/{bridge,agent_gate}.js`
-     `require("../../../shared/lib/paths")` (compiled from the MCP TypeScript source).
+     `require("../../../shared/lib/runtime/paths")` (compiled from the MCP TypeScript source).
 - **Resolution:** shims restored; they are intentional compatibility re-exports, NOT dead code. Direct
   source callers WERE migrated to canonical category paths (14 literal sites + the relative + alias
   sites), so the shims now have fewer consumers, but they must stay until the `#shared/*` alias map and

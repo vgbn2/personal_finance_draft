@@ -86,7 +86,7 @@
     },
     {
       "name": "Google Cloud Compute Engine Free Tier",
-      "cost_model": "Permanent monthly Free Tier allowance with no stated end date, distinct from the $300/90-day new-customer trial. A billing account is required, and usage above free limits is billable on a paid billing account.",
+      "cost_model": "Permanent monthly Free Tier allowance with no stated end date, distinct from the '00/90-day new-customer trial. A billing account is required, and usage above free limits is billable on a paid billing account.",
       "compute": "One e2-micro VM in eligible US regions. It exposes 2 guest vCPUs but sustains only 25% of one physical CPU in total and has 1 GB RAM.",
       "storage": "30 GB-month of standard persistent disk is free.",
       "persistence": "Persistent Disk survives VM restarts, but only 30 GB-month is free and the service depends on an active billing account.",
@@ -242,7 +242,7 @@
     },
     "temporary_only": [
       "AWS Free Plan can provide a short pilot at approximately the repo floor, but it is not a permanent host.",
-      "Google Cloud's $300 trial can fund a correctly sized temporary VM, but the permanent Free Tier cannot.",
+      "Google Cloud's '00 trial can fund a correctly sized temporary VM, but the permanent Free Tier cannot.",
       "GitHub Actions remains a readiness/CI surface, not the deployment host."
     ],
     "ruled_out": [
