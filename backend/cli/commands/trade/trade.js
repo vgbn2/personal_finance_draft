@@ -252,10 +252,56 @@ async function commandTrade(args) {
   args = buildTradeArgsFromActionFlag(args);
   const subcommand = args[0];
 
-  if (subcommand === 'favorites') {
-    const favorites = currentFavoriteSymbols();
-    pageText(renderFavoriteSymbolsList(favorites), args);
-    return 0;
+  if (subcommand === 'positions') {
+    try {
+      const isLive = hasFlag(args, '--live');
+      const isJson = hasFlag(args, '--json');
+      const gatewayArgs = ['positions', ...(isLive ? ['--live'] : ['--paper-provider']), '--json'];
+      const payload = runGatewayCommand(gatewayArgs);
+
+      if (!payload || !payload.ok) {
+        if (isJson) {
+          console.log(JSON.stringify({ ok: false, error: payload?.error || 'Failed to fetch positions' }));
+        } else {
+          console.error(`[ERROR] ${payload?.error || 'Failed to fetch positions'}`);
+        }
+        return 1;
+      }
+
+      if (isJson) {
+        console.log(JSON.stringify(payload, null, 2));
+        return 0;
+      }
+
+      console.log('\n\x1b[1;36m=== ACTIVE POSITIONS & MULTI-STRATEGY ATTRIBUTION ===\x1b[0m\n');
+      const positions = payload.positions || [];
+      if (positions.length === 0) {
+        console.log('No active positions held.');
+        return 0;
+      }
+
+      for (const pos of positions) {
+        const pnlColor = (pos.unrealizedPl >= 0) ? '\x1b[1;32m' : '\x1b[1;31m';
+        const pnlSign = pos.unrealizedPl >= 0 ? '+' : '';
+        console.log(`\x1b[1m${pos.symbol.padEnd(6)}\x1b[0m | Total Qty: \x1b[33m${pos.quantity}\x1b[0m | Avg: $${Number(pos.averagePrice).toFixed(2)} | Value: $${Number(pos.marketValue).toFixed(2)} | P&L: ${pnlColor}${pnlSign}$${Number(pos.unrealizedPl).toFixed(2)}\x1b[0m`);
+
+        if (Array.isArray(pos.subPositions) && pos.subPositions.length > 0) {
+          for (const sub of pos.subPositions) {
+            const isManual = sub.source === 'manual';
+            const tag = isManual ? '\x1b[1;35m[MANUAL]\x1b[0m' : `\x1b[1;34m[BOT:${sub.strategy_id}]\x1b[0m`;
+            const dateStr = sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : 'N/A';
+            const subPnlColor = (sub.unrealizedPl >= 0) ? '\x1b[32m' : '\x1b[31m';
+            const subPnlSign = sub.unrealizedPl >= 0 ? '+' : '';
+            console.log(`  ├─ ${tag} Qty: ${sub.quantity} @ $${Number(sub.averagePrice).toFixed(2)} | Value: $${Number(sub.marketValue).toFixed(2)} | P&L: ${subPnlColor}${subPnlSign}$${Number(sub.unrealizedPl).toFixed(2)}\x1b[0m | Subm: ${dateStr}`);
+          }
+        }
+        console.log('');
+      }
+      return 0;
+    } catch (err) {
+      console.error(`[ERROR] ${err.message}`);
+      return 1;
+    }
   }
 
   if (subcommand === 'balance' && hasFlag(args, '--json')) {

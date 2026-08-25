@@ -1,9 +1,9 @@
 import { BrokerAdapter, TradeOrder } from '../adapters/types';
 import { AlpacaAdapter } from '../adapters/alpaca_adapter';
-import { RiskEngineBridge, RiskContext } from './risk_engine_bridge';
+import { RiskEngineBridge, RiskContext, buildRiskContext } from './risk_engine_bridge';
 
 // @ts-ignore
-const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
+const { PersistenceBridge } = require('../../../../shared/lib/runtime/persistence_bridge');
 
 export enum OrderStatus {
   SUBMITTED = 'submitted',
@@ -43,8 +43,6 @@ export class ExecutionGateway {
 
     let riskContext: RiskContext;
     try {
-      // @ts-ignore
-      const { buildRiskContext } = require('../index');
       riskContext = await buildRiskContext(order, this.adapter, this.dryRun || Boolean(order.providerPaper));
     } catch (error: any) {
       console.error(`[RISK] Rejection: ${error.message}`);
@@ -87,9 +85,37 @@ export class ExecutionGateway {
         console.log(`[${label}] Order placed successfully: ${result.orderId} (Status: ${result.status})`);
         order.status = result.status === 'filled' ? OrderStatus.FILLED : OrderStatus.SUBMITTED;
 
+        try {
+          const subLedger = require('../../../../shared/lib/runtime/sub_positions_ledger.js');
+          if (order.side === 'buy') {
+            subLedger.recordSubPositionEntry({
+              symbol: order.instrumentId,
+              strategyId: order.strategyId || order.strategy || 'manual',
+              quantity: order.quantity,
+              entryPrice: order.price || 0,
+              source: order.source || (order.strategyId || order.strategy ? 'bot' : 'manual'),
+              timeframe: order.timeframe || '1m',
+              confidence: order.confidence || 1.0,
+              signature: order.clientOrderId || order.signature,
+              orderId: result.orderId,
+              submittedAt: order.submittedAt || new Date().toISOString()
+            });
+          } else if (order.side === 'sell') {
+            subLedger.recordSubPositionExit(
+              order.instrumentId,
+              order.strategyId || order.strategy || 'manual',
+              order.quantity,
+              { exitPrice: order.price || 0 }
+            );
+          }
+        } catch (ledgerErr) {
+          console.warn(`[LEDGER-SYNC] Warning: Could not record sub-position in ledger:`, ledgerErr);
+        }
+
         await this.persistence.logOrder(order, order.providerPaper ? 'alpaca_paper' : 'alpaca', {
           order_id: result.orderId,
-          strategy: order.strategy || null,
+          strategy: order.strategyId || order.strategy || null,
+          signature: order.clientOrderId || order.signature || null,
           paper: Boolean(order.providerPaper),
         }, result);
 

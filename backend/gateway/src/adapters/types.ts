@@ -1,3 +1,17 @@
+export interface SubPosition {
+  sub_id: string;
+  strategy_id: string;
+  source: 'bot' | 'manual';
+  quantity: number;
+  averagePrice: number;
+  marketValue: number;
+  unrealizedPl: number;
+  confidence?: number | null;
+  timeframe?: string | null;
+  signature?: string | null;
+  submittedAt?: string | null;
+}
+
 export interface Position {
   symbol: string;
   quantity: number;
@@ -7,6 +21,8 @@ export interface Position {
   asset_type?: string;
   asset_id?: string;
   side?: string;
+  submittedAt?: string;
+  subPositions?: SubPosition[];
 }
 
 export interface TradeOrder {
@@ -16,6 +32,12 @@ export interface TradeOrder {
   type: 'market' | 'limit';
   price?: number;
   tickSizeOverride?: string;
+  clientOrderId?: string;
+  strategyId?: string;
+  source?: 'bot' | 'manual';
+  timeframe?: string;
+  confidence?: number;
+  submittedAt?: string;
 }
 
 export interface RiskContext {

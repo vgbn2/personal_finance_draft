@@ -603,13 +603,38 @@ class AlpacaAdapter implements BrokerAdapter {
 
     try {
       const positions = await this.alpaca.getPositions();
-      return positions.map((p: any) => ({
-        symbol: p.symbol,
-        quantity: Number(p.qty),
-        averagePrice: Number(p.avg_entry_price),
-        marketValue: Number(p.market_value),
-        unrealizedPl: Number(p.unrealized_pl)
-      }));
+
+      let orderMap: Record<string, { submitted_at?: string; filled_at?: string; client_order_id?: string }> = {};
+      try {
+        const closedOrders = await this.alpaca.getOrders({ status: 'closed', limit: 100, nested: false });
+        if (Array.isArray(closedOrders)) {
+          for (const ord of closedOrders) {
+            const sym = String(ord.symbol || '').toUpperCase();
+            if (sym && (!orderMap[sym] || (ord.filled_at && orderMap[sym].filled_at && ord.filled_at > orderMap[sym].filled_at!))) {
+              orderMap[sym] = {
+                submitted_at: ord.submitted_at || ord.created_at,
+                filled_at: ord.filled_at,
+                client_order_id: ord.client_order_id
+              };
+            }
+          }
+        }
+      } catch {
+        // Non-fatal if order history enrichment fails
+      }
+
+      return positions.map((p: any) => {
+        const sym = String(p.symbol || '').toUpperCase();
+        const ordInfo = orderMap[sym];
+        return {
+          symbol: sym,
+          quantity: Number(p.qty),
+          averagePrice: Number(p.avg_entry_price),
+          marketValue: Number(p.market_value),
+          unrealizedPl: Number(p.unrealized_pl),
+          submittedAt: ordInfo?.submitted_at || ordInfo?.filled_at || undefined,
+        };
+      });
     } catch (err: any) {
       throw new Error(`Alpaca SDK Positions Error: ${err.message}`);
     }
@@ -1351,6 +1376,12 @@ export async function main() {
         process.exit(1);
     }
 
+    const clientOrderId = parseOptionValue(args, '--client-order-id') || parseOptionValue(args, '--signature') || undefined;
+    const strategyName = parseOptionValue(args, '--strategy') || undefined;
+    const timeframe = parseOptionValue(args, '--timeframe') || undefined;
+    const confidenceVal = parseOptionValue(args, '--confidence');
+    const sourceVal = parseOptionValue(args, '--source') as 'bot' | 'manual' | undefined;
+
     const order: TradeOrder = {
       instrumentId: symbol,
       side: command as OrderSide,
@@ -1359,7 +1390,13 @@ export async function main() {
       price,
       status: OrderStatus.PROPOSED,
       timestamp: new Date(),
-      strategy: parseOptionValue(args, '--strategy') || undefined,
+      strategy: strategyName,
+      strategyId: strategyName,
+      clientOrderId,
+      timeframe,
+      confidence: confidenceVal ? Number(confidenceVal) : undefined,
+      source: sourceVal || (strategyName ? 'bot' : 'manual'),
+      submittedAt: new Date().toISOString(),
       providerPaper,
     };
 
@@ -1386,7 +1423,14 @@ export async function main() {
         console.log(`[GATEWAY] Current Portfolio Balances:`, balances);
     }
   } else if (command === 'positions') {
-    const positions = await adapter.getPositions();
+    const rawPositions = await adapter.getPositions();
+    let positions = rawPositions;
+    try {
+      const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');
+      positions = subLedger.reconcilePositions(rawPositions);
+    } catch {
+      // Fallback to raw positions if ledger unavailable
+    }
     if (useJson) {
       console.log(JSON.stringify({ ok: true, positions }));
     } else {
