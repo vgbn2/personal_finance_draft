@@ -306,7 +306,8 @@ async function runAutomationPass(args, strategiesOverride = null) {
         return;
     }
 
-    console.log(`[\x1b[36m${new Date().toLocaleTimeString()}\x1b[0m] [AUTOMATION] Scanning ${targetStrategies.length} strategies... (Mode: ${isLive ? '\x1b[1;31mLIVE\x1b[0m' : '\x1b[1;32mDRY-RUN\x1b[0m'})`);
+    const modeLabel = isLive ? '\x1b[1;31mLIVE\x1b[0m' : (providerPaper ? '\x1b[1;33mPAPER-ALPACA (TRADE)\x1b[0m' : '\x1b[1;32mDRY-RUN\x1b[0m');
+    console.log(`[\x1b[36m${new Date().toLocaleTimeString()}\x1b[0m] [AUTOMATION] Scanning ${targetStrategies.length} strategies... (Mode: ${modeLabel})`);
     
     // 1. Collect all symbols needed, grouped by timeframe
     targetStrategies.forEach(s => {
