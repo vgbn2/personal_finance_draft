@@ -105,6 +105,7 @@ const PROTECTED_GET_CAPABILITIES = Object.freeze({
   '/api/system/service-health': CAPABILITIES.DATA_READ,
   '/api/scorecard': CAPABILITIES.RESEARCH_READ,
   '/api/combined-analysis': CAPABILITIES.RESEARCH_READ,
+  '/api/system/infra': CAPABILITIES.HOST_INSPECT,
 });
 
 const MUTATION_CAPABILITIES = Object.freeze({

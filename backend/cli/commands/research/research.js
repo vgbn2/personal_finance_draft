@@ -562,28 +562,38 @@ async function commandBacktest(args) {
     propFirmProfile: selectedPropFirm,
     engine: sampleMode ? 'js' : (strategyMeta?.engine || 'auto'),
   };
+  const signalOnly = hasFlag(args, '--signal-only') || hasFlag(args, '--fast-signal');
   const sampleWindowNote = backtestModeNote(sampleMode, quality);
   let inSample;
   let outOfSample;
   let fullBacktest;
   let wfResult;
   await withLoadingAnimation('Running backtest', async () => {
-    if (useDirectCppNative) {
-      inSample = runBacktest(featureFrame, { ...backtestOptions, to: oosRange.start, monteCarloRuns: 0 });
-      outOfSample = runBacktest(featureFrame, { ...backtestOptions, from: oosRange.start, monteCarloRuns: 0 });
+    if (signalOnly) {
+      // In signal-only mode, only compute the single full backtest pass to find current entry signals.
+      // Skip Walk-Forward validation (3 folds), Monte Carlo stress simulations (200 runs), and train/test splitting.
+      fullBacktest = runBacktest(featureFrame, { ...backtestOptions, timeframe, from, to, walkForwardFolds: 0, monteCarloRuns: 0 });
+      inSample = { metrics: fullBacktest.metrics };
+      outOfSample = { metrics: fullBacktest.metrics };
+      wfResult = null;
     } else {
-      inSample = runBacktest(split.train, { ...backtestOptions, monteCarloRuns: 0 });
-      outOfSample = runBacktest(split.test, { ...backtestOptions, monteCarloRuns: 0 });
-    }
-    fullBacktest = runBacktest(featureFrame, { ...backtestOptions, timeframe, from, to, walkForwardFolds: sampleMode ? 0 : 3 });
-    if (!sampleMode) {
-      if (fullBacktest && fullBacktest.walk_forward && fullBacktest.walk_forward.ok) {
-        wfResult = fullBacktest.walk_forward;
+      if (useDirectCppNative) {
+        inSample = runBacktest(featureFrame, { ...backtestOptions, to: oosRange.start, monteCarloRuns: 0 });
+        outOfSample = runBacktest(featureFrame, { ...backtestOptions, from: oosRange.start, monteCarloRuns: 0 });
       } else {
-        wfResult = rollingWalkForward(filteredFrame, runBacktest, {
-          folds: 3,
-          backtestOptions,
-        });
+        inSample = runBacktest(split.train, { ...backtestOptions, monteCarloRuns: 0 });
+        outOfSample = runBacktest(split.test, { ...backtestOptions, monteCarloRuns: 0 });
+      }
+      fullBacktest = runBacktest(featureFrame, { ...backtestOptions, timeframe, from, to, walkForwardFolds: sampleMode ? 0 : 3 });
+      if (!sampleMode) {
+        if (fullBacktest && fullBacktest.walk_forward && fullBacktest.walk_forward.ok) {
+          wfResult = fullBacktest.walk_forward;
+        } else {
+          wfResult = rollingWalkForward(filteredFrame, runBacktest, {
+            folds: 3,
+            backtestOptions,
+          });
+        }
       }
     }
   }, args);
