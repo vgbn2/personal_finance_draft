@@ -95,6 +95,8 @@ async function handleCommand(args) {
     'prop-firms':     (a) => commandPropFirmMenu(a),
     // --- Trade (manifest: trade) ---
     trade:            (a) => commandTrade(a),
+    positions:        (a) => commandTrade(['positions', ...a]),
+    portfolio:        (a) => commandTrade(['aggregate_portfolio', ...a]),
     alpaca:           (a) => commandTrade(a),
     mt5:              (a) => commandMt5(a),
     'add-platform':   (a) => commandAddPlatform(a),

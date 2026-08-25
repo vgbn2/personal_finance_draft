@@ -2,7 +2,7 @@ import { BrokerAdapter, Position, TradeOrder } from './types';
 
 // @ts-ignore
 const Alpaca = require('@alpacahq/alpaca-trade-api');
-const { resolveAlpacaSettings, toAlpacaTradeSymbol } = require('../../../shared/lib/brokers/alpaca_env');
+const { resolveAlpacaSettings, toAlpacaTradeSymbol } = require('../../../../shared/lib/brokers/alpaca_env');
 
 export interface AlpacaAdapterOptions {
   keyId?: string;
@@ -61,6 +61,10 @@ export class AlpacaAdapter implements BrokerAdapter {
         time_in_force: isCrypto ? 'gtc' : (isFractional ? 'day' : 'gtc'),
       };
 
+      if (order.clientOrderId) {
+        payload.client_order_id = order.clientOrderId;
+      }
+
       if (order.type === 'limit' && order.price) {
         payload.limit_price = order.price;
       }
@@ -112,13 +116,39 @@ export class AlpacaAdapter implements BrokerAdapter {
 
     try {
       const positions = await this.alpaca.getPositions();
-      return positions.map((p: any) => ({
-        symbol: p.symbol,
-        quantity: Number(p.qty),
-        averagePrice: Number(p.avg_entry_price),
-        marketValue: Number(p.market_value),
-        unrealizedPl: Number(p.unrealized_pl)
-      }));
+
+      // Enrich positions with order submission / fill history via Alpaca getOrders API
+      let orderMap: Record<string, { submitted_at?: string; filled_at?: string; client_order_id?: string }> = {};
+      try {
+        const closedOrders = await this.alpaca.getOrders({ status: 'closed', limit: 100, nested: false });
+        if (Array.isArray(closedOrders)) {
+          for (const ord of closedOrders) {
+            const sym = String(ord.symbol || '').toUpperCase();
+            if (sym && (!orderMap[sym] || (ord.filled_at && orderMap[sym].filled_at && ord.filled_at > orderMap[sym].filled_at!))) {
+              orderMap[sym] = {
+                submitted_at: ord.submitted_at || ord.created_at,
+                filled_at: ord.filled_at,
+                client_order_id: ord.client_order_id
+              };
+            }
+          }
+        }
+      } catch {
+        // Non-fatal if order history enrichment fails
+      }
+
+      return positions.map((p: any) => {
+        const sym = String(p.symbol || '').toUpperCase();
+        const ordInfo = orderMap[sym];
+        return {
+          symbol: sym,
+          quantity: Number(p.qty),
+          averagePrice: Number(p.avg_entry_price),
+          marketValue: Number(p.market_value),
+          unrealizedPl: Number(p.unrealized_pl),
+          submittedAt: ordInfo?.submitted_at || ordInfo?.filled_at || undefined,
+        };
+      });
     } catch (err: any) {
       throw new Error(`Alpaca SDK Positions Error: ${err.message}`);
     }

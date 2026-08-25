@@ -1,7 +1,6 @@
 # Next Session Goal
 
-## Immediate (gate)
-Run `node scripts/dev/sync_repo_skills.js --write` and verify `check_hygiene.js` + `test:structure` pass.
-
-## Primary Focus
-Begin Web Dashboard redesign aligned to 8-category taxonomy (`overview`, `signals`, `market_intel`, `backtest`, `quote_health`, `audit_log`, `telemetry`, `sigma_band`, `bot`, `settings`). Wire backend gateway API endpoints to updated frontend components.
+## Immediate
+1. **Deep Code Review**: Perform a thorough review of multi-strategy sub-position reconciliation, order signatures, dead stub tracking, and exit clamping logic.
+2. **Rsync & Container Sync**: Rsync to `root@hpdesk:/home/vgbn-server/personal_finance_draft/` and sync live Docker containers (`docker-bot-alpaca-paper-1`, `docker-web-1`).
+3. **Commit & Push**: Commit all staged changes on `worktree-perf-and-security` and push to remote.
