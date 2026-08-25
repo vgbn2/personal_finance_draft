@@ -52,6 +52,21 @@ const {
   resolveStrategyTimeframe,
 } = require('./strategy_presenter.js');
 
+const {
+  generateOrderSignature,
+  parseOrderSignature,
+  recordSubPositionEntry,
+  recordSubPositionExit
+} = require('../../../../shared/lib/runtime/sub_positions_ledger.js');
+
+const DEAD_STUB_TRACKER = new Map(); // strategyName -> { consecutiveZeroSignals, lastSignalAt, deadStub }
+const LOW_TF_DEAD_STUB_THRESHOLDS = {
+  '1m': 120,  // 120 bars = 2h
+  '5m': 120,  // 120 bars = 10h
+  '15m': 120, // 120 bars = 30h
+  '1h': 120   // 120 bars = 5 days
+};
+
 function getStrategyRegistryPath(options = {}) {
   return options.registryPath || path.join(REPO_ROOT, 'config', 'trading', 'strategies.yaml');
 }
@@ -332,11 +347,18 @@ async function runAutomationPass(args, strategiesOverride = null) {
     const totalEquity = balanceObj.EQUITY || balanceObj.USD || 100000;
     console.log(`[AUTOMATION] Total Equity: $${formatHumanNumber(totalEquity)}`);
 
+    const verifyGatewayMode = hasFlag(args, '--verify-gateway');
+    const probeConfidence = numericOption(args, '--probe-confidence', 0.35);
+
     for (const strategy of targetStrategies) {
         console.log(`[AUTOMATION] Analyzing ${strategy.name}...`);
-        
+
         const universeArgs = (strategy.universe || []).flatMap(s => ['--symbol', s]);
         const strategyTimeframe = resolveStrategyTimeframe(strategy, args);
+        const thresholdToUse = verifyGatewayMode
+            ? String(probeConfidence)
+            : String(strategy.risk?.signal_threshold || 0.65);
+
         global.suppressLogs = true;
         let report;
         try {
@@ -344,7 +366,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 '--strategy', strategy.path,
                 '--model', strategy.model,
                 '--timeframe', strategyTimeframe,
-                '--threshold', String(strategy.risk?.signal_threshold || 0.65),
+                '--threshold', thresholdToUse,
                 '--signal-only',
                 '--json',
                 ...universeArgs
@@ -354,6 +376,26 @@ async function runAutomationPass(args, strategiesOverride = null) {
         }
         // Yield event loop between strategy signal passes to prevent CPU starvation
         await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Dead Stub Tracking for low-timeframe strategies
+        if (!DEAD_STUB_TRACKER.has(strategy.name)) {
+            DEAD_STUB_TRACKER.set(strategy.name, { consecutiveZeroSignals: 0, lastSignalAt: null, deadStub: false });
+        }
+        const tracker = DEAD_STUB_TRACKER.get(strategy.name);
+
+        const hasValidTrades = report && report.trades && report.trades.length > 0;
+        if (!hasValidTrades) {
+            tracker.consecutiveZeroSignals += 1;
+            const threshold = LOW_TF_DEAD_STUB_THRESHOLDS[strategyTimeframe] || 50;
+            if (tracker.consecutiveZeroSignals >= threshold) {
+                tracker.deadStub = true;
+                console.warn(`[\x1b[1;31mDEAD_STUB\x1b[0m] Strategy ${strategy.name} flagged as DEAD_STUB (${tracker.consecutiveZeroSignals} consecutive zero-signal ticks on ${strategyTimeframe}). Use --verify-gateway to probe execution.`);
+            }
+        } else {
+            tracker.consecutiveZeroSignals = 0;
+            tracker.deadStub = false;
+            tracker.lastSignalAt = new Date().toISOString();
+        }
 
         if (report && report.trades && report.trades.length > 0) {
             const lastTrade = report.trades[report.trades.length - 1];
@@ -448,6 +490,14 @@ async function runAutomationPass(args, strategiesOverride = null) {
             if (executionEnabled) {
                 const mode = providerPaper ? 'PAPER-ALPACA' : 'LIVE';
                 console.log(`[\x1b[1;33m${mode}\x1b[0m] Sending order for ${lastTrade.symbol} (Qty: ${qty})...`);
+                const signature = generateOrderSignature({
+                    strategyId: strategy.name,
+                    timeframe: strategyTimeframe,
+                    confidence: trust.score ? trust.score / 100 : Number(strategy.risk?.signal_threshold || 0.65),
+                    source: 'bot',
+                    symbol: lastTrade.symbol
+                });
+
                 const tradeArgs = [
                     tradeType,
                     lastTrade.symbol,
@@ -456,6 +506,14 @@ async function runAutomationPass(args, strategiesOverride = null) {
                     ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(perOrderMaxNotional)] : ['--live']),
                     '--strategy',
                     strategy.name,
+                    '--signature',
+                    signature,
+                    '--timeframe',
+                    strategyTimeframe,
+                    '--confidence',
+                    String(trust.score ? trust.score / 100 : (strategy.risk?.signal_threshold || 0.65)),
+                    '--source',
+                    'bot'
                 ];
                 if (process.env.SOVEREIGN_TRADE_PIN) tradeArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
                 const tradeExitCode = await commandTrade(tradeArgs);

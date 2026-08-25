@@ -236,7 +236,25 @@ async function runAlpacaExitCheck(args = [], options = {}) {
       if (executionEnabled) {
         try {
           const { commandTrade } = require('../../../backend/cli/commands/trade/trade.js');
-          const sellArgs = ['sell', position.symbol, String(sellQty), 'market', ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(options.paperMaxNotional || 25)] : ['--live']), '--strategy', position.strategyName || 'alpaca_paper'];
+          const { generateOrderSignature } = require('./sub_positions_ledger.js');
+          const signature = generateOrderSignature({
+            strategyId: position.strategyName || 'alpaca_paper',
+            source: 'bot',
+            symbol: position.symbol
+          });
+          const sellArgs = [
+            'sell',
+            position.symbol,
+            String(sellQty),
+            'market',
+            ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(options.paperMaxNotional || 25)] : ['--live']),
+            '--strategy',
+            position.strategyName || 'alpaca_paper',
+            '--signature',
+            signature,
+            '--source',
+            'bot'
+          ];
           if (process.env.SOVEREIGN_TRADE_PIN) sellArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
           const exitCode = await commandTrade(sellArgs);
           if (exitCode !== 0) {

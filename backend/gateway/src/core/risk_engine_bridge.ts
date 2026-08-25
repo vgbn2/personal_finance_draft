@@ -13,12 +13,59 @@ export interface RiskContext {
   maxDrawdown: number;
 }
 
+export async function buildRiskContext(order: TradeOrder, adapter: BrokerAdapter, isDryRun: boolean = false): Promise<RiskContext> {
+  let portfolioEquity = 0;
+  let currentDrawdown = 0;
+  let maxDrawdown = 0.05; // 5% max drawdown threshold default
+
+  try {
+    const balances = await adapter.getPortfolioBalance();
+    portfolioEquity = balances.EQUITY || balances.USD || 0;
+  } catch (error) {
+    if (!isDryRun) {
+      throw new Error(`Failed to fetch portfolio equity for risk check: ${error}`);
+    }
+  }
+
+  // Dry run fallback to baseline if equity is zero or unconfigured
+  if (isDryRun && portfolioEquity <= 0) {
+    portfolioEquity = 100000;
+  }
+
+  // Fetch reference price
+  let referencePrice = order.price || 0;
+  if (!referencePrice || referencePrice <= 0) {
+    if (adapter.getQuote) {
+      try {
+        referencePrice = await adapter.getQuote(order.instrumentId);
+      } catch (err) {
+        console.warn(`[RISK] Failed to fetch current price for ${order.instrumentId}: ${err}`);
+      }
+    }
+  }
+
+  if (isDryRun && (!referencePrice || referencePrice <= 0)) {
+    referencePrice = 100; // Baseline fallback for simulation
+  }
+
+  if (!referencePrice || referencePrice <= 0) {
+    throw new Error(`Invalid reference price ($${referencePrice}) for instrument ${order.instrumentId}`);
+  }
+
+  return {
+    portfolioEquity,
+    referencePrice,
+    currentDrawdown,
+    maxDrawdown,
+  };
+}
+
 export class RiskEngineBridge {
   async checkRisk(order: TradeOrder, context: RiskContext): Promise<{ approved: boolean; reason?: string }> {
     console.log(`[RISK-ENGINE] Pre-trade check for ${order.instrumentId} (${order.quantity} units)`);
 
     // @ts-ignore
-    const { findBackendBinary } = require('../../../shared/lib/runtime/paths');
+    const { findBackendBinary } = require('../../../../shared/lib/runtime/paths');
     const binary: string | null = findBackendBinary();
 
     if (!binary) {
