@@ -369,6 +369,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 '--timeframe', strategyTimeframe,
                 '--threshold', thresholdToUse,
                 '--signal-only',
+                '--allow-degraded',
                 '--json',
                 ...universeArgs
             ]);
