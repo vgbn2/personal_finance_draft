@@ -579,7 +579,6 @@ async function commandBacktest(args) {
     propFirmProfile: selectedPropFirm,
     engine: sampleMode ? 'js' : (strategyMeta?.engine || 'auto'),
   };
-  const signalOnly = hasFlag(args, '--signal-only') || hasFlag(args, '--fast-signal');
   const sampleWindowNote = backtestModeNote(sampleMode, quality);
   let inSample;
   let outOfSample;
