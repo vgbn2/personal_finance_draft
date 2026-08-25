@@ -514,10 +514,27 @@ async function commandBacktest(args) {
   const isSubDailyTimeframe = timeframe && timeframe !== '1d';
   const useDirectCppNative = !sampleMode && bridge.backendAvailable() && selectedSymbols.length > 0 && !isSubDailyTimeframe;
 
+  const signalOnly = hasFlag(args, '--signal-only') || hasFlag(args, '--fast-signal');
+
   let featureFrame;
   if (!useDirectCppNative) {
     await withLoadingAnimation('Computing indicators', async () => {
-      featureFrame = filterFeatureFrameBySymbols(calculateRollingFeatureFrame(snapshot.sources, 2, periodOptionsFromArgs(args)), selectedSymbols);
+      let sources = snapshot.sources;
+      if (signalOnly && Array.isArray(sources) && sources.length > 200) {
+        // In signal-only mode, only recent bars (up to 200 per symbol) are needed to calculate indicators and derive the latest entry signal.
+        const bySym = new Map();
+        for (const s of sources) {
+          const sym = s.symbol || s.key;
+          if (!bySym.has(sym)) bySym.set(sym, []);
+          bySym.get(sym).push(s);
+        }
+        sources = [];
+        for (const list of bySym.values()) {
+          list.sort((a, b) => (Date.parse(a.timestamp || 0) || 0) - (Date.parse(b.timestamp || 0) || 0));
+          sources.push(...list.slice(-200));
+        }
+      }
+      featureFrame = filterFeatureFrameBySymbols(calculateRollingFeatureFrame(sources, 2, periodOptionsFromArgs(args)), selectedSymbols);
     }, args);
   } else {
     featureFrame = { features: selectedSymbols.map(s => ({ symbol: s, timeframe: timeframe || '1d' })) };
