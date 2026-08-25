@@ -125,7 +125,7 @@ if [[ "$1" == "ps" ]]; then
 fi
 if [[ "$1" == "cp" ]]; then
   source_path="$2"
-  destination="$3"
+  destination="'"
   case "\${source_path##*/}" in
     events.jsonl) printf '{"sequence":1}\\n' > "\${destination}";;
     portfolio.v1.json) printf '{"cash":100}\\n' > "\${destination}";;
@@ -134,7 +134,7 @@ if [[ "$1" == "cp" ]]; then
   exit 0
 fi
 if [[ "$1" == "inspect" ]]; then
-  format="$3"
+  format="'"
   target="\${!#}"
   service="\${target%-id}"
   if [[ "\${format}" == "{{.Image}}" ]]; then

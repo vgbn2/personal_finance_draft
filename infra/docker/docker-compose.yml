@@ -2,6 +2,8 @@
 # explicitly enables the writer profile; paper, monitoring, and research loops
 # require their own profiles. Keep SOVEREIGN_WEB_BIND private.
 
+name: sv
+
 x-common-build: &common-build
   context: ../..
   dockerfile: infra/docker/Dockerfile
@@ -24,6 +26,7 @@ x-logging: &default-logging
 
 services:
   web:
+    container_name: sv-web
     logging: *default-logging
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
@@ -59,9 +62,10 @@ services:
       retries: 3
       start_period: 20s
 
-  bot:
+  bot-polymarket-paper:
+    container_name: sv-bot-polymarket-paper
     logging: *default-logging
-    profiles: [paper]
+    profiles: [paper, paper-polymarket]
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
@@ -70,7 +74,7 @@ services:
     env_file:
       - path: '../../.env'
         required: false
-      - path: ${SOVEREIGN_BOT_ENV_FILE:-../../.env.services/bot.env}
+      - path: ${SOVEREIGN_BOT_POLYMARKET_ENV_FILE:-${SOVEREIGN_BOT_ENV_FILE:-../../.env.services/bot.env}}
         required: true
     environment: *central-runtime
     volumes:
@@ -90,6 +94,7 @@ services:
         node backend/cli/sovereign_cli.js run bot paper --strategy low_prob_dip
 
   bot-alpaca-paper:
+    container_name: sv-bot-alpaca-paper
     logging: *default-logging
     profiles: [paper-alpaca]
     build: *common-build
@@ -128,6 +133,7 @@ services:
           --allowed-timeframes "$$TIMEFRAMES"
 
   backfill:
+    container_name: sv-backfill
     logging: *default-logging
     profiles: [writer]
     build: *common-build
@@ -176,6 +182,7 @@ services:
         exec node backend/cli/sovereign_cli.js backfill-daemon --interval-secs "$$INTERVAL" $$DEEP_ALL_ARGS
 
   portfolio-monitor:
+    container_name: sv-portfolio-monitor
     logging: *default-logging
     profiles: [monitoring]
     build: *common-build
@@ -205,6 +212,7 @@ services:
           --timeout-ms "$${PORTFOLIO_MONITOR_TIMEOUT_MS:-45000}"
 
   host-health:
+    container_name: sv-host-health
     logging: *default-logging
     profiles: [monitoring]
     build: *common-build
@@ -235,6 +243,7 @@ services:
           --min-free-percent "$${HOST_HEALTH_MIN_FREE_PERCENT:-10}"
 
   host-backup:
+    container_name: sv-host-backup
     logging: *default-logging
     profiles: [monitoring]
     build: *common-build
@@ -262,6 +271,7 @@ services:
           --max-count "$${HOST_BACKUP_MAX_COUNT:-14}"
 
   polymarket-research:
+    container_name: sv-polymarket-research
     logging: *default-logging
     profiles: [research]
     build:

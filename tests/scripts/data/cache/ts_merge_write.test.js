@@ -390,7 +390,7 @@ test('cross-process append/append and append/merge races preserve the exact time
 });
 
 test('EQUIV real deep bin (copy of a live bin) + overlapping synthetic window == reference', (t) => {
-  const { STORAGE_TS_DIR } = require('../../../../shared/lib/paths.js');
+  const { STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths');
   let ran = 0;
   for (const [sym, tf] of [['XAUUSD', '5m'], ['BTCUSDT', '4h'], ['BTCUSDT', '1h']]) {
     if (!fs.existsSync(filePath(STORAGE_TS_DIR, sym, tf, '.bin'))) continue;
