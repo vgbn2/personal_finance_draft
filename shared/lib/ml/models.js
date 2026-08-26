@@ -27,12 +27,16 @@ function logistic(value) {
 
 function signalParts(feature) {
   const close = Math.max(valueOrZero(feature.close), 1);
-  const return1 = valueOrZero(feature.return_fast);
-  const return5 = valueOrZero(feature.return_slow);
-  const volatility = valueOrZero(feature.volatility);
-  const rsi = valueOrZero(feature.rsi);
+  const return1 = valueOrZero(feature.return_fast ?? feature.close_return_1);
+  const return5 = valueOrZero(feature.return_slow ?? feature.close_return_5);
+  const volatility = valueOrZero(feature.volatility ?? feature.realized_volatility_20);
+  const rsi = typeof feature.rsi === 'number' && Number.isFinite(feature.rsi)
+    ? feature.rsi
+    : typeof feature.rsi_14 === 'number' && Number.isFinite(feature.rsi_14)
+      ? feature.rsi_14
+      : 50.0;
   const macdNorm = valueOrZero(feature.macd) / close;
-  const atrPct = valueOrZero(feature.atr) / close;
+  const atrPct = valueOrZero(feature.atr ?? feature.atr_14) / close;
   const smcScore = valueOrZero(feature.smc_score);
   const divergenceScore = valueOrZero(feature.divergence_score);
   const sessionProfilePosition = valueOrZero(feature.session_volume_profile_position);
@@ -68,10 +72,13 @@ function signalParts(feature) {
 }
 
 function predictionFromScore(score, confidenceScale = 1) {
+  const normalizedMargin = clamp(score * confidenceScale, -1.0, 1.0);
+  const bullBearScore = Math.round(clamp(50.0 + 50.0 * normalizedMargin, 1.0, 100.0) * 10) / 10;
   return {
     direction: score > 0 ? 'long' : 'flat',
     confidence: clamp(0.5 + Math.abs(score) * confidenceScale, 0, 1),
     raw_score: score,
+    bull_bear_score: bullBearScore,
   };
 }
 
@@ -222,26 +229,36 @@ const modelCandidates = [
     },
   },
   {
-    name: 'momentum_baseline_v0',
-    family: 'baseline',
-    status: 'handcrafted_heuristic',
-    description: 'long when 5-period return is positive',
-    predict(feature) {
-      const score = valueOrZero(feature.close_return_5);
-      return predictionFromScore(score, 10);
-    },
+  name: 'momentum_baseline_v0',
+  family: 'baseline',
+  status: 'handcrafted_heuristic',
+  description: 'long when 5-period return is positive',
+  predict(feature) {
+    const score = valueOrZero(feature.close_return_5 ?? feature.return_slow);
+    return predictionFromScore(score, 10);
   },
-  {
-    name: 'mean_reversion_baseline_v0',
-    family: 'baseline',
-    status: 'handcrafted_heuristic',
-    description: 'long when RSI is washed out, flat when overbought',
-    predict(feature) {
-      const rsi = valueOrZero(feature.rsi_14);
-      const score = (50 - rsi) / 100;
-      return { direction: rsi < 45 ? 'long' : 'flat', confidence: clamp(0.5 + Math.abs(score), 0, 1), raw_score: score };
-    },
+},
+{
+  name: 'mean_reversion_baseline_v0',
+  family: 'baseline',
+  status: 'handcrafted_heuristic',
+  description: 'long when RSI is washed out, flat when overbought',
+  predict(feature) {
+    const rsi = typeof feature.rsi_14 === 'number' && Number.isFinite(feature.rsi_14)
+      ? feature.rsi_14
+      : typeof feature.rsi === 'number' && Number.isFinite(feature.rsi)
+        ? feature.rsi
+        : 50.0;
+    const score = (50 - rsi) / 100;
+    const normalizedMargin = clamp(score * 2.0, -1.0, 1.0);
+    return {
+      direction: rsi < 45 ? 'long' : 'flat',
+      confidence: clamp(0.5 + Math.abs(score), 0, 1),
+      raw_score: score,
+      bull_bear_score: Math.round(clamp(50.0 + 50.0 * normalizedMargin, 1.0, 100.0) * 10) / 10,
+    };
   },
+},
   {
     name: 'volatility_breakout_v0',
     family: 'baseline',
@@ -372,10 +389,21 @@ const onnxModelCandidates = ['xgboost_v1', 'logistic_v1', 'regime_classifier'].m
   description: `Trained ONNX model (${name}) — use precomputeForFeatures() before runBacktestJs`,
   predict(feature) {
     if (feature._onnxPred) {
-      const { direction, confidence } = feature._onnxPred;
-      return { direction: direction === 'up' ? 'long' : 'flat', confidence };
+      const { direction, confidence, class_probs } = feature._onnxPred;
+      // class_probs: [p_down, p_neutral, p_up]
+      const pDown = Array.isArray(class_probs) ? (class_probs[0] || 0) : (direction === 'down' ? confidence : 0);
+      const pUp = Array.isArray(class_probs) ? (class_probs[2] || 0) : (direction === 'up' ? confidence : 0);
+      const margin = pUp - pDown;
+      const bullBearScore = Math.round(clamp(50.0 + 50.0 * margin, 1.0, 100.0) * 10) / 10;
+      return {
+        direction: direction === 'up' ? 'long' : direction === 'down' ? 'short' : 'flat',
+        confidence: confidence || 0,
+        raw_score: margin,
+        bull_bear_score: bullBearScore,
+        probabilities: Array.isArray(class_probs) ? { down: class_probs[0], neutral: class_probs[1], up: class_probs[2] } : null,
+      };
     }
-    return { direction: 'flat', confidence: 0 };
+    return { direction: 'flat', confidence: 0, raw_score: 0, bull_bear_score: 50.0 };
   },
 }));
 

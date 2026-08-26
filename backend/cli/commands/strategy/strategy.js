@@ -58,8 +58,9 @@ const {
   recordSubPositionEntry,
   recordSubPositionExit
 } = require('../../../../shared/lib/runtime/sub_positions_ledger.js');
+const { STORAGE_DATA_DIR } = require('../../../../shared/lib/runtime/paths.js');
 
-const DEAD_STUB_TRACKER = new Map(); // strategyName -> { consecutiveZeroSignals, lastSignalAt, deadStub }
+const DEAD_STUB_TRACKER = new Map(); // strategyName -> { consecutiveZeroSignals, lastSignalAt, deadStub, flags: [] }
 const LOW_TF_DEAD_STUB_THRESHOLDS = {
   '1m': 120,  // 120 bars = 2h
   '5m': 120,  // 120 bars = 10h
@@ -69,6 +70,59 @@ const LOW_TF_DEAD_STUB_THRESHOLDS = {
   '1d': 1000, // 1000 ticks (~3.5 days on 5m cadence)
   '1w': 5000  // 5000 ticks
 };
+
+const STRATEGY_AUDIT_LOG_PATH = path.join(STORAGE_DATA_DIR, 'logs', 'strategy_automation.jsonl');
+
+function logStrategyAuditRecord(record) {
+  try {
+    const dir = path.dirname(STRATEGY_AUDIT_LOG_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const payload = JSON.stringify({ timestamp: new Date().toISOString(), ...record }) + '\n';
+    fs.appendFileSync(STRATEGY_AUDIT_LOG_PATH, payload, 'utf8');
+  } catch (_) {
+    // Non-blocking telemetry
+  }
+}
+
+function scanDeadStubsFromLogs(lookbackHours = 24) {
+  if (!fs.existsSync(STRATEGY_AUDIT_LOG_PATH)) return { deadStubs: [], summary: {} };
+  try {
+    const content = fs.readFileSync(STRATEGY_AUDIT_LOG_PATH, 'utf8');
+    const lines = content.split('\n').filter(Boolean);
+    const cutoff = Date.now() - lookbackHours * 60 * 60 * 1000;
+    const historyByStrategy = new Map();
+
+    for (const line of lines) {
+      try {
+        const row = JSON.parse(line);
+        if (!row.strategy || !row.timestamp) continue;
+        const ts = Date.parse(row.timestamp);
+        if (Number.isFinite(ts) && ts >= cutoff) {
+          if (!historyByStrategy.has(row.strategy)) {
+            historyByStrategy.set(row.strategy, { totalPasses: 0, signalsGenerated: 0, deadStubFlags: 0, lastSignalAt: null });
+          }
+          const stats = historyByStrategy.get(row.strategy);
+          stats.totalPasses++;
+          if (row.signals_count > 0) {
+            stats.signalsGenerated += row.signals_count;
+            stats.lastSignalAt = row.timestamp;
+          }
+          if (row.dead_stub) stats.deadStubFlags++;
+        }
+      } catch (_) {}
+    }
+
+    const deadStubs = [];
+    for (const [name, stats] of historyByStrategy.entries()) {
+      if (stats.totalPasses >= 10 && stats.signalsGenerated === 0) {
+        deadStubs.push({ strategy: name, ...stats });
+      }
+    }
+    return { deadStubs, summary: Object.fromEntries(historyByStrategy) };
+  } catch (_) {
+    return { deadStubs: [], summary: {} };
+  }
+}
 
 function getStrategyRegistryPath(options = {}) {
   return options.registryPath || path.join(REPO_ROOT, 'config', 'trading', 'strategies.yaml');
@@ -403,10 +457,21 @@ async function runAutomationPass(args, strategiesOverride = null) {
             tracker.lastSignalAt = new Date().toISOString();
         }
 
+        // Log audit record for historical dead stub analytics
+        logStrategyAuditRecord({
+            strategy: strategy.name,
+            timeframe: strategyTimeframe,
+            model: strategy.model,
+            signals_count: tradeList.length,
+            consecutive_zero_signals: tracker.consecutiveZeroSignals,
+            dead_stub: tracker.deadStub,
+            report_status: report?.status || (hasValidTrades ? 'success' : 'zero_signals'),
+        });
+
         if (hasValidTrades) {
             const lastTrade = tradeList[tradeList.length - 1];
             const tradeType = 'buy'; // runBacktest currently only generates long signals
-            const signalTime = lastTrade.entry_time || lastTrade.timestamp;
+            const signalTime = lastTrade.entry_time || lastTrade.entryTime || lastTrade.timestamp || new Date().toISOString();
             const signalPrice = lastTrade.entry || lastTrade.price;
             const signalId = `${strategy.name}:${lastTrade.symbol}:${signalTime}:${tradeType}`;
 
@@ -586,6 +651,12 @@ async function runAutomatedStrategies(args) {
                 passes++;
                 console.log(`[AUTOMATION] Starting Pass ${passes}/${passLabel}...`);
                 await runAutomationPass(args);
+
+                // Analyze historical execution logs to detect chronic dead stubs
+                const audit = scanDeadStubsFromLogs(24);
+                if (audit.deadStubs.length > 0) {
+                    console.warn(`[\x1b[1;31mDEAD_STUB_SCAN\x1b[0m] Found ${audit.deadStubs.length} chronic dead stub strategies in last 24h: ${audit.deadStubs.map(s => `${s.strategy} (${s.totalPasses} passes, 0 signals)`).join(', ')}`);
+                }
             } catch (error) {
                 console.error(`[AUTOMATION] Pass failed: ${error.message}`);
             }
