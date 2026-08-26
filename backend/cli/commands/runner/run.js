@@ -154,7 +154,7 @@ async function commandRunBot(args) {
 
   if (botSub === 'alpaca-paper') {
     const settings = loadRuntimeSettings();
-    const interval = numericOption(botArgs, '--interval', 15);
+    const interval = numericOption(botArgs, '--interval', 1);
     const once = hasFlag(botArgs, '--once');
     const minTrustScore = numericOption(botArgs, '--min-trust-score', 70);
     const paperMaxNotional = botArgs.includes('--paper-max-notional')
