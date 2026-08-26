@@ -584,6 +584,19 @@ async function commandBacktest(args) {
   let outOfSample;
   let fullBacktest;
   let wfResult;
+
+  // Precompute ONNX predictions if an ONNX model candidate or alias was selected
+  const resolvedModelObj = resolveModel(model);
+  const isOnnxCandidate = resolvedModelObj && (resolvedModelObj.family === 'onnx' || resolvedModelObj.status === 'onnx_model');
+  if (isOnnxCandidate && featureFrame && Array.isArray(featureFrame.features)) {
+    try {
+      const { precomputeForFeatures } = require('../../../../shared/lib/ml/onnx_runner.js');
+      await precomputeForFeatures(resolvedModelObj.name, featureFrame.features);
+    } catch (e) {
+      console.warn(`[research] ONNX precompute skipped: ${e.message}`);
+    }
+  }
+
   await withLoadingAnimation('Running backtest', async () => {
     if (signalOnly) {
       // In signal-only mode, only compute the single full backtest pass to find current entry signals.
