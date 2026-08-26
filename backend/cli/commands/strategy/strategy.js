@@ -64,7 +64,10 @@ const LOW_TF_DEAD_STUB_THRESHOLDS = {
   '1m': 120,  // 120 bars = 2h
   '5m': 120,  // 120 bars = 10h
   '15m': 120, // 120 bars = 30h
-  '1h': 120   // 120 bars = 5 days
+  '1h': 120,  // 120 bars = 5 days
+  '4h': 240,  // 240 ticks
+  '1d': 1000, // 1000 ticks (~3.5 days on 5m cadence)
+  '1w': 5000  // 5000 ticks
 };
 
 function getStrategyRegistryPath(options = {}) {
@@ -385,7 +388,8 @@ async function runAutomationPass(args, strategiesOverride = null) {
         }
         const tracker = DEAD_STUB_TRACKER.get(strategy.name);
 
-        const hasValidTrades = report && report.trades && report.trades.length > 0;
+        const tradeList = Array.isArray(report?.trade_logs) ? report.trade_logs : (Array.isArray(report?.trades) ? report.trades : []);
+        const hasValidTrades = tradeList.length > 0;
         if (!hasValidTrades) {
             tracker.consecutiveZeroSignals += 1;
             const threshold = LOW_TF_DEAD_STUB_THRESHOLDS[strategyTimeframe] || 50;
@@ -399,8 +403,8 @@ async function runAutomationPass(args, strategiesOverride = null) {
             tracker.lastSignalAt = new Date().toISOString();
         }
 
-        if (report && report.trades && report.trades.length > 0) {
-            const lastTrade = report.trades[report.trades.length - 1];
+        if (hasValidTrades) {
+            const lastTrade = tradeList[tradeList.length - 1];
             const tradeType = 'buy'; // runBacktest currently only generates long signals
             const signalTime = lastTrade.entry_time || lastTrade.timestamp;
             const signalPrice = lastTrade.entry || lastTrade.price;
