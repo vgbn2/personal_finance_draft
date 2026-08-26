@@ -14,7 +14,7 @@ sections:
     - BTC_100K_2026
     - BTC_DIP_15K_2026
   signals:
-    entry: "Signal > 0.15"
+    entry: "Signal >= 0.0"
     exit: "Hold until resolution"
   data:
     required_sources:
@@ -34,7 +34,7 @@ sections:
     return_slow: 5
     rsi: 14
   risk:
-    signal_threshold: 0.15
+    signal_threshold: 0.0
     max_holding_days: 30
     risk_weight: 0.05
     cost_bps: 10
