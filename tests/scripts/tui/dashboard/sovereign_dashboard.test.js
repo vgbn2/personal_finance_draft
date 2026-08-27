@@ -159,8 +159,8 @@ test('dashboard App: bt --strategy flag cycles through real registered strategie
   await send(stdin, instance, [keys.down, keys.down, keys.down, keys.enter]);
   assert.match(stdout.snapshot(), /RESEARCH & BACKTESTING/);
 
-  // cmd list: features(0) -> models(1) -> bt(2); bt has flags, drills into them
-  await send(stdin, instance, [keys.down, keys.down, keys.enter]);
+  // cmd list: features(0) -> bt(1); bt has flags, drills into them
+  await send(stdin, instance, [keys.down, keys.enter]);
   assert.match(stdout.snapshot(), /› bt/);
   assert.doesNotMatch(stdout.snapshot(), /<registered strategies>/,
     'the literal manifest placeholder must never reach the rendered flag panel once the registry resolves');
@@ -207,8 +207,8 @@ test('dashboard App: shows PIN gate for live trading and passes PIN to child pro
   const runCalls = [];
   const onRun = (argv, state) => runCalls.push({ argv, state });
 
-  // Start inside Trade category (index 4) and auto-trade command (index 4)
-  const instance = render(h(App, { initialCatI: 4, initialCmdI: 4, onRun }), {
+  // Start inside Trade category (index 5) and auto-trade command (index 4)
+  const instance = render(h(App, { initialCatI: 5, initialCmdI: 4, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -344,8 +344,8 @@ test('dashboard App: symbol picker (multi) groups by family/sector and a header 
   const stdout = makeFakeStdout();
   const onRun = () => {};
 
-  // Research(3) -> bt(2): --strategy(0,sel), --symbol(1,txt,pickSymbol:multi)
-  const instance = render(h(App, { initialCatI: 3, initialCmdI: 2, onRun }), {
+  // Research(3) -> bt(1): --strategy(0,sel), --symbol(1,txt,pickSymbol:multi)
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: 1, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -469,10 +469,10 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   let ranArgv = null;
   const onRun = (argv) => { ranArgv = argv; };
 
-  // Backend(2) -> backend chart(5): status(0), stats(1), correlation(2),
-  // visualize(3), universe(4), chart(5) -- appended last, see the manifest
+  // Backend(2) -> backend chart(6): status(0), stats(1), correlation(2),
+  // visualize(3), universe(4), risk(5), chart(6) -- appended last, see the manifest
   // comment for why (preserves universe's hardcoded index in another test).
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 5, onRun }), {
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 6, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());

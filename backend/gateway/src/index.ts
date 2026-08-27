@@ -1027,6 +1027,20 @@ class PolymarketAdapter implements BrokerAdapter {
     };
   }
 
+  async getSignerAddress(): Promise<string | null> {
+    if (!this.privateKey) return null;
+    try {
+      const { Wallet } = await import('ethers');
+      return new Wallet(this.privateKey).address;
+    } catch {
+      return null;
+    }
+  }
+
+  isConfigured(): boolean {
+    return this.hasCredentials();
+  }
+
   async getCollateralStatus(): Promise<{ balance: number; allowance: number; asset_type: 'COLLATERAL' }> {
     if (!this.hasCredentials()) throw new Error('Polymarket credentials not configured');
     await polymarketGet('/balance-allowance/update', { asset_type: 'COLLATERAL' }, {
@@ -1952,7 +1966,8 @@ export async function main() {
       }
     } else {
       console.error(`Unknown polymarket subcommand: ${sub}. Available: portfolio, balance, debug, auth-health, modes, investigate, probe, topology, trace, derive-creds, markets, orderbook, price-history, paper-run, buy, sell`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   } else if (command === 'bot') {
     const sub = (args[1] || 'status').toLowerCase();
@@ -2080,7 +2095,11 @@ export async function main() {
 
   } else if (command === 'process') {
     const proposedOrdersPath = args[1] || process.env.ORDERS_FILE || 'proposed_orders.json';
-    await gateway.processProposedOrders(proposedOrdersPath);
+    try {
+      await gateway.processProposedOrders(proposedOrdersPath);
+    } catch {
+      process.exitCode = 1;
+    }
   } else if (args.includes('--demo')) {
     console.log(`[GATEWAY] Initialized (DryRun: ${!isLive})`);
     const balances = await adapter.getPortfolioBalance();
@@ -2098,9 +2117,24 @@ export async function main() {
   } else {
     console.error(`Unknown command: ${command}`);
     printUsage();
+    process.exitCode = 1;
+  }
+}
+
+export function createPolymarketReadAdapter(options: PolymarketAdapterOptions = {}): PolymarketAdapter {
+  return new PolymarketAdapter(options);
+}
+
+export async function runGatewayEntrypoint(entrypoint: () => Promise<void> = main): Promise<void> {
+  try {
+    await entrypoint();
+  } catch (error: any) {
+    process.exitCode = 1;
+    console.error(error?.message || String(error));
   }
 }
 
 if (require.main === module) {
-  main().catch(console.error);
+  runGatewayEntrypoint(main);
 }
+
