@@ -12,7 +12,11 @@ const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quo
 const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../../shared/lib/strategy/backtest.js');
 const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../../shared/lib/market/indicators.js');
 const { compareModels, resolveModel } = require('../../../../shared/lib/ml/models.js');
-const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson, readTsIndex, readTsIndexSince } = require('../../../../shared/lib/market/validation.js');
+const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson, writeTsIndex, readTsIndex, readTsIndexSince } = require('../../../../shared/lib/market/validation.js');
+const { rollupFromBase } = require('../data/data_rollup.js');
+const { parseTimeframeMs } = require('../../../scripts/data_ops/ingest_market_data/constants.js');
+const { readCoverage } = require('../../../../shared/lib/market/coverage.js');
+const { FAMILY_BASE_TIMEFRAME } = require('../../../../shared/lib/market/configured_universe.js');
 const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, promptMultiSelect, isRichTerminal } = require('../../tui/index.js');
 const { inferStrategyTaxonomy, laneDisplayLabel, formatStrategyGradeTag, decorateStrategyRecord } = require('../../../../shared/lib/strategy/registry.js');
 const {
@@ -73,6 +77,36 @@ const LOW_TF_DEAD_STUB_THRESHOLDS = {
 
 const STRATEGY_AUDIT_LOG_PATH = path.join(STORAGE_DATA_DIR, 'logs', 'strategy_automation.jsonl');
 const STORAGE_TS_DIR = path.join(STORAGE_DATA_DIR, 'ts');
+
+const INGESTION_TTL_MAP = new Map(); // key: `${symbol}:${timeframe}` -> timestamp of last successful refresh
+const TIMEFRAME_TTL_MS = {
+  '1m': 50 * 1000,
+  '5m': 4 * 60 * 1000,
+  '15m': 12 * 60 * 1000,
+  '30m': 25 * 60 * 1000,
+  '1h': 50 * 60 * 1000,
+  '4h': 3.5 * 60 * 60 * 1000,
+  '1d': 4 * 60 * 60 * 1000,
+  '1w': 24 * 60 * 60 * 1000,
+};
+
+function shouldRefreshSymbolTimeframe(symbol, timeframe, now = Date.now(), tsDir = STORAGE_TS_DIR) {
+  const key = `${symbol}:${timeframe}`;
+  const lastFetch = INGESTION_TTL_MAP.get(key);
+  const ttl = TIMEFRAME_TTL_MS[timeframe] || (parseTimeframeMs(timeframe) ? Math.floor(parseTimeframeMs(timeframe) * 0.8) : (60 * 1000));
+
+  if (lastFetch && (now - lastFetch < ttl)) {
+    return false;
+  }
+
+  const coverage = readCoverage(tsDir, symbol, timeframe, now);
+  if (coverage && coverage.exists && coverage.count >= 25 && coverage.ageMs !== null && coverage.ageMs < ttl) {
+    INGESTION_TTL_MAP.set(key, now - coverage.ageMs);
+    return false;
+  }
+
+  return true;
+}
 
 async function deriveLiveStrategySignal({ strategy, timeframe = '1d', threshold = 0.55 }) {
   const universe = Array.isArray(strategy.universe) ? strategy.universe : [];
@@ -446,18 +480,63 @@ async function runAutomationPass(args, strategiesOverride = null) {
         universe.forEach(sym => bucket.add(sym));
     });
 
-    // 2. Fetch latest data in batches per timeframe
-    const { commandBackfill } = require('../data/data.js');
-    global.suppressLogs = true;
-    try {
-        for (const [timeframe, symbols] of refreshGroups.entries()) {
-            const list = [...symbols];
-            if (list.length === 0) continue;
-            console.log(`[AUTOMATION] Refreshing ${list.length} symbols for ${timeframe}...`);
-            await commandBackfill(['--symbol', list.join(','), '--days', String(refreshDays), '--timeframe', timeframe]);
+    // 2. Fetch latest data in batches per timeframe:
+    // Sort timeframes ascending by duration (1m < 5m < 15m < 1h < 4h < 1d) so fast intraday signals evaluate first.
+    // Ingest directly into binary TS storage (storage/data/ts/) and rollup higher timeframes locally.
+    const sortedTimeframes = [...refreshGroups.keys()].sort((a, b) => {
+        const aMs = parseTimeframeMs(a) || Infinity;
+        const bMs = parseTimeframeMs(b) || Infinity;
+        return aMs - bMs;
+    });
+
+    const now = Date.now();
+    for (const timeframe of sortedTimeframes) {
+        const symbols = refreshGroups.get(timeframe);
+        const list = [...symbols].filter(sym => shouldRefreshSymbolTimeframe(sym, timeframe, now, STORAGE_TS_DIR));
+        if (list.length === 0) continue;
+
+        console.log(`[AUTOMATION] Refreshing ${list.length} symbols for ${timeframe}...`);
+        for (const symbol of list) {
+            try {
+                // Determine base grain & seed days
+                const coverage = readCoverage(STORAGE_TS_DIR, symbol, timeframe, now);
+                const needsSeed = !coverage.exists || coverage.count < 25;
+                const effectiveDays = needsSeed ? Math.max(refreshDays, 30) : refreshDays;
+
+                const rawCandles = await fetchYahooBaseCandles(symbol, timeframe, effectiveDays);
+                if (Array.isArray(rawCandles) && rawCandles.length > 0) {
+                    const sources = rawCandles.map(c => ({
+                        symbol,
+                        timeframe,
+                        timestamp: new Date(c.timestamp || c.openTime || c.t || c.time).toISOString(),
+                        open: c.open,
+                        high: c.high,
+                        low: c.low,
+                        close: c.close,
+                        volume: c.volume || 0,
+                        provider: 'yahoo',
+                        family: 'equities',
+                    }));
+                    writeTsIndex(STORAGE_TS_DIR, { sources });
+                    INGESTION_TTL_MAP.set(`${symbol}:${timeframe}`, now);
+
+                    // If this was an intraday base timeframe (1m or 5m), rollup to any higher active timeframes
+                    if (timeframe === '1m' || timeframe === '5m') {
+                        const higherTfs = sortedTimeframes.filter(tf => {
+                            const tfMs = parseTimeframeMs(tf) || 0;
+                            const baseMs = parseTimeframeMs(timeframe) || 0;
+                            return tfMs > baseMs;
+                        });
+                        if (higherTfs.length > 0) {
+                            rollupFromBase(STORAGE_TS_DIR, symbol, timeframe, higherTfs);
+                            higherTfs.forEach(htf => INGESTION_TTL_MAP.set(`${symbol}:${htf}`, now));
+                        }
+                    }
+                }
+            } catch (err) {
+                // Keep automation loop robust on single-symbol network errors
+            }
         }
-    } finally {
-        global.suppressLogs = false;
     }
 
     // 3. For each strategy, generate signal and check threshold
