@@ -1,10 +1,9 @@
 import type { GatewayPosition } from '../polymarket_read_adapter';
 import { renderPolymarketSection } from './polymarket_private';
-
-// @ts-ignore
-const { buildAggregatedPortfolioSnapshot } = require('../polymarket_portfolio.js');
-// @ts-ignore
-const { summarizePortfolio: summarizeInternalPaperPortfolio } = require('../polymarket_paper.js');
+import {
+  buildAggregatedPortfolioSnapshot,
+  summarizePortfolio as summarizeInternalPaperPortfolio,
+} from '../polymarket';
 
 const ansi = {
   reset: '\x1b[0m', bold: '\x1b[1m', red: '\x1b[31m', green: '\x1b[32m',
