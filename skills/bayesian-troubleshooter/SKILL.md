@@ -133,6 +133,10 @@ Scan for these high-frequency edge cases during drill-down:
 | **Loop Advancement** | Trade loop increments `i += horizon` instead of `i++` on uncrossed entries. | Trace trade loop counter increment logic in backtest loop. |
 | **Stale Cache / Shadowing** | Binary `.bin` or JSON cache contains old bars; fresh code reads old binary. | Check file modification timestamps (`mtimeMs`) and run data integrity sweep. |
 | **Path Slippage** | Relative paths resolve differently depending on caller `cwd`. | Verify absolute path resolution (`path.resolve`, `STORAGE_DATA_DIR`). |
+| **Cache vs TS Binary Store Mismatch** | Fresh candles written only to JSON cache while signal evaluator reads `.bin` store. | Verify `writeTsIndex` writes to `storage/data/ts/` and probe with `readCoverage`. |
+| **Timeframe Inversion / Polling Flood** | Daily timeframes polled before/more frequently than intraday timeframes. | Verify duration-ascending sort (`1m` < `5m` < `1d`) and check `INGESTION_TTL_MAP`. |
+| **SDK Namespace / Constructor Migration** | `TypeError: X is not a constructor` or `getAccount is not a function` post-upgrade. | Check for named vs default exports (`{ Alpaca }`), parameter names (`secret` vs `secretKey`), and namespaced client domains. |
+| **Step-Size Rounding Dropouts** | Position sizing returns 0 units for allocations smaller than share price when `quantityStep: 1`. | Check asset reference price vs allocation and inspect `below_quantity_step` rejection codes. |
 
 ---
 
