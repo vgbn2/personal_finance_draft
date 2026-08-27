@@ -11,8 +11,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { withFileLockSync } = require('./file_lock');
+const { STORAGE_DATA_DIR } = require('./paths.js');
 
-const DEFAULT_LEDGER_PATH = path.resolve(__dirname, '../../../../storage/data/runtime/ledger/sub_positions.json');
+const DEFAULT_LEDGER_PATH = path.join(STORAGE_DATA_DIR, 'runtime', 'ledger', 'sub_positions.json');
 
 /**
  * Generate a deterministic strategy signature string
