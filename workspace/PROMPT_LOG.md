@@ -1,3 +1,19 @@
+# Prompt Log - 2026-08-27
+
+## Session Diagnosis & Closeout Preparation - 2026-08-27
+Received user prompt: "blast-through", "do diagnosis+logs", "im going to turn off the machine now", "hp desk i meant".
+- Performed full deep review and diagnosis across live signal fast-path, ML conviction scoring, pre-trade risk engine, and sub-position ledger.
+- Fixed `DEFAULT_LEDGER_PATH` in `shared/lib/runtime/sub_positions_ledger.js` to ensure the sub-position ledger is cleanly anchored inside `storage/data/runtime/ledger/`.
+- Inspected 24h strategy automation log records (`storage/data/logs/strategy_automation.jsonl`), confirming zero dead stubs and active signal generation.
+- Prepared clean handoff for HPDesk shutdown.
+
+## Session Boot — Session Orchestrator - 2026-08-27
+Received user prompt: "/session-orchestrator".
+- Executed `session-orchestrator` boot sequence.
+- Verified working directory (`/home/vgbn/Documents/codeptit/personal_finance_draft/.claude/worktrees/perf-and-security`).
+- Read compact state summary, `workspace/HANDOFF.md`, `workspace/handoff/2026/08/2026-08-27.md`, and `workspace/NEXT_SESSION_GOAL.md`.
+- Target: Deep Review & Architecture Audit / Bot Monitoring on HPDesk.
+
 # Prompt Log - 2026-08-23
 
 ## Session Closeout — Gateway B2A Seam Review & Selective Staging Landing - 2026-08-23
