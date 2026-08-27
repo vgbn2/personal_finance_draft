@@ -21,7 +21,7 @@ const { filterFeatureFrame, runBacktest, splitFeatureFrame, rollingWalkForward }
 const { calculateFeatureFrame, calculateRollingFeatureFrame,
         DEFAULT_PERIODS } = require('../../../../shared/lib/market/indicators.js');
 
-const { compareModels } = require('../../../../shared/lib/ml/models.js');
+const { compareModels, resolveModel } = require('../../../../shared/lib/ml/models.js');
 
 const { mergeSnapshots, readSnapshot,
         validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation.js');

@@ -62,10 +62,9 @@ services:
       retries: 3
       start_period: 20s
 
-  bot-polymarket-paper:
-    container_name: sv-bot-polymarket-paper
+  bot:
     logging: *default-logging
-    profiles: [paper, paper-polymarket]
+    profiles: [paper]
     build: *common-build
     image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
     depends_on:
@@ -74,7 +73,7 @@ services:
     env_file:
       - path: '../../.env'
         required: false
-      - path: ${SOVEREIGN_BOT_POLYMARKET_ENV_FILE:-${SOVEREIGN_BOT_ENV_FILE:-../../.env.services/bot.env}}
+      - path: ${SOVEREIGN_BOT_ENV_FILE:-../../.env.services/bot.env}
         required: true
     environment: *central-runtime
     volumes:

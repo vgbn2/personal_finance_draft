@@ -162,7 +162,14 @@ const modelCandidates = [
       const p = signalParts(feature);
       const margin = p.return5 * 18 + p.return1 * 4 + p.macdNorm * 30 - p.volatility * 5 + (50 - Math.abs(p.rsi - 55)) / 150;
       const probability = logistic(margin);
-      return { direction: probability >= 0.55 ? 'long' : 'flat', confidence: probability, raw_score: margin };
+      const normalizedMargin = clamp((probability - 0.5) * 2.0, -1.0, 1.0);
+      const bullBearScore = Math.round(clamp(50.0 + 50.0 * normalizedMargin, 1.0, 100.0) * 10) / 10;
+      return {
+        direction: probability >= 0.55 ? 'long' : 'flat',
+        confidence: probability,
+        raw_score: margin,
+        bull_bear_score: bullBearScore,
+      };
     },
   },
   {
@@ -201,7 +208,14 @@ const modelCandidates = [
       const volLikelihood = p.volatility < 0.035 ? 0.6 : 0.4;
       const probability = (trendLikelihood * rsiLikelihood * volLikelihood) /
         ((trendLikelihood * rsiLikelihood * volLikelihood) + ((1 - trendLikelihood) * (1 - rsiLikelihood) * (1 - volLikelihood)));
-      return { direction: probability >= 0.55 ? 'long' : 'flat', confidence: clamp(probability, 0, 1), raw_score: probability - 0.5 };
+      const normalizedMargin = clamp((probability - 0.5) * 2.0, -1.0, 1.0);
+      const bullBearScore = Math.round(clamp(50.0 + 50.0 * normalizedMargin, 1.0, 100.0) * 10) / 10;
+      return {
+        direction: probability >= 0.55 ? 'long' : 'flat',
+        confidence: clamp(probability, 0, 1),
+        raw_score: probability - 0.5,
+        bull_bear_score: bullBearScore,
+      };
     },
   },
   {
@@ -396,7 +410,7 @@ const onnxModelCandidates = ['xgboost_v1', 'logistic_v1', 'regime_classifier'].m
       const margin = pUp - pDown;
       const bullBearScore = Math.round(clamp(50.0 + 50.0 * margin, 1.0, 100.0) * 10) / 10;
       return {
-        direction: direction === 'up' ? 'long' : direction === 'down' ? 'short' : 'flat',
+        direction: direction === 'up' ? 'long' : 'flat',
         confidence: confidence || 0,
         raw_score: margin,
         bull_bear_score: bullBearScore,

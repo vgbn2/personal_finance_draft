@@ -1,8 +1,8 @@
-export function extractProposedOrdersPayload(payload: any): any[] {
+export function extractProposedOrdersPayload(payload: any): any[] | null {
   if (Array.isArray(payload)) return payload;
   if (payload && Array.isArray(payload.orders)) return payload.orders;
   if (payload && Array.isArray(payload.proposedOrders)) return payload.proposedOrders;
-  return [];
+  return null;
 }
 
 export interface ProposedOrder {
@@ -83,6 +83,15 @@ export interface ValidateProposedOrdersResult {
 
 export function validateProposedOrdersPayload(payload: any): ValidateProposedOrdersResult {
   const rawOrders = extractProposedOrdersPayload(payload);
+  if (!rawOrders) {
+    return {
+      ok: false,
+      total: 0,
+      orders: [],
+      errors: [{ index: 0, errors: ['payload must be an array or contain an orders/proposedOrders array'], preview: null }],
+      preview: [],
+    };
+  }
   const normalized: ProposedOrder[] = [];
   const errors: Array<{ index: number; errors: string[]; preview: any }> = [];
 

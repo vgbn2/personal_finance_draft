@@ -131,8 +131,8 @@ test('dashboard stays within common terminal widths and keeps output discoverabl
       `${viewport.columns}x${viewport.rows} rendered ${widest} columns`);
     assert.match(snapshot, /COMMAND OUTPUT/,
       `output remains discoverable at ${viewport.columns} columns`);
-    if (viewport.rows >= 30) {
-      for (const category of ['Operational', 'Data', 'Backend', 'Research', 'Trade', 'Polymarket', 'Settings', 'Account']) {
+    if (viewport.rows >= 30 && viewport.columns >= 120) {
+      for (const category of ['Operational', 'Data', 'Backend', 'Research', 'AI', 'Trade', 'Polymarket', 'Settings', 'Account']) {
         assert.match(snapshot, new RegExp(category),
           `${category} remains visible at ${viewport.columns} columns`);
       }

@@ -62,7 +62,7 @@ function buildFiveMinAccumulatePlan(config, options = {}) {
     require('../../../scripts/data_ops/ingest_market_data/constants.js');
   const { CANONICAL_MARKET_FAMILIES } = require('../../../../shared/lib/market/configured_universe.js');
 
-  const VALID_FAMILIES = ['indices', 'commodities', 'fx', ...CANONICAL_MARKET_FAMILIES.filter(f => !['indices', 'commodities', 'fx'].includes(f))];
+  const VALID_FAMILIES = ['indices', 'commodities', 'fx'];
   // 'all' (or blank) means no family filter -- lets the TUI use a clean select.
   const rawFamily = options.family ? String(options.family).trim().toLowerCase() : null;
   const familyFilter = (rawFamily && rawFamily !== 'all') ? rawFamily : null;
@@ -284,7 +284,7 @@ function buildIntradayAccumulatePlan(config, options = {}) {
     require('../../../scripts/data_ops/ingest_market_data/intraday_yahoo.js');
   const { CANONICAL_MARKET_FAMILIES } = require('../../../../shared/lib/market/configured_universe.js');
 
-  const VALID_FAMILIES = ['indices', 'commodities', 'fx', ...CANONICAL_MARKET_FAMILIES.filter(f => !['indices', 'commodities', 'fx'].includes(f))];
+  const VALID_FAMILIES = ['indices', 'commodities', 'fx'];
   const rawTimeframe = options.timeframe ? String(options.timeframe).trim().toLowerCase() : '1h';
   if (!SUPPORTED_INTRADAY_TFS.includes(rawTimeframe)) {
     throw new Error(`Invalid --timeframe "${rawTimeframe}". Must be one of: ${SUPPORTED_INTRADAY_TFS.join(', ')}`);

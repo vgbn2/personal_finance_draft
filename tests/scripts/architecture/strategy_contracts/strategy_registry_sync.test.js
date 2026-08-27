@@ -32,7 +32,7 @@ function tempRepoLayout() {
   fs.writeFileSync(path.join(strategyDir, 'existing.yaml'), [
     'name: existing',
     'kind: momentum',
-    'family: single_asset',
+    'family: equities',
     'lane: single_asset',
     'role: core',
     'status: draft',
@@ -87,7 +87,7 @@ function tempRepoLayout() {
   fs.writeFileSync(path.join(strategyDir, 'fresh_ai.yaml'), [
     'name: fresh_ai',
     'kind: momentum',
-    'family: single_asset',
+    'family: equities',
     'lane: single_asset',
     'role: core',
     'status: draft',
