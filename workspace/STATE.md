@@ -3,10 +3,11 @@
 ## Current Phase
 Fast-Path Live Signal Derivation & Inference Pipeline - ACTIVE
 
+- **Fast-Path Live Signal Derivation**: Integrated `deriveLiveStrategySignal` into `backend/cli/commands/strategy/strategy.js` to evaluate rolling feature frames directly from pre-warmed binary disk lookback buffers (`storage/data/ts/<SYM>_<TF>.bin`), eliminating `commandBacktest` inversion during live bot polling loops.
+- **Continuous 1-100 Conviction Scoring**: Standardized model conviction metrics in `shared/lib/ml/models.js` via continuous Bull/Bear score mapping $50.0 + 50.0 \times (P_{\text{up}} - P_{\text{down}})$.
 - **Sub-Positions Ledger**: Implemented `shared/lib/runtime/sub_positions_ledger.js` for deterministic signatures, atomic sub-position JSON ledger, and auto-attribution of residual broker shares as `[MANUAL]`.
-- **Gateway & Adapter Plumbing**: Extended `backend/gateway/src/` types, execution gateway, and Alpaca adapter with client order ID tagging and order history fill timestamp enrichment.
-- **Bot Safety & Exit Clamping**: Ensured automated bot exit check in `alpaca_bot_cycle.js` cannot liquidate manual shares.
-- **Dead Stub Tracker**: Added 120-bar silence detection per strategy timeframe and `--verify-gateway` probe mode in `strategy.js`.
-- **Host Sync & Clean-Up**: Removed orphaned 5.4 GB snapshot and recursive directory slippages on `hpdesk`, verified clean rsync, and verified 100% test pass on host.
-- **Closeout State**: All hygiene (`check_hygiene.js`), structure (`npm run test:structure`), and safety (`npm run test:safety`) tests pass. Ready for ongoing monitoring.
+- **Pre-Trade Risk & Protocol Bounds**: Aligned C++ risk check protocol validation and CLI exit codes (0 = approved, 2 = rejected by risk limit, 1 = validation error) in `backend/cli/commands/tools/risk.js`.
+- **TUI 9-Category Manifest Parity**: Reconciled category and command navigation indices across all TUI dashboard contract test suites.
+- **Suite Status**: 100% test pass rate across all 197 test files (`npm test`), structural tests (`npm run test:structure`), safety tests (`npm run test:safety`), and hygiene audits (`node scripts/dev/check_hygiene.js`).
+
 
