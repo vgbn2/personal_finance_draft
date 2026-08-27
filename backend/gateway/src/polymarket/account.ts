@@ -58,7 +58,7 @@ export function polymarketModeCandidates(env: Record<string, any> = process.env)
     const key = `${candidate.signatureType}:${String(candidate.funderAddress || '')}`.toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
-    return true;
+    return candidate.signatureType === 0 || Boolean(candidate.funderAddress);
   });
 }
 

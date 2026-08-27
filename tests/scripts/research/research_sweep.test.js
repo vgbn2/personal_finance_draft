@@ -81,7 +81,7 @@ test('sweep option parsing rejects malformed numbers instead of using defaults',
 
 test('real configured strategy registry is fully classified as unsupported by proxies', () => {
   const strategies = inspectConfiguredStrategies();
-  assert.equal(strategies.length, 14);
+  assert.equal(strategies.length, 16);
   assert.equal(strategies.every((strategy) => strategy.path.startsWith('config/strategies/')), true);
   assert.equal(strategies.some((strategy) => strategy.lane === 'cross_asset'), true);
   assert.equal(strategies.some((strategy) => strategy.kind === 'ml'), true);
@@ -116,7 +116,7 @@ test('preflight rejects unsupported evaluators and missing datasets', async () =
   assert.equal(result.errors.includes('unsupported_evaluators'), true);
   assert.equal(result.errors.includes('no_supported_evaluators'), true);
   assert.equal(result.errors.includes('no_eligible_datasets'), true);
-  assert.equal(result.capabilityRegistry.counts.configured_total, 14);
+  assert.equal(result.capabilityRegistry.counts.configured_total, 16);
   assert.equal(result.capabilityRegistry.counts.configured_supported, 0);
 });
 

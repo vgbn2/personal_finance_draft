@@ -5,18 +5,16 @@ import type {
   PolymarketTradePagination,
 } from '../polymarket_read_adapter';
 
-// @ts-ignore
-const {
+import {
   buildPolymarketCollateralProbeSnapshot,
   buildPolymarketDebugSnapshot,
   polymarketAddressRoles,
   polymarketModeCandidates,
   polymarketProbeCandidates,
-} = require('../polymarket_account.js');
-// @ts-ignore
-const { traceCsvFile } = require('../polymarket_trace.js');
-// @ts-ignore
-const { classifyPolymarketGatewayError, describeGatewayError } = require('../polymarket_errors.js');
+  traceCsvFile,
+  classifyPolymarketGatewayError,
+  describeGatewayError,
+} from '../polymarket';
 
 const ansi = {
   reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m', red: '\x1b[31m', green: '\x1b[32m',
