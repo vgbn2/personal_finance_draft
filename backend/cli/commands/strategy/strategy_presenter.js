@@ -260,16 +260,27 @@ function buildAutomationTrustDecision(report, minTrustScore, isLive) {
   };
 }
 
-function buildStrategySizingDecision({ symbol, allocationUsd, referencePrice }) {
+function resolveInstrumentQuantityStep(symbol, allowFractional = false) {
+  if (!allowFractional) return 1;
+  const sym = String(symbol || '').toUpperCase();
+  const isCrypto = /^(BTC|ETH|SOL|DOGE|XRP|ADA|AVAX|LINK|LTC|BCH|UNI|AAVE|SHIB|PEPE|SUI|DOT|TRX|NEAR|POL|MATIC)(USDT|USDC|USD)$/.test(sym) || sym.includes('/');
+  return isCrypto ? 0.0001 : 0.001;
+}
+
+function buildStrategySizingDecision({ symbol, allocationUsd, referencePrice, allowFractional = false, quantityStep = null }) {
+  const step = quantityStep !== null && quantityStep > 0
+    ? quantityStep
+    : resolveInstrumentQuantityStep(symbol, allowFractional);
+
   return normalizeSizingIntent({
     intent: { mode: 'notional', value: allocationUsd, currency: 'USD' },
     instrument: {
       instrumentId: symbol,
       assetClass: 'equity_or_crypto_unqualified',
       quoteCurrency: 'USD',
-      quantityStep: 1,
+      quantityStep: step,
       contractMultiplier: 1,
-      metadataSource: 'legacy_strategy_whole_unit_contract',
+      metadataSource: step === 1 ? 'legacy_strategy_whole_unit_contract' : 'fractional_unit_contract',
     },
     referencePrice,
   });
