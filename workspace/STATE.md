@@ -1,7 +1,7 @@
 # Current Workspace State
 
 ## Current Phase
-Unified Ingestion, Local Rollup, Fast-Path Live Signal Derivation & HPDesk Soak - VERIFIED
+Unified Ingestion, Local Rollup, Fast-Path Live Signal Derivation & HPDesk Soak - ACTIVE
 
 - **Unified Ingestion & Ascending Timeframe Duration Sorting**: Replaced naive `commandBackfill` in `runAutomationPass` with duration-sorted (`1m` < `5m` < `15m` < `1h` < `1d`) candle ingestion, `INGESTION_TTL_MAP` throttling, and atomic `writeTsIndex` updates directly to `storage/data/ts/`.
 - **Local OHLCV Aggregation & Rollup**: Base intraday bars (`5m`) are synthesized locally to higher timeframes (`15m`, `1h`, `1d`) via `rollupFromBase` and `aggregateCandles`, eliminating 26 redundant daily Yahoo Finance API calls per minute.

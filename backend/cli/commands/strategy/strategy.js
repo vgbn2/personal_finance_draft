@@ -36,7 +36,7 @@ const {
   resolvePropFirmProfile,
 } = require('../../../../shared/lib/profiles/prop_firms.js');
 const { featureGate, loadRuntimeSettings } = require('../../../../shared/lib/settings/runtime');
-const { normalizeSizingIntent } = require('../../../../shared/lib/trading/position_sizing.js');
+const { normalizeSizingIntent, roundDownToStep } = require('../../../../shared/lib/trading/position_sizing.js');
 
 const utils = require('../../lib/utils.js');
 const { usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption, get_Current_Universe_Symbols } = utils;
@@ -63,6 +63,8 @@ const {
   recordSubPositionExit
 } = require('../../../../shared/lib/runtime/sub_positions_ledger.js');
 const { STORAGE_DATA_DIR } = require('../../../../shared/lib/runtime/paths.js');
+
+const { isAlpacaTradable } = require('../../../../shared/lib/brokers/alpaca_env.js');
 
 const DEAD_STUB_TRACKER = new Map(); // strategyName -> { consecutiveZeroSignals, lastSignalAt, deadStub, flags: [] }
 const LOW_TF_DEAD_STUB_THRESHOLDS = {
@@ -668,6 +670,12 @@ async function runAutomationPass(args, strategiesOverride = null) {
             }
 
            
+            // Filter out unsupported/non-tradable assets on Alpaca Paper broker
+            if (providerPaper && !isAlpacaTradable(lastTrade.symbol)) {
+                console.log(`[AUTOMATION] Skipping ${lastTrade.symbol}: asset is not tradable on Alpaca paper broker.`);
+                continue;
+            }
+
             const riskWeight = strategy.risk?.risk_weight || 0.1;
             const currentPrice = Number(signalPrice);
             const fixedPositionSize = Number(settings.trading?.position_size);
@@ -678,6 +686,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 symbol: lastTrade.symbol,
                 allocationUsd,
                 referencePrice: currentPrice,
+                allowFractional: providerPaper,
             });
 
             if (!sizing.ok) {
@@ -700,10 +709,12 @@ async function runAutomationPass(args, strategiesOverride = null) {
                     console.log(`[AUTOMATION] Paper entry skipped for ${lastTrade.symbol}: ${budget.reason || 'alpaca_paper_budget_rejected'}.`);
                     continue;
                 }
-                qty = Math.floor(budget.approvedNotional / currentPrice);
+                const isCrypto = /^(BTC|ETH|SOL|DOGE|XRP|ADA|AVAX|LINK|LTC|BCH|UNI|AAVE|SHIB|PEPE|SUI|DOT|TRX|NEAR|POL|MATIC)(USDT|USDC|USD)$/.test(String(lastTrade.symbol).toUpperCase()) || String(lastTrade.symbol).includes('/');
+                const step = isCrypto ? 0.0001 : 0.001;
+                qty = roundDownToStep(budget.approvedNotional / currentPrice, step);
                 if (qty <= 0) {
                     updateAlpacaPaperEntryIntent(signalId, 'released');
-                    console.log(`[AUTOMATION] Paper entry skipped for ${lastTrade.symbol}: alpaca_paper_notional_below_one_share.`);
+                    console.log(`[AUTOMATION] Paper entry skipped for ${lastTrade.symbol}: alpaca_paper_notional_below_step.`);
                     continue;
                 }
                 reservation = budget.reservation;

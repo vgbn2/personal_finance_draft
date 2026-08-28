@@ -42,7 +42,8 @@
 
 ## Review
 
-- Read changed/requested files, then callers and tests.
+- Read changed/requested files, then callers, tests, and active runtime logs.
+- Inspect live logs (`storage/logs/flaw_monitor.log`, `storage/data/logs/*.jsonl`, broker logs) to identify active operational rejections or runtime regressions.
 - Report findings first in severity order with file:line, impact, fault-domain/stub-causality attribution, and
   missing verification.
 - Do not lead with a broad summary or section grades.
