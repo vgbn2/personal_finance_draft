@@ -94,10 +94,35 @@ function resolveAlpacaSettings(env = process.env, options = {}) {
   };
 }
 
+const ALPACA_SUPPORTED_CRYPTO_PAIRS = Object.freeze(new Set([
+  'BTC/USD', 'ETH/USD', 'SOL/USD', 'DOGE/USD', 'XRP/USD',
+  'ADA/USD', 'AVAX/USD', 'LINK/USD', 'LTC/USD', 'BCH/USD',
+  'UNI/USD', 'AAVE/USD', 'SHIB/USD', 'PEPE/USD', 'SUI/USD',
+  'DOT/USD', 'TRX/USD', 'NEAR/USD', 'POL/USD', 'MATIC/USD',
+  'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'DOGEUSDT', 'XRPUSDT',
+  'ADAUSDT', 'AVAXUSDT', 'LINKUSDT', 'LTCUSDT', 'BCHUSDT',
+  'UNIUSDT', 'AAVEUSDT', 'SHIBUSDT', 'PEPEUSDT', 'SUIUSDT',
+  'DOTUSDT', 'TRXUSDT', 'NEARUSDT', 'POLUSDT', 'MATICUSDT',
+]));
+
+function isAlpacaTradable(symbol) {
+  const sym = String(symbol || '').trim().toUpperCase();
+  if (!sym) return false;
+  // If crypto pattern, verify against supported crypto pairs
+  const isCrypto = /^(BTC|ETH|SOL|DOGE|XRP|ADA|AVAX|LINK|LTC|BCH|UNI|AAVE|SHIB|PEPE|SUI|DOT|TRX|NEAR|POL|MATIC|BNB|APT)(USDT|USDC|USD)$/.test(sym) || sym.includes('/');
+  if (isCrypto) {
+    return ALPACA_SUPPORTED_CRYPTO_PAIRS.has(sym);
+  }
+  // Standard US equities & ETFs (e.g. SPY, QQQ, AAPL, NVDA, MSFT)
+  return /^[A-Z]{1,5}$/.test(sym);
+}
+
 module.exports = {
   LIVE_BASE_URL,
   PAPER_BASE_URL,
   spec,
   buildAlpacaReport,
   resolveAlpacaSettings,
+  ALPACA_SUPPORTED_CRYPTO_PAIRS,
+  isAlpacaTradable,
 };
