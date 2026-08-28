@@ -1,9 +1,10 @@
-import { createClobClient, polymarketGet } from './clob_factory';
+import { createClobClient, polymarketGet, resolveOwnerAddress } from './clob_factory';
 import { type BotExecutionOptions, type BotOrderIntent } from './cycle';
 import {
   classifyPolymarketGatewayError,
   fetchPolymarketGammaMarkets as fetchPolymarketOrderBook, // fallback naming/export
   validateProposedOrdersPayload,
+  toFiniteNumber,
 } from './polymarket';
 // @ts-ignore
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
@@ -240,6 +241,33 @@ export class PolymarketAdapter implements BrokerAdapter {
       EQUITY: pUSD,
       COLLATERAL_ALLOWANCE: collateral.allowance / 1_000_000,
     };
+  }
+
+  async getOpenOrders(): Promise<Position[]> {
+    if (!this.hasCredentials()) throw new Error('Polymarket credentials not configured');
+    const owner = await resolveOwnerAddress(this.privateKey as string, this.funderAddress);
+    const raw = await polymarketGet('/data/orders', { owner }, {
+      privateKey: this.privateKey,
+      creds: this.creds ?? undefined,
+      funderAddress: this.funderAddress,
+      host: this.host,
+    }) ?? [];
+    const orders: any[] = Array.isArray(raw) ? raw : raw?.data ?? [];
+    return orders
+      .map((o: any) => {
+        const original = toFiniteNumber(o.original_size);
+        const matched = toFiniteNumber(o.size_matched);
+        const remaining = Math.max(0, original - matched);
+        return {
+          symbol: String(o.outcome ?? o.market ?? o.asset_id ?? ''),
+          quantity: remaining,
+          averagePrice: toFiniteNumber(o.price),
+          marketValue: remaining * toFiniteNumber(o.price),
+          unrealizedPl: 0,
+        };
+      })
+      .filter((o) => o.quantity > 0)
+      .sort((a, b) => a.symbol.localeCompare(b.symbol));
   }
 
   async getPositions(): Promise<Position[]> {
