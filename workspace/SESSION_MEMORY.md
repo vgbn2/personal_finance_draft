@@ -1,3 +1,16 @@
+### Session Memory - 2026-08-28 — Fractional Unit Sizing, Tradability Filtering & Live HPDesk Verification
+
+```json
+{
+  "batch": ["FRACTIONAL-SIZING-1"],
+  "lifecycle": "closed",
+  "scope": "Implemented fractional unit contracts (0.001 equity, 0.0001 crypto) in strategy_presenter.js and strategy.js via roundDownToStep, fixing below_quantity_step rejections on sub-$100 allocations for high-priced assets (SPY, QQQ, BTC). Added isAlpacaTradable filter in alpaca_env.js to prevent orders on unsupported pairs (BNBUSDT, EURUSD). Synchronized and restarted sv-bot-alpaca-paper on hpdesk; verified live order dispatch (BTC/USD 0.0006 filled, SPY 0.064 accepted, QQQ 0.069 accepted). Updated blast-through audit skill to mandate active runtime log inspection.",
+  "changes": "updated backend/cli/commands/strategy/strategy.js, backend/cli/commands/strategy/strategy_presenter.js, shared/lib/brokers/alpaca_env.js, skills/blast-through/SKILL.md, skills/blast-through/references/audit-modes.md, tests/scripts/safety/strategy_sizing.test.js, workspace/STATE.md, workspace/NEXT_SESSION_GOAL.md, workspace/SESSION_MEMORY.md, workspace/PROMPT_LOG.md, workspace/HANDOFF.md, workspace/handoff/2026/08/2026-08-28.md",
+  "verification": "node scripts/dev/check_hygiene.js (PASS, 0 findings); npm run test:structure (PASS, 100% green); npm run test:safety (PASS); live hpdesk docker logs & Alpaca paper REST order verification (BTC/USD filled, SPY accepted, QQQ accepted, zero below_quantity_step alerts in flaw_monitor.log)",
+  "boundaries": "dry-run and paper-trading verification only; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-08-27 — Fast-Path Live Signal Derivation & 100% Test Pass
 
 ```json

@@ -1,5 +1,17 @@
 # Prompt Log - 2026-08-28
 
+## Session Closeout — Fractional Unit Sizing, Alpaca Tradability & Live Bot Verification - 2026-08-28
+Received user prompts: "commit,push, rsync, monitor", "restart bot on hpdesk and check logs", "check open positions on hpdesk", "so the bot works?, finally?", "end session, a win , now update docs, UI, referances, worksapces".
+- Committed changes on `worktree-perf-and-security` (commit `79bff108`) and pushed to `origin/worktree-perf-and-security`.
+- Synchronized repository changes to `hpdesk` (`root@hpdesk:/home/vgbn-server/Documents/codeptit/personal_finance_draft/`).
+- Copied updated files into running `sv-bot-alpaca-paper` Docker container and restarted service.
+- Inspected live logs and confirmed execution:
+  - Fractional sizing active on sub-$100 budgets: BTCUSDT (0.0006 qty filled), SPY (0.064 qty accepted), QQQ (0.069 qty accepted).
+  - Tradability filter skipped unsupported pairs (BNBUSDT, EURUSD).
+  - Flaw monitor confirmed zero `below_quantity_step` alerts.
+- Polled Alpaca Paper REST API on `hpdesk` retrieving 6 active positions (AAPL, BTCUSD, INTC, PLTR, SPY, TSLA) and matching client order ID signatures.
+- Updated `workspace/STATE.md`, `workspace/SESSION_MEMORY.md`, `workspace/NEXT_SESSION_GOAL.md`, `workspace/PROMPT_LOG.md`, `workspace/HANDOFF.md`, and dated handoff `workspace/handoff/2026/08/2026-08-28.md`.
+
 ## Session Boot — Session Orchestrator - 2026-08-28
 Received user prompt: "/session-orchestrator".
 - Executed `session-orchestrator` boot sequence.
