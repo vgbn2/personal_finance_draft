@@ -30,3 +30,29 @@ test('strategy sizing preserves the legacy whole-unit contract explicitly', () =
   assert.equal(decision.projected_notional, 90);
   assert.equal(decision.instrument.metadata_source, 'legacy_strategy_whole_unit_contract');
 });
+
+test('strategy sizing supports fractional unit contracts when enabled', () => {
+  const equityDecision = buildStrategySizingDecision({
+    symbol: 'SPY',
+    allocationUsd: 50,
+    referencePrice: 500,
+    allowFractional: true,
+  });
+  assert.equal(equityDecision.ok, true);
+  assert.equal(equityDecision.quantity, 0.1);
+  assert.equal(equityDecision.quantity_step, 0.001);
+  assert.equal(equityDecision.projected_notional, 50);
+  assert.equal(equityDecision.instrument.metadata_source, 'fractional_unit_contract');
+
+  const cryptoDecision = buildStrategySizingDecision({
+    symbol: 'BTCUSDT',
+    allocationUsd: 65,
+    referencePrice: 65000,
+    allowFractional: true,
+  });
+  assert.equal(cryptoDecision.ok, true);
+  assert.equal(cryptoDecision.quantity, 0.001);
+  assert.equal(cryptoDecision.quantity_step, 0.0001);
+  assert.equal(cryptoDecision.projected_notional, 65);
+  assert.equal(cryptoDecision.instrument.metadata_source, 'fractional_unit_contract');
+});

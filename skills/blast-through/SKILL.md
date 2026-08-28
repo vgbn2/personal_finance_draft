@@ -33,13 +33,14 @@ When invoking `blast-through` in `security` mode, the agent MUST first ask the u
 ## Core Workflow
 
 1. Load current state, handoff, review ledger, governing docs, and the narrowest production/test surfaces.
-2. Use `graphify-out` when current and available; otherwise use `rg` and direct reads.
-3. Separate production, tests, docs, and scratch. Treat tests as evidence, not architecture ownership.
-4. Verify every high-signal candidate directly before reporting it.
-5. Classify evidence as proven, partial, unproven, or failed.
-6. Record confirmed debt with impact, repair owner, fault domain, causal mechanism, stub involvement, evidence,
+2. Inspect active runtime and diagnostic logs (e.g. `storage/logs/flaw_monitor.log`, `storage/data/logs/*.jsonl`, remote host / container logs) alongside static code and test suites. Do not rely solely on unit tests to prove runtime behavior.
+3. Use `graphify-out` when current and available; otherwise use `rg` and direct reads.
+4. Separate production, tests, docs, and scratch. Treat tests as evidence, not architecture ownership.
+5. Verify every high-signal candidate directly before reporting it.
+6. Classify evidence as proven, partial, unproven, or failed.
+7. Record confirmed debt with impact, repair owner, fault domain, causal mechanism, stub involvement, evidence,
    and the gate that clears it.
-7. Stop after the audit. Produce a structured implementation handoff only when fixes are desired.
+8. Stop after the audit. Produce a structured implementation handoff only when fixes are desired.
 
 When API authentication is in scope, use the API Authentication Gate in
 [audit-modes.md](references/audit-modes.md). Treat credential presence, matching fingerprints, environment
