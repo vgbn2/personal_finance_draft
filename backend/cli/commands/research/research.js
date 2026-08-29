@@ -5,8 +5,8 @@ const fs = require('node:fs');
 const { withProviderLogFilter, candlesToSources, recordBackfillSummary, loadUsableSources, validatedSnapshot, loadSampleSources, loadHistoricalSources, loadPredictionMarketHistory } = require('./research_sources.js');
 const { formatPercent, formatDecimal, formatBacktestLine, formatPanelLine, formatCompactPercent, ANSI_STRIP_RE, visibleLength, padVisibleRight, clipVisible, splitLines, shortTimestamp, shortDate, sampleSeries, drawBar, renderReturnTape, renderStressShape, renderSideBySide, renderVerdictBlock, renderFramedBlock, annualizedReturn, timeSpanYears, compactBenchmark, compactBenchmarks, buildTrustAssessment, backtestSummaryPayload, renderBacktestSummary } = require('./research_render.js');
 const {
-  fetchBinanceBaseCandles, fetchCoinbaseBaseCandles, fetchKalshiHistoricalCandlesticks,
-  fetchKalshiHistoricalMarkets, fetchStooqDailyHistory, fetchPolymarketHistoricalPrices,
+  fetchBinanceBaseCandles, fetchCoinbaseBaseCandles,
+  fetchStooqDailyHistory, fetchPolymarketHistoricalPrices,
   fetchYahooBaseCandles, fetchPaginated, fetchParallelBackfill, ingestMarketData,
   dedupePreferredMarketQuotes, loadConfig, loadExternalQuoteInputs,
   resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
