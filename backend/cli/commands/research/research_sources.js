@@ -303,8 +303,6 @@ async function loadHistoricalSources(args) {
 
 async function loadPredictionMarketHistory(args) {
   const {
-    fetchKalshiHistoricalCandlesticks,
-    fetchKalshiHistoricalMarkets,
     fetchPolymarketHistoricalPrices,
     fetchPredictionInterestSignal,
     loadConfig,
@@ -319,19 +317,6 @@ async function loadPredictionMarketHistory(args) {
   const errors = [];
 
   for (const eventName of config.prediction_market.events || []) {
-    if (provider === 'all' || provider === 'kalshi') {
-      try {
-        const { records } = await fetchKalshiHistoricalMarkets(eventName, { limit: 1000 });
-        sources.push(...records);
-        for (const market of records.slice(0, marketLimit)) {
-          if (!market.market_ticker) continue;
-          sources.push(...await fetchKalshiHistoricalCandlesticks(market.market_ticker, { startTs, endTs, periodInterval }));
-        }
-      } catch (error) {
-        errors.push({ family: 'prediction_market', provider: 'kalshi', symbol: eventName, message: error.message });
-      }
-    }
-
     if (provider === 'all' || provider === 'polymarket') {
       try {
         sources.push(...await fetchPolymarketHistoricalPrices(eventName, {
