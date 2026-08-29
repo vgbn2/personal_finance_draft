@@ -111,7 +111,7 @@ function isExperimentalSynthetic5mRecord(record) {
     label.includes('synthetic') ||
     label.includes('deconstruct') ||
     label.includes('daily_aggregate') ||
-    DAILY_OR_ABOVE_TIMEFRAMES.has(derivedFrom) ||
+    ALL_AVAILABLE_TIMEFRAMES.has(derivedFrom) ||
     label.includes('rollup')
   ) {
     return true;
