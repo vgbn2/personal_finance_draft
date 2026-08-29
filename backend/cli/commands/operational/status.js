@@ -2,8 +2,8 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const {
-  fetchBinanceBaseCandles, fetchCoinbaseBaseCandles, fetchKalshiHistoricalCandlesticks,
-  fetchKalshiHistoricalMarkets, fetchStooqDailyHistory, fetchPolymarketHistoricalPrices,
+  fetchBinanceBaseCandles, fetchCoinbaseBaseCandles,
+  fetchStooqDailyHistory, fetchPolymarketHistoricalPrices,
   fetchYahooBaseCandles, fetchPaginated, fetchParallelBackfill, ingestMarketData,
   dedupePreferredMarketQuotes, loadConfig, loadExternalQuoteInputs,
   resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol

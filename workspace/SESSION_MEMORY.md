@@ -1,3 +1,16 @@
+### Session Memory - 2026-08-29 — HPDesk Soak Audit & personal_finance Scaffold Initialization
+
+```json
+{
+  "batch": ["SCAFFOLD-INIT-1"],
+  "lifecycle": "closed",
+  "scope": "Audited live bot soak on hpdesk; polled 7 open paper positions totaling $97,755.17 equity. Replicated folder hierarchy, building block configs, and 0-byte header stubs to personal_finance repo; staged, committed (commit 22cf574) and pushed to origin/master. Logged refactoring backlog for Gateway CLI Alpaca bridge and fast-path binary TS lookback seeding.",
+  "changes": "created personal_finance scaffold on master (pushed); updated workspace/NEXT_SESSION_GOAL.md, workspace/HANDOFF.md, workspace/SESSION_MEMORY.md, workspace/handoff/2026/08/2026-08-29.md",
+  "verification": "node scripts/dev/check_hygiene.js (PASS, 0 findings); npm run test:structure (PASS, 28/28 tests); npm run test:safety (PASS, 18/18 tests); Alpaca Paper REST API account verification ($97,755.17 equity, 7 positions: PLTR +40.27%, AAPL +3.74%, SPY, QQQ, BTCUSD, TSLA, INTC); git status clean in personal_finance",
+  "boundaries": "no live trading execution; dry-run/paper verification only; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-08-28 — Fractional Unit Sizing, Tradability Filtering & Live HPDesk Verification
 
 ```json
