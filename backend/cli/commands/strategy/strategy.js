@@ -71,10 +71,10 @@ const LOW_TF_DEAD_STUB_THRESHOLDS = {
   '1m': 120,  // 120 bars = 2h
   '5m': 120,  // 120 bars = 10h
   '15m': 120, // 120 bars = 30h
-  '1h': 120,  // 120 bars = 5 days
-  '4h': 240,  // 240 ticks
-  '1d': 1000, // 1000 ticks (~3.5 days on 5m cadence)
-  '1w': 5000  // 5000 ticks
+  '1h': 1000, // 1000 ticks
+  '4h': 2000, // 2000 ticks
+  '1d': 5000, // 5000 ticks
+  '1w': 10000 // 10000 ticks
 };
 
 const STRATEGY_AUDIT_LOG_PATH = path.join(STORAGE_DATA_DIR, 'logs', 'strategy_automation.jsonl');
