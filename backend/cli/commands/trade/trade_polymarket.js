@@ -160,7 +160,16 @@ async function runPolymarketArchiveIngest(args, deps = {}) {
       if (prices && prices.length > 0) {
         const ohlcv = history.bucketTicksToOhlcv(prices, interval, { forwardFill: true });
         if (ohlcv.length > 0) {
-          const sym = m.slug || m.market_id || tokenId;
+          const symCandidate = m.symbol || m.slug || m.market_id || tokenId;
+          const matchedTarget = Array.isArray(targetSymbols) && targetSymbols.length > 0
+            ? targetSymbols.find((s) => {
+                const lower = String(s).toLowerCase();
+                return (m.slug && m.slug.toLowerCase().includes(lower)) ||
+                       (m.question && m.question.toLowerCase().includes(lower)) ||
+                       (Array.isArray(m.tokens) && m.tokens.some((t) => t.outcome && t.outcome.toLowerCase().includes(lower)));
+              })
+            : null;
+          const sym = matchedTarget || symCandidate;
           const meta = {
             family: 'prediction_market',
             provider: 'polymarket',
