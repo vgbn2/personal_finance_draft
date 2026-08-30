@@ -551,6 +551,10 @@ async function backfillPolymarketArchive(opts = {}) {
     refresh = false,
     delayMs = 0,
     sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
+    minVolume = null,
+    targetSymbols = null,
+    targetSlugs = null,
+    tuning = null,
   } = opts;
   const warnings = [];
   const errors = [];
@@ -575,6 +579,26 @@ async function backfillPolymarketArchive(opts = {}) {
       const endMs = market.end_date ? new Date(market.end_date).getTime() : NaN;
       if (cutoff && Number.isFinite(endMs) && endMs < cutoff) continue;
       if (!marketMatchesCategory(market, category)) continue;
+      if (minVolume !== null && minVolume !== undefined && Number(market.volume || 0) < Number(minVolume)) continue;
+
+      if (Array.isArray(targetSlugs) && targetSlugs.length > 0) {
+        const slugMatch = targetSlugs.some((s) => {
+          const lower = String(s).toLowerCase();
+          return (market.slug && market.slug.toLowerCase().includes(lower)) || (market.question && market.question.toLowerCase().includes(lower));
+        });
+        if (!slugMatch) continue;
+      }
+
+      if (Array.isArray(targetSymbols) && targetSymbols.length > 0) {
+        const symMatch = targetSymbols.some((s) => {
+          const lower = String(s).toLowerCase();
+          return (market.slug && market.slug.toLowerCase().includes(lower)) ||
+                 (market.question && market.question.toLowerCase().includes(lower)) ||
+                 (Array.isArray(market.tokens) && market.tokens.some((t) => t.outcome && t.outcome.toLowerCase().includes(lower)));
+        });
+        if (!symMatch) continue;
+      }
+
       markets.push(market);
       if (markets.length >= maxMarkets) break;
     }
@@ -937,6 +961,197 @@ function buildPriceSeries(rawHistory) {
     .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 }
 
+const CANONICAL_TIMEFRAMES = [
+  { label: '1s',  seconds: 1 },
+  { label: '5s',  seconds: 5 },
+  { label: '15s', seconds: 15 },
+  { label: '30s', seconds: 30 },
+  { label: '1m',  seconds: 60 },
+  { label: '5m',  seconds: 300 },
+  { label: '15m', seconds: 900 },
+  { label: '30m', seconds: 1800 },
+  { label: '1h',  seconds: 3600 },
+  { label: '2h',  seconds: 7200 },
+  { label: '4h',  seconds: 14400 },
+  { label: '6h',  seconds: 21600 },
+  { label: '12h', seconds: 43200 },
+  { label: '1d',  seconds: 86400 },
+];
+
+function timeframeToSeconds(timeframe = '1h') {
+  const normalized = String(timeframe || '1h').trim().toLowerCase();
+  const match = CANONICAL_TIMEFRAMES.find((tf) => tf.label === normalized);
+  if (match) return match.seconds;
+  if (normalized.endsWith('s')) return Math.max(1, parseInt(normalized, 10) || 1);
+  if (normalized.endsWith('m')) return Math.max(1, (parseInt(normalized, 10) || 1) * 60);
+  if (normalized.endsWith('h')) return Math.max(1, (parseInt(normalized, 10) || 1) * 3600);
+  if (normalized.endsWith('d')) return Math.max(1, (parseInt(normalized, 10) || 1) * 86400);
+  return 3600;
+}
+
+/**
+ * Resolves sampling interval Delta t(L; N, gamma, beta) based on market lifespan.
+ * Formula: Delta t = gamma * (L^beta / (N * 300^(beta - 1)))
+ */
+function resolveTunableRegressionFidelity(startTime, endTime, opts = {}) {
+  const toMs = (v) => {
+    if (v === null || v === undefined || v === '') return null;
+    if (v instanceof Date) return v.getTime();
+    const n = Number(v);
+    if (Number.isFinite(n)) return Math.abs(n) > 1e12 ? n : n * 1000;
+    const p = Date.parse(String(v));
+    return Number.isFinite(p) ? p : null;
+  };
+
+  const startMs = toMs(startTime) || 0;
+  const endMs = toMs(endTime) || (startMs + 86400 * 1000);
+  const lifespanSeconds = Math.max(1, Math.round((endMs - startMs) / 1000));
+
+  const targetBars = Number(opts.targetBars || opts.n) || 300;
+  const scale = Number(opts.scale || opts.gamma) || 1.0;
+  const beta = Number(opts.beta) || 0.9852;
+
+  // Evaluate Delta t formula
+  const denominator = targetBars * Math.pow(300, beta - 1);
+  const rawStepSeconds = scale * (Math.pow(lifespanSeconds, beta) / denominator);
+  const clampedStepSeconds = Math.max(1, Math.min(86400, rawStepSeconds));
+
+  let best = CANONICAL_TIMEFRAMES[0];
+  let minDiff = Infinity;
+  for (const tf of CANONICAL_TIMEFRAMES) {
+    const diff = Math.abs(tf.seconds - clampedStepSeconds);
+    if (diff < minDiff) {
+      minDiff = diff;
+      best = tf;
+    }
+  }
+
+  return {
+    lifespanSeconds,
+    rawStepSeconds: Math.round(rawStepSeconds * 1000) / 1000,
+    stepSeconds: best.seconds,
+    timeframe: best.label,
+    targetBars,
+    scale,
+    beta,
+    expectedBars: Math.max(1, Math.round(lifespanSeconds / best.seconds)),
+  };
+}
+
+/**
+ * Resamples tick points into quantized OHLCV bars with optional forward filling.
+ */
+function bucketTicksToOhlcv(ticks = [], intervalSeconds = 60, opts = {}) {
+  const {
+    forwardFill = true,
+    startTime = null,
+    endTime = null,
+  } = opts;
+
+  const toMs = (v) => {
+    if (v === null || v === undefined || v === '') return null;
+    if (v instanceof Date) return v.getTime();
+    const n = Number(v);
+    if (Number.isFinite(n)) return Math.abs(n) > 1e12 ? n : n * 1000;
+    const p = Date.parse(String(v));
+    return Number.isFinite(p) ? p : null;
+  };
+
+  const stepSec = typeof intervalSeconds === 'string'
+    ? timeframeToSeconds(intervalSeconds)
+    : Math.max(1, Number(intervalSeconds) || 60);
+
+  if (!Array.isArray(ticks) || ticks.length === 0) {
+    return [];
+  }
+
+  const normalized = [];
+  for (const tick of ticks) {
+    let t = null;
+    let p = null;
+    let v = 0;
+    if (Array.isArray(tick)) {
+      t = toMs(tick[0]);
+      p = Number(tick[1]);
+      v = Number(tick[2]) || 0;
+    } else if (tick && typeof tick === 'object') {
+      t = toMs(tick.t ?? tick.timestamp ?? tick.iso ?? tick.time);
+      p = Number(tick.p ?? tick.price ?? tick.close ?? tick.last_price);
+      v = Number(tick.v ?? tick.volume ?? tick.size ?? 0) || 0;
+    }
+    if (t !== null && Number.isFinite(p) && p >= 0) {
+      normalized.push({ tSec: Math.floor(t / 1000), p, v });
+    }
+  }
+
+  if (normalized.length === 0) return [];
+  normalized.sort((a, b) => a.tSec - b.tSec);
+
+  const startSec = startTime ? Math.floor(toMs(startTime) / 1000) : normalized[0].tSec;
+  const endSec = endTime ? Math.floor(toMs(endTime) / 1000) : normalized[normalized.length - 1].tSec;
+
+  const binned = new Map();
+  for (const item of normalized) {
+    const bucket = Math.floor(item.tSec / stepSec) * stepSec;
+    if (!binned.has(bucket)) {
+      binned.set(bucket, {
+        open: item.p,
+        high: item.p,
+        low: item.p,
+        close: item.p,
+        volume: item.v,
+        count: 1,
+      });
+    } else {
+      const b = binned.get(bucket);
+      b.high = Math.max(b.high, item.p);
+      b.low = Math.min(b.low, item.p);
+      b.close = item.p;
+      b.volume += item.v;
+      b.count += 1;
+    }
+  }
+
+  const buckets = Array.from(binned.keys()).sort((a, b) => a - b);
+  if (buckets.length === 0) return [];
+
+  const firstBucket = Math.floor(Math.min(startSec, buckets[0]) / stepSec) * stepSec;
+  const lastBucket = Math.floor(Math.max(endSec, buckets[buckets.length - 1]) / stepSec) * stepSec;
+
+  const result = [];
+  let lastClose = binned.get(buckets[0]).open;
+
+  for (let b = firstBucket; b <= lastBucket; b += stepSec) {
+    if (binned.has(b)) {
+      const data = binned.get(b);
+      lastClose = data.close;
+      result.push({
+        t: b,
+        timestamp: new Date(b * 1000).toISOString(),
+        open: data.open,
+        high: data.high,
+        low: data.low,
+        close: data.close,
+        volume: Math.round(data.volume * 10000) / 10000,
+        count: data.count,
+      });
+    } else if (forwardFill && result.length > 0) {
+      result.push({
+        t: b,
+        timestamp: new Date(b * 1000).toISOString(),
+        open: lastClose,
+        high: lastClose,
+        low: lastClose,
+        close: lastClose,
+        volume: 0,
+        count: 0,
+      });
+    }
+  }
+
+  return result;
+}
+
 module.exports = {
   ARCHIVE_SCHEMA_VERSION,
   ARCHIVE_SCHEMA_VERSION_V2,
@@ -965,6 +1180,10 @@ module.exports = {
   inferWinner,
   gammaFinalPrice,
   buildPriceSeries,
+  resolveTunableRegressionFidelity,
+  bucketTicksToOhlcv,
+  timeframeToSeconds,
+  CANONICAL_TIMEFRAMES,
   CACHE_DIR,
   GAMMA_BASE,
 };

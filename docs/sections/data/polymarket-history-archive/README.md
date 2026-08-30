@@ -52,6 +52,35 @@ For selected market tokens, backfill can call `buildPolymarketFeatureRows()` ove
 
 Orderbook-lite rows normalize bid/ask depth, midpoint, spread, 1%/5% depth, last trade, timing, market/token context, and source metadata. They are append-only JSONL snapshots, not a complete orderbook replay guarantee.
 
+## Tunable Adaptive Sampling & OHLCV Resampling
+
+Polymarket prediction contracts vary from 5-minute rolling binaries to multi-year geopolitical regimes. To prevent oversampling long-lifespan markets while retaining high-fidelity signal on short-lifespan markets, `resolveTunableRegressionFidelity()` dynamically resolves sampling step $\Delta t$:
+
+$$\Delta t(L; N, \gamma, \beta) = \gamma \cdot \frac{L^\beta}{N \cdot 300^{\beta - 1}}$$
+
+- **Parameters**:
+  - $L = T_{\text{end}} - T_{\text{start}}$ (lifespan in seconds)
+  - $N = 300$ (target bar count across lifecycle)
+  - $\gamma = 1.0$ (scale multiplier)
+  - $\beta = 0.9852$ (compression exponent)
+- **Quantization**: Clamps $\Delta t \in [1\text{s}, 86400\text{s}]$ and snaps to canonical intervals (`1s`, `5s`, `15s`, `30s`, `1m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `6h`, `12h`, `1d`).
+
+`bucketTicksToOhlcv()` resamples raw trade ticks or price points into standard $[t, o, h, l, c, v]$ candles with forward-filling across inactive intervals.
+
+## Curated Default Universes & Selection Modes
+
+Default contract universes are defined in `config/markets/data_sources.yaml` and `config/polymarket_scope.json`:
+- **Macro**: `fed_rate_cut_prob`, `us_cpi_target`, `us_recession_2026`
+- **Crypto**: `btc_price_milestone`, `eth_etf_inflows`, `eth_price_target`, `sol_target`, `poly_btc_15m_rolling`
+- **Geopolitics**: `us_presidency_regime`, `sec_crypto_regulation`
+
+CLI commands support four flexible selection modes and binary persistence:
+- **Mode 1 (Default Universe)**: `bin/sovereign polymarket backfill --all-defaults`
+- **Mode 2 (Targeted Symbols / Slugs)**: `bin/sovereign polymarket backfill --symbol fed_rate_cut_prob --slug "fed-rate-cut-in-2026"`
+- **Mode 3 (Top Liquidity Scanner)**: `bin/sovereign polymarket backfill --top 30 --category crypto --min-volume 50000`
+- **Mode 4 (Scope File)**: `bin/sovereign polymarket backfill --scope-file config/polymarket_scope.json --scale 0.5 --target-bars 600`
+- **Binary Time-Series Output**: Adding `--save-ts` writes `.bin` (SOVT format) and `.meta.json` sidecars directly to `storage/data/ts/`.
+
 ## Known Maintenance Boundary
 
 `backfillPolymarketArchive()` currently combines catalog pagination, index merge, skip-existing logic, feature regeneration, rate pacing, provider calls, writes, counters, and manifest construction in one high-complexity function. The repository review ledger identifies this as maintainability debt. Any refactor must preserve v1 mirror fields, skip-existing counts, delay behavior, and append-only run history before splitting helpers.
@@ -60,6 +89,7 @@ Orderbook-lite rows normalize bid/ask depth, midpoint, spread, 1%/5% depth, last
 
 Representative source contracts:
 
+- `tests/scripts/integration/polymarket/polymarket_tunable_backfill.test.js` covers adaptive fidelity calculation across 5m, 1h, 30d, 365d lifespans, scale overrides, OHLCV forward-filling, scope schemas, and filtered archive backfills.
 - `tests/scripts/integration/polymarket/polymarket_history_archive.test.js` covers archive paths, schema compatibility, pagination, skip-existing/refresh behavior, feature regeneration, merge behavior, and local fixtures.
 - `tests/scripts/strategy/polymarket_backtest.test.js` covers local archive replay and price-history normalization for research backtesting.
 - `tests/scripts/integration/polymarket/polymarket_orderbook_lite.test.js` covers normalized orderbook snapshot shapes and fallback behavior.
