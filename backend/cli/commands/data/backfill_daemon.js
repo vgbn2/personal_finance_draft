@@ -32,6 +32,7 @@ const {
   rollupTargetsAboveBase, rollupFromBase, DEFAULT_TS_DIR,
   commandCryptoDeepBackfill, commandEquityDeepBackfill, commandFiveMinAccumulate, commandIngest,
 } = require('./data.js');
+const { runPolymarketArchiveIngest } = require('../trade/trade_polymarket.js');
 const { parseTimeframeMs } = require('../../../scripts/data_ops/ingest_market_data/constants.js');
 const { isFresh } = require('../../../../shared/lib/market/coverage.js');
 const {
@@ -47,7 +48,7 @@ const ALL_FAMILIES = [...PRICE_BEARING_FAMILIES];
 const FAMILY_LANE = { ...FAMILY_PROVIDER };
 
 // Max concurrent jobs per provider lane (Yahoo rate-limits at ~429 above ~8).
-const LANE_CONCURRENCY = { binance: 3, alpaca: 3, yahoo: 5 };
+const LANE_CONCURRENCY = { binance: 3, alpaca: 3, yahoo: 5, polymarket: 2 };
 
 // HARD memory-safe ceiling per lane — a `--concurrency` override is clamped to this.
 // The 1m lanes (binance/alpaca) touch multi-million-row bins (BTCUSDT 1m ≈ 3M records);
@@ -55,7 +56,7 @@ const LANE_CONCURRENCY = { binance: 3, alpaca: 3, yahoo: 5 };
 // merge-write, so running too many at once exhausts the V8 heap (OOM). Yahoo bins are
 // 5m and ~100× smaller, so that lane can take the full override. A lane absent here is
 // uncapped. (See windowed-rollup wiring below, which removes the second full-bin read.)
-const LANE_MAX_CONCURRENCY = { binance: 3, alpaca: 3 };
+const LANE_MAX_CONCURRENCY = { binance: 3, alpaca: 3, polymarket: 2 };
 
 // Poll starts are globally paced in addition to the per-provider concurrency caps.
 // This prevents three lanes from all opening network/file/merge work at the same
@@ -134,7 +135,7 @@ function utcDayFloor(ms) { return Math.floor(ms / DAY_MS) * DAY_MS; }
 // floor (Binance to listing; Alpaca ~2016), so their windows are long. Yahoo families
 // have no deep intraday (≤30m capped ~60d), so their deep job only fills the recent 5m
 // window — their historical depth comes from the daily guard below, not this number.
-const DEFAULT_DEEP_DAYS = { crypto: 5650, equities: 7650, indices: 7650, commodities:7650, fx: 7650 };
+const DEFAULT_DEEP_DAYS = { crypto: 5650, equities: 7650, indices: 7650, commodities: 7650, fx: 7650, prediction_market: 365 };
 const INCREMENTAL_DAYS = 7;
 
 // Per-family DEEP acquisition plan: every timeframe to fetch NATIVELY at its maximum
@@ -161,6 +162,7 @@ const DEEP_PLAN = {
   fx:          [{ tf: '1d', kind: 'ingest', provider: 'frankfurter', days: 7300 },
                 { tf: '1h', kind: 'ingest', provider: 'yahoo', days: 730 },
                 { tf: '5m', kind: 'accumulate', days: null }],
+  prediction_market: [{ tf: '1h', kind: 'polymarket', days: null }],
 };
 
 /**
@@ -438,6 +440,16 @@ async function runDeepStep(job, step, deepDays) {
   if (step.kind === 'accumulate') {
     return commandFiveMinAccumulate(['--family', job.family, '--symbol', sym, '--json']);
   }
+  if (step.kind === 'polymarket') {
+    const res = await runPolymarketArchiveIngest([
+      '--symbol', sym,
+      '--days', String(deepDays || 365),
+      '--timeframe', step.tf || job.baseTf || '1h',
+      '--save-ts',
+      '--json',
+    ]);
+    return res && res.ok ? 0 : 1;
+  }
   // kind === 'ingest': native fetch of one TF at its max depth from a pinned provider.
   return commandIngest(['--family', job.family, '--symbol', sym, '--timeframe', step.tf,
     '--history-days', String(step.days), '--provider', step.provider, '--force', '--json']);
@@ -468,6 +480,16 @@ function makeRealExecutor() {
       rc = await commandCryptoDeepBackfill(['--symbol', job.symbol, '--days', String(days), '--json']);
     } else if (job.family === 'equities') {
       rc = await commandEquityDeepBackfill(['--symbol', job.symbol, '--days', String(days), '--json']);
+    } else if (job.family === 'prediction_market') {
+      const res = await runPolymarketArchiveIngest([
+        '--symbol', job.symbol,
+        '--days', String(days || 7),
+        '--timeframe', job.baseTf || '1h',
+        '--refresh',
+        '--save-ts',
+        '--json',
+      ]);
+      rc = res && res.ok ? 0 : 1;
     } else {
       rc = await commandFiveMinAccumulate(['--family', job.family, '--symbol', job.symbol, '--days', String(days), '--json']);
     }
@@ -512,7 +534,7 @@ async function commandBackfillDaemon(args) {
   const intervalSecs = numericOption(args, '--interval-secs', 1800);
   const once = hasFlag(args, '--once');
   const tsDir = optionValue(args, '--ts-dir', DEFAULT_TS_DIR);
-  const familyArg = optionValue(args, '--families', null);
+  const familyArg = optionValue(args, '--families', null) || optionValue(args, '--family', null);
   const families = familyArg
     ? familyArg.split(',').map((s) => s.trim().toLowerCase()).filter((f) => ALL_FAMILIES.includes(f))
     : ALL_FAMILIES;
