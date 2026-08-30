@@ -159,7 +159,15 @@ sources:
   prediction_market:
     enabled: true
     providers: ["kalshi", "polymarket"]
-    events: ["fed_rate_cut_prob", "us_recession_prob", "inflation_above_target", "risk_off_spike"]
+    events: ["fed_rate_cut_prob", "us_recession_prob", "inflation_above_target", "risk_off_spike", "us_cpi_target", "us_recession_2026", "btc_price_milestone", "eth_etf_inflows", "eth_price_target", "sol_target", "poly_btc_15m_rolling", "us_presidency_regime", "sec_crypto_regulation"]
+    tuning:
+      target_bars: 300
+      scale: 1.0
+      beta: 0.9852
+    defaults:
+      macro: ["fed_rate_cut_prob", "us_cpi_target", "us_recession_2026"]
+      crypto: ["btc_price_milestone", "eth_etf_inflows", "eth_price_target", "sol_target", "poly_btc_15m_rolling"]
+      geopolitics: ["us_presidency_regime", "sec_crypto_regulation"]
 
 fred_mappings:
   indices:
@@ -194,10 +202,19 @@ world_bank_mappings:
   fuel_exports_pct: "TX.VAL.FUEL.ZS.UN"
 
 prediction_market_keywords:
-  fed_rate_cut_prob: ["fed", "rate", "cut"]
+  fed_rate_cut_prob: ["fed", "rate", "cut", "fomc"]
   us_recession_prob: ["recession"]
+  us_recession_2026: ["recession", "2026", "gdp"]
+  us_cpi_target: ["cpi", "inflation", "target"]
   inflation_above_target: ["inflation", "cpi"]
   risk_off_spike: ["vix", "volatility", "recession", "crash"]
+  btc_price_milestone: ["bitcoin", "btc", "price", "reach", "100k", "120k", "hit"]
+  eth_etf_inflows: ["ethereum", "eth", "etf", "inflow"]
+  eth_price_target: ["ethereum", "eth", "price", "target"]
+  sol_target: ["solana", "sol", "target", "price"]
+  poly_btc_15m_rolling: ["btc", "bitcoin", "15m", "up", "down"]
+  us_presidency_regime: ["presidency", "president", "election", "white house", "administration"]
+  sec_crypto_regulation: ["sec", "crypto", "regulation", "etf", "approval", "gensler"]
 
 quality:
   reject_stale: true

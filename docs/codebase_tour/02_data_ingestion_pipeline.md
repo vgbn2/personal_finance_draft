@@ -16,6 +16,8 @@ Crypto (Binance) and equities (Alpaca) get a 1-minute base grain; everything els
 (`data_rollup.js:22-23`). Every coarser timeframe you ever see (15m/1h/1d/...) is rolled up from the base
 grain, never fetched separately — this is the "ingest finest grain only" rule.
 
+For `prediction_market` contracts (Polymarket / Kalshi), lifespans vary from 5 minutes to multiple years. Rather than a single fixed base grain, `resolveTunableRegressionFidelity()` in `shared/lib/market/polymarket_history.js` dynamically computes adaptive resolution $\Delta t(L; N, \gamma, \beta)$ to yield consistent indicator density (~300 bars) without aliasing short contracts or bloating long ones.
+
 ## One ingest call, traced
 
 ```
