@@ -1,4 +1,8 @@
 const { fetchKalshiPredictionEvent, fetchJson } = require('../../../../../shared/lib/providers');
+const {
+  resolveTunableRegressionFidelity,
+  bucketTicksToOhlcv,
+} = require('../../../../../shared/lib/market/polymarket_history');
 
 const {
   KALSHI_API_BASE,
@@ -276,7 +280,14 @@ async function fetchPolymarketPriceHistory(tokenId, options = {}) {
   const url = new URL(`${POLYMARKET_CLOB_BASE}/prices-history`);
   url.searchParams.set('market', tokenId);
   url.searchParams.set('interval', options.interval || 'max');
-  url.searchParams.set('fidelity', String(options.fidelity || 60));
+  
+  let fidelity = options.fidelity;
+  if (!fidelity && (options.tuning || options.startDate || options.endDate)) {
+    const res = resolveTunableRegressionFidelity(options.startDate, options.endDate, options.tuning || options);
+    fidelity = Math.max(1, Math.round(res.stepSeconds / 60));
+  }
+  url.searchParams.set('fidelity', String(fidelity || 60));
+
   if (options.startTs) url.searchParams.set('startTs', String(options.startTs));
   if (options.endTs) url.searchParams.set('endTs', String(options.endTs));
   return {
@@ -290,9 +301,14 @@ async function fetchPolymarketHistoricalPrices(eventName, config = {}, options =
   const records = [];
   for (const marketRecord of markets) {
     const tokenIds = marketRecord.clob_token_ids || [];
+    const marketOptions = {
+      ...options,
+      startDate: options.startDate || marketRecord.timestamp,
+      endDate: options.endDate || marketRecord.end_date,
+    };
     for (const tokenId of tokenIds.slice(0, options.maxTokens || 1)) {
-      const { payload, sourceUrl } = await fetchPolymarketPriceHistory(tokenId, options);
-      records.push(...polymarketPriceHistoryRecords(eventName, marketRecord, tokenId, payload, options, sourceUrl));
+      const { payload, sourceUrl } = await fetchPolymarketPriceHistory(tokenId, marketOptions);
+      records.push(...polymarketPriceHistoryRecords(eventName, marketRecord, tokenId, payload, marketOptions, sourceUrl));
     }
   }
   return records;
@@ -317,4 +333,6 @@ module.exports = {
   fetchPolymarketMarkets,
   fetchPolymarketPriceHistory,
   fetchPolymarketHistoricalPrices,
+  resolveTunableRegressionFidelity,
+  bucketTicksToOhlcv,
 };

@@ -1,0 +1,75 @@
+{
+  "version": "1.0",
+  "name": "default_polymarket_universes",
+  "description": "Curated prediction market scopes across Macro, Crypto, and Geopolitics",
+  "defaults": {
+    "macro": [
+      {
+        "symbol": "fed_rate_cut_prob",
+        "slug": "fed-rate-cut-in-2026",
+        "category": "macro",
+        "description": "FOMC meeting interest rate cut / hike outcomes"
+      },
+      {
+        "symbol": "us_cpi_target",
+        "slug": "us-cpi-inflation-target",
+        "category": "macro",
+        "description": "Monthly inflation print above/below consensus"
+      },
+      {
+        "symbol": "us_recession_2026",
+        "slug": "us-recession-2026",
+        "category": "macro",
+        "description": "Quarterly GDP / recession probabilities"
+      }
+    ],
+    "crypto": [
+      {
+        "symbol": "btc_price_milestone",
+        "slug": "bitcoin-reach-100k",
+        "category": "crypto",
+        "description": "Major Bitcoin price milestones"
+      },
+      {
+        "symbol": "eth_etf_inflows",
+        "slug": "ethereum-etf-net-inflows",
+        "category": "crypto",
+        "description": "Ethereum ETF flows and adoption milestones"
+      },
+      {
+        "symbol": "eth_price_target",
+        "slug": "ethereum-price-target",
+        "category": "crypto",
+        "description": "Ethereum price performance targets"
+      },
+      {
+        "symbol": "sol_target",
+        "slug": "solana-price-target",
+        "category": "crypto",
+        "description": "Solana ecosystem and price targets"
+      },
+      {
+        "symbol": "poly_btc_15m_rolling",
+        "slug": "btc-15m-rolling-binary",
+        "category": "crypto",
+        "description": "Synthetic 15-minute rolling crypto binary"
+      }
+    ],
+    "geopolitics": [
+      {
+        "symbol": "us_presidency_regime",
+        "slug": "us-presidential-election",
+        "category": "geopolitics",
+        "description": "US executive administration & legislative outcomes"
+      },
+      {
+        "symbol": "sec_crypto_regulation",
+        "slug": "sec-crypto-regulations",
+        "category": "geopolitics",
+        "description": "Key regulatory and ETF approvals"
+      }
+    ]
+  },
+  "markets": [],
+  "token_ids": []
+}
