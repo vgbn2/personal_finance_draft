@@ -1,3 +1,16 @@
+# Prompt Log - 2026-08-30
+
+## Session Closeout — Polymarket Continuous Backfill Daemon Integration & Proxmox VM Migration - 2026-08-30
+Received user prompts: "contiuue", "run a test backfill with --save-ts", "run backtest on the backfilled data", "how deap was the ingestion", "check for api liit on pmxt also", "should the backfill daemon that continuoutsly runs fetches hisotical polym datato the tss in", "what is whitelisted currently?, im interested in crypto, stock trading atm", "should there be a whitelisted list for polymarket-markets?", "deep plan", "follow mass implement", "test the backfill daemon", "run backtest on the backfilled data", "next session will monitor it, also the hpdesk is now migrated to be insde a promox VM(still ubuntu, all data backed up)", "update handoff and prompt log, end sessionm".
+- Integrated `prediction_market` family into configured market universe (`shared/lib/market/configured_universe.js`) and validation rules matrix (`shared/lib/market/validation.js`).
+- Implemented `polymarket: 2` provider lane, concurrency clamps, execution dispatch, and automated coarse rollup derivation (`4h`, `1d`, `1w`, `1mo`) in `backend/cli/commands/data/backfill_daemon.js`.
+- Created integration test suite in `tests/scripts/integration/polymarket/polymarket_daemon_backfill.test.js` (3/3 pass) and updated unit test suite `tests/scripts/data/backfill/backfill_daemon.test.js` (19/19 pass).
+- Executed full test runner suite (`node tests/run_node_tests.js`) confirming 0 test suite regressions.
+- Ran live dry-run single-cycle daemon verification (`sovereign_cli.js backfill-daemon --once --symbols BTCUSDT --json`) and mass backtest matrix (`sovereign mass-bt`) evaluating 96 strategy-timeframe pairs.
+- Recorded `hpdesk` host migration into Proxmox VM inside project auto-memory (`[[proxmox-vm-migration-hpdesk]]`).
+- Staged, committed (`b0a4c3bb`), and pushed to `origin/worktree-perf-and-security`.
+- Updated `workspace/HANDOFF.md`, `workspace/handoff/2026/08/2026-08-30.md`, and `workspace/PROMPT_LOG.md`.
+
 # Prompt Log - 2026-08-29
 
 ## Session Closeout — HPDesk Soak Audit & personal_finance Scaffold Initialization - 2026-08-29
