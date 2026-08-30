@@ -517,12 +517,13 @@ async function fetchJson(url, label, retryOpts = { attempts: 3, baseDelayMs: 250
 
 async function fetchResolvedGammaMarketsPage(opts = {}) {
   const {
-    limit = 200,
+    limit = 100,
     offset = 0,
     order = 'id',
     ascending = false,
   } = opts;
-  const url = `${GAMMA_BASE}/markets?closed=true&limit=${limit}&offset=${offset}&order=${encodeURIComponent(order)}&ascending=${ascending ? 'true' : 'false'}`;
+  const clampedLimit = Math.min(Number(limit) || 100, GAMMA_PAGE_MAX);
+  const url = `${GAMMA_BASE}/markets?closed=true&limit=${clampedLimit}&offset=${offset}&order=${encodeURIComponent(order)}&ascending=${ascending ? 'true' : 'false'}`;
   const backfillRetryOpts = { attempts: 5, baseDelayMs: 1000, retryOn429: true };
   try {
     const markets = await fetchJson(url, 'Gamma', backfillRetryOpts);

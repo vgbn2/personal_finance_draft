@@ -12,6 +12,7 @@ const PRICE_BEARING_FAMILIES = Object.freeze([
   'indices',
   'commodities',
   'fx',
+  'prediction_market',
 ]);
 
 const CANONICAL_MARKET_FAMILIES = Object.freeze([
@@ -29,6 +30,7 @@ const FAMILY_BASE_TIMEFRAME = Object.freeze({
   indices: '5m',
   commodities: '5m',
   fx: '5m',
+  prediction_market: '1h',
 });
 const FAMILY_PROVIDER = Object.freeze({
   crypto: 'binance',
@@ -36,10 +38,12 @@ const FAMILY_PROVIDER = Object.freeze({
   indices: 'yahoo',
   commodities: 'yahoo',
   fx: 'yahoo',
+  prediction_market: 'polymarket',
 });
 const FAMILY_MARKET = Object.freeze({
   crypto: 'GLOBAL',
   fx: 'GLOBAL',
+  prediction_market: 'GLOBAL',
 });
 const FAMILY_VALUE_KIND = Object.freeze({
   crypto: 'latest_price',
@@ -47,6 +51,7 @@ const FAMILY_VALUE_KIND = Object.freeze({
   indices: 'index_level',
   commodities: 'latest_price',
   fx: 'exchange_rate',
+  prediction_market: 'probability_price',
 });
 const YAHOO_MAPS = Object.freeze({
   indices: YAHOO_INDEX_SYMBOLS,
@@ -61,7 +66,6 @@ const NON_PRICE_AXES = Object.freeze({
   sentiment: ['fields'],
   onchain: ['chains', 'metrics'],
   crypto_tx: ['chains', 'metrics'],
-  prediction_market: ['events'],
   weather: ['locations', 'metrics'],
   flight: ['regions', 'metrics'],
   holdings: ['symbols', 'metrics'],
@@ -215,7 +219,10 @@ function resolveConfiguredMarketUniverse(config = {}) {
     }
 
     const seen = new Set();
-    for (const rawSymbol of normalizedList(section.symbols)) {
+    const rawList = family === 'prediction_market'
+      ? (section.events || section.symbols || [])
+      : normalizedList(section.symbols);
+    for (const rawSymbol of normalizedList(rawList)) {
       const symbol = normalizeSymbol(rawSymbol);
       if (!symbol) {
         exclusions.push({
