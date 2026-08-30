@@ -56,24 +56,80 @@ function polymarketHistoryPayload(snapshot, args = [], options = {}) {
   };
 }
 
+function allOptionValues(args = [], name) {
+  const values = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === name && i + 1 < args.length) {
+      values.push(args[i + 1]);
+    } else if (typeof args[i] === 'string' && args[i].startsWith(name + '=')) {
+      values.push(args[i].slice(name.length + 1));
+    }
+  }
+  return values;
+}
+
 async function runPolymarketArchiveIngest(args, deps = {}) {
   const history = deps.history || require('../../../../shared/lib/market/polymarket_history.js');
+  const tsStorage = deps.tsStorage || require('../../../../shared/lib/market/ts_index_storage.js');
+  
+  const allDefaults = hasFlag(args, '--all-defaults');
+  const symbols = allOptionValues(args, '--symbol');
+  const slugs = allOptionValues(args, '--slug');
+  const top = numericOption(args, '--top', null);
+  const minVolume = numericOption(args, '--min-volume', null);
+  const scopeFile = optionValue(args, '--scope-file', null);
+  const scale = numericOption(args, '--scale', 1.0);
+  const targetBars = numericOption(args, '--target-bars', 300);
+  const saveTs = hasFlag(args, '--save-ts');
+
   const daysBack = numericOption(args, '--days', numericOption(args, '--history-days', 180));
   const interval = optionValue(args, '--interval', optionValue(args, '--timeframe', '1h'));
-  const maxMarkets = numericOption(args, '--max-markets', 500);
+  const maxMarkets = top || numericOption(args, '--max-markets', 500);
   const startOffset = numericOption(args, '--start-offset', numericOption(args, '--offset', 0));
   const category = optionValue(args, '--category', 'all');
-  // optionValue's own default is null; passing a real default lets us omit `root`
-  // entirely when absent so backfillPolymarketArchive's `root = CACHE_DIR` applies
-  // (a literal null would defeat that default and crash archivePaths on path.join).
   const archiveRoot = optionValue(args, '--archive-root', null);
   const delayMs = numericOption(args, '--delay-ms', 250);
   const refresh = hasFlag(args, '--refresh');
-  // Gamma order: 'id' (newest-closed first) tops out at empty hourly micro-markets;
-  // 'volumeNum' surfaces the data-rich resolved markets that actually have CLOB price
-  // history. Default to volumeNum for the archive (its whole purpose is usable history).
   const order = optionValue(args, '--order', 'volumeNum');
-  return history.backfillPolymarketArchive({
+
+  let targetSymbols = [...symbols];
+  let targetSlugs = [...slugs];
+  
+  if (allDefaults) {
+    try {
+      const scopePath = path.resolve(__dirname, '../../../../config/polymarket_scope.json');
+      if (fs.existsSync(scopePath)) {
+        const scopeJson = JSON.parse(fs.readFileSync(scopePath, 'utf8'));
+        if (scopeJson.defaults) {
+          for (const group of Object.values(scopeJson.defaults)) {
+            if (Array.isArray(group)) {
+              for (const item of group) {
+                if (item.symbol) targetSymbols.push(item.symbol);
+                if (item.slug) targetSlugs.push(item.slug);
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  if (scopeFile) {
+    try {
+      const resolvedScope = path.resolve(scopeFile);
+      if (fs.existsSync(resolvedScope)) {
+        const scopeJson = JSON.parse(fs.readFileSync(resolvedScope, 'utf8'));
+        if (Array.isArray(scopeJson.markets)) {
+          for (const m of scopeJson.markets) {
+            if (m.slug) targetSlugs.push(m.slug);
+            if (m.symbol) targetSymbols.push(m.symbol);
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  const ingestResult = await history.backfillPolymarketArchive({
     daysBack,
     interval,
     maxMarkets,
@@ -85,7 +141,46 @@ async function runPolymarketArchiveIngest(args, deps = {}) {
     noCache: hasFlag(args, '--no-cache'),
     delayMs,
     refresh,
+    minVolume,
+    targetSymbols: targetSymbols.length ? targetSymbols : undefined,
+    targetSlugs: targetSlugs.length ? targetSlugs : undefined,
+    tuning: { scale, targetBars },
   });
+
+  if (saveTs && ingestResult && ingestResult.ok) {
+    const tsDir = path.resolve(__dirname, '../../../../storage/data/ts');
+    fs.mkdirSync(tsDir, { recursive: true });
+    
+    const index = history.loadArchivedMarketIndex({ root: archiveRoot });
+    let tsSavedCount = 0;
+    for (const m of index) {
+      const tokenId = history.yesTokenId(m);
+      if (!tokenId) continue;
+      const prices = history.loadArchivedPriceSeries(tokenId, { root: archiveRoot });
+      if (prices && prices.length > 0) {
+        const ohlcv = history.bucketTicksToOhlcv(prices, interval, { forwardFill: true });
+        if (ohlcv.length > 0) {
+          const sym = m.slug || m.market_id || tokenId;
+          const meta = {
+            family: 'prediction_market',
+            provider: 'polymarket',
+            symbol: sym,
+            timeframe: interval,
+            token_id: tokenId,
+            question: m.question,
+          };
+          try {
+            tsStorage.writeTsIndex(tsDir, meta, ohlcv);
+            tsSavedCount++;
+          } catch (_) {}
+        }
+      }
+    }
+    ingestResult.tsSavedCount = tsSavedCount;
+    ingestResult.tsDir = tsDir;
+  }
+
+  return ingestResult;
 }
 
 function parseGatewayJsonOutput(stdout, label) {
@@ -737,7 +832,7 @@ async function commandPolymarket(args, deps = {}) {
       return 1;
     }
   }
-  if ((sub === 'research' && args[1] === 'ingest') || (sub === 'history' && (args[1] === 'ingest' || args[1] === 'backfill'))) {
+  if (sub === 'backfill' || (sub === 'research' && args[1] === 'ingest') || (sub === 'history' && (args[1] === 'ingest' || args[1] === 'backfill'))) {
     const result = await runPolymarketArchiveIngest(args);
     printPayload(result, args);
     return result.ok ? 0 : 1;
