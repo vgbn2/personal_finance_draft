@@ -198,15 +198,18 @@ test('OOM guard: --concurrency override is clamped on the 1m lanes, not on Yahoo
     { symbol: 'BTCUSDT', family: 'crypto', baseTf: '1m' },
     { symbol: 'AAPL', family: 'equities', baseTf: '1m' },
     { symbol: 'SPX', family: 'indices', baseTf: '5m' },
+    { symbol: 'FED_RATE_CUT_PROB', family: 'prediction_market', baseTf: '1h' },
   ];
   const lanes = groupIntoLanes(jobs, 5);
   const c = (lane) => lanes.find((l) => l.lane === lane).concurrency;
   assert.equal(c('binance'), 3, 'binance clamped to safe ceiling');
   assert.equal(c('alpaca'), 3, 'alpaca clamped to safe ceiling');
+  assert.equal(c('polymarket'), 2, 'polymarket clamped to safe ceiling');
   assert.equal(c('yahoo'), 5, 'yahoo honors the full override');
   // A lower override is honored as-is (clamp only caps the upper bound).
   assert.equal(groupIntoLanes(jobs, 2).find((l) => l.lane === 'binance').concurrency, 2);
-  console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'lane_clamp', binance: c('binance'), yahoo: c('yahoo') }));
+  assert.equal(groupIntoLanes(jobs, 1).find((l) => l.lane === 'polymarket').concurrency, 1);
+  console.log(JSON.stringify({ type: 'backfill_daemon_test', case: 'lane_clamp', binance: c('binance'), polymarket: c('polymarket'), yahoo: c('yahoo') }));
 });
 
 test('global poll pacer spaces concurrent lanes and extends the gap under pressure', async () => {
