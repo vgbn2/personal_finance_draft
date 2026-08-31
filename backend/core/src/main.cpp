@@ -9,6 +9,7 @@
 #include "backtest/global_sweep_optimizer.hpp"
 #include "strategies/strategy_sweep_evaluator.hpp"
 #include "data/binary_ts_reader.hpp"
+#include "data/binary_ts_merger.hpp"
 #include "ml/onnx_model.hpp"
 
 #include <algorithm>
@@ -1543,6 +1544,32 @@ int printMassBt(const std::vector<std::string>& args) {
     return 0;
 }
 
+int printTsMerge(const std::vector<std::string>& args) {
+    const std::string existing_bin = optionValue(args, "--existing");
+    const std::string incoming_bin = optionValue(args, "--incoming");
+    const std::string output_bin = optionValue(args, "--out");
+    const bool existing_wins = hasFlag(args, "--existing-wins");
+
+    if (incoming_bin.empty() || output_bin.empty()) {
+        std::cout << "{\"ok\":false,\"error\":\"usage: ts-merge --incoming PATH --out PATH [--existing PATH] [--existing-wins]\"}\n";
+        return 1;
+    }
+
+    sovereign::BinaryMergeOptions opts;
+    opts.existing_wins_on_tie = existing_wins;
+
+    const auto res = sovereign::BinaryTsMerger::mergeFiles(existing_bin, incoming_bin, output_bin, opts);
+    if (!res.ok) {
+        std::cout << "{\"ok\":false,\"error\":\"" << jsonEscape(res.error) << "\"}\n";
+        return 1;
+    }
+
+    std::cout << "{\"ok\":true,\"count\":" << res.count
+              << ",\"existing_count\":" << res.existing_count
+              << ",\"incoming_count\":" << res.incoming_count << "}\n";
+    return 0;
+}
+
 void printUsage() {
     std::cout
         << "Sovereign C++ Core\n"
@@ -1648,6 +1675,9 @@ int main(int argc, char** argv) {
     }
     if (args[0] == "ml") {
         return printMl(args);
+    }
+    if (args[0] == "ts-merge") {
+        return printTsMerge(args);
     }
 
     std::cerr << "Unknown command: " << args[0] << "\n";
