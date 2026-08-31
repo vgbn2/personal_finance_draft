@@ -1,3 +1,17 @@
+# Prompt Log - 2026-08-31
+
+## Session Closeout — HPDesk Proxmox VM Soak Audit, Tailscale Migration, Rsync & Live Bot Monitoring - 2026-08-31
+Received user prompts: "check hpdesk bot soak and flaw monitor logs", "h yeah i migrated from that to proxmox VM", "its now ...", "check tailscale status", "start the bot on hpdesk, also should i remove the legacy hp desk", "monitor it, also check for changes that were not Rsynced", "rsync the changes to hpdesk", "check bot logs on hpdesk", "check open positions on alpaca", "update handoff and prompt log, end session".
+- Audited live trading bot soak and flaw monitor logs on HPDesk Proxmox VM.
+- Authenticated node via `tailscale up` to `hpdesk-1` (`100.79.196.24` / `192.168.4.101`).
+- Started Docker Compose stack on VM with `sv-web` and `sv-bot-alpaca-paper` (`ad6c2f6e4a34`).
+- Identified 48 updated files in local worktree not yet on host; executed `rsync` synchronizing prediction market backfill daemon, MCP tools, and workspace configs to VM.
+- Copied updated files directly into running `sv-bot-alpaca-paper` container and restarted loop.
+- Monitored live container execution (cycle `#6`), C++ pre-trade risk engine checks (0% drawdown), and Yahoo 5m data refreshes.
+- Polled Alpaca Paper REST API for current account equity ($97,729.52), cash ($92,635.45), buying power ($383,280.49), and 7 active positions ($5,094.07 market value, +$82.73 unrealized P&L).
+- Verified repository hygiene, structure contracts, and safety test gates.
+- Updated `workspace/HANDOFF.md`, `workspace/handoff/2026/08/2026-08-31.md`, and `workspace/PROMPT_LOG.md`.
+
 # Prompt Log - 2026-08-30
 
 ## Session Closeout — Polymarket Continuous Backfill Daemon Integration & Proxmox VM Migration - 2026-08-30

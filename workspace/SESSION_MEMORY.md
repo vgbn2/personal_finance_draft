@@ -1,3 +1,16 @@
+### Session Memory - 2026-08-31 — HPDesk Proxmox VM Soak Audit, Tailscale Migration, Rsync & Live Bot Monitoring
+
+```json
+{
+  "batch": ["PROXMOX-VM-SOAK-1"],
+  "lifecycle": "closed",
+  "scope": "Audited live paper trading bot soak on HPDesk Proxmox VM. Re-linked node to Tailscale network as hpdesk-1 (100.79.196.24 / 192.168.4.101). Launched Docker Compose stack; rsync'd 48 updated files from local worktree (including Polymarket backfill daemon, MCP server compiled bundles, and configuration updates) to VM; updated container files and restarted sv-bot-alpaca-paper. Verified live execution loop (cycle #6), C++ pre-trade risk engine validation (0% drawdown), and Yahoo 5m data refreshes. Polled Alpaca Paper REST API confirming 7 open positions ($5,094.07 market value, +$82.73 unrealized P&L).",
+  "changes": "updated workspace/HANDOFF.md, workspace/PROMPT_LOG.md, workspace/SESSION_MEMORY.md, created workspace/handoff/2026/08/2026-08-31.md",
+  "verification": "node scripts/dev/check_hygiene.js (PASS, 0 findings); npm run test:structure (PASS, 28/28 tests); npm run test:safety (PASS, 18/18 tests); live hpdesk container logs & Alpaca Paper REST API polling ($97,729.52 equity, 7 open positions, 1 accepted sell order)",
+  "boundaries": "paper-trading only; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-08-29 — HPDesk Soak Audit & personal_finance Scaffold Initialization
 
 ```json
