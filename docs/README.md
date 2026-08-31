@@ -46,6 +46,7 @@ These pages are supporting tutorials, not contract owners. Verify paths, symbols
 
 - [Quickstart](operational/guides/QUICKSTART.md)
 - [Environment setup](operational/guides/environment_setup.md)
+- [GitHub environment & rulesets](operational/guides/github_environment_and_rulesets.md)
 - [CLI guide](operational/guides/cli_quick_guide.md)
 - [Operations](operational/guides/operations.md)
 - [Data ingestion](operational/guides/data_ingestion.md)

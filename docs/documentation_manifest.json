@@ -249,6 +249,15 @@
       "review_triggers": ["deployment-profile", "environment-projection", "host-role"]
     },
     {
+      "path": "docs/operational/guides/github_environment_and_rulesets.md",
+      "type": "reference",
+      "audience": ["deployment-maintainers", "maintainers", "security-reviewers", "contributors"],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [".github/workflows/test.yml", ".github/workflows/build.yml", ".github/workflows/deploy.yml", ".github/CODEOWNERS"],
+      "review_triggers": ["github-ruleset", "environment-protection", "codeowners", "ci-matrix"]
+    },
+    {
       "path": "docs/operational/guides/testing_surface.md",
       "type": "reference",
       "audience": ["contributors", "reviewers"],
