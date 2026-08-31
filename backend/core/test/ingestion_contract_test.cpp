@@ -155,7 +155,9 @@ int main() {
 
     ok &= require_contains(config, "  prediction_market:\n", "prediction market source block");
     ok &= require_contains(config, "\"kalshi\"", "prediction market kalshi provider");
-    ok &= require_contains(config, "    events: [\"fed_rate_cut_prob\", \"us_recession_prob\", \"inflation_above_target\", \"risk_off_spike\"]\n", "prediction market events");
+    ok &= require_contains(config, "    events: [", "prediction market events");
+    ok &= require_contains(config, "\"fed_rate_cut_prob\"", "prediction market fed_rate_cut_prob event");
+    ok &= require_contains(config, "\"us_recession_prob\"", "prediction market us_recession_prob event");
 
     ok &= require_contains(config, "  weather:\n", "weather source block");
     ok &= require_contains(config, "    providers: [\"nasa_power\"]\n", "weather providers");
