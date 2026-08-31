@@ -1,10 +1,14 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const {
   refreshFileLockSync,
   withFileLockSync,
 } = require('../runtime/file_lock.js');
+const { REPO_ROOT } = require('../runtime/paths.js');
 const PROVIDER_PRIORITY = require('./provider_priority.js');
+
+const SOVEREIGN_WEALTH_BIN = path.join(REPO_ROOT, 'backend/core/build/sovereign_wealth');
 
 const OHLCV_FAMILIES = new Set(['equities', 'indices', 'commodities', 'crypto', 'fx', 'prediction_market']);
 
@@ -251,21 +255,71 @@ function mergeWriteBinUnlocked(tsDir, meta, incoming, lockHandle) {
   requireTsWriteLock(lockHandle);
   if (tryAppendBin(bin, metaPath, meta, incDedup)) return;
 
-  let existBuf = null;
-  let existCount = 0;
   let existProvider = '';
-  if (fs.existsSync(bin) && fs.existsSync(metaPath)) {
-    const b = fs.readFileSync(bin);
-    if (b.length >= TS_HEADER_BYTES && b.toString('ascii', 0, 4) === TS_MAGIC) {
-      const c = b.readUInt32LE(4);
-      if (b.length >= TS_HEADER_BYTES + c * TS_RECORD_BYTES) { existBuf = b; existCount = c; }
-    }
+  if (fs.existsSync(metaPath)) {
     try { existProvider = (JSON.parse(fs.readFileSync(metaPath, 'utf8')).provider) || ''; } catch (_) { /* keep '' */ }
   }
 
   const existingPriority = PROVIDER_PRIORITY[existProvider] ?? 0;
   const incomingPriority = PROVIDER_PRIORITY[meta.provider] ?? 0;
   const existingWinsOnTie = existingPriority > incomingPriority;
+
+  // ── Native C++ Streaming Merger Fast-Path ──
+  // If sovereign_wealth binary exists, stream-merge in native C++ (O(1) memory, zero V8 heap duplication)
+  if (fs.existsSync(SOVEREIGN_WEALTH_BIN)) {
+    const incTmp = atomicTempPath(`${bin}.incoming`);
+    const outTmp = atomicTempPath(bin);
+    try {
+      const incBuffer = encodeTsRecords(incDedup);
+      const incHeader = Buffer.allocUnsafe(TS_HEADER_BYTES);
+      incHeader.write(TS_MAGIC, 0, 'ascii');
+      incHeader.writeUInt32LE(incDedup.length, 4);
+      fs.writeFileSync(incTmp, Buffer.concat([incHeader, incBuffer]));
+
+      const args = [
+        'ts-merge',
+        '--incoming', incTmp,
+        '--out', outTmp,
+      ];
+      if (fs.existsSync(bin)) {
+        args.push('--existing', bin);
+      }
+      if (existingWinsOnTie) {
+        args.push('--existing-wins');
+      }
+
+      const res = spawnSync(SOVEREIGN_WEALTH_BIN, args, { encoding: 'utf8', timeout: 30000 });
+      if (res.status === 0) {
+        let payload;
+        try { payload = JSON.parse(res.stdout.trim()); } catch (_) { payload = null; }
+        if (payload && payload.ok) {
+          requireTsWriteLock(lockHandle);
+          renameWithRetry(outTmp, bin);
+          const count = payload.count;
+          const tmpMeta = atomicTempPath(metaPath);
+          fs.writeFileSync(tmpMeta, JSON.stringify({ ...meta, count }), 'utf8');
+          renameWithRetry(tmpMeta, metaPath);
+          return;
+        }
+      }
+    } catch (_) {
+      // Fall through to JS implementation on any error
+    } finally {
+      try { if (fs.existsSync(incTmp)) fs.unlinkSync(incTmp); } catch (_) {}
+      try { if (fs.existsSync(outTmp)) fs.unlinkSync(outTmp); } catch (_) {}
+    }
+  }
+
+  // ── JavaScript Fallback Path ──
+  let existBuf = null;
+  let existCount = 0;
+  if (fs.existsSync(bin) && fs.existsSync(metaPath)) {
+    const b = fs.readFileSync(bin);
+    if (b.length >= TS_HEADER_BYTES && b.toString('ascii', 0, 4) === TS_MAGIC) {
+      const c = b.readUInt32LE(4);
+      if (b.length >= TS_HEADER_BYTES + c * TS_RECORD_BYTES) { existBuf = b; existCount = c; }
+    }
+  }
 
   const maxCount = existCount + incDedup.length;
   const out = Buffer.allocUnsafe(TS_HEADER_BYTES + maxCount * TS_RECORD_BYTES);
