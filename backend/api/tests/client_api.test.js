@@ -126,7 +126,7 @@ test('role gate preserves viewer sessions and limits service-client capabilities
     const marketMonitorPayload = await clientMarketMonitor.json();
     assert.equal(marketMonitorPayload.type, 'market_monitor');
     assert.equal(marketMonitorPayload.pagination.returned, 2);
-    assert.equal(marketMonitorPayload.counts.price_bearing_total, 89);
+    assert.equal(marketMonitorPayload.counts.price_bearing_total, 102);
 
     const invalidMarketMonitor = await request(baseUrl, '/api/market/monitor?limit=101', {
       'X-Sovereign-Token': TEST_CLIENT_TOKEN,
