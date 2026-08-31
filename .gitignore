@@ -1,11 +1,17 @@
 # Sovereign Intelligence Suite - GitIgnore
 
 # Node.js
+node_modules
 node_modules/
+backend/api/node_modules
 backend/api/node_modules/
+backend/gateway/node_modules
 backend/gateway/node_modules/
+Frontend/dashboard/node_modules
 Frontend/dashboard/node_modules/
+dist
 dist/
+Frontend/dashboard/dist
 Frontend/dashboard/dist/
 npm-debug.log*
 
