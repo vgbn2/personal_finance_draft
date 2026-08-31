@@ -1,7 +1,6 @@
 #include "data/binary_ts_merger.hpp"
 #include "data/binary_ts_reader.hpp"
 
-#include <cassert>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -9,9 +8,19 @@
 
 namespace {
 
-void writeTestBinary(const std::filesystem::path& path, const std::vector<sovereign::RawTsRecord>& records) {
+bool expect(bool condition, const char* message) {
+    if (!condition) {
+        std::cerr << "FAIL: " << message << "\n";
+    }
+    return condition;
+}
+
+bool writeTestBinary(const std::filesystem::path& path, const std::vector<sovereign::RawTsRecord>& records) {
     std::ofstream out(path, std::ios::binary | std::ios::trunc);
-    assert(out.is_open());
+    if (!out.is_open()) {
+        std::cerr << "Failed to open test binary for writing: " << path << "\n";
+        return false;
+    }
     sovereign::RawTsHeader header{};
     header.magic[0] = 'S';
     header.magic[1] = 'O';
@@ -22,6 +31,7 @@ void writeTestBinary(const std::filesystem::path& path, const std::vector<sovere
     if (!records.empty()) {
         out.write(reinterpret_cast<const char*>(records.data()), static_cast<std::streamsize>(records.size() * sizeof(sovereign::RawTsRecord)));
     }
+    return out.good();
 }
 
 } // namespace
@@ -44,19 +54,19 @@ int main() {
             {1000.0, 10.0, 12.0, 9.0, 11.0, 100.0},
             {2000.0, 11.0, 13.0, 10.0, 12.0, 200.0},
         };
-        writeTestBinary(incoming_path, incoming);
+        if (!writeTestBinary(incoming_path, incoming)) return 1;
 
         const auto res = sovereign::BinaryTsMerger::mergeFiles(existing_path, incoming_path, out_path);
-        assert(res.ok);
-        assert(res.count == 2);
-        assert(res.incoming_count == 2);
-        assert(res.existing_count == 0);
+        if (!expect(res.ok, "mergeFiles when existing missing should succeed")) return 1;
+        if (!expect(res.count == 2, "mergeFiles count should be 2")) return 1;
+        if (!expect(res.incoming_count == 2, "incoming_count should be 2")) return 1;
+        if (!expect(res.existing_count == 0, "existing_count should be 0")) return 1;
 
         const auto read_res = sovereign::BinaryTsReader::readBinaryFile(out_path, "TEST", "1m");
-        assert(read_res.ok);
-        assert(read_res.total_records == 2);
-        assert(read_res.raw_records[0].ts_ms == 1000.0);
-        assert(read_res.raw_records[1].ts_ms == 2000.0);
+        if (!expect(read_res.ok, "readBinaryFile should succeed")) return 1;
+        if (!expect(read_res.total_records == 2, "readBinaryFile total_records should be 2")) return 1;
+        if (!expect(read_res.raw_records[0].ts_ms == 1000.0, "record 0 ts_ms should be 1000")) return 1;
+        if (!expect(read_res.raw_records[1].ts_ms == 2000.0, "record 1 ts_ms should be 2000")) return 1;
     }
 
     // Test 2: Two-pointer merge with disjoint and overlapping timestamps
@@ -66,7 +76,7 @@ int main() {
             {3000.0, 12.0, 14.0, 11.0, 13.0, 300.0}, // old value at 3000
             {5000.0, 14.0, 16.0, 13.0, 15.0, 500.0},
         };
-        writeTestBinary(existing_path, existing);
+        if (!writeTestBinary(existing_path, existing)) return 1;
 
         std::vector<sovereign::RawTsRecord> incoming = {
             {2000.0, 11.0, 13.0, 10.0, 12.0, 200.0},
@@ -74,24 +84,24 @@ int main() {
             {4000.0, 13.0, 15.0, 12.0, 14.0, 400.0},
             {6000.0, 15.0, 17.0, 14.0, 16.0, 600.0},
         };
-        writeTestBinary(incoming_path, incoming);
+        if (!writeTestBinary(incoming_path, incoming)) return 1;
 
         const auto res = sovereign::BinaryTsMerger::mergeFiles(existing_path, incoming_path, out_path);
-        assert(res.ok);
-        assert(res.count == 6); // 1000, 2000, 3000, 4000, 5000, 6000
-        assert(res.existing_count == 3);
-        assert(res.incoming_count == 4);
+        if (!expect(res.ok, "mergeFiles should succeed")) return 1;
+        if (!expect(res.count == 6, "merged count should be 6")) return 1;
+        if (!expect(res.existing_count == 3, "existing_count should be 3")) return 1;
+        if (!expect(res.incoming_count == 4, "incoming_count should be 4")) return 1;
 
         const auto read_res = sovereign::BinaryTsReader::readBinaryFile(out_path, "TEST", "1m");
-        assert(read_res.ok);
-        assert(read_res.total_records == 6);
-        assert(read_res.raw_records[0].ts_ms == 1000.0);
-        assert(read_res.raw_records[1].ts_ms == 2000.0);
-        assert(read_res.raw_records[2].ts_ms == 3000.0);
-        assert(read_res.raw_records[2].close == 13.5); // incoming won
-        assert(read_res.raw_records[3].ts_ms == 4000.0);
-        assert(read_res.raw_records[4].ts_ms == 5000.0);
-        assert(read_res.raw_records[5].ts_ms == 6000.0);
+        if (!expect(read_res.ok, "readBinaryFile should succeed")) return 1;
+        if (!expect(read_res.total_records == 6, "total_records should be 6")) return 1;
+        if (!expect(read_res.raw_records[0].ts_ms == 1000.0, "ts_ms 0 mismatch")) return 1;
+        if (!expect(read_res.raw_records[1].ts_ms == 2000.0, "ts_ms 1 mismatch")) return 1;
+        if (!expect(read_res.raw_records[2].ts_ms == 3000.0, "ts_ms 2 mismatch")) return 1;
+        if (!expect(read_res.raw_records[2].close == 13.5, "incoming should win on tie by default")) return 1;
+        if (!expect(read_res.raw_records[3].ts_ms == 4000.0, "ts_ms 3 mismatch")) return 1;
+        if (!expect(read_res.raw_records[4].ts_ms == 5000.0, "ts_ms 4 mismatch")) return 1;
+        if (!expect(read_res.raw_records[5].ts_ms == 6000.0, "ts_ms 5 mismatch")) return 1;
     }
 
     // Test 3: Existing wins on tie
@@ -100,13 +110,13 @@ int main() {
         opts.existing_wins_on_tie = true;
 
         const auto res = sovereign::BinaryTsMerger::mergeFiles(existing_path, incoming_path, out_path, opts);
-        assert(res.ok);
-        assert(res.count == 6);
+        if (!expect(res.ok, "mergeFiles with existing_wins_on_tie should succeed")) return 1;
+        if (!expect(res.count == 6, "count should be 6")) return 1;
 
         const auto read_res = sovereign::BinaryTsReader::readBinaryFile(out_path, "TEST", "1m");
-        assert(read_res.ok);
-        assert(read_res.raw_records[2].ts_ms == 3000.0);
-        assert(read_res.raw_records[2].close == 13.0); // existing won
+        if (!expect(read_res.ok, "readBinaryFile should succeed")) return 1;
+        if (!expect(read_res.raw_records[2].ts_ms == 3000.0, "ts_ms 2 mismatch")) return 1;
+        if (!expect(read_res.raw_records[2].close == 13.0, "existing should win on tie with option")) return 1;
     }
 
     // Clean up
