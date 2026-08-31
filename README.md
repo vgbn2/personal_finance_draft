@@ -23,17 +23,44 @@ The repository contains real execution adapters, but **execution availability is
 | Alpaca, Polymarket, Gate.io, and MT5 adapters | Gated | Live use requires the complete runtime-policy and risk boundary; this README does not claim live qualification. |
 | Private-host deployment and recovery | Not qualified | Source/runbooks exist; exact host, restart, rollback, recovery, one-writer, and soak evidence are separate. |
 
-## Quick Start
+## Quick Start for Contributors
 
-Prerequisites: Node.js and npm. The repository has multiple package roots. These installation commands modify local dependency directories but do not contact trading providers or start platform services.
+**Prerequisites:** Node.js (v20+) and CMake / C++ compiler (`g++` or `clang`). *No Python virtual environments (`venv`) or external API keys are required for development, tests, or paper research.*
 
 ```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd personal_finance_draft
+
+# 2. Copy the default environment template (contains safe local defaults & dummy keys)
+cp .env.example .env
+
+# 3. Install packages across workspaces
 npm install
 npm install --prefix backend/api
 npm install --prefix backend/gateway
 npm install --prefix backend/mcp_server
 npm install --prefix Frontend/dashboard
+
+# 4. Build the native C++ core engine & seed master test fixture
+npm run native:build
+npm run test:prepare
+
+# 5. Run test verification (all pass with zero external credentials)
+npm run test:data
+npm run test:structure
+npm run test:core
 ```
+
+### Zero-Key Development & API Key Boundaries
+
+- **Tests & Backtesting**: Run 100% locally against recorded fixtures without API keys.
+- **Public Data Feeds**: Binance and Yahoo Finance market feeds require no keys.
+- **Polymarket Research & Bot**: Evaluated using the internal checksum-chained virtual paper ledger (`backend/gateway/src/paper_ledger.js`) — no wallet private key needed.
+- **Alpaca Paper Trading**: Contributors can generate their own free test API keys at [alpaca.markets](https://alpaca.markets) and set `ALPACA_PAPER_API_KEY` in their local `.env`.
+- **Live Trading Keys**: Real-money keys are never committed or distributed; they reside strictly on the isolated production host (`hpdesk-1`).
+
+### Inspect Local System & Launch Cockpit
 
 After installation, inspect local status without placing orders or starting a persistent writer:
 
@@ -43,20 +70,19 @@ node backend/cli/sovereign_cli.js backend status --json
 node backend/cli/sovereign_cli.js market monitor --limit 20 --json
 ```
 
-Launch the terminal dashboard:
+Launch the interactive terminal dashboard:
 
 ```bash
 node backend/cli/sovereign_cli.js
 ```
 
-Build the optional C++ core:
+### Docker Quickstart (Zero Local Tooling)
+
+To run the complete platform (API, Web Dashboard, and C++ Core) in an isolated container without installing native compilers:
 
 ```bash
-npm run native:build
-ctest --test-dir backend/core/build --output-on-failure
+docker compose -f infra/docker/docker-compose.yml up -d --build
 ```
-
-For environment setup, platform-specific prerequisites, and expected output, use the [Quickstart guide](docs/operational/guides/QUICKSTART.md). Do not begin with deployment, provider polling, data backfills, persistent bots, or trade commands unless you have read the owning runbook and safety boundary.
 
 ## Architecture At A Glance
 
