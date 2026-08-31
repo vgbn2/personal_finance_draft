@@ -17,6 +17,7 @@ const { guardEquitySessionBars } = require('../market/equity_session');
 
 const NATIVE_CRYPTO_5M_PROVIDERS = new Set(['binance', 'coinbase', 'twelve', 'finnhub']);
 const DAILY_OR_ABOVE_TIMEFRAMES = new Set(['1d', '1w', '1mo']);
+const ALL_AVAILABLE_TIMEFRAMES = new Set(['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '1w', '1mo']);
 
 // Module-level cache for readFamilySources().
 // Keyed by resolved cacheRoot so per-root correctness is preserved.
