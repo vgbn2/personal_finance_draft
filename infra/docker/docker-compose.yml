@@ -156,10 +156,10 @@ services:
       resources:
         limits:
           cpus: '2.0'
-          memory: 1024M
+          memory: 3072M
         reservations:
           cpus: '0.5'
-          memory: 256M
+          memory: 512M
     # grain (1m crypto/equities, 5m Yahoo families), then locally derives only each
     # family's configured coarser TFs. It is cache-aware (skips fresh symbols) and runs no HTTP server, so disable the image's
     # :8787 healthcheck to avoid a false "unhealthy".
