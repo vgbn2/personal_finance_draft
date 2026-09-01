@@ -89,26 +89,36 @@ async function cachedFetch(url, options = {}, ttl = API_CACHE_TTL_MS) {
   const urlObj = new URL(urlStr);
   const host = urlObj.host;
 
+  // Disk caching of raw HTTP responses is disabled by default to prevent disk bloating.
+  // Set SOVEREIGN_ENABLE_RAW_HTTP_DISK_CACHE=true only if explicit offline raw payload dumping is required.
+  const isDiskCacheEnabled = process.env.SOVEREIGN_ENABLE_RAW_HTTP_DISK_CACHE === 'true';
+
   const cacheKey = crypto.createHash('sha256').update(urlStr + JSON.stringify(options)).digest('hex');
   const cacheFile = path.join(API_CACHE_DIR, `${cacheKey}.json`);
 
-  try {
-    const stats = await fs.stat(cacheFile);
-    if (Date.now() - stats.mtimeMs < ttl) {
-      const cached = await fs.readFile(cacheFile, 'utf8');
-      return { json: async () => JSON.parse(cached), ok: true, status: 200, from_cache: true };
-    }
-  } catch (e) {}
+  if (isDiskCacheEnabled) {
+    try {
+      const stats = await fs.stat(cacheFile);
+      if (Date.now() - stats.mtimeMs < ttl) {
+        const cached = await fs.readFile(cacheFile, 'utf8');
+        return { json: async () => JSON.parse(cached), ok: true, status: 200, from_cache: true };
+      }
+    } catch (e) {}
+  }
 
   // Apply rate limit before actual network call
   await rateLimit(host);
 
   const response = await fetch(url, options);
-  if (response.ok) {
-    const clone = response.clone();
-    const data = await clone.text();
-    await fs.mkdir(API_CACHE_DIR, { recursive: true });
-    await fs.writeFile(cacheFile, data, 'utf8');
+  if (response.ok && isDiskCacheEnabled) {
+    try {
+      const clone = response.clone();
+      const data = await clone.text();
+      await fs.mkdir(API_CACHE_DIR, { recursive: true });
+      await fs.writeFile(cacheFile, data, 'utf8');
+    } catch (_) {
+      // Disk write failure should never crash network request
+    }
   }
   return response;
 }
