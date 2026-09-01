@@ -354,6 +354,7 @@
         {"name": "SOVEREIGN_DISABLE_CACHE", "default": "false"},
         {"name": "SOVEREIGN_DISABLE_CPP", "default": "false"},
         {"name": "SOVEREIGN_DISABLE_MT5_AUTO_PATH", "default": "false"},
+        {"name": "SOVEREIGN_ENABLE_RAW_HTTP_DISK_CACHE", "default": "false", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution"]},
         {"name": "SOVEREIGN_ENV_FILE", "environment_class": "private", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution"]},
         {
           "name": "SOVEREIGN_EXECUTION_AUTHORIZED",
