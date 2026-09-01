@@ -3,7 +3,6 @@
     "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "node",
-    "ignoreDeprecations": "6.0",
     "types": ["node"],
     "outDir": "../../dist/mcp_server",
     "strict": true,
