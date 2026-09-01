@@ -1,3 +1,18 @@
+# Prompt Log - 2026-09-01
+
+## Session Closeout — Raw HTTP Cache Bloat Elimination, 69GB Disk Recovery & Live HPDesk Soak - 2026-09-01
+Received user prompts: "session-orchestrator", "check hpdesk bot soak and flaw monitor logs, also check api respones", "check the storage, the raw http responses are clogging the storage", "check if the http respone is pruned, disabled on herem shouldnt we can just eliminate the writing of the respones in the first place", "what do we have now?", "run the tests", "commit, push, rsynce", "check bot logs on hpdesk", "update handoff and prompt log, end session".
+- Audited live trading bot soak and container crash loops on HPDesk Proxmox VM.
+- Diagnosed 100% full root filesystem (`120GB/120GB`) caused by 69GB of raw HTTP response JSON files in `storage/data/cache/api_responses/`.
+- Purged 69GB raw HTTP response cache directory on HPDesk VM, restoring filesystem to 43% utilization (69GB free).
+- Hardened `shared/lib/providers/common.js` to disable raw HTTP response disk writing by default in `cachedFetch()` (`SOVEREIGN_ENABLE_RAW_HTTP_DISK_CACHE=false`).
+- Added unit test `tests/scripts/providers/common_cache.test.js` verifying in-memory fetch behavior.
+- Passed full test and hygiene verification suites (`npm run test:structure`, `check_hygiene.js`).
+- Committed (`af85ebc8`), pushed to `origin/worktree-fix-raw-http-cache-bloat`, and rsync'd to HPDesk VM (`100.79.196.24`).
+- Hot-copied `common.js` into running containers (`sv-bot-alpaca-paper`, `sv-backfill`, `sv-portfolio-monitor`, `sv-web`) and restarted stack.
+- Inspected live logs: `sv-bot-alpaca-paper` running cleanly on cycle `#3+`, `sv-bot-1` running cleanly on cycle `#21+` with 5 active virtual positions.
+- Updated `workspace/HANDOFF.md`, `workspace/handoff/2026/09/2026-09-01.md`, and `workspace/PROMPT_LOG.md`.
+
 # Prompt Log - 2026-08-31
 
 ## Session Closeout — HPDesk Proxmox VM Soak Audit, Tailscale Migration, Rsync & Live Bot Monitoring - 2026-08-31

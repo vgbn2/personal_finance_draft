@@ -1,3 +1,16 @@
+### Session Memory - 2026-09-01 — Raw HTTP Cache Bloat Elimination, 69GB Disk Recovery & Live HPDesk Soak
+
+```json
+{
+  "batch": ["STORAGE-CACHE-BLOAT-1"],
+  "lifecycle": "closed",
+  "scope": "Diagnosed 100% full root filesystem on HPDesk VM caused by 69GB of raw HTTP response JSON dumps in storage/data/cache/api_responses. Purged bloated directory on host (69GB free recovered, 43% disk use). Hardened shared/lib/providers/common.js to disable raw HTTP response disk writing by default in cachedFetch (opt-in via SOVEREIGN_ENABLE_RAW_HTTP_DISK_CACHE=true). Added regression test common_cache.test.js. Passed hygiene and structure test suites. Committed (af85ebc8), pushed to origin/worktree-fix-raw-http-cache-bloat, and rsynced to HPDesk VM. Hot-copied to running containers and verified clean soak loops on sv-bot-alpaca-paper and sv-bot-1.",
+  "changes": "updated shared/lib/providers/common.js, created tests/scripts/providers/common_cache.test.js, updated workspace/HANDOFF.md, workspace/PROMPT_LOG.md, workspace/SESSION_MEMORY.md, created workspace/handoff/2026/09/2026-09-01.md",
+  "verification": "node --test tests/scripts/providers/common_cache.test.js (PASS, 1/1); node scripts/dev/check_hygiene.js (PASS, 0 findings); npm run test:structure (PASS, 28/28 tests); live hpdesk docker logs (sv-bot-alpaca-paper cycle #3+, sv-bot-1 cycle #21+); host disk 66GB free",
+  "boundaries": "paper-trading only; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-08-31 — HPDesk Proxmox VM Soak Audit, Tailscale Migration, Rsync & Live Bot Monitoring
 
 ```json
