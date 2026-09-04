@@ -1043,6 +1043,19 @@ async function commandStrategy(args) {
     return 0;
   }
   
+  if (subcommand === 'explore' || subcommand === 'discovery') {
+    const { runExplorationCycle, startContinuousLoop } = require('../../../../scripts/strategies/auto_strategy_explorer.js');
+    const once = hasFlag(args, '--once') || hasFlag(args, '-1');
+    const interval = numericOption(args, '--interval', 30);
+    if (once) {
+      const entry = await runExplorationCycle();
+      printPayload(entry, args);
+      return entry ? 0 : 1;
+    }
+    await startContinuousLoop(interval);
+    return 0;
+  }
+
   if (subcommand === 'validate') {
     const report = strategyRegistryReport();
     printPayload(report, args);

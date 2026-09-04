@@ -35,6 +35,7 @@ import {
   getPolymarketPortfolio, getPolymarketPortfolioSchema,
   placePolymarketOrder, placePolymarketOrderSchema,
 } from './tools/polymarket';
+import { exploreStrategy, exploreStrategySchema } from './tools/strategy_explorer';
 import {
   authorizeMcpResource,
   authorizeMcpTool,
@@ -349,6 +350,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         required: ['token_id', 'size'],
       },
     },
+    {
+      name: 'explore_strategy',
+      description: 'Discover a unique quantitative strategy candidate, ingest deep continuous market data, evaluate via native C++20 Sovereign Core engine, and register YAML configuration.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          save_yaml: { type: 'boolean', description: 'Whether to persist YAML definition to config/strategies/ (default: true)' },
+        },
+      },
+    },
     ],
   };
 });
@@ -439,6 +450,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<any> =>
       case 'place_polymarket_order': {
         const args = placePolymarketOrderSchema.parse(request.params.arguments);
         return placePolymarketOrder(args);
+      }
+      case 'explore_strategy': {
+        const args = exploreStrategySchema.parse(request.params.arguments || {});
+        return exploreStrategy(args);
       }
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);

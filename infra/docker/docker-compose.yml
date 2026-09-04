@@ -304,3 +304,32 @@ services:
           node backend/cli/sovereign_cli.js polymarket history schedule --scope-file "$${POLYMARKET_RESEARCH_SCOPE_FILE}" --execute --once --json --poll-seconds $${POLYMARKET_RESEARCH_INTERVAL_SECS:-300} --max-tokens $${POLYMARKET_RESEARCH_MAX_TOKENS:-20} --retention-days $${POLYMARKET_RESEARCH_RETENTION_DAYS:-30} --max-rows-per-token $${POLYMARKET_RESEARCH_MAX_ROWS_PER_TOKEN:-5000} --max-archive-bytes $${POLYMARKET_RESEARCH_MAX_ARCHIVE_BYTES:-5368709120} || true
           sleep $$INTERVAL
         done
+
+  strategy-explorer:
+    container_name: sv-strategy-explorer
+    logging: *default-logging
+    profiles: [research]
+    build: *common-build
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
+    depends_on:
+      web:
+        condition: service_healthy
+    env_file:
+      - path: '../../.env'
+        required: false
+      - path: ${SOVEREIGN_STRATEGY_EXPLORER_ENV_FILE:-../../.env.services/strategy-explorer.env}
+        required: false
+    environment: *central-runtime
+    volumes:
+      - ../../storage:/app/storage
+      - ../../config:/app/config
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    command:
+      - /bin/sh
+      - -c
+      - |
+        INTERVAL=$${STRATEGY_EXPLORER_INTERVAL_MIN:-30}
+        exec node scripts/strategies/auto_strategy_explorer.js --interval "$$INTERVAL"
+
