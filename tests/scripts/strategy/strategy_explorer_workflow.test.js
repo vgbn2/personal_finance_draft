@@ -7,6 +7,7 @@ const path = require('node:path');
 
 const {
   runExplorationCycle,
+  evaluateAndRegisterSpec,
   generateUniqueCandidate,
   computeStrategyFingerprint,
   computeDistance,
@@ -63,3 +64,45 @@ test('strategy explorer: one-cycle execution produces valid YAML registry and C+
     assert.ok(parsed, 'registry file is valid parseable YAML');
   }
 });
+
+test('strategy explorer: agent-authored custom spec evaluation & registration', async () => {
+  const customSpec = {
+    name: `agent_crypto_vol_breakout_test_${Date.now().toString(36)}`,
+    hypothesis: 'High volatility regimes coupled with Bollinger Band breakouts signal persistent directional trend in BTC.',
+    family: 'breakout',
+    model: 'svm_margin_v0',
+    timeframe: '1h',
+    universe: ['BTCUSDT'],
+    indicators: { bollinger: true, atr: true, volatility: true },
+    threshold: 0.65,
+    max_holding_days: 7,
+    risk_weight: 0.15,
+    entry_signal: 'Close > Upper BB with ATR expansion',
+    exit_signal: 'Close < Middle BB or 7-day horizon',
+  };
+
+  const entry = await evaluateAndRegisterSpec(customSpec, { save_yaml: true });
+
+  assert.ok(entry, 'custom spec evaluation produced entry');
+  assert.strictEqual(entry.name, customSpec.name, 'name matches custom spec');
+  assert.strictEqual(entry.family, 'breakout', 'family matches custom spec');
+  assert.strictEqual(entry.model, 'svm_margin_v0', 'model matches custom spec');
+  assert.strictEqual(entry.evaluation.engine, 'sovereign_cpp_core', 'engine is sovereign_cpp_core');
+  assert.strictEqual(typeof entry.evaluation.tradeCount, 'number', 'tradeCount is number');
+  assert.strictEqual(typeof entry.evaluation.netReturn, 'number', 'netReturn is number');
+  assert.strictEqual(typeof entry.evaluation.maxDrawdown, 'number', 'maxDrawdown is number');
+  assert.strictEqual(typeof entry.evaluation.winRate, 'number', 'winRate is number');
+  assert.ok(typeof entry.novelty_distance === 'number', 'novelty distance is number');
+
+  if (entry.registry_file) {
+    assert.ok(fs.existsSync(entry.registry_file), `custom registry YAML exists at ${entry.registry_file}`);
+    const yamlContent = fs.readFileSync(entry.registry_file, 'utf8');
+    assert.ok(yamlContent.includes(customSpec.hypothesis), 'YAML preserves custom hypothesis');
+    assert.ok(yamlContent.includes('svm_margin_v0'), 'YAML preserves model');
+    const parsed = parseStrategyYaml(yamlContent);
+    assert.ok(parsed, 'registry file is valid parseable YAML');
+    // Cleanup test YAML
+    try { fs.unlinkSync(entry.registry_file); } catch (e) {}
+  }
+});
+

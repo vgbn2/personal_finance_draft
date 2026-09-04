@@ -24,7 +24,10 @@ function writeStrategyRegistryFile(candidate) {
       maxHoldingDays: candidate.horizon,
       universe: candidate.universe,
       indicators: candidate.indicators,
-      riskWeight: 0.10
+      riskWeight: candidate.risk_weight || 0.10,
+      hypothesis: candidate.hypothesis,
+      entrySignal: candidate.entry_signal,
+      exitSignal: candidate.exit_signal,
     });
     const filePath = path.join(STRATEGIES_DIR, `${candidate.name}.yaml`);
     fs.writeFileSync(filePath, yamlContent, 'utf8');
@@ -274,32 +277,46 @@ async function evaluateStrategyCandidate(candidate) {
   };
 }
 
-// Single exploration cycle
-async function runExplorationCycle() {
-  console.log(`\n[STRATEGY-EXPLORER] [${new Date().toISOString()}] Running unique discovery & backtest cycle...`);
+async function evaluateAndRegisterSpec(spec, options = {}) {
+  const saveYaml = options.save_yaml !== false;
+  const candidate = {
+    name: spec.name,
+    family: spec.family,
+    kind: spec.family,
+    model: spec.model,
+    timeframe: spec.timeframe || '1h',
+    universe: Array.isArray(spec.universe) && spec.universe.length > 0 ? spec.universe : ['SPY'],
+    indicators: spec.indicators || { rsi: true, bollinger: true, atr: true, return_fast: true, return_slow: true, volatility: true },
+    threshold: spec.threshold !== undefined ? spec.threshold : 0.60,
+    horizon: spec.max_holding_days || spec.horizon || 5,
+    cost_bps: spec.cost_bps || 5,
+    risk_weight: spec.risk_weight || 0.10,
+    hypothesis: spec.hypothesis || `Hypothesis for ${spec.name}`,
+    entry_signal: spec.entry_signal || 'Entry condition satisfied',
+    exit_signal: spec.exit_signal || 'Exit condition satisfied or horizon expired',
+    created_at: new Date().toISOString()
+  };
+
+  candidate.fingerprint = computeStrategyFingerprint(candidate);
+
   const state = loadExplorerState();
-
-  const candidate = generateUniqueCandidate(state);
-  const noveltyPct = state.lastStrategy ? (computeDistance(candidate, state.lastStrategy) * 100).toFixed(0) : '100';
-
-  console.log(`[STRATEGY-EXPLORER] Candidate Generated: "${candidate.name}"`);
-  console.log(`  - Family: ${candidate.family} | Model: ${candidate.model} | Timeframe: ${candidate.timeframe}`);
-  console.log(`  - Universe: [${candidate.universe.join(', ')}] | Threshold: ${candidate.threshold} | Horizon: ${candidate.horizon} bars`);
-  console.log(`  - Fingerprint: ${candidate.fingerprint} (Novelty vs last: ${noveltyPct}%)`);
+  let noveltyDistance = 1.0;
+  if (state.lastStrategy) {
+    noveltyDistance = computeDistance(candidate, state.lastStrategy);
+  }
 
   const evaluation = await evaluateStrategyCandidate(candidate);
-  console.log(`[STRATEGY-EXPLORER] Backtest Completed (Engine: ${evaluation.engine}) on ${evaluation.symbol} (${evaluation.barCount} bars):`);
-  console.log(`  - Trades: ${evaluation.tradeCount}`);
-  console.log(`  - Net Return: ${(evaluation.netReturn * 100).toFixed(2)}%`);
-  console.log(`  - Max Drawdown: ${(evaluation.maxDrawdown * 100).toFixed(2)}%`);
-  console.log(`  - Sharpe Ratio: ${Number(evaluation.sharpeRatio || 0).toFixed(2)}`);
-  console.log(`  - Sortino Ratio: ${Number(evaluation.sortinoRatio || 0).toFixed(2)}`);
-  console.log(`  - Win Rate: ${(evaluation.winRate * 100).toFixed(1)}%`);
+
+  let registryFile = null;
+  if (saveYaml) {
+    registryFile = writeStrategyRegistryFile(candidate);
+  }
 
   const entry = {
     ...candidate,
+    novelty_distance: noveltyDistance,
     evaluation,
-    registry_file: writeStrategyRegistryFile(candidate),
+    registry_file: registryFile,
     timestamp: new Date().toISOString()
   };
 
@@ -307,14 +324,23 @@ async function runExplorationCycle() {
   if (!state.seenFingerprints) state.seenFingerprints = [];
 
   state.history.push(entry);
-  state.seenFingerprints.push(candidate.fingerprint);
+  if (!state.seenFingerprints.includes(candidate.fingerprint)) {
+    state.seenFingerprints.push(candidate.fingerprint);
+  }
   state.lastStrategy = candidate;
   state.totalDiscovered = (state.totalDiscovered || 0) + 1;
 
   saveExplorerState(state);
-  console.log(`[STRATEGY-EXPLORER] Registry file saved: ${entry.registry_file}`);
-  console.log(`[STRATEGY-EXPLORER] Cycle complete. Total unique strategies registered: ${state.totalDiscovered}`);
   return entry;
+}
+
+// Single exploration cycle
+async function runExplorationCycle() {
+  console.log(`\n[STRATEGY-EXPLORER] [${new Date().toISOString()}] Running unique discovery & backtest cycle...`);
+  const state = loadExplorerState();
+
+  const candidate = generateUniqueCandidate(state);
+  return evaluateAndRegisterSpec(candidate, { save_yaml: true });
 }
 
 // Continuous loop with configurable interval (default 30 min)
@@ -353,6 +379,7 @@ if (require.main === module) {
 
 module.exports = {
   runExplorationCycle,
+  evaluateAndRegisterSpec,
   generateUniqueCandidate,
   evaluateStrategyCandidate,
   computeStrategyFingerprint,
