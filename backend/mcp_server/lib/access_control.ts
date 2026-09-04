@@ -26,6 +26,7 @@ const TOOL_CAPABILITIES: Record<string, string> = Object.freeze({
   get_polymarket_markets: CAPABILITIES.RESEARCH_READ,
   get_polymarket_portfolio: CAPABILITIES.PORTFOLIO_READ,
   place_polymarket_order: CAPABILITIES.PAPER_OPERATE,
+  explore_strategy: CAPABILITIES.RESEARCH_RUN,
 });
 
 export interface McpAccessDecision {

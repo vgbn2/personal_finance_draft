@@ -10,6 +10,7 @@
   },
   "scripts": {
     "fixtures:refresh:btc": "node backend/scripts/dev/refresh_real_bars_fixture.js",
+    "strategy:explore": "node scripts/strategies/auto_strategy_explorer.js",
     "models:parity": "node backend/scripts/dev/model_registry_parity.js",
     "native:doctor": "node backend/scripts/dev/native_toolchain_check.js",
     "host:prepare-central-env": "node backend/scripts/ops/prepare_central_env.js",
