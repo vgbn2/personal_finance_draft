@@ -352,10 +352,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     },
     {
       name: 'explore_strategy',
-      description: 'Discover a unique quantitative strategy candidate, ingest deep continuous market data, evaluate via native C++20 Sovereign Core engine, and register YAML configuration.',
+      description: 'Assist AI agents in researching, evaluating, and registering quantitative trading strategies. Evaluates agent-provided hypotheses and specifications (family, model, universe, timeframe, indicators, threshold, risk) against deep market data via native C++20 Sovereign Core engine, and persists canonical YAML configurations.',
       inputSchema: {
         type: 'object',
         properties: {
+          name: { type: 'string', description: 'Unique descriptive strategy name (e.g. "vol_regime_svm_breakout_1h"). If omitted, auto-generated.' },
+          hypothesis: { type: 'string', description: 'The market edge thesis or rationale driving the strategy.' },
+          family: { type: 'string', enum: ['momentum', 'mean_reversion', 'breakout', 'volatility', 'ml_alpha', 'stat_arb', 'orderflow'], description: 'Strategy family paradigm (default: momentum)' },
+          model: { type: 'string', enum: ['knn_pattern_v0', 'svm_margin_v0', 'random_forest_v0', 'cnn_window_v0', 'decision_tree_stump_v0', 'logistic_regression_v0'], description: 'Predictive ML/statistical model' },
+          timeframe: { type: 'string', enum: ['5m', '15m', '30m', '1h', '4h', '1d'], description: 'Primary bar interval (default: 1h)' },
+          universe: { type: 'array', items: { type: 'string' }, description: 'Target asset symbols (e.g. ["BTCUSDT", "ETHUSDT"] or ["SPY", "QQQ"])' },
+          indicators: { type: 'object', description: 'Active indicator map (e.g. {"rsi": true, "bollinger": true, "atr": true})' },
+          threshold: { type: 'number', description: 'Signal probability trigger floor between 0.50 and 0.99 (default: 0.60)' },
+          max_holding_days: { type: 'number', description: 'Max holding period horizon in bars/days (default: 5)' },
+          risk_weight: { type: 'number', description: 'Target risk allocation fraction 0.01 - 1.0 (default: 0.10)' },
+          entry_signal: { type: 'string', description: 'Description of entry trigger condition' },
+          exit_signal: { type: 'string', description: 'Description of exit trigger condition' },
           save_yaml: { type: 'boolean', description: 'Whether to persist YAML definition to config/strategies/ (default: true)' },
         },
       },
