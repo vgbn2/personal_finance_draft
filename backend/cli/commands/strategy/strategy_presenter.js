@@ -73,6 +73,10 @@ function buildStrategyPlan(name, options = {}) {
         atr: DEFAULT_PERIODS.atr,
         bollinger: DEFAULT_PERIODS.bollinger,
       };
+  const hypothesis = options.hypothesis || `Replace this with the market edge thesis for ${strategyName}.`;
+  const entrySignal = options.entrySignal || 'Define the trigger conditions here.';
+  const exitSignal = options.exitSignal || 'Define the exit conditions here.';
+
   return [
     `name: ${strategyName}`,
     `kind: ${kind}`,
@@ -84,12 +88,12 @@ function buildStrategyPlan(name, options = {}) {
     `model: ${model}`,
     `timeframe: ${timeframe}`,
     'sections:',
-    `  hypothesis: "Replace this with the market edge thesis for ${strategyName}."`,
+    `  hypothesis: ${JSON.stringify(hypothesis)}`,
     '  universe:',
     ...universe.map((symbol) => `    - ${symbol}`),
     '  signals:',
-    '    entry: "Define the trigger conditions here."',
-    '    exit: "Define the exit conditions here."',
+    `    entry: ${JSON.stringify(entrySignal)}`,
+    `    exit: ${JSON.stringify(exitSignal)}`,
     '  data:',
     '    required_sources:',
     '      - price_volume',
