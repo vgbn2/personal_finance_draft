@@ -6,7 +6,7 @@ boot) never has to read tens of thousands of tokens of accumulated history.
 
 ## Convention
 
-- Latest/current handoff: **`workspace/handoff/2026/09/2026-09-01.md`** (last update: Raw HTTP Cache Bloat Elimination, 69GB Disk Recovery & Live HPDesk Soak)
+- Latest/current handoff: **`workspace/handoff/2026/09/2026-09-04.md`** (last update: Automated C++ Strategy Explorer, Deep Market Ingestion, YAML Registry & MCP Integration)
 - At session close: append a new `## Update - <date> session N — <title>` block to
   **today's** `workspace/handoff/<YYYY>/<MM>/<YYYY-MM-DD>.md` (create it if it doesn't exist yet for today).
   Do NOT append to this pointer file or recreate a single growing log.

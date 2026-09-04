@@ -1,3 +1,29 @@
+### Session Memory - 2026-09-04 session 2 — AI Strategy Research Architecture, CLI Integration & HPDesk Docker Service
+
+```json
+{
+  "batch": ["STRATEGY-EXPLORER-ARCH-1"],
+  "lifecycle": "closed",
+  "scope": "Integrated CLI and TUI strategy explore subcommands (sovereign strategy explore --once / --interval), added sv-strategy-explorer container service in docker-compose.yml for HPDesk deployment, authored docs/RESEARCH_STRATEGY_EXPLORER.md detailing MCP, CLI, and YAML authoring workflows for autonomous AI agents, and hardened test assertions.",
+  "changes": "updated backend/cli/commands/strategy/strategy.js, backend/cli/tui/manifest.js, infra/docker/docker-compose.yml, tests/scripts/strategy/strategy_explorer_workflow.test.js, workspace/handoff/2026/09/2026-09-04.md, workspace/SESSION_MEMORY.md, workspace/PROMPT_LOG.md, workspace/NEXT_SESSION_GOAL.md, created docs/RESEARCH_STRATEGY_EXPLORER.md",
+  "verification": "node tests/scripts/strategy/strategy_explorer_workflow.test.js contract integrity check; YAML schema conformance; zero-key boundary maintained",
+  "boundaries": "paper-trading and research simulation only; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
+### Session Memory - 2026-09-04 — Automated C++ Strategy Explorer, Deep Market Ingestion, YAML Registry & MCP Integration
+
+```json
+{
+  "batch": ["STRATEGY-EXPLORER-WORKFLOW-1"],
+  "lifecycle": "closed",
+  "scope": "Formalized automated 30-minute quantitative strategy discovery daemon with strict novelty deduplication (>=50% distance metric via SHA-256 fingerprinting), deep continuous market bar ingestion (5,000+ bars from Binance and Yahoo), native C++20 frame backtesting (sovereign_wealth via FrameBacktester::runFromAnnotated), automatic canonical YAML registry persistence in config/strategies/, npm script entrypoint (npm run strategy:explore), MCP explore_strategy tool integration (backend/mcp_server/), and contract test suite.",
+  "changes": "updated scripts/strategies/auto_strategy_explorer.js, package.json, backend/mcp_server/index.ts, backend/mcp_server/lib/access_control.ts, created backend/mcp_server/tools/strategy_explorer.ts, tests/scripts/strategy/strategy_explorer_workflow.test.js, workspace/handoff/2026/09/2026-09-04.md, updated workspace/HANDOFF.md, workspace/SESSION_MEMORY.md, workspace/PROMPT_LOG.md, workspace/NEXT_SESSION_GOAL.md",
+  "verification": "npm run test:structure (PASS, 28/28 tests); npm run strategy:explore -- --once (PASS, non-zero C++ trade simulation); tsc build in backend/mcp_server (PASS); background daemon running on steamlinux",
+  "boundaries": "paper-trading and research backtest only; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-09-01 session 2 — Environment Manifest Classification, Dashboard Build & Blast-Through Audit
 
 ```json

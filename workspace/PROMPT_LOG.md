@@ -1,3 +1,47 @@
+# Prompt Log - 2026-09-04
+
+## Session Closeout — Autonomous AI Strategy Research Architecture, CLI Wiring & HPDesk Docker Service - 2026-09-04 session 2
+Received user prompts:
+- "activate it on hpdesk or call an AI agent to autonomously researching strategies, make this a sub section as well, though idk if this can be use for repo push, it since not everyone is usng claude so this is our own custom way of helping AI agents to find strategies, backtest and registry yaml files"
+
+Accomplished:
+- Added `strategy explore [--once] [--interval <mins>]` and alias `strategy discovery` in `backend/cli/commands/strategy/strategy.js`.
+- Added `strategy-explore` subcommand in TUI manifest under `backend/cli/tui/manifest.js`.
+- Authored `docs/RESEARCH_STRATEGY_EXPLORER.md` establishing universal autonomous AI agent integration across MCP, CLI, and direct YAML authoring.
+- Added `strategy-explorer` service to `infra/docker/docker-compose.yml` under `research` profile for direct background deployment on HPDesk.
+- Hardened test assertions in `tests/scripts/strategy/strategy_explorer_workflow.test.js`.
+- Updated handoff, session memory, and workspace tracking.
+
+## Session Closeout — Strategy Explorer Workflow, Deep Ingestion, C++ Engine Verification & MCP Tool Integration - 2026-09-04
+Received user prompts:
+- "keep monitoring, also create a loop to find a new strategy every 30 minutes and backtests it"
+- "each strategy must be unique from the last one, and the loops must take that into consideration"
+- "finde me one staregy right now then, use the web as your source..."
+- "are you using the c++ egniner or the js enginer for backtesting?"
+- "start the 30 minute on tsteam linux, and use the c++ engine and all of the protocols above"
+- "Trades: 29 trades evaluated... i dont really trút this. moorre sample size"
+- "cant you just like, create new strategey registry files and test it using the native engine?"
+- "is it using the c++engine or the js engine?, create a workflow out of this loop"
+- "refine the MCP section also"
+- "end current session, next session will bei using that"
+
+Accomplished:
+- Audited and verified engine execution: backtesting runs on native C++20 (`sovereign_wealth` via `FrameBacktester::runFromAnnotated`).
+- Resolved empty feature frame bug in `calculateRollingFeatureFrame` signature, ensuring non-zero trade metrics.
+- Upgraded market data ingestion to pull 5,000+ continuous bars from Binance / Yahoo with high-sample synthetic fallback.
+- Implemented SHA-256 fingerprinting and $\ge 50\%$ parameter distance novelty filtering.
+- Implemented automatic YAML strategy registry serialization into `config/strategies/<name>.yaml`.
+- Added npm script `"strategy:explore": "node scripts/strategies/auto_strategy_explorer.js"` supporting `--once` and `--interval <mins>`.
+- Refined MCP server with new `explore_strategy` tool in `backend/mcp_server/tools/strategy_explorer.ts`, registered in `index.ts` and mapped to `research:run` in `access_control.ts`.
+- Created test suite `tests/scripts/strategy/strategy_explorer_workflow.test.js`.
+- Documented handoff (`workspace/handoff/2026/09/2026-09-04.md`), updated `HANDOFF.md`, `SESSION_MEMORY.md`, and `NEXT_SESSION_GOAL.md`.
+
+## Session Boot & Repo Line Count Inspection - 2026-09-04
+Received user prompt: "https://ghloc.dev/vgbn2/personal_finance_draft?branch=main session boot, check this".
+- Executed `session-orchestrator` boot sequence.
+- Checked `https://ghloc.dev/vgbn2/personal_finance_draft?branch=main` (ghloc returned 154 MB storage size, no top-level npm package detected).
+- Analyzed codebase LOC breakdown across source files.
+
 # Prompt Log - 2026-09-01
 
 ## Session Closeout — Environment Manifest Classification, Dashboard Build & Blast-Through Review - 2026-09-01
