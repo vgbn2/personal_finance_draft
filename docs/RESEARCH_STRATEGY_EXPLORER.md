@@ -40,12 +40,35 @@ Autonomous AI agents do not need special external access or proprietary tooling.
 ## 2. Integration Modes for AI Agents
 
 ### Mode A: Model Context Protocol (MCP) Tools
-Any MCP-compatible client (Claude Desktop, Cursor, Cline, OpenDevin, custom agent runners) can call the registered MCP tool:
+Any MCP-compatible client (Claude Desktop, Gemini, ChatGPT, Cursor, Cline, OpenDevin, custom agent runners) can call the registered MCP tool:
 
 - **Tool**: `explore_strategy`
 - **Capability**: `research:run`
-- **Arguments**: `{ "save_yaml": true }`
-- **Behavior**: Generates a novel candidate ($\ge 50\%$ parameter novelty distance via SHA-256 fingerprinting), pulls continuous market data, runs the native C++ backtest, and writes `config/strategies/<name>.yaml`.
+- **Arguments (Custom Agent Hypothesis & Specification)**:
+  ```json
+  {
+    "name": "crypto_vol_breakout_1h",
+    "hypothesis": "High volatility regime combined with Bollinger upper band expansion produces persistent momentum continuation in crypto markets.",
+    "family": "breakout",
+    "model": "svm_margin_v0",
+    "timeframe": "1h",
+    "universe": ["BTCUSDT", "ETHUSDT"],
+    "indicators": {
+      "bollinger": true,
+      "atr": true,
+      "volatility": true,
+      "rsi": true
+    },
+    "threshold": 0.65,
+    "max_holding_days": 7,
+    "risk_weight": 0.15,
+    "entry_signal": "Price closes above 2-std dev upper Bollinger Band with ATR > 20-period median",
+    "exit_signal": "Price touches 20-period moving average or holding horizon exceeds 7 days",
+    "save_yaml": true
+  }
+  ```
+- **Behavior**: Evaluates the agent's specific hypothesis against deep continuous market data (5,000+ bars), runs the zero-allocation native C++20 Sovereign Core backtest (`sovereign_wealth --mode frame`), calculates comprehensive performance & tail risk metrics, and registers the strategy YAML in `config/strategies/<name>.yaml`.
+- **Automated Fallback**: If called with no arguments or `{ "save_yaml": true }`, automatically explores a novel parameter candidate ($\ge 50\%$ distance metric).
 
 ### Mode B: Direct CLI Execution
 Autonomous scripts, cron jobs, or container runners can invoke the explorer directly:

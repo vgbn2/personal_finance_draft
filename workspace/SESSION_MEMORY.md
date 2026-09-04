@@ -1,3 +1,16 @@
+### Session Memory - 2026-09-04 session 3 — AI Agent Strategy Workbench via MCP & Hypothesis Evaluation Engine
+
+```json
+{
+  "batch": ["MCP-AGENT-STRATEGY-WORKBENCH-1"],
+  "lifecycle": "closed",
+  "scope": "Refactored MCP explore_strategy tool from a pure random generator into an AI Agent Strategy Workbench. Upgraded Zod schema and tool handler to accept custom strategy specifications (hypothesis, family, model, timeframe, universe, indicators, threshold, risk). Connected to native C++20 FrameBacktester backtest engine over continuous market data with canonical YAML registry generation. Updated docs/RESEARCH_STRATEGY_EXPLORER.md and test suite.",
+  "changes": "updated backend/mcp_server/tools/strategy_explorer.ts, backend/mcp_server/index.ts, scripts/strategies/auto_strategy_explorer.js, backend/cli/commands/strategy/strategy_presenter.js, docs/RESEARCH_STRATEGY_EXPLORER.md, tests/scripts/strategy/strategy_explorer_workflow.test.js, workspace/handoff/2026/09/2026-09-04.md, workspace/SESSION_MEMORY.md",
+  "verification": "npm run --prefix backend/mcp_server build (PASS); Zod validation & type assertions; zero-key policy maintained",
+  "boundaries": "research backtesting and paper trading only; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-09-04 session 2 — AI Strategy Research Architecture, CLI Integration & HPDesk Docker Service
 
 ```json
