@@ -1,8 +1,11 @@
 # Current Workspace State
 
 ## Current Phase
-SV Console Comprehensive Documentation, Safety Hardening & Native C++ Core Integration - ACTIVE
+SV Console Architecture Review, TUI Optimization, Central Environment Hardening & Closeout - ACTIVE
 
+- **TUI Dashboard Optimization**: Implemented double buffering and diff rendering in `backend/cli/tui/engine/engine.js` and `backend/cli/sovereign_dashboard.mjs` to eliminate terminal flickering during high-frequency repaint loops.
+- **Central Environment Test Hardening**: Updated `tests/scripts/operational/prepare_central_env.test.js` to dynamically assert against `EXPECTED_COMPOSE_SERVICES.length` across all 9 Compose services.
+- **Cloudflare & Remote Rsync Security Audit**: Audited backward rsync artifacts for Cloudflare configuration to enforce private-origin boundaries and zero-key development policy.
 - **SV Console Comprehensive Documentation Suite**: Authored and integrated production-grade architectural and operational documentation across `docs/`:
   - `docs/engineering/DATA_PIPELINE_AND_STORAGE.md`: Complete ingestion lifecycle, multi-market resolutions (Equities 5m to 1w, Crypto 1m from 2017, Prediction 1s/tick), filtration/normalization rules, binary `SOVT` format (8-byte header, 48-byte packed records), and local rollup engine.
   - `docs/engineering/NATIVE_CORE_AND_BACKTESTER.md`: C++20 Sovereign Core architecture, `BinaryTsMerger` streaming algorithm ($O(1)$ memory, $<5\text{MB}$ RSS), `FrameBacktester` execution modes (Mode A Native vs Mode B Annotated), Monte Carlo bootstrap (`xorshift64`), and `PreTradeRisk` engine.

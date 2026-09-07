@@ -318,11 +318,11 @@ services:
       - path: '../../.env'
         required: false
       - path: ${SOVEREIGN_STRATEGY_EXPLORER_ENV_FILE:-../../.env.services/strategy-explorer.env}
-        required: false
+        required: true
     environment: *central-runtime
     volumes:
-      - ../../storage:/app/storage
       - ../../config:/app/config
+      - ../../storage:/app/storage
     restart: unless-stopped
     healthcheck:
       disable: true
@@ -330,6 +330,6 @@ services:
       - /bin/sh
       - -c
       - |
-        INTERVAL=$${STRATEGY_EXPLORER_INTERVAL_MIN:-30}
+        INTERVAL=$${EXPLORER_INTERVAL_MINUTES:-30}
         exec node scripts/strategies/auto_strategy_explorer.js --interval "$$INTERVAL"
 

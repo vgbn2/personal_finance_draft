@@ -62,6 +62,7 @@ COPY --from=build --chown=node:node /app/Frontend/dashboard/dist ./Frontend/dash
 COPY --from=build --chown=node:node /app/shared ./shared
 COPY --from=build --chown=node:node /app/config ./config
 COPY --from=build --chown=node:node /app/scripts/data_ops/backfill_20_years.js ./scripts/data_ops/backfill_20_years.js
+COPY --from=build --chown=node:node /app/scripts/strategies ./scripts/strategies
 
 RUN mkdir -p storage/data storage/logs storage/runtime \
     && chown -R node:node storage
