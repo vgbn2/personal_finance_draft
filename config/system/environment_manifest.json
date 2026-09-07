@@ -20,7 +20,8 @@
     "compose_portfolio_monitor",
     "compose_host_health",
     "compose_host_backup",
-    "compose_polymarket_research"
+    "compose_polymarket_research",
+    "compose_strategy_explorer"
   ],
   "compose_services": {
     "web": {
@@ -117,6 +118,18 @@
       "defaulted_keys": ["POLYMARKET_RESEARCH_INTERVAL_SECS", "POLYMARKET_RESEARCH_MAX_ARCHIVE_BYTES", "POLYMARKET_RESEARCH_MAX_ROWS_PER_TOKEN", "POLYMARKET_RESEARCH_MAX_TOKENS", "POLYMARKET_RESEARCH_RETENTION_DAYS"],
       "fixed_overrides": {"LIVE_TRADING": "false", "SOVEREIGN_DEPLOYMENT_PROFILE": "central-host", "SOVEREIGN_EXECUTION_AUTHORIZED": "false", "SOVEREIGN_RUNTIME_MODE": "cloud-compute"},
       "mounts": ["../../storage:/app/storage"],
+      "forbidden_environment_classes": ["private", "central", "execution"]
+    },
+    "strategy-explorer": {
+      "surface": "compose_strategy_explorer",
+      "profile": "central-host",
+      "compose_profile": "research",
+      "command_identity": "node scripts/strategies/auto_strategy_explorer.js",
+      "required_keys": [],
+      "optional_keys": [],
+      "defaulted_keys": ["EXPLORER_INTERVAL_MINUTES"],
+      "fixed_overrides": {"LIVE_TRADING": "false", "SOVEREIGN_DEPLOYMENT_PROFILE": "central-host", "SOVEREIGN_EXECUTION_AUTHORIZED": "false", "SOVEREIGN_RUNTIME_MODE": "cloud-compute"},
+      "mounts": ["../../config:/app/config", "../../storage:/app/storage"],
       "forbidden_environment_classes": ["private", "central", "execution"]
     }
   },
@@ -268,7 +281,7 @@
         {"name": "ALPACA_PAPER_MIN_TRUST_SCORE", "default": "70", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
         {"name": "BACKFILL_DEEP_ALL", "default": "false", "allowed_surfaces": ["operator", "compose_backfill"]},
         {"name": "BACKFILL_INTERVAL_SECS", "default": "1800", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
-        {"name": "EXPLORER_INTERVAL_MINUTES", "default": "30", "allowed_surfaces": ["default_cli", "operator", "mcp"]},
+        {"name": "EXPLORER_INTERVAL_MINUTES", "default": "30", "allowed_surfaces": ["default_cli", "operator", "mcp", "compose_strategy_explorer"]},
         {
           "name": "CURRENT_PORTFOLIO_DRAWDOWN",
           "environment_class": "private",

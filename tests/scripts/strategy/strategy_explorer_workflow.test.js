@@ -14,7 +14,10 @@ const {
   loadExplorerState
 } = require('../../../scripts/strategies/auto_strategy_explorer.js');
 const { parseStrategyYaml } = require('../../../backend/cli/commands/strategy/strategy_presenter.js');
-const { authorizeMcpTool } = require('../../../backend/mcp_server/lib/access_control.js');
+const { authorizeMcpTool } = require('../../../dist/mcp_server/lib/access_control.js');
+const { CAPABILITIES } = require('../../../shared/lib/auth/access_policy.js');
+const { createServicePrincipal } = require('../../../shared/lib/auth/service_principals.js');
+const os = require('node:os');
 
 test('strategy explorer: generates structurally unique candidate with valid distance score', () => {
   const state = loadExplorerState();
@@ -37,13 +40,22 @@ test('strategy explorer: generates structurally unique candidate with valid dist
   }
 });
 
-test('strategy explorer: MCP server authorizes explore_strategy tool capability', () => {
+test('strategy explorer: MCP server authorizes explore_strategy tool capability', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-strategy-auth-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const registryPath = path.join(root, 'services.json');
+  const service = createServicePrincipal({
+    id: 'strategy-agent',
+    capabilities: [CAPABILITIES.RESEARCH_RUN],
+  }, { path: registryPath });
+
   const serviceTokenEnv = {
-    SOVEREIGN_MCP_SERVICE_TOKEN: 'sovereign-internal-service-token-v1'
+    SOVEREIGN_SERVICE_PRINCIPALS_PATH: registryPath,
+    SOVEREIGN_MCP_SERVICE_TOKEN: service.token,
   };
   const decision = authorizeMcpTool('explore_strategy', {}, serviceTokenEnv);
   assert.strictEqual(decision.allowed, true, 'explore_strategy is allowed for authorized service token');
-  assert.deepStrictEqual(decision.required, ['research:run'], 'requires research:run capability');
+  assert.deepStrictEqual(decision.required, [CAPABILITIES.RESEARCH_RUN], 'requires research.run capability');
 });
 
 test('strategy explorer: one-cycle execution produces valid YAML registry and C++ backtest metrics', async () => {

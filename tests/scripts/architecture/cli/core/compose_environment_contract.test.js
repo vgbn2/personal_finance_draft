@@ -25,7 +25,7 @@ function composeService(source, name) {
   return match[0];
 }
 
-test('schema-3 service rows match all eight isolated Compose environment files', () => {
+test('schema-3 service rows match all nine isolated Compose environment files', () => {
   const manifest = loadEnvironmentManifest();
   const compose = fs.readFileSync(COMPOSE_PATH, 'utf8');
   const dockerfile = fs.readFileSync(DOCKERFILE_PATH, 'utf8');
@@ -39,13 +39,14 @@ test('schema-3 service rows match all eight isolated Compose environment files',
     'host-health': 'backend/scripts/ops/host_health.js',
     'host-backup': 'backend/scripts/ops/host_backup.js',
     'polymarket-research': 'polymarket history schedule',
+    'strategy-explorer': 'scripts/strategies/auto_strategy_explorer.js',
   };
 
   assert.deepEqual(Object.keys(manifest.compose_services).sort(), [...EXPECTED_COMPOSE_SERVICES]);
-  assert.equal((compose.match(/\.env\.services\/[a-z-]+\.env/g) || []).length, 8);
+  assert.equal((compose.match(/\.env\.services\/[a-z-]+\.env/g) || []).length, 9);
   assert.doesNotMatch(compose, /central-env-files|SOVEREIGN_CENTRAL_ENV_FILE/);
   assert.equal(rootDockerfile, dockerfile);
-  assert.equal((compose.match(/\$\{SOVEREIGN_IMAGE_REF:-personal_finance:latest\}/g) || []).length, 8);
+  assert.equal((compose.match(/\$\{SOVEREIGN_IMAGE_REF:-personal_finance:latest\}/g) || []).length, 9);
   assert.match(dockerfile, /org\.opencontainers\.image\.revision/);
   assert.match(dockerfile, /io\.sovereign\.source-tree/);
   assert.match(dockerfile, /io\.sovereign\.build-contract="1"/);
@@ -74,7 +75,7 @@ test('schema-3 service rows match all eight isolated Compose environment files',
 
 test('service rows isolate provider authority except the bounded Alpaca monitor read path', () => {
   const services = loadEnvironmentManifest().compose_services;
-  for (const serviceName of ['web', 'host-health', 'host-backup']) {
+  for (const serviceName of ['web', 'host-health', 'host-backup', 'strategy-explorer']) {
     const keys = [
       ...services[serviceName].required_keys,
       ...services[serviceName].optional_keys,
