@@ -92,7 +92,7 @@ test('strategy explorer: agent-authored custom spec evaluation & registration', 
   assert.strictEqual(typeof entry.evaluation.netReturn, 'number', 'netReturn is number');
   assert.strictEqual(typeof entry.evaluation.maxDrawdown, 'number', 'maxDrawdown is number');
   assert.strictEqual(typeof entry.evaluation.winRate, 'number', 'winRate is number');
-  assert.ok(typeof entry.novelty_distance === 'number', 'novelty distance is number');
+  assert.strictEqual(typeof entry.novelty_distance, 'number', 'novelty distance is number');
 
   if (entry.registry_file) {
     assert.ok(fs.existsSync(entry.registry_file), `custom registry YAML exists at ${entry.registry_file}`);

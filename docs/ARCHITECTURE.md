@@ -1,59 +1,95 @@
-# Sovereign Architecture
+# Sovereign Architecture (SV Console)
 
-Sovereign is a local-first trading research and controlled-execution platform. This page is the short architecture entrypoint; it does not duplicate module contracts or operator runbooks.
+Sovereign is a modular, local-first quantitative trading, research, and backtesting platform. This document serves as the canonical architectural entrypoint across all subsystems.
 
-## System Shape
+---
+
+## 1. System Overview & Modular Architecture
+
+The **SV Console** is engineered to support major tradable asset classes locally without external cloud dependencies:
+- **Traditional Equities & Indices**: `5m` base intraday resolution up to `1w` (synthesized locally via rollup to minimize rate limits).
+- **Crypto Markets**: High-granularity `1m` continuous data back to 2017–2018 (Binance, Coinbase).
+- **Prediction Markets (Polymarket)**: Sub-minute / tick / `1s` orderbook and price resolution with Gamma and CLOB history archiving.
 
 ```text
-external providers
-       |
-       v
-providers / ingestion -> validation -> binary ts-index + metadata
-                                      |
-                       +--------------+---------------+
-                       |                              |
-                 Node CLI / API                 C++ analytics / risk
-                       |                              |
-                       +---------- research ----------+
-                                      |
-                         runtime policy + authorization
-                                      |
-                       paper or gated broker execution
++---------------------------------------------------------------------------------------------------+
+|                                      SV CONSOLE ARCHITECTURE                                      |
++---------------------------------------------------------------------------------------------------+
+|                                                                                                   |
+|  [ 1. DATA INGESTION PIPELINE ]                                                                   |
+|  - Passive Background Ingestion (`backfill-daemon`) across multi-core CPU workers                 |
+|  - Two Operating Modes: Rebuild Mode (deep historical archive) & Live Mode (incremental polling)|
+|  - Market Resolutions:                                                                            |
+|    • Traditional Markets: 5m (base free provider), 15m, 30m, 1h, 4h, 1d, 1w                   |
+|    • Crypto Markets: 1m continuous historical data (2017-present)                                 |
+|    • Prediction Markets (Polymarket): 1s / tick orderbook archives                                |
+|                                       │                                                           |
+|                                       ▼                                                           |
+|  [ 2. DATA FILTRATION & NORMALIZATION PIPELINE ]                                                  |
+|  - Provenance Check: "Where does it come from? Who gave it?" (Provider attribution)               |
+|  - Numerical Validity: low <= high, positive volume, no NaN/INF, timestamp monotonicity          |
+|  - Depth & Rate Limits: Max depth per timeframe, TTL throttling (`INGESTION_TTL_MAP`)             |
+|  - Normalization: Asset metadata sidecar `category { family { symbols } }`                        |
+|  - Binary TS Storage (SOVT): 8-byte header + 48-byte packed records [ts_ms, O, H, L, C, V]        |
+|                                       │                                                           |
+|                                       ▼                                                           |
+|  [ 3. DATA REPAIR & SANITIZATION PIPELINE ]                                                       |
+|  - Repair triggers: Stale cache, server downtime gaps, corrupted tails, out-of-order writes       |
+|  - Native Streaming Merger (`BinaryTsMerger`): O(1) memory two-pointer deduplicating merge        |
+|  - Rollup from Base: 5m base bars synthesized to 15m/1h/1d (saves 26 API calls/min)              |
+|                                       │                                                           |
+|                                       ▼                                                           |
+|  [ 4. ENGINE INTERACTION & EXECUTION LAYER ]                                                      |
+|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐  |
+|  │ C++20 Sovereign Core          │ AI Strategy Explorer & MCP    │ Live Trading & Ledger       │  |
+|  │ - Zero-allocation Backtester  │ - Novelty metric (>=50% dist) │ - Fast-path signal (<2ms)   │  |
+|  │ - Monte Carlo / Walk-Forward  │ - 6D Hamming + SHA-256 dedup  │ - 200-bar lookback prune    │  |
+|  │ - PreTradeRisk & DrawdownGuard│ - MCP `explore_strategy` tool │ - Sub-positions JSON ledger │  |
+|  │ - Binary TS Streaming Merger  │ - Canonical Strategy YAMLs    │ - [MANUAL] auto-attribution │  |
+|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘  |
+|                                       │                                                           |
+|                                       ▼                                                           |
+|  [ 5. BROKER GATEWAYS & DEPLOYMENT TOPOLOGY ]                                                     |
+|  - Alpaca (Paper/Live with fractional step sizing) & Polymarket CLOB                              |
+|  - Docker Compose Services: `sv-web`, `sv-bot-alpaca-paper`, `sv-backfill`, `sv-strategy-explorer`|
+|  - HPDesk Proxmox VM soak monitoring & private central-host single-writer protocol                |
++---------------------------------------------------------------------------------------------------+
 ```
 
-## Active Domains
+---
 
-| Domain | Canonical source owner | Responsibility |
+## 2. Active Domains & Ownership
+
+| Domain | Canonical Source Owner | Responsibility |
 |---|---|---|
-| CLI and terminal UI | `backend/cli/` | command dispatch, Ink dashboard, legacy TUI, operator presentation |
-| Private API and web bridge | `backend/api/` | authenticated routes, capability checks, dashboard serving |
-| Execution gateway | `backend/gateway/` | broker adapters, execution boundary, internal paper ledger |
-| Native core | `backend/core/` | C++ analytics, data inspection, backtesting, and risk contracts |
-| Shared platform | `shared/lib/` | market, strategy, runtime, auth, data, broker, settings, and UI owners |
-| Frontend | `Frontend/dashboard/src/` | React dashboard source; `dist/` is generated output |
-| Configuration | `config/` | markets, strategies, risk, environment, and deployment policy |
-| Runtime data | `storage/data/` | local cache, time series, models, journals, and evidence artifacts |
-| Infrastructure | `infra/` | Compose, host preparation, update, backup, and deployment tooling |
-| Verification | `tests/`, `backend/api/tests/`, `backend/core/test/` | contract, regression, API, UI, and native tests |
+| **Data Ingestion & Storage** | `shared/lib/market/` | Binary TS index (`SOVT`), append-only segments, rollup synthesis, quote routing |
+| **Native C++ Core** | `backend/core/` | C++20 analytics, streaming binary merger, zero-allocation backtester, risk engine |
+| **Strategy Discovery & MCP** | `scripts/strategies/`, `backend/mcp_server/` | Autonomous AI agent strategy explorer, novelty deduplication, MCP tools |
+| **Execution & Sub-Positions**| `shared/lib/runtime/`, `backend/gateway/` | Virtual sub-position ledger, deterministic signatures, broker reconciliation |
+| **CLI & Terminal Dashboard** | `backend/cli/` | Ink dashboard, CLI commands, operator presentation |
+| **Private API & Web Bridge** | `backend/api/` | Authenticated Express routes, capability authorization, WebSocket server |
+| **Frontend** | `Frontend/dashboard/src/` | React 19 + Vite dashboard (source in `src/`, `dist/` is generated) |
+| **Configuration** | `config/` | System environment manifest, strategy registries, risk policies |
+| **Runtime Data** | `storage/data/` | Binary time series (`ts/`), JSON caches (`cache/`), paper state (`runtime/`) |
+| **Infrastructure & Deployment**| `infra/` | Docker Compose topology, HPDesk Proxmox VM runbooks, automated updater |
 
-## Canonical Reading Order
+---
 
-1. [Architecture overview](engineering/architecture_overview.md) — current runtime policy, paper ledger, execution, and deployment model.
-2. [Documentation hub](README.md) — audience and task navigation.
-3. [Documentation manifest](documentation_manifest.json) — which pages are canonical, supporting, stale, or historical.
-4. [Module catalog](modules/README.md) and [Code Atlas](atlas/README.md) — capability ownership and deep source-linked mechanisms.
-5. [Codebase organization](engineering/codebase_org.md) — retained map currently marked `needs_refresh`.
+## 3. Canonical Documentation Reading Order
 
-## Architecture Rules
+1. [Data Pipeline & Storage Architecture](engineering/DATA_PIPELINE_AND_STORAGE.md) — Ingestion, filtration, binary `SOVT` format, repair pipeline, and rollup engine.
+2. [Native C++20 Core & Backtester](engineering/NATIVE_CORE_AND_BACKTESTER.md) — Streaming merger, zero-allocation backtesting, Monte Carlo, and risk gates.
+3. [AI Strategy Explorer & MCP Workbench](RESEARCH_STRATEGY_EXPLORER.md) — Autonomous exploration loop, novelty Hamming metric, and MCP tools.
+4. [Sub-Position Virtual Ledger & Reconciliation](engineering/SUB_POSITIONS_LEDGER.md) — Deterministic signatures, broker reconciliation, and manual share isolation.
+5. [Operational Soak Runbook & HPDesk Deployment](OPERATIONAL_SOAK_RUNBOOK.md) — Docker Compose services, Proxmox VM soak monitoring, and single-writer safety.
+6. [Architecture Overview](engineering/architecture_overview.md) — Runtime policy, paper ledger, and execution boundaries.
+7. [Documentation Hub](README.md) & [Documentation Manifest](documentation_manifest.json) — Complete corpus registry.
 
-- A domain rule has one canonical source owner; compatibility shims must remain visibly secondary.
-- UI, API, CLI, MCP, and generated artifacts do not own trading, research, data-integrity, or authorization policy.
-- Research-only output cannot promote or authorize execution.
-- Deployment profiles control which services a machine may run; they do not grant user capabilities.
-- Internal paper simulation, broker-hosted paper accounts, and live execution are distinct systems and evidence scopes.
-- Data provenance, point-in-time rules, one-writer behavior, and recovery ownership are part of the architecture—not implementation trivia.
-- Historical logs and graph output are evidence to mine; promoted architecture claims must be verified against current source.
+---
 
-## Evidence Boundary
+## 4. Fundamental Architectural Invariants
 
-Architecture documentation describes source ownership and intended contracts. It does not by itself prove provider acceptance, an owned-host deployment, restart, rollback, recovery, soak, paper behavior, or live execution. See [Testing surfaces](operational/guides/testing_surface.md) and the owning runbook for those evidence layers.
+- **Single Canonical Writer**: Only the designated `central-host` node executes write daemons or updates binary storage.
+- **Fail-Closed Execution**: Research and backtest outputs cannot authorize live trading. Live trading requires explicit PIN authentication, environment variable authorization, and pre-trade C++ risk engine clearance.
+- **Strict Data Provenance**: Ingestion validates timestamp monotonicity, finite floating-point numbers, and provider ranking priority before persisting binary files.
+- **Virtual Sub-Position Isolation**: Automated trading bot strategies cannot mutate, close, or liquidate shares belonging to other strategies or manual operator positions.
