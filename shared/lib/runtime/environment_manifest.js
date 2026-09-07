@@ -39,6 +39,7 @@ const EXPECTED_COMPOSE_SERVICES = Object.freeze([
   'host-health',
   'polymarket-research',
   'portfolio-monitor',
+  'strategy-explorer',
   'web',
 ]);
 const REQUIRED_SAFE_COMPOSE_OVERRIDES = Object.freeze({

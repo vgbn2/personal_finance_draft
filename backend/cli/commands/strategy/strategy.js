@@ -1043,7 +1043,7 @@ async function commandStrategy(args) {
     return 0;
   }
   
-  if (subcommand === 'explore' || subcommand === 'discovery') {
+  if (subcommand === 'explore' || subcommand === 'discovery' || subcommand === 'strategy-explore') {
     const { runExplorationCycle, startContinuousLoop } = require('../../../../scripts/strategies/auto_strategy_explorer.js');
     const once = hasFlag(args, '--once') || hasFlag(args, '-1');
     const interval = numericOption(args, '--interval', 30);

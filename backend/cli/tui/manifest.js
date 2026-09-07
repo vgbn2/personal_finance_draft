@@ -337,7 +337,7 @@ const COMMAND_MANIFEST = {
       { id: 'agent', label: 'AI Trading Agent Task', flags: {
         '--query': { type: 'text', default: '', label: 'Task for the agent' }
       }},
-      { id: 'strategy-explore', prefix: ['strategy'], label: 'Autonomous AI Strategy Explorer', loading: true, flags: {
+      { id: 'strategy-explore', label: 'Autonomous AI Strategy Explorer', loading: true, flags: {
         '--once': { type: 'confirm', label: 'Single discovery cycle?', default: true },
         '--interval': { type: 'text', default: '30', label: 'Continuous Interval (minutes)' }
       }}

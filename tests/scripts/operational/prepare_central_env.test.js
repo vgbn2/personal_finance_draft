@@ -12,6 +12,7 @@ const {
   prepareCentralEnvironment,
 } = require('../../../backend/scripts/ops/prepare_central_env.js');
 const {
+  EXPECTED_COMPOSE_SERVICES,
   validateComposeServiceEnvironment,
 } = require('../../../shared/lib/runtime/environment_manifest.js');
 
@@ -86,7 +87,7 @@ test('central environment preparation copies only approved research settings and
   assert.equal(fs.statSync(outputPath).mode & 0o777, 0o600);
   assert.equal(validateCentralEnvironment(prepared).ok, true);
   assert.equal(result.compose_contract.ok, true);
-  assert.equal(result.service_environments.services.length, 8);
+  assert.equal(result.service_environments.services.length, EXPECTED_COMPOSE_SERVICES.length);
   for (const service of result.service_environments.services) {
     const serviceFile = path.join(root, '.env.services', service.file);
     assert.equal(fs.statSync(serviceFile).mode & 0o777, 0o600);
@@ -126,7 +127,7 @@ test('central service projection preview is name-only and closes when required i
     SOVEREIGN_TRADE_PIN: 'pin-poison',
   });
   assert.equal(report.ok, true);
-  assert.equal(report.services.length, 8);
+  assert.equal(report.services.length, EXPECTED_COMPOSE_SERVICES.length);
   assert.ok(
     report.services.find((service) => service.service === 'backfill').projected_keys.includes('FRED_API_KEY'),
   );

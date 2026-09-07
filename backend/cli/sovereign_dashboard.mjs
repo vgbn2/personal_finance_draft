@@ -325,6 +325,12 @@ const M = [
           '--query': { t:'txt', lbl:'Task for the agent', def:'' },
         },
       },
+      { id: 'strategy-explore', label: 'strategy-explore', desc: 'Autonomous AI strategy explorer (C++ backtest)',
+        flags: {
+          '--once':     { t:'yn',  lbl:'Single discovery cycle?', def:true },
+          '--interval': { t:'txt', lbl:'Continuous interval (minutes)', def:'30' },
+        },
+      },
     ],
   },
   {
