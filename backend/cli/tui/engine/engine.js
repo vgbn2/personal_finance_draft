@@ -261,11 +261,12 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
       const time = formatTimeForSettings();
       if (helpMode) {
         const buffer = renderHelpOverlay(question, time, 'multi');
+        let writeBuf = '\x1b[?25l';
         if (prevLineCount > 0) {
-          process.stdout.write(`\x1b[${prevLineCount}A`);
-          process.stdout.write('\x1b[J');
+          writeBuf += `\x1b[${prevLineCount}A\x1b[J`;
         }
-        process.stdout.write(buffer);
+        writeBuf += buffer + '\x1b[?25h';
+        process.stdout.write(writeBuf);
         prevLineCount = visualLineCount(buffer);
         return;
       }
@@ -313,12 +314,13 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
       buffer += separator();
       if (searchMode && filterText) buffer += customSelectionBar(customState);
       buffer += `  ${searchDisplay}\n`;
-      // Line-counting redraw: reliable on Windows ConPTY where CUR_SAVE/CUR_RESTORE fail.
+      // Line-counting redraw: atomic cursor hide + move + clear + paint + restore
+      let writeBuf = '\x1b[?25l';
       if (prevLineCount > 0) {
-        process.stdout.write(`\x1b[${prevLineCount}A`); // move cursor up
-        process.stdout.write('\x1b[J');                  // clear to end of screen
+        writeBuf += `\x1b[${prevLineCount}A\x1b[J`;
       }
-      process.stdout.write(buffer);
+      writeBuf += buffer + '\x1b[?25h';
+      process.stdout.write(writeBuf);
       prevLineCount = visualLineCount(buffer);
     };
 
@@ -470,11 +472,12 @@ async function promptSelect(question, options) {
       const time = formatTimeForSettings();
       if (helpMode) {
         const buffer = renderHelpOverlay(question, time, 'select');
+        let writeBuf = '\x1b[?25l';
         if (prevLineCount > 0) {
-          process.stdout.write(`\x1b[${prevLineCount}A`);
-          process.stdout.write('\x1b[J');
+          writeBuf += `\x1b[${prevLineCount}A\x1b[J`;
         }
-        process.stdout.write(buffer);
+        writeBuf += buffer + '\x1b[?25h';
+        process.stdout.write(writeBuf);
         prevLineCount = visualLineCount(buffer);
         return;
       }
@@ -505,11 +508,13 @@ async function promptSelect(question, options) {
       buffer += separator();
       buffer += `  ${searchBar(filterText, searchMode, filtered.length)}\n`;
 
+      // Line-counting redraw: atomic cursor hide + move + clear + paint + restore
+      let writeBuf = '\x1b[?25l';
       if (prevLineCount > 0) {
-        process.stdout.write(`\x1b[${prevLineCount}A`);
-        process.stdout.write('\x1b[J');
+        writeBuf += `\x1b[${prevLineCount}A\x1b[J`;
       }
-      process.stdout.write(buffer);
+      writeBuf += buffer + '\x1b[?25h';
+      process.stdout.write(writeBuf);
       prevLineCount = visualLineCount(buffer);
     };
 

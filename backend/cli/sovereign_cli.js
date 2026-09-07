@@ -87,6 +87,7 @@ async function handleCommand(args) {
     'ml-predict':     (a) => commandMlPredict(a),
     'ml-compare':     (a) => commandMlPredict(a),
     models:           (a) => commandModelCompare(a),
+    'strategy-explore': (a) => commandStrategyMenu(['explore', ...a]),
     optimize:         (a) => commandOptimize(a),
     sweep:            (a) => commandSweep(a),
     'edge-decay':     (a) => commandEdgeDecay(a),
