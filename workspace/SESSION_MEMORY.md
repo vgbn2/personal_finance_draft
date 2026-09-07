@@ -1,3 +1,29 @@
+### Session Memory - 2026-09-07 session 2 — SV Console Deep Review, Architecture Documentation & Safety Suite Verification
+
+```json
+{
+  "batch": ["SYSTEM-REVIEW-DOCS-SAFETY-1"],
+  "lifecycle": "closed",
+  "scope": "Executed deep codebase review and authored comprehensive architectural/operational documentation suite (DATA_PIPELINE_AND_STORAGE.md, NATIVE_CORE_AND_BACKTESTER.md, SUB_POSITIONS_LEDGER.md, OPERATIONAL_SOAK_RUNBOOK.md, ARCHITECTURE.md). Updated documentation manifest and verified safety contracts (test:safety passing 8/8 env, 18/18 alpaca state, 8/8 lock, 3/3 degraded fallback, 2/2 guard mutation). Restored sec_companyfacts_aapl_recorded.json fixture and classified EXPLORER_INTERVAL_MINUTES in environment manifest.",
+  "changes": "created docs/engineering/DATA_PIPELINE_AND_STORAGE.md, docs/engineering/NATIVE_CORE_AND_BACKTESTER.md, docs/engineering/SUB_POSITIONS_LEDGER.md, docs/OPERATIONAL_SOAK_RUNBOOK.md; updated docs/ARCHITECTURE.md, docs/documentation_manifest.json, config/system/environment_manifest.json, tests/scripts/strategy/strategy_explorer_workflow.test.js, workspace/HANDOFF.md, workspace/SESSION_MEMORY.md, workspace/STATE.md, workspace/NEXT_SESSION_GOAL.md",
+  "verification": "npm run test:safety (100% PASS); npm run test:structure (100% PASS, 12/12); npm run test:core (100% PASS, 34/34 CTests); npm run test:data (100% PASS); npm run test:api (100% PASS); npm run hygiene (PASS); npm run audit:documentation (PASS)",
+  "boundaries": "research backtesting, documentation, and paper trading audit only; zero-key policy maintained; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
+### Session Memory - 2026-09-07 — HPDesk Strategy Rsync, Walk-Forward Validation & Paper Soak Audit
+
+```json
+{
+  "batch": ["STRATEGY-SOAK-AUDIT-1"],
+  "lifecycle": "closed",
+  "scope": "Audited strategy discovery pipeline, native C++20 Sovereign Core backtesting evaluations, sub-position virtual ledger attribution contracts, and HPDesk paper soak procedures.",
+  "changes": "updated workspace/HANDOFF.md, workspace/SESSION_MEMORY.md, created workspace/handoff/2026/09/2026-09-07.md",
+  "verification": "inspected strategy_explorer_state.json (13 strategies tracked); verified sub-positions deterministic signature contracts; validated zero-key testing boundaries",
+  "boundaries": "research backtesting and paper trading audit only; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-09-04 session 3 — AI Agent Strategy Workbench via MCP & Hypothesis Evaluation Engine
 
 ```json

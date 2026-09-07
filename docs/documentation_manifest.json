@@ -55,8 +55,44 @@
       "audience": ["contributors", "maintainers"],
       "owner": "architecture",
       "status": "canonical",
-      "source_paths": ["docs/engineering/architecture_overview.md", "docs/engineering/codebase_org.md", "docs/modules/TEMPLATE.md"],
+      "source_paths": ["docs/engineering/DATA_PIPELINE_AND_STORAGE.md", "docs/engineering/NATIVE_CORE_AND_BACKTESTER.md", "docs/engineering/SUB_POSITIONS_LEDGER.md", "docs/OPERATIONAL_SOAK_RUNBOOK.md", "docs/engineering/architecture_overview.md", "docs/engineering/codebase_org.md", "docs/modules/TEMPLATE.md"],
       "review_triggers": ["top-level-domain", "architecture-entrypoint", "module-catalog"]
+    },
+    {
+      "path": "docs/engineering/DATA_PIPELINE_AND_STORAGE.md",
+      "type": "explanation",
+      "audience": ["contributors", "data-maintainers", "operators"],
+      "owner": "data",
+      "status": "canonical",
+      "source_paths": ["shared/lib/market/ts_index_storage.js", "shared/lib/market/append_only_segments.js", "shared/lib/market/quote_router.js", "shared/lib/market/indicators.js"],
+      "review_triggers": ["binary-storage", "sovt-layout", "ingestion-pipeline", "data-repair"]
+    },
+    {
+      "path": "docs/engineering/NATIVE_CORE_AND_BACKTESTER.md",
+      "type": "explanation",
+      "audience": ["contributors", "quantitative-researchers", "native-engineers"],
+      "owner": "native-core",
+      "status": "canonical",
+      "source_paths": ["backend/core/src/data/binary_ts_merger.cpp", "backend/core/src/backtest/frame_backtester.cpp", "backend/core/src/risk/pre_trade_risk.cpp"],
+      "review_triggers": ["cpp-engine", "binary-ts-merger", "frame-backtester", "risk-engine"]
+    },
+    {
+      "path": "docs/engineering/SUB_POSITIONS_LEDGER.md",
+      "type": "explanation",
+      "audience": ["contributors", "execution-maintainers", "operators"],
+      "owner": "execution",
+      "status": "canonical",
+      "source_paths": ["shared/lib/runtime/sub_positions_ledger.js", "shared/lib/brokers/alpaca_env.js", "shared/lib/brokers/polymarket_env.js"],
+      "review_triggers": ["sub-positions", "deterministic-signatures", "broker-reconciliation", "manual-attribution"]
+    },
+    {
+      "path": "docs/OPERATIONAL_SOAK_RUNBOOK.md",
+      "type": "how-to",
+      "audience": ["operators", "deployment-maintainers"],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": ["infra/docker/docker-compose.yml", "shared/lib/settings/deployment_profile.js", "backend/cli/sovereign_cli.js"],
+      "review_triggers": ["docker-topology", "hpdesk-soak", "central-host-writer"]
     },
     {
       "path": "docs/engineering/architecture_overview.md",
