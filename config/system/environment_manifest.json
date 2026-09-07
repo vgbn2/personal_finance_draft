@@ -268,6 +268,7 @@
         {"name": "ALPACA_PAPER_MIN_TRUST_SCORE", "default": "70", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
         {"name": "BACKFILL_DEEP_ALL", "default": "false", "allowed_surfaces": ["operator", "compose_backfill"]},
         {"name": "BACKFILL_INTERVAL_SECS", "default": "1800", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
+        {"name": "EXPLORER_INTERVAL_MINUTES", "default": "30", "allowed_surfaces": ["default_cli", "operator", "mcp"]},
         {
           "name": "CURRENT_PORTFOLIO_DRAWDOWN",
           "environment_class": "private",
