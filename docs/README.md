@@ -8,24 +8,24 @@ Historical logs, handoffs, plans, reviews, and graph reports are deliberately re
 
 1. [Project README](../README.md) — purpose, safety boundary, first commands, and audience routes.
 2. [Architecture entrypoint](ARCHITECTURE.md) — short system map and canonical owners.
-3. [Engineering Documentation Suite](engineering/README.md) — 7-section canonical architecture, data pipeline, C++ core, alpha research, sub-positions ledger, prediction markets, and security.
+3. [Engineering Documentation Suite](engineering/README.md) — 8-section canonical architecture, data pipeline, C++ core, alpha research, sub-positions ledger, prediction markets, security, and financial primer.
 4. [Codebase tour](codebase_tour/00_START_HERE.md) — guided traces and labs against real source; supporting material that may need path refresh.
-5. [Documentation standard](engineering/documentation_standard.md) — how to write and review docs in this repository.
+5. [Documentation standard](engineering/standards/documentation_standard.md) — how to write and review docs in this repository.
 
 ## By Audience
 
 | Audience | First document | Continue with |
 |---|---|---|
 | Operator | [Quickstart](operational/guides/QUICKSTART.md) | [CLI guide](operational/guides/cli_quick_guide.md), [operations](operational/guides/operations.md) |
-| Contributor | [Contributing](operational/guides/CONTRIBUTING.md) | [architecture](engineering/01_ARCHITECTURE_AND_CODEBASE.md), [testing](operational/guides/testing_surface.md) |
+| Contributor | [Contributing](operational/guides/CONTRIBUTING.md) | [architecture](engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md), [testing](operational/guides/testing_surface.md) |
 | Quantitative researcher | [Research overview](research/quant_research.md) | [macro model](research/macro_model.md), [codebase tour](codebase_tour/00_START_HERE.md) |
-| API/frontend developer | [Web/API reference](engineering/web_api.md) | [frontend design](design/frontend_design_spec.md) |
+| API/frontend developer | [Web/API reference](engineering/specs/web_api.md) | [frontend design](design/frontend_design_spec.md) |
 | Deployment maintainer | [Role-based hosting](operational/guides/role_based_hosting.md) | [deployment](operational/guides/DEPLOYMENT.md), [local-first setup](operational/local_first/local_first_setup.md) |
-| Module maintainer | [Module catalog](modules/README.md) | [Code Atlas](atlas/README.md), [documentation standard](engineering/documentation_standard.md) |
+| Module maintainer | [Module catalog](modules/README.md) | [Code Atlas](atlas/README.md), [documentation standard](engineering/standards/documentation_standard.md) |
 
 ## Documentation Types
 
-The repository follows the [documentation standard](engineering/documentation_standard.md): keep learning, task, reference, explanation, and historical evidence distinct.
+The repository follows the [documentation standard](engineering/standards/documentation_standard.md): keep learning, task, reference, explanation, and historical evidence distinct.
 
 ### Tutorials
 
@@ -60,29 +60,30 @@ Read each command's side-effect label before running provider, data-write, conta
 ### Reference
 
 - [Documentation manifest](documentation_manifest.json) — corpus status and source/review ownership.
-- [Documentation standard](engineering/documentation_standard.md) — writing and review contract.
-- [System Architecture & Codebase](engineering/01_ARCHITECTURE_AND_CODEBASE.md) — canonical system map and domain ownership.
+- [Documentation standard](engineering/standards/documentation_standard.md) — writing and review contract.
+- [System Architecture & Codebase](engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md) — canonical system map and domain ownership.
 - [Domain Structure Guides](sections/) — dedicated subsystem maps for [backend](sections/backend/README.md), [shared](sections/shared/README.md), [frontend](sections/frontend/README.md), [config](sections/config/README.md), [storage](sections/storage/README.md), and [tests](sections/tests/README.md).
 - [Module catalog](modules/README.md) and [module template](modules/TEMPLATE.md) — cross-file ownership contracts.
 - [Code Atlas](atlas/README.md) — source-linked algorithms, structures, protocols, and topology.
 - [Testing surfaces](operational/guides/testing_surface.md) — test and evidence commands.
-- [Web/API reference](engineering/web_api.md) — **needs refresh** against the active route registry.
-- [Capability manifest](engineering/capability_manifest.md) — **needs refresh**; contains obsolete paths/data-store claims.
-- [Stack manifest](engineering/stack_manifest.md)
-- [Supabase integration](engineering/supabase_integration.md)
+- [Web/API reference](engineering/specs/web_api.md) — **needs refresh** against the active route registry.
+- [Capability manifest](engineering/specs/capability_manifest.md) — **needs refresh**; contains obsolete paths/data-store claims.
+- [Stack manifest](engineering/specs/stack_manifest.md)
+- [Supabase integration](engineering/specs/supabase_integration.md)
 
 ### Explanation
 
-- [System Architecture Overview](engineering/01_ARCHITECTURE_AND_CODEBASE.md)
-- [Data Pipeline & Binary Storage](engineering/02_DATA_PIPELINE_AND_STORAGE.md)
-- [Native C++20 Core & Backtester](engineering/03_NATIVE_CORE_AND_BACKTESTER.md)
-- [Quantitative Alpha & ML Workbench](engineering/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md)
-- [Execution & Sub-Positions Ledger](engineering/05_EXECUTION_SUB_POSITIONS_AND_RISK.md)
-- [Prediction Markets & Orderbook Archiving](engineering/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md)
-- [Security, APIs & Deployment](engineering/07_SECURITY_API_TESTING_DEPLOYMENT.md)
-- [Product specification](engineering/product_spec.md) — **needs refresh** to separate implemented, gated, and roadmap capabilities.
-- [Technical specification](engineering/technical_spec.md) — **needs refresh** for current paths and public owners.
-- [Engineering standards](engineering/engineering_standards.md)
+- [System Architecture Overview](engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md)
+- [Data Pipeline & Binary Storage](engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md)
+- [Native C++20 Core & Backtester](engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md)
+- [Quantitative Alpha & ML Workbench](engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md)
+- [Execution & Sub-Positions Ledger](engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md)
+- [Prediction Markets & Orderbook Archiving](engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md)
+- [Security, APIs & Deployment](engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md)
+- [Financial Primer for Systems Engineers](engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md)
+- [Product specification](engineering/specs/product_spec.md) — **needs refresh** to separate implemented, gated, and roadmap capabilities.
+- [Technical specification](engineering/specs/technical_spec.md) — **needs refresh** for current paths and public owners.
+- [Engineering standards](engineering/standards/engineering_standards.md)
 - [Research overview](research/quant_research.md)
 - [Macro model](research/macro_model.md)
 - [Frontend design](design/frontend_design_spec.md)
@@ -120,4 +121,4 @@ Before writing:
 6. run available documentation, structure, link/path, and focused behavior gates;
 7. disclose which provider, host, deployment, recovery, paper, or live checks were not run.
 
-See [Documentation Standard](engineering/documentation_standard.md) for the full contract.
+See [Documentation Standard](engineering/standards/documentation_standard.md) for the full contract.

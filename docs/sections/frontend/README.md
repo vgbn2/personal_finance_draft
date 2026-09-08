@@ -32,5 +32,5 @@ Frontend/
 
 ## Code Atlas & Related Maps
 
-- API Route Reference — [`docs/engineering/web_api.md`](../../engineering/web_api.md)
+- API Route Reference — [`docs/engineering/specs/web_api.md`](../../engineering/specs/web_api.md)
 - Terminal Dashboard Interface — [`docs/sections/interface/terminal-dashboard/README.md`](../interface/terminal-dashboard/README.md)
