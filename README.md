@@ -249,11 +249,12 @@ Raw Market Feed (Binance / Yahoo / Polymarket)
 | `backend/gateway/` | Broker gateways (Alpaca, Polymarket, Gate.io) & checksummed paper ledger. |
 | `shared/lib/` | Shared domain logic: market storage, indicators, strategy runtime, risk models. |
 | `Frontend/dashboard/` | React 19 + Vite dashboard (source in `src/`, `dist/` is generated). |
-| `config/` | System environment manifest, asset mappings, risk policies. |
+| `config/` | System environment manifest, asset mappings, risk policies, and categorized strategy registry (`curated/`, `automated/`, `fixtures/`). |
 | `storage/data/` | Runtime disk storage: binary TS indices (`ts/`), JSON caches (`cache/`), paper trading state. |
+| `scripts/` | Domain-organized utilities: `mcp/`, `ml/training/`, `tools/`, and `dev/`. |
 | `tests/` | Node.js integration, architecture contract, and safety test suites. |
-| `docs/` | Canonical documentation hub, Code Atlas, and operational runbooks. |
-| `workspace/` | Project state (`STATE.md`), handoffs, logs, and developer documentation. |
+| `docs/` | Canonical documentation hub (`docs/README.md`), 8-section architecture suite (`docs/engineering/architecture/`), specs, standards, and operational runbooks. |
+| `workspace/` | Active project state (`STATE.md`), handoffs (`handoff/`), prompt logs, memory, governance (`governance/`), and protocols (`protocols/`). |
 
 ---
 
@@ -297,12 +298,12 @@ All development, testing, and pull request reviews follow the repository's canon
 ## 9. Choose Your Path
 
 - **Operator:** [Quickstart](docs/operational/guides/QUICKSTART.md) → [CLI guide](docs/operational/guides/cli_quick_guide.md) → [Operations](docs/operational/guides/operations.md)
-- **Contributor:** [Contributing](docs/operational/guides/CONTRIBUTING.md) → [GitHub rulesets](docs/operational/guides/github_environment_and_rulesets.md) → [Architecture](docs/engineering/architecture_overview.md) → [Documentation standard](docs/engineering/documentation_standard.md)
+- **Contributor:** [Contributing](docs/operational/guides/CONTRIBUTING.md) → [GitHub rulesets](docs/operational/guides/github_environment_and_rulesets.md) → [Architecture Suite](docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md) → [Documentation standard](docs/engineering/standards/documentation_standard.md)
 - **Maintainer:** [Maintainer roster](workspace/governance/MAINTAINERS.md) → [Governance](workspace/governance/GOVERNANCE.md) → [Security policy](workspace/governance/SECURITY.md) → [Module catalog](docs/modules/README.md)
-- **Quantitative researcher:** [Research overview](docs/research/quant_research.md) → [codebase tour](docs/codebase_tour/00_START_HERE.md)
-- **API or frontend developer:** [Web/API reference](docs/engineering/web_api.md) *(currently marked for refresh in the documentation manifest)*
+- **Quantitative researcher:** [Research overview](docs/research/quant_research.md) → [Financial Primer](docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md) → [Codebase tour](docs/codebase_tour/00_START_HERE.md)
+- **API or frontend developer:** [Web/API reference](docs/engineering/specs/web_api.md) *(currently marked for refresh in the documentation manifest)*
 - **Deployment maintainer:** [Role-based hosting](docs/operational/guides/role_based_hosting.md) → [Deployment](docs/operational/guides/DEPLOYMENT.md)
-- **Module maintainer:** [Module catalog](docs/modules/README.md) → [Code Atlas](docs/atlas/README.md) → [documentation standard](docs/engineering/documentation_standard.md).
+- **Module maintainer:** [Module catalog](docs/modules/README.md) → [Code Atlas](docs/atlas/README.md) → [Documentation standard](docs/engineering/standards/documentation_standard.md).
 
 ---
 
