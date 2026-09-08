@@ -40,6 +40,9 @@ const ERASE_LINE = `${ESC}[2K`;
 const CLR_DOWN = `${ESC}[J`;
 const CLR_ALL = `${ESC}[2J`;
 const HOME = `${ESC}[0;0H`;
+// Synchronized output (DEC Mode 2026) - atomic frame buffer updates
+const BSU = `${ESC}[?2026h`;
+const ESU = `${ESC}[?2026l`;
 
 // Raw-mode key codes
 const KEY_CTRL_C = '\u0003';
@@ -170,6 +173,8 @@ module.exports = {
   CLR_DOWN,
   CLR_ALL,
   HOME,
+  BSU,
+  ESU,
   KEY_CTRL_C,
   KEY_ESC,
   KEY_BS,
