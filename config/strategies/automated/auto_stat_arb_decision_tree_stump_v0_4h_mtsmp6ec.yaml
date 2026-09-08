@@ -1,0 +1,56 @@
+name: auto_stat_arb_decision_tree_stump_v0_4h_mtsmp6ec
+kind: stat_arb
+family: stat_arb
+lane: cross_asset
+role: arbitrage
+status: draft
+enabled: false
+model: decision_tree_stump_v0
+timeframe: 4h
+sections:
+  hypothesis: "Hypothesis for auto_stat_arb_decision_tree_stump_v0_4h_mtsmp6ec"
+  universe:
+    - BTCUSDT
+    - ETHUSDT
+  signals:
+    entry: "Entry condition satisfied"
+    exit: "Exit condition satisfied or horizon expired"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - atr
+      - volatility
+      - return_fast
+      - return_slow
+    relative:
+    orderflow:
+    custom:
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: false
+    atr: true
+    bollinger: false
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 21
+    risk_weight: 0.1
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []
