@@ -44,7 +44,7 @@ You should already understand:
 
 For folder ownership, the main path map is:
 
-- [Codebase organization](../../engineering/codebase_org.md)
+- [System Architecture & Codebase Organization](../../engineering/01_ARCHITECTURE_AND_CODEBASE.md)
 
 This chapter is a learning-oriented overview. The path map remains the canonical placement source.
 

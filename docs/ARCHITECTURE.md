@@ -1,93 +1,113 @@
 # Sovereign Architecture (SV Console)
 
-Sovereign is a modular, local-first quantitative trading, research, and backtesting platform. This document serves as the canonical architectural entrypoint across all subsystems.
+Sovereign is a modular, local-first quantitative trading, research, backtesting, and execution platform. This document serves as the master architectural entrypoint and navigation index across all subsystems.
 
 ---
 
-## 1. System Overview & Modular Architecture
-
-The **SV Console** is engineered to support major tradable asset classes locally without external cloud dependencies:
-- **Traditional Equities & Indices**: `5m` base intraday resolution up to `1w` (synthesized locally via rollup to minimize rate limits).
-- **Crypto Markets**: High-granularity `1m` continuous data back to 2017–2018 (Binance, Coinbase).
-- **Prediction Markets (Polymarket)**: Sub-minute / tick / `1s` orderbook and price resolution with Gamma and CLOB history archiving.
+## 1. Master System Topology & Modular Architecture
 
 ```text
-+---------------------------------------------------------------------------------------------------+
-|                                      SV CONSOLE ARCHITECTURE                                      |
-+---------------------------------------------------------------------------------------------------+
-|                                                                                                   |
-|  [ 1. DATA INGESTION PIPELINE ]                                                                   |
-|  - Passive Background Ingestion (`backfill-daemon`) across multi-core CPU workers                 |
-|  - Two Operating Modes: Rebuild Mode (deep historical archive) & Live Mode (incremental polling)|
-|  - Market Resolutions:                                                                            |
-|    • Traditional Markets: 5m (base free provider), 15m, 30m, 1h, 4h, 1d, 1w                   |
-|    • Crypto Markets: 1m continuous historical data (2017-present)                                 |
-|    • Prediction Markets (Polymarket): 1s / tick orderbook archives                                |
-|                                       │                                                           |
-|                                       ▼                                                           |
-|  [ 2. DATA FILTRATION & NORMALIZATION PIPELINE ]                                                  |
-|  - Provenance Check: "Where does it come from? Who gave it?" (Provider attribution)               |
-|  - Numerical Validity: low <= high, positive volume, no NaN/INF, timestamp monotonicity          |
-|  - Depth & Rate Limits: Max depth per timeframe, TTL throttling (`INGESTION_TTL_MAP`)             |
-|  - Normalization: Asset metadata sidecar `category { family { symbols } }`                        |
-|  - Binary TS Storage (SOVT): 8-byte header + 48-byte packed records [ts_ms, O, H, L, C, V]        |
-|                                       │                                                           |
-|                                       ▼                                                           |
-|  [ 3. DATA REPAIR & SANITIZATION PIPELINE ]                                                       |
-|  - Repair triggers: Stale cache, server downtime gaps, corrupted tails, out-of-order writes       |
-|  - Native Streaming Merger (`BinaryTsMerger`): O(1) memory two-pointer deduplicating merge        |
-|  - Rollup from Base: 5m base bars synthesized to 15m/1h/1d (saves 26 API calls/min)              |
-|                                       │                                                           |
-|                                       ▼                                                           |
-|  [ 4. ENGINE INTERACTION & EXECUTION LAYER ]                                                      |
-|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐  |
-|  │ C++20 Sovereign Core          │ AI Strategy Explorer & MCP    │ Live Trading & Ledger       │  |
-|  │ - Zero-allocation Backtester  │ - Novelty metric (>=50% dist) │ - Fast-path signal (<2ms)   │  |
-|  │ - Monte Carlo / Walk-Forward  │ - 6D Hamming + SHA-256 dedup  │ - 200-bar lookback prune    │  |
-|  │ - PreTradeRisk & DrawdownGuard│ - MCP `explore_strategy` tool │ - Sub-positions JSON ledger │  |
-|  │ - Binary TS Streaming Merger  │ - Canonical Strategy YAMLs    │ - [MANUAL] auto-attribution │  |
-|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘  |
-|                                       │                                                           |
-|                                       ▼                                                           |
-|  [ 5. BROKER GATEWAYS & DEPLOYMENT TOPOLOGY ]                                                     |
-|  - Alpaca (Paper/Live with fractional step sizing) & Polymarket CLOB                              |
-|  - Docker Compose Services: `sv-web`, `sv-bot-alpaca-paper`, `sv-backfill`, `sv-strategy-explorer`|
-|  - HPDesk Proxmox VM soak monitoring & private central-host single-writer protocol                |
-+---------------------------------------------------------------------------------------------------+
++--------------------------------------------------------------------------------------------------------------------+
+|                                    SOVEREIGN CONSOLE MASTER ARCHITECTURE TOPOLOGY                                  |
++--------------------------------------------------------------------------------------------------------------------+
+|                                                                                                                    |
+|  [ 1. PRESENTATION & INTEGRATION LAYER ]                                                                           |
+|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐                  |
+|  │ Sovereign CLI & Ink TUI       │ React 19 + Vite Dashboard     │ Model Context Protocol (MCP)│                  |
+|  │ `backend/cli/sovereign_cli.js`│ `Frontend/dashboard/src/`     │ `backend/mcp_server/`       │                  |
+|  │ Zero-allocation CLI commands  │ Real-time WebSocket bridge    │ AI Autonomous Workbench     │                  |
+|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘                  |
+|                                                  │                                                                 |
+|                                                  ▼                                                                 |
+|  [ 2. APPLICATION & ROUTING LAYER ]                                                                                |
+|  ┌───────────────────────────────────────────────────────────────┬─────────────────────────────┐                  |
+|  │ Authenticated Express API (`backend/api/`)                    │ Execution Policy Router     │                  |
+|  │ Token validation, rate limiters, WebSocket broadcaster        │ `shared/lib/settings/`      │                  |
+|  └───────────────────────────────────────────────────────────────┴─────────────────────────────┘                  |
+|                                                  │                                                                 |
+|                                                  ▼                                                                 |
+|  [ 3. QUANTITATIVE DISCOVERY & RUNTIME EXECUTION ]                                                                 |
+|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐                  |
+|  │ Autonomous Strategy Discovery │ Virtual Sub-Positions Ledger  │ Indicator & Feature Engine  │                  |
+|  │ `scripts/strategies/`         │ `shared/lib/runtime/`         │ `shared/lib/market/`        │                  |
+|  │ 6D Novelty Hamming Filter     │ Deterministic Order Signatures│ Rolling RSI, MACD, ATR, SVM │                  |
+|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘                  |
+|                                                  │                                                                 |
+|                                                  ▼                                                                 |
+|  [ 4. NATIVE C++20 SOVEREIGN CORE (`backend/core/`) ]                                                              |
+|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐                  |
+|  │ Streaming Binary TS Merger    │ FrameBacktester Engine        │ PreTradeRisk & Drawdown     │                  |
+|  │ Two-pointer zero-allocation   │ Mode A Native / Mode B Frame  │ Microsecond circuit breaker │                  |
+|  │ $O(1)$ memory (<5MB RSS)      │ Monte Carlo bootstrap PRNG    │ Drawdown limit & fat-finger │                  |
+|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘                  |
+|                                                  │                                                                 |
+|                                                  ▼                                                                 |
+|  [ 5. LOCAL STORAGE ENGINE (`storage/data/`) ]                                                                     |
+|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐                  |
+|  │ Binary TS Storage (`ts/*.bin`)│ Append-Only Paper Ledger JSONL│ Persistent Parameter Caches │                  |
+|  │ SOVT 48-byte packed format    │ Virtual Polymarket simulation │ `strategy_explorer_state`   │                  |
+|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘                  |
+|                                                  │                                                                 |
+|                                                  ▼                                                                 |
+|  [ 6. BROKER GATEWAYS & OPERATIONAL INFRASTRUCTURE ]                                                               |
+|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐                  |
+|  │ Alpaca Paper / Live Broker    │ Polymarket CLOB Gateway       │ Docker Compose Stack        │                  |
+|  │ Fractional step sizing clamp  │ 1s / tick orderbook streams   │ HPDesk Proxmox VM Soak Mesh │                  |
+|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘                  |
++--------------------------------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 2. Active Domains & Ownership
+## 2. Subsystem Ownership & Directory Taxonomy
 
 | Domain | Canonical Source Owner | Responsibility |
 |---|---|---|
-| **Data Ingestion & Storage** | `shared/lib/market/` | Binary TS index (`SOVT`), append-only segments, rollup synthesis, quote routing |
-| **Native C++ Core** | `backend/core/` | C++20 analytics, streaming binary merger, zero-allocation backtester, risk engine |
-| **Strategy Discovery & MCP** | `scripts/strategies/`, `backend/mcp_server/` | Autonomous AI agent strategy explorer, novelty deduplication, MCP tools |
-| **Execution & Sub-Positions**| `shared/lib/runtime/`, `backend/gateway/` | Virtual sub-position ledger, deterministic signatures, broker reconciliation |
-| **CLI & Terminal Dashboard** | `backend/cli/` | Ink dashboard, CLI commands, operator presentation |
-| **Private API & Web Bridge** | `backend/api/` | Authenticated Express routes, capability authorization, WebSocket server |
-| **Frontend** | `Frontend/dashboard/src/` | React 19 + Vite dashboard (source in `src/`, `dist/` is generated) |
-| **Configuration** | `config/` | System environment manifest, strategy registries, risk policies |
-| **Runtime Data** | `storage/data/` | Binary time series (`ts/`), JSON caches (`cache/`), paper state (`runtime/`) |
-| **Infrastructure & Deployment**| `infra/` | Docker Compose topology, HPDesk Proxmox VM runbooks, automated updater |
+| **System Architecture & Codebase** | `backend/cli/`, `backend/api/`, `backend/core/` | Core lifecycle, CLI entrypoints, directory contracts |
+| **Data Ingestion & Binary Storage**| `shared/lib/market/` | Binary `SOVT` storage, append-only segments, rollup synthesis |
+| **Native C++20 Core & Backtester** | `backend/core/` | Zero-allocation backtesting, streaming TS merger, Monte Carlo, PreTradeRisk |
+| **Quantitative Alpha & MCP Workbench**| `scripts/strategies/`, `backend/mcp_server/` | Autonomous AI strategy discovery, 6D novelty filter, MCP tools |
+| **Execution & Sub-Positions Ledger**| `shared/lib/runtime/`, `backend/gateway/` | Virtual sub-position accounting, deterministic signatures, broker reconciliation |
+| **Prediction Markets & Archiving** | `shared/lib/market/`, `backend/gateway/` | Polymarket Gamma/CLOB ingestion, 1s orderbook snapshots, paper ledger |
+| **Security, APIs & Deployment** | `backend/mcp_server/`, `infra/docker/` | RBAC access control, Express REST/WS APIs, test matrix, Proxmox VM soak |
 
 ---
 
-## 3. Canonical Documentation Reading Order
+## 3. Canonical 7-Section Engineering Documentation Roadmap
 
-1. [Data Pipeline & Storage Architecture](engineering/DATA_PIPELINE_AND_STORAGE.md) — Ingestion, filtration, binary `SOVT` format, repair pipeline, and rollup engine.
-2. [Native C++20 Core & Backtester](engineering/NATIVE_CORE_AND_BACKTESTER.md) — Streaming merger, zero-allocation backtesting, Monte Carlo, and risk gates.
-3. [AI Strategy Explorer & MCP Workbench](RESEARCH_STRATEGY_EXPLORER.md) — Autonomous exploration loop, novelty Hamming metric, and MCP tools.
-4. [Sub-Position Virtual Ledger & Reconciliation](engineering/SUB_POSITIONS_LEDGER.md) — Deterministic signatures, broker reconciliation, and manual share isolation.
-5. [Operational Soak Runbook & HPDesk Deployment](OPERATIONAL_SOAK_RUNBOOK.md) — Docker Compose services, Proxmox VM soak monitoring, and single-writer safety.
-6. [Architecture Overview](engineering/architecture_overview.md) — Runtime policy, paper ledger, and execution boundaries.
-7. [Documentation Hub](README.md) & [Documentation Manifest](documentation_manifest.json) — Complete corpus registry.
+The core technical architecture is thoroughly documented across the canonical **7-Section Modular Engineering Suite** (`docs/engineering/`):
+
+1. **[01. System Architecture & Codebase Organization](engineering/01_ARCHITECTURE_AND_CODEBASE.md)**
+   - Master multi-tier topology, module taxonomy, dependency direction, and fundamental invariants (single-writer, fail-closed, zero-key development, sub-position isolation).
+
+2. **[02. Data Pipeline & Binary Storage Architecture](engineering/02_DATA_PIPELINE_AND_STORAGE.md)**
+   - Ingestion lifecycle across equities (5m), crypto (1m from 2017), and prediction markets (1s), binary `SOVT` 48-byte packed format, C++20 zero-allocation streaming merger ($O(1)$ memory, $<5\text{MB}$ RSS), and local rollup synthesis.
+
+3. **[03. Native C++20 Core & Quantitative Backtester](engineering/03_NATIVE_CORE_AND_BACKTESTER.md)**
+   - C++20 Sovereign Core engine (`sovereign_wealth`), `FrameBacktester` (Mode A Native vs Mode B Annotated), execution drag simulation, Monte Carlo bootstrap engine (`xorshift64`), and `PreTradeRisk` microsecond gate.
+
+4. **[04. Quantitative Alpha, ML & AI Agent Workbench](engineering/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md)**
+   - Autonomous 30-minute AI strategy discovery daemon, 6D normalized parameter hypercube, $\ge 50\%$ novelty distance metric, SHA-256 fingerprinting, rolling feature frames, and Model Context Protocol (MCP) `explore_strategy` workbench tool.
+
+5. **[05. Execution, Sub-Positions Ledger & Risk Management](engineering/05_EXECUTION_SUB_POSITIONS_AND_RISK.md)**
+   - Virtual sub-positions accounting ledger (`sub_positions.json`), deterministic order client IDs (`strat_<id>_<tf>_<ts>_<entropy>` and `manual_cli_<sym>_<ts>_<entropy>`), broker physical reconciliation, and fractional step sizing (`0.001` equity, `0.0001` crypto).
+
+6. **[06. Prediction Markets & Polymarket Orderbook Archiving](engineering/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md)**
+   - Polymarket Gamma and CLOB ingestion, 1-second L2 orderbook snapshot archiving, virtual prediction paper trading simulator (`paper_ledger.js`), and oracle resolution settlement.
+
+7. **[07. Security Model, APIs, Testing Strategy & Deployment](engineering/07_SECURITY_API_TESTING_DEPLOYMENT.md)**
+   - RBAC capability authorization, Express REST and WebSocket APIs, zero-key local test matrix (`test:safety`, `test:structure`, `test:core` 34 CTests), Docker Compose multi-container topology, and HPDesk Proxmox VM soak runbook.
 
 ---
 
-## 4. Fundamental Architectural Invariants
+## 4. Supporting Runbooks & Guides
+- [Operational Soak Runbook & HPDesk Deployment](OPERATIONAL_SOAK_RUNBOOK.md) — Multi-container Docker Compose setup, Proxmox VM soak monitoring, single-writer protocol.
+- [Autonomous AI Strategy Research Guide](RESEARCH_STRATEGY_EXPLORER.md) — Step-by-step guide for AI agents interacting with Sovereign via MCP, CLI, and YAML registries.
+- [Master Documentation Catalog](README.md) & [Documentation Manifest](documentation_manifest.json) — Complete corpus registry.
+
+---
+
+## 5. Fundamental Architectural Invariants
 
 - **Single Canonical Writer**: Only the designated `central-host` node executes write daemons or updates binary storage.
 - **Fail-Closed Execution**: Research and backtest outputs cannot authorize live trading. Live trading requires explicit PIN authentication, environment variable authorization, and pre-trade C++ risk engine clearance.
