@@ -55,7 +55,7 @@
       "audience": ["contributors", "maintainers"],
       "owner": "architecture",
       "status": "canonical",
-      "source_paths": ["docs/engineering/01_ARCHITECTURE_AND_CODEBASE.md", "docs/engineering/02_DATA_PIPELINE_AND_STORAGE.md", "docs/engineering/03_NATIVE_CORE_AND_BACKTESTER.md", "docs/OPERATIONAL_SOAK_RUNBOOK.md", "docs/modules/TEMPLATE.md"],
+      "source_paths": ["docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md", "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md", "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md", "docs/OPERATIONAL_SOAK_RUNBOOK.md", "docs/modules/TEMPLATE.md"],
       "review_triggers": ["top-level-domain", "architecture-entrypoint", "module-catalog"]
     },
     {
@@ -64,11 +64,11 @@
       "audience": ["contributors", "maintainers", "operators"],
       "owner": "engineering",
       "status": "canonical",
-      "source_paths": ["docs/engineering/01_ARCHITECTURE_AND_CODEBASE.md", "docs/engineering/02_DATA_PIPELINE_AND_STORAGE.md", "docs/engineering/03_NATIVE_CORE_AND_BACKTESTER.md", "docs/engineering/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md", "docs/engineering/05_EXECUTION_SUB_POSITIONS_AND_RISK.md", "docs/engineering/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md", "docs/engineering/07_SECURITY_API_TESTING_DEPLOYMENT.md", "docs/engineering/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md"],
+      "source_paths": ["docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md", "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md", "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md", "docs/engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md", "docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md", "docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md", "docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md", "docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md"],
       "review_triggers": ["engineering-index", "reading-order"]
     },
     {
-      "path": "docs/engineering/01_ARCHITECTURE_AND_CODEBASE.md",
+      "path": "docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md",
       "type": "explanation",
       "audience": ["contributors", "maintainers", "security-reviewers"],
       "owner": "architecture",
@@ -77,7 +77,7 @@
       "review_triggers": ["architecture-overview", "codebase-org", "invariants"]
     },
     {
-      "path": "docs/engineering/02_DATA_PIPELINE_AND_STORAGE.md",
+      "path": "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md",
       "type": "explanation",
       "audience": ["contributors", "data-maintainers", "operators"],
       "owner": "data",
@@ -86,7 +86,7 @@
       "review_triggers": ["binary-storage", "sovt-layout", "ingestion-pipeline", "data-repair"]
     },
     {
-      "path": "docs/engineering/03_NATIVE_CORE_AND_BACKTESTER.md",
+      "path": "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md",
       "type": "explanation",
       "audience": ["contributors", "quantitative-researchers", "native-engineers"],
       "owner": "native-core",
@@ -95,7 +95,7 @@
       "review_triggers": ["cpp-engine", "binary-ts-merger", "frame-backtester", "risk-engine"]
     },
     {
-      "path": "docs/engineering/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md",
+      "path": "docs/engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md",
       "type": "explanation",
       "audience": ["quantitative-researchers", "ai-engineers", "contributors"],
       "owner": "research",
@@ -104,7 +104,7 @@
       "review_triggers": ["strategy-explorer", "novelty-metric", "mcp-workbench", "yaml-registry"]
     },
     {
-      "path": "docs/engineering/05_EXECUTION_SUB_POSITIONS_AND_RISK.md",
+      "path": "docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md",
       "type": "explanation",
       "audience": ["contributors", "execution-maintainers", "operators"],
       "owner": "execution",
@@ -113,7 +113,7 @@
       "review_triggers": ["sub-positions", "deterministic-signatures", "broker-reconciliation", "manual-attribution"]
     },
     {
-      "path": "docs/engineering/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md",
+      "path": "docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md",
       "type": "explanation",
       "audience": ["prediction-market-researchers", "data-maintainers", "operators"],
       "owner": "prediction",
@@ -122,7 +122,7 @@
       "review_triggers": ["prediction-markets", "polymarket-clob", "orderbook-archiving", "paper-ledger"]
     },
     {
-      "path": "docs/engineering/07_SECURITY_API_TESTING_DEPLOYMENT.md",
+      "path": "docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md",
       "type": "explanation",
       "audience": ["security-reviewers", "deployment-maintainers", "api-developers"],
       "owner": "platform",
@@ -131,7 +131,7 @@
       "review_triggers": ["security-model", "rbac", "mcp-api", "docker-topology", "hpdesk-soak"]
     },
     {
-      "path": "docs/engineering/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md",
+      "path": "docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md",
       "type": "explanation",
       "audience": ["contributors", "systems-engineers", "researchers"],
       "owner": "research",
@@ -158,7 +158,7 @@
       "review_triggers": ["autonomous-research", "mcp-tooling", "yaml-registry"]
     },
     {
-      "path": "docs/engineering/documentation_standard.md",
+      "path": "docs/engineering/standards/documentation_standard.md",
       "type": "reference",
       "audience": ["contributors", "reviewers"],
       "owner": "documentation",
