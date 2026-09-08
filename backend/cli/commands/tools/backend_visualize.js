@@ -201,8 +201,10 @@ async function runBackendVisualize(args = []) {
 
   function redraw() {
     const buf = renderSigmaFrame(symbol, timeframe, windowSize, state, pollSec, nextRefreshAt - Date.now(), tickCount);
-    if (prevLineCount > 0) process.stdout.write(`\x1b[${prevLineCount}A\x1b[J`);
-    process.stdout.write(buf);
+    let writeBuf = '\x1b[?25l\x1b[?2026h';
+    if (prevLineCount > 0) writeBuf += `\x1b[${prevLineCount}A\x1b[J`;
+    writeBuf += buf + '\x1b[?2026l\x1b[?25h';
+    process.stdout.write(writeBuf);
     prevLineCount = visualLineCount(buf);
     tickCount++;
   }

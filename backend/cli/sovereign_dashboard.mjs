@@ -629,19 +629,47 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
           });
           childRef.current = child;
 
+          let pendingChunks = '';
+          let flushTimer = null;
+          const scheduleFlush = () => {
+            if (flushTimer) return;
+            flushTimer = setTimeout(() => {
+              flushTimer = null;
+              if (mountedRef.current && pendingChunks) {
+                const chunk = pendingChunks;
+                pendingChunks = '';
+                setOutput((c) => c + chunk);
+              }
+            }, 16);
+          };
+
           child.stdout.on('data', (data) => {
-            if (mountedRef.current) setOutput((c) => c + data.toString('utf8'));
+            pendingChunks += data.toString('utf8');
+            scheduleFlush();
           });
           child.stderr.on('data', (data) => {
-            if (mountedRef.current) setOutput((c) => c + data.toString('utf8'));
+            pendingChunks += data.toString('utf8');
+            scheduleFlush();
           });
 
           await new Promise((resolve) => {
             child.on('close', (code) => {
-              if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
+              if (flushTimer) {
+                clearTimeout(flushTimer);
+                flushTimer = null;
+              }
+              if (mountedRef.current && pendingChunks) {
+                const chunk = pendingChunks;
+                pendingChunks = '';
+                setOutput((c) => c + chunk);
+              }
               resolve(code);
             });
             child.on('error', (err) => {
+              if (flushTimer) {
+                clearTimeout(flushTimer);
+                flushTimer = null;
+              }
               if (mountedRef.current) setOutput((c) => c + '\nError: ' + err.message);
               resolve(-1);
             });
@@ -652,7 +680,6 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
       } finally {
         childRef.current = null;
         if (mountedRef.current) {
-          if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
           setRunning(false);
         }
       }
@@ -811,7 +838,6 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
           try { childRef.current.kill('SIGINT'); } catch (e) {}
           setOutput((c) => c + '\n\n[Command aborted by user]\n');
         }
-        if (process.stdout.isTTY) process.stdout.write('\x1b[?25l');
         setRunning(false);
         return;
       }
@@ -1537,7 +1563,14 @@ function mountDashboard(initial) {
     initialCatI: initial ? initial.catI : 0,
     initialCmdI: initial ? initial.cmdI : -1,
     onRun: runExternal,
-  }));
+  }), {
+    stdout: process.stdout,
+    stdin: process.stdin,
+    incrementalRendering: true,
+    patchConsole: true,
+    exitOnCtrlC: false,
+    maxFps: 60,
+  });
 }
 
 // Guarded so this file can be imported (e.g. by tests) without launching the
