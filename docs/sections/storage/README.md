@@ -36,4 +36,4 @@ storage/
 ## Code Atlas Cross-References
 
 - Polymarket History Archive — [`docs/sections/data/polymarket-history-archive/README.md`](../data/polymarket-history-archive/README.md)
-- Storage Architecture Overview — [`docs/engineering/codebase_org.md`](../../engineering/codebase_org.md)
+- Storage Architecture Overview — [`docs/engineering/02_DATA_PIPELINE_AND_STORAGE.md`](../../engineering/02_DATA_PIPELINE_AND_STORAGE.md)

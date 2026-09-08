@@ -11,7 +11,7 @@
 
 This page records the current source contract and known blockers. It does not authorize a bot cycle, provider/account request, paper action, or live order. Do not treat a dry-run result, an action label, or a passing unit test as operational readiness.
 
-The architecture-level paper-ledger boundary is described in [Architecture Overview](../../../engineering/architecture_overview.md). That ledger is authoritative for internal paper events; this older bot cycle still maintains a separate `bot_state.json` projection and has not converged to the ledger.
+The architecture-level paper-ledger boundary is described in [System Architecture & Codebase](../../../engineering/01_ARCHITECTURE_AND_CODEBASE.md). That ledger is authoritative for internal paper events; this older bot cycle still maintains a separate `bot_state.json` projection and has not converged to the ledger.
 
 ## Entry Points And Modes
 
