@@ -6,7 +6,7 @@ const { spawn } = require('node:child_process');
 const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
 const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio.js');
 
-const REPO_ROOT = path.resolve(__dirname, '..');
+const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SERVER_PATH = path.join(REPO_ROOT, 'dist', 'mcp_server', 'index.js');
 const REQUIRED_TOOL_NAMES = ['get_market_bias', 'get_scorecard', 'get_market_signal'];
 const DEFAULT_TIMEOUT_MS = 10000;

@@ -3,7 +3,7 @@ const path = require('node:path');
 const {
   REPO_ROOT,
   findBackendBinary,
-} = require('../shared/lib/runtime/paths.js');
+} = require('../../shared/lib/runtime/paths.js');
 
 const MCP_CONFIG_PATH = path.join(REPO_ROOT, '.mcp.json');
 

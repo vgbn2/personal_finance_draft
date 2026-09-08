@@ -298,7 +298,7 @@ All development, testing, and pull request reviews follow the repository's canon
 
 - **Operator:** [Quickstart](docs/operational/guides/QUICKSTART.md) → [CLI guide](docs/operational/guides/cli_quick_guide.md) → [Operations](docs/operational/guides/operations.md)
 - **Contributor:** [Contributing](docs/operational/guides/CONTRIBUTING.md) → [GitHub rulesets](docs/operational/guides/github_environment_and_rulesets.md) → [Architecture](docs/engineering/architecture_overview.md) → [Documentation standard](docs/engineering/documentation_standard.md)
-- **Maintainer:** [Maintainer roster](workspace/MAINTAINERS.md) → [Governance](workspace/GOVERNANCE.md) → [Security policy](workspace/SECURITY.md) → [Module catalog](docs/modules/README.md)
+- **Maintainer:** [Maintainer roster](workspace/governance/MAINTAINERS.md) → [Governance](workspace/governance/GOVERNANCE.md) → [Security policy](workspace/governance/SECURITY.md) → [Module catalog](docs/modules/README.md)
 - **Quantitative researcher:** [Research overview](docs/research/quant_research.md) → [codebase tour](docs/codebase_tour/00_START_HERE.md)
 - **API or frontend developer:** [Web/API reference](docs/engineering/web_api.md) *(currently marked for refresh in the documentation manifest)*
 - **Deployment maintainer:** [Role-based hosting](docs/operational/guides/role_based_hosting.md) → [Deployment](docs/operational/guides/DEPLOYMENT.md)
