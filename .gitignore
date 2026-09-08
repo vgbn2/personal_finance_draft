@@ -112,11 +112,29 @@ logs/
 .env
 .env.*
 *.env
+.env.services/
+!.env.example
 !.env.central.example
+!.env.private.example
 *.key
 *.pem
 storage/secrets/
 .mcp.json
+
+# Scratch & Binary Artifacts
+*.bin
+disasm.txt
+
+# Agent CLIs, Skill Scratch Runs, and Local Skills
+/.antigravitycli/
+/blast-through/
+/repo-hygiene/
+/bayesian-troubleshooter/
+/codebase-untangler/
+/feature-exerciser/
+/mass-implement/
+/refine-suggestion/
+/polymarket-history-backfill/
 
 # Data — raw inputs, caches, artifacts
 data/raw/

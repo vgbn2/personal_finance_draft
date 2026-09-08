@@ -9,15 +9,19 @@ const SKILLS_ROOT = path.join(REPO_ROOT, 'skills');
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(SKILLS_ROOT, 'manifest.json'), 'utf8'));
 
 function read(relativePath) {
-  const fullPath = path.join(REPO_ROOT, relativePath);
-  if (fs.existsSync(fullPath)) {
-    return fs.readFileSync(fullPath, 'utf8');
+  const candidates = [
+    path.join(REPO_ROOT, relativePath),
+    path.join(REPO_ROOT, 'workspace', relativePath),
+    path.join(REPO_ROOT, 'workspace', 'governance', relativePath),
+    path.join(REPO_ROOT, 'workspace', 'protocols', relativePath),
+    path.join(REPO_ROOT, 'workspace', 'history', relativePath),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return fs.readFileSync(candidate, 'utf8');
+    }
   }
-  const workspacePath = path.join(REPO_ROOT, 'workspace', relativePath);
-  if (fs.existsSync(workspacePath)) {
-    return fs.readFileSync(workspacePath, 'utf8');
-  }
-  return fs.readFileSync(fullPath, 'utf8');
+  return fs.readFileSync(path.join(REPO_ROOT, relativePath), 'utf8');
 }
 
 test('canonical skill inventory is sorted, complete, and mirrored', () => {

@@ -71,7 +71,7 @@ def check_data():
     data_file = Path("training_data.jsonl")
     if not data_file.exists():
         print(f"[ERROR] Training data not found: {data_file}")
-        print(f"Run: python scripts/generate_training_data.py")
+        print(f"Run: python scripts/ml/training/generate_training_data.py")
         sys.exit(1)
 
     with open(data_file) as f:

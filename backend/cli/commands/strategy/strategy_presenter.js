@@ -177,8 +177,25 @@ function strategySectionPresent(text, section) {
 
 function inspectStrategyFile(filePath, options = {}) {
   const repoRoot = options.repoRoot || REPO_ROOT;
-  const absolutePath = path.isAbsolute(filePath) ? filePath : path.join(repoRoot, filePath);
-  const exists = fs.existsSync(absolutePath);
+  let absolutePath = path.isAbsolute(filePath) ? filePath : path.join(repoRoot, filePath);
+  let resolvedFilePath = filePath;
+  let exists = fs.existsSync(absolutePath);
+
+  if (!exists && !path.isAbsolute(filePath)) {
+    const raw = String(filePath).trim();
+    const subdirs = ['curated', 'automated', 'fixtures'];
+    for (const sub of subdirs) {
+      const candidateRel = path.join('config', 'strategies', sub, path.basename(raw)).replace(/\\/g, '/');
+      const candidateAbs = path.join(repoRoot, candidateRel);
+      if (fs.existsSync(candidateAbs)) {
+        absolutePath = candidateAbs;
+        resolvedFilePath = candidateRel;
+        exists = true;
+        break;
+      }
+    }
+  }
+
   if (!exists) {
     return {
       path: filePath,
@@ -202,9 +219,9 @@ function inspectStrategyFile(filePath, options = {}) {
   if (yaml.family === 'single_asset' || yaml.family === 'cross_asset') {
     issues.push(`invalid_family_taxonomy:${yaml.family}_is_a_lane_not_a_family`);
   }
-  const taxonomy = inferStrategyTaxonomy({ ...yaml, path: filePath });
+  const taxonomy = inferStrategyTaxonomy({ ...yaml, path: resolvedFilePath });
   const gradeRecord = decorateStrategyRecord({
-    path: filePath,
+    path: resolvedFilePath,
     name: yaml.name,
     family: yaml.family || taxonomy.family,
     lane: yaml.lane || taxonomy.lane,

@@ -2,7 +2,7 @@
 
 This guide defines the contribution workflow, zero-key development model, and canonical skill protocols for human contributors, reviewers, and AI coding assistants working in this repository.
 
-The repository-level [contribution entrypoint](../../../workspace/CONTRIBUTING.md) defines the pull-request workflow, contribution attestation, protected operational boundaries, and links to [governance](../../../workspace/GOVERNANCE.md), the [maintainer roster](../../../workspace/MAINTAINERS.md), and the [security policy](../../../workspace/SECURITY.md).
+The repository-level [contribution entrypoint](../../../workspace/governance/CONTRIBUTING.md) defines the pull-request workflow, contribution attestation, protected operational boundaries, and links to [governance](../../../workspace/governance/GOVERNANCE.md), the [maintainer roster](../../../workspace/governance/MAINTAINERS.md), and the [security policy](../../../workspace/governance/SECURITY.md).
 
 ---
 
