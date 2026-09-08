@@ -295,9 +295,26 @@ function filterFeatureFrameBySymbols(featureFrame, symbols) {
 function resolveStrategyPathInput(strategyPath) {
   if (!strategyPath) return strategyPath;
   const raw = String(strategyPath).trim();
-  if (!raw || path.isAbsolute(raw) || raw.includes('/') || raw.includes('\\')) return raw;
-  const candidate = path.join('config', 'strategies', raw).replace(/\\/g, '/');
-  return fs.existsSync(path.join(REPO_ROOT, candidate)) ? candidate : raw;
+  if (!raw || path.isAbsolute(raw)) return raw;
+
+  // 1. Direct path exists
+  if (fs.existsSync(path.join(REPO_ROOT, raw))) return raw.replace(/\\/g, '/');
+
+  // 2. Check config/strategies/<raw>
+  const directCandidate = path.join('config', 'strategies', raw).replace(/\\/g, '/');
+  if (fs.existsSync(path.join(REPO_ROOT, directCandidate))) return directCandidate;
+
+  // 3. Check nested subdirectories (curated/, automated/, fixtures/)
+  const subdirs = ['curated', 'automated', 'fixtures'];
+  const baseName = path.basename(raw);
+  for (const sub of subdirs) {
+    const subCandidate = path.join('config', 'strategies', sub, baseName).replace(/\\/g, '/');
+    if (fs.existsSync(path.join(REPO_ROOT, subCandidate))) return subCandidate;
+    const withYaml = path.join('config', 'strategies', sub, `${baseName}.yaml`).replace(/\\/g, '/');
+    if (fs.existsSync(path.join(REPO_ROOT, withYaml))) return withYaml;
+  }
+
+  return raw;
 }
 
 async function resolveStrategyBacktestDefaults(args) {

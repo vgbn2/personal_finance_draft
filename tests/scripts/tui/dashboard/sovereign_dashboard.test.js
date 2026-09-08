@@ -171,21 +171,21 @@ test('dashboard App: bt --strategy flag cycles through real registered strategie
   await send(stdin, instance, [keys.right]);
   const afterOne = stdout.snapshot();
   assert.doesNotMatch(afterOne, /<registered strategies>/);
-  assert.match(afterOne, /sovereign bt --strategy config\/strategies\/[A-Za-z0-9_-]+/,
+  assert.match(afterOne, /sovereign bt --strategy config\/strategies\/(?:curated|automated|fixtures\/)?[A-Za-z0-9_-]+/,
     'cycling --strategy now produces a real registry path in the bounded argv preview');
   assert.doesNotMatch(afterOne, /\.yaml\]/,
     'the flag value box renders the resolved label, not the raw .yaml path');
-  const valueAfterOne = afterOne.match(/--strategy (config\/strategies\/[A-Za-z0-9_-]+)/)[1];
+  const valueAfterOne = afterOne.match(/--strategy (config\/strategies\/(?:curated\/|automated\/|fixtures\/)?[A-Za-z0-9_-]+(?:\.yaml)?)/)[1];
 
   await send(stdin, instance, [keys.right]);
   const afterTwo = stdout.snapshot();
-  const valueAfterTwo = afterTwo.match(/--strategy (config\/strategies\/[A-Za-z0-9_-]+)/)[1];
+  const valueAfterTwo = afterTwo.match(/--strategy (config\/strategies\/(?:curated\/|automated\/|fixtures\/)?[A-Za-z0-9_-]+(?:\.yaml)?)/)[1];
   assert.notEqual(valueAfterOne, valueAfterTwo, 'cycling moves to a different real strategy each step');
 
   // cycling back left returns to the previous value (genuine wraparound list, not a one-way placeholder edit)
   await send(stdin, instance, [keys.left]);
   const afterBack = stdout.snapshot();
-  const valueAfterBack = afterBack.match(/--strategy (config\/strategies\/[A-Za-z0-9_-]+)/)[1];
+  const valueAfterBack = afterBack.match(/--strategy (config\/strategies\/(?:curated\/|automated\/|fixtures\/)?[A-Za-z0-9_-]+(?:\.yaml)?)/)[1];
   assert.equal(valueAfterBack, valueAfterOne);
 });
 

@@ -40,7 +40,7 @@ backend/
 
 5. **MCP Tool Server (`backend/mcp_server/`):**
    - Source: `backend/mcp_server/src/index.ts`
-   - Stdio Launcher: `scripts/mcp_stdio_probe.js`
+   - Stdio Launcher: `scripts/mcp/mcp_stdio_probe.js`
 
 ## Code Atlas Cross-References
 

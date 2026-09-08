@@ -14,7 +14,7 @@ const {
 const {
   buildMcpConfig,
   writeMcpConfig,
-} = require('../../../scripts/setup_mcp.js');
+} = require('../../../scripts/mcp/setup_mcp.js');
 
 function tempRepo() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-mcp-setup-'));

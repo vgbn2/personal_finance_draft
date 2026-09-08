@@ -4,7 +4,7 @@ const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
-const SCRIPT = path.join(REPO_ROOT, 'scripts', 'classify_strategy_assets.js');
+const SCRIPT = path.join(REPO_ROOT, 'scripts', 'tools', 'classify_strategy_assets.js');
 const { classifyStrategyAssetMode } = require('../../../../shared/lib/strategy/registry');
 const { inspectStrategyFile } = require('../../../../backend/cli/commands/strategy');
 
