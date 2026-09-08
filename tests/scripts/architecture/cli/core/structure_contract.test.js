@@ -105,8 +105,8 @@ test('load-bearing clean-clone assets are tracked', () => {
   [
     '.dockerignore',
     'backend/api/tests/correlation_contract.test.js',
-    'scripts/classify_strategy_assets.js',
-    'scripts/mcp_stdio_probe.js',
+    'scripts/tools/classify_strategy_assets.js',
+    'scripts/mcp/mcp_stdio_probe.js',
     'shared/lib/runtime/env.js',
     'shared/lib/data/ingestion.js',
     'shared/lib/data/macro_store.js',

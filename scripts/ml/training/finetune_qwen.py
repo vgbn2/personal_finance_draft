@@ -46,7 +46,7 @@ def finetune():
     data_path = Path("training_data.jsonl")
     if not data_path.exists():
         print(f"\n❌ Training data not found: {data_path}")
-        print("   Run: python scripts/generate_training_data.py")
+        print("   Run: python scripts/ml/training/generate_training_data.py")
         return
 
     with open(data_path) as f:
@@ -80,7 +80,7 @@ def finetune():
    pip install llama-cpp-python
 
 6. Run this script again to start finetuning:
-   python scripts/finetune_qwen.py
+   python scripts/ml/training/finetune_qwen.py
 """)
 
     print("\n⏱️  Estimated Time:")
