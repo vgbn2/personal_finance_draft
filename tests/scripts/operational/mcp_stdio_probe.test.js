@@ -7,7 +7,7 @@ const test = require('node:test');
 const {
   runChildStdioSelfTest,
   runMcpProbe,
-} = require('../../../scripts/mcp_stdio_probe.js');
+} = require('../../../scripts/mcp/mcp_stdio_probe.js');
 
 const REQUIRED_TOOLS = [
   { name: 'get_market_bias' },

@@ -38,7 +38,7 @@ Treat `dist/mcp_server/index.js` as the single reliable entrypoint.
 ## Host stdio and tool-discovery probe
 
 ```bash
-node scripts/mcp_stdio_probe.js
+node scripts/mcp/mcp_stdio_probe.js
 ```
 
 The probe first verifies that a known-good child can deliver stdout and stderr on the current host. It then
