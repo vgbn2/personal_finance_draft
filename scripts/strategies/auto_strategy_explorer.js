@@ -11,10 +11,11 @@ const { buildStrategyPlan } = require('../../backend/cli/commands/strategy/strat
 const { REPO_ROOT } = require('../../shared/lib/runtime/paths.js');
 
 const EXPLORER_STATE_FILE = path.join(REPO_ROOT, 'storage/data/strategy_explorer_state.json');
-const STRATEGIES_DIR = path.join(REPO_ROOT, 'config/strategies');
+const STRATEGIES_DIR = path.join(REPO_ROOT, 'config/strategies/automated');
 
 function writeStrategyRegistryFile(candidate) {
   try {
+    if (!fs.existsSync(STRATEGIES_DIR)) fs.mkdirSync(STRATEGIES_DIR, { recursive: true });
     const yamlContent = buildStrategyPlan(candidate.name, {
       kind: candidate.family,
       family: candidate.family,

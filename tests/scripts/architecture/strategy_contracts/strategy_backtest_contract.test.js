@@ -181,7 +181,7 @@ test('TUI manifest exposes registered strategies as select options', () => {
   const options = getRegisteredStrategies();
 
   assert.ok(options.length >= 1);
-  assert.ok(options.some((option) => option.value === 'config/strategies/mean_reversion.yaml'));
+  assert.ok(options.some((option) => option.value === 'config/strategies/curated/mean_reversion.yaml'));
 });
 
 test('TUI backtest exposes a history window field for longer runs', () => {
@@ -199,7 +199,7 @@ test('backtest uses strategy YAML defaults unless CLI flags override them', () =
     CLI,
     'bt',
     '--strategy',
-    'config/strategies/mean_reversion.yaml',
+    'config/strategies/curated/mean_reversion.yaml',
     '--allow-degraded',
     '--json',
   ], {
@@ -211,7 +211,7 @@ test('backtest uses strategy YAML defaults unless CLI flags override them', () =
   const payload = JSON.parse(result.stdout);
 
   assert.equal(payload.strategy, 'mean_reversion');
-  assert.equal(payload.strategy_source, 'config/strategies/mean_reversion.yaml');
+  assert.equal(payload.strategy_source, 'config/strategies/curated/mean_reversion.yaml');
   assert.equal(payload.strategy_family, 'mean_reversion');
   assert.equal(payload.strategy_lane, 'single_asset');
   assert.equal(payload.strategy_role, 'strategy');
@@ -220,7 +220,7 @@ test('backtest uses strategy YAML defaults unless CLI flags override them', () =
   assert.equal(payload.threshold, 0.65);
 
   const gradeIndex = JSON.parse(fs.readFileSync(STRATEGY_GRADE_INDEX_PATH, 'utf8'));
-  const gradeRecord = gradeIndex.strategies['config/strategies/mean_reversion.yaml'];
+  const gradeRecord = gradeIndex.strategies['config/strategies/curated/mean_reversion.yaml'];
   assert.ok(gradeRecord, 'expected backtest grade index entry for mean_reversion');
   assert.equal(gradeRecord.family, 'mean_reversion');
   assert.equal(gradeRecord.lane, 'single_asset');
@@ -233,7 +233,7 @@ test('backtest uses strategy YAML defaults unless CLI flags override them', () =
     CLI,
     'bt',
     '--strategy',
-    'config/strategies/mean_reversion.yaml',
+    'config/strategies/curated/mean_reversion.yaml',
     '--symbol',
     'SPY',
     '--threshold',
@@ -277,12 +277,12 @@ test('backtest accepts bare registered strategy filenames', () => {
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.strategy, 'mean_reversion');
-  assert.equal(payload.strategy_source, 'config/strategies/mean_reversion.yaml');
+  assert.equal(payload.strategy_source, 'config/strategies/curated/mean_reversion.yaml');
   assert.deepEqual(payload.strategy_universe, ['BTCUSDT', 'SPY']);
 });
 
 test('strategy files expose indicator presets and optimize respects disabled indicator dimensions', () => {
-  const strategy = inspectStrategyFile('config/strategies/trend_following.yaml');
+  const strategy = inspectStrategyFile('config/strategies/curated/trend_following.yaml');
 
   assert.equal(strategy.ok, true);
   assert.equal(strategy.family, 'ml');
@@ -291,7 +291,7 @@ test('strategy files expose indicator presets and optimize respects disabled ind
   assert.equal(strategy.indicators.rsi, true);
   assert.equal(strategy.indicator_periods.rsi, 7);
 
-  const crossAssetStrategy = inspectStrategyFile('config/strategies/ml_multi_asset.yaml');
+  const crossAssetStrategy = inspectStrategyFile('config/strategies/curated/ml_multi_asset.yaml');
   assert.equal(crossAssetStrategy.family, 'ml');
   assert.equal(crossAssetStrategy.lane, 'cross_asset');
   assert.equal(crossAssetStrategy.role, 'portfolio_optimization');

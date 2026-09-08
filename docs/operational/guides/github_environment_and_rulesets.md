@@ -104,7 +104,7 @@ The repository maintains three GitHub Actions workflows in `.github/workflows/`:
 
 ## 4. CODEOWNERS & Maintainer Mapping
 
-Domain ownership is defined in `.github/CODEOWNERS` and aligned with `workspace/MAINTAINERS.md`:
+Domain ownership is defined in `.github/CODEOWNERS` and aligned with `workspace/governance/MAINTAINERS.md`:
 
 ```text
 # Default review owner
@@ -133,7 +133,7 @@ Domain ownership is defined in `.github/CODEOWNERS` and aligned with `workspace/
 ## 5. Security & Vulnerability Handling
 
 - **Private Vulnerability Reporting**: Repository administrators should enable **Private vulnerability reporting** in GitHub under **Settings → Code security and analysis**.
-- **Public Disclosures Prohibited**: Do not open public issues for potential security vulnerabilities, leaked keys, or execution bypasses. Follow [workspace/SECURITY.md](../../../workspace/SECURITY.md).
+- **Public Disclosures Prohibited**: Do not open public issues for potential security vulnerabilities, leaked keys, or execution bypasses. Follow [workspace/governance/SECURITY.md](../../../workspace/governance/SECURITY.md).
 
 ---
 
