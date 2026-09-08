@@ -261,11 +261,11 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
       const time = formatTimeForSettings();
       if (helpMode) {
         const buffer = renderHelpOverlay(question, time, 'multi');
-        let writeBuf = '\x1b[?25l';
+        let writeBuf = '\x1b[?25l\x1b[?2026h';
         if (prevLineCount > 0) {
           writeBuf += `\x1b[${prevLineCount}A\x1b[J`;
         }
-        writeBuf += buffer + '\x1b[?25h';
+        writeBuf += buffer + '\x1b[?2026l\x1b[?25h';
         process.stdout.write(writeBuf);
         prevLineCount = visualLineCount(buffer);
         return;
@@ -315,11 +315,11 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
       if (searchMode && filterText) buffer += customSelectionBar(customState);
       buffer += `  ${searchDisplay}\n`;
       // Line-counting redraw: atomic cursor hide + move + clear + paint + restore
-      let writeBuf = '\x1b[?25l';
+      let writeBuf = '\x1b[?25l\x1b[?2026h';
       if (prevLineCount > 0) {
         writeBuf += `\x1b[${prevLineCount}A\x1b[J`;
       }
-      writeBuf += buffer + '\x1b[?25h';
+      writeBuf += buffer + '\x1b[?2026l\x1b[?25h';
       process.stdout.write(writeBuf);
       prevLineCount = visualLineCount(buffer);
     };
@@ -509,11 +509,11 @@ async function promptSelect(question, options) {
       buffer += `  ${searchBar(filterText, searchMode, filtered.length)}\n`;
 
       // Line-counting redraw: atomic cursor hide + move + clear + paint + restore
-      let writeBuf = '\x1b[?25l';
+      let writeBuf = '\x1b[?25l\x1b[?2026h';
       if (prevLineCount > 0) {
         writeBuf += `\x1b[${prevLineCount}A\x1b[J`;
       }
-      writeBuf += buffer + '\x1b[?25h';
+      writeBuf += buffer + '\x1b[?2026l\x1b[?25h';
       process.stdout.write(writeBuf);
       prevLineCount = visualLineCount(buffer);
     };

@@ -1,8 +1,14 @@
 # Current Workspace State
 
 ## Current Phase
-SV Console Architecture Review, TUI Optimization, Central Environment Hardening & Closeout - ACTIVE
+SV Console Architecture Review, TUI Flicker Elimination, Central Environment Hardening & Closeout - ACTIVE
 
+- **TUI Complete Flicker Elimination**:
+  - Implemented DEC Mode 2026 Synchronized Output (`BSU` `\x1b[?2026h` / `ESU` `\x1b[?2026l`) across `shared/lib/ui/ansi.js`, `backend/cli/tui/engine/engine.js`, and `backend/cli/commands/tools/backend_visualize.js` to lock GPU frame buffers during terminal repaint cycles.
+  - Configured Ink v7 engine in `backend/cli/sovereign_dashboard.mjs` with `incrementalRendering: true`, `patchConsole: true`, and `maxFps: 60` for line-level diff updates.
+  - Eliminated racy out-of-order `\x1b[?25l` cursor manipulation writes across async command lifecycle points in `sovereign_dashboard.mjs` (lines 641, 655, 814).
+  - Implemented 16ms animation-frame throttled chunk buffering for in-pane child process streaming stdout to prevent high-frequency render queue thrashing.
+  - Updated `tests/scripts/architecture/tui_components/tui_phase_b_contract.test.js` to assert `BSU` and `ESU` contract exports.
 - **TUI Dashboard Optimization**: Implemented double buffering and diff rendering in `backend/cli/tui/engine/engine.js` and `backend/cli/sovereign_dashboard.mjs` to eliminate terminal flickering during high-frequency repaint loops.
 - **Central Environment Test Hardening**: Updated `tests/scripts/operational/prepare_central_env.test.js` to dynamically assert against `EXPECTED_COMPOSE_SERVICES.length` across all 9 Compose services.
 - **Cloudflare & Remote Rsync Security Audit**: Audited backward rsync artifacts for Cloudflare configuration to enforce private-origin boundaries and zero-key development policy.

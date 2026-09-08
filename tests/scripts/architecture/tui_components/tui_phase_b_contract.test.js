@@ -48,6 +48,11 @@ test('richGlyph falls back gracefully for unknown keys', () => {
   assert.equal(val, 'nonexistent_key');
 });
 
+test('ansi.js exports BSU and ESU synchronized output sequences', () => {
+  assert.equal(A.BSU, '\x1b[?2026h');
+  assert.equal(A.ESU, '\x1b[?2026l');
+});
+
 test('GLYPH still has ASCII dline and indicator fallbacks', () => {
   assert.equal(A.GLYPH.dline, '=');
   assert.equal(A.GLYPH.indicator, '*');

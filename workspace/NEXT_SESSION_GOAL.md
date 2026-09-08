@@ -1,15 +1,11 @@
 # Next Session Goal
 
-## Primary Objective: Autonomous Strategy Explorer Validation, Walk-Forward Backtesting & Paper Soak Monitoring
+## Primary Objective: Merge to Main & Background Paper Soak Monitoring
 
-1. **Verify Background Strategy Explorer on HPDesk**:
-   - Check status and logs of `sv-strategy-explorer` on HPDesk (`root@100.79.196.24`).
-   - Sync discovered strategy YAMLs from HPDesk into `config/strategies/` and audit diversity scores and novelty fingerprints.
+1. **Integration and Merge to `main`**:
+   - Run complete end-to-end verification (`npm test`, `npm run test:core`, `npm run test:structure`, `npm run test:safety`, `npm run test:api`, `npm run hygiene`).
+   - Merge `worktree-fix-raw-http-cache-bloat` into `main` and sync with remote repository.
 
-2. **Walk-Forward Validation & Performance Matrix**:
-   - Run batch evaluations (`mass-bt`) over continuous market data using native C++ `FrameBacktester`.
-   - Track alpha degradation, Sharpe, Sortino, max drawdown, and trade count across symbols.
-
-3. **Paper Soak Loop & Reconciliation Health**:
-   - Audit `sv-bot-alpaca-paper` execution, order signatures (`strat_<id>_<tf>_<ts>_<entropy>`), and virtual sub-position ledger consistency.
-   - Verify zero unhandled exceptions or state divergence in `storage/logs/flaw_monitor.log`.
+2. **Background Strategy & Paper Soak Monitoring**:
+   - Verify `sv-strategy-explorer` and `sv-bot-alpaca-paper` service states on HPDesk.
+   - Monitor live paper trading execution logs and virtual sub-position attribution.

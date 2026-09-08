@@ -1,3 +1,20 @@
+# Prompt Log - 2026-09-08
+
+## Session Closeout — Complete Ink UI & Terminal TUI Flicker Elimination - 2026-09-08
+Received user prompts:
+- "/session-orchestrator"
+- "fix the remaining ink UI flicker somehow, , search relevant docs, web page for similar issues"
+- "root cause and confidence that you'll fix it?, what about the debugging section to know whats wrong according to bayesian troubleshooting"
+
+Accomplished:
+- Conducted Bayesian fault-domain classification and root-cause analysis on Ink v7 virtual DOM rendering, ANSI escape sequences, and stdout buffer synchronization.
+- Implemented DEC Mode 2026 Synchronized Output (`BSU` `\x1b[?2026h` / `ESU` `\x1b[?2026l`) in `shared/lib/ui/ansi.js`, `backend/cli/tui/engine/engine.js`, and `backend/cli/commands/tools/backend_visualize.js`.
+- Configured Ink v7 renderer in `backend/cli/sovereign_dashboard.mjs` with `incrementalRendering: true`, `patchConsole: true`, and `maxFps: 60`.
+- Eliminated racy, out-of-band `\x1b[?25l` cursor manipulation writes across child process execution handlers in `sovereign_dashboard.mjs`.
+- Implemented 16ms animation-frame throttled chunk buffering for in-pane child process streaming stdout.
+- Updated `tests/scripts/architecture/tui_components/tui_phase_b_contract.test.js` to assert `BSU` and `ESU` contract exports.
+- Updated workspace state (`workspace/STATE.md`) and goals (`workspace/NEXT_SESSION_GOAL.md`).
+
 # Prompt Log - 2026-09-07
 
 ## Session Closeout — SV Console Architecture Review, TUI Optimization, Central Environment Hardening & Closeout - 2026-09-07 session 2
@@ -11,6 +28,8 @@ Received user prompts:
 - "fix the failing tests"
 - "afterward, check for cloudflare configuratin through recent backward rsync"
 - "end session, logs and commit,push, rsync"
+- "[API Security log review]"
+- "end session, next session make the ink UI not flickering somehow, and make it to main"
 
 Accomplished:
 - Conducted deep architecture review across SV Console, native C++20 Sovereign Core, ingestion, and storage layers.
@@ -18,6 +37,7 @@ Accomplished:
 - Fixed central environment projection tests (`tests/scripts/operational/prepare_central_env.test.js`) to dynamically validate against all 9 Compose services (`EXPECTED_COMPOSE_SERVICES.length`).
 - Audited backward rsync artifacts for Cloudflare configuration to enforce private-origin boundaries and zero-key development policy.
 - Verified test suite matrix: 100% pass across `npm run test:structure` (12/12), `npm run test:safety` (43/43), `npm run test:data`, `npm run test:api`, `npm run test:core` (34/34), and `npm run hygiene`.
+- Updated next session goals to prioritize total Ink UI flicker elimination and merge to `main`.
 
 ## Session Closeout — HPDesk Strategy Rsync, Walk-Forward Validation & Paper Soak Audit - 2026-09-07
 Received user prompts:

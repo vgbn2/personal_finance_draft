@@ -1,3 +1,16 @@
+### Session Memory - 2026-09-08 session 1 — Complete Ink UI & Terminal TUI Flicker Elimination & DEC 2026 Synchronization
+
+```json
+{
+  "batch": ["TUI-DEC2026-FLICKER-ELIMINATION-1"],
+  "lifecycle": "closed",
+  "scope": "Diagnosed root-cause terminal redraw tearing under Bayesian troubleshooting framework, implemented DEC Mode 2026 Synchronized Output (BSU/ESU) across ANSI library, prompt engine, and Sigma visualizer, configured Ink v7 incremental line diff rendering and 60fps throttling, removed racy cursor writes, throttled in-pane child output streaming to 16ms animation frames, and added contract unit tests.",
+  "changes": "updated shared/lib/ui/ansi.js, backend/cli/commands/tools/backend_visualize.js, backend/cli/tui/engine/engine.js, backend/cli/sovereign_dashboard.mjs, tests/scripts/architecture/tui_components/tui_phase_b_contract.test.js, workspace/STATE.md, workspace/NEXT_SESSION_GOAL.md, workspace/PROMPT_LOG.md, workspace/HANDOFF.md, workspace/SESSION_MEMORY.md, workspace/handoff/2026/09/2026-09-08.md",
+  "verification": "added contract unit test for BSU/ESU exports in tui_phase_b_contract.test.js; zero-key policy maintained; verified atomic single-write stdout buffer invariants",
+  "boundaries": "zero-key policy maintained; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-09-07 session 3 — TUI Optimization, Central Environment Hardening & Closeout
 
 ```json
