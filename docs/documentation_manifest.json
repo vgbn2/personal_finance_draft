@@ -64,7 +64,7 @@
       "audience": ["contributors", "maintainers", "operators"],
       "owner": "engineering",
       "status": "canonical",
-      "source_paths": ["docs/engineering/01_ARCHITECTURE_AND_CODEBASE.md", "docs/engineering/02_DATA_PIPELINE_AND_STORAGE.md", "docs/engineering/03_NATIVE_CORE_AND_BACKTESTER.md", "docs/engineering/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md", "docs/engineering/05_EXECUTION_SUB_POSITIONS_AND_RISK.md", "docs/engineering/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md", "docs/engineering/07_SECURITY_API_TESTING_DEPLOYMENT.md"],
+      "source_paths": ["docs/engineering/01_ARCHITECTURE_AND_CODEBASE.md", "docs/engineering/02_DATA_PIPELINE_AND_STORAGE.md", "docs/engineering/03_NATIVE_CORE_AND_BACKTESTER.md", "docs/engineering/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md", "docs/engineering/05_EXECUTION_SUB_POSITIONS_AND_RISK.md", "docs/engineering/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md", "docs/engineering/07_SECURITY_API_TESTING_DEPLOYMENT.md", "docs/engineering/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md"],
       "review_triggers": ["engineering-index", "reading-order"]
     },
     {
@@ -129,6 +129,15 @@
       "status": "canonical",
       "source_paths": ["backend/mcp_server/lib/access_control.ts", "backend/api/app.js", "infra/docker/docker-compose.yml"],
       "review_triggers": ["security-model", "rbac", "mcp-api", "docker-topology", "hpdesk-soak"]
+    },
+    {
+      "path": "docs/engineering/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md",
+      "type": "explanation",
+      "audience": ["contributors", "systems-engineers", "researchers"],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": ["backend/core/src/risk/cost_model.cpp", "shared/lib/market/indicators.js", "shared/lib/runtime/sub_positions_ledger.js"],
+      "review_triggers": ["financial-primer", "clob-mechanics", "risk-metrics"]
     },
     {
       "path": "docs/OPERATIONAL_SOAK_RUNBOOK.md",

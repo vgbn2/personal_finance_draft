@@ -73,9 +73,9 @@ Sovereign is a modular, local-first quantitative trading, research, backtesting,
 
 ---
 
-## 3. Canonical 7-Section Engineering Documentation Roadmap
+## 3. Canonical 8-Section Engineering Documentation Roadmap
 
-The core technical architecture is thoroughly documented across the canonical **7-Section Modular Engineering Suite** (`docs/engineering/`):
+The core technical architecture is thoroughly documented across the canonical **8-Section Modular Engineering Suite** (`docs/engineering/`):
 
 1. **[01. System Architecture & Codebase Organization](engineering/01_ARCHITECTURE_AND_CODEBASE.md)**
    - Master multi-tier topology, module taxonomy, dependency direction, and fundamental invariants (single-writer, fail-closed, zero-key development, sub-position isolation).
@@ -97,6 +97,9 @@ The core technical architecture is thoroughly documented across the canonical **
 
 7. **[07. Security Model, APIs, Testing Strategy & Deployment](engineering/07_SECURITY_API_TESTING_DEPLOYMENT.md)**
    - RBAC capability authorization, Express REST and WebSocket APIs, zero-key local test matrix (`test:safety`, `test:structure`, `test:core` 34 CTests), Docker Compose multi-container topology, and HPDesk Proxmox VM soak runbook.
+
+8. **[08. Financial & Quantitative Primer for Systems Engineers](engineering/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md)**
+   - Quantitative finance primer for systems engineers: Order books, execution drag, OHLCV time series, DSP technical indicators, Sharpe/Sortino ratios, drawdown modeling, and prediction market pricing.
 
 ---
 
