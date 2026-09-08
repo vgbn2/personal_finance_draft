@@ -280,10 +280,20 @@ function listStrategyFiles(options = {}) {
   if (!fs.existsSync(strategyDir)) {
     return [];
   }
-  return fs.readdirSync(strategyDir)
-    .filter((fileName) => fileName.toLowerCase().endsWith('.yaml'))
-    .sort((a, b) => a.localeCompare(b))
-    .map((fileName) => path.relative(repoRoot, path.join(strategyDir, fileName)).replace(/\\/g, '/'));
+  const files = [];
+  function walk(dir) {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.yaml')) {
+        files.push(path.relative(repoRoot, full).replace(/\\/g, '/'));
+      }
+    }
+  }
+  walk(strategyDir);
+  return files.sort((a, b) => a.localeCompare(b));
 }
 
 function syncStrategyRegistry(options = {}) {
