@@ -1,26 +1,30 @@
-# Engineering Documentation
+# Sovereign Engineering Documentation Suite
 
-Current engineering standards, system-wide architecture explanations, implementation specifications, and architecture decisions live here.
+This directory contains the canonical technical and architectural specifications for the Sovereign Trading Platform (SV Console).
 
-## Owns
+---
 
-- documentation and engineering standards;
-- cross-module architecture and dependency direction;
-- implementation-facing specifications that do not belong to one module;
-- architecture decisions and their consequences.
+## Canonical 7-Section Roadmap
 
-## Does Not Own
+The engineering documentation is organized into 7 modular, diagram-dense sections equipped with quantified Load Indices and mathematical formalisms:
 
-- per-module contracts (`docs/modules/`);
-- detailed algorithms, structures, protocols, or flows (`docs/atlas/`);
-- operator procedures (`docs/operational/`);
-- session state or review evidence (`workspace/`).
+1. **[01. System Architecture & Codebase Organization](01_ARCHITECTURE_AND_CODEBASE.md)**
+   - Master multi-tier topology, module taxonomy, dependency direction, and fundamental invariants (single-writer, fail-closed, zero-key development, sub-position isolation).
 
-## Start Here
+2. **[02. Data Pipeline & Binary Storage Architecture](02_DATA_PIPELINE_AND_STORAGE.md)**
+   - Ingestion lifecycle across equities (5m), crypto (1m from 2017), and prediction markets (1s), binary `SOVT` 48-byte packed format, C++20 zero-allocation streaming merger ($O(1)$ memory, $<5\text{MB}$ RSS), and local rollup synthesis.
 
-- [Documentation standard](documentation_standard.md)
-- [Architecture overview](architecture_overview.md)
-- [Codebase organization](codebase_org.md) — retained as `needs_refresh` until source revalidation is complete.
-- [Technical specification](technical_spec.md) — retained as `needs_refresh`.
+3. **[03. Native C++20 Core & Quantitative Backtester](03_NATIVE_CORE_AND_BACKTESTER.md)**
+   - C++20 Sovereign Core engine (`sovereign_wealth`), `FrameBacktester` (Mode A Native vs Mode B Annotated), execution drag simulation, Monte Carlo bootstrap engine (`xorshift64`), and `PreTradeRisk` microsecond gate.
 
-The [documentation manifest](../documentation_manifest.json) records canonical status and source-review triggers.
+4. **[04. Quantitative Alpha, ML & AI Agent Workbench](04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md)**
+   - Autonomous 30-minute AI strategy discovery daemon, 6D normalized parameter hypercube, $\ge 50\%$ novelty distance metric, SHA-256 fingerprinting, rolling feature frames, and Model Context Protocol (MCP) `explore_strategy` workbench tool.
+
+5. **[05. Execution, Sub-Positions Ledger & Risk Management](05_EXECUTION_SUB_POSITIONS_AND_RISK.md)**
+   - Virtual sub-positions accounting ledger (`sub_positions.json`), deterministic order client IDs (`strat_<id>_<tf>_<ts>_<entropy>` and `manual_cli_<sym>_<ts>_<entropy>`), broker physical reconciliation, and fractional step sizing (`0.001` equity, `0.0001` crypto).
+
+6. **[06. Prediction Markets & Polymarket Orderbook Archiving](06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md)**
+   - Polymarket Gamma and CLOB ingestion, 1-second L2 orderbook snapshot archiving, virtual prediction paper trading simulator (`paper_ledger.js`), and oracle resolution settlement.
+
+7. **[07. Security Model, APIs, Testing Strategy & Deployment](07_SECURITY_API_TESTING_DEPLOYMENT.md)**
+   - RBAC capability authorization, Express REST and WebSocket APIs, zero-key local test matrix (`test:safety`, `test:structure`, `test:core` 34 CTests), Docker Compose multi-container topology, and HPDesk Proxmox VM soak runbook.
