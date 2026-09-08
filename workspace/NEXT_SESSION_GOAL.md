@@ -1,11 +1,18 @@
 # Next Session Goal
 
-## Primary Objective: Merge to Main & Background Paper Soak Monitoring
+## Primary Objective: Architecture Documentation Refinement & Visual Diagram Engineering
 
-1. **Integration and Merge to `main`**:
-   - Run complete end-to-end verification (`npm test`, `npm run test:core`, `npm run test:structure`, `npm run test:safety`, `npm run test:api`, `npm run hygiene`).
-   - Merge `worktree-fix-raw-http-cache-bloat` into `main` and sync with remote repository.
+1. **Research Architectural Documentation Standards**:
+   - Research best practices for writing cohesive, professional software architecture documentation (C4 model, arc42, Diátaxis framework, IEEE 1471/ISO 42010).
+   - Establish formal guidelines for documenting the codebase both as a unified whole and across granular sub-sections.
 
-2. **Background Strategy & Paper Soak Monitoring**:
-   - Verify `sv-strategy-explorer` and `sv-bot-alpaca-paper` service states on HPDesk.
-   - Monitor live paper trading execution logs and virtual sub-position attribution.
+2. **Refine Architecture Suite on `main` (`docs/engineering/architecture/`)**:
+   - Refine the 8-section architecture suite on `main` (`docs/engineering/architecture/01` to `08`).
+   - Enhance visual architecture diagrams across all subsystems:
+     - Global macro topology and multi-market data pipelines.
+     - Subsystem component interaction maps and internal call sequences.
+     - State machines, memory layouts, and binary byte packings.
+   - Maintain quantified Load Indices (CPU, RAM Heap vs RSS, Disk I/O, Network SLAs) and LaTeX mathematical rigor across all files.
+
+3. **Continuous Verification & Quality Assurance**:
+   - Verify `npm run audit:documentation`, `npm run test:structure`, and `npm run hygiene` after any documentation changes.
