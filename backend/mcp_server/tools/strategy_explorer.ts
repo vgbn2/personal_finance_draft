@@ -10,7 +10,7 @@ export const exploreStrategySchema = z.object({
   model: z.enum(['knn_pattern_v0', 'svm_margin_v0', 'random_forest_v0', 'cnn_window_v0', 'decision_tree_stump_v0', 'logistic_regression_v0']).optional().default('knn_pattern_v0').describe('Predictive ML/statistical model'),
   timeframe: z.enum(['5m', '15m', '30m', '1h', '4h', '1d']).optional().default('1h').describe('Primary bar interval for feature engineering and signals'),
   universe: z.array(z.string()).min(1).optional().default(['SPY', 'QQQ']).describe('Target asset symbols to evaluate (e.g. ["BTCUSDT", "ETHUSDT"] or ["SPY", "QQQ"])'),
-  indicators: z.record(z.boolean()).optional().default({
+  indicators: z.record(z.string(), z.boolean()).optional().default({
     rsi: true,
     bollinger: true,
     atr: true,
