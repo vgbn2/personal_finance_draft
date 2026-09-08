@@ -4,9 +4,9 @@ This directory contains the canonical technical and architectural specifications
 
 ---
 
-## Canonical 7-Section Roadmap
+## Canonical 8-Section Roadmap
 
-The engineering documentation is organized into 7 modular, diagram-dense sections equipped with quantified Load Indices and mathematical formalisms:
+The engineering documentation is organized into 8 modular, diagram-dense sections equipped with quantified Load Indices and mathematical formalisms:
 
 1. **[01. System Architecture & Codebase Organization](01_ARCHITECTURE_AND_CODEBASE.md)**
    - Master multi-tier topology, module taxonomy, dependency direction, and fundamental invariants (single-writer, fail-closed, zero-key development, sub-position isolation).
@@ -28,3 +28,6 @@ The engineering documentation is organized into 7 modular, diagram-dense section
 
 7. **[07. Security Model, APIs, Testing Strategy & Deployment](07_SECURITY_API_TESTING_DEPLOYMENT.md)**
    - RBAC capability authorization, Express REST and WebSocket APIs, zero-key local test matrix (`test:safety`, `test:structure`, `test:core` 34 CTests), Docker Compose multi-container topology, and HPDesk Proxmox VM soak runbook.
+
+8. **[08. Financial & Quantitative Primer for Systems Engineers](08_FINANCIAL_PRIMER_FOR_ENGINEERS.md)**
+   - Comprehensive systems engineering analogy guide to financial mechanics: Central Limit Order Books, order types, slippage, OHLCV bars, DSP technical indicators, Sharpe/Sortino ratios, maximum drawdown, and prediction market EV calculations.
