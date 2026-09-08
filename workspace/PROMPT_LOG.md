@@ -1,6 +1,46 @@
 # Prompt Log - 2026-09-08
 
-## Session Closeout — Complete Ink UI & Terminal TUI Flicker Elimination - 2026-09-08
+## Session Closeout — Repository Structural Categorization, Strategy Partitioning & Hygiene Overhaul - 2026-09-08 session 3
+Received user prompts:
+- "cant you commit it to main , and also write an additional section for non financiers-traders to at least know what financial concepts are"
+- "exit the worktree and merge to main"
+- "feat/ink-tui-refactor also what about this branchm why is it ahead 300 commits"
+- "also failed hygine test Bash(npm run audit:documentation && npm run test:structure && npm run test:safety && npm run test:core && npm run hygiene) ... find out why"
+- "sync the skills and run hygiene"
+- "why not just do stuff on main, i dont see any changes yet"
+- "do more organization by groupiong them into a folder,"
+- "mearge it to main after"
+- "meanwhile, call a suba gent to diagnose the test failling"
+- "next session wwill be about refininf those docs on main, by researching how to write proper architechtural documentation when coding,with diagrams of sub sections and as a whole"
+- "what did the subagent find, also i want more debugging code, for like basically everything, what debugging code do this repo currently has and what not ,according to the architechture"
+- "spawn another sub agents with the purpose of just reading code and group un grouped files(like 8+standalone files should be group, flexible wiht it), just tell it to do a report, no changes to strucutre and code"
+- "call gemini sub agents"
+- "show the grouping report,"
+- "now the cleaning and asking questions"
+- "more multiple choice cleanup related questiones, before and after dir struct, file struc"
+- "also spawn a gemini subagent to check for name sharing issues, folder naming consistencies"
+- "check what they have done"
+- "more multiple choice questions and refine it following mass implement protocols"
+- "tell 3 gemini sub agents to do a deeper dive into"
+- "why the subagent spawn therir own chil process"
+- "check for what also needde to be deldeted, is this"
+- "there are also json, md files, git ignores, packes, envs lying around to the user faces"
+- "also about the settinfg up of domains, hostings via tailscale vpn or cloudflare?, and workspace dir, check that also"
+- "env set up for other devs that wants to contribute without exposing our envs ?"
+- "refien, organsize the plan followng mass implement protocol, more multiple choice question"
+- "mearge to main first then commti"
+- "commit push rsynce end session"
+
+Accomplished:
+- Partitioned 32 strategy configuration YAMLs into `config/strategies/automated/`, `config/strategies/curated/`, and `config/strategies/fixtures/`.
+- Reorganized `workspace/` into `governance/` and `protocols/` subdirectories, retaining active session direction at `workspace/` root.
+- Categorized tooling and ML training scripts into `scripts/mcp/`, `scripts/ml/training/`, and `scripts/tools/`.
+- Purged redundant shadow files (`models.js`, `common.js`, `manifest.json`), scratch binaries, and untracked artifacts.
+- Upgraded `backend/mcp_server/tsconfig.json` module resolution to `NodeNext` to resolve TypeScript compilation errors.
+- Verified 100% pass rate across all verification gates (`npm run test:structure`, `npm run audit:documentation`, `npm run hygiene`, `npm run test:core`, `npm run test:safety`, `npm run test:data`, `npm run test:api`, `npm test`).
+- Merged worktree changes into `main` (commits `3e45d776`, `09be156d`, `c0a99ab2`, `d99ed0b5`), pushed to `origin/main`, and executed guarded rsync to HPDesk Proxmox VM (`192.168.4.101`).
+
+## Session Closeout — Complete Ink UI & Terminal TUI Flicker Elimination - 2026-09-08 session 1
 Received user prompts:
 - "/session-orchestrator"
 - "fix the remaining ink UI flicker somehow, , search relevant docs, web page for similar issues"
