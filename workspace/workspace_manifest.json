@@ -7,9 +7,11 @@
     "workspace/artifacts",
     "workspace/checklists",
     "workspace/dev_reviews",
+    "workspace/governance",
     "workspace/handoff",
     "workspace/history",
     "workspace/plans",
+    "workspace/protocols",
     "workspace/reports",
     "workspace/research",
     "workspace/session_memory"
