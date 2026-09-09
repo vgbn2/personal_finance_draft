@@ -279,3 +279,32 @@ Automated trading strategies cannot mutate, close, or liquidate shares belonging
 | **Sub-Position Atomic Mutation** | < 0.02 CPU | `< 4.0 MB` heap | `< 1.5 ms` per transaction | Lock file creation + atomic rename | $O(1)$ atomic swap | **2/10** |
 | **Broker Position Reconciliation** | 0.1 CPU | `< 8.0 MB` heap | $120–250\text{ ms}$ (broker REST) | 1 broker API request / cycle | $O(P + S)$ items | **3/10** |
 | **Fast-Path Signal Evaluation** | 0.05 CPU | `< 15.0 MB` heap | **`< 2.0 ms`** internal latency| Zero disk I/O | $O(\text{bars})$ lookback | **2/10** |
+
+---
+
+## 7. Failure Domains, Circuit Breakers & Autonomous Recovery Matrix
+
+The Sovereign platform implements an explicit failure isolation boundary across each functional domain:
+
+```text
++-------------------------------------------------------------------------------------------------------------------------+
+|                                      SOVEREIGN FAILURE DOMAIN & RECOVERY MATRIX                                         |
++----------------------+--------------------+---------------------+-------------------------------------------------------+
+| Subsystem Domain     | Primary Failure    | Circuit Breaker     | Autonomous Recovery / Fail-Safe Behavior              |
++----------------------+--------------------+---------------------+-------------------------------------------------------+
+| Market Data Ingest   | Upstream HTTP 429/ | Exponential Backoff | Route to TTL disk cache (`storage/data/cache/`),      |
+|                      | 503 / Timeout      | with 60s Jitter     | synthesize bars from local lower-timeframe rollups    |
++----------------------+--------------------+---------------------+-------------------------------------------------------+
+| Storage & I/O        | Lockfile Contention| `withFileLockSync`  | 5,000ms spin-wait timeout; abort transaction without  |
+|                      | / Disk Full        | File Descriptor Lock| partial state corruption; emit operational error alert|
++----------------------+--------------------+---------------------+-------------------------------------------------------+
+| C++ Analytics Engine | NaN in TimeSeries /| Invariant Sanitizer | Reject malformed bar tuple; fall back to safe Mode B  |
+|                      | Invalid Span Range | & PreTradeRisk Gate | annotated evaluation or halt live order dispatch      |
++----------------------+--------------------+---------------------+-------------------------------------------------------+
+| Broker Gateway       | Connection Drop /  | Heartbeat Monitor   | Reconnect WebSocket with exponential backoff; pause   |
+|                      | Order Rejection    | & Step Sizer        | strategy cycle; re-query physical broker positions    |
++----------------------+--------------------+---------------------+-------------------------------------------------------+
+| Sub-Positions Ledger | Allocation Mismatch| Reconciliation Gate | Auto-attribute positive discrepancies to `[MANUAL]`;  |
+|                      | with Broker Net Pos| ($Q_{\text{Broker}}$| freeze bot order sizing on negative net discrepancy   |
++----------------------+--------------------+---------------------+-------------------------------------------------------+
+```
