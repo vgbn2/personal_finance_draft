@@ -10,7 +10,7 @@ The Sovereign Web & API Bridge runs as a standalone daemon or containerized serv
 flowchart TD
     CLIENT["Browser / TUI / MCP Agent"] -->|HTTP / WebSocket| APP["Native HTTP Server<br/>backend/api/app.js (Port 8787)"]
     APP -->|Path Traversal Check| STATIC["Static Assets<br/>Frontend/dashboard/dist/"]
-    APP -->|Security Filter| ACCESS["Access Control & RBAC<br/>backend/api/server/access_control.js"]
+    APP -->|Security Filter| ACCESS["Access Control & RBAC<br/>backend/api/server/services/access_control.js"]
     ACCESS --> ROUTER["Router Engine (40 Routes)<br/>backend/api/server/routes/index.js"]
     ROUTER -->|In-Process Execution| CLI["CLI Command Handlers<br/>backend/cli/commands/"]
     ROUTER -->|C++ Subprocess Bridge| CORE["Native C++ Core<br/>sovereign_wealth"]

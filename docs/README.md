@@ -18,9 +18,9 @@ Historical logs, handoffs, plans, reviews, and graph reports are deliberately re
 |---|---|---|
 | Operator | [Quickstart](operational/guides/QUICKSTART.md) | [CLI guide](operational/guides/cli_quick_guide.md), [operations](operational/guides/operations.md) |
 | Contributor | [Contributing](operational/guides/CONTRIBUTING.md) | [architecture](engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md), [testing](operational/guides/testing_surface.md) |
-| Quantitative researcher | [Research overview](research/quant_research.md) | [macro model](research/macro_model.md), [codebase tour](codebase_tour/00_START_HERE.md) |
+| Quantitative researcher | [Research overview](research/quant_research.md) | [macro model (historical)](archive/research/macro_model.md), [codebase tour](codebase_tour/00_START_HERE.md) |
 | API/frontend developer | [Web/API reference](engineering/specs/web_api.md) | [frontend design](design/frontend_design_spec.md) |
-| Deployment maintainer | [Role-based hosting](operational/guides/role_based_hosting.md) | [deployment](operational/guides/DEPLOYMENT.md), [local-first setup](operational/local_first/local_first_setup.md) |
+| Deployment maintainer | [Role-based hosting](operational/guides/role_based_hosting.md) | [soak runbook](OPERATIONAL_SOAK_RUNBOOK.md), [local-first setup](operational/local_first/local_first_setup.md) |
 | Module maintainer | [Module catalog](modules/README.md) | [Code Atlas](atlas/README.md), [documentation standard](engineering/standards/documentation_standard.md) |
 
 ## Documentation Types
@@ -50,7 +50,6 @@ These pages are supporting tutorials, not contract owners. Verify paths, symbols
 - [CLI guide](operational/guides/cli_quick_guide.md)
 - [Operations](operational/guides/operations.md)
 - [Data ingestion](operational/guides/data_ingestion.md)
-- [Deployment](operational/guides/DEPLOYMENT.md)
 - [Role-based hosting](operational/guides/role_based_hosting.md)
 - [Local-first setup](operational/local_first/local_first_setup.md)
 - [Local-first migration](operational/local_first/local_first_migration.md)
@@ -66,9 +65,9 @@ Read each command's side-effect label before running provider, data-write, conta
 - [Module catalog](modules/README.md) and [module template](modules/TEMPLATE.md) — cross-file ownership contracts.
 - [Code Atlas](atlas/README.md) — source-linked algorithms, structures, protocols, and topology.
 - [Testing surfaces](operational/guides/testing_surface.md) — test and evidence commands.
-- [Web/API reference](engineering/specs/web_api.md) — **needs refresh** against the active route registry.
-- [Capability manifest](engineering/specs/capability_manifest.md) — **needs refresh**; contains obsolete paths/data-store claims.
-- [Stack manifest](engineering/specs/stack_manifest.md)
+- [Web/API reference](engineering/specs/web_api.md) — canonical 40-route REST and WebSocket specification.
+- [Capability manifest](engineering/specs/capability_manifest.md) — verified platform capabilities, CLI commands, and CTest catalog.
+- [Stack manifest](engineering/specs/stack_manifest.md) — toolchain baseline and dependencies.
 - [Supabase integration](engineering/specs/supabase_integration.md)
 
 ### Explanation
@@ -81,11 +80,11 @@ Read each command's side-effect label before running provider, data-write, conta
 - [Prediction Markets & Orderbook Archiving](engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md)
 - [Security, APIs & Deployment](engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md)
 - [Financial Primer for Systems Engineers](engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md)
-- [Product specification](engineering/specs/product_spec.md) — **needs refresh** to separate implemented, gated, and roadmap capabilities.
-- [Technical specification](engineering/specs/technical_spec.md) — **needs refresh** for current paths and public owners.
+- [Product specification](engineering/specs/product_spec.md) — core invariants and capabilities matrix.
+- [Technical specification](engineering/specs/technical_spec.md) — multi-tier architecture, SOVT binary layout, and concurrency.
 - [Engineering standards](engineering/standards/engineering_standards.md)
 - [Research overview](research/quant_research.md)
-- [Macro model](research/macro_model.md)
+- [Macro model (Historical)](archive/research/macro_model.md) — early exploratory macro and FX modeling direction.
 - [Frontend design](design/frontend_design_spec.md)
 
 ### Historical Evidence

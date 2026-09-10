@@ -1,5 +1,11 @@
 # Macro And Market Model Roadmap
 
+> **Diátaxis Type**: Reference | **Status**: Historical Archive | **Preserved for Architectural Continuity**
+
+*Note: This document records early exploratory macro regime and currency depreciation modeling direction. It is preserved for historical research rationale.*
+
+---
+
 This document describes the macro and market modeling direction for Sovereign Markets. Some local seams now exist in the prototype, but the full macro regime and economy health stack is still not a production feature.
 
 ## Scope Boundary

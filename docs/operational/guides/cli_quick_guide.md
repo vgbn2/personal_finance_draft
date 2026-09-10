@@ -44,16 +44,16 @@ node backend/cli/sovereign_cli.js help examples
 
 ## Example Runs
 
-```powershell
-.\sv.ps1 status
-.\sv.ps1 cockpit
-.\sv.ps1 check --strict
-node backend\cli\sovereign_cli.js status
-node backend\cli\sovereign_cli.js check --strict
-node backend\cli\sovereign_cli.js backfill --timeframe 1d --days 365 --include-prediction --relevance-floor 0.30
-node backend\cli\sovereign_cli.js bt --input storage\data\cache\backtest_history.json --timeframe 1d
-node backend\cli\sovereign_cli.js bt --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
-node backend\cli\sovereign_cli.js optimize --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
+```bash
+# Sovereign CLI commands (via npm bin or direct node path)
+node backend/cli/sovereign_cli.js status
+node backend/cli/sovereign_cli.js cockpit
+node backend/cli/sovereign_cli.js check --strict
+node backend/cli/sovereign_cli.js backfill --timeframe 1d --days 365 --include-prediction --relevance-floor 0.30
+node backend/cli/sovereign_cli.js bt --input storage/data/cache/backtest_history.json --timeframe 1d
+node backend/cli/sovereign_cli.js bt --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
+node backend/cli/sovereign_cli.js optimize --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
+node backend/cli/sovereign_cli.js mass-bt --symbols SPY,QQQ,BTC/USD --timeframes 5m,1h,1d
 ```
 
 ## Output Metrics

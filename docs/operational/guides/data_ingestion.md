@@ -1,21 +1,27 @@
 # Data Ingestion Contract
 
-The platform needs one coherent stream for assets before contributors add strategies, CNN models, or execution. This document defines the prototype data shape. It is a contract document, not a live ingestion implementation.
+The platform needs one coherent stream for assets before contributors add strategies, ML models, or execution. This document defines the operational ingestion contract. For the binary format and storage specification, see [02. Data Pipeline & Storage](../../engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md).
 
 ## Asset Coverage
 
 Supported asset domains:
 
-- stocks and ETFs
-- equity indices
-- futures where a broker or data source supports them
-- FX pairs
-- crypto spot and derivatives
-- volatility indexes
-- macro series
-- news and sentiment feeds
+- stocks and ETFs (Alpaca / Yahoo Finance: 5m base bars)
+- equity indices (SPY, QQQ)
+- crypto spot (Binance: 1m historical from 2017)
+- prediction markets (Polymarket: Gamma API & CLOB 1s L2 orderbooks)
+- macro series & economic indicators (FRED / SEC Company Facts)
 
-Each asset should resolve to a stable internal `asset_id` before it enters features, backtests, signals, or portfolio monitoring.
+Each asset resolves to a canonical symbol format (e.g. `SPY`, `BTC/USD`, `ETH/USD`) before entering features, backtests, or execution.
+
+## Storage Formats
+
+1. **Binary TS Index (`storage/data/ts/*.bin`)**:
+   - 8-byte magic header: `SOVT\x01\x00\x00\x00`
+   - 48-byte packed records: timestamp (uint64_le), open, high, low, close, volume (float64_le)
+   - Zero-allocation two-pointer streaming merger (`backend/core/src/data/binary_ts_merger.cpp`)
+2. **JSON Cache (`storage/data/cache/*.json`)**:
+   - Rapid-inspection caches for indicators, backtest fixtures, and recent market snapshots.
 
 ## Required Records
 

@@ -43,8 +43,10 @@
     "audit:control-flow": "node scripts/dev/audit_control_flow.js",
     "audit:documentation": "node scripts/dev/audit_documentation.js",
     "docs:filter": "node scripts/dev/filter_docs.js",
+    "docs:serve": "docker run --rm -it -p 8000:8000 -v \"$PWD:/docs\" squidfunk/mkdocs-material",
+    "docs:build": "docker run --rm -v \"$PWD:/docs\" squidfunk/mkdocs-material build",
     "bundle": "node scripts/dev/make_bundle.js",
-    "verify:strict": "npm run test:api && npm run test:contracts && npm run test:secrets && npm test"
+    "verify:strict": "npm run docs:filter -- --strict && npm run test:api && npm run test:contracts && npm run test:secrets && npm test"
   },
   "keywords": [],
   "author": "",

@@ -305,7 +305,7 @@ All development, testing, and pull request reviews follow the repository's canon
 - **Quantitative Researcher:** [Research Overview](docs/research/quant_research.md) → [Financial Primer for Systems Engineers](docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md) → [Quantitative Alpha & ML Workbench](docs/engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md) → [Codebase Tour](docs/codebase_tour/00_START_HERE.md)
 - **Core Systems & C++ Engineer:** [Native Core & Backtester Spec](docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md) → [Data Pipeline & Binary TS Storage](docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md) → [Module Catalog](docs/modules/README.md)
 - **Execution & Risk Engineer:** [Execution, Sub-Positions Ledger & Risk](docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md) → [Prediction Markets & Orderbook Archive](docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md)
-- **Maintainer & Infrastructure:** [Maintainer Roster](workspace/governance/MAINTAINERS.md) → [Governance](workspace/governance/GOVERNANCE.md) → [Security & Deployment Spec](docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md) → [Deployment Guide](docs/operational/guides/DEPLOYMENT.md)
+- **Maintainer & Infrastructure:** [Maintainer Roster](workspace/governance/MAINTAINERS.md) → [Governance](workspace/governance/GOVERNANCE.md) → [Security & Deployment Spec](docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md) → [Operational Soak Runbook](docs/OPERATIONAL_SOAK_RUNBOOK.md)
 
 ---
 
