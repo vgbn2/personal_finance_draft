@@ -1,170 +1,150 @@
-# Product And Phase Specification
+# Technical Architecture Specification
 
-> **Needs source refresh:** this page mixes product direction, phase history, implemented surfaces, and roadmap claims. It is retained for compatibility while subjects are migrated to current module, Atlas, architecture-decision, research, or roadmap owners. Do not use it as the current implementation contract.
+> **Diátaxis Type**: Reference & Specification | **Status**: Canonical | **Owner**: Core Engineering | **Review**: Continuous
 
-This file explains the product direction and phase boundaries. It is not a claim that all described systems already exist.
+## 1. Multi-Tier System Boundaries
 
-## Mission
+Sovereign is structured into six strictly bounded functional tiers:
 
-Sovereign is intended to become a C++-centered trading platform for market analysis, asset data ingestion, CNN-assisted signal generation, portfolio monitoring, and controlled trade execution.
+```mermaid
+flowchart TD
+    subgraph Tier1["1. Presentation Tier"]
+        TUI["Ink v7 TUI Dashboard<br/>DEC Mode 2026 Sync"]
+        VITE["React 19 + Vite Dashboard<br/>Frontend/dashboard/"]
+        MCP["MCP Server<br/>backend/mcp_server/"]
+    end
 
-The project should grow in phases. Each phase must produce a buildable, testable system before the next phase adds more surface area.
+    subgraph Tier2["2. Application Tier (Native Node.js)"]
+        HTTP["Native HTTP Server<br/>backend/api/app.js (Port 8787)"]
+        ROUTER["Router Engine (40 Route Keys)<br/>backend/api/server/routes/"]
+        RBAC["Access Control & RBAC Router<br/>backend/api/server/access_control.js"]
+    end
 
-The personal-finance and wealth work is legacy context. It should remain separate from the trading platform unless a field is reused as macro, consumer-sentiment, or purchasing-power data.
+    subgraph Tier3["3. Domain Runtime & State"]
+        SUBPOS["Sub-Positions Ledger<br/>shared/lib/trade/sub_positions_ledger.js"]
+        QUOTE["Quote Router & Feeds<br/>shared/lib/market/quote_feed.js"]
+        IND["Rolling Indicators<br/>shared/lib/indicators/"]
+    end
 
-## Pillars
+    subgraph Tier4["4. Native C++20 Core (sovereign_wealth)"]
+        MERGE["BinaryTsMerger ($O(1)$ RAM)"]
+        BACKTEST["FrameBacktester (OpenMP)"]
+        RISK["PreTradeRisk Gate (<15µs)"]
+        STATS["Monte Carlo (xorshift64)"]
+    end
 
-## Legacy Wealth Context
+    subgraph Tier5["5. Storage Subsystem"]
+        BIN["Binary TS Files (SOVT v1)<br/>storage/data/ts/*.bin"]
+        LOCK["POSIX File Lock (O_EXCL)<br/>shared/lib/trade/process_lock.js"]
+        JSONL["JSONL Execution Ledgers<br/>storage/data/paper/"]
+    end
 
-Purpose: preserve prior personal-finance assumptions without letting them dominate the trading-platform architecture.
+    subgraph Tier6["6. Execution Gateways"]
+        ALPACA["Alpaca Paper / Live Broker"]
+        POLY["Polymarket CLOB / Gamma"]
+        PAPER["Virtual Paper Simulator"]
+    end
 
-Allowed trading uses:
+    Tier1 --> HTTP
+    HTTP --> RBAC
+    RBAC --> ROUTER
+    ROUTER --> Tier3
+    ROUTER --> Tier4
+    Tier3 --> Tier5
+    Tier4 --> Tier5
+    Tier3 --> Tier6
+```
 
-- wage growth as a macro labor-market signal
-- inflation and currency depreciation as macro regime inputs
-- household demand data as consumer-sentiment context
+---
 
-Status: legacy/reference. Not the active product direction.
+## 2. Binary Time-Series Format (SOVT Version 1)
 
-## Sovereign Markets
+All high-density historical and streaming market data is serialized to fixed-width IEEE-754 binary records on disk under `storage/data/ts/*.bin`.
 
-Purpose: find and evaluate tactical market opportunities.
+### Header Layout (8 Bytes)
 
-Current and planned capabilities:
+| Byte Offset | Field | Type | Encoded Value | Purpose |
+|---|---|---|---|---|
+| `0x00..0x03` | Magic Bytes | 4 bytes ASCII | `0x53 0x4F 0x56 0x54` (`SOVT`) | File type identification |
+| `0x04` | Version | `uint8_t` | `0x01` | SOVT format version |
+| `0x05..0x07` | Reserved | 3 bytes | `0x00 0x00 0x00` | Header padding & alignment |
 
-- market data ingestion
-- FX and macroeconomic data ingestion
-- macro regime classification
-- economy health scoring as a market and risk input
-- quantitative research workflow
-- indicators
-- backtesting
-- Black-Scholes and options analysis
-- Kelly sizing
-- correlation analysis
-- slippage and fee modeling
+- **Offset `0x00..0x03`**: Magic identifier ASCII `SOVT` (`0x53, 0x4F, 0x56, 0x54`).
+- **Offset `0x04`**: Version byte (`0x01` for Version 1).
+- **Offset `0x05..0x07`**: 3 reserved padding zero bytes (`0x00, 0x00, 0x00`).
 
-Status: active local prototype. Ingestion, validation, technical indicators, correlation, sample/model comparison workflows, and backtesting commands exist; model promotion to production remains gated.
+### Record Layout (48 Bytes per Bar)
+Each bar record is exactly 48 bytes packed, 8-byte aligned, little-endian:
 
-## Macro And Sentiment Data
+| Field Name | Offset (Bytes) | Length | Data Type | Description |
+|---|---|---|---|---|
+| `timestamp` | `0x00..0x07` | 8 | `uint64_t` | Epoch timestamp (milliseconds or seconds) |
+| `open` | `0x08..0x0F` | 8 | `double` | Opening bar price (IEEE-754) |
+| `high` | `0x10..0x17` | 8 | `double` | Maximum bar price (IEEE-754) |
+| `low` | `0x18..0x1F` | 8 | `double` | Minimum bar price (IEEE-754) |
+| `close` | `0x20..0x27` | 8 | `double` | Closing bar price (IEEE-754) |
+| `volume` | `0x28..0x2F` | 8 | `double` | Cumulative bar volume (IEEE-754) |
 
-Purpose: provide market regime, economy health, labor-market, and consumer-sentiment inputs for trading decisions.
+### Memory & File Calculations
+- 1 year of 1-minute bars: $375 \times 252 = 94,500\text{ bars} \times 48\text{ bytes} \approx 4.53\text{ MB}$.
+- 10 years of 1-minute crypto bars: $5,256,000\text{ bars} \times 48\text{ bytes} \approx 252.28\text{ MB}$.
+- Seek complexity: $O(1)$ random access via binary search on timestamp offsets:
+  $$\text{Offset}(i) = 8 + (i \times 48)$$
 
-Current and planned capabilities:
+---
 
-- inflation, rates, yield curve, FX, wage growth, and employment series
-- consumer sentiment and demand proxies
-- news and market sentiment features
-- timestamped known-at-time observations
-- economy health score for market regime context
+## 3. Concurrency & POSIX File Locking Architecture
 
-Status: partially active. FX, macro, weather, and sentiment-style provider boundaries exist in local ingestion; full macro regime scoring remains a roadmap item.
+To guarantee single-writer authority without external database daemons, Sovereign implements POSIX file locks via `node:fs` open flags:
 
-## Sovereign Terminus
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Writer as central-host (Backfill / Bot)
+    participant Lock as storage/data/locks/*.lock
+    participant Storage as storage/data/ts/*.bin
+    participant Reader as CLI / Dashboard / Reader
 
-Purpose: connect decisions to controlled execution.
+    Writer->>Lock: openSync(path, O_CREAT | O_EXCL | O_RDWR)
+    alt Lock Acquired
+        Lock-->>Writer: File Descriptor
+        Writer->>Storage: Atomic Streaming Append / Merge
+        Writer->>Lock: closeSync(fd) & unlinkSync(path)
+    else Contention (EEXIST)
+        Lock-->>Writer: Throw FileLockContentionError
+        Writer->>Writer: Wait exponential backoff (max 5 retries)
+    end
+    Reader->>Storage: readSync(shared non-blocking open)
+    Storage-->>Reader: Immutable Byte Slices
+```
 
-Current and planned capabilities:
+---
 
-- broker and exchange adapters
-- dry-run execution
-- live execution gates
-- kill switches
-- operational monitoring
+## 4. Quantitative Engine & Drag Modeling
 
-Status: planned. Live execution remains gated and is not active in the local prototype.
+### Execution Drag Formulation
+Simulated fills compute realistic transaction drag factoring bid-ask spread, linear market impact slippage, and broker maker/taker fees:
 
-## Active Phase Contract
+$$\text{Effective Price}_{\text{long}} = P_{\text{close}} \times \left(1 + \frac{\text{Spread}_{\text{bps}}}{20,000}\right) \times \left(1 + \text{Slippage}\right)$$
+$$\text{Cost}_{\text{total}} = \text{Notional} \times \left(\frac{\text{Fee}_{\text{bps}}}{10,000} + \frac{\text{Spread}_{\text{bps}}}{20,000} + \text{Slippage}\right)$$
 
-The active prototype includes local CLI, backend, macro ingestion, feature, model-comparison, and web/API bridge surfaces. Phase 4 macro/market-model work is active, while earlier implementation paths are still being hardened where the codebase remains incomplete.
+Where default cost parameters:
+- Equities (Liquid ETF): $\text{Spread} = 2\text{ bps}$, $\text{Fee} = 0\text{ bps}$ (Alpaca zero-commission), $\text{Slippage} = 3\text{ bps}$.
+- Crypto (Spot): $\text{Spread} = 5\text{ bps}$, $\text{Fee} = 10\text{ bps}$ (Gate.io taker), $\text{Slippage} = 5\text{ bps}$.
 
-Scope:
+### Monte Carlo Bootstrap Resampling
+- Algorithm: `xorshift64` pseudo-random number generator seeded with entropy.
+- Execution: 1,000 to 10,000 independent trade-sequence permutations with replacement.
+- Metrics: 95th and 99th percentile conditional Value-at-Risk (CVaR), maximum drawdown distribution, and Sharpe ratio confidence intervals.
 
-- file names for market data, research, CNN, execution, and monitoring modules
-- documentation contracts for asset calculations and data quality
-- config slots for data sources, strategies, risk, features, and alerts
-- model artifact slots for CNN and regime classification
-- deterministic CNN baseline inference for local tensor smoke tests
+---
 
-Non-scope:
+## 5. Toolchain & Runtime Baseline
 
-- live trade execution
-- CNN training and promoted ONNX/Kronos runtime inference
-- production portfolio monitoring
-- new personal-finance features
-
-Existing wealth code and docs may remain as legacy reference until removed or archived.
-
-## Phase Roadmap
-
-Phase 4 macro/market-model work is active, with Phase 2 and Phase 3 implementation paths still being hardened where needed.
-
-- asset, ingestion, feature, CNN, research, risk, execution, and portfolio file names
-- docs for data contracts and module ownership
-- config and model slot names
-- no live trading; historical note: real local ingestion has since moved into active prototype work
-
-Phase 2: Data Contracts And Asset Calculations.
-
-- implement asset identity and universe loading
-- implement OHLCV parsing and validation
-- implement stock and index return calculations
-- implement technical indicators and correlation
-- implement data quality reports
-- allow macro and wage/labor data only as market regime or consumer-sentiment inputs
-
-Phase 3: Research, Backtesting, And CNN Features.
-
-- backtest engine
-- transaction cost model
-- walk-forward validation
-- feature frames and labels
-- CNN tensor builder
-- model metadata, model registry, and deterministic baseline inference interface
-
-Phase 4: Macro/Market Model.
-
-- market data ingestion
-- FX and macroeconomic data ingestion
-- data quality checks for market and macro observations
-- macro regime classification
-- economy health score as a market/risk regime input
-- quant research hypothesis lifecycle
-- backtest integrity checks
-- transaction cost modeling
-- volatility modeling
-- indicators
-- backtesting
-- performance metrics
-- correlation
-- position sizing
-
-Phase 5: Portfolio Monitoring And Execution.
-
-- expanded CLI
-- web dashboard
-- macro and economy health reporting surfaces
-- portfolio state, PnL, exposure, and risk dashboards
-- paper trading
-- broker adapters
-- dry-run and live execution gates
-- deployment packaging
-
-## Legacy Non-Goals
-
-The current prototype should not implement:
-
-- live market data
-- real stock or index ingestion
-- CNN training and promoted ONNX/Kronos runtime inference
-- portfolio monitoring service
-- paper or live trade execution
-- FX or macroeconomic data ingestion
-- economy health scoring
-- quant research workflow automation
-- options pricing
-- ONNX inference
-- deployment automation
-- SQLite persistence
-
-These are important later, but adding them now would make the skeleton harder to understand and maintain.
+| Component | Minimum Version | Verified Toolchain | Purpose |
+|---|---|---|---|
+| Node.js | `v20.0.0+` | `v20.x`, `v22.x` | Application server, TUI, CLI, broker gateways |
+| C++ Compiler | `C++20` | `clang++ 14+`, `g++ 11+` | Native core engine compilation |
+| CMake | `3.20.0+` | `3.25.1+` | Build system configuration (`CMakeLists.txt`) |
+| OpenMP | Standard OpenMP | `libgomp`, `libomp` | Multi-threaded backtesting & grid search |
+| OS Platform | POSIX / Linux | Ubuntu 24.04 LTS (Proxmox) | Production deployment host (`hpdesk-1`) |

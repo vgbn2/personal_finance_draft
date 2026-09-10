@@ -126,7 +126,7 @@ For each checked section, record the review outcome in one line:
 - [ ] Developer review ledger: TODO, FIXME, HACK, BUG, XXX, hardcoded test values, synthetic fixtures treated as real data.
 - [ ] Pattern scan: recurring logic duplicated across two or more files.
 - [ ] Surface parity: manifest vs CLI handler parity, route vs frontend endpoint parity, dead exports.
-- [ ] Architecture hygiene: feature placement matches `docs/engineering/codebase_org.md`, imports follow the active dependency direction, and no deprecated path alias is being treated as canonical.
+- [ ] Architecture hygiene: feature placement matches `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md`, imports follow the active dependency direction, and no deprecated path alias is being treated as canonical.
 - [ ] Path hygiene: stale folder names, duplicate roots, legacy compatibility shims, generated outputs, and mislocated feature files are identified and graded explicitly.
 - [ ] Security scan: secrets, dynamic require, unvalidated path reads, auth bypass, sensitive logging.
 - [ ] Completeness scan: stubs, TODO wire-ups, mock handlers, unreachable menu items, not-implemented paths.

@@ -17,4 +17,3 @@ User-interface and interaction design specifications live here.
 ## Pages
 
 - [Frontend design specification](frontend_design_spec.md)
-- [Frontend prompt reference](frontend_prompt.md) — supporting material, not a source contract.

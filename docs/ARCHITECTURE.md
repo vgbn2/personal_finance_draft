@@ -6,55 +6,51 @@ Sovereign is a modular, local-first quantitative trading, research, backtesting,
 
 ## 1. Master System Topology & Modular Architecture
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                    SOVEREIGN CONSOLE MASTER ARCHITECTURE TOPOLOGY                                  |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|  [ 1. PRESENTATION & INTEGRATION LAYER ]                                                                           |
-|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐                  |
-|  │ Sovereign CLI & Ink TUI       │ React 19 + Vite Dashboard     │ Model Context Protocol (MCP)│                  |
-|  │ `backend/cli/sovereign_cli.js`│ `Frontend/dashboard/src/`     │ `backend/mcp_server/`       │                  |
-|  │ Zero-allocation CLI commands  │ Real-time WebSocket bridge    │ AI Autonomous Workbench     │                  |
-|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘                  |
-|                                                  │                                                                 |
-|                                                  ▼                                                                 |
-|  [ 2. APPLICATION & ROUTING LAYER ]                                                                                |
-|  ┌───────────────────────────────────────────────────────────────┬─────────────────────────────┐                  |
-|  │ Authenticated Express API (`backend/api/`)                    │ Execution Policy Router     │                  |
-|  │ Token validation, rate limiters, WebSocket broadcaster        │ `shared/lib/settings/`      │                  |
-|  └───────────────────────────────────────────────────────────────┴─────────────────────────────┘                  |
-|                                                  │                                                                 |
-|                                                  ▼                                                                 |
-|  [ 3. QUANTITATIVE DISCOVERY & RUNTIME EXECUTION ]                                                                 |
-|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐                  |
-|  │ Autonomous Strategy Discovery │ Virtual Sub-Positions Ledger  │ Indicator & Feature Engine  │                  |
-|  │ `scripts/strategies/`         │ `shared/lib/runtime/`         │ `shared/lib/market/`        │                  |
-|  │ 6D Novelty Hamming Filter     │ Deterministic Order Signatures│ Rolling RSI, MACD, ATR, SVM │                  |
-|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘                  |
-|                                                  │                                                                 |
-|                                                  ▼                                                                 |
-|  [ 4. NATIVE C++20 SOVEREIGN CORE (`backend/core/`) ]                                                              |
-|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐                  |
-|  │ Streaming Binary TS Merger    │ FrameBacktester Engine        │ PreTradeRisk & Drawdown     │                  |
-|  │ Two-pointer zero-allocation   │ Mode A Native / Mode B Frame  │ Microsecond circuit breaker │                  |
-|  │ $O(1)$ memory (<5MB RSS)      │ Monte Carlo bootstrap PRNG    │ Drawdown limit & fat-finger │                  |
-|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘                  |
-|                                                  │                                                                 |
-|                                                  ▼                                                                 |
-|  [ 5. LOCAL STORAGE ENGINE (`storage/data/`) ]                                                                     |
-|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐                  |
-|  │ Binary TS Storage (`ts/*.bin`)│ Append-Only Paper Ledger JSONL│ Persistent Parameter Caches │                  |
-|  │ SOVT 48-byte packed format    │ Virtual Polymarket simulation │ `strategy_explorer_state`   │                  |
-|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘                  |
-|                                                  │                                                                 |
-|                                                  ▼                                                                 |
-|  [ 6. BROKER GATEWAYS & OPERATIONAL INFRASTRUCTURE ]                                                               |
-|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐                  |
-|  │ Alpaca Paper / Live Broker    │ Polymarket CLOB Gateway       │ Docker Compose Stack        │                  |
-|  │ Fractional step sizing clamp  │ 1s / tick orderbook streams   │ HPDesk Proxmox VM Soak Mesh │                  |
-|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘                  |
-+--------------------------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph Tier1["1. Presentation & Integration Tier"]
+        CLI["Sovereign CLI & Ink TUI<br/>backend/cli/sovereign_cli.js<br/>Interactive Cockpit"]
+        DASH["React 19 + Vite Dashboard<br/>Frontend/dashboard/src/<br/>Real-Time WebSocket Bridge"]
+        MCP["Model Context Protocol (MCP)<br/>backend/mcp_server/<br/>Autonomous AI Workbench"]
+    end
+
+    subgraph Tier2["2. Application & Routing Tier (Native Node.js)"]
+        HTTP["Native HTTP & WebSocket Server<br/>backend/api/app.js (Port 8787)<br/>40 Route Keys | RBAC Tiers"]
+        POLICY["Execution Policy Router<br/>shared/lib/settings/runtime_policy.js"]
+    end
+
+    subgraph Tier3["3. Quantitative Discovery & State Management"]
+        DISCOVERY["Autonomous Strategy Discovery<br/>scripts/strategies/auto_strategy_explorer.js<br/>6D Novelty Hamming Filter"]
+        SUB["Virtual Sub-Positions Ledger<br/>shared/lib/runtime/sub_positions_ledger.js<br/>Deterministic Order Signatures"]
+        INDICATORS["Indicator & Feature Engine<br/>shared/lib/market/indicators.js<br/>Rolling RSI, MACD, ATR, SVM"]
+    end
+
+    subgraph Tier4["4. Native C++20 Sovereign Core (backend/core/)"]
+        MERGER["Streaming Binary TS Merger<br/>Two-Pointer Zero-Allocation<br/>O(1) Memory (<5MB RSS)"]
+        BT["FrameBacktester Engine<br/>Mode A Native / Mode B Frame<br/>xorshift64 Monte Carlo Bootstrap"]
+        RISK["PreTradeRisk Microsecond Gate<br/>Drawdown Limit & Fat-Finger Filter<br/>34/34 CTests Passing"]
+    end
+
+    subgraph Tier5["5. Local Storage Subsystem (storage/data/)"]
+        BIN[("Binary TS Storage<br/>ts/*.bin (SOVT 48-byte)")]
+        PAPER_STATE[("Append-Only Paper Ledger JSONL<br/>Virtual Polymarket Simulation")]
+        CACHE[("Persistent Parameter Caches<br/>strategy_explorer_state")]
+    end
+
+    subgraph Tier6["6. Broker Gateways & Operational Infrastructure"]
+        ALPACA["Alpaca Paper / Live Broker<br/>Fractional Step Sizing Clamp"]
+        POLY["Polymarket CLOB Gateway<br/>1s / Tick Orderbook Streams"]
+        DOCKER["Docker Compose Multi-Service<br/>HPDesk Proxmox VM Soak Mesh"]
+    end
+
+    Tier1 --> HTTP
+    HTTP --> POLICY
+    POLICY --> Tier3
+    Tier3 --> Tier4
+    Tier4 --> Tier5
+    Tier3 --> Tier5
+    POLICY --> Tier6
+    Tier6 --> Tier5
 ```
 
 ---

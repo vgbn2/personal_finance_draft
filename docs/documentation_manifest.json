@@ -167,6 +167,132 @@
       "review_triggers": ["documentation-workflow", "corpus-policy", "review-standard"]
     },
     {
+      "path": "docs/engineering/specs/product_spec.md",
+      "type": "reference",
+      "audience": ["contributors", "maintainers", "operators"],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": ["backend/cli/sovereign_cli.js", "backend/api/app.js", "backend/core/CMakeLists.txt"],
+      "review_triggers": ["product-invariants", "capabilities-matrix"]
+    },
+    {
+      "path": "docs/engineering/specs/technical_spec.md",
+      "type": "reference",
+      "audience": ["contributors", "maintainers", "native-engineers"],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": ["backend/core/src/data/binary_ts_merger.cpp", "shared/lib/market/ts_index_storage.js", "backend/api/app.js"],
+      "review_triggers": ["binary-sovt", "locking", "concurrency"]
+    },
+    {
+      "path": "docs/engineering/specs/web_api.md",
+      "type": "reference",
+      "audience": ["api-developers", "frontend-developers", "operators"],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": ["backend/api/app.js", "backend/api/server/routes/index.js"],
+      "review_triggers": ["api-routes", "rbac", "websocket-bridge"]
+    },
+    {
+      "path": "docs/engineering/specs/capability_manifest.md",
+      "type": "reference",
+      "audience": ["contributors", "maintainers"],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": ["backend/core/CMakeLists.txt", "backend/cli/sovereign_cli.js"],
+      "review_triggers": ["capability-matrix", "cli-commands", "ctest-catalog"]
+    },
+    {
+      "path": "docs/engineering/specs/stack_manifest.md",
+      "type": "reference",
+      "audience": ["contributors", "maintainers", "devops"],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": ["package.json", "CMakeLists.txt", "backend/core/CMakeLists.txt"],
+      "review_triggers": ["toolchain", "runtime-versions", "dependencies"]
+    },
+    {
+      "path": "docs/engineering/specs/tui_feature_map.md",
+      "type": "reference",
+      "audience": ["cli-developers", "operators"],
+      "owner": "cli",
+      "status": "canonical",
+      "source_paths": ["backend/cli/sovereign_dashboard.mjs", "backend/cli/tui/manifest.js"],
+      "review_triggers": ["tui-features", "keyboard-shortcuts", "views"]
+    },
+    {
+      "path": "docs/engineering/specs/supabase_integration.md",
+      "type": "reference",
+      "audience": ["backend-developers", "database-maintainers"],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": ["backend/api/server/routes/account/supabase_config.js"],
+      "review_triggers": ["supabase-client", "auth-session"]
+    },
+    {
+      "path": "docs/engineering/specs/kronos_pipeline.md",
+      "type": "reference",
+      "audience": ["quantitative-researchers", "native-engineers"],
+      "owner": "native-core",
+      "status": "canonical",
+      "source_paths": ["backend/core/src/ml/kronos_tokenizer.cpp", "backend/core/src/ml/kronos_tensor_builder.cpp"],
+      "review_triggers": ["kronos-pipeline", "onnx-inference"]
+    },
+    {
+      "path": "docs/archive/rust_mirror_status.md",
+      "type": "reference",
+      "audience": ["contributors", "historical"],
+      "owner": "native-core",
+      "status": "historical",
+      "source_paths": ["backend/core/CMakeLists.txt"],
+      "review_triggers": ["historical-rust-parity"]
+    },
+    {
+      "path": "docs/archive/native_maintenance_notes.md",
+      "type": "reference",
+      "audience": ["contributors", "historical"],
+      "owner": "native-core",
+      "status": "historical",
+      "source_paths": ["backend/core/CMakeLists.txt"],
+      "review_triggers": ["historical-c-engine-notes"]
+    },
+    {
+      "path": "docs/sections/interface/terminal-dashboard/README.md",
+      "type": "reference",
+      "audience": ["cli-developers", "operators"],
+      "owner": "cli",
+      "status": "canonical",
+      "source_paths": ["backend/cli/sovereign_dashboard.mjs", "backend/cli/tui/dashboard_exec.js"],
+      "review_triggers": ["terminal-dashboard", "responsive-layout", "pin-gate"]
+    },
+    {
+      "path": "docs/sections/research/rsi-reversal-analysis/README.md",
+      "type": "reference",
+      "audience": ["quantitative-researchers"],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": ["shared/lib/strategy/rsi_backtest.js"],
+      "review_triggers": ["rsi-smoothing", "event-crossover", "statistical-summary"]
+    },
+    {
+      "path": "docs/sections/research/correlation-analysis/README.md",
+      "type": "reference",
+      "audience": ["quantitative-researchers"],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": ["backend/cli/commands/tools/backend_correlation.js"],
+      "review_triggers": ["correlation-matrix", "symbol-alignment", "synthetic-formulas"]
+    },
+    {
+      "path": "docs/sections/research/backtest-execution/README.md",
+      "type": "reference",
+      "audience": ["quantitative-researchers", "contributors"],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": ["backend/cli/commands/research/research.js", "shared/lib/strategy/backtest.js"],
+      "review_triggers": ["backtest-execution", "feature-frame-split", "engine-dispatch"]
+    },
+    {
       "path": "docs/sections/data/polymarket-history-archive/README.md",
       "type": "reference",
       "audience": ["research-maintainers", "data-maintainers"],

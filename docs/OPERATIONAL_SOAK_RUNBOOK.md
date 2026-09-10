@@ -4,36 +4,33 @@
 
 This runbook defines the deployment topology, persistent soak monitoring, and operational protocols for running Sovereign trading bots, data backfill daemons, and web interfaces on a dedicated host (e.g. an HPDesk mini-PC running Ubuntu within a Proxmox VM).
 
-```text
-+---------------------------------------------------------------------------------------------------+
-|                                  HPDesk SOAK DEPLOYMENT TOPOLOGY                                  |
-+---------------------------------------------------------------------------------------------------+
-|                                                                                                   |
-|  [ HPDesk Mini-PC (Proxmox VM: Ubuntu 24.04 LTS) ]                                                |
-|  Profile: `SOVEREIGN_DEPLOYMENT_PROFILE=central-host`                                             |
-|                                                                                                   |
-|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐  |
-|  │ sv-web (Port 127.0.0.1:8787)  │ sv-backfill (Canonical Writer)│ sv-bot-alpaca-paper         │  |
-|  │ - Dashboard API & Static UI   │ - Passive Ingestion Daemon    │ - Live Paper Loop           │  |
-|  │ - Read-Only In-Memory Cache   │ - SOVT Segment Writer (3GB)   │ - Fractional Step Sizing    │  |
-|  │ - Healthcheck: /health        │ - V8 Heap: --max-old-space=6GB│ - Deterministic Signatures  │  |
-|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘  |
-|  ┌───────────────────────────────┬───────────────────────────────┬─────────────────────────────┐  |
-|  │ sv-strategy-explorer          │ sv-portfolio-monitor          │ sv-host-health & sv-backup  │  |
-|  │ - 30-Min Discovery Daemon     │ - Balance & Drawdown Checks   │ - Flaw Log Inspection       │  |
-|  │ - C++ FrameBacktester Bridge  │ - Sub-Position Reconciliation │ - 24h State Snapshots       │  |
-|  └───────────────────────────────┴───────────────────────────────┴─────────────────────────────┘  |
-|                                 │                                                                 |
-|                                 ▼                                                                 |
-|  [ Storage Mount: `/app/storage` -> `storage/data/` (ts/, runtime/, logs/) ]                      |
-|                                 │                                                                 |
-|                                 ▼                                                                 |
-|  [ SSH Encrypted Port Forwarding: `ssh -L 8787:127.0.0.1:8787 user@hpdesk` ]                     |
-|                                 │                                                                 |
-|                                 ▼                                                                 |
-|  [ Client Workstations & Claude Code MCP Workbench ]                                              |
-|                                                                                                   |
-+---------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph Host["HPDesk Mini-PC (Proxmox VM: Ubuntu 24.04 LTS)<br/>Profile: SOVEREIGN_DEPLOYMENT_PROFILE=central-host"]
+        subgraph CoreServices["Core Services"]
+            WEB["sv-web (Port 127.0.0.1:8787)<br/>- Dashboard API & Static UI<br/>- Read-Only In-Memory Cache<br/>- Healthcheck: /health"]
+            BACKFILL["sv-backfill (Canonical Writer)<br/>- Passive Ingestion Daemon<br/>- SOVT Segment Writer (3GB)<br/>- V8 Heap: --max-old-space=6GB"]
+            BOT["sv-bot-alpaca-paper<br/>- Live Paper Loop<br/>- Fractional Step Sizing<br/>- Deterministic Signatures"]
+        end
+        subgraph AuxServices["Autonomous & Monitoring Services"]
+            EXPLORER["sv-strategy-explorer<br/>- 30-Min Discovery Daemon<br/>- C++ FrameBacktester Bridge"]
+            MONITOR["sv-portfolio-monitor<br/>- Balance & Drawdown Checks<br/>- Sub-Position Reconciliation"]
+            HEALTH["sv-host-health & sv-backup<br/>- Flaw Log Inspection<br/>- 24h State Snapshots"]
+        end
+        STORAGE[("Storage Mount: /app/storage<br/>storage/data/ ts/, runtime/, logs/")]
+        BACKFILL --> STORAGE
+        BOT --> STORAGE
+        EXPLORER --> STORAGE
+        MONITOR --> STORAGE
+        HEALTH --> STORAGE
+        WEB --> STORAGE
+    end
+
+    SSH["SSH Encrypted Tunnel<br/>ssh -L 8787:127.0.0.1:8787 user@hpdesk"]
+    CLIENTS["Client Workstations & Claude Code MCP Workbench"]
+
+    WEB --> SSH
+    SSH --> CLIENTS
 ```
 
 ---

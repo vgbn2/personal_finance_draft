@@ -1,7 +1,7 @@
 # Module 03 — Strategy, Backtesting & ML
 
 Supplements `docs/guide/chapter_17` and `chapter_18` (generic "why backtest gates exist" reading) and
-corrects `docs/engineering/kronos_pipeline.md`, which is labeled a "roadmap" but is partially stale in
+corrects `docs/engineering/specs/kronos_pipeline.md`, which is labeled a "roadmap" but is partially stale in
 the other direction — Kronos already has a real (if data-starved) test in the C++ suite (module 01).
 
 ## What a strategy actually is
