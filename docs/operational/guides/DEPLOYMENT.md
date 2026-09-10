@@ -75,15 +75,13 @@ The current local prototype should not need live secrets for ordinary validation
 
 Future deployment work must never hardcode credentials. Credentials should come from an approved secret source such as environment variables, a local encrypted store, or a deployment secret manager.
 
-## Starter Manifests
+## Deployment Infrastructure
 
-The repo now includes starter deployment assets under `deployment/`:
+The platform runs containerized services under `infra/docker/` for the dedicated Proxmox VM host (`hpdesk-1`):
 
-- `deployment/heroku/` for a Node process entrypoint and environment hints
-- `deployment/kubernetes/` for a web/API deployment, config map, and service
-- `deployment/terraform/` for managing the Kubernetes web surface from variables and outputs
-
-These are intentionally web-first and assume the local dashboard bridge is the supported runtime target until the live execution stack is promoted.
+- `infra/docker/Dockerfile` builds the native runtime and web/API bridge
+- `infra/docker/docker-compose.yml` runs the multi-service stack (`sv-web`, `sv-bot-alpaca-paper`, `sv-backfill`, `sv-strategy-explorer`)
+- `infra/systemd/` contains systemd service and timer units for automated host-side updates
 
 ## Always-On Data And Scorecard Host
 

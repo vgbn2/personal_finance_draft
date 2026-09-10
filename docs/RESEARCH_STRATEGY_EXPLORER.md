@@ -8,31 +8,26 @@ This guide describes how autonomous AI agents (Claude, GPT, Ollama, local LLMs, 
 
 Autonomous AI agents do not need special external access or proprietary tooling. They interact with Sovereign through three standard integration surfaces:
 
-```text
-               +-------------------------------------------+
-               | Autonomous AI Agent / Researcher / LLM   |
-               +-------------------------------------------+
-                                     |
-         +---------------------------+---------------------------+
-         |                           |                           |
-         v                           v                           v
-  [1. MCP Server Tool]       [2. CLI Subcommand]      [3. YAML Registry Direct]
-  `explore_strategy`         `sovereign strategy       `config/strategies/`
-  `run_backtest`              explore [--once]`         Canonical YAML Plan
-         |                           |                           |
-         +---------------------------+---------------------------+
-                                     |
-                                     v
-                 +---------------------------------------+
-                 | Native C++20 Sovereign Core Engine   |
-                 | (`FrameBacktester::runFromAnnotated`) |
-                 +---------------------------------------+
-                                     |
-                                     v
-                 +---------------------------------------+
-                 | Discovery History & State Ledger      |
-                 | `storage/data/strategy_explorer_state |
-                 +---------------------------------------+
+```mermaid
+flowchart TD
+    AGENT["Autonomous AI Agent / Researcher / LLM"]
+    
+    subgraph Surfaces["Integration Surfaces"]
+        MCP["1. MCP Server Tool<br/>explore_strategy<br/>run_backtest"]
+        CLI["2. CLI Subcommand<br/>sovereign strategy<br/>explore [--once]"]
+        YAML["3. YAML Registry Direct<br/>config/strategies/<br/>Canonical YAML Plan"]
+    end
+
+    ENGINE["Native C++20 Sovereign Core Engine<br/>FrameBacktester::runFromAnnotated"]
+    LEDGER[("Discovery History & State Ledger<br/>storage/data/strategy_explorer_state.json")]
+
+    AGENT --> MCP
+    AGENT --> CLI
+    AGENT --> YAML
+    MCP --> ENGINE
+    CLI --> ENGINE
+    YAML --> ENGINE
+    ENGINE --> LEDGER
 ```
 
 ---

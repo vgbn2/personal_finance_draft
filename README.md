@@ -8,64 +8,39 @@ The repository contains real execution adapters, but **execution availability is
 
 ## 1. System Architecture & Topology
 
-```text
-                               ┌─────────────────────────────────────────┐
-                               │           External Market Data          │
-                               │   (Binance, Yahoo, Polymarket, Alpaca)  │
-                               └────────────────────┬────────────────────┘
-                                                    │
-                                                    ▼
-                               ┌─────────────────────────────────────────┐
-                               │       Ingestion & Validation Plane      │
-                               │  - shared/lib/market/validation.js      │
-                               │  - OHLCV bounds & timestamp ordering    │
-                               └────────────────────┬────────────────────┘
-                                                    │
-                                                    ▼
-                               ┌─────────────────────────────────────────┐
-                               │     Native Streaming Binary TS Engine   │
-                               │  - Packed 48-byte Float64 candle records│
-                               │  - sovereign::BinaryTsMerger (C++20)    │
-                               │  - O(1) memory footprint (<5MB RSS)     │
-                               │  - storage/data/ts/{SYMBOL}_{TF}.bin    │
-                               └───────────┬─────────────────┬───────────┘
-                                           │                 │
-                  ┌────────────────────────┴─┐             ┌─┴────────────────────────┐
-                  │                          │             │                          │
-                  ▼                          ▼             ▼                          ▼
-       ┌────────────────────┐     ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐
-       │   CLI / Ink TUI    │     │   Private Express  │ │   C++20 Analytics  │ │  Strategy Engine   │
-       │  backend/cli/      │     │   Bridge & REST API│ │  - Fast Backtesting │ │  - RSI / ATR / BB  │
-       │  - Interactive TUI │     │  backend/api/      │ │  - Risk Validation │ │  - Regime Detect   │
-       │  - Command Handlers│     │  - Capability-gated│ │  - Native CTests   │ │  - Feature Frames  │
-       └──────────┬─────────┘     └──────────┬─────────┘ │  backend/core/     │ └─────────┬──────────┘
-                  │                          │           └─────────┬──────────┘           │
-                  │                          │                     │                      │
-                  │                          ▼                     │                      │
-                  │               ┌────────────────────┐           │                      │
-                  │               │  React 19 Dashboard│           │                      │
-                  │               │  Frontend/dashboard│           │                      │
-                  │               │  Vite + Charts UI  │           │                      │
-                  │               └────────────────────┘           │                      │
-                  │                                                │                      │
-                  └────────────────────────┬───────────────────────┴──────────────────────┘
-                                           │
-                                           ▼
-                               ┌─────────────────────────────────────────┐
-                               │   Runtime Policy & Safety Boundaries    │
-                               │   - shared/lib/settings/runtime_policy  │
-                               │   - Position sizing & Max drawdown gate │
-                               └───────────────────┬─────────────────────┘
-                                                   │
-                         ┌─────────────────────────┴─────────────────────────┐
-                         │                                                   │
-                         ▼                                                   ▼
-       ┌───────────────────────────────────┐               ┌───────────────────────────────────┐
-       │     Simulated Virtual Ledger      │               │     Gated Production Gateway      │
-       │   - Checksum-chained paper ledger │               │   - Alpaca, Gate.io, Polymarket   │
-       │   - 100% Zero-Key, simulated cash │               │   - Strict Key & Host Isolation   │
-       │   backend/gateway/src/paper_ledger│               │   - Isolated VM (hpdesk-1)        │
-       └───────────────────────────────────┘               └───────────────────────────────────┘
+```mermaid
+flowchart TD
+    EXT["External Market Data<br/>(Binance, Yahoo, Polymarket, Alpaca)"]
+    INGEST["Ingestion & Validation Plane<br/>- shared/lib/market/validation.js<br/>- OHLCV bounds & timestamp ordering"]
+    TS["Native Streaming Binary TS Engine<br/>- Packed 48-byte Float64 candle records<br/>- sovereign::BinaryTsMerger (C++20)<br/>- O(1) memory footprint (<5MB RSS)<br/>- storage/data/ts/{SYMBOL}_{TF}.bin"]
+
+    EXT --> INGEST
+    INGEST --> TS
+
+    subgraph CoreTiers["Processing & Presentation Tiers"]
+        CLI["CLI / Ink TUI<br/>backend/cli/"]
+        API["Native Node.js HTTP API<br/>backend/api/ (Port 8787)<br/>Capability-Gated RBAC"]
+        DASH["React 19 Dashboard<br/>Frontend/dashboard/<br/>Vite + Charts UI"]
+        CPP["C++20 Analytics & Core<br/>- Fast Backtesting<br/>- Risk Validation (34 CTests)<br/>backend/core/"]
+        STRAT["Strategy Engine<br/>- Indicators & Features<br/>- Regime Detection"]
+    end
+
+    TS --> CLI
+    TS --> API
+    TS --> CPP
+    TS --> STRAT
+    API --> DASH
+
+    POLICY["Runtime Policy & Safety Boundaries<br/>- shared/lib/settings/runtime_policy<br/>- Position sizing & Max drawdown gate"]
+    CLI --> POLICY
+    CPP --> POLICY
+    STRAT --> POLICY
+
+    PAPER["Simulated Virtual Ledger<br/>- Checksum-chained paper ledger<br/>- 100% Zero-Key, simulated cash<br/>backend/gateway/src/paper_ledger.js"]
+    GATEWAY["Gated Production Gateway<br/>- Alpaca, Gate.io, Polymarket<br/>- Isolated VM (hpdesk-1)<br/>- Hardware PIN & Token Auth"]
+
+    POLICY --> PAPER
+    POLICY --> GATEWAY
 ```
 
 ---
@@ -73,7 +48,7 @@ The repository contains real execution adapters, but **execution availability is
 ## 2. Fast-Start for Developers & Contributors
 
 ### Stack & Zero-Key Boundary Truth
-- **Runtime Stack**: Pure **Node.js (v20+)** and **C++20 (CMake 3.15+)**.
+- **Runtime Stack**: Pure **Node.js (v20+)** and **C++20 (CMake 3.20+)**.
 - **NO Python Virtual Environments (`venv`)**: Python is not part of the runtime or testing lifecycle.
 - **Zero-Key Development**: All tests, backtests, and research workflows run **100% locally with zero external API keys** against recorded fixtures and virtual paper ledgers.
 
@@ -143,25 +118,11 @@ Launch the interactive graphical terminal interface:
 node backend/cli/sovereign_cli.js
 ```
 
-```text
-+----------------------------------------------------------------------------------------------------+
-|  SOVEREIGN TRADING CONSOLE v1.0                     [Profile: local-dev]  [Status: OK]  [Auth: Guest]  |
-+----------------------------------------------------------------------------------------------------+
-|  CATEGORIES                               | COMMANDS & TOOLS                                       |
-|  > 1. Operational Dashboard & Health      |   [status]        System Health & Subsystem Latencies  |
-|    2. Data & Backfill                     |   [cockpit]       Live Streaming Market Ticker Matrix  |
-|    3. Backend Tools (C++ Analytics)       |   [watch]         Live Data Watcher Daemon             |
-|    4. Research & Backtesting              |   [cache-clean]   Prune Stale Timeseries Caches        |
-|    5. AI & Machine Learning               |   [kill-switch]   Emergency Safety Halt Controller     |
-|    6. Execution & Trading                 |                                                        |
-|    7. Prediction Markets                  | PARAMETER CONFIGURATION                                |
-|    8. Settings & Preferences              |   Symbol:     [ BTC/USDT        ]                          |
-|    9. Account & Auth                      |   Timeframe:  [ 1h              ]                          |
-|                                           |   History:    [ 730 days        ]                          |
-+-------------------------------------------+--------------------------------------------------------+
-|  NAVIGATION: [↑/↓] Select  [Enter] Execute  [/] Filter Search  [Tab] Switch Pane  [q] Quit Cockpit  |
-+----------------------------------------------------------------------------------------------------+
-```
+| Pane / Section | Displayed Components | Navigation Controls |
+|---|---|---|
+| **Header Bar** | Console v1.0, Profile: `local-dev`, Status: `OK`, Auth: `Guest` | `q` / `Ctrl+C`: Quit cockpit |
+| **Categories (Left Pane)** | 1. Operational Dashboard<br>2. Data & Backfill<br>3. Backend Tools (C++ Core)<br>4. Research & Backtest<br>5. AI & Machine Learning<br>6. Execution & Trading<br>7. Prediction Markets<br>8. Settings & Preferences<br>9. Account & Auth | `↑`/`↓`: Select category<br>`Tab`: Switch pane |
+| **Commands & Parameters (Right Pane)** | `[status]`, `[cockpit]`, `[watch]`, `[cache-clean]`, `[kill-switch]`<br>Config: Symbol `BTC/USDT`, Timeframe `1h`, History `730 days` | `Enter`: Execute command<br>`/`: Filter search<br>`Esc`: Cancel |
 
 #### TUI Keyboard Controls & Navigation
 - **`↑` / `↓` Arrow Keys**: Navigate between categories, commands, and parameter selectors.
@@ -210,26 +171,6 @@ Every TUI capability can be invoked headlessly in CI/CD pipelines, background sc
 
 ## 4. Subsystem Feature Matrix & Capabilities Breakdown
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                      SOVEREIGN SUBSYSTEM CAPABILITIES ARCHITECTURE                                 |
-+--------------------------------------------------------------------------------------------------------------------+
-|  1. STREAMING DATA & BINARY STORAGE     | 2. QUANTITATIVE ALPHA & ML WORKBENCH   | 3. SUB-POSITIONS LEDGER & RISK  |
-|  - Packed 48-byte SOVT format           - Autonomous 6D hypercube discovery      - Multi-strategy attribution      |
-|  - O(1) C++ two-pointer TS merger       - Novelty Manhattan distance (>=0.50)    - Deterministic order signatures  |
-|  - Microsecond ring buffer caching      - Rolling SVM & feature frame matrix     - Microsecond pre-trade circuit   |
-|  - Multi-resolution rollup aggregator   - Model Context Protocol (MCP) AI tools  - Exact broker balance invariant  |
-|  [Doc: 02_DATA_PIPELINE_AND_STORAGE]    [Doc: 04_QUANT_ALPHA_AND_ML_WORKBENCH]   [Doc: 05_EXECUTION_AND_RISK]      |
-+-----------------------------------------+----------------------------------------+---------------------------------+
-|  4. NATIVE C++20 ENGINE & BACKTESTER    | 5. PREDICTION MARKETS & ORDERBOOK CLOB | 6. ZERO-TRUST SECURITY & MESH   |
-|  - FrameBacktester Mode A/B             - Dual-stream Polymarket CLOB & Gamma    - RBAC capability authorization   |
-|  - xorshift64 Monte Carlo bootstrap     - 1s L2 depth snapshot archiving         - 4-tier automated test DAG       |
-|  - Realistic execution slippage drag    - Double-entry virtual paper ledger      - Docker Compose multi-service    |
-|  - 34/34 CTest native verification      - SHA-256 rolling ledger state hash      - Proxmox VM deployment mesh      |
-|  [Doc: 03_NATIVE_CORE_AND_BACKTESTER]   [Doc: 06_PREDICTION_MARKETS_ARCHIVE]     [Doc: 07_SECURITY_API_DEPLOYMENT] |
-+--------------------------------------------------------------------------------------------------------------------+
-```
-
 ### Subsystem Feature Index
 
 | Feature Subsystem | Key Capabilities & Architecture | Primary Files & Owners | Load Index | Spec & Architecture Ref |
@@ -246,20 +187,11 @@ Every TUI capability can be invoked headlessly in CI/CD pipelines, background sc
 
 ## 5. Environment & Secret Tiers
 
-```text
-┌───────────────────┬───────────────────────────────────┬────────────────────────────────────┐
-│ Environment Tier  │ Access & Protection               │ Allowed Credentials / Mode         │
-├───────────────────┼───────────────────────────────────┼────────────────────────────────────┤
-│ `development`     │ - Local machine & Pull Requests   │ - ZERO SECRETS (100% Keyless)      │
-│ (Default)         │ - All branches & contributors     │ - Recorded fixtures & mock feeds   │
-├───────────────────┼───────────────────────────────────┼────────────────────────────────────┤
-│ `hpdesk-paper`    │ - Staging / Paper soak            │ - Free Alpaca Paper sandbox key    │
-│ (Paper Trading)   │ - Restricted to main branch       │ - Virtual Polymarket paper ledger  │
-├───────────────────┼───────────────────────────────────┼────────────────────────────────────┤
-│ `production`      │ - Isolated Host (`hpdesk-1`)      │ - Real-money trading keys          │
-│ (Restricted)      │ - Manual review approval required │ - NEVER committed or sent to CI    │
-└───────────────────┴───────────────────────────────────┴────────────────────────────────────┘
-```
+| Environment Tier | Access & Protection | Allowed Credentials / Mode |
+|---|---|---|
+| `development` (Default) | - Local machine & pull requests<br>- All branches & contributors | - ZERO SECRETS (100% keyless)<br>- Recorded fixtures & mock feeds |
+| `hpdesk-paper` (Paper Trading) | - Staging / paper soak<br>- Restricted to main branch | - Free Alpaca Paper sandbox key<br>- Virtual Polymarket paper ledger |
+| `production` (Restricted) | - Isolated host (`hpdesk-1`)<br>- Manual review approval required | - Real-money trading keys<br>- NEVER committed or sent to CI |
 
 ---
 

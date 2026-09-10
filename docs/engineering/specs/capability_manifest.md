@@ -1,132 +1,93 @@
 # Capability Manifest
 
-This repository is an active trading-platform prototype with a few remaining legacy seams. The manifest below is a map of the current code and data surfaces, not a promise that every module is fully production ready.
+> **Diátaxis Type**: Reference & Specification | **Status**: Canonical | **Owner**: Platform Engineering | **Review**: Continuous
 
-The personal-finance and wealth code is legacy context. It should not drive the platform architecture except where a variable becomes useful as a macro, consumer-sentiment, or purchasing-power input.
+This manifest catalogs the verified capabilities, source module locations, and disk artifacts across the Sovereign trading platform.
 
-## Core Trading Modules
+---
 
-Asset identity and market data:
+## 1. Native C++20 Core Subsystem (`backend/core/`)
 
-- `backend/core/src/assets/asset.hpp`
-- `backend/core/src/assets/asset_universe.hpp`
-- `backend/core/src/assets/instrument_type.hpp`
-- `backend/core/src/data/market_event.hpp`
-- `backend/core/src/data/ohlcv_bar.hpp`
-- `backend/core/src/data/order_book_snapshot.hpp`
-- `backend/core/src/data/corporate_action.hpp`
-- `backend/core/src/data/data_quality_report.hpp`
-- `backend/core/src/data/validated_market_frame.hpp`
+The native engine is compiled via CMake 3.20+ as `sovereign_wealth` and tested via 34 CTest targets (`backend/core/CMakeLists.txt` lines 181–214):
 
-Data ingestion adapters:
+### Time-Series Ingestion & Storage Merger
+- `backend/core/include/data/binary_ts_merger.hpp` & `src/data/binary_ts_merger.cpp`: Zero-allocation, stream-buffered two-pointer binary TS merger ($O(1)$ memory overhead, $<5\text{MB}$ RSS).
+- `backend/core/include/data/binary_ts_reader.hpp` & `src/data/binary_ts_reader.cpp`: High-speed sequential and index-seeking reader for SOVT v1 binary format.
+- `backend/core/include/data/data_validator.hpp` & `src/data/data_validator.cpp`: Rigorous IEEE-754 price/volume integrity checks.
 
-- `backend/core/src/ingestion/ingestion_adapter.hpp`
-- `backend/core/src/ingestion/equity_ingestion.cpp`
-- `backend/core/src/ingestion/index_ingestion.cpp`
-- `backend/core/src/ingestion/fx_ingestion.cpp`
-- `backend/core/src/ingestion/crypto_ingestion.cpp`
-- `backend/core/src/ingestion/macro_ingestion.cpp`
-- `backend/core/src/ingestion/news_ingestion.cpp`
-- `backend/core/src/ingestion/sentiment_ingestion.cpp`
-- `backend/core/src/ingestion/stream_router.cpp`
+### Analytics, Indicators & Correlation
+- `backend/core/include/indicators/indicator_engine.hpp` & `src/indicators/indicator_engine.cpp`: Rolling indicators (RSI, MACD, Bollinger Bands, ATR, Exponential Averages).
+- `backend/core/include/stats/correlation_engine.hpp` & `src/stats/correlation_engine.cpp`: Clamped Pearson cross-asset correlation matrix.
+- `backend/core/include/stats/stats_engine.hpp` & `src/stats/stats_engine.cpp`: Quantitative performance statistics and Monte Carlo bootstrap resampling (`xorshift64`).
 
-Feature and CNN pipeline:
+### Backtesting & Strategy Execution
+- `backend/core/include/backtest/frame_backtester.hpp` & `src/backtest/frame_backtester.cpp`: High-throughput dual-mode vector backtester (OpenMP accelerated, Mode A Native vs Mode B Annotated).
+- `backend/core/include/backtest/equity_curve.hpp`: Bar-by-bar drawdown tracking and high-water mark peak equity ledger.
+- `backend/core/include/risk/cost_model.hpp` & `src/risk/cost_model.cpp`: Three-component execution drag modeling (spread bps, broker maker/taker fees, linear market impact slippage).
 
-- `backend/core/src/features/feature_frame.hpp`
-- `backend/core/src/features/technical_features.cpp`
-- `backend/core/src/features/macro_features.cpp`
-- `backend/core/src/features/sentiment_features.cpp`
-- `backend/core/src/features/label_builder.cpp`
-- `backend/core/src/features/lookahead_guard.cpp`
-- `backend/core/src/ml/cnn_tensor_builder.hpp`
-- `backend/core/src/ml/cnn_inference.cpp`
-- `backend/core/src/ml/model_registry.cpp`
-- `models/cnn_v3.onnx`
-- `models/regime_classifier.onnx`
-- `models/metadata.json`
-- `models/feature_config.yaml`
+### Pre-Trade Risk Engine
+- `backend/core/include/risk/pre_trade_risk.hpp` & `src/risk/pre_trade_risk.cpp`: Microsecond risk gate (<15µs evaluation) validating position limits, drawdown thresholds, and price freshness fences.
+- `backend/core/include/risk/kill_switch.hpp` & `src/risk/kill_switch.cpp`: Emergency halt and execution suspension.
 
-Backtesting and research:
+---
 
-- `backend/core/src/backtest/backtester.hpp`
-- `backend/core/src/backtest/equity_curve.hpp`
-- `backend/core/src/backtest/trade.hpp`
-- `backend/core/src/research/research_hypothesis.hpp`
-- `backend/core/src/research/promotion_gate.hpp`
-- `backend/core/src/research/walk_forward_split.hpp`
-- `backend/core/src/research/cost_model.hpp`
+## 2. Command Line Interface Subsystem (`backend/cli/`)
 
-Portfolio and risk:
+The CLI provides entrypoints via `backend/cli/sovereign_cli.js` and Ink TUI via `backend/cli/sovereign_dashboard.mjs`, structured into functional command modules:
 
-- `backend/core/src/portfolio/portfolio_state.hpp`
-- `backend/core/src/portfolio/position.hpp`
-- `backend/core/src/portfolio/pnl_calculator.cpp`
-- `backend/core/src/portfolio/exposure_monitor.cpp`
-- `backend/core/src/risk/risk_limits.hpp`
-- `backend/core/src/risk/pre_trade_risk.cpp`
-- `backend/core/src/risk/drawdown_guard.cpp`
+| Subdirectory | Responsibilities | Key Command Handlers |
+|---|---|---|
+| `backend/cli/commands/data/` | Historical bar ingestion & cache management | `data_fetch.js`, `data_fetch_binance.js`, `data_summary.js`, `data_clean.js` |
+| `backend/cli/commands/research/` | Alpha research, backtests & mass simulation | `research_backtest.js`, `research_mass_bt.js`, `research_correlation.js`, `research_signal.js` |
+| `backend/cli/commands/strategy/` | Strategy registry inspection & execution | `strategy_run.js`, `strategy_explore.js`, `strategy_promote.js` |
+| `backend/cli/commands/trade/` | Manual trade dispatch & order management | `trade_order.js`, `trade_positions.js`, `trade_cancel.js` |
+| `backend/cli/commands/account/` | Credentials, PIN security & environment checks | `account_status.js`, `account_pin.js` |
+| `backend/cli/commands/operational/` | Service health, soak runs & log streaming | `operational_soak.js`, `operational_status.js` |
+| `backend/cli/commands/settings/` | Platform configuration & runtime toggles | `settings_view.js`, `settings_set.js` |
+| `backend/cli/commands/runner/` | Background task loop runner | `runner_start.js`, `runner_daemon.js` |
+| `backend/cli/commands/tools/` | Terminal visualizations & diagnostic helpers | `backend_visualize.js`, `chart_viewer.js` |
 
-Execution:
+---
 
-- `backend/core/src/execution/execution_interface.hpp`
-- `backend/core/src/execution/order.hpp`
-- `backend/core/src/execution/order_state.hpp`
-- `backend/core/src/execution/paper_broker.cpp`
-- `backend/core/src/execution/live_broker_adapter.hpp`
-- `backend/core/src/execution/twap_vwap.cpp`
-- `backend/core/src/execution/kill_switch.cpp`
+## 3. Web Dashboard & API Bridge (`backend/api/`)
 
-Monitoring and surfaces:
+The web API runs a native `node:http` server on port 8787 across 40 active route keys in `backend/api/server/routes/index.js`:
 
-- `backend/cli/commands/data.js`
-- `backend/cli/commands/research.js`
-- `backend/cli/commands/portfolio.js`
-- `backend/cli/commands/trade.js`
-- `backend/cli/commands/strategy.js`
-- `backend/api/server/routes/signal.js`
-- `backend/api/server/routes/portfolio.js`
-- `backend/api/server/routes/backtest.js`
-- `backend/api/server/routes/strategies.js`
-- `Frontend/dashboard/src/components/portfolio`
-- `Frontend/dashboard/src/components/backtest`
-- `Frontend/dashboard/src/components/charts`
+- `backend/api/server/routes/status/`: Health probes (`health.js`), system status (`status.js`, `client_status.js`), runner state (`run_status.js`).
+- `backend/api/server/routes/data/`: Data summary (`data_summary.js`), universe (`universe.js`), indicators (`indicators.js`), quotes (`quotes.js`), cache lists (`cache_list.js`).
+- `backend/api/server/routes/market/`: Backtest (`backtest.js`), correlation (`correlation.js`), signals (`signal.js`, `signal_promote.js`), combined analysis (`combined_analysis.js`, `combined_promote.js`, `combined_paper_cycle.js`).
+- `backend/api/server/routes/bot/`: Bot status (`bot_status.js`), cycle execution (`bot_cycle.js`), emergency sell (`bot_sell.js`).
+- `backend/api/server/routes/system/`: System status (`system.js`, `service_health.js`), portfolio (`portfolio.js`), kill-switch (`kill_switch.js`), container infra (`infra.js`).
+- `backend/api/server/routes/account/`: Auth (`auth.js`, `session_reauth.js`), database status (`database.js`), config (`config.js`, `supabase_config.js`).
+- `backend/api/server/routes/public/`: Public market summaries (`public_market_summary.js`, `public_freshness.js`, `public_research_summary.js`).
 
-## Data Files
+---
 
-Repository data artifacts:
+## 4. Shared Domain Logic (`shared/lib/`)
 
-- `data/market_data.db`
-- `storage/data/cache/last_fetch.json`
-- `data/portfolio.json`
-- `data/trades/trade_log_YYYY_MM.sqlite`
-- `data/backtests/backtest_YYYYMMDD_strategy.json`
+- `shared/lib/trade/sub_positions_ledger.js`: Virtual sub-position accounting with deterministic order signatures (`strat_<id>_<tf>_<ts>_<entropy>` and `manual_cli_<sym>_<ts>_<entropy>`).
+- `shared/lib/trade/process_lock.js`: POSIX atomic `.lock` file concurrency via `O_EXCL` flags.
+- `shared/lib/market/ts_index_storage.js`: Binary SOVT v1 storage abstraction and native merger bridge.
+- `shared/lib/market/quote_feed.js`: Multi-broker quote router with fallback mechanisms.
+- `shared/lib/ui/ansi.js`: ANSI terminal formatting and DEC Mode 2026 synchronized output escapes.
 
-Production data should not be committed unless it is tiny sample data for tests.
+---
 
-## Configuration Files
+## 5. Storage Layout & Data Artifacts (`storage/data/`)
 
-- `config/markets/data_sources.yaml`
-- `config/feature_engineering.yaml`
-- `config/strategies.yaml`
-- `config/risk_management.yaml`
-- `config/regime_routing.yaml`
-- `config/alerts.yaml`
-- `config/app_config.yaml`
+| Path | Format | Description |
+|---|---|---|
+| `storage/data/ts/*.bin` | SOVT v1 Binary | High-density OHLCV time-series (48 bytes/record). |
+| `storage/data/cache/*.json` | JSON Cache | Cached universe, indicators, and last-fetch snapshots. |
+| `storage/data/paper/` | JSONL / JSON | Virtual paper trading state, sub-position ledgers, order records. |
+| `storage/data/locks/*.lock` | POSIX Locks | Atomic zero-byte lockfiles for single-writer authority. |
 
-Configs should describe sources, symbols, schedules, feature windows, risk limits, and model references. They should not contain credentials.
+---
 
-## Personal Finance Boundary
+## 6. Active Configuration Manifests (`config/`)
 
-Do not add new wage, mortgage, tax, or retirement workflows unless they directly support market modeling.
-
-Allowed examples:
-
-- wage growth as a macro labor-market feature
-- employment strength as a consumer-sentiment proxy
-- inflation and currency depreciation as macro regime inputs
-
-Disallowed examples:
-
-- salary budgeting UI
-- household spending planner
-- mortgage amortization as a main product surface
+- `config/trading/strategies.yaml`: Master strategy registry linking curated and automated strategy definitions.
+- `config/strategies/curated/*.yaml`: Hand-curated algorithmic trading strategies.
+- `config/strategies/automated/*.yaml`: Machine-discovered strategies produced by the Autonomous Strategy Explorer.
+- `config/system/environment_manifest.json`: System environment variables, allowed runtime keys, and secret masks.
+- `config/risk/risk_policy.yaml`: Global portfolio drawdown gates, position limits, and execution rules.

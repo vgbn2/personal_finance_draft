@@ -8,22 +8,16 @@ This document provides a rigorous, foundational guide bridging financial market 
 
 Financial markets can be understood entirely through core computer science and distributed systems concepts:
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                         THE FINANCIAL COMPUTING ANALOGY MATRIX                                     |
-+------------------------------------+--------------------------------------------------------------+----------------+
-| Distributed Systems / CompSci      | Financial / Quantitative Trading Equivalent                  | Load Rating    |
-+------------------------------------+--------------------------------------------------------------+----------------+
-| Priority Queue / Ring Buffer       | Central Limit Order Book (L2/L3 Bids and Asks Queue)         | [Load: 5/10]   |
-| Rate Limiter / Circuit Breaker     | Pre-Trade Risk Engine / Maximum Drawdown Kill-Switch         | [Load: 1/10]   |
-| Distributed Consensus Log          | Broker Trade Fill Event Stream / Append-Only Ledger          | [Load: 2/10]   |
-| Packet Loss & Transmission Jitter  | Slippage & Market Impact (Cost of Execution)                 | [Load: 3/10]   |
-| Clock Synchronization / Skew       | Lookahead Bias / Timestamp Drift across Bar Resolutions      | [Load: 2/10]   |
-| Distributed Partition Tolerance    | Multi-Account Sub-Position Attribution on Single Broker      | [Load: 2/10]   |
-| Binary Decision Classification     | Prediction Markets / Binary Outcome Oracle Resolution        | [Load: 1/10]   |
-| Signal-to-Noise Ratio (SNR)        | Sharpe Ratio / Information Ratio / Alpha Extraction          | [Load: 4/10]   |
-+------------------------------------+--------------------------------------------------------------+----------------+
-```
+| Distributed Systems / CompSci | Financial / Quantitative Trading Equivalent | Load Rating |
+|---|---|:---:|
+| Priority Queue / Ring Buffer | Central Limit Order Book (L2/L3 Bids and Asks Queue) | **5/10** |
+| Rate Limiter / Circuit Breaker | Pre-Trade Risk Engine / Maximum Drawdown Kill-Switch | **1/10** |
+| Distributed Consensus Log | Broker Trade Fill Event Stream / Append-Only Ledger | **2/10** |
+| Packet Loss & Transmission Jitter | Slippage & Market Impact (Cost of Execution) | **3/10** |
+| Clock Synchronization / Skew | Lookahead Bias / Timestamp Drift across Bar Resolutions | **2/10** |
+| Distributed Partition Tolerance | Multi-Account Sub-Position Attribution on Single Broker | **2/10** |
+| Binary Decision Classification | Prediction Markets / Binary Outcome Oracle Resolution | **1/10** |
+| Signal-to-Noise Ratio (SNR) | Sharpe Ratio / Information Ratio / Alpha Extraction | **4/10** |
 
 ---
 
@@ -33,25 +27,12 @@ Financial markets can be understood entirely through core computer science and d
 
 A market is a continuous double-auction mechanism matching buyers (bids) and sellers (asks) sorted by price-time priority:
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                    CENTRAL LIMIT ORDER BOOK (LOB) MICROSTRUCTURE                                   |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|           BIDS (Buy Orders - Sorted Descending)                   ASKS (Sell Orders - Sorted Ascending)            |
-|  ┌────────┬────────────┬─────────────┬─────────────┐     ┌─────────────┬─────────────┬────────────┬─────────┐  |
-|  | Orders | Size (Qty) | Queue Depth | Bid Price   |     | Ask Price   | Queue Depth | Size (Qty) | Orders  |  |
-|  ├────────┼────────────┼─────────────┼─────────────┤     ├─────────────┼─────────────┼────────────┼─────────┤  |
-|  |   4    |    150     |    $75,030  |  $500.20    |     |  $500.25    |   $100,050  |    200     |   3     |  | <-- Level 1 (Best Bid/Ask)
-|  |   2    |     80     |    $40,012  |  $500.15    |     |  $500.30    |   $225,135  |    450     |   7     |  | <-- Level 2
-|  |   9    |    320     |   $160,032  |  $500.10    |     |  $500.40    |    $60,048  |    120     |   2     |  | <-- Level 3
-|  |   1    |     50     |    $25,002  |  $500.05    |     |  $500.50    |   $300,300  |    600     |  11     |  | <-- Level 4
-|  └────────┴────────────┴─────────────┴─────────────┘     └─────────────┴─────────────┴────────────┴─────────┘  |
-|                                              │                 │                                                   |
-|                                              └─ SPREAD: $0.05 ─┘                                                   |
-|                                                 ($500.25 - $500.20 = $0.05 / 1.0 bps)                              |
-+--------------------------------------------------------------------------------------------------------------------+
-```
+| Bids Orders | Bids Qty | Queue Depth | Bid Price | Spread | Ask Price | Queue Depth | Asks Qty | Asks Orders | Level |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 4 | 150 | `$75,030` | **`$500.20`** | **`$0.05`** (1.0 bps) | **`$500.25`** | `$100,050` | 200 | 3 | **Level 1 (Best Bid/Ask)** |
+| 2 | 80 | `$40,012` | `$500.15` | — | `$500.30` | `$225,135` | 450 | 7 | Level 2 |
+| 9 | 320 | `$160,032` | `$500.10` | — | `$500.40` | `$60,048` | 120 | 2 | Level 3 |
+| 1 | 50 | `$25,002` | `$500.05` | — | `$500.50` | `$300,300` | 600 | 11 | Level 4 |
 
 - **Bid**: The maximum price a buyer is willing to pay.
 - **Ask (Offer)**: The minimum price a seller is willing to accept.
@@ -62,48 +43,29 @@ A market is a continuous double-auction mechanism matching buyers (bids) and sel
 
 ### 2.2 Order Types & Matching Engine Semantics
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                             ORDER EXECUTION SEMANTICS                                              |
-+-------------------+------------------------------+-----------------------------------------------------------------+
-| Order Type        | CS / Systems Analogy         | Market Behavior & Matching Semantics                            |
-+-------------------+------------------------------+-----------------------------------------------------------------+
-| Market Order      | Eager / Non-blocking Read    | Consumes liquidity immediately across L1..LK depth levels.      |
-|                   | Guaranteed Immediate Match   | Subject to slippage; pays exchange taker fees.                  |
-+-------------------+------------------------------+-----------------------------------------------------------------+
-| Limit Order       | Enqueue / Deferred Promise   | Enqueues liquidity into orderbook queue at bounded price.       |
-|                   | Guaranteed Price Ceiling     | Executes only when crossed; earns liquidity maker rebates.      |
-+-------------------+------------------------------+-----------------------------------------------------------------+
-| Fill-or-Kill      | Atomic Transaction           | Must fill 100% of quantity immediately against resting book,    |
-| (FOK)             | (Commit or Rollback)         | or the entire order is immediately cancelled.                   |
-+-------------------+------------------------------+-----------------------------------------------------------------+
-| Immediate-or-     | Partial Non-blocking Drain   | Fills available quantity at price, cancels remaining balance    |
-| Cancel (IOC)      |                              | without resting in the queue.                                   |
-+-------------------+------------------------------+-----------------------------------------------------------------+
-```
+| Order Type | CS / Systems Analogy | Market Behavior & Matching Semantics |
+|---|---|---|
+| **Market Order** | Eager / Non-blocking Read (Guaranteed Immediate Match) | Consumes liquidity immediately across L1..LK depth levels. Subject to slippage; pays exchange taker fees. |
+| **Limit Order** | Enqueue / Deferred Promise (Guaranteed Price Ceiling) | Enqueues liquidity into orderbook queue at bounded price. Executes only when crossed; earns liquidity maker rebates. |
+| **Fill-or-Kill (FOK)** | Atomic Transaction (Commit or Rollback) | Must fill 100% of quantity immediately against resting book, or the entire order is immediately cancelled. |
+| **Immediate-or-Cancel (IOC)** | Partial Non-blocking Drain | Fills available quantity at price, cancels remaining balance without resting in the queue. |
 
 ### 2.3 Slippage and Execution Drag
 
 **Slippage** is the difference between the expected price of a trade and the actual execution price resulting from book depth consumption:
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                    MARKET ORDER DEPTH CONSUMPTION (SLIPPAGE TRACE)                                 |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|   Incoming Market Buy: $Q_{\text{target}} = 500\text{ units}$                                                     |
-|                                                                                                                    |
-|   Level 1 Ask: 200 units @ $100.00  ──►  Filled 200 @ $100.00 = $20,000.00                                         |
-|   Level 2 Ask: 200 units @ $100.10  ──►  Filled 200 @ $100.10 = $20,020.00                                         |
-|   Level 3 Ask: 100 units @ $100.25  ──►  Filled 100 @ $100.25 = $10,025.00                                         |
-|   ────────────────────────────────────────────────────────────────────────                                         |
-|   Total Fill:  500 units                 Total Cost: $50,045.00                                                    |
-|   Volume Weighted Average Price (VWAP):  $50,045.00 / 500 = $100.09                                                |
-|                                                                                                                    |
-|   Initial Top of Book Price: $100.00                                                                               |
-|   Realized Execution Slippage: +$0.09 (+9 basis points / 0.09%)                                                    |
-+--------------------------------------------------------------------------------------------------------------------+
-```
+Incoming Market Buy: $Q_{\text{target}} = 500\text{ units}$ against book with top-of-book at $\$100.00$:
+
+| Orderbook Depth Level | Available Qty | Fill Price | Cumulative Filled | Level Notional | Cumulative Notional |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Level 1 Ask | 200 units | `$100.00` | 200 | `$20,000.00` | `$20,000.00` |
+| Level 2 Ask | 200 units | `$100.10` | 400 | `$20,020.00` | `$40,020.00` |
+| Level 3 Ask | 100 units | `$100.25` | 500 | `$10,025.00` | `$50,045.00` |
+
+- **Total Execution Cost**: `$50,045.00` for 500 units
+- **Volume Weighted Average Price (VWAP)**: $\frac{\$50,045.00}{500} = \$100.09$
+- **Initial Top-of-Book Price**: `$100.00`
+- **Realized Slippage**: $+\$0.09$ (+9 basis points / 0.09% execution drag)
 
 In the Sovereign Native Core (`backend/core/src/backtest/cost_model.cpp`), slippage is modeled in basis points ($1 \text{ bps} = 0.01\% = 0.0001$):
 $$P_{\text{entry}} = P_{\text{close}} \cdot \left(1 + \frac{\text{cost\_bps}}{10000}\right)$$
@@ -116,27 +78,14 @@ $$P_{\text{entry}} = P_{\text{close}} \cdot \left(1 + \frac{\text{cost\_bps}}{10
 
 Financial time series discretize continuous quote ticks into fixed time buckets called **OHLCV** bars:
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                           OHLCV CANDLESTICK STRUCTURAL ANATOMY                                     |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|         BULLISH BAR (Close >= Open)                             BEARISH BAR (Close < Open)                         |
-|                                                                                                                    |
-|              HIGH ($105.00) ──┐                                      HIGH ($105.00) ──┐                            |
-|                               │ (Upper Shadow / Wick)                                 │ (Upper Shadow / Wick)      |
-|                         ┌─────┴─────┐ ◄── CLOSE ($104.50)                       ┌─────┴─────┐ ◄── OPEN ($104.50)   |
-|                         │           │                                           │           │                      |
-|                         │ REAL BODY │                                           │ REAL BODY │                      |
-|                         │ (Bullish) │                                           │ (Bearish) │                      |
-|                         │           │                                           │           │                      |
-|                         └─────┬─────┘ ◄── OPEN ($103.00)                        └─────┬─────┘ ◄── CLOSE ($103.00)  |
-|                               │ (Lower Shadow / Wick)                                 │ (Lower Shadow / Wick)      |
-|               LOW ($101.50) ──┘                                       LOW ($101.50) ──┘                            |
-|                                                                                                                    |
-|  - Open ($O$): First price | High ($H$): Max price | Low ($L$): Min price | Close ($C$): Last price | Volume ($V$)  |
-+--------------------------------------------------------------------------------------------------------------------+
-```
+| Candlestick Component | Bullish Bar ($\text{Close} \ge \text{Open}$) | Bearish Bar ($\text{Close} < \text{Open}$) | Structural Definition |
+|---|---|---|---|
+| **Upper Shadow (Wick)** | $\text{High} - \text{Close}$ | $\text{High} - \text{Open}$ | Range above the real body |
+| **Real Body Top** | $\text{Close}$ | $\text{Open}$ | Higher of open or close |
+| **Real Body Bottom** | $\text{Open}$ | $\text{Close}$ | Lower of open or close |
+| **Lower Shadow (Wick)** | $\text{Open} - \text{Low}$ | $\text{Close} - \text{Low}$ | Range below the real body |
+| **Total Range (High - Low)** | $H - L$ | $H - L$ | Full price excursion over interval |
+| **Volume ($V$)** | Cumulative volume traded | Cumulative volume traded | Total asset units exchanged |
 
 ### 3.2 Returns & Compounding
 Never analyze raw asset prices directly across assets because price scales differ ($SPY \approx \$500$, $BTC \approx \$60,000$). Instead, analyze **Returns**:
@@ -149,31 +98,13 @@ Never analyze raw asset prices directly across assets because price scales diffe
 
 ## 4. Quantitative Performance Metrics & Portfolio Math
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                      PORTFOLIO EQUITY & UNDERWATER DRAWDOWN TRACE                                  |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|  [ Portfolio Equity Curve ($E_t$) ]                                                                                |
-|  $120k ──┐ Peak (HWM_1)                                                                                            |
-|          │\                                                                                                        |
-|  $100k ──┼─\──────────────/───┐ New All-Time High ($125k) (HWM_2)                                                  |
-|          │  \            /    │                                                                                    |
-|   $80k ──┼───\──────────/─────┼──                                                                                  |
-|          │    \        /      │                                                                                    |
-|   $60k ──┼─────\──────/───────┼──                                                                                  |
-|          │      └ Trough ($60k)                                                                                    |
-|          └───────────────────────────► Time                                                                        |
-|                                                                                                                    |
-|  [ Underwater Drawdown Percentage ($DD_t$) ]                                                                       |
-|    0%  ──┬──────────────┬────────────► Time                                                                        |
-|          │\            /                                                                                           |
-|  -25%  ──┼─\──────────/───────                                                                                     |
-|          │  \        /                                                                                             |
-|  -50%  ──┼───\──────/─────────                                                                                     |
-|          │    └ Maximum Drawdown: -50.0% ($60k vs $120k Peak)                                                      |
-+--------------------------------------------------------------------------------------------------------------------+
-```
+| Time Period | Event | Equity ($E_t$) | High-Water Mark ($\text{HWM}$) | Current Drawdown ($DD_t$) |
+|---|---|:---:|:---:|:---:|
+| $t_0$ | Initial Capital | `$100,000` | `$100,000` | `0.0%` |
+| $t_1$ | Peak 1 | `$120,000` | `$120,000` | `0.0%` |
+| $t_2$ | Drawdown Trough | `$60,000` | `$120,000` | **`-50.0%` (Maximum Drawdown)** |
+| $t_3$ | Recovery | `$100,000` | `$120,000` | `-16.7%` |
+| $t_4$ | New All-Time High | `$125,000` | `$125,000` | `0.0%` |
 
 ### 4.1 Sharpe Ratio (Signal-to-Noise Ratio of Excess Returns)
 The Sharpe ratio measures excess return per unit of total risk (volatility):
@@ -198,26 +129,16 @@ $$\text{MDD} = \max_{t \in [0, T]} \left( \text{Drawdown}(t) \right)$$
 
 In prediction markets (e.g. Polymarket), contracts represent binary event outcomes resolving to either $\$1.00$ (YES won) or $\$0.00$ (NO won):
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                    PREDICTION MARKET PROBABILITY PRICING & PAYOFF                                  |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|   Market: "Will Fed cut interest rates in September 2026?"                                                         |
-|                                                                                                                    |
-|   YES Contract Price: $0.65  <==> Implied Market Probability: 65%                                                  |
-|   NO Contract Price:  $0.35  <==> Implied Market Probability: 35%                                                  |
-|   ─────────────────────────────────────────────────────────────────────────                                        |
-|   Arbitrage Parity Bound: $P(\text{YES}) + P(\text{NO}) = \$1.00$                                                  |
-|                                                                                                                    |
-|   If Outcome Resolves YES:                                                                                         |
-|   ├── YES Holder Receives: $1.00 per share  (Net Profit: +$0.35 / +53.8% Return on Capital)                        |
-|   └── NO Holder Receives:  $0.00 per share  (Net Loss:   -$0.35 / -100.0% Total Loss)                              |
-|                                                                                                                    |
-|   Kelly Criterion Staking Formula for Prediction Markets:                                                          |
-|   $$f^* = \frac{p \cdot b - q}{b} = \frac{p(b + 1) - 1}{b}, \quad \text{where } b = \frac{1.0 - P_{\text{entry}}}{P_{\text{entry}}}$$ |
-+--------------------------------------------------------------------------------------------------------------------+
-```
+Market Example: *"Will the Federal Reserve cut interest rates in September 2026?"*
+
+| Contract Outcome | Implied Market Probability | Contract Unit Price | Payout If Outcome Resolves True | Net Profit / Return | Payout If Outcome Resolves False | Net Loss / Return |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **YES** | 65.0% | `$0.65` | `$1.00` | `+$0.35` (+53.8%) | `$0.00` | `-$0.65` (-100.0%) |
+| **NO** | 35.0% | `$0.35` | `$1.00` | `+$0.65` (+185.7%) | `$0.00` | `-$0.35` (-100.0%) |
+
+- **Arbitrage Parity Bound**: $P(\text{YES}) + P(\text{NO}) = \$1.00$
+- **Kelly Criterion Staking Formula**:
+  $$f^* = \frac{p \cdot b - q}{b} = \frac{p(b + 1) - 1}{b}, \quad \text{where } b = \frac{1.0 - P_{\text{entry}}}{P_{\text{entry}}}$$
 
 ---
 

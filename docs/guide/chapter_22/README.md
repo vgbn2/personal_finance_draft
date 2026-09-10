@@ -66,7 +66,7 @@ They do not all serve the same purpose.
 For current state and structure reasoning, use this order:
 
 1. `workspace/STATE.md` for current status
-2. `docs/engineering/codebase_org.md` for path ownership
+2. `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md` for path ownership
 3. `workspace/HANDOFF.md` for carryover and resume context
 4. `workspace/DEV_REVIEW.md` for active issues and review findings
 

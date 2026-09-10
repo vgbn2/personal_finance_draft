@@ -1,8 +1,10 @@
 # Native Core Maintenance Notes
 
-These are durable review constraints for `backend/core`. They replace the
-scattered `dev.review.txt` sidecars that previously mixed local reminders with
-source files.
+> **Diátaxis Type**: Reference | **Status**: Historical Archive | **Preserved for Architectural Continuity**
+
+*Note: These maintenance notes document early development conventions and review constraints for `backend/core`. Active architectural invariants and contracts are now canonically maintained in `docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md`.*
+
+---
 
 ## Data boundaries
 

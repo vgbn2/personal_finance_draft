@@ -6,13 +6,14 @@ This document defines the planned Kronos data path for market prediction and sig
 Integrate the Kronos foundation model for K-lines. The model consumes raw OHLCV sequences, tokenizes them using hierarchical quantization, and produces probabilistic future price paths.
 
 ## Feature Flow
-```text
-validated market frame (OHLCV)
-  -> Kronos C++ Tokenizer (Hierarchical Binning)
-  -> Token IDs
-  -> ONNX Runtime (Kronos Pre-trained Weights)
-  -> Probabilistic Embedding / Forecast
-  -> Signal generation
+
+```mermaid
+flowchart LR
+    FRAME["Validated Market Frame<br/>(OHLCV Bars)"] --> TOKEN["Kronos C++ Tokenizer<br/>(Hierarchical Binning)"]
+    TOKEN --> IDS["Token IDs<br/>(std::vector&lt;int&gt;)"]
+    IDS --> ONNX["ONNX Runtime Engine<br/>(Kronos Pre-trained Weights)"]
+    ONNX --> EMB["Probabilistic Embedding / Forecast"]
+    EMB --> SIG["Tactical Signal Generation"]
 ```
 
 ## Tokenizer Contract

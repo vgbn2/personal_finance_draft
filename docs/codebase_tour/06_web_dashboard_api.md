@@ -1,9 +1,6 @@
 # Module 06 — Web Dashboard & API
 
-`docs/engineering/web_api.md` (dated 2026-06-08) gets the runtime shape right but its endpoint list is
-incomplete — it's missing at least `/api/sigma-band`, a route that's had two separate security review
-passes this repo's history (a real unauthenticated path-read finding, fixed session 53). Treat that doc's
-endpoint list as a starting point, not a complete inventory, until it's refreshed.
+`docs/engineering/specs/web_api.md` defines the canonical 40-route catalog across all 39 handler modules with RBAC capability tiers and request/response contracts. This module covers the runtime mechanics and tracing.
 
 ## Runtime shape (confirmed current)
 

@@ -4,12 +4,11 @@
 grounded in a real `file:line` you can open right now. Every module ends with labs — read this, trace
 that, run this command, interpret the output — instead of just prose to skim.
 
-**What this is not:** a replacement for `docs/engineering/codebase_org.md` (the canonical folder map,
-verified current as of 2026-06-25) or `docs/guide/` (the 24-chapter "build it from scratch" book — useful
+**What this is not:** a replacement for `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md` (the canonical system architecture & folder map) or `docs/guide/` (the 24-chapter "build it from scratch" book — useful
 for *why* a pattern like a gateway exists, written with placeholder filenames, not *what this repo's
 real files do*). This tour exists for the gap between those two: real current code, traced and exercised.
 
-If you only have ten minutes, read `docs/engineering/codebase_org.md` first, then come back here for
+If you only have ten minutes, read `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md` first, then come back here for
 whichever module matches what you're touching today.
 
 ## Why this exists

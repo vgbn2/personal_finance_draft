@@ -1,6 +1,6 @@
 # Module 05 — CLI & TUI Dispatch
 
-For "which commands exist and do they currently work," read `docs/engineering/tui_feature_map.md` first
+For "which commands exist and do they currently work," read `docs/engineering/specs/tui_feature_map.md` first
 — it's a maintained, dated PASS/PARTIAL/BROKEN table (last full pass 2026-06-11; missing the chat
 suggestion dropdown, the legacy-engine switch, the chart upgrade, and the Alpaca position tracker added
 in sessions 55-58 — known gap, not yet refreshed). This module covers the *mechanism*, not the inventory.
