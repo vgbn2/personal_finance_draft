@@ -8,7 +8,7 @@
 |---|---|---|---|
 | **C++20** | `C++20` standard | `clang++ 14+`, `g++ 11+` | Native quantitative engine (`sovereign_wealth`), indicators, binary TS merger, and CTest suite. |
 | **Node.js** | `v20.0.0+` | Node LTS `v20.x`, `v22.x` | Orchestration CLI, Ink TUI dashboard, native HTTP server, and broker gateways. |
-| **CMake** | `3.20.0+` | CMake `3.25.1+` | Multi-platform build configuration (`CMakeLists.txt`) and CTest harness. |
+| **CMake** | `3.15.0+` | CMake `3.25.1+` | Multi-platform build configuration (`CMakeLists.txt`) and CTest harness. |
 | **TypeScript / JS**| `ES2022+` | Pure CommonJS / ESM | Dashboard components, broker bridges, and testing scripts. |
 
 ---
@@ -31,10 +31,10 @@
 ### Frontend Dashboard (`Frontend/dashboard/package.json`)
 | Technology | Version | Purpose |
 |---|---|---|
-| `React` | `19.0.0` | Component-driven reactive web user interface. |
-| `Vite` | `6.2.0` | Ultra-fast client bundler and development server. |
-| `TailwindCSS` | `3.4.17` | Utility-first responsive design styling. |
-| `Lucide React` | `0.475.0` | Minimalist interface iconography. |
+| `React` | `^19.0.1` | Component-driven reactive web user interface. |
+| `Vite` | `^6.2.3` | Ultra-fast client bundler and development server. |
+| `TailwindCSS` | `^4.1.14` | Tailwind CSS v4 utility-first responsive design styling. |
+| `Lucide React` | `^0.546.0` | Minimalist interface iconography. |
 
 ---
 

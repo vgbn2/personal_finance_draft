@@ -17,13 +17,13 @@ flowchart TD
     subgraph Tier2["2. Application Tier (Native Node.js)"]
         HTTP["Native HTTP Server<br/>backend/api/app.js (Port 8787)"]
         ROUTER["Router Engine (40 Route Keys)<br/>backend/api/server/routes/"]
-        RBAC["Access Control & RBAC Router<br/>backend/api/server/access_control.js"]
+        RBAC["Access Control & RBAC Router<br/>backend/api/server/services/access_control.js"]
     end
 
     subgraph Tier3["3. Domain Runtime & State"]
-        SUBPOS["Sub-Positions Ledger<br/>shared/lib/trade/sub_positions_ledger.js"]
-        QUOTE["Quote Router & Feeds<br/>shared/lib/market/quote_feed.js"]
-        IND["Rolling Indicators<br/>shared/lib/indicators/"]
+        SUBPOS["Sub-Positions Ledger<br/>shared/lib/runtime/sub_positions_ledger.js"]
+        QUOTE["Quote Router & Feeds<br/>shared/lib/market/quote_router.js"]
+        IND["Rolling Indicators<br/>shared/lib/market/indicators.js"]
     end
 
     subgraph Tier4["4. Native C++20 Core (sovereign_wealth)"]
@@ -35,7 +35,7 @@ flowchart TD
 
     subgraph Tier5["5. Storage Subsystem"]
         BIN["Binary TS Files (SOVT v1)<br/>storage/data/ts/*.bin"]
-        LOCK["POSIX File Lock (O_EXCL)<br/>shared/lib/trade/process_lock.js"]
+        LOCK["POSIX File Lock (O_EXCL)<br/>shared/lib/runtime/process_lock.js"]
         JSONL["JSONL Execution Ledgers<br/>storage/data/paper/"]
     end
 

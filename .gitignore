@@ -23,6 +23,8 @@ backend/cli/target/
 cli/target/
 web/node_modules/
 graphify-out/
+site/
+.cache/
 
 # Local agent/workflow state
 .agent/

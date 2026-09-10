@@ -9,42 +9,37 @@ Recommended loop:
 ```bash
 git status --short
 npm run native:doctor
-cmake -S . -B build
-cmake --build build
-ctest --test-dir build/backend/core
+npm run native:build
+npm run test:core
+npm run test:safety
 ```
 
-Windows PowerShell:
-
-```powershell
-git status --short
-npm run native:doctor
-cmake -S . -B build
-cmake --build build
-ctest --test-dir build/backend/core
-```
-
-The `native:doctor` command reports whether `cmake`, `ctest`, and a focused compiler fallback are available on the current machine. The CMake build verifies the C++ backend path. Node CLI and web/API checks should also be run when touching ingestion, validation, research, quote, or dashboard bridge behavior.
+The `native:doctor` command reports whether `cmake`, `ctest`, and a focused compiler fallback are available on the current machine. The `npm run native:build` command configures and compiles the C++20 engine in `backend/core/build`. The `npm run test:core` runs all 34 CTests.
 
 ## Verification Checklist
 
 Before handing off a change:
 
-- project builds
-- tests pass
-- warnings are reviewed
-- docs match changed behavior
-- no build artifacts are included
-- no future-phase dependency was added accidentally
+- project builds (`npm run native:build`)
+- native CTests pass (`npm run test:core`)
+- safety tests pass (`npm run test:safety`)
+- structure contracts pass (`npm run test:structure`)
+- documentation filter passes (`npm run docs:filter -- --strict`)
+- no build artifacts or uncommitted temporary files are tracked
 
-## Native Build Smoke Test
+## Native Build Commands
 
-To verify the native C++20 engine build and test suite directly:
+To configure, compile, and test the native C++20 engine:
 
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release --parallel
-ctest --test-dir build/backend/core --output-on-failure
+# Automated via npm:
+npm run native:build
+npm run test:core
+
+# Or manual CMake commands:
+cmake -S backend/core -B backend/core/build -DCMAKE_BUILD_TYPE=Release -DSOVEREIGN_ENABLE_ONNX_RUNTIME=OFF
+cmake --build backend/core/build --config Release --parallel
+ctest --test-dir backend/core/build -C Release --output-on-failure
 ```
 
 This does not replace the CMake path for final verification.

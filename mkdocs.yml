@@ -1,0 +1,95 @@
+site_name: Sovereign Trading Platform
+site_description: Institutional-grade, local-first quantitative research, backtesting, and algorithmic execution platform.
+site_url: https://vgbn2.github.io/personal_finance_draft/
+repo_url: https://github.com/vgbn2/personal_finance_draft
+repo_name: vgbn2/personal_finance_draft
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.path
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+
+nav:
+  - Overview:
+      - Overview: index.md
+      - Architecture Summary: ARCHITECTURE.md
+  - Architecture:
+      - 01. System Topology & Invariants: engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md
+      - 02. Data Pipeline & Storage: engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md
+      - 03. Native C++ Core & Backtester: engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md
+      - 04. Alpha Research & ML Workbench: engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md
+      - 05. Sub-Positions & Risk: engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md
+      - 06. Prediction Markets & L2 Archive: engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md
+      - 07. Security, API & Deployment: engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md
+      - 08. Financial Primer: engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md
+  - Specifications:
+      - Product Specification: engineering/specs/product_spec.md
+      - Technical Specification: engineering/specs/technical_spec.md
+      - Web REST & WebSocket API: engineering/specs/web_api.md
+      - Capability Manifest: engineering/specs/capability_manifest.md
+      - Stack & Toolchain Manifest: engineering/specs/stack_manifest.md
+      - TUI Feature Map: engineering/specs/tui_feature_map.md
+      - Supabase Integration: engineering/specs/supabase_integration.md
+      - Kronos Pipeline: engineering/specs/kronos_pipeline.md
+  - Subsystems:
+      - Backend: sections/backend/README.md
+      - Shared Lib: sections/shared/README.md
+      - Frontend Dashboard: sections/frontend/README.md
+      - Configuration: sections/config/README.md
+      - Data Storage: sections/storage/README.md
+      - Test Matrix: sections/tests/README.md
+      - Terminal Dashboard: sections/interface/terminal-dashboard/README.md
+      - RSI Reversal Research: sections/research/rsi-reversal-analysis/README.md
+      - Correlation Research: sections/research/correlation-analysis/README.md
+      - Backtest Engine: sections/research/backtest-execution/README.md
+      - Polymarket L2 Archive: sections/data/polymarket-history-archive/README.md
+      - Polymarket Bot Cycle: sections/execution/polymarket-bot-cycle/README.md
+  - Operations & Guides:
+      - Quickstart: operational/guides/QUICKSTART.md
+      - Operational Soak Runbook: OPERATIONAL_SOAK_RUNBOOK.md
+      - Contributing Guide: operational/guides/CONTRIBUTING.md
+      - Testing Surface Guide: operational/guides/testing_surface.md
+      - CLI Quick Guide: operational/guides/cli_quick_guide.md
+      - Data Ingestion: operational/guides/data_ingestion.md
+      - Operational Procedures: operational/guides/operations.md
+      - Deployment Plan: operational/guides/DEPLOYMENT.md
+      - Codebase Tour: codebase_tour/00_START_HERE.md
+      - Code Atlas: atlas/README.md
