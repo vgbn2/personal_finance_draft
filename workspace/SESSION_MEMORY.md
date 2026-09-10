@@ -1,3 +1,29 @@
+### Session Memory - 2026-09-10 session 1 — Blast-Through Audit Remediation & C++ Mass Strategy Backtesting
+
+```json
+{
+  "batch": ["BLAST-THROUGH-REMEDIATION-MASS-BT-1"],
+  "lifecycle": "closed",
+  "scope": "Executed full repository blast-through audit; resolved 9 confirmed defects across C++20 Core, Gateway Risk Bridge, Sub-positions Ledger, and Express API; validated C++ OpenMP mass-bt execution across 16 strategies and 6 timeframes with trade count tracking; verified 100% test integrity across test:core, test:safety, test:structure, and hygiene.",
+  "changes": "updated backend/gateway/src/core/risk_engine_bridge.ts, shared/lib/runtime/sub_positions_ledger.js, backend/api/server/routes/system/infra.js, backend/core/src/stats/stats_engine.cpp, shared/lib/runtime/process_lock.js, backend/gateway/src/bot_state.ts, shared/lib/strategy/backtest.js, backend/core/src/correlation/correlation_engine.cpp, backend/core/src/data/data_validator.cpp, backend/api/app.js, backend/cli/commands/research/research_mass_bt.js, workspace/HANDOFF.md, workspace/handoff/2026/09/2026-09-10.md, workspace/PROMPT_LOG.md, workspace/SESSION_MEMORY.md, workspace/NEXT_SESSION_GOAL.md",
+  "verification": "npm run native:build (100% PASS); npm run test:core (100% PASS, 34/34 CTests); npm run test:safety (100% PASS, 43/43 tests); npm run test:structure (100% PASS, 12/12 suites); npm run hygiene (100% PASS); npm run audit:documentation (100% PASS)",
+  "boundaries": "zero-key development policy maintained; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
+### Session Memory - 2026-09-09 session 1 — Architecture Documentation Refinement, Failure Domain Recovery & Remote Sync
+
+```json
+{
+  "batch": ["DOCS-ENG-REFINE-RECOVERY-1"],
+  "lifecycle": "closed",
+  "scope": "Refined the canonical 8-section architecture documentation suite on main (docs/engineering/architecture/01 to 08) synthesizing IEEE 42010, arc42, C4 model, and Diátaxis standards; integrated explicit Failure Domains, Circuit Breakers & Autonomous Recovery Matrix into 01_ARCHITECTURE_AND_CODEBASE.md; verified 100% test integrity across all test gates; pushed to origin/main and rsynced to HPDesk Proxmox VM.",
+  "changes": "updated docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md, workspace/HANDOFF.md, workspace/handoff/2026/09/2026-09-09.md, workspace/PROMPT_LOG.md, workspace/SESSION_MEMORY.md",
+  "verification": "npm run audit:documentation (100% PASS); npm run test:structure (100% PASS, 12/12 suites); npm run hygiene (100% PASS); npm run test:safety (100% PASS, 43/43 tests); npm run test:core (100% PASS, 34/34 CTests)",
+  "boundaries": "documentation and architectural specifications only; zero-key policy maintained; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-09-08 session 3 — Repository Structural Categorization, Strategy Partitioning & Hygiene Overhaul
 
 ```json

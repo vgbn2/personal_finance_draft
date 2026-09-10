@@ -1,6 +1,6 @@
 'use strict';
 
-const { execSync } = require('node:child_process');
+const { execSync, spawnSync } = require('node:child_process');
 
 function dockerImages() {
   try {
@@ -21,13 +21,23 @@ function dockerPs() {
 }
 
 function dockerLogs(container, lines = 100) {
-  if (!container || !/^[\w._-]+$/.test(container)) return { error: 'invalid container name' };
+  if (!container || typeof container !== 'string' || !/^[\w._-]+$/.test(container)) {
+    return { error: 'invalid container name' };
+  }
+  const parsedLines = Number(lines);
+  const lineCount = Number.isInteger(parsedLines) && parsedLines > 0
+    ? String(Math.min(parsedLines, 5000))
+    : '100';
+
   try {
-    const raw = execSync(`docker logs --tail ${Number(lines)} ${container} 2>&1`, {
+    const res = spawnSync('docker', ['logs', '--tail', lineCount, container], {
       timeout: 10000,
       encoding: 'utf8',
+      shell: false,
     });
-    return raw.split('\n').filter(Boolean);
+    if (res.error) return { error: res.error.message };
+    const out = (res.stdout || '') + (res.stderr || '');
+    return out.split('\n').filter(Boolean);
   } catch (e) {
     return { error: e.message };
   }

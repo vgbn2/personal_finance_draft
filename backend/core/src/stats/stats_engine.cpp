@@ -211,7 +211,7 @@ PerformanceStats StatsEngine::summarize(
     stats.sortino = annualizedSortino(returns, risk_free_per_period, periods_per_year);
     stats.max_drawdown = stats.drawdown.max_drawdown;
     stats.calmar = calmarRatio(stats.annualized_return, stats.max_drawdown);
-    stats.confidence=confidenceScore(stats.sharpe,stats.sortino,stats.max_drawdown,stats.calmar,stats.annualized_return);
+    stats.confidence = calculateConfidence(stats.sharpe, stats.sortino, stats.annualized_return, stats.max_drawdown, stats.calmar);
 
     // Skewness and Kurtosis
     const double mean_ret = meanReturn(returns);

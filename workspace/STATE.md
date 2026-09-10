@@ -3,6 +3,19 @@
 ## Current Phase
 Engineering Documentation Overhaul (7-Section Architecture Suite), SV Console Review & Soak Verification - ACTIVE
 
+- **Blast-Through Full-Stack Audit Remediation & C++ Mass Strategy Backtester**:
+  - Remediated 9 confirmed defects across fault domain `our_source`:
+    - Drawdown calculation guard in `risk_engine_bridge.ts` using live balance peak equity.
+    - Fail-closed sub-position ledger persistence in `sub_positions_ledger.js`.
+    - Sanitized container log streaming in `infra.js` using `spawnSync` without shell interpolation.
+    - Parameter ordering in `StatsEngine::summarize` confidence scoring (`stats_engine.cpp`).
+    - POSIX `O_EXCL` atomic process locking in `process_lock.js` and `bot_state.ts`.
+    - Downside deviation Sortino computation across zero baseline in `backtest.js`.
+    - Clamped Pearson correlation output in `correlation_engine.cpp` eliminating `std::acos` `NaN` propagation.
+    - Bar price and volume validation in `data_validator.cpp`.
+    - Prototype pollution protection on Express body parser in `app.js`.
+  - Upgraded `mass-bt` research CLI and native C++ OpenMP backtester to display trade counts alongside net returns across 16 strategies and 6 timeframes.
+  - Verified 100% pass across native CTests (34/34), safety suite (43/43), structure contracts (12/12), and documentation audits.
 - **7-Section Modular Engineering Architecture Suite**:
   - Engineered and integrated a complete 7-section canonical engineering documentation suite across `docs/engineering/` equipped with visual ASCII diagrams, quantified triple-metric Load Indices (CPU/Threads, RAM Heap vs RSS, Disk I/O & Network SLAs, Big-O Complexity), and rigorous LaTeX mathematical formulations:
     - `01_ARCHITECTURE_AND_CODEBASE.md`: Multi-tier system topology map, directory taxonomy, boundary dependency graph, execution call flows, and core architectural invariants (fail-closed, single-writer `central-host`, zero-key development, virtual ledger isolation).

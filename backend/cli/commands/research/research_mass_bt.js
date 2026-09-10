@@ -45,7 +45,7 @@ function formatReturnPct(value) {
 function renderMassBtMatrix(payload) {
   const timeframes = payload.timeframes || DEFAULT_TIMEFRAMES;
   const strategies = payload.matrix || [];
-  const lineDivider = '+' + '-'.repeat(27) + timeframes.map(() => '+' + '-'.repeat(11)).join('') + '+' + '-'.repeat(11) + '+';
+  const lineDivider = '+' + '-'.repeat(27) + timeframes.map(() => '+' + '-'.repeat(15)).join('') + '+' + '-'.repeat(11) + '+';
 
   const lines = [];
   lines.push('\n' + A.bold('='.repeat(80)));
@@ -57,7 +57,7 @@ function renderMassBtMatrix(payload) {
   // Header row
   let headerRow = '| ' + padCell('STRATEGY NAME', 25) + ' ';
   for (const tf of timeframes) {
-    headerRow += '| ' + padCell(tf, 9, true) + ' ';
+    headerRow += '| ' + padCell(`${tf} (ret/trd)`, 13, true) + ' ';
   }
   headerRow += '| ' + padCell('BEST TF', 9, true) + ' |';
   lines.push(A.bold(headerRow));
@@ -68,8 +68,15 @@ function renderMassBtMatrix(payload) {
     let dataRow = '| ' + padCell(row.name, 25) + ' ';
     for (const tf of timeframes) {
       const cell = row.timeframes ? row.timeframes[tf] : null;
-      const retVal = cell ? cell.net_return : null;
-      dataRow += '| ' + formatReturnPct(retVal) + ' ';
+      if (cell && cell.trades > 0) {
+        const retText = (cell.net_return * 100).toFixed(1) + '%';
+        const cellText = `${retText} [${cell.trades}]`;
+        const padded = padCell(cellText, 13, true);
+        const color = cell.net_return > 0 ? A.GREEN : (cell.net_return < 0 ? A.RED : A.RESET);
+        dataRow += '| ' + color + padded + A.RESET + ' ';
+      } else {
+        dataRow += '| ' + A.muted(padCell('N/A', 13, true)) + ' ';
+      }
     }
     const bestTf = row.best_tf || 'N/A';
     dataRow += '| ' + A.bold(A.YELLOW + padCell(bestTf, 9, true) + A.RESET) + ' |';

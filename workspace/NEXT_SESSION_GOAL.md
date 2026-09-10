@@ -1,18 +1,15 @@
 # Next Session Goal
 
-## Primary Objective: Architecture Documentation Refinement & Visual Diagram Engineering
+## Primary Objective: Strategy Alpha Tuning & Intraday Execution Optimization
 
-1. **Research Architectural Documentation Standards**:
-   - Research best practices for writing cohesive, professional software architecture documentation (C4 model, arc42, Diátaxis framework, IEEE 1471/ISO 42010).
-   - Establish formal guidelines for documenting the codebase both as a unified whole and across granular sub-sections.
+1. **Intraday Strategy Parameter Calibration**:
+   - Refine parameter configurations and thresholds for low-timeframe momentum strategies (`5m`, `15m`, `30m`, `1h`) to reduce spread/fee drag observed during mass-bt matrix evaluation.
+   - Investigate volume filters and regime detection (`CorrelationEngine`, `TechnicalFeatures`) to prune unprofitable chop trades.
 
-2. **Refine Architecture Suite on `main` (`docs/engineering/architecture/`)**:
-   - Refine the 8-section architecture suite on `main` (`docs/engineering/architecture/01` to `08`).
-   - Enhance visual architecture diagrams across all subsystems:
-     - Global macro topology and multi-market data pipelines.
-     - Subsystem component interaction maps and internal call sequences.
-     - State machines, memory layouts, and binary byte packings.
-   - Maintain quantified Load Indices (CPU, RAM Heap vs RSS, Disk I/O, Network SLAs) and LaTeX mathematical rigor across all files.
+2. **C++ Native Backtest Engine Feature Expansion**:
+   - Add trade duration and profit-factor metrics to `mass-bt` JSON payload and CLI renderer.
+   - Profile Monte Carlo bootstrap resampling engine integration with multi-strategy matrix evaluations.
 
-3. **Continuous Verification & Quality Assurance**:
-   - Verify `npm run audit:documentation`, `npm run test:structure`, and `npm run hygiene` after any documentation changes.
+3. **Continuous Verification & Safety Integrity**:
+   - Maintain 100% green status across `npm run test:core` (34 CTests), `npm run test:safety` (43 tests), `npm run test:structure` (12 suites), and `npm run hygiene`.
+   - Preserve fail-closed single-writer and zero-key development invariants.
