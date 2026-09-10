@@ -136,7 +136,8 @@ double pearsonCorrelation(std::span<const double> lhs, std::span<const double> r
         return 0.0;
     }
 
-    return cov / std::sqrt(lhs_var * rhs_var);
+    const double corr = cov / std::sqrt(lhs_var * rhs_var);
+    return std::clamp(corr, -1.0, 1.0);
 }
 
 double spearmanCorrelation(std::span<const double> lhs, std::span<const double> rhs) {

@@ -163,28 +163,34 @@ interface LockFile { pid: number; startedAt: string }
 const LOCK_MAX_AGE_MS = 10 * 60 * 1000;
 
 export function acquireLock(): boolean {
-  if (fs.existsSync(LOCK_PATH)) {
-    try {
-      const lock = JSON.parse(fs.readFileSync(LOCK_PATH, 'utf8')) as LockFile;
-      const age = Date.now() - new Date(lock.startedAt).getTime();
-      if (age < LOCK_MAX_AGE_MS) {
-        // Check if the holding process is still alive
-        try {
-          process.kill(lock.pid, 0);
-          return false; // process alive, lock is valid
-        } catch (e: any) {
-          if (e.code !== 'ESRCH') return false; // unexpected error — stay cautious
-          // ESRCH = process not found → stale lock, fall through to acquire
+  const payload = JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() });
+  try {
+    fs.writeFileSync(LOCK_PATH, payload, { flag: 'wx', mode: 0o600 });
+    return true;
+  } catch (err: any) {
+    if (err && err.code === 'EEXIST') {
+      try {
+        const lock = JSON.parse(fs.readFileSync(LOCK_PATH, 'utf8')) as LockFile;
+        const age = Date.now() - new Date(lock.startedAt).getTime();
+        if (age < LOCK_MAX_AGE_MS) {
+          // Check if the holding process is still alive
+          try {
+            process.kill(lock.pid, 0);
+            return false; // process alive, lock is valid
+          } catch (e: any) {
+            if (e.code !== 'ESRCH') return false; // unexpected error — stay cautious
+          }
         }
+        // stale lock → unlink and retry once atomically
+        fs.unlinkSync(LOCK_PATH);
+        fs.writeFileSync(LOCK_PATH, payload, { flag: 'wx', mode: 0o600 });
+        return true;
+      } catch {
+        return false;
       }
-      // stale lock — remove it
-    } catch {
-      // malformed lock file — remove it
     }
-    fs.unlinkSync(LOCK_PATH);
+    return false;
   }
-  fs.writeFileSync(LOCK_PATH, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), 'utf8');
-  return true;
 }
 
 export function releaseLock(): void {

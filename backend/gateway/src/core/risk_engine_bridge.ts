@@ -21,6 +21,10 @@ export async function buildRiskContext(order: TradeOrder, adapter: BrokerAdapter
   try {
     const balances = await adapter.getPortfolioBalance();
     portfolioEquity = balances.EQUITY || balances.USD || 0;
+    const peak = balances.PEAK_EQUITY || portfolioEquity;
+    if (peak > 0 && portfolioEquity > 0) {
+      currentDrawdown = Math.max(0, (peak - portfolioEquity) / peak);
+    }
   } catch (error) {
     if (!isDryRun) {
       throw new Error(`Failed to fetch portfolio equity for risk check: ${error}`);
