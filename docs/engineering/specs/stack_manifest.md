@@ -1,56 +1,73 @@
-# Technology Stack
+# Technology Stack Manifest
 
-> Updated on 2026-07-23 from live manifests and runtime entrypoints.
+> **Diátaxis Type**: Reference & Specification | **Status**: Canonical | **Owner**: Platform Engineering | **Review**: Continuous
 
-## Runtime
+## 1. Core Toolchain & Languages
 
-| Technology | Status | Purpose |
-|------------|--------|---------|
-| C++20 | **Active** | Core calculations, data contracts, backtests, risk, and execution interfaces |
-| Node.js | **Active** | Operational CLI (`backend/cli/sovereign_cli.js`) and local web/API bridge |
-| CMake | **Active** | C++ build configuration (3.15+) |
-| Rust | **Retire/archive** | Inactive `mirrored-contract-only` scaffold; not an operational CLI |
-| ONNX | **Active, opt-in** | Node inference runner and optional C++ Runtime linkage; central x64 image enables it |
+| Technology | Baseline Version | Active Implementation | Purpose |
+|---|---|---|---|
+| **C++20** | `C++20` standard | `clang++ 14+`, `g++ 11+` | Native quantitative engine (`sovereign_wealth`), indicators, binary TS merger, and CTest suite. |
+| **Node.js** | `v20.0.0+` | Node LTS `v20.x`, `v22.x` | Orchestration CLI, Ink TUI dashboard, native HTTP server, and broker gateways. |
+| **CMake** | `3.20.0+` | CMake `3.25.1+` | Multi-platform build configuration (`CMakeLists.txt`) and CTest harness. |
+| **TypeScript / JS**| `ES2022+` | Pure CommonJS / ESM | Dashboard components, broker bridges, and testing scripts. |
 
-## Production Dependencies
+---
 
-### Web (Node.js)
+## 2. Platform Dependencies (`package.json`)
+
+### Core Runtime Dependencies
 | Package | Version | Purpose |
-|---------|---------|---------|
-| node:http | built-in | Local web/API server in `backend/api/app.js` |
-| socket.io | ^4.5.0 | Live dashboard telemetry and market-data updates |
+|---|---|---|
+| `node:http` | Built-in | High-performance native HTTP server in `backend/api/app.js` (zero Express dependency). |
+| `ink` | `^7.1.0` | React-based terminal dashboard engine running DEC Mode 2026 synchronized output. |
+| `ink-select-input` | `^6.2.0` | Keyboard-driven terminal select input components. |
+| `ink-text-input` | `^6.0.0` | Keyboard-driven terminal text input fields. |
+| `@alpacahq/alpaca-trade-api`| `^4.0.1` | Alpaca REST and WebSocket streaming gateway for equities and crypto paper/live trading. |
+| `@polymarket/clob-client-v2`| `^0.0.3` | Polymarket CLOB gateway for prediction market orderbook streaming. |
+| `@supabase/supabase-js` | `^2.106.2` | Client library for telemetry and user audit trails. |
+| `ethers` | `^6.17.0` | Ethereum cryptographic utilities for Polymarket EIP-712 order signing. |
+| `@modelcontextprotocol/sdk` | `^1.29.0` | Model Context Protocol (MCP) server for Claude and autonomous agent tool exposure. |
 
-### CLI (Node.js)
-| Module | Purpose |
-|--------|---------|
-| `child_process` | Spawning C++ backend processes |
-| `fs`, `path` | Local cache and config management |
+### Frontend Dashboard (`Frontend/dashboard/package.json`)
+| Technology | Version | Purpose |
+|---|---|---|
+| `React` | `19.0.0` | Component-driven reactive web user interface. |
+| `Vite` | `6.2.0` | Ultra-fast client bundler and development server. |
+| `TailwindCSS` | `3.4.17` | Utility-first responsive design styling. |
+| `Lucide React` | `0.475.0` | Minimalist interface iconography. |
 
-## Development Dependencies
+---
 
-| Package | Purpose |
-|---------|---------|
-| CTest | C++ unit and integration testing |
-| nodemon | Web development auto-reload |
+## 3. Testing & Quality Assurance Stack
 
-## Infrastructure
+| Harness | Runner / Command | Coverage & Scope |
+|---|---|---|
+| **Native CTest Suite** | `ctest --test-dir backend/core/build` | 34 C++20 unit and regression test executables (`npm run test:core`). |
+| **Node.js Native Test Runner**| `node tests/run_node_tests.js` | Zero-dependency native Node test runner (`node:test`). |
+| **Safety & Invariant Suite** | `npm run test:safety` | 43 zero-mutation, trade PIN, and automation safety boundary tests. |
+| **Structural Contract Suite** | `npm run test:structure` | 12 architectural contract suites validating skill mirrors and hygiene. |
+| **API & Contract Suites** | `npm run test:api`, `npm run test:contracts` | 40 HTTP API route keys, WebSocket bridges, and storage contracts. |
+| **Documentation Audit & Filter**| `npm run docs:filter`, `npm run audit:documentation` | Zero-tolerance CI gate validating 100% of links, manifests, and Diátaxis types. |
 
-| Service | Status | Purpose |
-|---------|--------|---------|
-| GitHub Actions | **Active** | Test, build, and deployment-readiness workflows in `.github/workflows/` |
-| Docker | Active | Local containerization (`infra/docker/`) |
-| Kubernetes | Starter | Deployment manifests (`infra/deployment/kubernetes/`) |
-| Terraform | Starter | Infrastructure as Code (`infra/deployment/terraform/`) |
-| Heroku | Starter | Cloud deployment (`infra/deployment/heroku/`) |
+---
 
-## Configuration
+## 4. Production Deployment & Infrastructure
 
-| Variable/File | Purpose | Required |
-|---------------|---------|----------|
-| `.env` | Local secrets, never committed | No |
-| `config/markets/data_sources.yaml` | Source and universe config | Yes |
-| `config/trading/feature_engineering.yaml` | Feature and CNN windows | Yes |
-| `config/trading/strategies.yaml` | Shared strategy parameters | Yes |
-| `config/strategies/*.yaml` | Registered strategy definitions | Yes |
-| `config/trading/risk_management.yaml` | Risk limits | Yes |
-| `storage/data/models/latest_model_comparison.json` | Latest model comparison and promotion evidence | Generated |
+| Layer | Technology | Configuration & Path |
+|---|---|---|
+| **Host System** | Ubuntu 24.04 LTS (Proxmox VE) | Dedicated hardware node (`hpdesk-1`). |
+| **Network Mesh** | Tailscale Encrypted Mesh | Private point-to-point node interconnection without public exposure. |
+| **Container Engine**| Docker Compose | Multi-container soak stack (`infra/docker/docker-compose.yml`). |
+| **Services** | Docker Containers | `sv-web` (Port 8787), `sv-bot-alpaca-paper`, `sv-backfill`, `sv-strategy-explorer`. |
+| **Process Model** | Single-Writer Authority (`central-host`)| Atomic POSIX locking via `storage/data/locks/*.lock`. |
+
+---
+
+## 5. Storage & Persistence Tier
+
+| Subsystem | Storage Engine | Location |
+|---|---|---|
+| **High-Density TS** | Binary Packed IEEE-754 (SOVT v1) | `storage/data/ts/*.bin` |
+| **Universe & Caches**| Local JSON Store | `storage/data/cache/*.json` |
+| **Execution History**| Append-Only JSONL Ledgers | `storage/data/paper/` |
+| **State Locks** | POSIX `O_EXCL` Lockfiles | `storage/data/locks/` |

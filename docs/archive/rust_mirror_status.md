@@ -1,6 +1,10 @@
 # Rust Mirror Status
 
-Updated: 2026-07-23
+> **Diátaxis Type**: Reference | **Status**: Historical Archive | **Preserved for Architectural Continuity**
+
+*Note: This document records the architectural evaluation and retirement decision for the legacy Rust CLI scaffold. It is preserved for design lineage and historical rationale.*
+
+---
 
 ## Decision
 
@@ -19,8 +23,7 @@ The Rust CLI mirror is retired from the forward implementation plan. The active 
 - Do not add new Rust command mirrors or port Node orchestration into Rust.
 - Do not describe the Rust tree as active, production, or a required build dependency.
 - Keep Node JSON contracts as the canonical CLI/MCP/API behavior.
-- Archive or delete the scaffold only in a separately reviewed broad-deletion change. Until then, treat it as
-  non-production reference code.
+- Treat it as non-production reference code.
 
 ## Reconsideration gate
 

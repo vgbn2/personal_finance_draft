@@ -8,34 +8,34 @@ This document details the architecture, execution modes, mathematical models, bo
 
 The core engine is authored in standard **C++20** with CMake (`backend/core/CMakeLists.txt`), compiling into a zero-dependency static library `sovereign_core_lib` and an executable `sovereign_wealth`.
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                    NATIVE C++20 SOVEREIGN CORE SUBSYSTEM MAP                                       |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|  [ DATA INGESTION & PARSING (`backend/core/src/data/`) ]                                          [Load: 2/10]     |
-|  ├── `binary_ts_reader.cpp`: Zero-copy binary SOVT parser, tail seek, and record sanitation                        |
-|  └── `binary_ts_merger.cpp`: Zero-allocation streaming two-pointer merge engine ($O(1)$ memory, <5MB RSS)          |
-|                                         │                                                                          |
-|                                         ▼ Contiguous Memory Spans (`std::span<const Bar>`)                         |
-|  [ ANALYTICS & INDICATOR ENGINE (`backend/core/src/analytics/`) ]                                 [Load: 6/10]     |
-|  ├── `indicator_engine.cpp`: SIMD-vectorized RSI, MACD, Bollinger Bands, ATR, Rolling Volatility                   |
-|  └── `monte_carlo.cpp`: High-throughput bootstrap resampling with vectorized `xorshift64` PRNG                     |
-|                                         │                                                                          |
-|                                         ▼ Trade Signals & Feature Matrices                                         |
-|  [ QUANTITATIVE BACKTESTING & OPTIMIZATION (`backend/core/src/backtest/`) ]                       [Load: 7/10]     |
-|  ├── `frame_backtester.cpp`: Dual-mode simulation (Mode A Native Binary vs Mode B Annotated Feature Matrix)        |
-|  └── `optimizer.cpp`: Multi-threaded OpenMP grid sweep parameter optimizer                                         |
-|                                         │                                                                          |
-|                                         ▼ Trade Events & Portfolio Metrics                                         |
-|  [ PRE-TRADE RISK & SAFETY GATES (`backend/core/src/risk/`) ]                                     [Load: 1/10]     |
-|  ├── `pre_trade_risk.cpp`: Microsecond (<15μs) pre-trade gate (drawdown, concentration, notional limits)           |
-|  └── `drawdown_guard.cpp`: Portfolio peak-to-trough circuit breaker                                                |
-|                                         │                                                                          |
-|                                         ▼ CLI Command Dispatch & JSON Serialization                                |
-|  [ UNIFIED ENTRYPOINT & CLI BRIDGE (`backend/core/src/main.cpp`) ]                                                |
-|  - Subcommands: `sovereign_wealth backtest`, `ts-merge`, `risk check`, `monte-carlo`, `sweep`                      |
-+--------------------------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph Ingestion["Data Ingestion & Parsing (backend/core/src/data/) [Load: 2/10]"]
+        RDR["binary_ts_reader.cpp: Zero-copy binary SOVT parser, tail seek, sanitation"]
+        MRG["binary_ts_merger.cpp: Zero-allocation streaming two-pointer merge (O(1) memory, <5MB RSS)"]
+    end
+
+    subgraph Analytics["Analytics & Indicator Engine (backend/core/src/analytics/) [Load: 6/10]"]
+        IND["indicator_engine.cpp: SIMD-vectorized RSI, MACD, Bollinger Bands, ATR, Rolling Vol"]
+        MC["monte_carlo.cpp: High-throughput bootstrap resampling with vectorized xorshift64 PRNG"]
+    end
+
+    subgraph Backtest["Quantitative Backtesting & Optimization (backend/core/src/backtest/) [Load: 7/10]"]
+        FBT["frame_backtester.cpp: Dual-mode simulation (Mode A Native vs Mode B Feature Matrix)"]
+        OPT["optimizer.cpp: Multi-threaded OpenMP grid sweep parameter optimizer"]
+    end
+
+    subgraph Risk["Pre-Trade Risk & Safety Gates (backend/core/src/risk/) [Load: 1/10]"]
+        PTR["pre_trade_risk.cpp: Microsecond (<15µs) pre-trade gate (drawdown, concentration, notional)"]
+        DD["drawdown_guard.cpp: Portfolio peak-to-trough circuit breaker"]
+    end
+
+    CLI["Unified Entrypoint & CLI Bridge (backend/core/src/main.cpp)<br/>Commands: backtest, ts-merge, risk check, monte-carlo, sweep"]
+
+    Ingestion -->|Contiguous Memory Spans: std::span<const Bar>| Analytics
+    Analytics -->|Trade Signals & Feature Matrices| Backtest
+    Backtest -->|Trade Events & Portfolio Metrics| Risk
+    Risk -->|CLI Command Dispatch & JSON Output| CLI
 ```
 
 ---
@@ -46,69 +46,53 @@ The backtester supports two distinct execution modes:
 - **Mode A (Native Computation)**: Directly ingests raw binary `SOVT` time-series files, calculates technical indicators in C++, evaluates signal rules, and executes simulated trades.
 - **Mode B (Annotated Feature Frame)**: Ingests external feature matrices (JSON/CSV) generated by Node.js, Python, or AI exploration daemons containing custom alpha signals or machine learning predictions.
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                    `FrameBacktester` EXECUTION STATE MACHINE                                       |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|           ┌────────────────────────┐                   ┌────────────────────────┐                                  |
-|           │  MODE A: Native Binary │                   │  MODE B: Feature Frame │                                  |
-|           │  `storage/data/ts/`    │                   │  Annotated JSON Array  │                                  |
-|           └───────────┬────────────┘                   └───────────┬────────────┘                                  |
-|                       │                                            │                                               |
-|                       ▼                                            ▼                                               |
-|           ┌────────────────────────┐                   ┌────────────────────────┐                                  |
-|           │ Compute C++ Indicators │                   │ Stream Feature Parse   │                                  |
-|           │ (RSI, BB, MACD, ATR)   │                   │ (Signals, Probs, Regs) │                                  |
-|           └───────────┬────────────┘                   └───────────┬────────────┘                                  |
-|                       │                                            │                                               |
-|                       └─────────────────────┬──────────────────────┘                                               |
-|                                             │                                                                      |
-|                                             ▼                                                                      |
-|                                ┌────────────────────────┐                                                          |
-|                                │ STATE: BAR_ITERATION   │◄─────────────────────────────────────────┐               |
-|                                └────────────┬───────────┘                                          │               |
-|                                             │ Next Bar Arrives (t)                                 │               |
-|                                             ▼                                                      │               |
-|                                ┌────────────────────────┐                                          │               |
-|                                │ EVALUATE_SIGNALS       │                                          │               |
-|                                └────────────┬───────────┘                                          │               |
-|                                             │                                                      │               |
-|                       ┌─────────────────────┴──────────────────────┐                               │               |
-|                       ▼                                            ▼                               │               |
-|         Signal == FLAT / NO_ACTION                   Signal == ENTER_LONG / SHORT                  │               |
-|         ┌────────────────────────┐                   ┌────────────────────────┐                    │               |
-|         │ UPDATE_DRAWDOWN        │                   │ CHECK_PRE_TRADE_RISK   │                    │               |
-|         └───────────┬────────────┘                   └────────────┬───────────┘                    │               |
-|                     │                                             │ Risk Pass                      │               |
-|                     │                                             ▼                                │               |
-|                     │                                ┌────────────────────────┐                    │               |
-|                     │                                │ SIMULATE_FILL_SLIPPAGE │                    │               |
-|                     │                                │ P_entry = P*(1 + bps)  │                    │               |
-|                     │                                └────────────┬───────────┘                    │               |
-|                     │                                             │                                │               |
-|                     │                                             ▼                                │               |
-|                     │                                ┌────────────────────────┐                    │               |
-|                     │                                │ RECORD_TRADE_EVENT     │                    │               |
-|                     │                                └────────────┬───────────┘                    │               |
-|                     │                                             │                                │               |
-|                     └───────────────────────┬─────────────────────┘                                │               |
-|                                             │                                                      │               |
-|                                             ▼                                                      │               |
-|                                ┌────────────────────────┐                                          │               |
-|                                │ ADVANCE_BAR_TIME       │──────────────────────────────────────────┘               |
-|                                └────────────┬───────────┘                                                          |
-|                                             │ Reached Last Bar (t == N-1)                                          |
-|                                             ▼                                                                      |
-|                                ┌────────────────────────┐                                                          |
-|                                │ FINALIZE_TELEMETRY     │ Calculate Sharpe, Sortino, Calmar, MaxDD, WinRate        |
-|                                └────────────┬───────────┘                                                          |
-|                                             │                                                                      |
-|                                             ▼                                                                      |
-|                                ┌────────────────────────┐                                                          |
-|                                │ RUN_MONTE_CARLO_BOOT   │ Run 10,000 resamples with `xorshift64` PRNG              |
-|                                └────────────────────────┘                                                          |
-+--------------------------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph Inputs["Execution Inputs"]
+        MODE_A["MODE A: Native Binary<br/>storage/data/ts/"]
+        MODE_B["MODE B: Feature Frame<br/>Annotated JSON Array"]
+    end
+
+    subgraph Prep["Signal & Feature Preparation"]
+        COMP_IND["Compute C++ Indicators<br/>(RSI, BB, MACD, ATR)"]
+        PARSE_FEAT["Stream Feature Parse<br/>(Signals, Probs, Regs)"]
+    end
+
+    MODE_A --> COMP_IND
+    MODE_B --> PARSE_FEAT
+
+    ITER["BAR_ITERATION (Bar t)"]
+    COMP_IND --> ITER
+    PARSE_FEAT --> ITER
+
+    EVAL["EVALUATE_SIGNALS"]
+    ITER --> EVAL
+
+    subgraph Branches["Signal Branching"]
+        NOACT["Signal == FLAT / NO_ACTION<br/>UPDATE_DRAWDOWN"]
+        ACT["Signal == ENTER_LONG / SHORT<br/>CHECK_PRE_TRADE_RISK"]
+    end
+
+    EVAL --> NOACT
+    EVAL --> ACT
+
+    FILL["SIMULATE_FILL_SLIPPAGE<br/>P_entry = P * (1 + bps)"]
+    ACT -->|Risk Pass| FILL
+
+    RECORD["RECORD_TRADE_EVENT"]
+    FILL --> RECORD
+
+    ADV["ADVANCE_BAR_TIME (t = t + 1)"]
+    NOACT --> ADV
+    RECORD --> ADV
+
+    ADV -->|t < N - 1| ITER
+
+    TELEM["FINALIZE_TELEMETRY<br/>Sharpe, Sortino, Calmar, MaxDD, WinRate"]
+    ADV -->|t == N - 1| TELEM
+
+    MC_RUN["RUN_MONTE_CARLO_BOOT<br/>10,000 resamples with xorshift64 PRNG"]
+    TELEM --> MC_RUN
 ```
 
 ---
@@ -117,20 +101,18 @@ The backtester supports two distinct execution modes:
 
 Simulated orders incorporate realistic bid-ask spread crossing, market impact, and transaction fee schedules:
 
-```text
-[Signal Trigger: LONG]
-       │
-       ▼
-[Adjusted Entry Price]: P_entry = P_close * (1 + (cost_bps / 10000))
-       │
-       ▼
-[Trade Life Cycle: Holding Period Horizon (H bars) or Stop-Loss Trigger]
-       │
-       ▼
-[Adjusted Exit Price]:  P_exit  = P_close * (1 - (cost_bps / 10000))
-       │
-       ▼
-[Net Trade Return]:     R_trade = ((P_exit - P_entry) / P_entry) - (2 * fee_rate)
+```mermaid
+flowchart TD
+    SIG["Signal Trigger: LONG"]
+    ENTRY["Adjusted Entry Price: P_entry = P_close * (1 + cost_bps / 10000)"]
+    HOLD["Trade Life Cycle: Holding Period Horizon (H bars) or Stop-Loss Trigger"]
+    EXIT["Adjusted Exit Price: P_exit = P_close * (1 - cost_bps / 10000)"]
+    RET["Net Trade Return: R_trade = ((P_exit - P_entry) / P_entry) - (2 * fee_rate)"]
+
+    SIG --> ENTRY
+    ENTRY --> HOLD
+    HOLD --> EXIT
+    EXIT --> RET
 ```
 
 ### Mathematical Formulations
@@ -151,36 +133,24 @@ $$\text{Maximum Drawdown (MDD)} = \max_{\tau \in (0, T)} \left[ \max_{t \in (0, 
 
 To verify that quantitative performance is statistically robust rather than an artifact of trade ordering, the Monte Carlo engine resamples the trade sequence with replacement:
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                      MONTE CARLO BOOTSTRAP RESAMPLING PIPELINE                                     |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|  [ Original Historical Trade Returns Vector ] : [ R_1, R_2, R_3, ..., R_N ]                                        |
-|                                │                                                                                   |
-|                                ▼                                                                                   |
-|  [ High-Performance `xorshift64` PRNG Generator ]                                                                  |
-|  - State Update: `state ^= state << 13; state ^= state >> 7; state ^= state << 17;`                                |
-|  - Speed: > 1.2 Billion random numbers/second per core                                                             |
-|                                │                                                                                   |
-|                                ▼                                                                                   |
-|  [ Bootstrap Simulation Matrix (1,000 to 10,000 Iterations) ]                                                      |
-|  ┌───────────────────┬─────────────────────────────────────────────────┬──────────────────────────────────┐        |
-|  │ Simulation Run    │ Resampled Trade Sequence Vector                 │ Output Metrics                   │        |
-|  ├───────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────┤        |
-|  │ Iteration 0       │ [ R_42, R_11, R_42, R_89, ..., R_3 ]            │ MaxDD: 8.4%, Sharpe: 1.82        │        |
-|  │ Iteration 1       │ [ R_102, R_5, R_19, R_19, ..., R_77 ]           │ MaxDD: 14.1%, Sharpe: 1.45       │        |
-|  │ ...               │ ...                                             │ ...                              │        |
-|  │ Iteration K-1     │ [ R_1, R_98, R_12, R_55, ..., R_60 ]            │ MaxDD: 11.2%, Sharpe: 1.68       │        |
-|  └───────────────────┴─────────────────────────────────────────────────┴──────────────────────────────────┘        |
-|                                │                                                                                   |
-|                                ▼                                                                                   |
-|  [ Statistical Confidence Distributions & Risk Quantiles ]                                                         |
-|  ├── Median Expected Return: $\mu_{50}$ with 95% Confidence Interval $[\text{p05}, \text{p95}]$                   |
-|  ├── 95% / 99% Value-at-Risk (VaR) & Conditional VaR (CVaR / Expected Shortfall)                                   |
-|  └── Probability of Loss: $P(\text{Terminal Capital} < \text{Initial Capital})$                                    |
-+--------------------------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    VEC["Original Historical Trade Returns Vector<br/>[ R_1, R_2, R_3, ..., R_N ]"]
+    PRNG["High-Performance xorshift64 PRNG Generator<br/>State Update: state ^= state << 13; state ^= state >> 7; state ^= state << 17;<br/>Speed: > 1.2 Billion random numbers/sec per core"]
+    BOOT["Bootstrap Simulation Matrix<br/>(1,000 to 10,000 Iterations)"]
+    CONF["Statistical Confidence Distributions & Risk Quantiles<br/>• Median Expected Return: μ_50 with 95% CI [p05, p95]<br/>• 95% / 99% VaR & CVaR (Expected Shortfall)<br/>• Probability of Loss: P(Terminal Capital < Initial Capital)"]
+
+    VEC --> PRNG
+    PRNG --> BOOT
+    BOOT --> CONF
 ```
+
+| Simulation Run | Resampled Trade Sequence Vector | Output Metrics |
+|---|---|---|
+| Iteration 0 | `[ R_42, R_11, R_42, R_89, ..., R_3 ]` | MaxDD: 8.4%, Sharpe: 1.82 |
+| Iteration 1 | `[ R_102, R_5, R_19, R_19, ..., R_77 ]` | MaxDD: 14.1%, Sharpe: 1.45 |
+| $\dots$ | $\dots$ | $\dots$ |
+| Iteration $K-1$ | `[ R_1, R_98, R_12, R_55, ..., R_60 ]` | MaxDD: 11.2%, Sharpe: 1.68 |
 
 ### Mathematical Risk Quantiles
 $$\text{Value at Risk (VaR}_\alpha) = -\inf \{ l \in \mathbb{R} : P(L > l) \le 1 - \alpha \}$$
@@ -192,19 +162,26 @@ $$\text{Conditional VaR (CVaR}_\alpha) = \mathbb{E}[L \mid L \ge \text{VaR}_\alp
 
 Before an order is submitted to a broker, the native risk engine evaluates limits in microsecond timeframes:
 
-```text
-[Incoming Trade Order Request]
-       │
-       ├── 1. Finite Value & Monotonicity Check (Positive notional, valid timestamp)
-       │
-       ├── 2. Portfolio Peak-to-Trough Drawdown Check (Drawdown < max_drawdown, default 20%)
-       │
-       ├── 3. Maximum Symbol Concentration Check (Notional / Total Portfolio Equity <= 25%)
-       │
-       └── 4. Quantity Step Alignment Check (qty % step == 0)
-       │
-       ▼
-[Verdict]: PASS (Execution Authorized) OR FAIL (Order Rejected, Fail-Closed)
+```mermaid
+flowchart TD
+    REQ["Incoming Trade Order Request"]
+    
+    subgraph Checks["Pre-Trade Risk Invariant Checks"]
+        C1["1. Finite Value & Monotonicity Check (Positive notional, valid timestamp)"]
+        C2["2. Portfolio Peak-to-Trough Drawdown Check (Drawdown < max_drawdown, default 20%)"]
+        C3["3. Maximum Symbol Concentration Check (Notional / Total Portfolio Equity <= 25%)"]
+        C4["4. Quantity Step Alignment Check (qty % step == 0)"]
+    end
+
+    REQ --> C1
+    C1 --> C2
+    C2 --> C3
+    C3 --> C4
+
+    VERDICT{"PreTradeRisk Verdict"}
+    C4 --> VERDICT
+    VERDICT -->|All Checks Pass| PASS["PASS: Execution Authorized"]
+    VERDICT -->|Any Check Violates| FAIL["FAIL: Order Rejected (Fail-Closed)"]
 ```
 
 ---

@@ -26,7 +26,7 @@ Use this file to track writing progress without opening every chapter.
 - [x] Add one minimum working slice to every chapter
 - [x] Add one "Do Not Build Yet" section to every chapter
 - [x] Add file tree snapshots to every chapter
-- [x] Cross-check path claims with `docs/engineering/codebase_org.md`
+- [x] Cross-check path claims with `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md`
 - [x] Cross-check status claims with `workspace/STATE.md`
 
 ## Chapter Status

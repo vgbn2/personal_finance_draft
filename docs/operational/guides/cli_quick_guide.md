@@ -4,16 +4,15 @@ The CLI lives in `backend/cli/sovereign_cli.js`.
 
 ## First Commands
 
-```powershell
-cd C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\personal_finance_draft
-.\sv.ps1 help
-.\sv.ps1 status
-.\sv.ps1 cockpit
-node backend\cli\sovereign_cli.js help
-node backend\cli\sovereign_cli.js help commands
-node backend\cli\sovereign_cli.js help backtest
-node backend\cli\sovereign_cli.js help indicators
-node backend\cli\sovereign_cli.js help examples
+```bash
+# From repository root:
+node backend/cli/sovereign_cli.js help
+node backend/cli/sovereign_cli.js status
+node backend/cli/sovereign_cli.js cockpit
+node backend/cli/sovereign_cli.js help commands
+node backend/cli/sovereign_cli.js help backtest
+node backend/cli/sovereign_cli.js help indicators
+node backend/cli/sovereign_cli.js help examples
 ```
 
 ## Main Commands

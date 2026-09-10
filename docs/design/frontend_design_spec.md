@@ -84,12 +84,12 @@ Organized into **Pillars** (Vertical sections with 3px color-coded left borders)
 - **History Depth:** Range slider (120 to 10,000 bars).
 
 #### Pillar 2: Intelligence Engine (Violet)
-- **Active Model:** Dropdown (CNN Window v0, XGBoost Ranker, SVM Margin).
+- **Active Model:** Dropdown (CNN Window v0, Kronos Base, exploratory: XGBoost Ranker, SVM Margin).
 - **Confidence Gate:** Range slider (0.0 to 1.0). Default: 0.55.
 - **Inference Horizon:** Number input (1 to 20 bars).
 
 #### Pillar 3: Macro Regime (Amber)
-- **Provider Toggles:** Toggle switches for FRED, World Bank, and Kalshi.
+- **Provider Toggles:** Toggle switches for FRED, World Bank, and Polymarket / exploratory Kalshi.
 - **Regime Mode:** Select (Baseline, Macro-Aware, Path-Signature Optimized).
 
 #### Pillar 4: Risk & Execution (Red)

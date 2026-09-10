@@ -1,17 +1,17 @@
 # Quickstart
 
-This guide orients a new contributor to the current local Sovereign trading-platform prototype.
+This guide orients a new contributor to the current local Sovereign trading-platform architecture.
 
-The repository now has active local ingestion, validation, research/backtest commands, C++ backend inspection, and a Node web/API bridge. The older wealth executable remains compatibility context, not the active product direction.
+The repository features active local ingestion, binary time-series storage, quantitative backtesting, C++20 backend analytics, and a native Node.js HTTP/API dashboard bridge.
 
 ## Prerequisites
 
 Required:
 
-- C++20 compiler
-- CMake 3.10 or newer
-- a CMake-supported build backend such as Make, Ninja, MSBuild, or MinGW Makefiles
-- Node.js 22 or newer for the repository test runner, CLI, ingestion, and local web/API checks
+- C++20 compiler (`clang++ 14+` or `g++ 11+`)
+- CMake 3.20 or newer (aligned with root `CMakeLists.txt`)
+- a CMake-supported build backend such as Make, Ninja, or MSBuild
+- Node.js v20 or newer (supports LTS v20 and v22) for the CLI, ingestion, and local HTTP/API checks
 
 Currently not required for the local prototype:
 
@@ -47,13 +47,6 @@ ctest --test-dir build/backend/core
 If CMake is not installed, install it before treating the C++ backend as fully verified.
 
 ## CLI Health Checks
-
-Install the local CLI package first:
-
-```bash
-npm install
-npm link
-```
 
 Run the active CLI entrypoint from the repository root:
 
@@ -104,7 +97,7 @@ http://127.0.0.1:8787/api/quotes/status
 
 ## Native Backend Smoke Checks
 
-After a CMake build, use the active backend through the CLI or through focused CTest targets. The older wealth executable may still exist in older build folders, but it is compatibility context rather than the main product path.
+After a CMake build, use the active backend through the CLI or through focused CTest targets (`npm run test:core`).
 
 Preferred checks:
 
@@ -131,7 +124,7 @@ For current implementation work:
 - ingestion and provider routing: `backend/scripts/data_ops/ingest_market_data.js`, `shared/lib/providers/`
 - validation: `shared/lib/market_validation.js`
 - web/API bridge: `backend/api/app.js`, `backend/api/server/services/cli_executor.js`
-- Kronos pipeline: `docs/kronos_pipeline.md`, `backend/core/src/ml/`
+- Kronos pipeline: `docs/engineering/specs/kronos_pipeline.md`, `backend/core/src/ml/`
 - core C++ folders: `backend/core/src/assets`, `backend/core/src/data`, `backend/core/src/ingestion`, `backend/core/src/features`, `backend/core/src/ml`, `backend/core/src/research`, `backend/core/src/risk`, `backend/core/src/execution`, `backend/core/src/portfolio`
 
 Do not add live broker execution or production portfolio-monitoring side effects until the corresponding phase is explicitly opened.

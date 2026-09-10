@@ -193,7 +193,7 @@ This chapter does not create files. It depends on understanding the existing rep
 - You assume untracked means broken.
   Fix: untracked only means Git is not tracking the file yet.
 - You treat `node_modules/` or `build/` as source.
-  Fix: compare against `docs/engineering/codebase_org.md`.
+  Fix: compare against `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md`.
 
 ## Do Not Build Yet
 

@@ -8,18 +8,12 @@ This document establishes the canonical top-level architecture, subsystem bounda
 
 The Sovereign engineering documentation suite synthesizes four industry architectural standards:
 
-```text
-+-------------------------------------------------------------------------------------------------------------------------+
-|                                  SOVEREIGN ARCHITECTURAL DOCUMENTATION SYNTHESIS MATRIX                                 |
-+----------------------+--------------------+---------------------+-------------------------------------------------------+
-| Framework            | Core Focus         | Integration Layer   | Sovereign Platform Mapping                            |
-+----------------------+--------------------+---------------------+-------------------------------------------------------+
-| ISO/IEC/IEEE 42010   | Architecture Desc  | Meta-Framework      | Stakeholders, architectural viewpoints, invariants    |
-| arc42                | Structural Pattern | Document Sections   | Context, building blocks, runtime, deployment, risks  |
-| C4 Model             | Hierarchical Zoom  | Diagrammatic Model  | Context (L1), Containers (L2), Components (L3), Code   |
-| Diátaxis             | Information Needs  | Documentation Type  | High-density "Explanation" + "Reference" synthesis    |
-+----------------------+--------------------+---------------------+-------------------------------------------------------+
-```
+| Framework | Core Focus | Integration Layer | Sovereign Platform Mapping |
+|---|---|---|---|
+| **ISO/IEC/IEEE 42010** | Architecture Description | Meta-Framework | Stakeholders, architectural viewpoints, invariants |
+| **arc42** | Structural Pattern | Document Sections | Context, building blocks, runtime, deployment, risks |
+| **C4 Model** | Hierarchical Zoom | Diagrammatic Model | Context (L1), Containers (L2), Components (L3), Code |
+| **Diátaxis** | Information Needs | Documentation Type | High-density "Explanation" + "Reference" synthesis |
 
 ### Stakeholder Concerns & Quality Attributes
 - **Quantitative Researchers**: High-fidelity backtesting, zero lookahead bias, parameter exploration with 6D novelty filters.
@@ -32,127 +26,85 @@ The Sovereign engineering documentation suite synthesizes four industry architec
 
 ### C4 Level 1: System Context Diagram
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                      C4 LEVEL 1: SYSTEM CONTEXT TOPOLOGY                                            |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|  [ HUMAN OPERATORS ]                     [ AI AGENT CLIENTS ]              [ EXTERNAL DATA PROVIDERS ]             |
-|  ┌─────────────────────────┐             ┌─────────────────────────┐       ┌───────────────────────────────┐       |
-|  │ Discretionary Trader /  │             │ Autonomous AI Agents    │       │ Binance / Yahoo / Polymarket  │       |
-|  │ Systems Architect       │             │ (Claude / MCP Clients)  │       │ Public & REST Market Streams  │       |
-|  └────────────┬────────────┘             └────────────┬────────────┘       └───────────────┬───────────────┘       |
-|               │                                       │                                    │                       |
-|               │ TUI / CLI / Web                       │ JSON-RPC (MCP)                     │ Market Data Ingestion |
-|               ▼                                       ▼                                    ▼                       |
-|  +--------------------------------------------------------------------------------------------------------------+  |
-|  |                                      SOVEREIGN TRADING PLATFORM (SV CONSOLE)                                 |  |
-|  |  Local-First Quantitative Research, Streaming Binary Storage, Risk Mitigation & Execution Mesh               |  |
-|  +--------------------------------------------------------------------------------------------------------------+  |
-|                                                       │                                                            |
-|                                                       │ Authenticated Broker Order Routing                         |
-|                                                       ▼                                                            |
-|                                          [ EXTERNAL BROKER GATEWAYS ]                                              |
-|                                          ┌─────────────────────────────────────────┐                               |
-|                                          │ Alpaca (Equities/Crypto) / Gate.io /    │                               |
-|                                          │ Polymarket CLOB Outcome Exchange        │                               |
-|                                          └─────────────────────────────────────────┘                               |
-+--------------------------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph Actors["System Actors & Clients"]
+        TRADER["Human Operators<br/>Discretionary Trader / Systems Architect"]
+        AI["AI Agent Clients<br/>Autonomous AI Agents (Claude / MCP Clients)"]
+    end
+
+    PROVIDERS["External Data Providers<br/>Binance / Yahoo / Polymarket<br/>Public & REST Market Streams"]
+
+    SV["Sovereign Trading Platform (SV Console)<br/>Local-First Quantitative Research, Streaming Binary Storage,<br/>Risk Mitigation & Execution Mesh"]
+
+    BROKERS["External Broker Gateways<br/>Alpaca (Equities/Crypto) / Gate.io /<br/>Polymarket CLOB Outcome Exchange"]
+
+    TRADER -->|TUI / CLI / Web| SV
+    AI -->|JSON-RPC via MCP| SV
+    PROVIDERS -->|Market Data Ingestion| SV
+    SV -->|Authenticated Broker Orders| BROKERS
 ```
 
 ### C4 Level 2: Container Diagram (Inter-Process Topology)
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                     C4 LEVEL 2: CONTAINER TOPOLOGY & PROCESS BOUNDARIES                             |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|  [ PRESENTATION & CONTROL CONTAINERS ]                                                                             |
-|  ┌──────────────────────────────────┐  ┌──────────────────────────────────┐  ┌──────────────────────────────────┐  |
-|  │ Sovereign CLI & Ink TUI          │  │ React 19 + Vite Web Dashboard    │  │ Model Context Protocol (MCP)     │  |
-|  │ `backend/cli/sovereign_cli.js`   │  │ `Frontend/dashboard/src/`        │  │ `backend/mcp_server/index.ts`    │  |
-|  │ Zero-alloc terminal views        │  │ Real-time WS state bridge        │  │ AI Strategy discovery tools      │  |
-|  │ [Load: 2/10 | RSS: <30MB]        │  │ [Load: 3/10 | Browser DOM]       │  │ [Load: 2/10 | Heap: <40MB]       │  |
-|  └─────────────────┬────────────────┘  └─────────────────┬────────────────┘  └─────────────────┬────────────────┘  |
-|                    │                                     │                                     │                   |
-|                    │ IPC / Subprocess                    │ HTTP / WebSocket (Port 4000)        │ JSON-RPC 2.0      |
-|                    ▼                                     ▼                                     ▼                   |
-|  [ APPLICATION GATEWAY CONTAINER ]                                                                                 |
-|  ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  |
-|  │ Authenticated Express API Server & Policy Router (`backend/api/server.js`)                                   │  |
-|  │ JWT session validation, rate limiters, WebSocket broadcaster, deployment profile enforcer                    │  |
-|  │ [Load: 4/10 | Heap: <50MB | Latency SLA: P99 <15ms]                                                          │  |
-|  └──────────────────────────────────────────────────────┬───────────────────────────────────────────────────────┘  |
-|                                                         │                                                          |
-|                                                         ▼                                                          |
-|  [ QUANTITATIVE RUNTIME & DOMAIN LOGIC (SHARED CONTAINER) ]                                                        |
-|  ┌──────────────────────────────────┐  ┌──────────────────────────────────┐  ┌──────────────────────────────────┐  |
-|  │ Virtual Sub-Positions Ledger     │  │ Fast-Path Signal Evaluator       │  │ Technical Indicator Engine       │  |
-|  │ `shared/lib/runtime/`            │  │ `shared/lib/runtime/`            │  │ `shared/lib/market/`             │  |
-|  │ Deterministic order signatures   │  │ 200-bar lookback pruning         │  │ Rolling RSI, MACD, ATR, SVM      │  |
-|  │ [Load: 3/10 | Heap: <35MB]       │  │ [Load: 3/10 | Latency: <2ms]     │  │ [Load: 4/10 | Heap: <60MB]       │  |
-|  └─────────────────┬────────────────┘  └─────────────────┬────────────────┘  └─────────────────┬────────────────┘  |
-|                    │                                     │                                     │                   |
-|                    │ FFI / POSIX Spawning                │ Direct Memory Pointers              │ Read Buffers      |
-|                    ▼                                     ▼                                     ▼                   |
-|  [ NATIVE HIGH-PERFORMANCE ENGINE CONTAINER ]                                                                      |
-|  ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  |
-|  │ C++20 Sovereign Core (`backend/core/build/sovereign_wealth`)                                                 │  |
-|  │ Binary TS Streaming Merger ($O(1)$ memory), FrameBacktester (Mode A/B), Monte Carlo PRNG, PreTradeRisk (<15μs)│  |
-|  │ [Load: 8/10 | RSS: <15MB | Latency: <10ms for 10M records]                                                   │  |
-|  └──────────────────────────────────────────────────────┬───────────────────────────────────────────────────────┘  |
-|                                                         │                                                          |
-|                                                         ▼ POSIX File I/O (`withFileLockSync`)                      |
-|  [ PERSISTENCE & HARDWARE STORAGE CONTAINER ]                                                                      |
-|  ┌──────────────────────────────────┐  ┌──────────────────────────────────┐  ┌──────────────────────────────────┐  |
-|  │ Binary TS Store (`ts/*.bin`)     │  │ Virtual Ledger (`runtime/*.json`)│  │ Provider Cache (`cache/*.json`)  │  |
-|  │ SOVT 48-byte packed format       │  │ Sub-position state JSON          │  │ Ingestion buffers & last fetch   │  |
-|  │ [Load: 2/10 | Sequential I/O]    │  │ [Load: 1/10 | Atomic Swap]       │  │ [Load: 1/10 | Ephemeral]         │  |
-|  └──────────────────────────────────┘  └──────────────────────────────────┘  └──────────────────────────────────┘  |
-+--------------------------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph Presentation["Presentation & Control Containers"]
+        CLI["Sovereign CLI & Ink TUI<br/>backend/cli/sovereign_cli.js<br/>Zero-alloc terminal views<br/>[Load: 2/10 | RSS: <30MB]"]
+        DASH["React 19 + Vite Web Dashboard<br/>Frontend/dashboard/src/<br/>Real-time WS state bridge<br/>[Load: 3/10 | Browser DOM]"]
+        MCP["Model Context Protocol (MCP)<br/>backend/mcp_server/index.ts<br/>AI Strategy discovery tools<br/>[Load: 2/10 | Heap: <40MB]"]
+    end
+
+    subgraph Gateway["Application Gateway Container"]
+        API["Native Node.js HTTP & WebSocket Server<br/>backend/api/app.js (Port 8787)<br/>RBAC validation, rate limiters, WS broadcaster<br/>[Load: 4/10 | Heap: <50MB | SLA: P99 <15ms]"]
+    end
+
+    subgraph Runtime["Quantitative Runtime & Domain Logic"]
+        SUB["Virtual Sub-Positions Ledger<br/>shared/lib/runtime/sub_positions_ledger.js<br/>[Load: 3/10 | Heap: <35MB]"]
+        SIGNAL["Fast-Path Signal Evaluator<br/>shared/lib/runtime/alpaca_bot_cycle.js<br/>[Load: 3/10 | Latency: <2ms]"]
+        IND["Technical Indicator Engine<br/>shared/lib/market/indicators.js<br/>[Load: 4/10 | Heap: <60MB]"]
+    end
+
+    subgraph NativeCore["Native High-Performance Engine Container"]
+        CPP["C++20 Sovereign Core (backend/core/)<br/>Binary TS Merger (O(1) memory), FrameBacktester (Mode A/B)<br/>Monte Carlo PRNG, PreTradeRisk (<15µs)<br/>[Load: 8/10 | RSS: <15MB | Latency: <10ms for 10M records]"]
+    end
+
+    subgraph Persistence["Persistence & Hardware Storage Container"]
+        BIN[("Binary TS Store (ts/*.bin)<br/>SOVT 48-byte packed format<br/>[Load: 2/10 | Sequential I/O]")]
+        VIRTUAL_STATE[("Virtual Ledger (runtime/*.json)<br/>Sub-position state JSON<br/>[Load: 1/10 | Atomic Swap]")]
+        CACHE[("Provider Cache (cache/*.json)<br/>Ingestion buffers & last fetch<br/>[Load: 1/10 | Ephemeral]")]
+    end
+
+    CLI -->|IPC / Subprocess| API
+    DASH -->|HTTP / WebSocket| API
+    MCP -->|JSON-RPC 2.0| API
+
+    API --> SUB
+    API --> SIGNAL
+    API --> IND
+
+    SUB -->|POSIX Spawning| CPP
+    SIGNAL -->|Direct Memory Pointers| CPP
+    IND -->|Read Buffers| CPP
+
+    CPP -->|POSIX File I/O (withFileLockSync)| Persistence
+    SUB --> Persistence
 ```
 
 ### C4 Level 3: Component Diagram (Execution & Risk Subsystem)
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                    C4 LEVEL 3: EXECUTION & RISK COMPONENT MAP                                       |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|  [ Strategy Discovery / Live Bot Cycle ]                                                                           |
-|  │ `scripts/strategies/auto_strategy_explorer.js` or `backend/cli/commands/bot.js`                                 |
-|  └──────────────────────────────────────────────────────┬───────────────────────────────────────────────────────┘  |
-|                                                         │                                                          |
-|                                                         ▼ Signal Generated: { symbol: "AAPL", side: "BUY", qty: 10 }
-|  ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  |
-|  │ 1. Virtual Sub-Position Allocator (`shared/lib/runtime/sub_positions.js`)                       [Load: 3/10] │  |
-|  │ - Allocates target quantity to virtual slice without mutating sibling bot state                               │  |
-|  │ - Emits deterministic signature: `strat_momentum_5m_1725800000000_a1b2`                                     │  |
-|  └──────────────────────────────────────────────────────┬───────────────────────────────────────────────────────┘  |
-|                                                         │                                                          |
-|                                                         ▼ Pre-Trade Verification Request                           |
-|  ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  |
-|  │ 2. Pre-Trade Risk Manager (`backend/core/src/risk_manager.cpp`)                                 [Load: 7/10] │  |
-|  │ - Circuit Breaker 1: Max Portfolio Drawdown (< 15.0%)                                                        │  |
-|  │ - Circuit Breaker 2: Max Single-Asset Concentration (< 25.0%)                                                 │  |
-|  │ - Circuit Breaker 3: Fat-Finger Deviation Check (< 5.0% price divergence)                                     │  |
-|  │ - Evaluation SLA: < 15 microseconds                                                                           │  |
-|  └──────────────────────────────────────────────────────┬───────────────────────────────────────────────────────┘  |
-|                                                         │                                                          |
-|                                                         ▼ Approved Order Parameters                                |
-|  ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  |
-|  │ 3. Broker Sizing Quantizer (`shared/lib/brokers/alpaca_wrapper.js`)                              [Load: 2/10] │  |
-|  │ - Clamps quantity to exchange `step_size` and `min_notional` rules                                            │  |
-|  │ - Enforces integer lots vs fractional equity limits                                                          │  |
-|  └──────────────────────────────────────────────────────┬───────────────────────────────────────────────────────┘  |
-|                                                         │                                                          |
-|                                                         ▼ Outbound Order Payload                                   |
-|  ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  |
-|  │ 4. Execution Gateway (`backend/gateway/src/alpaca.js` / `polymarket.js`)                        [Load: 4/10] │  |
-|  │ - Dispatches authenticated REST / WebSocket order to broker API                                              │  |
-|  │ - Records execution fill into append-only paper ledger (`storage/data/paper_ledger.jsonl`)                    │  |
-|  └──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  |
-+--------------------------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    BOT["Strategy Discovery / Live Bot Cycle<br/>scripts/strategies/auto_strategy_explorer.js<br/>backend/cli/commands/bot.js"]
+    ALLOC["1. Virtual Sub-Position Allocator<br/>shared/lib/runtime/sub_positions_ledger.js<br/>- Allocates target quantity to virtual slice<br/>- Emits signature: strat_id_tf_ts_entropy<br/>[Load: 3/10]"]
+    RISK["2. Pre-Trade Risk Manager<br/>backend/core/src/risk/<br/>- CB1: Max Drawdown (<15.0%)<br/>- CB2: Max Concentration (<25.0%)<br/>- CB3: Fat-Finger Deviation (<5.0%)<br/>- Evaluation SLA: <15µs<br/>[Load: 7/10]"]
+    QUANT["3. Broker Sizing Quantizer<br/>shared/lib/brokers/alpaca_wrapper.js<br/>- Clamps quantity to step_size and min_notional<br/>- Enforces integer lots vs fractional limits<br/>[Load: 2/10]"]
+    GATEWAY["4. Execution Gateway<br/>backend/gateway/src/alpaca_broker.js / polymarket_gateway.js<br/>- Dispatches authenticated order<br/>- Records fill to paper ledger JSONL<br/>[Load: 4/10]"]
+
+    BOT -->|Signal: symbol, side, qty| ALLOC
+    ALLOC -->|Pre-Trade Verification Request| RISK
+    RISK -->|Approved Order Parameters| QUANT
+    QUANT -->|Outbound Order Payload| GATEWAY
 ```
 
 ---
@@ -286,25 +238,10 @@ Automated trading strategies cannot mutate, close, or liquidate shares belonging
 
 The Sovereign platform implements an explicit failure isolation boundary across each functional domain:
 
-```text
-+-------------------------------------------------------------------------------------------------------------------------+
-|                                      SOVEREIGN FAILURE DOMAIN & RECOVERY MATRIX                                         |
-+----------------------+--------------------+---------------------+-------------------------------------------------------+
-| Subsystem Domain     | Primary Failure    | Circuit Breaker     | Autonomous Recovery / Fail-Safe Behavior              |
-+----------------------+--------------------+---------------------+-------------------------------------------------------+
-| Market Data Ingest   | Upstream HTTP 429/ | Exponential Backoff | Route to TTL disk cache (`storage/data/cache/`),      |
-|                      | 503 / Timeout      | with 60s Jitter     | synthesize bars from local lower-timeframe rollups    |
-+----------------------+--------------------+---------------------+-------------------------------------------------------+
-| Storage & I/O        | Lockfile Contention| `withFileLockSync`  | 5,000ms spin-wait timeout; abort transaction without  |
-|                      | / Disk Full        | File Descriptor Lock| partial state corruption; emit operational error alert|
-+----------------------+--------------------+---------------------+-------------------------------------------------------+
-| C++ Analytics Engine | NaN in TimeSeries /| Invariant Sanitizer | Reject malformed bar tuple; fall back to safe Mode B  |
-|                      | Invalid Span Range | & PreTradeRisk Gate | annotated evaluation or halt live order dispatch      |
-+----------------------+--------------------+---------------------+-------------------------------------------------------+
-| Broker Gateway       | Connection Drop /  | Heartbeat Monitor   | Reconnect WebSocket with exponential backoff; pause   |
-|                      | Order Rejection    | & Step Sizer        | strategy cycle; re-query physical broker positions    |
-+----------------------+--------------------+---------------------+-------------------------------------------------------+
-| Sub-Positions Ledger | Allocation Mismatch| Reconciliation Gate | Auto-attribute positive discrepancies to `[MANUAL]`;  |
-|                      | with Broker Net Pos| ($Q_{\text{Broker}}$| freeze bot order sizing on negative net discrepancy   |
-+----------------------+--------------------+---------------------+-------------------------------------------------------+
-```
+| Subsystem Domain | Primary Failure | Circuit Breaker | Autonomous Recovery / Fail-Safe Behavior |
+|---|---|---|---|
+| **Market Data Ingest** | Upstream HTTP 429/503/Timeout | Exponential Backoff with 60s Jitter | Route to TTL disk cache (`storage/data/cache/`), synthesize bars from local lower-timeframe rollups |
+| **Storage & I/O** | Lockfile Contention / Disk Full | `withFileLockSync` File Descriptor Lock | 5,000ms spin-wait timeout; abort transaction without partial state corruption; emit operational error alert |
+| **C++ Analytics Engine** | NaN in TimeSeries / Invalid Span Range | Invariant Sanitizer & PreTradeRisk Gate | Reject malformed bar tuple; fall back to safe Mode B annotated evaluation or halt live order dispatch |
+| **Broker Gateway** | Connection Drop / Order Rejection | Heartbeat Monitor & Step Sizer | Reconnect WebSocket with exponential backoff; pause strategy cycle; re-query physical broker positions |
+| **Sub-Positions Ledger** | Allocation Mismatch with Broker Net Pos | Reconciliation Gate ($Q_{\text{Broker}}$) | Auto-attribute positive discrepancies to `[MANUAL]`; freeze bot order sizing on negative net discrepancy |

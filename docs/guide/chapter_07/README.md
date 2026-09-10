@@ -241,7 +241,7 @@ tests/
 ## Common Failure Modes
 
 - new code goes into a random root folder
-  Fix: place it according to `codebase_org.md`.
+  Fix: place it according to `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md`.
 - runtime state and docs truth get mixed together
   Fix: keep operational state in `workspace/`.
 - generated outputs get treated as a design source
