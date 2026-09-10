@@ -1,3 +1,16 @@
+### Session Memory - 2026-09-11 session 4 — Material for MkDocs, GitHub Pages CI/CD & Strict Documentation Governance
+
+```json
+{
+  "batch": ["DOCS-MKDOCS-PAGES-STRICT-CI-1"],
+  "lifecycle": "closed",
+  "scope": "Configured Material for MkDocs static site generator with Nightscout-styled tabs, dark/light palette toggle, and Docker encapsulation preserving zero-Python invariant; authored GitHub Pages automated deployment workflow (.github/workflows/deploy-docs.yml); relocated historical macro model and draft book scaffold to docs/archive/; remediated canonical path drift across product_spec, technical_spec, web_api, capability_manifest, and stack_manifest; cataloged 55 documentation files in documentation_manifest.json; hardened filter_docs.js with historical corpus support and wired strict CI documentation gate into verify:strict.",
+  "changes": "created mkdocs.yml, .github/workflows/deploy-docs.yml, docs/index.md, docs/archive/guide/README.md, docs/archive/research/macro_model.md, workspace/handoff/2026/09/2026-09-11.md; updated .gitignore, README.md, package.json, scripts/dev/filter_docs.js, docs/README.md, docs/documentation_manifest.json, docs/engineering/specs/ (product_spec, technical_spec, web_api, capability_manifest, stack_manifest), docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md, docs/operational/guides/ (cli_quick_guide, data_ingestion, operations, testing_surface), docs/operational/local_first/ (local_first_setup, local_first_migration), docs/research/README.md, backend/cli/commands/research/research_mass_bt.js, workspace/STATE.md, workspace/PROMPT_LOG.md, workspace/SESSION_MEMORY.md",
+  "verification": "npm run docs:filter -- --strict (CLEAN, 0 defects across 4 quadrants); npm run docs:build (PASS, 1.9s build in Docker); npm run hygiene (100% Pass); npm run test:structure (100% Pass, 28/28); npm run test:safety (100% Pass, 43/43); npm run test:core (100% Pass, 34/34 CTests); npm run verify:strict (100% Pass)",
+  "boundaries": "zero-key local development policy intact; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false; zero local Python virtual environment created"
+}
+```
+
 ### Session Memory - 2026-09-10 session 3 — Documentation Overhaul, Standalone Filter Tool, GitHub-Native Mermaid & Diátaxis Alignment
 
 ```json
