@@ -46,7 +46,7 @@ flowchart LR
 
 ### Invariant 4: Virtual Sub-Positions Isolation
 - Multiple autonomous strategies trade the same underlying physical asset (e.g., SPY, BTC/USD) without collision.
-- The virtual sub-positions ledger (`shared/lib/trade/sub_positions_ledger.js`) tracks inventory using deterministic signatures:
+- The virtual sub-positions ledger (`shared/lib/runtime/sub_positions_ledger.js`) tracks inventory using deterministic signatures:
   - Automated Strategy: `strat_<id>_<timeframe>_<timestamp>_<entropy>`
   - Manual CLI Trader: `manual_cli_<symbol>_<timestamp>_<entropy>`
 - Reconciles physical broker holdings while isolating strategy PnL, exits, and allocations.
@@ -73,18 +73,18 @@ flowchart LR
 | **Alpha Research** | Autonomous AI Strategy Explorer (30m Loop) | **Implemented** | `scripts/strategies/auto_strategy_explorer.js` | `npm run test:safety` |
 | **Alpha Research** | 6D Novelty Parameter Hypercube | **Implemented** | `shared/lib/strategy/strategy_generator.js` | `npm run test:structure` |
 | **Alpha Research** | Rolling Feature Frame Engineering | **Implemented** | `backend/core/src/features/` | `npm run test:core` |
-| **Execution** | Alpaca Broker Gateway (Paper & Live) | **Implemented** | `backend/gateway/src/alpaca_broker.js` | `npm run test:safety` |
-| **Execution** | Fractional Step Sizing (0.001 eq, 0.0001 crypto) | **Implemented** | `shared/lib/trade/strategy.js` | `npm run test:safety` |
-| **Execution** | Virtual Sub-Positions Ledger (`sub_positions.json`) | **Implemented** | `shared/lib/trade/sub_positions_ledger.js` | `npm run test:safety` |
-| **Prediction** | Polymarket Gamma/CLOB Ingestion | **Implemented** | `backend/gateway/src/polymarket_gateway.js` | `npm run test:contracts` |
-| **Prediction** | 1s L2 Orderbook Snapshot Archiving | **Implemented** | `backend/gateway/src/orderbook_archiver.js` | `npm run test:contracts` |
+| **Execution** | Alpaca Broker Gateway (Paper & Live) | **Implemented** | `backend/gateway/src/adapters/alpaca_adapter.ts` | `npm run test:safety` |
+| **Execution** | Fractional Step Sizing (0.001 eq, 0.0001 crypto) | **Implemented** | `shared/lib/trading/position_sizing.js` | `npm run test:safety` |
+| **Execution** | Virtual Sub-Positions Ledger (`sub_positions.json`) | **Implemented** | `shared/lib/runtime/sub_positions_ledger.js` | `npm run test:safety` |
+| **Prediction** | Polymarket Gamma/CLOB Ingestion | **Implemented** | `shared/lib/brokers/polymarket_env.js` | `npm run test:contracts` |
+| **Prediction** | 1s L2 Orderbook Snapshot Archiving | **Implemented** | `shared/lib/market/polymarket_history.js` | `npm run test:contracts` |
 | **Prediction** | Virtual Paper Settlement Simulator | **Implemented** | `backend/gateway/src/paper_ledger.js` | `npm run test:contracts` |
 | **Presentation** | Ink v7 TUI with DEC Mode 2026 Sync Output | **Implemented** | `backend/cli/sovereign_dashboard.mjs` | `npm run test:structure` |
 | **Presentation** | React 19 + Vite Web Dashboard | **Implemented** | `Frontend/dashboard/src/` | `npm run test:api` |
 | **Presentation** | Native Node.js HTTP Server (40 Route Keys) | **Implemented** | `backend/api/app.js` | `npm run test:api` |
-| **Presentation** | Model Context Protocol (MCP) Server | **Implemented** | `backend/mcp_server/server.js` | `npm run test:api` |
+| **Presentation** | Model Context Protocol (MCP) Server | **Implemented** | `backend/mcp_server/src/index.ts` | `npm run test:api` |
 | **Advanced Research**| Kronos CNN Multi-Asset Inference (ONNX) | *Research-Only* | `backend/core/src/ml/` | `npm run test:core` |
-| **Advanced Research**| Macro & Alternative Sentiment Series | *Research-Only* | `shared/lib/market/macro_store.js` | `npm run test:macro` |
+| **Advanced Research**| Macro & Alternative Sentiment Series | *Research-Only* | `shared/lib/data/macro_store.js` | `npm run test:macro` |
 
 ---
 

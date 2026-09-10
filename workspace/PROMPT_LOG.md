@@ -1,5 +1,9 @@
 # Prompt Log - 2026-09-10
 
+## Session 4 — Boot & Strategy Calibration / Remote Review - 2026-09-10 session 4
+Received user prompts:
+- "/session-orchestrator"
+
 ## Session Closeout — Documentation Overhaul, GitHub-Native Mermaid & Diátaxis Alignment - 2026-09-10 session 3
 Received user prompts:
 - "/session-orchestrator"
@@ -133,6 +137,32 @@ Accomplished:
 - Partitioned 32 strategy configuration YAMLs into `config/strategies/automated/`, `config/strategies/curated/`, and `config/strategies/fixtures/`.
 - Reorganized `workspace/` into `governance/` and `protocols/` subdirectories, retaining active session direction at `workspace/` root.
 - Categorized tooling and ML training scripts into `scripts/mcp/`, `scripts/ml/training/`, and `scripts/tools/`.
+
+---
+
+## Session 4 Prompt Log (2026-09-10 / 2026-09-11)
+
+Prompts:
+- "i would like to take a look onto the docs once again, i want you to ask me several question regarding it, do a blasth through first"
+- "fan out sub agents"
+- "https://squidfunk.github.io/mkdocs-material/getting-started/"
+- "https://nightscout.github.io/ make it kinda like this github page"
+- "blast out more subagents to do reseach on how to write proper documentation, what should be kept, delteed(file by file)"
+- "check the content of it also,and use gemini as subagetns"
+- "ask me questions as a second opinion of what file to keep/leave/delete and why, also include when it was first written"
+- "more questions"
+- "github page?"
+- "commit the docs overhaul and push to main"
+
+Accomplished:
+- Configured Nightscout-styled Material for MkDocs static site generator in `mkdocs.yml` with sticky top navigation tabs, instant search suggestions, and dark/light palette toggle.
+- Authored GitHub Pages automated deployment workflow in `.github/workflows/deploy-docs.yml` building MkDocs inside Docker (`squidfunk/mkdocs-material`) on push to `main`.
+- Added zero-Python Docker-encapsulated commands to `package.json` (`npm run docs:serve`, `npm run docs:build`).
+- Relocated historical wealth models and guide draft scaffold to `docs/archive/` (`macro_model.md`, `guide/`).
+- Remediated canonical path drift across `product_spec.md`, `technical_spec.md`, `web_api.md`, `capability_manifest.md`, `stack_manifest.md`, and `05_EXECUTION_SUB_POSITIONS_AND_RISK.md`.
+- Registered 55 documentation files in `docs/documentation_manifest.json` achieving complete coverage across all Diátaxis quadrants.
+- Hardened `scripts/dev/filter_docs.js` and wired `npm run docs:filter -- --strict` into `verify:strict`.
+- Verified 100% clean health scorecard (0 uncataloged, 0 stale, 0 dead links, 0 box art) and 0 test regressions across 28 structure tests, 43 safety tests, and 34 native CTests.
 - Purged redundant shadow files (`models.js`, `common.js`, `manifest.json`), scratch binaries, and untracked artifacts.
 - Upgraded `backend/mcp_server/tsconfig.json` module resolution to `NodeNext` to resolve TypeScript compilation errors.
 - Verified 100% pass rate across all verification gates (`npm run test:structure`, `npm run audit:documentation`, `npm run hygiene`, `npm run test:core`, `npm run test:safety`, `npm run test:data`, `npm run test:api`, `npm test`).

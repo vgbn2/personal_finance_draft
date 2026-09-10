@@ -11,7 +11,7 @@ This guide is for existing users who already have a `.env`, local paper-trading 
 
 ## Recommended flow
 
-```powershell
+```bash
 sovereign doctor --json
 sovereign setup alpaca
 sovereign setup polymarket

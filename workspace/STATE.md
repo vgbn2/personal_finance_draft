@@ -1,7 +1,7 @@
 # Current Workspace State
 
 ## Current Phase
-Documentation Engineering Overhaul (Diátaxis, GitHub-Native Mermaid, Standalone Filter Tool, Canonical Specs) - COMPLETED
+Documentation Engineering Overhaul (Diátaxis, MkDocs Material GitHub Pages, Canonical Specs) - ACTIVE
 
 - **Documentation Engineering Overhaul & GitHub Standards (Diátaxis, Mermaid, Standalone Filter Tool)**:
   - **Phase 0: Standalone Documentation Filter Tool**: Authored `scripts/dev/filter_docs.js` (zero-dependency native Node.js) and wired as `npm run docs:filter` and `npm run docs:filter -- --strict` in `npm run verify:strict`. Features scorecard calculation, orphan detection, broken relative link checking, stale path identification, and ASCII box-art detection.

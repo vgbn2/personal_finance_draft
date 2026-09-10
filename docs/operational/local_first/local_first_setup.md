@@ -4,21 +4,21 @@ This guide is the default onboarding path for a new user on their own machine.
 
 ## Install
 
-```powershell
+```bash
 npm install
 npm link
 ```
 
 ## Configure
 
-```powershell
+```bash
 sovereign setup
 sovereign doctor --json
 ```
 
 Broker-specific setup:
 
-```powershell
+```bash
 sovereign setup alpaca
 sovereign setup gateio
 sovereign setup mt5
@@ -28,7 +28,7 @@ sovereign setup supabase
 
 ## Run
 
-```powershell
+```bash
 sovereign status --json
 sovereign doctor runtime --json
 sovereign doctor data --json
