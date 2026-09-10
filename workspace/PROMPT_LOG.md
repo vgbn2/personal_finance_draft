@@ -5,6 +5,7 @@ Received user prompts:
 - "/session-orchestrator"
 - "check if its actually wrong stuff, and doesnt the last session covered"
 - "push to main and rsync to proxmox"
+- "nexte session, refine the specs"
 
 Accomplished:
 - Re-verified test suite integrity across CTests (34/34), safety tests (43/43), structure contracts (12/12), and hygiene.
