@@ -68,9 +68,10 @@ function renderMassBtMatrix(payload) {
     let dataRow = '| ' + padCell(row.name, 25) + ' ';
     for (const tf of timeframes) {
       const cell = row.timeframes ? row.timeframes[tf] : null;
-      if (cell && cell.trades > 0) {
-        const retText = (cell.net_return * 100).toFixed(1) + '%';
-        const cellText = `${retText} [${cell.trades}]`;
+      if (cell && (cell.trades === undefined ? typeof cell.net_return === 'number' : cell.trades > 0)) {
+        const sign = cell.net_return > 0 ? '+' : '';
+        const retText = sign + (cell.net_return * 100).toFixed(1) + '%';
+        const cellText = cell.trades !== undefined ? `${retText} [${cell.trades}]` : retText;
         const padded = padCell(cellText, 13, true);
         const color = cell.net_return > 0 ? A.GREEN : (cell.net_return < 0 ? A.RED : A.RESET);
         dataRow += '| ' + color + padded + A.RESET + ' ';

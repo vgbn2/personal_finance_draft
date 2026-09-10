@@ -17,12 +17,12 @@ flowchart TD
         CLI["Discretionary CLI Operator<br/>Manual buy/sell commands<br/>ID: manual_cli_SPY_1756148200000_8c1e4d<br/>[Load: 1/10 | SLA: <5μs]"]
     end
 
-    subgraph Broker["Broker Execution Gateway (backend/gateway/src/alpaca.js) [Load: 3/10 | 120-250ms]"]
+    subgraph Broker["Broker Execution Gateway (backend/gateway/src/adapters/alpaca_adapter.ts) [Load: 3/10 | 120-250ms]"]
         B1["Sets client_order_id = signature"]
         B2["Clamps quantity: Q_clamped = floor(Q / q_step) * q_step"]
     end
 
-    subgraph Ledger["Atomic Ledger Mutation Engine (shared/lib/runtime/sub_positions.js) [Load: 2/10 | <1.5ms]"]
+    subgraph Ledger["Atomic Ledger Mutation Engine (shared/lib/runtime/sub_positions_ledger.js) [Load: 2/10 | <1.5ms]"]
         L1["1. withFileLockSync('sub_positions.json.lock')"]
         L2["2. Mutate sub-position state in memory"]
         L3["3. Write payload to sub_positions.json.tmp"]
@@ -30,7 +30,7 @@ flowchart TD
     end
 
     subgraph Invariant["Broker Reconciliation Invariant [Load: 1/10]"]
-        INV["Q_BrokerPhysical(S) = sum_k q_k(S) + q_[MANUAL](S)<br/>• Discrepancy > 0: Auto-attributed to [MANUAL] residual<br/>• Discrepancy < 0: Fails safe, blocks unauthorized bot liquidation"]
+        INV["Q_BrokerPhysical(S) = sum_k q_k(S) + q_manual(S)<br/>• Discrepancy > 0: Auto-attributed to manual residual<br/>• Discrepancy < 0: Fails safe, blocks unauthorized bot liquidation"]
     end
 
     BOTS --> Broker
@@ -109,13 +109,13 @@ Example: `manual_cli_SPY_1756148200000_c3e8d2`
 
 The reconciliation algorithm enforces exact physical-to-virtual balance equality:
 
-$$Q_{\text{BrokerPhysical}}(S) = \sum_{k \in \text{BotStrategies}} q_k(S) + q_{\text{[MANUAL]}}(S)$$
+$$Q_{\text{BrokerPhysical}}(S) = \sum_{k \in \text{BotStrategies}} q_k(S) + q_{\text{manual}}(S)$$
 
 ### Reconciliation Invariant Cases:
-1. **Case A (Exact Match)**: $\sum q_k(S) = Q_{\text{BrokerPhysical}}(S) \implies q_{\text{[MANUAL]}}(S) = 0$.
+1. **Case A (Exact Match)**: $\sum q_k(S) = Q_{\text{BrokerPhysical}}(S) \implies q_{\text{manual}}(S) = 0$.
 2. **Case B (Excess Physical Shares)**: $Q_{\text{BrokerPhysical}}(S) > \sum q_k(S)$.
-   $$q_{\text{[MANUAL]}}(S) := Q_{\text{BrokerPhysical}}(S) - \sum q_k(S)$$
-   Excess shares are isolated under `[MANUAL]` ownership so bots cannot liquidate them.
+   $$q_{\text{manual}}(S) := Q_{\text{BrokerPhysical}}(S) - \sum q_k(S)$$
+   Excess shares are isolated under manual residual ownership so bots cannot liquidate them.
 3. **Case C (Deficit / Under-Allocation)**: $Q_{\text{BrokerPhysical}}(S) < \sum q_k(S)$.
    Fails closed: flags an operational anomaly, pauses automated sell signals, and alerts the operator.
 

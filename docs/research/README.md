@@ -17,6 +17,6 @@ Validated quantitative theory, model assumptions, and research-only methodology 
 ## Current Entry Points
 
 - [Quantitative research overview](quant_research.md)
-- [Macro model](macro_model.md)
+- [Macro model (Historical)](../archive/research/macro_model.md)
 
 Current research pages must link to the source-owned algorithm record when implementation exists.

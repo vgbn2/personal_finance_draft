@@ -96,10 +96,10 @@ function findMarkdownFiles(dir, fileList = []) {
 }
 
 function classifyQuadrant(relPath) {
-  if (relPath.startsWith('docs/archive/') || relPath.startsWith('docs/memory/')) {
+  if (relPath.startsWith('docs/archive/') || relPath.startsWith('docs/memory/') || relPath.startsWith('docs/guide/')) {
     return 'Archive / Historical';
   }
-  if (relPath.startsWith('docs/codebase_tour/') || relPath.startsWith('docs/guide/')) {
+  if (relPath.startsWith('docs/codebase_tour/')) {
     return 'Quadrant 1: Tutorials & Tours';
   }
   if (relPath.startsWith('docs/operational/') || relPath.includes('RUNBOOK') || relPath.includes('QUICKSTART') || relPath.includes('CONTRIBUTING')) {
@@ -156,8 +156,9 @@ function analyzeDocs(options) {
     }
     results.quadrants[quad].files++;
 
-    // 1. Uncataloged check (skip archive / memory)
-    const isArchived = relPath.startsWith('docs/archive/') || relPath.startsWith('docs/memory/');
+    // 1. Uncataloged check (skip archive / memory / historical corpus)
+    const historicalRoots = manifest.historical_corpus?.roots || ['docs/archive', 'docs/memory', 'docs/guide'];
+    const isArchived = historicalRoots.some(r => relPath === r || relPath.startsWith(r + '/'));
     if (!isArchived && !catalogedSet.has(relPath)) {
       results.uncataloged.push(relPath);
       results.quadrants[quad].defects++;

@@ -32,354 +32,1694 @@
   },
   "documents": [
     {
-      "path": "README.md",
-      "type": "orientation",
-      "audience": ["operator", "contributor", "researcher", "api-developer", "deployment-maintainer"],
-      "owner": "platform",
-      "status": "canonical",
-      "source_paths": ["backend/cli/sovereign_cli.js", "backend/api/app.js", "backend/core/CMakeLists.txt", "docs/README.md"],
-      "review_triggers": ["public-entrypoint", "safety-boundary", "installation", "documentation-map"]
-    },
-    {
-      "path": "docs/README.md",
-      "type": "orientation",
-      "audience": ["all-developers", "operators"],
-      "owner": "documentation",
-      "status": "canonical",
-      "source_paths": ["docs/documentation_manifest.json"],
-      "review_triggers": ["document-added", "document-status", "information-architecture"]
-    },
-    {
       "path": "docs/ARCHITECTURE.md",
       "type": "orientation",
-      "audience": ["contributors", "maintainers"],
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
       "owner": "architecture",
       "status": "canonical",
-      "source_paths": ["docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md", "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md", "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md", "docs/OPERATIONAL_SOAK_RUNBOOK.md", "docs/modules/TEMPLATE.md"],
-      "review_triggers": ["top-level-domain", "architecture-entrypoint", "module-catalog"]
-    },
-    {
-      "path": "docs/engineering/README.md",
-      "type": "orientation",
-      "audience": ["contributors", "maintainers", "operators"],
-      "owner": "engineering",
-      "status": "canonical",
-      "source_paths": ["docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md", "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md", "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md", "docs/engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md", "docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md", "docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md", "docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md", "docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md"],
-      "review_triggers": ["engineering-index", "reading-order"]
-    },
-    {
-      "path": "docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md",
-      "type": "explanation",
-      "audience": ["contributors", "maintainers", "security-reviewers"],
-      "owner": "architecture",
-      "status": "canonical",
-      "source_paths": ["backend/cli/sovereign_cli.js", "backend/api/app.js", "backend/core/CMakeLists.txt", "shared/lib/settings/runtime_policy.js"],
-      "review_triggers": ["architecture-overview", "codebase-org", "invariants"]
-    },
-    {
-      "path": "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md",
-      "type": "explanation",
-      "audience": ["contributors", "data-maintainers", "operators"],
-      "owner": "data",
-      "status": "canonical",
-      "source_paths": ["shared/lib/market/ts_index_storage.js", "shared/lib/market/append_only_segments.js", "shared/lib/market/quote_router.js", "shared/lib/market/indicators.js"],
-      "review_triggers": ["binary-storage", "sovt-layout", "ingestion-pipeline", "data-repair"]
-    },
-    {
-      "path": "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md",
-      "type": "explanation",
-      "audience": ["contributors", "quantitative-researchers", "native-engineers"],
-      "owner": "native-core",
-      "status": "canonical",
-      "source_paths": ["backend/core/src/data/binary_ts_merger.cpp", "backend/core/src/backtest/frame_backtester.cpp", "backend/core/src/risk/pre_trade_risk.cpp"],
-      "review_triggers": ["cpp-engine", "binary-ts-merger", "frame-backtester", "risk-engine"]
-    },
-    {
-      "path": "docs/engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md",
-      "type": "explanation",
-      "audience": ["quantitative-researchers", "ai-engineers", "contributors"],
-      "owner": "research",
-      "status": "canonical",
-      "source_paths": ["scripts/strategies/auto_strategy_explorer.js", "backend/mcp_server/tools/strategy_explorer.ts", "backend/cli/commands/strategy/strategy.js"],
-      "review_triggers": ["strategy-explorer", "novelty-metric", "mcp-workbench", "yaml-registry"]
-    },
-    {
-      "path": "docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md",
-      "type": "explanation",
-      "audience": ["contributors", "execution-maintainers", "operators"],
-      "owner": "execution",
-      "status": "canonical",
-      "source_paths": ["shared/lib/runtime/sub_positions_ledger.js", "shared/lib/brokers/alpaca_env.js", "shared/lib/brokers/polymarket_env.js"],
-      "review_triggers": ["sub-positions", "deterministic-signatures", "broker-reconciliation", "manual-attribution"]
-    },
-    {
-      "path": "docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md",
-      "type": "explanation",
-      "audience": ["prediction-market-researchers", "data-maintainers", "operators"],
-      "owner": "prediction",
-      "status": "canonical",
-      "source_paths": ["shared/lib/market/polymarket_history.js", "backend/gateway/src/paper_ledger.js"],
-      "review_triggers": ["prediction-markets", "polymarket-clob", "orderbook-archiving", "paper-ledger"]
-    },
-    {
-      "path": "docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md",
-      "type": "explanation",
-      "audience": ["security-reviewers", "deployment-maintainers", "api-developers"],
-      "owner": "platform",
-      "status": "canonical",
-      "source_paths": ["backend/mcp_server/lib/access_control.ts", "backend/api/app.js", "infra/docker/docker-compose.yml"],
-      "review_triggers": ["security-model", "rbac", "mcp-api", "docker-topology", "hpdesk-soak"]
-    },
-    {
-      "path": "docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md",
-      "type": "explanation",
-      "audience": ["contributors", "systems-engineers", "researchers"],
-      "owner": "research",
-      "status": "canonical",
-      "source_paths": ["backend/core/src/risk/cost_model.cpp", "shared/lib/market/indicators.js", "shared/lib/runtime/sub_positions_ledger.js"],
-      "review_triggers": ["financial-primer", "clob-mechanics", "risk-metrics"]
-    },
-    {
-      "path": "docs/OPERATIONAL_SOAK_RUNBOOK.md",
-      "type": "how-to",
-      "audience": ["operators", "deployment-maintainers"],
-      "owner": "operations",
-      "status": "canonical",
-      "source_paths": ["infra/docker/docker-compose.yml", "shared/lib/settings/deployment_profile.js", "backend/cli/sovereign_cli.js"],
-      "review_triggers": ["docker-topology", "hpdesk-soak", "central-host-writer"]
-    },
-    {
-      "path": "docs/RESEARCH_STRATEGY_EXPLORER.md",
-      "type": "guide",
-      "audience": ["ai-agents", "researchers", "contributors"],
-      "owner": "research",
-      "status": "canonical",
-      "source_paths": ["scripts/strategies/auto_strategy_explorer.js", "backend/mcp_server/tools/strategy_explorer.ts"],
-      "review_triggers": ["autonomous-research", "mcp-tooling", "yaml-registry"]
-    },
-    {
-      "path": "docs/engineering/standards/documentation_standard.md",
-      "type": "reference",
-      "audience": ["contributors", "reviewers"],
-      "owner": "documentation",
-      "status": "canonical",
-      "source_paths": ["docs/documentation_manifest.json", "docs/modules/TEMPLATE.md"],
-      "review_triggers": ["documentation-workflow", "corpus-policy", "review-standard"]
-    },
-    {
-      "path": "docs/engineering/specs/product_spec.md",
-      "type": "reference",
-      "audience": ["contributors", "maintainers", "operators"],
-      "owner": "platform",
-      "status": "canonical",
-      "source_paths": ["backend/cli/sovereign_cli.js", "backend/api/app.js", "backend/core/CMakeLists.txt"],
-      "review_triggers": ["product-invariants", "capabilities-matrix"]
-    },
-    {
-      "path": "docs/engineering/specs/technical_spec.md",
-      "type": "reference",
-      "audience": ["contributors", "maintainers", "native-engineers"],
-      "owner": "architecture",
-      "status": "canonical",
-      "source_paths": ["backend/core/src/data/binary_ts_merger.cpp", "shared/lib/market/ts_index_storage.js", "backend/api/app.js"],
-      "review_triggers": ["binary-sovt", "locking", "concurrency"]
-    },
-    {
-      "path": "docs/engineering/specs/web_api.md",
-      "type": "reference",
-      "audience": ["api-developers", "frontend-developers", "operators"],
-      "owner": "platform",
-      "status": "canonical",
-      "source_paths": ["backend/api/app.js", "backend/api/server/routes/index.js"],
-      "review_triggers": ["api-routes", "rbac", "websocket-bridge"]
-    },
-    {
-      "path": "docs/engineering/specs/capability_manifest.md",
-      "type": "reference",
-      "audience": ["contributors", "maintainers"],
-      "owner": "platform",
-      "status": "canonical",
-      "source_paths": ["backend/core/CMakeLists.txt", "backend/cli/sovereign_cli.js"],
-      "review_triggers": ["capability-matrix", "cli-commands", "ctest-catalog"]
-    },
-    {
-      "path": "docs/engineering/specs/stack_manifest.md",
-      "type": "reference",
-      "audience": ["contributors", "maintainers", "devops"],
-      "owner": "platform",
-      "status": "canonical",
-      "source_paths": ["package.json", "CMakeLists.txt", "backend/core/CMakeLists.txt"],
-      "review_triggers": ["toolchain", "runtime-versions", "dependencies"]
-    },
-    {
-      "path": "docs/engineering/specs/tui_feature_map.md",
-      "type": "reference",
-      "audience": ["cli-developers", "operators"],
-      "owner": "cli",
-      "status": "canonical",
-      "source_paths": ["backend/cli/sovereign_dashboard.mjs", "backend/cli/tui/manifest.js"],
-      "review_triggers": ["tui-features", "keyboard-shortcuts", "views"]
-    },
-    {
-      "path": "docs/engineering/specs/supabase_integration.md",
-      "type": "reference",
-      "audience": ["backend-developers", "database-maintainers"],
-      "owner": "platform",
-      "status": "canonical",
-      "source_paths": ["backend/api/server/routes/account/supabase_config.js"],
-      "review_triggers": ["supabase-client", "auth-session"]
-    },
-    {
-      "path": "docs/engineering/specs/kronos_pipeline.md",
-      "type": "reference",
-      "audience": ["quantitative-researchers", "native-engineers"],
-      "owner": "native-core",
-      "status": "canonical",
-      "source_paths": ["backend/core/src/ml/kronos_tokenizer.cpp", "backend/core/src/ml/kronos_tensor_builder.cpp"],
-      "review_triggers": ["kronos-pipeline", "onnx-inference"]
-    },
-    {
-      "path": "docs/archive/rust_mirror_status.md",
-      "type": "reference",
-      "audience": ["contributors", "historical"],
-      "owner": "native-core",
-      "status": "historical",
-      "source_paths": ["backend/core/CMakeLists.txt"],
-      "review_triggers": ["historical-rust-parity"]
+      "source_paths": [
+        "docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md",
+        "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md",
+        "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md",
+        "docs/OPERATIONAL_SOAK_RUNBOOK.md",
+        "docs/modules/TEMPLATE.md"
+      ],
+      "review_triggers": [
+        "top-level-domain",
+        "architecture-entrypoint",
+        "module-catalog"
+      ]
     },
     {
       "path": "docs/archive/native_maintenance_notes.md",
       "type": "reference",
-      "audience": ["contributors", "historical"],
+      "audience": [
+        "contributors",
+        "historical"
+      ],
       "owner": "native-core",
       "status": "historical",
-      "source_paths": ["backend/core/CMakeLists.txt"],
-      "review_triggers": ["historical-c-engine-notes"]
+      "source_paths": [
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "historical-c-engine-notes"
+      ]
     },
     {
-      "path": "docs/sections/interface/terminal-dashboard/README.md",
+      "path": "docs/archive/rust_mirror_status.md",
       "type": "reference",
-      "audience": ["cli-developers", "operators"],
-      "owner": "cli",
-      "status": "canonical",
-      "source_paths": ["backend/cli/sovereign_dashboard.mjs", "backend/cli/tui/dashboard_exec.js"],
-      "review_triggers": ["terminal-dashboard", "responsive-layout", "pin-gate"]
-    },
-    {
-      "path": "docs/sections/research/rsi-reversal-analysis/README.md",
-      "type": "reference",
-      "audience": ["quantitative-researchers"],
-      "owner": "research",
-      "status": "canonical",
-      "source_paths": ["shared/lib/strategy/rsi_backtest.js"],
-      "review_triggers": ["rsi-smoothing", "event-crossover", "statistical-summary"]
-    },
-    {
-      "path": "docs/sections/research/correlation-analysis/README.md",
-      "type": "reference",
-      "audience": ["quantitative-researchers"],
-      "owner": "research",
-      "status": "canonical",
-      "source_paths": ["backend/cli/commands/tools/backend_correlation.js"],
-      "review_triggers": ["correlation-matrix", "symbol-alignment", "synthetic-formulas"]
-    },
-    {
-      "path": "docs/sections/research/backtest-execution/README.md",
-      "type": "reference",
-      "audience": ["quantitative-researchers", "contributors"],
-      "owner": "research",
-      "status": "canonical",
-      "source_paths": ["backend/cli/commands/research/research.js", "shared/lib/strategy/backtest.js"],
-      "review_triggers": ["backtest-execution", "feature-frame-split", "engine-dispatch"]
-    },
-    {
-      "path": "docs/sections/data/polymarket-history-archive/README.md",
-      "type": "reference",
-      "audience": ["research-maintainers", "data-maintainers"],
-      "owner": "data",
-      "status": "needs_refresh",
-      "source_paths": ["shared/lib/market/polymarket_history.js", "shared/lib/market/polymarket_features.js"],
-      "test_paths": ["tests/scripts/integration/polymarket/polymarket_history_archive.test.js", "tests/scripts/strategy/polymarket_backtest.test.js", "tests/scripts/integration/polymarket/polymarket_orderbook_lite.test.js"],
-      "review_triggers": ["archive-schema", "archive-reader", "archive-backfill", "price-normalization", "orderbook-capture", "provider-cache"]
-    },
-    {
-      "path": "docs/sections/execution/polymarket-bot-cycle/README.md",
-      "type": "reference",
-      "audience": ["execution-maintainers", "security-reviewers"],
-      "owner": "execution",
-      "status": "needs_refresh",
-      "source_paths": ["backend/gateway/src/cycle.ts"],
-      "test_paths": ["tests/scripts/integration/polymarket/polymarket_bot_risk.test.js", "tests/scripts/integration/polymarket/polymarket_preflight.test.js"],
-      "review_triggers": ["bot-cycle", "bot-safety", "policy-enforcement", "balance-gate", "order-intent"]
-    },
-    {
-      "path": "docs/modules/documentation-retrieval.md",
-      "type": "reference",
-      "audience": ["contributors", "maintainers"],
-      "owner": "documentation",
-      "status": "canonical",
-      "source_paths": ["shared/lib/ai/docs_rag_indexer.js"],
-      "review_triggers": ["documentation-retrieval", "rag-system"]
+      "audience": [
+        "contributors",
+        "historical"
+      ],
+      "owner": "native-core",
+      "status": "historical",
+      "source_paths": [
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "historical-rust-parity"
+      ]
     },
     {
       "path": "docs/atlas/algorithms/documentation/tfidf-ranking.md",
       "type": "atlas",
       "id": "atlas.algorithm.documentation.tfidf-ranking",
       "kind": "algorithm",
-      "audience": ["contributors", "researchers"],
+      "audience": [
+        "contributors",
+        "researchers"
+      ],
       "owner": "documentation",
       "status": "canonical",
-      "source_paths": ["shared/lib/ai/docs_rag_indexer.js"],
-      "test_paths": ["tests/scripts/tools/docs_rag.test.js"],
-      "review_triggers": ["tokenization-change", "ranking-formula-change", "chunking-change"]
+      "source_paths": [
+        "shared/lib/ai/docs_rag_indexer.js"
+      ],
+      "test_paths": [
+        "tests/scripts/tools/docs_rag.test.js"
+      ],
+      "review_triggers": [
+        "tokenization-change",
+        "ranking-formula-change",
+        "chunking-change"
+      ]
+    },
+    {
+      "path": "docs/atlas/algorithms/README.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "atlas-structure-change"
+      ]
+    },
+    {
+      "path": "docs/atlas/algorithms/TEMPLATE.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "atlas-structure-change"
+      ]
     },
     {
       "path": "docs/atlas/protocols/alpaca_paper_auth.md",
       "type": "atlas",
       "id": "atlas.protocol.broker.alpaca-paper-auth",
       "kind": "protocol",
-      "audience": ["operators", "contributors"],
+      "audience": [
+        "operators",
+        "contributors"
+      ],
       "owner": "execution",
       "status": "canonical",
-      "source_paths": ["shared/lib/brokers/alpaca_paper_auth_diagnostic.js", "shared/lib/brokers/alpaca_env.js"],
-      "test_paths": ["tests/scripts/lib/alpaca_paper_auth_diagnostic.test.js", "tests/scripts/integration/trading/alpaca_env_scope.test.js"],
-      "review_triggers": ["alpaca-sdk-major-version-bump", "env-var-name-change", "protocol-contract-change"]
+      "source_paths": [
+        "shared/lib/brokers/alpaca_paper_auth_diagnostic.js",
+        "shared/lib/brokers/alpaca_env.js"
+      ],
+      "test_paths": [
+        "tests/scripts/lib/alpaca_paper_auth_diagnostic.test.js",
+        "tests/scripts/integration/trading/alpaca_env_scope.test.js"
+      ],
+      "review_triggers": [
+        "alpaca-sdk-major-version-bump",
+        "env-var-name-change",
+        "protocol-contract-change"
+      ]
     },
     {
       "path": "docs/atlas/protocols/documentation/corpus-selection.md",
       "type": "atlas",
       "id": "atlas.protocol.documentation.corpus-selection",
       "kind": "protocol",
-      "audience": ["contributors", "maintainers"],
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
       "owner": "documentation",
       "status": "canonical",
-      "source_paths": ["shared/lib/ai/docs_rag_indexer.js", "docs/documentation_manifest.json"],
-      "test_paths": ["tests/scripts/tools/docs_rag.test.js", "tests/scripts/architecture/cli/core/documentation_contract.test.js"],
-      "review_triggers": ["documentation-manifest-change", "corpus-policy-change", "workspace-boundary-change"]
+      "source_paths": [
+        "shared/lib/ai/docs_rag_indexer.js",
+        "docs/documentation_manifest.json"
+      ],
+      "test_paths": [
+        "tests/scripts/tools/docs_rag.test.js",
+        "tests/scripts/architecture/cli/core/documentation_contract.test.js"
+      ],
+      "review_triggers": [
+        "documentation-manifest-change",
+        "corpus-policy-change",
+        "workspace-boundary-change"
+      ]
+    },
+    {
+      "path": "docs/atlas/protocols/README.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "atlas-structure-change"
+      ]
+    },
+    {
+      "path": "docs/atlas/protocols/TEMPLATE.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "atlas-structure-change"
+      ]
+    },
+    {
+      "path": "docs/atlas/README.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "atlas-structure-change"
+      ]
     },
     {
       "path": "docs/atlas/structures/documentation/rag-index-payload.md",
       "type": "atlas",
       "id": "atlas.structure.documentation.rag-index-payload",
       "kind": "structure",
-      "audience": ["contributors", "maintainers"],
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
       "owner": "documentation",
       "status": "canonical",
-      "source_paths": ["shared/lib/ai/docs_rag_indexer.js"],
-      "test_paths": ["tests/scripts/tools/docs_rag.test.js"],
-      "review_triggers": ["cache-schema-change", "corpus-identity-change"]
+      "source_paths": [
+        "shared/lib/ai/docs_rag_indexer.js"
+      ],
+      "test_paths": [
+        "tests/scripts/tools/docs_rag.test.js"
+      ],
+      "review_triggers": [
+        "cache-schema-change",
+        "corpus-identity-change"
+      ]
+    },
+    {
+      "path": "docs/atlas/structures/README.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "atlas-structure-change"
+      ]
+    },
+    {
+      "path": "docs/atlas/structures/TEMPLATE.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "atlas-structure-change"
+      ]
     },
     {
       "path": "docs/atlas/topology/documentation/retrieval-flow.md",
       "type": "atlas",
       "id": "atlas.topology.documentation.retrieval-flow",
       "kind": "topology",
-      "audience": ["contributors", "maintainers"],
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
       "owner": "documentation",
       "status": "canonical",
-      "source_paths": ["scripts/dev/build_docs_rag_index.js", "shared/lib/ai/docs_rag_indexer.js"],
-      "test_paths": ["tests/scripts/tools/docs_rag.test.js"],
-      "review_triggers": ["retrieval-entrypoint-change", "corpus-resolution-change", "index-storage-change"]
+      "source_paths": [
+        "scripts/dev/build_docs_rag_index.js",
+        "shared/lib/ai/docs_rag_indexer.js"
+      ],
+      "test_paths": [
+        "tests/scripts/tools/docs_rag.test.js"
+      ],
+      "review_triggers": [
+        "retrieval-entrypoint-change",
+        "corpus-resolution-change",
+        "index-storage-change"
+      ]
+    },
+    {
+      "path": "docs/atlas/topology/README.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "atlas-structure-change"
+      ]
+    },
+    {
+      "path": "docs/atlas/topology/TEMPLATE.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "atlas-structure-change"
+      ]
+    },
+    {
+      "path": "docs/codebase_tour/00_START_HERE.md",
+      "type": "tutorial",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "onboarding-change",
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/codebase_tour/01_cpp_core_engine.md",
+      "type": "tutorial",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "onboarding-change",
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/codebase_tour/02_data_ingestion_pipeline.md",
+      "type": "tutorial",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "onboarding-change",
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/codebase_tour/03_strategy_backtest_ml.md",
+      "type": "tutorial",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "onboarding-change",
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/codebase_tour/04_trading_gateway_live_orders.md",
+      "type": "tutorial",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "onboarding-change",
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/codebase_tour/05_tui_cli_dashboard.md",
+      "type": "tutorial",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "onboarding-change",
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/codebase_tour/06_web_dashboard_api.md",
+      "type": "tutorial",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "onboarding-change",
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/codebase_tour/07_testing_methodology.md",
+      "type": "tutorial",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "onboarding-change",
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/codebase_tour/README.md",
+      "type": "tutorial",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "onboarding-change",
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/design/frontend_design_spec.md",
+      "type": "explanation",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "interface",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "ui-redesign",
+        "design-token-change"
+      ]
+    },
+    {
+      "path": "docs/design/README.md",
+      "type": "explanation",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "interface",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "ui-redesign",
+        "design-token-change"
+      ]
+    },
+    {
+      "path": "docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md",
+      "type": "explanation",
+      "audience": [
+        "contributors",
+        "maintainers",
+        "security-reviewers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "backend/cli/sovereign_cli.js",
+        "backend/api/app.js",
+        "backend/core/CMakeLists.txt",
+        "shared/lib/settings/runtime_policy.js"
+      ],
+      "review_triggers": [
+        "architecture-overview",
+        "codebase-org",
+        "invariants"
+      ]
+    },
+    {
+      "path": "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md",
+      "type": "explanation",
+      "audience": [
+        "contributors",
+        "data-maintainers",
+        "operators"
+      ],
+      "owner": "data",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/market/ts_index_storage.js",
+        "shared/lib/market/append_only_segments.js",
+        "shared/lib/market/quote_router.js",
+        "shared/lib/market/indicators.js"
+      ],
+      "review_triggers": [
+        "binary-storage",
+        "sovt-layout",
+        "ingestion-pipeline",
+        "data-repair"
+      ]
+    },
+    {
+      "path": "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md",
+      "type": "explanation",
+      "audience": [
+        "contributors",
+        "quantitative-researchers",
+        "native-engineers"
+      ],
+      "owner": "native-core",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/src/data/binary_ts_merger.cpp",
+        "backend/core/src/backtest/frame_backtester.cpp",
+        "backend/core/src/risk/pre_trade_risk.cpp"
+      ],
+      "review_triggers": [
+        "cpp-engine",
+        "binary-ts-merger",
+        "frame-backtester",
+        "risk-engine"
+      ]
+    },
+    {
+      "path": "docs/engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md",
+      "type": "explanation",
+      "audience": [
+        "quantitative-researchers",
+        "ai-engineers",
+        "contributors"
+      ],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": [
+        "scripts/strategies/auto_strategy_explorer.js",
+        "backend/mcp_server/tools/strategy_explorer.ts",
+        "backend/cli/commands/strategy/strategy.js"
+      ],
+      "review_triggers": [
+        "strategy-explorer",
+        "novelty-metric",
+        "mcp-workbench",
+        "yaml-registry"
+      ]
+    },
+    {
+      "path": "docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md",
+      "type": "explanation",
+      "audience": [
+        "contributors",
+        "execution-maintainers",
+        "operators"
+      ],
+      "owner": "execution",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/runtime/sub_positions_ledger.js",
+        "shared/lib/brokers/alpaca_env.js",
+        "shared/lib/brokers/polymarket_env.js"
+      ],
+      "review_triggers": [
+        "sub-positions",
+        "deterministic-signatures",
+        "broker-reconciliation",
+        "manual-attribution"
+      ]
+    },
+    {
+      "path": "docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md",
+      "type": "explanation",
+      "audience": [
+        "prediction-market-researchers",
+        "data-maintainers",
+        "operators"
+      ],
+      "owner": "prediction",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/market/polymarket_history.js",
+        "backend/gateway/src/paper_ledger.js"
+      ],
+      "review_triggers": [
+        "prediction-markets",
+        "polymarket-clob",
+        "orderbook-archiving",
+        "paper-ledger"
+      ]
+    },
+    {
+      "path": "docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md",
+      "type": "explanation",
+      "audience": [
+        "security-reviewers",
+        "deployment-maintainers",
+        "api-developers"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "backend/mcp_server/lib/access_control.ts",
+        "backend/api/app.js",
+        "infra/docker/docker-compose.yml"
+      ],
+      "review_triggers": [
+        "security-model",
+        "rbac",
+        "mcp-api",
+        "docker-topology",
+        "hpdesk-soak"
+      ]
+    },
+    {
+      "path": "docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md",
+      "type": "explanation",
+      "audience": [
+        "contributors",
+        "systems-engineers",
+        "researchers"
+      ],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/src/risk/cost_model.cpp",
+        "shared/lib/market/indicators.js",
+        "shared/lib/runtime/sub_positions_ledger.js"
+      ],
+      "review_triggers": [
+        "financial-primer",
+        "clob-mechanics",
+        "risk-metrics"
+      ]
+    },
+    {
+      "path": "docs/engineering/README.md",
+      "type": "orientation",
+      "audience": [
+        "contributors",
+        "maintainers",
+        "operators"
+      ],
+      "owner": "engineering",
+      "status": "canonical",
+      "source_paths": [
+        "docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md",
+        "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md",
+        "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md",
+        "docs/engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md",
+        "docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md",
+        "docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md",
+        "docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md",
+        "docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md"
+      ],
+      "review_triggers": [
+        "engineering-index",
+        "reading-order"
+      ]
+    },
+    {
+      "path": "docs/engineering/specs/capability_manifest.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/CMakeLists.txt",
+        "backend/cli/sovereign_cli.js"
+      ],
+      "review_triggers": [
+        "capability-matrix",
+        "cli-commands",
+        "ctest-catalog"
+      ]
+    },
+    {
+      "path": "docs/engineering/specs/kronos_pipeline.md",
+      "type": "reference",
+      "audience": [
+        "quantitative-researchers",
+        "native-engineers"
+      ],
+      "owner": "native-core",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/src/ml/kronos_tokenizer.cpp",
+        "backend/core/src/ml/kronos_tensor_builder.cpp"
+      ],
+      "review_triggers": [
+        "kronos-pipeline",
+        "onnx-inference"
+      ]
+    },
+    {
+      "path": "docs/engineering/specs/product_spec.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "maintainers",
+        "operators"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "backend/cli/sovereign_cli.js",
+        "backend/api/app.js",
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "product-invariants",
+        "capabilities-matrix"
+      ]
+    },
+    {
+      "path": "docs/engineering/specs/stack_manifest.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "maintainers",
+        "devops"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "package.json",
+        "CMakeLists.txt",
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "toolchain",
+        "runtime-versions",
+        "dependencies"
+      ]
+    },
+    {
+      "path": "docs/engineering/specs/supabase_integration.md",
+      "type": "reference",
+      "audience": [
+        "backend-developers",
+        "database-maintainers"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "backend/api/server/routes/account/supabase_config.js"
+      ],
+      "review_triggers": [
+        "supabase-client",
+        "auth-session"
+      ]
+    },
+    {
+      "path": "docs/engineering/specs/technical_spec.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "maintainers",
+        "native-engineers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/src/data/binary_ts_merger.cpp",
+        "shared/lib/market/ts_index_storage.js",
+        "backend/api/app.js"
+      ],
+      "review_triggers": [
+        "binary-sovt",
+        "locking",
+        "concurrency"
+      ]
+    },
+    {
+      "path": "docs/engineering/specs/tui_feature_map.md",
+      "type": "reference",
+      "audience": [
+        "cli-developers",
+        "operators"
+      ],
+      "owner": "cli",
+      "status": "canonical",
+      "source_paths": [
+        "backend/cli/sovereign_dashboard.mjs",
+        "backend/cli/tui/manifest.js"
+      ],
+      "review_triggers": [
+        "tui-features",
+        "keyboard-shortcuts",
+        "views"
+      ]
+    },
+    {
+      "path": "docs/engineering/specs/web_api.md",
+      "type": "reference",
+      "audience": [
+        "api-developers",
+        "frontend-developers",
+        "operators"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "backend/api/app.js",
+        "backend/api/server/routes/index.js"
+      ],
+      "review_triggers": [
+        "api-routes",
+        "rbac",
+        "websocket-bridge"
+      ]
+    },
+    {
+      "path": "docs/engineering/standards/agentic_coding_playbook.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "maintainers",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "engineering-standards-change"
+      ]
+    },
+    {
+      "path": "docs/engineering/standards/agentic_coding.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "maintainers",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "engineering-standards-change"
+      ]
+    },
+    {
+      "path": "docs/engineering/standards/architectural_debt.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "maintainers",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "engineering-standards-change"
+      ]
+    },
+    {
+      "path": "docs/engineering/standards/blast_through_checklist.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "maintainers",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "engineering-standards-change"
+      ]
+    },
+    {
+      "path": "docs/engineering/standards/dev_review_queue.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "maintainers",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "engineering-standards-change"
+      ]
+    },
+    {
+      "path": "docs/engineering/standards/documentation_standard.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "reviewers"
+      ],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": [
+        "docs/documentation_manifest.json",
+        "docs/modules/TEMPLATE.md"
+      ],
+      "review_triggers": [
+        "documentation-workflow",
+        "corpus-policy",
+        "review-standard"
+      ]
+    },
+    {
+      "path": "docs/engineering/standards/engineering_standards.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "maintainers",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "engineering-standards-change"
+      ]
+    },
+    {
+      "path": "docs/index.md",
+      "type": "overview",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "homepage-update"
+      ]
+    },
+    {
+      "path": "docs/modules/documentation-retrieval.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/ai/docs_rag_indexer.js"
+      ],
+      "review_triggers": [
+        "documentation-retrieval",
+        "rag-system"
+      ]
+    },
+    {
+      "path": "docs/modules/README.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "platform",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "module-catalog-change"
+      ]
+    },
+    {
+      "path": "docs/modules/TEMPLATE.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "platform",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "module-catalog-change"
+      ]
+    },
+    {
+      "path": "docs/OPERATIONAL_SOAK_RUNBOOK.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment-maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "infra/docker/docker-compose.yml",
+        "shared/lib/settings/deployment_profile.js",
+        "backend/cli/sovereign_cli.js"
+      ],
+      "review_triggers": [
+        "docker-topology",
+        "hpdesk-soak",
+        "central-host-writer"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/bootstrap.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/broker_setup.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/CLI_FEATURES.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/DEPLOYMENT.md",
+      "type": "how_to",
+      "audience": [
+        "operators",
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "canonical",
+      "source_paths": [
+        "infra/docker/docker-compose.yml",
+        "infra/docker/update-central-host.sh"
+      ],
+      "test_paths": [
+        "tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js"
+      ],
+      "review_triggers": [
+        "docker-compose-change",
+        "deployment-contract-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/cli_quick_guide.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/CONTRIBUTING.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/data_ingestion.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/environment_setup.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/execution_portfolio.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/github_environment_and_rulesets.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/hdd_tiering_storage_guide.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/operations.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/QUICKSTART.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/remote_cli_client.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/role_based_hosting.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/testing_surface.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/local_first/cloud_compute_vs_local_execution.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/local_first/local_first_migration.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/local_first/local_first_setup.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/local_first/local_first_trading_setup_plan.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/README.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/roadmap/ROADMAP_CLI.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/roadmap/roadmap.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
+      "path": "docs/README.md",
+      "type": "orientation",
+      "audience": [
+        "all-developers",
+        "operators"
+      ],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": [
+        "docs/documentation_manifest.json"
+      ],
+      "review_triggers": [
+        "document-added",
+        "document-status",
+        "information-architecture"
+      ]
+    },
+    {
+      "path": "docs/RESEARCH_STRATEGY_EXPLORER.md",
+      "type": "guide",
+      "audience": [
+        "ai-agents",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": [
+        "scripts/strategies/auto_strategy_explorer.js",
+        "backend/mcp_server/tools/strategy_explorer.ts"
+      ],
+      "review_triggers": [
+        "autonomous-research",
+        "mcp-tooling",
+        "yaml-registry"
+      ]
+    },
+    {
+      "path": "docs/research/quant_research.md",
+      "type": "explanation",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "research",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "quant-model-change"
+      ]
+    },
+    {
+      "path": "docs/research/README.md",
+      "type": "explanation",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "research",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "quant-model-change"
+      ]
+    },
+    {
+      "path": "docs/sections/backend/README.md",
+      "type": "reference",
+      "audience": [
+        "all-developers",
+        "operators"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "backend/api/app.js",
+        "backend/cli/sovereign_cli.js",
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "backend-structure",
+        "subsystem-entrypoints"
+      ]
+    },
+    {
+      "path": "docs/sections/config/README.md",
+      "type": "reference",
+      "audience": [
+        "operators",
+        "quantitative-researchers"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "config/trading/strategies.yaml",
+        "config/system/environment_manifest.json"
+      ],
+      "review_triggers": [
+        "configuration-tree",
+        "strategy-registry"
+      ]
+    },
+    {
+      "path": "docs/sections/data/polymarket-history-archive/README.md",
+      "type": "reference",
+      "audience": [
+        "research-maintainers",
+        "data-maintainers"
+      ],
+      "owner": "data",
+      "status": "needs_refresh",
+      "source_paths": [
+        "shared/lib/market/polymarket_history.js",
+        "shared/lib/market/polymarket_features.js"
+      ],
+      "test_paths": [
+        "tests/scripts/integration/polymarket/polymarket_history_archive.test.js",
+        "tests/scripts/strategy/polymarket_backtest.test.js",
+        "tests/scripts/integration/polymarket/polymarket_orderbook_lite.test.js"
+      ],
+      "review_triggers": [
+        "archive-schema",
+        "archive-reader",
+        "archive-backfill",
+        "price-normalization",
+        "orderbook-capture",
+        "provider-cache"
+      ]
+    },
+    {
+      "path": "docs/sections/execution/polymarket-bot-cycle/README.md",
+      "type": "reference",
+      "audience": [
+        "execution-maintainers",
+        "security-reviewers"
+      ],
+      "owner": "execution",
+      "status": "needs_refresh",
+      "source_paths": [
+        "backend/gateway/src/cycle.ts"
+      ],
+      "test_paths": [
+        "tests/scripts/integration/polymarket/polymarket_bot_risk.test.js",
+        "tests/scripts/integration/polymarket/polymarket_preflight.test.js"
+      ],
+      "review_triggers": [
+        "bot-cycle",
+        "bot-safety",
+        "policy-enforcement",
+        "balance-gate",
+        "order-intent"
+      ]
+    },
+    {
+      "path": "docs/sections/frontend/README.md",
+      "type": "reference",
+      "audience": [
+        "frontend-developers",
+        "ui-designers"
+      ],
+      "owner": "frontend",
+      "status": "canonical",
+      "source_paths": [
+        "Frontend/dashboard/src/App.tsx",
+        "Frontend/dashboard/package.json"
+      ],
+      "review_triggers": [
+        "frontend-dashboard",
+        "ui-components"
+      ]
+    },
+    {
+      "path": "docs/sections/interface/terminal-dashboard/README.md",
+      "type": "reference",
+      "audience": [
+        "cli-developers",
+        "operators"
+      ],
+      "owner": "cli",
+      "status": "canonical",
+      "source_paths": [
+        "backend/cli/sovereign_dashboard.mjs",
+        "backend/cli/tui/dashboard_exec.js"
+      ],
+      "review_triggers": [
+        "terminal-dashboard",
+        "responsive-layout",
+        "pin-gate"
+      ]
+    },
+    {
+      "path": "docs/sections/README.md",
+      "type": "reference",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "documentation",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "documentation-change"
+      ]
+    },
+    {
+      "path": "docs/sections/research/backtest-execution/README.md",
+      "type": "reference",
+      "audience": [
+        "quantitative-researchers",
+        "contributors"
+      ],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": [
+        "backend/cli/commands/research/research.js",
+        "shared/lib/strategy/backtest.js"
+      ],
+      "review_triggers": [
+        "backtest-execution",
+        "feature-frame-split",
+        "engine-dispatch"
+      ]
+    },
+    {
+      "path": "docs/sections/research/correlation-analysis/README.md",
+      "type": "reference",
+      "audience": [
+        "quantitative-researchers"
+      ],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": [
+        "backend/cli/commands/tools/backend_correlation.js"
+      ],
+      "review_triggers": [
+        "correlation-matrix",
+        "symbol-alignment",
+        "synthetic-formulas"
+      ]
+    },
+    {
+      "path": "docs/sections/research/rsi-reversal-analysis/README.md",
+      "type": "reference",
+      "audience": [
+        "quantitative-researchers"
+      ],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/strategy/rsi_backtest.js"
+      ],
+      "review_triggers": [
+        "rsi-smoothing",
+        "event-crossover",
+        "statistical-summary"
+      ]
+    },
+    {
+      "path": "docs/sections/shared/README.md",
+      "type": "reference",
+      "audience": [
+        "all-developers",
+        "contributors"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/runtime/sub_positions_ledger.js",
+        "shared/lib/market/ts_index_storage.js"
+      ],
+      "review_triggers": [
+        "shared-domain",
+        "runtime-state"
+      ]
+    },
+    {
+      "path": "docs/sections/storage/README.md",
+      "type": "reference",
+      "audience": [
+        "data-maintainers",
+        "operators"
+      ],
+      "owner": "data",
+      "status": "canonical",
+      "source_paths": [
+        "storage/data/ts/",
+        "storage/data/cache/"
+      ],
+      "review_triggers": [
+        "storage-layout",
+        "ts-index"
+      ]
+    },
+    {
+      "path": "docs/sections/tests/README.md",
+      "type": "reference",
+      "audience": [
+        "all-developers",
+        "qa-engineers"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "tests/run_node_tests.js",
+        "tests/scripts/"
+      ],
+      "review_triggers": [
+        "test-matrix",
+        "contract-verification"
+      ]
+    },
+    {
+      "path": "README.md",
+      "type": "orientation",
+      "audience": [
+        "operator",
+        "contributor",
+        "researcher",
+        "api-developer",
+        "deployment-maintainer"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "backend/cli/sovereign_cli.js",
+        "backend/api/app.js",
+        "backend/core/CMakeLists.txt",
+        "docs/README.md"
+      ],
+      "review_triggers": [
+        "public-entrypoint",
+        "safety-boundary",
+        "installation",
+        "documentation-map"
+      ]
     }
   ],
   "historical_corpus": {
@@ -388,6 +1728,7 @@
       "workspace",
       "docs/memory",
       "docs/archive",
+      "docs/guide",
       "graphify-out"
     ]
   }

@@ -38,7 +38,17 @@ That means:
 
 `npm run test:deploy`
 - Runs `tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js`
-- Verifies Docker, Kubernetes, and deployment docs stay aligned on ports, cache settings, and Supabase secret wiring
+- Verifies Docker topology and deployment docs stay aligned on ports, cache settings, and runtime wiring
+
+`npm run test:safety`
+- Runs 43 critical safety tests: trade PIN gates, environment manifest, bot cycle risk bounds, automation guards, and ledger fail-closed invariants
+
+`npm run test:core`
+- Seeds master fixtures, builds C++20 engine (`npm run native:build`), and executes all 34 native CTests
+
+`npm run docs:filter`
+- Executes `scripts/dev/filter_docs.js` (with `--strict` for CI validation)
+- Asserts 0 uncataloged files, 0 stale references, 0 broken relative links, and 0 unrendered box-art diagrams
 
 `npm run test:contracts`
 - Runs the contract-heavy slices: API, cache, Supabase routes, macro ingest, deployment, and config integrity
