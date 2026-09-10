@@ -103,16 +103,17 @@ function parseOrderSignature(signature) {
  * @returns {Object}
  */
 function loadSubPositionsLedger(filePath = DEFAULT_LEDGER_PATH) {
-  try {
-    if (fs.existsSync(filePath)) {
+  if (fs.existsSync(filePath)) {
+    try {
       const data = fs.readFileSync(filePath, 'utf8');
       const parsed = JSON.parse(data);
       if (parsed && typeof parsed === 'object' && parsed.positions) {
         return parsed;
       }
+      throw new Error('Invalid sub_positions ledger schema: missing positions object');
+    } catch (err) {
+      throw new Error(`Failed to load sub-positions ledger from ${filePath}: ${err.message}`);
     }
-  } catch (err) {
-    // If corrupt or missing, start fresh
   }
 
   return {

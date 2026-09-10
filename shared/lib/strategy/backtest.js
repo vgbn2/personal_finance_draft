@@ -300,9 +300,10 @@ function annualizedSharpe(returns, timeframe, horizon) {
 }
 
 function annualizedSortino(returns, timeframe, horizon) {
-  const downside = returns.filter((value) => value < 0);
-  const downsideDeviation = sampleStddev(downside);
-  if (returns.length < 2 || downside.length < 2 || downsideDeviation === 0) return null;
+  if (returns.length < 2) return null;
+  const sumSquaredDownside = returns.reduce((sum, r) => sum + (r < 0 ? r ** 2 : 0), 0);
+  const downsideDeviation = Math.sqrt(sumSquaredDownside / returns.length);
+  if (downsideDeviation === 0) return null;
   return (mean(returns) / downsideDeviation) * Math.sqrt(periodsPerYear(timeframe) / Math.max(horizon, 1));
 }
 

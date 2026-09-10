@@ -10,28 +10,35 @@ const LOCK_MAX_AGE_MS = 10 * 60 * 1000;
  * bot cycle) don't have to re-derive it.
  */
 function acquireLock(lockPath, maxAgeMs = LOCK_MAX_AGE_MS) {
-  if (fs.existsSync(lockPath)) {
-    try {
-      const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
-      const age = Date.now() - new Date(lock.startedAt).getTime();
-      if (age < maxAgeMs) {
-        try {
-          process.kill(lock.pid, 0);
-          return false; // process alive, lock is valid
-        } catch (e) {
-          if (e.code !== 'ESRCH') return false; // unexpected error — stay cautious
-          // ESRCH = process not found -> stale lock, fall through to acquire
-        }
-      }
-      // stale lock — remove it
-    } catch {
-      // malformed lock file — remove it
-    }
-    fs.unlinkSync(lockPath);
-  }
   fs.mkdirSync(path.dirname(lockPath), { recursive: true });
-  fs.writeFileSync(lockPath, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), 'utf8');
-  return true;
+  const payload = JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() });
+
+  try {
+    fs.writeFileSync(lockPath, payload, { flag: 'wx', mode: 0o600 });
+    return true;
+  } catch (err) {
+    if (err && err.code === 'EEXIST') {
+      try {
+        const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+        const age = Date.now() - new Date(lock.startedAt).getTime();
+        if (age < maxAgeMs) {
+          try {
+            process.kill(lock.pid, 0);
+            return false; // process alive, lock is valid
+          } catch (e) {
+            if (e.code !== 'ESRCH') return false; // unexpected error — stay cautious
+          }
+        }
+        // stale lock -> unlink and retry once atomically
+        fs.unlinkSync(lockPath);
+        fs.writeFileSync(lockPath, payload, { flag: 'wx', mode: 0o600 });
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+    return false;
+  }
 }
 
 function releaseLock(lockPath) {
