@@ -6,12 +6,16 @@ Received user prompts:
 - "check if its actually wrong stuff, and doesnt the last session covered"
 - "push to main and rsync to proxmox"
 - "nexte session, refine the specs"
+- "install docs related tools to global, mermaid sth sth to not having to use ascii drawing, things are going all over the place"
+- "end session"
 
 Accomplished:
 - Re-verified test suite integrity across CTests (34/34), safety tests (43/43), structure contracts (12/12), and hygiene.
 - Committed 23 files containing 9 blast-through defect remediations and mass-bt trade counts (`d47d67c3`).
 - Pushed `main` to `origin/main`.
 - Executed guarded one-way rsync transferring latest source updates to HPDesk Proxmox VM (`hpdesk:~/personal_finance_draft/`).
+- Updated next session goals (`workspace/NEXT_SESSION_GOAL.md`) to prioritize strategy and mass-bt specification refinements.
+- Installed `@mermaid-js/mermaid-cli` globally for SVG/PNG diagram generation with system Chromium integration.
 
 ## Session Closeout — Blast-Through Audit Remediation & C++ Mass Strategy Backtesting - 2026-09-10 session 1
 Received user prompts:
