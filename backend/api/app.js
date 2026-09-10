@@ -334,7 +334,13 @@ async function handleApi(req, res, url) {
   // Merge JSON body into query for POST routes
   if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
     const body = await readBody(req);
-    Object.assign(query, body);
+    if (body && typeof body === 'object' && !Array.isArray(body)) {
+      for (const [key, value] of Object.entries(body)) {
+        if (key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
+          query[key] = value;
+        }
+      }
+    }
   }
   const route = ROUTES[url.pathname];
   if (route) {

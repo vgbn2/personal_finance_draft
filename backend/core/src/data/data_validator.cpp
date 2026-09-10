@@ -1,5 +1,7 @@
 #include "data_validator.hpp"
 
+#include <cmath>
+
 namespace sovereign {
 
 namespace {
@@ -18,8 +20,13 @@ void reject(DataQualityReport& report, const std::string& reason, std::vector<st
 
 bool DataValidator::validateBar(const OhlcvBar& bar, DataQualityReport& report) {
     const std::string id = bar.asset_id + "@" + bar.timestamp;
-    if (bar.open < 0.0 || bar.high < 0.0 || bar.low < 0.0 || bar.close < 0.0) {
-        reject(report, id + ":negative_price", report.rejected_records);
+    if (bar.open <= 0.0 || bar.high <= 0.0 || bar.low <= 0.0 || bar.close <= 0.0 ||
+        !std::isfinite(bar.open) || !std::isfinite(bar.high) || !std::isfinite(bar.low) || !std::isfinite(bar.close)) {
+        reject(report, id + ":non_positive_or_non_finite_price", report.rejected_records);
+        return false;
+    }
+    if (bar.volume < 0.0 || !std::isfinite(bar.volume)) {
+        reject(report, id + ":invalid_volume", report.rejected_records);
         return false;
     }
     if (bar.high < bar.low || bar.high < bar.open || bar.high < bar.close || bar.low > bar.open || bar.low > bar.close) {
