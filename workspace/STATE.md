@@ -1,8 +1,27 @@
 # Current Workspace State
 
 ## Current Phase
-Engineering Documentation Overhaul (7-Section Architecture Suite), SV Console Review & Soak Verification - ACTIVE
+Documentation Engineering Overhaul (Diátaxis, GitHub-Native Mermaid, Standalone Filter Tool, Canonical Specs) - COMPLETED
 
+- **Documentation Engineering Overhaul & GitHub Standards (Diátaxis, Mermaid, Standalone Filter Tool)**:
+  - **Phase 0: Standalone Documentation Filter Tool**: Authored `scripts/dev/filter_docs.js` (zero-dependency native Node.js) and wired as `npm run docs:filter` and `npm run docs:filter -- --strict` in `npm run verify:strict`. Features scorecard calculation, orphan detection, broken relative link checking, stale path identification, and ASCII box-art detection.
+  - **Phase 1: Specifications & Reference Overhaul + Archive Relocation**:
+    - Completely rewrote canonical reference contracts:
+      - `docs/engineering/specs/product_spec.md`: 5 core invariants, mission, capabilities matrix, and Diátaxis Reference contract.
+      - `docs/engineering/specs/technical_spec.md`: Multi-tier system boundaries, SOVT v1 48-byte binary layout, single-writer POSIX locking, and execution drag model.
+      - `docs/engineering/specs/web_api.md`: Comprehensive 40-route catalog across all 39 handler modules with RBAC capability tiers, parameter schemas, and response formats under native `node:http.createServer()`.
+      - `docs/engineering/specs/capability_manifest.md`: Reconciled against 34 CTests, active subdirectories, and removed dead paths.
+      - `docs/engineering/specs/stack_manifest.md`: Reconciled toolchain baseline (Node v20+, CMake 3.20+, C++20, React 19).
+    - Relocated historical specs: `rust_mirror_status.md` and `native_maintenance_notes.md` from `docs/engineering/specs/` to `docs/archive/` with historical Diátaxis status banners.
+  - **Phase 2: Dead Files Purged & Tours/Guides Reconciled**:
+    - Hard deleted unmaintained prototype files: `docs/design/frontend_prompt.md` and `docs/research/legacy_math.md`.
+    - Relocated 7 book draft chapters (`00_prologue.md`–`06_epilogue.md`) from `docs/guide/` to `docs/archive/guide/`.
+    - Reconciled toolchain versions and fixed dead links across `docs/operational/guides/` and `docs/codebase_tour/`.
+  - **Phase 3: Diagrams-as-Code (ASCII Box Art to GitHub-Native Mermaid)**:
+    - Converted all 39 fixed-width (118–125 column) ASCII box-art diagrams across the entire 8-section modular engineering suite (`01_` through `08_`), `docs/ARCHITECTURE.md`, `docs/OPERATIONAL_SOAK_RUNBOOK.md`, and `docs/operational/guides/CONTRIBUTING.md` into responsive, theme-adaptive GitHub-native Mermaid (`flowchart TD/LR`, `sequenceDiagram`, `stateDiagram-v2`) and standard GitHub Markdown tables.
+  - **Phase 4: Manifest & Section READMEs**:
+    - Established canonical compact Diátaxis reference index READMEs for all 4 section directories in `docs/sections/`: `interface/terminal-dashboard/`, `research/rsi-reversal-analysis/`, `research/correlation-analysis/`, and `research/backtest-execution/`.
+    - Synchronized `docs/documentation_manifest.json`: registered 8 active canonical specs, 2 historical archive specs, and 4 section reference READMEs with verified source paths on disk.
 - **Blast-Through Full-Stack Audit Remediation & C++ Mass Strategy Backtester**:
   - Remediated 9 confirmed defects across fault domain `our_source`:
     - Drawdown calculation guard in `risk_engine_bridge.ts` using live balance peak equity.

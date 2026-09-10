@@ -8,7 +8,7 @@ The repository-level [contribution entrypoint](../../../workspace/governance/CON
 
 ## 1. Quick Start & Zero-Key Setup
 
-The repository is pure **Node.js (v20+)** and **C++20 (CMake 3.15+)**. No Python virtual environments (`venv`) or external API keys are required for development, testing, or strategy research:
+The repository is pure **Node.js (v20+)** and **C++20 (CMake 3.20+)**. No Python virtual environments (`venv`) or external API keys are required for development, testing, or strategy research:
 
 ```bash
 # Automated setup (installs workspaces, compiles native C++ core, seeds fixtures, runs tests)
@@ -21,19 +21,15 @@ npm run setup:dev
 
 All contributions, reviews, and bug triages reuse the repository's canonical skill protocols (`skills/manifest.json`):
 
-```text
-┌───────────────────────────┬────────────────────────────────────────────────────────┐
-│ Contribution Step         │ Protocol / Skill Command                               │
-├───────────────────────────┼────────────────────────────────────────────────────────┤
-│ 1. Feature / Refactor     │ skills/mass-implement (bounded radius, zero-key safety)│
-│ 2. Pre-PR Test Integrity  │ skills/verify-test-integrity (anti-cheating test audit)│
-│ 3. Native C++ Core Verify │ skills/native-core-verify (34/34 CTests pass)          │
-│ 4. Hygiene & Docs Sync    │ skills/repo-hygiene & skills/audit-documentation       │
-│ 5. PR Review & Audit      │ skills/blast-through (single-mode review with fault ID)│
-│ 6. Failure Triage         │ skills/bayesian-troubleshooter (binary probe triage)   │
-│ 7. Architecture Sync      │ skills/codebase-untangler (Code Atlas record sync)     │
-└───────────────────────────┴────────────────────────────────────────────────────────┘
-```
+| Contribution Step | Protocol / Skill Command |
+|---|---|
+| 1. Feature / Refactor | `skills/mass-implement` (bounded radius, zero-key safety) |
+| 2. Pre-PR Test Integrity | `skills/verify-test-integrity` (anti-cheating test audit) |
+| 3. Native C++ Core Verify | `skills/native-core-verify` (34/34 CTests pass) |
+| 4. Hygiene & Docs Sync | `skills/repo-hygiene` & `skills/audit-documentation` |
+| 5. PR Review & Audit | `skills/blast-through` (single-mode review with fault ID) |
+| 6. Failure Triage | `skills/bayesian-troubleshooter` (binary probe triage) |
+| 7. Architecture Sync | `skills/codebase-untangler` (Code Atlas record sync) |
 
 ---
 

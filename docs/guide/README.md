@@ -1,5 +1,7 @@
 # Sovereign Build Guide
 
+> **Diátaxis Type**: Tutorial (Draft Book Scaffold) | **Status**: Supporting | **Audience**: Contributors & Self-Study
+
 This directory is a book scaffold for writing a from-scratch implementation guide for the repository.
 
 It is intentionally isolated from `docs/README.md` so normal repo boot flows and casual documentation reads do not pull it into context unless someone asks for it directly.
@@ -30,7 +32,7 @@ It is intentionally isolated from `docs/README.md` so normal repo boot flows and
 - Include a "Do Not Build Yet" section in every chapter.
 - Include a file tree snapshot in every chapter.
 - Treat `workspace/STATE.md` as status truth if current-state claims conflict.
-- Treat `docs/engineering/codebase_org.md` as the canonical path map.
+- Treat `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md` as the canonical path map.
 
 ## Global Files
 

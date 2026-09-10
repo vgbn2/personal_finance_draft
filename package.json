@@ -42,6 +42,7 @@
     "audit:test-integrity": "node scripts/dev/audit_test_integrity.js",
     "audit:control-flow": "node scripts/dev/audit_control_flow.js",
     "audit:documentation": "node scripts/dev/audit_documentation.js",
+    "docs:filter": "node scripts/dev/filter_docs.js",
     "bundle": "node scripts/dev/make_bundle.js",
     "verify:strict": "npm run test:api && npm run test:contracts && npm run test:secrets && npm test"
   },

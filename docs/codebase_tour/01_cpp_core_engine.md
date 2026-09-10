@@ -8,7 +8,7 @@ over stdin/stdout JSON, not a library Node links against directly.
 
 ```
 backend/core/
-  CMakeLists.txt        <- declares the sovereign_core static lib, the sovereign_wealth exe, 30 test exes
+  CMakeLists.txt        <- declares the sovereign_core static lib, the sovereign_wealth exe, 34 test exes
   src/
     core/                OHLCV types
     data/                snapshots, validation, quality reports
@@ -21,7 +21,7 @@ backend/core/
     ml/                  ONNX inference, tensor builders, model registry
     features/            feature engineering, lookahead guards
     strategies/, regime/, stats/, correlation/, parser/, utils/, research/, replay/, assets/
-  test/                  30 test executables + fixtures
+  test/                  34 test executables + fixtures
   build/                 CMake output (gitignored)
 ```
 
@@ -66,8 +66,7 @@ cmake -S backend/core -B backend/core/build
 cmake --build backend/core/build --config Debug
 ctest --test-dir backend/core/build -C Debug --output-on-failure
 ```
-Expect ~29/30 passing — `kronos_integration_test` fails on a data-availability message ("need ≥4 points"),
-not a real regression (standing, documented gap). If anything else fails, that's new and worth flagging.
+Expect all 34 CTest suites to pass (`npm run test:core`). If anything fails, that is new and worth flagging.
 
 **Lab 2 — trace one real call end to end.** Run a status check from the JS side:
 ```bash

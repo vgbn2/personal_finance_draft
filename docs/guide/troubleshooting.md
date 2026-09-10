@@ -23,7 +23,7 @@ Use this as the shared troubleshooting reference instead of repeating the same l
 ## Repo Problems
 
 - dirty working tree confusion: check `git status --short -- .` before assuming your change caused the issue.
-- generated files tracked as source: compare against `docs/engineering/codebase_org.md` and the structure rules.
+- generated files tracked as source: compare against `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md` and the structure rules.
 
 ## Learning Problems
 

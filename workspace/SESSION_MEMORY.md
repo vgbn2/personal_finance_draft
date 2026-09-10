@@ -1,3 +1,16 @@
+### Session Memory - 2026-09-10 session 3 — Documentation Overhaul, Standalone Filter Tool, GitHub-Native Mermaid & Diátaxis Alignment
+
+```json
+{
+  "batch": ["DOCS-OVERHAUL-MERMAID-DIATAXIS-1"],
+  "lifecycle": "closed",
+  "scope": "Executed repository-wide documentation overhaul bounded to GitHub effective documentation standards; built standalone filter tool scripts/dev/filter_docs.js with strict CI gate; converted all 39 ASCII box-art diagrams to responsive GitHub-native Mermaid flowcharts/sequences/state-machines and Markdown tables; overhauled canonical specifications (product_spec, technical_spec, web_api with full 40 routes, capability_manifest, stack_manifest); purged dead prototype files; relocated historical specs and book scaffold to docs/archive/; authored 4 section index READMEs; synchronized documentation_manifest.json with all 14 new documents.",
+  "changes": "created scripts/dev/filter_docs.js, docs/archive/rust_mirror_status.md, docs/archive/native_maintenance_notes.md, docs/archive/guide/ (00-06), docs/sections/interface/terminal-dashboard/README.md, docs/sections/research/rsi-reversal-analysis/README.md, docs/sections/research/correlation-analysis/README.md, docs/sections/research/backtest-execution/README.md; deleted docs/design/frontend_prompt.md, docs/research/legacy_math.md, docs/engineering/specs/rust_mirror_status.md, docs/engineering/specs/native_maintenance_notes.md, docs/guide/ (00-06); updated package.json, docs/documentation_manifest.json, docs/README.md, docs/ARCHITECTURE.md, docs/OPERATIONAL_SOAK_RUNBOOK.md, docs/operational/guides/CONTRIBUTING.md, docs/operational/guides/QUICKSTART.md, docs/operational/guides/operations.md, docs/operational/guides/cli_quick_guide.md, docs/codebase_tour/ (00, 01, 03, 05, 06), docs/engineering/specs/ (product_spec, technical_spec, web_api, capability_manifest, stack_manifest, tui_feature_map, supabase_integration, kronos_pipeline), docs/engineering/architecture/ (01 to 08), workspace/STATE.md, workspace/SESSION_MEMORY.md, workspace/handoff/2026/09/2026-09-10.md, workspace/PROMPT_LOG.md",
+  "verification": "filter_docs.js verified across all 14 registered documents; zero dead links; 100% manifest sync; zero ASCII box-art diagrams remaining in architecture/specs suite; zero-key development policy maintained; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false",
+  "boundaries": "documentation and developer tooling only; zero-key policy maintained; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-09-10 session 1 — Blast-Through Audit Remediation & C++ Mass Strategy Backtesting
 
 ```json

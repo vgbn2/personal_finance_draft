@@ -48,28 +48,19 @@ To prevent stale branch accumulation and maintain clean git graph hygiene:
 
    # 5. Prune stale remote tracking references
    git fetch --prune
+   ```
 
 ---
 
 ## 2. GitHub Environments & Secret Separation
 
-GitHub Environments provide deployment protection rules and scoped credentials.
+GitHub Environments provide deployment protection rules and scoped credentials:
 
-```text
-┌────────────────────────────────────────────────────────┐
-│             GitHub Actions Environments                │
-├───────────────────┬────────────────────────────────────┤
-│   `development`   │  - Open to PRs & Feature Branches  │
-│                   │  - Zero Live Secrets (Mock/Dummy)  │
-├───────────────────┼────────────────────────────────────┤
-│   `hpdesk-paper`  │  - Alpaca Paper Sandbox Key        │
-│                   │  - Virtual Paper Ledger Execution  │
-├───────────────────┼────────────────────────────────────┤
-│   `production`    │  - Isolated Host (hpdesk-1)        │
-│   (Restricted)    │  - Real-Money Trading Keys         │
-│                   │  - Required Manual Reviewers       │
-└───────────────────┴────────────────────────────────────┘
-```
+| Environment | Scope & Targets | Secrets Policy |
+|---|---|---|
+| `development` | Open to PRs & feature branches | Zero live secrets (fixtures only) |
+| `hpdesk-paper` | Alpaca Paper sandbox | Virtual paper ledger execution |
+| `production` (Restricted) | Isolated host (`hpdesk-1`) | Real-money keys (never in CI) |
 
 ### Environment Matrix
 

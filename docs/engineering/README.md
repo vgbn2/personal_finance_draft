@@ -57,8 +57,11 @@ The engineering architecture is organized into 8 modular, diagram-dense sections
 
 - **[Technical Spec](specs/technical_spec.md)** & **[Product Spec](specs/product_spec.md)**: System component specifications.
 - **[Stack Manifest](specs/stack_manifest.md)** & **[Capability Manifest](specs/capability_manifest.md)**: Engine and runtime capabilities.
-- **[Web API Reference](specs/web_api.md)**: Express REST and WebSocket endpoints.
+- **[Web API Reference](specs/web_api.md)**: Native Node.js REST and WebSocket endpoints.
 - **[TUI Feature Map](specs/tui_feature_map.md)**: Terminal dashboard command tree.
 - **[Supabase Integration](specs/supabase_integration.md)**: Auth and cloud sync spec.
 - **[Kronos Pipeline Spec](specs/kronos_pipeline.md)**: High-frequency data pipeline notes.
-- **[Native Maintenance Notes](specs/native_maintenance_notes.md)** & **[Rust Mirror Status](specs/rust_mirror_status.md)**: Native core notes.
+
+Historical specifications are preserved in the [Documentation Archive](../archive/README.md):
+- **[Native Maintenance Notes](../archive/native_maintenance_notes.md)**: Historical native engine maintenance records.
+- **[Rust Mirror Status](../archive/rust_mirror_status.md)**: Historical Rust parity and mirror study.

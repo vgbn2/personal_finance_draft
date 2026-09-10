@@ -8,91 +8,70 @@ This document specifies the architecture of the autonomous quantitative alpha di
 
 Sovereign includes an autonomous discovery daemon (`scripts/strategies/auto_strategy_explorer.js`) that runs continuously (e.g. 30-minute interval on HPDesk) or on-demand via CLI and MCP tooling to research novel market anomalies, backtest them using the zero-allocation native C++20 engine, and automatically persist valid YAML strategy registries into `config/strategies/automated/`.
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                    AUTONOMOUS ALPHA DISCOVERY & VALIDATION PIPELINE                                |
-+--------------------------------------------------------------------------------------------------------------------+
-|                                                                                                                    |
-|  [ INTEGRATION SURFACES ]                                                                                          |
-|  ├── MCP Tool: `explore_strategy` (Claude Desktop, Cursor, AI Agents, LLM runners)                [Load: 2/10]     |
-|  ├── CLI Subcommand: `sovereign strategy explore [--once] [--interval <mins>]`                    [Load: 2/10]     |
-|  └── Docker Soak Service: `sv-strategy-explorer` container on HPDesk Proxmox VM                   [Load: 4/10]     |
-|             │                                                                                                      |
-|             ▼ [Load: 1/10 | SLA: <0.2ms]                                                                           |
-|  [ CANDIDATE GENERATION & 6D NOVELTY HYPERCUBE GATE ]                                                              |
-|  ├── 1. Parameter Projection: Map parameters onto 6D unit hypercube $[0, 1]^6$                                      |
-|  ├── 2. Normalized Manhattan Distance: Enforce $\min_{j} D(\vec{P}_{\text{cand}}, \vec{P}_j) \ge 0.50$ (50% shift)    |
-|  └── 3. SHA-256 Fingerprint: Reject duplicate parameter hashes                                                     |
-|             │                                                                                                      |
-|             ▼ [Load: 6/10 | Heap: 65-110MB]                                                                        |
-|  [ MARKET DATA SOURCING & ROLLING FEATURE FRAME BUILDER ]                                                          |
-|  ├── Slices 5,000+ continuous bars from binary TS storage or provider cache                                        |
-|  ├── Computes rolling technical indicators: RSI, Bollinger Bands, ATR, Momentum, Volatility                        |
-|  └── Synthesizes annotated feature matrix with ML model predictions (e.g. Rolling SVM)                             |
-|             │                                                                                                      |
-|             ▼ [Load: 7/10 | RSS: <18MB | Latency: 20-35ms]                                                         |
-|  [ NATIVE C++20 SOVEREIGN CORE BACKTEST BRIDGE ]                                                                   |
-|  ├── Spawns `sovereign_wealth backtest --mode frame` with zero-allocation execution                                |
-|  ├── Evaluates Sharpe Ratio, Sortino Ratio, Calmar Ratio, Win Rate, Expectancy, and Max Drawdown                    |
-|  └── Executes 1,000-run Monte Carlo bootstrap resampling for statistical confidence bounds                         |
-|             │                                                                                                      |
-|             ▼ [Load: 1/10 | Atomic File Write]                                                                     |
-|  [ VIABILITY FILTER & CANONICAL STRATEGY REGISTRY ]                                                                |
-|  ├── Viability Gates: Total Trades $\ge 10$, Sharpe Ratio $> 0$, Expectancy $> 0$, Max Drawdown $\le 25\%$         |
-|  ├── Serializes canonical YAML: `config/strategies/automated/auto_<name>.yaml`                                     |
-|  └── Updates persistent discovery state: `storage/data/strategy_explorer_state.json`                               |
-+--------------------------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph Surfaces["Integration Surfaces"]
+        MCP["MCP Tool: explore_strategy<br/>(Claude Desktop, Cursor, AI Agents, LLMs) [Load: 2/10]"]
+        CLI["CLI Subcommand: sovereign strategy explore<br/>[--once] [--interval <mins>] [Load: 2/10]"]
+        SOAK["Docker Soak Service: sv-strategy-explorer<br/>Container on HPDesk Proxmox VM [Load: 4/10]"]
+    end
+
+    subgraph Gate["Candidate Generation & 6D Novelty Hypercube Gate [Load: 1/10 | SLA: <0.2ms]"]
+        P1["1. Parameter Projection: Map parameters onto 6D unit hypercube [0, 1]^6"]
+        P2["2. Normalized Manhattan Distance: min_j D(P_cand, P_j) >= 0.50"]
+        P3["3. SHA-256 Fingerprint: Reject duplicate parameter hashes"]
+    end
+
+    subgraph Features["Market Data Sourcing & Rolling Feature Frame Builder [Load: 6/10 | Heap: 65-110MB]"]
+        F1["Slice 5,000+ continuous bars from binary TS storage or provider cache"]
+        F2["Compute rolling technical indicators: RSI, Bollinger Bands, ATR, Momentum, Volatility"]
+        F3["Synthesize annotated feature matrix with ML model predictions (e.g. Rolling SVM)"]
+    end
+
+    subgraph Backtest["Native C++20 Sovereign Core Backtest Bridge [Load: 7/10 | RSS: <18MB | Latency: 20-35ms]"]
+        B1["Spawn sovereign_wealth backtest --mode frame with zero-allocation execution"]
+        B2["Evaluate Sharpe, Sortino, Calmar, Win Rate, Expectancy, Max Drawdown"]
+        B3["Execute 1,000-run Monte Carlo bootstrap resampling for confidence bounds"]
+    end
+
+    subgraph Registry["Viability Filter & Canonical Strategy Registry [Load: 1/10 | Atomic File Write]"]
+        R1["Viability Gates: Trades >= 10, Sharpe > 0, Expectancy > 0, Max Drawdown <= 25%"]
+        R2["Serialize canonical YAML: config/strategies/automated/auto_<name>.yaml"]
+        R3["Update persistent discovery state: storage/data/strategy_explorer_state.json"]
+    end
+
+    Surfaces --> Gate
+    Gate --> Features
+    Features --> Backtest
+    Backtest --> Registry
 ```
 
 ---
 
 ## 2. Autonomous Strategy Exploration State Machine
 
-```text
-       ┌──────────────┐
-       │ STATE: IDLE  │  Awaiting scheduled tick (30 min) or MCP `explore_strategy` request
-       └──────┬───────┘
-              │ Trigger Fired
-              ▼
-       ┌──────────────┐
-       │ HYPOTHESIS   │  Select parameter archetype, timeframe, and feature set
-       └──────┬───────┘
-              │
-              ▼
-       ┌──────────────┐
-       │ 6D_NOVELTY   │◄──────────────────────────────────────────────┐
-       └──────┬───────┘                                               │
-              │                                                       │ Distance < 0.50
-      ┌───────┴───────────────────────────────┐                       │ (Too Similar to Seen)
-      ▼                                       ▼                       │
-Distance >= 0.50                        Distance < 0.50               │
-┌──────────────┐                        ┌──────────────┐              │
-│ FETCH_BARS   │                        │ MUTATE_PARAMS│──────────────┘
-└──────┬───────┘                        └──────────────┘
-       │ Sourced 5,000 Bars
-       ▼
-┌──────────────┐
-│ BUILD_MATRIX │  Calculate RSI, BB, ATR, MACD & generate ML signal column
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ C++_BACKTEST │  Execute `sovereign_wealth backtest --mode frame`
-└──────┬───────┘
-       │
-      ┌┴──────────────────────────────────────┐
-      ▼                                       ▼
-Metrics Pass Viability                  Metrics Fail Viability
-(Sharpe > 0, MaxDD <= 25%)              (Unprofitable / Excessive Drawdown)
-┌──────────────┐                        ┌──────────────┐
-│ SAVE_YAML    │                        │ RECORD_DROP  │
-└──────┬───────┘                        └──────┬───────┘
-       │                                       │
-       └──────────────────┬────────────────────┘
-                          ▼
-                   ┌──────────────┐
-                   │ UPDATE_LEDGER│ Update `strategy_explorer_state.json` & sleep
-                   └──────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE: Daemon Boot
+    IDLE --> HYPOTHESIS: Trigger Fired (30m tick or MCP request)
+    HYPOTHESIS --> NOVELTY_CHECK: Select Archetype, Timeframe & Features
+
+    state NOVELTY_CHECK <<choice>>
+    NOVELTY_CHECK --> FETCH_BARS: Distance >= 0.50
+    NOVELTY_CHECK --> MUTATE_PARAMS: Distance < 0.50
+
+    MUTATE_PARAMS --> NOVELTY_CHECK: Re-sample Candidate
+    FETCH_BARS --> BUILD_MATRIX: Sourced 5,000 Bars
+    BUILD_MATRIX --> CPP_BACKTEST: Features & ML Column Ready
+
+    state CPP_BACKTEST <<choice>>
+    CPP_BACKTEST --> SAVE_YAML: Pass (Sharpe > 0, MaxDD <= 25%)
+    CPP_BACKTEST --> RECORD_DROP: Fail (Unprofitable / High Risk)
+
+    SAVE_YAML --> UPDATE_LEDGER: Write config/strategies/automated/
+    RECORD_DROP --> UPDATE_LEDGER: Record Rejection Reason
+
+    UPDATE_LEDGER --> IDLE: Update strategy_explorer_state.json & Sleep
 ```
 
 ---
@@ -103,18 +82,14 @@ To ensure the autonomous discovery engine explores structurally diverse alpha sp
 
 $$\vec{P} = \left[ P_1, P_2, P_3, P_4, P_5, P_6 \right] \in [0, 1]^6$$
 
-```text
-+--------------------------------------------------------------------------------------------------------------------+
-|                                       6D PARAMETER NORMALIZATION HYPERCUBE                                         |
-+--------------------------------------------------------------------------------------------------------------------+
-|  1. Timeframe Index ($P_1$):    $\frac{\text{tf\_idx}}{5} \in [0, 1]$ (5m, 15m, 30m, 1h, 4h, 1d)                 |
-|  2. Strategy Family ($P_2$):    $\frac{\text{fam\_idx}}{4} \in [0, 1]$ (momentum, mean_rev, breakout, trend, vol) |
-|  3. ML Model ($P_3$):           $\frac{\text{mod\_idx}}{4} \in [0, 1]$ (svm, knn, rsi_div, macd, bb)               |
-|  4. Signal Threshold ($P_4$):   $\frac{\theta - 0.50}{0.35} \in [0, 1]$ for $\theta \in [0.50, 0.85]$              |
-|  5. Holding Horizon ($P_5$):    $\frac{H - 1}{29} \in [0, 1]$ for $H \in [1, 30] \text{ days}$                     |
-|  6. Risk Weight ($P_6$):        $\frac{w - 0.02}{0.23} \in [0, 1]$ for $w \in [0.02, 0.25]$                       |
-+--------------------------------------------------------------------------------------------------------------------+
-```
+| Dimension | Parameter Name | Normalized Value Metric | Range / Domain |
+|:---:|---|---|---|
+| $P_1$ | Timeframe Index | $\frac{\text{tf\_idx}}{5} \in [0, 1]$ | `5m`, `15m`, `30m`, `1h`, `4h`, `1d` |
+| $P_2$ | Strategy Family | $\frac{\text{fam\_idx}}{4} \in [0, 1]$ | `momentum`, `mean_rev`, `breakout`, `trend`, `vol` |
+| $P_3$ | ML Model | $\frac{\text{mod\_idx}}{4} \in [0, 1]$ | `svm`, `knn`, `rsi_div`, `macd`, `bb` |
+| $P_4$ | Signal Threshold | $\frac{\theta - 0.50}{0.35} \in [0, 1]$ | $\theta \in [0.50, 0.85]$ |
+| $P_5$ | Holding Horizon | $\frac{H - 1}{29} \in [0, 1]$ | $H \in [1, 30] \text{ days}$ |
+| $P_6$ | Risk Weight | $\frac{w - 0.02}{0.23} \in [0, 1]$ | $w \in [0.02, 0.25]$ |
 
 ### Novelty Distance Formalism
 The distance between candidate parameter vector $\vec{P}_{\text{cand}}$ and any previously evaluated strategy $\vec{P}_{\text{seen}}$ is given by the normalized Manhattan metric:
@@ -131,21 +106,22 @@ $$\text{Fingerprint} = \text{SHA-256}(\text{CanonicalJSON}(\text{SortedParams}))
 
 ## 4. Rolling Feature Matrix Synthesis & SVM Classifier
 
-```text
-[Raw Continuous OHLCV Bars (5,000+ bars)]
-       │
-       ▼
-[Rolling Feature Calculation Engine (`shared/lib/market/indicators.js`)]
-       ├── 1. Relative Strength Index (RSI-14, RSI-28)
-       ├── 2. Bollinger Bands (20-period, 2.0 std dev) & BandWidth ($BW = \frac{UB - LB}{MB}$)
-       ├── 3. Average True Range (ATR-14) & Normalized Volatility ($\sigma_{\text{norm}} = \frac{ATR}{Close}$)
-       ├── 4. Moving Average Convergence Divergence (MACD 12/26/9)
-       └── 5. Rolling Support Vector Machine (SVM) Decision Boundary:
-              $$f(\vec{x}) = \text{sign}\left( \sum_{i=1}^M \alpha_i y_i K(\vec{x}_i, \vec{x}) + b \right)$$
-       │
-       ▼
-[Annotated Feature Matrix: JSON Array / CSV Buffer]
-- Structure: `{ timestamp_ms, open, high, low, close, volume, rsi, bb_upper, bb_lower, atr, signal, confidence }`
+```mermaid
+flowchart TD
+    BARS["Raw Continuous OHLCV Bars (5,000+ bars)"]
+    
+    subgraph Engine["Rolling Feature Calculation Engine (shared/lib/market/indicators.js)"]
+        F1["1. Relative Strength Index: RSI-14, RSI-28"]
+        F2["2. Bollinger Bands (20-period, 2.0 std dev) & BandWidth: BW = (UB - LB) / MB"]
+        F3["3. Average True Range (ATR-14) & Normalized Volatility: σ_norm = ATR / Close"]
+        F4["4. Moving Average Convergence Divergence: MACD 12/26/9"]
+        F5["5. Rolling Support Vector Machine (SVM) Decision Boundary:<br/>f(x) = sign( sum_i α_i y_i K(x_i, x) + b )"]
+    end
+
+    MATRIX[("Annotated Feature Matrix: JSON Array / CSV Buffer<br/>Fields: timestamp_ms, open, high, low, close, volume, rsi, bb_upper, bb_lower, atr, signal, confidence")]
+
+    BARS --> Engine
+    Engine --> MATRIX
 ```
 
 ---
@@ -172,22 +148,25 @@ Any MCP-compatible client (Claude Desktop, Cursor, Cline, local LLMs) can call t
 }
 ```
 
-```text
-[MCP Client: Claude / LLM] ───(JSON-RPC `explore_strategy`)───► [backend/mcp_server/index.ts]
-                                                                        │
-                                                                        ▼
-                                                             [Zod Schema Validation]
-                                                             (Capability: `research:run`)
-                                                                        │
-                                                                        ▼
-                                                             [Market Data Fetch (5k bars)]
-                                                                        │
-                                                                        ▼
-                                                             [C++ FrameBacktester Bridge]
-                                                                        │
-                                                                        ▼
-                                                             [YAML Registry Persistence]
-                                                             (`config/strategies/automated/<name>.yaml`)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor AI as MCP Client (Claude / LLM)
+    participant MCP as backend/mcp_server/index.ts
+    participant VAL as Zod Schema Validator
+    participant DATA as Market Data Store
+    participant CPP as C++ FrameBacktester
+    participant FS as Strategy Registry
+
+    AI->>MCP: JSON-RPC explore_strategy(params)
+    MCP->>VAL: Validate capability (research:run) & schema
+    VAL-->>MCP: Parameters Valid
+    MCP->>DATA: Sourced 5,000 continuous bars
+    DATA-->>MCP: OHLCV Buffers
+    MCP->>CPP: Spawn sovereign_wealth backtest --mode frame
+    CPP-->>MCP: Performance & Monte Carlo metrics
+    MCP->>FS: Persist config/strategies/automated/<name>.yaml
+    MCP-->>AI: Return strategy YAML, Sharpe, WinRate, MaxDD
 ```
 
 ---

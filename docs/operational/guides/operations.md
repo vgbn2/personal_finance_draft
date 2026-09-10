@@ -37,16 +37,14 @@ Before handing off a change:
 - no build artifacts are included
 - no future-phase dependency was added accidentally
 
-## Manual Smoke Test
+## Native Build Smoke Test
 
-If CMake is unavailable locally, a direct compiler smoke test may be used during development:
+To verify the native C++20 engine build and test suite directly:
 
 ```bash
-g++ -std=c++20 -Wall -Wextra -Werror -I ./backend/core/include \
-  ./backend/core/src/main.cpp \
-  ./backend/core/src/wealth/finance_engine.cpp \
-  ./backend/core/src/wealth/param_loader.cpp \
-  -o ./build/manual/sovereign_wealth
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release --parallel
+ctest --test-dir build/backend/core --output-on-failure
 ```
 
 This does not replace the CMake path for final verification.

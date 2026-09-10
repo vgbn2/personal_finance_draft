@@ -142,7 +142,7 @@ This guide is not the only source of truth in the repository.
 When current-state claims conflict, trust:
 
 1. `workspace/STATE.md` for current status
-2. `docs/engineering/codebase_org.md` for where things belong
+2. `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md` for where things belong
 3. subsystem-specific docs only after those two
 
 That rule prevents the book from drifting into fiction if the repo changes.
