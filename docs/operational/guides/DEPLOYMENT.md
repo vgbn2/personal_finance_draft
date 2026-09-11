@@ -163,7 +163,7 @@ Alpaca credentials use explicit account scopes. Central hosts accept only
 Paper/Live scope.
 
 Start with 2 shared vCPU, 8 GB RAM, and enough SSD space for at least twice the current
-`storage/` footprint. The backfill container is configured with a 6 GB V8 heap ceiling,
+`storage/` footprint. The backfill container is configured with a 2560 MB V8 heap ceiling within a 3072 MB container cgroup limit,
 so a 4 GB host is not a reliable choice for the full crypto/equity universe. A reduced
 family/symbol deployment can operate below this recommendation, but it is a different
 runtime profile and must be measured separately.

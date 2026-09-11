@@ -26,13 +26,13 @@ live trading exists (it does, extensively), and 17 links in the documentation hu
 
 | # | Module | Covers | Don't re-read elsewhere for |
 |---|---|---|---|
-| 01 | `01_cpp_core_engine.md` | `backend/core/` — the C++ trade/risk/ML engine | building & running ctest, tracing one real backtest/risk call |
-| 02 | `02_data_ingestion_pipeline.md` | `shared/lib/market/`, the backfill daemon, `storage/data/ts/` | the real binary ts-index format, base-grain mapping, staleness logic |
-| 03 | `03_strategy_backtest_ml.md` | Strategy registry, backtests, ONNX inference, live automation | what a "strategy" is on disk, the live-automation stage list |
-| 04 | `04_trading_gateway_live_orders.md` | **Real money path** — Alpaca/Polymarket/MT5, risk engine, PIN gate | read this before touching anything in `backend/gateway/` or `trade.js` |
-| 05 | `05_tui_cli_dashboard.md` | The CLI/TUI dispatch model, the two competing menu definitions | why editing `manifest.js` sometimes does nothing |
-| 06 | `06_web_dashboard_api.md` | `backend/api/`, `Frontend/dashboard/` | route auth model, where the frontend actually talks to the backend |
-| 07 | `07_testing_methodology.md` | How tests actually run today | why `npx jest` lies to you about failures |
+| 01 | [01_cpp_core_engine.md](01_cpp_core_engine.md) | `backend/core/` — the C++ trade/risk/ML engine | building & running ctest, tracing one real backtest/risk call |
+| 02 | [02_data_ingestion_pipeline.md](02_data_ingestion_pipeline.md) | `shared/lib/market/`, the backfill daemon, `storage/data/ts/` | the real binary ts-index format, base-grain mapping, staleness logic |
+| 03 | [03_strategy_backtest_ml.md](03_strategy_backtest_ml.md) | Strategy registry, backtests, ONNX inference, live automation | what a "strategy" is on disk, the live-automation stage list |
+| 04 | [04_trading_gateway_live_orders.md](04_trading_gateway_live_orders.md) | **Real money path** — Alpaca/Polymarket/MT5, risk engine, PIN gate | read this before touching anything in `backend/gateway/` or `trade.js` |
+| 05 | [05_tui_cli_dashboard.md](05_tui_cli_dashboard.md) | The CLI/TUI dispatch model, the two competing menu definitions | why editing `manifest.js` sometimes does nothing |
+| 06 | [06_web_dashboard_api.md](06_web_dashboard_api.md) | `backend/api/`, `Frontend/dashboard/` | route auth model, where the frontend actually talks to the backend |
+| 07 | [07_testing_methodology.md](07_testing_methodology.md) | How tests actually run today | why `npx jest` lies to you about failures |
 
 ## How to use a module
 

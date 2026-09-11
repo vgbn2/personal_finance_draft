@@ -10,18 +10,18 @@ The `shared/` directory contains modular platform libraries used across CLI, API
 shared/
 └── lib/
     ├── ai/         # RAG docs indexer & local LLM helpers
-    ├── backfill.js # Cross-family market backfill helper
     ├── brokers/    # Broker runtime capability matrix
     ├── compat/     # Backward compatibility shims
-    ├── data/       # Ingestion & macro store libraries
+    ├── data/       # Ingestion, backfill (`backfill.js`) & macro store libraries
     ├── market/     # Time-series storage, coverage, quote router, validation
     ├── mcp/        # MCP gate security policy & agent access control
     ├── profiles/   # Prop firm profile management
     ├── providers/  # External data feed fetchers (Binance, Alpaca, Yahoo, etc.)
     ├── runtime/    # Environment pipeline, config loader, backend bridge
     ├── settings/   # Runtime policy & user settings helpers
-    ├── strategy/   # Walk-forward backtester, RSI reversal, position sizing
+    ├── strategy/   # Walk-forward backtester, RSI reversal
     ├── supabase/   # Supabase client & error classification helpers
+    ├── trading/    # Position sizing & execution rules
     └── ui/         # ANSI formatting & terminal presentation helpers
 ```
 
@@ -36,7 +36,7 @@ shared/
 2. **Strategy & Backtest Engine (`shared/lib/strategy/`):**
    - Walk-Forward Backtester: `shared/lib/strategy/backtest.js`
    - RSI Reversal Strategy: `shared/lib/strategy/rsi_backtest.js`
-   - Risk & Position Sizing: `shared/lib/strategy/position_sizing.js`
+   - Risk & Position Sizing: `shared/lib/trading/position_sizing.js`
 
 3. **Runtime & Security (`shared/lib/runtime/`, `shared/lib/settings/`, `shared/lib/mcp/`):**
    - Runtime Security Policy: `shared/lib/settings/runtime_policy.js`

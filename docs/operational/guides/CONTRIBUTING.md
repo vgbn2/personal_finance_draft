@@ -2,7 +2,7 @@
 
 This guide defines the contribution workflow, zero-key development model, and canonical skill protocols for human contributors, reviewers, and AI coding assistants working in this repository.
 
-The repository-level [contribution entrypoint](../../../workspace/governance/CONTRIBUTING.md) defines the pull-request workflow, contribution attestation, protected operational boundaries, and links to [governance](../../../workspace/governance/GOVERNANCE.md), the [maintainer roster](../../../workspace/governance/MAINTAINERS.md), and the [security policy](../../../workspace/governance/SECURITY.md).
+The repository-level [contribution entrypoint](https://github.com/vgbn2/personal_finance_draft/blob/main/workspace/governance/CONTRIBUTING.md) defines the pull-request workflow, contribution attestation, protected operational boundaries, and links to [governance](https://github.com/vgbn2/personal_finance_draft/blob/main/workspace/governance/GOVERNANCE.md), the [maintainer roster](https://github.com/vgbn2/personal_finance_draft/blob/main/workspace/governance/MAINTAINERS.md), and the [security policy](https://github.com/vgbn2/personal_finance_draft/blob/main/workspace/governance/SECURITY.md).
 
 ---
 

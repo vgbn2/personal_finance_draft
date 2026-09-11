@@ -39,9 +39,11 @@ flowchart LR
 
 ### Invariant 3: Fail-Closed Execution Safety
 - Order dispatch requires three distinct authorization layers:
-  1. Operator PIN verification matching salted sha256 environment hash.
-  2. Environment variable flag `SOVEREIGN_EXECUTION_AUTHORIZED=true`.
-  3. Pre-Trade Risk validation (`backend/core/src/risk/`) verifying drawdown (<15%), maximum position size, and stale quote fences (<15µs evaluation latency).
+
+    1. Operator PIN verification matching salted sha256 environment hash.
+    2. Environment variable flag `SOVEREIGN_EXECUTION_AUTHORIZED=true`.
+    3. Pre-Trade Risk validation (`backend/core/src/risk/`) verifying drawdown (<15%), maximum position size, and stale quote fences (<15µs evaluation latency).
+
 - Any ambiguity, missing quote, or heartbeat failure results in an immediate fail-closed state (`EMERGENCY_HALT`).
 
 ### Invariant 4: Virtual Sub-Positions Isolation
@@ -62,8 +64,8 @@ flowchart LR
 
 | Subsystem | Feature | Status | Primary Component Path | Verification Command |
 |---|---|---|---|---|
-| **Data Pipeline** | Equities OHLCV Ingestion (5m, 15m, 1h, 1d) | **Implemented** | `backend/cli/commands/data/data_fetch.js` | `npm run test:data` |
-| **Data Pipeline** | Crypto OHLCV Ingestion (1m historical) | **Implemented** | `backend/cli/commands/data/data_fetch_binance.js` | `npm run test:data` |
+| **Data Pipeline** | Equities OHLCV Ingestion (5m, 15m, 1h, 1d) | **Implemented** | `backend/cli/commands/data/data.js` | `npm run test:data` |
+| **Data Pipeline** | Crypto OHLCV Ingestion (1m historical) | **Implemented** | `shared/lib/providers/binance.js` | `npm run test:data` |
 | **Data Pipeline** | SOVT v1 Binary Packed Storage | **Implemented** | `shared/lib/market/ts_index_storage.js` | `npm run test:contracts` |
 | **Data Pipeline** | Streaming Two-Pointer TS Merger ($O(1)$ RAM) | **Implemented** | `backend/core/src/data/binary_ts_merger.cpp` | `npm run test:core` |
 | **Native Core** | C++20 Analytics & Technical Indicators | **Implemented** | `backend/core/src/indicators/` | `npm run test:core` (34 CTests) |
@@ -71,7 +73,7 @@ flowchart LR
 | **Native Core** | Execution Drag & Slippage Model | **Implemented** | `backend/core/src/risk/cost_model.cpp` | `npm run test:core` |
 | **Native Core** | Monte Carlo Bootstrap Resampling (xorshift64) | **Implemented** | `backend/core/src/stats/stats_engine.cpp` | `npm run test:core` |
 | **Alpha Research** | Autonomous AI Strategy Explorer (30m Loop) | **Implemented** | `scripts/strategies/auto_strategy_explorer.js` | `npm run test:safety` |
-| **Alpha Research** | 6D Novelty Parameter Hypercube | **Implemented** | `shared/lib/strategy/strategy_generator.js` | `npm run test:structure` |
+| **Alpha Research** | 6D Novelty Parameter Hypercube | **Implemented** | `scripts/strategies/auto_strategy_explorer.js` | `npm run test:structure` |
 | **Alpha Research** | Rolling Feature Frame Engineering | **Implemented** | `backend/core/src/features/` | `npm run test:core` |
 | **Execution** | Alpaca Broker Gateway (Paper & Live) | **Implemented** | `backend/gateway/src/adapters/alpaca_adapter.ts` | `npm run test:safety` |
 | **Execution** | Fractional Step Sizing (0.001 eq, 0.0001 crypto) | **Implemented** | `shared/lib/trading/position_sizing.js` | `npm run test:safety` |
@@ -82,7 +84,7 @@ flowchart LR
 | **Presentation** | Ink v7 TUI with DEC Mode 2026 Sync Output | **Implemented** | `backend/cli/sovereign_dashboard.mjs` | `npm run test:structure` |
 | **Presentation** | React 19 + Vite Web Dashboard | **Implemented** | `Frontend/dashboard/src/` | `npm run test:api` |
 | **Presentation** | Native Node.js HTTP Server (40 Route Keys) | **Implemented** | `backend/api/app.js` | `npm run test:api` |
-| **Presentation** | Model Context Protocol (MCP) Server | **Implemented** | `backend/mcp_server/src/index.ts` | `npm run test:api` |
+| **Presentation** | Model Context Protocol (MCP) Server | **Implemented** | `backend/mcp_server/index.ts` | `npm run test:api` |
 | **Advanced Research**| Kronos CNN Multi-Asset Inference (ONNX) | *Research-Only* | `backend/core/src/ml/` | `npm run test:core` |
 | **Advanced Research**| Macro & Alternative Sentiment Series | *Research-Only* | `shared/lib/data/macro_store.js` | `npm run test:macro` |
 
