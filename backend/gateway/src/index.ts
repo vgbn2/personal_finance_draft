@@ -129,6 +129,7 @@ interface TradeOrder {
   strategy?: string;
   strategyId?: string;
   clientOrderId?: string;
+  signature?: string;
   timeframe?: string;
   confidence?: number;
   source?: 'bot' | 'manual';
@@ -1370,7 +1371,7 @@ export async function main() {
       process.env.SOVEREIGN_EXECUTION_AUTHORIZED = 'true';
       runtimePolicy = resolveRuntimePolicy({
         args,
-        broker: command === 'polymarket' ? 'polymarket' : 'alpaca',
+        broker: 'alpaca',
         executionAuthorized: true,
       });
       if (!runtimePolicy.can_execute) {
