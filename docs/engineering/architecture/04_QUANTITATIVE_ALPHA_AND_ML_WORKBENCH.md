@@ -100,6 +100,7 @@ $$\text{Novelty Condition}: \min_{j \in \text{Seen}} D(\vec{P}_{\text{cand}}, \v
 
 ### SHA-256 Fingerprinting
 To guard against hash collisions and floating-point roundoff:
+
 $$\text{Fingerprint} = \text{SHA-256}(\text{CanonicalJSON}(\text{SortedParams}))[0:16]$$
 
 ---

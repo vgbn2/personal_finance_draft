@@ -8,12 +8,12 @@ The `storage/` directory forms the local data plane, storing binary Float64 cand
 
 ```text
 storage/
-└── data/
-    ├── cache/                # Family-partitioned JSON market cache (crypto, equities, etc.)
-    ├── models/               # Model comparison, ONNX manifests & strategy grades
-    ├── paper_trading/        # Local paper trading ledger & order event logs
-    ├── polymarket_history/   # Historical Polymarket archives & snapshot records
-    └── ts/                   # High-performance binary Float64 time-series index (.bin files)
+├── data/
+│   ├── cache/                # Family-partitioned JSON market cache (crypto, equities, etc.)
+│   ├── paper_trading/        # Local paper trading ledger & order event logs
+│   ├── polymarket_history/   # Historical Polymarket archives & snapshot records
+│   └── ts/                   # High-performance binary Float64 time-series index (.bin files)
+└── models/                   # Model comparison, ONNX manifests & strategy grades
 ```
 
 ## Active Subsystem Entrypoints
@@ -26,7 +26,7 @@ storage/
    - Partitioned by asset class (`cache/crypto/*.json`, `cache/equities/*.json`, `cache/fx/*.json`).
    - Managed by: `shared/lib/data/ingestion.js` and `shared/lib/market/validation.js`.
 
-3. **Model Artifacts & Reports (`storage/data/models/`):**
+3. **Model Artifacts & Reports (`storage/models/`):**
    - Stores trained ONNX model files, serving manifests (`serving_manifest.txt`), and evaluation reports.
 
 4. **Paper Trading Persistence (`storage/data/paper_trading/`):**

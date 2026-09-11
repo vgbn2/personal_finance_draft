@@ -56,6 +56,7 @@ During the planning and preflight phase (`proposed -> preflight`):
 - **Proactive Questioning**: Always present clear architectural choices, scope boundaries, trade-offs, and implementation options to the user before finalizing a batch plan.
 - **Explicit Confirmation**: Ask for user input and explicit confirmation whenever there are multiple valid approaches, structural changes, user-preference options, or boundary decisions.
 - **No Unilateral Assumptions**: Never assume user preference or proceed with major structural, architectural, or design decisions without asking the user.
+- **Mandatory Before & After Diffs**: Every proposed, planned, or executed change in mass-implement MUST include full, explicit Before and After diff blocks for every touched file. Never substitute narrative prose for concrete line-level diffs.
 
 ## Workflow
 

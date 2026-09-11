@@ -79,8 +79,8 @@ The web API runs a native `node:http` server on port 8787 across 40 active route
 |---|---|---|
 | `storage/data/ts/*.bin` | SOVT v1 Binary | High-density OHLCV time-series (48 bytes/record). |
 | `storage/data/cache/*.json` | JSON Cache | Cached universe, indicators, and last-fetch snapshots. |
-| `storage/data/paper/` | JSONL / JSON | Virtual paper trading state, sub-position ledgers, order records. |
-| `storage/data/locks/*.lock` | POSIX Locks | Atomic zero-byte lockfiles for single-writer authority. |
+| `storage/data/paper_trading/` | JSONL / JSON | Virtual paper trading state, sub-position ledgers, order records. |
+| `storage/data/cache/*.lock` | POSIX Locks | Atomic zero-byte lockfiles for single-writer authority. |
 
 ---
 

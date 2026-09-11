@@ -9,7 +9,7 @@ flowchart TD
     subgraph Host["HPDesk Mini-PC (Proxmox VM: Ubuntu 24.04 LTS)<br/>Profile: SOVEREIGN_DEPLOYMENT_PROFILE=central-host"]
         subgraph CoreServices["Core Services"]
             WEB["sv-web (Port 127.0.0.1:8787)<br/>- Dashboard API & Static UI<br/>- Read-Only In-Memory Cache<br/>- Healthcheck: /health"]
-            BACKFILL["sv-backfill (Canonical Writer)<br/>- Passive Ingestion Daemon<br/>- SOVT Segment Writer (3GB)<br/>- V8 Heap: --max-old-space=6GB"]
+            BACKFILL["sv-backfill (Canonical Writer)<br/>- Passive Ingestion Daemon<br/>- SOVT Segment Writer (3GB)<br/>- V8 Heap: --max-old-space-size=2560"]
             BOT["sv-bot-alpaca-paper<br/>- Live Paper Loop<br/>- Fractional Step Sizing<br/>- Deterministic Signatures"]
         end
         subgraph AuxServices["Autonomous & Monitoring Services"]
@@ -76,7 +76,7 @@ docker logs -f sv-bot-alpaca-paper
 ### 3. Verification Checklist
 - **Binary TS Integrity**: Confirm `storage/data/ts/*.bin` files are updating monotonically without lock contention errors.
 - **Sub-Position Ledger**: Verify `storage/data/runtime/ledger/sub_positions.json` maintains consistent reconciliation between broker physical quantities and active bot sub-positions.
-- **Memory Stability**: Ensure `sv-backfill` and `sv-bot-alpaca-paper` containers remain well below their cgroup memory limits ($<300\text{MB}$ RSS).
+- **Memory Stability**: Ensure `sv-backfill` and `sv-bot-alpaca-paper` containers remain well below their cgroup memory limits (< 300MB RSS).
 
 ---
 

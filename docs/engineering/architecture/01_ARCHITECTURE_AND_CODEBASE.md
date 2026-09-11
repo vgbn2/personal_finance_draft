@@ -87,7 +87,7 @@ flowchart TD
     SIGNAL -->|Direct Memory Pointers| CPP
     IND -->|Read Buffers| CPP
 
-    CPP -->|POSIX File I/O (withFileLockSync)| Persistence
+    CPP -->|"POSIX File I/O (withFileLockSync)"| Persistence
     SUB --> Persistence
 ```
 
@@ -95,11 +95,11 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    BOT["Strategy Discovery / Live Bot Cycle<br/>scripts/strategies/auto_strategy_explorer.js<br/>backend/cli/commands/bot.js"]
+    BOT["Strategy Discovery / Live Bot Cycle<br/>scripts/strategies/auto_strategy_explorer.js<br/>shared/lib/runtime/alpaca_bot_cycle.js"]
     ALLOC["1. Virtual Sub-Position Allocator<br/>shared/lib/runtime/sub_positions_ledger.js<br/>- Allocates target quantity to virtual slice<br/>- Emits signature: strat_id_tf_ts_entropy<br/>[Load: 3/10]"]
     RISK["2. Pre-Trade Risk Manager<br/>backend/core/src/risk/<br/>- CB1: Max Drawdown (<15.0%)<br/>- CB2: Max Concentration (<25.0%)<br/>- CB3: Fat-Finger Deviation (<5.0%)<br/>- Evaluation SLA: <15µs<br/>[Load: 7/10]"]
-    QUANT["3. Broker Sizing Quantizer<br/>shared/lib/brokers/alpaca_wrapper.js<br/>- Clamps quantity to step_size and min_notional<br/>- Enforces integer lots vs fractional limits<br/>[Load: 2/10]"]
-    GATEWAY["4. Execution Gateway<br/>backend/gateway/src/alpaca_broker.js / polymarket_gateway.js<br/>- Dispatches authenticated order<br/>- Records fill to paper ledger JSONL<br/>[Load: 4/10]"]
+    QUANT["3. Broker Sizing Quantizer<br/>shared/lib/runtime/alpaca_bot_cycle.js<br/>- Clamps quantity to step_size and min_notional<br/>- Enforces integer lots vs fractional limits<br/>[Load: 2/10]"]
+    GATEWAY["4. Execution Gateway<br/>backend/gateway/src/adapters/alpaca_adapter.ts<br/>- Dispatches authenticated order<br/>- Records fill to paper ledger JSONL<br/>[Load: 4/10]"]
 
     BOT -->|Signal: symbol, side, qty| ALLOC
     ALLOC -->|Pre-Trade Verification Request| RISK
@@ -149,7 +149,7 @@ personal_finance_draft/
 ├── storage/                 # Local data directory (excluded from git tracking)
 │   └── data/
 │       ├── cache/           # Provider HTTP response caches & temporary buffers
-│       ├── runtime/         # Active sub-positions virtual ledger (`sub_positions.json`)
+│       ├── runtime/         # Active sub-positions virtual ledger (`ledger/sub_positions.json`)
 │       └── ts/              # High-density binary time-series files (`*.bin`)
 ├── tests/                   # Native Node.js test suites (`run_node_tests.js`)
 └── workspace/               # Project state tracking (`STATE.md`, `PROMPT_LOG.md`, handoffs)

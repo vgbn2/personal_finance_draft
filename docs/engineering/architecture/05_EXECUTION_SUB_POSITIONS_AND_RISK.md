@@ -8,7 +8,7 @@ This document specifies the sub-position virtual accounting ledger, deterministi
 
 When multiple automated quantitative strategies (or manual operator trades) trade the same physical instrument (e.g. `SPY`, `QQQ`, `BTC/USD`) on a single broker account (Alpaca / Gate.io / Polymarket), the broker tracks only one aggregate net position. 
 
-Sovereign solves this multi-strategy attribution problem via the **Sub-Positions Virtual Ledger** (`storage/data/runtime/sub_positions.json`):
+Sovereign solves this multi-strategy attribution problem via the **Sub-Positions Virtual Ledger** (`storage/data/runtime/ledger/sub_positions.json`):
 
 ```mermaid
 flowchart TD
@@ -114,7 +114,9 @@ $$Q_{\text{BrokerPhysical}}(S) = \sum_{k \in \text{BotStrategies}} q_k(S) + q_{\
 ### Reconciliation Invariant Cases:
 1. **Case A (Exact Match)**: $\sum q_k(S) = Q_{\text{BrokerPhysical}}(S) \implies q_{\text{manual}}(S) = 0$.
 2. **Case B (Excess Physical Shares)**: $Q_{\text{BrokerPhysical}}(S) > \sum q_k(S)$.
+
    $$q_{\text{manual}}(S) := Q_{\text{BrokerPhysical}}(S) - \sum q_k(S)$$
+
    Excess shares are isolated under manual residual ownership so bots cannot liquidate them.
 3. **Case C (Deficit / Under-Allocation)**: $Q_{\text{BrokerPhysical}}(S) < \sum q_k(S)$.
    Fails closed: flags an operational anomaly, pauses automated sell signals, and alerts the operator.

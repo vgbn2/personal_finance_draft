@@ -124,7 +124,7 @@ Domain ownership is defined in `.github/CODEOWNERS` and aligned with `workspace/
 ## 5. Security & Vulnerability Handling
 
 - **Private Vulnerability Reporting**: Repository administrators should enable **Private vulnerability reporting** in GitHub under **Settings → Code security and analysis**.
-- **Public Disclosures Prohibited**: Do not open public issues for potential security vulnerabilities, leaked keys, or execution bypasses. Follow [workspace/governance/SECURITY.md](../../../workspace/governance/SECURITY.md).
+- **Public Disclosures Prohibited**: Do not open public issues for potential security vulnerabilities, leaked keys, or execution bypasses. Follow [workspace/governance/SECURITY.md](https://github.com/vgbn2/personal_finance_draft/blob/main/workspace/governance/SECURITY.md).
 
 ---
 

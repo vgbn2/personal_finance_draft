@@ -63,7 +63,7 @@ Any MCP-compatible client (Claude Desktop, Gemini, ChatGPT, Cursor, Cline, OpenD
   }
   ```
 - **Behavior**: Evaluates the agent's specific hypothesis against deep continuous market data (5,000+ bars), runs the zero-allocation native C++20 Sovereign Core backtest (`sovereign_wealth --mode frame`), calculates comprehensive performance & tail risk metrics, and registers the strategy YAML in `config/strategies/<name>.yaml`.
-- **Automated Fallback**: If called with no arguments or `{ "save_yaml": true }`, automatically explores a novel parameter candidate ($\ge 50\%$ distance metric).
+- **Automated Fallback**: If called with no arguments or `{ "save_yaml": true }`, automatically explores a novel parameter candidate (≥ 50% distance metric).
 
 ### Mode B: Direct CLI Execution
 Autonomous scripts, cron jobs, or container runners can invoke the explorer directly:

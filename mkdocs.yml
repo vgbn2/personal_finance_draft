@@ -3,6 +3,7 @@ site_description: Institutional-grade, local-first quantitative research, backte
 site_url: https://vgbn2.github.io/personal_finance_draft/
 repo_url: https://github.com/vgbn2/personal_finance_draft
 repo_name: vgbn2/personal_finance_draft
+draft_docs: /README.md
 
 theme:
   name: material

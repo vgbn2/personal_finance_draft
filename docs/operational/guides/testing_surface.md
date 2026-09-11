@@ -41,7 +41,7 @@ That means:
 - Verifies Docker topology and deployment docs stay aligned on ports, cache settings, and runtime wiring
 
 `npm run test:safety`
-- Runs 43 critical safety tests: trade PIN gates, environment manifest, bot cycle risk bounds, automation guards, and ledger fail-closed invariants
+- Runs 44 critical safety tests: trade PIN gates, environment manifest, bot cycle risk bounds, automation guards, and ledger fail-closed invariants
 
 `npm run test:core`
 - Seeds master fixtures, builds C++20 engine (`npm run native:build`), and executes all 34 native CTests

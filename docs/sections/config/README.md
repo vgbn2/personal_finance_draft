@@ -18,7 +18,7 @@ config/
 
 1. **Market Universes (`config/markets/`, `config/asset_mapping.json`):**
    - Configured Asset Mapping: `config/asset_mapping.json` (canonical symbol & asset metadata map)
-   - Universe Matrix: `config/markets/asset_mapping.json` (legacy/compat asset universe grid)
+   - Universe Matrix: `config/markets/asset_mapping.yaml` (legacy/compat asset universe grid)
 
 2. **Strategy Manifests (`config/strategies/`):**
    - Registered Strategy Manifests: `config/strategies/*.yaml` (defines RSI reversal, EMA crossover, Bollinger breakout, etc.)
@@ -27,9 +27,9 @@ config/
    - Environment Manifest: `config/system/environment_manifest.json` (classified environment variable catalog, surface permissions, default values)
 
 4. **Trading & Prop Firm Profiles (`config/trading/`):**
-   - Prop Firm Registries: `config/trading/prop_firm_profiles.json`
+   - Prop Firm Registries: `config/trading/prop_firms.json`
 
 ## Code Atlas & Related Maps
 
-- Shared Configured Universe Owner — [`shared/lib/market/configured_universe.js`](../../../shared/lib/market/configured_universe.js)
-- Environment Pipeline Contract — [`shared/lib/runtime/env_pipeline.js`](../../../shared/lib/runtime/env_pipeline.js)
+- Shared Configured Universe Owner — `shared/lib/market/configured_universe.js` (see [Shared Lib](../shared/README.md))
+- Environment Pipeline Contract — `shared/lib/runtime/env_pipeline.js` (see [Shared Lib](../shared/README.md))

@@ -88,7 +88,7 @@ Existing adapter and route names now point to likely integrations:
 - `backend/core/src/execution/simple_market.cpp`
 - `backend/core/src/execution/twap_vwap.cpp`
 - `backend/core/src/execution/rl_router.cpp`
-- `cli/src/broker_api/gate_io_api.rs`
-- `cli/src/broker_api/mt5_native.rs`
-- `cli/src/broker_api/order_executor.rs`
+- `backend/gateway/src/adapters/gate_io_adapter.ts`
+- `backend/gateway/src/adapters/alpaca_adapter.ts`
+- `backend/gateway/src/adapters/polymarket_adapter.ts`
 - `backend/core/src/execution/execution_interface.hpp`

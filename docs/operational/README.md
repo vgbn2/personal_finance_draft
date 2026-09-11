@@ -16,8 +16,8 @@ Task-oriented guides and runbooks for configuring, verifying, operating, recover
 
 ## Sections
 
-- [Guides](guides/)
-- [Local-first operation](local_first/)
-- [Roadmaps](roadmap/) — planning context, not current implementation truth.
+- [Guides](guides/QUICKSTART.md)
+- [Local-first operation](local_first/local_first_setup.md)
+- [Roadmaps](roadmap/roadmap.md) — planning context, not current implementation truth.
 
 Start with [Quickstart](guides/QUICKSTART.md) and [Testing surfaces](guides/testing_surface.md).
