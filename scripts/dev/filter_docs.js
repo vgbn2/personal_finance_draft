@@ -13,11 +13,11 @@ const DOCS_ROOT = path.join(REPO_ROOT, 'docs');
 const MANIFEST_PATH = path.join(DOCS_ROOT, 'documentation_manifest.json');
 
 const STALE_PATTERNS = [
-  { pattern: /codebase_org\.md/g, label: 'deleted file: codebase_org.md' },
-  { pattern: /backend\/core\/src\/wealth\//g, label: 'deleted path: backend/core/src/wealth/' },
-  { pattern: /deployment\/(heroku|kubernetes|terraform)/g, label: 'phantom path: deployment/{heroku,k8s,terraform}' },
-  { pattern: /frontend_prompt\.md/g, label: 'deleted prototype: frontend_prompt.md' },
-  { pattern: /legacy_math\.md/g, label: 'deleted prototype: legacy_math.md' },
+  { pattern: /codebase_org\.md/, label: 'deleted file: codebase_org.md' },
+  { pattern: /backend\/core\/src\/wealth\//, label: 'deleted path: backend/core/src/wealth/' },
+  { pattern: /deployment\/(heroku|kubernetes|terraform)/, label: 'phantom path: deployment/{heroku,k8s,terraform}' },
+  { pattern: /frontend_prompt\.md/, label: 'deleted prototype: frontend_prompt.md' },
+  { pattern: /legacy_math\.md/, label: 'deleted prototype: legacy_math.md' },
 ];
 
 const BOX_BORDER_REGEX = /^\s*(\+[-=]{4,}\+|[┌+][─═]{4,}[┐+]|\|[\s\S]*\|)\s*$/;

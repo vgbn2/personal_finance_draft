@@ -7,9 +7,8 @@ function resetCtrlC() {
   lastCtrlCAt = 0;
 }
 
-function registerCtrlCPress() {
-  const now = Date.now();
-  const withinWindow = now - lastCtrlCAt <= EXIT_WINDOW_MS;
+function registerCtrlCPress(now = Date.now()) {
+  const withinWindow = lastCtrlCAt > 0 && now - lastCtrlCAt <= EXIT_WINDOW_MS;
   lastCtrlCAt = withinWindow ? 0 : now;
   return withinWindow;
 }
