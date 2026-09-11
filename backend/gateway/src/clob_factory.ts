@@ -1,5 +1,5 @@
 import * as crypto from 'node:crypto';
-import { assertValidPrivateKey } from './polymarket';
+import { assertValidPrivateKey } from './polymarket/index.js';
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 
 export interface ClobClientOptions {

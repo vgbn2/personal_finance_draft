@@ -16,6 +16,11 @@ const { polymarketGet, createClobClient } = require('../../../shared/lib/brokers
 // @ts-ignore
 const { resolveOwnerAddress } = require('../../../shared/lib/brokers/polymarket_env');
 
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 export interface PolymarketAdapterOptions {
   host?: string;
   privateKey?: string;

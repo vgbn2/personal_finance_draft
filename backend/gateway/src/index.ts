@@ -15,13 +15,10 @@ import {
 } from './cycle';
 import { loadBotState, saveBotState } from './bot_state';
 import {
-  PolymarketAdapter,
   submitPolymarketOrder as submitPolymarketOrderExt,
   preflightPolymarketOrder,
   buildPolymarketBotExecutionOptions as buildPolymarketBotExecutionOptionsExt,
   processProposedOrdersFile,
-  type PreparedPolymarketOrder,
-  type PolymarketAdapterOptions,
 } from './polymarket_execution';
 import {
   fetchPolymarketPortfolio,
@@ -74,7 +71,7 @@ import {
   summarizePortfolio as summarizeInternalPaperPortfolio,
   traceCsvFile,
   validateProposedOrdersPayload,
-} from './polymarket';
+} from './polymarket/index.js';
 // @ts-ignore
 const { runPolymarketOrderbookLiteBackfill } = require('../../cli/commands/trade/polymarket_backtest.js');
 // @ts-ignore
@@ -89,6 +86,8 @@ const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_b
 const { fetchWithRetry, retryTransient } = require('../../../shared/lib/runtime/fetch_retry');
 // @ts-ignore
 const { resolveRuntimePolicy } = require('../../../shared/lib/settings/runtime_policy');
+// @ts-ignore
+const { verifyPin } = require('../../cli/lib/auth.js');
 
 const ansi = {
   reset:       '\x1b[0m',
@@ -128,6 +127,12 @@ interface TradeOrder {
   timestamp: Date;
   error?: string;
   strategy?: string;
+  strategyId?: string;
+  clientOrderId?: string;
+  timeframe?: string;
+  confidence?: number;
+  source?: 'bot' | 'manual';
+  submittedAt?: string;
   providerPaper?: boolean;
 }
 
@@ -146,7 +151,7 @@ interface Position {
   currentPrice?: number | null;
   valuationStatus?: 'live_quote' | 'unavailable';
   resolutionPrice?: number | null;
-  historyStatus?: 'complete' | 'trade_history_truncated';
+  historyStatus?: string;
 }
 
 interface PolymarketTrade {
@@ -838,6 +843,33 @@ class ExecutionGateway {
         console.log(`[${label}] Order placed successfully: ${result.orderId} (Status: ${result.status})`);
         order.status = result.status === 'filled' ? OrderStatus.FILLED : OrderStatus.SUBMITTED;
 
+        try {
+          const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');
+          if (order.side === 'buy') {
+            subLedger.recordSubPositionEntry({
+              symbol: order.instrumentId,
+              strategyId: order.strategyId || order.strategy || 'manual',
+              quantity: order.quantity,
+              entryPrice: order.price || 0,
+              source: order.source || (order.strategyId || order.strategy ? 'bot' : 'manual'),
+              timeframe: order.timeframe || '1m',
+              confidence: order.confidence || 1.0,
+              signature: order.clientOrderId || order.signature,
+              orderId: result.orderId,
+              submittedAt: order.submittedAt || new Date().toISOString()
+            });
+          } else if (order.side === 'sell') {
+            subLedger.recordSubPositionExit(
+              order.instrumentId,
+              order.strategyId || order.strategy || 'manual',
+              order.quantity,
+              { exitPrice: order.price || 0 }
+            );
+          }
+        } catch (ledgerErr) {
+          console.warn(`[LEDGER-SYNC] Warning: Could not record sub-position in ledger:`, ledgerErr);
+        }
+
         await this.persistence.logOrder(order, order.providerPaper ? 'alpaca_paper' : 'alpaca', {
           order_id: result.orderId,
           strategy: order.strategy || null,
@@ -1260,7 +1292,7 @@ class PolymarketAdapter implements BrokerAdapter {
   }
 }
 
-function createExecutionGatewayAdapter(adapter: PolymarketAdapter) {
+function createExecutionGatewayAdapter(adapter: any) {
   return new ExecutionGateway({ dryRun: false, adapter });
 }
 
@@ -1272,22 +1304,18 @@ function buildPolymarketBotExecutionOptions(): BotExecutionOptions {
   return buildPolymarketBotExecutionOptionsExt(createExecutionGatewayAdapter);
 }
 
-async function fetchPolymarketInvestigate(args: string[]): Promise<any> {
-  const trace = fetchPolymarketTrace(args);
-  if (!trace.ok) return trace;
-  const rawLimit = parseOptionValue(args, '--limit');
-  const limit = rawLimit ? Math.max(1, Number.parseInt(rawLimit, 10) || 3) : 3;
-  const addresses = (trace.recommendedProbeAddresses || []).slice(0, limit);
-  const probe = await probeCandidateSet(addresses);
-  return {
-    ok: true,
-    trace,
-    probe,
-    summary: {
-      candidateCount: addresses.length,
-      fundedCandidates: (probe.probes || []).filter((entry: any) => Array.isArray(entry.results) && entry.results.some((result: any) => Number(result?.collateral?.balance ?? 0) > 0 || Number(result?.collateral?.allowance ?? 0) > 0)),
-    },
-  };
+async function promptPin(): Promise<string> {
+  const readline = await import('node:readline/promises');
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  try {
+    const pin = await rl.question('Enter Trade PIN to confirm LIVE execution: ');
+    return pin.trim();
+  } finally {
+    rl.close();
+  }
 }
 
 export async function main() {
@@ -1298,7 +1326,7 @@ export async function main() {
     process.exitCode = 1;
     return;
   }
-  
+
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     printUsage();
     return;
@@ -1310,12 +1338,57 @@ export async function main() {
     process.exitCode = 1;
     return;
   }
-  const runtimePolicy = resolveRuntimePolicy({
+  const command = (args[0] || '').toLowerCase();
+  const wantsLive = args.includes('--live');
+  let runtimePolicy = resolveRuntimePolicy({
     args,
-    broker: args[0]?.toLowerCase() === 'polymarket' ? 'polymarket' : 'alpaca',
+    broker: command === 'polymarket' ? 'polymarket' : 'alpaca',
   });
-  const isLive = runtimePolicy.can_execute;
+  let isLive = runtimePolicy.can_execute;
   const useJson = args.includes('--json');
+
+  if (wantsLive && !isLive && (command === 'buy' || command === 'sell')) {
+    if (useJson || !process.stdin.isTTY) {
+      if (useJson) {
+        console.log(JSON.stringify({ ok: false, error: 'Unauthorized: live execution requires elevated permissions' }));
+      } else {
+        console.error('Error: Unauthorized: live execution requires elevated permissions');
+      }
+      process.exit(1);
+    } else {
+      const expectedPin = process.env.SOVEREIGN_TRADE_PIN;
+      if (!expectedPin) {
+        console.error('Error: SOVEREIGN_TRADE_PIN not set. Live execution blocked (Fail-Closed).');
+        process.exit(1);
+      }
+      const enteredPin = await promptPin();
+      if (!verifyPin(enteredPin, expectedPin)) {
+        console.error('Error: Invalid Trade PIN. Live execution blocked.');
+        process.exit(1);
+      }
+      process.env.SOVEREIGN_EXECUTION_AUTHORIZED = 'true';
+      runtimePolicy = resolveRuntimePolicy({
+        args,
+        broker: command === 'polymarket' ? 'polymarket' : 'alpaca',
+        executionAuthorized: true,
+      });
+      if (!runtimePolicy.can_execute) {
+        console.error(`Error: Execution blocked by policy: ${runtimePolicy.blocking_reasons.join(', ')}`);
+        process.exit(1);
+      }
+      isLive = runtimePolicy.can_execute;
+    }
+  }
+
+  if (wantsLive && !isLive && (command === 'buy' || command === 'sell')) {
+    if (useJson) {
+      console.log(JSON.stringify({ ok: false, error: 'Unauthorized: live execution requires elevated permissions' }));
+    } else {
+      console.error('Error: Unauthorized: live execution requires elevated permissions');
+    }
+    process.exit(1);
+  }
+
   const adapter = isLive
     ? new AlpacaAdapter({ simulateIfMissingCredentials: false })
     : providerPaper
@@ -1330,8 +1403,6 @@ export async function main() {
     paperMaxNotional: providerPaper ? Number(paperMaxNotional || '25') : undefined,
   });
   
-  const command = args[0].toLowerCase();
-
   if (command === 'buy' || command === 'sell') {
     // SANITIZATION
     const rawSymbol = String(args[1] || '').toUpperCase();
@@ -1532,7 +1603,7 @@ export async function main() {
       // distinct from Alpaca's hosted paper account.
       const internalPaperPortfolio = loadInternalPaperPortfolio();
       const internalPaperSummary = summarizeInternalPaperPortfolio(internalPaperPortfolio);
-      const paper = {
+      const paper: any = {
         name: 'Internal Paper Bot (Polymarket dry-run)',
         ...internalPaperSummary,
         positions: internalPaperPortfolio.positions || [],

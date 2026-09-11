@@ -35,6 +35,13 @@ test('decideExit returns "age" when held at least maxHoldingDays with price betw
   assert.equal(decideExit(basePosition, 100, 45), 'age');
 });
 
+test('decideExit returns "age" when elapsedBars meets or exceeds maxHoldingBars (BT-05 parity)', () => {
+  const barPosition = { targetPrice: 110, stopPrice: 90, maxHoldingDays: 30, maxHoldingBars: 5 };
+  assert.equal(decideExit(barPosition, 100, 0.1, 5), 'age');
+  assert.equal(decideExit(barPosition, 100, 0.1, 6), 'age');
+  assert.equal(decideExit(barPosition, 100, 0.1, 4.9), null);
+});
+
 test('decideExit returns null when price is between stop/target and age is under the limit', () => {
   assert.equal(decideExit(basePosition, 100, 1), null);
   assert.equal(decideExit(basePosition, 100, 29.9), null);

@@ -2,16 +2,20 @@ import { createClobClient, polymarketGet, resolveOwnerAddress } from './clob_fac
 import { type BotExecutionOptions, type BotOrderIntent } from './cycle';
 import {
   classifyPolymarketGatewayError,
-  fetchPolymarketGammaMarkets as fetchPolymarketOrderBook, // fallback naming/export
   validateProposedOrdersPayload,
-  toFiniteNumber,
-} from './polymarket';
+} from './polymarket/index.js';
+import { fetchPolymarketOrderBook as fetchOrderBook } from './polymarket_account_adapter.js';
 // @ts-ignore
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
 
 export enum OrderSide {
   BUY = 'buy',
@@ -37,6 +41,12 @@ export interface TradeOrder {
   timestamp: Date;
   error?: string;
   strategy?: string;
+  strategyId?: string;
+  clientOrderId?: string;
+  timeframe?: string;
+  confidence?: number;
+  source?: 'bot' | 'manual';
+  submittedAt?: string;
   providerPaper?: boolean;
 }
 
@@ -68,6 +78,9 @@ export interface BrokerAdapter {
 export interface PolymarketAdapterOptions {
   host?: string;
   privateKey?: string;
+  apiKey?: string;
+  apiSecret?: string;
+  apiPassphrase?: string;
   creds?: { key: string; secret: string; passphrase: string };
   funderAddress?: string;
   signatureType?: number;
@@ -117,6 +130,20 @@ export class PolymarketAdapter implements BrokerAdapter {
 
   getAccountIdentity(): { funderAddress?: string; signatureType?: number } {
     return { funderAddress: this.funderAddress, signatureType: this.signatureType };
+  }
+
+  async getSignerAddress(): Promise<string | null> {
+    if (!this.privateKey) return null;
+    try {
+      const { Wallet } = await import('ethers');
+      return new Wallet(this.privateKey).address;
+    } catch {
+      return null;
+    }
+  }
+
+  isConfigured(): boolean {
+    return Boolean(this.privateKey);
   }
 
   async prepareOrder(order: TradeOrder): Promise<PreparedPolymarketOrder> {

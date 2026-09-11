@@ -1,21 +1,22 @@
 # Next Session Goal
 
-## Primary Objective: Remote Review, Strategy Specification Refinement & Gated Verification
+## Primary Objective: Remote Proxmox VM Soak Deployment & Live Paper Verification
 
-1. **Remote Proxmox Review & Gated Verification**:
-   - Review and verify synchronized documentation files, standalone filter tool, and build health on the HPDesk Proxmox VM (`hpdesk:~/personal_finance_draft/`).
-   - Execute gated verification checks (`npm run docs:filter -- --strict`, `npm run hygiene`, `npm run test:structure`, `npm run test:safety`) on the remote host before any operational tasks.
+1. **Remote Proxmox VM (`hpdesk-1`) Soak Deployment & Synchronization**:
+   - Synchronize remediated codebase to remote soak VM: `rsync -avz --delete --exclude 'node_modules' --exclude '.git' --exclude 'build' ./ hpdesk:~/personal_finance_draft/`.
+   - Rebuild native core C++ binaries on target host: `npm run native:build`.
+   - Deploy full Docker Compose stack on Proxmox host (`infra/docker/docker-compose.yml`) with verified cgroup resource constraints.
 
-2. **Strategy Specification Review & Calibration (`config/strategies/`)**:
-   - Review and calibrate parameter specifications across registered and automated YAML configs (`config/strategies/*.yaml`, `config/strategies/automated/*.yaml`).
-   - Calibrate low-timeframe momentum and ML specs (`5m`, `15m`, `30m`, `1h`): entry signal thresholds, minimum hold duration, and volume surge filters to reduce fee/spread drag.
-   - Standardize spec schema definitions across timeframes, asset universes, and risk parameters.
+2. **Live Paper Trading Loop Verification**:
+   - Verify `sv-bot-alpaca-paper` loop stability over multi-hour operational cycle.
+   - Assert fractional unit sizing dispatch (`0.001` equity, `0.0001` crypto) and deterministic order ID generation.
+   - Verify zero-allocation streaming `BinaryTsMerger` performance under live ingestion.
+   - Verify virtual sub-positions ledger (`storage/data/runtime/ledger/sub_positions.json`) attribution for overlapping symbol positions.
 
-3. **Mass-BT Job Spec & Metric Expansion**:
-   - Expand `specsPayload` in `backend/cli/commands/research/research_mass_bt.js` and `MassBtJobSpec` in C++ `frame_backtester.hpp` to forward per-strategy risk and cost parameters.
-   - Surface profit-factor and trade duration metrics in C++ mass-bt JSON output and CLI matrix.
+3. **Polymarket Paper Resolution & Settlement Engine Soak**:
+   - Exercise Gamma orderbook ingestion and paper position matching.
+   - Verify corrected NO token settlement payout logic on resolved market events.
 
-4. **Continuous Verification & Safety Boundaries**:
-   - Keep 100% test integrity across `npm run test:core` (34 CTests), `npm run test:safety` (43 tests), `npm run test:structure` (12 suites), and `npm run hygiene`.
-   - Preserve zero-key development invariants, hardware execution PIN gates, and fail-closed safety guards.
-
+4. **Web & Terminal UI Operational Monitoring**:
+   - Monitor real-time telemetry on Ink v7 TUI dashboard (`npm run tui`) and React 19 web dashboard (`Frontend/dashboard`).
+   - Confirm zero-flicker DEC Mode 2026 synchronized rendering during live updates.

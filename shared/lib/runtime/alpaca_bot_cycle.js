@@ -4,17 +4,31 @@ const { acquireLock, releaseLock } = require('./process_lock');
 const { runGatewayCommand } = require('./backend_bridge');
 const botState = require('./alpaca_bot_state');
 
+let parseTimeframeMs;
+try {
+  ({ parseTimeframeMs } = require('../../../backend/scripts/data_ops/ingest_market_data/constants.js'));
+} catch {
+  parseTimeframeMs = (tf) => {
+    const match = /^(\d+)(m|h|d|w)$/.exec(String(tf || ''));
+    if (!match) return null;
+    const mult = { m: 60000, h: 3600000, d: 86400000, w: 604800000 }[match[2]] || 0;
+    return parseInt(match[1], 10) * mult;
+  };
+}
+
 /**
  * Pure exit decision -- no I/O, so it's trivially unit-testable.
  * @param {import('./alpaca_bot_state').AlpacaBotPosition} position
  * @param {number} currentPrice
  * @param {number} ageDays
+ * @param {number|null} [elapsedBars]
  * @returns {'target'|'stop'|'age'|null}
  */
-function decideExit(position, currentPrice, ageDays) {
+function decideExit(position, currentPrice, ageDays, elapsedBars = null) {
   if (currentPrice > 0 && currentPrice >= position.targetPrice) return 'target';
   if (currentPrice > 0 && currentPrice <= position.stopPrice) return 'stop';
-  if (ageDays >= position.maxHoldingDays) return 'age';
+  if (Number.isFinite(elapsedBars) && Number.isFinite(position.maxHoldingBars) && elapsedBars >= position.maxHoldingBars) return 'age';
+  if (Number.isFinite(ageDays) && Number.isFinite(position.maxHoldingDays) && ageDays >= position.maxHoldingDays) return 'age';
   return null;
 }
 
@@ -127,7 +141,7 @@ function fetchAlpacaPositions(live, options = {}) {
  * fill price (handles partial fills / pre-existing manual holdings) instead of
  * trusting the requested signal price.
  */
-function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true }, options = {}) {
+function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true, timeframe }, options = {}) {
   const state = botState.loadState();
   const inventory = fetchAlpacaPositions(live, options);
   const brokerPositions = inventory.positions;
@@ -139,18 +153,24 @@ function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true 
   const stopLossPct = Number.isFinite(risk.stop_loss_pct) ? risk.stop_loss_pct : state.config.defaultStopLossPct;
   const takeProfitPct = Number.isFinite(risk.take_profit_pct) ? risk.take_profit_pct : state.config.defaultTakeProfitPct;
   const maxHoldingDays = Number.isFinite(risk.max_holding_days) ? risk.max_holding_days : 30;
+  const maxHoldingBars = Number.isFinite(risk.max_holding_bars)
+    ? risk.max_holding_bars
+    : (Number.isFinite(strategy?.horizon) ? strategy.horizon : null);
+  const positionTimeframe = timeframe || strategy?.timeframe || strategy?.market?.timeframe || '1d';
 
   const position = {
     positionId: `${symbol}_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
     symbol,
     qty: filledQty,
     strategyName: strategy?.name || 'unknown',
+    timeframe: positionTimeframe,
     entryPrice: Number(requestedPrice),
     fillPrice,
     entryTimestamp: new Date().toISOString(),
     stopPrice: fillPrice * (1 - stopLossPct),
     targetPrice: fillPrice * (1 + takeProfitPct),
     maxHoldingDays,
+    maxHoldingBars,
     brokerReconciliation: inventory.status === 'confirmed' ? 'confirmed' : 'pending',
   };
 
@@ -213,8 +233,11 @@ async function runAlpacaExitCheck(args = [], options = {}) {
       }
 
       const currentPrice = Number(brokerPos.quantity) > 0 ? Number(brokerPos.marketValue) / Number(brokerPos.quantity) : 0;
-      const ageDays = (Date.now() - new Date(position.entryTimestamp).getTime()) / (24 * 60 * 60 * 1000);
-      const exitReason = decideExit(position, currentPrice, ageDays);
+      const elapsedMs = Date.now() - new Date(position.entryTimestamp).getTime();
+      const ageDays = elapsedMs / (24 * 60 * 60 * 1000);
+      const tfMs = parseTimeframeMs(position.timeframe || '1d');
+      const elapsedBars = tfMs && tfMs > 0 ? elapsedMs / tfMs : null;
+      const exitReason = decideExit(position, currentPrice, ageDays, elapsedBars);
 
       if (!exitReason) {
         remaining.push(position);

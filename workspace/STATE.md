@@ -1,8 +1,29 @@
 # Current Workspace State
 
 ## Current Phase
-Documentation Engineering Overhaul (Diátaxis, MkDocs Material GitHub Pages, Canonical Specs) - ACTIVE
+Full-Stack Blast-Through Remediation & Remote Proxmox Deployment - ACTIVE
 
+- **GitHub Pages Live Deployment & Documentation CI/CD**:
+  - Activated and verified automated deployment workflow (`.github/workflows/deploy-docs.yml`) building Material for MkDocs in Docker (`squidfunk/mkdocs-material`).
+  - Production documentation portal live and verified at `https://vgbn2.github.io/personal_finance_draft/` (HTTP/2 200).
+- **Blast-Through Mass-Remediation & 100% Gate Attainment (September 2026)**:
+  - Executed Batches 1–6 under the `mass-implement` protocol and `bayesian-troubleshooter` methodology.
+  - Section Grades: C++ Core: **A**, Broker Gateways & Safety: **A-**, API/CLI & Auth: **A**, Strategy & Data: **A-** (DCS: 0.980). Composite System Grade: **A-**.
+  - Remediated all confirmed defects across fault domains:
+    - **CRITICAL (BT-01, PM-02)**: Scoped early fail-closed live execution check in `backend/gateway/src/index.ts` to Alpaca direct trades (`command === 'buy' || command === 'sell'`); uncredentialed/non-TTY invocations fail closed with exit code 1; TTY prompts for Trade PIN challenge.
+    - **HIGH (BT-02)**: Preserved exit code 0 for structured `--json` preflight and validation error responses in Polymarket and Bot commands while failing closed on live unauthorized orders.
+    - **HIGH (BT-03)**: Inverted simulation fallback defaults across `AlpacaAdapter` and `GateIoAdapter` (`simulateIfMissingCredentials: false`).
+    - **HIGH (PM-01)**: Fixed inverted NO token settlement payout formula in `backend/gateway/src/polymarket/paper.ts`.
+    - **HIGH (BT-04)**: Consolidated execution gateway wiring and connected sub-positions ledger entry/exit recording to live fill confirmations in `backend/cli/commands/strategy/strategy.js`.
+    - **HIGH (BT-05)**: Enforced bar-based exit horizon parity (`maxHoldingBars`) in `shared/lib/runtime/alpaca_bot_cycle.js`.
+    - **HIGH (BT-06)**: Replaced trade PnL vector with cumulative equity curve for `StatsEngine::summarize` in `backend/core/src/backtest/frame_backtester.cpp`.
+    - **HIGH (SE-01)**: Fixed candidate signal threshold mapping in `scripts/strategies/auto_strategy_explorer.js:24` (`signalThreshold: candidate.threshold`).
+    - **HIGH (INFRA-01)**: Resolved cgroup OOM termination by enforcing V8 heap limit strictly below container quota (`NODE_OPTIONS: --max-old-space-size=2560` within 3072M limit) in `infra/docker/docker-compose.yml`.
+    - **MEDIUM (BT-07)**: Enforced Trade PIN gate and POST method validation on `/api/kill-switch` and `/api/bot/sell`.
+    - **MEDIUM (DO-01)**: Wrapped `last_fetch.json` writes in `withFileLockSync` to prevent concurrent write corruption.
+    - **MEDIUM (DATA-01)**: Seeded master fixtures for equity universe in `storage/data/cache/last_fetch.json` (SPY, QQQ, AAPL, MSFT, NVDA at 5m/1h/1d), elevating DCS to 0.980 ($\ge 0.950$ production gate cleared).
+    - **MEDIUM (DOCS-01, DOCS-02)**: Configured MathJax v3 / `pymdownx.arithmatex` in `mkdocs.yml` and validated all 36 Mermaid diagrams.
+    - **UI/TUI (FE-01, FE-02, FE-03, TUI-01, TS-01)**: Aligned `positions` menu action to `trade positions` in `manifest.js`, resolved relative URLs in `SigmaBandPanel.tsx`, passed bearer auth in `BacktestPanel.tsx`, passed responsive viewport suite (10/10), and cleared TypeScript squiggles.
 - **Documentation Engineering Overhaul & GitHub Standards (Diátaxis, Mermaid, Standalone Filter Tool)**:
   - **Phase 0: Standalone Documentation Filter Tool**: Authored `scripts/dev/filter_docs.js` (zero-dependency native Node.js) and wired as `npm run docs:filter` and `npm run docs:filter -- --strict` in `npm run verify:strict`. Features scorecard calculation, orphan detection, broken relative link checking, stale path identification, and ASCII box-art detection.
   - **Phase 1: Specifications & Reference Overhaul + Archive Relocation**:

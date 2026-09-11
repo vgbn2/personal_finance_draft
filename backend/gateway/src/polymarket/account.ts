@@ -1,4 +1,5 @@
-import { resolveSignatureType as resolvePolymarketSignatureType, resolveWalletAddress as resolvePolymarketWalletAddress } from '../../../../shared/lib/brokers/polymarket_env.js';
+// @ts-ignore
+const { resolveSignatureType: resolvePolymarketSignatureType, resolveWalletAddress: resolvePolymarketWalletAddress } = require('../../../../shared/lib/brokers/polymarket_env.js');
 
 export function getConfiguredWalletAddress(env: Record<string, any> = process.env): string | undefined {
   return resolvePolymarketWalletAddress(env);
@@ -74,6 +75,7 @@ export function polymarketAddressRoles(env: Record<string, any> = process.env) {
   const funder = getConfiguredWalletAddress(env);
   const sigType = getConfiguredSignatureType(env, funder);
   return {
+    signer: null as string | null,
     profile: env.PROFILE_ADDRESS || null,
     relayerApiKeyAddress: env.RELAYER_API_KEY_ADDRESS || null,
     proxy: env.PROXY_ADDRESS || null,
@@ -102,9 +104,9 @@ export function buildTradePagination(
 }
 
 export function buildPolymarketDebugSnapshot(params: {
-  signerAddress?: string;
-  funderAddress?: string;
-  signatureType?: number;
+  signerAddress?: string | null;
+  funderAddress?: string | null;
+  signatureType?: number | null;
   collateral?: any;
   openOrders?: any[];
   positions?: any[];
@@ -116,7 +118,7 @@ export function buildPolymarketDebugSnapshot(params: {
     1: 'POLY_PROXY',
     2: 'POLY_GNOSIS_SAFE',
   };
-  const walletMode = signatureType !== undefined ? walletModeMap[signatureType] || 'UNKNOWN' : 'UNCONFIGURED';
+  const walletMode = signatureType !== undefined && signatureType !== null ? walletModeMap[signatureType] || 'UNKNOWN' : 'UNCONFIGURED';
 
   let accountState = 'unknown';
   if (collateral) {
@@ -131,6 +133,7 @@ export function buildPolymarketDebugSnapshot(params: {
 
   return {
     ok: true,
+    configured: true,
     signerAddress: signerAddress || null,
     funderAddress: funderAddress || null,
     signatureType: signatureType ?? null,
@@ -144,14 +147,15 @@ export function buildPolymarketDebugSnapshot(params: {
 }
 
 export function buildPolymarketCollateralProbeSnapshot(params: {
-  signerAddress?: string;
-  funderAddress?: string;
-  signatureType?: number;
+  signerAddress?: string | null;
+  funderAddress?: string | null;
+  signatureType?: number | null;
   collateral?: any;
 }) {
   const debug = buildPolymarketDebugSnapshot(params);
   return {
     ok: debug.ok,
+    configured: debug.configured,
     signerAddress: debug.signerAddress,
     funderAddress: debug.funderAddress,
     signatureType: debug.signatureType,

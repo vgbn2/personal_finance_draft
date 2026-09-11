@@ -69,7 +69,7 @@ test('schema-3 service rows match all nine isolated Compose environment files', 
 
   assert.match(compose, /LIVE_TRADING:\s*"false"/);
   assert.match(compose, /SOVEREIGN_EXECUTION_AUTHORIZED:\s*"false"/);
-  assert.match(composeService(compose, 'backfill'), /NODE_OPTIONS:\s*--max-old-space-size=6144/);
+  assert.match(composeService(compose, 'backfill'), /NODE_OPTIONS:\s*--max-old-space-size=2560/);
   assert.match(composeService(compose, 'web'), /SOVEREIGN_WEB_HOST:\s*0\.0\.0\.0/);
 });
 
