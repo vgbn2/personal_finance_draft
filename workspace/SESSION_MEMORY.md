@@ -1,3 +1,16 @@
+### Session Memory - 2026-09-12 session 11 — MT5 Execution Review, Documentation Architecture Research (Alpaca, Polymarket, MkDocs) & Social Media Signals Research
+
+```json
+{
+  "batch": ["DOCS-RESEARCH-SOCIAL-SIGNALS-1"],
+  "lifecycle": "closed",
+  "scope": "Reviewed MT5 execution engine implementation on branch feat/mt5-execution-engine (commit 6af814b7, 100% operational test pass); researched institutional developer documentation standards across Alpaca (product domains, machine-readable llms.txt, tabbed responses), Polymarket (EIP-712 auth, CLOB order specs, dual crypto/quant audience targeting), Stripe/Coinbase (API cards, rate limit headers), and MkDocs Material (Diataxis 4-quadrant layout, content.tabs.link global language sync, admonitions hierarchy); authored comprehensive research and architectural specification for YouTube/Social Media alpha signal extraction in docs/research/social_signals_pipeline.md (zero-key subtitle API & local whisper.cpp fallback, strict JSON extraction schema, Bayesian credibility & decay scoring, anti-shill liquidity gating, isolated directory tree) with zero implementation code; updated docs/documentation_manifest.json and verified 100% documentation audit pass.",
+  "changes": "created docs/research/social_signals_pipeline.md; updated docs/documentation_manifest.json, workspace/NEXT_SESSION_GOAL.md, workspace/PROMPT_LOG.md, workspace/SESSION_MEMORY.md",
+  "verification": "npm run audit:documentation (PASS); npm run test:structure (PASS 28/28 tests); npm run hygiene (PASS 100%); node tests/run_node_tests.js mt5_magic_codec.test.js mt5_adapter.test.js (PASS 6/6 tests)",
+  "boundaries": "zero code added for social signals (research/spec only); zero-key local development policy intact; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false"
+}
+```
+
 ### Session Memory - 2026-09-11 session 10 — MetaTrader 5 (MT5) Institutional Execution Engine & Headless Wine Deployment Mass-Implementation
 
 ```json

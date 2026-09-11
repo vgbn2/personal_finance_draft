@@ -3,6 +3,16 @@
 ## Current Phase
 Full-Stack Blast-Through Remediation, MetaTrader 5 Execution Engine & Remote Proxmox Deployment - ACTIVE
 
+- **Documentation Engineering & Developer Experience Overhaul (September 2026)**:
+  - **Diátaxis & Institutional Developer Standard**: Benchmarked against Alpaca (`docs.alpaca.markets`), Polymarket (`docs.polymarket.com`), and Stripe/Coinbase. Enhanced `docs/engineering/standards/documentation_standard.md` with:
+    - Card-based API endpoint specifications with HTTP method badges, auth scopes, headers, and tabbed JSON request/response examples with error remediation.
+    - Global multi-language code synchronization using MkDocs `content.tabs.link` across Node.js, C++20, and CLI snippets.
+    - Wire protocol specifications with microsecond epoch timestamps, monotonic sequence numbers, and transport SLA latency targets.
+    - Fixed-point arithmetic invariants ($10^8$ satoshi standard, lot step and tick size normalization).
+  - **Machine-Readable LLM Index (`docs/llms.txt`)**: Authored root `docs/llms.txt` cataloging overview, architecture, specifications, operational runbooks, and research specifications for autonomous AI and developer tooling.
+  - **Social Media & YouTube Trade Signal Pipeline Research**: Authored comprehensive architectural and research specification in `docs/research/social_signals_pipeline.md` covering zero-key subtitle extraction with local `whisper.cpp` fallback, strict JSON NLP extraction schemas, Bayesian credibility & decay scoring ($W_c(t)$), anti-shill liquidity floors ($5M 24h), and pre-trade C++ risk engine gating boundaries.
+  - **100% Verification Gate Pass**: Passed `npm run audit:documentation`, `npm run hygiene`, `npm run test:structure`, and `npm run docs:filter -- --strict`.
+
 - **MetaTrader 5 (MT5) Institutional Trade Engine & Headless Wine Deployment**:
   - Implemented complete 7-batch institutional MT5 execution suite:
     - **Wire Types & 64-Bit ORDER_MAGIC Codec**: Defined NDJSON request/response interfaces in `backend/gateway/src/adapters/types.ts`. Implemented 64-bit integer codec in `shared/lib/runtime/mt5_magic_codec.js` encoding Sovereign System ID (`0x534F`), CRC16 strategy ID hash, timeframe in minutes, and instance ticket ID with bit 63 clear for positive signed representation in MQL5 logs.
