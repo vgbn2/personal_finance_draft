@@ -94,6 +94,7 @@ nav:
       - Contributing Guide: operational/guides/CONTRIBUTING.md
       - Testing Surface Guide: operational/guides/testing_surface.md
       - CLI Quick Guide: operational/guides/cli_quick_guide.md
+      - Strategy Explorer Guide: RESEARCH_STRATEGY_EXPLORER.md
       - Data Ingestion: operational/guides/data_ingestion.md
       - Operational Procedures: operational/guides/operations.md
       - Deployment Plan: operational/guides/DEPLOYMENT.md

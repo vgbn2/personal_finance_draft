@@ -73,6 +73,16 @@ int main() {
         return 1;
     }
 
+    const std::vector<double> inf_pos{100.0, std::numeric_limits<double>::infinity(), 120.0};
+    if (!expect(!sovereign::StatsEngine::summarize(inf_pos).ok, "Expected positive infinity equity rejection")) {
+        return 1;
+    }
+
+    const std::vector<double> inf_neg{100.0, -std::numeric_limits<double>::infinity(), 120.0};
+    if (!expect(!sovereign::StatsEngine::summarize(inf_neg).ok, "Expected negative infinity equity rejection")) {
+        return 1;
+    }
+
     const std::vector<double> flat{100.0, 100.0, 100.0};
     const auto flat_stats = sovereign::StatsEngine::summarize(flat);
     if (!expect(flat_stats.ok, "Expected flat equity curve to be valid")) {

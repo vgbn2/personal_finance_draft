@@ -872,7 +872,8 @@ class ExecutionGateway {
 
         await this.persistence.logOrder(order, order.providerPaper ? 'alpaca_paper' : 'alpaca', {
           order_id: result.orderId,
-          strategy: order.strategy || null,
+          strategy: order.strategyId || order.strategy || null,
+          signature: order.clientOrderId || order.signature || null,
           paper: Boolean(order.providerPaper),
         }, result);
 
