@@ -356,7 +356,7 @@ const M = [
           '--live':     { t:'yn',  lbl:'⚠ EXECUTE LIVE TRADES?', def:false, warn:true },
         },
       },
-      { id: 'auto-trade status', label: 'positions', desc: 'Open auto-trade positions, live P&L, recent exits',
+      { id: 'trade positions', label: 'positions', desc: 'Open trade positions, live P&L, broker & paper holdings',
         flags: {
           '--live': { t:'yn', lbl:'Query LIVE account (vs paper)?', def:false },
         },

@@ -16,12 +16,15 @@ const STRATEGIES_DIR = path.join(REPO_ROOT, 'config/strategies/automated');
 function writeStrategyRegistryFile(candidate) {
   try {
     if (!fs.existsSync(STRATEGIES_DIR)) fs.mkdirSync(STRATEGIES_DIR, { recursive: true });
-    const yamlContent = buildStrategyPlan(candidate.name, {
+    const safeName = String(candidate.name || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    if (!safeName) return null;
+    const yamlContent = buildStrategyPlan(safeName, {
       kind: candidate.family,
       family: candidate.family,
       model: candidate.model,
       timeframe: candidate.timeframe,
       threshold: candidate.threshold,
+      signalThreshold: candidate.threshold,
       maxHoldingDays: candidate.horizon,
       universe: candidate.universe,
       indicators: candidate.indicators,
@@ -30,7 +33,7 @@ function writeStrategyRegistryFile(candidate) {
       entrySignal: candidate.entry_signal,
       exitSignal: candidate.exit_signal,
     });
-    const filePath = path.join(STRATEGIES_DIR, `${candidate.name}.yaml`);
+    const filePath = path.join(STRATEGIES_DIR, `${safeName}.yaml`);
     fs.writeFileSync(filePath, yamlContent, 'utf8');
     return filePath;
   } catch (err) {

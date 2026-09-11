@@ -102,7 +102,7 @@ The core technical architecture is thoroughly documented across the canonical **
 ## 4. Supporting Runbooks & Guides
 - [Operational Soak Runbook & HPDesk Deployment](OPERATIONAL_SOAK_RUNBOOK.md) — Multi-container Docker Compose setup, Proxmox VM soak monitoring, single-writer protocol.
 - [Autonomous AI Strategy Research Guide](RESEARCH_STRATEGY_EXPLORER.md) — Step-by-step guide for AI agents interacting with Sovereign via MCP, CLI, and YAML registries.
-- [Master Documentation Catalog](README.md) & [Documentation Manifest](documentation_manifest.json) — Complete corpus registry.
+- [Master Documentation Catalog](index.md) & [Documentation Manifest](documentation_manifest.json) — Complete corpus registry.
 
 ---
 

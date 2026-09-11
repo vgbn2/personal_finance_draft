@@ -14,7 +14,7 @@ import {
   traceCsvFile,
   classifyPolymarketGatewayError,
   describeGatewayError,
-} from '../polymarket';
+} from '../polymarket/index.js';
 
 const ansi = {
   reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m', red: '\x1b[31m', green: '\x1b[32m',
@@ -294,10 +294,10 @@ function inferRootAddressFromCsvPath(csvPath: string): string | undefined {
 
 function fetchTrace(args: string[]) {
   const csvPath = parseOptionValue(args, '--csv');
-  if (!csvPath) return { ok: false, error: 'Missing --csv <path>' };
+  if (!csvPath) return { ok: false as const, error: 'Missing --csv <path>' };
   const rootAddress = parseOptionValue(args, '--address') || inferRootAddressFromCsvPath(csvPath);
-  if (!rootAddress) return { ok: false, error: 'Unable to infer root address; pass --address <0x...>' };
-  return { ok: true, csvPath, ...traceCsvFile(csvPath, rootAddress) };
+  if (!rootAddress) return { ok: false as const, error: 'Unable to infer root address; pass --address <0x...>' };
+  return { ok: true as const, csvPath, ...traceCsvFile(csvPath, rootAddress) };
 }
 
 async function fetchInvestigate(args: string[], factory: PolymarketReadAdapterFactory, env: NodeJS.ProcessEnv) {

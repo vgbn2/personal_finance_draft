@@ -172,6 +172,15 @@ async function runBackendVisualize(args = []) {
   // Initial compute
   let state = computeSigmaState(symbol, timeframe, windowSize);
   if (!state) {
+    try {
+      const { ingestMarketData } = require('../../../scripts/data_ops/ingest_market_data.js');
+      await ingestMarketData({ symbols: [symbol], timeframes: [timeframe] });
+      state = computeSigmaState(symbol, timeframe, windowSize);
+    } catch {
+      // Ingest fallback failed or offline
+    }
+  }
+  if (!state) {
     const snap = readSnapshot(DEFAULT_HISTORY);
     if (!snap) return { ok: false, error: 'No cache data found. Run a backfill first.' };
     return { ok: false, error: `Insufficient data for ${symbol} on ${timeframe} (need ${windowSize}+ bars).` };
