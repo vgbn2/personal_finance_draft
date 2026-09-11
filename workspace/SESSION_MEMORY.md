@@ -1,3 +1,16 @@
+### Session Memory - 2026-09-11 session 7 — Proxmox VM Soak Deploy Sync & Bayesian Docs 404 Diagnosis
+
+```json
+{
+  "batch": ["PROXMOX-DEPLOY-SYNC-DOCS-DIAG-1"],
+  "lifecycle": "closed",
+  "scope": "Diagnosed root cause of HTTP 404 at https://vgbn2.github.io/personal_finance_draft/engineering/specs/product_spec/ via Bayesian troubleshooting: GitHub Pages source set to Deploy from a branch (main/docs) triggers built-in Jekyll runner which races and clobbers deploy-docs.yml MkDocs build, generating flat product_spec.html instead of product_spec/index.html. Executed remote Proxmox VM (hpdesk-1) deploy sync: safely stashed untracked artifacts, synchronized codebase via state-safe rsync, rebuilt Docker image personal_finance:latest on target host compiling native C++ core and Vite dashboard, recreated all 9 Compose containers, and verified healthy container status.",
+  "changes": "updated workspace/SESSION_MEMORY.md, workspace/PROMPT_LOG.md, workspace/STATE.md, workspace/NEXT_SESSION_GOAL.md; synchronized hpdesk-1:/home/vgbn-server/Documents/codeptit/personal_finance_draft/",
+  "verification": "Bayesian probe isolating Jekyll generator vs MkDocs artifact; curl https://vgbn2.github.io/personal_finance_draft/ (generator: Jekyll v3.10.0); curl .../product_spec.html (HTTP 200) vs .../product_spec/ (HTTP 404); remote Docker image build on hpdesk-1 (PASS, 31.9s C++ compile + Vite build); docker compose up -d across all 9 services (PASS); sv-web container status (healthy)",
+  "boundaries": "zero-key local development policy intact; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false; zero production trades executed; remote .env files and storage/ data stores untouched"
+}
+```
+
 ### Session Memory - 2026-09-11 session 6 — Full Mass-Remediation & Complete Verification Gate Clearance
 
 ```json
