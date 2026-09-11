@@ -4,7 +4,7 @@ import { ToolResponse } from '../lib/schemas';
 const { evaluateAndRegisterSpec, runExplorationCycle } = require('../../../scripts/strategies/auto_strategy_explorer.js');
 
 export const exploreStrategySchema = z.object({
-  name: z.string().optional().describe('Unique descriptive strategy name (e.g. "vol_regime_svm_breakout_1h"). If omitted, auto-generated.'),
+  name: z.string().regex(/^[a-zA-Z0-9_-]+$/, 'Strategy name must contain only alphanumeric characters, underscores, or dashes').optional().describe('Unique descriptive strategy name (e.g. "vol_regime_svm_breakout_1h"). If omitted, auto-generated.'),
   hypothesis: z.string().optional().describe('The theoretical or empirical market edge thesis driving this strategy'),
   family: z.enum(['momentum', 'mean_reversion', 'breakout', 'volatility', 'ml_alpha', 'stat_arb', 'orderflow']).optional().default('momentum').describe('Quantitative strategy family/classification'),
   model: z.enum(['knn_pattern_v0', 'svm_margin_v0', 'random_forest_v0', 'cnn_window_v0', 'decision_tree_stump_v0', 'logistic_regression_v0']).optional().default('knn_pattern_v0').describe('Predictive ML/statistical model'),

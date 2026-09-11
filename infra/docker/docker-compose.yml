@@ -79,6 +79,14 @@ services:
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     # The image's HEALTHCHECK probes :8787/health, but bot runs no HTTP server —
     # disable it here so `docker compose ps` doesn't report a false "unhealthy".
     healthcheck:
@@ -110,6 +118,14 @@ services:
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     healthcheck:
       disable: true
     # Alpaca Paper automation loop: scans registered strategies against Alpaca Paper
@@ -146,9 +162,9 @@ services:
       <<: *central-runtime
       # Headroom for the merge-write path: an incremental crypto/equity cycle still
       # reads the existing deep 1m bin (millions of rows) to merge-protect it. The
-      # per-lane concurrency cap keeps this bounded, but raise the V8 old-space ceiling
-      # above the ~4GB default so a long-running daemon never trips an OOM at the edge.
-      NODE_OPTIONS: --max-old-space-size=6144
+      # per-lane concurrency cap keeps this bounded, but keep V8 old-space ceiling
+      # strictly below the 3072M container cgroup ceiling (INFRA-01).
+      NODE_OPTIONS: --max-old-space-size=2560
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
@@ -198,6 +214,14 @@ services:
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
     healthcheck:
       disable: true
     command:
@@ -228,6 +252,14 @@ services:
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
     healthcheck:
       disable: true
     command:
@@ -257,6 +289,14 @@ services:
       - ../../storage:/app/storage
       - /mnt/sda1/backups:/mnt/sda1/backups
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
     healthcheck:
       disable: true
     command:
@@ -289,6 +329,14 @@ services:
     volumes:
       - ../../storage:/app/storage
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     healthcheck:
       disable: true
     command:
@@ -324,6 +372,14 @@ services:
       - ../../config:/app/config
       - ../../storage:/app/storage
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     healthcheck:
       disable: true
     command:

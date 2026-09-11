@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '../../lib/utils';
 import { Play, BarChart, TrendingUp, ShieldAlert, Cpu, Calendar, Activity } from 'lucide-react';
-import { API_ENDPOINTS, DEFAULT_HEADERS } from '../../lib/api';
+import { API_ENDPOINTS, DEFAULT_HEADERS, getAuthHeaders } from '../../lib/api';
 
 interface BacktestMetrics {
   trades: number;
@@ -30,7 +30,8 @@ export function BacktestPanel() {
     setRunning(true);
     try {
       // Trigger a sample backtest via the API
-      const res = await fetch(`${API_ENDPOINTS.BACKTEST}?sample=true`, { headers: DEFAULT_HEADERS });
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${API_ENDPOINTS.BACKTEST}?sample=true`, { headers });
       const data = await res.json();
       if (data.ok) {
         // The API returns the stats directly in the sample mode or from cache
@@ -46,7 +47,8 @@ export function BacktestPanel() {
   useEffect(() => {
     const fetchLatest = async () => {
       try {
-        const res = await fetch(API_ENDPOINTS.BACKTEST, { headers: DEFAULT_HEADERS });
+        const headers = await getAuthHeaders();
+        const res = await fetch(API_ENDPOINTS.BACKTEST, { headers });
         const data = await res.json();
         if (data.ok && data.summary) setReport(data.summary);
       } catch (err) {

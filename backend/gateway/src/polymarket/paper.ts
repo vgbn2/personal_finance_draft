@@ -2,9 +2,12 @@ import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { GAMMA_BASE, inferWinner } from '../../../../shared/lib/market/polymarket_history';
-import { resolveRuntimePolicy } from '../../../../shared/lib/settings/runtime_policy';
-import { SIZING_MODES, normalizeSizingIntent } from '../../../../shared/lib/trading/position_sizing.js';
+// @ts-ignore
+const { GAMMA_BASE, inferWinner } = require('../../../../shared/lib/market/polymarket_history');
+// @ts-ignore
+const { resolveRuntimePolicy } = require('../../../../shared/lib/settings/runtime_policy');
+// @ts-ignore
+const { SIZING_MODES, normalizeSizingIntent } = require('../../../../shared/lib/trading/position_sizing.js');
 import { classifyPolymarketGatewayError } from './errors';
 import {
   appendLedgerEvents,
@@ -494,10 +497,12 @@ export async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAG
       market = Array.isArray(arr) ? arr[0] : (arr && arr.id ? arr : null);
     } catch { continue; }
 
-    if (!market || market.active !== false) continue;
+    if (!market || (market.active !== false && market.closed !== true)) continue;
 
-    const resolutionPrice = inferWinner(market).resolutionPrice;
-    const pnl = (resolutionPrice - pos.avg_price) * pos.shares;
+    const resolution = inferWinner(market);
+    const isNo = String(pos.outcome || '').trim().toLowerCase() === 'no';
+    const tokenPrice = isNo ? (1.0 - resolution.resolutionPrice) : resolution.resolutionPrice;
+    const pnl = (tokenPrice - pos.avg_price) * pos.shares;
 
     const record = {
       t: now,
@@ -507,11 +512,11 @@ export async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAG
       outcome: pos.outcome || 'Yes',
       shares: pos.shares,
       avg_price: pos.avg_price,
-      resolution_price: resolutionPrice,
+      resolution_price: tokenPrice,
       pnl: Number(pnl.toFixed(6)),
     };
 
-    const cashCredit = Number((pos.shares * resolutionPrice).toFixed(6));
+    const cashCredit = Number((pos.shares * tokenPrice).toFixed(6));
     portfolio.virtual_balance = Number((toNumber(portfolio.virtual_balance) + cashCredit).toFixed(6));
     portfolio.positions.splice(i, 1);
     const settled = appendLedgerEvents(storageDir, [{

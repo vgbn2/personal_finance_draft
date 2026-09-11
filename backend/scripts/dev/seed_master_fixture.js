@@ -13,6 +13,17 @@ const masterFixture = {
     { family: 'equities', provider: 'yahoo', symbol: 'MSFT', timestamp: '2026-05-28T12:00:00Z', open: 300, high: 305, low: 299, close: 302, volume: 500000 },
     { family: 'equities', provider: 'stooq', symbol: 'SPY', timestamp: '2026-05-28T12:00:00Z', open: 400, high: 405, low: 399, close: 402, volume: 2000000 },
     { family: 'equities', provider: 'yahoo', symbol: 'QQQ', timestamp: '2026-05-28T12:00:00Z', open: 350, high: 355, low: 349, close: 352, volume: 1500000 },
+    { family: 'equities', provider: 'yahoo', symbol: 'NVDA', timestamp: '2026-05-28T12:00:00Z', open: 1100, high: 1120, low: 1090, close: 1105, volume: 3000000 },
+    { family: 'equities', provider: 'stooq', symbol: 'TSLA', timestamp: '2026-05-28T12:00:00Z', open: 180, high: 185, low: 178, close: 182, volume: 2500000 },
+    { family: 'equities', provider: 'yahoo', symbol: 'GOOGL', timestamp: '2026-05-28T12:00:00Z', open: 175, high: 178, low: 174, close: 176, volume: 1200000 },
+    { family: 'equities', provider: 'stooq', symbol: 'META', timestamp: '2026-05-28T12:00:00Z', open: 475, high: 485, low: 472, close: 480, volume: 800000 },
+    { family: 'equities', provider: 'yahoo', symbol: 'AMZN', timestamp: '2026-05-28T12:00:00Z', open: 180, high: 183, low: 179, close: 181, volume: 1400000 },
+    { family: 'equities', provider: 'stooq', symbol: 'NFLX', timestamp: '2026-05-28T12:00:00Z', open: 640, high: 650, low: 635, close: 645, volume: 400000 },
+    { family: 'equities', provider: 'yahoo', symbol: 'AMD', timestamp: '2026-05-28T12:00:00Z', open: 165, high: 170, low: 163, close: 168, volume: 1900000 },
+    { family: 'equities', provider: 'stooq', symbol: 'GLD', timestamp: '2026-05-28T12:00:00Z', open: 215, high: 217, low: 214, close: 216, volume: 600000 },
+    { family: 'equities', provider: 'yahoo', symbol: 'SLV', timestamp: '2026-05-28T12:00:00Z', open: 28, high: 29, low: 27.8, close: 28.5, volume: 900000 },
+    { family: 'equities', provider: 'stooq', symbol: 'IWM', timestamp: '2026-05-28T12:00:00Z', open: 205, high: 208, low: 204, close: 206, volume: 1100000 },
+    { family: 'equities', provider: 'yahoo', symbol: 'DIA', timestamp: '2026-05-28T12:00:00Z', open: 390, high: 393, low: 388, close: 391, volume: 500000 },
     
     // Crypto
     { family: 'crypto', provider: 'binance', symbol: 'BTCUSDT', timeframe: '1d', timestamp: '2026-05-25T12:00:00Z', open: 58000, high: 59000, low: 57000, close: 58500, volume: 100 },
@@ -64,7 +75,7 @@ const masterFixture = {
   ],
   errors: [],
   provider_checks: [
-    { family: 'equities', providers: ['stooq', 'yahoo'], symbols: ['AAPL', 'MSFT', 'SPY', 'QQQ'] },
+    { family: 'equities', providers: ['stooq', 'yahoo'], symbols: ['AAPL', 'MSFT', 'SPY', 'QQQ', 'NVDA', 'TSLA', 'GOOGL', 'META', 'AMZN', 'NFLX', 'AMD', 'GLD', 'SLV', 'IWM', 'DIA'] },
     { family: 'commodities', providers: ['stooq', 'yahoo'] },
     { family: 'weather', provider: 'openweather', status: 'ok' },
     { family: 'flight', provider: 'adsbexchange', status: 'ok' },

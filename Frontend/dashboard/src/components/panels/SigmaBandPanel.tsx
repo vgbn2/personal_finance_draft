@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { API_ENDPOINTS, DEFAULT_HEADERS } from '../../lib/api';
+import { API_ENDPOINTS, DEFAULT_HEADERS, getAuthHeaders } from '../../lib/api';
 
 const POLL_INTERVAL_MS = 30_000;
 const SYMBOLS = ['AAPL', 'BTC', 'ETH', 'SPY', 'QQQ', 'MSFT', 'NVDA'];
@@ -109,11 +109,13 @@ export function SigmaBandPanel() {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(API_ENDPOINTS.SIGMA_BAND);
+      const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+      const url = new URL(API_ENDPOINTS.SIGMA_BAND, base);
       url.searchParams.set('symbol', symbol);
       url.searchParams.set('timeframe', timeframe);
       url.searchParams.set('period', String(period));
-      const res = await globalThis.fetch(url.toString(), { headers: DEFAULT_HEADERS });
+      const headers = await getAuthHeaders();
+      const res = await globalThis.fetch(url.toString(), { headers });
       const json = await res.json() as SigmaBandData;
       setData(json);
       setLastFetch(new Date());

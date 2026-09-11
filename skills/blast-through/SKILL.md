@@ -17,9 +17,60 @@ fixes to `codex`, or broad approved fixes to `mass-implement`.
 - `maintainability`: ownership clarity, readability, duplication, convention drift, and incident comprehension.
 - `review`: findings-first code review of changed or requested files.
 - `security`: interactive threat modeling, vulnerability auditing, secret scanning, API auth policy verification, and input sanitization review.
+- `deep-blastthrough`: multi-agent parallel architecture audit fanning out specialized subagents across all repository architectural planes (Core/Compute, Gateways & Execution Safety, API/CLI/Auth, Data & Strategy, Terminal UI / Console, Web Dashboard, Infrastructure / Docker / Soak, MCP & Config, Prediction Markets / Explorer), with Section Cleanliness Grades (A-F), Data Confidence Score (DCS), and Fault-Domain Defect Matrix.
 - `full`: archive, connectivity, grades, data trust, and system completeness; use only when explicitly requested.
 
 State one audit mode and either Hard Reading Mode (first/stale pass) or Fast Reading Mode (current follow-up). Do not mix modes silently. Read [audit-modes.md](references/audit-modes.md) for the selected checklist.
+
+## Deep Blast-Through Parallel Audit Protocol (For `deep-blastthrough` mode)
+
+When performing a Deep Blast-Through audit across the entire repository or multi-tier architecture, the orchestrator MUST systematically fan out specialized background subagents across all distinct architectural planes, enforce rigorous empirical verification, and produce a unified Section Scorecard and Defect Matrix.
+
+### 1. Architectural Plane Decomposition & Subagent Fan-Out
+Decompose the target codebase into distinct, non-overlapping architectural planes and assign one specialized subagent per plane:
+1. **Compute & Core Engine** (Native C++/Rust/Go, numerical kernels, SIMD, OpenMP, memory allocators, core unit/regression test suites).
+2. **Execution Safety & Broker Gateways** (Order submission pipelines, fail-closed safety invariants, virtual ledgers, trade attribution, broker adapters, rate limiting).
+3. **API, CLI & Authentication Mesh** (REST routes, WebSockets, CLI command dispatchers, RBAC capability matrices, loopback token gating, Trade PIN verification).
+4. **Data Pipelines, Indicators & Storage** (Time-series ingestion, binary formats, deduplication, atomic file staging, indicator parity, Data Confidence Score calculation).
+5. **Terminal UI & Console Engines** (TUI rendering pipelines, DEC Mode 2026 synchronized output, diff/double-buffering, keystroke frame locks, hardware cursor management, live ledger views).
+6. **Web Dashboard & Frontend Interfaces** (Component hierarchy, state management, client build/bundle verification, responsive viewports, API bridge consistency, mutation gates).
+7. **Infrastructure, Containerization & Soak Topology** (Docker Compose topologies, container cgroups CPU/RAM limits, volume persistence, network bridge isolation, systemd services, deployment scripts, soak runbook compliance).
+8. **Model Context Protocol (MCP) & Configuration Manifests** (MCP server tools, parameter schemas, error propagation, environment variable manifests, trading risk policies, asset universes).
+9. **Prediction Markets, Data Operations & Autonomous Exploration** (CLOB/Gamma orderbook archiving, settlement engines, backfill worker locks, continuous parameter hypercube search, novelty distance metrics, YAML generation).
+
+### 2. Uncovered Surface Sweeps (Zero Blind Spots)
+Before concluding an audit pass, the orchestrator MUST scan the repository directory taxonomy (`ls -d */`) against the completed subagent scopes. If any subsystem, daemon, helper script tree, or deployment surface remains unreviewed, immediately spawn additional targeted subagents until 100% of architectural surfaces are evaluated.
+
+### 3. Empirical Verification & Invariant Testing
+Subagents MUST NOT rely on static code review or documentation claims alone:
+- **Execute Native Test Runners**: Each subagent must execute its domain's native test commands (`ctest`, `npm test`, `tsc --noEmit`, etc.) and record exact pass/fail counts.
+- **Probe Fail-Closed Boundaries**: Actively test unauthorized execution commands (e.g. `--live` without elevation flags/keys) to prove they fail closed with non-zero exit codes.
+- **Detect Phantom Specs**: Contrast documented architectural claims against actual source implementations (e.g. WebSocket feeds vs REST polling, ring buffers vs static files).
+- **Inspect Log Evidence**: Check active diagnostic and runtime logs (`flaw_monitor.log`, container logs) alongside static code.
+
+### 4. Section Cleanliness Grading Rubric (A–F)
+Each architectural plane must receive a substantiated letter grade:
+- **A**: Pristine. Zero high/critical defects, 100% passing tests, strict fail-closed gating, zero dead code/stubs, comprehensive documentation alignment.
+- **B**: Production Ready. Passing test suites, solid security boundaries, minor non-blocking issues (e.g., logging gaps, documentation drift, minor styling inconsistencies).
+- **C**: Operational with Caution. Functional in standard paths but carries latent architectural hazards (e.g., missing cgroup limits, silent error fallbacks, mock balance leaks, untested edge cases).
+- **D**: Defective / High Risk. Major broken workflows, failing core test suites, inverted calculations, parameter overwrites, or broken mutation gates.
+- **F**: Catastrophic Failure. Fails open on live capital execution, leaks private keys, exhibits active data corruption, or crashes on startup.
+
+### 5. Data Confidence Score (DCS) Metric
+For data pipeline and quantitative strategy layers, calculate and report the composite DCS:
+$$\text{DCS} = 0.3 \times \text{Freshness} + 0.4 \times \text{Schema} + 0.3 \times \text{Coverage}$$
+$\text{DCS} \ge 0.950$ is strictly required for automated production promotion. Scores below $0.950$ immediately block deployment and must highlight the exact missing universe fixtures or schema gaps.
+
+### 6. Standardized Defect Matrix & Stub-Causality Schema
+Every finding across all planes must be cataloged in the unified Defect Matrix:
+- `ID`: Unique identifier prefixed by domain (e.g., `BT-01`, `INFRA-01`, `PM-01`, `SE-01`, `TUI-01`, `FE-01`).
+- `Severity`: `CRITICAL`, `HIGH`, `MEDIUM`, or `LOW`.
+- `File Path & Line(s)`: Exact file path and line numbers.
+- `Failing Boundary`: The first directly proved broken boundary in the call path.
+- `Fault Domain`: `our_source`, `our_host_or_deployment`, `operator_config_or_credentials`, `external_provider`, `environment_or_sandbox`, or `shared_or_mixed`.
+- `Repair Owner`: Exact module, service, or team responsible for remediation.
+- `Causal Mechanism`: Root-cause technical explanation.
+- `Stub Involvement`: `production_stub`, `test_stub_only`, `silent_fallback`, `compatibility_shim`, `adapter_not_stub`, or `none`.
 
 ## Security Audit Intake Protocol (For `security` mode)
 

@@ -572,8 +572,11 @@ std::vector<MassBtJobResult> FrameBacktester::runMassBt(
         res.net_return = equity - 1.0;
         res.win_rate = total_trades > 0 ? static_cast<double>(winners) / static_cast<double>(total_trades) : 0.0;
         res.max_drawdown = maxDrawdown(equity_points);
-        if (!returns.empty()) {
-            const auto stats = StatsEngine::summarize(returns, constants::DEFAULT_RISK_FREE_RATE, constants::TRADING_DAYS_PER_YEAR);
+        if (!equity_points.empty()) {
+            std::vector<double> eq_vals;
+            eq_vals.reserve(equity_points.size());
+            for (const auto& pt : equity_points) eq_vals.push_back(pt.equity);
+            const auto stats = StatsEngine::summarize(eq_vals, constants::DEFAULT_RISK_FREE_RATE, constants::TRADING_DAYS_PER_YEAR);
             res.sharpe_ratio = stats.sharpe;
         }
         res.ok = total_trades > 0;

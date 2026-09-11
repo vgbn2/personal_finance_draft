@@ -142,7 +142,7 @@ export function mergeTokenMetadata(target: Map<string, TokenMetadata>, source: M
   return target;
 }
 
-export function projectPolymarketPosition(position: any, metadata?: TokenMetadata, currentPrice?: number): PolymarketPosition {
+export function projectPolymarketPosition(position: any, metadata?: TokenMetadata, currentPrice?: number | null): PolymarketPosition {
   const historyComplete = !position?.historyStatus || position.historyStatus === 'complete';
   const lifecycle = historyComplete ? metadata?.lifecycle || 'unknown' : 'unknown';
   const price = toFiniteNumber(currentPrice);

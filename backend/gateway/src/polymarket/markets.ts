@@ -188,7 +188,7 @@ export function normalizePolymarketGammaEvent(event: any = {}): NormalizedGammaE
     volume: toFiniteNumber(event.volume ?? event.volumeNum, 0),
     markets: (Array.isArray(event.markets) ? event.markets : [])
       .map(normalizePolymarketGammaMarket)
-      .filter((m) => m.tokens.length > 0),
+      .filter((m: NormalizedGammaMarket) => m.tokens.length > 0),
   };
 }
 
