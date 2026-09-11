@@ -124,12 +124,20 @@ async function commandMt5(args) {
     if (sub === 'connect') return commandMt5Connect(args.slice(1));
     if (sub === 'doctor' || sub === 'diag') return commandMt5Doctor(args.slice(1));
     if (sub === 'bridge') return commandMt5Bridge(args.slice(1));
+    if (sub === 'buy' || sub === 'sell' || sub === 'positions' || sub === 'balance' || sub === 'cancel') {
+      const { commandTrade } = require('./trade.js');
+      return commandTrade([sub, ...args.slice(1), '--broker', 'mt5']);
+    }
   }
 
   global.suppressLogs = true;
   const action = await promptSelect('MT5 / EA:', [
     { label: 'List saved accounts', value: 'list' },
     { label: 'Add / Edit account  (login ID · server · password)', value: 'add' },
+    { label: 'Positions (view open MT5 holdings)', value: 'positions' },
+    { label: 'Balance   (check account equity & margin)', value: 'balance' },
+    { label: 'Buy       (submit market/limit buy order)', value: 'buy' },
+    { label: 'Sell      (submit market/limit sell order)', value: 'sell' },
     { label: 'Doctor  (check profile, terminal, bridge)', value: 'doctor' },
     { label: 'Connect  (launch terminal with saved profile)', value: 'connect' },
     { label: 'Install EA Bridge  (SovereignExport.mq5)', value: 'bridge' },
@@ -140,6 +148,10 @@ async function commandMt5(args) {
   if (action === 'list') return commandMt5Profile(['list']);
   if (action === 'add') return commandMt5Profile(['add']);
   if (action === 'delete') return commandMt5Profile(['delete']);
+  if (action === 'positions') return commandMt5(['positions']);
+  if (action === 'balance') return commandMt5(['balance']);
+  if (action === 'buy') return commandMt5(['buy']);
+  if (action === 'sell') return commandMt5(['sell']);
   if (action === 'doctor') return commandMt5Doctor([]);
   if (action === 'connect') return commandMt5Connect([]);
   if (action === 'bridge') return commandMt5Bridge([]);
