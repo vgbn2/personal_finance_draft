@@ -77,10 +77,11 @@ Future deployment work must never hardcode credentials. Credentials should come 
 
 ## Deployment Infrastructure
 
-The platform runs containerized services under `infra/docker/` for the dedicated Proxmox VM host (`hpdesk-1`):
+The platform runs containerized services under `infra/docker/` and `infra/mt5/` for the dedicated Proxmox VM host (`hpdesk-1`):
 
 - `infra/docker/Dockerfile` builds the native runtime and web/API bridge
-- `infra/docker/docker-compose.yml` runs the multi-service stack (`sv-web`, `sv-bot-alpaca-paper`, `sv-backfill`, `sv-strategy-explorer`)
+- `infra/docker/docker-compose.yml` runs the multi-service stack (`sv-web`, `sv-bot-alpaca-paper`, `sv-backfill`, `sv-strategy-explorer`, `sv-mt5`)
+- `infra/mt5/Dockerfile` builds headless MetaTrader 5 on Wine64 with Xvfb, audio nullification, and auto-update locking (`profiles: [paper-mt5]`)
 - `infra/systemd/` contains systemd service and timer units for automated host-side updates
 
 ## Always-On Data And Scorecard Host

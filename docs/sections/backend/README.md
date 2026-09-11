@@ -37,6 +37,8 @@ backend/
    - Cycle Engine: `backend/gateway/src/cycle.ts`
    - Paper Ledger: `backend/gateway/src/paper_ledger.js`
    - State Persistence: `backend/gateway/src/bot_state.ts`
+   - Broker Adapters: `backend/gateway/src/adapters/` (`alpaca_adapter.ts`, `gate_io_adapter.ts`, `polymarket_adapter.ts`, `mt5_adapter.ts`, `simulation_adapter.ts`)
+   - Native MT5 Bridge: `tools/mt5/SovereignTradeBridge.mq5` (MQL5 EA TCP client), `shared/lib/runtime/mt5_magic_codec.js` (64-bit ORDER_MAGIC attribution)
 
 5. **MCP Tool Server (`backend/mcp_server/`):**
    - Source: `backend/mcp_server/index.ts`

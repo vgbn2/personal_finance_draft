@@ -89,8 +89,8 @@ function tradeDeskText() {
 /**
  * Fetches the current portfolio balance from the gateway.
  */
-async function fetchBalance(live = false) {
-  const payload = runGatewayCommand(['balance', ...(live ? ['--live'] : []), '--json']);
+async function fetchBalance(live = false, broker = null) {
+  const payload = runGatewayCommand(['balance', ...(live ? ['--live'] : []), ...(broker ? ['--broker', broker] : []), '--json']);
   if (!payload.ok) {
     throw new Error(payload.error || 'Failed to fetch balance');
   }
@@ -256,7 +256,8 @@ async function commandTrade(args) {
     try {
       const isLive = hasFlag(args, '--live');
       const isJson = hasFlag(args, '--json');
-      const gatewayArgs = ['positions', ...(isLive ? ['--live'] : ['--paper-provider']), '--json'];
+      const broker = optionValue(args, '--broker', null);
+      const gatewayArgs = ['positions', ...(isLive ? ['--live'] : ['--paper-provider']), ...(broker ? ['--broker', broker] : []), '--json'];
       const payload = runGatewayCommand(gatewayArgs);
 
       if (!payload || !payload.ok) {
@@ -306,7 +307,7 @@ async function commandTrade(args) {
 
   if (subcommand === 'balance' && hasFlag(args, '--json')) {
       try {
-          const balance = await fetchBalance(hasFlag(args, '--live'));
+          const balance = await fetchBalance(hasFlag(args, '--live'), optionValue(args, '--broker', null));
           console.log(JSON.stringify(balance, null, 2));
           return 0;
       } catch (err) {
@@ -340,7 +341,8 @@ async function commandTrade(args) {
   }
 
   if (hasFlag(args, '--live')) {
-    const brokerName = subcommand === 'polymarket' ? 'polymarket' : (subcommand === 'mt5' ? 'mt5' : 'alpaca');
+    const brokerOption = optionValue(args, '--broker', null);
+    const brokerName = brokerOption || (subcommand === 'polymarket' ? 'polymarket' : (subcommand === 'mt5' ? 'mt5' : 'alpaca'));
     const liveGate = canLiveExecute(brokerName);
     if (!liveGate.ok) {
       printPayload({
