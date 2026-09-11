@@ -1437,6 +1437,20 @@
       ]
     },
     {
+      "path": "docs/research/social_signals_pipeline.md",
+      "type": "explanation",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "research",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "quant-model-change"
+      ]
+    },
+    {
       "path": "docs/research/README.md",
       "type": "explanation",
       "audience": [
