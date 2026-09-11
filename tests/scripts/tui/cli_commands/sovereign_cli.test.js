@@ -395,7 +395,8 @@ test('status phase label comes from workspace state anchor', () => {
 test('trade gateway launch uses an available TypeScript runtime', () => {
   const launch = buildTradeGatewayLaunch(['balance']);
   dumpVisibility('trade gateway launch uses an available typescript runtime', launch);
-  assert.ok(typeof launch.command === 'string' && launch.command.length > 0);
+  assert.equal(typeof launch.command, 'string');
+  assert.ok(launch.command.length > 0);
   assert.ok(
     launch.command === process.execPath ||
     /tsx(\.cmd)?$/i.test(launch.command) ||

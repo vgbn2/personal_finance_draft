@@ -10,7 +10,6 @@ test('double ctrl+c requires two presses within the exit window', async () => {
   assert.equal(registerCtrlCPress(), true);
 
   resetCtrlC();
-  assert.equal(registerCtrlCPress(), false);
-  await new Promise((resolve) => setTimeout(resolve, 1600));
-  assert.equal(registerCtrlCPress(), false);
+  assert.equal(registerCtrlCPress(1000), false);
+  assert.equal(registerCtrlCPress(1000 + 1600), false);
 });

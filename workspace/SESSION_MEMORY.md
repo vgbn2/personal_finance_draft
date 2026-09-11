@@ -1,3 +1,16 @@
+### Session Memory - 2026-09-11 session 8 — Test Suite Meta-Audit, Codebase Pruning & Documentation Synchronization
+
+```json
+{
+  "batch": ["META-AUDIT-PRUNE-DOCS-SYNC-1"],
+  "lifecycle": "closed",
+  "scope": "Executed test suite meta-audit across JS and C++20 test suites: eliminated 1600ms wall-clock sleep in exit_guard_contract.test.js with deterministic timestamp injection (0.49ms run); fixed latent lastCtrlCAt=0 bug in exit_guard.js; wrapped environment mutations in provider_sources.test.js in try...finally blocks; hardened assertions in sovereign_cli.test.js; deleted shadow duplicate test files; added +Inf, -Inf, and zero equity boundary test cases to C++ CTests (stats_test.cpp, risk_test.cpp, portfolio_risk_test.cpp); removed stateful /g regex flags from STALE_PATTERNS in filter_docs.js; pruned dead code (deleted 0-byte stubs backtest.js and optimize_indicators.js in commands/research/, deleted unmounted Express-prototype rate_limiter.js and error_handler.js in api/server/middleware/); synchronized order logging attribution in gateway/src/index.ts; added Strategy Explorer Guide to mkdocs.yml; verified clean Docker docs build and 100% test pass.",
+  "changes": "updated backend/cli/lib/exit_guard.js, tests/scripts/architecture/cli/core/exit_guard_contract.test.js, tests/scripts/data/providers/provider_sources.test.js, tests/scripts/tui/cli_commands/sovereign_cli.test.js, backend/core/test/stats_test.cpp, backend/core/test/risk_test.cpp, backend/core/test/portfolio_risk_test.cpp, scripts/dev/filter_docs.js, docs/engineering/specs/capability_manifest.md, mkdocs.yml, backend/gateway/src/index.ts, workspace/SESSION_MEMORY.md, workspace/NEXT_SESSION_GOAL.md, workspace/handoff/2026/09/2026-09-11.md; deleted backend/cli/commands/research/backtest.js, backend/cli/commands/research/optimize_indicators.js, backend/api/server/middleware/rate_limiter.js, backend/api/server/middleware/error_handler.js, tests/scripts/tests/backfill_daemon.test.js, tests/scripts/tests/coverage.test.js; relocated tests/scripts/tests/alpaca_paper_bot.test.js -> tests/scripts/operational/alpaca_paper_bot.test.js",
+  "verification": "npm run hygiene (PASS 100%); npm run test:structure (PASS 12/12); npm run test:safety (PASS 43/43); npm run test:core (PASS 34/34 CTests); npm run test:api (PASS 14/14 suites); npm run test:data (PASS 3/3); npm run test:deploy (PASS 1/1); npm run test:secrets (PASS, 1023 files scanned, 0 violations); npm run docs:filter -- --strict (PASS, 0 defects); npm run docs:build (PASS, 1.69s inside Docker); npm run verify:strict (PASS 100%); npm test (PASS 202/202 test files, 0 failed)",
+  "boundaries": "zero-key local development policy intact; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false; zero production trades executed"
+}
+```
+
 ### Session Memory - 2026-09-11 session 7 — Proxmox VM Soak Deploy Sync & Bayesian Docs 404 Diagnosis
 
 ```json

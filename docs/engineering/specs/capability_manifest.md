@@ -38,7 +38,7 @@ The CLI provides entrypoints via `backend/cli/sovereign_cli.js` and Ink TUI via 
 | Subdirectory | Responsibilities | Key Command Handlers |
 |---|---|---|
 | `backend/cli/commands/data/` | Historical bar ingestion & cache management | `data.js`, `data_accumulate.js`, `data_rollup.js`, `backfill_daemon.js` |
-| `backend/cli/commands/research/` | Alpha research, backtests & mass simulation | `research.js`, `backtest.js`, `research_mass_bt.js`, `optimize_indicators.js` |
+| `backend/cli/commands/research/` | Alpha research, backtests & mass simulation | `research.js`, `research_mass_bt.js`, `research_optimization.js` |
 | `backend/cli/commands/strategy/` | Strategy registry inspection & execution | `strategy.js`, `automation_guard.js`, `prop_firm_profiles.js` |
 | `backend/cli/commands/trade/` | Trade dispatch & broker adapters | `trade.js`, `trade_polymarket.js`, `trade_mt5.js` |
 | `backend/cli/commands/account/` | Credentials, PIN security & authentication | `auth.js` |
