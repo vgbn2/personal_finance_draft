@@ -65,8 +65,11 @@ All time series are persisted in a custom binary layout (`SOVT` Version 1), elim
 
 ### Mathematical Offset & Sizing Formalism
 For a binary time-series file containing $N$ records:
+
 $$\text{Total File Size}(N) = 8 + (N \times 48) \quad \text{bytes}$$
+
 $$\text{Record Byte Offset}(i) = 8 + (i \times 48), \quad i \in [0, N-1]$$
+
 $$\text{Storage Compression Ratio} = \frac{\text{Raw JSON Footprint}}{48 \times N} \approx 4.2\times$$
 
 ---
@@ -137,7 +140,9 @@ For real-time indicator computation and fast-path signal derivation, live bars a
 | `199` | $\text{Bar}(t)$ | **Tail Pointer** | Latest incoming live candle |
 
 #### Index Arithmetic & Window Slicing
+
 $$\text{Next Tail Index} = (\text{Tail} + 1) \pmod C$$
+
 $$\text{Next Head Index} = \begin{cases} (\text{Head} + 1) \pmod C & \text{if } \text{Size} = C \\ \text{Head} & \text{if } \text{Size} < C \end{cases}$$
 Zero-allocation sub-array span access enables $O(1)$ rolling indicator updates without memory reallocation.
 

@@ -59,7 +59,7 @@
 | **Network Mesh** | Tailscale Encrypted Mesh | Private point-to-point node interconnection without public exposure. |
 | **Container Engine**| Docker Compose | Multi-container soak stack (`infra/docker/docker-compose.yml`). |
 | **Services** | Docker Containers | `sv-web` (Port 8787), `sv-bot-alpaca-paper`, `sv-backfill`, `sv-strategy-explorer`. |
-| **Process Model** | Single-Writer Authority (`central-host`)| Atomic POSIX locking via `storage/data/locks/*.lock`. |
+| **Process Model** | Single-Writer Authority (`central-host`)| Atomic POSIX locking via `storage/data/cache/*.lock`. |
 
 ---
 
@@ -69,5 +69,5 @@
 |---|---|---|
 | **High-Density TS** | Binary Packed IEEE-754 (SOVT v1) | `storage/data/ts/*.bin` |
 | **Universe & Caches**| Local JSON Store | `storage/data/cache/*.json` |
-| **Execution History**| Append-Only JSONL Ledgers | `storage/data/paper/` |
-| **State Locks** | POSIX `O_EXCL` Lockfiles | `storage/data/locks/` |
+| **Execution History**| Append-Only JSONL Ledgers | `storage/data/paper_trading/` |
+| **State Locks** | POSIX `O_EXCL` Lockfiles | `storage/data/cache/` |

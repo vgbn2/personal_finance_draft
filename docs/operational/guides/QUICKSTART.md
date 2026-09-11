@@ -55,8 +55,8 @@ node backend/cli/sovereign_cli.js status --json
 node backend/cli/sovereign_cli.js check --strict
 node backend/cli/sovereign_cli.js backend integrity --json
 node backend/cli/sovereign_cli.js quotes status --json
-sovereign setup
-sovereign doctor --json
+node backend/cli/sovereign_cli.js setup
+node backend/cli/sovereign_cli.js doctor --json
 ```
 
 Useful research commands:

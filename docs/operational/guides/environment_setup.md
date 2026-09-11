@@ -27,7 +27,7 @@ narrowest upstream permissions available, and runtime/auth/risk gates remain man
 
 The schema-3 manifest declares allowed surfaces for each entry: public client, default CLI, web, MCP, public
 gateway, credentialed account gateway, writer, operator diagnostics, execution, process-internal plumbing, and
-one contract surface for each of the seven Compose services.
+one contract surface for each of the nine Compose services.
 
 The browser input set is exactly:
 

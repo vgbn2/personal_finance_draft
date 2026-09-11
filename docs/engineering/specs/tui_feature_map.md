@@ -8,6 +8,7 @@ Current audit baseline: this map is aligned to the 2026-06-11 feature pass. Use
 append-only repo truth. Re-run a row before treating this historical baseline as current evidence.
 
 Legend:
+
 - `PASS`
 - `PARTIAL`
 - `STUB`
@@ -91,9 +92,9 @@ CLI prefix: varies per command. Strategy Management, Prop Firm, and Persistent R
 | + Add Broker | `sovereign add-platform` | - | PASS | |
 | Auto-Trade Loop | `sovereign auto-trade` | `--interval`, `--live` | PARTIAL | `--live` gates on `requireAuth`; live broker execution remains a manual gate. |
 | AI Agent | `sovereign agent` | `--query` | PARTIAL | Works when Ollama is running locally; falls back gracefully when offline. |
-| Strategy -> sub-menu: New / List / Validate / Sync Registry | `sovereign strategy [new|list|validate|sync]` | - | PASS | |
-| Prop Firm -> sub-menu: Profiles / Set Active / Inspect Profile | `sovereign prop-firms [list|set-active|show]` | - | PASS | |
-| Persistent Runners -> sub-menu: Loop Status / Start Paper Bot / Start Auto-Backfill Loop / Start All Runners | `sovereign run [status|bot paper|backfill|all]` | prompted inline | PASS | |
+| Strategy -> sub-menu: New / List / Validate / Sync Registry | `sovereign strategy [new\|list\|validate\|sync]` | - | PASS | |
+| Prop Firm -> sub-menu: Profiles / Set Active / Inspect Profile | `sovereign prop-firms [list\|set-active\|show]` | - | PASS | |
+| Persistent Runners -> sub-menu: Loop Status / Start Paper Bot / Start Auto-Backfill Loop / Start All Runners | `sovereign run [status\|bot paper\|backfill\|all]` | prompted inline | PASS | |
 
 ---
 
