@@ -311,6 +311,8 @@
           "environment_class": "private",
           "allowed_surfaces": ["gateway_account", "operator", "execution"]
         },
+        {"name": "MT5_BRIDGE_HOST", "default": "127.0.0.1"},
+        {"name": "MT5_BRIDGE_PORT", "default": "8282"},
         {"name": "MT5_METAEDITOR_PATH"},
         {"name": "MT5_TERMINAL_ID"},
         {"name": "OLLAMA_BASE_URL", "default": "http://localhost:11434"},
