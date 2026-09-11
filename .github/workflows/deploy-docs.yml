@@ -25,7 +25,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build MkDocs with Docker
-        run: docker run --rm -v "${{ github.workspace }}:/docs" squidfunk/mkdocs-material build
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/docs" squidfunk/mkdocs-material build
+          touch site/.nojekyll
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
