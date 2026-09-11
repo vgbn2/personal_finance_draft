@@ -72,6 +72,7 @@ import {
   traceCsvFile,
   validateProposedOrdersPayload,
 } from './polymarket/index.js';
+import { Mt5Adapter } from './adapters/mt5_adapter';
 // @ts-ignore
 const { runPolymarketOrderbookLiteBackfill } = require('../../cli/commands/trade/polymarket_backtest.js');
 // @ts-ignore
@@ -135,6 +136,7 @@ interface TradeOrder {
   source?: 'bot' | 'manual';
   submittedAt?: string;
   providerPaper?: boolean;
+  broker?: string;
 }
 
 
@@ -1391,7 +1393,11 @@ export async function main() {
     process.exit(1);
   }
 
-  const adapter = isLive
+  const broker = parseOptionValue(args, '--broker')?.toLowerCase() || 'alpaca';
+
+  const adapter = broker === 'mt5'
+    ? new Mt5Adapter()
+    : isLive
     ? new AlpacaAdapter({ simulateIfMissingCredentials: false })
     : providerPaper
     ? new AlpacaAdapter({ paper: true, simulateIfMissingCredentials: false })
@@ -1485,6 +1491,7 @@ export async function main() {
       source: sourceVal || (strategyName ? 'bot' : 'manual'),
       submittedAt: new Date().toISOString(),
       providerPaper,
+      broker,
     };
 
     await gateway.execute(order);
@@ -1501,6 +1508,22 @@ export async function main() {
       if (useJson) {
         console.log(JSON.stringify({ ok: true, order }));
       }
+    }
+  } else if (command === 'cancel') {
+    const orderId = String(args[1] || '');
+    if (!orderId) {
+      if (useJson) console.log(JSON.stringify({ ok: false, error: 'Missing orderId' }));
+      else console.error('Error: Missing orderId');
+      process.exit(1);
+    }
+    try {
+      const ok = await adapter.cancelOrder(orderId);
+      if (useJson) console.log(JSON.stringify({ ok }));
+      else console.log(`[GATEWAY] Cancel order ${orderId}: ${ok ? 'SUCCESS' : 'FAILED'}`);
+    } catch (err: any) {
+      if (useJson) console.log(JSON.stringify({ ok: false, error: err.message }));
+      else console.error(`[GATEWAY] Cancel error: ${err.message}`);
+      process.exit(1);
     }
   } else if (command === 'balance') {
     const balances = await adapter.getPortfolioBalance();

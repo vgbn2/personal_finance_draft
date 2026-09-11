@@ -91,3 +91,15 @@ The web API runs a native `node:http` server on port 8787 across 40 active route
 - `config/strategies/automated/*.yaml`: Machine-discovered strategies produced by the Autonomous Strategy Explorer (34 automated strategies).
 - `config/system/environment_manifest.json`: System environment variables, allowed runtime keys, and secret masks.
 - `config/trading/risk_management.yaml`: Global portfolio drawdown gates, position limits, and execution rules.
+
+---
+
+## 7. MetaTrader 5 Bridge & Execution Subsystem
+
+- `backend/gateway/src/adapters/mt5_adapter.ts`: Implements `BrokerAdapter` over a persistent localhost TCP server (port 8282) using NDJSON framing, nonces, and `ORDER_MAGIC` encoding.
+- `shared/lib/runtime/mt5_magic_codec.js`: Pure mathematical 64-bit integer codec encoding system ID, CRC16 strategy ID, timeframe minutes, and sub-position ticket ID.
+- `tools/mt5/SovereignTradeBridge.mq5`: Native MQL5 Expert Advisor connecting outbound via client socket to 127.0.0.1:8282; runs inside `OnTimer(50ms)` with dynamic lot sizing, dynamic filling mode resolution, and ECN two-step SL/TP execution.
+- `tools/mt5/SovereignExport.mq5`: MQL5 export script for historical bar arrays and tick quotes.
+- `shared/lib/profiles/mt5_profiles.js`: AES-256-GCM encrypted local vault for broker login credentials.
+- `infra/mt5/Dockerfile` & `infra/mt5/entrypoint.sh`: Headless Wine64 container recipe with Xvfb :99, audio nullification, auto-update lock (`chmod 000 liveupdate`), and ephemeral `startup.ini` auto-unlinking.
+

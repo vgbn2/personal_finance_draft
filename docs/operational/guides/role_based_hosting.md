@@ -32,6 +32,8 @@ docker compose --env-file .env.central -f infra/docker/docker-compose.yml config
 The environment generator refuses to overwrite `.env.central` unless `--force` is supplied. Review and preserve
 the existing file before using that option.
 
+The `paper-mt5` Compose profile isolates the containerized headless MetaTrader 5 service (`sv-mt5`) under Wine64 on loopback port 8282 for automated paper execution without desktop GUI dependencies.
+
 ## Access roles
 
 | Role | Intended access |

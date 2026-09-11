@@ -1,0 +1,35 @@
+# Sovereign Trading Platform Documentation
+
+> Institutional-grade, local-first quantitative research, backtesting, and algorithmic execution platform.
+> Canonical website: https://vgbn2.github.io/personal_finance_draft/
+
+## Overview & Architecture
+- [Architecture Summary](ARCHITECTURE.md): System topology, invariants, zero-key development model, and execution drag.
+- [01. System Topology & Invariants](engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md): System boundaries, single-writer POSIX locking, and core layers.
+- [02. Data Pipeline & Storage](engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md): 48-byte SOVT binary time-series format (`.bin`) and multi-tier ingestion.
+- [03. Native C++ Core & Backtester](engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md): C++20 analytics engine, CTests, and frame backtesting runtime.
+- [04. Alpha Research & ML Workbench](engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md): Model registry parity, ONNX runtime, and feature engineering.
+- [05. Sub-Positions & Risk](engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md): Virtual sub-position attribution, 64-bit MT5 ORDER_MAGIC bitmasks, and C++ pre-trade risk gates.
+- [06. Prediction Markets & L2 Archive](engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md): Polymarket CLOB, CTF binary outcome tokens, and orderbook capture.
+- [07. Security, API & Deployment](engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md): Trade PIN authorization, Fail-Closed boundaries, and Wine64 containerization.
+- [08. Financial Primer for Engineers](engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md): Fixed-point arithmetic, market microstructures, and slippage models.
+
+## Specifications & Standards
+- [Product Specification](engineering/specs/product_spec.md): 5 platform invariants, capability tiers, and Diátaxis Reference contract.
+- [Technical Specification](engineering/specs/technical_spec.md): Multi-tier boundaries, 48-byte SOVT binary format, and POSIX concurrency.
+- [Web REST & WebSocket API](engineering/specs/web_api.md): 40-route catalog across all 39 handler modules with RBAC capability tiers.
+- [Capability Manifest](engineering/specs/capability_manifest.md): Verified native C++ and Node.js testing capabilities.
+- [Stack Manifest](engineering/specs/stack_manifest.md): Toolchain baseline (Node v20+, CMake 3.20+, C++20, React 19).
+- [Documentation Standards](engineering/standards/documentation_standard.md): Diátaxis quadrants, API endpoint cards, and multi-language tabs.
+
+## Operational Runbooks & Guides
+- [Quickstart](operational/guides/QUICKSTART.md): Zero-key developer onboarding, building native core, and running keyless tests.
+- [Operational Soak Runbook](OPERATIONAL_SOAK_RUNBOOK.md): Multi-hour container monitoring, cgroup memory limits (2560MB heap), and log health.
+- [CLI Quick Guide](operational/guides/cli_quick_guide.md): Command syntax, subcommands, and options for `sovereign` CLI.
+- [Deployment Guide](operational/guides/DEPLOYMENT.md): Headless MT5 on Wine64 and Proxmox VM deployment instructions.
+- [Testing Surface Guide](operational/guides/testing_surface.md): Unit, integration, and architecture contract testing surface.
+
+## Research & Exploration
+- [Quant Research Roadmap](research/quant_research.md): Falsifiable hypothesis lifecycle and edge validation methodology.
+- [Social Signals Pipeline](research/social_signals_pipeline.md): YouTube and social media alpha signal extraction specification.
+- [Strategy Explorer Guide](RESEARCH_STRATEGY_EXPLORER.md): Autonomous strategy generation and walk-forward parameter search.

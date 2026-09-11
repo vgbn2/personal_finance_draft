@@ -174,3 +174,66 @@ flowchart TD
 | **Broker Position Reconciliation**  | 0.1 CPU | `< 8.0 MB` heap | $120–250\text{ ms}$ (REST API)| 1 broker API request / cycle | $O(P + S)$ items | **3/10** |
 | **Fast-Path Signal Evaluation**     | 0.05 CPU | `< 15.0 MB` heap | **`< 2.0 ms`** internal latency| Zero disk I/O | $O(\text{bars})$ lookback | **2/10** |
 | **Pre-Trade Risk Verification**     | < 0.01 CPU | `< 1.0 MB` RSS | **`< 15 μs`** per order | Zero disk / network I/O | $O(1)$ constant | **1/10** |
+| **MT5 IPC NDJSON Bridge Engine**    | 0.02 CPU | `< 6.0 MB` heap | **`< 1.2 ms`** loopback | Zero disk I/O | $O(1)$ socket framing | **2/10** |
+
+---
+
+## 8. MetaTrader 5 (MT5) Execution Architecture & 64-Bit ORDER_MAGIC Attribution
+
+MetaTrader 5 execution operates through a high-performance native IPC bridge between the Node.js execution gateway and an MQL5 Expert Advisor (`SovereignTradeBridge.mq5`).
+
+```mermaid
+flowchart TD
+    subgraph Gateway["Node.js Execution Gateway (backend/gateway/src/adapters/mt5_adapter.ts) [Load: 2/10]"]
+        TCP["Persistent TCP Server<br/>127.0.0.1:8282 (NDJSON Framing)"]
+        MAGIC["MagicCodec Encoder<br/>64-bit ORDER_MAGIC Bitmask"]
+        NONCE["Nonce Router & Request Map<br/>Timeout: 15,000ms"]
+    end
+
+    subgraph EA["MQL5 Expert Advisor Bridge (tools/mt5/SovereignTradeBridge.mq5) [Load: 2/10]"]
+        SOCK["Client Socket (SocketConnect)<br/>OnTimer(50ms) Polling Loop"]
+        NORM["Lot Sizer & Normalizer<br/>Step / Min / Max / Contract Size"]
+        FILL["Dynamic Filling Resolver<br/>IOC / FOK / RETURN"]
+        ECN["ECN Two-Step Order Flow<br/>Market Deal -> Modify SL/TP"]
+    end
+
+    subgraph Terminal["MetaTrader 5 Terminal64 (/portable)"]
+        BOOK["Broker Match Engine"]
+        POS["Hedging / Netting Position Ledger"]
+    end
+
+    TCP <-->|NDJSON Frames| SOCK
+    MAGIC --> TCP
+    NONCE --> TCP
+    SOCK --> NORM
+    NORM --> FILL
+    FILL --> ECN
+    ECN --> BOOK
+    BOOK --> POS
+```
+
+### 1. Inverted Socket Topology
+Native MQL5 network functions are strictly client-only (`SocketCreate`, `SocketConnect`, `SocketSend`, `SocketRead`). Native MQL5 has no server socket capabilities (`SocketListen`/`SocketAccept` do not exist). Sovereign inverts the topology:
+- **Server**: Node.js `Mt5Adapter` hosts a localhost TCP server on port 8282 using newline-delimited JSON (`NDJSON`).
+- **Client**: `SovereignTradeBridge.mq5` connects outbound on initialization and polls incoming commands inside `OnTimer(50ms)` via `EventSetMillisecondTimer(50)`. Running inside `OnTimer` rather than `OnTick` prevents the bridge from going deaf during weekend and holiday market closures.
+
+### 2. 64-Bit ORDER_MAGIC Bitmask Codec
+Broker comment fields (`ORDER_COMMENT`) are truncated to 31 characters and frequently overwritten during broker-side rollovers, dividend adjustments, and partial fills. Strategy attribution is preserved using an immutable 64-bit integer bitmask:
+
+```text
+Bits [63..48] (16 bits): Sovereign System ID (0x534F = "SO", bit 63 is 0 for positive signed logs)
+Bits [47..32] (16 bits): Strategy ID Hash (CRC16 of strategy identifier string or uint16)
+Bits [31..16] (16 bits): Timeframe in minutes (1, 5, 15, 60, 240, 1440)
+Bits [15..0]  (16 bits): Sub-Position Instance / Ticket ID
+```
+
+### 3. Dynamic Lot Normalization & Filling Mode Resolution
+- **Contract Size & Volume Step**: Before placing an order, the EA dynamically queries `SYMBOL_TRADE_CONTRACT_SIZE`, `SYMBOL_VOLUME_MIN`, `SYMBOL_VOLUME_MAX`, and `SYMBOL_VOLUME_STEP`. Notional base quantities are converted to lots and normalized:
+
+  $$\text{Lots} = \max\left(\text{Vol}_{\min}, \min\left(\text{Vol}_{\max}, \left\lfloor\frac{\text{Quantity} / \text{ContractSize}}{\text{Step}}\right\rfloor \times \text{Step}\right)\right)$$
+
+- **Filling Modes**: Hardcoding `ORDER_FILLING_FOK` triggers broker rejection `10030` (`TRADE_RETCODE_INVALID_FILL`) on retail STP/ECN accounts. The EA queries `SymbolInfoInteger(symbol, SYMBOL_FILLING_MODE)` and dynamically selects `ORDER_FILLING_IOC`, `ORDER_FILLING_FOK`, or `ORDER_FILLING_RETURN`.
+
+### 4. ECN Two-Step Market Execution
+On Market Execution brokers (`SYMBOL_TRADE_EXECUTION_MARKET`), sending Stop Loss or Take Profit in the initial market deal triggers fatal broker rejection (`10016` / `TRADE_RETCODE_INVALID_STOPS`). The EA submits the initial market order with `sl=0, tp=0`, awaits fill confirmation, and immediately modifies the position ticket with SL/TP via `TRADE_ACTION_SLTP`.
+
