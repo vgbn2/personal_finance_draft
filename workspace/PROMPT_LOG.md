@@ -1,5 +1,24 @@
 # Prompt Log - 2026-09-11
 
+## Session 7 — Proxmox VM Soak Deploy Sync & Bayesian Docs 404 Diagnosis - 2026-09-11
+Received user prompts:
+- "/session-orchestrator"
+- "deply sync and fix the web page of docs https://vgbn2.github.io/personal_finance_draft/engineering/specs/product_spec/ its down,"
+- "find the cause using bayesian troubleshooting"
+- "how to avoid the github page problem"
+- "it worked before but why not now, worked with mkdocs"
+- "Build and deployment Source ... Workflow, commit push"
+- "fan out sub agents to focus on resolving this problem"
+- "so who is hosting it"
+- "end current session, next session will just be fixes, refactoring, documenting and audit the tests themselve,"
+
+Accomplished:
+- Diagnosed root cause of 404 at `/engineering/specs/product_spec/` via Bayesian troubleshooting: GitHub Pages source was set to "Deploy from branch" (Jekyll), which raced and clobbered MkDocs artifact.
+- Hardened `.github/workflows/deploy-docs.yml` to remove root-owned `touch` and pass `--user $(id -u):$(id -g)`.
+- Replaced Jekyll with GitHub Actions deployment; verified live URL at `https://vgbn2.github.io/personal_finance_draft/engineering/specs/product_spec/` (HTTP 200, MkDocs Material 9.7.7).
+- Synchronized codebase to remote Proxmox VM (`hpdesk-1`), stashed untracked artifacts, rebuilt Docker image `personal_finance:latest` (native C++20 core + Vite dashboard), and restarted all 9 services with `sv-web` healthy.
+- Set next session goals to test suite meta-audit, refactoring, documentation alignment, and maintainability fixes.
+
 ## Session 6 — Blast-Through Mass-Remediation & 100% Gate Verification - 2026-09-11
 Received user prompts:
 - "/session-orchestrator"
