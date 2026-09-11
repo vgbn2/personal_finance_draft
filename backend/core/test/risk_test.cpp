@@ -55,6 +55,15 @@ int main() {
         return 1;
     }
 
+    const std::vector<double> inf_curve{100.0, std::numeric_limits<double>::infinity(), 120.0};
+    const auto inf_fail_closed = sovereign::DrawdownGuard::evaluate(inf_curve, sovereign::RiskLimits{0.20, true});
+    if (!expect(!inf_fail_closed.approved, "Expected infinity equity curve to fail closed")) {
+        return 1;
+    }
+    if (!expect(inf_fail_closed.halt_trading, "Expected infinity equity curve halt")) {
+        return 1;
+    }
+
     const auto invalid_allowed = sovereign::DrawdownGuard::evaluate(invalid, sovereign::RiskLimits{0.20, false});
     if (!expect(invalid_allowed.approved, "Expected invalid curve allowed when fail_closed is false")) {
         return 1;

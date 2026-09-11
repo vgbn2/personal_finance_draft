@@ -84,6 +84,22 @@ int main() {
         return 1;
     }
 
+    sovereign::position_sizing::PositionSizingInput zero_input{};
+    zero_input.equity = 0.0;
+    zero_input.entry_price = 100.0;
+    zero_input.stop_price = 95.0;
+    const auto zero_kelly = sovereign::portfolio::sizeWithKelly(zero_input, 0.60, 2.0);
+    if (!expect(!zero_kelly.ok, "Expected zero equity Kelly sizing rejection")) {
+        return 1;
+    }
+
+    sovereign::PortfolioState empty_state;
+    empty_state.cash = 0.0;
+    const auto empty_metrics = sovereign::PnlCalculator::calculate(empty_state);
+    if (!expect(empty_metrics.total_equity == 0.0, "Expected zero total equity for empty portfolio")) {
+        return 1;
+    }
+
     std::cout << "[DATA FLOW] Portfolio equity: " << metrics.total_equity << "\n";
     std::cout << "[DATA FLOW] Largest single-name weight: " << exposure_report.largest_single_name_weight << "\n";
     std::cout << "[DATA FLOW] Kelly capped fraction: " << kelly.capped_fraction << "\n";
