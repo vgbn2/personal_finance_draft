@@ -1684,8 +1684,8 @@
       "owner": "data",
       "status": "canonical",
       "source_paths": [
-        "storage/data/ts/",
-        "storage/data/cache/"
+        "shared/lib/market/ts_index_storage.js",
+        "storage/models/"
       ],
       "review_triggers": [
         "storage-layout",
