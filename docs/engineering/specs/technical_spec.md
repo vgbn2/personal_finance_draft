@@ -42,6 +42,7 @@ flowchart TD
     subgraph Tier6["6. Execution Gateways"]
         ALPACA["Alpaca Paper / Live Broker"]
         POLY["Polymarket CLOB / Gamma"]
+        MT5["MetaTrader 5 Bridge Adapter"]
         PAPER["Virtual Paper Simulator"]
     end
 
@@ -151,3 +152,15 @@ Where default cost parameters:
 | CMake | `3.20.0+` | `3.25.1+` | Build system configuration (`CMakeLists.txt`) |
 | OpenMP | Standard OpenMP | `libgomp`, `libomp` | Multi-threaded backtesting & grid search |
 | OS Platform | POSIX / Linux | Ubuntu 24.04 LTS (Proxmox) | Production deployment host (`hpdesk-1`) |
+
+---
+
+## 6. Broker Execution & Gateway Specifications
+
+| Gateway Adapter | Protocol / Transport | Supported Instruments | Position Accounting | Strategy Attribution |
+|---|---|---|---|---|
+| **Alpaca** (`AlpacaAdapter`) | REST + WebSocket | US Equities, Crypto | Broker Net Holdings | `client_order_id` (36 chars) |
+| **Polymarket** (`PolymarketAdapter`) | REST (CLOB) | Binary Prediction Contracts | Virtual Paper Ledger | Salted Nonce / Proxy Wallet |
+| **MetaTrader 5** (`Mt5Adapter`) | TCP Server 8282 (NDJSON) | FX, Commodities, Indices, CFDs | Broker Net/Hedged Tickets | 64-bit `ORDER_MAGIC` Bitmask |
+| **Simulation** (`SimulationAdapter`) | In-Memory Engine | All Synthetic Feeds | Local Ledger State | Synthetic Nonce |
+

@@ -112,7 +112,7 @@ export class ExecutionGateway {
           console.warn(`[LEDGER-SYNC] Warning: Could not record sub-position in ledger:`, ledgerErr);
         }
 
-        await this.persistence.logOrder(order, order.providerPaper ? 'alpaca_paper' : 'alpaca', {
+        await this.persistence.logOrder(order, order.providerPaper ? 'alpaca_paper' : (order.broker || 'alpaca'), {
           order_id: result.orderId,
           strategy: order.strategyId || order.strategy || null,
           signature: order.clientOrderId || order.signature || null,
@@ -120,11 +120,11 @@ export class ExecutionGateway {
         }, result);
 
       } catch (error: any) {
-        const label = order.providerPaper ? 'PAPER-ALPACA' : 'LIVE';
+        const label = order.providerPaper ? 'PAPER-ALPACA' : (order.broker?.toUpperCase() || 'LIVE');
         console.error(`[${label}] Execution failed: ${error}`);
         order.status = OrderStatus.FAILED;
         order.error = error.message ?? String(error);
-        await this.persistence.logOrder(order, order.providerPaper ? 'alpaca_paper' : 'alpaca', {
+        await this.persistence.logOrder(order, order.providerPaper ? 'alpaca_paper' : (order.broker || 'alpaca'), {
           error: error.message,
           strategy: order.strategy || null,
           paper: Boolean(order.providerPaper),

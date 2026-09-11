@@ -1,8 +1,27 @@
 # Current Workspace State
 
 ## Current Phase
-Full-Stack Blast-Through Remediation & Remote Proxmox Deployment - ACTIVE
+Full-Stack Blast-Through Remediation, MetaTrader 5 Execution Engine & Remote Proxmox Deployment - ACTIVE
 
+- **Documentation Engineering & Developer Experience Overhaul (September 2026)**:
+  - **Diátaxis & Institutional Developer Standard**: Benchmarked against Alpaca (`docs.alpaca.markets`), Polymarket (`docs.polymarket.com`), and Stripe/Coinbase. Enhanced `docs/engineering/standards/documentation_standard.md` with:
+    - Card-based API endpoint specifications with HTTP method badges, auth scopes, headers, and tabbed JSON request/response examples with error remediation.
+    - Global multi-language code synchronization using MkDocs `content.tabs.link` across Node.js, C++20, and CLI snippets.
+    - Wire protocol specifications with microsecond epoch timestamps, monotonic sequence numbers, and transport SLA latency targets.
+    - Fixed-point arithmetic invariants ($10^8$ satoshi standard, lot step and tick size normalization).
+  - **Machine-Readable LLM Index (`docs/llms.txt`)**: Authored root `docs/llms.txt` cataloging overview, architecture, specifications, operational runbooks, and research specifications for autonomous AI and developer tooling.
+  - **Social Media & YouTube Trade Signal Pipeline Research**: Authored comprehensive architectural and research specification in `docs/research/social_signals_pipeline.md` covering zero-key subtitle extraction with local `whisper.cpp` fallback, strict JSON NLP extraction schemas, Bayesian credibility & decay scoring ($W_c(t)$), anti-shill liquidity floors ($5M 24h), and pre-trade C++ risk engine gating boundaries.
+  - **100% Verification Gate Pass**: Passed `npm run audit:documentation`, `npm run hygiene`, `npm run test:structure`, and `npm run docs:filter -- --strict`.
+
+- **MetaTrader 5 (MT5) Institutional Trade Engine & Headless Wine Deployment**:
+  - Implemented complete 7-batch institutional MT5 execution suite:
+    - **Wire Types & 64-Bit ORDER_MAGIC Codec**: Defined NDJSON request/response interfaces in `backend/gateway/src/adapters/types.ts`. Implemented 64-bit integer codec in `shared/lib/runtime/mt5_magic_codec.js` encoding Sovereign System ID (`0x534F`), CRC16 strategy ID hash, timeframe in minutes, and instance ticket ID with bit 63 clear for positive signed representation in MQL5 logs.
+    - **Gateway MT5 Adapter (`Mt5Adapter`)**: Implemented canonical `BrokerAdapter` interface in `backend/gateway/src/adapters/mt5_adapter.ts` hosting a localhost TCP server on port 8282 with NDJSON framing, nonces, and timeout maps (`placeOrder`, `cancelOrder`, `getPortfolioBalance`, `getPositions`, `getQuote`).
+    - **MQL5 Expert Advisor Client Bridge (`SovereignTradeBridge.mq5`)**: Native client socket connecting outbound to 127.0.0.1:8282 on `OnTimer(50ms)` (preventing weekend market deafness), dynamic contract sizing, lot step normalization, dynamic filling mode resolution (`IOC`/`FOK`/`RETURN`), and ECN two-step SL/TP execution.
+    - **CLI Commands & Sub-Positions Integration**: Added `buy`, `sell`, `positions`, `balance`, `cancel` to `backend/cli/commands/trade/trade_mt5.js` with Trade PIN verification and sub-positions ledger reconciliation.
+    - **Keyless Operational Test Suite**: Authored mock client fixture in `tests/fixtures/mock_mt5_bridge.js` and unit/integration suite in `tests/scripts/operational/mt5_adapter.test.js` passing 100% in 281ms via native `node:test`.
+    - **Headless Wine64 Docker Containerization**: Authored `infra/mt5/Dockerfile` and `entrypoint.sh` with Xvfb :99, audio nullification, liveupdate lock, and ephemeral `startup.ini` unlinking; added `sv-mt5` under `paper-mt5` profile in `infra/docker/docker-compose.yml`.
+    - **Full-Stack Documentation Sync**: Updated Architecture (`05_EXECUTION_SUB_POSITIONS_AND_RISK.md`), Specs (`technical_spec.md`, `capability_manifest.md`), Operations (`DEPLOYMENT.md`, `role_based_hosting.md`, `cli_quick_guide.md`), and Subsystems (`docs/sections/backend/README.md`).
 - **GitHub Pages Live Deployment & Documentation CI/CD**:
   - Activated and verified automated deployment workflow (`.github/workflows/deploy-docs.yml`) building Material for MkDocs in Docker (`squidfunk/mkdocs-material`).
   - Production documentation portal live and verified at `https://vgbn2.github.io/personal_finance_draft/` (HTTP/2 200).

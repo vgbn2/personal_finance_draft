@@ -26,6 +26,8 @@ node backend/cli/sovereign_cli.js help examples
 - `bt` or `backtest`: run the backtest
 - `optimize`: search indicator periods against backtest metrics
 - `demo`: run the sample research flow end to end
+- `trade`: open the guided interactive Trade Desk
+- `mt5`: MetaTrader 5 profile management, bridge diagnostics (`doctor`), and execution (`buy`, `sell`, `positions`, `balance`)
 
 ## Useful Flags
 
@@ -54,6 +56,9 @@ node backend/cli/sovereign_cli.js bt --input storage/data/cache/backtest_history
 node backend/cli/sovereign_cli.js bt --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
 node backend/cli/sovereign_cli.js optimize --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
 node backend/cli/sovereign_cli.js mass-bt --symbols SPY,QQQ,BTC/USD --timeframes 5m,1h,1d
+node backend/cli/sovereign_cli.js mt5 doctor
+node backend/cli/sovereign_cli.js mt5 positions
+node backend/cli/sovereign_cli.js mt5 balance
 ```
 
 ## Output Metrics

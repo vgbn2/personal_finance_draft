@@ -100,6 +100,34 @@ services:
       - |
         node backend/cli/sovereign_cli.js run bot paper --strategy low_prob_dip
 
+  mt5:
+    container_name: sv-mt5
+    logging: *default-logging
+    profiles: [paper-mt5]
+    build:
+      context: ../mt5
+      dockerfile: Dockerfile
+    env_file:
+      - path: '../../.env'
+        required: false
+      - path: ${SOVEREIGN_MT5_ENV_FILE:-../../.env.services/mt5.env}
+        required: false
+    environment:
+      MT5_LOGIN: ${MT5_LOGIN:-}
+      MT5_PASSWORD: ${MT5_PASSWORD:-}
+      MT5_SERVER: ${MT5_SERVER:-}
+    volumes:
+      - ../../storage/mt5/terminal:/opt/mt5/terminal
+      - ../../tools/mt5:/opt/mt5/terminal/MQL5/Experts:ro
+    ports:
+      - "127.0.0.1:8282:8282"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2048M
+
   bot-alpaca-paper:
     container_name: sv-bot-alpaca-paper
     logging: *default-logging
