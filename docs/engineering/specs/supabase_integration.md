@@ -24,6 +24,7 @@ authenticated dashboard session; `/api/client/status` and `/api/bias` require th
 The initial migration is `supabase/migrations/20260526121418_initial_auth_database_schema.sql`.
 
 Tables:
+
 - `profiles`
 - `portfolios`
 - `holdings`
@@ -42,6 +43,7 @@ as-of selection so later revisions cannot leak into earlier decisions.
 ## Local Web API
 
 Endpoints:
+
 - `GET /api/supabase/config`
 - `GET /api/auth/status`
 - `GET /api/database/status`

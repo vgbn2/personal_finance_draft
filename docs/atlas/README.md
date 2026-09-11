@@ -4,10 +4,10 @@ The Code Atlas is the source-linked engineering study layer. It records mechanis
 
 ## Sections
 
-- [Algorithms](algorithms/) — equations, pseudocode, invariants, complexity, and numerical behavior.
-- [Structures](structures/) — schemas, state ownership, mutation, persistence, concurrency, and recovery.
-- [Protocols](protocols/) — participants, message shapes, sequencing, errors, retries, and compatibility.
-- [Topology](topology/) — entrypoints, dependency direction, I/O boundaries, adapters, and failure domains.
+- [Algorithms](algorithms/README.md) — equations, pseudocode, invariants, complexity, and numerical behavior.
+- [Structures](structures/README.md) — schemas, state ownership, mutation, persistence, concurrency, and recovery.
+- [Protocols](protocols/README.md) — participants, message shapes, sequencing, errors, retries, and compatibility.
+- [Topology](topology/README.md) — entrypoints, dependency direction, I/O boundaries, adapters, and failure domains.
 
 ## Record Contract
 

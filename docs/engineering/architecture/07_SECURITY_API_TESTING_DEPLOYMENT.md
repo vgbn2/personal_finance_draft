@@ -101,10 +101,10 @@ flowchart TD
         HEALTH["sv-host-health & backup<br/>Disk / Flaw Sentinel<br/>24h State Snapshots<br/>Quota: 0.5 CPU, 256MB<br/>[Load: 1/10]"]
     end
 
-    VOL[("Shared Persistent Volume: /app/storage -> storage/data/<br/>• ts/*.bin (Binary market bars)<br/>• runtime/sub_positions.json (Virtual ledger)<br/>• logs/*.log (Flaw monitor and audit trails)")]
+    VOL[("Shared Persistent Volume: /app/storage -> storage/data/<br/>• ts/*.bin (Binary market bars)<br/>• runtime/ledger/sub_positions.json (Virtual ledger)<br/>• logs/*.log (Flaw monitor and audit trails)")]
 
     WEB -->|POSIX Mount| VOL
-    BACKFILL -->|POSIX Mount (Writer)| VOL
+    BACKFILL -->|"POSIX Mount (Writer)"| VOL
     BOT -->|POSIX Mount| VOL
     EXPLORER -->|POSIX Mount| VOL
     PORTFOLIO -->|POSIX Mount| VOL

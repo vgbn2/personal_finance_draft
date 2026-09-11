@@ -31,7 +31,7 @@ backend/
 3. **C++ Core Engine (`backend/core/`):**
    - Build Manifest: `backend/core/CMakeLists.txt`
    - CLI Entrypoint: `backend/core/src/main.cpp`
-   - Native Modules: `backend/core/src/backtest/`, `backend/core/src/data/`, `backend/core/src/math/`, `backend/core/src/ml/`
+   - Native Modules: `backend/core/src/backtest/`, `backend/core/src/data/`, `backend/core/src/stats/`, `backend/core/src/indicators/`, `backend/core/src/ml/`
 
 4. **Execution Gateway (`backend/gateway/`):**
    - Cycle Engine: `backend/gateway/src/cycle.ts`
@@ -39,7 +39,7 @@ backend/
    - State Persistence: `backend/gateway/src/bot_state.ts`
 
 5. **MCP Tool Server (`backend/mcp_server/`):**
-   - Source: `backend/mcp_server/src/index.ts`
+   - Source: `backend/mcp_server/index.ts`
    - Stdio Launcher: `scripts/mcp/mcp_stdio_probe.js`
 
 ## Code Atlas Cross-References

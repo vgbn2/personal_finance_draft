@@ -37,8 +37,11 @@ A market is a continuous double-auction mechanism matching buyers (bids) and sel
 - **Bid**: The maximum price a buyer is willing to pay.
 - **Ask (Offer)**: The minimum price a seller is willing to accept.
 - **Spread**: The difference between the lowest Ask and the highest Bid:
+
   $$\text{Spread} = P_{\text{best\_ask}} - P_{\text{best\_bid}}$$
+
 - **Mid Price**: The arithmetic mean between the best bid and best ask:
+
   $$P_{\text{mid}} = \frac{P_{\text{best\_bid}} + P_{\text{best\_ask}}}{2}$$
 
 ### 2.2 Order Types & Matching Engine Semantics
@@ -67,7 +70,8 @@ Incoming Market Buy: $Q_{\text{target}} = 500\text{ units}$ against book with to
 - **Initial Top-of-Book Price**: `$100.00`
 - **Realized Slippage**: $+\$0.09$ (+9 basis points / 0.09% execution drag)
 
-In the Sovereign Native Core (`backend/core/src/backtest/cost_model.cpp`), slippage is modeled in basis points ($1 \text{ bps} = 0.01\% = 0.0001$):
+In the Sovereign Native Core (`backend/core/src/risk/cost_model.cpp`), slippage is modeled in basis points ($1 \text{ bps} = 0.01\% = 0.0001$):
+
 $$P_{\text{entry}} = P_{\text{close}} \cdot \left(1 + \frac{\text{cost\_bps}}{10000}\right)$$
 
 ---
@@ -89,9 +93,13 @@ Financial time series discretize continuous quote ticks into fixed time buckets 
 
 ### 3.2 Returns & Compounding
 Never analyze raw asset prices directly across assets because price scales differ ($SPY \approx \$500$, $BTC \approx \$60,000$). Instead, analyze **Returns**:
+
 - **Simple Arithmetic Return**:
+
   $$R_t = \frac{P_t - P_{t-1}}{P_{t-1}} = \frac{P_t}{P_{t-1}} - 1$$
+
 - **Logarithmic (Continuously Compounded) Return**:
+
   $$r_t = \ln\left(\frac{P_t}{P_{t-1}}\right) = \ln(P_t) - \ln(P_{t-1})$$
 
 ---
@@ -108,19 +116,25 @@ Never analyze raw asset prices directly across assets because price scales diffe
 
 ### 4.1 Sharpe Ratio (Signal-to-Noise Ratio of Excess Returns)
 The Sharpe ratio measures excess return per unit of total risk (volatility):
+
 $$\text{Sharpe} = \frac{\mathbb{E}[R_p - R_f]}{\sigma(R_p)} \cdot \sqrt{K}$$
+
 - $R_p$: Portfolio return, $R_f$: Risk-free interest rate ($\approx 4\%$).
 - $\sigma(R_p)$: Standard deviation of returns.
 - $K$: Annualization factor ($K = 252$ daily bars, $K = 19,656$ 5-minute bars).
 
 ### 4.2 Sortino Ratio (Downside Volatility Focus)
 The **Sortino Ratio** penalizes only harmful downside volatility:
+
 $$\text{Sortino} = \frac{\mathbb{E}[R_p - R_f]}{\sigma_{\text{downward}}(R_p)} \cdot \sqrt{K}$$
+
 $$\sigma_{\text{downward}} = \sqrt{\frac{1}{T} \sum_{t=1}^T \min(0, R_t - R_f)^2}$$
 
 ### 4.3 Maximum Drawdown (MDD)
 The peak-to-trough decline in portfolio equity:
+
 $$\text{Drawdown}(t) = \frac{\max_{s \le t}(E_s) - E_t}{\max_{s \le t}(E_s)}$$
+
 $$\text{MDD} = \max_{t \in [0, T]} \left( \text{Drawdown}(t) \right)$$
 
 ---
@@ -138,6 +152,7 @@ Market Example: *"Will the Federal Reserve cut interest rates in September 2026?
 
 - **Arbitrage Parity Bound**: $P(\text{YES}) + P(\text{NO}) = \$1.00$
 - **Kelly Criterion Staking Formula**:
+
   $$f^* = \frac{p \cdot b - q}{b} = \frac{p(b + 1) - 1}{b}, \quad \text{where } b = \frac{1.0 - P_{\text{entry}}}{P_{\text{entry}}}$$
 
 ---
