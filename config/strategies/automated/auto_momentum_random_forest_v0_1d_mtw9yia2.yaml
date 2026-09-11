@@ -1,0 +1,58 @@
+name: auto_momentum_random_forest_v0_1d_mtw9yia2
+kind: momentum
+family: momentum
+lane: single_asset
+role: strategy
+status: draft
+enabled: false
+model: random_forest_v0
+timeframe: 1d
+sections:
+  hypothesis: "Hypothesis for auto_momentum_random_forest_v0_1d_mtw9yia2"
+  universe:
+    - PLTR
+    - TSLA
+    - AMD
+  signals:
+    entry: "Entry condition satisfied"
+    exit: "Exit condition satisfied or horizon expired"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - rsi
+      - macd
+      - atr
+      - return_fast
+      - volatility
+    relative:
+    orderflow:
+    custom:
+  indicators:
+    return_fast: true
+    return_slow: false
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: false
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.53
+    max_holding_days: 5
+    risk_weight: 0.1
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

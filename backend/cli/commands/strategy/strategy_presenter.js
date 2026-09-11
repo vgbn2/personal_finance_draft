@@ -42,7 +42,9 @@ function buildStrategyPlan(name, options = {}) {
     ? options.universe
     : get_Current_Universe_Symbols().slice(0, 5);
 
-  const threshold = Number.isFinite(Number(options.signalThreshold)) ? Number(options.signalThreshold) : 0.65;
+  const threshold = Number.isFinite(Number(options.signalThreshold))
+    ? Number(options.signalThreshold)
+    : (Number.isFinite(Number(options.threshold)) ? Number(options.threshold) : 0.65);
   const maxHoldingDays = Number.isFinite(Number(options.maxHoldingDays)) ? Number(options.maxHoldingDays) : 5;
   const riskWeight = Number.isFinite(Number(options.riskWeight)) ? Number(options.riskWeight) : 0.4;
   const indicators = options.indicators && typeof options.indicators === 'object'

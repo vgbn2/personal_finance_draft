@@ -80,6 +80,7 @@ const {
 } = require('../../../../shared/lib/providers');
 
 const { fetchPaginated, fetchParallelBackfill, BARS_PER_DAY } = require('../../../../shared/lib/data/backfill');
+const { withFileLockSync } = require('../../../../shared/lib/runtime/file_lock');
 
 const CONFIG_PATH = path.join(REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
 const OPTIONS_CONFIG_PATH = path.join(REPO_ROOT, 'config', 'markets', 'options_data.yaml');
@@ -1288,7 +1289,13 @@ async function ingestMarketData(options = {}) {
     if (!global.suppressLogs) console.log('[INGEST] Saving to local filesystem cache...');
     await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
     const latestSnapshotPath = scopedSnapshot ? SCOPED_CACHE_PATH : CACHE_PATH;
-    await fs.writeFile(latestSnapshotPath, JSON.stringify(capSubDailyJsonView(preservedSnapshot), null, 2), 'utf8');
+    const lockPath = `${latestSnapshotPath}.lock`;
+    const payload = JSON.stringify(capSubDailyJsonView(preservedSnapshot), null, 2);
+    withFileLockSync(lockPath, () => {
+      const tmpPath = `${latestSnapshotPath}.${Date.now()}.${Math.random().toString(36).slice(2, 8)}.tmp`;
+      require('node:fs').writeFileSync(tmpPath, payload, 'utf8');
+      require('node:fs').renameSync(tmpPath, latestSnapshotPath);
+    });
 
     // Write family-partitioned long-term history (merge with full archive first).
     // JSON gets the sub-daily-capped view (<=30m bars limited to the last

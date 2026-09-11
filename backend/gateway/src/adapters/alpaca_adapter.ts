@@ -20,7 +20,7 @@ export class AlpacaAdapter implements BrokerAdapter {
     const keyId = settings.keyId;
     const secretKey = settings.secretKey;
     const paper = settings.paper;
-    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? true;
+    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
 
     if (keyId && secretKey) {
       this.alpaca = new Alpaca({

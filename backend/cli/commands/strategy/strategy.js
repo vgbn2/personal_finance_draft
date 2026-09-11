@@ -773,12 +773,42 @@ async function runAutomationPass(args, strategiesOverride = null) {
                     continue;
                 }
                 if (reservation) updateAlpacaPaperEntryIntent(signalId, 'submitted');
+
+                if (tradeType === 'buy') {
+                    try {
+                        recordSubPositionEntry({
+                            symbol: lastTrade.symbol,
+                            strategyId: strategy.name,
+                            quantity: qty,
+                            entryPrice: currentPrice,
+                            source: 'bot',
+                            timeframe: strategyTimeframe,
+                            confidence: trust.score ? trust.score / 100 : Number(strategy.risk?.signal_threshold || 0.65),
+                            signature,
+                            submittedAt: new Date().toISOString()
+                        });
+                    } catch (err) {
+                        console.warn(`[SUB-POSITIONS] Warning: Could not record sub-position entry: ${err.message}`);
+                    }
+                } else if (tradeType === 'sell') {
+                    try {
+                        recordSubPositionExit(
+                            lastTrade.symbol,
+                            strategy.name,
+                            qty,
+                            { exitPrice: currentPrice, timeframe: strategyTimeframe, signature }
+                        );
+                    } catch (err) {
+                        console.warn(`[SUB-POSITIONS] Warning: Could not record sub-position exit: ${err.message}`);
+                    }
+                }
+
                 if (providerPaper && tradeType === 'buy') {
                     const { fetchAlpacaPositions, recordAlpacaEntry } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
                     const brokerInventory = fetchAlpacaPositions(false);
                     const brokerPosition = brokerInventory.positions.find((position) => position.symbol === lastTrade.symbol);
                     if (brokerInventory.status === 'confirmed' && brokerPosition) {
-                        recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: false });
+                        recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: false, timeframe: strategyTimeframe });
                         if (reservation) updateAlpacaPaperEntryIntent(signalId, 'confirmed');
                         openPositionCount++;
                     } else {

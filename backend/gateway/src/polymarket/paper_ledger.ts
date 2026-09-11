@@ -17,7 +17,7 @@ export interface LedgerEvent {
   event_time: string;
   prior_checksum: string;
   event_checksum?: string;
-  cash_after?: number;
+  cash_after?: number | null;
   cash_delta?: number;
   fees?: number;
   slippage?: number;

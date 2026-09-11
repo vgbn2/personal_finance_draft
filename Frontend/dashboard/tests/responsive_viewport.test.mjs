@@ -57,7 +57,7 @@ for (const width of [360, 768, 1440]) {
     assert.equal(state.viewport, width);
     assert.ok(state.documentWidth <= width, `${state.documentWidth}px document overflows ${width}px viewport`);
     assert.equal(state.navLabel, 'Dashboard views');
-    assert.equal(state.navButtons.length, 10, 'nine panels plus settings must share one reachable navigation');
+    assert.equal(state.navButtons.length, 11, 'ten panels plus settings must share one reachable navigation');
     assert.equal(state.navButtons.filter((button) => button.current === 'page').length, 1);
     const visited = await evaluate(browser.client, `(async () => {
       const buttons = [...document.querySelectorAll('nav[aria-label="Dashboard views"] button')];

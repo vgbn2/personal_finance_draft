@@ -11,7 +11,7 @@ import {
   polymarketProbeCandidates,
   summarizePolymarketApiCredShape,
   traceCsvFile,
-} from './polymarket';
+} from './polymarket/index.js';
 import { PolymarketAdapter } from './polymarket_execution';
 // @ts-ignore
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');

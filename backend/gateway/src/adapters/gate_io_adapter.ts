@@ -33,7 +33,7 @@ export class GateIoAdapter implements BrokerAdapter {
     this.baseUrl = settings.baseUrl;
     this.apiKey = settings.apiKey;
     this.apiSecret = settings.apiSecret;
-    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? true;
+    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
   }
 
   private hasCredentials(): boolean {
