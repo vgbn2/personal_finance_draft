@@ -196,7 +196,7 @@ npm run bench:mini-pc
 
 Production containers in `infra/docker/docker-compose.yml` declare explicit resource constraints:
 - `web`: `cpus: '1.0'`, `memory: 512M`
-- `backfill`: `cpus: '2.0'`, `memory: 1024M`
+- `backfill`: `cpus: '2.0'`, `memory: 3072M` (`NODE_OPTIONS: --max-old-space-size=2560`)
 
 Backfill polling is globally paced in addition to the provider-lane concurrency caps. The foreground daemon
 accepts `--poll-gap-ms`, `--warmup-jobs`, `--warmup-gap-ms`, and `--poll-jitter-ms`; it also increases the

@@ -8,13 +8,12 @@ The `tests/` directory contains Node.js contract/integration test suites, archit
 
 ```text
 tests/
-├── architecture/       # Static structure, documentation, and setting contract tests
 ├── benchmarks/         # Performance benchmarking & system load test suites
 ├── fixtures/           # Fixed test inputs, candle samples, and market JSON snapshots
 ├── integration/        # Inter-subsystem integration & API route contract tests
-├── safety/             # Degraded mode, auth permission, and execution safety tests
-├── scripts/            # Node test runner entrypoint (tests/run_node_tests.js)
-└── support/            # Shared test environment isolation & assertion helpers
+├── scripts/            # Domain test suites (architecture/, safety/, strategy/, tui/, etc.)
+├── support/            # Shared test environment isolation & assertion helpers
+└── run_node_tests.js   # Canonical Node test runner entrypoint
 ```
 
 ## Active Verification Entrypoints
@@ -30,7 +29,7 @@ tests/
 
 3. **C++ Native CTest Suite (`backend/core/test/`):**
    - Executed via `ctest --test-dir backend/core/build`.
-   - 33 compiled native C++ executables verifying Float64 readers, grid optimizers, and matrix correlation engines.
+   - 34 compiled native C++ executables verifying Float64 readers, grid optimizers, and matrix correlation engines.
 
 4. **Static Analysis & Anti-Cheating Scanners:**
    - Test Integrity Anti-Cheating Audit: `scripts/dev/audit_test_integrity.js`

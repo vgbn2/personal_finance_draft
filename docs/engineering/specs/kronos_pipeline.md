@@ -18,11 +18,13 @@ flowchart LR
 
 ## Tokenizer Contract
 The C++ tokenizer must replicate the Kronos tokenization strategy:
+
 - Inputs: Sequence of `OhlcvBar` (Open, High, Low, Close, Volume)
 - Output: `std::vector<int>` (Token IDs)
 - Binning: Quantizes continuous log-returns and price movements into discrete integer tokens.
 
 ## Model Artifacts
 Planned model files:
+
 - `models/kronos_base.onnx` (Exported PyTorch weights)
 - `models/kronos_tokenizer.json` (Vocabulary and bin definitions)

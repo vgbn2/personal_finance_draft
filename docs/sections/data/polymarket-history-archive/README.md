@@ -70,11 +70,13 @@ $$\Delta t(L; N, \gamma, \beta) = \gamma \cdot \frac{L^\beta}{N \cdot 300^{\beta
 ## Curated Default Universes & Selection Modes
 
 Default contract universes are defined in `config/markets/data_sources.yaml` and `config/polymarket_scope.json`:
+
 - **Macro**: `fed_rate_cut_prob`, `us_cpi_target`, `us_recession_2026`
 - **Crypto**: `btc_price_milestone`, `eth_etf_inflows`, `eth_price_target`, `sol_target`, `poly_btc_15m_rolling`
 - **Geopolitics**: `us_presidency_regime`, `sec_crypto_regulation`
 
 CLI commands support four flexible selection modes and binary persistence:
+
 - **Mode 1 (Default Universe)**: `bin/sovereign polymarket backfill --all-defaults`
 - **Mode 2 (Targeted Symbols / Slugs)**: `bin/sovereign polymarket backfill --symbol fed_rate_cut_prob --slug "fed-rate-cut-in-2026"`
 - **Mode 3 (Top Liquidity Scanner)**: `bin/sovereign polymarket backfill --top 30 --category crypto --min-volume 50000`

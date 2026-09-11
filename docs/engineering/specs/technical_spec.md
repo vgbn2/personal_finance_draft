@@ -36,7 +36,7 @@ flowchart TD
     subgraph Tier5["5. Storage Subsystem"]
         BIN["Binary TS Files (SOVT v1)<br/>storage/data/ts/*.bin"]
         LOCK["POSIX File Lock (O_EXCL)<br/>shared/lib/runtime/process_lock.js"]
-        JSONL["JSONL Execution Ledgers<br/>storage/data/paper/"]
+        JSONL["JSONL Execution Ledgers<br/>storage/data/paper_trading/"]
     end
 
     subgraph Tier6["6. Execution Gateways"]
@@ -89,6 +89,7 @@ Each bar record is exactly 48 bytes packed, 8-byte aligned, little-endian:
 - 1 year of 1-minute bars: $375 \times 252 = 94,500\text{ bars} \times 48\text{ bytes} \approx 4.53\text{ MB}$.
 - 10 years of 1-minute crypto bars: $5,256,000\text{ bars} \times 48\text{ bytes} \approx 252.28\text{ MB}$.
 - Seek complexity: $O(1)$ random access via binary search on timestamp offsets:
+
   $$\text{Offset}(i) = 8 + (i \times 48)$$
 
 ---
@@ -101,7 +102,7 @@ To guarantee single-writer authority without external database daemons, Sovereig
 sequenceDiagram
     autonumber
     participant Writer as central-host (Backfill / Bot)
-    participant Lock as storage/data/locks/*.lock
+    participant Lock as storage/data/cache/*.lock
     participant Storage as storage/data/ts/*.bin
     participant Reader as CLI / Dashboard / Reader
 
@@ -126,9 +127,11 @@ sequenceDiagram
 Simulated fills compute realistic transaction drag factoring bid-ask spread, linear market impact slippage, and broker maker/taker fees:
 
 $$\text{Effective Price}_{\text{long}} = P_{\text{close}} \times \left(1 + \frac{\text{Spread}_{\text{bps}}}{20,000}\right) \times \left(1 + \text{Slippage}\right)$$
+
 $$\text{Cost}_{\text{total}} = \text{Notional} \times \left(\frac{\text{Fee}_{\text{bps}}}{10,000} + \frac{\text{Spread}_{\text{bps}}}{20,000} + \text{Slippage}\right)$$
 
 Where default cost parameters:
+
 - Equities (Liquid ETF): $\text{Spread} = 2\text{ bps}$, $\text{Fee} = 0\text{ bps}$ (Alpaca zero-commission), $\text{Slippage} = 3\text{ bps}$.
 - Crypto (Spot): $\text{Spread} = 5\text{ bps}$, $\text{Fee} = 10\text{ bps}$ (Gate.io taker), $\text{Slippage} = 5\text{ bps}$.
 

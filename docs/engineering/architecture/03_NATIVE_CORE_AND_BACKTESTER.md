@@ -15,7 +15,7 @@ flowchart TD
         MRG["binary_ts_merger.cpp: Zero-allocation streaming two-pointer merge (O(1) memory, <5MB RSS)"]
     end
 
-    subgraph Analytics["Analytics & Indicator Engine (backend/core/src/analytics/) [Load: 6/10]"]
+    subgraph Analytics["Analytics & Indicator Engine (backend/core/src/indicators/) [Load: 6/10]"]
         IND["indicator_engine.cpp: SIMD-vectorized RSI, MACD, Bollinger Bands, ATR, Rolling Vol"]
         MC["monte_carlo.cpp: High-throughput bootstrap resampling with vectorized xorshift64 PRNG"]
     end
@@ -116,15 +116,23 @@ flowchart TD
 ```
 
 ### Mathematical Formulations
+
 $$\text{Adjusted Entry Price}: P_{\text{entry}} = P_{\text{close}} \cdot \left(1 + \frac{\text{cost\_bps}}{10000}\right)$$
+
 $$\text{Adjusted Exit Price}: P_{\text{exit}} = P_{\text{close}} \cdot \left(1 - \frac{\text{cost\_bps}}{10000}\right)$$
+
 $$\text{Net Trade Return}: R_{\text{trade}} = \frac{P_{\text{exit}} - P_{\text{entry}}}{P_{\text{entry}}} - 2 \cdot \text{Fee}_{\text{rate}}$$
 
 ### Performance Metrics Formulations
+
 $$\text{Annualized Return} = \left( \prod_{t=1}^T (1 + R_t) \right)^{\frac{252}{T}} - 1$$
+
 $$\text{Sharpe Ratio} = \frac{\mathbb{E}[R_p - R_f]}{\sigma(R_p)} \cdot \sqrt{252}$$
+
 $$\text{Sortino Ratio} = \frac{\mathbb{E}[R_p - R_f]}{\sqrt{\frac{1}{T} \sum_{t=1}^T \min(0, R_t - R_f)^2}} \cdot \sqrt{252}$$
+
 $$\text{Calmar Ratio} = \frac{\text{Annualized Return}}{\text{Maximum Drawdown}}$$
+
 $$\text{Maximum Drawdown (MDD)} = \max_{\tau \in (0, T)} \left[ \max_{t \in (0, \tau)} \frac{E_t - E_\tau}{E_t} \right]$$
 
 ---
@@ -153,7 +161,9 @@ flowchart TD
 | Iteration $K-1$ | `[ R_1, R_98, R_12, R_55, ..., R_60 ]` | MaxDD: 11.2%, Sharpe: 1.68 |
 
 ### Mathematical Risk Quantiles
+
 $$\text{Value at Risk (VaR}_\alpha) = -\inf \{ l \in \mathbb{R} : P(L > l) \le 1 - \alpha \}$$
+
 $$\text{Conditional VaR (CVaR}_\alpha) = \mathbb{E}[L \mid L \ge \text{VaR}_\alpha(L)]$$
 
 ---

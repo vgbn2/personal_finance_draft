@@ -47,8 +47,11 @@ Unlike equity continuous double auctions where prices can grow unboundedly, pred
 | **BID** | Level 3 | `$0.5850` | 20,000 | `$11,700` | Deep liquidity |
 
 ### Mathematical Definitions
+
 $$\text{Midpoint Probability}: P_{\text{mid}} = \frac{P_{\text{best\_bid}} + P_{\text{best\_ask}}}{2}$$
+
 $$\text{Bid-Ask Spread}: S = P_{\text{best\_ask}} - P_{\text{best\_bid}}$$
+
 $$\text{Implied Probability of Outcome}: \pi(\text{YES}) = P_{\text{mid}}, \quad \pi(\text{NO}) = 1.00 - P_{\text{mid}}$$
 
 ---
@@ -81,10 +84,10 @@ To test prediction strategies locally without capital risk, Sovereign maintains 
 
 ```mermaid
 flowchart TD
-    subgraph Log["Append-Only Chained Event Log (storage/data/runtime/paper_ledger.jsonl) [Load: 1/10]"]
-        E0['{"seq": 0, "type": "DEPOSIT", "amount": 10000.0, "ts": 1756140000000}']
-        E1['{"seq": 1, "type": "BUY", "token": "0xABC...", "qty": 500, "price": 0.60, "fee": 0}']
-        E2['{"seq": 2, "type": "RESOLVE", "token": "0xABC...", "outcome": 1.0, "payout": 500.0}']
+    subgraph Log["Append-Only Chained Event Log (storage/data/runtime/paper_trading/events.jsonl) [Load: 1/10]"]
+        E0["seq: 0 | DEPOSIT | amount: 10000.0 | ts: 1756140000000"]
+        E1["seq: 1 | BUY | token: 0xABC... | qty: 500 | price: 0.60 | fee: 0"]
+        E2["seq: 2 | RESOLVE | token: 0xABC... | outcome: 1.0 | payout: 500.0"]
     end
 
     subgraph State["Atomic Rebuildable State Projection (storage/data/runtime/portfolio.v1.json) [Load: 1/10 | SLA: <1.0ms]"]
@@ -115,7 +118,9 @@ flowchart TD
 ```
 
 ### Settlement Mathematics
-$$\text{Binary Payout} = \begin{cases} Q \times \$1.00 & \text{if Target Outcome} = \text{Resolved Outcome} \\ \$0.00 & \text{otherwise} \end{cases}$$
+
+$$\text{Binary Payout} = \begin{cases} Q \times 1.00 & \text{if Target Outcome} = \text{Resolved Outcome} \\ 0.00 & \text{otherwise} \end{cases}$$
+
 $$\text{Realized P\&L} = \text{Payout} - (Q \times P_{\text{entry}}) - \text{Fees}$$
 
 ---
