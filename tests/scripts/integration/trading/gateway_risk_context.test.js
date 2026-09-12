@@ -43,7 +43,7 @@ test('market-order risk context uses a broker quote and account equity', async (
       referencePrice: 125.50,
       portfolioEquity: 1000,
       currentDrawdown: 0.08,
-      maxDrawdown: 0.20,
+      maxDrawdown: 0.30,
     });
     assert.equal(context.referencePrice * marketOrder().quantity, 251);
   } finally {

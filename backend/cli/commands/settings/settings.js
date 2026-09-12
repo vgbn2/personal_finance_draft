@@ -24,6 +24,7 @@ function renderHuman(settings) {
   console.log(`\n  ${paint(A.BOLD, 'Trading Params')}`);
   const t = settings.trading;
   console.log(`    position_size    ${t.position_size} USDC`);
+  if (t.max_drawdown !== undefined) console.log(`    max_drawdown     ${(t.max_drawdown * 100).toFixed(1)}%`);
   console.log(`    stop_loss        ${(t.stop_loss * 100).toFixed(1)}%`);
   console.log(`    take_profit      ${(t.take_profit * 100).toFixed(1)}%`);
   console.log(`    min_edge         ${(t.min_edge * 100).toFixed(1)}%`);
@@ -135,6 +136,7 @@ async function commandSettings(args, { settingsPath } = {}) {
       return idx !== -1 ? parseFloat(args[idx + 1]) : null;
     }
     const ps = numArg('--position-size'); if (ps !== null && !isNaN(ps)) t.position_size = ps;
+    const dd = numArg('--max-drawdown');  if (dd !== null && !isNaN(dd)) t.max_drawdown = dd;
     const sl = numArg('--stop-loss');     if (sl !== null && !isNaN(sl)) t.stop_loss = sl;
     const tp = numArg('--take-profit');   if (tp !== null && !isNaN(tp)) t.take_profit = tp;
     const me = numArg('--min-edge');      if (me !== null && !isNaN(me)) t.min_edge = me;

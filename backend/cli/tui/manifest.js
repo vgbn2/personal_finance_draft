@@ -260,7 +260,8 @@ const COMMAND_MANIFEST = {
         '--notional': { type: 'text', default: '100', label: 'Order Notional ($)' },
         '--equity': { type: 'text', default: '10000', label: 'Account Equity ($)' },
         '--drawdown': { type: 'text', default: '0.02', label: 'Current Drawdown (0.02 = 2%)' },
-        '--max-drawdown': { type: 'text', default: '0.15', label: 'Max Allowed Drawdown (0.15 = 15%)' }
+        '--max-drawdown': { type: 'text', default: '0.30', label: 'Max Allowed Drawdown (0.30 = 30%)' },
+        '--max-concentration': { type: 'text', default: '0.25', label: 'Max Concentration (0.25 = 25%)' }
       }},
       { id: 'correlation', prefix: ['backend'], label: 'Pearson Correlation', loading: true, flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },

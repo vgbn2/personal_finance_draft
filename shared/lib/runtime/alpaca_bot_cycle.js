@@ -270,7 +270,7 @@ async function runAlpacaExitCheck(args = [], options = {}) {
             position.symbol,
             String(sellQty),
             'market',
-            ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(options.paperMaxNotional || 25)] : ['--live']),
+            ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(options.paperMaxNotional || Number(process.env.ALPACA_PAPER_MAX_NOTIONAL) || 100)] : ['--live']),
             '--strategy',
             position.strategyName || 'alpaca_paper',
             '--signature',

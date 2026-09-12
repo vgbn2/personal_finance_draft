@@ -157,17 +157,19 @@ async function commandRunBot(args) {
     const interval = numericOption(botArgs, '--interval', 1);
     const once = hasFlag(botArgs, '--once');
     const minTrustScore = numericOption(botArgs, '--min-trust-score', 70);
+    const defaultMaxNotional = Number(process.env.ALPACA_PAPER_MAX_NOTIONAL) || 100;
+    const defaultDailyNotional = Number(process.env.ALPACA_PAPER_DAILY_MAX_NOTIONAL) || 2500;
     const paperMaxNotional = botArgs.includes('--paper-max-notional')
-      ? numericOption(botArgs, '--paper-max-notional', 25)
-      : null;
+      ? numericOption(botArgs, '--paper-max-notional', defaultMaxNotional)
+      : (process.env.ALPACA_PAPER_MAX_NOTIONAL ? defaultMaxNotional : null);
 
     return runAlpacaPaperLoop(interval, {
       once,
       minTrustScore,
       paperMaxNotional,
       paperDailyMaxNotional: botArgs.includes('--paper-daily-max-notional')
-        ? numericOption(botArgs, '--paper-daily-max-notional', 1000)
-        : null,
+        ? numericOption(botArgs, '--paper-daily-max-notional', defaultDailyNotional)
+        : (process.env.ALPACA_PAPER_DAILY_MAX_NOTIONAL ? defaultDailyNotional : null),
       allowedTimeframes: optionValue(botArgs, '--allowed-timeframes', null),
       args: botArgs,
       settings,

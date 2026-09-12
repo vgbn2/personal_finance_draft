@@ -616,10 +616,14 @@ int printIndicators(const std::vector<std::string>& args) {
 
 int printRiskCheck(const std::vector<std::string>& args) {
     sovereign::RiskLimits limits;
-    limits.max_drawdown = 0.20;
+    limits.max_drawdown = 0.30;
     const std::string max_dd_str = optionValue(args, "--max-drawdown");
     if (!max_dd_str.empty()) {
         parseDoubleStrict(max_dd_str, limits.max_drawdown);
+    }
+    const std::string max_conc_str = optionValue(args, "--max-concentration");
+    if (!max_conc_str.empty()) {
+        parseDoubleStrict(max_conc_str, limits.max_concentration);
     }
     limits.fail_closed = !hasFlag(args, "--fail-open");
 
