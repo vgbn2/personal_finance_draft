@@ -19,7 +19,8 @@ function parseRiskInputs(args = []) {
   let notional = 100;
   let equity = 10000;
   let drawdown = 0.02;
-  let maxDrawdown = process.env.MAX_ALLOWED_DRAWDOWN ? Number(process.env.MAX_ALLOWED_DRAWDOWN) : 0.15;
+  const envMaxDd = process.env.SOVEREIGN_MAX_DRAWDOWN || process.env.MAX_ALLOWED_DRAWDOWN;
+  let maxDrawdown = Number.isFinite(Number(envMaxDd)) && Number(envMaxDd) > 0 ? Number(envMaxDd) : 0.30;
   let maxConcentration = 0.25;
   let json = false;
 

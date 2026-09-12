@@ -1,0 +1,57 @@
+name: auto_orderflow_random_forest_v0_15m_mtxwbs1y
+kind: orderflow
+family: orderflow
+lane: single_asset
+role: strategy
+status: draft
+enabled: false
+model: random_forest_v0
+timeframe: 15m
+sections:
+  hypothesis: "Hypothesis for auto_orderflow_random_forest_v0_15m_mtxwbs1y"
+  universe:
+    - AAPL
+    - MSFT
+    - NVDA
+  signals:
+    entry: "Entry condition satisfied"
+    exit: "Exit condition satisfied or horizon expired"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - bollinger
+      - atr
+      - return_slow
+      - volatility
+    relative:
+    orderflow:
+    custom:
+  indicators:
+    return_fast: false
+    return_slow: true
+    volatility: true
+    rsi: false
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.6
+    max_holding_days: 5
+    risk_weight: 0.1
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []
