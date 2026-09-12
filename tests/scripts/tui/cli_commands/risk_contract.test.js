@@ -132,6 +132,7 @@ test('risk parser preserves documented defaults and optional check positional', 
     equity: 10000,
     drawdown: 0.02,
     maxDrawdown: 0.15,
+    maxConcentration: 0.25,
   });
   assert.equal(parseRiskInputs(['check']).ok, true);
 });

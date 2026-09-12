@@ -19,7 +19,7 @@ struct PromotionGateThresholds {
     double min_sharpe = 1.0;
     double min_sortino = 1.0;
     double min_win_rate = 0.5;
-    double max_drawdown = 0.2;
+    double max_drawdown = 0.30;
     double max_cost_bps = 50.0;
     std::size_t min_trades = 30;
 };

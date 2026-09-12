@@ -16,7 +16,10 @@ export interface RiskContext {
 export async function buildRiskContext(order: TradeOrder, adapter: BrokerAdapter, isDryRun: boolean = false): Promise<RiskContext> {
   let portfolioEquity = 0;
   let currentDrawdown = 0;
-  let maxDrawdown = 0.05; // 5% max drawdown threshold default
+  const maxDrawdownEnv = process.env.MAX_ALLOWED_DRAWDOWN || process.env.SOVEREIGN_MAX_DRAWDOWN;
+  const maxDrawdown = Number.isFinite(Number(maxDrawdownEnv)) && Number(maxDrawdownEnv) > 0
+    ? Number(maxDrawdownEnv)
+    : 0.30;
 
   try {
     const balances = await adapter.getPortfolioBalance();

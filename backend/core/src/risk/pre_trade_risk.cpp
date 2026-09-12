@@ -32,11 +32,11 @@ RiskDecision PreTradeRisk::validate(const TradeOrder& order) const {
     }
 
     // 2. Concentration Check (Notional Limit)
-    const double concentration_limit = 0.25;
+    const double concentration_limit = limits_.max_concentration > 0.0 ? limits_.max_concentration : 0.25;
     const double current_concentration = order.notional / order.portfolio_equity;
     if (current_concentration > concentration_limit) {
         decision.approved = false;
-        decision.reason = "CRITICAL: Concentration limit exceeded (25% max).";
+        decision.reason = "CRITICAL: Concentration limit exceeded.";
         return decision;
     }
 

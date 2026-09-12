@@ -7,7 +7,7 @@ const {
 
 const CONFIG_DEFAULTS = {
   timezone: 'UTC',
-  risk_thresholds: { max_position_pct: 0.05, max_drawdown_pct: 0.15 },
+  risk_thresholds: { max_position_pct: 0.15, max_drawdown_pct: 0.30 },
   broker_preference: { default: 'alpaca' },
   dashboard_layout: {
     default_tab: 'overview',

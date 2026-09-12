@@ -26,6 +26,7 @@ const DEFAULTS = {
   favorite_symbols: ['AAPL', 'MSFT', 'SPY', 'BTCUSDT', 'ETHUSDT'],
   trading: {
     position_size: 100,
+    max_drawdown: 0.30,
     stop_loss: 0.05,
     take_profit: 0.10,
     min_edge: 0.05,
