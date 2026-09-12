@@ -25,6 +25,11 @@ Full-Stack Blast-Through Remediation, MetaTrader 5 Execution Engine & Remote Pro
     - `npm run test:structure`: PASSED (7/7, 9/9, 12/12 pass).
     - `npm run hygiene`: PASSED (0 defects).
     - `npm test`: PASSED.
+  - **Release & Remote Synchronization**:
+    - Branch: `feat/diataxis-docs-overhaul-and-social-alpha`
+    - Commit: `db5f059b`
+    - Pull Request: [#6](https://github.com/vgbn2/personal_finance_draft/pull/6)
+    - Code-Only Knowledge Graph: AST indexed at `graphify-out/graph.json` (6,665 nodes, 13,223 edges).
 
 - **Documentation Engineering & Developer Experience Overhaul (September 2026)**:
   - **Diátaxis & Institutional Developer Standard**: Benchmarked against Alpaca (`docs.alpaca.markets`), Polymarket (`docs.polymarket.com`), and Stripe/Coinbase. Enhanced `docs/engineering/standards/documentation_standard.md` with:
