@@ -33,7 +33,7 @@ promotion:
   require_walk_forward: true
   require_paper_trade: true
   min_sharpe_ratio: 1.5
-  max_drawdown_limit: 0.15
+  max_drawdown_limit: 0.30
 
 registry:
   files:

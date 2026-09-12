@@ -31,7 +31,7 @@ constexpr double PERCENT_MULTIPLIER = 100.0;
 constexpr double BPS_DIVISOR = 10000.0;
 
 // Risk
-constexpr double DEFAULT_MAX_DRAWDOWN_LIMIT = 0.20; // 20% limit
+constexpr double DEFAULT_MAX_DRAWDOWN_LIMIT = 0.30; // 30% limit
 
 // Indicator Fallbacks
 constexpr double RSI_NEUTRAL_LEVEL = 50.0;

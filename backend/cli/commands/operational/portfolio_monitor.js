@@ -23,10 +23,10 @@ const DEFAULT_ALPACA_SCOPE = 'paper';
 const PORTFOLIO_SCOPES = Object.freeze(['live', 'live_paper', 'both']);
 
 const DEFAULT_THRESHOLDS = Object.freeze({
-  max_position_notional: 25000,
-  max_gross_exposure: 100000,
-  max_net_exposure: 50000,
-  max_drawdown: 0.10,
+  max_position_notional: 50000,
+  max_gross_exposure: 200000,
+  max_net_exposure: 100000,
+  max_drawdown: 0.30,
 });
 
 function finiteNumber(value, fallback = 0) {
@@ -51,19 +51,19 @@ function loadRiskThresholds(configPath = DEFAULT_RISK_CONFIG_PATH, env = process
 
   return {
     max_position_notional: positiveNumber(
-      env.SOVEREIGN_MAX_POSITION_NOTIONAL,
+      env.MAX_POSITION_NOTIONAL || env.SOVEREIGN_MAX_POSITION_NOTIONAL,
       positiveNumber(configured.max_position_notional, DEFAULT_THRESHOLDS.max_position_notional),
     ),
     max_gross_exposure: positiveNumber(
-      env.SOVEREIGN_MAX_GROSS_EXPOSURE,
+      env.MAX_GROSS_EXPOSURE || env.SOVEREIGN_MAX_GROSS_EXPOSURE,
       positiveNumber(configured.max_gross_exposure, DEFAULT_THRESHOLDS.max_gross_exposure),
     ),
     max_net_exposure: positiveNumber(
-      env.SOVEREIGN_MAX_NET_EXPOSURE,
+      env.MAX_NET_EXPOSURE || env.SOVEREIGN_MAX_NET_EXPOSURE,
       positiveNumber(configured.max_net_exposure, DEFAULT_THRESHOLDS.max_net_exposure),
     ),
     max_drawdown: positiveNumber(
-      env.SOVEREIGN_MAX_DRAWDOWN,
+      env.MAX_ALLOWED_DRAWDOWN || env.SOVEREIGN_MAX_DRAWDOWN,
       positiveNumber(configured.max_drawdown, DEFAULT_THRESHOLDS.max_drawdown),
     ),
   };

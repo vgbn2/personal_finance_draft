@@ -118,7 +118,7 @@ test('gateway paper paths do not initialize credentialed execution adapters', ()
   const gateway = fs.readFileSync(path.join(repoRoot, 'backend', 'gateway', 'src', 'index.ts'), 'utf8');
   const cycle = fs.readFileSync(path.join(repoRoot, 'backend', 'gateway', 'src', 'cycle.ts'), 'utf8');
 
-  assert.match(gateway, /const adapter = isLive\s*\?\s*new AlpacaAdapter/);
+  assert.match(gateway, /const adapter =\s*(?:broker === 'mt5'\s*\?\s*new Mt5Adapter\(\)\s*:\s*)?isLive\s*\?\s*new AlpacaAdapter/);
   assert.match(gateway, /:\s*new SimulationAdapter\(\)/);
   assert.match(cycle, /if \(live && hasL2\) \{[\s\S]*createClobClient\(\{ withCreds: true \}\)/);
   assert.doesNotMatch(cycle, /if \(hasL2\) \{[\s\S]{0,120}createClobClient\(\{ withCreds: true \}\)/);

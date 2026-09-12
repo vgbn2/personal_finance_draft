@@ -704,8 +704,10 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 continue;
             }
             let qty = sizing.quantity;
-            const perOrderMaxNotional = numericOption(args, '--paper-max-notional', 25);
-            const dailyMaxNotional = numericOption(args, '--paper-daily-max-notional', 250);
+            const defaultOrderNotional = Number(process.env.ALPACA_PAPER_MAX_NOTIONAL) || 100;
+            const defaultDailyNotional = Number(process.env.ALPACA_PAPER_DAILY_MAX_NOTIONAL) || 2500;
+            const perOrderMaxNotional = numericOption(args, '--paper-max-notional', defaultOrderNotional);
+            const dailyMaxNotional = numericOption(args, '--paper-daily-max-notional', defaultDailyNotional);
             let reservation = null;
 
             if (providerPaper) {
