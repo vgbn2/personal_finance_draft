@@ -47,6 +47,7 @@ Subagents MUST NOT rely on static code review or documentation claims alone:
 - **Probe Fail-Closed Boundaries**: Actively test unauthorized execution commands (e.g. `--live` without elevation flags/keys) to prove they fail closed with non-zero exit codes.
 - **Detect Phantom Specs**: Contrast documented architectural claims against actual source implementations (e.g. WebSocket feeds vs REST polling, ring buffers vs static files).
 - **Inspect Log Evidence**: Check active diagnostic and runtime logs (`flaw_monitor.log`, container logs) alongside static code.
+- **Zero False-Positive Gate**: Actively distinguish between intended architectural design (e.g. offline fixture fallbacks, zero-key development mode, non-blocking diagnostic logs, frozen cache states) and actual operational defects. Reject all speculative or unverified static claims. Every reported finding must be backed by a proved failing boundary or broken execution path.
 
 ### 4. Section Cleanliness Grading Rubric (A–F)
 Each architectural plane must receive a substantiated letter grade:

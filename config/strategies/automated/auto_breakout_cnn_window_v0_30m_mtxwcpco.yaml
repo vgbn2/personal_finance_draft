@@ -1,0 +1,57 @@
+name: auto_breakout_cnn_window_v0_30m_mtxwcpco
+kind: breakout
+family: breakout
+lane: single_asset
+role: strategy
+status: draft
+enabled: false
+model: cnn_window_v0
+timeframe: 30m
+sections:
+  hypothesis: "Hypothesis for auto_breakout_cnn_window_v0_30m_mtxwcpco"
+  universe:
+    - SPY
+    - QQQ
+  signals:
+    entry: "Entry condition satisfied"
+    exit: "Exit condition satisfied or horizon expired"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - rsi
+      - macd
+      - atr
+      - return_fast
+      - volatility
+    relative:
+    orderflow:
+    custom:
+  indicators:
+    return_fast: true
+    return_slow: false
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: false
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.59
+    max_holding_days: 8
+    risk_weight: 0.1
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []
