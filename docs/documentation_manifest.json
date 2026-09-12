@@ -7,12 +7,16 @@
     "docs/codebase_tour",
     "docs/design",
     "docs/engineering",
+    "docs/explanation",
     "docs/guide",
+    "docs/how_to",
     "docs/memory",
     "docs/modules",
     "docs/operational",
+    "docs/reference",
     "docs/research",
-    "docs/sections"
+    "docs/sections",
+    "docs/tutorials"
   ],
   "atlas": {
     "record_roots": {
@@ -955,6 +959,391 @@
       ]
     },
     {
+      "path": "docs/explanation/architecture/01_system_topology_and_invariants.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/explanation/architecture/02_data_pipeline_and_storage.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/explanation/architecture/03_native_cpp_core_and_backtester.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/explanation/architecture/04_quantitative_alpha_and_ml_workbench.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/explanation/architecture/05_sub_positions_and_risk_ledger.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/explanation/architecture/06_prediction_markets_and_orderbook_archive.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/explanation/architecture/07_security_model_and_deployment.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/explanation/architecture/08_financial_primer_for_engineers.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/CMakeLists.txt"
+      ],
+      "review_triggers": [
+        "architecture-change"
+      ]
+    },
+    {
+      "path": "docs/explanation/design_rationale/frontend_design.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "docs/explanation/README.md"
+      ],
+      "review_triggers": [
+        "explanation-update"
+      ]
+    },
+    {
+      "path": "docs/explanation/quant_research/research_methodology.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "docs/explanation/README.md"
+      ],
+      "review_triggers": [
+        "explanation-update"
+      ]
+    },
+    {
+      "path": "docs/explanation/README.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "researchers",
+        "contributors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "docs/explanation/README.md"
+      ],
+      "review_triggers": [
+        "explanation-update"
+      ]
+    },
+    {
+      "path": "docs/how_to/broker_gateway_setup.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/cli_operations_guide.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/contributing_and_pr_hygiene.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/data_backfill_and_ingestion.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/disaster_recovery_and_rollback.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/environment_setup.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/operational_soak_runbook.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/proxmox_vm_deployment.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/README.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/strategy_explorer_workflow.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/testing_surface_and_verification.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
       "path": "docs/index.md",
       "type": "overview",
       "audience": [
@@ -1079,27 +1468,6 @@
       ]
     },
     {
-      "path": "docs/operational/guides/DEPLOYMENT.md",
-      "type": "how_to",
-      "audience": [
-        "operators",
-        "contributors"
-      ],
-      "owner": "execution",
-      "status": "canonical",
-      "source_paths": [
-        "infra/docker/docker-compose.yml",
-        "infra/docker/update-central-host.sh"
-      ],
-      "test_paths": [
-        "tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js"
-      ],
-      "review_triggers": [
-        "docker-compose-change",
-        "deployment-contract-change"
-      ]
-    },
-    {
       "path": "docs/operational/guides/cli_quick_guide.md",
       "type": "how_to",
       "audience": [
@@ -1142,6 +1510,27 @@
       "review_triggers": [
         "operations-change",
         "cli-change"
+      ]
+    },
+    {
+      "path": "docs/operational/guides/DEPLOYMENT.md",
+      "type": "how_to",
+      "audience": [
+        "operators",
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "canonical",
+      "source_paths": [
+        "infra/docker/docker-compose.yml",
+        "infra/docker/update-central-host.sh"
+      ],
+      "test_paths": [
+        "tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js"
+      ],
+      "review_triggers": [
+        "docker-compose-change",
+        "deployment-contract-change"
       ]
     },
     {
@@ -1403,6 +1792,191 @@
       ]
     },
     {
+      "path": "docs/reference/api/web_rest_and_websocket_api.md",
+      "type": "reference",
+      "audience": [
+        "api-developers",
+        "frontend",
+        "maintainers"
+      ],
+      "owner": "api",
+      "status": "canonical",
+      "source_paths": [
+        "backend/api/app.js"
+      ],
+      "review_triggers": [
+        "api-route-change",
+        "web-spec"
+      ]
+    },
+    {
+      "path": "docs/reference/README.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "reference",
+      "status": "canonical",
+      "source_paths": [
+        "docs/reference/README.md"
+      ],
+      "review_triggers": [
+        "reference-catalog"
+      ]
+    },
+    {
+      "path": "docs/reference/specifications/capability_manifest.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "package.json"
+      ],
+      "review_triggers": [
+        "spec-change"
+      ]
+    },
+    {
+      "path": "docs/reference/specifications/kronos_pipeline.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "package.json"
+      ],
+      "review_triggers": [
+        "spec-change"
+      ]
+    },
+    {
+      "path": "docs/reference/specifications/product_specification.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "package.json"
+      ],
+      "review_triggers": [
+        "spec-change"
+      ]
+    },
+    {
+      "path": "docs/reference/specifications/stack_manifest.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "package.json"
+      ],
+      "review_triggers": [
+        "spec-change"
+      ]
+    },
+    {
+      "path": "docs/reference/specifications/supabase_integration.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "package.json"
+      ],
+      "review_triggers": [
+        "spec-change"
+      ]
+    },
+    {
+      "path": "docs/reference/specifications/technical_specification.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "package.json"
+      ],
+      "review_triggers": [
+        "spec-change"
+      ]
+    },
+    {
+      "path": "docs/reference/specifications/tui_feature_map.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "package.json"
+      ],
+      "review_triggers": [
+        "spec-change"
+      ]
+    },
+    {
+      "path": "docs/reference/standards/documentation_standard.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "standards",
+      "status": "canonical",
+      "source_paths": [
+        "docs/README.md"
+      ],
+      "review_triggers": [
+        "standards-review"
+      ]
+    },
+    {
+      "path": "docs/reference/standards/engineering_standards.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "standards",
+      "status": "canonical",
+      "source_paths": [
+        "docs/README.md"
+      ],
+      "review_triggers": [
+        "standards-review"
+      ]
+    },
+    {
       "path": "docs/RESEARCH_STRATEGY_EXPLORER.md",
       "type": "guide",
       "audience": [
@@ -1437,7 +2011,7 @@
       ]
     },
     {
-      "path": "docs/research/social_signals_pipeline.md",
+      "path": "docs/research/README.md",
       "type": "explanation",
       "audience": [
         "contributors"
@@ -1451,7 +2025,92 @@
       ]
     },
     {
-      "path": "docs/research/README.md",
+      "path": "docs/research/social_alpha/01_ARCHITECTURE_AND_INGESTION.md",
+      "type": "research",
+      "audience": [
+        "researchers",
+        "contributors"
+      ],
+      "owner": "quant-research",
+      "status": "canonical",
+      "source_paths": [
+        "docs/research/social_alpha/README.md"
+      ],
+      "review_triggers": [
+        "social-alpha-research",
+        "nlp-pipeline"
+      ]
+    },
+    {
+      "path": "docs/research/social_alpha/02_TRANSCRIPT_NLP_EXTRACTION.md",
+      "type": "research",
+      "audience": [
+        "researchers",
+        "contributors"
+      ],
+      "owner": "quant-research",
+      "status": "canonical",
+      "source_paths": [
+        "docs/research/social_alpha/README.md"
+      ],
+      "review_triggers": [
+        "social-alpha-research",
+        "nlp-pipeline"
+      ]
+    },
+    {
+      "path": "docs/research/social_alpha/03_SENTIMENT_SCORING_AND_DECAY.md",
+      "type": "research",
+      "audience": [
+        "researchers",
+        "contributors"
+      ],
+      "owner": "quant-research",
+      "status": "canonical",
+      "source_paths": [
+        "docs/research/social_alpha/README.md"
+      ],
+      "review_triggers": [
+        "social-alpha-research",
+        "nlp-pipeline"
+      ]
+    },
+    {
+      "path": "docs/research/social_alpha/04_CONTRARIAN_ALPHA_FORMULATION.md",
+      "type": "research",
+      "audience": [
+        "researchers",
+        "contributors"
+      ],
+      "owner": "quant-research",
+      "status": "canonical",
+      "source_paths": [
+        "docs/research/social_alpha/README.md"
+      ],
+      "review_triggers": [
+        "social-alpha-research",
+        "nlp-pipeline"
+      ]
+    },
+    {
+      "path": "docs/research/social_alpha/README.md",
+      "type": "research",
+      "audience": [
+        "researchers",
+        "contributors"
+      ],
+      "owner": "quant-research",
+      "status": "canonical",
+      "source_paths": [
+        "docs/research/social_alpha/README.md"
+      ],
+      "review_triggers": [
+        "social-alpha-research",
+        "nlp-pipeline"
+      ]
+    },
+    {
+      "path": "docs/research/social_signals_pipeline.md",
       "type": "explanation",
       "audience": [
         "contributors"
@@ -1708,6 +2367,168 @@
       "review_triggers": [
         "test-matrix",
         "contract-verification"
+      ]
+    },
+    {
+      "path": "docs/tutorials/00_quick_onboarding.md",
+      "type": "tutorial",
+      "audience": [
+        "operators",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "developer-experience",
+      "status": "canonical",
+      "source_paths": [
+        "docs/tutorials/README.md"
+      ],
+      "review_triggers": [
+        "tutorial-update",
+        "codebase-tour"
+      ]
+    },
+    {
+      "path": "docs/tutorials/01_cpp_core_engine.md",
+      "type": "tutorial",
+      "audience": [
+        "operators",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "developer-experience",
+      "status": "canonical",
+      "source_paths": [
+        "docs/tutorials/README.md"
+      ],
+      "review_triggers": [
+        "tutorial-update",
+        "codebase-tour"
+      ]
+    },
+    {
+      "path": "docs/tutorials/02_data_ingestion_pipeline.md",
+      "type": "tutorial",
+      "audience": [
+        "operators",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "developer-experience",
+      "status": "canonical",
+      "source_paths": [
+        "docs/tutorials/README.md"
+      ],
+      "review_triggers": [
+        "tutorial-update",
+        "codebase-tour"
+      ]
+    },
+    {
+      "path": "docs/tutorials/03_strategy_backtest_ml.md",
+      "type": "tutorial",
+      "audience": [
+        "operators",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "developer-experience",
+      "status": "canonical",
+      "source_paths": [
+        "docs/tutorials/README.md"
+      ],
+      "review_triggers": [
+        "tutorial-update",
+        "codebase-tour"
+      ]
+    },
+    {
+      "path": "docs/tutorials/04_trading_gateway_live_orders.md",
+      "type": "tutorial",
+      "audience": [
+        "operators",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "developer-experience",
+      "status": "canonical",
+      "source_paths": [
+        "docs/tutorials/README.md"
+      ],
+      "review_triggers": [
+        "tutorial-update",
+        "codebase-tour"
+      ]
+    },
+    {
+      "path": "docs/tutorials/05_tui_cli_dashboard.md",
+      "type": "tutorial",
+      "audience": [
+        "operators",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "developer-experience",
+      "status": "canonical",
+      "source_paths": [
+        "docs/tutorials/README.md"
+      ],
+      "review_triggers": [
+        "tutorial-update",
+        "codebase-tour"
+      ]
+    },
+    {
+      "path": "docs/tutorials/06_web_dashboard_api.md",
+      "type": "tutorial",
+      "audience": [
+        "operators",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "developer-experience",
+      "status": "canonical",
+      "source_paths": [
+        "docs/tutorials/README.md"
+      ],
+      "review_triggers": [
+        "tutorial-update",
+        "codebase-tour"
+      ]
+    },
+    {
+      "path": "docs/tutorials/07_testing_methodology.md",
+      "type": "tutorial",
+      "audience": [
+        "operators",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "developer-experience",
+      "status": "canonical",
+      "source_paths": [
+        "docs/tutorials/README.md"
+      ],
+      "review_triggers": [
+        "tutorial-update",
+        "codebase-tour"
+      ]
+    },
+    {
+      "path": "docs/tutorials/README.md",
+      "type": "tutorial",
+      "audience": [
+        "operators",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "developer-experience",
+      "status": "canonical",
+      "source_paths": [
+        "docs/tutorials/README.md"
+      ],
+      "review_triggers": [
+        "tutorial-update",
+        "codebase-tour"
       ]
     },
     {

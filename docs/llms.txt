@@ -3,33 +3,52 @@
 > Institutional-grade, local-first quantitative research, backtesting, and algorithmic execution platform.
 > Canonical website: https://vgbn2.github.io/personal_finance_draft/
 
-## Overview & Architecture
+## Quadrant 1: Tutorials (Learning)
+- [00. Quick Onboarding](tutorials/00_quick_onboarding.md): 15-minute zero-key development tour and initial test run.
+- [01. Native C++ Core Engine](tutorials/01_cpp_core_engine.md): Build, inspect, and benchmark the native C++20 engine.
+- [02. Data Ingestion Pipeline](tutorials/02_data_ingestion_pipeline.md): Streaming providers to binary SOVT TS index store.
+- [03. Strategy, Backtest & ML](tutorials/03_strategy_backtest_ml.md): Developing alpha models and running frame backtests.
+- [04. Trading Gateway & Live Orders](tutorials/04_trading_gateway_live_orders.md): Broker gateways (Alpaca, Polymarket, MT5).
+- [05. Terminal TUI & CLI](tutorials/05_tui_cli_dashboard.md): Interactive Ink terminal controls and search.
+- [06. Web Dashboard & API](tutorials/06_web_dashboard_api.md): React 19 frontend and WebSocket streams.
+- [07. Testing Methodology](tutorials/07_testing_methodology.md): Fixture replay, contract tests, and zero-key verification.
+
+## Quadrant 2: How-To Guides (Problem-Solving)
+- [Environment Setup](how_to/environment_setup.md): Zero-key developer onboarding and toolchain setup.
+- [Proxmox VM Deployment](how_to/proxmox_vm_deployment.md): Headless MT5 on Wine64 and Proxmox VM deployment instructions.
+- [Operational Soak Runbook](how_to/operational_soak_runbook.md): Multi-hour container monitoring, cgroup memory limits, and log health.
+- [Broker Gateway Setup](how_to/broker_gateway_setup.md): Broker credentials and gateway configuration.
+- [CLI Operations Guide](how_to/cli_operations_guide.md): Command syntax, subcommands, and options for `sovereign` CLI.
+- [Data Backfill & Ingestion](how_to/data_backfill_and_ingestion.md): Market data backfill procedures.
+- [Strategy Explorer Workflow](how_to/strategy_explorer_workflow.md): Autonomous strategy generation and walk-forward search.
+- [Disaster Recovery & Rollback](how_to/disaster_recovery_and_rollback.md): Emergency kill-switch and rollback procedures.
+- [Contributing & PR Hygiene](how_to/contributing_and_pr_hygiene.md): Code review and hygiene standards.
+- [Testing Surface Guide](how_to/testing_surface_and_verification.md): Complete testing suite execution matrix.
+
+## Quadrant 3: Reference (Information)
+- [Web REST & WebSocket API](reference/api/web_rest_and_websocket_api.md): 40-route catalog with RBAC capability tiers and status code tabs.
+- [Product Specification](reference/specifications/product_specification.md): 5 platform invariants, capability tiers, and reference contracts.
+- [Technical Specification](reference/specifications/technical_specification.md): Multi-tier boundaries, 48-byte SOVT binary format, and POSIX concurrency.
+- [Capability Manifest](reference/specifications/capability_manifest.md): Verified native C++ and Node.js testing capabilities.
+- [Stack Manifest](reference/specifications/stack_manifest.md): Toolchain baseline (Node v20+, CMake 3.20+, C++20, React 19).
+- [Documentation Standards](reference/standards/documentation_standard.md): Diátaxis quadrants, API endpoint cards, and multi-language tabs.
+- [Engineering Standards](reference/standards/engineering_standards.md): C++20 coding invariants, memory constraints, and safety rules.
+
+## Quadrant 4: Explanation (Understanding)
 - [Architecture Summary](ARCHITECTURE.md): System topology, invariants, zero-key development model, and execution drag.
-- [01. System Topology & Invariants](engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md): System boundaries, single-writer POSIX locking, and core layers.
-- [02. Data Pipeline & Storage](engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md): 48-byte SOVT binary time-series format (`.bin`) and multi-tier ingestion.
-- [03. Native C++ Core & Backtester](engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md): C++20 analytics engine, CTests, and frame backtesting runtime.
-- [04. Alpha Research & ML Workbench](engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md): Model registry parity, ONNX runtime, and feature engineering.
-- [05. Sub-Positions & Risk](engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md): Virtual sub-position attribution, 64-bit MT5 ORDER_MAGIC bitmasks, and C++ pre-trade risk gates.
-- [06. Prediction Markets & L2 Archive](engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md): Polymarket CLOB, CTF binary outcome tokens, and orderbook capture.
-- [07. Security, API & Deployment](engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md): Trade PIN authorization, Fail-Closed boundaries, and Wine64 containerization.
-- [08. Financial Primer for Engineers](engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md): Fixed-point arithmetic, market microstructures, and slippage models.
+- [01. System Topology & Invariants](explanation/architecture/01_system_topology_and_invariants.md): System boundaries, single-writer POSIX locking, and core layers.
+- [02. Data Pipeline & Storage](explanation/architecture/02_data_pipeline_and_storage.md): 48-byte SOVT binary time-series format (`.bin`) and multi-tier ingestion.
+- [03. Native C++ Core & Backtester](explanation/architecture/03_native_cpp_core_and_backtester.md): C++20 analytics engine, CTests, and frame backtesting runtime.
+- [04. Alpha Research & ML Workbench](explanation/architecture/04_quantitative_alpha_and_ml_workbench.md): Model registry parity, ONNX runtime, and feature engineering.
+- [05. Sub-Positions & Risk](explanation/architecture/05_sub_positions_and_risk_ledger.md): Virtual sub-position attribution, 64-bit MT5 ORDER_MAGIC bitmasks, and C++ pre-trade risk gates.
+- [06. Prediction Markets & L2 Archive](explanation/architecture/06_prediction_markets_and_orderbook_archive.md): Polymarket CLOB, CTF binary outcome tokens, and orderbook capture.
+- [07. Security, API & Deployment](explanation/architecture/07_security_model_and_deployment.md): Trade PIN authorization, Fail-Closed boundaries, and Wine64 containerization.
+- [08. Financial Primer for Engineers](explanation/architecture/08_financial_primer_for_engineers.md): Fixed-point arithmetic, market microstructures, and slippage models.
+- [Quant Research Methodology](explanation/quant_research/research_methodology.md): Falsifiable hypothesis lifecycle and edge validation methodology.
 
-## Specifications & Standards
-- [Product Specification](engineering/specs/product_spec.md): 5 platform invariants, capability tiers, and Diátaxis Reference contract.
-- [Technical Specification](engineering/specs/technical_spec.md): Multi-tier boundaries, 48-byte SOVT binary format, and POSIX concurrency.
-- [Web REST & WebSocket API](engineering/specs/web_api.md): 40-route catalog across all 39 handler modules with RBAC capability tiers.
-- [Capability Manifest](engineering/specs/capability_manifest.md): Verified native C++ and Node.js testing capabilities.
-- [Stack Manifest](engineering/specs/stack_manifest.md): Toolchain baseline (Node v20+, CMake 3.20+, C++20, React 19).
-- [Documentation Standards](engineering/standards/documentation_standard.md): Diátaxis quadrants, API endpoint cards, and multi-language tabs.
-
-## Operational Runbooks & Guides
-- [Quickstart](operational/guides/QUICKSTART.md): Zero-key developer onboarding, building native core, and running keyless tests.
-- [Operational Soak Runbook](OPERATIONAL_SOAK_RUNBOOK.md): Multi-hour container monitoring, cgroup memory limits (2560MB heap), and log health.
-- [CLI Quick Guide](operational/guides/cli_quick_guide.md): Command syntax, subcommands, and options for `sovereign` CLI.
-- [Deployment Guide](operational/guides/DEPLOYMENT.md): Headless MT5 on Wine64 and Proxmox VM deployment instructions.
-- [Testing Surface Guide](operational/guides/testing_surface.md): Unit, integration, and architecture contract testing surface.
-
-## Research & Exploration
-- [Quant Research Roadmap](research/quant_research.md): Falsifiable hypothesis lifecycle and edge validation methodology.
-- [Social Signals Pipeline](research/social_signals_pipeline.md): YouTube and social media alpha signal extraction specification.
-- [Strategy Explorer Guide](RESEARCH_STRATEGY_EXPLORER.md): Autonomous strategy generation and walk-forward parameter search.
+## Research & Social Alpha (Alternative Data)
+- [Social Alpha Research Overview](research/social_alpha/README.md): Architecture and multi-modal alternative alpha signal pipeline.
+- [01. Ingestion Architecture](research/social_alpha/01_ARCHITECTURE_AND_INGESTION.md): YouTube Data API / yt-dlp subtitles, cashtags, and RSS syndication.
+- [02. Financial NLP Extraction](research/social_alpha/02_TRANSCRIPT_NLP_EXTRACTION.md): Entity disambiguation, timed chunks, and JSON signal schema.
+- [03. Sentiment Scoring & Decay](research/social_alpha/03_SENTIMENT_SCORING_AND_DECAY.md): Direction, conviction, and exponential half-life decay math.
+- [04. Contrarian Alpha Formulation](research/social_alpha/04_CONTRARIAN_ALPHA_FORMULATION.md): Retail consensus reversal hypothesis and backtesting integration.
