@@ -62,46 +62,63 @@ nav:
   - Overview:
       - Overview: index.md
       - Architecture Summary: ARCHITECTURE.md
-  - Architecture:
-      - 01. System Topology & Invariants: engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md
-      - 02. Data Pipeline & Storage: engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md
-      - 03. Native C++ Core & Backtester: engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md
-      - 04. Alpha Research & ML Workbench: engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md
-      - 05. Sub-Positions & Risk: engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md
-      - 06. Prediction Markets & L2 Archive: engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md
-      - 07. Security, API & Deployment: engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md
-      - 08. Financial Primer: engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md
-  - Specifications:
-      - Product Specification: engineering/specs/product_spec.md
-      - Technical Specification: engineering/specs/technical_spec.md
-      - Web REST & WebSocket API: engineering/specs/web_api.md
-      - Capability Manifest: engineering/specs/capability_manifest.md
-      - Stack & Toolchain Manifest: engineering/specs/stack_manifest.md
-      - TUI Feature Map: engineering/specs/tui_feature_map.md
-      - Supabase Integration: engineering/specs/supabase_integration.md
-      - Kronos Pipeline: engineering/specs/kronos_pipeline.md
-  - Subsystems:
-      - Backend: sections/backend/README.md
-      - Shared Lib: sections/shared/README.md
-      - Frontend Dashboard: sections/frontend/README.md
-      - Configuration: sections/config/README.md
-      - Data Storage: sections/storage/README.md
-      - Test Matrix: sections/tests/README.md
-      - Terminal Dashboard: sections/interface/terminal-dashboard/README.md
-      - RSI Reversal Research: sections/research/rsi-reversal-analysis/README.md
-      - Correlation Research: sections/research/correlation-analysis/README.md
-      - Backtest Engine: sections/research/backtest-execution/README.md
-      - Polymarket L2 Archive: sections/data/polymarket-history-archive/README.md
-      - Polymarket Bot Cycle: sections/execution/polymarket-bot-cycle/README.md
-  - Operations & Guides:
-      - Quickstart: operational/guides/QUICKSTART.md
-      - Operational Soak Runbook: OPERATIONAL_SOAK_RUNBOOK.md
-      - Contributing Guide: operational/guides/CONTRIBUTING.md
-      - Testing Surface Guide: operational/guides/testing_surface.md
-      - CLI Quick Guide: operational/guides/cli_quick_guide.md
-      - Strategy Explorer Guide: RESEARCH_STRATEGY_EXPLORER.md
-      - Data Ingestion: operational/guides/data_ingestion.md
-      - Operational Procedures: operational/guides/operations.md
-      - Deployment Plan: operational/guides/DEPLOYMENT.md
-      - Codebase Tour: codebase_tour/00_START_HERE.md
+  - Tutorials:
+      - Overview: tutorials/README.md
+      - 00. Quick Onboarding: tutorials/00_quick_onboarding.md
+      - 01. Native C++ Core: tutorials/01_cpp_core_engine.md
+      - 02. Data Ingestion: tutorials/02_data_ingestion_pipeline.md
+      - 03. Strategy & Backtest: tutorials/03_strategy_backtest_ml.md
+      - 04. Trading Gateway: tutorials/04_trading_gateway_live_orders.md
+      - 05. Terminal Dashboard: tutorials/05_tui_cli_dashboard.md
+      - 06. Web API & Dashboard: tutorials/06_web_dashboard_api.md
+      - 07. Testing Methodology: tutorials/07_testing_methodology.md
+  - How-To Guides:
+      - Overview: how_to/README.md
+      - Environment Setup: how_to/environment_setup.md
+      - Proxmox VM Deployment: how_to/proxmox_vm_deployment.md
+      - Operational Soak Runbook: how_to/operational_soak_runbook.md
+      - Broker Gateway Setup: how_to/broker_gateway_setup.md
+      - CLI Operations Guide: how_to/cli_operations_guide.md
+      - Data Backfill & Ingestion: how_to/data_backfill_and_ingestion.md
+      - Strategy Explorer Workflow: how_to/strategy_explorer_workflow.md
+      - Disaster Recovery: how_to/disaster_recovery_and_rollback.md
+      - Contributing & PR Hygiene: how_to/contributing_and_pr_hygiene.md
+      - Testing Surface: how_to/testing_surface_and_verification.md
+  - Reference:
+      - Overview: reference/README.md
+      - Web REST & WebSocket API: reference/api/web_rest_and_websocket_api.md
+      - Product Specification: reference/specifications/product_specification.md
+      - Technical Specification: reference/specifications/technical_specification.md
+      - Capability Manifest: reference/specifications/capability_manifest.md
+      - Stack Manifest: reference/specifications/stack_manifest.md
+      - TUI Feature Map: reference/specifications/tui_feature_map.md
+      - Supabase Integration: reference/specifications/supabase_integration.md
+      - Kronos Pipeline: reference/specifications/kronos_pipeline.md
+      - Documentation Standard: reference/standards/documentation_standard.md
+      - Engineering Standards: reference/standards/engineering_standards.md
+      - Subsystems:
+          - Backend: sections/backend/README.md
+          - Shared Lib: sections/shared/README.md
+          - Frontend Dashboard: sections/frontend/README.md
+          - Configuration: sections/config/README.md
+          - Data Storage: sections/storage/README.md
+          - Test Matrix: sections/tests/README.md
       - Code Atlas: atlas/README.md
+  - Explanation:
+      - Overview: explanation/README.md
+      - 01. System Topology & Invariants: explanation/architecture/01_system_topology_and_invariants.md
+      - 02. Data Pipeline & Storage: explanation/architecture/02_data_pipeline_and_storage.md
+      - 03. Native C++ Core & Backtester: explanation/architecture/03_native_cpp_core_and_backtester.md
+      - 04. Quantitative Alpha & ML: explanation/architecture/04_quantitative_alpha_and_ml_workbench.md
+      - 05. Sub-Positions & Risk: explanation/architecture/05_sub_positions_and_risk_ledger.md
+      - 06. Prediction Markets & L2: explanation/architecture/06_prediction_markets_and_orderbook_archive.md
+      - 07. Security & Deployment: explanation/architecture/07_security_model_and_deployment.md
+      - 08. Financial Primer: explanation/architecture/08_financial_primer_for_engineers.md
+      - Quant Research Methodology: explanation/quant_research/research_methodology.md
+      - Frontend Design Rationale: explanation/design_rationale/frontend_design.md
+  - Research & Social Alpha:
+      - Overview: research/social_alpha/README.md
+      - 01. Ingestion Architecture: research/social_alpha/01_ARCHITECTURE_AND_INGESTION.md
+      - 02. Transcript NLP Extraction: research/social_alpha/02_TRANSCRIPT_NLP_EXTRACTION.md
+      - 03. Sentiment Scoring & Decay: research/social_alpha/03_SENTIMENT_SCORING_AND_DECAY.md
+      - 04. Contrarian Alpha: research/social_alpha/04_CONTRARIAN_ALPHA_FORMULATION.md

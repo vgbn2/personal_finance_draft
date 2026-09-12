@@ -99,17 +99,20 @@ function classifyQuadrant(relPath) {
   if (relPath.startsWith('docs/archive/') || relPath.startsWith('docs/memory/') || relPath.startsWith('docs/guide/')) {
     return 'Archive / Historical';
   }
-  if (relPath.startsWith('docs/codebase_tour/')) {
+  if (relPath.startsWith('docs/tutorials/') || relPath.startsWith('docs/codebase_tour/')) {
     return 'Quadrant 1: Tutorials & Tours';
   }
-  if (relPath.startsWith('docs/operational/') || relPath.includes('RUNBOOK') || relPath.includes('QUICKSTART') || relPath.includes('CONTRIBUTING')) {
+  if (relPath.startsWith('docs/how_to/') || relPath.startsWith('docs/operational/') || relPath.includes('RUNBOOK') || relPath.includes('QUICKSTART') || relPath.includes('CONTRIBUTING')) {
     return 'Quadrant 2: How-To Guides & Runbooks';
   }
-  if (relPath.startsWith('docs/engineering/specs/') || relPath.startsWith('docs/sections/') || relPath.startsWith('docs/reference/') || relPath.startsWith('docs/atlas/')) {
+  if (relPath.startsWith('docs/reference/') || relPath.startsWith('docs/engineering/specs/') || relPath.startsWith('docs/sections/') || relPath.startsWith('docs/atlas/')) {
     return 'Quadrant 3: Reference & Specifications';
   }
-  if (relPath.startsWith('docs/engineering/architecture/') || relPath === 'docs/ARCHITECTURE.md') {
+  if (relPath.startsWith('docs/explanation/') || relPath.startsWith('docs/engineering/architecture/') || relPath === 'docs/ARCHITECTURE.md') {
     return 'Quadrant 4: Explanation & Architecture';
+  }
+  if (relPath.startsWith('docs/research/')) {
+    return 'Research & Alpha Stubs';
   }
   return 'General / Orientation';
 }

@@ -8,76 +8,81 @@ Historical logs, handoffs, plans, reviews, and graph reports are deliberately re
 
 1. [Project README](../README.md) — purpose, safety boundary, first commands, and audience routes.
 2. [Architecture entrypoint](ARCHITECTURE.md) — short system map and canonical owners.
-3. [Engineering Documentation Suite](engineering/README.md) — 8-section canonical architecture, data pipeline, C++ core, alpha research, sub-positions ledger, prediction markets, security, and financial primer.
-4. [Codebase tour](codebase_tour/00_START_HERE.md) — guided traces and labs against real source; supporting material that may need path refresh.
-5. [Documentation standard](engineering/standards/documentation_standard.md) — how to write and review docs in this repository.
+3. [Tutorials Overview](tutorials/README.md) — step-by-step learning path from 00 to 07.
+4. [How-To Runbooks](how_to/README.md) — deployment, operations, and recovery procedures.
+5. [Reference Specifications](reference/README.md) — 40-route REST/WS API, capability and stack manifests.
+6. [Explanation & Architecture](explanation/README.md) — system topology, C++ core, risk models, and financial primer.
+7. [Social Alpha Signal Research](research/social_alpha/README.md) — alternative data, YouTube transcript NLP, and contrarian alpha.
+8. [Documentation standard](reference/standards/documentation_standard.md) — how to write and review docs in this repository.
 
 ## By Audience
 
 | Audience | First document | Continue with |
 |---|---|---|
-| Operator | [Quickstart](operational/guides/QUICKSTART.md) | [CLI guide](operational/guides/cli_quick_guide.md), [operations](operational/guides/operations.md) |
-| Contributor | [Contributing](operational/guides/CONTRIBUTING.md) | [architecture](engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md), [testing](operational/guides/testing_surface.md) |
-| Quantitative researcher | [Research overview](research/quant_research.md) | [macro model (historical)](archive/research/macro_model.md), [codebase tour](codebase_tour/00_START_HERE.md) |
-| API/frontend developer | [Web/API reference](engineering/specs/web_api.md) | [frontend design](design/frontend_design_spec.md) |
-| Deployment maintainer | [Role-based hosting](operational/guides/role_based_hosting.md) | [soak runbook](OPERATIONAL_SOAK_RUNBOOK.md), [local-first setup](operational/local_first/local_first_setup.md) |
-| Module maintainer | [Module catalog](modules/README.md) | [Code Atlas](atlas/README.md), [documentation standard](engineering/standards/documentation_standard.md) |
+| Operator | [Environment Setup](how_to/environment_setup.md) | [CLI operations](how_to/cli_operations_guide.md), [operations runbook](how_to/disaster_recovery_and_rollback.md) |
+| Contributor | [Contributing](how_to/contributing_and_pr_hygiene.md) | [architecture](explanation/architecture/01_system_topology_and_invariants.md), [testing surface](how_to/testing_surface_and_verification.md) |
+| Quantitative researcher | [Research overview](explanation/quant_research/research_methodology.md) | [social alpha](research/social_alpha/README.md), [tutorials](tutorials/README.md) |
+| API/frontend developer | [Web/API reference](reference/api/web_rest_and_websocket_api.md) | [frontend design](explanation/design_rationale/frontend_design.md) |
+| Deployment maintainer | [Proxmox VM Deployment](how_to/proxmox_vm_deployment.md) | [soak runbook](how_to/operational_soak_runbook.md), [environment setup](how_to/environment_setup.md) |
+| Module maintainer | [Module catalog](modules/README.md) | [Code Atlas](atlas/README.md), [documentation standard](reference/standards/documentation_standard.md) |
 
-## Documentation Types
+## Documentation Types (Diátaxis 4-Quadrant Standard)
 
-The repository follows the [documentation standard](engineering/standards/documentation_standard.md): keep learning, task, reference, explanation, and historical evidence distinct.
+The repository strictly enforces the [Diátaxis framework](https://diataxis.fr/) keeping learning, task, reference, explanation, and isolated research distinct:
 
-### Tutorials
+### Quadrant 1: Tutorials (Learning)
+[Tutorials Overview](tutorials/README.md) — guided learning with real source traces and bounded labs:
+- [00. Quick Onboarding & Tour](tutorials/00_quick_onboarding.md)
+- [01. Native C++20 Core](tutorials/01_cpp_core_engine.md)
+- [02. Data Ingestion Pipeline](tutorials/02_data_ingestion_pipeline.md)
+- [03. Strategy, Backtest & ML](tutorials/03_strategy_backtest_ml.md)
+- [04. Trading Gateway & Live Orders](tutorials/04_trading_gateway_live_orders.md)
+- [05. Terminal TUI & CLI](tutorials/05_tui_cli_dashboard.md)
+- [06. Web Dashboard & API](tutorials/06_web_dashboard_api.md)
+- [07. Testing Methodology](tutorials/07_testing_methodology.md)
 
-Guided learning with real source traces and bounded labs:
+### Quadrant 2: How-To Guides (Problem-Solving)
+[How-To Overview](how_to/README.md) — task-oriented runbooks:
+- [Environment Setup](how_to/environment_setup.md)
+- [Proxmox VM Deployment](how_to/proxmox_vm_deployment.md)
+- [Operational Soak Runbook](how_to/operational_soak_runbook.md)
+- [Broker Gateway Setup](how_to/broker_gateway_setup.md)
+- [CLI Operations Guide](how_to/cli_operations_guide.md)
+- [Data Backfill & Ingestion](how_to/data_backfill_and_ingestion.md)
+- [Strategy Explorer Workflow](how_to/strategy_explorer_workflow.md)
+- [Disaster Recovery & Rollback](how_to/disaster_recovery_and_rollback.md)
+- [Contributing & PR Hygiene](how_to/contributing_and_pr_hygiene.md)
+- [Testing Surface & Verification](how_to/testing_surface_and_verification.md)
 
-- [Codebase tour: start here](codebase_tour/00_START_HERE.md)
-- [C++ core](codebase_tour/01_cpp_core_engine.md)
-- [Data ingestion and storage](codebase_tour/02_data_ingestion_pipeline.md)
-- [Strategy, backtest, and ML](codebase_tour/03_strategy_backtest_ml.md)
-- [Trading gateway](codebase_tour/04_trading_gateway_live_orders.md)
-- [CLI and TUI](codebase_tour/05_tui_cli_dashboard.md)
-- [Web dashboard and API](codebase_tour/06_web_dashboard_api.md)
-- [Testing methodology](codebase_tour/07_testing_methodology.md)
+### Quadrant 3: Reference (Information)
+[Reference Overview](reference/README.md) — exact technical contracts:
+- [Documentation manifest](documentation_manifest.json) — corpus status and review ownership.
+- [Web REST & WebSocket API](reference/api/web_rest_and_websocket_api.md) — canonical 40-route specification.
+- [Product Specification](reference/specifications/product_specification.md)
+- [Technical Specification](reference/specifications/technical_specification.md)
+- [Capability Manifest](reference/specifications/capability_manifest.md)
+- [Stack & Toolchain Manifest](reference/specifications/stack_manifest.md)
+- [TUI Feature Map](reference/specifications/tui_feature_map.md)
+- [Documentation Standard](reference/standards/documentation_standard.md)
+- [Engineering Standards](reference/standards/engineering_standards.md)
+- [Code Atlas](atlas/README.md) — algorithms, structures, protocols, and topology.
+- [Domain Structure Guides](sections/) — subsystem maps for [backend](sections/backend/README.md), [shared](sections/shared/README.md), [frontend](sections/frontend/README.md), [config](sections/config/README.md), [storage](sections/storage/README.md), and [tests](sections/tests/README.md).
 
-These pages are supporting tutorials, not contract owners. Verify paths, symbols, and commands against current source before editing a safety-critical path.
+### Quadrant 4: Explanation (Understanding)
+[Explanation Overview](explanation/README.md) — architectural rationale and theoretical foundations:
+- [01. System Topology & Invariants](explanation/architecture/01_system_topology_and_invariants.md)
+- [02. Data Pipeline & Binary Storage](explanation/architecture/02_data_pipeline_and_storage.md)
+- [03. Native C++20 Core & Backtester](explanation/architecture/03_native_cpp_core_and_backtester.md)
+- [04. Quantitative Alpha & ML Workbench](explanation/architecture/04_quantitative_alpha_and_ml_workbench.md)
+- [05. Sub-Positions Ledger & Execution Risk](explanation/architecture/05_sub_positions_and_risk_ledger.md)
+- [06. Prediction Markets & L2 Archive](explanation/architecture/06_prediction_markets_and_orderbook_archive.md)
+- [07. Security Model & Deployment](explanation/architecture/07_security_model_and_deployment.md)
+- [08. Financial Primer for Systems Engineers](explanation/architecture/08_financial_primer_for_engineers.md)
+- [Quant Research Methodology](explanation/quant_research/research_methodology.md)
+- [Frontend Design Rationale](explanation/design_rationale/frontend_design.md)
 
-### How-To Guides And Runbooks
-
-- [Quickstart](operational/guides/QUICKSTART.md)
-- [Environment setup](operational/guides/environment_setup.md)
-- [GitHub environment & rulesets](operational/guides/github_environment_and_rulesets.md)
-- [CLI guide](operational/guides/cli_quick_guide.md)
-- [Operations](operational/guides/operations.md)
-- [Data ingestion](operational/guides/data_ingestion.md)
-- [Role-based hosting](operational/guides/role_based_hosting.md)
-- [Local-first setup](operational/local_first/local_first_setup.md)
-- [Local-first migration](operational/local_first/local_first_migration.md)
-
-Read each command's side-effect label before running provider, data-write, container, host, paper, or live actions.
-
-### Reference
-
-- [Documentation manifest](documentation_manifest.json) — corpus status and source/review ownership.
-- [Documentation standard](engineering/standards/documentation_standard.md) — writing and review contract.
-- [System Architecture & Codebase](engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md) — canonical system map and domain ownership.
-- [Domain Structure Guides](sections/) — dedicated subsystem maps for [backend](sections/backend/README.md), [shared](sections/shared/README.md), [frontend](sections/frontend/README.md), [config](sections/config/README.md), [storage](sections/storage/README.md), and [tests](sections/tests/README.md).
-- [Module catalog](modules/README.md) and [module template](modules/TEMPLATE.md) — cross-file ownership contracts.
-- [Code Atlas](atlas/README.md) — source-linked algorithms, structures, protocols, and topology.
-- [Testing surfaces](operational/guides/testing_surface.md) — test and evidence commands.
-- [Web/API reference](engineering/specs/web_api.md) — canonical 40-route REST and WebSocket specification.
-- [Capability manifest](engineering/specs/capability_manifest.md) — verified platform capabilities, CLI commands, and CTest catalog.
-- [Stack manifest](engineering/specs/stack_manifest.md) — toolchain baseline and dependencies.
-- [Supabase integration](engineering/specs/supabase_integration.md)
-
-### Explanation
-
-- [System Architecture Overview](engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md)
-- [Data Pipeline & Binary Storage](engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md)
-- [Native C++20 Core & Backtester](engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md)
-- [Quantitative Alpha & ML Workbench](engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md)
-- [Execution & Sub-Positions Ledger](engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md)
-- [Prediction Markets & Orderbook Archiving](engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md)
+### Research & Alpha Stubs (Isolated)
+[Social Alpha Research Stub](research/social_alpha/README.md) — multi-modal YouTube transcript extraction and contrarian consensus alpha.
 - [Security, APIs & Deployment](engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md)
 - [Financial Primer for Systems Engineers](engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md)
 - [Product specification](engineering/specs/product_spec.md) — core invariants and capabilities matrix.
