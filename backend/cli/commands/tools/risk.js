@@ -19,7 +19,8 @@ function parseRiskInputs(args = []) {
   let notional = 100;
   let equity = 10000;
   let drawdown = 0.02;
-  let maxDrawdown = 0.15;
+  let maxDrawdown = process.env.MAX_ALLOWED_DRAWDOWN ? Number(process.env.MAX_ALLOWED_DRAWDOWN) : 0.15;
+  let maxConcentration = 0.25;
   let json = false;
 
   for (let i = 0; i < args.length; i += 1) {
@@ -71,6 +72,15 @@ function parseRiskInputs(args = []) {
       maxDrawdown = val;
       continue;
     }
+    if (arg === '--max-concentration') {
+      if (seenFlags.has('--max-concentration')) return { ok: false, error: 'Duplicate flag: --max-concentration' };
+      seenFlags.add('--max-concentration');
+      const valStr = args[++i];
+      const val = parseStrictNumber(valStr);
+      if (val === null || val <= 0 || val > 1.0) return { ok: false, error: 'Invalid --max-concentration: must be between >0.0 and 1.0' };
+      maxConcentration = val;
+      continue;
+    }
     return { ok: false, error: `Unknown or unexpected argument: ${arg}` };
   }
 
@@ -81,6 +91,7 @@ function parseRiskInputs(args = []) {
       equity,
       drawdown,
       maxDrawdown,
+      maxConcentration,
     },
     json,
   };
@@ -88,7 +99,7 @@ function parseRiskInputs(args = []) {
 
 /**
  * CLI command handler for pre-trade risk limit validation.
- * Exposes C++ sovereign_wealth risk check (--notional, --equity, --drawdown, --max-drawdown).
+ * Exposes C++ sovereign_wealth risk check (--notional, --equity, --drawdown, --max-drawdown, --max-concentration).
  */
 async function commandRiskCheck(args = [], options = {}) {
   const bridge = options.bridge || defaultBridge;
@@ -106,7 +117,7 @@ async function commandRiskCheck(args = [], options = {}) {
     return 1;
   }
 
-  const { notional, equity, drawdown, maxDrawdown } = parsed.values;
+  const { notional, equity, drawdown, maxDrawdown, maxConcentration } = parsed.values;
   const isJson = parsed.json;
   const engineInfo = bridge.resolveEngineExecution('risk check', { silent: isJson });
 
@@ -117,6 +128,7 @@ async function commandRiskCheck(args = [], options = {}) {
       '--equity', String(equity),
       '--drawdown', String(drawdown),
       '--max-drawdown', String(maxDrawdown),
+      '--max-concentration', String(maxConcentration || 0.25),
     ];
     if (isJson) cppArgs.push('--json');
 
@@ -158,14 +170,15 @@ async function commandRiskCheck(args = [], options = {}) {
   let haltTrading = false;
   let reason = 'Order passes risk limits';
 
+  const concLimit = maxConcentration || 0.25;
   if (drawdown >= maxDrawdown) {
     approved = false;
     haltTrading = true;
     reason = `Current drawdown (${(drawdown * 100).toFixed(1)}%) reaches or exceeds max allowed drawdown (${(maxDrawdown * 100).toFixed(1)}%)`;
-  } else if (notionalPct > 0.25) {
+  } else if (notionalPct > concLimit) {
     approved = false;
     haltTrading = false;
-    reason = `Order notional (${notional}) exceeds 25% of total equity (${equity})`;
+    reason = `Order notional (${notional}) exceeds ${(concLimit * 100).toFixed(0)}% of total equity (${equity})`;
   }
 
   const payload = {

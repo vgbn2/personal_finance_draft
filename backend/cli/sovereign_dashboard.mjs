@@ -210,10 +210,11 @@ const M = [
       { id: 'backend universe', label: 'universe', desc: 'Cached symbol inventory (all families)', flags: {} },
       { id: 'backend risk', label: 'risk check', desc: 'Pre-trade risk limit check (C++ core)',
         flags: {
-          '--notional':     { t:'txt', lbl:'Order Notional ($)', def:'100' },
-          '--equity':       { t:'txt', lbl:'Account Equity ($)', def:'10000' },
-          '--drawdown':     { t:'txt', lbl:'Current Drawdown (0.02 = 2%)', def:'0.02' },
-          '--max-drawdown': { t:'txt', lbl:'Max Allowed Drawdown (0.15 = 15%)', def:'0.15' },
+          '--notional':          { t:'txt', lbl:'Order Notional ($)', def:'100' },
+          '--equity':            { t:'txt', lbl:'Account Equity ($)', def:'10000' },
+          '--drawdown':          { t:'txt', lbl:'Current Drawdown (0.02 = 2%)', def:'0.02' },
+          '--max-drawdown':      { t:'txt', lbl:'Max Allowed Drawdown (0.30 = 30%)', def:'0.30' },
+          '--max-concentration': { t:'txt', lbl:'Max Concentration (0.25 = 25%)', def:'0.25' },
         },
       },
       // Appended after 'backend universe' deliberately, not next to 'backend

@@ -251,7 +251,7 @@ export async function buildRiskContext(order: TradeOrder, adapter: BrokerAdapter
     throw new Error('CURRENT_PORTFOLIO_DRAWDOWN must be explicitly set between 0 and 1 for live execution');
   }
 
-  const maxDrawdown = Number(process.env.MAX_ALLOWED_DRAWDOWN ?? 0.20);
+  const maxDrawdown = Number(process.env.MAX_ALLOWED_DRAWDOWN || process.env.SOVEREIGN_MAX_DRAWDOWN || 0.30);
   if (!Number.isFinite(maxDrawdown) || maxDrawdown <= 0 || maxDrawdown > 1) {
     throw new Error('MAX_ALLOWED_DRAWDOWN must be between 0 and 1');
   }
@@ -939,7 +939,7 @@ Commands:
 Options:
   --live                               Run in LIVE mode (default is dry-run)
   --paper-provider                     Submit to Alpaca Paper only; cannot be combined with --live
-  --paper-max-notional <usd>           Cap each Alpaca Paper order (default: $25)
+  --paper-max-notional <usd>           Cap each Alpaca Paper order (default: $100)
   --strategy <name>                    Strategy label persisted with the order
   --json                               Output as JSON
   --demo                               Run the demo sequence
@@ -1408,7 +1408,7 @@ export async function main() {
   const gateway = new ExecutionGateway({
     dryRun: providerPaper ? false : !isLive,
     adapter,
-    paperMaxNotional: providerPaper ? Number(paperMaxNotional || '25') : undefined,
+    paperMaxNotional: providerPaper ? Number(paperMaxNotional || process.env.ALPACA_PAPER_MAX_NOTIONAL || '100') : undefined,
   });
   
   if (command === 'buy' || command === 'sell') {

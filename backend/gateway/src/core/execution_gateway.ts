@@ -24,9 +24,10 @@ export class ExecutionGateway {
     this.adapter = options.adapter || new AlpacaAdapter();
     this.riskEngine = new RiskEngineBridge();
     this.persistence = new PersistenceBridge();
+    const envNotional = process.env.ALPACA_PAPER_MAX_NOTIONAL;
     this.paperMaxNotional = Number.isFinite(options.paperMaxNotional) && Number(options.paperMaxNotional) > 0
       ? Number(options.paperMaxNotional)
-      : null;
+      : (envNotional && Number.isFinite(Number(envNotional)) && Number(envNotional) > 0 ? Number(envNotional) : null);
   }
 
   async validateOrder(order: TradeOrder & any): Promise<boolean> {

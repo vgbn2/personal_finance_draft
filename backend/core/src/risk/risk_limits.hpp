@@ -3,8 +3,9 @@
 namespace sovereign {
 
 struct RiskLimits {
-    double max_drawdown{0.20};
+    double max_drawdown{0.30};
     bool fail_closed{true};
+    double max_concentration{0.25};
 };
 
 struct RiskDecision {
