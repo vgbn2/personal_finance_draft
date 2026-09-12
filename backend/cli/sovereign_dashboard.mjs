@@ -22,6 +22,17 @@ const { parseChatInput, suggestCommands } = require('./tui/chat_parser.js');
 const { resolveWithLLM } = require('./tui/chat_llm_fallback.js');
 const { dashboardLayout, windowedRange } = require('./tui/dashboard_layout.js');
 
+// ponytail: cap terminal dashboard output scrollback to 500 lines to prevent memory thrashing
+const MAX_OUTPUT_BUFFER_LINES = 500;
+function appendCappedOutput(current, chunk) {
+  const combined = current + chunk;
+  const lines = combined.split('\n');
+  if (lines.length > MAX_OUTPUT_BUFFER_LINES) {
+    return lines.slice(-MAX_OUTPUT_BUFFER_LINES).join('\n');
+  }
+  return combined;
+}
+
 // Resolved once at module load (mirrors tui/manifest.js's static-per-process
 // registry read); falls back to the manual-text-entry placeholder if the
 // registry is empty or unreadable.
@@ -621,7 +632,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
           const stdout = result.stdout == null ? '' : String(result.stdout);
           const stderr = result.stderr == null ? '' : String(result.stderr);
           if (mountedRef.current && (stdout || stderr)) {
-            setOutput((c) => c + stdout + stderr);
+            setOutput((c) => appendCappedOutput(c, stdout + stderr));
           }
         } else {
           const child = spawn(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...argv], {
@@ -639,7 +650,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
               if (mountedRef.current && pendingChunks) {
                 const chunk = pendingChunks;
                 pendingChunks = '';
-                setOutput((c) => c + chunk);
+                setOutput((c) => appendCappedOutput(c, chunk));
               }
             }, 16);
           };
@@ -662,7 +673,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
               if (mountedRef.current && pendingChunks) {
                 const chunk = pendingChunks;
                 pendingChunks = '';
-                setOutput((c) => c + chunk);
+                setOutput((c) => appendCappedOutput(c, chunk));
               }
               resolve(code);
             });
@@ -671,7 +682,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
                 clearTimeout(flushTimer);
                 flushTimer = null;
               }
-              if (mountedRef.current) setOutput((c) => c + '\nError: ' + err.message);
+              if (mountedRef.current) setOutput((c) => appendCappedOutput(c, '\nError: ' + err.message));
               resolve(-1);
             });
           });

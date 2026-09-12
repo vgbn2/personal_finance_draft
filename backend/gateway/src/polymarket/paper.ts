@@ -393,6 +393,7 @@ export async function runPolymarketPaperRun(options: any = {}): Promise<any> {
         .slice(0, 32),
       token_id: tokenId,
       market_id: market.id || market.condition_id || null,
+      condition_id: market.condition_id || market.id || null,
       question: market.question || null,
       outcome: token.outcome || 'Yes',
       shares: sizing.quantity,
@@ -486,11 +487,12 @@ export async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAG
 
   for (let i = (portfolio.positions || []).length - 1; i >= 0; i--) {
     const pos = portfolio.positions[i];
-    if (!pos.market_id) continue;
+    const targetConditionId = pos.condition_id || pos.market_id;
+    if (!targetConditionId) continue;
 
     let market: any;
     try {
-      const url = `${GAMMA_BASE}/markets?condition_id=${encodeURIComponent(pos.market_id)}&limit=1`;
+      const url = `${GAMMA_BASE}/markets?condition_id=${encodeURIComponent(targetConditionId)}&limit=1`;
       const res = await fetch(url, { headers: { Accept: 'application/json' } });
       if (!res.ok) continue;
       const arr: any = await res.json();

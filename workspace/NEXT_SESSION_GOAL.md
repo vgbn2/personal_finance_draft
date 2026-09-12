@@ -1,11 +1,10 @@
 # Next Session Goal
 
-## Primary Objective: Deep Review with Empirical Evidence & Remote Soak Deployment
+## Primary Objective: Full Test Suite Regression Gate & Remote Soak Verification
 
-1. **Deep Review & Evidence-First Verification (Zero False-Positive Gate)**:
-   - Perform comprehensive deep review across all newly deployed Diátaxis documentation quadrants (`tutorials/`, `how_to/`, `reference/`, `explanation/`).
-   - Run adversarial link validation and verify every code symbol and route referenced in `reference/api/web_rest_and_websocket_api.md` matches active handlers in `backend/api/app.js` and `backend/gateway/src/`.
-   - Re-verify zero broken links, zero uncataloged docs, and zero drift via `npm run audit:documentation` and `node scripts/dev/filter_docs.js --strict`.
+1. **Full Test Suite & Quality Gate Execution**:
+   - Run full test suite (`npm test`, `npm run hygiene`, `npm run audit:documentation`, `npm run test:structure`) once sandbox environment classifier is available.
+   - Verify all 10 responsive viewport tests pass in `Frontend/dashboard/`.
 
 2. **Social Alpha Signal Test Fixtures & Offline Replay**:
    - Create deterministic test fixtures in `tests/fixtures/social/` with recorded YouTube subtitles, cashtags, and financial RSS posts.

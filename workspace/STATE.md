@@ -3,6 +3,24 @@
 ## Current Phase
 Full-Stack Blast-Through Remediation, MetaTrader 5 Execution Engine & Remote Proxmox Deployment - ACTIVE
 
+- **Deep Blast-Through Remediation & 4-Batch Mass-Implementation (September 2026)**:
+  - **Zero False-Positive Gate**: Enforced mandatory empirical evidence requirement across `~/.claude/CLAUDE.md`, repo-level `CLAUDE.md`, and all `blast-through` skill mirrors.
+  - **Batch 1 (Frontend Integrity & Safety Gates)**:
+    - Fixed runtime `TypeError` in `Frontend/dashboard/src/components/panels/BacktestPanel.tsx` by normalizing flat (`stats`) and nested (`summary`) API responses into complete `metrics` object.
+    - Added explicit confirmation modal dialog and optional Trade PIN input in `Frontend/dashboard/src/components/panels/BotPanel.tsx` before triggering `/api/bot/cycle` and `/api/bot/sell`.
+    - Added headless test session mock bypass in `Frontend/dashboard/src/App.tsx` and injected session headers in `Frontend/dashboard/tests/helpers/chrome_cdp.mjs`.
+  - **Batch 2 (Infrastructure & Operations Harness)**:
+    - Registered `mt5` container service under `compose_services` in `config/system/environment_manifest.json` and `shared/lib/runtime/environment_manifest.js`; updated compose test suite.
+    - Fixed repository root path resolution (`../../..`) in `infra/scripts/dev_ops/build.sh`, `deploy.sh`, and `test.sh`.
+    - Updated `MAX_ALLOWED_DRAWDOWN=0.30` in `.env.example:85` to align with 30% decoupled risk limit.
+    - Updated `parseRiskInputs` in `backend/cli/commands/tools/risk.js` to default `maxDrawdown` to 0.30 and respect `SOVEREIGN_MAX_DRAWDOWN`.
+  - **Batch 3 (Prediction Markets & Autonomous Strategy Explorer Safety)**:
+    - Escaped `universe` and `features` arrays in `backend/cli/commands/strategy/strategy_presenter.js` with `JSON.stringify` to prevent YAML key injection.
+    - Attached `condition_id` to position records and queried Gamma resolution using `pos.condition_id || pos.market_id` in `backend/gateway/src/polymarket/paper.ts`.
+  - **Batch 4 (Terminal UI & Console Exit Restoration)**:
+    - Added `exitTerminal(130)` helper in `backend/cli/tui/engine/engine.js` to restore terminal cursor (`\x1b[?2026l\x1b[?25h\x1b[0m\n`), reset styles, disable raw mode, and exit with code 130 on Ctrl+C.
+    - Added 500-line capped streaming output buffering (`appendCappedOutput`) in `backend/cli/sovereign_dashboard.mjs` to prevent quadratic string allocation and GC thrashing.
+
 - **Diátaxis 4-Quadrant Documentation Overhaul & Social Alpha Research Deployment (September 2026)**:
   - **Diátaxis 4-Quadrant Canonical Migration**: Structured platform documentation into the 4 canonical quadrants:
     - `docs/tutorials/`: 8 guided lessons (00 to 07) from zero-key dev to live order routing, plus `tutorials/README.md`.
