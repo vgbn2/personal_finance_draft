@@ -141,6 +141,15 @@ async function createCdpClient(url) {
 export async function loadViewport(client, url, width, height = 900) {
   await client.send('Page.enable');
   await client.send('Runtime.enable');
+  await client.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: `
+      try {
+        window.localStorage.setItem('sovereign_test_mock_session', 'true');
+        document.documentElement.setAttribute('data-test-mock-session', 'true');
+        window.__SOVEREIGN_MOCK_SESSION__ = true;
+      } catch {}
+    `,
+  });
   await client.send('Emulation.setDeviceMetricsOverride', {
     width, height, deviceScaleFactor: 1, mobile: width < 768,
   });

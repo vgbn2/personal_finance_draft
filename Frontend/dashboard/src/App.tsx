@@ -31,6 +31,31 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    // ponytail: test mock session bypass for headless viewport verification
+    const isMock = typeof window !== 'undefined' && (
+      window.localStorage.getItem('sovereign_test_mock_session') === 'true'
+      || (window as any).__SOVEREIGN_MOCK_SESSION__ === true
+      || document.documentElement.hasAttribute('data-test-mock-session')
+    );
+    if (isMock) {
+      setSession({
+        access_token: 'mock-test-token',
+        token_type: 'bearer',
+        expires_in: 3600,
+        refresh_token: 'mock-refresh-token',
+        user: {
+          id: 'mock-test-user-id',
+          app_metadata: {},
+          user_metadata: {},
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+          email: 'tester@sovereign.local',
+        },
+      } as Session);
+      setLoading(false);
+      return;
+    }
+
     if (!supabase) {
       setLoading(false);
       return;
@@ -65,6 +90,13 @@ export default function App() {
   }, []);
 
   async function handleLogout() {
+    if (typeof window !== 'undefined' && (window as any).__SOVEREIGN_MOCK_SESSION__) {
+      (window as any).__SOVEREIGN_MOCK_SESSION__ = false;
+      window.localStorage.removeItem('sovereign_test_mock_session');
+      document.documentElement.removeAttribute('data-test-mock-session');
+      setSession(null);
+      return true;
+    }
     if (!supabase) return true;
     const cleared = await clearLocalSession(supabase.auth);
     if (cleared) setSession(null);
@@ -84,7 +116,7 @@ export default function App() {
     );
   }
 
-  if (!supabase) {
+  if (!supabase && !session) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[var(--bg-primary)] p-6">
         <div className="max-w-xl text-center font-mono">

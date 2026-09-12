@@ -26,6 +26,27 @@ export function BacktestPanel() {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
 
+  // ponytail: normalize flat data.stats or nested data.summary into BacktestReport
+  const normalizeReport = (raw: any): BacktestReport | null => {
+    if (!raw) return null;
+    const src = raw.metrics || raw;
+    return {
+      ok: Boolean(raw.ok ?? true),
+      strategy: String(raw.strategy || 'default'),
+      model: String(raw.model || 'CNN Momentum v1.2'),
+      timeframe: String(raw.timeframe || '1h'),
+      trades: Array.isArray(raw.trades) ? raw.trades : [],
+      metrics: {
+        trades: Number(src.trades ?? (Array.isArray(raw.trades) ? raw.trades.length : 0)),
+        net_return: Number(src.net_return ?? src.cumulative_return ?? 0),
+        max_drawdown: Number(src.max_drawdown ?? 0),
+        sharpe_ratio: Number(src.sharpe_ratio ?? src.sharpe ?? 0),
+        win_rate: Number(src.win_rate ?? src.hit_rate ?? 0),
+        expected_value: Number(src.expected_value ?? src.expectancy ?? 0),
+      },
+    };
+  };
+
   const runBacktest = async () => {
     setRunning(true);
     try {
@@ -34,8 +55,7 @@ export function BacktestPanel() {
       const res = await fetch(`${API_ENDPOINTS.BACKTEST}?sample=true`, { headers });
       const data = await res.json();
       if (data.ok) {
-        // The API returns the stats directly in the sample mode or from cache
-        setReport(data.stats);
+        setReport(normalizeReport(data.summary || data.stats));
       }
     } catch (err) {
       console.error('Failed to run backtest', err);
@@ -50,7 +70,7 @@ export function BacktestPanel() {
         const headers = await getAuthHeaders();
         const res = await fetch(API_ENDPOINTS.BACKTEST, { headers });
         const data = await res.json();
-        if (data.ok && data.summary) setReport(data.summary);
+        if (data.ok && (data.summary || data.stats)) setReport(normalizeReport(data.summary || data.stats));
       } catch (err) {
         console.error('Failed to fetch latest backtest', err);
       } finally {

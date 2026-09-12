@@ -1,0 +1,54 @@
+name: agent_crypto_vol_breakout_test_mtxw74ty
+kind: breakout
+family: breakout
+lane: single_asset
+role: strategy
+status: draft
+enabled: false
+model: svm_margin_v0
+timeframe: 1h
+sections:
+  hypothesis: "High volatility regimes coupled with Bollinger Band breakouts signal persistent directional trend in BTC."
+  universe:
+    - BTCUSDT
+  signals:
+    entry: "Close > Upper BB with ATR expansion"
+    exit: "Close < Middle BB or 7-day horizon"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - bollinger
+      - atr
+      - volatility
+    relative:
+    orderflow:
+    custom:
+  indicators:
+    return_fast: false
+    return_slow: false
+    volatility: true
+    rsi: false
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 7
+    risk_weight: 0.15
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []
