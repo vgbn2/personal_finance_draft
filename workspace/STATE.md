@@ -3,6 +3,29 @@
 ## Current Phase
 Full-Stack Blast-Through Remediation, MetaTrader 5 Execution Engine & Remote Proxmox Deployment - ACTIVE
 
+- **Diátaxis 4-Quadrant Documentation Overhaul & Social Alpha Research Deployment (September 2026)**:
+  - **Diátaxis 4-Quadrant Canonical Migration**: Structured platform documentation into the 4 canonical quadrants:
+    - `docs/tutorials/`: 8 guided lessons (00 to 07) from zero-key dev to live order routing, plus `tutorials/README.md`.
+    - `docs/how_to/`: 10 operational runbooks (Proxmox VM deployment, MT5 headless on Wine, soak monitoring, disaster recovery), plus `how_to/README.md`.
+    - `docs/reference/`: Canonical specifications, 40-route REST/WS API catalog, capability and stack manifests, standards, and Code Atlas, plus `reference/README.md`.
+    - `docs/explanation/`: 8-section deep-dive architecture suite, native C++20 core, risk models, financial primer, plus `explanation/README.md`.
+  - **Social Alpha Signal Research Stub (`docs/research/social_alpha/`)**: Complete isolated research suite:
+    - `README.md`: Architectural invariants, non-pollution safety guarantees, and storage contracts.
+    - `01_ARCHITECTURE_AND_INGESTION.md`: YouTube RSS, zero-key TimedText XML subtitle fetch, and Whisper.cpp audio fallback.
+    - `02_TRANSCRIPT_NLP_EXTRACTION.md`: Entity disambiguation, ticker normalization ($BTC, NVDA), and strict JSON extraction schema.
+    - `03_SENTIMENT_SCORING_AND_DECAY.md`: Polarity, conviction, Bayesian creator credibility weighting ($W_c$), and exponential half-life decay math.
+    - `04_CONTRARIAN_ALPHA_FORMULATION.md`: Retail consensus reversal hypothesis, anti-shill liquidity floor ($10M 24h), and virtual paper ledger boundaries.
+  - **Manifest & Navigation Synchronization**:
+    - Synchronized `docs/documentation_manifest.json` (146 registered documents across all section roots).
+    - Structured `mkdocs.yml` navigation into the 4 Diátaxis tabs plus Research & Social Alpha.
+    - Updated `docs/README.md`, `docs/index.md`, and `docs/llms.txt`.
+  - **100% Verification Gate Pass**:
+    - `npm run audit:documentation`: PASSED (0 errors).
+    - `node scripts/dev/filter_docs.js --strict`: PASSED (0 defects).
+    - `npm run test:structure`: PASSED (7/7, 9/9, 12/12 pass).
+    - `npm run hygiene`: PASSED (0 defects).
+    - `npm test`: PASSED.
+
 - **Documentation Engineering & Developer Experience Overhaul (September 2026)**:
   - **Diátaxis & Institutional Developer Standard**: Benchmarked against Alpaca (`docs.alpaca.markets`), Polymarket (`docs.polymarket.com`), and Stripe/Coinbase. Enhanced `docs/engineering/standards/documentation_standard.md` with:
     - Card-based API endpoint specifications with HTTP method badges, auth scopes, headers, and tabbed JSON request/response examples with error remediation.

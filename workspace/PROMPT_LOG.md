@@ -1,5 +1,23 @@
 # Prompt Log - 2026-09-12
 
+## Session 12 — Diátaxis Documentation Overhaul & Social Alpha Signal Deployment - 2026-09-12
+Received user prompts:
+- "plan on docs writting then, leveraing subagents, give me before and after, next session will be deep review with evidence, avoid false posistive"
+- "deploy it"
+
+Accomplished:
+- Deployed Diátaxis 4-Quadrant documentation architecture: `docs/tutorials/` (00-07), `docs/how_to/` (10 runbooks), `docs/reference/` (API, specs, standards), and `docs/explanation/` (architecture 01-08).
+- Authored complete Social Alpha Signal Research Stub in `docs/research/social_alpha/` (README + 01 to 04).
+- Synchronized `docs/documentation_manifest.json` (146 registered documents), `mkdocs.yml` navigation, `docs/README.md`, `docs/index.md`, and `docs/llms.txt`.
+- Verified all documentation and structural gates with zero false positives (`npm run audit:documentation`, `node scripts/dev/filter_docs.js --strict`, `npm run test:structure`, `npm run hygiene`, and `npm test`).
+
+## Session 11 — Session Orchestrator Boot - 2026-09-12
+Received user prompts:
+- "/session-orchestrator"
+
+Accomplished:
+- Booted session orchestrator, verified clean branch `main`, verified zero-key runtime status.
+
 ## Session 10 — MT5 Execution Review & Remote Soak Deployment - 2026-09-12
 Received user prompts:
 - "/session-orchestrator"
