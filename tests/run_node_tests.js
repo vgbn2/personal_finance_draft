@@ -11,6 +11,7 @@ const DEFAULT_FAILURE_LOG = path.resolve(
   process.env.SOVEREIGN_TEST_FAILURE_LOG
     || path.join('storage', 'logs', 'rag', 'test_failures.jsonl'),
 );
+const DEFAULT_PER_FILE_TIMEOUT_MS = Number(process.env.SOVEREIGN_TEST_FILE_TIMEOUT_MS || 60000);
 const RAG_REPORTER = path.resolve(__dirname, 'support', 'rag_failure_reporter.mjs');
 
 const OPTIONS_WITH_VALUES = new Set([
@@ -134,15 +135,22 @@ function sourceRevision(environment = process.env) {
 function runTestFile(options, target, environment, spawnProcess = spawn) {
   return new Promise((resolve) => {
     let settled = false;
+    let timer = null;
     const finish = (exitCode) => {
       if (settled) return;
       settled = true;
+      if (timer) clearTimeout(timer);
       resolve(exitCode);
     };
     const child = spawnProcess(process.execPath, buildFileArgs(options, target), {
       stdio: 'inherit',
       env: environment,
     });
+    timer = setTimeout(() => {
+      process.stderr.write(`test runner TIMED OUT on ${target} after ${DEFAULT_PER_FILE_TIMEOUT_MS}ms\n`);
+      try { child.kill('SIGKILL'); } catch (_) {}
+      finish(1);
+    }, DEFAULT_PER_FILE_TIMEOUT_MS);
     child.once('error', (error) => {
       process.stderr.write(`test runner failed to start ${target}: ${error.message}\n`);
       finish(1);
