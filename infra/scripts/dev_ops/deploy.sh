@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
-docker compose -f "$repo_root/docker/docker-compose.yml" up --build
+docker compose -f "$repo_root/infra/docker/docker-compose.yml" up --build

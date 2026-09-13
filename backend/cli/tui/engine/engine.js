@@ -19,6 +19,14 @@ function setAuthEmail(email) { _authEmail = email; }
 let _statusLine = null;
 function setStatusLine(line) { _statusLine = line; }
 
+function exitTerminal(code = 130) {
+  if (process.stdin.setRawMode) {
+    try { process.stdin.setRawMode(false); } catch {}
+  }
+  process.stdout.write('\x1b[?2026l\x1b[?25h\x1b[0m\n');
+  process.exit(code);
+}
+
 // Count visual lines a buffer occupies, accounting for terminal line-wrap.
 // Strips ANSI escape codes before measuring so colour sequences don't inflate widths.
 function visualLineCount(buf) {
@@ -344,8 +352,7 @@ async function promptMultiSelect(question, options, { initialValues = [] } = {})
         process.stdout.write('\n');
         if (shouldExit) {
           process.stdin.removeListener('data', onData);
-          if (process.stdin.setRawMode) process.stdin.setRawMode(false);
-          process.exit(130);
+          exitTerminal(130);
         } else {
           process.stdout.write('Press Ctrl+C again to exit.\n');
           render();
@@ -535,7 +542,10 @@ async function promptSelect(question, options) {
 
       if (!isControl && !isArrow && !isPrintable) return;
 
-      if (key === A.KEY_CTRL_C) { process.exit(0); }
+      if (key === A.KEY_CTRL_C) {
+        process.stdin.removeListener('data', onData);
+        exitTerminal(130);
+      }
       else if (key === A.KEY_ESC) {
         if (searchMode && filterText.length > 0) {
           filterText = '';
@@ -634,7 +644,8 @@ async function promptText(question, defaultValue = '') {
         resolve(input.trim() || defaultValue);
         return true;
       } else if (key === A.KEY_CTRL_C) {
-        process.exit(0);
+        process.stdin.removeListener('data', onData);
+        exitTerminal(130);
       } else if (key === A.KEY_BS || key === '\b' || key === '\x7f') {
         if (input.length > 0) { input = input.slice(0, -1); process.stdout.write('\b \b'); }
       } else if (key.length === 1 && key >= ' ') {
@@ -717,9 +728,11 @@ async function waitForPostCommandAction() {
       const action = postCommandActionForKey(key);
       if (!action) return;
       process.stdin.removeListener('data', onKey);
+      if (action === 'exit') {
+        exitTerminal(130);
+      }
       if (process.stdin.setRawMode) process.stdin.setRawMode(false);
       process.stdout.write('\n');
-      if (action === 'exit') process.exit(0);
       resolve(action);
     };
     process.stdin.on('data', onKey);

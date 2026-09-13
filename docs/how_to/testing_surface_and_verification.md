@@ -1,0 +1,166 @@
+# Testing Surface And Verification Scripts
+
+This file is the current list of verification scripts and test slices for the active prototype.
+
+## Hard Rule
+
+Tests must not be easy to pass.
+
+That means:
+
+- prefer real data paths or recorded fixtures over toy mocks
+- verify the actual contract shape, not only `status === 200`
+- fail closed when freshness, provenance, or required fields are missing
+- show why a test passed with visible data flow where possible
+- do not treat a smoke test as sufficient evidence for deployment or macro-data trust
+
+## Current Grouped Scripts
+
+`npm test`
+- Runs the broad Node suite through `tests/run_node_tests.js`
+- Covers `tests/scripts/**/*.test.js` and `tests/web/**/*.test.js`
+- Defaults to two concurrent test-file processes; an explicit `--test-concurrency=N` overrides that ceiling
+- Runs each file in its own process and removes Node's redundant inner file-isolation layer so assertion and
+  spawn errors reach the sanitized RAG failure record instead of collapsing to a generic `test failed`
+- Does not cover `backend/api/tests/`; run `npm run test:api` or `npm run verify:strict` for those
+
+`npm run test:api`
+- Runs every active `backend/api/tests/*.test.js` file serially, including correlation and TTL-cache contracts
+- Verifies served dashboard entrypoint, API route health, summary/correlation/universe payloads, and contract drift
+
+`npm run test:data`
+- Runs `tests/scripts/data/backfill/backfill_regression.test.js`, `tests/scripts/lib/indicators.data_flow.test.js`, and `tests/scripts/architecture/cli/core/config_integrity.test.js`
+- Verifies input bars, config loading, and feature/data-flow boundaries
+
+`npm run test:macro`
+- Runs the macro history, ingestion, and store contracts under `tests/scripts/data/cache/` and `tests/scripts/architecture/data_storage/`
+- Verifies macro and reserves history mapping, the canonical macro normalization layer, and the full ingest entrypoint
+
+`npm run test:deploy`
+- Runs `tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js`
+- Verifies Docker topology and deployment docs stay aligned on ports, cache settings, and runtime wiring
+
+`npm run test:safety`
+- Runs 44 critical safety tests: trade PIN gates, environment manifest, bot cycle risk bounds, automation guards, and ledger fail-closed invariants
+
+`npm run test:core`
+- Seeds master fixtures, builds C++20 engine (`npm run native:build`), and executes all 34 native CTests
+
+`npm run docs:filter`
+- Executes `scripts/dev/filter_docs.js` (with `--strict` for CI validation)
+- Asserts 0 uncataloged files, 0 stale references, 0 broken relative links, and 0 unrendered box-art diagrams
+
+`npm run test:contracts`
+- Runs the contract-heavy slices: API, cache, Supabase routes, macro ingest, deployment, and config integrity
+
+`npm run verify:strict`
+- Runs the complete API gate, contract gate, secret scan, and broader Node suite
+- Native C++, MCP TypeScript, and frontend build/responsive gates remain separate because they have distinct toolchain requirements
+- Use this before claiming the Node/server surfaces are healthy after API, deployment, or ingestion changes
+
+`npm run verify:source-snapshot`
+- Copies tracked and non-ignored working-tree files into a disposable source root
+- Records dirty state, exact source fingerprints, five lockfile digests, fixed verification steps, and excluded claims
+- Atomically checkpoints the active step before execution. An interrupted process therefore leaves durable
+  inconclusive evidence instead of a stale PASS
+- Proves only the current worktree snapshot; it is not exact-commit, CI, host, recovery, soak, or live evidence
+
+`npm run verify:committed-archive`
+- Builds its disposable source solely from `git archive HEAD`, so unstaged and untracked files cannot enter
+- Installs all five lockfile roots, builds MCP/dashboard/native code, and runs the environment, secret, API,
+  contract, structure, and aggregate Node gates
+- Writes a schema-v2 atomic evidence manifest. Failed steps retain a bounded sanitized summary plus stdout/stderr
+  SHA-256 fingerprints; raw command output is not copied into the manifest
+- Local runs default to the ignored durable path
+  `storage/logs/source_evidence/<mode>-latest.json`. Use
+  `-- --evidence-out /absolute/path/evidence.json` to select another retained destination
+- Defaults to at most two concurrent build/test/install jobs. Use `-- --jobs N` with `N` from 1 through 8 only
+  when the operator explicitly accepts the additional CPU and I/O load; the selected limit is recorded
+
+`npm run verify:fresh-install`
+- Compatibility alias for `verify:committed-archive`; it never verifies the dirty worktree
+- A PASS proves the committed archive completed the declared source gates. It still does not prove an
+  authenticated CI run, deployed-host health, provider connectivity, backup/restore, restart/rollback,
+  one-writer behavior, recovery, soak, or live execution
+
+CI runs `verify:committed-archive` and retains its manifest as `sovereign-source-evidence`. A source change is
+not exact-commit/CI-closed until that change is committed and the matching authenticated Actions run uploads a
+passing manifest.
+
+`node --test tests/scripts/data/cache/cache_contract.test.js`
+- Verifies cache reuse and disable-mode freshness behavior
+
+`node --test tests/scripts/architecture/data_storage/supabase_route_contract.test.js`
+- Verifies Supabase auth and database route contract shape with a mocked client
+
+## Existing Verification Helpers
+
+These are not all unit tests, but they are important evidence surfaces:
+
+`node backend/scripts/dev/native_toolchain_check.js`
+- Verifies whether the local native C++ toolchain is actually runnable
+
+`node backend/scripts/dev/model_registry_parity.js`
+- Checks JS and native model candidate registry parity
+
+`node backend/scripts/dev/parallel_backfill_probe.js`
+- Probes backfill behavior and is useful when debugging historical fetch paths
+
+`node backend/scripts/data_ops/ingest_market_data.js --family macro --days 30`
+- Runtime macro ingest evidence check
+- Should be inspected for record counts, timestamps, and family grouping
+
+`node backend/scripts/data_ops/ingest_market_data.js --family reserves --days 3650`
+- Runtime reserves/economy-history evidence check
+- Useful for country/metric coverage and long-window history shape
+
+`node backend/api/app.js`
+- Starts the live local web bridge for browser and endpoint inspection
+
+## Required Test Slices By Surface
+
+API and web bridge:
+
+- `/health`
+- `/`
+- `/js/app.js`
+- `/api/system/status`
+- `/api/data/summary`
+- `/api/correlation`
+- `/api/universe`
+- `/api/quotes/status`
+- `/api/signal`
+- `/api/backtest`
+
+Deployment:
+
+- Docker compose port and cache env contract
+- Kubernetes deployment port, probes, and Supabase secret refs
+- Deployment docs matching the real manifest assumptions
+
+Input data:
+
+- config loading from `config/markets/data_sources.yaml`
+- backfill integrity
+- indicator data flow
+- macro history mapping from FRED
+- macro normalization and Supabase write batching
+- reserves history mapping from World Bank
+- quote-source freshness and provider-priority behavior
+
+Integrated evidence checks:
+
+- macro ingest through `ingest_market_data.js`
+- reserves ingest through `ingest_market_data.js`
+- API payloads using recorded backend fixtures
+- dashboard shell references the current endpoint set
+
+## Next Missing Tests
+
+These are still needed and should be added in later passes:
+
+- a remote Supabase session/RLS verification gate beyond the existing local contracts
+- live deployment smoke checks against a real container runtime
+- macro stale-data rejection tests through the full ingest path, not only helper-level mapping
+- macro normalization tests that prove raw values, units, and unitless features stay aligned before database writes
+- end-to-end quote freshness tests that combine import files, dedupe, validation, and web status output

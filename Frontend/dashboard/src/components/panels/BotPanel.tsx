@@ -17,6 +17,8 @@ export function BotPanel() {
   const [sellingId, setSellingId] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<BotCycleResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ type: 'cycle' | 'sell'; target?: BotPosition } | null>(null);
+  const [tradePin, setTradePin] = useState('');
 
   const hydrate = async () => {
     try {
@@ -33,14 +35,17 @@ export function BotPanel() {
 
   useEffect(() => { hydrate(); }, []);
 
-  const handleRunCycle = async () => {
+  const executeRunCycle = async () => {
     setCycling(true);
     setError(null);
     try {
       const res  = await fetch(API_ENDPOINTS.BOT_CYCLE, {
         method:  'POST',
         headers: await getAuthHeaders(),
-        body:    JSON.stringify({ live: state?.config.liveTrading ? 'true' : 'false' }),
+        body:    JSON.stringify({
+          live: state?.config.liveTrading ? 'true' : 'false',
+          pin: tradePin || undefined,
+        }),
       });
       const data = await res.json();
       if (data.cycleId) setLastResult(data);
@@ -49,18 +54,23 @@ export function BotPanel() {
       setError(e.message);
     } finally {
       setCycling(false);
+      setConfirmAction(null);
+      setTradePin('');
       await hydrate();
     }
   };
 
-  const handleForceSell = async (pos: BotPosition) => {
+  const executeForceSell = async (pos: BotPosition) => {
     setSellingId(pos.positionId);
     setError(null);
     try {
       const res  = await fetch(API_ENDPOINTS.BOT_SELL, {
         method:  'POST',
         headers: await getAuthHeaders(),
-        body:    JSON.stringify({ position_id: pos.positionId }),
+        body:    JSON.stringify({
+          position_id: pos.positionId,
+          pin: tradePin || undefined,
+        }),
       });
       const data = await res.json();
       if (!data.ok) setError(data.error ?? 'Sell failed');
@@ -68,6 +78,8 @@ export function BotPanel() {
       setError(e.message);
     } finally {
       setSellingId(null);
+      setConfirmAction(null);
+      setTradePin('');
       await hydrate();
     }
   };
@@ -109,7 +121,7 @@ export function BotPanel() {
           )}
         </div>
         <button
-          onClick={handleRunCycle}
+          onClick={() => setConfirmAction({ type: 'cycle' })}
           disabled={cycling}
           className={cn(
             'px-4 py-1.5 rounded border text-xs font-mono font-semibold transition-all shadow-sm cursor-pointer',
@@ -192,7 +204,7 @@ export function BotPanel() {
                     <td className="px-4 py-2.5 text-[var(--text-muted)] font-mono">{formatAge(pos.entryTimestamp)}</td>
                     <td className="px-4 py-2.5">
                       <button
-                        onClick={() => handleForceSell(pos)}
+                        onClick={() => setConfirmAction({ type: 'sell', target: pos })}
                         disabled={sellingId === pos.positionId}
                         className="px-2.5 py-1 rounded border border-[var(--color-brand-red)]/40 text-[var(--color-brand-red)] hover:bg-[var(--color-brand-red)]/20 transition-colors disabled:opacity-40 font-mono text-[10px] cursor-pointer"
                       >
@@ -264,6 +276,63 @@ export function BotPanel() {
           ))}
         </div>
       </div>
+
+      {/* ── Confirmation Modal ── */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 className="font-heading font-bold text-lg text-[var(--text-main)]">
+              {confirmAction.type === 'cycle' ? 'Confirm Automation Cycle' : 'Confirm Force Liquidation'}
+            </h3>
+            <p className="text-xs font-mono text-[var(--text-muted)] leading-relaxed">
+              {confirmAction.type === 'cycle'
+                ? `Execute immediate automation cycle in ${cfg?.liveTrading ? 'LIVE TRADING' : 'DRY-RUN'} mode?`
+                : `Force sell position ${confirmAction.target?.slug} (${confirmAction.target?.side}) at market price?`}
+            </p>
+            {cfg?.liveTrading && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-mono text-[var(--color-brand-red)] uppercase font-semibold">
+                  Trade PIN Required for Live Execution
+                </label>
+                <input
+                  type="password"
+                  value={tradePin}
+                  onChange={(e) => setTradePin(e.target.value)}
+                  placeholder="Enter Trade PIN"
+                  className="w-full bg-[var(--bg-primary)] border border-slate-700 rounded px-3 py-2 text-xs font-mono text-[var(--text-main)] focus:outline-none focus:border-[var(--color-brand-red)]"
+                />
+              </div>
+            )}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => { setConfirmAction(null); setTradePin(''); }}
+                className="px-4 py-2 rounded text-xs font-mono text-[var(--text-muted)] hover:bg-[var(--bg-primary)] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirmAction.type === 'cycle') {
+                    void executeRunCycle();
+                  } else if (confirmAction.target) {
+                    void executeForceSell(confirmAction.target);
+                  }
+                }}
+                className={cn(
+                  'px-4 py-2 rounded text-xs font-mono font-semibold transition-colors cursor-pointer',
+                  confirmAction.type === 'sell' || cfg?.liveTrading
+                    ? 'bg-[var(--color-brand-red)] hover:bg-red-600 text-white'
+                    : 'bg-[var(--color-brand-cyan)] hover:bg-cyan-500 text-black'
+                )}
+              >
+                Confirm &amp; Execute
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

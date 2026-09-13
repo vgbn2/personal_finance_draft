@@ -3,6 +3,64 @@
 ## Current Phase
 Full-Stack Blast-Through Remediation, MetaTrader 5 Execution Engine & Remote Proxmox Deployment - ACTIVE
 
+- **Deep Blast-Through Remediation & 4-Batch Mass-Implementation (September 2026)**:
+  - **Zero False-Positive Gate**: Enforced mandatory empirical evidence requirement across `~/.claude/CLAUDE.md`, repo-level `CLAUDE.md`, and all `blast-through` skill mirrors.
+  - **Batch 1 (Frontend Integrity & Safety Gates)**:
+    - Fixed runtime `TypeError` in `Frontend/dashboard/src/components/panels/BacktestPanel.tsx` by normalizing flat (`stats`) and nested (`summary`) API responses into complete `metrics` object.
+    - Added explicit confirmation modal dialog and optional Trade PIN input in `Frontend/dashboard/src/components/panels/BotPanel.tsx` before triggering `/api/bot/cycle` and `/api/bot/sell`.
+    - Added headless test session mock bypass in `Frontend/dashboard/src/App.tsx` and injected session headers in `Frontend/dashboard/tests/helpers/chrome_cdp.mjs`.
+  - **Batch 2 (Infrastructure & Operations Harness)**:
+    - Registered `mt5` container service under `compose_services` in `config/system/environment_manifest.json` and `shared/lib/runtime/environment_manifest.js`; updated compose test suite.
+    - Fixed repository root path resolution (`../../..`) in `infra/scripts/dev_ops/build.sh`, `deploy.sh`, and `test.sh`.
+    - Updated `MAX_ALLOWED_DRAWDOWN=0.30` in `.env.example:85` to align with 30% decoupled risk limit.
+    - Updated `parseRiskInputs` in `backend/cli/commands/tools/risk.js` to default `maxDrawdown` to 0.30 and respect `SOVEREIGN_MAX_DRAWDOWN`.
+  - **Batch 3 (Prediction Markets & Autonomous Strategy Explorer Safety)**:
+    - Escaped `universe` and `features` arrays in `backend/cli/commands/strategy/strategy_presenter.js` with `JSON.stringify` to prevent YAML key injection.
+    - Attached `condition_id` to position records and queried Gamma resolution using `pos.condition_id || pos.market_id` in `backend/gateway/src/polymarket/paper.ts`.
+  - **Batch 4 (Terminal UI & Console Exit Restoration)**:
+    - Added `exitTerminal(130)` helper in `backend/cli/tui/engine/engine.js` to restore terminal cursor (`\x1b[?2026l\x1b[?25h\x1b[0m\n`), reset styles, disable raw mode, and exit with code 130 on Ctrl+C.
+    - Added 500-line capped streaming output buffering (`appendCappedOutput`) in `backend/cli/sovereign_dashboard.mjs` to prevent quadratic string allocation and GC thrashing.
+  - **Cloudflare Edge Deployment Config (`wrangler.jsonc`)**:
+    - Added root `wrangler.jsonc` specifying `assets.directory: ./Frontend/dashboard/dist` with SPA handling.
+    - Added root `"build": "npm run build --prefix Frontend/dashboard"` in `package.json` for deterministic Cloudflare deployment.
+
+- **Diátaxis 4-Quadrant Documentation Overhaul & Social Alpha Research Deployment (September 2026)**:
+  - **Diátaxis 4-Quadrant Canonical Migration**: Structured platform documentation into the 4 canonical quadrants:
+    - `docs/tutorials/`: 8 guided lessons (00 to 07) from zero-key dev to live order routing, plus `tutorials/README.md`.
+    - `docs/how_to/`: 10 operational runbooks (Proxmox VM deployment, MT5 headless on Wine, soak monitoring, disaster recovery), plus `how_to/README.md`.
+    - `docs/reference/`: Canonical specifications, 40-route REST/WS API catalog, capability and stack manifests, standards, and Code Atlas, plus `reference/README.md`.
+    - `docs/explanation/`: 8-section deep-dive architecture suite, native C++20 core, risk models, financial primer, plus `explanation/README.md`.
+  - **Social Alpha Signal Research Stub (`docs/research/social_alpha/`)**: Complete isolated research suite:
+    - `README.md`: Architectural invariants, non-pollution safety guarantees, and storage contracts.
+    - `01_ARCHITECTURE_AND_INGESTION.md`: YouTube RSS, zero-key TimedText XML subtitle fetch, and Whisper.cpp audio fallback.
+    - `02_TRANSCRIPT_NLP_EXTRACTION.md`: Entity disambiguation, ticker normalization ($BTC, NVDA), and strict JSON extraction schema.
+    - `03_SENTIMENT_SCORING_AND_DECAY.md`: Polarity, conviction, Bayesian creator credibility weighting ($W_c$), and exponential half-life decay math.
+    - `04_CONTRARIAN_ALPHA_FORMULATION.md`: Retail consensus reversal hypothesis, anti-shill liquidity floor ($10M 24h), and virtual paper ledger boundaries.
+  - **Manifest & Navigation Synchronization**:
+    - Synchronized `docs/documentation_manifest.json` (146 registered documents across all section roots).
+    - Structured `mkdocs.yml` navigation into the 4 Diátaxis tabs plus Research & Social Alpha.
+    - Updated `docs/README.md`, `docs/index.md`, and `docs/llms.txt`.
+  - **100% Verification Gate Pass**:
+    - `npm run audit:documentation`: PASSED (0 errors).
+    - `node scripts/dev/filter_docs.js --strict`: PASSED (0 defects).
+    - `npm run test:structure`: PASSED (7/7, 9/9, 12/12 pass).
+    - `npm run hygiene`: PASSED (0 defects).
+    - `npm test`: PASSED.
+  - **Release & Remote Synchronization**:
+    - Branch: `feat/diataxis-docs-overhaul-and-social-alpha`
+    - Commit: `db5f059b`
+    - Pull Request: [#6](https://github.com/vgbn2/personal_finance_draft/pull/6)
+    - Code-Only Knowledge Graph: AST indexed at `graphify-out/graph.json` (6,665 nodes, 13,223 edges).
+
+  - **Social Alpha Signal Engine & Deterministic Replay (September 2026)**:
+    - **Experimental Research Factor Module**: Implemented pure mathematical sentiment analysis, exponential decay, and contrarian rules in `shared/lib/analysis/social_alpha.js`. Strictly gated as experimental research with zero live engine or gateway coupling.
+    - **Mathematical Formulation & Half-Life Decay**: Implemented continuous half-life decay $S_i(t) = P_i(t_0) \cdot C_i(t_0) \cdot 2^{-\frac{\Delta t}{\tau_{\text{half}}}}$ across `SCALP` (4h), `SWING` (24h), `POSITION` (72h), and `MACRO_REGIME` (168h).
+    - **Bayesian Credibility Weighting**: Sigmoid credibility weighting $W_c = \sigma(\beta \cdot (\text{Brier}_{\text{prior}} - \text{Brier}_c)) \cdot \mathbb{I}(\text{SampleCount} \ge 10)$ with anti-dominance capping $\min(W_c, \max(0.25, 1/M) \sum W_j)$.
+    - **Contrarian Regime Rules**: Contrarian Short on Euphoria ($A_i(t) \ge +0.70$) + RSI $\ge 70$, Contrarian Long on Capitulation ($A_i(t) \le -0.70$) + RSI $\le 30$, and anti-shill liquidity floor ($10M 24h USD).
+    - **Deterministic Test Fixtures**: Created `tests/fixtures/social/signals_payload_fixture.json` and `tests/fixtures/social/creator_reputation_fixture.json` with multi-asset signals and calibrated Brier score profiles.
+    - **Replay Verification Suite**: Authored `tests/scripts/strategy/social_alpha_replay.test.js` (7/7 PASS) verifying point-in-time zero lookahead alignment, promotional signal rejection, and risk bounds.
+    - **100% Test & Hygiene Pass**: `npm test` (100% PASS), `npm run test:core` (34/34 CTest PASS), `npm run test:api` (100% PASS), `npm run hygiene` (100% PASS).
+
 - **Documentation Engineering & Developer Experience Overhaul (September 2026)**:
   - **Diátaxis & Institutional Developer Standard**: Benchmarked against Alpaca (`docs.alpaca.markets`), Polymarket (`docs.polymarket.com`), and Stripe/Coinbase. Enhanced `docs/engineering/standards/documentation_standard.md` with:
     - Card-based API endpoint specifications with HTTP method badges, auth scopes, headers, and tabbed JSON request/response examples with error remediation.
