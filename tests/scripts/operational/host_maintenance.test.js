@@ -115,7 +115,7 @@ test('probeHost ignores fresh temp, metadata, and unrelated files for canonical 
       minFreePercent: 0,
     });
     assert.equal(stale.checks.canonical_data.reason, 'stale');
-    assert.equal(stale.checks.canonical_data.newest_mtime, new Date(now - 10000).toISOString());
+    assert.equal(stale.checks.canonical_data.newest_mtime, fs.statSync(staleBin).mtime.toISOString());
 
     fs.rmSync(staleBin);
     const missing = probeHost({

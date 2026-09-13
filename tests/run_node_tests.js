@@ -73,14 +73,8 @@ function runnerConcurrency(options) {
 let supportsTestIsolationNone;
 function checkSupportsTestIsolationNone() {
   if (supportsTestIsolationNone !== undefined) return supportsTestIsolationNone;
-  if (typeof process.allowedNodeEnvironmentFlags?.has === 'function'
-    && (process.allowedNodeEnvironmentFlags.has('--test-isolation')
-      || process.allowedNodeEnvironmentFlags.has('--experimental-test-isolation'))) {
-    supportsTestIsolationNone = true;
-    return true;
-  }
-  const res = spawnSync(process.execPath, ['--test-isolation=none', '--help'], { stdio: 'ignore' });
-  supportsTestIsolationNone = res.status === 0;
+  const major = parseInt(process.versions.node.split('.')[0], 10);
+  supportsTestIsolationNone = Number.isFinite(major) && major >= 20;
   return supportsTestIsolationNone;
 }
 
