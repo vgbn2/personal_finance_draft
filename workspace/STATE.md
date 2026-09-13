@@ -52,6 +52,15 @@ Full-Stack Blast-Through Remediation, MetaTrader 5 Execution Engine & Remote Pro
     - Pull Request: [#6](https://github.com/vgbn2/personal_finance_draft/pull/6)
     - Code-Only Knowledge Graph: AST indexed at `graphify-out/graph.json` (6,665 nodes, 13,223 edges).
 
+  - **Social Alpha Signal Engine & Deterministic Replay (September 2026)**:
+    - **Experimental Research Factor Module**: Implemented pure mathematical sentiment analysis, exponential decay, and contrarian rules in `shared/lib/analysis/social_alpha.js`. Strictly gated as experimental research with zero live engine or gateway coupling.
+    - **Mathematical Formulation & Half-Life Decay**: Implemented continuous half-life decay $S_i(t) = P_i(t_0) \cdot C_i(t_0) \cdot 2^{-\frac{\Delta t}{\tau_{\text{half}}}}$ across `SCALP` (4h), `SWING` (24h), `POSITION` (72h), and `MACRO_REGIME` (168h).
+    - **Bayesian Credibility Weighting**: Sigmoid credibility weighting $W_c = \sigma(\beta \cdot (\text{Brier}_{\text{prior}} - \text{Brier}_c)) \cdot \mathbb{I}(\text{SampleCount} \ge 10)$ with anti-dominance capping $\min(W_c, \max(0.25, 1/M) \sum W_j)$.
+    - **Contrarian Regime Rules**: Contrarian Short on Euphoria ($A_i(t) \ge +0.70$) + RSI $\ge 70$, Contrarian Long on Capitulation ($A_i(t) \le -0.70$) + RSI $\le 30$, and anti-shill liquidity floor ($10M 24h USD).
+    - **Deterministic Test Fixtures**: Created `tests/fixtures/social/signals_payload_fixture.json` and `tests/fixtures/social/creator_reputation_fixture.json` with multi-asset signals and calibrated Brier score profiles.
+    - **Replay Verification Suite**: Authored `tests/scripts/strategy/social_alpha_replay.test.js` (7/7 PASS) verifying point-in-time zero lookahead alignment, promotional signal rejection, and risk bounds.
+    - **100% Test & Hygiene Pass**: `npm test` (100% PASS), `npm run test:core` (34/34 CTest PASS), `npm run test:api` (100% PASS), `npm run hygiene` (100% PASS).
+
 - **Documentation Engineering & Developer Experience Overhaul (September 2026)**:
   - **Diátaxis & Institutional Developer Standard**: Benchmarked against Alpaca (`docs.alpaca.markets`), Polymarket (`docs.polymarket.com`), and Stripe/Coinbase. Enhanced `docs/engineering/standards/documentation_standard.md` with:
     - Card-based API endpoint specifications with HTTP method badges, auth scopes, headers, and tabbed JSON request/response examples with error remediation.
