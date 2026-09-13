@@ -853,8 +853,8 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
           setTimeout(() => {
             try { proc.kill('SIGKILL'); } catch (e) {}
           }, 500).unref();
-          setOutput((c) => c + '\n\n[Command aborted by user]\n');
         }
+        setOutput((c) => c + '\n\n[Command aborted by user]\n');
         setRunning(false);
         return;
       }
