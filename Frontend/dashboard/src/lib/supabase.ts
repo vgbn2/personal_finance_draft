@@ -32,24 +32,42 @@ export async function getSessionToken(): Promise<string | null> {
  * Real-time subscription to order events.
  * Focused only on execution feedback to minimize throughput on the 512MB Supabase plan.
  */
+const orderListeners = new Set<(payload: any) => void>();
+let activeOrderChannel: any = null;
+
 export function subscribeToOrders(callback: (payload: any) => void) {
   if (!supabase) return () => {};
 
-  const channel = supabase
-    .channel('order-updates')
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'orders' },
-      (payload) => callback(payload)
-    )
-    .on(
-      'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'orders' },
-      (payload) => callback(payload)
-    )
-    .subscribe();
+  orderListeners.add(callback);
+  if (!activeOrderChannel) {
+    activeOrderChannel = supabase
+      .channel('order-updates')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          for (const listener of orderListeners) {
+            listener(payload);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        (payload) => {
+          for (const listener of orderListeners) {
+            listener(payload);
+          }
+        }
+      )
+      .subscribe();
+  }
 
   return () => {
-    supabase.removeChannel(channel);
+    orderListeners.delete(callback);
+    if (orderListeners.size === 0 && activeOrderChannel) {
+      supabase.removeChannel(activeOrderChannel);
+      activeOrderChannel = null;
+    }
   };
 }
