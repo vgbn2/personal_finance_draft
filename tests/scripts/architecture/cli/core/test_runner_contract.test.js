@@ -9,6 +9,7 @@ const {
   RAG_REPORTER,
   DEFAULT_TEST_TARGETS,
   buildFileArgs,
+  checkSupportsTestIsolationNone,
   resolveTargets,
   runnerConcurrency,
   sourceRevision,
@@ -21,7 +22,7 @@ test('each Node test file runs without a second isolation layer and keeps canoni
   const target = '/fixture/example.test.js';
   assert.deepEqual(buildFileArgs([], target), [
     '--test',
-    '--test-isolation=none',
+    ...(checkSupportsTestIsolationNone() ? ['--test-isolation=none'] : []),
     '--test-reporter=spec',
     '--test-reporter-destination=stdout',
     `--test-reporter=${RAG_REPORTER}`,
@@ -34,7 +35,7 @@ test('runner options precede a file and concurrency controls file workers, not n
   const options = ['--test-concurrency', '3', '--test-name-pattern', 'central host', '--test-reporter=dot'];
   assert.deepEqual(buildFileArgs(options, '/fixture/example.test.js'), [
     '--test',
-    '--test-isolation=none',
+    ...(checkSupportsTestIsolationNone() ? ['--test-isolation=none'] : []),
     '--test-name-pattern',
     'central host',
     '--test-reporter=dot',
