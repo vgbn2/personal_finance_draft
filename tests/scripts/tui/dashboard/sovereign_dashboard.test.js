@@ -17,7 +17,7 @@ test('dashboard App: research scorecard launches the canonical all-recorded v3 c
   assert.notEqual(scorecardIndex, -1, 'scorecard remains registered in the research menu');
   const executeInPane = async () => ({ exitCode: 0, stdout: '', stderr: '' });
   const instance = render(h(App, { initialCatI: 3, initialCmdI: scorecardIndex, onRun: (argv) => runCalls.push(argv), executeInPane }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -41,7 +41,7 @@ test('dashboard App: navigate into a flagged command, edit flags, and trigger Ru
   const onRun = (argv, state) => runCalls.push({ argv, state });
   const executeInPane = async () => ({ exitCode: 0, stdout: '', stderr: '' });
 
-  const instance = render(h(App, { onRun, executeInPane }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
+  const instance = render(h(App, { onRun, executeInPane }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true });
   t.after(() => instance.unmount());
 
   await instance.waitUntilRenderFlush();
@@ -117,7 +117,7 @@ test('dashboard App: yn flag toggles and a flagless command runs immediately on 
   // Start already inside the Operational category's command list.
   const executeInPane = async () => ({ exitCode: 0, stdout: '', stderr: '' });
   const instance = render(h(App, { initialCatI: 0, initialCmdI: 0, onRun, executeInPane }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -151,7 +151,7 @@ test('dashboard App: bt --strategy flag cycles through real registered strategie
   const stdout = makeFakeStdout();
   const onRun = () => {};
 
-  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
+  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
@@ -217,7 +217,7 @@ test('dashboard App: shows PIN gate for live trading and passes PIN to child pro
     return { exitCode: 0, stdout: '', stderr: '' };
   };
   const instance = render(h(App, { initialCatI: 5, initialCmdI: 4, onRun, executeInPane }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -284,7 +284,7 @@ test('dashboard App: in-pane running process can be aborted via Escape', async (
   // deterministically rather than depending on subprocess timing).
   const executeInPane = () => new Promise((resolve) => setTimeout(() => resolve({ exitCode: 0, stdout: '', stderr: '' }), 5000));
   const instance = render(h(App, { initialCatI: 0, initialCmdI: 2, onRun, executeInPane }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -322,7 +322,7 @@ test('dashboard App: symbol picker (single) searches the real universe and Enter
 
   // Backend(2) -> backend visualize(3): --symbol(0,txt,pickSymbol:single,required)
   const instance = render(h(App, { initialCatI: 2, initialCmdI: 3, onRun }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -355,7 +355,7 @@ test('dashboard App: symbol picker (multi) groups by family/sector and a header 
 
   // Research(3) -> bt(1): --strategy(0,sel), --symbol(1,txt,pickSymbol:multi)
   const instance = render(h(App, { initialCatI: 3, initialCmdI: 1, onRun }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -397,7 +397,7 @@ test('dashboard App: symbol picker accepts a typed value that is not in the cach
 
   // Data(1) -> ingest(1): --family(0,sel), --symbol(1,txt,pickSymbol:single)
   const instance = render(h(App, { initialCatI: 1, initialCmdI: 1, onRun }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -425,7 +425,7 @@ test('dashboard App: symbol picker Escape cancels without changing the flag\'s p
   const onRun = () => {};
 
   const instance = render(h(App, { initialCatI: 1, initialCmdI: 1, onRun }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -453,7 +453,7 @@ test('dashboard App: backend correlation exposes a --symbols flag (was previousl
 
   // Backend(2) -> backend correlation(2): status(0), stats(1), correlation(2)
   const instance = render(h(App, { initialCatI: 2, initialCmdI: 2, onRun }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -483,7 +483,7 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   // comment for why (preserves universe's hardcoded index in another test).
   const executeInPane = async () => ({ exitCode: 0, stdout: '', stderr: '' });
   const instance = render(h(App, { initialCatI: 2, initialCmdI: 6, onRun, executeInPane }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -537,7 +537,7 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls throug
   // using the host command here previously let `Symbols: 0` pass as a green
   // scrolling test when the native backend executable was unavailable.
   const instance = render(h(App, { initialCatI: 2, initialCmdI: 4, onRun, executeInPane }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
