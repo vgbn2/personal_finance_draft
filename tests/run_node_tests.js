@@ -73,8 +73,8 @@ function runnerConcurrency(options) {
 let supportsTestIsolationNone;
 function checkSupportsTestIsolationNone() {
   if (supportsTestIsolationNone !== undefined) return supportsTestIsolationNone;
-  const major = parseInt(process.versions.node.split('.')[0], 10);
-  supportsTestIsolationNone = Number.isFinite(major) && major >= 20;
+  const res = spawnSync(process.execPath, ['--test-isolation=none', '-e', ''], { stdio: 'ignore' });
+  supportsTestIsolationNone = res.status === 0;
   return supportsTestIsolationNone;
 }
 
@@ -222,6 +222,7 @@ module.exports = {
   DEFAULT_TEST_TARGETS,
   RAG_REPORTER,
   buildFileArgs,
+  checkSupportsTestIsolationNone,
   resolveTargets,
   runnerConcurrency,
   sourceRevision,
