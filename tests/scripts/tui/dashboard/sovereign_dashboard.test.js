@@ -15,7 +15,8 @@ test('dashboard App: research scorecard launches the canonical all-recorded v3 c
   const research = M.find((category) => category.label === 'Research');
   const scorecardIndex = research.cmds.findIndex((command) => command.id === 'scorecard');
   assert.notEqual(scorecardIndex, -1, 'scorecard remains registered in the research menu');
-  const instance = render(h(App, { initialCatI: 3, initialCmdI: scorecardIndex, onRun: (argv) => runCalls.push(argv) }), {
+  const executeInPane = async () => ({ exitCode: 0, stdout: '', stderr: '' });
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: scorecardIndex, onRun: (argv) => runCalls.push(argv), executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -38,8 +39,9 @@ test('dashboard App: navigate into a flagged command, edit flags, and trigger Ru
   const stdout = makeFakeStdout();
   const runCalls = [];
   const onRun = (argv, state) => runCalls.push({ argv, state });
+  const executeInPane = async () => ({ exitCode: 0, stdout: '', stderr: '' });
 
-  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
+  const instance = render(h(App, { onRun, executeInPane }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
   t.after(() => instance.unmount());
 
   await instance.waitUntilRenderFlush();
@@ -113,7 +115,8 @@ test('dashboard App: yn flag toggles and a flagless command runs immediately on 
   const onRun = (argv, state) => runCalls.push({ argv, state });
 
   // Start already inside the Operational category's command list.
-  const instance = render(h(App, { initialCatI: 0, initialCmdI: 0, onRun }), {
+  const executeInPane = async () => ({ exitCode: 0, stdout: '', stderr: '' });
+  const instance = render(h(App, { initialCatI: 0, initialCmdI: 0, onRun, executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -208,7 +211,12 @@ test('dashboard App: shows PIN gate for live trading and passes PIN to child pro
   const onRun = (argv, state) => runCalls.push({ argv, state });
 
   // Start inside Trade category (index 5) and auto-trade command (index 4)
-  const instance = render(h(App, { initialCatI: 5, initialCmdI: 4, onRun }), {
+  const executeInPane = async (argv, { env }) => {
+    assert.equal(env.SOVEREIGN_TRADE_PIN, '4321');
+    await delay(200);
+    return { exitCode: 0, stdout: '', stderr: '' };
+  };
+  const instance = render(h(App, { initialCatI: 5, initialCmdI: 4, onRun, executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
@@ -472,7 +480,8 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   // Backend(2) -> backend chart(6): status(0), stats(1), correlation(2),
   // visualize(3), universe(4), risk(5), chart(6) -- appended last, see the manifest
   // comment for why (preserves universe's hardcoded index in another test).
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 6, onRun }), {
+  const executeInPane = async () => ({ exitCode: 0, stdout: '', stderr: '' });
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 6, onRun, executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
