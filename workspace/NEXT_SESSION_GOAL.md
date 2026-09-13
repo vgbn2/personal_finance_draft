@@ -1,13 +1,13 @@
 # Next Session Goal
 
-## Primary Objective: Remote Proxmox VM (`hpdesk-1`) Deployment & Soak Verification
+## Primary Objective: Contributor Documentation Deep Dive & Developer Onboarding Overhaul
 
-1. **Remote Proxmox VM (`hpdesk-1`) Deployment & Soak Verification**:
-   - Synchronize working branch `feat/diataxis-docs-overhaul-and-social-alpha` to `hpdesk-1`.
-   - Test headless Wine64 MT5 container startup with Xvfb :99 under `docker compose --profile paper-mt5 up -d`.
-   - Monitor live cgroup memory stability and verify daemon heap remains strictly bounded within the 2560MB quota.
-   - Run 24h soak cycle and monitor `flaw_monitor.log` for zero error regressions.
+1. **Comprehensive Contributor Guide (`CONTRIBUTING.md` & `docs/community/contributing.md`)**:
+   - Write clear, approachable, and actionable contributor documentation explaining repository architecture, lifecycle, and coding standards.
+   - Document the zero-key offline development workflow, fixture-driven testing, and native C++ build process.
+   - Explain how to navigate the Diátaxis documentation layout, add new indicators/strategies, and register tests.
+   - Detail PR requirements, hygiene audits, commit conventions, and CI/CD verification gates.
 
-2. **Social Alpha Future Experimental Optimizations**:
-   - Monitor dataset volume and performance in offline replay.
-   - Evaluate indexing/caching strategies if historical transcript volumes expand.
+2. **Architecture & Subsystem Contribution Deep Dives**:
+   - Create step-by-step walkthroughs for contributing to Core C++20 engine, Ink TUI, REST/WS API, and Frontend dashboard.
+   - Provide visual dataflow maps and architectural diagrams for cross-domain contribution.
