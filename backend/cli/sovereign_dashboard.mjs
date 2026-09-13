@@ -563,6 +563,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
       mountedRef.current = false;
       if (childRef.current) {
         try { childRef.current.kill('SIGINT'); } catch (e) {}
+        try { childRef.current.kill('SIGKILL'); } catch (e) {}
       }
     };
   }, []);
@@ -847,7 +848,11 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
     if (running) {
       if (key.escape || input === 'c') {
         if (childRef.current) {
-          try { childRef.current.kill('SIGINT'); } catch (e) {}
+          const proc = childRef.current;
+          try { proc.kill('SIGINT'); } catch (e) {}
+          setTimeout(() => {
+            try { proc.kill('SIGKILL'); } catch (e) {}
+          }, 500).unref();
           setOutput((c) => c + '\n\n[Command aborted by user]\n');
         }
         setRunning(false);

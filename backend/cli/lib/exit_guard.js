@@ -15,6 +15,7 @@ function registerCtrlCPress(now = Date.now()) {
 
 function installDoubleCtrlCExit(onFirstPress) {
   if (installed) return;
+  if (process.env.SOVEREIGN_NONINTERACTIVE === 'true' || !process.stdin.isTTY) return;
   installed = true;
   process.on('SIGINT', () => {
     if (registerCtrlCPress()) {
