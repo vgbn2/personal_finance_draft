@@ -185,6 +185,14 @@ function generateUniqueCandidate(state) {
 // Fetch or generate continuous deep bars (5,000+ bars for crypto, 1,000+ for equities)
 async function loadDeepMarketBars(symbol, timeframe, minCount = 5000) {
   const isCrypto = symbol.includes('USDT') || symbol === 'BTCUSD' || symbol === 'ETHUSD';
+  if (process.env.SOVEREIGN_MOCK === 'true' || process.env.NODE_ENV === 'test' || process.env.CI === 'true') {
+    const synthetic = generateSampleBars(symbol, Math.min(minCount, 500), timeframe);
+    synthetic.forEach(b => {
+      b.family = isCrypto ? 'crypto' : 'equities';
+      b.timeframe = timeframe;
+    });
+    return synthetic;
+  }
   if (isCrypto) {
     try {
       const binanceSym = symbol === 'BTCUSD' ? 'BTCUSDT' : symbol === 'ETHUSD' ? 'ETHUSDT' : symbol;
