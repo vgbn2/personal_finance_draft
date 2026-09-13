@@ -11,7 +11,7 @@ const DEFAULT_FAILURE_LOG = path.resolve(
   process.env.SOVEREIGN_TEST_FAILURE_LOG
     || path.join('storage', 'logs', 'rag', 'test_failures.jsonl'),
 );
-const DEFAULT_PER_FILE_TIMEOUT_MS = Number(process.env.SOVEREIGN_TEST_FILE_TIMEOUT_MS || 60000);
+const DEFAULT_PER_FILE_TIMEOUT_MS = 60000;
 const RAG_REPORTER = path.resolve(__dirname, 'support', 'rag_failure_reporter.mjs');
 
 const OPTIONS_WITH_VALUES = new Set([
