@@ -50,7 +50,7 @@ test('chat: deterministic phrase runs immediately, no LLM call needed', async (t
   const stdout = makeFakeStdout();
   const runCalls = [];
   const onRun = (argv, state) => runCalls.push({ argv, state });
-  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
+  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
   await waitUntilVisible(stdout);
@@ -74,7 +74,7 @@ test('chat: typing a word containing "q" does not quit the dashboard', async (t)
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
-  const instance = render(h(App, { onRun: () => {} }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
+  const instance = render(h(App, { onRun: () => {} }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
@@ -94,7 +94,7 @@ test('chat: LLM fallback shows a mandatory confirm gate; nothing runs until conf
   const stdout = makeFakeStdout();
   const runCalls = [];
   const onRun = (argv, state) => runCalls.push({ argv, state });
-  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
+  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
@@ -129,7 +129,7 @@ test('chat: Escape cancels a pending LLM confirm without running anything', asyn
   const stdout = makeFakeStdout();
   const runCalls = [];
   const onRun = (argv, state) => runCalls.push({ argv, state });
-  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
+  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
@@ -155,7 +155,7 @@ test('chat: LLM unavailable degrades to a safe message, never hangs or runs anyt
   const stdout = makeFakeStdout();
   const runCalls = [];
   const onRun = (argv, state) => runCalls.push({ argv, state });
-  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
+  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
@@ -183,7 +183,7 @@ test('chat: a --live command resolved via chat still triggers the PIN gate', asy
   const stdout = makeFakeStdout();
   const runCalls = [];
   const onRun = (argv, state) => runCalls.push({ argv, state });
-  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
+  const instance = render(h(App, { onRun }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
@@ -220,7 +220,7 @@ test('chat: Tab moves keyboard focus between the chat bar and the grid; the stat
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
-  const instance = render(h(App, { onRun: () => {} }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false });
+  const instance = render(h(App, { onRun: () => {} }), { stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
 
