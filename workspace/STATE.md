@@ -20,6 +20,9 @@ Full-Stack Blast-Through Remediation, MetaTrader 5 Execution Engine & Remote Pro
   - **Batch 4 (Terminal UI & Console Exit Restoration)**:
     - Added `exitTerminal(130)` helper in `backend/cli/tui/engine/engine.js` to restore terminal cursor (`\x1b[?2026l\x1b[?25h\x1b[0m\n`), reset styles, disable raw mode, and exit with code 130 on Ctrl+C.
     - Added 500-line capped streaming output buffering (`appendCappedOutput`) in `backend/cli/sovereign_dashboard.mjs` to prevent quadratic string allocation and GC thrashing.
+  - **Cloudflare Edge Deployment Config (`wrangler.jsonc`)**:
+    - Added root `wrangler.jsonc` specifying `assets.directory: ./Frontend/dashboard/dist` with SPA handling.
+    - Added root `"build": "npm run build --prefix Frontend/dashboard"` in `package.json` for deterministic Cloudflare deployment.
 
 - **Diátaxis 4-Quadrant Documentation Overhaul & Social Alpha Research Deployment (September 2026)**:
   - **Diátaxis 4-Quadrant Canonical Migration**: Structured platform documentation into the 4 canonical quadrants:

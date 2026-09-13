@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sovereign-dashboard",
+  "compatibility_date": "2026-09-11",
+  "assets": {
+    "directory": "./Frontend/dashboard/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  }
+}
