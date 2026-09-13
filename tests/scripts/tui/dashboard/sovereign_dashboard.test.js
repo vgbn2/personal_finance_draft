@@ -282,7 +282,8 @@ test('dashboard App: in-pane running process can be aborted via Escape', async (
   // real before the Escape keystroke arrives under heavy system load,
   // racing this assertion; watch can't, so the abort path is exercised
   // deterministically rather than depending on subprocess timing).
-  const instance = render(h(App, { initialCatI: 0, initialCmdI: 2, onRun }), {
+  const executeInPane = () => new Promise((resolve) => setTimeout(() => resolve({ exitCode: 0, stdout: '', stderr: '' }), 5000));
+  const instance = render(h(App, { initialCatI: 0, initialCmdI: 2, onRun, executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false,
   });
   t.after(() => instance.unmount());
