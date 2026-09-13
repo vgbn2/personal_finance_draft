@@ -9,7 +9,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "npm install --prefix Frontend/dashboard && npm run build --prefix Frontend/dashboard",
+    "build": "npm run build --prefix Frontend/dashboard",
     "fixtures:refresh:btc": "node backend/scripts/dev/refresh_real_bars_fixture.js",
     "strategy:explore": "node scripts/strategies/auto_strategy_explorer.js",
     "models:parity": "node backend/scripts/dev/model_registry_parity.js",
