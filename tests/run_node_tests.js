@@ -73,8 +73,9 @@ function runnerConcurrency(options) {
 let supportsTestIsolationNone;
 function checkSupportsTestIsolationNone() {
   if (supportsTestIsolationNone !== undefined) return supportsTestIsolationNone;
-  const res = spawnSync(process.execPath, ['--test-isolation=none', '-e', ''], { stdio: 'ignore' });
-  supportsTestIsolationNone = res.status === 0;
+  supportsTestIsolationNone = typeof process.allowedNodeEnvironmentFlags?.has === 'function'
+    && (process.allowedNodeEnvironmentFlags.has('--test-isolation')
+      || process.allowedNodeEnvironmentFlags.has('--experimental-test-isolation'));
   return supportsTestIsolationNone;
 }
 

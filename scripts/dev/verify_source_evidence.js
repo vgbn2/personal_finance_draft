@@ -455,10 +455,10 @@ function runVerification({
   } finally {
     evidence.ended_at = new Date().toISOString();
     writeEvidenceAtomic(evidencePath, evidence);
-    fs.rmSync(sourceRoot, { recursive: true, force: true });
-    fs.rmSync(cacheRoot, { recursive: true, force: true });
+    fs.rmSync(sourceRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    fs.rmSync(cacheRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     fs.rmSync(archivePath, { force: true });
-    fs.rmSync(runRoot, { recursive: true, force: true });
+    fs.rmSync(runRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 
   output.write(`[source-evidence] evidence: ${evidencePath}\n`);
