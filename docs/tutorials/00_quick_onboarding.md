@@ -8,19 +8,18 @@ that, run this command, interpret the output — instead of just prose to skim.
 for *why* a pattern like a gateway exists, written with placeholder filenames, not *what this repo's
 real files do*). This tour exists for the gap between those two: real current code, traced and exercised.
 
-If you only have ten minutes, read `docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md` first, then come back here for
+If you only have ten minutes, read `docs/explanation/architecture/01_system_topology_and_invariants.md` first, then come back here for
 whichever module matches what you're touching today.
 
-## Why this exists
+## Onboarding Purpose & Architecture Tour
 
-2026-06-25 (session 59): direct request after noticing that ~50+ sessions of AI-assisted work had left
-a lot of real understanding undocumented, *and* that the documentation that did exist (`docs/`, 30+
-files) had quietly fallen out of session memory because nothing in the normal boot sequence reads it.
-`workspace/BOOTSTRAP.md` fixes the recurrence; this tour fixes the actual content gap. Full triage
-findings (what's current, what's stale, what's broken) are in `workspace/BOOTSTRAP.md` and
-`workspace/STATE.md`'s 2026-06-25 entries — the short version: the folder map is trustworthy, the
-"architecture overview" and "capability manifest" docs are stale enough to actively mislead on whether
-live trading exists (it does, extensively), and 17 links in the documentation hub itself were broken.
+This tutorial series guides contributors through the core subsystems of the Sovereign Trading Platform with hands-on labs:
+
+1. **Native Engine (`backend/core/`)**: C++20 indicators, backtesting, and microsecond risk checks.
+2. **Data Pipeline (`shared/lib/market/`)**: Binary time-series ingestion and rolling indicator calculation.
+3. **Strategy Engine (`config/strategies/`)**: Declarative alpha models, backtests, and signal generation.
+4. **Execution Gateway (`backend/gateway/`)**: Broker order routing, risk gating, and double-entry paper ledger.
+5. **User Interfaces (`backend/cli/`, `Frontend/dashboard/`)**: Terminal UI (Ink 5) and React 19 web dashboard.
 
 ## Module map
 

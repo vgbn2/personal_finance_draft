@@ -96,6 +96,7 @@ nav:
       - Kronos Pipeline: reference/specifications/kronos_pipeline.md
       - Documentation Standard: reference/standards/documentation_standard.md
       - Engineering Standards: reference/standards/engineering_standards.md
+      - Deprecation & Versioning: reference/standards/deprecation_and_versioning_policy.md
       - Subsystems:
           - Backend: sections/backend/README.md
           - Shared Lib: sections/shared/README.md
@@ -122,3 +123,6 @@ nav:
       - 02. Transcript NLP Extraction: research/social_alpha/02_TRANSCRIPT_NLP_EXTRACTION.md
       - 03. Sentiment Scoring & Decay: research/social_alpha/03_SENTIMENT_SCORING_AND_DECAY.md
       - 04. Contrarian Alpha: research/social_alpha/04_CONTRARIAN_ALPHA_FORMULATION.md
+  - Community:
+      - Overview: community/README.md
+      - Contributor Guide: community/contributing.md

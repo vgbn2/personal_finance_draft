@@ -223,3 +223,18 @@ The C++ Core maintains complete unit and regression test coverage across all sub
 | **Grid Optimizer (972 combos)** | Multi-core (4–8 vCPU) | `< 45.0 MB` RSS | `< 350 ms` total sweep | $O(\text{combos} \times N)$ | **8/10** |
 | **`BinaryTsReader` Scan** | Single Core (<0.1 CPU) | `< 2.0 MB` RSS | `< 0.5 ms` for 5,000 bars | $O(N)$ sequential | **2/10** |
 | **`BinaryTsMerger` Stream** | Single Core (0.2 CPU) | **`< 5.0 MB` RSS** | `< 15.0 ms` for 50,000 bars | $O(A + B)$ linear | **3/10** |
+
+---
+
+## 8. Cross-Runtime Node.js to C++ Subprocess Bridge Protocol
+
+The Node.js platform interacts with the compiled native binary (`backend/core/build/sovereign_wealth`) via a POSIX child process bridge (`shared/lib/runtime/backend_bridge.js`):
+
+### Protocol Characteristics
+- **Process Spawning**: Uses `child_process.spawnSync` with isolated stdin/stdout streams.
+- **Binary Resolution**: Dynamically resolved via `findBackendBinary()` in `shared/lib/runtime/paths.js`.
+- **Payload Framing**: CLI commands emit JSON to stdout. The bridge extracts payloads using `firstBrace` (`{`) and `lastBrace` (`}`) boundary markers to isolate structured output from debug logs.
+- **Buffer Safety Bounds**: Standard execution respects Node's 1MB buffer ceiling. Sweeps exceeding 1MB stream output to disk via `--out-file`.
+- **Latency Profile**: Subprocess initialization incurs ~15–25ms overhead. Once running, C++ calculation executes at microsecond speed (`<15µs` for pre-trade risk, `<1.8ms` for 10,000-bar backtests).
+- **Fail-Safe Fallback**: If the native binary is uncompiled or `SOVEREIGN_DISABLE_CPP=1` is set, analytics route cleanly to the pure JavaScript engine fallback without halting the runtime.
+

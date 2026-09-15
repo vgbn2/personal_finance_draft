@@ -271,3 +271,121 @@ The canonical route map is declared in `backend/api/server/routes/index.js`, rou
 - **Handler**: `backend/api/server/routes/system/infra.js`
 - **Capability**: `execution:admin`
 - **Description**: Streams Docker container operational logs and runtime status without shell interpolation.
+
+---
+
+## 4. WebSocket Streaming Protocol (`socket.io`)
+
+The web API exposes a persistent real-time telemetry stream on port `8787` using Socket.IO:
+
+### 4.1 Connection & Handshake Authentication
+- **Transport**: WebSocket / Polling fallback via `/socket.io/`.
+- **CORS Policy**: Restrained to `ALLOWED_ORIGINS` policy (`SOVEREIGN_ALLOWED_ORIGINS`).
+- **Handshake Verification**: Socket connections trigger the auth middleware (`app.js:396-425`):
+  - Resolves principal via `resolveSocketPrincipal(socket)`.
+  - Authorizes against `CAPABILITIES.STATUS_READ`.
+  - Enforces IP network binding via `authSessionRegistry.record()`. Sockets failing IP checks are rejected with `{ code: 'ip_reauthentication_required' }`.
+
+### 4.2 Telemetry Event Schema
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as Browser / TUI Client
+    participant Server as Socket.IO Server (Port 8787)
+    participant Disk as Cache Watcher (last_fetch.json)
+
+    Client->>Server: 1. Connect (/socket.io/?token=...)
+    Server->>Server: 2. Verify Principal & IP Binding
+    Server-->>Client: 3. emit('status', { msg, timestamp })
+    
+    Disk->>Server: 4. File Modification Detected (mtime check)
+    Server-->>Client: 5. emit('market_data', { universe, dataSummary, status })
+```
+
+#### Event: `status`
+Emitted immediately upon successful socket connection and session verification:
+```json
+{
+  "msg": "Connected to Sovereign Telemetry",
+  "timestamp": "2026-09-14T12:00:00.000Z"
+}
+```
+
+#### Event: `market_data`
+Broadcast globally to all authenticated sockets whenever `storage/data/cache/last_fetch.json` is updated by market data backfill daemons:
+```json
+{
+  "universe": {
+    "equities": ["AAPL", "NVDA", "MSFT"],
+    "crypto": ["BTC/USD", "ETH/USD"],
+    "prediction_markets": ["POLY-FED-RATE-CUT"]
+  },
+  "dataSummary": {
+    "total_bars": 1254300,
+    "latest_timestamp": "2026-09-14T11:59:00.000Z",
+    "symbols_active": 6
+  },
+  "status": {
+    "ok": true,
+    "degraded": false,
+    "core_engine": "available"
+  }
+}
+```
+
+---
+
+## 5. Schema Reference Cards & Error Envelope
+
+### 5.1 Standard Error Response Envelope
+All non-200 REST responses follow a uniform structured JSON format:
+```json
+{
+  "ok": false,
+  "error": "Access denied: insufficient capability",
+  "code": "insufficient_capability",
+  "required_capability": "execution:admin"
+}
+```
+
+### 5.2 Key POST Request Payload Models
+
+#### `POST /api/signal/promote`
+```json
+{
+  "symbol": "BTC/USD",
+  "timeframe": "1h",
+  "model": "knn_pattern_v0",
+  "horizon": 5,
+  "min_trust_score": 75.0
+}
+```
+
+#### `POST /api/bot/cycle`
+```json
+{
+  "bot_id": "alpaca_paper_v1",
+  "force": false,
+  "symbols": ["AAPL", "NVDA"]
+}
+```
+
+#### `POST /api/bot/sell`
+```json
+{
+  "symbol": "AAPL",
+  "quantity": 10.0,
+  "pin": "1234"
+}
+```
+
+#### `POST /api/kill-switch`
+```json
+{
+  "action": "HALT",
+  "pin": "1234",
+  "reason": "Emergency risk parameter trip"
+}
+```
+
