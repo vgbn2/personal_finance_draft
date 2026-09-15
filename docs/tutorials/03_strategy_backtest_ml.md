@@ -40,23 +40,37 @@ module 01's Lab 4 is the way to check.
 
 ## Backtest → live automation, stage by stage
 
-`strategy.js` `runAutomationPass()`:
+`strategy.js` `runAutomationPass()` enforces a strict 8-stage execution sequence:
 
-1. **Inventory reconciliation first** — `automation_guard.js` runs `runAlpacaExitCheck()` and only
-   reads local position capacity after broker truth is confirmed. A blocked or failed check returns
-   before strategy discovery or entry scanning.
-2. **Position-capacity load** — reads `openPositionCount` vs `maxOpenPositions` from validated state.
-3. **Strategy selection** and **data refresh**, batched by timeframe.
-4. **Per-strategy signal generation** — runs a real backtest, takes the latest trade as the
-   candidate signal.
-5. **Signal freshness gate** — rejects a signal older than 1.5× its own bar duration. This is
-   the guard against a cron running late and acting on a stale bar.
-6. **Trust gate** — requires `verdict === 'researchable'`,
-   `score >= minTrustScore` (default 70), and **positive out-of-sample alpha vs buy-and-hold**. Dry-run
-   bypasses this; live does not.
-7. **Position sizing** — equity × risk_weight, capped by a fixed `position_size` setting if
-   configured.
-8. **Live execution** — only here does a real order get sent, via `commandTrade()` (module 04).
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Guard as automation_guard.js
+    participant Strat as strategy.js
+    participant Core as Native C++ Core
+    participant Risk as PreTradeRisk
+    participant Gateway as commandTrade()
+
+    Guard->>Gateway: 1. Inventory Reconciliation (Exit Check)
+    Guard->>Strat: 2. Position Capacity Check (open < max)
+    Strat->>Strat: 3. Strategy Selection & Data Refresh
+    Strat->>Core: 4. Signal Generation (Backtest)
+    Strat->>Strat: 5. Signal Freshness Gate (Age < 1.5x bar)
+    Strat->>Strat: 6. Trust Gate (Score >= 70 & Out-of-Sample Alpha)
+    Strat->>Risk: 7. Position Sizing & Risk Gate
+    Strat->>Gateway: 8. Live Execution (PIN Gated)
+```
+
+| Stage | Component | Invariant Enforced |
+|---|---|---|
+| **1. Reconciliation** | `automation_guard.js` | Confirm broker inventory truth before calculating new entries |
+| **2. Capacity** | `strategy.js` | Load `openPositionCount` vs `maxOpenPositions` from state |
+| **3. Selection** | `strategy.js` | Batch candidate strategies by timeframe and fetch latest bars |
+| **4. Generation** | `FrameBacktester` | Execute native backtest; extract latest trade as candidate signal |
+| **5. Freshness** | `strategy.js` | Reject signal older than $1.5\times$ bar duration (anti-staleness) |
+| **6. Trust** | `strategy.js` | Require `verdict === 'researchable'`, score $\ge 70$, positive alpha |
+| **7. Sizing** | `PreTradeRisk` | Equity $\times$ risk weight, capped by max allowed drawdown |
+| **8. Execution** | `commandTrade()` | Dispatch order with Trade PIN verification and sub-position tracking |
 
 ## A constraint worth knowing before you trust a backtest result
 

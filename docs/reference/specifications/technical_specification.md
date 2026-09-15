@@ -67,24 +67,36 @@ All high-density historical and streaming market data is serialized to fixed-wid
 | Byte Offset | Field | Type | Encoded Value | Purpose |
 |---|---|---|---|---|
 | `0x00..0x03` | Magic Bytes | 4 bytes ASCII | `0x53 0x4F 0x56 0x54` (`SOVT`) | File type identification |
-| `0x04` | Version | `uint8_t` | `0x01` | SOVT format version |
-| `0x05..0x07` | Reserved | 3 bytes | `0x00 0x00 0x00` | Header padding & alignment |
+| `0x04..0x07` | Record Count | `uint32_t` (LE) | Variable Little-Endian | Total contiguous records in file |
 
 - **Offset `0x00..0x03`**: Magic identifier ASCII `SOVT` (`0x53, 0x4F, 0x56, 0x54`).
-- **Offset `0x04`**: Version byte (`0x01` for Version 1).
-- **Offset `0x05..0x07`**: 3 reserved padding zero bytes (`0x00, 0x00, 0x00`).
+- **Offset `0x04..0x07`**: Contiguous bar record count as an unsigned 32-bit little-endian integer (`uint32_t`).
+
+#### Byte-Level Memory Mapping (Arrow & ClickHouse Invariants)
+
+| Byte Range | Section | Encoding | Field Description |
+|---|---|---|---|
+| `0x00..0x03` | Header | ASCII (`char[4]`) | Magic identifier: `SOVT` |
+| `0x04..0x07` | Header | `uint32_t` LE | Contiguous bar record count |
+| `0x08..0x0F` | Record 0 | IEEE-754 `f64` LE | Bar timestamp: `ts_ms` |
+| `0x10..0x17` | Record 0 | IEEE-754 `f64` LE | Opening price: `open` |
+| `0x18..0x1F` | Record 0 | IEEE-754 `f64` LE | Maximum price: `high` |
+| `0x20..0x27` | Record 0 | IEEE-754 `f64` LE | Minimum price: `low` |
+| `0x28..0x2F` | Record 0 | IEEE-754 `f64` LE | Closing price: `close` |
+| `0x30..0x37` | Record 0 | IEEE-754 `f64` LE | Cumulative volume: `volume` |
+| `0x38..` | Record 1..N-1 | 48-byte slices | Subsequent contiguous records |
 
 ### Record Layout (48 Bytes per Bar)
-Each bar record is exactly 48 bytes packed, 8-byte aligned, little-endian:
+Each bar record is exactly 48 bytes packed (`#pragma pack(push, 1)`), 8-byte aligned, little-endian IEEE-754:
 
 | Field Name | Offset (Bytes) | Length | Data Type | Description |
 |---|---|---|---|---|
-| `timestamp` | `0x00..0x07` | 8 | `uint64_t` | Epoch timestamp (milliseconds or seconds) |
-| `open` | `0x08..0x0F` | 8 | `double` | Opening bar price (IEEE-754) |
-| `high` | `0x10..0x17` | 8 | `double` | Maximum bar price (IEEE-754) |
-| `low` | `0x18..0x1F` | 8 | `double` | Minimum bar price (IEEE-754) |
-| `close` | `0x20..0x27` | 8 | `double` | Closing bar price (IEEE-754) |
-| `volume` | `0x28..0x2F` | 8 | `double` | Cumulative bar volume (IEEE-754) |
+| `ts_ms` | `0x00..0x07` | 8 | `double` (IEEE-754) | Epoch timestamp in milliseconds (UTC) |
+| `open` | `0x08..0x0F` | 8 | `double` (IEEE-754) | Opening bar price |
+| `high` | `0x10..0x17` | 8 | `double` (IEEE-754) | Maximum bar price |
+| `low` | `0x18..0x1F` | 8 | `double` (IEEE-754) | Minimum bar price |
+| `close` | `0x20..0x27` | 8 | `double` (IEEE-754) | Closing bar price |
+| `volume` | `0x28..0x2F` | 8 | `double` (IEEE-754) | Cumulative bar volume |
 
 ### Memory & File Calculations
 - 1 year of 1-minute bars: $375 \times 252 = 94,500\text{ bars} \times 48\text{ bytes} \approx 4.53\text{ MB}$.

@@ -2,6 +2,12 @@
 
 Describe the problem, the change, and why this scope is necessary.
 
+## Related Issues
+
+<!-- Link relevant issues: Closes #123, Fixes #456, Relates to #789 -->
+- Closes #
+- Relates to #
+
 ## Affected Areas
 
 - [ ] C++ core / analytics / backtesting
@@ -44,6 +50,19 @@ evidence scope:
 - [ ] Not applicable: explain why the changed area cannot affect those boundaries. <!-- explanation -->
 
 A pull request does not authorize an order, provider mutation, credential use, data write, host change, deployment, or execution.
+
+## Breaking Changes & Migration
+
+- [ ] **No Breaking Changes**: 100% backward-compatible with preceding minor release.
+- [ ] **Deprecation Notice**: Follows `docs/reference/standards/deprecation_and_versioning_policy.md` with registered `SOV_DEP_xxx` code.
+- [ ] **Breaking Change**: Major version bump required; migration instructions and tooling provided: <!-- details -->
+
+## Rollback Plan
+
+<!-- Describe steps to cleanly roll back this PR if unexpected defects arise in staging or production -->
+- [ ] Git revert is clean and leaves no orphaned database/cache artifacts.
+- [ ] Rollback procedure tested: `git revert -m 1 <merge_commit_sha>`
+- [ ] Special rollback considerations: <!-- list if any -->
 
 ## Documentation and State
 
