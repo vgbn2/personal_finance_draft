@@ -6,15 +6,16 @@ Sovereign is a local-first trading research and controlled-execution platform. C
 
 Read these before beginning work:
 
-- [Detailed contribution guide](docs/operational/guides/CONTRIBUTING.md)
+- [Root Contributor Guide](../../CONTRIBUTING.md)
+- [Comprehensive Community Contributor Guide](../../docs/community/contributing.md)
 - [Project rules](PROJECT_RULES.md)
-- [Current project direction](workspace/STATE.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Testing surfaces](docs/operational/guides/testing_surface.md)
+- [Current project direction](../STATE.md)
+- [Architecture](../../docs/ARCHITECTURE.md)
+- [Testing surfaces](../../docs/how_to/testing_surface_and_verification.md)
 - [Governance](GOVERNANCE.md) and [maintainer roster](MAINTAINERS.md)
 - [Security policy](SECURITY.md)
 
-`workspace/STATE.md` is the current phase anchor. Do not treat a source adapter, credential variable, menu item, or test as authority to contact a provider, write canonical data, change a host, deploy, or place an order.
+`../STATE.md` is the current phase anchor. Do not treat a source adapter, credential variable, menu item, or test as authority to contact a provider, write canonical data, change a host, deploy, or place an order.
 
 ## Collaboration Workflow
 

@@ -37,6 +37,7 @@ const EXPECTED_COMPOSE_SERVICES = Object.freeze([
   'bot-alpaca-paper',
   'host-backup',
   'host-health',
+  'mt5',
   'polymarket-research',
   'portfolio-monitor',
   'strategy-explorer',

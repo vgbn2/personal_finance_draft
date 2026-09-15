@@ -1,4 +1,80 @@
-# Prompt Log - 2026-09-12
+# Prompt Log - 2026-09-14
+
+## Session 15 — Contributor Guide & Developer Onboarding Overhaul - 2026-09-14
+Received user prompts:
+- "session-orchestrator"
+- "write the contributor docs, first fan out subagents"
+- "only use gemini subagents"
+- "some failed though"
+- "First batch passed model: \"haiku\", tried Anthropic Haiku, failed.\nSecond batch launched without model override, inherited session default (claude-gemini-3.8-flash-high).\n3 Gemini agents running now. Output expected shortly., specifically choose gemini-flash n3.8 high"
+- "~next session review the docs, compare it to at least 20 famous documentation format of huge opensource projects"
+
+Accomplished:
+- Booted workspace session via session-orchestrator.
+- Designed and authored comprehensive root contributor entrypoint (`CONTRIBUTING.md`) with zero-key principles, `npm run setup:dev` toolchain, visual Mermaid architecture diagram, 5 subsystem extension recipes (C++ Core, Gateways, Shared Lib, CLI/TUI, React 19 Web Dashboard), pre-PR verification matrix, and Conventional Commits format.
+- Authored Diátaxis Community section portal (`docs/community/README.md`) and in-depth developer onboarding guide (`docs/community/contributing.md`).
+- Synchronized `docs/documentation_manifest.json` with `"docs/community"` section root and canonical document entries.
+- Synchronized `mkdocs.yml` navigation with top-level `Community:` tab.
+- Replaced dead links in `docs/how_to/contributing_and_pr_hygiene.md` and `workspace/governance/CONTRIBUTING.md` with relative links.
+- Updated `workspace/NEXT_SESSION_GOAL.md` to schedule 20-project open-source documentation benchmark audit.
+- Verified 100% pass on all documentation and test integrity gates (`npm run audit:documentation`, `npm run docs:filter -- --strict`, `npm run test:structure`, `npm run hygiene`, `npm run test:data`, `npm run test:core`).
+
+## Session 14 — Social Alpha Signal Engine & Deterministic Replay Implementation - 2026-09-13
+Received user prompts:
+- "/clear"
+- "session-orchestrator"
+- "blast-through and trouble shoot+ mass implement plan"
+- "mass-implement"
+- "social ALpha is experimental gated, as too large of a dataset but almost no valuable info other than sentiment i gues?, might need optimization in the fuutre"
+
+Accomplished:
+- Fixed risk contract default assertion mismatch (`risk_contract.test.js:134`) aligning with 0.30 decoupled risk standard.
+- Fixed Supabase channel multiplexing collision exception in `Frontend/dashboard/src/lib/supabase.ts`, passing all 10 responsive viewport tests (10/10 PASS).
+- Designed and implemented experimental research factor module in `shared/lib/analysis/social_alpha.js` (exponential decay, Bayesian credibility weighting, composite aggregation, contrarian rules).
+- Authored deterministic offline fixtures in `tests/fixtures/social/` (`signals_payload_fixture.json`, `creator_reputation_fixture.json`).
+- Authored and verified comprehensive replay test suite in `tests/scripts/strategy/social_alpha_replay.test.js` (7/7 PASS).
+- Verified full system test suites and hygiene (`npm test`, `npm run test:core`, `npm run test:api`, `npm run hygiene` 100% PASS).
+
+## Session 13 — Deep Blast-Through Audit & Mass-Implement 4-Batch Remediation - 2026-09-12
+Received user prompts:
+- "/clear"
+- "session-orchestrator"
+- "blast-through"
+- "{\"Which blast-through audit mode should be executed?\": \"deep-blastthrough\", \"Which reading mode should be applied?\": \"Hard Reading Mode (Recommended)\"}"
+- "check audit progress, be aware of false positives(put this as a blast through req)"
+- "put that requirement to global"
+- "mass-implement"
+
+Accomplished:
+- Orchestrated 9-plane Deep Blast-Through architecture audit across Core/Compute, Broker Gateways, API/CLI/Auth, Data Pipelines & Indicators, Terminal UI & Console, Web Dashboard, Infrastructure & Docker, MCP & Config Manifests, and Prediction Markets.
+- Installed Zero False-Positive Gate across global `~/.claude/CLAUDE.md`, repo-level `CLAUDE.md`, and all `blast-through` skill mirrors.
+- Authored and approved mass-implementation plan `splendid-exploring-eagle.md` covering 10 confirmed defects across 4 batches.
+- Executed Batch 1 (Frontend Integrity & Safety): normalized backtest report metrics in `BacktestPanel.tsx`, added Trade PIN & confirmation dialogs in `BotPanel.tsx`, and injected mock session support in `App.tsx` and Chrome CDP helper for headless testing.
+- Executed Batch 2 (Infrastructure & Operations): registered `mt5` container in `environment_manifest.json` and `environment_manifest.js`, fixed path arithmetic in `infra/scripts/dev_ops/build.sh`, `deploy.sh`, `test.sh`, aligned `.env.example` drawdown limit to 0.30, and aligned `risk.js` default drawdown limit.
+- Executed Batch 3 (Prediction Markets & Strategy Safety): sanitized YAML serialization in `strategy_presenter.js` to prevent key injection, and populated `condition_id` for Polymarket position resolution in `paper.ts`.
+- Executed Batch 4 (Terminal UI & Console Exit Restoration): implemented `exitTerminal(130)` helper in `engine.js` restoring terminal cursor (`\x1b[?2026l\x1b[?25h\x1b[0m\n`), and added capped line buffering (`appendCappedOutput`, 500 lines) in `sovereign_dashboard.mjs`.
+
+## Session 12 — Diátaxis Documentation Overhaul & Social Alpha Signal Deployment - 2026-09-12
+Received user prompts:
+- "plan on docs writting then, leveraing subagents, give me before and after, next session will be deep review with evidence, avoid false posistive"
+- "deploy it"
+- "commit and push"
+- "end session"
+
+Accomplished:
+- Deployed Diátaxis 4-Quadrant documentation architecture: `docs/tutorials/` (00-07), `docs/how_to/` (10 runbooks), `docs/reference/` (API, specs, standards), and `docs/explanation/` (architecture 01-08).
+- Authored complete Social Alpha Signal Research Stub in `docs/research/social_alpha/` (README + 01 to 04).
+- Synchronized `docs/documentation_manifest.json` (146 registered documents), `mkdocs.yml` navigation, `docs/README.md`, `docs/index.md`, and `docs/llms.txt`.
+- Verified all documentation and structural gates with zero false positives (`npm run audit:documentation`, `node scripts/dev/filter_docs.js --strict`, `npm run test:structure`, `npm run hygiene`, and `npm test`).
+- Created branch `feat/diataxis-docs-overhaul-and-social-alpha`, committed, pushed to origin, and opened PR #6 (https://github.com/vgbn2/personal_finance_draft/pull/6).
+- Rebuilt code-only knowledge graph index (`graphify-out/graph.json` with 6665 nodes).
+
+## Session 11 — Session Orchestrator Boot - 2026-09-12
+Received user prompts:
+- "/session-orchestrator"
+
+Accomplished:
+- Booted session orchestrator, verified clean branch `main`, verified zero-key runtime status.
 
 ## Session 10 — MT5 Execution Review & Remote Soak Deployment - 2026-09-12
 Received user prompts:
@@ -959,4 +1035,18 @@ Received user direction: Execute mass implementation of approved production plan
 - State: Booted session-orchestrator.
 - Next Goal: MetaTrader 5 (MT5) Trade Execution Engine & Stub Integration (Phase 1: Gateway stub & contracts).
 
+
+
+## [2026-09-12T04:29:19.738Z] Session Boot (session-orchestrator)
+- **Command**: /session-orchestrator
+- **Branch**: feat/diataxis-docs-overhaul-and-social-alpha
+- **Status**: Clean workspace initialized
+
+## [2026-09-13T14:15:00.000Z] Session Closeout (CI/CD Resolution & Contributor Goal Setting)
+- **Command**: next sessions, write docs for contributors to understand and contributes to this repo, make it easy for them, do a deep dive into it in the next sessions end it here
+- **Branch**: feat/diataxis-docs-overhaul-and-social-alpha
+- **Actions Completed**:
+  - Investigated and remediated CI test runner failures (`tests/run_node_tests.js`, `tests/scripts/operational/host_maintenance.test.js`, `tests/scripts/tui/dashboard/chat_ui.test.js`, `tests/scripts/architecture/cli/core/test_runner_contract.test.js`).
+  - Verified 100% green pass on GitHub Actions (`C++ debug sanitizer tests`, `C++ release build`, `Committed source evidence`) and Cloudflare Workers builds on PR #6.
+- **Next Session Goal**: Deep dive contributor documentation overhaul (`CONTRIBUTING.md` & `docs/community/contributing.md`) for developer onboarding and architectural clarity.
 
