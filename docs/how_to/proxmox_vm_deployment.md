@@ -98,41 +98,36 @@ Running the environment preparer and Compose/config tests on a developer laptop 
 not select that laptop as the persistent host and must not install the timer, change its power policy, or
 start continuous provider polling. The eventual host remains an explicit operator decision.
 
-The updater refuses a dirty, divergent, wrong-branch, or locally-ahead checkout, takes an exclusive deployment
-lock, fast-forwards from `origin/main`, requires `HEAD` to equal the fetched remote branch, runs
-`central_host_preflight.js`, validates Compose, and builds an image labeled with the exact commit and source
-tree. It always recreates `web` and `backfill` and also recreates only optional services that were already
-running or restarting before the cutover. A previously inactive profile remains inactive. Active
-`polymarket-research` blocks automatic cutover because recreating it can trigger provider polling. A developer machine updates code by
-pushing a reviewed commit; the central machine performs this serialized update. It does not mount a second
-copy of `storage/` and it does not accept client-side data writes.
+### Central Host Updater Invariants
 
-After the first successful manual deployment, `infra/systemd/install-central-updater.sh` can install the
-tracked five-minute host-side pull timer. The timer invokes the same fail-closed updater as the deployment
-user and no-ops only when the fetched branch matches its last-success marker, the web health endpoint passes,
-the active service set matches its evidence manifest, and every service uses the recorded image ID. This is
-deployment readiness, not proof that market data is fresh. Build/provenance failures occur before cutover.
-Post-cutover verification failures restore the captured service set from per-service rollback image tags and
-leave both success markers unchanged. This keeps GitHub
-credentials scoped to read-only source retrieval on the host and keeps all runtime/provider secrets off
-GitHub-hosted runners. See `infra/docker/DEPLOY.md` for the install and journal commands.
+The automated updater executes under strict serialized safeguards on the central host:
 
-The backfill service writes directly to the host-mounted `storage/data/ts/` index. The
-web service calculates scorecards on the same machine from that index; market data is
-not copied to the browser. Scorecard results are cached in memory for 30 seconds and
-identical concurrent requests share one calculation. Symbols are excluded unless every
-requested timeframe is present and fresh within its declared signal horizon. An empty
-scorecard is therefore a data-readiness result, not a successful zero-opportunity claim.
+| Pipeline Stage | Guard / Invariant | Failure Action |
+|---|---|---|
+| **Git Pre-Flight** | Clean working tree on `main`, zero local unpushed commits | Abort update; leave running containers untouched |
+| **Lock Acquisition** | Exclusive deployment file lock `/var/lock/sovereign-deploy.lock` | Fail immediately if another update is active |
+| **Validation** | Run `central_host_preflight.js` and Compose config checks | Halt deployment if environment variables fail whitelist |
+| **Image Build** | Build container image tagged with exact commit and source hash | Abort cutover on build error |
+| **Service Cutover** | Recreate `web` and `backfill`; preserve existing optional profiles | Auto-rollback to previous tagged image on health-check failure |
 
-Strictly newer live candles use an append path instead of rewriting the full historical
-binary file. The 30-minute daemon cycle still refreshes local coarse rollups when the base
-grain is fresh enough to skip provider polling, so WebSocket activity cannot strand stale
-`1h`, `4h`, or daily scorecard inputs.
+### Automated 5-Minute Pull Timer Setup
 
-Every symbol/timeframe append or overlap rewrite holds an ownership-token file lock. This makes the
-canonical store safe if a maintenance command overlaps the daemon, while the supported deployment still
-keeps exactly one `backfill` service. Lock acquisition times out rather than writing concurrently; an
-unchanged crashed-writer sidecar becomes reclaimable after the configured stale window.
+After initial manual deployment, install the host-side automated pull timer:
+
+```bash
+# Install the 5-minute pull timer on the central host
+sudo infra/systemd/install-central-updater.sh
+
+# Monitor timer activity and journal output
+journalctl -u sovereign-updater.timer -f
+```
+
+### Storage Concurrency & Scorecard Invariants
+
+- **Direct Storage Access**: `backfill` writes directly to host-mounted `storage/data/ts/`. `web` reads scorecards from disk without browser data replication.
+- **In-Memory Caching**: Scorecard calculations are cached in memory for 30 seconds to deduplicate concurrent browser queries.
+- **Append Path**: New market candles use an append path rather than full file rewrites.
+- **File Locking**: Every symbol/timeframe write holds a POSIX file lock (`withFileLockSync`) to prevent concurrent writer corruption. Stale locks from crashed processes are safely reclaimed after timeout.
 
 The scorecard endpoint requires `SOVEREIGN_API_TOKEN`:
 

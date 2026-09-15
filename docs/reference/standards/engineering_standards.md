@@ -68,6 +68,26 @@ Implementation details belong under the module that owns them:
 
 Avoid multiple headers with the same name and different definitions. One public API should have one authoritative declaration.
 
+## Quantitative C++ Low-Latency Standards (LLVM Parity)
+
+High-frequency analytics, backtesting loops, and pre-trade risk checks must comply with low-latency C++20 rules:
+
+### 1. Zero Heap Allocation in Critical Paths
+- Never call `new`, `malloc`, or invoke operations that dynamically resize containers (e.g. `std::vector::push_back` triggering reallocations) inside tick-processing loops or the `<15µs` `PreTradeRisk` evaluation path.
+- Pre-allocate working memory during subsystem initialization or allocate bounded fixed arrays on the stack (`std::array<T, N>`).
+
+### 2. Cache-Line Memory Alignment
+- Align critical high-throughput structures and circular buffers to 64-byte L1 cache boundaries using `alignas(64)` to prevent cross-core cache line bouncing and false sharing.
+- Pack binary disk structures explicitly (`#pragma pack(push, 1)`) only when writing contiguous binary time-series files (`SOVT v1`), and deserialize into cache-aligned in-memory structs for calculation.
+
+### 3. Non-Owning View Semantics
+- Pass contiguous memory slices as non-owning views (`std::span<const BarRecord>` or `std::string_view`) rather than copying `std::vector` or passing naked uncounted raw pointers.
+- Ensure views maintain explicit lifetime guarantees tied to the backing memory buffer.
+
+### 4. Deterministic Invariants & Exception Discipline
+- Hot-path math functions and indicator calculations must be qualified `noexcept` to permit compiler auto-vectorization (SIMD / AVX2).
+- Enforce fail-closed sanitization: explicitly test for `std::isnan` and `std::isinf` on inbound price and volume doubles before passing tuples into risk gates or sizing equations.
+
 ## Legacy Wealth Data Model
 
 This model is retained as legacy/reference context. New trading work should not add to it unless a field is explicitly reused as a macro, sentiment, or purchasing-power input.
