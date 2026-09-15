@@ -1,4 +1,23 @@
-# Prompt Log - 2026-09-13
+# Prompt Log - 2026-09-14
+
+## Session 15 — Contributor Guide & Developer Onboarding Overhaul - 2026-09-14
+Received user prompts:
+- "session-orchestrator"
+- "write the contributor docs, first fan out subagents"
+- "only use gemini subagents"
+- "some failed though"
+- "First batch passed model: \"haiku\", tried Anthropic Haiku, failed.\nSecond batch launched without model override, inherited session default (claude-gemini-3.8-flash-high).\n3 Gemini agents running now. Output expected shortly., specifically choose gemini-flash n3.8 high"
+- "~next session review the docs, compare it to at least 20 famous documentation format of huge opensource projects"
+
+Accomplished:
+- Booted workspace session via session-orchestrator.
+- Designed and authored comprehensive root contributor entrypoint (`CONTRIBUTING.md`) with zero-key principles, `npm run setup:dev` toolchain, visual Mermaid architecture diagram, 5 subsystem extension recipes (C++ Core, Gateways, Shared Lib, CLI/TUI, React 19 Web Dashboard), pre-PR verification matrix, and Conventional Commits format.
+- Authored Diátaxis Community section portal (`docs/community/README.md`) and in-depth developer onboarding guide (`docs/community/contributing.md`).
+- Synchronized `docs/documentation_manifest.json` with `"docs/community"` section root and canonical document entries.
+- Synchronized `mkdocs.yml` navigation with top-level `Community:` tab.
+- Replaced dead links in `docs/how_to/contributing_and_pr_hygiene.md` and `workspace/governance/CONTRIBUTING.md` with relative links.
+- Updated `workspace/NEXT_SESSION_GOAL.md` to schedule 20-project open-source documentation benchmark audit.
+- Verified 100% pass on all documentation and test integrity gates (`npm run audit:documentation`, `npm run docs:filter -- --strict`, `npm run test:structure`, `npm run hygiene`, `npm run test:data`, `npm run test:core`).
 
 ## Session 14 — Social Alpha Signal Engine & Deterministic Replay Implementation - 2026-09-13
 Received user prompts:

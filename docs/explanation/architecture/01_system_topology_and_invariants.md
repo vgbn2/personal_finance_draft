@@ -83,9 +83,9 @@ flowchart TD
     API --> SIGNAL
     API --> IND
 
-    SUB -->|POSIX Spawning| CPP
-    SIGNAL -->|Direct Memory Pointers| CPP
-    IND -->|Read Buffers| CPP
+    SUB -->|POSIX Spawning (spawnSync)| CPP
+    SIGNAL -->|Stdio JSON IPC Bridge| CPP
+    IND -->|Direct Binary TS File I/O| CPP
 
     CPP -->|"POSIX File I/O (withFileLockSync)"| Persistence
     SUB --> Persistence
@@ -113,80 +113,45 @@ flowchart TD
 
 The repository enforces strict module separation and unidirectional dependency flow:
 
-```text
-personal_finance_draft/
-├── backend/
-│   ├── api/                 # Authenticated Express REST API & WebSocket bridge
-│   ├── cli/                 # Sovereign CLI entrypoints, Ink TUI, and command handlers
-│   │   ├── commands/        # Domain subcommands (strategy, data, backtest, broker)
-│   │   └── tui/             # Terminal User Interface manifests & views
-│   ├── core/                # C++20 Sovereign Core native analytics & risk library
-│   │   ├── src/             # Source: binary TS merger, backtester, Monte Carlo, risk
-│   │   └── tests/           # 34 CTest verification suites
-│   ├── gateway/             # Broker adapters (Alpaca, Polymarket, Gate.io) & paper ledger
-│   └── mcp_server/          # Model Context Protocol (MCP) server for AI agent integration
-├── config/                  # System environment manifests, risk policies, strategies
-│   ├── strategies/          # Canonical YAML strategy registries (`automated/`, `curated/`, `fixtures/`)
-│   └── system/              # `environment_manifest.json` (strict variable whitelisting)
-├── docs/                    # Master documentation corpus (Schema: `sovereign.documentation_manifest/v1`)
-│   └── engineering/         # Modular 8-section canonical engineering specifications
-├── Frontend/
-│   └── dashboard/           # React 19 + Vite dashboard (source in `src/`, `dist/` generated)
-├── infra/
-│   └── docker/              # Multi-service `docker-compose.yml` for HPDesk Proxmox VM
-├── scripts/
-│   ├── dev/                 # Hygiene checks, documentation auditors, test runners
-│   ├── mcp/                 # Model Context Protocol operational scripts
-│   ├── ml/                  # Machine learning training & feature generation routines
-│   ├── strategies/          # `auto_strategy_explorer.js` (autonomous 30-min discovery daemon)
-│   └── tools/               # Operational utilities & diagnostic scripts
-├── shared/
-│   └── lib/                 # Shared TypeScript/JavaScript domain logic
-│       ├── brokers/         # Broker environment wrappers & tradability checks
-│       ├── market/          # Binary TS storage, quote router, rolling indicators
-│       ├── runtime/         # Virtual sub-positions ledger & deterministic signatures
-│       └── settings/        # Deployment profiles & fail-closed runtime policy
-├── storage/                 # Local data directory (excluded from git tracking)
-│   └── data/
-│       ├── cache/           # Provider HTTP response caches & temporary buffers
-│       ├── runtime/         # Active sub-positions virtual ledger (`ledger/sub_positions.json`)
-│       └── ts/              # High-density binary time-series files (`*.bin`)
-├── tests/                   # Native Node.js test suites (`run_node_tests.js`)
-└── workspace/               # Project state tracking (`STATE.md`, `PROMPT_LOG.md`, handoffs)
-```
+| Subsystem / Directory | Primary Language / Stack | Responsibility & Domain Ownership |
+|---|---|---|
+| `backend/core/` | C++20 (CMake 3.15+) | High-performance binary TS merger, frame backtester, pre-trade risk engine |
+| `backend/gateway/` | TypeScript / Node.js | Broker adapters (Alpaca, Polymarket, MT5) & cryptographic paper ledger |
+| `backend/cli/` | Node.js (Ink 5 TUI) | Terminal UI dashboard, command handlers, and interactive menus |
+| `backend/api/` | Node.js (`node:http`) | Authenticated REST API & Socket.IO telemetry bridge (port 8787) |
+| `backend/mcp_server/` | Node.js (JSON-RPC) | Model Context Protocol server for AI agent tool execution |
+| `shared/lib/` | JavaScript / CommonJS | Technical indicators (`IndicatorMethods`), quote routing, virtual ledger |
+| `Frontend/dashboard/` | React 19 + TypeScript + Vite | Real-time browser trading dashboard with CDP mock testing |
+| `config/` | YAML / JSON | System environment manifests, risk policies, curated strategy definitions |
+| `storage/data/` | Binary (`SOVT`) / JSON | Binary time-series files (`ts/`), provider caches, runtime paper ledger |
+| `tests/` | Node.js test runner | Architecture contracts, data regressions, API contracts, hygiene |
 
 ---
 
 ## 4. End-to-End Runtime Call Sequence
 
-```text
-[Trader/CLI]       [Express API]       [SubPositions]      [C++ PreTradeRisk]   [Broker Gateway]     [Storage Disk]
-     │                   │                   │                     │                   │                   │
-     │── 1. Execute ────►│                   │                     │                   │                   │
-     │   CLI Command     │── 2. Route ──────►│                     │                   │                   │
-     │                   │   Strategy Order  │── 3. Acquire Lock ─────────────────────────────────────────►│
-     │                   │                   │      & Mutate Slice │                   │                   │
-     │                   │                   │◄─ 4. Lock Released ─────────────────────────────────────────│
-     │                   │                   │                     │                   │                   │
-     │                   │                   │── 5. Verify Risk ──►│                   │                   │
-     │                   │                   │      Parameters     │                   │                   │
-     │                   │                   │                     │ (Drawdown Check,  │                   │
-     │                   │                   │                     │  Concentration,   │                   │
-     │                   │                   │                     │  Fat-Finger <15μs)│                   │
-     │                   │                   │◄─ 6. Risk Pass ─────│                   │                   │
-     │                   │                   │                     │                   │                   │
-     │                   │                   │── 7. Dispatch Order ───────────────────►│                   │
-     │                   │                   │      (Clamped Qty)  │                   │                   │
-     │                   │                   │                     │                   │── 8. REST/WS ────► [Exchange]
-     │                   │                   │                     │                   │      Execution    │
-     │                   │                   │                     │                   │◄─ 9. Execution ───│
-     │                   │                   │                     │                   │      Confirmation │
-     │                   │                   │                     │                   │                   │
-     │                   │                   │◄─ 10. Fill Event ───────────────────────│                   │
-     │                   │                   │── 11. Append Ledger ───────────────────────────────────────►│
-     │                   │◄─ 12. Success ────│       Double-Entry  │                   │   (`ledger.jsonl`)│
-     │◄─ 13. Render ─────│   JSON Status     │                     │                   │                   │
-     │   TUI State       │                   │                     │                   │                   │
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Trader as Trader / CLI / TUI
+    participant API as Express API (Port 8787)
+    participant Sub as Sub-Positions Ledger
+    participant Risk as C++ PreTradeRisk (<15µs)
+    participant Broker as Broker Gateway
+    participant Disk as Storage (ts/ & ledger/)
+
+    Trader->>API: 1. Execute Command / Bot Cycle
+    API->>Sub: 2. Route Strategy Order
+    Sub->>Disk: 3. Acquire POSIX File Lock & Mutate Slice
+    Disk-->>Sub: 4. Lock Released
+    Sub->>Risk: 5. Verify Risk Parameters (DD, Concentration, Fat-Finger)
+    Risk-->>Sub: 6. Risk Gate PASS (or Fail-Closed Reject)
+    Sub->>Broker: 7. Dispatch Clamped Order
+    Broker->>Broker: 8. Execute Order via Broker REST/WS
+    Broker-->>Sub: 9. Order Fill Event
+    Sub->>Disk: 10. Append Double-Entry Ledger (`ledger.jsonl`)
+    Sub-->>API: 11. Return Success Status
+    API-->>Trader: 12. Render TUI / Dashboard Update
 ```
 
 ---

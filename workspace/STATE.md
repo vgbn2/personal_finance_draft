@@ -61,6 +61,14 @@ Full-Stack Blast-Through Remediation, MetaTrader 5 Execution Engine & Remote Pro
     - **Replay Verification Suite**: Authored `tests/scripts/strategy/social_alpha_replay.test.js` (7/7 PASS) verifying point-in-time zero lookahead alignment, promotional signal rejection, and risk bounds.
     - **100% Test & Hygiene Pass**: `npm test` (100% PASS), `npm run test:core` (34/34 CTest PASS), `npm run test:api` (100% PASS), `npm run hygiene` (100% PASS).
 
+  - **20-Project Open-Source Benchmark Remediation & Contributor Documentation Refinement (September 2026)**:
+    - **Benchmark & Wall of Text Elimination**: Evaluated documentation against 20 premier open-source repositories (Linux Kernel, Kubernetes, Rust, CPython, LLVM, Chromium, Arrow, ClickHouse, PostgreSQL, Envoy, React, Node.js, PyTorch, Redis, Django, FastAPI, Git, Homebrew, Next.js, VS Code).
+    - **Batch 1 (Schema & Subprocess Invariants)**: Reconciled `SOVT v1` header (`SOVT` + `uint32_t count`) and 48-byte packed IEEE-754 record layout in `technical_specification.md` to match C++ reader truth; corrected C4 diagram to stdio JSON subprocess IPC (`spawnSync`); documented IPC bridge protocol in `03_native_cpp_core_and_backtester.md`.
+    - **Batch 2 (API Spec & WebSocket Protocol)**: Authored Section 4 (Socket.IO streaming protocol, handshake auth, `status`/`market_data` frames) and Section 5 (REST schema cards, standard error response envelope) in `web_rest_and_websocket_api.md`.
+    - **Batch 3 (Wall of Text Elimination)**: Refactored unbroken prose into structured tables and Mermaid sequence diagrams in `proxmox_vm_deployment.md`, `00_quick_onboarding.md`, `03_strategy_backtest_ml.md`, and `01_system_topology_and_invariants.md`.
+    - **Batch 4 (Governance & Low-Latency Standards)**: Formatted `workspace/governance/MAINTAINERS.md` with Linux Kernel-style subsystem blocks (`F:`, `M:`, `S:`); added LLVM-style low-latency C++ coding rules to `engineering_standards.md`; authored `deprecation_and_versioning_policy.md` (`SOV_DEP_xxx` codes, SemVer 2.0.0, binary evolution); hardened `.github/PULL_REQUEST_TEMPLATE.md` with issue linkage and rollback sections.
+    - **Full Verification Suite Passed**: 100% pass across `npm run audit:documentation`, `npm run docs:filter -- --strict`, `npm run test:structure` (28/28), `npm run hygiene`, `npm run test:core` (34/34 CTests), `npm run test:data`, `npm run test:api`, and `npm test`.
+
 - **Documentation Engineering & Developer Experience Overhaul (September 2026)**:
   - **Diátaxis & Institutional Developer Standard**: Benchmarked against Alpaca (`docs.alpaca.markets`), Polymarket (`docs.polymarket.com`), and Stripe/Coinbase. Enhanced `docs/engineering/standards/documentation_standard.md` with:
     - Card-based API endpoint specifications with HTTP method badges, auth scopes, headers, and tabbed JSON request/response examples with error remediation.

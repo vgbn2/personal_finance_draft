@@ -5,6 +5,7 @@
     "docs/archive",
     "docs/atlas",
     "docs/codebase_tour",
+    "docs/community",
     "docs/design",
     "docs/engineering",
     "docs/explanation",
@@ -1977,6 +1978,24 @@
       ]
     },
     {
+      "path": "docs/reference/standards/deprecation_and_versioning_policy.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "maintainers",
+        "operators"
+      ],
+      "owner": "standards",
+      "status": "canonical",
+      "source_paths": [
+        "docs/README.md"
+      ],
+      "review_triggers": [
+        "standards-review",
+        "versioning-policy"
+      ]
+    },
+    {
       "path": "docs/RESEARCH_STRATEGY_EXPLORER.md",
       "type": "guide",
       "audience": [
@@ -2529,6 +2548,57 @@
       "review_triggers": [
         "tutorial-update",
         "codebase-tour"
+      ]
+    },
+    {
+      "path": "docs/community/README.md",
+      "type": "orientation",
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": [
+        "docs/community/contributing.md"
+      ],
+      "review_triggers": [
+        "community-portal",
+        "contributor-onboarding"
+      ]
+    },
+    {
+      "path": "docs/community/contributing.md",
+      "type": "how-to",
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "documentation",
+      "status": "canonical",
+      "source_paths": [
+        "CONTRIBUTING.md"
+      ],
+      "review_triggers": [
+        "contributor-guide",
+        "developer-onboarding"
+      ]
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "type": "orientation",
+      "audience": [
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "platform",
+      "status": "canonical",
+      "source_paths": [
+        "docs/community/contributing.md"
+      ],
+      "review_triggers": [
+        "contributor-entrypoint",
+        "developer-onboarding"
       ]
     },
     {

@@ -1,3 +1,16 @@
+### Session Memory - 2026-09-14 session 15 — Contributor Guide & Developer Onboarding Overhaul
+
+```json
+{
+  "batch": ["CONTRIBUTOR-ONBOARDING-DOCS-1"],
+  "lifecycle": "closed",
+  "scope": "Authored comprehensive root contributor entrypoint (CONTRIBUTING.md) and Diátaxis community portal suite (docs/community/README.md, docs/community/contributing.md) adhering to zero-key invariants, fast-start npm run setup:dev automation, and pure C++20 / Node.js v20+ / React 19 stack; provided subsystem extension walkthroughs for C++ IndicatorFrame, TypeScript BrokerAdapter, shared IndicatorMethods, Ink 5 TUI terminal restoration, and React 19 CDP test mocks; registered docs/community section root and files in docs/documentation_manifest.json; updated mkdocs.yml navigation with top-level Community tab; fixed broken cross-links in docs/how_to/contributing_and_pr_hygiene.md and workspace/governance/CONTRIBUTING.md; scheduled 20-project open-source documentation benchmark audit in workspace/NEXT_SESSION_GOAL.md; passed 100% of documentation, structural, hygiene, and test integrity gates.",
+  "changes": "created CONTRIBUTING.md, docs/community/README.md, docs/community/contributing.md, workspace/handoff/2026/09/2026-09-14.md; updated docs/documentation_manifest.json, mkdocs.yml, docs/how_to/contributing_and_pr_hygiene.md, workspace/governance/CONTRIBUTING.md, workspace/NEXT_SESSION_GOAL.md, workspace/PROMPT_LOG.md, workspace/SESSION_MEMORY.md",
+  "verification": "npm run audit:documentation (PASS, 0 errors); npm run docs:filter -- --strict (PASS, 0 defects); npm run test:structure (PASS 28/28 tests); npm run hygiene (PASS 100% clean); npm run test:data (PASS); npm run test:core (PASS 34/34 CTests); npm test (PASS)",
+  "boundaries": "zero-key local development policy intact; LIVE_TRADING=false, SOVEREIGN_EXECUTION_AUTHORIZED=false; zero production trades executed"
+}
+```
+
 ### Session Memory - 2026-09-12 session 13 — Deep Blast-Through Remediation & 4-Batch Mass-Implementation
 
 ```json
