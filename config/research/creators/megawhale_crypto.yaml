@@ -1,0 +1,33 @@
+creator:
+  id: "megawhale_crypto"
+  name: "MegaWhale Crypto"
+  platform: "youtube"
+  channel_handle: "@MegaWhaleCrypto"
+  channel_id: "UC_megawhale_crypto_feed"
+  rss_feed_url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC_megawhale_crypto_feed"
+  enabled: true
+  tier: "tier_2_active"
+
+profile:
+  asset_focus: ["crypto"]
+  analysis_style: "MOMENTUM"
+  typical_bias: "PERMA_BULL"
+  contrarian_role: "retail_herd_bellwether"
+
+reputation:
+  min_sample_count: 10
+  prior_brier_score: 0.25
+  initial_weight: 1.0
+  shill_discount_factor: 0.5
+
+transcript_nlp:
+  key_phrases:
+    bullish: ["altcoin season", "whale accumulation", "massive breakout", "10x potential", "accumulate now"]
+    bearish: ["shakeout before pump", "capitulation wick", "bear trap"]
+    invalidation: ["market structure break", "trendline invalid", "support breakdown"]
+  ticker_regex: "\\b(BTC|ETH|SOL|BNB|NEAR|SUI|APT|RENDER|FET)\\b"
+
+execution_constraints:
+  time_horizon: "SWING"
+  volume_floor_usd: 20_000_000
+  max_portfolio_allocation_pct: 0.01
