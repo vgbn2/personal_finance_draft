@@ -1,10 +1,35 @@
-# Web & API Bridge Specification
+# Web REST & WebSocket API Bridge SRS
 
-> **Diátaxis Type**: Reference & Specification | **Status**: Canonical | **Engine**: Native `node:http` (Not Express) | **Review**: Continuous
+> **Document Standard**: IEEE 830-1998 / ISO/IEC/IEEE 29148:2018 | **Diátaxis Type**: Reference & Specification | **Status**: Canonical | **Engine**: Native `node:http` (Zero Express) | **Review**: Continuous
 
-## 1. Runtime Architecture
+---
 
-The Sovereign Web & API Bridge runs as a standalone daemon or containerized service bridging browser clients, automated CLI commands, Model Context Protocol (MCP) agents, and the native C++ engine.
+## 1. Introduction
+
+### 1.1 Purpose
+This Software Requirements Specification (SRS) defines the communication contracts, security policies, role-based access control (RBAC) tiers, routing engine, and payload schemas for the **Sovereign Web REST & WebSocket API Bridge**.
+
+### 1.2 Document Conventions
+- Requirements are uniquely identified using `FR-API-xxx` (Functional) and `NFR-API-xxx` (Non-Functional).
+- RFC 2119 keywords (`MUST`, `MUST NOT`, `SHOULD`, `MAY`) establish mandatory contracts.
+
+### 1.3 Intended Audience
+Frontend dashboard developers, API clients, integration engineers, and compliance auditors.
+
+### 1.4 System Scope
+Encompasses the standalone native HTTP daemon (`backend/api/app.js` on port 8787), 40 route keys across 39 handler modules, RBAC access control gates, Model Context Protocol (MCP) agent boundaries, and static asset serving for the React 19 dashboard.
+
+### 1.5 References
+- [Product Software Requirements Specification](../../reference/specifications/product_specification.md)
+- [Technical Architecture Specification](../specs/technical_spec.md)
+- [Pre-Trade Risk & Sub-Positions Specification](../../reference/specifications/sub_positions_risk_spec.md)
+
+---
+
+## 2. Overall Description
+
+### 2.1 Runtime Architecture & Topology
+The API server acts as an in-process bridge connecting web frontends, CLI consumers, MCP agents, and the native C++20 engine:
 
 ```mermaid
 flowchart TD
@@ -17,17 +42,19 @@ flowchart TD
     ROUTER -->|Read/Write State| CACHE["Disk State & Caches<br/>storage/data/"]
 ```
 
-### Server Characteristics
+### 2.2 Server Characteristics
 - **Entrypoint**: `backend/api/app.js` instantiated via standard `node:http.createServer()`.
 - **Default Port**: `8787` (configurable via `SOVEREIGN_PORT` or `PORT`).
-- **Zero Express Dependency**: Uses native URL parsing, manual body consumption buffers with prototype pollution guards, and explicit streaming response writers.
-- **Static Asset Serving**: When a route does not match the active API route table, requests fall through to `serveStatic()`, serving the built React 19 dashboard from `Frontend/dashboard/dist/` guarded by strict path containment (`filePath.startsWith(WEB_PUBLIC_ROOT)`).
+- **Zero Express Dependency**: Uses native URL parsing, manual body consumption buffers with prototype pollution guards, and streaming response writers.
+- **Static Asset Fallback**: Unmatched non-API requests route to `serveStatic()`, serving the compiled React 19 bundle from `Frontend/dashboard/dist/` guarded by strict path containment (`filePath.startsWith(WEB_PUBLIC_ROOT)`).
 
 ---
 
-## 2. Security & RBAC Capability Model
+## 3. Specific Functional Requirements
 
-The API enforces strict route protection, token gating, and Model Context Protocol (MCP) restrictions:
+### 3.1 Authentication & RBAC Capability Tiers
+- **FR-API-001 (RBAC Route Gate)**:
+  - *Description*: Every incoming request MUST be evaluated against its registered capability tier before executing route logic:
 
 | Capability Tier | Authentication Requirement | Allowed Route Patterns |
 |---|---|---|
@@ -37,237 +64,110 @@ The API enforces strict route protection, token gating, and Model Context Protoc
 | **`execution:paper`** | `x-sovereign-token` with paper trade capability | `/api/bot/status`, `/api/bot/cycle`, `/api/combined-analysis/paper-cycle` |
 | **`execution:admin`** | Signed admin bearer token + salted PIN | `/api/bot/sell`, `/api/kill-switch`, `/api/system/*`, `/api/auth/*` |
 
-### MCP Agent Gating (`isMcpAllowed`)
-AI agents accessing the platform via MCP are restricted from invoking dangerous operational endpoints (`/api/kill-switch`, `/api/bot/sell`) without explicit human confirmation.
+- **FR-API-002 (MCP Agent Safeguard)**:
+  - *Description*: Autonomous MCP agents MUST be blocked from invoking destructive operations (`/api/kill-switch`, `/api/bot/sell`) unless verified by human operator PIN.
+
+### 3.2 System Status & Health Endpoints
+- **FR-API-003 (Health & Status Probes)**:
+  - `GET /health` (`Public`): Uptime, heap/RSS memory metrics.
+  - `GET /api/status` (`Public`): Aggregated system health and quote feed staleness.
+  - `GET /api/client/status` (`Public`): Client handshake and build version.
+  - `GET /api/run/status` (`research:read`): Status of background backtests and exploration jobs.
+  - `GET /api/system/status` (`execution:admin`): Disk usage in `storage/data/ts/` and active POSIX locks.
+  - `GET /api/system/service-health` (`execution:admin`): Soak test health checks.
+
+### 3.3 Market Data & Storage Endpoints
+- **FR-API-004 (Market Data Retrieval)**:
+  - `GET /api/data/summary` (`research:read`): Returns validated OHLCV summaries and volatility metrics.
+  - `GET /api/universe` (`research:read`): Returns canonical asset universe.
+  - `GET /api/cache/universe` (`research:read`): Cached universe metadata.
+  - `GET /api/indicators` (`research:read`): Rolling RSI, MACD, Bollinger, ATR computed over binary SOVT files.
+  - `GET /api/quotes/status` (`research:read`): Real-time quote feed latency and provider fallback status.
+  - `GET /api/cache/list` (`research:read`): Disk file inspection under `storage/data/cache/`.
+  - `GET /api/market/monitor` (`research:read`): Real-time spreads, percent changes, and volume surges.
+  - `GET /api/analytics` (`research:read`): Cross-asset return distributions and benchmark beta.
+  - `GET /api/public/market-summary` (`Public`): Unauthenticated dashboard summary.
+  - `GET /api/public/freshness` (`Public`): Ingestion freshness and SLA timestamps.
+
+### 3.4 Alpha Research & Backtesting Endpoints
+- **FR-API-005 (Backtesting & Alpha Analytics)**:
+  - `GET /api/backtest` (`research:run`): Dispatches runs to C++20 `FrameBacktester` (or fallback), returning equity curve, Sharpe, Sortino, and drawdown.
+  - `GET /api/correlation` (`research:read`): Computes Pearson correlation matrix with clamped eigenvalues.
+  - `GET /api/backend/stats` (`research:read`): C++ quantitative analytics stats.
+  - `GET /api/backend/portfolio` (`research:read`): Portfolio exposure and concentration.
+  - `GET /api/signal` (`research:read`): Tactical signals across registered strategies (expires after 24h).
+  - `POST /api/signal/promote` (`research:run`): Promotes candidate signals to paper eligibility.
+  - `GET /api/strategies` (`research:read`): Lists registered strategy YAML configs.
+  - `GET /api/sigma-band` (`research:read`): Rolling standard deviation envelopes.
+  - `GET /api/bias` (`research:read`): Directional trend bias.
+  - `GET /api/scorecard` (`research:read`): Quantitative strategy grading.
+  - `GET /api/combined-analysis` (`research:read`): Multi-model ensemble analysis.
+  - `POST /api/combined-analysis/promote` (`research:run`): Promotes candidate to strategy config.
+  - `POST /api/combined-analysis/paper-cycle` (`execution:paper`): Triggers on-demand paper cycle.
+  - `GET /api/public/research-summary` (`Public`): Public research hypothesis summary.
+
+### 3.5 Bot Execution & Circuit Breakers
+- **FR-API-006 (Trading Bot Control)**:
+  - `GET /api/bot/status` (`execution:paper`): Sub-position ledger holdings, open orders, and cash balances.
+  - `POST /api/bot/cycle` (`execution:paper`): Forces immediate paper cycle with pre-trade risk validation.
+  - `POST /api/bot/sell` (`execution:admin`): Emergency sub-position trim/close requiring PIN verification.
+  - `POST /api/kill-switch` (`execution:admin`): Emergency platform circuit breaker cancelling open orders across all gateways and setting execution state to suspended.
+
+### 3.6 Account & Infrastructure Endpoints
+- **FR-API-007 (Infrastructure & Database Operations)**:
+  - `GET /api/auth/status` (`Public`): Current auth status and role permissions.
+  - `POST /api/auth/session/reauth` (`Public`): Refreshes session bearer token.
+  - `GET /api/database/status` (`execution:admin`): Paper ledger integrity and checksum verification.
+  - `GET /api/supabase/config` (`Public`): Safe public Supabase telemetry client configuration.
+  - `GET /api/config` (`research:read`): Sanitized system runtime configuration.
+  - `GET /api/system/infra` (`execution:admin`): Streams Docker operational logs without shell interpolation.
 
 ---
 
-## 3. Complete Route Catalog (All 40 Active Route Keys)
+## 4. External Interface Requirements
 
-The canonical route map is declared in `backend/api/server/routes/index.js`, routing requests across 39 specialized handler modules:
+### 4.1 Transport Protocols
+- **HTTP/1.1**: Persistent keep-alive connections on TCP port 8787.
+- **WebSocket**: Bidirectional JSON framed channels (`ws://127.0.0.1:8787/ws`) for order updates and live bars.
+- **Server-Sent Events (SSE)**: Unidirectional streaming (`/api/stream/*`) for telemetry and log tails.
 
-### Category 1: Status & System Health (6 Routes)
-
-#### `GET /health`
-- **Handler**: `backend/api/server/routes/status/health.js`
-- **Capability**: Public
-- **Description**: Lightweight health probe for Docker Compose, Kubernetes, and load balancers.
-- **Response**: `{ "ok": true, "status": "healthy", "uptime_s": 12450.2, "memory": { "heap_used_mb": 42.1, "rss_mb": 78.4 } }`
-
-#### `GET /api/status`
-- **Handler**: `backend/api/server/routes/status/status.js`
-- **Capability**: Public
-- **Description**: Aggregated system status summary covering quote feed freshness, CLI availability, and core engine status.
-- **Response**: `{ "ok": true, "degraded": false, "core_engine": "available", "quotes": { "stale": false } }`
-
-#### `GET /api/client/status`
-- **Handler**: `backend/api/server/routes/status/client_status.js`
-- **Capability**: Public
-- **Description**: Browser client handshake route returning web interface build version and active configuration capabilities.
-
-#### `GET /api/run/status`
-- **Handler**: `backend/api/server/routes/status/run_status.js`
-- **Capability**: `research:read`
-- **Description**: Returns execution status of background backtests, mass-bt jobs, and strategy exploration routines.
-
-#### `GET /api/system/status`
-- **Handler**: `backend/api/server/routes/system/system.js`
-- **Capability**: `execution:admin`
-- **Description**: Comprehensive system telemetry including disk usage across `storage/data/ts/`, active file locks, and container cgroup utilization.
-
-#### `GET /api/system/service-health`
-- **Handler**: `backend/api/server/routes/system/service_health.js`
-- **Capability**: `execution:admin`
-- **Description**: Multi-service soak test health monitor checking `sv-web`, `sv-bot-alpaca-paper`, `sv-backfill`, and `sv-strategy-explorer`.
+### 4.2 Error Responses & Format
+Standard JSON error payload for all non-2xx responses:
+```json
+{
+  "ok": false,
+  "error": "UNAUTHORIZED_CAPABILITY",
+  "message": "Route requires 'execution:admin' capability",
+  "status": 403
+}
+```
 
 ---
 
-### Category 2: Market Data & Storage Subsystem (10 Routes)
+## 5. Non-Functional Requirements
 
-#### `GET /api/data/summary`
-- **Handler**: `backend/api/server/routes/data/data_summary.js`
-- **Capability**: `research:read`
-- **Query Parameters**: `symbol` (e.g. `AAPL`), `timeframe` (default `1d`), `max_bars` (default `100`).
-- **Description**: Returns validated OHLCV bar summaries, latest close, volatility, and volume indicators.
+### 5.1 Performance & Latency
+- **NFR-API-001 (P95 Response Latency)**: P95 response time for non-backtesting REST routes MUST be $<10\text{ms}$.
+- **NFR-API-002 (Throughput Capacity)**: The server MUST sustain $>2,500\text{ req/sec}$ on 4 CPU cores for cached quote and indicator routes.
 
-#### `GET /api/universe`
-- **Handler**: `backend/api/server/routes/data/universe.js`
-- **Capability**: `research:read`
-- **Description**: Returns canonical asset universe split into Equities, Crypto, and Prediction Markets.
-
-#### `GET /api/cache/universe`
-- **Handler**: `backend/api/server/routes/data/universe.js`
-- **Capability**: `research:read`
-- **Description**: Returns cached universe metadata and last ingestion timestamp.
-
-#### `GET /api/indicators`
-- **Handler**: `backend/api/server/routes/data/indicators.js`
-- **Capability**: `research:read`
-- **Query Parameters**: `symbol`, `timeframe`, `indicators` (comma-separated: `rsi,macd,bollinger,atr`).
-- **Description**: Computes and streams rolling technical indicators calculated over the requested binary TS dataset.
-
-#### `GET /api/quotes/status`
-- **Handler**: `backend/api/server/routes/data/quotes.js`
-- **Capability**: `research:read`
-- **Description**: Reports real-time quote feed latency, websocket connection states, and fallback status across Yahoo and Binance.
-
-#### `GET /api/cache/list`
-- **Handler**: `backend/api/server/routes/data/cache_list.js`
-- **Capability**: `research:read`
-- **Description**: Inspects disk storage under `storage/data/cache/`, returning file sizes and modification timestamps.
-
-#### `GET /api/market/monitor`
-- **Handler**: `backend/api/server/routes/market/market_monitor.js`
-- **Capability**: `research:read`
-- **Description**: Real-time ticker monitor snapshot delivering bid/ask spreads, daily percent changes, and volume surges.
-
-#### `GET /api/analytics`
-- **Handler**: `backend/api/server/routes/market/analytics.js`
-- **Capability**: `research:read`
-- **Description**: Cross-asset return distributions, annualized volatility, and beta against benchmark (SPY).
-
-#### `GET /api/public/market-summary`
-- **Handler**: `backend/api/server/routes/public/public_market_summary.js`
-- **Capability**: Public
-- **Description**: Unauthenticated market overview for landing page and monitoring dashboards.
-
-#### `GET /api/public/freshness`
-- **Handler**: `backend/api/server/routes/public/public_freshness.js`
-- **Capability**: Public
-- **Description**: Public timestamp reporting data ingestion freshness and SLA compliance.
+### 5.2 Security Invariants
+- **NFR-API-003 (Path Traversal Protection)**: The static file server MUST verify that resolved paths reside strictly within `Frontend/dashboard/dist/`.
+- **NFR-API-004 (Prototype Pollution Guard)**: JSON body parser MUST reject payloads containing `__proto__`, `constructor`, or `prototype` keys.
 
 ---
 
-### Category 3: Quantitative Alpha, Strategy & Backtesting (14 Routes)
+## 6. Other Requirements & Verification Matrix
 
-#### `GET /api/backtest`
-- **Handler**: `backend/api/server/routes/market/backtest.js`
-- **Capability**: `research:run`
-- **Query Parameters**: `strategy`, `symbol`, `timeframe`, `cost_bps`, `engine` (`native` | `fallback`).
-- **Description**: Dispatches backtest run to C++20 `FrameBacktester` (or JS fallback), returning equity curve, Sharpe, Sortino, max drawdown, and trade log.
-
-#### `GET /api/correlation`
-- **Handler**: `backend/api/server/routes/market/correlation.js`
-- **Capability**: `research:read`
-- **Query Parameters**: `symbols` (comma-separated), `timeframe`, `max_bars`.
-- **Description**: Computes Pearson correlation matrix with clamped eigenvalues using C++ `correlation_engine`.
-
-#### `GET /api/backend/stats`
-- **Handler**: `backend/api/server/routes/market/stats.js`
-- **Capability**: `research:read`
-- **Description**: Surfaces high-performance stats from the C++ analytics engine.
-
-#### `GET /api/backend/portfolio`
-- **Handler**: `backend/api/server/routes/system/portfolio.js`
-- **Capability**: `research:read`
-- **Description**: Aggregated portfolio exposure, asset weights, and sector concentration.
-
-#### `GET /api/signal`
-- **Handler**: `backend/api/server/routes/market/signal.js`
-- **Capability**: `research:read`
-- **Description**: Evaluates latest bars across active strategies and produces tactical signal recommendations. Signals expire automatically after `SOVEREIGN_SIGNAL_REPORT_MAX_AGE_MS` (24h).
-
-#### `POST /api/signal/promote`
-- **Handler**: `backend/api/server/routes/market/signal_promote.js`
-- **Capability**: `research:run`
-- **Description**: Authenticated promotion of an exploratory candidate signal to paper-trading eligibility.
-
-#### `GET /api/strategies`
-- **Handler**: `backend/api/server/routes/market/strategies.js`
-- **Capability**: `research:read`
-- **Description**: Returns all registered strategies from `config/strategies/` and `config/strategies/automated/`.
-
-#### `GET /api/sigma-band`
-- **Handler**: `backend/api/server/routes/market/sigma_band.js`
-- **Capability**: `research:read`
-- **Description**: Computes rolling standard deviation envelopes and dynamic mean-reversion bands.
-
-#### `GET /api/bias`
-- **Handler**: `backend/api/server/routes/market/bias.js`
-- **Capability**: `research:read`
-- **Description**: Evaluates directional multi-timeframe trend bias.
-
-#### `GET /api/scorecard`
-- **Handler**: `backend/api/server/routes/market/scorecard.js`
-- **Capability**: `research:read`
-- **Description**: Quantitative scorecard grading strategies on win rate, profit factor, drawdown recovery, and Sharpe ratio.
-
-#### `GET /api/combined-analysis`
-- **Handler**: `backend/api/server/routes/market/combined_analysis.js`
-- **Capability**: `research:read`
-- **Description**: Multi-model ensemble analysis combining technical indicators, macro regime filters, and statistical bias.
-
-#### `POST /api/combined-analysis/promote`
-- **Handler**: `backend/api/server/routes/market/combined_promote.js`
-- **Capability**: `research:run`
-- **Description**: Promotes combined analysis candidates into registered strategy YAML configurations.
-
-#### `POST /api/combined-analysis/paper-cycle`
-- **Handler**: `backend/api/server/routes/market/combined_paper_cycle.js`
-- **Capability**: `execution:paper`
-- **Description**: Triggers an on-demand paper trading cycle for the combined analysis candidate.
-
-#### `GET /api/public/research-summary`
-- **Handler**: `backend/api/server/routes/public/public_research_summary.js`
-- **Capability**: Public
-- **Description**: Public summary of active research hypotheses and benchmark returns.
-
----
-
-### Category 4: Bot Execution & Risk Gating (4 Routes)
-
-#### `GET /api/bot/status`
-- **Handler**: `backend/api/server/routes/bot/bot_status.js`
-- **Capability**: `execution:paper`
-- **Description**: Live status of trading bots (`alpaca_paper`, `polymarket_paper`), including sub-position ledger holdings, open orders, and cash balances.
-
-#### `POST /api/bot/cycle`
-- **Handler**: `backend/api/server/routes/bot/bot_cycle.js`
-- **Capability**: `execution:paper`
-- **Description**: Forces immediate execution cycle for paper trading bot. Validates pre-trade risk before submitting fractional orders.
-
-#### `POST /api/bot/sell`
-- **Handler**: `backend/api/server/routes/bot/bot_sell.js`
-- **Capability**: `execution:admin`
-- **Body**: `{ "symbol": "AAPL", "quantity": 10, "pin": "..." }`
-- **Description**: Emergency order to close or trim sub-position for a specific symbol. Requires admin PIN verification.
-
-#### `POST /api/kill-switch`
-- **Handler**: `backend/api/server/routes/system/kill_switch.js`
-- **Capability**: `execution:admin`
-- **Body**: `{ "action": "HALT" | "RESUME", "pin": "..." }`
-- **Description**: Emergency platform circuit breaker. Cancels all open orders across brokers, sets execution state to suspended, and locks ledger.
-
----
-
-### Category 5: Account & Infrastructure Operations (6 Routes)
-
-#### `GET /api/auth/status`
-- **Handler**: `backend/api/server/routes/account/auth.js`
-- **Capability**: Public
-- **Description**: Returns current operator authentication status and active role permissions.
-
-#### `POST /api/auth/session/reauth`
-- **Handler**: `backend/api/server/routes/account/session_reauth.js`
-- **Capability**: Public
-- **Description**: Reauthenticates session with refreshed bearer token.
-
-#### `GET /api/database/status`
-- **Handler**: `backend/api/server/routes/account/database.js`
-- **Capability**: `execution:admin`
-- **Description**: Checks Supabase sync status, local paper ledger integrity, and checksum validation.
-
-#### `GET /api/supabase/config`
-- **Handler**: `backend/api/server/routes/account/supabase_config.js`
-- **Capability**: Public
-- **Description**: Returns safe, unprivileged public Supabase client configuration for dashboard telemetry.
-
-#### `GET /api/config`
-- **Handler**: `backend/api/server/routes/account/config.js`
-- **Capability**: `research:read`
-- **Description**: Returns sanitized system runtime configuration parameters.
-
-#### `GET /api/system/infra`
-- **Handler**: `backend/api/server/routes/system/infra.js`
-- **Capability**: `execution:admin`
-- **Description**: Streams Docker container operational logs and runtime status without shell interpolation.
+### 6.1 Verification Matrix
+| Requirement ID | Description | Verification Method | Target Command / Test |
+|---|---|---|---|
+| `FR-API-001` | RBAC Capability Enforcement | Route Contract Test | `tests/api/routes_access.test.js` |
+| `FR-API-002` | MCP Safety Gating | Unit Test | `tests/api/mcp_gating.test.js` |
+| `FR-API-003` | Status & Health Routes | Integration Test | `npm run test:api` |
+| `FR-API-004` | Market Data Routes | Integration Test | `npm run test:api` |
+| `FR-API-005` | Backtesting Dispatch | Integration Test | `npm run test:api` |
+| `FR-API-006` | Kill Switch & Emergency Halt | Safety Test | `npm run test:safety` |
+| `FR-API-007` | Database & Infra Routes | Integration Test | `npm run test:api` |
+| `NFR-API-001` | Latency SLA (<10ms) | API Benchmark | `npm run test:api` |
+| `NFR-API-003` | Path Traversal Protection | Security Test | `tests/api/path_traversal.test.js` |
+| `NFR-API-004` | Prototype Pollution Guard | Security Test | `tests/api/body_parser.test.js` |

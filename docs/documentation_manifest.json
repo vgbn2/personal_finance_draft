@@ -1844,6 +1844,23 @@
       ]
     },
     {
+      "path": "docs/reference/specifications/execution_gateway_spec.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "package.json"
+      ],
+      "review_triggers": [
+        "spec-change"
+      ]
+    },
+    {
       "path": "docs/reference/specifications/kronos_pipeline.md",
       "type": "reference",
       "audience": [
@@ -1878,7 +1895,41 @@
       ]
     },
     {
+      "path": "docs/reference/specifications/sovt_storage_spec.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "package.json"
+      ],
+      "review_triggers": [
+        "spec-change"
+      ]
+    },
+    {
       "path": "docs/reference/specifications/stack_manifest.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "package.json"
+      ],
+      "review_triggers": [
+        "spec-change"
+      ]
+    },
+    {
+      "path": "docs/reference/specifications/sub_positions_risk_spec.md",
       "type": "reference",
       "audience": [
         "architects",
