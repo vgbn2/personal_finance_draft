@@ -2,6 +2,7 @@
 #include <span>
 
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 
 namespace sovereign::execution {
@@ -24,7 +25,7 @@ std::vector<double> buildVwapSlices(double total_quantity, std::span<const doubl
     }
 
     const double total_volume = std::accumulate(volume_profile.begin(), volume_profile.end(), 0.0);
-    if (total_volume <= 0.0) {
+    if (total_volume <= 0.0 || !std::isfinite(total_volume)) {
         return buildTwapSlices(total_quantity, volume_profile.size());
     }
 
