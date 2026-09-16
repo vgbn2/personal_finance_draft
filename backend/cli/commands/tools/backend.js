@@ -100,11 +100,14 @@ function runBackendCommand(commandArgs) {
   }
 
   try {
+    const parsed = JSON.parse(result.stdout);
+    const isOk = parsed.ok !== undefined ? parsed.ok : (result.status === 0 && !parsed.error);
     return {
       available: true,
+      ok: isOk,
       path: binary,
       exit_code: result.status,
-      ...JSON.parse(result.stdout),
+      ...parsed,
     };
   } catch (error) {
     return {
@@ -193,7 +196,9 @@ async function runBackendCommandAsync(commandArgs, label = 'Calculating', estima
       const emit = () => {
         if (errObj) return resolve({ available: true, ok: false, path: binary, error: errObj.message });
         try {
-          resolve({ available: true, path: binary, exit_code: code, ...JSON.parse(stdout) });
+          const parsed = JSON.parse(stdout);
+          const isOk = parsed.ok !== undefined ? parsed.ok : (code === 0 && !parsed.error);
+          resolve({ available: true, ok: isOk, path: binary, exit_code: code, ...parsed });
         } catch (e) {
           resolve({ available: true, ok: false, path: binary, exit_code: code, error: `Unable to parse backend JSON: ${e.message}`, stdout, stderr });
         }

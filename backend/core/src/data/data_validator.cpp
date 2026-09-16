@@ -13,7 +13,9 @@ bool isBefore(const std::string& lhs, const std::string& rhs) {
 void reject(DataQualityReport& report, const std::string& reason, std::vector<std::string>& bucket) {
     bucket.push_back(reason);
     report.ok = false;
-    report.rejected_records.push_back(reason);
+    if (&bucket != &report.rejected_records) {
+        report.rejected_records.push_back(reason);
+    }
 }
 
 } // namespace
