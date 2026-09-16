@@ -197,18 +197,18 @@ std::vector<std::vector<double>> AzranGhahramaniClustering::create_transition_ma
 }
 
 double AzranGhahramaniClustering::calculate_eigengap_separation(const std::vector<double>& sorted_eigenvalues) const {
-    if (sorted_eigenvalues.size() < 2) return 0.0;
-    
+    if (sorted_eigenvalues.size() < 2 || k_clusters_ <= 0) return 0.0;
+
     // Assuming sorted_eigenvalues is sorted in descending order (largest first)
     // The k-th eigengap is |lambda_k - lambda_{k+1}|
     // We check the gap at k_clusters_ - 1 (0-based indexing)
-    
-    size_t k_idx = static_cast<size_t>(k_clusters_) - 1;
+
+    size_t k_idx = static_cast<size_t>(k_clusters_ - 1);
     if (k_idx + 1 < sorted_eigenvalues.size()) {
         return std::abs(sorted_eigenvalues[k_idx] - sorted_eigenvalues[k_idx + 1]);
     }
-    
-    return 0.0; 
+
+    return 0.0;
 }
 
 std::vector<int> AzranGhahramaniClustering::fit_predict(const std::vector<std::vector<double>>& data) {
