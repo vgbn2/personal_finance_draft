@@ -115,14 +115,18 @@ export function SignalPanel() {
             <thead>
               <tr>
                 <th className="w-8">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     onChange={(e) => {
-                      if (e.target.checked) setSelectedIds(signals.filter(s => s.status === 'GATED').map(s => s.id));
+                      const gated = signals.filter(s => s.status === 'GATED');
+                      if (e.target.checked) setSelectedIds(gated.map(s => s.id));
                       else setSelectedIds([]);
                     }}
-                    checked={selectedIds.length === signals.length && signals.length > 0}
-                    className="accent-[var(--color-brand-cyan)] rounded" 
+                    checked={(() => {
+                      const gatedCount = signals.filter(s => s.status === 'GATED').length;
+                      return gatedCount > 0 && selectedIds.length === gatedCount;
+                    })()}
+                    className="accent-[var(--color-brand-cyan)] rounded"
                   />
                 </th>
                 <th>Asset</th>

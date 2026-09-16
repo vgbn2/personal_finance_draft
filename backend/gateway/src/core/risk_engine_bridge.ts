@@ -1,3 +1,7 @@
+/**
+ * @deprecated UNLINKED SHADOW MODULE.
+ * Canonical risk engine bridge and RiskContext reside in backend/gateway/src/index.ts.
+ */
 import { spawnSync } from 'node:child_process';
 import { BrokerAdapter, TradeOrder } from '../adapters/types';
 
