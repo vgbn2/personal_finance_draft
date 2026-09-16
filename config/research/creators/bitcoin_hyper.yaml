@@ -1,0 +1,33 @@
+creator:
+  id: "bitcoin_hyper"
+  name: "Bitcoin Hyper"
+  platform: "youtube"
+  channel_handle: "@BitcoinHyper"
+  channel_id: "UC_bitcoin_hyper_feed"
+  rss_feed_url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC_bitcoin_hyper_feed"
+  enabled: true
+  tier: "tier_2_active"
+
+profile:
+  asset_focus: ["crypto"]
+  analysis_style: "SENTIMENT"
+  typical_bias: "PERMA_BULL"
+  contrarian_role: "euphoria_exhaustion"
+
+reputation:
+  min_sample_count: 10
+  prior_brier_score: 0.25
+  initial_weight: 1.0
+  shill_discount_factor: 0.6
+
+transcript_nlp:
+  key_phrases:
+    bullish: ["massive pump incoming", "all time high ready", "supercycle", "explode soon", "parabolic move"]
+    bearish: ["healthy correction", "buy the dip", "last chance to buy cheap"]
+    invalidation: ["crucial line in the sand", "bear market confirmation", "support fails"]
+  ticker_regex: "\\b(BTC|BITCOIN|ETH|SOL|XRP|DOGE)\\b"
+
+execution_constraints:
+  time_horizon: "SWING"
+  volume_floor_usd: 25_000_000
+  max_portfolio_allocation_pct: 0.01

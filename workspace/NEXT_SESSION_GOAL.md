@@ -1,13 +1,11 @@
 # Next Session Goal
 
-## Primary Objective: Social Alpha NLP Pipeline Implementation & Multi-Source Market Ingestion
+## Primary Objective: Signal Integration & C++ Feature Frame
 
-1. **Social Alpha NLP Pipeline Implementation (`shared/lib/analysis/social_alpha.js`)**:
-   - Complete live YouTube RSS parsing, transcript acquisition, and local Whisper.cpp fallback integration.
-   - Wire sentiment scoring and Bayesian creator credibility weighting into the offline research suite.
-   - Run end-to-end replay simulations against historical crypto/equity sentiment fixtures.
+1. **Signal Integration & C++ Feature Frame**:
+   - Wire `signals` table from `storage/data/transcripts/warehouse.sqlite` into C++20 `sentiment_features.cpp` / `sentiment_features.hpp` and backtest replay suites.
+   - Implement contrarian alpha feature derivation in C++ vector backtesting pipeline.
 
-2. **Multi-Source Market Data Expansion**:
-   - Implement native C++ and JS adapter support for tick data streams and WebSocket depth orderbook snapshots.
-   - Expand `ts_index_storage.js` and `BinaryTsMerger` validation suites for multi-timeframe synchronization under high-frequency tick loads.
-   - Maintain 100% zero-key local verification and strict documentation cleanliness (`npm run verify:strict`).
+2. **Backtest Verification & Execution Benchmarking**:
+   - Benchmark C++ feature generation on historical crypto/equity OHLCV binary data combined with social sentiment signals.
+   - Ensure zero-key local verification and pass all test suites (`npm test`, `npm run test:core`, `npm run test:social`).
