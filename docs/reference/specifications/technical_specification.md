@@ -1,10 +1,36 @@
-# Technical Architecture Specification
+# Technical Architecture Software Requirements Specification (SRS)
 
-> **Diátaxis Type**: Reference & Specification | **Status**: Canonical | **Owner**: Core Engineering | **Review**: Continuous
+> **Document Standard**: IEEE 830-1998 / ISO/IEC/IEEE 29148:2018 | **Diátaxis Type**: Reference | **Status**: Canonical | **Owner**: Core Engineering | **Review**: Continuous
 
-## 1. Multi-Tier System Boundaries
+---
 
-Sovereign is structured into six strictly bounded functional tiers:
+## 1. Introduction
+
+### 1.1 Purpose
+This Software Requirements Specification (SRS) specifies the architectural constraints, subsystem boundaries, binary serialization formats, concurrency rules, and performance envelopes for the **Sovereign C++20 / Node.js Hybrid Engine**.
+
+### 1.2 Document Conventions
+- Functional requirements are tagged `FR-TECH-xxx` and non-functional requirements are tagged `NFR-TECH-xxx`.
+- Normative requirements follow RFC 2119 keyword semantics (`MUST`, `MUST NOT`, `SHOULD`, `MAY`).
+
+### 1.3 Intended Audience
+Systems architects, C++20 core engineers, Node.js runtime developers, and devops engineers.
+
+### 1.4 System Scope
+Encompasses the 6-tier functional architecture: Presentation Tier, Native HTTP Application Tier, Domain Runtime, Native C++20 Core (`sovereign_wealth`), Storage Subsystem (SOVT v1 binary files and SQLite WAL), and Execution Broker Gateways.
+
+### 1.5 References
+- [Product Software Requirements Specification](product_specification.md)
+- [SOVT v1 Binary Storage Specification](sovt_storage_spec.md)
+- [Pre-Trade Risk & Sub-Positions Specification](sub_positions_risk_spec.md)
+- [Broker & Execution Gateway Specification](execution_gateway_spec.md)
+
+---
+
+## 2. Overall Description
+
+### 2.1 Multi-Tier System Boundaries & Data Flow
+Sovereign enforces a strict directional dependency flow across six functional tiers:
 
 ```mermaid
 flowchart TD
@@ -56,123 +82,106 @@ flowchart TD
     Tier3 --> Tier6
 ```
 
+### 2.2 Subsystem Functions Summary
+- **Tier 1 (Presentation)**: Interactive command entry, streaming telemetry visualization, agent tool interfaces.
+- **Tier 2 (Application)**: Lightweight in-process route dispatch without heavyweight web frameworks.
+- **Tier 3 (Domain Runtime)**: In-memory market indicator caches, quote routing, and virtual sub-position accounting.
+- **Tier 4 (Native Core)**: High-performance vectorized analytics, Monte Carlo simulation, and microsecond risk checks.
+- **Tier 5 (Storage)**: Packed binary time-series files (`.bin`) and SQLite databases in WAL mode.
+- **Tier 6 (Execution)**: Broker protocol adapters with fail-closed safety circuits.
+
 ---
 
-## 2. Binary Time-Series Format (SOVT Version 1)
+## 3. Specific Functional Requirements
 
-All high-density historical and streaming market data is serialized to fixed-width IEEE-754 binary records on disk under `storage/data/ts/*.bin`.
+### 3.1 Binary Time-Series Format (SOVT Version 1)
+- **FR-TECH-001 (SOVT v1 Header Contract)**:
+  - *Description*: Every binary time-series file MUST begin with an 8-byte header:
+    - Offset `0x00..0x03`: ASCII magic identifier `SOVT` (`0x53, 0x4F, 0x56, 0x54`).
+    - Offset `0x04..0x07`: Unsigned 32-bit Little-Endian integer (`uint32_t`) storing the contiguous record count.
+  - *Error Handling*: Files with invalid magic bytes MUST be rejected immediately with `InvalidBinaryHeaderError`.
 
-### Header Layout (8 Bytes)
+- **FR-TECH-002 (48-Byte Packed Bar Record Layout)**:
+  - *Description*: Contiguous market records MUST be stored as packed 48-byte slices (`#pragma pack(push, 1)`), 8-byte aligned, little-endian IEEE-754:
 
-| Byte Offset | Field | Type | Encoded Value | Purpose |
+| Offset | Length | Data Type | Field | Description |
 |---|---|---|---|---|
-| `0x00..0x03` | Magic Bytes | 4 bytes ASCII | `0x53 0x4F 0x56 0x54` (`SOVT`) | File type identification |
-| `0x04..0x07` | Record Count | `uint32_t` (LE) | Variable Little-Endian | Total contiguous records in file |
+| `0x00..0x07` | 8 bytes | `double` (LE) | `ts_ms` | Epoch millisecond timestamp (UTC) |
+| `0x08..0x0F` | 8 bytes | `double` (LE) | `open` | Opening price |
+| `0x10..0x17` | 8 bytes | `double` (LE) | `high` | Maximum price |
+| `0x18..0x1F` | 8 bytes | `double` (LE) | `low` | Minimum price |
+| `0x20..0x27` | 8 bytes | `double` (LE) | `close` | Closing price |
+| `0x28..0x2F` | 8 bytes | `double` (LE) | `volume` | Cumulative bar volume |
 
-- **Offset `0x00..0x03`**: Magic identifier ASCII `SOVT` (`0x53, 0x4F, 0x56, 0x54`).
-- **Offset `0x04..0x07`**: Contiguous bar record count as an unsigned 32-bit little-endian integer (`uint32_t`).
+- **FR-TECH-003 (Random Access Seek & Stream Merger)**:
+  - *Description*: Sequential and binary search seeks MUST compute record offsets in $O(1)$ time: $\text{Offset}(i) = 8 + (i \times 48)$.
+  - *Processing*: The streaming two-pointer merger (`BinaryTsMerger`) MUST merge multiple time-series files in a single pass with $O(1)$ RAM overhead ($<5\text{MB}$ RSS).
 
-#### Byte-Level Memory Mapping (Arrow & ClickHouse Invariants)
+### 3.2 Single-Writer Concurrency & Locking
+- **FR-TECH-004 (POSIX Atomic File Lock)**:
+  - *Description*: Writers to time-series and cache files MUST acquire an atomic POSIX lock using `openSync(path, O_CREAT | O_EXCL | O_RDWR)`.
+  - *Concurrency*: Readers MUST open files with shared non-blocking read flags (`O_RDONLY`).
+  - *Error Handling*: On contention (`EEXIST`), the writer MUST back off exponentially up to 5 retries before throwing `FileLockContentionError`.
 
-| Byte Range | Section | Encoding | Field Description |
-|---|---|---|---|
-| `0x00..0x03` | Header | ASCII (`char[4]`) | Magic identifier: `SOVT` |
-| `0x04..0x07` | Header | `uint32_t` LE | Contiguous bar record count |
-| `0x08..0x0F` | Record 0 | IEEE-754 `f64` LE | Bar timestamp: `ts_ms` |
-| `0x10..0x17` | Record 0 | IEEE-754 `f64` LE | Opening price: `open` |
-| `0x18..0x1F` | Record 0 | IEEE-754 `f64` LE | Maximum price: `high` |
-| `0x20..0x27` | Record 0 | IEEE-754 `f64` LE | Minimum price: `low` |
-| `0x28..0x2F` | Record 0 | IEEE-754 `f64` LE | Closing price: `close` |
-| `0x30..0x37` | Record 0 | IEEE-754 `f64` LE | Cumulative volume: `volume` |
-| `0x38..` | Record 1..N-1 | 48-byte slices | Subsequent contiguous records |
-
-### Record Layout (48 Bytes per Bar)
-Each bar record is exactly 48 bytes packed (`#pragma pack(push, 1)`), 8-byte aligned, little-endian IEEE-754:
-
-| Field Name | Offset (Bytes) | Length | Data Type | Description |
-|---|---|---|---|---|
-| `ts_ms` | `0x00..0x07` | 8 | `double` (IEEE-754) | Epoch timestamp in milliseconds (UTC) |
-| `open` | `0x08..0x0F` | 8 | `double` (IEEE-754) | Opening bar price |
-| `high` | `0x10..0x17` | 8 | `double` (IEEE-754) | Maximum bar price |
-| `low` | `0x18..0x1F` | 8 | `double` (IEEE-754) | Minimum bar price |
-| `close` | `0x20..0x27` | 8 | `double` (IEEE-754) | Closing bar price |
-| `volume` | `0x28..0x2F` | 8 | `double` (IEEE-754) | Cumulative bar volume |
-
-### Memory & File Calculations
-- 1 year of 1-minute bars: $375 \times 252 = 94,500\text{ bars} \times 48\text{ bytes} \approx 4.53\text{ MB}$.
-- 10 years of 1-minute crypto bars: $5,256,000\text{ bars} \times 48\text{ bytes} \approx 252.28\text{ MB}$.
-- Seek complexity: $O(1)$ random access via binary search on timestamp offsets:
-
-  $$\text{Offset}(i) = 8 + (i \times 48)$$
-
----
-
-## 3. Concurrency & POSIX File Locking Architecture
-
-To guarantee single-writer authority without external database daemons, Sovereign implements POSIX file locks via `node:fs` open flags:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Writer as central-host (Backfill / Bot)
-    participant Lock as storage/data/cache/*.lock
-    participant Storage as storage/data/ts/*.bin
-    participant Reader as CLI / Dashboard / Reader
-
-    Writer->>Lock: openSync(path, O_CREAT | O_EXCL | O_RDWR)
-    alt Lock Acquired
-        Lock-->>Writer: File Descriptor
-        Writer->>Storage: Atomic Streaming Append / Merge
-        Writer->>Lock: closeSync(fd) & unlinkSync(path)
-    else Contention (EEXIST)
-        Lock-->>Writer: Throw FileLockContentionError
-        Writer->>Writer: Wait exponential backoff (max 5 retries)
-    end
-    Reader->>Storage: readSync(shared non-blocking open)
-    Storage-->>Reader: Immutable Byte Slices
-```
-
----
-
-## 4. Quantitative Engine & Drag Modeling
-
-### Execution Drag Formulation
-Simulated fills compute realistic transaction drag factoring bid-ask spread, linear market impact slippage, and broker maker/taker fees:
+### 3.3 Quantitative Engine & Drag Modeling
+- **FR-TECH-005 (Execution Drag Computation)**:
+  - *Description*: Backtester fills MUST incorporate spread, broker fees, and linear slippage:
 
 $$\text{Effective Price}_{\text{long}} = P_{\text{close}} \times \left(1 + \frac{\text{Spread}_{\text{bps}}}{20,000}\right) \times \left(1 + \text{Slippage}\right)$$
 
 $$\text{Cost}_{\text{total}} = \text{Notional} \times \left(\frac{\text{Fee}_{\text{bps}}}{10,000} + \frac{\text{Spread}_{\text{bps}}}{20,000} + \text{Slippage}\right)$$
 
-Where default cost parameters:
-
-- Equities (Liquid ETF): $\text{Spread} = 2\text{ bps}$, $\text{Fee} = 0\text{ bps}$ (Alpaca zero-commission), $\text{Slippage} = 3\text{ bps}$.
-- Crypto (Spot): $\text{Spread} = 5\text{ bps}$, $\text{Fee} = 10\text{ bps}$ (Gate.io taker), $\text{Slippage} = 5\text{ bps}$.
-
-### Monte Carlo Bootstrap Resampling
-- Algorithm: `xorshift64` pseudo-random number generator seeded with entropy.
-- Execution: 1,000 to 10,000 independent trade-sequence permutations with replacement.
-- Metrics: 95th and 99th percentile conditional Value-at-Risk (CVaR), maximum drawdown distribution, and Sharpe ratio confidence intervals.
+- **FR-TECH-006 (Monte Carlo Resampling)**:
+  - *Description*: Resampling MUST use `xorshift64` to generate 1,000–10,000 trade sequence permutations with replacement to derive 95th/99th percentile CVaR.
 
 ---
 
-## 5. Toolchain & Runtime Baseline
+## 4. External Interface Requirements
 
-| Component | Minimum Version | Verified Toolchain | Purpose |
+### 4.1 Native Application Server Interface
+- Native `node:http` server running on port `8787` with zero Express framework dependencies.
+- Supports 40 discrete route keys categorized into RBAC capability tiers (`public`, `read`, `trade`, `admin`).
+
+### 4.2 Broker Protocol Adapters
+| Adapter | Transport Protocol | Instruments | Attribution Signature |
 |---|---|---|---|
-| Node.js | `v20.0.0+` | `v20.x`, `v22.x` | Application server, TUI, CLI, broker gateways |
-| C++ Compiler | `C++20` | `clang++ 14+`, `g++ 11+` | Native core engine compilation |
-| CMake | `3.20.0+` | `3.25.1+` | Build system configuration (`CMakeLists.txt`) |
-| OpenMP | Standard OpenMP | `libgomp`, `libomp` | Multi-threaded backtesting & grid search |
-| OS Platform | POSIX / Linux | Ubuntu 24.04 LTS (Proxmox) | Production deployment host (`hpdesk-1`) |
+| `AlpacaAdapter` | HTTPS / WSS | Equities, Crypto | `client_order_id` (36 chars) |
+| `PolymarketAdapter` | HTTPS CLOB / Gamma | Prediction Markets | EIP-712 Salted Nonce |
+| `Mt5Adapter` | TCP Port 8282 (NDJSON) | Forex, Indices, CFDs | 64-bit `ORDER_MAGIC` |
+| `PaperLedger` | In-Memory / JSONL | All Instruments | Synthetic Nonce |
 
 ---
 
-## 6. Broker Execution & Gateway Specifications
+## 5. Non-Functional Requirements
 
-| Gateway Adapter | Protocol / Transport | Supported Instruments | Position Accounting | Strategy Attribution |
-|---|---|---|---|---|
-| **Alpaca** (`AlpacaAdapter`) | REST + WebSocket | US Equities, Crypto | Broker Net Holdings | `client_order_id` (36 chars) |
-| **Polymarket** (`PolymarketAdapter`) | REST (CLOB) | Binary Prediction Contracts | Virtual Paper Ledger | Salted Nonce / Proxy Wallet |
-| **MetaTrader 5** (`Mt5Adapter`) | TCP Server 8282 (NDJSON) | FX, Commodities, Indices, CFDs | Broker Net/Hedged Tickets | 64-bit `ORDER_MAGIC` Bitmask |
-| **Simulation** (`SimulationAdapter`) | In-Memory Engine | All Synthetic Feeds | Local Ledger State | Synthetic Nonce |
+### 5.1 Performance & Latency Requirements
+- **NFR-TECH-001 (Pre-Trade Risk Latency)**: Native C++ PreTradeRisk gate evaluation latency MUST be $<15\mu\text{s}$.
+- **NFR-TECH-002 (Backtest Throughput)**: FrameBacktester MUST achieve $>100,000\text{ bars/sec}$ per CPU core.
+- **NFR-TECH-003 (Sequential Read Speed)**: Binary TS reader MUST achieve $>50,000,000\text{ bars/sec}$ via memory-mapped sequential scan.
+- **NFR-TECH-004 (API Response Latency)**: P95 response time on REST endpoints MUST be $<10\text{ms}$.
 
+### 5.2 System Reliability & Portability
+- **NFR-TECH-005 (Toolchain Baseline)**: The C++ codebase MUST compile warning-free with `C++20` on GCC 11+ and Clang 14+ via CMake 3.20+.
+- **NFR-TECH-006 (Node.js Portability)**: All JavaScript/TypeScript modules MUST run natively on Node.js LTS v20.x and v22.x without binary native addons outside the pre-compiled `sovereign_wealth` executable.
+
+---
+
+## 6. Other Requirements & Verification Matrix
+
+### 6.1 Data Dictionary
+- `SOVT_Header`: `[char magic[4], uint32_t record_count]` (8 bytes).
+- `SOVT_Record`: `[double ts_ms, double open, double high, double low, double close, double volume]` (48 bytes).
+
+### 6.2 Verification Matrix
+| Requirement ID | Description | Verification Method | Target Command / Test |
+|---|---|---|---|
+| `FR-TECH-001` | SOVT v1 Header Magic | Binary Format Test | `npm run test:data` |
+| `FR-TECH-002` | 48-byte Packed Bar | CTest Unit Test | `backend/core/tests/test_binary_ts_reader.cpp` |
+| `FR-TECH-003` | Two-Pointer TS Merger | Memory & Speed CTest | `backend/core/tests/test_binary_ts_merger.cpp` |
+| `FR-TECH-004` | Atomic POSIX Lock | Concurrency Stress Test | `npm run test:structure` |
+| `FR-TECH-005` | Cost & Drag Model | CTest Drag Test | `backend/core/tests/test_cost_model.cpp` |
+| `FR-TECH-006` | Monte Carlo Resampling | CTest Stats Test | `backend/core/tests/test_stats_engine.cpp` |
+| `NFR-TECH-001` | Risk Gate Latency (<15µs) | Benchmark Test | `backend/core/tests/test_pre_trade_risk.cpp` |
+| `NFR-TECH-002` | Backtest Throughput | Vector Benchmark | `backend/core/tests/test_frame_backtester.cpp` |
+| `NFR-TECH-003` | Sequential Read Speed | Reader Benchmark | `backend/core/tests/test_binary_ts_reader.cpp` |
+| `NFR-TECH-005` | C++20 Toolchain Build | Native Compilation | `npm run native:build` (34/34 CTests) |
