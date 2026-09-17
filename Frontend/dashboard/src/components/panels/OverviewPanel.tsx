@@ -160,32 +160,41 @@ export function OverviewPanel() {
           </div>
           <div className="flex-1 p-4 flex flex-col h-full overflow-hidden">
             {correlation ? (
-              <div className="flex-1 grid grid-cols-10 gap-1 h-full font-mono text-[7px] text-[var(--text-muted)] text-center">
-                <div className="col-span-10 grid grid-cols-10 gap-1 mb-1">
+              <div
+                className="flex-1 grid gap-1 h-full font-mono text-[7px] text-[var(--text-muted)] text-center"
+                style={{ gridTemplateColumns: `repeat(${correlation.labels.length + 1}, minmax(0, 1fr))` }}
+              >
+                <div
+                  className="grid gap-1 mb-1"
+                  style={{
+                    gridColumn: `span ${correlation.labels.length + 1} / span ${correlation.labels.length + 1}`,
+                    gridTemplateColumns: `repeat(${correlation.labels.length + 1}, minmax(0, 1fr))`
+                  }}
+                >
                   <div></div>
                   {correlation.labels.map(a => <div key={a} className="flex items-center justify-center truncate">{a}</div>)}
                 </div>
-                
+
                 {correlation.labels.map((assetRow, r) => (
                   <React.Fragment key={assetRow}>
                     <div className="flex items-center justify-end pr-2 truncate">{assetRow}</div>
                     {correlation.labels.map((assetCol, c) => {
                       const val = correlation.values[r][c];
-                      
-                      const red = val < 0 ? Math.floor(Math.abs(val) * 255) : 243;
-                      const green = val > 0 ? Math.floor(Math.abs(val) * 200 + 55) : 244;
-                      const blue = val < 0 ? Math.floor(Math.abs(val) * 255) : 246;
-                      
-                      const bg = r === c ? 'var(--color-brand-green)' : `rgb(${red}, ${green}, ${blue})`;
-                      const opacity = r === c ? 0.8 : Math.max(0.2, Math.abs(val));
+
+                      const bg = r === c
+                        ? 'var(--color-brand-green)'
+                        : val < 0
+                          ? `rgb(${Math.floor(Math.abs(val) * 200 + 40)}, 30, 45)`
+                          : `rgb(20, ${Math.floor(Math.abs(val) * 180 + 40)}, 60)`;
+                      const opacity = r === c ? 0.9 : Math.max(0.3, Math.abs(val));
 
                       return (
-                        <div 
-                          key={`${r}-${c}`} 
-                          className="w-full aspect-square relative flex items-center justify-center rounded-[1px] transition-all hover:scale-110 hover:z-10 hover:shadow-lg cursor-crosshair" 
+                        <div
+                          key={`${r}-${c}`}
+                          className="w-full aspect-square relative flex items-center justify-center rounded-[1px] transition-all hover:scale-110 hover:z-10 hover:shadow-lg cursor-crosshair"
                           style={{ backgroundColor: bg, opacity }}
                         >
-                          <span className="font-mono text-[8px] text-black font-bold pointer-events-none tracking-tighter">
+                          <span className="font-mono text-[8px] text-white font-bold pointer-events-none tracking-tighter">
                             {val.toFixed(2)}
                           </span>
                         </div>

@@ -54,11 +54,15 @@ const { reportSnapshotIntegrity, runBackendIntegrity } = require('./backend_inte
 
 const { sigmaPrediction, computeSigmaState, renderSigmaFrame, visualLineCount, runBackendVisualize } = require('./backend_visualize.js');
 
+const { findBackendBinary } = require('../../../../shared/lib/runtime/paths.js');
+const { backendAvailable } = require('../../../../shared/lib/runtime/backend_bridge.js');
+
 /**
  * Locates the C++ backend binary among known candidate paths.
  */
 function locateBackendBinary() {
-  return BACKEND_CANDIDATES.find((candidate) => fs.existsSync(candidate)) || null;
+  backendAvailable();
+  return findBackendBinary() || BACKEND_CANDIDATES.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
 /**

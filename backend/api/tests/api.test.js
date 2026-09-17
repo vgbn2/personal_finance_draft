@@ -213,7 +213,7 @@ test('web API exposes backend health, data summary, and correlation', async (t) 
     assert.equal(backtestPayload.type, 'backtest_summary');
     assert.equal(backtestPayload.stats.type, 'backend_stats');
     assert.equal(backtestPayload.stats.ok, true);
-    assert.ok(typeof backtestPayload.stats.equity_source === 'string');
+    assert.equal(typeof backtestPayload.stats.equity_source, 'string');
     assert.equal(backtestPayload.stats.equity_source, backtestReportPath);
     assert.equal(typeof backtestPayload.summary.available, 'boolean');
     if (backtestPayload.summary.available) {

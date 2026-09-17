@@ -180,10 +180,15 @@ async function deriveLiveStrategySignal({ strategy, timeframe = '1d', threshold 
   };
 }
 
+const MAX_STRATEGY_AUDIT_LOG_BYTES = 5 * 1024 * 1024;
+
 function logStrategyAuditRecord(record) {
   try {
     const dir = path.dirname(STRATEGY_AUDIT_LOG_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (fs.existsSync(STRATEGY_AUDIT_LOG_PATH) && fs.statSync(STRATEGY_AUDIT_LOG_PATH).size > MAX_STRATEGY_AUDIT_LOG_BYTES) {
+      fs.renameSync(STRATEGY_AUDIT_LOG_PATH, `${STRATEGY_AUDIT_LOG_PATH}.1`);
+    }
     const payload = JSON.stringify({ timestamp: new Date().toISOString(), ...record }) + '\n';
     fs.appendFileSync(STRATEGY_AUDIT_LOG_PATH, payload, 'utf8');
   } catch (_) {

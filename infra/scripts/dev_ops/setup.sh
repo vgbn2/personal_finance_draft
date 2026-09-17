@@ -2,6 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
 
 if [[ -f "$repo_root/package-lock.json" ]]; then
   npm install

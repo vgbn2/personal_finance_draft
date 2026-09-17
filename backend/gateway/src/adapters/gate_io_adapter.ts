@@ -112,7 +112,10 @@ export class GateIoAdapter implements BrokerAdapter {
   async getPortfolioBalance(): Promise<Record<string, number>> {
     console.log(`[GATE.IO] Fetching account balances`);
     if (!this.hasCredentials()) {
-      return { USDT: 10000, BTC: 0.5 };
+      if (!this.simulateIfMissingCredentials) {
+        throw new Error('Gate.io credentials are not configured');
+      }
+      return {};
     }
 
     const response = await this.requestJson('GET', '/spot/accounts');

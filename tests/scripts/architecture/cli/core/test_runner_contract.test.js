@@ -64,10 +64,14 @@ test('default discovery expands only canonical test trees into isolated file job
   assert.ok(resolved.every((target) => (
     target.includes(`${path.sep}tests${path.sep}scripts${path.sep}`)
     || target.includes(`${path.sep}tests${path.sep}web${path.sep}`)
+    || target.includes(`${path.sep}tests${path.sep}analysis${path.sep}`)
+    || target.includes(`${path.sep}backend${path.sep}api${path.sep}tests${path.sep}`)
   )));
   assert.deepEqual(DEFAULT_TEST_TARGETS, [
     'tests/scripts/**/*.test.js',
     'tests/web/**/*.test.js',
+    'tests/analysis/**/*.test.js',
+    'backend/api/tests/**/*.test.js',
   ]);
 });
 

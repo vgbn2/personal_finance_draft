@@ -135,6 +135,11 @@ function saveSubPositionsLedger(ledger, filePath = DEFAULT_LEDGER_PATH) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
+  // Cap history to last 100 entries to prevent NVMe write amplification
+  if (Array.isArray(ledger.history) && ledger.history.length > 100) {
+    ledger.history = ledger.history.slice(-100);
+  }
+
   ledger.last_updated = new Date().toISOString();
   const tmpPath = `${filePath}.${Date.now()}.${crypto.randomBytes(2).toString('hex')}.tmp`;
   fs.writeFileSync(tmpPath, JSON.stringify(ledger, null, 2), 'utf8');
