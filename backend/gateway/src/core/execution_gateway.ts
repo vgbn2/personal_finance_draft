@@ -1,3 +1,7 @@
+/**
+ * @deprecated UNLINKED SHADOW MODULE.
+ * Canonical execution gateway and risk engine integration reside in backend/gateway/src/index.ts.
+ */
 import { BrokerAdapter, TradeOrder } from '../adapters/types';
 import { AlpacaAdapter } from '../adapters/alpaca_adapter';
 import { RiskEngineBridge, RiskContext, buildRiskContext } from './risk_engine_bridge';

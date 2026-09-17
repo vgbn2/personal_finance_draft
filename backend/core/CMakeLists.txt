@@ -13,6 +13,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
+find_package(OpenMP)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror -Wpedantic)
     if(SOVEREIGN_ENABLE_SANITIZERS)
@@ -148,6 +150,10 @@ target_include_directories(sovereign_core PUBLIC src include)
 target_compile_definitions(sovereign_core PRIVATE
     SOVEREIGN_ONNX_RUNTIME_ENABLED=$<BOOL:${SOVEREIGN_ENABLE_ONNX_RUNTIME}>
 )
+
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(sovereign_core PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 if(SOVEREIGN_ENABLE_ONNX_RUNTIME)
     target_link_libraries(sovereign_core PRIVATE onnxruntime::onnxruntime)

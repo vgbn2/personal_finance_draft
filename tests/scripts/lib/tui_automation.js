@@ -1,6 +1,7 @@
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { setTimeout: delay } = require('node:timers/promises');
+const { VirtualTerminalScreen } = require('./virtual_terminal_screen');
 
 const ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
 const CTRL_RE = /[\u0000-\u001f\u007f]/g;
@@ -60,11 +61,18 @@ function createTuiSession(options = {}) {
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 
+  const virtualScreen = new VirtualTerminalScreen({
+    cols: options.cols || 80,
+    rows: options.rows || 30,
+  });
+
   let stdout = '';
   let stderr = '';
 
   child.stdout.on('data', (chunk) => {
-    stdout += chunk.toString('utf8');
+    const str = chunk.toString('utf8');
+    stdout += str;
+    virtualScreen.write(str);
   });
   child.stderr.on('data', (chunk) => {
     stderr += chunk.toString('utf8');
@@ -100,6 +108,23 @@ function createTuiSession(options = {}) {
     throw new Error(`Timed out waiting for ${pattern}\n--- transcript tail ---\n${tail}`);
   }
 
+  async function waitForVisual(pattern, timeoutMs = 5000) {
+    const matcher = toMatcher(pattern);
+    const deadline = Date.now() + timeoutMs;
+    let last = '';
+
+    while (Date.now() < deadline) {
+      last = virtualScreen.getVisualScreen();
+      if (matcher.test(last)) {
+        return last;
+      }
+      await delay(50);
+    }
+
+    const tail = last.slice(-4000);
+    throw new Error(`Timed out waiting for visual pattern ${pattern}\n--- visual screen ---\n${tail}`);
+  }
+
   async function waitForExit(timeoutMs = 5000) {
     return await Promise.race([
       closed,
@@ -113,6 +138,14 @@ function createTuiSession(options = {}) {
     return normalizeTranscript(stdout + stderr);
   }
 
+  function getVisualScreen() {
+    return virtualScreen.getVisualScreen();
+  }
+
+  function getVisualLine(row) {
+    return virtualScreen.getVisualLine(row);
+  }
+
   function kill(signal = 'SIGTERM') {
     if (!child.killed) {
       child.kill(signal);
@@ -121,16 +154,29 @@ function createTuiSession(options = {}) {
 
   return {
     child,
+    screen: virtualScreen,
     send,
     waitFor,
+    waitForVisual,
     waitForExit,
     snapshot,
+    getVisualScreen,
+    getVisualLine,
     kill,
     get stdout() {
       return normalizeTranscript(stdout);
     },
     get stderr() {
       return normalizeTranscript(stderr);
+    },
+    get rawStdout() {
+      return stdout;
+    },
+    get rawStderr() {
+      return stderr;
+    },
+    get syncFrames() {
+      return virtualScreen.syncFrames;
     },
   };
 }

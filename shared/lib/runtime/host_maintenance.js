@@ -38,7 +38,7 @@ function newestCanonicalBinMtime(root) {
       const fullPath = path.join(current, entry.name);
       if (entry.isDirectory()) pending.push(fullPath);
       else if (entry.isFile() && entry.name.endsWith('.bin')) {
-        const mtimeMs = fs.statSync(fullPath).mtimeMs;
+        const mtimeMs = fs.statSync(fullPath).mtime.getTime();
         if (newest === null || mtimeMs > newest) newest = mtimeMs;
       }
     }

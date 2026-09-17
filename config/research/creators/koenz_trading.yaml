@@ -1,0 +1,33 @@
+creator:
+  id: "koenz_trading"
+  name: "Koenz Trading"
+  platform: "youtube"
+  channel_handle: "@KoenzTrading"
+  channel_id: "UCm9tXw7xZ2x_1K5q7v_4uLQ"
+  rss_feed_url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCm9tXw7xZ2x_1K5q7v_4uLQ"
+  enabled: true
+  tier: "tier_2_active"
+
+profile:
+  asset_focus: ["crypto", "indices"]
+  analysis_style: "ORDERFLOW"
+  typical_bias: "MOMENTUM"
+  contrarian_role: "trap_detection"
+
+reputation:
+  min_sample_count: 10
+  prior_brier_score: 0.25
+  initial_weight: 1.0
+  shill_discount_factor: 1.0
+
+transcript_nlp:
+  key_phrases:
+    bullish: ["liquidity swept", "delta turning green", "orderbook bids absorbing", "bounce from support"]
+    bearish: ["absorption at resistance", "delta divergence", "liquidity grab high", "selling pressure"]
+    invalidation: ["invalidation tick", "lost level", "stop out level"]
+  ticker_regex: "\\b(BTC|ETH|SOL|NQ|ES)\\b"
+
+execution_constraints:
+  time_horizon: "SCALP"
+  volume_floor_usd: 15_000_000
+  max_portfolio_allocation_pct: 0.01
