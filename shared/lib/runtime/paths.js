@@ -1,5 +1,6 @@
 const path = require('node:path');
 const fs = require('node:fs');
+const os = require('node:os');
 const { parseYamlRecursive } = require('./config_loader');
 
 /**
@@ -74,12 +75,22 @@ function loadToolsConfig() {
     return config;
 }
 
+function resolveCandidatePath(c) {
+    if (typeof c !== 'string') return c;
+    if (c === '~') return os.homedir();
+    if (c.startsWith('~/') || c.startsWith('~\\')) {
+        return path.join(os.homedir(), c.slice(2));
+    }
+    return c;
+}
+
 /**
  * Finds an external tool by checking candidates in config or environment.
  */
 function findTool(toolName, envVar) {
-    if (envVar && process.env[envVar] && fs.existsSync(process.env[envVar])) {
-        return process.env[envVar];
+    if (envVar && process.env[envVar]) {
+        const custom = resolveCandidatePath(process.env[envVar]);
+        if (fs.existsSync(custom)) return custom;
     }
 
     const config = loadToolsConfig();
@@ -88,10 +99,14 @@ function findTool(toolName, envVar) {
         // Check all candidate lists/properties
         for (const list of Object.values(toolSpec)) {
             if (Array.isArray(list)) {
-                const found = list.find(c => fs.existsSync(c) || (!c.includes('\\') && !c.includes('/') && which(c)));
-                if (found) return found;
-            } else if (typeof list === 'string' && fs.existsSync(list)) {
-                return list;
+                const found = list.find(c => {
+                    const resolved = resolveCandidatePath(c);
+                    return fs.existsSync(resolved) || (!resolved.includes('\\') && !resolved.includes('/') && which(resolved));
+                });
+                if (found) return resolveCandidatePath(found);
+            } else if (typeof list === 'string') {
+                const resolved = resolveCandidatePath(list);
+                if (fs.existsSync(resolved)) return resolved;
             }
         }
     }

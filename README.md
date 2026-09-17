@@ -37,7 +37,7 @@ flowchart TD
     STRAT --> POLICY
 
     PAPER["Simulated Virtual Ledger<br/>- Checksum-chained paper ledger<br/>- 100% Zero-Key, simulated cash<br/>backend/gateway/src/paper_ledger.js"]
-    GATEWAY["Gated Production Gateway<br/>- Alpaca, Gate.io, Polymarket<br/>- Isolated VM (hpdesk-1)<br/>- Hardware PIN & Token Auth"]
+    GATEWAY["Gated Production Gateway<br/>- Alpaca, Gate.io, Polymarket, MetaTrader 5<br/>- Isolated VM (hpdesk-1)<br/>- Hardware PIN & Token Auth"]
 
     POLICY --> PAPER
     POLICY --> GATEWAY
@@ -166,6 +166,10 @@ Every TUI capability can be invoked headlessly in CI/CD pipelines, background sc
 | | `paper` | `--strategy <yaml>`, `--symbol <sym>` | Run zero-capital simulated strategy execution against virtual paper ledger. |
 | | `trade` | `--symbol <sym>`, `--side buy\|sell`, `--qty <n>` | Gated broker order submission (requires central-host profile and PIN auth). |
 | | `polymarket` | `--action order\|cancel\|positions` | Dispatch prediction market probability token trades to Polymarket CLOB. |
+| | `mt5 doctor` | `--slot <slot>` | Verify MT5 terminal binary, TCP port 8282, and profile vault status. |
+| | `mt5 profile` | `list\|add\|remove` | Manage AES-256-GCM encrypted MT5 credential slots (`propfirm`, `test`, `live`). |
+| | `mt5 connect` | `--slot <slot>`, `--headless` | Launch MT5 terminal with ephemeral config and establish TCP bridge. |
+| | `mt5 buy\|sell` | `--symbol <sym>`, `--lots <n>` | Execute forex/CFD market orders with `MagicCodec` strategy attribution. |
 
 ---
 
@@ -182,6 +186,7 @@ Every TUI capability can be invoked headlessly in CI/CD pipelines, background sc
 | **Prediction Markets & CLOB Archive** | • Dual-stream Polymarket Gamma REST & CLOB WebSocket feeds<br>• Sub-second Level 2 orderbook snapshot JSONL archiving<br>• Double-entry virtual paper ledger with rolling SHA-256 state digest verification<br>• Binary outcome oracle settlement and Kelly criterion staking math | `shared/lib/market/polymarket_history.js`<br>`backend/gateway/src/paper_ledger.js`<br>`storage/data/archive/polymarket/` | **3/10** | [06. Prediction Markets](docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md) |
 | **Zero-Trust Security & Deployment** | • Scoped RBAC capability model (`research:read`, `research:run`, `execution:paper`)<br>• 4-tier automated test execution DAG (`safety` $\to$ `structure` $\to$ `core` $\to$ `data`)<br>• Multi-container Docker Compose mesh with strict CPU/RAM quotas<br>• HPDesk Proxmox VM deployment topologies and Tailscale networking | `backend/mcp_server/lib/access_control.ts`<br>`infra/docker/docker-compose.yml`<br>`backend/api/server.js` | **2/10** | [07. Security & Deployment](docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md) |
 | **Financial Engineering Primer** | • Distributed systems mental models for quantitative finance<br>• Limit order book (LOB) bid-ask queue depth and market order slippage traces<br>• Candlestick OHLCV anatomy and logarithmic vs arithmetic returns<br>• Portfolio math: Sharpe, Sortino, Calmar, Max Drawdown, and VaR equations | `docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md` | **1/10** | [08. Financial Primer](docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md) |
+| **MetaTrader 5 Bridge & Trade Tree** | • Local TCP NDJSON streaming bridge (`127.0.0.1:8282`) to MQL5 EA<br>• AES-256-GCM profile vault (`storage/secrets/mt5/`) with ephemeral launch config<br>• 64-bit `MagicCodec` bitmask attribution (`ORDER_MAGIC`) without EA changes<br>• Multi-environment Wine / Windows / Docker (`sv-mt5`) headless execution | `backend/gateway/src/adapters/mt5_adapter.ts`<br>`tools/mt5/SovereignTradeBridge.mq5`<br>`shared/lib/profiles/mt5_profiles.js` | **3/10** | [Broker Gateway Setup](docs/how_to/broker_gateway_setup.md) |
 
 ---
 
