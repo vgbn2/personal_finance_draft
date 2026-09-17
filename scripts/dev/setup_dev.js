@@ -72,6 +72,8 @@ function verifySuites() {
   run('npm', ['run', 'test:core'], { label: 'C++ Core Unit & Integration Tests' });
 }
 
+const { installHooks } = require('./install_git_hooks.js');
+
 function main() {
   console.log('\x1b[1m\x1b[34m========================================================\x1b[0m');
   console.log('\x1b[1m\x1b[34m   Sovereign Trading Platform - Developer Setup        \x1b[0m');
@@ -79,6 +81,7 @@ function main() {
   console.log('Stack: Node.js (v20+) + C++20 (CMake). No Python venv required.');
   console.log('Mode: Zero-key local development (all fixtures & ledgers simulated).');
 
+  installHooks();
   ensureEnv();
   installWorkspaces();
   buildNative();
