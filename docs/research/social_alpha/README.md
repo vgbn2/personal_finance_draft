@@ -19,7 +19,7 @@ This research module defines an alternative alpha generation pipeline extracting
 
 ## Pipeline Topology
 
-```
+```text
 [YouTube / X / RSS Feed]
            │
            ▼
