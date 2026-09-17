@@ -1350,9 +1350,10 @@ export async function main() {
   }
   const command = (args[0] || '').toLowerCase();
   const wantsLive = args.includes('--live');
+  const broker = parseOptionValue(args, '--broker')?.toLowerCase() || (command === 'polymarket' ? 'polymarket' : 'alpaca');
   let runtimePolicy = resolveRuntimePolicy({
     args,
-    broker: command === 'polymarket' ? 'polymarket' : 'alpaca',
+    broker,
   });
   let isLive = runtimePolicy.can_execute;
   const useJson = args.includes('--json');
@@ -1379,7 +1380,7 @@ export async function main() {
       process.env.SOVEREIGN_EXECUTION_AUTHORIZED = 'true';
       runtimePolicy = resolveRuntimePolicy({
         args,
-        broker: 'alpaca',
+        broker,
         executionAuthorized: true,
       });
       if (!runtimePolicy.can_execute) {
@@ -1399,8 +1400,6 @@ export async function main() {
     process.exit(1);
   }
 
-  const broker = parseOptionValue(args, '--broker')?.toLowerCase() || 'alpaca';
-
   const adapter = broker === 'mt5'
     ? new Mt5Adapter()
     : isLive
@@ -1416,8 +1415,9 @@ export async function main() {
     adapter,
     paperMaxNotional: providerPaper ? Number(paperMaxNotional || process.env.ALPACA_PAPER_MAX_NOTIONAL || '100') : undefined,
   });
-  
-  if (command === 'buy' || command === 'sell') {
+
+  try {
+    if (command === 'buy' || command === 'sell') {
     // SANITIZATION
     const rawSymbol = String(args[1] || '').toUpperCase();
     const symbol = rawSymbol.replace(/[^A-Z0-9.\-_]/g, '');
@@ -1532,25 +1532,37 @@ export async function main() {
       process.exit(1);
     }
   } else if (command === 'balance') {
-    const balances = await adapter.getPortfolioBalance();
-    if (useJson) {
+    try {
+      const balances = await adapter.getPortfolioBalance();
+      if (useJson) {
         console.log(JSON.stringify(balances));
-    } else {
+      } else {
         console.log(`[GATEWAY] Current Portfolio Balances:`, balances);
+      }
+    } catch (err: any) {
+      if (useJson) console.log(JSON.stringify({ ok: false, error: err.message }));
+      else console.error(`[GATEWAY] Balance error: ${err.message}`);
+      process.exitCode = 1;
     }
   } else if (command === 'positions') {
-    const rawPositions = await adapter.getPositions();
-    let positions = rawPositions;
     try {
-      const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');
-      positions = subLedger.reconcilePositions(rawPositions);
-    } catch {
-      // Fallback to raw positions if ledger unavailable
-    }
-    if (useJson) {
-      console.log(JSON.stringify({ ok: true, positions }));
-    } else {
-      console.log(`[GATEWAY] Current Positions:`, positions);
+      const rawPositions = await adapter.getPositions();
+      let positions = rawPositions;
+      try {
+        const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');
+        positions = subLedger.reconcilePositions(rawPositions);
+      } catch {
+        // Fallback to raw positions if ledger unavailable
+      }
+      if (useJson) {
+        console.log(JSON.stringify({ ok: true, positions }));
+      } else {
+        console.log(`[GATEWAY] Current Positions:`, positions);
+      }
+    } catch (err: any) {
+      if (useJson) console.log(JSON.stringify({ ok: false, error: err.message }));
+      else console.error(`[GATEWAY] Positions error: ${err.message}`);
+      process.exitCode = 1;
     }
   } else if (command === 'aggregate_portfolio') {
     const isVerbose = !useJson;
@@ -2220,6 +2232,15 @@ export async function main() {
     console.error(`Unknown command: ${command}`);
     printUsage();
     process.exitCode = 1;
+  }
+  } finally {
+    if (typeof (adapter as any)?.stop === 'function') {
+      try {
+        await (adapter as any).stop();
+      } catch {
+        // ignore adapter teardown error
+      }
+    }
   }
 }
 

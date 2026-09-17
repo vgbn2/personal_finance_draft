@@ -16,6 +16,7 @@ export interface Mt5AdapterOptions {
   port?: number;
   host?: string;
   timeoutMs?: number;
+  connectTimeoutMs?: number;
   autoStartServer?: boolean;
 }
 
@@ -30,11 +31,13 @@ export class Mt5Adapter implements BrokerAdapter {
   private readonly port: number;
   private readonly host: string;
   private readonly timeoutMs: number;
+  private readonly connectTimeoutMs: number;
 
   constructor(options: Mt5AdapterOptions = {}) {
     this.port = options.port ?? Number(process.env.MT5_BRIDGE_PORT || '8282');
     this.host = options.host ?? (process.env.MT5_BRIDGE_HOST || '127.0.0.1');
     this.timeoutMs = options.timeoutMs ?? 15000;
+    this.connectTimeoutMs = options.connectTimeoutMs ?? Number(process.env.MT5_CONNECT_TIMEOUT_MS || '1500');
     if (options.autoStartServer !== false) {
       this.startServer().catch((err) => {
         console.error(`[MT5-BRIDGE] Server initialization error: ${err.message}`);
@@ -109,6 +112,19 @@ export class Mt5Adapter implements BrokerAdapter {
     }
   }
 
+  private async ensureConnected(timeoutMs?: number): Promise<void> {
+    if (this.socket && this.socket.writable && this.terminalInfo) return;
+    const timeout = timeoutMs ?? this.connectTimeoutMs;
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      if (this.socket && this.socket.writable && this.terminalInfo) return;
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    if (!this.socket || !this.socket.writable || !this.terminalInfo) {
+      throw new Error('MT5 terminal bridge is not connected');
+    }
+  }
+
   private sendLine(payload: any) {
     if (!this.socket || !this.socket.writable) {
       throw new Error('MT5 terminal bridge is not connected');
@@ -116,7 +132,8 @@ export class Mt5Adapter implements BrokerAdapter {
     this.socket.write(JSON.stringify(payload) + '\n');
   }
 
-  private request<T>(command: any, timeoutOverrideMs?: number): Promise<T> {
+  private async request<T>(command: any, timeoutOverrideMs?: number): Promise<T> {
+    await this.ensureConnected();
     const nonce = `cmd_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const timeout = timeoutOverrideMs ?? this.timeoutMs;
     return new Promise((resolve, reject) => {
