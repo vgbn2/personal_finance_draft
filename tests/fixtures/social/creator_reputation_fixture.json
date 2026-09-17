@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "ledger_version": "1.0.0",
+  "updated_at_utc": "2026-09-13T00:00:00.000Z",
+  "creators": {
+    "channel_yt_crypto_analyst": {
+      "creator_name": "CryptoAnalyst",
+      "platform": "youtube",
+      "sample_count": 35,
+      "brier_score": 0.15,
+      "hit_rate": 0.72
+    },
+    "channel_yt_crypto_shill": {
+      "creator_name": "CryptoShill",
+      "platform": "youtube",
+      "sample_count": 50,
+      "brier_score": 0.45,
+      "hit_rate": 0.28
+    },
+    "channel_x_macro_trader": {
+      "creator_name": "MacroTrader",
+      "platform": "twitter",
+      "sample_count": 22,
+      "brier_score": 0.20,
+      "hit_rate": 0.65
+    },
+    "channel_yt_tech_stock_perma": {
+      "creator_name": "TechStockPerma",
+      "platform": "youtube",
+      "sample_count": 18,
+      "brier_score": 0.32,
+      "hit_rate": 0.40
+    },
+    "channel_news_wire": {
+      "creator_name": "FinancialNewsWire",
+      "platform": "news_rss",
+      "sample_count": 80,
+      "brier_score": 0.18,
+      "hit_rate": 0.68
+    },
+    "channel_reddit_wsb_hype": {
+      "creator_name": "WSBHypeLord",
+      "platform": "reddit",
+      "sample_count": 5,
+      "brier_score": 0.10,
+      "hit_rate": 0.85
+    }
+  }
+}

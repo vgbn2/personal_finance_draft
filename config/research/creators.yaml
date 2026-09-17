@@ -1,0 +1,84 @@
+# config/research/creators.yaml
+# Tracked social influencers & media channels for contrarian retail sentiment analysis.
+#
+# ponytail: declarative configuration only. No hardcoded logic in application code.
+
+defaults:
+  min_sample_count: 10          # Calls needed before creator weight activates
+  prior_brier_score: 0.25       # Benchmark Brier score (0.25 = random coin flip)
+  default_time_horizon: "SWING" # SCALP | SWING | POSITION | MACRO_REGIME
+  max_creator_weight: 0.25      # Hard ceiling: no single creator exceeds 25% of composite
+
+creators:
+  - id: "trader_nick"
+    name: "Trader Nick"
+    platform: "youtube"
+    channel_handle: "@TraderNick"
+    asset_focus: ["fx", "indices", "commodities", "crypto"]
+    role: "retail_technical_sentiment"
+    typical_bias: "TREND_FOLLOWING"
+    enabled: true
+    tier: "tier_1_liquidity"
+    notes: "High retail following in FX/Indices. Useful for retail herd positioning and breakout trap detection."
+
+  - id: "more_crypto_online"
+    name: "More Crypto Online (MCO)"
+    platform: "youtube"
+    channel_handle: "@MoreCryptoOnline"
+    asset_focus: ["crypto"]
+    role: "elliott_wave_consensus"
+    typical_bias: "STRUCTURED_BULL"
+    enabled: true
+    tier: "tier_1_liquidity"
+    notes: "Detailed Elliott Wave counts. Tracks retail wave expectations and micro-count invalidations."
+
+  - id: "koenz_trading"
+    name: "Koenz Trading"
+    platform: "youtube"
+    channel_handle: "@KoenzTrading"
+    asset_focus: ["crypto", "indices"]
+    role: "orderflow_scalp_sentiment"
+    typical_bias: "MOMENTUM"
+    enabled: true
+    tier: "tier_2_active"
+    notes: "Intraday/scalp levels. High short-term retail reaction at key support/resistance."
+
+  - id: "bitcoin_hyper"
+    name: "Bitcoin Hyper"
+    platform: "youtube"
+    channel_handle: "@BitcoinHyper"
+    asset_focus: ["crypto"]
+    role: "euphoria_capitulation_gauge"
+    typical_bias: "PERMA_BULL"
+    enabled: true
+    tier: "tier_2_active"
+    overrides:
+      shill_discount_factor: 0.6
+    notes: "High retail retail buzz / clickbait titles. Prime candidate for euphoria exhaustion detection."
+
+  - id: "doctor_of_pump_and_dump"
+    name: "Doctor of Pump & Dump"
+    platform: "youtube"
+    channel_handle: "@DoctorOfPumpAndDump"
+    asset_focus: ["crypto", "equities"]
+    role: "speculative_meme_warning"
+    typical_bias: "HIGH_BETA_HYPER"
+    enabled: true
+    tier: "tier_3_high_risk"
+    overrides:
+      shill_discount_factor: 0.3
+      volume_floor_usd: 25_000_000
+    notes: "Small-cap and high-beta calls. Low-liquidity calls are filtered out by the volume floor."
+
+  - id: "megawhale_crypto"
+    name: "MegaWhale Crypto"
+    platform: "youtube"
+    channel_handle: "@MegaWhaleCrypto"
+    asset_focus: ["crypto"]
+    role: "retail_herd_bellwether"
+    typical_bias: "PERMA_BULL"
+    enabled: true
+    tier: "tier_2_active"
+    overrides:
+      shill_discount_factor: 0.5
+    notes: "Retail follower sentiment on major altcoins. Faded when extreme consensus aligns with RSI overbought."

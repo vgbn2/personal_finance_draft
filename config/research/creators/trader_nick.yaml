@@ -1,0 +1,33 @@
+creator:
+  id: "trader_nick"
+  name: "Trader Nick"
+  platform: "youtube"
+  channel_handle: "@TraderNick"
+  channel_id: "UCQk9Xm4m4vV1H5C9b4R8_9Q"
+  rss_feed_url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCQk9Xm4m4vV1H5C9b4R8_9Q"
+  enabled: true
+  tier: "tier_1_liquidity"
+
+profile:
+  asset_focus: ["fx", "indices", "commodities", "crypto"]
+  analysis_style: "TECHNICAL"
+  typical_bias: "TREND_FOLLOWING"
+  contrarian_role: "trap_detection"
+
+reputation:
+  min_sample_count: 10
+  prior_brier_score: 0.25
+  initial_weight: 1.0
+  shill_discount_factor: 1.0
+
+transcript_nlp:
+  key_phrases:
+    bullish: ["higher high", "breakout", "support holding", "bullish momentum", "long setup"]
+    bearish: ["lower low", "breakdown", "resistance rejected", "bearish structure", "short setup"]
+    invalidation: ["invalidation level", "stop placed at", "structural invalidation", "risk level"]
+  ticker_regex: "\\b(EURUSD|GBPUSD|USDJPY|XAUUSD|US30|SPX|NAS100|BTCUSD)\\b"
+
+execution_constraints:
+  time_horizon: "SWING"
+  volume_floor_usd: 50_000_000
+  max_portfolio_allocation_pct: 0.01

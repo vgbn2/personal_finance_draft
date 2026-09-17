@@ -9,6 +9,7 @@
     "test": "tests"
   },
   "scripts": {
+    "build": "cd Frontend/dashboard && npm install && npm run build",
     "fixtures:refresh:btc": "node backend/scripts/dev/refresh_real_bars_fixture.js",
     "strategy:explore": "node scripts/strategies/auto_strategy_explorer.js",
     "models:parity": "node backend/scripts/dev/model_registry_parity.js",
@@ -31,6 +32,11 @@
     "test:contracts": "node tests/run_node_tests.js --test-concurrency=1 backend/api/tests/api.test.js backend/api/tests/client_api.test.js backend/api/tests/access_control.test.js backend/api/tests/auth_session_registry.test.js backend/api/tests/dashboard_contract.test.js tests/scripts/data/cache/macro_history_helpers.test.js tests/scripts/data/cache/cache_contract.test.js tests/scripts/data/cache/append_only_segments.test.js tests/scripts/data/cache/ts_latest_record.test.js tests/scripts/data/cache/market_monitor_snapshot.test.js tests/scripts/data/cache/market_monitor_service.test.js tests/scripts/data/cache/canonical_data_summary.test.js tests/scripts/data/backfill/backfill_daemon.test.js tests/scripts/operational/service_heartbeat.test.js tests/scripts/architecture/auth/access_policy.test.js tests/scripts/architecture/deployment/deployment_profile.test.js tests/scripts/architecture/settings/interval_policy.test.js tests/scripts/architecture/settings/runner_interval_contract.test.js tests/scripts/architecture/data_storage/macro_ingestion_contract.test.js tests/scripts/architecture/data_storage/macro_store_contract.test.js tests/scripts/architecture/cli/core/config_integrity.test.js tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js tests/scripts/architecture/data_storage/supabase_route_contract.test.js tests/scripts/architecture/data_storage/dashboard_session_contract.test.js tests/scripts/architecture/data_storage/dashboard_market_monitor_contract.test.js tests/scripts/architecture/tui_components/tui_search_contract.test.js",
     "test:structure": "node tests/run_node_tests.js tests/scripts/architecture/cli/core/structure_contract.test.js tests/scripts/architecture/cli/core/repo_skills_contract.test.js tests/scripts/architecture/cli/core/documentation_contract.test.js",
     "test:data": "node tests/run_node_tests.js tests/scripts/data/backfill/backfill_regression.test.js tests/scripts/lib/indicators.data_flow.test.js tests/scripts/architecture/cli/core/config_integrity.test.js",
+    "test:social": "node tests/run_node_tests.js tests/analysis/transcript_store.test.js tests/analysis/transcript_nlp.test.js tests/analysis/youtube_ingestor.test.js tests/analysis/social_pipeline_bench.test.js",
+    "data:social:resolve": "node backend/scripts/data_ops/ingest_social_data/index.js --resolve",
+    "data:social:ingest": "node backend/scripts/data_ops/ingest_social_data/index.js --poll",
+    "data:social:backfill": "node backend/scripts/data_ops/ingest_social_data/index.js --backfill --drain --nlp",
+    "data:social:stats": "node backend/scripts/data_ops/ingest_social_data/index.js --stats",
     "test:deploy": "node tests/run_node_tests.js tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js",
     "test:macro": "node tests/run_node_tests.js tests/scripts/data/cache/macro_history_helpers.test.js tests/scripts/architecture/data_storage/macro_ingestion_contract.test.js tests/scripts/architecture/data_storage/macro_store_contract.test.js",
     "test:secrets": "node tests/run_logged_command.js --label secret-scan -- node backend/scripts/dev/secret_pattern_check.js",
