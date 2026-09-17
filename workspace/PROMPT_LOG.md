@@ -1,3 +1,20 @@
+# Prompt Log - 2026-09-17
+
+## Session 20 — Test Suite Audit, Documentation Code Block Validation & CI Pipeline - 2026-09-17
+Received user prompts:
+- "/session-orchestrator"
+- "refine the plan, show me before and"
+- "refine the plan following mass implement protocol"
+- "Workers Builds: personal-finance-draft ... Test / C++ debug sanitizer tests ... Build / C++ release build ... Test / Committed source evidence ... Deploy Docs / deploy ... also after done, check for this"
+- "full tests also"
+
+Accomplished:
+- Implemented Batch 1: Extended `scripts/dev/filter_docs.js` with `KNOWN_FENCE_LANGS` set and code block language tag validator, adding `--fence-langs` option, scorecard reporting, and zero-tolerance exit gate in `--strict` mode.
+- Implemented Batch 2: Authored test coverage in `tests/scripts/architecture/cli/core/documentation_contract.test.js` verifying unknown tag detection, bare code fence rejection, and acceptance of all valid language tags.
+- Implemented Batch 3: Added `node-tests` job to `.github/workflows/test.yml` running fixture seeding, structure contracts, documentation audits, data pipeline tests, API contracts, and full `npm test` suite in CI.
+- Remediated 13 bare code fences across documentation (`alpaca_paper_auth.md`, `README.md`, `04_CONTRARIAN_ALPHA_FORMULATION.md`, tour and tutorial modules) with explicit language tags (`text`, `http`).
+- 100% verified across `npm run hygiene` (0 defects), `npm run audit:documentation` (0 errors), `npm run docs:filter -- --strict` (0 defects across 187 files), `npm run test:structure` (31/31 PASS), `npm run test:contracts` (PASS), and `npm run test:core` (34/34 CTests PASS in 0.18s).
+
 # Prompt Log - 2026-09-16
 
 ## Session 19 — IEEE 830 / ISO/IEC/IEEE 29148 SRS Overhaul & Core Architectural Stubs - 2026-09-16
