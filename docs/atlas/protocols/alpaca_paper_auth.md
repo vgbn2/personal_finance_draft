@@ -51,7 +51,7 @@ last_verified:
 
 ### Required HTTP headers (Alpaca paper API)
 
-```
+```http
 APCA-API-KEY-ID: <ALPACA_PAPER_API_KEY>
 APCA-API-SECRET-KEY: <ALPACA_PAPER_SECRET_KEY>
 Accept: application/json
@@ -69,7 +69,7 @@ await client.trading.account.getAccount();                   // NOT client.getAc
 
 ## Ordering And State Transitions
 
-```
+```text
 resolveAlpacaSettings(env, { paper:true })
   → paper mode selected if ALPACA_PAPER_{API_KEY,SECRET_KEY,BASE_URL} present
   → URL lookup: ALPACA_PAPER_BASE_URL → ALPACA_BASE_URL/ALPACA_URL → hardcoded default

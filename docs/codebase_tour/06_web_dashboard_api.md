@@ -4,7 +4,7 @@
 
 ## Runtime shape (confirmed current)
 
-```
+```text
 browser / API client
     |
     v

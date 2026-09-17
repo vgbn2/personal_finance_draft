@@ -16,7 +16,7 @@ parsed schema has `universe`, `signals`, `data`, `features`, `indicators`, and a
 
 The canonical ownership and failure contract is [Backtest Execution](../sections/research/backtest-execution/README.md). This tutorial keeps only the guided trace:
 
-```
+```text
 commandBacktest(args)                                  backend/cli/commands/research/research.js
   -> resolveStrategyBacktestDefaults()                  research.js
   -> loadUsableSources() / loadHistoricalSources()      research_sources.js

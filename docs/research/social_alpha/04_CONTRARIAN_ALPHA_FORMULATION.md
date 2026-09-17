@@ -10,7 +10,7 @@ Retail financial content tends to peak in bullish enthusiasm during distribution
 
 ## Contrarian Signal Generation Logic
 
-```
+```text
    Composite Retail Sentiment A_i(t)
                 │
     ┌───────────┴───────────┐

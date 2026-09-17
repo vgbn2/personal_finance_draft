@@ -23,12 +23,28 @@ const STALE_PATTERNS = [
 const BOX_BORDER_REGEX = /^\s*(\+[-=]{4,}\+|[┌+][─═]{4,}[┐+]|\|[\s\S]*\|)\s*$/;
 const BOX_LINE_MIN_LEN = 80;
 
+const KNOWN_FENCE_LANGS = new Set([
+  'bash', 'sh', 'shell', 'zsh', 'console',
+  'powershell', 'pwsh', 'posh',
+  'javascript', 'js', 'jsx',
+  'typescript', 'ts', 'tsx',
+  'json', 'json5', 'jsonc',
+  'yaml', 'yml', 'env', 'dotenv',
+  'cpp', 'c++', 'c', 'cmake',
+  'mermaid',
+  'text', 'plaintext', 'txt',
+  'diff', 'html', 'css', 'toml', 'ini', 'markdown', 'md',
+  'http', 'https',
+  'sql', 'python', 'py', 'dockerfile', 'graphql', 'proto',
+]);
+
 function parseArgs(argv) {
   const options = {
     uncataloged: false,
     stale: false,
     deadLinks: false,
     diagrams: false,
+    fenceLangs: false,
     type: null,
     status: null,
     pathPrefix: null,
@@ -43,6 +59,7 @@ function parseArgs(argv) {
     else if (arg === '--stale') options.stale = true;
     else if (arg === '--dead-links') options.deadLinks = true;
     else if (arg === '--diagrams') options.diagrams = true;
+    else if (arg === '--fence-langs') options.fenceLangs = true;
     else if (arg === '--json') options.json = true;
     else if (arg === '--summary') options.summary = true;
     else if (arg === '--strict') options.strict = true;
@@ -56,7 +73,7 @@ function parseArgs(argv) {
   }
 
   // If no specific filter flag is passed, default to summary mode
-  if (!options.uncataloged && !options.stale && !options.deadLinks && !options.diagrams && !options.strict && !options.json) {
+  if (!options.uncataloged && !options.stale && !options.deadLinks && !options.diagrams && !options.fenceLangs && !options.strict && !options.json) {
     options.summary = true;
   }
 
@@ -73,6 +90,7 @@ Options:
   --stale         Scan for references to deleted or phantom paths
   --dead-links    Validate all relative markdown links
   --diagrams      Flag ASCII box-art diagrams (>80 cols or box borders)
+  --fence-langs   Scan for missing or unrecognized code fence language tags
   --type <type>   Filter manifest documents by Diataxis type
   --status <s>    Filter manifest documents by status (canonical, supporting, etc.)
   --path <prefix> Filter documents by path prefix (e.g. docs/engineering/specs)
@@ -117,21 +135,25 @@ function classifyQuadrant(relPath) {
   return 'General / Orientation';
 }
 
-function analyzeDocs(options) {
+function analyzeDocs(options = {}) {
+  const repoRoot = options.repoRoot || REPO_ROOT;
+  const docsRoot = options.docsRoot || path.join(repoRoot, 'docs');
+  const manifestPath = options.manifestPath || path.join(docsRoot, 'documentation_manifest.json');
+
   let manifest = { documents: [] };
-  if (fs.existsSync(MANIFEST_PATH)) {
+  if (fs.existsSync(manifestPath)) {
     try {
-      manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+      manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     } catch {
       manifest = { documents: [] };
     }
   }
 
-  const catalogedSet = new Set(manifest.documents.map(d => d.path.replaceAll('\\', '/')));
-  const allMdFiles = findMarkdownFiles(DOCS_ROOT);
+  const catalogedSet = new Set((manifest.documents || []).map(d => d.path.replaceAll('\\', '/')));
+  const allMdFiles = findMarkdownFiles(docsRoot);
 
   // Also include root README if present
-  const rootReadme = path.join(REPO_ROOT, 'README.md');
+  const rootReadme = path.join(repoRoot, 'README.md');
   if (fs.existsSync(rootReadme)) {
     allMdFiles.unshift(rootReadme);
   }
@@ -143,10 +165,11 @@ function analyzeDocs(options) {
     stale: [],
     deadLinks: [],
     diagrams: [],
+    badFenceLangs: [],
   };
 
   for (const fullPath of allMdFiles) {
-    const relPath = path.relative(REPO_ROOT, fullPath).replaceAll('\\', '/');
+    const relPath = path.relative(repoRoot, fullPath).replaceAll('\\', '/');
 
     if (options.pathPrefix && !relPath.startsWith(options.pathPrefix)) {
       continue;
@@ -202,7 +225,7 @@ function analyzeDocs(options) {
 
       let resolved;
       if (target.startsWith('/')) {
-        resolved = path.join(REPO_ROOT, target);
+        resolved = path.join(repoRoot, target);
       } else {
         resolved = path.resolve(fileDir, target);
       }
@@ -211,7 +234,7 @@ function analyzeDocs(options) {
         results.deadLinks.push({
           file: relPath,
           target: match[2],
-          resolved: path.relative(REPO_ROOT, resolved).replaceAll('\\', '/'),
+          resolved: path.relative(repoRoot, resolved).replaceAll('\\', '/'),
         });
         results.quadrants[quad].defects++;
       }
@@ -245,6 +268,15 @@ function analyzeDocs(options) {
             });
             results.quadrants[quad].defects++;
           }
+          const primaryTag = blockLang.split(/\s+/)[0];
+          if (!primaryTag || !KNOWN_FENCE_LANGS.has(primaryTag)) {
+            results.badFenceLangs.push({
+              file: relPath,
+              line: blockStartLine,
+              lang: blockLang || '(none)',
+            });
+            results.quadrants[quad].defects++;
+          }
           inCodeBlock = false;
         }
         continue;
@@ -268,7 +300,7 @@ function main() {
 
   if (options.json) {
     console.log(JSON.stringify(results, null, 2));
-    if (options.strict && (results.uncataloged.length > 0 || results.stale.length > 0 || results.deadLinks.length > 0 || results.diagrams.length > 0)) {
+    if (options.strict && (results.uncataloged.length > 0 || results.stale.length > 0 || results.deadLinks.length > 0 || results.diagrams.length > 0 || results.badFenceLangs.length > 0)) {
       process.exit(1);
     }
     return;
@@ -285,8 +317,8 @@ function main() {
     }
 
     console.log('--------------------------------------------------------------------------------');
-    console.log(`Uncataloged: ${results.uncataloged.length} | Stale: ${results.stale.length} | Dead Links: ${results.deadLinks.length} | Diagrams: ${results.diagrams.length}`);
-    const clean = results.uncataloged.length === 0 && results.stale.length === 0 && results.deadLinks.length === 0 && results.diagrams.length === 0;
+    console.log(`Uncataloged: ${results.uncataloged.length} | Stale: ${results.stale.length} | Dead Links: ${results.deadLinks.length} | Diagrams: ${results.diagrams.length} | Bad Fence Tags: ${results.badFenceLangs.length}`);
+    const clean = results.uncataloged.length === 0 && results.stale.length === 0 && results.deadLinks.length === 0 && results.diagrams.length === 0 && results.badFenceLangs.length === 0;
     console.log(`Overall Health: ${clean ? 'CLEAN (Passes verify:strict)' : 'FAIL (Defects present)'}`);
     console.log('================================================================================\n');
   }
@@ -311,8 +343,13 @@ function main() {
     for (const dg of results.diagrams) console.log(`  - ${dg.file}:${dg.line} (width: ${dg.maxWidth}, box lines: ${dg.boxLines})`);
   }
 
+  if (options.fenceLangs && results.badFenceLangs.length > 0) {
+    console.log(`\n[BAD FENCE TAGS] (${results.badFenceLangs.length}):`);
+    for (const b of results.badFenceLangs) console.log(`  - ${b.file}:${b.line} [lang: "${b.lang}"]`);
+  }
+
   if (options.strict) {
-    const defectCount = results.uncataloged.length + results.stale.length + results.deadLinks.length + results.diagrams.length;
+    const defectCount = results.uncataloged.length + results.stale.length + results.deadLinks.length + results.diagrams.length + results.badFenceLangs.length;
     if (defectCount > 0) {
       console.error(`\n[ERROR] docs:filter --strict failed with ${defectCount} defect(s).`);
       process.exit(1);
@@ -327,4 +364,5 @@ if (require.main === module) {
 module.exports = {
   analyzeDocs,
   classifyQuadrant,
+  KNOWN_FENCE_LANGS,
 };

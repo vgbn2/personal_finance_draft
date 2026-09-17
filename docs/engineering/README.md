@@ -2,7 +2,7 @@
 
 This directory contains the canonical technical and architectural specifications for the Sovereign Trading Platform (SV Console), categorized into clear functional subdirectories.
 
-```
+```text
 docs/engineering/
 ├── architecture/      # Canonical 8-Section Architecture Suite & Financial Primer
 ├── standards/         # Engineering standards, agentic coding guidelines & checklists
