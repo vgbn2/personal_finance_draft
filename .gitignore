@@ -80,12 +80,12 @@ site/
 .zencoder/
 .skills/
 
-# Local Scratch & Temporary Markdown Files
+# Local Workspace & Research Notes (Local/Private to Host)
+workspace/
+workspace
 *.tmp.md
 *.scratch.md
 *.local.md
-workspace/scratch/
-workspace/tmp/
 
 # Diagnostic Noise
 repo_tree.txt
