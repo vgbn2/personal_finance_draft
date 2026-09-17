@@ -90,6 +90,12 @@ function saveExplorerState(state) {
   try {
     const dir = path.dirname(EXPLORER_STATE_FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (Array.isArray(state.history) && state.history.length > 100) {
+      state.history = state.history.slice(-100);
+    }
+    if (Array.isArray(state.seenFingerprints) && state.seenFingerprints.length > 500) {
+      state.seenFingerprints = state.seenFingerprints.slice(-500);
+    }
     fs.writeFileSync(EXPLORER_STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
   } catch (err) {
     console.error('[EXPLORER] Failed to save state:', err.message);
@@ -113,20 +119,29 @@ function computeStrategyFingerprint(spec) {
 // Distance / Novelty metric (0.0 to 1.0)
 function computeDistance(stratA, stratB) {
   if (!stratA || !stratB) return 1.0;
-  let diffCount = 0;
+  let distance = 0.0;
   const totalDims = 6;
 
-  if (stratA.family !== stratB.family) diffCount++;
-  if (stratA.model !== stratB.model) diffCount++;
-  if (stratA.timeframe !== stratB.timeframe) diffCount++;
-  if (stratA.threshold !== stratB.threshold) diffCount++;
-  if (stratA.horizon !== stratB.horizon) diffCount++;
+  if (stratA.family !== stratB.family) distance += 1.0;
+  if (stratA.model !== stratB.model) distance += 1.0;
+  if (stratA.timeframe !== stratB.timeframe) distance += 1.0;
 
-  const uA = (stratA.universe || []).join(',');
-  const uB = (stratB.universe || []).join(',');
-  if (uA !== uB) diffCount++;
+  const tA = Number(stratA.threshold || 0);
+  const tB = Number(stratB.threshold || 0);
+  distance += Math.min(1.0, Math.abs(tA - tB) / 0.05);
 
-  return diffCount / totalDims;
+  const hA = Number(stratA.horizon || 1);
+  const hB = Number(stratB.horizon || 1);
+  distance += Math.min(1.0, Math.abs(hA - hB) / 20.0);
+
+  const uA = new Set(stratA.universe || []);
+  const uB = new Set(stratB.universe || []);
+  const union = new Set([...uA, ...uB]);
+  let intersection = 0;
+  for (const s of uA) if (uB.has(s)) intersection++;
+  distance += union.size > 0 ? (1.0 - intersection / union.size) : 0.0;
+
+  return Math.min(1.0, distance / totalDims);
 }
 
 // Generate candidate strategy guaranteed distinct from history and last run
@@ -319,8 +334,13 @@ async function evaluateAndRegisterSpec(spec, options = {}) {
 
   const evaluation = await evaluateStrategyCandidate(candidate);
 
+  const isHighQuality = Boolean(
+    options.force_yaml ||
+    (evaluation && Number(evaluation.sharpeRatio) >= 1.0 && Number(evaluation.tradeCount) >= 10)
+  );
+
   let registryFile = null;
-  if (saveYaml) {
+  if (saveYaml && isHighQuality) {
     registryFile = writeStrategyRegistryFile(candidate);
   }
 

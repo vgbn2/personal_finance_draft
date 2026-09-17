@@ -72,22 +72,22 @@ const TelemetryPanel: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           {connected ? (
-            <div className="flex items-center gap-1 text-[var(--cyan)]">
+            <div className="flex items-center gap-1 text-[var(--color-brand-cyan)]">
               <Wifi size={12} />
               <span className="text-[10px] font-mono">LIVE</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1 text-[var(--red)]">
+            <div className="flex items-center gap-1 text-[var(--color-brand-red)]">
               <WifiOff size={12} />
               <span className="text-[10px] font-mono">OFFLINE</span>
             </div>
           )}
         </div>
       </div>
-      
-      <div 
+
+      <div
         ref={scrollRef}
-        className="flex-1 p-4 font-mono text-[11px] overflow-y-auto space-y-1 selection:bg-[var(--cyan)] selection:text-[var(--bg-main)]"
+        className="flex-1 p-4 font-mono text-[11px] overflow-y-auto space-y-1 selection:bg-[var(--color-brand-cyan)] selection:text-[var(--bg-primary)]"
       >
         {logs.length === 0 && (
           <div className="text-[var(--text-faint)] italic">Waiting for telemetry data...</div>
@@ -96,8 +96,8 @@ const TelemetryPanel: React.FC = () => {
           <div key={i} className="flex gap-2">
             <span className="text-[var(--text-faint)] shrink-0">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
             <span className={
-              log.level === 'error' ? 'text-[var(--red)]' : 
-              log.level === 'warn' ? 'text-[var(--amber)]' : 
+              log.level === 'error' ? 'text-[var(--color-brand-red)]' :
+              log.level === 'warn' ? 'text-[var(--color-brand-amber)]' :
               'text-[var(--text-main)]'
             }>
               {log.msg}

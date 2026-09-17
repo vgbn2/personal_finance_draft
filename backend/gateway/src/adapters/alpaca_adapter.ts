@@ -92,7 +92,10 @@ export class AlpacaAdapter implements BrokerAdapter {
   async getPortfolioBalance(): Promise<Record<string, number>> {
     console.log(`[ALPACA-SDK] Fetching account details`);
     if (!this.hasCredentials()) {
-      return { USD: 100000, BUYING_POWER: 200000, EQUITY: 100000 };
+      if (!this.simulateIfMissingCredentials) {
+        throw new Error('Alpaca credentials are not configured');
+      }
+      return { USD: 0, BUYING_POWER: 0, EQUITY: 0 };
     }
 
     try {

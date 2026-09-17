@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const {
   DEFAULT_SNAPSHOT,
 } = require('../../../../shared/lib/runtime/paths');
+const { isPathWithinAllowedRoots } = require('./input_validator');
 
 const DEFAULT_HISTORY = DEFAULT_SNAPSHOT;
 
@@ -108,6 +109,9 @@ function normalizeRecord(record) {
 }
 
 function loadHistoryRecords(inputPath) {
+  if (inputPath && !isPathWithinAllowedRoots(inputPath)) {
+    return [];
+  }
   const payload = readJsonFile(inputPath);
   if (!payload) {
     return [];

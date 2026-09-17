@@ -130,7 +130,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         properties: {
           action: { type: 'string', enum: ['buy', 'sell'], description: 'Order side' },
           symbol: { type: 'string', description: 'Symbol to trade' },
-          qty: { type: 'string', description: 'Quantity or "amount:USD"' },
+          qty: { type: ['number', 'string'], description: 'Quantity or "amount:USD"' },
           type: { type: 'string', enum: ['market', 'limit'], description: 'Order type' },
           price: { type: 'number', description: 'Limit price' },
           live: { type: 'boolean', description: 'Execute live trade (requires .env config)' },

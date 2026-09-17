@@ -564,7 +564,8 @@ function buildFocusedSnapshot(symbolSet, timeframe, universe = [], verbose = fal
       : null;
   }
 
-  const tmpPath = path.join(os.tmpdir(), `sovereign_corr_${Date.now()}.json`);
+  const tmpDir = (process.platform === 'linux' && fs.existsSync('/dev/shm')) ? '/dev/shm' : os.tmpdir();
+  const tmpPath = path.join(tmpDir, `sovereign_corr_${Date.now()}.json`);
   fs.writeFileSync(tmpPath, JSON.stringify({ sources: alignedSources, mode: 'focused_correlation' }), 'utf8');
   return {
     tmpPath,
@@ -732,9 +733,13 @@ async function runBackendCorrelation(args = [], preSelectedSymbol = null) {
     ? Math.round(prevMs * 1.1)            // 10% buffer after real measurement
     : Math.max(1200, pairCount * 30);     // first-run: N(N-1)/2 * 30ms per pair
 
-  const result = await runBackendCommandAsync(backendArgs, `Computing ${symCount}x${symCount} correlation matrix`, estimatedMs, symCount,
-    (actualMs) => { _correlationTimingMs.set(symCount, actualMs); });
-  if (tmpSnapshot) try { fs.unlinkSync(tmpSnapshot); } catch (_) {}
+  let result;
+  try {
+    result = await runBackendCommandAsync(backendArgs, `Computing ${symCount}x${symCount} correlation matrix`, estimatedMs, symCount,
+      (actualMs) => { _correlationTimingMs.set(symCount, actualMs); });
+  } finally {
+    if (tmpSnapshot) try { fs.unlinkSync(tmpSnapshot); } catch (_) {}
+  }
   if (result && Object.keys(lastPrices).length > 0) result._lastPrices = lastPrices;
   if (result && droppedSymbols.length > 0) result._droppedSymbols = droppedSymbols;
   if (result && correlationMethod === 'fx-returns' && resolveCorrelationMethod(available, cachedUniverse) === 'fx-returns') {

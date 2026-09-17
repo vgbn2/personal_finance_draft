@@ -5,6 +5,8 @@ const path = require('node:path');
 const DEFAULT_TEST_TARGETS = [
   'tests/scripts/**/*.test.js',
   'tests/web/**/*.test.js',
+  'tests/analysis/**/*.test.js',
+  'backend/api/tests/**/*.test.js',
 ];
 const DEFAULT_TEST_CONCURRENCY = 2;
 const DEFAULT_FAILURE_LOG = path.resolve(
