@@ -105,6 +105,31 @@ function getDefaultMt5TerminalPath() {
   return findTool('metatrader5', 'SOVEREIGN_MT5_TERMINAL_PATH') || '';
 }
 
+function getMt5EnvCredentials(slot, env = process.env) {
+  const normalized = normalizeMt5Slot(slot);
+  if (!normalized) return null;
+  const prefix = normalized.toUpperCase();
+  const login = env[`MT5_${prefix}_LOGIN`] || env.MT5_LOGIN || '';
+  const password = env[`MT5_${prefix}_PASSWORD`] || env.MT5_PASSWORD || '';
+  const server = env[`MT5_${prefix}_SERVER`] || env.MT5_SERVER || '';
+  const terminalPath = env[`MT5_${prefix}_TERMINAL_PATH`] || env.SOVEREIGN_MT5_TERMINAL_PATH || getDefaultMt5TerminalPath();
+
+  if (!login && !server) return null;
+
+  return {
+    slot: normalized,
+    label: `${slotLabel(normalized)} (ENV)`,
+    login: String(login).trim(),
+    server: String(server).trim(),
+    password: String(password),
+    terminal_path: String(terminalPath).trim(),
+    account_type: normalized,
+    has_password: Boolean(password),
+    source: 'env',
+    updated_at: new Date().toISOString(),
+  };
+}
+
 function readMt5ProfileStore(options = {}) {
   const { storePath } = resolveVaultOptions(options);
   if (!fs.existsSync(storePath)) {
@@ -188,20 +213,43 @@ function getMt5Profile(slot, options = {}) {
   if (!normalized) return null;
   const store = readMt5ProfileStore(options);
   const record = store.profiles[normalized];
-  if (!record) return null;
-  const summary = summarizeMt5Profile(record);
-  if (options.includeSecret) {
-    return {
-      ...summary,
-      password: record.password_ciphertext ? decryptSecret(record.password_ciphertext, options) : '',
-    };
+  if (record && record.login) {
+    const summary = summarizeMt5Profile(record);
+    if (options.includeSecret) {
+      return {
+        ...summary,
+        password: record.password_ciphertext ? decryptSecret(record.password_ciphertext, options) : '',
+      };
+    }
+    return summary;
   }
-  return summary;
+
+  // Fallback to environment variables when slot is not in encrypted vault
+  const envCreds = getMt5EnvCredentials(normalized, options.env || process.env);
+  if (envCreds) {
+    if (options.includeSecret) {
+      return envCreds;
+    }
+    const { password, ...summary } = envCreds;
+    return summary;
+  }
+
+  return null;
 }
 
 function listMt5Profiles(options = {}) {
   const store = readMt5ProfileStore(options);
-  return MT5_PROFILE_SLOTS.map((slot) => summarizeMt5Profile(store.profiles[slot] || { slot }));
+  return MT5_PROFILE_SLOTS.map((slot) => {
+    if (store.profiles[slot] && store.profiles[slot].login) {
+      return summarizeMt5Profile(store.profiles[slot]);
+    }
+    const envCreds = getMt5EnvCredentials(slot, options.env || process.env);
+    if (envCreds) {
+      const { password, ...summary } = envCreds;
+      return summary;
+    }
+    return summarizeMt5Profile(store.profiles[slot] || { slot });
+  });
 }
 
 function upsertMt5Profile(input, options = {}) {

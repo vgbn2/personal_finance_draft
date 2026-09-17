@@ -2,7 +2,9 @@
 
 const path = require('node:path');
 const fs = require('node:fs');
-const { spawnSync } = require('node:child_process');
+const os = require('node:os');
+const crypto = require('node:crypto');
+const { spawn, spawnSync } = require('node:child_process');
 const utils = require('../../lib/utils.js');
 const { requireAuth } = require('../../lib/auth.js');
 const A = require('#shared/ui/ansi');
@@ -140,7 +142,7 @@ async function commandMt5(args) {
     { label: 'Sell      (submit market/limit sell order)', value: 'sell' },
     { label: 'Doctor  (check profile, terminal, bridge)', value: 'doctor' },
     { label: 'Connect  (launch terminal with saved profile)', value: 'connect' },
-    { label: 'Install EA Bridge  (SovereignExport.mq5)', value: 'bridge' },
+    { label: 'Install EA Scripts (Export + Trade Bridge)', value: 'bridge' },
     { label: 'Delete account profile', value: 'delete' },
   ]);
   global.suppressLogs = false;
@@ -162,7 +164,6 @@ async function commandMt5(args) {
  * Guided wizard to register a new broker or trading platform.
  * Supports REST API brokers (Alpaca-style), MT5 terminals, and custom/webhook setups.
  */
-// does this actually works as intended? dev reiview
 async function commandAddPlatform(args) {
   const { promptPassword } = require('../../lib/auth.js');
   const A = require('#shared/ui/ansi');
@@ -385,10 +386,39 @@ async function commandMt5Connect(args) {
     '',
   ].join('\r\n');
   fs.writeFileSync(configPath, config, { encoding: 'utf8', mode: 0o600 });
+  const configLen = Buffer.byteLength(config, 'utf8');
+  profile.password = null; // Clear raw secret from JS heap memory immediately
 
-  const child = spawn(terminal, [`/config:${configPath}`], { detached: true, stdio: 'ignore', windowsHide: false });
+  const cleanupConfig = () => {
+    try {
+      if (fs.existsSync(configPath)) {
+        fs.writeFileSync(configPath, crypto.randomBytes(configLen));
+        fs.unlinkSync(configPath);
+      }
+    } catch {}
+  };
+
+  process.once('exit', cleanupConfig);
+  process.once('SIGINT', cleanupConfig);
+  process.once('SIGTERM', cleanupConfig);
+
+  const isWine = process.platform !== 'win32' && terminal.toLowerCase().endsWith('.exe');
+  const spawnBin = isWine ? 'wine' : terminal;
+  const spawnArgs = isWine ? [terminal, `/config:${configPath}`] : [`/config:${configPath}`];
+  const spawnEnv = { ...process.env };
+  if (isWine && terminal.includes('.mt5')) {
+    spawnEnv.WINEPREFIX = spawnEnv.WINEPREFIX || path.join(os.homedir(), '.mt5');
+  }
+
+  const child = spawn(spawnBin, spawnArgs, { detached: true, stdio: 'ignore', windowsHide: false, env: spawnEnv });
   child.unref();
-  setTimeout(() => { try { fs.rmSync(configPath, { force: true }); } catch {} }, 5000);
+
+  setTimeout(() => {
+    cleanupConfig();
+    process.removeListener('exit', cleanupConfig);
+    process.removeListener('SIGINT', cleanupConfig);
+    process.removeListener('SIGTERM', cleanupConfig);
+  }, 2000);
 
   const masked = String(profile.login).replace(/^(.{2}).*(.{2})$/, '$1***$2');
   printPayload({ ok: true, slot, login: masked, server: profile.server, terminal }, args);
