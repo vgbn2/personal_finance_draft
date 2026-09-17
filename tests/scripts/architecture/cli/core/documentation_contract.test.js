@@ -10,6 +10,10 @@ const {
   auditDocumentation,
   parseAtlasFrontmatter,
 } = require('../../../../../scripts/dev/audit_documentation.js');
+const {
+  analyzeDocs,
+  KNOWN_FENCE_LANGS,
+} = require('../../../../../scripts/dev/filter_docs.js');
 
 function write(root, relativePath, content = '# Fixture\n') {
   const target = path.join(root, relativePath);
@@ -235,4 +239,62 @@ test('documentation audit rejects unregistered Atlas records', (t) => {
 
   const findings = auditDocumentation({ root });
   assert.ok(findings.some((item) => item.rule === 'DOC-ATLAS-MANIFEST' && item.file.endsWith('unregistered.md')));
+});
+
+test('filter_docs rejects unknown fence language tags', (t) => {
+  const root = fixture();
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  write(root, 'docs/tutorials/bad_fence.md', [
+    '# Bad Fence Tutorial',
+    '```unknownlang',
+    'const x = 1;',
+    '```',
+  ].join('\n'));
+
+  const results = analyzeDocs({ repoRoot: root });
+  assert.equal(results.badFenceLangs.length, 1);
+  assert.equal(results.badFenceLangs[0].lang, 'unknownlang');
+});
+
+test('filter_docs rejects bare code fences without language tags', (t) => {
+  const root = fixture();
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  write(root, 'docs/tutorials/bare_fence.md', [
+    '# Bare Fence Tutorial',
+    '```',
+    'echo "hello"',
+    '```',
+  ].join('\n'));
+
+  const results = analyzeDocs({ repoRoot: root });
+  assert.equal(results.badFenceLangs.length, 1);
+  assert.equal(results.badFenceLangs[0].lang, '(none)');
+});
+
+test('filter_docs accepts all known fence languages', (t) => {
+  const root = fixture();
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const validFences = [
+    '# Multi Language Tutorial',
+    '```bash',
+    'npm test',
+    '```',
+    '```json',
+    '{"ok": true}',
+    '```',
+    '```cpp',
+    'int main() { return 0; }',
+    '```',
+    '```mermaid',
+    'graph TD; A-->B;',
+    '```',
+  ].join('\n');
+  write(root, 'docs/tutorials/valid_fences.md', validFences);
+
+  const results = analyzeDocs({ repoRoot: root });
+  assert.equal(results.badFenceLangs.length, 0);
+  assert.ok(KNOWN_FENCE_LANGS.has('bash'));
+  assert.ok(KNOWN_FENCE_LANGS.has('json'));
+  assert.ok(KNOWN_FENCE_LANGS.has('cpp'));
+  assert.ok(KNOWN_FENCE_LANGS.has('mermaid'));
 });

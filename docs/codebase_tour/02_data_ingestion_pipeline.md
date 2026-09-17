@@ -20,7 +20,7 @@ For `prediction_market` contracts (Polymarket / Kalshi), lifespans vary from 5 m
 
 ## One ingest call, traced
 
-```
+```text
 ingestMarketData()                                    backend/scripts/data_ops/ingest_market_data/index.js:83
   -> fetchBinanceBaseCandles / fetchAlpacaBaseCandles / fetchYahooBaseCandles   shared/lib/providers/*
   -> validateSnapshot()                                shared/lib/market/validation.js:429
