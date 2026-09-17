@@ -9,9 +9,16 @@ msys64:
 
 metatrader5:
   terminal_candidates:
+    # Windows native
     - "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
     - "C:\\Program Files\\Five Percent Online MetaTrader 5\\terminal64.exe"
-    - "/usr/bin/mt5" # Placeholder for Linux/Wine
+    # Linux (Wine)
+    - "~/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+    - "~/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+    - "/usr/bin/mt5"
+    # macOS (Wine / CrossOver / Official App wrapper)
+    - "/Applications/MetaTrader 5.app/Contents/SharedSupport/metatrader5/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+    - "~/Library/Application Support/net.metaquotes.wine.metatrader5/drive_c/Program Files/MetaTrader 5/terminal64.exe"
 
 alpaca:
   # Placeholder for potential Alpaca local bridge if needed

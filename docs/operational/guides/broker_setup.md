@@ -1,41 +1,57 @@
-# Broker Setup
+# Operational Guide: Broker & Gateway Setup
 
-## Alpaca
+Quick operational reference for configuring and checking broker connections on live, paper, and containerized deployment nodes. For complete architecture and contributor details, see [docs/how_to/broker_gateway_setup.md](../../how_to/broker_gateway_setup.md).
 
-```powershell
-sovereign setup alpaca
-sovereign doctor alpaca --json
+---
+
+## Quick Operational Commands
+
+### MetaTrader 5 (MT5)
+```bash
+# Diagnostic check of terminal binary, port 8282, and vault profiles
+node backend/cli/sovereign_cli.js mt5 doctor
+
+# Manage encrypted credential profiles (propfirm, test, live)
+node backend/cli/sovereign_cli.js mt5 profile list
+node backend/cli/sovereign_cli.js mt5 profile add --slot test
+
+# Launch terminal and start TCP bridge
+node backend/cli/sovereign_cli.js mt5 connect --slot test
+
+# Headless Docker container run
+docker compose --profile paper-mt5 up -d sv-mt5
 ```
 
-## Gate.io
-
-```powershell
-sovereign setup gateio
-sovereign doctor gateio --json
+### Alpaca
+```bash
+# Verify Alpaca sandbox / production status
+node backend/cli/sovereign_cli.js doctor alpaca
 ```
 
-## MT5
-
-```powershell
-sovereign setup mt5
-sovereign doctor mt5 --json
+### Polymarket
+```bash
+# Verify CLOB wallet credentials and active collateral balances
+node backend/cli/sovereign_cli.js doctor polymarket
+node backend/cli/sovereign_cli.js polymarket positions
 ```
 
-## Polymarket
-
-```powershell
-sovereign setup polymarket
-sovereign doctor polymarket --json
+### Gate.io
+```bash
+# Verify Gate.io API permissions and server time sync
+node backend/cli/sovereign_cli.js doctor gateio
 ```
 
-## Supabase
-
-```powershell
-sovereign setup supabase
-sovereign doctor supabase --json
+### Supabase
+```bash
+# Test Supabase connection and public schema RLS policies
+node backend/cli/sovereign_cli.js doctor supabase
 ```
 
-## Shared Rule
+---
 
-- All secrets stay on the local machine or the user's private runner.
-- `doctor` redacts secret values and reports validation errors instead of raw keys.
+## Operational Security Checklist
+
+1. Never commit `.env` or `storage/secrets/` to git.
+2. Ensure file permissions on `storage/secrets/mt5/vault.key` are `0o600`.
+3. Use `doctor` checks before enabling any automated execution daemon.
+4. Verify kill-switch accessibility: `node backend/cli/sovereign_cli.js kill-switch --action engage`.
