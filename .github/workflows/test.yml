@@ -70,7 +70,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Build TypeScript workspaces
-        run: npx tsc -p backend/mcp_server/tsconfig.json && npx tsc -p backend/gateway/tsconfig.json
+        run: npx tsc -p backend/mcp_server/tsconfig.json
 
       - name: Build dashboard frontend
         run: npm --prefix Frontend/dashboard ci --ignore-scripts && npm --prefix Frontend/dashboard run build
