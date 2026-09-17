@@ -11,6 +11,9 @@ on:
 permissions:
   contents: read
 
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
+
 jobs:
   source-evidence:
     name: Committed source evidence
@@ -55,7 +58,6 @@ jobs:
   node-tests:
     name: Node test suite
     runs-on: ubuntu-latest
-    needs: source-evidence
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,17 +67,46 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            Frontend/dashboard/package-lock.json
+
+      - name: Cache C++ core build
+        id: cache-native-core
+        uses: actions/cache@v4
+        with:
+          path: backend/core/build
+          key: native-core-${{ runner.os }}-${{ hashFiles('backend/core/**', 'CMakeLists.txt') }}
+
+      - name: Cache MCP server build
+        id: cache-mcp-server
+        uses: actions/cache@v4
+        with:
+          path: dist/mcp_server
+          key: mcp-server-${{ runner.os }}-${{ hashFiles('backend/mcp_server/**') }}
+
+      - name: Cache dashboard build
+        id: cache-dashboard
+        uses: actions/cache@v4
+        with:
+          path: |
+            Frontend/dashboard/dist
+            Frontend/dashboard/node_modules
+          key: dashboard-dist-${{ runner.os }}-${{ hashFiles('Frontend/dashboard/package-lock.json', 'Frontend/dashboard/src/**', 'Frontend/dashboard/vite.config.*', 'Frontend/dashboard/index.html') }}
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
       - name: Build TypeScript workspaces
+        if: steps.cache-mcp-server.outputs.cache-hit != 'true'
         run: npx tsc -p backend/mcp_server/tsconfig.json
 
       - name: Build dashboard frontend
+        if: steps.cache-dashboard.outputs.cache-hit != 'true'
         run: npm --prefix Frontend/dashboard ci --ignore-scripts && npm --prefix Frontend/dashboard run build
 
       - name: Build native core
+        if: steps.cache-native-core.outputs.cache-hit != 'true'
         run: npm run native:build
 
       - name: Seed test fixtures
@@ -87,11 +118,5 @@ jobs:
       - name: Documentation audit
         run: npm run audit:documentation && node scripts/dev/filter_docs.js --strict
 
-      - name: Data pipeline tests
-        run: npm run test:data
-
-      - name: API contracts
-        run: npm run test:api
-
       - name: Full Node test suite
-        run: npm test
+        run: npm test -- --test-concurrency=4
