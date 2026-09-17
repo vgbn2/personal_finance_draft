@@ -376,68 +376,74 @@ const server = http.createServer(async (req, res) => {
     });
 });
 
-const { Server } = require('socket.io');
+let io = null;
 
-const io = new Server(server, {
-  cors: {
-    origin: (origin, callback) => {
-      // Validate origin against allowed origins policy
-      if (isAllowedOrigin(origin, { headers: { host: `${HOST}:${PORT}` } })) {
-        callback(null, true);
-      } else {
-        callback(new Error('Origin not allowed by CORS'));
-      }
+try {
+  const { Server } = require('socket.io');
+
+  io = new Server(server, {
+    cors: {
+      origin: (origin, callback) => {
+        // Validate origin against allowed origins policy
+        if (isAllowedOrigin(origin, { headers: { host: `${HOST}:${PORT}` } })) {
+          callback(null, true);
+        } else {
+          callback(new Error('Origin not allowed by CORS'));
+        }
+      },
+      methods: ['GET', 'POST']
     },
-    methods: ['GET', 'POST']
-  },
-  allowRequest: (req, callback) => callback(null, isAllowedOrigin(req.headers.origin, req)),
-});
-
-io.use(async (socket, next) => {
-  try {
-    const principal = await resolveSocketPrincipal(socket);
-    const decision = authorize(principal, [CAPABILITIES.STATUS_READ]);
-    if (!decision.allowed) {
-      const error = new Error(decision.reason);
-      error.data = {
-        code: decision.reason,
-        required_capabilities: decision.required,
-      };
-      next(error);
-      return;
-    }
-    const network = requestNetworkContext(socket.request);
-    const sessionDecision = authSessionRegistry.record(principal, network);
-    if (!sessionDecision.allowed) {
-      const error = new Error('ip_reauthentication_required');
-      error.data = { code: 'ip_reauthentication_required' };
-      next(error);
-      return;
-    }
-    socket.data.sovereignPrincipal = principal;
-    socket.data.sovereignNetwork = network;
-    next();
-  } catch (_) {
-    const error = new Error('authentication_required');
-    error.data = { code: 'authentication_required' };
-    next(error);
-  }
-});
-
-io.on('connection', (socket) => {
-  console.log(`[TELEMETRY] Client connected: ${socket.id}`);
-  socket.emit('status', { msg: 'Connected to Sovereign Telemetry', timestamp: new Date().toISOString() });
-  
-  socket.on('disconnect', () => {
-    console.log(`[TELEMETRY] Client disconnected: ${socket.id}`);
+    allowRequest: (req, callback) => callback(null, isAllowedOrigin(req.headers.origin, req)),
   });
-});
+
+  io.use(async (socket, next) => {
+    try {
+      const principal = await resolveSocketPrincipal(socket);
+      const decision = authorize(principal, [CAPABILITIES.STATUS_READ]);
+      if (!decision.allowed) {
+        const error = new Error(decision.reason);
+        error.data = {
+          code: decision.reason,
+          required_capabilities: decision.required,
+        };
+        next(error);
+        return;
+      }
+      const network = requestNetworkContext(socket.request);
+      const sessionDecision = authSessionRegistry.record(principal, network);
+      if (!sessionDecision.allowed) {
+        const error = new Error('ip_reauthentication_required');
+        error.data = { code: 'ip_reauthentication_required' };
+        next(error);
+        return;
+      }
+      socket.data.sovereignPrincipal = principal;
+      socket.data.sovereignNetwork = network;
+      next();
+    } catch (_) {
+      const error = new Error('authentication_required');
+      error.data = { code: 'authentication_required' };
+      next(error);
+    }
+  });
+
+  io.on('connection', (socket) => {
+    console.log(`[TELEMETRY] Client connected: ${socket.id}`);
+    socket.emit('status', { msg: 'Connected to Sovereign Telemetry', timestamp: new Date().toISOString() });
+
+    socket.on('disconnect', () => {
+      console.log(`[TELEMETRY] Client disconnected: ${socket.id}`);
+    });
+  });
+} catch (_) {
+  console.warn('socket.io not installed; realtime socket features disabled');
+}
 
 // Watch snapshot for real-time market data streaming
 const { DEFAULT_SNAPSHOT } = require('./server/services/cli_executor');
 if (fs.existsSync(DEFAULT_SNAPSHOT)) {
   fs.watchFile(DEFAULT_SNAPSHOT, { interval: 1000 }, (curr, prev) => {
-    if (curr.mtime > prev.mtime) {
+    if (curr.mtime > prev.mtime && io) {
       console.log('[TELEMETRY] Emitting real-time market data update');
       const universe = backendUniverse({});
       const dataSummary = backendDataSummary({});
@@ -453,7 +459,7 @@ global.sovereignIo = io;
 if (require.main === module) {
   server.listen(PORT, HOST, () => {
     console.log(`Sovereign web API listening on http://${HOST}:${PORT}`);
-    console.log(`[TELEMETRY] WebSocket server active`);
+    if (io) console.log(`[TELEMETRY] WebSocket server active`);
   });
 }
 

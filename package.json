@@ -79,6 +79,7 @@
     "ink-text-input": "^6.0.0",
     "onnxruntime-node": "^1.21.1",
     "react": "^19.2.7",
+    "socket.io": "^4.8.3",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
     "viem": "^2.55.10"
