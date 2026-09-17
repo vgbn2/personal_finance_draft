@@ -36,10 +36,10 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     range="$remote_sha..$local_sha"
   fi
 
-  workspace_diff=$(git diff --name-only --diff-filter=ACMR "$range" -- 'workspace/' 2>/dev/null || true)
+  workspace_diff=$(git diff --name-only --diff-filter=ACMR "$range" -- 'workspace/' 'storage/' 2>/dev/null || true)
   if [ -n "$workspace_diff" ]; then
-    echo "\\033[31m✖ [PRE-PUSH BLOCKED]\\033[0m Attempting to push workspace/ changes to GitHub."
-    echo "\\033[33mworkspace/ is local/private to host and must not be pushed to GitHub.\\033[0m"
+    echo "\\033[31m✖ [PRE-PUSH BLOCKED]\\033[0m Attempting to push workspace/ or storage/ changes to GitHub."
+    echo "\\033[33mworkspace/ and storage/ are local/private to host and must not be pushed to GitHub.\\033[0m"
     echo "Violating files in $range:"
     echo "$workspace_diff" | head -n 10
     exit 1
