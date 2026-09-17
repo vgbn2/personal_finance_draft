@@ -194,5 +194,12 @@ export function acquireLock(): boolean {
 }
 
 export function releaseLock(): void {
-  try { fs.unlinkSync(LOCK_PATH); } catch { /* already gone */ }
+  try {
+    if (fs.existsSync(LOCK_PATH)) {
+      const lock = JSON.parse(fs.readFileSync(LOCK_PATH, 'utf8'));
+      if (lock && lock.pid === process.pid) {
+        fs.unlinkSync(LOCK_PATH);
+      }
+    }
+  } catch { /* already gone or unreadable */ }
 }

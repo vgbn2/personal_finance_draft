@@ -1077,7 +1077,8 @@ function runBacktestCppFrame(featureFrame, options) {
     features: annotated,
   });
 
-  const tmpPath = path.join(os.tmpdir(), `sovereign_bt_frame_${process.pid}.json`);
+  const tmpDir = (process.platform === 'linux' && fs.existsSync('/dev/shm')) ? '/dev/shm' : os.tmpdir();
+  const tmpPath = path.join(tmpDir, `sovereign_bt_frame_${process.pid}.json`);
   try {
     fs.writeFileSync(tmpPath, framePayload, 'utf8');
     const result = bridge.runBackendCommand(['backtest', '--mode', 'frame', '--frame', tmpPath, '--json']);

@@ -72,11 +72,24 @@ function classifyMcpCliCapability(args = []) {
   return 'cached_read';
 }
 
-function backendAvailable() {
+let _autoBuildAttempted = false;
+
+function backendAvailable(options = {}) {
   if (process.env.SOVEREIGN_DISABLE_CPP === '1' || process.env.SOVEREIGN_DISABLE_CPP === 'true') {
     return false;
   }
-  return Boolean(findBackendBinary());
+  const binary = findBackendBinary();
+  if (binary) return true;
+
+  if (!_autoBuildAttempted && options.allowAutoBuild !== false) {
+    _autoBuildAttempted = true;
+    try {
+      const { ensureNativeCore } = require('../../../scripts/dev/ensure_native_core');
+      const built = ensureNativeCore({ silent: true });
+      if (built) return true;
+    } catch (_) {}
+  }
+  return false;
 }
 
 function resolveEngineExecution(commandName, options = {}) {

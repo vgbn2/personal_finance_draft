@@ -10,6 +10,7 @@ const { readStrategyRegistry } = require('../strategy/strategy.js');
 const { inspectStrategyFile } = require('../strategy/strategy_presenter.js');
 const { runBackend } = require('../../../api/server/services/cli_executor_cache.js');
 const { findBackendBinary, STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths.js');
+const { backendAvailable } = require('../../../../shared/lib/runtime/backend_bridge.js');
 const {
   buildResearchRunSpec,
   buildStrategyCapabilityRegistry,
@@ -142,7 +143,7 @@ async function compileSweepPreflight(args) {
 }
 
 async function commandSweep(args) {
-  if (!findBackendBinary({ repoRoot: REPO_ROOT })) {
+  if (!backendAvailable() && !findBackendBinary({ repoRoot: REPO_ROOT })) {
     const payload = errorPayload('native_backend_binary_not_found', {
       hint: 'Build native C++ core via npm run native:build',
     });

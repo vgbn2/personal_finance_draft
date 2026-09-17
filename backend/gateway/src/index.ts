@@ -313,7 +313,7 @@ class GateIoAdapter implements BrokerAdapter {
     this.baseUrl = settings.baseUrl;
     this.apiKey = settings.apiKey;
     this.apiSecret = settings.apiSecret;
-    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? true;
+    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
   }
 
   private hasCredentials(): boolean {
@@ -392,7 +392,10 @@ class GateIoAdapter implements BrokerAdapter {
   async getPortfolioBalance(): Promise<Record<string, number>> {
     console.log(`[GATE.IO] Fetching account balances`);
     if (!this.hasCredentials()) {
-      return { USDT: 10000, BTC: 0.5 };
+      if (!this.simulateIfMissingCredentials) {
+        throw new Error('Gate.io credentials are not configured');
+      }
+      return {};
     }
 
     const response = await this.requestJson('GET', '/spot/accounts');
@@ -518,7 +521,7 @@ class AlpacaAdapter implements BrokerAdapter {
     const keyId = settings.keyId;
     const secretKey = settings.secretKey;
     const paper = settings.paper;
-    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? true;
+    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
 
     if (keyId && secretKey) {
       this.alpaca = new Alpaca({
@@ -587,7 +590,10 @@ class AlpacaAdapter implements BrokerAdapter {
   async getPortfolioBalance(): Promise<Record<string, number>> {
     console.log(`[ALPACA-SDK] Fetching account details`);
     if (!this.hasCredentials()) {
-      return { USD: 100000, BUYING_POWER: 200000, EQUITY: 100000 };
+      if (!this.simulateIfMissingCredentials) {
+        throw new Error('Alpaca credentials are not configured');
+      }
+      return { USD: 0, BUYING_POWER: 0, EQUITY: 0 };
     }
 
     try {

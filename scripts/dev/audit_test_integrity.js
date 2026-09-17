@@ -41,10 +41,15 @@ function listFiles(dir, predicate) {
 }
 
 function listJsTestFiles() {
-  return listFiles(
+  const rootTests = listFiles(
     TESTS_DIR,
     (name) => name.endsWith('.test.js') || name.endsWith('.bench.js'),
   );
+  const apiTestsDir = path.join(REPO_ROOT, 'backend', 'api', 'tests');
+  const apiTests = fs.existsSync(apiTestsDir)
+    ? listFiles(apiTestsDir, (name) => name.endsWith('.test.js'))
+    : [];
+  return [...rootTests, ...apiTests];
 }
 
 function listCppTestFiles() {

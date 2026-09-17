@@ -42,7 +42,14 @@ function acquireLock(lockPath, maxAgeMs = LOCK_MAX_AGE_MS) {
 }
 
 function releaseLock(lockPath) {
-  try { fs.unlinkSync(lockPath); } catch { /* already gone */ }
+  try {
+    if (fs.existsSync(lockPath)) {
+      const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8'));
+      if (lock && lock.pid === process.pid) {
+        fs.unlinkSync(lockPath);
+      }
+    }
+  } catch { /* already gone or unreadable */ }
 }
 
 module.exports = { acquireLock, releaseLock, LOCK_MAX_AGE_MS };

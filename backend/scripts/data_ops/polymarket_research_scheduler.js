@@ -146,8 +146,10 @@ async function runPolymarketResearchCycle(opts = {}, deps = {}) {
   if (dryRun) return result;
 
   fs.mkdirSync(root, { recursive: true });
+  let currentArchiveBytes = directoryBytes(root);
+
   for (const { market, tokenId } of selected) {
-    if (directoryBytes(root) >= maxArchiveBytes) {
+    if (currentArchiveBytes >= maxArchiveBytes) {
       result.skipped_storage_limit += 1;
       continue;
     }
@@ -161,8 +163,9 @@ async function runPolymarketResearchCycle(opts = {}, deps = {}) {
         const priceFile = tokenPricePath(tokenId, root);
         const oldBytes = fs.existsSync(priceFile) ? fs.statSync(priceFile).size : 0;
         const nextBytes = Buffer.byteLength(JSON.stringify(prices, null, 2));
-        if (directoryBytes(root) - oldBytes + nextBytes <= maxArchiveBytes) {
+        if (currentArchiveBytes - oldBytes + nextBytes <= maxArchiveBytes) {
           writePolymarketArchiveChunk({ tokenId, prices }, { root });
+          currentArchiveBytes += (nextBytes - oldBytes);
           result.prices_written += prices.length;
         } else {
           result.skipped_storage_limit += 1;
@@ -170,9 +173,10 @@ async function runPolymarketResearchCycle(opts = {}, deps = {}) {
       }
     }
 
-    if (opts.captureOrderbooks !== false && directoryBytes(root) < maxArchiveBytes) {
+    if (opts.captureOrderbooks !== false && currentArchiveBytes < maxArchiveBytes) {
       const filePath = tokenOrderbookLitePath(tokenId, root);
       const previous = fs.existsSync(filePath) ? fs.readFileSync(filePath) : null;
+      const prevSize = previous ? previous.length : 0;
       const captured = await captureOrderbook(market, tokenId, {
         root,
         role: 'scheduled_research',
@@ -190,11 +194,14 @@ async function runPolymarketResearchCycle(opts = {}, deps = {}) {
           maxRows: opts.maxRowsPerToken,
         });
         result.rows_pruned += pruned.removed;
-        if (directoryBytes(root) > maxArchiveBytes) {
+        const newSize = fs.existsSync(filePath) ? fs.statSync(filePath).size : 0;
+        const sizeDelta = newSize - prevSize;
+        if (currentArchiveBytes + sizeDelta > maxArchiveBytes) {
           if (previous) fs.writeFileSync(filePath, previous);
           else fs.rmSync(filePath, { force: true });
           result.skipped_storage_limit += 1;
         } else {
+          currentArchiveBytes += sizeDelta;
           result.snapshots_written += Array.isArray(captured.rows) ? captured.rows.length : 0;
         }
       }
