@@ -40,7 +40,7 @@ test('dashboard command bar corrects a command mid-line and submits the correcte
   const stdout = makeFakeStdout();
   const calls = [];
   const instance = render(React.createElement(App, { onRun: (argv) => calls.push(argv) }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -57,7 +57,7 @@ test('dashboard reacts to terminal height resize instead of retaining mount-time
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout({ columns: 120, rows: 30 });
   const instance = render(React.createElement(App, { onRun: () => {} }), {
-    stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
   await instance.waitUntilRenderFlush();
@@ -91,7 +91,7 @@ test('short wide viewports keep the selected category and command visible', asyn
       const stdin = makeFakeStdin();
       const stdout = makeFakeStdout({ columns: 120, rows: 16 });
       const instance = render(React.createElement(App, { initialCatI: catI, initialCmdI: cmdI, onRun: () => {} }), {
-        stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+        stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
       });
       t.after(() => instance.unmount());
       await instance.waitUntilRenderFlush();
@@ -120,7 +120,7 @@ test('dashboard stays within common terminal widths and keeps output discoverabl
     const stdin = makeFakeStdin();
     const stdout = makeFakeStdout(viewport);
     const instance = render(React.createElement(App, { onRun: () => {} }), {
-      stdin, stdout, exitOnCtrlC: false, patchConsole: false,
+      stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
     });
     t.after(() => instance.unmount());
     await instance.waitUntilRenderFlush();

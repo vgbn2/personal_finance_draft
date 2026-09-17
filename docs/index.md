@@ -18,33 +18,39 @@ Sovereign operates under five non-negotiable architectural invariants:
 
 ## Documentation Navigation
 
-The documentation corpus follows the **Diátaxis Documentation Framework**, partitioning knowledge into four distinct quadrants:
+The documentation corpus follows the **Diátaxis Documentation Framework**, partitioning knowledge into four distinct quadrants plus an isolated research stream:
 
 <div class="grid cards" markdown>
 
--   :material-compass: __[Overview](ARCHITECTURE.md)__
+-   :material-school: __[Tutorials (Learning)](tutorials/README.md)__
 
     ---
 
-    System architecture overview, multi-tier topology, directory taxonomy, and Diátaxis structure map.
+    Step-by-step guided learning from zero-key dev to live order routing across 8 structured lessons.
 
--   :material-book-open-page-variant: __[Architecture Suite](engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md)__
-
-    ---
-
-    8-section deep-dive with Load Indices, Big-O metrics, and GitHub-native Mermaid sequence & flow diagrams.
-
--   :material-file-document-check: __[Specifications](engineering/specs/product_spec.md)__
+-   :material-hammer-wrench: __[How-To Guides (Problem-Solving)](how_to/README.md)__
 
     ---
 
-    Canonical contracts: Product Spec, Technical Spec, Web REST & WebSocket API, Capability and Stack manifests.
+    Task-oriented runbooks: Proxmox VM deployment, MT5 headless on Wine, soak monitoring, and recovery.
 
--   :material-hammer-wrench: __[Operations & Runbooks](OPERATIONAL_SOAK_RUNBOOK.md)__
+-   :material-file-document-check: __[Reference (Information)](reference/README.md)__
 
     ---
 
-    Proxmox VM deployment (`hpdesk`), soak test monitoring, CLI quickstart, and testing surface matrix.
+    Exact contracts: Stripe-style 40-route Web REST & WS API, Product & Tech Specs, Code Atlas, manifests.
+
+-   :material-book-open-page-variant: __[Explanation (Understanding)](explanation/README.md)__
+
+    ---
+
+    8-section architectural deep-dive, C++20 core engine, continuous double auction, and risk theory.
+
+-   :material-chart-timeline-variant: __[Social Alpha Research](research/social_alpha/README.md)__
+
+    ---
+
+    Multi-modal alternative data: YouTube transcript ingestion, financial NLP, and contrarian alpha.
 
 </div>
 

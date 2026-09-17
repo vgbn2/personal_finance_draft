@@ -1,0 +1,33 @@
+creator:
+  id: "doctor_of_pump_and_dump"
+  name: "Doctor of Pump & Dump"
+  platform: "youtube"
+  channel_handle: "@DoctorOfPumpAndDump"
+  channel_id: "UC_dr_pump_dump_feed"
+  rss_feed_url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC_dr_pump_dump_feed"
+  enabled: true
+  tier: "tier_3_high_risk"
+
+profile:
+  asset_focus: ["crypto", "equities"]
+  analysis_style: "SPECULATIVE"
+  typical_bias: "HIGH_BETA_HYPER"
+  contrarian_role: "euphoria_exhaustion"
+
+reputation:
+  min_sample_count: 10
+  prior_brier_score: 0.25
+  initial_weight: 1.0
+  shill_discount_factor: 0.3
+
+transcript_nlp:
+  key_phrases:
+    bullish: ["100x gem", "next microcap", "going viral", "pump starting", "dont miss out"]
+    bearish: ["whales dumping", "rug warning", "take profits now"]
+    invalidation: ["hard stop", "if team dumps", "liquidity pull"]
+  ticker_regex: "\\$([A-Z]{2,10})|\\b(PEPE|WIF|BONK|SHIB|DOGE|SOL)\\b"
+
+execution_constraints:
+  time_horizon: "SCALP"
+  volume_floor_usd: 25_000_000
+  max_portfolio_allocation_pct: 0.005
