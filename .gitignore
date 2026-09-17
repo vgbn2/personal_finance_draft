@@ -148,12 +148,16 @@ data/backtests/*.json
 data/backtests/*.sqlite
 data/trades/*.sqlite
 data/*.db
+# Storage — local runtime, databases, caches, models (Local/Private to Host)
+storage/
+storage
 storage/backups/
 storage/data/
 storage/db/
 storage/exports/
 storage/logs/
 storage/runtime/auth_sessions.json
+storage/secrets/
 backend/scripts/data/cache/
 
 # Generated notebook/model artifacts
