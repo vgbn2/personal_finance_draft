@@ -1135,3 +1135,8 @@ Received user direction: Execute mass implementation of approved production plan
 - **Branch**: feat/diataxis-docs-overhaul-and-social-alpha
 - **Status**: 100% Green (1223/1223 tests passing). Merged to main.
 - **Next Goal**: Comprehensive test suite audit, organization, and rationalization across all planes.
+
+## [2026-09-17T01:39:10.199Z] Direction Update (Docs Syntax Validation Goal)
+- **Command**: next session check for syntax error in the docs as well
+- **Branch**: main
+- **Status**: Updated NEXT_SESSION_GOAL.md & handoff with documentation syntax validation requirements.
