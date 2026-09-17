@@ -4,6 +4,13 @@ const path = require('node:path');
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch.json');
 
+try {
+  const { ensureAll } = require('../../../scripts/dev/ensure_workspace_skeleton.js');
+  ensureAll(REPO_ROOT);
+} catch {
+  // best effort skeleton scaffolding
+}
+
 const masterFixture = {
   mode: 'live',
   fetched_at: new Date().toISOString(),

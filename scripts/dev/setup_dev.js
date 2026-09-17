@@ -73,6 +73,7 @@ function verifySuites() {
 }
 
 const { installHooks } = require('./install_git_hooks.js');
+const { ensureAll } = require('./ensure_workspace_skeleton.js');
 
 function main() {
   console.log('\x1b[1m\x1b[34m========================================================\x1b[0m');
@@ -83,6 +84,7 @@ function main() {
 
   installHooks();
   ensureEnv();
+  ensureAll();
   installWorkspaces();
   buildNative();
   verifySuites();
