@@ -18,16 +18,20 @@ std::vector<int> KronosTokenizer::tokenize(const std::vector<OhlcvBar>& bars) {
     tokens.reserve(bars.size());
 
     for (const auto& bar : bars) {
-        if (bar.open <= 0.0) {
+        if (bar.open <= 0.0 || bar.close <= 0.0 || !std::isfinite(bar.open) || !std::isfinite(bar.close)) {
             tokens.push_back(KRONOS_MID_BIN); // Default middle bin for invalid data
             continue;
         }
-        
+
         double log_return = std::log(bar.close / bar.open);
-        
-        // Map log return to bins. 
+        if (!std::isfinite(log_return)) {
+            tokens.push_back(KRONOS_MID_BIN);
+            continue;
+        }
+
+        // Map log return to bins.
         int bin = static_cast<int>(std::round(log_return * KRONOS_SCALE_FACTOR + KRONOS_OFFSET));
-        
+
         // Clamp to range
         bin = std::clamp(bin, 0, KRONOS_MAX_BIN);
         tokens.push_back(bin);

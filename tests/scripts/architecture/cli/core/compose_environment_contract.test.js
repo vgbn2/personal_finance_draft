@@ -38,12 +38,13 @@ test('schema-3 service rows match all nine isolated Compose environment files', 
     'portfolio-monitor': 'portfolio-monitor',
     'host-health': 'backend/scripts/ops/host_health.js',
     'host-backup': 'backend/scripts/ops/host_backup.js',
+    mt5: '8282:8282',
     'polymarket-research': 'polymarket history schedule',
     'strategy-explorer': 'scripts/strategies/auto_strategy_explorer.js',
   };
 
   assert.deepEqual(Object.keys(manifest.compose_services).sort(), [...EXPECTED_COMPOSE_SERVICES]);
-  assert.equal((compose.match(/\.env\.services\/[a-z-]+\.env/g) || []).length, 9);
+  assert.equal((compose.match(/\.env\.services\/[a-z0-9-]+\.env/g) || []).length, 10);
   assert.doesNotMatch(compose, /central-env-files|SOVEREIGN_CENTRAL_ENV_FILE/);
   assert.equal(rootDockerfile, dockerfile);
   assert.equal((compose.match(/\$\{SOVEREIGN_IMAGE_REF:-personal_finance:latest\}/g) || []).length, 9);

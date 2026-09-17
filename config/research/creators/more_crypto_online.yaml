@@ -1,0 +1,33 @@
+creator:
+  id: "more_crypto_online"
+  name: "More Crypto Online (MCO)"
+  platform: "youtube"
+  channel_handle: "@MoreCryptoOnline"
+  channel_id: "UCJgHp4h9kK6p5fP6q_3sVaw"
+  rss_feed_url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCJgHp4h9kK6p5fP6q_3sVaw"
+  enabled: true
+  tier: "tier_1_liquidity"
+
+profile:
+  asset_focus: ["crypto"]
+  analysis_style: "ELLIOTT_WAVE"
+  typical_bias: "STRUCTURED_BULL"
+  contrarian_role: "retail_herd_bellwether"
+
+reputation:
+  min_sample_count: 10
+  prior_brier_score: 0.25
+  initial_weight: 1.0
+  shill_discount_factor: 1.0
+
+transcript_nlp:
+  key_phrases:
+    bullish: ["wave 3 extension", "impulse wave", "wave 5 target", "abc correction complete", "support zone"]
+    bearish: ["wave c down", "diagonal breakdown", "corrective rally", "lower wave degree"]
+    invalidation: ["wave 1 invalidation", "micro invalidation level", "structure invalid below"]
+  ticker_regex: "\\b(BTC|ETH|SOL|ADA|XRP|LINK|AVAX|DOT)\\b"
+
+execution_constraints:
+  time_horizon: "SWING"
+  volume_floor_usd: 25_000_000
+  max_portfolio_allocation_pct: 0.01

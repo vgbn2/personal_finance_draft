@@ -1,0 +1,154 @@
+# Autonomous AI Strategy Research, Backtesting & Registry Guide
+
+This guide describes how autonomous AI agents (Claude, GPT, Ollama, local LLMs, or background daemons) can research quantitative market alpha, execute native C++ backtests, and register valid strategy YAML configurations into Sovereign Trading Platform.
+
+---
+
+## 1. Overview & Protocol Architecture
+
+Autonomous AI agents do not need special external access or proprietary tooling. They interact with Sovereign through three standard integration surfaces:
+
+```mermaid
+flowchart TD
+    AGENT["Autonomous AI Agent / Researcher / LLM"]
+    
+    subgraph Surfaces["Integration Surfaces"]
+        MCP["1. MCP Server Tool<br/>explore_strategy<br/>run_backtest"]
+        CLI["2. CLI Subcommand<br/>sovereign strategy<br/>explore [--once]"]
+        YAML["3. YAML Registry Direct<br/>config/strategies/<br/>Canonical YAML Plan"]
+    end
+
+    ENGINE["Native C++20 Sovereign Core Engine<br/>FrameBacktester::runFromAnnotated"]
+    LEDGER[("Discovery History & State Ledger<br/>storage/data/strategy_explorer_state.json")]
+
+    AGENT --> MCP
+    AGENT --> CLI
+    AGENT --> YAML
+    MCP --> ENGINE
+    CLI --> ENGINE
+    YAML --> ENGINE
+    ENGINE --> LEDGER
+```
+
+---
+
+## 2. Integration Modes for AI Agents
+
+### Mode A: Model Context Protocol (MCP) Tools
+Any MCP-compatible client (Claude Desktop, Gemini, ChatGPT, Cursor, Cline, OpenDevin, custom agent runners) can call the registered MCP tool:
+
+- **Tool**: `explore_strategy`
+- **Capability**: `research:run`
+- **Arguments (Custom Agent Hypothesis & Specification)**:
+  ```json
+  {
+    "name": "crypto_vol_breakout_1h",
+    "hypothesis": "High volatility regime combined with Bollinger upper band expansion produces persistent momentum continuation in crypto markets.",
+    "family": "breakout",
+    "model": "svm_margin_v0",
+    "timeframe": "1h",
+    "universe": ["BTCUSDT", "ETHUSDT"],
+    "indicators": {
+      "bollinger": true,
+      "atr": true,
+      "volatility": true,
+      "rsi": true
+    },
+    "threshold": 0.65,
+    "max_holding_days": 7,
+    "risk_weight": 0.15,
+    "entry_signal": "Price closes above 2-std dev upper Bollinger Band with ATR > 20-period median",
+    "exit_signal": "Price touches 20-period moving average or holding horizon exceeds 7 days",
+    "save_yaml": true
+  }
+  ```
+- **Behavior**: Evaluates the agent's specific hypothesis against deep continuous market data (5,000+ bars), runs the zero-allocation native C++20 Sovereign Core backtest (`sovereign_wealth --mode frame`), calculates comprehensive performance & tail risk metrics, and registers the strategy YAML in `config/strategies/<name>.yaml`.
+- **Automated Fallback**: If called with no arguments or `{ "save_yaml": true }`, automatically explores a novel parameter candidate (≥ 50% distance metric).
+
+### Mode B: Direct CLI Execution
+Autonomous scripts, cron jobs, or container runners can invoke the explorer directly:
+
+```bash
+# Run a single discovery cycle and output JSON
+node backend/cli/sovereign_cli.js strategy explore --once --json
+
+# Run continuous 30-minute background daemon
+npm run strategy:explore -- --interval 30
+```
+
+### Mode C: Custom AI Agent YAML Generation & Native Backtest
+If an AI agent creates a new strategy hypothesis independently, it can:
+1. Write a canonical YAML definition to `config/strategies/<custom_name>.yaml`.
+2. Execute the native C++ backtester:
+   ```bash
+   node backend/cli/sovereign_cli.js bt --strategy config/strategies/<custom_name>.yaml --timeframe 1h --sample --json
+   ```
+3. Evaluate metrics (win rate, Sharpe, Sortino, max drawdown, tail risk).
+
+---
+
+## 3. Canonical Strategy YAML Specification
+
+Every strategy in `config/strategies/*.yaml` follows the standard format:
+
+```yaml
+name: auto_mean_reversion_knn_pattern_v0_1h_mtmp1n7y
+kind: mean_reversion
+family: mean_reversion
+lane: single_asset
+role: strategy
+status: draft
+enabled: false
+model: knn_pattern_v0
+timeframe: 1h
+sections:
+  hypothesis: "Mean reversion alpha using KNN pattern matching on RSI and return momentum."
+  universe:
+    - SPY
+    - BTCUSDT
+    - GLD
+  signals:
+    entry: "Bullish divergence with RSI < 35 and KNN positive prediction."
+    exit: "Mean touch or holding horizon reached."
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - rsi
+      - return_fast
+      - return_slow
+      - bollinger
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: false
+    rsi: true
+    atr: false
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 8
+    risk_weight: 0.10
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+```
+
+---
+
+## 4. Zero-Key Development & Safe Execution Policy
+- **Zero-Key Invariant**: Strategy exploration and backtesting work out-of-the-box with synthetic bar generation (`generateSampleBars` / `--sample`) and cached fixtures without requiring external broker API keys.
+- **Fail-Closed Boundary**: Autonomous exploration is strictly sandboxed for research and paper-trading simulation (`LIVE_TRADING=false`, `SOVEREIGN_EXECUTION_AUTHORIZED=false`).

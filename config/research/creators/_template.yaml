@@ -1,0 +1,36 @@
+# Schema & Template for Independent Creator Configurations
+# Directory: config/research/creators/<creator_id>.yaml
+
+creator:
+  id: "template_creator"
+  name: "Template Creator"
+  platform: "youtube"                     # youtube | twitter | rss | podcast
+  channel_handle: "@TemplateHandle"
+  channel_id: ""                          # Resolved YouTube UC... ID
+  rss_feed_url: ""                        # https://www.youtube.com/feeds/videos.xml?channel_id=...
+  enabled: true
+  tier: "tier_1_liquidity"                # tier_1_liquidity | tier_2_active | tier_3_high_risk
+
+profile:
+  asset_focus: ["crypto", "indices"]      # crypto | equities | fx | indices | commodities | macro
+  analysis_style: "TECHNICAL"             # TECHNICAL | ELLIOTT_WAVE | ORDERFLOW | MACRO | SENTIMENT
+  typical_bias: "PERMA_BULL"              # PERMA_BULL | PERMA_BEAR | TREND_FOLLOWING | MOMENTUM | NEUTRAL
+  contrarian_role: "retail_herd_bellwether" # retail_herd_bellwether | euphoria_exhaustion | trap_detection
+
+reputation:
+  min_sample_count: 10
+  prior_brier_score: 0.25
+  initial_weight: 1.0
+  shill_discount_factor: 1.0              # 0.0 - 1.0 penalty if sponsored/promo heavy
+
+transcript_nlp:
+  key_phrases:
+    bullish: ["moon", "breakout", "target", "all time high", "parabolic", "long"]
+    bearish: ["crash", "dump", "capitulation", "short", "bear market", "breakdown"]
+    invalidation: ["stop loss", "invalidation", "if we lose", "below this level"]
+  ticker_regex: "\\$([A-Z]{2,10})|\\b(BTC|ETH|SOL|SPY|QQQ|DXY|GOLD)\\b"
+
+execution_constraints:
+  time_horizon: "SWING"                   # SCALP (4h) | SWING (24h) | POSITION (72h)
+  volume_floor_usd: 10_000_000
+  max_portfolio_allocation_pct: 0.01      # 1% cap

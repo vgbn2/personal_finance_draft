@@ -1,0 +1,186 @@
+[
+  {
+    "source": {
+      "platform": "youtube",
+      "channel_id": "channel_yt_crypto_analyst",
+      "creator_name": "CryptoAnalyst",
+      "content_id": "yt_btc_breakout_001",
+      "published_at_utc": "2026-09-10T12:00:00.000Z",
+      "video_duration_seconds": 900
+    },
+    "extracted_signals": [
+      {
+        "symbol": "BTC/USD",
+        "asset_class": "crypto",
+        "direction": "BULLISH",
+        "conviction_score": 0.95,
+        "time_horizon": "SWING",
+        "expected_holding_days": 3,
+        "price_targets": [
+          { "level": 68000, "weight": 0.5 },
+          { "level": 72000, "weight": 0.5 }
+        ],
+        "invalidation_price": 62000,
+        "catalysts": ["etf_inflows", "halving_lag"],
+        "is_promotional": false
+      }
+    ],
+    "macro_sentiment": {
+      "us_equities": "NEUTRAL",
+      "crypto": "BULLISH",
+      "volatility_regime": "NORMAL"
+    }
+  },
+  {
+    "source": {
+      "platform": "youtube",
+      "channel_id": "channel_yt_crypto_shill",
+      "creator_name": "CryptoShill",
+      "content_id": "yt_btc_moon_002",
+      "published_at_utc": "2026-09-10T12:15:00.000Z",
+      "video_duration_seconds": 450
+    },
+    "extracted_signals": [
+      {
+        "symbol": "BTC/USD",
+        "asset_class": "crypto",
+        "direction": "BULLISH",
+        "conviction_score": 0.99,
+        "time_horizon": "SCALP",
+        "expected_holding_days": 1,
+        "price_targets": [
+          { "level": 100000, "weight": 1.0 }
+        ],
+        "invalidation_price": 64000,
+        "catalysts": ["sponsored_exchange_promo"],
+        "is_promotional": true
+      }
+    ],
+    "macro_sentiment": {
+      "us_equities": "NEUTRAL",
+      "crypto": "BULLISH",
+      "volatility_regime": "EXPANDING"
+    }
+  },
+  {
+    "source": {
+      "platform": "twitter",
+      "channel_id": "channel_x_macro_trader",
+      "creator_name": "MacroTrader",
+      "content_id": "x_post_btc_003",
+      "published_at_utc": "2026-09-10T13:00:00.000Z"
+    },
+    "extracted_signals": [
+      {
+        "symbol": "BTC/USD",
+        "asset_class": "crypto",
+        "direction": "BULLISH",
+        "conviction_score": 0.85,
+        "time_horizon": "POSITION",
+        "expected_holding_days": 14,
+        "price_targets": [
+          { "level": 75000, "weight": 1.0 }
+        ],
+        "invalidation_price": 59000,
+        "catalysts": ["fed_rate_cut"],
+        "is_promotional": false
+      }
+    ],
+    "macro_sentiment": {
+      "us_equities": "BULLISH",
+      "crypto": "BULLISH",
+      "volatility_regime": "NORMAL"
+    }
+  },
+  {
+    "source": {
+      "platform": "youtube",
+      "channel_id": "channel_yt_tech_stock_perma",
+      "creator_name": "TechStockPerma",
+      "content_id": "yt_nvda_hype_004",
+      "published_at_utc": "2026-09-11T08:00:00.000Z",
+      "video_duration_seconds": 1200
+    },
+    "extracted_signals": [
+      {
+        "symbol": "NVDA",
+        "asset_class": "equity",
+        "direction": "BULLISH",
+        "conviction_score": 0.90,
+        "time_horizon": "SWING",
+        "expected_holding_days": 5,
+        "price_targets": [
+          { "level": 140.0, "weight": 1.0 }
+        ],
+        "invalidation_price": 110.0,
+        "catalysts": ["ai_capex_surge"],
+        "is_promotional": false
+      }
+    ],
+    "macro_sentiment": {
+      "us_equities": "BULLISH",
+      "crypto": "NEUTRAL",
+      "volatility_regime": "COMPRESSING"
+    }
+  },
+  {
+    "source": {
+      "platform": "news_rss",
+      "channel_id": "channel_news_wire",
+      "creator_name": "FinancialNewsWire",
+      "content_id": "rss_macro_panic_005",
+      "published_at_utc": "2026-09-11T09:00:00.000Z"
+    },
+    "extracted_signals": [
+      {
+        "symbol": "SPY",
+        "asset_class": "equity",
+        "direction": "BEARISH",
+        "conviction_score": 0.80,
+        "time_horizon": "MACRO_REGIME",
+        "expected_holding_days": 30,
+        "price_targets": [
+          { "level": 520.0, "weight": 1.0 }
+        ],
+        "invalidation_price": 570.0,
+        "catalysts": ["inflation_reacceleration"],
+        "is_promotional": false
+      }
+    ],
+    "macro_sentiment": {
+      "us_equities": "BEARISH",
+      "crypto": "BEARISH",
+      "volatility_regime": "EXPANDING"
+    }
+  },
+  {
+    "source": {
+      "platform": "reddit",
+      "channel_id": "channel_reddit_wsb_hype",
+      "creator_name": "WSBHypeLord",
+      "content_id": "rd_tsla_yolo_006",
+      "published_at_utc": "2026-09-11T10:00:00.000Z"
+    },
+    "extracted_signals": [
+      {
+        "symbol": "TSLA",
+        "asset_class": "equity",
+        "direction": "BULLISH",
+        "conviction_score": 0.95,
+        "time_horizon": "SCALP",
+        "expected_holding_days": 2,
+        "price_targets": [
+          { "level": 260.0, "weight": 1.0 }
+        ],
+        "invalidation_price": 210.0,
+        "catalysts": ["robotaxi_hype"],
+        "is_promotional": false
+      }
+    ],
+    "macro_sentiment": {
+      "us_equities": "BULLISH",
+      "crypto": "NEUTRAL",
+      "volatility_regime": "EXPANDING"
+    }
+  }
+]
