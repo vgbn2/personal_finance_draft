@@ -252,6 +252,10 @@ async function commandTrade(args) {
   args = buildTradeArgsFromActionFlag(args);
   const subcommand = args[0];
 
+  if (subcommand === 'mt5') {
+    return commandMt5(args.slice(1));
+  }
+
   if (subcommand === 'positions') {
     try {
       const isLive = hasFlag(args, '--live');
