@@ -6,7 +6,7 @@ over stdin/stdout JSON, not a library Node links against directly.
 
 ## The shape
 
-```
+```text
 backend/core/
   CMakeLists.txt        <- declares the sovereign_core static lib, the sovereign_wealth exe, 34 test exes
   src/
