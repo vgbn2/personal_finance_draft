@@ -1,11 +1,13 @@
 # Next Session Goal
 
-## Primary Objective: Signal Integration & C++ Feature Frame
+## Primary Objective: Test Suite Audit, Organization & Rationalization
 
-1. **Signal Integration & C++ Feature Frame**:
-   - Wire `signals` table from `storage/data/transcripts/warehouse.sqlite` into C++20 `sentiment_features.cpp` / `sentiment_features.hpp` and backtest replay suites.
-   - Implement contrarian alpha feature derivation in C++ vector backtesting pipeline.
+1. **Test Suite Inventory & Architecture Mapping**:
+   - Audit all test files across `tests/`, `backend/api/tests/`, and `backend/core/tests/` (250+ test files).
+   - Map every test file to its owning architectural plane (Core/Compute, Gateways & Execution, API/Auth, Data & Storage, CLI/TUI, Social Alpha, Frontend).
+   - Review test suite execution paths, groupings, and runners (`tests/run_node_tests.js`, `ctest`, Jest/Mocha exclusion invariants).
 
-2. **Backtest Verification & Execution Benchmarking**:
-   - Benchmark C++ feature generation on historical crypto/equity OHLCV binary data combined with social sentiment signals.
-   - Ensure zero-key local verification and pass all test suites (`npm test`, `npm run test:core`, `npm run test:social`).
+2. **Test Rationalization & Sorting**:
+   - Identify redundant, slow, or disorganized test scripts and sort them into clear hierarchical domain directories.
+   - Align `package.json` test scripts (`test:data`, `test:api`, `test:structure`, `test:social`, `test:core`, etc.) with sorted structure.
+   - Enforce test integrity rules (`npm run audit:test-integrity`) and verify zero-key local execution with 100% green pass across all suites.
