@@ -151,6 +151,9 @@ double annualizedSortino(std::span<const double> returns, double minimum_accepta
 }
 
 double annualizedReturn(double start_equity, double end_equity, double periods, double periods_per_year) {
+    if (start_equity > 0.0 && end_equity <= 0.0) {
+        return -1.0;
+    }
     if (start_equity <= 0.0 || end_equity <= 0.0 || periods <= 0.0 || periods_per_year <= 0.0) {
         return 0.0;
     }

@@ -502,6 +502,18 @@ export async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAG
     if (!market || (market.active !== false && market.closed !== true)) continue;
 
     const resolution = inferWinner(market);
+    // ponytail: defer settlement if resolution price is indeterminate (pending oracle)
+    const hasExplicitResolution = Number.isFinite(Number(market.resolution_price))
+      || (Number.isFinite(parseFloat(market.bestAsk)) && (parseFloat(market.bestAsk) >= 0.9 || parseFloat(market.bestAsk) <= 0.1));
+    let hasOutcomePricesResolution = false;
+    try {
+      const prices = JSON.parse(market.outcomePrices || '');
+      const yesP = parseFloat(prices[0]);
+      if (Number.isFinite(yesP) && (yesP >= 0.85 || yesP <= 0.15)) {
+        hasOutcomePricesResolution = true;
+      }
+    } catch {}
+    if (!hasExplicitResolution && !hasOutcomePricesResolution) continue;
     const isNo = String(pos.outcome || '').trim().toLowerCase() === 'no';
     const tokenPrice = isNo ? (1.0 - resolution.resolutionPrice) : resolution.resolutionPrice;
     const pnl = (tokenPrice - pos.avg_price) * pos.shares;

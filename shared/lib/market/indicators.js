@@ -38,7 +38,9 @@ function stddev(values) {
 }
 
 function pearsonCorrelation(valuesA, valuesB) {
+  if (!Array.isArray(valuesA) || !Array.isArray(valuesB)) return 0;
   if (!valuesA.length || valuesA.length !== valuesB.length) return 0;
+  if (valuesA.some((v) => !Number.isFinite(v)) || valuesB.some((v) => !Number.isFinite(v))) return 0;
   const avgA = mean(valuesA);
   const avgB = mean(valuesB);
   let numerator = 0;
@@ -101,7 +103,8 @@ function rollingVolatilitySeries(closes, period) {
 }
 
 function rsi(closes, period = 14) {
-  if (closes.length <= period) return null;
+  if (!Array.isArray(closes) || closes.length <= period) return null;
+  if (closes.some((v) => !Number.isFinite(v))) return null;
   let gains = 0;
   let losses = 0;
   for (let i = closes.length - period; i < closes.length; i += 1) {

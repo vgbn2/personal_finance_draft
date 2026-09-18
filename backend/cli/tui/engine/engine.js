@@ -479,11 +479,11 @@ async function promptSelect(question, options) {
       const time = formatTimeForSettings();
       if (helpMode) {
         const buffer = renderHelpOverlay(question, time, 'select');
-        let writeBuf = '\x1b[?25l';
+        let writeBuf = '\x1b[?2026h\x1b[?25l';
         if (prevLineCount > 0) {
           writeBuf += `\x1b[${prevLineCount}A\x1b[J`;
         }
-        writeBuf += buffer + '\x1b[?25h';
+        writeBuf += buffer + '\x1b[?2026l\x1b[?25h';
         process.stdout.write(writeBuf);
         prevLineCount = visualLineCount(buffer);
         return;
