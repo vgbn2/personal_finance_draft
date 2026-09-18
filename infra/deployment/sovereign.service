@@ -12,6 +12,11 @@ Environment=NODE_ENV=production
 Environment=SOVEREIGN_WEB_PORT=8787
 # Load sensitive keys from .env
 # EnvironmentFile=/opt/sovereign/.env
+ProtectSystem=strict
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true
+ReadWritePaths=/opt/sovereign/storage /opt/sovereign/logs
 
 [Install]
 WantedBy=multi-user.target

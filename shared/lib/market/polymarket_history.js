@@ -38,7 +38,10 @@ function _readCache(key) {
 
 function _writeCache(key, data) {
   ensureCache();
-  fs.writeFileSync(_cachePath(key), JSON.stringify({ cachedAt: new Date().toISOString(), data }, null, 2));
+  const dest = _cachePath(key);
+  const tmp = `${dest}.tmp.${process.pid}.${Date.now()}`;
+  fs.writeFileSync(tmp, JSON.stringify({ cachedAt: new Date().toISOString(), data }, null, 2), 'utf8');
+  fs.renameSync(tmp, dest);
 }
 
 function archivePaths(root = CACHE_DIR) {

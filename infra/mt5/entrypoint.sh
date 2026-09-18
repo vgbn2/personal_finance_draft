@@ -3,10 +3,16 @@ set -e
 
 echo "[SV-MT5] Starting Headless MetaTrader 5 on display :99..."
 
-# 1. Start Xvfb Virtual Framebuffer
+# 1. Clean up stale locks and start Xvfb Virtual Framebuffer
+rm -f /tmp/.X11-unix/X99 /tmp/.X99-lock
 Xvfb :99 -screen 0 1024x768x16 -nolisten tcp -ac +extension GLX &
 XVFB_PID=$!
-sleep 2
+
+# Probe Xvfb socket readiness
+for i in $(seq 1 30); do
+    [ -S "/tmp/.X11-unix/X99" ] && break
+    sleep 0.1
+done
 
 # 2. Trap signals for clean wine shutdown
 cleanup() {
@@ -15,7 +21,7 @@ cleanup() {
     kill $XVFB_PID || true
     exit 0
 }
-trap cleanup SIGTERM SIGINT
+trap cleanup EXIT SIGTERM SIGINT
 
 # 3. Create ephemeral startup.ini if credentials are provided
 STARTUP_INI="/opt/mt5/terminal/startup.ini"

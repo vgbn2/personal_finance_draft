@@ -56,6 +56,7 @@ OptimizationTrialResult GridOptimizer::evaluateTrial(
     BacktestConfig cfg;
     cfg.entry_threshold = params.threshold;
     cfg.holding_period = static_cast<int>(params.holding_period);
+    cfg.lookback = std::max({params.rsi_period, params.atr_period, params.bollinger_period, params.volatility_period});
     cfg.fee_bps = cost_bps;
 
     trial.train_result = Backtester::run(train_bars, cfg);

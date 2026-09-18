@@ -81,6 +81,7 @@ export function OverviewPanel() {
     // REAL-TIME SUBSCRIPTION
     const unsubscribe = subscribeToOrders((payload) => {
       const order = payload.new;
+      if (!order || !order.side || !order.status) return;
       const timestamp = new Date(order.timestamp).toLocaleTimeString();
       const statusColor = order.status === 'filled' ? 'OK' : 
                           order.status === 'risk_rejected' ? 'SECURITY' : 

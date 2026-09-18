@@ -1412,8 +1412,10 @@ export async function main() {
 
   const adapter = broker === 'mt5'
     ? new Mt5Adapter()
+    : (broker === 'gate_io' || broker === 'gateio')
+    ? new GateIoAdapter({ simulateIfMissingCredentials: !isLive })
     : isLive
-    ? new AlpacaAdapter({ simulateIfMissingCredentials: false })
+    ? new AlpacaAdapter({ paper: false, simulateIfMissingCredentials: false })
     : providerPaper
     ? new AlpacaAdapter({ paper: true, simulateIfMissingCredentials: false })
     : environmentSurface === 'gateway_account'

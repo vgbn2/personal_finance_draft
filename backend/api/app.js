@@ -92,12 +92,7 @@ if (CLIENT_TOKEN) {
 
 function isAllowedOrigin(origin, req) {
   if (!origin || ALLOWED_ORIGINS.includes(origin)) return true;
-  try {
-    const parsed = new URL(origin);
-    return ['http:', 'https:'].includes(parsed.protocol) && parsed.host === req.headers.host;
-  } catch (_) {
-    return false;
-  }
+  return false;
 }
 
 function setSecurityHeaders(res, origin, req) {
@@ -166,7 +161,16 @@ async function checkSecurity(req, res) {
   // MCP headers opt a request into stricter route policy. When an MCP gate token is
   // configured, header-detected requests must also prove that token; headers alone
   // are never an authority signal.
-  const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
+  let pathname;
+  let requestUrl;
+  try {
+    requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    pathname = requestUrl.pathname;
+  } catch (_) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: false, error: 'bad_request' }));
+    return false;
+  }
   const mcpRequest = isMcpRequest(req);
   if (mcpRequest && process.env.MCP_GATE_TOKEN && !hasValidMcpGateToken(req)) {
     console.warn(`[MCP-GATE] Rejected unverified agent request to: ${pathname}`);
@@ -182,7 +186,6 @@ async function checkSecurity(req, res) {
   }
 
   // API Token check for data-modifying or sensitive routes
-  const requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const privilegedQueryFields = ['input', 'quality_report', 'model_report', 'backtest_report', 'equity'];
   const hasPrivilegedOverride = privilegedQueryFields.some((field) => requestUrl.searchParams.has(field));
   const query = Object.fromEntries(requestUrl.searchParams.entries());
@@ -353,8 +356,15 @@ async function handleApi(req, res, url) {
 
 const server = http.createServer(async (req, res) => {
   requestLogger(req, res);
-  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  
+  let url;
+  try {
+    url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  } catch (_) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: false, error: 'bad_request' }));
+    return;
+  }
+
   if (!(await checkSecurity(req, res))) {
     return;
   }
@@ -429,6 +439,7 @@ try {
 
   io.on('connection', (socket) => {
     console.log(`[TELEMETRY] Client connected: ${socket.id}`);
+    socket.join('sv:telemetry');
     socket.emit('status', { msg: 'Connected to Sovereign Telemetry', timestamp: new Date().toISOString() });
 
     socket.on('disconnect', () => {
@@ -448,7 +459,7 @@ if (fs.existsSync(DEFAULT_SNAPSHOT)) {
       const universe = backendUniverse({});
       const dataSummary = backendDataSummary({});
       const status = backendStatus({});
-      io.emit('market_data', { universe, dataSummary, status });
+      io.to('sv:telemetry').emit('market_data', { universe, dataSummary, status });
     }
   });
 }

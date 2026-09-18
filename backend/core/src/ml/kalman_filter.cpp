@@ -8,7 +8,8 @@ double KalmanFilter::update(double measurement) {
     p = p + q;
 
     // Measurement Update
-    double k = p / (p + r);
+    double denom = p + r;
+    double k = (denom <= 1e-12) ? 0.0 : p / denom;
     x = x + k * (measurement - x);
     p = (1 - k) * p;
 

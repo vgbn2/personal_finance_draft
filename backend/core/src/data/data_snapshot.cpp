@@ -266,6 +266,7 @@ MarketDataSnapshot loadMarketDataSnapshot(
     if (ts_res.ok && !ts_res.bars.empty()) {
         snapshot.bars = std::move(ts_res.bars);
         snapshot.quality.ok = true;
+        snapshot.summary = summarizeBars(std::move(symbol), std::move(timeframe), snapshot.bars);
         return snapshot;
     }
 

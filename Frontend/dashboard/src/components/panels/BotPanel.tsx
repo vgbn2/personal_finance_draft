@@ -289,10 +289,10 @@ export function BotPanel() {
                 ? `Execute immediate automation cycle in ${cfg?.liveTrading ? 'LIVE TRADING' : 'DRY-RUN'} mode?`
                 : `Force sell position ${confirmAction.target?.slug} (${confirmAction.target?.side}) at market price?`}
             </p>
-            {cfg?.liveTrading && (
+            {(cfg?.liveTrading || confirmAction.type === 'force_sell') && (
               <div className="space-y-1">
                 <label className="text-[10px] font-mono text-[var(--color-brand-red)] uppercase font-semibold">
-                  Trade PIN Required for Live Execution
+                  {cfg?.liveTrading ? 'Trade PIN Required for Live Execution' : 'Trade PIN Required for Force Liquidation'}
                 </label>
                 <input
                   type="password"

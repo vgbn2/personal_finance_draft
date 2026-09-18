@@ -103,6 +103,7 @@ export default function SettingsPage({ session }: Props) {
                     onChange={(e) => setRisk(r => ({ ...r, max_position_pct: Number(e.target.value) / 100 }))}
                     onMouseUp={() => saveKey('risk_thresholds', risk)}
                     onTouchEnd={() => saveKey('risk_thresholds', risk)}
+                    onBlur={() => saveKey('risk_thresholds', risk)}
                     className="w-full accent-[var(--color-brand-cyan)]"
                   />
                 </div>
@@ -118,6 +119,7 @@ export default function SettingsPage({ session }: Props) {
                     onChange={(e) => setRisk(r => ({ ...r, max_drawdown_pct: Number(e.target.value) / 100 }))}
                     onMouseUp={() => saveKey('risk_thresholds', risk)}
                     onTouchEnd={() => saveKey('risk_thresholds', risk)}
+                    onBlur={() => saveKey('risk_thresholds', risk)}
                     className="w-full accent-[var(--color-brand-cyan)]"
                   />
                 </div>

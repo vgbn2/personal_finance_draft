@@ -19,7 +19,10 @@ function installDoubleCtrlCExit(onFirstPress) {
   installed = true;
   process.on('SIGINT', () => {
     if (registerCtrlCPress()) {
-      process.stdout.write('\n');
+      if (process.stdin.isTTY && process.stdin.setRawMode) {
+        try { process.stdin.setRawMode(false); } catch {}
+      }
+      process.stdout.write('\x1b[?2026l\x1b[?25h\x1b[0m\n');
       process.exit(130);
       return;
     }
