@@ -1,0 +1,63 @@
+engine: auto
+name: forex_london_breakout
+kind: breakout
+family: breakout
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: cnn_window_v0
+timeframe: 15m
+sections:
+  hypothesis: "European session opening volatility triggers directional expansion out of Asian consolidation ranges on EURUSD, GBPUSD, and USDJPY. CNN window extracts spatial price-volume consolidation features."
+  universe:
+    - EURUSD
+    - GBPUSD
+    - USDJPY
+  signals:
+    entry: "Signal > 0.68"
+    exit: "Hold 2 days or trail stop on 1.5x ATR"
+  data:
+    required_sources:
+      - price_volume
+      - macro
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.68
+    max_holding_days: 2
+    risk_weight: 0.08
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes:
+    - "MT5 Forex intraday execution with sub-second reverse-TCP bridge"
+    - "Optimal execution during London/NY market overlap (08:00 - 16:00 GMT)"
+    - "Attributed via ORDER_MAGIC 64-bit codec with strategy CRC16 and 15m timeframe"

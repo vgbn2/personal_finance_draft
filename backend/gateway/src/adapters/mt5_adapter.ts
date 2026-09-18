@@ -158,9 +158,21 @@ export class Mt5Adapter implements BrokerAdapter {
   }
 
   async placeOrder(order: TradeOrder): Promise<{ orderId: string; status: string }> {
+    let tfMinutes = 1;
+    if (order.timeframe) {
+      const match = String(order.timeframe).match(/^(\d+)([mhd])$/i);
+      if (match) {
+        const val = Number(match[1]);
+        const unit = match[2].toLowerCase();
+        if (unit === 'm') tfMinutes = val;
+        else if (unit === 'h') tfMinutes = val * 60;
+        else if (unit === 'd') tfMinutes = val * 1440;
+      }
+    }
+
     const magic = MagicCodec.encode({
       strategyId: order.strategyId || order.strategy || 'manual',
-      timeframeMinutes: 1,
+      timeframeMinutes: tfMinutes,
       instanceId: 1,
     });
 

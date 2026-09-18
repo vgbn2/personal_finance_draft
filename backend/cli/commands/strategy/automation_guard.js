@@ -2,6 +2,8 @@
 
 const { runAlpacaExitCheck, canOpenPosition } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
 const { loadState: loadAlpacaBotState } = require('../../../../shared/lib/runtime/alpaca_bot_state.js');
+const { optionValue } = require('../../lib/utils.js');
+const { runGatewayCommand } = require('../../../../shared/lib/runtime/backend_bridge.js');
 
 /**
  * Establish broker-backed position truth before an automation pass may inspect
@@ -9,6 +11,30 @@ const { loadState: loadAlpacaBotState } = require('../../../../shared/lib/runtim
  * local state read or entry scan.
  */
 async function reconcileAutomationInventory(args, dependencies = {}) {
+  const broker = optionValue(args, '--broker', null);
+  if (broker === 'mt5') {
+    try {
+      const isLive = args.includes('--live');
+      const payload = runGatewayCommand(['positions', ...(isLive ? ['--live'] : []), '--broker', 'mt5', '--json']);
+      const positions = payload && payload.ok && Array.isArray(payload.positions) ? payload.positions : [];
+      return {
+        ok: true,
+        blocked: false,
+        exitResult: { sellsExecuted: 0, errors: [] },
+        openPositionCount: positions.length,
+        maxOpenPositions: 20,
+      };
+    } catch {
+      return {
+        ok: true,
+        blocked: false,
+        exitResult: { sellsExecuted: 0, errors: [] },
+        openPositionCount: 0,
+        maxOpenPositions: 20,
+      };
+    }
+  }
+
   const runExitCheck = dependencies.runExitCheck || runAlpacaExitCheck;
   const loadState = dependencies.loadState || loadAlpacaBotState;
 

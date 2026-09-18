@@ -1,0 +1,62 @@
+engine: auto
+name: gold_ny_momentum
+kind: momentum
+family: momentum
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: random_forest
+timeframe: 15m
+sections:
+  hypothesis: "Gold (XAUUSD) and Silver (XAGUSD) demonstrate strong institutional momentum impulses during NY cash session open driven by Treasury yield and dollar index shifts."
+  universe:
+    - XAUUSD
+    - XAGUSD
+  signals:
+    entry: "Signal > 0.70"
+    exit: "Hold 2 days or trail stop on 2.0x ATR"
+  data:
+    required_sources:
+      - price_volume
+      - macro
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.70
+    max_holding_days: 2
+    risk_weight: 0.10
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes:
+    - "MT5 precious metals contract execution"
+    - "Targeted for NY session volatility windows"
+    - "Direct stop-loss and take-profit enforcement via MT5 EA bridge"

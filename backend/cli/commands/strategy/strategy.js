@@ -438,8 +438,9 @@ async function runAutomationPass(args, strategiesOverride = null) {
     const settings = loadRuntimeSettings();
     const isLive = hasFlag(args, '--live');
     const providerPaper = hasFlag(args, '--paper-provider');
+    const broker = optionValue(args, '--broker', null);
     if (isLive && providerPaper) throw new Error('--paper-provider cannot be combined with --live');
-    const executionEnabled = isLive || providerPaper;
+    const executionEnabled = isLive || providerPaper || Boolean(broker);
     const refreshDays = numericOption(args, '--refresh-days', 2);
     const minTrustScore = numericOption(args, '--min-trust-score', 70);
     const refreshGroups = new Map();
@@ -485,7 +486,11 @@ async function runAutomationPass(args, strategiesOverride = null) {
         return;
     }
 
-    const modeLabel = isLive ? '\x1b[1;31mLIVE\x1b[0m' : (providerPaper ? '\x1b[1;33mPAPER-ALPACA (TRADE)\x1b[0m' : '\x1b[1;32mDRY-RUN\x1b[0m');
+    const modeLabel = isLive
+        ? '\x1b[1;31mLIVE\x1b[0m'
+        : (broker === 'mt5'
+            ? '\x1b[1;35mMT5 (TRADE)\x1b[0m'
+            : (providerPaper ? '\x1b[1;33mPAPER-ALPACA (TRADE)\x1b[0m' : '\x1b[1;32mDRY-RUN\x1b[0m'));
     console.log(`[\x1b[36m${new Date().toLocaleTimeString()}\x1b[0m] [AUTOMATION] Scanning ${targetStrategies.length} strategies... (Mode: ${modeLabel})`);
     
     // 1. Collect all symbols needed, grouped by timeframe
@@ -562,7 +567,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
 
    
     console.log(`[AUTOMATION] Fetching portfolio balance for dynamic sizing...`);
-    const balanceObj = await fetchBalance(isLive).catch(err => {
+    const balanceObj = await fetchBalance(isLive, broker).catch(err => {
         if (isLive) {
             throw new Error(`Critical: Failed to fetch balance in LIVE mode: ${err.message}`);
         }
@@ -686,7 +691,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
 
            
             // Filter out unsupported/non-tradable assets on Alpaca Paper broker
-            if (providerPaper && !isAlpacaTradable(lastTrade.symbol)) {
+            if (providerPaper && broker !== 'mt5' && !isAlpacaTradable(lastTrade.symbol)) {
                 console.log(`[AUTOMATION] Skipping ${lastTrade.symbol}: asset is not tradable on Alpaca paper broker.`);
                 continue;
             }
@@ -701,7 +706,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
                 symbol: lastTrade.symbol,
                 allocationUsd,
                 referencePrice: currentPrice,
-                allowFractional: providerPaper,
+                allowFractional: providerPaper || broker === 'mt5',
             });
 
             if (!sizing.ok) {
@@ -746,7 +751,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
             }
 
             if (executionEnabled) {
-                const mode = providerPaper ? 'PAPER-ALPACA' : 'LIVE';
+                const mode = broker === 'mt5' ? 'MT5' : (providerPaper ? 'PAPER-ALPACA' : 'LIVE');
                 console.log(`[\x1b[1;33m${mode}\x1b[0m] Sending order for ${lastTrade.symbol} (Qty: ${qty})...`);
                 const signature = generateOrderSignature({
                     strategyId: strategy.name,
@@ -761,7 +766,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
                     lastTrade.symbol,
                     String(qty),
                     'market',
-                    ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(perOrderMaxNotional)] : ['--live']),
+                    ...(broker === 'mt5' ? ['--broker', 'mt5'] : (providerPaper ? ['--paper-provider', '--paper-max-notional', String(perOrderMaxNotional)] : ['--live'])),
                     '--strategy',
                     strategy.name,
                     '--signature',
@@ -834,9 +839,10 @@ async function runAutomationPass(args, strategiesOverride = null) {
 async function runAutomatedStrategies(args) {
     const settings = loadRuntimeSettings();
     const providerPaper = hasFlag(args, '--paper-provider');
+    const broker = optionValue(args, '--broker', null);
     const once = hasFlag(args, '--once');
 
-    const gate = featureGate(providerPaper ? 'bot_autopilot' : 'ai_agent_trading', {
+    const gate = featureGate(providerPaper || broker === 'mt5' ? 'bot_autopilot' : 'ai_agent_trading', {
         settings,
         surface: 'Strategy automation'
     });
@@ -859,7 +865,8 @@ async function runAutomatedStrategies(args) {
     const maxPasses = numericOption(args, '--passes', 0); // 0 = run indefinitely
     const passLabel = maxPasses === 0 ? '∞' : String(maxPasses);
 
-    console.log(`[\x1b[1;35mAUTO\x1b[0m] Starting ${providerPaper ? 'Alpaca Paper' : 'Strategy'} Automation Loop (Interval: ${intervalMinutes} min, Max Passes: ${passLabel})`);
+    const loopLabel = broker === 'mt5' ? 'MT5' : (providerPaper ? 'Alpaca Paper' : 'Strategy');
+    console.log(`[\x1b[1;35mAUTO\x1b[0m] Starting ${loopLabel} Automation Loop (Interval: ${intervalMinutes} min, Max Passes: ${passLabel})`);
     console.log('Press Ctrl+C to stop.');
 
     return new Promise((resolve) => {
