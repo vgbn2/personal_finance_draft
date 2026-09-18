@@ -8,7 +8,7 @@ This guide explains how to implement and integrate a new market data provider in
 
 Data ingestion in Sovereign falls into three distinct implementation archetypes:
 
-```
+```text
 [Archetype A: Direct REST/WS API]     [Archetype B: Third-Party Archive]    [Archetype C: Local Terminal Stub]
   (Binance, Yahoo, Alpaca Data)             (PMXT for Polymarket)            (SovereignExport.mq5 for MT5)
                │                                      │                                      │

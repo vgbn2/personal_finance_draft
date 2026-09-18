@@ -26,7 +26,7 @@ Execution gateways where order routing is decoupled from data ingestion:
   - *Execution*: In-memory & disk-backed simulated paper trading (`backend/gateway/src/paper_ledger.js`).
   - *Data Feed*: Consumes any historical binary TS file (`storage/data/ts/*.bin`).
 
-```
+```text
 ┌───────────────────────────────────────────────────────────┐
 │                    Strategy & Trade Desks                 │
 │  backend/cli/commands/trade/trade.js (--broker <name>)    │
