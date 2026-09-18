@@ -78,6 +78,7 @@ nav:
       - Proxmox VM Deployment: how_to/proxmox_vm_deployment.md
       - Operational Soak Runbook: how_to/operational_soak_runbook.md
       - Broker Gateway Setup: how_to/broker_gateway_setup.md
+      - MT5 Trade Bridge: how_to/mt5_trade_bridge.md
       - CLI Operations Guide: how_to/cli_operations_guide.md
       - Data Backfill & Ingestion: how_to/data_backfill_and_ingestion.md
       - Strategy Explorer Workflow: how_to/strategy_explorer_workflow.md

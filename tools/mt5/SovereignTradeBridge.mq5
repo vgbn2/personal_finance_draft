@@ -15,15 +15,25 @@ input double InpMaxLot = 2.0;
 
 int      g_socket = INVALID_HANDLE;
 string   g_rxBuffer = "";
-datetime g_lastConnectAttempt = 0;
+ulong    g_lastConnectAttempt = 0;
+ulong    g_lastErrorLogTime = 0;
+ulong    g_lastHeartbeat = 0;
 
 int OnInit() {
-   EventSetMillisecondTimer(InpTimerMs);
+   Print("[SOVEREIGN] SovereignTradeBridge starting on ", _Symbol, " target=", InpHost, ":", InpPort);
+   if(!EventSetMillisecondTimer(InpTimerMs)) {
+      Print("[SOVEREIGN] Warning: EventSetMillisecondTimer(", InpTimerMs, ") failed, falling back to 1s timer");
+      if(!EventSetTimer(1)) {
+         Print("[SOVEREIGN] Fatal: Failed to initialize timer, err=", GetLastError());
+         return INIT_FAILED;
+      }
+   }
    ConnectBridge();
    return INIT_SUCCEEDED;
 }
 
 void OnDeinit(const int reason) {
+   Print("[SOVEREIGN] SovereignTradeBridge stopped, reason=", reason);
    EventKillTimer();
    CloseSocket();
 }
@@ -33,27 +43,38 @@ void CloseSocket() {
       SocketClose(g_socket);
       g_socket = INVALID_HANDLE;
    }
+   g_rxBuffer = "";
 }
 
 void ConnectBridge() {
-   if(g_socket != INVALID_HANDLE && SocketIsConnected(g_socket)) return;
-   if(TimeCurrent() - g_lastConnectAttempt < 2) return;
-   g_lastConnectAttempt = TimeCurrent();
+   if(g_socket != INVALID_HANDLE) return;
+   ulong now = GetTickCount64();
+   if(now - g_lastConnectAttempt < 1000) return;
+   g_lastConnectAttempt = now;
 
-   CloseSocket();
    g_socket = SocketCreate();
-   if(g_socket == INVALID_HANDLE) return;
+   if(g_socket == INVALID_HANDLE) {
+      Print("[SOVEREIGN] SocketCreate failed, err=", GetLastError());
+      return;
+   }
 
    SocketTimeouts(g_socket, 50, 50);
    if(!SocketConnect(g_socket, InpHost, InpPort, 500)) {
+      int err = GetLastError();
+      if(now - g_lastErrorLogTime >= 5000) {
+         Print("[SOVEREIGN] SocketConnect failed to ", InpHost, ":", InpPort, " err=", err);
+         g_lastErrorLogTime = now;
+      }
       CloseSocket();
       return;
    }
 
-   SendRegistration();
+   if(SendRegistration()) {
+      Print("[SOVEREIGN] Socket connected and registered with gateway at ", InpHost, ":", InpPort);
+   }
 }
 
-void SendRegistration() {
+bool SendRegistration() {
    string marginMode = "RETAIL_HEDGING";
    ENUM_ACCOUNT_MARGIN_MODE mode = (ENUM_ACCOUNT_MARGIN_MODE)AccountInfoInteger(ACCOUNT_MARGIN_MODE);
    if(mode == ACCOUNT_MARGIN_MODE_RETAIL_NETTING) marginMode = "RETAIL_NETTING";
@@ -71,25 +92,38 @@ void SendRegistration() {
       AccountInfoInteger(ACCOUNT_TRADE_ALLOWED) ? "true" : "false"
    );
 
-   SendRaw(reg);
+   return SendRaw(reg);
+}
+
+void OnTick() {
+   OnTimer();
 }
 
 void OnTimer() {
-   if(g_socket == INVALID_HANDLE || !SocketIsConnected(g_socket)) {
+   if(g_socket == INVALID_HANDLE) {
       ConnectBridge();
       return;
    }
 
-   while(SocketIsReadable(g_socket) > 0) {
+   uint readable = SocketIsReadable(g_socket);
+   if(readable > 0) {
       uchar chunk[1024];
-      int read = SocketRead(g_socket, chunk, 1024, 10);
+      uint toRead = (readable > 1024) ? 1024 : readable;
+      int read = SocketRead(g_socket, chunk, toRead, 10);
       if(read > 0) {
          string text = CharArrayToString(chunk, 0, read);
          g_rxBuffer += text;
          ProcessBuffer();
       } else {
-         break;
+         CloseSocket();
+         return;
       }
+   }
+
+   ulong now = GetTickCount64();
+   if(now - g_lastHeartbeat >= 2000) {
+      g_lastHeartbeat = now;
+      SendRaw("{\"type\":\"PING\"}\n");
    }
 }
 
@@ -108,7 +142,9 @@ void DispatchCommand(string line) {
    StringTrimRight(line);
    if(StringLen(line) == 0) return;
 
-   if(StringFind(line, "\"ORDER_SUBMIT\"") >= 0) {
+   if(StringFind(line, "\"REGISTER_ACK\"") >= 0 || StringFind(line, "\"PING\"") >= 0 || StringFind(line, "\"PONG\"") >= 0) {
+      return;
+   } else if(StringFind(line, "\"ORDER_SUBMIT\"") >= 0) {
       ExecuteOrderSubmit(line);
    } else if(StringFind(line, "\"ORDER_CANCEL\"") >= 0) {
       ExecuteOrderCancel(line);
@@ -118,6 +154,8 @@ void DispatchCommand(string line) {
       ExecuteAccountGet(line);
    } else if(StringFind(line, "\"QUOTE_GET\"") >= 0) {
       ExecuteQuoteGet(line);
+   } else {
+      Print("[SOVEREIGN] Unrecognized command: ", line);
    }
 }
 
@@ -132,11 +170,22 @@ string ExtractJsonField(string json, string field) {
    return StringSubstr(json, start, end - start);
 }
 
-void SendRaw(string msg) {
-   if(g_socket == INVALID_HANDLE || !SocketIsConnected(g_socket)) return;
+bool SendRaw(string msg) {
+   if(g_socket == INVALID_HANDLE) return false;
    uchar data[];
    StringToCharArray(msg, data, 0, StringLen(msg));
-   SocketSend(g_socket, data, ArraySize(data));
+   int sent = SocketSend(g_socket, data, StringLen(msg));
+   if(sent < 0) {
+      int err = GetLastError();
+      ulong now = GetTickCount64();
+      if(now - g_lastErrorLogTime >= 5000) {
+         Print("[SOVEREIGN] SocketSend error, err=", err);
+         g_lastErrorLogTime = now;
+      }
+      CloseSocket();
+      return false;
+   }
+   return true;
 }
 
 void ExecuteOrderSubmit(string line) {
@@ -214,11 +263,13 @@ void ExecuteOrderSubmit(string line) {
       sltpReq.symbol = symbol;
       if(sl > 0) sltpReq.sl = NormalizeDouble(sl, digits);
       if(tp > 0) sltpReq.tp = NormalizeDouble(tp, digits);
-      OrderSend(sltpReq, sltpRes);
+      if(!OrderSend(sltpReq, sltpRes)) {
+         Print("[SOVEREIGN] SLTP modification failed, retcode=", sltpRes.retcode);
+      }
    }
 
    SendRaw(StringFormat(
-      "{\"type\":\"ORDER_RESULT\",\"nonce\":\"%s\",\"ok\":true,\"ticket\":%d,\"deal\":%d,\"symbol\":\"%s\",\"volume\":%.2f,\"fillPrice\":%.5f,\"retcode\":%d,\"timestamp\":\"%s\"}\n",
+         "{\"type\":\"ORDER_RESULT\",\"nonce\":\"%s\",\"ok\":true,\"ticket\":%d,\"deal\":%d,\"symbol\":\"%s\",\"volume\":%.2f,\"fillPrice\":%.5f,\"retcode\":%d,\"timestamp\":\"%s\"}\n",
       nonce, (int)res.order, (int)res.deal, symbol, res.volume, res.price, res.retcode, TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS)
    ));
 }
