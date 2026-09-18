@@ -68,6 +68,19 @@ function buildAlpacaPaperStrategyArgs(options = {}) {
   return args;
 }
 
+function buildMt5StrategyArgs(options = {}) {
+  const args = [
+    '--once',
+    '--broker', 'mt5',
+    '--passes', '0',
+    '--min-trust-score', String(options.minTrustScore || 65),
+  ];
+  if (options.allowedTimeframes) {
+    args.push('--allowed-timeframes', String(options.allowedTimeframes));
+  }
+  return args;
+}
+
 async function runPaperBotLoop(intervalMin, opts = {}) {
   const gate = featureGate('bot_autopilot', { settings: opts.settings, surface: 'Paper bot loop' });
   if (!gate.ok) {
@@ -148,9 +161,67 @@ async function runAlpacaPaperLoop(intervalMin, opts = {}) {
   return 0;
 }
 
+async function runMt5BotLoop(intervalMin, opts = {}) {
+  const runStrategies = opts.runAutomatedStrategies
+    || require('../strategy/strategy.js').runAutomatedStrategies;
+  const settings = opts.settings || loadRuntimeSettings();
+
+  const gate = featureGate('bot_autopilot', {
+    settings,
+    surface: 'MT5 bot loop'
+  });
+  if (!gate.ok) {
+    printPayload({
+      ok: false,
+      type: 'feature_gate',
+      feature_flag: gate.flag,
+      reason: gate.reason,
+      hint: gate.hint
+    }, opts.args || []);
+    return 1;
+  }
+
+  const effectiveIntervalMin = Math.max(1, Number(intervalMin) || 1);
+  const intervalMs = effectiveIntervalMin * 60 * 1000;
+  const strategyArgs = buildMt5StrategyArgs(opts);
+
+  if (opts.once) {
+    console.log('[run bot mt5] Running one-shot MT5 automation pass...');
+    await runStrategies(strategyArgs);
+    return 0;
+  }
+
+  installShutdownHandlers();
+  console.log(`[run bot mt5] Starting MT5 automation loop every ${effectiveIntervalMin} min. Ctrl+C to stop.`);
+
+  const start = opts.startLoop || startLoop;
+  start('mt5_bot', async ({ iteration }) => {
+    console.log(`[mt5_bot] #${iteration} — ${new Date().toISOString()}`);
+    await runStrategies(strategyArgs);
+  }, intervalMs, { continueOnError: true });
+
+  if (opts.waitForShutdown !== false) await new Promise(() => {});
+  return 0;
+}
+
 async function commandRunBot(args) {
   const botSub = args[0] || 'paper';
   const botArgs = args.slice(1);
+
+  if (botSub === 'mt5' || botSub === 'mt5-bot' || (botSub === 'paper' && botArgs.includes('--broker') && optionValue(botArgs, '--broker') === 'mt5')) {
+    const settings = loadRuntimeSettings();
+    const interval = numericOption(botArgs, '--interval', 1);
+    const once = hasFlag(botArgs, '--once');
+    const minTrustScore = numericOption(botArgs, '--min-trust-score', 65);
+
+    return runMt5BotLoop(interval, {
+      once,
+      minTrustScore,
+      allowedTimeframes: optionValue(botArgs, '--allowed-timeframes', null),
+      args: botArgs,
+      settings,
+    });
+  }
 
   if (botSub === 'alpaca-paper') {
     const settings = loadRuntimeSettings();
@@ -201,7 +272,7 @@ async function commandRunBot(args) {
     return 1;
   }
 
-  console.error(`[run bot] Unknown subcommand '${botSub}'. Use: paper | alpaca-paper | live`);
+  console.error(`[run bot] Unknown subcommand '${botSub}'. Use: paper | alpaca-paper | mt5 | live`);
   return 1;
 }
 

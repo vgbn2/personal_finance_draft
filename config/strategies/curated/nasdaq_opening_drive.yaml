@@ -1,0 +1,63 @@
+engine: auto
+name: nasdaq_opening_drive
+kind: momentum
+family: momentum
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: logistic_regression
+timeframe: 5m
+sections:
+  hypothesis: "Index CFDs (NAS100, US30, SPX500) exhibit rapid orderflow imbalance at the 09:30 EST US market open. Fast 5m momentum impulse models capture opening drive continuation."
+  universe:
+    - NAS100
+    - US30
+    - SPX500
+  signals:
+    entry: "Signal > 0.65"
+    exit: "Hold 1 day or close at market session end"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 1
+    risk_weight: 0.08
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes:
+    - "MT5 US equity index CFD execution"
+    - "Tight 5m intraday cycle with fast cancellation on adverse moves"
+    - "Dynamic sizing based on MT5 lot specifications"

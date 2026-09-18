@@ -1,0 +1,58 @@
+name: auto_mt5_forex_reversion_knn_30m_mu7z4fx2
+kind: mean_reversion
+family: mean_reversion
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: knn_pattern_v0
+timeframe: 30m
+sections:
+  hypothesis: "Automated k-NN pattern matching on 30m Forex multi-pair mean reversion cycles (USDJPY, EURGBP, AUDUSD)."
+  universe:
+    - "USDJPY"
+    - "EURGBP"
+    - "AUDUSD"
+  signals:
+    entry: "k-NN neighbor consensus > 0.66"
+    exit: "Hold 2 days or Bollinger midline exit"
+  data:
+    required_sources:
+      - price_volume
+    validation: strict
+  features:
+    technical:
+      - "volatility"
+      - "return_fast"
+      - "return_slow"
+      - "rsi"
+      - "bollinger"
+      - "atr"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.66
+    max_holding_days: 2
+    risk_weight: 0.08
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []
