@@ -142,7 +142,13 @@ test('SV Console to MT5 Pipeline: trade balance, positions, quote, and diagnosti
     const docResult = spawnSync(process.execPath, [CLI_PATH, 'mt5', 'doctor', '--slot', 'test', '--json'], {
       cwd: REPO_ROOT,
       encoding: 'utf8',
-      env: { ...process.env, MT5_LOGIN: '665544' },
+      env: {
+        ...process.env,
+        MT5_LOGIN: '665544',
+        MT5_SERVER: 'MetaQuotes-Demo',
+        MT5_PASSWORD: 'password123',
+        SOVEREIGN_MT5_TERMINAL_PATH: CLI_PATH,
+      },
     });
     assert.equal(docResult.status, 0, `Doctor failed: ${docResult.stderr || docResult.stdout}`);
     const doc = JSON.parse(docResult.stdout.trim());
