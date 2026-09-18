@@ -553,6 +553,13 @@ async function commandBackfillDaemon(args) {
   // Suppress verbose sub-command output — daemon owns all progress reporting.
   global.suppressLogs = true;
 
+  const { acquireLock, releaseLock } = require('../../../../shared/lib/runtime/process_lock.js');
+  const lock = acquireLock('backfill_daemon');
+  if (!lock) {
+    console.error('[BACKFILL] Error: Backfill daemon is already running (process lock held).');
+    return 1;
+  }
+
   const { loadConfig } = require('../../../scripts/data_ops/ingest_market_data.js');
   const log = (line) => console.log(line);
   const execute = makeRealExecutor();
@@ -564,6 +571,7 @@ async function commandBackfillDaemon(args) {
   const stopDaemon = () => {
     if (stopping) return;
     stopping = true;
+    try { releaseLock(lock); } catch (_) {}
     writeDaemonStatus({ status: 'stopped', pid: process.pid, cycle, stopped_at: new Date().toISOString(), updated_at: new Date().toISOString() });
     writeBackfillHeartbeat({ state: 'stopped', attempted: false, next_run_at: null });
     process.exit(0);
