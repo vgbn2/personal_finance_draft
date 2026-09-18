@@ -81,9 +81,9 @@ bool SendRegistration() {
    else if(mode == ACCOUNT_MARGIN_MODE_EXCHANGE) marginMode = "EXCHANGE";
 
    string reg = StringFormat(
-      "{\"type\":\"REGISTER\",\"terminalId\":\"mt5_%d\",\"account\":%d,\"server\":\"%s\",\"company\":\"%s\",\"marginMode\":\"%s\",\"currency\":\"%s\",\"leverage\":%d,\"tradeAllowed\":%s}\n",
-      (int)AccountInfoInteger(ACCOUNT_LOGIN),
-      (int)AccountInfoInteger(ACCOUNT_LOGIN),
+      "{\"type\":\"REGISTER\",\"terminalId\":\"mt5_%I64d\",\"account\":%I64d,\"server\":\"%s\",\"company\":\"%s\",\"marginMode\":\"%s\",\"currency\":\"%s\",\"leverage\":%d,\"tradeAllowed\":%s}\n",
+      AccountInfoInteger(ACCOUNT_LOGIN),
+      AccountInfoInteger(ACCOUNT_LOGIN),
       AccountInfoString(ACCOUNT_SERVER),
       AccountInfoString(ACCOUNT_COMPANY),
       marginMode,
@@ -269,8 +269,8 @@ void ExecuteOrderSubmit(string line) {
    }
 
    SendRaw(StringFormat(
-         "{\"type\":\"ORDER_RESULT\",\"nonce\":\"%s\",\"ok\":true,\"ticket\":%d,\"deal\":%d,\"symbol\":\"%s\",\"volume\":%.2f,\"fillPrice\":%.5f,\"retcode\":%d,\"timestamp\":\"%s\"}\n",
-      nonce, (int)res.order, (int)res.deal, symbol, res.volume, res.price, res.retcode, TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS)
+         "{\"type\":\"ORDER_RESULT\",\"nonce\":\"%s\",\"ok\":true,\"ticket\":%I64u,\"deal\":%I64u,\"symbol\":\"%s\",\"volume\":%.2f,\"fillPrice\":%.5f,\"retcode\":%d,\"timestamp\":\"%s\"}\n",
+      nonce, res.order, res.deal, symbol, res.volume, res.price, res.retcode, TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS)
    ));
 }
 
@@ -310,8 +310,8 @@ void ExecutePositionsGet(string line) {
       ulong magic = PositionGetInteger(POSITION_MAGIC);
 
       json += StringFormat(
-         "{\"ticket\":%d,\"symbol\":\"%s\",\"side\":\"%s\",\"volume\":%.2f,\"openPrice\":%.5f,\"currentPrice\":%.5f,\"unrealizedPl\":%.2f,\"magic\":\"%I64u\"}",
-         (int)ticket, sym, side, vol, openPrice, curPrice, profit, magic
+         "{\"ticket\":%I64u,\"symbol\":\"%s\",\"side\":\"%s\",\"volume\":%.2f,\"openPrice\":%.5f,\"currentPrice\":%.5f,\"unrealizedPl\":%.2f,\"magic\":\"%I64u\"}",
+         ticket, sym, side, vol, openPrice, curPrice, profit, magic
       );
    }
    json += "]}\n";

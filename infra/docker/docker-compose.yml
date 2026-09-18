@@ -119,8 +119,6 @@ services:
     volumes:
       - ../../storage/mt5/terminal:/opt/mt5/terminal
       - ../../tools/mt5:/opt/mt5/terminal/MQL5/Experts:ro
-    ports:
-      - "127.0.0.1:8282:8282"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
