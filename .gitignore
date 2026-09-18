@@ -79,6 +79,12 @@ site/
 .windsurf/
 .zencoder/
 .skills/
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+**/CLAUDE.md
+**/GEMINI.md
+**/AGENTS.md
 
 # Local Workspace & Research Notes (Local/Private to Host)
 workspace/
