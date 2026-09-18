@@ -33,7 +33,7 @@ Sovereign strictly segregates provider responsibilities into three adapter arche
 
 MetaTrader 5 integrates via a local TCP NDJSON socket bridge. The Sovereign backend runs a lightweight `net.Server` on `127.0.0.1:8282` communicating with the native MQL5 Expert Advisor (`tools/mt5/SovereignTradeBridge.mq5`).
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────┐
 │                    Sovereign Platform                        │
 │  backend/gateway/src/adapters/mt5_adapter.ts (TCP Server)   │
