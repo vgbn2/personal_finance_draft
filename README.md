@@ -105,6 +105,41 @@ npm run test:structure
 npm run test:core
 ```
 
+### MetaTrader 5 (MT5) Setup (Optional for Forex/CFD Execution)
+
+MT5 is strictly optional. Core backtesting, data pipelines, C++ analytics, Alpaca, and Polymarket run zero-key with no MT5 or Wine installed.
+
+When MT5 execution is desired (demo or live accounts):
+
+#### Option A: One-Command Headless Docker (Recommended for Linux / Servers / Proxmox)
+```bash
+# Starts headless Wine 9.x + Xvfb + MetaTrader 5 with auto-attached bridge EA
+docker compose up -d sv-mt5
+```
+
+#### Option B: Host Installation (Linux Wine or Native Windows)
+1. **Install MT5 Terminal**:
+   - **Linux (Wine)**: Install Wine 9+, download your broker's `mt5setup.exe`, and run `wine mt5setup.exe`.
+   - **Windows**: Install MetaTrader 5 via the official installer.
+2. **Install & Compile Sovereign Bridge EA**:
+   ```bash
+   # Auto-detects terminal data directories, installs SovereignTradeBridge.mq5, and compiles .ex5
+   node backend/scripts/verification/mt5_bridge_install.js
+   ```
+3. **Configure & Verify Account**:
+   ```bash
+   # Add encrypted account credentials to vault (AES-256-GCM)
+   node backend/cli/sovereign_cli.js mt5 profile add --slot test
+
+   # Run doctor diagnostics to verify terminal binary, bridge EA, and credentials
+   node backend/cli/sovereign_cli.js mt5 doctor --slot test
+
+   # Launch terminal with ephemeral auto-login config
+   node backend/cli/sovereign_cli.js mt5 connect --slot test
+   ```
+
+For detailed protocol specifications, fail-closed risk checks, and Wine troubleshooting, see [MT5 Trade Bridge Guide](docs/how_to/mt5_trade_bridge.md).
+
 ---
 
 ## 3. Sovereign Ink TUI & CLI Navigation Guide
