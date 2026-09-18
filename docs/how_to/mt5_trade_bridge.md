@@ -8,7 +8,7 @@ Technical documentation for the Sovereign MetaTrader 5 execution bridge, native 
 
 Sovereign decouples quantitative strategy research and order orchestration from MetaTrader 5 terminal execution through an out-of-process, reverse-TCP socket architecture.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                      Sovereign Execution Engine                         │
 │  backend/cli/commands/trade/trade.js  │  backend/gateway/src/index.ts   │
@@ -101,7 +101,7 @@ The script performs the following:
 
 Every order submitted through the MT5 bridge passes through multiple defensive security and risk layers before reaching the terminal socket.
 
-```
+```text
 Order Intent (CLI / Strategy Bot)
                │
                ▼

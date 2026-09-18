@@ -1147,6 +1147,40 @@
       ]
     },
     {
+      "path": "docs/how_to/add_broker_gateway.md",
+      "type": "how-to",
+      "audience": [
+        "maintainers",
+        "researchers"
+      ],
+      "owner": "engineering",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/add_data_ingestion.md",
+      "type": "how-to",
+      "audience": [
+        "maintainers",
+        "researchers"
+      ],
+      "owner": "engineering",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
       "path": "docs/how_to/broker_gateway_setup.md",
       "type": "how-to",
       "audience": [
@@ -1219,6 +1253,24 @@
       ]
     },
     {
+      "path": "docs/how_to/deployment_and_testing.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
       "path": "docs/how_to/disaster_recovery_and_rollback.md",
       "type": "how-to",
       "audience": [
@@ -1238,6 +1290,24 @@
     },
     {
       "path": "docs/how_to/environment_setup.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/mt5_trade_bridge.md",
       "type": "how-to",
       "audience": [
         "operators",
