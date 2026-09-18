@@ -118,6 +118,7 @@ enum OrderStatus {
 }
 
 interface TradeOrder {
+  orderId?: string;
   instrumentId: string;
   side: OrderSide;
   quantity: number;
@@ -797,11 +798,15 @@ class ExecutionGateway {
     
     // Basic structural validation
     if (order.quantity <= 0) {
-      console.error('[RISK] Rejection: Quantity must be positive');
+      const msg = 'Quantity must be positive';
+      console.error(`[RISK] Rejection: ${msg}`);
+      order.error = msg;
       return false;
     }
     if (order.type === 'limit' && (!Number.isFinite(order.price || NaN) || (order.price || 0) <= 0)) {
-      console.error('[RISK] Rejection: Limit orders require a positive price');
+      const msg = 'Limit orders require a positive price';
+      console.error(`[RISK] Rejection: ${msg}`);
+      order.error = msg;
       return false;
     }
 
@@ -812,13 +817,16 @@ class ExecutionGateway {
       riskContext = await buildRiskContext(order, this.adapter, this.dryRun || Boolean(order.providerPaper));
     } catch (error: any) {
       console.error(`[RISK] Rejection: ${error.message}`);
+      order.error = error.message;
       return false;
     }
 
     if (order.providerPaper && this.paperMaxNotional !== null) {
       const notional = riskContext.referencePrice * order.quantity;
       if (!Number.isFinite(notional) || notional > this.paperMaxNotional) {
-        console.error(`[RISK] Rejection: Paper Alpaca notional ${notional} exceeds cap ${this.paperMaxNotional}`);
+        const msg = `Paper Alpaca notional ${notional} exceeds cap ${this.paperMaxNotional}`;
+        console.error(`[RISK] Rejection: ${msg}`);
+        order.error = msg;
         return false;
       }
     }
@@ -827,6 +835,7 @@ class ExecutionGateway {
     const riskResult = await this.riskEngine.checkRisk(order, riskContext);
     if (!riskResult.approved) {
       console.error(`[RISK] Rejection: ${riskResult.reason}`);
+      order.error = riskResult.reason;
       return false;
     }
 
@@ -851,6 +860,7 @@ class ExecutionGateway {
         const label = order.providerPaper ? 'PAPER-ALPACA' : 'LIVE';
         console.log(`[${label}] Order placed successfully: ${result.orderId} (Status: ${result.status})`);
         order.status = result.status === 'filled' ? OrderStatus.FILLED : OrderStatus.SUBMITTED;
+        order.orderId = result.orderId;
 
         try {
           const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');

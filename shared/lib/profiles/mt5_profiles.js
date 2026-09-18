@@ -109,7 +109,7 @@ function getMt5EnvCredentials(slot, env = process.env) {
   const normalized = normalizeMt5Slot(slot);
   if (!normalized) return null;
   const prefix = normalized.toUpperCase();
-  const login = env[`MT5_${prefix}_LOGIN`] || env.MT5_LOGIN || '';
+  const login = env[`MT5_${prefix}_LOGIN`] || env[`MT5_${prefix}_LOGIN_ID`] || env.MT5_LOGIN || env.MT5_LOGIN_ID || '';
   const password = env[`MT5_${prefix}_PASSWORD`] || env.MT5_PASSWORD || '';
   const server = env[`MT5_${prefix}_SERVER`] || env.MT5_SERVER || '';
   const terminalPath = env[`MT5_${prefix}_TERMINAL_PATH`] || env.SOVEREIGN_MT5_TERMINAL_PATH || getDefaultMt5TerminalPath();

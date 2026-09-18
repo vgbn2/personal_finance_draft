@@ -37,7 +37,7 @@ export class Mt5Adapter implements BrokerAdapter {
     this.port = options.port ?? Number(process.env.MT5_BRIDGE_PORT || '8282');
     this.host = options.host ?? (process.env.MT5_BRIDGE_HOST || '127.0.0.1');
     this.timeoutMs = options.timeoutMs ?? 15000;
-    this.connectTimeoutMs = options.connectTimeoutMs ?? Number(process.env.MT5_CONNECT_TIMEOUT_MS || '1500');
+    this.connectTimeoutMs = options.connectTimeoutMs ?? Number(process.env.MT5_CONNECT_TIMEOUT_MS || '10000');
     if (options.autoStartServer !== false) {
       this.startServer().catch((err) => {
         console.error(`[MT5-BRIDGE] Server initialization error: ${err.message}`);
@@ -99,6 +99,10 @@ export class Mt5Adapter implements BrokerAdapter {
       if (msg.type === 'REGISTER') {
         this.terminalInfo = msg as Mt5RegistrationMessage;
         this.sendLine({ type: 'REGISTER_ACK', ok: true });
+        return;
+      }
+      if (msg.type === 'PING') {
+        this.sendLine({ type: 'PONG', ok: true });
         return;
       }
       if (msg.nonce && this.pendingRequests.has(msg.nonce)) {
