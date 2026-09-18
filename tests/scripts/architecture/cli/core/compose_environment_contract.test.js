@@ -38,7 +38,7 @@ test('schema-3 service rows match all nine isolated Compose environment files', 
     'portfolio-monitor': 'portfolio-monitor',
     'host-health': 'backend/scripts/ops/host_health.js',
     'host-backup': 'backend/scripts/ops/host_backup.js',
-    mt5: '8282:8282',
+    mt5: 'host.docker.internal:host-gateway',
     'polymarket-research': 'polymarket history schedule',
     'strategy-explorer': 'scripts/strategies/auto_strategy_explorer.js',
   };
