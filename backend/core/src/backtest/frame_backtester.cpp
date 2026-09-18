@@ -132,7 +132,6 @@ std::vector<AnnotatedRow> parseFeaturesFast(std::string_view content) {
                     while (i < n && content[i] != '"') ++i;
                     std::string_view key = content.substr(k_start, i - k_start);
                     if (i < n) ++i;
-
                     while (i < n && (content[i] == ':' || content[i] == ' ' || content[i] == '\t' || content[i] == '\r' || content[i] == '\n')) ++i;
 
                     if (i < n && content[i] == '"') {

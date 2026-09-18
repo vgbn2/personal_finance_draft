@@ -12,6 +12,7 @@ Task-oriented runbooks, deployment guides, operational procedures, and disaster 
 | **Proxmox / Remote VM** | [Proxmox VM Deployment](proxmox_vm_deployment.md) | Ubuntu VM, headless Wine64 MT5, service units |
 | **Soak & Stability** | [Operational Soak Runbook](operational_soak_runbook.md) | Long-running daemon monitoring, memory limits |
 | **Broker Gateways** | [Broker Gateway Setup](broker_gateway_setup.md) | Alpaca paper API, Polymarket CLOB, MT5 bridge |
+| **MT5 Trade Bridge** | [MT5 Trade Bridge](mt5_trade_bridge.md) | Reverse-TCP socket bridge, wire protocol, Wine headless |
 | **CLI & Operations** | [CLI Operations Guide](cli_operations_guide.md) | Command syntax, interval policies, order inspection |
 | **Data Ingestion** | [Data Backfill & Ingestion](data_backfill_and_ingestion.md) | Market data backfill, provider priorities |
 | **Strategy Explorer** | [Strategy Explorer Workflow](strategy_explorer_workflow.md) | Automated 30-min strategy generation & rank |
