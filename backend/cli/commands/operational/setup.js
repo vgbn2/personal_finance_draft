@@ -218,6 +218,20 @@ async function commandSetup(args) {
 }
 
 async function commandDoctor(args) {
+  if (hasFlag(args, '--deep') || args[0] === 'deep' || args[0] === 'system') {
+    const { runSystemDoctor, renderDoctorTerminal } = require('../../../../scripts/ops/system_doctor.js');
+    const noNetwork = hasFlag(args, '--no-network');
+    const payload = await runSystemDoctor({ deep: true, noNetwork });
+    if (hasFlag(args, '--json')) {
+      printPayload(payload, args);
+    } else if (typeof renderDoctorTerminal === 'function') {
+      console.log(renderDoctorTerminal(payload));
+    } else {
+      printPayload(payload, args);
+    }
+    return payload.ok ? 0 : 1;
+  }
+
   if (args[0] === 'alpaca' && hasFlag(args, '--paper-auth')) {
     const configured = redactedSettings(process.env).report;
     const payload = hasFlag(args, '--no-network')
