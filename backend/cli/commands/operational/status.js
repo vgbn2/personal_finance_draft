@@ -491,7 +491,6 @@ function cockpitInspectPayload(name) {
 function renderStatus(payload) {
   const line = '-'.repeat(72);
   const lines = [`\n=== SYSTEM STATUS ===`];
-  lines.push(`Phase:       ${payload.phase || 'Unknown'}`);
   lines.push(`Backend:     ${payload.backend_ok ? 'OK' : 'ERROR'} (${payload.backend || 'unknown'})`);
   lines.push(`Cache Mode:  ${payload.cache_mode || 'unknown'}`);
   if (payload.fetched_at) lines.push(`Fetched At:  ${payload.fetched_at}`);
