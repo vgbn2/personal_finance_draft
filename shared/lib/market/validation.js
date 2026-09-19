@@ -660,13 +660,50 @@ function writeJson(outputPath, payload) {
   renameWithRetry(tempPath, outputPath);
 }
 
+// Retention thresholds for JSON snapshot caches (backtest_history.json).
+// High-frequency intraday depth lives in binary TS (*.bin) only.
+// Tiered retention prevents V8 heap exhaustion and Anti-OOM failures in containers.
+const JSON_CACHE_RETENTION_MS = {
+  '1m': 3 * 24 * 60 * 60 * 1000,
+  '3m': 7 * 24 * 60 * 60 * 1000,
+  '5m': 14 * 24 * 60 * 60 * 1000,
+  '15m': 30 * 24 * 60 * 60 * 1000,
+  '30m': 30 * 24 * 60 * 60 * 1000,
+  '1h': 90 * 24 * 60 * 60 * 1000,
+  '2h': 90 * 24 * 60 * 60 * 1000,
+  '4h': 90 * 24 * 60 * 60 * 1000,
+  '6h': 90 * 24 * 60 * 60 * 1000,
+  '8h': 90 * 24 * 60 * 60 * 1000,
+  '12h': 90 * 24 * 60 * 60 * 1000,
+  '1d': 730 * 24 * 60 * 60 * 1000, // 2 years (~500 trading days) for JSON cache; binary TS keeps all history
+};
+
+function capSnapshotForJson(snapshot, { now = Date.now(), retentionRules = JSON_CACHE_RETENTION_MS } = {}) {
+  if (!snapshot || !Array.isArray(snapshot.sources)) return snapshot;
+  let dropped = 0;
+  const capped = [];
+  for (const r of snapshot.sources) {
+    const retentionMs = retentionRules[r.timeframe];
+    if (retentionMs !== undefined && r.timestamp) {
+      const ts = new Date(r.timestamp).getTime();
+      if (!Number.isNaN(ts) && (now - ts) > retentionMs) {
+        dropped++;
+        continue;
+      }
+    }
+    capped.push(r);
+  }
+  if (dropped === 0) return snapshot;
+  return { ...snapshot, sources: capped };
+}
+
 /**
  * Splits a snapshot into families and writes them to partitioned directories.
  * outputPath should be the root cache directory.
  */
-function writePartitionedSnapshot(rootPath, snapshot) {
+function writePartitionedSnapshot(rootPath, snapshot, options = {}) {
   if (!snapshot || !Array.isArray(snapshot.sources)) return;
-  
+
   const byFamily = new Map();
   snapshot.sources.forEach(s => {
     const family = s.family || 'unknown';
@@ -677,26 +714,29 @@ function writePartitionedSnapshot(rootPath, snapshot) {
   for (const [family, sources] of byFamily.entries()) {
     const familyDir = path.join(rootPath, family);
     const familyPath = path.join(familyDir, 'backtest_history.json');
-    
+
     // For each family, we should ideally merge with existing if any,
     // but the caller might have already merged.
     // If rootPath/family/backtest_history.json exists, and we are not doing a full rewrite,
     // we should merge.
-    
+
     const familySnapshot = {
       ...snapshot,
       sources,
-      // Filter errors and windows relevant to this family if possible, 
+      // Filter errors and windows relevant to this family if possible,
       // otherwise just replicate them.
       errors: (snapshot.errors || []).filter(e => !e.family || e.family === family),
       backfill_windows: (snapshot.backfill_windows || []).filter(w => !w.family || w.family === family)
     };
 
-    writeJson(familyPath, familySnapshot);
+    const cappedSnapshot = options.skipCap ? familySnapshot : capSnapshotForJson(familySnapshot, options);
+    writeJson(familyPath, cappedSnapshot);
   }
 }
 
 module.exports = {
+  JSON_CACHE_RETENTION_MS,
+  capSnapshotForJson,
   OHLCV_FAMILIES,
   TsIndexIntegrityError,
   TsIndexRetryError,
