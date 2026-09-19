@@ -17,6 +17,7 @@ x-central-runtime: &central-runtime
   SOVEREIGN_RUNTIME_MODE: cloud-compute
   LIVE_TRADING: "false"
   SOVEREIGN_EXECUTION_AUTHORIZED: "false"
+  NODE_OPTIONS: --max-old-space-size=768
 
 x-logging: &default-logging
   driver: "json-file"
@@ -44,6 +45,7 @@ services:
       SOVEREIGN_WEB_PORT: 8787
       SOVEREIGN_CACHE_TTL_MS: 30000
       SOVEREIGN_CACHE_MAX_ENTRIES: 100
+      NODE_OPTIONS: --max-old-space-size=768
     ports:
       - "${SOVEREIGN_WEB_BIND:-127.0.0.1}:8787:8787"
     volumes:
@@ -54,10 +56,10 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 512M
+          memory: 1024M
         reservations:
           cpus: '0.25'
-          memory: 128M
+          memory: 256M
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
@@ -88,10 +90,10 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 512M
+          memory: 1024M
         reservations:
           cpus: '0.25'
-          memory: 128M
+          memory: 256M
     # The image's HEALTHCHECK probes :8787/health, but bot runs no HTTP server —
     # disable it here so `docker compose ps` doesn't report a false "unhealthy".
     healthcheck:
@@ -160,10 +162,10 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 512M
+          memory: 1024M
         reservations:
           cpus: '0.25'
-          memory: 128M
+          memory: 256M
     healthcheck:
       disable: true
     # Alpaca Paper automation loop: scans registered strategies against Alpaca Paper
@@ -260,10 +262,10 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 256M
+          memory: 512M
         reservations:
           cpus: '0.1'
-          memory: 64M
+          memory: 128M
     healthcheck:
       disable: true
     command:
@@ -300,10 +302,10 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 256M
+          memory: 512M
         reservations:
           cpus: '0.1'
-          memory: 64M
+          memory: 128M
     healthcheck:
       disable: true
     command:
