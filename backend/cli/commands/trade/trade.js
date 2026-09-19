@@ -73,7 +73,6 @@ function tradeDeskText() {
   return [
     A.B_CYAN + 'Sovereign Trade Desk' + A.RESET,
     A.GRAY + '='.repeat(72) + A.RESET,
-    `  Phase: ${currentPhaseLabel()}`,
     '  Mode: dry-run by default; use --live only when you mean it',
     '  Actions: balance | buy | sell | process',
     '  Tip: plain `trade` opens the guided desk on an interactive terminal',
