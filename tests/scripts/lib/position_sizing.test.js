@@ -71,6 +71,36 @@ test('contract and lot sizing use their economic multipliers', () => {
   assert.equal(lots.ok, true);
   assert.equal(lots.quantity, 0.25);
   assert.equal(lots.projected_notional, 27500);
+
+  const fxNotional = normalizeSizingIntent({
+    intent: { mode: 'notional', value: 5500, currency: 'USD' },
+    instrument: instrument({
+      instrumentId: 'EURUSD',
+      assetClass: 'fx',
+      quantityStep: 0.01,
+      contractMultiplier: 1,
+      unitsPerLot: 100000,
+    }),
+    referencePrice: 1.1,
+  });
+  assert.equal(fxNotional.ok, true);
+  assert.equal(fxNotional.quantity, 0.05);
+  assert.equal(fxNotional.projected_notional, 5500);
+
+  const fxRisk = normalizeSizingIntent({
+    intent: { mode: 'risk_budget', value: 100, stopPrice: 1.0830, currency: 'USD' },
+    instrument: instrument({
+      instrumentId: 'EURUSD',
+      assetClass: 'fx',
+      quantityStep: 0.01,
+      contractMultiplier: 1,
+      unitsPerLot: 100000,
+    }),
+    referencePrice: 1.0850,
+  });
+  assert.equal(fxRisk.ok, true);
+  assert.equal(fxRisk.quantity, 0.5);
+  assert.equal(fxRisk.projected_notional, 54250);
 });
 
 test('risk-budget sizing uses stop loss and fails closed on invalid prices', () => {

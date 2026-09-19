@@ -146,6 +146,8 @@ void DispatchCommand(string line) {
       return;
    } else if(StringFind(line, "\"ORDER_SUBMIT\"") >= 0) {
       ExecuteOrderSubmit(line);
+   } else if(StringFind(line, "\"POSITION_MODIFY\"") >= 0) {
+      ExecutePositionModify(line);
    } else if(StringFind(line, "\"ORDER_CANCEL\"") >= 0) {
       ExecuteOrderCancel(line);
    } else if(StringFind(line, "\"POSITIONS_GET\"") >= 0) {
@@ -210,7 +212,7 @@ void ExecuteOrderSubmit(string line) {
    int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
 
    double lots = rawQty;
-   if(contractSize > 0.0 && rawQty >= contractSize) {
+   if(contractSize >= 1000.0 && rawQty >= 1000.0) {
       lots = rawQty / contractSize;
    }
    if(volumeStep > 0.0) {
@@ -271,6 +273,35 @@ void ExecuteOrderSubmit(string line) {
    SendRaw(StringFormat(
          "{\"type\":\"ORDER_RESULT\",\"nonce\":\"%s\",\"ok\":true,\"ticket\":%I64u,\"deal\":%I64u,\"symbol\":\"%s\",\"volume\":%.2f,\"fillPrice\":%.5f,\"retcode\":%d,\"timestamp\":\"%s\"}\n",
       nonce, res.order, res.deal, symbol, res.volume, res.price, res.retcode, TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS)
+   ));
+}
+
+void ExecutePositionModify(string line) {
+   string nonce = ExtractJsonField(line, "nonce");
+   ulong ticket = (ulong)StringToInteger(ExtractJsonField(line, "ticket"));
+   double sl = StringToDouble(ExtractJsonField(line, "sl"));
+   double tp = StringToDouble(ExtractJsonField(line, "tp"));
+
+   if(!PositionSelectByTicket(ticket)) {
+      SendRaw(StringFormat("{\"type\":\"MODIFY_RESULT\",\"nonce\":\"%s\",\"ok\":false,\"ticket\":%I64u,\"retcode\":10013,\"error\":\"Position ticket not found\"}\n", nonce, ticket));
+      return;
+   }
+
+   string symbol = PositionGetString(POSITION_SYMBOL);
+   int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+
+   MqlTradeRequest req = {};
+   MqlTradeResult  res = {};
+   req.action = TRADE_ACTION_SLTP;
+   req.position = ticket;
+   req.symbol = symbol;
+   if(sl > 0) req.sl = NormalizeDouble(sl, digits);
+   if(tp > 0) req.tp = NormalizeDouble(tp, digits);
+
+   bool ok = OrderSend(req, res);
+   SendRaw(StringFormat(
+      "{\"type\":\"MODIFY_RESULT\",\"nonce\":\"%s\",\"ok\":%s,\"ticket\":%I64u,\"retcode\":%d,\"sl\":%.5f,\"tp\":%.5f,\"error\":\"%s\"}\n",
+      nonce, ok ? "true" : "false", ticket, res.retcode, req.sl, req.tp, res.comment
    ));
 }
 

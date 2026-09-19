@@ -41,6 +41,10 @@ export interface TradeOrder {
   timeframe?: string;
   confidence?: number;
   submittedAt?: string;
+  stopLoss?: number;
+  takeProfit?: number;
+  sl?: number;
+  tp?: number;
 }
 
 export interface RiskContext {
@@ -54,6 +58,7 @@ export interface RiskContext {
 export interface BrokerAdapter {
   placeOrder(order: TradeOrder): Promise<{ orderId: string; status: string }>;
   cancelOrder(orderId: string): Promise<boolean>;
+  modifyOrder?(orderId: string, modification: { sl?: number; tp?: number; price?: number }): Promise<boolean>;
   getPortfolioBalance(): Promise<Record<string, number>>;
   getPositions(): Promise<Position[]>;
   getQuote?(symbol: string): Promise<number>;
@@ -99,5 +104,25 @@ export interface Mt5OrderResultMessage {
   retcodeDescription?: string;
   error?: string;
   timestamp: string;
+}
+
+export interface Mt5PositionModifyMessage {
+  type: 'POSITION_MODIFY';
+  nonce: string;
+  ticket: number;
+  sl?: number;
+  tp?: number;
+  price?: number;
+}
+
+export interface Mt5PositionModifyResultMessage {
+  type: 'MODIFY_RESULT';
+  nonce: string;
+  ok: boolean;
+  ticket: number;
+  retcode: number;
+  sl?: number;
+  tp?: number;
+  error?: string;
 }
 
