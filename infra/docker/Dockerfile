@@ -64,6 +64,7 @@ COPY --from=build --chown=node:node /app/config ./config
 COPY --from=build --chown=node:node /app/scripts/data_ops/backfill_20_years.js ./scripts/data_ops/backfill_20_years.js
 COPY --from=build --chown=node:node /app/scripts/ops ./scripts/ops
 COPY --from=build --chown=node:node /app/scripts/strategies ./scripts/strategies
+COPY --from=build /usr/lib/x86_64-linux-gnu/libgomp.so.1* /usr/lib/x86_64-linux-gnu/
 
 RUN mkdir -p storage/data storage/logs storage/runtime \
     && chown -R node:node storage
