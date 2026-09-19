@@ -175,3 +175,26 @@ test('setup writes polymarket secrets to a caller-specified local env file witho
     if (fs.existsSync(envPath)) fs.unlinkSync(envPath);
   }
 });
+
+test('doctor --deep --json --no-network executes fail-loud system diagnostic and redacts secrets', () => {
+  const result = runCli([
+    'doctor',
+    '--deep',
+    '--json',
+    '--no-network',
+  ]);
+
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(typeof parsed.ok, 'boolean');
+  assert.equal(typeof parsed.storage, 'object');
+  assert.equal(typeof parsed.backend_engine, 'object');
+  assert.equal(typeof parsed.stub_and_mock_gates, 'object');
+  assert.equal(typeof parsed.brokers, 'object');
+  assert.equal(typeof parsed.brokers.polymarket, 'object');
+  assert.equal(typeof parsed.brokers.alpaca, 'object');
+  assert.equal(typeof parsed.brokers.mt5, 'object');
+  assert.equal(typeof parsed.brokers.gate_io, 'object');
+  assert.equal(typeof parsed.runtime, 'object');
+  assert.equal(typeof parsed.storage.anti_oom_gate, 'object');
+});
+
