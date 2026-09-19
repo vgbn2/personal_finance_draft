@@ -11,7 +11,7 @@ const {
 } = require('../research/research.js');
 const { backfill20Years } = require('../../../../scripts/data_ops/backfill_20_years.js');
 const { runMaintenance } = require('../../../../shared/lib/data/db_pruning.js');
-const { validateSnapshot, writeJson, readSnapshot, mergeSnapshots, writePartitionedSnapshot, writeTsIndex, readTsIndex, recordKey } = require('../../../../shared/lib/market/validation.js');
+const { validateSnapshot, writeJson, readSnapshot, mergeSnapshots, writePartitionedSnapshot, writeTsIndex, readTsIndex, recordKey, capSnapshotForJson } = require('../../../../shared/lib/market/validation.js');
 const utils = require('../../lib/utils.js');
 const { featureGate } = require('../../../../shared/lib/settings/runtime');
 const {
@@ -606,12 +606,15 @@ async function commandLoc(args) {
  *   --api              clear storage/data/cache/api_responses/ (default: true unless --ts-only)
  *   --ts               also clear storage/data/ts/ bins
  *   --ts-only          clear only ts bins (skip api_responses)
+ *   --tmp              clean orphaned atomic write *.tmp files across cache and ts dirs
+ *   --compact          apply tiered retention to compact oversized backtest_history.json caches
  *   --symbol SYMBOL    with --ts: restrict to bins for that symbol (e.g. BTCUSDT)
  *   --timeframe TF     with --ts + --symbol: restrict to a single timeframe bin
  *
  * Examples:
  *   sovereign clear-api-cache --dry-run
  *   sovereign clear-api-cache
+ *   sovereign clear-api-cache --compact
  *   sovereign clear-api-cache --ts --symbol BTCUSDT
  *   sovereign clear-api-cache --ts-only --symbol AAPL --timeframe 1m
  */
@@ -620,10 +623,12 @@ function commandClearApiCache(args) {
   const tsOnly = hasFlag(args, '--ts-only');
   const includeTs = tsOnly || hasFlag(args, '--ts');
   const includeApi = !tsOnly;
+  const includeTmp = hasFlag(args, '--tmp') || includeApi;
+  const doCompact = hasFlag(args, '--compact');
   const symbolFilter = (optionValue(args, '--symbol', null) || '').toUpperCase() || null;
   const tfFilter = optionValue(args, '--timeframe', null) || null;
 
-  const result = { ok: true, dry_run: dryRun, api_cache: null, ts_cache: null };
+  const result = { ok: true, dry_run: dryRun, api_cache: null, ts_cache: null, tmp_files: null, compacted: null };
 
   // --- API response cache ---
   if (includeApi) {
@@ -644,6 +649,70 @@ function commandClearApiCache(args) {
     } else {
       result.api_cache = { would_delete: apiFiles.length, size_mb: +(apiBytes / 1e6).toFixed(1) };
     }
+  }
+
+  // --- Orphaned *.tmp files in cache and ts trees ---
+  if (includeTmp) {
+    const tmpFiles = [];
+    let tmpBytes = 0;
+    const scanTmp = (dir) => {
+      if (!fs.existsSync(dir)) return;
+      try {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+          const full = path.join(dir, entry.name);
+          if (entry.isDirectory()) scanTmp(full);
+          else if (entry.isFile() && entry.name.includes('.tmp')) {
+            try { tmpBytes += fs.statSync(full).size; } catch (_) {}
+            tmpFiles.push(full);
+          }
+        }
+      } catch (_) {}
+    };
+    scanTmp(path.join(utils.REPO_ROOT, 'storage', 'data', 'cache'));
+    scanTmp(DEFAULT_TS_DIR);
+    if (!dryRun) {
+      let deleted = 0;
+      for (const fp of tmpFiles) { try { fs.unlinkSync(fp); deleted++; } catch (_) {} }
+      result.tmp_files = { deleted, freed_mb: +(tmpBytes / 1e6).toFixed(2) };
+    } else {
+      result.tmp_files = { would_delete: tmpFiles.length, size_mb: +(tmpBytes / 1e6).toFixed(2) };
+    }
+  }
+
+  // --- Compact oversized backtest_history.json caches ---
+  if (doCompact) {
+    const cacheRoot = path.join(utils.REPO_ROOT, 'storage', 'data', 'cache');
+    const compactReports = [];
+    if (fs.existsSync(cacheRoot)) {
+      try {
+        for (const fam of fs.readdirSync(cacheRoot)) {
+          const histFile = path.join(cacheRoot, fam, 'backtest_history.json');
+          if (!fs.existsSync(histFile)) continue;
+          try {
+            const raw = fs.readFileSync(histFile, 'utf8');
+            const data = JSON.parse(raw);
+            if (!Array.isArray(data.sources)) continue;
+            const capped = capSnapshotForJson(data);
+            const beforeCount = data.sources.length;
+            const afterCount = capped.sources.length;
+            if (afterCount < beforeCount) {
+              const beforeBytes = fs.statSync(histFile).size;
+              if (!dryRun) {
+                fs.writeFileSync(histFile, JSON.stringify(capped, null, 2), 'utf8');
+              }
+              const afterBytes = dryRun ? Buffer.byteLength(JSON.stringify(capped, null, 2)) : fs.statSync(histFile).size;
+              compactReports.push({
+                family: fam,
+                records_dropped: beforeCount - afterCount,
+                records_remaining: afterCount,
+                freed_mb: +((beforeBytes - afterBytes) / 1e6).toFixed(2),
+              });
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
+    result.compacted = compactReports;
   }
 
   // --- ts binary cache ---

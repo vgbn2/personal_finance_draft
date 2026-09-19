@@ -92,8 +92,11 @@ function checkStorageSubsystem() {
   // Inspect JSON Cache & Anti-OOM Gate
   let jsonFileCount = 0;
   let jsonTotalBytes = 0;
+  let apiResponseCount = 0;
+  let apiResponseBytes = 0;
   const oversizedFiles = [];
   const scannedJsonFiles = [];
+  const orphanedTmpFiles = [];
 
   function scanCacheDir(dir) {
     if (!fs.existsSync(dir)) return;
@@ -103,17 +106,26 @@ function checkStorageSubsystem() {
         const full = path.join(dir, ent.name);
         if (ent.isDirectory()) {
           scanCacheDir(full);
-        } else if (ent.isFile() && ent.name.endsWith('.json')) {
-          jsonFileCount += 1;
-          const st = fs.statSync(full);
-          jsonTotalBytes += st.size;
-          scannedJsonFiles.push({ path: path.relative(REPO_ROOT, full), size: st.size });
-          if (st.size > MAX_SAFE_JSON_CACHE_BYTES) {
-            oversizedFiles.push({
-              path: path.relative(REPO_ROOT, full),
-              sizeMb: (st.size / (1024 * 1024)).toFixed(2),
-              sizeBytes: st.size,
-            });
+        } else if (ent.isFile()) {
+          if (ent.name.includes('.tmp')) {
+            const st = fs.statSync(full);
+            orphanedTmpFiles.push({ path: path.relative(REPO_ROOT, full), size: st.size });
+          } else if (ent.name.endsWith('.json')) {
+            jsonFileCount += 1;
+            const st = fs.statSync(full);
+            jsonTotalBytes += st.size;
+            if (full.includes('/cache/api_responses/')) {
+              apiResponseCount += 1;
+              apiResponseBytes += st.size;
+            }
+            scannedJsonFiles.push({ path: path.relative(REPO_ROOT, full), size: st.size });
+            if (st.size > MAX_SAFE_JSON_CACHE_BYTES) {
+              oversizedFiles.push({
+                path: path.relative(REPO_ROOT, full),
+                sizeMb: (st.size / (1024 * 1024)).toFixed(2),
+                sizeBytes: st.size,
+              });
+            }
           }
         }
       }
@@ -122,12 +134,34 @@ function checkStorageSubsystem() {
     }
   }
 
+  // Also scan tsDir for orphaned tmp files
+  if (fs.existsSync(tsDir)) {
+    try {
+      for (const f of fs.readdirSync(tsDir)) {
+        if (f.includes('.tmp')) {
+          const full = path.join(tsDir, f);
+          const st = fs.statSync(full);
+          orphanedTmpFiles.push({ path: path.relative(REPO_ROOT, full), size: st.size });
+        }
+      }
+    } catch (_) {}
+  }
+
   scanCacheDir(cacheDir);
 
   if (oversizedFiles.length > 0) {
     for (const f of oversizedFiles) {
       issues.push(`[ANTI-OOM TRIGGERED] JSON cache file '${f.path}' is ${f.sizeMb}MB (exceeds 20MB safe limit). Parsing will exhaust V8 heap in 512MB/1GB containers!`);
     }
+  }
+
+  if (apiResponseBytes > 100 * 1024 * 1024 || apiResponseCount > 1000) {
+    warnings.push(`Raw HTTP API response cache contains ${apiResponseCount} files (${(apiResponseBytes / (1024 * 1024)).toFixed(1)}MB). Run 'sovereign clear-api-cache' to reclaim space.`);
+  }
+
+  if (orphanedTmpFiles.length > 0) {
+    const tmpMb = (orphanedTmpFiles.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024)).toFixed(2);
+    warnings.push(`Found ${orphanedTmpFiles.length} orphaned atomic write temporary file(s) (${tmpMb}MB). Run 'sovereign clear-api-cache' to clean.`);
   }
 
   // Active Reading Format Detection
@@ -384,9 +418,26 @@ function checkMt5Gateway() {
   const report = buildBrokerReport('mt5', process.env);
   const terminalField = (report.fields || []).find(f => f.key === 'MT5_TERMINAL_ID') || {};
 
-  const terminalDir = path.join(REPO_ROOT, 'storage', 'mt5', 'terminal');
+  // Check storage directory across container mount, native Wine, and discovered paths
+  const containerDir = path.join(REPO_ROOT, 'storage', 'mt5', 'terminal');
+  let detectedPath = null;
+  let detectedType = null;
+
+  if (fs.existsSync(containerDir)) {
+    detectedPath = path.relative(REPO_ROOT, containerDir);
+    detectedType = 'container';
+  } else {
+    try {
+      const { getDefaultMt5TerminalPath } = require('../../shared/lib/profiles/mt5_profiles');
+      const defTerminal = getDefaultMt5TerminalPath();
+      if (defTerminal && fs.existsSync(defTerminal)) {
+        detectedPath = defTerminal;
+        detectedType = 'wine/native';
+      }
+    } catch (_) {}
+  }
+
   const expertsDir = path.join(REPO_ROOT, 'tools', 'mt5');
-  const terminalDirExists = fs.existsSync(terminalDir);
   const expertsDirExists = fs.existsSync(expertsDir);
 
   if (!terminalField.present) {
@@ -401,7 +452,11 @@ function checkMt5Gateway() {
     server_configured: terminalField.present,
     server_name: terminalField.present ? terminalField.value : null,
     password_configured: terminalField.present,
-    terminal_storage_dir: { path: path.relative(REPO_ROOT, terminalDir), exists: terminalDirExists },
+    terminal_storage_dir: {
+      path: detectedPath || path.relative(REPO_ROOT, containerDir),
+      exists: Boolean(detectedPath),
+      type: detectedType || 'none',
+    },
     experts_tools_dir: { path: path.relative(REPO_ROOT, expertsDir), exists: expertsDirExists },
     issues,
     warnings,
@@ -603,7 +658,7 @@ function renderDoctorTerminal(payload) {
   const mt5 = br.mt5;
   out.push(`  ${ANSI.CYAN}MetaTrader 5:${ANSI.RESET}`);
   out.push(`    Login / Server:    ${mt5.login_configured ? ANSI.GREEN + mt5.login_masked + ' @ ' + (mt5.server_name || 'default') + ANSI.RESET : ANSI.YELLOW + 'Not configured' + ANSI.RESET}`);
-  out.push(`    Terminal Storage:  ${mt5.terminal_storage_dir.exists ? ANSI.GREEN + 'Present' + ANSI.RESET : ANSI.YELLOW + 'Missing' + ANSI.RESET}`);
+  out.push(`    Terminal Storage:  ${mt5.terminal_storage_dir.exists ? ANSI.GREEN + 'Present (' + mt5.terminal_storage_dir.type + ': ' + mt5.terminal_storage_dir.path + ')' + ANSI.RESET : ANSI.YELLOW + 'Missing (no local Wine MT5 at ~/.mt5 or container mount at storage/mt5/terminal)' + ANSI.RESET}`);
 
   // Gate.io
   const gt = br.gate_io;
