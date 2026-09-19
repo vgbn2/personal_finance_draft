@@ -29,7 +29,8 @@ function roundDownToStep(value, step) {
   const numericStep = finitePositive(step);
   if (numericValue === null || numericStep === null) return 0;
   const precision = Math.min(12, Math.max(decimalPlaces(numericStep), 0));
-  const steps = Math.floor((numericValue + Number.EPSILON * numericValue) / numericStep);
+  const ratio = Number((numericValue / numericStep).toFixed(10));
+  const steps = Math.floor(ratio);
   return Number((steps * numericStep).toFixed(precision));
 }
 
@@ -79,8 +80,8 @@ function normalizeSizingIntent({
   }
 
   let exposureMultiplier = contractMultiplier;
+  const unitsPerLot = finitePositive(instrument?.unitsPerLot);
   if (mode === 'lots') {
-    const unitsPerLot = finitePositive(instrument?.unitsPerLot);
     if (unitsPerLot === null) {
       return reject(
         'missing_units_per_lot',
@@ -88,6 +89,10 @@ function normalizeSizingIntent({
         requestedIntent,
       );
     }
+    exposureMultiplier *= unitsPerLot;
+  } else if (unitsPerLot !== null && (instrument?.assetClass === 'fx' || String(instrument?.instrumentId).match(/^[A-Z]{6}$/))) {
+    // For FX/CFD instruments where quantityStep is in lots (e.g. 0.01),
+    // notional and risk_budget sizing scales by unitsPerLot so quantity is in lots.
     exposureMultiplier *= unitsPerLot;
   }
 

@@ -88,6 +88,16 @@ class MockMt5Client {
         ok: true,
         retcode: 10009
       }) + '\n');
+    } else if (msg.type === 'POSITION_MODIFY') {
+      this.socket.write(JSON.stringify({
+        type: 'MODIFY_RESULT',
+        nonce: msg.nonce,
+        ok: true,
+        ticket: msg.ticket,
+        retcode: 10009,
+        sl: msg.sl,
+        tp: msg.tp,
+      }) + '\n');
     } else if (msg.type === 'QUOTE_GET') {
       this.socket.write(JSON.stringify({
         type: 'QUOTE_RESULT',
