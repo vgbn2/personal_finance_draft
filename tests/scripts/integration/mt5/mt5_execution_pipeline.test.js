@@ -72,7 +72,11 @@ test('MT5 Execution Pipeline: comprehensive trade execution, positions, and bala
   const quote = await adapter.getQuote('EURUSD');
   assert.equal(quote, 1.0855);
 
-  // 6. Cancel order by ticket ID
+  // 6. Modify open position SL/TP
+  const modifyOk = await adapter.modifyOrder('1001', { sl: 1.0850, tp: 1.0920 });
+  assert.equal(modifyOk, true);
+
+  // 7. Cancel order by ticket ID
   const cancelOk = await adapter.cancelOrder('889900');
   assert.equal(cancelOk, true);
 

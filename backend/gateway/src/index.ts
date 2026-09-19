@@ -89,6 +89,8 @@ const { fetchWithRetry, retryTransient } = require('../../../shared/lib/runtime/
 const { resolveRuntimePolicy } = require('../../../shared/lib/settings/runtime_policy');
 // @ts-ignore
 const { verifyPin } = require('../../cli/lib/auth.js');
+// @ts-ignore
+const { getActivePropFirmProfile } = require('../../../shared/lib/profiles/prop_firms.js');
 
 const ansi = {
   reset:       '\x1b[0m',
@@ -252,7 +254,18 @@ export async function buildRiskContext(order: TradeOrder, adapter: BrokerAdapter
     throw new Error('CURRENT_PORTFOLIO_DRAWDOWN must be explicitly set between 0 and 1 for live execution');
   }
 
-  const maxDrawdown = Number(process.env.MAX_ALLOWED_DRAWDOWN || process.env.SOVEREIGN_MAX_DRAWDOWN || 0.30);
+  let maxDrawdown = Number(process.env.MAX_ALLOWED_DRAWDOWN || process.env.SOVEREIGN_MAX_DRAWDOWN || 0.30);
+  if (order.broker === 'mt5') {
+    try {
+      const propProfile = getActivePropFirmProfile();
+      const propMaxLoss = Number(propProfile?.rules?.max_total_loss);
+      if (Number.isFinite(propMaxLoss) && propMaxLoss > 0 && propMaxLoss < maxDrawdown) {
+        maxDrawdown = propMaxLoss;
+      }
+    } catch {
+      // fallback to configured maxDrawdown
+    }
+  }
   if (!Number.isFinite(maxDrawdown) || maxDrawdown <= 0 || maxDrawdown > 1) {
     throw new Error('MAX_ALLOWED_DRAWDOWN must be between 0 and 1');
   }

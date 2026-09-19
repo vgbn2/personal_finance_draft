@@ -176,6 +176,9 @@ export class Mt5Adapter implements BrokerAdapter {
       instanceId: 1,
     });
 
+    const sl = order.sl ?? order.stopLoss;
+    const tp = order.tp ?? order.takeProfit;
+
     const payload: Partial<Mt5OrderSubmitMessage> = {
       type: 'ORDER_SUBMIT',
       symbol: order.instrumentId,
@@ -183,6 +186,8 @@ export class Mt5Adapter implements BrokerAdapter {
       orderType: order.type,
       quantity: order.quantity,
       price: order.price,
+      sl: sl !== undefined ? Number(sl) : undefined,
+      tp: tp !== undefined ? Number(tp) : undefined,
       magic,
       clientOrderId: order.clientOrderId,
       comment: `sov|${order.strategyId || order.strategy || 'cli'}`.slice(0, 31),
@@ -196,6 +201,17 @@ export class Mt5Adapter implements BrokerAdapter {
       orderId: String(res.ticket || res.deal || Date.now()),
       status: 'filled',
     };
+  }
+
+  async modifyOrder(orderId: string, options: { sl?: number; tp?: number; price?: number }): Promise<boolean> {
+    const res = await this.request<{ ok: boolean; ticket: number; retcode: number; error?: string }>({
+      type: 'POSITION_MODIFY',
+      ticket: Number(orderId),
+      sl: options.sl,
+      tp: options.tp,
+      price: options.price,
+    });
+    return Boolean(res && res.ok);
   }
 
   async cancelOrder(orderId: string): Promise<boolean> {

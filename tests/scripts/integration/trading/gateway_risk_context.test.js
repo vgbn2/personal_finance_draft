@@ -68,3 +68,20 @@ test('live risk context rejects an omitted drawdown instead of assuming zero', a
     if (previousDrawdown !== undefined) process.env.CURRENT_PORTFOLIO_DRAWDOWN = previousDrawdown;
   }
 });
+
+test('MT5 broker orders respect active prop firm max drawdown limits', async () => {
+  const previousDrawdown = process.env.CURRENT_PORTFOLIO_DRAWDOWN;
+  process.env.CURRENT_PORTFOLIO_DRAWDOWN = '0.02';
+  try {
+    const adapter = {
+      async getQuote() { return 1.0850; },
+      async getPortfolioBalance() { return { EQUITY: 100000 }; },
+    };
+    const mt5Order = { ...marketOrder(), instrumentId: 'EURUSD', broker: 'mt5' };
+    const context = await buildRiskContext(mt5Order, adapter, false);
+    assert.ok(context.maxDrawdown <= 0.10, `Expected MT5 maxDrawdown to be clamped by prop firm profile (got ${context.maxDrawdown})`);
+  } finally {
+    if (previousDrawdown === undefined) delete process.env.CURRENT_PORTFOLIO_DRAWDOWN;
+    else process.env.CURRENT_PORTFOLIO_DRAWDOWN = previousDrawdown;
+  }
+});
