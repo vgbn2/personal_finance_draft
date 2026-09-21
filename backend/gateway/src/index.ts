@@ -140,6 +140,11 @@ interface TradeOrder {
   submittedAt?: string;
   providerPaper?: boolean;
   broker?: string;
+  stopLoss?: number;
+  takeProfit?: number;
+  sl?: number;
+  tp?: number;
+  unitsPerLot?: number;
 }
 
 
@@ -752,7 +757,18 @@ class RiskEngineBridge {
     }
     
     // Preparation for C++ Risk Check
-    const notional = context.referencePrice * order.quantity;
+    let units = order.quantity;
+    if (order.broker === 'mt5') {
+      const unitsPerLot = order.unitsPerLot && order.unitsPerLot > 0
+        ? order.unitsPerLot
+        : (/^[A-Z]{6}$/.test(order.instrumentId)
+            ? 100000
+            : (/^(XAUUSD|XAGUSD|XAU|XAG)$/.test(order.instrumentId) ? 100 : 1));
+      if (order.quantity < 50.0) {
+        units = order.quantity * unitsPerLot;
+      }
+    }
+    const notional = context.referencePrice * units;
 
     const riskCheckArgs = [
       'risk', 'check',
@@ -1505,6 +1521,12 @@ export async function main() {
     const timeframe = parseOptionValue(args, '--timeframe') || undefined;
     const confidenceVal = parseOptionValue(args, '--confidence');
     const sourceVal = parseOptionValue(args, '--source') as 'bot' | 'manual' | undefined;
+    const slVal = parseOptionValue(args, '--sl') || parseOptionValue(args, '--stop-loss');
+    const tpVal = parseOptionValue(args, '--tp') || parseOptionValue(args, '--take-profit');
+    const unitsPerLotVal = parseOptionValue(args, '--units-per-lot');
+    const slNum = slVal ? Number(slVal) : undefined;
+    const tpNum = tpVal ? Number(tpVal) : undefined;
+    const unitsPerLotNum = unitsPerLotVal ? Number(unitsPerLotVal) : undefined;
 
     const order: TradeOrder = {
       instrumentId: symbol,
@@ -1523,6 +1545,11 @@ export async function main() {
       submittedAt: new Date().toISOString(),
       providerPaper,
       broker,
+      sl: slNum,
+      tp: tpNum,
+      stopLoss: slNum,
+      takeProfit: tpNum,
+      unitsPerLot: unitsPerLotNum,
     };
 
     await gateway.execute(order);

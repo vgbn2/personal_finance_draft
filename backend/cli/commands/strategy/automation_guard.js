@@ -16,7 +16,17 @@ async function reconcileAutomationInventory(args, dependencies = {}) {
     try {
       const isLive = args.includes('--live');
       const payload = runGatewayCommand(['positions', ...(isLive ? ['--live'] : []), '--broker', 'mt5', '--json']);
-      const positions = payload && payload.ok && Array.isArray(payload.positions) ? payload.positions : [];
+      if (!payload || !payload.ok) {
+        return {
+          ok: false,
+          blocked: true,
+          reason: 'mt5_inventory_unavailable',
+          exitResult: { sellsExecuted: 0, errors: [payload?.error || 'MT5 gateway unreachable'] },
+          openPositionCount: 0,
+          maxOpenPositions: 20,
+        };
+      }
+      const positions = Array.isArray(payload.positions) ? payload.positions : [];
       return {
         ok: true,
         blocked: false,
@@ -24,11 +34,12 @@ async function reconcileAutomationInventory(args, dependencies = {}) {
         openPositionCount: positions.length,
         maxOpenPositions: 20,
       };
-    } catch {
+    } catch (err) {
       return {
-        ok: true,
-        blocked: false,
-        exitResult: { sellsExecuted: 0, errors: [] },
+        ok: false,
+        blocked: true,
+        reason: 'mt5_inventory_unavailable',
+        exitResult: { sellsExecuted: 0, errors: [err?.message || 'MT5 gateway unreachable'] },
         openPositionCount: 0,
         maxOpenPositions: 20,
       };

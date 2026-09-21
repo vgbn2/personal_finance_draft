@@ -55,4 +55,28 @@ test('strategy sizing supports fractional unit contracts when enabled', () => {
   assert.equal(cryptoDecision.quantity_step, 0.0001);
   assert.equal(cryptoDecision.projected_notional, 65);
   assert.equal(cryptoDecision.instrument.metadata_source, 'fractional_unit_contract');
+
+  const fxDecision = buildStrategySizingDecision({
+    symbol: 'EURUSD',
+    allocationUsd: 1080,
+    referencePrice: 1.08,
+    allowFractional: true,
+  });
+  assert.equal(fxDecision.ok, true);
+  assert.equal(fxDecision.quantity, 0.01);
+  assert.equal(fxDecision.quantity_step, 0.01);
+  assert.equal(fxDecision.instrument.asset_class, 'fx');
+  assert.equal(fxDecision.projected_notional, 1080);
+
+  const goldDecision = buildStrategySizingDecision({
+    symbol: 'XAUUSD',
+    allocationUsd: 2500,
+    referencePrice: 2500,
+    allowFractional: true,
+  });
+  assert.equal(goldDecision.ok, true);
+  assert.equal(goldDecision.quantity, 0.01);
+  assert.equal(goldDecision.quantity_step, 0.01);
+  assert.equal(goldDecision.instrument.asset_class, 'commodities');
+  assert.equal(goldDecision.projected_notional, 2500);
 });

@@ -212,7 +212,7 @@ void ExecuteOrderSubmit(string line) {
    int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
 
    double lots = rawQty;
-   if(contractSize >= 1000.0 && rawQty >= 1000.0) {
+   if(rawQty >= 50.0 && contractSize > 0.0 && rawQty >= contractSize) {
       lots = rawQty / contractSize;
    }
    if(volumeStep > 0.0) {
@@ -289,14 +289,16 @@ void ExecutePositionModify(string line) {
 
    string symbol = PositionGetString(POSITION_SYMBOL);
    int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+   double currentSl = PositionGetDouble(POSITION_SL);
+   double currentTp = PositionGetDouble(POSITION_TP);
 
    MqlTradeRequest req = {};
    MqlTradeResult  res = {};
    req.action = TRADE_ACTION_SLTP;
    req.position = ticket;
    req.symbol = symbol;
-   if(sl > 0) req.sl = NormalizeDouble(sl, digits);
-   if(tp > 0) req.tp = NormalizeDouble(tp, digits);
+   req.sl = (sl > 0) ? NormalizeDouble(sl, digits) : currentSl;
+   req.tp = (tp > 0) ? NormalizeDouble(tp, digits) : currentTp;
 
    bool ok = OrderSend(req, res);
    SendRaw(StringFormat(

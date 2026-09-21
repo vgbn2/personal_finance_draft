@@ -453,7 +453,8 @@ async function commandWatch(args) {
     const start = Date.now();
     process.stdout.write(`\r\x1b[K\x1b[33m⌛\x1b[0m Synchronizing ${family} data...`);
     try {
-      const snapshot = await ingestMarketData({ family: family === 'all' ? null : family });
+      const isDry = process.env.SOVEREIGN_NONINTERACTIVE === 'true' || hasFlag(args, '--dry-run');
+      const snapshot = await ingestMarketData({ family: family === 'all' ? null : family, dryRun: isDry });
       lastSyncDuration = ((Date.now() - start) / 1000).toFixed(1);
       lastSyncTime = new Date().toLocaleTimeString();
 
@@ -491,6 +492,10 @@ async function commandWatch(args) {
   }
 
   await runIngest();
+
+  if (process.env.SOVEREIGN_NONINTERACTIVE === 'true' || hasFlag(args, '--once') || hasFlag(args, '--dry-run')) {
+    return 0;
+  }
 
   let nextRun = Date.now() + intervalMs;
   const timer = setInterval(async () => {

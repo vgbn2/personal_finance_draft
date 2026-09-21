@@ -104,7 +104,7 @@ test('legacy and dashboard manifests stay aligned on shared command ids and core
   const modernOnly = [...modernCommands.keys()].filter((id) => !legacyCommands.has(id));
   assert.deepEqual(
     modernOnly.sort(),
-    ['backend chart', 'bot', 'stop-backfill-daemon'],
+    ['backend chart', 'bot'],
     'only explicitly newer dashboard entries and its bot submenu should be modern-only'
   );
 
