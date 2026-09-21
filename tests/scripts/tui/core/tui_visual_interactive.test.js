@@ -67,7 +67,7 @@ test('Visual Interactive: Submenu transition renders clean separator and items',
     // Verify sub-commands exist on screen
     assert.ok(screen.findRowIndex(/Status/) >= 0, 'Status command should be visually rendered');
     assert.ok(screen.findRowIndex(/Terminal dashboard/) >= 0, 'Terminal dashboard command should be visually rendered');
-    assert.ok(screen.findRowIndex(/Safety Kill Switch/) >= 0, 'Kill switch command should be visually rendered');
+    assert.ok(screen.findRowIndex(/Watch/) >= 0, 'Watch command should be visually rendered');
 
     // Verify initial selection on Status
     const selectedSubRow = screen.findRowIndex(/>\s+Status/);
@@ -88,25 +88,25 @@ test('Visual Interactive: Real-time search query filtering and backspace recover
     await session.send(['/'], 50);
     await session.waitForVisual(/type to search\.\.\./);
 
-    // Type 'kill' to filter for Safety Kill Switch
-    await session.send(['k', 'i', 'l', 'l'], 40);
-    await session.waitForVisual(/Safety Kill Switch/);
+    // Type 'watch' to filter for Watch
+    await session.send(['w', 'a', 't', 'c', 'h'], 40);
+    await session.waitForVisual(/Watch/);
 
     const screen = session.screen;
 
     // Verify filtered screen state
-    const killRow = screen.findRowIndex(/Safety Kill Switch/);
-    assert.ok(killRow >= 0, 'Safety Kill Switch should remain visible');
+    const watchRow = screen.findRowIndex(/Watch/);
+    assert.ok(watchRow >= 0, 'Watch should remain visible');
 
     const statusRow = screen.findRowIndex(/Status/);
-    assert.equal(statusRow, -1, 'Status should be filtered out when typing "kill"');
+    assert.equal(statusRow, -1, 'Status should be filtered out when typing "watch"');
 
     // Search bar shows match count
-    const searchBarRow = screen.findRowIndex(/kill_.*1 match/);
+    const searchBarRow = screen.findRowIndex(/watch_.*1 match/);
     assert.ok(searchBarRow >= 0, 'Search bar must display active query and match count');
 
-    // Press backspace 4 times to clear query
-    await session.send(['\x7f', '\x7f', '\x7f', '\x7f'], 40);
+    // Press backspace 5 times to clear query
+    await session.send(['\x7f', '\x7f', '\x7f', '\x7f', '\x7f'], 40);
     await session.waitForVisual(/Status/);
 
     // Verify all items restored

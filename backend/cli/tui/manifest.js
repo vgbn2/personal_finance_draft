@@ -181,7 +181,7 @@ const COMMAND_MANIFEST = {
   categories: [
     { id: 'op',         label: 'Operational Dashboard & Health' },
     { id: 'data',       label: 'Data & Backfill' },
-    { id: 'backend',    label: 'Backend Tools (Analytics)' },
+    { id: 'backend',    label: 'Tools' },
     { id: 'research',   label: 'Research & Backtesting' },
     { id: 'ai',         label: 'AI & Machine Learning' },
     { id: 'trade',      label: 'Execution & Trading' },
@@ -196,13 +196,6 @@ const COMMAND_MANIFEST = {
       { id: 'watch',    label: 'Watch', flags: {
         '--family':   { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities', 'macro', 'prediction_market'], label: 'Family', default: 'all' },
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' }
-      }},
-      { id: 'cache-clean', label: 'Cache Clean', flags: {
-        '--dry-run': { type: 'confirm', label: 'Preview only?', default: true }
-      }},
-      { id: 'kill-switch', label: 'Safety Kill Switch', flags: {
-        '--action': { type: 'select', options: ['status', 'engage', 'disengage'], label: 'Action', default: 'status' },
-        '--reason': { type: 'text', default: 'manual_tui_trigger', label: 'Reason' }
       }},
     ],
     data: [
@@ -224,28 +217,11 @@ const COMMAND_MANIFEST = {
         '--once':          { type: 'confirm', label: 'Run once (no daemon loop)?', default: true },
         '--deep-all':      { type: 'confirm', label: 'Full rebuild? (force deep on every symbol, ignore freshness)', default: false },
         '--families':      { type: 'text', default: '', label: 'Families (comma-separated, blank = all)' },
+        '--symbols':       { type: 'text', default: '', label: 'Symbols filter (comma-separated, blank = all)' },
         '--concurrency':   { type: 'text', default: '5', label: 'Symbols in parallel per provider' },
         '--interval-secs': { type: 'text', default: '1800', label: 'Loop interval seconds (daemon mode only)' }
       }},
-      { id: 'intraday-rollup', label: 'Intraday Rollup ', loading: true, flags: {
-        '--family':     { type: 'select', options: ['all', 'crypto', 'equities'], label: 'Family', default: 'all' },
-        '--symbols':    { type: 'text', default: '', label: 'Symbol filter, comma-separated (blank = all)' },
-        '--timeframes': { type: 'text', default: '15m,30m,1h,4h', label: 'Target timeframes to derive' }
-      }},
-      { id: 'crypto-deep-backfill', label: 'Crypto Deep Backfill (Binance 1m)', loading: true, flags: {
-        '--days':   { type: 'text', default: '1825', label: 'History depth (days)' },
-        '--symbol': { type: 'text', default: '', label: 'Single symbol override (optional)' }
-      }},
-      { id: 'equity-deep-backfill', label: 'Equity Deep Backfill (Alpaca SIP 5m)', loading: true, flags: {
-        '--days':   { type: 'text', default: '1825', label: 'History depth (days)' },
-        '--symbol': { type: 'text', default: '', label: 'Single symbol override (optional)' }
-      }},
-      { id: 'five-min-accumulate', label: 'Five Min Accumulate (Yahoo 5m)', loading: true, flags: {
-        '--family': { type: 'select', options: ['indices', 'commodities', 'fx'], label: 'Family', default: 'indices' }
-      }},
-      { id: 'intraday-accumulate', label: 'Intraday Accumulate (Yahoo 15m/30m/1h/4h)', loading: true, flags: {
-        '--family': { type: 'select', options: ['indices', 'commodities', 'fx'], label: 'Family', default: 'indices' }
-      }},
+      { id: 'stop-backfill-daemon', label: 'Stop Backfill Daemon', args: [] },
       { id: 'clear-api-cache', label: 'Clear API Cache', flags: {
         '--dry-run':   { type: 'confirm', label: 'Preview only (no deletion)?', default: true },
         '--ts':        { type: 'confirm', label: 'Also delete ts/ candle bins?', default: false },
@@ -254,7 +230,6 @@ const COMMAND_MANIFEST = {
       }},
     ],
     backend: [
-      { id: 'status', prefix: ['backend'], label: 'Backend Status', args: [] },
       { id: 'stats', prefix: ['backend'], label: 'Backend Stats', args: [] },
       { id: 'risk', prefix: ['backend'], label: 'Pre-Trade Risk Check', flags: {
         '--notional': { type: 'text', default: '100', label: 'Order Notional ($)' },
@@ -278,9 +253,6 @@ const COMMAND_MANIFEST = {
       { id: 'universe', prefix: ['backend'], label: 'Backend Universe', args: [] },
     ],
     research: [
-      { id: 'features', label: 'Features / Indicators', flags: {
-        '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' }
-      }},
       { id: 'bt', label: 'Backtest (Prop-firm fit)', loading: true, flags: {
         '--strategy': { type: 'select', options: getRegisteredStrategies, label: 'Strategy' },
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
@@ -388,9 +360,6 @@ const COMMAND_MANIFEST = {
       { id: 'positions', prefix: ['trade'], label: 'Positions', flags: {
         '--live': { type: 'confirm', label: 'Show LIVE account positions?', default: false }
       }},
-      { id: 'agent',        label: 'AI Agent', flags: {
-        '--query': { type: 'text', default: '', label: 'Task for the agent' }
-      }},
       // --- Strategy / Prop Firm / Runners: each opens its own sub-menu (see commandStrategyMenu / commandPropFirmMenu / commandRunnerMenu) ---
       { id: 'strategy',   label: 'Strategy', args: [] },
       { id: 'prop-firms', label: 'Prop Firm', args: [] },
@@ -436,6 +405,7 @@ const COMMAND_MANIFEST = {
 
 module.exports = {
   ...COMMAND_MANIFEST,
+  CATEGORIES: COMMAND_MANIFEST.categories,
   getCachedSymbols,
   getCachedTimeframes,
   getCachedUniverse,

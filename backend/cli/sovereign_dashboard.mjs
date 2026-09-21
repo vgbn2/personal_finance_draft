@@ -57,13 +57,12 @@ const STRATEGY_UNIVERSE = STRATEGY_OPTIONS.length > 0
 const SYMBOL_UNIVERSE = await loadFullSymbolUniverse();
 
 const INTERACTIVE_CMDS = new Set([
-  'cockpit',
-  'polymarket markets',
   'polymarket derive-creds',
   'login',
   'register',
   'add-platform',
   'mt5',
+  // 'cockpit' & 'polymarket markets' were here, but now execute IN-PANE.
   // 'trade favorites' / 'strategy' / 'prop-firms' / 'run' were here, but as
   // INTERACTIVE_CMDS they unmounted the whole Ink dashboard into the old
   // prompt-menu UI -- which read as "the trade section drops me into the
@@ -116,17 +115,6 @@ const M = [
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframes', def:'1d' },
         },
       },
-      { id: 'cache-clean', label: 'cache-clean',  desc: 'Quarantine rejected cache records',
-        flags: {
-          '--dry-run': { t:'yn', lbl:'Preview only? (no deletion)', def:true, warn:true },
-        },
-      },
-      { id: 'kill-switch', label: 'kill-switch', desc: 'Safety kill switch (engage, disengage, status)',
-        flags: {
-          '--action': { t:'sel', opts:['status','engage','disengage'], lbl:'Action', def:'status' },
-          '--reason': { t:'txt', lbl:'Reason', def:'manual_tui_trigger' },
-        },
-      },
     ],
   },
   {
@@ -137,12 +125,13 @@ const M = [
           '--audit-vintages': { t:'yn', lbl:'Only show vintage anomalies?', def:false },
         },
       },
-      { id: 'ingest', label: 'ingest', desc: 'Fetch latest market data',//load too long,require a press of the esc key to reveal, is this redundant?, dev question, 
+      { id: 'ingest', label: 'ingest', desc: 'Fetch latest market data',
         flags: {
           '--family':       { t:'sel', opts:['all','crypto','fx','equities','indices','commodities','macro','prediction_market'], lbl:'Data family', def:'all' },
           '--symbol':       { t:'txt', lbl:'Symbol filter (optional)', def:'', pickSymbol:'single' },
           '--timeframe':    { t:'sel', opts:['1w','1d','1h','15m'], lbl:'Timeframe', def:'1h' },
           '--history-days': { t:'txt', lbl:'History days (blank = latest only)', def:'' },
+          '--background':   { t:'yn',  lbl:'Run in background (non-blocking)?', def:false },
         },
       },
       { id: 'backfill-daemon', label: 'backfill-daemon', desc: 'Deep history backfill across all symbols',
@@ -156,35 +145,6 @@ const M = [
         },
       },
       { id: 'stop-backfill-daemon', label: 'stop-backfill-daemon', desc: 'Stop the background backfill daemon', flags: {} },
-      { id: 'intraday-rollup', label: 'intraday-rollup', desc: 'Derive coarser bins from 1m/5m base',//same backgroud action like backfill-daemon, dev suggest -- RESOLVED: confirmed backfill_daemon.js calls rollupFromBase every cycle; this command stays as the manual/recovery path, not a duplicate. Desc updated 2026-06-22, pending user confirmation.
-        flags: {
-          '--family':     { t:'sel', opts:['all','crypto','equities'], lbl:'Family', def:'all' },
-          '--symbols':    { t:'txt', lbl:'Symbol filter comma-sep (blank = all)', def:'' },
-          '--timeframes': { t:'txt', lbl:'Target timeframes to derive', def:'15m,30m,1h,4h' },
-        },
-      },
-      { id: 'crypto-deep-backfill', label: 'crypto-deep-backfill', desc: 'Crypto Deep Backfill (Binance 1m)',
-        flags: {
-          '--days':   { t:'txt', lbl:'History depth (days)', def:'1825' },
-          '--symbol': { t:'txt', lbl:'Single symbol override (optional)', def:'' },
-        },
-      },
-      { id: 'equity-deep-backfill', label: 'equity-deep-backfill', desc: 'Equity Deep Backfill (Alpaca SIP 5m)',
-        flags: {
-          '--days':   { t:'txt', lbl:'History depth (days)', def:'1825' },
-          '--symbol': { t:'txt', lbl:'Single symbol override (optional)', def:'' },
-        },
-      },
-      { id: 'five-min-accumulate', label: 'five-min-accumulate', desc: 'Five Min Accumulate (Yahoo 5m)',
-        flags: {
-          '--family': { t:'sel', opts:['indices','commodities','fx'], lbl:'Family', def:'indices' },
-        },
-      },
-      { id: 'intraday-accumulate', label: 'intraday-accumulate', desc: 'Intraday Accumulate (Yahoo 15m/30m/1h/4h)',
-        flags: {
-          '--family': { t:'sel', opts:['indices','commodities','fx'], lbl:'Family', def:'indices' },
-        },
-      },
       { id: 'clear-api-cache', label: 'clear-api-cache', desc: 'Delete provider API response cache',
         flags: {
           '--dry-run':   { t:'yn',  lbl:'Preview only (no deletion)?', def:true, warn:true },
@@ -196,9 +156,8 @@ const M = [
     ],
   },
   {
-    label: 'Backend', full: 'BACKEND TOOLS (C++)',
+    label: 'Tools', full: 'TOOLS (C++)',
     cmds: [
-      { id: 'backend status',      label: 'status',      desc: 'C++ backend health check', flags: {} },//is this redundant?, dev question -- RESOLVED: not redundant, status.js documents it as a separate complementary command to top-level `status` (different layer: C++ backend vs overall system). Pending user confirmation.
       { id: 'backend stats',       label: 'stats',       desc: 'Equity-curve stats from a CSV/backtest file', flags: {} },//is this redundant?, dev question -- RESOLVED: `bt` already prints Sharpe/vol/cum-return for its own run, so this is redundant for that common case; its real value is computing stats on an arbitrary external --equity curve, which `bt` can't do. Desc updated 2026-06-22, pending user confirmation.
       { id: 'backend correlation', label: 'correlation', desc: 'Correlation matrix → heatmap',
         flags: {
@@ -248,11 +207,6 @@ const M = [
   {
     label: 'Research', full: 'RESEARCH & BACKTESTING',
     cmds: [
-      { id: 'features', label: 'features', desc: 'Compute rolling indicator feature frame',
-        flags: {
-          '--timeframe': { t:'sel', opts:['1d','1h','4h','15m'], lbl:'Timeframe', def:'1d' },
-        },
-      },
       { id: 'bt', label: 'bt', desc: 'Backtest trust gate, prop-firm fit',
         flags: {
           '--strategy':       { t:'sel', opts:STRATEGY_FLAG_OPTS, lbl:'Strategy file', def:'', pickStrategy:'single' },//i want to be able to choose strategies like choosing sym,bols, dev review -- RESOLVED: added pickStrategy:'single', reuses the same symbol-picker overlay (STRATEGY_UNIVERSE). Pending user confirmation.
@@ -371,11 +325,6 @@ const M = [
       { id: 'trade positions', label: 'positions', desc: 'Open trade positions, live P&L, broker & paper holdings',
         flags: {
           '--live': { t:'yn', lbl:'Query LIVE account (vs paper)?', def:false },
-        },
-      },
-      { id: 'agent',      label: 'agent',      desc: 'AI agent task runner (local Ollama)',
-        flags: {
-          '--query': { t:'txt', lbl:'Task for the agent', def:'' },
         },
       },
       { id: 'strategy',   label: 'strategy',   desc: 'Strategy management', flags: {} },
@@ -585,6 +534,19 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
       child.unref();
       if (mountedRef.current) {
         setOutput((c) => c + `\nStarted backfill-daemon in the background (pid ${child.pid}). It keeps running after you navigate away or exit the dashboard - watch the header indicator for progress. Stop it with: kill ${child.pid} (or its Docker/terminal equivalent if it's not this pid).\n`);
+      }
+      return;
+    }
+
+    // Ingest with --background runs detached and non-blocking
+    if (argv[0] === 'ingest' && argv.includes('--background')) {
+      const cleanArgv = argv.filter((a) => a !== '--background');
+      const child = spawn(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...cleanArgv], {
+        detached: true, stdio: 'ignore',
+      });
+      child.unref();
+      if (mountedRef.current) {
+        setOutput((c) => c + `\nStarted market ingest in the background (pid ${child.pid}). It runs independently without blocking the UI.\n`);
       }
       return;
     }
@@ -1493,20 +1455,25 @@ function waitForKeypress() {
   return new Promise((resolve) => {
     const { stdin } = process;
     const wasRaw = !!stdin.isRaw;
-    if (stdin.isTTY) stdin.setRawMode(true);
+    if (stdin.isTTY) {
+      try { stdin.setRawMode(true); } catch (_) {}
+    }
     stdin.resume();
-    stdin.once('data', () => {
-      if (stdin.isTTY) stdin.setRawMode(wasRaw);
-      stdin.pause();
+    const onData = () => {
+      if (stdin.isTTY) {
+        try { stdin.setRawMode(wasRaw); } catch (_) {}
+      }
+      stdin.removeListener('data', onData);
       resolve();
-    });
+    };
+    stdin.on('data', onData);
   });
 }
 
 async function runExternal(argv, returnState) {
   lastRunArgv = argv;
   const cmdStr = argv.join(' ');
-  const isInteractive = Array.from(INTERACTIVE_CMDS).some(ic => cmdStr.startsWith(ic) || cmdStr === ic);
+  const isInteractive = isInteractiveCmd(cmdStr, INTERACTIVE_CMDS);
   if (!isInteractive) {
     return;
   }
@@ -1566,6 +1533,9 @@ async function runExternal(argv, returnState) {
 }
 
 function mountDashboard(initial) {
+  if (process.stdin.isPaused()) {
+    try { process.stdin.resume(); } catch (_) {}
+  }
   // Normal terminal flow -- no alternate screen buffer (\x1b[?1049h). Forcing
   // alt-screen + fullscreen made Ink mis-position the cursor on win32 conhost
   // (typed chars ghosted into the bottom-right corner). gemini-cli / Claude
@@ -1575,7 +1545,7 @@ function mountDashboard(initial) {
   // shell prompt, earlier typing) would otherwise linger on rows the
   // non-fullscreen frame doesn't paint over. One-shot at mount, never per
   // keystroke, so it doesn't reintroduce redraw flicker.
-  if (process.stdout.isTTY) process.stdout.write('\x1b[2J\x1b[3J\x1b[H');
+  if (process.stdout.isTTY) process.stdout.write('\x1b[2J\x1b[3J\x1b[H\x1b[?25h');
   dashboard = render(h(App, {
     initialCatI: initial ? initial.catI : 0,
     initialCmdI: initial ? initial.cmdI : -1,

@@ -16,7 +16,7 @@ const { compareModels } = require('../../../../shared/lib/ml/models');
 const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation');
 const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal } = require('../../tui');
 const A = require('../../../../shared/lib/ui/ansi');
-const { buildTradeGatewayLaunch } = require('../../../../shared/lib/runtime/backend_bridge');
+const { buildTradeGatewayLaunch, runGatewayCommand } = require('../../../../shared/lib/runtime/backend_bridge');
 const { parseGatewayJsonOutput } = require('../trade/trade_polymarket.js');
 const { buildAggregatedPortfolioSnapshot } = require('../../../gateway/src/polymarket');
 const { resolveRuntimePolicy } = require('../../../../shared/lib/settings/runtime_policy');
@@ -343,6 +343,105 @@ function loadStatusSnapshot() {
   };
 }
 
+function loadSystemDoctorSummary() {
+  try {
+    const { checkStorageSubsystem, checkBackendEngine, checkStubsAndMocks } = require('../../../../scripts/ops/system_doctor.js');
+    const storage = checkStorageSubsystem();
+    const backendEngine = checkBackendEngine();
+    const mocks = checkStubsAndMocks();
+    return {
+      engine: backendEngine.active_engine,
+      engine_ok: backendEngine.ok,
+      storage_mode: storage.active_storage_format,
+      ts_files: storage.binary_ts.file_count,
+      ts_size_mb: storage.binary_ts.total_size_mb,
+      json_cache_files: storage.json_cache.file_count,
+      json_cache_size_mb: storage.json_cache.total_size_mb,
+      anti_oom: storage.anti_oom_gate.passed ? 'PASS' : 'WARN',
+      anti_oom_passed: storage.anti_oom_gate.passed,
+      active_mocks: mocks.active_mocks.map((m) => m.env),
+      live_trading: mocks.live_trading,
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function loadStatusPortfolio() {
+  try {
+    const agg = runGatewayCommand(['aggregate_portfolio', '--json']);
+    if (agg && agg.ok) {
+      const alpaca = agg.live_paper?.brokers?.find((b) => b.name?.includes('Alpaca'));
+      const polymarket = agg.live?.brokers?.find((b) => b.name?.includes('Polymarket'));
+      const paperBot = agg.paper;
+      const positions = (agg.live_paper?.positions || []).map((p) => ({
+        symbol: p.symbol,
+        quantity: p.quantity,
+        averagePrice: p.averagePrice,
+        marketValue: p.marketValue,
+        unrealizedPl: p.unrealizedPl,
+      }));
+
+      let mt5Info = null;
+      try {
+        const mt5Res = runGatewayCommand(['balance', '--broker', 'mt5', '--json']);
+        if (mt5Res && mt5Res.ok) {
+          mt5Info = {
+            connected: true,
+            balance: mt5Res.balance ?? 0,
+            equity: mt5Res.equity ?? 0,
+            margin: mt5Res.margin ?? 0,
+            free_margin: mt5Res.free_margin ?? 0,
+          };
+        } else {
+          mt5Info = {
+            connected: false,
+            status: 'disconnected',
+          };
+        }
+      } catch (_) {}
+
+      return {
+        alpaca_paper: alpaca ? {
+          usd: alpaca.balance?.USD ?? 0,
+          equity: alpaca.balance?.EQUITY ?? 0,
+          buying_power: alpaca.balance?.BUYING_POWER ?? 0,
+          position_count: alpaca.position_count ?? 0,
+        } : null,
+        polymarket: polymarket ? {
+          usd: polymarket.balance?.USD ?? 0,
+          equity: polymarket.balance?.EQUITY ?? 0,
+          status: polymarket.status || 'connected',
+        } : null,
+        paper_bot: paperBot ? {
+          virtual_balance: paperBot.virtual_balance ?? 100,
+          open_cost: paperBot.open_cost ?? 0,
+          open_positions: paperBot.open_positions ?? 0,
+        } : null,
+        mt5: mt5Info,
+        open_positions: positions,
+      };
+    }
+  } catch (_) {}
+  return null;
+}
+
+function loadStatusRisk(portfolio) {
+  if (!portfolio) return null;
+  const equity = portfolio.alpaca_paper?.equity ?? 100000;
+  const positions = portfolio.open_positions || [];
+  const grossExposure = positions.reduce((sum, p) => sum + Math.abs(p.marketValue || 0), 0);
+  const peakEquity = Math.max(100000, equity);
+  const drawdown = peakEquity > 0 ? Math.max(0, (peakEquity - equity) / peakEquity) : 0;
+  return {
+    peak_equity: peakEquity,
+    current_equity: equity,
+    drawdown,
+    max_drawdown_limit: 0.30,
+    gross_exposure: grossExposure,
+  };
+}
+
 function buildStatusPayload(snapshot, report, backend) {
   const scoped = detectScopedSnapshot(snapshot, report);
   const freshnessScope = scoped.active ? 'last_fetch_snapshot_scoped' : 'last_fetch_snapshot';
@@ -350,6 +449,10 @@ function buildStatusPayload(snapshot, report, backend) {
   const qualityBasis = scoped.active
     ? 'latest snapshot is scoped to a targeted or historical ingest and is not representative of global live health; run `backend integrity --json` for configured cache coverage'
     : 'most recent fetch snapshot; run `backend integrity --json` for configured symbol/timeframe cache coverage';
+
+  const doctor = loadSystemDoctorSummary();
+  const portfolio = loadStatusPortfolio();
+  const risk = loadStatusRisk(portfolio);
 
   return {
     phase: currentPhaseLabel(),
@@ -375,6 +478,9 @@ function buildStatusPayload(snapshot, report, backend) {
     quality_basis: qualityBasis,
     recovery: snapshot && snapshot.recovery ? snapshot.recovery : null,
     runtime_policy: resolveRuntimePolicy(),
+    doctor,
+    portfolio,
+    risk,
     next: 'run demo for sample indicators, model comparison, and backtest',
   };
 }
@@ -490,11 +596,17 @@ function cockpitInspectPayload(name) {
 
 function renderStatus(payload) {
   const line = '-'.repeat(72);
-  const lines = [`\n=== SYSTEM STATUS ===`];
-  lines.push(`Backend:     ${payload.backend_ok ? 'OK' : 'ERROR'} (${payload.backend || 'unknown'})`);
-  lines.push(`Cache Mode:  ${payload.cache_mode || 'unknown'}`);
-  if (payload.fetched_at) lines.push(`Fetched At:  ${payload.fetched_at}`);
-  
+  const lines = [`\n=== SYSTEM STATUS & HEALTH ===`];
+  if (payload.doctor) {
+    const d = payload.doctor;
+    lines.push(`Compute Engine:   ${d.engine || (payload.backend_ok ? 'OK' : 'ERROR')} (${d.engine_ok ? 'healthy' : 'fallback'})`);
+    lines.push(`Storage Mode:     ${d.storage_mode || payload.cache_mode || 'unknown'} (${d.ts_files || 0} .bin files, ${d.ts_size_mb || 0} MB) | Anti-OOM: ${d.anti_oom}`);
+  } else {
+    lines.push(`Backend:          ${payload.backend_ok ? 'OK' : 'ERROR'} (${payload.backend || 'unknown'})`);
+    lines.push(`Cache Mode:       ${payload.cache_mode || 'unknown'}`);
+  }
+  if (payload.fetched_at) lines.push(`Fetched At:       ${payload.fetched_at}`);
+
   lines.push(`\n[DATA QUALITY]`);
   lines.push(`  State:            ${payload.quality || 'unknown'}`);
   lines.push(`  Total Records:    ${payload.records || 0}`);
@@ -502,7 +614,53 @@ function renderStatus(payload) {
   lines.push(`  Rejected Records: ${payload.rejected_records || 0}`);
   lines.push(`  Stale Records:    ${payload.stale_records || 0}`);
   lines.push(`  Provider Errors:  ${payload.provider_errors || 0}`);
-  
+
+  if (payload.portfolio) {
+    const p = payload.portfolio;
+    lines.push(`\n[PORTFOLIO & BALANCES]`);
+    if (p.alpaca_paper) {
+      lines.push(`  Alpaca (Paper):   USD: $${formatHumanNumber(p.alpaca_paper.usd)} | Equity: $${formatHumanNumber(p.alpaca_paper.equity)} | Buying Power: $${formatHumanNumber(p.alpaca_paper.buying_power)}`);
+    }
+    if (p.polymarket) {
+      lines.push(`  Polymarket:       Collateral: $${formatHumanNumber(p.polymarket.usd)} | Equity: $${formatHumanNumber(p.polymarket.equity)} (${p.polymarket.status})`);
+    }
+    if (p.paper_bot) {
+      lines.push(`  Virtual Paper:    Balance: $${formatHumanNumber(p.paper_bot.virtual_balance)} | Open Cost: $${formatHumanNumber(p.paper_bot.open_cost)}`);
+    }
+    if (p.mt5) {
+      if (p.mt5.connected) {
+        lines.push(`  MT5 (Demo):       Balance: $${formatHumanNumber(p.mt5.balance)} | Equity: $${formatHumanNumber(p.mt5.equity)} | Free Margin: $${formatHumanNumber(p.mt5.free_margin)}`);
+      } else {
+        lines.push(`  MT5 (Demo):       Bridge Disconnected`);
+      }
+    }
+    if (Array.isArray(p.open_positions) && p.open_positions.length > 0) {
+      lines.push(`  Open Positions (${p.open_positions.length}):`);
+      for (const pos of p.open_positions.slice(0, 8)) {
+        const sign = (pos.unrealizedPl || 0) >= 0 ? '+' : '';
+        lines.push(`    - ${pos.symbol}: ${pos.quantity} @ $${formatHumanNumber(pos.averagePrice)} (Val: $${formatHumanNumber(pos.marketValue)} | PnL: ${sign}$${formatHumanNumber(pos.unrealizedPl)})`);
+      }
+      if (p.open_positions.length > 8) {
+        lines.push(`    ... and ${p.open_positions.length - 8} more open positions`);
+      }
+    } else {
+      lines.push(`  Open Positions:   None`);
+    }
+  }
+
+  if (payload.risk) {
+    const r = payload.risk;
+    lines.push(`\n[RISK & PROP FIRM GUARD]`);
+    lines.push(`  Peak Equity:      $${formatHumanNumber(r.peak_equity)}`);
+    lines.push(`  Current Drawdown: ${(Number(r.drawdown || 0) * 100).toFixed(2)}% (Limit: ${(Number(r.max_drawdown_limit || 0.3) * 100).toFixed(2)}%)`);
+    lines.push(`  Gross Exposure:   $${formatHumanNumber(r.gross_exposure)}`);
+  }
+
+  if (payload.doctor && Array.isArray(payload.doctor.active_mocks) && payload.doctor.active_mocks.length > 0) {
+    lines.push(`\n[ACTIVE MOCK FLAGS]`);
+    lines.push(`  ${payload.doctor.active_mocks.join(', ')}`);
+  }
+
   if (payload.recovery) {
     lines.push(`\n[RECOVERY]`);
     lines.push(`  ${payload.recovery}`);
@@ -538,7 +696,11 @@ async function commandCockpit(args) {
     printPayload(model, args);
     return 0;
   }
-  pageText(renderCockpit(model), args);
+  if (hasFlag(args, '--pager')) {
+    pageText(renderCockpit(model), args);
+  } else {
+    console.log(renderCockpit(model));
+  }
   return 0;
 }
 

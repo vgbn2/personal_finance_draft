@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { spawn, spawnSync } = require('node:child_process');
 const path = require('node:path');
+const fs = require('node:fs');
 
 const REPO_ROOT = path.resolve(__dirname, '../../../../');
 const CLI_PATH = path.join(REPO_ROOT, 'backend', 'cli', 'sovereign_cli.js');
@@ -91,7 +92,7 @@ test('MT5 Lockout Interactions & Edge Cases', async (t) => {
             ok: true,
             ticket: 112233,
             deal: 445566,
-            volume: msg.quantity / 100000,
+            volume: Number(msg.quantity) <= 50 ? Number(msg.quantity) : Number(msg.quantity) / 100000,
             fillPrice: 1.0855,
             retcode: 10009,
             retcodeDescription: 'TRADE_RETCODE_DONE'
@@ -103,6 +104,9 @@ test('MT5 Lockout Interactions & Edge Cases', async (t) => {
 
     poll();
   `;
+
+  const killSwitchFile = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'kill_switch.lock');
+  fs.rmSync(killSwitchFile, { force: true });
 
   const daemonChild = spawn(process.execPath, ['-e', daemonCode], {
     stdio: 'inherit',
@@ -150,6 +154,7 @@ test('MT5 Lockout Interactions & Edge Cases', async (t) => {
           encoding: 'utf8',
         });
         assert.equal(disengageRes.status, 0);
+        fs.rmSync(killSwitchFile, { force: true });
       }
     });
 
