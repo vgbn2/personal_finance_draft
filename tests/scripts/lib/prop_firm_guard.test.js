@@ -118,6 +118,34 @@ test('calculateBreakEvenSl adjusts stop loss at target R-multiple', () => {
     pipSize: 0.0001,
   });
   assert.equal(sellBe, 1.0999);
+
+  // Gold (XAUUSD): entry 2500.00, initial SL 2490.00 (risk = 10.00)
+  // At 2515.00 (profit 15.00 > 1.0R), move SL to entry + 10 pips (0.10) -> 2500.10
+  const goldBe = calculateBreakEvenSl({
+    symbol: 'XAUUSD',
+    side: 'buy',
+    openPrice: 2500.00,
+    currentPrice: 2515.00,
+    currentSl: 2490.00,
+    riskDistance: 10.00,
+    thresholdRMultiple: 1.0,
+    bufferPips: 10,
+  });
+  assert.equal(goldBe, 2500.10);
+
+  // USDJPY (3 digits): entry 150.000, initial SL 149.500 (risk = 0.500)
+  // At 150.600 (profit 0.600 > 1.0R), move SL to entry + 2 pips (0.02) -> 150.020
+  const jpyBe = calculateBreakEvenSl({
+    symbol: 'USDJPY',
+    side: 'buy',
+    openPrice: 150.000,
+    currentPrice: 150.600,
+    currentSl: 149.500,
+    riskDistance: 0.500,
+    thresholdRMultiple: 1.0,
+    bufferPips: 2,
+  });
+  assert.equal(jpyBe, 150.02);
 });
 
 test('calculateTrailingSl trails stop loss in favorable direction', () => {
@@ -140,4 +168,15 @@ test('calculateTrailingSl trails stop loss in favorable direction', () => {
     trailDistance: 0.0030,
   });
   assert.equal(sellTrail, 1.0950);
+
+  // Gold (XAUUSD): entry 2500.00, currentPrice 2530.00, trail 5.00 -> candidate 2525.00
+  const goldTrail = calculateTrailingSl({
+    symbol: 'XAUUSD',
+    side: 'buy',
+    openPrice: 2500.00,
+    currentPrice: 2530.00,
+    currentSl: 2510.00,
+    trailDistance: 5.00,
+  });
+  assert.equal(goldTrail, 2525.00);
 });

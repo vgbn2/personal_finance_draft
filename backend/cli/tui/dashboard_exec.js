@@ -213,7 +213,12 @@ function firstSelectableIndex(rows, multi) {
 // with "run"). Extracted so the AI-testable safety harness can exercise the
 // exact same allowlist instead of re-deriving a second copy that could drift.
 function isInteractiveCmd(cmdStr, interactiveCmds) {
-  return Array.from(interactiveCmds).some((ic) => cmdStr.startsWith(ic) || cmdStr === ic);
+  return Array.from(interactiveCmds).some((ic) => {
+    if (ic === 'mt5') {
+      return cmdStr === 'mt5';
+    }
+    return cmdStr === ic || cmdStr.startsWith(ic + ' ');
+  });
 }
 
 // Reads backfill-daemon's status file and returns it ONLY when it describes

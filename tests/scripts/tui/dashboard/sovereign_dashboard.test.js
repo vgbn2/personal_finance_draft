@@ -97,7 +97,7 @@ test('dashboard App: navigate into a flagged command, edit flags, and trigger Ru
   assert.match(stdout.snapshot(), /sovereign ingest --family crypto --symbol BTCUSDT --timeframe 1h/);
 
   // move down to the Run row and trigger it
-  await send(stdin, instance, [keys.down, keys.down, keys.down, keys.enter]);
+  await send(stdin, instance, [keys.down, keys.down, keys.down, keys.down, keys.enter]);
   assert.equal(runCalls.length, 1, 'onRun should fire exactly once');
   assert.deepEqual(runCalls[0].argv, ['ingest', '--family', 'crypto', '--symbol', 'BTCUSDT', '--timeframe', '1h']);
   assert.deepEqual(runCalls[0].state, { catI: 1, cmdI: 1 });
@@ -132,13 +132,14 @@ test('dashboard App: yn flag toggles and a flagless command runs immediately on 
     await delay(50);
   }
 
-  // cmd 3 = cache-clean (--dry-run yn, default true) -> toggle it off then run.
-  await send(stdin, instance, [keys.down, keys.down, keys.down, keys.enter]);
-  assert.match(stdout.snapshot(), /\[Y\]/, 'dry-run defaults to Y');
-  await send(stdin, instance, [keys.left]);
-  assert.match(stdout.snapshot(), /\[N\]/);
+  // Navigate to Data category (cmd 0 = backend integrity with --audit-vintages yn flag) -> toggle it on then run.
+  await send(stdin, instance, [keys.escape, keys.down, keys.enter]);
+  await send(stdin, instance, [keys.enter]);
+  assert.match(stdout.snapshot(), /\[N\]/, 'audit-vintages defaults to N');
+  await send(stdin, instance, [keys.right]);
+  assert.match(stdout.snapshot(), /\[Y\]/);
   await send(stdin, instance, [keys.down, keys.enter]);
-  assert.deepEqual(runCalls[1].argv, ['cache-clean']);
+  assert.deepEqual(runCalls[1].argv, ['backend', 'integrity', '--audit-vintages']);
 });
 
 test('dashboard App: bt --strategy flag cycles through real registered strategies, not the manifest placeholder', async (t) => {
@@ -162,8 +163,8 @@ test('dashboard App: bt --strategy flag cycles through real registered strategie
   await send(stdin, instance, [keys.down, keys.down, keys.down, keys.enter]);
   assert.match(stdout.snapshot(), /RESEARCH & BACKTESTING/);
 
-  // cmd list: features(0) -> bt(1); bt has flags, drills into them
-  await send(stdin, instance, [keys.down, keys.enter]);
+  // cmd list: bt(0); bt has flags, drills into them
+  await send(stdin, instance, [keys.enter]);
   assert.match(stdout.snapshot(), /› bt/);
   assert.doesNotMatch(stdout.snapshot(), /<registered strategies>/,
     'the literal manifest placeholder must never reach the rendered flag panel once the registry resolves');
@@ -320,8 +321,8 @@ test('dashboard App: symbol picker (single) searches the real universe and Enter
   const stdout = makeFakeStdout();
   const onRun = () => {};
 
-  // Backend(2) -> backend visualize(3): --symbol(0,txt,pickSymbol:single,required)
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 3, onRun }), {
+  // Backend(2) -> backend visualize(2): --symbol(0,txt,pickSymbol:single,required)
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 2, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
@@ -353,8 +354,8 @@ test('dashboard App: symbol picker (multi) groups by family/sector and a header 
   const stdout = makeFakeStdout();
   const onRun = () => {};
 
-  // Research(3) -> bt(1): --strategy(0,sel), --symbol(1,txt,pickSymbol:multi)
-  const instance = render(h(App, { initialCatI: 3, initialCmdI: 1, onRun }), {
+  // Research(3) -> bt(0): --strategy(0,sel), --symbol(1,txt,pickSymbol:multi)
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: 0, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
@@ -451,8 +452,8 @@ test('dashboard App: backend correlation exposes a --symbols flag (was previousl
   const stdout = makeFakeStdout();
   const onRun = () => {};
 
-  // Backend(2) -> backend correlation(2): status(0), stats(1), correlation(2)
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 2, onRun }), {
+  // Backend(2) -> backend correlation(1): stats(0), correlation(1)
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 1, onRun }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
@@ -478,11 +479,11 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   let ranArgv = null;
   const onRun = (argv) => { ranArgv = argv; };
 
-  // Backend(2) -> backend chart(6): status(0), stats(1), correlation(2),
-  // visualize(3), universe(4), risk(5), chart(6) -- appended last, see the manifest
+  // Backend(2) -> backend chart(5): stats(0), correlation(1),
+  // visualize(2), universe(3), risk(4), chart(5) -- appended last, see the manifest
   // comment for why (preserves universe's hardcoded index in another test).
   const executeInPane = async () => ({ exitCode: 0, stdout: '', stderr: '' });
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 6, onRun, executeInPane }), {
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 5, onRun, executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
@@ -532,11 +533,11 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls throug
     return { exitCode: 0, stdout: inventoryOutput, stderr: '' };
   };
 
-  // Backend(2) -> backend universe(4). The synthetic contract fixture is
+  // Backend(2) -> backend universe(3). The synthetic contract fixture is
   // intentionally non-empty and long enough to exceed the panel's viewport;
   // using the host command here previously let `Symbols: 0` pass as a green
   // scrolling test when the native backend executable was unavailable.
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 4, onRun, executeInPane }), {
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 3, onRun, executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());

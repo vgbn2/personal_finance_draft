@@ -68,3 +68,12 @@ test('automation inventory reconciliation converts broker exceptions into loud f
   assert.equal(result.reason, 'alpaca_inventory_unavailable');
   assert.deepEqual(result.exitResult.errors, ['broker timeout']);
 });
+
+test('automation inventory reconciliation fails closed when MT5 broker is unreachable', async () => {
+  const result = await reconcileAutomationInventory(['--broker', 'mt5']);
+  assert.equal(result.ok, false);
+  assert.equal(result.blocked, true);
+  assert.equal(result.reason, 'mt5_inventory_unavailable');
+  assert.ok(result.exitResult.errors.length > 0);
+});
+

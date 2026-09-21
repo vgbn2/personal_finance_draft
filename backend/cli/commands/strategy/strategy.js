@@ -766,7 +766,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
                     lastTrade.symbol,
                     String(qty),
                     'market',
-                    ...(broker === 'mt5' ? ['--broker', 'mt5'] : (providerPaper ? ['--paper-provider', '--paper-max-notional', String(perOrderMaxNotional)] : ['--live'])),
+                    ...(broker === 'mt5' ? ['--broker', 'mt5', ...(isLive ? ['--live'] : [])] : (providerPaper ? ['--paper-provider', '--paper-max-notional', String(perOrderMaxNotional)] : ['--live'])),
                     '--strategy',
                     strategy.name,
                     '--signature',

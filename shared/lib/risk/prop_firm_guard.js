@@ -80,7 +80,30 @@ function isLockoutActive(lockoutUntilUtc, now = new Date()) {
   return Number.isFinite(target) && now.getTime() < target;
 }
 
+function resolveSymbolDigitsAndPipSize(symbol, explicitDigits, explicitPipSize) {
+  const sym = String(symbol || '').trim().toUpperCase();
+  let defaultDigits = 5;
+  let defaultPipSize = 0.0001;
+
+  if (/^(XAU|XAG)/.test(sym) || /^(US500|US30|NAS100|SPX|NDX|DJI)/.test(sym)) {
+    defaultDigits = 2;
+    defaultPipSize = 0.01;
+  } else if (/JPY$/.test(sym)) {
+    defaultDigits = 3;
+    defaultPipSize = 0.01;
+  } else if (/^(BTC|ETH|SOL|DOGE|XRP)/.test(sym)) {
+    defaultDigits = 2;
+    defaultPipSize = 0.01;
+  }
+
+  const digits = Number.isFinite(Number(explicitDigits)) ? Number(explicitDigits) : defaultDigits;
+  const pipSize = Number.isFinite(Number(explicitPipSize)) && Number(explicitPipSize) > 0 ? Number(explicitPipSize) : defaultPipSize;
+
+  return { digits, pipSize };
+}
+
 function calculateBreakEvenSl({
+  symbol,
   side,
   openPrice,
   currentPrice,
@@ -88,9 +111,10 @@ function calculateBreakEvenSl({
   riskDistance,
   thresholdRMultiple = 1.0,
   bufferPips = 1,
-  pipSize = 0.0001,
-  digits = 5,
+  pipSize: explicitPipSize,
+  digits: explicitDigits,
 }) {
+  const { digits, pipSize } = resolveSymbolDigitsAndPipSize(symbol, explicitDigits, explicitPipSize);
   const isBuy = String(side).toLowerCase() === 'buy';
   const open = Number(openPrice);
   const current = Number(currentPrice);
@@ -122,13 +146,16 @@ function calculateBreakEvenSl({
 }
 
 function calculateTrailingSl({
+  symbol,
   side,
   openPrice,
   currentPrice,
   currentSl = 0,
   trailDistance,
-  digits = 5,
+  pipSize: explicitPipSize,
+  digits: explicitDigits,
 }) {
+  const { digits } = resolveSymbolDigitsAndPipSize(symbol, explicitDigits, explicitPipSize);
   const isBuy = String(side).toLowerCase() === 'buy';
   const open = Number(openPrice);
   const current = Number(currentPrice);

@@ -90,7 +90,7 @@ function normalizeSizingIntent({
       );
     }
     exposureMultiplier *= unitsPerLot;
-  } else if (unitsPerLot !== null && (instrument?.assetClass === 'fx' || String(instrument?.instrumentId).match(/^[A-Z]{6}$/))) {
+  } else if (unitsPerLot !== null && (instrument?.assetClass === 'fx' || instrument?.assetClass === 'commodities' || String(instrument?.instrumentId).match(/^[A-Z]{6}$/))) {
     // For FX/CFD instruments where quantityStep is in lots (e.g. 0.01),
     // notional and risk_budget sizing scales by unitsPerLot so quantity is in lots.
     exposureMultiplier *= unitsPerLot;

@@ -59,7 +59,7 @@ class MockMt5Client {
         ticket,
         deal,
         symbol: msg.symbol,
-        volume: msg.quantity / 100000,
+        volume: Number(msg.quantity) <= 50 ? Number(msg.quantity) : Number(msg.quantity) / 100000,
         fillPrice: msg.price || 1.0850,
         retcode: 10009,
         retcodeDescription: 'TRADE_RETCODE_DONE',

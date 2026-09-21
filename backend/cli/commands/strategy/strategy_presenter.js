@@ -290,19 +290,59 @@ function resolveInstrumentQuantityStep(symbol, allowFractional = false) {
   return isCrypto ? 0.0001 : 0.001;
 }
 
+function classifyInstrument(symbol, allowFractional = false) {
+  const sym = String(symbol || '').trim().toUpperCase();
+  const isCrypto = /^(BTC|ETH|SOL|DOGE|XRP|ADA|AVAX|LINK|LTC|BCH|UNI|AAVE|SHIB|PEPE|SUI|DOT|TRX|NEAR|POL|MATIC)(USDT|USDC|USD)$/.test(sym) || sym.includes('/');
+  if (isCrypto) {
+    return {
+      assetClass: 'crypto',
+      unitsPerLot: 1,
+      quantityStep: resolveInstrumentQuantityStep(symbol, allowFractional),
+    };
+  }
+  if (/^(XAUUSD|XAGUSD|XAU|XAG)$/.test(sym)) {
+    return {
+      assetClass: 'commodities',
+      unitsPerLot: 100,
+      quantityStep: 0.01,
+    };
+  }
+  if (/^(US500|US30|NAS100|SPX|NDX|DJI)$/.test(sym)) {
+    return {
+      assetClass: 'indices',
+      unitsPerLot: 1,
+      quantityStep: 1,
+    };
+  }
+  if (/^[A-Z]{6}$/.test(sym)) {
+    return {
+      assetClass: 'fx',
+      unitsPerLot: 100000,
+      quantityStep: 0.01,
+    };
+  }
+  return {
+    assetClass: 'equities',
+    unitsPerLot: 1,
+    quantityStep: resolveInstrumentQuantityStep(symbol, allowFractional),
+  };
+}
+
 function buildStrategySizingDecision({ symbol, allocationUsd, referencePrice, allowFractional = false, quantityStep = null }) {
+  const profile = classifyInstrument(symbol, allowFractional);
   const step = quantityStep !== null && quantityStep > 0
     ? quantityStep
-    : resolveInstrumentQuantityStep(symbol, allowFractional);
+    : profile.quantityStep;
 
   return normalizeSizingIntent({
     intent: { mode: 'notional', value: allocationUsd, currency: 'USD' },
     instrument: {
       instrumentId: symbol,
-      assetClass: 'equity_or_crypto_unqualified',
+      assetClass: profile.assetClass,
       quoteCurrency: 'USD',
       quantityStep: step,
       contractMultiplier: 1,
+      unitsPerLot: profile.unitsPerLot,
       metadataSource: step === 1 ? 'legacy_strategy_whole_unit_contract' : 'fractional_unit_contract',
     },
     referencePrice,
@@ -325,5 +365,6 @@ module.exports = {
   inspectStrategyFile,
   buildAutomationTrustDecision,
   buildStrategySizingDecision,
+  classifyInstrument,
   resolveStrategyTimeframe,
 };

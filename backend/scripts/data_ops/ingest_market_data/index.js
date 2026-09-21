@@ -1022,68 +1022,68 @@ async function ingestMarketData(options = {}) {
     }
 
     // 2. Standard Families (Market Data)
-    for (const family of FAMILIES_MANIFEST) {
-      if (targetFamily && targetFamily !== family.id) continue;
-      if (family.availability?.status === 'not_implemented') continue;
+    const ingestSingleFamily = async (family) => {
+      const familySources = [];
+      const familyErrors = [];
+      const familyProviderChecks = [];
+
+      if (family.availability?.status === 'not_implemented') {
+        return { sources: familySources, errors: familyErrors, provider_checks: familyProviderChecks };
+      }
       const section = config[family.configKey];
-      if (!section || !section.enabled) continue;
+      if (!section || !section.enabled) {
+        return { sources: familySources, errors: familyErrors, provider_checks: familyProviderChecks };
+      }
 
       const fetcher = family.fetcher || family.fetch;
 
       // A. Provider Smoke Tests
       const items = family.itemsKey ? section[family.itemsKey] : ['fear_and_greed'];
-        if (items && items[0] && (options.historyDays || 0) <= 5 && !options.symbol) {
-          const sampleItem = items[0];
-          for (const provider of section.providers) {
-            if (!provider) continue;
-            try {
-              const sampleRecords = normalizeFetchedRecords(await fetcher(provider, sampleItem, section.timeframes || ['1d'], config, options), fetchContext(family.id, provider, sampleItem));
-              if (sampleRecords.length > 0) {
-                snapshot.provider_checks.push({ family: family.id, provider, symbol: sampleItem, status: 'ok' });
-              } else {
-                snapshot.provider_checks.push({ family: family.id, provider, symbol: sampleItem, status: 'skipped', reason: 'no_records' });
-              }
-            } catch (error) {
-              snapshot.provider_checks.push({ family: family.id, provider, symbol: sampleItem, status: 'error', message: error.message });
+      if (items && items[0] && (options.historyDays || 0) <= 5 && !options.symbol) {
+        const sampleItem = items[0];
+        for (const provider of section.providers) {
+          if (!provider) continue;
+          try {
+            const sampleRecords = normalizeFetchedRecords(
+              await fetcher(provider, sampleItem, section.timeframes || ['1d'], config, options),
+              fetchContext(family.id, provider, sampleItem)
+            );
+            if (sampleRecords.length > 0) {
+              familyProviderChecks.push({ family: family.id, provider, symbol: sampleItem, status: 'ok' });
+            } else {
+              familyProviderChecks.push({ family: family.id, provider, symbol: sampleItem, status: 'skipped', reason: 'no_records' });
             }
+          } catch (error) {
+            familyProviderChecks.push({ family: family.id, provider, symbol: sampleItem, status: 'error', message: error.message });
           }
         }
+      }
 
       // B. Full Data Sync
       if (items) {
         const allSymbols = new Set(items);
         const tagsMap = categoryTags.get(family.id);
         if (tagsMap) {
-            for (const s of tagsMap.keys()) allSymbols.add(s);
+          for (const s of tagsMap.keys()) allSymbols.add(s);
         }
 
-        const filteredItems = options.symbol 
+        const filteredItems = options.symbol
           ? Array.from(allSymbols).filter(i => i === options.symbol)
           : Array.from(allSymbols);
 
         const syncTimeframes = options.timeframe ? [options.timeframe] : (section.timeframes || ['1d']);
 
-        for (const item of filteredItems) { 
-         
+        for (const item of filteredItems) {
           const requestedDays = options.historyDays || options.days || 5;
           const force = options.force || options.historyForce || false;
           const requestedMs = requestedDays * 24 * 60 * 60 * 1000;
           const now = Date.now();
           const targetStart = now - requestedMs;
-          
+
           let skipItem = !force;
           let latestInCache = 0;
           let earliestInCache = Infinity;
 
-          // ts/bin gate: binary bins are the authoritative store and are more
-          // accurate than the snapshot-based check below (snapshot only covers
-          // JSON-ingested data, not symbols backfilled via crypto/equity-deep-backfill).
-          // Skip the provider loop entirely for bulk ingest only when the bin for the
-          // REQUESTED timeframe is BOTH fresh AND already covers the requested history
-          // depth. Gating on the requested TF (not the family base) is what lets an
-          // explicit deep `--timeframe 1d --history-days N` request through even when the
-          // base (5m/1m) bin is fresh. Single-symbol calls always fall through; force
-          // bypasses entirely (skipItem already false).
           if (skipItem && filteredItems.length > 1 && OHLCV_INGEST_FAMILIES.has(family.id)) {
             const gateTf = syncTimeframes[0] || FAMILY_BASE_TF_MAP[family.id] || '1d';
             try {
@@ -1091,70 +1091,62 @@ async function ingestMarketData(options = {}) {
               const cov = readCoverage(TS_INDEX_PATH, item, gateTf);
               const coversDepth = cov && cov.exists && Number.isFinite(cov.firstBarMs)
                 && cov.firstBarMs <= targetStart;
-              if (binGate.fresh && coversDepth) continue; // fresh AND deep enough — skip
-              skipItem = false;            // stale or too shallow — fetch
+              if (binGate.fresh && coversDepth) continue;
+              skipItem = false;
             } catch (_) {
-              skipItem = false;            // on error, fall through to provider
+              skipItem = false;
             }
           }
 
           for (const tf of syncTimeframes) {
-              const cacheKey = `${family.id}:${item}:${tf}`;
-              const meta = universeMap.get(cacheKey);
-              const freshnessThreshold = SUPPORTED_INTERVALS[tf] || 24 * 60 * 60 * 1000;
-              
-              if (!meta || meta.min > targetStart || (now - meta.max) > freshnessThreshold) {
-                  skipItem = false;
-              }
-              if (meta) {
-                  latestInCache = Math.max(latestInCache, meta.max);
-                  earliestInCache = Math.min(earliestInCache, meta.min);
-              }
+            const cacheKey = `${family.id}:${item}:${tf}`;
+            const meta = universeMap.get(cacheKey);
+            const freshnessThreshold = SUPPORTED_INTERVALS[tf] || 24 * 60 * 60 * 1000;
+
+            if (!meta || meta.min > targetStart || (now - meta.max) > freshnessThreshold) {
+              skipItem = false;
+            }
+            if (meta) {
+              latestInCache = Math.max(latestInCache, meta.max);
+              earliestInCache = Math.min(earliestInCache, meta.min);
+            }
           }
 
           if (skipItem) {
-              if (filteredItems.length > 1) {
-                // Bulk ingestion skip
-                continue;
-              } else {
-                // Single symbol: force refresh but log it
-                console.log(`[INGEST] ${family.id}:${item} cache hit (full range covered). Refreshing anyway for latest bar.`);
-              }
+            if (filteredItems.length > 1) {
+              continue;
+            } else {
+              console.log(`[INGEST] ${family.id}:${item} cache hit (full range covered). Refreshing anyway for latest bar.`);
+            }
           }
 
-         
           let fetchOptions = { ...options };
           if (!skipItem && latestInCache > 0 && earliestInCache <= targetStart && (now - latestInCache) > 0) {
-              // Cache covers history but is stale. Just fetch the forward gap.
-              const buffer = 1000 * 60 * 5; // 5m buffer
-              fetchOptions.startTime = latestInCache - buffer; 
-              if (!global.suppressLogs) console.log(`[INGEST] ${family.id}:${item} identifies forward gap. Fetching from ${new Date(fetchOptions.startTime).toISOString()} to fill.`);
+            const buffer = 1000 * 60 * 5;
+            fetchOptions.startTime = latestInCache - buffer;
+            if (!global.suppressLogs) console.log(`[INGEST] ${family.id}:${item} identifies forward gap. Fetching from ${new Date(fetchOptions.startTime).toISOString()} to fill.`);
           }
 
           if (!global.suppressLogs) console.log('[INGEST] Fetching ' + family.id + ':' + item);
           let resolved = false;
 
-          // Local Aggregation Engine: Build 1w/1mo from 1d if available
           const localDerived = [];
           const remoteTimeframes = [];
           for (const tf of syncTimeframes) {
-              const derived = deriveHighTfFromLocalDaily(family.id, item, tf);
-              if (derived) {
-                  appendRecords(localDerived, derived);
-              } else {
-                  remoteTimeframes.push(tf);
-              }
+            const derived = deriveHighTfFromLocalDaily(family.id, item, tf);
+            if (derived) {
+              appendRecords(localDerived, derived);
+            } else {
+              remoteTimeframes.push(tf);
+            }
           }
 
           if (localDerived.length > 0) {
-              appendRecords(snapshot.sources, localDerived);
-              if (remoteTimeframes.length === 0) resolved = true;
+            appendRecords(familySources, localDerived);
+            if (remoteTimeframes.length === 0) resolved = true;
           }
 
           if (!resolved) {
-            // options.provider pins the provider chain to one entry (e.g. the 5m
-            // deep backfill must hit binance natively -- TwelveData earlier in the
-            // chain silently caps history at 5,000 bars and would win the break).
             const providerList = options.provider
               ? [options.provider]
               : section.providers;
@@ -1166,29 +1158,60 @@ async function ingestMarketData(options = {}) {
                 if (!records || records.length === 0) {
                   continue;
                 }
-              
-             
-              const tags = categoryTags.get(family.id)?.get(item);
-              records.forEach(r => {
+
+                const tags = categoryTags.get(family.id)?.get(item);
+                records.forEach(r => {
                   if (!r.family) r.family = family.id;
                   if (tags) {
-                      if (tags.config_market) r.config_market = tags.config_market;
-                      if (tags.config_sector) r.config_sector = tags.config_sector;
-                      if (tags.coordinate_id) r.coordinate_id = tags.coordinate_id;
+                    if (tags.config_market) r.config_market = tags.config_market;
+                    if (tags.config_sector) r.config_sector = tags.config_sector;
+                    if (tags.coordinate_id) r.coordinate_id = tags.coordinate_id;
                   }
-              });
+                });
 
-              appendRecords(snapshot.sources, records);
-              resolved = true;
-              break;
-            } catch (error) {
-              snapshot.errors.push({ provider, symbol: item, family: family.id, message: error.message });
+                appendRecords(familySources, records);
+                resolved = true;
+                break;
+              } catch (error) {
+                familyErrors.push({ provider, symbol: item, family: family.id, message: error.message });
+              }
             }
           }
-        }
           if (!resolved && items.length > 0) {
-            snapshot.errors.push({ provider: family.id, symbol: item, message: `No ${family.id} provider resolved successfully` });
+            familyErrors.push({ provider: family.id, symbol: item, message: `No ${family.id} provider resolved successfully` });
           }
+        }
+      }
+
+      return { sources: familySources, errors: familyErrors, provider_checks: familyProviderChecks };
+    };
+
+    // ponytail: Promise.allSettled family-level concurrency; per-symbol concurrency skipped (add when provider rate limits permit)
+    if (targetFamily) {
+      const family = FAMILIES_MANIFEST.find(f => f.id === targetFamily);
+      if (family) {
+        const res = await ingestSingleFamily(family);
+        appendRecords(snapshot.sources, res.sources);
+        snapshot.errors.push(...res.errors);
+        snapshot.provider_checks.push(...res.provider_checks);
+      }
+    } else {
+      const results = await Promise.allSettled(
+        FAMILIES_MANIFEST.map(f => ingestSingleFamily(f))
+      );
+      for (let i = 0; i < results.length; i++) {
+        const res = results[i];
+        if (res.status === 'fulfilled') {
+          appendRecords(snapshot.sources, res.value.sources);
+          snapshot.errors.push(...res.value.errors);
+          snapshot.provider_checks.push(...res.value.provider_checks);
+        } else {
+          snapshot.errors.push({
+            provider: FAMILIES_MANIFEST[i].id,
+            symbol: 'all',
+            family: FAMILIES_MANIFEST[i].id,
+            message: res.reason?.message || String(res.reason),
+          });
         }
       }
     }
