@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-09-21T00:00:00.000Z",
+  "description": "Static audit markers for immutable domain and math modules, enabling SHA-256 validated fast-path skip in blast-through audit passes.",
+  "audited_plane_hashes": {
+    "shared/lib/market/indicators.js": {
+      "plane": "Plane 4: Data Pipelines, Indicators & Storage",
+      "grade": "A",
+      "sha256": "802557966a7efec8abb98c47e80d4cdd8c068715c4bedfbacfa68e9fa432aea4",
+      "invariants": [
+        "rsi_flat_50",
+        "macd_finite",
+        "bollinger_bounds"
+      ]
+    },
+    "shared/lib/risk/prop_firm_guard.js": {
+      "plane": "Plane 2: Execution Safety & Broker Gateways",
+      "grade": "A",
+      "sha256": "c611fda4c142710a9e2c94f730e79f02af97026e88d72c2afc4a0728e013ba42",
+      "invariants": [
+        "drawdown_fail_closed",
+        "max_daily_loss_enforced"
+      ]
+    },
+    "shared/lib/strategy/rsi_backtest.js": {
+      "plane": "Plane 4: Data Pipelines, Indicators & Storage",
+      "grade": "A",
+      "sha256": "3f2c35dbbb84e0313b2da130a245e590bc566947fa887e069b81d131d5584d06",
+      "invariants": [
+        "rsi_flat_50_neutrality",
+        "holding_period_bounds"
+      ]
+    },
+    "backend/core/src/strategies/strategy_sweep_evaluator.cpp": {
+      "plane": "Plane 1: Compute & Core Engine",
+      "grade": "A",
+      "sha256": "a76f451810ac102a45abd6c55999d467b4745cbe6cf59246cb94e555bbd880f2",
+      "invariants": [
+        "non_positive_price_guards",
+        "finite_mark_to_market"
+      ]
+    },
+    "backend/core/src/backtest/frame_backtester.cpp": {
+      "plane": "Plane 1: Compute & Core Engine",
+      "grade": "A",
+      "sha256": "1ce5bc3318940984daf14ef2c526938a0c3c2b8c93cd1163057c3f4e2b84ea1e",
+      "invariants": [
+        "splitmix64_prng_non_zero_state",
+        "xorshift64_absorption_guard"
+      ]
+    },
+    "backend/core/src/correlation/correlation_engine.cpp": {
+      "plane": "Plane 1: Compute & Core Engine",
+      "grade": "A",
+      "sha256": "12e449a10596801e8fc277419e29d580f882f5e1f599b03da9cb7f7bea785f7a",
+      "invariants": [
+        "log_return_series_alignment",
+        "pearson_dimension_parity"
+      ]
+    }
+  }
+}

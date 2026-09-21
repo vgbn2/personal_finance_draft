@@ -479,11 +479,10 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   let ranArgv = null;
   const onRun = (argv) => { ranArgv = argv; };
 
-  // Backend(2) -> backend chart(5): stats(0), correlation(1),
-  // visualize(2), universe(3), risk(4), chart(5) -- appended last, see the manifest
-  // comment for why (preserves universe's hardcoded index in another test).
+  // Backend(2) -> backend chart(3): stats(0), correlation(1),
+  // visualize(2), chart(3)
   const executeInPane = async () => ({ exitCode: 0, stdout: '', stderr: '' });
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 5, onRun, executeInPane }), {
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 3, onRun, executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
@@ -533,11 +532,9 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls throug
     return { exitCode: 0, stdout: inventoryOutput, stderr: '' };
   };
 
-  // Backend(2) -> backend universe(3). The synthetic contract fixture is
+  // Backend(2) -> backend stats(0). The synthetic contract fixture is
   // intentionally non-empty and long enough to exceed the panel's viewport;
-  // using the host command here previously let `Symbols: 0` pass as a green
-  // scrolling test when the native backend executable was unavailable.
-  const instance = render(h(App, { initialCatI: 2, initialCmdI: 3, onRun, executeInPane }), {
+  const instance = render(h(App, { initialCatI: 2, initialCmdI: 0, onRun, executeInPane }), {
     stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
   });
   t.after(() => instance.unmount());
@@ -549,7 +546,7 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls throug
     await delay(50);
     snap = stdout.snapshot();
   }
-  assert.deepEqual(executions, [['backend', 'universe']], 'the fixture went through the real dashboard command-selection seam');
+  assert.deepEqual(executions, [['backend', 'stats']], 'the fixture went through the real dashboard command-selection seam');
 
   // The panel column is narrow enough to word-wrap long lines (including
   // the indicator text itself) across multiple display rows -- flatten
@@ -586,15 +583,104 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls throug
   await send(stdin, instance, [keys.pageDown]);
   const sourcePage = stdout.snapshot();
   assert.match(flat(sourcePage), /Source: fixture:\/\/scroll/, 'the rendered output came from the injected contract fixture');
+  assert.match(flat(sourcePage), /Symbols: 16 \| Records: 16/, 'the fixture proves positive inventory and record counts');
 
   await send(stdin, instance, [keys.pageDown]);
-  const countPage = stdout.snapshot();
-  assert.match(flat(countPage), /Symbols: 16 \| Records: 16/, 'the fixture proves positive inventory and record counts');
-  assert.doesNotMatch(flat(afterTop + sourcePage + countPage), /unavailable|Symbols:\s*0\b/i, 'backend errors and zero-inventory output are not accepted as scroll evidence');
+  const tfPage = stdout.snapshot();
+  assert.match(flat(tfPage), /Timeframes:/, 'pageDown advances to next content window');
+  assert.doesNotMatch(flat(afterTop + sourcePage + tfPage), /unavailable|Symbols:\s*0\b/i, 'backend errors and zero-inventory output are not accepted as scroll evidence');
 
   await send(stdin, instance, [keys.end]);
   const afterEnd = stdout.snapshot();
   const endMatch = flat(afterEnd).match(/\[lines (\d+)-(\d+)\/(\d+)\]/);
   assert.equal(Number(endMatch[2]), total, 'End jumps back to the live tail');
   assert.match(flat(afterEnd), /PgUp/, 'auto-follow re-armed');
+});
+
+test('dashboard App: zero-lockout mid-run navigation and live streaming output', async (t) => {
+  const { render, default: React } = await Promise.all([import('ink'), import('react')])
+    .then(([ink, react]) => ({ render: ink.render, default: react.default }));
+  const h = React.createElement;
+  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+
+  const stdin = makeFakeStdin();
+  const stdout = makeFakeStdout();
+  const runCalls = [];
+  const onRun = (argv, state) => runCalls.push({ argv, state });
+
+  let finishTask = null;
+  const executeInPane = () => new Promise((resolve) => {
+    finishTask = resolve;
+  });
+
+  const instance = render(h(App, { initialCatI: 0, initialCmdI: 0, onRun, executeInPane }), {
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
+  });
+  t.after(() => {
+    if (finishTask) finishTask({ exitCode: 0, stdout: '', stderr: '' });
+    instance.unmount();
+  });
+  await instance.waitUntilRenderFlush();
+
+  // 1. Run flagless 'status' command -> execution is pending
+  await send(stdin, instance, [keys.enter]);
+  const runningSnap = stdout.snapshot();
+  assert.match(runningSnap, /Running:/, 'Command is executing');
+  assert.match(runningSnap, /\[in background\]/, 'Output shows background execution indicator');
+
+  // 2. WHILE running: verify user is NOT locked out of the keyboard
+  // Move down to next command ('cockpit')
+  await send(stdin, instance, [keys.down]);
+  const navigatedSnap = stdout.snapshot();
+  assert.match(navigatedSnap, /▸ cockpit/, 'Keyboard navigation remains fully active while task executes in background');
+
+  // 3. Resolve the pending task
+  if (finishTask) {
+    finishTask({ exitCode: 0, stdout: 'System operational\nAll checks passed\n', stderr: '' });
+    finishTask = null;
+  }
+  await delay(100);
+});
+
+test('dashboard App: symbol picker modal isolation and market tab navigation', async (t) => {
+  const { render, default: React } = await Promise.all([import('ink'), import('react')])
+    .then(([ink, react]) => ({ render: ink.render, default: react.default }));
+  const h = React.createElement;
+  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+
+  const stdin = makeFakeStdin();
+  const stdout = makeFakeStdout();
+  const onRun = () => {};
+
+  // Research(3) -> bt(0)
+  const instance = render(h(App, { initialCatI: 3, initialCmdI: 0, onRun }), {
+    stdin, stdout, exitOnCtrlC: false, patchConsole: false, interactive: true,
+  });
+  t.after(() => instance.unmount());
+  await instance.waitUntilRenderFlush();
+
+  // Enter bt flags
+  await send(stdin, instance, [keys.enter]);
+  // Move to --symbol (flagI = 1) and press Enter to open picker
+  await send(stdin, instance, [keys.down, keys.enter]);
+
+  const pickerSnap = stdout.snapshot();
+  assert.match(pickerSnap, /Select symbols — --symbol/, 'Symbol picker modal is displayed');
+  assert.match(pickerSnap, /Filter\s*\[\s*\/\s*\]/, 'Market filter tabs bar is displayed');
+  assert.match(pickerSnap, /\[ALL\]/, 'ALL filter tab present');
+  assert.match(pickerSnap, /\[CRYPTO\]/, 'CRYPTO filter tab present');
+
+  // Verify modal isolation: ...cmdRows should NOT be visible inside contentPanel when picker is open
+  assert.doesNotMatch(pickerSnap, /RESEARCH & BACKTESTING[\s\S]*?Backtest trust gate[\s\S]*?Select symbols/,
+    'Dedicated modal view isolates contentPanel: hides command rows to prevent vertical collision');
+
+  // Press ']' to switch market filter tab to CRYPTO
+  await send(stdin, instance, [']']);
+  const cryptoSnap = stdout.snapshot();
+  assert.match(cryptoSnap, /Select symbols/, 'Picker remains open on market tab switch');
+
+  // Press Escape to cleanly close picker
+  await send(stdin, instance, [keys.escape]);
+  const closedSnap = stdout.snapshot();
+  assert.match(closedSnap, /RESEARCH & BACKTESTING/, 'Closing picker restores command rows');
 });

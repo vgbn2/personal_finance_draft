@@ -1,5 +1,6 @@
 'use strict';
 
+const os = require('node:os');
 const path = require('node:path');
 const { REPO_ROOT, STORAGE_DATA_DIR } = require('../../../../shared/lib/runtime/paths');
 
@@ -34,7 +35,7 @@ function isValidPositionId(id) {
   return POSITION_ID_REGEX.test(id.trim());
 }
 
-function isPathWithinAllowedRoots(targetPath, allowedRoots = [REPO_ROOT, STORAGE_DATA_DIR]) {
+function isPathWithinAllowedRoots(targetPath, allowedRoots = [REPO_ROOT, STORAGE_DATA_DIR, os.tmpdir()]) {
   if (typeof targetPath !== 'string' || !targetPath.trim()) return false;
   try {
     const resolvedTarget = path.resolve(targetPath);

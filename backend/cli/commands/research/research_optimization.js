@@ -60,7 +60,7 @@ function buildOptimizationGrid(strategyMeta, args, periodOptionsFromStrategy, no
   return { grid, basePeriods, indicatorFlags };
 }
 
-function renderOptimize(payload) {
+function renderOptimize(payload, strategyMeta = null) {
   const line = '-'.repeat(72);
   const lines = [`\n=== OPTIMIZATION RESULTS ===`];
 
@@ -76,12 +76,55 @@ function renderOptimize(payload) {
     return lines.join('\n');
   }
 
-  lines.push(`\n[OPTIMAL CONFIGURATION]`);
-  for (const [key, val] of Object.entries(payload.winner)) {
-    if (key !== 'enabled_indicators') {
-      lines.push(`  ${key}: ${val}`);
+  const beforeParams = strategyMeta?.params || {};
+  const PARAM_KEYS = ['fast_period', 'slow_period', 'signal_period', 'atr_period', 'rsi_period', 'bollinger_period'];
+  const signalBefore = Number(beforeParams.signal_period);
+  const signalAfter = Number(payload.winner.signal_period);
+
+  const overfitFlag = (key, bVal, aVal) => {
+    if (key === 'signal_period' && Number.isFinite(signalBefore) && Number.isFinite(signalAfter)
+        && Math.abs(signalAfter - signalBefore) < 3 && signalAfter < signalBefore) {
+      return 'MEDIUM ⚠';
+    }
+    return 'LOW';
+  };
+
+  const COL = [18, 12, 12, 10, 14];
+  const hdr = ['Param', 'Before', 'After', 'Delta', 'Overfit Risk'];
+  const sep = COL.map((w) => '-'.repeat(w)).join(' ');
+  const row = (cells) => cells.map((c, i) => String(c ?? '').padEnd(COL[i])).join(' ');
+
+  lines.push(`\n[PARAMETER DELTA]`);
+  lines.push(row(hdr));
+  lines.push(sep);
+
+  let hasParamRow = false;
+  for (const key of PARAM_KEYS) {
+    const aVal = payload.winner[key];
+    const bVal = beforeParams[key];
+    if (aVal == null && bVal == null) continue;
+    hasParamRow = true;
+    const bStr = bVal != null ? String(bVal) : 'N/A';
+    const aStr = aVal != null ? String(aVal) : 'N/A';
+    const delta = (bVal != null && aVal != null && Number.isFinite(Number(aVal) - Number(bVal)))
+      ? ((Number(aVal) - Number(bVal) > 0 ? '+' : '') + (Number(aVal) - Number(bVal)))
+      : 'N/A';
+    lines.push(row([key, bStr, aStr, delta, overfitFlag(key, bVal, aVal)]));
+  }
+
+  // Fallback if no known indicator param keys matched
+  if (!hasParamRow) {
+    for (const [key, val] of Object.entries(payload.winner)) {
+      if (key !== 'enabled_indicators' && typeof val !== 'object') {
+        lines.push(row([key, 'N/A', String(val), 'N/A', 'LOW']));
+      }
     }
   }
+
+  lines.push(sep);
+  lines.push(row(['Sharpe', toNum(payload.winner_sharpe), toNum(payload.oos_sharpe_ratio ?? null), '—', '—']));
+  lines.push(row(['Max DD', toPct(payload.winner_max_drawdown), toPct(payload.oos_max_drawdown ?? null), '—', '—']));
+  lines.push(row(['Win Rate', toPct(payload.winner_win_rate), toPct(payload.oos_win_rate ?? null), '—', '—']));
 
   lines.push(`\n[TRAINING METRICS (In-Sample)]`);
   lines.push(`  Net Return:     ${toPct(payload.winner_net_return)}`);
@@ -98,6 +141,11 @@ function renderOptimize(payload) {
   lines.push(`  Net Return:     ${toPct(payload.oos_net_return)}`);
   lines.push(`  Expected Value: ${toNum(payload.oos_ev)}`);
   lines.push(`  Overfit Warn:   ${payload.oos_overfit_warning ? 'YES (Severely Degraded)' : 'No'}`);
+
+  if (payload.oos_overfit_warning || (Number.isFinite(signalAfter) && Number.isFinite(signalBefore)
+      && Math.abs(signalAfter - signalBefore) < 3 && signalAfter < signalBefore)) {
+    lines.push(`\n  ⚠  signal_period gap < 3 periods — monitor for curve-fit on short lookback`);
+  }
 
   lines.push(`\n${line}`);
   return lines.join('\n');
@@ -211,7 +259,7 @@ async function commandOptimize(args, helpers = {}) {
         if (hasFlag(args, '--json')) {
           printPayload(payload, args);
         } else {
-          console.log(renderOptimize(payload));
+          console.log(renderOptimize(payload, strategyMeta));
         }
         return 0;
       }
@@ -246,7 +294,9 @@ async function commandOptimize(args, helpers = {}) {
       };
       const trainBacktest = runBacktest(split.train, backtestOptions);
       const testBacktest = runBacktest(split.test, backtestOptions);
-      const overfit_warning = (testBacktest.metrics.sharpe_ratio < (trainBacktest.metrics.sharpe_ratio * 0.5)) || (testBacktest.metrics.expected_value < 0);
+      const trainSharpe = trainBacktest.metrics.sharpe_ratio;
+      const testSharpe = testBacktest.metrics.sharpe_ratio;
+      const overfit_warning = (trainSharpe > 0 ? (testSharpe < trainSharpe * 0.5) : (testSharpe < trainSharpe)) || (testBacktest.metrics.expected_value < 0);
 
       return {
         periods,
@@ -266,6 +316,9 @@ async function commandOptimize(args, helpers = {}) {
         expected_value: trainBacktest.metrics.expected_value,
         oos_trades: testBacktest.metrics.trades,
         oos_net_return: testBacktest.metrics.net_return,
+        oos_max_drawdown: testBacktest.metrics.max_drawdown,
+        oos_sharpe_ratio: testBacktest.metrics.sharpe_ratio,
+        oos_win_rate: testBacktest.metrics.win_rate,
         oos_expected_value: testBacktest.metrics.expected_value,
         overfit_warning,
         score: trainBacktest.metrics.net_return - trainBacktest.metrics.max_drawdown + (trainBacktest.metrics.expected_value * 10) - (overfit_warning ? 100 : 0), // Penalize overfitting
@@ -312,6 +365,9 @@ async function commandOptimize(args, helpers = {}) {
     winner_mc_loss_prob: report.winner && report.winner.train && report.winner.train.monte_carlo ? report.winner.train.monte_carlo.probability_of_loss : null,
     oos_trades: report.winner ? report.winner.oos_trades : 0,
     oos_net_return: report.winner ? report.winner.oos_net_return : 0,
+    oos_max_drawdown: report.winner ? report.winner.oos_max_drawdown : 0,
+    oos_sharpe_ratio: report.winner ? report.winner.oos_sharpe_ratio : null,
+    oos_win_rate: report.winner ? report.winner.oos_win_rate : 0,
     oos_ev: report.winner ? report.winner.oos_expected_value : 0,
     oos_overfit_warning: report.winner ? report.winner.overfit_warning : false,
     output,
@@ -320,7 +376,7 @@ async function commandOptimize(args, helpers = {}) {
   if (hasFlag(args, '--json')) {
     printPayload(payload, args);
   } else {
-    console.log(renderOptimize(payload));
+    console.log(renderOptimize(payload, strategyMeta));
   }
   return 0;
 }

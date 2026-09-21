@@ -194,6 +194,7 @@ MonteCarloResult FrameBacktester::runMonteCarlo(
     max_drawdowns.reserve(static_cast<std::size_t>(runs));
 
     uint64_t state = seed ^ (n * 6364136223846793005ULL + 1442695040888963407ULL);
+    if (state == 0ULL) state = 0x9E3779B97F4A7C15ULL; // SplitMix64 golden ratio constant prevents absorbing zero state in xorshift64
 
     for (int r = 0; r < runs; ++r) {
         double equity = 1.0, peak = 1.0, sim_dd = 0.0;

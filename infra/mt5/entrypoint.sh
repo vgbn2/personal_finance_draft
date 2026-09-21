@@ -24,7 +24,10 @@ cleanup() {
 trap cleanup EXIT SIGTERM SIGINT
 
 # 3. Create ephemeral startup.ini if credentials are provided
-STARTUP_INI="/opt/mt5/terminal/startup.ini"
+CONFIG_DIR="/opt/mt5/config"
+mkdir -p "$CONFIG_DIR"
+chmod 700 "$CONFIG_DIR"
+STARTUP_INI="$CONFIG_DIR/startup.ini"
 if [ -n "$MT5_LOGIN" ] && [ -n "$MT5_PASSWORD" ] && [ -n "$MT5_SERVER" ]; then
     echo "[SV-MT5] Generating ephemeral startup.ini configuration..."
     cat <<EOF > "$STARTUP_INI"
@@ -59,7 +62,11 @@ chmod 000 /opt/mt5/terminal/liveupdate
 
 # 5. Launch MetaTrader 5 in portable mode
 echo "[SV-MT5] Launching terminal64.exe in portable mode..."
-wine /opt/mt5/terminal/terminal64.exe /portable /config:startup.ini &
+if [ -f "$STARTUP_INI" ]; then
+    wine /opt/mt5/terminal/terminal64.exe /portable "/config:$STARTUP_INI" &
+else
+    wine /opt/mt5/terminal/terminal64.exe /portable &
+fi
 TERMINAL_PID=$!
 
 # 6. Wait on terminal process

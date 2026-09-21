@@ -723,11 +723,14 @@ function renderBackendStats(payload) {
   return lines.join('\n');
 }
 
+const { runBackendChart } = require('./backend_chart.js');
+
 async function commandBackend(args) {
   const subcommand = args[0] || 'status';
 
   const subcommands = {
     status: (a) => runBackendStatus(a),
+    chart: (a) => runBackendChart(a),
     stats: (a) => runBackendStats(a),
     portfolio: (a) => runBackendPortfolio(a),
     correlation: (a) => runBackendCorrelation(a),
