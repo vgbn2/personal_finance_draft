@@ -77,7 +77,7 @@ sources:
       grid:
         GLOBAL:
           layer1: ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "ADAUSDT", "AVAXUSDT", "NEARUSDT", "SUIUSDT", "POLUSDT", "DOTUSDT", "MATICUSDT"]
-          exchange_tokens: ["BNBUSDT", "OKB", "KCS", "HT", "GT", "CROUSDT", "FTT"]
+          exchange_tokens: ["BNBUSDT", "OKB", "KCS", "GT", "CROUSDT"]
           defi: ["UNIUSDT", "AAVEUSDT", "LINKUSDT", "INJUSDT", "MKRUSDT", "SNXUSDT", "LDOUSDT"]
           memes: ["DOGEUSDT", "SHIBUSDT", "PEPEUSDT", "WIFUSDT", "FLOKIUSDT", "BONKUSDT"]
           ai: ["FETUSDT", "RNDRUSDT", "AGIXUSDT", "OCEANUSDT", "TAOUSDT"]

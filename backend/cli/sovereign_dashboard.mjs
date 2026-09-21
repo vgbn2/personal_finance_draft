@@ -25,7 +25,22 @@ const { dashboardLayout, windowedRange } = require('./tui/dashboard_layout.js');
 // ponytail: cap terminal dashboard output scrollback to 500 lines to prevent memory thrashing
 const MAX_OUTPUT_BUFFER_LINES = 500;
 function appendCappedOutput(current, chunk) {
-  const combined = current + chunk;
+  let combined = current + chunk;
+  // If the stream emitted a clear-screen escape sequence (e.g. watch/top redraw),
+  // reset the buffer to the latest screen frame.
+  const clearIdx = Math.max(combined.lastIndexOf('\x1b[2J'), combined.lastIndexOf('\x1bc'));
+  if (clearIdx !== -1) {
+    combined = combined.slice(clearIdx + (combined[clearIdx + 1] === 'c' ? 2 : 4));
+    if (combined.startsWith('\x1b[3J')) {
+      combined = combined.slice(4);
+    }
+    if (combined.startsWith('\x1b[H') || combined.startsWith('\x1b[0f')) {
+      combined = combined.slice(3);
+    }
+    if (combined.startsWith('\x1b[0;0H')) {
+      combined = combined.slice(6);
+    }
+  }
   const lines = combined.split('\n');
   if (lines.length > MAX_OUTPUT_BUFFER_LINES) {
     return lines.slice(-MAX_OUTPUT_BUFFER_LINES).join('\n');
@@ -107,14 +122,7 @@ const M = [
     cmds: [
       { id: 'status',      label: 'status',      desc: 'System health snapshot',           flags: {} },
       { id: 'cockpit',     label: 'cockpit',      desc: 'Terminal dashboard', flags: {} },
-      { id: 'watch',       label: 'watch',        desc: 'Live data feed, polls every N min',// took long to boot,require a press of the esc key to reveal,ruin the interface in here, can this be replace by charting? references for charting  C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\terminus,C:\Users\Lenovo\Desktop\VGBN\.vscode\CODEPTIT\_resources\lightweight-charts dev suggest -- RESOLVED: raw cursor-control output piped into the dashboard panel is now TTY-guarded (no more garbled output); added an optional --symbol live-chart mode reusing renderPriceChart() and narrowing ingest to just that symbol (much faster boot than the whole-family fetch). terminus/lightweight-charts had no reusable Node-TUI pattern. Pending user confirmation.
-        flags: {
-          '--family':    { t:'sel', opts:['all','crypto','fx','equities','indices','commodities'], lbl:'Data family', def:'all' },
-          '--interval':  { t:'txt', lbl:'Poll interval (minutes)', def:'15' },
-          '--symbol':    { t:'txt', lbl:'Symbol for live chart mode', def:'', pickSymbol:'single' },
-          '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframes', def:'1d' },
-        },
-      },
+      { id: 'watch',       label: 'watch',        desc: '4-family market grid & live chart', flags: {} },
     ],
   },
   {
@@ -177,22 +185,7 @@ const M = [
           '--no-poll':   { t:'yn',  lbl:'One-shot (no live poll)?', def:false },
         },
       },
-      { id: 'backend universe', label: 'universe', desc: 'Cached symbol inventory (all families)', flags: {} },
-      { id: 'backend risk', label: 'risk check', desc: 'Pre-trade risk limit check (C++ core)',
-        flags: {
-          '--notional':          { t:'txt', lbl:'Order Notional ($)', def:'100' },
-          '--equity':            { t:'txt', lbl:'Account Equity ($)', def:'10000' },
-          '--drawdown':          { t:'txt', lbl:'Current Drawdown (0.02 = 2%)', def:'0.02' },
-          '--max-drawdown':      { t:'txt', lbl:'Max Allowed Drawdown (0.30 = 30%)', def:'0.30' },
-          '--max-concentration': { t:'txt', lbl:'Max Concentration (0.25 = 25%)', def:'0.25' },
-        },
-      },
-      // Appended after 'backend universe' deliberately, not next to 'backend
-      // visualize' above -- sovereign_dashboard.test.js hardcodes initialCmdI:4
-      // for 'backend universe' (its real, fast, deterministically-long output
-      // is used to test panel scrolling); inserting earlier in this list would
-      // have silently shifted that index and broken an unrelated test.
-      { id: 'backend chart', label: 'chart', desc: 'OHLCV price chart',// type-to-edit + width auto-clamp fixed 2026-06-22. Candlestick/SMA/volume upgrade DONE 2026-06-22 (s55): --style candle renders OHLC body+wick, --sma/--volume add the overlay + subplot, all via renderCandlestickChart() (visualizations.js).
+      { id: 'backend chart', label: 'chart', desc: 'OHLCV price chart',
         flags: {
           '--symbol':    { t:'txt', lbl:'Symbol to chart (required)', def:'', pickSymbol:'single' },
           '--timeframe': { t:'sel', opts:['1d','1h','4h','15m','5m','1m'], lbl:'Timeframe', def:'1d' },
@@ -436,7 +429,7 @@ const M = [
 ];
 
 // ── App ──────────────────────────────────────────────────────────────────
-const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
+const App = ({ initialCatI = 0, initialCmdI = -1, onRun = () => {}, executeInPane }) => {
   const { exit } = useApp();
   const viewport = useWindowSize();
   const layout = dashboardLayout(viewport.columns, viewport.rows);
@@ -453,6 +446,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
   const [editing, setEditing] = useState(false);
   const [editBuffer, setEditBuffer] = useState('');
   const [pickerUniverse, setPickerUniverse] = useState(() => SYMBOL_UNIVERSE);
+  const [pickerMarketFilter, setPickerMarketFilter] = useState('ALL');
   const [pickerQuery, setPickerQuery] = useState('');
   const [pickerIndex, setPickerIndex] = useState(0);
   const [pickerSelected, setPickerSelected] = useState(() => new Set());
@@ -570,14 +564,25 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
     const isInteractive = isInteractiveCmd(cmdStr, INTERACTIVE_CMDS);
 
     if (!isInteractive) {
+      // Preempt any existing running background process before starting a new command
+      if (childRef.current) {
+        const prevProc = childRef.current;
+        childRef.current = null;
+        try { prevProc.kill('SIGINT'); } catch (e) {}
+        setTimeout(() => {
+          try { prevProc.kill('SIGKILL'); } catch (e) {}
+        }, 500).unref();
+      }
+
       lastRunArgv = argv;
       if (mountedRef.current) {
         setRunning(true);
         setLastExecuted(argv);
-        setOutput('Running...\n');
-        setOutputScrollTop(null); // re-pin to the tail for the new run's output
+        setOutput('');
+        setOutputScrollTop(null);
       }
       await new Promise(resolve => setTimeout(resolve, 50));
+      let child = null;
       try {
         // This child's stdin is a piped, never-written, never-closed pipe (no
         // inherited TTY) -- tell the shared prompt stack (engine.js) to resolve
@@ -595,10 +600,13 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
           const stdout = result.stdout == null ? '' : String(result.stdout);
           const stderr = result.stderr == null ? '' : String(result.stderr);
           if (mountedRef.current && (stdout || stderr)) {
-            setOutput((c) => appendCappedOutput(c, stdout + stderr));
+            const streamText = stdout + stderr;
+            const hadClear = streamText.includes('\x1b[2J') || streamText.includes('\x1bc');
+            setOutput((c) => appendCappedOutput(c, streamText));
+            if (hadClear) setOutputScrollTop(0);
           }
         } else {
-          const child = spawn(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...argv], {
+          child = spawn(process.execPath, [path.join(__dirname, 'sovereign_cli.js'), ...argv], {
             env,
             stdio: ['ignore', 'pipe', 'pipe']
           });
@@ -613,7 +621,9 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
               if (mountedRef.current && pendingChunks) {
                 const chunk = pendingChunks;
                 pendingChunks = '';
+                const hadClear = chunk.includes('\x1b[2J') || chunk.includes('\x1bc');
                 setOutput((c) => appendCappedOutput(c, chunk));
+                if (hadClear) setOutputScrollTop(0);
               }
             }, 16);
           };
@@ -636,7 +646,9 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
               if (mountedRef.current && pendingChunks) {
                 const chunk = pendingChunks;
                 pendingChunks = '';
+                const hadClear = chunk.includes('\x1b[2J') || chunk.includes('\x1bc');
                 setOutput((c) => appendCappedOutput(c, chunk));
+                if (hadClear) setOutputScrollTop(0);
               }
               resolve(code);
             });
@@ -653,9 +665,11 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
       } catch (err) {
         if (mountedRef.current) setOutput('Error executing command: ' + err.message);
       } finally {
-        childRef.current = null;
-        if (mountedRef.current) {
-          setRunning(false);
+        if (!child || childRef.current === child) {
+          childRef.current = null;
+          if (mountedRef.current) {
+            setRunning(false);
+          }
         }
       }
     }
@@ -717,8 +731,8 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
   const activeFlagMeta = activeFlagKey ? cmd.flags[activeFlagKey] : null;
   const pickerMulti = !!(activeFlagMeta && activeFlagMeta.pickSymbol === 'multi');
   const pickerRows = React.useMemo(() => {
-    return focus === 'symbolPicker' ? buildSymbolPickerRows(pickerUniverse, pickerQuery) : [];
-  }, [focus, pickerQuery, pickerUniverse]);
+    return focus === 'symbolPicker' ? buildSymbolPickerRows(pickerUniverse, pickerQuery, pickerMarketFilter) : [];
+  }, [focus, pickerQuery, pickerUniverse, pickerMarketFilter]);
 
   function handleEditSubmit(value) {
     const fk = fkeys[flagI];
@@ -807,26 +821,17 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
       return;
     }
 
-    if (running) {
-      if (key.escape || input === 'c') {
-        if (childRef.current) {
-          const proc = childRef.current;
-          try { proc.kill('SIGINT'); } catch (e) {}
-          setTimeout(() => {
-            try { proc.kill('SIGKILL'); } catch (e) {}
-          }, 500).unref();
-        }
-        setOutput((c) => c + '\n\n[Command aborted by user]\n');
-        setRunning(false);
-        return;
+    // Allow explicit abort of running background task via Ctrl+X or Esc (when not editing/in picker)
+    if (running && ((key.ctrl && input === 'x') || (key.escape && !editing && focus !== 'symbolPicker'))) {
+      if (childRef.current) {
+        const proc = childRef.current;
+        try { proc.kill('SIGINT'); } catch (e) {}
+        setTimeout(() => {
+          try { proc.kill('SIGKILL'); } catch (e) {}
+        }, 500).unref();
       }
-      if (key.ctrl && input === 'c') {
-        if (childRef.current) {
-          try { childRef.current.kill('SIGINT'); } catch (e) {}
-        }
-        exit();
-        return;
-      }
+      setOutput((c) => c + '\n\n[Command aborted by user]\n');
+      setRunning(false);
       return;
     }
 
@@ -851,6 +856,15 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
       // independent hooks fighting over the same buffer is exactly the kind
       // of bug class this whole feature is supposed to avoid introducing.
       if (key.escape) { setFocus('flags'); return; }
+      if (input === '[' || input === ']') {
+        const families = ['ALL', 'CRYPTO', 'FX', 'COMMODITIES', 'INDICES', 'EQUITIES'];
+        const curIdx = families.indexOf(pickerMarketFilter);
+        const dir = input === ']' ? 1 : -1;
+        const nextFam = families[((curIdx + dir) % families.length + families.length) % families.length];
+        setPickerMarketFilter(nextFam);
+        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(pickerUniverse, pickerQuery, nextFam), pickerMulti));
+        return;
+      }
       if (key.upArrow) {
         setPickerIndex((i) => {
           if (pickerRows.length === 0) return 0;
@@ -874,7 +888,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
       if (key.backspace || key.delete) {
         const newQuery = pickerQuery.slice(0, -1);
         setPickerQuery(newQuery);
-        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(pickerUniverse, newQuery), pickerMulti));
+        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(pickerUniverse, newQuery, pickerMarketFilter), pickerMulti));
         return;
       }
       if (input === ' ') {
@@ -902,7 +916,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
       if (input && input.length === 1 && !key.ctrl && !key.meta) {
         const newQuery = pickerQuery + input;
         setPickerQuery(newQuery);
-        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(pickerUniverse, newQuery), pickerMulti));
+        setPickerIndex(firstSelectableIndex(buildSymbolPickerRows(pickerUniverse, newQuery, pickerMarketFilter), pickerMulti));
         return;
       }
       return;
@@ -1133,7 +1147,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
   // ── Flag panel ─────────────────────────────────────────────────────────
   let flagPanel;
   if (!cmd) {
-    flagPanel = h(Text, { color: MUT }, '  ⏎ or → to enter command list');
+    flagPanel = h(Text, { key: 'flag_panel', color: MUT }, '  ⏎ or → to enter command list');
   } else if (focus === 'symbolPicker') {
     const maxVisible = layout.pickerRows;
     const pickerScroll = pickerIndex >= maxVisible ? pickerIndex - maxVisible + 1 : 0;
@@ -1148,7 +1162,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
             const groupVals = groupValuesFor(pickerRows, row.groupKey);
             const checkedCount = groupVals.filter((v) => pickerSelected.has(v)).length;
             const tag = pickerMulti ? ` [${checkedCount}/${groupVals.length}]` : '';
-            return h(Text, { key: row.groupKey, color: active ? YL : CY, bold: true }, arrow + row.label + tag);
+            return h(Text, { key: row.groupKey, color: active ? YL : CY, bold: true }, arrow + `── ${row.label} ──` + tag);
           }
           if (row.type === 'custom') {
             const checked = pickerMulti && pickerSelected.has(row.value);
@@ -1159,8 +1173,14 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
           const box = pickerMulti ? (checked ? '[x] ' : '[ ] ') : '';
           return h(Text, { key: row.value, color: active ? YL : VAL }, arrow + box + row.value);
         });
-    flagPanel = h(Box, { flexDirection: 'column' },
+    flagPanel = h(Box, { key: 'flag_panel', flexDirection: 'column' },
       h(Text, { color: CY, bold: true }, '  Select ' + (activeFlagMeta && activeFlagMeta.pickStrategy ? 'strategy' : 'symbol') + (pickerMulti ? 's' : '') + ' — ' + activeFlagKey),
+      h(Box, {},
+        h(Text, { key: '_filter_label', color: MUT }, '  Filter [ / ]: '),
+        ...['ALL', 'CRYPTO', 'FX', 'COMMODITIES', 'INDICES', 'EQUITIES'].map((fam) =>
+          h(Text, { key: fam, color: pickerMarketFilter === fam ? GN : MUT, bold: pickerMarketFilter === fam }, `[${fam}] `)
+        )
+      ),
       h(Box, {}, h(Text, { color: YL }, '  Search: '), h(Text, { color: VAL }, pickerQuery + '█')),
       h(Text, { color: BDR }, '  ' + '─'.repeat(70)),
       ...rowNodes,
@@ -1182,13 +1202,13 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
     const activeSub = subcmdI >= 0 ? cmd.subcmds[subcmdI] : null;
     const cmdStr = activeSub ? activeSub.cmdStr : '';
 
-    flagPanel = h(Box, { flexDirection: 'column' },
+    flagPanel = h(Box, { key: 'flag_panel', flexDirection: 'column' },
       h(Text, { color: CY }, '  › ' + cmd.id + ' sub-options:'),
       ...subRows,
       h(Text, { color: BDR, wrap: 'truncate-end' }, '  sovereign ' + (cmdStr ? cmdStr : cmd.id)),
     );
   } else if (fkeys.length === 0) {
-    flagPanel = h(Box, { flexDirection: 'column' },
+    flagPanel = h(Box, { key: 'flag_panel', flexDirection: 'column' },
       h(Text, { color: CY },  '  › ' + cmd.id),
       h(Text, { color: MUT }, '    no configurable flags · ⏎ to run'),
       h(Text, { color: BDR, wrap: 'truncate-end' }, '  sovereign ' + cmd.id),
@@ -1209,7 +1229,7 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
         h(Text, { color: m.warn ? RD : MUT, wrap: 'truncate-end' }, m.lbl),
       );
     });
-    flagPanel = h(Box, { flexDirection: 'column' },
+    flagPanel = h(Box, { key: 'flag_panel', flexDirection: 'column' },
       h(Text, { color: CY }, '  › ' + cmd.id),
       ...flagRows,
       h(Box, {},
@@ -1357,11 +1377,15 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
     paddingX: 1,
     overflowY: 'hidden',
   },
-    h(Text, { color: YL, bold: true, wrap: 'truncate-end' }, cat.full),
-    h(Text, { color: BDR, wrap: 'truncate-end' }, '─'.repeat(contentRuleWidth)),
-    ...cmdRows,
-    h(Text, { color: BDR, wrap: 'truncate-end' }, '─'.repeat(contentRuleWidth)),
-    flagPanel,
+    focus === 'symbolPicker'
+      ? flagPanel
+      : [
+          h(Text, { key: 'cat_title', color: YL, bold: true, wrap: 'truncate-end' }, cat.full),
+          h(Text, { key: 'div1', color: BDR, wrap: 'truncate-end' }, '─'.repeat(contentRuleWidth)),
+          ...cmdRows,
+          h(Text, { key: 'div2', color: BDR, wrap: 'truncate-end' }, '─'.repeat(contentRuleWidth)),
+          flagPanel,
+        ],
   );
 
   const outputPanel = h(Box, {
@@ -1376,26 +1400,22 @@ const App = ({ initialCatI = 0, initialCmdI = -1, onRun, executeInPane }) => {
   },
     h(Text, { color: CY, bold: true, wrap: 'truncate-end' }, 'COMMAND OUTPUT'),
     h(Text, { color: BDR, wrap: 'truncate-end' }, '─'.repeat(outputRuleWidth)),
-    running
+    output || running
       ? h(Box, { flexDirection: 'column', overflowY: 'hidden' },
-          h(Text, { color: YL, bold: true, wrap: 'truncate-end' }, `⌛ Running: sovereign ${lastExecuted.join(' ')}`),
-          h(Text, { color: MUT, wrap: 'truncate-end' }, 'Please wait for execution to complete...'),
+          h(Text, { color: running ? YL : GN, bold: true, wrap: 'truncate-end' },
+            running ? `⌛ Running: [in background] sovereign ${lastExecuted.join(' ')}` : `$ sovereign ${lastExecuted.join(' ')}`),
+          h(Text, { color: BDR, wrap: 'truncate-end' }, '─'.repeat(outputRuleWidth)),
+          ...visibleLines.map((line, idx) => h(Text, { key: idx, color: VAL, wrap: 'truncate-end' }, line)),
+          outputLines.length > maxLines
+            ? h(Text, { color: outputScrolledUp ? YL : MUT, wrap: 'truncate-end' },
+                `[lines ${outputTop + 1}-${Math.min(outputTop + maxLines, outputLines.length)}/${outputLines.length}] ` +
+                (outputScrolledUp ? 'PgDn/End' : 'PgUp'))
+            : null,
         )
-      : output
-        ? h(Box, { flexDirection: 'column', overflowY: 'hidden' },
-            h(Text, { color: GN, bold: true, wrap: 'truncate-end' }, `$ sovereign ${lastExecuted.join(' ')}`),
-            h(Text, { color: BDR, wrap: 'truncate-end' }, '─'.repeat(outputRuleWidth)),
-            ...visibleLines.map((line, idx) => h(Text, { key: idx, color: VAL, wrap: 'truncate-end' }, line)),
-            outputLines.length > maxLines
-              ? h(Text, { color: outputScrolledUp ? YL : MUT, wrap: 'truncate-end' },
-                  `[lines ${outputTop + 1}-${Math.min(outputTop + maxLines, outputLines.length)}/${outputLines.length}] ` +
-                  (outputScrolledUp ? 'PgDn/End' : 'PgUp'))
-              : null,
-          )
-        : h(Box, { flexDirection: 'column', overflowY: 'hidden' },
-            h(Text, { color: MUT, wrap: 'truncate-end' }, 'No command executed yet.'),
-            h(Text, { color: MUT, wrap: 'truncate-end' }, 'Select a command and choose Run to see output.'),
-          ),
+      : h(Box, { flexDirection: 'column', overflowY: 'hidden' },
+          h(Text, { color: MUT, wrap: 'truncate-end' }, 'No command executed yet.'),
+          h(Text, { color: MUT, wrap: 'truncate-end' }, 'Select a command and choose Run to see output.'),
+        ),
   );
 
   const dashboardBody = layout.stacked

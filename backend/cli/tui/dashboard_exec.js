@@ -145,16 +145,25 @@ async function loadFullSymbolUniverse() {
 // match any known symbol, a leading "custom" row lets the user select the
 // typed text itself (e.g. for `ingest`, which can fetch a symbol that isn't
 // in the cache yet) -- the picker is an enhanced browser, not a restriction.
-function buildSymbolPickerRows(universe, query) {
+const MARKET_FAMILIES = ['ALL', 'CRYPTO', 'FX', 'COMMODITIES', 'INDICES', 'EQUITIES'];
+
+function buildSymbolPickerRows(universe, query, marketFilter = 'ALL') {
   const list = universe || [];
   const q = String(query || '').trim().toLowerCase();
-  const filtered = !q
-    ? list
-    : list.filter((u) => (
-        u.symbol.toLowerCase().includes(q) ||
-        u.category.toLowerCase().includes(q) ||
-        u.sector.toLowerCase().includes(q)
-      ));
+  const targetMarket = String(marketFilter || 'ALL').toUpperCase();
+
+  const filtered = list.filter((u) => {
+    if (targetMarket !== 'ALL') {
+      const fam = (u.family || u.category || '').toUpperCase();
+      if (!fam.includes(targetMarket)) return false;
+    }
+    if (!q) return true;
+    return (
+      u.symbol.toLowerCase().includes(q) ||
+      (u.category && u.category.toLowerCase().includes(q)) ||
+      (u.sector && u.sector.toLowerCase().includes(q))
+    );
+  });
 
   const groups = new Map();
   for (const u of filtered) {

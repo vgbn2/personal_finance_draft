@@ -42,6 +42,11 @@ function formatReturnPct(value) {
   return A.muted(padded);
 }
 
+function pruneStrategyName(name) {
+  if (!name) return '';
+  return String(name).replace(/_(?=[a-z0-9]*\d)[a-z0-9]{6,12}$/i, '');
+}
+
 function renderMassBtMatrix(payload) {
   const timeframes = payload.timeframes || DEFAULT_TIMEFRAMES;
   const strategies = payload.matrix || [];
@@ -65,7 +70,7 @@ function renderMassBtMatrix(payload) {
 
   // Data rows
   for (const row of strategies) {
-    let dataRow = '| ' + padCell(row.name, 25) + ' ';
+    let dataRow = '| ' + padCell(pruneStrategyName(row.name), 25) + ' ';
     for (const tf of timeframes) {
       const cell = row.timeframes ? row.timeframes[tf] : null;
       if (cell && (cell.trades === undefined ? typeof cell.net_return === 'number' : cell.trades > 0)) {
@@ -302,5 +307,6 @@ async function commandMassBt(args) {
 module.exports = {
   commandMassBt,
   renderMassBtMatrix,
+  pruneStrategyName,
   DEFAULT_TIMEFRAMES,
 };

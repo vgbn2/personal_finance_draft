@@ -392,11 +392,228 @@ async function commandPrune(args) {
   }
 }
 
+async function loadWatchGridFromConfig() {
+  const { loadMarketConfig } = require('../../../../shared/lib/runtime/config_loader.js');
+  const yamlPath = path.join(utils.REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
+  try {
+    const config = await loadMarketConfig(yamlPath);
+    const indices = (config.indices?.symbols || []).slice(0, 3).map((s) => ['Indices', s, '1d']);
+    const fx = (config.fx?.symbols || []).slice(0, 3).map((s) => ['FX', s, '1d']);
+    const commodities = (config.commodities?.symbols || []).slice(0, 3).map((s) => ['Commodities', s, '1d']);
+    const crypto = (config.crypto?.symbols || []).slice(0, 3).map((s) => ['Crypto', s, '1d']);
+    const grid = [...indices, ...fx, ...commodities, ...crypto];
+    return grid.length >= 4 ? grid : null;
+  } catch {
+    return null;
+  }
+}
+
+const YAHOO_WATCH_MAP = {
+  EURUSD: 'EURUSD=X', USDJPY: 'USDJPY=X', GBPUSD: 'GBPUSD=X', AUDUSD: 'AUDUSD=X',
+  XAUUSD: 'GC=F',     USOIL: 'CL=F',      UKOIL: 'BZ=F',      XAGUSD: 'SI=F',
+  US500: '^GSPC',     NDX: '^NDX',        GER40: '^GDAXI',    UK100: '^FTSE',
+};
+
+const WATCH_FAMILIES = [
+  { name: 'CRYPTO', symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT'] },
+  { name: 'FX (MAJOR PAIRS)', symbols: ['EURUSD', 'USDJPY', 'GBPUSD', 'AUDUSD'] },
+  { name: 'COMMODITIES', symbols: ['XAUUSD', 'USOIL', 'UKOIL', 'XAGUSD'] },
+  { name: 'INDICES', symbols: ['US500', 'NDX', 'GER40', 'UK100'] },
+];
+
+async function fetchLiveMarketQuotes() {
+  const liveMap = new Map();
+  const promises = [];
+
+  // 1. Real-time Crypto via Binance 24hr ticker API (sub-second live prices)
+  const cryptoGroup = WATCH_FAMILIES.find((f) => f.name === 'CRYPTO');
+  const cryptoSymbols = cryptoGroup ? cryptoGroup.symbols : ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'];
+  const binanceParam = encodeURIComponent(JSON.stringify(cryptoSymbols));
+
+  promises.push(
+    fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${binanceParam}`, {
+      signal: AbortSignal.timeout(2500),
+    })
+      .then((r) => r.json())
+      .then((list) => {
+        if (Array.isArray(list)) {
+          for (const item of list) {
+            liveMap.set(item.symbol, {
+              price: Number(item.lastPrice),
+              change: Number(item.priceChangePercent),
+            });
+          }
+        }
+      })
+      .catch(() => {})
+  );
+
+  // 2. 1-minute real-time stream for FX, Commodities, and Indices via Yahoo v8 chart endpoint
+  for (const [sym, ySym] of Object.entries(YAHOO_WATCH_MAP)) {
+    promises.push(
+      fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1m&range=1d`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(2500),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          const meta = data?.chart?.result?.[0]?.meta;
+          if (meta && Number.isFinite(meta.regularMarketPrice)) {
+            const price = meta.regularMarketPrice;
+            const prev = meta.previousClose || meta.chartPreviousClose;
+            const change = prev ? ((price - prev) / prev) * 100 : 0;
+            liveMap.set(sym, { price, change });
+          }
+        })
+        .catch(() => {})
+    );
+  }
+
+  await Promise.allSettled(promises);
+  return liveMap;
+}
+
+async function commandWatchGrid(args = []) {
+  const { readTsIndex } = require('../../../../shared/lib/market/ts_index_storage.js');
+  const A = require('../../../../shared/lib/ui/ansi.js');
+  const intervalSecs = numericOption(args, '--interval-secs', Math.round(numericOption(args, '--interval', 0.5) * 60));
+  const once = hasFlag(args, '--once');
+
+  let running = true;
+  let wakeTimer = null;
+  let sleepTimer = null;
+  const previousPrices = new Map();
+  const onSig = () => {
+    running = false;
+    if (sleepTimer) {
+      clearTimeout(sleepTimer);
+      sleepTimer = null;
+    }
+    if (wakeTimer) {
+      wakeTimer();
+      wakeTimer = null;
+    }
+  };
+  process.on('SIGINT', onSig);
+  process.on('SIGTERM', onSig);
+
+  try {
+    while (running) {
+      const liveQuotes = await fetchLiveMarketQuotes();
+
+      process.stdout.write('\x1b[2J\x1b[H');
+      const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+      console.log('='.repeat(78));
+      console.log(`  ${A.bold(A.CYAN + 'SOVEREIGN WATCH' + A.RESET)} ${A.muted(`— Live Market Grid [${intervalSecs}s Stream] (Updated ${timeStr})`)}`);
+      console.log('='.repeat(78));
+
+      const allEntries = [];
+
+      for (let i = 0; i < WATCH_FAMILIES.length; i++) {
+        const group = WATCH_FAMILIES[i];
+        console.log(A.bold(A.YELLOW + `  [${group.name}]` + A.RESET));
+
+        const items = [];
+        for (const sym of group.symbols) {
+          let price = null;
+          let change = null;
+          let bars = [];
+
+          // 1. Prefer real-time live quote if available
+          const live = liveQuotes.get(sym);
+          if (live && live.price !== null && Number.isFinite(live.price)) {
+            price = live.price;
+            change = live.change;
+          }
+
+          // 2. Load historical bars for in-pane chart visualization or fallback quote
+          try {
+            const records = readTsIndex(DEFAULT_TS_DIR, sym, '1d');
+            bars = Array.isArray(records) ? records : (records?.bars || []);
+            if (price === null && bars.length > 0) {
+              const last = bars[bars.length - 1];
+              const prev = bars[bars.length - 2];
+              price = last ? last.close : null;
+              change = (last && prev && prev.close) ? ((last.close - prev.close) / prev.close) * 100 : null;
+            }
+          } catch {}
+
+          let tick = ' ';
+          if (previousPrices.has(sym) && price !== null) {
+            const prevP = previousPrices.get(sym);
+            if (price > prevP) {
+              tick = A.c(A.GREEN, '▲');
+            } else if (price < prevP) {
+              tick = A.c(A.RED, '▼');
+            }
+          }
+          if (price !== null) {
+            previousPrices.set(sym, price);
+          }
+
+          const entry = { family: group.name, sym, price, change, bars, tick };
+          items.push(entry);
+          allEntries.push(entry);
+        }
+
+        // Render 2 pairs (4 columns) or 2 columns
+        for (let r = 0; r < items.length; r += 2) {
+          const left = items[r];
+          const right = items[r + 1];
+
+          const formatItem = (item) => {
+            if (!item) return ''.padEnd(36);
+            const pStr = item.price !== null
+              ? (item.price >= 1000 ? item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : item.price.toFixed(4))
+              : 'N/A';
+            const chgStr = item.change !== null ? `${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)}%` : '';
+            const col = item.change !== null ? (item.change >= 0 ? A.GREEN : A.RED) : '';
+            const tick = item.tick || ' ';
+            return `  ${item.sym.padEnd(9)} ${pStr.padStart(10)} ${tick}  ${col ? A.c(col, chgStr.padStart(7)) : ''.padStart(7)}`;
+          };
+
+          console.log(`${formatItem(left)}   │${formatItem(right)}`);
+        }
+
+        if (i < WATCH_FAMILIES.length - 1) {
+          console.log(A.muted('─'.repeat(78)));
+        }
+      }
+      console.log('='.repeat(78));
+
+      if (once) {
+        break;
+      }
+
+      console.log(A.muted(`  Live stream active (refreshing every ${intervalSecs}s | Press Ctrl+C or switch command to stop)\n`));
+
+      await new Promise((resolve) => {
+        wakeTimer = resolve;
+        sleepTimer = setTimeout(resolve, intervalSecs * 1000);
+      });
+      sleepTimer = null;
+    }
+  } finally {
+    if (sleepTimer) {
+      clearTimeout(sleepTimer);
+      sleepTimer = null;
+    }
+    process.removeListener('SIGINT', onSig);
+    process.removeListener('SIGTERM', onSig);
+  }
+
+  return 0;
+}
+
 /**
  * Handles the 'watch' command.
  */
-async function commandWatch(args) {
-  const family = optionValue(args, '--family', 'all');
+async function commandWatch(args = []) {
+  const family = optionValue(args, '--family', null);
+  if (!family || family === 'all') {
+    return commandWatchGrid(args);
+  }
+
   if (['onchain', 'crypto_tx', 'holdings', 'reserves'].includes(family)) {
     const gate = featureGate('onchain_data', { surface: `Watch family '${family}'` });
     if (!gate.ok) {
@@ -404,7 +621,7 @@ async function commandWatch(args) {
       return 1;
     }
   }
-  const intervalMinutes = numericOption(args, '--interval', 15);
+  const intervalMinutes = numericOption(args, '--interval', 1);
   const intervalMs = intervalMinutes * 60 * 1000;
 
   let showLimit = 10;
@@ -767,6 +984,7 @@ module.exports = {
   inspectMassBackfillJob,
   commandValidate,
   commandWatch,
+  commandWatchGrid,
   commandPrune,
   commandLoc,
   commandUniverse,

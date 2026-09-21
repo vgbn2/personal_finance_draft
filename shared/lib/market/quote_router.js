@@ -13,7 +13,19 @@ const DEFAULT_PROVIDER_PRIORITY = {
 }
 
 const CURRENCY_CODES = new Set(['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'CNH', 'VND']);
-const COMMODITY_SYMBOLS = new Set(['XAUUSD', 'XAGUSD', 'XCUUSD', 'USOIL']);
+const COMMODITY_SYMBOLS = new Set(['XAUUSD', 'XAGUSD', 'XCUUSD', 'USOIL', 'UKOIL', 'NG', 'WHEAT', 'CORN', 'SOYBN']);
+const VN_EQUITY_SYMBOLS = new Set(['VCB', 'BID', 'CTG', 'TCB', 'FPT', 'CMG', 'VIC', 'VHM', 'VRE', 'VNM', 'MSN', 'HPG', 'FMC', 'GAS']);
+const COMMODITY_ALIASES = {
+  'GC=F': 'XAUUSD',
+  'SI=F': 'XAGUSD',
+  'HG=F': 'XCUUSD',
+  'CL=F': 'USOIL',
+  'BZ=F': 'UKOIL',
+  'NG=F': 'NG',
+  'ZW=F': 'WHEAT',
+  'ZC=F': 'CORN',
+  'ZS=F': 'SOYBN',
+};
 const INDEX_ALIASES = {
   US500: 'SPX',
   SP500: 'SPX',
@@ -44,8 +56,14 @@ function normalizeFamily(family) {
 }
 
 function normalizeSymbol(symbol, family = null) {
-  let value = String(symbol || '').trim().toUpperCase();
-  value = value.replace(/\s+/g, '');
+  let raw = String(symbol || '').trim().toUpperCase();
+  if (COMMODITY_ALIASES[raw]) return COMMODITY_ALIASES[raw];
+  if (raw.endsWith('.VN')) {
+    const base = raw.slice(0, -3);
+    if (VN_EQUITY_SYMBOLS.has(base)) return base;
+  }
+  const hadUsSuffix = /\.(US|us)$|:(US|us)$|\/(US|us)$/.test(raw.trim());
+  let value = raw.replace(/\s+/g, '');
   value = value.replace(/[./:_-]/g, '');
   value = INDEX_ALIASES[value] || value;
   if (family === 'crypto' && value.endsWith('USD') && !value.endsWith('USDT')) {
@@ -53,7 +71,10 @@ function normalizeSymbol(symbol, family = null) {
   } else if (family && family !== 'crypto') {
     value = value.replace(/USDT$/, 'USD');
   }
-  if ((family === 'equities' || !family) && value.endsWith('US') && value.length > 2) {
+  if ((family === 'equities' || !family) && hadUsSuffix && value.endsWith('US') && value.length > 2) {
+    value = value.slice(0, -2);
+  }
+  if (value.endsWith('VN') && VN_EQUITY_SYMBOLS.has(value.slice(0, -2))) {
     value = value.slice(0, -2);
   }
   return value;

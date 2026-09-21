@@ -48,6 +48,16 @@ Subagents MUST NOT rely on static code review or documentation claims alone:
 - **Detect Phantom Specs**: Contrast documented architectural claims against actual source implementations (e.g. WebSocket feeds vs REST polling, ring buffers vs static files).
 - **Inspect Log Evidence**: Check active diagnostic and runtime logs (`flaw_monitor.log`, container logs) alongside static code.
 - **Zero False-Positive Gate**: Actively distinguish between intended architectural design (e.g. offline fixture fallbacks, zero-key development mode, non-blocking diagnostic logs, frozen cache states) and actual operational defects. Reject all speculative or unverified static claims. Every reported finding must be backed by a proved failing boundary or broken execution path.
+- **Audit False-Positive Tests & Circular Mocks**: Actively audit test files for shallow mocks (`executeInPane`, synchronous stubs) that pass green while bypassing the real runtime lifecycle. Specifically flag:
+  1. *Mocked-Execution Circular Proof*: Tests asserting mock return values instead of exercising the real execution pipeline.
+  2. *State-Masking Test Blindspots*: Tests that wait for background states to finish without testing intermediate interactive states (e.g. keyboard lockouts, output masking).
+  3. *Viewport Layout Blindspots*: Tests that render components without validating line collision in bounded terminal dimensions (80x24).
+
+### 3.1. Static Audit-Marker Fast-Path Engine
+To eliminate redundant line-by-line reading of immutable mathematical kernels, indicators, and risk invariants across repeated blast-through passes, the audit engine supports a SHA-256 static marker fast-path:
+- Check `config/audit/static_audit_manifest.json` for audited module hashes and invariants.
+- If a target file's current SHA-256 matches its manifest hash and its associated invariant tests pass, the audit subagent marks the plane's module as **Verified Static** and skips manual line-by-line hard reading.
+- If the hash diverges, the fast-path is invalidated, forcing a full Bayesian hard-reading pass and invariant re-verification before updating the manifest.
 
 ### 4. Section Cleanliness Grading Rubric (A–F)
 Each architectural plane must receive a substantiated letter grade:

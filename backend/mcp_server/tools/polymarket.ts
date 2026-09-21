@@ -20,7 +20,7 @@ export async function getPolymarketPortfolio(): Promise<ToolResponse> {
 
 export const placePolymarketOrderSchema = z.object({
   token_id: z.string().describe('CLOB token ID for the outcome to buy'),
-  size: z.number().describe('Number of shares (USDC-denominated)'),
+  size: z.number().positive().finite().describe('Number of shares (USDC-denominated)'),
   price: z.number().optional().describe('Limit price per share (0-1). Live TUI orders use an explicit limit price.'),
   max_cost_usdc: z.number().optional().describe('Optional safety cap; refuse the order if size * price exceeds this amount'),
   live: z.boolean().optional().default(false).describe('Execute live order (requires ai_agent_trading feature flag)'),

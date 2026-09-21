@@ -6,9 +6,9 @@ import { ToolResponse } from '../lib/schemas';
 export const tradeSchema = z.object({
   action: z.enum(['buy', 'sell']).describe('Order side'),
   symbol: z.string().describe('Symbol to trade (e.g. AAPL)'),
-  qty: z.union([z.number(), z.string()]).describe('Quantity or amount (e.g. 10 or "amount:1000")'),
+  qty: z.union([z.number().positive().finite(), z.string().regex(/^(\d+(\.\d+)?|amount:\d+(\.\d+)?)$/)]).describe('Quantity or amount (e.g. 10 or "amount:1000")'),
   type: z.enum(['market', 'limit']).optional().default('market').describe('Order type'),
-  price: z.number().optional().describe('Limit price'),
+  price: z.number().positive().finite().optional().describe('Limit price'),
   live: z.boolean().optional().default(false).describe('Whether to execute live (requires ai_agent_trading feature flag)'),
   confirm_live: z.boolean().optional().default(false).describe('Must be true when live=true; prevents accidental live execution from agents'),
 });

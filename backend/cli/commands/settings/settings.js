@@ -178,8 +178,14 @@ async function commandSettings(args, { settingsPath } = {}) {
     const settings = loadSettings(settingsPath);
     const emailIdx = args.indexOf('--email');
     const pushIdx  = args.indexOf('--push');
-    if (emailIdx !== -1) settings.alerts.email = args[emailIdx + 1] !== 'false';
-    if (pushIdx  !== -1) settings.alerts.push  = args[pushIdx  + 1] !== 'false';
+    if (emailIdx !== -1) {
+      const nextArg = args[emailIdx + 1];
+      settings.alerts.email = nextArg === 'true' || nextArg === undefined || (nextArg !== 'false' && nextArg.startsWith('--'));
+    }
+    if (pushIdx !== -1) {
+      const nextArg = args[pushIdx + 1];
+      settings.alerts.push = nextArg === 'true' || nextArg === undefined || (nextArg !== 'false' && nextArg.startsWith('--'));
+    }
     persistSettings(settings, settingsPath);
     if (useJson) {
       printPayload({ ok: true, type: 'user_settings', alerts: settings.alerts }, args);

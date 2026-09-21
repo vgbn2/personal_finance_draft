@@ -193,10 +193,7 @@ const COMMAND_MANIFEST = {
     op: [
       { id: 'status',   label: 'Status ', args: [] },
       { id: 'cockpit',  label: 'Terminal dashboard', args: [] },
-      { id: 'watch',    label: 'Watch', flags: {
-        '--family':   { type: 'select', options: ['all', 'crypto', 'fx', 'equities', 'indices', 'commodities', 'macro', 'prediction_market'], label: 'Family', default: 'all' },
-        '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' }
-      }},
+      { id: 'watch',    label: 'Watch', args: [] },
     ],
     data: [
       { id: 'integrity',   prefix: ['backend'], label: 'Integrity', args: [], flags: {
@@ -231,13 +228,6 @@ const COMMAND_MANIFEST = {
     ],
     backend: [
       { id: 'stats', prefix: ['backend'], label: 'Backend Stats', args: [] },
-      { id: 'risk', prefix: ['backend'], label: 'Pre-Trade Risk Check', flags: {
-        '--notional': { type: 'text', default: '100', label: 'Order Notional ($)' },
-        '--equity': { type: 'text', default: '10000', label: 'Account Equity ($)' },
-        '--drawdown': { type: 'text', default: '0.02', label: 'Current Drawdown (0.02 = 2%)' },
-        '--max-drawdown': { type: 'text', default: '0.30', label: 'Max Allowed Drawdown (0.30 = 30%)' },
-        '--max-concentration': { type: 'text', default: '0.25', label: 'Max Concentration (0.25 = 25%)' }
-      }},
       { id: 'correlation', prefix: ['backend'], label: 'Pearson Correlation', loading: true, flags: {
         '--timeframe': { type: 'select', options: getCachedTimeframes, label: 'Timeframe' },
         '--max-bars': { type: 'text', default: '252', label: 'Lookback Period (Bars)' },
@@ -250,7 +240,6 @@ const COMMAND_MANIFEST = {
         '--interval': { type: 'text', default: '30', label: 'Poll interval (seconds)' },
         '--no-poll': { type: 'confirm', label: 'One-shot (no live poll)?', default: false },
       }},
-      { id: 'universe', prefix: ['backend'], label: 'Backend Universe', args: [] },
     ],
     research: [
       { id: 'bt', label: 'Backtest (Prop-firm fit)', loading: true, flags: {
@@ -352,7 +341,7 @@ const COMMAND_MANIFEST = {
       { id: 'alpaca',       label: 'Alpaca', args: [] },
       { id: 'mt5',          label: 'MT5 / EA', args: [] },
       { id: 'add-platform', label: '+ Add Broker', args: [] },
-      { id: 'favorites',    label: 'Favourite Symbols', args: [] },
+      { id: 'favorites',    label: 'Favourite Symbols', prefix: ['trade'], args: [] },
       { id: 'auto-trade',   label: 'Auto-Trade Loop', flags: {
         '--interval': { type: 'text', default: '15', label: 'Interval (minutes)' },
         '--live':     { type: 'confirm', label: 'EXECUTE LIVE TRADES?', default: false }

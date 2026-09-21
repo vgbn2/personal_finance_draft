@@ -77,6 +77,7 @@ BacktestResult StrategySweepEvaluator::evaluateStrategy(
         const auto& row = frame.rows[i];
         const double close = row.bar.close;
         if (position_open) {
+            if (close <= 0.0 || !std::isfinite(close) || entry_price <= 0.0 || !std::isfinite(entry_price)) continue;
             const double marked_return = (close * (1.0 - drag)) / (entry_price * (1.0 + drag)) - 1.0;
             const double marked_equity = entry_equity * (1.0 + marked_return);
             result.equity_curve.points.push_back({row.bar.timestamp, marked_equity});

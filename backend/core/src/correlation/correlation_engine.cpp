@@ -159,7 +159,8 @@ std::vector<double> logReturnSeries(std::span<const double> prices) {
     for (std::size_t i = 1; i < prices.size(); ++i) {
         const double previous = prices[i - 1U];
         const double current = prices[i];
-        if (previous <= 0.0 || current <= 0.0) {
+        if (previous <= 0.0 || current <= 0.0 || !std::isfinite(previous) || !std::isfinite(current)) {
+            returns.push_back(0.0);
             continue;
         }
         returns.push_back(std::log(current / previous));

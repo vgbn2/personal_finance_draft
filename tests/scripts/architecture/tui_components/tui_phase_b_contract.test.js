@@ -145,9 +145,7 @@ test('manifest edge-decay label has no double space', () => {
   assert.ok(!edgeDecay.label.includes('  '), 'label should not contain double spaces');
 });
 
-test('manifest backend stats and universe have args array', () => {
+test('manifest backend stats has args array', () => {
   const stats = manifest.commands.backend.find((e) => e.id === 'stats');
-  const universe = manifest.commands.backend.find((e) => e.id === 'universe');
   assert.ok(stats && Array.isArray(stats.args), 'backend stats should have args: []');
-  assert.ok(universe && Array.isArray(universe.args), 'backend universe should have args: []');
 });

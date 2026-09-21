@@ -55,7 +55,7 @@ const {
   localBackendFallback,
 } = require('./cli_executor_market');
 
-const { isValidPositionId, sanitizeSymbol } = require('./input_validator');
+const { isValidPositionId, sanitizeSymbol, isPathWithinAllowedRoots } = require('./input_validator');
 
 const {
   DEFAULT_BACKTEST_REPORT,
@@ -176,7 +176,21 @@ function backendStats(query = {}) {
     let equityCsv = stringOrFallback(query.equity, null);
     let equitySource = equityCsv ? 'query' : null;
     if (!equityCsv) {
-      const inputPath = stringOrFallback(query.input, DEFAULT_BACKTEST_REPORT);
+      let inputPath = DEFAULT_BACKTEST_REPORT;
+      if (query.input) {
+        const candidate = path.resolve(REPO_ROOT, String(query.input));
+        if (!isPathWithinAllowedRoots(candidate)) {
+          return {
+            available: Boolean(locateBackendBinary()),
+            ok: false,
+            type: 'backend_stats',
+            engine: 'sovereign_web_api',
+            schema_version: 1,
+            error: 'Path traversal denied: path outside repository root',
+          };
+        }
+        inputPath = candidate;
+      }
       try {
         const backtest = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
         if (backtest && backtest.equity_curve && Array.isArray(backtest.equity_curve)) {
