@@ -98,6 +98,7 @@ services:
     # disable it here so `docker compose ps` doesn't report a false "unhealthy".
     healthcheck:
       disable: true
+    init: true
     # The CLI owns the single global/personal/admin interval resolver. Its default
     # effective paper-bot cadence is one minute; SOVEREIGN_ADMIN_BOT_INTERVAL_MIN
     # may impose a slower host-wide minimum.
@@ -105,7 +106,7 @@ services:
       - /bin/sh
       - -c
       - |
-        node backend/cli/sovereign_cli.js run bot paper --strategy low_prob_dip
+        exec node backend/cli/sovereign_cli.js run bot paper --strategy low_prob_dip
 
   mt5:
     container_name: sv-mt5
@@ -389,6 +390,7 @@ services:
           memory: 256M
     healthcheck:
       disable: true
+    init: true
     command:
       - /bin/sh
       - -c
@@ -434,6 +436,7 @@ services:
           memory: 512M
     healthcheck:
       disable: true
+    init: true
     command:
       - /bin/sh
       - -c

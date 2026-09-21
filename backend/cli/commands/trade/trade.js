@@ -251,6 +251,16 @@ async function commandTrade(args) {
   args = buildTradeArgsFromActionFlag(args);
   const subcommand = args[0];
 
+  if (subcommand === 'favorites') {
+    const favorites = currentFavoriteSymbols();
+    if (hasFlag(args, '--json')) {
+      console.log(JSON.stringify(favorites, null, 2));
+    } else {
+      console.log('\n' + renderFavoriteSymbolsList(favorites) + '\n');
+    }
+    return 0;
+  }
+
   if (subcommand === 'mt5') {
     return commandMt5(args.slice(1));
   }

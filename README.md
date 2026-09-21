@@ -144,7 +144,7 @@ For detailed protocol specifications, fail-closed risk checks, and Wine troubles
 
 ## 3. Sovereign Ink TUI & CLI Navigation Guide
 
-Sovereign features a terminal cockpit powered by React Ink (`backend/cli/sovereign_cli.js`) alongside a headless CLI interface.
+Sovereign features an asynchronous terminal cockpit powered by React Ink (`backend/cli/sovereign_cli.js`) alongside a headless CLI interface.
 
 ### Interactive Terminal Cockpit (Ink TUI)
 
@@ -155,16 +155,18 @@ node backend/cli/sovereign_cli.js
 
 | Pane / Section | Displayed Components | Navigation Controls |
 |---|---|---|
-| **Header Bar** | Console v1.0, Profile: `local-dev`, Status: `OK`, Auth: `Guest` | `q` / `Ctrl+C`: Quit cockpit |
-| **Categories (Left Pane)** | 1. Operational Dashboard<br>2. Data & Backfill<br>3. Backend Tools (C++ Core)<br>4. Research & Backtest<br>5. AI & Machine Learning<br>6. Execution & Trading<br>7. Prediction Markets<br>8. Settings & Preferences<br>9. Account & Auth | `↑`/`↓`: Select category<br>`Tab`: Switch pane |
-| **Commands & Parameters (Right Pane)** | `[status]`, `[cockpit]`, `[watch]`, `[cache-clean]`, `[kill-switch]`<br>Config: Symbol `BTC/USDT`, Timeframe `1h`, History `730 days` | `Enter`: Execute command<br>`/`: Filter search<br>`Esc`: Cancel |
+| **Header Bar** | Console v1.0, Backend ●, Cache ◐, Quotes ◐, System Clock | `q` / `Ctrl+C`: Quit cockpit |
+| **Categories (Left Pane)** | 1. Operational Dashboard<br>2. Data & Backfill<br>3. Tools (C++ Core)<br>4. Research & Backtest<br>5. AI & Machine Learning<br>6. Execution & Trading<br>7. Prediction Markets<br>8. Settings & Preferences<br>9. Account & Auth | `↑`/`↓`: Select category<br>`Tab`: Switch to/from Chat |
+| **Command & Flag Panel (Center Pane)** | Command list with inline subcommands and flags.<br>Symbol picker modal with market filtering tabs: `[ALL]`, `[CRYPTO]`, `[FX]`, `[COMMODITIES]`, `[INDICES]`, `[EQUITIES]` | `Enter`: Execute command / enter flag<br>`[` / `]`: Cycle market filter<br>`Esc`: Back out / return to flags |
+| **Live Command Output (Right Pane)** | Non-blocking live streaming output (`[Running in background]`) with process preemption and page scrolling | `PgUp` / `PgDn`: Scroll output<br>`End`: Jump to live tail<br>`Ctrl+X` / `Esc`: Abort running task |
 
 #### TUI Keyboard Controls & Navigation
-- **`↑` / `↓` Arrow Keys**: Navigate between categories, commands, and parameter selectors.
-- **`Enter`**: Select item or execute the configured command.
-- **`Tab` / `Shift+Tab`**: Switch focus between category list, command pane, and parameter form fields.
-- **`/`**: Open instant fuzzy filter search across all registered platform commands.
-- **`Esc`**: Cancel search prompt or back out of sub-menus.
+- **`↑` / `↓` Arrow Keys**: Navigate between categories, commands, sub-options, and parameter selectors.
+- **`Enter`**: Select item or trigger execution (runs in background without locking interface).
+- **`Tab`**: Toggle focus between Category/Command navigation and the bottom AI Chat input bar.
+- **`[` / `]`**: Cycle market family filters (`ALL`, `CRYPTO`, `FX`, `COMMODITIES`, `INDICES`, `EQUITIES`) inside the symbol picker modal.
+- **`PgUp` / `PgDn` / `Home` / `End`**: Scroll through output buffer with line-range indicators (e.g. `[lines 1-15/23]`).
+- **`Ctrl+X` / `Esc`**: Cancel running background task or back out of sub-menus.
 - **`q` / `Ctrl+C` (x2)**: Gracefully disconnect and exit the terminal cockpit.
 
 ---
@@ -179,20 +181,22 @@ Every TUI capability can be invoked headlessly in CI/CD pipelines, background sc
 
 | Category | Command | Primary Flags | Purpose & Subsystem |
 |---|---|---|---|
-| **Operational** | `status` | `--json`, `--debug` | Display health status of API, C++ core, data caches, and gateways. |
+| **Operational** | `status` | `--json`, `--debug` | Display rich multi-broker portfolio balances (Alpaca, Polymarket, MT5, Virtual Paper), open positions, prop firm risk metrics (drawdown % vs 30% limit, gross exposure), and System Doctor diagnostics. |
+| | `watch` | `--interval <mins>`, `--interval-secs <sec>`, `--once` | 4-family live market streaming grid (Crypto, FX, Commodities, Indices) with 30s live intervals, directional price deltas (`▲`/`▼`), and sub-second quote feeds. |
 | | `cockpit` | `--limit <n>`, `--interval <sec>` | Live console monitoring table of assets, spreads, and indicators. |
 | | `doctor` | `--full`, `--fix` | Diagnostic check of toolchains, dependencies, permissions, and caches. |
 | | `kill-switch` | `--action engage\|disengage` | Instant safety circuit breaker halting all outbound broker orders. |
-| **Data & Feeds** | `ingest` | `--family <fam>`, `--symbol <sym>`, `--timeframe <tf>` | Ingest raw OHLCV market feeds from Binance, Yahoo, or Polymarket. |
+| **Data & Feeds** | `ingest` | `--family <fam>`, `--symbol <sym>`, `--timeframe <tf>`, `--background` | Ingest raw OHLCV market feeds from Binance, Yahoo, or Polymarket in parallel across 7 asset families. |
 | | `backfill` | `--days <n>`, `--symbol <sym>` | Fetch historical market bars and append to binary TS files. |
-| | `backfill-daemon` | `--once`, `--concurrency <n>` | Continuous background market data synchronization worker. |
+| | `backfill-daemon` | `--once`, `--concurrency <n>` | Continuous background market data synchronization worker with parallel crypto & equities lanes. |
 | | `intraday-rollup` | `--family <fam>`, `--timeframes 15m,1h` | Synthesize higher timeframe bars from base 1m/5m binary data. |
 | | `cache-clean` | `--dry-run`, `--ts` | Prune expired JSON cache buffers and orphaned temporary files. |
-| **C++ Analytics** | `backend status` | `--json` | Query native C++20 Sovereign Core engine status and binary memory footprint. |
-| | `risk-check` | `--notional <$>`, `--equity <$>`, `--drawdown <%>` | Microsecond pre-trade risk filter validation against portfolio constraints. |
-| | `correlation` | `--timeframe <tf>`, `--max-bars <n>` | Fast Pearson cross-asset correlation matrix calculation. |
+| **C++ Analytics** | `backend stats` | `--file <csv>`, `--json` | Query equity curve statistics, Sharpe/Sortino ratios, and drawdown analysis from backtest runs. |
+| | `backend correlation` | `--symbols <syms>`, `--timeframe <tf>`, `--max-bars <n>` | Fast Pearson cross-asset correlation matrix calculation. |
+| | `backend visualize` | `--symbol <sym>`, `--timeframe <tf>`, `--window <n>` | Sigma band live rolling volatility visualization. |
+| | `backend chart` | `--symbol <sym>`, `--timeframe <tf>`, `--style candle\|line` | ASCII / ANSI candlestick and line OHLCV price chart with volume subplot. |
 | **Research & ML** | `bt` *(or `backtest`)* | `--strategy <yaml>`, `--timeframe <tf>`, `--days <n>` | Native C++20 quantitative backtest with Monte Carlo bootstrap resampling. |
-| | `mass-bt` | `--timeframes 5m,1h,1d`, `--position-size-pct 0.1` | Run full strategy matrix cross-evaluations across all timeframes. |
+| | `mass-bt` | `--timeframes 5m,1h,1d`, `--position-size-pct 0.1` | Run full strategy matrix cross-evaluations across all timeframes with pruned strategy token hashes. |
 | | `strategy explore` | `--once`, `--interval <mins>` | Autonomous AI alpha discovery: 6D hypercube parameter generation. |
 | | `ml-predict` | `--symbol <sym>`, `--model svm` | Run rolling Support Vector Machine (SVM) directional regime classifiers. |
 | | `optimize` | `--strategy <yaml>`, `--timeframe <tf>` | Grid/Bayesian parameter optimization over historical feature matrices. |

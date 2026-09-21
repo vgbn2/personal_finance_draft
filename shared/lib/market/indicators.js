@@ -112,7 +112,7 @@ function rsi(closes, period = 14) {
     if (change >= 0) gains += change;
     else losses -= change;
   }
-  if (losses === 0) return 100;
+  if (losses === 0) return gains === 0 ? 50 : 100;
   const rs = gains / losses;
   return 100 - 100 / (1 + rs);
 }
@@ -129,7 +129,7 @@ function rsiSeries(closes, period = 14) {
       else losses -= change;
     }
     if (losses === 0) {
-      result[i] = 100;
+      result[i] = gains === 0 ? 50 : 100;
     } else {
       const rs = gains / losses;
       result[i] = 100 - 100 / (1 + rs);

@@ -64,8 +64,8 @@ export class Mt5Adapter implements BrokerAdapter {
           if (this.socket === sock) {
             this.socket = null;
             this.terminalInfo = null;
+            this.rejectPendingRequests('MT5 terminal bridge disconnected');
           }
-          this.rejectPendingRequests('MT5 terminal bridge disconnected');
         });
 
         sock.on('error', (err) => {

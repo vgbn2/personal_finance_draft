@@ -175,17 +175,23 @@ string ExtractJsonField(string json, string field) {
 bool SendRaw(string msg) {
    if(g_socket == INVALID_HANDLE) return false;
    uchar data[];
-   StringToCharArray(msg, data, 0, StringLen(msg));
-   int sent = SocketSend(g_socket, data, StringLen(msg));
-   if(sent < 0) {
-      int err = GetLastError();
-      ulong now = GetTickCount64();
-      if(now - g_lastErrorLogTime >= 5000) {
-         Print("[SOVEREIGN] SocketSend error, err=", err);
-         g_lastErrorLogTime = now;
+   int total = StringToCharArray(msg, data, 0, StringLen(msg));
+   int offset = 0;
+   while(offset < total) {
+      uchar chunk[];
+      ArrayCopy(chunk, data, 0, offset, total - offset);
+      int sent = SocketSend(g_socket, chunk, total - offset);
+      if(sent <= 0) {
+         int err = GetLastError();
+         ulong now = GetTickCount64();
+         if(now - g_lastErrorLogTime >= 5000) {
+            Print("[SOVEREIGN] SocketSend error, err=", err);
+            g_lastErrorLogTime = now;
+         }
+         CloseSocket();
+         return false;
       }
-      CloseSocket();
-      return false;
+      offset += sent;
    }
    return true;
 }
@@ -212,14 +218,16 @@ void ExecuteOrderSubmit(string line) {
    int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
 
    double lots = rawQty;
-   if(rawQty >= 50.0 && contractSize > 0.0 && rawQty >= contractSize) {
+   if(contractSize > 0.0 && rawQty > InpMaxLot && rawQty >= (contractSize * volumeMin)) {
       lots = rawQty / contractSize;
    }
    if(volumeStep > 0.0) {
-      lots = MathFloor(lots / volumeStep) * volumeStep;
+      lots = MathFloor((lots + 1e-9) / volumeStep) * volumeStep;
    }
-   lots = MathMax(volumeMin, MathMin(volumeMax, lots));
-   if(lots > InpMaxLot) lots = InpMaxLot;
+   if(lots < volumeMin || lots > volumeMax || lots > InpMaxLot) {
+      SendRaw(StringFormat("{\"type\":\"ORDER_RESULT\",\"nonce\":\"%s\",\"ok\":false,\"retcode\":10014,\"error\":\"Invalid volume after normalization\"}\n", nonce));
+      return;
+   }
 
    MqlTradeRequest req = {};
    MqlTradeResult  res = {};
@@ -257,6 +265,8 @@ void ExecuteOrderSubmit(string line) {
    }
 
    // ECN two-step SL/TP modification after fill
+   bool sltpOk = true;
+   int sltpRetcode = 0;
    if(isMarketExec && (sl > 0 || tp > 0)) {
       MqlTradeRequest sltpReq = {};
       MqlTradeResult  sltpRes = {};
@@ -267,12 +277,14 @@ void ExecuteOrderSubmit(string line) {
       if(tp > 0) sltpReq.tp = NormalizeDouble(tp, digits);
       if(!OrderSend(sltpReq, sltpRes)) {
          Print("[SOVEREIGN] SLTP modification failed, retcode=", sltpRes.retcode);
+         sltpOk = false;
+         sltpRetcode = (int)sltpRes.retcode;
       }
    }
 
    SendRaw(StringFormat(
-         "{\"type\":\"ORDER_RESULT\",\"nonce\":\"%s\",\"ok\":true,\"ticket\":%I64u,\"deal\":%I64u,\"symbol\":\"%s\",\"volume\":%.2f,\"fillPrice\":%.5f,\"retcode\":%d,\"timestamp\":\"%s\"}\n",
-      nonce, res.order, res.deal, symbol, res.volume, res.price, res.retcode, TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS)
+         "{\"type\":\"ORDER_RESULT\",\"nonce\":\"%s\",\"ok\":%s,\"sltp_ok\":%s,\"sltp_retcode\":%d,\"ticket\":%I64u,\"deal\":%I64u,\"symbol\":\"%s\",\"volume\":%.2f,\"fillPrice\":%.5f,\"retcode\":%d,\"timestamp\":\"%s\"}\n",
+      nonce, sltpOk ? "true" : "false", sltpOk ? "true" : "false", sltpRetcode, res.order, res.deal, symbol, res.volume, res.price, res.retcode, TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS)
    ));
 }
 

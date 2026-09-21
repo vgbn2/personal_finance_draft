@@ -124,7 +124,6 @@ test('legacy and dashboard manifests stay aligned on shared command ids and core
     'backfill-daemon',
     'backend correlation',
     'backend visualize',
-    'backend universe',
     'bt',
     'optimize',
     'sweep',
