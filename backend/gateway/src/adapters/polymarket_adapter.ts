@@ -8,13 +8,9 @@ import {
   fetchPolymarketOrderBook,
   PolymarketTradePagination,
 } from '../polymarket_account_adapter';
+import { createClobClient, polymarketGet, resolveOwnerAddress } from '../clob_factory';
 
-// @ts-ignore
-const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env');
-// @ts-ignore
-const { polymarketGet, createClobClient } = require('../../../shared/lib/brokers/polymarket_clob');
-// @ts-ignore
-const { resolveOwnerAddress } = require('../../../shared/lib/brokers/polymarket_env');
+const { resolvePolymarketClientSettings } = require('../../../../shared/lib/brokers/polymarket_env');
 
 function toFiniteNumber(value: unknown, fallback = 0): number {
   const n = Number(value);

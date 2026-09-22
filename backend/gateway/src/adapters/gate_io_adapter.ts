@@ -1,10 +1,7 @@
 import { BrokerAdapter, Position, TradeOrder } from './types';
 
-// @ts-ignore
 const { resolveGateIoSettings } = require('../../../../shared/lib/brokers/gateio_env');
-// @ts-ignore
 const { fetchWithRetry } = require('../../../../shared/lib/runtime/fetch_retry');
-// @ts-ignore
 const { signGateIoRequest } = require('../../../../shared/lib/brokers/gateio_sign');
 
 export interface GateIoAdapterOptions {
