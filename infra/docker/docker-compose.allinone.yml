@@ -1,0 +1,59 @@
+# /opt/sovereign/docker-compose.prod.yml
+# Production All-in-One Compose Manifest for Sovereign Trading Platform
+# Zero hardcoded secrets: credentials injected strictly from host /etc/sovereign/sovereign.env (chmod 0600)
+
+name: sovereign-allinone
+
+networks:
+  sovereign-net:
+    driver: bridge
+
+services:
+  app:
+    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/personal_finance:latest}
+    container_name: sv-allinone
+    restart: unless-stopped
+    user: "1000:1000"
+    networks:
+      - sovereign-net
+    ports:
+      # Private loopback binding. Connect via SSH tunnel or private mesh VPN (Tailscale).
+      - "127.0.0.1:8787:8787"
+      - "127.0.0.1:8282:8282"
+    env_file:
+      - path: /etc/sovereign/sovereign.env
+        required: false
+    environment:
+      - NODE_ENV=production
+      - SOVEREIGN_DEPLOYMENT_PROFILE=central-host
+      - SOVEREIGN_RUNTIME_MODE=${SOVEREIGN_RUNTIME_MODE:-cloud-compute}
+      - LIVE_TRADING=${LIVE_TRADING:-false}
+      - SOVEREIGN_EXECUTION_AUTHORIZED=${SOVEREIGN_EXECUTION_AUTHORIZED:-false}
+      - SOVEREIGN_WEB_HOST=0.0.0.0
+      - SOVEREIGN_WEB_PORT=8787
+      - SOVEREIGN_CACHE_TTL_MS=30000
+      - SOVEREIGN_CACHE_MAX_ENTRIES=100
+      - NODE_OPTIONS=--max-old-space-size=2560
+    volumes:
+      # Persistent storage across container restarts and updates
+      - ${SOVEREIGN_STORAGE_PATH:-/opt/sovereign/storage}:/app/storage:rw
+      - ${SOVEREIGN_MT5_PATH:-/opt/sovereign/mt5/terminal}:/opt/mt5/terminal:rw
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 3072M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
