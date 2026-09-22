@@ -631,7 +631,7 @@ async function commandWatch(args = []) {
   let lastSyncDuration = 0;
 
   const render = () => {
-    console.clear();
+    process.stdout.write('\x1b[2J\x1b[H');
     console.log(`\x1b[1;36mSOVEREIGN WATCH MODE\x1b[0m \x1b[90m(Family: ${family}, Interval: ${intervalMinutes}m)\x1b[0m`);
     console.log('\x1b[90mPress Ctrl+C to stop, Ctrl+T to show more.\x1b[0m\n');
 
