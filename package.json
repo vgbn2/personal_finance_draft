@@ -47,6 +47,7 @@
     "verify:fresh-install": "npm run verify:committed-archive --",
     "hygiene": "node scripts/dev/check_hygiene.js",
     "audit:test-integrity": "node scripts/dev/audit_test_integrity.js",
+    "audit:test-results": "node scripts/dev/audit_test_results.js",
     "audit:control-flow": "node scripts/dev/audit_control_flow.js",
     "audit:documentation": "node scripts/dev/audit_documentation.js",
     "docs:filter": "node scripts/dev/filter_docs.js",
