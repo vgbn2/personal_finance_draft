@@ -7,7 +7,8 @@ ENV WINEPREFIX=/opt/mt5/.wine
 ENV DISPLAY=:99
 ENV MT5_HOME=/opt/mt5
 
-RUN dpkg --add-architecture amd64 && \
+RUN dpkg --add-architecture i386 && \
+    mkdir -pm1777 /tmp/.X11-unix && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         curl ca-certificates gnupg2 software-properties-common \
@@ -26,12 +27,14 @@ RUN useradd -m -u 1000 -d /opt/mt5 mt5 && \
 USER mt5
 WORKDIR /opt/mt5
 
-RUN Xvfb :99 -screen 0 1024x768x16 & \
+RUN Xvfb :99 -screen 0 1024x768x16 -nolisten tcp -ac +extension GLX & \
+    XVFB_PID=$! && \
     sleep 2 && \
-    wineboot --init && \
+    WINEDEBUG=-all wineboot --init && \
     wineserver -w && \
-    wine reg add "HKEY_CURRENT_USER\Software\Wine\Drivers" /v Audio /t REG_SZ /d "" /f && \
-    wineserver -w
+    WINEDEBUG=-all wine reg add "HKEY_CURRENT_USER\Software\Wine\Drivers" /v Audio /t REG_SZ /d "" /f && \
+    wineserver -w && \
+    kill $XVFB_PID 2>/dev/null || true
 
 COPY --chown=mt5:mt5 entrypoint.sh /opt/mt5/entrypoint.sh
 RUN chmod +x /opt/mt5/entrypoint.sh
