@@ -26,6 +26,7 @@ export interface Position {
 }
 
 export interface TradeOrder {
+  orderId?: string;
   instrumentId: string;
   quantity: number;
   side: 'buy' | 'sell';
@@ -41,10 +42,15 @@ export interface TradeOrder {
   timeframe?: string;
   confidence?: number;
   submittedAt?: string;
+  signature?: string;
   stopLoss?: number;
   takeProfit?: number;
   sl?: number;
   tp?: number;
+  status?: string;
+  error?: string;
+  unitsPerLot?: number;
+  timestamp?: Date | string;
 }
 
 export interface RiskContext {

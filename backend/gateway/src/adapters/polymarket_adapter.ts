@@ -46,6 +46,20 @@ export class PolymarketAdapter implements BrokerAdapter {
     return Boolean(this.privateKey && this.creds);
   }
 
+  isConfigured(): boolean {
+    return this.hasCredentials();
+  }
+
+  async getSignerAddress(): Promise<string | null> {
+    if (!this.privateKey) return null;
+    try {
+      const { Wallet } = await import('ethers');
+      return new Wallet(this.privateKey).address;
+    } catch {
+      return null;
+    }
+  }
+
   getTradePagination(): PolymarketTradePagination | undefined {
     return this.lastTradePagination;
   }

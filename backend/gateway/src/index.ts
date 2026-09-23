@@ -2,9 +2,35 @@ import * as fs from 'node:fs/promises';
 import * as crypto from 'node:crypto';
 import * as path from 'node:path';
 import { spawnSync } from 'node:child_process';
-// @ts-ignore
-import Alpaca from '@alpacahq/alpaca-trade-api';
 import { createClobClient, resolveOwnerAddress, polymarketGet } from './clob_factory';
+import {
+  BrokerAdapter,
+  Position,
+  TradeOrder,
+  SimulationAdapter,
+  GateIoAdapter,
+  AlpacaAdapter,
+  PolymarketAdapter,
+  Mt5Adapter,
+  GateIoAdapterOptions,
+  AlpacaAdapterOptions,
+  PolymarketAdapterOptions,
+} from './adapters';
+import { runAggregatePortfolioCommand } from './commands/aggregate_portfolio';
+
+export {
+  BrokerAdapter,
+  Position,
+  TradeOrder,
+  SimulationAdapter,
+  GateIoAdapter,
+  AlpacaAdapter,
+  PolymarketAdapter,
+  Mt5Adapter,
+  GateIoAdapterOptions,
+  AlpacaAdapterOptions,
+  PolymarketAdapterOptions,
+};
 import {
   runCycle,
   runBotLoop,
@@ -72,19 +98,14 @@ import {
   traceCsvFile,
   validateProposedOrdersPayload,
 } from './polymarket/index.js';
-import { Mt5Adapter } from './adapters/mt5_adapter';
 // @ts-ignore
 const { runPolymarketOrderbookLiteBackfill } = require('../../cli/commands/trade/polymarket_backtest.js');
-// @ts-ignore
-const { resolveAlpacaSettings, resolveGateIoSettings } = require('../../../shared/lib/brokers/index.js');
 // @ts-ignore
 const { buildAlpacaPortfolioAdapterSpecs } = require('../../../shared/lib/brokers/alpaca_portfolio_scope.js');
 // @ts-ignore
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
-// @ts-ignore
-const { fetchWithRetry, retryTransient } = require('../../../shared/lib/runtime/fetch_retry');
 // @ts-ignore
 const { resolveRuntimePolicy } = require('../../../shared/lib/settings/runtime_policy');
 // @ts-ignore
@@ -119,112 +140,7 @@ enum OrderStatus {
   FAILED = 'failed'
 }
 
-interface TradeOrder {
-  orderId?: string;
-  instrumentId: string;
-  side: OrderSide;
-  quantity: number;
-  price?: number;
-  tickSizeOverride?: string;
-  type: 'market' | 'limit';
-  status: OrderStatus;
-  timestamp: Date;
-  error?: string;
-  strategy?: string;
-  strategyId?: string;
-  clientOrderId?: string;
-  signature?: string;
-  timeframe?: string;
-  confidence?: number;
-  source?: 'bot' | 'manual';
-  submittedAt?: string;
-  providerPaper?: boolean;
-  broker?: string;
-  stopLoss?: number;
-  takeProfit?: number;
-  sl?: number;
-  tp?: number;
-  unitsPerLot?: number;
-}
-
-
-interface Position {
-  symbol: string;
-  assetId?: string;
-  quantity: number;
-  averagePrice: number;
-  marketValue: number;
-  unrealizedPl: number;
-  cost_basis_unavailable?: boolean;
-  question?: string;
-  outcome?: string;
-  lifecycle?: 'active' | 'ended' | 'unknown';
-  currentPrice?: number | null;
-  valuationStatus?: 'live_quote' | 'unavailable';
-  resolutionPrice?: number | null;
-  historyStatus?: string;
-}
-
-interface PolymarketTrade {
-  id?: string;
-  asset_id?: string;
-  market?: string;
-  outcome?: string;
-  outcome_index?: number;
-  side?: string | number;
-  size?: string | number;
-  price?: string | number;
-  match_time?: string;
-  last_update?: string;
-}
-
-interface PolymarketTradePagination {
-  pages_fetched: number;
-  trades_fetched: number;
-  page_cap: number;
-  truncated: boolean;
-  next_cursor?: string;
-}
-
-function toFiniteNumber(value: unknown, fallback = 0): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-/**
- * Hypothetical Broker Interface
- */
-interface BrokerAdapter {
-  placeOrder(order: TradeOrder): Promise<{ orderId: string; status: string }>;
-  cancelOrder(orderId: string): Promise<boolean>;
-  getPortfolioBalance(): Promise<Record<string, number>>;
-  getPositions(): Promise<Position[]>;
-  getQuote(symbol: string): Promise<number>;
-}
-
-class SimulationAdapter implements BrokerAdapter {
-  async placeOrder(): Promise<{ orderId: string; status: string }> {
-    return { orderId: 'simulation-only', status: 'accepted' };
-  }
-
-  async cancelOrder(): Promise<boolean> {
-    return true;
-  }
-
-  async getPortfolioBalance(): Promise<Record<string, number>> {
-    return { USD: 100000, BUYING_POWER: 100000, EQUITY: 100000 };
-  }
-
-  async getPositions(): Promise<Position[]> {
-    return [];
-  }
-
-  async getQuote(): Promise<number> {
-    return 1;
-  }
-}
-
-interface RiskContext {
+export interface RiskContext {
   referencePrice: number;
   portfolioEquity: number;
   currentDrawdown: number;
@@ -243,7 +159,7 @@ export async function buildRiskContext(order: TradeOrder, adapter: BrokerAdapter
   const explicitPrice = Number(order.price);
   const referencePrice = Number.isFinite(explicitPrice) && explicitPrice > 0
     ? explicitPrice
-    : Number(await adapter.getQuote(order.instrumentId));
+    : (typeof adapter.getQuote === 'function' ? Number(await adapter.getQuote(order.instrumentId)) : 0);
   if (!Number.isFinite(referencePrice) || referencePrice <= 0) {
     throw new Error(`Unable to resolve a positive reference price for ${order.instrumentId}`);
   }
@@ -276,438 +192,6 @@ export async function buildRiskContext(order: TradeOrder, adapter: BrokerAdapter
   }
 
   return { referencePrice, portfolioEquity, currentDrawdown, maxDrawdown };
-}
-
-interface GateIoAdapterOptions {
-  baseUrl?: string;
-  apiKey?: string;
-  apiSecret?: string;
-  simulateIfMissingCredentials?: boolean;
-}
-
-interface AlpacaAdapterOptions {
-  keyId?: string;
-  secretKey?: string;
-  paper?: boolean;
-  simulateIfMissingCredentials?: boolean;
-}
-
-function sha512Hex(value: string): string {
-  return crypto.createHash('sha512').update(value, 'utf8').digest('hex');
-}
-
-function signGateIoRequest(method: string, requestPath: string, query: string, body: string, timestamp: string, secret: string): string {
-  const canonical = [
-    method.toUpperCase(),
-    requestPath,
-    query,
-    sha512Hex(body),
-    timestamp,
-  ].join('\n');
-  return crypto.createHmac('sha512', secret).update(canonical, 'utf8').digest('hex');
-}
-
-function toJsonOrText(input: string): unknown {
-  if (!input.trim()) {
-    return {};
-  }
-  try {
-    return JSON.parse(input);
-  } catch {
-    return input;
-  }
-}
-
-/**
- * Gate.io Implementation of the Broker Adapter
- */
-class GateIoAdapter implements BrokerAdapter {
-  private readonly baseUrl: string;
-  private readonly apiKey: string | undefined;
-  private readonly apiSecret: string | undefined;
-  private readonly simulateIfMissingCredentials: boolean;
-
-  constructor(options: GateIoAdapterOptions = {}) {
-    const settings = resolveGateIoSettings(process.env, options);
-    this.baseUrl = settings.baseUrl;
-    this.apiKey = settings.apiKey;
-    this.apiSecret = settings.apiSecret;
-    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
-  }
-
-  private hasCredentials(): boolean {
-    return Boolean(this.apiKey && this.apiSecret);
-  }
-
-  private async requestJson(method: string, requestPath: string, body?: Record<string, unknown>): Promise<unknown> {
-    const payload = body ? JSON.stringify(body) : '';
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const signature = signGateIoRequest(method, requestPath, '', payload, timestamp, this.apiSecret || '');
-
-    const response = await fetchWithRetry(`${this.baseUrl}${requestPath}`, {
-      method,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        KEY: this.apiKey || '',
-        SIGN: signature,
-        Timestamp: timestamp,
-      },
-      body: payload || undefined,
-    });
-
-    const responseText = await response.text();
-    const parsed = toJsonOrText(responseText);
-    if (!response.ok) {
-      const message = typeof parsed === 'string'
-        ? parsed
-        : JSON.stringify(parsed);
-      throw new Error(`Gate.io request failed (${response.status}): ${message}`);
-    }
-    return parsed;
-  }
-
-  async placeOrder(order: TradeOrder): Promise<{ orderId: string; status: string }> {
-    console.log(`[GATE.IO] Placing ${order.side.toUpperCase()} ${order.type} order for ${order.instrumentId}`);
-    console.log(`[GATE.IO] Quantity: ${order.quantity}${order.price ? `, Price: ${order.price}` : ''}`);
-
-    if (!this.hasCredentials()) {
-      if (!this.simulateIfMissingCredentials) {
-        throw new Error('Gate.io credentials are not configured');
-      }
-      return {
-        orderId: `gate-sim-${Math.random().toString(36).substring(2, 11)}`,
-        status: 'open',
-      };
-    }
-
-    const payload: Record<string, unknown> = {
-      currency_pair: order.instrumentId,
-      side: order.side,
-      type: order.type,
-      amount: String(order.quantity),
-    };
-    if (typeof order.price === 'number' && Number.isFinite(order.price) && order.price > 0) {
-      payload.price = String(order.price);
-    }
-
-    const response = await this.requestJson('POST', '/spot/orders', payload);
-    const record = (response as Record<string, unknown>) || {};
-    return {
-      orderId: String(record.id || record.order_id || record.client_order_id || `gate-${Date.now()}`),
-      status: String(record.status || 'submitted'),
-    };
-  }
-
-  async cancelOrder(orderId: string): Promise<boolean> {
-    console.log(`[GATE.IO] Canceling order ${orderId}`);
-    if (!this.hasCredentials()) {
-      return this.simulateIfMissingCredentials;
-    }
-    await this.requestJson('DELETE', `/spot/orders/${encodeURIComponent(orderId)}`);
-    return true;
-  }
-
-  async getPortfolioBalance(): Promise<Record<string, number>> {
-    console.log(`[GATE.IO] Fetching account balances`);
-    if (!this.hasCredentials()) {
-      if (!this.simulateIfMissingCredentials) {
-        throw new Error('Gate.io credentials are not configured');
-      }
-      return {};
-    }
-
-    const response = await this.requestJson('GET', '/spot/accounts');
-    const balances: Record<string, number> = {};
-    if (Array.isArray(response)) {
-      for (const item of response) {
-        if (item && typeof item === 'object') {
-          const record = item as Record<string, unknown>;
-          const currency = String(record.currency || record.currency_pair || record.name || '').toUpperCase();
-          const balance = Number(record.available ?? record.balance ?? record.total ?? 0);
-          if (currency) {
-            balances[currency] = balance;
-          }
-        }
-      }
-    }
-    return balances;
-  }
-
-  private async getCostBasisVwap(pair: string): Promise<{ averagePrice: number; found: boolean }> {
-    try {
-      const trades = await this.requestJson('GET', `/spot/my_trades?currency_pair=${encodeURIComponent(pair)}&limit=1000`) as any[];
-      if (!Array.isArray(trades) || trades.length === 0) return { averagePrice: 0, found: false };
-      let totalAmount = 0;
-      let totalCost = 0;
-      for (const t of trades) {
-        if (String(t.side || '').toLowerCase() !== 'buy') continue;
-        const amount = Number(t.amount ?? t.qty ?? 0);
-        const price = Number(t.price ?? 0);
-        if (amount > 0 && price > 0) {
-          totalAmount += amount;
-          totalCost += price * amount;
-        }
-      }
-      if (totalAmount <= 0) return { averagePrice: 0, found: false };
-      return { averagePrice: totalCost / totalAmount, found: true };
-    } catch {
-      return { averagePrice: 0, found: false };
-    }
-  }
-
-  async getPositions(): Promise<Position[]> {
-    const balances = await this.getPortfolioBalance();
-    const heldCurrencies = Object.entries(balances).filter(([sym, qty]) => qty > 0 && sym !== 'USDT');
-
-    if (heldCurrencies.length === 0) return [];
-
-    // Fetch spot tickers to enrich balances with current market prices
-    let tickerMap: Record<string, number> = {};
-    try {
-      const tickers = await this.requestJson('GET', '/spot/tickers') as any[];
-      if (Array.isArray(tickers)) {
-        for (const t of tickers) {
-          if (t && t.currency_pair) {
-            const lastPrice = Number(t.last ?? t.last_price ?? 0);
-            if (lastPrice > 0) tickerMap[String(t.currency_pair).toUpperCase()] = lastPrice;
-          }
-        }
-      }
-    } catch {
-      // Non-fatal: fall back to zero market value
-    }
-
-    const positions: Position[] = [];
-    for (const [symbol, qty] of heldCurrencies) {
-      const pair = `${symbol}_USDT`;
-      const currentPrice = tickerMap[pair] ?? 0;
-      const { averagePrice, found } = await this.getCostBasisVwap(pair);
-      const unrealizedPl = found && averagePrice > 0
-        ? Number(((currentPrice - averagePrice) * qty).toFixed(4))
-        : 0;
-      positions.push({
-        symbol,
-        quantity: qty,
-        averagePrice: found ? Number(averagePrice.toFixed(6)) : 0,
-        marketValue: Number((qty * currentPrice).toFixed(4)),
-        unrealizedPl,
-        ...(found ? {} : { cost_basis_unavailable: true }),
-      });
-    }
-    return positions;
-  }
-
-  async getQuote(symbol: string): Promise<number> {
-    if (!this.hasCredentials()) {
-      console.warn('[GATE.IO] No credentials — quote unavailable');
-      return 0;
-    }
-    const pair = symbol.includes('_') ? symbol.toUpperCase() : `${symbol.toUpperCase()}_USDT`;
-    try {
-        const tickers = await this.requestJson('GET', `/spot/tickers?currency_pair=${pair}`) as any[];
-        if (Array.isArray(tickers) && tickers[0]) {
-            return Number(tickers[0].last || tickers[0].last_price || 0);
-        }
-        return 0;
-    } catch (err: any) {
-        console.warn(`[GATE.IO] Quote fetch failed for ${pair}: ${err.message}`);
-        return 0;
-    }
-  }
-}
-
-// Alpaca trades crypto as slash pairs against USD (BTC/USD); the platform's cache
-// universe uses concatenated symbols (BTCUSDT). Map known crypto bases; leave
-// everything else (equities, already-slashed pairs) untouched.
-const ALPACA_CRYPTO_SYMBOL = /^(BTC|ETH|SOL|DOGE|XRP|ADA|AVAX|LINK|LTC|BCH|UNI|AAVE|SHIB|PEPE|SUI|DOT|TRX|NEAR|POL|MATIC)(USDT|USDC|USD)$/;
-function toAlpacaTradeSymbol(symbol: string): string {
-  const upper = String(symbol || '').toUpperCase();
-  if (upper.includes('/')) return upper;
-  const m = upper.match(ALPACA_CRYPTO_SYMBOL);
-  return m ? `${m[1]}/USD` : upper;
-}
-
-/**
- * Alpaca Implementation using official SDK
- */
-class AlpacaAdapter implements BrokerAdapter {
-  private alpaca: any;
-  private readonly simulateIfMissingCredentials: boolean;
-
-  constructor(options: AlpacaAdapterOptions = {}) {
-    const settings = resolveAlpacaSettings(process.env, options);
-    const keyId = settings.keyId;
-    const secretKey = settings.secretKey;
-    const paper = settings.paper;
-    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
-
-    if (keyId && secretKey) {
-      this.alpaca = new Alpaca({
-        keyId,
-        secretKey,
-        paper,
-      });
-    }
-  }
-
-  private hasCredentials(): boolean {
-    return Boolean(this.alpaca);
-  }
-
-  async placeOrder(order: TradeOrder): Promise<{ orderId: string; status: string }> {
-    console.log(`[ALPACA-SDK] Placing ${order.side.toUpperCase()} ${order.type} order for ${order.instrumentId}`);
-    console.log(`[ALPACA-SDK] Quantity: ${order.quantity}${order.price ? `, Price: ${order.price}` : ''}`);
-
-    if (!this.hasCredentials()) {
-      if (!this.simulateIfMissingCredentials) {
-        throw new Error('Alpaca credentials are not configured');
-      }
-      return {
-        orderId: `alpaca-sim-${Math.random().toString(36).substring(2, 11)}`,
-        status: 'accepted',
-      };
-    }
-
-    try {
-      const symbol = toAlpacaTradeSymbol(order.instrumentId);
-      const isCrypto = symbol.includes('/');
-      const isFractional = !Number.isInteger(order.quantity);
-      const payload: any = {
-        symbol,
-        qty: order.quantity,
-        side: order.side,
-        type: order.type,
-        // Alpaca rejects fractional equity orders with any TIF other than 'day' (422).
-        time_in_force: isCrypto ? 'gtc' : (isFractional ? 'day' : 'gtc'),
-      };
-
-      if (order.type === 'limit' && order.price) {
-        payload.limit_price = order.price;
-      }
-
-      const alpacaOrder = await this.alpaca.createOrder(payload);
-      return {
-        orderId: alpacaOrder.id,
-        status: alpacaOrder.status,
-      };
-    } catch (err: any) {
-      const detail = err?.response?.data ? ` ${JSON.stringify(err.response.data)}` : '';
-      throw new Error(`Alpaca SDK Order Error: ${err.message}${detail}`);
-    }
-  }
-
-  async cancelOrder(orderId: string): Promise<boolean> {
-    console.log(`[ALPACA-SDK] Canceling order ${orderId}`);
-    if (!this.hasCredentials()) {
-      return this.simulateIfMissingCredentials;
-    }
-    await this.alpaca.cancelOrder(orderId);
-    return true;
-  }
-
-  async getPortfolioBalance(): Promise<Record<string, number>> {
-    console.log(`[ALPACA-SDK] Fetching account details`);
-    if (!this.hasCredentials()) {
-      if (!this.simulateIfMissingCredentials) {
-        throw new Error('Alpaca credentials are not configured');
-      }
-      return { USD: 0, BUYING_POWER: 0, EQUITY: 0 };
-    }
-
-    try {
-      const account = await this.alpaca.getAccount();
-      return {
-        USD: Number(account.cash || 0),
-        BUYING_POWER: Number(account.buying_power || 0),
-        EQUITY: Number(account.equity || 0)
-      };
-    } catch (err: any) {
-      throw new Error(`Alpaca SDK Account Error: ${err.message}`);
-    }
-  }
-
-  async getPositions(): Promise<Position[]> {
-    console.log(`[ALPACA-SDK] Fetching positions`);
-    if (!this.hasCredentials()) {
-      if (!this.simulateIfMissingCredentials) throw new Error('Alpaca credentials are not configured');
-      return [];
-    }
-
-    try {
-      const positions = await this.alpaca.getPositions();
-
-      let orderMap: Record<string, { submitted_at?: string; filled_at?: string; client_order_id?: string }> = {};
-      try {
-        const closedOrders = await this.alpaca.getOrders({ status: 'closed', limit: 100, nested: false });
-        if (Array.isArray(closedOrders)) {
-          for (const ord of closedOrders) {
-            const sym = String(ord.symbol || '').toUpperCase();
-            if (sym && (!orderMap[sym] || (ord.filled_at && orderMap[sym].filled_at && ord.filled_at > orderMap[sym].filled_at!))) {
-              orderMap[sym] = {
-                submitted_at: ord.submitted_at || ord.created_at,
-                filled_at: ord.filled_at,
-                client_order_id: ord.client_order_id
-              };
-            }
-          }
-        }
-      } catch {
-        // Non-fatal if order history enrichment fails
-      }
-
-      return positions.map((p: any) => {
-        const sym = String(p.symbol || '').toUpperCase();
-        const ordInfo = orderMap[sym];
-        return {
-          symbol: sym,
-          quantity: Number(p.qty),
-          averagePrice: Number(p.avg_entry_price),
-          marketValue: Number(p.market_value),
-          unrealizedPl: Number(p.unrealized_pl),
-          submittedAt: ordInfo?.submitted_at || ordInfo?.filled_at || undefined,
-        };
-      });
-    } catch (err: any) {
-      throw new Error(`Alpaca SDK Positions Error: ${err.message}`);
-    }
-  }
-
-  /**
-   * Advanced: Submit a Bracket Order
-   */
-  async placeBracketOrder(symbol: string, qty: number, takeProfitPrice: number, stopLossPrice: number) {
-    if (!this.hasCredentials()) return { id: 'sim-bracket' };
-
-    return await this.alpaca.createOrder({
-      symbol,
-      qty,
-      side: 'buy',
-      type: 'market',
-      time_in_force: 'gtc',
-      order_class: 'bracket',
-      take_profit: {
-        limit_price: takeProfitPrice,
-      },
-      stop_loss: {
-        stop_price: stopLossPrice,
-      },
-    });
-  }
-
-  async getQuote(symbol: string): Promise<number> {
-    if (!this.hasCredentials()) {
-      console.warn('[ALPACA] No credentials — quote unavailable');
-      return 0;
-    }
-    try {
-      const quote = await this.alpaca.getLatestQuote(symbol);
-      return Number(quote.AskPrice || quote.BidPrice || 0);
-    } catch (err: any) {
-      console.warn(`[ALPACA-SDK] Quote fetch failed for ${symbol}: ${err.message}`);
-      return 0;
-    }
-  }
 }
 
 /**
@@ -997,350 +481,6 @@ Examples:
   `);
 }
 
-interface PolymarketAdapterOptions {
-  host?: string;
-  privateKey?: string;
-  apiKey?: string;
-  apiSecret?: string;
-  apiPassphrase?: string;
-}
-
-const VALID_POLYMARKET_TICK_SIZES = new Set(['0.1', '0.01', '0.001', '0.0001']);
-
-function buildPolymarketOrderError(stage: string, error: any): Error {
-  const diagnostic = classifyPolymarketGatewayError(error);
-  const err = new Error(`Polymarket CLOB ${stage} failed: ${diagnostic.error}`);
-  (err as any).error_category = diagnostic.error_category;
-  (err as any).suggestion = diagnostic.suggestion;
-  (err as any).stage = stage;
-  return err;
-}
-
-interface PreparedPolymarketOrder {
-  client: any;
-  tickSize: string;
-  signedOrder: any;
-  accountIdentity: { funderAddress?: string; signatureType?: number };
-}
-
-/**
- * Polymarket CLOB Adapter
- * Uses @polymarket/clob-client against https://clob.polymarket.com (Polygon mainnet).
- * Requires POLYMARKET_PRIVATE_KEY + L2 credentials in env; falls back to no-credential
- * mode (public endpoints only — no balances or positions) if missing.
- */
-class PolymarketAdapter implements BrokerAdapter {
-  private readonly host: string;
-  private readonly privateKey: string | undefined;
-  private readonly creds: { key: string; secret: string; passphrase: string } | null;
-  private readonly funderAddress: string | undefined;
-  private readonly signatureType: number | undefined;
-  private lastTradePagination: PolymarketTradePagination | undefined;
-
-  constructor(options: PolymarketAdapterOptions = {}) {
-    const settings = resolvePolymarketClientSettings(process.env, options);
-    this.host = settings.host;
-    this.privateKey = settings.privateKey;
-    this.creds = settings.creds;
-    // Deposit/proxy wallet that actually owns collateral and orders (falls back to signer EOA).
-    this.funderAddress = settings.funderAddress;
-    this.signatureType = settings.signatureType;
-  }
-
-  private hasCredentials(): boolean {
-    return Boolean(this.privateKey && this.creds);
-  }
-
-  getTradePagination(): PolymarketTradePagination | undefined {
-    return this.lastTradePagination;
-  }
-
-  getAccountIdentity(): { funderAddress?: string; signatureType?: number } {
-    return { funderAddress: this.funderAddress, signatureType: this.signatureType };
-  }
-
-  async prepareOrder(order: TradeOrder): Promise<PreparedPolymarketOrder> {
-    if (!this.hasCredentials()) throw new Error('Polymarket credentials not configured');
-    const client = await createClobClient({ withCreds: true, host: this.host, privateKey: this.privateKey, creds: this.creds, funderAddress: this.funderAddress, signatureType: this.signatureType });
-
-    const price = order.price ?? 0.5;
-    if (!Number.isFinite(price) || price <= 0 || price >= 1) {
-      throw new Error('Polymarket limit orders require a finite price between 0 and 1');
-    }
-
-    let tickSize: string | undefined = String(order.tickSizeOverride || '').trim() || undefined;
-    try {
-      if (!tickSize || !VALID_POLYMARKET_TICK_SIZES.has(tickSize)) {
-        tickSize = String(await client.getTickSize(order.instrumentId));
-      }
-      if (!VALID_POLYMARKET_TICK_SIZES.has(tickSize)) {
-        const publicBook = await fetchPolymarketOrderBook(order.instrumentId);
-        const fallbackTickSize = String(publicBook?.book?.tick_size ?? '');
-        if (VALID_POLYMARKET_TICK_SIZES.has(fallbackTickSize)) {
-          tickSize = fallbackTickSize;
-        }
-      }
-      if (!VALID_POLYMARKET_TICK_SIZES.has(tickSize)) {
-        throw new Error(`Unable to resolve valid CLOB tick size for token ${order.instrumentId}: ${tickSize || 'missing'}`);
-      }
-    } catch (error: any) {
-      throw buildPolymarketOrderError('tick-size lookup', error);
-    }
-
-    let signedOrder: any;
-    try {
-      const { Side } = await import('@polymarket/clob-client-v2');
-      signedOrder = await client.createOrder({
-        tokenID: order.instrumentId,
-        price,
-        size: order.quantity,
-        side: order.side === OrderSide.BUY ? Side.BUY : Side.SELL,
-      }, { tickSize: tickSize as any });
-    } catch (error: any) {
-      throw buildPolymarketOrderError('order signing', error);
-    }
-
-    return {
-      client,
-      tickSize,
-      signedOrder,
-      accountIdentity: this.getAccountIdentity(),
-    };
-  }
-
-  async getSignerAddress(): Promise<string | null> {
-    if (!this.privateKey) return null;
-    try {
-      const { Wallet } = await import('ethers');
-      return new Wallet(this.privateKey).address;
-    } catch {
-      return null;
-    }
-  }
-
-  isConfigured(): boolean {
-    return this.hasCredentials();
-  }
-
-  async getCollateralStatus(): Promise<{ balance: number; allowance: number; asset_type: 'COLLATERAL' }> {
-    if (!this.hasCredentials()) throw new Error('Polymarket credentials not configured');
-    await polymarketGet('/balance-allowance/update', { asset_type: 'COLLATERAL' }, {
-      privateKey: this.privateKey,
-      creds: this.creds ?? undefined,
-      funderAddress: this.funderAddress,
-      signatureType: this.signatureType,
-      host: this.host,
-    });
-    const data = await polymarketGet('/balance-allowance', { asset_type: 'COLLATERAL' }, {
-      privateKey: this.privateKey,
-      creds: this.creds ?? undefined,
-      funderAddress: this.funderAddress,
-      signatureType: this.signatureType,
-      host: this.host,
-    });
-    return {
-      balance: Number(data?.balance ?? 0),
-      allowance: Number(data?.allowance ?? 0),
-      asset_type: 'COLLATERAL',
-    };
-  }
-
-  async placeOrder(order: TradeOrder): Promise<{ orderId: string; status: string }> {
-    const prepared = await this.prepareOrder(order);
-    const client = prepared.client;
-    const signedOrder = prepared.signedOrder;
-
-    let resp: any;
-    try {
-      const { OrderType } = await import('@polymarket/clob-client-v2');
-      resp = await client.postOrder(signedOrder, OrderType.GTC) as any;
-    } catch (error: any) {
-      throw buildPolymarketOrderError('order submit', error);
-    }
-    if (!resp?.success) {
-      throw new Error(`Polymarket CLOB rejected order: ${resp?.errorMsg || JSON.stringify(resp)}`);
-    }
-    return { orderId: resp.orderID, status: resp.status ?? 'submitted' };
-  }
-
-  async cancelOrder(orderId: string): Promise<boolean> {
-    if (!this.hasCredentials()) throw new Error('Polymarket credentials not configured');
-    const client = await createClobClient({ withCreds: true, host: this.host, privateKey: this.privateKey, creds: this.creds, funderAddress: this.funderAddress });
-    await client.cancelOrder({ orderID: orderId });
-    return true;
-  }
-
-  async getPortfolioBalance(): Promise<Record<string, number>> {
-    const collateral = await this.getCollateralStatus();
-    let pUSD = collateral.balance / 1_000_000;
-
-    // When funderAddress is the Gnosis Safe (signatureType=2) and the primary
-    // balance is zero, also check the PROXY_ADDRESS (signatureType=1 / old
-    // deposit flow). Users who deposited before switching to the Gnosis Safe flow
-    // still have collateral there.
-    if (pUSD === 0 && this.signatureType === 2) {
-      const proxyAddress = process.env.PROXY_ADDRESS?.trim();
-      if (proxyAddress && proxyAddress.toLowerCase() !== String(this.funderAddress ?? '').toLowerCase()) {
-        try {
-          const proxyData = await polymarketGet('/balance-allowance', { asset_type: 'COLLATERAL' }, {
-            privateKey: this.privateKey,
-            creds: this.creds ?? undefined,
-            funderAddress: proxyAddress,
-            signatureType: 1,
-            host: this.host,
-          });
-          pUSD += Number(proxyData?.balance ?? 0) / 1_000_000;
-        } catch { /* best-effort */ }
-      }
-    }
-
-    return { pUSD };
-  }
-
-  async getOpenOrders(): Promise<Position[]> {
-    if (!this.hasCredentials()) throw new Error('Polymarket credentials not configured');
-    const owner = await resolveOwnerAddress(this.privateKey as string, this.funderAddress);
-    const raw = await polymarketGet('/data/orders', { owner }, {
-      privateKey: this.privateKey,
-      creds: this.creds ?? undefined,
-      funderAddress: this.funderAddress,
-      host: this.host,
-    }) ?? [];
-    const orders: any[] = Array.isArray(raw) ? raw : raw?.data ?? [];
-    return orders
-      .map((o: any) => {
-        const original = toFiniteNumber(o.original_size);
-        const matched = toFiniteNumber(o.size_matched);
-        const remaining = Math.max(0, original - matched);
-        return {
-          symbol: String(o.outcome ?? o.market ?? o.asset_id ?? ''),
-          quantity: remaining,
-          averagePrice: toFiniteNumber(o.price),
-          marketValue: remaining * toFiniteNumber(o.price),
-          unrealizedPl: 0,
-        };
-      })
-      .filter((o) => o.quantity > 0)
-      .sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }
-
-  async getPositions(): Promise<Position[]> {
-    if (!this.hasCredentials()) throw new Error('Polymarket credentials not configured');
-    const owner = await resolveOwnerAddress(this.privateKey as string, this.funderAddress);
-    const gatewayOpts = {
-      privateKey: this.privateKey,
-      creds: this.creds ?? undefined,
-      funderAddress: this.funderAddress,
-      signatureType: this.signatureType,
-      host: this.host,
-    };
-    const allTrades: PolymarketTrade[] = [];
-    let cursor: string | undefined;
-    const configuredPageCap = Number.parseInt(process.env.POLYMARKET_TRADE_PAGE_CAP || '10', 10);
-    const PAGE_CAP = Number.isFinite(configuredPageCap) && configuredPageCap > 0 ? configuredPageCap : 10;
-    let pagesFetched = 0;
-    for (let page = 0; page < PAGE_CAP; page++) {
-      const params: Record<string, string> = { owner, limit: '1000' };
-      if (cursor) params.cursor = cursor;
-      const raw = await polymarketGet('/trades', params, gatewayOpts) ?? [];
-      const page_trades: PolymarketTrade[] = Array.isArray(raw) ? raw : raw?.data ?? [];
-      pagesFetched += 1;
-      allTrades.push(...page_trades);
-      cursor = Array.isArray(raw) ? undefined : raw?.next_cursor;
-      if (!cursor || page_trades.length === 0) break;
-    }
-    const tradePagination = buildTradePagination(pagesFetched, allTrades.length, PAGE_CAP, cursor);
-    this.lastTradePagination = tradePagination;
-    // truncation is noted in trade_pagination; no console noise needed
-    const trades = allTrades;
-    const positions: Position[] = aggregatePolymarketFilledPositions(trades);
-
-    if (positions.length === 0) return [];
-    if (tradePagination.truncated) {
-      return markPolymarketHistoryIncomplete(positions, 'trade_history_truncated');
-    }
-
-    // Fill history cannot distinguish an active holding from an ended market.
-    // Resolve lifecycle first so unknown and ended rows never inherit fake value.
-    const uniqueTokenIds = [...new Set(positions.map((p) => p.assetId).filter(Boolean))];
-    const tokenMetadata = new Map<string, any>();
-    if (uniqueTokenIds.length > 0) {
-      const axios = require('axios') as any;
-      const gammaHeaders = { accept: 'application/json' };
-      const buildParams = (extra?: Record<string, string>) => {
-        const p = new URLSearchParams();
-        uniqueTokenIds.forEach((id) => p.append('clob_token_ids', id as string));
-        p.set('limit', String(Math.min(uniqueTokenIds.length * 2, 200)));
-        if (extra) Object.entries(extra).forEach(([k, v]) => p.set(k, v));
-        return p;
-      };
-      // Pass 1 — active markets
-      try {
-        const resp = await retryTransient(() => axios.get(`https://gamma-api.polymarket.com/markets?${buildParams().toString()}`, { timeout: 8000, headers: gammaHeaders }));
-        const markets: any[] = Array.isArray(resp.data) ? resp.data : (resp.data?.data ?? []);
-        mergeTokenMetadata(tokenMetadata, buildPolymarketTokenMetadata(markets));
-      } catch { /* best-effort */ }
-      // Pass 2 — resolved/closed markets (Gamma excludes these from the default response)
-      const stillMissing = uniqueTokenIds.filter((id) => !tokenMetadata.has(String(id)));
-      if (stillMissing.length > 0) {
-        try {
-          const p2 = new URLSearchParams();
-          stillMissing.forEach((id) => p2.append('clob_token_ids', id as string));
-          p2.set('limit', String(Math.min(stillMissing.length * 2, 200)));
-          p2.set('active', 'false');
-          const resp2 = await retryTransient(() => axios.get(`https://gamma-api.polymarket.com/markets?${p2.toString()}`, { timeout: 8000, headers: gammaHeaders }));
-          const markets2: any[] = Array.isArray(resp2.data) ? resp2.data : (resp2.data?.data ?? []);
-          mergeTokenMetadata(tokenMetadata, buildPolymarketTokenMetadata(markets2));
-        } catch { /* best-effort */ }
-      }
-    }
-
-    const lifecycle: Position[] = positions.map((position: Position) => projectPolymarketPosition(
-      position,
-      tokenMetadata.get(String(position.assetId || '')),
-      null,
-    ));
-    const { active } = partitionPolymarketPositions(lifecycle);
-    let clientForQuote: any = null;
-    if (active.length > 0) {
-      try {
-        clientForQuote = await createClobClient({ host: this.host });
-      } catch {
-        clientForQuote = null;
-      }
-    }
-
-    const projected: Position[] = await Promise.all(lifecycle.map(async (position: Position) => {
-      if (position.lifecycle !== 'active' || !clientForQuote) return position;
-      const tokenId = position.assetId || position.symbol;
-      let currentPrice = 0;
-      try {
-        const resp = await clientForQuote.getPrice(tokenId, 'BUY');
-        currentPrice = Number(resp?.price ?? resp ?? 0);
-      } catch {
-        currentPrice = 0;
-      }
-      return projectPolymarketPosition(
-        position,
-        tokenMetadata.get(String(position.assetId || '')),
-        currentPrice,
-      );
-    }));
-
-    return projected.sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }
-
-  async getQuote(symbol: string): Promise<number> {
-    const client = await createClobClient({ host: this.host }); // public endpoint, no creds
-    try {
-      const resp = await client.getPrice(symbol, 'BUY');
-      return Number(resp?.price ?? resp ?? 0);
-    } catch {
-      return 0;
-    }
-  }
-}
-
 function createExecutionGatewayAdapter(adapter: any) {
   return new ExecutionGateway({ dryRun: false, adapter });
 }
@@ -1617,132 +757,54 @@ export async function main() {
       process.exitCode = 1;
     }
   } else if (command === 'aggregate_portfolio') {
-    const isVerbose = !useJson;
-    if (isVerbose) console.log('[GATEWAY] Aggregating portfolios — live / live-paper / paper...');
-
-    try {
-      const alpacaScope = buildAlpacaPortfolioAdapterSpecs(
-        parseOptionValue(args, '--alpaca-scope') || 'both',
-      );
-      // "live": real-money broker connections (and the live Polymarket account).
-      const liveAdapters = [
-        ...alpacaScope.live.map((entry: { name: string; paper: boolean }) => ({
+    const alpacaScope = parseOptionValue(args, '--alpaca-scope') || 'both';
+    const source = {
+      async collect(scope: string) {
+        const specs = buildAlpacaPortfolioAdapterSpecs(scope);
+        const liveAdapters = [
+          ...specs.live.map((entry: { name: string; paper: boolean }) => ({
+            name: entry.name,
+            adapter: new AlpacaAdapter({ paper: entry.paper, simulateIfMissingCredentials: false }),
+          })),
+          { name: 'Gate.io', adapter: new GateIoAdapter({ simulateIfMissingCredentials: false }) },
+        ];
+        const livePaperAdapters = specs.live_paper.map((entry: { name: string; paper: boolean }) => ({
           name: entry.name,
-          adapter: new AlpacaAdapter({
-            paper: entry.paper,
-            simulateIfMissingCredentials: false,
-          }),
-        })),
-        { name: 'Gate.io', adapter: new GateIoAdapter({ simulateIfMissingCredentials: false }) },
-      ];
-      // "live-paper": broker-hosted simulated accounts (Alpaca's own paper-trading API).
-      const livePaperAdapters = alpacaScope.live_paper.map(
-        (entry: { name: string; paper: boolean }) => ({
-          name: entry.name,
-          adapter: new AlpacaAdapter({
-            paper: entry.paper,
-            simulateIfMissingCredentials: false,
-          }),
-        }),
-      );
+          adapter: new AlpacaAdapter({ paper: entry.paper, simulateIfMissingCredentials: false }),
+        }));
 
-      const fetchAdapterResults = (adapters: { name: string; adapter: BrokerAdapter }[]) => Promise.all(adapters.map(async (entry) => {
-        try {
-          const [balance, positions] = await Promise.all([
-            entry.adapter.getPortfolioBalance(),
-            entry.adapter.getPositions()
-          ]);
-          return { name: entry.name, ok: true, balance, positions };
-        } catch (e: any) {
-          return { name: entry.name, ok: false, error: e.message };
-        }
-      }));
+        const fetchAdapterResults = (adapters: { name: string; adapter: BrokerAdapter }[]) =>
+          Promise.all(adapters.map(async (entry) => {
+            try {
+              const [balance, positions] = await Promise.all([
+                entry.adapter.getPortfolioBalance(),
+                entry.adapter.getPositions(),
+              ]);
+              return { name: entry.name, ok: true, balance, positions };
+            } catch (e: any) {
+              return { name: entry.name, ok: false, error: e.message };
+            }
+          }));
 
-      const [liveResults, livePaperResults, polymarket] = await Promise.all([
-        fetchAdapterResults(liveAdapters),
-        fetchAdapterResults(livePaperAdapters),
-        fetchPolymarketPortfolio(),
-      ]);
+        const [liveResults, livePaperResults, polymarket] = await Promise.all([
+          fetchAdapterResults(liveAdapters),
+          fetchAdapterResults(livePaperAdapters),
+          fetchPolymarketPortfolio(),
+        ]);
+        const internalPaperPortfolio = loadInternalPaperPortfolio();
 
-      const dedupePositions = (positions: Position[]) => {
-        const merged = new Map<string, Position>();
-        for (const p of positions) {
-          if (merged.has(p.symbol)) {
-            const existing = merged.get(p.symbol)!;
-            const totalQty = existing.quantity + p.quantity;
-            const avgPrice = ((existing.quantity * existing.averagePrice) + (p.quantity * p.averagePrice)) / totalQty;
-            merged.set(p.symbol, {
-              symbol: p.symbol,
-              quantity: totalQty,
-              averagePrice: Number(avgPrice.toFixed(4)),
-              marketValue: existing.marketValue + p.marketValue,
-              unrealizedPl: existing.unrealizedPl + p.unrealizedPl
-            });
-          } else {
-            merged.set(p.symbol, { ...p });
-          }
-        }
-        return Array.from(merged.values());
-      };
+        return { liveResults, livePaperResults, polymarket, internalPaperPortfolio };
+      },
+    };
 
-      // "live" bucket includes the live Polymarket account (real funds, real exposure).
-      const live: any = buildAggregatedPortfolioSnapshot(liveResults, polymarket);
-      live.positions = dedupePositions(live.positions);
-
-      // "live-paper" bucket: Alpaca's hosted paper account only — no Polymarket (that's real-money).
-      const livePaper: any = buildAggregatedPortfolioSnapshot(livePaperResults, null);
-      livePaper.positions = dedupePositions(livePaper.positions);
-
-      // "paper" bucket: this platform's own internal/simulated Polymarket dry-run ledger
-      // (storage/data/paper_trading/events.jsonl, projected to portfolio.v1.json) —
-      // distinct from Alpaca's hosted paper account.
-      const internalPaperPortfolio = loadInternalPaperPortfolio();
-      const internalPaperSummary = summarizeInternalPaperPortfolio(internalPaperPortfolio);
-      const paper: any = {
-        name: 'Internal Paper Bot (Polymarket dry-run)',
-        ...internalPaperSummary,
-        positions: internalPaperPortfolio.positions || [],
-      };
-
-      const aggregated: any = { live, live_paper: livePaper, paper };
-
-      if (useJson) {
-        console.log(JSON.stringify(aggregated));
-      } else {
-        const renderBucket = (title: string, bucket: any) => {
-          console.log(`${ansi.boldCyan}--- ${title} ---${ansi.reset}`);
-          console.log(`Total Equity: $${ansi.boldGreen}${bucket.total_equity.toLocaleString()}${ansi.reset}`);
-          console.log(`Total Cash: $${ansi.green}${bucket.total_usd.toLocaleString()}${ansi.reset}`);
-          console.log(`${ansi.bold}Brokers:${ansi.reset}`);
-          bucket.brokers.forEach((b: any) => {
-            const statusColor = b.status === 'connected' ? ansi.green : ansi.red;
-            console.log(`  - ${b.name}: ${statusColor}${b.status}${ansi.reset} ${b.error ? `(${b.error})` : ''}`);
-          });
-          console.log(`${ansi.bold}Active Positions (${bucket.positions.length}):${ansi.reset}`);
-          bucket.positions.forEach((p: Position) => {
-            const plColor = p.unrealizedPl >= 0 ? ansi.green : ansi.red;
-            console.log(`  ${p.symbol.padEnd(6)} | Qty: ${p.quantity.toString().padEnd(6)} | Value: $${p.marketValue.toLocaleString().padEnd(10)} | PnL: ${plColor}$${p.unrealizedPl.toLocaleString()}${ansi.reset}`);
-          });
-        };
-
-        renderBucket('LIVE  (real funds: Alpaca Live, Gate.io, Polymarket)', live);
-        renderPolymarketSection(live.prediction_markets.polymarket);
-
-        renderBucket('LIVE-PAPER  (broker-hosted simulation: Alpaca Paper)', livePaper);
-
-        console.log(`${ansi.boldCyan}--- PAPER  (internal Polymarket dry-run ledger) ---${ansi.reset}`);
-        console.log(`Virtual Balance: $${ansi.green}${paper.virtual_balance}${ansi.reset} (started at $${paper.starting_balance})`);
-        console.log(`Open Positions: ${paper.open_positions} | Open Cost: $${paper.open_cost} | Equity (marked at cost): $${ansi.boldGreen}${paper.equity_marked_at_cost}${ansi.reset}`);
-        paper.positions.forEach((p: any) => {
-          console.log(`  ${String(p.question || p.market_id || '').slice(0, 56).padEnd(56)} | ${String(p.outcome || '').padEnd(4)} | shares ${Number(p.shares).toFixed(2).padStart(10)} @ ${p.avg_price}`);
-        });
-      }
-    } catch (e: any) {
-      if (useJson) {
-        console.log(JSON.stringify({ ok: false, error: e.message }));
-      } else {
-        console.error(`[GATEWAY] Aggregation failed: ${e.message}`);
-      }
+    const success = await runAggregatePortfolioCommand({
+      scope: alpacaScope,
+      source,
+      output: console,
+      useJson,
+    });
+    if (!success) {
+      process.exitCode = 1;
     }
   } else if (command === 'polymarket') {
     const sub = (args[1] || 'portfolio').toLowerCase();
