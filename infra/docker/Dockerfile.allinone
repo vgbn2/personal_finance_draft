@@ -43,7 +43,10 @@ FROM ubuntu:22.04 AS runtime
 ARG SOVEREIGN_SOURCE_REVISION
 ARG SOVEREIGN_SOURCE_TREE
 
-LABEL org.opencontainers.image.revision="${SOVEREIGN_SOURCE_REVISION}" \
+LABEL org.opencontainers.image.source="https://github.com/vgbn2/personal_finance_draft" \
+      org.opencontainers.image.description="Sovereign Trading Platform All-in-One Container" \
+      org.opencontainers.image.licenses="SEE LICENSE IN LICENSE" \
+      org.opencontainers.image.revision="${SOVEREIGN_SOURCE_REVISION}" \
       io.sovereign.source-tree="${SOVEREIGN_SOURCE_TREE}" \
       io.sovereign.build-contract="all-in-one"
 

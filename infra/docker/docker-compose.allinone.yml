@@ -10,7 +10,7 @@ networks:
 
 services:
   app:
-    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/personal_finance:latest}
+    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/personal_finance_draft:latest}
     container_name: sv-allinone
     restart: unless-stopped
     user: "1000:1000"

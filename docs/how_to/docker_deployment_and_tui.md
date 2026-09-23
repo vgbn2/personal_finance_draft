@@ -1,6 +1,6 @@
 # Sovereign All-in-One Docker Deployment, Security Isolation & TUI Runbook
 
-This guide covers the deployment, secret isolation architecture, interactive Ink Terminal UI (TUI) container access, and secondary test instance setup for the **Sovereign Trading Platform** All-in-One container (`ghcr.io/vgbn2/personal_finance:latest`).
+This guide covers the deployment, secret isolation architecture, interactive Ink Terminal UI (TUI) container access, and secondary test instance setup for the **Sovereign Trading Platform** All-in-One container (`ghcr.io/vgbn2/personal_finance_draft:latest`).
 
 ---
 
