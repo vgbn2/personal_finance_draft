@@ -61,7 +61,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     SOVEREIGN_BACKEND_BIN=/app/backend/core/build/sovereign_wealth
 
 # Install Wine Staging, Xvfb, and Node.js 22 LTS
-RUN dpkg --add-architecture amd64 && \
+RUN dpkg --add-architecture i386 && \
+    mkdir -pm1777 /tmp/.X11-unix && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         curl ca-certificates gnupg2 software-properties-common \
@@ -83,12 +84,14 @@ USER sovereign
 WORKDIR /opt/mt5
 
 # Initialize Wine headless prefix and disable audio driver loops
-RUN Xvfb :99 -screen 0 1024x768x16 & \
+RUN Xvfb :99 -screen 0 1024x768x16 -nolisten tcp -ac +extension GLX & \
+    XVFB_PID=$! && \
     sleep 2 && \
-    wineboot --init && \
+    WINEDEBUG=-all wineboot --init && \
     wineserver -w && \
-    wine reg add "HKEY_CURRENT_USER\Software\Wine\Drivers" /v Audio /t REG_SZ /d "" /f && \
-    wineserver -w
+    WINEDEBUG=-all wine reg add "HKEY_CURRENT_USER\Software\Wine\Drivers" /v Audio /t REG_SZ /d "" /f && \
+    wineserver -w && \
+    kill $XVFB_PID 2>/dev/null || true
 
 WORKDIR /app
 
