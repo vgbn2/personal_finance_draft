@@ -1,9 +1,11 @@
-name: Build and Publish All-in-One Docker Image to GHCR
+name: Build, Test, and Publish Docker Packages to GHCR
 
 on:
   push:
     branches: [ main ]
     tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 env:
@@ -11,7 +13,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push:
+  test-and-publish:
+    name: Build, Test and Publish Container
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,7 +27,92 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build All-in-One image for testing
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infra/docker/Dockerfile.allinone
+          load: true
+          tags: sovereign-allinone:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start All-in-One container
+        run: |
+          docker run -d --name sv-allinone-test \
+            -p 8787:8787 \
+            -e NODE_ENV=production \
+            -e SOVEREIGN_WEB_HOST=0.0.0.0 \
+            -e SOVEREIGN_WEB_PORT=8787 \
+            -e SOVEREIGN_RUNTIME_MODE=test-isolated \
+            -e LIVE_TRADING=false \
+            -e SOVEREIGN_EXECUTION_AUTHORIZED=false \
+            sovereign-allinone:test
+
+      - name: Verify All-in-One healthcheck and services
+        run: |
+          echo "Waiting for container HTTP /health endpoint..."
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8787/health | grep -q '"ok":true'; then
+              echo "Healthcheck passed on attempt $i"
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8787/health | grep -q '"ok":true'
+
+      - name: Test in-container CLI diagnostics
+        run: |
+          echo "Running CLI doctor inside All-in-One container..."
+          docker exec sv-allinone-test node backend/cli/sovereign_cli.js doctor
+          echo "Running CLI status inside All-in-One container..."
+          docker exec sv-allinone-test node backend/cli/sovereign_cli.js status --json
+
+      - name: Test in-container C++ core binary & Xvfb
+        run: |
+          echo "Checking C++ binary exists and is executable..."
+          docker exec sv-allinone-test test -x /app/backend/core/build/sovereign_wealth
+          echo "Checking Xvfb display server is running..."
+          docker exec sv-allinone-test pgrep -f Xvfb
+
+      - name: Gracefully stop All-in-One container
+        run: |
+          docker stop -t 10 sv-allinone-test
+          docker rm sv-allinone-test
+
+      - name: Build slim production image for testing
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          load: true
+          tags: sovereign-slim:test
+          cache-from: type=gha
+
+      - name: Verify slim production container
+        run: |
+          docker run -d --name sv-slim-test \
+            -p 8787:8787 \
+            -e NODE_ENV=production \
+            -e SOVEREIGN_WEB_HOST=0.0.0.0 \
+            -e SOVEREIGN_WEB_PORT=8787 \
+            sovereign-slim:test
+          echo "Waiting for slim container /health endpoint..."
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8787/health | grep -q '"ok":true'; then
+              echo "Slim healthcheck passed on attempt $i"
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8787/health | grep -q '"ok":true'
+          docker exec sv-slim-test node backend/cli/sovereign_cli.js doctor
+          docker exec sv-slim-test test -x /app/backend/core/build/sovereign_wealth
+          docker stop -t 10 sv-slim-test
+          docker rm sv-slim-test
+
       - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -32,6 +120,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract Docker metadata
+        if: github.event_name != 'pull_request'
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -41,7 +130,8 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
 
-      - name: Build and push All-in-One Docker image
+      - name: Push All-in-One Docker image to GHCR
+        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -50,4 +140,3 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
