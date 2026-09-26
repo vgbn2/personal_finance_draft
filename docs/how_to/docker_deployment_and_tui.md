@@ -37,7 +37,70 @@ docker exec -it sv-allinone node backend/cli/sovereign_cli.js bt --strategy low_
 
 ---
 
-## 2. Strict Environment Variable & Secret Isolation
+## 2. Hardware Sizing & System Resource Allocation
+
+Sovereign is engineered for high performance with minimal overhead on commodity x86_64 hardware, Proxmox LXC containers, Proxmox VMs, and bare-metal cloud instances.
+
+### OS-Agnostic Host & Proxmox LXC Support
+
+Since Sovereign runs fully containerized via Docker and OCI images, **Ubuntu is NOT a requirement**. Any Linux distribution supporting Docker 24+ and Compose can host Sovereign seamlessly:
+
+- **Proxmox LXC Containers (Recommended)**: Extremely lightweight with near-zero hypervisor overhead. Can use any standard Linux template (Debian 12, Alpine, Ubuntu, Rocky Linux). Requires only enabling **Nesting** (`features: nesting=1,keyctl=1`) in Proxmox container options to run Docker Engine within the LXC.
+- **Proxmox QEMU / KVM VMs**: Full hardware-isolated virtual machines.
+- **Bare-Metal Linux Hosts**: Debian, Arch Linux, Fedora, Rocky Linux, Ubuntu, etc.
+- **Local Workstations**: Linux or macOS running Docker Desktop, OrbStack, or Colima.
+
+### Recommended Sizing Matrix
+
+| Resource | Baseline (Standard Operations) | Minimal (Headless Web/Paper) | Performance / Multi-Strategy |
+| :--- | :--- | :--- | :--- |
+| **RAM** | **6 GB** | 4 GB | 8–16 GB |
+| **Storage (SSD)** | **40 GB SSD (NVMe / SATA)** | 25 GB SSD | 100+ GB SSD (Tick history) |
+| **CPU Cores** | **2–4 vCPU / Cores** | 2 Cores | 4–8 Cores |
+| **Operating System** | **Any Linux with Docker** (Ubuntu not required) | Any Linux with Docker | Any Linux with Docker |
+| **Architecture** | **x86_64 / amd64** (AVX2/SSE4.2) | x86_64 | x86_64 |
+
+### Detailed Resource Breakdown
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        SOVEREIGN RESOURCE BUDGET ALLOCATION                            │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│  RAM BUDGET: 6 GB Total                                                                │
+│  ├── Host OS / LXC + Kernel & Buffer Cache:     ~1.0 GB - 1.5 GB                       │
+│  ├── Node.js Web API + React Dashboard:         ~768 MB - 1024 MB (cgroups limit)      │
+│  ├── Native C++20 Core & ONNX Runtime:          ~512 MB - 768 MB                       │
+│  ├── Headless Wine 9 + MetaTrader 5 Bridge:     ~1024 MB - 1536 MB                     │
+│  └── Ingestion & Backfill Scratchpad Buffer:    ~512 MB                                │
+│                                                                                        │
+│  STORAGE BUDGET: 40 GB SSD                                                             │
+│  ├── Base Linux OS / LXC Rootfs:                ~4 GB - 8 GB                           │
+│  ├── Docker Engine & Image Cache:               ~6 GB (Base layers + All-in-One image)  │
+│  ├── Binary Time-Series Indices (storage/ts/):  ~12 GB (Multi-year 1m/5m/1d OHLCV bars)│
+│  ├── Wine 9 Prefix & MT5 Terminal Data:         ~4 GB (/opt/mt5/.wine & indicators)    │
+│  ├── SQLite Cache & ONNX Models:                ~3 GB (Indicators + ML weights)        │
+│  └── Workspace, Logs & Atomic Scratchpad:       ~7 GB (Free operating buffer)          │
+│                                                                                        │
+│  CPU ALLOCATION: 2–4 Cores                                                             │
+│  ├── Core 0: Linux Kernel, Network I/O, Node.js Event Loop & Express API               │
+│  ├── Core 1: Native C++20 Analytics, Feature Engine & Binary TS Ingestion              │
+│  ├── Core 2: Wine 9 / MT5 Terminal Process & Expert Advisor socket bridge              │
+│  └── Core 3: Parallel CTest evaluation, ML inference & Monte Carlo simulation          │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Resource Tuning & Memory Optimization
+
+- **Low-Memory Environments (4 GB RAM)**:
+  When operating on 4 GB hosts without MetaTrader 5, run the standard `web` container instead of `allinone` (`docker compose up sv-web`). This reduces memory consumption to `< 1.2 GB` total.
+- **Node.js Heap Clamping**:
+  The Compose stack configures `NODE_OPTIONS=--max-old-space-size=1024` for web services and `--max-old-space-size=2560` for all-in-one containers, preventing V8 garbage collection spikes from exhausting host memory.
+- **Fast NVMe / SSD Storage**:
+  Sovereign's streaming binary TS merger (`sovereign::BinaryTsMerger`) performs sequential and indexed reads on 48-byte packed binary candle files (`storage/data/ts/*.bin`). An SSD ensures sub-millisecond seek times for multi-year backtests.
+
+---
+
+## 3. Strict Environment Variable & Secret Isolation
 
 To guarantee that **no credentials or API keys ever leak into Docker images or build layers**:
 
@@ -146,9 +209,30 @@ docker run -d --name sv-wealth-test \
 
 ---
 
-## 4. Proxmox VM Deployment Runbook
+## 4. Proxmox LXC Container & VM Deployment Runbook
 
-### Host Directory Layout
+### Proxmox LXC Container Provisioning (Recommended)
+
+When deploying on Proxmox VE, an **unprivileged LXC container** with Nesting is lighter, faster, and more memory-efficient than a full QEMU VM:
+
+```bash
+# Proxmox VE Node Shell: Create LXC container with 6GB RAM, 40GB Disk, 4 Cores, and Docker Nesting
+pct create 120 local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst \
+  --hostname sovereign-node \
+  --cores 4 \
+  --memory 6144 \
+  --swap 2048 \
+  --rootfs local-lvm:40 \
+  --net0 name=eth0,bridge=vmbr0,ip=dhcp,firewall=1 \
+  --features nesting=1,keyctl=1 \
+  --unprivileged 1 \
+  --onboot 1 \
+  --start 1
+```
+
+*Note: The `--features nesting=1,keyctl=1` flag is essential for running Docker daemon inside LXC.*
+
+### Host / Container Directory Layout
 ```text
 /opt/sovereign/
 ├── docker-compose.allinone.yml  # Docker Compose definition
@@ -163,7 +247,7 @@ docker run -d --name sv-wealth-test \
 
 ### Single-Command Deployment
 
-Run the deployment script on the host:
+Run the deployment script inside the LXC container or host VM:
 ```bash
 /opt/sovereign/scripts/deploy.sh latest
 ```

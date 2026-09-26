@@ -121,13 +121,19 @@ export function TopBar({ activeTab, onTabChange, session, onLogout, sidebarOpen,
           <div className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] flex items-center justify-center">
             <User className="w-4 h-4" />
           </div>
-          <span className="text-xs font-mono hidden xl:inline max-w-[140px] truncate">
-            {userEmail ?? 'Guest'}
-          </span>
-          {userEmail && (
+          {session?.user?.id === 'local-operator' ? (
+            <span className="hidden xl:inline-flex items-center gap-1 px-2 py-0.5 rounded border border-[var(--color-brand-cyan)]/40 bg-[var(--color-brand-cyan)]/10 text-[var(--color-brand-cyan)] text-[10px] font-mono font-bold tracking-wider uppercase">
+              Local Operator
+            </span>
+          ) : (
+            <span className="text-xs font-mono hidden xl:inline max-w-[140px] truncate">
+              {userEmail ?? 'Guest'}
+            </span>
+          )}
+          {session && (
             <button
               onClick={handleLogout}
-              title={logoutFailed ? 'Sign out failed; session is still active' : 'Sign out'}
+              title={logoutFailed ? 'Sign out failed; session is still active' : 'Exit session'}
               className="w-7 h-7 flex items-center justify-center text-[var(--text-muted)] hover:text-red-400 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />

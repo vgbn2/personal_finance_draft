@@ -756,4 +756,7 @@ module.exports = {
   writePartitionedSnapshot,
   writeTsIndex,
   mergeWriteBin,
+  deriveMultiGrainInMemory: require('./multi_grain_rollup.js').deriveMultiGrainInMemory,
+  MultiGrainRollupPipeline: require('./multi_grain_rollup.js').MultiGrainRollupPipeline,
+  writeMultiGrainTsIndex: require('./multi_grain_rollup.js').writeMultiGrainTsIndex,
 };

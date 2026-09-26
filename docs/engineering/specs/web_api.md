@@ -17,7 +17,7 @@ This Software Requirements Specification (SRS) defines the communication contrac
 Frontend dashboard developers, API clients, integration engineers, and compliance auditors.
 
 ### 1.4 System Scope
-Encompasses the standalone native HTTP daemon (`backend/api/app.js` on port 8787), 40 route keys across 39 handler modules, RBAC access control gates, Model Context Protocol (MCP) agent boundaries, and static asset serving for the React 19 dashboard.
+Encompasses the standalone native HTTP daemon (`backend/api/app.js` on port 8787), 42 route keys across 41 handler modules, RBAC access control gates, Model Context Protocol (MCP) agent boundaries, and static asset serving for the React 19 dashboard.
 
 ### 1.5 References
 - [Product Software Requirements Specification](../../reference/specifications/product_specification.md)
@@ -36,7 +36,7 @@ flowchart TD
     CLIENT["Browser / TUI / MCP Agent"] -->|HTTP / WebSocket| APP["Native HTTP Server<br/>backend/api/app.js (Port 8787)"]
     APP -->|Path Traversal Check| STATIC["Static Assets<br/>Frontend/dashboard/dist/"]
     APP -->|Security Filter| ACCESS["Access Control & RBAC<br/>backend/api/server/services/access_control.js"]
-    ACCESS --> ROUTER["Router Engine (40 Routes)<br/>backend/api/server/routes/index.js"]
+    ACCESS --> ROUTER["Router Engine (42 Routes)<br/>backend/api/server/routes/index.js"]
     ROUTER -->|In-Process Execution| CLI["CLI Command Handlers<br/>backend/cli/commands/"]
     ROUTER -->|C++ Subprocess Bridge| CORE["Native C++ Core<br/>sovereign_wealth"]
     ROUTER -->|Read/Write State| CACHE["Disk State & Caches<br/>storage/data/"]
@@ -58,11 +58,12 @@ flowchart TD
 
 | Capability Tier | Authentication Requirement | Allowed Route Patterns |
 |---|---|---|
-| **Public (`*`)** | None (Unauthenticated) | `/health`, `/api/status`, `/api/client/status`, `/api/public/*` |
-| **`research:read`** | `x-sovereign-token` or valid Supabase session | `/api/data/*`, `/api/universe`, `/api/indicators`, `/api/market/*`, `/api/quotes/*`, `/api/cache/*` |
+| **Public (`*`)** | None (Unauthenticated) | `/health`, `/api/auth/status`, `/api/supabase/config`, `/api/public/*` |
+| **`status:read`** | `x-sovereign-token` or valid Supabase session | `/api/status`, `/api/client/status`, `/api/bot/status`, `/api/run/status`, `/api/backend/stats`, `/api/system/status`, `/api/cluster/status` (GET) |
+| **`research:read`** | `x-sovereign-token` or valid Supabase session | `/api/data/*`, `/api/universe`, `/api/indicators`, `/api/market/*`, `/api/quotes/*`, `/api/cache/*`, `/api/analytics`, `/api/strategies`, `/api/sigma-band`, `/api/bias`, `/api/scorecard`, `/api/combined-analysis` |
 | **`research:run`** | `x-sovereign-token` with write capability | `/api/backtest`, `/api/signal/promote`, `/api/combined-analysis/*` |
-| **`execution:paper`** | `x-sovereign-token` with paper trade capability | `/api/bot/status`, `/api/bot/cycle`, `/api/combined-analysis/paper-cycle` |
-| **`execution:admin`** | Signed admin bearer token + salted PIN | `/api/bot/sell`, `/api/kill-switch`, `/api/system/*`, `/api/auth/*` |
+| **`execution:paper`** | `x-sovereign-token` with paper trade capability | `/api/bot/cycle`, `/api/combined-analysis/paper-cycle` |
+| **`execution:admin`** | Signed admin bearer token + salted PIN | `/api/bot/sell`, `/api/kill-switch`, `/api/system/*`, `/api/auth/session/reauth`, `/api/cluster/status` (POST) |
 
 - **FR-API-002 (MCP Agent Safeguard)**:
   - *Description*: Autonomous MCP agents MUST be blocked from invoking destructive operations (`/api/kill-switch`, `/api/bot/sell`) unless verified by human operator PIN.
@@ -70,8 +71,8 @@ flowchart TD
 ### 3.2 System Status & Health Endpoints
 - **FR-API-003 (Health & Status Probes)**:
   - `GET /health` (`Public`): Uptime, heap/RSS memory metrics.
-  - `GET /api/status` (`Public`): Aggregated system health and quote feed staleness.
-  - `GET /api/client/status` (`Public`): Client handshake and build version.
+  - `GET /api/status` (`status:read`): Aggregated system health and quote feed staleness.
+  - `GET /api/client/status` (`status:read`): Client handshake and build version.
   - `GET /api/run/status` (`research:read`): Status of background backtests and exploration jobs.
   - `GET /api/system/status` (`execution:admin`): Disk usage in `storage/data/ts/` and active POSIX locks.
   - `GET /api/system/service-health` (`execution:admin`): Soak test health checks.
@@ -121,6 +122,8 @@ flowchart TD
   - `GET /api/supabase/config` (`Public`): Safe public Supabase telemetry client configuration.
   - `GET /api/config` (`research:read`): Sanitized system runtime configuration.
   - `GET /api/system/infra` (`execution:admin`): Streams Docker operational logs without shell interpolation.
+  - `GET /api/cluster/status` (`status:read`): Returns local node role, active leader lease, healthy/unresponsive cluster nodes, and remote peer mesh health.
+  - `POST /api/cluster/status` (`execution:admin`): Cluster control actions — `action=heartbeat` registers local node; `action=elect` forces election evaluation; `action=step_down` surrenders leadership; `action=acquire_lock` / `action=release_lock` manages distributed order idempotency locks.
 
 ---
 

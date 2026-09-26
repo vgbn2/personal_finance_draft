@@ -6,7 +6,15 @@ The repository features active local ingestion, binary time-series storage, quan
 
 ## Prerequisites
 
-Required:
+### Hardware & System Sizing
+- **RAM**: **6 GB** recommended (4 GB minimum for local web/paper development; 8–16 GB for full-universe backfills).
+- **Storage**: **40 GB SSD (NVMe / SATA)** for container images, SQLite caches, and packed binary time-series files (`storage/data/ts/*.bin`).
+- **CPU**: **2–4 cores / vCPUs** (x86_64/amd64 with AVX2 or SSE4.2 SIMD support).
+- **Operating System**: **OS-Agnostic** (Any Linux distribution with Docker, Proxmox LXC container with nesting, Proxmox VM, macOS, or Windows WSL2). **Ubuntu is NOT a requirement**.
+
+### Software Prerequisites
+
+Required for local native development:
 
 - C++20 compiler (`clang++ 14+` or `g++ 11+`)
 - CMake 3.20 or newer (aligned with root `CMakeLists.txt`)
@@ -18,7 +26,6 @@ Currently not required for the local prototype:
 - Rust crates
 - SQLite
 - broker credentials
-- Docker
 - production deployment credentials
 
 Optional or gated:

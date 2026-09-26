@@ -106,6 +106,7 @@ const PROTECTED_GET_CAPABILITIES = Object.freeze({
   '/api/scorecard': CAPABILITIES.RESEARCH_READ,
   '/api/combined-analysis': CAPABILITIES.RESEARCH_READ,
   '/api/system/infra': CAPABILITIES.HOST_INSPECT,
+  '/api/cluster/status': CAPABILITIES.STATUS_READ,
 });
 
 const MUTATION_CAPABILITIES = Object.freeze({
@@ -117,6 +118,7 @@ const MUTATION_CAPABILITIES = Object.freeze({
   '/api/bot/sell': CAPABILITIES.PAPER_OPERATE,
   '/api/kill-switch': CAPABILITIES.SAFETY_CONTROL,
   '/api/auth/session/reauth': CAPABILITIES.STATUS_READ,
+  '/api/cluster/status': CAPABILITIES.SAFETY_CONTROL,
 });
 
 function normalizeRole(value, fallback = null) {
@@ -188,6 +190,15 @@ function requiredCapabilities({
     const command = String(query.command || 'status').trim().toLowerCase();
     return [
       command === 'status'
+        ? CAPABILITIES.STATUS_READ
+        : CAPABILITIES.SAFETY_CONTROL,
+    ];
+  }
+
+  if (route === '/api/cluster/status') {
+    const action = String(query.action || query.command || 'status').trim().toLowerCase();
+    return [
+      (action === 'status' || action === 'nodes')
         ? CAPABILITIES.STATUS_READ
         : CAPABILITIES.SAFETY_CONTROL,
     ];

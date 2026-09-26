@@ -3,7 +3,10 @@ const { verifyPin } = require('../../../../cli/lib/auth.js');
 
 module.exports = {
   path: '/api/bot/sell',
-  status: (payload) => (payload && payload.ok !== false ? 200 : 503),
+  status: (payload) => {
+    if (payload && payload.error && payload.error.startsWith('Unauthorized:')) return 401;
+    return payload && payload.ok !== false ? 200 : 503;
+  },
   handle: (query = {}, ctx = {}) => {
     if (ctx.req && ctx.req.method !== 'POST') return { ok: false, error: 'POST only' };
     const expectedPin = process.env.SOVEREIGN_TRADE_PIN;

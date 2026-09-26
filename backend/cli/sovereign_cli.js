@@ -29,6 +29,7 @@ const { commandCombined } = require('./commands/research/combined.js');
 const { commandKillSwitch } = require('./commands/tools/kill_switch.js');
 const { commandRiskCheck } = require('./commands/tools/risk.js');
 const { commandMlPredict } = require('./commands/research/ml_predict.js');
+const { commandCluster } = require('./commands/operational/cluster.js');
 const { installDoubleCtrlCExit } = require('./lib/exit_guard');
 
 installDoubleCtrlCExit();
@@ -48,6 +49,7 @@ async function handleCommand(args) {
   const handlers = {
     // --- Operational (manifest: op) ---
     status:           (a) => commandStatus(a),
+    cluster:          (a) => commandCluster(a),
     remote:           (a) => commandRemote(a),
     setup:            (a) => commandSetup(a),
     doctor:           (a) => commandDoctor(a),

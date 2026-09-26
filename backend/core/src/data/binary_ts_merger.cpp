@@ -4,6 +4,7 @@
 #include <array>
 #include <cstring>
 #include <fstream>
+#include <iostream>
 #include <vector>
 
 namespace sovereign {
@@ -16,22 +17,24 @@ constexpr char kMagic[4] = {'S', 'O', 'V', 'T'};
 class BinaryStreamReader {
 public:
     explicit BinaryStreamReader(const std::filesystem::path& path)
-        : stream_(path, std::ios::binary) {
-        if (!stream_) {
-            error_ = "failed to open file";
+        : is_cin_(path == "-") {
+        if (is_cin_) {
+            stream_ = &std::cin;
+            init();
             return;
         }
-        RawTsHeader header{};
-        if (!stream_.read(reinterpret_cast<char*>(&header), sizeof(header))) {
-            error_ = "failed to read header";
+        file_stream_.open(path, std::ios::binary);
+        if (!file_stream_) {
+            error_ = "failed to open file: " + path.string();
             return;
         }
-        if (std::memcmp(header.magic, kMagic, 4) != 0) {
-            error_ = "invalid SOVT magic header";
-            return;
-        }
-        total_count_ = header.count;
-        valid_ = true;
+        stream_ = &file_stream_;
+        init();
+    }
+
+    explicit BinaryStreamReader(std::istream& is)
+        : is_cin_(false), stream_(&is) {
+        init();
     }
 
     bool isValid() const { return valid_; }
@@ -59,22 +62,42 @@ public:
     }
 
 private:
+    void init() {
+        if (!stream_) {
+            error_ = "null input stream";
+            return;
+        }
+        RawTsHeader header{};
+        if (!stream_->read(reinterpret_cast<char*>(&header), sizeof(header))) {
+            error_ = "failed to read header";
+            return;
+        }
+        if (std::memcmp(header.magic, kMagic, 4) != 0) {
+            error_ = "invalid SOVT magic header";
+            return;
+        }
+        total_count_ = header.count;
+        valid_ = true;
+    }
+
     void fillBuffer() {
         buf_idx_ = 0;
         buf_size_ = 0;
-        if (read_count_ >= total_count_ || !stream_) return;
+        if (read_count_ >= total_count_ || !stream_ || !(*stream_)) return;
 
         const std::size_t to_read = std::min<std::size_t>(
             kChunkRecords,
             total_count_ - read_count_);
-        stream_.read(
+        stream_->read(
             reinterpret_cast<char*>(buffer_.data()),
             static_cast<std::streamsize>(to_read * sizeof(RawTsRecord)));
-        const auto bytes = stream_.gcount();
+        const auto bytes = stream_->gcount();
         buf_size_ = static_cast<std::size_t>(bytes) / sizeof(RawTsRecord);
     }
 
-    std::ifstream stream_;
+    bool is_cin_ = false;
+    std::ifstream file_stream_;
+    std::istream* stream_ = nullptr;
     bool valid_ = false;
     std::string error_;
     std::uint32_t total_count_ = 0;
@@ -87,17 +110,22 @@ private:
 class BinaryStreamWriter {
 public:
     explicit BinaryStreamWriter(const std::filesystem::path& path)
-        : stream_(path, std::ios::binary | std::ios::trunc) {
-        if (!stream_) {
-            error_ = "failed to create output file";
+        : to_stdout_(path == "-") {
+        if (to_stdout_) {
+            valid_ = true;
+            return;
+        }
+        file_stream_.open(path, std::ios::binary | std::ios::trunc);
+        if (!file_stream_) {
+            error_ = "failed to create output file: " + path.string();
             return;
         }
         // Write placeholder header
         RawTsHeader header{};
         std::memcpy(header.magic, kMagic, 4);
         header.count = 0;
-        stream_.write(reinterpret_cast<const char*>(&header), sizeof(header));
-        valid_ = static_cast<bool>(stream_);
+        file_stream_.write(reinterpret_cast<const char*>(&header), sizeof(header));
+        valid_ = static_cast<bool>(file_stream_);
     }
 
     bool isValid() const { return valid_; }
@@ -105,6 +133,11 @@ public:
     std::uint32_t writtenCount() const { return written_count_; }
 
     void writeRecord(const RawTsRecord& rec) {
+        if (to_stdout_) {
+            stdout_records_.push_back(rec);
+            ++written_count_;
+            return;
+        }
         buffer_[buf_size_++] = rec;
         ++written_count_;
         if (buf_size_ >= kChunkRecords) {
@@ -113,27 +146,42 @@ public:
     }
 
     bool finalize() {
+        if (to_stdout_) {
+            RawTsHeader header{};
+            std::memcpy(header.magic, kMagic, 4);
+            header.count = written_count_;
+            std::cout.write(reinterpret_cast<const char*>(&header), sizeof(header));
+            if (!stdout_records_.empty()) {
+                std::cout.write(
+                    reinterpret_cast<const char*>(stdout_records_.data()),
+                    static_cast<std::streamsize>(stdout_records_.size() * sizeof(RawTsRecord)));
+            }
+            std::cout.flush();
+            return static_cast<bool>(std::cout);
+        }
         flush();
-        if (!stream_) return false;
-        stream_.seekp(0, std::ios::beg);
+        if (!file_stream_) return false;
+        file_stream_.seekp(0, std::ios::beg);
         RawTsHeader header{};
         std::memcpy(header.magic, kMagic, 4);
         header.count = written_count_;
-        stream_.write(reinterpret_cast<const char*>(&header), sizeof(header));
-        stream_.flush();
-        return static_cast<bool>(stream_);
+        file_stream_.write(reinterpret_cast<const char*>(&header), sizeof(header));
+        file_stream_.flush();
+        return static_cast<bool>(file_stream_);
     }
 
 private:
     void flush() {
-        if (buf_size_ == 0 || !stream_) return;
-        stream_.write(
+        if (buf_size_ == 0 || !file_stream_) return;
+        file_stream_.write(
             reinterpret_cast<const char*>(buffer_.data()),
             static_cast<std::streamsize>(buf_size_ * sizeof(RawTsRecord)));
         buf_size_ = 0;
     }
 
-    std::ofstream stream_;
+    bool to_stdout_ = false;
+    std::ofstream file_stream_;
+    std::vector<RawTsRecord> stdout_records_;
     bool valid_ = false;
     std::string error_;
     std::uint32_t written_count_ = 0;
@@ -152,11 +200,11 @@ BinaryMergeResult BinaryTsMerger::mergeFiles(
 
     bool has_existing = false;
     std::error_code ec;
-    if (std::filesystem::exists(existing_bin, ec) && std::filesystem::file_size(existing_bin, ec) >= sizeof(RawTsHeader)) {
+    if (!existing_bin.empty() && existing_bin != "-" && std::filesystem::exists(existing_bin, ec) && std::filesystem::file_size(existing_bin, ec) >= sizeof(RawTsHeader)) {
         has_existing = true;
     }
 
-    if (!std::filesystem::exists(incoming_bin, ec)) {
+    if (incoming_bin != "-" && !std::filesystem::exists(incoming_bin, ec)) {
         result.error = "incoming file does not exist: " + incoming_bin.string();
         return result;
     }

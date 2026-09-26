@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-export default function LoginPage() {
+interface LoginPageProps {
+  onEnterLocalMode?: () => void;
+}
+
+export default function LoginPage({ onEnterLocalMode }: LoginPageProps) {
   const [mode, setMode] = useState<'password' | 'magic'>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -9,32 +13,23 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [magicSent, setMagicSent] = useState(false);
 
-  if (!supabase) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center bg-[var(--bg-primary)]">
-        <div className="text-center space-y-2">
-          <p className="text-[var(--text-muted)] font-mono text-sm">Supabase not configured.</p>
-          <p className="text-[var(--text-muted)] font-mono text-xs">Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the dashboard environment.</p>
-        </div>
-      </div>
-    );
-  }
-
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
+    if (!supabase) return;
     setLoading(true);
     setError('');
-    const { error } = await supabase!.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    if (err) setError(err.message);
     setLoading(false);
   }
 
   async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault();
+    if (!supabase) return;
     setLoading(true);
     setError('');
-    const { error } = await supabase!.auth.signInWithOtp({ email });
-    if (error) { setError(error.message); } else { setMagicSent(true); }
+    const { error: err } = await supabase.auth.signInWithOtp({ email });
+    if (err) { setError(err.message); } else { setMagicSent(true); }
     setLoading(false);
   }
 
@@ -51,7 +46,29 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl p-6 space-y-5">
-          {magicSent ? (
+          {/* Local Mode First-Run Primary Option */}
+          {onEnterLocalMode && (
+            <div className="space-y-3 pb-4 border-b border-[var(--border-subtle)]">
+              <button
+                type="button"
+                onClick={onEnterLocalMode}
+                className="w-full bg-[var(--color-brand-cyan)] text-[var(--bg-primary)] font-mono font-bold text-sm py-2.5 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-sm"
+              >
+                <span>Launch Local Operator</span>
+              </button>
+              <p className="text-[var(--text-muted)] font-mono text-[11px] text-center leading-relaxed">
+                Zero-config offline mode. Runs local paper ledger, public feeds, and disk storage without cloud signup.
+              </p>
+            </div>
+          )}
+
+          {!supabase ? (
+            <div className="text-center pt-1">
+              <p className="text-[var(--text-muted)] font-mono text-xs">
+                Cloud Sync (Supabase) is unconfigured. Running in standalone local mode.
+              </p>
+            </div>
+          ) : magicSent ? (
             <div className="text-center space-y-2 py-4">
               <p className="text-[var(--color-brand-green)] font-mono text-sm">Magic link sent.</p>
               <p className="text-[var(--text-muted)] font-mono text-xs">Check your inbox at {email}</p>
@@ -64,6 +81,9 @@ export default function LoginPage() {
             </div>
           ) : (
             <form onSubmit={mode === 'password' ? handlePasswordLogin : handleMagicLink} className="space-y-4">
+              <div className="text-center font-mono text-[11px] text-[var(--text-muted)] uppercase tracking-wider">
+                — or sign in to Cloud Sync —
+              </div>
               <div className="space-y-1">
                 <label className="font-mono text-xs text-[var(--text-muted)] uppercase tracking-wider">Email</label>
                 <input
@@ -97,9 +117,9 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[var(--color-brand-cyan)] text-[var(--bg-primary)] font-mono font-bold text-sm py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] text-[var(--text-main)] font-mono font-bold text-sm py-2 rounded-lg hover:border-[var(--color-brand-cyan)] transition-colors disabled:opacity-50"
               >
-                {loading ? 'Working...' : mode === 'password' ? 'Sign In' : 'Send Magic Link'}
+                {loading ? 'Working...' : mode === 'password' ? 'Sign In to Cloud' : 'Send Magic Link'}
               </button>
 
               <button

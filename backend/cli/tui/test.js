@@ -6,10 +6,9 @@ const { findCommandSpec, handleIntersection } = require('./intersection');
 test('TUI/CLI Manifest Integrity', (t) => {
   assert.ok(MANIFEST.categories.length > 0, 'Should have categories');
   assert.ok(MANIFEST.commands.op, 'Should have operational commands');
-  
-  // Verify prefixes
-  const backendSummary = MANIFEST.commands.backend.find(c => c.id === 'summary');
-  assert.deepStrictEqual(backendSummary.prefix, ['backend', 'data'], 'Backend summary should route through backend data');
+
+  const backendStats = MANIFEST.commands.backend.find(c => c.id === 'stats');
+  assert.deepStrictEqual(backendStats.prefix, ['backend'], 'Backend stats should route through backend');
 });
 
 test('Intersection Logic - Command Matching', async (t) => {
@@ -28,14 +27,14 @@ test('Intersection Logic - Manifest Path Resolution', (t) => {
   assert.equal(status.spec.id, 'status');
   assert.equal(status.pathLength, 1);
 
-  const backendSummary = findCommandSpec(['backend', 'data', 'summary']);
-  assert.equal(backendSummary.spec.id, 'summary');
-  assert.deepStrictEqual(backendSummary.spec.prefix, ['backend', 'data']);
-  assert.equal(backendSummary.pathLength, 3);
+  const backendStats = findCommandSpec(['backend', 'stats']);
+  assert.equal(backendStats.spec.id, 'stats');
+  assert.deepStrictEqual(backendStats.spec.prefix, ['backend']);
+  assert.equal(backendStats.pathLength, 2);
 
-  const strategyNew = findCommandSpec(['strategy', 'new']);
-  assert.equal(strategyNew.spec.id, 'new');
-  assert.equal(strategyNew.pathLength, 2);
+  const integrity = findCommandSpec(['backend', 'integrity']);
+  assert.equal(integrity.spec.id, 'integrity');
+  assert.equal(integrity.pathLength, 2);
 
   assert.equal(findCommandSpec(['unknown-command']), null);
 });
@@ -51,7 +50,7 @@ test('Intersection Logic - Flag Preservation', async (t) => {
 });
 
 test('Manifest Utils - Timeframe Options', (t) => {
-  const timeframes = MANIFEST.commands.backend.find(c => c.id === 'summary').flags['--timeframe'].options();
+  const timeframes = MANIFEST.commands.backend.find(c => c.id === 'correlation').flags['--timeframe'].options();
   assert.ok(Array.isArray(timeframes), 'Timeframes should be an array');
   assert.ok(timeframes.length > 0, 'Should return some timeframe options');
 });

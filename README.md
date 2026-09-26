@@ -52,6 +52,12 @@ flowchart TD
 - **NO Python Virtual Environments (`venv`)**: Python is not part of the runtime or testing lifecycle.
 - **Zero-Key Development**: All tests, backtests, and research workflows run **100% locally with zero external API keys** against recorded fixtures and virtual paper ledgers.
 
+### Hardware Sizing & Operating System Requirements
+- **RAM**: **6 GB** recommended baseline (4 GB minimal for headless web/paper, 8–16 GB for full-universe backfills).
+- **Storage**: **40 GB SSD (NVMe / SATA)** for container layers, binary time-series files (`storage/data/ts/*.bin`), and SQLite caches.
+- **CPU**: **2–4 cores / vCPUs** (x86_64/amd64 with AVX2 or SSE4.2 SIMD support).
+- **Operating System**: **OS-Agnostic Docker Runtime**. Runs on any Linux distribution (Debian, Alpine, Ubuntu, Arch, Fedora, Rocky), Proxmox LXC containers (with nesting), Proxmox VMs, macOS, or Windows WSL2. **Ubuntu is NOT a requirement**.
+
 ### 1-Command Automated Setup Flow
 
 ```text
@@ -260,7 +266,7 @@ npm run api:dev
 # Terminal 2: Start frontend dashboard
 npm run dashboard:dev
 ```
-Open **`http://localhost:5173`** in your browser.
+Open **`http://localhost:3000`** in your browser.
 
 ### C. Launch the Interactive Terminal Cockpit (Ink TUI)
 ```bash

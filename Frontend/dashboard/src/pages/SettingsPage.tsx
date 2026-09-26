@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { Cpu, Layers, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { API_ENDPOINTS, getAuthHeaders } from '../lib/api';
 
 interface Props {
@@ -22,6 +23,56 @@ interface AlertPreferences {
 
 const BROKERS = ['alpaca', 'binance', 'coinbase', 'gate_io', 'interactive_brokers', 'deribit'];
 
+interface BrokerNodeInfo {
+  id: string;
+  name: string;
+  statusLabel: string;
+  badgeClass: string;
+  description: string;
+  envKeyHint?: string;
+}
+
+const BROKER_NODES: BrokerNodeInfo[] = [
+  {
+    id: 'virtual_paper',
+    name: 'Virtual Paper Ledger',
+    statusLabel: 'Active & Built-in',
+    badgeClass: 'text-[var(--color-brand-green)] border-[var(--color-brand-green)]/30 bg-[var(--color-brand-green)]/10',
+    description: 'Deterministic local paper engine ($100,000 USD virtual capital). Zero cloud dependency, instant fills.',
+  },
+  {
+    id: 'polymarket',
+    name: 'Polymarket CLOB',
+    statusLabel: 'Paper / Public Feed',
+    badgeClass: 'text-[var(--color-brand-cyan)] border-[var(--color-brand-cyan)]/30 bg-[var(--color-brand-cyan)]/10',
+    description: 'Prediction market orderbook & outcome pricing. Defaults to virtual paper execution.',
+    envKeyHint: 'Optional live keys: POLYMARKET_API_KEY',
+  },
+  {
+    id: 'alpaca',
+    name: 'Alpaca Markets',
+    statusLabel: 'Pluggable Adapter',
+    badgeClass: 'text-[var(--color-brand-cyan)] border-[var(--color-brand-cyan)]/30 bg-[var(--color-brand-cyan)]/10',
+    description: 'Equities & Crypto execution gateway. Falls back to internal paper ledger when keys are unset in .env.',
+    envKeyHint: 'Optional keys: APCA_API_KEY_ID, APCA_API_SECRET_KEY',
+  },
+  {
+    id: 'mt5',
+    name: 'MetaTrader 5 Bridge',
+    statusLabel: 'Port 8282 / Fallback',
+    badgeClass: 'text-[var(--color-brand-cyan)] border-[var(--color-brand-cyan)]/30 bg-[var(--color-brand-cyan)]/10',
+    description: 'Headless Wine 9 / Windows MT5 bridge socket. Automatic simulation fallback when terminal is offline.',
+    envKeyHint: 'Daemon port: SOVEREIGN_MT5_PORT=8282',
+  },
+  {
+    id: 'market_feeds',
+    name: 'Binance & Yahoo Feeds',
+    statusLabel: 'Public Feeds Active',
+    badgeClass: 'text-[var(--color-brand-green)] border-[var(--color-brand-green)]/30 bg-[var(--color-brand-green)]/10',
+    description: 'Unauthenticated public market streams for real-time OHLCV bars, orderbooks, and volatility feeds.',
+  },
+];
+
 export default function SettingsPage({ session }: Props) {
   const [risk, setRisk] = useState<RiskThresholds>({ max_position_pct: 0.05, max_drawdown_pct: 0.15 });
   const [broker, setBroker] = useState<BrokerPreference>({ default: 'alpaca' });
@@ -29,6 +80,8 @@ export default function SettingsPage({ session }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
+
+  const isLocalOperator = session?.user?.id === 'local-operator';
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -79,8 +132,57 @@ export default function SettingsPage({ session }: Props) {
     <div className="flex-1 overflow-y-auto p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="space-y-1">
-          <h2 className="text-lg font-heading font-bold text-[var(--text-main)]">Settings</h2>
-          <p className="text-[var(--text-muted)] font-mono text-xs">{session.user.email}</p>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-heading font-bold text-[var(--text-main)]">System Settings</h2>
+            {isLocalOperator && (
+              <span className="px-2 py-0.5 rounded border border-[var(--color-brand-cyan)]/40 bg-[var(--color-brand-cyan)]/10 text-[var(--color-brand-cyan)] text-[10px] font-mono font-bold tracking-wider uppercase">
+                Local Operator Mode
+              </span>
+            )}
+          </div>
+          <p className="text-[var(--text-muted)] font-mono text-xs">
+            {isLocalOperator ? 'Local loopback instance (127.0.0.1) • Zero cloud requirement' : session.user.email}
+          </p>
+        </div>
+
+        {/* Pluggable Brokerage & Integration Hub */}
+        <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-[var(--color-brand-cyan)]" />
+            <h3 className="font-mono text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              Pluggable Brokerage & Adapter Hub
+            </h3>
+          </div>
+          <p className="text-[var(--text-muted)] font-mono text-xs leading-relaxed">
+            All broker adapters are modular. In the absence of external API keys, Sovereign automatically falls back to the deterministic internal paper ledger and public market feeds.
+          </p>
+
+          <div className="space-y-3 pt-1">
+            {BROKER_NODES.map((node) => (
+              <div
+                key={node.id}
+                className="p-3.5 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1.5"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-brand-green)]" />
+                    <span className="font-mono text-xs font-bold text-[var(--text-main)]">{node.name}</span>
+                  </div>
+                  <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${node.badgeClass}`}>
+                    {node.statusLabel}
+                  </span>
+                </div>
+                <p className="text-[var(--text-muted)] font-mono text-[11px] leading-relaxed">
+                  {node.description}
+                </p>
+                {node.envKeyHint && (
+                  <p className="text-[var(--text-muted)]/70 font-mono text-[10px] italic">
+                    {node.envKeyHint}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {loading ? (
@@ -89,7 +191,10 @@ export default function SettingsPage({ session }: Props) {
           <>
             {/* Risk Thresholds */}
             <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl p-5 space-y-4">
-              <h3 className="font-mono text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Risk Thresholds</h3>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[var(--color-brand-cyan)]" />
+                <h3 className="font-mono text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Risk Thresholds</h3>
+              </div>
 
               <div className="space-y-3">
                 <div className="space-y-1">
@@ -128,7 +233,10 @@ export default function SettingsPage({ session }: Props) {
 
             {/* Broker Preference */}
             <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl p-5 space-y-4">
-              <h3 className="font-mono text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Default Broker</h3>
+              <div className="flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-[var(--color-brand-cyan)]" />
+                <h3 className="font-mono text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Default Broker</h3>
+              </div>
               <select
                 value={broker.default}
                 onChange={(e) => {
@@ -146,9 +254,12 @@ export default function SettingsPage({ session }: Props) {
 
             {/* Alert Preferences */}
             <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl p-5 space-y-4">
-              <h3 className="font-mono text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Alert Preferences</h3>
+              <h3 className="font-mono text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Out-of-Band Notification Preferences</h3>
+              <p className="text-[var(--text-muted)] font-mono text-[11px]">
+                Configures trade execution reports and margin breach alerts. Not required for app access.
+              </p>
               <div className="space-y-3">
-                {([['email', 'Email alerts'], ['push', 'Push notifications']] as const).map(([key, label]) => (
+                {([['email', 'Email Execution Alerts'], ['push', 'Push Notifications']] as const).map(([key, label]) => (
                   <label key={key} className="flex items-center justify-between cursor-pointer">
                     <span className="font-mono text-sm text-[var(--text-main)]">{label}</span>
                     <div
@@ -182,3 +293,4 @@ export default function SettingsPage({ session }: Props) {
     </div>
   );
 }
+
