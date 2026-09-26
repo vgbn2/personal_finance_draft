@@ -463,26 +463,23 @@ function loadStatusPortfolio() {
         greeks: greeksInfo,
       };
 
+      const mt5Broker = agg.live?.brokers?.find((b) => b.name?.includes('MetaTrader') || b.name?.includes('MT5'));
       let mt5Info = null;
-      try {
-        const mt5Res = runGatewayCommand(['balance', '--broker', 'mt5', '--json'], {
-          env: { MT5_CONNECT_TIMEOUT_MS: process.env.MT5_CONNECT_TIMEOUT_MS || '300' },
-        });
-        if (mt5Res && mt5Res.ok) {
-          mt5Info = {
-            connected: true,
-            balance: mt5Res.balance ?? 0,
-            equity: mt5Res.equity ?? 0,
-            margin: mt5Res.margin ?? 0,
-            free_margin: mt5Res.free_margin ?? 0,
-          };
-        } else {
-          mt5Info = {
-            connected: false,
-            status: 'disconnected',
-          };
-        }
-      } catch (_) {}
+      if (mt5Broker && (mt5Broker.status === 'connected' || mt5Broker.ok)) {
+        const bal = mt5Broker.balance || {};
+        mt5Info = {
+          connected: true,
+          balance: bal.USD ?? 0,
+          equity: bal.EQUITY ?? 0,
+          margin: (bal.EQUITY ?? 0) - (bal.FREE_MARGIN ?? 0),
+          free_margin: bal.FREE_MARGIN ?? 0,
+        };
+      } else {
+        mt5Info = {
+          connected: false,
+          status: 'disconnected',
+        };
+      }
 
       return {
         alpaca_paper: alpaca ? {

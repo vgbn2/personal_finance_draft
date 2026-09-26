@@ -769,6 +769,8 @@ export async function main() {
     const source = {
       async collect(scope: string) {
         const specs = buildAlpacaPortfolioAdapterSpecs(scope);
+        const mt5ConnectTimeout = Number(process.env.MT5_CONNECT_TIMEOUT_MS || (process.env.SOVEREIGN_NONINTERACTIVE === 'true' ? '50' : '100'));
+        const mt5Adapter = new Mt5Adapter({ connectTimeoutMs: mt5ConnectTimeout });
         const liveAdapters = [
           ...specs.live.map((entry: { name: string; paper: boolean }) => ({
             name: entry.name,
@@ -776,6 +778,7 @@ export async function main() {
           })),
           { name: 'Gate.io', adapter: new GateIoAdapter({ simulateIfMissingCredentials: false }) },
           { name: 'Deribit (Options Live)', adapter: new DeribitAdapter({ testnet: false, simulateIfMissingCredentials: false }) },
+          { name: 'MetaTrader 5', adapter: mt5Adapter },
         ];
         const livePaperAdapters = [
           ...specs.live_paper.map((entry: { name: string; paper: boolean }) => ({
@@ -798,11 +801,20 @@ export async function main() {
             }
           }));
 
-        const [liveResults, livePaperResults, polymarket] = await Promise.all([
-          fetchAdapterResults(liveAdapters),
-          fetchAdapterResults(livePaperAdapters),
-          fetchPolymarketPortfolio(),
-        ]);
+        let liveResults: any[];
+        let livePaperResults: any[];
+        let polymarket: any;
+        try {
+          [liveResults, livePaperResults, polymarket] = await Promise.all([
+            fetchAdapterResults(liveAdapters),
+            fetchAdapterResults(livePaperAdapters),
+            fetchPolymarketPortfolio(),
+          ]);
+        } finally {
+          try {
+            await mt5Adapter.stop();
+          } catch {}
+        }
         const internalPaperPortfolio = loadInternalPaperPortfolio();
 
         return { liveResults, livePaperResults, polymarket, internalPaperPortfolio };
