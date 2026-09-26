@@ -406,6 +406,7 @@ test('trade gateway launch uses an available TypeScript runtime', () => {
   );
   assert.ok(
     launch.args.some((value) => /backend[\\/]gateway[\\/]src[\\/]index\.ts/.test(value)) ||
+    launch.args.some((value) => /backend[\\/]gateway[\\/]dist[\\/]index\.js/.test(value)) ||
     launch.args.some((value) => /backend[\\/]cli[\\/]lib[\\/]run_trade_gateway\.js/.test(value))
   );
   assert.ok(launch.args.some((value) => /balance/.test(String(value))));

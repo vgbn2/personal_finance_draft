@@ -213,8 +213,18 @@ function buildTradeGatewayLaunch(args = [], options = {}) {
       SOVEREIGN_SKIP_LOCAL_ENV: '1',
     },
   });
+  const gatewayDistPath = path.join(REPO_ROOT, 'backend', 'gateway', 'dist', 'index.js');
   const gatewayPath = path.join(REPO_ROOT, 'backend', 'gateway', 'src', 'index.ts');
   const gatewayBootstrapPath = path.join(REPO_ROOT, 'backend', 'cli', 'lib', 'run_trade_gateway.js');
+  if (fs.existsSync(gatewayDistPath)) {
+    return {
+      command: process.execPath,
+      args: [gatewayDistPath, ...args],
+      shell: false,
+      env,
+      surface,
+    };
+  }
   const tsxCandidates = [
     path.join(REPO_ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx'),
     path.join(REPO_ROOT, 'backend', 'gateway', 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx'),
