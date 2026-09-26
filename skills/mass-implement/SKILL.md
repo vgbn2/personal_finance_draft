@@ -74,6 +74,23 @@ When any test fails during execution, testing, or verification:
 - **Isolate and Record in Defect Log**: Leave the failing test intact as empirical reproduction evidence. Log the exact failing boundary, error signature, stack trace, and reproduction command into the mass-implement defect backlog.
 - **Fix Production Code Only**: Resolve failures exclusively by fixing root-cause defects in production code. If a test is suspected to be genuinely stale or invalid, do not change it unilaterally—leave it failing, document the contract mismatch, and require explicit user confirmation before modifying the test.
 
+## Anti-Retry Spiral & Bayesian Troubleshooting Circuit Breaker (Max 2 Attempts)
+
+When any test or verification boundary fails during batch implementation:
+- **Maximum 2 Fix Attempts**: The agent is allowed at most **2 targeted fix attempts** per failing boundary (attempt 1: initial targeted fix -> re-verify; attempt 2: secondary refined fix -> re-verify).
+- **Auto-Detection of Fix Spiraling**: An agent is defined as "spiraling into retries" if:
+  1. The same test, assertion, or failure boundary remains broken after 2 consecutive fix attempts;
+  2. The agent attempts repeated trial-and-error code churn ("guess-and-check" edits, blind flag tweaks, speculative patches);
+  3. A new secondary regression appears while attempting to fix the original failure.
+- **Mandatory Hard Stop**: When the 2-attempt ceiling is reached, the agent MUST STOP all code edits immediately. Continuing to retry, guess, or re-run tests in a loop is strictly forbidden.
+- **Automatic Bayesian Troubleshooting Escalation**: The agent must immediately transition to `skills/bayesian-troubleshooter/SKILL.md` and execute the 5-step diagnostic protocol:
+  1. *Fault Domain Classification*: Isolate whether the defect is `our_source`, `environment_or_sandbox` (e.g. runner CPU/memory/permissions), `operator_config_or_credentials`, or `external_provider`.
+  2. *Hypothesis-Driven What-If Probing*: Formulate explicit falsifiable hypotheses with mutation shielding before touching any file.
+  3. *Optimal Binary Probing*: Execute probes that bisect the hypothesis space (sample vs real data, precompiled vs transpiled runtime).
+  4. *A/B Differential Isolation*: Trace divergence between known-good reference state and target execution state.
+  5. *Line-Level Attribution*: Identify the exact line and causal mechanism.
+- **Report & User Confirmation**: Present the confirmed diagnostic trail and structured remediation plan to the user. Do not resume code edits until the root cause is proved and the user approves the remediation approach.
+
 ## Workflow
 
 1. Load `PROJECT_RULES.md`, current state/handoff/review evidence, and the nearest behavioral docs.
@@ -86,7 +103,7 @@ When any test fails during execution, testing, or verification:
 8. Publish a concise preflight with intended files, duplicate/stub classifications, edge cases, security findings, user confirmations, and GO status.
 9. Implement conservatively through existing owners.
 10. Run focused proof, then one broader practical gate.
-11. Recheck changed trust boundaries and classify every failure as regression, pre-existing defect, environment limitation, or stale expectation. If a test fails, apply the Failing Test Preservation Policy: leave it untouched, record it in the defect backlog, and fix the production defect.
+11. Recheck changed trust boundaries and classify every failure as regression, pre-existing defect, environment limitation, or stale expectation. If a test fails, apply the Failing Test Preservation Policy (leave untouched, record in backlog) and attempt at most 2 targeted fixes. If failures persist after 2 attempts, trigger the Anti-Retry Spiral Circuit Breaker: STOP immediately and invoke `bayesian-troubleshooter`.
 12. Apply the Readable Implementation Contract and remove batch-introduced duplication or narrative drift.
 13. Update grade-relevant state and close the batch with evidence.
 
@@ -117,7 +134,7 @@ hotspots.
 
 Use `NO-GO` for an unresolved P0/P1, ambiguous authorization, credential exposure, destructive or irreversible uncertainty, or an unapproved live/provider/public/migration/privileged boundary.
 
-When verification fails, stop batch progression, reproduce the failure, classify it, correct the plan if needed, and rerun the focused gate. Do not bury a regression inside aggregate noise.
+When verification fails, stop batch progression, reproduce the failure, classify it, correct the plan if needed, and rerun the focused gate. Do not bury a regression inside aggregate noise. If a test failure persists after 2 fix attempts or the agent begins spiraling into iterative trial-and-error edits, trigger the Anti-Retry Spiral Circuit Breaker: cease code edits immediately and invoke `bayesian-troubleshooter` for rigorous root-cause isolation.
 
 In Plan Mode or another non-mutating mode, produce the decision-complete batch plan only.
 
