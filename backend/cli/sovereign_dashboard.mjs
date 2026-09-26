@@ -195,6 +195,31 @@ const M = [
           '--bars':      { t:'txt', lbl:'Bars to show (most recent N)', def:'200' },
         },
       },
+      { id: 'backend volatility-smile', label: 'volatility-smile', desc: 'Options Volatility Smile Surface',
+        flags: {
+          '--currency': { t:'sel', opts:['BTC','ETH','SOL'], lbl:'Currency', def:'BTC' },
+        },
+      },
+      { id: 'backend net-greeks', label: 'net-greeks', desc: 'Derivatives Net Greeks Exposure Table',
+        flags: {
+          '--currency': { t:'sel', opts:['BTC','ETH','SOL'], lbl:'Currency', def:'BTC' },
+        },
+      },
+      { id: 'backend options-bot-runner', label: 'options-bot-runner', desc: 'Options Delta-Neutral Bot Runner (Deribit)',
+        flags: {
+          '--currency':  { t:'sel', opts:['BTC','ETH','SOL'], lbl:'Currency', def:'BTC' },
+          '--max-gamma': { t:'txt', lbl:'Max Net Gamma limit', def:'50' },
+          '--max-vega':  { t:'txt', lbl:'Max Net Vega limit', def:'10000' },
+          '--dry-run':   { t:'yn',  lbl:'Dry run (no orders)?', def:true },
+        },
+      },
+      { id: 'backend polymarket-bundle', label: 'polymarket-bundle', desc: 'Prediction Market Multi-Outcome Arbitrage Bundle',
+        flags: {
+          '--outcomes': { t:'txt', lbl:'Outcomes & prices (Name:Price,...)', def:'Candidate A:0.32,Candidate B:0.34,Candidate C:0.28' },
+          '--shares':   { t:'txt', lbl:'Target Shares', def:'10' },
+          '--dry-run':  { t:'yn',  lbl:'Dry run (no orders)?', def:true },
+        },
+      },
     ],
   },
   {

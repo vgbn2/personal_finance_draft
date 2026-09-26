@@ -648,7 +648,53 @@ int printRiskCheck(const std::vector<std::string>& args) {
         << "  \"limit\": " << decision.limit << ",\n"
         << "  \"reason\": \"" << jsonEscape(decision.reason) << "\"\n"
         << "}\n";
-    
+
+    return decision.approved ? 0 : 2;
+}
+
+int printOptionsRiskCheck(const std::vector<std::string>& args) {
+    sovereign::OptionsRiskLimits limits;
+    limits.max_gamma = 50.0;
+    limits.max_vega = 10000.0;
+    limits.max_delta = 5.0;
+
+    const std::string max_gamma_str = optionValue(args, "--max-gamma");
+    if (!max_gamma_str.empty()) {
+        parseDoubleStrict(max_gamma_str, limits.max_gamma);
+    }
+    const std::string max_vega_str = optionValue(args, "--max-vega");
+    if (!max_vega_str.empty()) {
+        parseDoubleStrict(max_vega_str, limits.max_vega);
+    }
+    const std::string max_delta_str = optionValue(args, "--max-delta");
+    if (!max_delta_str.empty()) {
+        parseDoubleStrict(max_delta_str, limits.max_delta);
+    }
+    limits.fail_closed = !hasFlag(args, "--fail-open");
+
+    sovereign::OptionsGreeks greeks{};
+    const std::string delta_str = optionValue(args, "--delta", "0.0");
+    const std::string gamma_str = optionValue(args, "--gamma", "0.0");
+    const std::string vega_str = optionValue(args, "--vega", "0.0");
+    const std::string theta_str = optionValue(args, "--theta", "0.0");
+
+    parseDoubleStrict(delta_str, greeks.delta);
+    parseDoubleStrict(gamma_str, greeks.gamma);
+    parseDoubleStrict(vega_str, greeks.vega);
+    parseDoubleStrict(theta_str, greeks.theta);
+
+    const auto decision = sovereign::PreTradeRisk::validateOptionsGreeks(greeks, limits);
+
+    std::cout
+        << "{\n"
+        << "  \"type\": \"options_risk_decision\",\n"
+        << "  \"approved\": " << (decision.approved ? "true" : "false") << ",\n"
+        << "  \"halt_trading\": " << (decision.halt_trading ? "true" : "false") << ",\n"
+        << "  \"observed_value\": " << decision.observed_drawdown << ",\n"
+        << "  \"limit\": " << decision.limit << ",\n"
+        << "  \"reason\": \"" << jsonEscape(decision.reason) << "\"\n"
+        << "}\n";
+
     return decision.approved ? 0 : 2;
 }
 
@@ -1683,6 +1729,9 @@ int main(int argc, char** argv) {
     }
     if (args[0] == "risk" && args.size() > 1 && args[1] == "check") {
         return printRiskCheck(args);
+    }
+    if (args[0] == "risk" && args.size() > 1 && (args[1] == "options" || args[1] == "options-check")) {
+        return printOptionsRiskCheck(args);
     }
     if (args[0] == "backtest") {
         return printBacktest(args);

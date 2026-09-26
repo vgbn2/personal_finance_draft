@@ -1289,6 +1289,24 @@
       ]
     },
     {
+      "path": "docs/how_to/docker_deployment_and_tui.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
       "path": "docs/how_to/environment_setup.md",
       "type": "how-to",
       "audience": [
@@ -1326,6 +1344,24 @@
     },
     {
       "path": "docs/how_to/operational_soak_runbook.md",
+      "type": "how-to",
+      "audience": [
+        "operators",
+        "deployment",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/how_to/README.md"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
+      "path": "docs/how_to/proxmox_lxc_deployment.md",
       "type": "how-to",
       "audience": [
         "operators",

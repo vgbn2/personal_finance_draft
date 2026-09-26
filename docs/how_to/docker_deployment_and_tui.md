@@ -63,30 +63,28 @@ Since Sovereign runs fully containerized via Docker and OCI images, **Ubuntu is 
 ### Detailed Resource Breakdown
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                        SOVEREIGN RESOURCE BUDGET ALLOCATION                            │
-├────────────────────────────────────────────────────────────────────────────────────────┤
-│  RAM BUDGET: 6 GB Total                                                                │
-│  ├── Host OS / LXC + Kernel & Buffer Cache:     ~1.0 GB - 1.5 GB                       │
-│  ├── Node.js Web API + React Dashboard:         ~768 MB - 1024 MB (cgroups limit)      │
-│  ├── Native C++20 Core & ONNX Runtime:          ~512 MB - 768 MB                       │
-│  ├── Headless Wine 9 + MetaTrader 5 Bridge:     ~1024 MB - 1536 MB                     │
-│  └── Ingestion & Backfill Scratchpad Buffer:    ~512 MB                                │
-│                                                                                        │
-│  STORAGE BUDGET: 40 GB SSD                                                             │
-│  ├── Base Linux OS / LXC Rootfs:                ~4 GB - 8 GB                           │
-│  ├── Docker Engine & Image Cache:               ~6 GB (Base layers + All-in-One image)  │
-│  ├── Binary Time-Series Indices (storage/ts/):  ~12 GB (Multi-year 1m/5m/1d OHLCV bars)│
-│  ├── Wine 9 Prefix & MT5 Terminal Data:         ~4 GB (/opt/mt5/.wine & indicators)    │
-│  ├── SQLite Cache & ONNX Models:                ~3 GB (Indicators + ML weights)        │
-│  └── Workspace, Logs & Atomic Scratchpad:       ~7 GB (Free operating buffer)          │
-│                                                                                        │
-│  CPU ALLOCATION: 2–4 Cores                                                             │
-│  ├── Core 0: Linux Kernel, Network I/O, Node.js Event Loop & Express API               │
-│  ├── Core 1: Native C++20 Analytics, Feature Engine & Binary TS Ingestion              │
-│  ├── Core 2: Wine 9 / MT5 Terminal Process & Expert Advisor socket bridge              │
-│  └── Core 3: Parallel CTest evaluation, ML inference & Monte Carlo simulation          │
-└────────────────────────────────────────────────────────────────────────────────────────┘
+SOVEREIGN RESOURCE BUDGET ALLOCATION
+====================================
+RAM BUDGET: 6 GB Total
+* Host OS / LXC + Kernel & Buffer Cache:     ~1.0 GB - 1.5 GB
+* Node.js Web API + React Dashboard:         ~768 MB - 1024 MB (cgroups limit)
+* Native C++20 Core & ONNX Runtime:          ~512 MB - 768 MB
+* Headless Wine 9 + MetaTrader 5 Bridge:     ~1024 MB - 1536 MB
+* Ingestion & Backfill Scratchpad Buffer:    ~512 MB
+
+STORAGE BUDGET: 40 GB SSD
+* Base Linux OS / LXC Rootfs:                ~4 GB - 8 GB
+* Docker Engine & Image Cache:               ~6 GB (Base layers + All-in-One image)
+* Binary Time-Series Indices (storage/ts/):  ~12 GB (Multi-year 1m/5m/1d OHLCV bars)
+* Wine 9 Prefix & MT5 Terminal Data:         ~4 GB (/opt/mt5/.wine & indicators)
+* SQLite Cache & ONNX Models:                ~3 GB (Indicators + ML weights)
+* Workspace, Logs & Atomic Scratchpad:       ~7 GB (Free operating buffer)
+
+CPU ALLOCATION: 2–4 Cores
+* Core 0: Linux Kernel, Network I/O, Node.js Event Loop & Express API
+* Core 1: Native C++20 Analytics, Feature Engine & Binary TS Ingestion
+* Core 2: Wine 9 / MT5 Terminal Process & Expert Advisor socket bridge
+* Core 3: Parallel CTest evaluation, ML inference & Monte Carlo simulation
 ```
 
 ### Resource Tuning & Memory Optimization
