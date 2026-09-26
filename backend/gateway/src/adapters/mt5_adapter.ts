@@ -37,7 +37,8 @@ export class Mt5Adapter implements BrokerAdapter {
     this.port = options.port ?? Number(process.env.MT5_BRIDGE_PORT || '8282');
     this.host = options.host ?? (process.env.MT5_BRIDGE_HOST || '127.0.0.1');
     this.timeoutMs = options.timeoutMs ?? 15000;
-    this.connectTimeoutMs = options.connectTimeoutMs ?? Number(process.env.MT5_CONNECT_TIMEOUT_MS || '10000');
+    const defaultConnectTimeout = process.env.SOVEREIGN_NONINTERACTIVE === 'true' ? '50' : '300';
+    this.connectTimeoutMs = options.connectTimeoutMs ?? Number(process.env.MT5_CONNECT_TIMEOUT_MS || defaultConnectTimeout);
     if (options.autoStartServer !== false) {
       this.startServer().catch((err) => {
         console.error(`[MT5-BRIDGE] Server initialization error: ${err.message}`);
@@ -78,6 +79,9 @@ export class Mt5Adapter implements BrokerAdapter {
       });
 
       this.server.listen(this.port, this.host, () => {
+        if (this.server && typeof (this.server as any).unref === 'function') {
+          (this.server as any).unref();
+        }
         resolve();
       });
     });
@@ -116,13 +120,20 @@ export class Mt5Adapter implements BrokerAdapter {
     }
   }
 
+  public isConnected(): boolean {
+    return Boolean(this.socket && this.socket.writable && this.terminalInfo);
+  }
+
   private async ensureConnected(timeoutMs?: number): Promise<void> {
     if (this.socket && this.socket.writable && this.terminalInfo) return;
     const timeout = timeoutMs ?? this.connectTimeoutMs;
+    if (timeout <= 0) {
+      throw new Error('MT5 terminal bridge is not connected');
+    }
     const start = Date.now();
     while (Date.now() - start < timeout) {
       if (this.socket && this.socket.writable && this.terminalInfo) return;
-      await new Promise((r) => setTimeout(r, 25));
+      await new Promise((r) => setTimeout(r, 20));
     }
     if (!this.socket || !this.socket.writable || !this.terminalInfo) {
       throw new Error('MT5 terminal bridge is not connected');
