@@ -1,5 +1,6 @@
 const { spawn, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 
 const DEFAULT_TEST_TARGETS = [
@@ -8,7 +9,7 @@ const DEFAULT_TEST_TARGETS = [
   'tests/analysis/**/*.test.js',
   'backend/api/tests/**/*.test.js',
 ];
-const DEFAULT_TEST_CONCURRENCY = 2;
+const DEFAULT_TEST_CONCURRENCY = Math.max(2, Math.min(8, (typeof os.availableParallelism === 'function' ? os.availableParallelism() : (os.cpus() || []).length)));
 const DEFAULT_FAILURE_LOG = path.resolve(
   process.env.SOVEREIGN_TEST_FAILURE_LOG
     || path.join('storage', 'logs', 'rag', 'test_failures.jsonl'),

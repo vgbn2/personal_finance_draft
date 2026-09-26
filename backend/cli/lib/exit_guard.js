@@ -13,16 +13,30 @@ function registerCtrlCPress(now = Date.now()) {
   return withinWindow;
 }
 
+function restoreTerminal() {
+  if (process.stdin.isTTY && process.stdin.setRawMode) {
+    try { process.stdin.setRawMode(false); } catch {}
+  }
+  process.stdout.write('\x1b[?2026l\x1b[?25h\x1b[0m\n');
+}
+
 function installDoubleCtrlCExit(onFirstPress) {
   if (installed) return;
   if (process.env.SOVEREIGN_NONINTERACTIVE === 'true' || !process.stdin.isTTY) return;
   installed = true;
+
+  process.on('SIGTERM', () => {
+    restoreTerminal();
+    process.exit(143);
+  });
+
+  process.on('exit', () => {
+    restoreTerminal();
+  });
+
   process.on('SIGINT', () => {
     if (registerCtrlCPress()) {
-      if (process.stdin.isTTY && process.stdin.setRawMode) {
-        try { process.stdin.setRawMode(false); } catch {}
-      }
-      process.stdout.write('\x1b[?2026l\x1b[?25h\x1b[0m\n');
+      restoreTerminal();
       process.exit(130);
       return;
     }
@@ -39,4 +53,5 @@ module.exports = {
   installDoubleCtrlCExit,
   registerCtrlCPress,
   resetCtrlC,
+  restoreTerminal,
 };

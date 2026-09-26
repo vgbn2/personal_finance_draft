@@ -265,20 +265,19 @@ function mergeWriteBinUnlocked(tsDir, meta, incoming, lockHandle) {
   const existingWinsOnTie = existingPriority > incomingPriority;
 
   // ── Native C++ Streaming Merger Fast-Path ──
-  // If sovereign_wealth binary exists, stream-merge in native C++ (O(1) memory, zero V8 heap duplication)
+  // If sovereign_wealth binary exists, stream-merge in native C++ via stdin (zero temp files on input)
   if (fs.existsSync(SOVEREIGN_WEALTH_BIN)) {
-    const incTmp = atomicTempPath(`${bin}.incoming`);
     const outTmp = atomicTempPath(bin);
     try {
       const incBuffer = encodeTsRecords(incDedup);
       const incHeader = Buffer.allocUnsafe(TS_HEADER_BYTES);
       incHeader.write(TS_MAGIC, 0, 'ascii');
       incHeader.writeUInt32LE(incDedup.length, 4);
-      fs.writeFileSync(incTmp, Buffer.concat([incHeader, incBuffer]));
+      const inputBuffer = Buffer.concat([incHeader, incBuffer]);
 
       const args = [
         'ts-merge',
-        '--incoming', incTmp,
+        '--incoming', '-',
         '--out', outTmp,
       ];
       if (fs.existsSync(bin)) {
@@ -288,7 +287,12 @@ function mergeWriteBinUnlocked(tsDir, meta, incoming, lockHandle) {
         args.push('--existing-wins');
       }
 
-      const res = spawnSync(SOVEREIGN_WEALTH_BIN, args, { encoding: 'utf8', timeout: 30000 });
+      const res = spawnSync(SOVEREIGN_WEALTH_BIN, args, {
+        input: inputBuffer,
+        encoding: 'utf8',
+        timeout: 30000,
+        maxBuffer: 64 * 1024 * 1024,
+      });
       if (res.status === 0) {
         let payload;
         try { payload = JSON.parse(res.stdout.trim()); } catch (_) { payload = null; }
@@ -305,7 +309,6 @@ function mergeWriteBinUnlocked(tsDir, meta, incoming, lockHandle) {
     } catch (_) {
       // Fall through to JS implementation on any error
     } finally {
-      try { if (fs.existsSync(incTmp)) fs.unlinkSync(incTmp); } catch (_) {}
       try { if (fs.existsSync(outTmp)) fs.unlinkSync(outTmp); } catch (_) {}
     }
   }
@@ -647,6 +650,9 @@ function readTsIndexSince(tsDir, symbol, timeframe, sinceMs) {
 }
 
 module.exports = {
+  TS_MAGIC,
+  TS_HEADER_BYTES,
+  TS_RECORD_BYTES,
   OHLCV_FAMILIES,
   TsIndexIntegrityError,
   TsIndexRetryError,

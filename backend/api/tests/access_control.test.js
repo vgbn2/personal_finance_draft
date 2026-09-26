@@ -158,3 +158,67 @@ test('socket principals use handshake auth without browser-visible host headers'
   assert.equal(principal.role, 'viewer');
   assert.equal(principal.source, 'supabase');
 });
+
+test('loopback requests without credentials receive operator principal when local guest is enabled', async () => {
+  for (const ip of ['127.0.0.1', '::1', '::ffff:127.0.0.1']) {
+    const principal = await resolvePrincipal(request({}, ip), { env: {} });
+    assert.equal(principal.authenticated, true);
+    assert.equal(principal.role, 'operator');
+    assert.equal(principal.id, 'local-operator');
+    assert.equal(principal.source, 'local_guest');
+    assert.equal(principal.identity_type, 'human');
+    assert.equal(typeof principal.session_id, 'string');
+  }
+
+  const localTokenPrincipal = await resolvePrincipal(
+    request({ authorization: 'Bearer local-operator-token' }, '127.0.0.1'),
+    { env: {} },
+  );
+  assert.equal(localTokenPrincipal.authenticated, true);
+  assert.equal(localTokenPrincipal.role, 'operator');
+  assert.equal(localTokenPrincipal.source, 'local_guest');
+});
+
+test('loopback requests fail closed when SOVEREIGN_ALLOW_LOCAL_GUEST is false', async () => {
+  const env = { SOVEREIGN_ALLOW_LOCAL_GUEST: 'false' };
+  const principal = await resolvePrincipal(request({}, '127.0.0.1'), { env });
+  assert.equal(principal.authenticated, false);
+  assert.equal(principal.role, null);
+  assert.equal(principal.source, 'none');
+
+  const localTokenPrincipal = await resolvePrincipal(
+    request({ authorization: 'Bearer local-operator-token' }, '127.0.0.1'),
+    { env },
+  );
+  assert.equal(localTokenPrincipal.authenticated, false);
+  assert.equal(localTokenPrincipal.source, 'invalid_credentials');
+});
+
+test('remote and LAN requests without credentials never receive local guest operator principal', async () => {
+  const remoteIps = ['192.168.1.100', '10.0.0.5', '172.16.0.2', '203.0.113.195'];
+  for (const ip of remoteIps) {
+    const noAuth = await resolvePrincipal(request({}, ip), { env: {} });
+    assert.equal(noAuth.authenticated, false);
+    assert.equal(noAuth.source, 'none');
+
+    const spoofToken = await resolvePrincipal(
+      request({ authorization: 'Bearer local-operator-token' }, ip),
+      { env: {} },
+    );
+    assert.equal(spoofToken.authenticated, false);
+    assert.equal(spoofToken.source, 'invalid_credentials');
+  }
+});
+
+test('loopback operator capabilities include paper and data operations but strictly exclude LIVE_EXECUTE', async () => {
+  const principal = await resolvePrincipal(request({}, '127.0.0.1'), { env: {} });
+  assert.equal(principal.authenticated, true);
+  assert.equal(principal.capabilities.includes(CAPABILITIES.DATA_READ), true);
+  assert.equal(principal.capabilities.includes(CAPABILITIES.RESEARCH_READ), true);
+  assert.equal(principal.capabilities.includes(CAPABILITIES.PAPER_OPERATE), true);
+  assert.equal(principal.capabilities.includes(CAPABILITIES.HOST_INSPECT), true);
+  assert.equal(principal.capabilities.includes(CAPABILITIES.SAFETY_CONTROL), true);
+  // Strict safety boundary: LIVE_EXECUTE must NEVER be granted to local-guest operator
+  assert.equal(principal.capabilities.includes(CAPABILITIES.LIVE_EXECUTE), false);
+});
+

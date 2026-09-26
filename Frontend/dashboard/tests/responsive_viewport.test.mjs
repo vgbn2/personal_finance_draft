@@ -193,7 +193,8 @@ async function openMarketMonitor(width, {
   })()`);
   for (let attempt = 0; attempt < 100; attempt += 1) {
     const state = await evaluate(browser.client, `document.querySelector('[data-market-monitor-state]')?.getAttribute('data-market-monitor-state') ?? null`);
-    if (state) return state;
+    if (pending && state) return state;
+    if (!pending && state && state !== 'loading') return state;
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
   throw new Error('Timed out waiting for the global market monitor panel');

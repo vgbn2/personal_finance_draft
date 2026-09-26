@@ -312,10 +312,17 @@ async function commandIntradayRollup(args) {
   return results.errors === 0 ? 0 : 1;
 }
 
+const {
+  deriveMultiGrainInMemory,
+  MultiGrainRollupPipeline,
+  writeMultiGrainTsIndex,
+} = require('../../../../shared/lib/market/multi_grain_rollup.js');
+
 module.exports = {
   DEFAULT_TS_DIR,
   INTRADAY_TF_ORDER, FULL_TF_ORDER, FAMILY_BASE_TF,
   rollupTargetsAboveBase, listDeepSymbols, listDeepFiveMinSymbols,
   readBinFamily, readFiveMinBinFamily, writeDeadSymbolMarker, removeDerivedBin,
   rollupFromBase, rollupFiveMinForSymbol, commandIntradayRollup,
+  deriveMultiGrainInMemory, MultiGrainRollupPipeline, writeMultiGrainTsIndex,
 };

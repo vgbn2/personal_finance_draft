@@ -1555,7 +1555,7 @@ int printTsMerge(const std::vector<std::string>& args) {
     const bool existing_wins = hasFlag(args, "--existing-wins");
 
     if (incoming_bin.empty() || output_bin.empty()) {
-        std::cout << "{\"ok\":false,\"error\":\"usage: ts-merge --incoming PATH --out PATH [--existing PATH] [--existing-wins]\"}\n";
+        std::cout << "{\"ok\":false,\"error\":\"usage: ts-merge --incoming PATH|- --out PATH|- [--existing PATH] [--existing-wins]\"}\n";
         return 1;
     }
 
@@ -1564,13 +1564,23 @@ int printTsMerge(const std::vector<std::string>& args) {
 
     const auto res = sovereign::BinaryTsMerger::mergeFiles(existing_bin, incoming_bin, output_bin, opts);
     if (!res.ok) {
-        std::cout << "{\"ok\":false,\"error\":\"" << jsonEscape(res.error) << "\"}\n";
+        if (output_bin == "-") {
+            std::cerr << "{\"ok\":false,\"error\":\"" << jsonEscape(res.error) << "\"}\n";
+        } else {
+            std::cout << "{\"ok\":false,\"error\":\"" << jsonEscape(res.error) << "\"}\n";
+        }
         return 1;
     }
 
-    std::cout << "{\"ok\":true,\"count\":" << res.count
-              << ",\"existing_count\":" << res.existing_count
-              << ",\"incoming_count\":" << res.incoming_count << "}\n";
+    if (output_bin == "-") {
+        std::cerr << "{\"ok\":true,\"count\":" << res.count
+                  << ",\"existing_count\":" << res.existing_count
+                  << ",\"incoming_count\":" << res.incoming_count << "}\n";
+    } else {
+        std::cout << "{\"ok\":true,\"count\":" << res.count
+                  << ",\"existing_count\":" << res.existing_count
+                  << ",\"incoming_count\":" << res.incoming_count << "}\n";
+    }
     return 0;
 }
 
