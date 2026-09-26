@@ -1,0 +1,62 @@
+engine: auto
+name: defi_ecosystem_momentum
+kind: momentum
+family: momentum
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: lstm_v1
+sections:
+  hypothesis: "DeFi protocol token prices lead on-chain TVL and DEX volume surges; LSTM captures lagged correlation between on-chain activity and price momentum."
+  universe:
+    - AAVEUSDT
+    - LINKUSDT
+  signals:
+    entry: "Signal > 0.73"
+    exit: "Hold 6 days"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+      - on_chain
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.73
+    max_holding_days: 6
+    risk_weight: 0.08
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+  notes:
+    - "v3: threshold 0.70→0.73, hold 4→6d, universe 4→2 (AAVE+LINK — deepest liquidity in DeFi)"
+    - "Removed UNI/LDO: governance tokens with lower on-chain activity signal clarity"
+    - "LINKUSDT = oracle infrastructure; AAVEUSDT = lending TVL proxy"
+    - "on_chain feed essential — without TVL data this strategy loses its edge"
+    - "Target <90 trades/year on 2 symbols"

@@ -348,9 +348,9 @@ function registeredStrategyOptions() {
     .filter((strategy) => strategy.exists && strategy.ok)
     .sort((a, b) => (a.name || a.path).localeCompare(b.name || b.path))
     .map((strategy) => ({
-      label: `${strategy.enabled ? '[\x1b[32mON\x1b[0m]' : '[\x1b[90mOFF\x1b[0m]'} ${strategy.name || strategy.path} (${formatStrategyGradeTag(strategy)})`,
+      label: `${strategy.enabled ? '[\x1b[32mON\x1b[0m]' : '[\x1b[90mOFF\x1b[0m]'} [${strategy.tier || 'trad'}] ${strategy.name || strategy.path} (${formatStrategyGradeTag(strategy)})`,
       value: strategy.path,
-      category: laneDisplayLabel(strategy.lane),
+      category: strategy.tier_label || laneDisplayLabel(strategy.lane),
     }));
 }
 

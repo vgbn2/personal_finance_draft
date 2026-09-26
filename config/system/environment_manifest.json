@@ -180,6 +180,8 @@
         {"name": "OPENSKY_CLIENT_ID"},
         {"name": "OPENSKY_CLIENT_SECRET"},
         {"name": "OPENSKY_ACCESS_TOKEN"},
+        {"name": "DERIBIT_CLIENT_ID"},
+        {"name": "DERIBIT_CLIENT_SECRET"},
         {"name": "GATEIO_API_KEY"},
         {"name": "GATEIO_API_SECRET"},
         {"name": "GATEIO_API_PASSPHRASE"},
@@ -294,6 +296,7 @@
         {"name": "ALPACA_PAPER_MIN_TRUST_SCORE", "default": "70", "allowed_surfaces": ["default_cli", "operator", "compose_bot_alpaca_paper"]},
         {"name": "BACKFILL_DEEP_ALL", "default": "false", "allowed_surfaces": ["operator", "compose_backfill"]},
         {"name": "BACKFILL_INTERVAL_SECS", "default": "1800", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_backfill"]},
+        {"name": "DERIBIT_TESTNET", "default": "true", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution"]},
         {"name": "EXPLORER_INTERVAL_MINUTES", "default": "30", "allowed_surfaces": ["default_cli", "operator", "mcp", "compose_strategy_explorer"]},
         {
           "name": "CURRENT_PORTFOLIO_DRAWDOWN",
@@ -430,6 +433,7 @@
         {"name": "SOVEREIGN_SIGNAL_REPORT_MAX_AGE_MS", "default": "86400000"},
         {"name": "SOVEREIGN_SKIP_DOTENV", "default": "false"},
         {"name": "SOVEREIGN_SKIP_LOCAL_ENV", "default": "false"},
+        {"name": "SOVEREIGN_STREAMING_WINDOW_SIZE", "default": "1000", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution"]},
         {"name": "SOVEREIGN_TEST_OUTPUT_DIR"},
         {
           "name": "SOVEREIGN_TEST_FAILURE_LOG",
