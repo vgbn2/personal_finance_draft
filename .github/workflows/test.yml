@@ -98,8 +98,9 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Build TypeScript workspaces
-        if: steps.cache-mcp-server.outputs.cache-hit != 'true'
-        run: npx tsc -p backend/mcp_server/tsconfig.json
+        run: |
+          npx tsc -p backend/mcp_server/tsconfig.json
+          npx tsc -p backend/gateway/tsconfig.json
 
       - name: Build dashboard frontend
         if: steps.cache-dashboard.outputs.cache-hit != 'true'
