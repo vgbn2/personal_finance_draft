@@ -74,10 +74,14 @@ jobs:
 
       - name: Test in-container CLI diagnostics
         run: |
-          echo "Running CLI doctor inside All-in-One container..."
-          docker exec sv-allinone-test node backend/cli/sovereign_cli.js doctor
+          echo "Running CLI doctor runtime inside All-in-One container..."
+          docker exec sv-allinone-test node backend/cli/sovereign_cli.js doctor runtime
+          echo "Running CLI doctor data inside All-in-One container..."
+          docker exec sv-allinone-test node backend/cli/sovereign_cli.js doctor data
           echo "Running CLI status inside All-in-One container..."
           docker exec sv-allinone-test node backend/cli/sovereign_cli.js status --json
+          echo "Running full broker doctor (informational in zero-key environment)..."
+          docker exec sv-allinone-test node backend/cli/sovereign_cli.js doctor || true
 
       - name: Test in-container C++ core binary & Xvfb
         run: |
@@ -128,7 +132,11 @@ jobs:
             docker logs sv-slim-test
             exit 1
           fi
-          docker exec sv-slim-test node backend/cli/sovereign_cli.js doctor
+          echo "Running CLI diagnostics inside slim container..."
+          docker exec sv-slim-test node backend/cli/sovereign_cli.js doctor runtime
+          docker exec sv-slim-test node backend/cli/sovereign_cli.js doctor data
+          docker exec sv-slim-test node backend/cli/sovereign_cli.js status --json
+          docker exec sv-slim-test node backend/cli/sovereign_cli.js doctor || true
           docker exec sv-slim-test test -x /app/backend/core/build/sovereign_wealth
           docker stop -t 10 sv-slim-test
           docker rm sv-slim-test
