@@ -2,6 +2,9 @@
   "name": "sovereign-gateway",
   "private": true,
   "license": "SEE LICENSE IN ../../LICENSE",
+  "scripts": {
+    "build": "tsc"
+  },
   "dependencies": {
     "@alpacahq/alpaca-trade-api": "^3.1.3",
     "@polymarket/clob-client-v2": "^1.0.6",

@@ -1,0 +1,56 @@
+name: auto_mt5_gold_orderflow_rf_15m_mu7z2au1
+kind: orderflow
+family: orderflow
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: random_forest
+timeframe: 15m
+sections:
+  hypothesis: "Automated Random Forest ensemble on MT5 XAUUSD / XAGUSD micro-structure orderflow and volatility regime shifts."
+  universe:
+    - "XAUUSD"
+    - "XAGUSD"
+  signals:
+    entry: "RF probability > 0.67"
+    exit: "Hold 2 days or 2x ATR target"
+  data:
+    required_sources:
+      - price_volume
+    validation: strict
+  features:
+    technical:
+      - "volatility"
+      - "return_fast"
+      - "return_slow"
+      - "bollinger"
+      - "atr"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.67
+    max_holding_days: 2
+    risk_weight: 0.10
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

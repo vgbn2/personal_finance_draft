@@ -240,6 +240,12 @@ const COMMAND_MANIFEST = {
         '--interval': { type: 'text', default: '30', label: 'Poll interval (seconds)' },
         '--no-poll': { type: 'confirm', label: 'One-shot (no live poll)?', default: false },
       }},
+      { id: 'volatility-smile', prefix: ['backend'], label: 'Volatility Smile Surface', flags: {
+        '--currency': { type: 'select', options: ['BTC', 'ETH', 'SOL'], label: 'Currency', default: 'BTC' },
+      }},
+      { id: 'net-greeks', prefix: ['backend'], label: 'Net Greeks Exposure', flags: {
+        '--currency': { type: 'select', options: ['BTC', 'ETH', 'SOL'], label: 'Currency', default: 'BTC' },
+      }},
     ],
     research: [
       { id: 'bt', label: 'Backtest (Prop-firm fit)', loading: true, flags: {

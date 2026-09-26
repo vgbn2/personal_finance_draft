@@ -19,7 +19,21 @@ function normalizeStrategyPath(filePath) {
   return path.relative(REPO_ROOT, absolutePath).replace(/\\/g, '/');
 }
 
-function inferStrategyTaxonomy(meta = {}) {
+function inferStrategyTaxonomy(meta = {}, filePath = '') {
+  const explicitTier = normalizeKey(meta.tier);
+  const normalizedPath = normalizeStrategyPath(filePath || meta.path || '');
+  let tier = explicitTier;
+  if (!tier) {
+    if (normalizedPath.includes('/options/')) tier = 'options';
+    else if (normalizedPath.includes('/polymarket/')) tier = 'polymarket';
+    else if (normalizedPath.includes('/trad/')) tier = 'trad';
+    else if (meta.family === 'prediction' || normalizeKey(meta.name).includes('polymarket')) tier = 'polymarket';
+    else if (normalizeKey(meta.name).includes('option') ||
+             normalizeKey(meta.name).includes('volatility') ||
+             normalizeKey(meta.name).includes('smile') ||
+             normalizeKey(meta.kind).includes('option')) tier = 'options';
+    else tier = 'trad';
+  }
   const family = normalizeKey(meta.family || meta.kind || meta.role || meta.name, 'uncategorized') || 'uncategorized';
   const explicitLane = normalizeKey(meta.lane);
   const explicitRole = normalizeKey(meta.role);
@@ -49,6 +63,10 @@ function inferStrategyTaxonomy(meta = {}) {
   }
 
   return {
+    tier,
+    tier_label: tier === 'options' ? 'Options & Derivatives'
+              : tier === 'polymarket' ? 'Polymarket Prediction'
+              : 'Traditional & Crypto',
     family: family || 'uncategorized',
     lane,
     role,
@@ -214,11 +232,13 @@ function getStrategyGradeRecord(filePath, name = null) {
 }
 
 function decorateStrategyRecord(record) {
-  const taxonomy = inferStrategyTaxonomy(record);
+  const taxonomy = inferStrategyTaxonomy(record, record.path);
   const gradeRecord = getStrategyGradeRecord(record.path, record.name);
   const assetMode = classifyStrategyAssetMode(record);
   return {
     ...record,
+    tier: record.tier || taxonomy.tier,
+    tier_label: taxonomy.tier_label,
     family: record.family || taxonomy.family,
     lane: record.lane || taxonomy.lane,
     role: record.role || taxonomy.role,

@@ -1,0 +1,60 @@
+engine: auto
+name: crude_oil_inventory_reversal
+kind: mean_reversion
+family: mean_reversion
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: svm_margin_v0
+timeframe: 1h
+sections:
+  hypothesis: "Crude Oil (USOIL) experiences weekly inventory reaction overshoots followed by multi-day mean reversion towards 20-period moving average equilibrium."
+  universe:
+    - USOIL
+  signals:
+    entry: "Signal > 0.70"
+    exit: "Hold 4 days or exit on mean cross"
+  data:
+    required_sources:
+      - price_volume
+      - macro
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.70
+    max_holding_days: 4
+    risk_weight: 0.09
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes:
+    - "MT5 WTI crude oil CFD trading"
+    - "Hold window aligned with weekly EIA inventory reports"

@@ -1,14 +1,10 @@
 import { BrokerAdapter, Position, TradeOrder } from './types';
 import {
-  submitPolymarketOrder,
-  preflightPolymarketOrder,
-} from '../polymarket_execution';
-import {
-  fetchPolymarketPortfolio,
   fetchPolymarketOrderBook,
   PolymarketTradePagination,
 } from '../polymarket_account_adapter';
 import { createClobClient, polymarketGet, resolveOwnerAddress } from '../clob_factory';
+import { aggregatePolymarketFilledPositions } from '../polymarket/positions';
 
 const { resolvePolymarketClientSettings } = require('../../../../shared/lib/brokers/polymarket_env');
 
@@ -20,9 +16,31 @@ function toFiniteNumber(value: unknown, fallback = 0): number {
 export interface PolymarketAdapterOptions {
   host?: string;
   privateKey?: string;
+  apiKey?: string;
+  apiSecret?: string;
+  apiPassphrase?: string;
+  passphrase?: string;
   creds?: { key: string; secret: string; passphrase: string };
   funderAddress?: string;
   signatureType?: number;
+  simulateIfMissingCredentials?: boolean;
+}
+
+export interface PreparedPolymarketOrder {
+  client: any;
+  tickSize: string;
+  signedOrder: any;
+  accountIdentity: { funderAddress?: string; signatureType?: number };
+}
+
+export const VALID_POLYMARKET_TICK_SIZES = new Set(['0.1', '0.01', '0.001', '0.0001']);
+
+export function buildPolymarketOrderError(stage: string, error: any): Error {
+  const code = error?.code || error?.status || error?.response?.status;
+  const detail = error?.response?.data ? JSON.stringify(error.response.data) : (error?.message ?? String(error));
+  const err = new Error(`Polymarket ${stage} failed${code ? ` [code ${code}]` : ''}: ${detail}`);
+  (err as any).cause = error;
+  return err;
 }
 
 export class PolymarketAdapter implements BrokerAdapter {
@@ -31,6 +49,7 @@ export class PolymarketAdapter implements BrokerAdapter {
   private readonly creds: { key: string; secret: string; passphrase: string } | null;
   private readonly funderAddress: string | undefined;
   private readonly signatureType: number | undefined;
+  private readonly simulateIfMissingCredentials: boolean;
   private lastTradePagination: PolymarketTradePagination | undefined;
 
   constructor(options: PolymarketAdapterOptions = {}) {
@@ -40,6 +59,7 @@ export class PolymarketAdapter implements BrokerAdapter {
     this.creds = settings.creds;
     this.funderAddress = settings.funderAddress;
     this.signatureType = settings.signatureType;
+    this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
   }
 
   hasCredentials(): boolean {
@@ -91,15 +111,72 @@ export class PolymarketAdapter implements BrokerAdapter {
     };
   }
 
+  async prepareOrder(order: TradeOrder): Promise<PreparedPolymarketOrder> {
+    if (!this.hasCredentials()) throw new Error('Polymarket credentials not configured');
+    const client = await createClobClient({
+      withCreds: true,
+      host: this.host,
+      privateKey: this.privateKey,
+      creds: this.creds,
+      funderAddress: this.funderAddress,
+      signatureType: this.signatureType,
+    });
+
+    const price = order.price ?? 0.5;
+    if (!Number.isFinite(price) || price <= 0 || price >= 1) {
+      throw new Error('Polymarket limit orders require a finite price between 0 and 1');
+    }
+
+    let tickSize: string | undefined = String(order.tickSizeOverride || '').trim() || undefined;
+    try {
+      if (!tickSize || !VALID_POLYMARKET_TICK_SIZES.has(tickSize)) {
+        tickSize = String(await client.getTickSize(order.instrumentId));
+      }
+      if (!VALID_POLYMARKET_TICK_SIZES.has(tickSize)) {
+        const publicBook = await fetchPolymarketOrderBook(order.instrumentId as any);
+        const fallbackTickSize = String((publicBook as any)?.book?.tick_size ?? '');
+        if (VALID_POLYMARKET_TICK_SIZES.has(fallbackTickSize)) {
+          tickSize = fallbackTickSize;
+        }
+      }
+      if (!VALID_POLYMARKET_TICK_SIZES.has(tickSize)) {
+        throw new Error(`Unable to resolve valid CLOB tick size for token ${order.instrumentId}: ${tickSize || 'missing'}`);
+      }
+    } catch (error: any) {
+      throw buildPolymarketOrderError('tick-size lookup', error);
+    }
+
+    let signedOrder: any;
+    try {
+      const { Side } = await import('@polymarket/clob-client-v2');
+      signedOrder = await client.createOrder({
+        tokenID: order.instrumentId,
+        price,
+        size: order.quantity,
+        side: order.side === 'buy' ? Side.BUY : Side.SELL,
+      }, { tickSize: tickSize as any });
+    } catch (error: any) {
+      throw buildPolymarketOrderError('order signing', error);
+    }
+
+    return {
+      client,
+      tickSize,
+      signedOrder,
+      accountIdentity: this.getAccountIdentity(),
+    };
+  }
+
   async placeOrder(order: TradeOrder): Promise<{ orderId: string; status: string }> {
-    const res = await submitPolymarketOrder(
-      order.instrumentId,
-      order.quantity,
-      order.price,
-      order.tickSizeOverride,
-      order.side
-    );
-    return { orderId: res.orderId, status: res.status };
+    const { client, signedOrder } = await this.prepareOrder(order);
+    try {
+      const resp = await client.postOrder(signedOrder);
+      const orderId = resp?.orderID || resp?.id || 'SUBMITTED';
+      const status = resp?.status || 'SUBMITTED';
+      return { orderId, status };
+    } catch (error: any) {
+      throw buildPolymarketOrderError('order placement', error);
+    }
   }
 
   async cancelOrder(orderId: string): Promise<boolean> {
@@ -160,18 +237,35 @@ export class PolymarketAdapter implements BrokerAdapter {
   }
 
   async getPositions(): Promise<Position[]> {
-    const section = await fetchPolymarketPortfolio();
-    if (!section.ok || !section.positions) return [];
-    return section.positions.map((p: any) => ({
-      symbol: p.symbol || p.asset_id || p.slug || 'POLYMARKET',
-      quantity: p.quantity || p.size || p.shares || 0,
-      averagePrice: p.averagePrice || p.price || 0,
-      marketValue: p.marketValue || p.current_value || 0,
-      unrealizedPl: p.unrealizedPl || p.realized_pnl || 0,
-      asset_id: p.assetId || p.asset_id,
-      side: p.outcome || p.side,
-      lifecycle: p.lifecycle,
-    }));
+    if (!this.hasCredentials()) {
+      if (!this.simulateIfMissingCredentials) {
+        throw new Error('Polymarket credentials not configured');
+      }
+      return [];
+    }
+    try {
+      const owner = await resolveOwnerAddress(this.privateKey as string, this.funderAddress);
+      const raw = await polymarketGet('/data/trades', { maker_address: owner }, {
+        privateKey: this.privateKey,
+        creds: this.creds ?? undefined,
+        funderAddress: this.funderAddress,
+        host: this.host,
+      }) ?? [];
+      const trades: any[] = Array.isArray(raw) ? raw : raw?.data ?? [];
+      const filled = aggregatePolymarketFilledPositions(trades);
+      return filled.map((p) => ({
+        symbol: p.symbol || p.assetId || 'POLYMARKET',
+        quantity: p.quantity,
+        averagePrice: p.averagePrice,
+        marketValue: p.marketValue,
+        unrealizedPl: p.unrealizedPl,
+        asset_id: p.assetId,
+        side: (p.outcome || 'buy') as any,
+        lifecycle: p.lifecycle,
+      }));
+    } catch {
+      return [];
+    }
   }
 
   async getQuote(symbol: string): Promise<number> {

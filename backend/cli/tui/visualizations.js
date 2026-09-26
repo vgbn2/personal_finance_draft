@@ -437,6 +437,65 @@ function renderCandlestickChart(bars, width = 64, height = 12, opts = {}) {
   return buffer;
 }
 
+function renderVolatilitySmile(smileRecords = [], width = 64, height = 12) {
+  if (!Array.isArray(smileRecords) || smileRecords.length === 0) {
+    return `\n  ${paint(A.GRAY, '[No Options Volatility Smile Data Available]')}\n`;
+  }
+  const ivs = smileRecords.map((r) => Number(r.mark_iv || 0)).filter((v) => v > 0);
+  const strikes = smileRecords.map((r) => Number(r.strike || 0)).filter((v) => v > 0);
+  if (ivs.length === 0 || strikes.length === 0) {
+    return `\n  ${paint(A.GRAY, '[Insufficient IV Data]')}\n`;
+  }
+  const minIv = Math.min(...ivs);
+  const maxIv = Math.max(...ivs);
+  const minK = Math.min(...strikes);
+  const maxK = Math.max(...strikes);
+  const kRange = maxK - minK || 1;
+  const ivRange = maxIv - minIv || 1;
+  const grid = Array.from({ length: height }, () => Array(width).fill(' '));
+  const colors = Array.from({ length: height }, () => Array(width).fill(''));
+
+  for (const r of smileRecords) {
+    if (!r.strike || !r.mark_iv) continue;
+    const col = Math.min(width - 1, Math.max(0, Math.round(((r.strike - minK) / kRange) * (width - 1))));
+    const row = Math.min(height - 1, Math.max(0, Math.round(((r.mark_iv - minIv) / ivRange) * (height - 1))));
+    const rowIdx = height - 1 - row;
+    grid[rowIdx][col] = r.option_type === 'C' ? 'C' : r.option_type === 'P' ? 'P' : '●';
+    colors[rowIdx][col] = r.option_type === 'C' ? A.GREEN : r.option_type === 'P' ? A.RED : A.CYAN;
+  }
+
+  let buffer = `\n   ${paint(A.BOLD, 'Implied Volatility Smile Surface')}\n`;
+  for (let r = 0; r < height; r++) {
+    const levelIv = (maxIv - (r / (height - 1)) * ivRange) * 100;
+    let line = paint(A.GRAY, `${levelIv.toFixed(1).padStart(5)}% | `);
+    for (let c = 0; c < width; c++) {
+      line += colors[r][c] ? paint(colors[r][c], grid[r][c]) : grid[r][c];
+    }
+    buffer += line + '\n';
+  }
+  buffer += `         +${A.GLYPH.hline.repeat(width)}\n`;
+  buffer += `          ${fmtPrice(minK).padEnd(Math.floor(width / 2), ' ')}${fmtPrice(maxK)}\n`;
+  return buffer;
+}
+
+function renderNetGreeksTable(greeks = {}) {
+  const curr = String(greeks.currency || 'BTC');
+  const d = Number(greeks.net_delta_oi || 0);
+  const g = Number(greeks.net_gamma_oi || 0);
+  const v = Number(greeks.net_vega_oi || 0);
+  const t = Number(greeks.net_theta_oi || 0);
+
+  let buf = `\n  ${paint(A.BOLD + A.CYAN, `+--- [ ${curr} Net Greeks ] -----------------------+`)}\n`;
+  buf += `  | ${paint(A.BOLD, 'Δ Delta')}: ${paint(d >= 0 ? A.GREEN : A.RED, d.toFixed(2).padStart(10))} OI`;
+  buf += `  | ${paint(A.BOLD, 'Γ Gamma')}: ${paint(g >= 0 ? A.GREEN : A.YELLOW, g.toFixed(2).padStart(10))} / 1% |\n`;
+  buf += `  | ${paint(A.BOLD, 'ν Vega ')}: ${paint(v >= 0 ? A.GREEN : A.YELLOW, ('$' + v.toFixed(0)).padStart(10))} / 1%`;
+  buf += `  | ${paint(A.BOLD, 'Θ Theta')}: ${paint(A.RED, ('$' + t.toFixed(0)).padStart(10))} / day |\n`;
+  buf += `  | OI: ${String(greeks.total_open_interest || 0).padStart(8)} contracts`;
+  buf += `  | Vol 24h: $${((greeks.total_volume_usd || 0) / 1e6).toFixed(2)}M |\n`;
+  buf += `  ${paint(A.CYAN, '+--------------------------------------------------+')}\n`;
+  return buf;
+}
+
 module.exports = {
   fmtPrice,
   centerCell,
@@ -444,4 +503,6 @@ module.exports = {
   renderCorrelationHeatmap,
   renderPriceChart,
   renderCandlestickChart,
+  renderVolatilitySmile,
+  renderNetGreeksTable,
 };

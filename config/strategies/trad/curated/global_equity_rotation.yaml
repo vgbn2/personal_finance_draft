@@ -1,0 +1,67 @@
+engine: auto
+name: global_equity_rotation
+kind: ml
+family: ml
+lane: cross_asset
+role: portfolio_optimization
+status: draft
+enabled: true
+model: cnn_v3
+sections:
+  hypothesis: "Risk-on/risk-off rotations across equities, commodities, and crypto create persistent cross-asset momentum; high-threshold CNN filters noise from macro regime shifts."
+  universe:
+    - SPY
+    - QQQ
+    - XAUUSD
+    - BTCUSDT
+  signals:
+    entry: "Signal > 0.75"
+    exit: "Hold 10 days"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+      - macro
+      - breadth
+    validation: strict
+  features:
+    technical:
+      - return_fast
+      - return_slow
+      - volatility
+      - rsi
+      - atr
+      - bollinger
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 10
+    rsi: 7
+    atr: 7
+    bollinger: 10
+  risk:
+    signal_threshold: 0.52
+    max_holding_days: 10
+    risk_weight: 0.10
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes:
+    - "v2: threshold 0.68→0.75, hold 8→10d, universe 6→4 (dropped IWM/USOIL)"
+    - "Backtest finding: 461 trades/year with DD 40% — over-trading with too many symbols"
+    - "IWM dropped: small-cap noise adds volatility without return; USOIL dropped: data quality poor"
+    - "Grade C provisional on 365d real data — best performing new strategy"
+    - "Target <120 trades/year; breadth feed (SPY-RSP, QQQ-SPY) provides regime signal"

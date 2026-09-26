@@ -1,0 +1,43 @@
+engine: auto
+name: volatility_smile_skew
+tier: options
+kind: volatility_smile
+family: volatility
+lane: cross_asset
+role: arbitrage
+timeframe: 1h
+status: draft
+enabled: false
+model: options_smile_v1
+sections:
+  hypothesis: "Trades mean-reverting skew anomalies via 25-Delta Risk Reversal and Butterfly Z-score signals."
+  universe:
+    - BTC
+    - ETH
+  signals:
+    entry: "Abs(Z_RR25) > 2.0 and BF25 > 0.02"
+    exit: "Abs(Z_RR25) < 0.5 or DTE < 3"
+  data:
+    required_sources:
+      - options_chain
+      - implied_volatility
+    validation: strict
+  features:
+    technical:
+      - volatility
+      - iv_rank
+    relative: []
+    orderflow: []
+    custom:
+      - rr25_skew
+      - bf25_convexity
+  indicators:
+    volatility: true
+  indicator_periods:
+    volatility: 24
+  risk:
+    max_net_gamma_oi: 50.0
+    max_net_vega_oi: 10000.0
+    delta_rebalance_trigger: 0.15
+    signal_threshold: 2.0
+    risk_weight: 0.05

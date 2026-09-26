@@ -1,0 +1,43 @@
+engine: auto
+name: clob_depth_imbalance
+tier: polymarket
+kind: depth_imbalance
+family: prediction
+lane: cross_asset
+role: arbitrage
+timeframe: 5m
+status: draft
+enabled: false
+model: clob_logit_drift_v1
+sections:
+  hypothesis: "Exploits short-term micro-price dislocation and Top-5 depth imbalance on Polymarket CLOB books."
+  universe:
+    - POLYMARKET_PRESIDENT_2024
+    - POLYMARKET_FED_RATES
+  signals:
+    entry: "Abs(Signal) > 0.02 and PinRisk == false"
+    exit: "MicroPrice converged or PinRisk == true"
+  data:
+    required_sources:
+      - clob_depth
+      - trade_tape
+    validation: strict
+  features:
+    technical:
+      - volume
+    relative: []
+    orderflow:
+      - dir5_imbalance
+      - micro_price_spread
+    custom:
+      - logit_probability_drift
+  indicators:
+    volume: true
+  indicator_periods:
+    volume: 12
+  risk:
+    min_liquidity_usd: 5000.0
+    max_slippage_bps: 100
+    pin_risk_bounds: [0.03, 0.97]
+    signal_threshold: 0.02
+    risk_weight: 0.05

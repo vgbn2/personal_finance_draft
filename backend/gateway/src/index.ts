@@ -12,9 +12,11 @@ import {
   AlpacaAdapter,
   PolymarketAdapter,
   Mt5Adapter,
+  DeribitAdapter,
   GateIoAdapterOptions,
   AlpacaAdapterOptions,
   PolymarketAdapterOptions,
+  DeribitAdapterOptions,
 } from './adapters';
 import { runAggregatePortfolioCommand } from './commands/aggregate_portfolio';
 
@@ -27,9 +29,11 @@ export {
   AlpacaAdapter,
   PolymarketAdapter,
   Mt5Adapter,
+  DeribitAdapter,
   GateIoAdapterOptions,
   AlpacaAdapterOptions,
   PolymarketAdapterOptions,
+  DeribitAdapterOptions,
 };
 import {
   runCycle,
@@ -583,6 +587,10 @@ export async function main() {
     ? new Mt5Adapter()
     : (broker === 'gate_io' || broker === 'gateio')
     ? new GateIoAdapter({ simulateIfMissingCredentials: !isLive })
+    : (broker === 'deribit')
+    ? new DeribitAdapter({ testnet: !isLive, simulateIfMissingCredentials: !isLive })
+    : (broker === 'polymarket')
+    ? new PolymarketAdapter({ simulateIfMissingCredentials: !isLive })
     : isLive
     ? new AlpacaAdapter({ paper: false, simulateIfMissingCredentials: false })
     : providerPaper
@@ -767,11 +775,15 @@ export async function main() {
             adapter: new AlpacaAdapter({ paper: entry.paper, simulateIfMissingCredentials: false }),
           })),
           { name: 'Gate.io', adapter: new GateIoAdapter({ simulateIfMissingCredentials: false }) },
+          { name: 'Deribit (Options Live)', adapter: new DeribitAdapter({ testnet: false, simulateIfMissingCredentials: false }) },
         ];
-        const livePaperAdapters = specs.live_paper.map((entry: { name: string; paper: boolean }) => ({
-          name: entry.name,
-          adapter: new AlpacaAdapter({ paper: entry.paper, simulateIfMissingCredentials: false }),
-        }));
+        const livePaperAdapters = [
+          ...specs.live_paper.map((entry: { name: string; paper: boolean }) => ({
+            name: entry.name,
+            adapter: new AlpacaAdapter({ paper: entry.paper, simulateIfMissingCredentials: false }),
+          })),
+          { name: 'Deribit (Options Testnet)', adapter: new DeribitAdapter({ testnet: true, simulateIfMissingCredentials: false }) },
+        ];
 
         const fetchAdapterResults = (adapters: { name: string; adapter: BrokerAdapter }[]) =>
           Promise.all(adapters.map(async (entry) => {

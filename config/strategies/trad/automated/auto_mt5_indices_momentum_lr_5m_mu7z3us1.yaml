@@ -1,0 +1,56 @@
+name: auto_mt5_indices_momentum_lr_5m_mu7z3us1
+kind: momentum
+family: momentum
+lane: single_asset
+role: strategy
+status: draft
+enabled: true
+model: logistic_regression
+timeframe: 5m
+sections:
+  hypothesis: "Automated logistic regression momentum classifier on MT5 index CFDs (NAS100, US30) 5m opening drive bars."
+  universe:
+    - "NAS100"
+    - "US30"
+  signals:
+    entry: "Logistic score > 0.64"
+    exit: "Hold 1 day or intraday profit target"
+  data:
+    required_sources:
+      - price_volume
+    validation: strict
+  features:
+    technical:
+      - "volatility"
+      - "return_fast"
+      - "return_slow"
+      - "rsi"
+      - "atr"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: false
+  indicator_periods:
+    return_fast: 1
+    return_slow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.64
+    max_holding_days: 1
+    risk_weight: 0.08
+    fail_closed: true
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []
