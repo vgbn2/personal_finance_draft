@@ -465,7 +465,9 @@ function loadStatusPortfolio() {
 
       let mt5Info = null;
       try {
-        const mt5Res = runGatewayCommand(['balance', '--broker', 'mt5', '--json']);
+        const mt5Res = runGatewayCommand(['balance', '--broker', 'mt5', '--json'], {
+          env: { MT5_CONNECT_TIMEOUT_MS: process.env.MT5_CONNECT_TIMEOUT_MS || '300' },
+        });
         if (mt5Res && mt5Res.ok) {
           mt5Info = {
             connected: true,
