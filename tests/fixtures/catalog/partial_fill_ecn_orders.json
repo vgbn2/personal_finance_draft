@@ -1,0 +1,55 @@
+{
+  "description": "Multi-step ECN fill, partial fill, and reject scenario orders",
+  "anomaly_type": "ecn_partial_fills",
+  "orders": [
+    {
+      "orderId": "ord_ecn_001",
+      "symbol": "EURUSD",
+      "side": "buy",
+      "requestedUnits": 100000,
+      "fills": [
+        {
+          "fillId": "fill_1a",
+          "units": 40000,
+          "price": 1.0851,
+          "timestamp": "2026-05-01T10:00:01.000Z"
+        },
+        {
+          "fillId": "fill_1b",
+          "units": 60000,
+          "price": 1.0853,
+          "timestamp": "2026-05-01T10:00:03.000Z"
+        }
+      ],
+      "status": "filled",
+      "averagePrice": 1.08522
+    },
+    {
+      "orderId": "ord_ecn_002",
+      "symbol": "BTCUSDT",
+      "side": "sell",
+      "requestedUnits": 2.5,
+      "fills": [
+        {
+          "fillId": "fill_2a",
+          "units": 1,
+          "price": 68100,
+          "timestamp": "2026-05-01T10:05:00.000Z"
+        }
+      ],
+      "status": "partially_filled",
+      "remainingUnits": 1.5,
+      "averagePrice": 68100
+    },
+    {
+      "orderId": "ord_ecn_003",
+      "symbol": "AAPL",
+      "side": "buy",
+      "requestedUnits": 500,
+      "fills": [],
+      "status": "rejected",
+      "error": "market_closed_outside_rth",
+      "timestamp": "2026-05-01T04:00:00.000Z"
+    }
+  ]
+}

@@ -1,10 +1,13 @@
 # Deploy — Sovereign Trading Platform
 
-## Prerequisites on the central host
-- Docker 24+ and Docker Compose plugin
+## Prerequisites on the host (Proxmox LXC, VM, or Bare-Metal)
+- **OS-Agnostic Docker Runtime**: Any modern Linux distribution (Debian, Alpine, Ubuntu, Arch, Fedora, Rocky) or Proxmox LXC container (with `nesting=1,keyctl=1`). **Ubuntu is NOT a requirement**.
+- **Docker 24+** and Docker Compose plugin (v2+)
+- **Hardware Sizing**:
+  - **RAM**: **6 GB** recommended baseline (4 GB bare minimum for headless web/paper; 16GB is recommended for full-universe 20-year backfills).
+  - **Storage**: **40 GB SSD (NVMe / SATA)** for container images, Wine prefix, SQLite caches, and packed binary time-series files (`storage/data/ts/*.bin`).
+  - **CPU**: **2–4 cores / vCPUs** (x86_64/amd64 with AVX2/SSE4.2 SIMD for C++20 core vector analytics).
 - System-wide Node.js 22 LTS (Node.js 20 is the minimum for the host-side preflight)
-- x86_64/amd64 CPU for the current ONNX-enabled central image
-- 8GB installed RAM for the full-universe backfill profile; 16GB is recommended
 - Git, `flock`, and `curl`
 - SSH tunnel or access-controlled private VPN; do not publish port 8787 to the internet
 

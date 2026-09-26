@@ -717,6 +717,9 @@ function postCommandActionForKey(key) {
 }
 
 async function waitForPostCommandAction() {
+  if (isNonInteractive() || !process.stdin.isTTY) {
+    return 'menu';
+  }
   process.stdin.removeAllListeners('data');
   process.stdin.removeAllListeners('keypress');
   process.stdin.removeAllListeners('line');

@@ -90,6 +90,12 @@ function resolveHumanRole(user, env = process.env) {
   return fallback === 'service' ? 'viewer' : fallback;
 }
 
+function isLocalGuestAllowed(env = process.env) {
+  if (env.SOVEREIGN_ALLOW_LOCAL_GUEST === 'true') return true;
+  if (env.SOVEREIGN_ALLOW_LOCAL_GUEST === 'false') return false;
+  return !env.SOVEREIGN_API_TOKEN && !env.SOVEREIGN_CLIENT_TOKEN;
+}
+
 async function resolvePrincipal(req, {
   env = process.env,
   getAuthStatusFn = getAuthStatus,
@@ -131,7 +137,7 @@ async function resolvePrincipal(req, {
   }
 
   const bearer = tokens.find((token) => token.source === 'bearer');
-  if (bearer) {
+  if (bearer && bearer.value !== 'local-operator-token') {
     const auth = await getAuthStatusFn(req);
     if (auth && auth.authenticated === true) {
       const user = auth.user || {};
@@ -146,6 +152,22 @@ async function resolvePrincipal(req, {
         sessionId: humanSessionId(user.id || 'supabase-user'),
       });
     }
+  }
+
+  // ponytail: auto-grant local operator on loopback when guest mode is enabled or zero-key
+  const isLocalGuestCandidate = tokens.length === 0
+    || (tokens.length === 1 && tokens[0].value === 'local-operator-token');
+
+  if (isLoopbackRequest(req) && isLocalGuestAllowed(env) && isLocalGuestCandidate) {
+    return buildPrincipal({
+      id: 'local-operator',
+      identityType: 'human',
+      role: 'operator',
+      capabilities: capabilitiesForRole('operator'),
+      authenticated: true,
+      source: 'local_guest',
+      sessionId: humanSessionId('local-operator'),
+    });
   }
 
   return buildPrincipal({
@@ -179,6 +201,7 @@ module.exports = {
   resolvePrincipal,
   resolveSocketPrincipal,
   humanSessionId,
+  isLocalGuestAllowed,
   isLoopbackRequest,
   tokenSessionId,
 };

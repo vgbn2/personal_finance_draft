@@ -413,6 +413,10 @@
           "allowed_surfaces": ["default_cli"]
         },
         {"name": "SOVEREIGN_MODE"},
+        {"name": "SOVEREIGN_NODE_ID"},
+        {"name": "SOVEREIGN_NODE_PRIORITY", "default": "100"},
+        {"name": "SOVEREIGN_CLUSTER_PEERS", "default": ""},
+        {"name": "SOVEREIGN_CLUSTER_AUTO_ELECT", "default": "false"},
         {"name": "SOVEREIGN_NONINTERACTIVE", "default": "false"},
         {"name": "SOVEREIGN_RUN_STATUS_PATH"},
         {"name": "SOVEREIGN_RUNTIME_MODE"},

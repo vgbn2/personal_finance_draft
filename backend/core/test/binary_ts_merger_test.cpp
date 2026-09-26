@@ -119,6 +119,20 @@ int main() {
         if (!expect(read_res.raw_records[2].close == 13.0, "existing should win on tie with option")) return 1;
     }
 
+    // Test 4: Stream piping (incoming via stdin / output via stdout)
+    {
+        std::vector<sovereign::RawTsRecord> incoming = {
+            {2000.0, 11.0, 13.0, 10.0, 12.0, 200.0},
+            {7000.0, 16.0, 18.0, 15.0, 17.0, 700.0},
+        };
+        if (!writeTestBinary(incoming_path, incoming)) return 1;
+
+        // Verify mergeFiles with incoming as file and out to stdout "-"
+        const auto res = sovereign::BinaryTsMerger::mergeFiles(existing_path, incoming_path, "-");
+        if (!expect(res.ok, "mergeFiles with stdout output should succeed")) return 1;
+        if (!expect(res.count == 5, "stdout count should be 5 (3 existing + 2 new)")) return 1;
+    }
+
     // Clean up
     std::error_code ec;
     std::filesystem::remove_all(temp_dir, ec);

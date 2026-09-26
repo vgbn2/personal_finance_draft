@@ -1,6 +1,6 @@
 ---
 name: mass-implement
-description: Convert approved, evidence-backed repository findings into ranked, verified implementation batches across multiple personal_finance_draft sections. Use for broad gap closure, grade improvement, multi-section cleanup, or continuing an approved implementation backlog; do not use for audit-only work or a single bounded fix.
+description: Convert approved, evidence-backed repository findings into ranked, verified implementation batches across multiple repository sections. Use for broad gap closure, grade improvement, multi-section cleanup, or continuing an approved implementation backlog; do not use for audit-only work or a single bounded fix.
 ---
 
 # Mass Implement
@@ -59,6 +59,21 @@ During the planning and preflight phase (`proposed -> preflight`):
 - **Mandatory Before & After Diffs**: Every proposed, planned, or executed change in mass-implement MUST include full, explicit Before and After diff blocks for every touched file. Never substitute narrative prose for concrete line-level diffs.
 - **Mandatory Edge Cases Analysis**: Every planned batch MUST document concrete edge cases audited (boundary limits, concurrency/preemption races, empty state handling, viewport overflows).
 
+## Mandatory PR-Imposed Changes & Review Enforcement Gate
+
+When executing batches derived from PR reviews, reviewer comments, or imposed change requests:
+- **Explicit Review Intake**: Every PR comment, review thread, or reviewer-imposed requirement must be ingested into a structured checklist with identifier, file, line anchor, requested change, and acceptance criteria.
+- **Line-by-Line Before & After Diffs**: Every PR-imposed change must provide explicit Before and After diffs for every affected file.
+- **Focused Proof per Imposed Item**: Each imposed change must be individually verified with an empirical test, probe, or contract check.
+- **Strict Resolution Gate**: Never mark a batch or task completed while any PR-imposed requirement, review thread, or reviewer change remains unresolved, unaddressed, or unverified.
+
+## Failing Test Preservation Policy (Leave As-Is)
+
+When any test fails during execution, testing, or verification:
+- **Do Not Touch or Modify Failing Tests**: Leave the failing test file, assertions, fixtures, and expectations untouched. Never rewrite, delete, weaken, mock away, bypass, or comment out failing tests to make the suite pass.
+- **Isolate and Record in Defect Log**: Leave the failing test intact as empirical reproduction evidence. Log the exact failing boundary, error signature, stack trace, and reproduction command into the mass-implement defect backlog.
+- **Fix Production Code Only**: Resolve failures exclusively by fixing root-cause defects in production code. If a test is suspected to be genuinely stale or invalid, do not change it unilaterally—leave it failing, document the contract mismatch, and require explicit user confirmation before modifying the test.
+
 ## Workflow
 
 1. Load `PROJECT_RULES.md`, current state/handoff/review evidence, and the nearest behavioral docs.
@@ -71,7 +86,7 @@ During the planning and preflight phase (`proposed -> preflight`):
 8. Publish a concise preflight with intended files, duplicate/stub classifications, edge cases, security findings, user confirmations, and GO status.
 9. Implement conservatively through existing owners.
 10. Run focused proof, then one broader practical gate.
-11. Recheck changed trust boundaries and classify every failure as regression, pre-existing defect, environment limitation, or stale expectation.
+11. Recheck changed trust boundaries and classify every failure as regression, pre-existing defect, environment limitation, or stale expectation. If a test fails, apply the Failing Test Preservation Policy: leave it untouched, record it in the defect backlog, and fix the production defect.
 12. Apply the Readable Implementation Contract and remove batch-introduced duplication or narrative drift.
 13. Update grade-relevant state and close the batch with evidence.
 
@@ -116,5 +131,6 @@ Report the batch state, files changed, commands/results, edge cases, security ch
 - Never claim a file was read, command ran, test passed, host was checked, or behavior was proved without direct
   evidence. Keep source, test, clean-install, CI, host, deployment, recovery, soak, paper, and live proof distinct.
 - Do not weaken, skip, delete, mock away, suppress, or rewrite tests merely to make a result pass.
+- When tests fail, leave them as-is without touching or mutating them; log them into the implementation backlog/defect intake and fix production code or obtain explicit user confirmation.
 - Change a stale test only with canonical contract or approved behavior evidence; report the before/after
   expectation and keep production, tests, and docs aligned.

@@ -18,6 +18,7 @@ npm-debug.log*
 # Build Directories
 build/
 backend/core/build/
+backend/core/build_asan/
 cpp_core/build/
 backend/cli/target/
 cli/target/
@@ -25,6 +26,7 @@ web/node_modules/
 graphify-out/
 site/
 .cache/
+backfill_daemon*
 
 # Local agent/workflow state
 .agent/
@@ -155,8 +157,8 @@ data/backtests/*.sqlite
 data/trades/*.sqlite
 data/*.db
 # Storage — local runtime, databases, caches, models (Local/Private to Host)
-storage/
-storage
+/storage/
+/storage
 storage/backups/
 storage/data/
 storage/db/

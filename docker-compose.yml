@@ -1,0 +1,167 @@
+# Sovereign Trading Platform — Root Docker Compose Manifest
+# Zero-config local-first default: running `docker compose up` starts sv-web on http://127.0.0.1:8787
+# Optional profiles:
+#   docker compose --profile paper up      -> starts web + virtual paper trading bot
+#   docker compose --profile mt5 up        -> starts unified Wine 9 / MT5 bridge container
+#   docker compose --profile backfill up   -> runs 20-year data backfill job
+
+name: sovereign
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-common-build: &common-build
+  context: .
+  dockerfile: Dockerfile
+  args:
+    SOVEREIGN_SOURCE_REVISION: ${SOVEREIGN_SOURCE_REVISION:-unverified}
+    SOVEREIGN_SOURCE_TREE: ${SOVEREIGN_SOURCE_TREE:-unverified}
+
+services:
+  web:
+    container_name: sv-web
+    logging: *default-logging
+    build: *common-build
+    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/personal_finance_draft:latest}
+    restart: unless-stopped
+    ports:
+      - "${SOVEREIGN_WEB_BIND:-127.0.0.1}:8787:8787"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NODE_ENV=production
+      - SOVEREIGN_WEB_HOST=0.0.0.0
+      - SOVEREIGN_WEB_PORT=8787
+      - SOVEREIGN_DEPLOYMENT_PROFILE=${SOVEREIGN_DEPLOYMENT_PROFILE:-local}
+      - SOVEREIGN_RUNTIME_MODE=${SOVEREIGN_RUNTIME_MODE:-local-compute}
+      - LIVE_TRADING=${LIVE_TRADING:-false}
+      - SOVEREIGN_EXECUTION_AUTHORIZED=${SOVEREIGN_EXECUTION_AUTHORIZED:-false}
+      - SOVEREIGN_ALLOW_LOCAL_GUEST=${SOVEREIGN_ALLOW_LOCAL_GUEST:-true}
+      - SOVEREIGN_CACHE_TTL_MS=30000
+      - SOVEREIGN_CACHE_MAX_ENTRIES=100
+      - NODE_OPTIONS=--max-old-space-size=1024
+    volumes:
+      - ./storage:/app/storage
+      - ./workspace:/app/workspace
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1536M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  paper-bot:
+    container_name: sv-paper-bot
+    logging: *default-logging
+    profiles: [paper]
+    build: *common-build
+    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/personal_finance_draft:latest}
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NODE_ENV=production
+      - SOVEREIGN_DEPLOYMENT_PROFILE=${SOVEREIGN_DEPLOYMENT_PROFILE:-local}
+      - SOVEREIGN_RUNTIME_MODE=${SOVEREIGN_RUNTIME_MODE:-local-compute}
+      - LIVE_TRADING=false
+      - SOVEREIGN_EXECUTION_AUTHORIZED=false
+      - NODE_OPTIONS=--max-old-space-size=768
+    volumes:
+      - ./storage:/app/storage
+    command:
+      - node
+      - backend/cli/sovereign_cli.js
+      - run
+      - bot
+      - paper
+      - --strategy
+      - low_prob_dip
+    healthcheck:
+      disable: true
+
+  allinone:
+    container_name: sv-allinone
+    logging: *default-logging
+    profiles: [mt5, allinone]
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.allinone
+      args:
+        SOVEREIGN_SOURCE_REVISION: ${SOVEREIGN_SOURCE_REVISION:-unverified}
+        SOVEREIGN_SOURCE_TREE: ${SOVEREIGN_SOURCE_TREE:-unverified}
+    image: ${SOVEREIGN_ALLINONE_IMAGE_REF:-ghcr.io/vgbn2/personal_finance_draft:allinone}
+    restart: unless-stopped
+    ports:
+      - "${SOVEREIGN_WEB_BIND:-127.0.0.1}:8787:8787"
+      - "${SOVEREIGN_MT5_BIND:-127.0.0.1}:8282:8282"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NODE_ENV=production
+      - SOVEREIGN_WEB_HOST=0.0.0.0
+      - SOVEREIGN_WEB_PORT=8787
+      - SOVEREIGN_DEPLOYMENT_PROFILE=${SOVEREIGN_DEPLOYMENT_PROFILE:-local}
+      - SOVEREIGN_RUNTIME_MODE=${SOVEREIGN_RUNTIME_MODE:-local-compute}
+      - LIVE_TRADING=${LIVE_TRADING:-false}
+      - SOVEREIGN_EXECUTION_AUTHORIZED=${SOVEREIGN_EXECUTION_AUTHORIZED:-false}
+      - SOVEREIGN_ALLOW_LOCAL_GUEST=${SOVEREIGN_ALLOW_LOCAL_GUEST:-true}
+      - SOVEREIGN_CACHE_TTL_MS=30000
+      - SOVEREIGN_CACHE_MAX_ENTRIES=100
+      - NODE_OPTIONS=--max-old-space-size=2560
+    volumes:
+      - ./storage:/app/storage
+      - ./workspace:/app/workspace
+      - ${SOVEREIGN_MT5_PATH:-./storage/mt5/terminal}:/opt/mt5/terminal
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 3072M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  backfill:
+    container_name: sv-backfill
+    logging: *default-logging
+    profiles: [backfill]
+    build: *common-build
+    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/personal_finance_draft:latest}
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NODE_ENV=production
+      - SOVEREIGN_DEPLOYMENT_PROFILE=${SOVEREIGN_DEPLOYMENT_PROFILE:-local}
+      - SOVEREIGN_RUNTIME_MODE=${SOVEREIGN_RUNTIME_MODE:-local-compute}
+      - NODE_OPTIONS=--max-old-space-size=1024
+    volumes:
+      - ./storage:/app/storage
+    command:
+      - node
+      - scripts/data_ops/backfill_20_years.js
+    healthcheck:
+      disable: true

@@ -104,12 +104,15 @@ function parseTokenList(market = {}) {
 function normalizeGammaMarket(market = {}) {
   const tokens = parseTokenList(market);
   const winner = inferWinner(market);
+  const mId = String(market.id || market.market_id || market.slug || market.conditionId || '').trim() || null;
   return {
-    market_id: String(market.id || market.market_id || market.slug || market.conditionId || '').trim() || null,
+    id: mId,
+    market_id: mId,
     condition_id: String(market.conditionId || market.condition_id || '').trim() || null,
     question: String(market.question || market.title || market.groupItemTitle || '').trim(),
     category: String(market.category || market.categorySlug || market.tagSlug || market.tag || '').trim() || null,
     created_at: market.createdAt || market.created_at || market.created_time || market.startDate || market.start_date || null,
+    updated_at: market.updatedAt || market.updated_at || market.endDate || market.end_date || null,
     end_date: market.endDate || market.end_date || market.close_time || market.resolutionTime || null,
     closed: market.closed === true || String(market.closed).toLowerCase() === 'true',
     volume: finiteNumber(market.volume, finiteNumber(market.volumeNum, 0)) || 0,
@@ -1156,6 +1159,136 @@ function bucketTicksToOhlcv(ticks = [], intervalSeconds = 60, opts = {}) {
   return result;
 }
 
+async function fetchClobDepth(tokenId, levels = 10, options = {}) {
+  const fetchImpl = options.fetchImpl || fetch;
+  const timeoutMs = options.timeoutMs || 5000;
+  const target = `${CLOB_BASE}/book?token_id=${encodeURIComponent(tokenId)}`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetchImpl(target, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) {
+      throw new Error(`CLOB HTTP ${res.status}`);
+    }
+    const book = await res.json();
+    const rawBids = Array.isArray(book && book.bids) ? book.bids : [];
+    const rawAsks = Array.isArray(book && book.asks) ? book.asks : [];
+
+    // Parse and sort: bids descending by price, asks ascending by price
+    const bids = rawBids
+      .map((b) => ({ price: Number(b.price || 0), size: Number(b.size || 0) }))
+      .filter((b) => b.price > 0 && b.size > 0)
+      .sort((a, b) => b.price - a.price)
+      .slice(0, Math.max(1, levels));
+
+    const asks = rawAsks
+      .map((a) => ({ price: Number(a.price || 0), size: Number(a.size || 0) }))
+      .filter((a) => a.price > 0 && a.size > 0)
+      .sort((a, b) => a.price - b.price)
+      .slice(0, Math.max(1, levels));
+
+    const bestBid = bids.length > 0 ? bids[0].price : null;
+    const bestAsk = asks.length > 0 ? asks[0].price : null;
+    const midPrice = (bestBid !== null && bestAsk !== null) ? Number(((bestBid + bestAsk) / 2).toFixed(4)) : null;
+    const spread = (bestBid !== null && bestAsk !== null) ? Number((bestAsk - bestBid).toFixed(4)) : null;
+
+    const totalBidVol = bids.reduce((sum, b) => sum + b.size, 0);
+    const totalAskVol = asks.reduce((sum, a) => sum + a.size, 0);
+    const totalVol = totalBidVol + totalAskVol;
+
+    // Imbalance: (bid_vol - ask_vol) / (bid_vol + ask_vol) in [-1.0, 1.0]
+    const imbalance = totalVol > 0 ? Number(((totalBidVol - totalAskVol) / totalVol).toFixed(4)) : 0;
+
+    return {
+      token_id: String(tokenId),
+      best_bid: bestBid,
+      best_ask: bestAsk,
+      mid_price: midPrice,
+      spread,
+      bids,
+      asks,
+      total_bid_volume: Number(totalBidVol.toFixed(4)),
+      total_ask_volume: Number(totalAskVol.toFixed(4)),
+      imbalance,
+      timestamp: Date.now(),
+    };
+  } catch (err) {
+    clearTimeout(timer);
+    if (options.throwOnError) throw err;
+    return {
+      token_id: String(tokenId),
+      best_bid: null,
+      best_ask: null,
+      mid_price: null,
+      spread: null,
+      bids: [],
+      asks: [],
+      total_bid_volume: 0,
+      total_ask_volume: 0,
+      imbalance: 0,
+      timestamp: Date.now(),
+      error: err.message,
+    };
+  }
+}
+
+async function syncGammaMarketsDelta(options = {}) {
+  const fetchPage = options.fetchMarketsPage || fetchResolvedGammaMarketsPage;
+  const cursor = options.cursor || options.lastSyncedUpdatedAt || null;
+  const maxMarkets = Number(options.maxMarkets) || 200;
+  const pageLimit = Math.min(Number(options.pageLimit) || 50, GAMMA_PAGE_MAX);
+
+  const newMarkets = [];
+  let offset = 0;
+  let reachedCursor = false;
+  let newestSeenUpdatedAt = null;
+
+  while (newMarkets.length < maxMarkets && !reachedCursor) {
+    const limit = Math.min(pageLimit, maxMarkets - newMarkets.length);
+    const res = await fetchPage({
+      limit,
+      offset,
+      order: options.order || 'updated_at',
+      ascending: false,
+      closed: options.closed !== undefined ? options.closed : true,
+    });
+
+    if (!res || !res.ok || !Array.isArray(res.markets) || res.markets.length === 0) {
+      break;
+    }
+
+    for (const raw of res.markets) {
+      const market = normalizeGammaMarket(raw);
+      const updatedAt = market.updated_at || market.end_date_iso || null;
+      if (newestSeenUpdatedAt === null && updatedAt) {
+        newestSeenUpdatedAt = updatedAt;
+      }
+
+      if (cursor && updatedAt && updatedAt <= cursor) {
+        reachedCursor = true;
+        break;
+      }
+
+      newMarkets.push(market);
+      if (newMarkets.length >= maxMarkets) break;
+    }
+
+    if (res.markets.length < limit) break;
+    offset += res.markets.length;
+  }
+
+  return {
+    markets: newMarkets,
+    count: newMarkets.length,
+    previous_cursor: cursor,
+    next_cursor: newestSeenUpdatedAt || cursor,
+    reached_cursor: reachedCursor,
+  };
+}
+
 module.exports = {
   ARCHIVE_SCHEMA_VERSION,
   ARCHIVE_SCHEMA_VERSION_V2,
@@ -1190,4 +1323,7 @@ module.exports = {
   CANONICAL_TIMEFRAMES,
   CACHE_DIR,
   GAMMA_BASE,
+  CLOB_BASE,
+  fetchClobDepth,
+  syncGammaMarketsDelta,
 };

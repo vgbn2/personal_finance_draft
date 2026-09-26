@@ -9,9 +9,9 @@ actual current code, verified line-by-line on 2026-06-25.
 
 | Broker | Adapter | Order call | Minimal shape |
 |---|---|---|---|
-| Alpaca (equities/crypto) | `AlpacaAdapter`, `backend/gateway/src/index.ts:456` | `this.alpaca.createOrder(payload)` (:511) | `{symbol, qty, side, type, time_in_force, limit_price?}` — `time_in_force` is `'gtc'` for crypto, `'day'` for fractional equities (an Alpaca 422-rejection workaround) |
-| Polymarket (prediction markets) | `PolymarketAdapter`, `:900` | `client.createOrder(...)` then `client.postOrder(signedOrder, OrderType.GTC)` | `{tokenID, price, size, side}` — price is bounds-checked against tick size before submission |
-| MT5 (forex/CFDs) | No direct adapter — `backend/cli/commands/trade/trade_mt5.js` launches the real MT5 terminal via a saved profile; symbol/qty/side flow through the MT5 EA bridge, not this gateway | — | `{login, server, has_password, terminal_path}` |
+| Alpaca (equities/crypto) | `AlpacaAdapter`, `backend/gateway/src/adapters/alpaca_adapter.ts` | `this.alpaca.createOrder(payload)` | `{symbol, qty, side, type, time_in_force, limit_price?}` — `time_in_force` is `'gtc'` for crypto, `'day'` for fractional equities (an Alpaca 422-rejection workaround) |
+| Polymarket (prediction markets) | `PolymarketAdapter`, `backend/gateway/src/adapters/polymarket_adapter.ts` | `client.createOrder(...)` then `client.postOrder(signedOrder, OrderType.GTC)` | `{tokenID, price, size, side}` — price is bounds-checked against tick size before submission |
+| MT5 (forex/CFDs) | `MT5Adapter`, `backend/gateway/src/adapters/mt5_adapter.ts` | `backend/cli/commands/trade/trade_mt5.js` profile launcher or MT5 EA bridge | `{login, server, has_password, terminal_path}` |
 
 From the CLI, all three are reachable through one function: `commandTrade(args)` in
 `backend/cli/commands/trade/trade.js:264` (Alpaca path) or `trade_polymarket.js`'s `commandPolymarket`

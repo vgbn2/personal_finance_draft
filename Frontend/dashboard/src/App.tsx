@@ -10,6 +10,7 @@ import { clearLocalSession, restoreVerifiedSession, verifySession } from './lib/
 import { TopBar } from './components/layout/TopBar';
 import { Sidebar } from './components/layout/Sidebar';
 import { OverviewPanel } from './components/panels/OverviewPanel';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
 import { TabId } from './types';
 
@@ -50,6 +51,30 @@ export default function App() {
           aud: 'authenticated',
           created_at: new Date().toISOString(),
           email: 'tester@sovereign.local',
+        },
+      } as Session);
+      setLoading(false);
+      return;
+    }
+
+    // ponytail: zero-config local mode preference or auto-fallback
+    const isLocalMode = typeof window !== 'undefined' && (
+      window.localStorage.getItem('sovereign_auth_mode') === 'local'
+      || !supabase
+    );
+    if (isLocalMode && (typeof window === 'undefined' || window.localStorage.getItem('sovereign_explicit_logout') !== 'true')) {
+      setSession({
+        access_token: 'local-operator-token',
+        token_type: 'bearer',
+        expires_in: 86400 * 365,
+        refresh_token: 'local-operator-refresh-token',
+        user: {
+          id: 'local-operator',
+          app_metadata: { sovereign_role: 'operator' },
+          user_metadata: { full_name: 'Local Operator' },
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+          email: 'operator@local',
         },
       } as Session);
       setLoading(false);
@@ -97,10 +122,41 @@ export default function App() {
       setSession(null);
       return true;
     }
-    if (!supabase) return true;
+    if (typeof window !== 'undefined' && session?.user?.id === 'local-operator') {
+      window.localStorage.removeItem('sovereign_auth_mode');
+      window.localStorage.setItem('sovereign_explicit_logout', 'true');
+      setSession(null);
+      return true;
+    }
+    if (!supabase) {
+      setSession(null);
+      return true;
+    }
     const cleared = await clearLocalSession(supabase.auth);
     if (cleared) setSession(null);
     return cleared;
+  }
+
+  function handleEnterLocalMode() {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('sovereign_auth_mode', 'local');
+      window.localStorage.removeItem('sovereign_explicit_logout');
+    }
+    setSession({
+      access_token: 'local-operator-token',
+      token_type: 'bearer',
+      expires_in: 86400 * 365,
+      refresh_token: 'local-operator-refresh-token',
+      user: {
+        id: 'local-operator',
+        app_metadata: { sovereign_role: 'operator' },
+        user_metadata: { full_name: 'Local Operator' },
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+        email: 'operator@local',
+      },
+    } as Session);
+    setLoading(false);
   }
 
   function handleTabChange(tab: TabId) {
@@ -116,22 +172,8 @@ export default function App() {
     );
   }
 
-  if (!supabase && !session) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center bg-[var(--bg-primary)] p-6">
-        <div className="max-w-xl text-center font-mono">
-          <h1 className="text-lg text-[var(--text-primary)]">Authentication configuration required</h1>
-          <p className="mt-3 text-sm text-[var(--text-muted)]">
-            Configure the Supabase URL and publishable key. Dashboard data is private and cannot be
-            loaded anonymously.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (!session) {
-    return <LoginPage />;
+    return <LoginPage onEnterLocalMode={handleEnterLocalMode} />;
   }
 
   return (
@@ -157,23 +199,25 @@ export default function App() {
         )}
 
         <main className="dashboard-main flex-1 relative overflow-hidden flex flex-col bg-[var(--bg-primary)]">
-          <Suspense fallback={<div className="flex-1 grid place-items-center font-mono text-sm text-[var(--text-muted)]">Loading panel...</div>}>
-            {activeTab === 'overview' && <OverviewPanel />}
-            {activeTab === 'signals' && <SignalPanel />}
-            {activeTab === 'market_intel' && <MarketIntelPanel />}
-            {activeTab === 'backtest' && <BacktestPanel />}
-            {activeTab === 'quote_health' && <QuoteHealthPanel />}
-            {activeTab === 'audit_log' && <AuditLogPanel />}
-            {activeTab === 'sigma_band' && <SigmaBandPanel />}
-            {activeTab === 'bot' && <BotPanel />}
-            {activeTab === 'infra'     && <InfraPanel />}
-            {activeTab === 'settings' && <SettingsPage session={session} />}
-            {activeTab === 'telemetry' && (
-              <div className="flex-1 p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <TelemetryPanel />
-              </div>
-            )}
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<div className="flex-1 grid place-items-center font-mono text-sm text-[var(--text-muted)]">Loading panel...</div>}>
+              {activeTab === 'overview' && <OverviewPanel />}
+              {activeTab === 'signals' && <SignalPanel />}
+              {activeTab === 'market_intel' && <MarketIntelPanel />}
+              {activeTab === 'backtest' && <BacktestPanel />}
+              {activeTab === 'quote_health' && <QuoteHealthPanel />}
+              {activeTab === 'audit_log' && <AuditLogPanel />}
+              {activeTab === 'sigma_band' && <SigmaBandPanel />}
+              {activeTab === 'bot' && <BotPanel />}
+              {activeTab === 'infra'     && <InfraPanel />}
+              {activeTab === 'settings' && <SettingsPage session={session} />}
+              {activeTab === 'telemetry' && (
+                <div className="flex-1 p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <TelemetryPanel />
+                </div>
+              )}
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
     </div>
