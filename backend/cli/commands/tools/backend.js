@@ -749,6 +749,61 @@ async function runBackendNetGreeks(args = []) {
   };
 }
 
+async function runBackendOptionsBotRunner(args = []) {
+  const { runOptionsBotCycle } = require('../strategy/options_bot_runner.js');
+  const currency = optionValue(args, '--currency', 'BTC');
+  const maxGamma = numericOption(args, '--max-gamma', 50.0);
+  const maxVega = numericOption(args, '--max-vega', 10000.0);
+  const maxDelta = numericOption(args, '--max-delta', 5.0);
+  const dryRun = hasFlag(args, '--dry-run');
+  return runOptionsBotCycle({ currency, maxGamma, maxVega, maxDelta, dryRun });
+}
+
+async function runBackendPolymarketBundle(args = []) {
+  const { detectSumToOneArbitrage } = require('../../../../shared/lib/strategy/polymarket_clob_model.js');
+  const { PolymarketAdapter } = require('../../../gateway/dist/adapters/polymarket_adapter.js');
+
+  const shares = numericOption(args, '--shares', 10);
+  const dryRun = !hasFlag(args, '--live') || hasFlag(args, '--dry-run');
+  const rawOutcomes = optionValue(args, '--outcomes', 'Candidate A:0.32,Candidate B:0.34,Candidate C:0.28');
+
+  const outcomes = rawOutcomes.split(',').map((item, idx) => {
+    const [name, priceStr] = item.split(':');
+    const price = Number(priceStr ?? 0.33);
+    return {
+      outcomeId: `out-${idx + 1}`,
+      name: (name || `Outcome ${idx + 1}`).trim(),
+      tokenId: `token-${idx + 1}`,
+      bestAsk: price,
+      price,
+    };
+  });
+
+  const arb = detectSumToOneArbitrage(outcomes, { targetShares: shares });
+  let executionResult = null;
+
+  if (arb.hasArbitrage && !dryRun) {
+    const adapter = new PolymarketAdapter({ simulateIfMissingCredentials: true });
+    const orders = arb.legs.map(leg => ({
+      instrumentId: leg.tokenId,
+      side: 'buy',
+      quantity: leg.filledShares,
+      price: leg.vwap,
+      type: 'limit',
+    }));
+    executionResult = await adapter.placeMultiOutcomeBundleOrder(orders);
+  }
+
+  return {
+    ok: true,
+    outcomesCount: outcomes.length,
+    shares,
+    arbitrage: arb,
+    executionResult,
+    dryRun,
+  };
+}
+
 async function commandBackend(args) {
   const subcommand = args[0] || 'status';
 
@@ -763,6 +818,9 @@ async function commandBackend(args) {
     'volatility-smile': (a) => runBackendVolatilitySmile(a),
     greeks: (a) => runBackendNetGreeks(a),
     'net-greeks': (a) => runBackendNetGreeks(a),
+    'options-bot': (a) => runBackendOptionsBotRunner(a),
+    'options-bot-runner': (a) => runBackendOptionsBotRunner(a),
+    'polymarket-bundle': (a) => runBackendPolymarketBundle(a),
     universe: (a) => runBackendUniverse(a),
     integrity: (a) => runBackendIntegrity(a),
     benchmark: (a) => runBackendBenchmark(a),

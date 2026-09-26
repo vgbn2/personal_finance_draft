@@ -246,6 +246,17 @@ const COMMAND_MANIFEST = {
       { id: 'net-greeks', prefix: ['backend'], label: 'Net Greeks Exposure', flags: {
         '--currency': { type: 'select', options: ['BTC', 'ETH', 'SOL'], label: 'Currency', default: 'BTC' },
       }},
+      { id: 'options-bot-runner', prefix: ['backend'], label: 'Options Delta-Neutral Bot Runner', flags: {
+        '--currency': { type: 'select', options: ['BTC', 'ETH', 'SOL'], label: 'Currency', default: 'BTC' },
+        '--max-gamma': { type: 'text', default: '50', label: 'Max Net Gamma limit' },
+        '--max-vega': { type: 'text', default: '10000', label: 'Max Net Vega limit' },
+        '--dry-run': { type: 'confirm', label: 'Dry run only (no order placement)?', default: true },
+      }},
+      { id: 'polymarket-bundle', prefix: ['backend'], label: 'Polymarket Multi-Outcome Arbitrage Bundle', flags: {
+        '--outcomes': { type: 'text', default: 'Candidate A:0.32,Candidate B:0.34,Candidate C:0.28', label: 'Outcomes & prices (Name:Price,...)' },
+        '--shares': { type: 'text', default: '10', label: 'Target Shares' },
+        '--dry-run': { type: 'confirm', label: 'Dry run only (no order placement)?', default: true },
+      }},
     ],
     research: [
       { id: 'bt', label: 'Backtest (Prop-firm fit)', loading: true, flags: {

@@ -13,8 +13,9 @@ struct TradeOrder {
 class PreTradeRisk {
 public:
     explicit PreTradeRisk(RiskLimits limits);
-    
+
     RiskDecision validate(const TradeOrder& order) const;
+    static RiskDecision validateOptionsGreeks(const OptionsGreeks& greeks, const OptionsRiskLimits& limits = {});
 
 private:
     RiskLimits limits_;
