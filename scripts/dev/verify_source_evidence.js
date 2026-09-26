@@ -213,7 +213,6 @@ function fixedSteps(sourceRoot, jobs = DEFAULT_JOB_LIMIT) {
         path.join(sourceRoot, 'node_modules/typescript/bin/tsc'),
         '-p',
         path.join(sourceRoot, 'backend/gateway/tsconfig.json'),
-        '--noEmit',
       ],
     },
     ...[
