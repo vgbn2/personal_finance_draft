@@ -19,7 +19,14 @@ function buildArgvFromManifest(cmd, flagValues = {}) {
   const idParts = String(cmd.id || '').trim().split(/\s+/).filter(Boolean);
   argv.push(...idParts);
 
-  for (const [flagKey, meta] of Object.entries(cmd.flags || {})) {
+  const mergedFlags = { ...(cmd.flags || {}) };
+  for (const [flagKey, val] of Object.entries(flagValues)) {
+    if (!mergedFlags[flagKey]) {
+      mergedFlags[flagKey] = { type: typeof val === 'boolean' ? 'confirm' : 'text' };
+    }
+  }
+
+  for (const [flagKey, meta] of Object.entries(mergedFlags)) {
     const val = flagValues[flagKey] !== undefined ? flagValues[flagKey] : meta.default;
     if (meta.type === 'confirm' || meta.t === 'yn') {
       if (val === true || val === 'true') {
@@ -99,6 +106,9 @@ function generateFlagPermutations(cmd) {
     baseFlags['--symbols'] = 'BTCUSDT';
     baseFlags['--once'] = true;
   }
+  if (cmd.id === 'watch') {
+    baseFlags['--once'] = true;
+  }
 
   permutations.push({ label: 'default', flags: { ...baseFlags } });
 
@@ -172,6 +182,9 @@ function generateFlagPermutations(cmd) {
       altFlags['--symbols'] = 'BTCUSDT';
       altFlags['--once'] = true;
     }
+    if (cmd.id === 'watch') {
+      altFlags['--once'] = true;
+    }
     permutations.push({ label: 'alternate_matrix', flags: altFlags });
   }
 
@@ -227,13 +240,13 @@ function runCommandHeadless(argv, timeoutMs = 25000) {
   });
 }
 
-test('TUI Manifest Command Surface Coverage Suite', async (t) => {
+test('TUI Manifest Command Surface Coverage Suite', { concurrency: 4 }, async (t) => {
   const results = [];
   let totalCommands = 0;
   let totalPermutations = 0;
 
-  for (const [categoryKey, cmdList] of Object.entries(commands)) {
-    await t.test(`Category [${categoryKey}] coverage`, { concurrency: 4 }, async (catTest) => {
+  const categoryTasks = Object.entries(commands).map(([categoryKey, cmdList]) =>
+    t.test(`Category [${categoryKey}] coverage`, { concurrency: 4 }, async (catTest) => {
       const tests = [];
       for (const cmd of cmdList) {
         totalCommands++;
@@ -273,8 +286,10 @@ test('TUI Manifest Command Surface Coverage Suite', async (t) => {
         }
       }
       await Promise.all(tests);
-    });
-  }
+    })
+  );
+
+  await Promise.all(categoryTasks);
 
   // Clean up any process locks created during test execution
   t.after(() => {
