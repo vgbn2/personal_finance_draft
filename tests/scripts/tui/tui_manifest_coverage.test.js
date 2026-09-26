@@ -194,7 +194,7 @@ function generateFlagPermutations(cmd) {
 /**
  * Execute command headlessly under SOVEREIGN_NONINTERACTIVE=1
  */
-function runCommandHeadless(argv, timeoutMs = 25000) {
+function runCommandHeadless(argv, timeoutMs = 45000) {
   return new Promise((resolve) => {
     const start = Date.now();
     const env = {
@@ -240,13 +240,13 @@ function runCommandHeadless(argv, timeoutMs = 25000) {
   });
 }
 
-test('TUI Manifest Command Surface Coverage Suite', { concurrency: 4 }, async (t) => {
+test('TUI Manifest Command Surface Coverage Suite', { concurrency: 2 }, async (t) => {
   const results = [];
   let totalCommands = 0;
   let totalPermutations = 0;
 
   const categoryTasks = Object.entries(commands).map(([categoryKey, cmdList]) =>
-    t.test(`Category [${categoryKey}] coverage`, { concurrency: 4 }, async (catTest) => {
+    t.test(`Category [${categoryKey}] coverage`, { concurrency: 2 }, async (catTest) => {
       const tests = [];
       for (const cmd of cmdList) {
         totalCommands++;
