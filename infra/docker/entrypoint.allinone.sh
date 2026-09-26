@@ -4,7 +4,8 @@ set -e
 echo "[SV-ALLINONE] Initializing Sovereign All-in-One Container..."
 
 # 1. Clean up stale Xvfb locks
-rm -f /tmp/.X11-unix/X99 /tmp/.X99-lock
+rm -f /tmp/.X11-unix/X99 /tmp/.X99-lock 2>/dev/null || true
+mkdir -p /app/storage/data/cache /app/storage/data/ts /app/storage/logs /app/storage/runtime 2>/dev/null || true
 
 # 2. Start Xvfb virtual framebuffer for headless Wine / MT5 if display :99 is specified
 if [ "$DISPLAY" = ":99" ]; then

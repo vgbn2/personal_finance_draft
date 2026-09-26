@@ -77,7 +77,7 @@ RUN dpkg --add-architecture i386 && \
 
 # Setup non-root sovereign user (UID 1000)
 RUN useradd -m -u 1000 -d /home/sovereign sovereign && \
-    mkdir -p /opt/mt5/terminal /opt/mt5/config /opt/mt5/.wine /app/storage /app/workspace && \
+    mkdir -p /opt/mt5/terminal /opt/mt5/config /opt/mt5/.wine /app/storage/data/cache /app/storage/data/ts /app/storage/logs /app/storage/runtime /app/workspace && \
     chown -R sovereign:sovereign /opt/mt5 /app /home/sovereign
 
 USER sovereign

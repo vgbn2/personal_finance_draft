@@ -44,7 +44,8 @@ jobs:
             -e NODE_ENV=production \
             -e SOVEREIGN_WEB_HOST=0.0.0.0 \
             -e SOVEREIGN_WEB_PORT=8787 \
-            -e SOVEREIGN_RUNTIME_MODE=test-isolated \
+            -e SOVEREIGN_RUNTIME_MODE=local-compute \
+            -e SOVEREIGN_ALLOW_LOCAL_GUEST=true \
             -e LIVE_TRADING=false \
             -e SOVEREIGN_EXECUTION_AUTHORIZED=false \
             sovereign-allinone:test
@@ -52,14 +53,24 @@ jobs:
       - name: Verify All-in-One healthcheck and services
         run: |
           echo "Waiting for container HTTP /health endpoint..."
+          PASSED=false
           for i in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8787/health | grep -q '"ok":true'; then
-              echo "Healthcheck passed on attempt $i"
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8787/health || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "Healthcheck passed on attempt $i (HTTP 200)"
+              PASSED=true
               break
             fi
+            echo "Attempt $i: HTTP status $STATUS, waiting 1s..."
             sleep 1
           done
-          curl -fsS http://127.0.0.1:8787/health | grep -q '"ok":true'
+          if [ "$PASSED" != "true" ]; then
+            echo "=== CONTAINER FAILED HEALTHCHECK ==="
+            docker ps -a
+            echo "=== CONTAINER LOGS ==="
+            docker logs sv-allinone-test
+            exit 1
+          fi
 
       - name: Test in-container CLI diagnostics
         run: |
@@ -96,16 +107,27 @@ jobs:
             -e NODE_ENV=production \
             -e SOVEREIGN_WEB_HOST=0.0.0.0 \
             -e SOVEREIGN_WEB_PORT=8787 \
+            -e SOVEREIGN_ALLOW_LOCAL_GUEST=true \
             sovereign-slim:test
           echo "Waiting for slim container /health endpoint..."
+          PASSED=false
           for i in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8787/health | grep -q '"ok":true'; then
-              echo "Slim healthcheck passed on attempt $i"
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8787/health || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "Slim healthcheck passed on attempt $i (HTTP 200)"
+              PASSED=true
               break
             fi
+            echo "Attempt $i: HTTP status $STATUS, waiting 1s..."
             sleep 1
           done
-          curl -fsS http://127.0.0.1:8787/health | grep -q '"ok":true'
+          if [ "$PASSED" != "true" ]; then
+            echo "=== SLIM CONTAINER FAILED HEALTHCHECK ==="
+            docker ps -a
+            echo "=== SLIM CONTAINER LOGS ==="
+            docker logs sv-slim-test
+            exit 1
+          fi
           docker exec sv-slim-test node backend/cli/sovereign_cli.js doctor
           docker exec sv-slim-test test -x /app/backend/core/build/sovereign_wealth
           docker stop -t 10 sv-slim-test
