@@ -40,7 +40,7 @@ export async function createClobClient(opts: ClobClientOptions = {}): Promise<an
     : undefined;
 
   const { signatureType, funderAddress } = resolveAccountIdentity(opts);
-  return new ClobClient({ host, chain: 137, signer, creds: creds as any, signatureType: signatureType as any, funderAddress, retryOnError: true });
+  return new ClobClient({ host, chain: 137, signer: signer as any, creds: creds as any, signatureType: signatureType as any, funderAddress, retryOnError: true });
 }
 
 /**
