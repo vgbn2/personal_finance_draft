@@ -45,4 +45,61 @@ RiskDecision PreTradeRisk::validate(const TradeOrder& order) const {
     return decision;
 }
 
+RiskDecision PreTradeRisk::validateOptionsGreeks(const OptionsGreeks& greeks, const OptionsRiskLimits& limits) {
+    RiskDecision decision{};
+    decision.halt_trading = false;
+
+    // 1. Sanity check for non-finite values (fail-closed)
+    const bool non_finite = !std::isfinite(greeks.delta) ||
+                            !std::isfinite(greeks.gamma) ||
+                            !std::isfinite(greeks.vega) ||
+                            !std::isfinite(greeks.theta);
+    if (non_finite) {
+        decision.approved = !limits.fail_closed;
+        decision.halt_trading = limits.fail_closed;
+        decision.reason = "CRITICAL: Non-finite Greek values detected (fail-closed).";
+        return decision;
+    }
+
+    const double abs_gamma = std::fabs(greeks.gamma);
+    const double abs_vega = std::fabs(greeks.vega);
+    const double abs_delta = std::fabs(greeks.delta);
+
+    // 2. Net Gamma exposure boundary
+    if (limits.max_gamma > 0.0 && abs_gamma > limits.max_gamma) {
+        decision.approved = false;
+        decision.halt_trading = limits.fail_closed;
+        decision.limit = limits.max_gamma;
+        decision.observed_drawdown = abs_gamma;
+        decision.reason = "CRITICAL: Net Gamma limit exceeded.";
+        return decision;
+    }
+
+    // 3. Net Vega exposure boundary
+    if (limits.max_vega > 0.0 && abs_vega > limits.max_vega) {
+        decision.approved = false;
+        decision.halt_trading = limits.fail_closed;
+        decision.limit = limits.max_vega;
+        decision.observed_drawdown = abs_vega;
+        decision.reason = "CRITICAL: Net Vega limit exceeded.";
+        return decision;
+    }
+
+    // 4. Net Delta exposure boundary
+    if (limits.max_delta > 0.0 && abs_delta > limits.max_delta) {
+        decision.approved = false;
+        decision.halt_trading = limits.fail_closed;
+        decision.limit = limits.max_delta;
+        decision.observed_drawdown = abs_delta;
+        decision.reason = "CRITICAL: Net Delta limit exceeded.";
+        return decision;
+    }
+
+    decision.approved = true;
+    decision.limit = limits.max_gamma;
+    decision.observed_drawdown = abs_gamma;
+    decision.reason = "Risk parameters cleared: Options Greeks within authorized bounds.";
+    return decision;
+}
+
 } // namespace sovereign
