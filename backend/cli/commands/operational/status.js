@@ -111,6 +111,40 @@ function summarizeFeaturesCard(features) {
   };
 }
 
+function summarizeOptionsCard() {
+  let greeks = null;
+  let smileRecords = [];
+  try {
+    const { getDefaultAnalyticsEngine } = require('../../../../shared/lib/storage/sqlite_analytics.js');
+    const analytics = getDefaultAnalyticsEngine();
+    greeks = analytics.getNetGreekExposure('BTC');
+    smileRecords = analytics.getVolatilitySmile('BTC');
+  } catch (_) {}
+
+  const hasData = greeks && (greeks.contracts_count > 0 || greeks.total_open_interest > 0);
+  const deribitConfigured = Boolean(process.env.DERIBIT_CLIENT_ID && process.env.DERIBIT_CLIENT_SECRET);
+  const isTestnet = String(process.env.DERIBIT_TESTNET || 'true').toLowerCase() !== 'false';
+
+  return {
+    source: 'storage/data/relational/analytics.db',
+    last_checked: new Date().toISOString(),
+    state: hasData || deribitConfigured ? 'ok' : 'warn',
+    title: `OPTIONS & DERIVATIVES [${isTestnet ? 'TESTNET' : 'LIVE'}]`,
+    subtitle: deribitConfigured
+      ? (hasData ? 'deribit gateway & analytics synced' : 'deribit configured, awaiting contracts')
+      : 'zero-key options simulation & analytics active',
+    metrics: {
+      delta_oi: greeks ? Number((greeks.net_delta_oi || 0).toFixed(2)) : 0,
+      gamma_oi: greeks ? Number((greeks.net_gamma_oi || 0).toFixed(2)) : 0,
+      vega_oi: greeks ? Number((greeks.net_vega_oi || 0).toFixed(0)) : 0,
+      theta_oi: greeks ? Number((greeks.net_theta_oi || 0).toFixed(0)) : 0,
+      contracts: greeks ? greeks.contracts_count || 0 : 0,
+      smile_points: smileRecords.length,
+    },
+    payload: { greeks, smile_count: smileRecords.length },
+  };
+}
+
 // Cockpit's portfolio card previously read ONLY the static storage/data/
 // portfolio.json (mode/cash/positions/open_orders/last_mark_at -- no equity
 // field at all today, so the card always showed "portfolio unavailable")
@@ -373,6 +407,8 @@ function loadStatusPortfolio() {
     if (agg && agg.ok) {
       const alpaca = agg.live_paper?.brokers?.find((b) => b.name?.includes('Alpaca'));
       const polymarket = agg.live?.brokers?.find((b) => b.name?.includes('Polymarket'));
+      const deribit = agg.live_paper?.brokers?.find((b) => b.name?.includes('Deribit'))
+        || agg.live?.brokers?.find((b) => b.name?.includes('Deribit'));
       const paperBot = agg.paper;
       const positions = (agg.live_paper?.positions || []).map((p) => ({
         symbol: p.symbol,
@@ -381,6 +417,51 @@ function loadStatusPortfolio() {
         marketValue: p.marketValue,
         unrealizedPl: p.unrealizedPl,
       }));
+
+      let greeksInfo = null;
+      try {
+        const { getDefaultAnalyticsEngine } = require('../../../../shared/lib/storage/sqlite_analytics.js');
+        const analytics = getDefaultAnalyticsEngine();
+        const greeks = analytics.getNetGreekExposure('BTC');
+        if (greeks) {
+          greeksInfo = {
+            currency: greeks.currency || 'BTC',
+            net_delta: Number(greeks.net_delta_oi || 0),
+            net_gamma: Number(greeks.net_gamma_oi || 0),
+            net_vega: Number(greeks.net_vega_oi || 0),
+            net_theta: Number(greeks.net_theta_oi || 0),
+            open_interest: greeks.total_open_interest || 0,
+            contracts_count: greeks.contracts_count || 0,
+          };
+        }
+      } catch (_) {}
+
+      const hasDeribitEnv = Boolean(process.env.DERIBIT_CLIENT_ID && process.env.DERIBIT_CLIENT_SECRET);
+      const isTestnet = String(process.env.DERIBIT_TESTNET || 'true').toLowerCase() !== 'false';
+      let deribitStatus = 'zero_key_simulation';
+      if (deribit) {
+        if (deribit.ok) {
+          deribitStatus = 'connected';
+        } else if (deribit.error) {
+          deribitStatus = deribit.error.toLowerCase().includes('invalid_credentials')
+            ? 'invalid_credentials'
+            : (deribit.error.toLowerCase().includes('failed (400)') ? 'auth_rejected' : deribit.error);
+        } else {
+          deribitStatus = 'disconnected';
+        }
+      } else if (hasDeribitEnv) {
+        deribitStatus = 'configured';
+      }
+
+      const deribitInfo = {
+        connected: deribit ? Boolean(deribit.ok) : false,
+        testnet: isTestnet,
+        status: deribitStatus,
+        btc_balance: deribit?.balance?.BTC ?? 0,
+        eth_balance: deribit?.balance?.ETH ?? 0,
+        sol_balance: deribit?.balance?.SOL ?? 0,
+        greeks: greeksInfo,
+      };
 
       let mt5Info = null;
       try {
@@ -413,6 +494,7 @@ function loadStatusPortfolio() {
           equity: polymarket.balance?.EQUITY ?? 0,
           status: polymarket.status || 'connected',
         } : null,
+        deribit: deribitInfo,
         paper_bot: paperBot ? {
           virtual_balance: paperBot.virtual_balance ?? 100,
           open_cost: paperBot.open_cost ?? 0,
@@ -507,12 +589,14 @@ function buildCockpitModel(opts = {}) {
   const backtestCard = summarizeBacktestCard(backtestReport);
   const featuresCard = summarizeFeaturesCard(features);
   const portfolioCard = summarizePortfolioCard(mergePolymarketIntoPortfolio(portfolio, polymarket));
+  const optionsCard = summarizeOptionsCard();
   const cards = [
     statusCard,
     featuresCard,
     modelCard,
     backtestCard,
     portfolioCard,
+    optionsCard,
   ];
   return {
     generated_at: new Date().toISOString(),
@@ -578,7 +662,7 @@ function renderCockpit(model) {
 
   lines.push(A.muted(A.GLYPH.hline.repeat(80)));
   lines.push(`  ${A.c(A.BOLD, 'Commands:')} status | backend status | quotes status | models | bt | ${A.c(A.CYAN, 'trade balance')}`);
-  lines.push(A.muted('  Tip: use --inspect <status|features|model|backtest|portfolio> for raw JSON.'));
+  lines.push(A.muted('  Tip: use --inspect <status|features|model|backtest|portfolio|options> for raw JSON.'));
   return lines.join('\n');
 }
 
@@ -590,6 +674,7 @@ function cockpitInspectPayload(name) {
     model: model.cards[2],
     backtest: model.cards[3],
     portfolio: model.cards[4],
+    options: model.cards[5],
   };
   return lookup[name] || null;
 }
@@ -632,6 +717,15 @@ function renderStatus(payload) {
         lines.push(`  MT5 (Demo):       Balance: $${formatHumanNumber(p.mt5.balance)} | Equity: $${formatHumanNumber(p.mt5.equity)} | Free Margin: $${formatHumanNumber(p.mt5.free_margin)}`);
       } else {
         lines.push(`  MT5 (Demo):       Bridge Disconnected`);
+      }
+    }
+    if (p.deribit) {
+      const mode = p.deribit.testnet ? 'Testnet' : 'Live';
+      const statusLabel = p.deribit.connected ? `${mode} Connected` : (p.deribit.status || 'Offline / Sim');
+      lines.push(`  Deribit (Options): BTC: ${formatHumanNumber(p.deribit.btc_balance || 0)} | ETH: ${formatHumanNumber(p.deribit.eth_balance || 0)} | SOL: ${formatHumanNumber(p.deribit.sol_balance || 0)} (${statusLabel})`);
+      if (p.deribit.greeks) {
+        const g = p.deribit.greeks;
+        lines.push(`    Net Greeks (${g.currency}): Δ ${g.net_delta.toFixed(2)} | Γ ${g.net_gamma.toFixed(2)} | ν $${g.net_vega.toFixed(0)} | Θ $${g.net_theta.toFixed(0)}/day | OI: ${g.open_interest}`);
       }
     }
     if (Array.isArray(p.open_positions) && p.open_positions.length > 0) {

@@ -725,6 +725,30 @@ function renderBackendStats(payload) {
 
 const { runBackendChart } = require('./backend_chart.js');
 
+async function runBackendVolatilitySmile(args = []) {
+  const currency = optionValue(args, '--currency', 'BTC');
+  const { getDefaultAnalyticsEngine } = require('../../../../shared/lib/storage/sqlite_analytics.js');
+  const db = getDefaultAnalyticsEngine();
+  const records = db.getVolatilitySmile(currency);
+  return {
+    ok: true,
+    currency,
+    records,
+  };
+}
+
+async function runBackendNetGreeks(args = []) {
+  const currency = optionValue(args, '--currency', 'BTC');
+  const { getDefaultAnalyticsEngine } = require('../../../../shared/lib/storage/sqlite_analytics.js');
+  const db = getDefaultAnalyticsEngine();
+  const greeks = db.getNetGreekExposure(currency);
+  return {
+    ok: true,
+    currency,
+    greeks,
+  };
+}
+
 async function commandBackend(args) {
   const subcommand = args[0] || 'status';
 
@@ -735,6 +759,10 @@ async function commandBackend(args) {
     portfolio: (a) => runBackendPortfolio(a),
     correlation: (a) => runBackendCorrelation(a),
     visualize: (a) => runBackendVisualize(a),
+    smile: (a) => runBackendVolatilitySmile(a),
+    'volatility-smile': (a) => runBackendVolatilitySmile(a),
+    greeks: (a) => runBackendNetGreeks(a),
+    'net-greeks': (a) => runBackendNetGreeks(a),
     universe: (a) => runBackendUniverse(a),
     integrity: (a) => runBackendIntegrity(a),
     benchmark: (a) => runBackendBenchmark(a),
@@ -754,6 +782,18 @@ async function commandBackend(args) {
 
   try {
     const payload = await handler(args.slice(1));
+
+    if ((subcommand === 'smile' || subcommand === 'volatility-smile') && !hasFlag(args, '--json')) {
+      const { renderVolatilitySmile } = require('../../tui/visualizations.js');
+      console.log(renderVolatilitySmile(payload.records));
+      return 0;
+    }
+
+    if ((subcommand === 'greeks' || subcommand === 'net-greeks') && !hasFlag(args, '--json')) {
+      const { renderNetGreeksTable } = require('../../tui/visualizations.js');
+      console.log(renderNetGreeksTable(payload.greeks));
+      return 0;
+    }
 
     if (subcommand === 'status' && !hasFlag(args, '--json')) {
         console.log(renderBackendStatus(payload));

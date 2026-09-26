@@ -37,6 +37,10 @@ import {
 } from './tools/polymarket';
 import { exploreStrategy, exploreStrategySchema } from './tools/strategy_explorer';
 import {
+  getOptionsAnalytics, getOptionsAnalyticsSchema,
+  getDeribitStatus, getDeribitStatusSchema,
+} from './tools/options_analytics';
+import {
   authorizeMcpResource,
   authorizeMcpTool,
   resolveMcpPrincipal,
@@ -372,6 +376,27 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
     },
+    {
+      name: 'get_options_analytics',
+      description: 'Query options Net Greeks (Delta, Gamma, Vega, Theta), open interest, Volatility Smile surface, and 25-Delta Skew (RR25, BF25) for crypto underlyings (BTC, ETH, SOL) from the relational SQLite analytics database',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          currency: { type: 'string', enum: ['BTC', 'ETH', 'SOL'], description: 'Underlying asset (default: BTC)' },
+          include_smile: { type: 'boolean', description: 'Whether to include raw strike/IV smile points (default: true)' },
+        },
+      },
+    },
+    {
+      name: 'get_deribit_status',
+      description: 'Inspect Deribit options broker gateway connectivity, testnet mode, and configured credential state',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          testnet: { type: 'boolean', description: 'Check testnet configuration' },
+        },
+      },
+    },
     ],
   };
 });
@@ -466,6 +491,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request): Promise<any> =>
       case 'explore_strategy': {
         const args = exploreStrategySchema.parse(request.params.arguments || {});
         return exploreStrategy(args);
+      }
+      case 'get_options_analytics': {
+        const args = getOptionsAnalyticsSchema.parse(request.params.arguments || {});
+        return getOptionsAnalytics(args);
+      }
+      case 'get_deribit_status': {
+        const args = getDeribitStatusSchema.parse(request.params.arguments || {});
+        return getDeribitStatus(args);
       }
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
