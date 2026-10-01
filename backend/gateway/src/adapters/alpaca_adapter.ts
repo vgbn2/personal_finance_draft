@@ -123,10 +123,11 @@ export class AlpacaAdapter implements BrokerAdapter {
       // Enrich positions with order submission / fill history via Alpaca getOrders API
       let orderMap: Record<string, { submitted_at?: string; filled_at?: string; client_order_id?: string }> = {};
       try {
-        const closedOrders = await this.alpaca.getOrders({ status: 'closed', limit: 100, nested: false });
+        const closedOrders = await this.alpaca.getOrders({ status: 'all', limit: 500, nested: false });
         if (Array.isArray(closedOrders)) {
           for (const ord of closedOrders) {
-            const sym = String(ord.symbol || '').toUpperCase();
+            const rawSym = String(ord.symbol || '').toUpperCase();
+            const sym = rawSym.replace('/', '');
             if (sym && (!orderMap[sym] || (ord.filled_at && orderMap[sym].filled_at && ord.filled_at > orderMap[sym].filled_at!))) {
               orderMap[sym] = {
                 submitted_at: ord.submitted_at || ord.created_at,
@@ -141,8 +142,9 @@ export class AlpacaAdapter implements BrokerAdapter {
       }
 
       return positions.map((p: any) => {
-        const sym = String(p.symbol || '').toUpperCase();
-        const ordInfo = orderMap[sym];
+        const rawSym = String(p.symbol || '').toUpperCase();
+        const sym = rawSym.replace('/', '');
+        const ordInfo = orderMap[sym] || orderMap[rawSym];
         return {
           symbol: sym,
           quantity: Number(p.qty),
