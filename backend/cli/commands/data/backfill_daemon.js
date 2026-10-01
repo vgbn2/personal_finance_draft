@@ -71,6 +71,7 @@ const DEFAULT_HIGH_MEMORY_RATIO = 0.8;
 
 const DAY_MS = 86400000;
 const DAEMON_STATUS_PATH = path.resolve(__dirname, '../../../../storage/data/cache/backfill_daemon_status.json');
+const DAEMON_LOCK_PATH = path.resolve(__dirname, '../../../../storage/data/cache/backfill_daemon.lock');
 
 function writeDaemonStatus(status) {
   fs.mkdirSync(path.dirname(DAEMON_STATUS_PATH), { recursive: true });
@@ -570,8 +571,8 @@ async function commandBackfillDaemon(args) {
   global.suppressLogs = true;
 
   const { acquireLock, releaseLock } = require('../../../../shared/lib/runtime/process_lock.js');
-  const lock = acquireLock('backfill_daemon');
-  if (!lock) {
+  const locked = acquireLock(DAEMON_LOCK_PATH);
+  if (!locked) {
     console.error('[BACKFILL] Error: Backfill daemon is already running (process lock held).');
     return 1;
   }
@@ -587,7 +588,7 @@ async function commandBackfillDaemon(args) {
   const stopDaemon = () => {
     if (stopping) return;
     stopping = true;
-    try { releaseLock(lock); } catch (_) {}
+    try { releaseLock(DAEMON_LOCK_PATH); } catch (_) {}
     writeDaemonStatus({ status: 'stopped', pid: process.pid, cycle, stopped_at: new Date().toISOString(), updated_at: new Date().toISOString() });
     writeBackfillHeartbeat({ state: 'stopped', attempted: false, next_run_at: null });
     process.exit(0);
