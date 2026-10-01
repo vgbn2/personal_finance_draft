@@ -82,11 +82,6 @@ function buildMt5StrategyArgs(options = {}) {
 }
 
 async function runPaperBotLoop(intervalMin, opts = {}) {
-  const gate = featureGate('bot_autopilot', { settings: opts.settings, surface: 'Paper bot loop' });
-  if (!gate.ok) {
-    printPayload({ ok: false, type: 'feature_gate', feature_flag: gate.flag, reason: gate.reason, hint: gate.hint }, opts.args || []);
-    return 1;
-  }
   const intervalPolicy = resolvePaperBotInterval(intervalMin, opts.settings);
   const effectiveIntervalMin = intervalPolicy.effective_interval_min;
   const { commandPolymarket } = require('../trade/trade.js');
@@ -95,7 +90,13 @@ async function runPaperBotLoop(intervalMin, opts = {}) {
   const strategy = opts.strategy || 'low_prob_dip';
   const paperArgs = buildPaperRunArgs({ ...opts, strategy });
 
+  const initialGate = featureGate('bot_autopilot', { settings: opts.settings, surface: 'Paper bot loop' });
+
   if (opts.once) {
+    if (!initialGate.ok) {
+      printPayload({ ok: false, type: 'feature_gate', feature_flag: initialGate.flag, reason: initialGate.reason, hint: initialGate.hint }, opts.args || []);
+      return 1;
+    }
     console.log('[run bot paper] Running one-shot paper cycle...');
     const closed = await checkAndCloseResolvedPositions();
     if (closed.closed.length > 0) console.log(`[paper_bot] Auto-closed ${closed.closed.length} resolved position(s)`);
@@ -104,10 +105,20 @@ async function runPaperBotLoop(intervalMin, opts = {}) {
   }
 
   installShutdownHandlers();
-  console.log(`[run bot paper] Starting Polymarket paper bot every ${effectiveIntervalMin} min (global=${intervalPolicy.global_minimum_min} personal=${intervalPolicy.personal_interval_min} admin=${intervalPolicy.admin_minimum_min}). Ctrl+C to stop.`);
+  if (!initialGate.ok) {
+    console.log(`[run bot paper] Notice: bot_autopilot feature flag is disabled (${initialGate.reason}). Starting dormant loop waiting for enablement. Ctrl+C to stop.`);
+  } else {
+    console.log(`[run bot paper] Starting Polymarket paper bot every ${effectiveIntervalMin} min (global=${intervalPolicy.global_minimum_min} personal=${intervalPolicy.personal_interval_min} admin=${intervalPolicy.admin_minimum_min}). Ctrl+C to stop.`);
+  }
 
   const start = opts.startLoop || startLoop;
   start('paper_bot', async ({ iteration }) => {
+    const currentSettings = opts.settings || loadRuntimeSettings();
+    const currentGate = featureGate('bot_autopilot', { settings: currentSettings, surface: 'Paper bot loop' });
+    if (!currentGate.ok) {
+      console.log(`[paper_bot] #${iteration} — dormant (bot_autopilot flag is disabled)`);
+      return;
+    }
     console.log(`[paper_bot] #${iteration} — ${new Date().toISOString()}`);
     const closed = await checkAndCloseResolvedPositions();
     if (closed.closed.length > 0) console.log(`[paper_bot] Auto-closed ${closed.closed.length} resolved position(s)`);
@@ -123,37 +134,47 @@ async function runAlpacaPaperLoop(intervalMin, opts = {}) {
     || require('../strategy/strategy.js').runAutomatedStrategies;
   const settings = opts.settings || loadRuntimeSettings();
 
-  const gate = featureGate('bot_autopilot', {
+  const initialGate = featureGate('bot_autopilot', {
     settings,
     surface: 'Alpaca Paper bot loop'
   });
-  if (!gate.ok) {
-    printPayload({
-      ok: false,
-      type: 'feature_gate',
-      feature_flag: gate.flag,
-      reason: gate.reason,
-      hint: gate.hint
-    }, opts.args || []);
-    return 1;
-  }
-
-  const effectiveIntervalMin = Math.max(1, Number(intervalMin) || 15);
-  const intervalMs = effectiveIntervalMin * 60 * 1000;
-  const strategyArgs = buildAlpacaPaperStrategyArgs(opts);
 
   if (opts.once) {
+    if (!initialGate.ok) {
+      printPayload({
+        ok: false,
+        type: 'feature_gate',
+        feature_flag: initialGate.flag,
+        reason: initialGate.reason,
+        hint: initialGate.hint
+      }, opts.args || []);
+      return 1;
+    }
     console.log('[run bot alpaca-paper] Running one-shot automation pass...');
-    await runStrategies(strategyArgs);
+    await runStrategies(buildAlpacaPaperStrategyArgs(opts));
     return 0;
   }
 
   installShutdownHandlers();
-  console.log(`[run bot alpaca-paper] Starting Alpaca Paper automation loop every ${effectiveIntervalMin} min. Ctrl+C to stop.`);
+  const effectiveIntervalMin = Math.max(1, Number(intervalMin) || 15);
+  const intervalMs = effectiveIntervalMin * 60 * 1000;
+
+  if (!initialGate.ok) {
+    console.log(`[run bot alpaca-paper] Notice: bot_autopilot feature flag is disabled (${initialGate.reason}). Starting dormant loop waiting for enablement. Ctrl+C to stop.`);
+  } else {
+    console.log(`[run bot alpaca-paper] Starting Alpaca Paper automation loop every ${effectiveIntervalMin} min. Ctrl+C to stop.`);
+  }
 
   const start = opts.startLoop || startLoop;
   start('alpaca_paper_bot', async ({ iteration }) => {
+    const currentSettings = opts.settings || loadRuntimeSettings();
+    const currentGate = featureGate('bot_autopilot', { settings: currentSettings, surface: 'Alpaca Paper bot loop' });
+    if (!currentGate.ok) {
+      console.log(`[alpaca_paper_bot] #${iteration} — dormant (bot_autopilot flag is disabled)`);
+      return;
+    }
     console.log(`[alpaca_paper_bot] #${iteration} — ${new Date().toISOString()}`);
+    const strategyArgs = buildAlpacaPaperStrategyArgs(opts);
     await runStrategies(strategyArgs);
   }, intervalMs, { continueOnError: true });
 

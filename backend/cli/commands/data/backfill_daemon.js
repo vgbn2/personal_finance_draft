@@ -34,7 +34,7 @@ const {
 } = require('./data.js');
 const { runPolymarketArchiveIngest } = require('../trade/trade_polymarket.js');
 const { parseTimeframeMs } = require('../../../scripts/data_ops/ingest_market_data/constants.js');
-const { isFresh } = require('../../../../shared/lib/market/coverage.js');
+const { isFresh, readCoverage } = require('../../../../shared/lib/market/coverage.js');
 const {
   buildWriterJobUniverse,
   PRICE_BEARING_FAMILIES,
@@ -363,12 +363,28 @@ async function runBackfillCycle(o) {
 
     if (action === 'skip') {
       summary.skipped += 1;
-      // A fresh base bin can coexist with missing/stale derived bins after an interrupted
-      // rollup. Repair them locally without issuing another provider request.
-      try {
-        if (!applyRollup(job, action, o.rollup(job, 'refresh'), ' refresh')) return;
-      } catch (error) {
-        if (!applyRollup(job, action, { ok: false, error: error.message }, ' refresh')) return;
+      // Check whether any configured derived bin is actually missing or stale.
+      // If all derived bins are already present and up-to-date with the base bin,
+      // skip rollup entirely to prevent redundant disk write wear.
+      const targets = configuredRollupTargets(job);
+      let needsRepair = false;
+      if (targets.length > 0) {
+        for (const tf of targets) {
+          const cov = readCoverage(tsDir, job.symbol, tf, now);
+          const tfMs = parseTimeframeMs(tf) || 0;
+          if (!cov || !cov.exists || cov.count === 0 || (gate.lastBarMs && (!cov.lastBarMs || cov.lastBarMs + tfMs <= gate.lastBarMs))) {
+            needsRepair = true;
+            break;
+          }
+        }
+      }
+
+      if (needsRepair) {
+        try {
+          if (!applyRollup(job, action, o.rollup(job, 'refresh'), ' refresh')) return;
+        } catch (error) {
+          if (!applyRollup(job, action, { ok: false, error: error.message }, ' refresh')) return;
+        }
       }
       if (gate.reason === 'not_found') log(`[BACKFILL] ${job.symbol}  ✗ no data on provider (skip 7d)`);
       if (o.onJobDone) o.onJobDone(job, 'skipped');

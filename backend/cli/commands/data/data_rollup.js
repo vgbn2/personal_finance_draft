@@ -2,6 +2,7 @@
 const path = require('node:path');
 const fs = require('node:fs');
 const { writeTsIndex, readTsIndex, readTsIndexSince, mergeWriteBin, recordKey } = require('../../../../shared/lib/market/validation.js');
+const { readCoverage } = require('../../../../shared/lib/market/coverage.js');
 const {
   FAMILY_BASE_TIMEFRAME: FAMILY_BASE_TF,
 } = require('../../../../shared/lib/market/configured_universe.js');
@@ -180,6 +181,12 @@ function rollupFromBase(tsDir, symbol, baseTf, timeframes, opts = {}) {
         const derived = aggregateCandles(dailyCandles, tf, symbol, provider, family, { sourceTimeframe: '1d' });
         tfCounts[tf] = derived.length;
         if (derived.length > 0) {
+          const lastDerivedMs = Date.parse(derived[derived.length - 1].timestamp || derived[derived.length - 1].openTime);
+          const existingCov = readCoverage(tsDir, symbol, tf);
+          if (existingCov && existingCov.exists && existingCov.count === derived.length && existingCov.lastBarMs === lastDerivedMs) {
+            // Derived bin is already count- and timestamp-identical; bypass redundant disk unlink & write
+            continue;
+          }
           removeDerivedBin(tsDir, symbol, tf); // clean rebuild — pure cache of 1d
           writeTsIndex(tsDir, { sources: derived });
         }
