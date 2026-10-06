@@ -28,11 +28,11 @@ const CONFIG_DEFAULTS = {
     polling_interval_seconds: 60,
   },
   feature_flags: {
-    bot_autopilot: false,
-    polymarket: false,
-    onchain_data: false,
-    multi_agent_research: false,
-    auto_rebalance: false,
+    bot_autopilot: true,
+    polymarket: true,
+    onchain_data: true,
+    multi_agent_research: true,
+    auto_rebalance: true,
   },
 };
 

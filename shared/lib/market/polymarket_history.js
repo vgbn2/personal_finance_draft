@@ -527,16 +527,26 @@ async function fetchResolvedGammaMarketsPage(opts = {}) {
     offset = 0,
     order = 'id',
     ascending = false,
+    closed = true,
   } = opts;
   const clampedLimit = Math.min(Number(limit) || 100, GAMMA_PAGE_MAX);
-  const url = `${GAMMA_BASE}/markets?closed=true&limit=${clampedLimit}&offset=${offset}&order=${encodeURIComponent(order)}&ascending=${ascending ? 'true' : 'false'}`;
+  // Gamma API enforces an offset ceiling (2000-5000). Beyond this, return clean empty data.
+  if (offset >= 2000) {
+    return { ok: true, source: 'api_exhausted', data: [], url: '' };
+  }
+  const closedParam = closed === 'all' ? '' : `closed=${closed ? 'true' : 'false'}&`;
+  const url = `${GAMMA_BASE}/markets?${closedParam}limit=${clampedLimit}&offset=${offset}&order=${encodeURIComponent(order)}&ascending=${ascending ? 'true' : 'false'}`;
   const backfillRetryOpts = { attempts: 5, baseDelayMs: 1000, retryOn429: true };
   try {
     const markets = await fetchJson(url, 'Gamma', backfillRetryOpts);
     if (!Array.isArray(markets)) return { ok: false, error: 'Gamma response is not an array', raw: markets };
     return { ok: true, source: 'api', data: markets, url };
   } catch (err) {
-    return { ok: false, error: err && err.message ? err.message : String(err), url };
+    const errMsg = err && err.message ? err.message : String(err);
+    if (errMsg.includes('422') || errMsg.includes('offset too large')) {
+      return { ok: true, source: 'api_exhausted', data: [], url };
+    }
+    return { ok: false, error: errMsg, url };
   }
 }
 
