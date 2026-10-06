@@ -481,6 +481,13 @@ async function runAutomationPass(args, strategiesOverride = null) {
         targetStrategies = targetStrategies.filter((strategy) => allowedTimeframes.includes(resolveStrategyTimeframe(strategy, args)));
     }
 
+    // Filter strategies by broker compatibility (e.g. skip MT5-only forex/indices on Alpaca Paper runner)
+    if (providerPaper) {
+        const mt5Excluded = targetStrategies.filter((strategy) => strategy.broker === 'mt5' || String(strategy.name || '').startsWith('auto_mt5_'));
+        mt5Excluded.forEach((strategy) => console.log(`[AUTOMATION] ${strategy.name} skipped: broker_mismatch (mt5 strategy on alpaca paper runner).`));
+        targetStrategies = targetStrategies.filter((strategy) => strategy.broker !== 'mt5' && !String(strategy.name || '').startsWith('auto_mt5_'));
+    }
+
     if (targetStrategies.length === 0) {
         console.log(`[\x1b[90m${new Date().toLocaleTimeString()}\x1b[0m] [AUTOMATION] No strategies to process.`);
         return;

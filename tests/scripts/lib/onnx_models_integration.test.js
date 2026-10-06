@@ -21,8 +21,20 @@ test('MODEL_ALIASES.xgboost now points to xgboost_v1 (not the old ranker stub)',
   assert.equal(MODEL_ALIASES.xgboost, 'xgboost_v1');
 });
 
-test('MODEL_ALIASES.lr now points to logistic_v1 (trained model)', () => {
-  assert.equal(MODEL_ALIASES.lr, 'logistic_v1');
+test('resolveModel resolves unversioned strategy model names without fallback warnings', () => {
+  assert.equal(resolveModel('logistic_regression').name, 'logistic_regression_v0');
+  assert.equal(resolveModel('random_forest').name, 'random_forest_v0');
+  assert.equal(resolveModel('decision_tree_stump').name, 'decision_tree_stump_v0');
+  assert.equal(resolveModel('knn_pattern').name, 'knn_pattern_v0');
+  assert.equal(resolveModel('svm_margin').name, 'svm_margin_v0');
+  assert.equal(resolveModel('naive_bayes_regime').name, 'naive_bayes_regime_v0');
+});
+
+test('MODEL_ALIASES maps unversioned strategy names to canonical versions', () => {
+  assert.equal(MODEL_ALIASES.logistic_regression, 'logistic_regression_v0');
+  assert.equal(MODEL_ALIASES.random_forest, 'random_forest_v0');
+  assert.equal(MODEL_ALIASES.knn_pattern, 'knn_pattern_v0');
+  assert.equal(MODEL_ALIASES.decision_tree_stump, 'decision_tree_stump_v0');
 });
 
 test('ONNX_MODEL_NAMES contains all three trained models', () => {

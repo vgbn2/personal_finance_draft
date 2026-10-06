@@ -421,19 +421,30 @@ const onnxModelCandidates = ['xgboost_v1', 'logistic_v1', 'regime_classifier'].m
   },
 }));
 
-// Short names used in strategy YAMLs → canonical model names
+// Short and unversioned names used in strategy YAMLs → canonical model names
 const MODEL_ALIASES = {
-  xgboost:   'xgboost_v1',
-  cnn_v3:    'cnn_window_v0',
-  lstm_v1:   'lstm_sequence_v0',
-  cnn:       'cnn_window_v0',
-  lstm:      'lstm_sequence_v0',
-  rf:        'random_forest_v0',
-  dt:        'decision_tree_stump_v0',
-  lr:        'logistic_v1',
-  logistic:  'logistic_v1',
-  svm:       'svm_margin_v0',
-  regime:    'regime_classifier',
+  xgboost:             'xgboost_v1',
+  cnn_v3:              'cnn_window_v0',
+  lstm_v1:             'lstm_sequence_v0',
+  cnn:                 'cnn_window_v0',
+  cnn_window:          'cnn_window_v0',
+  lstm:                'lstm_sequence_v0',
+  lstm_sequence:       'lstm_sequence_v0',
+  rf:                  'random_forest_v0',
+  random_forest:       'random_forest_v0',
+  dt:                  'decision_tree_stump_v0',
+  decision_tree_stump: 'decision_tree_stump_v0',
+  decision_tree:       'decision_tree_stump_v0',
+  lr:                  'logistic_regression_v0',
+  logistic:            'logistic_regression_v0',
+  logistic_regression: 'logistic_regression_v0',
+  svm:                 'svm_margin_v0',
+  svm_margin:          'svm_margin_v0',
+  knn:                 'knn_pattern_v0',
+  knn_pattern:         'knn_pattern_v0',
+  naive_bayes:         'naive_bayes_regime_v0',
+  naive_bayes_regime:  'naive_bayes_regime_v0',
+  regime:              'regime_classifier',
 };
 
 const ONNX_MODEL_NAMES = new Set(['xgboost_v1', 'logistic_v1', 'regime_classifier']);
