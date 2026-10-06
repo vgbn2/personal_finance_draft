@@ -57,9 +57,10 @@ function buildDeribitReport(env = process.env, options = {}) {
 }
 
 function resolveDeribitSettings(env = process.env, options = {}) {
+  const testnetEnv = getEnvValue(env, ['DERIBIT_TESTNET']);
   const isTestnet = options.testnet !== undefined
     ? Boolean(options.testnet)
-    : (getEnvValue(env, ['DERIBIT_TESTNET'], 'true').toLowerCase() !== 'false');
+    : (testnetEnv ? testnetEnv.toLowerCase() !== 'false' : true);
 
   const defaultBaseUrl = isTestnet ? TESTNET_BASE_URL : LIVE_BASE_URL;
 

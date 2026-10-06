@@ -8,7 +8,9 @@ export interface AlpacaAdapterOptions {
   keyId?: string;
   secretKey?: string;
   paper?: boolean;
+  baseUrl?: string;
   simulateIfMissingCredentials?: boolean;
+  client?: any;
 }
 
 export class AlpacaAdapter implements BrokerAdapter {
@@ -22,11 +24,19 @@ export class AlpacaAdapter implements BrokerAdapter {
     const paper = settings.paper;
     this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
 
-    if (keyId && secretKey) {
-      this.alpaca = new Alpaca({
+    if (options.client) {
+      this.alpaca = options.client;
+    } else if (keyId && secretKey) {
+      // ponytail: supports both SDK v3 and v4 namespace exports
+      const AlpacaModule = require('@alpacahq/alpaca-trade-api');
+      const AlpacaConstructor = typeof AlpacaModule === 'function'
+        ? AlpacaModule
+        : (AlpacaModule?.Alpaca || AlpacaModule?.default || AlpacaModule);
+      this.alpaca = new AlpacaConstructor({
         keyId,
         secretKey,
         paper,
+        baseUrl: settings.baseUrl,
       });
     }
   }

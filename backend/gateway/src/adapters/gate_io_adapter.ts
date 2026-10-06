@@ -9,6 +9,9 @@ export interface GateIoAdapterOptions {
   apiSecret?: string;
   baseUrl?: string;
   simulateIfMissingCredentials?: boolean;
+  timeoutMs?: number;
+  attempts?: number;
+  baseDelayMs?: number;
 }
 
 function toJsonOrText(text: string): unknown {
@@ -24,6 +27,9 @@ export class GateIoAdapter implements BrokerAdapter {
   private readonly apiKey: string | undefined;
   private readonly apiSecret: string | undefined;
   private readonly simulateIfMissingCredentials: boolean;
+  private readonly timeoutMs?: number;
+  private readonly attempts?: number;
+  private readonly baseDelayMs?: number;
 
   constructor(options: GateIoAdapterOptions = {}) {
     const settings = resolveGateIoSettings(process.env, options);
@@ -31,6 +37,9 @@ export class GateIoAdapter implements BrokerAdapter {
     this.apiKey = settings.apiKey;
     this.apiSecret = settings.apiSecret;
     this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
+    this.timeoutMs = options.timeoutMs;
+    this.attempts = options.attempts;
+    this.baseDelayMs = options.baseDelayMs;
   }
 
   private hasCredentials(): boolean {
@@ -52,6 +61,10 @@ export class GateIoAdapter implements BrokerAdapter {
         Timestamp: timestamp,
       },
       body: payload || undefined,
+    }, {
+      attempts: this.attempts ?? 3,
+      timeoutMs: this.timeoutMs,
+      baseDelayMs: this.baseDelayMs ?? 300,
     });
 
     const responseText = await response.text();

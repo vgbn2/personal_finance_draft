@@ -1266,11 +1266,15 @@ async function syncGammaMarketsDelta(options = {}) {
       closed: options.closed !== undefined ? options.closed : true,
     });
 
-    if (!res || !res.ok || !Array.isArray(res.markets) || res.markets.length === 0) {
+    const rawMarkets = Array.isArray(res.markets)
+      ? res.markets
+      : (Array.isArray(res.data) ? res.data : []);
+
+    if (!res || !res.ok || rawMarkets.length === 0) {
       break;
     }
 
-    for (const raw of res.markets) {
+    for (const raw of rawMarkets) {
       const market = normalizeGammaMarket(raw);
       const updatedAt = market.updated_at || market.end_date_iso || null;
       if (newestSeenUpdatedAt === null && updatedAt) {
@@ -1286,8 +1290,8 @@ async function syncGammaMarketsDelta(options = {}) {
       if (newMarkets.length >= maxMarkets) break;
     }
 
-    if (res.markets.length < limit) break;
-    offset += res.markets.length;
+    if (rawMarkets.length < limit) break;
+    offset += rawMarkets.length;
   }
 
   return {

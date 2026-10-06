@@ -19,6 +19,7 @@ function isRetryableError(err) {
   if (RETRYABLE_CODES.has(code)) return true;
   // undici errors all start with UND_ERR_
   if (typeof code === 'string' && code.startsWith('UND_ERR_')) return true;
+  if (err.name === 'TimeoutError' || (err.cause && err.cause.name === 'TimeoutError')) return true;
   return false;
 }
 
@@ -46,6 +47,9 @@ async function fetchWithRetry(url, options = {}, retry = {}) {
     ? retry.baseDelayMs
     : 300;
   const retryOn429 = retry.retryOn429 === true;
+  const timeoutMs = typeof retry.timeoutMs === 'number' && retry.timeoutMs > 0
+    ? retry.timeoutMs
+    : null;
 
   let lastError;
   let lastResponse;
@@ -57,7 +61,10 @@ async function fetchWithRetry(url, options = {}, retry = {}) {
     }
 
     try {
-      const response = await fetch(url, options);
+      const fetchOpts = (timeoutMs && !options.signal)
+        ? { ...options, signal: AbortSignal.timeout(timeoutMs) }
+        : options;
+      const response = await fetch(url, fetchOpts);
 
       // 429 Too Many Requests — opt-in retry with Retry-After backoff.
       if (response.status === 429 && retryOn429) {

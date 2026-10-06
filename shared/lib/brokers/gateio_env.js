@@ -26,10 +26,12 @@ function resolveGateIoSettings(env = process.env, options = {}) {
     baseUrl: options.baseUrl
       || getEnvValue(env, ['GATEIO_BASE_URL'])
       || spec.defaultHost,
-    apiKey: options.apiKey
-      || getEnvValue(env, ['GATEIO_API_KEY']),
-    apiSecret: options.apiSecret
-      || getEnvValue(env, ['GATEIO_API_SECRET']),
+    apiKey: options.apiKey !== undefined
+      ? options.apiKey
+      : getEnvValue(env, ['GATEIO_API_KEY']),
+    apiSecret: options.apiSecret !== undefined
+      ? options.apiSecret
+      : getEnvValue(env, ['GATEIO_API_SECRET']),
   };
 }
 
