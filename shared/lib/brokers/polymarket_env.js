@@ -61,14 +61,18 @@ function resolvePolymarketClientSettings(env = process.env, options = {}) {
   const host = options.host
     || getEnvValue(env, ['POLYMARKET_CLOB_HOST'])
     || spec.defaultHost;
-  const privateKey = options.privateKey
-    || getEnvValue(env, ['POLYMARKET_PRIVATE_KEY']);
-  const apiKey = options.apiKey
-    || getEnvValue(env, ['POLYMARKET_API_KEY']);
-  const apiSecret = options.apiSecret
-    || getEnvValue(env, ['POLYMARKET_API_SECRET']);
-  const apiPassphrase = options.apiPassphrase
-    || getEnvValue(env, ['POLYMARKET_API_PASSPHRASE']);
+  const privateKey = options.privateKey !== undefined
+    ? options.privateKey
+    : getEnvValue(env, ['POLYMARKET_PRIVATE_KEY']);
+  const apiKey = options.apiKey !== undefined
+    ? options.apiKey
+    : getEnvValue(env, ['POLYMARKET_API_KEY']);
+  const apiSecret = options.apiSecret !== undefined
+    ? options.apiSecret
+    : getEnvValue(env, ['POLYMARKET_API_SECRET']);
+  const apiPassphrase = options.apiPassphrase !== undefined
+    ? options.apiPassphrase
+    : getEnvValue(env, ['POLYMARKET_API_PASSPHRASE']);
   const funderAddress = options.funderAddress || resolveWalletAddress(env);
   const signatureType = options.signatureType ?? (() => {
     const explicit = String(env.POLYMARKET_SIGNATURE_TYPE || '').trim();

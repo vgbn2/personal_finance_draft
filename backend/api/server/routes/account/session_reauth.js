@@ -8,8 +8,12 @@ module.exports = {
     return {
       ok: Boolean(decision && decision.allowed),
       type: 'session_reauthentication',
-      action: decision ? decision.action : 'reauth',
-      risk: decision ? decision.risk : { level: 'elevated', reason: 'missing_session_decision', changed: false },
+      action: decision && decision.action ? decision.action : 'reauth',
+      risk: (decision && decision.risk) || {
+        level: 'elevated',
+        reason: 'missing_session_decision',
+        changed: false,
+      },
     };
   },
 };

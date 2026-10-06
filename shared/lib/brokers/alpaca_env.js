@@ -78,12 +78,12 @@ function resolveAlpacaSettings(env = process.env, options = {}) {
     || getEnvValue(env, scopedNames.base)
     || (legacyMatchesScope ? legacyBaseUrl : null)
     || scopedNames.defaultBase;
-  const keyId = options.keyId
-    || getEnvValue(env, scopedNames.key)
-    || (legacyMatchesScope ? getEnvValue(env, ['ALPACA_API_KEY', 'ALPACA_KEY']) : null);
-  const secretKey = options.secretKey
-    || getEnvValue(env, scopedNames.secret)
-    || (legacyMatchesScope ? getEnvValue(env, ['ALPACA_SECRET_KEY', 'ALPACA_API_SECRET']) : null);
+  const keyId = options.keyId !== undefined
+    ? options.keyId
+    : (getEnvValue(env, scopedNames.key) || (legacyMatchesScope ? getEnvValue(env, ['ALPACA_API_KEY', 'ALPACA_KEY']) : null));
+  const secretKey = options.secretKey !== undefined
+    ? options.secretKey
+    : (getEnvValue(env, scopedNames.secret) || (legacyMatchesScope ? getEnvValue(env, ['ALPACA_SECRET_KEY', 'ALPACA_API_SECRET']) : null));
 
   return {
     baseUrl,
@@ -117,6 +117,18 @@ function isAlpacaTradable(symbol) {
   return /^[A-Z]{1,5}$/.test(sym);
 }
 
+function toAlpacaTradeSymbol(symbol) {
+  const sym = String(symbol || '').trim().toUpperCase();
+  if (!sym) return '';
+  if (sym.includes('/')) return sym;
+  if (sym.includes('-')) return sym.replace('-', '/');
+  const cryptoMatch = sym.match(/^(BTC|ETH|SOL|DOGE|XRP|ADA|AVAX|LINK|LTC|BCH|UNI|AAVE|SHIB|PEPE|SUI|DOT|TRX|NEAR|POL|MATIC)(USD|USDT|USDC)$/);
+  if (cryptoMatch) {
+    return `${cryptoMatch[1]}/USD`;
+  }
+  return sym;
+}
+
 module.exports = {
   LIVE_BASE_URL,
   PAPER_BASE_URL,
@@ -125,4 +137,5 @@ module.exports = {
   resolveAlpacaSettings,
   ALPACA_SUPPORTED_CRYPTO_PAIRS,
   isAlpacaTradable,
+  toAlpacaTradeSymbol,
 };

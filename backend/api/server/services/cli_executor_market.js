@@ -73,10 +73,23 @@ function localStatsFromEquityCsv(equityCsv) {
     const previous = values[index];
     return previous !== 0 ? (value - previous) / previous : 0;
   });
-  const average = returns.length ? returns.reduce((sum, value) => sum + value, 0) / returns.length : 0;
-  const variance = returns.length ? returns.reduce((sum, value) => sum + ((value - average) ** 2), 0) / returns.length : 0;
+  let average = 0;
+  if (returns.length > 0) {
+    const sum = returns.reduce((acc, value) => acc + value, 0);
+    average = sum / returns.length;
+  }
+
+  let variance = 0;
+  if (returns.length > 0) {
+    const sumSqDiff = returns.reduce((acc, value) => acc + ((value - average) ** 2), 0);
+    variance = sumSqDiff / returns.length;
+  }
   const volatility = Math.sqrt(variance);
-  const cumulativeReturn = values[0] !== 0 ? (values[values.length - 1] - values[0]) / values[0] : 0;
+
+  let cumulativeReturn = 0;
+  if (values[0] !== 0) {
+    cumulativeReturn = (values[values.length - 1] - values[0]) / values[0];
+  }
   return {
     ok: true,
     type: 'backend_stats',
@@ -158,7 +171,10 @@ function bucketKeyForTimeframe(timestamp, timeframe) {
   }
 
   if (timeframe === '1w') {
-    const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const day = date.getUTCDate();
+    const utc = new Date(Date.UTC(year, month, day));
     const dayIndex = utc.getUTCDay();
     const offset = dayIndex === 0 ? 6 : dayIndex - 1;
     utc.setUTCDate(utc.getUTCDate() - offset);
@@ -219,6 +235,11 @@ function buildMarketDataSummary(query = {}) {
   const closes = slice.map((record) => Number(record.close)).filter((value) => Number.isFinite(value));
   const volumes = slice.map((record) => Number(record.volume)).filter((value) => Number.isFinite(value));
 
+  let totalVolume = 0;
+  if (volumes.length > 0) {
+    totalVolume = volumes.reduce((sum, value) => sum + value, 0);
+  }
+
   return {
     available: true,
     ok: true,
@@ -237,7 +258,7 @@ function buildMarketDataSummary(query = {}) {
       last_close: Number.isFinite(Number(last.close)) ? Number(last.close) : null,
       min_close: closes.length ? Math.min(...closes) : null,
       max_close: closes.length ? Math.max(...closes) : null,
-      total_volume: volumes.length ? volumes.reduce((sum, value) => sum + value, 0) : 0,
+      total_volume: totalVolume,
     },
     quality: {
       rejected_records: 0,
@@ -281,9 +302,14 @@ function buildCorrelationMatrix(query = {}) {
   const requestedSymbols = parseSymbolList(query.symbols);
   const allRecords = loadHistoryRecords(input);
   const records = allRecords.filter((record) => !timeframe || record.timeframe === timeframe);
-  const symbols = requestedSymbols.length
-    ? requestedSymbols.map((symbol) => symbol.toUpperCase())
-    : [...new Set((records.length ? records : allRecords).map((record) => record.symbol).filter(Boolean))];
+  let symbols = [];
+  if (requestedSymbols.length > 0) {
+    symbols = requestedSymbols.map((symbol) => symbol.toUpperCase());
+  } else {
+    const candidateRecords = records.length > 0 ? records : allRecords;
+    const rawSymbols = candidateRecords.map((record) => record.symbol).filter(Boolean);
+    symbols = [...new Set(rawSymbols)];
+  }
   const bySymbol = new Map();
 
   for (const symbol of symbols) {
@@ -303,7 +329,10 @@ function buildCorrelationMatrix(query = {}) {
     return new Set([...shared].filter((timestamp) => timestamps.has(timestamp)));
   }, new Set());
   const alignedTimestamps = [...commonTimestamps].sort((left, right) => left.localeCompare(right));
-  const alignedValues = symbols.map((symbol) => alignedTimestamps.map((timestamp) => Number(bySymbol.get(symbol).get(timestamp)?.close)));
+  const alignedValues = symbols.map((symbol) => {
+    const symbolMap = bySymbol.get(symbol);
+    return alignedTimestamps.map((timestamp) => Number(symbolMap.get(timestamp)?.close));
+  });
   const completeIndices = alignedTimestamps
     .map((_, index) => index)
     .filter((index) => alignedValues.every((series) => Number.isFinite(series[index])));

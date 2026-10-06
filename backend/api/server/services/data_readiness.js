@@ -91,7 +91,12 @@ function checkStrategyDataReadiness(strategySpec, options = {}) {
     return { ok: false, error_code: 'invalid_strategy_spec', status: 400, message: 'Invalid strategy specification' };
   }
 
-  const symbols = Array.isArray(strategySpec.symbols) ? strategySpec.symbols : (strategySpec.symbol ? [strategySpec.symbol] : []);
+  let symbols = [];
+  if (Array.isArray(strategySpec.symbols)) {
+    symbols = strategySpec.symbols;
+  } else if (strategySpec.symbol) {
+    symbols = [strategySpec.symbol];
+  }
   const timeframe = strategySpec.timeframe || '1d';
 
   if (symbols.length === 0) {

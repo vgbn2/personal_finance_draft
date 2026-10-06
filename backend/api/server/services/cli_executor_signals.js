@@ -27,7 +27,10 @@ const DEFAULT_BACKTEST_REPORT = DEFAULT_BACKTEST;
 
 const SIGNAL_REPORT_MAX_AGE_MS = (() => {
   const configured = Number.parseInt(process.env.SOVEREIGN_SIGNAL_REPORT_MAX_AGE_MS || '', 10);
-  return Number.isFinite(configured) && configured > 0 ? configured : 24 * 60 * 60 * 1000;
+  if (Number.isFinite(configured) && configured > 0) {
+    return configured;
+  }
+  return 24 * 60 * 60 * 1000;
 })();
 
 function directionFromReturn(value) {
@@ -96,7 +99,10 @@ function resolveSignalRequest(query, runtime) {
   const thresholdReport = readJsonFile(modelPath);
   const threshold = finiteNumber(query.threshold, null)
     ?? finiteNumber(thresholdReport?.threshold, 0.55);
-  const runtimeCacheSuffix = runtime.now === undefined ? '' : `:${now}:${reportMaxAgeMs}`;
+  let runtimeCacheSuffix = '';
+  if (runtime.now !== undefined) {
+    runtimeCacheSuffix = `:${now}:${reportMaxAgeMs}`;
+  }
   const cacheKey = `signal:${modelPath}:${backtestPath}:${threshold}:${query.input || 'latest'}${runtimeCacheSuffix}`;
   return { now, reportMaxAgeMs, modelPath, backtestPath, threshold, cacheKey };
 }
@@ -134,7 +140,10 @@ function regenerateSignalModelReport(query, request, modelReport) {
 
 function signalReportFreshness(modelReport, request) {
   const generatedMs = Date.parse(modelReport?.generated_at || '');
-  const ageMs = Number.isFinite(generatedMs) ? Math.max(0, request.now - generatedMs) : null;
+  let ageMs = null;
+  if (Number.isFinite(generatedMs)) {
+    ageMs = Math.max(0, request.now - generatedMs);
+  }
   return {
     fresh: Number.isFinite(ageMs) && ageMs <= request.reportMaxAgeMs,
     ageMs,
@@ -148,7 +157,10 @@ function signalReason(fresh, decisionReady, qualityApproved, active) {
   if (!fresh) return 'source_report_expired';
   if (!decisionReady) return 'model_not_decision_ready';
   if (!qualityApproved) return 'data_quality_not_approved';
-  return active ? 'candidate_above_threshold_not_promoted' : 'candidate_for_review_not_promoted';
+  if (active) {
+    return 'candidate_above_threshold_not_promoted';
+  }
+  return 'candidate_for_review_not_promoted';
 }
 
 function projectSignalCandidate(entry, index, reports, request, freshness) {
@@ -270,7 +282,10 @@ async function backendScorecard(query = {}) {
     return { ok: false, type: 'scorecard', error_code: 'invalid_direction', error: 'direction must be long, short, or neutral' };
   }
   const timeframeOptions = parseScorecardOptions(['--tf', timeframes]);
-  const requestedTimeframes = timeframes.split(',').map((value) => value.trim()).filter(Boolean);
+  const rawTimeframes = timeframes.split(',');
+  const requestedTimeframes = rawTimeframes
+    .map((value) => value.trim())
+    .filter(Boolean);
   if (!timeframeOptions.ok || timeframeOptions.tfConfigs.length !== requestedTimeframes.length) {
     return { ok: false, type: 'scorecard', error_code: 'invalid_timeframe', error: `invalid scorecard timeframe list: ${timeframes}` };
   }
