@@ -94,8 +94,27 @@ function buildFileArgs(options, target) {
       `--test-reporter=${RAG_REPORTER}`,
       '--test-reporter-destination=stderr',
     ] : []),
-    ...withoutConcurrency(options),
+    ...withoutConcurrency(options).filter((option) => option !== '--batch'),
     target,
+  ];
+}
+
+function buildBatchArgs(options, targets, concurrency = DEFAULT_TEST_CONCURRENCY) {
+  const hasReporter = options.some(
+    (option) => option === '--test-reporter' || option.startsWith('--test-reporter='),
+  );
+  return [
+    '--test',
+    ...(checkSupportsTestIsolationNone() ? ['--test-isolation=none'] : []),
+    `--test-concurrency=${concurrency}`,
+    ...(!hasReporter ? [
+      '--test-reporter=spec',
+      '--test-reporter-destination=stdout',
+      `--test-reporter=${RAG_REPORTER}`,
+      '--test-reporter-destination=stderr',
+    ] : []),
+    ...withoutConcurrency(options).filter((option) => option !== '--batch'),
+    ...targets,
   ];
 }
 
@@ -165,14 +184,50 @@ function runTestFile(options, target, environment, spawnProcess = spawn) {
   });
 }
 
-async function runTestFiles(options, targets, environment, concurrency) {
+function runTestBatch(options, targets, environment, concurrency, spawnProcess = spawn) {
+  return new Promise((resolve) => {
+    let settled = false;
+    let timer = null;
+    const finish = (exitCode) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      resolve(exitCode);
+    };
+    const child = spawnProcess(process.execPath, buildBatchArgs(options, targets, concurrency), {
+      stdio: 'inherit',
+      env: environment,
+    });
+    const batchTimeoutMs = Math.max(DEFAULT_PER_FILE_TIMEOUT_MS, Math.min(600000, targets.length * 5000));
+    timer = setTimeout(() => {
+      process.stderr.write(`batch test runner TIMED OUT after ${batchTimeoutMs}ms\n`);
+      if (child && !child.killed) {
+        child.kill('SIGKILL');
+      }
+      finish(1);
+    }, batchTimeoutMs);
+    child.once('error', (error) => {
+      process.stderr.write(`batch test runner failed to start: ${error.message}\n`);
+      finish(1);
+    });
+    child.once('close', (code, signal) => {
+      if (signal) process.stderr.write(`batch test runner terminated by signal: ${signal}\n`);
+      finish(code ?? 1);
+    });
+  });
+}
+
+async function runTestFiles(options, targets, environment, concurrency, spawnProcess = spawn) {
+  if (options.includes('--batch') || environment.SOVEREIGN_BATCH_TESTS === '1' || environment.SOVEREIGN_BATCH_TESTS === 'true') {
+    return runTestBatch(options, targets, environment, concurrency, spawnProcess);
+  }
   let nextIndex = 0;
   let failed = false;
   async function worker() {
     while (nextIndex < targets.length) {
       const target = targets[nextIndex];
       nextIndex += 1;
-      if (await runTestFile(options, target, environment) !== 0) failed = true;
+      if (await runTestFile(options, target, environment, spawnProcess) !== 0) failed = true;
     }
   }
   await Promise.all(
@@ -224,9 +279,11 @@ module.exports = {
   DEFAULT_FAILURE_LOG,
   DEFAULT_TEST_TARGETS,
   RAG_REPORTER,
+  buildBatchArgs,
   buildFileArgs,
   checkSupportsTestIsolationNone,
   resolveTargets,
+  runTestBatch,
   runnerConcurrency,
   sourceRevision,
   splitRunnerArgs,

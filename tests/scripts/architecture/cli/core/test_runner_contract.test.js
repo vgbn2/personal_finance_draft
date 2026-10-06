@@ -8,6 +8,7 @@ const {
   DEFAULT_TEST_CONCURRENCY,
   RAG_REPORTER,
   DEFAULT_TEST_TARGETS,
+  buildBatchArgs,
   buildFileArgs,
   checkSupportsTestIsolationNone,
   resolveTargets,
@@ -28,6 +29,20 @@ test('each Node test file runs without a second isolation layer and keeps canoni
     `--test-reporter=${RAG_REPORTER}`,
     '--test-reporter-destination=stderr',
     target,
+  ]);
+});
+
+test('buildBatchArgs combines multiple targets with native test concurrency and RAG reporter', () => {
+  const targets = ['/fixture/a.test.js', '/fixture/b.test.js'];
+  assert.deepEqual(buildBatchArgs([], targets, 4), [
+    '--test',
+    ...(checkSupportsTestIsolationNone() ? ['--test-isolation=none'] : []),
+    '--test-concurrency=4',
+    '--test-reporter=spec',
+    '--test-reporter-destination=stdout',
+    `--test-reporter=${RAG_REPORTER}`,
+    '--test-reporter-destination=stderr',
+    ...targets,
   ]);
 });
 
