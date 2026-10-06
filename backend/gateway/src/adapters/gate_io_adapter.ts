@@ -115,21 +115,29 @@ export class GateIoAdapter implements BrokerAdapter {
       return {};
     }
 
-    const response = await this.requestJson('GET', '/spot/accounts');
-    const balances: Record<string, number> = {};
-    if (Array.isArray(response)) {
-      for (const item of response) {
-        if (item && typeof item === 'object') {
-          const record = item as Record<string, unknown>;
-          const currency = String(record.currency || record.currency_pair || record.name || '').toUpperCase();
-          const balance = Number(record.available ?? record.balance ?? record.total ?? 0);
-          if (currency) {
-            balances[currency] = balance;
+    try {
+      const response = await this.requestJson('GET', '/spot/accounts');
+      const balances: Record<string, number> = {};
+      if (Array.isArray(response)) {
+        for (const item of response) {
+          if (item && typeof item === 'object') {
+            const record = item as Record<string, unknown>;
+            const currency = String(record.currency || record.currency_pair || record.name || '').toUpperCase();
+            const balance = Number(record.available ?? record.balance ?? record.total ?? 0);
+            if (currency) {
+              balances[currency] = balance;
+            }
           }
         }
       }
+      return balances;
+    } catch (err: any) {
+      if (this.simulateIfMissingCredentials) {
+        console.warn(`[GATE.IO] Account balance check failed (${err.message}), falling back to simulated empty balances`);
+        return {};
+      }
+      throw err;
     }
-    return balances;
   }
 
   private async getCostBasisVwap(pair: string): Promise<{ averagePrice: number; found: boolean }> {
