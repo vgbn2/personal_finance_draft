@@ -771,12 +771,13 @@ export async function main() {
         const specs = buildAlpacaPortfolioAdapterSpecs(scope);
         const mt5ConnectTimeout = Number(process.env.MT5_CONNECT_TIMEOUT_MS || (process.env.SOVEREIGN_NONINTERACTIVE === 'true' ? '50' : '100'));
         const mt5Adapter = new Mt5Adapter({ connectTimeoutMs: mt5ConnectTimeout });
+        const gateIoSimulate = !isLive || !process.env.GATEIO_API_KEY || process.env.GATEIO_SIMULATE === 'true';
         const liveAdapters = [
           ...specs.live.map((entry: { name: string; paper: boolean }) => ({
             name: entry.name,
             adapter: new AlpacaAdapter({ paper: entry.paper, simulateIfMissingCredentials: false }),
           })),
-          { name: 'Gate.io', adapter: new GateIoAdapter({ simulateIfMissingCredentials: false }) },
+          { name: 'Gate.io', adapter: new GateIoAdapter({ simulateIfMissingCredentials: gateIoSimulate }) },
           { name: 'Deribit (Options Live)', adapter: new DeribitAdapter({ testnet: false, simulateIfMissingCredentials: false }) },
           { name: 'MetaTrader 5', adapter: mt5Adapter },
         ];

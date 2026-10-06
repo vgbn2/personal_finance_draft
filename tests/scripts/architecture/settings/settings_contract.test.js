@@ -80,21 +80,21 @@ test('settings params --position-size merges correctly; other params unchanged',
 
 test('settings auto_backfill flag and backfill_interval_min round-trip', () => {
   withTempSettings((file) => {
-    // Defaults: flag off, interval present.
+    // Defaults: flag on by default, interval present.
     const initial = runSettings(['show'], file);
-    assert.equal(initial.feature_flags.auto_backfill, false);
+    assert.equal(initial.feature_flags.auto_backfill, true);
     assert.equal(initial.trading.backfill_interval_min, 1440);
 
-    const flag = runSettings(['flags', '--flag', 'auto_backfill', '--value', 'true'], file);
+    const flag = runSettings(['flags', '--flag', 'auto_backfill', '--value', 'false'], file);
     assert.equal(flag.ok, true);
-    assert.equal(flag.feature_flags.auto_backfill, true);
+    assert.equal(flag.feature_flags.auto_backfill, false);
 
     const params = runSettings(['params', '--backfill-interval', '720'], file);
     assert.equal(params.ok, true);
     assert.equal(params.trading.backfill_interval_min, 720);
 
     const show = runSettings(['show'], file);
-    assert.equal(show.feature_flags.auto_backfill, true);
+    assert.equal(show.feature_flags.auto_backfill, false);
     assert.equal(show.trading.backfill_interval_min, 720);
   });
 });
