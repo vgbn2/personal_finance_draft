@@ -18,6 +18,7 @@ const {
   tokenPricePath,
   tokenFeaturePath,
   writePolymarketArchiveChunk,
+  syncGammaMarketsDelta,
 } = require('../../../../shared/lib/market/polymarket_history.js');
 
 function tempArchive() {
@@ -481,4 +482,50 @@ test('backfillPolymarketArchive delayMs: skipped tokens do not trigger sleep', a
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+// ── syncGammaMarketsDelta dual mapper & pagination tests ───────────────────────
+
+test('syncGammaMarketsDelta: maps from { data: [...] } (Gamma API response shape) and terminates on cursor', async () => {
+  const rawPage1 = [
+    { id: 'm1', question: 'M1?', updated_at: '2026-03-01T12:00:00.000Z', tokens: [{ outcome: 'Yes', token_id: 't1' }] },
+    { id: 'm2', question: 'M2?', updated_at: '2026-02-01T12:00:00.000Z', tokens: [{ outcome: 'Yes', token_id: 't2' }] },
+  ];
+  const rawPage2 = [
+    { id: 'm3', question: 'M3?', updated_at: '2026-01-01T12:00:00.000Z', tokens: [{ outcome: 'Yes', token_id: 't3' }] },
+  ];
+
+  let fetchCalls = 0;
+  const mockFetchPage = async ({ offset }) => {
+    fetchCalls++;
+    if (offset === 0) return { ok: true, source: 'api', data: rawPage1 };
+    if (offset === 2) return { ok: true, source: 'api', data: rawPage2 };
+    return { ok: true, source: 'api', data: [] };
+  };
+
+  const result = await syncGammaMarketsDelta({
+    pageLimit: 2,
+    maxMarkets: 10,
+    cursor: '2026-01-15T00:00:00.000Z',
+    fetchMarketsPage: mockFetchPage,
+  });
+
+  assert.equal(result.count, 2, 'Must extract exactly 2 markets before hitting cursor');
+  assert.equal(result.reached_cursor, true, 'Must flag reached_cursor: true');
+  assert.equal(result.next_cursor, '2026-03-01T12:00:00.000Z', 'Must track newest seen updated_at');
+});
+
+test('syncGammaMarketsDelta: supports legacy { markets: [...] } response shape', async () => {
+  const rawMarkets = [
+    { id: 'legacy-m1', question: 'Legacy M1?', updated_at: '2026-04-01T12:00:00.000Z', tokens: [{ outcome: 'Yes', token_id: 'lt1' }] },
+  ];
+
+  const result = await syncGammaMarketsDelta({
+    pageLimit: 5,
+    maxMarkets: 5,
+    fetchMarketsPage: async () => ({ ok: true, markets: rawMarkets }),
+  });
+
+  assert.equal(result.count, 1, 'Must extract 1 market from legacy .markets property');
+  assert.equal(result.markets[0].id, 'legacy-m1');
 });

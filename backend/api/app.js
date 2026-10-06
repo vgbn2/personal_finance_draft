@@ -306,44 +306,56 @@ function queryObject(url) {
   return Object.fromEntries(url.searchParams.entries());
 }
 
+function handleDataChunk(state, chunk) {
+  state.bytes += chunk.length;
+  if (state.bytes > MAX_BODY_BYTES) {
+    state.exceeded = true;
+    return;
+  }
+  state.raw += chunk;
+}
+
+function handleBodyEnd(state, resolve, reject) {
+  if (state.exceeded) {
+    const error = new Error('request_body_too_large');
+    error.statusCode = 413;
+    return reject(error);
+  }
+  try {
+    resolve(JSON.parse(state.raw));
+  } catch (_) {
+    resolve({});
+  }
+}
+
 async function readBody(req) {
   return new Promise((resolve, reject) => {
-    let raw = '';
-    let bytes = 0;
-    let exceeded = false;
-    req.on('data', chunk => {
-      bytes += chunk.length;
-      if (bytes > MAX_BODY_BYTES) {
-        exceeded = true;
-        return;
-      }
-      raw += chunk;
-    });
-    req.on('end', () => {
-      if (exceeded) {
-        const error = new Error('request_body_too_large');
-        error.statusCode = 413;
-        reject(error);
-        return;
-      }
-      try { resolve(JSON.parse(raw)); } catch { resolve({}); }
-    });
+    const state = { raw: '', bytes: 0, exceeded: false };
+    req.on('data', chunk => handleDataChunk(state, chunk));
+    req.on('end', () => handleBodyEnd(state, resolve, reject));
     req.on('error', reject);
   });
+}
+
+function mergeRequestBody(query, body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return;
+  }
+  for (const [key, value] of Object.entries(body)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    query[key] = value;
+  }
 }
 
 async function handleApi(req, res, url) {
   const query = queryObject(url);
   // Merge JSON body into query for POST routes
-  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+  const isBodyMethod = req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH';
+  if (isBodyMethod) {
     const body = await readBody(req);
-    if (body && typeof body === 'object' && !Array.isArray(body)) {
-      for (const [key, value] of Object.entries(body)) {
-        if (key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
-          query[key] = value;
-        }
-      }
-    }
+    mergeRequestBody(query, body);
   }
   const route = ROUTES[url.pathname];
   if (route) {
@@ -388,54 +400,54 @@ const server = http.createServer(async (req, res) => {
 
 let io = null;
 
+function validateSocketCorsOrigin(origin, callback) {
+  if (isAllowedOrigin(origin, { headers: { host: `${HOST}:${PORT}` } })) {
+    return callback(null, true);
+  }
+  return callback(new Error('Origin not allowed by CORS'));
+}
+
+async function authenticateSocket(socket, next) {
+  try {
+    const principal = await resolveSocketPrincipal(socket);
+    const decision = authorize(principal, [CAPABILITIES.STATUS_READ]);
+    if (!decision.allowed) {
+      const error = new Error(decision.reason);
+      error.data = {
+        code: decision.reason,
+        required_capabilities: decision.required,
+      };
+      return next(error);
+    }
+    const network = requestNetworkContext(socket.request);
+    const sessionDecision = authSessionRegistry.record(principal, network);
+    if (!sessionDecision.allowed) {
+      const error = new Error('ip_reauthentication_required');
+      error.data = { code: 'ip_reauthentication_required' };
+      return next(error);
+    }
+    socket.data.sovereignPrincipal = principal;
+    socket.data.sovereignNetwork = network;
+    next();
+  } catch (_) {
+    const error = new Error('authentication_required');
+    error.data = { code: 'authentication_required' };
+    next(error);
+  }
+}
+
 try {
   const { Server } = require('socket.io');
 
   io = new Server(server, {
     cors: {
-      origin: (origin, callback) => {
-        // Validate origin against allowed origins policy
-        if (isAllowedOrigin(origin, { headers: { host: `${HOST}:${PORT}` } })) {
-          callback(null, true);
-        } else {
-          callback(new Error('Origin not allowed by CORS'));
-        }
-      },
-      methods: ['GET', 'POST']
+      origin: validateSocketCorsOrigin,
+      methods: ['GET', 'POST'],
     },
     allowRequest: (req, callback) => callback(null, isAllowedOrigin(req.headers.origin, req)),
   });
 
-  io.use(async (socket, next) => {
-    try {
-      const principal = await resolveSocketPrincipal(socket);
-      const decision = authorize(principal, [CAPABILITIES.STATUS_READ]);
-      if (!decision.allowed) {
-        const error = new Error(decision.reason);
-        error.data = {
-          code: decision.reason,
-          required_capabilities: decision.required,
-        };
-        next(error);
-        return;
-      }
-      const network = requestNetworkContext(socket.request);
-      const sessionDecision = authSessionRegistry.record(principal, network);
-      if (!sessionDecision.allowed) {
-        const error = new Error('ip_reauthentication_required');
-        error.data = { code: 'ip_reauthentication_required' };
-        next(error);
-        return;
-      }
-      socket.data.sovereignPrincipal = principal;
-      socket.data.sovereignNetwork = network;
-      next();
-    } catch (_) {
-      const error = new Error('authentication_required');
-      error.data = { code: 'authentication_required' };
-      next(error);
-    }
-  });
+  io.use(authenticateSocket);
 
   io.on('connection', (socket) => {
     console.log(`[TELEMETRY] Client connected: ${socket.id}`);

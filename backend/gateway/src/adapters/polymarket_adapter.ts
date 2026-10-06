@@ -24,6 +24,7 @@ export interface PolymarketAdapterOptions {
   funderAddress?: string;
   signatureType?: number;
   simulateIfMissingCredentials?: boolean;
+  client?: any;
 }
 
 export interface PreparedPolymarketOrder {
@@ -50,6 +51,7 @@ export class PolymarketAdapter implements BrokerAdapter {
   private readonly funderAddress: string | undefined;
   private readonly signatureType: number | undefined;
   private readonly simulateIfMissingCredentials: boolean;
+  private readonly client: any;
   private lastTradePagination: PolymarketTradePagination | undefined;
 
   constructor(options: PolymarketAdapterOptions = {}) {
@@ -60,10 +62,11 @@ export class PolymarketAdapter implements BrokerAdapter {
     this.funderAddress = settings.funderAddress;
     this.signatureType = settings.signatureType;
     this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
+    this.client = options.client;
   }
 
   hasCredentials(): boolean {
-    return Boolean(this.privateKey && this.creds);
+    return Boolean(this.client || (this.privateKey && this.creds));
   }
 
   isConfigured(): boolean {
@@ -113,7 +116,7 @@ export class PolymarketAdapter implements BrokerAdapter {
 
   async prepareOrder(order: TradeOrder): Promise<PreparedPolymarketOrder> {
     if (!this.hasCredentials()) throw new Error('Polymarket credentials not configured');
-    const client = await createClobClient({
+    const client = this.client || await createClobClient({
       withCreds: true,
       host: this.host,
       privateKey: this.privateKey,

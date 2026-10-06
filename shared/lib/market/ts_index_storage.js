@@ -660,6 +660,7 @@ module.exports = {
   mergeWriteBin,
   writeTsIndex,
   readTsIndex,
+  readCanonicalTsIndex,
   readLatestTsRecord,
   readTsIndexSince,
   tsIndexPath,

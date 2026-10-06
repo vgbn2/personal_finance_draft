@@ -304,6 +304,7 @@
           "allowed_surfaces": ["gateway_account", "operator", "execution"]
         },
         {"name": "GATEIO_BASE_URL", "default": "https://api.gateio.ws"},
+        {"name": "GATEIO_SIMULATE", "default": "false"},
         {"name": "HOST_BACKUP_INTERVAL_SECS", "default": "86400", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_host_backup"]},
         {"name": "HOST_BACKUP_MAX_COUNT", "default": "14", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_host_backup"]},
         {"name": "HOST_BACKUP_RETENTION_DAYS", "default": "30", "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "compose_host_backup"]},

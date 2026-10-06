@@ -12,6 +12,9 @@ export interface DeribitAdapterOptions {
   testnet?: boolean;
   simulateIfMissingCredentials?: boolean;
   currencies?: string[];
+  timeoutMs?: number;
+  attempts?: number;
+  baseDelayMs?: number;
 }
 
 export interface DeribitAccountSummary {
@@ -36,6 +39,9 @@ export class DeribitAdapter implements BrokerAdapter {
   private readonly testnet: boolean;
   private readonly simulateIfMissingCredentials: boolean;
   private readonly currencies: string[];
+  private readonly timeoutMs?: number;
+  private readonly attempts?: number;
+  private readonly baseDelayMs?: number;
 
   private accessToken: string | null = null;
   private tokenExpiresAt: number = 0;
@@ -51,6 +57,9 @@ export class DeribitAdapter implements BrokerAdapter {
     this.currencies = options.currencies && options.currencies.length > 0
       ? options.currencies.map(c => c.toUpperCase())
       : ['BTC', 'ETH', 'SOL'];
+    this.timeoutMs = options.timeoutMs;
+    this.attempts = options.attempts;
+    this.baseDelayMs = options.baseDelayMs;
   }
 
   public hasCredentials(): boolean {
@@ -85,7 +94,11 @@ export class DeribitAdapter implements BrokerAdapter {
       const response = await fetchWithRetry(authUrl, {
         method: 'GET',
         headers: { Accept: 'application/json' },
-      }, { attempts: 1 });
+      }, {
+        attempts: this.attempts ?? 1,
+        timeoutMs: this.timeoutMs,
+        baseDelayMs: this.baseDelayMs ?? 300,
+      });
 
       if (!response.ok) {
         const errText = await response.text();
@@ -151,6 +164,10 @@ export class DeribitAdapter implements BrokerAdapter {
     const response = await fetchWithRetry(url, {
       method: 'GET',
       headers,
+    }, {
+      attempts: this.attempts ?? 3,
+      timeoutMs: this.timeoutMs,
+      baseDelayMs: this.baseDelayMs ?? 300,
     });
 
     if (!response.ok) {
