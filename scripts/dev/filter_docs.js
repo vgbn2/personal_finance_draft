@@ -31,6 +31,7 @@ const KNOWN_FENCE_LANGS = new Set([
   'json', 'json5', 'jsonc',
   'yaml', 'yml', 'env', 'dotenv',
   'cpp', 'c++', 'c', 'cmake',
+  'go',
   'mermaid',
   'text', 'plaintext', 'txt',
   'diff', 'html', 'css', 'toml', 'ini', 'markdown', 'md',

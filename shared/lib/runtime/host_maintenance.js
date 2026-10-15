@@ -58,6 +58,26 @@ function diskUsage(targetPath) {
   };
 }
 
+const MIN_ROOT_FREE_BYTES = 1024 ** 3; // 1 GiB
+const MIN_ROOT_FREE_PERCENT = 5; // 5%
+
+function checkRootDiskSpace(rootPath = '/', options = {}) {
+  // ponytail: native statfs inspection; fail-closed check to prevent container OOM/disk exhaustion
+  const minFreeBytes = options.minFreeBytes ?? MIN_ROOT_FREE_BYTES;
+  const minFreePercent = options.minFreePercent ?? MIN_ROOT_FREE_PERCENT;
+  const inspectDisk = options.diskUsage || diskUsage;
+  const usage = inspectDisk(rootPath);
+  if (usage.free_bytes < minFreeBytes || usage.free_percent < minFreePercent) {
+    const freeMb = Math.round(usage.free_bytes / (1024 ** 2));
+    const percentStr = usage.free_percent.toFixed(1);
+    const error = new Error(`Root filesystem disk space exhausted: ${freeMb}MB (${percentStr}%) free on ${rootPath}`);
+    error.code = 'ENOSPC';
+    error.usage = usage;
+    throw error;
+  }
+  return usage;
+}
+
 function probeRunner(statusPath, now, maxAgeMs) {
   const status = readJson(statusPath);
   if (!status) return { ok: false, reason: 'missing_or_invalid_status', status_path: statusPath };
@@ -263,6 +283,9 @@ function pruneHostBackups(options = {}) {
 }
 
 async function createHostBackup(options = {}) {
+  if (options.checkRootDisk !== false) {
+    (options.checkRootDiskSpace || checkRootDiskSpace)(options.rootPath || '/', options.rootDiskOptions);
+  }
   const repoRoot = path.resolve(options.repoRoot || REPO_ROOT);
   const backupRoot = path.resolve(options.backupRoot || DEFAULT_BACKUP_ROOT);
   validateRetentionPolicy(options.retentionMaxAgeMs, options.retentionMaxCount);
@@ -327,6 +350,9 @@ module.exports = {
   DEFAULT_DISK_PATH,
   DEFAULT_DAEMON_STATUS,
   DEFAULT_STATE_FILES,
+  MIN_ROOT_FREE_BYTES,
+  MIN_ROOT_FREE_PERCENT,
+  checkRootDiskSpace,
   newestCanonicalBinMtime,
   diskUsage,
   probeRunner,

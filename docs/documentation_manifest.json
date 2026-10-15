@@ -37,6 +37,176 @@
   },
   "documents": [
     {
+      "path": "docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.md",
+      "type": "orientation",
+      "audience": [
+        "newcomers",
+        "contributors",
+        "operators",
+        "quantitative-reviewers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "docs/ARCHITECTURE.md",
+        "docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md",
+        "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md",
+        "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md",
+        "docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md",
+        "docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md"
+      ],
+      "test_paths": [
+        "tests/scripts/architecture/cli/core/documentation_contract.test.js"
+      ],
+      "review_triggers": [
+        "architecture-change",
+        "report-build-change",
+        "evidence-status-change"
+      ]
+    },
+    {
+      "path": "docs/modules/alpaca-deduplicated-exit.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "operators"
+      ],
+      "owner": "execution",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/runtime/alpaca_bot_cycle.js",
+        "backend/gateway/src/index.ts"
+      ],
+      "test_paths": [
+        "tests/scripts/lib/alpaca_bot_cycle.test.js"
+      ],
+      "review_triggers": [
+        "broker-order-sizing",
+        "notional-limits",
+        "exit-deduplication"
+      ]
+    },
+    {
+      "path": "docs/modules/ct-storage-backup-safety.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "operators"
+      ],
+      "owner": "infrastructure",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/runtime/host_maintenance.js",
+        "backend/scripts/ops/host_backup.js",
+        "scripts/deploy/deploy_proxmox.sh"
+      ],
+      "test_paths": [
+        "tests/scripts/operational/host_maintenance.test.js",
+        "tests/scripts/operational/host_backup_cli.test.js"
+      ],
+      "review_triggers": [
+        "disk-thresholds",
+        "backup-mount",
+        "retention-policy"
+      ]
+    },
+    {
+      "path": "docs/modules/ingestion-quarantine.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "maintainers",
+        "researchers"
+      ],
+      "owner": "data-pipeline",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/data/quarantine.js",
+        "shared/lib/data/ingestion.js",
+        "shared/lib/data/db_pruning.js"
+      ],
+      "test_paths": [
+        "tests/scripts/integration/data/ingestion_quarantine.test.js",
+        "tests/scripts/integration/data/quarantine_lifecycle.test.js"
+      ],
+      "review_triggers": [
+        "quarantine-taxonomy",
+        "ingestion-schema",
+        "retention-pruning"
+      ]
+    },
+    {
+      "path": "docs/modules/market-invariants-spec.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "researchers"
+      ],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/strategy/backtest.js",
+        "shared/lib/data/macro_store.js",
+        "shared/lib/market/indicators.js"
+      ],
+      "test_paths": [
+        "tests/scripts/integration/research_invariants/market_invariants.test.js"
+      ],
+      "review_triggers": [
+        "backtesting-invariants",
+        "time-zone-handling",
+        "numeric-precision"
+      ]
+    },
+    {
+      "path": "docs/modules/paper-settlement-ledger.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "operators"
+      ],
+      "owner": "execution",
+      "status": "canonical",
+      "source_paths": [
+        "backend/gateway/src/polymarket/paper_ledger.ts",
+        "backend/gateway/src/polymarket/paper.ts"
+      ],
+      "test_paths": [
+        "tests/scripts/integration/gateway/paper_ledger_settlement.test.js"
+      ],
+      "review_triggers": [
+        "settlement-windows",
+        "ledger-schema",
+        "cash-accounting"
+      ]
+    },
+    {
+      "path": "docs/modules/polymarket-clob-reference-pricing.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "researchers",
+        "operators"
+      ],
+      "owner": "execution",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/strategy/polymarket_clob_model.js",
+        "backend/gateway/src/adapters/polymarket_adapter.ts",
+        "backend/gateway/src/polymarket/polybolt_bbo_monitor.ts"
+      ],
+      "test_paths": [
+        "tests/scripts/integration/polymarket/polymarket_clob_spread_fallback.test.js",
+        "tests/scripts/integration/polymarket/polybolt_bbo_sequence.test.js"
+      ],
+      "review_triggers": [
+        "clob-api-update",
+        "polybolt-protocol",
+        "spread-fallback",
+        "depth-recovery"
+      ]
+    },
+    {
       "path": "docs/ARCHITECTURE.md",
       "type": "orientation",
       "audience": [

@@ -11,6 +11,7 @@ import {
 } from './bot_state';
 import { fetchTradingInfo } from './market';
 import { createClobClient } from './clob_factory';
+import { startPolyBoltBboMonitor } from './polymarket/polybolt_bbo_monitor';
 const { resolvePolymarketClientSettings } = require('../../../shared/lib/brokers/polymarket_env.js');
 // @ts-ignore
 const { PersistenceBridge } = require('../../../shared/lib/runtime/persistence_bridge');
@@ -140,6 +141,11 @@ export type BotPreTradeAuthorizer = (order: BotOrderIntent) => Promise<BotPreTra
 
 export interface BotExecutionOptions {
   authorizeOrder?: BotPreTradeAuthorizer;
+  fetchOrderBook?: (tokenId: string) => Promise<{ ok: boolean; book?: unknown; error?: string }>;
+}
+
+export function botMarketAssetIds(state: Pick<BotState, 'positions'>): string[] {
+  return [...new Set(state.positions.map((position) => position.tokenId).filter(Boolean))].sort();
 }
 
 function liveBotAuthorizationError(args: string[]): string | null {
@@ -671,10 +677,27 @@ export async function runBotLoop(args: string[], options: BotExecutionOptions = 
 
   const intervalMinutes = parseIntervalArg(args);
   const intervalMs      = intervalMinutes * 60 * 1000;
+  const once            = args.includes('--once');
   let passes            = 0;
 
   console.log(`[BOT] Starting loop — interval: ${intervalMinutes}min, live: ${args.includes('--live')}`);
   console.log('[BOT] Press Ctrl+C to stop.');
+
+  const monitor = options.fetchOrderBook
+    ? startPolyBoltBboMonitor({ fetchSnapshot: options.fetchOrderBook })
+    : null;
+
+  const syncMarketSubscriptions = async () => {
+    if (!monitor) return;
+    const state = await loadBotStateWithFallback();
+    await monitor.setAssetIds(botMarketAssetIds(state));
+  };
+
+  try {
+    await syncMarketSubscriptions();
+  } catch (error: any) {
+    console.warn(`[BOT] PolyBolt subscription sync failed: ${error.message}`);
+  }
 
   const loop = async () => {
     passes++;
@@ -683,8 +706,13 @@ export async function runBotLoop(args: string[], options: BotExecutionOptions = 
       const result = await runCycle(args, options);
       console.log(`[BOT] Cycle complete — sold: ${result.sellsExecuted}, bought: ${result.buysFilled}, errors: ${result.errors.length}`);
       if (result.errors.length) result.errors.forEach(e => console.warn(`  [ERR] ${e}`));
+      await syncMarketSubscriptions();
     } catch (e: any) {
       console.error(`[BOT] Cycle failed: ${e.message}`);
+    }
+    if (once) {
+      if (monitor) monitor.stop();
+      return;
     }
     setTimeout(loop, intervalMs);
   };

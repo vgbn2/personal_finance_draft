@@ -1,0 +1,18 @@
+{
+  "schema_version": "sovereign.report-pdf/v1",
+  "source": "docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.md",
+  "output": "docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.pdf",
+  "generator": "npm run docs:report:pdf",
+  "inputs": {
+    "docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.md": "e2eec543ff2a611a1cc8e28264d80d8c20f03d7866b35f52a91a58573af39c12",
+    "docs/stylesheets/architecture-report.css": "83a2e2ed27b365476853bae15c217122ed9e8aedda9be64f6cb4ca026dfc39e1",
+    "docs/javascripts/mermaid-report.js": "610aa0ce9dea67f8e2c5d820106f73e35a8dbedb8c1b07a9a3e73112babf4880",
+    "mkdocs.yml": "c810c42d3b6033a1407ea2151a64b1d4a51393a51d55e879e55fbc30bc537103"
+  },
+  "pdf_sha256": "a8bba91b998257083d28d95b3b1ee2be2bbbc20536bdc808c1e54c894bda5e97",
+  "page_size": "595.92 x 841.92 pts (A4)",
+  "page_count": 44,
+  "has_outline": true,
+  "outline_entries": 77,
+  "generated_at": "2026-10-14T17:17:13.423Z"
+}

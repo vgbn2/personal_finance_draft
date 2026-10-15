@@ -11,6 +11,7 @@ const { STORAGE_DATA_DIR } = require('../../../shared/lib/runtime/paths');
 const {
   HOST_BACKUP_MANIFEST_KIND,
   DEFAULT_DISK_PATH,
+  checkRootDiskSpace,
   probeRunner,
   probeHost,
   createHostBackup,
@@ -396,3 +397,55 @@ test('createHostBackup rejects an invalid retention policy before publishing', a
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('checkRootDiskSpace passes when disk has ample free space', () => {
+  const usage = checkRootDiskSpace('/', {
+    diskUsage: () => ({ total_bytes: 100 * 1024 ** 3, free_bytes: 20 * 1024 ** 3, free_percent: 20 }),
+  });
+  assert.equal(usage.free_percent, 20);
+});
+
+test('checkRootDiskSpace throws ENOSPC when free bytes are below threshold', () => {
+  assert.throws(() => {
+    checkRootDiskSpace('/', {
+      minFreeBytes: 1024 ** 3,
+      minFreePercent: 5,
+      diskUsage: () => ({ total_bytes: 100 * 1024 ** 3, free_bytes: 500 * 1024 ** 2, free_percent: 10 }),
+    });
+  }, (err) => err.code === 'ENOSPC' && /Root filesystem disk space exhausted/.test(err.message));
+});
+
+test('checkRootDiskSpace throws ENOSPC when free percent is below threshold', () => {
+  assert.throws(() => {
+    checkRootDiskSpace('/', {
+      minFreeBytes: 1024 ** 3,
+      minFreePercent: 5,
+      diskUsage: () => ({ total_bytes: 100 * 1024 ** 3, free_bytes: 2 * 1024 ** 3, free_percent: 2 }),
+    });
+  }, (err) => err.code === 'ENOSPC' && /Root filesystem disk space exhausted/.test(err.message));
+});
+
+test('createHostBackup fails closed and creates no staging dir when root disk space is exhausted', async () => {
+  const root = tempDir();
+  try {
+    const source = path.join(root, 'config');
+    const backupRoot = path.join(root, 'backups');
+    fs.mkdirSync(source);
+    fs.writeFileSync(path.join(source, 'app.json'), '{}');
+    await assert.rejects(createHostBackup({
+      repoRoot: root,
+      backupRoot,
+      sources: [source],
+      timestamp: 'exhausted-test',
+      checkRootDiskSpace: () => {
+        const error = new Error('Root filesystem disk space exhausted: 200MB (1.5%) free on /');
+        error.code = 'ENOSPC';
+        throw error;
+      },
+    }), (err) => err.code === 'ENOSPC' && /disk space exhausted/.test(err.message));
+    assert.equal(fs.existsSync(backupRoot), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
