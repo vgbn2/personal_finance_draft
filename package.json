@@ -60,8 +60,10 @@
     "audit:control-flow": "node scripts/dev/audit_control_flow.js",
     "audit:documentation": "node scripts/dev/audit_documentation.js",
     "docs:filter": "node scripts/dev/filter_docs.js",
-    "docs:serve": "docker run --rm -it -p 8000:8000 -v \"$PWD:/docs\" squidfunk/mkdocs-material",
-    "docs:build": "docker run --rm -v \"$PWD:/docs\" squidfunk/mkdocs-material build",
+    "docs:report:pdf": "node scripts/dev/build_architecture_report_pdf.js",
+    "docs:report:verify": "node scripts/dev/verify_architecture_report_pdf.js",
+    "docs:serve": "docker run --rm -it -p 8000:8000 -v \"$PWD:/docs\" squidfunk/mkdocs-material@sha256:51b87149d227691486b5f08993d28c65ca7e4990010664b697265b8e6fcd5287",
+    "docs:build": "docker run --rm -v \"$PWD:/docs\" squidfunk/mkdocs-material@sha256:51b87149d227691486b5f08993d28c65ca7e4990010664b697265b8e6fcd5287 build",
     "bundle": "node scripts/dev/make_bundle.js",
     "verify:strict": "npm run docs:filter -- --strict && npm run test:api && npm run test:contracts && npm run test:secrets && npm test"
   },

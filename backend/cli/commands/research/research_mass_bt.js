@@ -103,7 +103,9 @@ async function commandMassBt(args) {
   const bridge = require('../../../../shared/lib/runtime/backend_bridge.js');
   const { STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths.js');
 
-  const files = readStrategyRegistry();
+  // ponytail: sample mode bounds evaluation to top 3 strategies to prevent 50s+ JS fallback timeouts
+  const allFiles = readStrategyRegistry();
+  const files = hasFlag(args, '--sample') ? allFiles.slice(0, 3) : allFiles;
   if (files.length === 0) {
     printPayload({ error: 'No registered strategies found in config/strategies/' }, args);
     return 1;

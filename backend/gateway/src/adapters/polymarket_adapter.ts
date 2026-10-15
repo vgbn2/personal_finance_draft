@@ -7,6 +7,7 @@ import { createClobClient, polymarketGet, resolveOwnerAddress } from '../clob_fa
 import { aggregatePolymarketFilledPositions } from '../polymarket/positions';
 
 const { resolvePolymarketClientSettings } = require('../../../../shared/lib/brokers/polymarket_env');
+const { calculatePolymarketReferencePrice } = require('../../../../shared/lib/strategy/polymarket_clob_model');
 
 function toFiniteNumber(value: unknown, fallback = 0): number {
   const n = Number(value);
@@ -364,11 +365,12 @@ export class PolymarketAdapter implements BrokerAdapter {
     }
   }
 
-  async getQuote(symbol: string): Promise<number> {
+  async getQuote(symbol: string, options: { lastTradePrice?: number } = {}): Promise<number> {
     const book = await fetchPolymarketOrderBook(symbol);
     if (!book.ok || !book.book) return 0;
     const ask = book.book.asks?.[0]?.price;
     const bid = book.book.bids?.[0]?.price;
-    return Number(ask || bid || 0);
+    const { referencePrice } = calculatePolymarketReferencePrice(bid, ask, options?.lastTradePrice);
+    return referencePrice;
   }
 }

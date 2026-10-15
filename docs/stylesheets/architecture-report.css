@@ -1,0 +1,300 @@
+:root {
+  --report-surface: #ffffff;
+  --report-ink: #1a1a1a;
+  --report-muted: #4a4a4a;
+  --report-heading: #1c3d73;
+  --report-border: #d0d7de;
+  --report-code-bg: #f6f8fa;
+  --report-control: #1c4f9c;
+  --report-data: #4a3aa7;
+  --report-external: #9c3d00;
+  --report-warning: #7a4e00;
+  --report-critical: #a01010;
+  --report-grid: #d0d7de;
+}
+
+[data-md-color-scheme="slate"] {
+  --report-surface: #1a1a19;
+  --report-ink: #ffffff;
+  --report-muted: #c3c2b7;
+  --report-heading: #82aaff;
+  --report-border: #30363d;
+  --report-code-bg: #161b22;
+  --report-control: #3987e5;
+  --report-data: #80cbc4;
+  --report-external: #d95926;
+  --report-warning: #fab219;
+  --report-critical: #ff5370;
+  --report-grid: #30363d;
+}
+
+.architecture-report-page .md-content__inner {
+  max-width: 78rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.55;
+  color: var(--report-ink);
+}
+
+.architecture-report-page h1 {
+  font-size: 20pt;
+  font-weight: 700;
+  color: var(--report-heading);
+  margin-top: 1rem;
+  margin-bottom: 0.8rem;
+  line-height: 1.25;
+}
+
+.architecture-report-page h2 {
+  font-size: 14pt;
+  font-weight: 700;
+  color: var(--report-heading);
+  border-bottom: 1.5px solid var(--report-border);
+  padding-bottom: 0.35rem;
+  margin-top: 2rem;
+  margin-bottom: 0.8rem;
+  line-height: 1.3;
+}
+
+.architecture-report-page h3 {
+  font-size: 11.5pt;
+  font-weight: 700;
+  color: var(--report-ink);
+  margin-top: 1.5rem;
+  margin-bottom: 0.6rem;
+  line-height: 1.35;
+}
+
+.architecture-report-page h4 {
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: var(--report-muted);
+  margin-top: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.architecture-report-page p,
+.architecture-report-page li {
+  max-width: 82ch;
+  margin-bottom: 0.6rem;
+}
+
+.architecture-report-page table {
+  font-size: 9pt;
+  line-height: 1.45;
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0 1.5rem;
+}
+
+.architecture-report-page table th {
+  background: var(--report-code-bg);
+  color: var(--report-ink);
+  font-weight: 600;
+  border: 1px solid var(--report-border);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.architecture-report-page table td {
+  border: 1px solid var(--report-border);
+  padding: 5px 8px;
+}
+
+.architecture-report-page pre {
+  background: var(--report-code-bg);
+  border: 1px solid var(--report-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 8.8pt;
+  line-height: 1.45;
+}
+
+.architecture-report-page div.mermaid {
+  margin: 1.5rem 0 2rem;
+  padding: 1.2rem;
+  overflow: auto;
+  color: var(--report-ink);
+  background: #ffffff;
+  border: 1px solid var(--report-border);
+  border-radius: 6px;
+}
+
+.architecture-report-page div.mermaid svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 32rem;
+  margin: 0 auto;
+}
+
+.architecture-report-page div.mermaid .control > rect,
+.architecture-report-page div.mermaid .control > polygon,
+.architecture-report-page div.mermaid .control > path {
+  fill: #f0f4fa;
+  stroke: var(--report-control);
+  stroke-width: 1.5px;
+}
+
+.architecture-report-page div.mermaid .data > rect,
+.architecture-report-page div.mermaid .data > polygon,
+.architecture-report-page div.mermaid .data > path,
+.architecture-report-page div.mermaid .data > circle {
+  fill: #f4f0fa;
+  stroke: var(--report-data);
+  stroke-width: 1.5px;
+}
+
+.architecture-report-page div.mermaid .neutral > rect,
+.architecture-report-page div.mermaid .neutral > polygon,
+.architecture-report-page div.mermaid .neutral > path {
+  fill: #faf4f0;
+  stroke: var(--report-external);
+  stroke-width: 1.5px;
+}
+
+.architecture-report-page div.mermaid .warning > rect,
+.architecture-report-page div.mermaid .warning > polygon,
+.architecture-report-page div.mermaid .warning > path {
+  fill: #fffbf0;
+  stroke: var(--report-warning);
+  stroke-width: 2px;
+  stroke-dasharray: 6 4;
+}
+
+.architecture-report-page div.mermaid .critical > rect,
+.architecture-report-page div.mermaid .critical > polygon,
+.architecture-report-page div.mermaid .critical > path {
+  fill: #fff0f0;
+  stroke: var(--report-critical);
+  stroke-width: 2.5px;
+}
+
+.architecture-report-page div.mermaid .nodeLabel,
+.architecture-report-page div.mermaid .edgeLabel {
+  color: #111111 !important;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+@media (forced-colors: active) {
+  .architecture-report-page div.mermaid .node rect,
+  .architecture-report-page div.mermaid .node polygon,
+  .architecture-report-page div.mermaid .node path,
+  .architecture-report-page div.mermaid .node circle {
+    fill: Canvas;
+    stroke: CanvasText;
+  }
+
+  .architecture-report-page div.mermaid .warning > *,
+  .architecture-report-page div.mermaid .critical > * {
+    stroke-width: 3px;
+    stroke-dasharray: 6 4;
+  }
+}
+
+@media print {
+  :root,
+  [data-md-color-scheme="slate"],
+  body,
+  .architecture-report-page {
+    --report-surface: #ffffff;
+    --report-ink: #000000;
+    --report-muted: #222222;
+    --report-heading: #1c3d73;
+    --report-border: #999999;
+    --report-code-bg: #f8f9fa;
+    --report-control: #1c4f9c;
+    --report-data: #4a3aa7;
+    --report-external: #9c3d00;
+    --report-warning: #7a4e00;
+    --report-critical: #a01010;
+    --report-grid: #999999;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 14mm 13mm 16mm;
+  }
+
+  .md-header,
+  .md-sidebar,
+  .md-footer,
+  .md-top,
+  .md-content__button,
+  .md-source-file {
+    display: none !important;
+  }
+
+  .md-main__inner,
+  .md-content,
+  .md-content__inner,
+  .architecture-report-page .md-content__inner {
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .architecture-report-page .md-content p,
+  .architecture-report-page .md-content li {
+    max-width: none;
+    font-size: 10pt;
+    line-height: 1.5;
+  }
+
+  .architecture-report-page h1 {
+    font-size: 20pt;
+    break-after: avoid-page;
+  }
+
+  .architecture-report-page h2 {
+    font-size: 14pt;
+    break-after: avoid-page;
+  }
+
+  .architecture-report-page h3,
+  .architecture-report-page h4 {
+    font-size: 11.5pt;
+    break-after: avoid-page;
+  }
+
+  .architecture-report-page table,
+  .architecture-report-page pre,
+  .architecture-report-page div.mermaid {
+    break-inside: avoid-page;
+  }
+
+  .architecture-report-page div.mermaid {
+    margin: 4mm 0 6mm;
+    padding: 3mm;
+    overflow: visible;
+    border-color: #888888;
+    background: #ffffff !important;
+  }
+
+  .architecture-report-page div.mermaid svg {
+    min-width: 0;
+    max-height: 220mm;
+  }
+
+  .architecture-report-page div.mermaid .nodeLabel,
+  .architecture-report-page div.mermaid .edgeLabel {
+    color: #000000 !important;
+    font-weight: 600;
+  }
+
+  .architecture-report-page pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 8.8pt;
+  }
+
+  .architecture-report-page table {
+    font-size: 8.5pt;
+  }
+}

@@ -464,7 +464,8 @@
       "members": [
         {"name": "SOVEREIGN_HEADWAY_MT5_QUOTES_PATH", "aliases": ["HEADWAY_MT5_QUOTES_PATH"]},
         {"name": "SOVEREIGN_MT5_QUOTES_PATH", "aliases": ["MT5_QUOTES_PATH"]},
-        {"name": "SOVEREIGN_WEBULL_QUOTES_PATH", "aliases": ["WEBULL_QUOTES_PATH"]}
+        {"name": "SOVEREIGN_WEBULL_QUOTES_PATH", "aliases": ["WEBULL_QUOTES_PATH"]},
+        {"name": "PUPPETEER_EXECUTABLE_PATH"}
       ]
     },
     {

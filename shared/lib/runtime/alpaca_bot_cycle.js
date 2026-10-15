@@ -91,6 +91,7 @@ function buildExitOutcome(position, exitReason, currentPrice, sellQty, cycleId, 
   const historyEntry = {
     cycleId,
     positionId: position.positionId,
+    strategyName: position.strategyName || position.strategy || null,
     symbol: position.symbol,
     exitReason,
     exitPrice: currentPrice,
@@ -224,6 +225,7 @@ async function runAlpacaExitCheck(args = [], options = {}) {
     // bot positions stacked on one symbol can't together oversell the holding.
     const availableBySymbol = new Map(brokerPositions.map((p) => [p.symbol, Number(p.quantity)]));
     const remaining = [];
+    const exitingBySymbol = new Map();
 
     for (const position of state.positions) {
       const brokerPos = brokerBySymbol.get(position.symbol);
@@ -244,59 +246,83 @@ async function runAlpacaExitCheck(args = [], options = {}) {
         continue;
       }
 
-      const available = availableBySymbol.get(position.symbol) || 0;
-      const sellQty = resolveExitQty(position.qty, available);
+      if (!exitingBySymbol.has(position.symbol)) {
+        exitingBySymbol.set(position.symbol, []);
+      }
+      exitingBySymbol.get(position.symbol).push({ position, exitReason, currentPrice });
+    }
 
-      if (sellQty <= 0) {
+    for (const [symbol, exitingItems] of exitingBySymbol.entries()) {
+      const available = availableBySymbol.get(symbol) || 0;
+      const totalDesiredQty = exitingItems.reduce((sum, item) => sum + Number(item.position.qty || 0), 0);
+      const aggregateSellQty = resolveExitQty(totalDesiredQty, available);
+
+      if (aggregateSellQty <= 0) {
         // Broker holds nothing left for this symbol (already exited / sold
         // manually) -- drop stale tracking instead of firing an oversell.
-        // Applies in dry-run too: a paper account showing 0 shares means
-        // there is nothing to simulate exiting either.
-        result.errors.push(`No broker shares left to exit ${position.symbol} (${exitReason}); dropping stale tracking.`);
+        result.errors.push(`No broker shares left to exit ${symbol}; dropping stale tracking.`);
         continue;
       }
 
       if (executionEnabled) {
         try {
-          const { commandTrade } = require('../../../backend/cli/commands/trade/trade.js');
+          const tradeFn = options.commandTrade || require('../../../backend/cli/commands/trade/trade.js').commandTrade;
           const { generateOrderSignature } = require('./sub_positions_ledger.js');
           const signature = generateOrderSignature({
-            strategyId: position.strategyName || 'alpaca_paper',
+            strategyId: exitingItems[0].position.strategyName || 'alpaca_paper',
             source: 'bot',
-            symbol: position.symbol
+            symbol
           });
           const sellArgs = [
             'sell',
-            position.symbol,
-            String(sellQty),
+            symbol,
+            String(aggregateSellQty),
             'market',
-            ...(providerPaper ? ['--paper-provider', '--paper-max-notional', String(options.paperMaxNotional || Number(process.env.ALPACA_PAPER_MAX_NOTIONAL) || 100)] : ['--live']),
+            ...(providerPaper ? ['--paper-provider'] : ['--live']),
             '--strategy',
-            position.strategyName || 'alpaca_paper',
+            exitingItems[0].position.strategyName || 'alpaca_paper',
             '--signature',
             signature,
             '--source',
             'bot'
           ];
           if (process.env.SOVEREIGN_TRADE_PIN) sellArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
-          const exitCode = await commandTrade(sellArgs);
+          const exitCode = await tradeFn(sellArgs);
           if (exitCode !== 0) {
-            result.errors.push(`Exit sell failed for ${position.symbol} (${exitReason}): non-zero exit ${exitCode}`);
-            remaining.push(position);
+            result.errors.push(`Exit sell failed for ${symbol}: non-zero exit ${exitCode}`);
+            for (const item of exitingItems) remaining.push(item.position);
             continue;
           }
-          availableBySymbol.set(position.symbol, available - sellQty);
+          availableBySymbol.set(symbol, available - aggregateSellQty);
         } catch (err) {
-          result.errors.push(`Exit sell failed for ${position.symbol} (${exitReason}): ${err.message}`);
-          remaining.push(position);
+          result.errors.push(`Exit sell failed for ${symbol}: ${err.message}`);
+          for (const item of exitingItems) remaining.push(item.position);
           continue;
         }
       }
 
-      const { historyEntry, remainingPosition } = buildExitOutcome(position, exitReason, currentPrice, sellQty, result.cycleId, executionEnabled);
-      state.cycleHistory = [historyEntry, ...state.cycleHistory].slice(0, 50);
-      if (remainingPosition) remaining.push(remainingPosition);
-      result.sellsExecuted++;
+      let remainingSold = aggregateSellQty;
+      for (const item of exitingItems) {
+        const itemQty = Number(item.position.qty || 0);
+        const allocatedQty = Math.min(itemQty, remainingSold);
+        remainingSold -= allocatedQty;
+
+        if (allocatedQty > 0) {
+          const { historyEntry, remainingPosition } = buildExitOutcome(
+            item.position,
+            item.exitReason,
+            item.currentPrice,
+            allocatedQty,
+            result.cycleId,
+            executionEnabled
+          );
+          state.cycleHistory = [historyEntry, ...state.cycleHistory].slice(0, 50);
+          if (remainingPosition) remaining.push(remainingPosition);
+          result.sellsExecuted++;
+        } else {
+          remaining.push(item.position);
+        }
+      }
     }
 
     state.positions = remaining;

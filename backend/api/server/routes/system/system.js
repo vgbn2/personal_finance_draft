@@ -4,6 +4,9 @@ const { isConfigured } = require('../../services/supabase_client');
 const {
   resolveDeploymentProfile,
 } = require('../../../../../shared/lib/settings/deployment_profile');
+const {
+  getQuarantineMetrics,
+} = require('../../../../../shared/lib/data/quarantine');
 
 module.exports = {
   path: '/api/system/status',
@@ -33,6 +36,7 @@ module.exports = {
           access_policy: 'capability-rbac-v1',
         },
         deployment: deploymentProfile,
+        quarantine: getQuarantineMetrics(),
       },
       degraded: Boolean(payload.degraded || !isConfigured() || !deploymentProfile.ok),
     };

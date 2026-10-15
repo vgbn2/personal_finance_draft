@@ -10,7 +10,7 @@ SOVEREIGN_ROOT="${SOVEREIGN_ROOT:-/opt/sovereign}"
 COMPOSE_FILE="${SOVEREIGN_ROOT}/docker-compose.allinone.yml"
 SECRETS_FILE="${SECRETS_FILE:-/etc/sovereign/sovereign.env}"
 STORAGE_DIR="${SOVEREIGN_ROOT}/storage"
-BACKUP_DIR="${SOVEREIGN_ROOT}/backups"
+BACKUP_DIR="${BACKUP_DIR:-/data/backups}"
 LOCK_FILE="/var/lock/sovereign-deploy.lock"
 IMAGE_REPO="${IMAGE_REPO:-ghcr.io/vgbn2/personal_finance_draft}"
 TARGET_TAG="${1:-latest}"
@@ -30,6 +30,18 @@ exec 9>"${LOCK_FILE}"
 if ! flock -n 9; then
   log_error "Deployment is already running. Lock held at ${LOCK_FILE}."
   exit 73
+fi
+
+# Step 1b: Fail-Closed Root & Backup Mount Health Check (< 5% or < 1GB free)
+ROOT_FREE_KB=$(df -k / 2>/dev/null | awk 'NR==2 {print $4}')
+ROOT_AVAIL_PCT=$(df -k / 2>/dev/null | awk 'NR==2 {gsub("%","",$5); print 100 - $5}')
+if [[ -n "${ROOT_FREE_KB}" && "${ROOT_FREE_KB}" -lt 1048576 ]]; then
+  log_error "Fail-closed: Root filesystem free space below 1GB (${ROOT_FREE_KB} KB). Refusing deployment to prevent container OOM/disk exhaustion."
+  exit 1
+fi
+if [[ -n "${ROOT_AVAIL_PCT}" && "${ROOT_AVAIL_PCT}" -lt 5 ]]; then
+  log_error "Fail-closed: Root filesystem free space below 5% (${ROOT_AVAIL_PCT}%). Refusing deployment to prevent container OOM/disk exhaustion."
+  exit 1
 fi
 
 log_info "Starting deployment sequence for ${TARGET_IMAGE}..."

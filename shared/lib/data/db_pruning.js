@@ -69,31 +69,44 @@ async function pruneTable(table, timeColumn, daysToKeep, options = {}) {
   };
 }
 
+const { pruneQuarantineRecords } = require('./quarantine');
+
 /**
- * Runs a full database maintenance pruning session.
+ * Runs a full database and filesystem maintenance pruning session.
  */
-async function runMaintenance(daysToKeep = 30, archiveDir = null) {
+async function runMaintenance(daysToKeep = 30, archiveDir = null, options = {}) {
   const results = [];
   const archivePath = archiveDir || path.join(process.cwd(), 'data', 'archive');
-  
+
   try {
     // Prune macro observations
     const macroResult = await pruneTable('macro_observations', 'observed_at', daysToKeep, { archivePath });
     results.push(macroResult);
-    
+
     // Prune orders
     const ordersResult = await pruneTable('orders', 'created_at', daysToKeep, { archivePath });
     results.push(ordersResult);
-    
+
+    // Prune quarantined market observation logs
+    const quarantineResult = pruneQuarantineRecords(daysToKeep, options);
+    results.push({
+      table: 'storage/data/quarantine',
+      archived: 0,
+      deleted: quarantineResult.pruned_files,
+      freed_bytes: quarantineResult.freed_bytes,
+      status: 'success',
+    });
+
   } catch (error) {
     console.error(`[PRUNING] Maintenance failed: ${error.message}`);
     throw error;
   }
-  
+
   return results;
 }
 
 module.exports = {
   pruneTable,
-  runMaintenance
+  runMaintenance,
+  pruneQuarantineRecords,
 };

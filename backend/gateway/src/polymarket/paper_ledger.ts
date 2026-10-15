@@ -25,6 +25,7 @@ export interface LedgerEvent {
   paper_fill?: any;
   token_id?: string;
   realized_pnl?: number;
+  settlement_due_at?: string | number | null;
   [key: string]: any;
 }
 
@@ -33,6 +34,9 @@ export interface LedgerProjection {
   ledger_sequence?: number;
   ledger_checksum?: string;
   virtual_balance: number;
+  settled_cash?: number;
+  pending_receivables?: number;
+  available_cash?: number;
   starting_balance: number;
   opened_at: string | null;
   updated_at: string | null;
@@ -41,6 +45,7 @@ export interface LedgerProjection {
   total_slippage?: number;
   fees?: number;
   slippage?: number;
+  funding_fees?: number;
   positions: any[];
   fills: any[];
   settlements: any[];
@@ -107,7 +112,11 @@ export function readLedger(storageDir: string): { ok: boolean; events: LedgerEve
   return { ok: true, events, last_checksum: priorChecksum };
 }
 
-export function replayLedger(events: LedgerEvent[], fallbackBalance = 100): LedgerProjection {
+export function replayLedger(
+  events: LedgerEvent[],
+  fallbackBalance = 100,
+  options: { asOf?: string | number } = {},
+): LedgerProjection {
   let startingBalance = fallbackBalance;
   let cash = fallbackBalance;
   let openedAt: string | null = null;
@@ -115,9 +124,24 @@ export function replayLedger(events: LedgerEvent[], fallbackBalance = 100): Ledg
   let realizedPnl = 0;
   let fees = 0;
   let slippage = 0;
+  let fundingFees = 0;
   const positions = new Map<string, any>();
   const fills: any[] = [];
   const settlements: any[] = [];
+  const pendingReceivables: { amount: number; due_at: number }[] = [];
+
+  let asOfMs: number;
+  if (options.asOf !== undefined) {
+    asOfMs = typeof options.asOf === 'number' ? options.asOf : Date.parse(String(options.asOf));
+  } else if ((options as any).now !== undefined) {
+    const rawNow = (options as any).now;
+    asOfMs = typeof rawNow === 'number' ? rawNow : Date.parse(String(rawNow));
+  } else {
+    asOfMs = Date.now();
+  }
+  if (!Number.isFinite(asOfMs) && options.asOf !== Infinity) {
+    asOfMs = Date.now();
+  }
 
   for (const event of events) {
     updatedAt = event.event_time;
@@ -130,10 +154,26 @@ export function replayLedger(events: LedgerEvent[], fallbackBalance = 100): Ledg
     cash = Number((cash + Number(event.cash_delta || 0)).toFixed(6));
     fees = Number((fees + Number(event.fees || 0)).toFixed(6));
     slippage = Number((slippage + Number(event.slippage || 0)).toFixed(6));
-    if (event.event_type === 'paper_fill' && event.position) {
-      positions.set(String(event.token_id), { ...event.position });
-      fills.push(event.paper_fill);
+
+    if (event.event_type === 'funding_fee') {
+      fundingFees = Number((fundingFees + Number(event.fees || Math.abs(event.cash_delta || 0))).toFixed(6));
     }
+
+    if (event.event_type === 'paper_fill') {
+      if (event.position) {
+        positions.set(String(event.token_id), { ...event.position });
+        fills.push(event.paper_fill);
+      }
+      if (Number(event.cash_delta) > 0 && event.settlement_due_at) {
+        const dueMs = typeof event.settlement_due_at === 'number'
+          ? event.settlement_due_at
+          : Date.parse(String(event.settlement_due_at));
+        if (Number.isFinite(dueMs)) {
+          pendingReceivables.push({ amount: Number(event.cash_delta), due_at: dueMs });
+        }
+      }
+    }
+
     if (event.event_type === 'position_settled') {
       positions.delete(String(event.token_id));
       realizedPnl = Number((realizedPnl + Number(event.realized_pnl || 0)).toFixed(6));
@@ -141,11 +181,22 @@ export function replayLedger(events: LedgerEvent[], fallbackBalance = 100): Ledg
     }
   }
 
+  const activeReceivables = pendingReceivables
+    .filter((r) => r.due_at > asOfMs)
+    .reduce((acc, r) => acc + r.amount, 0);
+
+  const roundedReceivables = Number(activeReceivables.toFixed(6));
+  const settledCash = Number((cash - roundedReceivables).toFixed(6));
+  const availableCash = Math.max(0, settledCash);
+
   return {
     schema_version: LEDGER_SCHEMA_VERSION,
     ledger_sequence: events.length,
     ledger_checksum: events.length ? events[events.length - 1].event_checksum : GENESIS_CHECKSUM,
     virtual_balance: cash,
+    settled_cash: settledCash,
+    pending_receivables: roundedReceivables,
+    available_cash: availableCash,
     starting_balance: startingBalance,
     positions: Array.from(positions.values()),
     fills,
@@ -153,6 +204,7 @@ export function replayLedger(events: LedgerEvent[], fallbackBalance = 100): Ledg
     realized_pnl: realizedPnl,
     fees,
     slippage,
+    funding_fees: fundingFees,
     opened_at: openedAt,
     updated_at: updatedAt,
   };
@@ -241,6 +293,7 @@ export function buildEvent(input: any, sequence: number, priorChecksum: string):
     position: input.position || null,
     position_effect: input.position_effect || null,
     settlement: input.settlement || null,
+    settlement_due_at: input.settlement_due_at || null,
     cash_delta: Number(input.cash_delta || 0),
     cash_after: input.cash_after === undefined ? null : Number(input.cash_after),
     realized_pnl: Number(input.realized_pnl || 0),
@@ -282,7 +335,7 @@ export function appendLedgerEvents(storageDir: string, inputs: any[], options: a
     }
     if (options.injectCrashAfterAppend) throw new Error('injected crash after ledger append');
     const events = [...loaded.events, ...accepted];
-    const projection = replayLedger(events, options.startingBalance);
+    const projection = replayLedger(events, options.startingBalance, { asOf: options.asOf ?? options.now });
     atomicWriteJson(ledgerPaths(storageDir).snapshot, projection);
     return { ok: true, accepted, duplicates, projection, recovered_stale_lock: Boolean(lock.recovered_stale_lock) };
   } finally {
@@ -298,7 +351,7 @@ export function initializeLedger(storageDir: string, startingBalance = 100, opti
       ok: true,
       accepted: [],
       duplicates: [],
-      projection: replayLedger(loaded.events, startingBalance),
+      projection: replayLedger(loaded.events, startingBalance, { asOf: options.asOf ?? options.now }),
       existing: true,
     };
   }
@@ -311,8 +364,12 @@ export function initializeLedger(storageDir: string, startingBalance = 100, opti
   }], { ...options, startingBalance });
 }
 
-export function loadLedgerProjection(storageDir: string, startingBalance = 100): { ok: boolean; projection?: LedgerProjection; events?: LedgerEvent[]; error?: string } {
+export function loadLedgerProjection(
+  storageDir: string,
+  startingBalance = 100,
+  options: { asOf?: string | number; now?: string | number } = {},
+): { ok: boolean; projection?: LedgerProjection; events?: LedgerEvent[]; error?: string } {
   const loaded = readLedger(storageDir);
   if (!loaded.ok) return loaded;
-  return { ok: true, projection: replayLedger(loaded.events, startingBalance), events: loaded.events };
+  return { ok: true, projection: replayLedger(loaded.events, startingBalance, options), events: loaded.events };
 }

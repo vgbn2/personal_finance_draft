@@ -98,7 +98,7 @@ test('browser telemetry derives Socket.IO auth from the current Supabase session
   assert.match(apiSource, /socketAuthProvider/);
   assert.match(apiSource, /getAuthHeaders\(\)/);
   assert.match(panelSource, /auth:\s*socketAuthProvider/);
-  assert.match(serverSource, /io\.use\(async/);
+  assert.match(serverSource, /io\.use\((?:async\s*\(|authenticateSocket\b)/);
   assert.match(serverSource, /CAPABILITIES\.STATUS_READ/);
   assert.doesNotMatch(panelSource, /VITE_API_TOKEN|SOVEREIGN_API_TOKEN/);
 });

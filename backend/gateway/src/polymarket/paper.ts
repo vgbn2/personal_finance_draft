@@ -35,10 +35,10 @@ function toNumber(value: any, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-export function loadPortfolio(storageDir = DEFAULT_STORAGE_DIR, virtualBalance = 100): any {
+export function loadPortfolio(storageDir = DEFAULT_STORAGE_DIR, virtualBalance = 100, options: { asOf?: string | number } = {}): any {
   ensureDir(storageDir);
   if (fs.existsSync(ledgerPaths(storageDir).ledger)) {
-    const loaded = loadLedgerProjection(storageDir, virtualBalance);
+    const loaded = loadLedgerProjection(storageDir, virtualBalance, options);
     if (!loaded.ok) throw new Error(loaded.error);
     return loaded.projection;
   }
@@ -66,10 +66,10 @@ export function loadPortfolio(storageDir = DEFAULT_STORAGE_DIR, virtualBalance =
   }
 }
 
-export function migrateLegacyPaperState(storageDir = DEFAULT_STORAGE_DIR, options: { virtualBalance?: number; now?: string } = {}): any {
+export function migrateLegacyPaperState(storageDir = DEFAULT_STORAGE_DIR, options: { virtualBalance?: number; now?: string; asOf?: string | number } = {}): any {
   ensureDir(storageDir);
   if (fs.existsSync(ledgerPaths(storageDir).ledger)) {
-    const loaded = loadLedgerProjection(storageDir, options.virtualBalance || 100);
+    const loaded = loadLedgerProjection(storageDir, options.virtualBalance || 100, { asOf: options.asOf ?? options.now });
     return loaded.ok ? { ok: true, migrated: false, projection: loaded.projection } : loaded;
   }
   const portfolioPath = path.join(storageDir, 'portfolio.json');
@@ -77,7 +77,7 @@ export function migrateLegacyPaperState(storageDir = DEFAULT_STORAGE_DIR, option
   const hasLegacyPortfolio = fs.existsSync(portfolioPath);
   const fillText = fs.existsSync(fillsPath) ? fs.readFileSync(fillsPath, 'utf8') : '';
   if (!hasLegacyPortfolio && !fillText.trim()) {
-    const initialized = initializeLedger(storageDir, options.virtualBalance || 100, { now: options.now });
+    const initialized = initializeLedger(storageDir, options.virtualBalance || 100, { now: options.now, asOf: options.asOf ?? options.now });
     return { ...initialized, migrated: false };
   }
   if (fillText && !fillText.endsWith('\n')) {
@@ -290,7 +290,7 @@ export async function runPolymarketPaperRun(options: any = {}): Promise<any> {
     broker: 'polymarket',
     now,
   });
-  const initialized = migrateLegacyPaperState(storageDir, { virtualBalance, now });
+  const initialized = migrateLegacyPaperState(storageDir, { virtualBalance, now, asOf: now });
   if (!initialized.ok) return initialized;
   const portfolio = initialized.projection;
 
@@ -362,9 +362,10 @@ export async function runPolymarketPaperRun(options: any = {}): Promise<any> {
       continue;
     }
 
-    const availableNotional = Math.min(maxPositionUsd, toNumber(portfolio.virtual_balance, 0));
+    const spendableCash = portfolio.available_cash !== undefined ? portfolio.available_cash : portfolio.virtual_balance;
+    const availableNotional = Math.min(maxPositionUsd, toNumber(spendableCash, 0));
     if (availableNotional <= 0) {
-      skipped.push({ reason: 'virtual balance exhausted', token_id: tokenId });
+      skipped.push({ reason: 'available cash exhausted', token_id: tokenId });
       break;
     }
     const sizing = normalizeSizingIntent({
@@ -403,6 +404,12 @@ export async function runPolymarketPaperRun(options: any = {}): Promise<any> {
     };
     portfolio.positions.push(position);
     portfolio.virtual_balance = Number((toNumber(portfolio.virtual_balance) - spend).toFixed(6));
+    if (portfolio.available_cash !== undefined) {
+      portfolio.available_cash = Number((toNumber(portfolio.available_cash) - spend).toFixed(6));
+    }
+    if (portfolio.settled_cash !== undefined) {
+      portfolio.settled_cash = Number((toNumber(portfolio.settled_cash) - spend).toFixed(6));
+    }
     existing.add(tokenId);
 
     const fill = {
@@ -454,7 +461,7 @@ export async function runPolymarketPaperRun(options: any = {}): Promise<any> {
     });
   }
 
-  const committed = appendLedgerEvents(storageDir, proposedEvents, { now, startingBalance: virtualBalance });
+  const committed = appendLedgerEvents(storageDir, proposedEvents, { now, asOf: now, startingBalance: virtualBalance });
   if (!committed.ok) return committed;
   const fills = committed.accepted.map((event: any) => event.paper_fill);
   for (const key of committed.duplicates) {

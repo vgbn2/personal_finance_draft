@@ -4,6 +4,7 @@
 const path = require('node:path');
 const {
   DEFAULT_BACKUP_ROOT,
+  checkRootDiskSpace,
   completedBackups,
   createHostBackup,
 } = require('../../../shared/lib/runtime/host_maintenance');
@@ -35,7 +36,7 @@ function optionalNumber(args, env, cliName, envName, { integer = false, positive
 }
 
 function parseHostBackupOptions(args = [], env = process.env) {
-  const destination = valueArg(args, '--destination');
+  const destination = valueArg(args, '--destination') ?? env.HOST_BACKUP_ROOT;
   const intervalSecs = optionalNumber(
     args,
     env,
@@ -118,10 +119,37 @@ async function runHostBackupLoop(options = {}) {
   const createBackup = options.createBackup || createHostBackup;
   const publishHeartbeat = options.writeHeartbeat || writeServiceHeartbeat;
   const output = options.output || (() => {});
+  const inspectRootDisk = options.checkRootDisk || checkRootDiskSpace;
   const maxCycles = Number.isInteger(options.maxCycles) && options.maxCycles > 0
     ? options.maxCycles
     : null;
   let cycles = 0;
+
+  // ponytail: fail-closed startup check prevents container OOM/disk exhaustion
+  if (options.checkStartupDisk !== false) {
+    try {
+      inspectRootDisk(options.rootPath || '/', options.rootDiskOptions);
+    } catch (error) {
+      const errCode = errorCode(error.message) || 'storage_unavailable';
+      publishHeartbeat('host_backup', {
+        state: 'degraded',
+        attempted: false,
+        error_code: errCode,
+        next_run_at: null,
+      });
+      output({
+        ok: false,
+        backup_ok: false,
+        error_code: errCode,
+        error: error.message,
+      });
+      return {
+        cycles: 0,
+        result: { ok: false, backup_ok: false, error_code: errCode },
+        exitCode: 1,
+      };
+    }
+  }
 
   if (options.watch) {
     let dueAt;

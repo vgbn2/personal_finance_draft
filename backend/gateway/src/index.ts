@@ -338,7 +338,7 @@ class ExecutionGateway {
       return false;
     }
 
-    if (order.providerPaper && this.paperMaxNotional !== null) {
+    if (order.providerPaper && this.paperMaxNotional !== null && order.side === 'buy') {
       const notional = riskContext.referencePrice * order.quantity;
       if (!Number.isFinite(notional) || notional > this.paperMaxNotional) {
         const msg = `Paper Alpaca notional ${notional} exceeds cap ${this.paperMaxNotional}`;
@@ -495,6 +495,17 @@ async function submitPolymarketOrder(tokenId: string, quantity: number, price?: 
 
 function buildPolymarketBotExecutionOptions(): BotExecutionOptions {
   return buildPolymarketBotExecutionOptionsExt(createExecutionGatewayAdapter);
+}
+
+export function buildBotCommandOptions(
+  subcommand: string,
+  live: boolean,
+  liveOptions: BotExecutionOptions = {},
+): BotExecutionOptions {
+  if (subcommand === 'run') {
+    return { ...liveOptions, fetchOrderBook: fetchPolymarketOrderBook };
+  }
+  return live ? liveOptions : {};
 }
 
 async function promptPin(): Promise<string> {
@@ -1239,9 +1250,10 @@ export async function main() {
       process.exitCode = 1;
       return;
     }
-    const botExecutionOptions = submitsOrder && botLive
+    const liveBotOptions = submitsOrder && botLive
       ? buildPolymarketBotExecutionOptions()
       : {};
+    const botExecutionOptions = buildBotCommandOptions(sub, botLive, liveBotOptions);
 
     if (sub === 'cycle') {
       const result = await runCycle(args.slice(1), botExecutionOptions);
