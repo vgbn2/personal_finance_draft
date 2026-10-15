@@ -20,11 +20,15 @@ require('ts-node').register({
 
 const CYCLE_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'gateway', 'src', 'cycle.ts');
 const {
+  botMarketAssetIds,
   determinePositionExitReason,
   resolveObservablePositionPrice,
   runCycle,
   submitRiskApprovedFokOrder,
 } = require(CYCLE_PATH);
+const { buildBotCommandOptions } = require(
+  path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'gateway', 'src', 'index.ts'),
+);
 
 function intent() {
   return {
@@ -34,6 +38,28 @@ function intent() {
     side: 'BUY',
   };
 }
+
+test('bot market subscriptions use unique sorted open-position token ids', () => {
+  assert.deepEqual(botMarketAssetIds({
+    positions: [
+      { tokenId: 'token-b' },
+      { tokenId: 'token-a' },
+      { tokenId: 'token-b' },
+      { tokenId: '' },
+    ],
+  }), ['token-a', 'token-b']);
+});
+
+test('only bot run receives the canonical REST orderbook recovery owner', () => {
+  const authorizeOrder = async () => ({ approved: true });
+  const liveOptions = { authorizeOrder };
+  const runOptions = buildBotCommandOptions('run', true, liveOptions);
+
+  assert.equal(runOptions.authorizeOrder, authorizeOrder);
+  assert.equal(typeof runOptions.fetchOrderBook, 'function');
+  assert.deepEqual(buildBotCommandOptions('cycle', false), {});
+  assert.deepEqual(buildBotCommandOptions('sell', true, liveOptions), liveOptions);
+});
 
 test('bot FOK submission fails closed without a pre-trade authorizer', async () => {
   let submitted = false;

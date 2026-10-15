@@ -109,6 +109,12 @@ function generateFlagPermutations(cmd) {
   if (cmd.id === 'watch') {
     baseFlags['--once'] = true;
   }
+  if (cmd.id === 'auto-trade') {
+    baseFlags['--once'] = true;
+  }
+  if (cmd.id === 'run' && Array.isArray(cmd.prefix) && cmd.prefix.includes('bot')) {
+    baseFlags['--once'] = true;
+  }
 
   permutations.push({ label: 'default', flags: { ...baseFlags } });
 
@@ -183,6 +189,12 @@ function generateFlagPermutations(cmd) {
       altFlags['--once'] = true;
     }
     if (cmd.id === 'watch') {
+      altFlags['--once'] = true;
+    }
+    if (cmd.id === 'auto-trade') {
+      altFlags['--once'] = true;
+    }
+    if (cmd.id === 'run' && Array.isArray(cmd.prefix) && cmd.prefix.includes('bot')) {
       altFlags['--once'] = true;
     }
     permutations.push({ label: 'alternate_matrix', flags: altFlags });

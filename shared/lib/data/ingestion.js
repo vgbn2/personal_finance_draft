@@ -1,7 +1,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const { 
-  fetchBinanceBaseCandles, 
+const {
+  fetchBinanceBaseCandles,
   fetchYahooBaseCandles,
   fetchFrankfurterFx,
   fetchFredLatest,
@@ -9,6 +9,7 @@ const {
   fetchKalshiPredictionEvent,
   fetchAlternativeMeFearGreed,
 } = require('../providers');
+const { validateIngestRecord, quarantineRecord } = require('./quarantine');
 const { DEFAULT_SNAPSHOT } = require('../runtime/paths');
 
 const CACHE_PATH = DEFAULT_SNAPSHOT;
@@ -27,7 +28,8 @@ async function runIngestBatch(config, options = {}) {
     fetched_at: new Date().toISOString(),
     sources: [],
     errors: [],
-    provider_checks: []
+    provider_checks: [],
+    quarantine_count: 0,
   };
 
   for (const family of FAMILIES_MANIFEST) {
@@ -38,7 +40,22 @@ async function runIngestBatch(config, options = {}) {
     for (const symbol of section.symbols || ['default']) {
        try {
          const records = await family.fetcher(section.providers[0], symbol, section.timeframes?.[0] || '1d');
-         snapshot.sources.push(...records.map(r => ({ ...r, family: family.id, symbol })));
+         const list = Array.isArray(records) ? records : (records ? [records] : []);
+         const validRecords = [];
+         for (const r of list) {
+           const validation = validateIngestRecord(r, family.id);
+           if (validation.valid) {
+             validRecords.push({ ...r, family: family.id, symbol });
+           } else {
+             quarantineRecord(r, validation.reason, validation.error, {
+               family: family.id,
+               symbol,
+               storageDir: options.quarantineDir,
+             });
+             snapshot.quarantine_count += 1;
+           }
+         }
+         snapshot.sources.push(...validRecords);
          snapshot.provider_checks.push({ family: family.id, provider: section.providers[0], status: 'ok' });
        } catch (e) {
          snapshot.errors.push({ family: family.id, message: e.message });

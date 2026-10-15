@@ -296,5 +296,81 @@ test('filter_docs accepts all known fence languages', (t) => {
   assert.ok(KNOWN_FENCE_LANGS.has('bash'));
   assert.ok(KNOWN_FENCE_LANGS.has('json'));
   assert.ok(KNOWN_FENCE_LANGS.has('cpp'));
+  assert.ok(KNOWN_FENCE_LANGS.has('go'));
   assert.ok(KNOWN_FENCE_LANGS.has('mermaid'));
+});
+
+test('master architecture report is registered and starts with a newcomer-safe reading path', () => {
+  const repoRoot = path.resolve(__dirname, '..', '..', '..', '..', '..');
+  const reportPath = 'docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.md';
+  const report = fs.readFileSync(path.join(repoRoot, reportPath), 'utf8');
+  const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'docs/documentation_manifest.json'), 'utf8'));
+  const mkdocs = fs.readFileSync(path.join(repoRoot, 'mkdocs.yml'), 'utf8');
+
+  const record = manifest.documents.find((document) => document.path === reportPath);
+  assert.ok(record, 'master report must be registered in the documentation manifest');
+  assert.equal(record.status, 'canonical');
+  assert.equal(record.owner, 'architecture');
+  assert.match(mkdocs, /End-to-End Architecture Report: Reports\/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT\.md/);
+
+  for (const heading of [
+    '## Table of Contents',
+    '## Executive Summary',
+    '## Chapter 1. Introduction, Problem Statement & Market Invariants',
+    '## Appendix A. Operational Runbook: Bare-Metal Cold Disaster Recovery',
+    '## Appendix B. Complete Platform Mathematical Invariants & Verification Matrix',
+  ]) {
+    assert.ok(report.includes(heading), `missing canonical section heading: ${heading}`);
+  }
+});
+
+test('master architecture report uses pinned, scoped and print-safe visual assets', () => {
+  const repoRoot = path.resolve(__dirname, '..', '..', '..', '..', '..');
+  const mkdocs = fs.readFileSync(path.join(repoRoot, 'mkdocs.yml'), 'utf8');
+  const packageJson = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
+  const css = fs.readFileSync(path.join(repoRoot, 'docs/stylesheets/architecture-report.css'), 'utf8');
+  const javascript = fs.readFileSync(path.join(repoRoot, 'docs/javascripts/mermaid-report.js'), 'utf8');
+
+  assert.match(mkdocs, /cdn\.jsdelivr\.net\/npm\/mermaid@11\.17\.2\/dist\/mermaid\.min\.js/);
+  assert.match(mkdocs, /stylesheets\/architecture-report\.css/);
+  assert.match(mkdocs, /javascripts\/mermaid-report\.js/);
+  assert.match(packageJson.scripts['docs:build'], /mkdocs-material@sha256:[a-f0-9]{64}/);
+  assert.match(css, /\.architecture-report-page/);
+  assert.match(css, /@page\s*{[\s\S]*size:\s*A4 portrait/);
+  assert.match(css, /@media \(forced-colors: active\)/);
+  assert.match(javascript, /SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT/);
+  assert.match(javascript, /securityLevel:\s*'strict'/);
+});
+
+test('architecture report PDF verification passes and detects input drift', (t) => {
+  const repoRoot = path.resolve(__dirname, '..', '..', '..', '..', '..');
+  const { verifyReportPdf } = require(path.join(repoRoot, 'scripts/dev/verify_architecture_report_pdf.js'));
+
+  // 1. Current repo state passes verification
+  const currentResult = verifyReportPdf({ root: repoRoot });
+  assert.equal(currentResult.ok, true, `Verification must pass on current repository state: ${currentResult.errors?.join('; ')}`);
+  assert.ok(currentResult.pageCount >= 20, `Page count must be >= 20, got ${currentResult.pageCount}`);
+
+  // 2. Drift detection: simulated manifest with tampered hash
+  const manifestPath = path.join(repoRoot, 'docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.pdf.manifest.json');
+  const originalManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-drift-test-'));
+  t.after(() => fs.rmSync(tempDir, { recursive: true, force: true }));
+
+  const tamperedManifest = {
+    ...originalManifest,
+    inputs: {
+      ...originalManifest.inputs,
+      'docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.md': '0000000000000000000000000000000000000000000000000000000000000000',
+    },
+  };
+  const tempManifestPath = path.join(tempDir, 'manifest.json');
+  fs.writeFileSync(tempManifestPath, JSON.stringify(tamperedManifest, null, 2));
+
+  const driftResult = verifyReportPdf({
+    root: repoRoot,
+    manifestPath: tempManifestPath,
+  });
+  assert.equal(driftResult.ok, false, 'Must fail when an input hash has drifted');
+  assert.ok(driftResult.errors.some((e) => e.includes('Input drifted: docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.md')));
 });

@@ -193,3 +193,34 @@ test('watch mode retries unreadable backup schedule state without creating a bac
   assert.equal(heartbeats[0].patch.error_code, 'permission_denied');
   assert.equal(heartbeats.at(-1).patch.state, 'stopped');
 });
+
+test('host-backup fails closed at startup when root disk is exhausted', async () => {
+  const heartbeats = [];
+  const outputs = [];
+  const result = await runHostBackupLoop({
+    watch: false,
+    intervalSecs: 300,
+    checkStartupDisk: true,
+    checkRootDisk: () => {
+      const error = new Error('Root filesystem disk space exhausted: 100MB (1%) free on /');
+      error.code = 'ENOSPC';
+      throw error;
+    },
+    writeHeartbeat: (service, patch) => heartbeats.push({ service, patch }),
+    output: (payload) => outputs.push(payload),
+  });
+
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.cycles, 0);
+  assert.equal(heartbeats[0].patch.state, 'degraded');
+  assert.equal(heartbeats[0].patch.error_code, 'storage_unavailable');
+  assert.equal(outputs[0].ok, false);
+  assert.equal(outputs[0].error_code, 'storage_unavailable');
+});
+
+test('parseHostBackupOptions reads destination from HOST_BACKUP_ROOT env var', () => {
+  const parsed = parseHostBackupOptions([], { HOST_BACKUP_ROOT: '/data/backups/custom' });
+  assert.equal(parsed.backupRoot, '/data/backups/custom');
+  assert.equal(parsed.backupOptions.backupRoot, '/data/backups/custom');
+});
+

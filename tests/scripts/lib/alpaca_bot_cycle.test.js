@@ -180,3 +180,103 @@ test('broker inventory failure preserves tracked positions and blocks the exit c
   assert.equal(saved, false, 'uncertain inventory must never rewrite tracked state');
   assert.match(result.errors[0], /timeout/);
 });
+
+test('composite: 10 attributed AAPL rows, 1 broker position, 1 exit command, deterministic reduction (ALPACA-EXIT-01)', async () => {
+  const tenRows = Array.from({ length: 10 }, (_, i) => ({
+    symbol: 'AAPL',
+    qty: 1,
+    fillPrice: 100,
+    targetPrice: 200,
+    stopPrice: 50,
+    maxHoldingDays: 30,
+    strategyName: `strat_${i + 1}`,
+    entryTimestamp: new Date(Date.now() - 40 * 86400000).toISOString(), // 40 days old -> age exit
+  }));
+
+  let savedState = null;
+  const stateStore = {
+    LOCK_PATH: '/tmp/alpaca-test-composite.lock',
+    loadState: () => ({
+      version: 1,
+      config: { maxPositions: 10 },
+      positions: structuredClone(tenRows),
+      cycleHistory: [],
+      lastCycleAt: null,
+    }),
+    saveState: (s) => { savedState = structuredClone(s); },
+  };
+
+  const tradeCalls = [];
+  const mockCommandTrade = async (args) => {
+    tradeCalls.push(args);
+    return 0; // exit success
+  };
+
+  const prevEnv = process.env.ALPACA_PAPER_MAX_NOTIONAL;
+  process.env.ALPACA_PAPER_MAX_NOTIONAL = '5'; // $5 entry cap, AAPL is $100.91
+
+  try {
+    const result = await runAlpacaExitCheck(['--paper-provider'], {
+      stateStore,
+      acquireLock: () => true,
+      releaseLock: () => {},
+      fetchPositions: () => ({
+        status: 'confirmed',
+        positions: [{ symbol: 'AAPL', quantity: '10', marketValue: '1009.10' }], // $100.91/share
+      }),
+      commandTrade: mockCommandTrade,
+    });
+
+    // 1. Exactly one exit command dispatched to broker
+    assert.equal(tradeCalls.length, 1, 'must aggregate 10 rows into 1 broker sell command');
+    assert.equal(tradeCalls[0][0], 'sell');
+    assert.equal(tradeCalls[0][1], 'AAPL');
+    assert.equal(tradeCalls[0][2], '10', 'sell quantity must be sum of all exiting rows');
+
+    // 2. No cap rejection errors
+    assert.equal(result.errors.length, 0, 'exit sell must not be rejected by entry notional cap');
+    assert.equal(result.sellsExecuted, 10);
+
+    // 3. Deterministic state reduction
+    assert.ok(savedState, 'state must be saved');
+    assert.equal(savedState.positions.length, 0, 'all 10 exiting positions must be cleared from open positions');
+
+    // 4. Attribution preserved
+    assert.equal(savedState.cycleHistory.length, 10, 'each strategy must receive individual exit attribution');
+    const attributedStrategies = savedState.cycleHistory.map((h) => h.strategyName);
+    for (let i = 1; i <= 10; i++) {
+      assert.ok(attributedStrategies.includes(`strat_${i}`), `missing attribution for strat_${i}`);
+    }
+
+    // 5. Failure deduplication: if broker sell fails, emit exactly 1 error and retain all 10 positions
+    let failSavedState = null;
+    const failStateStore = {
+      LOCK_PATH: '/tmp/alpaca-test-composite-fail.lock',
+      loadState: () => ({
+        version: 1,
+        config: { maxPositions: 10 },
+        positions: structuredClone(tenRows),
+        cycleHistory: [],
+        lastCycleAt: null,
+      }),
+      saveState: (s) => { failSavedState = structuredClone(s); },
+    };
+    const failResult = await runAlpacaExitCheck(['--paper-provider'], {
+      stateStore: failStateStore,
+      acquireLock: () => true,
+      releaseLock: () => {},
+      fetchPositions: () => ({
+        status: 'confirmed',
+        positions: [{ symbol: 'AAPL', quantity: '10', marketValue: '1009.10' }],
+      }),
+      commandTrade: async () => 1, // Broker failure exit code 1
+    });
+
+    assert.equal(failResult.errors.length, 1, 'must emit exactly 1 error instead of 10 identical errors');
+    assert.match(failResult.errors[0], /Exit sell failed for AAPL: non-zero exit 1/);
+    assert.equal(failSavedState.positions.length, 10, 'all 10 positions must be preserved upon failure');
+  } finally {
+    if (prevEnv !== undefined) process.env.ALPACA_PAPER_MAX_NOTIONAL = prevEnv;
+    else delete process.env.ALPACA_PAPER_MAX_NOTIONAL;
+  }
+});

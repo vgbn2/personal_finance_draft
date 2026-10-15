@@ -342,7 +342,7 @@ services:
       NODE_OPTIONS: --max-old-space-size=384
     volumes:
       - ../../storage:/app/storage
-      - ${HOST_BACKUP_EXTERNAL_DIR:-../../storage/backups}:/mnt/sda1/backups
+      - ${HOST_BACKUP_EXTERNAL_DIR:-/data/backups}:/data/backups
     restart: unless-stopped
     deploy:
       resources:

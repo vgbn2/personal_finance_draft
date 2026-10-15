@@ -11,7 +11,55 @@
  * ponytail: linear logit drift with depth weighting; full Cont-Kukanov-Stoikov OFI multi-tick kernel when WebSocket order stream is enabled
  */
 
-function calculateDepthImbalance(bids = [], asks = [], depth = 5) {
+/**
+ * Polymarket Official Reference Price Evaluator
+ * When the bid-ask spread is <= $0.10, the reference price is the midpoint (P_bid + P_ask) / 2.
+ * When the spread > $0.10, it falls back to the last trade price (P_last).
+ * If P_last is missing or non-finite, it defaults to available side price or midpoint.
+ *
+ * ponytail: strict piecewise spread evaluation with finite validation
+ */
+function calculatePolymarketReferencePrice(bestBid, bestAsk, lastTradePrice = null) {
+  const bid = Number(bestBid || 0);
+  const ask = Number(bestAsk || 0);
+  const last = Number(lastTradePrice);
+
+  if (bid > 0 && ask > 0) {
+    const spread = Number((ask - bid).toFixed(6));
+    const midpoint = Number(((bid + ask) / 2).toFixed(6));
+    if (spread > 0.10 && Number.isFinite(last) && last > 0) {
+      return {
+        referencePrice: Number(last.toFixed(6)),
+        source: 'last_trade',
+        spread,
+        midpoint,
+      };
+    }
+    return {
+      referencePrice: midpoint,
+      source: 'midpoint',
+      spread,
+      midpoint,
+    };
+  }
+
+  if (Number.isFinite(last) && last > 0) {
+    const p = Number(last.toFixed(6));
+    return { referencePrice: p, source: 'last_trade', spread: 0, midpoint: p };
+  }
+  if (bid > 0) {
+    const p = Number(bid.toFixed(6));
+    return { referencePrice: p, source: 'bid', spread: 0, midpoint: p };
+  }
+  if (ask > 0) {
+    const p = Number(ask.toFixed(6));
+    return { referencePrice: p, source: 'ask', spread: 0, midpoint: p };
+  }
+
+  return { referencePrice: 0.5, source: 'default', spread: 0, midpoint: 0.5 };
+}
+
+function calculateDepthImbalance(bids = [], asks = [], depth = 5, options = {}) {
   if (!Array.isArray(bids)) bids = [];
   if (!Array.isArray(asks)) asks = [];
 
@@ -56,9 +104,15 @@ function calculateDepthImbalance(bids = [], asks = [], depth = 5) {
     microPrice = bestAskPrice;
   }
 
+  const refPricing = calculatePolymarketReferencePrice(bestBidPrice, bestAskPrice, options?.lastTradePrice);
+
   return {
     dir5: Math.max(-1, Math.min(1, dir5)),
     microPrice,
+    referencePrice: refPricing.referencePrice,
+    priceSource: refPricing.source,
+    spread: refPricing.spread,
+    midpoint: refPricing.midpoint,
     weightedBidSize,
     weightedAskSize,
     bestBid: bestBidPrice,
@@ -272,6 +326,7 @@ function evaluateNegRiskConversion(noPrice, alternativeYesPrices = []) {
 }
 
 module.exports = {
+  calculatePolymarketReferencePrice,
   calculateDepthImbalance,
   forecastBinaryProbability,
   calculateMarketFillCost,

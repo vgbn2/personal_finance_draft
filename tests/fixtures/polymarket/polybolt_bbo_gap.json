@@ -1,0 +1,43 @@
+{
+  "asset_id": "21742633143463906290569050155826241533067272736897614950488156847949938836455",
+  "frames": [
+    {
+      "v": 1,
+      "channel": "price.polymarket",
+      "seq": 1,
+      "snapshot": true,
+      "payload": {
+        "market": "0x9deb0baac40648821f96f01339229a422e2f5c877de55dc4dbf981f95a1e709c",
+        "asset_id": "21742633143463906290569050155826241533067272736897614950488156847949938836455",
+        "best_bid": "0.51",
+        "best_ask": "0.53",
+        "hash": "3f9c1e7a",
+        "timestamp": 1788972999871
+      }
+    },
+    {
+      "v": 1,
+      "channel": "price.polymarket",
+      "seq": 3,
+      "payload": {
+        "market": "0x9deb0baac40648821f96f01339229a422e2f5c877de55dc4dbf981f95a1e709c",
+        "asset_id": "21742633143463906290569050155826241533067272736897614950488156847949938836455",
+        "best_bid": "0.52",
+        "best_ask": "0.54",
+        "hash": "4a0d2f9b",
+        "timestamp": 1788973000123
+      }
+    }
+  ],
+  "rest_snapshot": {
+    "ok": true,
+    "book": {
+      "bids": [
+        { "price": "0.51", "size": "30" }
+      ],
+      "asks": [
+        { "price": "0.53", "size": "25" }
+      ]
+    }
+  }
+}
