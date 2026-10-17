@@ -121,3 +121,12 @@ test('MT5 Execution Pipeline: handles rejection from EA bridge', async () => {
   mockClient.disconnect();
   await adapter.stop();
 });
+
+test('MT5 Execution Pipeline: scripts/ops/run_headless_mt5.sh status executes cleanly', () => {
+  const { execSync } = require('node:child_process');
+  const path = require('node:path');
+  const scriptPath = path.resolve(__dirname, '../../../../scripts/ops/run_headless_mt5.sh');
+  const res = execSync(`bash "${scriptPath}" status`, { encoding: 'utf8' });
+  assert.ok(res.includes('MT5') || res.includes('Xvfb'));
+});
+

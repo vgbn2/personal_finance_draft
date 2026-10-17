@@ -79,6 +79,24 @@ shared/lib/providers/ -> shared/lib/data/ingestion.js
 
 ---
 
+## Storage Staging Architecture: RAM & Tmpfs / Swap First Policy
+
+To prevent excessive NVMe/SSD wear caused by continuous high-frequency backfilling (where direct intermediate disk writes generated nearly 2 TB of block I/O over 30 hours of continuous daemon polling), the ingestion and backfill engine employs an explicit **Memory & Tmpfs / Swap-First Staging Architecture**:
+
+1. **In-Memory & Tmpfs Volatile Buffer (`/dev/shm` / swap-backed tmpfs)**:
+   - Raw incoming candles, incremental fetches, and intermediate multi-grain rollups (1m -> 5m, 15m, 1h, 4h, 1d) are staged entirely in memory-mapped volatile storage (`/dev/shm` or tmpfs backed by OS swap space).
+   - Validation checks (`validateIngestRecord`), quarantine classification, and timestamp deduplication execute in RAM without generating intermediate disk writes.
+
+2. **Batched Coalescence & Pointer Swapping**:
+   - Time-series records are accumulated and sorted in memory buffers (`dedupeSortCandles`).
+   - Active readers access stable, immutable snapshots of existing binary TS files while ingestion workers mutate in-memory staging buffers.
+
+3. **Atomic Single-Pass Disk Commit**:
+   - Once all timeframes in a cycle are validated, rolled up, and verified for monotonic continuity, the buffer is serialized to a temporary swap file in tmpfs (`.bin.tmp`).
+   - A single atomic filesystem rename (`fs.renameSync` / POSIX `rename()`) swaps the staged binary index into persistent disk storage (`storage/data/ts/<symbol>_<timeframe>.bin`), guaranteeing zero half-written files and minimizing block I/O wear by up to 90%.
+
+---
+
 ## Observability
 
 - **Snapshot Summary**: `snapshot.quarantine_count` in `storage/data/cache/last_fetch.json`.

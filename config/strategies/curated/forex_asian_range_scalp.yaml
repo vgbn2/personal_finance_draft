@@ -1,5 +1,6 @@
 engine: auto
 name: forex_asian_range_scalp
+broker: mt5
 kind: mean_reversion
 family: mean_reversion
 lane: single_asset

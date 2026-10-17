@@ -40,4 +40,5 @@ set(SOVEREIGN_CPP_CORE_TEST_TARGETS
     binary_ts_merger_test
     grid_optimizer_test
     global_sweep_optimizer_test
+    frame_backtester_test
 )

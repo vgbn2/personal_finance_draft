@@ -1,5 +1,6 @@
 engine: auto
 name: forex_london_breakout
+broker: mt5
 kind: breakout
 family: breakout
 lane: single_asset

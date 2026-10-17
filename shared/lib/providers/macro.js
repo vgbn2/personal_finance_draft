@@ -15,6 +15,8 @@ async function fetchFredLatest(seriesId) {
     timestamp: new Date(obs.date).toISOString(),
     value: parseFloat(obs.value),
     source: 'fred',
+    available_at: obs.realtime_start ? new Date(obs.realtime_start).toISOString() : null,
+    released_at: obs.realtime_start ? new Date(obs.realtime_start).toISOString() : null,
   };
 }
 
@@ -50,6 +52,8 @@ async function fetchFredHistory(seriesId, days) {
     timestamp: new Date(o.date).toISOString(),
     value: parseFloat(o.value),
     source: 'fred',
+    available_at: o.realtime_start ? new Date(o.realtime_start).toISOString() : null,
+    released_at: o.realtime_start ? new Date(o.realtime_start).toISOString() : null,
   }));
 }
 

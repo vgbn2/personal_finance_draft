@@ -214,3 +214,10 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
     docs_aligned: true,
   }, null, 2));
 });
+
+test('package.json exposes docker:build, docker:up, docker:pull shortcut scripts', () => {
+  const pkg = JSON.parse(read(path.join(REPO_ROOT, 'package.json')));
+  ['docker:build', 'docker:up', 'docker:pull'].forEach((key) => {
+    assert.ok(pkg.scripts[key], `Missing npm script: ${key}`);
+  });
+});

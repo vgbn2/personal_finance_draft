@@ -309,3 +309,23 @@ test('ClusterCoordinator: Monotonic fencing tokens increment on election and pro
   }
 });
 
+test('ClusterCoordinator: cluster_heartbeat_daemon runs --once and reports status cleanly', () => {
+  const { runClusterHeartbeat } = require('../../../backend/scripts/ops/cluster_heartbeat_daemon');
+  const tempDir = makeTempDir();
+  try {
+    const coordinator = new ClusterCoordinator({
+      directory: tempDir,
+      nodeId: 'test-daemon-node',
+      allowAutoElect: true,
+    });
+    const result = runClusterHeartbeat(['--once'], coordinator);
+    assert.ok(result);
+    assert.strictEqual(result.isLeader, true);
+    assert.strictEqual(result.leader.leader_id, 'test-daemon-node');
+    assert.strictEqual(result.hb.node_id, 'test-daemon-node');
+    assert.ok(result.hb.pid);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+

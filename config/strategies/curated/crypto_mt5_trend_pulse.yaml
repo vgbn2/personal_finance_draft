@@ -1,5 +1,6 @@
 engine: auto
 name: crypto_mt5_trend_pulse
+broker: mt5
 kind: trend_following
 family: trend_following
 lane: single_asset

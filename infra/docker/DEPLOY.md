@@ -194,3 +194,56 @@ Generate API tokens with: `openssl rand -hex 32`
 | Preflight rejects memory | Install compatible RAM to reach at least 8GB total; use 16GB for safer catch-up |
 | C++ build fails | Ensure the host has sufficient RAM and disk headroom |
 | Dashboard blank | Frontend dist is built inside image — check `docker compose build` output for vite errors |
+
+## Dell OptiPlex Deployment (Docker Compose Pull-and-Run)
+
+### Prerequisites
+- Docker Engine 24+ and Docker Compose v2 installed on the OptiPlex host.
+- SSH access with at least 40 GB free on the data partition.
+- `checkRootDiskSpace` fail-closed guard is active in `shared/lib/runtime/host_maintenance.js`.
+
+### Steps
+
+1. **Pull the published OCI image**:
+   ```bash
+   export SOVEREIGN_IMAGE_REF=ghcr.io/vgbn2/personal_finance_draft:latest
+   docker compose -f infra/docker/docker-compose.yml pull web
+   # Or via npm: npm run docker:pull
+   ```
+
+2. **Configure environment files**:
+   ```bash
+   cp .env.example .env.services/web.env
+   # Edit SOVEREIGN_WEB_BIND, storage mounts as needed
+   ```
+
+3. **Start the web service**:
+   ```bash
+   docker compose -f infra/docker/docker-compose.yml up -d web
+   # Or via npm: npm run docker:up
+   curl http://127.0.0.1:8787/health  # Expect {"ok":true}
+   ```
+
+4. **Enable optional profiles** (paper bot, backfill writer):
+   ```bash
+   docker compose -f infra/docker/docker-compose.yml --profile paper --profile writer up -d
+   ```
+
+5. **Verify storage persistence**:
+   ```bash
+   docker compose -f infra/docker/docker-compose.yml exec web \
+     node -e "require('./shared/lib/runtime/host_maintenance.js').checkRootDiskSpace().then(console.log)"
+   ```
+
+6. **Validate TUI access** (requires `--profile paper` and TTY):
+   ```bash
+   docker compose -f infra/docker/docker-compose.yml exec bot \
+     node backend/cli/sovereign_cli.js status --json
+   ```
+
+### Storage Volume Mapping
+| Host path | Container path | Purpose |
+|---|---|---|
+| `./storage` | `/app/storage` | Binary TS indices, paper ledger, quarantine logs |
+| `./workspace` | `/app/workspace` | Prompt logs, session state |
+| `${HOST_BACKUP_EXTERNAL_DIR:-/data/backups}` | `/data/backups` | Backup staging mount |

@@ -1,5 +1,6 @@
 engine: auto
 name: forex_trend_breakout
+broker: mt5
 kind: momentum
 family: momentum
 lane: single_asset

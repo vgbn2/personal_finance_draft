@@ -64,6 +64,9 @@
     "docs:report:verify": "node scripts/dev/verify_architecture_report_pdf.js",
     "docs:serve": "docker run --rm -it -p 8000:8000 -v \"$PWD:/docs\" squidfunk/mkdocs-material@sha256:51b87149d227691486b5f08993d28c65ca7e4990010664b697265b8e6fcd5287",
     "docs:build": "docker run --rm -v \"$PWD:/docs\" squidfunk/mkdocs-material@sha256:51b87149d227691486b5f08993d28c65ca7e4990010664b697265b8e6fcd5287 build",
+    "docker:build": "docker compose -f infra/docker/docker-compose.yml build web",
+    "docker:up": "docker compose -f infra/docker/docker-compose.yml up -d web",
+    "docker:pull": "docker compose -f infra/docker/docker-compose.yml pull web",
     "bundle": "node scripts/dev/make_bundle.js",
     "verify:strict": "npm run docs:filter -- --strict && npm run test:api && npm run test:contracts && npm run test:secrets && npm test"
   },

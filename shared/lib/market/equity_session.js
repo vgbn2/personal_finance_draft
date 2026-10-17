@@ -93,6 +93,18 @@ function guardEquitySessionBars(records) {
   return { records: kept, dropped: dropped };
 }
 
+var EXCHANGE_SESSIONS = Object.freeze({
+  NYSE: { tz: 'America/New_York', open: [9, 30], close: [16, 0], breakOpen: null, breakClose: null },
+  HOSE: { tz: 'Asia/Ho_Chi_Minh', open: [9, 0], close: [15, 0], breakOpen: [11, 30], breakClose: [13, 0] },
+  HNX: { tz: 'Asia/Ho_Chi_Minh', open: [9, 0], close: [15, 0], breakOpen: [11, 30], breakClose: [13, 0] },
+  SGX: { tz: 'Asia/Singapore', open: [9, 0], close: [17, 0], breakOpen: [12, 0], breakClose: [13, 0] },
+});
+
+function getExchangeSession(market) {
+  var key = String(market || 'NYSE').toUpperCase();
+  return EXCHANGE_SESSIONS[key] || EXCHANGE_SESSIONS.NYSE;
+}
+
 module.exports = {
   NYSE_OPEN_MINUTES: NYSE_OPEN_MINUTES,
   NYSE_CLOSE_MINUTES: NYSE_CLOSE_MINUTES,
@@ -100,4 +112,6 @@ module.exports = {
   SUB_DAILY_TFS: SUB_DAILY_TFS,
   filterEquitySessionGaps: filterEquitySessionGaps,
   guardEquitySessionBars: guardEquitySessionBars,
+  EXCHANGE_SESSIONS: EXCHANGE_SESSIONS,
+  getExchangeSession: getExchangeSession,
 };
