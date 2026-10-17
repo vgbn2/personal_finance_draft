@@ -1,5 +1,6 @@
 engine: auto
 name: crude_oil_inventory_reversal
+broker: mt5
 kind: mean_reversion
 family: mean_reversion
 lane: single_asset

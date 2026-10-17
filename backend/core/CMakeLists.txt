@@ -218,6 +218,7 @@ add_sovereign_test(binary_ts_reader_test test/binary_ts_reader_test.cpp)
 add_sovereign_test(binary_ts_merger_test test/binary_ts_merger_test.cpp)
 add_sovereign_test(grid_optimizer_test test/grid_optimizer_test.cpp)
 add_sovereign_test(global_sweep_optimizer_test test/global_sweep_optimizer_test.cpp)
+add_sovereign_test(frame_backtester_test test/frame_backtester_test.cpp)
 
 # Specialized Test Configuration
 target_compile_definitions(kronos_integration_test PRIVATE

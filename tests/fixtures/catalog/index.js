@@ -22,6 +22,7 @@ const CATALOG_ENTRIES = Object.freeze({
   FLATLINE_WEEKEND_EURUSD_1H: 'flatline_weekend_eurusd_1h.json',
   ILLIQUID_TOKEN_ZERO_VOLUME_15M: 'illiquid_token_zero_volume_15m.json',
   PARTIAL_FILL_ECN_ORDERS: 'partial_fill_ecn_orders.json',
+  OPTIONS_SMILE_5M: 'options_smile_5m.json',
 });
 
 let _cache = new Map();
@@ -53,6 +54,10 @@ function getPartialFillEcnOrders() {
   return getCatalogFixture('PARTIAL_FILL_ECN_ORDERS');
 }
 
+function getOptionsSmile() {
+  return getCatalogFixture('OPTIONS_SMILE_5M');
+}
+
 function clearCatalogCache() {
   _cache.clear();
 }
@@ -64,5 +69,6 @@ module.exports = {
   getFlatlineWeekendEurUsd,
   getIlliquidToken,
   getPartialFillEcnOrders,
+  getOptionsSmile,
   clearCatalogCache,
 };
