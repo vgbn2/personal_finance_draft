@@ -73,3 +73,16 @@ test('Cluster API Routes: accepts mutating action when invoked via HTTP POST', a
   assert.strictEqual(clusterRoutes.status(res), 200);
 });
 
+test('Cluster API Routes: handles doctor action correctly without requiring POST', async () => {
+  const res = await clusterRoutes.handle(
+    { action: 'doctor' },
+    { req: { method: 'GET' } },
+  );
+  assert.strictEqual(res.ok, true);
+  assert.ok(res.doctor, 'Must contain doctor diagnosis block');
+  assert.equal(typeof res.doctor.cluster_healthy, 'boolean');
+  assert.ok(Number.isFinite(res.doctor.alive_nodes));
+  assert.ok(Number.isFinite(res.doctor.stale_nodes));
+  assert.strictEqual(clusterRoutes.status(res), 200);
+});
+

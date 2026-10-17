@@ -53,6 +53,16 @@ This specification defines the foundational mathematical, temporal, and economic
 - **Rule**: Perpetual crypto futures funding rates are discrete periodic cash transfers, not trade price adjustments.
 - **Invariant**: Funding payments must adjust available cash balance independently, leaving the original position entry price and size unaltered.
 
+### 8. Treasury Yield Curve Publication Timing & Date-Label Disambiguation
+- **Rule**: US Treasury Daily Par Yield Curve rates carry a calendar date label (e.g. `2026-10-15`) but are officially released at 19:57:00 UTC.
+- **Invariant**: The publication instant $t_{\text{publication}} = \text{YYYY-MM-DDT19:57:00Z}$ must govern point-in-time visibility, not midnight 00:00:00Z. Decision loops executed prior to 19:57Z on day $T$ must not observe the day $T$ curve.
+
+### 9. Regional Exchange Session Conventions (Vietnam HOSE/HNX & Singapore SGX)
+- **Rule**: Non-US exchanges operate under regional statutory session windows and quote conventions:
+  - **HOSE / HNX (Vietnam)**: Operating window 09:00-15:00 ICT (`Asia/Ho_Chi_Minh`, UTC+7) with mandatory 11:30-13:00 lunch break. Quote scale is 1,000 VND per point; statutory round lot is 100 shares.
+  - **SGX / MAS (Singapore)**: Operating window 09:00-17:00 SGT (`Asia/Singapore`, UTC+8) with 12:00-13:00 break. MAS Singapore Government Securities (SGS) are clean-quoted per S$100 nominal principal.
+- **Invariant**: Intraday equity filters must enforce exchange-specific lunch breaks and prevent after-hours gap distortion. Quotation basis transformations must multiply VND points by 1,000 and divide SGS bond clean prices by 100 to yield true nominal settlement cashflows.
+
 ---
 
 ## Entrypoints And Public Contracts

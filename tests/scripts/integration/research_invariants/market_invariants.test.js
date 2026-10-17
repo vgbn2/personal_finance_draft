@@ -3,6 +3,7 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
+const { getExchangeSession } = require('../../../../shared/lib/market/equity_session');
 
 describe('Market Data & Research Invariants (Ported from Research Handbook)', () => {
   // 1. Explicit Timestamp Units
@@ -220,5 +221,48 @@ describe('Market Data & Research Invariants (Ported from Research Handbook)', ()
 
     assert.equal(totalPreValue, totalPostValue);
     assert.equal(postSplitPrice / preSplitPrice - 1, -0.5); // 50% raw per-share drop
+  });
+
+  // 16. Treasury Par Yield Publication Instant vs Date-Label
+  test('treasury publication instant: date-label midnight differs from 19:57Z release', () => {
+    const dateLabel = '2026-10-15';
+    // Date label interpreted naively as midnight UTC
+    const midnightUtc = Date.parse(`${dateLabel}T00:00:00Z`);
+    // Actual Treasury yield curve release time: 19:57:00Z same calendar day
+    const publicationInstant = Date.parse(`${dateLabel}T19:57:00Z`);
+    assert.notEqual(midnightUtc, publicationInstant);
+    // A decision at 12:00Z cannot see the data published at 19:57Z
+    const decisionMs = Date.parse(`${dateLabel}T12:00:00Z`);
+    assert.equal(decisionMs < publicationInstant, true);
+  });
+
+  // 17. Regional Exchange Session Boundaries (HOSE / HNX Vietnam)
+  test('regional exchange session: HOSE 09:00-15:00 ICT with 11:30-13:00 lunch break', () => {
+    const hose = getExchangeSession('HOSE');
+    assert.equal(hose.tz, 'Asia/Ho_Chi_Minh');
+    assert.deepEqual(hose.open, [9, 0]);
+    assert.deepEqual(hose.close, [15, 0]);
+    assert.deepEqual(hose.breakOpen, [11, 30]);
+    assert.deepEqual(hose.breakClose, [13, 0]);
+
+    // Quotation unit: 1000 VND per quote point, 100-share round lot
+    const quotePrice = 25.5; // 25,500 VND
+    const roundLot = 100;
+    const notionalVnd = quotePrice * 1000 * roundLot;
+    assert.equal(notionalVnd, 2550000);
+  });
+
+  // 18. Singapore MAS SGS Benchmark Bond Clean Price Quotation
+  test('singapore SGS benchmark bond quotation: clean price per S$100 nominal principal', () => {
+    const sgx = getExchangeSession('SGX');
+    assert.equal(sgx.tz, 'Asia/Singapore');
+    assert.deepEqual(sgx.open, [9, 0]);
+    assert.deepEqual(sgx.close, [17, 0]);
+
+    // SGS clean price is quoted per S$100 principal
+    const cleanQuote = 99.75;
+    const faceValueSgd = 100000;
+    const cleanCashValue = (cleanQuote / 100.0) * faceValueSgd;
+    assert.equal(cleanCashValue, 99750);
   });
 });

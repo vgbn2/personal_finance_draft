@@ -12,6 +12,8 @@ const {
   quarantineRecord,
   readQuarantineRecords,
   computePayloadHash,
+  getQuarantineMetrics,
+  pruneQuarantineRecords,
 } = require('../../../../shared/lib/data/quarantine');
 const { runIngestBatch, FAMILIES_MANIFEST } = require('../../../../shared/lib/data/ingestion');
 
@@ -163,6 +165,63 @@ describe('Ingestion Staging & Quarantine Engine', () => {
       assert.equal(quarantined.length, 3);
     } finally {
       cryptoManifest.fetcher = originalFetcher;
+    }
+  });
+
+  test('getQuarantineMetrics: calculates totals, reasons, and latest anomaly correctly', () => {
+    const testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sov_qmetrics_'));
+    try {
+      quarantineRecord({ symbol: 'BAD1', close: -5 }, QUARANTINE_REASONS.NON_FINITE_PRICE, 'Negative price', {
+        storageDir: testDir,
+        family: 'crypto',
+        now: new Date('2026-10-01T10:00:00Z'),
+      });
+      quarantineRecord({ symbol: 'BAD2', bid: 10, ask: 9 }, QUARANTINE_REASONS.NEGATIVE_SPREAD, 'Inverted spread', {
+        storageDir: testDir,
+        family: 'trad',
+        now: new Date('2026-10-02T12:00:00Z'),
+      });
+
+      const metrics = getQuarantineMetrics({ storageDir: testDir });
+      assert.equal(metrics.total_quarantined, 2);
+      assert.equal(metrics.file_count, 2);
+      assert.equal(metrics.by_reason[QUARANTINE_REASONS.NON_FINITE_PRICE], 1);
+      assert.equal(metrics.by_reason[QUARANTINE_REASONS.NEGATIVE_SPREAD], 1);
+      assert.equal(metrics.by_family['crypto'], 1);
+      assert.equal(metrics.by_family['trad'], 1);
+      assert.ok(metrics.latest_anomaly);
+      assert.equal(metrics.latest_anomaly.symbol, 'BAD2');
+    } finally {
+      fs.rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  test('pruneQuarantineRecords: removes files older than retention days while preserving fresh ones', () => {
+    const testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sov_qprune_'));
+    try {
+      // Old record from 40 days ago
+      quarantineRecord({ symbol: 'OLD1' }, QUARANTINE_REASONS.MALFORMED_ROW, 'Old failure', {
+        storageDir: testDir,
+        family: 'general',
+        now: new Date('2026-08-01T00:00:00Z'),
+      });
+      // Fresh record
+      quarantineRecord({ symbol: 'FRESH1' }, QUARANTINE_REASONS.MALFORMED_ROW, 'Recent failure', {
+        storageDir: testDir,
+        family: 'general',
+        now: new Date('2026-10-15T00:00:00Z'),
+      });
+
+      const evalTime = new Date('2026-10-16T00:00:00Z');
+      const pruneRes = pruneQuarantineRecords(30, { storageDir: testDir, now: evalTime });
+      assert.equal(pruneRes.pruned_files, 1);
+      assert.ok(pruneRes.freed_bytes > 0);
+
+      const remaining = readQuarantineRecords({ storageDir: testDir });
+      assert.equal(remaining.length, 1);
+      assert.equal(remaining[0].symbol, 'FRESH1');
+    } finally {
+      fs.rmSync(testDir, { recursive: true, force: true });
     }
   });
 });

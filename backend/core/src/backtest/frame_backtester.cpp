@@ -148,6 +148,7 @@ std::vector<AnnotatedRow> parseFeaturesFast(std::string_view content) {
                         else if (key == "timeframe") row.timeframe = std::move(val);
                         else if (key == "as_of") row.as_of = std::move(val);
                         else if (key == "predicted_direction") row.predicted_direction = std::move(val);
+                        else if (key == "option_type") row.option_type = std::move(val);
                     } else {
                         const std::size_t v_start = i;
                         while (i < n && content[i] != ',' && content[i] != '}' && content[i] != ' ' && content[i] != '\t' && content[i] != '\r' && content[i] != '\n') ++i;
@@ -157,6 +158,10 @@ std::vector<AnnotatedRow> parseFeaturesFast(std::string_view content) {
                         if (ec == std::errc()) {
                             if (key == "close") row.close = val_dbl;
                             else if (key == "predicted_confidence") row.predicted_confidence = val_dbl;
+                            else if (key == "implied_vol") row.implied_vol = val_dbl;
+                            else if (key == "option_delta") row.option_delta = val_dbl;
+                            else if (key == "strike") row.strike = val_dbl;
+                            else if (key == "expiration_frac") row.expiration_frac = val_dbl;
                         }
                     }
                 } else {
@@ -290,10 +295,29 @@ FrameBacktestResult FrameBacktester::runFromAnnotated(
             if (entry.predicted_confidence < threshold)      continue;
             if (entry.close <= 0.0 || exit.close <= 0.0)    continue;
 
-            const double adj_entry  = entry.close * (1.0 + drag);
-            const double adj_exit   = exit.close  * (1.0 - drag);
-            const double gross_ret  = exit.close / entry.close - 1.0;
-            const double net_ret    = adj_exit / adj_entry - 1.0;
+            double gross_ret = 0.0;
+            double net_ret   = 0.0;
+
+            if (!entry.option_type.empty() && entry.strike > 0.0 && entry.expiration_frac > 0.0) {
+                // Non-linear option position payoff approximation:
+                // ΔP ≈ Δ·ΔS + ½·Γ·(ΔS²), normalized by entry underlying close
+                const double dS = exit.close - entry.close;
+                const double delta_pnl = entry.option_delta * dS;
+                const double approx_gamma = (entry.expiration_frac > 0.001 && entry.implied_vol > 0.001)
+                    ? std::abs(entry.option_delta) / (entry.close * entry.implied_vol * std::sqrt(entry.expiration_frac))
+                    : 0.0;
+                const double gamma_pnl = 0.5 * approx_gamma * dS * dS;
+                gross_ret = (delta_pnl + gamma_pnl) / std::max(entry.close, 1e-9);
+                // Options bid/ask spread execution drag (2x base equity cost_bps)
+                const double opt_drag = 2.0 * drag;
+                net_ret = gross_ret - opt_drag;
+            } else {
+                // Standard spot/equity cash payoff
+                const double adj_entry  = entry.close * (1.0 + drag);
+                const double adj_exit   = exit.close  * (1.0 - drag);
+                gross_ret = exit.close / entry.close - 1.0;
+                net_ret   = adj_exit / adj_entry - 1.0;
+            }
 
             const double pos_size   = std::clamp(frame_cfg.position_size_pct, 0.01, 1.0);
             const double trade_pnl  = pos_size * net_ret;

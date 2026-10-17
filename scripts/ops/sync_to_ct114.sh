@@ -68,11 +68,10 @@ if [[ "$REBUILD" == "true" && "$DRY_RUN" == "false" ]]; then
   echo "==> Rebuilding Docker image on CT ${CT_ID}..."
   $PROXMOX_SSH "pct exec ${CT_ID} -- bash -c '
     cd ${CT_DEST}
-    npm install --prefix backend/api --silent
-    npm install --prefix backend/gateway --silent
     docker compose build web
-    docker compose up -d --no-build --force-recreate web backfill
-    docker compose ps
+    docker tag ghcr.io/vgbn2/personal_finance_draft:latest personal_finance:latest
+    docker compose -p sv -f infra/docker/docker-compose.yml --profile "*" up -d --no-build --force-recreate web backfill bot-alpaca-paper portfolio-monitor host-health host-backup
+    docker compose -p sv -f infra/docker/docker-compose.yml ps
   '"
   echo "==> Rebuild done."
 fi

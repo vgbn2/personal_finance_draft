@@ -483,9 +483,26 @@ async function runAutomationPass(args, strategiesOverride = null) {
 
     // Filter strategies by broker compatibility (e.g. skip MT5-only forex/indices on Alpaca Paper runner)
     if (providerPaper) {
-        const mt5Excluded = targetStrategies.filter((strategy) => strategy.broker === 'mt5' || String(strategy.name || '').startsWith('auto_mt5_'));
+        const MT5_CURATED_NAMES = new Set([
+            'forex_london_breakout',
+            'gold_ny_momentum',
+            'nasdaq_opening_drive',
+            'forex_asian_range_scalp',
+            'crude_oil_inventory_reversal',
+            'crypto_mt5_trend_pulse',
+            'forex_trend_breakout',
+        ]);
+        const mt5Excluded = targetStrategies.filter((strategy) => (
+            strategy.broker === 'mt5' ||
+            String(strategy.name || '').startsWith('auto_mt5_') ||
+            MT5_CURATED_NAMES.has(strategy.name)
+        ));
         mt5Excluded.forEach((strategy) => console.log(`[AUTOMATION] ${strategy.name} skipped: broker_mismatch (mt5 strategy on alpaca paper runner).`));
-        targetStrategies = targetStrategies.filter((strategy) => strategy.broker !== 'mt5' && !String(strategy.name || '').startsWith('auto_mt5_'));
+        targetStrategies = targetStrategies.filter((strategy) => (
+            strategy.broker !== 'mt5' &&
+            !String(strategy.name || '').startsWith('auto_mt5_') &&
+            !MT5_CURATED_NAMES.has(strategy.name)
+        ));
     }
 
     if (targetStrategies.length === 0) {

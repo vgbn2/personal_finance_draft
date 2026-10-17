@@ -80,6 +80,12 @@ struct AnnotatedRow {
     double close = 0.0;
     std::string predicted_direction;   // "long" | "short" | ""
     double predicted_confidence = 0.0;
+    // Options extensions — zero/empty indicates equity/spot bar
+    double implied_vol = 0.0;          // mid-market implied vol fraction (e.g. 0.72 = 72%)
+    double option_delta = 0.0;         // signed net delta of the position at entry bar
+    std::string option_type;           // "C" | "P" | "" (blank = equity/spot)
+    double strike = 0.0;               // strike price (0 for equity bars)
+    double expiration_frac = 0.0;      // time-to-expiry in years at bar open
 };
 
 struct FrameBacktestResult {

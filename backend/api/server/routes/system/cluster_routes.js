@@ -36,6 +36,25 @@ module.exports = {
       };
     }
 
+    if (action === 'doctor') {
+      const nodes = coordinator.getClusterNodes();
+      const leader = coordinator.getLeader();
+      const alive = nodes.filter((n) => n.status === 'healthy').length;
+      const stale = nodes.filter((n) => n.status === 'unresponsive').length;
+      return {
+        ok: true,
+        doctor: {
+          cluster_healthy: alive > 0 && !!leader,
+          leader_id: leader?.leader_id || null,
+          alive_nodes: alive,
+          stale_nodes: stale,
+          fencing_token: coordinator.fencingToken,
+          lease_ttl_ms: coordinator.leaseTtlMs,
+          nodes,
+        },
+      };
+    }
+
     const isMutationAction = [
       'heartbeat',
       'elect',
