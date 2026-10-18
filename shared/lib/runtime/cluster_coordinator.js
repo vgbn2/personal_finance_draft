@@ -316,6 +316,41 @@ class ClusterCoordinator {
       expires_ms: now + lockTtlMs,
     };
 
+    if (!existing) {
+      const dir = path.dirname(lockPath);
+      this.fsImpl.mkdirSync(dir, { recursive: true });
+      try {
+        // ponytail: native POSIX O_EXCL write prevents race conditions under high concurrency
+        this.fsImpl.writeFileSync(lockPath, JSON.stringify(lockData, null, 2), { flag: 'wx', encoding: 'utf8' });
+        return {
+          ok: true,
+          acquired: true,
+          owner_node: this.nodeId,
+          fencing_token: callerToken,
+          expires_at: lockData.expires_at,
+        };
+      } catch (err) {
+        if (err.code === 'EEXIST') {
+          const competitor = readJsonSync(lockPath, this.fsImpl);
+          if (competitor && competitor.owner_node !== this.nodeId) {
+            const expMs = competitor.expires_ms || Date.parse(competitor.expires_at) || 0;
+            if (now < expMs) {
+              return {
+                ok: false,
+                acquired: false,
+                reason: 'lock_held_by_peer',
+                owner_node: competitor.owner_node,
+                expires_at: competitor.expires_at,
+                fencing_token: competitor.fencing_token,
+              };
+            }
+          }
+        } else {
+          throw err;
+        }
+      }
+    }
+
     writeAtomicSync(lockPath, lockData, this.fsImpl);
     return {
       ok: true,
