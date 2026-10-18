@@ -123,10 +123,13 @@ test('MT5 Execution Pipeline: handles rejection from EA bridge', async () => {
 });
 
 test('MT5 Execution Pipeline: scripts/ops/run_headless_mt5.sh status executes cleanly', () => {
-  const { execSync } = require('node:child_process');
+  const { spawnSync } = require('node:child_process');
   const path = require('node:path');
   const scriptPath = path.resolve(__dirname, '../../../../scripts/ops/run_headless_mt5.sh');
-  const res = execSync(`bash "${scriptPath}" status`, { encoding: 'utf8' });
-  assert.ok(res.includes('MT5') || res.includes('Xvfb'));
+  // ponytail: status returns 0 when running or 1 when stopped; test asserts valid output safely without altering operational exit code semantics
+  const res = spawnSync('bash', [scriptPath, 'status'], { encoding: 'utf8' });
+  assert.ok(res.status === 0 || res.status === 1, 'Status exit code must be 0 (running) or 1 (stopped)');
+  const output = (res.stdout || '') + (res.stderr || '');
+  assert.ok(output.includes('MT5') || output.includes('Xvfb'));
 });
 

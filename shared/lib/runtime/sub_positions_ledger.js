@@ -288,6 +288,10 @@ function reconcilePositions(brokerPositions = [], filePath = DEFAULT_LEDGER_PATH
   for (const bp of brokerPositions) {
     const sym = String(bp.symbol || '').toUpperCase();
     const brokerQty = Math.max(0, Number(bp.quantity || 0));
+    // ponytail: preserve broker qty_available or fallback to gross brokerQty
+    const brokerQtyAvailable = (bp.qty_available !== undefined && bp.qty_available !== null && Number.isFinite(Number(bp.qty_available)))
+      ? Number(bp.qty_available)
+      : brokerQty;
     const avgPrice = Number(bp.averagePrice || bp.average_price || 0);
     const marketVal = Number(bp.marketValue || bp.market_value || 0);
     const unrPl = Number(bp.unrealizedPl || bp.unrealized_pl || 0);
@@ -350,6 +354,7 @@ function reconcilePositions(brokerPositions = [], filePath = DEFAULT_LEDGER_PATH
     reconciled.push({
       symbol: sym,
       quantity: brokerQty,
+      qty_available: brokerQtyAvailable,
       averagePrice: avgPrice,
       marketValue: marketVal,
       unrealizedPl: unrPl,
