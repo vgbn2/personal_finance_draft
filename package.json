@@ -22,6 +22,7 @@
     "native:build": "cmake -S backend/core -B backend/core/build -DCMAKE_BUILD_TYPE=Release -DSOVEREIGN_ENABLE_ONNX_RUNTIME=OFF && cmake --build backend/core/build --config Release --parallel",
     "probe:backfill": "node backend/scripts/dev/parallel_backfill_probe.js",
     "test": "node tests/run_node_tests.js",
+    "test:batch": "node tests/run_node_tests.js --batch",
     "test:tier1": "node tests/run_node_tests.js tests/scripts/architecture/tiers/tier1_math_invariants.test.js",
     "test:tier2": "node tests/run_node_tests.js tests/scripts/integration/engine/factorial_seam_pipeline.test.js",
     "test:tier3": "node tests/run_node_tests.js tests/scripts/integration/matrix/scenario_fault_matrix.test.js",

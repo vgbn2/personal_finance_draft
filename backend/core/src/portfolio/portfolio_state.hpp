@@ -10,6 +10,8 @@ struct Position {
     double quantity = 0.0;
     double average_cost = 0.0;
     double current_price = 0.0;
+    double multiplier = 1.0;
+    double fx_rate = 1.0; // rate to convert position currency to portfolio base currency
 };
 
 struct PortfolioState {

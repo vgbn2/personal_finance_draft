@@ -13,7 +13,9 @@ ExposureReport analyzeExposure(const PortfolioState& state, const ExposureLimits
 
     std::map<std::string, ExposureBucket> buckets;
     for (const auto& position : state.positions) {
-        const double market_value = position.quantity * position.current_price;
+        const double mult = (position.multiplier > 0.0) ? position.multiplier : 1.0;
+        const double fx = (position.fx_rate > 0.0) ? position.fx_rate : 1.0;
+        const double market_value = position.quantity * position.current_price * mult * fx;
         auto& bucket = buckets[position.symbol];
         bucket.symbol = position.symbol;
         bucket.net_exposure += market_value;
