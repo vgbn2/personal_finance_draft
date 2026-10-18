@@ -27,12 +27,24 @@ function makeStream() {
 function withEnv(overrides, fn) {
   const origIsTTY = process.stdout.isTTY;
   const origArgv  = process.argv;
+  const origEnv   = {};
   if ('isTTY' in overrides) Object.defineProperty(process.stdout, 'isTTY', { value: overrides.isTTY, configurable: true, writable: true });
   if ('argv'  in overrides) process.argv = overrides.argv;
+  if ('env'   in overrides) {
+    for (const [k, v] of Object.entries(overrides.env)) {
+      origEnv[k] = process.env[k];
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = String(v);
+    }
+  }
   try { return fn(); }
   finally {
     Object.defineProperty(process.stdout, 'isTTY', { value: origIsTTY, configurable: true, writable: true });
     process.argv = origArgv;
+    for (const [k, v] of Object.entries(origEnv)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
   }
 }
 
@@ -91,21 +103,12 @@ test('progress non-TTY: each milestone fires exactly once even with coarse ticks
 
 test('progress TTY: renders \\r-based single line with bar and percent', () => {
   const stream = makeStream();
-  const origIsTTY = process.stdout.isTTY;
-  const origArgv  = process.argv;
-  const origCI    = process.env.CI;
 
-  Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true, writable: true });
-  process.argv = ['node', 'test'];
-  process.env.CI = '1'; // isRichTerminal() → false → ASCII bar chars
-
-  const p = createProgress('Loading', 10, { _stream: stream });
-  p.tick(5);  // 50% — immediate paint (note not provided but force=false; throttle starts from 0)
-  p.done();   // 100% — forced paint
-
-  Object.defineProperty(process.stdout, 'isTTY', { value: origIsTTY, configurable: true, writable: true });
-  process.argv = origArgv;
-  if (origCI === undefined) delete process.env.CI; else process.env.CI = origCI;
+  withEnv({ isTTY: true, argv: ['node', 'test'], env: { CI: '1' } }, () => {
+    const p = createProgress('Loading', 10, { _stream: stream });
+    p.tick(5);  // 50% — immediate paint (note not provided but force=false; throttle starts from 0)
+    p.done();   // 100% — forced paint
+  });
 
   assert.match(stream.text, /\[/, 'bar open bracket present');
   assert.match(stream.text, /%/, 'percent symbol present');
@@ -125,20 +128,11 @@ test('progress TTY: renders \\r-based single line with bar and percent', () => {
 
 test('progress TTY: 50% shows exactly half the bar filled (ASCII mode)', () => {
   const stream = makeStream();
-  const origIsTTY = process.stdout.isTTY;
-  const origArgv  = process.argv;
-  const origCI    = process.env.CI;
 
-  Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true, writable: true });
-  process.argv = ['node', 'test'];
-  process.env.CI = '1'; // ASCII bar chars
-
-  const p = createProgress('Test', 10, { _stream: stream });
-  p.tick(5, 'halfway'); // note forces immediate repaint
-
-  Object.defineProperty(process.stdout, 'isTTY', { value: origIsTTY, configurable: true, writable: true });
-  process.argv = origArgv;
-  if (origCI === undefined) delete process.env.CI; else process.env.CI = origCI;
+  withEnv({ isTTY: true, argv: ['node', 'test'], env: { CI: '1' } }, () => {
+    const p = createProgress('Test', 10, { _stream: stream });
+    p.tick(5, 'halfway'); // note forces immediate repaint
+  });
 
   // Bar is 20 chars wide; 50% → 10 '#' + 10 '.'
   assert.match(stream.text, /#{10}\.{10}/, '50% bar: 10 fill + 10 empty ASCII chars');
@@ -147,20 +141,11 @@ test('progress TTY: 50% shows exactly half the bar filled (ASCII mode)', () => {
 
 test('progress TTY: note text appears in the rendered line', () => {
   const stream = makeStream();
-  const origIsTTY = process.stdout.isTTY;
-  const origArgv  = process.argv;
-  const origCI    = process.env.CI;
 
-  Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true, writable: true });
-  process.argv = ['node', 'test'];
-  process.env.CI = '1';
-
-  const p = createProgress('Crunching', 4, { _stream: stream });
-  p.tick(2, 'BTCUSDT'); // note forces immediate repaint
-
-  Object.defineProperty(process.stdout, 'isTTY', { value: origIsTTY, configurable: true, writable: true });
-  process.argv = origArgv;
-  if (origCI === undefined) delete process.env.CI; else process.env.CI = origCI;
+  withEnv({ isTTY: true, argv: ['node', 'test'], env: { CI: '1' } }, () => {
+    const p = createProgress('Crunching', 4, { _stream: stream });
+    p.tick(2, 'BTCUSDT'); // note forces immediate repaint
+  });
 
   assert.match(stream.text, /BTCUSDT/, 'note text must appear in TTY render');
 });
