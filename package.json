@@ -26,7 +26,7 @@
     "test:tier2": "node tests/run_node_tests.js tests/scripts/integration/engine/factorial_seam_pipeline.test.js",
     "test:tier3": "node tests/run_node_tests.js tests/scripts/integration/matrix/scenario_fault_matrix.test.js",
     "test:matrix": "npm run test:tier3",
-    "test:cluster": "node tests/run_node_tests.js tests/scripts/operational/cluster_coordinator.test.js backend/api/tests/cluster_routes.test.js",
+    "test:cluster": "node tests/run_node_tests.js tests/scripts/operational/cluster_coordinator.test.js tests/scripts/operational/cluster_flow_optimization.test.js backend/api/tests/cluster_routes.test.js",
     "test:pyramid": "npm run test:tier1 && npm run test:tier2 && npm run test:tier3 && npm run test:cluster",
     "test:bench": "node tests/run_node_tests.js tests/benchmarks/**/*.bench.js",
     "bench": "npm run test:bench",
