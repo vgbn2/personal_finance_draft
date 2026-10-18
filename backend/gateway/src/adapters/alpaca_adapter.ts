@@ -2,7 +2,7 @@ import { BrokerAdapter, Position, TradeOrder } from './types';
 
 // @ts-ignore
 const Alpaca = require('@alpacahq/alpaca-trade-api');
-const { resolveAlpacaSettings, toAlpacaTradeSymbol } = require('../../../../shared/lib/brokers/alpaca_env');
+const { normalizeAlpacaPosition, resolveAlpacaSettings, toAlpacaTradeSymbol } = require('../../../../shared/lib/brokers/alpaca_env');
 
 export interface AlpacaAdapterOptions {
   keyId?: string;
@@ -154,15 +154,7 @@ export class AlpacaAdapter implements BrokerAdapter {
       return positions.map((p: any) => {
         const rawSym = String(p.symbol || '').toUpperCase();
         const sym = rawSym.replace('/', '');
-        const ordInfo = orderMap[sym] || orderMap[rawSym];
-        return {
-          symbol: sym,
-          quantity: Number(p.qty),
-          averagePrice: Number(p.avg_entry_price),
-          marketValue: Number(p.market_value),
-          unrealizedPl: Number(p.unrealized_pl),
-          submittedAt: ordInfo?.submitted_at || ordInfo?.filled_at || undefined,
-        };
+        return normalizeAlpacaPosition(p, orderMap[sym] || orderMap[rawSym]);
       });
     } catch (err: any) {
       throw new Error(`Alpaca SDK Positions Error: ${err.message}`);

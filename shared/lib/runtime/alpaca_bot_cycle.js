@@ -223,7 +223,13 @@ async function runAlpacaExitCheck(args = [], options = {}) {
     const brokerBySymbol = new Map(brokerPositions.map((p) => [p.symbol, p]));
     // Broker shares still sellable per symbol, decremented as we exit -- so two
     // bot positions stacked on one symbol can't together oversell the holding.
-    const availableBySymbol = new Map(brokerPositions.map((p) => [p.symbol, Number(p.quantity)]));
+    // ponytail: consume qty_available if present; fallback to gross quantity for backwards compatibility
+    const availableBySymbol = new Map(brokerPositions.map((p) => [
+      p.symbol,
+      p.qty_available !== undefined && p.qty_available !== null && Number.isFinite(Number(p.qty_available))
+        ? Math.max(0, Number(p.qty_available))
+        : Math.max(0, Number(p.quantity))
+    ]));
     const remaining = [];
     const exitingBySymbol = new Map();
 
@@ -257,7 +263,16 @@ async function runAlpacaExitCheck(args = [], options = {}) {
       const totalDesiredQty = exitingItems.reduce((sum, item) => sum + Number(item.position.qty || 0), 0);
       const aggregateSellQty = resolveExitQty(totalDesiredQty, available);
 
+      const brokerPos = brokerBySymbol.get(symbol);
+      const brokerGrossQty = Math.max(0, Number(brokerPos?.quantity || 0));
+
       if (aggregateSellQty <= 0) {
+        if (brokerGrossQty > 0) {
+          // ponytail: retain tracking and skip duplicate sell when broker shares are held by an open order
+          for (const item of exitingItems) remaining.push(item.position);
+          result.errors.push(`Shares for ${symbol} are held by an open order (available: ${available}, held: ${brokerGrossQty - available}); skipping duplicate exit.`);
+          continue;
+        }
         // Broker holds nothing left for this symbol (already exited / sold
         // manually) -- drop stale tracking instead of firing an oversell.
         result.errors.push(`No broker shares left to exit ${symbol}; dropping stale tracking.`);

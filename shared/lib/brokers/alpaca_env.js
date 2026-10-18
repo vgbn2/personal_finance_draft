@@ -129,6 +129,22 @@ function toAlpacaTradeSymbol(symbol) {
   return sym;
 }
 
+function normalizeAlpacaPosition(position, order = null) {
+  const quantity = Number(position.qty);
+  const available = Number(position.qty_available);
+  return {
+    symbol: String(position.symbol || '').toUpperCase().replace('/', ''),
+    quantity,
+    qty_available: position.qty_available !== undefined && position.qty_available !== null && Number.isFinite(available)
+      ? available
+      : quantity,
+    averagePrice: Number(position.avg_entry_price),
+    marketValue: Number(position.market_value),
+    unrealizedPl: Number(position.unrealized_pl),
+    submittedAt: order?.submitted_at || order?.filled_at || undefined,
+  };
+}
+
 module.exports = {
   LIVE_BASE_URL,
   PAPER_BASE_URL,
@@ -138,4 +154,5 @@ module.exports = {
   ALPACA_SUPPORTED_CRYPTO_PAIRS,
   isAlpacaTradable,
   toAlpacaTradeSymbol,
+  normalizeAlpacaPosition,
 };

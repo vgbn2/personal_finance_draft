@@ -1,0 +1,54 @@
+{
+  "captured_at": "2026-10-18T00:02:50.590Z",
+  "bot_state": {
+    "version": 1,
+    "config": {
+      "enabled": true,
+      "defaultStopLossPct": 0.08,
+      "defaultTakeProfitPct": 0.15,
+      "maxPositions": 10
+    },
+    "positions": [
+      {
+        "positionId": "pos_aapl_pending_exit",
+        "symbol": "AAPL",
+        "qty": 30.182,
+        "fillPrice": 228.5,
+        "targetPrice": 250,
+        "stopPrice": 200,
+        "maxHoldingDays": 30,
+        "strategyName": "trend_pulse",
+        "entryTimestamp": "2026-08-01T00:00:00.000Z"
+      }
+    ],
+    "cycleHistory": [],
+    "entryIntents": [],
+    "lastCycleAt": null
+  },
+  "positions": [
+    {
+      "symbol": "AAPL",
+      "qty": "30.182",
+      "qty_available": "0",
+      "avg_entry_price": "228.5",
+      "market_value": "6896.587",
+      "unrealized_pl": "0"
+    },
+    {
+      "symbol": "MSFT",
+      "qty": "15",
+      "avg_entry_price": "420",
+      "market_value": "6300",
+      "unrealized_pl": "0"
+    }
+  ],
+  "open_orders": [
+    {
+      "id": "746f64bf-e9ec-416e-80bf-9fd2de05fd95",
+      "symbol": "AAPL",
+      "qty": "30.182",
+      "status": "accepted",
+      "submitted_at": "2026-10-17T08:43:38.997Z"
+    }
+  ]
+}

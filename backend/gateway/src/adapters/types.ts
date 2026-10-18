@@ -15,6 +15,7 @@ export interface SubPosition {
 export interface Position {
   symbol: string;
   quantity: number;
+  qty_available?: number;
   averagePrice: number;
   marketValue: number;
   unrealizedPl: number;

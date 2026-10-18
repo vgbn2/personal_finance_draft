@@ -43,7 +43,7 @@
     "backend/core/src/backtest/frame_backtester.cpp": {
       "plane": "Plane 1: Compute & Core Engine",
       "grade": "A",
-      "sha256": "1ce5bc3318940984daf14ef2c526938a0c3c2b8c93cd1163057c3f4e2b84ea1e",
+      "sha256": "9a77f8aa93e046bdc4fee55de7cf6d2d27f7192db1d186be1ee8febb885a9296",
       "invariants": [
         "splitmix64_prng_non_zero_state",
         "xorshift64_absorption_guard"

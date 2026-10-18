@@ -1,6 +1,11 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { normalizeAlpacaPosition } = require('../../../shared/lib/brokers/alpaca_env');
+const alpacaBotState = require('../../../shared/lib/runtime/alpaca_bot_state');
 const {
   decideExit,
   canOpenPosition,
@@ -19,6 +24,10 @@ const {
  */
 
 const basePosition = { targetPrice: 110, stopPrice: 90, maxHoldingDays: 30 };
+const alpacaPositionsFixture = JSON.parse(fs.readFileSync(
+  path.join(__dirname, '../../fixtures/alpaca_positions_pending_exit.json'),
+  'utf8'
+));
 
 test('decideExit returns "target" when current price meets or exceeds the target', () => {
   assert.equal(decideExit(basePosition, 110, 1), 'target');
@@ -278,5 +287,39 @@ test('composite: 10 attributed AAPL rows, 1 broker position, 1 exit command, det
   } finally {
     if (prevEnv !== undefined) process.env.ALPACA_PAPER_MAX_NOTIONAL = prevEnv;
     else delete process.env.ALPACA_PAPER_MAX_NOTIONAL;
+  }
+});
+
+test('recorded pending exit skips duplicate sell and preserves file-backed tracking', async () => {
+  const statePath = path.join(os.tmpdir(), `alpaca_pending_exit_${process.pid}_${Date.now()}.json`);
+  const lockPath = `${statePath}.lock`;
+  const stateStore = {
+    LOCK_PATH: lockPath,
+    loadState: () => alpacaBotState.loadState({ statePath }),
+    saveState: (state) => alpacaBotState.saveState(state, { statePath }),
+  };
+  fs.writeFileSync(statePath, `${JSON.stringify(alpacaPositionsFixture.bot_state, null, 2)}\n`);
+
+  const rawPosition = alpacaPositionsFixture.positions.find((position) => position.symbol === 'AAPL');
+  const openOrder = alpacaPositionsFixture.open_orders.find((order) => order.symbol === 'AAPL');
+  const brokerPosition = normalizeAlpacaPosition(rawPosition, openOrder);
+
+  try {
+    const result = await runAlpacaExitCheck(['--paper-provider'], {
+      stateStore,
+      fetchPositions: () => ({ status: 'confirmed', positions: [brokerPosition] }),
+      commandTrade: async () => { throw new Error('duplicate sell dispatched'); },
+    });
+    const savedState = alpacaBotState.loadState({ statePath });
+
+    assert.equal(result.sellsExecuted, 0);
+    assert.equal(savedState.positions.length, 1, 'tracked position must be preserved');
+    assert.equal(savedState.positions[0].symbol, 'AAPL');
+    assert.equal(savedState.positions[0].qty, 30.182);
+    assert.deepEqual(savedState.cycleHistory, []);
+    assert.match(result.errors[0], /held by an open order/);
+  } finally {
+    fs.rmSync(statePath, { force: true });
+    fs.rmSync(lockPath, { force: true });
   }
 });
