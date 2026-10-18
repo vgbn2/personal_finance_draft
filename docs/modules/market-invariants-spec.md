@@ -71,7 +71,8 @@ This specification defines the foundational mathematical, temporal, and economic
 |---|---|---|
 | `selectMacroObservationsAsOf(records, asOf)` | `shared/lib/data/macro_store.js` | Returns strictly point-in-time eligible macro observations as of time $T$. |
 | `withinDateRange(row, from, to)` | `shared/lib/strategy/backtest.js` | Enforces chronological boundary filtering on feature frames. |
-| `market_invariants.test.js` | `tests/scripts/integration/research_invariants/` | Native test suite exercising all 7 invariants against synthetic edge cases. |
+| `PnlCalculator::calculate(state)` | `backend/core/src/portfolio/pnl_calculator.cpp` | Normalizes positions by contract multiplier $M_i$ and FX rate $X_{c \to \text{base}}$: $\text{MarketValue} = Q_i \cdot P_i \cdot M_i \cdot X$. |
+| `market_invariants.test.js` | `tests/scripts/integration/research_invariants/` | Native test suite exercising all 18 invariants against synthetic and historical edge cases. |
 
 ---
 

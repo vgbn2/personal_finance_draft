@@ -30,5 +30,25 @@ int main() {
         return 1;
     }
 
+    // Test regional multi-currency position with contract multiplier and FX rate
+    sovereign::PortfolioState multi_state;
+    multi_state.cash = 500.0; // USD cash
+    // 100 shares HOSE:FPT @ 110.0 (1,000 multiplier = 110,000 VND), average cost 100.0, fx_rate = 0.00004 (1 VND = 0.00004 USD)
+    // market_value = 100 * 110.0 * 1000 * 0.00004 = 440.0 USD
+    // cost_basis   = 100 * 100.0 * 1000 * 0.00004 = 400.0 USD
+    // unrealized   = 40.0 USD
+    multi_state.positions = {
+        {"FPT", 100.0, 100.0, 110.0, 1000.0, 0.00004},
+    };
+    const auto multi_metrics = sovereign::PnlCalculator::calculate(multi_state);
+    if (!multi_metrics.ok ||
+        !closeEnough(multi_metrics.total_equity, 940.0) ||
+        !closeEnough(multi_metrics.total_unrealized_pnl, 40.0) ||
+        !closeEnough(multi_metrics.net_exposure, 440.0) ||
+        !closeEnough(multi_metrics.gross_exposure, 440.0)) {
+        std::cerr << "multi-currency portfolio metrics mismatch\n";
+        return 1;
+    }
+
     return 0;
 }

@@ -65,161 +65,187 @@ function loadRoutes(mockClient) {
   };
 }
 
-test('supabase auth and database routes follow the expected contract', async () => {
-  process.env.SUPABASE_URL = 'https://example.supabase.co';
-  process.env.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_test_key';
-  delete process.env.SOVEREIGN_SUPABASE_URL;
-  delete process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY;
-
-  const mockClient = () => ({
-    auth: {
-      getUser: async (token) => ({
-        data: token === 'good-token' ? { user: { id: 'user-123', email: 'a@example.com', role: 'authenticated' } } : { user: null },
-        error: token === 'bad-token' ? new Error('invalid token') : null,
-      }),
-    },
-    from: (table) => ({
-      select: async () => ({
-        count: 1,
-        error: table === 'audit_events' ? null : null,
-      }),
-    }),
-  });
-
-  const { authRoute, dbRoute, restore } = loadRoutes(mockClient);
-  try {
-    const noAuth = await authRoute.handle({}, { req: { headers: {} } });
-    assert.equal(noAuth.ok, true);
-    assert.equal(noAuth.authenticated, false);
-    assert.equal(authRoute.status(noAuth), 200);
-
-    const goodAuth = await authRoute.handle({}, { req: { headers: { authorization: 'Bearer good-token' } } });
-    assert.equal(goodAuth.ok, true);
-    assert.equal(goodAuth.authenticated, true);
-    assert.equal(goodAuth.user.email, 'a@example.com');
-    assert.equal(authRoute.status(goodAuth), 200);
-
-    const badAuth = await authRoute.handle({}, { req: { headers: { authorization: 'Bearer bad-token' } } });
-    assert.equal(badAuth.ok, false);
-    assert.equal(authRoute.status(badAuth), 401);
-
-    const dbNoAuth = await dbRoute.handle({}, { req: { headers: {} } });
-    assert.equal(dbNoAuth.ok, false);
-    assert.equal(dbRoute.status(dbNoAuth), 401);
-
-    const dbAuth = await dbRoute.handle({}, { req: { headers: { authorization: 'Bearer good-token' } } });
-    assert.equal(dbAuth.ok, true);
-    assert.equal(dbAuth.authenticated, true);
-    assert.equal(Array.isArray(dbAuth.tables), true);
-    assert.equal(dbAuth.tables.length >= 6, true);
-    assert.equal(dbRoute.status(dbAuth), 200);
-
-    console.log(JSON.stringify({
-      type: 'supabase_route_contract',
-      auth_status: authRoute.status(goodAuth),
-      db_status: dbRoute.status(dbAuth),
-      table_count: dbAuth.tables.length,
-    }, null, 2));
-  } finally {
-    restore();
-    delete process.env.SUPABASE_URL;
-    delete process.env.SUPABASE_PUBLISHABLE_KEY;
+async function withScopedEnvAsync(overrides, fn) {
+  const keys = Object.keys(overrides);
+  const snapshot = {};
+  for (const k of keys) {
+    snapshot[k] = process.env[k];
+    if (overrides[k] === undefined) {
+      delete process.env[k];
+    } else {
+      process.env[k] = overrides[k];
+    }
   }
+  try {
+    return await fn();
+  } finally {
+    for (const k of keys) {
+      if (snapshot[k] === undefined) {
+        delete process.env[k];
+      } else {
+        process.env[k] = snapshot[k];
+      }
+    }
+  }
+}
+
+test('supabase auth and database routes follow the expected contract', async () => {
+  await withScopedEnvAsync({
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_key',
+    SOVEREIGN_SUPABASE_URL: undefined,
+    SOVEREIGN_SUPABASE_PUBLISHABLE_KEY: undefined,
+  }, async () => {
+    const mockClient = () => ({
+      auth: {
+        getUser: async (token) => ({
+          data: token === 'good-token' ? { user: { id: 'user-123', email: 'a@example.com', role: 'authenticated' } } : { user: null },
+          error: token === 'bad-token' ? new Error('invalid token') : null,
+        }),
+      },
+      from: (table) => ({
+        select: async () => ({
+          count: 1,
+          error: table === 'audit_events' ? null : null,
+        }),
+      }),
+    });
+
+    const { authRoute, dbRoute, restore } = loadRoutes(mockClient);
+    try {
+      const noAuth = await authRoute.handle({}, { req: { headers: {} } });
+      assert.equal(noAuth.ok, true);
+      assert.equal(noAuth.authenticated, false);
+      assert.equal(authRoute.status(noAuth), 200);
+
+      const goodAuth = await authRoute.handle({}, { req: { headers: { authorization: 'Bearer good-token' } } });
+      assert.equal(goodAuth.ok, true);
+      assert.equal(goodAuth.authenticated, true);
+      assert.equal(goodAuth.user.email, 'a@example.com');
+      assert.equal(authRoute.status(goodAuth), 200);
+
+      const badAuth = await authRoute.handle({}, { req: { headers: { authorization: 'Bearer bad-token' } } });
+      assert.equal(badAuth.ok, false);
+      assert.equal(authRoute.status(badAuth), 401);
+
+      const dbNoAuth = await dbRoute.handle({}, { req: { headers: {} } });
+      assert.equal(dbNoAuth.ok, false);
+      assert.equal(dbRoute.status(dbNoAuth), 401);
+
+      const dbAuth = await dbRoute.handle({}, { req: { headers: { authorization: 'Bearer good-token' } } });
+      assert.equal(dbAuth.ok, true);
+      assert.equal(dbAuth.authenticated, true);
+      assert.equal(Array.isArray(dbAuth.tables), true);
+      assert.equal(dbAuth.tables.length >= 6, true);
+      assert.equal(dbRoute.status(dbAuth), 200);
+
+      console.log(JSON.stringify({
+        type: 'supabase_route_contract',
+        auth_status: authRoute.status(goodAuth),
+        db_status: dbRoute.status(dbAuth),
+        table_count: dbAuth.tables.length,
+      }, null, 2));
+    } finally {
+      restore();
+    }
+  });
 });
 
 test('authorization decisions are revalidated when the same token is revoked', async () => {
-  process.env.SUPABASE_URL = 'https://example.supabase.co';
-  process.env.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_test_key';
-  let revoked = false;
-  let validationCalls = 0;
+  await withScopedEnvAsync({
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_key',
+  }, async () => {
+    let revoked = false;
+    let validationCalls = 0;
 
-  const mockClient = () => ({
-    auth: {
-      getUser: async () => {
-        validationCalls += 1;
-        return revoked
-          ? { data: { user: null }, error: new Error('token revoked') }
-          : { data: { user: { id: 'user-123', email: 'a@example.com' } }, error: null };
+    const mockClient = () => ({
+      auth: {
+        getUser: async () => {
+          validationCalls += 1;
+          return revoked
+            ? { data: { user: null }, error: new Error('token revoked') }
+            : { data: { user: { id: 'user-123', email: 'a@example.com' } }, error: null };
+        },
       },
-    },
+    });
+
+    const { service, restore } = loadRoutes(mockClient);
+    const req = { headers: { authorization: 'Bearer same-token' } };
+    try {
+      const valid = await service.getAuthStatus(req);
+      revoked = true;
+      const invalid = await service.getAuthStatus(req);
+
+      assert.equal(valid.authenticated, true);
+      assert.equal(invalid.authenticated, false);
+      assert.equal(invalid.ok, false);
+      assert.equal(validationCalls, 2, 'every authorization decision must reach the provider');
+    } finally {
+      restore();
+    }
   });
-
-  const { service, restore } = loadRoutes(mockClient);
-  const req = { headers: { authorization: 'Bearer same-token' } };
-  try {
-    const valid = await service.getAuthStatus(req);
-    revoked = true;
-    const invalid = await service.getAuthStatus(req);
-
-    assert.equal(valid.authenticated, true);
-    assert.equal(invalid.authenticated, false);
-    assert.equal(invalid.ok, false);
-    assert.equal(validationCalls, 2, 'every authorization decision must reach the provider');
-  } finally {
-    restore();
-    delete process.env.SUPABASE_URL;
-    delete process.env.SUPABASE_PUBLISHABLE_KEY;
-  }
 });
 
 test('user config has a migrated own-user schema and validates persisted shapes', async () => {
-  process.env.SUPABASE_URL = 'https://example.supabase.co';
-  process.env.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_test_key';
-  const stored = new Map();
-  const mockClient = () => ({
-    auth: {
-      getUser: async (token) => ({
-        data: token === 'good-token' ? { user: { id: 'user-123', email: 'a@example.com' } } : { user: null },
-        error: token === 'good-token' ? null : new Error('invalid token'),
-      }),
-    },
-    from: (table) => {
-      assert.equal(table, 'user_config');
-      return {
-        select: () => ({
-          eq: async (_field, userId) => ({
-            data: [...stored.values()].filter((row) => row.user_id === userId),
-            error: null,
-          }),
+  await withScopedEnvAsync({
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_key',
+  }, async () => {
+    const stored = new Map();
+    const mockClient = () => ({
+      auth: {
+        getUser: async (token) => ({
+          data: token === 'good-token' ? { user: { id: 'user-123', email: 'a@example.com' } } : { user: null },
+          error: token === 'good-token' ? null : new Error('invalid token'),
         }),
-        upsert: async (row) => {
-          stored.set(`${row.user_id}:${row.config_key}`, row);
-          return { error: null };
-        },
-      };
-    },
+      },
+      from: (table) => {
+        assert.equal(table, 'user_config');
+        return {
+          select: () => ({
+            eq: async (_field, userId) => ({
+              data: [...stored.values()].filter((row) => row.user_id === userId),
+              error: null,
+            }),
+          }),
+          upsert: async (row) => {
+            stored.set(`${row.user_id}:${row.config_key}`, row);
+            return { error: null };
+          },
+        };
+      },
+    });
+
+    const { configRoute, restore } = loadRoutes(mockClient);
+    const req = { headers: { authorization: 'Bearer good-token' }, method: 'POST' };
+    try {
+      const saved = await configRoute.handle({
+        key: 'risk_thresholds',
+        value: { max_position_pct: 0.05, max_drawdown_pct: 0.15 },
+      }, { req });
+      assert.deepEqual(saved, { ok: true });
+
+      const fetched = await configRoute.handle({}, { req: { ...req, method: 'GET' } });
+      assert.equal(fetched.config.risk_thresholds.max_position_pct, 0.05);
+      assert.equal(fetched.config.dashboard_layout.default_tab, 'overview');
+
+      const invalid = await configRoute.handle({ key: 'risk_thresholds', value: { max_position_pct: 'bad' } }, { req });
+      assert.equal(invalid.error, 'invalid_config');
+      assert.equal(configRoute.status(invalid), 400);
+
+      const unknown = await configRoute.handle({ key: 'private_key', value: 'never-store-secrets-here' }, { req });
+      assert.equal(unknown.error, 'key_required');
+
+      const migration = fs.readFileSync(USER_CONFIG_MIGRATION, 'utf8');
+      assert.match(migration, /create table if not exists public\.user_config/i);
+      assert.match(migration, /primary key \(user_id, config_key\)/i);
+      assert.match(migration, /enable row level security/i);
+      assert.match(migration, /user_config_update_own/i);
+    } finally {
+      restore();
+    }
   });
-
-  const { configRoute, restore } = loadRoutes(mockClient);
-  const req = { headers: { authorization: 'Bearer good-token' }, method: 'POST' };
-  try {
-    const saved = await configRoute.handle({
-      key: 'risk_thresholds',
-      value: { max_position_pct: 0.05, max_drawdown_pct: 0.15 },
-    }, { req });
-    assert.deepEqual(saved, { ok: true });
-
-    const fetched = await configRoute.handle({}, { req: { ...req, method: 'GET' } });
-    assert.equal(fetched.config.risk_thresholds.max_position_pct, 0.05);
-    assert.equal(fetched.config.dashboard_layout.default_tab, 'overview');
-
-    const invalid = await configRoute.handle({ key: 'risk_thresholds', value: { max_position_pct: 'bad' } }, { req });
-    assert.equal(invalid.error, 'invalid_config');
-    assert.equal(configRoute.status(invalid), 400);
-
-    const unknown = await configRoute.handle({ key: 'private_key', value: 'never-store-secrets-here' }, { req });
-    assert.equal(unknown.error, 'key_required');
-
-    const migration = fs.readFileSync(USER_CONFIG_MIGRATION, 'utf8');
-    assert.match(migration, /create table if not exists public\.user_config/i);
-    assert.match(migration, /primary key \(user_id, config_key\)/i);
-    assert.match(migration, /enable row level security/i);
-    assert.match(migration, /user_config_update_own/i);
-  } finally {
-    restore();
-    delete process.env.SUPABASE_URL;
-    delete process.env.SUPABASE_PUBLISHABLE_KEY;
-  }
 });
 
 test('supabase service honors SOVEREIGN_ENV_FILE for migrated checkouts', () => {
