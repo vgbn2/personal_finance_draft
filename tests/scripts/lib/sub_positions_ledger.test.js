@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const { normalizeAlpacaPosition } = require('../../../shared/lib/brokers/alpaca_env');
 
 const {
   generateOrderSignature,
@@ -16,6 +17,10 @@ const {
 } = require('../../../shared/lib/runtime/sub_positions_ledger');
 
 const getTempLedgerPath = () => path.join(os.tmpdir(), `test_sub_positions_${Date.now()}_${Math.random().toString(36).slice(2)}.json`);
+const alpacaPositionsFixture = JSON.parse(fs.readFileSync(
+  path.join(__dirname, '../../fixtures/alpaca_positions_pending_exit.json'),
+  'utf8'
+));
 
 test('generateOrderSignature and parseOrderSignature roundtrip bot signatures', () => {
   const ts = 1756148200000;
@@ -167,6 +172,24 @@ test('reconcilePositions attributes bot allocations and auto-computes manual res
     assert.ok(botSub, 'Bot position should exist');
     assert.equal(botSub.quantity, 15);
     assert.equal(botSub.strategy_id, 'momentum_v1');
+  } finally {
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+    if (fs.existsSync(`${tempPath}.lock`)) fs.unlinkSync(`${tempPath}.lock`);
+  }
+});
+
+test('reconcilePositions preserves broker qty_available or falls back to gross quantity', () => {
+  const brokerPositions = alpacaPositionsFixture.positions.map((position) => normalizeAlpacaPosition(position));
+  const tempPath = getTempLedgerPath();
+  try {
+    const reconciled = reconcilePositions(brokerPositions, tempPath);
+    assert.equal(reconciled.length, 2);
+    assert.equal(reconciled[0].symbol, 'AAPL');
+    assert.equal(reconciled[0].quantity, 30.182);
+    assert.equal(reconciled[0].qty_available, 0);
+    assert.equal(reconciled[1].symbol, 'MSFT');
+    assert.equal(reconciled[1].quantity, 15);
+    assert.equal(reconciled[1].qty_available, 15, 'missing qty_available must fall back to quantity');
   } finally {
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
     if (fs.existsSync(`${tempPath}.lock`)) fs.unlinkSync(`${tempPath}.lock`);
