@@ -125,9 +125,16 @@ requested timeframe is present and fresh within its declared signal horizon. An 
 scorecard is therefore a data-readiness result, not a successful zero-opportunity claim.
 
 Strictly newer live candles use an append path instead of rewriting the full historical
-binary file. The 30-minute daemon cycle still refreshes local coarse rollups when the base
+binary file. Duplicate tail candles now avoid the native full-merge rewrite, while conflicting
+overlaps still use provider-priority merge semantics. The 30-minute daemon cycle still refreshes local coarse rollups when the base
 grain is fresh enough to skip provider polling, so WebSocket activity cannot strand stale
 `1h`, `4h`, or daily scorecard inputs.
+
+Maintenance backfills may pass `--binary-only` to retain binary TS and quality-report writes
+without rewriting legacy JSON history. The default remains unchanged. CT 114 source sync uses
+`scripts/ops/sync_to_ct114.sh`; its guarded archive excludes runtime storage, dependencies,
+build output, and generated artifacts. Native merger buffering is heap-backed; descriptor-level
+`fsync` remains deferred pending a verified cross-platform stream/descriptor abstraction.
 
 Every symbol/timeframe append or overlap rewrite holds an ownership-token file lock. This makes the
 canonical store safe if a maintenance command overlaps the daemon, while the supported deployment still

@@ -151,7 +151,7 @@ export async function loadBotStateWithFallback(): Promise<BotState> {
 export function saveBotState(state: BotState): void {
   fs.mkdirSync(CACHE_DIR, { recursive: true });
   const tmp = STATE_PATH + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(state, null, 2), 'utf8');
+  fs.writeFileSync(tmp, JSON.stringify(state), 'utf8');
   fs.renameSync(tmp, STATE_PATH);
   // fire-and-forget Supabase sync
   syncToSupabase(state).catch(() => {});
