@@ -20,7 +20,7 @@ function writeAtomicSync(filePath, data, fsImpl = fs) {
   fsImpl.mkdirSync(dir, { recursive: true });
   const tmp = `${filePath}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
   try {
-    fsImpl.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
+    fsImpl.writeFileSync(tmp, JSON.stringify(data), 'utf8');
     fsImpl.renameSync(tmp, filePath);
   } catch (err) {
     try { fsImpl.unlinkSync(tmp); } catch (_) {}

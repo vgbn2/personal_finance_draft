@@ -62,7 +62,7 @@ function writeAtomic(filePath, payload, fsImpl = fs) {
   fsImpl.mkdirSync(directory, { recursive: true });
   const tempPath = `${filePath}.${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}.tmp`;
   try {
-    fsImpl.writeFileSync(tempPath, `${JSON.stringify(payload, null, 2)}\n`, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+    fsImpl.writeFileSync(tempPath, `${JSON.stringify(payload)}\n`, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
     fsImpl.renameSync(tempPath, filePath);
   } catch (error) {
     try { fsImpl.unlinkSync(tempPath); } catch (_) { /* best effort cleanup */ }

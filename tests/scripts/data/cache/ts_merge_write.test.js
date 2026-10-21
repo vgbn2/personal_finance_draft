@@ -320,6 +320,26 @@ test('pure append does not read or rewrite the historical binary payload', () =>
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+test('overlap classification skips duplicate tails and preserves append/conflict semantics', () => {
+  const dir = tmp('overlap-classification');
+  const seed = seedN(3);
+  writeTsIndex(dir, { sources: seed });
+  const bin = filePath(dir, 'BTCUSDT', '1m', '.bin');
+  const before = fs.readFileSync(bin);
+
+  writeTsIndex(dir, { sources: [seed[2]] });
+  assert.deepEqual(fs.readFileSync(bin), before, 'duplicate tail does not rewrite the binary');
+
+  writeTsIndex(dir, { sources: [rec('BTCUSDT', 'binance', '1m', M(3), 500)] });
+  assert.equal(readTsIndex(dir, 'BTCUSDT', '1m').length, 4, 'newer tail appends one record');
+
+  writeTsIndex(dir, { sources: [rec('BTCUSDT', 'binance', '1m', M(2), 900)] });
+  const rows = readTsIndex(dir, 'BTCUSDT', '1m');
+  assert.equal(rows.length, 4, 'conflicting overlap does not duplicate timestamps');
+  assert.equal(rows[2].close, 900.5, 'conflicting overlap keeps canonical incoming precedence');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test('production ts writer waits for an existing cross-process lock and releases cleanly', async (t) => {
   const dir = tmp('held-lock');
   writeTsIndex(dir, { sources: seedN(2) });

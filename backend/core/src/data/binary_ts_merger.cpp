@@ -1,7 +1,6 @@
 #include "binary_ts_merger.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -11,7 +10,7 @@ namespace sovereign {
 
 namespace {
 
-constexpr std::size_t kChunkRecords = 1024; // 1024 * 48 bytes = 48 KB buffer per stream
+constexpr std::size_t kChunkRecords = 65536; // 65536 * 48 bytes = 3 MB heap buffer per stream
 constexpr char kMagic[4] = {'S', 'O', 'V', 'T'};
 
 class BinaryStreamReader {
@@ -104,7 +103,7 @@ private:
     std::uint32_t read_count_ = 0;
     std::size_t buf_idx_ = 0;
     std::size_t buf_size_ = 0;
-    std::array<RawTsRecord, kChunkRecords> buffer_{};
+    std::vector<RawTsRecord> buffer_{kChunkRecords};
 };
 
 class BinaryStreamWriter {
@@ -186,7 +185,7 @@ private:
     std::string error_;
     std::uint32_t written_count_ = 0;
     std::size_t buf_size_ = 0;
-    std::array<RawTsRecord, kChunkRecords> buffer_{};
+    std::vector<RawTsRecord> buffer_{kChunkRecords};
 };
 
 } // namespace

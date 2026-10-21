@@ -233,6 +233,7 @@ async function commandMassBackfill(args) {
   const concurrency = numericOption(args, '--concurrency', 10);
   const dryRun = hasFlag(args, '--dry-run');
   const force = hasFlag(args, '--force');
+  const binaryOnly = hasFlag(args, '--binary-only');
 
   const config = await loadConfig();
   const families = ['equities', 'indices', 'commodities', 'fx', 'crypto'];
@@ -251,6 +252,7 @@ async function commandMassBackfill(args) {
       ok: true,
       dry_run: true,
       force,
+      binary_only: binaryOnly,
       total_jobs: plan.total_jobs,
       pending_jobs: jobs.length,
       skipped_jobs: plan.skipped.length,
@@ -363,9 +365,9 @@ async function commandMassBackfill(args) {
   };
 
   const { report } = validateSnapshot(snapshot, { rejectStale: false });
-  const existing = readSnapshot(DEFAULT_HISTORY);
-  const merged = mergeSnapshots(existing, snapshot);
-  writePartitionedSnapshot(DEFAULT_HISTORY, merged);
+  const existing = binaryOnly ? null : readSnapshot(DEFAULT_HISTORY);
+  const merged = binaryOnly ? snapshot : mergeSnapshots(existing, snapshot);
+  if (!binaryOnly) writePartitionedSnapshot(DEFAULT_HISTORY, merged);
   writeTsIndex(DEFAULT_TS_DIR, merged);
   writeJson(DEFAULT_QUALITY_REPORT, report);
 
@@ -402,6 +404,7 @@ async function commandMassBackfill(args) {
     timeframes,
     days,
     concurrency,
+    binary_only: binaryOnly,
     output: DEFAULT_HISTORY,
   };
   if (hasFlag(args, '--json')) {
