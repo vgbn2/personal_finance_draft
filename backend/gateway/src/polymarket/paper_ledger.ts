@@ -262,7 +262,7 @@ export function releaseLedgerLock(storageDir: string, token?: string): boolean {
 
 export function atomicWriteJson(target: string, value: any): void {
   const tmp = `${target}.${process.pid}.${crypto.randomUUID()}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(value, null, 2), { mode: 0o600 });
+  fs.writeFileSync(tmp, JSON.stringify(value), { mode: 0o600 });
   fs.renameSync(tmp, target);
 }
 

@@ -215,7 +215,7 @@ function writeManifest(manifestPath, manifest) {
   const temp = atomicPath(manifestPath);
   const fd = fs.openSync(temp, 'wx', 0o600);
   try {
-    fs.writeFileSync(fd, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+    fs.writeFileSync(fd, `${JSON.stringify(manifest)}\n`, 'utf8');
     fs.fsyncSync(fd);
   } finally {
     fs.closeSync(fd);

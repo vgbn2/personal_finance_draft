@@ -237,6 +237,68 @@ function tryAppendBin(bin, metaPath, meta, incoming) {
   }
 }
 
+function classifyTailOverlap(bin, metaPath, incoming) {
+  if (incoming.length === 0 || !fs.existsSync(bin) || !fs.existsSync(metaPath)) return null;
+
+  let fd;
+  try {
+    JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+    fd = fs.openSync(bin, 'r');
+    const header = Buffer.allocUnsafe(TS_HEADER_BYTES);
+    if (fs.readSync(fd, header, 0, header.length, 0) !== header.length
+      || header.toString('ascii', 0, 4) !== TS_MAGIC) return null;
+    const count = header.readUInt32LE(4);
+    const expectedBytes = TS_HEADER_BYTES + count * TS_RECORD_BYTES;
+    if (fs.fstatSync(fd).size < expectedBytes || count === 0) return null;
+
+    const recordAt = (index) => {
+      const record = Buffer.allocUnsafe(TS_RECORD_BYTES);
+      const offset = TS_HEADER_BYTES + index * TS_RECORD_BYTES;
+      if (fs.readSync(fd, record, 0, record.length, offset) !== record.length) return null;
+      return record;
+    };
+    const timestampAt = (index) => {
+      const record = recordAt(index);
+      return record ? record.readDoubleLE(0) : null;
+    };
+    const findTimestamp = (timestamp) => {
+      let low = 0;
+      let high = count - 1;
+      while (low <= high) {
+        const middle = low + Math.floor((high - low) / 2);
+        const value = timestampAt(middle);
+        if (value === null) return -1;
+        if (value === timestamp) return middle;
+        if (value < timestamp) low = middle + 1;
+        else high = middle - 1;
+      }
+      return -1;
+    };
+
+    const appendable = [];
+    const lastTimestamp = timestampAt(count - 1);
+    if (lastTimestamp === null) return null;
+    for (const item of incoming) {
+      if (item.ms > lastTimestamp) {
+        appendable.push(item);
+        continue;
+      }
+      const index = findTimestamp(item.ms);
+      if (index < 0) return null;
+      const existing = recordAt(index);
+      const incomingRecord = encodeTsRecords([item]);
+      if (!existing || !existing.equals(incomingRecord)) return null;
+    }
+    return { kind: appendable.length > 0 ? 'append' : 'duplicate', records: appendable };
+  } catch (_) {
+    return null;
+  } finally {
+    if (fd !== undefined) {
+      try { fs.closeSync(fd); } catch (_) { /* Best effort after classification. */ }
+    }
+  }
+}
+
 function mergeWriteBinUnlocked(tsDir, meta, incoming, lockHandle) {
   const inc = [];
   for (const r of incoming) {
@@ -253,7 +315,9 @@ function mergeWriteBinUnlocked(tsDir, meta, incoming, lockHandle) {
   const { bin, meta: metaPath } = tsIndexPath(tsDir, meta.symbol, meta.timeframe);
 
   requireTsWriteLock(lockHandle);
-  if (tryAppendBin(bin, metaPath, meta, incDedup)) return;
+  const tail = classifyTailOverlap(bin, metaPath, incDedup);
+  if (tail?.kind === 'duplicate') return;
+  if (tail?.kind === 'append' && tryAppendBin(bin, metaPath, meta, tail.records)) return;
 
   let existProvider = '';
   if (fs.existsSync(metaPath)) {

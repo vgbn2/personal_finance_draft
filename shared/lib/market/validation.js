@@ -627,7 +627,7 @@ function writeJson(outputPath, payload) {
   // execution_memory's [[id, ts], ...] format) and primitives go through plain
   // JSON.stringify so their shape on disk is unchanged.
   if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
-    fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
+    fs.writeFileSync(tempPath, JSON.stringify(payload), 'utf8');
     renameWithRetry(tempPath, outputPath);
     return;
   }

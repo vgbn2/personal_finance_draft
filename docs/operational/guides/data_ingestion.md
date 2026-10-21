@@ -22,6 +22,16 @@ Each asset resolves to a canonical symbol format (e.g. `SPY`, `BTC/USD`, `ETH/US
    - Zero-allocation two-pointer streaming merger (`backend/core/src/data/binary_ts_merger.cpp`)
 2. **JSON Cache (`storage/data/cache/*.json`)**:
    - Rapid-inspection caches for indicators, backtest fixtures, and recent market snapshots.
+   - Machine-written snapshots use compact JSON while preserving parsed content and atomic replacement.
+   - `mass-backfill --binary-only` skips legacy JSON history/cache persistence while retaining binary TS and quality-report writes for maintenance runs.
+
+Incremental write safety:
+
+- Duplicate tail records are compared against the existing binary record and do not trigger a full native merge rewrite.
+- Strictly newer records use the existing fsync-protected append path.
+- Conflicting overlaps retain provider-priority native merge semantics.
+- Native merger buffers are heap-backed at 65,536 records (about 3 MiB per stream) to avoid stack pressure.
+- Descriptor-level `fsync` after native stream flush remains deferred: the current cross-platform `fstream` abstraction has no verified portable descriptor boundary, so `flush()` is not documented as durable beyond the existing contract.
 
 ## Required Records
 

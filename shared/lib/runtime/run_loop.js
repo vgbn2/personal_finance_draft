@@ -61,24 +61,24 @@ function startLoop(name, fn, intervalMs, opts = {}) {
     if (stopped) return;
     iteration++;
     const now = new Date().toISOString();
-    _writeStatus(name, { iteration, lastRunAt: now });
-    _heartbeat(name, { state: 'running', last_attempt_at: now });
     try {
       await fn({ name, iteration, startedAt });
-      _writeStatus(name, { healthyAt: new Date().toISOString() });
-      _heartbeat(name, { state: 'healthy', success: true, next_run_at: new Date(Date.now() + intervalMs).toISOString() });
+      _writeStatus(name, { iteration, lastRunAt: now, healthyAt: new Date().toISOString() });
+      _heartbeat(name, { state: 'healthy', last_attempt_at: now, success: true, next_run_at: new Date(Date.now() + intervalMs).toISOString() });
     } catch (err) {
       const msg = err && err.message ? err.message : String(err);
       const code = errorCode(msg) || 'service_failed';
-      _writeStatus(name, { lastError: code, lastErrorAt: new Date().toISOString() });
-      _heartbeat(name, { state: 'degraded', error_code: code, next_run_at: new Date(Date.now() + intervalMs).toISOString() });
+      const errorPatch = { iteration, lastRunAt: now, lastError: code, lastErrorAt: new Date().toISOString() };
+      const heartbeatPatch = { state: 'degraded', last_attempt_at: now, error_code: code };
       if (!continueOnError) {
         stopped = true;
         _loops.delete(name);
-        _writeStatus(name, { running: false, crashed: true, crashedAt: new Date().toISOString() });
-        _heartbeat(name, { state: 'degraded', error_code: code });
+        _writeStatus(name, { ...errorPatch, running: false, crashed: true, crashedAt: new Date().toISOString() });
+        _heartbeat(name, heartbeatPatch);
         return;
       }
+      _writeStatus(name, errorPatch);
+      _heartbeat(name, { ...heartbeatPatch, next_run_at: new Date(Date.now() + intervalMs).toISOString() });
     }
     if (!stopped) {
       await new Promise((resolve) => {
