@@ -5,14 +5,14 @@
   "generator": "npm run docs:report:pdf",
   "inputs": {
     "docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.md": "1815b41bb259603a0ab6bb9c075eb89f2483baf45d4f467ff3528fce1ba2ead4",
-    "docs/stylesheets/architecture-report.css": "83a2e2ed27b365476853bae15c217122ed9e8aedda9be64f6cb4ca026dfc39e1",
+    "docs/stylesheets/architecture-report.css": "f3b61a654ce8fa5cba183db9b65593a0a8a649611a34ba6980312f780205ddc1",
     "docs/javascripts/mermaid-report.js": "610aa0ce9dea67f8e2c5d820106f73e35a8dbedb8c1b07a9a3e73112babf4880",
-    "mkdocs.yml": "c810c42d3b6033a1407ea2151a64b1d4a51393a51d55e879e55fbc30bc537103"
+    "mkdocs.yml": "9c83acf2a360075ee09182597c067b42abc587e809542ab2a1dfc071ae0f8b8f"
   },
-  "pdf_sha256": "2e8ca17e794ec75b54a3e154fcac99e9ed8c9151d15093460db9e25fe78ab89c",
+  "pdf_sha256": "a4c71932f0ca446e8ddeb17b4c8d92dabdae67bd518c4a6ac96187e9a0e54b41",
   "page_size": "595.92 x 841.92 pts (A4)",
   "page_count": 44,
   "has_outline": true,
   "outline_entries": 78,
-  "generated_at": "2026-10-17T08:26:58.501Z"
+  "generated_at": "2026-10-24T08:40:32.245Z"
 }
