@@ -68,6 +68,7 @@ nav:
       - Overview: index.md
       - Architecture Summary: ARCHITECTURE.md
       - End-to-End Architecture Report: Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.md
+      - Technical Manual & Cybersecurity Specification: Reports/SOVEREIGN_TECHNICAL_MANUAL_AND_CYBERSECURITY_SPECIFICATION.md
   - Tutorials:
       - Overview: tutorials/README.md
       - 00. Quick Onboarding: tutorials/00_quick_onboarding.md

@@ -36,10 +36,27 @@
   color: var(--report-ink);
 }
 
+.architecture-report-page h1,
+.architecture-report-page h2,
+.architecture-report-page h3,
+.architecture-report-page h4,
+.architecture-report-page h5,
+.architecture-report-page h6,
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  font-family: Helvetica, Arial, "Liberation Sans", sans-serif !important;
+}
+
 .architecture-report-page h1 {
-  font-size: 20pt;
+  font-size: 18pt;
   font-weight: 700;
   color: var(--report-heading);
+  border-bottom: 2px solid #000000;
+  padding-bottom: 4px;
   margin-top: 1rem;
   margin-bottom: 0.8rem;
   line-height: 1.25;
@@ -101,6 +118,10 @@
   padding: 5px 8px;
 }
 
+.architecture-report-page table tr:nth-child(even) td {
+  background: #f6f8fa;
+}
+
 .architecture-report-page pre {
   background: var(--report-code-bg);
   border: 1px solid var(--report-border);
@@ -108,6 +129,43 @@
   padding: 8px 12px;
   font-size: 8.8pt;
   line-height: 1.45;
+}
+
+.architecture-report-page .stm32-figure,
+.md-typeset .stm32-figure {
+  margin: 1.5rem 0 2rem;
+  page-break-inside: avoid;
+  break-inside: avoid-page;
+}
+
+.architecture-report-page pre.stm32-diagram,
+.architecture-report-page .stm32-figure pre,
+.md-typeset pre.stm32-diagram,
+.md-typeset .stm32-figure pre {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1.5px solid #000000 !important;
+  border-radius: 0px !important;
+  padding: 10px 14px !important;
+  font-family: "Courier New", "Liberation Mono", "DejaVu Sans Mono", Courier, monospace !important;
+  font-size: 8.2pt !important;
+  line-height: 1.22 !important;
+  letter-spacing: 0px !important;
+  white-space: pre !important;
+  overflow-x: auto !important;
+  box-shadow: none !important;
+  margin: 0 0 0.4rem 0 !important;
+}
+
+.architecture-report-page .figure-caption,
+.md-typeset .figure-caption {
+  font-family: "Times New Roman", Times, "Liberation Serif", Georgia, serif !important;
+  font-size: 9.5pt !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  color: #000000 !important;
+  margin-top: 0.3rem !important;
+  margin-bottom: 1.2rem !important;
 }
 
 .architecture-report-page div.mermaid {
@@ -193,6 +251,155 @@
   }
 }
 
+/* ==========================================================================
+   STM32 RM0008 Institutional Table of Contents Specification
+   ========================================================================== */
+
+.architecture-report-page .stm32-toc-wrapper,
+.md-typeset .stm32-toc-wrapper {
+  margin: 1.5rem 0 2rem;
+  color: var(--report-ink);
+  font-family: Arial, Helvetica, "Liberation Sans", "DejaVu Sans", sans-serif;
+  page-break-before: always;
+  break-before: page;
+  page-break-after: always;
+  break-after: page;
+}
+
+.architecture-report-page .stm32-toc-header,
+.md-typeset .stm32-toc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: Arial, Helvetica, "Liberation Sans", sans-serif;
+  font-size: 9.5pt;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 1.2rem;
+  letter-spacing: 0.3px;
+}
+
+.architecture-report-page .stm32-toc-title,
+.md-typeset .stm32-toc-title {
+  font-family: Arial, Helvetica, "Liberation Sans", sans-serif !important;
+  font-size: 17pt !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  margin-top: 0 !important;
+  margin-bottom: 1rem !important;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.architecture-report-page .stm32-toc-list,
+.md-typeset .stm32-toc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none !important;
+}
+
+.architecture-report-page .stm32-toc-item,
+.md-typeset .stm32-toc-item {
+  display: flex !important;
+  align-items: baseline !important;
+  text-decoration: none !important;
+  color: #000000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style-type: none !important;
+}
+
+.architecture-report-page .stm32-toc-item:hover,
+.md-typeset .stm32-toc-item:hover {
+  color: var(--report-heading) !important;
+}
+
+.architecture-report-page .stm32-toc-item.level-1,
+.md-typeset .stm32-toc-item.level-1 {
+  font-weight: 700 !important;
+  font-size: 11pt !important;
+  margin-top: 13px !important;
+  margin-bottom: 2px !important;
+}
+
+.architecture-report-page .stm32-toc-item.level-2,
+.md-typeset .stm32-toc-item.level-2 {
+  font-weight: 400 !important;
+  font-size: 9.6pt !important;
+  padding-left: 36px !important;
+  margin-top: 1px !important;
+  margin-bottom: 1px !important;
+  line-height: 1.52 !important;
+}
+
+.architecture-report-page .stm32-toc-item.level-3,
+.md-typeset .stm32-toc-item.level-3 {
+  font-weight: 400 !important;
+  font-size: 9pt !important;
+  padding-left: 62px !important;
+  margin-top: 1px !important;
+  margin-bottom: 1px !important;
+  line-height: 1.45 !important;
+}
+
+.architecture-report-page .stm32-toc-num,
+.md-typeset .stm32-toc-num {
+  flex-shrink: 0;
+  margin-right: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.architecture-report-page .stm32-toc-item.level-1 .stm32-toc-num,
+.md-typeset .stm32-toc-item.level-1 .stm32-toc-num {
+  min-width: 22px;
+}
+
+.architecture-report-page .stm32-toc-item.level-2 .stm32-toc-num,
+.md-typeset .stm32-toc-item.level-2 .stm32-toc-num {
+  min-width: 28px;
+}
+
+.architecture-report-page .stm32-toc-item.level-3 .stm32-toc-num,
+.md-typeset .stm32-toc-item.level-3 .stm32-toc-num {
+  min-width: 36px;
+}
+
+.architecture-report-page .stm32-toc-text,
+.md-typeset .stm32-toc-text {
+  flex-shrink: 0;
+  max-width: 76%;
+}
+
+.architecture-report-page .stm32-toc-dots,
+.md-typeset .stm32-toc-dots {
+  flex: 1 1 auto;
+  overflow: hidden;
+  margin: 0 6px;
+  position: relative;
+  white-space: nowrap;
+}
+
+.architecture-report-page .stm32-toc-dots::after,
+.md-typeset .stm32-toc-dots::after {
+  content: ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ";
+  letter-spacing: 2px;
+  color: #444444;
+  font-size: 8.5pt;
+  font-weight: 400;
+}
+
+.architecture-report-page .stm32-toc-page,
+.md-typeset .stm32-toc-page {
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 24px;
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+}
+
 @media print {
   :root,
   [data-md-color-scheme="slate"],
@@ -247,8 +454,19 @@
     line-height: 1.5;
   }
 
+  .architecture-report-page h1,
+  .architecture-report-page h2,
+  .architecture-report-page h3,
+  .architecture-report-page h4,
+  .architecture-report-page h5,
+  .architecture-report-page h6 {
+    font-family: Helvetica, Arial, "Liberation Sans", sans-serif !important;
+  }
+
   .architecture-report-page h1 {
-    font-size: 20pt;
+    font-size: 18pt;
+    border-bottom: 2px solid #000000;
+    padding-bottom: 4px;
     break-after: avoid-page;
   }
 
@@ -265,8 +483,37 @@
 
   .architecture-report-page table,
   .architecture-report-page pre,
+  .architecture-report-page .stm32-figure,
+  .architecture-report-page pre.stm32-diagram,
   .architecture-report-page div.mermaid {
     break-inside: avoid-page;
+  }
+
+  .architecture-report-page table tr:nth-child(even) td {
+    background: #f6f8fa !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .architecture-report-page .stm32-figure,
+  .architecture-report-page pre.stm32-diagram,
+  .architecture-report-page .stm32-figure pre {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1.5px solid #000000 !important;
+    font-size: 7.8pt !important;
+    line-height: 1.18 !important;
+    white-space: pre !important;
+    margin: 3mm 0 2mm !important;
+  }
+
+  .architecture-report-page .figure-caption {
+    font-family: "Times New Roman", Times, "Liberation Serif", Georgia, serif !important;
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    text-align: center !important;
+    break-after: avoid-page !important;
   }
 
   .architecture-report-page div.mermaid {
@@ -296,5 +543,66 @@
 
   .architecture-report-page table {
     font-size: 8.5pt;
+  }
+
+  .architecture-report-page .stm32-toc-wrapper {
+    break-before: page !important;
+    page-break-before: always !important;
+    break-after: page !important;
+    page-break-after: always !important;
+    margin: 0 !important;
+    padding-top: 1mm !important;
+  }
+
+  .architecture-report-page .stm32-toc-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    margin-bottom: 4mm !important;
+  }
+
+  .architecture-report-page .stm32-toc-title {
+    font-size: 16pt !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    margin-bottom: 3.5mm !important;
+    border: none !important;
+  }
+
+  .architecture-report-page .stm32-toc-item.level-1 {
+    font-size: 10.2pt !important;
+    margin-top: 3.2mm !important;
+    margin-bottom: 0.4mm !important;
+    color: #000000 !important;
+  }
+
+  .architecture-report-page .stm32-toc-item.level-2 {
+    font-size: 9.1pt !important;
+    padding-left: 9.5mm !important;
+    margin-top: 0.2mm !important;
+    margin-bottom: 0.2mm !important;
+    line-height: 1.38 !important;
+    color: #000000 !important;
+  }
+
+  .architecture-report-page .stm32-toc-item.level-3 {
+    font-size: 8.6pt !important;
+    padding-left: 17mm !important;
+    margin-top: 0.2mm !important;
+    margin-bottom: 0.2mm !important;
+    line-height: 1.35 !important;
+    color: #000000 !important;
+  }
+
+  .architecture-report-page .stm32-toc-dots::after {
+    color: #000000 !important;
+    font-size: 7.8pt !important;
+  }
+
+  .architecture-report-page .stm32-toc-page {
+    color: #000000 !important;
+    font-size: 9.2pt !important;
   }
 }
