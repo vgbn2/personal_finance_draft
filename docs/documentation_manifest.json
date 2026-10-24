@@ -37,6 +37,36 @@
   },
   "documents": [
     {
+      "path": "docs/Reports/SOVEREIGN_TECHNICAL_MANUAL_AND_CYBERSECURITY_SPECIFICATION.md",
+      "type": "orientation",
+      "audience": [
+        "newcomers",
+        "contributors",
+        "operators",
+        "quantitative-reviewers",
+        "security-auditors"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "docs/ARCHITECTURE.md",
+        "docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md",
+        "docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md",
+        "docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md",
+        "docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md",
+        "docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md"
+      ],
+      "test_paths": [
+        "tests/scripts/architecture/cli/core/documentation_contract.test.js"
+      ],
+      "review_triggers": [
+        "architecture-change",
+        "security-review",
+        "report-build-change",
+        "evidence-status-change"
+      ]
+    },
+    {
       "path": "docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.md",
       "type": "orientation",
       "audience": [

@@ -374,3 +374,41 @@ test('architecture report PDF verification passes and detects input drift', (t) 
   assert.equal(driftResult.ok, false, 'Must fail when an input hash has drifted');
   assert.ok(driftResult.errors.some((e) => e.includes('Input drifted: docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.md')));
 });
+
+test('sovereign technical manual and cybersecurity specification is registered and conforms to ST typography contracts', () => {
+  const repoRoot = path.resolve(__dirname, '..', '..', '..', '..', '..');
+  const manualPath = 'docs/Reports/SOVEREIGN_TECHNICAL_MANUAL_AND_CYBERSECURITY_SPECIFICATION.md';
+  const manual = fs.readFileSync(path.join(repoRoot, manualPath), 'utf8');
+  const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'docs/documentation_manifest.json'), 'utf8'));
+  const mkdocs = fs.readFileSync(path.join(repoRoot, 'mkdocs.yml'), 'utf8');
+  const css = fs.readFileSync(path.join(repoRoot, 'docs/stylesheets/architecture-report.css'), 'utf8');
+  const pdfScript = fs.readFileSync(path.join(repoRoot, 'scripts/dev/build_technical_manual_pdf.js'), 'utf8');
+
+  // Registration contracts
+  const record = manifest.documents.find((document) => document.path === manualPath);
+  assert.ok(record, 'technical manual must be registered in the documentation manifest');
+  assert.equal(record.status, 'canonical');
+  assert.equal(record.owner, 'architecture');
+  assert.match(mkdocs, /Technical Manual & Cybersecurity Specification: Reports\/SOVEREIGN_TECHNICAL_MANUAL_AND_CYBERSECURITY_SPECIFICATION\.md/);
+
+  // Content structure contracts
+  for (const heading of [
+    '# SOVEREIGN TRADING PLATFORM',
+    '<div class="stm32-toc-title">Contents</div>',
+    '## Executive Summary & Document Control',
+    '# 1. Introduction & Executive Summary',
+    '# 2. System Architecture & Component Design',
+    '# 10. Appendix & Related Documents',
+  ]) {
+    assert.ok(manual.includes(heading), `missing canonical section heading: ${heading}`);
+  }
+
+  // ST typography and print layout contracts
+  assert.match(css, /font-family:\s*Helvetica,\s*Arial,\s*"Liberation Sans",\s*sans-serif\s*!important;/);
+  assert.match(css, /\.architecture-report-page table tr:nth-child\(even\) td/);
+  assert.match(css, /\.architecture-report-page \.stm32-toc-wrapper/);
+  assert.match(pdfScript, /displayHeaderFooter:\s*true/);
+  assert.match(pdfScript, /SOVEREIGN TECHNICAL MANUAL/);
+  assert.match(pdfScript, /SV-TM-001/);
+});
+

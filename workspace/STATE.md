@@ -1,5 +1,15 @@
 # Current Workspace State
 
+## Session 2026-10-24 — Technical Manual & Cybersecurity Specification Publication (53 Pages) & ST Styling
+- Diagnosed Claude Code allow rule warnings in `.claude/settings.local.json` (13 wildcard rules allowing arbitrary option injection; identified dead ephemeral job paths).
+- Authored comprehensive 10-section Technical Manual & Cybersecurity Specification in `docs/Reports/SOVEREIGN_TECHNICAL_MANUAL_AND_CYBERSECURITY_SPECIFICATION.md` synthesizing STM32 RM0008 register maps, ExploitGym (*arXiv:2605.11086v1*) threat containment, C++20 SIMD DOD compute, Go UDS streaming, and Node.js control planes.
+- Refined Table of Contents to strictly mimic STMicroelectronics STM32 RM0008 Reference Manual (`reference-1.pdf`), implementing `.stm32-toc-wrapper` with running header (`Contents TM-SOV-2026-V1`), 17pt bold `Contents` title, 11pt bold Level 1 chapters with 13mm top spacing, 9.6pt regular Level 2 subsections indented by 10mm, flexbox dot leaders (`. . . . . . . .`), and right-aligned tabular page numbers.
+- Upgraded PDF styling to ST reference format: switched headings from serif (`Times New Roman`) to grotesque sans-serif (`Helvetica, Arial, Liberation Sans`), added 2px bottom chapter rule, alternating zebra table rows (`#f6f8fa`), running header (`SOVEREIGN TECHNICAL MANUAL` | `SV-TM-001`), running footer (`<span class="pageNumber"></span>/<span class="totalPages"></span>` | `SV-TM-001 Rev 1`), and dedicated unnumbered ST cover page.
+- Built automated two-pass page number synchronization into `scripts/dev/build_technical_manual_pdf.js` with code-fence-aware heading parsing and `pageOffset = 1`, guaranteeing 100% page alignment between the TOC table, document body, and Ghostscript `/Outlines` bookmarks across all 53 pages.
+- Symlinked `docs/sections` and `docs/Reports` to Obsidian Vault at `/home/vgbn/Documents/Obsidian Vault/SV-console-docs/` using portable relative links.
+- Re-synchronized master report drift manifest (`npm run docs:report:pdf`) to reflect stylesheet changes.
+- Verification passed 100%: structure tests 34/34 PASS, docs audit PASS, hygiene audit PRISTINE, anti-cheat 0 strikes.
+
 ## Session 2026-10-21 — SSD Write Optimization Planned
 - Verified write amplification sources and saved the decision-complete mass-implement preflight in `workspace/plans/ssd_write_optimization_plan.md`.
 - Implemented the approved SSD write optimization sequence: overlap-aware TS append, compact machine JSON persistence, explicit `mass-backfill --binary-only`, coalesced loop telemetry, and heap-backed native merger buffers.
