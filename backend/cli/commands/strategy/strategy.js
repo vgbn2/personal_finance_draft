@@ -390,7 +390,7 @@ const {
 const EXECUTION_MEMORY = require('../../../../shared/lib/runtime/execution_memory.js');
 const alpacaBotState = require('../../../../shared/lib/runtime/alpaca_bot_state.js');
 const { acquireLock, releaseLock } = require('../../../../shared/lib/runtime/process_lock.js');
-const { parseAllowedTimeframes, decideEntryBudget } = require('../../../../shared/lib/runtime/alpaca_intraday_policy.js');
+const { parseAllowedTimeframes, decideEntryBudget, DEFAULT_ALLOWED_TIMEFRAMES } = require('../../../../shared/lib/runtime/alpaca_intraday_policy.js');
 const {
   canOpenPosition,
   reconcileAutomationInventory,
@@ -473,7 +473,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
     }
 
     const allowedTimeframes = providerPaper
-        ? parseAllowedTimeframes(optionValue(args, '--allowed-timeframes', '5m,15m'))
+        ? parseAllowedTimeframes(optionValue(args, '--allowed-timeframes', DEFAULT_ALLOWED_TIMEFRAMES.join(',')))
         : null;
     if (allowedTimeframes) {
         const excluded = targetStrategies.filter((strategy) => !allowedTimeframes.includes(resolveStrategyTimeframe(strategy, args)));

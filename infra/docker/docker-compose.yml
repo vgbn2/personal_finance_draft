@@ -158,6 +158,7 @@ services:
     environment: *central-runtime
     volumes:
       - ../../storage:/app/storage
+      - feedd-sock:/tmp
     restart: unless-stopped
     deploy:
       resources:
@@ -187,6 +188,33 @@ services:
           --paper-max-notional "$$NOTIONAL" \
           --paper-daily-max-notional "$$DAILY_NOTIONAL" \
           --allowed-timeframes "$$TIMEFRAMES"
+
+  feedd:
+    container_name: sv-feedd
+    logging: *default-logging
+    profiles: [paper-alpaca]
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      target: feedd-runtime
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}-feedd
+    networks:
+      - internal-net
+    volumes:
+      - feedd-sock:/tmp
+    environment:
+      SOVEREIGN_FEEDD_SOCKET: /tmp/sovereign-feed.sock
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "test", "-S", "/tmp/sovereign-feed.sock"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   backfill:
     container_name: sv-backfill
@@ -457,4 +485,7 @@ networks:
     driver: bridge
   mt5-net:
     driver: bridge
+
+volumes:
+  feedd-sock:
 

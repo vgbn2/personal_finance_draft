@@ -157,7 +157,11 @@ func (s *Server) Stop() {
 }
 
 func main() {
-	socketPath := flag.String("socket", DefaultSocketPath, "Unix domain socket path for IPC broadcast")
+	defaultPath := os.Getenv("SOVEREIGN_FEEDD_SOCKET")
+	if defaultPath == "" {
+		defaultPath = DefaultSocketPath
+	}
+	socketPath := flag.String("socket", defaultPath, "Unix domain socket path for IPC broadcast")
 	once := flag.Bool("once", false, "Run single self-check and exit 0")
 	flag.Parse()
 

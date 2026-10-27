@@ -3,6 +3,17 @@
 ARG SOVEREIGN_SOURCE_REVISION=unverified
 ARG SOVEREIGN_SOURCE_TREE=unverified
 
+FROM golang:1.24-alpine AS go-builder
+WORKDIR /src
+COPY backend/go/go.mod ./
+RUN go mod download 2>/dev/null || true
+COPY backend/go/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /sovereign-feedd ./cmd/sovereign-feedd
+
+FROM alpine:3.21 AS feedd-runtime
+COPY --from=go-builder /sovereign-feedd /usr/local/bin/sovereign-feedd
+ENTRYPOINT ["/usr/local/bin/sovereign-feedd"]
+
 FROM node:22-bookworm AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
