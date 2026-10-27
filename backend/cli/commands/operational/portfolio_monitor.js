@@ -179,12 +179,39 @@ function buildRiskAssessment(
   const values = positions.map((position) => positionMarketValue(position));
   const grossExposure = values.reduce((sum, value) => sum + Math.abs(value), 0);
   const netExposure = values.reduce((sum, value) => sum + value, 0);
-  const previousPeak = previousStatus.portfolio_scope
-    && previousStatus.portfolio_scope !== normalized.scope
+
+  const connectedBrokers = brokers
+    .filter((broker) => broker && broker.status === 'connected')
+    .map((broker) => broker.name);
+
+  const brokerErrors = brokers
+    .filter((broker) => broker && broker.status !== 'connected')
+    .map((broker) => ({
+      code: 'broker_unavailable',
+      severity: 'warning',
+      broker: String(broker.name || 'unknown'),
+      error_code: broker.error ? errorCode(broker.error) : null,
+    }));
+
+  const scopeChanged = previousStatus.portfolio_scope
+    && previousStatus.portfolio_scope !== normalized.scope;
+  const previousPeak = scopeChanged
     ? 0
     : finiteNumber(previousStatus.peak_equity);
   const peakEquity = Math.max(previousPeak, equity);
-  const drawdown = peakEquity > 0 ? Math.max(0, (peakEquity - equity) / peakEquity) : 0;
+
+  // ponytail: track peak_equity_brokers so historical peaks aren't compared against degraded single-broker snapshots
+  const peakEquityBrokers = scopeChanged || !previousStatus.peak_equity_brokers
+    ? (equity >= previousPeak && connectedBrokers.length > 0 ? connectedBrokers : (previousStatus.connected_brokers || connectedBrokers))
+    : (equity >= previousPeak && connectedBrokers.length > 0 ? connectedBrokers : previousStatus.peak_equity_brokers);
+
+  const missingPeakBrokers = peakEquityBrokers.filter((name) => !connectedBrokers.includes(name));
+  const hasDegradedBrokerLedger = (missingPeakBrokers.length > 0 && brokerErrors.some((b) => missingPeakBrokers.includes(b.broker)))
+    || (equity === 0 && brokerErrors.length > 0 && peakEquity > 0);
+
+  const drawdown = hasDegradedBrokerLedger
+    ? (finiteNumber(previousStatus.drawdown) || 0)
+    : (peakEquity > 0 ? Math.max(0, (peakEquity - equity) / peakEquity) : 0);
   const breaches = [];
 
   positions.forEach((position, index) => {
@@ -205,22 +232,11 @@ function buildRiskAssessment(
   if (Math.abs(netExposure) > thresholds.max_net_exposure) {
     breaches.push({ code: 'max_net_exposure', severity: 'critical', actual: Math.abs(netExposure), limit: thresholds.max_net_exposure });
   }
-  if (drawdown > thresholds.max_drawdown) {
+  if (!hasDegradedBrokerLedger && drawdown > thresholds.max_drawdown) {
     breaches.push({ code: 'max_drawdown', severity: 'critical', actual: drawdown, limit: thresholds.max_drawdown });
   }
 
-  const brokerErrors = brokers
-    .filter((broker) => broker && broker.status !== 'connected')
-    .map((broker) => ({
-      code: 'broker_unavailable',
-      severity: 'warning',
-      broker: String(broker.name || 'unknown'),
-      error_code: broker.error ? errorCode(broker.error) : null,
-    }));
   breaches.push(...brokerErrors);
-  const connectedBrokers = brokers
-    .filter((broker) => broker && broker.status === 'connected')
-    .map((broker) => broker.name);
   if (brokers.length > 0 && connectedBrokers.length === 0) {
     breaches.push({ code: 'no_connected_brokers', severity: 'critical' });
   }
@@ -239,6 +255,8 @@ function buildRiskAssessment(
     net_exposure: netExposure,
     position_count: positions.length,
     connected_brokers: connectedBrokers,
+    peak_equity_brokers: peakEquityBrokers,
+    degraded_valuation: hasDegradedBrokerLedger,
     broker_count: brokers.length,
     thresholds: { ...thresholds },
     breaches,

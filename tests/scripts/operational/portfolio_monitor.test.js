@@ -261,6 +261,38 @@ test('broker failure alone is a warning and does not discard valid portfolio met
   assert.equal(result.breaches[0].code, 'broker_unavailable');
 });
 
+test('broker failure dropping equity suppresses false max_drawdown breach and preserves previous drawdown', () => {
+  const previousStatus = {
+    peak_equity: 100000,
+    peak_equity_brokers: ['Gate.io', 'Alpaca (Paper)'],
+    connected_brokers: ['Gate.io', 'Alpaca (Paper)'],
+    drawdown: 0.05,
+    portfolio_scope: 'legacy_flat',
+  };
+
+  const result = buildRiskAssessment(
+    legacySnapshot({
+      total_equity: 0,
+      total_usd: 0,
+      positions: [],
+      brokers: [
+        { name: 'Gate.io', status: 'connected' },
+        { name: 'Alpaca (Paper)', status: 'error', error: 'service_failed' },
+      ],
+    }),
+    previousStatus,
+    { max_drawdown: 0.30 },
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.status, 'warning');
+  assert.equal(result.drawdown, 0.05);
+  assert.equal(result.degraded_valuation, true);
+  assert.deepEqual(result.peak_equity_brokers, ['Gate.io', 'Alpaca (Paper)']);
+  assert.equal(result.breaches.some((b) => b.code === 'max_drawdown'), false);
+  assert.equal(result.breaches.some((b) => b.code === 'broker_unavailable' && b.broker === 'Alpaca (Paper)'), true);
+});
+
 test('incomplete production envelope fails closed instead of reporting zero exposure', () => {
   const payload = productionSnapshot();
   delete payload.paper;

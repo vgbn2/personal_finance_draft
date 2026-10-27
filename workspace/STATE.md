@@ -1,6 +1,7 @@
 # Current Workspace State
 
-## Session 2026-10-27 — Alpaca Paper Sizing Expansion, Bayesian Audit & DOD Containerization
+## Session 2026-10-27 — Alpaca Paper Sizing Expansion, Bayesian Audit, DOD Containerization & Portfolio Drawdown Guard
+- **Portfolio Monitor Broker-Aware Drawdown Guard**: Dissected false 100% drawdown alerts in `sv-portfolio-monitor` caused by transient Alpaca Paper connection timeouts dropping total equity to $0 against historical peak equity ($107.7k). Implemented `peak_equity_brokers` tracking and `hasDegradedBrokerLedger` detection in `backend/cli/commands/operational/portfolio_monitor.js:180-264`. Preserved last valid drawdown, flagged `degraded_valuation: true`, and suppressed false `max_drawdown` critical breaches during partial broker outages. Added regression reproducer in `tests/scripts/operational/portfolio_monitor.test.js` (16/16 PASS). Hot-patched running container on CT 114 and verified healthy/warning state with steady 8.7% drawdown across cycles 53584–53613.
 - **Alpaca Paper Sizing Expansion (CT 114)**: Elevated container risk envelope in `/home/vgbn/personal_finance_draft/.env.services/bot-alpaca-paper.env` on Proxmox VM CT 114 (`hp-svconsole`): `ALPACA_PAPER_MAX_NOTIONAL` raised from $5 to $100; `ALPACA_PAPER_DAILY_MAX_NOTIONAL` raised from $50 to $2,500. Verified live execution with SPY order placed at $99.86 notional ceiling.
 - **Bayesian Troubleshooting & Web Intelligence**: Executed 5-domain fault isolation pass:
   - *External Provider (Yahoo Finance Chart v8)*: Discovered `includePrePost=false` omits pre/post market candles outside RTH; confirmed signal freshness guard (`maxAgeMs = 1.5 * barDurationMs`) correctly discards stale bars outside regular market hours.
