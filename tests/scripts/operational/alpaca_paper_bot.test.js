@@ -86,6 +86,17 @@ test('alpaca-paper forwards bounded automation arguments', async () => {
   assert.equal(capturedArgs.includes('--live'), false);
 });
 
+test('alpaca-paper omits --allowed-timeframes when unspecified to preserve canonical strategy defaults', async () => {
+  let capturedArgs = null;
+  await runAlpacaPaperLoop(15, {
+    settings: enabledSettings,
+    once: true,
+    runAutomatedStrategies: async (args) => { capturedArgs = args; },
+  });
+
+  assert.equal(capturedArgs.includes('--allowed-timeframes'), false);
+});
+
 test('alpaca-paper fails closed when bot_autopilot is disabled', async () => {
   const result = await runAlpacaPaperLoop(15, {
     settings: { feature_flags: { bot_autopilot: false } },

@@ -1,5 +1,17 @@
 # Current Workspace State
 
+## Session 2026-10-27 — Alpaca Paper Sizing Expansion, Bayesian Audit & DOD Containerization
+- **Alpaca Paper Sizing Expansion (CT 114)**: Elevated container risk envelope in `/home/vgbn/personal_finance_draft/.env.services/bot-alpaca-paper.env` on Proxmox VM CT 114 (`hp-svconsole`): `ALPACA_PAPER_MAX_NOTIONAL` raised from $5 to $100; `ALPACA_PAPER_DAILY_MAX_NOTIONAL` raised from $50 to $2,500. Verified live execution with SPY order placed at $99.86 notional ceiling.
+- **Bayesian Troubleshooting & Web Intelligence**: Executed 5-domain fault isolation pass:
+  - *External Provider (Yahoo Finance Chart v8)*: Discovered `includePrePost=false` omits pre/post market candles outside RTH; confirmed signal freshness guard (`maxAgeMs = 1.5 * barDurationMs`) correctly discards stale bars outside regular market hours.
+  - *Our Source (Timeframe Whitelist)*: Discovered `backend/cli/commands/strategy/strategy.js:476` hardcoded `'5m,15m'` default overriding `DEFAULT_ALLOWED_TIMEFRAMES` (`1m,5m,15m,1h,1d`), compounded by CT 114 env restriction (`ALPACA_PAPER_ALLOWED_TIMEFRAMES=5m,15m`), filtering out 17 of 25 strategies.
+  - *Data-Oriented Design (DOD) Architecture*: Identified that while C++20 SIMD analytics and 48-byte SOVT binary time-series exist on disk, the standalone Go zero-allocation UDS streaming daemon (`backend/go/cmd/sovereign-feedd/main.go`) lacked a Docker container and compose service on CT 114.
+- **Mass-Implement Batch Execution**:
+  - *Batch A*: Fixed timeframe default in `strategy.js` to use `DEFAULT_ALLOWED_TIMEFRAMES.join(',')`. Added unit test in `tests/scripts/operational/alpaca_paper_bot.test.js` and policy tests in `alpaca_intraday_policy.test.js`. Updated CT 114 env to `5m,15m,1h,1d`, copied `strategy.js`, committed `personal_finance:latest`, and restarted container. Verified live analysis of `1h` and `1d` strategies.
+  - *Batch B*: Audited MT5 bridge credentials on CT 114. Ruled NO-GO on MT5 container activation due to absent credentials in `.env.services/mt5.env`, safely preserving broker-mismatch filters.
+  - *Batch C*: Containerized `sovereign-feedd` via multi-stage Go build (`go-builder` & `feedd-runtime`) in `infra/docker/Dockerfile` and root `Dockerfile`. Added `sv-feedd` service and shared IPC socket volume `feedd-sock:/tmp` in `docker-compose.yml`. Added `SOVEREIGN_FEEDD_SOCKET` env var support in Go daemon. Synced source and configuration to CT 114 via `scripts/ops/sync_to_ct114.sh`.
+- **Verification**: 100% clean baseline (`npm run test:safety` 47/47 PASS, `alpaca_paper_bot.test.js` 6/6 PASS, `npm run test:go` PASS, `npm run test:structure` 35/35 PASS, `npm run hygiene` 100% PRISTINE, `anti-cheat-enforcer --diff --require-tests` 0 strikes).
+
 ## Session 2026-10-24 — Technical Manual & Cybersecurity Specification Publication (53 Pages) & ST Styling
 - Diagnosed Claude Code allow rule warnings in `.claude/settings.local.json` (13 wildcard rules allowing arbitrary option injection; identified dead ephemeral job paths).
 - Authored comprehensive 10-section Technical Manual & Cybersecurity Specification in `docs/Reports/SOVEREIGN_TECHNICAL_MANUAL_AND_CYBERSECURITY_SPECIFICATION.md` synthesizing STM32 RM0008 register maps, ExploitGym (*arXiv:2605.11086v1*) threat containment, C++20 SIMD DOD compute, Go UDS streaming, and Node.js control planes.
