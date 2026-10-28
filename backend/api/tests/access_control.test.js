@@ -222,3 +222,31 @@ test('loopback operator capabilities include paper and data operations but stric
   assert.equal(principal.capabilities.includes(CAPABILITIES.LIVE_EXECUTE), false);
 });
 
+test('proxied requests through loopback with external X-Forwarded-For or X-Real-IP are rejected from guest elevation', async () => {
+  // Remote user through local reverse proxy
+  const proxiedWithXff = request({ 'x-forwarded-for': '203.0.113.195' }, '127.0.0.1');
+  assert.equal(isLoopbackRequest(proxiedWithXff), false);
+  const p1 = await resolvePrincipal(proxiedWithXff, { env: {} });
+  assert.equal(p1.authenticated, false);
+  assert.equal(p1.role, null);
+
+  // Multi-hop XFF where originating client is external
+  const multiHop = request({ 'x-forwarded-for': '198.51.100.10, 127.0.0.1' }, '127.0.0.1');
+  assert.equal(isLoopbackRequest(multiHop), false);
+  const p2 = await resolvePrincipal(multiHop, { env: {} });
+  assert.equal(p2.authenticated, false);
+
+  // External X-Real-IP
+  const proxiedWithRealIp = request({ 'x-real-ip': '192.168.1.50' }, '127.0.0.1');
+  assert.equal(isLoopbackRequest(proxiedWithRealIp), false);
+  const p3 = await resolvePrincipal(proxiedWithRealIp, { env: {} });
+  assert.equal(p3.authenticated, false);
+
+  // Internal loopback proxy chaining is permitted
+  const validLoopbackProxy = request({ 'x-forwarded-for': '127.0.0.1' }, '127.0.0.1');
+  assert.equal(isLoopbackRequest(validLoopbackProxy), true);
+  const p4 = await resolvePrincipal(validLoopbackProxy, { env: {} });
+  assert.equal(p4.authenticated, true);
+  assert.equal(p4.role, 'operator');
+});
+

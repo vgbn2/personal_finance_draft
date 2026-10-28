@@ -89,7 +89,7 @@ npm run setup:dev
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
-cd personal_finance_draft
+cd sovereign-trades
 
 # 2. Copy the default environment template (contains safe local defaults & dummy keys)
 cp .env.example .env

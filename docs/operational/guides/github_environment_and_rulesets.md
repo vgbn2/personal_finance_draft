@@ -1,6 +1,6 @@
 # GitHub Environment & Repository Rulesets Guide
 
-This document defines the configuration, branch protection rulesets, environment boundaries, secrets policy, and GitHub Actions CI matrix for the **Sovereign Trading Platform** repository (`personal_finance_draft`).
+This document defines the configuration, branch protection rulesets, environment boundaries, secrets policy, and GitHub Actions CI matrix for the **Sovereign Trading Platform** repository (`sovereign-trades`).
 
 ---
 
@@ -34,7 +34,7 @@ To prevent stale branch accumulation and maintain clean git graph hygiene:
    After your pull request is merged into `main`, clean up your local worktree and branch:
    ```bash
    # 1. Switch to main repo root
-   cd /path/to/personal_finance_draft
+   cd /path/to/sovereign-trades
 
    # 2. Update main
    git checkout main
@@ -124,7 +124,7 @@ Domain ownership is defined in `.github/CODEOWNERS` and aligned with `workspace/
 ## 5. Security & Vulnerability Handling
 
 - **Private Vulnerability Reporting**: Repository administrators should enable **Private vulnerability reporting** in GitHub under **Settings → Code security and analysis**.
-- **Public Disclosures Prohibited**: Do not open public issues for potential security vulnerabilities, leaked keys, or execution bypasses. Follow [workspace/governance/SECURITY.md](https://github.com/vgbn2/personal_finance_draft/blob/main/workspace/governance/SECURITY.md).
+- **Public Disclosures Prohibited**: Do not open public issues for potential security vulnerabilities, leaked keys, or execution bypasses. Follow [workspace/governance/SECURITY.md](https://github.com/vgbn2/sovereign-trades/blob/main/workspace/governance/SECURITY.md).
 
 ---
 
