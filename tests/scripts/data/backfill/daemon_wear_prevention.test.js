@@ -17,7 +17,7 @@ const path = require('node:path');
 
 const { writeTsIndex, readTsIndex } = require('../../../../shared/lib/market/validation.js');
 const { rollupFromBase, rollupTargetsAboveBase } = require('../../../../backend/cli/commands/data/data.js');
-const { runBackfillCycle } = require('../../../../backend/cli/commands/data/backfill_daemon.js');
+const { runBackfillCycle, writeDaemonStatus, DAEMON_STATUS_PATH } = require('../../../../backend/cli/commands/data/backfill_daemon.js');
 
 test('backfill daemon performs ZERO derived rollups when all derived bins are already fresh', async () => {
   const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'daemon-wear-'));
@@ -115,4 +115,35 @@ test('backfill daemon selectively restores a missing derived bin without rewriti
   assert.ok(readTsIndex(tsDir, 'BTCUSDT', '1h'), 'missing 1h bin was successfully restored');
 
   fs.rmSync(tsDir, { recursive: true, force: true });
+});
+
+test('daemon status write coalescing throttles rapid updates while force flushes immediately', () => {
+  const originalExists = fs.existsSync(DAEMON_STATUS_PATH);
+  const originalContent = originalExists ? fs.readFileSync(DAEMON_STATUS_PATH, 'utf8') : null;
+
+  try {
+    const status1 = { status: 'running', cycle: 1, test_seq: 1 };
+    writeDaemonStatus(status1, { force: true });
+    assert.ok(fs.existsSync(DAEMON_STATUS_PATH));
+    const read1 = JSON.parse(fs.readFileSync(DAEMON_STATUS_PATH, 'utf8'));
+    assert.equal(read1.test_seq, 1);
+
+    // Immediate unforced write should be throttled within 5000ms window
+    const status2 = { status: 'running', cycle: 1, test_seq: 2 };
+    writeDaemonStatus(status2, { force: false });
+    const read2 = JSON.parse(fs.readFileSync(DAEMON_STATUS_PATH, 'utf8'));
+    assert.equal(read2.test_seq, 1, 'unforced write within 5s window must be throttled');
+
+    // Forced write must bypass throttle and flush immediately
+    const status3 = { status: 'stopped', cycle: 1, test_seq: 3 };
+    writeDaemonStatus(status3, { force: true });
+    const read3 = JSON.parse(fs.readFileSync(DAEMON_STATUS_PATH, 'utf8'));
+    assert.equal(read3.test_seq, 3, 'forced write must flush immediately');
+  } finally {
+    if (originalContent !== null) {
+      fs.writeFileSync(DAEMON_STATUS_PATH, originalContent);
+    } else if (fs.existsSync(DAEMON_STATUS_PATH)) {
+      fs.unlinkSync(DAEMON_STATUS_PATH);
+    }
+  }
 });

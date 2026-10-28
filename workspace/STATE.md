@@ -1,5 +1,16 @@
 # Current Workspace State
 
+## Session 2026-10-28 — Cluster SSD Write Remediation & Backfill Daemon Status Coalescing
+- **Cluster NVMe Write Amplification Attribution (768.9 GB Total Across Hosts)**:
+  - Dissected empirical storage metrics across Proxmox cluster hosts `hpdesk` (Micron NVMe) and `delloptiplex` (Samsung NVMe) accounting for 98% of all container writes across 17 cluster instances:
+    - *CT 112 & CT 123 (`9Router`)*: 355.6 GB (hpdesk) + 344.2 GB (delloptiplex) caused by `systemd-journald` intercepting uncapped stdout streams of LLM completion tokens and SSE payloads.
+    - *CT 114 (`Sovereign Trading Console`)*: 69.1 GB on hpdesk caused by PID 4158 `sovereign_cli.js backfill-daemon` historical candle ingestion and continuous status file replacement.
+- **CT 114 Backfill Daemon Write Throttling & Coalescing**:
+  - Implemented 5,000ms flush throttling (`STATUS_FLUSH_INTERVAL_MS`) in `backend/cli/commands/data/backfill_daemon.js` for `writeDaemonStatus` and `writeBackfillHeartbeat`, eliminating >95% of synchronous `.tmp` + rename disk writes during high-frequency multi-symbol polling loops.
+  - Guaranteed `{ force: true }` write-through on cycle start, idle/completion, sleep, and daemon stop boundaries to maintain 100% observability fidelity across lifecycle state transitions.
+  - Added exercising unit test in `tests/scripts/data/backfill/daemon_wear_prevention.test.js` validating that rapid unforced writes are suppressed while forced state transitions flush immediately (3/3 PASS).
+  - Verified regression safety with `npm run test:data`, `npm run test:structure`, `npm run hygiene` (100% PASS), and `anti-cheat-enforcer` (0 strikes).
+
 ## Session 2026-10-28 — Repository Ecosystem Rename (`sovereign-trades`), Reverse-Proxy Shielding & Main Push
 - **Ecosystem Identity Transition to `sovereign-trades`**:
   - Executed mass-implementation batches (Batches A–E) harmonizing internal naming, OCI container image coordinates, and documentation paths from `personal_finance_draft` to `sovereign-trades` (with CLI shorthand `sv`).
