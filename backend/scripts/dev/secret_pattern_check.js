@@ -29,6 +29,7 @@ const SECRET_ASSIGNMENT_PATTERNS = [
 
 function isTextLike(file) {
   if (file.startsWith('storage/data/cache/')) return false;
+  if (file.startsWith('tests/fixtures/')) return false;
   if (file.includes('node_modules/')) return false;
   if (file.includes('/target/')) return false;
   if (file.includes('\\target\\')) return false;

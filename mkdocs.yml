@@ -1,8 +1,8 @@
 site_name: Sovereign Trading Platform
 site_description: Institutional-grade, local-first quantitative research, backtesting, and algorithmic execution platform.
-site_url: https://vgbn2.github.io/personal_finance_draft/
-repo_url: https://github.com/vgbn2/personal_finance_draft
-repo_name: vgbn2/personal_finance_draft
+site_url: https://vgbn2.github.io/sovereign-trades/
+repo_url: https://github.com/vgbn2/sovereign-trades
+repo_name: vgbn2/sovereign-trades
 draft_docs: /README.md
 
 theme:

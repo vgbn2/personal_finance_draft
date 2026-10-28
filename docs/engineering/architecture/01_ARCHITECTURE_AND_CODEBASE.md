@@ -114,7 +114,7 @@ flowchart TD
 The repository enforces strict module separation and unidirectional dependency flow:
 
 ```text
-personal_finance_draft/
+sovereign-trades/
 ├── backend/
 │   ├── api/                 # Authenticated Express REST API & WebSocket bridge
 │   ├── cli/                 # Sovereign CLI entrypoints, Ink TUI, and command handlers

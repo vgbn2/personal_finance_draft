@@ -4,7 +4,7 @@
 //|                   High-Performance Native Client Socket Bridge   |
 //+------------------------------------------------------------------+
 #property copyright "Sovereign Platform"
-#property link      "https://github.com/vgbn2/personal_finance_draft"
+#property link      "https://github.com/vgbn2/sovereign-trades"
 #property version   "1.00"
 #property strict
 

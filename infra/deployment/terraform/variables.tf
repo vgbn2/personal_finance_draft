@@ -19,7 +19,7 @@ variable "app_title" {
 variable "image" {
   description = "Container image that contains the backend/api/app.js entrypoint."
   type        = string
-  default     = "ghcr.io/vgbn2/personal_finance_draft-web:latest"
+  default     = "ghcr.io/vgbn2/sovereign-trades-web:latest"
 }
 
 variable "replicas" {

@@ -57,7 +57,7 @@ All contributions, reviews, and bug triages reuse the repository's canonical ski
 
 4. **Post-Merge Cleanup**:
    ```bash
-   cd /path/to/personal_finance_draft
+   cd /path/to/sovereign-trades
    git checkout main
    git pull origin main
    git worktree remove .claude/worktrees/<feature-name>

@@ -46,8 +46,8 @@ tracking, and the migration sequence are documented in
 
 ```bash
 # 1. Clone to the central host
-git clone <your-repo-url> personal_finance
-cd personal_finance
+git clone <your-repo-url> sovereign-trades
+cd sovereign-trades
 
 # 2. Create the data/research-only environment.
 cp .env.central.example .env.central
@@ -206,7 +206,7 @@ Generate API tokens with: `openssl rand -hex 32`
 
 1. **Pull the published OCI image**:
    ```bash
-   export SOVEREIGN_IMAGE_REF=ghcr.io/vgbn2/personal_finance_draft:latest
+   export SOVEREIGN_IMAGE_REF=ghcr.io/vgbn2/sovereign-trades:latest
    docker compose -f infra/docker/docker-compose.yml pull web
    # Or via npm: npm run docker:pull
    ```

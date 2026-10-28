@@ -1,8 +1,8 @@
 {
-  "name": "personal_finance",
+  "name": "sovereign-trades",
   "private": true,
   "version": "1.0.0",
-  "description": "Sovereign is an active local trading research prototype with ingestion, validation, research/backtest commands, C++ backend inspection, and a local web/API dashboard bridge.",
+  "description": "Sovereign Trades: an active local trading research prototype with ingestion, validation, research/backtest commands, C++ backend inspection, and a local web/API dashboard bridge.",
   "main": "index.js",
   "directories": {
     "doc": "docs",
@@ -76,7 +76,8 @@
   "license": "SEE LICENSE IN LICENSE",
   "type": "commonjs",
   "bin": {
-    "sovereign": "backend/cli/sovereign_cli.js"
+    "sovereign": "backend/cli/sovereign_cli.js",
+    "sv": "backend/cli/sovereign_cli.js"
   },
   "imports": {
     "#shared/*": "./shared/lib/*.js",

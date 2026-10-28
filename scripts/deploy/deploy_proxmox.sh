@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Sovereign All-in-One Deployment & Atomic Rollback Script for Proxmox VM
-# Image: ghcr.io/vgbn2/personal_finance_draft:latest
+# Image: ghcr.io/vgbn2/sovereign-trades:latest
 # ==============================================================================
 set -euo pipefail
 
@@ -12,7 +12,7 @@ SECRETS_FILE="${SECRETS_FILE:-/etc/sovereign/sovereign.env}"
 STORAGE_DIR="${SOVEREIGN_ROOT}/storage"
 BACKUP_DIR="${BACKUP_DIR:-/data/backups}"
 LOCK_FILE="/var/lock/sovereign-deploy.lock"
-IMAGE_REPO="${IMAGE_REPO:-ghcr.io/vgbn2/personal_finance_draft}"
+IMAGE_REPO="${IMAGE_REPO:-ghcr.io/vgbn2/sovereign-trades}"
 TARGET_TAG="${1:-latest}"
 TARGET_IMAGE="${IMAGE_REPO}:${TARGET_TAG}"
 HEALTH_URL="http://127.0.0.1:8787/health"

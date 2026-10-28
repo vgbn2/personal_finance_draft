@@ -25,7 +25,7 @@ services:
     container_name: sv-web
     logging: *default-logging
     build: *common-build
-    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/personal_finance_draft:latest}
+    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/sovereign-trades:latest}
     restart: unless-stopped
     ports:
       - "${SOVEREIGN_WEB_BIND:-127.0.0.1}:8787:8787"
@@ -67,7 +67,7 @@ services:
     logging: *default-logging
     profiles: [paper]
     build: *common-build
-    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/personal_finance_draft:latest}
+    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/sovereign-trades:latest}
     restart: unless-stopped
     depends_on:
       web:
@@ -105,7 +105,7 @@ services:
       args:
         SOVEREIGN_SOURCE_REVISION: ${SOVEREIGN_SOURCE_REVISION:-unverified}
         SOVEREIGN_SOURCE_TREE: ${SOVEREIGN_SOURCE_TREE:-unverified}
-    image: ${SOVEREIGN_ALLINONE_IMAGE_REF:-ghcr.io/vgbn2/personal_finance_draft:allinone}
+    image: ${SOVEREIGN_ALLINONE_IMAGE_REF:-ghcr.io/vgbn2/sovereign-trades:allinone}
     restart: unless-stopped
     ports:
       - "${SOVEREIGN_WEB_BIND:-127.0.0.1}:8787:8787"
@@ -149,7 +149,7 @@ services:
     logging: *default-logging
     profiles: [backfill]
     build: *common-build
-    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/personal_finance_draft:latest}
+    image: ${SOVEREIGN_IMAGE_REF:-ghcr.io/vgbn2/sovereign-trades:latest}
     env_file:
       - path: .env
         required: false

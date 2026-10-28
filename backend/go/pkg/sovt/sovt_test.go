@@ -7,7 +7,17 @@ import (
 	"testing"
 )
 
-const repoRoot = "/home/vgbn/Documents/codeptit/personal_finance_draft"
+var repoRoot = func() string {
+	if env := os.Getenv("SOVEREIGN_REPO_ROOT"); env != "" {
+		return env
+	}
+	if rel, err := filepath.Abs("../../../"); err == nil {
+		if _, err := os.Stat(filepath.Join(rel, "package.json")); err == nil {
+			return rel
+		}
+	}
+	return "/home/vgbn/Documents/codeptit/sovereign-trades"
+}()
 
 type RealBarFixture struct {
 	FetchedAt string `json:"fetched_at"`

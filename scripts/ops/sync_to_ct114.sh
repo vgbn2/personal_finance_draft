@@ -12,7 +12,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PROXMOX_HOST="100.115.226.69"
 PROXMOX_SSH="ssh -o ConnectTimeout=10 root@${PROXMOX_HOST}"
 CT_ID="114"
-CT_DEST="/home/vgbn/personal_finance_draft"
+CT_DEST="/home/vgbn/sovereign-trades"
 
 REBUILD=false
 DRY_RUN=false
@@ -50,6 +50,12 @@ TAR_EXCLUDES=(
   --exclude='graphify-out'
   --exclude='*.bin'
   --exclude='*.swp'
+  --exclude='.env'
+  --exclude='.env.*'
+  --exclude='*.env'
+  --exclude='*.key'
+  --exclude='*.pem'
+  --exclude='storage/secrets'
 )
 
 if [[ "$DRY_RUN" == "true" ]]; then
@@ -69,7 +75,7 @@ if [[ "$REBUILD" == "true" && "$DRY_RUN" == "false" ]]; then
   $PROXMOX_SSH "pct exec ${CT_ID} -- bash -c '
     cd ${CT_DEST}
     docker compose build web
-    docker tag ghcr.io/vgbn2/personal_finance_draft:latest personal_finance:latest
+    docker tag ghcr.io/vgbn2/sovereign-trades:latest sovereign-trades:latest
     docker compose -p sv -f infra/docker/docker-compose.yml --profile "*" up -d --no-build --force-recreate web backfill bot-alpaca-paper portfolio-monitor host-health host-backup
     docker compose -p sv -f infra/docker/docker-compose.yml ps
   '"

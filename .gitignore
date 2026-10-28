@@ -23,6 +23,11 @@ cpp_core/build/
 backend/cli/target/
 cli/target/
 web/node_modules/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+compile_commands.json
+*.test
 graphify-out/
 site/
 .cache/
@@ -135,6 +140,11 @@ storage/secrets/
 *.bin
 disasm.txt
 
+# Generated Documents & PDF Drafts (ignore untracked PDFs, preserve canonical reports)
+*.pdf
+!docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.pdf
+!docs/Reports/SOVEREIGN_TECHNICAL_MANUAL_AND_CYBERSECURITY_SPECIFICATION.pdf
+
 # Agent CLIs, Skill Scratch Runs, and Local Skills
 /.antigravitycli/
 /blast-through/
@@ -193,11 +203,6 @@ docss/
 
 # ML training virtualenv (local-only)
 .venv_ml/
-
-# Agent CLIs and local skills
-/.antigravitycli/
-/blast-through/
-/repo-hygiene/
 
 # Quarantine data dumps
 _quarantine_grain/

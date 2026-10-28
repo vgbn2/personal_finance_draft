@@ -47,7 +47,7 @@ test('schema-3 service rows match all nine isolated Compose environment files', 
   assert.equal((compose.match(/\.env\.services\/[a-z0-9-]+\.env/g) || []).length, 10);
   assert.doesNotMatch(compose, /central-env-files|SOVEREIGN_CENTRAL_ENV_FILE/);
   assert.equal(rootDockerfile, dockerfile);
-  assert.equal((compose.match(/\$\{SOVEREIGN_IMAGE_REF:-personal_finance:latest\}/g) || []).length, 9);
+  assert.equal((compose.match(/\$\{SOVEREIGN_IMAGE_REF:-personal_finance:latest\}/g) || []).length, 10);
   assert.match(dockerfile, /org\.opencontainers\.image\.revision/);
   assert.match(dockerfile, /io\.sovereign\.source-tree/);
   assert.match(dockerfile, /io\.sovereign\.build-contract="1"/);
