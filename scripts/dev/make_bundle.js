@@ -5,10 +5,10 @@
  * make_bundle.js — repeatable git-bundle generator for transferring this repo to
  * another machine (e.g. an old Ubuntu PC) with full version history.
  *
- * The git root is the CODEPTIT monorepo (personal_finance_draft is a subdir), so a
+ * The git root is the CODEPTIT monorepo (sovereign-trades is a subdir), so a
  * `git bundle` necessarily covers the whole monorepo. The monorepo also contains
  * embedded git repos (gitlinks with no .gitmodules) — notably
- * personal_finance_draft/backend/polymarket-cli — whose CONTENTS are NOT carried by
+ * sovereign-trades/backend/polymarket-cli — whose CONTENTS are NOT carried by
  * the parent's `--all` bundle (only the commit pointer is). This script therefore
  * also emits a companion bundle per populated embedded repo so the destination clone
  * is complete and restorable.
@@ -22,7 +22,7 @@
  *
  *   --out <dir>        Output directory (default: <gitRoot>/../portable_exports).
  *   --embedded <mode>  Which embedded repos to also bundle:
- *                        pfd  (default) only those under personal_finance_draft/
+ *                        pfd  (default) only those under sovereign-trades/
  *                        all  every populated embedded repo in the monorepo
  *                        none skip embedded repos entirely
  *   --dry-run          Print what would be produced without writing bundles.
@@ -32,7 +32,7 @@ const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const PFD_PREFIX = 'personal_finance_draft/';
+const SOVEREIGN_PREFIX = 'sovereign-trades/';
 
 function git(args, opts = {}) {
   const r = spawnSync('git', args, {
@@ -117,7 +117,7 @@ function main() {
     .filter(Boolean);
 
   if (embeddedMode === 'none') gitlinks = [];
-  else if (embeddedMode === 'pfd') gitlinks = gitlinks.filter((p) => p.startsWith(PFD_PREFIX));
+  else if (embeddedMode === 'pfd' || embeddedMode === 'sv') gitlinks = gitlinks.filter((p) => p.startsWith(SOVEREIGN_PREFIX));
 
   // Resolve which embedded gitlinks are populated local repos with commits.
   const embedded = [];
@@ -257,10 +257,10 @@ function renderRestoreDoc(manifest, repoName) {
     lines.push('');
   }
 
-  lines.push('## 3. Install + build (the platform lives in `personal_finance_draft/`)');
+  lines.push('## 3. Install + build (the platform lives in `sovereign-trades/`)');
   lines.push('');
   lines.push('```bash');
-  lines.push('cd personal_finance_draft');
+  lines.push('cd sovereign-trades');
   lines.push('npm install            # node_modules is gitignored, not in the bundle');
   lines.push('# C++ core (needed for ML / backtest / correlation; Node alone is enough to ingest data):');
   lines.push('cmake -S backend/core -B backend/core/build -DCMAKE_BUILD_TYPE=Release \\');

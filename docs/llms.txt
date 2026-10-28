@@ -1,7 +1,7 @@
 # Sovereign Trading Platform Documentation
 
 > Institutional-grade, local-first quantitative research, backtesting, and algorithmic execution platform.
-> Canonical website: https://vgbn2.github.io/personal_finance_draft/
+> Canonical website: https://vgbn2.github.io/sovereign-trades/
 
 ## Quadrant 1: Tutorials (Learning)
 - [00. Quick Onboarding](tutorials/00_quick_onboarding.md): 15-minute zero-key development tour and initial test run.

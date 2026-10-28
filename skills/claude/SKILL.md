@@ -1,6 +1,6 @@
 ---
 name: claude
-description: Compatibility router for review-heavy personal_finance_draft work. Use when a Claude-oriented workflow requests audit, code review, gap finding, cleanliness grading, architecture review, or debt surfacing; route the task through the canonical blast-through modes.
+description: Compatibility router for review-heavy sovereign-trades work. Use when a Claude-oriented workflow requests audit, code review, gap finding, cleanliness grading, architecture review, or debt surfacing; route the task through the canonical blast-through modes.
 ---
 
 # Claude

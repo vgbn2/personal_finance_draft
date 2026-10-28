@@ -1,6 +1,6 @@
 ---
 name: blast-through
-description: Run evidence-first repository audits, code reviews, section grading, connectivity sweeps, API authentication checks, fault-domain and stub-causality diagnosis, data-integrity reviews, maintainability/readability assessments, and full system assessments in personal_finance_draft. Use for broad or focused review, gap finding, dependency/path/string wiring, credential projection and provider-auth diagnosis, source-versus-host-versus-provider attribution, stub or orphan detection, AI-authored consistency drift, data trust, architecture completeness, or repository cleanliness grading; do not use it to implement fixes.
+description: Run evidence-first repository audits, code reviews, section grading, connectivity sweeps, API authentication checks, fault-domain and stub-causality diagnosis, data-integrity reviews, maintainability/readability assessments, and full system assessments in sovereign-trades. Use for broad or focused review, gap finding, dependency/path/string wiring, credential projection and provider-auth diagnosis, source-versus-host-versus-provider attribution, stub or orphan detection, AI-authored consistency drift, data trust, architecture completeness, or repository cleanliness grading; do not use it to implement fixes.
 ---
 
 # Blast Through

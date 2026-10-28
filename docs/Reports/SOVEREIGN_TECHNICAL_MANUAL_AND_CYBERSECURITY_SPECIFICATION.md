@@ -1844,10 +1844,10 @@ Release builds follow strict semantic versioning (SemVer 2.0.0). Production OCI 
 
 ```bash
 # 1. Build and tag release container
-docker build -t ghcr.io/vgbn2/personal_finance_draft:3.2.0 -f infra/docker/Dockerfile .
+docker build -t ghcr.io/vgbn2/sovereign-trades:3.2.0 -f infra/docker/Dockerfile .
 
 # 2. Verify image integrity and clean-room contracts
-docker run --rm ghcr.io/vgbn2/personal_finance_draft:3.2.0 npm run test:structure
+docker run --rm ghcr.io/vgbn2/sovereign-trades:3.2.0 npm run test:structure
 ```
 
 Cryptographic drift manifests (`SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.pdf.manifest.json`) track input file hashes, guaranteeing reproducibility.

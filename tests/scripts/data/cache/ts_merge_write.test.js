@@ -27,7 +27,7 @@ const path = require('node:path');
 const cp = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
 
-const REPO = path.resolve(__dirname, '../../../../'); // personal_finance_draft
+const REPO = path.resolve(__dirname, '../../../../'); // sovereign-trades
 const NEW_MODULE = require.resolve('../../../../shared/lib/market/validation.js');
 const { writeTsIndex, readTsIndex, tsWriteLockPath } = require(NEW_MODULE);
 const {

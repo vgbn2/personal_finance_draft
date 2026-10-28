@@ -1,6 +1,6 @@
 ---
 name: codex
-description: Implement focused repository fixes and features with current-source evidence and proportionate verification in personal_finance_draft. Use for one bounded implementation surface; route broad multi-section backlogs to mass-implement and audit-only requests to blast-through.
+description: Implement focused repository fixes and features with current-source evidence and proportionate verification in sovereign-trades. Use for one bounded implementation surface; route broad multi-section backlogs to mass-implement and audit-only requests to blast-through.
 ---
 
 # Codex

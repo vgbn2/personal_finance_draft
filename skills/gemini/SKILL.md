@@ -1,6 +1,6 @@
 ---
 name: gemini
-description: Compatibility router for Gemini-oriented session startup, continuity, and research context in personal_finance_draft. Use when Gemini or another CLI assistant needs repository boot context; delegate the canonical workflow to session-orchestrator.
+description: Compatibility router for Gemini-oriented session startup, continuity, and research context in sovereign-trades. Use when Gemini or another CLI assistant needs repository boot context; delegate the canonical workflow to session-orchestrator.
 ---
 
 # Gemini

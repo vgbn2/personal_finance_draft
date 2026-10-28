@@ -6,7 +6,7 @@ This guide describes how to configure hot SSD execution alongside cold HDD long-
 
 | Tier | Device | Default Path | Purpose |
 | :--- | :--- | :--- | :--- |
-| **Hot Tier (Fast)** | NVMe / SSD | `/home/vgbn-server/.../personal_finance_draft` | Repository code, Docker runtime, 1m/5m live data polling, active strategy state |
+| **Hot Tier (Fast)** | NVMe / SSD | `/home/vgbn-server/.../sovereign-trades` | Repository code, Docker runtime, 1m/5m live data polling, active strategy state |
 | **Cold Tier (Archive)** | HDD | `/mnt/hdd_data/sovereign/` | Long-term historical archives, database backups, snapshot retentions |
 
 ---

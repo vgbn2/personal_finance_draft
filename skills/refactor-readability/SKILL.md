@@ -1,6 +1,6 @@
 ---
 name: refactor-readability
-description: Refactor personal_finance_draft code for readability, maintainability, coherent ownership, and consistent conventions without changing behavior. Use when the user asks to make code easier to read, simplify a large file or function, reduce AI-generated style drift, consolidate duplicate implementations, clarify names/control flow, or perform a behavior-preserving cleanup; use blast-through for audit-only requests and codex or mass-implement when behavior must change.
+description: Refactor sovereign-trades code for readability, maintainability, coherent ownership, and consistent conventions without changing behavior. Use when the user asks to make code easier to read, simplify a large file or function, reduce AI-generated style drift, consolidate duplicate implementations, clarify names/control flow, or perform a behavior-preserving cleanup; use blast-through for audit-only requests and codex or mass-implement when behavior must change.
 ---
 
 # Refactor Readability

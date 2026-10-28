@@ -1,6 +1,6 @@
 ---
 name: codebase-untangler
-description: Recover source-verified engineering knowledge and incrementally untangle fragmented ownership in personal_finance_draft. Use for multi-session codebase mapping, hidden-knowledge promotion, Code Atlas maintenance, canonical-owner recovery, compatibility-led migration, and staged modular convergence; route bounded refactors to refactor-readability, behavioral fixes to codex, broad approved fixes to mass-implement, and audits to blast-through.
+description: Recover source-verified engineering knowledge and incrementally untangle fragmented ownership in sovereign-trades. Use for multi-session codebase mapping, hidden-knowledge promotion, Code Atlas maintenance, canonical-owner recovery, compatibility-led migration, and staged modular convergence; route bounded refactors to refactor-readability, behavioral fixes to codex, broad approved fixes to mass-implement, and audits to blast-through.
 ---
 
 # Codebase Untangler

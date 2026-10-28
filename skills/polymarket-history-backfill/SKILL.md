@@ -1,6 +1,6 @@
 ---
 name: polymarket-history-backfill
-description: Plan, implement, delegate, and verify Polymarket historical data backfill and replay backtesting in personal_finance_draft. Use when the task mentions Polymarket historical data, CLOB price history, PMXT order-book archives, resolved-market backfills, market impact or slippage modeling, Polymarket strategy backtests, or delegating this work to subagents.
+description: Plan, implement, delegate, and verify Polymarket historical data backfill and replay backtesting in sovereign-trades. Use when the task mentions Polymarket historical data, CLOB price history, PMXT order-book archives, resolved-market backfills, market impact or slippage modeling, Polymarket strategy backtests, or delegating this work to subagents.
 ---
 
 # Polymarket History Backfill

@@ -46,12 +46,27 @@ function tokenSessionId(token) {
   return crypto.createHash('sha256').update(String(token)).digest('hex').slice(0, 24);
 }
 
+function isLoopbackAddress(addr) {
+  const s = String(addr || '').trim();
+  return s === '127.0.0.1' || s === '::1' || s === '::ffff:127.0.0.1';
+}
+
 function isLoopbackRequest(req) {
   const address = req && req.socket ? String(req.socket.remoteAddress || '') : '';
-  if (!address) return false;
-  return address === '127.0.0.1'
-    || address === '::1'
-    || address === '::ffff:127.0.0.1';
+  if (!address || !isLoopbackAddress(address)) return false;
+
+  // Screening reverse proxy headers: prevent remote callers from inheriting loopback operator privileges
+  if (req && req.headers) {
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (forwardedFor) {
+      const clientIp = String(forwardedFor).split(',')[0].trim();
+      if (!isLoopbackAddress(clientIp)) return false;
+    }
+    const realIp = req.headers['x-real-ip'];
+    if (realIp && !isLoopbackAddress(realIp)) return false;
+  }
+
+  return true;
 }
 
 function humanSessionId(userId) {
