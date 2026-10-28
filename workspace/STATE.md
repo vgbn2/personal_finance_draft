@@ -1,5 +1,20 @@
 # Current Workspace State
 
+## Session 2026-10-28 — Repository Ecosystem Rename (`sovereign-trades`), Reverse-Proxy Shielding & Main Push
+- **Ecosystem Identity Transition to `sovereign-trades`**:
+  - Executed mass-implementation batches (Batches A–E) harmonizing internal naming, OCI container image coordinates, and documentation paths from `personal_finance_draft` to `sovereign-trades` (with CLI shorthand `sv`).
+  - Standardized OCI container coordinates across root and modular Compose definitions, Kubernetes deployments, Heroku configurations, and Proxmox deployment scripts (`ghcr.io/vgbn2/sovereign-trades:latest`).
+  - Updated MkDocs metadata, site navigation, contributor documentation, and developer bundle tooling (`scripts/dev/make_bundle.js`).
+  - Regenerated canonical 44-page A4 Architecture Report PDF (`docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.pdf`) and synchronized input hashes in its cryptographic manifest.
+- **Security Hardening & Privilege Shielding**:
+  - Hardened loopback guest privilege evaluation in `backend/api/server/services/access_control.js`: rejected requests carrying external `x-forwarded-for` or `x-real-ip` headers from inheriting local operator permissions, shielding against reverse-proxy elevation bypasses.
+  - Added exercising regression suite in `backend/api/tests/access_control.test.js` (13/13 PASS).
+  - Isolated environment variable propagation in `infra/docker/docker-compose.yml` to prevent accidental credential bleed.
+- **Verification & Deployment Push**:
+  - Full suite passed: `npm run test:structure` (35/35 PASS), `npm run test:api` (13/13 PASS), `npm run test:secrets` (1,055 files clean, 0 violations), `npm run hygiene` (100% PRISTINE), `anti-cheat-enforcer --diff --require-tests` (0 strikes).
+  - Committed as `feat(repo): rename ecosystem to sovereign-trades, isolate compose env, and shield loopback guest` (`ac20d905`).
+  - Fast-forward merged into `main` and pushed to remote `origin/main` and `origin/feat/architecture-report-and-polybolt-recovery`.
+
 ## Session 2026-10-27 — Alpaca Paper Sizing Expansion, Bayesian Audit, DOD Containerization & Portfolio Drawdown Guard
 - **Portfolio Monitor Broker-Aware Drawdown Guard**: Dissected false 100% drawdown alerts in `sv-portfolio-monitor` caused by transient Alpaca Paper connection timeouts dropping total equity to $0 against historical peak equity ($107.7k). Implemented `peak_equity_brokers` tracking and `hasDegradedBrokerLedger` detection in `backend/cli/commands/operational/portfolio_monitor.js:180-264`. Preserved last valid drawdown, flagged `degraded_valuation: true`, and suppressed false `max_drawdown` critical breaches during partial broker outages. Added regression reproducer in `tests/scripts/operational/portfolio_monitor.test.js` (16/16 PASS). Hot-patched running container on CT 114 and verified healthy/warning state with steady 8.7% drawdown across cycles 53584–53613.
 - **Alpaca Paper Sizing Expansion (CT 114)**: Elevated container risk envelope in `/home/vgbn/personal_finance_draft/.env.services/bot-alpaca-paper.env` on Proxmox VM CT 114 (`hp-svconsole`): `ALPACA_PAPER_MAX_NOTIONAL` raised from $5 to $100; `ALPACA_PAPER_DAILY_MAX_NOTIONAL` raised from $50 to $2,500. Verified live execution with SPY order placed at $99.86 notional ceiling.
