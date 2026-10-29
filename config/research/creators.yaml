@@ -1,7 +1,7 @@
 # config/research/creators.yaml
 # Tracked social influencers & media channels for contrarian retail sentiment analysis.
 #
-# ponytail: declarative configuration only. No hardcoded logic in application code.
+# Schema: declarative research configuration for social sentiment weights and scoring thresholds.
 
 defaults:
   min_sample_count: 10          # Calls needed before creator weight activates

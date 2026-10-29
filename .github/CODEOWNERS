@@ -1,31 +1,26 @@
-# Bootstrap ownership map for a controlled-maintainer repository.
-#
-# IMPORTANT: These are intentionally non-functional placeholders. Replace EVERY
-# placeholder with a real GitHub user or team, validate access, and only then
-# enable required CODEOWNERS review in repository settings.
+# Sovereign Trading Platform - Codeowners
 
 # Default review owner
-* @PRIMARY_OWNER_HANDLE
+* @vgbn2
 
 # Domain ownership
-/backend/core/ @PRIMARY_OWNER_HANDLE @CPP_MAINTAINER_HANDLE
-/backend/cli/ @PRIMARY_OWNER_HANDLE @APPLICATION_MAINTAINER_HANDLE
-/backend/api/ @PRIMARY_OWNER_HANDLE @APPLICATION_MAINTAINER_HANDLE
-/Frontend/dashboard/ @PRIMARY_OWNER_HANDLE @APPLICATION_MAINTAINER_HANDLE
-/docs/ @PRIMARY_OWNER_HANDLE @DOCUMENTATION_MAINTAINER_HANDLE
+/backend/core/ @vgbn2
+/backend/cli/ @vgbn2
+/backend/api/ @vgbn2
+/backend/gateway/ @vgbn2
+/backend/go/ @vgbn2
+/Frontend/dashboard/ @vgbn2
+/docs/ @vgbn2
 
 # Core-maintainer-only boundaries
-/backend/gateway/ @PRIMARY_OWNER_HANDLE
-/shared/lib/auth/ @PRIMARY_OWNER_HANDLE
-/shared/lib/runtime/ @PRIMARY_OWNER_HANDLE
-/shared/lib/market/ @PRIMARY_OWNER_HANDLE
-/config/ @PRIMARY_OWNER_HANDLE
-/infra/ @PRIMARY_OWNER_HANDLE
-/.github/ @PRIMARY_OWNER_HANDLE
-/PROJECT_RULES.md @PRIMARY_OWNER_HANDLE
-/LICENSE @PRIMARY_OWNER_HANDLE
-/CONTRIBUTING.md @PRIMARY_OWNER_HANDLE
-/GOVERNANCE.md @PRIMARY_OWNER_HANDLE
-/MAINTAINERS.md @PRIMARY_OWNER_HANDLE
-/SECURITY.md @PRIMARY_OWNER_HANDLE
-/CODE_OF_CONDUCT.md @PRIMARY_OWNER_HANDLE
+/shared/lib/auth/ @vgbn2
+/shared/lib/runtime/ @vgbn2
+/shared/lib/market/ @vgbn2
+/config/ @vgbn2
+/infra/ @vgbn2
+/.github/ @vgbn2
+/PROJECT_RULES.md @vgbn2
+/LICENSE @vgbn2
+/CONTRIBUTING.md @vgbn2
+/SECURITY.md @vgbn2
+/CODE_OF_CONDUCT.md @vgbn2

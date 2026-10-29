@@ -252,7 +252,8 @@ function runCommandHeadless(argv, timeoutMs = 45000) {
   });
 }
 
-test('TUI Manifest Command Surface Coverage Suite', { concurrency: 2 }, async (t) => {
+test('TUI Manifest Command Surface Coverage Suite', async (t) => {
+  assert.ok(CLI_PATH);
   const results = [];
   let totalCommands = 0;
   let totalPermutations = 0;

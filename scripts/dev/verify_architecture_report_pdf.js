@@ -11,7 +11,7 @@
  * 3. Physical page size is A4 and page count >= 20
  * 4. Text content contains title, key sections, and zero browser file:/// artifacts
  *
- * ponytail: stdlib first, fast deterministic checks, zero external dependencies.
+ * Implementation: deterministic cryptographic SHA-256 and structural PDF checks using Node.js standard library.
  */
 
 const fs = require('node:fs');

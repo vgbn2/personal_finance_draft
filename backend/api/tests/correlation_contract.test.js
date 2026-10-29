@@ -29,6 +29,8 @@ test('backend correlation fallback derives weekly and monthly frames from stable
     timeframe: '1w',
     max_bars: '252',
   });
+  assert.equal(weekly.ok, true);
+  assert.equal(weekly.timeframe, '1w');
   validateMatrix(weekly, '1w');
 
   const monthly = buildCorrelationMatrix({
@@ -37,6 +39,8 @@ test('backend correlation fallback derives weekly and monthly frames from stable
     timeframe: '1mo',
     max_bars: '252',
   });
+  assert.equal(monthly.ok, true);
+  assert.equal(monthly.timeframe, '1mo');
   validateMatrix(monthly, '1mo');
 });
 

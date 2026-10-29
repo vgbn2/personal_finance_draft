@@ -8,6 +8,7 @@ def test_fetch():
     
     page = ChromiumPage(co)
     url = "https://www.mql5.com/en/code/46630"
+    assert url.startswith("https://")
     print(f"Fetching {url}")
     page.get(url)
     

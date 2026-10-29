@@ -200,7 +200,7 @@ function buildRiskAssessment(
     : finiteNumber(previousStatus.peak_equity);
   const peakEquity = Math.max(previousPeak, equity);
 
-  // ponytail: track peak_equity_brokers so historical peaks aren't compared against degraded single-broker snapshots
+  // State invariant: track broker set composition at peak equity to isolate genuine drawdowns from single-broker connectivity dropouts
   const peakEquityBrokers = scopeChanged || !previousStatus.peak_equity_brokers
     ? (equity >= previousPeak && connectedBrokers.length > 0 ? connectedBrokers : (previousStatus.connected_brokers || connectedBrokers))
     : (equity >= previousPeak && connectedBrokers.length > 0 ? connectedBrokers : previousStatus.peak_equity_brokers);

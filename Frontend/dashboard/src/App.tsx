@@ -32,7 +32,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    // ponytail: test mock session bypass for headless viewport verification
+    // Mock session bypass for headless viewport verification
     const isMock = typeof window !== 'undefined' && (
       window.localStorage.getItem('sovereign_test_mock_session') === 'true'
       || (window as any).__SOVEREIGN_MOCK_SESSION__ === true
@@ -57,9 +57,12 @@ export default function App() {
       return;
     }
 
-    // ponytail: zero-config local mode preference or auto-fallback
+    // Auto-authenticate loopback interface as operator for local development without external auth provider
     const isLocalMode = typeof window !== 'undefined' && (
-      window.localStorage.getItem('sovereign_auth_mode') === 'local'
+      window.location.hostname === 'localhost'
+      || window.location.hostname === '127.0.0.1'
+      || window.location.hostname === '[::1]'
+      || window.localStorage.getItem('sovereign_auth_mode') === 'local'
       || !supabase
     );
     if (isLocalMode && (typeof window === 'undefined' || window.localStorage.getItem('sovereign_explicit_logout') !== 'true')) {

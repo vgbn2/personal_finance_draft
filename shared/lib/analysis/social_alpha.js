@@ -4,7 +4,7 @@
  * Social Alpha Signal Scoring, Decay & Contrarian Engine.
  * Pure mathematical primitives for experimental social sentiment analysis.
  *
- * ponytail: pure functions only, zero external I/O or stateful connections.
+ * Design invariant: pure functions with no side effects, zero asynchronous I/O, and deterministic numerical bounds.
  */
 
 const HALF_LIVES_MS = Object.freeze({
@@ -98,7 +98,7 @@ function applyCreatorWeightCaps(creatorWeights) {
   const count = creatorWeights.length;
   if (count <= 1) return [...creatorWeights];
   const sumW = creatorWeights.reduce((sum, w) => sum + w, 0);
-  // ponytail: cap ratio is max(0.25, 1/M) to prevent sub-mean truncation when M < 4
+  // Upper bound: cap ratio evaluates to max(0.25, 1/M) to prevent sub-mean truncation when sample size M < 4
   const capRatio = Math.max(CONSTANTS.CREATOR_WEIGHT_CAP_RATIO, 1 / count);
   const cap = capRatio * sumW;
   return creatorWeights.map((w) => Math.min(w, cap));

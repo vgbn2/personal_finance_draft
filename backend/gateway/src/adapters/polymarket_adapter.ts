@@ -208,7 +208,7 @@ export class PolymarketAdapter implements BrokerAdapter {
    * Multi-Outcome Combinatorial Order Bundle Placement
    * Pre-validates and signs all order legs before submitting, executing atomic bundle routing.
    *
-   * ponytail: sequential signed postOrder submission; CLOB multi-order batch API endpoint when Polymarket SDK v2.1 promotes batch orders
+   * Execution model: sequential signed order submission across legs with cumulative result accounting.
    */
   async placeMultiOutcomeBundleOrder(orders: TradeOrder[]): Promise<{
     bundleId: string;

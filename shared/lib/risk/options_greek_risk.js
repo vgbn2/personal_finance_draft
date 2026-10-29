@@ -14,7 +14,8 @@ const SOVEREIGN_WEALTH_BIN = path.join(REPO_ROOT, 'backend/core/build/sovereign_
  * Uses native C++ PreTradeRisk engine via POSIX process bridge when binary is present,
  * with zero-overhead JS fallback for zero-key test environments.
  *
- * ponytail: spawnSync CLI bridge; direct N-API / shared memory ringbuffer when cycle frequency exceeds 100Hz
+ * Verification architecture: synchronous child process bridge to native sovereign_wealth binary;
+ * falls back to internal floating-point calculation when native binary is absent.
  */
 function validateOptionsGreeks(greeks = {}, limits = {}) {
   const delta = Number(greeks.delta ?? 0);

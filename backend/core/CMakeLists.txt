@@ -1,6 +1,6 @@
 # Sovereign C++ Core - Wealth Engine
 cmake_minimum_required(VERSION 3.15)
-project(sovereign_wealth_core LANGUAGES CXX)
+project(sovereign_wealth_core VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)

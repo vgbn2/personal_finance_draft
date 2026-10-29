@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security reporting
-    url: https://github.com/OWNER/REPOSITORY/security/advisories/new
-    about: Use GitHub private vulnerability reporting only after the repository administrator enables it and replaces this placeholder URL.
+    url: https://github.com/vgbn2/personal_finance_draft/security/advisories/new
+    about: Use GitHub private vulnerability reporting to report security vulnerabilities confidentially.
   - name: Contribution and governance guidance
-    url: https://github.com/OWNER/REPOSITORY/blob/main/CONTRIBUTING.md
+    url: https://github.com/vgbn2/personal_finance_draft/blob/main/CONTRIBUTING.md
     about: Read the collaboration workflow, protected boundaries, and evidence expectations before opening an issue.

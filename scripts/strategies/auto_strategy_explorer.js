@@ -1,4 +1,4 @@
-// ponytail: automated unique strategy explorer utilizing native C++20 backtest core with strict novelty deduplication
+// Automated strategy exploration pipeline: executes native C++20 backtest core with novelty deduplication and Sharpe/Sortino filtering
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');

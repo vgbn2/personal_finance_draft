@@ -27,7 +27,7 @@ export class AlpacaAdapter implements BrokerAdapter {
     if (options.client) {
       this.alpaca = options.client;
     } else if (keyId && secretKey) {
-      // ponytail: supports both SDK v3 and v4 namespace exports
+      // Compatibility layer: supports both SDK v3 function export and v4 namespace/default object exports
       const AlpacaModule = require('@alpacahq/alpaca-trade-api');
       const AlpacaConstructor = typeof AlpacaModule === 'function'
         ? AlpacaModule

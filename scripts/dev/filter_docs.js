@@ -3,7 +3,7 @@
 
 // scripts/dev/filter_docs.js
 // Standalone documentation filter, health scorecard, and zero-tolerance CI gate.
-// ponytail: stdlib only (node:fs, node:path), zero dependencies.
+// Implementation: zero-dependency Node.js standard library filter engine (node:fs, node:path).
 
 const fs = require('node:fs');
 const path = require('node:path');

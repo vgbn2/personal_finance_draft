@@ -4,7 +4,7 @@
  * High-performance SQLite warehouse for social transcripts and extracted signals.
  * Uses native node:sqlite DatabaseSync with WAL journal mode and node:zlib compression.
  *
- * ponytail: stdlib node:sqlite + node:zlib. Zero external database dependencies.
+ * Storage architecture: embedded node:sqlite engine with WAL journal mode and node:zlib deflate compression.
  */
 
 const { DatabaseSync } = require('node:sqlite');

@@ -223,7 +223,7 @@ async function runAlpacaExitCheck(args = [], options = {}) {
     const brokerBySymbol = new Map(brokerPositions.map((p) => [p.symbol, p]));
     // Broker shares still sellable per symbol, decremented as we exit -- so two
     // bot positions stacked on one symbol can't together oversell the holding.
-    // ponytail: consume qty_available if present; fallback to gross quantity for backwards compatibility
+    // Liquidity constraint: prioritize broker qty_available; fallback to gross quantity for backward compatibility
     const availableBySymbol = new Map(brokerPositions.map((p) => [
       p.symbol,
       p.qty_available !== undefined && p.qty_available !== null && Number.isFinite(Number(p.qty_available))
@@ -268,7 +268,7 @@ async function runAlpacaExitCheck(args = [], options = {}) {
 
       if (aggregateSellQty <= 0) {
         if (brokerGrossQty > 0) {
-          // ponytail: retain tracking and skip duplicate sell when broker shares are held by an open order
+          // Concurrency safety: retain position tracking and suppress duplicate exit orders when shares are committed to an open order
           for (const item of exitingItems) remaining.push(item.position);
           result.errors.push(`Shares for ${symbol} are held by an open order (available: ${available}, held: ${brokerGrossQty - available}); skipping duplicate exit.`);
           continue;

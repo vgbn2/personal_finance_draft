@@ -4,7 +4,7 @@
  * Dynamic YouTube Creator Metadata & Channel ID Resolver.
  * Resolves @handles to canonical UC... channel IDs via zero-key web endpoints.
  *
- * ponytail: pure stdlib (https/fs/path), zero external API keys or heavy packages.
+ * Implementation: zero-dependency Node.js standard library (node:https, node:fs, node:path) with keyless HTTP endpoints.
  */
 
 const https = require('https');

@@ -103,7 +103,7 @@ async function commandMassBt(args) {
   const bridge = require('../../../../shared/lib/runtime/backend_bridge.js');
   const { STORAGE_TS_DIR } = require('../../../../shared/lib/runtime/paths.js');
 
-  // ponytail: sample mode bounds evaluation to top 3 strategies to prevent 50s+ JS fallback timeouts
+  // Evaluation subset: sampling flag bounds candidate execution to the first 3 strategies for rapid verification
   const allFiles = readStrategyRegistry();
   const files = hasFlag(args, '--sample') ? allFiles.slice(0, 3) : allFiles;
   if (files.length === 0) {

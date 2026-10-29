@@ -4,7 +4,7 @@
  * YouTube Multi-Modal Video Catalog & Subtitle Ingestor.
  * Extracts video lists and subtitle tracks keylessly using RSS and TimedText endpoints.
  *
- * ponytail: stdlib https/http/child_process. Multi-tier caption fallback.
+ * Implementation: standard library HTTP/HTTPS streaming with hierarchical caption track fallback.
  */
 
 const https = require('https');

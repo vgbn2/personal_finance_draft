@@ -8,7 +8,7 @@
  * - 25-Delta Butterfly (BF25): (sigma_call(0.25) + sigma_put(-0.25)) / 2 - sigma_atm
  * - Skew Z-Score: (RR25 - rolling_mean) / rolling_std
  *
- * ponytail: static 25-delta nearest neighbor; full Gatheral SVI calibration when continuous smile interpolation is required
+ * Numerical method: 25-delta nearest-neighbor option selection via linear search (O(N) search over strikes).
  */
 
 function findNearestOption(records = [], targetDelta, optionType = null) {
@@ -88,7 +88,7 @@ function calculateSkewZScore(currentRR, rollingMean = 0, rollingStd = 1) {
  * - Γ_net = net portfolio gamma
  * - γ = risk aversion parameter (default 0.1)
  *
- * ponytail: asymptotic expansion; full numerical Bellman PDE when discrete time step exceeds 1 hour
+ * Mathematical formulation: Whalley-Wilmott asymptotic expansion for proportional transaction costs.
  */
 function calculateWhalleyWilmottBand(gammaNet, spotPrice, options = {}) {
   const gamma = Math.abs(Number(gammaNet) || 0);
@@ -137,7 +137,7 @@ function calculateWhalleyWilmottBand(gammaNet, spotPrice, options = {}) {
  * Net Delta (USD) = deltaCoin * spotPrice
  * Contract Count = -round(Net Delta (USD) / contractNotionalUsd)
  *
- * ponytail: linear contract sizing rounded to nearest integer contract; partial sub-contract execution when micro-perps are listed
+ * Contract calculation: integer contract rounding with discrete contract notional multiplier.
  */
 function calculateInverseHedgeContracts(netDeltaCoin, spotPrice, contractNotionalUsd = 10) {
   const deltaCoin = Number(netDeltaCoin) || 0;

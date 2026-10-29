@@ -24,7 +24,7 @@ const {
  * 3. Enforces C++ PreTradeRisk Greek boundaries (Gamma <= max_gamma, Vega <= max_vega).
  * 4. Sizes and submits inverse perpetual futures rebalancing order when delta breaches the band.
  *
- * ponytail: one-shot cycle execution with Deribit perpetual hedge; multi-leg options roll when gamma limit approaches
+ * Execution cycle: discrete options delta calculation with inverse perpetual futures hedging on boundary breaches.
  */
 async function runOptionsBotCycle(options = {}) {
   const currency = String(options.currency || 'BTC').toUpperCase();

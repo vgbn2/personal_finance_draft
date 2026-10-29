@@ -26,7 +26,7 @@ export function BacktestPanel() {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
 
-  // ponytail: normalize flat data.stats or nested data.summary into BacktestReport
+  // Data normalization: transforms flat metrics payload or nested summary structure into strongly-typed BacktestReport
   const normalizeReport = (raw: any): BacktestReport | null => {
     if (!raw) return null;
     const src = raw.metrics || raw;
