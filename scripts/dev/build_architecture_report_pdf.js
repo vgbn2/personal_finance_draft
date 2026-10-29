@@ -12,7 +12,7 @@
  * - Validates PDF metadata, page size, and text extraction
  * - Atomically commits PDF and writes input-hash drift manifest
  *
- * ponytail: stdlib first, native puppeteer/chromium, ghostscript pdfmark outline.
+ * Toolchain: headless Chromium PDF rasterization with Ghostscript pdfmark outline injection.
  */
 
 const fs = require('node:fs');

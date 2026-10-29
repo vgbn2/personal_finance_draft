@@ -8,7 +8,7 @@
  * - Level-1 / Multi-Level Micro-Price
  * - Bounded Logit Probability Forecast with Pin-Risk Protection
  *
- * ponytail: linear logit drift with depth weighting; full Cont-Kukanov-Stoikov OFI multi-tick kernel when WebSocket order stream is enabled
+ * Model specification: linear logit probability drift weighted by top-K book depth imbalance.
  */
 
 /**
@@ -17,7 +17,7 @@
  * When the spread > $0.10, it falls back to the last trade price (P_last).
  * If P_last is missing or non-finite, it defaults to available side price or midpoint.
  *
- * ponytail: strict piecewise spread evaluation with finite validation
+ * Pricing invariant: piecewise evaluation switching from midpoint to last trade when spread exceeds threshold.
  */
 function calculatePolymarketReferencePrice(bestBid, bestAsk, lastTradePrice = null) {
   const bid = Number(bestBid || 0);
@@ -158,7 +158,7 @@ function forecastBinaryProbability(pMid, dir5, ofiZ = 0, weights = { b1: 0.15, b
  * Multi-Level Orderbook VWAP Fill Cost Simulator
  * Calculates realistic market impact across top-N depth levels.
  *
- * ponytail: discrete level walking with VWAP; continuous power-law orderbook density integration when tick count exceeds 50
+ * Complexity: discrete price-level traversal with cumulative volume-weighted average price (VWAP).
  */
 function calculateMarketFillCost(asks = [], targetShares = 1) {
   const target = Math.max(0, Number(targetShares) || 0);
@@ -216,7 +216,7 @@ function calculateMarketFillCost(asks = [], targetShares = 1) {
  * costs strictly less than 1.00 USDC after accounting for taker fees and slippage reserve:
  *   Σ P_ask,i(L) + Fees + SlippageReserve < 1.00
  *
- * ponytail: static fee and slippage reserve deduction; dynamic taker fee tier resolution when Polymarket VIP volume scales
+ * Cost model: constant proportional taker fee and slippage haircut applied to aggregate basket notional.
  */
 function detectSumToOneArbitrage(outcomes = [], options = {}) {
   if (!Array.isArray(outcomes) || outcomes.length < 2) {
@@ -305,7 +305,7 @@ function detectSumToOneArbitrage(outcomes = [], options = {}) {
  * NegRisk Conversion & Token Parity Evaluator
  * Checks whether holding 1 NO token or converting to complementary YES tokens yields higher yield.
  *
- * ponytail: deterministic payoff parity comparison; gas-optimized batch conversion when on-chain NegRiskAdapter is invoked
+ * Arbitrage evaluation: deterministic payoff parity comparison between direct NO holding and synthetic YES basket.
  */
 function evaluateNegRiskConversion(noPrice, alternativeYesPrices = []) {
   const pNo = Number(noPrice ?? 0);

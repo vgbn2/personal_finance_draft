@@ -10,7 +10,7 @@
  *  4. High-throughput sequential lock acquisition latency (< 2ms per cycle)
  *  5. Test runner batching optimization and concurrency contract
  *
- * ponytail: stdlib node:test + real tmpfs directory; zero shallow mocks.
+ * Test architecture: native node:test runner exercising physical filesystem tmpfs primitives without stubs.
  */
 
 const { test, describe, before, after } = require('node:test');

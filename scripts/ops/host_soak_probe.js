@@ -10,7 +10,7 @@
  * Usage:
  *   node scripts/ops/host_soak_probe.js [--iterations N] [--bars N] [--json]
  *
- * ponytail: native stdlib node:fs + /proc/self/fd inspection; zero extra dependencies.
+ * Implementation: zero-dependency runtime telemetry via node:fs, node:os, and Linux /proc/self/fd inspection.
  */
 
 const fs = require('node:fs');

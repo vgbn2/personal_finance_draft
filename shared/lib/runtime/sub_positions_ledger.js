@@ -288,7 +288,7 @@ function reconcilePositions(brokerPositions = [], filePath = DEFAULT_LEDGER_PATH
   for (const bp of brokerPositions) {
     const sym = String(bp.symbol || '').toUpperCase();
     const brokerQty = Math.max(0, Number(bp.quantity || 0));
-    // ponytail: preserve broker qty_available or fallback to gross brokerQty
+    // Position invariant: prioritize broker qty_available with fallback to gross position quantity
     const brokerQtyAvailable = (bp.qty_available !== undefined && bp.qty_available !== null && Number.isFinite(Number(bp.qty_available)))
       ? Number(bp.qty_available)
       : brokerQty;

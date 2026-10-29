@@ -1,6 +1,7 @@
 {
   "name": "sovereign-gateway",
   "private": true,
+  "version": "1.0.0",
   "license": "SEE LICENSE IN ../../LICENSE",
   "scripts": {
     "build": "tsc"

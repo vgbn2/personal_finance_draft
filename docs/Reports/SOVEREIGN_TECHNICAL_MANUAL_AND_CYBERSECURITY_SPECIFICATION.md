@@ -963,13 +963,13 @@ Offset  Register Name       Bit Width   Type        Reset Value     Field Descri
 
 Every float64 register in the SOVT memory block adheres to the IEEE 754-2008 standard:
 
-```text
+<pre class="stm32-diagram">
  63       62         52 51                                                      0
 +--------+-------------+---------------------------------------------------------+
 | Sign   | Exponent    | Fraction / Mantissa                                     |
 | (1 bit)| (11 bits)   | (52 bits)                                               |
 +--------+-------------+---------------------------------------------------------+
-```
+</pre>
 
 | Bit Position | Bitfield Name | Access Privileges | Valid Range / Encoding | Hardware Semantic & Invariant Description |
 |---|---|---|---|---|

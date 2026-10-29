@@ -1186,7 +1186,7 @@ async function ingestMarketData(options = {}) {
       return { sources: familySources, errors: familyErrors, provider_checks: familyProviderChecks };
     };
 
-    // ponytail: Promise.allSettled family-level concurrency; per-symbol concurrency skipped (add when provider rate limits permit)
+    // Concurrency control: family-level parallelization via Promise.allSettled with sequential per-symbol ingestion to respect rate limits
     if (targetFamily) {
       const family = FAMILIES_MANIFEST.find(f => f.id === targetFamily);
       if (family) {
