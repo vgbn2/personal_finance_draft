@@ -97,7 +97,7 @@
     "@supabase/supabase-js": "^2.106.2",
     "@types/node": "^25.9.1",
     "ethers": "^6.17.0",
-    "ink": "^7.1.0",
+    "ink": "^8.0.0",
     "ink-select-input": "^6.2.0",
     "ink-text-input": "^6.0.0",
     "onnxruntime-node": "^1.21.1",
