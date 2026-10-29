@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build MkDocs with Docker
         run: docker run --rm --user $(id -u):$(id -g) -v "${{ github.workspace }}:/docs" squidfunk/mkdocs-material build
