@@ -90,7 +90,7 @@
     "#native/*": "./native/pkg/*.js"
   },
   "dependencies": {
-    "@alpacahq/alpaca-trade-api": "^4.0.1",
+    "@alpacahq/alpaca-trade-api": "^5.0.0",
     "@mathieuc/tradingview": "git+https://github.com/Mathieu2301/TradingView-API.git#574a9948b2adb3396b934c612f58d2ab103a6915",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@polymarket/clob-client-v2": "^0.0.3",
