@@ -9,7 +9,7 @@
  *  3. Corrupted Binary TS Blocks (bad magic headers, truncated records, NaN floats, mid-file bit flips)
  *  4. Lock Contention & Host Dropouts (crashed PID recovery, unlinked lock ELOCKLOST, EACCES permission drops)
  *
- * ponytail: stdlib node:http/net/fs/test fixtures; zero external mock dependencies.
+ * Test fixtures: live local network sockets and real ephemeral filesystem fixtures via Node.js standard library.
  */
 
 const test = require('node:test');

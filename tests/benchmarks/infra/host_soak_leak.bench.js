@@ -12,7 +12,7 @@
  *  2. Zero uncollected handles (active handle count returns to baseline)
  *  3. In-memory multi-grain rollup strictly bounds write amplification (< 3.5x)
  *
- * ponytail: stdlib node:test + /proc/self/fd sampling; zero external dependencies.
+ * Test harness: native node:test execution with real Linux /proc/self/fd inspection for zero-leak verification.
  */
 
 const test = require('node:test');

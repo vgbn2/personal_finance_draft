@@ -509,7 +509,7 @@ export async function checkAndCloseResolvedPositions(storageDir = DEFAULT_STORAG
     if (!market || (market.active !== false && market.closed !== true)) continue;
 
     const resolution = inferWinner(market);
-    // ponytail: defer settlement if resolution price is indeterminate (pending oracle)
+    // Settlement invariant: defer position resolution if final settlement price is indeterminate pending oracle confirmation
     const hasExplicitResolution = Number.isFinite(Number(market.resolution_price))
       || (Number.isFinite(parseFloat(market.bestAsk)) && (parseFloat(market.bestAsk) >= 0.9 || parseFloat(market.bestAsk) <= 0.1));
     let hasOutcomePricesResolution = false;

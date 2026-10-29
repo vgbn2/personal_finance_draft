@@ -3,7 +3,7 @@
 
 const { getDefaultClusterCoordinator } = require('../../../shared/lib/runtime/cluster_coordinator');
 
-// ponytail: thin wrapper around cluster_coordinator with signal handling and --once self check
+// Process wrapper: invokes cluster coordinator heartbeat cycle with POSIX signal handlers and optional single-shot verification mode
 function runClusterHeartbeat(args = process.argv.slice(2), coordinator = getDefaultClusterCoordinator()) {
   const once = args.includes('--once');
   const intervalMs = Number(process.env.CLUSTER_HEARTBEAT_INTERVAL_MS || 5000);

@@ -22,7 +22,7 @@ const { parseChatInput, suggestCommands } = require('./tui/chat_parser.js');
 const { resolveWithLLM } = require('./tui/chat_llm_fallback.js');
 const { dashboardLayout, windowedRange } = require('./tui/dashboard_layout.js');
 
-// ponytail: cap terminal dashboard output scrollback to 500 lines to prevent memory thrashing
+// Memory constraint: bounds terminal scrollback ring buffer to 500 lines to maintain O(1) space complexity during continuous redraw cycles
 const MAX_OUTPUT_BUFFER_LINES = 500;
 function appendCappedOutput(current, chunk) {
   let combined = current + chunk;

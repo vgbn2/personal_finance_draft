@@ -17,7 +17,7 @@ It is intentionally isolated from `docs/README.md` so normal repo boot flows and
 ## Structure Rules
 
 - One directory per chapter: `chapter_00`, `chapter_01`, and so on.
-- One main chapter file per chapter: `chapter_xx/README.md`.
+- One main chapter file per chapter: `chapter_<xx>/README.md`.
 - Target chapter size: 250 to 350 lines.
 - Hard limit: 400 lines per chapter file.
 - If a chapter grows too large, split it into `part_01.md` and `part_02.md` inside the same chapter directory.

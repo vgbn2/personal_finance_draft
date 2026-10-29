@@ -3,6 +3,11 @@
   "private": true,
   "version": "1.0.0",
   "description": "Sovereign Trades: an active local trading research prototype with ingestion, validation, research/backtest commands, C++ backend inspection, and a local web/API dashboard bridge.",
+  "packageManager": "npm@10.8.2",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "main": "index.js",
   "directories": {
     "doc": "docs",

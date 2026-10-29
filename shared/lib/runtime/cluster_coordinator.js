@@ -320,7 +320,7 @@ class ClusterCoordinator {
       const dir = path.dirname(lockPath);
       this.fsImpl.mkdirSync(dir, { recursive: true });
       try {
-        // ponytail: native POSIX O_EXCL write prevents race conditions under high concurrency
+        // Concurrency invariant: POSIX O_EXCL file creation (flag 'wx') guarantees atomic mutual exclusion
         this.fsImpl.writeFileSync(lockPath, JSON.stringify(lockData, null, 2), { flag: 'wx', encoding: 'utf8' });
         return {
           ok: true,

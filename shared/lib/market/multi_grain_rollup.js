@@ -1,7 +1,7 @@
 'use strict';
 
-// ponytail: in-memory multi-grain rollup engine. O(1) streaming accumulator + zero-copy batch rollup.
-// Eliminates 4-6x disk I/O read-back amplification before writing to binary TS index.
+// In-memory multi-grain rollup engine: O(1) streaming accumulator and zero-copy batch aggregation.
+// Eliminates disk I/O read-back amplification before writing to binary TS index.
 
 const {
   bucketStartFor,
@@ -87,10 +87,10 @@ function deriveMultiGrainInMemory(records, options = {}) {
     return { derived: {}, sources: [], counts: {} };
   }
 
-  // ponytail: sort chronologically to resolve out-of-order feeds before bucket aggregation
+  // Sort chronologically (O(N log N)) to resolve out-of-order ticks prior to interval bucketing
   sanitized.sort((a, b) => a.timestampMs - b.timestampMs);
 
-  // ponytail: deduplicate identical timestamps (latest wins)
+  // Deduplicate identical timestamps in linear time O(N) where subsequent tick overrides predecessor
   const deduped = [];
   let prevMs = -1;
   let prevSym = '';

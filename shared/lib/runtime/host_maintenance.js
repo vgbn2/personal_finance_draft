@@ -62,7 +62,7 @@ const MIN_ROOT_FREE_BYTES = 1024 ** 3; // 1 GiB
 const MIN_ROOT_FREE_PERCENT = 5; // 5%
 
 function checkRootDiskSpace(rootPath = '/', options = {}) {
-  // ponytail: native statfs inspection; fail-closed check to prevent container OOM/disk exhaustion
+  // Filesystem check: statfs telemetry inspection; fail-closed threshold prevents disk exhaustion
   const minFreeBytes = options.minFreeBytes ?? MIN_ROOT_FREE_BYTES;
   const minFreePercent = options.minFreePercent ?? MIN_ROOT_FREE_PERCENT;
   const inspectDisk = options.diskUsage || diskUsage;

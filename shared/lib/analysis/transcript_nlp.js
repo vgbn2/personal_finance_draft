@@ -4,7 +4,7 @@
  * Transcript Coherence, Semantic Reconstruction & Financial Signal Extraction.
  * Transforms fragmented YouTube auto-captions into coherent sentences and structured signals.
  *
- * ponytail: pure stdlib RegExp & lexical dictionaries. Zero heavy NLP model dependencies.
+ * Algorithmic approach: deterministic regular expression tokenization and frozen hash-map lexical lookup (O(N) processing).
  */
 
 const { alignEffectiveTimestamp } = require('./social_alpha');

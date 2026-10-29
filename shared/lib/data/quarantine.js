@@ -6,7 +6,7 @@
  * Ingestion Staging & Quarantine Engine.
  * Isolates malformed, corrupted, or non-finite records into forensic JSONL logs.
  *
- * ponytail: stdlib node:crypto, node:fs, node:path only; zero external dependencies.
+ * Implementation: zero-dependency audit logging using node:crypto, node:fs, and node:path.
  */
 
 const fs = require('node:fs');

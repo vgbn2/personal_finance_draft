@@ -3,7 +3,7 @@
 const { calculateFeatureFrame } = require('./indicators.js');
 const { MultiGrainRollupPipeline } = require('./multi_grain_rollup.js');
 
-// ponytail: default capacity falls back to env var SOVEREIGN_STREAMING_WINDOW_SIZE or 200
+// Precondition: capacity falls back to SOVEREIGN_STREAMING_WINDOW_SIZE environment variable or 200 bars (O(N) ring buffer allocation)
 function resolveDefaultCapacity(override) {
   const num = Number(override);
   if (Number.isFinite(num) && num > 0) return Math.floor(num);
@@ -176,7 +176,7 @@ class StreamingQuoteRouter {
       total_dropped: 0,
       total_coalesced: 0,
     };
-    // ponytail: optional in-memory multi-grain rollup pipeline for real-time 5m/15m/1h rollover signals
+    // Pipeline: in-memory multi-grain rollup engine for real-time 5m/15m/1h rollover event dispatch
     this.rollupPipeline = options.rollupPipeline || (options.enableRollup ? new MultiGrainRollupPipeline(options.rollupOptions) : null);
     if (this.rollupPipeline) {
       this.rollupPipeline.onBarClosed((event) => {

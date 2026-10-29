@@ -169,7 +169,7 @@ async function resolvePrincipal(req, {
     }
   }
 
-  // ponytail: auto-grant local operator on loopback when guest mode is enabled or zero-key
+  // Auto-grant operator role on loopback interface for local development when guest access is permitted
   const isLocalGuestCandidate = tokens.length === 0
     || (tokens.length === 1 && tokens[0].value === 'local-operator-token');
 

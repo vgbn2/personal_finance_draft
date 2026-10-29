@@ -125,7 +125,7 @@ async function runHostBackupLoop(options = {}) {
     : null;
   let cycles = 0;
 
-  // ponytail: fail-closed startup check prevents container OOM/disk exhaustion
+  // Storage precondition: fail-closed filesystem capacity check aborts backup prior to archive generation if disk threshold is breached
   if (options.checkStartupDisk !== false) {
     try {
       inspectRootDisk(options.rootPath || '/', options.rootDiskOptions);
