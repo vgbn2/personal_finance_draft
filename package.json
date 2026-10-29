@@ -93,7 +93,7 @@
     "@alpacahq/alpaca-trade-api": "^4.0.1",
     "@mathieuc/tradingview": "git+https://github.com/Mathieu2301/TradingView-API.git#574a9948b2adb3396b934c612f58d2ab103a6915",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@polymarket/clob-client-v2": "^0.0.3",
+    "@polymarket/clob-client-v2": "^1.2.0",
     "@supabase/supabase-js": "^2.106.2",
     "@types/node": "^25.9.1",
     "ethers": "^6.17.0",
