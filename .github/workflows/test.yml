@@ -73,21 +73,21 @@ jobs:
 
       - name: Cache C++ core build
         id: cache-native-core
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: backend/core/build
           key: native-core-${{ runner.os }}-${{ hashFiles('backend/core/**', 'CMakeLists.txt') }}
 
       - name: Cache MCP server build
         id: cache-mcp-server
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: dist/mcp_server
           key: mcp-server-${{ runner.os }}-${{ hashFiles('backend/mcp_server/**') }}
 
       - name: Cache dashboard build
         id: cache-dashboard
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             Frontend/dashboard/dist
