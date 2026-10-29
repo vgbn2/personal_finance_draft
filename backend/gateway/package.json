@@ -9,7 +9,7 @@
   "dependencies": {
     "@alpacahq/alpaca-trade-api": "^4.0.1",
     "@polymarket/clob-client-v2": "^1.0.6",
-    "@supabase/supabase-js": "^2.106.2",
+    "@supabase/supabase-js": "^2.118.0",
     "axios": "^1.18.1",
     "dotenv": "^17.4.2",
     "ethers": "^5.7.1",
