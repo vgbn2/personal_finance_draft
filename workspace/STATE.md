@@ -24,6 +24,14 @@
 - **Verification Gates**:
   - Parameterized test runner timeout in `tests/run_node_tests.js` to 120,000ms via `SOVEREIGN_TEST_TIMEOUT_MS`.
   - 100% PASS across all verification suites: `npm run hygiene` (PRISTINE), `npm run test:structure` (35/35), `npm run test:core` (35/35 C++ CTests), `npm run test:api` (15/15 suites), `npm run test:data` (5/5), `tui_manifest_coverage.test.js` (100/100 commands), and `anti-cheat-enforcer --diff --require-tests` (0 strikes).
+- **Dead Code, Config & Ad-hoc Script Cleanup (Mass-Implement)**:
+  - Removed 85 redundant YAML strategy files in `config/strategies/trad/` (64 automated, 21 curated).
+  - Removed obsolete report `reports/restricted_dependency_advisory_2026-07-28.json`.
+  - Removed 3 unused LLM fine-tuning scripts in `scripts/ml/training/`.
+  - Removed 4 unreferenced ad-hoc scripts in `scripts/dev/` (alphabetically processed) while preserving load-bearing `source_evidence_schema.js`.
+  - Audited and preserved `docs/engineering/architecture/` and `docs/codebase_tour/` due to registration in `docs/documentation_manifest.json`.
+  - Untracked `notebooks/research/rsi_reversal.py` (`git rm --cached`), ignored `notebooks/research/` in `.gitignore`, and updated `structure_contract.test.js`.
+  - Full test suite passed (100/100 tests, 0 failures).
 
 ## Session 2026-10-28 — Cluster SSD Write Remediation & Backfill Daemon Status Coalescing
 - **Cluster NVMe Write Amplification Attribution (768.9 GB Total Across Hosts)**:

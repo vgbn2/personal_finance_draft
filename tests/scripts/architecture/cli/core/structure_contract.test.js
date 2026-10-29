@@ -51,6 +51,7 @@ test('generated and local-only paths are ignored', () => {
     'storage/data/ts/',
     '__pycache__/',
     '.mcp.json',
+    'notebooks/research/',
   ];
 
   const gitignoreContent = fs.readFileSync(path.join(REPO_ROOT, '.gitignore'), 'utf8');
@@ -95,6 +96,7 @@ test('generated and local-only paths are not tracked', () => {
     'storage/data/ts',
     '__pycache__',
     '.mcp.json',
+    'notebooks/research',
   ]);
 
   assert.equal(result.status, 0, result.stderr);

@@ -185,6 +185,7 @@ models/*.onnx
 storage/models/*.onnx
 notebooks/*.ipynb
 notebooks/signal_library.json
+notebooks/research/
 Frontend/dashboard/*.zip
 __pycache__
 __pycache__/
@@ -208,3 +209,12 @@ docss/
 
 # Quarantine data dumps
 _quarantine_grain/
+
+# Local unreferenced scripts and legacy configs (local-only, untracked)
+config/strategies/trad/
+reports/restricted_dependency_advisory_2026-07-28.json
+scripts/dev/graphify_update_check.py
+scripts/dev/recover_workspace_history.js
+scripts/dev/refine_notebooks.js
+scripts/dev/run_10_strats_1m.js
+scripts/ml/training/
