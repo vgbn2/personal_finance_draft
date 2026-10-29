@@ -11,7 +11,7 @@
     "@polymarket/clob-client-v2": "^1.0.6",
     "@supabase/supabase-js": "^2.106.2",
     "axios": "^1.18.1",
-    "dotenv": "^17.4.2",
+    "dotenv": "^18.0.9",
     "ethers": "^5.7.1",
     "viem": "^2.55.10",
     "ws": "^8.22.0"
