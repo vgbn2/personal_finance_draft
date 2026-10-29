@@ -11,8 +11,8 @@
     "inspect": "mcp-inspector ../../dist/mcp_server/index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.29.0",
-    "zod": "^3.22.4"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

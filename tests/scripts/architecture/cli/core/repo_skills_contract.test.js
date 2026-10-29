@@ -11,7 +11,7 @@ const HAS_SKILLS = fs.existsSync(MANIFEST_PATH);
 
 if (!HAS_SKILLS) {
   test('repo skills contract (skipped: skills tree untracked/ignored)', () => {
-    assert.ok(true);
+    assert.equal(fs.existsSync(MANIFEST_PATH), false);
   });
   return;
 }
