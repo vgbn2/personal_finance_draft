@@ -6,12 +6,14 @@ const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
 const { once } = require('node:events');
-let WebSocketServer;
-try {
-  ({ WebSocketServer } = require('ws'));
-} catch (_) {
-  ({ WebSocketServer } = require('../../../../backend/gateway/node_modules/ws'));
-}
+const wsModule = (() => {
+  try {
+    return require('ws');
+  } catch (_) {
+    return require('../../../../backend/gateway/node_modules/ws');
+  }
+})();
+const WebSocketServer = wsModule.WebSocketServer || wsModule.Server;
 
 require('../../../../shared/lib/runtime/ts_register');
 const {

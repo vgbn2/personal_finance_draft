@@ -86,6 +86,8 @@ backfill_daemon*
 .windsurf/
 .zencoder/
 .skills/
+skills/
+skill-lock.json
 CLAUDE.md
 GEMINI.md
 AGENTS.md
