@@ -13,28 +13,6 @@
 
 ---
 
-## Walkthrough & System Demonstration
-
-> [!TIP]
-> ### 📺 Video Demonstration (Walkthrough Preview)
-> 
-> ```text
-> ┌──────────────────────────────────────────────────────────────────────────────────┐
-> │ ▶  [ VIDEO WALKTHROUGH PLACEHOLDER ]                                             │
-> │                                                                                  │
-> │    00:00 - High-Throughput Binary TS Ingestion & Rollup Synthesis                │
-> │    02:15 - C++20 Frame Backtester & Monte Carlo Resampling (34/34 CTests)        │
-> │    04:30 - Sovereign Terminal Cockpit (Ink TUI) & Live Market Streaming Grid     │
-> │    07:10 - Prediction Market CLOB Engine & Virtual Paper Ledger Settlement       │
-> │    09:45 - React 19 Encapsulated Dashboard & Quote Health Telemetry             │
-> │                                                                                  │
-> │    [Full HD walkthrough recording scheduled — run 'npm run setup:dev' locally]   │
-> └──────────────────────────────────────────────────────────────────────────────────┘
-> ```
-> *To experience the interactive terminal cockpit live: clone the repo and execute `node backend/cli/sovereign_cli.js`.*
-
----
-
 ## Polyglot Division of Labor
 
 The platform enforces a strict separation of concerns across compiled systems code, asynchronous orchestration, and reactive presentation:

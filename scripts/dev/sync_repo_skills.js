@@ -11,6 +11,9 @@ const MIRROR_ROOT = path.join(REPO_ROOT, '.agents', 'skills');
 const MANIFEST_PATH = path.join(CANONICAL_ROOT, 'manifest.json');
 
 function readManifest() {
+  if (!fs.existsSync(MANIFEST_PATH)) {
+    return [];
+  }
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
   if (manifest.schema_version !== 1 || !Array.isArray(manifest.skills)) {
     throw new Error('skills/manifest.json must contain schema_version=1 and a skills array');

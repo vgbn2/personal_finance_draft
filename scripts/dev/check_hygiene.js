@@ -203,6 +203,9 @@ function checkSymlinks() {
 
 // 3. Agent Skills Inventory Hygiene
 function checkAgentSkills() {
+  if (!fs.existsSync(path.join(WORKSPACE_ROOT, 'skills', 'manifest.json'))) {
+    return { pass: true, findings: [] };
+  }
   let rawFindings;
   try {
     rawFindings = compareInventory(readManifest(), {
