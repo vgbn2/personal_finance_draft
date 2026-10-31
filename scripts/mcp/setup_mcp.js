@@ -4,11 +4,36 @@ const {
   REPO_ROOT,
   findBackendBinary,
 } = require('../../shared/lib/runtime/paths.js');
+const {
+  createServicePrincipal,
+  listServicePrincipals,
+} = require('../../shared/lib/auth/service_principals.js');
 
 const MCP_CONFIG_PATH = path.join(REPO_ROOT, '.mcp.json');
 
 function portablePath(value) {
   return value.replace(/\\/g, '/');
+}
+
+function ensureMcpToken(env = process.env) {
+  if (env.SOVEREIGN_MCP_SERVICE_TOKEN) {
+    return env.SOVEREIGN_MCP_SERVICE_TOKEN;
+  }
+  const existing = listServicePrincipals({ env }).find((p) => p.id === 'mcp-agent' && !p.revokedAt);
+  if (existing) {
+    return null;
+  }
+  try {
+    const created = createServicePrincipal({
+      id: 'mcp-agent',
+      capabilities: ['status.read', 'data.read', 'research.read', 'research.run', 'paper.operate'],
+      actingUserId: 'system-setup',
+      env,
+    });
+    return created.token;
+  } catch (_) {
+    return null;
+  }
 }
 
 function buildMcpConfig(options = {}) {
@@ -38,14 +63,21 @@ function buildMcpConfig(options = {}) {
     throw error;
   }
 
+  const mcpToken = options.mcpToken || ensureMcpToken(options.env || process.env);
+
   const sovereign = {
     command: options.nodePath || process.execPath,
     args: [portablePath(serverPath)],
+    env: {},
   };
   if (backendPath) {
-    sovereign.env = {
-      SOVEREIGN_BACKEND_BIN: portablePath(path.resolve(backendPath)),
-    };
+    sovereign.env.SOVEREIGN_BACKEND_BIN = portablePath(path.resolve(backendPath));
+  }
+  if (mcpToken) {
+    sovereign.env.SOVEREIGN_MCP_SERVICE_TOKEN = mcpToken;
+  }
+  if (Object.keys(sovereign.env).length === 0) {
+    delete sovereign.env;
   }
 
   return {

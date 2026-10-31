@@ -1,0 +1,72 @@
+# Canonical Strategy Template
+# Sovereign Trading Platform - Pure Mathematical Alpha
+#
+# DESIGN INVARIANT:
+# Strategy definitions specify mathematical parameters, indicator parameters,
+# universe definitions, and execution conditions. Broker mechanics (order routing,
+# slippage models, tick sizes, fee tiers, and API credentials) MUST NOT reside here.
+# They are managed by gateway adapters (backend/gateway/) and config/markets/asset_mapping.yaml.
+
+name: canonical_template_strategy
+version: 1.0.0
+description: "Reference broker-agnostic alpha strategy template with multi-timeframe indicators"
+author: "Sovereign Engineering"
+license: "Proprietary"
+
+# Universe selection: asset class and symbol universe
+universe:
+  asset_class: equity # [equity, crypto, prediction]
+  symbols:
+    - AAPL
+    - MSFT
+    - NVDA
+  benchmark: SPY
+
+# Required timeframes and historical bar lookback depth
+data:
+  primary_timeframe: 1h
+  auxiliary_timeframes:
+    - 1d
+  min_bars_required: 200 # Minimum lookback required for warmup
+
+# Indicator configuration evaluated by core analytics engine
+indicators:
+  trend:
+    type: ema
+    period: 50
+    source: close
+  momentum:
+    type: rsi
+    period: 14
+    source: close
+  volatility:
+    type: atr
+    period: 14
+
+# Quantitative signal generation rules
+signals:
+  entry:
+    long:
+      - "close > indicators.trend"
+      - "indicators.momentum > 50"
+      - "indicators.momentum < 70"
+    short: [] # Long-only template
+  exit:
+    take_profit_pct: 0.05
+    stop_loss_pct: 0.02
+    trailing_stop_pct: null
+    max_holding_bars: 48
+
+# Position sizing and portfolio risk allocations
+risk:
+  allocation_model: fixed_fractional # [fixed_fractional, risk_parity, kelly]
+  max_position_size_pct: 0.10
+  max_portfolio_leverage: 1.0
+  max_drawdown_stop_pct: 0.15
+  cooldown_bars_after_stop: 12
+
+# Execution preferences (broker-agnostic conditions)
+execution:
+  order_type: market # [market, limit]
+  allow_extended_hours: false
+  time_in_force: gtc # [gtc, day, ioc]
