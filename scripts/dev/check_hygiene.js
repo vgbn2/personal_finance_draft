@@ -392,7 +392,7 @@ function checkDocsAlignment() {
   const promptLogPath = path.join(WORKSPACE_ROOT, 'workspace', 'PROMPT_LOG.md');
 
   // In CI clean checkouts, workspace files may be ephemeral or uncommitted
-  const isCi = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+  const isCi = process.env.CI === 'true';
 
   if (!fs.existsSync(statePath)) {
     findings.push({
