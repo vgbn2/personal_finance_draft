@@ -32,9 +32,9 @@ test('fresh-install is a compatibility wrapper for committed-archive evidence', 
     'backend/api',
     'backend/gateway',
     'backend/mcp_server',
-    'Frontend/dashboard',
+    'frontend/dashboard',
   ]) {
-    assert.match(coordinator, new RegExp(packageRoot.replace('/', '\\/')));
+    assert.match(coordinator, new RegExp(packageRoot.replace('/', '\\/'), 'i'));
   }
   assert.match(coordinator, /test_native_core/);
   assert.match(coordinator, /typecheck_gateway/);

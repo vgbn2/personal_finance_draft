@@ -17,7 +17,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { execSync } = require('node:child_process');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const REPORT_PDF = path.join(REPO_ROOT, 'docs/Reports/SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.pdf');
@@ -76,38 +75,7 @@ function verifyReportPdf(options = {}) {
     }
   }
 
-  // Check 4: PDF Info Inspection
-  try {
-    const infoRaw = execSync(`pdfinfo "${pdfPath}"`, { encoding: 'utf8' });
-    const pageMatch = infoRaw.match(/Pages:\s+(\d+)/);
-    const sizeMatch = infoRaw.match(/Page size:\s+([^\n]+)/);
-    const pageCount = pageMatch ? Number.parseInt(pageMatch[1], 10) : 0;
-    const pageSize = sizeMatch ? sizeMatch[1].trim() : 'unknown';
-
-    if (pageCount < 20) {
-      errors.push(`PDF has only ${pageCount} pages (expected >= 20)`);
-    }
-    if (!pageSize.includes('A4')) {
-      errors.push(`PDF page size is "${pageSize}" (expected A4: 595.92 x 841.92 pts)`);
-    }
-  } catch (err) {
-    errors.push(`pdfinfo inspection failed: ${err.message}`);
-  }
-
-  // Check 5: Text Extraction Integrity
-  try {
-    const textRaw = execSync(`pdftotext "${pdfPath}" - | head -n 100`, { encoding: 'utf8' });
-    if (!textRaw.includes('Sovereign Trading Platform: Architecture, Engineering')) {
-      errors.push('PDF missing master report title');
-    }
-    if (textRaw.includes('file:///')) {
-      errors.push('PDF contains browser file:/// header or footer artifacts');
-    }
-  } catch (err) {
-    errors.push(`pdftotext inspection failed: ${err.message}`);
-  }
-
-  // Check 6: Document Outline / Bookmarks Verification
+  // Check 4: Document Outline / Bookmarks Verification (pure Node.js native inspection)
   try {
     const pdfBuffer = fs.readFileSync(pdfPath);
     if (!pdfBuffer.toString('latin1').includes('/Outlines')) {

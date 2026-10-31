@@ -64,7 +64,7 @@ function readNonTtyLine() {
 const PIN_SALT = 'sovereign-trade-pin-v1';
 
 function hashPin(pin) {
-  return crypto.createHmac('sha256', PIN_SALT).update(String(pin)).digest('hex');
+  return crypto.scryptSync(String(pin), PIN_SALT, 32).toString('hex');
 }
 
 function verifyPin(candidate, expected) {

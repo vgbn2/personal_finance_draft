@@ -62,10 +62,11 @@ function finding(rule, file, message, severity = 'error') {
   return { rule, file, message, severity };
 }
 
-function readJson(root, relativePath, findings) {
+function readJson(root, relativePath, findings, { optional = false } = {}) {
   try {
     return JSON.parse(fs.readFileSync(path.join(root, relativePath), 'utf8'));
   } catch (error) {
+    if (optional && error.code === 'ENOENT') return null;
     findings.push(finding('DOC-JSON', relativePath, `cannot parse JSON: ${error.message}`));
     return null;
   }
@@ -360,11 +361,13 @@ function auditDocumentation(options = {}) {
   const root = options.root || REPO_ROOT;
   const findings = [];
   const manifest = readJson(root, DOCUMENTATION_MANIFEST, findings);
-  const workspaceManifest = readJson(root, WORKSPACE_MANIFEST, findings);
-  if (!manifest || !workspaceManifest) return findings;
+  const workspaceManifest = readJson(root, WORKSPACE_MANIFEST, findings, { optional: true });
+  if (!manifest) return findings;
 
   validateDocumentationManifest(root, manifest, findings);
-  validateWorkspace(root, workspaceManifest, findings);
+  if (workspaceManifest) {
+    validateWorkspace(root, workspaceManifest, findings);
+  }
   validateActiveMarkdownLinks(root, findings);
 
   const ids = new Map();

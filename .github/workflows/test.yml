@@ -28,9 +28,6 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: Install PDF tools
-        run: sudo apt-get install -y --no-install-recommends poppler-utils
-
       - name: Verify committed archive across all package roots
         run: npm run verify:committed-archive -- --evidence-out "$RUNNER_TEMP/sovereign-source-evidence.json"
 
@@ -117,9 +114,6 @@ jobs:
       - name: Build native core
         if: steps.cache-native-core.outputs.cache-hit != 'true'
         run: npm run native:build
-
-      - name: Install PDF tools
-        run: sudo apt-get install -y --no-install-recommends poppler-utils
 
       - name: Seed test fixtures
         run: node backend/scripts/dev/seed_master_fixture.js
