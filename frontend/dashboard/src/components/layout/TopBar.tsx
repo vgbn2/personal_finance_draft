@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, Bot, Database, GitMerge, LayoutDashboard, LineChart, LogOut, Menu, Server, Settings, User, Lock, Unlock, TrendingUp, X } from 'lucide-react';
-import type { Session } from '@supabase/supabase-js';
+import type { Session } from '../../lib/supabase';
 import { TabId } from '../../types';
 import { cn } from '../../lib/utils';
 import { subscribeToOrders } from '../../lib/supabase';

@@ -2,7 +2,6 @@ const crypto = require('node:crypto');
 
 const BLOCKED_ROUTES = [
   '/api/auth',
-  '/api/supabase/config',
   '/api/kill-switch',
   '/api/config',
   '/api/cache/list',

@@ -18,8 +18,8 @@ async function commandLogin(args) {
   let password = passFlag  !== -1 ? args[passFlag  + 1] : '';
 
   if (!auth.isSupabaseConfigured()) {
-    console.error(paint(A.RED, 'Supabase not configured.'));
-    console.error(A.muted('Set SOVEREIGN_SUPABASE_URL and SOVEREIGN_SUPABASE_PUBLISHABLE_KEY in your .env, or the VITE_SUPABASE_* aliases.'));
+    console.error(paint(A.YELLOW, 'Remote Supabase auth is disabled (local-only mode).'));
+    console.error(A.muted('The platform operates with local credentials and local paper ledger.'));
     return 1;
   }
 
@@ -74,8 +74,8 @@ async function commandRegister(args) {
   let email = emailFlag !== -1 ? args[emailFlag + 1] : '';
 
   if (!auth.isSupabaseConfigured()) {
-    console.error(paint(A.RED, 'Supabase not configured.'));
-    console.error(A.muted('Set SOVEREIGN_SUPABASE_URL and SOVEREIGN_SUPABASE_PUBLISHABLE_KEY in your .env, or the VITE_SUPABASE_* aliases.'));
+    console.error(paint(A.YELLOW, 'Remote Supabase auth is disabled (local-only mode).'));
+    console.error(A.muted('The platform operates with local credentials and local paper ledger.'));
     return 1;
   }
 
@@ -160,7 +160,7 @@ async function commandLogout() {
 
 async function commandAuthStatus() {
   if (!auth.isSupabaseConfigured()) {
-    console.log(`${paint(A.YELLOW, '○')} Auth: ${A.muted('Supabase not configured (local mode)')}`);
+    console.log(`${paint(A.GREEN, '●')} Auth: ${A.muted('Local mode (Zero-cloud / local paper ledger)')}`);
     return 0;
   }
   const session = auth.loadSession();

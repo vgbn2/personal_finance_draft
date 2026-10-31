@@ -114,6 +114,7 @@ tracked_files.txt
 backend_candidates.txt
 training_data.jsonl
 .graphify_*
+.graphifyignore
 
 # Legacy / Temp Binaries
 sovereign_wealth_console*

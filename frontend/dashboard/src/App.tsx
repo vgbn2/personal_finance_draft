@@ -4,7 +4,7 @@
  */
 
 import { lazy, Suspense, useState, useEffect } from 'react';
-import type { Session } from '@supabase/supabase-js';
+import type { Session } from './lib/supabase';
 import { supabase } from './lib/supabase';
 import { clearLocalSession, restoreVerifiedSession, verifySession } from './lib/session';
 import { TopBar } from './components/layout/TopBar';

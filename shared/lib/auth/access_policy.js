@@ -59,7 +59,6 @@ const VALID_ROLES = Object.freeze(Object.keys(ROLE_CAPABILITIES));
 const PUBLIC_GET_ROUTES = new Set([
   '/health',
   '/api/auth/status',
-  '/api/supabase/config',
   '/api/public/market-summary',
   '/api/public/freshness',
   '/api/public/research-summary',

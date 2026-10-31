@@ -1,8 +1,6 @@
 require('../../../shared/lib/runtime/env.js');
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { createClient } from '@supabase/supabase-js';
-const { resolveSupabaseSettings } = require('../../../shared/lib/auth/supabase_env.js');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -88,35 +86,7 @@ const DEFAULT_STATE: BotState = {
   lockedAt:     null,
 };
 
-// ─── Supabase helper (fire-and-forget writes) ─────────────────────────────────
-
-function getSupabaseClient() {
-  const { url, secretKey } = resolveSupabaseSettings(process.env);
-  const key = secretKey;
-  if (!url || !key) return null;
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-}
-
-async function syncToSupabase(state: BotState): Promise<void> {
-  const sb = getSupabaseClient();
-  if (!sb) return;
-  try {
-    await sb.from('bot_state').upsert({ id: 'singleton', state, updated_at: new Date().toISOString() });
-  } catch {
-    // non-fatal — JSON file is the primary store
-  }
-}
-
-async function loadFromSupabase(): Promise<BotState | null> {
-  const sb = getSupabaseClient();
-  if (!sb) return null;
-  try {
-    const { data } = await sb.from('bot_state').select('state').eq('id', 'singleton').single();
-    return (data?.state as BotState) ?? null;
-  } catch {
-    return null;
-  }
-}
+// ─── Persistence helper (JSON file is primary store in local mode) ────────────
 
 // ─── State I/O ────────────────────────────────────────────────────────────────
 
@@ -137,14 +107,6 @@ export function loadBotState(): BotState {
 }
 
 export async function loadBotStateWithFallback(): Promise<BotState> {
-  if (fs.existsSync(STATE_PATH)) {
-    return loadBotState();
-  }
-  const remote = await loadFromSupabase();
-  if (remote) {
-    saveBotState(remote); // hydrate local cache
-    return remote;
-  }
   return loadBotState();
 }
 
@@ -153,8 +115,6 @@ export function saveBotState(state: BotState): void {
   const tmp = STATE_PATH + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(state), 'utf8');
   fs.renameSync(tmp, STATE_PATH);
-  // fire-and-forget Supabase sync
-  syncToSupabase(state).catch(() => {});
 }
 
 // ─── Cycle lock ───────────────────────────────────────────────────────────────
@@ -162,34 +122,38 @@ export function saveBotState(state: BotState): void {
 interface LockFile { pid: number; startedAt: string }
 const LOCK_MAX_AGE_MS = 10 * 60 * 1000;
 
+function isPidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e: any) {
+    return e?.code !== 'ESRCH';
+  }
+}
+
+function breakStaleLock(payload: string): boolean {
+  try {
+    const lock = JSON.parse(fs.readFileSync(LOCK_PATH, 'utf8')) as LockFile;
+    const age = Date.now() - new Date(lock.startedAt).getTime();
+    if (age < LOCK_MAX_AGE_MS && isPidAlive(lock.pid)) {
+      return false;
+    }
+    fs.unlinkSync(LOCK_PATH);
+    fs.writeFileSync(LOCK_PATH, payload, { flag: 'wx', mode: 0o600 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function acquireLock(): boolean {
   const payload = JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() });
   try {
     fs.writeFileSync(LOCK_PATH, payload, { flag: 'wx', mode: 0o600 });
     return true;
   } catch (err: any) {
-    if (err && err.code === 'EEXIST') {
-      try {
-        const lock = JSON.parse(fs.readFileSync(LOCK_PATH, 'utf8')) as LockFile;
-        const age = Date.now() - new Date(lock.startedAt).getTime();
-        if (age < LOCK_MAX_AGE_MS) {
-          // Check if the holding process is still alive
-          try {
-            process.kill(lock.pid, 0);
-            return false; // process alive, lock is valid
-          } catch (e: any) {
-            if (e.code !== 'ESRCH') return false; // unexpected error — stay cautious
-          }
-        }
-        // stale lock → unlink and retry once atomically
-        fs.unlinkSync(LOCK_PATH);
-        fs.writeFileSync(LOCK_PATH, payload, { flag: 'wx', mode: 0o600 });
-        return true;
-      } catch {
-        return false;
-      }
-    }
-    return false;
+    if (err?.code !== 'EEXIST') return false;
+    return breakStaleLock(payload);
   }
 }
 

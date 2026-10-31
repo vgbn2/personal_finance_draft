@@ -3,71 +3,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createClient } from '@supabase/supabase-js';
-
 /**
- * Supabase client initialization for the Sovereign Trading Platform.
- * 
- * Keep all project-specific keys in environment variables.
+ * Local offline stub for Supabase client.
+ * Sovereign trading kernel operates local-first via native REST/WebSocket and paper ledger.
  */
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+export interface Session {
+  access_token?: string;
+  user?: {
+    id: string;
+    email?: string;
+    role?: string;
+  };
+}
 
-export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-export const supabase = isSupabaseConfigured
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+export const isSupabaseConfigured = false;
+export const supabase: any = null;
 
 /**
  * Helper to get the current session token for passing to the local backend.
  */
 export async function getSessionToken(): Promise<string | null> {
-  if (!supabase) return null;
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token || null;
+  return null;
 }
 
 /**
- * Real-time subscription to order events.
- * Focused only on execution feedback to minimize throughput on the 512MB Supabase plan.
+ * Real-time subscription to order events (offline stub).
  */
-const orderListeners = new Set<(payload: any) => void>();
-let activeOrderChannel: any = null;
-
-export function subscribeToOrders(callback: (payload: any) => void) {
-  if (!supabase) return () => {};
-
-  orderListeners.add(callback);
-  if (!activeOrderChannel) {
-    activeOrderChannel = supabase
-      .channel('order-updates')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'orders' },
-        (payload) => {
-          for (const listener of orderListeners) {
-            listener(payload);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders' },
-        (payload) => {
-          for (const listener of orderListeners) {
-            listener(payload);
-          }
-        }
-      )
-      .subscribe();
-  }
-
-  return () => {
-    orderListeners.delete(callback);
-    if (orderListeners.size === 0 && activeOrderChannel) {
-      supabase.removeChannel(activeOrderChannel);
-      activeOrderChannel = null;
-    }
-  };
+export function subscribeToOrders(_callback: (payload: any) => void) {
+  return () => {};
 }
+
