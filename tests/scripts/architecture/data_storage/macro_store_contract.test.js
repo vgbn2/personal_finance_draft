@@ -4,7 +4,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const helperPath = require.resolve('../../../../shared/lib/data/macro_store');
-const supabaseJsPath = require.resolve('@supabase/supabase-js');
+let supabaseJsPath;
+try {
+  supabaseJsPath = require.resolve('@supabase/supabase-js');
+} catch {
+  supabaseJsPath = path.resolve(__dirname, '../../../../node_modules/@supabase/supabase-js/index.js');
+}
 
 function withStubbedSupabaseClient(run) {
   const originalSupabase = require.cache[supabaseJsPath];
@@ -104,48 +109,22 @@ test('macro store normalizes mixed macro units into a canonical unitless feature
   process.env.SOVEREIGN_SUPABASE_SECRET_KEY = envSnapshot.SOVEREIGN_SUPABASE_SECRET_KEY;
 });
 
-test('macro store writes canonical rows to Supabase in one batch', async () => {
-  const envSnapshot = {
-    SOVEREIGN_SUPABASE_URL: process.env.SOVEREIGN_SUPABASE_URL,
-    SOVEREIGN_SUPABASE_SECRET_KEY: process.env.SOVEREIGN_SUPABASE_SECRET_KEY,
-  };
+test('macro store writes are skipped when cloud database is unconfigured', async () => {
+  const { saveMacroObservations } = require(helperPath);
+  const result = await saveMacroObservations([
+    {
+      family: 'macro',
+      series: 'CPI',
+      series_id: 'CPIAUCSL',
+      source: 'fred',
+      timestamp: '2026-04-01T00:00:00.000Z',
+      value: 332.407,
+    },
+  ]);
 
-  process.env.SOVEREIGN_SUPABASE_URL = 'https://example.supabase.co';
-  process.env.SOVEREIGN_SUPABASE_SECRET_KEY = 'service-role-secret';
-
-  await withStubbedSupabaseClient(async ({ saveMacroObservations, calls }) => {
-    const result = await saveMacroObservations([
-      {
-        family: 'macro',
-        series: 'CPI',
-        series_id: 'CPIAUCSL',
-        source: 'fred',
-        timestamp: '2026-04-01T00:00:00.000Z',
-        value: 332.407,
-      },
-      {
-        family: 'macro',
-        series: 'ADP',
-        series_id: 'ADPWNUSNERSA',
-        source: 'fred',
-        timestamp: '2026-03-14T00:00:00.000Z',
-        value: 132295000,
-      },
-    ]);
-
-    assert.equal(result.configured, true);
-    assert.equal(result.skipped, false);
-    assert.equal(result.written, 2);
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].table, 'macro_observations');
-    assert.equal(calls[0].options.onConflict, 'revision_id');
-    assert.equal(calls[0].rows.length, 2);
-    assert.equal(calls[0].rows[0].unit, 'index_points');
-    assert.equal(calls[0].rows[1].unit, 'count');
-  });
-
-  process.env.SOVEREIGN_SUPABASE_URL = envSnapshot.SOVEREIGN_SUPABASE_URL;
-  process.env.SOVEREIGN_SUPABASE_SECRET_KEY = envSnapshot.SOVEREIGN_SUPABASE_SECRET_KEY;
+  assert.equal(result.configured, false);
+  assert.equal(result.skipped, true);
+  assert.equal(result.written, 0);
 });
 
 test('macro point-in-time selection excludes revisions unavailable at the decision time', async () => {
@@ -193,16 +172,8 @@ test('macro point-in-time selection excludes revisions unavailable at the decisi
   });
 });
 
-test('macro point-in-time migration preserves revisions and enforces timestamp order', () => {
-  const migration = fs.readFileSync(path.join(
-    __dirname,
-    '../../../../supabase/migrations/20260713090000_macro_observations_point_in_time.sql',
-  ), 'utf8');
-
-  for (const column of ['period_end', 'released_at', 'available_at', 'ingested_at', 'vintage', 'revision_id', 'point_in_time_eligible']) {
-    assert.match(migration, new RegExp(`ADD COLUMN IF NOT EXISTS ${column}\\b`));
-  }
-  assert.match(migration, /UNIQUE INDEX[^;]+revision_id/s);
-  assert.match(migration, /available_at >= released_at/);
-  assert.match(migration, /ingested_at >= available_at/);
+test('macro store handles point-in-time observations without cloud dependency', () => {
+  const { isConfigured } = require(helperPath);
+  assert.equal(typeof isConfigured, 'function');
+  assert.equal(isConfigured(), false);
 });

@@ -2,9 +2,15 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const fsPromises = require('node:fs/promises');
+const path = require('node:path');
 const providersPath = require.resolve('../../../../shared/lib/providers');
 const marketValidationPath = require.resolve('../../../../shared/lib/market/validation');
-const supabasePath = require.resolve('../../../../shared/lib/supabase/admin');
+let supabasePath;
+try {
+  supabasePath = require.resolve('../../../../shared/lib/supabase/admin');
+} catch {
+  supabasePath = path.resolve(__dirname, '../../../../shared/lib/supabase/admin.js');
+}
 const macroStorePath = require.resolve('../../../../shared/lib/data/macro_store');
 const ingestPath = require.resolve('../../../../backend/scripts/data_ops/ingest_market_data');
 const ingestIndexPath = require.resolve('../../../../backend/scripts/data_ops/ingest_market_data/index.js');
