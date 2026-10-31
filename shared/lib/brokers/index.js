@@ -3,14 +3,12 @@ const { spec: gateio, buildGateIoReport, resolveGateIoSettings } = require('./ga
 const { signGateIoRequest, sha512Hex } = require('./gateio_sign');
 const { spec: mt5, buildMt5Report, resolveMt5Settings } = require('./mt5_env');
 const { spec: polymarket, buildPolymarketReport } = require('./polymarket_env');
-const { spec: supabase, buildSupabaseReport } = require('../auth/supabase_env');
 
 const REGISTRY = {
   alpaca,
   gateio,
   mt5,
   polymarket,
-  supabase,
 };
 
 const BUILDERS = {
@@ -18,7 +16,6 @@ const BUILDERS = {
   gateio: buildGateIoReport,
   mt5: buildMt5Report,
   polymarket: buildPolymarketReport,
-  supabase: buildSupabaseReport,
 };
 
 function listBrokers() {

@@ -1,10 +1,6 @@
-const { createClient } = require('@supabase/supabase-js');
-
 class PersistenceBridge {
   constructor() {
-    const url = process.env.SOVEREIGN_SUPABASE_URL;
-    const key = process.env.SOVEREIGN_SUPABASE_SECRET_KEY || process.env.SOVEREIGN_SUPABASE_SERVICE_ROLE_KEY;
-    this.client = (url && key) ? createClient(url, key) : null;
+    this.client = null;
     // Intentionally silent — startup noise suppressed
   }
 

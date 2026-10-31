@@ -980,23 +980,6 @@
       ]
     },
     {
-      "path": "docs/engineering/specs/supabase_integration.md",
-      "type": "reference",
-      "audience": [
-        "backend-developers",
-        "database-maintainers"
-      ],
-      "owner": "platform",
-      "status": "canonical",
-      "source_paths": [
-        "backend/api/server/routes/account/supabase_config.js"
-      ],
-      "review_triggers": [
-        "supabase-client",
-        "auth-session"
-      ]
-    },
-    {
       "path": "docs/engineering/specs/technical_spec.md",
       "type": "reference",
       "audience": [
@@ -2259,23 +2242,6 @@
     },
     {
       "path": "docs/reference/specifications/sub_positions_risk_spec.md",
-      "type": "reference",
-      "audience": [
-        "architects",
-        "contributors",
-        "maintainers"
-      ],
-      "owner": "architecture",
-      "status": "canonical",
-      "source_paths": [
-        "package.json"
-      ],
-      "review_triggers": [
-        "spec-change"
-      ]
-    },
-    {
-      "path": "docs/reference/specifications/supabase_integration.md",
       "type": "reference",
       "audience": [
         "architects",

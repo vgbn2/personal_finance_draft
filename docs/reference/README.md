@@ -13,7 +13,6 @@ Factual specifications, APIs, schemas, manifests, and engineering standards.
 - [Capability Manifest](specifications/capability_manifest.md) — Machine-verified CTest suite, Node CLI commands, and test catalog.
 - [Stack & Toolchain Manifest](specifications/stack_manifest.md) — Runtime versions, compilers, and library dependencies.
 - [TUI Feature Map](specifications/tui_feature_map.md) — Interactive Ink terminal screen contracts and hotkeys.
-- [Supabase Integration](specifications/supabase_integration.md) — Persistence schemas and access tokens.
 - [Kronos Pipeline](specifications/kronos_pipeline.md) — High-throughput event streaming engine specification.
 
 ### Engineering & Documentation Standards

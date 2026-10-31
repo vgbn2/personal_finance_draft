@@ -1,4 +1,10 @@
-const { createClient } = require('@supabase/supabase-js');
+function getCreateClient() {
+  try {
+    return require('@supabase/supabase-js').createClient;
+  } catch {
+    return null;
+  }
+}
 
 require('../runtime/env');
 
@@ -29,7 +35,7 @@ const MACRO_SERIES_UNITS = {
 };
 
 function isConfigured() {
-  return Boolean(SUPABASE_URL && SUPABASE_SECRET_KEY);
+  return Boolean(SUPABASE_URL && SUPABASE_SECRET_KEY && getCreateClient());
 }
 
 function signedLog1p(value) {
@@ -174,6 +180,7 @@ async function saveMacroObservations(records, options = {}) {
     };
   }
 
+  const createClient = getCreateClient();
   const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
     auth: {
       persistSession: false,

@@ -70,8 +70,8 @@ const HELP_TOPICS = {
     'Operational',
     '  status',
     '  remote [status|bias SYMBOL|data|universe|signal|scorecard|bot] [--watch] [--json]',
-    '  setup [alpaca|gateio|mt5|polymarket|supabase] [--json] [--dry-run]',
-    '  doctor [runtime|data|alpaca|gateio|mt5|polymarket|supabase] [--json] [--no-network]',
+    '  setup [alpaca|gateio|mt5|polymarket] [--json] [--dry-run]',
+    '  doctor [runtime|data|alpaca|gateio|mt5|polymarket] [--json] [--no-network]',
     '  backend status | backend stats [--equity 100,110,105]',
     '  backend data summary [--symbol AAPL] [--timeframe 1d] [--input path]',
     '  backend correlation [--symbols AAPL,MSFT,SPY] [--timeframe 1d] [--method auto|pearson-returns|fx-returns|pearson-levels] [--input path]',
@@ -380,47 +380,71 @@ function numericOption(args, name, fallback) {
 }
 
 
+function collectFamilyUniverseEntries(familyPath, family, seen, universe) {
+  if (!fs.statSync(familyPath).isDirectory()) return;
+  const historyPath = path.join(familyPath, 'backtest_history.json');
+  if (!fs.existsSync(historyPath)) return;
+  try {
+    const data = JSON.parse(fs.readFileSync(historyPath, 'utf8'));
+    (data.sources || []).forEach(s => {
+      const symbol = s.symbol || s.underlying || s.series || s.metric || s.event;
+      if (!symbol) return;
+      const key = `${s.family || family}:${symbol}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      universe.push({
+        symbol,
+        family: s.family || family,
+        market: s.config_market || null,
+        sector: s.config_sector || null,
+        coordinate_id: s.coordinate_id || null,
+      });
+    });
+  } catch (e) {
+    logger.error(`Failed to parse history for family ${family}`, e);
+  }
+}
+
 function get_Current_Universe_Symbols() {
   try {
     if (!fs.existsSync(DEFAULT_HISTORY)) return [];
-    
     const universe = [];
     const seen = new Set();
-
-    // Scan all family subdirectories for backtest_history.json
     const families = fs.readdirSync(DEFAULT_HISTORY);
     for (const family of families) {
-      const familyPath = path.join(DEFAULT_HISTORY, family);
-      if (!fs.statSync(familyPath).isDirectory()) continue;
-
-      const historyPath = path.join(familyPath, 'backtest_history.json');
-      if (!fs.existsSync(historyPath)) continue;
-
-      try {
-        const data = JSON.parse(fs.readFileSync(historyPath, 'utf8'));
-        (data.sources || []).forEach(s => {
-            const symbol = s.symbol || s.underlying || s.series || s.metric || s.event;
-            if (!symbol) return;
-            const key = `${s.family || family}:${symbol}`;
-            if (seen.has(key)) return;
-            seen.add(key);
-            universe.push({ 
-              symbol, 
-              family: s.family || family,
-              market: s.config_market || null,
-              sector: s.config_sector || null,
-              coordinate_id: s.coordinate_id || null
-            });
-        });
-      } catch (e) {
-        logger.error(`Failed to parse history for family ${family}`, e);
-      }
+      collectFamilyUniverseEntries(path.join(DEFAULT_HISTORY, family), family, seen, universe);
     }
-    
     return universe;
   } catch (e) {
     return [];
   }
+}
+
+function addGridUniverseSymbols(grid, family, add) {
+  if (!grid || typeof grid !== 'object') return;
+  for (const [market, sectors] of Object.entries(grid)) {
+    if (!sectors || typeof sectors !== 'object') continue;
+    for (const [sector, symbols] of Object.entries(sectors)) {
+      if (!Array.isArray(symbols)) continue;
+      symbols.forEach((sym) => add(sym, family, market, sector));
+    }
+  }
+}
+
+function mergeHistoryUniverseSymbols(add, tradeable) {
+  if (!fs.existsSync(DEFAULT_HISTORY)) return;
+  try {
+    const families = fs.readdirSync(DEFAULT_HISTORY);
+    for (const family of families) {
+      const histPath = path.join(DEFAULT_HISTORY, family, 'backtest_history.json');
+      if (!fs.existsSync(histPath)) continue;
+      const data = JSON.parse(fs.readFileSync(histPath, 'utf8'));
+      (data.sources || []).forEach(s => {
+        const sym = s.symbol || s.underlying || s.series || s.metric || s.event;
+        if (sym && tradeable.has(s.family || family)) add(sym, s.family || family);
+      });
+    }
+  } catch (e) { /* ignore */ }
 }
 
 /**
@@ -445,19 +469,13 @@ async function get_Full_Universe_Symbols() {
   try {
     const yamlPath = path.join(REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
     const config = await loadMarketConfig(yamlPath);
-    
+
     for (const [family, data] of Object.entries(config)) {
       if (!TRADEABLE.has(family) || !data.enabled) continue;
 
       // Handle universe_matrix first (most specific)
-      if (data.universe_matrix && data.universe_matrix.grid) {
-        for (const [market, sectors] of Object.entries(data.universe_matrix.grid)) {
-          for (const [sector, symbols] of Object.entries(sectors)) {
-            if (Array.isArray(symbols)) {
-              symbols.forEach(sym => add(sym, family, market, sector));
-            }
-          }
-        }
+      if (data.universe_matrix?.grid) {
+        addGridUniverseSymbols(data.universe_matrix.grid, family, add);
       }
 
       // Handle raw symbols/series list
@@ -471,20 +489,7 @@ async function get_Full_Universe_Symbols() {
   }
 
   // 2. Merge anything in backtest_history.json not already in config
-  try {
-    if (fs.existsSync(DEFAULT_HISTORY)) {
-      const families = fs.readdirSync(DEFAULT_HISTORY);
-      for (const family of families) {
-        const histPath = path.join(DEFAULT_HISTORY, family, 'backtest_history.json');
-        if (!fs.existsSync(histPath)) continue;
-        const data = JSON.parse(fs.readFileSync(histPath, 'utf8'));
-        (data.sources || []).forEach(s => {
-          const sym = s.symbol || s.underlying || s.series || s.metric || s.event;
-          if (sym && TRADEABLE.has(s.family || family)) add(sym, s.family || family);
-        });
-      }
-    }
-  } catch (e) { /* ignore */ }
+  mergeHistoryUniverseSymbols(add, TRADEABLE);
 
   return universe;
 }

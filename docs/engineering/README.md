@@ -59,7 +59,6 @@ The engineering architecture is organized into 8 modular, diagram-dense sections
 - **[Stack Manifest](specs/stack_manifest.md)** & **[Capability Manifest](specs/capability_manifest.md)**: Engine and runtime capabilities.
 - **[Web API Reference](specs/web_api.md)**: Native Node.js REST and WebSocket endpoints.
 - **[TUI Feature Map](specs/tui_feature_map.md)**: Terminal dashboard command tree.
-- **[Supabase Integration](specs/supabase_integration.md)**: Auth and cloud sync spec.
 - **[Kronos Pipeline Spec](specs/kronos_pipeline.md)**: High-frequency data pipeline notes.
 
 Historical specifications are preserved in the [Documentation Archive](../archive/README.md):

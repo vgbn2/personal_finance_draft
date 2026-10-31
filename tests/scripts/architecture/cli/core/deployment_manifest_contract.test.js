@@ -161,7 +161,7 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.match(dashboardEnv, /^VITE_SUPABASE_URL=/m);
   assert.match(dashboardEnv, /^VITE_SUPABASE_ANON_KEY=/m);
   assert.doesNotMatch(dashboardEnv, /GEMINI_API_KEY|APP_URL/);
-  assert.equal(backendApiPackage.dependencies['@supabase/supabase-js'], '2.106.2');
+  assert.equal(backendApiPackage.dependencies['@supabase/supabase-js'], undefined);
   assert.ok(backendApiPackage.dependencies['socket.io']);
 
   assert.match(centralUpdater, /flock -n 9/);

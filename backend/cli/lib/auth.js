@@ -3,7 +3,6 @@ const os = require('node:os');
 const fs = require('node:fs');
 const readline = require('node:readline');
 const crypto = require('node:crypto');
-const { classifySupabaseError } = require('../../../shared/lib/supabase/errors');
 
 const SESSION_DIR  = path.join(os.homedir(), '.sovereign');
 const SESSION_PATH = path.join(SESSION_DIR, 'session.json');
@@ -280,8 +279,7 @@ function loadMigratedSupabaseConfig() {
 }
 
 function isSupabaseConfigured() {
-  const { url, key } = getSupabaseConfig();
-  return Boolean(url && key);
+  return false;
 }
 
 // ─── Session storage ──────────────────────────────────────────────────────────
@@ -311,71 +309,16 @@ function isSessionValid(session) {
 
 // ─── Supabase auth ────────────────────────────────────────────────────────────
 
-async function refreshSession(session) {
-  if (!session?.refresh_token) return null;
-  const { url, key } = getSupabaseConfig();
-  if (!url || !key) return null;
-  const { createClient } = require('@supabase/supabase-js');
-  const client = createClient(url, key, { auth: { persistSession: false } });
-  try {
-    const { data, error } = await client.auth.refreshSession({ refresh_token: session.refresh_token });
-    if (error || !data.session) return null;
-    const fresh = {
-      access_token:  data.session.access_token,
-      refresh_token: data.session.refresh_token,
-      expires_at:    data.session.expires_at,
-      user: { id: data.session.user.id, email: data.session.user.email },
-    };
-    saveSession(fresh);
-    return fresh;
-  } catch (error) {
-    throw new Error(classifySupabaseError(error, 'refresh the Supabase session'));
-  }
+async function refreshSession(_session) {
+  return null;
 }
 
-async function loginWithCredentials(email, password) {
-  const { url, key } = getSupabaseConfig();
-  if (!url || !key) throw new Error('Supabase not configured');
-  const { createClient } = require('@supabase/supabase-js');
-  const client = createClient(url, key, { auth: { persistSession: false } });
-  try {
-    const { data, error } = await client.auth.signInWithPassword({ email, password });
-    if (error) throw new Error(error.message);
-    const session = {
-      access_token:  data.session.access_token,
-      refresh_token: data.session.refresh_token,
-      expires_at:    data.session.expires_at,
-      user: { id: data.session.user.id, email: data.session.user.email },
-    };
-    saveSession(session);
-    return session;
-  } catch (error) {
-    throw new Error(classifySupabaseError(error, 'sign in to Supabase'));
-  }
+async function loginWithCredentials(_email, _password) {
+  throw new Error('Supabase not configured');
 }
 
-async function registerWithCredentials(email, password) {
-  const { url, key } = getSupabaseConfig();
-  if (!url || !key) throw new Error('Supabase not configured');
-  const { createClient } = require('@supabase/supabase-js');
-  const client = createClient(url, key, { auth: { persistSession: false } });
-  try {
-    const { data, error } = await client.auth.signUp({ email, password });
-    if (error) throw new Error(error.message);
-    if (data.session) {
-      const session = {
-        access_token:  data.session.access_token,
-        refresh_token: data.session.refresh_token,
-        expires_at:    data.session.expires_at,
-        user: { id: data.session.user.id, email: data.session.user.email },
-      };
-      saveSession(session);
-      return { session, needsConfirmation: false };
-    }
-    return { session: null, needsConfirmation: true, email: data.user?.email };
-  } catch (error) {
-    throw new Error(classifySupabaseError(error, 'create a Supabase account'));
-  }
+async function registerWithCredentials(_email, _password) {
+  throw new Error('Supabase not configured');
 }
 
 async function getAuthenticatedUser(options = {}) {

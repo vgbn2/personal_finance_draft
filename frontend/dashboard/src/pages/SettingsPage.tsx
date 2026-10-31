@@ -1,7 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Session } from '@supabase/supabase-js';
 import { Cpu, Layers, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { API_ENDPOINTS, getAuthHeaders } from '../lib/api';
+
+export interface Session {
+  access_token?: string;
+  user?: {
+    id: string;
+    email?: string;
+  };
+}
 
 interface Props {
   session: Session | null;
