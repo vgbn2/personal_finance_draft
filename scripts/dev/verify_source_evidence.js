@@ -204,7 +204,7 @@ function fixedSteps(sourceRoot, jobs = DEFAULT_JOB_LIMIT) {
     {
       label: 'build_dashboard',
       command: 'npm',
-      args: ['--prefix', path.join(sourceRoot, 'Frontend/dashboard'), 'run', 'build'],
+      args: ['--prefix', path.join(sourceRoot, 'frontend/dashboard'), 'run', 'build'],
     },
     {
       label: 'typecheck_gateway',

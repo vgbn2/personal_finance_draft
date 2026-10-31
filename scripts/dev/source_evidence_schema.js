@@ -6,7 +6,7 @@ const PACKAGE_ROOTS = [
   'backend/api',
   'backend/gateway',
   'backend/mcp_server',
-  'Frontend/dashboard',
+  'frontend/dashboard',
 ];
 const PROVEN_CLAIMS = new Set([
   'worktree_snapshot_source_evidence',

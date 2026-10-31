@@ -43,7 +43,7 @@ export function AuditLogPanel() {
     if (supabase) {
       const client = supabase;
       const channel = client.channel('audit_log_changes')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_events' }, payload => {
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_events' }, (payload: { new: AuditEvent }) => {
           setEvents(prev => [payload.new as AuditEvent, ...prev].slice(0, 100));
         })
         .subscribe();

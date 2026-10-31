@@ -148,7 +148,7 @@ export default function SettingsPage({ session }: Props) {
             )}
           </div>
           <p className="text-[var(--text-muted)] font-mono text-xs">
-            {isLocalOperator ? 'Local loopback instance (127.0.0.1) • Zero cloud requirement' : session.user.email}
+            {isLocalOperator ? 'Local loopback instance (127.0.0.1) • Zero cloud requirement' : (session?.user?.email || 'Authenticated User')}
           </p>
         </div>
 

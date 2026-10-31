@@ -28,7 +28,6 @@ function main() {
     quote_import_configured: Boolean(exportPath.value),
     login_configured: Boolean(login.value),
     auth_configured: hasPassword,
-    password_configured: hasPassword,
     server_configured: Boolean(server.value),
     mode: exportPath.value ? 'local_mt5_export_bridge' : 'credentials_present_but_no_quote_export_bridge',
     note: 'MT5 account credentials alone are not enough for direct quotes unless Headway exposes a broker API or a local MT5/bridge process writes quotes for ingestion.',
