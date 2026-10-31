@@ -98,6 +98,7 @@ const PROTECTED_GET_CAPABILITIES = Object.freeze({
   '/api/config': CAPABILITIES.USER_CONFIG_READ,
   '/api/database/status': CAPABILITIES.USER_CONFIG_READ,
   '/api/bot/status': CAPABILITIES.STATUS_READ,
+  '/api/engine/runtime-state': CAPABILITIES.STATUS_READ,
   '/api/bias': CAPABILITIES.RESEARCH_READ,
   '/api/client/status': CAPABILITIES.STATUS_READ,
   '/api/kill-switch': CAPABILITIES.STATUS_READ,
@@ -115,7 +116,9 @@ const MUTATION_CAPABILITIES = Object.freeze({
   '/api/combined-analysis/promote': CAPABILITIES.SIGNAL_PROMOTE,
   '/api/combined-analysis/paper-cycle': CAPABILITIES.PAPER_OPERATE,
   '/api/bot/cycle': CAPABILITIES.PAPER_OPERATE,
+  '/api/order/execution-cycle': CAPABILITIES.PAPER_OPERATE,
   '/api/bot/sell': CAPABILITIES.PAPER_OPERATE,
+  '/api/order/liquidation': CAPABILITIES.PAPER_OPERATE,
   '/api/kill-switch': CAPABILITIES.SAFETY_CONTROL,
   '/api/auth/session/reauth': CAPABILITIES.STATUS_READ,
   '/api/cluster/status': CAPABILITIES.SAFETY_CONTROL,
@@ -180,7 +183,7 @@ function requiredCapabilities({
   }
 
   if (normalizedMethod !== 'GET' && normalizedMethod !== 'HEAD') {
-    if (route === '/api/bot/cycle' && String(query.live || '').toLowerCase() === 'true') {
+    if ((route === '/api/bot/cycle' || route === '/api/order/execution-cycle') && String(query.live || '').toLowerCase() === 'true') {
       return [CAPABILITIES.PAPER_OPERATE, CAPABILITIES.LIVE_EXECUTE];
     }
     return [MUTATION_CAPABILITIES[route] || CAPABILITIES.HOST_MANAGE];

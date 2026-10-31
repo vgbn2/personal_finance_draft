@@ -196,7 +196,7 @@ export function QuoteHealthPanel() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const families = useMemo(
-    () => [...new Set((currentMonitor?.rows || []).map((row: any) => row.family))].sort(),
+    () => [...new Set<string>((currentMonitor?.rows || []).map((row: any) => String(row.family || '')))].sort(),
     [currentMonitor],
   );
 

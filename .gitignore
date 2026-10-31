@@ -9,10 +9,14 @@ backend/gateway/node_modules
 backend/gateway/node_modules/
 Frontend/dashboard/node_modules
 Frontend/dashboard/node_modules/
+frontend/dashboard/node_modules
+frontend/dashboard/node_modules/
 dist
 dist/
 Frontend/dashboard/dist
 Frontend/dashboard/dist/
+frontend/dashboard/dist
+frontend/dashboard/dist/
 npm-debug.log*
 
 # Build Directories
@@ -34,6 +38,7 @@ site/
 backfill_daemon*
 
 # Local agent/workflow state
+skills-lock.json
 .agent/
 .agents/
 .gemini/

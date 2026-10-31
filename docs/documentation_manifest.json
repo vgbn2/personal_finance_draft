@@ -2620,8 +2620,8 @@
       "owner": "frontend",
       "status": "canonical",
       "source_paths": [
-        "Frontend/dashboard/src/App.tsx",
-        "Frontend/dashboard/package.json"
+        "frontend/dashboard/src/App.tsx",
+        "frontend/dashboard/package.json"
       ],
       "review_triggers": [
         "frontend-dashboard",
