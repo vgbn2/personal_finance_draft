@@ -1381,6 +1381,29 @@
       ]
     },
     {
+      "path": "docs/how_to/api_key_management.md",
+      "type": "how-to",
+      "audience": [
+        "maintainers",
+        "operators",
+        "researchers"
+      ],
+      "owner": "engineering",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/auth/service_principals.js",
+        "backend/api/server/services/access_control.js"
+      ],
+      "test_paths": [
+        "backend/api/tests/access_control.test.js",
+        "tests/scripts/architecture/auth/service_principals.test.js"
+      ],
+      "review_triggers": [
+        "operations-runbook",
+        "deployment-procedure"
+      ]
+    },
+    {
       "path": "docs/how_to/broker_gateway_setup.md",
       "type": "how-to",
       "audience": [
