@@ -170,7 +170,7 @@ test('every direct gateway spawn consumes the classified launch environment', ()
       assert.match(block, /\benv:\s*launch\.env\b/, callerPath);
     }
   }
-  assert.equal(launches, 6, 'update the gateway spawn inventory when adding or removing direct callers');
+  assert.equal(launches, 0, 'direct gateway commands must use runGatewayCommand instead of raw spawnSync');
 
   const gatewaySource = fs.readFileSync(
     path.resolve(__dirname, '..', '..', '..', 'backend/gateway/src/index.ts'),

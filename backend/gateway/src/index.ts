@@ -941,9 +941,9 @@ export async function main() {
         if (useJson) {
           console.log(JSON.stringify({
             key: normalizedCreds.key,
-            has_secret: Boolean(normalizedCreds.secret),
-            has_passphrase: Boolean(normalizedCreds.passphrase),
-            auth_configured: Boolean(normalizedCreds.secret && normalizedCreds.passphrase),
+            credentials_ready: Boolean(normalizedCreds.secret && normalizedCreds.passphrase),
+            l2_signature_ready: Boolean(normalizedCreds.passphrase),
+            l2_auth_complete: Boolean(normalizedCreds.secret && normalizedCreds.passphrase),
             source: derivation.source,
             createRequestErrors: derivation.createRequestErrors,
             deriveRequestErrors: derivation.deriveRequestErrors,

@@ -40,5 +40,10 @@ jobs:
       - name: Run code audit & typecheck matrix
         run: npm run audit:code
 
+      - name: Seed test fixtures and workspace skeleton
+        run: |
+          node backend/scripts/dev/seed_master_fixture.js
+          node scripts/dev/ensure_workspace_skeleton.js
+
       - name: Structure & documentation contracts
         run: npm run test:structure

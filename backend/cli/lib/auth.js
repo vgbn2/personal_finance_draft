@@ -335,7 +335,7 @@ async function getAuthenticatedUser(options = {}) {
     session = await refreshSession(session);
     return session ? session.user : null;
   } catch (error) {
-    throw new Error(classifySupabaseError(error, 'refresh the Supabase session'));
+    throw new Error(error?.message ? `Failed to refresh the Supabase session: ${error.message}` : 'Failed to refresh the Supabase session');
   }
 }
 

@@ -2708,8 +2708,7 @@
       "owner": "data",
       "status": "canonical",
       "source_paths": [
-        "shared/lib/market/ts_index_storage.js",
-        "storage/models/"
+        "shared/lib/market/ts_index_storage.js"
       ],
       "review_triggers": [
         "storage-layout",

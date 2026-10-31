@@ -93,8 +93,13 @@ async function cachedFetch(url, options = {}, ttl = API_CACHE_TTL_MS) {
   // Set SOVEREIGN_ENABLE_RAW_HTTP_DISK_CACHE=true only if explicit offline raw payload dumping is required.
   const isDiskCacheEnabled = process.env.SOVEREIGN_ENABLE_RAW_HTTP_DISK_CACHE === 'true';
 
-  // Use URL, method, and body to compute cache key without reading header objects
-  const cachePayload = `${options.method || 'GET'}:${urlStr}:${options.body ? String(options.body) : ''}`;
+  // Use sanitized URL, method, and body to compute cache key without reading header objects
+  // Strip sensitive query credentials (API keys/tokens) to prevent credential leakage into cache file names
+  const safeUrl = new URL(urlStr);
+  for (const param of ['api_key', 'apikey', 'key', 'token', 'secret']) {
+    safeUrl.searchParams.delete(param);
+  }
+  const cachePayload = `${options.method || 'GET'}:${safeUrl.toString()}:${options.body ? String(options.body) : ''}`;
   const cacheKey = crypto.createHash('sha256').update(cachePayload).digest('hex').slice(0, 48);
   const cacheFile = path.join(API_CACHE_DIR, `${cacheKey}.json`);
 
