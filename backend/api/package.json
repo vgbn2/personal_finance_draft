@@ -11,6 +11,6 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "2.106.2",
-    "socket.io": "^4.5.0"
+    "socket.io": "^4.8.4"
   }
 }
