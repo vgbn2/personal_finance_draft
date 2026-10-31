@@ -408,7 +408,8 @@ async function commandTrade(args) {
   const launch = buildTradeGatewayLaunch(stripFlagValue(args, '--pin'), {
     env: hasFlag(args, '--live') ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {},
   });
-  const result = spawnSync(launch.command, launch.args, {
+  const execPath = String(launch.command || process.execPath).trim();
+  const result = spawnSync(execPath, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
     shell: false,
@@ -498,7 +499,8 @@ async function commandBot(args) {
   const launch = buildTradeGatewayLaunch(gatewayArgs, {
     env: liveAuthorized ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {},
   });
-  const result = spawnSync(launch.command, launch.args, {
+  const execPath = String(launch.command || process.execPath).trim();
+  const result = spawnSync(execPath, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
     shell: false,

@@ -21,12 +21,14 @@ function main() {
   const server = envValue('HEADWAY_MT5_SERVER', 'MT5_SERVER');
   const exportPath = envValue('SOVEREIGN_HEADWAY_MT5_QUOTES_PATH', 'HEADWAY_MT5_QUOTES_PATH');
 
+  const hasPassword = Boolean(password.value);
   console.log(JSON.stringify({
     provider: 'headway_mt5',
-    account_configured: Boolean(login.value && password.value && server.value),
+    account_configured: Boolean(login.value && hasPassword && server.value),
     quote_import_configured: Boolean(exportPath.value),
     login_configured: Boolean(login.value),
-    password_configured: Boolean(password.value),
+    auth_configured: hasPassword,
+    password_configured: hasPassword,
     server_configured: Boolean(server.value),
     mode: exportPath.value ? 'local_mt5_export_bridge' : 'credentials_present_but_no_quote_export_bridge',
     note: 'MT5 account credentials alone are not enough for direct quotes unless Headway exposes a broker API or a local MT5/bridge process writes quotes for ingestion.',

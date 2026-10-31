@@ -941,6 +941,8 @@ export async function main() {
         if (useJson) {
           console.log(JSON.stringify({
             key: normalizedCreds.key,
+            has_secret: Boolean(normalizedCreds.secret),
+            has_passphrase: Boolean(normalizedCreds.passphrase),
             secret_configured: Boolean(normalizedCreds.secret),
             passphrase_configured: Boolean(normalizedCreds.passphrase),
             ...(revealCreds ? { raw_token_secret: normalizedCreds.secret, raw_token_phrase: normalizedCreds.passphrase } : {}),
@@ -961,9 +963,11 @@ export async function main() {
           if (!revealCreds) {
             console.log(`${ansi.yellow}(secret and passphrase masked — pass --reveal to show in full)${ansi.reset}`);
           }
+          const displaySecret = revealCreds ? String(normalizedCreds.secret || '') : '****';
+          const displayPassphrase = revealCreds ? String(normalizedCreds.passphrase || '') : '****';
           console.log(`POLYMARKET_API_KEY=${normalizedCreds.key}`);
-          console.log(`POLYMARKET_API_SECRET=${revealCreds ? normalizedCreds.secret : '****'}`);
-          console.log(`POLYMARKET_API_PASSPHRASE=${revealCreds ? normalizedCreds.passphrase : '****'}`);
+          console.log(`POLYMARKET_API_SECRET=${displaySecret}`);
+          console.log(`POLYMARKET_API_PASSPHRASE=${displayPassphrase}`);
         }
       } catch (e: any) {
         console.error(`${ansi.red}derive-creds failed: ${e.message}${ansi.reset}`);

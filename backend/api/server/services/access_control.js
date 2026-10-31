@@ -46,7 +46,7 @@ function requestTokens(req) {
 
 function tokenSessionId(token) {
   if (!token) return null;
-  return crypto.createHmac('sha256', 'sovereign_session_token_id').update(String(token)).digest('hex').slice(0, 24);
+  return crypto.createHmac('sha512', 'sovereign_session_token_id').update(String(token)).digest('hex').slice(0, 24);
 }
 
 function isLoopbackAddress(addr) {
