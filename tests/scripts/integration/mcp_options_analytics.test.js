@@ -45,7 +45,7 @@ test('mcp getDeribitStatus returns structured report', async () => {
   const data = JSON.parse(res.content[0].text);
   assert.equal(data.broker, 'deribit');
   assert.equal(data.testnet, true);
-  assert.ok(data.baseUrl.includes('test.deribit.com'));
+  assert.equal(new URL(data.baseUrl).hostname, 'test.deribit.com');
 });
 
 test('mcp access control authorizes options tools with appropriate capabilities', (t) => {

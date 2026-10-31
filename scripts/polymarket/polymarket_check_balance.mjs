@@ -20,7 +20,7 @@ if (!apiKey || !apiSecret || !apiPassphrase) {
   process.exit(1);
 }
 
-console.log('API_KEY:', apiKey.slice(0, 8) + '...');
+console.log('L2 credentials loaded: present');
 
 // Call CLOB balance endpoint directly with L2 auth (no private key)
 const { ethers } = require(path.join(repoRoot, 'backend/gateway/node_modules/ethers/lib/index.js'));

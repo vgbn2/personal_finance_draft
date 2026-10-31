@@ -1,5 +1,17 @@
 # Current Workspace State
 
+## Session 2026-11-01 — Supabase Eradication, Secret Redaction & Zero-Cloud Contract
+- **Supabase Cloud Eradication**:
+  - Replaced `@supabase/supabase-js` cloud dependency with zero-cloud offline stubs in `backend/api/server/services/supabase_client.js` and `frontend/dashboard/src/lib/supabase.ts`.
+  - Preserved existing route handlers and local operator auto-trust without invoking remote endpoints.
+- **CLI Secret Redaction Hardening**:
+  - Hardened `backend/cli/commands/operational/setup.js` to redact credentials (`[redacted]`) across text and `--json` modes.
+  - Verified redaction behavior across setup and doctor commands via `setup_doctor.test.js`.
+- **Harness & Permission Configuration**:
+  - Configured project `.claude/settings.json` with safe read-only search permissions (`mcp__tavily-remote-mcp__tavily_search`).
+- **Verification Gates**:
+  - 100% clean baseline: `setup_doctor.test.js` (7/7 PASS), `npm run test:structure` (12/12 PASS), `npm run test:api` (15/15 PASS), `node scripts/dev/check_hygiene.js` (PRISTINE), `anti-cheat-enforcer --diff --require-tests` (0 strikes).
+
 ## Session 2026-10-31 — Strategy Alpha Decoupling, Multi-User API Key Integration, CI Repair & Dependabot Governance
 - **Live Deployment & Proxmox CT112 Diagnostic Review**:
   - Investigated container log anomalies: identified `listen EPERM: 127.0.0.1:8787` (port collisions/unprivileged namespace bounds), missing C++ pre-trade risk engine binary (`FAIL-CLOSED`), and upstream feed DNS resolution timeouts (`getaddrinfo EAI_AGAIN`).

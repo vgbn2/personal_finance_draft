@@ -106,7 +106,8 @@ async function commandFeaturesDump(args) {
         const series = fredRecordsToSeries(await fetchFredHistory(seriesId, days));
         if (series.length > 0) { anchors[name] = series; anchorReport[name] = series.length; }
       } catch (err) {
-        anchorReport[name] = `error: ${err.message}`;
+        const safeMsg = String(err.message || '').replace(/api_key=[^&]+/gi, 'api_key=REDACTED');
+        anchorReport[name] = `error: ${safeMsg}`;
       }
     }
   }

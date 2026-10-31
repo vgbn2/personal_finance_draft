@@ -17,7 +17,7 @@ const {
   requiredCapabilities,
 } = require('../../../../shared/lib/auth/access_policy');
 const ROUTES = require('../../../../backend/api/server/routes');
-const botCycleRoute = require('../../../../backend/api/server/routes/bot/bot_cycle');
+const botCycleRoute = require('../../../../backend/api/server/routes/bot/order_execution_cycle');
 
 test('role capabilities are monotonic and live execution remains owner-only', () => {
   assert.deepEqual(VALID_ROLES, ['viewer', 'analyst', 'operator', 'owner', 'service']);
@@ -86,7 +86,7 @@ test('policy distinguishes public, authenticated, and unauthorized requests', ()
     identityType: 'human',
     role: 'viewer',
     authenticated: true,
-    source: 'supabase',
+    source: 'local_auth',
   });
   assert.equal(authorize(
     viewer,

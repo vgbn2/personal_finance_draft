@@ -365,9 +365,7 @@ async function checkPolymarketGateway(options = {}) {
     signature_type: signatureType,
     funder_address: funderAddress,
     private_key_configured: hasPrivateKey,
-    private_key_masked: maskSecret(clientSettings.privateKey),
     l2_api_key_configured: hasApiCreds,
-    l2_api_key_masked: maskSecret(clientSettings.apiKey),
     endpoint_probe: endpointProbe,
     issues,
     warnings,
@@ -478,7 +476,6 @@ function checkGateIoGateway() {
     ok: issues.length === 0,
     broker: 'gate_io',
     api_key_configured: keyField.present,
-    api_key_masked: keyField.present ? maskSecret(keyField.value) : '[empty]',
     api_secret_configured: secretField.present,
     issues,
     warnings,
@@ -639,8 +636,8 @@ function renderDoctorTerminal(payload) {
   const pm = br.polymarket;
   out.push(`  ${ANSI.CYAN}Polymarket:${ANSI.RESET}`);
   out.push(`    Host:              ${pm.host}`);
-  out.push(`    Private Key:       ${pm.private_key_configured ? ANSI.GREEN + 'Configured (' + pm.private_key_masked + ')' + ANSI.RESET : ANSI.YELLOW + 'Not set' + ANSI.RESET}`);
-  out.push(`    L2 API Key:        ${pm.l2_api_key_configured ? ANSI.GREEN + 'Configured (' + pm.l2_api_key_masked + ')' + ANSI.RESET : ANSI.GRAY + 'Not set' + ANSI.RESET}`);
+  out.push(`    Private Key:       ${pm.private_key_configured ? ANSI.GREEN + 'Configured' + ANSI.RESET : ANSI.YELLOW + 'Not set' + ANSI.RESET}`);
+  out.push(`    L2 API Key:        ${pm.l2_api_key_configured ? ANSI.GREEN + 'Configured' + ANSI.RESET : ANSI.GRAY + 'Not set' + ANSI.RESET}`);
   out.push(`    Funder Address:    ${pm.funder_address || 'Not set'}`);
   out.push(`    Signature Type:    ${pm.signature_type}`);
   if (pm.endpoint_probe && pm.endpoint_probe.ok !== null) {
@@ -651,19 +648,19 @@ function renderDoctorTerminal(payload) {
   // Alpaca
   const al = br.alpaca;
   out.push(`  ${ANSI.CYAN}Alpaca (${al.mode}):${ANSI.RESET}`);
-  out.push(`    API Key ID:        ${al.key_id_configured ? ANSI.GREEN + 'Configured (' + al.key_id_masked + ')' + ANSI.RESET : ANSI.YELLOW + 'Not set' + ANSI.RESET}`);
+  out.push(`    API Key ID:        ${al.key_id_configured ? ANSI.GREEN + 'Configured' + ANSI.RESET : ANSI.YELLOW + 'Not set' + ANSI.RESET}`);
   out.push(`    API Host:          ${al.host}`);
 
   // MT5
   const mt5 = br.mt5;
   out.push(`  ${ANSI.CYAN}MetaTrader 5:${ANSI.RESET}`);
-  out.push(`    Login / Server:    ${mt5.login_configured ? ANSI.GREEN + mt5.login_masked + ' @ ' + (mt5.server_name || 'default') + ANSI.RESET : ANSI.YELLOW + 'Not configured' + ANSI.RESET}`);
+  out.push(`    Login / Server:    ${mt5.login_configured ? ANSI.GREEN + 'Configured @ ' + (mt5.server_name || 'default') + ANSI.RESET : ANSI.YELLOW + 'Not configured' + ANSI.RESET}`);
   out.push(`    Terminal Storage:  ${mt5.terminal_storage_dir.exists ? ANSI.GREEN + 'Present (' + mt5.terminal_storage_dir.type + ': ' + mt5.terminal_storage_dir.path + ')' + ANSI.RESET : ANSI.YELLOW + 'Missing (no local Wine MT5 at ~/.mt5 or container mount at storage/mt5/terminal)' + ANSI.RESET}`);
 
   // Gate.io
   const gt = br.gate_io;
   out.push(`  ${ANSI.CYAN}Gate.io:${ANSI.RESET}`);
-  out.push(`    API Key:           ${gt.api_key_configured ? ANSI.GREEN + 'Configured (' + gt.api_key_masked + ')' + ANSI.RESET : ANSI.YELLOW + 'Not configured' + ANSI.RESET}`);
+  out.push(`    API Key:           ${gt.api_key_configured ? ANSI.GREEN + 'Configured' + ANSI.RESET : ANSI.YELLOW + 'Not configured' + ANSI.RESET}`);
 
   // 5. Runtime & V8
   out.push(`\n${ANSI.BOLD}5. Runtime & Memory Health${ANSI.RESET}`);

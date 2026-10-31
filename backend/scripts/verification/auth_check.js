@@ -10,11 +10,12 @@ function mask(value) {
 
 function main() {
   const { clientId, clientSecret } = readOpenSkyCredentials();
+  const hasToken = Boolean(process.env.OPENSKY_ACCESS_TOKEN);
   console.log(JSON.stringify({
     configured: Boolean(clientId && clientSecret),
-    auth_mode: process.env.OPENSKY_ACCESS_TOKEN ? 'bearer_token' : 'oauth2_client_credentials',
-    client_id: mask(clientId),
-    client_secret: clientSecret ? `set (${clientSecret.length} chars)` : 'missing',
+    auth_mode: hasToken ? 'bearer_token' : 'oauth2_client_credentials',
+    client_id_configured: Boolean(clientId),
+    client_secret_configured: Boolean(clientSecret),
     authorization_header: clientId && clientSecret ? 'will_fetch_bearer_token' : 'missing',
   }, null, 2));
 }

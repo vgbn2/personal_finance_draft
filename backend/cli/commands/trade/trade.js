@@ -411,7 +411,7 @@ async function commandTrade(args) {
   const result = spawnSync(launch.command, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
-    shell: launch.shell ?? false,
+    shell: false,
     env: launch.env,
   });
   if (result.error) {
@@ -501,7 +501,7 @@ async function commandBot(args) {
   const result = spawnSync(launch.command, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
-    shell: launch.shell ?? false,
+    shell: false,
     env: launch.env,
   });
   return result.status ?? 0;

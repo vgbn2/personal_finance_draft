@@ -516,7 +516,7 @@ function fetchPolymarketEventsSnapshot(category = 'crypto', limit = 15) {
     const result = spawnSync(launch.command, launch.args, {
       cwd: utils.REPO_ROOT,
       encoding: 'utf8',
-      shell: launch.shell ?? false,
+      shell: false,
       env: launch.env,
       timeout: 15000,
     });
@@ -631,7 +631,7 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext, args
             cwd: utils.REPO_ROOT,
             encoding: 'utf8',
             timeout: 10000,
-            shell: launch.shell ?? false,
+            shell: false,
             env: launch.env,
           });
           return r.stdout ? parseGatewayJsonOutput(r.stdout, 'polymarket portfolio') : null;
@@ -963,7 +963,7 @@ async function commandPolymarket(args, deps = {}) {
   const result = spawnSync(launch.command, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
-    shell: launch.shell ?? false,
+    shell: false,
     env: launch.env,
   });
   return result.status ?? 0;

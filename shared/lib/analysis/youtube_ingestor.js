@@ -89,7 +89,7 @@ async function fetchChannelHistoricalVideos(channelId, opts = {}) {
       '--max-downloads', String(limit),
       '--print', '%(id)s\t%(upload_date)s\t%(title)s',
       playlistUrl
-    ], { encoding: 'utf8', timeout: 30000 });
+    ], { encoding: 'utf8', timeout: 30000, shell: false });
 
     if (proc.status === 0 && proc.stdout) {
       const lines = proc.stdout.trim().split(/\r?\n/);
@@ -159,15 +159,12 @@ function parseTimedText(rawText) {
   const segments = [];
   let match;
 
+  const HTML_ENTITIES = { '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&amp;': '&' };
   while ((match = textTagRegex.exec(rawText)) !== null) {
     const startSec = parseFloat(match[1]);
     const durSec = parseFloat(match[2]);
     const cleanText = match[3]
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
+      .replace(/&(?:amp|lt|gt|quot|#39);/g, (entity) => HTML_ENTITIES[entity] || entity)
       .replace(/\n/g, ' ')
       .trim();
 

@@ -19,6 +19,8 @@ export interface Session {
 
 export const isSupabaseConfigured = false;
 export const supabase: any = null;
+export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 /**
  * Helper to get the current session token for passing to the local backend.
