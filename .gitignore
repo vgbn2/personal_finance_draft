@@ -183,9 +183,9 @@ backend/scripts/data/cache/
 # Generated notebook/model artifacts
 models/*.onnx
 storage/models/*.onnx
-notebooks/*.ipynb
-notebooks/signal_library.json
-notebooks/research/
+*.ipynb
+notebooks/
+scripts/dev/refine_notebooks.js
 Frontend/dashboard/*.zip
 __pycache__
 __pycache__/
