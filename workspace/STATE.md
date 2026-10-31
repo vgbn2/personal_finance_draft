@@ -1,6 +1,6 @@
 # Current Workspace State
 
-## Session 2026-10-31 — Strategy Alpha Decoupling, Multi-User API Key Integration & CI Matrix Repair
+## Session 2026-10-31 — Strategy Alpha Decoupling, Multi-User API Key Integration, CI Repair & Dependabot Governance
 - **Live Deployment & Proxmox CT112 Diagnostic Review**:
   - Investigated container log anomalies: identified `listen EPERM: 127.0.0.1:8787` (port collisions/unprivileged namespace bounds), missing C++ pre-trade risk engine binary (`FAIL-CLOSED`), and upstream feed DNS resolution timeouts (`getaddrinfo EAI_AGAIN`).
 - **Canonical Strategy YAML Specification (`config/strategies/_template.yaml`)**:
@@ -8,14 +8,24 @@
 - **Multi-User Personal API Key & Outside User Onboarding (`docs/how_to/api_key_management.md`)**:
   - Documented role-based capability scoping (`status.read`, `data.read`, `research.read`, `research.run`, `paper.operate`, `live.execute`).
   - Outlined scrypt salted hashing (`crypto.scryptSync`) and constant-time verification against `storage/runtime/service_principals.json`.
-  - Added dedicated runbook for non-configured/outside users: anti-spoofing reverse proxy screening (`X-Forwarded-For`, `X-Real-IP`), loopback auto-trust exclusion, and safe fallback roles (`viewer`).
+  - Added dedicated runbook for non-configured/outside users: anti-spoofing reverse proxy screening (`X-Forwarded-For`, `X-Real-IP`), loopback auto-trust exclusion, and safe fallback roles (`viewer`). Registered in `docs/documentation_manifest.json`.
 - **Model Context Protocol (MCP) AI Tool Hardening**:
   - Updated `scripts/mcp/setup_mcp.js` to automatically verify or provision a local `mcp-agent` service principal and inject `SOVEREIGN_MCP_SERVICE_TOKEN` into generated `.mcp.json`.
 - **CI/CD CodeQL Workflow Resolution & Dependabot Triage**:
-  - Fixed `.github/workflows/codeql.yml` matrix runner build-mode configuration for JavaScript/TypeScript and C++20 manual compilation.
+  - Replaced conflicting custom `.github/workflows/codeql.yml` with native GitHub Default Code Scanning Setup.
   - Merged safe patch PR #34 (`socket.io` from 4.8.3 to 4.8.4).
+- **Dependabot Governance, Branch Pruning & Security Audit**:
+  - Grouped dependencies by workspace across `/`, `/backend/api`, `/backend/gateway`, `/backend/mcp_server`, `/Frontend/dashboard`, and `github-actions` in `.github/dependabot.yml`.
+  - Reduced `open-pull-requests-limit: 2` and ignored major breaking upgrades (`ethers >=6`, `@alpacahq/alpaca-trade-api >=5`).
+  - Pruned 31 stale remote branches from `origin`, consolidating 25 open PRs down to 2 clean grouped PRs (#44, #45).
+  - Enabled `deleteBranchOnMerge: true` on GitHub repository settings.
+  - Added `npm run audit:security` (`scripts/dev/audit_security.js`) asserting 0 high/critical vulnerabilities.
+- **Jupyter Notebook Pruning & Anti-Regression Contract**:
+  - Purged 5 legacy `.ipynb` test fixtures from `tests/fixtures/notebooks/` and untracked `notebooks/notebook_utils.py`.
+  - Configured repository-wide `*.ipynb` and `notebooks/` rules in `.gitignore`.
+  - Updated `tests/scripts/architecture/cli/core/notebooks_contract.test.js` to enforce zero tracked `.ipynb` files across the repository.
 - **Verification Gates**:
-  - 100% PASS across `npm run test:structure`, `npm run test:data`, `npm run test:core` (35/35 CTests), `npm run test:api`, `npm run hygiene`, and `anti-cheat-enforcer --diff` (0 strikes).
+  - 100% PASS across `npm run test:structure`, `npm run test:data`, `npm run test:core` (35/35 CTests), `npm run test:api`, `npm run hygiene`, `npm run audit:security`, and remote GitHub Actions `Test` workflow (green).
 
 ## Session 2026-10-29 — Institutional Engineering Overhaul, Monolith Decomposition & KTLT Standard
 - **De-Vibing & Architecture Cleanse**:
