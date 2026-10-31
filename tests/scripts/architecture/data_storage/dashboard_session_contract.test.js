@@ -12,7 +12,7 @@ function candidateSession(id = 'user-1') {
 }
 
 test('dashboard restores only sessions that the auth provider still recognizes', async () => {
-  const { restoreVerifiedSession } = await import('../../../../Frontend/dashboard/src/lib/session.js');
+  const { restoreVerifiedSession } = await import('../../../../frontend/dashboard/src/lib/session.js');
   const candidate = candidateSession();
   const validatedTokens = [];
   const validAuth = {
@@ -53,7 +53,7 @@ test('dashboard restores only sessions that the auth provider still recognizes',
 });
 
 test('logout is confirmed locally before the dashboard clears its user state', async () => {
-  const { clearLocalSession } = await import('../../../../Frontend/dashboard/src/lib/session.js');
+  const { clearLocalSession } = await import('../../../../frontend/dashboard/src/lib/session.js');
   let session = candidateSession();
   const workingAuth = {
     signOut: async () => { session = null; return { error: null }; },
@@ -70,10 +70,10 @@ test('logout is confirmed locally before the dashboard clears its user state', a
 
 test('browser auth wiring contains no privileged host token fallback', () => {
   const frontendFiles = [
-    'Frontend/dashboard/src/App.tsx',
-    'Frontend/dashboard/src/lib/api.ts',
-    'Frontend/dashboard/src/lib/session.js',
-    'Frontend/dashboard/src/lib/supabase.ts',
+    'frontend/dashboard/src/App.tsx',
+    'frontend/dashboard/src/lib/api.ts',
+    'frontend/dashboard/src/lib/session.js',
+    'frontend/dashboard/src/lib/supabase.ts',
   ];
   const source = frontendFiles
     .map((relativePath) => fs.readFileSync(path.join(REPO_ROOT, relativePath), 'utf8'))
@@ -86,12 +86,12 @@ test('browser auth wiring contains no privileged host token fallback', () => {
 
 test('browser telemetry derives Socket.IO auth from the current Supabase session', () => {
   const apiSource = fs.readFileSync(
-    path.join(REPO_ROOT, 'Frontend/dashboard/src/lib/api.ts'),
+    path.join(REPO_ROOT, 'frontend/dashboard/src/lib/api.ts'),
     'utf8',
   );
   const panelSource = [
-    'Frontend/dashboard/src/components/panels/TelemetryPanel.tsx',
-    'Frontend/dashboard/src/components/panels/MarketIntelPanel.tsx',
+    'frontend/dashboard/src/components/panels/TelemetryPanel.tsx',
+    'frontend/dashboard/src/components/panels/MarketIntelPanel.tsx',
   ].map((relativePath) => fs.readFileSync(path.join(REPO_ROOT, relativePath), 'utf8')).join('\n');
   const serverSource = fs.readFileSync(path.join(REPO_ROOT, 'backend/api/app.js'), 'utf8');
 
@@ -105,7 +105,7 @@ test('browser telemetry derives Socket.IO auth from the current Supabase session
 
 test('Socket.IO auth provider resolves a refreshed token for every handshake', async () => {
   const { createSocketAuthProvider } = await import(
-    '../../../../Frontend/dashboard/src/lib/socket_auth.js'
+    '../../../../frontend/dashboard/src/lib/socket_auth.js'
   );
   let token = 'first-token';
   const provider = createSocketAuthProvider(async () => ({ token }));
@@ -118,7 +118,7 @@ test('Socket.IO auth provider resolves a refreshed token for every handshake', a
 
 test('authenticated sidebar requests current browser auth headers', () => {
   const sidebarSource = fs.readFileSync(
-    path.join(REPO_ROOT, 'Frontend/dashboard/src/components/layout/Sidebar.tsx'),
+    path.join(REPO_ROOT, 'frontend/dashboard/src/components/layout/Sidebar.tsx'),
     'utf8',
   );
   assert.match(sidebarSource, /getAuthHeaders\(\)/);

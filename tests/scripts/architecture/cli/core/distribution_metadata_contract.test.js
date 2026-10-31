@@ -11,7 +11,7 @@ const PACKAGE_PATHS = [
   'backend/api/package.json',
   'backend/gateway/package.json',
   'backend/mcp_server/package.json',
-  'Frontend/dashboard/package.json',
+  'frontend/dashboard/package.json',
 ];
 
 test('every package root is private and points to the tracked personal license', () => {

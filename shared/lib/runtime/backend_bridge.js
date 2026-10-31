@@ -135,7 +135,7 @@ function executeSovereignCommand(command, args, options = {}) {
   const spawnOptions = {
     cwd: REPO_ROOT,
     encoding: 'utf8',
-    shell: options.shell ?? false,
+    shell: false,
     stdio: options.stdio ?? 'pipe',
     env: options.replaceEnv === true
       ? { ...(options.env || {}) }
@@ -280,7 +280,7 @@ function runGatewayCommand(gatewayArgs, options = {}) {
   });
   return executeSovereignCommand(launch.command, launch.args, {
     ...options,
-    shell: launch.shell ?? false,
+    shell: false,
     env: launch.env,
     replaceEnv: true,
   });

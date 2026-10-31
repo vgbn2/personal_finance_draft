@@ -157,7 +157,7 @@ function fetchPolymarketPortfolioForCockpit() {
   try {
     const launch = buildTradeGatewayLaunch(['polymarket', 'portfolio', '--json']);
     const r = spawnSync(launch.command, launch.args, {
-      cwd: REPO_ROOT, encoding: 'utf8', timeout: 10000, shell: launch.shell ?? false,
+      cwd: REPO_ROOT, encoding: 'utf8', timeout: 10000, shell: false,
       env: launch.env,
     });
     return r.stdout ? parseGatewayJsonOutput(r.stdout, 'polymarket portfolio') : null;

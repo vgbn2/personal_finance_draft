@@ -156,7 +156,7 @@ test('socket principals use handshake auth without browser-visible host headers'
   assert.equal(principal.authenticated, true);
   assert.equal(principal.id, 'socket-user');
   assert.equal(principal.role, 'viewer');
-  assert.equal(principal.source, 'supabase');
+  assert.equal(principal.source, 'local_auth');
 });
 
 test('loopback requests without credentials receive operator principal when local guest is enabled', async () => {

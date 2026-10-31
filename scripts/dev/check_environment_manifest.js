@@ -8,8 +8,8 @@ const { loadEnvironmentManifest } = require('../../shared/lib/runtime/environmen
 
 const SKIP_DIRECTORIES = new Set(['.git', '.claude', 'node_modules', 'dist', 'build', 'site', 'storage', 'workspace']);
 const SOURCE_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.ts', '.tsx']);
-const EXAMPLE_FILES = ['.env.example', '.env.central.example', 'Frontend/dashboard/.env.example'];
-const FRONTEND_ROOT = path.join(REPO_ROOT, 'Frontend', 'dashboard');
+const EXAMPLE_FILES = ['.env.example', '.env.central.example', 'frontend/dashboard/.env.example'];
+const FRONTEND_ROOT = path.join(REPO_ROOT, 'frontend', 'dashboard');
 const EXPECTED_FRONTEND_NAMES = Object.freeze([
   'VITE_API_URL',
   'VITE_SUPABASE_ANON_KEY',

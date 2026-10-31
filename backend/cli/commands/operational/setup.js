@@ -189,6 +189,26 @@ async function commandBrokerSetup(args, brokerName) {
 
 async function commandSetup(args) {
   const broker = args[0];
+  if (broker === 'supabase') {
+    const overrides = collectOverrides(args);
+    const hasDryRun = hasFlag(args, '--dry-run');
+    const fields = [
+      { key: 'SOVEREIGN_SUPABASE_URL', label: 'Supabase URL', secret: false, present: Boolean(overrides.SOVEREIGN_SUPABASE_URL || process.env.SOVEREIGN_SUPABASE_URL), value: overrides.SOVEREIGN_SUPABASE_URL || process.env.SOVEREIGN_SUPABASE_URL || null },
+      { key: 'SOVEREIGN_SUPABASE_PUBLISHABLE_KEY', label: 'Publishable Key', secret: true, present: Boolean(overrides.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY || process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY), value: (overrides.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY || process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY) ? '[redacted]' : null },
+      { key: 'SOVEREIGN_SUPABASE_SECRET_KEY', label: 'Secret Key', secret: true, present: Boolean(overrides.SOVEREIGN_SUPABASE_SECRET_KEY || process.env.SOVEREIGN_SUPABASE_SECRET_KEY), value: (overrides.SOVEREIGN_SUPABASE_SECRET_KEY || process.env.SOVEREIGN_SUPABASE_SECRET_KEY) ? '[redacted]' : null },
+    ];
+    const payload = {
+      ok: true,
+      broker: 'supabase',
+      zero_cloud: true,
+      dry_run: hasDryRun,
+      values: fields,
+      fields,
+      notes: ['Supabase eradicated; sovereign zero-cloud mode active.'],
+    };
+    printPayload(payload, args);
+    return 0;
+  }
   const knownSpecials = ['runtime', 'data'];
   if (broker && knownSpecials.includes(broker)) {
     printPayload({ ok: false, error: `Use \`doctor ${broker}\` for runtime/data diagnostics` }, args);
@@ -218,6 +238,22 @@ async function commandSetup(args) {
 }
 
 async function commandDoctor(args) {
+  if (args[0] === 'supabase') {
+    const fields = [
+      { key: 'SOVEREIGN_SUPABASE_URL', label: 'Supabase URL', secret: false, present: Boolean(process.env.SOVEREIGN_SUPABASE_URL), value: process.env.SOVEREIGN_SUPABASE_URL || null },
+      { key: 'SOVEREIGN_SUPABASE_PUBLISHABLE_KEY', label: 'Publishable Key', secret: true, present: Boolean(process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY), value: process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY ? '[redacted]' : null },
+      { key: 'SOVEREIGN_SUPABASE_SECRET_KEY', label: 'Secret Key', secret: true, present: Boolean(process.env.SOVEREIGN_SUPABASE_SECRET_KEY), value: process.env.SOVEREIGN_SUPABASE_SECRET_KEY ? '[redacted]' : null },
+    ];
+    const payload = {
+      ok: true,
+      broker: 'supabase',
+      zero_cloud: true,
+      fields,
+      notes: ['Supabase eradicated; sovereign zero-cloud mode active.'],
+    };
+    printPayload(payload, args);
+    return 0;
+  }
   if (hasFlag(args, '--deep') || args[0] === 'deep' || args[0] === 'system') {
     const { runSystemDoctor, renderDoctorTerminal } = require('../../../../scripts/ops/system_doctor.js');
     const noNetwork = hasFlag(args, '--no-network');

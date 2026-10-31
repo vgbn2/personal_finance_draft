@@ -60,7 +60,7 @@ test('schema-3 service rows match all nine isolated Compose environment files', 
     assert.ok(source.includes(`.env.services/${serviceName}.env`), serviceName);
     if (row.compose_profile === null) {
       assert.doesNotMatch(source, /^\s+profiles:/m, serviceName);
-      assert.match(dockerfile, new RegExp(commandFragments[serviceName].replace(/\//g, '\\/')));
+      assert.ok(dockerfile.includes(commandFragments[serviceName]), `${serviceName} command fragment in Dockerfile`);
     } else {
       assert.match(source, new RegExp(`profiles:\\s*\\[\\s*${row.compose_profile}\\s*\\]`), serviceName);
       assert.ok(source.includes(commandFragments[serviceName]), serviceName);

@@ -77,7 +77,7 @@ test('dashboard monitor fetches bounded authenticated pages and rejects changing
   const {
     fetchCompleteMarketMonitor,
     MarketMonitorRequestError,
-  } = await import('../../../../Frontend/dashboard/src/lib/market_monitor.js');
+  } = await import('../../../../frontend/dashboard/src/lib/market_monitor.js');
   const rows = [row('BTCUSDT'), row('ETHUSDT', 1)];
   const calls = [];
   const fetchImpl = async (url, options) => {
@@ -142,7 +142,7 @@ test('dashboard monitor fetches bounded authenticated pages and rejects changing
 test('dashboard model degrades stale, malformed, empty, and counter-mismatched payloads', async () => {
   const {
     normalizeMarketMonitorPayload,
-  } = await import('../../../../Frontend/dashboard/src/lib/market_monitor.js');
+  } = await import('../../../../frontend/dashboard/src/lib/market_monitor.js');
   const base = payload([row('BTCUSDT')]);
   const stale = normalizeMarketMonitorPayload(base, Date.parse('2026-07-27T00:02:31.000Z'));
   assert.equal(stale.staleSnapshot, true);
@@ -198,7 +198,7 @@ test('dashboard model degrades stale, malformed, empty, and counter-mismatched p
 test('dashboard filters and sorts verified rows without mutating the source payload', async () => {
   const {
     filterAndSortMarketRows,
-  } = await import('../../../../Frontend/dashboard/src/lib/market_monitor.js');
+  } = await import('../../../../frontend/dashboard/src/lib/market_monitor.js');
   const source = [
     { ...row('ETHUSDT', 1), freshness_state: 'stale', value: null },
     { ...row('BTCUSDT'), freshness_state: 'fresh', value: 64000 },
@@ -219,15 +219,15 @@ test('dashboard filters and sorts verified rows without mutating the source payl
 
 test('dashboard source uses current browser auth and contains no privileged token fallback', () => {
   const apiSource = fs.readFileSync(
-    path.join(REPO_ROOT, 'Frontend/dashboard/src/lib/api.ts'),
+    path.join(REPO_ROOT, 'frontend/dashboard/src/lib/api.ts'),
     'utf8',
   );
   const panelSource = fs.readFileSync(
-    path.join(REPO_ROOT, 'Frontend/dashboard/src/components/panels/QuoteHealthPanel.tsx'),
+    path.join(REPO_ROOT, 'frontend/dashboard/src/components/panels/QuoteHealthPanel.tsx'),
     'utf8',
   );
   const modelSource = fs.readFileSync(
-    path.join(REPO_ROOT, 'Frontend/dashboard/src/lib/market_monitor.js'),
+    path.join(REPO_ROOT, 'frontend/dashboard/src/lib/market_monitor.js'),
     'utf8',
   );
   assert.match(apiSource, /MARKET_MONITOR:.*\/api\/market\/monitor/);

@@ -269,7 +269,7 @@ class RiskEngineBridge {
     ];
 
     console.log(`[RISK-ENGINE-BRIDGE] Invoking: ${binary} ${riskCheckArgs.join(' ')}`);
-    const riskResult = spawnSync(binary, riskCheckArgs, { encoding: 'utf8' });
+    const riskResult = spawnSync(binary, riskCheckArgs, { encoding: 'utf8', shell: false });
 
     if (riskResult.status === 0 || riskResult.status === 2) {
        try {
@@ -941,8 +941,9 @@ export async function main() {
         if (useJson) {
           console.log(JSON.stringify({
             key: normalizedCreds.key,
-            secret: maskValue(normalizedCreds.secret),
-            passphrase: maskValue(normalizedCreds.passphrase),
+            secret_configured: Boolean(normalizedCreds.secret),
+            passphrase_configured: Boolean(normalizedCreds.passphrase),
+            ...(revealCreds ? { raw_token_secret: normalizedCreds.secret, raw_token_phrase: normalizedCreds.passphrase } : {}),
             source: derivation.source,
             createRequestErrors: derivation.createRequestErrors,
             deriveRequestErrors: derivation.deriveRequestErrors,
@@ -961,8 +962,8 @@ export async function main() {
             console.log(`${ansi.yellow}(secret and passphrase masked — pass --reveal to show in full)${ansi.reset}`);
           }
           console.log(`POLYMARKET_API_KEY=${normalizedCreds.key}`);
-          console.log(`POLYMARKET_API_SECRET=${maskValue(normalizedCreds.secret)}`);
-          console.log(`POLYMARKET_API_PASSPHRASE=${maskValue(normalizedCreds.passphrase)}`);
+          console.log(`POLYMARKET_API_SECRET=${revealCreds ? normalizedCreds.secret : '****'}`);
+          console.log(`POLYMARKET_API_PASSPHRASE=${revealCreds ? normalizedCreds.passphrase : '****'}`);
         }
       } catch (e: any) {
         console.error(`${ansi.red}derive-creds failed: ${e.message}${ansi.reset}`);

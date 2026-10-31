@@ -7,8 +7,8 @@ const {
   capabilitiesForRole,
   normalizeRole,
 } = require('../../../../shared/lib/auth/access_policy');
-const { getAuthStatus } = require('./supabase_client');
 const { authenticateServiceToken } = require('../../../../shared/lib/auth/service_principals');
+const defaultAuthClient = require('./supabase_client');
 
 const CLIENT_CAPABILITIES = Object.freeze([
   CAPABILITIES.STATUS_READ,
@@ -35,15 +35,18 @@ function requestTokens(req) {
     ? req.headers.authorization
     : null;
   if (typeof authorization === 'string') {
-    const match = authorization.match(/^Bearer\s+(.+)$/i);
-    if (match && match[1]) tokens.push({ value: match[1], source: 'bearer' });
+    const trimmed = authorization.trim();
+    if (trimmed.length > 7 && trimmed.slice(0, 7).toLowerCase() === 'bearer ') {
+      const token = trimmed.slice(7).trim();
+      if (token) tokens.push({ value: token, source: 'bearer' });
+    }
   }
   return tokens;
 }
 
 function tokenSessionId(token) {
   if (!token) return null;
-  return crypto.createHash('sha256').update(String(token)).digest('hex').slice(0, 24);
+  return crypto.createHmac('sha256', 'sovereign_session_token_id').update(String(token)).digest('hex').slice(0, 24);
 }
 
 function isLoopbackAddress(addr) {
@@ -71,10 +74,7 @@ function isLoopbackRequest(req) {
 
 function humanSessionId(userId) {
   if (!userId) return null;
-  // Supabase access tokens rotate routinely. Bind network-risk history to the
-  // verified subject rather than a bearer-token fingerprint so rotation cannot
-  // turn an IP change into a new first-seen session.
-  return crypto.createHash('sha256').update(`human:${String(userId)}`).digest('hex').slice(0, 24);
+  return crypto.createHmac('sha256', 'sovereign_human_session_id').update(`human:${String(userId)}`).digest('hex').slice(0, 24);
 }
 
 function parseUserRoleMap(raw) {
@@ -113,7 +113,7 @@ function isLocalGuestAllowed(env = process.env) {
 
 async function resolvePrincipal(req, {
   env = process.env,
-  getAuthStatusFn = getAuthStatus,
+  getAuthStatusFn = defaultAuthClient.getAuthStatus,
 } = {}) {
   const apiToken = String(env.SOVEREIGN_API_TOKEN || '');
   const clientToken = String(env.SOVEREIGN_CLIENT_TOKEN || '');
@@ -152,19 +152,19 @@ async function resolvePrincipal(req, {
   }
 
   const bearer = tokens.find((token) => token.source === 'bearer');
-  if (bearer && bearer.value !== 'local-operator-token') {
+  if (bearer && bearer.value !== 'local-operator-token' && typeof getAuthStatusFn === 'function') {
     const auth = await getAuthStatusFn(req);
     if (auth && auth.authenticated === true) {
       const user = auth.user || {};
       const role = resolveHumanRole(user, env);
       return buildPrincipal({
-        id: user.id || 'supabase-user',
+        id: user.id || 'local-user',
         identityType: 'human',
         role,
         capabilities: capabilitiesForRole(role),
         authenticated: true,
-        source: 'supabase',
-        sessionId: humanSessionId(user.id || 'supabase-user'),
+        source: 'local_auth',
+        sessionId: humanSessionId(user.id || 'local-user'),
       });
     }
   }
