@@ -25,7 +25,6 @@ jobs:
       matrix:
         include:
           - language: javascript-typescript
-            build-mode: none
           - language: c-cpp
             build-mode: manual
 
@@ -40,7 +39,7 @@ jobs:
         queries: security-extended,security-and-quality
 
     - name: Build C++ core
-      if: matrix.build-mode == 'manual'
+      if: matrix.language == 'c-cpp'
       run: |
         cmake -S . -B build/codeql -DCMAKE_BUILD_TYPE=Release -DSOVEREIGN_ENABLE_SANITIZERS=OFF -DSOVEREIGN_ENABLE_ONNX_RUNTIME=OFF
         cmake --build build/codeql --parallel
