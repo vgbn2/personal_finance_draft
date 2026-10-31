@@ -943,9 +943,7 @@ export async function main() {
             key: normalizedCreds.key,
             has_secret: Boolean(normalizedCreds.secret),
             has_passphrase: Boolean(normalizedCreds.passphrase),
-            secret_configured: Boolean(normalizedCreds.secret),
-            passphrase_configured: Boolean(normalizedCreds.passphrase),
-            ...(revealCreds ? { raw_token_secret: normalizedCreds.secret, raw_token_phrase: normalizedCreds.passphrase } : {}),
+            auth_configured: Boolean(normalizedCreds.secret && normalizedCreds.passphrase),
             source: derivation.source,
             createRequestErrors: derivation.createRequestErrors,
             deriveRequestErrors: derivation.deriveRequestErrors,
@@ -959,15 +957,9 @@ export async function main() {
           if (derivation.createRequestErrors.length > 0) {
             console.log(`${ansi.yellow}Create attempt diagnostics:${ansi.reset} ${JSON.stringify(derivation.createRequestErrors[0])}`);
           }
-          console.log(`\n${ansi.boldCyan}Paste these into your .env:${ansi.reset}`);
-          if (!revealCreds) {
-            console.log(`${ansi.yellow}(secret and passphrase masked — pass --reveal to show in full)${ansi.reset}`);
-          }
-          const displaySecret = revealCreds ? String(normalizedCreds.secret || '') : '****';
-          const displayPassphrase = revealCreds ? String(normalizedCreds.passphrase || '') : '****';
+          console.log(`\n${ansi.boldCyan}Derived API key info:${ansi.reset}`);
           console.log(`POLYMARKET_API_KEY=${normalizedCreds.key}`);
-          console.log(`POLYMARKET_API_SECRET=${displaySecret}`);
-          console.log(`POLYMARKET_API_PASSPHRASE=${displayPassphrase}`);
+          console.log(`POLYMARKET_CREDENTIALS_CONFIGURED=true`);
         }
       } catch (e: any) {
         console.error(`${ansi.red}derive-creds failed: ${e.message}${ansi.reset}`);

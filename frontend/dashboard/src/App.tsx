@@ -101,7 +101,7 @@ export default function App() {
       }
     };
 
-    const { data: { subscription } } = client.auth.onAuthStateChange((_e, nextSession) => {
+    const { data: { subscription } } = client.auth.onAuthStateChange((_e: unknown, nextSession: Session | null) => {
       void applyVerifiedSession(nextSession);
     });
     const restoreRevision = ++revision;
