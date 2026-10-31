@@ -65,6 +65,7 @@
     "audit:test-results": "node scripts/dev/audit_test_results.js",
     "audit:control-flow": "node scripts/dev/audit_control_flow.js",
     "audit:documentation": "node scripts/dev/audit_documentation.js",
+    "audit:security": "node scripts/dev/audit_security.js",
     "docs:filter": "node scripts/dev/filter_docs.js",
     "docs:report:pdf": "node scripts/dev/build_architecture_report_pdf.js",
     "docs:report:verify": "node scripts/dev/verify_architecture_report_pdf.js",
