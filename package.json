@@ -93,21 +93,21 @@
     "#native/*": "./native/pkg/*.js"
   },
   "dependencies": {
-    "@alpacahq/alpaca-trade-api": "^4.0.1",
+    "@alpacahq/alpaca-trade-api": "^5.0.0",
     "@mathieuc/tradingview": "git+https://github.com/Mathieu2301/TradingView-API.git#574a9948b2adb3396b934c612f58d2ab103a6915",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@polymarket/clob-client-v2": "^0.0.3",
+    "@polymarket/clob-client-v2": "^1.2.0",
     "@types/node": "^25.9.1",
     "ethers": "^6.17.0",
-    "ink": "^7.1.0",
+    "ink": "^8.0.0",
     "ink-select-input": "^6.2.0",
     "ink-text-input": "^6.0.0",
-    "onnxruntime-node": "^1.21.1",
+    "onnxruntime-node": "^1.31.1",
     "react": "^19.2.7",
-    "socket.io": "^4.8.3",
+    "socket.io": "^4.8.4",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
-    "viem": "^2.55.10"
+    "viem": "^2.57.13"
   },
   "overrides": {
     "ws": "^8.21.0"
