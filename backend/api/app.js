@@ -44,7 +44,7 @@ const {
 } = require('./server/services/auth_session_registry');
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
-const WEB_PUBLIC_ROOT = path.join(REPO_ROOT, 'Frontend', 'dashboard', 'dist');
+const WEB_PUBLIC_ROOT = path.join(REPO_ROOT, 'frontend', 'dashboard', 'dist');
 const INDEX_PATH = path.join(WEB_PUBLIC_ROOT, 'index.html');
 const PORT = Number.parseInt(process.env.SOVEREIGN_WEB_PORT || process.env.PORT || '8787', 10);
 const HOST = process.env.SOVEREIGN_WEB_HOST || '127.0.0.1';

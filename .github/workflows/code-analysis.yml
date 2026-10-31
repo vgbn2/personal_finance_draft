@@ -1,0 +1,44 @@
+name: Code Analysis
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
+
+jobs:
+  static-analysis:
+    name: Static Analysis & Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/dashboard/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install dashboard dependencies
+        run: npm --prefix frontend/dashboard ci --ignore-scripts
+
+      - name: Run code audit & typecheck matrix
+        run: npm run audit:code
+
+      - name: Structure & documentation contracts
+        run: npm run test:structure

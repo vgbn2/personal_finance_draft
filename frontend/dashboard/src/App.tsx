@@ -88,23 +88,24 @@ export default function App() {
       setLoading(false);
       return;
     }
+    const client = supabase;
     let active = true;
     let revision = 0;
 
     const applyVerifiedSession = async (candidate: Session | null) => {
       const currentRevision = ++revision;
-      const result = await verifySession(supabase.auth, candidate);
+      const result = await verifySession(client.auth, candidate);
       if (active && currentRevision === revision) {
         setSession(result.session);
         setLoading(false);
       }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, nextSession) => {
+    const { data: { subscription } } = client.auth.onAuthStateChange((_e, nextSession) => {
       void applyVerifiedSession(nextSession);
     });
     const restoreRevision = ++revision;
-    void restoreVerifiedSession(supabase.auth).then((result) => {
+    void restoreVerifiedSession(client.auth).then((result) => {
       if (active && restoreRevision === revision) {
         setSession(result.session);
         setLoading(false);

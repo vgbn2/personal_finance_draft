@@ -12,10 +12,18 @@ const METRICS: MetricTileData[] = [
   { label: 'Quote Health', value: '...', status: 'amber', subtext: 'Checking...' },
 ];
 
+interface CorrelationData {
+  ok: boolean;
+  labels: string[];
+  values: number[][];
+}
+
+const DEFAULT_CORRELATION_SYMBOLS = 'AAPL,MSFT,TSLA,NVDA,BTCUSDT,ETHUSDT,XAUUSD,BRENT,EURUSD';
+
 export function OverviewPanel() {
   const [logs, setLogs] = useState<string[]>([]);
   const [metrics, setMetrics] = useState<MetricTileData[]>(METRICS);
-  const [correlation, setCorrelation] = useState<any>(null);
+  const [correlation, setCorrelation] = useState<CorrelationData | null>(null);
 
   useEffect(() => {
     const hydrateSystem = async () => {
@@ -56,7 +64,7 @@ export function OverviewPanel() {
 
     const hydrateCorrelation = async () => {
       try {
-        const assets = 'AAPL,MSFT,TSLA,NVDA,BTCUSDT,ETHUSDT,XAUUSD,BRENT,EURUSD';
+        const assets = DEFAULT_CORRELATION_SYMBOLS;
         const res = await fetch(`${API_ENDPOINTS.CORRELATION}?symbols=${assets}&max_bars=120`, { headers: await getAuthHeaders() });
         const data = await res.json();
         if (data.ok) {
@@ -173,13 +181,13 @@ export function OverviewPanel() {
                   }}
                 >
                   <div></div>
-                  {correlation.labels.map(a => <div key={a} className="flex items-center justify-center truncate">{a}</div>)}
+                  {correlation.labels.map((a: string) => <div key={a} className="flex items-center justify-center truncate">{a}</div>)}
                 </div>
 
-                {correlation.labels.map((assetRow, r) => (
+                {correlation.labels.map((assetRow: string, r: number) => (
                   <React.Fragment key={assetRow}>
                     <div className="flex items-center justify-end pr-2 truncate">{assetRow}</div>
-                    {correlation.labels.map((assetCol, c) => {
+                    {correlation.labels.map((assetCol: string, c: number) => {
                       const val = correlation.values[r][c];
 
                       const bg = r === c

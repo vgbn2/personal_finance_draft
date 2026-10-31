@@ -29,7 +29,7 @@ test('active domain-layout entrypoints exist', () => {
     'backend/cli/sovereign_cli.js',
     'backend/scripts/data_ops/ingest_market_data.js',
     'shared/lib',
-    'Frontend/dashboard/package.json',
+    'frontend/dashboard/package.json',
     'storage/data',
     'docs/ARCHITECTURE.md',
   ].forEach((relativePath) => {

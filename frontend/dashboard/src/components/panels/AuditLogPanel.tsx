@@ -41,14 +41,15 @@ export function AuditLogPanel() {
     fetchEvents();
 
     if (supabase) {
-      const channel = supabase.channel('audit_log_changes')
+      const client = supabase;
+      const channel = client.channel('audit_log_changes')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_events' }, payload => {
           setEvents(prev => [payload.new as AuditEvent, ...prev].slice(0, 100));
         })
         .subscribe();
-      
+
       return () => {
-        supabase.removeChannel(channel);
+        client.removeChannel(channel);
       };
     }
   }, []);
