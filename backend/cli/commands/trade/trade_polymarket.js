@@ -513,7 +513,8 @@ function fetchPolymarketEventsSnapshot(category = 'crypto', limit = 15) {
   try {
     const gatewayArgs = ['polymarket', 'events', String(limit), '--category', category, '--json'];
     const launch = buildTradeGatewayLaunch(gatewayArgs);
-    const result = spawnSync(launch.command, launch.args, {
+    const execPath = String(launch.command || process.execPath).trim();
+    const result = spawnSync(execPath, launch.args, {
       cwd: utils.REPO_ROOT,
       encoding: 'utf8',
       shell: false,
@@ -627,7 +628,8 @@ async function runPolymarketMarketActionLoop(selectedMarket, resultContext, args
       const portfolioSnap = (() => {
         try {
           const launch = buildTradeGatewayLaunch(['polymarket', 'portfolio', '--json']);
-          const r = spawnSync(launch.command, launch.args, {
+          const execPath = String(launch.command || process.execPath).trim();
+          const r = spawnSync(execPath, launch.args, {
             cwd: utils.REPO_ROOT,
             encoding: 'utf8',
             timeout: 10000,
@@ -960,7 +962,8 @@ async function commandPolymarket(args, deps = {}) {
   const launch = buildTradeGatewayLaunch(gatewayArgs, {
     env: liveAuthorized ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {},
   });
-  const result = spawnSync(launch.command, launch.args, {
+  const execPath = String(launch.command || process.execPath).trim();
+  const result = spawnSync(execPath, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',
     shell: false,

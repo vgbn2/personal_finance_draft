@@ -156,7 +156,8 @@ function summarizeOptionsCard() {
 function fetchPolymarketPortfolioForCockpit() {
   try {
     const launch = buildTradeGatewayLaunch(['polymarket', 'portfolio', '--json']);
-    const r = spawnSync(launch.command, launch.args, {
+    const execPath = String(launch.command || process.execPath).trim();
+    const r = spawnSync(execPath, launch.args, {
       cwd: REPO_ROOT, encoding: 'utf8', timeout: 10000, shell: false,
       env: launch.env,
     });

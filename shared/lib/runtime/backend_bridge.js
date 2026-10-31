@@ -145,7 +145,8 @@ function executeSovereignCommand(command, args, options = {}) {
     spawnOptions.timeout = options.timeout;
   }
 
-  const result = spawnSync(command, args, spawnOptions);
+  const safeCommand = String(command).trim();
+  const result = spawnSync(safeCommand, args, spawnOptions);
 
   if (process.argv.includes('--verbose') && result.stderr && options.stdio !== 'inherit') {
     process.stderr.write(result.stderr);
@@ -255,7 +256,7 @@ function buildTradeGatewayLaunch(args = [], options = {}) {
   if (process.platform === 'win32') {
     return { command: 'cmd.exe', args: ['/c', 'npx', 'tsx', gatewayPath, ...args], shell: false, env, surface };
   }
-  return { command: 'npx', args: ['tsx', gatewayPath, ...args], shell: false, env, surface };
+  return { command: process.execPath, args: [gatewayBootstrapPath, ...args], shell: false, env, surface };
 }
 
 /**
