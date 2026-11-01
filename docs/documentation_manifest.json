@@ -237,6 +237,36 @@
       ]
     },
     {
+      "path": "docs/modules/binary_injection_and_execution_guard.md",
+      "type": "reference",
+      "audience": [
+        "maintainers",
+        "contributors",
+        "operators",
+        "security-auditors"
+      ],
+      "owner": "security",
+      "status": "canonical",
+      "source_paths": [
+        "backend/core/src/data/data_validator.hpp",
+        "backend/core/src/data/data_validator.cpp",
+        "backend/core/src/data/binary_ts_merger.cpp",
+        "backend/core/src/data/binary_ts_reader.cpp",
+        "backend/api/server/services/cli_executor.js",
+        "backend/api/server/services/input_validator.js"
+      ],
+      "test_paths": [
+        "tests/scripts/security/binary_injection_guard.test.js",
+        "backend/core/test/data/binary_ts_reader_test.cpp"
+      ],
+      "review_triggers": [
+        "security-review",
+        "process-execution",
+        "binary-format-change",
+        "cryptographic-digest"
+      ]
+    },
+    {
       "path": "docs/ARCHITECTURE.md",
       "type": "orientation",
       "audience": [

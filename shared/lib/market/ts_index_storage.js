@@ -125,11 +125,14 @@ function decodeLatestRecord(buffer, offset, meta) {
   };
 }
 
+// [Security] Path Traversal Shielding: Both symbol and timeframe are sanitized
+// to prevent escaping the time-series storage root directory via '../' traversal.
 function tsIndexPath(tsDir, symbol, timeframe) {
-  const safe = symbol.replace(/[^a-zA-Z0-9_]/g, '_');
+  const safeSymbol = String(symbol || '').replace(/[^a-zA-Z0-9_]/g, '_');
+  const safeTimeframe = String(timeframe || '').replace(/[^a-zA-Z0-9_]/g, '_');
   return {
-    bin:  path.join(tsDir, `${safe}_${timeframe}.bin`),
-    meta: path.join(tsDir, `${safe}_${timeframe}.meta.json`),
+    bin:  path.join(tsDir, `${safeSymbol}_${safeTimeframe}.bin`),
+    meta: path.join(tsDir, `${safeSymbol}_${safeTimeframe}.meta.json`),
   };
 }
 

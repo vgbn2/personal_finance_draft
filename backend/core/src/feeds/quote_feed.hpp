@@ -35,6 +35,9 @@ struct QuoteBar {
     std::string ingested_at;
 };
 
+// [OOP] Interface Abstraction & Polymorphic Adapter Pattern
+// Pure virtual interface defining quote ingestion contracts. Subclasses (Webull, MT5, CryptoExchangeFeed)
+// implement polymorphic dynamic dispatch (vtable) decoupling the analytics core from specific broker APIs.
 class IQuoteFeed {
 public:
     virtual ~IQuoteFeed() = default;

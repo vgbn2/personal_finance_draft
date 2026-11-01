@@ -55,7 +55,13 @@ const {
   localBackendFallback,
 } = require('./cli_executor_market');
 
-const { isValidPositionId, sanitizeSymbol, isPathWithinAllowedRoots } = require('./input_validator');
+const {
+  isValidPositionId,
+  isValidSymbol,
+  isValidTimeframe,
+  sanitizeSymbol,
+  isPathWithinAllowedRoots,
+} = require('./input_validator');
 
 const {
   DEFAULT_BACKTEST_REPORT,
@@ -77,6 +83,18 @@ const {
 } = require('./cli_executor_signals');
 
 function backendStatus(query = {}) {
+  if (query.input) {
+    const candidate = path.resolve(REPO_ROOT, String(query.input));
+    if (!isPathWithinAllowedRoots(candidate)) {
+      return { ok: false, error: 'Path traversal denied: input outside allowed roots' };
+    }
+  }
+  if (query.quality_report) {
+    const candidate = path.resolve(REPO_ROOT, String(query.quality_report));
+    if (!isPathWithinAllowedRoots(candidate)) {
+      return { ok: false, error: 'Path traversal denied: quality_report outside allowed roots' };
+    }
+  }
   const input = stringOrFallback(query.input, DEFAULT_SNAPSHOT);
   return withCache(`status:${input}`, () => {
     const args = [
@@ -93,12 +111,20 @@ function backendStatus(query = {}) {
 }
 
 function backendDataSummary(query = {}) {
-  const symbol = stringOrFallback(query.symbol, 'SPY');
-  const timeframe = stringOrFallback(query.timeframe, '1d');
+  const rawSymbol = stringOrFallback(query.symbol, 'SPY');
+  const symbol = sanitizeSymbol(rawSymbol) || 'SPY';
+  const rawTimeframe = stringOrFallback(query.timeframe, '1d');
+  const timeframe = isValidTimeframe(rawTimeframe) ? rawTimeframe : '1d';
   const maxBars = stringOrFallback(query.max_bars, '0');
   const explicitInput = typeof query.input === 'string' && query.input.trim()
     ? query.input.trim()
     : null;
+  if (explicitInput) {
+    const candidate = path.resolve(REPO_ROOT, explicitInput);
+    if (!isPathWithinAllowedRoots(candidate)) {
+      return { ok: false, error: 'Path traversal denied: input outside allowed roots' };
+    }
+  }
   if (!explicitInput) {
     return withCache(`summary:canonical:${symbol}:${timeframe}:${maxBars}`, () => runNodeCli([
       'backend',
@@ -142,8 +168,15 @@ function backendDataSummary(query = {}) {
 }
 
 function backendCorrelation(query = {}) {
+  if (query.input) {
+    const candidate = path.resolve(REPO_ROOT, String(query.input));
+    if (!isPathWithinAllowedRoots(candidate)) {
+      return { ok: false, error: 'Path traversal denied: input outside allowed roots' };
+    }
+  }
   const symbols = stringOrFallback(query.symbols, 'AAPL,MSFT,SPY');
-  const timeframe = stringOrFallback(query.timeframe, '1d');
+  const rawTimeframe = stringOrFallback(query.timeframe, '1d');
+  const timeframe = isValidTimeframe(rawTimeframe) ? rawTimeframe : '1d';
   const input = stringOrFallback(query.input, DEFAULT_HISTORY);
   const maxBars = stringOrFallback(query.max_bars, '252');
   return withCache(`correlation:${symbols}:${timeframe}:${input}:${maxBars}`, () => {
@@ -242,6 +275,12 @@ function backendStats(query = {}) {
 }
 
 function backendUniverse(query = {}) {
+  if (query.input) {
+    const candidate = path.resolve(REPO_ROOT, String(query.input));
+    if (!isPathWithinAllowedRoots(candidate)) {
+      return { ok: false, error: 'Path traversal denied: input outside allowed roots' };
+    }
+  }
   const input = stringOrFallback(query.input, DEFAULT_HISTORY);
   const maxEntries = stringOrFallback(query.max_entries, '0');
   return withCache(`universe:${input}:${maxEntries}`, () => {
@@ -307,8 +346,10 @@ function backendPortfolio(query = {}) {
 }
 
 function backendIndicators(query = {}) {
-  const symbol = stringOrFallback(query.symbol, '');
-  const timeframe = stringOrFallback(query.timeframe, '1d');
+  const rawSymbol = stringOrFallback(query.symbol, '');
+  const symbol = rawSymbol ? (sanitizeSymbol(rawSymbol) || '') : '';
+  const rawTimeframe = stringOrFallback(query.timeframe, '1d');
+  const timeframe = isValidTimeframe(rawTimeframe) ? rawTimeframe : '1d';
   return withCache(`indicators:${symbol}:${timeframe}`, () => {
     const args = [
       'indicators',

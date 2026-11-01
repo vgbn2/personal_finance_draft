@@ -126,3 +126,45 @@ For outside automated scripts, remote AI copilots, or external third-party integ
    node backend/cli/sovereign_cli.js auth service revoke --id "client-external-hedge"
    ```
 
+---
+
+## 5. Bring-Your-Own-Key (BYOK) Architecture: Data Keys vs Interactive Keys
+
+To enable outside researchers, external teammates, and transient clients to utilize their own provider quotas and execute trades securely, Sovereign implements the **Bring-Your-Own-Key (BYOK)** model.
+
+```text
+               ┌────────────────────────────────────────────────────────┐
+               │ Outside Client / Dashboard / Headless Integrator       │
+               └───────────┬────────────────────────────────┬───────────┘
+                           │                                │
+                 Ephemeral Data Key                Interactive Execution Key
+             (Alpaca Data, Binance, etc.)      (Alpaca Secret, Polymarket Key)
+                           │                                │
+                           ▼                                ▼
+               ┌───────────────────────┐        ┌───────────────────────┐
+               │ HTTP / WebSocket Auth │        │ EphemeralKeyVault     │
+               │ Handshake Payload     │        │ In-Memory RAM Only    │
+               │ (Connection Scoped)   │        │ (Zero Disk / SQLite)  │
+               └───────────┬───────────┘        └───────────┬───────────┘
+                           │                                │
+                           ▼                                ▼
+               Provider Quota Streaming         Gated Broker Submission
+```
+
+### Architectural Segregation & Guarantees
+
+| Key Category | Examples | Transport & Ingestion | Persistence & Lifetime | Security Invariant |
+|---|---|---|---|---|
+| **Data Keys** (Read-Only) | Alpaca Data Key, Binance Read Key, Finnhub, Gate.io | Sent in WebSocket connection handshake (`auth.dataKey`) or HTTP header (`x-provider-key`) | Connection lifetime only; discarded immediately upon socket close | Cannot place orders or sign contracts; rate-limits charged to user's quota |
+| **Interactive Keys** (Execution/Signing) | Alpaca Live/Paper Secret, Polymarket Private Key, MT5 Credentials | Client-side AES-256-GCM encrypted vault or in-memory `EphemeralKeyVault` | Held strictly in volatile memory; auto-evicted after 1 hour of inactivity | **Zero-Disk Invariant**: Never written to `.env`, SQLite, logs, or disk caches |
+
+### Ephemeral Vault API Reference (`EphemeralKeyVault`)
+
+The in-memory vault (`backend/api/server/services/ephemeral_key_vault.js`) manages transient credentials:
+
+- `vault.register(sessionId, credentials, { ttlMs })`: Registers session keys in memory.
+- `vault.get(sessionId, keyName)`: Retrieves a key and extends session TTL.
+- `vault.revoke(sessionId)`: Overwrites memory and immediately evicts credentials.
+- `vault.getTelemetry()`: Emits health metrics with all keys fully masked (`ABCD...WXYZ`).
+
+

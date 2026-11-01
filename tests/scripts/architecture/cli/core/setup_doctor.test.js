@@ -61,37 +61,35 @@ function stripSecretEnv(source) {
 test('setup output redacts secret values in json mode', () => {
   const result = runCli([
     'setup',
-    'supabase',
+    'alpaca',
     '--dry-run',
     '--json',
     '--set',
-    'SOVEREIGN_SUPABASE_URL=https://example.supabase.co',
+    'ALPACA_PAPER_API_KEY=paper_key_123456789',
     '--set',
-    'SOVEREIGN_SUPABASE_PUBLISHABLE_KEY=publishable_secret_123456789',
-    '--set',
-    'SOVEREIGN_SUPABASE_SECRET_KEY=server_secret_987654321',
+    'ALPACA_PAPER_SECRET_KEY=paper_secret_987654321',
   ]);
 
   assert.equal(result.status, 0);
   assert.match(result.stdout, /\[redacted\]/);
-  assert.doesNotMatch(result.stdout, /publishable_secret_123456789/);
-  assert.doesNotMatch(result.stdout, /server_secret_987654321/);
+  assert.doesNotMatch(result.stdout, /paper_key_123456789/);
+  assert.doesNotMatch(result.stdout, /paper_secret_987654321/);
 });
 
 test('doctor output redacts secret values in json mode', () => {
   const result = runCli(
-    ['doctor', 'supabase', '--json', '--no-network'],
+    ['doctor', 'gateio', '--json', '--no-network'],
     {
-      SOVEREIGN_SUPABASE_URL: 'https://kwrnlkvoqzmaolmwvhse.supabase.co',
-      SOVEREIGN_SUPABASE_PUBLISHABLE_KEY: 'publishable_secret_123456789',
-      SOVEREIGN_SUPABASE_SECRET_KEY: 'server_secret_987654321',
+      GATEIO_API_KEY: 'gateio_key_123456789',
+      GATEIO_API_SECRET: 'gateio_secret_987654321',
+      GATEIO_API_PASSPHRASE: 'gateio_pass_555',
     }
   );
 
   assert.equal(result.status, 0);
   assert.match(result.stdout, /\[redacted\]/);
-  assert.doesNotMatch(result.stdout, /publishable_secret_123456789/);
-  assert.doesNotMatch(result.stdout, /server_secret_987654321/);
+  assert.doesNotMatch(result.stdout, /gateio_key_123456789/);
+  assert.doesNotMatch(result.stdout, /gateio_secret_987654321/);
 });
 
 test('doctor alpaca paper-auth --no-network emits only redacted, non-attempted diagnostics', () => {

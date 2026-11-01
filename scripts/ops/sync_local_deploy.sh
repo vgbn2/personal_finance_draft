@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# Sync local repository to a target Proxmox container through pct exec.
+# Usage:
+#   bash scripts/ops/sync_local_deploy.sh                      # sync source only
+#   bash scripts/ops/sync_local_deploy.sh --rebuild            # sync + rebuild Docker image + restart containers
+#   bash scripts/ops/sync_local_deploy.sh --clean              # deep clean build caches before sync
+#   bash scripts/ops/sync_local_deploy.sh --dry-run            # list files that would be archived
+#   bash scripts/ops/sync_local_deploy.sh --host <ip> --ct <id> --dest <path>
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+# Configurable defaults via environment variables
+PROXMOX_HOST="${SOVEREIGN_PROXMOX_HOST:-${PROXMOX_HOST:-100.115.226.69}}"
+PROXMOX_USER="${SOVEREIGN_PROXMOX_USER:-${PROXMOX_USER:-root}}"
+CT_ID="${SOVEREIGN_CT_ID:-${CT_ID:-114}}"
+CT_DEST="${SOVEREIGN_CT_DEST:-${CT_DEST:-/home/vgbn/sovereign-trades}}"
+
+REBUILD=false
+DRY_RUN=false
+CLEAN=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --rebuild)
+      REBUILD=true
+      shift
+      ;;
+    --dry-run)
+      DRY_RUN=true
+      shift
+      ;;
+    --clean)
+      CLEAN=true
+      shift
+      ;;
+    --host)
+      PROXMOX_HOST="$2"
+      shift 2
+      ;;
+    --user)
+      PROXMOX_USER="$2"
+      shift 2
+      ;;
+    --ct)
+      CT_ID="$2"
+      shift 2
+      ;;
+    --dest)
+      CT_DEST="$2"
+      shift 2
+      ;;
+    -h|--help)
+      echo "Usage: $0 [options]"
+      echo ""
+      echo "Options:"
+      echo "  --host <ip|host>   Proxmox host (default: \$PROXMOX_HOST or 100.115.226.69)"
+      echo "  --user <user>      SSH user (default: \$PROXMOX_USER or root)"
+      echo "  --ct <id>          Target container ID (default: \$CT_ID or 114)"
+      echo "  --dest <path>      Target destination directory (default: \$CT_DEST or /home/vgbn/sovereign-trades)"
+      echo "  --rebuild          Rebuild Docker images and recreate containers on target"
+      echo "  --clean            Purge transient build/dist caches on target before sync"
+      echo "  --dry-run          Preview files to be archived without syncing"
+      echo "  -h, --help         Show this help message"
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+TAR_EXCLUDES=(
+  --exclude='.git'
+  --exclude='*/.git'
+  --exclude='node_modules'
+  --exclude='*/node_modules'
+  --exclude='storage/data/ts'
+  --exclude='storage/data/cache'
+  --exclude='storage/data/paper_trading'
+  --exclude='dist'
+  --exclude='*/dist'
+  --exclude='site'
+  --exclude='graphify-out'
+  --exclude='*.bin'
+  --exclude='*.swp'
+  --exclude='.env'
+  --exclude='.env.*'
+  --exclude='*.env'
+  --exclude='*.key'
+  --exclude='*.pem'
+  --exclude='storage/secrets'
+)
+
+if [[ "$DRY_RUN" == "true" ]]; then
+  echo "==> Dry run: listing archived paths from ${REPO_ROOT}/ (target CT ${CT_ID}:${CT_DEST} on ${PROXMOX_HOST})"
+  tar -C "$REPO_ROOT" "${TAR_EXCLUDES[@]}" -cf /dev/null -v . 2>&1 | sed -n '1,100p'
+  echo "==> Dry run completed (first 100 archived paths displayed)."
+  exit 0
+fi
+
+PROXMOX_SSH="ssh -o ConnectTimeout=10 ${PROXMOX_USER}@${PROXMOX_HOST}"
+
+# Verify Proxmox reachable
+if ! $PROXMOX_SSH "echo ok" &>/dev/null; then
+  echo "ERROR: Cannot reach Proxmox host at ${PROXMOX_HOST} via SSH." >&2
+  exit 1
+fi
+
+# Verify Container running
+ct_status=$($PROXMOX_SSH "pct status ${CT_ID} 2>/dev/null | awk '{print \$2}'")
+if [[ "$ct_status" != "running" ]]; then
+  echo "ERROR: Container ${CT_ID} is not running (status: ${ct_status})." >&2
+  exit 1
+fi
+
+echo "==> Syncing ${REPO_ROOT}/ -> CT ${CT_ID}:${CT_DEST}/ on ${PROXMOX_HOST}"
+
+$PROXMOX_SSH "pct exec ${CT_ID} -- mkdir -p '${CT_DEST}'"
+
+echo "==> Purging legacy casing ghosts and obsolete directories on CT ${CT_ID}..."
+$PROXMOX_SSH "pct exec ${CT_ID} -- bash -c '
+  rm -rf \"${CT_DEST}/Frontend\"
+  rm -rf \"${CT_DEST}/notebooks\"
+  rm -rf \"${CT_DEST}/web\"
+  rm -rf \"${CT_DEST}/site\"
+'"
+
+if [[ "$CLEAN" == "true" ]]; then
+  echo "==> Deep clean requested: purging transient dist and build caches on CT ${CT_ID}..."
+  $PROXMOX_SSH "pct exec ${CT_ID} -- bash -c '
+    rm -rf \"${CT_DEST}/dist\"
+    rm -rf \"${CT_DEST}/backend/*/dist\"
+    rm -rf \"${CT_DEST}/frontend/dashboard/dist\"
+  '"
+fi
+
+tar -C "$REPO_ROOT" "${TAR_EXCLUDES[@]}" -cf - . \
+  | $PROXMOX_SSH "pct exec ${CT_ID} -- tar -C '${CT_DEST}' -xf -"
+
+echo "==> Sync complete."
+
+if [[ "$REBUILD" == "true" && "$DRY_RUN" == "false" ]]; then
+  echo "==> Rebuilding Docker image on CT ${CT_ID}..."
+  $PROXMOX_SSH "pct exec ${CT_ID} -- bash -c '
+    cd \"${CT_DEST}\"
+    docker compose build web feedd
+    docker tag ghcr.io/vgbn2/sovereign-trades:latest sovereign-trades:latest
+    docker compose -p sv -f infra/docker/docker-compose.yml --profile \"*\" up -d --no-build --force-recreate web feedd backfill bot-alpaca-paper portfolio-monitor host-health host-backup
+    docker compose -p sv -f infra/docker/docker-compose.yml ps
+  '"
+  echo "==> Rebuild done."
+fi

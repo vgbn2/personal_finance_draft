@@ -7,6 +7,10 @@ export default defineConfig(() => {
   return {
     envPrefix: ['VITE_', 'SOVEREIGN_SUPABASE_URL', 'SOVEREIGN_SUPABASE_PUBLISHABLE_'],
     plugins: [react(), tailwindcss()],
+    build: {
+      outDir: '../../build/dashboard',
+      emptyOutDir: true,
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

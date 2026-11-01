@@ -92,7 +92,8 @@ std::vector<double> parseEquityCsv(const std::string& csv, bool& ok) {
         try {
             std::size_t parsed = 0;
             const double value = std::stod(token, &parsed);
-            if (parsed != token.size()) {
+            // [Security: TV-01] Non-finite float injection check (Carlini et al., arXiv:2605.11086v1)
+            if (parsed != token.size() || !std::isfinite(value)) {
                 ok = false;
                 return {};
             }
@@ -106,11 +107,12 @@ std::vector<double> parseEquityCsv(const std::string& csv, bool& ok) {
     return values;
 }
 
+// [Security: TV-01] Strict finite float parsing (rejects NaN, Inf, and non-finite injection)
 bool parseDoubleStrict(const std::string& token, double& value) {
     try {
         std::size_t parsed = 0;
         value = std::stod(token, &parsed);
-        return parsed == token.size();
+        return parsed == token.size() && std::isfinite(value);
     } catch (const std::exception&) {
         return false;
     }
@@ -1210,15 +1212,15 @@ bool parseSweepDatasets(
             || colon == 0U
             || at <= colon + 1U
             || hash <= at + 1U
-            || hash + 65U != item.size()) {
-            error = "datasets must use FAMILY:SYMBOL@TIMEFRAME#SHA256";
+            || hash + 129U != item.size()) {
+            error = "datasets must use FAMILY:SYMBOL@TIMEFRAME#SHA512";
             return false;
         }
         std::string fingerprint = item.substr(hash + 1U);
         if (!std::all_of(fingerprint.begin(), fingerprint.end(), [](unsigned char value) {
                 return std::isxdigit(value) != 0;
             })) {
-            error = "dataset fingerprint must be 64 hexadecimal characters";
+            error = "dataset fingerprint must be 128 hexadecimal characters";
             return false;
         }
         std::transform(fingerprint.begin(), fingerprint.end(), fingerprint.begin(), [](unsigned char value) {
@@ -1644,7 +1646,7 @@ void printUsage() {
         << "  risk check --notional 1000 --equity 5000 --drawdown 0.05\n"
         << "  ml compare --frame storage/data/ml/feature_frame.csv --json\n"
         << "  ml predict --model xgboost_v1 --frame PATH [--limit N]\n"
-        << "  sweep --datasets FAMILY:SYMBOL@TIMEFRAME#SHA256 --evaluators ARCHETYPE [--top-k N]\n";
+        << "  sweep --datasets FAMILY:SYMBOL@TIMEFRAME#SHA512 --evaluators ARCHETYPE [--top-k N]\n";
 }
 
 } // namespace

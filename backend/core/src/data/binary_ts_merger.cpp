@@ -1,4 +1,5 @@
 #include "binary_ts_merger.hpp"
+#include "data_validator.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -222,9 +223,12 @@ BinaryMergeResult BinaryTsMerger::mergeFiles(
     }
 
     if (!has_existing) {
-        // Fast path: simply copy/stream incoming records
+        // Fast path: simply copy/stream incoming records (gated by DataValidator against NaN injection)
         while (in_reader.hasNext()) {
-            writer.writeRecord(in_reader.peek());
+            const auto& rec = in_reader.peek();
+            if (DataValidator::isValidRecord(rec.ts_ms, rec.close)) {
+                writer.writeRecord(rec);
+            }
             in_reader.advance();
         }
         if (!writer.finalize()) {
@@ -243,10 +247,26 @@ BinaryMergeResult BinaryTsMerger::mergeFiles(
     }
     result.existing_count = ex_reader.totalCount();
 
-    // Two-pointer streaming merge with deduplication
+    // [DSA] Two-Pointer Streaming Merge with Deduplication & NaN Sanitization
+    // Algorithmic pattern: Two-pointer sorted stream merge (identical to Merge Sort merge phase).
+    // Time Complexity: O(N + M) where N = ex_records, M = in_records.
+    // Space Complexity: O(1) auxiliary streaming buffers, preventing RAM exhaustion on multi-GB datasets.
+    // [Security: TV-01] Filters non-finite floats to prevent IEEE 754 NaN desynchronization.
     while (ex_reader.hasNext() && in_reader.hasNext()) {
         const auto& ex_rec = ex_reader.peek();
         const auto& in_rec = in_reader.peek();
+
+        const bool ex_valid = DataValidator::isValidRecord(ex_rec.ts_ms, ex_rec.close);
+        const bool in_valid = DataValidator::isValidRecord(in_rec.ts_ms, in_rec.close);
+
+        if (!ex_valid) {
+            ex_reader.advance();
+            continue;
+        }
+        if (!in_valid) {
+            in_reader.advance();
+            continue;
+        }
 
         if (ex_rec.ts_ms == in_rec.ts_ms) {
             if (options.existing_wins_on_tie) {
@@ -266,12 +286,18 @@ BinaryMergeResult BinaryTsMerger::mergeFiles(
     }
 
     while (ex_reader.hasNext()) {
-        writer.writeRecord(ex_reader.peek());
+        const auto& rec = ex_reader.peek();
+        if (DataValidator::isValidRecord(rec.ts_ms, rec.close)) {
+            writer.writeRecord(rec);
+        }
         ex_reader.advance();
     }
 
     while (in_reader.hasNext()) {
-        writer.writeRecord(in_reader.peek());
+        const auto& rec = in_reader.peek();
+        if (DataValidator::isValidRecord(rec.ts_ms, rec.close)) {
+            writer.writeRecord(rec);
+        }
         in_reader.advance();
     }
 

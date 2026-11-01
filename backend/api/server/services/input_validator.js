@@ -4,8 +4,8 @@ const os = require('node:os');
 const path = require('node:path');
 const { REPO_ROOT, STORAGE_DATA_DIR } = require('../../../../shared/lib/runtime/paths');
 
-const SYMBOL_REGEX = /^[A-Z0-9_.-]{1,20}$/i;
-const TIMEFRAME_REGEX = /^(1m|3m|5m|15m|30m|1h|2h|4h|6h|8h|12h|1d|1w|1M)$/;
+const SYMBOL_REGEX = /^[A-Z0-9][A-Z0-9_.-]{0,19}$/i;
+const TIMEFRAME_REGEX = /^(1m|3m|5m|15m|30m|1h|2h|4h|6h|8h|12h|1d|1w|1M|1mo)$/;
 const SIGNAL_ID_REGEX = /^[a-zA-Z0-9_-]{1,128}$/;
 const PROMOTION_ID_REGEX = /^[a-zA-Z0-9:_.-]{1,160}$/;
 const POSITION_ID_REGEX = /^[a-zA-Z0-9_-]{1,128}$/;

@@ -12,6 +12,16 @@ RiskDecision PreTradeRisk::validate(const TradeOrder& order) const {
     decision.limit = limits_.max_drawdown;
     decision.observed_drawdown = order.current_drawdown;
 
+    // [Security: TV-01] Non-finite float injection mitigation (Carlini et al., arXiv:2605.11086v1).
+    // IEEE 754 NaN comparisons evaluate to false (NaN >= max_drawdown is false), which would
+    // bypass the kill-switch if not checked explicitly. Fail-closed on non-finite drawdown.
+    if (!std::isfinite(order.current_drawdown)) {
+        decision.approved = false;
+        decision.halt_trading = limits_.fail_closed;
+        decision.reason = "CRITICAL: Non-finite drawdown value detected (fail-closed).";
+        return decision;
+    }
+
     // 1. Portfolio Level Kill-Switch (Drawdown)
     if (order.current_drawdown >= limits_.max_drawdown) {
         decision.approved = false;

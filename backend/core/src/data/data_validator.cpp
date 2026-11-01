@@ -1,5 +1,6 @@
 #include "data_validator.hpp"
 
+#include <cctype>
 #include <cmath>
 
 namespace sovereign {
@@ -45,6 +46,34 @@ bool DataValidator::validateMacroObservation(const MacroObservation& obs, DataQu
         return false;
     }
     return true;
+}
+
+// [Security] Path Traversal Shielding: Whitelist alphanumeric characters + underscores
+// Centralized sanitizer prevents directory escape via path injection tokens ('..', '/', etc.).
+std::string DataValidator::sanitizeSymbol(const std::string& symbol) {
+    std::string safe = symbol;
+    for (char& c : safe) {
+        if (!std::isalnum(static_cast<unsigned char>(c)) && c != '_') {
+            c = '_';
+        }
+    }
+    return safe;
+}
+
+std::string DataValidator::sanitizeTimeframe(const std::string& timeframe) {
+    std::string safe = timeframe;
+    for (char& c : safe) {
+        if (!std::isalnum(static_cast<unsigned char>(c)) && c != '_') {
+            c = '_';
+        }
+    }
+    return safe;
+}
+
+// [Security: TV-01] Non-finite float validation (Carlini et al., arXiv:2605.11086v1)
+// Rejects NaN, Inf, and non-positive prices to guarantee stream ordering invariants.
+bool DataValidator::isValidRecord(double ts_ms, double close) {
+    return std::isfinite(ts_ms) && ts_ms >= 0.0 && std::isfinite(close) && close > 0.0;
 }
 
 } // namespace sovereign

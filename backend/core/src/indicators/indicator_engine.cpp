@@ -66,7 +66,7 @@ std::vector<double> IndicatorEngine::rateOfChangeSeries(const std::vector<double
     }
     return res;
 }
-
+//average true range series
 std::vector<double> IndicatorEngine::rollingVolatilitySeries(const std::vector<double>& closes, std::size_t period) {
     std::vector<double> res(closes.size(), std::numeric_limits<double>::quiet_NaN());
     if (period < 2U || closes.size() <= period) {
@@ -88,7 +88,7 @@ std::vector<double> IndicatorEngine::rollingVolatilitySeries(const std::vector<d
     }
     return res;
 }
-
+//kalman filter series with variance
 std::vector<KalmanResult> IndicatorEngine::kalmanSeriesWithVariance(const std::vector<double>& closes, double process_noise, double measurement_noise) {
     std::vector<KalmanResult> res(closes.size(), {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()});
     if (closes.empty()) return res;

@@ -10,6 +10,9 @@
 
 namespace sovereign {
 
+// [DOD] Flat Binary Struct Packing
+// Cache-friendly contiguous memory layout with zero padding (#pragma pack(push, 1)).
+// Sequential 48-byte records enable direct streaming into CPU L1/L2 cache lines without heap indirection.
 #pragma pack(push, 1)
 struct RawTsHeader {
     char magic[4];       // "SOVT"
@@ -41,6 +44,7 @@ class BinaryTsReader {
 public:
     static std::string formatIsoTimestamp(double ts_ms);
     static std::string sanitizeSymbol(const std::string& symbol);
+    static std::string sanitizeTimeframe(const std::string& timeframe);
     static std::filesystem::path buildBinaryPath(
         const std::filesystem::path& ts_dir,
         const std::string& symbol,
@@ -48,7 +52,8 @@ public:
 
     static bool readHeader(const std::filesystem::path& path, RawTsHeader& out_header, std::string& out_error);
 
-    static bool sha256File(
+    // [Security: Cryptographic Dataset Integrity] FIPS 180-4 SHA-512 dataset fingerprinting
+    static bool sha512File(
         const std::filesystem::path& path,
         std::string& out_digest,
         std::string& out_error);

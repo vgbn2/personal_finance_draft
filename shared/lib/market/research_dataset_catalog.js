@@ -32,7 +32,7 @@ function hashRegularFile(filePath, maxBytes = MAX_FINGERPRINT_BYTES) {
     if (!stat.isFile()) return { ok: false, reason: 'dataset_not_regular_file' };
     if (stat.size <= 0) return { ok: false, reason: 'dataset_empty_file' };
     if (stat.size > maxBytes) return { ok: false, reason: 'dataset_exceeds_fingerprint_limit' };
-    const hash = crypto.createHash('sha256');
+    const hash = crypto.createHash('sha512');
     const chunk = Buffer.allocUnsafe(Math.min(64 * 1024, stat.size));
     let position = 0;
     while (position < stat.size) {
@@ -46,7 +46,7 @@ function hashRegularFile(filePath, maxBytes = MAX_FINGERPRINT_BYTES) {
     if (after.size !== stat.size || after.mtimeMs !== stat.mtimeMs) {
       return { ok: false, reason: 'dataset_changed_during_fingerprint' };
     }
-    return { ok: true, sha256: hash.digest('hex'), bytes: stat.size };
+    return { ok: true, sha512: hash.digest('hex'), bytes: stat.size };
   } catch (error) {
     return {
       ok: false,
@@ -143,7 +143,7 @@ function inspectDataset(config, instrument, timeframe, options) {
     eligible: true,
     reason: null,
     physical_path: bin,
-    fingerprint: fingerprint.sha256,
+    fingerprint: fingerprint.sha512,
     bytes: fingerprint.bytes,
     freshness: {
       reason: freshness.reason,

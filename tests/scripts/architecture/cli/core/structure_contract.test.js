@@ -39,11 +39,14 @@ test('active domain-layout entrypoints exist', () => {
 
 test('generated and local-only paths are ignored', () => {
   const ignoredPaths = [
+    'build/',
     'node_modules/',
     'backend/api/node_modules/',
     'backend/gateway/node_modules/',
     'Frontend/dashboard/node_modules/',
     'Frontend/dashboard/dist/',
+    'frontend/dashboard/node_modules/',
+    'frontend/dashboard/dist/',
     'storage/data/cache/',
     'storage/data/ml/',
     'storage/data/paper_trading/',
@@ -158,13 +161,23 @@ test('every native test source is registered in both CMake manifests', () => {
   const testDir = path.join(REPO_ROOT, 'backend', 'core', 'test');
   const rootCmake = fs.readFileSync(path.join(REPO_ROOT, 'backend', 'core', 'CMakeLists.txt'), 'utf8');
   const testCmake = fs.readFileSync(path.join(testDir, 'CMakeLists.txt'), 'utf8');
-  const testSources = fs.readdirSync(testDir)
-    .filter((file) => file.endsWith('_test.cpp'))
-    .sort();
+  function findTestSources(dir) {
+    let results = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        results = results.concat(findTestSources(full));
+      } else if (entry.name.endsWith('_test.cpp')) {
+        results.push(path.relative(testDir, full).replace(/\\/g, '/'));
+      }
+    }
+    return results.sort();
+  }
+  const testSources = findTestSources(testDir);
 
   for (const source of testSources) {
     const registration = rootCmake.match(
-      new RegExp(`add_sovereign_test\\(([^\\s)]+)\\s+test/${source.replaceAll('.', '\\.')}\\)`)
+      new RegExp(`add_sovereign_test\\(([^\\s)]+)\\s+test/${source.replaceAll('/', '\\/').replaceAll('.', '\\.')}\\)`)
     );
     assert.ok(registration, `${source} should be compiled and registered by backend/core/CMakeLists.txt`);
     const target = registration[1];

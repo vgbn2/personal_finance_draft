@@ -5,7 +5,7 @@
 #include <numeric>
 
 namespace sovereign {
-
+//looka bit stale, simple, naive regime detector based on moving averages and volatility
 class SimpleMovingRegimeDetector final : public IRegimeDetector {
 public:
     void update(const std::vector<double>& prices, const std::vector<double>& volumes) override {

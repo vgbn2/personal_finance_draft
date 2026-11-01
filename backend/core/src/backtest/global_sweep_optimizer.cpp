@@ -102,7 +102,7 @@ bool verifyDatasetSnapshot(
     }
 
     std::string digest;
-    if (!BinaryTsReader::sha256File(file_spec.path, digest, error)) return false;
+    if (!BinaryTsReader::sha512File(file_spec.path, digest, error)) return false;
     if (digest != file_spec.fingerprint) {
         error = "dataset_fingerprint_mismatch:" + file_spec.symbol + "@" + file_spec.timeframe;
         return false;

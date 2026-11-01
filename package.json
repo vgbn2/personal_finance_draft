@@ -13,9 +13,15 @@
     "doc": "docs",
     "test": "tests"
   },
+  "workspaces": [
+    "backend/api",
+    "backend/gateway",
+    "backend/mcp_server",
+    "frontend/dashboard"
+  ],
   "scripts": {
     "postinstall": "node scripts/dev/ensure_native_core.js",
-    "build": "cd frontend/dashboard && npm install && npm run build",
+    "build": "npm run build --prefix frontend/dashboard",
     "api:dev": "node backend/api/app.js",
     "dashboard:dev": "npm run dev --prefix frontend/dashboard",
     "fixtures:refresh:btc": "node backend/scripts/dev/refresh_real_bars_fixture.js",
@@ -24,7 +30,8 @@
     "native:doctor": "node backend/scripts/dev/native_toolchain_check.js",
     "host:prepare-central-env": "node backend/scripts/ops/prepare_central_env.js",
     "host:monitor": "bash backend/scripts/ops/host_resource_monitor.sh",
-    "native:build": "cmake -S backend/core -B backend/core/build -DCMAKE_BUILD_TYPE=Release -DSOVEREIGN_ENABLE_ONNX_RUNTIME=OFF && cmake --build backend/core/build --config Release --parallel",
+    "clean": "rm -rf build dist backend/core/build frontend/dashboard/dist Frontend/dashboard/dist",
+    "native:build": "cmake -S backend/core -B build/core -DCMAKE_BUILD_TYPE=Release -DSOVEREIGN_ENABLE_ONNX_RUNTIME=OFF && cmake --build build/core --config Release --parallel",
     "probe:backfill": "node backend/scripts/dev/parallel_backfill_probe.js",
     "test": "node tests/run_node_tests.js",
     "test:batch": "node tests/run_node_tests.js --batch",
@@ -41,7 +48,7 @@
     "test:safety": "node tests/run_node_tests.js --test-concurrency=1 tests/scripts/architecture/auth/trade_pin_safety.test.js tests/scripts/architecture/cli/core/environment_manifest.test.js tests/scripts/lib/alpaca_bot_state.test.js tests/scripts/lib/alpaca_bot_cycle.test.js tests/scripts/safety/automation_guard.test.js tests/scripts/safety/degraded_fallback.test.js tests/scripts/safety/guard_mutation.test.js",
     "test:prepare": "node backend/scripts/dev/seed_master_fixture.js",
     "setup:dev": "node scripts/dev/setup_dev.js",
-    "test:core": "npm run test:prepare && node tests/run_logged_command.js --label native-build -- npm run native:build && node tests/run_logged_command.js --label native-ctest -- ctest --test-dir backend/core/build -C Release --output-on-failure",
+    "test:core": "npm run test:prepare && node tests/run_logged_command.js --label native-build -- npm run native:build && node tests/run_logged_command.js --label native-ctest -- ctest --test-dir build/core -C Release --output-on-failure",
     "test:go": "node tests/run_logged_command.js --label go-test -- bash -c \"cd backend/go && go test -v -race ./...\"",
     "setup:mcp": "node scripts/mcp/setup_mcp.js",
     "test:api": "node tests/run_node_tests.js --test-concurrency=1 backend/api/tests/access_control.test.js backend/api/tests/api.test.js backend/api/tests/auth_session_registry.test.js backend/api/tests/charts.test.js backend/api/tests/client_api.test.js backend/api/tests/cluster_routes.test.js backend/api/tests/correlation_contract.test.js backend/api/tests/dashboard_contract.test.js backend/api/tests/market_routes_contract.test.js backend/api/tests/mcp_gate.test.js backend/api/tests/promotion_audit_chain.test.js backend/api/tests/public_routes_contract.test.js backend/api/tests/service_principals_perms.test.js backend/api/tests/supabase_client.test.js backend/api/tests/ttl_cache.test.js",

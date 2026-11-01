@@ -70,29 +70,26 @@ function renderSetupSummary(report, dryRun) {
   return lines.join('\n');
 }
 
+function parseKeyValue(pair) {
+  const equalsIndex = pair ? pair.indexOf('=') : -1;
+  if (equalsIndex <= 0) return null;
+  const key = pair.slice(0, equalsIndex).trim();
+  return key ? { key, value: pair.slice(equalsIndex + 1) } : null;
+}
+
 function collectOverrides(args) {
   const overrides = {};
   for (let i = 0; i < args.length; i += 1) {
     const token = args[i];
     if (token === '--set' && i + 1 < args.length) {
-      const pair = args[i + 1];
-      const equalsIndex = pair.indexOf('=');
-      if (equalsIndex > 0) {
-        const key = pair.slice(0, equalsIndex).trim();
-        const value = pair.slice(equalsIndex + 1);
-        if (key) overrides[key] = value;
-      }
+      const parsed = parseKeyValue(args[i + 1]);
+      if (parsed) overrides[parsed.key] = parsed.value;
       i += 1;
       continue;
     }
     if (token.startsWith('--set=')) {
-      const pair = token.slice(6);
-      const equalsIndex = pair.indexOf('=');
-      if (equalsIndex > 0) {
-        const key = pair.slice(0, equalsIndex).trim();
-        const value = pair.slice(equalsIndex + 1);
-        if (key) overrides[key] = value;
-      }
+      const parsed = parseKeyValue(token.slice(6));
+      if (parsed) overrides[parsed.key] = parsed.value;
     }
   }
   return overrides;
@@ -189,26 +186,6 @@ async function commandBrokerSetup(args, brokerName) {
 
 async function commandSetup(args) {
   const broker = args[0];
-  if (broker === 'supabase') {
-    const overrides = collectOverrides(args);
-    const hasDryRun = hasFlag(args, '--dry-run');
-    const fields = [
-      { key: 'SOVEREIGN_SUPABASE_URL', label: 'Supabase URL', secret: false, present: Boolean(overrides.SOVEREIGN_SUPABASE_URL || process.env.SOVEREIGN_SUPABASE_URL), value: overrides.SOVEREIGN_SUPABASE_URL || process.env.SOVEREIGN_SUPABASE_URL || null },
-      { key: 'SOVEREIGN_SUPABASE_PUBLISHABLE_KEY', label: 'Publishable Key', secret: true, present: Boolean(overrides.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY || process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY), value: (overrides.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY || process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY) ? '[redacted]' : null },
-      { key: 'SOVEREIGN_SUPABASE_SECRET_KEY', label: 'Secret Key', secret: true, present: Boolean(overrides.SOVEREIGN_SUPABASE_SECRET_KEY || process.env.SOVEREIGN_SUPABASE_SECRET_KEY), value: (overrides.SOVEREIGN_SUPABASE_SECRET_KEY || process.env.SOVEREIGN_SUPABASE_SECRET_KEY) ? '[redacted]' : null },
-    ];
-    const payload = {
-      ok: true,
-      broker: 'supabase',
-      zero_cloud: true,
-      dry_run: hasDryRun,
-      values: fields,
-      fields,
-      notes: ['Supabase eradicated; sovereign zero-cloud mode active.'],
-    };
-    printPayload(payload, args);
-    return 0;
-  }
   const knownSpecials = ['runtime', 'data'];
   if (broker && knownSpecials.includes(broker)) {
     printPayload({ ok: false, error: `Use \`doctor ${broker}\` for runtime/data diagnostics` }, args);
@@ -238,22 +215,6 @@ async function commandSetup(args) {
 }
 
 async function commandDoctor(args) {
-  if (args[0] === 'supabase') {
-    const fields = [
-      { key: 'SOVEREIGN_SUPABASE_URL', label: 'Supabase URL', secret: false, present: Boolean(process.env.SOVEREIGN_SUPABASE_URL), value: process.env.SOVEREIGN_SUPABASE_URL || null },
-      { key: 'SOVEREIGN_SUPABASE_PUBLISHABLE_KEY', label: 'Publishable Key', secret: true, present: Boolean(process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY), value: process.env.SOVEREIGN_SUPABASE_PUBLISHABLE_KEY ? '[redacted]' : null },
-      { key: 'SOVEREIGN_SUPABASE_SECRET_KEY', label: 'Secret Key', secret: true, present: Boolean(process.env.SOVEREIGN_SUPABASE_SECRET_KEY), value: process.env.SOVEREIGN_SUPABASE_SECRET_KEY ? '[redacted]' : null },
-    ];
-    const payload = {
-      ok: true,
-      broker: 'supabase',
-      zero_cloud: true,
-      fields,
-      notes: ['Supabase eradicated; sovereign zero-cloud mode active.'],
-    };
-    printPayload(payload, args);
-    return 0;
-  }
   if (hasFlag(args, '--deep') || args[0] === 'deep' || args[0] === 'system') {
     const { runSystemDoctor, renderDoctorTerminal } = require('../../../../scripts/ops/system_doctor.js');
     const noNetwork = hasFlag(args, '--no-network');
@@ -355,11 +316,10 @@ async function commandDoctor(args) {
     if (!spec) continue;
     const report = buildBrokerReport(name, process.env);
     for (const field of report.fields || []) {
-      if (field.secret) {
-        const rawValue = getEnvValue(process.env, [field.key, ...(spec.fields.find((candidate) => candidate.key === field.key)?.aliases || [])]);
-        if (rawValue) {
-          scanValues[field.key] = rawValue;
-        }
+      if (!field.secret) continue;
+      const rawValue = getEnvValue(process.env, [field.key, ...(spec.fields.find((candidate) => candidate.key === field.key)?.aliases || [])]);
+      if (rawValue) {
+        scanValues[field.key] = rawValue;
       }
     }
     if (probeNetwork && report.host) {

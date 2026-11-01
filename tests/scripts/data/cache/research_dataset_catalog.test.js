@@ -95,7 +95,8 @@ test('dataset catalog returns exact eligible identity and deterministic fingerpr
   assert.equal(catalog.counts.rejected, 0);
   assert.equal(catalog.datasets[0].dataset_id, 'equities:AAPL:1d');
   assert.equal(catalog.datasets[0].instrument_id, 'equities:AAPL');
-  assert.equal(catalog.datasets[0].fingerprint, expected.sha256);
+  assert.equal(catalog.datasets[0].fingerprint, expected.sha512);
+  assert.equal(expected.sha512.length, 128);
   assert.equal(catalog.datasets[0].records, 120);
 });
 

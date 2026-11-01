@@ -17,7 +17,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { execSync } = require('node:child_process');
+const { execSync, spawnSync } = require('node:child_process');
 
 try {
   require('../../shared/lib/runtime/ts_register');
@@ -79,7 +79,23 @@ function checkDockerContainers() {
 }
 
 function scanContainerLogs(containerName, tail = 100) {
-  const logOutput = safeExec(`docker logs --tail ${tail} ${containerName} 2>&1`);
+  if (typeof containerName !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(containerName)) {
+    return { available: false, findings: [] };
+  }
+  const cleanTail = Number.isInteger(Number(tail)) && Number(tail) > 0 ? String(Math.min(Number(tail), 5000)) : '100';
+  let logOutput = null;
+  try {
+    const res = spawnSync('docker', ['logs', '--tail', cleanTail, containerName], {
+      encoding: 'utf8',
+      shell: false,
+      timeout: 10000,
+    });
+    if (res.status === 0 || res.stdout || res.stderr) {
+      logOutput = ((res.stdout || '') + (res.stderr || '')).trim();
+    }
+  } catch {
+    logOutput = null;
+  }
   if (!logOutput) return { available: false, findings: [] };
 
   const findings = [];

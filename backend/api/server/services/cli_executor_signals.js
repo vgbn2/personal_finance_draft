@@ -1,4 +1,6 @@
+const path = require('node:path');
 const {
+  REPO_ROOT,
   DEFAULT_MODEL_REPORT,
   DEFAULT_BACKTEST,
 } = require('../../../../shared/lib/runtime/paths');
@@ -8,6 +10,7 @@ const { parseScorecardOptions } = require('../../../cli/commands/research/scorec
 const { buildCachedCombinedResearch } = require('../../../cli/commands/research/combined');
 const { buildRecordedAppleShadow, RECORDED_AAPL_FIXTURE_ID } = require('../../../../shared/lib/analysis/services/equity_3m_shadow');
 const { buildAllRecordedShadowCatalog, ALL_RECORDED_FIXTURE_ID, filterShadowCatalog } = require('../../../../shared/lib/analysis/services/shadow_catalog');
+const { isPathWithinAllowedRoots } = require('./input_validator');
 
 const {
   withCache,
@@ -254,6 +257,15 @@ function buildSignalStatusResponse(reports, perSymbol, signals, request, freshne
 }
 
 function signalStatus(query = {}, runtime = {}) {
+  // ponytail: unified path containment check for report file arguments
+  for (const field of ['input', 'model_report', 'backtest_report']) {
+    if (query[field]) {
+      const candidate = path.resolve(REPO_ROOT, String(query[field]));
+      if (!isPathWithinAllowedRoots(candidate)) {
+        return { ok: false, error: `Path traversal denied: ${field} outside allowed roots` };
+      }
+    }
+  }
   const request = resolveSignalRequest(query, runtime);
   return withCache(request.cacheKey, () => {
     const reports = {

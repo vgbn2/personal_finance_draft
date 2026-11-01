@@ -54,7 +54,7 @@ function writeDailyBin(tsDir, symbol, count = 120, family = 'equities') {
   }));
   return {
     binPath,
-    fingerprint: crypto.createHash('sha256').update(buffer).digest('hex'),
+    fingerprint: crypto.createHash('sha512').update(buffer).digest('hex'),
   };
 }
 

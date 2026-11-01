@@ -86,6 +86,7 @@ endfunction()
 
 # Core Library Sources
 set(CORE_SOURCES
+    src/crypto/sha512.cpp
     src/data/binary_ts_reader.cpp
     src/data/binary_ts_merger.cpp
     src/backtest/grid_optimizer.cpp
@@ -184,41 +185,52 @@ macro(add_sovereign_test name src_file)
     add_test(NAME ${name} COMMAND ${name})
 endmacro()
 
-add_sovereign_test(phase2_data_contract_test test/phase2_data_contract_test.cpp)
-add_sovereign_test(research_contract_test test/research_contract_test.cpp)
-add_sovereign_test(stats_test test/stats_test.cpp)
-add_sovereign_test(risk_test test/risk_test.cpp)
-add_sovereign_test(cost_model_test test/cost_model_test.cpp)
-add_sovereign_test(crypto_replay_runner_test test/crypto_replay_runner_test.cpp)
-add_sovereign_test(quote_feed_interface_test test/quote_feed_interface_test.cpp)
-add_sovereign_test(correlation_test test/correlation_test.cpp)
-add_sovereign_test(data_snapshot_test test/data_snapshot_test.cpp)
-add_sovereign_test(indicator_test test/indicator_test.cpp)
-add_sovereign_test(backtest_test test/backtest_test.cpp)
-add_sovereign_test(portfolio_test test/portfolio_test.cpp)
-add_sovereign_test(ingestion_adapter_test test/ingestion_contract_test.cpp)
-add_sovereign_test(phase1_compounding_test test/phase1_compounding_test.cpp)
-add_sovereign_test(kronos_integration_test test/kronos_integration_test.cpp)
-add_sovereign_test(onnx_model_test test/onnx_model_test.cpp)
-add_sovereign_test(tensor_builder_test test/tensor_builder_test.cpp)
-add_sovereign_test(cnn_tensor_builder_test test/cnn_tensor_builder_test.cpp)
-add_sovereign_test(cnn_inference_test test/cnn_inference_test.cpp)
-add_sovereign_test(model_registry_test test/model_registry_test.cpp)
-add_sovereign_test(execution_test test/execution_test.cpp)
-add_sovereign_test(kill_switch_test test/kill_switch_test.cpp)
-add_sovereign_test(technical_features_test test/technical_features_test.cpp)
-add_sovereign_test(parser_position_sizer_test test/parser_position_sizer_test.cpp)
-add_sovereign_test(normalization_optimizer_test test/normalization_optimizer_test.cpp)
-add_sovereign_test(macro_features_test test/macro_features_test.cpp)
-add_sovereign_test(regime_test test/regime_test.cpp)
-add_sovereign_test(regime_strategy_test test/regime_strategy_test.cpp)
-add_sovereign_test(feature_pipeline_test test/feature_pipeline_test.cpp)
-add_sovereign_test(portfolio_risk_test test/portfolio_risk_test.cpp)
-add_sovereign_test(binary_ts_reader_test test/binary_ts_reader_test.cpp)
-add_sovereign_test(binary_ts_merger_test test/binary_ts_merger_test.cpp)
-add_sovereign_test(grid_optimizer_test test/grid_optimizer_test.cpp)
-add_sovereign_test(global_sweep_optimizer_test test/global_sweep_optimizer_test.cpp)
-add_sovereign_test(frame_backtester_test test/frame_backtester_test.cpp)
+# --- ML Tests ---
+add_sovereign_test(cnn_inference_test test/ml/cnn_inference_test.cpp)
+add_sovereign_test(cnn_tensor_builder_test test/ml/cnn_tensor_builder_test.cpp)
+add_sovereign_test(kronos_integration_test test/ml/kronos_integration_test.cpp)
+add_sovereign_test(model_registry_test test/ml/model_registry_test.cpp)
+add_sovereign_test(normalization_optimizer_test test/ml/normalization_optimizer_test.cpp)
+add_sovereign_test(onnx_model_test test/ml/onnx_model_test.cpp)
+add_sovereign_test(tensor_builder_test test/ml/tensor_builder_test.cpp)
+
+# --- Risk Tests ---
+add_sovereign_test(cost_model_test test/risk/cost_model_test.cpp)
+add_sovereign_test(kill_switch_test test/risk/kill_switch_test.cpp)
+add_sovereign_test(portfolio_risk_test test/risk/portfolio_risk_test.cpp)
+add_sovereign_test(risk_test test/risk/risk_test.cpp)
+
+# --- Backtest Tests ---
+add_sovereign_test(backtest_test test/backtest/backtest_test.cpp)
+add_sovereign_test(frame_backtester_test test/backtest/frame_backtester_test.cpp)
+add_sovereign_test(global_sweep_optimizer_test test/backtest/global_sweep_optimizer_test.cpp)
+add_sovereign_test(grid_optimizer_test test/backtest/grid_optimizer_test.cpp)
+
+# --- Data Tests ---
+add_sovereign_test(binary_ts_merger_test test/data/binary_ts_merger_test.cpp)
+add_sovereign_test(binary_ts_reader_test test/data/binary_ts_reader_test.cpp)
+add_sovereign_test(data_snapshot_test test/data/data_snapshot_test.cpp)
+add_sovereign_test(ingestion_adapter_test test/data/ingestion_contract_test.cpp)
+add_sovereign_test(phase2_data_contract_test test/data/phase2_data_contract_test.cpp)
+
+# --- Analytics Tests ---
+add_sovereign_test(correlation_test test/analytics/correlation_test.cpp)
+add_sovereign_test(feature_pipeline_test test/analytics/feature_pipeline_test.cpp)
+add_sovereign_test(indicator_test test/analytics/indicator_test.cpp)
+add_sovereign_test(macro_features_test test/analytics/macro_features_test.cpp)
+add_sovereign_test(phase1_compounding_test test/analytics/phase1_compounding_test.cpp)
+add_sovereign_test(regime_strategy_test test/analytics/regime_strategy_test.cpp)
+add_sovereign_test(regime_test test/analytics/regime_test.cpp)
+add_sovereign_test(research_contract_test test/analytics/research_contract_test.cpp)
+add_sovereign_test(stats_test test/analytics/stats_test.cpp)
+add_sovereign_test(technical_features_test test/analytics/technical_features_test.cpp)
+
+# --- Execution Tests ---
+add_sovereign_test(crypto_replay_runner_test test/execution/crypto_replay_runner_test.cpp)
+add_sovereign_test(execution_test test/execution/execution_test.cpp)
+add_sovereign_test(parser_position_sizer_test test/execution/parser_position_sizer_test.cpp)
+add_sovereign_test(portfolio_test test/execution/portfolio_test.cpp)
+add_sovereign_test(quote_feed_interface_test test/execution/quote_feed_interface_test.cpp)
 
 # Specialized Test Configuration
 target_compile_definitions(kronos_integration_test PRIVATE

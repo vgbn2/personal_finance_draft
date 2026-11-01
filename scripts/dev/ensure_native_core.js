@@ -41,7 +41,7 @@ function ensureNativeCore(options = {}) {
     console.log('[NATIVE-CORE] Compiling native C++20 Sovereign Core engine (Release mode)...');
   }
 
-  const buildDir = path.join(REPO_ROOT, 'backend', 'core', 'build');
+  const buildDir = path.join(REPO_ROOT, 'build', 'core');
   const srcDir = path.join(REPO_ROOT, 'backend', 'core');
 
   const configure = spawnSync(

@@ -45,7 +45,7 @@ function installWorkspaces() {
     'backend/api',
     'backend/gateway',
     'backend/mcp_server',
-    'Frontend/dashboard'
+    'frontend/dashboard'
   ];
 
   for (const ws of workspaces) {
@@ -62,6 +62,7 @@ function installWorkspaces() {
 
 function buildNative() {
   run('npm', ['run', 'native:build'], { label: 'Build C++ Analytics Core (CMake)' });
+  run('npm', ['run', 'build', '--prefix', 'backend/gateway'], { label: 'Build Execution Gateway (TypeScript)' });
   run('npm', ['run', 'test:prepare'], { label: 'Seed Master Test Fixtures' });
 }
 

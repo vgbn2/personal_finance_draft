@@ -21,6 +21,10 @@ function buildBackendCandidates(repoRoot = REPO_ROOT, platform = process.platfor
     const binaryName = backendBinaryName(platform);
     const pathApi = platform === 'win32' ? path.win32 : path.posix;
     return [
+        pathApi.join(repoRoot, 'build', 'core', 'bin', binaryName),
+        pathApi.join(repoRoot, 'build', 'core', 'Release', binaryName),
+        pathApi.join(repoRoot, 'build', 'core', 'Debug', binaryName),
+        pathApi.join(repoRoot, 'build', 'core', binaryName),
         pathApi.join(repoRoot, 'backend', 'core', 'build', 'Release', binaryName),
         pathApi.join(repoRoot, 'backend', 'core', 'build', 'Debug', binaryName),
         pathApi.join(repoRoot, 'backend', 'core', 'build', binaryName),
@@ -114,14 +118,17 @@ function findTool(toolName, envVar) {
 }
 
 /**
- * Simple 'which' check for system paths
+ * Simple 'which' check for system paths (hardened against shell injection).
  */
 function which(cmd) {
+    if (typeof cmd !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(cmd)) {
+        return null;
+    }
     try {
-        const { execSync } = require('node:child_process');
-        const checkCmd = process.platform === 'win32' ? `where ${cmd}` : `which ${cmd}`;
-        execSync(checkCmd, { stdio: 'ignore' });
-        return cmd;
+        const { spawnSync } = require('node:child_process');
+        const bin = process.platform === 'win32' ? 'where' : 'which';
+        const res = spawnSync(bin, [cmd], { stdio: 'ignore', shell: false });
+        return res.status === 0 ? cmd : null;
     } catch {
         return null;
     }

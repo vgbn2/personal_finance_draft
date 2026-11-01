@@ -13,6 +13,7 @@ Module pages explain which source owner is responsible for a capability across e
 ## Catalog
 
 - [Documentation retrieval and knowledge boundaries](documentation-retrieval.md) — manifest-selected canonical/historical lookup, index/cache ownership, and documentation validation.
+- [Binary Injection And Process Execution Guard](binary_injection_and_execution_guard.md) — IEEE 754 non-finite/NaN injection defense (ExploitGym TV-01), FIPS 180-4 SHA-512 fingerprinting, and path traversal containment across C++ core and Node.js API services.
 - [Alpaca Asymmetric Exit Cap & Multi-Position Deduplication](alpaca-deduplicated-exit.md) — asymmetric buy vs sell notional caps (`ALPACA_PAPER_MAX_NOTIONAL`), same-symbol exit aggregation, and attribution preservation (`ALPACA-EXIT-01`).
 - [Proxmox Host Storage & Backup Safety Guard](ct-storage-backup-safety.md) — dual-threshold fail-closed root disk checks (`<1GB` or `<5%`), `/data/backups/` external mount isolation, and atomic provenance retention (`CT-STORAGE-01`).
 - [Ingestion Staging & Quarantine Engine](ingestion-quarantine.md) — microstructure anomaly quarantine, reason taxonomy (`QUARANTINE_REASONS`), SHA-256 payload digests, and 30-day retention pruning.

@@ -1,16 +1,45 @@
 # Current Workspace State
 
-## Session 2026-11-01 — Supabase Eradication, Secret Redaction & Zero-Cloud Contract
+## Session 2026-11-01 — Zero-Cloud Portability, Deployment Mirror Hardening & CS Concepts Ledger
+- **Cluster Deployment Script Hardening (`scripts/ops/sync_local_deploy.sh`)**:
+  - Renamed from `scripts/ops/sync_to_ct114.sh` to generic `sync_local_deploy.sh`.
+  - Replaced hardcoded IP addresses, container IDs, and destination paths with dynamic environment variable cascading (`SOVEREIGN_PROXMOX_HOST`, `SOVEREIGN_CT_ID`, `SOVEREIGN_CT_DEST`) and CLI flags (`--host`, `--ct`, `--dest`, `--user`).
+  - Decoupled `--dry-run` to execute offline without requiring active SSH network connections.
+  - Added pre-extraction purging of legacy casing ghosts and obsolete directories (`Frontend/`, `notebooks/`, `web/`, `site/`) on remote Proxmox containers.
+- **Docker & Multi-Cloud Container Portability**:
+  - Audited multi-stage `Dockerfile` and `infra/docker/Dockerfile` (`go-builder`, `feedd-runtime`, `build`, `runtime`).
+  - Verified Docker Compose configuration syntax (`docker compose config` valid) and port/mount mapping isolation.
+  - Enforced zero-cloud neutrality, ensuring full portability across local Docker, Proxmox LXC/VM, Heroku, AWS (ECS), and Azure (Container Apps).
+- **CLI Setup & Doctor Migration to Active Brokers**:
+  - Migrated `backend/cli/commands/operational/setup.js` and `setup_doctor.test.js` to target active brokers (`alpaca`, `gateio`).
+  - Flattened AST control flow to strictly enforce nesting depth $\le 3$ standards via helper functions (`parseKeyValue`) and inverted guard clauses.
+- **Git Commit Graph Vulnerability & Packfile Audit**:
+  - Executed read-only audit across 545 commits (151MB `.git`). Identified historical cache blobs (21MB `backtest_history.json`, API responses, node_modules).
+  - Formulated safe filter-repo command plan with multi-node sync precautions to protect daemon pull loops across Proxmox nodes.
+- **CS Domain Alignment (DSA / OOP / DOD)**:
+  - Identified and commented Data-Oriented Design (DOD flat packed struct `#pragma pack(push, 1)` in `backend/core/src/data/binary_ts_reader.hpp`).
+  - Identified and commented Data Structures & Algorithms (DSA two-pointer sorted streaming merge in `backend/core/src/data/binary_ts_merger.cpp`).
+  - Identified and commented Object-Oriented Programming (OOP abstract interface and polymorphic adapters in `backend/core/src/feeds/quote_feed.hpp`).
+  - Identified Linked List: Cryptographic hash-linked chain (`prev_hash` pointer linking) in `shared/lib/storage/event_ledger.js`.
+  - Identified Dynamic Array: Geometric heap-backed resizing vector (`std::vector<RawTsRecord>`) in `backend/core/src/data/binary_ts_merger.cpp`.
+  - Identified Greedy Algorithm: Greedy sub-position lot depletion & execution matching in `shared/lib/runtime/sub_positions_ledger.js`.
+  - Identified Recursion: Indentation-aware recursive descent configuration parsing in `shared/lib/runtime/config_loader.js`.
 - **Supabase Cloud Eradication**:
   - Replaced `@supabase/supabase-js` cloud dependency with zero-cloud offline stubs in `backend/api/server/services/supabase_client.js` and `frontend/dashboard/src/lib/supabase.ts`.
   - Preserved existing route handlers and local operator auto-trust without invoking remote endpoints.
-- **CLI Secret Redaction Hardening**:
-  - Hardened `backend/cli/commands/operational/setup.js` to redact credentials (`[redacted]`) across text and `--json` modes.
-  - Verified redaction behavior across setup and doctor commands via `setup_doctor.test.js`.
-- **Harness & Permission Configuration**:
-  - Configured project `.claude/settings.json` with safe read-only search permissions (`mcp__tavily-remote-mcp__tavily_search`).
+- **MT5 Real Interactive Integration Test Suite (`tests/scripts/integration/mt5/`)**:
+  - Implemented `tests/scripts/integration/mt5/mock_mt5_terminal_runner.js` as an isolated OS process simulating MT5 reverse TCP IPC.
+  - Implemented `tests/scripts/integration/mt5/mt5_interactive_cli.test.js` validating all 4 live interaction boundaries:
+    1. Fail-closed exit when bridge is disconnected.
+    2. Interactive account balance and equity queries over TCP socket bridge.
+    3. Live position streaming.
+    4. Buy order dispatch passing pre-trade C++ risk validation.
+  - Enabled `gateway_public`, `gateway_account`, and `execution` surfaces in `config/system/environment_manifest.json` for MT5 environment variables.
+  - Verified 4/4 tests passing in 3.5s.
 - **Verification Gates**:
-  - 100% clean baseline: `setup_doctor.test.js` (7/7 PASS), `npm run test:structure` (12/12 PASS), `npm run test:api` (15/15 PASS), `node scripts/dev/check_hygiene.js` (PRISTINE), `anti-cheat-enforcer --diff --require-tests` (0 strikes).
+  - 100% clean baseline: `npm run test:structure` (12/12 PASS), `npm run test:core` (35/35 CTests PASS), `npm run test:api` (50/50 PASS), `npm run hygiene` (PRISTINE), `npm run audit:documentation` (PASS), `anti-cheat-enforcer --diff --require-tests` (0 strikes).
+- **Roadmap Hand-off for Next Session**:
+  - Target: Writing pedagogical, rigorous inline code documentation referencing authoritative source specifications and PDFs (`[Spec: "PDF/Specification Name" § X.X]`) across C++20 core, execution gateways, and security modules.
 
 ## Session 2026-10-31 — Strategy Alpha Decoupling, Multi-User API Key Integration, CI Repair & Dependabot Governance
 - **Live Deployment & Proxmox CT112 Diagnostic Review**:
