@@ -1,4 +1,4 @@
-# Sovereign Trading Platform
+# Sovereign Trading Reasearch Platform
 
 [![CI Verification](https://img.shields.io/badge/CI-Passing-brightgreen?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![Documentation Health](https://img.shields.io/badge/docs-100%25_clean-brightgreen?style=flat-square&logo=gitbook&logoColor=white)](docs/README.md)
