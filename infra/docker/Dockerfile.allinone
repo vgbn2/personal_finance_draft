@@ -104,7 +104,7 @@ COPY --from=build --chown=sovereign:sovereign /app/backend/gateway ./backend/gat
 COPY --from=build --chown=sovereign:sovereign /app/backend/mcp_server ./backend/mcp_server
 COPY --from=build --chown=sovereign:sovereign /app/backend/scripts ./backend/scripts
 COPY --from=build --chown=sovereign:sovereign /app/backend/core/build ./backend/core/build
-COPY --from=build --chown=sovereign:sovereign /app/frontend/dashboard/dist ./frontend/dashboard/dist
+COPY --from=build --chown=sovereign:sovereign /app/build/dashboard ./build/dashboard
 COPY --from=build --chown=sovereign:sovereign /app/shared ./shared
 COPY --from=build --chown=sovereign:sovereign /app/config ./config
 COPY --from=build --chown=sovereign:sovereign /app/scripts ./scripts

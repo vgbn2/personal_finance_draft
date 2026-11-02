@@ -69,7 +69,7 @@ COPY --from=build --chown=node:node /app/backend/gateway ./backend/gateway
 COPY --from=build --chown=node:node /app/backend/mcp_server ./backend/mcp_server
 COPY --from=build --chown=node:node /app/backend/scripts ./backend/scripts
 COPY --from=build --chown=node:node /app/backend/core/build ./backend/core/build
-COPY --from=build --chown=node:node /app/frontend/dashboard/dist ./frontend/dashboard/dist
+COPY --from=build --chown=node:node /app/build/dashboard ./build/dashboard
 COPY --from=build --chown=node:node /app/shared ./shared
 COPY --from=build --chown=node:node /app/config ./config
 COPY --from=build --chown=node:node /app/scripts/data_ops/backfill_20_years.js ./scripts/data_ops/backfill_20_years.js
