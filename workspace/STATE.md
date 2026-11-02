@@ -1,5 +1,22 @@
 # Current Workspace State
 
+## Session 2026-11-02 — CI Docker Multi-Stage Isolation, Concurrency Test Invariant & Repository Cleanliness
+- **Docker Multi-Stage Workspace Isolation**:
+  - Decoupled `frontend/dashboard` build into Stage 0 (`FROM node:22-bookworm AS frontend-builder`) in `Dockerfile`, `infra/docker/Dockerfile`, and `infra/docker/Dockerfile.allinone`.
+  - Prevents child workspace `npm ci` from pruning hoisted dependencies from root `/app/node_modules`.
+  - Maintained 100% byte-identical parity between `Dockerfile` and `infra/docker/Dockerfile`.
+- **TypeScript Module Lazy-Loading (`shared/lib/runtime/ts_register.js`)**:
+  - Replaced eager top-level `require('typescript')` with a lazy getter `getTs()`, allowing production slim containers without TypeScript to run CLI diagnostics cleanly.
+- **Concurrent Test Suite Mutex Parameterization**:
+  - Parameterized kill switch lockfile via `SOVEREIGN_KILL_SWITCH_LOCK` in C++ risk engine (`backend/core/src/main.cpp`), CLI tools (`kill_switch.js`), and registered in `config/system/environment_manifest.json`.
+  - Converted `mt5_lockout_edgecases.test.js` to process-scoped PID lockfile, eliminating parallel test collision under `--test-concurrency=4`.
+- **Repository Debloating & Tmpfs Cleanliness**:
+  - Unlinked orphaned Vim swap file `.swp`.
+  - Cleaned stale logs from `logs/`.
+  - Pruned transient debug files from `/dev/shm`.
+- **GitHub Actions CI Status**:
+  - 100% GREEN across all workflows on `main` at `6f6a8de9` (Docker GHCR publish, Test suite, Code Analysis, Build, Deploy Docs, CodeQL).
+
 ## Session 2026-11-01 — Zero-Cloud Portability, Deployment Mirror Hardening & CS Concepts Ledger
 - **Cluster Deployment Script Hardening (`scripts/ops/sync_local_deploy.sh`)**:
   - Renamed from `scripts/ops/sync_to_ct114.sh` to generic `sync_local_deploy.sh`.
