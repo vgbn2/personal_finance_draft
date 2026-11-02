@@ -23,13 +23,6 @@ export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 /**
- * Helper to get the current session token for passing to the local backend.
- */
-export async function getSessionToken(): Promise<string | null> {
-  return null;
-}
-
-/**
  * Real-time subscription to order events (offline stub).
  */
 export function subscribeToOrders(_callback: (payload: any) => void) {

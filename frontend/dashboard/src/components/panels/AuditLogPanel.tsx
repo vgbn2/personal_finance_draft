@@ -103,8 +103,8 @@ export function AuditLogPanel() {
               Hydrating audit ledger...
             </div>
           ) : !supabase ? (
-            <div className="p-8 text-center font-mono text-[10px] text-red-400">
-              Supabase client not configured. Audit events unavailable.
+            <div className="p-8 text-center font-mono text-[10px] text-[var(--text-faint)]">
+              Local audit mode active. Audit events are recorded in local disk ledger.
             </div>
           ) : events.length === 0 ? (
             <div className="p-8 text-center font-mono text-[10px] text-[var(--text-faint)]">

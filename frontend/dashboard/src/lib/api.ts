@@ -21,7 +21,6 @@ export const API_ENDPOINTS = {
   PORTFOLIO: `${API_BASE_URL}/api/backend/portfolio`,
   AUTH_STATUS: `${API_BASE_URL}/api/auth/status`,
   DATABASE_STATUS: `${API_BASE_URL}/api/database/status`,
-  SUPABASE_CONFIG: `${API_BASE_URL}/api/supabase/config`,
   KILL_SWITCH: `${API_BASE_URL}/api/kill-switch`,
   CONFIG: `${API_BASE_URL}/api/config`,
   SIGMA_BAND:  `${API_BASE_URL}/api/sigma-band`,

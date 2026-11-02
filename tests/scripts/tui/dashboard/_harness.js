@@ -8,13 +8,9 @@
 
 const { PassThrough, Writable } = require('node:stream');
 const { setTimeout: delay } = require('node:timers/promises');
+const { ANSI_PATTERN: ANSI_RE, stripAnsi } = require('../../../../shared/lib/ui/ansi');
 
-const ANSI_RE = /\x1b\[[0-?]*[ -/]*[@-~]/g;
 const SYNC_FRAME_START = '\x1b[?2026h';
-
-function stripAnsi(input) {
-  return String(input).replace(ANSI_RE, '');
-}
 
 // Ink wraps each repaint in a synchronized-update marker pair; isolating the
 // tail after the LAST start marker gives the current frame instead of the

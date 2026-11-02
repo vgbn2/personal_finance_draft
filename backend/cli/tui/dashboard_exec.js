@@ -1,5 +1,7 @@
 'use strict';
 
+const { stripAnsi } = require('../../../shared/lib/ui/ansi');
+
 function splitWords(str) {
   return String(str || '').trim().split(/\s+/).filter(Boolean);
 }
@@ -46,12 +48,6 @@ function cycleOption(meta, current, dir) {
   if (idx === -1) idx = 0;
   idx = ((idx + dir) % opts.length + opts.length) % opts.length;
   return values[idx];
-}
-
-const ANSI_PATTERN = /\x1b\[[0-9;]*m/g;
-
-function stripAnsi(str) {
-  return String(str || '').replace(ANSI_PATTERN, '');
 }
 
 // Mirrors the legacy TUI's tui/manifest.js getRegisteredStrategies(): same

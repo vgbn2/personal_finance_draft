@@ -144,6 +144,13 @@ function status(status, text = String(status)) {
   return c(statusColor(status), text);
 }
 
+const ANSI_PATTERN = /\u001b\[[0-?]*[ -/]*[@-~]/g;
+
+function stripAnsi(str) {
+  if (str == null || str === '') return '';
+  return String(str).replace(ANSI_PATTERN, '');
+}
+
 module.exports = {
   ESC,
   RESET,
@@ -192,4 +199,6 @@ module.exports = {
   muted,
   status,
   statusColor,
+  ANSI_PATTERN,
+  stripAnsi,
 };

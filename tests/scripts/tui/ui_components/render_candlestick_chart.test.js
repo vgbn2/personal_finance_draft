@@ -5,10 +5,7 @@ const assert = require('node:assert/strict');
 
 const { renderCandlestickChart } = require('../../../../backend/cli/tui/visualizations.js');
 const A = require('../../../../shared/lib/ui/ansi');
-
-function stripAnsi(s) {
-  return String(s).replace(/\x1b\[[0-9;]*m/g, '');
-}
+const { stripAnsi } = A;
 
 test('renderCandlestickChart degrades gracefully on empty input', () => {
   const out = stripAnsi(renderCandlestickChart([]));

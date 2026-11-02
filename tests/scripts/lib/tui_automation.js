@@ -2,8 +2,8 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { setTimeout: delay } = require('node:timers/promises');
 const { VirtualTerminalScreen } = require('./virtual_terminal_screen');
+const { stripAnsi } = require('../../../shared/lib/ui/ansi');
 
-const ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
 const CTRL_RE = /[\u0000-\u001f\u007f]/g;
 
 const keys = {
@@ -19,10 +19,6 @@ const keys = {
 // Pipe-driven sessions are enough for menu and prompt automation, but they do
 // not emulate every real TTY signal path. Keep signal-specific assertions in
 // dedicated process-level tests unless we add a true PTY harness later.
-
-function stripAnsi(input) {
-  return String(input).replace(ANSI_RE, '');
-}
 
 function normalizeTranscript(input) {
   return stripAnsi(input)

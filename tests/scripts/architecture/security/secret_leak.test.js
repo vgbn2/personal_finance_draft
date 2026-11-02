@@ -19,15 +19,13 @@ function runCli(args, env = {}) {
 test('setup output redacts secret values in json mode', () => {
   const result = runCli([
     'setup',
-    'supabase',
+    'alpaca',
     '--dry-run',
     '--json',
     '--set',
-    'SOVEREIGN_SUPABASE_URL=https://example.supabase.co',
+    'ALPACA_PAPER_API_KEY=publishable_secret_123456789',
     '--set',
-    'SOVEREIGN_SUPABASE_PUBLISHABLE_KEY=publishable_secret_123456789',
-    '--set',
-    'SOVEREIGN_SUPABASE_SECRET_KEY=server_secret_987654321',
+    'ALPACA_PAPER_SECRET_KEY=server_secret_987654321',
   ]);
 
   assert.equal(result.status, 0);
@@ -38,11 +36,11 @@ test('setup output redacts secret values in json mode', () => {
 
 test('doctor output redacts secret values in json mode', () => {
   const result = runCli(
-    ['doctor', 'supabase', '--json', '--no-network'],
+    ['doctor', 'gateio', '--json', '--no-network'],
     {
-      SOVEREIGN_SUPABASE_URL: 'https://kwrnlkvoqzmaolmwvhse.supabase.co',
-      SOVEREIGN_SUPABASE_PUBLISHABLE_KEY: 'publishable_secret_123456789',
-      SOVEREIGN_SUPABASE_SECRET_KEY: 'server_secret_987654321',
+      GATEIO_API_KEY: 'publishable_secret_123456789',
+      GATEIO_API_SECRET: 'server_secret_987654321',
+      GATEIO_API_PASSPHRASE: 'gateio_pass_555',
     }
   );
 

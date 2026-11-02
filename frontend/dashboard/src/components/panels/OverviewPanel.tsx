@@ -82,7 +82,7 @@ export function OverviewPanel() {
     setLogs([
       '[SYS] Initializing Sovereign Kernel v1.5.0...',
       '[DATA] Hydrating local cache from snapshot...',
-      '[SECURITY] Real-time persistence active via Supabase.',
+      '[SECURITY] Real-time persistence active via local paper ledger.',
       '[OK] Dashboard connected to backend on port 8787.',
     ]);
 
