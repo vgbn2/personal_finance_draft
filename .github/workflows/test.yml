@@ -24,10 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -37,7 +37,7 @@ jobs:
 
       - name: Retain source evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sovereign-source-evidence
           path: ${{ runner.temp }}/sovereign-source-evidence.json
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configure
         run: cmake -S . -B build/ci-debug -DCMAKE_BUILD_TYPE=Debug -DSOVEREIGN_ENABLE_SANITIZERS=ON -DSOVEREIGN_ENABLE_ONNX_RUNTIME=OFF
@@ -64,10 +64,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -77,21 +77,21 @@ jobs:
 
       - name: Cache C++ core build
         id: cache-native-core
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: backend/core/build
           key: native-core-${{ runner.os }}-${{ hashFiles('backend/core/**', 'CMakeLists.txt') }}
 
       - name: Cache MCP server build
         id: cache-mcp-server
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: dist/mcp_server
           key: mcp-server-${{ runner.os }}-${{ hashFiles('backend/mcp_server/**') }}
 
       - name: Cache dashboard build
         id: cache-dashboard
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build/dashboard
