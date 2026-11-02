@@ -55,6 +55,7 @@ test('C++ Actions workflow executes CTest from the generated root-build director
 
 test('Node Actions workflow retains committed-archive evidence instead of root-only proof', () => {
   const workflow = fs.readFileSync(TEST_WORKFLOW, 'utf8');
+  assert.match(workflow, /ONNXRUNTIME_NODE_INSTALL: 'skip'/);
   assert.match(workflow, /npm run verify:committed-archive/);
   assert.match(workflow, /--evidence-out "\$RUNNER_TEMP\/sovereign-source-evidence\.json"/);
   assert.match(workflow, /uses: actions\/upload-artifact@v4/);
@@ -67,6 +68,27 @@ test('Node Actions workflow retains committed-archive evidence instead of root-o
   assert.match(coordinator, /typecheck_gateway/);
   assert.match(coordinator, /shared\/lib\/market\/quote_router\.js/);
   assert.match(coordinator, /backend\/api\/app\.js/);
+});
+
+test('workspace manifests agree with root and package-local lockfiles', () => {
+  const manifest = JSON.parse(read('package.json'));
+  const rootLock = JSON.parse(read('package-lock.json'));
+  for (const workspace of manifest.workspaces) {
+    const workspaceManifest = JSON.parse(read(`${workspace}/package.json`));
+    const localLock = JSON.parse(read(`${workspace}/package-lock.json`));
+    for (const [label, locked] of [['root', rootLock.packages[workspace]], ['local', localLock.packages['']]]) {
+      for (const group of ['dependencies', 'devDependencies', 'optionalDependencies']) {
+        assert.deepEqual(locked?.[group], workspaceManifest[group], `${workspace}: ${label} lock ${group}`);
+      }
+    }
+  }
+  const dashboardLock = JSON.parse(read('frontend/dashboard/package-lock.json'));
+  const rootIcon = rootLock.packages['frontend/dashboard/node_modules/lucide-react']
+    || rootLock.packages['node_modules/lucide-react'];
+  const satisfies = require('semver/functions/satisfies');
+  const range = JSON.parse(read('frontend/dashboard/package.json')).dependencies['lucide-react'];
+  assert.ok(satisfies(rootIcon.version, range), 'root lucide-react resolution satisfies the manifest');
+  assert.ok(satisfies(dashboardLock.packages['node_modules/lucide-react'].version, range), 'local lucide-react resolution satisfies the manifest');
 });
 
 test('CI dependencies use non-interactive transports', () => {
