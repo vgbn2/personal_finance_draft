@@ -105,7 +105,7 @@ test('MT5 Lockout Interactions & Edge Cases', async (t) => {
     poll();
   `;
 
-  const killSwitchFile = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'kill_switch.lock');
+  const killSwitchFile = path.join(REPO_ROOT, 'storage', 'data', 'cache', `kill_switch_test_${process.pid}.lock`);
   fs.rmSync(killSwitchFile, { force: true });
 
   const daemonChild = spawn(process.execPath, ['-e', daemonCode], {
@@ -130,6 +130,7 @@ test('MT5 Lockout Interactions & Edge Cases', async (t) => {
       const engageRes = spawnSync(process.execPath, [CLI_PATH, 'kill-switch', 'engage', '--reason', 'Emergency test halt', '--json'], {
         cwd: REPO_ROOT,
         encoding: 'utf8',
+        env: { ...process.env, SOVEREIGN_KILL_SWITCH_LOCK: killSwitchFile },
       });
       assert.equal(engageRes.status, 0);
 
@@ -138,7 +139,7 @@ test('MT5 Lockout Interactions & Edge Cases', async (t) => {
         const buyRes = spawnSync(process.execPath, [CLI_PATH, 'trade', 'buy', 'EURUSD', '1000', '--broker', 'mt5', '--live', '--pin', '1234', '--json'], {
           cwd: REPO_ROOT,
           encoding: 'utf8',
-          env: { ...process.env, MT5_BRIDGE_PORT: String(PORT), SOVEREIGN_TRADE_PIN: '1234', SOVEREIGN_MOCK: 'true', CURRENT_PORTFOLIO_DRAWDOWN: '0.02', MT5_CONNECT_TIMEOUT_MS: '3000' },
+          env: { ...process.env, MT5_BRIDGE_PORT: String(PORT), SOVEREIGN_TRADE_PIN: '1234', SOVEREIGN_MOCK: 'true', CURRENT_PORTFOLIO_DRAWDOWN: '0.02', MT5_CONNECT_TIMEOUT_MS: '3000', SOVEREIGN_KILL_SWITCH_LOCK: killSwitchFile },
         });
         assert.equal(buyRes.status, 1);
         const firstBrace = buyRes.stdout.indexOf('{');
@@ -152,6 +153,7 @@ test('MT5 Lockout Interactions & Edge Cases', async (t) => {
         const disengageRes = spawnSync(process.execPath, [CLI_PATH, 'kill-switch', 'disengage', '--json'], {
           cwd: REPO_ROOT,
           encoding: 'utf8',
+          env: { ...process.env, SOVEREIGN_KILL_SWITCH_LOCK: killSwitchFile },
         });
         assert.equal(disengageRes.status, 0);
         fs.rmSync(killSwitchFile, { force: true });

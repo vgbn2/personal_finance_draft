@@ -14,6 +14,13 @@ FROM alpine:3.21 AS feedd-runtime
 COPY --from=go-builder /sovereign-feedd /usr/local/bin/sovereign-feedd
 ENTRYPOINT ["/usr/local/bin/sovereign-feedd"]
 
+FROM node:22-bookworm AS frontend-builder
+WORKDIR /src
+COPY frontend/dashboard/package*.json ./frontend/dashboard/
+RUN cd frontend/dashboard && npm ci --ignore-scripts
+COPY frontend/dashboard ./frontend/dashboard
+RUN cd frontend/dashboard && npm run build
+
 FROM node:22-bookworm AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -34,11 +41,8 @@ RUN cd backend/api && npm ci --ignore-scripts --omit=dev
 COPY backend/gateway/package*.json ./backend/gateway/
 RUN cd backend/gateway && npm ci --ignore-scripts --omit=dev
 
-COPY frontend/dashboard/package*.json ./frontend/dashboard/
-RUN cd frontend/dashboard && npm ci --ignore-scripts
-
 COPY . .
-RUN cd frontend/dashboard && npm run build
+COPY --from=frontend-builder /src/build/dashboard ./build/dashboard
 
 RUN cmake -S backend/core -B backend/core/build \
       -DCMAKE_BUILD_TYPE=Release \

@@ -31,7 +31,7 @@ async function commandKillSwitch(args = []) {
   const fs = require('node:fs');
   const path = require('node:path');
   const { STORAGE_CACHE_DIR } = require('../../../../shared/lib/runtime/paths');
-  const lockFile = path.join(STORAGE_CACHE_DIR, 'kill_switch.lock');
+  const lockFile = process.env.SOVEREIGN_KILL_SWITCH_LOCK || path.join(STORAGE_CACHE_DIR, 'kill_switch.lock');
 
   let status = 'disengaged';
   let message = 'System operating normally';

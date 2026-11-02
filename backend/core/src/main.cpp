@@ -1686,7 +1686,10 @@ int main(int argc, char** argv) {
         return printSweep(args);
     }
     if (args[0] == "kill-switch") {
-        const auto lockPath = std::filesystem::path("storage/data/cache/kill_switch.lock");
+        const char* envLock = std::getenv("SOVEREIGN_KILL_SWITCH_LOCK");
+        const auto lockPath = (envLock && *envLock)
+            ? std::filesystem::path(envLock)
+            : std::filesystem::path("storage/data/cache/kill_switch.lock");
         if (args.size() > 1) {
             const std::string sub = args[1];
             if (sub == "engage") {

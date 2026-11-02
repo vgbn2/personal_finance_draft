@@ -5,6 +5,15 @@
 ARG SOVEREIGN_SOURCE_REVISION=unverified
 ARG SOVEREIGN_SOURCE_TREE=unverified
 
+# --- STAGE 0: Frontend Builder ---
+FROM node:22-bookworm AS frontend-builder
+
+WORKDIR /src
+COPY frontend/dashboard/package*.json ./frontend/dashboard/
+RUN cd frontend/dashboard && npm ci --ignore-scripts
+COPY frontend/dashboard ./frontend/dashboard
+RUN cd frontend/dashboard && npm run build
+
 # --- STAGE 1: C++20 Core & Frontend Build ---
 FROM node:22-bookworm AS build
 
@@ -26,11 +35,8 @@ RUN cd backend/api && npm ci --ignore-scripts --omit=dev
 COPY backend/gateway/package*.json ./backend/gateway/
 RUN cd backend/gateway && npm ci --ignore-scripts --omit=dev
 
-COPY frontend/dashboard/package*.json ./frontend/dashboard/
-RUN cd frontend/dashboard && npm ci --ignore-scripts
-
 COPY . .
-RUN cd frontend/dashboard && npm run build
+COPY --from=frontend-builder /src/build/dashboard ./build/dashboard
 
 RUN cmake -S backend/core -B backend/core/build \
       -DCMAKE_BUILD_TYPE=Release \

@@ -2,11 +2,19 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const ts = require('typescript');
 const Module = require('node:module');
+
+let tsInstance;
+function getTs() {
+  if (!tsInstance) {
+    tsInstance = require('typescript');
+  }
+  return tsInstance;
+}
 
 if (!require.extensions['.ts']) {
   require.extensions['.ts'] = function(module, filename) {
+    const ts = getTs();
     const content = fs.readFileSync(filename, 'utf8');
     const compiled = ts.transpileModule(content, {
       compilerOptions: {

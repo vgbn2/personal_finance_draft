@@ -21,6 +21,7 @@ const CHILD_RUNTIME_PASSTHROUGH = Object.freeze([
   'NO_COLOR',
   'PATH',
   'PATHEXT',
+  'SOVEREIGN_KILL_SWITCH_LOCK',
   'SYSTEMROOT',
   'SystemRoot',
   'TEMP',
