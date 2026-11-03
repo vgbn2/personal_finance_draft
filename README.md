@@ -1,10 +1,10 @@
-# Sovereign Trading Reasearch Platform
+# Sovereign Trading Research Platform
 
 [![CI Verification](https://img.shields.io/badge/CI-Passing-brightgreen?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![Documentation Health](https://img.shields.io/badge/docs-100%25_clean-brightgreen?style=flat-square&logo=gitbook&logoColor=white)](docs/README.md)
 [![Runtime Node](https://img.shields.io/badge/node.js-%3E%3D20.0.0-339933?style=flat-square&logo=node.js&logoColor=white)](package.json)
 [![Core C++](https://img.shields.io/badge/C%2B%2B-20-00599C?style=flat-square&logo=cplusplus&logoColor=white)](backend/core/)
-[![Frontend UI](https://img.shields.io/badge/frontend-React_19_+_Vite-61DAFB?style=flat-square&logo=react&logoColor=black)](Frontend/dashboard/)
+[![Frontend UI](https://img.shields.io/badge/frontend-React_19_+_Vite-61DAFB?style=flat-square&logo=react&logoColor=black)](frontend/dashboard/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
 [![Zero Keys Required](https://img.shields.io/badge/auth-100%25_zero--key_offline-blueviolet?style=flat-square)](docs/how_to/zero_key_development_guide.md)
 
@@ -85,8 +85,8 @@ flowchart TD
     subgraph CoreTiers["Processing & Presentation Tiers"]
         CLI["CLI / Ink TUI<br/>backend/cli/"]
         API["Native Node.js HTTP API<br/>backend/api/ (Port 8787)<br/>Capability-Gated RBAC"]
-        DASH["React 19 Dashboard<br/>Frontend/dashboard/<br/>Vite + Charts UI"]
-        CPP["C++20 Analytics & Core<br/>- Fast Backtesting<br/>- Risk Validation (34 CTests)<br/>backend/core/"]
+        DASH["React 19 Dashboard<br/>frontend/dashboard/<br/>Vite + Charts UI"]
+        CPP["C++20 Analytics & Core<br/>- Fast Backtesting<br/>- Risk Validation (35 CTests)<br/>backend/core/"]
         STRAT["Strategy Engine<br/>- Indicators & Features<br/>- Regime Detection"]
     end
 
@@ -164,7 +164,7 @@ npm install
 npm install --prefix backend/api
 npm install --prefix backend/gateway
 npm install --prefix backend/mcp_server
-npm install --prefix Frontend/dashboard
+npm install --prefix frontend/dashboard
 
 # 4. Build the native C++ core engine & seed master test fixture
 npm run native:build
@@ -290,7 +290,7 @@ Every TUI capability can be invoked headlessly in CI/CD pipelines, background sc
 | Feature Subsystem | Key Capabilities & Architecture | Primary Files & Owners | Load Index | Spec & Architecture Ref |
 |---|---|---|:---:|---|
 | **Binary Timeseries Engine** | • Packed 48-byte IEEE-754 binary records (`SOVT` format)<br>• $O(A+B)$ streaming two-pointer merger with $<5\text{MB}$ RSS<br>• Zero-allocation in-memory circular ring buffers<br>• Multi-resolution rollup synthesizer (`1m` $\to$ `5m`, `15m`, `1h`, `1d`) | `backend/core/src/ts_merger.cpp`<br>`shared/lib/market/validation.js`<br>`storage/data/ts/*.bin` | **2/10** | [02. Data Pipeline & Storage](docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md) |
-| **Native Backtester & Monte Carlo** | • `FrameBacktester` dual execution: Binary Bars & Feature Frames<br>• Realistic execution slippage drag ($P_{\text{entry}} = P_{\text{close}} \cdot (1 + \text{cost\_bps}/10000)$)<br>• PRNG bootstrap resampling ($N=10,000$ iterations) for Sharpe, Sortino, VaR<br>• 34/34 native C++ CTest test suite | `backend/core/src/backtest/`<br>`backend/core/src/monte_carlo/`<br>`backend/core/build/sovereign_wealth` | **8/10** | [03. Native Core & Backtester](docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md) |
+| **Native Backtester & Monte Carlo** | • `FrameBacktester` dual execution: Binary Bars & Feature Frames<br>• Realistic execution slippage drag ($P_{\text{entry}} = P_{\text{close}} \cdot (1 + \text{cost\_bps}/10000)$)<br>• PRNG bootstrap resampling ($N=10,000$ iterations) for Sharpe, Sortino, VaR<br>• 35/35 native C++ CTest test suite | `backend/core/src/backtest/`<br>`backend/core/src/monte_carlo/`<br>`backend/core/build/sovereign_wealth` | **8/10** | [03. Native Core & Backtester](docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md) |
 | **Autonomous Alpha & ML Workbench** | • Autonomous parameter space explorer over 6D hypercube $[0, 1]^6$<br>• Normalized Manhattan novelty filter ($D_H \ge 0.50$) & SHA-256 fingerprinting<br>• Rolling feature matrix synthesis with SVM decision boundaries<br>• Model Context Protocol (MCP) JSON-RPC tool interface for Claude / LLMs | `scripts/strategies/auto_strategy_explorer.js`<br>`backend/mcp_server/index.ts`<br>`config/strategies/automated/` | **5/10** | [04. Quantitative Alpha & ML](docs/engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md) |
 | **Sub-Positions Virtual Ledger** | • Multi-strategy virtual accounting ledger on shared symbols<br>• Deterministic client order signatures (`strat_<id>_<tf>_<ts>_<hex>` / `manual_cli_...`)<br>• Physical-to-virtual broker reconciliation: $Q_{\text{Broker}} = \sum q_k + q_{\text{[MANUAL]}}$<br>• Microsecond ($<15\mu\text{s}$) pre-trade risk circuit breaker & step sizing clamp | `shared/lib/runtime/sub_positions.js`<br>`backend/gateway/src/alpaca.js`<br>`backend/core/src/risk/` | **2/10** | [05. Execution & Risk](docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md) |
 | **Prediction Markets & CLOB Archive** | • Dual-stream Polymarket Gamma REST & CLOB WebSocket feeds<br>• Sub-second Level 2 orderbook snapshot JSONL archiving<br>• Double-entry virtual paper ledger with rolling SHA-256 state digest verification<br>• Binary outcome oracle settlement and Kelly criterion staking math | `shared/lib/market/polymarket_history.js`<br>`backend/gateway/src/paper_ledger.js`<br>`storage/data/archive/polymarket/` | **3/10** | [06. Prediction Markets](docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md) |
@@ -355,7 +355,7 @@ Modify C++ indicators, binary time-series stream mergers, or risk models:
 # Rebuild native engine
 npm run native:build
 
-# Run all 34 CTest suites
+# Run all 35 CTest suites
 npm run test:core
 ```
 
@@ -387,7 +387,7 @@ docker compose -f infra/docker/docker-compose.yml up -d --build
 | `backend/gateway/` | Broker gateways (Alpaca, Polymarket, Gate.io) & checksummed paper ledger. |
 | `backend/mcp_server/`| Model Context Protocol (MCP) server exposing tools to Claude and AI agents. |
 | `shared/lib/` | Shared domain logic: market storage, indicators, strategy runtime, risk models. |
-| `Frontend/dashboard/` | React 19 + Vite dashboard (source in `src/`, `dist/` is generated). |
+| `frontend/dashboard/` | React 19 + Vite dashboard (source in `src/`, `dist/` is generated). |
 | `config/` | System environment manifest, asset mappings, risk policies, and categorized strategy registry (`curated/`, `automated/`, `fixtures/`). |
 | `storage/data/` | Runtime disk storage: binary TS indices (`ts/`), JSON caches (`cache/`), paper trading state. |
 | `scripts/` | Domain-organized utilities: `mcp/`, `ml/training/`, `tools/`, and `dev/`. |
@@ -397,23 +397,7 @@ docker compose -f infra/docker/docker-compose.yml up -d --build
 
 ---
 
-## 8. Canonical Skill Protocols for Development & Review
-
-All development, testing, and pull request reviews follow the repository's canonical skill protocols in `skills/manifest.json`:
-
-| Lifecycle Phase | Protocol / Command | Enforced Gate |
-|---|---|---|
-| **Authoring & Refactoring** | `skills/mass-implement` | Bounded scope, zero-key development preservation. |
-| **Test Integrity Audit** | `skills/verify-test-integrity` | Anti-cheating scan, no Release-elided `assert()` calls. |
-| **Native Core Verification** | `skills/native-core-verify` | 34/34 CTests pass with sanitizer validation (`npm run test:core`). |
-| **Hygiene & Documentation** | `skills/repo-hygiene`<br>`skills/audit-documentation` | `npm run hygiene` (0 noise) + `npm run audit:documentation` (100% manifest match). |
-| **PR Review & Audit** | `skills/blast-through` | Single-mode audit (`review`, `security`) with 6-tuple fault attribution. |
-| **Failure Triage** | `skills/bayesian-troubleshooter` | Hypothesis ranking and binary probe debugging. |
-| **Architecture & Atlas Sync**| `skills/codebase-untangler` | Syncs Code Atlas records in `docs/atlas/`. |
-
----
-
-## 9. Choose Your Path & Documentation Map
+## 8. Choose Your Path & Documentation Map
 
 - **Operator:** [Quickstart](docs/operational/guides/QUICKSTART.md) → [CLI Guide](docs/operational/guides/cli_quick_guide.md) → [Operations](docs/operational/guides/operations.md)
 - **Contributor:** [Contributing](docs/operational/guides/CONTRIBUTING.md) → [GitHub Rulesets](docs/operational/guides/github_environment_and_rulesets.md) → [Architecture Overview](docs/engineering/architecture/01_ARCHITECTURE_AND_CODEBASE.md) → [Documentation Standard](docs/engineering/standards/documentation_standard.md)
@@ -424,13 +408,13 @@ All development, testing, and pull request reviews follow the repository's canon
 
 ---
 
-## 10. Testing & Verification
+## 9. Testing & Verification
 
 ```bash
 # Run core verification gates
 npm run test:data        # Ingestion, indicators, backfill regression
-npm run test:structure   # Repo structural contracts, hygiene, skill integrity
-npm run test:core        # Native C++ analytics & CTest suite (34/34 tests)
+npm run test:structure   # Repo structural contracts and hygiene
+npm run test:core        # Native C++ analytics & CTest suite (35/35 tests)
 npm run test:api         # Backend REST/WebSocket API contracts
 
 # Full test suite
@@ -445,6 +429,6 @@ npm run audit:documentation
 
 ---
 
-## 11. Safety Boundary
+## 10. Safety Boundary
 
 Do not infer trading permission from the presence of an adapter, credential variable, menu item, test, paper account, or prior session record. Live-capital actions require explicit authorization and current operator review of runtime policy, kill switch, risk limits, credentials, account scope, and provider behavior. Nothing in this README authorizes an order, provider mutation, canonical-data write, host change, or deployment.
