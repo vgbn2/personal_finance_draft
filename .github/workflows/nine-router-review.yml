@@ -156,18 +156,31 @@ jobs:
                   timeout=30.0,
                   max_retries=0,
               )
-              # Zero tools, zero autonomous permissions, review diff text only
-              response = client.messages.create(
-                  model=model,
-                  max_tokens=2048,
-                  system=(
-                      "You are an automated code review assistant. Analyze the diff for potential "
-                      "bugs, security vulnerabilities, and regressions. Output untrusted plaintext only."
-                  ),
-                  messages=[
-                      {"role": "user", "content": f"Review this git diff:\n\n{diff_text}"}
-                  ],
-              )
+              # Direct Gemini target avoids the alias's unrequested Gemini 3.7 fallback.
+              models = (model, "claude-gpt-5.6-luna", "ag/gemini-3.8-flash-high")
+              for index, candidate in enumerate(models):
+                  try:
+                      response = client.messages.create(
+                          model=candidate,
+                          max_tokens=2048,
+                          extra_body={"reasoning_effort": "high"},
+                          system=(
+                              "You are an automated code review assistant. Analyze the diff for potential "
+                              "bugs, security vulnerabilities, and regressions. Output untrusted plaintext only."
+                          ),
+                          messages=[
+                              {"role": "user", "content": f"Review this git diff:\n\n{diff_text}"}
+                          ],
+                      )
+                      break
+                  except (anthropic.APIConnectionError, anthropic.APIStatusError) as exc:
+                      if isinstance(exc, anthropic.APIStatusError):
+                          if exc.status_code not in (404, 408, 409, 429) and exc.status_code < 500:
+                              raise
+                      if index == len(models) - 1:
+                          raise
+                      print(f"::warning::Review target {index + 1} unavailable; trying next target.")
+              print(f"Review completed with {candidate} (effort: high).")
               if getattr(response, "stop_reason", None) != "end_turn":
                   print(
                       f"::error::Model response incomplete or truncated (stop_reason: {getattr(response, 'stop_reason', None)})",

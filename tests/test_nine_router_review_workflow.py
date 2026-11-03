@@ -116,6 +116,68 @@ class TestNineRouterReviewWorkflowStructure(unittest.TestCase):
         self.assertIn('stop_reason", None) != "end_turn"', py_code)
         self.assertIn("review_summary.txt", py_code)
 
+    def test_model_fallback_transport(self):
+        """Exercise the real SDK, JSON wire format, and error decoding over local HTTP."""
+        import contextlib
+        import http.server
+        import io
+        import json
+        import threading
+        import anthropic
+
+        step = next(
+            s for s in self.doc["jobs"]["review"]["steps"]
+            if "Execute Gated Review" in s.get("name", "")
+        )
+        code = re.search(r"python3 - << 'EOF'\n(.*?)\nEOF", step["run"], re.DOTALL).group(1)
+        request_block = next(node for node in ast.parse(code).body if isinstance(node, ast.Try))
+        compiled = compile(ast.Module(body=[request_block], type_ignores=[]), WORKFLOW_PATH, "exec")
+        requests = []
+        statuses = []
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                body = self.rfile.read(int(self.headers["Content-Length"]))
+                requests.append((self.path, json.loads(body)))
+                self.send_error(statuses.pop(0))
+
+            def log_message(self, format, *args):
+                return  # Local HTTP access logs contain no additional test evidence.
+
+        with http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler) as server:
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                for errors, expected_count in (([503, 404, 429], 3), ([401], 1), ([400], 1)):
+                    with self.subTest(errors=errors):
+                        requests.clear()
+                        statuses[:] = errors
+                        namespace = {
+                            "anthropic": anthropic,
+                            "api_key": "offline-test-not-a-credential",
+                            "base_url": f"http://127.0.0.1:{server.server_port}",
+                            "model": "claude-gpt-6.1-sol",
+                            "diff_text": "diff --git a/a b/a\n+transport test\n",
+                            "sys": sys,
+                        }
+                        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                            with self.assertRaises(SystemExit) as raised:
+                                exec(compiled, namespace)
+                        self.assertEqual(raised.exception.code, 1)
+                        self.assertEqual(len(requests), expected_count)
+                        self.assertEqual(
+                            [body["model"] for _, body in requests],
+                            ["claude-gpt-6.1-sol", "claude-gpt-5.6-luna", "ag/gemini-3.8-flash-high"][:expected_count],
+                        )
+                        for path, body in requests:
+                            self.assertEqual(path, "/v1/messages")
+                            self.assertEqual(body["reasoning_effort"], "high")
+                            self.assertNotIn("tools", body)
+                            self.assertIn("transport test", body["messages"][0]["content"])
+            finally:
+                server.shutdown()
+                thread.join()
+
     def test_default_branch_guard_probe(self):
         """Execution probe: verify default branch guard passes for default branch, rejects other branches and tags."""
         steps = self.doc["jobs"]["review"]["steps"]
