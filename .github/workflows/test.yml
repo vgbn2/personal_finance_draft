@@ -22,6 +22,9 @@ jobs:
   source-evidence:
     name: Committed source evidence
     runs-on: ubuntu-latest
+    env:
+      # CPU is bundled; this job does not qualify CUDA/TensorRT providers.
+      ONNXRUNTIME_NODE_INSTALL: 'skip'
     steps:
       - name: Checkout
         uses: actions/checkout@v4

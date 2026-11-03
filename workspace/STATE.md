@@ -1,5 +1,21 @@
 # Current Workspace State
 
+## Session 2026-11-03 — CI Monorepo Workspace Lockfile Synchronization, Hermetic ONNX CPU Invariance & Evidence Verification
+- **Monorepo Workspace Lockfile Reconciliation**:
+  - Investigated and resolved workspace dependency drift between `frontend/dashboard/package.json` (`lucide-react@^1.65.0`) and root `package-lock.json` (`1.64.0`).
+  - Re-synchronized both root `package-lock.json` and `frontend/dashboard/package-lock.json` to `1.66.0` via `npm install --package-lock-only`.
+  - Eliminated `ELSPROBLEMS` and `EUSAGE` discrepancies during clean-room `npm ls --depth=0` executions.
+- **Hermetic CI Environment Hardening (`ONNXRUNTIME_NODE_INSTALL: 'skip'`)**:
+  - Configured `ONNXRUNTIME_NODE_INSTALL: 'skip'` in `.github/workflows/test.yml` under the `source-evidence` job.
+  - Bypassed non-deterministic external network downloads for CUDA/TensorRT binaries during `onnxruntime-node` postinstallation, preventing runner egress timeouts while preserving bundled offline CPU inference.
+- **Architectural Workflow & Offline Inference Contract Tests**:
+  - Enforced workspace manifest vs lockfile agreement and workflow environment requirements in `tests/scripts/architecture/cli/core/github_workflow_contract.test.js`.
+  - Added unit regression test `tests/scripts/lib/onnx_cpu_install.test.js` validating that bundled ONNX CPU execution provider successfully evaluates an Identity model.
+- **Empirical Reproducers & Verification Evidence**:
+  - Verified baseline failures and resolutions using `tests/repro/repro_20261103_013123_ci_workspace_lock_drift.sh` and `tests/repro/repro_20261103_013602_ci_onnx_cpu_install.sh`.
+  - Passed all 26 verification steps in `scripts/dev/verify_source_evidence.js` across disposable worktree snapshots (100% PASS, exit code 0).
+  - Verified 0 strikes via `anti-cheat-enforcer --diff --require-tests` and pristine hygiene via `node scripts/dev/check_hygiene.js`.
+
 ## Session 2026-11-02 — CI Docker Multi-Stage Isolation, Concurrency Test Invariant & Repository Cleanliness
 - **Docker Multi-Stage Workspace Isolation**:
   - Decoupled `frontend/dashboard` build into Stage 0 (`FROM node:22-bookworm AS frontend-builder`) in `Dockerfile`, `infra/docker/Dockerfile`, and `infra/docker/Dockerfile.allinone`.
