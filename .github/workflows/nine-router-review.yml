@@ -1,4 +1,4 @@
-name: 9Router AI Code Review (Manual Gated)
+name: CI
 
 'on':
   workflow_dispatch:
