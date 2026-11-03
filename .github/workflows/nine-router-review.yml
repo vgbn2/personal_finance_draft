@@ -1,0 +1,210 @@
+name: 9Router AI Code Review (Manual Gated)
+
+'on':
+  workflow_dispatch:
+    inputs:
+      base_sha:
+        description: 'Base commit SHA (40-hex) to diff against HEAD'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nine-router-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Gated Review Execution
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate Default Branch Guard
+        env:
+          EVENT_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REF: ${{ github.ref }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          DEFAULT_BRANCH="${EVENT_DEFAULT_BRANCH:-main}"
+          EXPECTED_REF="refs/heads/${DEFAULT_BRANCH}"
+          if [ "$REF" != "$EXPECTED_REF" ] || [ "$REF_TYPE" != "branch" ]; then
+            echo "::error::Review workflow permitted only on default branch ($EXPECTED_REF). Current ref: $REF (type: $REF_TYPE)"
+            exit 1
+          fi
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate Base Commit SHA
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+        run: |
+          if ! [[ "$BASE_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::Invalid base_sha: must be a 40-character hexadecimal commit hash."
+            exit 1
+          fi
+          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            echo "::error::Base commit SHA $BASE_SHA is not reachable in repository history."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$BASE_SHA" HEAD; then
+            echo "::error::Base commit SHA $BASE_SHA is not an ancestor of HEAD."
+            exit 1
+          fi
+
+      - name: Generate Bounded Diff
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+          MAX_DIFF_BYTES: 65536
+        run: |
+          git --no-pager diff --no-ext-diff --no-textconv "${BASE_SHA}" HEAD > candidate.diff
+          DIFF_SIZE=$(wc -c < candidate.diff)
+          if [ "$DIFF_SIZE" -gt "$MAX_DIFF_BYTES" ]; then
+            echo "::error::Diff size ($DIFF_SIZE bytes) exceeds maximum allowable limit ($MAX_DIFF_BYTES bytes). Failing closed without truncation."
+            exit 1
+          fi
+          if [ "$DIFF_SIZE" -eq 0 ]; then
+            echo "Diff is empty; nothing to review."
+            exit 0
+          fi
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Official Anthropic SDK
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install anthropic==0.49.0
+
+      - name: Execute Gated Review (Fail-Closed)
+        env:
+          NINE_ROUTER_API_KEY: ${{ secrets.NINE_ROUTER_API_KEY }}
+          NINE_ROUTER_BASE_URL: ${{ vars.NINE_ROUTER_BASE_URL }}
+          NINE_ROUTER_REVIEW_MODEL: ${{ vars.NINE_ROUTER_REVIEW_MODEL }}
+        run: |
+          python3 - << 'EOF'
+          import os
+          import sys
+          import urllib.parse
+          import re
+          import anthropic
+
+          api_key = os.environ.get("NINE_ROUTER_API_KEY", "").strip()
+          base_url = os.environ.get("NINE_ROUTER_BASE_URL", "").strip()
+          model = os.environ.get("NINE_ROUTER_REVIEW_MODEL", "").strip()
+
+          if not api_key:
+              print("::error::Missing required secret NINE_ROUTER_API_KEY", file=sys.stderr)
+              sys.exit(1)
+
+          if not base_url:
+              print("::error::Missing required variable NINE_ROUTER_BASE_URL", file=sys.stderr)
+              sys.exit(1)
+
+          if not model:
+              print("::error::Missing required variable NINE_ROUTER_REVIEW_MODEL", file=sys.stderr)
+              sys.exit(1)
+
+          # Validate base_url: HTTPS without user/password/query/fragment
+          parsed = urllib.parse.urlparse(base_url)
+          if parsed.scheme != "https":
+              print("::error::NINE_ROUTER_BASE_URL must use https scheme", file=sys.stderr)
+              sys.exit(1)
+          if not parsed.hostname:
+              print("::error::NINE_ROUTER_BASE_URL must have a valid hostname", file=sys.stderr)
+              sys.exit(1)
+          if parsed.username or parsed.password:
+              print("::error::NINE_ROUTER_BASE_URL must not contain embedded user credentials", file=sys.stderr)
+              sys.exit(1)
+          if parsed.query or parsed.fragment:
+              print("::error::NINE_ROUTER_BASE_URL must not contain query parameters or fragments", file=sys.stderr)
+              sys.exit(1)
+          hostname = parsed.hostname.lower().strip("[]")
+          if hostname in ("localhost", "127.0.0.1", "0.0.0.0", "::1", "::", "0:0:0:0:0:0:0:1", "0:0:0:0:0:0:0:0"):
+              print("::error::NINE_ROUTER_BASE_URL cannot point to loopback/local addresses", file=sys.stderr)
+              sys.exit(1)
+
+          # Validate model name format
+          if not re.match(r"^[a-zA-Z0-9\.\-_:]+$", model):
+              print("::error::Invalid NINE_ROUTER_REVIEW_MODEL format", file=sys.stderr)
+              sys.exit(1)
+
+          # Read diff
+          diff_path = "candidate.diff"
+          if not os.path.exists(diff_path) or os.path.getsize(diff_path) == 0:
+              print("No diff to review.")
+              sys.exit(0)
+
+          if os.path.getsize(diff_path) > 65536:
+              print("::error::Diff exceeds 65536 byte limit (fail-closed)", file=sys.stderr)
+              sys.exit(1)
+
+          with open(diff_path, "r", encoding="utf-8", errors="replace") as f:
+              diff_text = f.read()
+
+          try:
+              client = anthropic.Anthropic(
+                  api_key=api_key,
+                  base_url=base_url,
+                  timeout=30.0,
+                  max_retries=0,
+              )
+              # Zero tools, zero autonomous permissions, review diff text only
+              response = client.messages.create(
+                  model=model,
+                  max_tokens=2048,
+                  system=(
+                      "You are an automated code review assistant. Analyze the diff for potential "
+                      "bugs, security vulnerabilities, and regressions. Output untrusted plaintext only."
+                  ),
+                  messages=[
+                      {"role": "user", "content": f"Review this git diff:\n\n{diff_text}"}
+                  ],
+              )
+              if getattr(response, "stop_reason", None) != "end_turn":
+                  print(
+                      f"::error::Model response incomplete or truncated (stop_reason: {getattr(response, 'stop_reason', None)})",
+                      file=sys.stderr,
+                  )
+                  sys.exit(1)
+
+              review_text = "".join(
+                  block.text for block in response.content if getattr(block, "type", "") == "text"
+              ).strip()
+              if not review_text:
+                  print("::error::Model response content is empty (fail-closed)", file=sys.stderr)
+                  sys.exit(1)
+          except Exception as exc:
+              # Fail closed on network/gateway/auth errors, scrub secrets from logs
+              print(
+                  f"::error::9Router gateway review execution failed (fail-closed): {type(exc).__name__}",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          # Write untrusted output to artifact and GitHub step summary
+          with open("review_summary.txt", "w", encoding="utf-8") as out:
+              out.write(review_text)
+
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary_path and os.path.exists(summary_path):
+              with open(summary_path, "a", encoding="utf-8") as s:
+                  s.write("\n### 9Router Untrusted Automated Review\n<pre>\n")
+                  s.write(review_text.replace("<", "&lt;").replace(">", "&gt;"))
+                  s.write("\n</pre>\n")
+          EOF
+
+      - name: Upload Review Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nine-router-review-report
+          path: review_summary.txt
+          if-no-files-found: ignore
