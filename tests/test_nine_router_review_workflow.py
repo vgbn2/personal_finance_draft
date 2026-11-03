@@ -116,6 +116,28 @@ class TestNineRouterReviewWorkflowStructure(unittest.TestCase):
         self.assertIn('stop_reason", None) != "end_turn"', py_code)
         self.assertIn("review_summary.txt", py_code)
 
+    def test_tailscale_join_configuration(self):
+        """Tailscale join step must use verified commit SHA, configure OAuth with tag:github-review, and precede review execution."""
+        steps = self.doc["jobs"]["review"]["steps"]
+        ts_step = next((s for s in steps if "Tailscale" in s.get("name", "")), None)
+        self.assertIsNotNone(ts_step, "Tailscale join step missing from review job")
+        self.assertRegex(
+            ts_step.get("uses", ""),
+            r"^tailscale/github-action@[0-9a-fA-F]{40}",
+            "Tailscale action must be pinned to a 40-hex commit SHA",
+        )
+        ts_with = ts_step.get("with", {})
+        self.assertEqual(ts_with.get("oauth-client-id"), "${{ secrets.TS_OAUTH_CLIENT_ID }}")
+        self.assertEqual(ts_with.get("oauth-secret"), "${{ secrets.TS_OAUTH_SECRET }}")
+        self.assertEqual(ts_with.get("tags"), "tag:github-review")
+
+        review_step = next(s for s in steps if "Execute Gated Review" in s.get("name", ""))
+        self.assertLess(
+            steps.index(ts_step),
+            steps.index(review_step),
+            "Tailscale join step must execute before gated review execution",
+        )
+
     def test_model_fallback_transport(self):
         """Exercise the real SDK, JSON wire format, and error decoding over local HTTP."""
         import contextlib

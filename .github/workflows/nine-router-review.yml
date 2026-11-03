@@ -83,6 +83,13 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install anthropic==0.49.0
 
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4.4.0
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:github-review
+
       - name: Execute Gated Review (Fail-Closed)
         env:
           NINE_ROUTER_API_KEY: ${{ secrets.NINE_ROUTER_API_KEY }}
