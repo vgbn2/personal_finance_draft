@@ -1,5 +1,35 @@
 # Current Workspace State
 
+## Release handoff 2026-11-05 — all pending changes approved for commit and push
+
+User explicitly requested “commit all, push”. Release scope includes onboarding fixes/tests, ingestion stub removal and research reports, manual review workflow/tests, package updates, README and continuity documentation. `npm run svconsole-update` completed; preserves npmrc lifecycle policy via the local wrapper. Fresh release verification: Node aggregate 1,662 total / 1,655 pass / zero fail / seven skip; native CTest 35/35; structure, hygiene, documentation, secret scan (899 files, zero violations), whitespace and anti-cheat (zero strikes) passed. The separate workflow suite initially failed on missing local Python SDK; all seven unchanged tests passed with pinned anthropic 0.49.0 supplied in a temporary target, without a venv or system installation. Review subagent unavailable (503); local review used instead. Commit on a new branch from main, then verify the pushed remote ref; no PR, merge, CT100 synchronization, deployment or service restart authorized. Twelve low-severity npm advisories, pending ONNX install-script approval, existing graph refresh safeguard, strict-drift candidates and missing restore drill remain limitations. Earlier dated entries below retain their historical authorization and evidence boundaries.
+
+## Active 2026-11-05 — approved CT100 empty-user-state qualification
+
+User approved exact-snapshot onboarding qualification. Frozen base `5d063e91` plus five onboarding files, 1,456-file manifest `f1bc5f6836ac29cfa0f3f259a06da9b6dbd90ebdf1cf89a04d0337286d369cf9`; isolated source/HOME/cache/build state on existing CT100, original checkout preserved. Setup and immediate aggregate passed: setup34 Node checks plus native35/35; aggregate1,654 total/1,646 pass/zero fail/eight skip. All source hashes matched initially; only lockfile root version metadata normalized afterward. Original checkout fingerprints unchanged. Local focused checks19/19. Archive/manifest: `workspace/artifacts/ct100-empty-state-f1bc5f6836ac-20261105/`; current handoff: `workspace/handoff/2026/11/2026-11-05-ct100-empty-state.md`. Shared OS prerequisites remain; no empty-container rebuild, commit/push, credentials/provider/live/public-ingress work. Fresh closeout: focused19/19, structure35/35, hygiene/documentation/integrity/whitespace pass. Strict drift203potential items and absent restore drill remain open; no backup-health claim. Guest temporary staging removed; both installations retained. Next feature direction: GitHub CLI-style user-managed secrets, CLI before TUI; scope recorded, implementation not started.
+
+## Closeout 2026-11-05
+
+Session ended at user request; CT100 patched-checkout verification complete. Fresh local closeout onboarding19/19, structure35/35, hygiene/docs/integrity/whitespace passed. Drift203potential candidates, missing restore drill and prior graph overwrite safeguard remain open. Preserve all dirty work; no commit/push or further remote mutation. Latest handoff: `workspace/handoff/2026/11/2026-11-05.md`. Next remains separately approved exact-snapshot empty-state qualification.
+
+## Session 2026-11-05 — CT100 approved test continuation
+
+- User requested continued testing on existing CT100. Strict mesh SSH succeeded; LAN root authentication failed without guest execution. Base revision remains `5d063e91031e3fb95b219c419ed1c1e11d249b40`; existing native fixture/lockfile/reproducer preserved. Applied only four hash-guarded onboarding files.
+- Non-root `npm run setup:dev` exited0: managed Go1.27.3 installation, native/gateway/MCP/dashboard builds, fixture preparation, data5/5, structure29/29 and native35/35. Focused checks42/42 and full Node aggregate passed (task `bpogenueg`):1,654 total/1,646 pass/0fail/8skip/0cancelled. Runner discovers managed Go without manual PATH addition. Final guest hashes/whitespace pass; pre-existing native fixture and lockfile hashes unchanged.
+- Guest evidence: `workspace/handoff/2026/11/2026-11-05-onboarding-prerequisites.md` and feature matrix. This is patched-checkout verification, not an empty-state repeat. No new CT, live/provider/public ingress, commit or push.
+
+## Session 2026-11-05 — Managed Go onboarding patch, local verification
+
+- User selected managed Go provisioning. Patch adds checksum-verified user-local installation/reuse, setup MCP/dashboard builds and cached Go resolution for aggregate parity. Actual MCP/dashboard builds passed; focused onboarding/API/MCP tests passed 34/34. Isolated empty-HOME official Go 1.27.3 installation/version probe passed; temporary installation removed. No guest/host mutation, npm dependency installation, commit or push.
+- Initial local aggregate: 1,652 pass, one fail, seven skip. Failure traced to new direct TMPDIR reads; replaced redundant environment handling with native `os.tmpdir()`, which preserves TMPDIR. Baseline reproducer failed before repair; focused manifest/installer/runner/parity checks pass 19/19. Local aggregate rerun exits 0: 1,653 pass, zero fail, seven skip (1,660 tests).
+- Integrity zero strikes, structure 35/35, documentation ownership audit and whitespace checks passed. Graph refresh refused smaller overwrite; strict doc-drift reports stale references; restore drill entrypoint absent. Evidence and next gates: `workspace/handoff/2026/11/2026-11-05-onboarding-prerequisites.md`. Preserve CT100 and prior work. Full setup/guest/empty-state qualification remains outstanding; historical guest aggregate is unchanged.
+
+## Session 2026-11-04 — Dell CT native onboarding verification
+
+- CT100 on Dell OptiPlex: corrected manual bootstrap and clean public checkout verified; original missing-user and GCC12 Release failures preserved.
+- Approved test-fixture direct string initialization repairs the native compile without warning suppression or assertion changes. Patched-checkout setup and documented native/tier/cluster gates pass. Full `npm test` exits 1: 1,623 pass, five fail, eight skip; missing dashboard build, missing Go executable, and MCP build-order dependency. The two MCP files subsequently pass 18/18 after another test generates artifacts; original aggregate remains failed.
+- Evidence: `workspace/reports/FEATURE_TEST_MATRIX.md` and `workspace/handoff/2026/11/2026-11-04.md`. Not an unchanged-public-source or empty-state repeat, UI/Docker/provider/live certification. Architectural direction unchanged.
+
 ## Session 2026-11-03 — CI Monorepo Workspace Lockfile Synchronization, Hermetic ONNX CPU Invariance & Evidence Verification
 - **Monorepo Workspace Lockfile Reconciliation**:
   - Investigated and resolved workspace dependency drift between `frontend/dashboard/package.json` (`lucide-react@^1.65.0`) and root `package-lock.json` (`1.64.0`).

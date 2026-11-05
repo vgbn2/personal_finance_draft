@@ -176,6 +176,25 @@ npm run test:structure
 npm run test:core
 ```
 
+### Updating Packages & the C++ Backend
+
+Run from the repository root; save existing work before changing dependency files:
+
+```bash
+# Inspect available npm dependency updates
+npm outdated --workspaces --include-workspace-root
+
+# Update within declared ranges, rebuild/test C++, then run Node.js tests
+npm run svconsole-update
+
+# Review dependency changes before committing
+git diff -- '**/package.json' package-lock.json
+```
+
+`svconsole-update` preserves project/user/global `.npmrc` install-script policy and stops at the first failed stage; it does not roll back dependency changes already made. Run it through `npm run` as shown above.
+
+`npm update` does not upgrade CMake, the C++ compiler or system libraries; manage those through your operating system's package manager. The native core uses C++20 and optional system OpenMP. External ONNX Runtime is disabled by the default native build; its opt-in version is pinned in `backend/core/CMakeLists.txt` and requires a reviewed source change to upgrade. `npm run test:core` rebuilds the current C++ source—it does not fetch newer source or upgrade dependencies. Major npm upgrades and `npm audit fix --force` require separate compatibility review.
+
 ### MetaTrader 5 (MT5) Setup (Optional for Forex/CFD Execution)
 
 MT5 is strictly optional. Core backtesting, data pipelines, C++ analytics, Alpaca, and Polymarket run zero-key with no MT5 or Wine installed.

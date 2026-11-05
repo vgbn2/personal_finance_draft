@@ -94,8 +94,6 @@ test('prediction history forwards the configured window and records interest evi
   let interestCalls = 0;
   const ingestStub = {
     loadConfig: async () => TEST_CONFIG,
-    fetchKalshiHistoricalMarkets: async () => ({ records: [] }),
-    fetchKalshiHistoricalCandlesticks: async () => [],
     fetchPolymarketHistoricalPrices: async (eventName, options) => {
       priceCalls.push({ eventName, ...options });
       return [];

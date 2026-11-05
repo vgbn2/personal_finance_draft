@@ -61,12 +61,6 @@ async function fetchSecHoldingsSnapshot() { return notImplementedProvider('sec',
 async function fetchSpGlobalFlashPmi() { return notImplementedProvider('spglobal', 'pmi'); }
 async function fetchFxApiFx() { return notImplementedProvider('fxapi', 'fx'); }
 async function fetchYahooBreadthProxy() { return notImplementedProvider('yahoo', 'breadth'); }
-async function fetchKalshiHistoricalMarkets() {
-  return notImplementedProvider('kalshi', 'prediction_market_history');
-}
-async function fetchKalshiHistoricalCandlesticks() {
-  return notImplementedProvider('kalshi', 'prediction_market_history');
-}
 
 const FAMILIES_MANIFEST = [
   { id: 'equities', configKey: 'equities', itemsKey: 'symbols', fetcher: async (p, s, t, cfg, opts) => {
@@ -213,8 +207,6 @@ module.exports = {
   fetchEcbFx,
   fetchFxApiFx,
   fetchYahooBreadthProxy,
-  fetchKalshiHistoricalMarkets,
-  fetchKalshiHistoricalCandlesticks,
   getIngestFamilyAvailability,
   FAMILIES_MANIFEST,
   OPTIONS_MANIFEST,

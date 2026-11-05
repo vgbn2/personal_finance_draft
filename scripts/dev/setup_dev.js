@@ -63,6 +63,8 @@ function installWorkspaces() {
 function buildNative() {
   run('npm', ['run', 'native:build'], { label: 'Build C++ Analytics Core (CMake)' });
   run('npm', ['run', 'build', '--prefix', 'backend/gateway'], { label: 'Build Execution Gateway (TypeScript)' });
+  run('npm', ['run', 'build', '--prefix', 'backend/mcp_server'], { label: 'Build MCP Server (TypeScript)' });
+  run('npm', ['run', 'build', '--prefix', 'frontend/dashboard'], { label: 'Build Dashboard Assets (Vite)' });
   run('npm', ['run', 'test:prepare'], { label: 'Seed Master Test Fixtures' });
 }
 
@@ -76,13 +78,15 @@ function verifySuites() {
 const { installHooks } = require('./install_git_hooks.js');
 const { ensureAll } = require('./ensure_workspace_skeleton.js');
 
-function main() {
+async function main() {
   console.log('\x1b[1m\x1b[34m========================================================\x1b[0m');
   console.log('\x1b[1m\x1b[34m   Sovereign Trading Platform - Developer Setup        \x1b[0m');
   console.log('\x1b[1m\x1b[34m========================================================\x1b[0m');
   console.log('Stack: Node.js (v20+) + C++20 (CMake). No Python venv required.');
   console.log('Mode: Zero-key local development (all fixtures & ledgers simulated).');
 
+  const { ensureGo } = require('./ensure_go');
+  process.env.PATH = `${await ensureGo()}${path.delimiter}${process.env.PATH || ''}`;
   installHooks();
   ensureEnv();
   ensureAll();
@@ -101,7 +105,10 @@ function main() {
 }
 
 if (require.main === module) {
-  main();
+  main().catch(error => {
+    console.error(`Setup failed: ${error.message}`);
+    process.exitCode = 1;
+  });
 }
 
 module.exports = { main, ensureEnv, installWorkspaces, buildNative };
