@@ -28,10 +28,13 @@ int main() {
     bars.reserve(200);
     double price = 100.0;
     for (int i = 0; i < 200; ++i) {
-        sovereign::OhlcvBar bar;
-        bar.asset_id = "TEST";
-        bar.timeframe = "1d";
-        bar.timestamp = "2023-01-01";
+        sovereign::OhlcvBar bar{
+            .asset_id = "TEST",
+            .timestamp = "2023-01-01",
+            .timeframe = "1d",
+            .source = {},
+            .ingested_at = {},
+        };
         price += (i % 2 == 0 ? 1.5 : -1.0);
         bar.open = price - 0.5;
         bar.high = price + 1.0;

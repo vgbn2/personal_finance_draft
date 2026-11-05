@@ -45,21 +45,14 @@ test('enabled placeholder ingest families fail explicitly instead of returning e
   }
 });
 
-test('Kalshi history fails visibly with structured provider metadata', async () => {
-  for (const fetchHistory of [
-    manifests.fetchKalshiHistoricalMarkets,
-    manifests.fetchKalshiHistoricalCandlesticks,
-  ]) {
-    await assert.rejects(
-      () => fetchHistory('event-or-market'),
-      (error) => {
-        assert.equal(error.code, 'not_implemented');
-        assert.equal(error.provider, 'kalshi');
-        assert.equal(error.family, 'prediction_market_history');
-        return true;
-      },
-    );
+test('removed Kalshi history exports stay absent and history dispatch fails visibly', async () => {
+  const ingest = require(ingestPath);
+  for (const api of [manifests, ingest]) {
+    assert.equal(Object.hasOwn(api, 'fetchKalshiHistoricalMarkets'), false);
+    assert.equal(Object.hasOwn(api, 'fetchKalshiHistoricalCandlesticks'), false);
   }
+  assert.equal(typeof ingest.fetchKalshiPredictionMarket, 'function');
+  assert.equal(typeof ingest.fetchPolymarketHistoricalPrices, 'function');
 
   const prediction = manifests.FAMILIES_MANIFEST.find((entry) => entry.id === 'prediction_market');
   await assert.rejects(

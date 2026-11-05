@@ -19,6 +19,39 @@ const {
 } = require('../../../../run_node_tests.js');
 const packageJson = require('../../../../../package.json');
 
+test('svconsole-update scopes npm updates and stops before later gates on failure', () => {
+  assert.equal(packageJson.scripts['svconsole-update'],
+    'node scripts/dev/update_packages.js && npm run test:core && npm test');
+});
+
+test('update wrapper preserves npmrc policy in a real offline npm workspace', () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const { spawnSync } = require('node:child_process');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-update-policy-'));
+  try {
+    const wrapper = path.resolve(__dirname, '../../../../../scripts/dev/update_packages.js');
+    fs.mkdirSync(path.join(root, 'child'));
+    fs.writeFileSync(path.join(root, 'child/package.json'), JSON.stringify({ name: 'policy-child', version: '1.0.0' }));
+    fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
+      name: 'policy-root', private: true, workspaces: ['child'],
+      scripts: { probe: `node ${JSON.stringify(wrapper)} --offline --dry-run` },
+    }));
+    const policy = 'allow-scripts=9router\n';
+    fs.writeFileSync(path.join(root, '.npmrc'), policy);
+    const result = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'probe'], {
+      cwd: root, encoding: 'utf8', shell: process.platform === 'win32',
+      env: { ...process.env, npm_config_allow_scripts: '9router', npm_config_cache: path.join(root, 'cache') },
+      timeout: 30000,
+    });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(fs.readFileSync(path.join(root, '.npmrc'), 'utf8'), policy);
+    assert.equal(fs.existsSync(path.join(root, 'node_modules')), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('each Node test file runs without a second isolation layer and keeps canonical reporters', () => {
   const target = '/fixture/example.test.js';
   assert.deepEqual(buildFileArgs([], target), [

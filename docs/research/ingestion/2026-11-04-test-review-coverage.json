@@ -1,0 +1,5641 @@
+{
+  "metadata": {
+    "title": "Sovereign Test Review Coverage & Reconciliation Ledger",
+    "date": "2026-11-04",
+    "scope": "All test and test-support paths reconciled across review ledgers",
+    "limits": [
+      "Zero production or test source modifications",
+      "Excluded denied .env templates and credential files from review evidence",
+      "Execution status separated from read depth (execution does not substitute for logical read)",
+      "No live orders, external network calls, or container mutations"
+    ]
+  },
+  "counts": {
+    "union_reviewed_paths": 349,
+    "default_discovered": 266,
+    "default_covered": 266,
+    "tracked_test_naming_inventory": 318,
+    "tracked_covered": 318,
+    "untracked_python": 1,
+    "tracked_helpers": 13,
+    "untracked_helpers": 0
+  },
+  "read_depth_verification": {
+    "default_discovered_total": 266,
+    "default_discovered_covered": 266,
+    "default_discovered_uncovered": [],
+    "tracked_test_naming_total": 318,
+    "tracked_test_naming_covered": 318,
+    "tracked_test_naming_uncovered": [],
+    "untracked_python_tests": [
+      "tests/test_nine_router_review_workflow.py"
+    ],
+    "tracked_helpers_and_harnesses": [
+      "backend/cli/tui/engine/render_helpers.js",
+      "frontend/dashboard/tests/helpers/chrome_cdp.mjs",
+      "tests/benchmarks/helpers/benchmark_runner.js",
+      "tests/benchmarks/helpers/symbol_sampler.js",
+      "tests/fixtures/mock_mt5_bridge.js",
+      "tests/scripts/data/cache/macro_history_helpers.test.js",
+      "tests/scripts/integration/mt5/mock_mt5_terminal_runner.js",
+      "tests/scripts/lib/virtual_terminal_screen.js",
+      "tests/scripts/tui/core/tui_autopilot.js",
+      "tests/scripts/tui/dashboard/_harness.js",
+      "tests/scripts/tui/ui_components/manifest_crawler.js",
+      "tests/scripts/tui/ui_components/tui_render_helpers_contract.test.js",
+      "tests/support/env_helper.js"
+    ]
+  },
+  "tests_and_support_paths": [
+    {
+      "path": "backend/api/tests/access_control.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/api.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/auth_session_registry.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/charts.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/client_api.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/cluster_routes.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/correlation_contract.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/dashboard_contract.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/market_routes_contract.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/mcp_gate.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/promotion_audit_chain.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/public_routes_contract.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/service_principals_perms.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/supabase_client.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/api/tests/ttl_cache.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/analytics/correlation_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/analytics/feature_pipeline_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/analytics/indicator_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/analytics/macro_features_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/analytics/phase1_compounding_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/analytics/regime_strategy_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/analytics/regime_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/analytics/research_contract_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/analytics/stats_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/analytics/technical_features_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/backtest/backtest_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/backtest/frame_backtester_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/backtest/global_sweep_optimizer_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/backtest/grid_optimizer_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/data/binary_ts_merger_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/data/binary_ts_reader_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/data/data_snapshot_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/data/ingestion_contract_test.cpp",
+      "owner": "native",
+      "owners": [
+        "ingestion",
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "partial_read_slice_60_plus",
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "ingestion_review_ledger",
+        "executed_known"
+      ],
+      "sources": [
+        "executed_pass",
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/data/phase2_data_contract_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/execution/crypto_replay_runner_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/execution/execution_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/execution/parser_position_sizer_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/execution/portfolio_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/execution/quote_feed_interface_test.cpp",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion",
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger",
+        "executed_known"
+      ],
+      "sources": [
+        "executed_pass",
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/ml/cnn_inference_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/ml/cnn_tensor_builder_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/ml/kronos_integration_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/ml/model_registry_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/ml/normalization_optimizer_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/ml/onnx_model_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/ml/tensor_builder_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/risk/cost_model_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/risk/kill_switch_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/risk/portfolio_risk_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/core/test/risk/risk_test.cpp",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/go/cmd/sovereign-feedd/feedd_test.go",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "backend/go/pkg/sovt/sovt_test.go",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "docs/guide/examples/minimal_sovereign/tests/scaffold.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "frontend/dashboard/tests/helpers/chrome_cdp.mjs",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "frontend/dashboard/tests/responsive_viewport.test.mjs",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "scripts/data_ops/test_dp.py",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "read_only",
+      "read_depths": [
+        "read_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/analysis/social_pipeline_bench.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/analysis/transcript_nlp.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/analysis/transcript_store.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/analysis/youtube_ingestor.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/api/scorecard_aggregation.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/data/data_ingestion_stub_io.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/data/indicator_rolling.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/data/ts_binary_reader.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/helpers/benchmark_runner.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/helpers/symbol_sampler.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/infra/container_service_process.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/infra/host_soak_leak.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/math/correlation_matrix.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/ml/onnx_inference.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/strategy/backtest_engine.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/strategy/cpp_grid_optimizer.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/benchmarks/strategy/position_sizing.bench.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "logical_only",
+      "read_depths": [
+        "logical_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/integration/live_paths.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/api/ephemeral_key_vault.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/analysis/analysis_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/analysis/asset_taxonomy.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/analysis/combined_exact_asset.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/analysis/combined_promotion_store.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/analysis/equity_3m_policy.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/analysis/recorded_family_shadows.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/analysis/shadow_readiness.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/analysis/shadow_service_parity.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/analysis/technical_v2_adapter.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/api/cli_executor_indicators_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/api/scorecard_route_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/api/signal_freshness_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/audit/docs_formula_parity.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/audit/static_marker_integrity.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/audit/test_keyword_audit.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/auth/access_policy.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/auth/service_cli.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/auth/service_principals.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/auth/trade_pin_safety.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/backend_cli_human_surfaces.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/backend_visualize_sigma_state.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/cli_ui_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/backend_binary_discovery.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/central_host_updater_runtime.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/command_failure_reporter.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/compose_environment_contract.test.js",
+      "owner": "environment",
+      "owners": [
+        "environment"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "environment_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/config_integrity.test.js",
+      "owner": "environment",
+      "owners": [
+        "environment"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "environment_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/container_runtime_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/control_flow_audit.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools",
+        "environment"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review",
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "per_file_ledger",
+        "environment_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/distribution_metadata_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/documentation_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/environment_loader.test.js",
+      "owner": "environment",
+      "owners": [
+        "environment"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "environment_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/environment_manifest.test.js",
+      "owner": "environment",
+      "owners": [
+        "environment"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "environment_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/exit_guard_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/fresh_install_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools",
+        "environment"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review",
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "per_file_ledger",
+        "environment_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/github_workflow_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/lxc_provision_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/module_loading.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/native_toolchain_check.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/notebooks_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/rag_failure_reporter.test.js",
+      "owner": "coordinator",
+      "owners": [
+        "coordinator"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "reviewed_not_executed",
+      "execution_classes": [
+        "reviewed_not_executed"
+      ],
+      "sources": [
+        "coordinator_final_coverage"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/repo_skills_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/secret_scan_export.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/setup_doctor.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools",
+        "environment"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review",
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "per_file_ledger",
+        "environment_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/source_evidence_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/structure_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/test_integrity_audit.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/cli/core/test_runner_contract.test.js",
+      "owner": "coordinator",
+      "owners": [
+        "coordinator"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "reviewed_not_executed",
+      "execution_classes": [
+        "reviewed_not_executed"
+      ],
+      "sources": [
+        "coordinator_final_coverage"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/coverage/coverage.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/coverage/integrity_coverage_equivalence.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/data_storage/dashboard_market_monitor_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/data_storage/dashboard_session_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/data_storage/macro_ingestion_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/data_storage/macro_store_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/data_storage/supabase_route_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/data_storage/zero_supabase_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/deployment/deployment_profile.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/prop_firms_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/security/secret_leak.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/settings/interval_policy.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/settings/runner_interval_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/settings/runtime_policy.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/settings/settings_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/settings/settings_runtime_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/strategy_contracts/strategy_asset_classification.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/strategy_contracts/strategy_backtest_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/strategy_contracts/strategy_registry_sync.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/tiers/fixture_catalog_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/tiers/tier1_math_invariants.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/tui_components/tui_phase_b_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/tui_components/tui_progress_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/tui_components/tui_search_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/architecture/tui_components/tui_spinner_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/chaos/adversarial_chaos.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/backfill/backfill_daemon.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/backfill/backfill_regression.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/backfill/crypto_5m_backfill.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/backfill/daemon_wear_prevention.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/backfill/equity_5m_backfill.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/backfill/fetch_paginated_gap_aware.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/backfill/mass_backfill_incremental_flush.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/append_only_segments.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/cache_contract.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/canonical_data_summary.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/crypto_aggregates.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/dev_utilities.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/json_cache_tiered_retention.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/macro_history_helpers.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/market_monitor_service.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/market_monitor_snapshot.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/provider_api_cache_prune.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/research_dataset_catalog.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/ts_latest_record.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/cache/ts_merge_write.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/fetch_retry.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/ingest/ingest_manifest_contract.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/intraday/five_min_accumulate.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/intraday/five_min_fetchers.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/intraday/intraday_native_poll.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/intraday/intraday_rollup.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/intraday/multi_grain_rollup_pipeline.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/options_funding_ingestion.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/polymarket_delta_sync.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/providers/coingecko_provider.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/data/providers/provider_sources.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/data/ingestion_quarantine.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/data/quarantine_lifecycle.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/deribit/deribit_adapter.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/deribit/options_bot_runner.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/engine/backend_correlation_preflight.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/engine/equity_session.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/engine/factorial_seam_pipeline.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/engine/live_guard.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/engine/run_loop.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/gateway/paper_ledger_settlement.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/go_parity_sovt.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/matrix/scenario_fault_matrix.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/mcp_options_analytics.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/mt5/mock_mt5_terminal_runner.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/mt5/mt5_bridge_lifecycle.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/mt5/mt5_cli_routing.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/mt5/mt5_execution_pipeline.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/mt5/mt5_interactive_cli.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/mt5/mt5_lockout_edgecases.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/mt5/mt5_profile_vault.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/mt5/mt5_strategy_deployment.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/mt5/mt5_sv_console_pipeline.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/cockpit_polymarket_merge.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polybolt_bbo_sequence.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_account.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_auth_health.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_bot_risk.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_clob_spread_fallback.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_creds.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_daemon_backfill.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_errors.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_features.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_history_archive.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_market_browser_auth.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_markets.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_multi_outcome.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_orderbook_lite.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_paper.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_portfolio_aggregate.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_position_lifecycle.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_preflight.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_private_commands.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_research_scheduler.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_trace.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/polymarket/polymarket_tunable_backfill.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/research_invariants/market_invariants.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/trading/alpaca_env_scope.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/trading/broker_env.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/trading/gateway_aggregate_command.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/trading/gateway_command_exit.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/trading/gateway_risk_context.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/trading/mcp_access_control.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/trading/mcp_trade_contract.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/trading/proposed_orders_cli.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/integration/trading/proposed_orders.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/alpaca_bot_cycle.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/alpaca_bot_state.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/alpaca_intraday_policy.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/alpaca_paper_auth_diagnostic.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/backend_bridge.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/file_lock.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/hmm.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/indicators.data_flow.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/indicators.manifest_parity.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/onnx_cpu_install.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/onnx_models_integration.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/onnx_runner.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/polymarket_execution.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/position_sizing.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/prop_firm_guard.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/provider_mesh_backpressure.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/rename_with_retry.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/research_sources_ts_fallback.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/strategy_automation_pipeline.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/streaming_quote_router.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/strip_flag_value.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/sub_positions_ledger.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/supabase_errors.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/trade_args_from_action_flag.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/lib/virtual_terminal_screen.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/alpaca_paper_bot.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/central_host_preflight.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/client_startup_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/cluster_coordinator.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/cluster_flow_optimization.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/deployment_evidence.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/host_backup_cli.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/host_health.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/host_maintenance.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/host_resource_monitor.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/mcp_setup.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools",
+        "environment"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review",
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "per_file_ledger",
+        "environment_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/mcp_stdio_probe.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/mt5_adapter.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/mt5_magic_codec.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/portfolio_monitor.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/prepare_central_env.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools",
+        "environment"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review",
+        "whole_file_logical_read"
+      ],
+      "execution_class": "executed_known",
+      "execution_classes": [
+        "executed_known"
+      ],
+      "sources": [
+        "per_file_ledger",
+        "environment_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/release_version.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/remote_cli_client.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/operational/service_heartbeat.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/providers/common_cache.test.js",
+      "owner": "ingestion",
+      "owners": [
+        "ingestion"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "ingestion_review_ledger",
+      "execution_classes": [
+        "ingestion_review_ledger"
+      ],
+      "sources": [
+        "executed_pass"
+      ]
+    },
+    {
+      "path": "tests/scripts/research/model_truth_contract.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/research/research_config.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/research/research_sweep.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/research/scorecard_freshness.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/safety/automation_guard.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/safety/degraded_fallback.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/safety/guard_mutation.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/safety/strategy_sizing.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/security/binary_injection_guard.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/dead_symbol_marker.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/feature_builder.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/ml_dataset.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/options_smile_model.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/polymarket_backtest.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/polymarket_clob_model.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/rsi_backtest_analyze.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/rsi_backtest_primitives.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/social_alpha_replay.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/strategy_explorer_workflow.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/strategy/sweep_contracts.test.js",
+      "owner": "trading",
+      "owners": [
+        "trading"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "trading_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tools/docs_rag.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/cli_commands/mass_bt_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/cli_commands/risk_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/cli_commands/sovereign_cli_human_surfaces.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/cli_commands/sovereign_cli_price_action.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/cli_commands/sovereign_cli.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/core/tui_autopilot.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "helper_module",
+      "read_depths": [
+        "helper_module"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/core/tui_engine_noninteractive.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/core/tui_terminal_automation.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/core/tui_visual_interactive.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/dashboard/_harness.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "helper_module",
+      "read_depths": [
+        "helper_module"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/dashboard/chat_parser.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/dashboard/chat_ui.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/dashboard/command_input.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/dashboard/dashboard_command_safety.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/dashboard/dashboard_exec.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/dashboard/sovereign_dashboard.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/tui_manifest_coverage.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/ui_components/manifest_crawler.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "helper_module",
+      "read_depths": [
+        "helper_module"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/ui_components/render_candlestick_chart.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/ui_components/render_price_chart.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/ui_components/tui_page_size_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/ui_components/tui_render_helpers_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/scripts/tui/ui_components/tui_semantic_color_contract.test.js",
+      "owner": "architecture-operational-tui-tools",
+      "owners": [
+        "architecture-operational-tui-tools"
+      ],
+      "read_depth": "full_logical_review",
+      "read_depths": [
+        "full_logical_review"
+      ],
+      "execution_classes": [],
+      "sources": [
+        "per_file_ledger"
+      ]
+    },
+    {
+      "path": "tests/test_nine_router_review_workflow.py",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "read_only",
+      "read_depths": [
+        "read_only"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    },
+    {
+      "path": "tests/web/server/sigma_band_route.test.js",
+      "owner": "native",
+      "owners": [
+        "native"
+      ],
+      "read_depth": "whole_file_logical_read",
+      "read_depths": [
+        "whole_file_logical_read"
+      ],
+      "execution_class": "not_recorded",
+      "execution_classes": [
+        "not_recorded"
+      ],
+      "sources": [
+        "native_review_ledger"
+      ]
+    }
+  ]
+}

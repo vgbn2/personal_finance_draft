@@ -154,6 +154,10 @@ test('live repository documentation audit passes', () => {
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 });
 
+test('live repository Markdown documents are all cataloged', () => {
+  assert.deepEqual(analyzeDocs().uncataloged, []);
+});
+
 test('Atlas frontmatter parser reads typed owners and working-tree evidence', () => {
   const metadata = parseAtlasFrontmatter(validRecord());
   assert.equal(metadata.id, 'atlas.algorithm.docs.term-frequency');
