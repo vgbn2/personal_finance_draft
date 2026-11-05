@@ -2392,6 +2392,36 @@
       ]
     },
     {
+      "path": "docs/research/ingestion/2026-11-04-ingestion-config-test-review.md",
+      "type": "research",
+      "audience": ["contributors"],
+      "owner": "research",
+      "status": "supporting",
+      "source_paths": ["backend/scripts/data_ops/ingest_market_data/manifests.js"],
+      "test_paths": ["tests/scripts/data/ingest/ingest_manifest_contract.test.js"],
+      "review_triggers": ["ingestion-contract-change"]
+    },
+    {
+      "path": "docs/research/ingestion/2026-11-04-ingestion-readiness-plan.md",
+      "type": "research",
+      "audience": ["contributors"],
+      "owner": "research",
+      "status": "supporting",
+      "source_paths": ["config/markets/data_sources.yaml"],
+      "test_paths": [],
+      "review_triggers": ["ingestion-contract-change"]
+    },
+    {
+      "path": "docs/research/ingestion/2026-11-04-polymarket-history-check.md",
+      "type": "research",
+      "audience": ["contributors"],
+      "owner": "research",
+      "status": "supporting",
+      "source_paths": ["shared/lib/market/polymarket_history.js"],
+      "test_paths": ["tests/scripts/integration/polymarket/polymarket_history_archive.test.js"],
+      "review_triggers": ["ingestion-contract-change"]
+    },
+    {
       "path": "docs/research/quant_research.md",
       "type": "explanation",
       "audience": [
