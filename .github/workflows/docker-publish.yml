@@ -30,15 +30,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build All-in-One image for testing
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: infra/docker/Dockerfile.allinone
@@ -106,7 +106,7 @@ jobs:
           docker rm sv-allinone-test
 
       - name: Build slim production image for testing
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
@@ -153,7 +153,7 @@ jobs:
 
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -176,7 +176,7 @@ jobs:
       - name: Extract Docker metadata
         if: github.event_name != 'pull_request'
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -188,7 +188,7 @@ jobs:
 
       - name: Push All-in-One Docker image to GHCR
         if: github.event_name != 'pull_request'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: infra/docker/Dockerfile.allinone
