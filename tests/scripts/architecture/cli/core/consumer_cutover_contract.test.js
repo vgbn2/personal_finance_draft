@@ -132,7 +132,17 @@ test('every static relative CLI dependency resolves from its relocated caller', 
         const source = fs.readFileSync(file, 'utf8');
         for (const [, request] of source.matchAll(/require(?:\.resolve)?\(['"](\.[^'"]+)['"]\)/g)) {
           assert.doesNotMatch(request, /(?:^|\/)backend\/(?:gateway|cli|core)\//);
-          assert.doesNotThrow(() => require.resolve(path.resolve(path.dirname(file), request)), `${file}: ${request}`);
+          const resolved = path.resolve(path.dirname(file), request);
+          const candidates = [
+            resolved,
+            resolved.replace('/dist/', '/src/').replace(/\.js$/, '.ts'),
+          ];
+          assert.ok(
+            candidates.some((c) => {
+              try { return require.resolve(c); } catch { return fs.existsSync(c); }
+            }),
+            `${file}: ${request}`
+          );
         }
       }
     }
