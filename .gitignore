@@ -35,7 +35,8 @@ compile_commands.json
 graphify-out/
 site/
 .cache/
-backfill_daemon*
+/backfill_daemon*
+storage/**/backfill_daemon*
 
 # Local agent/workflow state
 skills-lock.json
