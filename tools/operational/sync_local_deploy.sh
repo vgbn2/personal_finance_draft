@@ -131,6 +131,9 @@ $PROXMOX_SSH "pct exec ${CT_ID} -- bash -c '
   rm -rf \"${CT_DEST}/notebooks\"
   rm -rf \"${CT_DEST}/web\"
   rm -rf \"${CT_DEST}/site\"
+  if [ -d \"${CT_DEST}/tools/ops\" ] && [ ! -L \"${CT_DEST}/tools/ops\" ]; then
+    rm -rf \"${CT_DEST}/tools/ops\"
+  fi
 '"
 
 if [[ "$CLEAN" == "true" ]]; then
