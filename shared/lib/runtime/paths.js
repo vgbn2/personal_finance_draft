@@ -21,6 +21,10 @@ function buildBackendCandidates(repoRoot = REPO_ROOT, platform = process.platfor
     const binaryName = backendBinaryName(platform);
     const pathApi = platform === 'win32' ? path.win32 : path.posix;
     return [
+        pathApi.join(repoRoot, 'build', 'core', 'bin', binaryName),
+        pathApi.join(repoRoot, 'build', 'core', 'Release', binaryName),
+        pathApi.join(repoRoot, 'build', 'core', 'Debug', binaryName),
+        pathApi.join(repoRoot, 'build', 'core', binaryName),
         pathApi.join(repoRoot, 'build', 'cpp_core', 'bin', binaryName),
         pathApi.join(repoRoot, 'build', 'cpp_core', 'Release', binaryName),
         pathApi.join(repoRoot, 'build', 'cpp_core', 'Debug', binaryName),

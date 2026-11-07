@@ -46,7 +46,7 @@
     "bench:sim": "SOVEREIGN_BENCH_PROFILE=constrained_vps node tests/run_node_tests.js tests/benchmarks/**/*.bench.js",
     "bench:mini-pc": "SOVEREIGN_BENCH_PROFILE=mini_pc node tests/run_node_tests.js tests/benchmarks/**/*.bench.js",
     "test:safety": "node tests/run_node_tests.js --test-concurrency=1 tests/scripts/architecture/auth/trade_pin_safety.test.js tests/scripts/architecture/cli/core/environment_manifest.test.js tests/scripts/lib/alpaca_bot_state.test.js tests/scripts/lib/alpaca_bot_cycle.test.js tests/scripts/safety/automation_guard.test.js tests/scripts/safety/degraded_fallback.test.js tests/scripts/safety/guard_mutation.test.js",
-    "test:prepare": "node backend/scripts/dev/seed_master_fixture.js",
+    "test:prepare": "node backend/scripts/dev/seed_master_fixture.js && node tools/dev/ensure_workspace_skeleton.js",
     "setup:dev": "node tools/dev/setup_dev.js",
     "svconsole-update": "node tools/dev/update_packages.js && npm run test:core && npm test",
     "test:core": "npm run test:prepare && node tests/run_logged_command.js --label native-build -- npm run native:build && node tests/run_logged_command.js --label native-ctest -- ctest --test-dir build/core -C Release --output-on-failure",

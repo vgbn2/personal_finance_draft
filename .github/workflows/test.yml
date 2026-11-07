@@ -122,8 +122,10 @@ jobs:
         if: steps.cache-native-core.outputs.cache-hit != 'true'
         run: npm run native:build
 
-      - name: Seed test fixtures
-        run: node backend/scripts/dev/seed_master_fixture.js
+      - name: Seed test fixtures and workspace skeleton
+        run: |
+          node backend/scripts/dev/seed_master_fixture.js
+          node tools/dev/ensure_workspace_skeleton.js
 
       - name: Structure contracts
         run: npm run test:structure
