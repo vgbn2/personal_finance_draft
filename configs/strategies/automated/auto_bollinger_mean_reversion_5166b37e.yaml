@@ -1,0 +1,84 @@
+name: cand_bollinger_mean_reversion_1d_mw6oeecd_28ct
+kind: mean_reversion
+family: mean_reversion
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: knn_pattern_v0
+timeframe: 1d
+sections:
+  hypothesis: "Mean reversion on Bollinger Band extreme lower envelope confirmed by RSI oversold exhaustion."
+  universe:
+    - "BTCUSDT"
+  signals:
+    entry: "Close < Bollinger_Lower and RSI < 30"
+    exit: "Close > Bollinger_Middle or RSI > 50"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "bollinger"
+      - "rsi"
+      - "atr"
+      - "return_fast"
+      - "volatility"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    bollinger: true
+    rsi: true
+    atr: true
+    return_fast: true
+    volatility: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 3
+    risk_weight: 0.08
+    stop_loss_pct: 0.045
+    take_profit_pct: 0.1
+    max_drawdown_limit: 0.2
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "mean_reversion"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 38
+    sharpe_ratio: 3.88
+    max_drawdown: 0.0930
+    win_rate: 0.579
+    net_return: 0.3471
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []
