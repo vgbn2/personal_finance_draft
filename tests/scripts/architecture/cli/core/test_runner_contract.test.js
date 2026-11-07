@@ -21,7 +21,7 @@ const packageJson = require('../../../../../package.json');
 
 test('svconsole-update scopes npm updates and stops before later gates on failure', () => {
   assert.equal(packageJson.scripts['svconsole-update'],
-    'node scripts/dev/update_packages.js && npm run test:core && npm test');
+    'node tools/dev/update_packages.js && npm run test:core && npm test');
 });
 
 test('update wrapper preserves npmrc policy in a real offline npm workspace', () => {
@@ -30,7 +30,7 @@ test('update wrapper preserves npmrc policy in a real offline npm workspace', ()
   const { spawnSync } = require('node:child_process');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-update-policy-'));
   try {
-    const wrapper = path.resolve(__dirname, '../../../../../scripts/dev/update_packages.js');
+    const wrapper = path.resolve(__dirname, '../../../../../tools/dev/update_packages.js');
     fs.mkdirSync(path.join(root, 'child'));
     fs.writeFileSync(path.join(root, 'child/package.json'), JSON.stringify({ name: 'policy-child', version: '1.0.0' }));
     fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({

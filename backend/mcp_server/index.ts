@@ -103,7 +103,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       inputSchema: {
         type: 'object',
         properties: {
-          strategy: { type: 'string', description: 'Strategy file path (e.g., config/strategies/mean_reversion.yaml)' },
+          strategy: { type: 'string', description: 'Strategy file path (e.g., configs/strategies/mean_reversion.yaml)' },
           symbol: { type: 'string', description: 'Target instrument (e.g., BTCUSDT)' },
           timeframe: { type: 'string', description: 'e.g., 1d, 1h' },
           days: { type: 'number', description: 'Lookback window in calendar days (e.g. 90, 365, 730). Preferred over from/to.' },
@@ -372,7 +372,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           risk_weight: { type: 'number', description: 'Target risk allocation fraction 0.01 - 1.0 (default: 0.10)' },
           entry_signal: { type: 'string', description: 'Description of entry trigger condition' },
           exit_signal: { type: 'string', description: 'Description of exit trigger condition' },
-          save_yaml: { type: 'boolean', description: 'Whether to persist YAML definition to config/strategies/ (default: true)' },
+          save_yaml: { type: 'boolean', description: 'Whether to persist YAML definition to configs/strategies/ (default: true)' },
         },
       },
     },

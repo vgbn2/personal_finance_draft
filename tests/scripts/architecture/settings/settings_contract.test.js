@@ -5,9 +5,9 @@ const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
-const manifest = require('../../../../backend/cli/tui/manifest');
+const manifest = require('../../../../frontend/cli-tui/tui/manifest');
 
-const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
+const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'frontend', 'cli-tui', 'sovereign_cli.js');
 
 function runSettings(args, settingsFile) {
   const env = { ...process.env, SOVEREIGN_USER_SETTINGS_PATH: settingsFile };

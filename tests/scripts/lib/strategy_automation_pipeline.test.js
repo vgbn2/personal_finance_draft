@@ -5,9 +5,9 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
 const { parseTimeframeMs } = require('../../../backend/scripts/data_ops/ingest_market_data/constants.js');
-const { rollupFromBase } = require('../../../backend/cli/commands/data/data_rollup.js');
+const { rollupFromBase } = require('../../../frontend/cli-tui/commands/data/data_rollup.js');
 const { writeTsIndex, readTsIndex } = require('../../../shared/lib/market/validation.js');
-const { deriveLiveStrategySignal } = require('../../../backend/cli/commands/strategy/strategy.js');
+const { deriveLiveStrategySignal } = require('../../../frontend/cli-tui/commands/strategies/strategy.js');
 
 test('timeframe ascending duration sort', () => {
   const timeframes = ['1d', '5m', '1w', '1m', '1h', '15m'];

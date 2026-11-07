@@ -1,5 +1,5 @@
 const { backendKillSwitch } = require('../../services/cli_executor');
-const { verifyPin } = require('../../../../cli/lib/auth.js');
+const { verifyPin } = require('../../../../../frontend/cli-tui/lib/auth.js');
 
 module.exports = {
   path: '/api/kill-switch',
@@ -24,4 +24,3 @@ module.exports = {
     return backendKillSwitch(query.command || 'status');
   },
 };
-

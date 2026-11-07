@@ -60,7 +60,7 @@ jobs:
         run: cmake --build build/ci-debug --parallel
 
       - name: Run CTest
-        run: ctest --test-dir build/ci-debug/backend/core --output-on-failure
+        run: ctest --test-dir build/ci-debug/backend/cpp_core --output-on-failure
 
   node-tests:
     name: Node test suite
@@ -82,8 +82,8 @@ jobs:
         id: cache-native-core
         uses: actions/cache@v4
         with:
-          path: backend/core/build
-          key: native-core-${{ runner.os }}-${{ hashFiles('backend/core/**', 'CMakeLists.txt') }}
+          path: backend/cpp_core/build
+          key: native-core-${{ runner.os }}-${{ hashFiles('backend/cpp_core/**', 'CMakeLists.txt') }}
 
       - name: Cache MCP server build
         id: cache-mcp-server
@@ -111,7 +111,7 @@ jobs:
       - name: Build TypeScript workspaces
         run: |
           npx tsc -p backend/mcp_server/tsconfig.json
-          npx tsc -p backend/gateway/tsconfig.json
+          npx tsc -p backend/execution/tsconfig.json
           npx tsc -p frontend/dashboard/tsconfig.json --noEmit
 
       - name: Build dashboard frontend
@@ -129,7 +129,7 @@ jobs:
         run: npm run test:structure
 
       - name: Documentation audit
-        run: npm run audit:documentation && node scripts/dev/filter_docs.js --strict
+        run: npm run audit:documentation && node tools/dev/filter_docs.js --strict
 
       - name: Full Node test suite
         run: npm test -- --test-concurrency=4

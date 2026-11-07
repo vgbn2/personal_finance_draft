@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { renderPriceChart } = require('../../../../backend/cli/tui/visualizations.js');
+const { renderPriceChart } = require('../../../../frontend/cli-tui/tui/visualizations.js');
 const A = require('../../../../shared/lib/ui/ansi');
 const { stripAnsi } = A;
 

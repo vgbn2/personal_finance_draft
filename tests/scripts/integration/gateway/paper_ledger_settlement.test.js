@@ -13,10 +13,10 @@ const {
   appendLedgerEvents,
   loadLedgerProjection,
   GENESIS_CHECKSUM,
-} = require('../../../../backend/gateway/src/polymarket/paper_ledger');
+} = require('../../../../backend/execution/src/polymarket/paper_ledger');
 const {
   runPolymarketPaperRun,
-} = require('../../../../backend/gateway/src/polymarket/paper');
+} = require('../../../../backend/execution/src/polymarket/paper');
 
 describe('Paper Trading Settlement & Accounting Ledger', () => {
   let tempLedgerDir;

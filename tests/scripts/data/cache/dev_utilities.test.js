@@ -6,7 +6,7 @@ const { categoryFor } = require('../../../../backend/scripts/dev/organize_test_f
 const { FIXTURE_PATH } = require('../../../../backend/scripts/dev/refresh_real_bars_fixture');
 const { probeParallelBackfill } = require('../../../../backend/scripts/dev/parallel_backfill_probe');
 const { compareModelRegistries } = require('../../../../backend/scripts/dev/model_registry_parity');
-const { withLoadingAnimation } = require('../../../../backend/cli/lib/utils');
+const { withLoadingAnimation } = require('../../../../frontend/cli-tui/lib/utils');
 
 test('development utilities expose safe paths and fixture categories', () => {
   assert.equal(categoryFor('validator_rejects_bad_ohlc.json'), 'validation');

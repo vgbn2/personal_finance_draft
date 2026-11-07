@@ -46,11 +46,11 @@ test('C++ Actions workflow executes CTest from the generated root-build director
   const workflow = fs.readFileSync(TEST_WORKFLOW, 'utf8');
   assert.match(workflow, /node-version: '22'/);
   assert.match(workflow, /cmake -S \. -B build\/ci-debug/);
-  assert.match(workflow, /ctest --test-dir build\/ci-debug\/backend\/core --output-on-failure/);
+  assert.match(workflow, /ctest --test-dir build\/ci-debug\/backend\/cpp_core --output-on-failure/);
   assert.doesNotMatch(workflow, /build\/ci-debug\/cpp_core/);
 
   const rootCmake = read('CMakeLists.txt');
-  assert.match(rootCmake, /add_subdirectory\(backend\/core\)/);
+  assert.match(rootCmake, /add_subdirectory\(backend\/cpp_core\)/);
 });
 
 test('Node Actions workflow retains committed-archive evidence instead of root-only proof', () => {
@@ -64,7 +64,7 @@ test('Node Actions workflow retains committed-archive evidence instead of root-o
   assert.doesNotMatch(workflow, /^\s+- name: Install Node dependencies$/m);
   assert.doesNotMatch(workflow, /^\s+- name: Run Node tests$/m);
 
-  const coordinator = read('scripts/dev/verify_source_evidence.js');
+  const coordinator = read('tools/dev/verify_source_evidence.js');
   assert.match(coordinator, /typecheck_gateway/);
   assert.match(coordinator, /shared\/lib\/market\/quote_router\.js/);
   assert.match(coordinator, /backend\/api\/app\.js/);

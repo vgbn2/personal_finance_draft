@@ -3,7 +3,7 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 
-const { runAlpacaPaperLoop } = require('../../../backend/cli/commands/runner/run.js');
+const { runAlpacaPaperLoop } = require('../../../frontend/cli-tui/commands/runner/run.js');
 
 const enabledSettings = { feature_flags: { bot_autopilot: true } };
 

@@ -8,7 +8,7 @@ const {
   calculateBump,
   bumpVersion,
   generateChangelog,
-} = require('../../../scripts/ops/release_version');
+} = require('../../../tools/ops/release_version');
 
 test('parseSemver parses standard and v-prefixed versions', () => {
   assert.deepEqual(parseSemver('1.2.3'), { major: 1, minor: 2, patch: 3 });

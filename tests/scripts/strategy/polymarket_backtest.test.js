@@ -8,8 +8,8 @@ const {
   runPolymarketBacktest,
   signalLowProbDip,
   signalMeanRevert,
-} = require('../../../backend/cli/commands/trade/polymarket_backtest.js');
-const { runPolymarketArchiveIngest } = require('../../../backend/cli/commands/trade/trade.js');
+} = require('../../../frontend/cli-tui/commands/trade/polymarket_backtest.js');
+const { runPolymarketArchiveIngest } = require('../../../frontend/cli-tui/commands/trade/trade.js');
 const {
   buildPriceSeries,
   inferWinner,

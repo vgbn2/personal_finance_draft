@@ -1,6 +1,6 @@
 const { botCycle } = require('../../services/cli_executor');
 const { CAPABILITIES, authorize } = require('../../../../../shared/lib/auth/access_policy');
-const { verifyPin } = require('../../../../cli/lib/auth.js');
+const { verifyPin } = require('../../../../../frontend/cli-tui/lib/auth.js');
 
 module.exports = {
   path: '/api/bot/cycle',

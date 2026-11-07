@@ -203,7 +203,7 @@ test('frameToCsv emits header + numeric cells, blanks for null', () => {
 });
 
 test('commandFeaturesDump parses --max-bars-per-symbol and uses safe defaults', async () => {
-  const mlCmdPath = path.resolve(__dirname, '../../../backend/cli/commands/research/ml');
+  const mlCmdPath = path.resolve(__dirname, '../../../frontend/cli-tui/commands/research/ml');
   const datasetPath = path.resolve(__dirname, '../../../shared/lib/ml/dataset.js');
 
   let passedMaxBars = null;

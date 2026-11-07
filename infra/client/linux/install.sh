@@ -184,9 +184,9 @@ trap 'rm -f "${config_tmp}" "${client_json_tmp}" "${service_tmp}" "${launcher_tm
 
 if [[ -z "${cli_launcher}" ]]; then
   node_bin="$(realpath "$(command -v node)")"
-  cli_entry="${repo_root}/backend/cli/sovereign_cli.js"
+  cli_entry="${repo_root}/frontend/cli-tui/sovereign_cli.js"
   [[ -f "${cli_entry}" ]] || {
-    echo "cannot find backend/cli/sovereign_cli.js; pass --cli-launcher" >&2
+    echo "cannot find frontend/cli-tui/sovereign_cli.js; pass --cli-launcher" >&2
     exit 66
   }
   {

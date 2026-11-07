@@ -138,17 +138,17 @@ test('createHostBackup publishes an immutable snapshot with checksums and no sec
   try {
     fs.mkdirSync(path.join(root, 'storage', 'data', 'ts'), { recursive: true });
     fs.mkdirSync(path.join(root, 'storage', 'data', 'cache'), { recursive: true });
-    fs.mkdirSync(path.join(root, 'config', 'system'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'configs', 'system'), { recursive: true });
     fs.writeFileSync(path.join(root, 'storage', 'data', 'ts', 'BTCUSDT_1m.bin'), 'canonical-bars');
     fs.writeFileSync(path.join(root, 'storage', 'data', 'portfolio.json'), '{"cash":100}');
-    fs.writeFileSync(path.join(root, 'config', 'system', 'app.yaml'), 'mode: paper\n');
+    fs.writeFileSync(path.join(root, 'configs', 'system', 'app.yaml'), 'mode: paper\n');
     fs.writeFileSync(path.join(root, '.env'), 'SECRET=must-not-copy\n');
     fs.writeFileSync(path.join(root, 'storage', 'data', 'cache', 'provider.json'), 'disposable');
 
     const backupRoot = path.join(root, 'backups');
     const sources = [
       path.join(root, 'storage', 'data', 'ts'),
-      path.join(root, 'config'),
+      path.join(root, 'configs'),
       path.join(root, 'storage', 'data', 'portfolio.json'),
     ];
     const result = await createHostBackup({
@@ -249,7 +249,7 @@ function writeCompletedBackup(backupRoot, name, createdAt, sourceRoot = null) {
 test('createHostBackup applies max-age and max-count retention only after publishing a new backup', async () => {
   const root = tempDir();
   try {
-    const source = path.join(root, 'config');
+    const source = path.join(root, 'configs');
     const backupRoot = path.join(root, 'backups');
     fs.mkdirSync(source);
     fs.writeFileSync(path.join(source, 'app.json'), '{}');
@@ -293,7 +293,7 @@ test('createHostBackup applies max-age and max-count retention only after publis
 test('createHostBackup only prunes backups with matching source_root provenance', async () => {
   const root = tempDir();
   try {
-    const source = path.join(root, 'config');
+    const source = path.join(root, 'configs');
     const backupRoot = path.join(root, 'backups');
     fs.mkdirSync(source);
     fs.writeFileSync(path.join(source, 'app.json'), '{}');
@@ -352,7 +352,7 @@ test('createHostBackup does not apply retention when the new backup fails', asyn
 test('createHostBackup reports retention deletion failures without removing the published backup', async () => {
   const root = tempDir();
   try {
-    const source = path.join(root, 'config');
+    const source = path.join(root, 'configs');
     const backupRoot = path.join(root, 'backups');
     fs.mkdirSync(source);
     fs.writeFileSync(path.join(source, 'app.json'), '{}');
@@ -381,7 +381,7 @@ test('createHostBackup reports retention deletion failures without removing the 
 test('createHostBackup rejects an invalid retention policy before publishing', async () => {
   const root = tempDir();
   try {
-    const source = path.join(root, 'config');
+    const source = path.join(root, 'configs');
     const backupRoot = path.join(root, 'backups');
     fs.mkdirSync(source);
     fs.writeFileSync(path.join(source, 'app.json'), '{}');
@@ -428,7 +428,7 @@ test('checkRootDiskSpace throws ENOSPC when free percent is below threshold', ()
 test('createHostBackup fails closed and creates no staging dir when root disk space is exhausted', async () => {
   const root = tempDir();
   try {
-    const source = path.join(root, 'config');
+    const source = path.join(root, 'configs');
     const backupRoot = path.join(root, 'backups');
     fs.mkdirSync(source);
     fs.writeFileSync(path.join(source, 'app.json'), '{}');

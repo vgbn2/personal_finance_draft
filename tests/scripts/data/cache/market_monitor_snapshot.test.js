@@ -17,7 +17,7 @@ const {
 } = require('../../../../shared/lib/market/validation.js');
 const {
   buildJobUniverse,
-} = require('../../../../backend/cli/commands/data/backfill_daemon.js');
+} = require('../../../../frontend/cli-tui/commands/data/backfill_daemon.js');
 
 function record(instrument, timestamp, close, provider) {
   return {

@@ -5,18 +5,18 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
+const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'frontend', 'cli-tui', 'sovereign_cli.js');
 const { mergeSnapshots, validateSnapshot } = require('../../../../shared/lib/market/validation');
 const { classifySupabaseError } = require('../../../../shared/lib/supabase/errors');
-const { commandLogin } = require('../../../../backend/cli/commands/account/auth');
-const auth = require('../../../../backend/cli/lib/auth');
+const { commandLogin } = require('../../../../frontend/cli-tui/commands/account/auth');
+const auth = require('../../../../frontend/cli-tui/lib/auth');
 const {
   cryptoLimitForWindow,
   filterCandlesByWindow,
   historicalWindowFromArgs,
   buildTradeGatewayLaunch,
   currentPhaseLabel,
-} = require('../../../../backend/cli/sovereign_cli');
+} = require('../../../../frontend/cli-tui/sovereign_cli');
 const {
   buildPolymarketActionChoices,
   buildPolymarketCategoryChoices,
@@ -29,7 +29,7 @@ const {
   resolveOutcomeToken,
   renderPolymarketMarketDetails,
   renderPolymarketOrderbookDetails,
-} = require('../../../../backend/cli/commands/trade/trade');
+} = require('../../../../frontend/cli-tui/commands/trade/trade');
 const {
   fetchGoogleCustomSearchInterest,
   fetchPredictionInterestSignal,
@@ -672,7 +672,7 @@ test('optimize fails fast when the current slice has no usable features', () => 
     CLI_PATH,
     'optimize',
     '--strategy',
-    'config/strategies/defensive_rotation.yaml',
+    'configs/strategies/defensive_rotation.yaml',
     '--input',
     input,
     '--json',

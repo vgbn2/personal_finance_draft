@@ -18,9 +18,9 @@ require('ts-node').register({
 });
 
 const REPO_ROOT = path.resolve(__dirname, '../../../../');
-const { readStrategyRegistry, inspectStrategyFile } = require(path.join(REPO_ROOT, 'backend', 'cli', 'commands', 'strategy', 'strategy.js'));
+const { readStrategyRegistry, inspectStrategyFile } = require(path.join(REPO_ROOT, 'frontend', 'cli-tui', 'commands', 'strategy', 'strategy.js'));
 const { MagicCodec } = require(path.join(REPO_ROOT, 'shared', 'lib', 'runtime', 'mt5_magic_codec.js'));
-const { Mt5Adapter } = require(path.join(REPO_ROOT, 'backend', 'gateway', 'src', 'adapters', 'mt5_adapter.ts'));
+const { Mt5Adapter } = require(path.join(REPO_ROOT, 'backend', 'execution', 'src', 'adapters', 'mt5_adapter.ts'));
 const { MockMt5Client } = require(path.join(REPO_ROOT, 'tests', 'fixtures', 'mock_mt5_bridge.js'));
 
 test('MT5 Strategy Deployment: All registered MT5 strategies load and validate cleanly', () => {
@@ -45,7 +45,7 @@ test('MT5 Strategy Deployment: All registered MT5 strategies load and validate c
 
   for (const name of [...mt5Curated, ...mt5Automated]) {
     const fileMatch = registered.find((f) => f.includes(name));
-    assert.ok(fileMatch, `Strategy ${name} must be listed in config/trading/strategies.yaml`);
+    assert.ok(fileMatch, `Strategy ${name} must be listed in configs/trading/strategies.yaml`);
 
     const inspected = inspectStrategyFile(fileMatch);
     assert.equal(inspected.ok, true, `Strategy ${name} failed inspection: ${JSON.stringify(inspected.issues)}`);
@@ -124,6 +124,6 @@ test('MT5 Strategy Deployment: Mt5Adapter places order with timeframe-encoded ma
 });
 
 test('MT5 Strategy Deployment: CLI runner correctly exports commandRun and supports mt5 bot subcommand', () => {
-  const runModule = require(path.join(REPO_ROOT, 'backend', 'cli', 'commands', 'runner', 'run.js'));
+  const runModule = require(path.join(REPO_ROOT, 'frontend', 'cli-tui', 'commands', 'runner', 'run.js'));
   assert.equal(typeof runModule.commandRun, 'function', 'commandRun must be exported');
 });

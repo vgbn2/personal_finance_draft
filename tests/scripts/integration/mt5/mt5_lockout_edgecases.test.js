@@ -7,7 +7,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 const REPO_ROOT = path.resolve(__dirname, '../../../../');
-const CLI_PATH = path.join(REPO_ROOT, 'backend', 'cli', 'sovereign_cli.js');
+const CLI_PATH = path.join(REPO_ROOT, 'frontend', 'cli-tui', 'sovereign_cli.js');
 
 test('MT5 Lockout Interactions & Edge Cases', async (t) => {
   const PORT = 18286;

@@ -9,7 +9,7 @@ const { writeTsIndex } = require('../../../../shared/lib/market/validation');
 const {
   locateBackendBinary,
   _test,
-} = require('../../../../backend/cli/commands/tools/backend');
+} = require('../../../../frontend/cli-tui/commands/tools/backend');
 
 function tempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-corr-preflight-'));

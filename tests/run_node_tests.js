@@ -255,7 +255,7 @@ async function main(argv = process.argv.slice(2)) {
   }
   const environment = { ...process.env };
   if (resolvedTargets.some(target => target.endsWith('go_parity_sovt.test.js'))) {
-    const { ensureGo } = require('../scripts/dev/ensure_go');
+  const { ensureGo } = require('../tools/dev/ensure_go');
     environment.PATH = `${await ensureGo({ install: false })}${path.delimiter}${environment.PATH || ''}`;
   }
   return runTestFiles(

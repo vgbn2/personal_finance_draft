@@ -6,19 +6,19 @@ const path = require('node:path');
 const test = require('node:test');
 
 test('fresh-install is a compatibility wrapper for committed-archive evidence', () => {
-  const wrapper = fs.readFileSync(path.resolve('scripts/dev/verify_fresh_install.sh'), 'utf8');
+  const wrapper = fs.readFileSync(path.resolve('tools/dev/verify_fresh_install.sh'), 'utf8');
   const coordinator = fs.readFileSync(
-    path.resolve('scripts/dev/verify_source_evidence.js'),
+    path.resolve('tools/dev/verify_source_evidence.js'),
     'utf8',
   );
   const packageJson = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'));
   assert.equal(
     packageJson.scripts['verify:source-snapshot'],
-    'node scripts/dev/verify_source_evidence.js --mode worktree_snapshot',
+    'node tools/dev/verify_source_evidence.js --mode worktree_snapshot',
   );
   assert.equal(
     packageJson.scripts['verify:committed-archive'],
-    'node scripts/dev/verify_source_evidence.js --mode committed_archive',
+    'node tools/dev/verify_source_evidence.js --mode committed_archive',
   );
   assert.equal(packageJson.scripts['verify:fresh-install'], 'npm run verify:committed-archive --');
   assert.match(wrapper, /verify_source_evidence\.js/);
@@ -30,7 +30,7 @@ test('fresh-install is a compatibility wrapper for committed-archive evidence', 
   assert.match(coordinator, /writeEvidenceAtomic/);
   for (const packageRoot of [
     'backend/api',
-    'backend/gateway',
+    'backend/execution',
     'backend/mcp_server',
     'frontend/dashboard',
   ]) {

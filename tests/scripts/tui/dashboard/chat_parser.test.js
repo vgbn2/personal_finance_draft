@@ -2,7 +2,7 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { tokenize, resolveCommand, resolveFlags, parseChatInput } = require('../../../../backend/cli/tui/chat_parser.js');
+const { tokenize, resolveCommand, resolveFlags, parseChatInput } = require('../../../../frontend/cli-tui/tui/chat_parser.js');
 
 // Small synthetic manifest -- deliberately decoupled from the real M in
 // sovereign_dashboard.mjs so these unit tests stay stable across manifest

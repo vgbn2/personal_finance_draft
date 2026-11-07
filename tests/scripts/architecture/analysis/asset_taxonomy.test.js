@@ -8,7 +8,7 @@ const { validateAssetDescriptor } = require('../../../../shared/contracts/analys
 const { loadMarketConfig } = require('../../../../shared/lib/runtime/config_loader');
 const { EVIDENCE_FAMILIES, inventoryMarketConfig } = require('../../../../shared/lib/analysis/assets');
 
-const CONFIG_PATH = path.join(__dirname, '../../../../config/markets/data_sources.yaml');
+const CONFIG_PATH = path.join(__dirname, '../../../../configs/markets/data_sources.yaml');
 
 test('real market config inventories assets, evidence, and unsupported entries', async () => {
   const config = await loadMarketConfig(CONFIG_PATH);

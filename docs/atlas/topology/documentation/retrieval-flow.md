@@ -5,7 +5,7 @@ title: Documentation Retrieval Flow
 status: current
 owners:
   source:
-    - path: scripts/dev/build_docs_rag_index.js
+    - path: tools/dev/build_docs_rag_index.js
       symbol: main
     - path: shared/lib/ai/docs_rag_indexer.js
       symbol: buildDocsIndex

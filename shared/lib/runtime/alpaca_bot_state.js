@@ -5,7 +5,7 @@ const { writeJson } = require('../market/validation');
 const { STORAGE_DATA_DIR } = require('./paths');
 
 /**
- * Persistent Alpaca bot position tracker. Mirrors backend/gateway/src/bot_state.ts's
+ * Persistent Alpaca bot position tracker. Mirrors backend/execution/src/bot_state.ts's
  * shape (BotPosition/BotConfig/BotState) for the equities/crypto-via-Alpaca side of
  * the platform, which previously had no position memory at all -- the automation
  * loop (strategy.js's runAutomationPass) only ever opened positions, never tracked

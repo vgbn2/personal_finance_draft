@@ -5,7 +5,7 @@ const test = require('node:test');
 
 const {
   reconcileAutomationInventory,
-} = require('../../../backend/cli/commands/strategy/automation_guard.js');
+} = require('../../../frontend/cli-tui/commands/strategies/automation_guard.js');
 
 test('automation inventory reconciliation reads state only after broker truth is confirmed', async () => {
   const calls = [];

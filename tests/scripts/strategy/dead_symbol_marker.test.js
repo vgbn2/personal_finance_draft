@@ -12,7 +12,7 @@ const path = require('node:path');
 
 const { writeTsIndex, readTsIndex } = require('../../../shared/lib/market/validation.js');
 const { readCoverage, isFresh } = require('../../../shared/lib/market/coverage.js');
-const { writeDeadSymbolMarker } = require('../../../backend/cli/commands/data/data.js');
+const { writeDeadSymbolMarker } = require('../../../frontend/cli-tui/commands/data/data.js');
 
 const DAY = 24 * 60 * 60 * 1000;
 

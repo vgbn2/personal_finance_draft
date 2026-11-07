@@ -9,11 +9,11 @@ const { spawnSync } = require('node:child_process');
 const {
   auditDocumentation,
   parseAtlasFrontmatter,
-} = require('../../../../../scripts/dev/audit_documentation.js');
+} = require('../../../../../tools/dev/audit_documentation.js');
 const {
   analyzeDocs,
   KNOWN_FENCE_LANGS,
-} = require('../../../../../scripts/dev/filter_docs.js');
+} = require('../../../../../tools/dev/filter_docs.js');
 
 function write(root, relativePath, content = '# Fixture\n') {
   const target = path.join(root, relativePath);
@@ -147,7 +147,7 @@ function fixture() {
 
 test('live repository documentation audit passes', () => {
   const repoRoot = path.resolve(__dirname, '..', '..', '..', '..', '..');
-  const result = spawnSync('node', ['scripts/dev/audit_documentation.js'], {
+  const result = spawnSync('node', ['tools/dev/audit_documentation.js'], {
     cwd: repoRoot,
     encoding: 'utf8',
   });
@@ -348,7 +348,7 @@ test('master architecture report uses pinned, scoped and print-safe visual asset
 
 test('architecture report PDF verification passes and detects input drift', (t) => {
   const repoRoot = path.resolve(__dirname, '..', '..', '..', '..', '..');
-  const { verifyReportPdf } = require(path.join(repoRoot, 'scripts/dev/verify_architecture_report_pdf.js'));
+  const { verifyReportPdf } = require(path.join(repoRoot, 'tools/dev/verify_architecture_report_pdf.js'));
 
   // 1. Current repo state passes verification
   const currentResult = verifyReportPdf({ root: repoRoot });
@@ -386,7 +386,7 @@ test('sovereign technical manual and cybersecurity specification is registered a
   const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'docs/documentation_manifest.json'), 'utf8'));
   const mkdocs = fs.readFileSync(path.join(repoRoot, 'mkdocs.yml'), 'utf8');
   const css = fs.readFileSync(path.join(repoRoot, 'docs/stylesheets/architecture-report.css'), 'utf8');
-  const pdfScript = fs.readFileSync(path.join(repoRoot, 'scripts/dev/build_technical_manual_pdf.js'), 'utf8');
+  const pdfScript = fs.readFileSync(path.join(repoRoot, 'tools/dev/build_technical_manual_pdf.js'), 'utf8');
 
   // Registration contracts
   const record = manifest.documents.find((document) => document.path === manualPath);

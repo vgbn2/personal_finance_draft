@@ -7,7 +7,7 @@ const {
   analyzeCppSource,
   analyzeJsSource,
   isProductionSource,
-} = require('../../../../../scripts/dev/audit_control_flow.js');
+} = require('../../../../../tools/dev/audit_control_flow.js');
 
 test('control-flow audit counts nested JS branches and loops', () => {
   const result = analyzeJsSource(`
@@ -72,9 +72,9 @@ test('control-flow audit counts nested C++ control blocks and ignores literals',
 });
 
 test('control-flow audit excludes tests and generated roots from production', () => {
-  assert.equal(isProductionSource('backend/core/src/main.cpp'), true);
+  assert.equal(isProductionSource('backend/cpp_core/src/main.cpp'), true);
   assert.equal(isProductionSource('shared/lib/market/coverage.js'), true);
-  assert.equal(isProductionSource('backend/core/test/stats_test.cpp'), false);
+  assert.equal(isProductionSource('backend/cpp_core/test/stats_test.cpp'), false);
   assert.equal(isProductionSource('tests/scripts/foo.test.js'), false);
   assert.equal(isProductionSource('Frontend/dashboard/dist/app.js'), false);
 });

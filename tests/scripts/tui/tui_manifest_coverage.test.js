@@ -5,8 +5,8 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 
-const CLI_PATH = path.resolve(__dirname, '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
-const { commands, categories } = require('../../../backend/cli/tui/manifest.js');
+const CLI_PATH = path.resolve(__dirname, '..', '..', '..', 'frontend', 'cli-tui', 'sovereign_cli.js');
+const { commands, categories } = require('../../../frontend/cli-tui/tui/manifest.js');
 
 /**
  * Builds CLI argument list from a manifest command definition and flag values.
@@ -74,7 +74,7 @@ function generateFlagPermutations(cmd) {
   if (cmd.id === 'bt') {
     baseFlags['--days'] = '0';
     baseFlags['--allow-degraded'] = true;
-    if (!baseFlags['--strategy']) baseFlags['--strategy'] = 'config/strategies/curated/forex_trend_breakout.yaml';
+    if (!baseFlags['--strategy']) baseFlags['--strategy'] = 'configs/strategies/curated/forex_trend_breakout.yaml';
     if (!baseFlags['--timeframe']) baseFlags['--timeframe'] = '1d';
   }
   if (cmd.id === 'mass-bt') {
@@ -83,7 +83,7 @@ function generateFlagPermutations(cmd) {
     baseFlags['--allow-degraded'] = true;
   }
   if (cmd.id === 'optimize') {
-    if (!baseFlags['--strategy']) baseFlags['--strategy'] = 'config/strategies/curated/forex_trend_breakout.yaml';
+    if (!baseFlags['--strategy']) baseFlags['--strategy'] = 'configs/strategies/curated/forex_trend_breakout.yaml';
     if (!baseFlags['--timeframe']) baseFlags['--timeframe'] = '1d';
   }
   if (cmd.id === 'sweep') {
@@ -156,7 +156,7 @@ function generateFlagPermutations(cmd) {
     if (cmd.id === 'bt') {
       altFlags['--days'] = '0';
       altFlags['--allow-degraded'] = true;
-      if (!altFlags['--strategy']) altFlags['--strategy'] = 'config/strategies/curated/forex_trend_breakout.yaml';
+      if (!altFlags['--strategy']) altFlags['--strategy'] = 'configs/strategies/curated/forex_trend_breakout.yaml';
       if (!altFlags['--timeframe']) altFlags['--timeframe'] = '1d';
     }
     if (cmd.id === 'mass-bt') {
@@ -165,7 +165,7 @@ function generateFlagPermutations(cmd) {
       altFlags['--allow-degraded'] = true;
     }
     if (cmd.id === 'optimize') {
-      if (!altFlags['--strategy']) altFlags['--strategy'] = 'config/strategies/curated/forex_trend_breakout.yaml';
+      if (!altFlags['--strategy']) altFlags['--strategy'] = 'configs/strategies/curated/forex_trend_breakout.yaml';
       if (!altFlags['--timeframe']) altFlags['--timeframe'] = '1d';
     }
     if (cmd.id === 'sweep') {

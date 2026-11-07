@@ -1,7 +1,7 @@
 # Dependencies — reinstalled inside image
 node_modules/
 backend/api/node_modules/
-backend/gateway/node_modules/
+backend/execution/node_modules/
 Frontend/dashboard/node_modules/
 
 # Secrets — injected via env_file at runtime, never baked in
@@ -23,8 +23,8 @@ graphify-out/
 
 # Build artifacts — rebuilt inside image
 build/
-backend/core/build/
-backend/cli/target/
+backend/cpp_core/build/
+frontend/cli-tui/target/
 Frontend/dashboard/dist/
 
 # Session / workspace state — not part of the application

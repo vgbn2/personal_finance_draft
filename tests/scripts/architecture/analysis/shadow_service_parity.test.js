@@ -5,7 +5,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 const { buildRecordedAppleShadow } = require('../../../../shared/lib/analysis/services/equity_3m_shadow');
-const { buildScorecard, renderShadowCatalog } = require('../../../../backend/cli/commands/research/scorecard');
+const { buildScorecard, renderShadowCatalog } = require('../../../../frontend/cli-tui/commands/research/scorecard');
 const { backendScorecard } = require('../../../../backend/api/server/services/cli_executor');
 const { buildAllRecordedShadowCatalog } = require('../../../../shared/lib/analysis/services/shadow_catalog');
 
@@ -17,7 +17,7 @@ test('canonical service, CLI adapter, and API adapter return identical schema-v3
   assert.deepEqual(apiAdapter, service);
 
   const { NODE_TEST_CONTEXT: _testContext, ...childEnv } = process.env;
-  const cli = spawnSync(process.execPath, [path.resolve('backend/cli/sovereign_cli.js'), 'scorecard', '--schema', '3', '--fixture', 'aapl-recorded', '--json'], {
+  const cli = spawnSync(process.execPath, [path.resolve('frontend/cli-tui/sovereign_cli.js'), 'scorecard', '--schema', '3', '--fixture', 'aapl-recorded', '--json'], {
     cwd: path.resolve('.'), encoding: 'utf8', env: { ...childEnv, NO_COLOR: '1' },
   });
   assert.equal(cli.error, undefined, cli.error?.message);

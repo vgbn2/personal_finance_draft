@@ -5,7 +5,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { REPO_ROOT } = require('../runtime/paths.js');
 
-const SOVEREIGN_WEALTH_BIN = path.join(REPO_ROOT, 'backend/core/build/sovereign_wealth');
+const SOVEREIGN_WEALTH_BIN = path.join(REPO_ROOT, 'backend/cpp_core/build/sovereign_wealth');
 
 /**
  * Options Greek Pre-Trade Risk Verification Bridge

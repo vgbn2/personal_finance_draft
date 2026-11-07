@@ -62,7 +62,7 @@ test('GLYPH still has ASCII dline and indicator fallbacks', () => {
 // 2. asset_picker — hierarchy cache
 // ---------------------------------------------------------------------------
 
-const { _clearHierarchyCache, _stepHeader } = require('../../../../backend/cli/tui/asset_picker');
+const { _clearHierarchyCache, _stepHeader } = require('../../../../frontend/cli-tui/tui/asset_picker');
 
 test('asset_picker exports _clearHierarchyCache', () => {
   assert.equal(typeof _clearHierarchyCache, 'function');
@@ -88,7 +88,7 @@ test('_stepHeader renders label and step info without raw escape literals', () =
 // 3. render_helpers — renderHelpOverlay
 // ---------------------------------------------------------------------------
 
-const { renderHelpOverlay, HELP_KEYBINDS_SELECT, HELP_KEYBINDS_MULTI } = require('../../../../backend/cli/tui/engine/render_helpers');
+const { renderHelpOverlay, HELP_KEYBINDS_SELECT, HELP_KEYBINDS_MULTI } = require('../../../../frontend/cli-tui/tui/engine/render_helpers');
 
 test('render_helpers exports renderHelpOverlay', () => {
   assert.equal(typeof renderHelpOverlay, 'function');
@@ -137,7 +137,7 @@ test('renderHelpOverlay does not emit CUR_SAVE or CUR_RESTORE sequences', () => 
 // 4. manifest label tuning
 // ---------------------------------------------------------------------------
 
-const manifest = require('../../../../backend/cli/tui/manifest');
+const manifest = require('../../../../frontend/cli-tui/tui/manifest');
 
 test('manifest edge-decay label has no double space', () => {
   const edgeDecay = manifest.commands.research.find((entry) => entry.id === 'edge-decay');

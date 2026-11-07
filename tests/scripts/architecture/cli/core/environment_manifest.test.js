@@ -18,7 +18,7 @@ const {
 const {
   checkEnvironmentManifest,
   discoverFrontendSourceNames,
-} = require('../../../../../scripts/dev/check_environment_manifest');
+} = require('../../../../../tools/dev/check_environment_manifest');
 const {
   resolveRuntimePolicy,
 } = require('../../../../../shared/lib/settings/runtime_policy');

@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { buildScorecard, buildScorecardRefreshArgs, refreshScorecardData, renderScorecard } = require('../../../backend/cli/commands/research/scorecard.js');
+const { buildScorecard, buildScorecardRefreshArgs, refreshScorecardData, renderScorecard } = require('../../../frontend/cli-tui/commands/research/scorecard.js');
 const { adaptTechnicalV2Row } = require('../../../shared/lib/analysis/analyzers/technical_v2_adapter.js');
 const { writeTsIndex } = require('../../../shared/lib/market/validation.js');
 

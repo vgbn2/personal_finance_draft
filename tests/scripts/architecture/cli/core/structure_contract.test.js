@@ -24,9 +24,9 @@ function isTracked(relativePath) {
 
 test('active domain-layout entrypoints exist', () => {
   [
-    'backend/core/CMakeLists.txt',
+    'backend/cpp_core/CMakeLists.txt',
     'backend/api/app.js',
-    'backend/cli/sovereign_cli.js',
+    'frontend/cli-tui/sovereign_cli.js',
     'backend/scripts/data_ops/ingest_market_data.js',
     'shared/lib',
     'frontend/dashboard/package.json',
@@ -42,7 +42,7 @@ test('generated and local-only paths are ignored', () => {
     'build/',
     'node_modules/',
     'backend/api/node_modules/',
-    'backend/gateway/node_modules/',
+    'backend/execution/node_modules/',
     'Frontend/dashboard/node_modules/',
     'Frontend/dashboard/dist/',
     'frontend/dashboard/node_modules/',
@@ -89,7 +89,7 @@ test('generated and local-only paths are not tracked', () => {
     'ls-files',
     'node_modules',
     'backend/api/node_modules',
-    'backend/gateway/node_modules',
+    'backend/execution/node_modules',
     'Frontend/dashboard/node_modules',
     'Frontend/dashboard/dist',
     'storage/data/cache',
@@ -110,8 +110,8 @@ test('load-bearing clean-clone assets are tracked', () => {
   [
     '.dockerignore',
     'backend/api/tests/correlation_contract.test.js',
-    'scripts/tools/classify_strategy_assets.js',
-    'scripts/mcp/mcp_stdio_probe.js',
+    'tools/strategies/classify_strategy_assets.js',
+    'tools/mcp/mcp_stdio_probe.js',
     'shared/lib/runtime/env.js',
     'shared/lib/data/ingestion.js',
     'shared/lib/data/macro_store.js',
@@ -134,8 +134,8 @@ test('committed production and test sources contain no conflict markers', () => 
     '--',
     'backend',
     'shared',
-    'config',
-    'scripts',
+    'configs',
+    'tools',
     'tests',
   ]);
 
@@ -143,23 +143,23 @@ test('committed production and test sources contain no conflict markers', () => 
 });
 
 test('frame backtester sources referenced by the native build are tracked', () => {
-  const cmake = fs.readFileSync(path.join(REPO_ROOT, 'backend', 'core', 'CMakeLists.txt'), 'utf8');
-  const main = fs.readFileSync(path.join(REPO_ROOT, 'backend', 'core', 'src', 'main.cpp'), 'utf8');
+  const cmake = fs.readFileSync(path.join(REPO_ROOT, 'backend', 'cpp_core', 'CMakeLists.txt'), 'utf8');
+  const main = fs.readFileSync(path.join(REPO_ROOT, 'backend', 'cpp_core', 'src', 'main.cpp'), 'utf8');
 
   assert.match(cmake, /src\/backtest\/frame_backtester\.cpp/);
   assert.match(main, /backtest\/frame_backtester\.hpp/);
 
   [
-    'backend/core/src/backtest/frame_backtester.cpp',
-    'backend/core/src/backtest/frame_backtester.hpp',
+    'backend/cpp_core/src/backtest/frame_backtester.cpp',
+    'backend/cpp_core/src/backtest/frame_backtester.hpp',
   ].forEach((relativePath) => {
     assert.equal(isTracked(relativePath), true, `${relativePath} should be tracked`);
   });
 });
 
 test('every native test source is registered in both CMake manifests', () => {
-  const testDir = path.join(REPO_ROOT, 'backend', 'core', 'test');
-  const rootCmake = fs.readFileSync(path.join(REPO_ROOT, 'backend', 'core', 'CMakeLists.txt'), 'utf8');
+  const testDir = path.join(REPO_ROOT, 'backend', 'cpp_core', 'test');
+  const rootCmake = fs.readFileSync(path.join(REPO_ROOT, 'backend', 'cpp_core', 'CMakeLists.txt'), 'utf8');
   const testCmake = fs.readFileSync(path.join(testDir, 'CMakeLists.txt'), 'utf8');
   function findTestSources(dir) {
     let results = [];
@@ -179,12 +179,12 @@ test('every native test source is registered in both CMake manifests', () => {
     const registration = rootCmake.match(
       new RegExp(`add_sovereign_test\\(([^\\s)]+)\\s+test/${source.replaceAll('/', '\\/').replaceAll('.', '\\.')}\\)`)
     );
-    assert.ok(registration, `${source} should be compiled and registered by backend/core/CMakeLists.txt`);
+    assert.ok(registration, `${source} should be compiled and registered by backend/cpp_core/CMakeLists.txt`);
     const target = registration[1];
     assert.match(
       testCmake,
       new RegExp(`\\b${target}\\b`),
-      `${target} should appear in backend/core/test/CMakeLists.txt`
+      `${target} should appear in backend/cpp_core/test/CMakeLists.txt`
     );
   }
 });
@@ -224,7 +224,7 @@ test('npm test scripts reference existing test files', () => {
 });
 
 test('repository hygiene checks pass', () => {
-  const result = spawnSync('node', [path.join(REPO_ROOT, 'scripts', 'dev', 'check_hygiene.js')], {
+  const result = spawnSync('node', [path.join(REPO_ROOT, 'tools', 'dev', 'check_hygiene.js')], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
   });
@@ -232,7 +232,7 @@ test('repository hygiene checks pass', () => {
 });
 
 test('test integrity anti-cheating audit scanner passes', () => {
-  const result = spawnSync('node', [path.join(REPO_ROOT, 'scripts', 'dev', 'audit_test_integrity.js')], {
+  const result = spawnSync('node', [path.join(REPO_ROOT, 'tools', 'dev', 'audit_test_integrity.js')], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
   });

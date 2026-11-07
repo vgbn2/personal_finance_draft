@@ -2,7 +2,7 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { verifyPin } = require('../../../../backend/cli/lib/auth');
+const { verifyPin } = require('../../../../frontend/cli-tui/lib/auth');
 
 function withEnvironment(name, value, fn) {
   const previous = process.env[name];

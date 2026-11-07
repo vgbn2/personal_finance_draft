@@ -5,7 +5,7 @@ const path = require('node:path');
 const LOCK_MAX_AGE_MS = 10 * 60 * 1000;
 
 /**
- * PID-staleness file lock. Same pattern as backend/gateway/src/bot_state.ts's
+ * PID-staleness file lock. Same pattern as backend/execution/src/bot_state.ts's
  * acquireLock/releaseLock, generalized so non-Polymarket callers (e.g. the Alpaca
  * bot cycle) don't have to re-derive it.
  */

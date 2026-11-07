@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const {
   buildAggregatedPortfolioSnapshot,
-} = require('../../../backend/gateway/src/polymarket');
+} = require('../../../backend/execution/src/polymarket');
 
 const {
   DEFAULT_ALPACA_SCOPE,
@@ -19,7 +19,7 @@ const {
   runPortfolioMonitorCycle,
   runPortfolioMonitorLoop,
   portfolioMonitorExitCode,
-} = require('../../../backend/cli/commands/operational/portfolio_monitor.js');
+} = require('../../../frontend/cli-tui/commands/operational/portfolio_monitor.js');
 const {
   buildAlpacaPortfolioAdapterSpecs,
 } = require('../../../shared/lib/brokers/alpaca_portfolio_scope.js');

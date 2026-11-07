@@ -9,10 +9,10 @@ const {
 } = require('../../../../shared/lib/strategy/polymarket_clob_model.js');
 const {
   PolymarketAdapter,
-} = require('../../../../backend/gateway/dist/adapters/polymarket_adapter.js');
+} = require('../../../../backend/execution/dist/adapters/polymarket_adapter.js');
 const {
   commandBackend,
-} = require('../../../../backend/cli/commands/tools/backend.js');
+} = require('../../../../frontend/cli-tui/commands/tools/backend.js');
 
 test('calculateMarketFillCost calculates depth-weighted VWAP and level consumption', () => {
   const asks = [

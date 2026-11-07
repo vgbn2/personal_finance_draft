@@ -4,10 +4,10 @@
 * @vgbn2
 
 # Domain ownership
-/backend/core/ @vgbn2
-/backend/cli/ @vgbn2
+/backend/cpp_core/ @vgbn2
+/frontend/cli-tui/ @vgbn2
 /backend/api/ @vgbn2
-/backend/gateway/ @vgbn2
+/backend/execution/ @vgbn2
 /backend/go/ @vgbn2
 /Frontend/dashboard/ @vgbn2
 /docs/ @vgbn2
@@ -16,7 +16,7 @@
 /shared/lib/auth/ @vgbn2
 /shared/lib/runtime/ @vgbn2
 /shared/lib/market/ @vgbn2
-/config/ @vgbn2
+/configs/ @vgbn2
 /infra/ @vgbn2
 /.github/ @vgbn2
 /PROJECT_RULES.md @vgbn2

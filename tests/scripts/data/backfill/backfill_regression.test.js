@@ -5,10 +5,10 @@ const Module = require('node:module');
 const os = require('node:os');
 const path = require('node:path');
 
-const researchPath = path.resolve(__dirname, '../../../..//backend/cli/commands/research/research.js');
+const researchPath = path.resolve(__dirname, '../../../..//frontend/cli-tui/commands/research/research.js');
 const ingestPath = path.resolve(__dirname, '../../../..//backend/scripts/data_ops/ingest_market_data.js');
 const configLoaderPath = path.resolve(__dirname, '../../../..//shared/lib/runtime/config_loader.js');
-const researchConfigPath = path.resolve(__dirname, '../../../..//backend/cli/lib/research_config.js');
+const researchConfigPath = path.resolve(__dirname, '../../../..//frontend/cli-tui/lib/research_config.js');
 const validationPath = path.resolve(__dirname, '../../../..//shared/lib/market/validation.js');
 
 function freshRequire(filePath) {

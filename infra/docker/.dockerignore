@@ -1,7 +1,7 @@
 node_modules
 **/node_modules
 build
-backend/core/build
+backend/cpp_core/build
 graphify-out
 .git
 .github

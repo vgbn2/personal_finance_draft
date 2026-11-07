@@ -167,7 +167,7 @@ test('web API exposes backend health, data summary, and correlation', async (t) 
     assert.equal(system.status, 200);
     const systemPayload = await system.json();
     assert.equal(systemPayload.type, 'system_status');
-    assert.match(systemPayload.components.cli.cli_path, /backend[\\\\/]cli[\\\\/]sovereign_cli\.js/);
+    assert.match(systemPayload.components.cli.cli_path, /frontend[\\\\/]cli-tui[\\\\/]sovereign_cli\.js/);
     assert.ok(systemPayload.components.cli.usable_records >= 0);
     assert.ok(Array.isArray(systemPayload.components.quotes.providers));
     assert.equal(systemPayload.components.deployment.effective_profile, 'developer');

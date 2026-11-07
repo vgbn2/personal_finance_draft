@@ -11,7 +11,7 @@ test('zero-supabase contract: @supabase/supabase-js is not in root or workspace 
   const packagePaths = [
     path.join(REPO_ROOT, 'package.json'),
     path.join(REPO_ROOT, 'backend', 'api', 'package.json'),
-    path.join(REPO_ROOT, 'backend', 'gateway', 'package.json'),
+    path.join(REPO_ROOT, 'backend', 'execution', 'package.json'),
     path.join(REPO_ROOT, 'frontend', 'dashboard', 'package.json'),
   ];
 

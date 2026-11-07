@@ -6,9 +6,9 @@ const Module = require('node:module');
 const path = require('node:path');
 
 const REPO_ROOT = path.resolve(__dirname, '../../../../');
-const dataPath = path.resolve(REPO_ROOT, 'backend/cli/commands/data/data.js');
+const dataPath = path.resolve(REPO_ROOT, 'frontend/cli-tui/commands/data/data.js');
 const ingestPath = path.resolve(REPO_ROOT, 'backend/scripts/data_ops/ingest_market_data.js');
-const utilsPath = path.resolve(REPO_ROOT, 'backend/cli/lib/utils.js');
+const utilsPath = path.resolve(REPO_ROOT, 'frontend/cli-tui/lib/utils.js');
 
 function freshData() {
   delete require.cache[dataPath];

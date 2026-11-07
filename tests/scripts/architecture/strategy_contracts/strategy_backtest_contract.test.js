@@ -9,9 +9,9 @@ const { validateSnapshot } = require('../../../../shared/lib/market/validation')
 const { STRATEGY_GRADE_INDEX_PATH } = require('../../../../shared/lib/strategy/registry');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
-const CLI = path.join(REPO_ROOT, 'backend', 'cli', 'sovereign_cli.js');
-const { buildStrategyPlan, inspectStrategyFile } = require('../../../../backend/cli/commands/strategy');
-const { buildOptimizationGrid } = require('../../../../backend/cli/commands/research');
+const CLI = path.join(REPO_ROOT, 'frontend', 'cli-tui', 'sovereign_cli.js');
+const { buildStrategyPlan, inspectStrategyFile } = require('../../../../frontend/cli-tui/commands/strategies');
+const { buildOptimizationGrid } = require('../../../../frontend/cli-tui/commands/research');
 
 test('market validation rejects impossible crypto history and lower-timeframe synthetic bars', () => {
   const { report, usableSources } = validateSnapshot({
@@ -176,16 +176,16 @@ test('cache-clean quarantines rejected cache records and keeps usable history', 
 });
 
 test('TUI manifest exposes registered strategies as select options', () => {
-  const manifest = require('../../../../backend/cli/tui/manifest');
+  const manifest = require('../../../../frontend/cli-tui/tui/manifest');
   const { getRegisteredStrategies } = manifest;
   const options = getRegisteredStrategies();
 
   assert.ok(options.length >= 1);
-  assert.ok(options.some((option) => option.value === 'config/strategies/curated/mean_reversion.yaml'));
+  assert.ok(options.some((option) => option.value === 'configs/strategies/curated/mean_reversion.yaml'));
 });
 
 test('TUI backtest exposes a history window field for longer runs', () => {
-  const manifest = require('../../../../backend/cli/tui/manifest');
+  const manifest = require('../../../../frontend/cli-tui/tui/manifest');
   const backtest = manifest.commands.research.find((command) => command.id === 'bt');
 
   assert.ok(backtest);
@@ -199,7 +199,7 @@ test('backtest uses strategy YAML defaults unless CLI flags override them', () =
     CLI,
     'bt',
     '--strategy',
-    'config/strategies/curated/mean_reversion.yaml',
+    'configs/strategies/curated/mean_reversion.yaml',
     '--allow-degraded',
     '--json',
   ], {
@@ -211,7 +211,7 @@ test('backtest uses strategy YAML defaults unless CLI flags override them', () =
   const payload = JSON.parse(result.stdout);
 
   assert.equal(payload.strategy, 'mean_reversion');
-  assert.equal(payload.strategy_source, 'config/strategies/curated/mean_reversion.yaml');
+  assert.equal(payload.strategy_source, 'configs/strategies/curated/mean_reversion.yaml');
   assert.equal(payload.strategy_family, 'mean_reversion');
   assert.equal(payload.strategy_lane, 'single_asset');
   assert.equal(payload.strategy_role, 'strategy');
@@ -220,7 +220,7 @@ test('backtest uses strategy YAML defaults unless CLI flags override them', () =
   assert.equal(payload.threshold, 0.65);
 
   const gradeIndex = JSON.parse(fs.readFileSync(STRATEGY_GRADE_INDEX_PATH, 'utf8'));
-  const gradeRecord = gradeIndex.strategies['config/strategies/curated/mean_reversion.yaml'];
+  const gradeRecord = gradeIndex.strategies['configs/strategies/curated/mean_reversion.yaml'];
   assert.ok(gradeRecord, 'expected backtest grade index entry for mean_reversion');
   assert.equal(gradeRecord.family, 'mean_reversion');
   assert.equal(gradeRecord.lane, 'single_asset');
@@ -233,7 +233,7 @@ test('backtest uses strategy YAML defaults unless CLI flags override them', () =
     CLI,
     'bt',
     '--strategy',
-    'config/strategies/curated/mean_reversion.yaml',
+    'configs/strategies/curated/mean_reversion.yaml',
     '--symbol',
     'SPY',
     '--threshold',
@@ -277,12 +277,12 @@ test('backtest accepts bare registered strategy filenames', () => {
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.strategy, 'mean_reversion');
-  assert.equal(payload.strategy_source, 'config/strategies/curated/mean_reversion.yaml');
+  assert.equal(payload.strategy_source, 'configs/strategies/curated/mean_reversion.yaml');
   assert.deepEqual(payload.strategy_universe, ['BTCUSDT', 'SPY']);
 });
 
 test('strategy files expose indicator presets and optimize respects disabled indicator dimensions', () => {
-  const strategy = inspectStrategyFile('config/strategies/curated/trend_following.yaml');
+  const strategy = inspectStrategyFile('configs/strategies/curated/trend_following.yaml');
 
   assert.equal(strategy.ok, true);
   assert.equal(strategy.family, 'ml');
@@ -291,7 +291,7 @@ test('strategy files expose indicator presets and optimize respects disabled ind
   assert.equal(strategy.indicators.rsi, true);
   assert.equal(strategy.indicator_periods.rsi, 7);
 
-  const crossAssetStrategy = inspectStrategyFile('config/strategies/curated/ml_multi_asset.yaml');
+  const crossAssetStrategy = inspectStrategyFile('configs/strategies/curated/ml_multi_asset.yaml');
   assert.equal(crossAssetStrategy.family, 'ml');
   assert.equal(crossAssetStrategy.lane, 'cross_asset');
   assert.equal(crossAssetStrategy.role, 'portfolio_optimization');
@@ -372,7 +372,7 @@ test('backtest human output renders as a sectioned terminal report', () => {
     CLI,
     'bt',
     '--strategy',
-    'config/strategies/trend_following.yaml',
+    'configs/strategies/trend_following.yaml',
     '--sample',
     '--allow-degraded',
   ], {
@@ -410,7 +410,7 @@ test('backtest always uses live data and reports a live-mode note', () => {
     CLI,
     'bt',
     '--strategy',
-    'config/strategies/defensive_rotation.yaml',
+    'configs/strategies/defensive_rotation.yaml',
     '--timeframe',
     '1h',
     '--allow-degraded',
@@ -440,7 +440,7 @@ test('sample backtest uses generated bars and ignores history window', () => {
     CLI,
     'bt',
     '--strategy',
-    'config/strategies/defensive_rotation.yaml',
+    'configs/strategies/defensive_rotation.yaml',
     '--timeframe',
     '1h',
     '--days',
@@ -493,7 +493,7 @@ test('--days restricts the backtest window to the requested number of days', () 
   // The invariant: historicalWindowFromArgs(['--days', 'N']) returns a startTs
   // that is approximately N days before now, preventing regression of the Session 50
   // fix (bt --days 30 was using the full 9-year cache before).
-  const { historicalWindowFromArgs } = require('../../../../backend/cli/commands/research');
+  const { historicalWindowFromArgs } = require('../../../../frontend/cli-tui/commands/research');
   const now = Math.floor(Date.now() / 1000);
 
   const window14 = historicalWindowFromArgs(['--days', '14']);

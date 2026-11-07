@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { REPO_ROOT } = require('./paths');
 
-const MANIFEST_PATH = path.join(REPO_ROOT, 'config', 'system', 'environment_manifest.json');
+const MANIFEST_PATH = path.join(REPO_ROOT, 'configs', 'system', 'environment_manifest.json');
 const CHILD_RUNTIME_PASSTHROUGH = Object.freeze([
   'APPDATA',
   'CI',

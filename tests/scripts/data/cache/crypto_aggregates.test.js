@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { buildCryptoAggregateSeries } = require('../../../../shared/lib/data/crypto_aggregates');
-const { refreshCryptoAggregates } = require('../../../../backend/cli/commands/research/ml');
+const { refreshCryptoAggregates } = require('../../../../frontend/cli-tui/commands/research/ml');
 
 // Injected fetcher: symbol -> Map(date -> mcap). No network.
 function fakeFetcher(data) {

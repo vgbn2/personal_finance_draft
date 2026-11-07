@@ -8,7 +8,7 @@ const {
   looksLikeCryptoMarket,
   normalizePolymarketGammaMarket,
   normalizePolymarketGammaEvent,
-} = require('../../../../backend/gateway/src/polymarket_markets');
+} = require('../../../../backend/execution/src/polymarket_markets');
 
 test('polymarket gamma markets normalize crypto sections like the browse page', () => {
   const raw = [

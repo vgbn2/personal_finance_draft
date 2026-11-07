@@ -30,7 +30,7 @@ async function assertAsynchronousGuardRejects(mutatedBehaviour) {
 
 test('trade PIN safety contract detects an unconditional-approval mutation', () => {
   const auth = loadMutatedModule(
-    'backend/cli/lib/auth.js',
+    'frontend/cli-tui/lib/auth.js',
     'function verifyPin(candidate, expected) {',
     'function verifyPin(candidate, expected) { return true;',
   );

@@ -11,13 +11,13 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { writeTsIndex, readTsIndex } = require('../../../../shared/lib/market/validation.js');
-const { rollupFromBase, rollupTargetsAboveBase } = require('../../../../backend/cli/commands/data/data.js');
+const { rollupFromBase, rollupTargetsAboveBase } = require('../../../../frontend/cli-tui/commands/data/data.js');
 const { spawn } = require('node:child_process');
 const {
   runBackfillCycle, decideAction, buildJobUniverse,
   groupIntoLanes, utcDayFloor, makeRealRollup, configuredRollupTargets, createPollPacer, DEEP_PLAN, DEFAULT_DEEP_DAYS,
   commandBackfillDaemon, commandStopBackfillDaemon, DAEMON_STATUS_PATH,
-} = require('../../../../backend/cli/commands/data/backfill_daemon.js');
+} = require('../../../../frontend/cli-tui/commands/data/backfill_daemon.js');
 
 function waitForExit(child, timeoutMs = 3000) {
   return new Promise((resolve, reject) => {

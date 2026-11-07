@@ -58,7 +58,7 @@ test('explicit directory callers retain broad scan compatibility', () => {
 });
 
 test('RAG builder CLI parses explicit historical corpus without ambiguity', () => {
-  const { parseArgs } = require('../../../scripts/dev/build_docs_rag_index.js');
+  const { parseArgs } = require('../../../tools/dev/build_docs_rag_index.js');
   assert.deepEqual(parseArgs(['--corpus', 'historical']), { corpus: 'historical' });
   assert.deepEqual(parseArgs([]), { corpus: undefined });
   assert.throws(() => parseArgs(['--corpus', 'unknown']), /Unsupported documentation corpus/);

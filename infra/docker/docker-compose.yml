@@ -102,7 +102,7 @@ services:
       - /bin/sh
       - -c
       - |
-        exec node backend/cli/sovereign_cli.js run bot paper --strategy low_prob_dip
+        exec node frontend/cli-tui/sovereign_cli.js run bot paper --strategy low_prob_dip
 
   mt5:
     container_name: sv-mt5
@@ -174,7 +174,7 @@ services:
         NOTIONAL=$${ALPACA_PAPER_MAX_NOTIONAL:-100}
         DAILY_NOTIONAL=$${ALPACA_PAPER_DAILY_MAX_NOTIONAL:-2500}
         TIMEFRAMES=$${ALPACA_PAPER_ALLOWED_TIMEFRAMES:-1m,5m,15m,1h,1d}
-        exec node backend/cli/sovereign_cli.js run bot alpaca-paper \
+        exec node frontend/cli-tui/sovereign_cli.js run bot alpaca-paper \
           --interval "$$INTERVAL" \
           --min-trust-score "$$TRUST" \
           --paper-max-notional "$$NOTIONAL" \
@@ -255,7 +255,7 @@ services:
         if [ "$${BACKFILL_DEEP_ALL:-false}" = "true" ]; then
           DEEP_ALL_ARGS="--deep-all"
         fi
-        exec node backend/cli/sovereign_cli.js backfill-daemon --interval-secs "$$INTERVAL" $$DEEP_ALL_ARGS
+        exec node frontend/cli-tui/sovereign_cli.js backfill-daemon --interval-secs "$$INTERVAL" $$DEEP_ALL_ARGS
 
   portfolio-monitor:
     container_name: sv-portfolio-monitor
@@ -291,7 +291,7 @@ services:
       - /bin/sh
       - -c
       - |
-        exec node backend/cli/sovereign_cli.js portfolio-monitor --json \
+        exec node frontend/cli-tui/sovereign_cli.js portfolio-monitor --json \
           --scope "$${PORTFOLIO_MONITOR_SCOPE:-both}" \
           --alpaca-scope "$${PORTFOLIO_MONITOR_ALPACA_SCOPE:-paper}" \
           --interval-secs "$${PORTFOLIO_MONITOR_INTERVAL_SECS:-60}" \
@@ -417,7 +417,7 @@ services:
         fi
         INTERVAL=$${POLYMARKET_RESEARCH_INTERVAL_SECS:-300}
         while true; do
-          node backend/cli/sovereign_cli.js polymarket history schedule --scope-file "$${POLYMARKET_RESEARCH_SCOPE_FILE}" --execute --once --json --poll-seconds $${POLYMARKET_RESEARCH_INTERVAL_SECS:-300} --max-tokens $${POLYMARKET_RESEARCH_MAX_TOKENS:-20} --retention-days $${POLYMARKET_RESEARCH_RETENTION_DAYS:-30} --max-rows-per-token $${POLYMARKET_RESEARCH_MAX_ROWS_PER_TOKEN:-5000} --max-archive-bytes $${POLYMARKET_RESEARCH_MAX_ARCHIVE_BYTES:-5368709120} || true
+          node frontend/cli-tui/sovereign_cli.js polymarket history schedule --scope-file "$${POLYMARKET_RESEARCH_SCOPE_FILE}" --execute --once --json --poll-seconds $${POLYMARKET_RESEARCH_INTERVAL_SECS:-300} --max-tokens $${POLYMARKET_RESEARCH_MAX_TOKENS:-20} --retention-days $${POLYMARKET_RESEARCH_RETENTION_DAYS:-30} --max-rows-per-token $${POLYMARKET_RESEARCH_MAX_ROWS_PER_TOKEN:-5000} --max-archive-bytes $${POLYMARKET_RESEARCH_MAX_ARCHIVE_BYTES:-5368709120} || true
           sleep $$INTERVAL
         done
 
@@ -456,7 +456,7 @@ services:
       - -c
       - |
         INTERVAL=$${EXPLORER_INTERVAL_MINUTES:-30}
-        exec node scripts/strategies/auto_strategy_explorer.js --interval "$$INTERVAL"
+        exec node tools/strategies/auto_strategy_explorer.js --interval "$$INTERVAL"
 
 networks:
   edge-net:

@@ -8,7 +8,7 @@ const {
 const { REPO_ROOT } = require('../runtime/paths.js');
 const PROVIDER_PRIORITY = require('./provider_priority.js');
 
-const SOVEREIGN_WEALTH_BIN = path.join(REPO_ROOT, 'backend/core/build/sovereign_wealth');
+const SOVEREIGN_WEALTH_BIN = path.join(REPO_ROOT, 'backend/cpp_core/build/sovereign_wealth');
 
 const OHLCV_FAMILIES = new Set(['equities', 'indices', 'commodities', 'crypto', 'fx', 'prediction_market']);
 

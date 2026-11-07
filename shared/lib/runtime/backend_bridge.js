@@ -84,7 +84,7 @@ function backendAvailable(options = {}) {
   if (!_autoBuildAttempted && options.allowAutoBuild !== false) {
     _autoBuildAttempted = true;
     try {
-      const { ensureNativeCore } = require('../../../scripts/dev/ensure_native_core');
+      const { ensureNativeCore } = require('../../../tools/dev/ensure_native_core');
       const built = ensureNativeCore({ silent: true });
       if (built) return true;
     } catch (_) {}
@@ -214,9 +214,9 @@ function buildTradeGatewayLaunch(args = [], options = {}) {
       SOVEREIGN_SKIP_LOCAL_ENV: '1',
     },
   });
-  const gatewayDistPath = path.join(REPO_ROOT, 'backend', 'gateway', 'dist', 'index.js');
-  const gatewayPath = path.join(REPO_ROOT, 'backend', 'gateway', 'src', 'index.ts');
-  const gatewayBootstrapPath = path.join(REPO_ROOT, 'backend', 'cli', 'lib', 'run_trade_gateway.js');
+  const gatewayDistPath = path.join(REPO_ROOT, 'backend', 'execution', 'dist', 'index.js');
+  const gatewayPath = path.join(REPO_ROOT, 'backend', 'execution', 'src', 'index.ts');
+  const gatewayBootstrapPath = path.join(REPO_ROOT, 'frontend', 'cli-tui', 'lib', 'run_trade_gateway.js');
   if (fs.existsSync(gatewayDistPath)) {
     return {
       command: process.execPath,
@@ -228,7 +228,7 @@ function buildTradeGatewayLaunch(args = [], options = {}) {
   }
   const tsxCandidates = [
     path.join(REPO_ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx'),
-    path.join(REPO_ROOT, 'backend', 'gateway', 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx'),
+    path.join(REPO_ROOT, 'backend', 'execution', 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx'),
   ];
   const tsxPath = tsxCandidates.find((candidate) => fs.existsSync(candidate));
   if (tsxPath) {

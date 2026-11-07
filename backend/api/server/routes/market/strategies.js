@@ -4,7 +4,7 @@ let _strategyModule = null;
 function getStrategyModule() {
   if (!_strategyModule) {
     try {
-      _strategyModule = require('../../../../cli/commands/strategy');
+      _strategyModule = require('../../../../../frontend/cli-tui/commands/strategies');
     } catch {
       _strategyModule = null;
     }
@@ -79,4 +79,3 @@ module.exports = {
     }
   },
 };
-

@@ -38,16 +38,16 @@ RUN npm ci --ignore-scripts
 COPY backend/api/package*.json ./backend/api/
 RUN cd backend/api && npm ci --ignore-scripts --omit=dev
 
-COPY backend/gateway/package*.json ./backend/gateway/
-RUN cd backend/gateway && npm ci --ignore-scripts --omit=dev
+COPY backend/execution/package*.json ./backend/execution/
+RUN cd backend/execution && npm ci --ignore-scripts --omit=dev
 
 COPY . .
 COPY --from=frontend-builder /src/build/dashboard ./build/dashboard
 
-RUN cmake -S backend/core -B backend/core/build \
+RUN cmake -S backend/cpp_core -B backend/cpp_core/build \
       -DCMAKE_BUILD_TYPE=Release \
       -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON \
-    && cmake --build backend/core/build --parallel --target sovereign_wealth
+    && cmake --build backend/cpp_core/build --parallel --target sovereign_wealth
 
 FROM node:22-bookworm-slim AS runtime
 
@@ -61,24 +61,24 @@ LABEL org.opencontainers.image.revision="${SOVEREIGN_SOURCE_REVISION}" \
 ENV NODE_ENV=production \
     SOVEREIGN_WEB_HOST=0.0.0.0 \
     SOVEREIGN_WEB_PORT=8787 \
-    SOVEREIGN_BACKEND_BIN=/app/backend/core/build/sovereign_wealth
+    SOVEREIGN_BACKEND_BIN=/app/backend/cpp_core/build/sovereign_wealth
 
 WORKDIR /app
 
 COPY --from=build --chown=node:node /app/package.json /app/package-lock.json ./
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/backend/api ./backend/api
-COPY --from=build --chown=node:node /app/backend/cli ./backend/cli
-COPY --from=build --chown=node:node /app/backend/gateway ./backend/gateway
+COPY --from=build --chown=node:node /app/frontend/cli-tui ./frontend/cli-tui
+COPY --from=build --chown=node:node /app/backend/execution ./backend/execution
 COPY --from=build --chown=node:node /app/backend/mcp_server ./backend/mcp_server
 COPY --from=build --chown=node:node /app/backend/scripts ./backend/scripts
-COPY --from=build --chown=node:node /app/backend/core/build ./backend/core/build
+COPY --from=build --chown=node:node /app/backend/cpp_core/build ./backend/cpp_core/build
 COPY --from=build --chown=node:node /app/build/dashboard ./build/dashboard
 COPY --from=build --chown=node:node /app/shared ./shared
-COPY --from=build --chown=node:node /app/config ./config
-COPY --from=build --chown=node:node /app/scripts/data_ops/backfill_20_years.js ./scripts/data_ops/backfill_20_years.js
-COPY --from=build --chown=node:node /app/scripts/ops ./scripts/ops
-COPY --from=build --chown=node:node /app/scripts/strategies ./scripts/strategies
+COPY --from=build --chown=node:node /app/configs ./configs
+COPY --from=build --chown=node:node /app/tools/data_ops/backfill_20_years.js ./tools/data_ops/backfill_20_years.js
+COPY --from=build --chown=node:node /app/tools/ops ./tools/ops
+COPY --from=build --chown=node:node /app/tools/strategies ./tools/strategies
 COPY --from=build /usr/lib/x86_64-linux-gnu/libgomp.so.1* /usr/lib/x86_64-linux-gnu/
 
 RUN mkdir -p storage/data storage/logs storage/runtime \

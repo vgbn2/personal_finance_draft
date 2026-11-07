@@ -542,9 +542,9 @@ test('fetchCryptoSnapshot survives a >150k-bar native fetch without RangeError',
  * until the async command resolves — not just during module load.
  */
 async function runDeepBackfillWithStubs(cmdArgs, fakeConfig, snapshotFactory = null) {
-  const dataPath   = path.resolve(REPO_ROOT, 'backend/cli/commands/data/data.js');
+  const dataPath   = path.resolve(REPO_ROOT, 'frontend/cli-tui/commands/data/data.js');
   const ingestPath = path.resolve(REPO_ROOT, 'backend/scripts/data_ops/ingest_market_data.js');
-  const utilsPath  = path.resolve(REPO_ROOT, 'backend/cli/lib/utils.js');
+  const utilsPath  = path.resolve(REPO_ROOT, 'frontend/cli-tui/lib/utils.js');
 
   const ingestStub = async (...args) => (
     snapshotFactory ? snapshotFactory(...args) : { sources: [], errors: [], mode: 'test' }

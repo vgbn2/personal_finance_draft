@@ -10,14 +10,14 @@ const {
   loadRemoteConfig,
   normalizeBaseUrl,
   requestRemote,
-} = require('../../../backend/cli/lib/remote_client');
+} = require('../../../frontend/cli-tui/lib/remote_client');
 const {
   endpointFor,
   requestView,
-} = require('../../../backend/cli/commands/operational/remote');
+} = require('../../../frontend/cli-tui/commands/operational/remote');
 const {
   computeCachedBias,
-} = require('../../../backend/cli/commands/research/bias');
+} = require('../../../frontend/cli-tui/commands/research/bias');
 
 test('remote config reads token from a file without requiring argv secrets', () => {
   const configDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-client-'));

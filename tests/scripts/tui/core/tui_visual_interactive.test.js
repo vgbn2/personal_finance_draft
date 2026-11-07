@@ -3,7 +3,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { setTimeout: delay } = require('node:timers/promises');
-const manifest = require('../../../../backend/cli/tui/manifest');
+const manifest = require('../../../../frontend/cli-tui/tui/manifest');
 const { createTuiSession, keys } = require('../../lib/tui_automation');
 const { VirtualTerminalScreen } = require('../../lib/virtual_terminal_screen');
 

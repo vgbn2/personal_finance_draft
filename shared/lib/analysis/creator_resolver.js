@@ -12,15 +12,15 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Parse creators from config/research/creators/*.yaml and config/research/creators.yaml.
+ * Parse creators from configs/research/creators/*.yaml and configs/research/creators.yaml.
  * @param {string} [creatorsDir] Directory containing individual creator YAMLs.
  * @param {string} [mainYamlPath] Path to composite creators.yaml.
  * @returns {Array<object>} List of creator configuration objects.
  */
 function loadCreatorsFromYaml(creatorsDir, mainYamlPath) {
   const root = process.cwd();
-  const dir = creatorsDir || path.join(root, 'config', 'research', 'creators');
-  const main = mainYamlPath || path.join(root, 'config', 'research', 'creators.yaml');
+  const dir = creatorsDir || path.join(root, 'configs', 'research', 'creators');
+  const main = mainYamlPath || path.join(root, 'configs', 'research', 'creators.yaml');
 
   const creators = [];
   const seen = new Set();
@@ -72,7 +72,7 @@ function loadCreatorsFromYaml(creatorsDir, mainYamlPath) {
             seen.add(cur.id);
             creators.push(cur);
           }
-          cur = { id: matchItem[1].trim(), source_file: 'config/research/creators.yaml' };
+          cur = { id: matchItem[1].trim(), source_file: 'configs/research/creators.yaml' };
           continue;
         }
         if (cur) {

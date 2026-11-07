@@ -5,7 +5,7 @@ const { buildChildEnvironment } = require('../runtime/environment_manifest');
 const { classifyMcpCliCapability } = require('../runtime/backend_bridge');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const CLI_PATH = path.join(ROOT, 'backend', 'cli', 'sovereign_cli.js');
+const CLI_PATH = path.join(ROOT, 'frontend', 'cli-tui', 'sovereign_cli.js');
 
 const TOOLS = {
   status: { description: 'Get system status', args: {} },

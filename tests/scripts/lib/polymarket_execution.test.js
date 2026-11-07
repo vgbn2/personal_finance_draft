@@ -4,8 +4,7 @@ const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 
 const GATEWAY_RUNNER = path.resolve(__dirname, '..', '..', '..',
-  'backend',
-  'cli',
+  'frontend', 'cli-tui',
   'lib',
   'run_trade_gateway.js'
 );

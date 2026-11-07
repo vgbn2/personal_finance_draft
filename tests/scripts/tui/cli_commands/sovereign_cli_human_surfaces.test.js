@@ -5,10 +5,10 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
+const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'frontend', 'cli-tui', 'sovereign_cli.js');
 const BACKEND_HISTORY_FIXTURE = path.join(__dirname, '..', '..', '..', 'fixtures', 'backend_history_sample.json');
-const { buildCockpitModel, renderCockpit } = require('../../../../backend/cli/sovereign_cli');
-const { buildStatusPayload, detectScopedSnapshot, buildRecoveredSnapshotFromHistory } = require('../../../../backend/cli/commands/operational/status');
+const { buildCockpitModel, renderCockpit } = require('../../../../frontend/cli-tui/sovereign_cli');
+const { buildStatusPayload, detectScopedSnapshot, buildRecoveredSnapshotFromHistory } = require('../../../../frontend/cli-tui/commands/operational/status');
 
 function dumpVisibility(name, data) {
   const dir = process.env.SOVEREIGN_TEST_OUTPUT_DIR ||

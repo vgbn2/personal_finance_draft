@@ -41,7 +41,7 @@ const {
   initializeLedger,
   appendLedgerEvents,
   loadLedgerProjection,
-} = require('../../../../backend/gateway/src/paper_ledger.js');
+} = require('../../../../backend/execution/src/paper_ledger.js');
 
 const BTC_FIXTURE_PATH = path.resolve(__dirname, '../../../../tests/fixtures/real_bars_btc.json');
 const btcFixture = JSON.parse(fs.readFileSync(BTC_FIXTURE_PATH, 'utf8'));

@@ -11,7 +11,7 @@ const {
   inspectMt5Setup,
   renderMt5Diagnostics,
   renderMt5ProfileList,
-} = require('../../../../backend/cli/commands/trade/trade_mt5.js');
+} = require('../../../../frontend/cli-tui/commands/trade/trade_mt5.js');
 
 const {
   upsertMt5Profile,

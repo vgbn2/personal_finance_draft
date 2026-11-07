@@ -19,7 +19,7 @@ const {
   commandMarketMonitor,
   renderMarketMonitor,
   runMarketMonitorQuery,
-} = require('../../../../backend/cli/commands/operational/market_monitor.js');
+} = require('../../../../frontend/cli-tui/commands/operational/market_monitor.js');
 const {
   createMarketMonitorRoute,
 } = require('../../../../backend/api/server/routes/market/market_monitor.js');

@@ -86,7 +86,7 @@ services:
       - ./storage:/app/storage
     command:
       - node
-      - backend/cli/sovereign_cli.js
+      - frontend/cli-tui/sovereign_cli.js
       - run
       - bot
       - paper
@@ -162,6 +162,6 @@ services:
       - ./storage:/app/storage
     command:
       - node
-      - scripts/data_ops/backfill_20_years.js
+      - tools/data_ops/backfill_20_years.js
     healthcheck:
       disable: true

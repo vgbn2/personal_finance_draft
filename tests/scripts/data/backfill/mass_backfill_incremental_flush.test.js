@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * commandMassBackfill (backend/cli/commands/data/data.js) used to accumulate every
+ * commandMassBackfill (frontend/cli-tui/commands/data/data.js) used to accumulate every
  * job's records into one run-wide array and write the JSON cache + ts-index exactly
  * once after all jobs settled -- the confirmed OOM-risk pattern for large universes.
  * It now flushes the ts-index per job (writeTsIndex's symbol+timeframe-scoped

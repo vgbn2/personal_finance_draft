@@ -3,7 +3,7 @@ import { invokeSovereignCli } from '../lib/bridge';
 import { ToolResponse } from '../lib/schemas';
 
 export const runBacktestSchema = z.object({
-  strategy: z.string().optional().describe('Strategy file path (e.g., "config/strategies/mean_reversion.yaml")'),
+  strategy: z.string().optional().describe('Strategy file path (e.g., "configs/strategies/mean_reversion.yaml")'),
   symbol: z.string().optional().describe('Target instrument (e.g., "BTCUSDT")'),
   timeframe: z.string().optional().describe('e.g., "1d", "1h"'),
   days: z.number().optional().describe('Lookback window in calendar days (e.g. 90, 365, 730). Overrides --from.'),

@@ -39,7 +39,7 @@
 - [ ] **Feature Engineering**: Implement `label_builder.cpp`, `lookahead_guard.cpp`, and `sentiment_features.cpp`.
 - [x] **Macro Features**: `macro_features.cpp` implemented with Rate Momentum and Liquidity Index.
 - [x] **Technical Features**: `technical_features.cpp` and `path_signature.cpp` active.
-- [ ] **Position Sizing**: Implement Kelly Criterion in `portfolio/kelly_sizing.cpp` (Phase 5).
+- [ ] **Position Sizing**: Implement Kelly Criterion in `risk_management/position_sizing/kelly_sizer.cpp` (Phase 5).
 - [ ] **Exposure Management**: Implement multi-asset exposure in `portfolio/multi_asset.cpp` (Phase 5).
 - [ ] **ONNX Real Linkage**: Promote the deterministic baseline adapter into physical `onnxruntime` linkage when the dependency/toolchain gate is available.
 

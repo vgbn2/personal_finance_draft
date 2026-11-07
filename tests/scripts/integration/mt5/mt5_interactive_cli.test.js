@@ -6,7 +6,7 @@ const { spawn, spawnSync } = require('node:child_process');
 const path = require('node:path');
 
 const REPO_ROOT = path.resolve(__dirname, '../../../../');
-const CLI_PATH = path.join(REPO_ROOT, 'backend', 'cli', 'sovereign_cli.js');
+const CLI_PATH = path.join(REPO_ROOT, 'frontend', 'cli-tui', 'sovereign_cli.js');
 const MOCK_RUNNER_PATH = path.join(__dirname, 'mock_mt5_terminal_runner.js');
 
 function createMockTerminalWorker(port) {

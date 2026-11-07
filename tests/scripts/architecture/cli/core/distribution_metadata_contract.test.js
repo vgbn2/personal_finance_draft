@@ -9,7 +9,7 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..', '..');
 const PACKAGE_PATHS = [
   'package.json',
   'backend/api/package.json',
-  'backend/gateway/package.json',
+  'backend/execution/package.json',
   'backend/mcp_server/package.json',
   'frontend/dashboard/package.json',
 ];

@@ -24,7 +24,7 @@ const {
   polymarketAddressRoles,
   polymarketModeCandidates,
   polymarketProbeCandidates,
-} = require('../../../../backend/gateway/src/polymarket/index.ts');
+} = require('../../../../backend/execution/src/polymarket/index.ts');
 const { resolvePolymarketClientSettings } = require('../../../../shared/lib/brokers/polymarket_env.js');
 
 test('wallet resolver accepts the legacy mixed-case wallet env alias', () => {

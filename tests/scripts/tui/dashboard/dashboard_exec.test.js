@@ -20,7 +20,7 @@ const {
   toggleSet,
   readDaemonStatus,
   renderProgressBar,
-} = require('../../../../backend/cli/tui/dashboard_exec.js');
+} = require('../../../../frontend/cli-tui/tui/dashboard_exec.js');
 
 test('splitWords splits multi-word command ids and bot sub-command strings', () => {
   assert.deepEqual(splitWords('status'), ['status']);
@@ -64,24 +64,24 @@ test('optionValue/optionLabel/cycleOption handle {label,value} option pairs (reg
   const meta = {
     t: 'sel',
     opts: [
-      { label: '[ON] alpha (A / 9)', value: 'config/strategies/alpha.yaml' },
-      { label: '[OFF] beta (F / 0)', value: 'config/strategies/beta.yaml' },
+      { label: '[ON] alpha (A / 9)', value: 'configs/strategies/alpha.yaml' },
+      { label: '[OFF] beta (F / 0)', value: 'configs/strategies/beta.yaml' },
     ],
   };
-  assert.equal(optionValue(meta.opts[0]), 'config/strategies/alpha.yaml');
+  assert.equal(optionValue(meta.opts[0]), 'configs/strategies/alpha.yaml');
   assert.equal(optionValue('plain-string'), 'plain-string');
-  assert.equal(optionLabel(meta, 'config/strategies/beta.yaml'), '[OFF] beta (F / 0)');
-  assert.equal(optionLabel(meta, 'config/strategies/alpha.yaml'), '[ON] alpha (A / 9)');
+  assert.equal(optionLabel(meta, 'configs/strategies/beta.yaml'), '[OFF] beta (F / 0)');
+  assert.equal(optionLabel(meta, 'configs/strategies/alpha.yaml'), '[ON] alpha (A / 9)');
   // unresolvable / plain-string values fall back to the raw value itself,
   // so optionLabel is safe to call unconditionally on non-registry selects.
-  assert.equal(optionLabel(meta, 'config/strategies/unknown.yaml'), 'config/strategies/unknown.yaml');
+  assert.equal(optionLabel(meta, 'configs/strategies/unknown.yaml'), 'configs/strategies/unknown.yaml');
   assert.equal(optionLabel({ t: 'sel', opts: ['all', 'crypto'] }, 'crypto'), 'crypto');
   // cycling stores/returns the bare value, not the {label,value} pair, and a
   // current value not in the list (e.g. the blank '' default) snaps to the
   // first real entry rather than throwing or sticking on an invalid index.
-  assert.equal(cycleOption(meta, '', 1), 'config/strategies/beta.yaml');
-  assert.equal(cycleOption(meta, 'config/strategies/alpha.yaml', 1), 'config/strategies/beta.yaml');
-  assert.equal(cycleOption(meta, 'config/strategies/beta.yaml', 1), 'config/strategies/alpha.yaml');
+  assert.equal(cycleOption(meta, '', 1), 'configs/strategies/beta.yaml');
+  assert.equal(cycleOption(meta, 'configs/strategies/alpha.yaml', 1), 'configs/strategies/beta.yaml');
+  assert.equal(cycleOption(meta, 'configs/strategies/beta.yaml', 1), 'configs/strategies/alpha.yaml');
 });
 
 test('stripAnsi removes color escape codes, leaving plain text untouched', () => {
@@ -92,7 +92,7 @@ test('stripAnsi removes color escape codes, leaving plain text untouched', () =>
 });
 
 test('loadStrategyOptions mirrors the real strategy registry with ANSI stripped from labels', () => {
-  const { registeredStrategyOptions } = require('../../../../backend/cli/commands/strategy/strategy.js');
+  const { registeredStrategyOptions } = require('../../../../frontend/cli-tui/commands/strategies/strategy.js');
   const expected = registeredStrategyOptions();
   const got = loadStrategyOptions();
   assert.equal(got.length, expected.length);
@@ -138,7 +138,7 @@ test('buildArgv splits multi-word command ids into separate argv entries', () =>
 });
 
 test('loadFullSymbolUniverse mirrors the real family/market/sector-tagged universe used by the legacy pickAssets() wizard', async () => {
-  const { get_Full_Universe_Symbols } = require('../../../../backend/cli/lib/utils.js');
+  const { get_Full_Universe_Symbols } = require('../../../../frontend/cli-tui/lib/utils.js');
   const raw = await get_Full_Universe_Symbols();
   const got = await loadFullSymbolUniverse();
   assert.equal(got.length, raw.length);

@@ -4,9 +4,9 @@ const test = require('node:test');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { computeSigmaState } = require('../../../../backend/cli/commands/tools/backend_visualize.js');
+const { computeSigmaState } = require('../../../../frontend/cli-tui/commands/tools/backend_visualize.js');
 const { writeTsIndex } = require('../../../../shared/lib/market/validation.js');
-const { DEFAULT_TS_DIR } = require('../../../../backend/cli/commands/data/data_rollup.js');
+const { DEFAULT_TS_DIR } = require('../../../../frontend/cli-tui/commands/data/data_rollup.js');
 
 const TEST_SYMBOL = '__TEST_SIGMA_VISUALIZE__';
 const TEST_TF = '4h';

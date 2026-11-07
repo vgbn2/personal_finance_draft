@@ -1,6 +1,6 @@
 'use strict';
 
-// Contract tests for backend/cli/tui/spinner.js  (W1 — Spinner)
+// Contract tests for frontend/cli-tui/tui/spinner.js  (W1 — Spinner)
 //
 // Conventions mirror tui_search_contract.test.js:
 //   node:test  +  node:assert/strict
@@ -11,7 +11,7 @@
 const test   = require('node:test');
 const assert = require('node:assert/strict');
 
-const { startSpinner } = require('../../../../backend/cli/tui/spinner');
+const { startSpinner } = require('../../../../frontend/cli-tui/tui/spinner');
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 

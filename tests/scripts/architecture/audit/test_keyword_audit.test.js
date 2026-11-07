@@ -14,7 +14,7 @@ const {
   loadTestResults,
   spotKeywordsInResults,
   spotKeywordsInSource,
-} = require('../../../../scripts/dev/audit_test_results.js');
+} = require('../../../../tools/dev/audit_test_results.js');
 
 const REPO_ROOT = path.resolve(__dirname, '../../../..');
 

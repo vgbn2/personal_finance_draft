@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 
-const { handleCommand } = require('../../../../backend/cli/sovereign_cli');
+const { handleCommand } = require('../../../../frontend/cli-tui/sovereign_cli');
 const { authenticateServiceToken } = require('../../../../shared/lib/auth/service_principals');
 
 test('service CLI creates a one-time credential and can revoke it', async (t) => {

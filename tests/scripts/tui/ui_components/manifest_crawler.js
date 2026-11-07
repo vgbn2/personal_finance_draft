@@ -1,4 +1,4 @@
-const { MANIFEST } = require('../../../../backend/cli/tui');
+const { MANIFEST } = require('../../../../frontend/cli-tui/tui');
 const { driveTui } = require('./tui_autopilot');
 
 const ARROW_DOWN = '\u001b[B';

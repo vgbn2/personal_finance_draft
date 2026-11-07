@@ -16,8 +16,8 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { writeTsIndex, readTsIndex } = require('../../../../shared/lib/market/validation.js');
-const { rollupFromBase, rollupTargetsAboveBase } = require('../../../../backend/cli/commands/data/data.js');
-const { runBackfillCycle, writeDaemonStatus, DAEMON_STATUS_PATH } = require('../../../../backend/cli/commands/data/backfill_daemon.js');
+const { rollupFromBase, rollupTargetsAboveBase } = require('../../../../frontend/cli-tui/commands/data/data.js');
+const { runBackfillCycle, writeDaemonStatus, DAEMON_STATUS_PATH } = require('../../../../frontend/cli-tui/commands/data/backfill_daemon.js');
 
 test('backfill daemon performs ZERO derived rollups when all derived bins are already fresh', async () => {
   const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'daemon-wear-'));
