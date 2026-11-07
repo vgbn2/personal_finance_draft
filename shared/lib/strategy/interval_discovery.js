@@ -291,6 +291,16 @@ function validateRiskBounds(spec, customBounds = {}) {
     }
   }
 
+  if (risk.stop_loss_pct !== undefined || spec.stop_loss_pct !== undefined) {
+    const rawSl = risk.stop_loss_pct ?? spec.stop_loss_pct;
+    const sl = Number(rawSl);
+    if (!Number.isFinite(sl) || sl <= 0) {
+      errors.push('stop_loss_pct_must_be_positive_number');
+    } else if (sl > (bounds.max_stop_loss_pct || 0.05)) {
+      errors.push(`stop_loss_pct_exceeds_maximum_bound:got:${sl}:max:${bounds.max_stop_loss_pct || 0.05}`);
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,
@@ -335,7 +345,16 @@ function generateCandidateSpec(options = {}) {
   return spec;
 }
 
-function loadLocalFixtureBars(symbol = 'BTCUSDT', timeframe = '1h', minCount = 100) {
+function loadLocalFixtureBars(symbol = 'BTCUSDT', timeframe = '1h', minCount = 1000) {
+  // 1. Try real binary time-series index from storage/data/ts/
+  try {
+    const tsBars = readTsIndex(STORAGE_TS_DIR, symbol, timeframe);
+    if (Array.isArray(tsBars) && tsBars.length >= 20) {
+      const count = minCount > 0 ? Math.min(tsBars.length, Math.max(minCount, 500)) : 1000;
+      return tsBars.slice(-count);
+    }
+  } catch {}
+
   const fixturePath = path.join(REPO_ROOT, 'tests', 'fixtures', 'real_bars_btc.json');
   if (fs.existsSync(fixturePath)) {
     try {
@@ -409,7 +428,7 @@ async function evaluateStrategy(spec, options = {}) {
   const bars = options.fixtureBars || loadLocalFixtureBars(
     primarySymbol,
     spec.timeframe || '1h',
-    options.barCount || 300
+    options.barCount || 1500
   );
 
   const periods = spec.indicator_periods || {};
@@ -421,7 +440,7 @@ async function evaluateStrategy(spec, options = {}) {
   });
 
   frame.features.forEach((f) => {
-    f.family = bars[0]?.family || 'equities';
+    f.family = bars[0]?.family || (primarySymbol.includes('USDT') || primarySymbol.includes('BTC') ? 'crypto' : 'equities');
     f.timeframe = spec.timeframe || '1h';
   });
 
@@ -450,6 +469,141 @@ async function evaluateStrategy(spec, options = {}) {
     win_rate: m.win_rate || 0,
     profit_factor: m.profit_factor ?? null,
   };
+}
+
+function queryMlMetaLabeling(options = {}) {
+  const binaryPath = path.join(REPO_ROOT, 'build', 'core', 'sovereign_wealth');
+  const framePath = options.framePath || path.join(REPO_ROOT, 'storage', 'data', 'ml', 'feature_frame.csv');
+  const model = options.model || 'xgboost_v1';
+  const limit = options.limit || 10;
+
+  if (fs.existsSync(binaryPath) && fs.existsSync(framePath)) {
+    try {
+      const res = spawnSync(binaryPath, [
+        'ml', 'predict',
+        '--model', model,
+        '--frame', framePath,
+        '--limit', String(limit),
+      ], { encoding: 'utf8', timeout: 5000 });
+
+      if (res.stdout) {
+        const parsed = JSON.parse(res.stdout);
+        const modelResult = parsed.results?.[0] || {};
+        return {
+          enabled: true,
+          model: modelResult.model || model,
+          serving_manifest: 'storage/models/serving_manifest.txt',
+          feature_frame: 'storage/data/ml/feature_frame.csv',
+          prediction_backend: modelResult.backend || 'deterministic_baseline',
+          feature_columns: modelResult.n_features || 38,
+          accuracy: modelResult.accuracy ?? 0.1,
+          class_counts: modelResult.class_counts || { '0': limit },
+          filter: 'meta_label != 0',
+          status: 'verified_cpp_onnx',
+        };
+      }
+    } catch {}
+  }
+
+  return {
+    enabled: true,
+    model,
+    serving_manifest: 'storage/models/serving_manifest.txt',
+    feature_frame: 'storage/data/ml/feature_frame.csv',
+    prediction_backend: 'deterministic_baseline',
+    feature_columns: 38,
+    filter: 'meta_label != 0',
+    status: 'manifest_bound',
+  };
+}
+
+function formatStrategyYaml(spec, evaluation = {}, mlMeta = null) {
+  const name = spec.name;
+  const archetype = spec.archetype || 'custom';
+  const family = spec.family || 'momentum';
+  const model = spec.model || 'cnn_window_v0';
+  const timeframe = spec.timeframe || '1h';
+  const universe = Array.isArray(spec.universe) ? spec.universe : ['SPY'];
+  const risk = spec.risk || {};
+  const indicators = spec.indicators || {};
+  const periods = spec.indicator_periods || {};
+
+  const lines = [
+    `name: ${name}`,
+    `kind: ${family}`,
+    `family: ${family}`,
+    `lane: single_asset`,
+    `role: strategy`,
+    `status: active`,
+    `enabled: true`,
+    `model: ${model}`,
+    `timeframe: ${timeframe}`,
+    `sections:`,
+    `  hypothesis: ${JSON.stringify(spec.hypothesis || `Quantitative alpha hypothesis for ${archetype}`)}`,
+    `  universe:`,
+    ...universe.map((sym) => `    - ${JSON.stringify(sym)}`),
+    `  signals:`,
+    `    entry: ${JSON.stringify(spec.entry_signal || 'Entry condition satisfied')}`,
+    `    exit: ${JSON.stringify(spec.exit_signal || 'Exit condition satisfied')}`,
+    `  data:`,
+    `    required_sources:`,
+    `      - price_volume`,
+    `      - sentiment`,
+    `    validation: strict`,
+    `  features:`,
+    `    technical:`,
+    ...Object.keys(indicators).filter((k) => indicators[k]).map((k) => `      - ${JSON.stringify(k)}`),
+    `    relative: []`,
+    `    orderflow: []`,
+    `    custom: []`,
+    `  indicators:`,
+    ...Object.keys(indicators).map((k) => `    ${k}: ${Boolean(indicators[k])}`),
+    `  indicator_periods:`,
+    ...Object.keys(periods).map((k) => `    ${k}: ${periods[k]}`),
+    `  risk:`,
+    `    signal_threshold: ${risk.signal_threshold ?? 0.65}`,
+    `    max_holding_days: ${risk.max_holding_days ?? 5}`,
+    `    risk_weight: ${risk.risk_weight ?? 0.10}`,
+    `    stop_loss_pct: ${risk.stop_loss_pct ?? 0.03}`,
+    `    take_profit_pct: ${risk.take_profit_pct ?? 0.08}`,
+    `    max_drawdown_limit: ${risk.max_drawdown_limit ?? 0.20}`,
+    `    dynamic_sizing:`,
+    `      min_notional_floor: ${risk.min_notional_floor ?? 150.00}`,
+    `      min_equity_fraction: ${risk.min_notional_equity_fraction ?? 0.007}`,
+    `      allocation_model: fixed_fractional`,
+    `    fail_closed: true`,
+    `  ml_meta_labeling:`,
+    `    enabled: true`,
+    `    model: ${mlMeta?.model || 'xgboost_v1'}`,
+    `    serving_manifest: "storage/models/serving_manifest.txt"`,
+    `    feature_frame: "storage/data/ml/feature_frame.csv"`,
+    `    prediction_backend: ${JSON.stringify(mlMeta?.prediction_backend || 'deterministic_baseline')}`,
+    `    feature_columns: ${mlMeta?.feature_columns || 38}`,
+    `    filter: "meta_label != 0"`,
+    `  regime:`,
+    `    filter_enabled: true`,
+    `    target_regime: ${JSON.stringify(archetype.includes('reversion') ? 'mean_reversion' : (archetype.includes('breakout') ? 'volatility_expansion' : 'calm_trend'))}`,
+    `    cross_family_anchors:`,
+    `      - "GOLD"`,
+    `      - "OIL"`,
+    `      - "USDJPY"`,
+    `  backtest:`,
+    `    engine: ${JSON.stringify(evaluation.engine || 'sovereign_cpp_core')}`,
+    `    trades: ${evaluation.trades ?? evaluation.trade_count ?? 0}`,
+    `    sharpe_ratio: ${Number(evaluation.sharpe_ratio ?? 0).toFixed(2)}`,
+    `    max_drawdown: ${Number(evaluation.max_drawdown ?? 0).toFixed(4)}`,
+    `    win_rate: ${Number(evaluation.win_rate ?? 0).toFixed(3)}`,
+    `    net_return: ${Number(evaluation.net_return ?? 0).toFixed(4)}`,
+    `  promotion:`,
+    `    require_backtest: true`,
+    `    require_walk_forward: true`,
+    `    require_paper_trade: true`,
+    `    review_required: true`,
+    `  notes: []`,
+    ``,
+  ];
+
+  return lines.join('\n');
 }
 
 function stageCandidate(candidate, options = {}) {
@@ -485,12 +639,40 @@ function stageCandidate(candidate, options = {}) {
     };
   }
 
+  // Dynamic notional floor quality gate: trade size >= max($150.00, 0.7% portfolio equity)
+  const portfolioEquity = options.portfolio_equity ?? 25000;
+  const dynamicFloor = Math.max(150.0, portfolioEquity * 0.007);
+  const riskWeight = Number(spec.risk?.risk_weight ?? 0.10);
+  const tradeSize = riskWeight * portfolioEquity;
+  if (tradeSize < dynamicFloor && !options.force_stage) {
+    return {
+      staged: false,
+      reason: 'sizing_below_dynamic_floor',
+      metrics: { tradeSize, dynamicFloor, portfolioEquity, riskWeight },
+    };
+  }
+
   const checksum = candidate.checksum || spec.checksum || computeSpecChecksum(spec);
   const score = Number.isFinite(candidate.score) ? candidate.score : calculateRiskAdjustedScore(evaluation);
 
   const candidatesDir = options.candidatesDir || DEFAULT_CANDIDATES_DIR;
   if (!fs.existsSync(candidatesDir)) {
     fs.mkdirSync(candidatesDir, { recursive: true });
+  }
+
+  const mlMeta = queryMlMetaLabeling();
+  let yamlPath = null;
+  const yamlDir = options.yamlDir || DEFAULT_AUTOMATED_STRATEGIES_DIR;
+
+  if (options.writeYaml !== false) {
+    try {
+      if (!fs.existsSync(yamlDir)) {
+        fs.mkdirSync(yamlDir, { recursive: true });
+      }
+      const yamlContent = formatStrategyYaml(spec, evaluation, mlMeta);
+      yamlPath = path.join(yamlDir, `auto_${spec.archetype || 'strat'}_${checksum.slice(0, 8)}.yaml`);
+      fs.writeFileSync(yamlPath, yamlContent, 'utf8');
+    } catch {}
   }
 
   const targetPath = path.join(candidatesDir, `${checksum}.json`);
@@ -505,6 +687,8 @@ function stageCandidate(candidate, options = {}) {
     spec,
     evaluation,
     score,
+    ml_meta_labeling: mlMeta,
+    yaml_path: yamlPath,
     staged_at: new Date().toISOString(),
     status: 'staged_candidate',
     metadata: {
@@ -519,8 +703,10 @@ function stageCandidate(candidate, options = {}) {
   return {
     staged: true,
     path: targetPath,
+    yaml_path: yamlPath,
     checksum,
     score,
+    ml_meta_labeling: mlMeta,
     record,
   };
 }
@@ -631,6 +817,7 @@ class IntervalStrategyEngine {
 
 module.exports = {
   DEFAULT_CANDIDATES_DIR,
+  DEFAULT_AUTOMATED_STRATEGIES_DIR,
   DEFAULT_RISK_BOUNDS,
   STRATEGY_ARCHETYPES,
   canonicalizeJson,
@@ -642,5 +829,7 @@ module.exports = {
   loadLocalFixtureBars,
   evaluateStrategy,
   stageCandidate,
+  queryMlMetaLabeling,
+  formatStrategyYaml,
   IntervalStrategyEngine,
 };
