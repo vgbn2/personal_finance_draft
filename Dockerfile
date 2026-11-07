@@ -76,9 +76,7 @@ COPY --from=build --chown=node:node /app/backend/cpp_core/build ./backend/cpp_co
 COPY --from=build --chown=node:node /app/build/dashboard ./build/dashboard
 COPY --from=build --chown=node:node /app/shared ./shared
 COPY --from=build --chown=node:node /app/configs ./configs
-COPY --from=build --chown=node:node /app/tools/data_ops/backfill_20_years.js ./tools/data_ops/backfill_20_years.js
-COPY --from=build --chown=node:node /app/tools/ops ./tools/ops
-COPY --from=build --chown=node:node /app/tools/strategies ./tools/strategies
+COPY --from=build --chown=node:node /app/tools ./tools
 COPY --from=build /usr/lib/x86_64-linux-gnu/libgomp.so.1* /usr/lib/x86_64-linux-gnu/
 
 RUN mkdir -p storage/data storage/logs storage/runtime \

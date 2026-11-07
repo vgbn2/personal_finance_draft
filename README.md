@@ -421,7 +421,7 @@ docker compose -f infra/docker/docker-compose.yml up -d --build
 | `frontend/dashboard/` | React 19 + Vite dashboard (source in `src/`, `dist/` is generated). |
 | `configs/` | System environment manifest, asset mappings, risk policies, and categorized strategy registry (`curated/`, `automated/`, `fixtures/`). |
 | `storage/data/` | Runtime disk storage: binary TS indices (`ts/`), JSON caches (`cache/`), paper trading state. |
-| `tools/` | Domain-organized operator/developer utilities, including `agent/` (autonomous quant loop), `ops/` (Proxmox sync/deploy), `mcp/`, `ml/`, `dev/`, and `mt5/` tooling; distinct from `backend/scripts/` and `tests/scripts/`. |
+| `tools/` | Domain-organized operator/developer utilities, including `agent/` (autonomous quant loop), `operational/` (Proxmox sync/deploy, health, backup), `mcp/`, `ml/`, `dev/`, and `mt5/` tooling; distinct from `backend/scripts/` and `tests/scripts/`. |
 | `tests/` | Node.js integration, architecture contract, and safety test suites. |
 | `docs/` | Canonical documentation hub (`docs/README.md`), 8-section architecture suite (`docs/engineering/architecture/`), specs, standards, and operational runbooks. |
 | `workspace/` | Active project state (`STATE.md`), handoffs (`handoff/`), prompt logs, memory, governance (`governance/`), and protocols (`protocols/`). |

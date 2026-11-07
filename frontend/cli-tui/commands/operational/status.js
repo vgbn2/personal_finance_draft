@@ -380,7 +380,7 @@ function loadStatusSnapshot() {
 
 function loadSystemDoctorSummary() {
   try {
-    const { checkStorageSubsystem, checkBackendEngine, checkStubsAndMocks } = require('../../../../tools/ops/system_doctor.js');
+    const { checkStorageSubsystem, checkBackendEngine, checkStubsAndMocks } = require('../../../../tools/operational/system_doctor.js');
     const storage = checkStorageSubsystem();
     const backendEngine = checkBackendEngine();
     const mocks = checkStubsAndMocks();

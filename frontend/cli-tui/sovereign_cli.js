@@ -53,6 +53,7 @@ async function handleCommand(args) {
     cluster:          (a) => commandCluster(a),
     remote:           (a) => commandRemote(a),
     setup:            (a) => commandSetup(a),
+    update:           (a) => require('../../tools/operational/update_system.js').main(a),
     doctor:           (a) => commandDoctor(a),
     cockpit:          (a) => commandCockpit(a),
     watch:            (a) => commandWatch(a),

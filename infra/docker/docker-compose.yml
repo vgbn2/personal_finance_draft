@@ -458,6 +458,40 @@ services:
         INTERVAL=$${EXPLORER_INTERVAL_MINUTES:-30}
         exec node tools/strategies/auto_strategy_explorer.js --interval "$$INTERVAL"
 
+  quant:
+    container_name: sv-quant
+    logging: *default-logging
+    profiles: [quant, research]
+    build: *common-build
+    image: ${SOVEREIGN_IMAGE_REF:-personal_finance:latest}
+    networks:
+      - internal-net
+    environment:
+      <<: *central-runtime
+      SOVEREIGN_ROUTER_URL: ${SOVEREIGN_ROUTER_URL:-http://192.168.4.103:20128/v1}
+      SOVEREIGN_ROUTER_KEY: ${SOVEREIGN_ROUTER_KEY:-sk-1b6920feeeab2737-617eb2-92380c8a}
+      NODE_OPTIONS: --max-old-space-size=1536
+    volumes:
+      - ../../storage:/app/storage
+      - ../../configs/strategies/automated:/app/configs/strategies/automated
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2048M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      disable: true
+    command:
+      - /bin/sh
+      - -c
+      - |
+        INTERVAL=$${QUANT_INTERVAL_SECS:-60}
+        exec node tools/agent/strategy_interval_generator.js --interval-secs "$$INTERVAL"
+
 networks:
   edge-net:
     driver: bridge

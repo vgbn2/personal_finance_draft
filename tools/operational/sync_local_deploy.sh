@@ -20,11 +20,16 @@ CT_DEST="${SOVEREIGN_CT_DEST:-${CT_DEST:-/home/vgbn/sovereign-trades}}"
 REBUILD=false
 DRY_RUN=false
 CLEAN=false
+QUANT=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --rebuild)
       REBUILD=true
+      shift
+      ;;
+    --quant)
+      QUANT=true
       shift
       ;;
     --dry-run)
@@ -148,7 +153,11 @@ if [[ "$REBUILD" == "true" && "$DRY_RUN" == "false" ]]; then
     cd \"${CT_DEST}\"
     docker compose build web feedd
     docker tag ghcr.io/vgbn2/sovereign-trades:latest sovereign-trades:latest
-    docker compose -p sv -f infra/docker/docker-compose.yml --profile \"*\" up -d --no-build --force-recreate web feedd backfill bot-alpaca-paper portfolio-monitor host-health host-backup
+    SERVICES=\"web feedd backfill bot-alpaca-paper portfolio-monitor host-health host-backup\"
+    if [[ \"$QUANT\" == \"true\" ]]; then
+      SERVICES=\"\$SERVICES quant\"
+    fi
+    docker compose -p sv -f infra/docker/docker-compose.yml --profile \"*\" up -d --no-build --force-recreate \$SERVICES
     docker compose -p sv -f infra/docker/docker-compose.yml ps
   '"
   echo "==> Rebuild done."

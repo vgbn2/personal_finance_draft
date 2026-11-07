@@ -216,7 +216,7 @@ async function commandSetup(args) {
 
 async function commandDoctor(args) {
   if (hasFlag(args, '--deep') || args[0] === 'deep' || args[0] === 'system') {
-    const { runSystemDoctor, renderDoctorTerminal } = require('../../../../tools/ops/system_doctor.js');
+    const { runSystemDoctor, renderDoctorTerminal } = require('../../../../tools/operational/system_doctor.js');
     const noNetwork = hasFlag(args, '--no-network');
     const payload = await runSystemDoctor({ deep: true, noNetwork });
     if (hasFlag(args, '--json')) {

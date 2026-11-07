@@ -122,10 +122,10 @@ test('MT5 Execution Pipeline: handles rejection from EA bridge', async () => {
   await adapter.stop();
 });
 
-test('MT5 Execution Pipeline: tools/ops/run_headless_mt5.sh status executes cleanly', () => {
+test('MT5 Execution Pipeline: tools/operational/run_headless_mt5.sh status executes cleanly', () => {
   const { spawnSync } = require('node:child_process');
   const path = require('node:path');
-  const scriptPath = path.resolve(__dirname, '../../../../tools/ops/run_headless_mt5.sh');
+  const scriptPath = path.resolve(__dirname, '../../../../tools/operational/run_headless_mt5.sh');
   // Operational semantics: status subcommand returns 0 when daemon is active or 1 when stopped; assertion accepts both valid operational states
   const res = spawnSync('bash', [scriptPath, 'status'], { encoding: 'utf8' });
   assert.ok(res.status === 0 || res.status === 1, 'Status exit code must be 0 (running) or 1 (stopped)');
