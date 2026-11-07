@@ -4,7 +4,7 @@ const MODES = new Set(['worktree_snapshot', 'committed_archive']);
 const PACKAGE_ROOTS = [
   '.',
   'backend/api',
-  'backend/gateway',
+  'backend/execution',
   'backend/mcp_server',
   'frontend/dashboard',
 ];

@@ -350,7 +350,7 @@ function checkRepositoryIntegrity() {
   const packageFiles = [
     'package.json',
     'backend/api/package.json',
-    'backend/gateway/package.json',
+    'backend/execution/package.json',
     'backend/mcp_server/package.json',
     'frontend/dashboard/package.json',
   ];
