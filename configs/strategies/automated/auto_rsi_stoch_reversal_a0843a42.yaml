@@ -1,0 +1,85 @@
+name: cand_rsi_stoch_reversal_1d_mw6mps8v_2ucz
+kind: mean_reversion
+family: mean_reversion
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: knn_pattern_v0
+timeframe: 1d
+sections:
+  hypothesis: "Counter-trend entry on oversold RSI exhaustion with rapid mean reversion capture."
+  universe:
+    - "BTCUSDT"
+    - "SPY"
+  signals:
+    entry: "RSI < 25 and negative short-term return"
+    exit: "RSI > 50 or maximum horizon reached"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "rsi"
+      - "return_fast"
+      - "return_slow"
+      - "volatility"
+      - "atr"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    rsi: true
+    return_fast: true
+    return_slow: true
+    volatility: true
+    atr: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 3
+    risk_weight: 0.06
+    stop_loss_pct: 0.04
+    take_profit_pct: 0.08
+    max_drawdown_limit: 0.18
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "calm_trend"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 38
+    sharpe_ratio: 4.68
+    max_drawdown: 0.0930
+    win_rate: 0.605
+    net_return: 0.4206
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

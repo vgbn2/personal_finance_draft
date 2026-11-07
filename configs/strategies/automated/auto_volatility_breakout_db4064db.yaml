@@ -1,0 +1,85 @@
+name: cand_volatility_breakout_1h_mw6mr67m_znx5
+kind: breakout
+family: breakout
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: volatility_breakout_v0
+timeframe: 1h
+sections:
+  hypothesis: "Volatility Breakout: Directional breakout following Bollinger band compression with ATR expansion above 1.4x rolling baseline."
+  universe:
+    - "MSFT"
+    - "NVDA"
+  signals:
+    entry: "Close breaches upper volatility band with ATR expansion > 1.4x rolling baseline"
+    exit: "Trailing ATR volatility contraction or 5-bar max holding horizon reached"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "return_fast"
+      - "return_slow"
+      - "volatility"
+      - "atr"
+      - "bollinger"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.6
+    max_holding_days: 5
+    risk_weight: 0.1
+    stop_loss_pct: 0.04
+    take_profit_pct: 0.09
+    max_drawdown_limit: 0.2
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "volatility_expansion"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 188
+    sharpe_ratio: 1.57
+    max_drawdown: 0.0679
+    win_rate: 0.479
+    net_return: 0.2804
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

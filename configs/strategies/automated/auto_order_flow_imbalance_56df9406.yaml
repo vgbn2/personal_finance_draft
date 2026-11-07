@@ -1,0 +1,87 @@
+name: cand_order_flow_imbalance_1h_mw6mqzty_22x0
+kind: microstructure
+family: microstructure
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: logistic_regression_v0
+timeframe: 1h
+sections:
+  hypothesis: "Order Flow Imbalance: Microstructure bid-ask queue depletion and directional volume delta surge in index ETFs leading to short-term momentum continuation."
+  universe:
+    - "QQQ"
+    - "SPY"
+  signals:
+    entry: "Logistic regression probability >= 0.65 on positive normalized MACD and short-term return acceleration"
+    exit: "Holding horizon of 5 bars reached, take profit at 5.0%, or tight stop loss triggered at 2.0%"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "return_fast"
+      - "return_slow"
+      - "volatility"
+      - "rsi"
+      - "atr"
+      - "bollinger"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 5
+    risk_weight: 0.1
+    stop_loss_pct: 0.02
+    take_profit_pct: 0.05
+    max_drawdown_limit: 0.2
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "calm_trend"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 29
+    sharpe_ratio: 6.87
+    max_drawdown: 0.0197
+    win_rate: 0.552
+    net_return: 0.1034
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []
