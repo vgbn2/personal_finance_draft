@@ -30,6 +30,20 @@ const DEFAULT_RISK_BOUNDS = Object.freeze({
   min_notional_equity_fraction: 0.007,
 });
 
+const VALID_STRATEGY_FAMILIES = Object.freeze([
+  'momentum',
+  'mean_reversion',
+  'breakout',
+  'volatility',
+  'microstructure',
+  'orderflow',
+  'event_drift',
+  'stat_arb',
+  'trend_following',
+  'ml_alpha',
+  'prediction',
+]);
+
 const STRATEGY_ARCHETYPES = Object.freeze({
   pead_earnings_drift: Object.freeze({
     archetype: 'pead_earnings_drift',
@@ -301,6 +315,20 @@ function validateRiskBounds(spec, customBounds = {}) {
     }
   }
 
+  if (spec.family !== undefined) {
+    const fam = String(spec.family).toLowerCase().trim();
+    if (!VALID_STRATEGY_FAMILIES.includes(fam)) {
+      errors.push(`invalid_strategy_family:got:${spec.family}:valid:[${VALID_STRATEGY_FAMILIES.join(',')}]`);
+    }
+  }
+
+  if (spec.name !== undefined) {
+    const nameStr = String(spec.name).trim();
+    if (!nameStr || !/^[a-z0-9_]+$/i.test(nameStr)) {
+      errors.push(`invalid_strategy_name:must_be_alphanumeric_snake_case:got:${spec.name}`);
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,
@@ -318,7 +346,7 @@ function generateCandidateSpec(options = {}) {
     ? String(options.seed)
     : `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
-  const name = options.name || `cand_${base.archetype}_${base.timeframe}_${uniqueSuffix}`;
+  const name = options.name || `cand_${base.family}_${base.archetype}_${base.timeframe}_${uniqueSuffix}`;
 
   const spec = {
     name,
@@ -819,6 +847,7 @@ module.exports = {
   DEFAULT_CANDIDATES_DIR,
   DEFAULT_AUTOMATED_STRATEGIES_DIR,
   DEFAULT_RISK_BOUNDS,
+  VALID_STRATEGY_FAMILIES,
   STRATEGY_ARCHETYPES,
   canonicalizeJson,
   computeSpecChecksum,

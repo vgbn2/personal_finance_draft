@@ -2061,6 +2061,21 @@
       ]
     },
     {
+      "path": "docs/operational/guides/workstation_memory_and_storage_topology.md",
+      "type": "how_to",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "supporting",
+      "source_paths": [],
+      "test_paths": [],
+      "review_triggers": [
+        "operations-change",
+        "cli-change"
+      ]
+    },
+    {
       "path": "docs/operational/local_first/cloud_compute_vs_local_execution.md",
       "type": "how_to",
       "audience": [

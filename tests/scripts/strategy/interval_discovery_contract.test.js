@@ -9,6 +9,7 @@ const { spawnSync } = require('node:child_process');
 
 const {
   DEFAULT_RISK_BOUNDS,
+  VALID_STRATEGY_FAMILIES,
   STRATEGY_ARCHETYPES,
   generateCandidateSpec,
   validateRiskBounds,
@@ -94,6 +95,18 @@ test('interval discovery: strictly rejects ungrounded or out-of-bound risk param
   // 5. non-object spec
   assert.strictEqual(validateRiskBounds(null).valid, false, 'rejects null spec');
   assert.strictEqual(validateRiskBounds('invalid').valid, false, 'rejects string spec');
+
+  // 6. strategy family and name validation
+  assert.ok(Array.isArray(VALID_STRATEGY_FAMILIES) && VALID_STRATEGY_FAMILIES.length >= 10);
+  const badFamilySpec = { ...baseSpec, family: 'unregistered_moon_shot' };
+  const valBadFamily = validateRiskBounds(badFamilySpec);
+  assert.strictEqual(valBadFamily.valid, false, 'rejects unregistered strategy family');
+  assert.ok(valBadFamily.errors.some((e) => e.includes('invalid_strategy_family')));
+
+  const badNameSpec = { ...baseSpec, name: 'invalid name with spaces!' };
+  const valBadName = validateRiskBounds(badNameSpec);
+  assert.strictEqual(valBadName.valid, false, 'rejects non-alphanumeric/spaces strategy name');
+  assert.ok(valBadName.errors.some((e) => e.includes('invalid_strategy_name')));
 });
 
 test('interval discovery: scoring criteria deterministically rank candidates', () => {
