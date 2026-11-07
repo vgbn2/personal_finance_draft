@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const { mergePolymarketIntoPortfolio, summarizePortfolioCard, buildCockpitModel } =
-  require('../../../../backend/cli/commands/operational/status.js');
+  require('../../../../frontend/cli-tui/commands/operational/status.js');
 
 // Pure-function coverage for the cockpit's Polymarket merge step. Synthetic
 // fixtures only -- no live credentials, no network, no spawned subprocess.

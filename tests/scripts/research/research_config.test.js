@@ -4,12 +4,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
 
-const { loadResearchConfig } = require('../../../backend/cli/lib/research_config.js');
-const { historicalWindowFromArgs } = require('../../../backend/cli/commands/research/research.js');
+const { loadResearchConfig } = require('../../../frontend/cli-tui/lib/research_config.js');
+const { historicalWindowFromArgs } = require('../../../frontend/cli-tui/commands/research/research.js');
 
 const EXPECTED_DEFAULT_DAYS = 1825;
 const EXPECTED_DEFAULT_SECONDS = EXPECTED_DEFAULT_DAYS * 24 * 60 * 60;
-const RESEARCH_SOURCES_PATH = require.resolve('../../../backend/cli/commands/research/research_sources.js');
+const RESEARCH_SOURCES_PATH = require.resolve('../../../frontend/cli-tui/commands/research/research_sources.js');
 const INGEST_PATH = require.resolve('../../../backend/scripts/data_ops/ingest_market_data.js');
 
 const TEST_CONFIG = {

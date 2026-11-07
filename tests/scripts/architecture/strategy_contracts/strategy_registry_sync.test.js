@@ -4,12 +4,12 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 
-const { syncStrategyRegistry, readStrategyRegistry } = require('../../../../backend/cli/commands/strategy');
+const { syncStrategyRegistry, readStrategyRegistry } = require('../../../../frontend/cli-tui/commands/strategies');
 
 function tempRepoLayout() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'strategy-sync-'));
-  const strategyDir = path.join(root, 'config', 'strategies');
-  const registryDir = path.join(root, 'config', 'trading');
+  const strategyDir = path.join(root, 'configs', 'strategies');
+  const registryDir = path.join(root, 'configs', 'trading');
   fs.mkdirSync(strategyDir, { recursive: true });
   fs.mkdirSync(registryDir, { recursive: true });
 
@@ -25,7 +25,7 @@ function tempRepoLayout() {
     '',
     'registry:',
     '  files:',
-    '    - "config/strategies/existing.yaml"',
+    '    - "configs/strategies/existing.yaml"',
     '',
   ].join('\n'), 'utf8');
 
@@ -160,7 +160,7 @@ test('strategy registry sync adds valid unregistered YAML files and skips invali
 
   try {
     const before = readStrategyRegistry({ registryPath: layout.registryPath });
-    assert.deepEqual(before, ['config/strategies/existing.yaml']);
+    assert.deepEqual(before, ['configs/strategies/existing.yaml']);
 
     const summary = syncStrategyRegistry({
       repoRoot: layout.root,
@@ -170,14 +170,14 @@ test('strategy registry sync adds valid unregistered YAML files and skips invali
 
     assert.equal(summary.before, 1);
     assert.equal(summary.after, 2);
-    assert.deepEqual(summary.added, ['config/strategies/fresh_ai.yaml']);
+    assert.deepEqual(summary.added, ['configs/strategies/fresh_ai.yaml']);
     assert.equal(summary.skipped.length, 1);
-    assert.equal(summary.skipped[0].path, 'config/strategies/broken.yaml');
+    assert.equal(summary.skipped[0].path, 'configs/strategies/broken.yaml');
 
     const registryText = fs.readFileSync(layout.registryPath, 'utf8');
-    assert.match(registryText, /config\/strategies\/existing\.yaml/);
-    assert.match(registryText, /config\/strategies\/fresh_ai\.yaml/);
-    assert.doesNotMatch(registryText, /config\/strategies\/broken\.yaml/);
+    assert.match(registryText, /configs\/strategies\/existing\.yaml/);
+    assert.match(registryText, /configs\/strategies\/fresh_ai\.yaml/);
+    assert.doesNotMatch(registryText, /configs\/strategies\/broken\.yaml/);
   } finally {
     fs.rmSync(layout.root, { recursive: true, force: true });
   }

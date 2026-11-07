@@ -8,7 +8,7 @@ const path = require('node:path');
 
 const {
   buildCanonicalDataSummary,
-} = require('../../../../backend/cli/commands/tools/backend.js');
+} = require('../../../../frontend/cli-tui/commands/tools/backend.js');
 const {
   writeTsIndex,
 } = require('../../../../shared/lib/market/validation.js');

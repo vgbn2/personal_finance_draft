@@ -43,7 +43,7 @@ function toMatcher(pattern) {
 }
 
 function createTuiSession(options = {}) {
-  const cliPath = options.cliPath || path.join(__dirname, '../../../backend/cli/sovereign_cli.js');
+  const cliPath = options.cliPath || path.join(__dirname, '../../../frontend/cli-tui/sovereign_cli.js');
   const env = {
     ...process.env,
     CI: 'false',

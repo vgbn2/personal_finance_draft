@@ -16,7 +16,7 @@ require('ts-node').register({
   },
 });
 
-const { Mt5Adapter } = require('../../../backend/gateway/src/adapters/mt5_adapter.ts');
+const { Mt5Adapter } = require('../../../backend/execution/src/adapters/mt5_adapter.ts');
 const { MockMt5Client } = require('../../fixtures/mock_mt5_bridge.js');
 
 test('Mt5Adapter starts TCP server, accepts registration, and routes trades', async () => {

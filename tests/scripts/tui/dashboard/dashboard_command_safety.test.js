@@ -8,11 +8,11 @@ const os = require('node:os');
 const { spawn } = require('node:child_process');
 
 const { buildArgv, defaultFlagValues, splitWords, isInteractiveCmd } =
-  require('../../../../backend/cli/tui/dashboard_exec.js');
+  require('../../../../frontend/cli-tui/tui/dashboard_exec.js');
 const { withTimeout: withTimeoutHelper } = require('./_harness.js');
 
 const REPO_ROOT = path.join(__dirname, '../../../..//..');
-const CLI_PATH = path.join(REPO_ROOT, 'backend/cli/sovereign_cli.js');
+const CLI_PATH = path.join(REPO_ROOT, 'frontend/cli-tui/sovereign_cli.js');
 
 // Infinite-by-design loops (watch/backfill-daemon/auto-trade) or genuinely
 // continuous runners reachable via a dashboard subcmd (bot run) -- these are
@@ -59,7 +59,7 @@ const HEAVY_COMPUTATIONAL_IDS = new Set([
 let M, INTERACTIVE_CMDS;
 
 test.before(async () => {
-  const mod = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const mod = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
   M = mod.M;
   INTERACTIVE_CMDS = mod.INTERACTIVE_CMDS;
 });
@@ -126,7 +126,7 @@ test('every in-pane, non-state-mutating manifest command exits without hanging',
 // ---------------------------------------------------------------------------
 // Reproduces a real bug: INTERACTIVE_CMDS entries are spawned in-pane by the
 // dashboard via a piped, never-written, never-closed stdin (see
-// sovereign_dashboard.mjs's runExternal()). backend/cli/lib/auth.js's prompt
+// sovereign_dashboard.mjs's runExternal()). frontend/cli-tui/lib/auth.js's prompt
 // functions (promptLine/makeReadlineMasked, used by login/register) have no
 // SOVEREIGN_NONINTERACTIVE bypass today, unlike tui/engine/engine.js's
 // promptSelect/promptText/promptMultiSelect -- so any INTERACTIVE_CMDS entry

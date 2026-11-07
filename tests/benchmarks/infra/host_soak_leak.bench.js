@@ -30,10 +30,10 @@ const {
 const {
   deriveMultiGrainInMemory,
 } = require('../../../shared/lib/market/multi_grain_rollup.js');
-const { GateIoAdapter } = require('../../../backend/gateway/dist/adapters/gate_io_adapter.js');
-const { DeribitAdapter } = require('../../../backend/gateway/dist/adapters/deribit_adapter.js');
-const { AlpacaAdapter } = require('../../../backend/gateway/dist/adapters/alpaca_adapter.js');
-const { PolymarketAdapter } = require('../../../backend/gateway/dist/adapters/polymarket_adapter.js');
+const { GateIoAdapter } = require('../../../backend/execution/dist/adapters/gate_io_adapter.js');
+const { DeribitAdapter } = require('../../../backend/execution/dist/adapters/deribit_adapter.js');
+const { AlpacaAdapter } = require('../../../backend/execution/dist/adapters/alpaca_adapter.js');
+const { PolymarketAdapter } = require('../../../backend/execution/dist/adapters/polymarket_adapter.js');
 
 function countOpenFileDescriptors() {
   if (fs.existsSync('/proc/self/fd')) {

@@ -1,6 +1,6 @@
 const { parentPort, workerData } = require('node:worker_threads');
 
-const { buildScorecard } = require('../../../cli/commands/research/scorecard');
+const { buildScorecard } = require('../../../../frontend/cli-tui/commands/research/scorecard');
 
 buildScorecard(workerData.args)
   .then((payload) => parentPort.postMessage(payload))

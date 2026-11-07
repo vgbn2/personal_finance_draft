@@ -7,9 +7,9 @@ const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
 const { formatTimeForSettings, layoutConfig } = require('../../../../shared/lib/settings/runtime');
-const { buildAutomationTrustDecision } = require('../../../../backend/cli/commands/strategy/strategy');
+const { buildAutomationTrustDecision } = require('../../../../frontend/cli-tui/commands/strategies/strategy');
 
-const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
+const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'frontend', 'cli-tui', 'sovereign_cli.js');
 
 function withTempSettings(settings, fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-runtime-settings-'));

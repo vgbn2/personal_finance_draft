@@ -1,0 +1,65 @@
+strategies:
+  kronos_momentum:
+    enabled: false
+    asset_universe: ["SPY", "QQQ", "AAPL", "MSFT", "BTCUSDT"]
+    model: "kronos_base"
+    signal_threshold: 0.65
+    max_holding_days: 5
+    risk_weight: 0.4
+  asset_class_cnns:
+    enabled: false
+    equities:
+      model: "cnn_equities_v1"
+      inputs: ["price_volume", "options", "holdings", "breadth", "sentiment"]
+    crypto:
+      model: "cnn_crypto_v1"
+      inputs: ["price_volume", "funding", "crypto_tx", "onchain", "sentiment"]
+    commodities:
+      model: "cnn_commodities_v1"
+      inputs: ["price_volume", "weather", "satellite_nrt", "cargo", "reserves"]
+    fx_macro:
+      model: "cnn_fx_macro_v1"
+      inputs: ["fx", "macro", "macro_alt", "pmi", "reserves", "prediction_market"]
+    correlation:
+      model: "linear_correlation_baseline_v1"
+      inputs: ["pairwise_returns", "cross_asset_corr", "lead_lag_score"]
+  macro_regime_filter:
+    enabled: false
+    model: "regime_classifier"
+    allowed_regimes: ["expansion", "risk_on"]
+    risk_weight: 0.6
+promotion:
+  require_backtest: true
+  require_walk_forward: true
+  require_paper_trade: true
+  min_sharpe_ratio: 1.5
+  max_drawdown_limit: 0.30
+
+registry:
+  files:
+    - "configs/strategies/curated/ai_sector_momentum.yaml"
+    - "configs/strategies/curated/commodity_macro_hedge.yaml"
+    - "configs/strategies/curated/crude_oil_inventory_reversal.yaml"
+    - "configs/strategies/curated/crypto_breadth_momentum.yaml"
+    - "configs/strategies/curated/crypto_layer1_momentum.yaml"
+    - "configs/strategies/curated/crypto_mt5_trend_pulse.yaml"
+    - "configs/strategies/curated/defensive_rotation.yaml"
+    - "configs/strategies/curated/defi_ecosystem_momentum.yaml"
+    - "configs/strategies/curated/forex_asian_range_scalp.yaml"
+    - "configs/strategies/curated/forex_london_breakout.yaml"
+    - "configs/strategies/curated/forex_trend_breakout.yaml"
+    - "configs/strategies/curated/global_equity_rotation.yaml"
+    - "configs/strategies/curated/gold_ny_momentum.yaml"
+    - "configs/strategies/curated/mean_reversion.yaml"
+    - "configs/strategies/curated/ml_multi_asset.yaml"
+    - "configs/strategies/curated/nasdaq_opening_drive.yaml"
+    - "configs/strategies/curated/tech_alpha_xgboost.yaml"
+    - "configs/strategies/curated/trend_following.yaml"
+    - "configs/strategies/curated/vietnam_equity_growth.yaml"
+    - "configs/strategies/curated/volume_profile.yaml"
+    - "configs/strategies/automated/auto_mt5_forex_breakout_cnn_15m_mu7z1fx1.yaml"
+    - "configs/strategies/automated/auto_mt5_gold_orderflow_rf_15m_mu7z2au1.yaml"
+    - "configs/strategies/automated/auto_mt5_indices_momentum_lr_5m_mu7z3us1.yaml"
+    - "configs/strategies/automated/auto_mt5_forex_reversion_knn_30m_mu7z4fx2.yaml"
+    - "configs/strategies/fixtures/paper_dca_test.yaml"
+    - "configs/strategies/fixtures/polymarket_dca_test.yaml"

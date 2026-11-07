@@ -54,15 +54,6 @@ export function invokeSovereignCli(
   args: string[],
   options: InvokeSovereignCliOptions = {},
 ): Promise<ToolResponse> {
-  const cliPath = findNodeCli();
-
-  if (!cliPath) {
-    return Promise.resolve(textResponse(
-      `Sovereign CLI entrypoint not found. Searched: ${CLI_CANDIDATES.join(', ')}`,
-      true,
-    ));
-  }
-
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxOutputBytes = options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
   const cliArgs = args.includes('--json') ? args : [...args, '--json'];
@@ -74,6 +65,13 @@ export function invokeSovereignCli(
       surface: 'mcp',
       required_capability: capability,
     }), true));
+  }
+  const cliPath = findNodeCli();
+  if (!cliPath) {
+    return Promise.resolve(textResponse(
+      `Sovereign CLI entrypoint not found. Searched: ${CLI_CANDIDATES.join(', ')}`,
+      true,
+    ));
   }
   const childEnvironment = buildChildEnvironment(process.env, 'mcp', {
     overrides: {

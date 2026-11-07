@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   DeribitAdapter,
-} = require('../../../../backend/gateway/dist/adapters/deribit_adapter.js');
+} = require('../../../../backend/execution/dist/adapters/deribit_adapter.js');
 const {
   resolveDeribitSettings,
   buildDeribitReport,
@@ -14,7 +14,7 @@ const {
 const {
   buildCockpitModel,
   cockpitInspectPayload,
-} = require('../../../../backend/cli/commands/operational/status.js');
+} = require('../../../../frontend/cli-tui/commands/operational/status.js');
 
 test('resolveDeribitSettings defaults to testnet and resolves keys from env', () => {
   const settings = resolveDeribitSettings({

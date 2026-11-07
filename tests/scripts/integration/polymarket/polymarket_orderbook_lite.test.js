@@ -16,7 +16,7 @@ const {
 const {
   runPolymarketBacktest,
   runPolymarketOrderbookLiteBackfill,
-} = require('../../../../backend/cli/commands/trade/polymarket_backtest.js');
+} = require('../../../../frontend/cli-tui/commands/trade/polymarket_backtest.js');
 
 function tempArchive() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'polyob-'));

@@ -1,4 +1,4 @@
-const { buildCachedCombinedResearch } = require('../../../../cli/commands/research/combined');
+const { buildCachedCombinedResearch } = require('../../../../../frontend/cli-tui/commands/research/combined');
 const {
   appendWorkflowEvent,
   digest,

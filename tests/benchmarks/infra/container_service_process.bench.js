@@ -14,13 +14,13 @@ const { runBenchmark, formatBenchmarkReport } = require('../helpers/benchmark_ru
 
 const TARGET_CONTAINER_SERVICES = [
   { name: 'sv-web', identity: 'backend/api/app.js', profile: 'default', memoryLimitMb: 512 },
-  { name: 'sv-bot-alpaca-paper', identity: 'backend/gateway/src/index.ts', profile: 'paper-alpaca', memoryLimitMb: 512 },
-  { name: 'sv-portfolio-monitor', identity: 'backend/cli/commands/portfolio/portfolio.js', profile: 'monitoring', memoryLimitMb: 256 },
+  { name: 'sv-bot-alpaca-paper', identity: 'backend/execution/src/index.ts', profile: 'paper-alpaca', memoryLimitMb: 512 },
+  { name: 'sv-portfolio-monitor', identity: 'frontend/cli-tui/commands/portfolio/portfolio.js', profile: 'monitoring', memoryLimitMb: 256 },
   { name: 'sv-host-health', identity: 'backend/scripts/ops/host_health.js', profile: 'monitoring', memoryLimitMb: 256 },
   { name: 'sv-host-backup', identity: 'backend/scripts/ops/host_backup_cli.js', profile: 'monitoring', memoryLimitMb: 512 },
   { name: 'sv-polymarket-research', identity: 'backend/scripts/data_ops/ingest_market_data/providers/prediction.js', profile: 'research', memoryLimitMb: 1024 },
-  { name: 'sv-backfill', identity: 'backend/cli/commands/data/backfill.js', profile: 'writer', memoryLimitMb: 3072 },
-  { name: 'sv-strategy-explorer', identity: 'scripts/strategies/auto_strategy_explorer.js', profile: 'research', memoryLimitMb: 2048 },
+  { name: 'sv-backfill', identity: 'frontend/cli-tui/commands/data/backfill.js', profile: 'writer', memoryLimitMb: 3072 },
+  { name: 'sv-strategy-explorer', identity: 'tools/strategies/auto_strategy_explorer.js', profile: 'research', memoryLimitMb: 2048 },
 ];
 
 test('benchmark 8 containerized service runtime profiles and event loop lag', async () => {

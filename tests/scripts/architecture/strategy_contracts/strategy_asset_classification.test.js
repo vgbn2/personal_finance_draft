@@ -4,9 +4,9 @@ const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
-const SCRIPT = path.join(REPO_ROOT, 'scripts', 'tools', 'classify_strategy_assets.js');
+const SCRIPT = path.join(REPO_ROOT, 'tools', 'strategies', 'classify_strategy_assets.js');
 const { classifyStrategyAssetMode } = require('../../../../shared/lib/strategy/registry');
-const { inspectStrategyFile } = require('../../../../backend/cli/commands/strategy');
+const { inspectStrategyFile } = require('../../../../frontend/cli-tui/commands/strategies');
 
 test('strategy asset mode helper separates single, multi-asset, and portfolio management', () => {
   const singleAsset = classifyStrategyAssetMode({
@@ -15,8 +15,8 @@ test('strategy asset mode helper separates single, multi-asset, and portfolio ma
     lane: 'single_asset',
     role: 'strategy',
   });
-  const multiAsset = classifyStrategyAssetMode(inspectStrategyFile('config/strategies/mean_reversion.yaml'));
-  const portfolioManagement = classifyStrategyAssetMode(inspectStrategyFile('config/strategies/global_equity_rotation.yaml'));
+  const multiAsset = classifyStrategyAssetMode(inspectStrategyFile('configs/strategies/curated/mean_reversion.yaml'));
+  const portfolioManagement = classifyStrategyAssetMode(inspectStrategyFile('configs/strategies/curated/global_equity_rotation.yaml'));
 
   assert.equal(singleAsset, 'single_asset');
   assert.equal(multiAsset, 'multi_asset_strategy');
@@ -28,7 +28,7 @@ test('classification script filters portfolio-management strategies and reports 
     SCRIPT,
     '--json',
     '--strategy',
-    'config/strategies/global_equity_rotation.yaml',
+    'configs/strategies/curated/global_equity_rotation.yaml',
   ], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
@@ -45,7 +45,7 @@ test('classification script filters portfolio-management strategies and reports 
     '--mode',
     'portfolio_management',
     '--strategy',
-    'config/strategies/mean_reversion.yaml',
+    'configs/strategies/curated/mean_reversion.yaml',
   ], {
     cwd: REPO_ROOT,
     encoding: 'utf8',

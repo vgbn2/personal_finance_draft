@@ -278,7 +278,7 @@ const _warnedIndicatorIds = new Set();
 
 let _cachedManifest = null;
 /**
- * Loads the indicator manifest from config/system/indicator_manifest.yaml.
+ * Loads the indicator manifest from configs/system/indicator_manifest.yaml.
  */
 function getIndicatorManifest() {
   if (_cachedManifest) return _cachedManifest;
@@ -287,7 +287,7 @@ function getIndicatorManifest() {
     const path = require('node:path');
     const { REPO_ROOT } = require('../runtime/paths');
     const { parseYamlRecursive } = require('../runtime/config_loader');
-    const manifestPath = path.join(REPO_ROOT, 'config', 'system', 'indicator_manifest.yaml');
+    const manifestPath = path.join(REPO_ROOT, 'configs', 'system', 'indicator_manifest.yaml');
     if (fs.existsSync(manifestPath)) {
       const lines = fs.readFileSync(manifestPath, 'utf8').split(/\r?\n/);
       const [config] = parseYamlRecursive(lines);

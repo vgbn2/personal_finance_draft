@@ -6,8 +6,8 @@ const {
 } = require('../../../../shared/lib/runtime/paths');
 const { calculateRollingFeatureFrame } = require('../../../../shared/lib/market/indicators');
 const { compareModels } = require('../../../../shared/lib/ml/models');
-const { parseScorecardOptions } = require('../../../cli/commands/research/scorecard');
-const { buildCachedCombinedResearch } = require('../../../cli/commands/research/combined');
+const { parseScorecardOptions } = require('../../../../frontend/cli-tui/commands/research/scorecard');
+const { buildCachedCombinedResearch } = require('../../../../frontend/cli-tui/commands/research/combined');
 const { buildRecordedAppleShadow, RECORDED_AAPL_FIXTURE_ID } = require('../../../../shared/lib/analysis/services/equity_3m_shadow');
 const { buildAllRecordedShadowCatalog, ALL_RECORDED_FIXTURE_ID, filterShadowCatalog } = require('../../../../shared/lib/analysis/services/shadow_catalog');
 const { isPathWithinAllowedRoots } = require('./input_validator');

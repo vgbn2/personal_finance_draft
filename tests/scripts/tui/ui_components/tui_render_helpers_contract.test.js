@@ -14,7 +14,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const A = require('../../../../shared/lib/ui/ansi');
-const RH = require('../../../../backend/cli/tui/engine/render_helpers');
+const RH = require('../../../../frontend/cli-tui/tui/engine/render_helpers');
 
 // Force 80-column terminal for all tests in this file.
 const origColumns = Object.getOwnPropertyDescriptor(process.stdout, 'columns');

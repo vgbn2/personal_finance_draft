@@ -157,9 +157,9 @@ test('projected gateway child cannot repopulate stripped secrets from an env fil
 
 test('every direct gateway spawn consumes the classified launch environment', () => {
   const callerPaths = [
-    'backend/cli/commands/operational/status.js',
-    'backend/cli/commands/trade/trade.js',
-    'backend/cli/commands/trade/trade_polymarket.js',
+    'frontend/cli-tui/commands/operational/status.js',
+    'frontend/cli-tui/commands/trade/trade.js',
+    'frontend/cli-tui/commands/trade/trade_polymarket.js',
   ];
   let launches = 0;
   for (const callerPath of callerPaths) {
@@ -173,7 +173,7 @@ test('every direct gateway spawn consumes the classified launch environment', ()
   assert.equal(launches, 0, 'direct gateway commands must use runGatewayCommand instead of raw spawnSync');
 
   const gatewaySource = fs.readFileSync(
-    path.resolve(__dirname, '..', '..', '..', 'backend/gateway/src/index.ts'),
+    path.resolve(__dirname, '..', '..', '..', 'backend/execution/src/index.ts'),
     'utf8',
   );
   assert.doesNotMatch(gatewaySource, /dotenv\/config/);
@@ -210,8 +210,8 @@ test('repeated poisoned-parent projections stay isolated across surfaces', () =>
   assert.deepEqual(parent, before);
 });
 
-test('stripFlagValue is the same canonical export used by backend/cli/lib/utils.js', () => {
-  const { stripFlagValue: utilsStripFlagValue } = require('../../../backend/cli/lib/utils.js');
+test('stripFlagValue is the same canonical export used by frontend/cli-tui/lib/utils.js', () => {
+  const { stripFlagValue: utilsStripFlagValue } = require('../../../frontend/cli-tui/lib/utils.js');
   assert.equal(utilsStripFlagValue, stripFlagValue, 'utils.js must re-export the shared/lib/runtime implementation, not a duplicate');
 });
 

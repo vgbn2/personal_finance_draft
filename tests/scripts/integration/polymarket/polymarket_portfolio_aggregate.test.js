@@ -14,7 +14,7 @@ require('ts-node').register({
   },
 });
 
-const { buildAggregatedPortfolioSnapshot } = require('../../../../backend/gateway/src/polymarket/index.ts');
+const { buildAggregatedPortfolioSnapshot } = require('../../../../backend/execution/src/polymarket/index.ts');
 
 test('aggregate portfolio synthetic fixture includes Polymarket pUSD in totals and sidecar output', () => {
   const snapshot = buildAggregatedPortfolioSnapshot(

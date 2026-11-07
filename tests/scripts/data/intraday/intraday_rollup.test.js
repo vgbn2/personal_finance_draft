@@ -9,7 +9,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { commandIntradayRollup, listDeepFiveMinSymbols, rollupFromBase, rollupTargetsAboveBase } = require('../../../../backend/cli/commands/data/data.js');
+const { commandIntradayRollup, listDeepFiveMinSymbols, rollupFromBase, rollupTargetsAboveBase } = require('../../../../frontend/cli-tui/commands/data/data.js');
 const { writeTsIndex, readTsIndex } = require('../../../../shared/lib/market/validation.js');
 
 // Build a deterministic deep 5m fixture: 24 bars from 14:00Z stepping 5 min

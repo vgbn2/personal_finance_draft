@@ -5,18 +5,18 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
+const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'frontend', 'cli-tui', 'sovereign_cli.js');
 const { mergeSnapshots, validateSnapshot } = require('../../../../shared/lib/market/validation');
 const { classifySupabaseError } = require('../../../../shared/lib/supabase/errors');
-const { commandLogin } = require('../../../../backend/cli/commands/account/auth');
-const auth = require('../../../../backend/cli/lib/auth');
+const { commandLogin } = require('../../../../frontend/cli-tui/commands/account/auth');
+const auth = require('../../../../frontend/cli-tui/lib/auth');
 const {
   cryptoLimitForWindow,
   filterCandlesByWindow,
   historicalWindowFromArgs,
   buildTradeGatewayLaunch,
   currentPhaseLabel,
-} = require('../../../../backend/cli/sovereign_cli');
+} = require('../../../../frontend/cli-tui/sovereign_cli');
 const {
   buildPolymarketActionChoices,
   buildPolymarketCategoryChoices,
@@ -29,7 +29,7 @@ const {
   resolveOutcomeToken,
   renderPolymarketMarketDetails,
   renderPolymarketOrderbookDetails,
-} = require('../../../../backend/cli/commands/trade/trade');
+} = require('../../../../frontend/cli-tui/commands/trade/trade');
 const {
   fetchGoogleCustomSearchInterest,
   fetchPredictionInterestSignal,
@@ -405,9 +405,9 @@ test('trade gateway launch uses an available TypeScript runtime', () => {
     `Unexpected trade launcher: ${launch.command}`
   );
   assert.ok(
-    launch.args.some((value) => /backend[\\/]gateway[\\/]src[\\/]index\.ts/.test(value)) ||
-    launch.args.some((value) => /backend[\\/]gateway[\\/]dist[\\/]index\.js/.test(value)) ||
-    launch.args.some((value) => /backend[\\/]cli[\\/]lib[\\/]run_trade_gateway\.js/.test(value))
+    launch.args.some((value) => /backend[\\/](?:gateway|execution)[\\/]src[\\/]index\.ts/.test(value)) ||
+    launch.args.some((value) => /backend[\\/](?:gateway|execution)[\\/]dist[\\/]index\.js/.test(value)) ||
+    launch.args.some((value) => /(?:backend[\\/]cli|frontend[\\/]cli-tui)[\\/]lib[\\/]run_trade_gateway\.js/.test(value))
   );
   assert.ok(launch.args.some((value) => /balance/.test(String(value))));
 });
@@ -672,7 +672,7 @@ test('optimize fails fast when the current slice has no usable features', () => 
     CLI_PATH,
     'optimize',
     '--strategy',
-    'config/strategies/defensive_rotation.yaml',
+    'configs/strategies/defensive_rotation.yaml',
     '--input',
     input,
     '--json',
@@ -687,7 +687,7 @@ test('optimize fails fast when the current slice has no usable features', () => 
 });
 
 test('strategy command creates a validated yaml plan file', () => {
-  const registryPath = path.resolve(__dirname, '..', '..', '..', '..', 'config', 'trading', 'strategies.yaml');
+  const registryPath = path.resolve(__dirname, '..', '..', '..', '..', 'configs', 'trading', 'strategies.yaml');
   const registryBackup = fs.readFileSync(registryPath, 'utf8');
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'strategy-config-'));
   const target = path.join(tempDir, 'my_strategy.yaml');

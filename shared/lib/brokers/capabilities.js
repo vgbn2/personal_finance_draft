@@ -3,7 +3,7 @@ const path = require('node:path');
 const { REPO_ROOT } = require('../runtime/paths');
 const { resolveRuntimePolicy, runtimeProfile } = require('../settings/runtime_policy');
 
-const CAPABILITIES_PATH = path.join(REPO_ROOT, 'config', 'system', 'broker_capabilities.json');
+const CAPABILITIES_PATH = path.join(REPO_ROOT, 'configs', 'system', 'broker_capabilities.json');
 
 function loadBrokerCapabilities() {
   if (!fs.existsSync(CAPABILITIES_PATH)) return {};

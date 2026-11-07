@@ -18,7 +18,7 @@ require('ts-node').register({
   },
 });
 
-const CYCLE_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'gateway', 'src', 'cycle.ts');
+const CYCLE_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'execution', 'src', 'cycle.ts');
 const {
   botMarketAssetIds,
   determinePositionExitReason,
@@ -27,7 +27,7 @@ const {
   submitRiskApprovedFokOrder,
 } = require(CYCLE_PATH);
 const { buildBotCommandOptions } = require(
-  path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'gateway', 'src', 'index.ts'),
+  path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'execution', 'src', 'index.ts'),
 );
 
 function intent() {

@@ -3,7 +3,7 @@
 [![CI Verification](https://img.shields.io/badge/CI-Passing-brightgreen?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![Documentation Health](https://img.shields.io/badge/docs-100%25_clean-brightgreen?style=flat-square&logo=gitbook&logoColor=white)](docs/README.md)
 [![Runtime Node](https://img.shields.io/badge/node.js-%3E%3D20.0.0-339933?style=flat-square&logo=node.js&logoColor=white)](package.json)
-[![Core C++](https://img.shields.io/badge/C%2B%2B-20-00599C?style=flat-square&logo=cplusplus&logoColor=white)](backend/core/)
+[![Core C++](https://img.shields.io/badge/C%2B%2B-20-00599C?style=flat-square&logo=cplusplus&logoColor=white)](backend/cpp_core/)
 [![Frontend UI](https://img.shields.io/badge/frontend-React_19_+_Vite-61DAFB?style=flat-square&logo=react&logoColor=black)](frontend/dashboard/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
 [![Zero Keys Required](https://img.shields.io/badge/auth-100%25_zero--key_offline-blueviolet?style=flat-square)](docs/how_to/zero_key_development_guide.md)
@@ -22,14 +22,14 @@ The platform enforces a strict separation of concerns across compiled systems co
 | **High-Throughput Analytics & Risk** | **C++20** (CMake 3.20+, GCC 13+ / Clang 17+) | • Packed 48-byte IEEE-754 binary timeseries merger (`BinaryTsMerger`)<br>• $O(1)$ memory streaming candle ingestion ($<5\text{ MB}$ RSS)<br>• Monte Carlo bootstrap resampling ($N=10,000$ iterations)<br>• Pre-trade risk validation gates and CTest test suite | Sub-millisecond execution ($<15\,\mu\text{s}$ per risk check), zero heap churn during streaming |
 | **Control Plane & Broker Gateways** | **Node.js v20+** (ESM / CommonJS) | • Asynchronous market streaming router and multi-grain bar synthesizer<br>• Capability-gated HTTP API (Port 8787) with localhost auto-trust<br>• Double-entry virtual paper ledger with SHA-256 state chain<br>• Gated broker adapters: Alpaca, Polymarket CLOB, Gate.io, Deribit | Asynchronous non-blocking event loop, bounded 500-line scrollback buffers |
 | **Forex / CFD Trade Bridge** | **TypeScript / MQL5** (MT5 TCP Bridge) | • Local TCP NDJSON streaming bridge (`127.0.0.1:8282`)<br>• AES-256-GCM encrypted credential vault with ephemeral login configs<br>• 64-bit `MagicCodec` bitmask strategy attribution (`ORDER_MAGIC`) | Sub-millisecond IPC loopback transport, fail-closed order rejection handling |
-| **Terminal Operations Cockpit** | **React Ink** (Node.js TUI) | • Keyboard-driven interactive operations console (`sovereign_cli.js`)<br>• Real-time market monitoring grid across 4 asset families<br>• Live command execution with background process preemption | Low-overhead ANSI rendering, zero terminal flicker via differential diffing |
+| **Terminal Operations Cockpit** | **Node.js CLI/TUI** | • Keyboard-driven interactive operations console (`sovereign_cli.js`)<br>• Real-time market monitoring grid across 4 asset families<br>• Live command execution with background process preemption | Low-overhead ANSI rendering, zero terminal flicker via differential diffing |
 | **Institutional Dashboard** | **React 19 + Vite + TypeScript** | • Modularized quote health telemetry and latency tracking<br>• Lightweight-charts financial candlestick and depth visualization<br>• Zero-config loopback authentication (`local-operator` mode) | Pure client-side SPA, zero heavy component libraries, sub-second HMR |
 
 ---
 
 ## Live Terminal Cockpit Telemetry
 
-Executing `node backend/cli/sovereign_cli.js status` produces instantaneous institutional telemetry across all integrated subsystems:
+Run `node frontend/cli-tui/sovereign_cli.js status` to inspect telemetry. The following is an existing sample, not current runtime proof; this path synchronization does not verify runtime behavior or the metrics below:
 
 ```text
 === SYSTEM STATUS & HEALTH ===
@@ -83,10 +83,10 @@ flowchart TD
     INGEST --> TS
 
     subgraph CoreTiers["Processing & Presentation Tiers"]
-        CLI["CLI / Ink TUI<br/>backend/cli/"]
+        CLI["CLI / TUI<br/>frontend/cli-tui/"]
         API["Native Node.js HTTP API<br/>backend/api/ (Port 8787)<br/>Capability-Gated RBAC"]
         DASH["React 19 Dashboard<br/>frontend/dashboard/<br/>Vite + Charts UI"]
-        CPP["C++20 Analytics & Core<br/>- Fast Backtesting<br/>- Risk Validation (35 CTests)<br/>backend/core/"]
+        CPP["C++20 Analytics & Core<br/>- Fast Backtesting<br/>- Risk Validation (35 CTests)<br/>backend/cpp_core/"]
         STRAT["Strategy Engine<br/>- Indicators & Features<br/>- Regime Detection"]
     end
 
@@ -101,7 +101,7 @@ flowchart TD
     CPP --> POLICY
     STRAT --> POLICY
 
-    PAPER["Simulated Virtual Ledger<br/>- Checksum-chained paper ledger<br/>- 100% Zero-Key, simulated cash<br/>backend/gateway/src/paper_ledger.js"]
+    PAPER["Simulated Virtual Ledger<br/>- Checksum-chained paper ledger<br/>- 100% Zero-Key, simulated cash<br/>backend/execution/src/paper_ledger.js"]
     GATEWAY["Gated Production Gateway<br/>- Alpaca, Gate.io, Polymarket, MetaTrader 5<br/>- Isolated VM (hpdesk-1)<br/>- Hardware PIN & Token Auth"]
 
     POLICY --> PAPER
@@ -162,7 +162,7 @@ cp .env.example .env
 # 3. Install packages across workspaces
 npm install
 npm install --prefix backend/api
-npm install --prefix backend/gateway
+npm install --prefix backend/execution
 npm install --prefix backend/mcp_server
 npm install --prefix frontend/dashboard
 
@@ -193,7 +193,7 @@ git diff -- '**/package.json' package-lock.json
 
 `svconsole-update` preserves project/user/global `.npmrc` install-script policy and stops at the first failed stage; it does not roll back dependency changes already made. Run it through `npm run` as shown above.
 
-`npm update` does not upgrade CMake, the C++ compiler or system libraries; manage those through your operating system's package manager. The native core uses C++20 and optional system OpenMP. External ONNX Runtime is disabled by the default native build; its opt-in version is pinned in `backend/core/CMakeLists.txt` and requires a reviewed source change to upgrade. `npm run test:core` rebuilds the current C++ source—it does not fetch newer source or upgrade dependencies. Major npm upgrades and `npm audit fix --force` require separate compatibility review.
+`npm update` does not upgrade CMake, the C++ compiler or system libraries; manage those through your operating system's package manager. The native core uses C++20 and optional system OpenMP. External ONNX Runtime is disabled by the default native build; its opt-in version is pinned in `backend/cpp_core/CMakeLists.txt` and requires a reviewed source change to upgrade. `npm run test:core` rebuilds the current C++ source—it does not fetch newer source or upgrade dependencies. Major npm upgrades and `npm audit fix --force` require separate compatibility review.
 
 ### MetaTrader 5 (MT5) Setup (Optional for Forex/CFD Execution)
 
@@ -219,28 +219,28 @@ docker compose up -d sv-mt5
 3. **Configure & Verify Account**:
    ```bash
    # Add encrypted account credentials to vault (AES-256-GCM)
-   node backend/cli/sovereign_cli.js mt5 profile add --slot test
+   node frontend/cli-tui/sovereign_cli.js mt5 profile add --slot test
 
    # Run doctor diagnostics to verify terminal binary, bridge EA, and credentials
-   node backend/cli/sovereign_cli.js mt5 doctor --slot test
+   node frontend/cli-tui/sovereign_cli.js mt5 doctor --slot test
 
    # Launch terminal with ephemeral auto-login config
-   node backend/cli/sovereign_cli.js mt5 connect --slot test
+   node frontend/cli-tui/sovereign_cli.js mt5 connect --slot test
    ```
 
 For detailed protocol specifications, fail-closed risk checks, and Wine troubleshooting, see [MT5 Trade Bridge Guide](docs/how_to/mt5_trade_bridge.md).
 
 ---
 
-## 3. Sovereign Ink TUI & CLI Navigation Guide
+## 3. Sovereign TUI & CLI Navigation Guide
 
-Sovereign features an asynchronous terminal cockpit powered by React Ink (`backend/cli/sovereign_cli.js`) alongside a headless CLI interface.
+Sovereign provides a terminal cockpit and headless CLI interface through `frontend/cli-tui/sovereign_cli.js`.
 
-### Interactive Terminal Cockpit (Ink TUI)
+### Interactive Terminal Cockpit (TUI)
 
 Launch the interactive graphical terminal interface:
 ```bash
-node backend/cli/sovereign_cli.js
+node frontend/cli-tui/sovereign_cli.js
 ```
 
 | Pane / Section | Displayed Components | Navigation Controls |
@@ -266,7 +266,7 @@ node backend/cli/sovereign_cli.js
 Every TUI capability can be invoked headlessly in CI/CD pipelines, background scripts, or cron daemons:
 
 ```bash
-# Pattern: node backend/cli/sovereign_cli.js <command> [subcommand] [flags]
+# Pattern: node frontend/cli-tui/sovereign_cli.js <command> [subcommand] [flags]
 ```
 
 | Category | Command | Primary Flags | Purpose & Subsystem |
@@ -308,14 +308,14 @@ Every TUI capability can be invoked headlessly in CI/CD pipelines, background sc
 
 | Feature Subsystem | Key Capabilities & Architecture | Primary Files & Owners | Load Index | Spec & Architecture Ref |
 |---|---|---|:---:|---|
-| **Binary Timeseries Engine** | • Packed 48-byte IEEE-754 binary records (`SOVT` format)<br>• $O(A+B)$ streaming two-pointer merger with $<5\text{MB}$ RSS<br>• Zero-allocation in-memory circular ring buffers<br>• Multi-resolution rollup synthesizer (`1m` $\to$ `5m`, `15m`, `1h`, `1d`) | `backend/core/src/ts_merger.cpp`<br>`shared/lib/market/validation.js`<br>`storage/data/ts/*.bin` | **2/10** | [02. Data Pipeline & Storage](docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md) |
-| **Native Backtester & Monte Carlo** | • `FrameBacktester` dual execution: Binary Bars & Feature Frames<br>• Realistic execution slippage drag ($P_{\text{entry}} = P_{\text{close}} \cdot (1 + \text{cost\_bps}/10000)$)<br>• PRNG bootstrap resampling ($N=10,000$ iterations) for Sharpe, Sortino, VaR<br>• 35/35 native C++ CTest test suite | `backend/core/src/backtest/`<br>`backend/core/src/monte_carlo/`<br>`backend/core/build/sovereign_wealth` | **8/10** | [03. Native Core & Backtester](docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md) |
-| **Autonomous Alpha & ML Workbench** | • Autonomous parameter space explorer over 6D hypercube $[0, 1]^6$<br>• Normalized Manhattan novelty filter ($D_H \ge 0.50$) & SHA-256 fingerprinting<br>• Rolling feature matrix synthesis with SVM decision boundaries<br>• Model Context Protocol (MCP) JSON-RPC tool interface for Claude / LLMs | `scripts/strategies/auto_strategy_explorer.js`<br>`backend/mcp_server/index.ts`<br>`config/strategies/automated/` | **5/10** | [04. Quantitative Alpha & ML](docs/engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md) |
-| **Sub-Positions Virtual Ledger** | • Multi-strategy virtual accounting ledger on shared symbols<br>• Deterministic client order signatures (`strat_<id>_<tf>_<ts>_<hex>` / `manual_cli_...`)<br>• Physical-to-virtual broker reconciliation: $Q_{\text{Broker}} = \sum q_k + q_{\text{[MANUAL]}}$<br>• Microsecond ($<15\mu\text{s}$) pre-trade risk circuit breaker & step sizing clamp | `shared/lib/runtime/sub_positions.js`<br>`backend/gateway/src/alpaca.js`<br>`backend/core/src/risk/` | **2/10** | [05. Execution & Risk](docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md) |
-| **Prediction Markets & CLOB Archive** | • Dual-stream Polymarket Gamma REST & CLOB WebSocket feeds<br>• Sub-second Level 2 orderbook snapshot JSONL archiving<br>• Double-entry virtual paper ledger with rolling SHA-256 state digest verification<br>• Binary outcome oracle settlement and Kelly criterion staking math | `shared/lib/market/polymarket_history.js`<br>`backend/gateway/src/paper_ledger.js`<br>`storage/data/archive/polymarket/` | **3/10** | [06. Prediction Markets](docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md) |
+| **Binary Timeseries Engine** | • Packed 48-byte IEEE-754 binary records (`SOVT` format)<br>• $O(A+B)$ streaming two-pointer merger with $<5\text{MB}$ RSS<br>• Zero-allocation in-memory circular ring buffers<br>• Multi-resolution rollup synthesizer (`1m` $\to$ `5m`, `15m`, `1h`, `1d`) | `backend/cpp_core/src/data/binary_ts_merger.cpp`<br>`shared/lib/market/validation.js`<br>`storage/data/ts/*.bin` | **2/10** | [02. Data Pipeline & Storage](docs/engineering/architecture/02_DATA_PIPELINE_AND_STORAGE.md) |
+| **Native Backtester & Monte Carlo** | • `FrameBacktester` dual execution: Binary Bars & Feature Frames<br>• Realistic execution slippage drag ($P_{\text{entry}} = P_{\text{close}} \cdot (1 + \text{cost\_bps}/10000)$)<br>• PRNG bootstrap resampling ($N=10,000$ iterations) for Sharpe, Sortino, VaR<br>• 35/35 native C++ CTest test suite | `backend/cpp_core/src/backtest/`<br>`build/core/sovereign_wealth` | **8/10** | [03. Native Core & Backtester](docs/engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md) |
+| **Autonomous Alpha & ML Workbench** | • Autonomous parameter space explorer over 6D hypercube $[0, 1]^6$<br>• Normalized Manhattan novelty filter ($D_H \ge 0.50$) & SHA-256 fingerprinting<br>• Rolling feature matrix synthesis with SVM decision boundaries<br>• Model Context Protocol (MCP) JSON-RPC tool interface for Claude / LLMs | `tools/strategies/auto_strategy_explorer.js`<br>`backend/mcp_server/index.ts`<br>`configs/strategies/automated/` | **5/10** | [04. Quantitative Alpha & ML](docs/engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md) |
+| **Sub-Positions Virtual Ledger** | • Multi-strategy virtual accounting ledger on shared symbols<br>• Deterministic client order signatures (`strat_<id>_<tf>_<ts>_<hex>` / `manual_cli_...`)<br>• Physical-to-virtual broker reconciliation: $Q_{\text{Broker}} = \sum q_k + q_{\text{[MANUAL]}}$<br>• Microsecond ($<15\mu\text{s}$) pre-trade risk circuit breaker & step sizing clamp | `shared/lib/runtime/sub_positions.js`<br>`backend/execution/src/adapters/alpaca_adapter.ts`<br>`backend/cpp_core/src/risk/` | **2/10** | [05. Execution & Risk](docs/engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md) |
+| **Prediction Markets & CLOB Archive** | • Dual-stream Polymarket Gamma REST & CLOB WebSocket feeds<br>• Sub-second Level 2 orderbook snapshot JSONL archiving<br>• Double-entry virtual paper ledger with rolling SHA-256 state digest verification<br>• Binary outcome oracle settlement and Kelly criterion staking math | `shared/lib/market/polymarket_history.js`<br>`backend/execution/src/paper_ledger.js`<br>`storage/data/archive/polymarket/` | **3/10** | [06. Prediction Markets](docs/engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md) |
 | **Zero-Trust Security & Deployment** | • Scoped RBAC capability model (`research:read`, `research:run`, `execution:paper`)<br>• 4-tier automated test execution DAG (`safety` $\to$ `structure` $\to$ `core` $\to$ `data`)<br>• Multi-container Docker Compose mesh with strict CPU/RAM quotas<br>• HPDesk Proxmox VM deployment topologies and Tailscale networking | `backend/mcp_server/lib/access_control.ts`<br>`infra/docker/docker-compose.yml`<br>`backend/api/server.js` | **2/10** | [07. Security & Deployment](docs/engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md) |
 | **Financial Engineering Primer** | • Distributed systems mental models for quantitative finance<br>• Limit order book (LOB) bid-ask queue depth and market order slippage traces<br>• Candlestick OHLCV anatomy and logarithmic vs arithmetic returns<br>• Portfolio math: Sharpe, Sortino, Calmar, Max Drawdown, and VaR equations | `docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md` | **1/10** | [08. Financial Primer](docs/engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md) |
-| **MetaTrader 5 Bridge & Trade Tree** | • Local TCP NDJSON streaming bridge (`127.0.0.1:8282`) to MQL5 EA<br>• AES-256-GCM profile vault (`storage/secrets/mt5/`) with ephemeral launch config<br>• 64-bit `MagicCodec` bitmask attribution (`ORDER_MAGIC`) without EA changes<br>• Multi-environment Wine / Windows / Docker (`sv-mt5`) headless execution | `backend/gateway/src/adapters/mt5_adapter.ts`<br>`tools/mt5/SovereignTradeBridge.mq5`<br>`shared/lib/profiles/mt5_profiles.js` | **3/10** | [Broker Gateway Setup](docs/how_to/broker_gateway_setup.md) |
+| **MetaTrader 5 Bridge & Trade Tree** | • Local TCP NDJSON streaming bridge (`127.0.0.1:8282`) to MQL5 EA<br>• AES-256-GCM profile vault (`storage/secrets/mt5/`) with ephemeral launch config<br>• 64-bit `MagicCodec` bitmask attribution (`ORDER_MAGIC`) without EA changes<br>• Multi-environment Wine / Windows / Docker (`sv-mt5`) headless execution | `backend/execution/src/adapters/mt5_adapter.ts`<br>`tools/mt5/SovereignTradeBridge.mq5`<br>`shared/lib/profiles/mt5_profiles.js` | **3/10** | [Broker Gateway Setup](docs/how_to/broker_gateway_setup.md) |
 
 ---
 
@@ -335,14 +335,14 @@ Every TUI capability can be invoked headlessly in CI/CD pipelines, background sc
 Execute local historical backtests with regime detection and feature extraction:
 ```bash
 # Run strategy backtesting CLI
-node backend/cli/sovereign_cli.js backtest --symbol BTC/USDT --timeframe 1h
+node frontend/cli-tui/sovereign_cli.js backtest --symbol BTC/USDT --timeframe 1h
 
 # Run feature generator and data flow verification
 npm run test:data
 ```
 
 ### B. Launch the Web Dashboard & Private API
-Start the Express backend bridge and the React 19 + Vite dashboard:
+Start the HTTP backend bridge and the React 19 + Vite dashboard:
 ```bash
 # Terminal 1: Start backend API bridge
 npm run api:dev
@@ -352,20 +352,20 @@ npm run dashboard:dev
 ```
 Open **`http://localhost:3000`** in your browser.
 
-### C. Launch the Interactive Terminal Cockpit (Ink TUI)
+### C. Launch the Interactive Terminal Cockpit (TUI)
 ```bash
 # Launch interactive TUI
-node backend/cli/sovereign_cli.js
+node frontend/cli-tui/sovereign_cli.js
 
 # Or inspect status directly
-node backend/cli/sovereign_cli.js status --json
-node backend/cli/sovereign_cli.js market monitor --limit 20 --json
+node frontend/cli-tui/sovereign_cli.js status --json
+node frontend/cli-tui/sovereign_cli.js market monitor --limit 20 --json
 ```
 
 ### D. Trade on the Simulated Paper Ledger
 Simulate prediction market orders and paper strategies without Polygon wallet credentials or real capital:
 ```bash
-node backend/cli/sovereign_cli.js paper --strategy polymarket_sample
+node frontend/cli-tui/sovereign_cli.js paper --strategy polymarket_sample
 ```
 
 ### E. Develop & Benchmark the Native C++20 Core
@@ -382,10 +382,10 @@ npm run test:core
 Explore novel strategy parameter spaces and generate validated strategy YAML definitions:
 ```bash
 # Single exploratory cycle
-node scripts/strategies/auto_strategy_explorer.js --once
+node tools/strategies/auto_strategy_explorer.js --once
 
 # Or via CLI
-node backend/cli/sovereign_cli.js strategy explore --once
+node frontend/cli-tui/sovereign_cli.js strategy explore --once
 ```
 
 ### G. Docker Quickstart (Zero Local Tooling)
@@ -400,16 +400,16 @@ docker compose -f infra/docker/docker-compose.yml up -d --build
 
 | Path | Purpose & Ownership |
 |---|---|
-| `backend/core/` | C++20 analytics engine, risk checks, binary TS merger, CTest suite. |
-| `backend/cli/` | Sovereign CLI entrypoints, Ink TUI, and command handlers. |
+| `backend/cpp_core/` | C++20 analytics engine, risk checks, binary TS merger, CTest suite. |
+| `frontend/cli-tui/` | Sovereign CLI entrypoints, TUI, and command handlers. |
 | `backend/api/` | Private Express API, route access control, and web dashboard bridge. |
-| `backend/gateway/` | Broker gateways (Alpaca, Polymarket, Gate.io) & checksummed paper ledger. |
+| `backend/execution/` | Broker gateways (Alpaca, Polymarket, Gate.io) & checksummed paper ledger. |
 | `backend/mcp_server/`| Model Context Protocol (MCP) server exposing tools to Claude and AI agents. |
 | `shared/lib/` | Shared domain logic: market storage, indicators, strategy runtime, risk models. |
 | `frontend/dashboard/` | React 19 + Vite dashboard (source in `src/`, `dist/` is generated). |
-| `config/` | System environment manifest, asset mappings, risk policies, and categorized strategy registry (`curated/`, `automated/`, `fixtures/`). |
+| `configs/` | System environment manifest, asset mappings, risk policies, and categorized strategy registry (`curated/`, `automated/`, `fixtures/`). |
 | `storage/data/` | Runtime disk storage: binary TS indices (`ts/`), JSON caches (`cache/`), paper trading state. |
-| `scripts/` | Domain-organized utilities: `mcp/`, `ml/training/`, `tools/`, and `dev/`. |
+| `tools/` | Domain-organized operator/developer utilities, including `mcp/`, `ml/`, `dev/`, and existing `mt5/` tooling; distinct from `backend/scripts/` and `tests/scripts/`. |
 | `tests/` | Node.js integration, architecture contract, and safety test suites. |
 | `docs/` | Canonical documentation hub (`docs/README.md`), 8-section architecture suite (`docs/engineering/architecture/`), specs, standards, and operational runbooks. |
 | `workspace/` | Active project state (`STATE.md`), handoffs (`handoff/`), prompt logs, memory, governance (`governance/`), and protocols (`protocols/`). |

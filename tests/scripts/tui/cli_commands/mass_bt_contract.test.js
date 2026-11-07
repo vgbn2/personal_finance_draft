@@ -5,9 +5,9 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
-const { renderMassBtMatrix } = require('../../../../backend/cli/commands/research/research_mass_bt.js');
-const manifest = require('../../../../backend/cli/tui/manifest.js');
+const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'frontend', 'cli-tui', 'sovereign_cli.js');
+const { renderMassBtMatrix } = require('../../../../frontend/cli-tui/commands/research/research_mass_bt.js');
+const manifest = require('../../../../frontend/cli-tui/tui/manifest.js');
 
 test('mass-bt CLI command executes and outputs structured JSON payload in sample mode', () => {
   const result = spawnSync(process.execPath, [

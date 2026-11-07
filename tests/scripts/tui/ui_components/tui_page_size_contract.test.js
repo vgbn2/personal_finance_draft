@@ -10,7 +10,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { _test } = require('../../../../backend/cli/tui/engine');
+const { _test } = require('../../../../frontend/cli-tui/tui/engine');
 const { layoutConfig } = require('../../../../shared/lib/settings/runtime');
 
 const { derivePageSize } = _test;

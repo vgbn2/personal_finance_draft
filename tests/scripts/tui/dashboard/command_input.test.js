@@ -6,7 +6,7 @@ const { setTimeout: delay } = require('node:timers/promises');
 const { makeFakeStdin, makeFakeStdout, keys, send } = require('./_harness');
 
 test('command input editing supports mid-line arrows, Backspace, Delete, Home, and End', async () => {
-  const { editCommandValue } = await import('../../../../backend/cli/tui/command_input.mjs');
+  const { editCommandValue } = await import('../../../../frontend/cli-tui/tui/command_input.mjs');
   let state = { value: 'statuus', cursorOffset: 7 };
   state = editCommandValue(state.value, state.cursorOffset, '', { leftArrow: true });
   state = editCommandValue(state.value, state.cursorOffset, '', { leftArrow: true });
@@ -23,7 +23,7 @@ test('command input editing supports mid-line arrows, Backspace, Delete, Home, a
 });
 
 test('command input window keeps graphemes intact and uses terminal-cell width', async () => {
-  const { commandInputWindow, displayWidth, splitGraphemes } = await import('../../../../backend/cli/tui/command_input.mjs');
+  const { commandInputWindow, displayWidth, splitGraphemes } = await import('../../../../frontend/cli-tui/tui/command_input.mjs');
   assert.equal(splitGraphemes('A🙂界').length, 3);
   assert.equal(displayWidth('A🙂界'), 5);
   const window = commandInputWindow('abcdef🙂界', 8, 6);
@@ -35,7 +35,7 @@ test('command input window keeps graphemes intact and uses terminal-cell width',
 test('dashboard command bar corrects a command mid-line and submits the corrected argv', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
   const calls = [];
@@ -53,7 +53,7 @@ test('dashboard command bar corrects a command mid-line and submits the correcte
 test('dashboard reacts to terminal height resize instead of retaining mount-time rows', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout({ columns: 120, rows: 30 });
   const instance = render(React.createElement(App, { onRun: () => {} }), {
@@ -71,7 +71,7 @@ test('dashboard reacts to terminal height resize instead of retaining mount-time
 });
 
 test('short viewports disable the slash suggestion expansion instead of clipping cursor math', async () => {
-  const { dashboardLayout, windowedRange } = require('../../../../backend/cli/tui/dashboard_layout.js');
+  const { dashboardLayout, windowedRange } = require('../../../../frontend/cli-tui/tui/dashboard_layout.js');
   assert.equal(dashboardLayout(80, 12).suggestionLimit, 0);
   assert.equal(dashboardLayout(120, 24).suggestionLimit, 2);
   assert.equal(dashboardLayout(160, 40).suggestionLimit, 6);
@@ -83,7 +83,7 @@ test('short viewports disable the slash suggestion expansion instead of clipping
 test('short wide viewports keep the selected category and command visible', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
-  const { App, M } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App, M } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   for (const catI of [0, Math.floor(M.length / 2), M.length - 1]) {
     const commands = M[catI].cmds;
@@ -107,8 +107,8 @@ test('short wide viewports keep the selected category and command visible', asyn
 test('dashboard stays within common terminal widths and keeps output discoverable', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
-  const { displayWidth } = await import('../../../../backend/cli/tui/command_input.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
+  const { displayWidth } = await import('../../../../frontend/cli-tui/tui/command_input.mjs');
 
   for (const viewport of [
     { columns: 80, rows: 20 },

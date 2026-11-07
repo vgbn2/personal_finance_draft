@@ -6,4 +6,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Sovereign Core Build Configuration
-add_subdirectory(backend/core)
+add_subdirectory(backend/cpp_core)

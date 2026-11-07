@@ -4,7 +4,7 @@ const path = require('node:path');
 const { modelCandidates } = require('../../../shared/lib/ml/models');
 
 const REPO_ROOT = path.resolve(__dirname, '../../..');
-const CPP_REGISTRY_PATH = path.join(REPO_ROOT, 'backend', 'core', 'src', 'ml', 'model_registry.cpp');
+const CPP_REGISTRY_PATH = path.join(REPO_ROOT, 'backend', 'cpp_core', 'src', 'machine_learning', 'model_registry.cpp');
 
 function parseCppModelRegistry(source = fs.readFileSync(CPP_REGISTRY_PATH, 'utf8')) {
   const candidates = [];

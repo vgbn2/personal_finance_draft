@@ -4,7 +4,7 @@ const test = require('node:test');
 const {
   normalizeProposedOrder,
   validateProposedOrdersPayload,
-} = require('../../../../backend/gateway/src/polymarket');
+} = require('../../../../backend/execution/src/polymarket');
 
 test('normalizeProposedOrder accepts a standard buy record', () => {
   const result = normalizeProposedOrder({

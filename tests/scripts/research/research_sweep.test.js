@@ -16,7 +16,7 @@ const {
   parseFiniteNumber,
   parsePositiveInteger,
   renderSweep,
-} = require('../../../backend/cli/commands/research/research_sweep.js');
+} = require('../../../frontend/cli-tui/commands/research/research_sweep.js');
 const { buildResearchDatasetCatalog } = require('../../../shared/lib/market/research_dataset_catalog.js');
 const { selectInternalEvaluators } = require('../../../shared/lib/strategy/sweep_contracts.js');
 const { findBackendBinary, REPO_ROOT } = require('../../../shared/lib/runtime/paths.js');
@@ -82,7 +82,7 @@ test('sweep option parsing rejects malformed numbers instead of using defaults',
 test('real configured strategy registry is fully classified as unsupported by proxies', () => {
   const strategies = inspectConfiguredStrategies();
   assert.equal(strategies.length, 26);
-  assert.equal(strategies.every((strategy) => strategy.path.startsWith('config/strategies/')), true);
+  assert.equal(strategies.every((strategy) => strategy.path.startsWith('configs/strategies/')), true);
   assert.equal(strategies.some((strategy) => strategy.lane === 'cross_asset'), true);
   assert.equal(strategies.some((strategy) => strategy.kind === 'ml'), true);
 });

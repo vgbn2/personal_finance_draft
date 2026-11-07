@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { _test, renderCorrelationHeatmap } = require('../../../../backend/cli/tui/engine');
-const { defaultCorrelationMethod, resolveCorrelationMethod } = require('../../../../backend/cli/commands/tools/backend.js');
+const { _test, renderCorrelationHeatmap } = require('../../../../frontend/cli-tui/tui/engine');
+const { defaultCorrelationMethod, resolveCorrelationMethod } = require('../../../../frontend/cli-tui/commands/tools/backend.js');
 
 const ESC = String.fromCharCode(27);
 const ANSI_RE = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');

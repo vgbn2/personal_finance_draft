@@ -32,16 +32,16 @@ RUN npm ci --ignore-scripts
 COPY backend/api/package*.json ./backend/api/
 RUN cd backend/api && npm ci --ignore-scripts --omit=dev
 
-COPY backend/gateway/package*.json ./backend/gateway/
-RUN cd backend/gateway && npm ci --ignore-scripts --omit=dev
+COPY backend/execution/package*.json ./backend/execution/
+RUN cd backend/execution && npm ci --ignore-scripts --omit=dev
 
 COPY . .
 COPY --from=frontend-builder /src/build/dashboard ./build/dashboard
 
-RUN cmake -S backend/core -B backend/core/build \
+RUN cmake -S backend/cpp_core -B backend/cpp_core/build \
       -DCMAKE_BUILD_TYPE=Release \
       -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON \
-    && cmake --build backend/core/build --parallel --target sovereign_wealth
+    && cmake --build backend/cpp_core/build --parallel --target sovereign_wealth
 
 # --- STAGE 2: Unified Runtime with Headless Wine 9 & Node 22 LTS ---
 FROM ubuntu:22.04 AS runtime
@@ -64,7 +64,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     NODE_ENV=production \
     SOVEREIGN_WEB_HOST=0.0.0.0 \
     SOVEREIGN_WEB_PORT=8787 \
-    SOVEREIGN_BACKEND_BIN=/app/backend/core/build/sovereign_wealth
+    SOVEREIGN_BACKEND_BIN=/app/backend/cpp_core/build/sovereign_wealth
 
 # Install Wine Staging, Xvfb, and Node.js 22 LTS
 RUN dpkg --add-architecture i386 && \
@@ -105,15 +105,15 @@ WORKDIR /app
 COPY --from=build --chown=sovereign:sovereign /app/package.json /app/package-lock.json ./
 COPY --from=build --chown=sovereign:sovereign /app/node_modules ./node_modules
 COPY --from=build --chown=sovereign:sovereign /app/backend/api ./backend/api
-COPY --from=build --chown=sovereign:sovereign /app/backend/cli ./backend/cli
-COPY --from=build --chown=sovereign:sovereign /app/backend/gateway ./backend/gateway
+COPY --from=build --chown=sovereign:sovereign /app/frontend/cli-tui ./frontend/cli-tui
+COPY --from=build --chown=sovereign:sovereign /app/backend/execution ./backend/execution
 COPY --from=build --chown=sovereign:sovereign /app/backend/mcp_server ./backend/mcp_server
 COPY --from=build --chown=sovereign:sovereign /app/backend/scripts ./backend/scripts
-COPY --from=build --chown=sovereign:sovereign /app/backend/core/build ./backend/core/build
+COPY --from=build --chown=sovereign:sovereign /app/backend/cpp_core/build ./backend/cpp_core/build
 COPY --from=build --chown=sovereign:sovereign /app/build/dashboard ./build/dashboard
 COPY --from=build --chown=sovereign:sovereign /app/shared ./shared
-COPY --from=build --chown=sovereign:sovereign /app/config ./config
-COPY --from=build --chown=sovereign:sovereign /app/scripts ./scripts
+COPY --from=build --chown=sovereign:sovereign /app/configs ./configs
+COPY --from=build --chown=sovereign:sovereign /app/tools ./tools
 COPY --from=build --chown=sovereign:sovereign /app/tools/mt5 /opt/mt5/terminal/MQL5/Experts
 COPY --chown=sovereign:sovereign infra/docker/entrypoint.allinone.sh /app/entrypoint.sh
 

@@ -1,6 +1,6 @@
 'use strict';
 
-// Contract tests for backend/cli/tui/progress.js  (W5 — Progress bar)
+// Contract tests for frontend/cli-tui/tui/progress.js  (W5 — Progress bar)
 //
 // Conventions mirror tui_search_contract.test.js:
 //   node:test  +  node:assert/strict
@@ -11,7 +11,7 @@
 const test   = require('node:test');
 const assert = require('node:assert/strict');
 
-const { createProgress } = require('../../../../backend/cli/tui/progress');
+const { createProgress } = require('../../../../frontend/cli-tui/tui/progress');
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 

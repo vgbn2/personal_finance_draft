@@ -12,10 +12,10 @@ const {
 const {
   runOptionsBotCycle,
   commandOptionsBotRunner,
-} = require('../../../../backend/cli/commands/strategy/options_bot_runner.js');
+} = require('../../../../frontend/cli-tui/commands/strategies/options_bot_runner.js');
 const {
   DeribitAdapter,
-} = require('../../../../backend/gateway/dist/adapters/deribit_adapter.js');
+} = require('../../../../backend/execution/dist/adapters/deribit_adapter.js');
 
 test('calculateWhalleyWilmottBand returns zero band on zero or uninitialized gamma', () => {
   const zeroBand = calculateWhalleyWilmottBand(0, 60000);

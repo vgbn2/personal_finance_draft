@@ -44,7 +44,7 @@ test('chat: deterministic phrase runs immediately, no LLM call needed', async (t
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -71,7 +71,7 @@ test('chat: typing a word containing "q" does not quit the dashboard', async (t)
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -90,7 +90,7 @@ test('chat: LLM fallback shows a mandatory confirm gate; nothing runs until conf
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -126,7 +126,7 @@ test('chat: Escape cancels a pending LLM confirm without running anything', asyn
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -153,7 +153,7 @@ test('chat: LLM unavailable degrades to a safe message, never hangs or runs anyt
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -182,7 +182,7 @@ test('chat: a --live command resolved via chat still triggers the PIN gate', asy
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -222,7 +222,7 @@ test('chat: Tab moves keyboard focus between the chat bar and the grid; the stat
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();

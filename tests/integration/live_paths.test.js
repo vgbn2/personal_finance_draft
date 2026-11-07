@@ -19,7 +19,7 @@ const path = require('node:path');
 
 const LIVE = process.env.SOVEREIGN_LIVE_TEST === '1';
 const REPO_ROOT = path.join(__dirname, '..', '..');
-const CLI = path.join(REPO_ROOT, 'backend', 'cli', 'sovereign_cli.js');
+const CLI = path.join(REPO_ROOT, 'frontend', 'cli-tui', 'sovereign_cli.js');
 
 function cli(...args) {
   return spawnSync(process.execPath, [CLI, ...args], {

@@ -88,7 +88,7 @@ test('bucketTicksToOhlcv groups ticks into OHLCV and forward-fills gaps', () => 
 });
 
 test('polymarket_scope.json has valid universes and schema', () => {
-  const scopePath = path.resolve(__dirname, '../../../../config/polymarket_scope.json');
+  const scopePath = path.resolve(__dirname, '../../../../configs/polymarket_scope.json');
   assert.ok(fs.existsSync(scopePath), 'polymarket_scope.json exists');
   const scope = JSON.parse(fs.readFileSync(scopePath, 'utf8'));
   assert.ok(scope.defaults, 'defaults section exists');

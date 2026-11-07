@@ -33,7 +33,7 @@ const {
   initializeLedger,
   appendLedgerEvents,
   loadLedgerProjection,
-} = require('../../../../backend/gateway/src/paper_ledger.js');
+} = require('../../../../backend/execution/src/paper_ledger.js');
 
 const ASSETS = [
   { family: 'crypto', symbol: 'BTCUSDT', basePrice: 65000, provider: 'binance' },

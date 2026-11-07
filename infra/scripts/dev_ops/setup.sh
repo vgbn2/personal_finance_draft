@@ -10,4 +10,4 @@ else
   npm install --omit=dev
 fi
 
-node "$repo_root/backend/cli/sovereign_cli.js" status --json
+node "$repo_root/frontend/cli-tui/sovereign_cli.js" status --json

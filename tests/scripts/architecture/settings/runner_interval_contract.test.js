@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { buildPaperRunArgs, resolvePaperBotInterval, runPaperBotLoop } = require('../../../../backend/cli/commands/runner/run.js');
+const { buildPaperRunArgs, resolvePaperBotInterval, runPaperBotLoop } = require('../../../../frontend/cli-tui/commands/runner/run.js');
 
 test('persistent paper runner resolves the shared interval policy before scheduler setup', () => {
   const interval = resolvePaperBotInterval(null, {

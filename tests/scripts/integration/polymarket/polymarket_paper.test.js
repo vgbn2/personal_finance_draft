@@ -11,14 +11,14 @@ const {
   migrateLegacyPaperState,
   runPolymarketPaperRun,
   yesTokenForMarket,
-} = require('../../../../backend/gateway/src/polymarket_paper');
+} = require('../../../../backend/execution/src/polymarket_paper');
 const {
   appendLedgerEvents,
   initializeLedger,
   ledgerPaths,
   loadLedgerProjection,
   readLedger,
-} = require('../../../../backend/gateway/src/paper_ledger');
+} = require('../../../../backend/execution/src/paper_ledger');
 
 function tempStorageDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-paper-'));

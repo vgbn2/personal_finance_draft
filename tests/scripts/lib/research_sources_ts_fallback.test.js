@@ -60,8 +60,8 @@ test('loadUsableSources falls back to ts-index when family is known', () => {
 
   try {
     // Force re-require so stubs are applied
-    delete require.cache[require.resolve('../../../backend/cli/commands/research/research_sources.js')];
-    const { loadUsableSources } = require('../../../backend/cli/commands/research/research_sources.js');
+    delete require.cache[require.resolve('../../../frontend/cli-tui/commands/research/research_sources.js')];
+    const { loadUsableSources } = require('../../../frontend/cli-tui/commands/research/research_sources.js');
 
     const result = loadUsableSources([], { family: 'crypto' });
     assert.equal(result.snapshot.mode, 'ts_index', 'should have loaded from ts-index');
@@ -69,7 +69,7 @@ test('loadUsableSources falls back to ts-index when family is known', () => {
     assert.equal(result.loaded_family, 'crypto');
   } finally {
     Module._load = origLoad;
-    delete require.cache[require.resolve('../../../backend/cli/commands/research/research_sources.js')];
+    delete require.cache[require.resolve('../../../frontend/cli-tui/commands/research/research_sources.js')];
   }
 });
 
@@ -100,14 +100,14 @@ test('loadUsableSources respects explicit --input and skips ts-index fallback', 
   };
 
   try {
-    delete require.cache[require.resolve('../../../backend/cli/commands/research/research_sources.js')];
-    const { loadUsableSources } = require('../../../backend/cli/commands/research/research_sources.js');
+    delete require.cache[require.resolve('../../../frontend/cli-tui/commands/research/research_sources.js')];
+    const { loadUsableSources } = require('../../../frontend/cli-tui/commands/research/research_sources.js');
 
     const result = loadUsableSources(['--input', inputFile], { family: 'crypto' });
     assert.equal(result.snapshot.mode, 'custom', 'explicit --input should be honoured, not overridden by ts-index fallback');
   } finally {
     Module._load = origLoad;
-    delete require.cache[require.resolve('../../../backend/cli/commands/research/research_sources.js')];
+    delete require.cache[require.resolve('../../../frontend/cli-tui/commands/research/research_sources.js')];
   }
 });
 
@@ -135,13 +135,13 @@ test('loadUsableSources does not fall back when family is not specified', () => 
   };
 
   try {
-    delete require.cache[require.resolve('../../../backend/cli/commands/research/research_sources.js')];
-    const { loadUsableSources } = require('../../../backend/cli/commands/research/research_sources.js');
+    delete require.cache[require.resolve('../../../frontend/cli-tui/commands/research/research_sources.js')];
+    const { loadUsableSources } = require('../../../frontend/cli-tui/commands/research/research_sources.js');
 
     loadUsableSources([], {}); // no family
     assert.equal(tsIndexCalled, false, 'ts-index should not be read when family is unknown');
   } finally {
     Module._load = origLoad;
-    delete require.cache[require.resolve('../../../backend/cli/commands/research/research_sources.js')];
+    delete require.cache[require.resolve('../../../frontend/cli-tui/commands/research/research_sources.js')];
   }
 });

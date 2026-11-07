@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import diagnosticUtilities from '../../scripts/dev/sanitized_diagnostics.js';
+import diagnosticUtilities from '../../tools/dev/sanitized_diagnostics.js';
 
 const { sanitizedText } = diagnosticUtilities;
 

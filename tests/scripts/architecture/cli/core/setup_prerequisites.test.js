@@ -8,7 +8,7 @@ const path = require('node:path');
 const http = require('node:http');
 const { spawnSync } = require('node:child_process');
 const { createHash } = require('node:crypto');
-const { ensureGo, installArchive, compatible } = require('../../../../../scripts/dev/ensure_go');
+const { ensureGo, installArchive, compatible } = require('../../../../../tools/dev/ensure_go');
 
 test('Go prerequisite honors the module minimum and reuses a real compatible toolchain', async () => {
   assert.equal(compatible('go version go1.24.6 linux/amd64', '1.24'), true);
@@ -50,7 +50,7 @@ test('managed installer verifies real archive bytes and publishes without replac
     const cache = path.join(root, '.local', 'share', 'sovereign', 'go', 'go1.24.6-linux-amd64');
     fs.mkdirSync(path.dirname(cache), { recursive: true });
     fs.renameSync(destination, cache);
-    const script = `require(${JSON.stringify(require.resolve('../../../../../scripts/dev/ensure_go'))}).ensureGo({ install: false }).then(bin => console.log(bin)).catch(error => { console.error(error.message); process.exitCode = 1; })`;
+    const script = `require(${JSON.stringify(require.resolve('../../../../../tools/dev/ensure_go'))}).ensureGo({ install: false }).then(bin => console.log(bin)).catch(error => { console.error(error.message); process.exitCode = 1; })`;
     const cached = spawnSync(process.execPath, ['-e', script], {
       encoding: 'utf8', env: { ...process.env, HOME: root, PATH: '' },
     });

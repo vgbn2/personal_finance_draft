@@ -1,5 +1,5 @@
 const { botSell } = require('../../services/cli_executor');
-const { verifyPin } = require('../../../../cli/lib/auth.js');
+const { verifyPin } = require('../../../../../frontend/cli-tui/lib/auth.js');
 
 module.exports = {
   path: '/api/bot/sell',
@@ -19,4 +19,3 @@ module.exports = {
     return botSell(query);
   },
 };
-

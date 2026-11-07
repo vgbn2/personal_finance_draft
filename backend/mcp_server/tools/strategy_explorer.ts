@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../lib/schemas';
 // @ts-ignore
-const { evaluateAndRegisterSpec, runExplorationCycle } = require('../../../scripts/strategies/auto_strategy_explorer.js');
+const { evaluateAndRegisterSpec, runExplorationCycle } = require('../../../tools/strategies/auto_strategy_explorer.js');
 
 export const exploreStrategySchema = z.object({
   name: z.string().regex(/^[a-zA-Z0-9_-]+$/, 'Strategy name must contain only alphanumeric characters, underscores, or dashes').optional().describe('Unique descriptive strategy name (e.g. "vol_regime_svm_breakout_1h"). If omitted, auto-generated.'),
@@ -23,7 +23,7 @@ export const exploreStrategySchema = z.object({
   risk_weight: z.number().min(0.01).max(1.0).optional().default(0.10).describe('Target portfolio risk allocation fraction (0.01 - 1.00)'),
   entry_signal: z.string().optional().describe('Description of entry trigger condition'),
   exit_signal: z.string().optional().describe('Description of exit trigger condition'),
-  save_yaml: z.boolean().optional().default(true).describe('Whether to persist the evaluated strategy definition as a YAML file in config/strategies/'),
+  save_yaml: z.boolean().optional().default(true).describe('Whether to persist the evaluated strategy definition as a YAML file in configs/strategies/'),
 });
 
 export async function exploreStrategy(args: z.infer<typeof exploreStrategySchema>): Promise<ToolResponse> {

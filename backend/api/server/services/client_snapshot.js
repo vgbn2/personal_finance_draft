@@ -16,7 +16,7 @@ const {
 const { errorCode } = require('../../../../shared/lib/runtime/service_heartbeat');
 const {
   computeCachedBias,
-} = require('../../../cli/commands/research/bias');
+} = require('../../../../frontend/cli-tui/commands/research/bias');
 const {
   resolveRuntimePolicy,
 } = require('../../../../shared/lib/settings/runtime_policy');

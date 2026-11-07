@@ -14,7 +14,7 @@ const {
 const {
   buildMcpConfig,
   writeMcpConfig,
-} = require('../../../scripts/mcp/setup_mcp.js');
+} = require('../../../tools/mcp/setup_mcp.js');
 
 function tempRepo() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-mcp-setup-'));
@@ -37,7 +37,7 @@ test('backend binary discovery is platform-aware', () => {
 
 test('MCP config emits absolute existing paths and the Linux native binary', () => {
   const { root, serverPath } = tempRepo();
-  const backendPath = path.join(root, 'backend', 'core', 'build', 'sovereign_wealth');
+  const backendPath = path.join(root, 'backend', 'cpp_core', 'build', 'sovereign_wealth');
   fs.mkdirSync(path.dirname(backendPath), { recursive: true });
   fs.writeFileSync(backendPath, '');
 
@@ -102,12 +102,12 @@ test('atomic writer replaces a validated config and leaves no temporary file', (
 test('current Linux checkout resolves the compiled native backend', {
   skip: process.platform === 'win32' ||
     !fs.existsSync(path.join(REPO_ROOT, 'dist', 'mcp_server', 'index.js')) ||
-    !fs.existsSync(path.join(REPO_ROOT, 'backend', 'core', 'build', 'sovereign_wealth')),
+    !fs.existsSync(path.join(REPO_ROOT, 'backend', 'cpp_core', 'build', 'sovereign_wealth')),
 }, () => {
   const result = buildMcpConfig({ repoRoot: REPO_ROOT, platform: process.platform });
   assert.equal(
     result.backendPath,
-    path.join(REPO_ROOT, 'backend', 'core', 'build', 'sovereign_wealth')
+    path.join(REPO_ROOT, 'backend', 'cpp_core', 'build', 'sovereign_wealth')
   );
   assert.equal(fs.existsSync(result.serverPath), true);
   assert.equal(fs.existsSync(result.backendPath), true);

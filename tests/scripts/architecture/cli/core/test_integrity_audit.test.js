@@ -7,7 +7,7 @@ const {
   auditCppSource,
   auditJsSource,
   listCppTestFiles,
-} = require('../../../../../scripts/dev/audit_test_integrity.js');
+} = require('../../../../../tools/dev/audit_test_integrity.js');
 
 function rules(violations) {
   return violations.map((violation) => violation.rule);

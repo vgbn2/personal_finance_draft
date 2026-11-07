@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
-const manifest = require('../../../../backend/cli/tui/manifest');
-const { backtestDataQualityError, rejectDegradedResearchInput, backtestSummaryPayload } = require('../../../../backend/cli/commands/research');
-const { ingestOptionsFromArgs } = require('../../../../backend/cli/commands/data/data');
-const { polymarketHistoryPayload } = require('../../../../backend/cli/commands/trade/trade');
+const manifest = require('../../../../frontend/cli-tui/tui/manifest');
+const { backtestDataQualityError, rejectDegradedResearchInput, backtestSummaryPayload } = require('../../../../frontend/cli-tui/commands/research');
+const { ingestOptionsFromArgs } = require('../../../../frontend/cli-tui/commands/data/data');
+const { polymarketHistoryPayload } = require('../../../../frontend/cli-tui/commands/trade/trade');
 
 test('optimize does not expose prop-firm selection', () => {
   const optimize = manifest.commands.research.find((entry) => entry.id === 'optimize');
@@ -81,7 +81,7 @@ test('ingest TUI family selector maps to scoped ingest options', () => {
 });
 
 test('legacy dashboard omits unavailable ingest families', async () => {
-  const { M } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { M } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
   const ingest = M.find((category) => category.label === 'Data').cmds
     .find((entry) => entry.id === 'ingest');
   const unavailableFamilies = ['pmi', 'flight', 'crypto_tx', 'holdings', 'onchain', 'breadth'];
@@ -92,7 +92,7 @@ test('legacy dashboard omits unavailable ingest families', async () => {
 });
 
 test('legacy and dashboard manifests stay aligned on shared command ids and core flags', async () => {
-  const { M } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { M } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
   const modernCommands = new Map(M.flatMap((category) => category.cmds).map((entry) => [entry.id, entry]));
   const legacyCommands = new Map(Object.entries(manifest.commands).flatMap(([categoryId, entries]) => entries.map((entry) => {
     const id = categoryId === 'trade' && entry.id === 'favorites'
@@ -228,7 +228,7 @@ test('backtest payload exposes prop firm expectancy', () => {
     data_quality_summary: null,
     trust_assessment: null,
     strategy: 'demo',
-    strategy_source: 'config/strategies/demo.yaml',
+    strategy_source: 'configs/strategies/demo.yaml',
     strategy_family: 'single',
     strategy_lane: 'single',
     strategy_role: 'core',

@@ -17,7 +17,7 @@ require('ts-node').register({
   },
 });
 
-const { Mt5Adapter } = require('../../../../backend/gateway/src/adapters/mt5_adapter.ts');
+const { Mt5Adapter } = require('../../../../backend/execution/src/adapters/mt5_adapter.ts');
 const { MockMt5Client } = require('../../../fixtures/mock_mt5_bridge.js');
 
 test('MT5 Bridge Lifecycle: starts, performs registration handshake, and handles clean stop', async () => {

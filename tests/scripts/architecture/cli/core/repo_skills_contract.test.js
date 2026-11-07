@@ -56,7 +56,7 @@ test('canonical skill inventory is sorted, complete, and mirrored', () => {
 
   const mirrorRoot = path.join(REPO_ROOT, '.agents', 'skills');
   if (fs.existsSync(mirrorRoot)) {
-    const result = spawnSync('node', ['scripts/dev/sync_repo_skills.js', '--check'], {
+    const result = spawnSync('node', ['tools/dev/sync_repo_skills.js', '--check'], {
       cwd: REPO_ROOT,
       encoding: 'utf8',
     });

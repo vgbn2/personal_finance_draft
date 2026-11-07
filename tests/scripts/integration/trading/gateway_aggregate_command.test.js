@@ -14,7 +14,7 @@ require('ts-node').register({
 const {
   projectAggregatePortfolio,
   runAggregatePortfolioCommand,
-} = require('../../../../backend/gateway/src/commands/aggregate_portfolio.ts');
+} = require('../../../../backend/execution/src/commands/aggregate_portfolio.ts');
 
 function inputs() {
   return {

@@ -6,7 +6,7 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 
 const REPO_ROOT = path.join(__dirname, '../../../..');
-const ENGINE_PATH = path.join(REPO_ROOT, 'backend/cli/tui/engine/engine.js');
+const ENGINE_PATH = path.join(REPO_ROOT, 'frontend/cli-tui/tui/engine/engine.js');
 
 // Each assertion runs in a REAL child process with the dashboard's exact
 // spawn() stdio shape (default ['pipe','pipe','pipe'] -- open, never written,

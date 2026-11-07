@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const utils = require('../../../backend/cli/lib/utils.js');
+const utils = require('../../../frontend/cli-tui/lib/utils.js');
 
 const DEFAULT_TS_DIR = path.join(utils.REPO_ROOT, 'storage', 'data', 'ts');
 

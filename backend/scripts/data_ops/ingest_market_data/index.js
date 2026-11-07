@@ -82,8 +82,8 @@ const {
 const { fetchPaginated, fetchParallelBackfill, BARS_PER_DAY } = require('../../../../shared/lib/data/backfill');
 const { withFileLockSync } = require('../../../../shared/lib/runtime/file_lock');
 
-const CONFIG_PATH = path.join(REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
-const OPTIONS_CONFIG_PATH = path.join(REPO_ROOT, 'config', 'markets', 'options_data.yaml');
+const CONFIG_PATH = path.join(REPO_ROOT, 'configs', 'markets', 'data_sources.yaml');
+const OPTIONS_CONFIG_PATH = path.join(REPO_ROOT, 'configs', 'markets', 'options_data.yaml');
 const CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch.json');
 const SCOPED_CACHE_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache', 'last_fetch_scoped.json');
 const HISTORY_PATH = path.join(REPO_ROOT, 'storage', 'data', 'cache');

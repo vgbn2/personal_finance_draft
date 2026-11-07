@@ -15,7 +15,7 @@ const {
 
 test('configured strategies are rejected instead of impersonated by native proxies', () => {
   const modelStrategy = classifyConfiguredStrategy({
-    path: 'config/strategies/trend_following.yaml',
+    path: 'configs/strategies/trend_following.yaml',
     name: 'trend_following',
     kind: 'ml',
     family: 'ml',

@@ -10,7 +10,7 @@ const wsModule = (() => {
   try {
     return require('ws');
   } catch (_) {
-    return require('../../../../backend/gateway/node_modules/ws');
+    return require('../../../../backend/execution/node_modules/ws');
   }
 })();
 const WebSocketServer = wsModule.WebSocketServer || wsModule.Server;
@@ -19,7 +19,7 @@ require('../../../../shared/lib/runtime/ts_register');
 const {
   reconnectDelayMs,
   startPolyBoltBboMonitor,
-} = require('../../../../backend/gateway/src/polymarket/polybolt_bbo_monitor');
+} = require('../../../../backend/execution/src/polymarket/polybolt_bbo_monitor');
 
 const fixture = JSON.parse(fs.readFileSync(
   path.resolve(__dirname, '..', '..', '..', 'fixtures', 'polymarket', 'polybolt_bbo_gap.json'),

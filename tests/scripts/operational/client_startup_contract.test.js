@@ -52,7 +52,7 @@ test('Linux installer can stage a disabled per-user connector in an isolated hom
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-client-install-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const home = path.join(root, 'home');
-  const configHome = path.join(root, 'config');
+  const configHome = path.join(root, 'configs');
   const dataHome = path.join(root, 'data');
   const stateHome = path.join(root, 'state');
   fs.mkdirSync(home, { recursive: true });

@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { stripFlagValue } = require('../../../backend/cli/lib/utils.js');
+const { stripFlagValue } = require('../../../frontend/cli-tui/lib/utils.js');
 
 /**
  * TEST: stripFlagValue (keep secrets like --pin out of a spawned subprocess argv)

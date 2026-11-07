@@ -7,9 +7,9 @@ const {
   massBackfillUniverse,
   renderMassBackfillReport,
   summarizeMassBackfillByFamily,
-} = require('../../../../backend/cli/commands/data/data.js');
-const { renderBackendUniverse } = require('../../../../backend/cli/commands/tools/backend.js');
-const { inspectMt5Setup } = require('../../../../backend/cli/commands/trade/trade.js');
+} = require('../../../../frontend/cli-tui/commands/data/data.js');
+const { renderBackendUniverse } = require('../../../../frontend/cli-tui/commands/tools/backend.js');
+const { inspectMt5Setup } = require('../../../../frontend/cli-tui/commands/trade/trade.js');
 
 test('mass backfill plan skips fresh jobs without hiding stale ones', () => {
   const plan = buildMassBackfillExecutionPlan({

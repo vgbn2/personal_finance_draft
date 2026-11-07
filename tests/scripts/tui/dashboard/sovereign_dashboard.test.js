@@ -2,13 +2,13 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const { setTimeout: delay } = require('node:timers/promises');
 const { makeFakeStdin, makeFakeStdout, keys, send } = require('./_harness');
-const { renderBackendUniverse } = require('../../../../backend/cli/commands/tools/backend.js');
+const { renderBackendUniverse } = require('../../../../frontend/cli-tui/commands/tools/backend.js');
 
 test('dashboard App: research scorecard launches the canonical all-recorded v3 catalog', async (t) => {
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App, M } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App, M } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
   const runCalls = [];
@@ -33,7 +33,7 @@ test('dashboard App: navigate into a flagged command, edit flags, and trigger Ru
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -107,7 +107,7 @@ test('dashboard App: yn flag toggles and a flagless command runs immediately on 
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -146,7 +146,7 @@ test('dashboard App: bt --strategy flag cycles through real registered strategie
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -175,21 +175,21 @@ test('dashboard App: bt --strategy flag cycles through real registered strategie
   await send(stdin, instance, [keys.right]);
   const afterOne = stdout.snapshot();
   assert.doesNotMatch(afterOne, /<registered strategies>/);
-  assert.match(afterOne, /sovereign bt --strategy config\/strategies\/(?:curated|automated|fixtures\/)?[A-Za-z0-9_-]+/,
+  assert.match(afterOne, /sovereign bt --strategy configs?\/strategies\/(?:curated|automated|fixtures\/)?[A-Za-z0-9_-]+/,
     'cycling --strategy now produces a real registry path in the bounded argv preview');
   assert.doesNotMatch(afterOne, /\.yaml\]/,
     'the flag value box renders the resolved label, not the raw .yaml path');
-  const valueAfterOne = afterOne.match(/--strategy (config\/strategies\/(?:curated\/|automated\/|fixtures\/)?[A-Za-z0-9_-]+(?:\.yaml)?)/)[1];
+  const valueAfterOne = afterOne.match(/--strategy (configs?\/strategies\/(?:curated\/|automated\/|fixtures\/)?[A-Za-z0-9_-]+(?:\.yaml)?)/)[1];
 
   await send(stdin, instance, [keys.right, keys.right]);
   const afterTwo = stdout.snapshot();
-  const valueAfterTwo = afterTwo.match(/--strategy (config\/strategies\/(?:curated\/|automated\/|fixtures\/)?[A-Za-z0-9_-]+(?:\.yaml)?)/)[1];
+  const valueAfterTwo = afterTwo.match(/--strategy (configs?\/strategies\/(?:curated\/|automated\/|fixtures\/)?[A-Za-z0-9_-]+(?:\.yaml)?)/)[1];
   assert.notEqual(valueAfterOne, valueAfterTwo, 'cycling moves to a different real strategy each step');
 
   // cycling back left returns to the previous value (genuine wraparound list, not a one-way placeholder edit)
   await send(stdin, instance, [keys.left, keys.left]);
   const afterBack = stdout.snapshot();
-  const valueAfterBack = afterBack.match(/--strategy (config\/strategies\/(?:curated\/|automated\/|fixtures\/)?[A-Za-z0-9_-]+(?:\.yaml)?)/)[1];
+  const valueAfterBack = afterBack.match(/--strategy (configs?\/strategies\/(?:curated\/|automated\/|fixtures\/)?[A-Za-z0-9_-]+(?:\.yaml)?)/)[1];
   assert.equal(valueAfterBack, valueAfterOne);
 });
 
@@ -204,7 +204,7 @@ test('dashboard App: shows PIN gate for live trading and passes PIN to child pro
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -243,7 +243,7 @@ test('dashboard App: shows PIN gate for live trading and passes PIN to child pro
   // It should start running
   assert.match(stdout.snapshot(), /Running:/, 'Command is running after PIN entry');
 
-  // auto-trade --live is the real automation loop (backend/cli/commands/
+  // auto-trade --live is the real automation loop (frontend/cli-tui/commands/
   // strategy/strategy.js runAutomatedStrategies) -- it only exits this fast
   // if the ai_agent_trading feature flag is disabled (a feature-gate
   // fast-fail); if someone has it enabled locally (e.g. while exercising the
@@ -271,7 +271,7 @@ test('dashboard App: in-pane running process can be aborted via Escape', async (
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -315,7 +315,7 @@ test('dashboard App: symbol picker (single) searches the real universe and Enter
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -348,7 +348,7 @@ test('dashboard App: symbol picker (multi) groups by family/sector and a header 
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -390,7 +390,7 @@ test('dashboard App: symbol picker accepts a typed value that is not in the cach
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -419,7 +419,7 @@ test('dashboard App: symbol picker Escape cancels without changing the flag\'s p
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -446,7 +446,7 @@ test('dashboard App: backend correlation exposes a --symbols flag (was previousl
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -472,7 +472,7 @@ test('dashboard App: backend chart resolves to the expected argv with a typed sy
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -509,7 +509,7 @@ test('dashboard App: COMMAND OUTPUT panel is scrollable -- PageUp scrolls throug
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout({ rows: 20 });
@@ -601,7 +601,7 @@ test('dashboard App: zero-lockout mid-run navigation and live streaming output',
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();
@@ -646,7 +646,7 @@ test('dashboard App: symbol picker modal isolation and market tab navigation', a
   const { render, default: React } = await Promise.all([import('ink'), import('react')])
     .then(([ink, react]) => ({ render: ink.render, default: react.default }));
   const h = React.createElement;
-  const { App } = await import('../../../../backend/cli/sovereign_dashboard.mjs');
+  const { App } = await import('../../../../frontend/cli-tui/sovereign_dashboard.mjs');
 
   const stdin = makeFakeStdin();
   const stdout = makeFakeStdout();

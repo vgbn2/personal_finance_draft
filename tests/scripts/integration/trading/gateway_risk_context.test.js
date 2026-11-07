@@ -16,7 +16,7 @@ require('ts-node').register({
   },
 });
 
-const { buildRiskContext } = require('../../../../backend/gateway/src/index.ts');
+const { buildRiskContext } = require('../../../../backend/execution/src/index.ts');
 
 function marketOrder() {
   return {

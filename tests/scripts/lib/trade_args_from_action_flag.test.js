@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildTradeArgsFromActionFlag } = require('../../../backend/cli/commands/trade/trade.js');
+const { buildTradeArgsFromActionFlag } = require('../../../frontend/cli-tui/commands/trade/trade.js');
 
 /**
  * TEST: buildTradeArgsFromActionFlag (dashboard flag-grid -> wizard's own

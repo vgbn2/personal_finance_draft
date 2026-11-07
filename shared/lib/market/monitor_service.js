@@ -15,7 +15,7 @@ const MARKET_MONITOR_CACHE_TTL_MS = 5000;
 const MARKET_MONITOR_DEFAULT_LIMIT = 50;
 const MARKET_MONITOR_MAX_LIMIT = 100;
 const MARKET_MONITOR_MAX_OFFSET = 100000;
-const DEFAULT_CONFIG_PATH = path.join(REPO_ROOT, 'config', 'markets', 'data_sources.yaml');
+const DEFAULT_CONFIG_PATH = path.join(REPO_ROOT, 'configs', 'markets', 'data_sources.yaml');
 const DEFAULT_TS_DIR = path.join(REPO_ROOT, 'storage', 'data', 'ts');
 const ALLOWED_QUERY_FIELDS = new Set([
   'family',

@@ -115,8 +115,8 @@ test('broker capability gate delegates permanent profile denial to the policy', 
 
 test('gateway paper paths do not initialize credentialed execution adapters', () => {
   const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
-  const gateway = fs.readFileSync(path.join(repoRoot, 'backend', 'gateway', 'src', 'index.ts'), 'utf8');
-  const cycle = fs.readFileSync(path.join(repoRoot, 'backend', 'gateway', 'src', 'cycle.ts'), 'utf8');
+  const gateway = fs.readFileSync(path.join(repoRoot, 'backend', 'execution', 'src', 'index.ts'), 'utf8');
+  const cycle = fs.readFileSync(path.join(repoRoot, 'backend', 'execution', 'src', 'cycle.ts'), 'utf8');
 
   assert.match(gateway, /const adapter =\s*(?:broker === 'mt5'\s*\?\s*new Mt5Adapter\(\)\s*:\s*)?(?:\(?broker === 'gate_io' \|\| broker === 'gateio'\)?\s*\?\s*new GateIoAdapter\([^)]*\)\s*:\s*)?(?:\(?broker === 'deribit'\)?\s*\?\s*new DeribitAdapter\([^)]*\)\s*:\s*)?(?:\(?broker === 'polymarket'\)?\s*\?\s*new PolymarketAdapter\([^)]*\)\s*:\s*)?isLive\s*\?\s*new AlpacaAdapter/);
   assert.match(gateway, /:\s*new SimulationAdapter\(\)/);

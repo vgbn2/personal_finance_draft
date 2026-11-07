@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
-const manifest = require('../../../../backend/cli/tui/manifest');
+const manifest = require('../../../../frontend/cli-tui/tui/manifest');
 const { createTuiSession, keys } = require('../../lib/tui_automation');
 
 function repeat(key, count) {

@@ -25,21 +25,25 @@ function buildBackendCandidates(repoRoot = REPO_ROOT, platform = process.platfor
         pathApi.join(repoRoot, 'build', 'core', 'Release', binaryName),
         pathApi.join(repoRoot, 'build', 'core', 'Debug', binaryName),
         pathApi.join(repoRoot, 'build', 'core', binaryName),
-        pathApi.join(repoRoot, 'backend', 'core', 'build', 'Release', binaryName),
-        pathApi.join(repoRoot, 'backend', 'core', 'build', 'Debug', binaryName),
-        pathApi.join(repoRoot, 'backend', 'core', 'build', binaryName),
-        pathApi.join(repoRoot, 'build', 'backend', 'core', 'Release', binaryName),
-        pathApi.join(repoRoot, 'build', 'backend', 'core', 'Debug', binaryName),
-        pathApi.join(repoRoot, 'backend', 'core', 'build', 'manual', binaryName),
-        pathApi.join(repoRoot, 'build', 'backend', 'core', binaryName),
-        pathApi.join(repoRoot, 'backend', 'core', 'src', binaryName),
+        pathApi.join(repoRoot, 'build', 'cpp_core', 'bin', binaryName),
+        pathApi.join(repoRoot, 'build', 'cpp_core', 'Release', binaryName),
+        pathApi.join(repoRoot, 'build', 'cpp_core', 'Debug', binaryName),
+        pathApi.join(repoRoot, 'build', 'cpp_core', binaryName),
+        pathApi.join(repoRoot, 'backend', 'cpp_core', 'build', 'Release', binaryName),
+        pathApi.join(repoRoot, 'backend', 'cpp_core', 'build', 'Debug', binaryName),
+        pathApi.join(repoRoot, 'backend', 'cpp_core', 'build', binaryName),
+        pathApi.join(repoRoot, 'build', 'backend', 'cpp_core', 'Release', binaryName),
+        pathApi.join(repoRoot, 'build', 'backend', 'cpp_core', 'Debug', binaryName),
+        pathApi.join(repoRoot, 'backend', 'cpp_core', 'build', 'manual', binaryName),
+        pathApi.join(repoRoot, 'build', 'backend', 'cpp_core', binaryName),
+        pathApi.join(repoRoot, 'backend', 'cpp_core', 'src', binaryName),
     ];
 }
 
 const BACKEND_CANDIDATES = buildBackendCandidates();
 
 const CLI_CANDIDATES = [
-    path.join(REPO_ROOT, 'backend', 'cli', 'sovereign_cli.js'),
+    path.join(REPO_ROOT, 'frontend', 'cli-tui', 'sovereign_cli.js'),
 ];
 
 /**
@@ -68,10 +72,10 @@ function findNodeCli() {
 }
 
 /**
- * Loads tool configurations from config/system/tools.yaml.
+ * Loads tool configurations from configs/system/tools.yaml.
  */
 function loadToolsConfig() {
-    const toolsPath = path.join(REPO_ROOT, 'config', 'system', 'tools.yaml');
+    const toolsPath = path.join(REPO_ROOT, 'configs', 'system', 'tools.yaml');
     if (!fs.existsSync(toolsPath)) return {};
 
     const lines = fs.readFileSync(toolsPath, 'utf8').split(/\r?\n/);

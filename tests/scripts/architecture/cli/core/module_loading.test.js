@@ -28,7 +28,7 @@ function loadCheck(entryRelPath) {
 }
 
 test('sovereign_cli entry point loads without broken requires', () => {
-  const result = loadCheck('backend/cli/sovereign_cli.js');
+  const result = loadCheck('frontend/cli-tui/sovereign_cli.js');
   assert.equal(result.status, 0, `sovereign_cli failed to load:\n${result.stderr}`);
 });
 

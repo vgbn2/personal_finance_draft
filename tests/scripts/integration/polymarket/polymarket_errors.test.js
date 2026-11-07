@@ -21,7 +21,7 @@ const {
   redactHeaderMap,
   sanitizeAxiosConfig,
   sanitizeGatewayError,
-} = require('../../../../backend/gateway/src/polymarket/index.ts');
+} = require('../../../../backend/execution/src/polymarket/index.ts');
 
 test('redactHeaderMap removes Polymarket auth-bearing headers', () => {
   const redacted = redactHeaderMap({

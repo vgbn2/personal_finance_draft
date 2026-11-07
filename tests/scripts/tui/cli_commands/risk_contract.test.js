@@ -6,7 +6,7 @@ const assert = require('node:assert/strict');
 const {
   commandRiskCheck,
   parseRiskInputs,
-} = require('../../../../backend/cli/commands/tools/risk.js');
+} = require('../../../../frontend/cli-tui/commands/tools/risk.js');
 
 function harness({ useNative, nativeResult }) {
   const payloads = [];

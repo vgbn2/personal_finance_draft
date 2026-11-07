@@ -3,7 +3,7 @@ const path = require('node:path');
 const { REPO_ROOT } = require('../runtime/paths');
 const { writeJson } = require('../market/validation');
 
-const PROP_FIRM_STORE_PATH = path.join(REPO_ROOT, 'config', 'trading', 'prop_firms.json');
+const PROP_FIRM_STORE_PATH = path.join(REPO_ROOT, 'configs', 'trading', 'prop_firms.json');
 
 const ACCOUNT_TYPE_DEFAULTS = {
   one_step: {

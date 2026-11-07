@@ -21,7 +21,7 @@ const {
   createPolymarketReadAdapter,
   main,
   runGatewayEntrypoint,
-} = require('../../../../backend/gateway/src/index.ts');
+} = require('../../../../backend/execution/src/index.ts');
 
 async function invokeMain(args, surface = 'gateway_public') {
   const originalArgv = process.argv;

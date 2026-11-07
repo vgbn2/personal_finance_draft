@@ -1,0 +1,818 @@
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const {
+  fetchBinanceBaseCandles, fetchCoinbaseBaseCandles,
+  fetchStooqDailyHistory, fetchPolymarketHistoricalPrices,
+  fetchYahooBaseCandles, fetchPaginated, fetchParallelBackfill, ingestMarketData,
+  dedupePreferredMarketQuotes, loadConfig, loadExternalQuoteInputs,
+  resolveCommoditySymbol, resolveEquityOrIndexSymbol, resolveStooqSymbol
+} = require('../../../../backend/scripts/data_ops/ingest_market_data.js');
+const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quote_router.js');
+const { DEFAULT_PORTFOLIO } = require('../../../../shared/lib/runtime/paths.js');
+const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../../shared/lib/strategy/backtest.js');
+const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../../shared/lib/market/indicators.js');
+const { compareModels } = require('../../../../shared/lib/ml/models.js');
+const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson } = require('../../../../shared/lib/market/validation.js');
+const { runInteractiveMenu, handleIntersection, promptSelect, promptText, promptConfirm, isRichTerminal } = require('../../tui/index.js');
+const A = require('../../../../shared/lib/ui/ansi.js');
+const { buildTradeGatewayLaunch, runGatewayCommand } = require('../../../../shared/lib/runtime/backend_bridge.js');
+const { parseGatewayJsonOutput } = require('../trade/trade_polymarket.js');
+const { buildAggregatedPortfolioSnapshot } = require('../../../../backend/execution/src/polymarket.js');
+const { resolveRuntimePolicy } = require('../../../../shared/lib/settings/runtime_policy.js');
+
+const utils = require('../../lib/utils.js');
+const { usage, helpText, pageText, optionValue, hasFlag, printPayload, currentPhaseLabel, formatHumanNumber, formatHumanPayload, renderHumanValue, safeReadJson, labelState, numericOption } = utils;
+const { REPO_ROOT, DEFAULT_SNAPSHOT, DEFAULT_QUALITY_REPORT, DEFAULT_HISTORY, DEFAULT_FEATURES, DEFAULT_MODEL_REPORT, DEFAULT_BACKTEST, DEFAULT_STATE_PATH, BACKEND_CANDIDATES, HELP_TOPICS } = utils;
+
+const { backendAvailability, runBackendStatus } = require('../tools/backend.js');
+
+
+
+function summarizeModelCard(report) {
+  const winner = report && report.winner ? report.winner : null;
+  const top = winner || (report && Array.isArray(report.models) && report.models[0]) || null;
+  return {
+    source: DEFAULT_MODEL_REPORT,
+    last_checked: report && report.generated_at ? report.generated_at : null,
+    state: top ? labelState(true, Boolean((top.oos_expected_value != null && top.oos_expected_value < 0) || (top.expected_value != null && top.expected_value < 0))) : 'warn',
+    title: top ? top.name || top.model || 'model_candidate' : 'no_model_report',
+    subtitle: top ? top.description || `trades=${top.trades || 0}` : 'model comparison cache missing',
+    metrics: top ? {
+      expected_value: top.expected_value ?? top.oos_expected_value ?? null,
+      net_return: top.net_return ?? null,
+      oos_expected_value: top.oos_expected_value ?? null,
+      sharpe_like: top.sharpe_like ?? null,
+    } : {},
+    payload: report,
+  };
+}
+
+function summarizeBacktestCard(report) {
+  let backtestState = 'warn';
+  if (report) {
+    const negativeEv = Boolean(report.metrics && report.metrics.expected_value < 0);
+    const isTrusted = report.trust_assessment?.grade <= 'C' && report.trust_assessment?.verdict !== 'do-not-trust-yet';
+    const isSample = report.sample_mode === true;
+    backtestState = (!isTrusted || isSample) ? 'warn' : labelState(true, negativeEv);
+  }
+  return {
+    source: DEFAULT_BACKTEST,
+    last_checked: report && report.generated_at ? report.generated_at : null,
+    state: backtestState,
+    title: report ? `${report.model || 'model'} / ${report.timeframe || 'all'}` : 'no_backtest_report',
+    subtitle: report ? `trades=${report.metrics ? report.metrics.trades : 0}` : 'backtest cache missing',
+    metrics: report ? {
+      net_return: report.metrics ? report.metrics.net_return : null,
+      max_drawdown: report.metrics ? report.metrics.max_drawdown : null,
+      win_rate: report.metrics ? report.metrics.win_rate : null,
+      expected_value: report.metrics ? report.metrics.expected_value : null,
+      oos_expected_value: report.oos_expected_value ?? null,
+    } : {},
+    payload: report,
+  };
+}
+
+function summarizeStatusCard(snapshot, quality) {
+  const report = quality || {};
+  const ok = Boolean(report.ok);
+  const state = ok ? 'ok' : 'warn';
+  const freshness = report.freshness || {};
+  return {
+    source: DEFAULT_SNAPSHOT,
+    last_checked: snapshot && snapshot.fetched_at ? snapshot.fetched_at : null,
+    state,
+    title: snapshot && snapshot.mode ? snapshot.mode : 'unknown',
+    subtitle: ok ? 'data cache healthy' : 'data cache needs attention',
+    metrics: {
+      usable_records: report.usable_records ?? 0,
+      rejected_records: report.rejected_records ?? 0,
+      stale_records: freshness.stale_records ?? 0,
+      provider_errors: (report.provider_errors || []).length || 0,
+    },
+    payload: { snapshot, report },
+  };
+}
+
+function summarizeFeaturesCard(features) {
+  const featureFrame = features || {};
+  const count = featureFrame.feature_count ?? (Array.isArray(featureFrame.features) ? featureFrame.features.length : 0);
+  return {
+    source: DEFAULT_FEATURES,
+    last_checked: featureFrame.generated_at || null,
+    state: count > 0 ? 'ok' : 'warn',
+    title: `${count} feature rows`,
+    subtitle: featureFrame.timeframe ? `timeframe=${featureFrame.timeframe}` : 'feature cache',
+    metrics: {
+      feature_count: count,
+      symbols: Array.isArray(featureFrame.symbols) ? featureFrame.symbols.length : null,
+    },
+    payload: featureFrame,
+  };
+}
+
+function summarizeOptionsCard() {
+  let greeks = null;
+  let smileRecords = [];
+  try {
+    const { getDefaultAnalyticsEngine } = require('../../../../shared/lib/storage/sqlite_analytics.js');
+    const analytics = getDefaultAnalyticsEngine();
+    greeks = analytics.getNetGreekExposure('BTC');
+    smileRecords = analytics.getVolatilitySmile('BTC');
+  } catch (_) {}
+
+  const hasData = greeks && (greeks.contracts_count > 0 || greeks.total_open_interest > 0);
+  const deribitConfigured = Boolean(process.env.DERIBIT_CLIENT_ID && process.env.DERIBIT_CLIENT_SECRET);
+  const isTestnet = String(process.env.DERIBIT_TESTNET || 'true').toLowerCase() !== 'false';
+
+  return {
+    source: 'storage/data/relational/analytics.db',
+    last_checked: new Date().toISOString(),
+    state: hasData || deribitConfigured ? 'ok' : 'warn',
+    title: `OPTIONS & DERIVATIVES [${isTestnet ? 'TESTNET' : 'LIVE'}]`,
+    subtitle: deribitConfigured
+      ? (hasData ? 'deribit gateway & analytics synced' : 'deribit configured, awaiting contracts')
+      : 'zero-key options simulation & analytics active',
+    metrics: {
+      delta_oi: greeks ? Number((greeks.net_delta_oi || 0).toFixed(2)) : 0,
+      gamma_oi: greeks ? Number((greeks.net_gamma_oi || 0).toFixed(2)) : 0,
+      vega_oi: greeks ? Number((greeks.net_vega_oi || 0).toFixed(0)) : 0,
+      theta_oi: greeks ? Number((greeks.net_theta_oi || 0).toFixed(0)) : 0,
+      contracts: greeks ? greeks.contracts_count || 0 : 0,
+      smile_points: smileRecords.length,
+    },
+    payload: { greeks, smile_count: smileRecords.length },
+  };
+}
+
+// Cockpit's portfolio card previously read ONLY the static storage/data/
+// portfolio.json (mode/cash/positions/open_orders/last_mark_at -- no equity
+// field at all today, so the card always showed "portfolio unavailable")
+// and never touched Polymarket. Reuses the exact spawnSync+parse pattern
+// already proven in trade_polymarket.js's own portfolio fetch (timeout:
+// 10000) -- returns null on any failure (not configured, unreachable,
+// timeout) so the cockpit degrades the same way it always has rather than
+// crashing or hanging the cockpit render.
+function fetchPolymarketPortfolioForCockpit() {
+  try {
+    const launch = buildTradeGatewayLaunch(['polymarket', 'portfolio', '--json']);
+    const execPath = String(launch.command || process.execPath).trim();
+    const r = spawnSync(execPath, launch.args, {
+      cwd: REPO_ROOT, encoding: 'utf8', timeout: 10000, shell: false,
+      env: launch.env,
+    });
+    return r.stdout ? parseGatewayJsonOutput(r.stdout, 'polymarket portfolio') : null;
+  } catch {
+    return null;
+  }
+}
+
+// Folds Polymarket's pUSD balance into whatever the base portfolio object
+// already carries, via the already-tested buildAggregatedPortfolioSnapshot
+// (results=[] since no other broker-balance fetch currently feeds the
+// cockpit either -- this stays a scoped "add Polymarket" change, not a
+// full multi-broker aggregation). summarizePortfolioCard's own field
+// contract ({equity, exposure, drawdown, readiness, generated_at}) is left
+// unchanged; only the equity number gains Polymarket's contribution.
+function mergePolymarketIntoPortfolio(portfolio, polymarket) {
+  const base = portfolio && typeof portfolio === 'object' ? portfolio : {};
+  const aggregated = buildAggregatedPortfolioSnapshot([], polymarket);
+  const pmEntry = aggregated.brokers.find((b) => b.name === 'Polymarket') || null;
+  const baseEquity = Number.isFinite(Number(base.equity)) ? Number(base.equity) : null;
+  const pmEquity = pmEntry && pmEntry.status === 'connected' ? aggregated.total_equity : 0;
+  const merged = { ...base, polymarket: pmEntry };
+  // Omit the key entirely (rather than setting it to null) when neither side
+  // has a value -- summarizePortfolioCard does Number.isFinite(Number(x)),
+  // and Number(null) is 0 (finite!), so an explicit null would be
+  // misread as a real zero-equity portfolio instead of "no data available".
+  if (baseEquity != null || pmEquity) {
+    merged.equity = (baseEquity || 0) + pmEquity;
+  } else {
+    delete merged.equity;
+  }
+  return merged;
+}
+
+function summarizePortfolioCard(portfolio) {
+  const equity = portfolio && Number.isFinite(Number(portfolio.equity)) ? Number(portfolio.equity) : null;
+  const exposure = portfolio && Number.isFinite(Number(portfolio.exposure)) ? Number(portfolio.exposure) : null;
+  const credentialedPolymarketRead = Boolean(
+    portfolio
+    && portfolio.polymarket
+    && portfolio.polymarket.status === 'connected',
+  );
+  return {
+    source: DEFAULT_PORTFOLIO,
+    last_checked: portfolio && portfolio.generated_at ? portfolio.generated_at : null,
+    state: equity != null ? 'ok' : 'warn',
+    title: equity != null ? `equity ${equity}` : 'portfolio unavailable',
+    subtitle: credentialedPolymarketRead
+      ? `credentialed Polymarket account read${exposure != null ? `; exposure=${exposure}` : ''}`
+      : (exposure != null ? `exposure=${exposure}` : 'cached/local portfolio metrics only'),
+    metrics: {
+      equity,
+      evidence_class: credentialedPolymarketRead ? 'credentialed_account_read' : 'cached_or_local',
+      exposure,
+      drawdown: portfolio ? portfolio.drawdown ?? null : null,
+      readiness: portfolio ? portfolio.readiness ?? null : null,
+    },
+    payload: portfolio,
+  };
+}
+
+function latestSeriesKey(record = {}) {
+  return [
+    record.family || 'unknown',
+    record.symbol || record.underlying || record.series || record.location || record.region || record.country || record.chain || record.metric || 'unknown',
+    record.timeframe || record.component || record.metric || record.option_type || 'point',
+  ].join(':');
+}
+
+function buildRecoveredSnapshotFromHistory(historySnapshot) {
+  const sourceSnapshot = historySnapshot && Array.isArray(historySnapshot.sources) ? historySnapshot : { sources: [], errors: [] };
+  const latestBySeries = new Map();
+
+  for (const record of sourceSnapshot.sources) {
+    if (!record || !record.timestamp) continue;
+    const key = latestSeriesKey(record);
+    const current = latestBySeries.get(key);
+    if (!current || String(record.timestamp) > String(current.timestamp)) {
+      latestBySeries.set(key, record);
+    }
+  }
+
+  return {
+    mode: 'recovered_live',
+    fetched_at: new Date().toISOString(),
+    recovered_from: 'partitioned_history',
+    sources: Array.from(latestBySeries.values()),
+    errors: [],
+    provider_checks: [],
+    snapshot_scope: {
+      kind: 'global',
+      representative_of_global_live_health: true,
+      target_family: null,
+      target_symbol: null,
+      requested_days: null,
+      recovery_source: 'partitioned_history',
+    },
+  };
+}
+
+function detectScopedSnapshot(snapshot, report) {
+  const sourceSnapshot = snapshot && typeof snapshot === 'object' ? snapshot : {};
+  const scope = sourceSnapshot.snapshot_scope && typeof sourceSnapshot.snapshot_scope === 'object'
+    ? sourceSnapshot.snapshot_scope
+    : null;
+  if (scope && scope.kind === 'scoped') {
+    return {
+      active: true,
+      kind: 'scoped',
+      target_family: scope.target_family || null,
+      target_symbol: scope.target_symbol || null,
+      requested_days: scope.requested_days || null,
+      representative_of_global_live_health: false,
+      reason: 'snapshot_scope_metadata',
+    };
+  }
+
+  const macroStoreTargetFamily = sourceSnapshot.macro_store && sourceSnapshot.macro_store.target_family
+    ? String(sourceSnapshot.macro_store.target_family)
+    : null;
+  const providerChecks = Array.isArray(sourceSnapshot.provider_checks) ? sourceSnapshot.provider_checks : [];
+  const targetFamilyFilter = providerChecks.find((check) => check && check.reason === 'target_family_filter' && check.target_family);
+  const families = new Set((Array.isArray(sourceSnapshot.sources) ? sourceSnapshot.sources : []).map((row) => row && row.family).filter(Boolean));
+  const historicalPolicy = String(sourceSnapshot.quality_filter && sourceSnapshot.quality_filter.policy || '').includes('preserve_historical_records');
+
+  if (macroStoreTargetFamily || targetFamilyFilter || (historicalPolicy && families.size === 1 && report && report.total_records > 0)) {
+    return {
+      active: true,
+      kind: 'scoped',
+      target_family: macroStoreTargetFamily || (targetFamilyFilter ? targetFamilyFilter.target_family : (families.size === 1 ? [...families][0] : null)),
+      target_symbol: null,
+      requested_days: null,
+      representative_of_global_live_health: false,
+      reason: macroStoreTargetFamily || targetFamilyFilter ? 'target_family_filter' : 'single_family_historical_snapshot',
+    };
+  }
+
+  return {
+    active: false,
+    kind: 'global',
+    target_family: null,
+    target_symbol: null,
+    requested_days: null,
+    representative_of_global_live_health: true,
+    reason: null,
+  };
+}
+
+function loadStatusSnapshot() {
+  const snapshot = readSnapshot(DEFAULT_SNAPSHOT);
+  const validation = validateSnapshot(snapshot);
+  const scoped = detectScopedSnapshot(snapshot, validation.report);
+  const missing = !snapshot;
+
+  // A present, global (non-scoped) snapshot is authoritative -- use it as-is.
+  // A MISSING snapshot (fresh checkout / no fetch yet) or a SCOPED/targeted snapshot
+  // both fall through to history recovery so status and the cockpit present a
+  // representative global view instead of crashing on null or showing 'unknown'.
+  if (!missing && !scoped.active) {
+    return {
+      snapshot,
+      report: validation.report,
+      recovered: false,
+      previous_scope: scoped,
+    };
+  }
+
+  // When the primary snapshot is absent, carry a non-null empty snapshot through the
+  // fallback returns so downstream consumers never dereference null.
+  const baseSnapshot = snapshot || { mode: 'no_snapshot', fetched_at: null, sources: [], errors: [] };
+
+  const historySnapshot = readSnapshot(DEFAULT_HISTORY);
+  if (!historySnapshot || !Array.isArray(historySnapshot.sources) || historySnapshot.sources.length === 0) {
+    return {
+      snapshot: baseSnapshot,
+      report: validation.report,
+      recovered: false,
+      previous_scope: scoped,
+    };
+  }
+
+  const recoveredSnapshot = buildRecoveredSnapshotFromHistory(historySnapshot);
+  const recoveredValidation = validateSnapshot(recoveredSnapshot);
+  if (recoveredValidation.report.usable_records <= validation.report.usable_records) {
+    return {
+      snapshot: baseSnapshot,
+      report: validation.report,
+      recovered: false,
+      previous_scope: scoped,
+    };
+  }
+
+  const persistedSnapshot = {
+    ...recoveredSnapshot,
+    sources: recoveredValidation.usableSources,
+    recovery: {
+      source: 'partitioned_history',
+      previous_scope: scoped,
+      previous_records: validation.report.total_records,
+      previous_usable_records: validation.report.usable_records,
+      recovered_records: recoveredValidation.report.total_records,
+      recovered_usable_records: recoveredValidation.report.usable_records,
+    },
+  };
+  writeJson(DEFAULT_SNAPSHOT, persistedSnapshot);
+
+  return {
+    snapshot: persistedSnapshot,
+    report: {
+      ...recoveredValidation.report,
+      total_records: persistedSnapshot.sources.length,
+      usable_records: persistedSnapshot.sources.length,
+      rejected_records: 0,
+    },
+    recovered: true,
+    previous_scope: scoped,
+  };
+}
+
+function loadSystemDoctorSummary() {
+  try {
+    const { checkStorageSubsystem, checkBackendEngine, checkStubsAndMocks } = require('../../../../tools/ops/system_doctor.js');
+    const storage = checkStorageSubsystem();
+    const backendEngine = checkBackendEngine();
+    const mocks = checkStubsAndMocks();
+    return {
+      engine: backendEngine.active_engine,
+      engine_ok: backendEngine.ok,
+      storage_mode: storage.active_storage_format,
+      ts_files: storage.binary_ts.file_count,
+      ts_size_mb: storage.binary_ts.total_size_mb,
+      json_cache_files: storage.json_cache.file_count,
+      json_cache_size_mb: storage.json_cache.total_size_mb,
+      anti_oom: storage.anti_oom_gate.passed ? 'PASS' : 'WARN',
+      anti_oom_passed: storage.anti_oom_gate.passed,
+      active_mocks: mocks.active_mocks.map((m) => m.env),
+      live_trading: mocks.live_trading,
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function loadStatusPortfolio() {
+  try {
+    const agg = runGatewayCommand(['aggregate_portfolio', '--json']);
+    if (agg && agg.ok) {
+      const alpaca = agg.live_paper?.brokers?.find((b) => b.name?.includes('Alpaca'));
+      const polymarket = agg.live?.brokers?.find((b) => b.name?.includes('Polymarket'));
+      const deribit = agg.live_paper?.brokers?.find((b) => b.name?.includes('Deribit'))
+        || agg.live?.brokers?.find((b) => b.name?.includes('Deribit'));
+      const paperBot = agg.paper;
+      const positions = (agg.live_paper?.positions || []).map((p) => ({
+        symbol: p.symbol,
+        quantity: p.quantity,
+        averagePrice: p.averagePrice,
+        marketValue: p.marketValue,
+        unrealizedPl: p.unrealizedPl,
+      }));
+
+      let greeksInfo = null;
+      try {
+        const { getDefaultAnalyticsEngine } = require('../../../../shared/lib/storage/sqlite_analytics.js');
+        const analytics = getDefaultAnalyticsEngine();
+        const greeks = analytics.getNetGreekExposure('BTC');
+        if (greeks) {
+          greeksInfo = {
+            currency: greeks.currency || 'BTC',
+            net_delta: Number(greeks.net_delta_oi || 0),
+            net_gamma: Number(greeks.net_gamma_oi || 0),
+            net_vega: Number(greeks.net_vega_oi || 0),
+            net_theta: Number(greeks.net_theta_oi || 0),
+            open_interest: greeks.total_open_interest || 0,
+            contracts_count: greeks.contracts_count || 0,
+          };
+        }
+      } catch (_) {}
+
+      const hasDeribitEnv = Boolean(process.env.DERIBIT_CLIENT_ID && process.env.DERIBIT_CLIENT_SECRET);
+      const isTestnet = String(process.env.DERIBIT_TESTNET || 'true').toLowerCase() !== 'false';
+      let deribitStatus = 'zero_key_simulation';
+      if (deribit) {
+        if (deribit.ok) {
+          deribitStatus = 'connected';
+        } else if (deribit.error) {
+          deribitStatus = deribit.error.toLowerCase().includes('invalid_credentials')
+            ? 'invalid_credentials'
+            : (deribit.error.toLowerCase().includes('failed (400)') ? 'auth_rejected' : deribit.error);
+        } else {
+          deribitStatus = 'disconnected';
+        }
+      } else if (hasDeribitEnv) {
+        deribitStatus = 'configured';
+      }
+
+      const deribitInfo = {
+        connected: deribit ? Boolean(deribit.ok) : false,
+        testnet: isTestnet,
+        status: deribitStatus,
+        btc_balance: deribit?.balance?.BTC ?? 0,
+        eth_balance: deribit?.balance?.ETH ?? 0,
+        sol_balance: deribit?.balance?.SOL ?? 0,
+        greeks: greeksInfo,
+      };
+
+      const mt5Broker = agg.live?.brokers?.find((b) => b.name?.includes('MetaTrader') || b.name?.includes('MT5'));
+      let mt5Info = null;
+      if (mt5Broker && (mt5Broker.status === 'connected' || mt5Broker.ok)) {
+        const bal = mt5Broker.balance || {};
+        mt5Info = {
+          connected: true,
+          balance: bal.USD ?? 0,
+          equity: bal.EQUITY ?? 0,
+          margin: (bal.EQUITY ?? 0) - (bal.FREE_MARGIN ?? 0),
+          free_margin: bal.FREE_MARGIN ?? 0,
+        };
+      } else {
+        mt5Info = {
+          connected: false,
+          status: 'disconnected',
+        };
+      }
+
+      return {
+        alpaca_paper: alpaca ? {
+          usd: alpaca.balance?.USD ?? 0,
+          equity: alpaca.balance?.EQUITY ?? 0,
+          buying_power: alpaca.balance?.BUYING_POWER ?? 0,
+          position_count: alpaca.position_count ?? 0,
+        } : null,
+        polymarket: polymarket ? {
+          usd: polymarket.balance?.USD ?? 0,
+          equity: polymarket.balance?.EQUITY ?? 0,
+          status: polymarket.status || 'connected',
+        } : null,
+        deribit: deribitInfo,
+        paper_bot: paperBot ? {
+          virtual_balance: paperBot.virtual_balance ?? 100,
+          open_cost: paperBot.open_cost ?? 0,
+          open_positions: paperBot.open_positions ?? 0,
+        } : null,
+        mt5: mt5Info,
+        open_positions: positions,
+      };
+    }
+  } catch (_) {}
+  return null;
+}
+
+function loadStatusRisk(portfolio) {
+  if (!portfolio) return null;
+  const equity = portfolio.alpaca_paper?.equity ?? 100000;
+  const positions = portfolio.open_positions || [];
+  const grossExposure = positions.reduce((sum, p) => sum + Math.abs(p.marketValue || 0), 0);
+  const peakEquity = Math.max(100000, equity);
+  const drawdown = peakEquity > 0 ? Math.max(0, (peakEquity - equity) / peakEquity) : 0;
+  return {
+    peak_equity: peakEquity,
+    current_equity: equity,
+    drawdown,
+    max_drawdown_limit: 0.30,
+    gross_exposure: grossExposure,
+  };
+}
+
+function buildStatusPayload(snapshot, report, backend) {
+  const scoped = detectScopedSnapshot(snapshot, report);
+  const freshnessScope = scoped.active ? 'last_fetch_snapshot_scoped' : 'last_fetch_snapshot';
+  const quality = scoped.active ? 'scoped snapshot only' : (report.ok ? 'ok' : 'needs attention');
+  const qualityBasis = scoped.active
+    ? 'latest snapshot is scoped to a targeted or historical ingest and is not representative of global live health; run `backend integrity --json` for configured cache coverage'
+    : 'most recent fetch snapshot; run `backend integrity --json` for configured symbol/timeframe cache coverage';
+
+  const doctor = loadSystemDoctorSummary();
+  const portfolio = loadStatusPortfolio();
+  const risk = loadStatusRisk(portfolio);
+
+  return {
+    phase: currentPhaseLabel(),
+    backend: backend.available ? 'available' : 'unavailable',
+    backend_ok: Boolean(backend.ok),
+    cache_mode: (snapshot && snapshot.mode) || 'unknown',
+    fetched_at: (snapshot && snapshot.fetched_at) || 'unknown',
+    records: report.total_records,
+    usable_records: report.usable_records,
+    rejected_records: report.rejected_records,
+    stale_records: report.freshness.stale_records,
+    freshness_scope: freshnessScope,
+    integrity_scope: 'configured_ts_cache',
+    freshness: {
+      scope: freshnessScope,
+      reject_stale: report.reject_stale,
+      stale_records: report.freshness.stale_records,
+      issues: report.freshness.issues,
+    },
+    snapshot_scope: scoped,
+    provider_errors: report.provider_errors.length,
+    quality,
+    quality_basis: qualityBasis,
+    recovery: snapshot && snapshot.recovery ? snapshot.recovery : null,
+    runtime_policy: resolveRuntimePolicy(),
+    doctor,
+    portfolio,
+    risk,
+    next: 'run demo for sample indicators, model comparison, and backtest',
+  };
+}
+
+function buildCockpitModel(opts = {}) {
+  // Use the recovering loader (not a raw file read) so a fresh checkout with no
+  // last_fetch.json still presents a representative recovered_live snapshot.
+  const snapshot = loadStatusSnapshot().snapshot;
+  const quality = safeReadJson(DEFAULT_QUALITY_REPORT);
+  const features = safeReadJson(DEFAULT_FEATURES);
+  const modelReport = safeReadJson(DEFAULT_MODEL_REPORT);
+  const backtestReport = safeReadJson(DEFAULT_BACKTEST);
+  const portfolio = safeReadJson(DEFAULT_PORTFOLIO);
+  // Opt-in only: fetching Polymarket spawns a real gateway subprocess with a
+  // real network round-trip (~5s+, matches the existing trade_polymarket.js
+  // precedent) -- fine for the actual interactive `cockpit` CLI command
+  // (commandCockpit passes includePolymarket:true below), but every other
+  // caller of buildCockpitModel (tests included -- this function previously
+  // had zero network I/O) should keep getting the fast, offline, file-read-
+  // only behavior they already depend on.
+  const polymarket = opts.includePolymarket ? fetchPolymarketPortfolioForCockpit() : null;
+  const statusCard = summarizeStatusCard(snapshot, quality);
+  const modelCard = summarizeModelCard(modelReport);
+  const backtestCard = summarizeBacktestCard(backtestReport);
+  const featuresCard = summarizeFeaturesCard(features);
+  const portfolioCard = summarizePortfolioCard(mergePolymarketIntoPortfolio(portfolio, polymarket));
+  const optionsCard = summarizeOptionsCard();
+  const cards = [
+    statusCard,
+    featuresCard,
+    modelCard,
+    backtestCard,
+    portfolioCard,
+    optionsCard,
+  ];
+  return {
+    generated_at: new Date().toISOString(),
+    time: new Date().toLocaleTimeString(),
+    title: 'Sovereign CLI Cockpit',
+    status: {
+      backend: backendAvailability().available ? 'available' : 'unavailable',
+      cache: statusCard.state,
+      quote_provider: opts.quoteState !== undefined
+        ? opts.quoteState
+        : ((quality && (!quality.ok || (quality.provider_errors && quality.provider_errors.length > 0) || (quality.freshness && quality.freshness.stale_records > 0))) ? 'warn' : 'ok'),
+    },
+    cards,
+  };
+}
+
+async function quoteProviderHeaderState() {
+  try {
+    const config = await loadConfig();
+    const imported = await loadExternalQuoteInputs(config);
+    const report = validateSnapshot({
+      mode: 'live',
+      fetched_at: new Date().toISOString(),
+      sources: imported.records,
+      errors: imported.errors,
+    }, { rejectStale: true }).report;
+    return imported.errors.length === 0 && report.ok ? 'ok' : 'warn';
+  } catch {
+    return 'warn';
+  }
+}
+
+function renderCockpit(model) {
+  // Rich-gated rule character: ═ when Unicode is available, = otherwise.
+  const dline = A.richGlyph('dline', isRichTerminal);
+  // Rich-gated status indicator: ■ when Unicode is available, * otherwise.
+  const indicator = A.richGlyph('indicator', isRichTerminal);
+
+  const lines = [];
+  lines.push(`${A.c(A.SEMANTIC.HEADER, model.title)} ${A.muted('| ' + model.time)}`);
+  lines.push(A.muted(dline.repeat(80)));
+
+  const backendStatus = A.c(A.statusColor(model.status.backend), model.status.backend);
+  const cacheStatus   = A.c(A.statusColor(model.status.cache),   model.status.cache);
+  const quoteStatus   = A.c(A.statusColor(model.status.quote_provider), model.status.quote_provider);
+
+  lines.push(`  ${A.c(A.BOLD, 'System:')} backend=${backendStatus}  cache=${cacheStatus}  quotes=${quoteStatus}`);
+  lines.push(A.muted(A.GLYPH.hline.repeat(80)));
+
+  for (const card of model.cards) {
+    const dot = A.c(A.statusColor(card.state), indicator);
+    lines.push(`  ${dot} ${A.c(A.BOLD, card.title.toUpperCase())} ${A.muted('(' + card.subtitle + ')')}`);
+
+    const metrics = Object.entries(card.metrics || {}).filter(([, value]) => value != null);
+    if (metrics.length) {
+      const metricLine = metrics
+        .map(([key, value]) => `${A.muted(key + '=')}${A.c(A.WHITE, String(renderHumanValue(value)).trim())}`)
+        .join('  ');
+      lines.push(`    ${metricLine}`);
+    }
+    lines.push('');
+  }
+
+  lines.push(A.muted(A.GLYPH.hline.repeat(80)));
+  lines.push(`  ${A.c(A.BOLD, 'Commands:')} status | backend status | quotes status | models | bt | ${A.c(A.CYAN, 'trade balance')}`);
+  lines.push(A.muted('  Tip: use --inspect <status|features|model|backtest|portfolio|options> for raw JSON.'));
+  return lines.join('\n');
+}
+
+function cockpitInspectPayload(name) {
+  const model = buildCockpitModel();
+  const lookup = {
+    status: model.cards[0],
+    features: model.cards[1],
+    model: model.cards[2],
+    backtest: model.cards[3],
+    portfolio: model.cards[4],
+    options: model.cards[5],
+  };
+  return lookup[name] || null;
+}
+
+function renderStatus(payload) {
+  const line = '-'.repeat(72);
+  const lines = [`\n=== SYSTEM STATUS & HEALTH ===`];
+  if (payload.doctor) {
+    const d = payload.doctor;
+    lines.push(`Compute Engine:   ${d.engine || (payload.backend_ok ? 'OK' : 'ERROR')} (${d.engine_ok ? 'healthy' : 'fallback'})`);
+    lines.push(`Storage Mode:     ${d.storage_mode || payload.cache_mode || 'unknown'} (${d.ts_files || 0} .bin files, ${d.ts_size_mb || 0} MB) | Anti-OOM: ${d.anti_oom}`);
+  } else {
+    lines.push(`Backend:          ${payload.backend_ok ? 'OK' : 'ERROR'} (${payload.backend || 'unknown'})`);
+    lines.push(`Cache Mode:       ${payload.cache_mode || 'unknown'}`);
+  }
+  if (payload.fetched_at) lines.push(`Fetched At:       ${payload.fetched_at}`);
+
+  lines.push(`\n[DATA QUALITY]`);
+  lines.push(`  State:            ${payload.quality || 'unknown'}`);
+  lines.push(`  Total Records:    ${payload.records || 0}`);
+  lines.push(`  Usable Records:   ${payload.usable_records || 0}`);
+  lines.push(`  Rejected Records: ${payload.rejected_records || 0}`);
+  lines.push(`  Stale Records:    ${payload.stale_records || 0}`);
+  lines.push(`  Provider Errors:  ${payload.provider_errors || 0}`);
+
+  if (payload.portfolio) {
+    const p = payload.portfolio;
+    lines.push(`\n[PORTFOLIO & BALANCES]`);
+    if (p.alpaca_paper) {
+      lines.push(`  Alpaca (Paper):   USD: $${formatHumanNumber(p.alpaca_paper.usd)} | Equity: $${formatHumanNumber(p.alpaca_paper.equity)} | Buying Power: $${formatHumanNumber(p.alpaca_paper.buying_power)}`);
+    }
+    if (p.polymarket) {
+      lines.push(`  Polymarket:       Collateral: $${formatHumanNumber(p.polymarket.usd)} | Equity: $${formatHumanNumber(p.polymarket.equity)} (${p.polymarket.status})`);
+    }
+    if (p.paper_bot) {
+      lines.push(`  Virtual Paper:    Balance: $${formatHumanNumber(p.paper_bot.virtual_balance)} | Open Cost: $${formatHumanNumber(p.paper_bot.open_cost)}`);
+    }
+    if (p.mt5) {
+      if (p.mt5.connected) {
+        lines.push(`  MT5 (Demo):       Balance: $${formatHumanNumber(p.mt5.balance)} | Equity: $${formatHumanNumber(p.mt5.equity)} | Free Margin: $${formatHumanNumber(p.mt5.free_margin)}`);
+      } else {
+        lines.push(`  MT5 (Demo):       Bridge Disconnected`);
+      }
+    }
+    if (p.deribit) {
+      const mode = p.deribit.testnet ? 'Testnet' : 'Live';
+      const statusLabel = p.deribit.connected ? `${mode} Connected` : (p.deribit.status || 'Offline / Sim');
+      lines.push(`  Deribit (Options): BTC: ${formatHumanNumber(p.deribit.btc_balance || 0)} | ETH: ${formatHumanNumber(p.deribit.eth_balance || 0)} | SOL: ${formatHumanNumber(p.deribit.sol_balance || 0)} (${statusLabel})`);
+      if (p.deribit.greeks) {
+        const g = p.deribit.greeks;
+        lines.push(`    Net Greeks (${g.currency}): Δ ${g.net_delta.toFixed(2)} | Γ ${g.net_gamma.toFixed(2)} | ν $${g.net_vega.toFixed(0)} | Θ $${g.net_theta.toFixed(0)}/day | OI: ${g.open_interest}`);
+      }
+    }
+    if (Array.isArray(p.open_positions) && p.open_positions.length > 0) {
+      lines.push(`  Open Positions (${p.open_positions.length}):`);
+      for (const pos of p.open_positions.slice(0, 8)) {
+        const sign = (pos.unrealizedPl || 0) >= 0 ? '+' : '';
+        lines.push(`    - ${pos.symbol}: ${pos.quantity} @ $${formatHumanNumber(pos.averagePrice)} (Val: $${formatHumanNumber(pos.marketValue)} | PnL: ${sign}$${formatHumanNumber(pos.unrealizedPl)})`);
+      }
+      if (p.open_positions.length > 8) {
+        lines.push(`    ... and ${p.open_positions.length - 8} more open positions`);
+      }
+    } else {
+      lines.push(`  Open Positions:   None`);
+    }
+  }
+
+  if (payload.risk) {
+    const r = payload.risk;
+    lines.push(`\n[RISK & PROP FIRM GUARD]`);
+    lines.push(`  Peak Equity:      $${formatHumanNumber(r.peak_equity)}`);
+    lines.push(`  Current Drawdown: ${(Number(r.drawdown || 0) * 100).toFixed(2)}% (Limit: ${(Number(r.max_drawdown_limit || 0.3) * 100).toFixed(2)}%)`);
+    lines.push(`  Gross Exposure:   $${formatHumanNumber(r.gross_exposure)}`);
+  }
+
+  if (payload.doctor && Array.isArray(payload.doctor.active_mocks) && payload.doctor.active_mocks.length > 0) {
+    lines.push(`\n[ACTIVE MOCK FLAGS]`);
+    lines.push(`  ${payload.doctor.active_mocks.join(', ')}`);
+  }
+
+  if (payload.recovery) {
+    lines.push(`\n[RECOVERY]`);
+    lines.push(`  ${payload.recovery}`);
+  }
+
+  if (payload.next) {
+    lines.push(`\nNext Step: ${payload.next}`);
+  }
+  lines.push(`${line}\n`);
+  return lines.join('\n');
+}
+
+function commandStatus(args) {
+  const loaded = loadStatusSnapshot();
+  const snapshot = loaded.snapshot;
+  const report = loaded.report;
+  const backend = runBackendStatus(args);
+  writeJson(DEFAULT_QUALITY_REPORT, report);
+  
+  const payload = buildStatusPayload(snapshot, report, backend);
+  if (hasFlag(args, '--json')) {
+    printPayload(payload, args);
+  } else {
+    console.log(renderStatus(payload));
+  }
+  return 0;
+}
+
+async function commandCockpit(args) {
+  const quoteState = await quoteProviderHeaderState();
+  const model = buildCockpitModel({ quoteState, includePolymarket: true });
+  if (hasFlag(args, '--json')) {
+    printPayload(model, args);
+    return 0;
+  }
+  if (hasFlag(args, '--pager')) {
+    pageText(renderCockpit(model), args);
+  } else {
+    console.log(renderCockpit(model));
+  }
+  return 0;
+}
+
+module.exports = {
+  summarizeModelCard,
+  summarizeBacktestCard,
+  summarizeStatusCard,
+  summarizeFeaturesCard,
+  summarizePortfolioCard,
+  mergePolymarketIntoPortfolio,
+  buildCockpitModel,
+  quoteProviderHeaderState,
+  renderCockpit,
+  cockpitInspectPayload,
+  detectScopedSnapshot,
+  buildRecoveredSnapshotFromHistory,
+  loadStatusSnapshot,
+  buildStatusPayload,
+  commandStatus,
+  commandCockpit,
+};

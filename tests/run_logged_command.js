@@ -5,7 +5,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const {
   sanitizedText,
-} = require('../scripts/dev/sanitized_diagnostics');
+} = require('../tools/dev/sanitized_diagnostics');
 const { sourceRevision } = require('./run_node_tests.js');
 
 const DEFAULT_FAILURE_LOG = path.resolve(

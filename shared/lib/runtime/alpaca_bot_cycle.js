@@ -281,7 +281,7 @@ async function runAlpacaExitCheck(args = [], options = {}) {
 
       if (executionEnabled) {
         try {
-          const tradeFn = options.commandTrade || require('../../../backend/cli/commands/trade/trade.js').commandTrade;
+          const tradeFn = options.commandTrade || require('../../../backend/CLI-TUI/commands/trade/trade.js').commandTrade;
           const { generateOrderSignature } = require('./sub_positions_ledger.js');
           const signature = generateOrderSignature({
             strategyId: exitingItems[0].position.strategyName || 'alpaca_paper',

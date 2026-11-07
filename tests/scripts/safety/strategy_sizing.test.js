@@ -5,7 +5,7 @@ const test = require('node:test');
 
 const {
   buildStrategySizingDecision,
-} = require('../../../backend/cli/commands/strategy/strategy.js');
+} = require('../../../frontend/cli-tui/commands/strategies/strategy.js');
 
 test('strategy sizing fails closed instead of fabricating a one-dollar price', () => {
   for (const referencePrice of [undefined, null, 0, -1, Number.NaN]) {

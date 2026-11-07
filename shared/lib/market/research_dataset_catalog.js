@@ -11,7 +11,7 @@ const { readManifest } = require('./append_only_segments.js');
 const { tsIndexPath } = require('./ts_index_storage.js');
 const { DATASET_CATALOG_VERSION } = require('../strategy/sweep_contracts.js');
 
-const DEFAULT_MARKET_CONFIG = `${REPO_ROOT}/config/markets/data_sources.yaml`;
+const DEFAULT_MARKET_CONFIG = `${REPO_ROOT}/configs/markets/data_sources.yaml`;
 const MAX_FINGERPRINT_BYTES = 256 * 1024 * 1024;
 
 function parseCsvSet(value) {

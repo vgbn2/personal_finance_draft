@@ -55,7 +55,7 @@ jobs:
         env:
           BUMP_INPUT: ${{ inputs.bump || 'auto' }}
         run: |
-          node scripts/ops/release_version.js --bump="$BUMP_INPUT" --apply --json > release_result.json
+          node tools/ops/release_version.js --bump="$BUMP_INPUT" --apply --json > release_result.json
           cat release_result.json
 
           RELEASE_NEEDED=$(node -e "const r = JSON.parse(require('fs').readFileSync('release_result.json')); console.log(r.releaseNeeded);")

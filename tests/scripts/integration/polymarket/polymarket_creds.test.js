@@ -17,7 +17,7 @@ require('ts-node').register({
 const {
   normalizePolymarketApiCreds,
   summarizePolymarketApiCredShape,
-} = require('../../../../backend/gateway/src/polymarket/index.ts');
+} = require('../../../../backend/execution/src/polymarket/index.ts');
 
 test('normalizePolymarketApiCreds accepts direct key/secret/passphrase shape', () => {
   assert.deepEqual(

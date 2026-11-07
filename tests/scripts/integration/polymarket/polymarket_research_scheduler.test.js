@@ -11,7 +11,7 @@ const {
   runPolymarketResearchScheduler,
   selectScopedActiveTokens,
 } = require('../../../../backend/scripts/data_ops/polymarket_research_scheduler.js');
-const { commandPolymarket } = require('../../../../backend/cli/commands/trade/trade_polymarket.js');
+const { commandPolymarket } = require('../../../../frontend/cli-tui/commands/trade/trade_polymarket.js');
 const { tokenOrderbookLitePath } = require('../../../../shared/lib/market/polymarket_history.js');
 
 const NOW = Date.parse('2026-07-10T00:00:00.000Z');

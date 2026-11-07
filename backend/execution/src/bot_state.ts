@@ -1,0 +1,169 @@
+require('../../../shared/lib/runtime/env.js');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface BotConfig {
+  enabled: boolean;
+  liveTrading: boolean;
+  intervalMinutes: number;
+  maxPositions: number;
+  positionSizeUsdc: number;
+  minEdgeThreshold: number;
+  stopLossPct: number;
+  edgeCaptureRatio: number;
+  fokCooldownMinutes: number;
+  maxPositionAgeHours: number;
+}
+
+export interface BotPosition {
+  positionId: string;
+  tokenId: string;
+  slug: string;
+  side: 'YES' | 'NO';
+  entryPrice: number;
+  fillPrice: number;
+  shares: number;
+  targetPrice: number;
+  stopPrice: number;
+  entryTimestamp: string;
+  aiProbabilityAtEntry: number;
+  lastFokFailTimestamp: string | null;
+}
+
+export interface CycleResult {
+  cycleId: string;
+  startedAt: string;
+  completedAt: string | null;
+  balanceBefore: number;
+  balanceAfter: number | null;
+  sellsExecuted: number;
+  buysFilled: number;
+  errors: string[];
+  dryRun: boolean;
+}
+
+export interface BotState {
+  version: number;
+  config: BotConfig;
+  positions: BotPosition[];
+  cycleHistory: CycleResult[];
+  lastCycleAt: string | null;
+  lockedAt: string | null;
+}
+
+// ─── Paths ────────────────────────────────────────────────────────────────────
+
+// __dirname is available via tsx at runtime and in the CommonJS build output.
+// execution/src → execution → backend → repo root (3 hops)
+const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
+const CACHE_DIR  = path.join(REPO_ROOT, 'storage', 'data', 'cache');
+const STATE_PATH = path.join(CACHE_DIR, 'bot_state.json');
+const LOCK_PATH  = path.join(CACHE_DIR, 'bot_cycle.lock');
+
+// ─── Defaults ─────────────────────────────────────────────────────────────────
+
+export const DEFAULT_CONFIG: BotConfig = {
+  enabled:             false,
+  liveTrading:         false,
+  intervalMinutes:     15,
+  maxPositions:        5,
+  positionSizeUsdc:    10,
+  minEdgeThreshold:    0.06,
+  stopLossPct:         0.30,
+  edgeCaptureRatio:    0.50,
+  fokCooldownMinutes:  30,
+  maxPositionAgeHours: 168,
+};
+
+const DEFAULT_STATE: BotState = {
+  version:      1,
+  config:       DEFAULT_CONFIG,
+  positions:    [],
+  cycleHistory: [],
+  lastCycleAt:  null,
+  lockedAt:     null,
+};
+
+// ─── Persistence helper (JSON file is primary store in local mode) ────────────
+
+// ─── State I/O ────────────────────────────────────────────────────────────────
+
+export function loadBotState(): BotState {
+  if (fs.existsSync(STATE_PATH)) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(STATE_PATH, 'utf8')) as Partial<BotState>;
+      return {
+        ...DEFAULT_STATE,
+        ...raw,
+        config: { ...DEFAULT_CONFIG, ...(raw.config ?? {}) },
+      };
+    } catch {
+      // fallthrough to default
+    }
+  }
+  return { ...DEFAULT_STATE, config: { ...DEFAULT_CONFIG } };
+}
+
+export async function loadBotStateWithFallback(): Promise<BotState> {
+  return loadBotState();
+}
+
+export function saveBotState(state: BotState): void {
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  const tmp = STATE_PATH + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(state), 'utf8');
+  fs.renameSync(tmp, STATE_PATH);
+}
+
+// ─── Cycle lock ───────────────────────────────────────────────────────────────
+
+interface LockFile { pid: number; startedAt: string }
+const LOCK_MAX_AGE_MS = 10 * 60 * 1000;
+
+function isPidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e: any) {
+    return e?.code !== 'ESRCH';
+  }
+}
+
+function breakStaleLock(payload: string): boolean {
+  try {
+    const lock = JSON.parse(fs.readFileSync(LOCK_PATH, 'utf8')) as LockFile;
+    const age = Date.now() - new Date(lock.startedAt).getTime();
+    if (age < LOCK_MAX_AGE_MS && isPidAlive(lock.pid)) {
+      return false;
+    }
+    fs.unlinkSync(LOCK_PATH);
+    fs.writeFileSync(LOCK_PATH, payload, { flag: 'wx', mode: 0o600 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function acquireLock(): boolean {
+  const payload = JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() });
+  try {
+    fs.writeFileSync(LOCK_PATH, payload, { flag: 'wx', mode: 0o600 });
+    return true;
+  } catch (err: any) {
+    if (err?.code !== 'EEXIST') return false;
+    return breakStaleLock(payload);
+  }
+}
+
+export function releaseLock(): void {
+  try {
+    if (fs.existsSync(LOCK_PATH)) {
+      const lock = JSON.parse(fs.readFileSync(LOCK_PATH, 'utf8'));
+      if (lock && lock.pid === process.pid) {
+        fs.unlinkSync(LOCK_PATH);
+      }
+    }
+  } catch { /* already gone or unreadable */ }
+}

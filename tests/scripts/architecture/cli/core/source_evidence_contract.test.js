@@ -18,7 +18,7 @@ const {
   parseCounts,
   runVerification,
   validateEvidence,
-} = require('../../../../../scripts/dev/verify_source_evidence');
+} = require('../../../../../tools/dev/verify_source_evidence');
 
 function git(cwd, args) {
   return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();

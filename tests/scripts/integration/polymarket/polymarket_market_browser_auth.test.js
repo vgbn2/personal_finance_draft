@@ -7,7 +7,7 @@ const {
   commandPolymarket,
   runPolymarketMarketActionLoop,
   submitPolymarketBuyOrder,
-} = require('../../../../backend/cli/commands/trade/trade_polymarket');
+} = require('../../../../frontend/cli-tui/commands/trade/trade_polymarket');
 
 test('public Polymarket browser cancel requires no live authorization and does not mutate parent authorization', async () => {
   const previous = process.env.SOVEREIGN_EXECUTION_AUTHORIZED;

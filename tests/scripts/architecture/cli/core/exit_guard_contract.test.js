@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
-const { registerCtrlCPress, resetCtrlC } = require('../../../../../backend/cli/lib/exit_guard');
+const { registerCtrlCPress, resetCtrlC } = require('../../../../../frontend/cli-tui/lib/exit_guard');
 
 test('double ctrl+c requires two presses within the exit window', async () => {
   resetCtrlC();

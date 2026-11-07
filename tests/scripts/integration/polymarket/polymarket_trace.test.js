@@ -14,7 +14,7 @@ require('ts-node').register({
   },
 });
 
-const { parseCsvTable, summarizeTraceRows } = require('../../../../backend/gateway/src/polymarket/index.ts');
+const { parseCsvTable, summarizeTraceRows } = require('../../../../backend/execution/src/polymarket/index.ts');
 
 test('parseCsvTable parses simple block explorer csv rows', () => {
   const rows = parseCsvTable([

@@ -12,8 +12,8 @@ const {
   computeStrategyFingerprint,
   computeDistance,
   loadExplorerState
-} = require('../../../scripts/strategies/auto_strategy_explorer.js');
-const { parseStrategyYaml } = require('../../../backend/cli/commands/strategy/strategy_presenter.js');
+} = require('../../../tools/strategies/auto_strategy_explorer.js');
+const { parseStrategyYaml } = require('../../../frontend/cli-tui/commands/strategies/strategy_presenter.js');
 const { authorizeMcpTool } = require('../../../dist/mcp_server/lib/access_control.js');
 const { CAPABILITIES } = require('../../../shared/lib/auth/access_policy.js');
 const { createServicePrincipal } = require('../../../shared/lib/auth/service_principals.js');

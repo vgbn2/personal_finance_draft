@@ -5,7 +5,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 
-const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', '..', 'backend', 'cli', 'sovereign_cli.js');
+const CLI_PATH = path.resolve(__dirname, '..', '..', '..', '..', '..', 'frontend', 'cli-tui', 'sovereign_cli.js');
 
 function runCli(args, env = {}) {
   return spawnSync(process.execPath, [CLI_PATH, ...args], {

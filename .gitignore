@@ -5,8 +5,8 @@ node_modules
 node_modules/
 backend/api/node_modules
 backend/api/node_modules/
-backend/gateway/node_modules
-backend/gateway/node_modules/
+backend/execution/node_modules
+backend/execution/node_modules/
 Frontend/dashboard/node_modules
 Frontend/dashboard/node_modules/
 frontend/dashboard/node_modules
@@ -21,10 +21,10 @@ npm-debug.log*
 
 # Build Directories
 build/
-backend/core/build/
-backend/core/build_asan/
+backend/cpp_core/build/
+backend/cpp_core/build_asan/
 cpp_core/build/
-backend/cli/target/
+frontend/cli-tui/target/
 cli/target/
 web/node_modules/
 coverage/
@@ -35,7 +35,8 @@ compile_commands.json
 graphify-out/
 site/
 .cache/
-backfill_daemon*
+/backfill_daemon*
+storage/**/backfill_daemon*
 
 # Local agent/workflow state
 skills-lock.json
@@ -191,7 +192,7 @@ models/*.onnx
 storage/models/*.onnx
 *.ipynb
 notebooks/
-scripts/dev/refine_notebooks.js
+tools/dev/refine_notebooks.js
 Frontend/dashboard/*.zip
 __pycache__
 __pycache__/
@@ -217,10 +218,10 @@ docss/
 _quarantine_grain/
 
 # Local unreferenced scripts and legacy configs (local-only, untracked)
-config/strategies/trad/
+configs/strategies/trad/
 reports/restricted_dependency_advisory_2026-07-28.json
-scripts/dev/graphify_update_check.py
-scripts/dev/recover_workspace_history.js
-scripts/dev/refine_notebooks.js
-scripts/dev/run_10_strats_1m.js
-scripts/ml/training/
+tools/dev/graphify_update_check.py
+tools/dev/recover_workspace_history.js
+tools/dev/refine_notebooks.js
+tools/dev/run_10_strats_1m.js
+tools/ml/training/

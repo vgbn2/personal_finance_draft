@@ -17,7 +17,7 @@ require('ts-node').register({
 const {
   collectPolymarketPortfolio,
   runPolymarketPrivateReadCommand,
-} = require('../../../../backend/gateway/src/commands/polymarket_private.ts');
+} = require('../../../../backend/execution/src/commands/polymarket_private.ts');
 
 function adapter(overrides = {}) {
   return {

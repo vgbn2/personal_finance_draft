@@ -194,7 +194,7 @@ test('ClusterCoordinator: Remote peer parsing and polling', async () => {
 });
 
 test('commandCluster: CLI status and doctor execution', async () => {
-  const { commandCluster } = require('../../../backend/cli/commands/operational/cluster.js');
+  const { commandCluster } = require('../../../frontend/cli-tui/commands/operational/health.js');
 
   const statusExit = await commandCluster(['status', '--json']);
   assert.strictEqual(statusExit, 0);

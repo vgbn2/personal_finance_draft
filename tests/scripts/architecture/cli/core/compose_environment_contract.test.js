@@ -40,7 +40,7 @@ test('schema-3 service rows match all nine isolated Compose environment files', 
     'host-backup': 'backend/scripts/ops/host_backup.js',
     mt5: 'host.docker.internal:host-gateway',
     'polymarket-research': 'polymarket history schedule',
-    'strategy-explorer': 'scripts/strategies/auto_strategy_explorer.js',
+    'strategy-explorer': 'tools/strategies/auto_strategy_explorer.js',
   };
 
   assert.deepEqual(Object.keys(manifest.compose_services).sort(), [...EXPECTED_COMPOSE_SERVICES]);

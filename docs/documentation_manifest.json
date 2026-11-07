@@ -37,6 +37,55 @@
   },
   "documents": [
     {
+      "path": "docs/architecture/mcp-bridge-capability-order.md",
+      "type": "explanation",
+      "audience": [
+        "contributors",
+        "security-auditors"
+      ],
+      "owner": "mcp-server",
+      "status": "canonical",
+      "source_paths": [
+        "backend/mcp_server/lib/bridge.ts",
+        "frontend/cli-tui/sovereign_cli.js"
+      ],
+      "test_paths": [
+        "tests/scripts/integration/trading/mcp_trade_contract.test.js"
+      ],
+      "review_triggers": [
+        "capability-order-change",
+        "cli-discovery-change",
+        "authorization-boundary-change"
+      ]
+    },
+    {
+      "path": "docs/architecture/ownership-driven-debloat.md",
+      "type": "explanation",
+      "audience": [
+        "architects",
+        "contributors",
+        "maintainers"
+      ],
+      "owner": "architecture",
+      "status": "canonical",
+      "source_paths": [
+        "frontend/cli-tui",
+        "backend/cpp_core",
+        "backend/execution",
+        "configs",
+        "tools"
+      ],
+      "test_paths": [
+        "tests/scripts/architecture/cli/core/structure_contract.test.js",
+        "tests/scripts/architecture/cli/core/documentation_contract.test.js"
+      ],
+      "review_triggers": [
+        "ownership-boundary-change",
+        "canonical-path-change",
+        "implementation-deletion"
+      ]
+    },
+    {
       "path": "docs/Reports/SOVEREIGN_TECHNICAL_MANUAL_AND_CYBERSECURITY_SPECIFICATION.md",
       "type": "orientation",
       "audience": [
@@ -105,7 +154,7 @@
       "status": "canonical",
       "source_paths": [
         "shared/lib/runtime/alpaca_bot_cycle.js",
-        "backend/gateway/src/index.ts"
+        "backend/execution/src/index.ts"
       ],
       "test_paths": [
         "tests/scripts/lib/alpaca_bot_cycle.test.js"
@@ -128,7 +177,7 @@
       "source_paths": [
         "shared/lib/runtime/host_maintenance.js",
         "backend/scripts/ops/host_backup.js",
-        "scripts/deploy/deploy_proxmox.sh"
+        "tools/deploy/deploy_proxmox.sh"
       ],
       "test_paths": [
         "tests/scripts/operational/host_maintenance.test.js",
@@ -198,8 +247,8 @@
       "owner": "execution",
       "status": "canonical",
       "source_paths": [
-        "backend/gateway/src/polymarket/paper_ledger.ts",
-        "backend/gateway/src/polymarket/paper.ts"
+        "backend/execution/src/polymarket/paper_ledger.ts",
+        "backend/execution/src/polymarket/paper.ts"
       ],
       "test_paths": [
         "tests/scripts/integration/gateway/paper_ledger_settlement.test.js"
@@ -222,8 +271,8 @@
       "status": "canonical",
       "source_paths": [
         "shared/lib/strategy/polymarket_clob_model.js",
-        "backend/gateway/src/adapters/polymarket_adapter.ts",
-        "backend/gateway/src/polymarket/polybolt_bbo_monitor.ts"
+        "backend/execution/src/adapters/polymarket_adapter.ts",
+        "backend/execution/src/polymarket/polybolt_bbo_monitor.ts"
       ],
       "test_paths": [
         "tests/scripts/integration/polymarket/polymarket_clob_spread_fallback.test.js",
@@ -248,16 +297,16 @@
       "owner": "security",
       "status": "canonical",
       "source_paths": [
-        "backend/core/src/data/data_validator.hpp",
-        "backend/core/src/data/data_validator.cpp",
-        "backend/core/src/data/binary_ts_merger.cpp",
-        "backend/core/src/data/binary_ts_reader.cpp",
+        "backend/cpp_core/src/data/data_validator.hpp",
+        "backend/cpp_core/src/data/data_validator.cpp",
+        "backend/cpp_core/src/data/binary_ts_merger.cpp",
+        "backend/cpp_core/src/data/binary_ts_reader.cpp",
         "backend/api/server/services/cli_executor.js",
         "backend/api/server/services/input_validator.js"
       ],
       "test_paths": [
         "tests/scripts/security/binary_injection_guard.test.js",
-        "backend/core/test/data/binary_ts_reader_test.cpp"
+        "backend/cpp_core/test/data/binary_ts_reader_test.cpp"
       ],
       "review_triggers": [
         "security-review",
@@ -298,7 +347,7 @@
       "owner": "native-core",
       "status": "historical",
       "source_paths": [
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "historical-c-engine-notes"
@@ -314,7 +363,7 @@
       "owner": "native-core",
       "status": "historical",
       "source_paths": [
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "historical-rust-parity"
@@ -525,7 +574,7 @@
       "owner": "documentation",
       "status": "canonical",
       "source_paths": [
-        "scripts/dev/build_docs_rag_index.js",
+        "tools/dev/build_docs_rag_index.js",
         "shared/lib/ai/docs_rag_indexer.js"
       ],
       "test_paths": [
@@ -741,9 +790,9 @@
       "owner": "architecture",
       "status": "canonical",
       "source_paths": [
-        "backend/cli/sovereign_cli.js",
+        "frontend/cli-tui/sovereign_cli.js",
         "backend/api/app.js",
-        "backend/core/CMakeLists.txt",
+        "backend/cpp_core/CMakeLists.txt",
         "shared/lib/settings/runtime_policy.js"
       ],
       "review_triggers": [
@@ -786,9 +835,9 @@
       "owner": "native-core",
       "status": "canonical",
       "source_paths": [
-        "backend/core/src/data/binary_ts_merger.cpp",
-        "backend/core/src/backtest/frame_backtester.cpp",
-        "backend/core/src/risk/pre_trade_risk.cpp"
+        "backend/cpp_core/src/data/binary_ts_merger.cpp",
+        "backend/cpp_core/src/backtest/frame_backtester.cpp",
+        "backend/cpp_core/src/risk_management/pre_trade_risk.cpp"
       ],
       "review_triggers": [
         "cpp-engine",
@@ -808,9 +857,9 @@
       "owner": "research",
       "status": "canonical",
       "source_paths": [
-        "scripts/strategies/auto_strategy_explorer.js",
+        "tools/strategies/auto_strategy_explorer.js",
         "backend/mcp_server/tools/strategy_explorer.ts",
-        "backend/cli/commands/strategy/strategy.js"
+        "frontend/cli-tui/commands/strategies/strategy.js"
       ],
       "review_triggers": [
         "strategy-explorer",
@@ -853,7 +902,7 @@
       "status": "canonical",
       "source_paths": [
         "shared/lib/market/polymarket_history.js",
-        "backend/gateway/src/paper_ledger.js"
+        "backend/execution/src/paper_ledger.js"
       ],
       "review_triggers": [
         "prediction-markets",
@@ -896,7 +945,7 @@
       "owner": "research",
       "status": "canonical",
       "source_paths": [
-        "backend/core/src/risk/cost_model.cpp",
+        "backend/cpp_core/src/risk_management/cost_model.cpp",
         "shared/lib/market/indicators.js",
         "shared/lib/runtime/sub_positions_ledger.js"
       ],
@@ -941,8 +990,8 @@
       "owner": "platform",
       "status": "canonical",
       "source_paths": [
-        "backend/core/CMakeLists.txt",
-        "backend/cli/sovereign_cli.js"
+        "backend/cpp_core/CMakeLists.txt",
+        "frontend/cli-tui/sovereign_cli.js"
       ],
       "review_triggers": [
         "capability-matrix",
@@ -960,8 +1009,8 @@
       "owner": "native-core",
       "status": "canonical",
       "source_paths": [
-        "backend/core/src/ml/kronos_tokenizer.cpp",
-        "backend/core/src/ml/kronos_tensor_builder.cpp"
+        "backend/cpp_core/src/machine_learning/kronos_tokenizer.cpp",
+        "backend/cpp_core/src/machine_learning/kronos_tensor_builder.cpp"
       ],
       "review_triggers": [
         "kronos-pipeline",
@@ -979,9 +1028,9 @@
       "owner": "platform",
       "status": "canonical",
       "source_paths": [
-        "backend/cli/sovereign_cli.js",
+        "frontend/cli-tui/sovereign_cli.js",
         "backend/api/app.js",
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "product-invariants",
@@ -1001,7 +1050,7 @@
       "source_paths": [
         "package.json",
         "CMakeLists.txt",
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "toolchain",
@@ -1020,7 +1069,7 @@
       "owner": "architecture",
       "status": "canonical",
       "source_paths": [
-        "backend/core/src/data/binary_ts_merger.cpp",
+        "backend/cpp_core/src/data/binary_ts_merger.cpp",
         "shared/lib/market/ts_index_storage.js",
         "backend/api/app.js"
       ],
@@ -1040,8 +1089,8 @@
       "owner": "cli",
       "status": "canonical",
       "source_paths": [
-        "backend/cli/sovereign_dashboard.mjs",
-        "backend/cli/tui/manifest.js"
+        "frontend/cli-tui/sovereign_dashboard.mjs",
+        "frontend/cli-tui/tui/manifest.js"
       ],
       "review_triggers": [
         "tui-features",
@@ -1183,7 +1232,7 @@
       "owner": "architecture",
       "status": "canonical",
       "source_paths": [
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "architecture-change"
@@ -1200,7 +1249,7 @@
       "owner": "architecture",
       "status": "canonical",
       "source_paths": [
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "architecture-change"
@@ -1217,7 +1266,7 @@
       "owner": "architecture",
       "status": "canonical",
       "source_paths": [
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "architecture-change"
@@ -1234,7 +1283,7 @@
       "owner": "architecture",
       "status": "canonical",
       "source_paths": [
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "architecture-change"
@@ -1251,7 +1300,7 @@
       "owner": "architecture",
       "status": "canonical",
       "source_paths": [
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "architecture-change"
@@ -1268,7 +1317,7 @@
       "owner": "architecture",
       "status": "canonical",
       "source_paths": [
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "architecture-change"
@@ -1285,7 +1334,7 @@
       "owner": "architecture",
       "status": "canonical",
       "source_paths": [
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "architecture-change"
@@ -1302,7 +1351,7 @@
       "owner": "architecture",
       "status": "canonical",
       "source_paths": [
-        "backend/core/CMakeLists.txt"
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "architecture-change"
@@ -1757,7 +1806,7 @@
       "source_paths": [
         "infra/docker/docker-compose.yml",
         "shared/lib/settings/deployment_profile.js",
-        "backend/cli/sovereign_cli.js"
+        "frontend/cli-tui/sovereign_cli.js"
       ],
       "review_triggers": [
         "docker-topology",
@@ -2382,7 +2431,7 @@
       "owner": "research",
       "status": "canonical",
       "source_paths": [
-        "scripts/strategies/auto_strategy_explorer.js",
+        "tools/strategies/auto_strategy_explorer.js",
         "backend/mcp_server/tools/strategy_explorer.ts"
       ],
       "review_triggers": [
@@ -2407,7 +2456,7 @@
       "audience": ["contributors"],
       "owner": "research",
       "status": "supporting",
-      "source_paths": ["config/markets/data_sources.yaml"],
+      "source_paths": ["configs/markets/data_sources.yaml"],
       "test_paths": [],
       "review_triggers": ["ingestion-contract-change"]
     },
@@ -2559,8 +2608,8 @@
       "status": "canonical",
       "source_paths": [
         "backend/api/app.js",
-        "backend/cli/sovereign_cli.js",
-        "backend/core/CMakeLists.txt"
+        "frontend/cli-tui/sovereign_cli.js",
+        "backend/cpp_core/CMakeLists.txt"
       ],
       "review_triggers": [
         "backend-structure",
@@ -2577,8 +2626,8 @@
       "owner": "platform",
       "status": "canonical",
       "source_paths": [
-        "config/trading/strategies.yaml",
-        "config/system/environment_manifest.json"
+        "configs/trading/strategies.yaml",
+        "configs/system/environment_manifest.json"
       ],
       "review_triggers": [
         "configuration-tree",
@@ -2622,7 +2671,7 @@
       "owner": "execution",
       "status": "needs_refresh",
       "source_paths": [
-        "backend/gateway/src/cycle.ts"
+        "backend/execution/src/cycle.ts"
       ],
       "test_paths": [
         "tests/scripts/integration/polymarket/polymarket_bot_risk.test.js",
@@ -2664,8 +2713,8 @@
       "owner": "cli",
       "status": "canonical",
       "source_paths": [
-        "backend/cli/sovereign_dashboard.mjs",
-        "backend/cli/tui/dashboard_exec.js"
+        "frontend/cli-tui/sovereign_dashboard.mjs",
+        "frontend/cli-tui/tui/dashboard_exec.js"
       ],
       "review_triggers": [
         "terminal-dashboard",
@@ -2697,7 +2746,7 @@
       "owner": "research",
       "status": "canonical",
       "source_paths": [
-        "backend/cli/commands/research/research.js",
+        "frontend/cli-tui/commands/research/research.js",
         "shared/lib/strategy/backtest.js"
       ],
       "review_triggers": [
@@ -2715,7 +2764,7 @@
       "owner": "research",
       "status": "canonical",
       "source_paths": [
-        "backend/cli/commands/tools/backend_correlation.js"
+        "frontend/cli-tui/commands/tools/backend_correlation.js"
       ],
       "review_triggers": [
         "correlation-matrix",
@@ -3019,9 +3068,9 @@
       "owner": "platform",
       "status": "canonical",
       "source_paths": [
-        "backend/cli/sovereign_cli.js",
+        "frontend/cli-tui/sovereign_cli.js",
         "backend/api/app.js",
-        "backend/core/CMakeLists.txt",
+        "backend/cpp_core/CMakeLists.txt",
         "docs/README.md"
       ],
       "review_triggers": [
