@@ -12,6 +12,8 @@ struct PositionSizingInput {
     double stop_price = 0.0;
     double risk_fraction = 0.0;
     double max_notional_fraction = 1.0;
+    double min_notional_floor = 150.0;
+    double min_notional_equity_fraction = 0.007; // 0.7% of portfolio minimum
 };
 
 struct PositionSizingDecision {
@@ -19,6 +21,7 @@ struct PositionSizingDecision {
     double notional = 0.0;
     double risk_budget = 0.0;
     double stop_distance = 0.0;
+    double min_notional = 0.0;
     bool ok = false;
 };
 
@@ -44,7 +47,15 @@ inline PositionSizingDecision sizePosition(const PositionSizingInput& input) {
     const double notional_quantity = max_notional / input.entry_price;
     decision.quantity = std::max(0.0, std::min(risk_quantity, notional_quantity));
     decision.notional = decision.quantity * input.entry_price;
-    decision.ok = decision.quantity > 0.0;
+
+    // Dynamic minimum notional floor: max($150 statutory floor, 0.7% of portfolio equity)
+    const double effective_min_notional = std::max(
+        input.min_notional_floor,
+        input.equity * std::max(0.0, input.min_notional_equity_fraction)
+    );
+    decision.min_notional = effective_min_notional;
+
+    decision.ok = decision.quantity > 0.0 && decision.notional >= effective_min_notional;
     return decision;
 }
 

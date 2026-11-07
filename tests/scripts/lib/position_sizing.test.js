@@ -160,3 +160,47 @@ test('available cash, minimum quantity, and missing lot metadata fail safely', (
   assert.equal(missingLotContract.ok, false);
   assert.equal(missingLotContract.code, 'missing_units_per_lot');
 });
+
+test('portfolio equity enforces $150 statutory floor and 0.7% portfolio equity rule', () => {
+  // On $10,000 equity: 0.7% is $70, so the $150 floor binds. $100 notional rejected.
+  const rejected10k = normalizeSizingIntent({
+    intent: { mode: 'notional', value: 100 },
+    instrument: instrument({ quantityStep: 0.001 }),
+    referencePrice: 100,
+    portfolioEquity: 10000,
+  });
+  assert.equal(rejected10k.ok, false);
+  assert.equal(rejected10k.code, 'below_minimum_notional');
+  assert.equal(rejected10k.min_notional, 150);
+
+  // On $10,000 equity: $160 notional accepted (> $150).
+  const accepted10k = normalizeSizingIntent({
+    intent: { mode: 'notional', value: 160 },
+    instrument: instrument({ quantityStep: 0.001 }),
+    referencePrice: 100,
+    portfolioEquity: 10000,
+  });
+  assert.equal(accepted10k.ok, true);
+  assert.equal(accepted10k.projected_notional, 160);
+
+  // On $100,000 equity: 0.7% = $700. $500 notional rejected even though > $150.
+  const rejected100k = normalizeSizingIntent({
+    intent: { mode: 'notional', value: 500 },
+    instrument: instrument({ quantityStep: 0.001 }),
+    referencePrice: 100,
+    portfolioEquity: 100000,
+  });
+  assert.equal(rejected100k.ok, false);
+  assert.equal(rejected100k.code, 'below_minimum_notional');
+  assert.equal(rejected100k.min_notional, 700);
+
+  // On $100,000 equity: $750 notional accepted (> $700).
+  const accepted100k = normalizeSizingIntent({
+    intent: { mode: 'notional', value: 750 },
+    instrument: instrument({ quantityStep: 0.001 }),
+    referencePrice: 100,
+    portfolioEquity: 100000,
+  });
+  assert.equal(accepted100k.ok, true);
+  assert.equal(accepted100k.projected_notional, 750);
+});

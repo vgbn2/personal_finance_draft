@@ -10,8 +10,23 @@ function parseEnvLine(line) {
   const key = trimmed.slice(0, equalsIndex).trim();
   if (!key) return null;
   let value = trimmed.slice(equalsIndex + 1).trim();
-  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+  if (value.startsWith('"') && value.endsWith('"')) {
+    const inner = value.slice(1, -1);
+    try {
+      value = JSON.parse(`"${inner.replace(/\\\$/g, '$').replace(/\\`/g, '`')}"`);
+    } catch {
+      value = inner
+        .replace(/\\"/g, '"')
+        .replace(/\\\$/g, '$')
+        .replace(/\\`/g, '`')
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '\r')
+        .replace(/\\\\/g, '\\');
+    }
+    return { key, value };
+  } else if (value.startsWith("'") && value.endsWith("'")) {
     value = value.slice(1, -1);
+    return { key, value };
   }
   value = value.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
   return { key, value };
@@ -20,8 +35,9 @@ function parseEnvLine(line) {
 function serializeEnvValue(value) {
   const text = String(value ?? '');
   if (text === '') return '';
-  if (/[\s#"'=]/.test(text) || text.includes('\n') || text.includes('\r')) {
-    return JSON.stringify(text);
+  if (/[\s#"'=$`\\]/.test(text) || text.includes('\n') || text.includes('\r')) {
+    const s = JSON.stringify(text);
+    return s.replace(/\$/g, '\\$').replace(/`/g, '\\`');
   }
   return text;
 }

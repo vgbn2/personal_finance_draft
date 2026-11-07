@@ -21,6 +21,7 @@ const { commandBackfillDaemon, commandStopBackfillDaemon } = require('./commands
 const { commandTrade, buildTradeGatewayLaunch, commandMt5, commandMt5Profile, commandMt5Connect, commandMt5Bridge, commandAutoTrade, commandAddPlatform, commandAgent, commandPolymarket, commandBot } = require('./commands/trade/trade.js');
 const { commandAuth, commandLogin, commandRegister, commandLogout, commandAuthStatus } = require('./commands/account/auth.js');
 const { commandSettings } = require('./commands/settings/settings.js');
+const { commandSecret } = require('./commands/settings/secret.js');
 const { commandRunnerMenu } = require('./commands/runner/run.js');
 const { commandMl } = require('./commands/research/ml.js');
 const { commandBias } = require('./commands/research/bias.js');
@@ -106,6 +107,8 @@ async function handleCommand(args) {
     run:              (a) => commandRunnerMenu(a),
     // --- Settings (manifest: settings) ---
     settings:         (a) => commandSettings(a),
+    secret:           (a) => commandSecret(a),
+    secrets:          (a) => commandSecret(a),
     // --- Account (manifest: account) ---
     login:            (a) => commandLogin(a),
     register:         (a) => commandRegister(a),

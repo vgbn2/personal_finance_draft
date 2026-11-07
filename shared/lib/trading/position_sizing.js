@@ -53,6 +53,9 @@ function normalizeSizingIntent({
   instrument,
   referencePrice,
   availableNotional,
+  portfolioEquity,
+  minEquityFraction = 0.007,
+  minNotionalFloor = 150.0,
 }) {
   const requestedIntent = intent && typeof intent === 'object' ? { ...intent } : null;
   const mode = String(requestedIntent?.mode || '').trim().toLowerCase();
@@ -147,13 +150,20 @@ function normalizeSizingIntent({
   }
 
   const projectedNotional = stableDecimal(quantity * price * exposureMultiplier);
-  const minNotional = finitePositive(instrument?.minNotional);
-  if (minNotional !== null && projectedNotional < minNotional) {
+  const staticMinNotional = finitePositive(instrument?.minNotional);
+  const numericEquity = finitePositive(portfolioEquity);
+  let effectiveMinNotional = staticMinNotional;
+  if (numericEquity !== null) {
+    const dynamicFloor = Math.max(minNotionalFloor, numericEquity * minEquityFraction);
+    effectiveMinNotional = staticMinNotional !== null ? Math.max(staticMinNotional, dynamicFloor) : dynamicFloor;
+  }
+
+  if (effectiveMinNotional !== null && projectedNotional < effectiveMinNotional) {
     return reject(
       'below_minimum_notional',
-      `projected notional ${projectedNotional} is below the instrument minimum ${minNotional}`,
+      `projected notional ${projectedNotional} is below the minimum notional threshold ${effectiveMinNotional}`,
       requestedIntent,
-      { quantity, projected_notional: projectedNotional, min_notional: minNotional },
+      { quantity, projected_notional: projectedNotional, min_notional: effectiveMinNotional },
     );
   }
 

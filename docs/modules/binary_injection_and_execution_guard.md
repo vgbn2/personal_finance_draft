@@ -33,6 +33,7 @@ This module provides boundary defense against binary poisoning, argument injecti
 | `BinaryTsMerger::mergeFiles(ex, in, out, opts)` | `backend/core/src/data/binary_ts_merger.cpp` | Merges two binary time-series streams in $O(N+M)$ time while discarding NaN/Inf records. |
 | `isPathWithinAllowedRoots(path, roots)` | `backend/api/server/services/input_validator.js` | Confines target path to `[REPO_ROOT, STORAGE_DATA_DIR, os.tmpdir()]`. |
 | `isValidSymbol(symbol)` / `isValidTimeframe(tf)` | `backend/api/server/services/input_validator.js` | Strict regex validation prohibiting option injection (`-` prefixes) and directory slashes. |
+| `isFormulaInjection(val)` / `sanitizeCsvCell(val)` | `shared/lib/security/normalized.js` | Detects and neutralizes spreadsheet formula injection (CWE-1236) via `'` apostrophe prefixing. |
 | `backendStatus`, `backendDataSummary`, `signalStatus` | `backend/api/server/services/cli_executor.js` | Web API bridge handlers validating query parameters against path traversal and CLI injection. |
 
 ---
@@ -89,6 +90,11 @@ When spawning C++ backend binaries or Node CLI tools:
 - Shell execution is strictly prohibited (`{ shell: false }`).
 - Arguments are passed as individual array elements, never concatenated strings.
 - Ticker symbols and timeframes are validated against strict regexes (`/^[A-Z0-9][A-Z0-9_.-]{0,19}$/i`). Arguments starting with hyphens are rejected to prevent option injection.
+
+### 5. CSV / Spreadsheet Formula Injection Guard (CWE-1236)
+When exporting data frames, feature matrices, or ledger balances to CSV:
+- Cells beginning with formula trigger characters (`=`, `+`, `-`, `@`, `\t`, `\r`) can execute unauthorized DDE/commands when opened in Excel or LibreOffice Calc.
+- `shared/lib/security/normalized.js` enforces detection (`isFormulaInjection`) and OWASP-standard neutralization (`sanitizeCsvCell`), which prepends an apostrophe (`'`) to force interpretation as a raw text literal.
 
 ---
 

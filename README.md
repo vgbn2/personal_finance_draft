@@ -378,15 +378,27 @@ npm run native:build
 npm run test:core
 ```
 
-### F. Run the Autonomous AI Strategy Discovery Daemon
-Explore novel strategy parameter spaces and generate validated strategy YAML definitions:
-```bash
-# Single exploratory cycle
-node tools/strategies/auto_strategy_explorer.js --once
+### F. Run the Autonomous AI Strategy Discovery Daemon & Overnight Quant Harness
 
-# Or via CLI
-node frontend/cli-tui/sovereign_cli.js strategy explore --once
+Explore novel strategy parameter spaces, backtest against local tick fixtures via native C++20, and synthesize validated declarative YAML strategies:
+
+```bash
+# 1. Single exploratory cycle (Native JS + C++ backend)
+node tools/agent/strategy_interval_generator.js --once
+
+# 2. Continuous unattended overnight quant loop (Recommended: prevents reinventing the wheel)
+# Prerequisites: OpenCode (`opencode`) or Antigravity (`agy`), tmux, and a local 9Router proxy.
+npm run strategy:overnight
+
+# Monitor overnight progress without waking terminal
+tail -f /dev/shm/sovereign-quant.log
+
+# Attach to live interactive session
+tmux attach -t sovereign-quant   # (Ctrl+B then D to detach)
 ```
+
+> **Why OpenCode / Antigravity as Prerequisites?**  
+> Rather than reinventing agent harnesses from scratch with brittle Python/Redis daemons, Sovereign offloads the autonomous agent loop directly to standard LLM agent runners (`opencode` / `agy`) inside isolated, detached `tmux` sessions. Prompts and goals reside in `workspace/OVERNIGHT_GOAL.md`. Candidates must survive the dynamic notional floor ($\max(\$150, 0.7\% \times \text{equity})$), Sharpe $\ge 1.50$, and Max Drawdown $\le 20.0\%$ to be staged under `configs/strategies/automated/`.
 
 ### G. Docker Quickstart (Zero Local Tooling)
 To run the complete platform (API, Web Dashboard, and C++ Core) in isolated containers without installing local compilers:
@@ -409,7 +421,7 @@ docker compose -f infra/docker/docker-compose.yml up -d --build
 | `frontend/dashboard/` | React 19 + Vite dashboard (source in `src/`, `dist/` is generated). |
 | `configs/` | System environment manifest, asset mappings, risk policies, and categorized strategy registry (`curated/`, `automated/`, `fixtures/`). |
 | `storage/data/` | Runtime disk storage: binary TS indices (`ts/`), JSON caches (`cache/`), paper trading state. |
-| `tools/` | Domain-organized operator/developer utilities, including `mcp/`, `ml/`, `dev/`, and existing `mt5/` tooling; distinct from `backend/scripts/` and `tests/scripts/`. |
+| `tools/` | Domain-organized operator/developer utilities, including `agent/` (autonomous quant loop), `ops/` (Proxmox sync/deploy), `mcp/`, `ml/`, `dev/`, and `mt5/` tooling; distinct from `backend/scripts/` and `tests/scripts/`. |
 | `tests/` | Node.js integration, architecture contract, and safety test suites. |
 | `docs/` | Canonical documentation hub (`docs/README.md`), 8-section architecture suite (`docs/engineering/architecture/`), specs, standards, and operational runbooks. |
 | `workspace/` | Active project state (`STATE.md`), handoffs (`handoff/`), prompt logs, memory, governance (`governance/`), and protocols (`protocols/`). |
@@ -451,3 +463,37 @@ npm run audit:documentation
 ## 10. Safety Boundary
 
 Do not infer trading permission from the presence of an adapter, credential variable, menu item, test, paper account, or prior session record. Live-capital actions require explicit authorization and current operator review of runtime policy, kill switch, risk limits, credentials, account scope, and provider behavior. Nothing in this README authorizes an order, provider mutation, canonical-data write, host change, or deployment.
+
+---
+
+## 11. Acknowledgments & Credits
+
+Sovereign Trading Research Platform builds upon foundational work across quantitative finance, open-source systems programming, and modern machine learning. We gratefully acknowledge:
+
+### Open-Source Technologies & Engines
+- **[Node.js](https://nodejs.org/)**: Asynchronous event loop powering the broker gateway multiplexer and private API bridge.
+- **[C++20 & CMake](https://cmake.org/)**: Native compiled core for SIMD-accelerated binary timeseries merging and microsecond pre-trade risk evaluation.
+- **[React](https://react.dev/) & [Vite](https://vitejs.dev/)**: Client-side reactive interface for real-time market data monitoring and portfolio telemetry.
+- **[Lightweight Charts™](https://github.com/tradingview/lightweight-charts)**: High-performance financial charting library by TradingView.
+- **[Model Context Protocol (MCP)](https://modelcontextprotocol.io/)**: Open specification for connecting autonomous AI agents with platform tools.
+
+### Market Data & Broker APIs
+- **[Binance API](https://binance-docs.github.io/apidocs/)**: High-frequency spot and perpetual market data feeds.
+- **[Yahoo Finance](https://finance.yahoo.com/)**: Historical equities and indices market data.
+- **[Alpaca Markets](https://alpaca.markets/)**: Commission-free paper and live equity brokerage execution API.
+- **[Polymarket](https://polymarket.com/)**: Decentralized prediction market CLOB (Central Limit Order Book) and Gamma markets API.
+- **[Gate.io](https://www.gate.io/) & [Deribit](https://www.deribit.com/)**: Crypto spot, futures, and options liquidity interfaces.
+- **[MetaTrader 5](https://www.metatrader5.com/)**: Forex / CFD terminal execution bridge and MQL5 integration.
+
+### Research, AI & Search Infrastructure
+- **[Tavily Search API](https://tavily.com/)**: Real-time AI research search engine for macroeconomic intelligence and market sentiment analysis.
+- **[Ollama](https://ollama.ai/)**: Local LLM serving infrastructure for zero-key autonomous agent hypothesis generation.
+
+### Foundational Algorithms & Quantitative Literature
+- **Kelly Criterion**: J. L. Kelly Jr., *A New Interpretation of Information Rate* (1956) — Optimal capital allocation under probabilistic edge.
+- **Black-Scholes-Merton Model**: Fischer Black, Myron Scholes, and Robert C. Merton (1973) — Options pricing and Greeks analytical formulas.
+- **Sortino & Sharpe Ratios**: Frank A. Sortino and William F. Sharpe — Downside-risk-adjusted and volatility-adjusted performance metrics.
+- **Support Vector Machines (SVM)**: Corinna Cortes and Vladimir Vapnik (1995) — Hyperplane regime classification.
+- **Random Forests**: Leo Breiman (2001) — Ensemble decision tree voting for robust predictive alpha.
+- **Convolutional Neural Networks**: Yann LeCun et al. (1989/1998) — Spatial pattern recognition over 2D rolling feature frames.
+

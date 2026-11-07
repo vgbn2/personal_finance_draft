@@ -2471,6 +2471,93 @@
       "review_triggers": ["ingestion-contract-change"]
     },
     {
+      "path": "docs/research/2026-11-07_quantitative_strategy_and_execution_research.md",
+      "type": "explanation",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "research",
+      "status": "supporting",
+      "source_paths": [
+        "shared/lib/runtime/sub_positions_ledger.js",
+        "shared/lib/trading/position_sizing.js",
+        "tools/strategies/auto_strategy_explorer.js"
+      ],
+      "test_paths": [
+        "tests/scripts/research/execution_fee_drag_attribution.test.js"
+      ],
+      "review_triggers": [
+        "quant-model-change",
+        "broker-fee-schedule-update"
+      ]
+    },
+    {
+      "path": "docs/research/2026-11-07_strategy_pruning_and_large_scale_classification.md",
+      "type": "explanation",
+      "audience": [
+        "contributors"
+      ],
+      "owner": "research",
+      "status": "supporting",
+      "source_paths": [
+        "tools/agent/strategy_interval_generator.js",
+        "tools/agent/run_overnight.sh",
+        "shared/lib/trading/position_sizing.js",
+        "backend/cpp_core/src/risk_management/position_sizing/position_sizer.hpp"
+      ],
+      "test_paths": [
+        "tests/scripts/research/execution_fee_drag_attribution.test.js"
+      ],
+      "review_triggers": [
+        "quant-model-change",
+        "strategy-discovery-pipeline-change"
+      ]
+    },
+    {
+      "path": "docs/audit/2026-11-07_geospatial_camera_alternative_data_audit.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "contributors",
+        "security-auditors"
+      ],
+      "owner": "research",
+      "status": "canonical",
+      "source_paths": [
+        "configs/system/feature_flags.yaml",
+        "configs/markets/data_sources.yaml"
+      ],
+      "test_paths": [
+        "backend/cpp_core/test/data/ingestion_contract_test.cpp"
+      ],
+      "review_triggers": [
+        "data-source-change",
+        "feature-flag-change"
+      ]
+    },
+    {
+      "path": "docs/audit/2026-11-07_svconsole_runtime_audit.md",
+      "type": "reference",
+      "audience": [
+        "architects",
+        "operators",
+        "contributors"
+      ],
+      "owner": "execution",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/runtime/alpaca_bot_cycle.js",
+        "shared/lib/runtime/backend_bridge.js"
+      ],
+      "test_paths": [
+        "tests/scripts/research/execution_fee_drag_attribution.test.js"
+      ],
+      "review_triggers": [
+        "broker-gateway-change",
+        "bot-cycle-update"
+      ]
+    },
+    {
       "path": "docs/research/quant_research.md",
       "type": "explanation",
       "audience": [
