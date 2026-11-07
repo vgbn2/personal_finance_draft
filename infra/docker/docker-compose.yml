@@ -474,6 +474,8 @@ services:
     volumes:
       - ../../storage:/app/storage
       - ../../configs/strategies/automated:/app/configs/strategies/automated
+      - ../../tools:/app/tools
+      - ../../shared:/app/shared
     restart: unless-stopped
     deploy:
       resources:

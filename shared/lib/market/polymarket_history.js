@@ -7,6 +7,7 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const CACHE_DIR = path.join(REPO_ROOT, 'storage', 'data', 'polymarket_history');
 const GAMMA_BASE = 'https://gamma-api.polymarket.com';
 const CLOB_BASE  = 'https://clob.polymarket.com';
+const DATA_API_BASE = 'https://data-api.polymarket.com/v2';
 // Gamma /markets returns at most 100 rows per request regardless of the `limit`
 // query param, so deep pagination must page by offset rather than asking for more.
 const GAMMA_PAGE_MAX = 100;
@@ -710,7 +711,8 @@ async function backfillPolymarketArchive(opts = {}) {
         await sleep(delayMs);
       }
 
-      const history = await fetchHistory(tokenId, interval, noCache);
+      const conditionId = market.condition_id || market.conditionId || null;
+      const history = await fetchHistory(tokenId, interval, noCache, { conditionId, market });
       fetchCount++;
 
       if (!history.ok) {
@@ -860,8 +862,36 @@ async function fetchResolvedGammaMarkets(opts = {}) {
  * @param {string}  interval  '1m' | '5m' | '1h' | '1d' (default '1d')
  * @param {boolean} noCache
  */
-async function fetchClobPriceHistory(tokenId, interval = '1d', noCache = false) {
+function findConditionIdForToken(tokenId, root = CACHE_DIR) {
+  if (!tokenId) return null;
+  const sTok = String(tokenId);
+  try {
+    const idx = readJsonFile(archivePaths(root).marketsIndex, []);
+    for (const m of idx) {
+      if (m.tokens && m.tokens.some((t) => String(t.token_id || t.id || '') === sTok)) return m.condition_id || m.conditionId || null;
+      if (m.clobTokenIds && String(m.clobTokenIds).includes(sTok)) return m.condition_id || m.conditionId || null;
+    }
+  } catch {}
+
+  try {
+    const files = fs.readdirSync(root).filter((f) => f.startsWith('gamma_resolved_') && f.endsWith('.json'));
+    for (const file of files) {
+      const raw = readJsonFile(path.join(root, file), null);
+      const rows = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.data) ? raw.data : []);
+      for (const m of rows) {
+        if (m.tokens && m.tokens.some((t) => String(t.token_id || t.id || '') === sTok)) return m.condition_id || m.conditionId || null;
+        if (m.clobTokenIds && String(m.clobTokenIds).includes(sTok)) return m.condition_id || m.conditionId || null;
+      }
+    }
+  } catch {}
+  return null;
+}
+
+async function fetchClobPriceHistory(tokenId, interval = '1d', noCache = false, opts = {}) {
   if (!tokenId) return { ok: false, error: 'Missing tokenId' };
+  const conditionId = opts.conditionId
+    || (opts.market && (opts.market.condition_id || opts.market.conditionId))
+    || findConditionIdForToken(tokenId, opts.root || CACHE_DIR);
   const cacheKey = `clob_hist_${tokenId}_${interval}`;
 
   if (!noCache) {
@@ -878,13 +908,52 @@ async function fetchClobPriceHistory(tokenId, interval = '1d', noCache = false) 
   try {
     raw = await fetchJson(url, 'CLOB', backfillRetryOpts);
   } catch (err) {
+    if (conditionId) {
+      return fetchPolymarketV2TradesHistory(conditionId, tokenId, noCache);
+    }
     return { ok: false, error: err && err.message ? err.message : String(err) };
   }
 
   const history = Array.isArray(raw) ? raw
     : (raw && Array.isArray(raw.history) ? raw.history : []);
+  if (history.length === 0 && conditionId) {
+    return fetchPolymarketV2TradesHistory(conditionId, tokenId, noCache);
+  }
+
   _writeCache(cacheKey, history);
   return { ok: true, source: 'api', data: history };
+}
+
+/**
+ * ponytail: bypass dead PMXT proxy; fetch raw trades directly from official Data API v2.
+ * ceiling: 1,000 trades per call, unauthenticated public Cloudflare edge.
+ * upgrade path: cursor pagination via pagination.next_cursor if market lifespan exceeds 1,000 trades.
+ */
+async function fetchPolymarketV2TradesHistory(conditionId, tokenId = null, noCache = false) {
+  if (!conditionId) return { ok: false, error: 'Missing conditionId' };
+  const cacheKey = `v2_trades_${conditionId}_${tokenId || 'all'}`;
+
+  if (!noCache) {
+    const hit = _readCache(cacheKey);
+    if (hit) return { ok: true, source: 'cache', data: hit };
+  }
+
+  const url = `${DATA_API_BASE}/trades?condition=${encodeURIComponent(conditionId)}&limit=1000`;
+  try {
+    const fetchImpl = fetchWithRetry || fetch;
+    const res = await fetchImpl(url);
+    if (!res.ok) {
+      return { ok: false, error: `Polymarket v2 HTTP ${res.status}` };
+    }
+    const json = await res.json();
+    const rows = Array.isArray(json && json.data) ? json.data : [];
+    const trades = rows.filter((t) => !tokenId || String(t && t.token_id) === String(tokenId));
+    const normalized = normalizePriceHistory(trades, 'polymarket_v2_trades');
+    _writeCache(cacheKey, normalized);
+    return { ok: true, source: 'polymarket_v2_trades', data: normalized };
+  } catch (err) {
+    return { ok: false, error: err && err.message ? err.message : String(err) };
+  }
 }
 
 /**
@@ -1338,6 +1407,8 @@ module.exports = {
   CACHE_DIR,
   GAMMA_BASE,
   CLOB_BASE,
+  DATA_API_BASE,
+  fetchPolymarketV2TradesHistory,
   fetchClobDepth,
   syncGammaMarketsDelta,
 };

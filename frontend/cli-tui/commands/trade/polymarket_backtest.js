@@ -142,22 +142,23 @@ async function loadBacktestMarkets(opts, options, loaders) {
   return { marketsResult, archiveCoverage: null };
 }
 
-async function loadMarketHistory(tokenId, marketSource, options, loaders, totals) {
+async function loadMarketHistory(market, tokenId, marketSource, options, loaders, totals) {
   let rawHistory = [];
   let historySource = marketSource || 'api';
+  const conditionId = market && (market.conditionId || market.condition_id);
 
   if (marketSource === 'archive') {
     rawHistory = loaders.loadPrices(tokenId, { root: options.archiveRoot });
     if (rawHistory.length > 0) totals.archivePriceHits += 1;
     if (rawHistory.length === 0 && options.repairMissing) {
-      const repaired = await loaders.fetchHistory(tokenId, options.interval, options.noCache);
+      const repaired = await loaders.fetchHistory(tokenId, options.interval, options.noCache, { conditionId, market });
       if (!repaired.ok) return null;
       rawHistory = repaired.data;
       historySource = repaired.source || 'repair';
       totals.repairedMissing += 1;
     }
   } else {
-    const historyResult = await loaders.fetchHistory(tokenId, options.interval, options.noCache);
+    const historyResult = await loaders.fetchHistory(tokenId, options.interval, options.noCache, { conditionId, market });
     if (!historyResult.ok) return null;
     rawHistory = historyResult.data;
     historySource = historyResult.source || 'api';
@@ -437,6 +438,7 @@ async function runPolymarketBacktest(opts = {}) {
     if (!tokenId) continue;
 
     const loadedHistory = await loadMarketHistory(
+      market,
       tokenId,
       marketsResult.source,
       options,

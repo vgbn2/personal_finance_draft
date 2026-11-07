@@ -28,6 +28,7 @@ const DEFAULT_RISK_BOUNDS = Object.freeze({
   max_stop_loss_pct: 0.05,
   min_notional_floor: 150.0,
   min_notional_equity_fraction: 0.007,
+  min_trades: 200,
 });
 
 const VALID_STRATEGY_FAMILIES = Object.freeze([
@@ -648,7 +649,8 @@ function stageCandidate(candidate, options = {}) {
   const evaluation = candidate.evaluation || candidate.metrics || {};
   const minSharpe = options.min_sharpe ?? DEFAULT_RISK_BOUNDS.min_sharpe;
   const maxDrawdown = options.max_drawdown ?? DEFAULT_RISK_BOUNDS.max_drawdown_limit;
-  const minTrades = options.min_trades ?? 1;
+  // ponytail: require > 200 trades to avoid curve-fit sample bias.
+  const minTrades = options.min_trades ?? DEFAULT_RISK_BOUNDS.min_trades ?? 200;
 
   const sharpe = Number(evaluation.sharpe_ratio ?? evaluation.sharpeRatio ?? 0);
   const drawdown = Number(evaluation.max_drawdown ?? evaluation.maxDrawdown ?? 1);
@@ -656,7 +658,7 @@ function stageCandidate(candidate, options = {}) {
 
   const passesQualityGate = Boolean(
     options.force_stage ||
-    (trades >= minTrades && sharpe >= minSharpe && drawdown <= maxDrawdown)
+    (trades > minTrades && sharpe >= minSharpe && drawdown <= maxDrawdown)
   );
 
   if (!passesQualityGate) {
@@ -746,6 +748,7 @@ class IntervalStrategyEngine {
     this.fixtureBars = options.fixtureBars || null;
     this.minSharpe = options.minSharpe ?? DEFAULT_RISK_BOUNDS.min_sharpe;
     this.maxDrawdown = options.maxDrawdown ?? DEFAULT_RISK_BOUNDS.max_drawdown_limit;
+    this.minTrades = options.minTrades ?? options.min_trades ?? DEFAULT_RISK_BOUNDS.min_trades ?? 200;
     this.logger = options.logger || console.log;
     this.onCandidate = options.onCandidate || null;
     this.timer = null;
@@ -778,6 +781,7 @@ class IntervalStrategyEngine {
       candidatesDir: this.candidatesDir,
       min_sharpe: this.minSharpe,
       max_drawdown: this.maxDrawdown,
+      min_trades: this.minTrades,
     });
 
     const cycleResult = {
@@ -787,6 +791,8 @@ class IntervalStrategyEngine {
       score,
       staged: stagingResult.staged,
       stagedPath: stagingResult.path || null,
+      yamlPath: stagingResult.yaml_path || null,
+      reason: stagingResult.reason || null,
       checksum: spec.checksum,
       timestamp: new Date().toISOString(),
     };

@@ -183,9 +183,9 @@ test('interval discovery: candidate staging produces immutable checksummed recor
   const spec = generateCandidateSpec({ archetype: 'ema_macd_trend', seed: 'stage_test' });
   const evaluation = {
     symbol: 'SPY',
-    bar_count: 100,
+    bar_count: 5000,
     engine: 'sovereign_cpp_core',
-    trades: 12,
+    trades: 250,
     net_return: 0.05,
     max_drawdown: 0.04,
     sharpe_ratio: 2.10,
@@ -209,10 +209,23 @@ test('interval discovery: candidate staging produces immutable checksummed recor
   assert.strictEqual(loaded.checksum, spec.checksum, 'staged checksum matches spec checksum');
   assert.strictEqual(loaded.spec.name, spec.name, 'staged spec name matches');
   assert.strictEqual(loaded.status, 'staged_candidate', 'status is staged_candidate');
-  assert.strictEqual(loaded.evaluation.trades, 12, 'staged evaluation matches');
+  assert.strictEqual(loaded.evaluation.trades, 250, 'staged evaluation matches');
   assert.strictEqual(typeof loaded.score, 'number', 'staged record contains computed numeric score');
 
-  // Verify failure when quality gate fails
+  // Verify rejection when trades <= 200 (boundary condition)
+  const lowTradesEval = { ...evaluation, trades: 200 };
+  const failTrades = stageCandidate({
+    spec,
+    evaluation: lowTradesEval,
+  }, {
+    candidatesDir: tmpDir,
+    min_sharpe: 1.0,
+    max_drawdown: 0.20,
+  });
+  assert.strictEqual(failTrades.staged, false, 'candidate with <= 200 trades must be rejected');
+  assert.strictEqual(failTrades.reason, 'quality_gate_failed');
+
+  // Verify failure when quality gate fails on Sharpe
   const lowQualEval = { ...evaluation, sharpe_ratio: 0.10 };
   const failStage = stageCandidate({
     spec,
@@ -233,6 +246,7 @@ test('interval discovery: IntervalStrategyEngine executes cycle against local fi
     intervalSecs: 1,
     candidatesDir: tmpDir,
     minSharpe: -10, // allow staging for test verification
+    minTrades: 0,   // allow staging for test verification
     logger: () => {}, // silent
   });
 

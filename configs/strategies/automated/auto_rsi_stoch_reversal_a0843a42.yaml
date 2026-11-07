@@ -1,4 +1,4 @@
-name: cand_rsi_stoch_reversal_1d_mw6mps8v_2ucz
+name: cand_mean_reversion_rsi_stoch_reversal_1d_mw6rdihf_091v
 kind: mean_reversion
 family: mean_reversion
 lane: single_asset
@@ -73,10 +73,10 @@ sections:
   backtest:
     engine: "sovereign_cpp_core"
     trades: 38
-    sharpe_ratio: 4.68
+    sharpe_ratio: 3.88
     max_drawdown: 0.0930
-    win_rate: 0.605
-    net_return: 0.4206
+    win_rate: 0.579
+    net_return: 0.3471
   promotion:
     require_backtest: true
     require_walk_forward: true
