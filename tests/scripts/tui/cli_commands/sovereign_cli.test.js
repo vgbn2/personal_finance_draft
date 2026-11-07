@@ -405,9 +405,9 @@ test('trade gateway launch uses an available TypeScript runtime', () => {
     `Unexpected trade launcher: ${launch.command}`
   );
   assert.ok(
-    launch.args.some((value) => /backend[\\/]gateway[\\/]src[\\/]index\.ts/.test(value)) ||
-    launch.args.some((value) => /backend[\\/]gateway[\\/]dist[\\/]index\.js/.test(value)) ||
-    launch.args.some((value) => /backend[\\/]cli[\\/]lib[\\/]run_trade_gateway\.js/.test(value))
+    launch.args.some((value) => /backend[\\/](?:gateway|execution)[\\/]src[\\/]index\.ts/.test(value)) ||
+    launch.args.some((value) => /backend[\\/](?:gateway|execution)[\\/]dist[\\/]index\.js/.test(value)) ||
+    launch.args.some((value) => /(?:backend[\\/]cli|frontend[\\/]cli-tui)[\\/]lib[\\/]run_trade_gateway\.js/.test(value))
   );
   assert.ok(launch.args.some((value) => /balance/.test(String(value))));
 });
@@ -687,7 +687,7 @@ test('optimize fails fast when the current slice has no usable features', () => 
 });
 
 test('strategy command creates a validated yaml plan file', () => {
-  const registryPath = path.resolve(__dirname, '..', '..', '..', '..', 'config', 'trading', 'strategies.yaml');
+  const registryPath = path.resolve(__dirname, '..', '..', '..', '..', 'configs', 'trading', 'strategies.yaml');
   const registryBackup = fs.readFileSync(registryPath, 'utf8');
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'strategy-config-'));
   const target = path.join(tempDir, 'my_strategy.yaml');

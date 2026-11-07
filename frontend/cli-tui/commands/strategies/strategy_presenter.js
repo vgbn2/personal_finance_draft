@@ -186,10 +186,10 @@ function inspectStrategyFile(filePath, options = {}) {
   if (!exists && !path.isAbsolute(filePath)) {
     const raw = String(filePath).trim();
     const subdirs = [
+      'curated', 'automated', 'fixtures',
       'trad/curated', 'trad/automated',
       'options/curated', 'options/automated',
       'polymarket/curated', 'polymarket/automated',
-      'curated', 'automated', 'fixtures'
     ];
     for (const sub of subdirs) {
       const candidateRel = path.join('configs', 'strategies', sub, path.basename(raw)).replace(/\\/g, '/');
@@ -236,7 +236,7 @@ function inspectStrategyFile(filePath, options = {}) {
   });
 
   return {
-    path: filePath,
+    path: resolvedFilePath,
     exists: true,
     ok: issues.length === 0,
     name: yaml.name,

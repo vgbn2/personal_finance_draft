@@ -121,7 +121,7 @@ test('deployment manifests and docs agree on the active web bridge contract', ()
   assert.doesNotMatch(terraform, /web\/app\.js/);
   assert.match(herokuProcfile, /backend\/api\/app\.js/);
   assert.doesNotMatch(herokuProcfile, /web\/app\.js/);
-  assert.match(herokuApp, /backend\/cli\/sovereign_cli\.js/);
+  assert.match(herokuApp, /frontend\/cli-tui\/sovereign_cli\.js/);
 
   assert.match(docs, /Supabase-backed database\/auth available/i);
   assert.match(docs, /sovereign-supabase/i);

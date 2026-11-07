@@ -58,7 +58,7 @@ test('Node Actions workflow retains committed-archive evidence instead of root-o
   assert.match(workflow, /ONNXRUNTIME_NODE_INSTALL: 'skip'/);
   assert.match(workflow, /npm run verify:committed-archive/);
   assert.match(workflow, /--evidence-out "\$RUNNER_TEMP\/sovereign-source-evidence\.json"/);
-  assert.match(workflow, /uses: actions\/upload-artifact@v4/);
+  assert.match(workflow, /uses: actions\/upload-artifact@v[4-7]/);
   assert.match(workflow, /if: always\(\)/);
   assert.match(workflow, /if-no-files-found: error/);
   assert.doesNotMatch(workflow, /^\s+- name: Install Node dependencies$/m);

@@ -18,7 +18,7 @@ require('ts-node').register({
 });
 
 const REPO_ROOT = path.resolve(__dirname, '../../../../');
-const { readStrategyRegistry, inspectStrategyFile } = require(path.join(REPO_ROOT, 'frontend', 'cli-tui', 'commands', 'strategy', 'strategy.js'));
+const { readStrategyRegistry, inspectStrategyFile } = require(path.join(REPO_ROOT, 'frontend', 'cli-tui', 'commands', 'strategies', 'strategy.js'));
 const { MagicCodec } = require(path.join(REPO_ROOT, 'shared', 'lib', 'runtime', 'mt5_magic_codec.js'));
 const { Mt5Adapter } = require(path.join(REPO_ROOT, 'backend', 'execution', 'src', 'adapters', 'mt5_adapter.ts'));
 const { MockMt5Client } = require(path.join(REPO_ROOT, 'tests', 'fixtures', 'mock_mt5_bridge.js'));

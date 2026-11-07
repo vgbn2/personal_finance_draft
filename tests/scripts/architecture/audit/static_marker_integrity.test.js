@@ -7,7 +7,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const REPO_ROOT = path.resolve(__dirname, '../../../../');
-const MANIFEST_PATH = path.join(REPO_ROOT, 'config/audit/static_audit_manifest.json');
+const MANIFEST_PATH = path.join(REPO_ROOT, 'configs/audit/static_audit_manifest.json');
 
 test('static audit manifest: structure and schema integrity', () => {
   assert.ok(fs.existsSync(MANIFEST_PATH), 'static_audit_manifest.json must exist');

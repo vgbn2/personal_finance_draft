@@ -6,7 +6,7 @@
     "shared/lib/market/indicators.js": {
       "plane": "Plane 4: Data Pipelines, Indicators & Storage",
       "grade": "A",
-      "sha256": "802557966a7efec8abb98c47e80d4cdd8c068715c4bedfbacfa68e9fa432aea4",
+      "sha256": "69811d0ac2da9fc17af77107032ecb9e75820abdbc1c872121ccc760164e9452",
       "invariants": [
         "rsi_flat_50",
         "macd_finite",
@@ -31,25 +31,25 @@
         "holding_period_bounds"
       ]
     },
-    "backend/core/src/strategies/strategy_sweep_evaluator.cpp": {
+    "backend/cpp_core/src/strategies/strategy_sweep_evaluator.cpp": {
       "plane": "Plane 1: Compute & Core Engine",
       "grade": "A",
-      "sha256": "a76f451810ac102a45abd6c55999d467b4745cbe6cf59246cb94e555bbd880f2",
+      "sha256": "1ef6a7b6ae0703ae3c6ac641beb6b1d1a8cd33c2e6ac9674351441018da32786",
       "invariants": [
         "non_positive_price_guards",
         "finite_mark_to_market"
       ]
     },
-    "backend/core/src/backtest/frame_backtester.cpp": {
+    "backend/cpp_core/src/backtest/frame_backtester.cpp": {
       "plane": "Plane 1: Compute & Core Engine",
       "grade": "A",
-      "sha256": "9a77f8aa93e046bdc4fee55de7cf6d2d27f7192db1d186be1ee8febb885a9296",
+      "sha256": "cb1b1afd5b5a698bcab1fcf3489424cdfd0239e39b7aa18e6c3155ac2aa5ddf8",
       "invariants": [
         "splitmix64_prng_non_zero_state",
         "xorshift64_absorption_guard"
       ]
     },
-    "backend/core/src/correlation/correlation_engine.cpp": {
+    "backend/cpp_core/src/statistical_analysis/correlation/correlation_engine.cpp": {
       "plane": "Plane 1: Compute & Core Engine",
       "grade": "A",
       "sha256": "12e449a10596801e8fc277419e29d580f882f5e1f599b03da9cb7f7bea785f7a",

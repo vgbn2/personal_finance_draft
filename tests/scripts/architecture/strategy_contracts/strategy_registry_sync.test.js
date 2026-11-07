@@ -175,9 +175,9 @@ test('strategy registry sync adds valid unregistered YAML files and skips invali
     assert.equal(summary.skipped[0].path, 'configs/strategies/broken.yaml');
 
     const registryText = fs.readFileSync(layout.registryPath, 'utf8');
-    assert.match(registryText, /config\/strategies\/existing\.yaml/);
-    assert.match(registryText, /config\/strategies\/fresh_ai\.yaml/);
-    assert.doesNotMatch(registryText, /config\/strategies\/broken\.yaml/);
+    assert.match(registryText, /configs\/strategies\/existing\.yaml/);
+    assert.match(registryText, /configs\/strategies\/fresh_ai\.yaml/);
+    assert.doesNotMatch(registryText, /configs\/strategies\/broken\.yaml/);
   } finally {
     fs.rmSync(layout.root, { recursive: true, force: true });
   }
