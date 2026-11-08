@@ -1,7 +1,7 @@
 {
   "name": "sovereign-trades",
   "private": true,
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "Sovereign Trades: an active local trading research prototype with ingestion, validation, research/backtest commands, C++ backend inspection, and a local web/API dashboard bridge.",
   "packageManager": "npm@10.8.2",
   "engines": {
