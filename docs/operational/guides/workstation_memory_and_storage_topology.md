@@ -6,27 +6,13 @@ This document details the memory hierarchy, zram compressed RAM swap architectur
 
 ## 1. Physical & Virtual Memory Topology
 
-```text
-+--------------------------------------------------------------------------+
-|                          PHYSICAL RAM (27 GiB)                           |
-|                                                                          |
-|  +---------------------------+  +-------------------------------------+  |
-|  | Active Applications       |  | /dev/zram0 (Compressed RAM Swap)    |  |
-|  | - Node.js Workspaces      |  | - Virtual Size: 14.2 GiB            |  |
-|  | - C++ Analytics Engine    |  | - Priority: 100 (Primary)           |  |
-|  | - Heavy Dev / Game Tasks  |  | - Compression: LZ4 / ZSTD (~3:1)    |  |
-|  | - Page Cache (Clean)      |  | - Physical RAM Footprint: ~1.5 GiB  |  |
-|  +---------------------------+  +-------------------------------------+  |
-+--------------------------------------------------------------------------+
-                                     |
-                     (Spillover on extreme pressure)
-                                     v
-+--------------------------------------------------------------------------+
-|                          NVMe DISK SWAP (29.1 GiB)                       |
-|  /dev/nvme0n1p3                                                          |
-|  - Priority: -2 (Fallback only)                                          |
-|  - Zero NVMe write wear under standard operational loads                 |
-+--------------------------------------------------------------------------+
+```mermaid
+graph TD
+    subgraph RAM["PHYSICAL RAM (27 GiB)"]
+        APPS["Active Applications<br/>- Node.js Workspaces<br/>- C++ Analytics Engine<br/>- Page Cache"]
+        ZRAM["/dev/zram0 (Compressed RAM Swap)<br/>- Virtual Size: 14.2 GiB<br/>- Priority: 100 (Primary)<br/>- Physical Footprint: ~1.5 GiB"]
+    end
+    ZRAM -->|Spillover on extreme pressure| NVME["NVMe DISK SWAP (29.1 GiB)<br/>/dev/nvme0n1p3<br/>- Priority: -2 (Fallback only)<br/>- Zero wear under standard load"]
 ```
 
 ### Active System Metrics (Workstation)

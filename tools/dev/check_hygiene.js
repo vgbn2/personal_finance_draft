@@ -149,20 +149,10 @@ function checkSymlinks() {
       }
 
       let isBroken = false;
-      if (lstat.isSymbolicLink()) {
-        try {
-          fs.statSync(fullPath);
-        } catch (e) {
-          isBroken = true;
-        }
-      } else if (lstat.isDirectory()) {
-        try {
-          fs.statSync(fullPath);
-        } catch (e) {
-          if (e.code === 'ENOENT') {
-            isBroken = true;
-          }
-        }
+      try {
+        fs.statSync(fullPath);
+      } catch (e) {
+        isBroken = lstat.isSymbolicLink() || (lstat.isDirectory() && e && e.code === 'ENOENT');
       }
 
       if (isBroken) {
@@ -226,6 +216,23 @@ function checkAgentSkills() {
   };
 }
 
+function scanFileMarkers(fullPath, extFilter, reviewPattern, findings) {
+  if (!extFilter.has(path.extname(fullPath))) return;
+  const content = fs.readFileSync(fullPath, 'utf8');
+  if (!reviewPattern.test(content)) return;
+
+  const lines = content.split('\n');
+  lines.forEach((line, idx) => {
+    if (reviewPattern.test(line)) {
+      findings.push({
+        finding: `Stale comment marker: "${line.trim()}"`,
+        surface: `${path.relative(WORKSPACE_ROOT, fullPath)}:${idx + 1}`,
+        action: `Remove comment on line ${idx + 1} of ${path.relative(WORKSPACE_ROOT, fullPath)}`
+      });
+    }
+  });
+}
+
 // 4. Code Marker & Review Scan
 function checkCodeMarkers() {
   const findings = [];
@@ -245,22 +252,7 @@ function checkCodeMarkers() {
           walk(fullPath);
         }
       } else {
-        const ext = path.extname(file);
-        if (extFilter.has(ext)) {
-          const content = fs.readFileSync(fullPath, 'utf8');
-          if (reviewPattern.test(content)) {
-            const lines = content.split('\n');
-            lines.forEach((line, idx) => {
-              if (reviewPattern.test(line)) {
-                findings.push({
-                  finding: `Stale comment marker: "${line.trim()}"`,
-                  surface: `${path.relative(WORKSPACE_ROOT, fullPath)}:${idx + 1}`,
-                  action: `Remove comment on line ${idx + 1} of ${path.relative(WORKSPACE_ROOT, fullPath)}`
-                });
-              }
-            });
-          }
-        }
+        scanFileMarkers(fullPath, extFilter, reviewPattern, findings);
       }
     }
   }
@@ -356,6 +348,18 @@ function checkRepositoryIntegrity() {
   ];
   const scriptTargetPattern = /(?:^|\s)([^\s"';&|]+\.(?:js|mjs|cjs|ts|sh))(?=$|\s|[;&|])/g;
 
+  function validateTarget(packageFile, packageRoot, scriptName, target) {
+    const normalized = target.replace(/\\/g, '/');
+    if (normalized.includes('*') || normalized.includes('/dist/') || normalized.startsWith('dist/')) return;
+    if (!fs.existsSync(path.resolve(packageRoot, target))) {
+      findings.push({
+        finding: `${packageFile} script ${scriptName} references missing target ${target}`,
+        surface: packageFile,
+        action: `Restore ${target} or correct the ${scriptName} package script`
+      });
+    }
+  }
+
   for (const packageFile of packageFiles) {
     const packagePath = path.join(WORKSPACE_ROOT, packageFile);
     if (!fs.existsSync(packagePath)) continue;
@@ -364,16 +368,7 @@ function checkRepositoryIntegrity() {
 
     for (const [scriptName, command] of Object.entries(pkg.scripts || {})) {
       for (const match of String(command).matchAll(scriptTargetPattern)) {
-        const target = match[1];
-        const normalized = target.replace(/\\/g, '/');
-        if (normalized.includes('*') || normalized.includes('/dist/') || normalized.startsWith('dist/')) continue;
-        if (!fs.existsSync(path.resolve(packageRoot, target))) {
-          findings.push({
-            finding: `${packageFile} script ${scriptName} references missing target ${target}`,
-            surface: packageFile,
-            action: `Restore ${target} or correct the ${scriptName} package script`
-          });
-        }
+        validateTarget(packageFile, packageRoot, scriptName, match[1]);
       }
     }
   }
@@ -394,7 +389,7 @@ function checkDocsAlignment() {
   // In CI clean checkouts, workspace files may be ephemeral or uncommitted
   const isCi = process.env.CI === 'true';
 
-  if (!fs.existsSync(statePath)) {
+  if (!isCi && !fs.existsSync(statePath)) {
     findings.push({
       finding: 'Missing workspace/STATE.md',
       surface: 'workspace/STATE.md',

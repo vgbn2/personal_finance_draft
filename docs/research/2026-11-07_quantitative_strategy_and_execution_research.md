@@ -29,30 +29,14 @@ Brokers advertising zero-commission trading do not execute fractional equities o
 - The broker-dealer aggregates fractional inventory into principal accounts and executes whole-share market orders on external venues, allocating proportional fractional claims to customer accounts.
 - While software commissions are $0.00, non-negotiable US regulatory pass-through fees and market microstructure costs are deducted on cash settlement.
 
-```
-+-----------------------------------------------------------------------------------+
-|                         SOVEREIGN EXECUTION PIPELINE                             |
-|                                                                                   |
-|  [Strategy Signal] --> [Sizing & Allocation] --> [Internal Netting Engine]        |
-|                                                              |                    |
-|                                                    (Net Order Delta)              |
-|                                                              v                    |
-|                                                    [Broker Gateway API]           |
-|                                                              |                    |
-|                                                    (Wholesaler / Internalizer)     |
-|                                                              v                    |
-|                                      +-------------------------------+            |
-|                                      |      Gross Execution Fill     |            |
-|                                      +-------------------------------+            |
-|                                                      |                            |
-|                       +------------------------------+--------------------+       |
-|                       |                                                   |       |
-|                       v                                                   v       |
-|           [Fixed Regulatory Pass-Through]                       [Microstructure Friction] |
-|           - SEC Section 31 (REG Fee, Sales)                     - Half-Spread Crossing    |
-|           - FINRA CAT Fee (Buys & Sells)                        - Wholesaler Price Skew   |
-|           - FINRA TAF Fee (Sales Floor)                         - Odd-Lot/Fractional Bias |
-+-----------------------------------------------------------------------------------+
+```mermaid
+graph TD
+    SIGNAL[Strategy Signal] --> SIZING[Sizing & Allocation]
+    SIZING --> NETTING[Internal Netting Engine]
+    NETTING -->|Net Order Delta| GATEWAY[Broker Gateway API]
+    GATEWAY -->|Wholesaler / Internalizer| FILL[Gross Execution Fill]
+    FILL --> REG[Fixed Regulatory Pass-Through<br/>- SEC Section 31<br/>- FINRA CAT Fee<br/>- FINRA TAF Fee]
+    FILL --> MICRO[Microstructure Friction<br/>- Half-Spread Crossing<br/>- Wholesaler Price Skew<br/>- Odd-Lot/Fractional Bias]
 ```
 
 ### 1.2 Regulatory Pass-Through Fee Architecture
@@ -192,40 +176,12 @@ $$q_2 = Q_{\text{total}} \times \left( \frac{w_2}{w_1 + w_2} \right) = 0.867 \ti
 The observed holdings ratio matches the analytical allocation invariant:
 $$\frac{q_1}{q_2} = \frac{0.578}{0.289} = \mathbf{2.000}$$
 
-```
-+-----------------------------------------------------------------------------------+
-|                        SUB-POSITION LEDGER ARCHITECTURE                           |
-|                                                                                   |
-|   +-----------------------+              +-----------------------+                |
-|   |   Trend Following     |              |     Mean Reversion    |                |
-|   |   Allocation: 2x      |              |     Allocation: 1x    |                |
-|   |   Target: +0.578 SPY  |              |     Target: +0.289 SPY|                |
-|   +-----------+-----------+              +-----------+-----------+                |
-|               |                                      |                            |
-|               +------------------+-------------------+                            |
-|                                  |                                                |
-|                                  v                                                |
-|                   +-------------------------------+                               |
-|                   |  In-Process Netting Resolver  |                               |
-|                   |  Target Aggregate: +0.867 SPY |                               |
-|                   +---------------+---------------+                               |
-|                                   |                                               |
-|                       (Atomic Diff vs Broker)                                     |
-|                                   v                                               |
-|                   +-------------------------------+                               |
-|                   |  Broker Physical Order Engine |                               |
-|                   |  Alpaca Holdings: 0.867 SPY   |                               |
-|                   +---------------+---------------+                               |
-|                                   |                                               |
-|                        (Execution Fill Event)                                     |
-|                                   v                                               |
-|                   +-------------------------------+                               |
-|                   |  Virtual Sub-Position Ledger  |                               |
-|                   |  - sub_SPY_trend_following    |                               |
-|                   |  - sub_SPY_mean_reversion     |                               |
-|                   |  - sub_SPY_manual_residual    |                               |
-|                   +-------------------------------+                               |
-+-----------------------------------------------------------------------------------+
+```mermaid
+graph TD
+    TF[Trend Following<br/>Allocation: 2x<br/>Target: +0.578 SPY] --> NET[In-Process Netting Resolver<br/>Target Aggregate: +0.867 SPY]
+    MR[Mean Reversion<br/>Allocation: 1x<br/>Target: +0.289 SPY] --> NET
+    NET -->|Atomic Diff vs Broker| BROKER[Broker Physical Order Engine<br/>Alpaca Holdings: 0.867 SPY]
+    BROKER -->|Execution Fill Event| VIRT[Virtual Sub-Position Ledger<br/>- sub_SPY_trend_following<br/>- sub_SPY_mean_reversion<br/>- sub_SPY_manual_residual]
 ```
 
 ### 2.3 Netting vs. Independent Order Routing Dynamics
@@ -279,31 +235,16 @@ $$\text{Fee}_{\text{allocated}, k} = \text{Fee}_{\text{total, order}} \times \le
 
 ### 3.1 Algorithmic Synthesis Paradigms
 
-```
-+-----------------------------------------------------------------------------------+
-|               CONTINUOUS INTERVAL STRATEGY GENERATION PIPELINE                     |
-|                                                                                   |
-|   [Hypothesis Engine]                                                             |
-|   ├── 1. Parameterized Grid Search (6D Indicator Hypercube)                       |
-|   ├── 2. Genetic Recombination (Crossover + Mutation + Novelty Filter)            |
-|   └── 3. LLM-Guided Heuristic Search (Declarative Spec Synthesis)                 |
-|                               │                                                   |
-|                               v                                                   |
-|   [Novelty & Uniqueness Filter]                                                   |
-|   - Structural Fingerprint: SHA-256(family, model, indicators, params)            |
-|   - Manhattan Novelty Metric: D_H >= 0.50 (Prunes duplicate local optima)         |
-|                               │                                                   |
-|                               v                                                   |
-|   [Strict Anti-Overfitting & Validation Gates]                                    |
-|   ├── Combinatorial Purged Cross-Validation (CPCV)                                |
-|   │   ├── Purging: Truncates features overlapping test trade returns              |
-|   │   └── Embargoing: Discards training bars adjacent to test window              |
-|   ├── Deflated Sharpe Ratio (DSR Gate): p >= 0.95 (Corrects for N trials)         |
-|   └── Dynamic Fee Drag Model: Cost(N) = c_prop * N + c_fixed                      |
-|                               │                                                   |
-|                               v                                                   |
-|   [Promotion Gate] --> Validated Registry (configs/strategies/curated/)           |
-+-----------------------------------------------------------------------------------+
+```mermaid
+graph TD
+    subgraph HYP[Hypothesis Engine]
+        GRID[1. Parameterized Grid Search]
+        GEN[2. Genetic Recombination]
+        LLM[3. LLM-Guided Heuristic Search]
+    end
+    HYP --> NOVELTY[Novelty & Uniqueness Filter<br/>- SHA-256 Fingerprint<br/>- Manhattan Novelty D_H >= 0.50]
+    NOVELTY --> GATES[Strict Anti-Overfitting & Validation Gates<br/>- CPCV Purged Cross-Validation<br/>- Deflated Sharpe Ratio DSR p >= 0.95<br/>- Dynamic Fee Drag Model]
+    GATES --> PROMOTE[Promotion Gate --> configs/strategies/curated/]
 ```
 
 #### A. Parameterized Indicator Grid Search
@@ -391,7 +332,6 @@ A generated strategy candidate is immediately rejected if $\mathbf{\text{DSR} < 
 
 ### 5.2 4-Tier Operational CLI Runbook
 
-```markdown
 ### Sovereign Quantitative Execution & Fee Drag Runbook
 
 #### 1. Inspection & Diagnostic Probes (Read-Only)
@@ -435,7 +375,6 @@ cp storage/data/runtime/ledger/sub_positions.json.bak storage/data/runtime/ledge
 
 # 2. Emergency cancel all pending broker orders and flatten intraday exposure
 npm run cli -- tools kill-switch --engage # engages lockfile and cancels all open broker orders
-```
 ```
 
 ---

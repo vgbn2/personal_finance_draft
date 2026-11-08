@@ -58,20 +58,12 @@ Rather than Family-Wise Error Rate (Bonferroni), which is overly conservative an
 
 To evaluate 100,000 strategies without exhausting CPU cycles or memory, strategies are pruned through a 4-tier funnel:
 
-```
-[100,000 Candidates]
-         │
-         ▼
-[Stage 1: Binary Trade Vector Fingerprinting] ──► (Discards ~70,000 duplicate signals in <1ms)
-         │
-         ▼
-[Stage 2: Return Correlation Clustering]      ──► (Collapses ~25,000 co-linear variants into clusters)
-         │
-         ▼
-[Stage 3: Dynamic Sizing & Cost Drag Gate]    ──► (Enforces max($150, 0.7% equity) floor)
-         │
-         ▼
-[Stage 4: DSR & CPCV Regime Cross-Validation] ──► (Leaves ~5-10 statistically robust alphas)
+```mermaid
+graph TD
+    A[100,000 Candidates] --> B[Stage 1: Binary Trade Vector Fingerprinting<br/>Discards ~70,000 duplicate signals in &lt;1ms]
+    B --> C[Stage 2: Return Correlation Clustering<br/>Collapses ~25,000 co-linear variants into clusters]
+    C --> D[Stage 3: Dynamic Sizing & Cost Drag Gate<br/>Enforces max $150, 0.7% equity floor]
+    D --> E[Stage 4: DSR & CPCV Regime Cross-Validation<br/>Leaves ~5-10 statistically robust alphas]
 ```
 
 ### Stage 1: Binary Trade Vector Fingerprinting (Zero-Backtest Pruning)

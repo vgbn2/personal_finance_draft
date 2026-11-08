@@ -212,6 +212,7 @@
           "allowed_surfaces": ["gateway_account", "execution"]
         },
         {"name": "TRUFLATION_API_KEY"},
+        {"name": "SOVEREIGN_ROUTER_KEY", "central_copy": true, "allowed_surfaces": ["default_cli", "operator", "writer", "execution"]},
         {
           "name": "SOVEREIGN_TRADE_PIN",
           "environment_class": "execution",
@@ -337,6 +338,8 @@
         {"name": "MT5_TERMINAL_ID"},
         {"name": "OLLAMA_BASE_URL", "default": "http://localhost:11434"},
         {"name": "OLLAMA_MODEL"},
+        {"name": "SOVEREIGN_ROUTER_URL", "default": "http://192.168.4.103:20128/v1"},
+        {"name": "SOVEREIGN_ROUTER_MODEL", "default": "ag/gemini-3.8-flash"},
         {"name": "OMP_NUM_THREADS", "default": "1", "allowed_surfaces": ["default_cli", "web", "mcp", "writer", "operator", "execution"]},
         {
           "name": "ORDERS_FILE",
@@ -495,7 +498,8 @@
         {"name": "PATH"},
         {"name": "SOVEREIGN_ENVIRONMENT_SURFACE"},
         {"name": "SOVEREIGN_DEBUG"},
-        {"name": "SOVEREIGN_LOG_HEALTH_CHECKS"}
+        {"name": "SOVEREIGN_LOG_HEALTH_CHECKS"},
+        {"name": "RESEARCH_CAPTURE"}
       ]
     }
   ]
