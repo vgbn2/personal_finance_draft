@@ -1,4 +1,4 @@
-name: cand_mean_reversion_crypto_regime_reversal_1d_mw7cemlf_1b5r
+name: cand_mean_reversion_crypto_regime_reversal_1d_mw7g88gu_snho
 kind: mean_reversion
 family: mean_reversion
 lane: single_asset
@@ -71,11 +71,14 @@ sections:
       - "USDJPY"
   backtest:
     engine: "sovereign_cpp_core"
-    trades: 38
-    sharpe_ratio: 3.88
-    max_drawdown: 0.0930
-    win_rate: 0.579
-    net_return: 0.3471
+    trades: 562
+    sharpe_ratio: 1.53
+    max_drawdown: 0.0745
+    win_rate: 0.514
+    net_return: 0.2581
+    first_trade_enter: "2018-03-01T00:00:00.000Z"
+    last_trade_exit: "2025-09-13T00:00:00.000Z"
+    trading_window: "01/03/18 to 13/09/25"
   promotion:
     require_backtest: true
     require_walk_forward: true

@@ -1,0 +1,90 @@
+name: auto_volatility_volatility_smile_1d
+kind: volatility
+family: volatility
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: volatility_breakout_v0
+timeframe: 1d
+sections:
+  hypothesis: "Volatility smile skew regime shift: Asymmetric implied-versus-realized volatility expansion indicating structural trend continuation."
+  universe:
+    - "SPY"
+    - "QQQ"
+    - "BTCUSDT"
+    - "ETHUSDT"
+  signals:
+    entry: "Bollinger Bandwidth expansion > 2.0x 20-day median with ATR breakout"
+    exit: "Bandwidth mean reversion or trailing 3.5% stop loss"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "atr"
+      - "bollinger"
+      - "hv"
+      - "volatility"
+      - "return_fast"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    atr: true
+    bollinger: true
+    hv: true
+    volatility: true
+    return_fast: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 7
+    risk_weight: 0.08
+    stop_loss_pct: 0.035
+    take_profit_pct: 0.08
+    max_drawdown_limit: 0.2
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "calm_trend"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 1918
+    sharpe_ratio: 1.43
+    max_drawdown: 0.0449
+    win_rate: 0.556
+    net_return: 0.2170
+    first_trade_enter: "1997-09-19T00:00:00.000Z"
+    last_trade_exit: "2009-09-24T00:00:00.000Z"
+    trading_window: "19/09/97 to 24/09/09"
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

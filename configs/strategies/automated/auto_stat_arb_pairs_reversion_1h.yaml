@@ -1,0 +1,88 @@
+name: auto_stat_arb_pairs_reversion_1h
+kind: stat_arb
+family: stat_arb
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: knn_pattern_v0
+timeframe: 1h
+sections:
+  hypothesis: "Pairs spread reversion: Synthetic spread between cointegrated high-liquidity crypto pairs mean-reverting after outlier dislocation."
+  universe:
+    - "BTCUSDT"
+    - "ETHUSDT"
+  signals:
+    entry: "Normalized price ratio z-score > 2.2 outside outer Bollinger band"
+    exit: "Spread z-score returns inside 0.5 boundary or 5-bar max holding reached"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "zscore"
+      - "bollinger"
+      - "atr"
+      - "return_fast"
+      - "volatility"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    zscore: true
+    bollinger: true
+    atr: true
+    return_fast: true
+    volatility: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 5
+    risk_weight: 0.08
+    stop_loss_pct: 0.035
+    take_profit_pct: 0.08
+    max_drawdown_limit: 0.2
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "mean_reversion"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 13794
+    sharpe_ratio: -0.57
+    max_drawdown: 0.3042
+    win_rate: 0.434
+    net_return: -0.2933
+    first_trade_enter: "2018-02-10T06:00:00.000Z"
+    last_trade_exit: "2018-06-21T19:00:00.000Z"
+    trading_window: "10/02/18 to 21/06/18"
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

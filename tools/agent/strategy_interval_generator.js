@@ -159,8 +159,6 @@ async function runSingleCycle(options) {
     if (staging.yaml_path) {
       console.log(`[INTERVAL-GENERATOR] STAGED STRATEGY YAML: ${staging.yaml_path}`);
     }
-  } else {
-    console.log(`[INTERVAL-GENERATOR] Discarded candidate: quality gate not met (${staging.reason})`);
   }
 
   return {
@@ -212,37 +210,9 @@ function printCandidatesReport(candidatesDir) {
 
   list.sort((a, b) => b.rawScore - a.rawScore);
 
-  console.log('\n' + '='.repeat(115));
-  console.log('                              SOVEREIGN DISCOVERED STRATEGY CANDIDATES');
-  console.log('='.repeat(115));
-  console.log(
-    'Checksum'.padEnd(10) + ' | ' +
-    'Archetype'.padEnd(25) + ' | ' +
-    'Family'.padEnd(15) + ' | ' +
-    'Trading Window'.padEnd(20) + ' | ' +
-    'Trades'.padStart(6) + ' | ' +
-    'Sharpe'.padStart(7) + ' | ' +
-    'MaxDD'.padStart(7) + ' | ' +
-    'WinRate'.padStart(7) + ' | ' +
-    'Score'.padStart(8)
-  );
-  console.log('-'.repeat(10) + '-+-' + '-'.repeat(25) + '-+-' + '-'.repeat(15) + '-+-' + '-'.repeat(20) + '-+-' + '-'.repeat(6) + '-+-' + '-'.repeat(7) + '-+-' + '-'.repeat(7) + '-+-' + '-'.repeat(7) + '-+-' + '-'.repeat(8));
-
-  for (const item of list) {
-    console.log(
-      item.checksum.padEnd(10) + ' | ' +
-      item.archetype.padEnd(25) + ' | ' +
-      item.family.padEnd(15) + ' | ' +
-      item.window.padEnd(20) + ' | ' +
-      String(item.trades).padStart(6) + ' | ' +
-      item.sharpe.padStart(7) + ' | ' +
-      item.maxDd.padStart(7) + ' | ' +
-      item.winRate.padStart(7) + ' | ' +
-      item.score.padStart(8)
-    );
-  }
-  console.log('='.repeat(115));
-  console.log(`Total Staged Candidates: ${list.length} | Source: ${candidatesDir}\n`);
+  console.log(`\n=== SOVEREIGN DISCOVERED STRATEGY CANDIDATES (${list.length} Total) ===`);
+  console.table(list.map(({ rawScore, ...rest }) => rest));
+  console.log(`Source: ${candidatesDir}\n`);
 }
 
 function printCandidateCard(candidatesDir, query) {

@@ -1,4 +1,4 @@
-name: cand_microstructure_order_flow_imbalance_1h_mw6rdjhu_1qnn
+name: cand_microstructure_order_flow_imbalance_1h_mw7g016g_po9u
 kind: microstructure
 family: microstructure
 lane: single_asset
@@ -74,11 +74,14 @@ sections:
       - "USDJPY"
   backtest:
     engine: "sovereign_cpp_core"
-    trades: 29
-    sharpe_ratio: 6.87
-    max_drawdown: 0.0197
-    win_rate: 0.552
-    net_return: 0.1034
+    trades: 3177
+    sharpe_ratio: -1.24
+    max_drawdown: 0.1044
+    win_rate: 0.480
+    net_return: -0.0940
+    first_trade_enter: "2020-07-29T15:00:00.000Z"
+    last_trade_exit: "2021-06-24T15:00:00.000Z"
+    trading_window: "29/07/20 to 24/06/21"
   promotion:
     require_backtest: true
     require_walk_forward: true

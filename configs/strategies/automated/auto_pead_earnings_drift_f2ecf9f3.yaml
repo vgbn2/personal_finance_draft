@@ -1,4 +1,4 @@
-name: cand_event_drift_pead_earnings_drift_1h_mw7cx0j0_9o5s
+name: cand_event_drift_pead_earnings_drift_1h_mw7p0dkw_64sy
 kind: event_drift
 family: event_drift
 lane: single_asset
@@ -75,14 +75,14 @@ sections:
       - "USDJPY"
   backtest:
     engine: "sovereign_cpp_core"
-    trades: 259
-    sharpe_ratio: 1.03
-    max_drawdown: 0.1619
-    win_rate: 0.533
-    net_return: 0.3102
-    first_trade_enter: "2026-04-22T14:30:00.000Z"
-    last_trade_exit: "2026-11-05T14:00:00.000Z"
-    trading_window: "22/04/26 to 05/11/26"
+    trades: 3473
+    sharpe_ratio: 0.14
+    max_drawdown: 0.0486
+    win_rate: 0.495
+    net_return: 0.0194
+    first_trade_enter: "2020-07-30T15:00:00.000Z"
+    last_trade_exit: "2021-09-02T15:00:00.000Z"
+    trading_window: "30/07/20 to 02/09/21"
   promotion:
     require_backtest: true
     require_walk_forward: true

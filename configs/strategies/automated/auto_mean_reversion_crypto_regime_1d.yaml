@@ -1,0 +1,90 @@
+name: auto_mean_reversion_crypto_regime_1d
+kind: mean_reversion
+family: mean_reversion
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: knn_pattern_v0
+timeframe: 1d
+sections:
+  hypothesis: "Crypto Regime Reversal: Mean reversion on extreme RSI oversold exhaustion confirmed by nearest-neighbor return similarity clusters in high-liquidity crypto assets."
+  universe:
+    - "BTCUSDT"
+    - "ETHUSDT"
+    - "SOLUSDT"
+    - "AVAXUSDT"
+  signals:
+    entry: "KNN pattern classifier score >= 0.65 with RSI < 42 and negative short-term return exhaustion"
+    exit: "Target take profit of 10.0%, stop loss of 4.5%, or 3-day holding horizon"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "return_fast"
+      - "return_slow"
+      - "volatility"
+      - "rsi"
+      - "atr"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 3
+    risk_weight: 0.08
+    stop_loss_pct: 0.045
+    take_profit_pct: 0.1
+    max_drawdown_limit: 0.2
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "calm_trend"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 1779
+    sharpe_ratio: 1.91
+    max_drawdown: 0.0583
+    win_rate: 0.512
+    net_return: 0.4756
+    first_trade_enter: "2018-03-01T00:00:00.000Z"
+    last_trade_exit: "2021-04-17T00:00:00.000Z"
+    trading_window: "01/03/18 to 17/04/21"
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

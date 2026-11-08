@@ -1,0 +1,89 @@
+name: auto_microstructure_orderflow_depth_15m
+kind: microstructure
+family: microstructure
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: logistic_regression_v0
+timeframe: 15m
+sections:
+  hypothesis: "Order book depth depletion: Asymmetric queue consumption at key liquidity nodes signaling short-term directional pressure."
+  universe:
+    - "BTCUSDT"
+    - "ETHUSDT"
+    - "QQQ"
+  signals:
+    entry: "Cumulative volume delta (CVD) divergence > 2 standard deviations with price holding above VWAP"
+    exit: "CVD mean reversion or 3-bar holding horizon timeout"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "cvd"
+      - "vwap"
+      - "atr"
+      - "return_fast"
+      - "volatility"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    cvd: true
+    vwap: true
+    atr: true
+    return_fast: true
+    volatility: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 3
+    risk_weight: 0.1
+    stop_loss_pct: 0.025
+    take_profit_pct: 0.06
+    max_drawdown_limit: 0.2
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "calm_trend"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 83152
+    sharpe_ratio: -2.05
+    max_drawdown: 0.9248
+    win_rate: 0.365
+    net_return: -0.9246
+    first_trade_enter: "2018-02-09T15:00:00.000Z"
+    last_trade_exit: "2018-02-27T23:15:00.000Z"
+    trading_window: "09/02/18 to 27/02/18"
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

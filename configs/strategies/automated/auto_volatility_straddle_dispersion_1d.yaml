@@ -1,0 +1,90 @@
+name: auto_volatility_straddle_dispersion_1d
+kind: volatility
+family: volatility
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: volatility_breakout_v0
+timeframe: 1d
+sections:
+  hypothesis: "Index vs sector implied dispersion: Volatility premium divergence between index ETFs and constituent sector baskets."
+  universe:
+    - "SPY"
+    - "XLK"
+    - "XLF"
+    - "QQQ"
+  signals:
+    entry: "Dispersion spread z-score > 1.8 with positive component return spread"
+    exit: "Spread normalization or 10-day maximum horizon"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "volatility"
+      - "atr"
+      - "bollinger"
+      - "return_fast"
+      - "return_slow"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    volatility: true
+    atr: true
+    bollinger: true
+    return_fast: true
+    return_slow: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 10
+    risk_weight: 0.08
+    stop_loss_pct: 0.04
+    take_profit_pct: 0.09
+    max_drawdown_limit: 0.2
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "calm_trend"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 1017
+    sharpe_ratio: 0.95
+    max_drawdown: 0.0295
+    win_rate: 0.611
+    net_return: 0.0416
+    first_trade_enter: "1997-09-19T00:00:00.000Z"
+    last_trade_exit: "2013-04-16T00:00:00.000Z"
+    trading_window: "19/09/97 to 16/04/13"
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

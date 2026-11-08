@@ -884,16 +884,24 @@ int printBacktest(const std::vector<std::string>& args) {
         const auto snap = sovereign::loadMarketDataSnapshot(input, sym, timeframe, max_bars);
         if (snap.bars.empty()) continue; // quality.ok may be false for minor issues; trust Backtester::run's own validation
         const auto res = sovereign::Backtester::run(snap.bars, bt_cfg);
-        const double pos_size = std::clamp(bt_cfg.position_size_pct, 0.01, 1.0);
-        for (const auto& t : res.trades) {
-            const double trade_pnl = pos_size * t.net_return;
-            equity *= (1.0 + trade_pnl);
-            all_returns.push_back(trade_pnl);
-            aggregate.base.trades.push_back(t);
-            aggregate.base.equity_curve.points.push_back({t.exit_time, equity});
-            if (t.net_return > 0.0) ++aggregate.base.summary.winners;
-            else if (t.net_return < 0.0) ++aggregate.base.summary.losers;
-        }
+        aggregate.base.trades.insert(aggregate.base.trades.end(), res.trades.begin(), res.trades.end());
+    }
+
+    // Sort trades chronologically by exit_time to simulate realistic interleaved multi-symbol portfolio equity
+    std::sort(aggregate.base.trades.begin(), aggregate.base.trades.end(),
+              [](const auto& a, const auto& b) { return a.exit_time < b.exit_time; });
+
+    // ponytail: cap portfolio concurrency scaling to at most 10 active slots; upgrade when margin tracking is added.
+    const double n_slots = symbols.empty() ? 1.0 : std::min(static_cast<double>(symbols.size()), 10.0);
+    const double pos_size = std::clamp(bt_cfg.position_size_pct / n_slots, 0.01, 1.0);
+
+    for (const auto& t : aggregate.base.trades) {
+        const double trade_pnl = pos_size * t.net_return;
+        equity *= (1.0 + trade_pnl);
+        all_returns.push_back(trade_pnl);
+        aggregate.base.equity_curve.points.push_back({t.exit_time, equity});
+        if (t.net_return > 0.0) ++aggregate.base.summary.winners;
+        else if (t.net_return < 0.0) ++aggregate.base.summary.losers;
     }
 
     // Aggregate summary

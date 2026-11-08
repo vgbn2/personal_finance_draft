@@ -212,6 +212,7 @@ async function runMcpProbe(options = {}) {
       command: process.execPath,
       args: [serverPath],
       cwd: repoRoot,
+      env: options.env || process.env,
       stderr: 'pipe',
     });
     if (transport.stderr?.on) {

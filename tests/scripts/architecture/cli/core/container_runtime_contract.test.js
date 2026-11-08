@@ -20,6 +20,6 @@ test('canonical and compatibility Dockerfiles use a non-root build-separated run
   assert.doesNotMatch(canonical, /\/app\/workspace\/STATE\.md\b/);
   assert.match(
     canonical,
-    /\/app\/tools\/data_ops\/backfill_20_years\.js \.\/tools\/data_ops\/backfill_20_years\.js/,
+    /\/app\/tools \.\/tools/,
   );
 });

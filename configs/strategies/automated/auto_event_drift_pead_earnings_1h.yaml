@@ -1,0 +1,92 @@
+name: auto_event_drift_pead_earnings_1h
+kind: event_drift
+family: event_drift
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: gradient_boosted_trees_v0
+timeframe: 1h
+sections:
+  hypothesis: "Post-Earnings Announcement Drift (PEAD): Directional momentum persistence in high-beta liquid equities following earnings announcement volatility contraction."
+  universe:
+    - "MSFT"
+    - "NVDA"
+    - "AAPL"
+    - "GOOGL"
+  signals:
+    entry: "Gradient boosted momentum score > 0.65 with expanding return_slow and RSI in non-overbought zone (45 <= RSI <= 65)"
+    exit: "Holding horizon of 8 bars reached, take profit at 8.0%, or stop loss triggered at 3.0%"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "return_fast"
+      - "return_slow"
+      - "volatility"
+      - "rsi"
+      - "atr"
+      - "bollinger"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    return_fast: true
+    return_slow: true
+    volatility: true
+    rsi: true
+    atr: true
+    bollinger: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 8
+    risk_weight: 0.12
+    stop_loss_pct: 0.03
+    take_profit_pct: 0.08
+    max_drawdown_limit: 0.2
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "calm_trend"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 4341
+    sharpe_ratio: 0.11
+    max_drawdown: 0.0559
+    win_rate: 0.493
+    net_return: 0.0173
+    first_trade_enter: "2020-07-30T15:00:00.000Z"
+    last_trade_exit: "2021-06-15T13:00:00.000Z"
+    trading_window: "30/07/20 to 15/06/21"
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

@@ -1,4 +1,4 @@
-name: cand_momentum_ema_macd_trend_1h_stage_test
+name: cand_momentum_ema_macd_trend_1h_keep_all_test
 kind: momentum
 family: momentum
 lane: single_asset
@@ -74,11 +74,11 @@ sections:
       - "USDJPY"
   backtest:
     engine: "sovereign_cpp_core"
-    trades: 250
-    sharpe_ratio: 2.10
-    max_drawdown: 0.0400
-    win_rate: 0.580
-    net_return: 0.0500
+    trades: 50
+    sharpe_ratio: -0.47
+    max_drawdown: 0.5100
+    win_rate: 0.000
+    net_return: 0.0000
     first_trade_enter: null
     last_trade_exit: null
     trading_window: null

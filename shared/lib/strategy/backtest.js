@@ -1006,6 +1006,7 @@ function runBacktestCppNative(featureFrame, options) {
     '--threshold', String(options.threshold || 0.55),
     '--horizon', String(options.horizon || 5),
     '--cost-bps', String(options.costBps || 5),
+    '--position-size-pct', String(options.positionSizePct ?? options.position_size_pct ?? 0.10),
     '--monte-carlo-runs', String(options.monteCarloRuns != null ? options.monteCarloRuns : 200),
     '--json',
   ];

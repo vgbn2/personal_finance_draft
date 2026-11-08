@@ -9,8 +9,10 @@ const { spawnSync } = require('node:child_process');
 
 const {
   DEFAULT_RISK_BOUNDS,
+  CANONICAL_STRATEGY_FAMILIES,
   VALID_STRATEGY_FAMILIES,
   STRATEGY_ARCHETYPES,
+  formatStrategyName,
   generateCandidateSpec,
   validateRiskBounds,
   computeSpecChecksum,
@@ -216,30 +218,16 @@ test('interval discovery: candidate staging produces immutable checksummed recor
   assert.strictEqual(loaded.evaluation.trades, 250, 'staged evaluation matches');
   assert.strictEqual(typeof loaded.score, 'number', 'staged record contains computed numeric score');
 
-  // Verify rejection when trades <= 200 (boundary condition)
-  const lowTradesEval = { ...evaluation, trades: 200 };
-  const failTrades = stageCandidate({
+  // Candidate is staged regardless of Sharpe or trade count for manual user filtering
+  const lowTradesEval = { ...evaluation, trades: 10, sharpe_ratio: 0.10 };
+  const stageLow = stageCandidate({
     spec,
     evaluation: lowTradesEval,
   }, {
     candidatesDir: tmpDir,
-    min_sharpe: 1.0,
-    max_drawdown: 0.20,
   });
-  assert.strictEqual(failTrades.staged, false, 'candidate with <= 200 trades must be rejected');
-  assert.strictEqual(failTrades.reason, 'quality_gate_failed');
-
-  // Verify failure when quality gate fails on Sharpe
-  const lowQualEval = { ...evaluation, sharpe_ratio: 0.10 };
-  const failStage = stageCandidate({
-    spec,
-    evaluation: lowQualEval,
-  }, {
-    candidatesDir: tmpDir,
-    min_sharpe: 1.0,
-  });
-  assert.strictEqual(failStage.staged, false, 'candidate failing quality gate must not stage');
-  assert.strictEqual(failStage.reason, 'quality_gate_failed');
+  assert.strictEqual(stageLow.staged, true, 'candidate is preserved for manual user filtering');
+  assert.ok(fs.existsSync(stageLow.path), 'candidate file written to storage');
 });
 
 test('interval discovery: IntervalStrategyEngine executes cycle against local fixtures', async (t) => {
@@ -352,4 +340,95 @@ test('interval discovery: CLI supports --all-markets and custom universe', () =>
   assert.ok(res.stdout.includes('Universe: 3 symbols'), 'logs reflect 3 universe symbols');
   assert.ok(res.stdout.includes('Backtest Engine: sovereign_cpp_core'), 'confirms sovereign_cpp_core C++ execution');
   assert.ok(res.stdout.includes('Window:'), 'confirms trade window output');
+});
+
+test('interval discovery: canonical taxonomy covers 10 families and 20 archetypes with multi-asset universes', () => {
+  const expectedFamilies = [
+    'momentum',
+    'mean_reversion',
+    'breakout',
+    'microstructure',
+    'volatility',
+    'event_drift',
+    'stat_arb',
+    'trend_following',
+    'ml_alpha',
+    'prediction',
+  ];
+
+  for (const fam of expectedFamilies) {
+    assert.ok(CANONICAL_STRATEGY_FAMILIES.includes(fam), `canonical families must include ${fam}`);
+    assert.ok(VALID_STRATEGY_FAMILIES.includes(fam), `valid families must include ${fam}`);
+  }
+
+  const expectedArchetypes = [
+    'ema_macd_trend', 'opening_range_momentum',
+    'bollinger_mean_reversion', 'crypto_regime_reversal', 'rsi_stoch_reversal',
+    'volatility_breakout', 'atr_volatility_breakout',
+    'order_flow_imbalance', 'orderflow_depth',
+    'volatility_smile_skew', 'straddle_dispersion',
+    'pead_earnings_drift', 'fomc_drift',
+    'etf_basket_arb', 'pairs_reversion',
+    'macro_trend_ribbon', 'turtle_breakout',
+    'cnn_window_alpha', 'random_forest_alpha',
+    'clob_depth_imbalance', 'outcome_skew',
+  ];
+
+  for (const arch of expectedArchetypes) {
+    assert.ok(STRATEGY_ARCHETYPES[arch], `archetype ${arch} must exist in STRATEGY_ARCHETYPES`);
+    const item = STRATEGY_ARCHETYPES[arch];
+    assert.ok(expectedFamilies.includes(item.family), `family for ${arch} must be canonical: ${item.family}`);
+    assert.ok(item.signal_core, `archetype ${arch} must declare signal_core`);
+    assert.ok(Array.isArray(item.universe) && item.universe.length >= 2, `archetype ${arch} must define multi-asset universe (>=2 symbols): ${item.universe}`);
+    assert.ok(Object.keys(item.indicators).length >= 2, `archetype ${arch} must combine at least 2 indicators`);
+    assert.ok(item.default_risk.stop_loss_pct <= 0.05, `archetype ${arch} stop loss <= 5%`);
+    assert.ok(item.default_risk.max_drawdown_limit <= 0.20, `archetype ${arch} drawdown <= 20%`);
+  }
+});
+
+test('interval discovery: formatStrategyName adheres to mandatory naming grammar', () => {
+  const autoName = formatStrategyName({
+    prefix: 'auto',
+    family: 'momentum',
+    signal_core: 'ema_macd',
+    timeframe: '1h',
+  });
+  assert.strictEqual(autoName, 'auto_momentum_ema_macd_1h');
+  assert.match(autoName, /^[a-z0-9_]+$/);
+
+  const candName = formatStrategyName({
+    prefix: 'cand',
+    family: 'mean_reversion',
+    signal_core: 'bollinger_rsi',
+    timeframe: '1d',
+    seed: 'seed123',
+  });
+  assert.strictEqual(candName, 'cand_mean_reversion_bollinger_rsi_1d_seed123');
+  assert.match(candName, /^[a-z0-9_]+$/);
+});
+
+test('interval discovery: preserves all evaluated candidates for manual human filtering without discard', (t) => {
+  const tmpStaged = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-staged-'));
+  t.after(() => fs.rmSync(tmpStaged, { recursive: true, force: true }));
+
+  const spec = generateCandidateSpec({ archetype: 'ema_macd_trend', seed: 'keep_all_test' });
+  const rawEval = {
+    symbol: 'SPY',
+    trades: 50,
+    sharpe_ratio: -0.47,
+    max_drawdown: 0.51,
+  };
+
+  const stageRes = stageCandidate({
+    spec,
+    evaluation: rawEval,
+  }, {
+    candidatesDir: tmpStaged,
+  });
+
+  assert.strictEqual(stageRes.staged, true, 'must stage candidate without discard');
+  assert.ok(fs.existsSync(stageRes.path), 'staged file written to storage');
+  const stagedData = JSON.parse(fs.readFileSync(stageRes.path, 'utf8'));
+  assert.strictEqual(stagedData.checksum, spec.checksum);
+  assert.strictEqual(stagedData.evaluation.trades, 50);
 });
