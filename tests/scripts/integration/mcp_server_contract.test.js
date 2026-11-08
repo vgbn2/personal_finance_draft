@@ -72,6 +72,8 @@ async function createMcpClient(token, regPath) {
   const env = {
     ...process.env,
     SOVEREIGN_SERVICE_PRINCIPALS_PATH: regPath,
+    DERIBIT_CLIENT_ID: process.env.DERIBIT_CLIENT_ID || 'test_deribit_client',
+    DERIBIT_CLIENT_SECRET: process.env.DERIBIT_CLIENT_SECRET || 'test_deribit_secret',
   };
   if (token) {
     env.SOVEREIGN_MCP_SERVICE_TOKEN = token;

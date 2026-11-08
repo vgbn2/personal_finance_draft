@@ -52,12 +52,13 @@ test('calculateBump determines major, minor, patch, or none based on commit hier
   const patchCommits = [
     { type: 'chore', breaking: false },
     { type: 'fix', breaking: false },
+    { type: 'feat', scope: 'ops', breaking: false },
   ];
   assert.equal(calculateBump(patchCommits), 'patch');
 
   const minorCommits = [
     { type: 'fix', breaking: false },
-    { type: 'feat', breaking: false },
+    { type: 'feat', scope: 'milestone', breaking: false },
   ];
   assert.equal(calculateBump(minorCommits), 'minor');
 

@@ -127,9 +127,10 @@ function calculateBump(commits, manualBump = 'auto') {
       hasMajor = true;
       break;
     }
-    if (c.type === 'feat') {
+    // Only milestone/platform scopes or explicit minor bump minor (X); routine features bump patch (Y)
+    if (c.type === 'feat' && ['release', 'milestone', 'arch', 'platform', 'minor'].includes(c.scope)) {
       hasMinor = true;
-    } else if (['fix', 'perf', 'refactor'].includes(c.type)) {
+    } else if (c.type === 'feat' || ['fix', 'perf', 'refactor'].includes(c.type)) {
       hasPatch = true;
     }
   }

@@ -5,6 +5,11 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 2
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-dependencies:
         patterns:
@@ -45,6 +50,11 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 2
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       mcp-dependencies:
         patterns:
@@ -55,6 +65,11 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 2
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       frontend-dependencies:
         patterns:
