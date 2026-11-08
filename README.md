@@ -1,6 +1,8 @@
 # Sovereign Trading Research Platform
 
-[![CI Verification](https://img.shields.io/badge/CI-Passing-brightgreen?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
+[![CI Verification](https://img.shields.io/badge/CI-Passing-brightgreen?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows/test.yml)
+[![Version](https://img.shields.io/badge/version-v1.8.4-blue?style=flat-square)](package.json)
+[![Discussions](https://img.shields.io/badge/discussions-active-success?style=flat-square&logo=github)](https://github.com/vgbn2/personal_finance_draft/discussions)
 [![Documentation Health](https://img.shields.io/badge/docs-100%25_clean-brightgreen?style=flat-square&logo=gitbook&logoColor=white)](docs/README.md)
 [![Runtime Node](https://img.shields.io/badge/node.js-%3E%3D20.0.0-339933?style=flat-square&logo=node.js&logoColor=white)](package.json)
 [![Core C++](https://img.shields.io/badge/C%2B%2B-20-00599C?style=flat-square&logo=cplusplus&logoColor=white)](backend/cpp_core/)
@@ -466,7 +468,22 @@ Do not infer trading permission from the presence of an adapter, credential vari
 
 ---
 
-## 11. Acknowledgments & Credits
+## 11. Codebase Review & Maintenance Strategy
+
+The platform operates under a continuous review, refactoring, and maintenance protocol:
+
+- **Review & Maintenance Campaign**: Low-coding, high-signal audit passes focused on hotspot profiling, memory bounds, and dependency hygiene across compiled C++20 core, broker gateways, private API bridges, and the React 19 UI.
+- **Monorepo Lockfile Integrity**: All workspaces (`backend/api`, `backend/execution`, `backend/mcp_server`, `frontend/dashboard`) maintain lockfile parity with the root `package-lock.json` through unified root-level Dependabot management.
+- **Scoped Semver Progression**: Routine `feat(...)` commits advance patch (`1.X.Y`); minor releases (`1.X.0`) are reserved for explicit milestone/platform scopes (`release`, `milestone`, `arch`, `platform`).
+- **Zero-Cheat Testing Mandate**: Core suites (`test:core`, `test:data`, `test:structure`, `test:api`) execute keylessly and hermetically without mocked core paths, widened tolerances, or synthetic bypasses.
+- **Durable Community & Architectural Memory**: Long-term technical memory and roadmap proposals are tracked in [GitHub Discussions](https://github.com/vgbn2/personal_finance_draft/discussions):
+  - [Discussion #66: CI Stabilization & Dependabot Monorepo Alignment](https://github.com/vgbn2/personal_finance_draft/discussions/66)
+  - [Discussion #67: Production-Grade CI/CD Modernization](https://github.com/vgbn2/personal_finance_draft/discussions/67)
+  - [Discussion #69: Multi-Session Codebase Review & Maintenance Campaign](https://github.com/vgbn2/personal_finance_draft/discussions/69)
+
+---
+
+## 12. Acknowledgments & Credits
 
 Sovereign Trading Research Platform builds upon foundational work across quantitative finance, open-source systems programming, and modern machine learning. We gratefully acknowledge:
 
