@@ -154,8 +154,9 @@ if [[ "$REBUILD" == "true" && "$DRY_RUN" == "false" ]]; then
   echo "==> Rebuilding Docker image on CT ${CT_ID}..."
   $PROXMOX_SSH "pct exec ${CT_ID} -- bash -c '
     cd \"${CT_DEST}\"
-    docker compose build web feedd
-    docker tag ghcr.io/vgbn2/sovereign-trades:latest sovereign-trades:latest
+    docker compose -f infra/docker/docker-compose.yml --profile \"*\" build web feedd
+    docker tag personal_finance:latest sovereign-trades:latest
+    docker tag personal_finance:latest ghcr.io/vgbn2/sovereign-trades:latest
     SERVICES=\"web feedd backfill bot-alpaca-paper portfolio-monitor host-health host-backup\"
     if [[ \"$QUANT\" == \"true\" ]]; then
       SERVICES=\"\$SERVICES quant\"
