@@ -251,6 +251,7 @@ test('interval discovery: IntervalStrategyEngine executes cycle against local fi
     candidatesDir: tmpDir,
     minSharpe: -10, // allow staging for test verification
     minTrades: 0,   // allow staging for test verification
+    maxDrawdown: 1.0, // allow staging for test verification
     logger: () => {}, // silent
   });
 

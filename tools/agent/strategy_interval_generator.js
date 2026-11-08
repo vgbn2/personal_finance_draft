@@ -40,7 +40,7 @@ Options:
   --universe <symbols>   Comma-separated list of symbols (e.g. SPY,QQQ,AAPL,NVDA,BTCUSDT).
   --from, --start-date   Start date filter in dd/mm/yy or ISO format.
   --to, --end-date       End date filter in dd/mm/yy or ISO format.
-  --engine <name>        Backtest engine: cpp_frame (default, C++ core) or auto.
+  --engine <name>        Backtest engine: cpp_native (default, C++ core native mode), cpp_frame, or auto.
   --min-sharpe <N>       Minimum Sharpe ratio to stage candidate (default: 1.50).
   --max-drawdown <N>     Maximum allowed drawdown to stage candidate (default: 0.20).
   --min-trades <N>       Minimum trade count to stage candidate (default: 200).
@@ -62,7 +62,7 @@ function parseCliArgs(argv) {
     universe: null,
     from: null,
     to: null,
-    engine: 'cpp_frame',
+    engine: 'cpp_native',
     minSharpe: 1.50,
     maxDrawdown: 0.20,
     minTrades: 200,
@@ -134,7 +134,7 @@ async function runSingleCycle(options) {
     universe: options.universe,
     from: options.from,
     to: options.to,
-    engine: options.engine || 'cpp_frame',
+    engine: options.engine || 'cpp_native',
   });
   const score = calculateRiskAdjustedScore(evaluation);
 
@@ -328,7 +328,7 @@ async function main() {
     universe: options.universe,
     from: options.from,
     to: options.to,
-    engine: options.engine || 'cpp_frame',
+    engine: options.engine || 'cpp_native',
     logger: console.log,
     onCandidate: (res) => {
       const now = new Date().toISOString();

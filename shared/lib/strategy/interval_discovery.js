@@ -447,6 +447,23 @@ function generateCandidateSpec(options = {}) {
   return spec;
 }
 
+let cachedFixtureData = null;
+function getCachedFixtureBars() {
+  if (cachedFixtureData) return cachedFixtureData;
+  const fixturePath = path.join(REPO_ROOT, 'tests', 'fixtures', 'real_bars_btc.json');
+  if (fs.existsSync(fixturePath)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
+      cachedFixtureData = Array.isArray(data) ? data : (data.sources || []);
+    } catch {
+      cachedFixtureData = [];
+    }
+  } else {
+    cachedFixtureData = [];
+  }
+  return cachedFixtureData;
+}
+
 function loadLocalFixtureBars(symbol = 'BTCUSDT', timeframe = '1h', minCount = 1000) {
   // 1. Try real binary time-series index from storage/data/ts/
   try {
@@ -457,26 +474,20 @@ function loadLocalFixtureBars(symbol = 'BTCUSDT', timeframe = '1h', minCount = 1
     }
   } catch {}
 
-  const fixturePath = path.join(REPO_ROOT, 'tests', 'fixtures', 'real_bars_btc.json');
-  if (fs.existsSync(fixturePath)) {
-    try {
-      const data = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
-      const rawBars = Array.isArray(data) ? data : data.sources;
-      if (Array.isArray(rawBars) && rawBars.length >= 20) {
-        return rawBars.map((b) => ({
-          family: b.family || 'crypto',
-          provider: b.provider || 'binance',
-          symbol: symbol || b.symbol || 'BTCUSDT',
-          timeframe: timeframe || b.timeframe || '1h',
-          timestamp: b.timestamp,
-          open: Number(b.open),
-          high: Number(b.high),
-          low: Number(b.low),
-          close: Number(b.close),
-          volume: Number(b.volume || 1000),
-        }));
-      }
-    } catch {}
+  const rawBars = getCachedFixtureBars();
+  if (Array.isArray(rawBars) && rawBars.length >= 20) {
+    return rawBars.map((b) => ({
+      family: b.family || 'crypto',
+      provider: b.provider || 'binance',
+      symbol: symbol || b.symbol || 'BTCUSDT',
+      timeframe: timeframe || b.timeframe || '1h',
+      timestamp: b.timestamp,
+      open: Number(b.open),
+      high: Number(b.high),
+      low: Number(b.low),
+      close: Number(b.close),
+      volume: Number(b.volume || 1000),
+    }));
   }
 
   // ponytail: deterministic synthetic sample bars satisfy the test oracle without hitting live APIs.
@@ -544,57 +555,89 @@ async function evaluateStrategy(spec, options = {}) {
   const fromIso = parseDdMmYy(options.from || options.startDate || null);
   const toIso = parseDdMmYy(options.to || options.endDate || null);
 
+  const bridge = require('../runtime/backend_bridge');
+  const engineChoice = options.engine || 'cpp_native';
+
+  let backtestResult = null;
   let allBars = [];
-  if (Array.isArray(options.fixtureBars) && options.fixtureBars.length > 0) {
-    allBars = [...options.fixtureBars];
-  } else {
-    for (const sym of symbols) {
-      const symBars = loadLocalFixtureBars(sym, timeframe, barCount);
-      if (Array.isArray(symBars) && symBars.length > 0) {
-        allBars.push(...symBars);
+
+  // ponytail: fast C++ native multi-market backtesting directly loads binary snapshots (2.5s vs 9m JS feature loop).
+  if ((engineChoice === 'cpp_native' || engineChoice === 'auto') &&
+      bridge.backendAvailable() &&
+      (!options.fixtureBars || options.fixtureBars.length === 0)) {
+    try {
+      backtestResult = runBacktest(
+        { features: symbols.map((s) => ({ symbol: s })) },
+        {
+          strategy: spec.name,
+          model: spec.model || 'cnn_window_v0',
+          threshold: spec.risk?.signal_threshold ?? spec.threshold ?? 0.60,
+          horizon: spec.risk?.max_holding_days ?? spec.horizon ?? 5,
+          costBps: spec.cost_bps ?? 5,
+          timeframe,
+          engine: 'cpp_native',
+          from: fromIso,
+          to: toIso,
+        }
+      );
+    } catch {
+      backtestResult = null;
+    }
+  }
+
+  // If fast C++ native run did not succeed, fall back to feature frame backtest
+  const isNativeSuccess = backtestResult && (backtestResult.metrics != null && backtestResult.ok !== false);
+  if (!isNativeSuccess) {
+    if (Array.isArray(options.fixtureBars) && options.fixtureBars.length > 0) {
+      allBars = [...options.fixtureBars];
+    } else {
+      for (const sym of symbols) {
+        const symBars = loadLocalFixtureBars(sym, timeframe, barCount);
+        if (Array.isArray(symBars) && symBars.length > 0) {
+          allBars.push(...symBars);
+        }
       }
     }
-  }
 
-  if (fromIso || toIso) {
-    allBars = allBars.filter((b) => {
-      const stamp = b.timestamp || b.as_of;
-      if (!stamp) return true;
-      if (fromIso && stamp < fromIso) return false;
-      if (toIso && stamp > toIso) return false;
-      return true;
+    if (fromIso || toIso) {
+      allBars = allBars.filter((b) => {
+        const stamp = b.timestamp || b.as_of;
+        if (!stamp) return true;
+        if (fromIso && stamp < fromIso) return false;
+        if (toIso && stamp > toIso) return false;
+        return true;
+      });
+    }
+
+    const periods = spec.indicator_periods || {};
+    const frame = calculateRollingFeatureFrame(allBars, 2, {
+      rsi: spec.indicators?.rsi ? (periods.rsi || 14) : undefined,
+      atr: spec.indicators?.atr ? (periods.atr || 14) : undefined,
+      bollinger: spec.indicators?.bollinger ? (periods.bollinger || 20) : undefined,
+      volatility: spec.indicators?.volatility ? (periods.volatility || 20) : undefined,
+    });
+
+    frame.features.forEach((f) => {
+      if (!f.family) {
+        f.family = (f.symbol?.includes('USDT') || f.symbol?.includes('BTC')) ? 'crypto' : 'equities';
+      }
+      if (!f.timeframe) {
+        f.timeframe = timeframe;
+      }
+    });
+
+    backtestResult = runBacktest(frame, {
+      strategy: spec.name,
+      model: spec.model || 'cnn_window_v0',
+      threshold: spec.risk?.signal_threshold ?? spec.threshold ?? 0.60,
+      horizon: spec.risk?.max_holding_days ?? spec.horizon ?? 5,
+      costBps: spec.cost_bps ?? 5,
+      timeframe,
+      engine: engineChoice === 'cpp_native' ? 'cpp_frame' : engineChoice,
+      from: fromIso,
+      to: toIso,
     });
   }
-
-  const periods = spec.indicator_periods || {};
-  const frame = calculateRollingFeatureFrame(allBars, 2, {
-    rsi: spec.indicators?.rsi ? (periods.rsi || 14) : undefined,
-    atr: spec.indicators?.atr ? (periods.atr || 14) : undefined,
-    bollinger: spec.indicators?.bollinger ? (periods.bollinger || 20) : undefined,
-    volatility: spec.indicators?.volatility ? (periods.volatility || 20) : undefined,
-  });
-
-  frame.features.forEach((f) => {
-    if (!f.family) {
-      f.family = (f.symbol?.includes('USDT') || f.symbol?.includes('BTC')) ? 'crypto' : 'equities';
-    }
-    if (!f.timeframe) {
-      f.timeframe = timeframe;
-    }
-  });
-
-  // ponytail: default engine to cpp_frame invoking C++ core backtest binary; falling back to JS when unavailable.
-  const backtestResult = runBacktest(frame, {
-    strategy: spec.name,
-    model: spec.model || 'cnn_window_v0',
-    threshold: spec.risk?.signal_threshold ?? spec.threshold ?? 0.60,
-    horizon: spec.risk?.max_holding_days ?? spec.horizon ?? 5,
-    costBps: spec.cost_bps ?? 5,
-    timeframe,
-    engine: options.engine || 'cpp_frame',
-    from: fromIso,
-    to: toIso,
-  });
 
   const m = backtestResult.metrics || {};
   const trades = Array.isArray(backtestResult.trade_logs) && backtestResult.trade_logs.length > 0
@@ -897,7 +940,7 @@ class IntervalStrategyEngine {
     this.allMarkets = Boolean(options.allMarkets);
     this.from = options.from || options.startDate || null;
     this.to = options.to || options.endDate || null;
-    this.engine = options.engine || 'cpp_frame';
+    this.engine = options.engine || 'cpp_native';
     this.minSharpe = options.minSharpe ?? DEFAULT_RISK_BOUNDS.min_sharpe;
     this.maxDrawdown = options.maxDrawdown ?? DEFAULT_RISK_BOUNDS.max_drawdown_limit;
     this.minTrades = options.minTrades ?? options.min_trades ?? DEFAULT_RISK_BOUNDS.min_trades ?? 200;

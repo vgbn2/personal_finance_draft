@@ -1,4 +1,4 @@
-name: cand_mean_reversion_rsi_stoch_reversal_1d_mw7cenms_m340
+name: cand_mean_reversion_rsi_stoch_reversal_1d_mw7dl7mi_kzzx
 kind: mean_reversion
 family: mean_reversion
 lane: single_asset
@@ -72,11 +72,14 @@ sections:
       - "USDJPY"
   backtest:
     engine: "sovereign_cpp_core"
-    trades: 38
-    sharpe_ratio: 3.88
-    max_drawdown: 0.0930
-    win_rate: 0.579
-    net_return: 0.3471
+    trades: 2141
+    sharpe_ratio: 0.57
+    max_drawdown: 0.7130
+    win_rate: 0.524
+    net_return: 2.8473
+    first_trade_enter: "2018-03-01T00:00:00.000Z"
+    last_trade_exit: "2025-09-13T00:00:00.000Z"
+    trading_window: "01/03/18 to 13/09/25"
   promotion:
     require_backtest: true
     require_walk_forward: true
