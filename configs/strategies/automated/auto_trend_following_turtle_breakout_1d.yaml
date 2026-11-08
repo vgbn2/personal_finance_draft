@@ -1,0 +1,90 @@
+name: auto_trend_following_turtle_breakout_1d
+kind: trend_following
+family: trend_following
+lane: single_asset
+role: strategy
+status: active
+enabled: true
+model: volatility_breakout_v0
+timeframe: 1d
+sections:
+  hypothesis: "Turtle Channel Breakout: Multi-week Donchian channel expansion capturing fat-tailed trend distribution in liquid markets."
+  universe:
+    - "BTCUSDT"
+    - "ETHUSDT"
+    - "SPY"
+    - "NVDA"
+  signals:
+    entry: "Close breaches 20-day high with ATR expansion > 1.2x baseline"
+    exit: "Close crosses 10-day low or trailing ATR stop triggered"
+  data:
+    required_sources:
+      - price_volume
+      - sentiment
+    validation: strict
+  features:
+    technical:
+      - "donchian"
+      - "atr"
+      - "volatility"
+      - "return_fast"
+      - "return_slow"
+    relative: []
+    orderflow: []
+    custom: []
+  indicators:
+    donchian: true
+    atr: true
+    volatility: true
+    return_fast: true
+    return_slow: true
+  indicator_periods:
+    returnFast: 1
+    returnSlow: 5
+    volatility: 20
+    rsi: 14
+    atr: 14
+    bollinger: 20
+  risk:
+    signal_threshold: 0.65
+    max_holding_days: 20
+    risk_weight: 0.1
+    stop_loss_pct: 0.05
+    take_profit_pct: 0.15
+    max_drawdown_limit: 0.2
+    dynamic_sizing:
+      min_notional_floor: 150
+      min_equity_fraction: 0.007
+      allocation_model: fixed_fractional
+    fail_closed: true
+  ml_meta_labeling:
+    enabled: true
+    model: xgboost_v1
+    serving_manifest: "storage/models/serving_manifest.txt"
+    feature_frame: "storage/data/ml/feature_frame.csv"
+    prediction_backend: "deterministic_baseline"
+    feature_columns: 38
+    filter: "meta_label != 0"
+  regime:
+    filter_enabled: true
+    target_regime: "volatility_expansion"
+    cross_family_anchors:
+      - "GOLD"
+      - "OIL"
+      - "USDJPY"
+  backtest:
+    engine: "sovereign_cpp_core"
+    trades: 771
+    sharpe_ratio: 3.00
+    max_drawdown: 0.0514
+    win_rate: 0.575
+    net_return: 0.6772
+    first_trade_enter: "1997-09-19T00:00:00.000Z"
+    last_trade_exit: "2020-12-04T00:00:00.000Z"
+    trading_window: "19/09/97 to 04/12/20"
+  promotion:
+    require_backtest: true
+    require_walk_forward: true
+    require_paper_trade: true
+    review_required: true
+  notes: []

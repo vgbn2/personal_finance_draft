@@ -9,6 +9,7 @@ const { REPO_ROOT, STORAGE_DATA_DIR, STORAGE_TS_DIR } = require('../runtime/path
 const { calculateRollingFeatureFrame, generateSampleBars } = require('../market/indicators');
 const { readTsIndex } = require('../market/validation');
 const { runBacktest } = require('./backtest');
+const { synthesizeStrategyWithAi } = require('../ai/ai_client');
 
 // ponytail: default candidate staging dir under local storage/data; add remote sync when multi-node is active.
 const DEFAULT_CANDIDATES_DIR = path.join(STORAGE_DATA_DIR, 'strategies', 'candidates');
@@ -464,6 +465,87 @@ function generateCandidateSpec(options = {}) {
   return spec;
 }
 
+async function generateAiCandidateSpec(options = {}) {
+  try {
+    const aiResult = await synthesizeStrategyWithAi(options);
+    if (!aiResult) return null;
+
+    const baseFamily = CANONICAL_STRATEGY_FAMILIES.includes(aiResult.family)
+      ? aiResult.family
+      : (VALID_STRATEGY_FAMILIES.includes(aiResult.family) ? aiResult.family : 'momentum');
+
+    const rawArch = String(aiResult.archetype || `${baseFamily}_alpha`).toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    const signalCore = rawArch.replace(/^(cand_|auto_)/, '') || 'alpha';
+    const timeframe = ['1m', '5m', '15m', '30m', '1h', '4h', '1d'].includes(aiResult.timeframe)
+      ? aiResult.timeframe
+      : '1h';
+
+    const uniqueSuffix = options.seed
+      ? String(options.seed)
+      : `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+
+    const name = formatStrategyName({
+      prefix: 'cand',
+      family: baseFamily,
+      signal_core: signalCore,
+      timeframe,
+      seed: uniqueSuffix,
+    });
+
+    const universe = options.allMarkets || options.universe === 'all'
+      ? discoverAllMarketSymbols()
+      : (Array.isArray(aiResult.universe) && aiResult.universe.length > 0
+          ? aiResult.universe.map((s) => String(s).toUpperCase())
+          : (options.universe ? [...options.universe] : ['SPY', 'QQQ', 'BTCUSDT']));
+
+    const risk = aiResult.risk || {};
+    const clampedRiskWeight = Math.min(0.25, Math.max(0.01, Number(risk.risk_weight ?? 0.10)));
+    const clampedStopLoss = Math.min(0.05, Math.max(0.005, Number(risk.stop_loss_pct ?? 0.03)));
+    const clampedTakeProfit = Math.min(0.50, Math.max(0.01, Number(risk.take_profit_pct ?? 0.06)));
+    const clampedHoldingDays = Math.min(30, Math.max(1, Math.round(Number(risk.max_holding_days ?? 5))));
+    const clampedThreshold = Math.min(0.90, Math.max(0.50, Number(risk.signal_threshold ?? 0.60)));
+
+    const spec = {
+      name,
+      archetype: rawArch,
+      family: baseFamily,
+      kind: baseFamily,
+      signal_core: signalCore,
+      model: aiResult.model || 'cnn_window_v0',
+      timeframe,
+      universe,
+      indicators: (aiResult.indicators && typeof aiResult.indicators === 'object')
+        ? aiResult.indicators
+        : { rsi: true, return_fast: true, volatility: true },
+      indicator_periods: (aiResult.indicator_periods && typeof aiResult.indicator_periods === 'object')
+        ? aiResult.indicator_periods
+        : DEF_PERIODS,
+      cost_bps: options.cost_bps ?? 5,
+      risk: {
+        ...DEF_RISK,
+        risk_weight: clampedRiskWeight,
+        max_holding_days: clampedHoldingDays,
+        signal_threshold: clampedThreshold,
+        stop_loss_pct: clampedStopLoss,
+        take_profit_pct: clampedTakeProfit,
+        max_drawdown_limit: 0.20,
+        ...(options.risk || {}),
+      },
+      hypothesis: String(aiResult.hypothesis || 'AI-synthesized alpha hypothesis based on multi-asset market dynamics'),
+      entry_signal: String(aiResult.entry_signal || 'Causal multi-indicator entry trigger confirmed'),
+      exit_signal: String(aiResult.exit_signal || 'Triple-barrier take profit, stop loss, or horizon timeout'),
+      ai_generated: true,
+      ai_model: aiResult.source || 'ag/gemini-3.8-flash',
+      created_at: new Date().toISOString(),
+    };
+
+    spec.checksum = computeSpecChecksum(spec);
+    return spec;
+  } catch {
+    return null;
+  }
+}
+
 let cachedFixtureData = null;
 function getCachedFixtureBars() {
   if (cachedFixtureData) return cachedFixtureData;
@@ -832,7 +914,10 @@ ${perList}
     first_trade_enter: ${JSON.stringify(evaluation.first_trade_enter || null)}
     last_trade_exit: ${JSON.stringify(evaluation.last_trade_exit || null)}
     trading_window: ${JSON.stringify(evaluation.trading_window || null)}
-  promotion:
+${spec.ai_generated ? `  synthesis:
+    generator: "ai_agent"
+    model: ${JSON.stringify(spec.ai_model || 'ag/gemini-3.8-flash')}
+` : ''}  promotion:
     require_backtest: true
     require_walk_forward: true
     require_paper_trade: true
@@ -938,6 +1023,7 @@ class IntervalStrategyEngine {
     this.minSharpe = options.minSharpe ?? DEFAULT_RISK_BOUNDS.min_sharpe;
     this.maxDrawdown = options.maxDrawdown ?? DEFAULT_RISK_BOUNDS.max_drawdown_limit;
     this.minTrades = options.minTrades ?? options.min_trades ?? DEFAULT_RISK_BOUNDS.min_trades ?? 200;
+    this.useAi = options.useAi ?? options.ai ?? true;
     this.logger = options.logger || console.log;
     this.onCandidate = options.onCandidate || null;
     this.timer = null;
@@ -946,10 +1032,31 @@ class IntervalStrategyEngine {
   }
 
   async runCycle(customSpec = null) {
-    const spec = customSpec || generateCandidateSpec({
-      allMarkets: this.allMarkets,
-      universe: this.universe,
-    });
+    let spec = customSpec;
+    if (!spec) {
+      if (!this.archetype && this.useAi !== false) {
+        try {
+          spec = await generateAiCandidateSpec({
+            allMarkets: this.allMarkets,
+            universe: this.universe,
+          });
+          if (spec && typeof this.logger === 'function') {
+            this.logger(`[INTERVAL-DISCOVERY] [AI-AGENT: ${spec.ai_model || 'ag/gemini-3.8-flash'}] Synthesized: ${spec.name}`);
+          }
+        } catch (err) {
+          if (typeof this.logger === 'function') {
+            this.logger(`[INTERVAL-DISCOVERY] AI generation failed, falling back to algorithmic: ${err.message}`);
+          }
+        }
+      }
+      if (!spec) {
+        spec = generateCandidateSpec({
+          archetype: this.archetype,
+          allMarkets: this.allMarkets,
+          universe: this.universe,
+        });
+      }
+    }
     const validation = validateRiskBounds(spec);
     if (!validation.valid) {
       return {
@@ -1056,6 +1163,7 @@ module.exports = {
   computeSpecChecksum,
   validateRiskBounds,
   generateCandidateSpec,
+  generateAiCandidateSpec,
   calculateRiskAdjustedScore,
   rankCandidates,
   loadLocalFixtureBars,

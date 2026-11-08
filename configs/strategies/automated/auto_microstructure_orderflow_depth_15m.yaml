@@ -73,11 +73,11 @@ sections:
       - "USDJPY"
   backtest:
     engine: "sovereign_cpp_core"
-    trades: 83152
+    trades: 83179
     sharpe_ratio: -2.05
-    max_drawdown: 0.9248
+    max_drawdown: 0.9249
     win_rate: 0.365
-    net_return: -0.9246
+    net_return: -0.9247
     first_trade_enter: "2018-02-09T15:00:00.000Z"
     last_trade_exit: "2018-02-27T23:15:00.000Z"
     trading_window: "09/02/18 to 27/02/18"

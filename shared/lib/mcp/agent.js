@@ -107,7 +107,7 @@ async function agentLoop(query, options = {}) {
   for (let iteration = 0; iteration < 5; iteration += 1) {
     const response = await ask(prompt, systemPrompt);
     if (!response) {
-      return { status: 'error', error: 'Ollama unavailable' };
+      return { status: 'error', error: 'AI agent backend unavailable' };
     }
 
     const toolCall = extractToolCall(response.text);

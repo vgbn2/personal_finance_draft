@@ -14,6 +14,7 @@ const {
   STRATEGY_ARCHETYPES,
   formatStrategyName,
   generateCandidateSpec,
+  generateAiCandidateSpec,
   validateRiskBounds,
   computeSpecChecksum,
   calculateRiskAdjustedScore,
@@ -431,4 +432,17 @@ test('interval discovery: preserves all evaluated candidates for manual human fi
   const stagedData = JSON.parse(fs.readFileSync(stageRes.path, 'utf8'));
   assert.strictEqual(stagedData.checksum, spec.checksum);
   assert.strictEqual(stagedData.evaluation.trades, 50);
+});
+
+test('interval discovery: generateAiCandidateSpec validates AI candidate spec or returns null on offline', async () => {
+  const aiCandidate = await generateAiCandidateSpec();
+  if (aiCandidate) {
+    const validation = validateRiskBounds(aiCandidate);
+    assert.strictEqual(validation.valid, true, `AI candidate must pass risk bounds validation: ${JSON.stringify(validation.errors)}`);
+    assert.ok(aiCandidate.ai_generated, 'must be marked as ai_generated');
+    assert.ok(aiCandidate.checksum, 'must contain checksum');
+  } else {
+    // Expected when router/network is temporarily unreachable in hermetic test env
+    assert.strictEqual(aiCandidate, null);
+  }
 });

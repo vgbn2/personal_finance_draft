@@ -9,6 +9,7 @@ const {
   DEFAULT_AUTOMATED_STRATEGIES_DIR,
   STRATEGY_ARCHETYPES,
   generateCandidateSpec,
+  generateAiCandidateSpec,
   validateRiskBounds,
   evaluateStrategy,
   calculateRiskAdjustedScore,
@@ -67,6 +68,7 @@ function parseCliArgs(argv) {
     maxDrawdown: 0.20,
     minTrades: 200,
     writeYaml: true,
+    ai: true,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -87,6 +89,10 @@ function parseCliArgs(argv) {
       options.archetype = args[++i];
     } else if (arg === '--all-markets') {
       options.allMarkets = true;
+    } else if (arg === '--ai') {
+      options.ai = true;
+    } else if (arg === '--no-ai' || arg === '--disable-ai') {
+      options.ai = false;
     } else if (arg === '--universe') {
       const val = args[++i];
       if (val) {
@@ -114,11 +120,28 @@ function parseCliArgs(argv) {
 }
 
 async function runSingleCycle(options) {
-  const spec = generateCandidateSpec({
-    archetype: options.archetype,
-    allMarkets: options.allMarkets,
-    universe: options.universe,
-  });
+  let spec = null;
+  if (!options.archetype && options.ai !== false) {
+    try {
+      spec = await generateAiCandidateSpec({
+        allMarkets: options.allMarkets,
+        universe: options.universe,
+      });
+      if (spec) {
+        console.log(`[INTERVAL-GENERATOR] [AI-AGENT: ${spec.ai_model || 'ag/gemini-3.8-flash'}] Synthesized: ${spec.name} (${spec.family} | ${spec.archetype})`);
+      }
+    } catch (err) {
+      console.log(`[INTERVAL-GENERATOR] AI generation note: ${err.message}, falling back to algorithmic`);
+    }
+  }
+
+  if (!spec) {
+    spec = generateCandidateSpec({
+      archetype: options.archetype,
+      allMarkets: options.allMarkets,
+      universe: options.universe,
+    });
+  }
 
   const validation = validateRiskBounds(spec);
   if (!validation.valid) {
@@ -294,6 +317,7 @@ async function main() {
     minSharpe: options.minSharpe,
     maxDrawdown: options.maxDrawdown,
     minTrades: options.minTrades,
+    useAi: options.ai !== false,
     allMarkets: options.allMarkets,
     universe: options.universe,
     from: options.from,
