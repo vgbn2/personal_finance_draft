@@ -2,13 +2,21 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { DatabaseSync } = require('node:sqlite');
+let DatabaseSync;
+try {
+  ({ DatabaseSync } = require('node:sqlite'));
+} catch {
+  // node < 22.5.0: node:sqlite not built-in; guard at constructor
+}
 const { STORAGE_DATA_DIR } = require('../runtime/paths');
 
 const DEFAULT_DB_PATH = path.join(STORAGE_DATA_DIR, 'relational', 'analytics.db');
 
 class SqliteAnalyticsEngine {
   constructor(dbPath = DEFAULT_DB_PATH) {
+    if (!DatabaseSync) {
+      throw new Error('node:sqlite is unavailable on this Node runtime (requires Node.js v22.5+)');
+    }
     this.dbPath = dbPath;
     if (dbPath !== ':memory:') {
       const dir = path.dirname(dbPath);
