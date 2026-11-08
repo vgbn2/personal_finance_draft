@@ -1,4 +1,4 @@
-name: cand_crypto_regime_reversal_1d_mw6mrdc9_939f
+name: cand_mean_reversion_crypto_regime_reversal_1d_mw7cemlf_1b5r
 kind: mean_reversion
 family: mean_reversion
 lane: single_asset
@@ -72,10 +72,10 @@ sections:
   backtest:
     engine: "sovereign_cpp_core"
     trades: 38
-    sharpe_ratio: 4.68
+    sharpe_ratio: 3.88
     max_drawdown: 0.0930
-    win_rate: 0.605
-    net_return: 0.4206
+    win_rate: 0.579
+    net_return: 0.3471
   promotion:
     require_backtest: true
     require_walk_forward: true

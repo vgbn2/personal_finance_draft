@@ -492,7 +492,17 @@ services:
       - -c
       - |
         INTERVAL=$${QUANT_INTERVAL_SECS:-60}
-        exec node tools/agent/strategy_interval_generator.js --interval-secs "$$INTERVAL"
+        EXTRA_ARGS=""
+        if [ "$${QUANT_ALL_MARKETS:-true}" = "true" ]; then
+          EXTRA_ARGS="$$EXTRA_ARGS --all-markets"
+        fi
+        if [ -n "$$QUANT_FROM" ]; then
+          EXTRA_ARGS="$$EXTRA_ARGS --from $$QUANT_FROM"
+        fi
+        if [ -n "$$QUANT_TO" ]; then
+          EXTRA_ARGS="$$EXTRA_ARGS --to $$QUANT_TO"
+        fi
+        exec node tools/agent/strategy_interval_generator.js --interval-secs "$$INTERVAL" $$EXTRA_ARGS
 
 networks:
   edge-net:

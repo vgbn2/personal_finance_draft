@@ -13,6 +13,10 @@ const {
   evaluateStrategy,
   calculateRiskAdjustedScore,
   stageCandidate,
+  discoverAllMarketSymbols,
+  formatDdMmYy,
+  formatTradeWindow,
+  parseDdMmYy,
   IntervalStrategyEngine,
 } = require('../../shared/lib/strategy/interval_discovery');
 
@@ -32,6 +36,11 @@ Options:
   --candidates-dir <dir> Destination directory for staged candidates (default: storage/data/strategies/candidates).
   --yaml-dir <dir>       Destination directory for staged strategy YAML files (default: configs/strategies/automated).
   --archetype <name>     Force specific archetype: pead_earnings_drift, order_flow_imbalance, volatility_breakout, crypto_regime_reversal, etc.
+  --all-markets          Evaluate backtest across all discovered market symbols.
+  --universe <symbols>   Comma-separated list of symbols (e.g. SPY,QQQ,AAPL,NVDA,BTCUSDT).
+  --from, --start-date   Start date filter in dd/mm/yy or ISO format.
+  --to, --end-date       End date filter in dd/mm/yy or ISO format.
+  --engine <name>        Backtest engine: cpp_frame (default, C++ core) or auto.
   --min-sharpe <N>       Minimum Sharpe ratio to stage candidate (default: 1.50).
   --max-drawdown <N>     Maximum allowed drawdown to stage candidate (default: 0.20).
   --min-trades <N>       Minimum trade count to stage candidate (default: 200).
@@ -49,6 +58,11 @@ function parseCliArgs(argv) {
     candidatesDir: DEFAULT_CANDIDATES_DIR,
     yamlDir: DEFAULT_AUTOMATED_STRATEGIES_DIR,
     archetype: null,
+    allMarkets: false,
+    universe: null,
+    from: null,
+    to: null,
+    engine: 'cpp_frame',
     minSharpe: 1.50,
     maxDrawdown: 0.20,
     minTrades: 200,
@@ -71,6 +85,19 @@ function parseCliArgs(argv) {
       options.yamlDir = path.resolve(args[++i]);
     } else if (arg === '--archetype') {
       options.archetype = args[++i];
+    } else if (arg === '--all-markets') {
+      options.allMarkets = true;
+    } else if (arg === '--universe') {
+      const val = args[++i];
+      if (val) {
+        options.universe = val.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
+      }
+    } else if (arg === '--from' || arg === '--start-date') {
+      options.from = args[++i];
+    } else if (arg === '--to' || arg === '--end-date') {
+      options.to = args[++i];
+    } else if (arg === '--engine') {
+      options.engine = args[++i];
     } else if (arg === '--min-sharpe') {
       options.minSharpe = parseFloat(args[++i]);
     } else if (arg === '--max-drawdown') {
@@ -89,6 +116,8 @@ function parseCliArgs(argv) {
 async function runSingleCycle(options) {
   const spec = generateCandidateSpec({
     archetype: options.archetype,
+    allMarkets: options.allMarkets,
+    universe: options.universe,
   });
 
   const validation = validateRiskBounds(spec);
@@ -98,12 +127,19 @@ async function runSingleCycle(options) {
   }
 
   console.log(`[INTERVAL-GENERATOR] [${new Date().toISOString()}] Generated: ${spec.name} (${spec.archetype} | ${spec.model} | ${spec.timeframe})`);
-  console.log(`[INTERVAL-GENERATOR] Checksum: ${spec.checksum}`);
+  console.log(`[INTERVAL-GENERATOR] Universe: ${spec.universe.length} symbols | Checksum: ${spec.checksum}`);
 
-  const evaluation = await evaluateStrategy(spec);
+  const evaluation = await evaluateStrategy(spec, {
+    allMarkets: options.allMarkets,
+    universe: options.universe,
+    from: options.from,
+    to: options.to,
+    engine: options.engine || 'cpp_frame',
+  });
   const score = calculateRiskAdjustedScore(evaluation);
 
-  console.log(`[INTERVAL-GENERATOR] Backtest Engine: ${evaluation.engine} | Trades: ${evaluation.trades} | Sharpe: ${Number(evaluation.sharpe_ratio).toFixed(2)} | MaxDD: ${(evaluation.max_drawdown * 100).toFixed(2)}% | WinRate: ${(evaluation.win_rate * 100).toFixed(1)}% | Score: ${score}`);
+  const windowStr = evaluation.trading_window || 'N/A';
+  console.log(`[INTERVAL-GENERATOR] Backtest Engine: ${evaluation.engine} | Window: ${windowStr} | Trades: ${evaluation.trades} | Sharpe: ${Number(evaluation.sharpe_ratio).toFixed(2)} | MaxDD: ${(evaluation.max_drawdown * 100).toFixed(2)}% | WinRate: ${(evaluation.win_rate * 100).toFixed(1)}% | Score: ${score}`);
 
   const staging = stageCandidate({
     spec,
@@ -154,11 +190,16 @@ function printCandidatesReport(candidatesDir) {
     try {
       const data = JSON.parse(fs.readFileSync(path.join(candidatesDir, f), 'utf8'));
       const ev = data.evaluation || {};
+      const windowStr = data.trading_window || ev.trading_window || (
+        ev.first_trade_enter && ev.last_trade_exit
+          ? formatTradeWindow(ev.first_trade_enter, ev.last_trade_exit)
+          : (data.timeframe || data.spec?.timeframe || 'N/A')
+      );
       list.push({
         checksum: (data.checksum || f.replace('.json', '')).slice(0, 8),
         archetype: data.archetype || data.spec?.archetype || 'unknown',
         family: data.family || data.spec?.family || 'unknown',
-        tf: data.timeframe || data.spec?.timeframe || '1h',
+        window: windowStr,
         trades: ev.trades ?? ev.trade_count ?? 0,
         sharpe: Number.isFinite(ev.sharpe_ratio) ? ev.sharpe_ratio.toFixed(2) : 'N/A',
         maxDd: Number.isFinite(ev.max_drawdown) ? (ev.max_drawdown * 100).toFixed(1) + '%' : 'N/A',
@@ -171,28 +212,28 @@ function printCandidatesReport(candidatesDir) {
 
   list.sort((a, b) => b.rawScore - a.rawScore);
 
-  console.log('\n' + '='.repeat(105));
+  console.log('\n' + '='.repeat(115));
   console.log('                              SOVEREIGN DISCOVERED STRATEGY CANDIDATES');
-  console.log('='.repeat(105));
+  console.log('='.repeat(115));
   console.log(
     'Checksum'.padEnd(10) + ' | ' +
-    'Archetype'.padEnd(26) + ' | ' +
-    'Family'.padEnd(16) + ' | ' +
-    'TF'.padEnd(4) + ' | ' +
+    'Archetype'.padEnd(25) + ' | ' +
+    'Family'.padEnd(15) + ' | ' +
+    'Trading Window'.padEnd(20) + ' | ' +
     'Trades'.padStart(6) + ' | ' +
     'Sharpe'.padStart(7) + ' | ' +
     'MaxDD'.padStart(7) + ' | ' +
     'WinRate'.padStart(7) + ' | ' +
     'Score'.padStart(8)
   );
-  console.log('-'.repeat(10) + '-+-' + '-'.repeat(26) + '-+-' + '-'.repeat(16) + '-+-' + '-'.repeat(4) + '-+-' + '-'.repeat(6) + '-+-' + '-'.repeat(7) + '-+-' + '-'.repeat(7) + '-+-' + '-'.repeat(7) + '-+-' + '-'.repeat(8));
+  console.log('-'.repeat(10) + '-+-' + '-'.repeat(25) + '-+-' + '-'.repeat(15) + '-+-' + '-'.repeat(20) + '-+-' + '-'.repeat(6) + '-+-' + '-'.repeat(7) + '-+-' + '-'.repeat(7) + '-+-' + '-'.repeat(7) + '-+-' + '-'.repeat(8));
 
   for (const item of list) {
     console.log(
       item.checksum.padEnd(10) + ' | ' +
-      item.archetype.padEnd(26) + ' | ' +
-      item.family.padEnd(16) + ' | ' +
-      item.tf.padEnd(4) + ' | ' +
+      item.archetype.padEnd(25) + ' | ' +
+      item.family.padEnd(15) + ' | ' +
+      item.window.padEnd(20) + ' | ' +
       String(item.trades).padStart(6) + ' | ' +
       item.sharpe.padStart(7) + ' | ' +
       item.maxDd.padStart(7) + ' | ' +
@@ -200,7 +241,7 @@ function printCandidatesReport(candidatesDir) {
       item.score.padStart(8)
     );
   }
-  console.log('='.repeat(105));
+  console.log('='.repeat(115));
   console.log(`Total Staged Candidates: ${list.length} | Source: ${candidatesDir}\n`);
 }
 
@@ -223,13 +264,17 @@ function printCandidateCard(candidatesDir, query) {
   console.log('\n' + '='.repeat(70));
   console.log(`STRATEGY INSPECTION CARD: ${record.strategy_id || record.name || match.replace('.json', '')}`);
   console.log('='.repeat(70));
-  console.log(`Checksum:    ${record.checksum || match.replace('.json', '')}`);
-  console.log(`Family:      ${record.family || spec.family} (${record.archetype || spec.archetype})`);
-  console.log(`Model:       ${record.model || spec.model} | Timeframe: ${record.timeframe || spec.timeframe}`);
-  console.log(`Universe:    ${(spec.universe || []).join(', ') || 'N/A'}`);
-  console.log(`Created At:  ${spec.created_at || 'N/A'}`);
+  console.log(`Checksum:        ${record.checksum || match.replace('.json', '')}`);
+  console.log(`Family:          ${record.family || spec.family} (${record.archetype || spec.archetype})`);
+  console.log(`Model:           ${record.model || spec.model} | Timeframe: ${record.timeframe || spec.timeframe}`);
+  console.log(`Trading Window:  ${record.trading_window || ev.trading_window || formatTradeWindow(ev.first_trade_enter, ev.last_trade_exit)}`);
+  console.log(`First Entry:     ${ev.first_trade_enter || 'N/A'}`);
+  console.log(`Last Exit:       ${ev.last_trade_exit || 'N/A'}`);
+  console.log(`Universe:        ${Array.isArray(spec.universe) ? spec.universe.join(', ') : 'N/A'}`);
+  console.log(`Created At:      ${spec.created_at || 'N/A'}`);
   console.log('-'.repeat(70));
   console.log('EVALUATION METRICS (C++20 SOVEREIGN ENGINE):');
+  console.log(`  Engine:         ${ev.engine || record.metadata?.engine || 'sovereign_cpp_core'}`);
   console.log(`  Trades:         ${ev.trades ?? ev.trade_count ?? 0}`);
   console.log(`  Sharpe Ratio:   ${Number(ev.sharpe_ratio ?? 0).toFixed(2)}`);
   console.log(`  Max Drawdown:   ${(Number(ev.max_drawdown ?? 0) * 100).toFixed(2)}%`);
@@ -242,7 +287,7 @@ function printCandidateCard(candidatesDir, query) {
   console.log(`  Model Backend:  ${ml.model || 'N/A'} (${ml.prediction_backend || 'N/A'})`);
   console.log(`  Filter Logic:   ${ml.filter || 'N/A'}`);
   console.log('-'.repeat(70));
-  console.log(`YAML Path:   ${record.yaml_path || 'N/A'}`);
+  console.log(`YAML Path:       ${record.yaml_path || 'N/A'}`);
   console.log('='.repeat(70) + '\n');
 }
 
@@ -275,9 +320,15 @@ async function main() {
   const engine = new IntervalStrategyEngine({
     intervalSecs: options.intervalSecs,
     candidatesDir: options.candidatesDir,
+    yamlDir: options.yamlDir,
     minSharpe: options.minSharpe,
     maxDrawdown: options.maxDrawdown,
     minTrades: options.minTrades,
+    allMarkets: options.allMarkets,
+    universe: options.universe,
+    from: options.from,
+    to: options.to,
+    engine: options.engine || 'cpp_frame',
     logger: console.log,
     onCandidate: (res) => {
       const now = new Date().toISOString();
@@ -290,7 +341,8 @@ async function main() {
         const trades = res.evaluation?.trades ?? 0;
         const sharpe = Number.isFinite(res.evaluation?.sharpe_ratio) ? res.evaluation.sharpe_ratio.toFixed(2) : 'N/A';
         const dd = Number.isFinite(res.evaluation?.max_drawdown) ? (res.evaluation.max_drawdown * 100).toFixed(1) + '%' : 'N/A';
-        console.log(`[INTERVAL-GENERATOR] [${now}] Evaluated ${res.spec?.name} (${res.spec?.family} | ${trades} trades | Sharpe ${sharpe} | DD ${dd}) - Discarded: ${res.reason || 'quality_gate'}`);
+        const win = res.evaluation?.trading_window || 'N/A';
+        console.log(`[INTERVAL-GENERATOR] [${now}] Evaluated ${res.spec?.name} (${res.spec?.family} | ${win} | ${trades} trades | Sharpe ${sharpe} | DD ${dd}) - Discarded: ${res.reason || 'quality_gate'}`);
       }
     },
   });

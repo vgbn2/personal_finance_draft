@@ -45,6 +45,39 @@ const VALID_STRATEGY_FAMILIES = Object.freeze([
   'prediction',
 ]);
 
+function formatDdMmYy(dateOrIso) {
+  if (!dateOrIso) return 'N/A';
+  const d = new Date(dateOrIso);
+  if (isNaN(d.getTime())) return 'N/A';
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const year = String(d.getUTCFullYear()).slice(-2);
+  return `${day}/${month}/${year}`;
+}
+
+function formatTradeWindow(firstEntry, lastExit) {
+  if (!firstEntry || !lastExit) return 'N/A';
+  const start = formatDdMmYy(firstEntry);
+  const end = formatDdMmYy(lastExit);
+  if (start === 'N/A' || end === 'N/A') return 'N/A';
+  return `${start} to ${end}`;
+}
+
+function parseDdMmYy(str) {
+  if (!str) return null;
+  const match = String(str).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (!match) {
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  const day = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  let year = parseInt(match[3], 10);
+  if (year < 100) year += 2000;
+  const d = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 const STRATEGY_ARCHETYPES = Object.freeze({
   pead_earnings_drift: Object.freeze({
     archetype: 'pead_earnings_drift',
@@ -232,6 +265,44 @@ const STRATEGY_ARCHETYPES = Object.freeze({
   }),
 });
 
+// ponytail: dynamically discovers market symbols from storage and asset mappings; zero hardcoded symbols.
+function discoverAllMarketSymbols() {
+  const symbols = new Set();
+  if (fs.existsSync(STORAGE_TS_DIR)) {
+    try {
+      const files = fs.readdirSync(STORAGE_TS_DIR);
+      for (const file of files) {
+        if (file.endsWith('.bin')) {
+          const sym = file.slice(0, file.lastIndexOf('_'));
+          if (sym && /^[A-Z0-9=.-]{2,20}$/i.test(sym)) {
+            symbols.add(sym.toUpperCase());
+          }
+        }
+      }
+    } catch {}
+  }
+  const mappingPath = path.join(REPO_ROOT, 'configs', 'asset_mapping.json');
+  if (fs.existsSync(mappingPath)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
+      const mapping = parsed.mapping || parsed;
+      for (const list of Object.values(mapping)) {
+        if (Array.isArray(list)) {
+          for (const s of list) {
+            if (typeof s === 'string' && s.trim()) symbols.add(s.trim().toUpperCase());
+          }
+        }
+      }
+    } catch {}
+  }
+  for (const arch of Object.values(STRATEGY_ARCHETYPES || {})) {
+    if (Array.isArray(arch.universe)) {
+      for (const s of arch.universe) symbols.add(s.toUpperCase());
+    }
+  }
+  return Array.from(symbols).sort();
+}
+
 function canonicalizeJson(obj) {
   if (obj === null || typeof obj !== 'object') {
     return JSON.stringify(obj);
@@ -356,7 +427,9 @@ function generateCandidateSpec(options = {}) {
     kind: base.family,
     model: options.model || base.model,
     timeframe: options.timeframe || base.timeframe,
-    universe: options.universe ? [...options.universe] : [...base.universe],
+    universe: options.allMarkets || options.universe === 'all'
+      ? discoverAllMarketSymbols()
+      : (options.universe ? [...options.universe] : [...base.universe]),
     indicators: options.indicators ? { ...options.indicators } : { ...base.indicators },
     indicator_periods: options.indicator_periods ? { ...options.indicator_periods } : { ...base.indicator_periods },
     cost_bps: options.cost_bps ?? 5,
@@ -453,15 +526,48 @@ function rankCandidates(candidates = []) {
 }
 
 async function evaluateStrategy(spec, options = {}) {
-  const primarySymbol = spec.universe?.[0] || 'SPY';
-  const bars = options.fixtureBars || loadLocalFixtureBars(
-    primarySymbol,
-    spec.timeframe || '1h',
-    options.barCount || 1500
-  );
+  let symbols = [];
+  if (options.allMarkets || spec.universe === 'all' || (Array.isArray(spec.universe) && spec.universe.includes('all'))) {
+    symbols = discoverAllMarketSymbols();
+  } else if (Array.isArray(options.universe) && options.universe.length > 0) {
+    symbols = [...options.universe];
+  } else if (Array.isArray(spec.universe) && spec.universe.length > 0) {
+    symbols = [...spec.universe];
+  } else if (typeof spec.universe === 'string' && spec.universe.trim()) {
+    symbols = spec.universe.split(',').map((s) => s.trim()).filter(Boolean);
+  } else {
+    symbols = ['SPY'];
+  }
+
+  const timeframe = spec.timeframe || '1h';
+  const barCount = options.barCount || 1500;
+  const fromIso = parseDdMmYy(options.from || options.startDate || null);
+  const toIso = parseDdMmYy(options.to || options.endDate || null);
+
+  let allBars = [];
+  if (Array.isArray(options.fixtureBars) && options.fixtureBars.length > 0) {
+    allBars = [...options.fixtureBars];
+  } else {
+    for (const sym of symbols) {
+      const symBars = loadLocalFixtureBars(sym, timeframe, barCount);
+      if (Array.isArray(symBars) && symBars.length > 0) {
+        allBars.push(...symBars);
+      }
+    }
+  }
+
+  if (fromIso || toIso) {
+    allBars = allBars.filter((b) => {
+      const stamp = b.timestamp || b.as_of;
+      if (!stamp) return true;
+      if (fromIso && stamp < fromIso) return false;
+      if (toIso && stamp > toIso) return false;
+      return true;
+    });
+  }
 
   const periods = spec.indicator_periods || {};
-  const frame = calculateRollingFeatureFrame(bars, 2, {
+  const frame = calculateRollingFeatureFrame(allBars, 2, {
     rsi: spec.indicators?.rsi ? (periods.rsi || 14) : undefined,
     atr: spec.indicators?.atr ? (periods.atr || 14) : undefined,
     bollinger: spec.indicators?.bollinger ? (periods.bollinger || 20) : undefined,
@@ -469,27 +575,61 @@ async function evaluateStrategy(spec, options = {}) {
   });
 
   frame.features.forEach((f) => {
-    f.family = bars[0]?.family || (primarySymbol.includes('USDT') || primarySymbol.includes('BTC') ? 'crypto' : 'equities');
-    f.timeframe = spec.timeframe || '1h';
+    if (!f.family) {
+      f.family = (f.symbol?.includes('USDT') || f.symbol?.includes('BTC')) ? 'crypto' : 'equities';
+    }
+    if (!f.timeframe) {
+      f.timeframe = timeframe;
+    }
   });
 
+  // ponytail: default engine to cpp_frame invoking C++ core backtest binary; falling back to JS when unavailable.
   const backtestResult = runBacktest(frame, {
     strategy: spec.name,
     model: spec.model || 'cnn_window_v0',
     threshold: spec.risk?.signal_threshold ?? spec.threshold ?? 0.60,
     horizon: spec.risk?.max_holding_days ?? spec.horizon ?? 5,
     costBps: spec.cost_bps ?? 5,
-    timeframe: spec.timeframe || '1h',
-    engine: options.engine || 'auto',
+    timeframe,
+    engine: options.engine || 'cpp_frame',
+    from: fromIso,
+    to: toIso,
   });
 
   const m = backtestResult.metrics || {};
+  const trades = Array.isArray(backtestResult.trade_logs) && backtestResult.trade_logs.length > 0
+    ? backtestResult.trade_logs
+    : (Array.isArray(backtestResult.trades) ? backtestResult.trades : []);
+
+  let firstTradeEnter = null;
+  let lastTradeExit = null;
+  if (trades.length > 0) {
+    firstTradeEnter = trades[0].entry_time || trades[0].entryTime || null;
+    for (const t of trades) {
+      const exit = t.exit_time || t.exitTime;
+      if (exit && (!lastTradeExit || exit > lastTradeExit)) {
+        lastTradeExit = exit;
+      }
+    }
+    if (!lastTradeExit && trades[trades.length - 1]) {
+      lastTradeExit = trades[trades.length - 1].exit_time || trades[trades.length - 1].exitTime;
+    }
+  }
+
+  const tradeWindow = formatTradeWindow(firstTradeEnter, lastTradeExit);
+
   return {
-    symbol: bars[0]?.symbol || primarySymbol,
-    bar_count: bars.length,
+    symbol: symbols.length === 1 ? symbols[0] : `${symbols.length} markets (${symbols.join(', ')})`,
+    universe: symbols,
+    bar_count: allBars.length,
     engine: backtestResult.engine || 'sovereign_cpp_core',
     trades: m.trades || 0,
     trade_count: m.trades || 0,
+    first_trade_enter: firstTradeEnter,
+    last_trade_exit: lastTradeExit,
+    trading_window: tradeWindow,
+    timeframe_window: tradeWindow,
+    timeframe,
     net_return: m.net_return || 0,
     gross_return: m.gross_return || 0,
     max_drawdown: m.max_drawdown || 0,
@@ -623,6 +763,9 @@ function formatStrategyYaml(spec, evaluation = {}, mlMeta = null) {
     `    max_drawdown: ${Number(evaluation.max_drawdown ?? 0).toFixed(4)}`,
     `    win_rate: ${Number(evaluation.win_rate ?? 0).toFixed(3)}`,
     `    net_return: ${Number(evaluation.net_return ?? 0).toFixed(4)}`,
+    `    first_trade_enter: ${JSON.stringify(evaluation.first_trade_enter || null)}`,
+    `    last_trade_exit: ${JSON.stringify(evaluation.last_trade_exit || null)}`,
+    `    trading_window: ${JSON.stringify(evaluation.trading_window || null)}`,
     `  promotion:`,
     `    require_backtest: true`,
     `    require_walk_forward: true`,
@@ -714,6 +857,10 @@ function stageCandidate(candidate, options = {}) {
     family: spec.family || 'uncategorized',
     model: spec.model,
     timeframe: spec.timeframe,
+    universe: spec.universe,
+    trading_window: evaluation.trading_window || null,
+    first_trade_enter: evaluation.first_trade_enter || null,
+    last_trade_exit: evaluation.last_trade_exit || null,
     spec,
     evaluation,
     score,
@@ -746,6 +893,11 @@ class IntervalStrategyEngine {
     this.intervalSecs = Number(options.intervalSecs || options.interval || 30);
     this.candidatesDir = options.candidatesDir || DEFAULT_CANDIDATES_DIR;
     this.fixtureBars = options.fixtureBars || null;
+    this.universe = options.universe || null;
+    this.allMarkets = Boolean(options.allMarkets);
+    this.from = options.from || options.startDate || null;
+    this.to = options.to || options.endDate || null;
+    this.engine = options.engine || 'cpp_frame';
     this.minSharpe = options.minSharpe ?? DEFAULT_RISK_BOUNDS.min_sharpe;
     this.maxDrawdown = options.maxDrawdown ?? DEFAULT_RISK_BOUNDS.max_drawdown_limit;
     this.minTrades = options.minTrades ?? options.min_trades ?? DEFAULT_RISK_BOUNDS.min_trades ?? 200;
@@ -757,7 +909,10 @@ class IntervalStrategyEngine {
   }
 
   async runCycle(customSpec = null) {
-    const spec = customSpec || generateCandidateSpec();
+    const spec = customSpec || generateCandidateSpec({
+      allMarkets: this.allMarkets,
+      universe: this.universe,
+    });
     const validation = validateRiskBounds(spec);
     if (!validation.valid) {
       return {
@@ -770,6 +925,11 @@ class IntervalStrategyEngine {
 
     const evaluation = await evaluateStrategy(spec, {
       fixtureBars: this.fixtureBars,
+      engine: this.engine,
+      from: this.from,
+      to: this.to,
+      allMarkets: this.allMarkets,
+      universe: this.universe,
     });
     const score = calculateRiskAdjustedScore(evaluation);
 
@@ -866,5 +1026,9 @@ module.exports = {
   stageCandidate,
   queryMlMetaLabeling,
   formatStrategyYaml,
+  discoverAllMarketSymbols,
+  formatDdMmYy,
+  formatTradeWindow,
+  parseDdMmYy,
   IntervalStrategyEngine,
 };

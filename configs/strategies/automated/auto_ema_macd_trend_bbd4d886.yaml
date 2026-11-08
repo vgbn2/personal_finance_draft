@@ -79,6 +79,9 @@ sections:
     max_drawdown: 0.0400
     win_rate: 0.580
     net_return: 0.0500
+    first_trade_enter: null
+    last_trade_exit: null
+    trading_window: null
   promotion:
     require_backtest: true
     require_walk_forward: true

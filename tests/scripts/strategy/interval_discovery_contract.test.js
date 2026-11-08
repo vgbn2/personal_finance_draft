@@ -18,6 +18,10 @@ const {
   rankCandidates,
   evaluateStrategy,
   stageCandidate,
+  discoverAllMarketSymbols,
+  formatDdMmYy,
+  formatTradeWindow,
+  parseDdMmYy,
   IntervalStrategyEngine,
 } = require('../../../shared/lib/strategy/interval_discovery');
 
@@ -286,4 +290,65 @@ test('interval discovery: CLI supports single-cycle execution via --once', (t) =
   assert.ok(res.stdout.includes('[INTERVAL-GENERATOR]'), 'stdout contains interval generator logs');
   assert.ok(res.stdout.includes('Generated:'), 'stdout confirms strategy generation');
   assert.ok(res.stdout.includes('Backtest Engine:'), 'stdout confirms backtest execution');
+});
+
+test('interval discovery: discoverAllMarketSymbols dynamically retrieves universe from disk and manifests', () => {
+  const symbols = discoverAllMarketSymbols();
+  assert.ok(Array.isArray(symbols), 'symbols must be an array');
+  assert.ok(symbols.length > 10, 'must dynamically discover >10 symbols from disk storage and configs');
+  assert.ok(symbols.includes('AAPL'), 'contains AAPL from equity data/configs');
+  assert.ok(symbols.includes('BTCUSDT') || symbols.includes('BTC'), 'contains crypto symbols from data/configs');
+});
+
+test('interval discovery: date parsing and trade window formatting (dd/mm/yy to dd/mm/yy)', () => {
+  const iso = parseDdMmYy('15/03/24');
+  assert.ok(iso, 'parses 15/03/24 successfully');
+  assert.strictEqual(iso.slice(0, 10), '2024-03-15');
+
+  const formatted = formatDdMmYy(iso);
+  assert.strictEqual(formatted, '15/03/24');
+
+  const windowStr = formatTradeWindow('2024-01-05T00:00:00.000Z', '2024-04-20T12:00:00.000Z');
+  assert.strictEqual(windowStr, '05/01/24 to 20/04/24');
+});
+
+test('interval discovery: evaluates strategy across multi-market universe with C++ engine', async () => {
+  const spec = generateCandidateSpec({
+    archetype: 'volatility_breakout',
+    universe: ['SPY', 'QQQ', 'AAPL'],
+  });
+
+  const evaluation = await evaluateStrategy(spec, {
+    universe: ['SPY', 'QQQ', 'AAPL'],
+    engine: 'cpp_frame',
+  });
+
+  assert.strictEqual(evaluation.engine, 'sovereign_cpp_core', 'engine provenance must be sovereign_cpp_core');
+  assert.ok(evaluation.trades > 0, 'trades count must be positive');
+  assert.ok(evaluation.first_trade_enter, 'first_trade_enter must be recorded');
+  assert.ok(evaluation.last_trade_exit, 'last_trade_exit must be recorded');
+  assert.ok(evaluation.trading_window.includes(' to '), 'trading window formatted as dd/mm/yy to dd/mm/yy');
+});
+
+test('interval discovery: CLI supports --all-markets and custom universe', () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-cli-multimarket-'));
+  const scriptPath = path.resolve(__dirname, '../../../tools/agent/strategy_interval_generator.js');
+
+  const res = spawnSync(process.execPath, [
+    scriptPath,
+    '--once',
+    '--universe', 'SPY,QQQ,AAPL',
+    '--candidates-dir', tmpDir,
+    '--archetype', 'volatility_breakout',
+    '--from', '01/01/24',
+    '--to', '01/06/24',
+  ], {
+    encoding: 'utf8',
+    timeout: 15000,
+  });
+
+  assert.strictEqual(res.status, 0, `CLI exited with error: ${res.stderr}`);
+  assert.ok(res.stdout.includes('Universe: 3 symbols'), 'logs reflect 3 universe symbols');
+  assert.ok(res.stdout.includes('Backtest Engine: sovereign_cpp_core'), 'confirms sovereign_cpp_core C++ execution');
+  assert.ok(res.stdout.includes('Window:'), 'confirms trade window output');
 });

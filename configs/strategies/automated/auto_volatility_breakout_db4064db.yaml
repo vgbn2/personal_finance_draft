@@ -1,4 +1,4 @@
-name: cand_breakout_volatility_breakout_1h_mw6ppg7c_yzf0
+name: cand_breakout_volatility_breakout_1h_mw7cwyrv_4l73
 kind: breakout
 family: breakout
 lane: single_asset
@@ -72,11 +72,14 @@ sections:
       - "USDJPY"
   backtest:
     engine: "sovereign_cpp_core"
-    trades: 188
-    sharpe_ratio: 1.57
-    max_drawdown: 0.0679
-    win_rate: 0.479
-    net_return: 0.2804
+    trades: 395
+    sharpe_ratio: 0.88
+    max_drawdown: 0.1415
+    win_rate: 0.484
+    net_return: 0.3438
+    first_trade_enter: "2026-04-22T14:30:00.000Z"
+    last_trade_exit: "2026-09-25T15:00:00.000Z"
+    trading_window: "22/04/26 to 25/09/26"
   promotion:
     require_backtest: true
     require_walk_forward: true
