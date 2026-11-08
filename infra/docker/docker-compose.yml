@@ -470,12 +470,14 @@ services:
       <<: *central-runtime
       SOVEREIGN_ROUTER_URL: ${SOVEREIGN_ROUTER_URL:-http://192.168.4.103:20128/v1}
       SOVEREIGN_ROUTER_KEY: ${SOVEREIGN_ROUTER_KEY:-sk-1b6920feeeab2737-617eb2-92380c8a}
+      SOVEREIGN_ROUTER_MODEL: ${SOVEREIGN_ROUTER_MODEL:-ag/gemini-3.8-flash}
       NODE_OPTIONS: --max-old-space-size=1536
     volumes:
       - ../../storage:/app/storage
       - ../../configs/strategies/automated:/app/configs/strategies/automated
       - ../../tools:/app/tools
       - ../../shared:/app/shared
+      - ../../workspace:/app/workspace
     restart: unless-stopped
     deploy:
       resources:
@@ -502,7 +504,10 @@ services:
         if [ -n "$$QUANT_TO" ]; then
           EXTRA_ARGS="$$EXTRA_ARGS --to $$QUANT_TO"
         fi
-        exec node tools/agent/strategy_interval_generator.js --interval-secs "$$INTERVAL" $$EXTRA_ARGS
+        while true; do
+          node tools/agent/quant_research_harness.js --once $$EXTRA_ARGS || true
+          sleep "$$INTERVAL"
+        done
 
 networks:
   edge-net:

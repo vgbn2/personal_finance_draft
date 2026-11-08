@@ -37,7 +37,7 @@ while true; do
 4. Inspect the harness verdict and metrics table (Trades >= 30, Sharpe >= 1.0, MaxDD <= 15%). The harness automatically intercepts the C++ backtest, asserts hard gates, purges premature YAMLs on REJECT, and commits to workspace/RESEARCH_LEDGER.jsonl.
 5. Output exactly one markdown table summarizing this cycle's strategy and metrics."
 
-  opencode run --auto --archived "${PROMPT}" 2>&1 | tee -a "${LOG_FILE}"
+  opencode run --auto --archived -m "9router/ag/gemini-3.8-flash" "${PROMPT}" 2>&1 | tee -a "${LOG_FILE}"
 
   cycle=$((cycle + 1))
   sleep 2

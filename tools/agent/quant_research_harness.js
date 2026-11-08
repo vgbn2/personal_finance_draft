@@ -347,6 +347,9 @@ function main() {
     console.log(`Strategy:    ${spec.name} (${spec.family} | ${spec.archetype} | ${spec.timeframe})`);
     console.log(`Universe:    [${spec.universe?.join(', ')}]`);
     console.log(`Checksum:    ${checksum.slice(0, 12)}...`);
+    if (spec.ai_usage) {
+      console.log(`Tokens:      Prompt: ${spec.ai_usage.prompt_tokens || 0} | Completion: ${spec.ai_usage.completion_tokens || 0} | Total: ${spec.ai_usage.total_tokens || 0} (${spec.ai_model || 'ag/gemini-3.8-flash'})`);
+    }
     console.log(`Metrics:     Trades: ${metrics.trades} | Sharpe: ${metrics.sharpe.toFixed(2)} | MaxDD: ${(metrics.maxDd * 100).toFixed(2)}% | WinRate: ${(metrics.winRate * 100).toFixed(1)}%`);
     console.log(`Verdict:     ${status === 'PASS' ? '✅ PASS' : '❌ REJECT'}`);
 
@@ -379,6 +382,8 @@ function main() {
       status,
       failed_gates: failedGates,
       yaml_path: yamlPath,
+      tokens_used: spec.ai_usage ? (spec.ai_usage.total_tokens || null) : null,
+      model: spec.ai_model || null,
       rationale: options.rationale || `Empirical verification for ${spec.archetype || 'synthesized strategy'} on ${spec.timeframe}`,
     };
 

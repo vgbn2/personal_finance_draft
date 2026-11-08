@@ -85,6 +85,9 @@ test('cold cycle DEEP-fetches a missing symbol and rolls up coarser bins', async
   assert.equal(summary.skipped, 0);
   assert.equal(summary.rolled_up, 1, 'rolled up after fetch');
   assert.equal(summary.errors, 0);
+  assert.notEqual(summary.mb_added, undefined, 'mb_added reported in summary');
+  assert.notEqual(summary.storage_total_mb, undefined, 'storage_total_mb reported in summary');
+  assert.ok(summary.mb_added >= 0, 'mb_added is non-negative');
   assert.equal(calls.length, 1);
   assert.equal(calls[0].mode, 'deep');
 

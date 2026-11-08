@@ -536,6 +536,7 @@ async function generateAiCandidateSpec(options = {}) {
       exit_signal: String(aiResult.exit_signal || 'Triple-barrier take profit, stop loss, or horizon timeout'),
       ai_generated: true,
       ai_model: aiResult.source || 'ag/gemini-3.8-flash',
+      ai_usage: aiResult.usage || null,
       created_at: new Date().toISOString(),
     };
 

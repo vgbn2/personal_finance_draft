@@ -73,6 +73,25 @@ const DAY_MS = 86400000;
 const DAEMON_STATUS_PATH = path.resolve(__dirname, '../../../../storage/data/cache/backfill_daemon_status.json');
 const DAEMON_LOCK_PATH = path.resolve(__dirname, '../../../../storage/data/cache/backfill_daemon.lock');
 
+function getDirectorySizeBytes(dirPath) {
+  try {
+    if (!fs.existsSync(dirPath)) return 0;
+    let total = 0;
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isFile()) {
+        try {
+          const st = fs.statSync(path.join(dirPath, entry.name));
+          total += st.size;
+        } catch {}
+      }
+    }
+    return total;
+  } catch {
+    return 0;
+  }
+}
+
 // ponytail: 5s throttle eliminates 95%+ of SSD disk write churn during multi-symbol loops
 const STATUS_FLUSH_INTERVAL_MS = 5000;
 let lastDaemonStatusWrite = 0;
@@ -346,6 +365,7 @@ async function runBackfillCycle(o) {
 
   const summary = { cycle, scanned: 0, deep: 0, incremental: 0, skipped: 0, rolled_up: 0, derived_targets: 0, rollup_errors: 0, errors: 0, failures: [] };
   const start = Date.now();
+  const startBytes = typeof o.getDirSize === 'function' ? o.getDirSize(tsDir) : getDirectorySizeBytes(tsDir);
 
   // Keep both fresh-base repair and post-fetch derivation on one visible outcome path.
   function applyRollup(job, action, roll, label) {
@@ -407,6 +427,10 @@ async function runBackfillCycle(o) {
     const days = action === 'deep' ? (deepDays[job.family] || 59) : incrementalDays;
     log(`[BACKFILL] ${job.symbol}  → ${action.toUpperCase()} ${days}d`);
 
+    const baseBinPath = path.join(tsDir, `${job.symbol}_${job.baseTf}.bin`);
+    let preBytes = 0;
+    try { preBytes = fs.statSync(baseBinPath).size; } catch (_) {}
+
     const t0 = Date.now();
     let res;
     try {
@@ -426,7 +450,12 @@ async function runBackfillCycle(o) {
       return;
     }
     if (action === 'deep') summary.deep += 1; else summary.incremental += 1;
-    log(`[BACKFILL] ${job.symbol}  ok  ${elapsed}s`);
+
+    let postBytes = 0;
+    try { postBytes = fs.statSync(baseBinPath).size; } catch (_) {}
+    const deltaBytes = Math.max(0, postBytes - preBytes);
+    const deltaStr = deltaBytes > 0 ? ` (+${(deltaBytes / (1024 * 1024)).toFixed(2)} MB)` : '';
+    log(`[BACKFILL] ${job.symbol}  ok  ${elapsed}s${deltaStr}`);
 
     // Derive coarser bins from the freshly-written base bin. For an incremental
     // top-up only the recent window needs re-deriving, so the action is passed
@@ -451,8 +480,16 @@ async function runBackfillCycle(o) {
     }
   }
 
+  const endBytes = typeof o.getDirSize === 'function' ? o.getDirSize(tsDir) : getDirectorySizeBytes(tsDir);
+  const diffBytes = Math.max(0, endBytes - startBytes);
+  const mbAdded = Number((diffBytes / (1024 * 1024)).toFixed(2));
+  const totalMb = Number((endBytes / (1024 * 1024)).toFixed(2));
+
   summary.elapsed_s = Number(((Date.now() - start) / 1000).toFixed(1));
   summary.polls_started = pollPacer.getState().started;
+  summary.mb_added = mbAdded;
+  summary.storage_total_mb = totalMb;
+  log(`[BACKFILL] Cycle #${cycle} finished: +${mbAdded} MB added to storage (total: ${totalMb} MB)`);
   log(JSON.stringify({ type: 'backfill_cycle', ...summary }));
   return summary;
 }

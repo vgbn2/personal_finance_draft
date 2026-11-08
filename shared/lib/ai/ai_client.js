@@ -102,7 +102,8 @@ async function ask(prompt, systemPrompt = '') {
         const data = await res.json();
         const text = data.choices?.[0]?.message?.content;
         if (text && typeof text === 'string') {
-          return { text: text.trim(), source: `router:${ROUTER_MODEL}` };
+          const usage = data.usage || null;
+          return { text: text.trim(), source: `router:${ROUTER_MODEL}`, usage };
         }
       }
     } catch {
@@ -125,7 +126,12 @@ async function ask(prompt, systemPrompt = '') {
 
     if (res.status === 200) {
       const text = res.body?.message?.content;
-      if (text) return { text, source: `ollama:${OLLAMA_MODEL}` };
+      const usage = (res.body?.prompt_eval_count || res.body?.eval_count) ? {
+        prompt_tokens: res.body.prompt_eval_count || 0,
+        completion_tokens: res.body.eval_count || 0,
+        total_tokens: (res.body.prompt_eval_count || 0) + (res.body.eval_count || 0),
+      } : null;
+      if (text) return { text, source: `ollama:${OLLAMA_MODEL}`, usage };
     }
   } catch {
     // offline
@@ -192,6 +198,13 @@ Output Format: Return strictly a single raw JSON object without markdown fences,
   const response = await ask(userPrompt, systemPrompt);
   if (!response?.text) return null;
 
+  if (response.usage) {
+    const pTokens = response.usage.prompt_tokens ?? response.usage.input_tokens ?? 0;
+    const cTokens = response.usage.completion_tokens ?? response.usage.output_tokens ?? 0;
+    const tTokens = response.usage.total_tokens ?? (pTokens + cTokens);
+    console.log(`[AI-TOKENS] model=${response.source} prompt=${pTokens} completion=${cTokens} total=${tTokens}`);
+  }
+
   try {
     let clean = response.text.trim();
     // Strip markdown code fences if model enclosed in ```json ... ```
@@ -204,6 +217,7 @@ Output Format: Return strictly a single raw JSON object without markdown fences,
     return {
       ...parsed,
       source: response.source,
+      usage: response.usage || null,
     };
   } catch {
     return null;
