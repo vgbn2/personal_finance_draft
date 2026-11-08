@@ -4,11 +4,15 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 2
+    open-pull-requests-limit: 3
     ignore:
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ethers"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@alpacahq/alpaca-trade-api"
         update-types: ["version-update:semver-major"]
     groups:
       dev-dependencies:
@@ -17,61 +21,6 @@ updates:
           - "typescript"
           - "eslint*"
       production-dependencies:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "npm"
-    directory: "/backend/api"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 2
-    groups:
-      api-dependencies:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "npm"
-    directory: "/backend/execution"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 2
-    ignore:
-      - dependency-name: "ethers"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@alpacahq/alpaca-trade-api"
-        update-types: ["version-update:semver-major"]
-    groups:
-      gateway-dependencies:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "npm"
-    directory: "/backend/mcp_server"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 2
-    ignore:
-      - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@types/node"
-        update-types: ["version-update:semver-major"]
-    groups:
-      mcp-dependencies:
-        patterns:
-          - "*"
-
-  - package-ecosystem: "npm"
-    directory: "/frontend/dashboard"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 2
-    ignore:
-      - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@types/node"
-        update-types: ["version-update:semver-major"]
-    groups:
-      frontend-dependencies:
         patterns:
           - "*"
 
