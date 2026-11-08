@@ -33,10 +33,9 @@ while true; do
   PROMPT="You are an autonomous quant researcher executing Cycle #${cycle}.
 1. Inspect the last 3 lines of workspace/RESEARCH_LEDGER.jsonl and review workspace/OVERNIGHT_GOAL.md to avoid duplicate strategies.
 2. If exploring an unfamiliar alpha model, run 'web-search \"<query>\"' to inspect current academic or industry literature.
-3. Execute a backtest iteration using 'node tools/agent/strategy_interval_generator.js --once --archetype <archetype>'.
-4. Inspect the backtest output (Trades, Sharpe, Max Drawdown).
-5. Append a single-line JSON record to workspace/RESEARCH_LEDGER.jsonl with keys: timestamp, cycle, archetype, name, sharpe, max_dd, trades, status (PASS or REJECT), and rationale.
-6. Output exactly one markdown table summarizing this cycle's strategy and metrics."
+3. Execute the anti-cheat research harness: 'node tools/agent/quant_research_harness.js --once --archetype <archetype>'.
+4. Inspect the harness verdict and metrics table (Trades >= 30, Sharpe >= 1.0, MaxDD <= 15%). The harness automatically intercepts the C++ backtest, asserts hard gates, purges premature YAMLs on REJECT, and commits to workspace/RESEARCH_LEDGER.jsonl.
+5. Output exactly one markdown table summarizing this cycle's strategy and metrics."
 
   opencode run --auto --archived "${PROMPT}" 2>&1 | tee -a "${LOG_FILE}"
 
