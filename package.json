@@ -118,7 +118,7 @@
     "react": "^19.2.7",
     "socket.io": "^4.8.4",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3",
+    "typescript": "^5.9.3",
     "viem": "^2.57.13"
   },
   "overrides": {
