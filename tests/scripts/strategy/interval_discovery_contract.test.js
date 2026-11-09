@@ -22,6 +22,9 @@ const {
   evaluateStrategy,
   stageCandidate,
   discoverAllMarketSymbols,
+  resolveUniverse,
+  getCategorySymbols,
+  NON_TRADEABLE_SERIES,
   formatDdMmYy,
   formatTradeWindow,
   parseDdMmYy,
@@ -452,6 +455,16 @@ test('interval discovery: discoverAllMarketSymbols dynamically retrieves univers
   assert.ok(symbols.length > 10, 'must dynamically discover >10 symbols from disk storage and configs');
   assert.ok(symbols.includes('AAPL'), 'contains AAPL from equity data/configs');
   assert.ok(symbols.includes('BTCUSDT') || symbols.includes('BTC'), 'contains crypto symbols from data/configs');
+  assert.strictEqual(symbols.includes('FEDFUNDS'), false, 'strictly excludes non-tradeable macro reference series FEDFUNDS');
+  assert.strictEqual(symbols.includes('CPI'), false, 'strictly excludes non-tradeable macro reference series CPI');
+  assert.ok(NON_TRADEABLE_SERIES.has('FEDFUNDS'), 'NON_TRADEABLE_SERIES catalog includes FEDFUNDS');
+
+  const cryptoUniverse = resolveUniverse('crypto');
+  assert.ok(cryptoUniverse.includes('BTC'), 'resolves crypto asset class universe');
+  assert.strictEqual(cryptoUniverse.includes('FEDFUNDS'), false, 'crypto universe excludes macro indicators');
+
+  const equityUniverse = resolveUniverse('equities');
+  assert.ok(equityUniverse.includes('AAPL'), 'resolves equity asset class universe');
 });
 
 test('interval discovery: date parsing and trade window formatting (dd/mm/yy to dd/mm/yy)', () => {

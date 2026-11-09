@@ -495,8 +495,10 @@ services:
       - |
         INTERVAL=$${QUANT_INTERVAL_SECS:-60}
         EXTRA_ARGS=""
-        if [ "$${QUANT_ALL_MARKETS:-true}" = "true" ]; then
+        if [ "$${QUANT_ALL_MARKETS:-false}" = "true" ]; then
           EXTRA_ARGS="$$EXTRA_ARGS --all-markets"
+        elif [ -n "$$QUANT_UNIVERSE" ]; then
+          EXTRA_ARGS="$$EXTRA_ARGS --universe $$QUANT_UNIVERSE"
         fi
         if [ -n "$$QUANT_FROM" ]; then
           EXTRA_ARGS="$$EXTRA_ARGS --from $$QUANT_FROM"

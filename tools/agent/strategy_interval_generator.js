@@ -93,10 +93,12 @@ function parseCliArgs(argv) {
       options.ai = true;
     } else if (arg === '--no-ai' || arg === '--disable-ai') {
       options.ai = false;
-    } else if (arg === '--universe') {
+    } else if (arg === '--universe' || arg === '--asset-class' || arg === '--category') {
       const val = args[++i];
       if (val) {
-        options.universe = val.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
+        options.universe = val.includes(',')
+          ? val.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
+          : val.trim();
       }
     } else if (arg === '--from' || arg === '--start-date') {
       options.from = args[++i];

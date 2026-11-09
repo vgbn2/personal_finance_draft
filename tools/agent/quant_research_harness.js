@@ -69,7 +69,7 @@ function parseCliArgs(argv) {
     cycles: 1,
     archetype: null,
     universe: null,
-    allMarkets: true,
+    allMarkets: false,
     from: null,
     to: null,
     engine: 'cpp_native',
@@ -88,9 +88,9 @@ function parseCliArgs(argv) {
       options.cycles = 1;
     } else if (arg === '--cycles') {
       options.cycles = Math.max(1, parseInt(args[++i], 10) || 1);
-    } else if (arg === '--archetype') {
+    } else if (arg === '--archetype' || arg === '--family') {
       options.archetype = args[++i];
-    } else if (arg === '--universe') {
+    } else if (arg === '--universe' || arg === '--asset-class' || arg === '--category') {
       options.universe = args[++i];
     } else if (arg === '--all-markets') {
       options.allMarkets = true;

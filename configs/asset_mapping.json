@@ -5,6 +5,6 @@
     "Commodities": ["XAU", "XAG", "XCU", "USOIL", "UKOIL", "GOLD", "SILVER", "OIL", "NG", "GC=F", "SI=F", "HG=F", "CL=F"],
     "Forex": ["EUR", "GBP", "JPY", "CHF", "AUD", "CAD", "NZD", "CNY", "HKD", "SGD", "USD"],
     "Macro": ["DXY", "TNX", "FVX", "TYX", "FEDFUNDS", "CPI", "PCE", "UNEMPLOYMENT"],
-    "Equities": []
+    "Equities": ["AAPL", "MSFT", "NVDA", "TSLA", "GOOGL", "AMZN", "META", "NFLX", "ARM", "AVGO", "BABA", "BAC", "COIN", "CRM", "DIS", "GS", "JPM", "MCD", "MS", "MSTR", "NKE", "ORCL", "SBUX", "SMCI", "TMUS", "VZ", "WFC"]
   }
 }

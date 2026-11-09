@@ -306,6 +306,17 @@ const STRATEGY_ARCHETYPES = Object.freeze({
   ),
 });
 
+// Economic indicators / macro reference series that do not have continuous order books or tradeable OHLCV candles
+const NON_TRADEABLE_SERIES = Object.freeze(new Set([
+  'FEDFUNDS',
+  'CPI',
+  'PCE',
+  'UNEMPLOYMENT',
+  'DFF',
+  'GS10',
+  'US02YIELD',
+]));
+
 function readStorageSymbols(storageDir) {
   if (!fs.existsSync(storageDir)) return [];
   try {
@@ -313,40 +324,108 @@ function readStorageSymbols(storageDir) {
       .filter((file) => file.endsWith('.bin'))
       .map((file) => file.slice(0, file.lastIndexOf('_')))
       .filter((sym) => sym && /^[A-Z0-9=.-]{2,20}$/i.test(sym))
-      .map((sym) => sym.toUpperCase());
+      .map((sym) => sym.toUpperCase())
+      .filter((sym) => !NON_TRADEABLE_SERIES.has(sym));
   } catch {
     return [];
   }
 }
 
-function readMappedSymbols(mappingPath) {
+function readMappedSymbols(mappingPath, options = {}) {
   if (!fs.existsSync(mappingPath)) return [];
   try {
     const parsed = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
     const mapping = parsed.mapping || parsed;
-    return Object.values(mapping)
-      .flat()
+    const symbols = [];
+    for (const [category, catSymbols] of Object.entries(mapping)) {
+      // Exclude non-tradeable macro reference category unless explicitly requested
+      if (category.toLowerCase() === 'macro' && !options.includeMacro) continue;
+      if (Array.isArray(catSymbols)) {
+        symbols.push(...catSymbols);
+      }
+    }
+    return symbols
       .filter((s) => typeof s === 'string' && s.trim())
-      .map((s) => s.trim().toUpperCase());
+      .map((s) => s.trim().toUpperCase())
+      .filter((s) => !NON_TRADEABLE_SERIES.has(s));
+  } catch {
+    return [];
+  }
+}
+
+// Retrieve tradeable symbols for a specific market asset class or sector
+function getCategorySymbols(category) {
+  const mappingPath = path.join(REPO_ROOT, 'configs', 'asset_mapping.json');
+  if (!fs.existsSync(mappingPath)) return [];
+  try {
+    const parsed = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
+    const mapping = parsed.mapping || parsed;
+    const target = String(category || '').toLowerCase().trim();
+    for (const [cat, syms] of Object.entries(mapping)) {
+      const c = cat.toLowerCase();
+      if (
+        (target === 'crypto' && c === 'crypto') ||
+        ((target === 'equities' || target === 'equity' || target === 'stocks') && c === 'equities') ||
+        ((target === 'indices' || target === 'index' || target === 'etfs') && c === 'indices') ||
+        ((target === 'commodities' || target === 'commodity') && c === 'commodities') ||
+        ((target === 'forex' || target === 'fx') && c === 'forex') ||
+        (target === 'prediction' && c === 'prediction')
+      ) {
+        return (Array.isArray(syms) ? syms : [])
+          .map((s) => String(s).toUpperCase())
+          .filter((s) => !NON_TRADEABLE_SERIES.has(s));
+      }
+    }
+    return [];
   } catch {
     return [];
   }
 }
 
 // Dynamically discovers market symbols from storage and asset mappings
-function discoverAllMarketSymbols() {
+function discoverAllMarketSymbols(options = {}) {
   const symbols = new Set([
     ...readStorageSymbols(STORAGE_TS_DIR),
-    ...readMappedSymbols(path.join(REPO_ROOT, 'configs', 'asset_mapping.json')),
+    ...readMappedSymbols(path.join(REPO_ROOT, 'configs', 'asset_mapping.json'), options),
   ]);
 
   for (const arch of Object.values(STRATEGY_ARCHETYPES || {})) {
     if (Array.isArray(arch.universe)) {
-      for (const s of arch.universe) symbols.add(s.toUpperCase());
+      for (const s of arch.universe) {
+        const u = s.toUpperCase();
+        if (!NON_TRADEABLE_SERIES.has(u)) symbols.add(u);
+      }
     }
   }
 
-  return Array.from(symbols).sort();
+  return Array.from(symbols).filter((s) => !NON_TRADEABLE_SERIES.has(s)).sort();
+}
+
+// Resolves universe argument: named category ('crypto', 'equities'), 'all', or explicit list
+function resolveUniverse(universeOpt, defaultUniverse = ['SPY', 'QQQ', 'BTCUSDT']) {
+  if (!universeOpt) {
+    return Array.isArray(defaultUniverse) && defaultUniverse.length > 0
+      ? defaultUniverse.map((s) => String(s).toUpperCase()).filter((s) => !NON_TRADEABLE_SERIES.has(s))
+      : ['SPY', 'QQQ', 'BTCUSDT'];
+  }
+  if (universeOpt === 'all') {
+    return discoverAllMarketSymbols();
+  }
+  if (typeof universeOpt === 'string') {
+    const catSymbols = getCategorySymbols(universeOpt);
+    if (catSymbols.length > 0) return catSymbols;
+    return universeOpt
+      .split(',')
+      .map((s) => s.trim().toUpperCase())
+      .filter((s) => s && !NON_TRADEABLE_SERIES.has(s));
+  }
+  if (Array.isArray(universeOpt)) {
+    if (universeOpt.includes('all')) return discoverAllMarketSymbols();
+    return universeOpt
+      .map((s) => String(s).trim().toUpperCase())
+      .filter((s) => s && !NON_TRADEABLE_SERIES.has(s));
+  }
+  return [...defaultUniverse].filter((s) => !NON_TRADEABLE_SERIES.has(s));
 }
 
 function canonicalizeJson(obj) {
@@ -452,7 +531,7 @@ function generateCandidateSpec(options = {}) {
     timeframe: options.timeframe || base.timeframe,
     universe: options.allMarkets || options.universe === 'all'
       ? discoverAllMarketSymbols()
-      : (options.universe ? [...options.universe] : [...base.universe]),
+      : resolveUniverse(options.universe, base.universe),
     indicators: options.indicators ? { ...options.indicators } : { ...base.indicators },
     indicator_periods: options.indicator_periods ? { ...options.indicator_periods } : { ...base.indicator_periods },
     cost_bps: options.cost_bps ?? 5,
@@ -497,13 +576,14 @@ async function generateAiCandidateSpec(options = {}) {
       seed: uniqueSuffix,
     });
 
-    // ponytail: non-specific strategy families default to full market discovery unless explicit universe given
-    const nonSpecificFamily = ['momentum', 'mean_reversion', 'breakout', 'volatility', 'trend_following'].includes(baseFamily);
-    const universe = (options.allMarkets || options.universe === 'all' || (!options.universe && nonSpecificFamily))
+    // ponytail: respect AI/archetype fundamental universe by default; support explicit sector or all-markets overrides
+    const candidateUniverse = (Array.isArray(aiResult.universe) && aiResult.universe.length > 0)
+      ? aiResult.universe.map((s) => String(s).toUpperCase())
+      : (baseFamily === 'prediction' ? ['CLOB_TRUMP_2024', 'FED_RATE_CUT'] : ['SPY', 'QQQ', 'BTCUSDT']);
+
+    const universe = options.allMarkets || options.universe === 'all'
       ? discoverAllMarketSymbols()
-      : (Array.isArray(aiResult.universe) && aiResult.universe.length > 0
-          ? aiResult.universe.map((s) => String(s).toUpperCase())
-          : (options.universe ? [...options.universe] : ['SPY', 'QQQ', 'BTCUSDT']));
+      : resolveUniverse(options.universe, candidateUniverse);
 
     const risk = aiResult.risk || {};
     const clampedRiskWeight = Math.min(0.25, Math.max(0.01, Number(risk.risk_weight ?? 0.10)));
@@ -661,12 +741,10 @@ async function evaluateStrategy(spec, options = {}) {
   let symbols = [];
   if (options.allMarkets || spec.universe === 'all' || (Array.isArray(spec.universe) && spec.universe.includes('all'))) {
     symbols = discoverAllMarketSymbols();
-  } else if (Array.isArray(options.universe) && options.universe.length > 0) {
-    symbols = [...options.universe];
-  } else if (Array.isArray(spec.universe) && spec.universe.length > 0) {
-    symbols = [...spec.universe];
-  } else if (typeof spec.universe === 'string' && spec.universe.trim()) {
-    symbols = spec.universe.split(',').map((s) => s.trim()).filter(Boolean);
+  } else if (options.universe) {
+    symbols = resolveUniverse(options.universe, spec.universe);
+  } else if (spec.universe) {
+    symbols = resolveUniverse(spec.universe, ['SPY']);
   } else {
     symbols = ['SPY'];
   }
@@ -1239,6 +1317,9 @@ module.exports = {
   queryMlMetaLabeling,
   formatStrategyYaml,
   discoverAllMarketSymbols,
+  resolveUniverse,
+  getCategorySymbols,
+  NON_TRADEABLE_SERIES,
   formatDdMmYy,
   formatTradeWindow,
   parseDdMmYy,
