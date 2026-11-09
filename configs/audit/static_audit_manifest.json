@@ -6,7 +6,7 @@
     "shared/lib/market/indicators.js": {
       "plane": "Plane 4: Data Pipelines, Indicators & Storage",
       "grade": "A",
-      "sha512": "822b8888fb81b4faf8113abec84a00f59bbea76d2663087d7dbb04b661c442cc120eacad4c756f0ecda83ecc3f9d724b040666e05dbbef8c58ccf8e2e9016f44",
+      "sha512": "c8994481b40176a2015a120ac33cad0465a0ceb127475b8f50e5931565f6691b0e24d1a609cbe39289c9c7b4bf196bbaf5e9b466a8c608f004d97e8a5e4f688b",
       "invariants": [
         "rsi_flat_50",
         "macd_finite",
