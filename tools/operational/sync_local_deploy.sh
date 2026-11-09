@@ -106,7 +106,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
   exit 0
 fi
 
-PROXMOX_SSH="ssh -o ConnectTimeout=10 ${PROXMOX_USER}@${PROXMOX_HOST}"
+PROXMOX_SSH="${SOVEREIGN_PROXMOX_SSH:-ssh -o ConnectTimeout=10 ${PROXMOX_USER}@${PROXMOX_HOST}}"
 
 # Verify Proxmox reachable
 if ! $PROXMOX_SSH "echo ok" &>/dev/null; then
@@ -115,7 +115,7 @@ if ! $PROXMOX_SSH "echo ok" &>/dev/null; then
 fi
 
 # Verify Container running
-ct_status=$($PROXMOX_SSH "pct status ${CT_ID} 2>/dev/null | awk '{print \$2}'")
+ct_status=$($PROXMOX_SSH "pct status ${CT_ID}" 2>/dev/null | awk '{print $2}')
 if [[ "$ct_status" != "running" ]]; then
   echo "ERROR: Container ${CT_ID} is not running (status: ${ct_status})." >&2
   exit 1
@@ -126,43 +126,46 @@ echo "==> Syncing ${REPO_ROOT}/ -> CT ${CT_ID}:${CT_DEST}/ on ${PROXMOX_HOST}"
 $PROXMOX_SSH "pct exec ${CT_ID} -- mkdir -p '${CT_DEST}'"
 
 echo "==> Purging legacy casing ghosts and obsolete directories on CT ${CT_ID}..."
-$PROXMOX_SSH "pct exec ${CT_ID} -- bash -c '
-  rm -rf \"${CT_DEST}/Frontend\"
-  rm -rf \"${CT_DEST}/notebooks\"
-  rm -rf \"${CT_DEST}/web\"
-  rm -rf \"${CT_DEST}/site\"
-  if [ -d \"${CT_DEST}/tools/ops\" ] && [ ! -L \"${CT_DEST}/tools/ops\" ]; then
-    rm -rf \"${CT_DEST}/tools/ops\"
+$PROXMOX_SSH "pct exec ${CT_ID} -- bash -s" << EOF
+  rm -rf "${CT_DEST}/Frontend"
+  rm -rf "${CT_DEST}/notebooks"
+  rm -rf "${CT_DEST}/web"
+  rm -rf "${CT_DEST}/site"
+  if [ -d "${CT_DEST}/tools/ops" ] && [ ! -L "${CT_DEST}/tools/ops" ]; then
+    rm -rf "${CT_DEST}/tools/ops"
   fi
-'"
+EOF
 
 if [[ "$CLEAN" == "true" ]]; then
   echo "==> Deep clean requested: purging transient dist and build caches on CT ${CT_ID}..."
-  $PROXMOX_SSH "pct exec ${CT_ID} -- bash -c '
-    rm -rf \"${CT_DEST}/dist\"
-    rm -rf \"${CT_DEST}/backend/*/dist\"
-    rm -rf \"${CT_DEST}/frontend/dashboard/dist\"
-  '"
+  $PROXMOX_SSH "pct exec ${CT_ID} -- bash -s" << EOF
+    rm -rf "${CT_DEST}/dist"
+    rm -rf "${CT_DEST}/backend/*/dist"
+    rm -rf "${CT_DEST}/frontend/dashboard/dist"
+EOF
 fi
 
 tar -C "$REPO_ROOT" "${TAR_EXCLUDES[@]}" -cf - . \
   | $PROXMOX_SSH "pct exec ${CT_ID} -- tar -C '${CT_DEST}' -xf -"
 
+$PROXMOX_SSH "pct exec ${CT_ID} -- chown -R vgbn:vgbn '${CT_DEST}'"
+
 echo "==> Sync complete."
 
 if [[ "$REBUILD" == "true" && "$DRY_RUN" == "false" ]]; then
   echo "==> Rebuilding Docker image on CT ${CT_ID}..."
-  $PROXMOX_SSH "pct exec ${CT_ID} -- bash -c '
-    cd \"${CT_DEST}\"
-    docker compose -f infra/docker/docker-compose.yml --profile \"*\" build web feedd
+  $PROXMOX_SSH "pct exec ${CT_ID} -- bash -s" << EOF
+    set -e
+    cd "${CT_DEST}"
+    docker compose -f infra/docker/docker-compose.yml --profile "*" build web feedd
     docker tag personal_finance:latest sovereign-trades:latest
     docker tag personal_finance:latest ghcr.io/vgbn2/sovereign-trades:latest
-    SERVICES=\"web feedd backfill bot-alpaca-paper portfolio-monitor host-health host-backup\"
-    if [[ \"$QUANT\" == \"true\" ]]; then
-      SERVICES=\"\$SERVICES quant\"
+    SERVICES="web feedd backfill bot-alpaca-paper portfolio-monitor host-health host-backup"
+    if [[ "$QUANT" == "true" ]]; then
+      SERVICES="\$SERVICES quant"
     fi
-    docker compose -p sv -f infra/docker/docker-compose.yml --profile \"*\" up -d --no-build --force-recreate \$SERVICES
+    docker compose -p sv -f infra/docker/docker-compose.yml --profile "*" up -d --no-build --force-recreate \$SERVICES
     docker compose -p sv -f infra/docker/docker-compose.yml ps
-  '"
+EOF
   echo "==> Rebuild done."
 fi

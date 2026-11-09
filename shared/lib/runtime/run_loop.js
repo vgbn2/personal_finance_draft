@@ -62,9 +62,15 @@ function startLoop(name, fn, intervalMs, opts = {}) {
     iteration++;
     const now = new Date().toISOString();
     try {
-      await fn({ name, iteration, startedAt });
-      _writeStatus(name, { iteration, lastRunAt: now, healthyAt: new Date().toISOString() });
-      _heartbeat(name, { state: 'healthy', last_attempt_at: now, success: true, next_run_at: new Date(Date.now() + intervalMs).toISOString() });
+      const stepResult = await fn({ name, iteration, startedAt });
+      if (stepResult && stepResult.ok === false) {
+        const code = stepResult.reason || stepResult.error || 'step_failed';
+        _writeStatus(name, { iteration, lastRunAt: now, lastError: code, lastErrorAt: new Date().toISOString() });
+        _heartbeat(name, { state: 'degraded', last_attempt_at: now, error_code: code, next_run_at: new Date(Date.now() + intervalMs).toISOString() });
+      } else {
+        _writeStatus(name, { iteration, lastRunAt: now, healthyAt: new Date().toISOString() });
+        _heartbeat(name, { state: 'healthy', last_attempt_at: now, success: true, next_run_at: new Date(Date.now() + intervalMs).toISOString() });
+      }
     } catch (err) {
       const msg = err && err.message ? err.message : String(err);
       const code = errorCode(msg) || 'service_failed';

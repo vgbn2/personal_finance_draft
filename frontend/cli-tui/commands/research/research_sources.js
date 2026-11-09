@@ -85,12 +85,12 @@ function _historicalWindowFromArgs(args, fallbackDays) {
 
 function loadUsableSources(args, options = {}) {
   const input = optionValue(args, '--input', DEFAULT_SNAPSHOT);
-  const family = options.family || null;
+  const symbols = options.symbols || symbolsFromArgs(args);
+  const family = options.family || optionValue(args, '--family', null);
   const timeframe = options.timeframe || optionValue(args, '--timeframe', '1d');
 
-  if (input === DEFAULT_SNAPSHOT && family) {
+  if (input === DEFAULT_SNAPSHOT && (family || symbols.length > 0)) {
     const days = numericOption(args, '--days', 2000);
-    const symbols = options.symbols || symbolsFromArgs(args);
     const tsBars = loadSourcesFromTsIndex(family, days, timeframe, symbols);
     if (tsBars.length >= MIN_BACKTEST_BARS) {
       const tsSnapshot = { mode: 'ts_index', sources: tsBars, errors: [] };
@@ -99,7 +99,7 @@ function loadUsableSources(args, options = {}) {
         return {
           snapshot: { ...tsSnapshot, sources: usableSources },
           quality: report,
-          loaded_family: family,
+          loaded_family: family || usableSources[0]?.family || null,
         };
       }
     }
@@ -194,6 +194,46 @@ function recordBackfillSummary(summaries, candles, family, provider, symbol, tim
   });
 }
 
+async function ingestSymbolTimeframe(family, symbol, tf, window, force, args) {
+  const { ingestMarketData } = require('../../../../backend/scripts/data_ops/ingest_market_data.js');
+  if (hasFlag(args, '--debug')) console.log(`[DEBUG] Calling ingestMarketData for ${family}:${symbol}:${tf}`);
+  const snapshot = await withProviderLogFilter(args, () => ingestMarketData({
+    family,
+    symbol,
+    timeframe: tf,
+    historyDays: window.days,
+    force,
+  }));
+  const candles = snapshot.sources.filter((s) =>
+    (s.symbol === symbol || s.series === symbol || s.series_id === symbol || s.underlying === symbol) &&
+    (s.timeframe === tf || s.timeframe === 'point' || !s.timeframe)
+  );
+  return { snapshot, candles };
+}
+
+async function backfillSymbol(family, symbol, chosenTimeframe, config, window, force, args, sources, backfillWindows) {
+  try {
+    const familyTfs = config[family]?.timeframes;
+    const syncTimeframes = chosenTimeframe ? [chosenTimeframe] : (Array.isArray(familyTfs) && familyTfs.length > 0 ? familyTfs : ['1d']);
+    for (const tf of syncTimeframes) {
+      const { snapshot, candles } = await ingestSymbolTimeframe(family, symbol, tf, window, force, args);
+      if (candles.length > 0) {
+        sources.push(...candles);
+        backfillWindows.push({
+          family,
+          symbol,
+          timeframe: tf,
+          days: window.days,
+          fetched_at: snapshot.fetched_at || new Date().toISOString(),
+          records: candles.length,
+        });
+      }
+    }
+  } catch (err) {
+    console.warn(`[BACKFILL] Failed to load ${family}:${symbol}: ${err.message}`);
+  }
+}
+
 async function loadHistoricalSources(args) {
   const { ingestMarketData, loadConfig } = require('../../../../backend/scripts/data_ops/ingest_market_data.js');
   const timeframe = optionValue(args, '--timeframe', null);
@@ -249,39 +289,8 @@ async function loadHistoricalSources(args) {
 
       if (hasFlag(args, '--debug')) console.log(`[DEBUG] Backfilling family ${family} with ${symbols.length} symbols`);
       for (const symbol of symbols) {
-          if (targetSymbols && !targetSymbols.has(symbol)) continue;
-          try {
-              const syncTimeframes = chosenTimeframe ? [chosenTimeframe] : ((config[family]?.timeframes && Array.isArray(config[family].timeframes) && config[family].timeframes.length > 0) ? config[family].timeframes : ['1d']);
-              for (const tf of syncTimeframes) {
-                if (hasFlag(args, '--debug')) console.log(`[DEBUG] Calling ingestMarketData for ${family}:${symbol}:${tf}`);
-                const snapshot = await withProviderLogFilter(args, () => ingestMarketData({
-                    family,
-                    symbol,
-                    timeframe: tf,
-                    historyDays: window.days,
-                    force
-                }));
-
-                const candles = snapshot.sources.filter(s =>
-                    (s.symbol === symbol || s.series === symbol || s.series_id === symbol || s.underlying === symbol) &&
-                    (s.timeframe === tf || s.timeframe === 'point' || !s.timeframe)
-                );
-
-                if (candles.length > 0) {
-                    sources.push(...candles);
-                    backfillWindows.push({
-                      family,
-                      symbol,
-                      timeframe: tf,
-                      days: window.days,
-                      fetched_at: snapshot.fetched_at || new Date().toISOString(),
-                      records: candles.length,
-                    });
-                }
-              }
-          } catch (err) {
-              console.warn(`[BACKFILL] Failed to load ${family}:${symbol}: ${err.message}`);
-          }
+        if (targetSymbols && !targetSymbols.has(symbol)) continue;
+        await backfillSymbol(family, symbol, chosenTimeframe, config, window, force, args, sources, backfillWindows);
       }
   }
 
@@ -301,9 +310,17 @@ async function loadHistoricalSources(args) {
   return validatedSnapshot(snapshot);
 }
 
+async function fetchPolymarketEventSources(eventName, options) {
+  const { fetchPolymarketHistoricalPrices } = require('../../../../backend/scripts/data_ops/ingest_market_data.js');
+  try {
+    return await fetchPolymarketHistoricalPrices(eventName, options);
+  } catch (error) {
+    return [{ error: { family: 'prediction_market', provider: 'polymarket', symbol: eventName, message: error.message } }];
+  }
+}
+
 async function loadPredictionMarketHistory(args) {
   const {
-    fetchPolymarketHistoricalPrices,
     fetchPredictionInterestSignal,
     loadConfig,
   } = require('../../../../backend/scripts/data_ops/ingest_market_data.js');
@@ -315,19 +332,22 @@ async function loadPredictionMarketHistory(args) {
   const { startTs, endTs } = _historicalWindowFromArgs(args);
   const sources = [];
   const errors = [];
+  const includePolymarket = provider === 'all' || provider === 'polymarket';
+  const polyOpts = {
+    marketLimit,
+    startTs,
+    endTs,
+    interval: periodInterval >= 1440 ? '1d' : 'max',
+    fidelity: periodInterval >= 1440 ? 1440 : Math.max(1, periodInterval),
+  };
 
   for (const eventName of config.prediction_market.events || []) {
-    if (provider === 'all' || provider === 'polymarket') {
-      try {
-        sources.push(...await fetchPolymarketHistoricalPrices(eventName, {
-          marketLimit,
-          startTs,
-          endTs,
-          interval: periodInterval >= 1440 ? '1d' : 'max',
-          fidelity: periodInterval >= 1440 ? 1440 : Math.max(1, periodInterval),
-        }));
-      } catch (error) {
-        errors.push({ family: 'prediction_market', provider: 'polymarket', symbol: eventName, message: error.message });
+    if (includePolymarket) {
+      const polyRes = await fetchPolymarketEventSources(eventName, polyOpts);
+      if (polyRes[0]?.error) {
+        errors.push(polyRes[0].error);
+      } else {
+        sources.push(...polyRes);
       }
     }
 

@@ -81,6 +81,138 @@ const STRATEGY_AUDIT_LOG_PATH = path.join(STORAGE_DATA_DIR, 'logs', 'strategy_au
 const STORAGE_TS_DIR = path.join(STORAGE_DATA_DIR, 'ts');
 
 const INGESTION_TTL_MAP = new Map(); // key: `${symbol}:${timeframe}` -> timestamp of last successful refresh
+
+function maybeRollupIntraday(symbol, timeframe, sortedTimeframes, now) {
+  if (timeframe !== '1m' && timeframe !== '5m') return;
+  const baseMs = parseTimeframeMs(timeframe) || 0;
+  const higherTfs = sortedTimeframes.filter((tf) => (parseTimeframeMs(tf) || 0) > baseMs);
+  if (higherTfs.length === 0) return;
+  rollupFromBase(STORAGE_TS_DIR, symbol, timeframe, higherTfs);
+  higherTfs.forEach((htf) => INGESTION_TTL_MAP.set(`${symbol}:${htf}`, now));
+}
+
+async function refreshSymbolCandles(symbol, timeframe, sortedTimeframes, refreshDays, now) {
+  try {
+    const coverage = readCoverage(STORAGE_TS_DIR, symbol, timeframe, now);
+    const needsSeed = !coverage.exists || coverage.count < 25;
+    const effectiveDays = needsSeed ? Math.max(refreshDays, 30) : refreshDays;
+
+    const rawCandles = await fetchYahooBaseCandles(symbol, timeframe, effectiveDays);
+    if (!Array.isArray(rawCandles) || rawCandles.length === 0) return;
+    const sources = rawCandles.map((c) => ({
+      symbol,
+      timeframe,
+      timestamp: new Date(c.timestamp || c.openTime || c.t || c.time).toISOString(),
+      open: c.open,
+      high: c.high,
+      low: c.low,
+      close: c.close,
+      volume: c.volume || 0,
+      provider: 'yahoo',
+      family: 'equities',
+    }));
+    writeTsIndex(STORAGE_TS_DIR, { sources });
+    INGESTION_TTL_MAP.set(`${symbol}:${timeframe}`, now);
+    maybeRollupIntraday(symbol, timeframe, sortedTimeframes, now);
+  } catch (err) {
+    if (process.env.DEBUG) console.warn(`[AUTOMATION] Symbol refresh failed: ${err.message}`);
+  }
+}
+
+function recordSubPositionTrade(tradeType, lastTrade, strategy, qty, currentPrice, strategyTimeframe, trust, signature) {
+  if (tradeType === 'buy') {
+    try {
+      recordSubPositionEntry({
+        symbol: lastTrade.symbol,
+        strategyId: strategy.name,
+        quantity: qty,
+        entryPrice: currentPrice,
+        source: 'bot',
+        timeframe: strategyTimeframe,
+        confidence: trust.score ? trust.score / 100 : Number(strategy.risk?.signal_threshold || 0.65),
+        signature,
+        submittedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn(`[SUB-POSITIONS] Warning: Could not record sub-position entry: ${err.message}`);
+    }
+    return;
+  }
+  if (tradeType === 'sell') {
+    try {
+      recordSubPositionExit(
+        lastTrade.symbol,
+        strategy.name,
+        qty,
+        { exitPrice: currentPrice, timeframe: strategyTimeframe, signature }
+      );
+    } catch (err) {
+      console.warn(`[SUB-POSITIONS] Warning: Could not record sub-position exit: ${err.message}`);
+    }
+  }
+}
+
+function maybeRecordAlpacaPaperEntry(providerPaper, tradeType, lastTrade, qty, strategy, currentPrice, strategyTimeframe, reservation, signalId) {
+  if (!providerPaper || tradeType !== 'buy') return 0;
+  const { fetchAlpacaPositions, recordAlpacaEntry } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
+  const brokerInventory = fetchAlpacaPositions(false);
+  const brokerPosition = brokerInventory.positions.find((position) => position.symbol === lastTrade.symbol);
+  if (brokerInventory.status === 'confirmed' && brokerPosition) {
+    recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: false, timeframe: strategyTimeframe });
+    if (reservation) updateAlpacaPaperEntryIntent(signalId, 'confirmed');
+    return 1;
+  }
+  console.warn(`[AUTOMATION] Paper order submitted for ${lastTrade.symbol}; position confirmation is pending broker reconciliation.`);
+  return 0;
+}
+
+async function executeOrderForTrade(params) {
+  const {
+    tradeType,
+    lastTrade,
+    qty,
+    broker,
+    isLive,
+    providerPaper,
+    perOrderMaxNotional,
+    strategy,
+    signature,
+    strategyTimeframe,
+    trust,
+    reservation,
+    signalId,
+    currentPrice,
+  } = params;
+
+  const { commandTrade } = require('../trade/trade.js');
+  const tradeArgs = [
+    tradeType,
+    lastTrade.symbol,
+    String(qty),
+    'market',
+    ...(broker === 'mt5' ? ['--broker', 'mt5', ...(isLive ? ['--live'] : [])] : (providerPaper ? ['--paper-provider', '--paper-max-notional', String(perOrderMaxNotional)] : ['--live'])),
+    '--strategy',
+    strategy.name,
+    '--signature',
+    signature,
+    '--timeframe',
+    strategyTimeframe,
+    '--confidence',
+    String(trust.score ? trust.score / 100 : (strategy.risk?.signal_threshold || 0.65)),
+    '--source',
+    'bot',
+  ];
+  if (process.env.SOVEREIGN_TRADE_PIN) tradeArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
+  const tradeExitCode = await commandTrade(tradeArgs);
+  if (tradeExitCode !== 0) {
+    if (reservation) updateAlpacaPaperEntryIntent(signalId, 'released');
+    return { ok: false };
+  }
+  if (reservation) updateAlpacaPaperEntryIntent(signalId, 'submitted');
+  recordSubPositionTrade(tradeType, lastTrade, strategy, qty, currentPrice, strategyTimeframe, trust, signature);
+  const added = maybeRecordAlpacaPaperEntry(providerPaper, tradeType, lastTrade, qty, strategy, currentPrice, strategyTimeframe, reservation, signalId);
+  return { ok: true, addedPositions: added };
+}
 const TIMEFRAME_TTL_MS = {
   '1m': 50 * 1000,
   '5m': 4 * 60 * 1000,
@@ -110,6 +242,16 @@ function shouldRefreshSymbolTimeframe(symbol, timeframe, now = Date.now(), tsDir
   return true;
 }
 
+async function applyOnnxPrediction(model, latestFeature) {
+  if (model.family !== 'onnx' && model.status !== 'onnx_model') return;
+  try {
+    const { predict: onnxPredict } = require('../../../../shared/lib/ml/onnx_runner.js');
+    latestFeature._onnxPred = await onnxPredict(model.name, latestFeature);
+  } catch (err) {
+    if (process.env.DEBUG) console.warn(`[AUTOMATION] ONNX runner fallback: ${err.message}`);
+  }
+}
+
 async function deriveLiveStrategySignal({ strategy, timeframe = '1d', threshold = 0.55 }) {
   const universe = Array.isArray(strategy.universe) ? strategy.universe : [];
   const tradeLogs = [];
@@ -134,14 +276,7 @@ async function deriveLiveStrategySignal({ strategy, timeframe = '1d', threshold 
     const latestFeature = frame.features && frame.features.length > 0 ? frame.features[frame.features.length - 1] : null;
     if (!latestFeature) continue;
 
-    if (model.family === 'onnx' || model.status === 'onnx_model') {
-      try {
-        const { predict: onnxPredict } = require('../../../../shared/lib/ml/onnx_runner.js');
-        latestFeature._onnxPred = await onnxPredict(model.name, latestFeature);
-      } catch (_) {
-        // ONNX runner gracefully falls back
-      }
-    }
+    await applyOnnxPrediction(model, latestFeature);
 
     const prediction = model.predict(latestFeature);
     const numThreshold = Number(threshold);
@@ -191,8 +326,29 @@ function logStrategyAuditRecord(record) {
     }
     const payload = JSON.stringify({ timestamp: new Date().toISOString(), ...record }) + '\n';
     fs.appendFileSync(STRATEGY_AUDIT_LOG_PATH, payload, 'utf8');
-  } catch (_) {
-    // Non-blocking telemetry
+  } catch (err) {
+    if (process.env.DEBUG) console.warn(`[AUTOMATION] Audit log record failed: ${err.message}`);
+  }
+}
+
+function processAuditRow(line, cutoff, historyByStrategy) {
+  try {
+    const row = typeof line === 'string' ? JSON.parse(line) : line;
+    if (!row.strategy || !row.timestamp) return;
+    const ts = Date.parse(row.timestamp);
+    if (!Number.isFinite(ts) || ts < cutoff) return;
+    if (!historyByStrategy.has(row.strategy)) {
+      historyByStrategy.set(row.strategy, { totalPasses: 0, signalsGenerated: 0, deadStubFlags: 0, lastSignalAt: null });
+    }
+    const stats = historyByStrategy.get(row.strategy);
+    stats.totalPasses++;
+    if (row.signals_count > 0) {
+      stats.signalsGenerated += row.signals_count;
+      stats.lastSignalAt = row.timestamp;
+    }
+    if (row.dead_stub) stats.deadStubFlags++;
+  } catch (err) {
+    if (process.env.DEBUG) console.warn(`[AUTOMATION] Failed to parse audit log row: ${err.message}`);
   }
 }
 
@@ -205,23 +361,7 @@ function scanDeadStubsFromLogs(lookbackHours = 24) {
     const historyByStrategy = new Map();
 
     for (const line of lines) {
-      try {
-        const row = JSON.parse(line);
-        if (!row.strategy || !row.timestamp) continue;
-        const ts = Date.parse(row.timestamp);
-        if (Number.isFinite(ts) && ts >= cutoff) {
-          if (!historyByStrategy.has(row.strategy)) {
-            historyByStrategy.set(row.strategy, { totalPasses: 0, signalsGenerated: 0, deadStubFlags: 0, lastSignalAt: null });
-          }
-          const stats = historyByStrategy.get(row.strategy);
-          stats.totalPasses++;
-          if (row.signals_count > 0) {
-            stats.signalsGenerated += row.signals_count;
-            stats.lastSignalAt = row.timestamp;
-          }
-          if (row.dead_stub) stats.deadStubFlags++;
-        }
-      } catch (_) {}
+      processAuditRow(line, cutoff, historyByStrategy);
     }
 
     const deadStubs = [];
@@ -231,7 +371,8 @@ function scanDeadStubsFromLogs(lookbackHours = 24) {
       }
     }
     return { deadStubs, summary: Object.fromEntries(historyByStrategy) };
-  } catch (_) {
+  } catch (err) {
+    if (process.env.DEBUG) console.warn(`[AUTOMATION] Failed to scan dead stubs: ${err.message}`);
     return { deadStubs: [], summary: {} };
   }
 }
@@ -434,6 +575,41 @@ function updateAlpacaPaperEntryIntent(signalId, status) {
     }
 }
 
+async function fallbackBacktestSignal(strategy, strategyTimeframe, thresholdToUse, universeArgs) {
+  const { commandBacktest } = require('../research/research.js');
+  try {
+    return await commandBacktest([
+      '--strategy', strategy.path,
+      '--model', strategy.model,
+      '--timeframe', strategyTimeframe,
+      '--threshold', thresholdToUse,
+      '--signal-only',
+      '--allow-degraded',
+      '--json',
+      ...universeArgs,
+    ]);
+  } catch (err) {
+    if (process.env.DEBUG) console.warn(`[AUTOMATION] Fallback backtest failed: ${err.message}`);
+    return null;
+  }
+}
+
+async function obtainStrategyReport(strategy, strategyTimeframe, thresholdToUse, universeArgs) {
+  global.suppressLogs = true;
+  try {
+    return await deriveLiveStrategySignal({
+      strategy,
+      timeframe: strategyTimeframe,
+      threshold: thresholdToUse,
+    });
+  } catch (err) {
+    console.warn(`[AUTOMATION] Fast-path signal derivation error for ${strategy.name}: ${err.message}. Falling back to backtest.`);
+    return await fallbackBacktestSignal(strategy, strategyTimeframe, thresholdToUse, universeArgs);
+  } finally {
+    global.suppressLogs = false;
+  }
+}
+
 async function runAutomationPass(args, strategiesOverride = null) {
     const settings = loadRuntimeSettings();
     const isLive = hasFlag(args, '--live');
@@ -543,45 +719,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
 
         console.log(`[AUTOMATION] Refreshing ${list.length} symbols for ${timeframe}...`);
         for (const symbol of list) {
-            try {
-                // Determine base grain & seed days
-                const coverage = readCoverage(STORAGE_TS_DIR, symbol, timeframe, now);
-                const needsSeed = !coverage.exists || coverage.count < 25;
-                const effectiveDays = needsSeed ? Math.max(refreshDays, 30) : refreshDays;
-
-                const rawCandles = await fetchYahooBaseCandles(symbol, timeframe, effectiveDays);
-                if (Array.isArray(rawCandles) && rawCandles.length > 0) {
-                    const sources = rawCandles.map(c => ({
-                        symbol,
-                        timeframe,
-                        timestamp: new Date(c.timestamp || c.openTime || c.t || c.time).toISOString(),
-                        open: c.open,
-                        high: c.high,
-                        low: c.low,
-                        close: c.close,
-                        volume: c.volume || 0,
-                        provider: 'yahoo',
-                        family: 'equities',
-                    }));
-                    writeTsIndex(STORAGE_TS_DIR, { sources });
-                    INGESTION_TTL_MAP.set(`${symbol}:${timeframe}`, now);
-
-                    // If this was an intraday base timeframe (1m or 5m), rollup to any higher active timeframes
-                    if (timeframe === '1m' || timeframe === '5m') {
-                        const higherTfs = sortedTimeframes.filter(tf => {
-                            const tfMs = parseTimeframeMs(tf) || 0;
-                            const baseMs = parseTimeframeMs(timeframe) || 0;
-                            return tfMs > baseMs;
-                        });
-                        if (higherTfs.length > 0) {
-                            rollupFromBase(STORAGE_TS_DIR, symbol, timeframe, higherTfs);
-                            higherTfs.forEach(htf => INGESTION_TTL_MAP.set(`${symbol}:${htf}`, now));
-                        }
-                    }
-                }
-            } catch (err) {
-                // Keep automation loop robust on single-symbol network errors
-            }
+            await refreshSymbolCandles(symbol, timeframe, sortedTimeframes, refreshDays, now);
         }
     }
 
@@ -613,31 +751,7 @@ async function runAutomationPass(args, strategiesOverride = null) {
             ? String(probeConfidence)
             : String(strategy.risk?.signal_threshold || 0.65);
 
-        global.suppressLogs = true;
-        let report;
-        try {
-            report = await deriveLiveStrategySignal({
-                strategy,
-                timeframe: strategyTimeframe,
-                threshold: thresholdToUse,
-            });
-        } catch (err) {
-            console.warn(`[AUTOMATION] Fast-path signal derivation error for ${strategy.name}: ${err.message}. Falling back to backtest.`);
-            try {
-                report = await commandBacktest([
-                    '--strategy', strategy.path,
-                    '--model', strategy.model,
-                    '--timeframe', strategyTimeframe,
-                    '--threshold', thresholdToUse,
-                    '--signal-only',
-                    '--allow-degraded',
-                    '--json',
-                    ...universeArgs
-                ]);
-            } catch (_) {}
-        } finally {
-            global.suppressLogs = false;
-        }
+        const report = await obtainStrategyReport(strategy, strategyTimeframe, thresholdToUse, universeArgs);
         // Yield event loop between strategy signal passes to prevent CPU starvation
         await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -673,8 +787,9 @@ async function runAutomationPass(args, strategiesOverride = null) {
             report_status: report?.status || (hasValidTrades ? 'success' : 'zero_signals'),
         });
 
-        if (hasValidTrades) {
-            const lastTrade = tradeList[tradeList.length - 1];
+        if (!hasValidTrades) continue;
+
+        const lastTrade = tradeList[tradeList.length - 1];
             const tradeType = 'buy'; // runBacktest currently only generates long signals
             const signalTime = lastTrade.entry_time || lastTrade.entryTime || lastTrade.timestamp || new Date().toISOString();
             const signalPrice = lastTrade.entry || lastTrade.price;
@@ -785,78 +900,29 @@ async function runAutomationPass(args, strategiesOverride = null) {
                     symbol: lastTrade.symbol
                 });
 
-                const tradeArgs = [
+                const execResult = await executeOrderForTrade({
                     tradeType,
-                    lastTrade.symbol,
-                    String(qty),
-                    'market',
-                    ...(broker === 'mt5' ? ['--broker', 'mt5', ...(isLive ? ['--live'] : [])] : (providerPaper ? ['--paper-provider', '--paper-max-notional', String(perOrderMaxNotional)] : ['--live'])),
-                    '--strategy',
-                    strategy.name,
-                    '--signature',
+                    lastTrade,
+                    qty,
+                    broker,
+                    isLive,
+                    providerPaper,
+                    perOrderMaxNotional,
+                    strategy,
                     signature,
-                    '--timeframe',
                     strategyTimeframe,
-                    '--confidence',
-                    String(trust.score ? trust.score / 100 : (strategy.risk?.signal_threshold || 0.65)),
-                    '--source',
-                    'bot'
-                ];
-                if (process.env.SOVEREIGN_TRADE_PIN) tradeArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
-                const tradeExitCode = await commandTrade(tradeArgs);
-                if (tradeExitCode !== 0) {
-                    if (reservation) updateAlpacaPaperEntryIntent(signalId, 'released');
-                    continue;
-                }
-                if (reservation) updateAlpacaPaperEntryIntent(signalId, 'submitted');
-
-                if (tradeType === 'buy') {
-                    try {
-                        recordSubPositionEntry({
-                            symbol: lastTrade.symbol,
-                            strategyId: strategy.name,
-                            quantity: qty,
-                            entryPrice: currentPrice,
-                            source: 'bot',
-                            timeframe: strategyTimeframe,
-                            confidence: trust.score ? trust.score / 100 : Number(strategy.risk?.signal_threshold || 0.65),
-                            signature,
-                            submittedAt: new Date().toISOString()
-                        });
-                    } catch (err) {
-                        console.warn(`[SUB-POSITIONS] Warning: Could not record sub-position entry: ${err.message}`);
-                    }
-                } else if (tradeType === 'sell') {
-                    try {
-                        recordSubPositionExit(
-                            lastTrade.symbol,
-                            strategy.name,
-                            qty,
-                            { exitPrice: currentPrice, timeframe: strategyTimeframe, signature }
-                        );
-                    } catch (err) {
-                        console.warn(`[SUB-POSITIONS] Warning: Could not record sub-position exit: ${err.message}`);
-                    }
-                }
-
-                if (providerPaper && tradeType === 'buy') {
-                    const { fetchAlpacaPositions, recordAlpacaEntry } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
-                    const brokerInventory = fetchAlpacaPositions(false);
-                    const brokerPosition = brokerInventory.positions.find((position) => position.symbol === lastTrade.symbol);
-                    if (brokerInventory.status === 'confirmed' && brokerPosition) {
-                        recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: false, timeframe: strategyTimeframe });
-                        if (reservation) updateAlpacaPaperEntryIntent(signalId, 'confirmed');
-                        openPositionCount++;
-                    } else {
-                        console.warn(`[AUTOMATION] Paper order submitted for ${lastTrade.symbol}; position confirmation is pending broker reconciliation.`);
-                    }
-                }
+                    trust,
+                    reservation,
+                    signalId,
+                    currentPrice,
+                });
+                if (!execResult.ok) continue;
+                openPositionCount += execResult.addedPositions || 0;
             } else {
                 console.log(`[\x1b[1;32mDRY-RUN\x1b[0m] Order simulated for ${lastTrade.symbol} | Calculated Qty: ${qty}.`);
             }
 
             EXECUTION_MEMORY.add(signalId);
-        }
     }
 }
 
@@ -878,8 +944,7 @@ async function runAutomatedStrategies(args) {
     // One-shot mode: run single pass and exit
     if (once) {
         console.log('[AUTOMATION] Running one-shot automation pass...');
-        await runAutomationPass(args);
-        return 0;
+        return await runAutomationPass(args);
     }
 
     // Persistent loop mode for direct CLI invocation

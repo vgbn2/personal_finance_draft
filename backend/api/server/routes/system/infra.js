@@ -4,15 +4,29 @@ const { dockerImages, dockerPs, dockerLogs } = require('../../services/infra_ser
 
 module.exports = {
   path: '/api/system/infra',
-  status: (payload) => (payload?.error ? 500 : 200),
+  status: (payload) => (payload?.error && payload?.error !== 'docker_unavailable' ? 500 : 200),
   handle: (query = {}) => {
     const resource = query.resource || 'images';
 
     if (resource === 'images') {
-      return { ok: true, images: dockerImages(), containers: dockerPs() };
+      const images = dockerImages();
+      if (images && images.error) {
+        return {
+          ok: false,
+          images: [],
+          containers: [],
+          error: images.error,
+          containerized: images.containerized || false,
+        };
+      }
+      return { ok: true, images, containers: dockerPs() };
     }
     if (resource === 'logs') {
-      return { ok: true, logs: dockerLogs(query.container, query.lines) };
+      const logs = dockerLogs(query.container, query.lines);
+      if (logs && logs.error) {
+        return { ok: false, error: logs.error };
+      }
+      return { ok: true, logs };
     }
     return { error: `unknown resource: ${resource}` };
   },

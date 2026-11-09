@@ -33,13 +33,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --ignore-scripts
-
 COPY backend/api/package*.json ./backend/api/
-RUN cd backend/api && npm ci --ignore-scripts --omit=dev
-
 COPY backend/execution/package*.json ./backend/execution/
-RUN cd backend/execution && npm ci --ignore-scripts --omit=dev
+COPY backend/mcp_server/package*.json ./backend/mcp_server/
+COPY frontend/dashboard/package*.json ./frontend/dashboard/
+RUN npm ci --ignore-scripts
 
 COPY . .
 COPY --from=frontend-builder /src/build/dashboard ./build/dashboard

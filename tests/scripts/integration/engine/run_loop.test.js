@@ -81,3 +81,17 @@ test('getStatus returns persisted loop state', async () => {
   const afterStop = getStatus();
   assert.ok(!afterStop.test_status, 'Expected test_status removed after stop');
 });
+
+test('loop marks status with lastError when fn returns { ok: false }', async () => {
+  const loop = startLoop('test_degraded_return', async () => {
+    return { ok: false, reason: 'broker_inventory_unavailable' };
+  }, 9999);
+  await new Promise((resolve) => setTimeout(resolve, 30));
+
+  const status = getStatus();
+  assert.ok(status.test_degraded_return);
+  assert.equal(status.test_degraded_return.lastError, 'broker_inventory_unavailable');
+  assert.equal(status.test_degraded_return.healthyAt, undefined);
+
+  loop.stop();
+});

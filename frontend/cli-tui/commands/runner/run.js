@@ -175,7 +175,7 @@ async function runAlpacaPaperLoop(intervalMin, opts = {}) {
     }
     console.log(`[alpaca_paper_bot] #${iteration} — ${new Date().toISOString()}`);
     const strategyArgs = buildAlpacaPaperStrategyArgs(opts);
-    await runStrategies(strategyArgs);
+    return await runStrategies(strategyArgs);
   }, intervalMs, { continueOnError: true });
 
   if (opts.waitForShutdown !== false) await new Promise(() => {});
@@ -218,7 +218,7 @@ async function runMt5BotLoop(intervalMin, opts = {}) {
   const start = opts.startLoop || startLoop;
   start('mt5_bot', async ({ iteration }) => {
     console.log(`[mt5_bot] #${iteration} — ${new Date().toISOString()}`);
-    await runStrategies(strategyArgs);
+    return await runStrategies(strategyArgs);
   }, intervalMs, { continueOnError: true });
 
   if (opts.waitForShutdown !== false) await new Promise(() => {});

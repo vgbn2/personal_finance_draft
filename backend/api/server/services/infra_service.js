@@ -9,7 +9,12 @@ function dockerImages() {
       encoding: 'utf8',
       shell: false,
     });
-    if (res.error) return { error: res.error.message };
+    if (res.error) {
+      return {
+        error: res.error.code === 'ENOENT' ? 'docker_unavailable' : res.error.message,
+        containerized: res.error.code === 'ENOENT',
+      };
+    }
     const raw = res.stdout || '';
     return raw.trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
   } catch (e) {
@@ -47,7 +52,11 @@ function dockerLogs(container, lines = 100) {
       encoding: 'utf8',
       shell: false,
     });
-    if (res.error) return { error: res.error.message };
+    if (res.error) {
+      return {
+        error: res.error.code === 'ENOENT' ? 'docker_unavailable' : res.error.message,
+      };
+    }
     const out = (res.stdout || '') + (res.stderr || '');
     return out.split('\n').filter(Boolean);
   } catch (e) {
