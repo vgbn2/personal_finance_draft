@@ -340,6 +340,7 @@
         {"name": "OLLAMA_MODEL"},
         {"name": "SOVEREIGN_ROUTER_URL", "default": "http://192.168.4.103:20128/v1"},
         {"name": "SOVEREIGN_ROUTER_MODEL", "default": "ag/gemini-3.8-flash"},
+        {"name": "SOVEREIGN_ROUTER_TIMEOUT_MS", "default": "45000"},
         {"name": "OMP_NUM_THREADS", "default": "1", "allowed_surfaces": ["default_cli", "web", "mcp", "writer", "operator", "execution"]},
         {
           "name": "ORDERS_FILE",

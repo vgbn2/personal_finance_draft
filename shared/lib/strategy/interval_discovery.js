@@ -448,11 +448,16 @@ function computeSpecChecksum(spec = {}) {
     universe: Array.isArray(spec.universe) ? [...spec.universe].sort() : [],
     indicators: spec.indicators || {},
     indicator_periods: spec.indicator_periods || {},
+    entry_signal: spec.entry_signal || '',
+    exit_signal: spec.exit_signal || '',
+    cost_bps: spec.cost_bps ?? 5,
     risk: {
       risk_weight: spec.risk?.risk_weight ?? spec.risk_weight,
       max_holding_days: spec.risk?.max_holding_days ?? spec.max_holding_days ?? spec.horizon,
       signal_threshold: spec.risk?.signal_threshold ?? spec.signal_threshold ?? spec.threshold,
       max_drawdown_limit: spec.risk?.max_drawdown_limit ?? spec.max_drawdown_limit,
+      stop_loss_pct: spec.risk?.stop_loss_pct ?? spec.stop_loss_pct,
+      take_profit_pct: spec.risk?.take_profit_pct ?? spec.take_profit_pct,
     },
   };
   return crypto.createHash('sha256').update(canonicalizeJson(norm)).digest('hex');
@@ -492,6 +497,13 @@ function validateRiskBounds(spec, customBounds = {}) {
     if (!VALID_STRATEGY_FAMILIES.includes(fam)) errors.push(`invalid_strategy_family:got:${spec.family}:valid:[${VALID_STRATEGY_FAMILIES.join(',')}]`);
   }
 
+  if (spec.archetype && STRATEGY_ARCHETYPES[spec.archetype]) {
+    const expectedFamily = STRATEGY_ARCHETYPES[spec.archetype].family;
+    if (spec.family && spec.family !== expectedFamily) {
+      errors.push(`archetype_family_mismatch:archetype_${spec.archetype}_belongs_to_${expectedFamily}:got:${spec.family}`);
+    }
+  }
+
   if (spec.name !== undefined) {
     const nameStr = String(spec.name).trim();
     if (!nameStr || !/^[a-z0-9_]+$/i.test(nameStr)) errors.push(`invalid_strategy_name:must_be_alphanumeric_snake_case:got:${spec.name}`);
@@ -502,9 +514,42 @@ function validateRiskBounds(spec, customBounds = {}) {
 
 function generateCandidateSpec(options = {}) {
   const archetypeKeys = Object.keys(STRATEGY_ARCHETYPES);
-  const selectedArchetypeKey = options.archetype && STRATEGY_ARCHETYPES[options.archetype]
-    ? options.archetype
-    : archetypeKeys[Math.floor(Math.random() * archetypeKeys.length)];
+  let requestedFamily = options.family || null;
+
+  let selectedArchetypeKey = null;
+  if (options.archetype) {
+    if (STRATEGY_ARCHETYPES[options.archetype]) {
+      selectedArchetypeKey = options.archetype;
+      const archFamily = STRATEGY_ARCHETYPES[options.archetype].family;
+      if (requestedFamily && requestedFamily !== archFamily) {
+        throw new Error(`Conflicting family and archetype: family '${requestedFamily}' does not match archetype '${options.archetype}' (family '${archFamily}')`);
+      }
+      requestedFamily = archFamily;
+    } else if (VALID_STRATEGY_FAMILIES.includes(options.archetype)) {
+      // Archetype passed as family name
+      if (requestedFamily && requestedFamily !== options.archetype) {
+        throw new Error(`Conflicting family selections: '${requestedFamily}' vs '${options.archetype}'`);
+      }
+      requestedFamily = options.archetype;
+    } else {
+      throw new Error(`Unknown strategy archetype or family: ${options.archetype}`);
+    }
+  }
+
+  if (requestedFamily) {
+    if (!VALID_STRATEGY_FAMILIES.includes(requestedFamily)) {
+      throw new Error(`Unknown strategy family: ${requestedFamily}`);
+    }
+    const familyArchetypes = archetypeKeys.filter((k) => STRATEGY_ARCHETYPES[k].family === requestedFamily);
+    if (familyArchetypes.length === 0) {
+      throw new Error(`No archetypes registered for family: ${requestedFamily}`);
+    }
+    if (!selectedArchetypeKey) {
+      selectedArchetypeKey = familyArchetypes[Math.floor(Math.random() * familyArchetypes.length)];
+    }
+  } else if (!selectedArchetypeKey) {
+    selectedArchetypeKey = archetypeKeys[Math.floor(Math.random() * archetypeKeys.length)];
+  }
 
   const base = STRATEGY_ARCHETYPES[selectedArchetypeKey];
   const uniqueSuffix = options.seed
@@ -524,7 +569,7 @@ function generateCandidateSpec(options = {}) {
   const spec = {
     name,
     archetype: base.archetype,
-    family: options.family || base.family,
+    family: base.family,
     kind: base.family,
     signal_core: signalCore,
     model: options.model || base.model,
@@ -554,9 +599,9 @@ async function generateAiCandidateSpec(options = {}) {
     const aiResult = await synthesizeStrategyWithAi(options);
     if (!aiResult) return null;
 
-    const baseFamily = CANONICAL_STRATEGY_FAMILIES.includes(aiResult.family)
+    const baseFamily = options.family || (CANONICAL_STRATEGY_FAMILIES.includes(aiResult.family)
       ? aiResult.family
-      : (VALID_STRATEGY_FAMILIES.includes(aiResult.family) ? aiResult.family : 'momentum');
+      : (VALID_STRATEGY_FAMILIES.includes(aiResult.family) ? aiResult.family : 'momentum'));
 
     const rawArch = String(aiResult.archetype || `${baseFamily}_alpha`).toLowerCase().replace(/[^a-z0-9_]/g, '_');
     const signalCore = rawArch.replace(/^(cand_|auto_)/, '') || 'alpha';
@@ -1159,6 +1204,8 @@ class IntervalStrategyEngine {
     this.intervalSecs = Number(options.intervalSecs || options.interval || 30);
     this.candidatesDir = options.candidatesDir || DEFAULT_CANDIDATES_DIR;
     this.yamlDir = options.yamlDir || DEFAULT_AUTOMATED_STRATEGIES_DIR;
+    this.archetype = options.archetype || null;
+    this.family = options.family || null;
     this.fixtureBars = options.fixtureBars || null;
     this.universe = options.universe || null;
     this.allMarkets = Boolean(options.allMarkets);
@@ -1188,6 +1235,7 @@ class IntervalStrategyEngine {
     if (!this.archetype && this.useAi !== false) {
       try {
         const aiSpec = await generateAiCandidateSpec({
+          family: this.family,
           allMarkets: this.allMarkets,
           universe: this.universe,
         });
@@ -1202,6 +1250,7 @@ class IntervalStrategyEngine {
 
     return generateCandidateSpec({
       archetype: this.archetype,
+      family: this.family,
       allMarkets: this.allMarkets,
       universe: this.universe,
     });

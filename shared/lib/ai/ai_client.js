@@ -172,9 +172,13 @@ async function isAvailable() {
 async function synthesizeStrategyWithAi(options = {}) {
   const systemPrompt = 'You are Sovereign autonomous quantitative strategy synthesizer. You design production-ready, non-overfit quantitative trading strategies following the Sovereign Strategy Taxonomy. All strategies must be declarative YAML, multi-asset, strictly causal (zero lookahead), and satisfy risk bounds: Sharpe >= 1.50, DD <= 20%, trades > 200.';
 
+  const familyRequirement = options.family
+    ? `1. Family: STRICTLY USE '${options.family}' (mandatory constraint).`
+    : `1. Family: Pick one of [momentum, mean_reversion, breakout, volatility, microstructure, event_drift, stat_arb, trend_following, ml_alpha, prediction].`;
+
   const userPrompt = `Synthesize a strategy hypothesis and declarative quantitative specification.
 Constraint Checklist:
-1. Family: Pick one of [momentum, mean_reversion, breakout, volatility, microstructure, event_drift, stat_arb, trend_following, ml_alpha, prediction].
+${familyRequirement}
 2. Universe: Dynamic multi-asset selection (no hardcoded single symbol, 2-5 liquid assets from SPY, QQQ, AAPL, MSFT, NVDA, BTCUSDT, ETHUSDT).
 3. Indicators: Combine at least 2 distinct indicator families (e.g. Trend + Volatility, or Microstructure + Momentum).
 4. Signals: Define explicit causal entry signal (Present: t <= T) and exit barrier rules (Future: t > T).

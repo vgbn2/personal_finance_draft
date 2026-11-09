@@ -34,7 +34,7 @@
     "backend/cpp_core/src/strategies/strategy_sweep_evaluator.cpp": {
       "plane": "Plane 1: Compute & Core Engine",
       "grade": "A",
-      "sha512": "f82552e9e9e5da5d16dba1dfad669e95c583ec0b7219ae38ae5e703efdfdd19196e4f245930431f2d23a7df68d9cfb2c6e2b2421c8d85a2c047e4e33959a71a3",
+      "sha512": "f660e42234f24192c7750c33fc0cc3ae8ccbffd07496a0b84dbb67cd4912291bcc405cc1b1e9d8553d88715d4600013916b81904af7eea39119706b1089f3028",
       "invariants": [
         "parameter_sweep_coverage",
         "objective_monotonicity"

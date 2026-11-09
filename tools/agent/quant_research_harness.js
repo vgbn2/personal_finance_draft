@@ -68,6 +68,7 @@ function parseCliArgs(argv) {
   const options = {
     cycles: 1,
     archetype: null,
+    family: null,
     universe: null,
     allMarkets: false,
     from: null,
@@ -88,8 +89,14 @@ function parseCliArgs(argv) {
       options.cycles = 1;
     } else if (arg === '--cycles') {
       options.cycles = Math.max(1, parseInt(args[++i], 10) || 1);
-    } else if (arg === '--archetype' || arg === '--family') {
+    } else if (arg === '--archetype') {
       options.archetype = args[++i];
+    } else if (arg === '--family') {
+      options.family = args[++i];
+      // ponytail: preserve archetype alias for backward compat; upgrade path: drop alias when callers pass both
+      if (!options.archetype) {
+        options.archetype = options.family;
+      }
     } else if (arg === '--universe' || arg === '--asset-class' || arg === '--category') {
       options.universe = args[++i];
     } else if (arg === '--all-markets') {
@@ -184,7 +191,8 @@ m.evaluateStrategy = async function(spec, evalOptions) {
       path.join(REPO_ROOT, 'tools', 'agent', 'strategy_interval_generator.js'),
       '--once',
     ];
-    if (options.archetype) childArgs.push('--archetype', options.archetype);
+    if (options.archetype && options.archetype !== options.family) childArgs.push('--archetype', options.archetype);
+    if (options.family) childArgs.push('--family', options.family);
     if (options.allMarkets) childArgs.push('--all-markets');
     if (options.universe) childArgs.push('--universe', options.universe);
     if (options.from) childArgs.push('--from', options.from);

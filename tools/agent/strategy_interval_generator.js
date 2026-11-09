@@ -59,6 +59,7 @@ function parseCliArgs(argv) {
     candidatesDir: DEFAULT_CANDIDATES_DIR,
     yamlDir: DEFAULT_AUTOMATED_STRATEGIES_DIR,
     archetype: null,
+    family: null,
     allMarkets: false,
     universe: null,
     from: null,
@@ -87,6 +88,8 @@ function parseCliArgs(argv) {
       options.yamlDir = path.resolve(args[++i]);
     } else if (arg === '--archetype') {
       options.archetype = args[++i];
+    } else if (arg === '--family') {
+      options.family = args[++i];
     } else if (arg === '--all-markets') {
       options.allMarkets = true;
     } else if (arg === '--ai') {
@@ -126,6 +129,7 @@ async function runSingleCycle(options) {
   if (!options.archetype && options.ai !== false) {
     try {
       spec = await generateAiCandidateSpec({
+        family: options.family,
         allMarkets: options.allMarkets,
         universe: options.universe,
       });
@@ -140,6 +144,7 @@ async function runSingleCycle(options) {
   if (!spec) {
     spec = generateCandidateSpec({
       archetype: options.archetype,
+      family: options.family,
       allMarkets: options.allMarkets,
       universe: options.universe,
     });
@@ -316,6 +321,8 @@ async function main() {
     intervalSecs: options.intervalSecs,
     candidatesDir: options.candidatesDir,
     yamlDir: options.yamlDir,
+    archetype: options.archetype,
+    family: options.family,
     minSharpe: options.minSharpe,
     maxDrawdown: options.maxDrawdown,
     minTrades: options.minTrades,

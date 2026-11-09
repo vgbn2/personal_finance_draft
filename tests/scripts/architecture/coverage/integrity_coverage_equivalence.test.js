@@ -32,7 +32,7 @@ function bars(tsDir, sym, n, lastIso) {
   const sources = [];
   for (let i = 0; i < n; i += 1) {
     const ts = new Date(lastMs - (n - 1 - i) * 60000).toISOString();
-    sources.push({ symbol: sym, family: 'crypto', provider: 'binance', timeframe: '1m', timestamp: ts, open: 1, high: 2, low: 1, close: 1 + i, volume: 1 });
+    sources.push({ symbol: sym, family: 'crypto', provider: 'binance', timeframe: '1m', timestamp: ts, open: 1, high: 2 + i, low: 1, close: 1 + i, volume: 1 });
   }
   writeTsIndex(tsDir, { sources });
 }

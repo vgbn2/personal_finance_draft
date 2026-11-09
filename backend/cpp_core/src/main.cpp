@@ -850,6 +850,11 @@ int printBacktest(const std::vector<std::string>& args) {
     const std::size_t max_bars    = parseSizeOption(args, "--max-bars", 0U);
     const std::string from_date   = optionValue(args, "--from");
     const std::string to_date     = optionValue(args, "--to");
+    const std::string model_name  = optionValue(args, "--model");
+    const std::string archetype_name = optionValue(args, "--archetype");
+    const std::string strategy_name  = optionValue(args, "--strategy");
+    const std::string selector = !archetype_name.empty() ? archetype_name
+        : (!strategy_name.empty() ? strategy_name : model_name);
 
     if (symbols_str.empty()) {
         std::cout << "{\"ok\":false,\"error\":\"--symbol required for native mode\"}\n";
@@ -897,7 +902,22 @@ int printBacktest(const std::vector<std::string>& args) {
             bars = snap.bars;
         }
         if (bars.empty()) continue;
-        const auto res = sovereign::Backtester::run(bars, bt_cfg);
+        sovereign::BacktestResult res;
+        // ponytail: route named model/archetype to sweep evaluator; upgrade path: plug in full rule compiler when dynamic predicates needed
+        if (!selector.empty()) {
+            sovereign::strategies::SweepStrategyParams params;
+            params.archetype = sovereign::strategies::stringToArchetype(selector);
+            params.threshold = bt_cfg.entry_threshold;
+            params.holding_period = bt_cfg.holding_period;
+            res = sovereign::strategies::StrategySweepEvaluator::evaluateStrategy(
+                bars, params, bt_cfg.fee_bps + bt_cfg.slippage_bps);
+            for (auto& t : res.trades) {
+                if (t.symbol.empty()) t.symbol = sym;
+                if (t.timeframe.empty()) t.timeframe = timeframe;
+            }
+        } else {
+            res = sovereign::Backtester::run(bars, bt_cfg);
+        }
         aggregate.base.trades.insert(aggregate.base.trades.end(), res.trades.begin(), res.trades.end());
     }
 

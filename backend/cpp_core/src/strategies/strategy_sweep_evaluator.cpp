@@ -19,9 +19,23 @@ std::string archetypeToString(StrategyArchetype archetype) {
 }
 
 StrategyArchetype stringToArchetype(const std::string& str) {
-    if (str == "MeanReversion") return StrategyArchetype::MeanReversion;
-    if (str == "BreakoutVolatility") return StrategyArchetype::BreakoutVolatility;
-    if (str == "HybridRegime") return StrategyArchetype::HybridRegime;
+    std::string s = str;
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
+    if (s.find("mean_reversion") != std::string::npos || s.find("reversal") != std::string::npos ||
+        s.find("knn") != std::string::npos || s.find("fade") != std::string::npos ||
+        s.find("cointegration") != std::string::npos || s.find("divergence") != std::string::npos ||
+        s == "meanreversion") {
+        return StrategyArchetype::MeanReversion;
+    }
+    if (s.find("breakout") != std::string::npos || s.find("volatility") != std::string::npos ||
+        s.find("donchian") != std::string::npos || s.find("channel") != std::string::npos ||
+        s == "breakoutvolatility") {
+        return StrategyArchetype::BreakoutVolatility;
+    }
+    if (s.find("regime") != std::string::npos || s.find("hybrid") != std::string::npos ||
+        s == "hybridregime") {
+        return StrategyArchetype::HybridRegime;
+    }
     return StrategyArchetype::MomentumTrend;
 }
 

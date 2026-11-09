@@ -1012,6 +1012,9 @@ function runBacktestCppNative(featureFrame, options) {
     '--monte-carlo-runs', String(options.monteCarloRuns != null ? options.monteCarloRuns : 200),
     '--json',
   ];
+  if (options.model) args.push('--model', options.model);
+  if (options.archetype) args.push('--archetype', options.archetype);
+  if (options.strategy) args.push('--strategy', options.strategy);
   if (options.walkForwardFolds) args.push('--walk-forward-folds', String(options.walkForwardFolds));
   if (options.from) args.push('--from', options.from);
   if (options.to)   args.push('--to', options.to);
