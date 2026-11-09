@@ -55,7 +55,7 @@ async function findWorkingRouterUrl() {
     try {
       const res = await fetch(`${url}/models`, {
         headers: { Authorization: `Bearer ${ROUTER_KEY}` },
-        signal: AbortSignal.timeout(800),
+        signal: AbortSignal.timeout(3000),
       });
       if (res.ok) {
         cachedWorkingRouterUrl = url;
@@ -95,7 +95,7 @@ async function ask(prompt, systemPrompt = '') {
           stream: false,
           temperature: 0.7,
         }),
-        signal: AbortSignal.timeout(3500),
+        signal: AbortSignal.timeout(Number(process.env.SOVEREIGN_ROUTER_TIMEOUT_MS) || 45000),
       });
 
       if (res.ok) {
@@ -146,7 +146,7 @@ async function isAvailable() {
     try {
       const res = await fetch(`${routerUrl}/models`, {
         headers: { Authorization: `Bearer ${ROUTER_KEY}` },
-        signal: AbortSignal.timeout(1500),
+        signal: AbortSignal.timeout(3000),
       });
       if (res.ok) return true;
     } catch {}
@@ -207,10 +207,8 @@ Output Format: Return strictly a single raw JSON object without markdown fences,
 
   try {
     let clean = response.text.trim();
-    // Strip markdown code fences if model enclosed in ```json ... ```
-    if (clean.startsWith('```')) {
-      clean = clean.replace(/^```[a-zA-Z]*\n?/, '').replace(/\n?```$/, '').trim();
-    }
+    const jsonMatch = clean.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || clean.match(/(\{[\s\S]*\})/);
+    if (jsonMatch) clean = jsonMatch[1].trim();
     const parsed = JSON.parse(clean);
     if (!parsed || typeof parsed !== 'object') return null;
 
