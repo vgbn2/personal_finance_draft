@@ -271,6 +271,57 @@ function writeSecrets(entries, envPath = ENV_PATH) {
   };
 }
 
+const crypto = require('node:crypto');
+const VAULT_MAGIC = Buffer.from('SOVV\x01', 'binary');
+const VAULT_SCRYPT_PARAMS = { N: 16384, r: 8, p: 1, maxmem: 32 * 1024 * 1024 };
+
+function deriveVaultKeyAsync(password, salt) {
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, 32, VAULT_SCRYPT_PARAMS, (err, key) => {
+      if (err) reject(err);
+      else resolve(key);
+    });
+  });
+}
+
+async function encryptSecretsVault(plaintext, password, vaultPath) {
+  if (typeof password !== 'string' || password.length < 8) {
+    throw new Error('ERR_VAULT_WEAK_PASSWORD: Vault password must be at least 8 characters');
+  }
+  const salt = crypto.randomBytes(16);
+  const iv = crypto.randomBytes(12);
+  const key = await deriveVaultKeyAsync(password, salt);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  cipher.setAAD(VAULT_MAGIC);
+  const encrypted = Buffer.concat([cipher.update(String(plaintext), 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  const payload = Buffer.concat([VAULT_MAGIC, salt, iv, tag, encrypted]);
+
+  fs.mkdirSync(path.dirname(vaultPath), { recursive: true, mode: 0o700 });
+  const tmpPath = `${vaultPath}.tmp.${process.pid}.${Date.now()}`;
+  fs.writeFileSync(tmpPath, payload, { mode: 0o600 });
+  fs.chmodSync(tmpPath, 0o600);
+  fs.renameSync(tmpPath, vaultPath);
+  fs.chmodSync(vaultPath, 0o600);
+  return { ok: true, vault_path: vaultPath, bytes: payload.length };
+}
+
+async function decryptSecretsVault(password, vaultPath) {
+  const buf = fs.readFileSync(vaultPath);
+  if (buf.length < 49 || !buf.subarray(0, 5).equals(VAULT_MAGIC)) {
+    throw new Error('ERR_INVALID_VAULT_HEADER');
+  }
+  const salt = buf.subarray(5, 21);
+  const iv = buf.subarray(21, 33);
+  const tag = buf.subarray(33, 49);
+  const ciphertext = buf.subarray(49);
+  const key = await deriveVaultKeyAsync(password, salt);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAAD(VAULT_MAGIC);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+}
+
 module.exports = {
   DEFAULT_TEMPLATE_PATH,
   loadEnvSchema,
@@ -279,4 +330,6 @@ module.exports = {
   parseBatchInput,
   listSecrets,
   writeSecrets,
+  encryptSecretsVault,
+  decryptSecretsVault,
 };

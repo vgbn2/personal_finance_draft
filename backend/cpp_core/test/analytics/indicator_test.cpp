@@ -65,6 +65,12 @@ int main() {
     if (!expect(atr.size() == bars.size() && atr.back() > 0.0, "Expected ATR")) {
         return 1;
     }
+    const std::vector<double> vol_closes{100.0, 102.0, 101.0, 0.0, 104.0, 106.0, 105.0, 108.0};
+    const auto vol_gap = sovereign::indicators::IndicatorEngine::rollingVolatilitySeries(vol_closes, 3U);
+    if (!expect(vol_gap.size() == vol_closes.size() && std::isnan(vol_gap[1]) && !std::isnan(vol_gap.back()) && vol_gap.back() > 0.0,
+                "Expected rollingVolatilitySeries to handle zero-price gaps and compute positive volatility")) {
+        return 1;
+    }
 
     const auto frame = sovereign::indicators::IndicatorEngine::buildFrame(std::span<const sovereign::OhlcvBar>(bars.data(), bars.size()));
     if (!expect(frame.rows.size() == bars.size(), "Expected one indicator row per bar")) {

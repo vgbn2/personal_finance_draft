@@ -329,3 +329,55 @@ test('ClusterCoordinator: cluster_heartbeat_daemon runs --once and reports statu
   }
 });
 
+test('ClusterCoordinator Issue #87: stepDown preserves fencing_token, force election preempts remote leader, and assertOrderEpoch fails closed', () => {
+  const tempDir = makeTempDir();
+  try {
+    const coordA = new ClusterCoordinator({
+      directory: tempDir,
+      nodeId: 'node-a',
+      priority: 100,
+      leaseTtlMs: 5000,
+      allowAutoElect: true,
+    });
+    const coordB = new ClusterCoordinator({
+      directory: tempDir,
+      nodeId: 'node-b',
+      priority: 50,
+      leaseTtlMs: 5000,
+      allowAutoElect: true,
+    });
+
+    coordA.registerHeartbeat();
+    coordB.registerHeartbeat();
+
+    // 1. Elect Node A (epoch = 1)
+    const electA1 = coordA.evaluateElection();
+    assert.strictEqual(electA1.role, 'leader');
+    assert.strictEqual(electA1.fencing_token, 1);
+    assert.doesNotThrow(() => coordA.assertOrderEpoch(1));
+
+    // 2. Node A steps down and Node B elects -> epoch must increment to 2 (not reset to 1)
+    coordA.stepDown();
+    const electB = coordB.evaluateElection();
+    assert.strictEqual(electB.role, 'leader');
+    assert.strictEqual(electB.fencing_token, 2, 'stepDown must preserve monotonic fencing_token across handoff');
+    assert.doesNotThrow(() => coordB.assertOrderEpoch(2));
+    assert.throws(() => coordA.assertOrderEpoch(1), /ERR_STALE_FENCING_TOKEN/);
+
+    // 3. Force-elect Node A while Node B holds active lease -> preempts and increments to 3
+    const electA2 = coordA.evaluateElection({ force: true });
+    assert.strictEqual(electA2.role, 'leader');
+    assert.strictEqual(electA2.fencing_token, 3, 'force election must preempt active remote leader and increment epoch');
+    assert.doesNotThrow(() => coordA.assertOrderEpoch(3));
+
+    // 4. Stale, zero, missing, NaN, and future tokens fail closed
+    assert.throws(() => coordB.assertOrderEpoch(2), /ERR_STALE_FENCING_TOKEN/);
+    assert.throws(() => coordA.assertOrderEpoch(0), /ERR_STALE_FENCING_TOKEN/);
+    assert.throws(() => coordA.assertOrderEpoch(undefined), /ERR_STALE_FENCING_TOKEN/);
+    assert.throws(() => coordA.assertOrderEpoch(NaN), /ERR_STALE_FENCING_TOKEN/);
+    assert.throws(() => coordA.assertOrderEpoch(999), /ERR_STALE_FENCING_TOKEN/);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+

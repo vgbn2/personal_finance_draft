@@ -73,17 +73,25 @@ std::vector<double> IndicatorEngine::rollingVolatilitySeries(const std::vector<d
         return res;
     }
 
+    // Precompute 1-bar return series once; reuse a single window buffer across all bars
+    std::vector<double> one_bar_returns(closes.size(), std::numeric_limits<double>::quiet_NaN());
+    for (std::size_t j = 1U; j < closes.size(); ++j) {
+        if (closes[j - 1U] != 0.0) {
+            one_bar_returns[j] = closes[j] / closes[j - 1U] - 1.0;
+        }
+    }
+
+    std::vector<double> window_returns;
+    window_returns.reserve(period);
     for (std::size_t i = period; i < closes.size(); ++i) {
-        std::vector<double> returns;
-        returns.reserve(period);
-        for (std::size_t j = i + 1 - period; j <= i; ++j) {
-            const double previous = closes[j - 1];
-            if (previous != 0.0) {
-                returns.push_back(closes[j] / previous - 1.0);
+        window_returns.clear();
+        for (std::size_t j = i + 1U - period; j <= i; ++j) {
+            if (!std::isnan(one_bar_returns[j])) {
+                window_returns.push_back(one_bar_returns[j]);
             }
         }
-        if (returns.size() >= 2U) {
-            res[i] = stddev(returns);
+        if (window_returns.size() >= 2U) {
+            res[i] = stddev(window_returns);
         }
     }
     return res;

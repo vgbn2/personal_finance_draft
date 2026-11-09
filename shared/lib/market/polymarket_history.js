@@ -1372,9 +1372,78 @@ async function syncGammaMarketsDelta(options = {}) {
   };
 }
 
+const SOVP_MAGIC = 'SOVP';
+const SOVP_HEADER_BYTES = 16;
+const SOVP_RECORD_BYTES = 32;
+
+function writeSovpBinaryArchive(outPath, bars, intervalSec = 60) {
+  const rows = Array.isArray(bars) ? bars : [];
+  const count = rows.length;
+  const buf = Buffer.allocUnsafe(SOVP_HEADER_BYTES + count * SOVP_RECORD_BYTES);
+  buf.write(SOVP_MAGIC, 0, 4, 'ascii');
+  buf.writeUInt16LE(1, 4);
+  buf.writeUInt16LE(intervalSec & 0xffff, 6);
+  buf.writeUInt32LE(count >>> 0, 8);
+  buf.writeUInt32LE(0, 12);
+
+  for (let i = 0; i < count; i++) {
+    const r = rows[i];
+    const off = SOVP_HEADER_BYTES + i * SOVP_RECORD_BYTES;
+    const tsMs = typeof r.timestamp === 'number' ? r.timestamp : Date.parse(r.timestamp);
+    const close = Number.isFinite(Number(r.close)) ? Number(r.close) : 0;
+    const open = r.open !== undefined && r.open !== null && Number.isFinite(Number(r.open)) ? Number(r.open) : close;
+    const high = r.high !== undefined && r.high !== null && Number.isFinite(Number(r.high)) ? Number(r.high) : close;
+    const low = r.low !== undefined && r.low !== null && Number.isFinite(Number(r.low)) ? Number(r.low) : close;
+    const volume = r.volume !== undefined && r.volume !== null && Number.isFinite(Number(r.volume)) ? Number(r.volume) : 0;
+    buf.writeDoubleLE(Number.isFinite(tsMs) ? tsMs : 0, off);
+    buf.writeFloatLE(open, off + 8);
+    buf.writeFloatLE(high, off + 12);
+    buf.writeFloatLE(low, off + 16);
+    buf.writeFloatLE(close, off + 20);
+    buf.writeDoubleLE(volume, off + 24);
+  }
+
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  const tmpPath = `${outPath}.tmp.${process.pid}.${Date.now()}`;
+  fs.writeFileSync(tmpPath, buf);
+  fs.renameSync(tmpPath, outPath);
+  return { ok: true, count, bytes: buf.length, path: outPath };
+}
+
+function readSovpBinaryArchive(filePath) {
+  const buf = fs.readFileSync(filePath);
+  if (buf.length < SOVP_HEADER_BYTES || buf.toString('ascii', 0, 4) !== SOVP_MAGIC) {
+    throw new Error('ERR_INVALID_SOVP_HEADER');
+  }
+  const version = buf.readUInt16LE(4);
+  const intervalSec = buf.readUInt16LE(6);
+  const count = buf.readUInt32LE(8);
+  if (buf.length < SOVP_HEADER_BYTES + count * SOVP_RECORD_BYTES) {
+    throw new Error('ERR_TRUNCATED_SOVP_ARCHIVE');
+  }
+  const records = new Array(count);
+  for (let i = 0; i < count; i++) {
+    const off = SOVP_HEADER_BYTES + i * SOVP_RECORD_BYTES;
+    records[i] = {
+      timestamp: buf.readDoubleLE(off),
+      open: buf.readFloatLE(off + 8),
+      high: buf.readFloatLE(off + 12),
+      low: buf.readFloatLE(off + 16),
+      close: buf.readFloatLE(off + 20),
+      volume: buf.readDoubleLE(off + 24),
+    };
+  }
+  return { version, intervalSec, count, records };
+}
+
 module.exports = {
   ARCHIVE_SCHEMA_VERSION,
   ARCHIVE_SCHEMA_VERSION_V2,
+  SOVP_MAGIC,
+  SOVP_HEADER_BYTES,
+  SOVP_RECORD_BYTES,
+  writeSovpBinaryArchive,
+  readSovpBinaryArchive,
   archivePaths,
   backfillPolymarketArchive,
   ensureArchive,

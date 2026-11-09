@@ -112,6 +112,32 @@ int main() {
     }
     std::cout << "  ✔ readSidecarFamily binds the dataset family" << std::endl;
 
+    // Test SovpHeader (16B) and SovpRecord (32B) binary layout & 0.0 outcome preservation
+    const auto sovp_path = temp_dir / "test.sovp";
+    {
+        sovereign::SovpHeader shdr{{'S', 'O', 'V', 'P'}, 1, 60, 2, 0};
+        sovereign::SovpRecord srec[2] = {
+            {1700000000000.0, 0.45f, 0.50f, 0.0f, 0.0f, 125.5},
+            {1700000060000.0, 0.0f, 0.0f, 0.0f, 0.0f, 0.0},
+        };
+        std::ofstream out(sovp_path, std::ios::binary);
+        out.write(reinterpret_cast<const char*>(&shdr), sizeof(shdr));
+        out.write(reinterpret_cast<const char*>(srec), sizeof(srec));
+    }
+    {
+        sovereign::SovpHeader rhdr{};
+        sovereign::SovpRecord rrec[2]{};
+        std::ifstream in(sovp_path, std::ios::binary);
+        in.read(reinterpret_cast<char*>(&rhdr), sizeof(rhdr));
+        in.read(reinterpret_cast<char*>(rrec), sizeof(rrec));
+        if (rhdr.magic[0] != 'S' || rhdr.magic[3] != 'P' || rhdr.version != 1 || rhdr.interval_sec != 60 || rhdr.count != 2
+            || rrec[0].low != 0.0f || rrec[0].close != 0.0f || rrec[1].close != 0.0f) {
+            std::cerr << "FAILED: SovpHeader/SovpRecord binary layout check" << std::endl;
+            return 1;
+        }
+    }
+    std::cout << "  ✔ SovpHeader (16B) and SovpRecord (32B) binary layout verified" << std::endl;
+
     std::filesystem::remove_all(temp_dir);
     std::cout << "✔ binary_ts_reader_test passed cleanly!" << std::endl;
     return 0;

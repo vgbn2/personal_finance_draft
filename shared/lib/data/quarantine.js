@@ -62,6 +62,31 @@ function validateIngestRecord(record, family = 'general') {
     }
   }
 
+  // Check OHLC bar envelope (high >= low, open/close within [low, high]) and non-negative volume
+  if (record.high !== undefined && record.high !== null && record.low !== undefined && record.low !== null) {
+    const high = Number(record.high);
+    const low = Number(record.low);
+    const open = record.open !== undefined && record.open !== null ? Number(record.open) : low;
+    const close = record.close !== undefined && record.close !== null ? Number(record.close) : low;
+    if (high < low || open < low || open > high || close < low || close > high) {
+      return {
+        valid: false,
+        reason: QUARANTINE_REASONS.NEGATIVE_SPREAD,
+        error: `Inverted OHLC bar envelope: L=${low} O=${open} C=${close} H=${high}`,
+      };
+    }
+  }
+  if (record.volume !== undefined && record.volume !== null) {
+    const volume = Number(record.volume);
+    if (!Number.isFinite(volume) || volume < 0) {
+      return {
+        valid: false,
+        reason: QUARANTINE_REASONS.MALFORMED_ROW,
+        error: `Invalid volume: ${record.volume}`,
+      };
+    }
+  }
+
   // Check spread validity
   if (record.bid !== undefined && record.ask !== undefined) {
     const bid = Number(record.bid);

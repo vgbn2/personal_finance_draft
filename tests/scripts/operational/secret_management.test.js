@@ -237,3 +237,37 @@ test('Secret Management - Serialization & Deserialization Roundtrip', () => {
   }
 });
 
+test('Secret Management Issue #89: AES-256-GCM Vault Roundtrip & Tamper Rejection', async (t) => {
+  const { encryptSecretsVault, decryptSecretsVault } = require('../../../shared/lib/settings/secrets');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sovereign-vault-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  const vaultPath = path.join(root, 'secrets.vault');
+  const plaintext = 'FRED_API_KEY=secret_alpha\nSOVEREIGN_WEB_PORT=8080\n';
+
+  await assert.rejects(
+    () => encryptSecretsVault(plaintext, 'short', vaultPath),
+    /ERR_VAULT_WEAK_PASSWORD/
+  );
+
+  const enc = await encryptSecretsVault(plaintext, 'StrongPassphrase#2026', vaultPath);
+  assert.equal(enc.ok, true);
+  const stat = fs.statSync(vaultPath);
+  assert.equal((stat.mode & 0o777).toString(8), '600');
+
+  const dec = await decryptSecretsVault('StrongPassphrase#2026', vaultPath);
+  assert.equal(dec, plaintext);
+
+  await assert.rejects(
+    () => decryptSecretsVault('WrongPassphrase#2026', vaultPath)
+  );
+
+  // Flip a byte in ciphertext and verify GCM authTag rejection
+  const raw = fs.readFileSync(vaultPath);
+  raw[raw.length - 1] ^= 0xff;
+  fs.writeFileSync(vaultPath, raw);
+  await assert.rejects(
+    () => decryptSecretsVault('StrongPassphrase#2026', vaultPath)
+  );
+});
+

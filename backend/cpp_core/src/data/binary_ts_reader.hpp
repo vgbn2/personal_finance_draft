@@ -27,7 +27,27 @@ struct RawTsRecord {
     double close;
     double volume;
 };
+
+struct SovpHeader {
+    char magic[4];              // "SOVP"
+    std::uint16_t version;      // 1
+    std::uint16_t interval_sec; // e.g., 60, 300, 3600
+    std::uint32_t count;        // Record count
+    std::uint32_t flags;        // Reserved (0)
+};
+
+struct SovpRecord {
+    double ts_ms;               // Epoch ms
+    float open;
+    float high;
+    float low;
+    float close;
+    double volume;
+};
 #pragma pack(pop)
+
+static_assert(sizeof(SovpHeader) == 16, "SovpHeader must be 16 bytes");
+static_assert(sizeof(SovpRecord) == 32, "SovpRecord must be 32 bytes");
 
 struct BinaryTsReaderResult {
     bool ok = false;

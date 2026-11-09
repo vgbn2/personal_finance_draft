@@ -224,4 +224,48 @@ describe('Ingestion Staging & Quarantine Engine', () => {
       fs.rmSync(testDir, { recursive: true, force: true });
     }
   });
+
+  test('Issue #90: enforces OHLC bar envelope and volume invariants while preserving descending backfills', () => {
+    const { writeTsIndex, readTsIndex } = require('../../../../shared/lib/market/ts_index_storage');
+    const tsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sov_ohlc_envelope_'));
+    try {
+      const invertedHighLow = validateIngestRecord({
+        symbol: 'BTCUSDT', open: 100, high: 95, low: 105, close: 100, volume: 10,
+      }, 'crypto');
+      assert.equal(invertedHighLow.valid, false);
+      assert.equal(invertedHighLow.reason, QUARANTINE_REASONS.NEGATIVE_SPREAD);
+
+      const closeOutsideEnvelope = validateIngestRecord({
+        symbol: 'BTCUSDT', open: 100, high: 105, low: 98, close: 110, volume: 10,
+      }, 'crypto');
+      assert.equal(closeOutsideEnvelope.valid, false);
+      assert.equal(closeOutsideEnvelope.reason, QUARANTINE_REASONS.NEGATIVE_SPREAD);
+
+      const negativeVolume = validateIngestRecord({
+        symbol: 'BTCUSDT', open: 100, high: 105, low: 98, close: 102, volume: -5,
+      }, 'crypto');
+      assert.equal(negativeVolume.valid, false);
+      assert.equal(negativeVolume.reason, QUARANTINE_REASONS.MALFORMED_ROW);
+
+      // Descending historical backfill with 3 valid bars + 2 corrupted bars (inverted OHLC and negative volume)
+      writeTsIndex(tsDir, {
+        sources: [
+          { symbol: 'BTCUSDT', family: 'crypto', provider: 'binance', timeframe: '1h', timestamp: '2026-10-01T03:00:00.000Z', open: 102, high: 106, low: 101, close: 105, volume: 12 },
+          { symbol: 'BTCUSDT', family: 'crypto', provider: 'binance', timeframe: '1h', timestamp: '2026-10-01T02:00:00.000Z', open: 101, high: 104, low: 100, close: 102, volume: 11 },
+          { symbol: 'BTCUSDT', family: 'crypto', provider: 'binance', timeframe: '1h', timestamp: '2026-10-01T01:00:00.000Z', open: 100, high: 103, low: 99, close: 101, volume: 10 },
+          { symbol: 'BTCUSDT', family: 'crypto', provider: 'binance', timeframe: '1h', timestamp: '2026-10-01T04:00:00.000Z', open: 105, high: 90, low: 110, close: 100, volume: 10 },
+          { symbol: 'BTCUSDT', family: 'crypto', provider: 'binance', timeframe: '1h', timestamp: '2026-10-01T05:00:00.000Z', open: 105, high: 110, low: 100, close: 108, volume: -1 },
+        ],
+      });
+
+      const stored = readTsIndex(tsDir, 'BTCUSDT', '1h');
+      assert.equal(stored.length, 3, 'Must preserve 3 valid descending bars and exclude 2 malformed bars');
+      assert.deepEqual(
+        stored.map((b) => b.timestamp),
+        ['2026-10-01T01:00:00.000Z', '2026-10-01T02:00:00.000Z', '2026-10-01T03:00:00.000Z']
+      );
+    } finally {
+      fs.rmSync(tsDir, { recursive: true, force: true });
+    }
+  });
 });

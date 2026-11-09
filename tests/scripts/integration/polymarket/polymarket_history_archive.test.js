@@ -529,3 +529,32 @@ test('syncGammaMarketsDelta: supports legacy { markets: [...] } response shape',
   assert.equal(result.count, 1, 'Must extract 1 market from legacy .markets property');
   assert.equal(result.markets[0].id, 'legacy-m1');
 });
+
+test('Issue #86: writeSovpBinaryArchive and readSovpBinaryArchive preserve 0.0 outcome prices and 32-byte record layout', () => {
+  const { writeSovpBinaryArchive, readSovpBinaryArchive } = require('../../../../shared/lib/market/polymarket_history.js');
+  const root = tempArchive();
+  try {
+    const outPath = path.join(root, 'token_zero.sovp');
+    const bars = [
+      { timestamp: 1700000000000, open: 0.45, high: 0.50, low: 0.0, close: 0.0, volume: 125.5 },
+      { timestamp: 1700000060000, open: 0.0, high: 0.0, low: 0.0, close: 0.0, volume: 0.0 },
+    ];
+    const written = writeSovpBinaryArchive(outPath, bars, 60);
+    assert.equal(written.ok, true);
+    assert.equal(written.count, 2);
+    assert.equal(written.bytes, 16 + 2 * 32);
+
+    const decoded = readSovpBinaryArchive(outPath);
+    assert.equal(decoded.version, 1);
+    assert.equal(decoded.intervalSec, 60);
+    assert.equal(decoded.records.length, 2);
+    assert.equal(decoded.records[0].timestamp, 1700000000000);
+    assert.ok(Math.abs(decoded.records[0].open - 0.45) < 1e-6);
+    assert.equal(decoded.records[0].low, 0.0);
+    assert.equal(decoded.records[0].close, 0.0);
+    assert.equal(decoded.records[1].open, 0.0);
+    assert.equal(decoded.records[1].close, 0.0);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

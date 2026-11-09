@@ -302,11 +302,24 @@ function classifyTailOverlap(bin, metaPath, incoming) {
   }
 }
 
+function isValidOhlcvRecord(r) {
+  if (!r || typeof r !== 'object') return false;
+  const c = Number(r.close);
+  if (!Number.isFinite(c) || c < 0) return false;
+  const o = r.open !== undefined && r.open !== null ? Number(r.open) : c;
+  const h = r.high !== undefined && r.high !== null ? Number(r.high) : Math.max(o, c);
+  const l = r.low !== undefined && r.low !== null ? Number(r.low) : Math.min(o, c);
+  const v = r.volume !== undefined && r.volume !== null ? Number(r.volume) : 0;
+  return Number.isFinite(o) && Number.isFinite(h) && Number.isFinite(l) && Number.isFinite(v)
+    && o >= 0 && h >= 0 && l >= 0 && v >= 0
+    && h >= l && o >= l && o <= h && c >= l && c <= h;
+}
+
 function mergeWriteBinUnlocked(tsDir, meta, incoming, lockHandle) {
   const inc = [];
   for (const r of incoming) {
     const ms = Date.parse(r.timestamp);
-    if (Number.isFinite(ms)) inc.push({ ms, r });
+    if (Number.isFinite(ms) && isValidOhlcvRecord(r)) inc.push({ ms, r });
   }
   inc.sort((a, b) => a.ms - b.ms);
   const incDedup = [];

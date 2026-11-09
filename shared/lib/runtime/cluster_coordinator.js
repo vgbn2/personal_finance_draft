@@ -197,14 +197,14 @@ class ClusterCoordinator {
       return { ok: true, role: 'leader', leader_id: this.nodeId, fencing_token: token, elected: false, renewed: true };
     }
 
-    if (leader && leader.leader_id !== this.nodeId) {
+    const isForced = options.force === true;
+    if (!isForced && leader && leader.leader_id !== this.nodeId) {
       this.role = 'follower';
       this.fencingToken = Number.isFinite(leader.fencing_token) ? leader.fencing_token : 0;
       this.registerHeartbeat();
       return { ok: true, role: 'follower', leader_id: leader.leader_id, fencing_token: this.fencingToken, elected: false, renewed: false };
     }
 
-    const isForced = options.force === true;
     if (!this.allowAutoElect && !isForced) {
       this.role = 'follower';
       this.registerHeartbeat();
@@ -220,9 +220,11 @@ class ClusterCoordinator {
     }
 
     const expiredLease = readJsonSync(this.leasePath, this.fsImpl);
-    const expiredLeaderId = (expiredLease && expiredLease.leader_id) ? expiredLease.leader_id : null;
+    const expiredLeaderId = (expiredLease && (expiredLease.leader_id || expiredLease.previous_leader_id))
+      ? (expiredLease.leader_id || expiredLease.previous_leader_id)
+      : null;
     const lastToken = (expiredLease && Number.isFinite(expiredLease.fencing_token)) ? expiredLease.fencing_token : 0;
-    const newFencingToken = lastToken + 1;
+    const newFencingToken = Math.max(this.fencingToken, lastToken) + 1;
 
     const aliveNodes = this.getClusterNodes().filter((n) => {
       if (n.status !== 'healthy') return false;
@@ -234,7 +236,7 @@ class ClusterCoordinator {
 
     const highestPriorityNode = aliveNodes[0] || { node_id: this.nodeId, priority: this.priority };
 
-    if (highestPriorityNode.node_id === this.nodeId || this.priority >= (highestPriorityNode.priority || 0)) {
+    if (isForced || highestPriorityNode.node_id === this.nodeId || this.priority >= (highestPriorityNode.priority || 0)) {
       this.role = 'leader';
       this.fencingToken = newFencingToken;
       const newLease = {
@@ -258,15 +260,33 @@ class ClusterCoordinator {
 
   stepDown() {
     this.role = 'follower';
-    this.fencingToken = 0;
-    const leader = this.getLeader();
-    if (leader && leader.leader_id === this.nodeId) {
-      try {
-        this.fsImpl.unlinkSync(this.leasePath);
-      } catch (_) {}
+    const currentLease = readJsonSync(this.leasePath, this.fsImpl);
+    if (currentLease && currentLease.leader_id === this.nodeId) {
+      const preservedToken = Number.isFinite(currentLease.fencing_token)
+        ? currentLease.fencing_token
+        : this.fencingToken;
+      writeAtomicSync(this.leasePath, {
+        leader_id: null,
+        previous_leader_id: this.nodeId,
+        fencing_token: preservedToken,
+        stepped_down_at: new Date().toISOString(),
+        expires_at: new Date(0).toISOString(),
+        expires_ms: 0,
+      }, this.fsImpl);
     }
     this.registerHeartbeat();
-    return { ok: true, role: 'follower' };
+    return { ok: true, role: 'follower', fencing_token: this.fencingToken };
+  }
+
+  assertOrderEpoch(orderFencingToken) {
+    const token = Number(orderFencingToken);
+    const lease = this.getLeader();
+    if (!Number.isFinite(token) || token <= 0 || !lease || lease.leader_id !== this.nodeId || token !== lease.fencing_token) {
+      const err = new Error(`ERR_STALE_FENCING_TOKEN: order=${orderFencingToken} active=${lease ? lease.fencing_token : 'none'}`);
+      err.code = 'ERR_STALE_FENCING_TOKEN';
+      throw err;
+    }
+    return true;
   }
 
   acquireOrderLock(idempotencyKey, lockTtlMs = 60000, options = {}) {
