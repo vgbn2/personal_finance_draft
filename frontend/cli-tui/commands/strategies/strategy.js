@@ -115,7 +115,7 @@ async function refreshSymbolCandles(symbol, timeframe, sortedTimeframes, refresh
     INGESTION_TTL_MAP.set(`${symbol}:${timeframe}`, now);
     maybeRollupIntraday(symbol, timeframe, sortedTimeframes, now);
   } catch (err) {
-    if (process.env.DEBUG) console.warn(`[AUTOMATION] Symbol refresh failed: ${err.message}`);
+    if (process.env.SOVEREIGN_DEBUG) console.warn(`[AUTOMATION] Symbol refresh failed: ${err.message}`);
   }
 }
 
@@ -248,7 +248,7 @@ async function applyOnnxPrediction(model, latestFeature) {
     const { predict: onnxPredict } = require('../../../../shared/lib/ml/onnx_runner.js');
     latestFeature._onnxPred = await onnxPredict(model.name, latestFeature);
   } catch (err) {
-    if (process.env.DEBUG) console.warn(`[AUTOMATION] ONNX runner fallback: ${err.message}`);
+    if (process.env.SOVEREIGN_DEBUG) console.warn(`[AUTOMATION] ONNX runner fallback: ${err.message}`);
   }
 }
 
@@ -327,7 +327,7 @@ function logStrategyAuditRecord(record) {
     const payload = JSON.stringify({ timestamp: new Date().toISOString(), ...record }) + '\n';
     fs.appendFileSync(STRATEGY_AUDIT_LOG_PATH, payload, 'utf8');
   } catch (err) {
-    if (process.env.DEBUG) console.warn(`[AUTOMATION] Audit log record failed: ${err.message}`);
+    if (process.env.SOVEREIGN_DEBUG) console.warn(`[AUTOMATION] Audit log record failed: ${err.message}`);
   }
 }
 
@@ -348,7 +348,7 @@ function processAuditRow(line, cutoff, historyByStrategy) {
     }
     if (row.dead_stub) stats.deadStubFlags++;
   } catch (err) {
-    if (process.env.DEBUG) console.warn(`[AUTOMATION] Failed to parse audit log row: ${err.message}`);
+    if (process.env.SOVEREIGN_DEBUG) console.warn(`[AUTOMATION] Failed to parse audit log row: ${err.message}`);
   }
 }
 
@@ -372,7 +372,7 @@ function scanDeadStubsFromLogs(lookbackHours = 24) {
     }
     return { deadStubs, summary: Object.fromEntries(historyByStrategy) };
   } catch (err) {
-    if (process.env.DEBUG) console.warn(`[AUTOMATION] Failed to scan dead stubs: ${err.message}`);
+    if (process.env.SOVEREIGN_DEBUG) console.warn(`[AUTOMATION] Failed to scan dead stubs: ${err.message}`);
     return { deadStubs: [], summary: {} };
   }
 }
@@ -589,7 +589,7 @@ async function fallbackBacktestSignal(strategy, strategyTimeframe, thresholdToUs
       ...universeArgs,
     ]);
   } catch (err) {
-    if (process.env.DEBUG) console.warn(`[AUTOMATION] Fallback backtest failed: ${err.message}`);
+    if (process.env.SOVEREIGN_DEBUG) console.warn(`[AUTOMATION] Fallback backtest failed: ${err.message}`);
     return null;
   }
 }

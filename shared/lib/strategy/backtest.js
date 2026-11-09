@@ -571,6 +571,7 @@ function renderEquityCurveChart(seriesList, options = {}) {
 }
 
 function withinDateRange(row, from, to) {
+  if (!row.as_of) return true;
   const stamp = Date.parse(row.as_of);
   if (!Number.isFinite(stamp)) return false;
   if (from && stamp < Date.parse(from)) return false;
@@ -907,6 +908,7 @@ function normalizeCppResult(cppResult, options, featureFrame) {
     if (returns.length > 0) tailRisk = historicalTailRisk(returns, options.tailAlpha || 0.05);
   } catch {}
   const result = {
+    ok: cppResult.ok !== false,
     generated_at: new Date().toISOString(),
     strategy: options.strategy || '',
     model: options.model || 'cpp_native',

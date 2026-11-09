@@ -10,7 +10,6 @@ require('ts-node').register({
   experimentalResolver: true,
   compilerOptions: {
     module: 'CommonJS', moduleResolution: 'node', target: 'ES2020', esModuleInterop: true,
-    ignoreDeprecations: '6.0',
   },
 });
 

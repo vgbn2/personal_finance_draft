@@ -848,6 +848,8 @@ int printBacktest(const std::vector<std::string>& args) {
     const std::string symbols_str = optionValue(args, "--symbol");
     const std::string timeframe   = optionValue(args, "--timeframe", "1d");
     const std::size_t max_bars    = parseSizeOption(args, "--max-bars", 0U);
+    const std::string from_date   = optionValue(args, "--from");
+    const std::string to_date     = optionValue(args, "--to");
 
     if (symbols_str.empty()) {
         std::cout << "{\"ok\":false,\"error\":\"--symbol required for native mode\"}\n";
@@ -883,7 +885,19 @@ int printBacktest(const std::vector<std::string>& args) {
     for (const auto& sym : symbols) {
         const auto snap = sovereign::loadMarketDataSnapshot(input, sym, timeframe, max_bars);
         if (snap.bars.empty()) continue; // quality.ok may be false for minor issues; trust Backtester::run's own validation
-        const auto res = sovereign::Backtester::run(snap.bars, bt_cfg);
+        std::vector<sovereign::OhlcvBar> bars;
+        if (!from_date.empty() || !to_date.empty()) {
+            bars.reserve(snap.bars.size());
+            for (const auto& b : snap.bars) {
+                if (!from_date.empty() && b.timestamp < from_date) continue;
+                if (!to_date.empty() && b.timestamp > to_date) continue;
+                bars.push_back(b);
+            }
+        } else {
+            bars = snap.bars;
+        }
+        if (bars.empty()) continue;
+        const auto res = sovereign::Backtester::run(bars, bt_cfg);
         aggregate.base.trades.insert(aggregate.base.trades.end(), res.trades.begin(), res.trades.end());
     }
 
@@ -891,7 +905,7 @@ int printBacktest(const std::vector<std::string>& args) {
     std::sort(aggregate.base.trades.begin(), aggregate.base.trades.end(),
               [](const auto& a, const auto& b) { return a.exit_time < b.exit_time; });
 
-    // ponytail: cap portfolio concurrency scaling to at most 10 active slots; upgrade when margin tracking is added.
+    // Cap portfolio concurrency scaling to at most 10 active slots.
     const double n_slots = symbols.empty() ? 1.0 : std::min(static_cast<double>(symbols.size()), 10.0);
     const double pos_size = std::clamp(bt_cfg.position_size_pct / n_slots, 0.01, 1.0);
 

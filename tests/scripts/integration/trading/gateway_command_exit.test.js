@@ -13,7 +13,6 @@ require('ts-node').register({
     moduleResolution: 'node',
     target: 'ES2020',
     esModuleInterop: true,
-    ignoreDeprecations: '6.0',
   },
 });
 

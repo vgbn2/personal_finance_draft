@@ -528,8 +528,7 @@ async function commandBacktest(args) {
     return 1;
   }
   const bridge = require('../../../../shared/lib/runtime/backend_bridge.js');
-  const isSubDailyTimeframe = timeframe && timeframe !== '1d';
-  const useDirectCppNative = !sampleMode && bridge.backendAvailable() && selectedSymbols.length > 0 && !isSubDailyTimeframe;
+  const useDirectCppNative = !sampleMode && bridge.backendAvailable() && selectedSymbols.length > 0;
 
   const signalOnly = hasFlag(args, '--signal-only') || hasFlag(args, '--fast-signal');
 
@@ -595,6 +594,7 @@ async function commandBacktest(args) {
     propFirm: selectedPropFirmRef,
     propFirmProfile: selectedPropFirm,
     engine: sampleMode ? 'js' : (strategyMeta?.engine || 'auto'),
+    timeframe: timeframe || '1d',
   };
   const sampleWindowNote = backtestModeNote(sampleMode, quality);
   let inSample;

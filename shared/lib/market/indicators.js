@@ -481,11 +481,21 @@ function calculateRollingFeatureFrame(sources, minimumBars = 2, periods = {}) {
     const atrArr = atrSeries(bars, mergedPeriods.atr);
     const bands = bollingerBandsSeries(closes, mergedPeriods.bollinger);
 
+    const maxWindow = Math.max(
+      200,
+      (mergedPeriods.bollinger || 20) * 3,
+      (mergedPeriods.rsi || 14) * 3,
+      (mergedPeriods.volatility || 20) * 3,
+      (mergedPeriods.atr || 14) * 3
+    );
+
     for (let end = minimumBars; end <= bars.length; end += 1) {
       const idx = end - 1;
       const lastBar = bars[idx];
-      const window = bars.slice(0, end);
+      const start = Math.max(0, end - maxWindow);
+      const window = bars.slice(start, end);
       const baseFeature = featureFromWindow(key, window, mergedPeriods);
+      baseFeature.bars = end;
       features.push({
         ...baseFeature,
         return_fast: retFast[idx] ?? baseFeature.return_fast ?? null,
