@@ -497,7 +497,9 @@ async function generateAiCandidateSpec(options = {}) {
       seed: uniqueSuffix,
     });
 
-    const universe = options.allMarkets || options.universe === 'all'
+    // ponytail: non-specific strategy families default to full market discovery unless explicit universe given
+    const nonSpecificFamily = ['momentum', 'mean_reversion', 'breakout', 'volatility', 'trend_following'].includes(baseFamily);
+    const universe = (options.allMarkets || options.universe === 'all' || (!options.universe && nonSpecificFamily))
       ? discoverAllMarketSymbols()
       : (Array.isArray(aiResult.universe) && aiResult.universe.length > 0
           ? aiResult.universe.map((s) => String(s).toUpperCase())

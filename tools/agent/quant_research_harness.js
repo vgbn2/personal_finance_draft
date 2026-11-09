@@ -69,7 +69,7 @@ function parseCliArgs(argv) {
     cycles: 1,
     archetype: null,
     universe: null,
-    allMarkets: false,
+    allMarkets: true,
     from: null,
     to: null,
     engine: 'cpp_native',
