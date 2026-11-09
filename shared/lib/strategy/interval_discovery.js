@@ -306,41 +306,46 @@ const STRATEGY_ARCHETYPES = Object.freeze({
   ),
 });
 
-// ponytail: dynamically discovers market symbols from storage and asset mappings; zero hardcoded symbols.
+function readStorageSymbols(storageDir) {
+  if (!fs.existsSync(storageDir)) return [];
+  try {
+    return fs.readdirSync(storageDir)
+      .filter((file) => file.endsWith('.bin'))
+      .map((file) => file.slice(0, file.lastIndexOf('_')))
+      .filter((sym) => sym && /^[A-Z0-9=.-]{2,20}$/i.test(sym))
+      .map((sym) => sym.toUpperCase());
+  } catch {
+    return [];
+  }
+}
+
+function readMappedSymbols(mappingPath) {
+  if (!fs.existsSync(mappingPath)) return [];
+  try {
+    const parsed = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
+    const mapping = parsed.mapping || parsed;
+    return Object.values(mapping)
+      .flat()
+      .filter((s) => typeof s === 'string' && s.trim())
+      .map((s) => s.trim().toUpperCase());
+  } catch {
+    return [];
+  }
+}
+
+// Dynamically discovers market symbols from storage and asset mappings
 function discoverAllMarketSymbols() {
-  const symbols = new Set();
-  if (fs.existsSync(STORAGE_TS_DIR)) {
-    try {
-      const files = fs.readdirSync(STORAGE_TS_DIR);
-      for (const file of files) {
-        if (file.endsWith('.bin')) {
-          const sym = file.slice(0, file.lastIndexOf('_'));
-          if (sym && /^[A-Z0-9=.-]{2,20}$/i.test(sym)) {
-            symbols.add(sym.toUpperCase());
-          }
-        }
-      }
-    } catch {}
-  }
-  const mappingPath = path.join(REPO_ROOT, 'configs', 'asset_mapping.json');
-  if (fs.existsSync(mappingPath)) {
-    try {
-      const parsed = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
-      const mapping = parsed.mapping || parsed;
-      for (const list of Object.values(mapping)) {
-        if (Array.isArray(list)) {
-          for (const s of list) {
-            if (typeof s === 'string' && s.trim()) symbols.add(s.trim().toUpperCase());
-          }
-        }
-      }
-    } catch {}
-  }
+  const symbols = new Set([
+    ...readStorageSymbols(STORAGE_TS_DIR),
+    ...readMappedSymbols(path.join(REPO_ROOT, 'configs', 'asset_mapping.json')),
+  ]);
+
   for (const arch of Object.values(STRATEGY_ARCHETYPES || {})) {
     if (Array.isArray(arch.universe)) {
       for (const s of arch.universe) symbols.add(s.toUpperCase());
     }
   }
+
   return Array.from(symbols).sort();
 }
 
@@ -636,6 +641,20 @@ function rankCandidates(candidates = []) {
   });
 }
 
+function collectFallbackBars(optionsFixtureBars, symbols, timeframe, barCount) {
+  if (Array.isArray(optionsFixtureBars) && optionsFixtureBars.length > 0) {
+    return [...optionsFixtureBars];
+  }
+  const bars = [];
+  for (const sym of symbols) {
+    const symBars = loadLocalFixtureBars(sym, timeframe, barCount);
+    if (Array.isArray(symBars) && symBars.length > 0) {
+      bars.push(...symBars);
+    }
+  }
+  return bars;
+}
+
 async function evaluateStrategy(spec, options = {}) {
   let symbols = [];
   if (options.allMarkets || spec.universe === 'all' || (Array.isArray(spec.universe) && spec.universe.includes('all'))) {
@@ -689,16 +708,7 @@ async function evaluateStrategy(spec, options = {}) {
   // If fast C++ native run did not succeed, fall back to feature frame backtest
   const isNativeSuccess = backtestResult && (backtestResult.metrics != null && backtestResult.ok !== false);
   if (!isNativeSuccess) {
-    if (Array.isArray(options.fixtureBars) && options.fixtureBars.length > 0) {
-      allBars = [...options.fixtureBars];
-    } else {
-      for (const sym of symbols) {
-        const symBars = loadLocalFixtureBars(sym, timeframe, barCount);
-        if (Array.isArray(symBars) && symBars.length > 0) {
-          allBars.push(...symBars);
-        }
-      }
-    }
+    allBars = collectFallbackBars(options.fixtureBars, symbols, timeframe, barCount);
 
     if (fromIso || toIso) {
       allBars = allBars.filter((b) => {
@@ -939,6 +949,59 @@ function stageCandidate(candidate, options = {}) {
   }
 
   const evaluation = candidate.evaluation || candidate.metrics || {};
+
+  const minSharpe = options.min_sharpe !== undefined ? options.min_sharpe : options.minSharpe;
+  if (minSharpe !== undefined) {
+    const sharpe = Number(evaluation.sharpe_ratio ?? 0);
+    if (!Number.isFinite(sharpe) || sharpe < minSharpe) {
+      return {
+        staged: false,
+        reason: 'sharpe_below_threshold',
+        sharpe,
+        threshold: minSharpe,
+      };
+    }
+  }
+
+  const maxDrawdown = options.max_drawdown !== undefined ? options.max_drawdown : options.maxDrawdown;
+  if (maxDrawdown !== undefined) {
+    const drawdown = Number(evaluation.max_drawdown ?? 0);
+    if (!Number.isFinite(drawdown) || drawdown > maxDrawdown) {
+      return {
+        staged: false,
+        reason: 'drawdown_above_threshold',
+        drawdown,
+        threshold: maxDrawdown,
+      };
+    }
+  }
+
+  const minTrades = options.min_trades !== undefined ? options.min_trades : options.minTrades;
+  if (minTrades !== undefined) {
+    const trades = Number(evaluation.trades ?? evaluation.total_trades ?? 0);
+    if (!Number.isFinite(trades) || trades < minTrades) {
+      return {
+        staged: false,
+        reason: 'trades_below_threshold',
+        trades,
+        threshold: minTrades,
+      };
+    }
+  }
+
+  const minProfitFactor = options.min_profit_factor !== undefined ? options.min_profit_factor : options.minProfitFactor;
+  if (minProfitFactor !== undefined) {
+    const profitFactor = Number(evaluation.profit_factor ?? 0);
+    if (!Number.isFinite(profitFactor) || profitFactor < minProfitFactor) {
+      return {
+        staged: false,
+        reason: 'profit_factor_below_threshold',
+        profit_factor: profitFactor,
+        threshold: minProfitFactor,
+      };
+    }
+  }
+
   const checksum = candidate.checksum || spec.checksum || computeSpecChecksum(spec);
   const score = Number.isFinite(candidate.score) ? candidate.score : calculateRiskAdjustedScore(evaluation);
   const signalCore = spec.signal_core || spec.archetype || 'signal';
@@ -1015,6 +1078,7 @@ class IntervalStrategyEngine {
   constructor(options = {}) {
     this.intervalSecs = Number(options.intervalSecs || options.interval || 30);
     this.candidatesDir = options.candidatesDir || DEFAULT_CANDIDATES_DIR;
+    this.yamlDir = options.yamlDir || DEFAULT_AUTOMATED_STRATEGIES_DIR;
     this.fixtureBars = options.fixtureBars || null;
     this.universe = options.universe || null;
     this.allMarkets = Boolean(options.allMarkets);
@@ -1032,32 +1096,39 @@ class IntervalStrategyEngine {
     this.history = [];
   }
 
-  async runCycle(customSpec = null) {
-    let spec = customSpec;
-    if (!spec) {
-      if (!this.archetype && this.useAi !== false) {
-        try {
-          spec = await generateAiCandidateSpec({
-            allMarkets: this.allMarkets,
-            universe: this.universe,
-          });
-          if (spec && typeof this.logger === 'function') {
-            this.logger(`[INTERVAL-DISCOVERY] [AI-AGENT: ${spec.ai_model || 'ag/gemini-3.8-flash'}] Synthesized: ${spec.name}`);
-          }
-        } catch (err) {
-          if (typeof this.logger === 'function') {
-            this.logger(`[INTERVAL-DISCOVERY] AI generation failed, falling back to algorithmic: ${err.message}`);
-          }
-        }
-      }
-      if (!spec) {
-        spec = generateCandidateSpec({
-          archetype: this.archetype,
+  log(message) {
+    if (typeof this.logger === 'function') {
+      this.logger(message);
+    }
+  }
+
+  async resolveCycleSpec(customSpec = null) {
+    if (customSpec) return customSpec;
+
+    if (!this.archetype && this.useAi !== false) {
+      try {
+        const aiSpec = await generateAiCandidateSpec({
           allMarkets: this.allMarkets,
           universe: this.universe,
         });
+        if (aiSpec) {
+          this.log(`[INTERVAL-DISCOVERY] [AI-AGENT: ${aiSpec.ai_model || 'ag/gemini-3.8-flash'}] Synthesized: ${aiSpec.name}`);
+          return aiSpec;
+        }
+      } catch (err) {
+        this.log(`[INTERVAL-DISCOVERY] AI generation failed, falling back to algorithmic: ${err.message}`);
       }
     }
+
+    return generateCandidateSpec({
+      archetype: this.archetype,
+      allMarkets: this.allMarkets,
+      universe: this.universe,
+    });
+  }
+
+  async runCycle(customSpec = null) {
+    const spec = await this.resolveCycleSpec(customSpec);
     const validation = validateRiskBounds(spec);
     if (!validation.valid) {
       return {
@@ -1085,6 +1156,9 @@ class IntervalStrategyEngine {
     }, {
       candidatesDir: this.candidatesDir,
       yamlDir: this.yamlDir,
+      min_sharpe: this.minSharpe,
+      max_drawdown: this.maxDrawdown,
+      min_trades: this.minTrades,
     });
 
     const cycleResult = {
@@ -1105,9 +1179,7 @@ class IntervalStrategyEngine {
       try {
         this.onCandidate(cycleResult);
       } catch (err) {
-        if (typeof this.logger === 'function') {
-          this.logger(`[INTERVAL-DISCOVERY] onCandidate callback error: ${err.message}`);
-        }
+        this.log(`[INTERVAL-DISCOVERY] onCandidate callback error: ${err.message}`);
       }
     }
 
@@ -1117,25 +1189,19 @@ class IntervalStrategyEngine {
   async start() {
     if (this.running) return;
     this.running = true;
-    if (typeof this.logger === 'function') {
-      this.logger(`[INTERVAL-DISCOVERY] Autonomous interval discovery started (${this.intervalSecs}s loop)...`);
-    }
+    this.log(`[INTERVAL-DISCOVERY] Autonomous interval discovery started (${this.intervalSecs}s loop)...`);
 
     try {
       await this.runCycle();
     } catch (err) {
-      if (typeof this.logger === 'function') {
-        this.logger(`[INTERVAL-DISCOVERY] Cycle error: ${err.message}`);
-      }
+      this.log(`[INTERVAL-DISCOVERY] Cycle error: ${err.message}`);
     }
 
     this.timer = setInterval(async () => {
       try {
         await this.runCycle();
       } catch (err) {
-        if (typeof this.logger === 'function') {
-          this.logger(`[INTERVAL-DISCOVERY] Interval cycle error: ${err.message}`);
-        }
+        this.log(`[INTERVAL-DISCOVERY] Interval cycle error: ${err.message}`);
       }
     }, this.intervalSecs * 1000);
   }
@@ -1146,9 +1212,7 @@ class IntervalStrategyEngine {
       this.timer = null;
     }
     this.running = false;
-    if (typeof this.logger === 'function') {
-      this.logger('[INTERVAL-DISCOVERY] Autonomous interval discovery stopped.');
-    }
+    this.log('[INTERVAL-DISCOVERY] Autonomous interval discovery stopped.');
   }
 }
 

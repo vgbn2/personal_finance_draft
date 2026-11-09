@@ -1,12 +1,12 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-09-21T00:00:00.000Z",
-  "description": "Static audit markers for immutable domain and math modules, enabling SHA-256 validated fast-path skip in blast-through audit passes.",
+  "generated_at": "2026-11-09T00:00:00.000Z",
+  "description": "Static audit markers for immutable domain and math modules, enabling SHA-512 validated fast-path skip in blast-through audit passes.",
   "audited_plane_hashes": {
     "shared/lib/market/indicators.js": {
       "plane": "Plane 4: Data Pipelines, Indicators & Storage",
       "grade": "A",
-      "sha256": "69811d0ac2da9fc17af77107032ecb9e75820abdbc1c872121ccc760164e9452",
+      "sha512": "822b8888fb81b4faf8113abec84a00f59bbea76d2663087d7dbb04b661c442cc120eacad4c756f0ecda83ecc3f9d724b040666e05dbbef8c58ccf8e2e9016f44",
       "invariants": [
         "rsi_flat_50",
         "macd_finite",
@@ -16,7 +16,7 @@
     "shared/lib/risk/prop_firm_guard.js": {
       "plane": "Plane 2: Execution Safety & Broker Gateways",
       "grade": "A",
-      "sha256": "c611fda4c142710a9e2c94f730e79f02af97026e88d72c2afc4a0728e013ba42",
+      "sha512": "96da1b19875ddafd0559ddcdfb20e5931c0295dbf150a41c73467f37535e23dd4b64fbbd942c15be7ff6551624059af3cf798b52d3ff6a34d22fc7b201877969",
       "invariants": [
         "drawdown_fail_closed",
         "max_daily_loss_enforced"
@@ -25,7 +25,7 @@
     "shared/lib/strategy/rsi_backtest.js": {
       "plane": "Plane 4: Data Pipelines, Indicators & Storage",
       "grade": "A",
-      "sha256": "3f2c35dbbb84e0313b2da130a245e590bc566947fa887e069b81d131d5584d06",
+      "sha512": "13ce2fecc43dbd525d5a39b96ed57103f1212164e7af4ea0c4e2a018932cfc1270ddff2eb00a15a0ff7932d4339e9c20bc6890337d36b1081fe5663038189807",
       "invariants": [
         "rsi_flat_50_neutrality",
         "holding_period_bounds"
@@ -34,16 +34,16 @@
     "backend/cpp_core/src/strategies/strategy_sweep_evaluator.cpp": {
       "plane": "Plane 1: Compute & Core Engine",
       "grade": "A",
-      "sha256": "1ef6a7b6ae0703ae3c6ac641beb6b1d1a8cd33c2e6ac9674351441018da32786",
+      "sha512": "f82552e9e9e5da5d16dba1dfad669e95c583ec0b7219ae38ae5e703efdfdd19196e4f245930431f2d23a7df68d9cfb2c6e2b2421c8d85a2c047e4e33959a71a3",
       "invariants": [
-        "non_positive_price_guards",
-        "finite_mark_to_market"
+        "parameter_sweep_coverage",
+        "objective_monotonicity"
       ]
     },
     "backend/cpp_core/src/backtest/frame_backtester.cpp": {
       "plane": "Plane 1: Compute & Core Engine",
       "grade": "A",
-      "sha256": "cb1b1afd5b5a698bcab1fcf3489424cdfd0239e39b7aa18e6c3155ac2aa5ddf8",
+      "sha512": "c0536570e725318ef99126d5edc013662d4d800bb2a9c8767b266b3dd5cc988694679bb521e7ce338f531bd53cc31ad01b7f7ab10fd02d0940517075c782cda5",
       "invariants": [
         "splitmix64_prng_non_zero_state",
         "xorshift64_absorption_guard"
@@ -52,7 +52,7 @@
     "backend/cpp_core/src/statistical_analysis/correlation/correlation_engine.cpp": {
       "plane": "Plane 1: Compute & Core Engine",
       "grade": "A",
-      "sha256": "12e449a10596801e8fc277419e29d580f882f5e1f599b03da9cb7f7bea785f7a",
+      "sha512": "481787cca45159663522b8d979ae47c8a7bee75aaf5ecc1d5c482d075f4bf7342e2d1e1efe973a674f3d3619bc5bfc72d99d929047a31ebceb1bd1301cabe62e",
       "invariants": [
         "log_return_series_alignment",
         "pearson_dimension_parity"

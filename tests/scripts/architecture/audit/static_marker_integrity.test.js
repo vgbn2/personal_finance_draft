@@ -23,12 +23,13 @@ test('static audit manifest: structure and schema integrity', () => {
   for (const [relPath, metadata] of entries) {
     assert.equal(typeof metadata.plane, 'string', `${relPath} must specify plane`);
     assert.equal(typeof metadata.grade, 'string', `${relPath} must specify grade`);
-    assert.match(metadata.sha256, /^[a-f0-9]{64}$/, `${relPath} must have a valid 64-character SHA-256 hash`);
+    assert.match(metadata.sha512, /^[a-f0-9]{128}$/, `${relPath} must have a valid 128-character SHA-512 hash`);
+    assert.equal(metadata.sha256, undefined, `${relPath} must not contain legacy sha256`);
     assert.ok(Array.isArray(metadata.invariants), `${relPath} must list verified mathematical invariants`);
   }
 });
 
-test('static audit manifest: cryptographic SHA-256 hash verification for audited modules', () => {
+test('static audit manifest: cryptographic SHA-512 hash verification for audited modules', () => {
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
 
   for (const [relPath, metadata] of Object.entries(manifest.audited_plane_hashes)) {
@@ -36,12 +37,12 @@ test('static audit manifest: cryptographic SHA-256 hash verification for audited
     assert.ok(fs.existsSync(fullPath), `Audited file ${relPath} must exist on disk`);
 
     const fileBuffer = fs.readFileSync(fullPath);
-    const actualHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+    const actualHash = crypto.createHash('sha512').update(fileBuffer).digest('hex');
 
     assert.equal(
       actualHash,
-      metadata.sha256,
-      `SHA-256 checksum mismatch for ${relPath}. If code was intentionally modified, rerun mathematical invariant validation and update the manifest.`
+      metadata.sha512,
+      `SHA-512 checksum mismatch for ${relPath}. If code was intentionally modified, rerun mathematical invariant validation and update the manifest.`
     );
   }
 });

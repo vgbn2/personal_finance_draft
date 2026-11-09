@@ -231,6 +231,168 @@ test('interval discovery: candidate staging produces immutable checksummed recor
   assert.ok(fs.existsSync(stageLow.path), 'candidate file written to storage');
 });
 
+test('interval discovery: stageCandidate enforces metric thresholds before disk persistence', async (t) => {
+  const tmpCandidates = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-stage-gate-candidates-'));
+  const tmpYaml = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-stage-gate-yaml-'));
+  t.after(() => {
+    fs.rmSync(tmpCandidates, { recursive: true, force: true });
+    fs.rmSync(tmpYaml, { recursive: true, force: true });
+  });
+
+  const spec = generateCandidateSpec({ archetype: 'ema_macd_trend', seed: 'gate_test' });
+
+  // 1. Reject negative or below-threshold Sharpe ratio
+  const negSharpeEval = {
+    symbol: 'SPY',
+    trades: 300,
+    win_rate: 0.40,
+    sharpe_ratio: -0.46,
+    max_drawdown: 0.15,
+    profit_factor: 1.1,
+  };
+  const negSharpeResult = stageCandidate({
+    spec,
+    evaluation: negSharpeEval,
+  }, {
+    candidatesDir: tmpCandidates,
+    yamlDir: tmpYaml,
+    min_sharpe: 0.50,
+    max_drawdown: 0.35,
+    min_trades: 200,
+  });
+  assert.strictEqual(negSharpeResult.staged, false, 'candidate with negative Sharpe must not be staged');
+  assert.strictEqual(negSharpeResult.reason, 'sharpe_below_threshold');
+  assert.strictEqual(negSharpeResult.sharpe, -0.46);
+  assert.strictEqual(negSharpeResult.threshold, 0.50);
+  assert.strictEqual(fs.readdirSync(tmpCandidates).length, 0, 'zero candidate files written on Sharpe failure');
+  assert.strictEqual(fs.readdirSync(tmpYaml).length, 0, 'zero YAML files written on Sharpe failure');
+
+  // 2. Reject excessive drawdown exceeding threshold
+  const highDdEval = {
+    symbol: 'SPY',
+    trades: 300,
+    win_rate: 0.55,
+    sharpe_ratio: 1.20,
+    max_drawdown: 0.42,
+    profit_factor: 1.5,
+  };
+  const highDdResult = stageCandidate({
+    spec,
+    evaluation: highDdEval,
+  }, {
+    candidatesDir: tmpCandidates,
+    yamlDir: tmpYaml,
+    min_sharpe: 0.50,
+    max_drawdown: 0.20,
+    min_trades: 200,
+  });
+  assert.strictEqual(highDdResult.staged, false, 'candidate with excessive drawdown must not be staged');
+  assert.strictEqual(highDdResult.reason, 'drawdown_above_threshold');
+  assert.strictEqual(highDdResult.drawdown, 0.42);
+  assert.strictEqual(highDdResult.threshold, 0.20);
+  assert.strictEqual(fs.readdirSync(tmpCandidates).length, 0, 'zero candidate files written on drawdown failure');
+  assert.strictEqual(fs.readdirSync(tmpYaml).length, 0, 'zero YAML files written on drawdown failure');
+
+  // 3. Reject insufficient trade count
+  const lowTradesEval = {
+    symbol: 'SPY',
+    trades: 45,
+    win_rate: 0.60,
+    sharpe_ratio: 1.80,
+    max_drawdown: 0.10,
+    profit_factor: 2.0,
+  };
+  const lowTradesResult = stageCandidate({
+    spec,
+    evaluation: lowTradesEval,
+  }, {
+    candidatesDir: tmpCandidates,
+    yamlDir: tmpYaml,
+    min_sharpe: 0.50,
+    max_drawdown: 0.35,
+    min_trades: 200,
+  });
+  assert.strictEqual(lowTradesResult.staged, false, 'candidate with insufficient trades must not be staged');
+  assert.strictEqual(lowTradesResult.reason, 'trades_below_threshold');
+  assert.strictEqual(lowTradesResult.trades, 45);
+  assert.strictEqual(lowTradesResult.threshold, 200);
+  assert.strictEqual(fs.readdirSync(tmpCandidates).length, 0, 'zero candidate files written on trade count failure');
+  assert.strictEqual(fs.readdirSync(tmpYaml).length, 0, 'zero YAML files written on trade count failure');
+
+  // 4. Reject insufficient profit factor
+  const lowPfEval = {
+    symbol: 'SPY',
+    trades: 250,
+    win_rate: 0.50,
+    sharpe_ratio: 1.10,
+    max_drawdown: 0.12,
+    profit_factor: 0.85,
+  };
+  const lowPfResult = stageCandidate({
+    spec,
+    evaluation: lowPfEval,
+  }, {
+    candidatesDir: tmpCandidates,
+    yamlDir: tmpYaml,
+    min_profit_factor: 1.0,
+  });
+  assert.strictEqual(lowPfResult.staged, false, 'candidate with low profit factor must not be staged');
+  assert.strictEqual(lowPfResult.reason, 'profit_factor_below_threshold');
+  assert.strictEqual(lowPfResult.profit_factor, 0.85);
+  assert.strictEqual(lowPfResult.threshold, 1.0);
+  assert.strictEqual(fs.readdirSync(tmpCandidates).length, 0, 'zero candidate files written on profit factor failure');
+
+  // 5. Stage when all thresholds are met
+  const validEval = {
+    symbol: 'SPY',
+    trades: 250,
+    win_rate: 0.58,
+    sharpe_ratio: 1.45,
+    max_drawdown: 0.14,
+    profit_factor: 1.80,
+  };
+  const passResult = stageCandidate({
+    spec,
+    evaluation: validEval,
+  }, {
+    candidatesDir: tmpCandidates,
+    yamlDir: tmpYaml,
+    min_sharpe: 1.0,
+    max_drawdown: 0.20,
+    min_trades: 200,
+    min_profit_factor: 1.0,
+  });
+  assert.strictEqual(passResult.staged, true, 'valid candidate must be staged successfully');
+  assert.ok(fs.existsSync(passResult.path), 'candidate JSON file exists on disk');
+  assert.ok(fs.existsSync(passResult.yaml_path), 'strategy YAML file exists on disk');
+
+  const loadedRecord = JSON.parse(fs.readFileSync(passResult.path, 'utf8'));
+  assert.strictEqual(loadedRecord.checksum, spec.checksum);
+  assert.strictEqual(loadedRecord.evaluation.sharpe_ratio, 1.45);
+  assert.strictEqual(loadedRecord.evaluation.trades, 250);
+
+  const loadedYaml = fs.readFileSync(passResult.yaml_path, 'utf8');
+  assert.ok(loadedYaml.includes(passResult.record.name));
+  assert.ok(loadedYaml.includes('1.45'));
+
+  // 6. IntervalStrategyEngine runCycle enforces minSharpe barrier
+  const engine = new IntervalStrategyEngine({
+    intervalSecs: 1,
+    candidatesDir: tmpCandidates,
+    yamlDir: tmpYaml,
+    minSharpe: 99.0, // unachievable Sharpe ratio
+    minTrades: 0,
+    maxDrawdown: 1.0,
+    logger: () => {},
+  });
+  const cycle = await engine.runCycle();
+  assert.strictEqual(cycle.success, true);
+  assert.strictEqual(cycle.staged, false, 'engine cycle must not stage when Sharpe is below minSharpe threshold');
+  assert.strictEqual(cycle.reason, 'sharpe_below_threshold');
+  assert.strictEqual(cycle.stagedPath, null);
+  assert.strictEqual(cycle.yamlPath, null);
+});
+
 test('interval discovery: IntervalStrategyEngine executes cycle against local fixtures', async (t) => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-engine-candidates-'));
   t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
@@ -238,6 +400,7 @@ test('interval discovery: IntervalStrategyEngine executes cycle against local fi
   const engine = new IntervalStrategyEngine({
     intervalSecs: 1,
     candidatesDir: tmpDir,
+    yamlDir: tmpDir,
     minSharpe: -10, // allow staging for test verification
     minTrades: 0,   // allow staging for test verification
     maxDrawdown: 1.0, // allow staging for test verification
@@ -270,6 +433,7 @@ test('interval discovery: CLI supports single-cycle execution via --once', (t) =
     scriptPath,
     '--once',
     '--candidates-dir', tmpDir,
+    '--yaml-dir', tmpDir,
     '--archetype', 'ema_macd_trend',
   ], {
     encoding: 'utf8',
@@ -320,8 +484,9 @@ test('interval discovery: evaluates strategy across multi-market universe with C
   assert.ok(evaluation.trading_window.includes(' to '), 'trading window formatted as dd/mm/yy to dd/mm/yy');
 });
 
-test('interval discovery: CLI supports --all-markets and custom universe', () => {
+test('interval discovery: CLI supports --all-markets and custom universe', (t) => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-cli-multimarket-'));
+  t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
   const scriptPath = path.resolve(__dirname, '../../../tools/agent/strategy_interval_generator.js');
 
   const res = spawnSync(process.execPath, [
@@ -329,6 +494,7 @@ test('interval discovery: CLI supports --all-markets and custom universe', () =>
     '--once',
     '--universe', 'SPY,QQQ,AAPL',
     '--candidates-dir', tmpDir,
+    '--yaml-dir', tmpDir,
     '--archetype', 'volatility_breakout',
     '--from', '01/01/24',
     '--to', '01/06/24',
